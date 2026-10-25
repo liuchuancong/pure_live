@@ -30,5 +30,8 @@
   "limitPresetsLabel": "预设数量",
   "limitCustomLabel": "自定义数量",
   "limitInvalid": "请输入 {min: int} 到 {max: int} 之间的整数。",
-  "limitSaved": "上限已设为 {limit: int} 条"
+  "limitSaved": "上限已设为 {limit: int} 条",
+  "refresh": "刷新",
+  "refreshFailed": "{count: int} 条记录刷新失败",
+  "openRoom": "进入直播间"
 }

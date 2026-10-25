@@ -30,5 +30,8 @@
   "limitPresetsLabel": "Preset Limits",
   "limitCustomLabel": "Custom Limit",
   "limitInvalid": "Enter a whole number from {min: int} to {max: int}.",
-  "limitSaved": "History limit set to {limit: int}"
+  "limitSaved": "History limit set to {limit: int}",
+  "refresh": "Refresh",
+  "refreshFailed": "{count: int} records could not be refreshed",
+  "openRoom": "Open the room"
 }

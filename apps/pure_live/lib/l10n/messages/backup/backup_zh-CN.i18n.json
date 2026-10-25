@@ -77,5 +77,21 @@
   "deleteConfirmDesc": "{name: String} 将被永久删除。",
   "deleteDone": "备份文件已删除",
   "deleteFileFailed": "删除备份文件失败",
-  "summaryFollows": "关注 {follows: int} · 分区 {areas: int}"
+  "summaryFollows": "关注 {follows: int} · 分区 {areas: int}",
+  "webdavBrowse": "浏览服务器",
+  "webdavUp": "上一级",
+  "webdavEmpty": "这个目录没有文件",
+  "webdavLoadFailed": "无法读取服务器目录",
+  "webdavRestore": "恢复",
+  "webdavRestoreTitle": "恢复“{name: String}”？",
+  "webdavRestoreDesc": "将用服务器文件覆盖本机的关注、历史、分区与设置。",
+  "webdavRestored": "已恢复服务器备份",
+  "webdavFileDelete": "删除服务器文件",
+  "webdavDeleteTitle": "删除服务器文件“{name: String}”？",
+  "webdavDeleteDesc": "只删除服务器上的这个文件，本机数据不受影响。",
+  "webdavDeleted": "已删除服务器文件",
+  "webdavUploadHere": "上传当前备份",
+  "webdavUploadName": "文件名",
+  "webdavUploadInvalid": "文件名不能为空",
+  "webdavNoServer": "请先配置服务器地址"
 }

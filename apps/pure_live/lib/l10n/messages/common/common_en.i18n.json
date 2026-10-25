@@ -20,5 +20,13 @@
   "searchHint": "Search rooms, streamers or sites",
   "switchModule": "Switch content type",
   "openNavigation": "Open navigation",
-  "refreshFailed": "Refresh failed"
+  "refreshFailed": "Refresh failed",
+  "layout": "Switch layout",
+  "layoutGrid": "Card layout",
+  "layoutList": "List layout",
+  "switchToDark": "Switch to dark",
+  "switchToLight": "Switch to light",
+  "backToTop": "Back to top",
+  "more": "More",
+  "delete": "Delete"
 }

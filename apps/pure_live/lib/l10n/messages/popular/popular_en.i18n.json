@@ -4,5 +4,10 @@
   "prevPage": "Previous page",
   "nextPage": "Next page",
   "inlineAt": "Searching “{query}” on {platform}",
-  "backToBrowse": "Back to browsing"
+  "backToBrowse": "Back to browsing",
+  "sortLabel": "Sort",
+  "sortPlatform": "Platform order",
+  "sortAudience": "By audience",
+  "perPage": "Per page",
+  "pageSize": "{size: int} per page"
 }

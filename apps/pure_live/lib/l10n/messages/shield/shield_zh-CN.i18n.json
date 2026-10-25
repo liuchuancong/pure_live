@@ -19,5 +19,5 @@
   "removed": "已移除",
   "cleared": "已清空",
   "removeEntry": "移除这条屏蔽规则",
-  "effectNote": "屏蔽在直播间弹幕管道中生效；该管道将随播放器接入后启用。"
+  "effectNote": "屏蔽在直播间弹幕中立即生效。"
 }

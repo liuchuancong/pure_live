@@ -4,5 +4,10 @@
   "prevPage": "上一页",
   "nextPage": "下一页",
   "inlineAt": "在 {platform} 中搜索“{query}”",
-  "backToBrowse": "返回浏览"
+  "backToBrowse": "返回浏览",
+  "sortLabel": "排序",
+  "sortPlatform": "平台推荐",
+  "sortAudience": "按观众",
+  "perPage": "每页",
+  "pageSize": "每页 {size: int} 个"
 }

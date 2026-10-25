@@ -166,6 +166,12 @@ class Translations$areas$zh_CN {
 
 	/// zh-CN: '取消关注'
 	String get unfollow => '取消关注';
+
+	/// zh-CN: '全部分类'
+	String get categoryAll => '全部分类';
+
+	/// zh-CN: '关注分区'
+	String get follow => '关注分区';
 }
 
 // Path: backup
@@ -412,6 +418,54 @@ class Translations$backup$zh_CN {
 
 	/// zh-CN: '关注 {follows: int} · 分区 {areas: int}'
 	String summaryFollows({required int follows, required int areas}) => '关注 ${follows} · 分区 ${areas}';
+
+	/// zh-CN: '浏览服务器'
+	String get webdavBrowse => '浏览服务器';
+
+	/// zh-CN: '上一级'
+	String get webdavUp => '上一级';
+
+	/// zh-CN: '这个目录没有文件'
+	String get webdavEmpty => '这个目录没有文件';
+
+	/// zh-CN: '无法读取服务器目录'
+	String get webdavLoadFailed => '无法读取服务器目录';
+
+	/// zh-CN: '恢复'
+	String get webdavRestore => '恢复';
+
+	/// zh-CN: '恢复“{name: String}”？'
+	String webdavRestoreTitle({required String name}) => '恢复“${name}”？';
+
+	/// zh-CN: '将用服务器文件覆盖本机的关注、历史、分区与设置。'
+	String get webdavRestoreDesc => '将用服务器文件覆盖本机的关注、历史、分区与设置。';
+
+	/// zh-CN: '已恢复服务器备份'
+	String get webdavRestored => '已恢复服务器备份';
+
+	/// zh-CN: '删除服务器文件'
+	String get webdavFileDelete => '删除服务器文件';
+
+	/// zh-CN: '删除服务器文件“{name: String}”？'
+	String webdavDeleteTitle({required String name}) => '删除服务器文件“${name}”？';
+
+	/// zh-CN: '只删除服务器上的这个文件，本机数据不受影响。'
+	String get webdavDeleteDesc => '只删除服务器上的这个文件，本机数据不受影响。';
+
+	/// zh-CN: '已删除服务器文件'
+	String get webdavDeleted => '已删除服务器文件';
+
+	/// zh-CN: '上传当前备份'
+	String get webdavUploadHere => '上传当前备份';
+
+	/// zh-CN: '文件名'
+	String get webdavUploadName => '文件名';
+
+	/// zh-CN: '文件名不能为空'
+	String get webdavUploadInvalid => '文件名不能为空';
+
+	/// zh-CN: '请先配置服务器地址'
+	String get webdavNoServer => '请先配置服务器地址';
 }
 
 // Path: common
@@ -487,6 +541,30 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '刷新失败'
 	String get refreshFailed => '刷新失败';
+
+	/// zh-CN: '切换排版'
+	String get layout => '切换排版';
+
+	/// zh-CN: '卡片排版'
+	String get layoutGrid => '卡片排版';
+
+	/// zh-CN: '列表排版'
+	String get layoutList => '列表排版';
+
+	/// zh-CN: '切换到深色'
+	String get switchToDark => '切换到深色';
+
+	/// zh-CN: '切换到浅色'
+	String get switchToLight => '切换到浅色';
+
+	/// zh-CN: '回到顶部'
+	String get backToTop => '回到顶部';
+
+	/// zh-CN: '更多'
+	String get more => '更多';
+
+	/// zh-CN: '删除'
+	String get delete => '删除';
 }
 
 // Path: favorites
@@ -547,6 +625,72 @@ class Translations$favorites$zh_CN {
 
 	/// zh-CN: '{count: int} 个直播间刷新失败'
 	String refreshFailed({required int count}) => '${count} 个直播间刷新失败';
+
+	/// zh-CN: '已开播'
+	String get statusLiveNow => '已开播';
+
+	/// zh-CN: '未开播'
+	String get statusOfflineNow => '未开播';
+
+	/// zh-CN: '刚刚开播'
+	String get justStarted => '刚刚开播';
+
+	/// zh-CN: '已播 {duration}'
+	String liveFor({required Object duration}) => '已播 ${duration}';
+
+	/// zh-CN: '{m} 分钟'
+	String durationMinutes({required Object m}) => '${m} 分钟';
+
+	/// zh-CN: '{h} 小时 {m} 分'
+	String durationHours({required Object h, required Object m}) => '${h} 小时 ${m} 分';
+
+	/// zh-CN: '{d} 天 {h} 小时'
+	String durationDays({required Object d, required Object h}) => '${d} 天 ${h} 小时';
+
+	/// zh-CN: '每页'
+	String get perPage => '每页';
+
+	/// zh-CN: '跳转至'
+	String get goTo => '跳转至';
+
+	/// zh-CN: '页'
+	String get pageUnit => '页';
+
+	/// zh-CN: '设置标签'
+	String get setTags => '设置标签';
+
+	/// zh-CN: '标签'
+	String get tagsTitle => '标签';
+
+	/// zh-CN: '标签筛选'
+	String get tagsFilter => '标签筛选';
+
+	/// zh-CN: '全部标签'
+	String get allTags => '全部标签';
+
+	/// zh-CN: '还没有标签'
+	String get tagsEmpty => '还没有标签';
+
+	/// zh-CN: '新标签名称'
+	String get tagFieldHint => '新标签名称';
+
+	/// zh-CN: '添加标签'
+	String get addTag => '添加标签';
+
+	/// zh-CN: '删除标签“{name: String}”？'
+	String deleteTagTitle({required String name}) => '删除标签“${name}”？';
+
+	/// zh-CN: '所有直播间都会移出这个标签，直播间本身不会被取消关注。'
+	String get deleteTagBody => '所有直播间都会移出这个标签，直播间本身不会被取消关注。';
+
+	/// zh-CN: '这个标签已经存在'
+	String get tagExists => '这个标签已经存在';
+
+	/// zh-CN: '标签名称不能为空'
+	String get tagInvalid => '标签名称不能为空';
+
+	/// zh-CN: '删除'
+	String get deleteTag => '删除';
 }
 
 // Path: history
@@ -652,6 +796,15 @@ class Translations$history$zh_CN {
 
 	/// zh-CN: '上限已设为 {limit: int} 条'
 	String limitSaved({required int limit}) => '上限已设为 ${limit} 条';
+
+	/// zh-CN: '刷新'
+	String get refresh => '刷新';
+
+	/// zh-CN: '{count: int} 条记录刷新失败'
+	String refreshFailed({required int count}) => '${count} 条记录刷新失败';
+
+	/// zh-CN: '进入直播间'
+	String get openRoom => '进入直播间';
 }
 
 // Path: iptv
@@ -728,41 +881,68 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '删除此节目单源'
 	String get epgRemove => '删除此节目单源';
 
-	/// zh-CN: '还没有节目单源，导入一个后频道卡就会显示正在播的节目。'
-	String get epgEmpty => '还没有节目单源，导入一个后频道卡就会显示正在播的节目。';
+	/// zh-CN: '还没有节目单来源；导入一个后，频道就会显示正在播的节目。'
+	String get epgEmpty => '还没有节目单来源；导入一个后，频道就会显示正在播的节目。';
 
-	/// zh-CN: '选择用于节目单的指南源；同一时间只使用一个。'
-	String get activeGuideDescription => '选择用于节目单的指南源；同一时间只使用一个。';
+	/// zh-CN: '选择用于频道节目的节目单来源；同一时间只使用一个。'
+	String get activeGuideDescription => '选择用于频道节目的节目单来源；同一时间只使用一个。';
 
 	/// zh-CN: '未选择'
 	String get activeGuideNone => '未选择';
 
-	/// zh-CN: '使用中的指南'
-	String get activeGuideTitle => '使用中的指南';
+	/// zh-CN: '当前节目单'
+	String get activeGuideTitle => '当前节目单';
+
+	/// zh-CN: '频道的正在播出与进度都按这份节目单显示。'
+	String get activeGuideCardHint => '频道的正在播出与进度都按这份节目单显示。';
 
 	/// zh-CN: '自动更新'
 	String get autoUpdate => '自动更新';
 
-	/// zh-CN: '打开后按间隔自动重新拉取订阅源。'
-	String get autoUpdateHint => '打开后按间隔自动重新拉取订阅源。';
+	/// zh-CN: '应用会按此间隔在后台检查，并重新拉取已开启自动更新的节目单。'
+	String get autoUpdateHint => '应用会按此间隔在后台检查，并重新拉取已开启自动更新的节目单。';
+
+	/// zh-CN: '更新间隔'
+	String get updateInterval => '更新间隔';
+
+	/// zh-CN: '{hours: int} 小时'
+	String updateIntervalHours({required int hours}) => '${hours} 小时';
+
+	/// zh-CN: '{days: int} 天'
+	String updateIntervalDays({required int days}) => '${days} 天';
+
+	/// zh-CN: '{count: int} 个节目单会按此间隔自动刷新'
+	String autoUpdateStatusOn({required int count}) => '${count} 个节目单会按此间隔自动刷新';
+
+	/// zh-CN: '还没有节目单开启自动更新。'
+	String get autoUpdateStatusNone => '还没有节目单开启自动更新。';
+
+	/// zh-CN: '还没有网络节目单'
+	String get autoUpdateNoRemote => '还没有网络节目单';
+
+	/// zh-CN: '选择'
+	String get select => '选择';
+
+	/// zh-CN: '还没有节目单'
+	String get selectGuideUnavailable => '还没有节目单';
 
 	/// zh-CN: '{count: int} 个频道'
 	String channelCount({required int count}) => '${count} 个频道';
 
-	/// zh-CN: '选择指南源'
-	String get chooseGuide => '选择指南源';
+	/// zh-CN: '选择节目单'
+	String get chooseGuide => '选择节目单';
 
 	/// zh-CN: '删除'
 	String get delete => '删除';
 
-	/// zh-CN: '这是正在使用的指南，删除后将改用其他来源。'
-	String get deleteActiveGuideNote => '这是正在使用的指南，删除后将改用其他来源。';
+	/// zh-CN: '这是正在使用的节目单，删除后将改用其他来源。'
+	String get deleteActiveGuideNote => '这是正在使用的节目单，删除后将改用其他来源。';
 
-	/// zh-CN: '删除指南源“{name: String}”？已下载的节目单会一并移除。'
-	String deleteGuideMessage({required String name}) => '删除指南源“${name}”？已下载的节目单会一并移除。';
+	/// zh-CN: '删除节目单“{name: String}”？已下载的节目会一并移除。'
+	String deleteGuideMessage({required String name}) => '删除节目单“${name}”？已下载的节目会一并移除。';
 
-	/// zh-CN: '删除指南源？'
-	String get deleteGuideTitle => '删除指南源？';
+	/// zh-CN: '删除节目单？'
+	String get deleteGuideTitle => '删除节目单？';
 
 	/// zh-CN: '删除“{name: String}”及其 {count: int} 个频道？'
 	String deletePlaylistMessage({required String name, required int count}) => '删除“${name}”及其 ${count} 个频道？';
@@ -773,8 +953,8 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '已删除“{name: String}”'
 	String deleted({required String name}) => '已删除“${name}”';
 
-	/// zh-CN: '指南名称'
-	String get guideName => '指南名称';
+	/// zh-CN: '节目单名称'
+	String get guideName => '节目单名称';
 
 	/// zh-CN: '例如：我的 EPG'
 	String get guideNameHint => '例如：我的 EPG';
@@ -806,11 +986,11 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '订阅地址'
 	String get importFromUrl => '订阅地址';
 
-	/// zh-CN: '导入指南'
-	String get importGuide => '导入指南';
+	/// zh-CN: '导入节目单'
+	String get importGuide => '导入节目单';
 
-	/// zh-CN: '支持 XMLTV 地址或文件；导入后会下载节目单。'
-	String get importGuideDescription => '支持 XMLTV 地址或文件；导入后会下载节目单。';
+	/// zh-CN: '支持 XMLTV 地址或文件；导入后会下载节目。'
+	String get importGuideDescription => '支持 XMLTV 地址或文件；导入后会下载节目。';
 
 	/// zh-CN: '内容不是有效的播放列表'
 	String get importInvalid => '内容不是有效的播放列表';
@@ -854,8 +1034,14 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '尚未更新'
 	String get neverUpdated => '尚未更新';
 
-	/// zh-CN: '还没有指南源'
-	String get noGuidesTitle => '还没有指南源';
+	/// zh-CN: '还没有节目单'
+	String get noGuidesTitle => '还没有节目单';
+
+	/// zh-CN: '还没有来源'
+	String get noSourcesTitle => '还没有来源';
+
+	/// zh-CN: '导入播放列表或节目单后，它们会出现在这里。'
+	String get noSourcesDescription => '导入播放列表或节目单后，它们会出现在这里。';
 
 	/// zh-CN: '从订阅地址、文件或粘贴的文本导入播放列表。'
 	String get noPlaylistsDescription => '从订阅地址、文件或粘贴的文本导入播放列表。';
@@ -869,8 +1055,8 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '播放列表名称'
 	String get playlistName => '播放列表名称';
 
-	/// zh-CN: '例如：我的频道'
-	String get playlistNameHint => '例如：我的频道';
+	/// zh-CN: '留空则按来源自动命名'
+	String get playlistNameHint => '留空则按来源自动命名';
 
 	/// zh-CN: '播放列表内容'
 	String get playlistText => '播放列表内容';
@@ -896,11 +1082,104 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '订阅源已变化，已更新缓存'
 	String get sourceChanged => '订阅源已变化，已更新缓存';
 
+	/// zh-CN: '共 {count: int} 个频道 · {groups: int} 个分组'
+	String summaryChannels({required int count, required int groups}) => '共 ${count} 个频道 · ${groups} 个分组';
+
+	/// zh-CN: '找到 {count: int} 个频道'
+	String summaryChannelSearch({required int count}) => '找到 ${count} 个频道';
+
+	/// zh-CN: '{playlists: int} 个播放列表 · {guides: int} 个节目单 · {channels: int} 个频道'
+	String summarySources({required int playlists, required int guides, required int channels}) => '${playlists} 个播放列表 · ${guides} 个节目单 · ${channels} 个频道';
+
+	/// zh-CN: '全部'
+	String get filterAll => '全部';
+
+	/// zh-CN: '播放列表'
+	String get filterPlaylists => '播放列表';
+
+	/// zh-CN: '节目单'
+	String get filterGuides => '节目单';
+
+	/// zh-CN: '搜索频道…'
+	String get searchChannels => '搜索频道…';
+
+	/// zh-CN: '搜索名称或地址…'
+	String get searchSources => '搜索名称或地址…';
+
+	/// zh-CN: '没有匹配的频道'
+	String get noChannelMatch => '没有匹配的频道';
+
+	/// zh-CN: '没有匹配的来源'
+	String get noSourceMatch => '没有匹配的来源';
+
+	/// zh-CN: '共 {count: int} 项'
+	String sourceCount({required int count}) => '共 ${count} 项';
+
+	/// zh-CN: '频道'
+	String get colChannel => '频道';
+
+	/// zh-CN: '分组'
+	String get colGroup => '分组';
+
+	/// zh-CN: '正在播出'
+	String get colNow => '正在播出';
+
+	/// zh-CN: '收藏'
+	String get colFavorite => '收藏';
+
+	/// zh-CN: '操作'
+	String get colActions => '操作';
+
+	/// zh-CN: '名称'
+	String get colName => '名称';
+
+	/// zh-CN: '类型'
+	String get colFormat => '类型';
+
+	/// zh-CN: '更新于'
+	String get colUpdated => '更新于';
+
+	/// zh-CN: '自动更新'
+	String get colAutoUpdate => '自动更新';
+
+	/// zh-CN: '编辑顺序'
+	String get editOrder => '编辑顺序';
+
+	/// zh-CN: '来源顺序'
+	String get orderTitle => '来源顺序';
+
+	/// zh-CN: '拖动左侧手柄，或用箭头调整；保存后按此顺序显示。'
+	String get orderHint => '拖动左侧手柄，或用箭头调整；保存后按此顺序显示。';
+
+	/// zh-CN: '未保存的排序草稿'
+	String get orderDraft => '未保存的排序草稿';
+
+	/// zh-CN: '保存顺序'
+	String get saveOrder => '保存顺序';
+
+	/// zh-CN: '顺序已保存'
+	String get orderSaved => '顺序已保存';
+
+	/// zh-CN: '上移'
+	String get moveUp => '上移';
+
+	/// zh-CN: '移到顶部'
+	String get moveToTop => '移到顶部';
+
+	/// zh-CN: '下移'
+	String get moveDown => '下移';
+
+	/// zh-CN: '移到底部'
+	String get moveToBottom => '移到底部';
+
+	/// zh-CN: '播放频道'
+	String get openChannel => '播放频道';
+
 	/// zh-CN: '频道'
 	String get statChannels => '频道';
 
-	/// zh-CN: '指南'
-	String get statGuides => '指南';
+	/// zh-CN: '节目单'
+	String get statGuides => '节目单';
 
 	/// zh-CN: '播放列表'
 	String get statPlaylists => '播放列表';
@@ -911,14 +1190,14 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '全部同步'
 	String get syncAll => '全部同步';
 
-	/// zh-CN: '已同步 {count: int} 个播放列表'
-	String syncAllDone({required int count}) => '已同步 ${count} 个播放列表';
+	/// zh-CN: '已同步 {count: int} 个来源'
+	String syncAllDone({required int count}) => '已同步 ${count} 个来源';
 
-	/// zh-CN: '没有可同步的播放列表'
-	String get syncAllNone => '没有可同步的播放列表';
+	/// zh-CN: '没有可同步的网络来源'
+	String get syncAllNone => '没有可同步的网络来源';
 
-	/// zh-CN: '{failed: int} / {count: int} 个播放列表同步失败'
-	String syncAllPartial({required int failed, required int count}) => '${failed} / ${count} 个播放列表同步失败';
+	/// zh-CN: '{failed: int} / {count: int} 个来源同步失败'
+	String syncAllPartial({required int failed, required int count}) => '${failed} / ${count} 个来源同步失败';
 
 	/// zh-CN: '正在同步 {done: int} / {total: int}'
 	String syncAllRunning({required int done, required int total}) => '正在同步 ${done} / ${total}';
@@ -935,8 +1214,68 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '视图'
 	String get viewLabel => '视图';
 
-	/// zh-CN: '播放列表'
-	String get viewSources => '播放列表';
+	/// zh-CN: '来源'
+	String get viewSources => '来源';
+
+	/// zh-CN: '正在打开频道'
+	String get playerOpening => '正在打开频道';
+
+	/// zh-CN: '这个频道没有播放地址'
+	String get playerNoStream => '这个频道没有播放地址';
+
+	/// zh-CN: '频道不存在或已被删除'
+	String get playerChannelMissing => '频道不存在或已被删除';
+
+	/// zh-CN: '频道播放失败'
+	String get playerOpenFailed => '频道播放失败';
+
+	/// zh-CN: '节目单'
+	String get guideTitle => '节目单';
+
+	/// zh-CN: '这一天没有节目'
+	String get guideEmpty => '这一天没有节目';
+
+	/// zh-CN: '今天'
+	String get today => '今天';
+
+	/// zh-CN: '昨天'
+	String get yesterday => '昨天';
+
+	/// zh-CN: '前一天'
+	String get previousDay => '前一天';
+
+	/// zh-CN: '后一天'
+	String get nextDay => '后一天';
+
+	/// zh-CN: '回到直播'
+	String get backToLive => '回到直播';
+
+	/// zh-CN: '回看'
+	String get catchup => '回看';
+
+	/// zh-CN: '不可回看'
+	String get catchupUnavailable => '不可回看';
+
+	/// zh-CN: '正在回看'
+	String get playingCatchup => '正在回看';
+
+	/// zh-CN: '无法生成这个节目的回看地址'
+	String get catchupFailed => '无法生成这个节目的回看地址';
+
+	/// zh-CN: '导入的播放列表'
+	String get importDefaultName => '导入的播放列表';
+
+	/// zh-CN: '复制源地址'
+	String get copySourceAddress => '复制源地址';
+
+	/// zh-CN: '打开源地址'
+	String get openSourceAddress => '打开源地址';
+
+	/// zh-CN: '源地址已复制'
+	String get sourceAddressCopied => '源地址已复制';
+
+	/// zh-CN: '无法打开源地址'
+	String get sourceAddressOpenFailed => '无法打开源地址';
 }
 
 // Path: multiview
@@ -950,11 +1289,17 @@ class Translations$multiview$zh_CN {
 	/// zh-CN: '布局'
 	String get layoutLabel => '布局';
 
-	/// zh-CN: '多画面播放将随播放器内核接入，现在可先排布格子并挑选房间。'
-	String get videoComingSoon => '多画面播放将随播放器内核接入，现在可先排布格子并挑选房间。';
+	/// zh-CN: '点击格子选中，只有选中的格子有声音'
+	String get selectHint => '点击格子选中，只有选中的格子有声音';
+
+	/// zh-CN: '第 {index} 格 · 有声'
+	String selectedPane({required Object index}) => '第 ${index} 格 · 有声';
 
 	/// zh-CN: '选择房间'
 	String get pickRoom => '选择房间';
+
+	/// zh-CN: '进入直播间'
+	String get openRoom => '进入直播间';
 
 	/// zh-CN: '清空这一格'
 	String get clearPane => '清空这一格';
@@ -964,6 +1309,12 @@ class Translations$multiview$zh_CN {
 
 	/// zh-CN: '换到这格'
 	String get swapHere => '换到这格';
+
+	/// zh-CN: '这一格无法播放'
+	String get paneFailed => '这一格无法播放';
+
+	/// zh-CN: '重试这一格'
+	String get retryPane => '重试这一格';
 
 	/// zh-CN: '为第 {index} 格选择房间'
 	String pickerTitle({required Object index}) => '为第 ${index} 格选择房间';
@@ -979,6 +1330,39 @@ class Translations$multiview$zh_CN {
 
 	/// zh-CN: '第 {index} 格'
 	String shownIn({required Object index}) => '第 ${index} 格';
+
+	/// zh-CN: '已暂停'
+	String get panePaused => '已暂停';
+
+	/// zh-CN: '画质'
+	String get paneQuality => '画质';
+
+	/// zh-CN: '暂停这一格'
+	String get pausePane => '暂停这一格';
+
+	/// zh-CN: '播放这一格'
+	String get playPane => '播放这一格';
+
+	/// zh-CN: '全部暂停'
+	String get pauseAll => '全部暂停';
+
+	/// zh-CN: '全部继续'
+	String get resumeAll => '全部继续';
+
+	/// zh-CN: '全部静音'
+	String get muteAll => '全部静音';
+
+	/// zh-CN: '取消全部静音'
+	String get unmuteAll => '取消全部静音';
+
+	/// zh-CN: '画质切换失败'
+	String get qualityFailed => '画质切换失败';
+
+	/// zh-CN: '搜索关注或历史房间…'
+	String get pickerSearch => '搜索关注或历史房间…';
+
+	/// zh-CN: '没有匹配的房间'
+	String get pickerNoMatch => '没有匹配的房间';
 }
 
 // Path: music
@@ -1049,8 +1433,8 @@ class Translations$navigation$zh_CN {
 	/// zh-CN: '发现'
 	String get discover => '发现';
 
-	/// zh-CN: '历史'
-	String get history => '历史';
+	/// zh-CN: '观看记录'
+	String get history => '观看记录';
 
 	/// zh-CN: '内容与工具'
 	String get groupContent => '内容与工具';
@@ -1067,11 +1451,11 @@ class Translations$navigation$zh_CN {
 	/// zh-CN: '分区'
 	String get zones => '分区';
 
-	/// zh-CN: '搜索'
-	String get search => '搜索';
+	/// zh-CN: '搜索直播'
+	String get search => '搜索直播';
 
-	/// zh-CN: '工具箱'
-	String get toolbox => '工具箱';
+	/// zh-CN: '链接解析'
+	String get toolbox => '链接解析';
 
 	/// zh-CN: '个人与系统'
 	String get groupPersonal => '个人与系统';
@@ -1144,6 +1528,21 @@ class Translations$popular$zh_CN {
 
 	/// zh-CN: '返回浏览'
 	String get backToBrowse => '返回浏览';
+
+	/// zh-CN: '排序'
+	String get sortLabel => '排序';
+
+	/// zh-CN: '平台推荐'
+	String get sortPlatform => '平台推荐';
+
+	/// zh-CN: '按观众'
+	String get sortAudience => '按观众';
+
+	/// zh-CN: '每页'
+	String get perPage => '每页';
+
+	/// zh-CN: '每页 {size: int} 个'
+	String pageSize({required int size}) => '每页 ${size} 个';
 }
 
 // Path: recorder
@@ -1172,8 +1571,8 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '已完成的录制会出现在这里'
 	String get emptyFinishedTitle => '已完成的录制会出现在这里';
 
-	/// zh-CN: '录制功能将随播放器内核一起接入：到时可在直播间里点录制，任务会出现在这里。'
-	String get emptyDescription => '录制功能将随播放器内核一起接入：到时可在直播间里点录制，任务会出现在这里。';
+	/// zh-CN: '在直播间点击录制，任务会出现在这里。'
+	String get emptyDescription => '在直播间点击录制，任务会出现在这里。';
 
 	/// zh-CN: '最佳画质'
 	String get qualityBest => '最佳画质';
@@ -1205,17 +1604,17 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '文件命名模板'
 	String get namingTitle => '文件命名模板';
 
-	/// zh-CN: '可用日期、时间、平台、房间号与标题占位符，播放器接入后生效。'
-	String get namingDescription => '可用日期、时间、平台、房间号与标题占位符，播放器接入后生效。';
+	/// zh-CN: '可用日期、时间、平台、房间号与标题占位符。'
+	String get namingDescription => '可用日期、时间、平台、房间号与标题占位符。';
 
 	/// zh-CN: '输入录制文件的命名模板'
 	String get namingDialogHint => '输入录制文件的命名模板';
 
-	/// zh-CN: '单文件大小上限'
-	String get maxSizeTitle => '单文件大小上限';
+	/// zh-CN: '单次录制大小上限'
+	String get maxSizeTitle => '单次录制大小上限';
 
-	/// zh-CN: '录制超过上限后分卷保存，播放器接入后生效。'
-	String get maxSizeDescription => '录制超过上限后分卷保存，播放器接入后生效。';
+	/// zh-CN: '录制达到上限后自动结束并保存；按 MB 计。'
+	String get maxSizeDescription => '录制达到上限后自动结束并保存；按 MB 计。';
 
 	/// zh-CN: '筛选'
 	String get filterLabel => '筛选';
@@ -1267,6 +1666,108 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '录制设置'
 	String get settingsOpen => '录制设置';
+
+	/// zh-CN: '停止录制'
+	String get stop => '停止录制';
+
+	/// zh-CN: '文件与位置'
+	String get settingsFiles => '文件与位置';
+
+	/// zh-CN: '分段与恢复'
+	String get settingsRecovery => '分段与恢复';
+
+	/// zh-CN: '后台与上限'
+	String get settingsRuntime => '后台与上限';
+
+	/// zh-CN: '分段时长'
+	String get segmentTitle => '分段时长';
+
+	/// zh-CN: '每段录制的长度；段文件在崩溃后仍可播放。'
+	String get segmentDescription => '每段录制的长度；段文件在崩溃后仍可播放。';
+
+	/// zh-CN: '{count: int} 分钟'
+	String segmentMinutes({required int count}) => '${count} 分钟';
+
+	/// zh-CN: '读取超时'
+	String get readTimeoutTitle => '读取超时';
+
+	/// zh-CN: '直播流停止供流后等待多久判定失败。'
+	String get readTimeoutDescription => '直播流停止供流后等待多久判定失败。';
+
+	/// zh-CN: '{count: int} 秒'
+	String seconds({required int count}) => '${count} 秒';
+
+	/// zh-CN: '输入队列'
+	String get queueTitle => '输入队列';
+
+	/// zh-CN: 'FFmpeg 输入包队列大小；直播突发时越大越不容易丢包。'
+	String get queueDescription => 'FFmpeg 输入包队列大小；直播突发时越大越不容易丢包。';
+
+	/// zh-CN: '只录首路音视频'
+	String get preferBestTitle => '只录首路音视频';
+
+	/// zh-CN: '开启时只映射首个视频和音频流，避免多码率文件变成多轨。'
+	String get preferBestDescription => '开启时只映射首个视频和音频流，避免多码率文件变成多轨。';
+
+	/// zh-CN: '后台保持录制'
+	String get keepAliveTitle => '后台保持录制';
+
+	/// zh-CN: '录制期间持有后台会话与唤醒锁（Android 前台服务/通知）。'
+	String get keepAliveDescription => '录制期间持有后台会话与唤醒锁（Android 前台服务/通知）。';
+
+	/// zh-CN: '结束时校验文件'
+	String get verifyTitle => '结束时校验文件';
+
+	/// zh-CN: '结束前检查分段是否可播放。'
+	String get verifyDescription => '结束前检查分段是否可播放。';
+
+	/// zh-CN: '断流重试次数'
+	String get restartTitle => '断流重试次数';
+
+	/// zh-CN: '流中断后 FFmpeg 自动重开的次数；0 表示不重试。'
+	String get restartDescription => '流中断后 FFmpeg 自动重开的次数；0 表示不重试。';
+
+	/// zh-CN: '{count: int} 次'
+	String restartCount({required int count}) => '${count} 次';
+
+	/// zh-CN: '重试间隔'
+	String get backoffTitle => '重试间隔';
+
+	/// zh-CN: '两次重开之间的等待。'
+	String get backoffDescription => '两次重开之间的等待。';
+
+	/// zh-CN: '卡流判定'
+	String get stallTitle => '卡流判定';
+
+	/// zh-CN: '多久没有新数据就判定为卡流并重开。'
+	String get stallDescription => '多久没有新数据就判定为卡流并重开。';
+
+	/// zh-CN: '磁盘余量保护'
+	String get watermarkTitle => '磁盘余量保护';
+
+	/// zh-CN: '剩余空间低于该值时停止录制。'
+	String get watermarkDescription => '剩余空间低于该值时停止录制。';
+
+	/// zh-CN: '同时录制任务上限'
+	String get maxTasksTitle => '同时录制任务上限';
+
+	/// zh-CN: '达到上限后新的录制请求会被拒绝。'
+	String get maxTasksDescription => '达到上限后新的录制请求会被拒绝。';
+
+	/// zh-CN: '{count: int} 个'
+	String maxTasksCount({required int count}) => '${count} 个';
+
+	/// zh-CN: '分段格式'
+	String get containerTitle => '分段格式';
+
+	/// zh-CN: 'TS 更耐中断，MP4 更易被普通播放器打开。'
+	String get containerDescription => 'TS 更耐中断，MP4 更易被普通播放器打开。';
+
+	/// zh-CN: 'MPEG-TS'
+	String get containerTs => 'MPEG-TS';
+
+	/// zh-CN: '分段 MP4'
+	String get containerMp4 => '分段 MP4';
 }
 
 // Path: room
@@ -1336,6 +1837,264 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '退出全屏'
 	String get fullscreenOff => '退出全屏';
+
+	/// zh-CN: '聊天'
+	String get chatTitle => '聊天';
+
+	/// zh-CN: '显示弹幕'
+	String get danmakuOn => '显示弹幕';
+
+	/// zh-CN: '隐藏弹幕'
+	String get danmakuOff => '隐藏弹幕';
+
+	/// zh-CN: '窗口全屏'
+	String get windowFullscreenOn => '窗口全屏';
+
+	/// zh-CN: '退出窗口全屏'
+	String get windowFullscreenOff => '退出窗口全屏';
+
+	/// zh-CN: '画中画'
+	String get pipOn => '画中画';
+
+	/// zh-CN: '退出画中画'
+	String get pipOff => '退出画中画';
+
+	/// zh-CN: '投屏'
+	String get cast => '投屏';
+
+	/// zh-CN: '投屏到设备'
+	String get castTitle => '投屏到设备';
+
+	/// zh-CN: '正在搜索附近的设备'
+	String get castSearching => '正在搜索附近的设备';
+
+	/// zh-CN: '请确认电视与电脑在同一局域网。'
+	String get castSearchingHint => '请确认电视与电脑在同一局域网。';
+
+	/// zh-CN: '可用设备'
+	String get castDevices => '可用设备';
+
+	/// zh-CN: '正在投屏'
+	String get casting => '正在投屏';
+
+	/// zh-CN: '停止投屏'
+	String get castStop => '停止投屏';
+
+	/// zh-CN: '已开始投屏'
+	String get castStarted => '已开始投屏';
+
+	/// zh-CN: '投屏失败，设备可能无法访问这条线路'
+	String get castFailed => '投屏失败，设备可能无法访问这条线路';
+
+	/// zh-CN: '睡眠定时已到，播放已暂停'
+	String get sleepDone => '睡眠定时已到，播放已暂停';
+
+	/// zh-CN: '正在打开房间'
+	String get openingRoom => '正在打开房间';
+
+	/// zh-CN: '播放失败'
+	String get playbackFailed => '播放失败';
+
+	/// zh-CN: '缓冲中'
+	String get buffering => '缓冲中';
+
+	/// zh-CN: '正在连接直播流'
+	String get connecting => '正在连接直播流';
+
+	/// zh-CN: '时间有点长，线路可能不稳定'
+	String get slowReason => '时间有点长，线路可能不稳定';
+
+	/// zh-CN: '已暂停'
+	String get paused => '已暂停';
+
+	/// zh-CN: '回放已结束'
+	String get replayEnded => '回放已结束';
+
+	/// zh-CN: '该直播间已被封禁'
+	String get banned => '该直播间已被封禁';
+
+	/// zh-CN: '轮播中'
+	String get carousel => '轮播中';
+
+	/// zh-CN: '主播暂时不在，平台正在播放轮播内容'
+	String get carouselReason => '主播暂时不在，平台正在播放轮播内容';
+
+	/// zh-CN: '主播暂时不在'
+	String get offlineTitle => '主播暂时不在';
+
+	/// zh-CN: '有回放可看，回到列表后可从卡片进入'
+	String get offlineReplayReason => '有回放可看，回到列表后可从卡片进入';
+
+	/// zh-CN: '开播后这里会看到直播画面'
+	String get offlineReason => '开播后这里会看到直播画面';
+
+	/// zh-CN: '房间信息加载失败'
+	String get detailFailed => '房间信息加载失败';
+
+	/// zh-CN: '复制房间链接'
+	String get copyLink => '复制房间链接';
+
+	/// zh-CN: '链接已复制'
+	String get linkCopied => '链接已复制';
+
+	/// zh-CN: '录制'
+	String get record => '录制';
+
+	/// zh-CN: '停止录制'
+	String get stopRecording => '停止录制';
+
+	/// zh-CN: '开始录制'
+	String get recordStarted => '开始录制';
+
+	/// zh-CN: '录制已停止'
+	String get recordStopped => '录制已停止';
+
+	/// zh-CN: '录制操作失败'
+	String get recordFailed => '录制操作失败';
+
+	/// zh-CN: '直播间详情'
+	String get details => '直播间详情';
+
+	/// zh-CN: '查看直播间详情'
+	String get detailsHint => '查看直播间详情';
+
+	/// zh-CN: '公告'
+	String get notice => '公告';
+
+	/// zh-CN: '简介'
+	String get introduction => '简介';
+
+	/// zh-CN: '房间号'
+	String get roomNumber => '房间号';
+
+	/// zh-CN: '链接'
+	String get link => '链接';
+
+	/// zh-CN: '复制'
+	String get copy => '复制';
+
+	/// zh-CN: '已复制'
+	String get copied => '已复制';
+
+	/// zh-CN: '分享'
+	String get share => '分享';
+
+	/// zh-CN: '分享失败'
+	String get shareFailed => '分享失败';
+
+	/// zh-CN: '在 {platform} 打开'
+	String openIn({required Object platform}) => '在 ${platform} 打开';
+
+	/// zh-CN: '该平台没有提供可打开的链接'
+	String get openUnavailable => '该平台没有提供可打开的链接';
+
+	/// zh-CN: '无法打开链接'
+	String get openFailed => '无法打开链接';
+
+	/// zh-CN: '刷新房间信息'
+	String get refreshRoom => '刷新房间信息';
+
+	/// zh-CN: '弹幕操作'
+	String get messageActions => '弹幕操作';
+
+	/// zh-CN: '屏蔽此用户'
+	String get blockUser => '屏蔽此用户';
+
+	/// zh-CN: '屏蔽关键词…'
+	String get blockKeyword => '屏蔽关键词…';
+
+	/// zh-CN: '输入要屏蔽的关键词'
+	String get blockKeywordHint => '输入要屏蔽的关键词';
+
+	/// zh-CN: '已屏蔽该用户'
+	String get userBlocked => '已屏蔽该用户';
+
+	/// zh-CN: '已屏蔽该关键词'
+	String get keywordBlocked => '已屏蔽该关键词';
+
+	/// zh-CN: '弹幕设置'
+	String get danmakuSettings => '弹幕设置';
+
+	/// zh-CN: '屏蔽列表'
+	String get blockList => '屏蔽列表';
+
+	/// zh-CN: '超级聊天'
+	String get superChats => '超级聊天';
+
+	/// zh-CN: '暂无超级聊天'
+	String get superChatEmpty => '暂无超级聊天';
+
+	/// zh-CN: '超级聊天加载失败'
+	String get superChatFailed => '超级聊天加载失败';
+
+	/// zh-CN: '在线'
+	String get onlineViewers => '在线';
+
+	/// zh-CN: '热度'
+	String get popularity => '热度';
+
+	/// zh-CN: '累计观看'
+	String get totalViewers => '累计观看';
+
+	/// zh-CN: '{time} 开播'
+	String startedAt({required Object time}) => '${time} 开播';
+
+	/// zh-CN: '弹幕'
+	String get danmakuList => '弹幕';
+
+	/// zh-CN: '控制飞行弹幕的显示、字号、速度与区域。'
+	String get danmakuSettingsDesc => '控制飞行弹幕的显示、字号、速度与区域。';
+
+	/// zh-CN: '屏蔽'
+	String get block => '屏蔽';
+
+	/// zh-CN: '在平台打开'
+	String get openExternal => '在平台打开';
+
+	/// zh-CN: '需要登录'
+	String get restrictionNeedsLogin => '需要登录';
+
+	/// zh-CN: '需要付费'
+	String get restrictionPaid => '需要付费';
+
+	/// zh-CN: '仅限会员'
+	String get restrictionSubscribersOnly => '仅限会员';
+
+	/// zh-CN: '私密房间'
+	String get restrictionPrivate => '私密房间';
+
+	/// zh-CN: '需要在官方 App 观看'
+	String get restrictionAppOnly => '需要在官方 App 观看';
+
+	/// zh-CN: '当前地区不可观看'
+	String get restrictionRegionBlocked => '当前地区不可观看';
+
+	/// zh-CN: '需要密码'
+	String get restrictionPassword => '需要密码';
+
+	/// zh-CN: '年龄限制'
+	String get restrictionAdult => '年龄限制';
+
+	/// zh-CN: '暂时无法播放'
+	String get restrictionUnplayable => '暂时无法播放';
+
+	/// zh-CN: '画面方向'
+	String get orientation => '画面方向';
+
+	/// zh-CN: '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。'
+	String get orientationHint => '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。';
+
+	/// zh-CN: '自动'
+	String get orientationAutomatic => '自动';
+
+	/// zh-CN: '竖屏'
+	String get orientationPortrait => '竖屏';
+
+	/// zh-CN: '横屏'
+	String get orientationLandscape => '横屏';
+
+	/// zh-CN: '画面方向已更新'
+	String get orientationUpdated => '画面方向已更新';
 }
 
 // Path: search
@@ -1390,6 +2149,63 @@ class Translations$search$zh_CN {
 
 	/// zh-CN: '清空'
 	String get clearHistory => '清空';
+
+	/// zh-CN: '网页搜索'
+	String get webSearch => '网页搜索';
+
+	/// zh-CN: '网页搜索'
+	String get webSearchTitle => '网页搜索';
+
+	/// zh-CN: '先选择一个平台再网页搜索'
+	String get webSearchSelectPlatform => '先选择一个平台再网页搜索';
+
+	/// zh-CN: '该平台没有网页搜索'
+	String get webSearchUnavailable => '该平台没有网页搜索';
+
+	/// zh-CN: '当前平台不支持内嵌网页'
+	String get webSearchUnsupportedTitle => '当前平台不支持内嵌网页';
+
+	/// zh-CN: '可以在系统浏览器中打开这个搜索页。'
+	String get webSearchUnsupportedDescription => '可以在系统浏览器中打开这个搜索页。';
+
+	/// zh-CN: '在浏览器中打开'
+	String get webSearchOpenExternal => '在浏览器中打开';
+
+	/// zh-CN: '无法打开系统浏览器'
+	String get webSearchExternalFailed => '无法打开系统浏览器';
+
+	/// zh-CN: '页面加载失败'
+	String get webSearchFailed => '页面加载失败';
+
+	/// zh-CN: '排序'
+	String get sort => '排序';
+
+	/// zh-CN: '综合'
+	String get sortSmart => '综合';
+
+	/// zh-CN: '按平台'
+	String get sortPlatform => '按平台';
+
+	/// zh-CN: '按人气'
+	String get sortAudience => '按人气';
+
+	/// zh-CN: '按关注'
+	String get sortFollowers => '按关注';
+
+	/// zh-CN: '显示离线'
+	String get includeOffline => '显示离线';
+
+	/// zh-CN: '检测到直播间链接'
+	String get linkDetected => '检测到直播间链接';
+
+	/// zh-CN: '打开直播间'
+	String get linkOpen => '打开直播间';
+
+	/// zh-CN: '正在解析链接…'
+	String get linkResolving => '正在解析链接…';
+
+	/// zh-CN: '没有解析到直播间'
+	String get linkFailed => '没有解析到直播间';
 }
 
 // Path: settings
@@ -1403,8 +2219,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '设置'
 	String get title => '设置';
 
-	/// zh-CN: '通用'
-	String get navGeneral => '通用';
+	/// zh-CN: '浏览与窗口'
+	String get navGeneral => '浏览与窗口';
 
 	/// zh-CN: '外观'
 	String get navAppearance => '外观';
@@ -1415,11 +2231,20 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '站点'
 	String get navSites => '站点';
 
-	/// zh-CN: '数据'
-	String get navData => '数据';
+	/// zh-CN: '节目单与更新'
+	String get navIptv => '节目单与更新';
 
-	/// zh-CN: '关于'
-	String get navAbout => '关于';
+	/// zh-CN: '账号与清晰度'
+	String get navVod => '账号与清晰度';
+
+	/// zh-CN: '观看数据'
+	String get navData => '观看数据';
+
+	/// zh-CN: '备份与恢复'
+	String get navBackup => '备份与恢复';
+
+	/// zh-CN: '版本与许可'
+	String get navAbout => '版本与许可';
 
 	/// zh-CN: '基础设置'
 	String get groupBasics => '基础设置';
@@ -1433,11 +2258,17 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '关于'
 	String get groupAbout => '关于';
 
-	/// zh-CN: '默认站点、卡片宽度与每页数量。'
-	String get generalDescription => '默认站点、卡片宽度与每页数量。';
+	/// zh-CN: 'IPTV'
+	String get groupIptv => 'IPTV';
 
-	/// zh-CN: '主题模式：跟随系统、浅色或深色。'
-	String get appearanceDescription => '主题模式：跟随系统、浅色或深色。';
+	/// zh-CN: 'Bilibili 视频'
+	String get groupVod => 'Bilibili 视频';
+
+	/// zh-CN: '卡片宽度、每页数量与窗口行为。'
+	String get generalDescription => '卡片宽度、每页数量与窗口行为。';
+
+	/// zh-CN: '主题模式、对比度、圆角与字体。'
+	String get appearanceDescription => '主题模式、对比度、圆角与字体。';
 
 	/// zh-CN: '画质、比例与播放器行为。'
 	String get playbackDescription => '画质、比例与播放器行为。';
@@ -1445,8 +2276,17 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '浏览站点与登录账号。'
 	String get sitesDescription => '浏览站点与登录账号。';
 
-	/// zh-CN: '收藏、历史与本地存储。'
-	String get dataDescription => '收藏、历史与本地存储。';
+	/// zh-CN: '节目单自动更新与来源同步。'
+	String get iptvDescription => '节目单自动更新与来源同步。';
+
+	/// zh-CN: 'Bilibili 账号、默认清晰度与视频站行为。'
+	String get vodDescription => 'Bilibili 账号、默认清晰度与视频站行为。';
+
+	/// zh-CN: '直播观看历史与关注数据。'
+	String get dataDescription => '直播观看历史与关注数据。';
+
+	/// zh-CN: '本地备份、恢复与 WebDAV 同步。'
+	String get backupDescription => '本地备份、恢复与 WebDAV 同步。';
 
 	/// zh-CN: '版本、开源许可与项目链接。'
 	String get aboutDescription => '版本、开源许可与项目链接。';
@@ -1459,9 +2299,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '数据管理即将接入。'
 	String get dataComingSoon => '数据管理即将接入。';
-
-	/// zh-CN: '关于页即将接入。'
-	String get aboutComingSoon => '关于页即将接入。';
 
 	/// zh-CN: '外观'
 	String get appearance => '外观';
@@ -1496,11 +2333,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '首页与分区流里一张卡片的宽度；越小一排越多。'
 	String get cardExtentDescription => '首页与分区流里一张卡片的宽度；越小一排越多。';
 
-	/// zh-CN: '每页数量'
-	String get pageSize => '每页数量';
+	/// zh-CN: '每页显示数量'
+	String get pageSize => '每页显示数量';
 
-	/// zh-CN: '一次向站点请求多少个房间。'
-	String get pageSizeDescription => '一次向站点请求多少个房间。';
+	/// zh-CN: '桌面分页每页显示多少个房间；站点按自己的窗口取回，应用在本地切片，换页不会跳过房间。'
+	String get pageSizeDescription => '桌面分页每页显示多少个房间；站点按自己的窗口取回，应用在本地切片，换页不会跳过房间。';
 
 	/// zh-CN: '平台显示'
 	String get sitesDisplay => '平台显示';
@@ -1786,6 +2623,558 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '立即重启'
 	String get windowChromeRestartNow => '立即重启';
+
+	/// zh-CN: '界面'
+	String get groupInterface => '界面';
+
+	/// zh-CN: '直播来源'
+	String get groupSources => '直播来源';
+
+	/// zh-CN: '播放'
+	String get groupPlayback => '播放';
+
+	/// zh-CN: '通用'
+	String get groupGeneral => '通用';
+
+	/// zh-CN: '导航栏'
+	String get navNavigation => '导航栏';
+
+	/// zh-CN: '自动刷新'
+	String get navRefresh => '自动刷新';
+
+	/// zh-CN: '网络代理'
+	String get navProxy => '网络代理';
+
+	/// zh-CN: '平台与账号'
+	String get navPlatforms => '平台与账号';
+
+	/// zh-CN: '侧栏入口的显示与顺序。'
+	String get navigationDescription => '侧栏入口的显示与顺序。';
+
+	/// zh-CN: '关注列表与直播缩略图的自动刷新。'
+	String get refreshDescription => '关注列表与直播缩略图的自动刷新。';
+
+	/// zh-CN: '应用级网络代理，所有站点请求都走它。'
+	String get proxyDescription => '应用级网络代理，所有站点请求都走它。';
+
+	/// zh-CN: '平台显示、排列顺序与账号登录。'
+	String get platformsDescription => '平台显示、排列顺序与账号登录。';
+
+	/// zh-CN: '搜索设置'
+	String get searchSettings => '搜索设置';
+
+	/// zh-CN: '没有匹配的设置'
+	String get searchNoResults => '没有匹配的设置';
+
+	/// zh-CN: '搜索结果'
+	String get searchResults => '搜索结果';
+
+	/// zh-CN: '列间距'
+	String get crossSpacing => '列间距';
+
+	/// zh-CN: '卡片网格里左右两张卡片之间的距离。'
+	String get crossSpacingDescription => '卡片网格里左右两张卡片之间的距离。';
+
+	/// zh-CN: '行间距'
+	String get mainSpacing => '行间距';
+
+	/// zh-CN: '卡片网格里上下两行之间的距离。'
+	String get mainSpacingDescription => '卡片网格里上下两行之间的距离。';
+
+	/// zh-CN: '视频'
+	String get navVideo => '视频';
+
+	/// zh-CN: '视频播放'
+	String get vodPlayback => '视频播放';
+
+	/// zh-CN: '默认清晰度'
+	String get vodQuality => '默认清晰度';
+
+	/// zh-CN: '打开视频时优先请求的清晰度；未登录时 Bilibili 可能只提供 720P 及以下。'
+	String get vodQualityDesc => '打开视频时优先请求的清晰度；未登录时 Bilibili 可能只提供 720P 及以下。';
+
+	/// zh-CN: '720P'
+	String get vodQuality720 => '720P';
+
+	/// zh-CN: '1080P'
+	String get vodQuality1080 => '1080P';
+
+	/// zh-CN: '1080P+'
+	String get vodQuality1080Plus => '1080P+';
+
+	/// zh-CN: '4K'
+	String get vodQuality4K => '4K';
+
+	/// zh-CN: '节目单更新'
+	String get iptvGuideUpdates => '节目单更新';
+
+	/// zh-CN: '重新下载网络播放列表与节目单；本地来源不受影响。'
+	String get iptvSyncDesc => '重新下载网络播放列表与节目单；本地来源不受影响。';
+
+	/// zh-CN: '弹幕'
+	String get navDanmaku => '弹幕';
+
+	/// zh-CN: '小窗弹幕'
+	String get navMiniDanmaku => '小窗弹幕';
+
+	/// zh-CN: '播放内核'
+	String get navKernel => '播放内核';
+
+	/// zh-CN: '录制'
+	String get navRecording => '录制';
+
+	/// zh-CN: '画质、音量与画面比例。'
+	String get videoDescription => '画质、音量与画面比例。';
+
+	/// zh-CN: '弹幕显示、样式与屏蔽。'
+	String get danmakuDescription => '弹幕显示、样式与屏蔽。';
+
+	/// zh-CN: '画中画小窗里的弹幕。'
+	String get miniDanmakuDescription => '画中画小窗里的弹幕。';
+
+	/// zh-CN: '播放内核与硬件解码。'
+	String get kernelDescription => '播放内核与硬件解码。';
+
+	/// zh-CN: '录制目录、文件命名与容量上限。'
+	String get recordingDescription => '录制目录、文件命名与容量上限。';
+
+	/// zh-CN: '首选画质'
+	String get preferredQuality => '首选画质';
+
+	/// zh-CN: '进入房间时优先选用的画质；站点没有时用它的第一个。'
+	String get preferredQualityDesc => '进入房间时优先选用的画质；站点没有时用它的第一个。';
+
+	/// zh-CN: '自动（站点默认）'
+	String get qualityAuto => '自动（站点默认）';
+
+	/// zh-CN: '原画'
+	String get qualityOriginal => '原画';
+
+	/// zh-CN: '蓝光'
+	String get qualityBluRay => '蓝光';
+
+	/// zh-CN: '超清'
+	String get qualityUltra => '超清';
+
+	/// zh-CN: '高清'
+	String get qualityHigh => '高清';
+
+	/// zh-CN: '标清'
+	String get qualityStandard => '标清';
+
+	/// zh-CN: '流畅'
+	String get qualitySmooth => '流畅';
+
+	/// zh-CN: '默认静音'
+	String get defaultMuted => '默认静音';
+
+	/// zh-CN: '每个新房间打开时保持静音。'
+	String get defaultMutedDesc => '每个新房间打开时保持静音。';
+
+	/// zh-CN: '默认音量'
+	String get defaultVolume => '默认音量';
+
+	/// zh-CN: '每个新房间打开时的音量。'
+	String get defaultVolumeDesc => '每个新房间打开时的音量。';
+
+	/// zh-CN: '画面比例'
+	String get fit => '画面比例';
+
+	/// zh-CN: '画面在播放区域里的铺法。'
+	String get fitDesc => '画面在播放区域里的铺法。';
+
+	/// zh-CN: '适应（留黑边）'
+	String get fitContain => '适应（留黑边）';
+
+	/// zh-CN: '裁切填满'
+	String get fitCover => '裁切填满';
+
+	/// zh-CN: '拉伸'
+	String get fitFill => '拉伸';
+
+	/// zh-CN: '画中画中显示弹幕'
+	String get miniDanmakuVisible => '画中画中显示弹幕';
+
+	/// zh-CN: '缩成小窗时是否继续显示飞行弹幕。'
+	String get miniDanmakuVisibleDesc => '缩成小窗时是否继续显示飞行弹幕。';
+
+	/// zh-CN: '弹幕样式与「弹幕」页共用。'
+	String get miniDanmakuHint => '弹幕样式与「弹幕」页共用。';
+
+	/// zh-CN: '播放内核'
+	String get engineTitle => '播放内核';
+
+	/// zh-CN: '由 media_core 的内核注册表提供，当前只注册了 mpv。'
+	String get engineDesc => '由 media_core 的内核注册表提供，当前只注册了 mpv。';
+
+	/// zh-CN: '硬件解码'
+	String get hardwareDecoding => '硬件解码';
+
+	/// zh-CN: '用 GPU 解码视频，关闭则交给 CPU。'
+	String get hardwareDecodingDesc => '用 GPU 解码视频，关闭则交给 CPU。';
+
+	/// zh-CN: '在下一个播放器实例上生效。'
+	String get hardwareDecodingHint => '在下一个播放器实例上生效。';
+
+	/// zh-CN: '返回应用时刷新关注'
+	String get refreshOnResume => '返回应用时刷新关注';
+
+	/// zh-CN: '切回应用时刷新一遍关注列表的状态。'
+	String get refreshOnResumeDesc => '切回应用时刷新一遍关注列表的状态。';
+
+	/// zh-CN: '首页入口：多画面'
+	String get multiviewVisible => '首页入口：多画面';
+
+	/// zh-CN: '关闭后侧栏不再显示多画面入口。'
+	String get multiviewVisibleDesc => '关闭后侧栏不再显示多画面入口。';
+
+	/// zh-CN: '主题'
+	String get groupTheme => '主题';
+
+	/// zh-CN: '卡片与列表'
+	String get groupCards => '卡片与列表';
+
+	/// zh-CN: '字体和语言'
+	String get groupType => '字体和语言';
+
+	/// zh-CN: '对比度'
+	String get contrast => '对比度';
+
+	/// zh-CN: '控件边界与文字的对比强度。'
+	String get contrastDescription => '控件边界与文字的对比强度。';
+
+	/// zh-CN: '柔和'
+	String get contrastSoft => '柔和';
+
+	/// zh-CN: '标准'
+	String get contrastStandard => '标准';
+
+	/// zh-CN: '选中样式'
+	String get selectionStyle => '选中样式';
+
+	/// zh-CN: '选中行与控件的高亮方式。'
+	String get selectionDescription => '选中行与控件的高亮方式。';
+
+	/// zh-CN: '柔和'
+	String get selectionSoft => '柔和';
+
+	/// zh-CN: '强烈'
+	String get selectionStrong => '强烈';
+
+	/// zh-CN: '自动避让状态色'
+	String get autoClash => '自动避让状态色';
+
+	/// zh-CN: '主题色接近危险或成功色时自动调整，避免选中状态被误读。'
+	String get autoClashDesc => '主题色接近危险或成功色时自动调整，避免选中状态被误读。';
+
+	/// zh-CN: '背景'
+	String get navBackground => '背景';
+
+	/// zh-CN: '用图片或视频铺在应用后面，可上传本地文件或填写地址。'
+	String get backgroundDescription => '用图片或视频铺在应用后面，可上传本地文件或填写地址。';
+
+	/// zh-CN: '背景来源'
+	String get backgroundSource => '背景来源';
+
+	/// zh-CN: '类型'
+	String get backgroundKind => '类型';
+
+	/// zh-CN: '无'
+	String get backgroundNone => '无';
+
+	/// zh-CN: '图片'
+	String get backgroundImage => '图片';
+
+	/// zh-CN: '视频'
+	String get backgroundVideo => '视频';
+
+	/// zh-CN: '图片地址'
+	String get backgroundImageAddress => '图片地址';
+
+	/// zh-CN: '视频地址'
+	String get backgroundVideoAddress => '视频地址';
+
+	/// zh-CN: 'https://…'
+	String get backgroundAddressHint => 'https://…';
+
+	/// zh-CN: '应用'
+	String get backgroundApply => '应用';
+
+	/// zh-CN: '上传'
+	String get backgroundUpload => '上传';
+
+	/// zh-CN: '选择图片'
+	String get backgroundUploadImage => '选择图片';
+
+	/// zh-CN: '选择视频'
+	String get backgroundUploadVideo => '选择视频';
+
+	/// zh-CN: '本地文件：{name}'
+	String backgroundLocalFile({required Object name}) => '本地文件：${name}';
+
+	/// zh-CN: '地址需要是 http(s) 链接'
+	String get backgroundInvalidUrl => '地址需要是 http(s) 链接';
+
+	/// zh-CN: '导入失败'
+	String get backgroundImportFailed => '导入失败';
+
+	/// zh-CN: '正在复制文件…'
+	String get backgroundBusy => '正在复制文件…';
+
+	/// zh-CN: '还没有设置媒体；选择图片或视频后填写地址或上传。'
+	String get backgroundEmpty => '还没有设置媒体；选择图片或视频后填写地址或上传。';
+
+	/// zh-CN: '显示'
+	String get backgroundDisplay => '显示';
+
+	/// zh-CN: '填充方式'
+	String get backgroundFit => '填充方式';
+
+	/// zh-CN: '裁切填满'
+	String get backgroundFitCover => '裁切填满';
+
+	/// zh-CN: '完整显示'
+	String get backgroundFitContain => '完整显示';
+
+	/// zh-CN: '拉伸填满'
+	String get backgroundFitFill => '拉伸填满';
+
+	/// zh-CN: '适应宽度'
+	String get backgroundFitWidth => '适应宽度';
+
+	/// zh-CN: '适应高度'
+	String get backgroundFitHeight => '适应高度';
+
+	/// zh-CN: '原始大小'
+	String get backgroundFitNone => '原始大小';
+
+	/// zh-CN: '原始或缩小'
+	String get backgroundFitScaleDown => '原始或缩小';
+
+	/// zh-CN: '遮罩'
+	String get backgroundMask => '遮罩';
+
+	/// zh-CN: '压暗或提亮背景，保证文字可读。'
+	String get backgroundMaskDescription => '压暗或提亮背景，保证文字可读。';
+
+	/// zh-CN: '高斯模糊'
+	String get backgroundBlur => '高斯模糊';
+
+	/// zh-CN: '对图片或视频做模糊，适合花哨的壁纸。'
+	String get backgroundBlurDescription => '对图片或视频做模糊，适合花哨的壁纸。';
+
+	/// zh-CN: '清除背景'
+	String get backgroundClear => '清除背景';
+
+	/// zh-CN: '检查更新'
+	String get checkUpdate => '检查更新';
+
+	/// zh-CN: '从项目的发行页读取最新版本。'
+	String get checkUpdateDesc => '从项目的发行页读取最新版本。';
+
+	/// zh-CN: '正在检查更新…'
+	String get checkingUpdate => '正在检查更新…';
+
+	/// zh-CN: '可更新到 {version}'
+	String updateAvailable({required Object version}) => '可更新到 ${version}';
+
+	/// zh-CN: '已是最新版本'
+	String get upToDate => '已是最新版本';
+
+	/// zh-CN: '检查更新失败'
+	String get updateCheckFailed => '检查更新失败';
+
+	/// zh-CN: '查看更新'
+	String get viewUpdate => '查看更新';
+
+	/// zh-CN: '版本更新'
+	String get updatePanelTitle => '版本更新';
+
+	/// zh-CN: '构建 {build}'
+	String updateBuild({required Object build}) => '构建 ${build}';
+
+	/// zh-CN: '打开下载页'
+	String get openDownload => '打开下载页';
+
+	/// zh-CN: '版本记录'
+	String get releaseHistory => '版本记录';
+
+	/// zh-CN: '查看项目历次发布与更新内容。'
+	String get releaseHistoryDesc => '查看项目历次发布与更新内容。';
+
+	/// zh-CN: '暂无发布记录'
+	String get releaseHistoryEmpty => '暂无发布记录';
+
+	/// zh-CN: '发行记录加载失败'
+	String get releaseHistoryFailed => '发行记录加载失败';
+
+	/// zh-CN: '发布于 {date}'
+	String releasedOn({required Object date}) => '发布于 ${date}';
+
+	/// zh-CN: '至少保留一个平台'
+	String get sitesKeepOne => '至少保留一个平台';
+
+	/// zh-CN: '离开应用时自动小窗'
+	String get autoPip => '离开应用时自动小窗';
+
+	/// zh-CN: '播放中切到后台时进入画中画；系统未开启画中画时不会生效。'
+	String get autoPipDesc => '播放中切到后台时进入画中画；系统未开启画中画时不会生效。';
+
+	/// zh-CN: '分区'
+	String get searchSections => '分区';
+
+	/// zh-CN: '具体设置'
+	String get searchRows => '具体设置';
+
+	/// zh-CN: '匹配：{items: String}'
+	String searchRowMatches({required String items}) => '匹配：${items}';
+
+	/// zh-CN: '观众数显示'
+	String get audienceMetric => '观众数显示';
+
+	/// zh-CN: '热门、关注等卡片优先展示的观众指标。'
+	String get audienceMetricDesc => '热门、关注等卡片优先展示的观众指标。';
+
+	/// zh-CN: '跟随平台'
+	String get audienceAutomatic => '跟随平台';
+
+	/// zh-CN: '在线观众'
+	String get audienceOnline => '在线观众';
+
+	/// zh-CN: '热度'
+	String get audiencePopularity => '热度';
+
+	/// zh-CN: '累计观看'
+	String get audienceTotal => '累计观看';
+
+	/// zh-CN: '纯色'
+	String get backgroundSolid => '纯色';
+
+	/// zh-CN: '渐变'
+	String get backgroundGradient => '渐变';
+
+	/// zh-CN: '预设'
+	String get backgroundPresets => '预设';
+
+	/// zh-CN: '图库'
+	String get backgroundGallery => '图库';
+
+	/// zh-CN: '点选一张图片直接应用；图片来自公开图库，需要网络加载。'
+	String get backgroundGalleryHint => '点选一张图片直接应用；图片来自公开图库，需要网络加载。';
+
+	/// zh-CN: '壁纸图库'
+	String get backgroundLibraryTitle => '壁纸图库';
+
+	/// zh-CN: '浏览全部壁纸'
+	String get backgroundLibraryBrowse => '浏览全部壁纸';
+
+	/// zh-CN: '加载更多'
+	String get backgroundLibraryLoadMore => '加载更多';
+
+	/// zh-CN: '没有可用的壁纸'
+	String get backgroundLibraryEmpty => '没有可用的壁纸';
+
+	/// zh-CN: '图库加载失败'
+	String get backgroundLibraryFailed => '图库加载失败';
+
+	/// zh-CN: '已应用为背景'
+	String get backgroundLibraryApplied => '已应用为背景';
+
+	/// zh-CN: 'deepin 图库随应用内置，不用网络。'
+	String get backgroundLibraryLocalHint => 'deepin 图库随应用内置，不用网络。';
+
+	/// zh-CN: '图库来自公开的 iTab 接口；应用代理设置对它同样生效。'
+	String get backgroundLibraryNetworkHint => '图库来自公开的 iTab 接口；应用代理设置对它同样生效。';
+
+	/// zh-CN: '官方壁纸'
+	String get wallpaperSourceOfficial => '官方壁纸';
+
+	/// zh-CN: 'Wallhaven'
+	String get wallpaperSourceWallhaven => 'Wallhaven';
+
+	/// zh-CN: '必应壁纸'
+	String get wallpaperSourceBing => '必应壁纸';
+
+	/// zh-CN: 'deepin'
+	String get wallpaperSourceDeepin => 'deepin';
+
+	/// zh-CN: '动态壁纸'
+	String get wallpaperSourceVideo => '动态壁纸';
+
+	/// zh-CN: '自然'
+	String get wallpaperCategoryNature => '自然';
+
+	/// zh-CN: '动漫'
+	String get wallpaperCategoryAnime => '动漫';
+
+	/// zh-CN: '艺术'
+	String get wallpaperCategoryArt => '艺术';
+
+	/// zh-CN: '建筑'
+	String get wallpaperCategoryArchitecture => '建筑';
+
+	/// zh-CN: '生命'
+	String get wallpaperCategoryLife => '生命';
+
+	/// zh-CN: '纹理'
+	String get wallpaperCategoryTexture => '纹理';
+
+	/// zh-CN: '其他'
+	String get wallpaperCategoryOther => '其他';
+
+	/// zh-CN: '热门'
+	String get wallpaperCategoryPopular => '热门';
+
+	/// zh-CN: '极简主义'
+	String get wallpaperCategoryMinimalism => '极简主义';
+
+	/// zh-CN: '图案'
+	String get wallpaperCategoryPatterns => '图案';
+
+	/// zh-CN: '风景'
+	String get wallpaperCategoryLandscape => '风景';
+
+	/// zh-CN: 'Cosplay'
+	String get wallpaperCategoryCosplay => 'Cosplay';
+
+	/// zh-CN: '蜘蛛侠'
+	String get wallpaperCategorySpiderMan => '蜘蛛侠';
+
+	/// zh-CN: '吉卜力'
+	String get wallpaperCategoryGhibli => '吉卜力';
+
+	/// zh-CN: '火影忍者'
+	String get wallpaperCategoryNaruto => '火影忍者';
+
+	/// zh-CN: '科幻'
+	String get wallpaperCategorySciFi => '科幻';
+
+	/// zh-CN: '日漫'
+	String get wallpaperCategoryAnimeWallhaven => '日漫';
+
+	/// zh-CN: '动漫女孩'
+	String get wallpaperCategoryAnimeGirls => '动漫女孩';
+
+	/// zh-CN: '赛博朋克'
+	String get wallpaperCategoryCyberpunk => '赛博朋克';
+
+	/// zh-CN: '像素艺术'
+	String get wallpaperCategoryPixelArt => '像素艺术';
+
+	/// zh-CN: '艺术画'
+	String get wallpaperCategoryArtwork => '艺术画';
+
+	/// zh-CN: '城市景观'
+	String get wallpaperCategoryCityscape => '城市景观';
+
+	/// zh-CN: '数字艺术'
+	String get wallpaperCategoryDigitalArt => '数字艺术';
+
+	/// zh-CN: '奇幻艺术'
+	String get wallpaperCategoryFantasyArt => '奇幻艺术';
+
+	/// zh-CN: '最终幻想'
+	String get wallpaperCategoryFinalFantasy => '最终幻想';
 }
 
 // Path: shield
@@ -1856,8 +3245,8 @@ class Translations$shield$zh_CN {
 	/// zh-CN: '移除这条屏蔽规则'
 	String get removeEntry => '移除这条屏蔽规则';
 
-	/// zh-CN: '屏蔽在直播间弹幕管道中生效；该管道将随播放器接入后启用。'
-	String get effectNote => '屏蔽在直播间弹幕管道中生效；该管道将随播放器接入后启用。';
+	/// zh-CN: '屏蔽在直播间弹幕中立即生效。'
+	String get effectNote => '屏蔽在直播间弹幕中立即生效。';
 }
 
 // Path: sites
@@ -1907,11 +3296,11 @@ class Translations$toolbox$zh_CN {
 	/// zh-CN: '粘贴平台链接，打开直播间或复制房间地址。'
 	String get toolLinkDescription => '粘贴平台链接，打开直播间或复制房间地址。';
 
-	/// zh-CN: '网络诊断'
-	String get toolNetworkTitle => '网络诊断';
+	/// zh-CN: '平台节点'
+	String get toolNetworkTitle => '平台节点';
 
-	/// zh-CN: '检测站点接口是否可达，并测量响应时间。'
-	String get toolNetworkDescription => '检测站点接口是否可达，并测量响应时间。';
+	/// zh-CN: '测试各平台接口的连通性与延迟。'
+	String get toolNetworkDescription => '测试各平台接口的连通性与延迟。';
 
 	/// zh-CN: '缓存清理'
 	String get toolCacheTitle => '缓存清理';
@@ -1919,11 +3308,11 @@ class Translations$toolbox$zh_CN {
 	/// zh-CN: '查看并清理图片占用的内存缓存。'
 	String get toolCacheDescription => '查看并清理图片占用的内存缓存。';
 
-	/// zh-CN: '日志查看'
-	String get toolLogsTitle => '日志查看';
+	/// zh-CN: '日志'
+	String get toolLogsTitle => '日志';
 
-	/// zh-CN: '浏览应用运行日志，排查播放与网络问题。'
-	String get toolLogsDescription => '浏览应用运行日志，排查播放与网络问题。';
+	/// zh-CN: '查看应用运行日志与诊断信息。'
+	String get toolLogsDescription => '查看应用运行日志与诊断信息。';
 
 	/// zh-CN: '返回'
 	String get back => '返回';
@@ -2053,6 +3442,126 @@ class Translations$toolbox$zh_CN {
 
 	/// zh-CN: '这个工具还没有完成，敬请期待。'
 	String get comingSoonDesc => '这个工具还没有完成，敬请期待。';
+
+	/// zh-CN: '获取直链'
+	String get linkDirect => '获取直链';
+
+	/// zh-CN: '直链地址'
+	String get linkDirectTitle => '直链地址';
+
+	/// zh-CN: '画质'
+	String get linkDirectQuality => '画质';
+
+	/// zh-CN: '播放地址'
+	String get linkDirectLines => '播放地址';
+
+	/// zh-CN: '复制'
+	String get linkDirectCopy => '复制';
+
+	/// zh-CN: '直链已复制'
+	String get linkDirectCopyDone => '直链已复制';
+
+	/// zh-CN: '这个房间暂时没有可用的直链'
+	String get linkDirectEmpty => '这个房间暂时没有可用的直链';
+
+	/// zh-CN: '直链读取失败'
+	String get linkDirectFailed => '直链读取失败';
+
+	/// zh-CN: '全部测速'
+	String get nodeTestAll => '全部测速';
+
+	/// zh-CN: '测速'
+	String get nodeTest => '测速';
+
+	/// zh-CN: '测速中'
+	String get nodeTesting => '测速中';
+
+	/// zh-CN: '未测速'
+	String get nodeUntested => '未测速';
+
+	/// zh-CN: '正常'
+	String get nodeReachable => '正常';
+
+	/// zh-CN: '失败'
+	String get nodeFailed => '失败';
+
+	/// zh-CN: '没有可测速的平台'
+	String get nodeNoSites => '没有可测速的平台';
+
+	/// zh-CN: '点「测速」检查这个平台。'
+	String get nodeHint => '点「测速」检查这个平台。';
+
+	/// zh-CN: '返回 {count: int} 个房间'
+	String nodeAnswer({required int count}) => '返回 ${count} 个房间';
+
+	/// zh-CN: '推荐接口'
+	String get nodeSourceRecommended => '推荐接口';
+
+	/// zh-CN: '热门接口'
+	String get nodeSourceHot => '热门接口';
+
+	/// zh-CN: '{ok} / {tested} 可用 · 共 {total} 个平台'
+	String nodeSummary({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台';
+
+	/// zh-CN: '尚未测速 · 共 {total} 个平台'
+	String nodeUntestedSummary({required Object total}) => '尚未测速 · 共 ${total} 个平台';
+
+	/// zh-CN: '日志与诊断'
+	String get logsSection => '日志与诊断';
+
+	/// zh-CN: '日志级别'
+	String get logsLevel => '日志级别';
+
+	/// zh-CN: '写入日志文件'
+	String get logsFile => '写入日志文件';
+
+	/// zh-CN: '在应用数据目录保存轮转日志（pure_live.log）；关闭后只保留内存日志。'
+	String get logsFileDesc => '在应用数据目录保存轮转日志（pure_live.log）；关闭后只保留内存日志。';
+
+	/// zh-CN: '复制日志'
+	String get logsExport => '复制日志';
+
+	/// zh-CN: '把内存中的日志复制到剪贴板。'
+	String get logsExportDesc => '把内存中的日志复制到剪贴板。';
+
+	/// zh-CN: '清空日志'
+	String get logsClear => '清空日志';
+
+	/// zh-CN: '只清除内存中的日志，已写入的文件保留。'
+	String get logsClearDesc => '只清除内存中的日志，已写入的文件保留。';
+
+	/// zh-CN: '清空内存日志？'
+	String get logsClearConfirm => '清空内存日志？';
+
+	/// zh-CN: '内存中的日志会被删除，日志文件不受影响。'
+	String get logsClearConfirmDesc => '内存中的日志会被删除，日志文件不受影响。';
+
+	/// zh-CN: '搜索日志…'
+	String get logsSearch => '搜索日志…';
+
+	/// zh-CN: '还没有日志'
+	String get logsEmptyTitle => '还没有日志';
+
+	/// zh-CN: '应用启动、网络请求与错误会记录在这里。'
+	String get logsEmptyDescription => '应用启动、网络请求与错误会记录在这里。';
+
+	/// zh-CN: '自动滚动已开启'
+	String get logsAutoOn => '自动滚动已开启';
+
+	/// zh-CN: '自动滚动已关闭（滚动到底部可开启）'
+	String get logsAutoOff => '自动滚动已关闭（滚动到底部可开启）';
+
+	/// zh-CN: '{count: int} 行'
+	String logsLines({required int count}) => '${count} 行';
+
+	/// zh-CN: '滚动到底部'
+	String get logsScrollBottom => '滚动到底部';
+
+	/// zh-CN: '日志已复制'
+	String get logsCopied => '日志已复制';
+
+	/// zh-CN: '没有可复制的日志'
+	String get logsCopyEmpty => '没有可复制的日志';
 }
 
 // Path: vod
@@ -2069,8 +3578,8 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '搜索点播视频'
 	String get idleTitle => '搜索点播视频';
 
-	/// zh-CN: '输入关键词搜索 Bilibili 的视频；分区与排行榜此源暂未提供。'
-	String get idleDescription => '输入关键词搜索 Bilibili 的视频；分区与排行榜此源暂未提供。';
+	/// zh-CN: '输入关键词搜索 Bilibili 的视频。'
+	String get idleDescription => '输入关键词搜索 Bilibili 的视频。';
 
 	/// zh-CN: '没有找到视频'
 	String get noResultsTitle => '没有找到视频';
@@ -2083,6 +3592,138 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '重试'
 	String get retry => '重试';
+
+	/// zh-CN: '热门'
+	String get popular => '热门';
+
+	/// zh-CN: '排行'
+	String get ranking => '排行';
+
+	/// zh-CN: '分区'
+	String get regions => '分区';
+
+	/// zh-CN: '搜索'
+	String get search => '搜索';
+
+	/// zh-CN: '刷新'
+	String get refresh => '刷新';
+
+	/// zh-CN: '全部'
+	String get regionAll => '全部';
+
+	/// zh-CN: '排序'
+	String get sort => '排序';
+
+	/// zh-CN: '综合'
+	String get sortTotalrank => '综合';
+
+	/// zh-CN: '播放多'
+	String get sortClick => '播放多';
+
+	/// zh-CN: '最新'
+	String get sortPubdate => '最新';
+
+	/// zh-CN: '弹幕多'
+	String get sortDm => '弹幕多';
+
+	/// zh-CN: '收藏多'
+	String get sortStow => '收藏多';
+
+	/// zh-CN: '时长'
+	String get duration => '时长';
+
+	/// zh-CN: '全部时长'
+	String get durationAny => '全部时长';
+
+	/// zh-CN: '10 分钟以下'
+	String get durationUnder10 => '10 分钟以下';
+
+	/// zh-CN: '10–30 分钟'
+	String get duration10to30 => '10–30 分钟';
+
+	/// zh-CN: '30–60 分钟'
+	String get duration30to60 => '30–60 分钟';
+
+	/// zh-CN: '60 分钟以上'
+	String get durationOver60 => '60 分钟以上';
+
+	/// zh-CN: '相关推荐'
+	String get related => '相关推荐';
+
+	/// zh-CN: '分P'
+	String get parts => '分P';
+
+	/// zh-CN: '播放'
+	String get views => '播放';
+
+	/// zh-CN: '弹幕'
+	String get danmaku => '弹幕';
+
+	/// zh-CN: '点赞'
+	String get likes => '点赞';
+
+	/// zh-CN: '投币'
+	String get coins => '投币';
+
+	/// zh-CN: '收藏'
+	String get favorites => '收藏';
+
+	/// zh-CN: '简介'
+	String get description => '简介';
+
+	/// zh-CN: '这个视频没有简介。'
+	String get noDescription => '这个视频没有简介。';
+
+	/// zh-CN: '播放'
+	String get play => '播放';
+
+	/// zh-CN: '暂停'
+	String get pause => '暂停';
+
+	/// zh-CN: '静音'
+	String get mute => '静音';
+
+	/// zh-CN: '取消静音'
+	String get unmute => '取消静音';
+
+	/// zh-CN: '音量'
+	String get volume => '音量';
+
+	/// zh-CN: '清晰度'
+	String get quality => '清晰度';
+
+	/// zh-CN: '倍速'
+	String get speed => '倍速';
+
+	/// zh-CN: '全屏'
+	String get fullscreen => '全屏';
+
+	/// zh-CN: '退出全屏'
+	String get exitFullscreen => '退出全屏';
+
+	/// zh-CN: '小窗播放'
+	String get pip => '小窗播放';
+
+	/// zh-CN: '退出小窗'
+	String get exitPip => '退出小窗';
+
+	/// zh-CN: '这个清晰度只有画面，没有声音；换一个清晰度试试。'
+	String get silentNotice => '这个清晰度只有画面，没有声音；换一个清晰度试试。';
+
+	/// zh-CN: '正在打开视频…'
+	String get opening => '正在打开视频…';
+
+	/// zh-CN: '视频信息加载失败'
+	String get loadFailed => '视频信息加载失败';
+
+	/// zh-CN: '视频打开失败'
+	String get openFailed => '视频打开失败';
+
+	/// zh-CN: '播放进度'
+	String get progress => '播放进度';
+
+	/// zh-CN: 'UP主'
+	String get up => 'UP主';
 }
 
 /// The flat map containing all translations for locale <zh-CN>.
@@ -2122,6 +3763,8 @@ extension on Translations {
 			'areas.followedEmptyHint' => '在平台分区或直播间里点爱心即可关注',
 			'areas.noPlatforms' => '没有可浏览的平台',
 			'areas.unfollow' => '取消关注',
+			'areas.categoryAll' => '全部分类',
+			'areas.follow' => '关注分区',
 			'backup.title' => '备份与恢复',
 			'backup.localSection' => '本地备份',
 			'backup.summaryTitle' => '当前数据',
@@ -2201,6 +3844,22 @@ extension on Translations {
 			'backup.deleteDone' => '备份文件已删除',
 			'backup.deleteFileFailed' => '删除备份文件失败',
 			'backup.summaryFollows' => ({required int follows, required int areas}) => '关注 ${follows} · 分区 ${areas}',
+			'backup.webdavBrowse' => '浏览服务器',
+			'backup.webdavUp' => '上一级',
+			'backup.webdavEmpty' => '这个目录没有文件',
+			'backup.webdavLoadFailed' => '无法读取服务器目录',
+			'backup.webdavRestore' => '恢复',
+			'backup.webdavRestoreTitle' => ({required String name}) => '恢复“${name}”？',
+			'backup.webdavRestoreDesc' => '将用服务器文件覆盖本机的关注、历史、分区与设置。',
+			'backup.webdavRestored' => '已恢复服务器备份',
+			'backup.webdavFileDelete' => '删除服务器文件',
+			'backup.webdavDeleteTitle' => ({required String name}) => '删除服务器文件“${name}”？',
+			'backup.webdavDeleteDesc' => '只删除服务器上的这个文件，本机数据不受影响。',
+			'backup.webdavDeleted' => '已删除服务器文件',
+			'backup.webdavUploadHere' => '上传当前备份',
+			'backup.webdavUploadName' => '文件名',
+			'backup.webdavUploadInvalid' => '文件名不能为空',
+			'backup.webdavNoServer' => '请先配置服务器地址',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => '这里还没有内容',
 			'common.comingSoon' => '即将推出',
@@ -2223,6 +3882,14 @@ extension on Translations {
 			'common.switchModule' => '切换内容类型',
 			'common.openNavigation' => '打开导航',
 			'common.refreshFailed' => '刷新失败',
+			'common.layout' => '切换排版',
+			'common.layoutGrid' => '卡片排版',
+			'common.layoutList' => '列表排版',
+			'common.switchToDark' => '切换到深色',
+			'common.switchToLight' => '切换到浅色',
+			'common.backToTop' => '回到顶部',
+			'common.more' => '更多',
+			'common.delete' => '删除',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
@@ -2240,6 +3907,28 @@ extension on Translations {
 			'favorites.emptyGroupHint' => '换个分组或平台，或刷新重新获取状态。',
 			'favorites.showOffline' => '查看未开播',
 			'favorites.refreshFailed' => ({required int count}) => '${count} 个直播间刷新失败',
+			'favorites.statusLiveNow' => '已开播',
+			'favorites.statusOfflineNow' => '未开播',
+			'favorites.justStarted' => '刚刚开播',
+			'favorites.liveFor' => ({required Object duration}) => '已播 ${duration}',
+			'favorites.durationMinutes' => ({required Object m}) => '${m} 分钟',
+			'favorites.durationHours' => ({required Object h, required Object m}) => '${h} 小时 ${m} 分',
+			'favorites.durationDays' => ({required Object d, required Object h}) => '${d} 天 ${h} 小时',
+			'favorites.perPage' => '每页',
+			'favorites.goTo' => '跳转至',
+			'favorites.pageUnit' => '页',
+			'favorites.setTags' => '设置标签',
+			'favorites.tagsTitle' => '标签',
+			'favorites.tagsFilter' => '标签筛选',
+			'favorites.allTags' => '全部标签',
+			'favorites.tagsEmpty' => '还没有标签',
+			'favorites.tagFieldHint' => '新标签名称',
+			'favorites.addTag' => '添加标签',
+			'favorites.deleteTagTitle' => ({required String name}) => '删除标签“${name}”？',
+			'favorites.deleteTagBody' => '所有直播间都会移出这个标签，直播间本身不会被取消关注。',
+			'favorites.tagExists' => '这个标签已经存在',
+			'favorites.tagInvalid' => '标签名称不能为空',
+			'favorites.deleteTag' => '删除',
 			'history.emptyTitle' => '还没有观看记录',
 			'history.emptyDescription' => '看过一场直播后，就会出现在这里。',
 			'history.clear' => '清空记录',
@@ -2272,6 +3961,9 @@ extension on Translations {
 			'history.limitCustomLabel' => '自定义数量',
 			'history.limitInvalid' => ({required int min, required int max}) => '请输入 ${min} 到 ${max} 之间的整数。',
 			'history.limitSaved' => ({required int limit}) => '上限已设为 ${limit} 条',
+			'history.refresh' => '刷新',
+			'history.refreshFailed' => ({required int count}) => '${count} 条记录刷新失败',
+			'history.openRoom' => '进入直播间',
 			'iptv.tabAll' => '全部',
 			'iptv.scopeLabel' => '频道范围',
 			'iptv.scopeAll' => '全部频道',
@@ -2294,22 +3986,31 @@ extension on Translations {
 			'iptv.epgImported' => '节目单已导入',
 			'iptv.epgFailed' => '节目单导入失败',
 			'iptv.epgRemove' => '删除此节目单源',
-			'iptv.epgEmpty' => '还没有节目单源，导入一个后频道卡就会显示正在播的节目。',
-			'iptv.activeGuideDescription' => '选择用于节目单的指南源；同一时间只使用一个。',
+			'iptv.epgEmpty' => '还没有节目单来源；导入一个后，频道就会显示正在播的节目。',
+			'iptv.activeGuideDescription' => '选择用于频道节目的节目单来源；同一时间只使用一个。',
 			'iptv.activeGuideNone' => '未选择',
-			'iptv.activeGuideTitle' => '使用中的指南',
+			'iptv.activeGuideTitle' => '当前节目单',
+			'iptv.activeGuideCardHint' => '频道的正在播出与进度都按这份节目单显示。',
 			'iptv.autoUpdate' => '自动更新',
-			'iptv.autoUpdateHint' => '打开后按间隔自动重新拉取订阅源。',
+			'iptv.autoUpdateHint' => '应用会按此间隔在后台检查，并重新拉取已开启自动更新的节目单。',
+			'iptv.updateInterval' => '更新间隔',
+			'iptv.updateIntervalHours' => ({required int hours}) => '${hours} 小时',
+			'iptv.updateIntervalDays' => ({required int days}) => '${days} 天',
+			'iptv.autoUpdateStatusOn' => ({required int count}) => '${count} 个节目单会按此间隔自动刷新',
+			'iptv.autoUpdateStatusNone' => '还没有节目单开启自动更新。',
+			'iptv.autoUpdateNoRemote' => '还没有网络节目单',
+			'iptv.select' => '选择',
+			'iptv.selectGuideUnavailable' => '还没有节目单',
 			'iptv.channelCount' => ({required int count}) => '${count} 个频道',
-			'iptv.chooseGuide' => '选择指南源',
+			'iptv.chooseGuide' => '选择节目单',
 			'iptv.delete' => '删除',
-			'iptv.deleteActiveGuideNote' => '这是正在使用的指南，删除后将改用其他来源。',
-			'iptv.deleteGuideMessage' => ({required String name}) => '删除指南源“${name}”？已下载的节目单会一并移除。',
-			'iptv.deleteGuideTitle' => '删除指南源？',
+			'iptv.deleteActiveGuideNote' => '这是正在使用的节目单，删除后将改用其他来源。',
+			'iptv.deleteGuideMessage' => ({required String name}) => '删除节目单“${name}”？已下载的节目会一并移除。',
+			'iptv.deleteGuideTitle' => '删除节目单？',
 			'iptv.deletePlaylistMessage' => ({required String name, required int count}) => '删除“${name}”及其 ${count} 个频道？',
 			'iptv.deletePlaylistTitle' => '删除播放列表？',
 			'iptv.deleted' => ({required String name}) => '已删除“${name}”',
-			'iptv.guideName' => '指南名称',
+			'iptv.guideName' => '节目单名称',
 			'iptv.guideNameHint' => '例如：我的 EPG',
 			'iptv.guideSelected' => ({required String name}) => '已切换到“${name}”',
 			'iptv.importAction' => '导入',
@@ -2320,8 +4021,8 @@ extension on Translations {
 			'iptv.importFromFile' => '从文件',
 			'iptv.importFromText' => '粘贴文本',
 			'iptv.importFromUrl' => '订阅地址',
-			'iptv.importGuide' => '导入指南',
-			'iptv.importGuideDescription' => '支持 XMLTV 地址或文件；导入后会下载节目单。',
+			'iptv.importGuide' => '导入节目单',
+			'iptv.importGuideDescription' => '支持 XMLTV 地址或文件；导入后会下载节目。',
 			'iptv.importInvalid' => '内容不是有效的播放列表',
 			'iptv.importNameRequired' => '请输入播放列表名称',
 			'iptv.importNetworkFailed' => '网络请求失败，请检查地址或代理',
@@ -2336,12 +4037,14 @@ extension on Translations {
 			'iptv.localTag' => '本地',
 			'iptv.networkTag' => '网络',
 			'iptv.neverUpdated' => '尚未更新',
-			'iptv.noGuidesTitle' => '还没有指南源',
+			'iptv.noGuidesTitle' => '还没有节目单',
+			'iptv.noSourcesTitle' => '还没有来源',
+			'iptv.noSourcesDescription' => '导入播放列表或节目单后，它们会出现在这里。',
 			'iptv.noPlaylistsDescription' => '从订阅地址、文件或粘贴的文本导入播放列表。',
 			'iptv.noPlaylistsTitle' => '还没有播放列表',
 			'iptv.pickPlaylistFile' => '选择播放列表文件',
 			'iptv.playlistName' => '播放列表名称',
-			'iptv.playlistNameHint' => '例如：我的频道',
+			'iptv.playlistNameHint' => '留空则按来源自动命名',
 			'iptv.playlistText' => '播放列表内容',
 			'iptv.playlistTextHint' => '粘贴 M3U/M3U8/TXT 内容',
 			'iptv.playlistUrl' => '订阅地址',
@@ -2350,31 +4053,97 @@ extension on Translations {
 			'iptv.replaceMessage' => '同名播放列表已存在，导入内容将替换它。',
 			'iptv.replaceTitle' => ({required String name}) => '替换“${name}”？',
 			'iptv.sourceChanged' => '订阅源已变化，已更新缓存',
+			'iptv.summaryChannels' => ({required int count, required int groups}) => '共 ${count} 个频道 · ${groups} 个分组',
+			'iptv.summaryChannelSearch' => ({required int count}) => '找到 ${count} 个频道',
+			'iptv.summarySources' => ({required int playlists, required int guides, required int channels}) => '${playlists} 个播放列表 · ${guides} 个节目单 · ${channels} 个频道',
+			'iptv.filterAll' => '全部',
+			'iptv.filterPlaylists' => '播放列表',
+			'iptv.filterGuides' => '节目单',
+			'iptv.searchChannels' => '搜索频道…',
+			'iptv.searchSources' => '搜索名称或地址…',
+			'iptv.noChannelMatch' => '没有匹配的频道',
+			'iptv.noSourceMatch' => '没有匹配的来源',
+			'iptv.sourceCount' => ({required int count}) => '共 ${count} 项',
+			'iptv.colChannel' => '频道',
+			'iptv.colGroup' => '分组',
+			'iptv.colNow' => '正在播出',
+			'iptv.colFavorite' => '收藏',
+			'iptv.colActions' => '操作',
+			'iptv.colName' => '名称',
+			'iptv.colFormat' => '类型',
+			'iptv.colUpdated' => '更新于',
+			'iptv.colAutoUpdate' => '自动更新',
+			'iptv.editOrder' => '编辑顺序',
+			'iptv.orderTitle' => '来源顺序',
+			'iptv.orderHint' => '拖动左侧手柄，或用箭头调整；保存后按此顺序显示。',
+			'iptv.orderDraft' => '未保存的排序草稿',
+			'iptv.saveOrder' => '保存顺序',
+			'iptv.orderSaved' => '顺序已保存',
+			'iptv.moveUp' => '上移',
+			'iptv.moveToTop' => '移到顶部',
+			'iptv.moveDown' => '下移',
+			'iptv.moveToBottom' => '移到底部',
+			'iptv.openChannel' => '播放频道',
 			'iptv.statChannels' => '频道',
-			'iptv.statGuides' => '指南',
+			'iptv.statGuides' => '节目单',
 			'iptv.statPlaylists' => '播放列表',
 			'iptv.sync' => '同步',
 			'iptv.syncAll' => '全部同步',
-			'iptv.syncAllDone' => ({required int count}) => '已同步 ${count} 个播放列表',
-			'iptv.syncAllNone' => '没有可同步的播放列表',
-			'iptv.syncAllPartial' => ({required int failed, required int count}) => '${failed} / ${count} 个播放列表同步失败',
+			'iptv.syncAllDone' => ({required int count}) => '已同步 ${count} 个来源',
+			'iptv.syncAllNone' => '没有可同步的网络来源',
+			'iptv.syncAllPartial' => ({required int failed, required int count}) => '${failed} / ${count} 个来源同步失败',
 			'iptv.syncAllRunning' => ({required int done, required int total}) => '正在同步 ${done} / ${total}',
 			'iptv.syncFailed' => ({required String name}) => '“${name}”同步失败',
 			'iptv.synced' => ({required String name}) => '已同步“${name}”',
 			'iptv.viewChannels' => '频道',
 			'iptv.viewLabel' => '视图',
-			'iptv.viewSources' => '播放列表',
+			'iptv.viewSources' => '来源',
+			'iptv.playerOpening' => '正在打开频道',
+			'iptv.playerNoStream' => '这个频道没有播放地址',
+			'iptv.playerChannelMissing' => '频道不存在或已被删除',
+			'iptv.playerOpenFailed' => '频道播放失败',
+			'iptv.guideTitle' => '节目单',
+			'iptv.guideEmpty' => '这一天没有节目',
+			'iptv.today' => '今天',
+			'iptv.yesterday' => '昨天',
+			'iptv.previousDay' => '前一天',
+			'iptv.nextDay' => '后一天',
+			'iptv.backToLive' => '回到直播',
+			'iptv.catchup' => '回看',
+			'iptv.catchupUnavailable' => '不可回看',
+			'iptv.playingCatchup' => '正在回看',
+			'iptv.catchupFailed' => '无法生成这个节目的回看地址',
+			'iptv.importDefaultName' => '导入的播放列表',
+			'iptv.copySourceAddress' => '复制源地址',
+			'iptv.openSourceAddress' => '打开源地址',
+			'iptv.sourceAddressCopied' => '源地址已复制',
+			'iptv.sourceAddressOpenFailed' => '无法打开源地址',
 			'multiview.layoutLabel' => '布局',
-			'multiview.videoComingSoon' => '多画面播放将随播放器内核接入，现在可先排布格子并挑选房间。',
+			'multiview.selectHint' => '点击格子选中，只有选中的格子有声音',
+			'multiview.selectedPane' => ({required Object index}) => '第 ${index} 格 · 有声',
 			'multiview.pickRoom' => '选择房间',
+			'multiview.openRoom' => '进入直播间',
 			'multiview.clearPane' => '清空这一格',
 			'multiview.swapPane' => '交换格子',
 			'multiview.swapHere' => '换到这格',
+			'multiview.paneFailed' => '这一格无法播放',
+			'multiview.retryPane' => '重试这一格',
 			'multiview.pickerTitle' => ({required Object index}) => '为第 ${index} 格选择房间',
 			'multiview.pickerEmptyTitle' => '还没有关注的房间',
 			'multiview.pickerEmptyHint' => '先到直播间点关注，再回到这里挑选，房间会出现在列表里。',
 			'multiview.alreadyShown' => ({required Object index}) => '已在第 ${index} 格',
 			'multiview.shownIn' => ({required Object index}) => '第 ${index} 格',
+			'multiview.panePaused' => '已暂停',
+			'multiview.paneQuality' => '画质',
+			'multiview.pausePane' => '暂停这一格',
+			'multiview.playPane' => '播放这一格',
+			'multiview.pauseAll' => '全部暂停',
+			'multiview.resumeAll' => '全部继续',
+			'multiview.muteAll' => '全部静音',
+			'multiview.unmuteAll' => '取消全部静音',
+			'multiview.qualityFailed' => '画质切换失败',
+			'multiview.pickerSearch' => '搜索关注或历史房间…',
+			'multiview.pickerNoMatch' => '没有匹配的房间',
 			'music.title' => '音乐',
 			'music.tagline' => '歌曲、歌单与榜单正在路上',
 			'music.viewsLabel' => '音乐视图',
@@ -2392,14 +4161,14 @@ extension on Translations {
 			'navigation.live' => '直播',
 			'navigation.channels' => '频道',
 			'navigation.discover' => '发现',
-			'navigation.history' => '历史',
+			'navigation.history' => '观看记录',
 			'navigation.groupContent' => '内容与工具',
 			'navigation.multiview' => '多画面',
 			'navigation.favorites' => '关注',
 			'navigation.hot' => '热门',
 			'navigation.zones' => '分区',
-			'navigation.search' => '搜索',
-			'navigation.toolbox' => '工具箱',
+			'navigation.search' => '搜索直播',
+			'navigation.toolbox' => '链接解析',
 			'navigation.groupPersonal' => '个人与系统',
 			'navigation.record' => '录制中心',
 			'navigation.settings' => '设置',
@@ -2418,13 +4187,18 @@ extension on Translations {
 			'popular.nextPage' => '下一页',
 			'popular.inlineAt' => ({required Object platform, required Object query}) => '在 ${platform} 中搜索“${query}”',
 			'popular.backToBrowse' => '返回浏览',
+			'popular.sortLabel' => '排序',
+			'popular.sortPlatform' => '平台推荐',
+			'popular.sortAudience' => '按观众',
+			'popular.perPage' => '每页',
+			'popular.pageSize' => ({required int size}) => '每页 ${size} 个',
 			'recorder.tabRunning' => '进行中',
 			'recorder.tabFinished' => '已完成',
 			'recorder.clearFinished' => '清空已完成',
 			'recorder.removeTask' => '删除这条任务',
 			'recorder.emptyTitle' => '还没有录制任务',
 			'recorder.emptyFinishedTitle' => '已完成的录制会出现在这里',
-			'recorder.emptyDescription' => '录制功能将随播放器内核一起接入：到时可在直播间里点录制，任务会出现在这里。',
+			'recorder.emptyDescription' => '在直播间点击录制，任务会出现在这里。',
 			'recorder.qualityBest' => '最佳画质',
 			'recorder.startedAt' => ({required Object time}) => '开始于 ${time}',
 			'recorder.stateRecording' => '录制中',
@@ -2435,10 +4209,10 @@ extension on Translations {
 			'recorder.saveDirDefault' => '跟随引擎默认目录',
 			'recorder.saveDirDialogHint' => '输入保存录制文件的文件夹路径',
 			'recorder.namingTitle' => '文件命名模板',
-			'recorder.namingDescription' => '可用日期、时间、平台、房间号与标题占位符，播放器接入后生效。',
+			'recorder.namingDescription' => '可用日期、时间、平台、房间号与标题占位符。',
 			'recorder.namingDialogHint' => '输入录制文件的命名模板',
-			'recorder.maxSizeTitle' => '单文件大小上限',
-			'recorder.maxSizeDescription' => '录制超过上限后分卷保存，播放器接入后生效。',
+			'recorder.maxSizeTitle' => '单次录制大小上限',
+			'recorder.maxSizeDescription' => '录制达到上限后自动结束并保存；按 MB 计。',
 			'recorder.filterLabel' => '筛选',
 			'recorder.filterAll' => '全部',
 			'recorder.filterRecording' => '录制中',
@@ -2456,6 +4230,42 @@ extension on Translations {
 			'recorder.deleteTitle' => ({required String name}) => '删除“${name}”？',
 			'recorder.deleteBody' => '只删除这条录制任务记录，已保存的视频文件不会被删除。',
 			'recorder.settingsOpen' => '录制设置',
+			'recorder.stop' => '停止录制',
+			'recorder.settingsFiles' => '文件与位置',
+			'recorder.settingsRecovery' => '分段与恢复',
+			'recorder.settingsRuntime' => '后台与上限',
+			'recorder.segmentTitle' => '分段时长',
+			'recorder.segmentDescription' => '每段录制的长度；段文件在崩溃后仍可播放。',
+			'recorder.segmentMinutes' => ({required int count}) => '${count} 分钟',
+			'recorder.readTimeoutTitle' => '读取超时',
+			'recorder.readTimeoutDescription' => '直播流停止供流后等待多久判定失败。',
+			'recorder.seconds' => ({required int count}) => '${count} 秒',
+			'recorder.queueTitle' => '输入队列',
+			'recorder.queueDescription' => 'FFmpeg 输入包队列大小；直播突发时越大越不容易丢包。',
+			'recorder.preferBestTitle' => '只录首路音视频',
+			'recorder.preferBestDescription' => '开启时只映射首个视频和音频流，避免多码率文件变成多轨。',
+			'recorder.keepAliveTitle' => '后台保持录制',
+			'recorder.keepAliveDescription' => '录制期间持有后台会话与唤醒锁（Android 前台服务/通知）。',
+			_ => null,
+		} ?? switch (path) {
+			'recorder.verifyTitle' => '结束时校验文件',
+			'recorder.verifyDescription' => '结束前检查分段是否可播放。',
+			'recorder.restartTitle' => '断流重试次数',
+			'recorder.restartDescription' => '流中断后 FFmpeg 自动重开的次数；0 表示不重试。',
+			'recorder.restartCount' => ({required int count}) => '${count} 次',
+			'recorder.backoffTitle' => '重试间隔',
+			'recorder.backoffDescription' => '两次重开之间的等待。',
+			'recorder.stallTitle' => '卡流判定',
+			'recorder.stallDescription' => '多久没有新数据就判定为卡流并重开。',
+			'recorder.watermarkTitle' => '磁盘余量保护',
+			'recorder.watermarkDescription' => '剩余空间低于该值时停止录制。',
+			'recorder.maxTasksTitle' => '同时录制任务上限',
+			'recorder.maxTasksDescription' => '达到上限后新的录制请求会被拒绝。',
+			'recorder.maxTasksCount' => ({required int count}) => '${count} 个',
+			'recorder.containerTitle' => '分段格式',
+			'recorder.containerDescription' => 'TS 更耐中断，MP4 更易被普通播放器打开。',
+			'recorder.containerTs' => 'MPEG-TS',
+			'recorder.containerMp4' => '分段 MP4',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -2476,6 +4286,92 @@ extension on Translations {
 			'room.sendFailed' => '发送失败',
 			'room.fullscreenOn' => '进入全屏',
 			'room.fullscreenOff' => '退出全屏',
+			'room.chatTitle' => '聊天',
+			'room.danmakuOn' => '显示弹幕',
+			'room.danmakuOff' => '隐藏弹幕',
+			'room.windowFullscreenOn' => '窗口全屏',
+			'room.windowFullscreenOff' => '退出窗口全屏',
+			'room.pipOn' => '画中画',
+			'room.pipOff' => '退出画中画',
+			'room.cast' => '投屏',
+			'room.castTitle' => '投屏到设备',
+			'room.castSearching' => '正在搜索附近的设备',
+			'room.castSearchingHint' => '请确认电视与电脑在同一局域网。',
+			'room.castDevices' => '可用设备',
+			'room.casting' => '正在投屏',
+			'room.castStop' => '停止投屏',
+			'room.castStarted' => '已开始投屏',
+			'room.castFailed' => '投屏失败，设备可能无法访问这条线路',
+			'room.sleepDone' => '睡眠定时已到，播放已暂停',
+			'room.openingRoom' => '正在打开房间',
+			'room.playbackFailed' => '播放失败',
+			'room.buffering' => '缓冲中',
+			'room.connecting' => '正在连接直播流',
+			'room.slowReason' => '时间有点长，线路可能不稳定',
+			'room.paused' => '已暂停',
+			'room.replayEnded' => '回放已结束',
+			'room.banned' => '该直播间已被封禁',
+			'room.carousel' => '轮播中',
+			'room.carouselReason' => '主播暂时不在，平台正在播放轮播内容',
+			'room.offlineTitle' => '主播暂时不在',
+			'room.offlineReplayReason' => '有回放可看，回到列表后可从卡片进入',
+			'room.offlineReason' => '开播后这里会看到直播画面',
+			'room.detailFailed' => '房间信息加载失败',
+			'room.copyLink' => '复制房间链接',
+			'room.linkCopied' => '链接已复制',
+			'room.record' => '录制',
+			'room.stopRecording' => '停止录制',
+			'room.recordStarted' => '开始录制',
+			'room.recordStopped' => '录制已停止',
+			'room.recordFailed' => '录制操作失败',
+			'room.details' => '直播间详情',
+			'room.detailsHint' => '查看直播间详情',
+			'room.notice' => '公告',
+			'room.introduction' => '简介',
+			'room.roomNumber' => '房间号',
+			'room.link' => '链接',
+			'room.copy' => '复制',
+			'room.copied' => '已复制',
+			'room.share' => '分享',
+			'room.shareFailed' => '分享失败',
+			'room.openIn' => ({required Object platform}) => '在 ${platform} 打开',
+			'room.openUnavailable' => '该平台没有提供可打开的链接',
+			'room.openFailed' => '无法打开链接',
+			'room.refreshRoom' => '刷新房间信息',
+			'room.messageActions' => '弹幕操作',
+			'room.blockUser' => '屏蔽此用户',
+			'room.blockKeyword' => '屏蔽关键词…',
+			'room.blockKeywordHint' => '输入要屏蔽的关键词',
+			'room.userBlocked' => '已屏蔽该用户',
+			'room.keywordBlocked' => '已屏蔽该关键词',
+			'room.danmakuSettings' => '弹幕设置',
+			'room.blockList' => '屏蔽列表',
+			'room.superChats' => '超级聊天',
+			'room.superChatEmpty' => '暂无超级聊天',
+			'room.superChatFailed' => '超级聊天加载失败',
+			'room.onlineViewers' => '在线',
+			'room.popularity' => '热度',
+			'room.totalViewers' => '累计观看',
+			'room.startedAt' => ({required Object time}) => '${time} 开播',
+			'room.danmakuList' => '弹幕',
+			'room.danmakuSettingsDesc' => '控制飞行弹幕的显示、字号、速度与区域。',
+			'room.block' => '屏蔽',
+			'room.openExternal' => '在平台打开',
+			'room.restrictionNeedsLogin' => '需要登录',
+			'room.restrictionPaid' => '需要付费',
+			'room.restrictionSubscribersOnly' => '仅限会员',
+			'room.restrictionPrivate' => '私密房间',
+			'room.restrictionAppOnly' => '需要在官方 App 观看',
+			'room.restrictionRegionBlocked' => '当前地区不可观看',
+			'room.restrictionPassword' => '需要密码',
+			'room.restrictionAdult' => '年龄限制',
+			'room.restrictionUnplayable' => '暂时无法播放',
+			'room.orientation' => '画面方向',
+			'room.orientationHint' => '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。',
+			'room.orientationAutomatic' => '自动',
+			'room.orientationPortrait' => '竖屏',
+			'room.orientationLandscape' => '横屏',
+			'room.orientationUpdated' => '画面方向已更新',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -2491,27 +4387,53 @@ extension on Translations {
 			'search.scopeAll' => '全部',
 			'search.historyTitle' => '搜索历史',
 			'search.clearHistory' => '清空',
+			'search.webSearch' => '网页搜索',
+			'search.webSearchTitle' => '网页搜索',
+			'search.webSearchSelectPlatform' => '先选择一个平台再网页搜索',
+			'search.webSearchUnavailable' => '该平台没有网页搜索',
+			'search.webSearchUnsupportedTitle' => '当前平台不支持内嵌网页',
+			'search.webSearchUnsupportedDescription' => '可以在系统浏览器中打开这个搜索页。',
+			'search.webSearchOpenExternal' => '在浏览器中打开',
+			'search.webSearchExternalFailed' => '无法打开系统浏览器',
+			'search.webSearchFailed' => '页面加载失败',
+			'search.sort' => '排序',
+			'search.sortSmart' => '综合',
+			'search.sortPlatform' => '按平台',
+			'search.sortAudience' => '按人气',
+			'search.sortFollowers' => '按关注',
+			'search.includeOffline' => '显示离线',
+			'search.linkDetected' => '检测到直播间链接',
+			'search.linkOpen' => '打开直播间',
+			'search.linkResolving' => '正在解析链接…',
+			'search.linkFailed' => '没有解析到直播间',
 			'settings.title' => '设置',
-			'settings.navGeneral' => '通用',
+			'settings.navGeneral' => '浏览与窗口',
 			'settings.navAppearance' => '外观',
 			'settings.navPlayback' => '播放',
 			'settings.navSites' => '站点',
-			'settings.navData' => '数据',
-			'settings.navAbout' => '关于',
+			'settings.navIptv' => '节目单与更新',
+			'settings.navVod' => '账号与清晰度',
+			'settings.navData' => '观看数据',
+			'settings.navBackup' => '备份与恢复',
+			'settings.navAbout' => '版本与许可',
 			'settings.groupBasics' => '基础设置',
 			'settings.groupContent' => '站点',
 			'settings.groupData' => '数据',
 			'settings.groupAbout' => '关于',
-			'settings.generalDescription' => '默认站点、卡片宽度与每页数量。',
-			'settings.appearanceDescription' => '主题模式：跟随系统、浅色或深色。',
+			'settings.groupIptv' => 'IPTV',
+			'settings.groupVod' => 'Bilibili 视频',
+			'settings.generalDescription' => '卡片宽度、每页数量与窗口行为。',
+			'settings.appearanceDescription' => '主题模式、对比度、圆角与字体。',
 			'settings.playbackDescription' => '画质、比例与播放器行为。',
 			'settings.sitesDescription' => '浏览站点与登录账号。',
-			'settings.dataDescription' => '收藏、历史与本地存储。',
+			'settings.iptvDescription' => '节目单自动更新与来源同步。',
+			'settings.vodDescription' => 'Bilibili 账号、默认清晰度与视频站行为。',
+			'settings.dataDescription' => '直播观看历史与关注数据。',
+			'settings.backupDescription' => '本地备份、恢复与 WebDAV 同步。',
 			'settings.aboutDescription' => '版本、开源许可与项目链接。',
 			'settings.playbackComingSoon' => '播放设置将在播放器接入后开放。',
 			'settings.sitesComingSoon' => '站点管理与账号登录即将接入。',
 			'settings.dataComingSoon' => '数据管理即将接入。',
-			'settings.aboutComingSoon' => '关于页即将接入。',
 			'settings.appearance' => '外观',
 			'settings.themeMode' => '主题',
 			'settings.themeModeSystem' => '跟随系统',
@@ -2523,8 +4445,8 @@ extension on Translations {
 			'settings.site' => '默认站点',
 			'settings.cardExtent' => '卡片宽度',
 			'settings.cardExtentDescription' => '首页与分区流里一张卡片的宽度；越小一排越多。',
-			'settings.pageSize' => '每页数量',
-			'settings.pageSizeDescription' => '一次向站点请求多少个房间。',
+			'settings.pageSize' => '每页显示数量',
+			'settings.pageSizeDescription' => '桌面分页每页显示多少个房间；站点按自己的窗口取回，应用在本地切片，换页不会跳过房间。',
 			'settings.sitesDisplay' => '平台显示',
 			'settings.sitesDisplayDesc' => '关闭的平台不再出现在热门与分区的平台列表里。',
 			'settings.sitesAllShown' => '全部平台都在显示中。',
@@ -2605,8 +4527,6 @@ extension on Translations {
 			'settings.cacheClear' => '清除缓存',
 			'settings.cacheClearDesc' => '删除所有已缓存的封面、头像与站点图标。',
 			'settings.cacheCleared' => '缓存已清除',
-			_ => null,
-		} ?? switch (path) {
 			'settings.cacheLimit' => '自动清理上限',
 			'settings.cacheLimitDesc' => '超过上限时按最旧优先删除；关闭则只清理过期项。',
 			'settings.cacheLimitOff' => '不自动清理',
@@ -2622,6 +4542,190 @@ extension on Translations {
 			'settings.windowChromeRestartTitle' => '重启以应用标题栏？',
 			'settings.windowChromeRestartDesc' => '标题栏样式在窗口创建时决定，重启应用后生效。',
 			'settings.windowChromeRestartNow' => '立即重启',
+			'settings.groupInterface' => '界面',
+			'settings.groupSources' => '直播来源',
+			'settings.groupPlayback' => '播放',
+			'settings.groupGeneral' => '通用',
+			'settings.navNavigation' => '导航栏',
+			'settings.navRefresh' => '自动刷新',
+			'settings.navProxy' => '网络代理',
+			'settings.navPlatforms' => '平台与账号',
+			'settings.navigationDescription' => '侧栏入口的显示与顺序。',
+			'settings.refreshDescription' => '关注列表与直播缩略图的自动刷新。',
+			'settings.proxyDescription' => '应用级网络代理，所有站点请求都走它。',
+			'settings.platformsDescription' => '平台显示、排列顺序与账号登录。',
+			'settings.searchSettings' => '搜索设置',
+			'settings.searchNoResults' => '没有匹配的设置',
+			'settings.searchResults' => '搜索结果',
+			'settings.crossSpacing' => '列间距',
+			'settings.crossSpacingDescription' => '卡片网格里左右两张卡片之间的距离。',
+			'settings.mainSpacing' => '行间距',
+			'settings.mainSpacingDescription' => '卡片网格里上下两行之间的距离。',
+			'settings.navVideo' => '视频',
+			'settings.vodPlayback' => '视频播放',
+			'settings.vodQuality' => '默认清晰度',
+			'settings.vodQualityDesc' => '打开视频时优先请求的清晰度；未登录时 Bilibili 可能只提供 720P 及以下。',
+			'settings.vodQuality720' => '720P',
+			'settings.vodQuality1080' => '1080P',
+			'settings.vodQuality1080Plus' => '1080P+',
+			'settings.vodQuality4K' => '4K',
+			'settings.iptvGuideUpdates' => '节目单更新',
+			'settings.iptvSyncDesc' => '重新下载网络播放列表与节目单；本地来源不受影响。',
+			'settings.navDanmaku' => '弹幕',
+			'settings.navMiniDanmaku' => '小窗弹幕',
+			'settings.navKernel' => '播放内核',
+			'settings.navRecording' => '录制',
+			'settings.videoDescription' => '画质、音量与画面比例。',
+			'settings.danmakuDescription' => '弹幕显示、样式与屏蔽。',
+			'settings.miniDanmakuDescription' => '画中画小窗里的弹幕。',
+			'settings.kernelDescription' => '播放内核与硬件解码。',
+			'settings.recordingDescription' => '录制目录、文件命名与容量上限。',
+			'settings.preferredQuality' => '首选画质',
+			'settings.preferredQualityDesc' => '进入房间时优先选用的画质；站点没有时用它的第一个。',
+			'settings.qualityAuto' => '自动（站点默认）',
+			'settings.qualityOriginal' => '原画',
+			'settings.qualityBluRay' => '蓝光',
+			'settings.qualityUltra' => '超清',
+			'settings.qualityHigh' => '高清',
+			'settings.qualityStandard' => '标清',
+			'settings.qualitySmooth' => '流畅',
+			'settings.defaultMuted' => '默认静音',
+			'settings.defaultMutedDesc' => '每个新房间打开时保持静音。',
+			'settings.defaultVolume' => '默认音量',
+			'settings.defaultVolumeDesc' => '每个新房间打开时的音量。',
+			'settings.fit' => '画面比例',
+			'settings.fitDesc' => '画面在播放区域里的铺法。',
+			'settings.fitContain' => '适应（留黑边）',
+			'settings.fitCover' => '裁切填满',
+			'settings.fitFill' => '拉伸',
+			'settings.miniDanmakuVisible' => '画中画中显示弹幕',
+			'settings.miniDanmakuVisibleDesc' => '缩成小窗时是否继续显示飞行弹幕。',
+			'settings.miniDanmakuHint' => '弹幕样式与「弹幕」页共用。',
+			'settings.engineTitle' => '播放内核',
+			'settings.engineDesc' => '由 media_core 的内核注册表提供，当前只注册了 mpv。',
+			'settings.hardwareDecoding' => '硬件解码',
+			'settings.hardwareDecodingDesc' => '用 GPU 解码视频，关闭则交给 CPU。',
+			'settings.hardwareDecodingHint' => '在下一个播放器实例上生效。',
+			'settings.refreshOnResume' => '返回应用时刷新关注',
+			'settings.refreshOnResumeDesc' => '切回应用时刷新一遍关注列表的状态。',
+			'settings.multiviewVisible' => '首页入口：多画面',
+			'settings.multiviewVisibleDesc' => '关闭后侧栏不再显示多画面入口。',
+			'settings.groupTheme' => '主题',
+			'settings.groupCards' => '卡片与列表',
+			'settings.groupType' => '字体和语言',
+			'settings.contrast' => '对比度',
+			'settings.contrastDescription' => '控件边界与文字的对比强度。',
+			'settings.contrastSoft' => '柔和',
+			'settings.contrastStandard' => '标准',
+			'settings.selectionStyle' => '选中样式',
+			'settings.selectionDescription' => '选中行与控件的高亮方式。',
+			'settings.selectionSoft' => '柔和',
+			'settings.selectionStrong' => '强烈',
+			'settings.autoClash' => '自动避让状态色',
+			'settings.autoClashDesc' => '主题色接近危险或成功色时自动调整，避免选中状态被误读。',
+			'settings.navBackground' => '背景',
+			'settings.backgroundDescription' => '用图片或视频铺在应用后面，可上传本地文件或填写地址。',
+			'settings.backgroundSource' => '背景来源',
+			'settings.backgroundKind' => '类型',
+			'settings.backgroundNone' => '无',
+			'settings.backgroundImage' => '图片',
+			'settings.backgroundVideo' => '视频',
+			'settings.backgroundImageAddress' => '图片地址',
+			'settings.backgroundVideoAddress' => '视频地址',
+			'settings.backgroundAddressHint' => 'https://…',
+			'settings.backgroundApply' => '应用',
+			'settings.backgroundUpload' => '上传',
+			'settings.backgroundUploadImage' => '选择图片',
+			'settings.backgroundUploadVideo' => '选择视频',
+			'settings.backgroundLocalFile' => ({required Object name}) => '本地文件：${name}',
+			'settings.backgroundInvalidUrl' => '地址需要是 http(s) 链接',
+			'settings.backgroundImportFailed' => '导入失败',
+			'settings.backgroundBusy' => '正在复制文件…',
+			'settings.backgroundEmpty' => '还没有设置媒体；选择图片或视频后填写地址或上传。',
+			'settings.backgroundDisplay' => '显示',
+			'settings.backgroundFit' => '填充方式',
+			'settings.backgroundFitCover' => '裁切填满',
+			'settings.backgroundFitContain' => '完整显示',
+			'settings.backgroundFitFill' => '拉伸填满',
+			'settings.backgroundFitWidth' => '适应宽度',
+			'settings.backgroundFitHeight' => '适应高度',
+			'settings.backgroundFitNone' => '原始大小',
+			'settings.backgroundFitScaleDown' => '原始或缩小',
+			'settings.backgroundMask' => '遮罩',
+			'settings.backgroundMaskDescription' => '压暗或提亮背景，保证文字可读。',
+			'settings.backgroundBlur' => '高斯模糊',
+			'settings.backgroundBlurDescription' => '对图片或视频做模糊，适合花哨的壁纸。',
+			'settings.backgroundClear' => '清除背景',
+			'settings.checkUpdate' => '检查更新',
+			'settings.checkUpdateDesc' => '从项目的发行页读取最新版本。',
+			'settings.checkingUpdate' => '正在检查更新…',
+			'settings.updateAvailable' => ({required Object version}) => '可更新到 ${version}',
+			'settings.upToDate' => '已是最新版本',
+			'settings.updateCheckFailed' => '检查更新失败',
+			'settings.viewUpdate' => '查看更新',
+			'settings.updatePanelTitle' => '版本更新',
+			'settings.updateBuild' => ({required Object build}) => '构建 ${build}',
+			'settings.openDownload' => '打开下载页',
+			'settings.releaseHistory' => '版本记录',
+			'settings.releaseHistoryDesc' => '查看项目历次发布与更新内容。',
+			'settings.releaseHistoryEmpty' => '暂无发布记录',
+			'settings.releaseHistoryFailed' => '发行记录加载失败',
+			'settings.releasedOn' => ({required Object date}) => '发布于 ${date}',
+			'settings.sitesKeepOne' => '至少保留一个平台',
+			'settings.autoPip' => '离开应用时自动小窗',
+			'settings.autoPipDesc' => '播放中切到后台时进入画中画；系统未开启画中画时不会生效。',
+			'settings.searchSections' => '分区',
+			'settings.searchRows' => '具体设置',
+			'settings.searchRowMatches' => ({required String items}) => '匹配：${items}',
+			'settings.audienceMetric' => '观众数显示',
+			'settings.audienceMetricDesc' => '热门、关注等卡片优先展示的观众指标。',
+			'settings.audienceAutomatic' => '跟随平台',
+			'settings.audienceOnline' => '在线观众',
+			'settings.audiencePopularity' => '热度',
+			'settings.audienceTotal' => '累计观看',
+			'settings.backgroundSolid' => '纯色',
+			'settings.backgroundGradient' => '渐变',
+			'settings.backgroundPresets' => '预设',
+			'settings.backgroundGallery' => '图库',
+			'settings.backgroundGalleryHint' => '点选一张图片直接应用；图片来自公开图库，需要网络加载。',
+			'settings.backgroundLibraryTitle' => '壁纸图库',
+			'settings.backgroundLibraryBrowse' => '浏览全部壁纸',
+			'settings.backgroundLibraryLoadMore' => '加载更多',
+			'settings.backgroundLibraryEmpty' => '没有可用的壁纸',
+			'settings.backgroundLibraryFailed' => '图库加载失败',
+			'settings.backgroundLibraryApplied' => '已应用为背景',
+			'settings.backgroundLibraryLocalHint' => 'deepin 图库随应用内置，不用网络。',
+			'settings.backgroundLibraryNetworkHint' => '图库来自公开的 iTab 接口；应用代理设置对它同样生效。',
+			'settings.wallpaperSourceOfficial' => '官方壁纸',
+			'settings.wallpaperSourceWallhaven' => 'Wallhaven',
+			'settings.wallpaperSourceBing' => '必应壁纸',
+			'settings.wallpaperSourceDeepin' => 'deepin',
+			'settings.wallpaperSourceVideo' => '动态壁纸',
+			'settings.wallpaperCategoryNature' => '自然',
+			'settings.wallpaperCategoryAnime' => '动漫',
+			'settings.wallpaperCategoryArt' => '艺术',
+			'settings.wallpaperCategoryArchitecture' => '建筑',
+			'settings.wallpaperCategoryLife' => '生命',
+			'settings.wallpaperCategoryTexture' => '纹理',
+			'settings.wallpaperCategoryOther' => '其他',
+			'settings.wallpaperCategoryPopular' => '热门',
+			'settings.wallpaperCategoryMinimalism' => '极简主义',
+			'settings.wallpaperCategoryPatterns' => '图案',
+			'settings.wallpaperCategoryLandscape' => '风景',
+			'settings.wallpaperCategoryCosplay' => 'Cosplay',
+			'settings.wallpaperCategorySpiderMan' => '蜘蛛侠',
+			'settings.wallpaperCategoryGhibli' => '吉卜力',
+			'settings.wallpaperCategoryNaruto' => '火影忍者',
+			'settings.wallpaperCategorySciFi' => '科幻',
+			'settings.wallpaperCategoryAnimeWallhaven' => '日漫',
+			'settings.wallpaperCategoryAnimeGirls' => '动漫女孩',
+			'settings.wallpaperCategoryCyberpunk' => '赛博朋克',
+			'settings.wallpaperCategoryPixelArt' => '像素艺术',
+			'settings.wallpaperCategoryArtwork' => '艺术画',
+			'settings.wallpaperCategoryCityscape' => '城市景观',
+			'settings.wallpaperCategoryDigitalArt' => '数字艺术',
+			'settings.wallpaperCategoryFantasyArt' => '奇幻艺术',
+			'settings.wallpaperCategoryFinalFantasy' => '最终幻想',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词与用户屏蔽直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
@@ -2642,7 +4746,7 @@ extension on Translations {
 			'shield.removed' => '已移除',
 			'shield.cleared' => '已清空',
 			'shield.removeEntry' => '移除这条屏蔽规则',
-			'shield.effectNote' => '屏蔽在直播间弹幕管道中生效；该管道将随播放器接入后启用。',
+			'shield.effectNote' => '屏蔽在直播间弹幕中立即生效。',
 			'sites.title' => '站点',
 			'sites.live' => '直播',
 			'sites.search' => '搜索',
@@ -2653,12 +4757,14 @@ extension on Translations {
 			'toolbox.groupData' => '数据',
 			'toolbox.toolLinkTitle' => '链接解析',
 			'toolbox.toolLinkDescription' => '粘贴平台链接，打开直播间或复制房间地址。',
-			'toolbox.toolNetworkTitle' => '网络诊断',
-			'toolbox.toolNetworkDescription' => '检测站点接口是否可达，并测量响应时间。',
+			'toolbox.toolNetworkTitle' => '平台节点',
+			'toolbox.toolNetworkDescription' => '测试各平台接口的连通性与延迟。',
 			'toolbox.toolCacheTitle' => '缓存清理',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.toolCacheDescription' => '查看并清理图片占用的内存缓存。',
-			'toolbox.toolLogsTitle' => '日志查看',
-			'toolbox.toolLogsDescription' => '浏览应用运行日志，排查播放与网络问题。',
+			'toolbox.toolLogsTitle' => '日志',
+			'toolbox.toolLogsDescription' => '查看应用运行日志与诊断信息。',
 			'toolbox.back' => '返回',
 			'toolbox.confirm' => '确认',
 			'toolbox.cancel' => '取消',
@@ -2702,13 +4808,97 @@ extension on Translations {
 			'toolbox.cacheEmpty' => '暂无缓存',
 			'toolbox.comingSoonTitle' => '即将推出',
 			'toolbox.comingSoonDesc' => '这个工具还没有完成，敬请期待。',
+			'toolbox.linkDirect' => '获取直链',
+			'toolbox.linkDirectTitle' => '直链地址',
+			'toolbox.linkDirectQuality' => '画质',
+			'toolbox.linkDirectLines' => '播放地址',
+			'toolbox.linkDirectCopy' => '复制',
+			'toolbox.linkDirectCopyDone' => '直链已复制',
+			'toolbox.linkDirectEmpty' => '这个房间暂时没有可用的直链',
+			'toolbox.linkDirectFailed' => '直链读取失败',
+			'toolbox.nodeTestAll' => '全部测速',
+			'toolbox.nodeTest' => '测速',
+			'toolbox.nodeTesting' => '测速中',
+			'toolbox.nodeUntested' => '未测速',
+			'toolbox.nodeReachable' => '正常',
+			'toolbox.nodeFailed' => '失败',
+			'toolbox.nodeNoSites' => '没有可测速的平台',
+			'toolbox.nodeHint' => '点「测速」检查这个平台。',
+			'toolbox.nodeAnswer' => ({required int count}) => '返回 ${count} 个房间',
+			'toolbox.nodeSourceRecommended' => '推荐接口',
+			'toolbox.nodeSourceHot' => '热门接口',
+			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
+			'toolbox.nodeUntestedSummary' => ({required Object total}) => '尚未测速 · 共 ${total} 个平台',
+			'toolbox.logsSection' => '日志与诊断',
+			'toolbox.logsLevel' => '日志级别',
+			'toolbox.logsFile' => '写入日志文件',
+			'toolbox.logsFileDesc' => '在应用数据目录保存轮转日志（pure_live.log）；关闭后只保留内存日志。',
+			'toolbox.logsExport' => '复制日志',
+			'toolbox.logsExportDesc' => '把内存中的日志复制到剪贴板。',
+			'toolbox.logsClear' => '清空日志',
+			'toolbox.logsClearDesc' => '只清除内存中的日志，已写入的文件保留。',
+			'toolbox.logsClearConfirm' => '清空内存日志？',
+			'toolbox.logsClearConfirmDesc' => '内存中的日志会被删除，日志文件不受影响。',
+			'toolbox.logsSearch' => '搜索日志…',
+			'toolbox.logsEmptyTitle' => '还没有日志',
+			'toolbox.logsEmptyDescription' => '应用启动、网络请求与错误会记录在这里。',
+			'toolbox.logsAutoOn' => '自动滚动已开启',
+			'toolbox.logsAutoOff' => '自动滚动已关闭（滚动到底部可开启）',
+			'toolbox.logsLines' => ({required int count}) => '${count} 行',
+			'toolbox.logsScrollBottom' => '滚动到底部',
+			'toolbox.logsCopied' => '日志已复制',
+			'toolbox.logsCopyEmpty' => '没有可复制的日志',
 			'vod.searchHint' => '搜索 Bilibili 视频',
 			'vod.idleTitle' => '搜索点播视频',
-			'vod.idleDescription' => '输入关键词搜索 Bilibili 的视频；分区与排行榜此源暂未提供。',
+			'vod.idleDescription' => '输入关键词搜索 Bilibili 的视频。',
 			'vod.noResultsTitle' => '没有找到视频',
 			'vod.noResultsDescription' => '换个关键词再试试。',
 			'vod.errorTitle' => '视频没有加载出来',
 			'vod.retry' => '重试',
+			'vod.popular' => '热门',
+			'vod.ranking' => '排行',
+			'vod.regions' => '分区',
+			'vod.search' => '搜索',
+			'vod.refresh' => '刷新',
+			'vod.regionAll' => '全部',
+			'vod.sort' => '排序',
+			'vod.sortTotalrank' => '综合',
+			'vod.sortClick' => '播放多',
+			'vod.sortPubdate' => '最新',
+			'vod.sortDm' => '弹幕多',
+			'vod.sortStow' => '收藏多',
+			'vod.duration' => '时长',
+			'vod.durationAny' => '全部时长',
+			'vod.durationUnder10' => '10 分钟以下',
+			'vod.duration10to30' => '10–30 分钟',
+			'vod.duration30to60' => '30–60 分钟',
+			'vod.durationOver60' => '60 分钟以上',
+			'vod.related' => '相关推荐',
+			'vod.parts' => '分P',
+			'vod.views' => '播放',
+			'vod.danmaku' => '弹幕',
+			'vod.likes' => '点赞',
+			'vod.coins' => '投币',
+			'vod.favorites' => '收藏',
+			'vod.description' => '简介',
+			'vod.noDescription' => '这个视频没有简介。',
+			'vod.play' => '播放',
+			'vod.pause' => '暂停',
+			'vod.mute' => '静音',
+			'vod.unmute' => '取消静音',
+			'vod.volume' => '音量',
+			'vod.quality' => '清晰度',
+			'vod.speed' => '倍速',
+			'vod.fullscreen' => '全屏',
+			'vod.exitFullscreen' => '退出全屏',
+			'vod.pip' => '小窗播放',
+			'vod.exitPip' => '退出小窗',
+			'vod.silentNotice' => '这个清晰度只有画面，没有声音；换一个清晰度试试。',
+			'vod.opening' => '正在打开视频…',
+			'vod.loadFailed' => '视频信息加载失败',
+			'vod.openFailed' => '视频打开失败',
+			'vod.progress' => '播放进度',
+			'vod.up' => 'UP主',
 			_ => null,
 		};
 	}

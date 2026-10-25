@@ -6,5 +6,7 @@
   "followedEmpty": "No followed areas yet",
   "followedEmptyHint": "Tap the heart on an area or in a room to follow it",
   "noPlatforms": "No platform to browse",
-  "unfollow": "Unfollow"
+  "unfollow": "Unfollow",
+  "categoryAll": "All categories",
+  "follow": "Follow area"
 }

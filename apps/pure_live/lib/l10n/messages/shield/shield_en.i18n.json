@@ -19,5 +19,5 @@
   "removed": "Removed",
   "cleared": "Cleared",
   "removeEntry": "Remove this rule",
-  "effectNote": "The rules apply in the live room's danmaku pipeline, which arrives with the player stack."
+  "effectNote": "The rules apply to the room chat immediately."
 }

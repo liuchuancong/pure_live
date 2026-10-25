@@ -77,5 +77,21 @@
   "deleteConfirmDesc": "{name: String} will be permanently deleted.",
   "deleteDone": "Backup file deleted",
   "deleteFileFailed": "Could not delete the backup file",
-  "summaryFollows": "Follows {follows: int} · Areas {areas: int}"
+  "summaryFollows": "Follows {follows: int} · Areas {areas: int}",
+  "webdavBrowse": "Browse the server",
+  "webdavUp": "Parent folder",
+  "webdavEmpty": "No files in this folder",
+  "webdavLoadFailed": "The folder could not be read",
+  "webdavRestore": "Restore",
+  "webdavRestoreTitle": "Restore “{name: String}”?",
+  "webdavRestoreDesc": "The server file replaces this device’s follows, history, areas and settings.",
+  "webdavRestored": "Server backup restored",
+  "webdavFileDelete": "Delete server file",
+  "webdavDeleteTitle": "Delete “{name: String}” from the server?",
+  "webdavDeleteDesc": "Only that server file is removed; this device keeps its data.",
+  "webdavDeleted": "Server file deleted",
+  "webdavUploadHere": "Upload the current backup",
+  "webdavUploadName": "File name",
+  "webdavUploadInvalid": "Enter a file name",
+  "webdavNoServer": "Set the server address first"
 }

@@ -6,5 +6,7 @@
   "followedEmpty": "还没有关注的分区",
   "followedEmptyHint": "在平台分区或直播间里点爱心即可关注",
   "noPlatforms": "没有可浏览的平台",
-  "unfollow": "取消关注"
+  "unfollow": "取消关注",
+  "categoryAll": "全部分类",
+  "follow": "关注分区"
 }
