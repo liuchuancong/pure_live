@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
@@ -7,12 +7,14 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/app/routing/app_router.dart' show AreaRoomsRoute;
+import 'package:pure_live/app/routing/app_router.dart' show AreaRoomsRoute, SettingsSectionRoute;
 import 'package:pure_live/features/areas/area_follow_repository.dart';
 import 'package:pure_live/features/areas/areas_controller.dart';
+import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart';
+import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
 import 'package:pure_live/shared/platforms/platform_picker.dart';
 
 /// The areas page (the reference's `AreasPage`): the platforms' own
@@ -30,8 +32,17 @@ final class AreasPage extends ConsumerStatefulWidget {
 /// The two views the segmented control switches between.
 enum _AreasView { platform, followed }
 
-final class _AreasPageState extends ConsumerState<AreasPage> {
+final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBindingObserver {
   _AreasView _view = _AreasView.platform;
+
+  /// When the viewer last left the app, so a long absence refreshes on return.
+  DateTime? _backgroundedAt;
+
+  /// Warms the next platform after the viewer settles on this one.
+  Timer? _warmTimer;
+
+  static const Duration _warmDelay = Duration(milliseconds: 800);
+  static const Duration _resumeRefreshAfter = Duration(seconds: 15);
 
   /// One scroll controller per platform (the catalogue grid keeps each
   /// platform's place across tab switches); released with the page.
@@ -39,6 +50,8 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _warmTimer?.cancel();
     for (final controller in _scrolls.values) {
       controller.dispose();
     }
@@ -46,15 +59,45 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _backgroundedAt = DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      final away = _backgroundedAt == null ? Duration.zero : DateTime.now().difference(_backgroundedAt!);
+      _backgroundedAt = null;
+      if (away >= _resumeRefreshAfter) {
+        unawaited(ref.read(areasCatalogProvider.notifier).refresh(ref.read(areasSiteProvider)));
+      }
+    }
+  }
+
+  /// The platform after the shown one (or before, at the end) loads its
+  /// catalogue once the viewer has settled.
+  void _armWarmUp() {
+    _warmTimer?.cancel();
+    final ids = ref.read(areasCatalogProvider.notifier).platformIds();
+    if (ids.length < 2) return;
+    final index = ids.indexOf(ref.read(areasSiteProvider));
+    if (index < 0) return;
+    final next = index + 1 < ids.length ? index + 1 : index - 1;
+    _warmTimer = Timer(_warmDelay, () {
+      if (mounted) unawaited(ref.read(areasCatalogProvider.notifier).warm(ids[next]));
+    });
+  }
+
   ScrollController _scrollOf(String platform) => _scrolls[platform] ??= ScrollController();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // The catalogue never loads from inside its own build; the page asks.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(ref.read(areasCatalogProvider.notifier).open(ref.read(areasSiteProvider)));
+      _armWarmUp();
     });
+    ref.listenManual(areasSiteProvider, (_, _) => _armWarmUp());
   }
 
   @override
@@ -93,6 +136,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
                     onChanged: (id) {
                       ref.read(areasSiteProvider.notifier).selected = id;
                       unawaited(ref.read(areasCatalogProvider.notifier).open(id));
+                      _armWarmUp();
                     },
                   ),
                 ),
@@ -102,7 +146,23 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
         Expanded(
           child: _view == _AreasView.platform
               ? (ids.isEmpty
-                  ? Center(child: DsEmptyState(icon: const DsIcon(DsIcons.antenna), title: Text(t.areas.noPlatforms)))
+                  ? Center(
+                      child: DsEmptyState(
+                        icon: const DsIcon(DsIcons.antenna),
+                        title: Text(t.areas.noPlatforms),
+                        actions: [
+                          DsButton(
+                            variant: DsButtonVariant.secondary,
+                            size: DsSize.sm,
+                            leading: const DsIcon(DsIcons.antenna, size: 16),
+                            onPressed: () => unawaited(
+                              context.push(SettingsSectionRoute(section: SettingsSection.sites.name).location),
+                            ),
+                            child: Text(t.settings.sitesDisplay),
+                          ),
+                        ],
+                      ),
+                    )
                   : _PlatformAreas(
                       key: ValueKey('areas-$platform'),
                       platform: platform,
@@ -116,12 +176,14 @@ final class _AreasPageState extends ConsumerState<AreasPage> {
 
   String _platformName(String id) {
     final site = ref.watch(sitesProvider).getById(id);
-    return site?.manifest.name['zh-CN'] ?? id;
+    return site == null ? id : localizedSiteName(site);
   }
 }
 
-/// One platform's areas catalogue as the card grid.
-final class _PlatformAreas extends ConsumerWidget {
+/// One platform's areas catalogue: the platform's secondary category tabs
+/// (the reference's category row) over the card grid. A category the
+/// platform does not nest leaves the row away.
+final class _PlatformAreas extends ConsumerStatefulWidget {
   const _PlatformAreas({required this.platform, this.scrollController, super.key});
 
   /// The platform whose areas show.
@@ -131,31 +193,149 @@ final class _PlatformAreas extends ConsumerWidget {
   final ScrollController? scrollController;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PlatformAreas> createState() => _PlatformAreasState();
+}
+
+final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
+  /// The chosen parent category id, '' for every area.
+  String _category = '';
+
+  /// Moves the category tab one step, wrapping at both ends; a swipe left
+  /// goes forward, a swipe right back.
+  void _stepCategory(List<(String, String)> categories, int delta) {
+    final order = ['', for (final (id, _) in categories) id];
+    final index = order.indexOf(_category);
+    final next = order[(index + delta) % order.length];
+    if (next == _category) return;
+    setState(() => _category = next);
+    if (widget.scrollController?.hasClients ?? false) widget.scrollController!.jumpTo(0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final controller = ref.read(areasCatalogProvider.notifier);
-    final catalog = ref.watch(areasCatalogProvider.select((map) => map[platform]));
-    final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
+    final catalog = ref.watch(areasCatalogProvider.select((map) => map[widget.platform]));
+    final settings = ref.watch(browseSettingsProvider);
+    final followed = ref.watch(followedAreasProvider);
+    final followedKeys = {for (final area in followed.areas) area.identityKey};
     final state = catalog ?? (areas: const <LiveArea>[], loading: false, error: null);
-    return CardGrid<LiveArea>(
-      scrollController: scrollController,
-      items: state.areas,
-      cardExtent: cardExtent,
-      aspectRatio: 3.4,
-      isLoading: state.loading,
-      error: state.error?.message,
-      onRetry: () => controller.refresh(platform),
-      // A pull reloads the catalogue; a failure keeps the areas and is
-      // explained in the bar over them.
-      onRefresh: () => controller.refresh(platform),
-      refreshError: state.error?.message,
-      emptyIcon: DsIcons.layoutGrid,
-      emptyTitle: context.t.areas.noAreas,
-      itemBuilder: (context, area) => _AreaCard(
+    // The platform's own nesting: first-seen order, unique parents.
+    final categories = <(String, String)>[];
+    for (final area in state.areas) {
+      final id = area.parentAreaId;
+      final name = area.parentAreaName;
+      if (id == null || id.isEmpty || name == null || name.isEmpty) continue;
+      if (!categories.any((category) => category.$1 == id)) categories.add((id, name));
+    }
+    final category = categories.any((entry) => entry.$1 == _category) ? _category : '';
+    final items = category.isEmpty
+        ? state.areas
+        : [
+            for (final area in state.areas)
+              if (area.parentAreaId == category) area,
+          ];
+    Widget cardBuilder(BuildContext context, LiveArea area) {
+      final followed = followedKeys.contains(area.identityKey);
+      return _AreaCard(
         area: area,
         onSelect: () => unawaited(
-          context.push(AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location, extra: area),
+          context.push(
+            AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location,
+            extra: area,
+          ),
         ),
-      ),
+        trailing: _AreaFollowButton(
+          followed: followed,
+          onPressed: () => unawaited(ref.read(followedAreasProvider.notifier).toggle(area)),
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (categories.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DsTabs<String>(
+                value: category,
+                onChanged: (value) => setState(() => _category = value),
+                tabs: [
+                  DsTab<String>(value: '', label: Text(context.t.areas.categoryAll)),
+                  for (final (id, name) in categories) DsTab<String>(value: id, label: Text(name)),
+                ],
+              ),
+            ),
+          ),
+        Expanded(
+          // A horizontal swipe changes the category tab: the reference's
+          // category pager, without moving the platform's own tab.
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onHorizontalDragEnd: categories.isEmpty
+                ? null
+                : (details) {
+                    final velocity = details.primaryVelocity ?? 0;
+                    if (velocity.abs() < 240) return;
+                    _stepCategory(categories, velocity < 0 ? 1 : -1);
+                  },
+            child: CardGrid<LiveArea>(
+              scrollController: widget.scrollController,
+              items: items,
+              layout: ref.watch(browseLayoutProvider),
+              cardExtent: settings.homeCardExtent,
+              crossSpacing: settings.crossSpacing,
+              mainSpacing: settings.mainSpacing,
+              aspectRatio: 3.4,
+              isLoading: state.loading,
+              error: state.error?.message,
+              onRetry: () => controller.refresh(widget.platform),
+              // A pull reloads the catalogue; a failure keeps the areas and
+              // is explained in the bar over them.
+              onRefresh: () => controller.refresh(widget.platform),
+              refreshError: state.error?.message,
+              emptyIcon: DsIcons.layoutGrid,
+              emptyTitle: context.t.areas.noAreas,
+              itemBuilder: cardBuilder,
+              listItemBuilder: cardBuilder,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The heart on a platform area's card: filled while followed, a hollow
+/// heart while not; pressing it follows or unfollows the area.
+final class _AreaFollowButton extends StatelessWidget {
+  const _AreaFollowButton({required this.followed, required this.onPressed});
+
+  final bool followed;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    return DsPressable(
+      semanticLabel: followed ? t.areas.unfollow : t.areas.follow,
+      onPressed: onPressed,
+      builder: (context, states, _) {
+        final hovered = states.contains(WidgetState.hovered);
+        return DsIcon(
+          DsIcons.heart,
+          size: DsTheme.of(context).sizes.iconSm,
+          color: followed
+              ? hovered
+                    ? colors.danger.fill
+                    : colors.accent
+              : hovered
+              ? colors.accent
+              : colors.textSubtle,
+        );
+      },
     );
   }
 }
@@ -169,11 +349,14 @@ final class _FollowedAreas extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final followed = ref.watch(followedAreasProvider);
-    final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
+    final settings = ref.watch(browseSettingsProvider);
     if (!followed.ready) {
       return CardGrid<LiveArea>(
         items: const [],
-        cardExtent: cardExtent,
+        layout: ref.watch(browseLayoutProvider),
+        cardExtent: settings.homeCardExtent,
+        crossSpacing: settings.crossSpacing,
+        mainSpacing: settings.mainSpacing,
         aspectRatio: 3.4,
         isLoading: true,
         itemBuilder: (_, _) => const SizedBox.shrink(),
@@ -188,17 +371,22 @@ final class _FollowedAreas extends ConsumerWidget {
         ),
       );
     }
+    Widget cardBuilder(BuildContext context, LiveArea area) => _FollowedAreaCard(
+      area: area,
+      onUnfollow: () => unawaited(ref.read(followedAreasProvider.notifier).remove(area.identityKey)),
+      onSelect: () => unawaited(
+        context.push(AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location, extra: area),
+      ),
+    );
     return CardGrid<LiveArea>(
       items: followed.areas,
-      cardExtent: cardExtent,
+      layout: ref.watch(browseLayoutProvider),
+      cardExtent: settings.homeCardExtent,
+      crossSpacing: settings.crossSpacing,
+      mainSpacing: settings.mainSpacing,
       aspectRatio: 3.4,
-      itemBuilder: (context, area) => _FollowedAreaCard(
-        area: area,
-        onUnfollow: () => unawaited(ref.read(followedAreasProvider.notifier).remove(area.identityKey)),
-        onSelect: () => unawaited(
-          context.push(AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location, extra: area),
-        ),
-      ),
+      itemBuilder: cardBuilder,
+      listItemBuilder: cardBuilder,
     );
   }
 }

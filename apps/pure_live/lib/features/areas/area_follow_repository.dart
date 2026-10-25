@@ -101,6 +101,12 @@ final class FollowedAreasController extends Notifier<FollowedAreasState> {
     final repository = ref.read(areaFollowRepositoryProvider).value;
     if (repository != null) await repository.remove(identityKey);
   }
+
+  /// Follows the area when it is not, unfollows it when it is.
+  Future<void> toggle(LiveArea area) async {
+    final repository = ref.read(areaFollowRepositoryProvider).value;
+    if (repository != null) await repository.toggle(area);
+  }
 }
 
 /// The followed areas.

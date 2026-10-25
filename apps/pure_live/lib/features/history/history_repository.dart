@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/providers/refresh_settings_providers.dart' show historyLimitProvider;
+import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 
 /// How many watch records the history keeps; the oldest leave first.
 const int kHistoryLimit = 500;
@@ -46,6 +47,17 @@ final class HistoryRepository {
     final merged = stored == null ? room : LiveRoom.fromJson(_jsonOf(stored)).mergedWith(room);
     final json = {...merged.toJson(), 'lastWatchedAt': at.toIso8601String()};
     return box.save(key, json).then((_) => _trim(limit));
+  }
+
+  /// Replaces a stored record's room with a fresher read, keeping the
+  /// moment it was watched (a refresh must not reorder the list).
+  Future<void> updateRoom(LiveRoom room) async {
+    final key = room.ref.identityKey;
+    final stored = box.get(key);
+    if (stored == null) return;
+    final watchedAt = _watchedAt(stored);
+    final merged = LiveRoom.fromJson(_jsonOf(stored)).mergedWith(room);
+    await box.save(key, {...merged.toJson(), 'lastWatchedAt': watchedAt.toIso8601String()});
   }
 
   /// Drops the record behind [identityKey]; a room never watched is a
@@ -128,6 +140,35 @@ final class HistoryController extends Notifier<HistoryState> {
     final repository = ref.read(historyRepositoryProvider).value;
     if (repository == null) return;
     await repository.record(room, DateTime.now().toUtc(), limit: ref.read(historyLimitProvider));
+  }
+
+  /// Re-reads [rooms] through each platform's refresh capability, keeping
+  /// the watch moments; answers how many could not be refreshed.
+  Future<int> refreshRooms(List<LiveRoom> rooms, {void Function(int done, int total)? onProgress}) async {
+    final repository = ref.read(historyRepositoryProvider).value;
+    if (repository == null) return rooms.length;
+    var failed = 0;
+    var done = 0;
+    onProgress?.call(done, rooms.length);
+    for (final room in rooms) {
+      final refresh = ref.read(sitesProvider).getById(room.ref.platform)?.capability<LiveRoomRefresh>();
+      if (refresh == null) {
+        failed++;
+        onProgress?.call(++done, rooms.length);
+        continue;
+      }
+      final answer = await refresh.getRoomForRefresh(roomId: room.ref.roomId);
+      await answer.match(
+        (_) async {
+          failed++;
+        },
+        (fresh) async {
+          await repository.updateRoom(fresh);
+        },
+      );
+      onProgress?.call(++done, rooms.length);
+    }
+    return failed;
   }
 
   /// Drops one record.

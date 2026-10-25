@@ -118,6 +118,32 @@ final class FollowsController extends Notifier<FollowsState> {
     await repository.remove(identityKey);
   }
 
+  /// Replaces the local tag ids of the followed room behind [identityKey];
+  /// a room no longer followed is a no-op.
+  Future<void> setTags(String identityKey, List<String> tagIds) async {
+    final repository = ref.read(followRepositoryProvider).value;
+    final room = state.rooms.where((entry) => entry.ref.identityKey == identityKey).firstOrNull;
+    if (repository == null || room == null) return;
+    final updated = room.rebuild((b) => b..local.tagIds.replace(tagIds));
+    await repository.add(updated);
+  }
+
+  /// Strips [tagId] from every followed room that carries it.
+  Future<void> stripTag(String tagId) async {
+    final repository = ref.read(followRepositoryProvider).value;
+    if (repository == null) return;
+    for (final room in state.rooms) {
+      if (!room.local.tagIds.contains(tagId)) continue;
+      final updated = room.rebuild(
+        (b) => b..local.tagIds.replace([
+          for (final id in room.local.tagIds)
+            if (id != tagId) id,
+        ]),
+      );
+      await repository.add(updated);
+    }
+  }
+
   /// Refreshes every followed room against its platform (the reference's
   /// `FollowRefresher`): the room provider asks each site for the room as
   /// it is now, and what comes back merges into the stored copy — a stale

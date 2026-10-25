@@ -4,16 +4,23 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
+import 'package:pure_live/app/providers/browse_settings_providers.dart' show browseLayoutProvider, browseSettingsProvider;
 import 'package:pure_live/app/providers/refresh_settings_providers.dart' show historyLimitProvider;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/history/history_limit_dialog.dart';
 import 'package:pure_live/features/history/history_repository.dart';
+import 'package:pure_live/features/room/room_details.dart' show copyRoomLink, roomLinkOf;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/grids/card_grid.dart' show CardLayout;
+import 'package:pure_live/shared/grids/room_cover_chip.dart' show RoomCoverChip;
 import 'package:pure_live/shared/images/app_image_cache.dart';
+import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
 
 /// The live module's history (the reference's `HistoryPage`): the watched
-/// rooms grouped by day — 今天 / 昨天 / 更早, like the reference's history
+/// rooms grouped by day — Today / Yesterday / Earlier, like the reference's history
 /// sections — each as a full-width list card; one row's x drops its
 /// record, the header's button drops them all.
 ///
@@ -36,6 +43,9 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
 
   /// A destructive change is running; its buttons wait.
   bool _busy = false;
+
+  /// The refresh's progress (0..1); null when none runs.
+  double? _progress;
 
   @override
   void dispose() {
@@ -96,8 +106,14 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
               onQueryChanged: (_) => setState(() {}),
               onToggleFilter: _toggleFilter,
               onEditLimit: () => unawaited(_editLimit()),
+              onRefresh: () => unawaited(_refreshAll(history.records)),
               onClear: () => unawaited(_clear()),
             ),
+            if (_progress case final progress?)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s6),
+                child: DsProgressBar(value: progress, semanticLabel: t.history.refresh),
+              ),
             Expanded(child: _body(t, history.records, shown)),
           ],
         ),
@@ -133,6 +149,8 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
       );
     }
     final sections = _daySections(t, shown, DateTime.now());
+    final layout = ref.watch(browseLayoutProvider);
+    final settings = ref.watch(browseSettingsProvider);
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
       child: Column(
@@ -150,8 +168,39 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                 ),
               ),
             ),
-            for (final (room, _) in records)
-              _HistoryCard(room: room, onRemove: _busy ? null : () => unawaited(_remove(room))),
+            if (layout == CardLayout.list)
+              for (final (room, _) in records)
+                _HistoryCard(
+                  room: room,
+                  onOpen: () => unawaited(
+                    context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+                  ),
+                  onRemove: _busy ? null : () => unawaited(_remove(room)),
+                )
+            else
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: settings.homeCardExtent,
+                  crossAxisSpacing: settings.crossSpacing,
+                  mainAxisSpacing: settings.mainSpacing,
+                  childAspectRatio: 1.35,
+                ),
+                itemCount: records.length,
+                itemBuilder: (context, index) {
+                  final (room, watchedAt) = records[index];
+                  return _HistoryGridCard(
+                    room: room,
+                    watchedAt: watchedAt,
+                    onOpen: () => unawaited(
+                      context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+                    ),
+                    onRemove: _busy ? null : () => unawaited(_remove(room)),
+                  );
+                },
+              ),
           ],
         ],
       ),
@@ -173,7 +222,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   /// name contains [needle] (any case).
   bool _matches(LiveRoom room, String needle) {
     final site = ref.read(sitesProvider).getById(room.ref.platform);
-    final platformName = site?.manifest.name['zh-CN'] ?? '';
+    final platformName = site == null ? '' : localizedSiteName(site);
     return [
       room.content.title,
       room.anchor?.name ?? '',
@@ -212,6 +261,38 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
       _resetFilter();
     } else {
       _closeFilter();
+    }
+  }
+
+  /// Re-reads every record's room state, keeping each watch moment; the
+  /// failures are counted rather than hidden.
+  Future<void> _refreshAll(List<(LiveRoom, DateTime)> records) async {
+    if (_busy || records.isEmpty) return;
+    setState(() {
+      _busy = true;
+      _progress = 0;
+    });
+    try {
+      final failed = await ref.read(historyProvider.notifier).refreshRooms(
+        [for (final (room, _) in records) room],
+        onProgress: (done, total) {
+          if (mounted) setState(() => _progress = total == 0 ? null : done / total);
+        },
+      );
+      if (failed > 0 && mounted) {
+        showDsToast(
+          context: context,
+          title: context.t.history.refreshFailed(count: failed),
+          status: DsStatus.danger,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _progress = null;
+        });
+      }
     }
   }
 
@@ -298,7 +379,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     return title.isEmpty ? room.ref.roomId : title;
   }
 
-  /// Splits the records into 今天 / 昨天 / 更早, keeping each section's
+  /// Splits the records into Today / Yesterday / Earlier, keeping each section's
   /// order; an empty day never shows.
   List<(String, List<(LiveRoom, DateTime)>)> _daySections(
     Translations t,
@@ -346,6 +427,7 @@ final class _Header extends StatelessWidget {
     required this.onQueryChanged,
     required this.onToggleFilter,
     required this.onEditLimit,
+    required this.onRefresh,
     required this.onClear,
   });
 
@@ -360,6 +442,7 @@ final class _Header extends StatelessWidget {
   final ValueChanged<String> onQueryChanged;
   final VoidCallback onToggleFilter;
   final VoidCallback onEditLimit;
+  final VoidCallback onRefresh;
   final VoidCallback onClear;
 
   @override
@@ -381,6 +464,13 @@ final class _Header extends StatelessWidget {
               Text(
                 t.history.recordCount(count: total, limit: limit),
                 style: theme.typography.small.copyWith(color: colors.textMuted),
+              ),
+              DsButton(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.refreshCw),
+                onPressed: busy || total == 0 ? null : onRefresh,
+                child: Text(t.history.refresh),
               ),
               DsButton(
                 variant: filtering ? DsButtonVariant.tinted : DsButtonVariant.secondary,
@@ -433,9 +523,12 @@ final class _Header extends StatelessWidget {
 /// One watched room as a list card: the cover as a thumb, the title, the
 /// streamer, and the record's remove button.
 final class _HistoryCard extends StatelessWidget {
-  const _HistoryCard({required this.room, required this.onRemove});
+  const _HistoryCard({required this.room, required this.onOpen, required this.onRemove});
 
   final LiveRoom room;
+
+  /// Opens the room again.
+  final VoidCallback onOpen;
 
   /// Null while another change runs.
   final VoidCallback? onRemove;
@@ -444,11 +537,15 @@ final class _HistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    return DsPressable(
-      onPressed: null,
-      builder: (context, states, _) {
-        final hovered = states.contains(WidgetState.hovered);
-        return Container(
+    final t = context.t;
+    return DsContextMenuRegion(
+      semanticLabel: t.common.more,
+      items: _historyMenuItems(context, room, onOpen: onOpen, onRemove: onRemove),
+      child: DsPressable(
+        onPressed: onOpen,
+        builder: (context, states, _) {
+          final hovered = states.contains(WidgetState.hovered);
+          return Container(
           padding: const EdgeInsets.all(DsSpace.s8),
           decoration: DsBoxDecoration(
             color: hovered ? colors.hover : null,
@@ -506,8 +603,128 @@ final class _HistoryCard extends StatelessWidget {
             ],
           ),
         );
-      },
+        },
+      ),
     );
+  }
+}
+
+/// The history card's context menu: open, copy the room's link, remove.
+List<Widget> _historyMenuItems(
+  BuildContext context,
+  LiveRoom room, {
+  required VoidCallback onOpen,
+  required VoidCallback? onRemove,
+}) {
+  final t = context.t;
+  final link = roomLinkOf(room);
+  return [
+    DsMenuItem(
+      leading: const DsIcon(DsIcons.play),
+      label: Text(t.history.openRoom),
+      onPressed: onOpen,
+    ),
+    if (link.isNotEmpty)
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.link),
+        label: Text(t.room.copyLink),
+        onPressed: () => unawaited(copyRoomLink(context, room)),
+      ),
+    const DsMenuDivider(),
+    DsMenuItem(
+      leading: const DsIcon(DsIcons.trash2),
+      label: Text(t.history.remove),
+      destructive: true,
+      onPressed: onRemove,
+    ),
+  ];
+}
+
+/// One watched room as a grid card: its cover, the title and streamer
+/// beneath, and the watch clock over the picture; the same context menu as
+/// the list card.
+final class _HistoryGridCard extends StatelessWidget {
+  const _HistoryGridCard({
+    required this.room,
+    required this.watchedAt,
+    required this.onOpen,
+    required this.onRemove,
+  });
+
+  final LiveRoom room;
+  final DateTime watchedAt;
+  final VoidCallback onOpen;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    return DsContextMenuRegion(
+      semanticLabel: context.t.common.more,
+      items: _historyMenuItems(context, room, onOpen: onOpen, onRemove: onRemove),
+      child: DsCard(
+        onPressed: onOpen,
+        style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: BorderRadius.circular(theme.radii.card)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Stack(
+              children: [
+                DsImage(
+                  image: cachedImage(room.content.coverUrl),
+                  aspectRatio: 16 / 9,
+                  semanticLabel: room.content.title,
+                  style: DsImageStyle(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
+                  ),
+                ),
+                PositionedDirectional(
+                  bottom: DsSpace.s6,
+                  end: DsSpace.s6,
+                  child: RoomCoverChip(text: _watchClock(watchedAt)),
+                ),
+              ],
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: 3,
+                  children: [
+                    Text(
+                      room.content.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                    ),
+                    Text(
+                      room.anchor?.name ?? room.ref.roomId,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// The moment watched, as a clock on today's records and a short date
+  /// otherwise.
+  static String _watchClock(DateTime time) {
+    final local = time.toLocal();
+    final now = DateTime.now();
+    String two(int value) => value.toString().padLeft(2, '0');
+    final clock = '${two(local.hour)}:${two(local.minute)}';
+    final sameDay = local.year == now.year && local.month == now.month && local.day == now.day;
+    return sameDay ? clock : '${two(local.month)}-${two(local.day)}';
   }
 }
 

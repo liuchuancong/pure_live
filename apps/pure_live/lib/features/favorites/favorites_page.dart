@@ -10,19 +10,24 @@ import 'package:pure_live/app/providers/refresh_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/app/routing/app_router.dart' show RoomRoute, SearchRoute;
 import 'package:pure_live/features/favorites/favorite_rules.dart';
+import 'package:pure_live/features/favorites/favorites_widgets.dart';
 import 'package:pure_live/features/favorites/follow_repository.dart';
-import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
+import 'package:pure_live/features/favorites/follow_tag_picker.dart' show showFollowTagPicker;
+import 'package:pure_live/features/favorites/follow_tags.dart' show followTagsProvider;
 import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider, sitesOrderProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
+import 'package:pure_live/shared/grids/layout_toggle.dart' show LayoutToggle;
+import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon, localizedSiteName;
 import 'package:pure_live/shared/platforms/platform_picker.dart' show kAllPlatforms;
 
-/// The follows page (the reference's `FavoritePage`): the group tabs (all,
-/// live, replay, offline — each with its count on the shown platform)
-/// above the platform tabs (each with its count in the shown group), a
-/// refresh button over the visible slice with its progress bar, and the
-/// followed rooms as the home feed's own card grid with an unfollow heart
-/// on each cover.
+/// The follows page (the reference's `FavoritePage`): the group tabs (live,
+/// replay, offline, all — each with its count on the shown platform) above
+/// the platform tabs (each with its count in the shown group), a refresh
+/// button over the visible slice with its progress bar, and the followed
+/// rooms as cards carrying their audience over the cover and a
+/// streamer · status · audience line, with the reference's pager under
+/// them once they fill more than one page.
 final class FavoritesPage extends ConsumerStatefulWidget {
   /// The favorites page.
   const FavoritesPage({super.key});
@@ -45,6 +50,21 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   /// Progress of the visible refresh (0..1); null when none is shown.
   double? _progress;
 
+  /// The tag shown, or null for every tag.
+  String? _tag;
+
+  /// The page shown on the bottom pager, from 1.
+  int _page = 1;
+
+  /// How many follows one page holds.
+  int _pageSize = 20;
+
+  /// The pager's page sizes (the reference's desktop choices).
+  static const List<int> _pageSizes = [20, 40, 60, 80];
+
+  /// The grid's position, so a new page starts at its top.
+  final ScrollController _gridScroll = ScrollController();
+
   Timer? _autoRefresh;
 
   @override
@@ -60,6 +80,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _autoRefresh?.cancel();
+    _gridScroll.dispose();
     super.dispose();
   }
 
@@ -143,11 +164,53 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     setState(() => _progress = total == 0 ? 1 : done / total);
   }
 
+  /// Switches the group: a new slice starts on its first page.
+  void _selectGroup(LiveFollowGroup? group) {
+    if (_group == group) return;
+    setState(() {
+      _group = group;
+      _page = 1;
+    });
+    _jumpToTop();
+  }
+
+  /// Switches the platform: a new slice starts on its first page.
+  void _selectPlatform(String platform) {
+    if (_platform == platform) return;
+    setState(() {
+      _platform = platform;
+      _page = 1;
+    });
+    _jumpToTop();
+  }
+
+  /// Shows [page] and scrolls the cards back to the top.
+  void _goToPage(int page) {
+    setState(() => _page = page);
+    _jumpToTop();
+  }
+
+  /// Changes the page size, keeping the first room the viewer was seeing
+  /// on the page it lands on (the reference's `onPageSize`).
+  void _changePageSize(int size) {
+    final firstIndex = (_page - 1) * _pageSize;
+    setState(() {
+      _pageSize = size;
+      _page = firstIndex ~/ size + 1;
+    });
+    _jumpToTop();
+  }
+
+  void _jumpToTop() {
+    if (_gridScroll.hasClients) _gridScroll.jumpTo(0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final follows = ref.watch(followsProvider);
     final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
+    final layout = ref.watch(browseLayoutProvider);
     // A platform switched off, or the order dragged, in the settings
     // surface reorders the tabs.
     ref
@@ -180,6 +243,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
       }
       return CardGrid<LiveRoom>(
         items: const [],
+        layout: layout,
         cardExtent: cardExtent,
         isLoading: true,
         itemBuilder: (_, _) => const SizedBox.shrink(),
@@ -209,12 +273,57 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     final platformTabs = followPlatformTabs(follows.rooms, ref.read(sitesDisplayProvider.notifier).visibleIds());
     final platform = platformTabs.contains(_platform) ? _platform : kAllPlatforms;
     final scope = platform == kAllPlatforms ? null : platform;
+    final tags = ref.watch(followTagsProvider);
+    // A tag removed while selected falls back to every tag rather than
+    // showing an empty page nobody can explain.
+    final selectedTag = tags.any((tag) => tag.id == _tag) ? _tag : null;
+    final tagNames = {for (final tag in tags) tag.id: tag.name};
     final counts = followGroupCounts(follows.rooms, scope);
     final total = followCount(follows.rooms, platform: scope);
     final rooms = [
       for (final room in follows.rooms)
-        if (onFollowPlatform(room, scope) && (_group == null || followGroupOf(room) == _group)) room,
+        if (onFollowPlatform(room, scope) &&
+            (_group == null || followGroupOf(room) == _group) &&
+            (selectedTag == null || room.local.tagIds.contains(selectedTag)))
+          room,
     ];
+    // The pager slices the loaded follows locally; the shown page is kept
+    // inside the slice that is left after a filter or an unfollow.
+    final lastPage = rooms.isEmpty ? 1 : (rooms.length + _pageSize - 1) ~/ _pageSize;
+    final page = _page.clamp(1, lastPage);
+    final start = (page - 1) * _pageSize;
+    final end = start + _pageSize > rooms.length ? rooms.length : start + _pageSize;
+    final visibleRooms = rooms.sublist(start, end);
+
+    Widget cardFor(LiveRoom room, {required bool compact}) {
+      final names = [
+        for (final id in room.local.tagIds) ?tagNames[id],
+      ];
+      return DsContextMenuRegion(
+        semanticLabel: t.common.more,
+        items: [
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.tag),
+            label: Text(t.favorites.setTags),
+            onPressed: () => unawaited(showFollowTagPicker(context, room)),
+          ),
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.heartCrack),
+            label: Text(t.favorites.unfollow),
+            destructive: true,
+            onPressed: () => unawaited(ref.read(followsProvider.notifier).remove(room.ref.identityKey)),
+          ),
+        ],
+        child: FollowedRoomCard(
+          room: room,
+          compact: compact,
+          tags: names,
+          platformName: platform == kAllPlatforms ? _platformName(room.ref.platform) : null,
+          onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+          onUnfollow: () => unawaited(ref.read(followsProvider.notifier).remove(room.ref.identityKey)),
+        ),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -232,12 +341,12 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                   Expanded(
                     child: DsTabs<LiveFollowGroup?>(
                       value: _group,
-                      onChanged: (value) => setState(() => _group = value),
+                      onChanged: _selectGroup,
                       tabs: [
-                        DsTab<LiveFollowGroup?>(value: null, label: Text(t.favorites.statusAll), count: total),
+                        // The reference's order: live, replay, offline, all.
                         DsTab<LiveFollowGroup?>(
                           value: LiveFollowGroup.live,
-                          label: Text(t.favorites.statusLive),
+                          label: Text(t.favorites.statusLiveNow),
                           count: counts[LiveFollowGroup.live],
                         ),
                         DsTab<LiveFollowGroup?>(
@@ -247,13 +356,16 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                         ),
                         DsTab<LiveFollowGroup?>(
                           value: LiveFollowGroup.offline,
-                          label: Text(t.favorites.statusOffline),
+                          label: Text(t.favorites.statusOfflineNow),
                           count: counts[LiveFollowGroup.offline],
                         ),
+                        DsTab<LiveFollowGroup?>(value: null, label: Text(t.favorites.statusAll), count: total),
                       ],
                     ),
                   ),
                   const SizedBox(width: DsSpace.s12),
+                  const LayoutToggle(),
+                  const SizedBox(width: DsSpace.s8),
                   _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
                 ],
               ),
@@ -261,16 +373,35 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
               // in the configured order, each with its count in the group.
               DsTabs<String>(
                 value: platform,
-                onChanged: (value) => setState(() => _platform = value),
+                onChanged: _selectPlatform,
                 tabs: [
                   for (final id in <String>[kAllPlatforms, ...platformTabs])
                     DsTab<String>(
                       value: id,
-                      label: Text(_platformName(id)),
+                      label: id == kAllPlatforms
+                          ? Text(_platformName(id))
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              spacing: 6,
+                              children: [
+                                ?localizedSiteIcon(ref.read(sitesProvider).getById(id), size: 14),
+                                Text(_platformName(id)),
+                              ],
+                            ),
                       count: followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
                     ),
                 ],
               ),
+              if (tags.isNotEmpty)
+                DsChoiceChips<String?>(
+                  value: selectedTag,
+                  onChanged: (value) => setState(() => _tag = value),
+                  semanticLabel: t.favorites.tagsFilter,
+                  options: [
+                    DsChipOption(value: null, label: Text(t.favorites.allTags)),
+                    for (final tag in tags) DsChipOption(value: tag.id, label: Text(tag.name)),
+                  ],
+                ),
               if (_progress case final progress?)
                 DsProgressBar(
                   value: progress,
@@ -287,19 +418,30 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                     group: _group,
                     offlineCount: counts[LiveFollowGroup.offline] ?? 0,
                     refreshing: _refreshing,
-                    onShowOffline: () => setState(() => _group = LiveFollowGroup.offline),
+                    onShowOffline: () => _selectGroup(LiveFollowGroup.offline),
                     onRefresh: _runRefresh,
                   ),
                 )
               : CardGrid<LiveRoom>(
-                  items: rooms,
+                  items: visibleRooms,
+                  layout: layout,
+                  listItemBuilder: (context, room) => cardFor(room, compact: true),
                   cardExtent: cardExtent,
-                  itemBuilder: (context, room) => _FollowedCard(
-                    room: room,
-                    onUnfollow: () => unawaited(ref.read(followsProvider.notifier).remove(room.ref.identityKey)),
-                  ),
+                  scrollController: _gridScroll,
+                  itemBuilder: (context, room) => cardFor(room, compact: false),
                 ),
         ),
+        if (lastPage > 1)
+          FavoritesPager(
+            page: page,
+            pageCount: lastPage,
+            pageSize: _pageSize,
+            busy: _refreshing,
+            pageSizes: _pageSizes,
+            onPage: _goToPage,
+            onPageSize: _changePageSize,
+            onRefresh: _runRefresh,
+          ),
       ],
     );
   }
@@ -307,7 +449,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   String _platformName(String id) {
     if (id == kAllPlatforms) return context.t.favorites.statusAll;
     final site = ref.read(sitesProvider).getById(id);
-    return site?.manifest.name['zh-CN'] ?? id;
+    return site == null ? id : localizedSiteName(site);
   }
 }
 
@@ -392,51 +534,6 @@ final class _RefreshButton extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-/// A followed room's card: the home feed's card with the heart on its
-/// cover, pressed to unfollow.
-final class _FollowedCard extends StatelessWidget {
-  const _FollowedCard({required this.room, required this.onUnfollow});
-
-  final LiveRoom room;
-  final VoidCallback onUnfollow;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return Stack(
-      children: [
-        RoomCard(
-          room: room,
-          onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
-        ),
-        PositionedDirectional(
-          top: DsSpace.s8,
-          end: DsSpace.s8,
-          child: DsPressable(
-            semanticLabel: context.t.favorites.unfollow,
-            onPressed: onUnfollow,
-            builder: (context, states, _) {
-              final hovered = states.contains(WidgetState.hovered);
-              return Container(
-                width: theme.sizes.sm,
-                height: theme.sizes.sm,
-                decoration: DsBoxDecoration(
-                  color: hovered ? colors.danger.fill : colors.overlay,
-                  borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
-                ),
-                child: Center(
-                  child: DsIcon(DsIcons.heart, size: theme.sizes.iconSm, color: colors.text),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 }
