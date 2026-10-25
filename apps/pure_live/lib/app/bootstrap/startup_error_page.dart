@@ -15,11 +15,16 @@ final class StartupErrorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DsScope(
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text('启动失败:$error', textAlign: TextAlign.center),
+    return Directionality(
+      // The app's own Directionality lives under the router, which never
+      // mounted; the error page must still be able to draw text.
+      textDirection: TextDirection.ltr,
+      child: DsScope(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text('启动失败:$error', textAlign: TextAlign.center),
+          ),
         ),
       ),
     );

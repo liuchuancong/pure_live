@@ -46,21 +46,31 @@ final class WindowManagerHost implements WindowHost {
   @override
   Stream<WindowEvent> get events => _events.stream;
 
-  /// The current engine's window, asked for on every use rather than cached: a
-  /// window the runner rebuilt (lightweight mode, a render failure) is a new
-  /// native object, and a cached reference would dress the corpse.
-  wm.Window get _window {
-    final window = _windowOrNull;
-    if (window == null) {
-      throw StateError('the current engine owns no top-level window');
-    }
-    return window;
-  }
-
   /// The window, or null while the native side has not registered one yet —
   /// a gap every read must tolerate, because the first widget frame can be
-  /// built before the registration lands. Only the verbs assert.
-  wm.Window? get _windowOrNull => wm.WindowManager.instance.getCurrent();
+  /// built before the registration lands.
+  wm.Window? get _windowOrNull {
+    try {
+      return wm.WindowManager.instance.getCurrent();
+    } on Object {
+      return null;
+    }
+  }
+
+  /// The current engine's window for a verb. A hot restart can leave the
+  /// plugin's registration a moment behind the first boot task, so a missing
+  /// window is waited for briefly; a host that truly has none skips the verb
+  /// rather than turning a startup race into a failed boot.
+  Future<wm.Window?> _windowForVerb() async {
+    final existing = _windowOrNull;
+    if (existing != null) return existing;
+    for (var attempt = 0; attempt < 20; attempt++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      final window = _windowOrNull;
+      if (window != null) return window;
+    }
+    return null;
+  }
 
   /// Subscribes to the plugin. Calling it again does nothing.
   ///
@@ -130,14 +140,16 @@ final class WindowManagerHost implements WindowHost {
 
   @override
   Future<void> show({bool inactive = false}) async {
+    final window = await _windowForVerb();
+    if (window == null) return;
     // A popup is never raised onto the keyboard, whoever asks: that is what its
     // role means, and a caller that passes `inactive: false` to a popup is
     // describing a focus change it cannot have.
     final keepBack = inactive || !role.takesFocusOnShow;
     if (keepBack) {
-      _window.showInactive();
+      window.showInactive();
     } else {
-      _window
+      window
         ..show()
         ..focus();
     }
@@ -146,28 +158,36 @@ final class WindowManagerHost implements WindowHost {
 
   @override
   Future<void> hide() async {
-    _window.hide();
+    final window = await _windowForVerb();
+    if (window == null) return;
+    window.hide();
     _emit(WindowEvent.hidden);
   }
 
   @override
   Future<void> minimize() async {
-    _window.minimize();
+    final window = await _windowForVerb();
+    if (window == null) return;
+    window.minimize();
   }
 
   @override
   Future<void> restore() async {
-    _window.restore();
+    final window = await _windowForVerb();
+    if (window == null) return;
+    window.restore();
     _emit(WindowEvent.restored);
   }
 
   @override
   Future<bool> toggleMaximize() async {
-    if (_window.isMaximized) {
-      _window.unmaximize();
+    final window = await _windowForVerb();
+    if (window == null) return false;
+    if (window.isMaximized) {
+      window.unmaximize();
       return false;
     }
-    _window.maximize();
+    window.maximize();
     return true;
   }
 
@@ -185,7 +205,9 @@ final class WindowManagerHost implements WindowHost {
 
   @override
   Future<void> close() async {
-    _window.close();
+    final window = await _windowForVerb();
+    if (window == null) return;
+    window.close();
   }
 
   @override
@@ -194,7 +216,8 @@ final class WindowManagerHost implements WindowHost {
     // which is how a prevent-close window still dies when the shell has
     // decided to quit.
     _destroying = true;
-    _window.close();
+    final window = await _windowForVerb();
+    window?.close();
     _alive = false;
     _emit(WindowEvent.closed);
   }
@@ -223,40 +246,52 @@ final class WindowManagerHost implements WindowHost {
 
   @override
   Future<void> setGeometry(WindowGeometry geometry) async {
+    final window = await _windowForVerb();
+    if (window == null) return;
     // A maximised window is asked to be maximised rather than sized to the work
     // area: sizing it leaves the window manager outside its own maximised state,
     // so the restore button returns the wrong size and snap-to-edge stops
     // working on a window that is visibly full screen.
     if (geometry.maximized) {
-      _window.maximize();
+      window.maximize();
       return;
     }
-    _window.bounds = frameToRect(geometry.frame).toNative();
+    window.bounds = frameToRect(geometry.frame).toNative();
   }
 
   @override
   Future<void> center() async {
-    _window.center();
+    final window = await _windowForVerb();
+    if (window == null) return;
+    window.center();
   }
 
   @override
   Future<void> setAlwaysOnTop({required bool value}) async {
-    _window.isAlwaysOnTop = value;
+    final window = await _windowForVerb();
+    if (window == null) return;
+    window.isAlwaysOnTop = value;
   }
 
   @override
   Future<void> setResizable({required bool value}) async {
-    _window.isResizable = value;
+    final window = await _windowForVerb();
+    if (window == null) return;
+    window.isResizable = value;
   }
 
   @override
   Future<void> setTitle(String value) async {
-    _window.title = value;
+    final window = await _windowForVerb();
+    if (window == null) return;
+    window.title = value;
   }
 
   @override
   Future<void> startDragging() async {
-    _window.startDragging();
+    final window = await _windowForVerb();
+    if (window == null) return;
+    window.startDragging();
   }
 
   @override
