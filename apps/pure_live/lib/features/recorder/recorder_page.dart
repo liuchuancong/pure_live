@@ -3,22 +3,22 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart' show LiveAudienceMetricType, LiveRoom;
 import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:path/path.dart' as p;
 
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
 import 'package:pure_live/features/history/history_repository.dart' show historyProvider;
 import 'package:pure_live/features/recorder/recorder_engine.dart' show recorderEngineProvider;
 import 'package:pure_live/features/recorder/recording_repository.dart';
 import 'package:pure_live/features/recorder/recording_settings.dart';
 import 'package:pure_live/features/recorder/recording_task.dart';
+import 'package:pure_live/features/settings/settings_widgets.dart' show SettingsChoiceRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart' show cachedImage;
+import 'package:pure_live/shared/navigation/room_opener.dart';
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
 
@@ -76,7 +76,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final colors = DsTheme.colorsOf(context);
     final store = ref.watch(recordingTasksProvider);
     // The tasks store their room's identity only; the room itself (cover,
-    // streamer, audience) is the snapshot the follows and history boxes
+    // streamer, audience) is the snapshot the follows and history stores
     // keep under the same key (`platform:roomId`), so the card shows real
     // room facts without the recording model growing copies of them.
     final follows = ref.watch(followsProvider);
@@ -115,7 +115,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           task: task,
           room: rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'],
           platformName: _platformName(task.platform),
-          onOpen: () => unawaited(context.push(RoomRoute(platform: task.platform, roomId: task.roomId).location)),
+          onOpen: () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId)),
           onStop: ref.read(recorderEngineProvider).isRecording(task.id) ? () => unawaited(_stop(task.id)) : null,
           onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
         ),
@@ -510,9 +510,7 @@ String _formatBytes(int bytes) {
 
 /// A recording cap in the unit the settings use: whole megabytes below a
 /// gigabyte, one decimal above.
-String _formatMb(int megabytes) => megabytes >= 1024
-    ? '${(megabytes / 1024).toStringAsFixed(1)} GB'
-    : '$megabytes MB';
+String _formatMb(int megabytes) => megabytes >= 1024 ? '${(megabytes / 1024).toStringAsFixed(1)} GB' : '$megabytes MB';
 
 /// A local moment for a task list row: the clock on today's entries, a
 /// short date with the clock otherwise.
@@ -556,12 +554,7 @@ final class _RecordSlider extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      DsListRow(
-        leading: DsIcon(icon),
-        title: Text(title),
-        description: Text(description),
-        detail: Text(detail),
-      ),
+      DsListRow(leading: DsIcon(icon), title: Text(title), description: Text(description), detail: Text(detail)),
       Padding(
         padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
         child: DsSlider(
@@ -606,12 +599,7 @@ final class _RecordSwitch extends StatelessWidget {
 /// picker): the segmented control needs the row's width, not the trailing
 /// column.
 final class _RecordChoice extends StatelessWidget {
-  const _RecordChoice({
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.child,
-  });
+  const _RecordChoice({required this.icon, required this.title, required this.description, required this.child});
 
   final DsIconData icon;
   final String title;
@@ -801,21 +789,15 @@ final class RecordingSettingsPane extends ConsumerWidget {
               value: settings.keepAlive,
               onChanged: (value) => controller.keepAlive = value,
             ),
-            DsListRow(
+            SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.listOrdered),
-              title: Text(t.recorder.queueTitle),
-              description: Text(t.recorder.queueDescription),
-              trailing: DsSelect<int>(
-                value: _queueChoice(settings.queueSize),
-                onChanged: (value) {
-                  if (value != null) controller.queueSize = value;
-                },
-                options: [
-                  for (final size in const [1024, 2048, 4096, 8192])
-                    DsSelectOption(value: size, label: '$size'),
-                ],
-                semanticLabel: t.recorder.queueTitle,
-              ),
+              title: t.recorder.queueTitle,
+              description: t.recorder.queueDescription,
+              value: _queueChoice(settings.queueSize),
+              options: [
+                for (final size in const [1024, 2048, 4096, 8192]) DsSelectOption(value: size, label: '$size'),
+              ],
+              onChanged: (value) => controller.queueSize = value,
             ),
             _RecordSlider(
               icon: DsIcons.copy,

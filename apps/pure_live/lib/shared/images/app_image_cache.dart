@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import 'package:cached_network_image_ce/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart' show CachedNetworkImageProvider;
 import 'package:flutter/widgets.dart' show ImageProvider;
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -11,27 +12,68 @@ import 'package:path_provider/path_provider.dart';
 /// Every image the app draws from the network goes through [cachedImage],
 /// which hands the [CachedNetworkImageProvider] this manager — so the bytes
 /// live in one folder, age out after the manager's stale period, and can be
-/// measured, cleared and capped from the settings surface. (Before this,
-/// images used `Image.network`: memory only, nothing on disk to manage.)
-final DefaultCacheManager appImageCache = DefaultCacheManager(
-  stalePeriod: const Duration(days: 30),
-  maxNrOfCacheObjects: 320,
+/// measured, cleared and capped from the settings surface.
+final CacheManager appImageCache = CacheManager(
+  Config(_cacheFolder, stalePeriod: const Duration(days: 30), maxNrOfCacheObjects: 320),
 );
 
-/// The folder the manager keeps its image files in, under the temporary
-/// directory. Its `hive` subfolder is metadata and is never counted or
-/// pruned — deleting it would corrupt the manager's bookkeeping.
-const String _cacheFolder = 'cached_network_image_ce';
-const String _metadataFolder = 'hive';
+/// The room windows' image cache, when one is installed. A room window
+/// gets a folder and a JSON metadata file of its own, so two engines never
+/// share cache bookkeeping.
+CacheManager? _roomWindowImageCache;
+
+/// Points the shared image cache at [directory] for this engine. Call it
+/// from a room window's boot, before the first image is asked for.
+Future<void> installWindowImageCache(Directory directory) async {
+  await directory.create(recursive: true);
+  // The default file system for [CacheManager] puts files under the temp
+  // directory under the cache key; the key therefore carries the room's
+  // folder. The metadata goes beside them instead of a shared database.
+  final key = p.join('pure_live_window_cache', p.basename(directory.path));
+  _roomWindowImageCache = CacheManager(
+    Config(
+      key,
+      stalePeriod: const Duration(days: 1),
+      maxNrOfCacheObjects: 120,
+      repo: JsonCacheInfoRepository.withFile(File(p.join(directory.path, 'metadata.json'))),
+    ),
+  );
+}
+
+/// The folder the default manager keeps its image files in, under the
+/// temporary directory.
+const String _cacheFolder = 'pure_live_image_cache';
+
+/// Creates the default cache folder before the first image asks for it.
+///
+/// `flutter_cache_manager`'s file system creates the folder lazily on each
+/// `createFile`; on Windows several image loads in one frame can race that
+/// creation and surface a `PathAccessException`. The boot owns the folder
+/// first, so the per-file path only ever sees an existing directory.
+Future<void> prepareImageCache() async {
+  final directory = await _cacheDirectory();
+  if (directory == null) return;
+  try {
+    await directory.create(recursive: true);
+  } on Object {
+    // A cache that cannot be created costs images their disk copy, not the app.
+  }
+}
 
 /// The extensions the manager writes (webp included); only these are
 /// counted and pruned.
 const Set<String> _imageExtensions = {'jpg', 'jpeg', 'png', 'webp', 'gif', 'tga', 'cur', 'ico'};
 
-/// A network image through [appImageCache]; [width]/[height] ask for a
+/// A network image through the engine's own cache — the room window's
+/// when one is installed, the app's otherwise; [width]/[height] ask for a
 /// decode box and, where the server can, a fitting copy.
-ImageProvider cachedImage(String url, {int? width, int? height, String? cacheKey}) =>
-    CachedNetworkImageProvider(url, cacheManager: appImageCache, maxWidth: width, maxHeight: height, cacheKey: cacheKey);
+ImageProvider cachedImage(String url, {int? width, int? height, String? cacheKey}) => CachedNetworkImageProvider(
+  url,
+  cacheManager: _roomWindowImageCache ?? appImageCache,
+  maxWidth: width,
+  maxHeight: height,
+  cacheKey: cacheKey,
+);
 
 /// The cache's image folder, when the platform has a temporary directory.
 Future<Directory?> _cacheDirectory() async {
@@ -43,16 +85,12 @@ Future<Directory?> _cacheDirectory() async {
   }
 }
 
-/// The image files under [root], skipping the metadata folder.
+/// The image files under [root].
 List<(File, DateTime, int)> _imageFiles(Directory root) {
   final files = <(File, DateTime, int)>[];
   try {
     for (final entity in root.listSync(recursive: true)) {
       if (entity is! File) {
-        continue;
-      }
-      final parts = p.split(p.relative(entity.path, from: root.path));
-      if (parts.contains(_metadataFolder)) {
         continue;
       }
       if (!_imageExtensions.contains(p.extension(entity.path).replaceFirst('.', '').toLowerCase())) {
@@ -76,7 +114,15 @@ Future<int> imageCacheBytes() async {
 }
 
 /// Deletes every cached image (the manager's own bookkeeping goes with it).
-Future<void> clearImageCache() => appImageCache.emptyCache();
+///
+/// A room window installs its own manager; clearing there must empty that
+/// engine's cache too, otherwise the scheduled cover refresh would keep the
+/// only images that window actually draws.
+Future<void> clearImageCache() async {
+  await appImageCache.emptyCache();
+  final roomWindow = _roomWindowImageCache;
+  if (roomWindow != null) await roomWindow.emptyCache();
+}
 
 /// Deletes the oldest cached images until the images fit [maxBytes]; a
 /// limit of zero or less means no pruning. Answers the bytes left.

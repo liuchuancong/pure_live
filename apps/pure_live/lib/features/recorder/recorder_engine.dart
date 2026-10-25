@@ -169,7 +169,12 @@ final class RecorderEngine {
       await _endAs(session, failed: true, errorText: _errorOf(error));
       return 'cannot stop: ${_errorOf(error)}';
     }
-    await _persist(session, success: result.success, bytes: result.bytesWritten, errorText: result.error == null ? '' : _errorOf(result.error!));
+    await _persist(
+      session,
+      success: result.success,
+      bytes: result.bytesWritten,
+      errorText: result.error == null ? '' : _errorOf(result.error!),
+    );
     return null;
   }
 
@@ -222,12 +227,7 @@ final class RecorderEngine {
     await _endAs(session, failed: !success, errorText: errorText, bytes: bytes);
   }
 
-  Future<void> _endAs(
-    _LiveRecording session, {
-    required bool failed,
-    required String errorText,
-    int? bytes,
-  }) async {
+  Future<void> _endAs(_LiveRecording session, {required bool failed, required String errorText, int? bytes}) async {
     _sessions.remove(session.task.id);
     unawaited(session.manager.dispose());
     final repo = _ref.read(recordingRepositoryProvider).value;

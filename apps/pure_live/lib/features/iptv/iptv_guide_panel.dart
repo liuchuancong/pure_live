@@ -22,29 +22,21 @@ Future<void> showIptvGuide(
   context: context,
   builder: (context) => DsPanel(
     title: Text(context.t.iptv.guideTitle),
-    child: _IptvGuidePanel(
-      channel: channel,
-      catchup: catchup,
-      onCatchup: onCatchup,
-      onBackToLive: onBackToLive,
-    ),
+    child: _IptvGuidePanel(channel: channel, catchup: catchup, onCatchup: onCatchup, onBackToLive: onBackToLive),
   ),
 );
 
 /// Whether [programme] can be replayed on [channel], from the playlist's
 /// own catch-up attributes and the archive window.
-IptvCatchupAvailability catchupAvailabilityOf(
-  IptvChannel channel,
-  EpgProgramme programme, {
-  DateTime? now,
-}) => evaluateIptvCatchupAvailability(
-  programmeStop: programme.stop,
-  now: now ?? DateTime.now(),
-  mode: channel.entry.catchupMode,
-  source: channel.entry.catchupSource,
-  days: double.tryParse(channel.entry.catchupDays?.trim() ?? ''),
-  catchupId: programme.catchupId,
-);
+IptvCatchupAvailability catchupAvailabilityOf(IptvChannel channel, EpgProgramme programme, {DateTime? now}) =>
+    evaluateIptvCatchupAvailability(
+      programmeStop: programme.stop,
+      now: now ?? DateTime.now(),
+      mode: channel.entry.catchupMode,
+      source: channel.entry.catchupSource,
+      days: double.tryParse(channel.entry.catchupDays?.trim() ?? ''),
+      catchupId: programme.catchupId,
+    );
 
 /// The URL that replays [programme] on [channel], or null when the playlist
 /// offers no usable catch-up for it.
@@ -112,7 +104,8 @@ final class _IptvGuidePanelState extends ConsumerState<_IptvGuidePanel> {
     final library = ref.watch(iptvLibraryProvider).value;
     final now = DateTime.now();
     final nextDay = DateTime(_day.year, _day.month, _day.day + 1);
-    final schedule = library?.schedule(widget.channel, from: _day, span: nextDay.difference(_day)) ?? const <EpgProgramme>[];
+    final schedule =
+        library?.schedule(widget.channel, from: _day, span: nextDay.difference(_day)) ?? const <EpgProgramme>[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s12,
@@ -217,7 +210,9 @@ final class _GuideRow extends StatelessWidget {
     final phase = classifyIptvProgramme(start: programme.start, stop: programme.stop, now: now);
     final live = phase == IptvProgrammePhase.live;
     final replaying = catchup != null && catchup!.start == programme.start && catchup!.stop == programme.stop;
-    final available = phase == IptvProgrammePhase.catchup && catchupAvailabilityOf(channel, programme, now: now) == IptvCatchupAvailability.available;
+    final available =
+        phase == IptvProgrammePhase.catchup &&
+        catchupAvailabilityOf(channel, programme, now: now) == IptvCatchupAvailability.available;
     final subtitle = programme.subtitle?.trim() ?? '';
     final total = programme.stop.difference(programme.start);
     final progress = live && total > Duration.zero

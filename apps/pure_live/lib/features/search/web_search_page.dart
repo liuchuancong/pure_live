@@ -5,9 +5,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/toolbox/toolbox_controllers.dart' show linkToolProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/navigation/room_opener.dart';
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 import 'package:webview_flutter/webview_flutter.dart';
@@ -247,7 +247,7 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
     if (!mounted) return;
     final link = ref.read(linkToolProvider);
     if (link.resolved case final room?) {
-      await context.push(RoomRoute(platform: room.platform, roomId: room.roomId).location);
+      await openRoom(context, platform: room.platform, roomId: room.roomId);
       return;
     }
     showDsToast(context: context, title: context.t.search.linkFailed);

@@ -62,23 +62,25 @@ const List<NavigationItem> kToolItems = [
 ];
 
 /// The settings every module shares: the app's own surface. A module adds
-/// its own group on top of these (live its sources and danmaku, IPTV its
-/// guide updates, video its Bilibili account), never borrows another
-/// module's. Only what genuinely belongs to the whole app lives here —
-/// theme, app navigation, the network proxy, backups, the cache and about.
-const List<SettingsGroup> _appearanceSettings = [
-  (labelKey: 'groupInterface', sections: [SettingsSection.appearance, SettingsSection.background, SettingsSection.nav]),
+/// its own category on top of these (live its sources, danmaku and
+/// recording; IPTV its guide updates; video its Bilibili account), never
+/// borrows another module's. Categories are the sidebar's entries; the
+/// pages inside them are reached from the category's overview.
+const List<SettingsGroup> _appCategories = [
+  (labelKey: 'groupApp', sections: [SettingsSection.personalization, SettingsSection.playback, SettingsSection.system]),
 ];
 
-const List<SettingsGroup> _generalSettings = [
-  (labelKey: 'groupGeneral', sections: [SettingsSection.general, SettingsSection.network]),
+/// Live's categories sit in the app list with the shared ones: a group
+/// header repeating the category's own name ("Live / Live") is noise, not
+/// structure.
+const List<SettingsGroup> _liveAppCategories = [
+  (
+    labelKey: 'groupApp',
+    sections: [SettingsSection.live, SettingsSection.personalization, SettingsSection.playback, SettingsSection.system],
+  ),
 ];
 
-const List<SettingsGroup> _dataSettings = [
-  (labelKey: 'groupData', sections: [SettingsSection.backup, SettingsSection.cache]),
-];
-
-const List<SettingsGroup> _aboutSettings = [
+const List<SettingsGroup> _aboutCategories = [
   (labelKey: 'groupAbout', sections: [SettingsSection.about]),
 ];
 
@@ -94,23 +96,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
       [NavigationItem.record],
     ],
     landing: NavigationItem.hot,
-    settingsGroups: [
-      ..._appearanceSettings,
-      (labelKey: 'groupSources', sections: [SettingsSection.sites, SettingsSection.refresh]),
-      (
-        labelKey: 'groupPlayback',
-        sections: [
-          SettingsSection.video,
-          SettingsSection.danmaku,
-          SettingsSection.miniDanmaku,
-          SettingsSection.kernel,
-          SettingsSection.recording,
-        ],
-      ),
-      ..._generalSettings,
-      (labelKey: 'groupData', sections: [SettingsSection.data, SettingsSection.backup, SettingsSection.cache]),
-      ..._aboutSettings,
-    ],
+    settingsGroups: [..._liveAppCategories, ..._aboutCategories],
   ),
   AppModule.iptv: ModuleNavigation(
     menu: [
@@ -123,10 +109,8 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // recording, platforms) or the Bilibili station belongs here.
     settingsGroups: [
       (labelKey: 'groupIptv', sections: [SettingsSection.iptv]),
-      ..._appearanceSettings,
-      ..._generalSettings,
-      ..._dataSettings,
-      ..._aboutSettings,
+      ..._appCategories,
+      ..._aboutCategories,
     ],
   ),
   AppModule.vod: ModuleNavigation(
@@ -140,10 +124,8 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // danmaku stay out of it.
     settingsGroups: [
       (labelKey: 'groupVod', sections: [SettingsSection.vod]),
-      ..._appearanceSettings,
-      ..._generalSettings,
-      ..._dataSettings,
-      ..._aboutSettings,
+      ..._appCategories,
+      ..._aboutCategories,
     ],
   ),
   AppModule.music: ModuleNavigation(
@@ -154,7 +136,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     landing: NavigationItem.music,
     // No music source feeds the module yet; it carries only the app's own
     // settings rather than borrowing another module's playback or sources.
-    settingsGroups: [..._appearanceSettings, ..._generalSettings, ..._dataSettings, ..._aboutSettings],
+    settingsGroups: [..._appCategories, ..._aboutCategories],
   ),
 };
 

@@ -1,12 +1,12 @@
+import 'dart:async' show unawaited;
 import 'dart:io';
 
-import 'package:hive_ce/hive.dart';
 import 'package:live_storage/live_storage.dart';
 
 // A demo prints; that is its whole job.
 // ignore_for_file: avoid_print
 
-/// A favorite live room, stored as a typed value behind a [JsonBoxAdapter].
+/// A favorite live room, stored as a JSON document.
 final class FavoriteRoom {
   /// Creates a favorite room.
   new(this.platform, this.roomId, this.nick);
@@ -32,8 +32,7 @@ final class FavoriteRoom {
   String toString() => '$platform/$roomId ($nick)';
 }
 
-/// A player setting pair, stored through `prefObject` as JSON — no adapter
-/// needed.
+/// A player setting pair, stored through `prefObject` as JSON.
 final class PlayerSettings {
   /// Creates settings.
   new(this.rate, this.volume);
@@ -56,47 +55,37 @@ final class PlayerSettings {
   String toString() => 'PlayerSettings(rate: $rate, volume: $volume)';
 }
 
-/// Walks the live_storage story: bootstrap, typed repository, the simple
+/// Walks the live_storage story: bootstrap, a namespaced JSON store, the
 /// settings facade and write-through pref values.
 Future<void> main() async {
   final directory = await Directory.systemTemp.createTemp('live_storage_demo');
   print('Storage directory: ${directory.path}');
 
   _section('1. Bootstrap');
-  final adapters = StorageAdapterRegistry()
-    ..add('demo', () {
-      // Type ids are a workspace-wide registry: assign once, never renumber.
-      Hive.registerAdapter(
-        JsonBoxAdapter<FavoriteRoom>(42, fromJson: FavoriteRoom.fromJson, toJson: (room) => room.toJson()),
-      );
-    });
-  final bootstrap = StorageBootstrap(
-    pathProvider: StoragePathProvider(resolver: () async => directory.path),
-    adapterRegistry: adapters,
-  );
+  final bootstrap = StorageBootstrap(pathProvider: StoragePathProvider(resolver: () async => directory.path));
   await bootstrap.initialize();
-  print('Hive initialized at the app-provided path; demo adapter registered.');
+  print('SQLite opened at ${StorageStores.instance.databasePath}');
 
-  _section('2. Typed repository');
-  final rooms = HiveStorageRepository<FavoriteRoom>(box: await StorageBoxManager().keyed<FavoriteRoom>('demo.rooms'));
-  final changes = rooms.watch(key: '222').listen((_) => print('  [watch] 222 changed'));
-  await rooms.save('222', FavoriteRoom('huya', '222', 'synk'));
-  await rooms.save('999', FavoriteRoom('douyu', '999', 'otto'));
-  print('get(222)     -> ${rooms.get('222')}');
-  await rooms.update('222', (room) => FavoriteRoom(room.platform, room.roomId, 'synk2'));
-  print('after update -> ${rooms.get('222')}');
-  print('count/keys   -> ${rooms.count} ${rooms.getAllKeys()}');
+  _section('2. Namespaced JSON store');
+  final rooms = await StorageStores.instance.openStore('demo.rooms');
+  final changes = rooms.watchKeys().listen((key) => print('  [watch] $key changed'));
+  await rooms.put('222', FavoriteRoom('huya', '222', 'synk').toJson());
+  await rooms.put('999', FavoriteRoom('douyu', '999', 'otto').toJson());
+  print('get(222)     -> ${FavoriteRoom.fromJson(rooms.get('222')! as Map<String, Object?>)}');
+  await rooms.put('222', FavoriteRoom('huya', '222', 'synk2').toJson());
+  print('after update -> ${FavoriteRoom.fromJson(rooms.get('222')! as Map<String, Object?>)}');
+  print('count/keys   -> ${rooms.length} ${rooms.keys}');
   await rooms.delete('999');
-  print('after delete -> count ${rooms.count}');
+  print('after delete -> count ${rooms.length}');
   await changes.cancel();
 
   _section('3. StoragePrefs');
   await StoragePrefs.init();
   await StoragePrefs.setString('lastPlatform', 'huya');
   print('lastPlatform -> ${StoragePrefs.getString('lastPlatform')}');
-  await StoragePrefs.persistBatch(() async {
-    await StoragePrefs.setBool('danmakuOn', true);
-    await StoragePrefs.setInt('danmakuSize', 18);
+  await StoragePrefs.persistBatch(() {
+    unawaited(StoragePrefs.setBool('danmakuOn', true));
+    unawaited(StoragePrefs.setInt('danmakuSize', 18));
   });
   print(
     'batch        -> danmakuOn=${StoragePrefs.getBool('danmakuOn')} '

@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/app/routing/app_router.dart' show AreaRoomsRoute, RoomRoute;
+import 'package:pure_live/app/routing/app_router.dart' show AreaRoomsRoute;
 import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
 import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
 import 'package:pure_live/features/search/search_controller.dart';
@@ -18,9 +18,11 @@ import 'package:pure_live/features/toolbox/toolbox_controllers.dart' show linkTo
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart';
+import 'package:pure_live/shared/navigation/room_opener.dart';
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
 import 'package:pure_live/shared/platforms/platform_picker.dart';
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
+import 'package:pure_live/shared/widgets/choice_dialog.dart' show AdaptiveChoiceField;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// How many completions the panel shows at most: a handful keeps the field's
@@ -217,12 +219,11 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
               children: [
                 SizedBox(
                   width: 160,
-                  child: DsSelect<_SearchSort>(
+                  child: AdaptiveChoiceField<_SearchSort>(
                     value: _sort,
+                    title: context.t.search.sort,
                     semanticLabel: context.t.search.sort,
-                    onChanged: (value) {
-                      if (value != null) setState(() => _sort = value);
-                    },
+                    onChanged: (value) => setState(() => _sort = value),
                     options: [
                       for (final sort in _SearchSort.values)
                         DsSelectOption(value: sort, label: _sortLabel(context, sort)),
@@ -377,7 +378,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     if (!mounted) return;
     final link = ref.read(linkToolProvider);
     if (link.resolved case final room?) {
-      await context.push(RoomRoute(platform: room.platform, roomId: room.roomId).location);
+      await openRoom(context, platform: room.platform, roomId: room.roomId);
       return;
     }
     showDsToast(context: context, title: context.t.search.linkFailed);
@@ -600,7 +601,7 @@ final class _RoomResults extends ConsumerWidget {
       listItemBuilder: (context, room) => RoomCard(
         room: room,
         compact: true,
-        onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
       ),
       cardExtent: cardExtent,
       isLoading: search.loading,
@@ -608,7 +609,7 @@ final class _RoomResults extends ConsumerWidget {
       onLoadMore: controller.loadMore,
       itemBuilder: (context, room) => RoomCard(
         room: room,
-        onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
       ),
     );
   }

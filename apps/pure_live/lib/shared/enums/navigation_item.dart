@@ -34,8 +34,8 @@ enum NavigationItem {
   /// The search branch.
   search(DsIcons.search),
 
-  /// The link-parser branch (the reference's link parser; the toolbox surface
-  /// still lives behind it).
+  /// The link-parser branch. The network probe, image-cache clear and log
+  /// viewer that used to share this entry are settings utilities now.
   toolbox(DsIcons.wrench),
 
   /// The recording branch.

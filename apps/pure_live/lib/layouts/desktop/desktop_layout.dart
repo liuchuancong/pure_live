@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/background/app_background.dart' show BackgroundActiveScope;
+import 'package:pure_live/app/providers/settings_section_provider.dart' show settingsSectionProvider;
 import 'package:pure_live/app/providers/sidebar_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteIdProvider;
 import 'package:pure_live/app/theme/theme_mode_toggle.dart';
@@ -18,6 +20,7 @@ import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart';
 import 'package:pure_live/shared/enums/app_module.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart';
+import 'package:pure_live/shared/navigation/window_opener.dart' show openAppWindow;
 
 // Every import stays on one line with no `show` clause: the save-time
 // import organizer used to tear wrapped imports apart, so nothing here
@@ -26,6 +29,11 @@ import 'package:pure_live/shared/enums/navigation_item.dart';
 /// The folded rail's item: a 40px tile with a 24px icon — the header's
 /// module mark and the rail's items read at one weight.
 const DsSidebarItemStyle _collapsedItem = DsSidebarItemStyle(height: 40, iconSize: 24);
+
+/// A footer row that performs an action instead of selecting a destination.
+final class _NewWindowAction {
+  const new();
+}
 
 /// The desktop layout, following the v4 navigation design: the self-drawn
 /// title bar above ([WindowTitleBar] — its left corner holds the app icon
@@ -245,6 +253,18 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
     return index > 0 ? const SidebarDivider() : null;
   }
 
+  void _footerChanged(Object value) {
+    if (value is _NewWindowAction) {
+      unawaited(openAppWindow(context));
+      return;
+    }
+    if (widget.settingsSection == null) {
+      widget.onMenu(value);
+    } else {
+      widget.onBackToApp();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
@@ -264,6 +284,10 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
     // A width remembered from a wider window yields to the content's
     // floor until the window grows again.
     final sidebarWidth = sidebarStyle.width!;
+    // The toolbar search is 320 wide; below this floor it would squeeze the
+    // breadcrumb instead of sharing the row, so it gives way first.
+    final showToolbarSearch =
+        !widget.tv && widget.settingsSection == null && MediaQuery.sizeOf(context).width - sidebarWidth >= 640;
     final items = <Widget>[
       for (final (index, group) in widget.menuGroups.indexed) ...[
         // In settings the groups earn their names (the reference's areas);
@@ -347,25 +371,30 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                           DsSidebar<Object>(
                             collapsed: !widget.expanded,
                             value: widget.settingsSection == null ? null : NavigationItem.settings,
-                            onChanged: widget.settingsSection == null ? widget.onMenu : (_) => widget.onBackToApp(),
+                            onChanged: _footerChanged,
                             style: sidebarStyle,
-                            children: widget.settingsSection == null
-                                ? [
-                                    DsSidebarItem<Object>(
-                                      value: NavigationItem.settings,
-                                      leading: const DsIcon(DsIcons.settings),
-                                      label: Text(t.navigation.settings),
-                                      style: widget.expanded ? null : _collapsedItem,
-                                    ),
-                                  ]
-                                : [
-                                    DsSidebarItem<Object>(
-                                      value: NavigationItem.settings,
-                                      leading: const DsIcon(DsIcons.arrowLeft),
-                                      label: Text(t.settings.backHome),
-                                      style: widget.expanded ? null : _collapsedItem,
-                                    ),
-                                  ],
+                            children: [
+                              DsSidebarItem<Object>(
+                                value: const _NewWindowAction(),
+                                leading: const DsIcon(DsIcons.appWindow),
+                                label: Text(t.common.newWindow),
+                                style: widget.expanded ? null : _collapsedItem,
+                              ),
+                              if (widget.settingsSection == null)
+                                DsSidebarItem<Object>(
+                                  value: NavigationItem.settings,
+                                  leading: const DsIcon(DsIcons.settings),
+                                  label: Text(t.navigation.settings),
+                                  style: widget.expanded ? null : _collapsedItem,
+                                )
+                              else
+                                DsSidebarItem<Object>(
+                                  value: NavigationItem.settings,
+                                  leading: const DsIcon(DsIcons.arrowLeft),
+                                  label: Text(t.settings.backHome),
+                                  style: widget.expanded ? null : _collapsedItem,
+                                ),
+                            ],
                           ),
                         ],
                       ),
@@ -400,7 +429,7 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                                 // The settings surface has its own section
                                 // search in the pane; a second, room-wide
                                 // field over it reads as two searches.
-                                if (!widget.tv && widget.settingsSection == null) ...[
+                                if (showToolbarSearch) ...[
                                   const SizedBox(width: DsSpace.s16),
                                   SizedBox(
                                     width: 320,
@@ -470,7 +499,7 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
 /// crumb, not pressed); deeper context — an area inside the areas page,
 /// the query inside the search page — is that page's own breadcrumb, one
 /// level below this one.
-final class _LocationBreadcrumb extends StatelessWidget {
+final class _LocationBreadcrumb extends ConsumerWidget {
   const _LocationBreadcrumb({required this.module, required this.selected, this.settings});
 
   final AppModule module;
@@ -478,13 +507,23 @@ final class _LocationBreadcrumb extends StatelessWidget {
   final SettingsSection? settings;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final section = settings;
     if (section != null) {
+      // Walk the whole tree: Personalized › Background › Online images.
+      final ancestors = <SettingsSection>[];
+      for (var parent = section.parentSection; parent != null; parent = parent.parentSection) {
+        ancestors.add(parent);
+      }
       return DsBreadcrumb(
         items: [
           DsBreadcrumbItem(label: t.navigation.settings, icon: const DsIcon(DsIcons.settings, size: 14)),
+          for (final ancestor in ancestors.reversed)
+            DsBreadcrumbItem(
+              label: ancestor.label(t),
+              onPressed: () => ref.read(settingsSectionProvider.notifier).section = ancestor,
+            ),
           DsBreadcrumbItem(label: section.label(t)),
         ],
       );

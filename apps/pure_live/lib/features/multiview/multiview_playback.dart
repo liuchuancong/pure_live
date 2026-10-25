@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
+import 'package:pure_live/app/providers/network_type_provider.dart' show networkTypeProvider;
 import 'package:pure_live/app/providers/player_providers.dart'
     show createRoomPlayback, playerKernelProvider, roomSourcesOf;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
 import 'package:pure_live/features/multiview/multiview_controller.dart' show multiviewProvider;
-import 'package:pure_live/features/settings/playback_settings_providers.dart' show playbackSettingsProvider;
+import 'package:pure_live/features/settings/playback_settings_providers.dart'
+    show playbackSettingsProvider, preferredQualityIndex;
 
 /// Where one pane's session stands.
 enum MultiviewPaneStage {
@@ -46,12 +48,7 @@ typedef MultiviewPanePlayback = ({
 
 /// The wall's sessions: one playback per assigned pane, the pane that owns
 /// the sound, whether every pane is muted, and whether the wall is on screen.
-typedef MultiviewPlaybackState = ({
-  bool active,
-  bool allMuted,
-  int? selected,
-  Map<int, MultiviewPanePlayback> panes,
-});
+typedef MultiviewPlaybackState = ({bool active, bool allMuted, int? selected, Map<int, MultiviewPanePlayback> panes});
 
 /// The walls' playback owner.
 ///
@@ -67,10 +64,18 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
   final List<_PaneSession> _sessions = [];
   bool _active = false;
   bool _allMuted = false;
+  bool _globalMuted = false;
   int? _selected;
 
   @override
   MultiviewPlaybackState build() {
+    _globalMuted = ref.read(playbackSettingsProvider).globalMute;
+    ref.listen(playbackSettingsProvider.select((settings) => settings.globalMute), (previous, next) {
+      if (previous == next) return;
+      _globalMuted = next;
+      if (_active) _applyFocus();
+      _publish();
+    });
     ref.listen(multiviewProvider, (previous, next) {
       if (_active) _sync();
     });
@@ -228,9 +233,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     if (!_active) return;
     final wall = ref.read(multiviewProvider);
     if (!wall.ready) return;
-    final followed = {
-      for (final room in ref.read(followsProvider).rooms) room.ref.identityKey: room,
-    };
+    final followed = {for (final room in ref.read(followsProvider).rooms) room.ref.identityKey: room};
     for (final session in [..._sessions]) {
       if (session.slot >= wall.slots.length || wall.slots[session.slot] != session.identity) {
         _release(session);
@@ -240,7 +243,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       final identity = wall.slots[slot];
       if (identity == null) continue;
       if (_sessions.any((session) => session.slot == slot)) continue;
-      final volume = ref.read(playbackSettingsProvider).volume;
+      final volume = ref.read(playbackSettingsProvider.notifier).volume;
       final session = _PaneSession(slot: slot, identity: identity, volume: volume.clamp(0.0, 1.0));
       _sessions.add(session);
       unawaited(_open(session, followed[identity]));
@@ -263,9 +266,9 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
         return;
       }
       session.capability = capability;
-      final qualities = await capability.getQualities(room: room).then(
-        (answer) => answer.fold((error) => throw _PaneOpenFailure(error.message), (qualities) => qualities),
-      );
+      final qualities = await capability
+          .getQualities(room: room)
+          .then((answer) => answer.fold((error) => throw _PaneOpenFailure(error.message), (qualities) => qualities));
       if (stale()) return;
       session.qualities = qualities;
       final quality = _pickQuality(qualities);
@@ -351,17 +354,17 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     return room;
   }
 
-  /// The viewer's preferred quality when the room offers it, the room's own
-  /// first otherwise.
+  /// The viewer's preferred tier at an exact label, or the nearest tier by
+  /// position when the room spells them differently.
   LivePlayQuality? _pickQuality(List<LivePlayQuality> qualities) {
     if (qualities.isEmpty) return null;
-    final wanted = ref.read(playbackSettingsProvider).preferredQuality?.trim().toLowerCase();
-    if (wanted != null && wanted.isNotEmpty) {
-      for (final quality in qualities) {
-        if (quality.label.trim().toLowerCase() == wanted) return quality;
-      }
-    }
-    return qualities.first;
+    final settings = ref.read(playbackSettingsProvider);
+    final cellular = ref.read(networkTypeProvider.notifier).usesCellular;
+    final index = preferredQualityIndex(
+      qualities.map((quality) => quality.label),
+      cellular ? settings.preferredQualityCellular : settings.preferredQuality,
+    );
+    return qualities[index];
   }
 
   /// Keeps the selection on a pane that still holds a room.
@@ -376,8 +379,8 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
   _PaneSession? _sessionOf(int slot) => _sessions.where((session) => session.slot == slot).firstOrNull;
 
   /// Whether [session]'s sound is the one on the wall: the selected pane's,
-  /// unless every pane is muted.
-  bool _audible(_PaneSession session) => !_allMuted && session.slot == _selected;
+  /// unless every pane or the app-wide mute silences the wall.
+  bool _audible(_PaneSession session) => !_allMuted && !_globalMuted && session.slot == _selected;
 
   /// Applies the focus to every pane: the selected one is audible, the rest
   /// are muted.

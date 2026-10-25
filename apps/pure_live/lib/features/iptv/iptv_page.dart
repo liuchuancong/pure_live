@@ -14,6 +14,7 @@ import 'package:pure_live/features/iptv/iptv_sources_controller.dart';
 import 'package:pure_live/features/iptv/iptv_sources_view.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart';
+import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
 /// How often the page re-reads "what is on now": a programme that started
 /// on the minute should not wait for the viewer to reopen the page.
@@ -265,7 +266,7 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
     final t = context.t;
     final channels = widget.channels;
     if (!channels.ready) {
-      return const Center(child: DsSpinner());
+      return const Center(child: AppLoadingIndicator(size: 28));
     }
     if (channels.libraryCount == 0) {
       return Center(

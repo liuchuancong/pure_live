@@ -1,5 +1,6 @@
 import 'dart:async' show unawaited;
 import 'dart:io' show Directory, File;
+import 'dart:typed_data' show Uint8List;
 
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType, PlatformFile;
 import 'package:flutter/painting.dart' show BoxFit, Color;
@@ -154,10 +155,8 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
         videoUrl: StoragePrefs.getString(_videoUrlKey) ?? '',
         videoPath: StoragePrefs.getString(_videoPathKey) ?? '',
         solidColor: _parseColor(StoragePrefs.getString(_solidKey)) ?? const Color(0xFF141E30),
-        gradientColors: _parseGradient(StoragePrefs.getString(_gradientKey)) ?? const [
-          Color(0xFFA18CD1),
-          Color(0xFFFBC2EB),
-        ],
+        gradientColors:
+            _parseGradient(StoragePrefs.getString(_gradientKey)) ?? const [Color(0xFFA18CD1), Color(0xFFFBC2EB)],
         fit: fit,
         maskOpacity: (StoragePrefs.getDouble(_maskKey) ?? 0.45).clamp(0.0, 0.8),
         blurSigma: (StoragePrefs.getDouble(_blurKey) ?? 0).clamp(0.0, 40.0),
@@ -239,6 +238,36 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
     unawaited(_delete(previous));
   }
 
+  /// Saves a picture fetched from a random source and makes it the image
+  /// background.
+  ///
+  /// A random API has no stable URL to keep, so the bytes are written into
+  /// the app's own media folder. The name is a content hash: fetching the
+  /// same picture twice reuses one file and leaves the previous one alone.
+  Future<void> useRandomImage(Uint8List bytes, {required String extension}) async {
+    if (bytes.length < 256) return;
+    state = state.copyWith(busy: true, error: '');
+    File? target;
+    try {
+      final paths = ref.read(storagePathsProvider);
+      final directory = Directory(p.join(paths.data.path, 'background'));
+      await directory.create(recursive: true);
+      target = File(p.join(directory.path, 'random-${_bytesHash(bytes)}.$extension'));
+      if (!target.existsSync() || target.lengthSync() == 0) {
+        await target.writeAsBytes(bytes, flush: true);
+      }
+      if (!ref.mounted) return;
+      final previous = state.imagePath;
+      state = state.copyWith(kind: BackgroundKind.image, imagePath: target.path, imageUrl: '', busy: false, error: '');
+      _persist();
+      if (previous.isNotEmpty && previous != target.path) unawaited(_delete(previous));
+    } on Object catch (error) {
+      if (target != null) await _delete(target.path);
+      if (!ref.mounted) return;
+      state = state.copyWith(busy: false, error: '$error');
+    }
+  }
+
   Future<void> _import(
     PlatformFile file, {
     required String prefix,
@@ -312,6 +341,16 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
 
 /// A colour as `#AARRGGBB`, the form the prefs store.
 String _colorHex(Color color) => '#${color.toARGB32().toRadixString(16).padLeft(8, '0')}';
+
+/// FNV-1a over the bytes and their length: stable across runs, so the same
+/// random picture is stored once.
+String _bytesHash(Uint8List bytes) {
+  var hash = 0x811C9DC5;
+  for (final byte in bytes) {
+    hash = ((hash ^ byte) * 0x01000193) & 0xFFFFFFFF;
+  }
+  return '${hash.toRadixString(16).padLeft(8, '0')}-${bytes.length.toRadixString(16)}';
+}
 
 Color? _parseColor(String? text) {
   final value = int.tryParse((text ?? '').replaceFirst('#', ''), radix: 16);

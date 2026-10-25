@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/widgets.dart' show BoxFit;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
@@ -21,6 +22,46 @@ enum PlaybackFit {
   };
 }
 
+/// The reference's resolution tiers, best first. Sites spell their qualities
+/// differently; [preferredQualityIndex] matches an exact label first and
+/// otherwise lands on the nearest tier by position.
+const List<String> kPreferredResolutionChoices = ['原画', '蓝光8M', '蓝光4M', '超清', '流畅'];
+
+/// Normalizes a stored/legacy quality to one of [kPreferredResolutionChoices].
+///
+/// Old builds stored site labels (`蓝光`, `高清`, `标清`); they map onto the
+/// nearest tier so a saved preference survives the switch.
+String normalizePreferredResolution(String? value) {
+  final raw = value?.trim();
+  if (raw == null || raw.isEmpty) return kPreferredResolutionChoices.first;
+  for (final tier in kPreferredResolutionChoices) {
+    if (tier.toLowerCase() == raw.toLowerCase()) return tier;
+  }
+  return switch (raw.toLowerCase()) {
+    '蓝光' => '蓝光8M',
+    '高清' => '超清',
+    '标清' => '流畅',
+    _ => kPreferredResolutionChoices.first,
+  };
+}
+
+/// The index in [labels] the viewer's preferred tier should play.
+///
+/// An exact label wins. Otherwise the tier's position is mapped across the
+/// available list (the reference's ratio), so a site with three qualities
+/// still honours "流畅" at the bottom and "原画" at the top.
+int preferredQualityIndex(Iterable<String> labels, String? preferred) {
+  final list = labels.toList(growable: false);
+  if (list.isEmpty) return 0;
+  final tier = normalizePreferredResolution(preferred);
+  final exact = list.indexWhere((label) => label.trim().toLowerCase() == tier.toLowerCase());
+  if (exact != -1) return exact;
+  final level = kPreferredResolutionChoices.indexWhere((choice) => choice.toLowerCase() == tier.toLowerCase());
+  final safeLevel = level < 0 ? 0 : level;
+  final ratio = kPreferredResolutionChoices.length <= 1 ? 0.0 : safeLevel / (kPreferredResolutionChoices.length - 1);
+  return (ratio * (list.length - 1)).round().clamp(0, list.length - 1);
+}
+
 /// The viewer's playback preferences: the quality a room starts on, the
 /// audio it starts with, how the picture sits in its box, whether the flying
 /// danmaku (and its small-window copy) draws, whether the engine decodes in
@@ -28,8 +69,11 @@ enum PlaybackFit {
 /// window.
 typedef PlaybackSettings = ({
   String? preferredQuality,
+  String? preferredQualityCellular,
   bool muted,
-  double volume,
+  bool globalMute,
+  double mobileVolume,
+  double desktopVolume,
   PlaybackFit fit,
   bool danmakuVisible,
   bool miniDanmakuVisible,
@@ -38,9 +82,12 @@ typedef PlaybackSettings = ({
 });
 
 const PlaybackSettings _defaults = (
-  preferredQuality: null,
+  preferredQuality: '原画',
+  preferredQualityCellular: '原画',
   muted: false,
-  volume: 1,
+  globalMute: false,
+  mobileVolume: 0.5,
+  desktopVolume: 1,
   fit: PlaybackFit.contain,
   danmakuVisible: true,
   miniDanmakuVisible: true,
@@ -48,17 +95,36 @@ const PlaybackSettings _defaults = (
   autoPipOnLeave: false,
 );
 
+/// Whether this build's new players use the mobile volume default. TV
+/// builds are Android and therefore mobile here, as in the reference.
+bool get usesMobileVolumeDefault =>
+    !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
+
 /// Owns the playback preferences, persisted under `playback.*`; the room
 /// controller applies them when a player handle arrives and the player
 /// surface reads them live.
-final class PlaybackSettingsController extends Notifier<PlaybackSettings> {
+class PlaybackSettingsController extends Notifier<PlaybackSettings> {
   @override
-  PlaybackSettings build() {
+  PlaybackSettings build() => _read();
+
+  /// Reads the stored choices, the boot default on any failed read.
+  PlaybackSettings _read() {
     try {
+      // The reference keeps separate mobile and desktop defaults; older
+      // installs of this app stored one `playback.volume`, which seeds both
+      // until the viewer moves the current platform's slider.
+      final legacy = _readVolume('playback.volume');
       return (
-        preferredQuality: _readString('playback.quality'),
+        preferredQuality: normalizePreferredResolution(_readString('playback.quality')),
+        preferredQualityCellular: normalizePreferredResolution(_readString('playback.qualityCellular')),
         muted: StoragePrefs.getBool('playback.muted') ?? _defaults.muted,
-        volume: (StoragePrefs.getDouble('playback.volume') ?? _defaults.volume).clamp(0.0, 1.0),
+        globalMute: StoragePrefs.getBool('playback.globalMute') ?? _defaults.globalMute,
+        mobileVolume:
+            _readVolume('playback.mobileVolume') ?? (usesMobileVolumeDefault ? legacy : null) ?? _defaults.mobileVolume,
+        desktopVolume:
+            _readVolume('playback.desktopVolume') ??
+            (!usesMobileVolumeDefault ? legacy : null) ??
+            _defaults.desktopVolume,
         fit: PlaybackFit.values.asNameMap()[_readString('playback.fit')] ?? _defaults.fit,
         danmakuVisible: StoragePrefs.getBool('playback.danmaku') ?? _defaults.danmakuVisible,
         miniDanmakuVisible: StoragePrefs.getBool('playback.miniDanmaku') ?? _defaults.miniDanmakuVisible,
@@ -70,6 +136,10 @@ final class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     }
   }
 
+  /// Re-reads the store after another window's change. The window that
+  /// made the write has already applied it; this is the mirror's landing.
+  void reload() => state = _read();
+
   static String? _readString(String key) {
     try {
       return StoragePrefs.getString(key);
@@ -78,20 +148,34 @@ final class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     }
   }
 
+  static double? _readVolume(String key) {
+    try {
+      final value = StoragePrefs.getDouble(key);
+      return value?.clamp(0.0, 1.0);
+    } on Object {
+      return null;
+    }
+  }
+
   PlaybackSettings _with({
     String? preferredQuality,
-    bool clearQuality = false,
+    String? preferredQualityCellular,
     bool? muted,
-    double? volume,
+    bool? globalMute,
+    double? mobileVolume,
+    double? desktopVolume,
     PlaybackFit? fit,
     bool? danmakuVisible,
     bool? miniDanmakuVisible,
     bool? hardwareDecoding,
     bool? autoPipOnLeave,
   }) => (
-    preferredQuality: clearQuality ? null : preferredQuality ?? state.preferredQuality,
+    preferredQuality: preferredQuality ?? state.preferredQuality,
+    preferredQualityCellular: preferredQualityCellular ?? state.preferredQualityCellular,
     muted: muted ?? state.muted,
-    volume: volume ?? state.volume,
+    globalMute: globalMute ?? state.globalMute,
+    mobileVolume: mobileVolume ?? state.mobileVolume,
+    desktopVolume: desktopVolume ?? state.desktopVolume,
     fit: fit ?? state.fit,
     danmakuVisible: danmakuVisible ?? state.danmakuVisible,
     miniDanmakuVisible: miniDanmakuVisible ?? state.miniDanmakuVisible,
@@ -99,14 +183,29 @@ final class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     autoPipOnLeave: autoPipOnLeave ?? state.autoPipOnLeave,
   );
 
-  /// The quality label a room starts on; null means the site's first line.
+  /// The resolution tier a room starts on; normalized to the reference's
+  /// five choices, so it is always set.
   String? get preferredQuality => state.preferredQuality;
 
-  /// The volume a new handle starts on.
-  double get volume => state.volume;
+  /// The tier used while the device reports a cellular interface.
+  String? get preferredQualityCellular => state.preferredQualityCellular;
+
+  /// The volume a new handle starts on: the reference's mobile default on
+  /// phones/tablets and desktop default elsewhere.
+  double get volume => usesMobileVolumeDefault ? state.mobileVolume : state.desktopVolume;
+
+  /// The mobile/tablet default, regardless of the current platform.
+  double get mobileVolume => state.mobileVolume;
+
+  /// The desktop default, regardless of the current platform.
+  double get desktopVolume => state.desktopVolume;
 
   /// Whether a new handle starts muted.
   bool get muted => state.muted;
+
+  /// Whether every playback surface is silenced regardless of its own mute
+  /// choice (the reference's `globalVolumeMute`).
+  bool get globalMute => state.globalMute;
 
   /// How the picture sits in its box.
   PlaybackFit get fit => state.fit;
@@ -129,12 +228,19 @@ final class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     await _write(() => StoragePrefs.setBool('playback.autoPip', value));
   }
 
-  /// Stores the starting quality; null returns to the site's first.
+  /// Stores the starting resolution tier; null/unknown falls back to 原画
+  /// rather than leaving an option the picker cannot show.
   Future<void> setPreferredQuality(String? label) async {
-    state = _with(preferredQuality: label, clearQuality: label == null);
-    await _write(
-      () => label == null ? StoragePrefs.remove('playback.quality') : StoragePrefs.setString('playback.quality', label),
-    );
+    final next = normalizePreferredResolution(label);
+    state = _with(preferredQuality: next);
+    await _write(() => StoragePrefs.setString('playback.quality', next));
+  }
+
+  /// Stores the tier used on cellular data; normalized like the main one.
+  Future<void> setPreferredQualityCellular(String? label) async {
+    final next = normalizePreferredResolution(label);
+    state = _with(preferredQualityCellular: next);
+    await _write(() => StoragePrefs.setString('playback.qualityCellular', next));
   }
 
   /// Flips the starting mute.
@@ -143,11 +249,32 @@ final class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     await _write(() => StoragePrefs.setBool('playback.muted', value));
   }
 
-  /// Moves the starting volume.
+  /// Silences every playback surface, or lets each keep its own choice.
+  Future<void> setGlobalMute({required bool value}) async {
+    state = _with(globalMute: value);
+    await _write(() => StoragePrefs.setBool('playback.globalMute', value));
+  }
+
+  /// Moves the current platform's starting volume.
+  ///
+  /// The reference edits only the platform being used; the other platform's
+  /// default is left alone. The old shared `playback.volume` is removed once
+  /// a platform-specific value is written.
   Future<void> setVolume(double value) async {
     final clamped = value.clamp(0.0, 1.0);
-    state = _with(volume: clamped);
-    await _write(() => StoragePrefs.setDouble('playback.volume', clamped));
+    if (usesMobileVolumeDefault) {
+      state = _with(mobileVolume: clamped);
+      await _write(() async {
+        await StoragePrefs.setDouble('playback.mobileVolume', clamped);
+        await StoragePrefs.remove('playback.volume');
+      });
+      return;
+    }
+    state = _with(desktopVolume: clamped);
+    await _write(() async {
+      await StoragePrefs.setDouble('playback.desktopVolume', clamped);
+      await StoragePrefs.remove('playback.volume');
+    });
   }
 
   /// Chooses how the picture fits.

@@ -36,6 +36,11 @@ abstract final class WindowChromeState {
   /// Whether the shell draws its own strip for this window.
   static bool get drawsStrip => mode != ChromeMode.nativeCaption;
 
+  /// Whether the strip also draws minimise, maximise and close. macOS keeps
+  /// its own traffic lights inset in the app's bar, so the app does not add
+  /// a second set.
+  static bool get drawsCaptionControls => mode == ChromeMode.selfDrawn;
+
   /// Whether the settings surface offers the choice.
   static bool get configurable => !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
 

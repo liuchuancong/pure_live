@@ -18,13 +18,13 @@ final class StorageConfig {
   /// Increment this value when a storage migration is required.
   final int schemaVersion;
 
-  /// Builds a namespaced box name for a feature.
+  /// Builds a namespaced store name for a feature.
   ///
-  /// Example: `boxName('settings', 'preferences')` returns
+  /// Example: `namespaceName('settings', 'preferences')` returns
   /// `settings.preferences`.
-  String boxName(String feature, String name) {
+  String namespaceName(String feature, String name) {
     if (feature.trim().isEmpty || name.trim().isEmpty) {
-      throw ArgumentError('Feature and box name must not be empty.');
+      throw ArgumentError('Feature and namespace name must not be empty.');
     }
 
     return '${feature.trim()}.${name.trim()}';

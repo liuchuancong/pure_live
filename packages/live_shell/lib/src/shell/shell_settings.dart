@@ -12,6 +12,7 @@ final class ShellSettings {
   /// The settings for one shell.
   const new({
     this.closeAction = CloseAction.hideToTray,
+    this.dontAskExit = false,
     this.trayEnabled = true,
     this.rememberBounds = true,
     this.startHidden = false,
@@ -22,6 +23,13 @@ final class ShellSettings {
 
   /// What the viewer wants the close button to mean.
   final CloseAction closeAction;
+
+  /// Whether the close button performs [closeAction] without asking first.
+  ///
+  /// This is the reference's `dontAskExit`: when it is off, the app's
+  /// [CloseChoice] callback gets the chance to confirm (and remember) the
+  /// action.
+  final bool dontAskExit;
 
   /// Whether a tray icon is wanted at all.
   ///

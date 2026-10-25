@@ -126,7 +126,12 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
   Widget build(BuildContext context) {
     final breakpoint = _breakpointOf(MediaQuery.sizeOf(context).width);
     final selected = ref.watch(selectedNavItemProvider);
-    final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
+    final formFactor = ref.watch(platformRuntimeProvider).environment.runtime.formFactor;
+    final tv = formFactor == FormFactor.tv;
+    // A desktop platform keeps the desktop shell at every window width: the
+    // sidebar is the window's navigation, and a narrow window must not lose
+    // it to the touch drawer. A phone or tablet still gets the bottom bar.
+    final desktopShell = formFactor == FormFactor.desktop || tv;
     final sidebar = ref.watch(sidebarProvider);
     final module = ref.watch(selectedModuleProvider);
 
@@ -206,7 +211,9 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
         menuGroupLabels.add(null);
       }
     }
-    final Object menuValue = inSettings ? settingsSection : selected;
+    // A page nested under Personalization keeps that row lit: the menu no
+    // longer lists the children themselves.
+    final Object menuValue = inSettings ? settingsSection.menuSection : selected;
 
     void handleMenu(Object value) {
       switch (value) {
@@ -269,7 +276,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     // A TV keeps the desktop shell even on a narrow logical canvas: the
     // drawer and bottom bar belong to thumbs, and this shell's sidebar is
     // what a remote starts on.
-    if (breakpoint.index < kBottomBarBreakpoint.index && !tv) {
+    if (breakpoint.index < kBottomBarBreakpoint.index && !desktopShell) {
       return MobileLayout(
         content: moduleContent,
         module: module,

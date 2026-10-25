@@ -4,12 +4,11 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/app/providers/browse_settings_providers.dart' show browseLayoutProvider, browseSettingsProvider;
+import 'package:pure_live/app/providers/browse_settings_providers.dart'
+    show browseLayoutProvider, browseSettingsProvider;
 import 'package:pure_live/app/providers/refresh_settings_providers.dart' show historyLimitProvider;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/history/history_limit_dialog.dart';
 import 'package:pure_live/features/history/history_repository.dart';
 import 'package:pure_live/features/room/room_details.dart' show copyRoomLink, roomLinkOf;
@@ -17,6 +16,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart' show CardLayout;
 import 'package:pure_live/shared/grids/room_cover_chip.dart' show RoomCoverChip;
 import 'package:pure_live/shared/images/app_image_cache.dart';
+import 'package:pure_live/shared/navigation/room_opener.dart';
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
 
 /// The live module's history (the reference's `HistoryPage`): the watched
@@ -172,9 +172,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
               for (final (room, _) in records)
                 _HistoryCard(
                   room: room,
-                  onOpen: () => unawaited(
-                    context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
-                  ),
+                  onOpen: () => unawaited(openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId)),
                   onRemove: _busy ? null : () => unawaited(_remove(room)),
                 )
             else
@@ -194,9 +192,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                   return _HistoryGridCard(
                     room: room,
                     watchedAt: watchedAt,
-                    onOpen: () => unawaited(
-                      context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
-                    ),
+                    onOpen: () => unawaited(openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId)),
                     onRemove: _busy ? null : () => unawaited(_remove(room)),
                   );
                 },
@@ -273,12 +269,14 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
       _progress = 0;
     });
     try {
-      final failed = await ref.read(historyProvider.notifier).refreshRooms(
-        [for (final (room, _) in records) room],
-        onProgress: (done, total) {
-          if (mounted) setState(() => _progress = total == 0 ? null : done / total);
-        },
-      );
+      final failed = await ref
+          .read(historyProvider.notifier)
+          .refreshRooms(
+            [for (final (room, _) in records) room],
+            onProgress: (done, total) {
+              if (mounted) setState(() => _progress = total == 0 ? null : done / total);
+            },
+          );
       if (failed > 0 && mounted) {
         showDsToast(
           context: context,
@@ -546,63 +544,63 @@ final class _HistoryCard extends StatelessWidget {
         builder: (context, states, _) {
           final hovered = states.contains(WidgetState.hovered);
           return Container(
-          padding: const EdgeInsets.all(DsSpace.s8),
-          decoration: DsBoxDecoration(
-            color: hovered ? colors.hover : null,
-            borderRadius: BorderRadius.circular(theme.radii.card),
-            shadows: hovered
-                ? [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))]
-                : const <DsShadow>[],
-          ),
-          child: Row(
-            spacing: DsSpace.s12,
-            children: [
-              SizedBox(
-                width: theme.sizes.lg * 2,
-                child: DsImage(
-                  image: cachedImage(room.content.coverUrl),
-                  aspectRatio: 16 / 9,
-                  semanticLabel: room.content.title,
-                  style: DsImageStyle(
-                    borderRadius: BorderRadius.circular(theme.radii.nested(theme.radii.card, DsSpace.s8)),
+            padding: const EdgeInsets.all(DsSpace.s8),
+            decoration: DsBoxDecoration(
+              color: hovered ? colors.hover : null,
+              borderRadius: BorderRadius.circular(theme.radii.card),
+              shadows: hovered
+                  ? [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))]
+                  : const <DsShadow>[],
+            ),
+            child: Row(
+              spacing: DsSpace.s12,
+              children: [
+                SizedBox(
+                  width: theme.sizes.lg * 2,
+                  child: DsImage(
+                    image: cachedImage(room.content.coverUrl),
+                    aspectRatio: 16 / 9,
+                    semanticLabel: room.content.title,
+                    style: DsImageStyle(
+                      borderRadius: BorderRadius.circular(theme.radii.nested(theme.radii.card, DsSpace.s8)),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: DsSpace.s3,
-                  children: [
-                    Text(
-                      room.content.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                    ),
-                    Text(
-                      room.anchor?.name ?? room.ref.roomId,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: DsSpace.s3,
+                    children: [
+                      Text(
+                        room.content.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                      ),
+                      Text(
+                        room.anchor?.name ?? room.ref.roomId,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              DsPressable(
-                semanticLabel: context.t.history.remove,
-                onPressed: onRemove,
-                builder: (context, states, _) {
-                  final hovered = states.contains(WidgetState.hovered);
-                  return DsIcon(
-                    DsIcons.x,
-                    size: theme.sizes.iconSm,
-                    color: hovered ? colors.danger.fill : colors.textSubtle,
-                  );
-                },
-              ),
-            ],
-          ),
-        );
+                DsPressable(
+                  semanticLabel: context.t.history.remove,
+                  onPressed: onRemove,
+                  builder: (context, states, _) {
+                    final hovered = states.contains(WidgetState.hovered);
+                    return DsIcon(
+                      DsIcons.x,
+                      size: theme.sizes.iconSm,
+                      color: hovered ? colors.danger.fill : colors.textSubtle,
+                    );
+                  },
+                ),
+              ],
+            ),
+          );
         },
       ),
     );
@@ -619,11 +617,7 @@ List<Widget> _historyMenuItems(
   final t = context.t;
   final link = roomLinkOf(room);
   return [
-    DsMenuItem(
-      leading: const DsIcon(DsIcons.play),
-      label: Text(t.history.openRoom),
-      onPressed: onOpen,
-    ),
+    DsMenuItem(leading: const DsIcon(DsIcons.play), label: Text(t.history.openRoom), onPressed: onOpen),
     if (link.isNotEmpty)
       DsMenuItem(
         leading: const DsIcon(DsIcons.link),
@@ -644,12 +638,7 @@ List<Widget> _historyMenuItems(
 /// beneath, and the watch clock over the picture; the same context menu as
 /// the list card.
 final class _HistoryGridCard extends StatelessWidget {
-  const _HistoryGridCard({
-    required this.room,
-    required this.watchedAt,
-    required this.onOpen,
-    required this.onRemove,
-  });
+  const _HistoryGridCard({required this.room, required this.watchedAt, required this.onOpen, required this.onRemove});
 
   final LiveRoom room;
   final DateTime watchedAt;
@@ -675,9 +664,7 @@ final class _HistoryGridCard extends StatelessWidget {
                   image: cachedImage(room.content.coverUrl),
                   aspectRatio: 16 / 9,
                   semanticLabel: room.content.title,
-                  style: DsImageStyle(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
-                  ),
+                  style: DsImageStyle(borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card))),
                 ),
                 PositionedDirectional(
                   bottom: DsSpace.s6,

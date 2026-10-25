@@ -28,6 +28,8 @@
   "activeGuideCardHint": "The channel list's “on air” and progress follow this guide.",
   "autoUpdate": "Auto update",
   "autoUpdateHint": "The app checks in the background at this interval and re-fetches guides whose auto update is on.",
+  "customUserAgent": "Custom User-Agent",
+  "customUserAgentDesc": "The User-Agent for playlist and guide downloads and playback requests. Leave empty for the app default; a playlist line's own User-Agent wins.",
   "updateInterval": "Update interval",
   "updateIntervalHours": "{hours: int} h",
   "updateIntervalDays": "{days: int} d",

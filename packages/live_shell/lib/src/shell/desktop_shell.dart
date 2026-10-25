@@ -69,12 +69,15 @@ final class DesktopShell {
     required this.window,
     required this.settings,
     required this.exit,
+    this.confirmClose,
     this.tray,
     this.stateStore,
     this.busy = _neverBusy,
     this.rebuildWindow,
     this.idle,
     this.windows,
+    this.beforeQuit,
+    this.hasOtherWindows,
     this.readDisplays = _noDisplays,
     this.onMenuAction,
     this.menuEntries,
@@ -95,6 +98,17 @@ final class DesktopShell {
   /// Reads the current settings, fresh each time they matter: the viewer can
   /// change the close action between two presses of the same button.
   final ShellSettings Function() settings;
+
+  /// Asks the viewer what the close button should do.
+  ///
+  /// Only called for the window that owns the app's lifetime, and only when
+  /// [ShellSettings.dontAskExit] is off. [tray] tells the question whether a
+  /// hidden window still has an icon to return from. Null cancels the close.
+  final Future<CloseChoice?> Function({required bool tray})? confirmClose;
+
+  /// One close press at a time: a second press while the question is open
+  /// must not open another one.
+  Future<void>? _closeFlow;
 
   /// Ends the process.
   final Future<void> Function() exit;
@@ -137,6 +151,20 @@ final class DesktopShell {
   /// close — reached from the tray, the taskbar, or Task Manager, depending on
   /// how stubborn their session happens to be.
   final SecondaryWindows? windows;
+
+  /// The app's own last step before the process ends: close engines the
+  /// shell's tracked set cannot know about, flush the stores, release what
+  /// lives outside the window. Runs once, before the windows are dismissed;
+  /// a failure is logged by the app and must not veto the quit.
+  final Future<void> Function()? beforeQuit;
+
+  /// Whether the process still has another window besides this one.
+  ///
+  /// The primary's close button must not take a clone down with it: with
+  /// another window alive, a plain close hides (or minimises, without a tray)
+  /// instead of running the quit sequence. An explicit quit choice or the
+  /// tray's quit still ends everything.
+  final Future<bool> Function()? hasOtherWindows;
 
   /// Bounds the automatic rebuild path, so a reclaim that does not bring a window
   /// back cannot become a destroy-and-rebuild loop.
@@ -351,14 +379,46 @@ final class DesktopShell {
   }
 
   /// Applies the close policy to a press of the close button.
-  Future<void> handleClose() async {
-    final disposition = resolveCloseDisposition(
+  Future<void> handleClose() => _closeFlow ??= _handleClose().whenComplete(() => _closeFlow = null);
+
+  Future<void> _handleClose() async {
+    final current = settings();
+    var action = current.closeAction;
+    var explicitQuit = false;
+    final ask = confirmClose;
+    // The reference asks before closing the window that owns the app, and
+    // stores the answer so the next press can skip the question.
+    if (ask != null && !current.dontAskExit && !_quitting && window.role.ownsAppState) {
+      final choice = await ask(tray: hasTray);
+      if (choice == null) return;
+      action = choice.action;
+      explicitQuit = action == CloseAction.quit;
+    }
+    var disposition = resolveCloseDisposition(
       platform: platform,
-      action: settings().closeAction,
+      action: action,
       role: window.role,
       hasTray: hasTray,
       isQuitting: _quitting,
     );
+    // A plain close of the primary is a window close, not an app quit, when
+    // another window still exists. The app keeps its engine and database; the
+    // tray (or a remaining clone) is the way back. An explicit Quit choice
+    // bypasses this, as does the tray's Quit.
+    if (disposition == CloseDisposition.quit && !explicitQuit) {
+      final probe = hasOtherWindows;
+      if (probe != null) {
+        var others = false;
+        try {
+          others = await probe();
+        } on Object {
+          // An unanswerable probe falls back to the ordinary quit.
+        }
+        if (others) {
+          disposition = hasTray ? CloseDisposition.hide : CloseDisposition.minimise;
+        }
+      }
+    }
     switch (disposition) {
       case CloseDisposition.hide:
         // Last chance to capture where the window actually is: hiding stops the
@@ -373,7 +433,7 @@ final class DesktopShell {
       case CloseDisposition.destroy:
         ledger.record(
           trigger: QuitTrigger.windowClose,
-          minimizeToTray: settings().closeAction == CloseAction.hideToTray,
+          minimizeToTray: action == CloseAction.hideToTray,
           hasTray: hasTray,
         );
         await _record();
@@ -479,6 +539,16 @@ final class DesktopShell {
     }
     _quitting = true;
     _watcher?.stop();
+    // The app gets the first word: engines that only it can address, then
+    // any store buffers, before the window set below starts closing.
+    final hook = beforeQuit;
+    if (hook != null) {
+      try {
+        await hook();
+      } on Object {
+        // A failed last step must not turn quit into a window that stays.
+      }
+    }
     ledger.record(trigger: QuitTrigger.explicitQuit, minimizeToTray: false, hasTray: hasTray);
     await windows?.dismissAll();
     await _record();

@@ -1,14 +1,14 @@
 import 'dart:async' show Timer, unawaited;
+import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/refresh_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/app/routing/app_router.dart' show RoomRoute, SearchRoute;
+import 'package:pure_live/app/routing/app_router.dart' show SearchRoute;
 import 'package:pure_live/features/favorites/favorite_rules.dart';
 import 'package:pure_live/features/favorites/favorites_widgets.dart';
 import 'package:pure_live/features/favorites/follow_repository.dart';
@@ -18,8 +18,35 @@ import 'package:pure_live/features/settings/sites_display_provider.dart' show si
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 import 'package:pure_live/shared/grids/layout_toggle.dart' show LayoutToggle;
+import 'package:pure_live/shared/navigation/room_opener.dart';
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon, localizedSiteName;
 import 'package:pure_live/shared/platforms/platform_picker.dart' show kAllPlatforms;
+
+/// The narrowest card the follows grid uses when dense mode is off (the
+/// reference's large follows card).
+const double _favoriteLargeCardMinWidth = 300;
+
+/// The widest a compact follows card gets, so dense mode always stays
+/// smaller than the large cards.
+const double _favoriteDenseCardMaxWidth = 280;
+
+/// The gap and padding the follows grid's [CardGrid] uses (its defaults):
+/// the card measure is worked out from the same box, so the columns match
+/// the reference's minimum width.
+const double _favoriteGridGap = DsSpace.s16;
+const EdgeInsets _favoriteGridPadding = EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24);
+
+/// A card measure for [width] that gives the follows grid the reference's
+/// columns: compact cards keep the browsing width (up to a small-card cap),
+/// while large cards are as wide as the row allows around the 300 px floor.
+double _favoriteCardExtent({required bool dense, required double width, required double preferred}) {
+  if (dense) return math.min(preferred, _favoriteDenseCardMaxWidth);
+  final content = math.max(0, width - _favoriteGridPadding.horizontal);
+  final columns = math.max(1, ((content + _favoriteGridGap) / (_favoriteLargeCardMinWidth + _favoriteGridGap)).floor());
+  // A hair above the exact item width keeps the grid's own ceil() on the
+  // intended column count instead of tipping into one more.
+  return (content - _favoriteGridGap * (columns - 1)) / columns + 0.01;
+}
 
 /// The follows page (the reference's `FavoritePage`): the group tabs (live,
 /// replay, offline, all — each with its count on the shown platform) above
@@ -67,12 +94,26 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
 
   Timer? _autoRefresh;
 
+  /// The reference waits for the foreground transition to settle, then skips
+  /// the pass when a refresh just completed.
+  static const Duration _resumeRefreshDelay = Duration(milliseconds: 450);
+  static const Duration _resumeRefreshStaleAfter = Duration(seconds: 15);
+
+  Timer? _resumeRefresh;
+
+  /// When a refresh last completed; a resume inside
+  /// [_resumeRefreshStaleAfter] does not repeat it.
+  DateTime? _lastRefreshAt;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // A change from the settings surface re-arms the clock in place.
-    ref.listenManual(followsAutoRefreshProvider, (_, _) => _syncTimer());
+    ref.listenManual(followsAutoRefreshProvider, (_, _) {
+      _syncTimer();
+      if (!ref.read(followsAutoRefreshProvider).onResume) _cancelResumeRefresh();
+    });
     _syncTimer();
   }
 
@@ -80,14 +121,39 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _autoRefresh?.cancel();
+    _cancelResumeRefresh();
     _gridScroll.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // A backgrounded page does not need its clock.
-    if (state == AppLifecycleState.resumed) _syncTimer();
+    // A backgrounded page does not need its clock or a pending resume pass.
+    if (state == AppLifecycleState.resumed) {
+      _syncTimer();
+      _scheduleResumeRefresh();
+    } else {
+      _cancelResumeRefresh();
+    }
+  }
+
+  /// Arms the reference's one-shot foreground refresh. It is independent of
+  /// the periodic clock: the switch defaults on even with auto refresh off.
+  void _scheduleResumeRefresh() {
+    _cancelResumeRefresh();
+    if (!ref.read(followsAutoRefreshProvider).onResume) return;
+    final last = _lastRefreshAt;
+    if (last != null && DateTime.now().difference(last) < _resumeRefreshStaleAfter) return;
+    _resumeRefresh = Timer(_resumeRefreshDelay, () {
+      _resumeRefresh = null;
+      if (!mounted || _refreshing) return;
+      unawaited(_refresh(ref.read(followsProvider).rooms, showProgress: false));
+    });
+  }
+
+  void _cancelResumeRefresh() {
+    _resumeRefresh?.cancel();
+    _resumeRefresh = null;
   }
 
   /// Re-arms the auto refresh after the choice or the page changed: a new
@@ -150,6 +216,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
         );
       }
     } finally {
+      _lastRefreshAt = DateTime.now();
       if (mounted) {
         setState(() {
           _refreshing = false;
@@ -209,7 +276,8 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   Widget build(BuildContext context) {
     final t = context.t;
     final follows = ref.watch(followsProvider);
-    final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
+    final browseCardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
+    final dense = ref.watch(favoritesDensityProvider);
     final layout = ref.watch(browseLayoutProvider);
     // A platform switched off, or the order dragged, in the settings
     // surface reorders the tabs.
@@ -217,7 +285,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
       ..watch(sitesDisplayProvider)
       ..watch(sitesOrderProvider);
     if (!follows.ready) {
-      // A locked box (a second app instance) or a broken store says so,
+      // A failed database open or a broken store says so,
       // with the retry that re-opens the repository once the other
       // instance is gone.
       if (follows.error != null) {
@@ -241,12 +309,14 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
           ),
         );
       }
-      return CardGrid<LiveRoom>(
-        items: const [],
-        layout: layout,
-        cardExtent: cardExtent,
-        isLoading: true,
-        itemBuilder: (_, _) => const SizedBox.shrink(),
+      return LayoutBuilder(
+        builder: (context, constraints) => CardGrid<LiveRoom>(
+          items: const [],
+          layout: layout,
+          cardExtent: _favoriteCardExtent(dense: dense, width: constraints.maxWidth, preferred: browseCardExtent),
+          isLoading: true,
+          itemBuilder: (_, _) => const SizedBox.shrink(),
+        ),
       );
     }
     if (follows.rooms.isEmpty) {
@@ -296,9 +366,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     final visibleRooms = rooms.sublist(start, end);
 
     Widget cardFor(LiveRoom room, {required bool compact}) {
-      final names = [
-        for (final id in room.local.tagIds) ?tagNames[id],
-      ];
+      final names = [for (final id in room.local.tagIds) ?tagNames[id]];
       return DsContextMenuRegion(
         semanticLabel: t.common.more,
         items: [
@@ -319,7 +387,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
           compact: compact,
           tags: names,
           platformName: platform == kAllPlatforms ? _platformName(room.ref.platform) : null,
-          onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+          onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
           onUnfollow: () => unawaited(ref.read(followsProvider.notifier).remove(room.ref.identityKey)),
         ),
       );
@@ -422,13 +490,19 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                     onRefresh: _runRefresh,
                   ),
                 )
-              : CardGrid<LiveRoom>(
-                  items: visibleRooms,
-                  layout: layout,
-                  listItemBuilder: (context, room) => cardFor(room, compact: true),
-                  cardExtent: cardExtent,
-                  scrollController: _gridScroll,
-                  itemBuilder: (context, room) => cardFor(room, compact: false),
+              : LayoutBuilder(
+                  builder: (context, constraints) => CardGrid<LiveRoom>(
+                    items: visibleRooms,
+                    layout: layout,
+                    listItemBuilder: (context, room) => cardFor(room, compact: true),
+                    cardExtent: _favoriteCardExtent(
+                      dense: dense,
+                      width: constraints.maxWidth,
+                      preferred: browseCardExtent,
+                    ),
+                    scrollController: _gridScroll,
+                    itemBuilder: (context, room) => cardFor(room, compact: false),
+                  ),
                 ),
         ),
         if (lastPage > 1)

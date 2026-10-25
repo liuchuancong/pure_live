@@ -13,9 +13,12 @@ import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart' show PlayerId, PresentationMode;
 import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
+import 'package:pure_live/app/providers/keep_screen_on_provider.dart' show keepScreenOnProvider;
 import 'package:pure_live/app/providers/presentation_providers.dart'
     show RoomPresentationController, roomPresentationProvider;
+import 'package:pure_live/app/providers/room_leave_provider.dart' show roomLeaveProvider;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
 import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
 import 'package:pure_live/features/room/player_surface.dart' show PlayerSurface;
 import 'package:pure_live/features/room/room_chat.dart' show RoomChatPanel;
@@ -138,12 +141,13 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     }
   }
 
-  /// Holds the display awake exactly while frames are playing: a paused or
-  /// failed room lets the display sleep as usual.
-  void _syncScreenWake(bool playing) {
-    if (playing == _screenHeld) return;
-    _screenHeld = playing;
-    unawaited((playing ? _screenAwake.enable() : _screenAwake.disable()).catchError((Object _) {}));
+  /// Holds the display awake exactly while frames are playing and the
+  /// preference allows it: a paused room, a failed room, or the setting off
+  /// lets the display sleep as usual.
+  void _syncScreenWake(bool hold) {
+    if (hold == _screenHeld) return;
+    _screenHeld = hold;
+    unawaited((hold ? _screenAwake.enable() : _screenAwake.disable()).catchError((Object _) {}));
   }
 
   @override
@@ -188,7 +192,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   Widget build(BuildContext context) {
     final t = context.t;
     final room = ref.watch(roomProvider);
-    _syncScreenWake(room.playback.playing);
+    _syncScreenWake(room.playback.playing && ref.watch(keepScreenOnProvider));
     final presentation = ref.watch(roomPresentationProvider);
     final colors = DsTheme.colorsOf(context);
     // A TV remote uses the arrows to move focus and its own volume keys
@@ -200,13 +204,18 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     _player = room.handle?.id;
 
     /// The back arrow and Escape: leave the presentation mode while one
-    /// holds the page, otherwise leave the room.
+    /// holds the page, otherwise leave the room — where "leave" is the
+    /// host's verb: a route pop in the app, a window close in a room window.
     void leave() {
       final player = room.handle?.id;
       if (presentation != PresentationMode.normal && player != null) {
         unawaited(presentationController.exit(player));
-      } else {
+      } else if (ref.read(roomLeaveProvider) case final closeWindow?) {
+        unawaited(closeWindow());
+      } else if (context.canPop()) {
         context.pop();
+      } else {
+        context.go(RouteNames.popular);
       }
     }
 
@@ -264,7 +273,9 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
             height: math.min(desired, maxPicture),
             child: ColoredBox(
               color: colors.overlay,
-              child: Center(child: AspectRatio(aspectRatio: ratio, child: player)),
+              child: Center(
+                child: AspectRatio(aspectRatio: ratio, child: player),
+              ),
             ),
           );
           return Column(
@@ -470,7 +481,8 @@ final class _RoomMenu extends ConsumerWidget {
     final t = context.t;
     final detail = room.room;
     final link = detail == null ? '' : roomLinkOf(detail);
-    final external = detail != null &&
+    final external =
+        detail != null &&
         ((detail.links.webUrl?.trim().isNotEmpty ?? false) || (detail.links.appUrl?.trim().isNotEmpty ?? false));
     return Padding(
       padding: const EdgeInsetsDirectional.symmetric(vertical: DsSpace.s8),
@@ -566,10 +578,8 @@ final class _RoomInfoBar extends ConsumerWidget {
     return DsPressable(
       semanticLabel: t.room.detailsHint,
       onPressed: () => unawaited(showRoomDetails(context)),
-      builder: (context, states, child) => ColoredBox(
-        color: states.contains(WidgetState.hovered) ? colors.hover : colors.surface,
-        child: child,
-      ),
+      builder: (context, states, child) =>
+          ColoredBox(color: states.contains(WidgetState.hovered) ? colors.hover : colors.surface, child: child),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s8, DsSpace.s12, DsSpace.s6),
         child: Column(

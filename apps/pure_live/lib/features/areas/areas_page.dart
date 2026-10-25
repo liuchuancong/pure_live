@@ -146,28 +146,28 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
         Expanded(
           child: _view == _AreasView.platform
               ? (ids.isEmpty
-                  ? Center(
-                      child: DsEmptyState(
-                        icon: const DsIcon(DsIcons.antenna),
-                        title: Text(t.areas.noPlatforms),
-                        actions: [
-                          DsButton(
-                            variant: DsButtonVariant.secondary,
-                            size: DsSize.sm,
-                            leading: const DsIcon(DsIcons.antenna, size: 16),
-                            onPressed: () => unawaited(
-                              context.push(SettingsSectionRoute(section: SettingsSection.sites.name).location),
+                    ? Center(
+                        child: DsEmptyState(
+                          icon: const DsIcon(DsIcons.antenna),
+                          title: Text(t.areas.noPlatforms),
+                          actions: [
+                            DsButton(
+                              variant: DsButtonVariant.secondary,
+                              size: DsSize.sm,
+                              leading: const DsIcon(DsIcons.antenna, size: 16),
+                              onPressed: () => unawaited(
+                                context.push(SettingsSectionRoute(section: SettingsSection.sources.name).location),
+                              ),
+                              child: Text(t.settings.sitesDisplay),
                             ),
-                            child: Text(t.settings.sitesDisplay),
-                          ),
-                        ],
-                      ),
-                    )
-                  : _PlatformAreas(
-                      key: ValueKey('areas-$platform'),
-                      platform: platform,
-                      scrollController: _scrollOf(platform),
-                    ))
+                          ],
+                        ),
+                      )
+                    : _PlatformAreas(
+                        key: ValueKey('areas-$platform'),
+                        platform: platform,
+                        scrollController: _scrollOf(platform),
+                      ))
               : const _FollowedAreas(),
         ),
       ],
@@ -250,6 +250,7 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
         ),
       );
     }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -375,7 +376,10 @@ final class _FollowedAreas extends ConsumerWidget {
       area: area,
       onUnfollow: () => unawaited(ref.read(followedAreasProvider.notifier).remove(area.identityKey)),
       onSelect: () => unawaited(
-        context.push(AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location, extra: area),
+        context.push(
+          AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location,
+          extra: area,
+        ),
       ),
     );
     return CardGrid<LiveArea>(
@@ -420,7 +424,9 @@ final class _AreaCard extends StatelessWidget {
           decoration: DsBoxDecoration(
             color: hovered ? colors.hover : colors.control,
             borderRadius: BorderRadius.circular(theme.radii.card),
-            shadows: hovered ? [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))] : const <DsShadow>[],
+            shadows: hovered
+                ? [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))]
+                : const <DsShadow>[],
           ),
           child: Row(
             spacing: DsSpace.s12,
@@ -439,7 +445,12 @@ final class _AreaCard extends StatelessWidget {
                       style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                     ),
                     if (parent != null && parent.isNotEmpty)
-                      Text(parent, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                      Text(
+                        parent,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
                   ],
                 ),
               ),
@@ -497,7 +508,9 @@ final class _AreaIcon extends StatelessWidget {
     final theme = DsTheme.of(context);
     final fallback = ColoredBox(
       color: colors.channel,
-      child: Center(child: DsIcon(DsIcons.tag, size: theme.sizes.iconMd, color: colors.textMuted)),
+      child: Center(
+        child: DsIcon(DsIcons.tag, size: theme.sizes.iconMd, color: colors.textMuted),
+      ),
     );
     final url = area.iconUrl;
     if (url == null || url.isEmpty) {

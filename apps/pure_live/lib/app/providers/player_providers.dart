@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart';
+import 'package:media_core_better_player/media_core_better_player.dart';
+import 'package:media_core_ijk_player/media_core_ijk_player.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/app/providers/presentation_providers.dart' show presentationDriverProvider;
@@ -13,9 +16,16 @@ import 'package:pure_live/app/providers/presentation_providers.dart' show presen
 /// bootstrap calls [primePlayerEngine] before the first frame); the kernel
 /// itself is cheap to hold and never disposed.
 final Provider<PlayerKernel> playerKernelProvider = Provider<PlayerKernel>((ref) {
-  return PlayerKernel()
-    ..registerBackend(const MediaKitAdapterFactory().registration())
-    ..presentationDriver = ref.watch(presentationDriverProvider);
+  final kernel = PlayerKernel()..registerBackend(const MediaKitAdapterFactory().registration());
+  // Desktop keeps the mpv engine; the two mobile engines are real, shipped
+  // adapters on Android and iOS and stay out of a desktop build.
+  if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)) {
+    kernel
+      ..registerBackend(const FlvLzcPlayerAdapterFactory().registration())
+      ..registerBackend(const BetterPlayerAdapterFactory().registration());
+  }
+  kernel.presentationDriver = ref.watch(presentationDriverProvider);
+  return kernel;
 });
 
 /// The one-time native engine prime the boot path calls. Safe to call

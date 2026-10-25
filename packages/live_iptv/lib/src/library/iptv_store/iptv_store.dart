@@ -10,9 +10,9 @@ import 'package:live_iptv/src/model/model.dart';
 /// whole-set on purpose — a partial save is where a list ends up holding two
 /// records of one channel.
 ///
-/// The implementations are `BoxIptvStore` (production, over a live_storage
-/// repository) and `InMemoryIptvStore` (tests and previews); the keys they
-/// store under are `IptvKeys`.
+/// The implementations are `StorageIptvStore` (production, over the app's
+/// shared JSON list store) and `InMemoryIptvStore` (tests and previews); the
+/// keys they store under are `IptvKeys`.
 abstract interface class IptvStore {
   /// Loads the channels (ordered by position).
   Future<List<IptvChannel>> loadChannels();

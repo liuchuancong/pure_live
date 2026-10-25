@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
@@ -28,9 +29,7 @@ final class AreasCatalogController extends Notifier<Map<String, PlatformAreasSta
     final sites = {for (final site in ref.read(sitesProvider).all) site.manifest.id: site};
     return [
       for (final id in order)
-        if (sites[id] case final site?
-            when site.capability<LiveAreaProvider>() != null && display.shown(id))
-          id,
+        if (sites[id] case final site? when site.capability<LiveAreaProvider>() != null && display.shown(id)) id,
     ];
   }
 

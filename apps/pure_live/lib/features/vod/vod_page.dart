@@ -10,6 +10,7 @@ import 'package:pure_live/features/vod/vod_controller.dart';
 import 'package:pure_live/features/vod/vod_widgets.dart' show VodVideoCard, VodVideoRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
+import 'package:pure_live/shared/widgets/choice_dialog.dart' show AdaptiveChoiceField;
 import 'package:pure_live/shared/widgets/chrome_icon_button.dart';
 
 /// The station's four surfaces.
@@ -373,12 +374,11 @@ final class _VodSearchPane extends ConsumerWidget {
             children: [
               SizedBox(
                 width: 150,
-                child: DsSelect<String>(
+                child: AdaptiveChoiceField<String>(
                   value: order,
+                  title: t.vod.sort,
                   semanticLabel: t.vod.sort,
-                  onChanged: (value) {
-                    if (value != null) onOrder(value);
-                  },
+                  onChanged: onOrder,
                   options: [
                     DsSelectOption(value: 'totalrank', label: t.vod.sortTotalrank),
                     DsSelectOption(value: 'click', label: t.vod.sortClick),
@@ -390,12 +390,11 @@ final class _VodSearchPane extends ConsumerWidget {
               ),
               SizedBox(
                 width: 160,
-                child: DsSelect<int>(
+                child: AdaptiveChoiceField<int>(
                   value: duration,
+                  title: t.vod.duration,
                   semanticLabel: t.vod.duration,
-                  onChanged: (value) {
-                    if (value != null) onDuration(value);
-                  },
+                  onChanged: onDuration,
                   options: [
                     DsSelectOption(value: 0, label: t.vod.durationAny),
                     DsSelectOption(value: 1, label: t.vod.durationUnder10),

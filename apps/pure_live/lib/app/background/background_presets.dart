@@ -34,9 +34,21 @@ const List<BackgroundGradientPreset> kBackgroundGradientPresets = [
   (colors: [Color(0xFF2B5876), Color(0xFF4E4376)], begin: Alignment.topLeft, end: Alignment.bottomRight),
   (colors: [Color(0xFF13547A), Color(0xFF80D0C7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
   (colors: [Color(0xFF0250C5), Color(0xFFD43F8D)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-  (colors: [Color(0xFF7085B6), Color(0xFF87A7D9), Color(0xFFDEF3F8)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-  (colors: [Color(0xFF2CD8D5), Color(0xFF6B8DD6), Color(0xFF8E37D7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-  (colors: [Color(0xFF3D3393), Color(0xFF2B76B9), Color(0xFF2CACD1), Color(0xFF35EB93)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+  (
+    colors: [Color(0xFF7085B6), Color(0xFF87A7D9), Color(0xFFDEF3F8)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  ),
+  (
+    colors: [Color(0xFF2CD8D5), Color(0xFF6B8DD6), Color(0xFF8E37D7)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  ),
+  (
+    colors: [Color(0xFF3D3393), Color(0xFF2B76B9), Color(0xFF2CACD1), Color(0xFF35EB93)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  ),
   (colors: [Color(0xFFFDFBFB), Color(0xFFEBEDEE)], begin: Alignment.topLeft, end: Alignment.bottomRight),
   (colors: [Color(0xFF434343), Color(0xFF000000)], begin: Alignment.topLeft, end: Alignment.bottomRight),
   (colors: [Color(0xFF0FD850), Color(0xFFF9F047)], begin: Alignment.topLeft, end: Alignment.bottomRight),
@@ -46,19 +58,6 @@ const List<BackgroundGradientPreset> kBackgroundGradientPresets = [
 List<Color> get kDefaultBackgroundGradient => kBackgroundGradientPresets.first.colors;
 Alignment get kDefaultGradientBegin => kBackgroundGradientPresets.first.begin;
 Alignment get kDefaultGradientEnd => kBackgroundGradientPresets.first.end;
-
-/// A few pictures from the TV wallpaper set's public deepin/UOS collection
-/// (`files.itab.link`). They are ordinary image URLs, so they reuse the
-/// image path's download, cache and failure handling; the gallery is a
-/// shelf of starting points, not a second media pipeline.
-const List<String> kBackgroundGalleryUrls = [
-  'https://files.itab.link/wallpaper/deepin/0.jpg',
-  'https://files.itab.link/wallpaper/deepin/3.jpg',
-  'https://files.itab.link/wallpaper/deepin/7.jpg',
-  'https://files.itab.link/wallpaper/deepin/13.jpg',
-  'https://files.itab.link/wallpaper/deepin/19.jpg',
-  'https://files.itab.link/wallpaper/deepin/24.jpg',
-];
 
 /// The full deepin/UOS set (26 files), named as the TV wallpaper library
 /// names them. The index is the file number on the public CDN.

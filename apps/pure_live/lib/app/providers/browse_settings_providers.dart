@@ -7,12 +7,13 @@ import 'package:pure_live/shared/grids/card_grid.dart' show CardLayout;
 /// The browsing surfaces' tunables: what a settings page will own.
 typedef BrowseSettings = ({double homeCardExtent, int homePageSize, double crossSpacing, double mainSpacing});
 
-/// The grid gaps' floor, ceiling and default: the settings sliders and the
-/// stored values share them, so a stored value can never leave the range the
+/// The grid gaps' floor, ceiling and default (the reference's
+/// `crossAxisSpacing`/`mainAxisSpacing`): the settings sliders and the stored
+/// values share them, so a stored value can never leave the range the
 /// settings page offers.
 const double kBrowseSpacingMin = 0;
-const double kBrowseSpacingMax = 32;
-const double kBrowseSpacingDefault = 16;
+const double kBrowseSpacingMax = 64;
+const double kBrowseSpacingDefault = 6;
 
 /// Owns the browsing settings the home feed and its grid read.
 ///
@@ -153,6 +154,35 @@ final class BrowseLayoutController extends Notifier<CardLayout> {
 
 /// The feed layout choice.
 final browseLayoutProvider = NotifierProvider<BrowseLayoutController, CardLayout>(BrowseLayoutController.new);
+
+/// Owns the follows page's card density (the reference's
+/// `enableDenseFavorites`): compact cards when on, large cards when off;
+/// persists under `browse.denseFavorites`.
+final class FavoritesDensityController extends Notifier<bool> {
+  static const String prefsKey = 'browse.denseFavorites';
+
+  @override
+  bool build() {
+    try {
+      return StoragePrefs.getBool(prefsKey) ?? true;
+    } on Object {
+      return true;
+    }
+  }
+
+  /// Turns the compact follows grid on or off and writes it through.
+  Future<void> set({required bool dense}) async {
+    state = dense;
+    try {
+      await StoragePrefs.setBool(prefsKey, dense);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// Whether the follows page uses compact cards.
+final favoritesDensityProvider = NotifierProvider<FavoritesDensityController, bool>(FavoritesDensityController.new);
 
 /// The browsing settings.
 final browseSettingsProvider = NotifierProvider<BrowseSettingsController, BrowseSettings>(BrowseSettingsController.new);

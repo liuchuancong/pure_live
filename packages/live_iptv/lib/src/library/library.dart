@@ -7,9 +7,9 @@
 /// rules about what a write means; the store knows only documents.
 library;
 
-export 'box_iptv_store/box_iptv_store.dart';
 export 'in_memory_iptv_store/in_memory_iptv_store.dart';
 export 'iptv_keys/iptv_keys.dart';
 export 'iptv_library/iptv_library.dart';
 export 'iptv_store/iptv_store.dart';
 export 'library_iptv_channel_source/library_iptv_channel_source.dart';
+export 'storage_iptv_store/storage_iptv_store.dart';

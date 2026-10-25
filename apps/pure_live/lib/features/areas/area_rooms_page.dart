@@ -3,18 +3,17 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/background/app_background.dart' show BackgroundActiveScope;
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteProvider;
-import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/areas/area_follow_repository.dart';
 import 'package:pure_live/features/areas/area_rooms_controller.dart';
 import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 import 'package:pure_live/shared/grids/layout_toggle.dart' show LayoutToggle;
+import 'package:pure_live/shared/navigation/room_opener.dart';
 import 'package:pure_live/shared/paging/room_paging.dart';
 
 /// One area's rooms (the reference's `kAreaRooms`): its own page under the
@@ -91,7 +90,7 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
       listItemBuilder: (context, room) => RoomCard(
         room: room,
         compact: true,
-        onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
       ),
       cardExtent: settings.homeCardExtent,
       crossSpacing: settings.crossSpacing,
@@ -108,7 +107,7 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
       refreshError: open.error?.message,
       itemBuilder: (context, room) => RoomCard(
         room: room,
-        onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
       ),
     );
 

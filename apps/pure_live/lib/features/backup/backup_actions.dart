@@ -9,6 +9,7 @@ import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart' show getApplicationDocumentsDirectory, getApplicationSupportDirectory;
 import 'package:pure_live/app/providers/network_providers.dart' show networkFactoryProvider;
+import 'package:pure_live/app/providers/settings_refresh.dart' show refreshSettingsFromWidget;
 import 'package:pure_live/features/backup/backup_document.dart';
 import 'package:pure_live/features/backup/backup_repository.dart';
 import 'package:pure_live/features/backup/webdav_client.dart';
@@ -27,19 +28,25 @@ import 'package:pure_live/features/backup/webdav_settings.dart';
 /// default folder.
 const String kBackupFolderPref = 'backup.dir';
 
-/// The backup document built from the boxes and settings as they are now.
+/// The backup document built from the stores and settings as they are now.
 Future<BackupDocument> captureBackupDocument(WidgetRef ref, {BackupScope scope = BackupScope.all}) async {
   final repository = await ref.read(backupRepositoryProvider.future);
   return repository.capture(scope: scope);
 }
 
-/// Applies [document]: the boxes restore section by section and the
+/// Applies [document]: the stores restore section by section and the
 /// settings keys are written back. Parsing happens first
 /// (`BackupDocument.tryDecode`), so the pane can confirm on the decoded
 /// counts before anything is touched.
 Future<void> applyBackup(WidgetRef ref, BackupDocument document) async {
   final repository = await ref.read(backupRepositoryProvider.future);
   await repository.apply(document);
+  // The restore writes prefs directly rather than through the settings
+  // controllers, so this window must re-read them too; the other windows
+  // hear the same writes over the store's change stream.
+  if (document.scope != BackupScope.follows && document.hasSettings) {
+    refreshSettingsFromWidget(ref);
+  }
 }
 
 // -- Local backup files ---------------------------------------------------

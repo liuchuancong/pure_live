@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show SiteIds;
 import 'package:pure_live/features/account/account_pane.dart' show AccountPane;
-import 'package:pure_live/features/settings/settings_widgets.dart' show SettingsConfigRow;
+import 'package:pure_live/features/settings/settings_widgets.dart' show SettingsChoiceRow;
 import 'package:pure_live/features/vod/vod_settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 
@@ -26,21 +26,15 @@ final class VodSettingsPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.vodPlayback),
           children: [
-            SettingsConfigRow(
+            SettingsChoiceRow<VodQualityChoice>(
               leading: const DsIcon(DsIcons.gauge),
               title: t.settings.vodQuality,
               description: t.settings.vodQualityDesc,
-              controlWidth: 160,
-              control: DsSelect<VodQualityChoice>(
-                value: quality,
-                onChanged: (value) {
-                  if (value != null) ref.read(vodQualityProvider.notifier).select(value);
-                },
-                options: [
-                  for (final choice in VodQualityChoice.values) DsSelectOption(value: choice, label: choice.label(t)),
-                ],
-                semanticLabel: t.settings.vodQuality,
-              ),
+              value: quality,
+              options: [
+                for (final choice in VodQualityChoice.values) DsSelectOption(value: choice, label: choice.label(t)),
+              ],
+              onChanged: ref.read(vodQualityProvider.notifier).select,
             ),
           ],
         ),

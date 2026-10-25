@@ -43,7 +43,6 @@ dependencies:
   animations: ^3.0.0 # 常用动画效果
   any_image_view: ^2.5.0 # 多来源图片展示
   cached_network_image: ^4.0.4 # 网络图片缓存
-  cached_network_image_ce: ^4.13.1 # 社区维护的图片缓存实现
   flutter_cache_manager: ^3.4.5 # 图片缓存的体积与清理
   custom_refresh_indicator: ^4.0.2 # 自定义下拉刷新
   desen_ui: ^0.3.2 # 设计令牌、主题与组件
@@ -91,6 +90,8 @@ dependencies:
   media_core: { path: F:/media_core/packages/media_core } # 播放器内核
   media_core_live: { path: F:/media_core/packages/media_core_live } # 直播恢复编排（线路×引擎扫描）
   media_core_media_kit: { path: F:/media_core/packages/media_core_media_kit } # mpv 后端
+  media_core_ijk_player: { path: F:/media_core/packages/media_core_ijk_player } # Android/iOS 内核
+  media_core_better_player: { path: F:/media_core/packages/media_core_better_player } # Android/iOS 内核
   media_core_danmaku: { path: F:/media_core/packages/media_core_danmaku } # 弹幕管线（过滤/摄录）
   media_core_recording_ffmpeg: { path: F:/media_core/packages/media_core_recording_ffmpeg } # FFmpeg 录制后端
   media_core_presentation: { path: F:/media_core/packages/media_core_presentation } # 呈现驱动
@@ -129,7 +130,6 @@ dev_dependencies:
   # 开发辅助
   slang_mcp: ^0.2.1 # 多语言开发辅助工具（MCP 服务器）
 
-  hive_ce: any
 flutter:
   uses-material-design: true
 
@@ -155,6 +155,7 @@ flutter:
   assets:
     - assets/tray/ # 系统托盘图标
     - assets/icon/ # 启动页的品牌图（母图）
+    - assets/shaders/ # Anime4K 超分辨率着色器
 
 # 启动图标：assets/icon/app_icon.png 是唯一母图，各平台的图标资源全部由它生成。
 # 换图标只改母图，然后跑：dart run icons_launcher:launch

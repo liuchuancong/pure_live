@@ -107,6 +107,4 @@ final class WebDavSettingsController extends Notifier<WebDavSettings> {
 }
 
 /// The WebDAV settings.
-final webdavSettingsProvider = NotifierProvider<WebDavSettingsController, WebDavSettings>(
-  WebDavSettingsController.new,
-);
+final webdavSettingsProvider = NotifierProvider<WebDavSettingsController, WebDavSettings>(WebDavSettingsController.new);

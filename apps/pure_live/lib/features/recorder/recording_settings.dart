@@ -152,7 +152,8 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
       stallTimeoutSeconds: (_storedInt('recorder.stallTimeout') ?? 30).clamp(10, 600),
       diskWatermarkMb: (_storedInt('recorder.diskWatermark') ?? 200).clamp(50, 4096),
       maxTasks: (_storedInt('recorder.maxTasks') ?? 1).clamp(1, 10),
-      container: RecordingFileContainer.values.asNameMap()[_storedString('recorder.container') ?? ''] ??
+      container:
+          RecordingFileContainer.values.asNameMap()[_storedString('recorder.container') ?? ''] ??
           RecordingFileContainer.mpegTs,
     );
   }

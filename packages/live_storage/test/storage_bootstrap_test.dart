@@ -3,9 +3,8 @@ import 'dart:io';
 import 'package:live_storage/live_storage.dart';
 import 'package:test/test.dart';
 
-/// `StorageBootstrap` is the only thing that decides whether the app has a usable
-/// database, so these cases target the promises its own documentation makes: one
-/// shared initialization under concurrency, a retryable failure, and a shutdown
+/// The one bootstrap that decides whether the app has a usable database:
+/// one shared open under concurrency, a retryable failure, and a shutdown
 /// that really resets.
 void main() {
   late Directory storageDir;
@@ -14,18 +13,17 @@ void main() {
     storageDir = Directory.systemTemp.createTempSync('live_storage_bootstrap');
   });
 
-  tearDown(() {
-    // Hive holds a process-wide path, so every case must leave with nothing open
-    // or the next one inherits it.
+  tearDown(() async {
+    await StorageStores.closeInstance();
     try {
       storageDir.deleteSync(recursive: true);
     } on FileSystemException {
-      // A Windows file lock after a closed box is transient; the temp directory is
-      // collected with the process anyway.
+      // A Windows file handle can outlive close by a tick; the temp directory
+      // is collected with the process.
     }
   });
 
-  StorageBootstrap bootstrapFor(StorageAdapterRegistry registry, {required int Function() onResolve}) {
+  StorageBootstrap bootstrapFor({required int Function() onResolve}) {
     return StorageBootstrap(
       pathProvider: StoragePathProvider(
         resolver: () async {
@@ -33,54 +31,39 @@ void main() {
           return storageDir.path;
         },
       ),
-      adapterRegistry: registry,
     );
   }
 
-  test('a successful initialization runs the resolver and the registrars once each', () async {
+  test('a successful initialization opens the database and resolves once', () async {
     var resolves = 0;
-    var registrations = 0;
-    final subject = bootstrapFor(
-      StorageAdapterRegistry()..add('iptv', () => registrations++),
-      onResolve: () => ++resolves,
-    );
+    final subject = bootstrapFor(onResolve: () => ++resolves);
 
     expect(subject.isInitialized, isFalse);
 
     await subject.initialize();
 
     expect(subject.isInitialized, isTrue);
+    expect(StorageStores.isOpen, isTrue);
     expect(resolves, 1);
-    expect(registrations, 1);
+    expect(StorageStores.databaseFile(storageDir.path).existsSync(), isTrue);
 
     await subject.initialize();
 
     expect(resolves, 1, reason: 'an already-initialized store must not re-read the path');
-    expect(registrations, 1, reason: 'a second adapter registration would throw inside Hive');
   });
 
   test('concurrent callers share one initialization operation', () async {
     var resolves = 0;
-    var registrations = 0;
-    final subject = bootstrapFor(
-      StorageAdapterRegistry()..add('library', () => registrations++),
-      onResolve: () => ++resolves,
-    );
+    final subject = bootstrapFor(onResolve: () => ++resolves);
 
-    // Two start-up paths (a page and a service, say) racing to initialize is the
-    // common case, not an exotic one; the shared future is what prevents a
-    // double `Hive.init` and a duplicate adapter registration.
     await Future.wait([subject.initialize(), subject.initialize(), subject.initialize()]);
 
     expect(resolves, 1);
-    expect(registrations, 1);
     expect(subject.isInitialized, isTrue);
   });
 
   test('a failed initialization can be retried instead of poisoning the store', () async {
     var attempt = 0;
-    var registrations = 0;
-    final registry = StorageAdapterRegistry()..add('library', () => registrations++);
     final subject = StorageBootstrap(
       pathProvider: StoragePathProvider(
         resolver: () async {
@@ -91,23 +74,21 @@ void main() {
           return storageDir.path;
         },
       ),
-      adapterRegistry: registry,
     );
 
     await expectLater(subject.initialize(), throwsStateError);
     expect(subject.isInitialized, isFalse);
+    expect(StorageStores.isOpen, isFalse);
 
     await subject.initialize();
 
     expect(subject.isInitialized, isTrue);
     expect(attempt, 2, reason: 'the second call must actually re-resolve, not await the stored failure');
-    expect(registrations, 1);
   });
 
   test('concurrent callers of a failing initialization all see the same failure', () async {
     final subject = StorageBootstrap(
       pathProvider: StoragePathProvider(resolver: () async => throw StateError('unavailable')),
-      adapterRegistry: StorageAdapterRegistry(),
     );
 
     final results = await Future.wait(
@@ -121,14 +102,15 @@ void main() {
     expect(subject.isInitialized, isFalse);
   });
 
-  test('shutdown closes the store and a later initialization starts it again', () async {
+  test('shutdown closes the database and a later initialization starts it again', () async {
     var resolves = 0;
-    final subject = bootstrapFor(StorageAdapterRegistry(), onResolve: () => ++resolves);
+    final subject = bootstrapFor(onResolve: () => ++resolves);
 
     await subject.initialize();
     await subject.shutdown();
 
     expect(subject.isInitialized, isFalse);
+    expect(StorageStores.isOpen, isFalse);
 
     await subject.initialize();
 
@@ -138,7 +120,7 @@ void main() {
 
   test('shutdown before any initialization is a no-op', () async {
     var resolves = 0;
-    final subject = bootstrapFor(StorageAdapterRegistry(), onResolve: () => ++resolves);
+    final subject = bootstrapFor(onResolve: () => ++resolves);
 
     await subject.shutdown();
 

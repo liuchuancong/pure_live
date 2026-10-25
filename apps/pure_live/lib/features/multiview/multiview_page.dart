@@ -4,20 +4,21 @@ import 'dart:math' as math;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart' show LivePlayQuality, LiveRoom, LiveRoomRefIdentity;
 import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:pure_live/app/providers/navigation_providers.dart' show selectedNavItemProvider;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
 import 'package:pure_live/features/history/history_repository.dart' show historyProvider;
 import 'package:pure_live/features/multiview/multiview_controller.dart';
 import 'package:pure_live/features/multiview/multiview_playback.dart';
+import 'package:pure_live/features/settings/playback_settings_providers.dart' show playbackSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart' show NavigationItem;
 import 'package:pure_live/shared/images/app_image_cache.dart';
+import 'package:pure_live/shared/navigation/room_opener.dart';
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon, localizedSiteName;
+import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
 /// The multi-view wall (the reference's multiview): the 1×1, 1×2, 2×2 and
 /// 1+3 arrangements, each pane holding a followed room, with the layout
@@ -63,15 +64,15 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
       if (mounted) ref.read(multiviewPlaybackProvider.notifier).setActive(active: visible);
     });
   }
+
   @override
   Widget build(BuildContext context) {
     _syncVisibility(
-      TickerMode.valuesOf(context).enabled &&
-          ref.watch(selectedNavItemProvider) == NavigationItem.multiview,
+      TickerMode.valuesOf(context).enabled && ref.watch(selectedNavItemProvider) == NavigationItem.multiview,
     );
     final wall = ref.watch(multiviewProvider);
     if (!wall.ready) {
-      return const Center(child: SizedBox(width: 24, height: 24, child: DsSpinner()));
+      return const Center(child: AppLoadingIndicator(size: 24));
     }
     final rooms = ref.watch(followsProvider.select((state) => state.rooms));
     final playback = ref.watch(multiviewPlaybackProvider);
@@ -129,6 +130,10 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     final theme = DsTheme.of(context);
     final controls = ref.read(multiviewPlaybackProvider.notifier);
     final selected = playback.selected;
+    // The app-wide mute is a second reason the wall can be silent; the
+    // button reflects either and clears both in one press.
+    final globallyMuted = ref.watch(playbackSettingsProvider.select((settings) => settings.globalMute));
+    final wallMuted = playback.allMuted || globallyMuted;
     final layout = DsSegmentedControl<MultiviewLayout>(
       segments: [
         for (final arrangement in MultiviewLayout.values)
@@ -152,10 +157,15 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     final switches = [
       if (playback.panes.isNotEmpty)
         _ToolbarButton(
-          icon: playback.allMuted ? DsIcons.volumeOff : DsIcons.volume,
-          semanticLabel: playback.allMuted ? t.multiview.unmuteAll : t.multiview.muteAll,
-          active: playback.allMuted,
-          onPressed: controls.toggleMuteAll,
+          icon: wallMuted ? DsIcons.volumeOff : DsIcons.volume,
+          semanticLabel: wallMuted ? t.multiview.unmuteAll : t.multiview.muteAll,
+          active: wallMuted,
+          onPressed: () {
+            if (playback.allMuted) controls.toggleMuteAll();
+            if (globallyMuted) {
+              unawaited(ref.read(playbackSettingsProvider.notifier).setGlobalMute(value: false));
+            }
+          },
         ),
       if (activePanes.isNotEmpty)
         _ToolbarButton(
@@ -250,12 +260,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
   /// The 1+3 wall: the selected pane large, the other three in a rail
   /// beside it (or below it when that leaves the large pane more room).
   /// A tap on a small pane selects it, so it moves into the large place.
-  Widget _focusWall(
-    List<_Slot> slots,
-    MultiviewPlaybackState playback,
-    double gap,
-    BoxConstraints constraints,
-  ) {
+  Widget _focusWall(List<_Slot> slots, MultiviewPlaybackState playback, double gap, BoxConstraints constraints) {
     final largeAt = _largeSlot(slots, playback);
     final smalls = [
       for (final slot in slots)
@@ -267,20 +272,14 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
       child: side
           ? Column(
               spacing: gap,
-              children: [
-                for (final at in smalls) Expanded(child: _pane(slots, playback, at, compact: true)),
-              ],
+              children: [for (final at in smalls) Expanded(child: _pane(slots, playback, at, compact: true))],
             )
           : Row(
               spacing: gap,
-              children: [
-                for (final at in smalls) Expanded(child: _pane(slots, playback, at, compact: true)),
-              ],
+              children: [for (final at in smalls) Expanded(child: _pane(slots, playback, at, compact: true))],
             ),
     );
-    return side
-        ? Row(spacing: gap, children: [large, rail])
-        : Column(spacing: gap, children: [large, rail]);
+    return side ? Row(spacing: gap, children: [large, rail]) : Column(spacing: gap, children: [large, rail]);
   }
 
   /// The pane that fills the large place: the audible one while it holds a
@@ -368,7 +367,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     final platform = room?.ref.platform ?? key.substring(0, at);
     final roomId = room?.ref.roomId ?? key.substring(at + 1);
     final playback = ref.read(multiviewPlaybackProvider.notifier)..setActive(active: false);
-    await context.push(RoomRoute(platform: platform, roomId: roomId).location);
+    await openRoom(context, platform: platform, roomId: roomId);
     if (!mounted) return;
     playback.setActive(active: TickerMode.valuesOf(context).enabled);
   }
@@ -486,12 +485,7 @@ final class _PaneTile extends StatelessWidget {
                         fit: StackFit.expand,
                         children: [
                           _picture(context, colors, theme, hovered),
-                          PositionedDirectional(
-                            start: 0,
-                            end: 0,
-                            bottom: 0,
-                            child: _compactCaption(theme),
-                          ),
+                          PositionedDirectional(start: 0, end: 0, bottom: 0, child: _compactCaption(theme)),
                         ],
                       )
                     : Column(
@@ -544,15 +538,12 @@ final class _PaneTile extends StatelessWidget {
           )
         else ...[
           _cover(colors, theme, hovered),
-          if (playback?.stage == MultiviewPaneStage.opening)
-            const Center(child: SizedBox(width: 22, height: 22, child: DsSpinner())),
+          if (playback?.stage == MultiviewPaneStage.opening) const Center(child: AppLoadingIndicator(size: 22)),
           if (playback?.stage == MultiviewPaneStage.failed) _failure(context, colors, theme),
         ],
         if (handle != null && playback?.switching == true)
           const Positioned.fill(
-            child: IgnorePointer(
-              child: Center(child: SizedBox(width: 22, height: 22, child: DsSpinner())),
-            ),
+            child: IgnorePointer(child: Center(child: AppLoadingIndicator(size: 22))),
           ),
         if (handle != null && playback?.paused == true) _pausedBadge(context, theme),
       ],
@@ -573,10 +564,7 @@ final class _PaneTile extends StatelessWidget {
               child: Container(
                 height: 26,
                 padding: const EdgeInsetsDirectional.only(start: DsSpace.s8, end: DsSpace.s12),
-                decoration: BoxDecoration(
-                  color: const Color(0xB3000000),
-                  borderRadius: BorderRadius.circular(13),
-                ),
+                decoration: BoxDecoration(color: const Color(0xB3000000), borderRadius: BorderRadius.circular(13)),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   spacing: DsSpace.s6,
@@ -685,10 +673,7 @@ final class _PaneTile extends StatelessWidget {
               slot.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.typography.caption.copyWith(
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFFFFFFFF),
-              ),
+              style: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, color: const Color(0xFFFFFFFF)),
             ),
           ),
         ],
@@ -719,11 +704,7 @@ final class _PaneTile extends StatelessWidget {
               style: theme.typography.caption.copyWith(color: colors.text),
             ),
           ),
-          _PaneBarButton(
-            icon: DsIcons.externalLink,
-            semanticLabel: t.multiview.openRoom,
-            onPressed: onOpen,
-          ),
+          _PaneBarButton(icon: DsIcons.externalLink, semanticLabel: t.multiview.openRoom, onPressed: onOpen),
           _PaneBarButton(
             icon: DsIcons.arrowLeftRight,
             semanticLabel: t.multiview.swapPane,
@@ -800,12 +781,7 @@ final class _PaneBarButton extends StatelessWidget {
 /// A toolbar switch: an icon alone in the header, filled while its state is
 /// on (mute-all, pause-all), with the words in a tooltip.
 final class _ToolbarButton extends StatelessWidget {
-  const _ToolbarButton({
-    required this.icon,
-    required this.semanticLabel,
-    required this.onPressed,
-    this.active = false,
-  });
+  const _ToolbarButton({required this.icon, required this.semanticLabel, required this.onPressed, this.active = false});
 
   /// The icon shown.
   final DsIconData icon;
@@ -835,15 +811,15 @@ final class _ToolbarButton extends StatelessWidget {
             width: theme.sizes.sm,
             height: theme.sizes.sm,
             decoration: DsBoxDecoration(
-              color: active ? colors.accentTint : hovered ? colors.hover : null,
+              color: active
+                  ? colors.accentTint
+                  : hovered
+                  ? colors.hover
+                  : null,
               borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
             ),
             child: Center(
-              child: DsIcon(
-                icon,
-                size: theme.sizes.iconSm,
-                color: active ? colors.accentText : colors.textMuted,
-              ),
+              child: DsIcon(icon, size: theme.sizes.iconSm, color: active ? colors.accentText : colors.textMuted),
             ),
           );
         },
@@ -1088,7 +1064,7 @@ final class _PanePickerDialogState extends ConsumerState<_PanePickerDialog> {
           ];
     final Widget content;
     if (!follows.ready || !history.ready) {
-      content = const Center(child: SizedBox(width: 24, height: 24, child: DsSpinner()));
+      content = const Center(child: AppLoadingIndicator(size: 24));
     } else if (rooms.isEmpty) {
       content = DsEmptyState(
         icon: const DsIcon(DsIcons.heart),

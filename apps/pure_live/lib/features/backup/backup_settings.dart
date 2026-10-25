@@ -44,14 +44,22 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('browse.areas.site', BackupPrefKind.string),
   ('browse.search.site', BackupPrefKind.string),
   ('browse.layout', BackupPrefKind.string),
+  ('browse.denseFavorites', BackupPrefKind.boolean),
   ('browse.pageSize', BackupPrefKind.integer),
   ('browse.cardExtent', BackupPrefKind.floating),
   ('browse.crossSpacing', BackupPrefKind.floating),
   ('browse.mainSpacing', BackupPrefKind.floating),
   ('browse.audienceMetric', BackupPrefKind.string),
+  ('display.refreshRateMode', BackupPrefKind.string),
+  ('updates.autoCheck', BackupPrefKind.boolean),
+  ('window.width', BackupPrefKind.integer),
+  ('window.height', BackupPrefKind.integer),
+  ('exit.autoShutdown.enabled', BackupPrefKind.boolean),
+  ('exit.autoShutdown.minutes', BackupPrefKind.integer),
   ('nav.multiview', BackupPrefKind.boolean),
   ('tools.order', BackupPrefKind.stringList),
   ('shell.closeAction', BackupPrefKind.string),
+  ('shell.dontAskExit', BackupPrefKind.boolean),
   ('search.history', BackupPrefKind.stringList),
   // The platform display and its order/preference.
   ('sites.display', BackupPrefKind.stringList),
@@ -60,9 +68,16 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   // Follows refresh and the history cap.
   ('refresh.follows.auto', BackupPrefKind.boolean),
   ('refresh.follows.minutes', BackupPrefKind.integer),
+  ('refresh.follows.onResume', BackupPrefKind.boolean),
+  ('refresh.maxConcurrent', BackupPrefKind.integer),
+  ('refresh.thumbnails.auto', BackupPrefKind.boolean),
+  ('refresh.thumbnails.minutes', BackupPrefKind.integer),
   ('history.limit', BackupPrefKind.integer),
   // Appearance.
   ('theme.mode', BackupPrefKind.string),
+  ('theme.dynamicColor', BackupPrefKind.boolean),
+  ('theme.loadingStyle', BackupPrefKind.string),
+  ('theme.loadingColor', BackupPrefKind.string),
   ('theme.seed', BackupPrefKind.string),
   ('theme.corners', BackupPrefKind.string),
   ('theme.density', BackupPrefKind.string),
@@ -70,6 +85,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('theme.selection', BackupPrefKind.string),
   ('theme.autoClash', BackupPrefKind.string),
   ('theme.font', BackupPrefKind.string),
+  ('theme.textScale', BackupPrefKind.floating),
   ('app.locale', BackupPrefKind.string),
   // The wallpaper: its kind and every source it can hold.
   ('background.kind', BackupPrefKind.string),
@@ -84,13 +100,23 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('background.blur', BackupPrefKind.floating),
   // Playback and the flying layer's own look.
   ('playback.quality', BackupPrefKind.string),
+  ('playback.qualityCellular', BackupPrefKind.string),
   ('playback.muted', BackupPrefKind.boolean),
+  ('playback.globalMute', BackupPrefKind.boolean),
+  ('playback.mobileVolume', BackupPrefKind.floating),
+  ('playback.desktopVolume', BackupPrefKind.floating),
+  // The pre-split shared volume; read as a fallback for older backups.
   ('playback.volume', BackupPrefKind.floating),
   ('playback.fit', BackupPrefKind.string),
   ('playback.danmaku', BackupPrefKind.boolean),
   ('playback.miniDanmaku', BackupPrefKind.boolean),
   ('playback.hwdec', BackupPrefKind.boolean),
   ('playback.autoPip', BackupPrefKind.boolean),
+  ('playback.keepScreenOn', BackupPrefKind.boolean),
+  ('player.backend', BackupPrefKind.string),
+  ('player.superResolution', BackupPrefKind.string),
+  ('player.tuning', BackupPrefKind.string),
+  ('player.proxy', BackupPrefKind.string),
   ('danmaku.style.fontSize', BackupPrefKind.floating),
   ('danmaku.style.baseSpeed', BackupPrefKind.floating),
   ('danmaku.style.area', BackupPrefKind.floating),
@@ -109,6 +135,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('iptv.update.hours', BackupPrefKind.integer),
   ('iptv.guide.active', BackupPrefKind.string),
   ('iptv.sources.order', BackupPrefKind.stringList),
+  ('iptv.userAgent', BackupPrefKind.string),
   // The recorder's 15 tunables (and the old gigabyte cap for upgrades).
   ('recorder.dir', BackupPrefKind.string),
   ('recorder.naming', BackupPrefKind.string),
@@ -134,7 +161,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
 /// Reads every backed-up pref that currently has a value.
 ///
 /// A closed store answers an empty snapshot — capture runs where a
-/// failure means "back up the boxes only", not "the export fails".
+/// failure means "back up the stores only", not "the export fails".
 Map<String, Object?> captureSettingsSnapshot() {
   final snapshot = <String, Object?>{};
   for (final (key, kind) in kBackedUpPrefs) {

@@ -8,7 +8,7 @@ import 'package:pure_live/app/window_chrome.dart' show WindowChromeState;
 import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
-import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowTitleBar;
+import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowCaptionBar;
 import 'package:pure_live/shared/enums/app_module.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart';
 import 'package:pure_live/shared/widgets/chrome_icon_button.dart';
@@ -228,16 +228,7 @@ final class MobileLayout extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (WindowChromeState.drawsStrip)
-          WindowTitleBar(
-            expanded: false,
-            onToggleSidebar: () {},
-            canBack: false,
-            canForward: false,
-            onBack: () {},
-            onForward: () {},
-            onSearch: onSearch,
-          ),
+        if (WindowChromeState.drawsStrip) const WindowCaptionBar(),
         Expanded(child: scaffold),
       ],
     );

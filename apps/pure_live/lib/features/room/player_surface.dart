@@ -9,6 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/providers/presentation_providers.dart' show roomPresentationProvider;
+import 'package:pure_live/app/providers/room_leave_provider.dart' show roomLeaveProvider;
+import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
 import 'package:pure_live/features/recorder/recording_repository.dart' show recordingTasksProvider;
 import 'package:pure_live/features/recorder/recording_task.dart' show RecordingTaskState;
 import 'package:pure_live/features/room/cast_dialog.dart' show showCastDialog;
@@ -18,6 +20,7 @@ import 'package:pure_live/features/room/room_status.dart'
 import 'package:pure_live/features/settings/danmaku_style_providers.dart' show danmakuStyleProvider;
 import 'package:pure_live/features/settings/playback_settings_providers.dart' show playbackSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
 /// The picture's own ink: the frame is dark whatever the app's theme, so
 /// the bars, the state overlay and the position line never borrow the
@@ -50,8 +53,16 @@ final class PictureActionButton extends ConsumerWidget {
           final player = ref.read(roomProvider).handle?.id;
           if (presentation != PresentationMode.normal && player != null) {
             await ref.read(roomPresentationProvider.notifier).exit(player);
+          } else if (ref.read(roomLeaveProvider) case final closeWindow?) {
+            await closeWindow();
           } else if (context.mounted) {
-            context.pop();
+            // A clone starts at the room route, so there is nothing to pop;
+            // the picture's back still has to leave the room.
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(RouteNames.popular);
+            }
           }
         },
       ),
@@ -338,16 +349,11 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                       mainAxisSize: MainAxisSize.min,
                       spacing: DsSpace.s4,
                       children: [
-                        DsIcon(
-                          volume <= 0.001 ? DsIcons.volumeX : DsIcons.volume2,
-                          size: 24,
-                          color: _onVideo,
-                        ),
+                        DsIcon(volume <= 0.001 ? DsIcons.volumeX : DsIcons.volume2, size: 24, color: _onVideo),
                         Text(
                           '${(volume * 100).round()}%',
-                          style: DsTheme.of(context).typography.numeric(
-                            DsTheme.of(context).typography.caption.copyWith(color: _onVideo),
-                          ),
+                          style: DsTheme.of(context).typography
+                              .numeric(DsTheme.of(context).typography.caption.copyWith(color: _onVideo)),
                         ),
                       ],
                     ),
@@ -368,7 +374,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   mainAxisSize: MainAxisSize.min,
                   spacing: DsSpace.s12,
                   children: [
-                    if (picture.busy) const DsSpinner(style: DsSpinnerStyle(color: _onVideoSubtle)),
+                    if (picture.busy) const AppLoadingIndicator(size: 20, color: _onVideoSubtle),
                     Text(
                       picture.title,
                       textAlign: TextAlign.center,
@@ -656,9 +662,7 @@ final class _ControlBar extends ConsumerWidget {
                     ),
                 ],
               );
-              return compact
-                  ? SingleChildScrollView(scrollDirection: Axis.horizontal, child: bar)
-                  : bar;
+              return compact ? SingleChildScrollView(scrollDirection: Axis.horizontal, child: bar) : bar;
             },
           ),
         ],

@@ -11,6 +11,7 @@ import 'package:pure_live/features/backup/backup_document.dart';
 import 'package:pure_live/features/backup/backup_repository.dart' show backupSummaryProvider;
 import 'package:pure_live/features/backup/webdav_client.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
 /// Opens the server's own folder browser: walk collections, upload the
 /// current backup under a chosen name, restore any file, or delete one.
@@ -123,7 +124,11 @@ final class _WebDavBrowserState extends ConsumerState<_WebDavBrowser> {
     try {
       await _client!.uploadFile(directory.resolve(name), utf8.encode(document.encode()));
       if (!mounted) return;
-      showDsToast(context: context, title: t.backup.webdavUploadDone(file: name), status: DsStatus.success);
+      showDsToast(
+        context: context,
+        title: t.backup.webdavUploadDone(file: name),
+        status: DsStatus.success,
+      );
       _reload();
     } on Object catch (error) {
       if (mounted) _showFailure(error);
@@ -246,7 +251,7 @@ final class _WebDavBrowserState extends ConsumerState<_WebDavBrowser> {
             future: _future,
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: DsSpinner());
+                return const Center(child: AppLoadingIndicator(size: 24));
               }
               if (snapshot.hasError) {
                 return DsEmptyState(
@@ -263,10 +268,7 @@ final class _WebDavBrowserState extends ConsumerState<_WebDavBrowser> {
               }
               final entries = snapshot.data ?? const <WebDavEntry>[];
               if (entries.isEmpty) {
-                return DsEmptyState(
-                  icon: const DsIcon(DsIcons.folderOpen),
-                  title: Text(t.backup.webdavEmpty),
-                );
+                return DsEmptyState(icon: const DsIcon(DsIcons.folderOpen), title: Text(t.backup.webdavEmpty));
               }
               return ListView(
                 children: [
@@ -277,9 +279,7 @@ final class _WebDavBrowserState extends ConsumerState<_WebDavBrowser> {
                           leading: DsIcon(entry.isDirectory ? DsIcons.folder : DsIcons.fileBraces),
                           title: Text(entry.name),
                           description: entry.isDirectory ? null : Text(_metaOf(entry)),
-                          onPressed: entry.isDirectory
-                              ? () => _open(entry.uri)
-                              : () => unawaited(_restore(entry)),
+                          onPressed: entry.isDirectory ? () => _open(entry.uri) : () => unawaited(_restore(entry)),
                           trailing: entry.isDirectory
                               ? const DsIcon(DsIcons.chevronRight)
                               : DsButton.icon(

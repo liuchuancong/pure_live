@@ -1,6 +1,6 @@
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/widgets.dart' show Color;
 import 'package:live_storage/live_storage.dart';
-import 'package:pure_live/app/theme/theme_settings.dart';
 
 /// The theme's persisted subset: the choices the settings surface writes
 /// and the root reads back on boot.
@@ -8,6 +8,58 @@ import 'package:pure_live/app/theme/theme_settings.dart';
 /// Every write lands in the store the moment it happens; a closed store
 /// loses the choice rather than the session.
 abstract final class ThemePersistence {
+  /// Whether the platform's dynamic palette seeds the theme; false keeps the
+  /// viewer's own accent.
+  static bool readDynamicColor() {
+    try {
+      return StoragePrefs.getBool('theme.dynamicColor') ?? false;
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Stores the dynamic-colour choice.
+  static Future<void> storeDynamicColor({required bool value}) async {
+    try {
+      await StoragePrefs.setBool('theme.dynamicColor', value);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
+  /// The stored loading-animation key, or null before the viewer picks one.
+  static String? readLoadingStyle() {
+    try {
+      final stored = StoragePrefs.getString('theme.loadingStyle');
+      return (stored == null || stored.isEmpty) ? null : stored;
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Stores the loading-animation key.
+  static Future<void> storeLoadingStyle(String key) => _store('theme.loadingStyle', key);
+
+  /// The stored loading-animation colour, or null to follow the accent.
+  ///
+  /// The reference keeps `AARRGGBB`; the parser also accepts `#RRGGBB`.
+  static Color? readLoadingColor() {
+    try {
+      return parseSeedColor(StoragePrefs.getString('theme.loadingColor'));
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Stores the loading-animation colour; null clears it back to the accent.
+  static Future<void> storeLoadingColor(Color? color) => color == null
+      ? _remove('theme.loadingColor')
+      : _store('theme.loadingColor', encodeArgbColor(color));
+
+  /// The `#AARRGGBB` form the loading-colour field shows.
+  static String encodeArgbColor(Color color) =>
+      '#${color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}';
+
   /// The stored mode, or null to let the settings default stand.
   static DsThemeMode? readMode() {
     try {
@@ -25,9 +77,10 @@ abstract final class ThemePersistence {
   /// Stores the mode.
   static Future<void> storeMode(DsThemeMode mode) => _store('theme.mode', mode.name);
 
-  /// The stored seed's name, or null for the platform accent (the root's
+  /// The stored seed: a named tone (`seedBlue`), a custom colour as
+  /// `#RRGGBB`/`#AARRGGBB`, or null for the platform accent (the root's
   /// own default).
-  static String? readSeedName() {
+  static String? readSeed() {
     try {
       return StoragePrefs.getString('theme.seed');
     } on Object {
@@ -35,8 +88,32 @@ abstract final class ThemePersistence {
     }
   }
 
-  /// Stores the seed's name; null clears it back to the platform accent.
-  static Future<void> storeSeedName(String? name) => name == null ? _remove('theme.seed') : _store('theme.seed', name);
+  /// Parses the reference's 6- or 8-digit hex colour forms (`#RRGGBB`,
+  /// `0xAARRGGBB`); null for anything else.
+  static Color? parseSeedColor(String? value) {
+    if (value == null) return null;
+    var hex = value.trim();
+    if (hex.startsWith('#')) {
+      hex = hex.substring(1);
+    } else if (hex.toLowerCase().startsWith('0x')) {
+      hex = hex.substring(2);
+    }
+    if (hex.length == 6) hex = 'FF$hex';
+    if (hex.length != 8) return null;
+    final argb = int.tryParse(hex, radix: 16);
+    return argb == null ? null : Color(argb);
+  }
+
+  /// The `#RRGGBB` form shown in the appearance rows and the picker's hex
+  /// field.
+  static String encodeSeedColor(Color color) {
+    final rgb = color.toARGB32() & 0x00FFFFFF;
+    return '#${rgb.toRadixString(16).padLeft(6, '0').toUpperCase()}';
+  }
+
+  /// Stores a named tone or a custom hex colour; null clears it back to the
+  /// platform accent.
+  static Future<void> storeSeed(String? value) => value == null ? _remove('theme.seed') : _store('theme.seed', value);
 
   /// The stored contrast, or null to let the settings default stand.
   static DsContrast? readContrast() {
@@ -138,11 +215,31 @@ abstract final class ThemePersistence {
   static Future<void> storeFont(String? family) =>
       family == null ? _remove('theme.font') : _store('theme.font', family);
 
-  /// The stored locale's code ('zh-CN', 'en'), or null to follow the system.
+  /// Canonical locale codes the appearance pane offers.
+  static const String localeSimplifiedChinese = 'zh-CN';
+  static const String localeEnglish = 'en';
+
+  /// Canonicalizes a persisted locale: earlier builds and the reference
+  /// stored display names, while slang only resolves language tags. Empty,
+  /// "system" and unknown values follow the system locale.
+  static String? normalizeLocaleCode(String? value) {
+    final code = value?.trim().toLowerCase();
+    if (code == null || code.isEmpty || code == 'system') return null;
+    if (code == 'zh' || code.startsWith('zh-') || code.startsWith('zh_')) {
+      return localeSimplifiedChinese;
+    }
+    if (code == '简体中文' || code == '中文' || code == 'chinese' || code == 'simplified chinese') {
+      return localeSimplifiedChinese;
+    }
+    if (code == 'en' || code.startsWith('en-') || code.startsWith('en_') || code == 'english') return localeEnglish;
+    return null;
+  }
+
+  /// The stored locale's canonical code ('zh-CN', 'en'), or null to follow
+  /// the system.
   static String? readLocale() {
     try {
-      final stored = StoragePrefs.getString('app.locale');
-      return (stored == null || stored.isEmpty) ? null : stored;
+      return normalizeLocaleCode(StoragePrefs.getString('app.locale'));
     } on Object {
       return null;
     }
@@ -177,6 +274,3 @@ const List<(String, DsSeed)> kNamedSeeds = [
   ('seedOxblood', DsSeed.oxblood),
   ('seedForest', DsSeed.forest),
 ];
-
-/// Rebuilds [settings] with [seed] applied (null = platform accent).
-AppThemeSettings withSeed(AppThemeSettings settings, DsSeed? seed) => settings.rebuild((b) => b..seed = seed);

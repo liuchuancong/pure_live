@@ -20,6 +20,10 @@ enum CloseAction {
   quit,
 }
 
+/// The viewer's answer to a close confirmation: what to do, and whether the
+/// question should stop being asked.
+typedef CloseChoice = ({CloseAction action, bool remember});
+
 /// What the shell does with the window, once the platform and the tray's
 /// condition have had their say.
 enum CloseDisposition {

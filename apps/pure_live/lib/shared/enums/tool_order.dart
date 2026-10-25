@@ -15,10 +15,7 @@ final class ToolOrderController extends Notifier<List<NavigationItem>> {
       final stored = StoragePrefs.getStringList('tools.order');
       if (stored == null || stored.isEmpty) return kToolItems;
       final known = {for (final item in kToolItems) item.name: item};
-      final ordered = [
-        for (final name in stored)
-          ?known.remove(name),
-      ];
+      final ordered = [for (final name in stored) ?known.remove(name)];
       return [...ordered, ...known.values];
     } on Object {
       return kToolItems;
@@ -41,6 +38,4 @@ final class ToolOrderController extends Notifier<List<NavigationItem>> {
 }
 
 /// The sidebar's tools, in the viewer's order.
-final toolOrderProvider = NotifierProvider<ToolOrderController, List<NavigationItem>>(
-  ToolOrderController.new,
-);
+final toolOrderProvider = NotifierProvider<ToolOrderController, List<NavigationItem>>(ToolOrderController.new);

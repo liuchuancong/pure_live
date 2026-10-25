@@ -1,64 +1,81 @@
-
 # live_storage
 
-Shared storage infrastructure for PureLive, built on Hive CE.
+Shared storage infrastructure for PureLive, built on drift + SQLite.
 
 ## Responsibilities
 
-- Initialize the storage engine.
-- Coordinate application adapter registration.
-- Manage storage configuration and box lifecycle.
-- Provide storage migration infrastructure.
-- Resolve platform-specific storage paths.
-- Expose storage diagnostics.
-- Expose the simple typed settings facade (`StoragePrefs`) and its write-through reactive values for ad-hoc flags that do not deserve a repository.
-- Store cookies and passwords through `SecretStore` over the device-encrypted `SecretVault` the app provides (flutter_secure_storage: Keystore / Keychain / DPAPI).
+- Open the process's single SQLite database (the main window owns it).
+- Run schema migrations and provide the namespaced JSON stores.
+- Expose `JsonStore` / `JsonListStore` so feature repositories never touch
+  tables or a database connection directly.
+- Resolve application-provided storage paths.
+- Expose the simple typed settings facade (`StoragePrefs`) over the
+  `settings` namespace.
+- Store cookies and passwords through `SecretStore` over the device-encrypted
+  `SecretVault` the app provides (flutter_secure_storage: Keystore / Keychain /
+  DPAPI).
 
 ## Dependencies
 
-- `hive_ce`: Core storage engine.
-- `hive_ce_flutter`: Flutter platform integration.
-- `hive_box_manager`: Box management utilities.
-- `hive_ce_generator`: Adapter code generation.
+- `drift`: typed SQL and schema migrations.
+- `sqlite3`: the native SQLite bindings drift opens (native assets).
+- `drift_dev` / `build_runner` (dev): database code generation.
 
 ## Architecture Rules
 
-- Business packages own their data models and adapters.
-- `live_storage` owns shared storage infrastructure only.
-- Business packages use Hive CE APIs directly for data operations.
-- The application composition root coordinates storage initialization.
-- Storage initialization must complete before dependent data is accessed.
-- Adapter registration must finish before opening boxes that use custom types.
-- Storage migrations must be explicit and versioned.
-- Platform-specific paths must not be hard-coded in business packages.
+- `live_storage` owns the database, its schema, transactions and stores.
+- Feature repositories own their domain JSON and call a `JsonStore`.
+- No feature or business package opens SQLite, Hive or a database file.
+- The main window opens the database; room and tool windows read the
+  projection the window bridge feeds them and send writes back as commands.
+- Storage migrations are versioned in the drift `MigrationStrategy`.
+- Platform-specific paths are injected by the app through
+  `StoragePathProvider`.
 
 ## Code Generation
 
-Run the following command from the workspace root:
+Run this in `packages/live_storage`, not at the workspace root (the app's
+slang output lives elsewhere):
 
 ```bash
-dart run build_runner build --delete-conflicting-outputs
+dart run build_runner build
 ```
 
-Generate adapters for application models using the project's Hive CE generator conventions.
+The generated `lib/src/database/storage_database.g.dart` is committed.
 
 ## Usage
 
-Initialize storage during application startup, register the required adapters, and then allow feature packages to access their boxes.
+```dart
+final bootstrap = StorageBootstrap(
+  pathProvider: StoragePathProvider(resolver: () async => dataDirectory),
+);
+await bootstrap.initialize(); // opens <data>/storage.sqlite
+await StoragePrefs.init();
+```
 
-See the implementation in `lib/src/` for the supported initialization and management APIs.
+Feature data uses a namespaced store; the main window opens it, a room
+window gets the same data through its seed/projection instead:
+
+```dart
+final store = await StorageStores.instance.openStore('follows');
+await store.put(identityKey, room.toJson());
+store.get(identityKey); // synchronous, from the memory snapshot
+store.watchKeys();     // the window bridge's change source
+```
 
 ### Simple settings
 
-Ad-hoc flags that do not deserve a repository go through the `StoragePrefs` facade: one string-keyed box (`settings.kv`), static one-line typed reads and writes. Call `StoragePrefs.init()` once after `StorageBootstrap.initialize`.
+Ad-hoc flags go through the `StoragePrefs` facade over the `settings`
+namespace; reads are synchronous, writes are queued SQLite upserts.
 
 ```dart
 await StoragePrefs.setString('lastPlatform', 'huya');
-StoragePrefs.getString('lastPlatform'); // synchronous read
+StoragePrefs.getString('lastPlatform');
 await StoragePrefs.persistBatch(() {
   StoragePrefs.setBool('danmakuOn', true);
   StoragePrefs.setInt('fontSize', 18);
-}); // one commit
+});
 ```
 
-`prefBool`, `prefString` and the other factories hand back write-through `PrefValue`s — assign `v`, the value persists and notifies listeners synchronously.
+`prefBool`, `prefString` and the other factories hand back write-through
+`PrefValue`s — assign `v`, the value persists and notifies listeners.

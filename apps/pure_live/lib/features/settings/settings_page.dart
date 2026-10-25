@@ -1,33 +1,43 @@
 import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
-import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart' show showLicensePage;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
-import 'package:live_platform/live_platform.dart' show FormFactor;
+import 'package:live_platform/live_platform.dart' show FormFactor, PlatformKind;
 import 'package:live_shell/live_shell.dart' show CloseAction;
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:path/path.dart' as p;
-import 'package:pure_live/app/background/background_library.dart' show showBackgroundLibrary;
-import 'package:pure_live/app/background/background_presets.dart'
-    show kBackgroundGalleryUrls, kBackgroundGradientPresets, kBackgroundSolidPresets;
 import 'package:pure_live/app/background/background_settings.dart';
 import 'package:pure_live/app/bootstrap/pure_live_app.dart' show AppLocaleScope;
 import 'package:pure_live/app/navigation/module_navigation.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
-import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
+import 'package:pure_live/app/providers/dynamic_color_provider.dart'
+    show dynamicColorProvider, dynamicColorSeedProvider;
+import 'package:pure_live/app/providers/environment_providers.dart' show deviceProfileProvider, platformRuntimeProvider;
+import 'package:pure_live/app/providers/keep_screen_on_provider.dart' show keepScreenOnProvider;
+import 'package:pure_live/app/providers/loading_style_provider.dart' show loadingStyleProvider;
 import 'package:pure_live/app/providers/module_providers.dart' show selectedModuleProvider;
 import 'package:pure_live/app/providers/nav_visibility_providers.dart' show showMultiviewProvider;
 import 'package:pure_live/app/providers/network_providers.dart' show proxySettingsProvider;
+import 'package:pure_live/app/providers/network_type_provider.dart' show networkTypeProvider;
+import 'package:pure_live/app/providers/player_backend_providers.dart' show playerKernelBackendProvider;
 import 'package:pure_live/app/providers/refresh_settings_providers.dart';
 import 'package:pure_live/app/providers/settings_section_provider.dart' show settingsSectionProvider;
 import 'package:pure_live/app/providers/shell_settings_provider.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteIdProvider, sitesProvider;
+import 'package:pure_live/app/providers/splash_settings_provider.dart' show splashSettingsProvider;
+import 'package:pure_live/app/providers/startup_provider.dart' show startupProvider;
+import 'package:pure_live/app/providers/text_scale_provider.dart'
+    show kMaxTextScaleFactor, kMinTextScaleFactor, textScaleFactorProvider;
+import 'package:pure_live/app/providers/thumbnail_refresh_provider.dart'
+    show kThumbnailRefreshIntervalChoices, thumbnailRefreshProvider;
+import 'package:pure_live/app/providers/update_settings_provider.dart' show updateSettingsProvider;
+import 'package:pure_live/app/providers/window_providers.dart' show isPrimaryWindowProvider;
 import 'package:pure_live/app/routing/app_router.dart' show SettingsSectionRoute;
 import 'package:pure_live/app/theme/font_defaults.dart';
+import 'package:pure_live/app/theme/theme_mode_dialog.dart' show themeModeLabel;
 import 'package:pure_live/app/theme/theme_persistence.dart';
 import 'package:pure_live/app/theme/theme_settings.dart';
 import 'package:pure_live/app/window_chrome.dart' show WindowChrome, WindowChromeState;
@@ -37,14 +47,30 @@ import 'package:pure_live/features/favorites/follow_repository.dart' show follow
 import 'package:pure_live/features/history/history_repository.dart' show historyProvider;
 import 'package:pure_live/features/iptv/iptv_settings_pane.dart' show IptvSettingsPane;
 import 'package:pure_live/features/recorder/recorder_page.dart' show RecordingSettingsPane;
-import 'package:pure_live/features/settings/audience_metric_provider.dart' show AudienceMetricChoice, audienceMetricProvider;
+import 'package:pure_live/features/settings/audience_metric_provider.dart'
+    show AudienceMetricChoice, audienceMetricProvider;
+import 'package:pure_live/features/settings/auto_shutdown_section.dart' show AutoShutdownSection;
+import 'package:pure_live/features/settings/background_panes.dart'
+    show
+        BackgroundColorsPane,
+        BackgroundDevicePane,
+        BackgroundLibraryPane,
+        BackgroundOverviewPane,
+        BackgroundRandomPane;
+import 'package:pure_live/features/settings/config_preview_dialog.dart' show showConfigPreview;
 import 'package:pure_live/features/settings/danmaku_style_providers.dart';
+import 'package:pure_live/features/settings/loading_style_dialog.dart' show loadingStyleLabel, showLoadingStyleDialog;
 import 'package:pure_live/features/settings/playback_settings_providers.dart';
+import 'package:pure_live/features/settings/player_kernel_pane.dart' show PlayerKernelPane;
+import 'package:pure_live/features/settings/refresh_rate_section.dart' show RefreshRateSection;
 import 'package:pure_live/features/settings/settings_search.dart' show SettingsSearchHit, settingsSearchHits;
 import 'package:pure_live/features/settings/settings_sections.dart';
-import 'package:pure_live/features/settings/settings_widgets.dart' show SettingsConfigRow;
+import 'package:pure_live/features/settings/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/features/settings/sites_display_provider.dart';
+import 'package:pure_live/features/settings/theme_color_dialog.dart' show showThemeColorDialog, themeSeedToneLabel;
+import 'package:pure_live/features/settings/window_size_row.dart' show WindowSizeRow;
 import 'package:pure_live/features/shield/shield_pane.dart' show ShieldPane;
+import 'package:pure_live/features/toolbox/toolbox_page.dart' show LogsPane, PlatformNodesPane;
 import 'package:pure_live/features/version/version_controller.dart' show versionCheckProvider;
 import 'package:pure_live/features/version/version_page.dart' show showReleaseHistory, showUpdatePanel;
 import 'package:pure_live/features/vod/vod_settings_pane.dart' show VodSettingsPane;
@@ -54,26 +80,46 @@ import 'package:pure_live/shared/enums/app_module.dart' show AppModule;
 import 'package:pure_live/shared/enums/tool_order.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart';
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon, localizedSiteName;
+import 'package:pure_live/shared/widgets/app_loading_indicator.dart' show AppLoadingIndicator;
 import 'package:restart_app/restart_app.dart' show Restart;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
+/// The width below which the settings surface takes the pushed-menu layout.
+const double kSettingsCompactWidth = 768;
+
+/// Opens [section] from a category overview: desktop switches the pane in
+/// place and keeps the sidebar; a touch shell pushes the page as its own
+/// route, the same way the settings menu does.
+void openSettingsChild(BuildContext context, WidgetRef ref, SettingsSection section) {
+  ref.read(settingsSectionProvider.notifier).section = section;
+  // Only the touch menu pushes a page. A desktop window keeps the sidebar
+  // and switches its pane, however narrow the window is.
+  final compact =
+      !ref.read(deviceProfileProvider).isDesktop && MediaQuery.sizeOf(context).width < kSettingsCompactWidth;
+  if (compact) {
+    unawaited(context.push(SettingsSectionRoute(section: section.name).location));
+  }
+}
+
 /// The settings surface. On a desktop window the shell's own sidebar lists
-/// the sections — the same menu the module destinations live in, so
+/// the categories — the same menu the module destinations live in, so
 /// entering settings swaps the menu's entries rather than stacking a second
-/// menu beside it — and this page is the selected section's pane alone. On
-/// a phone, where there is no sidebar, the page is the grouped list whose
-/// entries push their section as its own route ([SettingsSectionRoute]).
+/// menu beside it — and this page is the selected category or its child
+/// page. On a phone, where there is no sidebar, the page is the grouped
+/// list whose entries push their category as its own route
+/// ([SettingsSectionRoute]); the category's rows push its children.
 ///
 /// Both read and write [settingsSectionProvider]: the sidebar and the list
-/// agree on which section is on screen, and the pane is always that one.
+/// agree on which page is on screen, and the pane is always that one.
 final class SettingsPage extends ConsumerWidget {
   /// The settings page.
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final compact = MediaQuery.sizeOf(context).width < 768;
-    if (compact) return const _SettingsMenuList();
+    final compact = MediaQuery.sizeOf(context).width < kSettingsCompactWidth;
+    final desktop = ref.watch(deviceProfileProvider).isDesktop;
+    if (compact && !desktop) return const _SettingsMenuList();
     final section = ref.watch(settingsSectionProvider);
     return _SettingsPaneWithSearch(section: section);
   }
@@ -115,18 +161,23 @@ final class _SettingsPaneWithSearchState extends ConsumerState<_SettingsPaneWith
     final results = query.isEmpty ? const <SettingsSection>[] : _matchingSections(t, query, groups);
     final hits = query.isEmpty
         ? const <SettingsSearchHit>[]
-        : settingsSearchHits(t, query, groups.expand((group) => group.sections));
+        : settingsSearchHits(t, query, settingsSearchSections(groups));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (!tv)
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s16, DsSpace.s24, 0),
-            child: DsSearchField(
-              controller: _query,
-              placeholder: t.settings.searchSettings,
-              semanticLabel: t.settings.searchSettings,
-              onChanged: (_) => setState(() {}),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: DsSearchField(
+                  controller: _query,
+                  placeholder: t.settings.searchSettings,
+                  semanticLabel: t.settings.searchSettings,
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
             ),
           ),
         Expanded(
@@ -168,6 +219,14 @@ List<SettingsSection> _matchingSections(Translations t, String query, List<Setti
       if (byGroup || hasAll(section.label(t)) || hasAll(section.description(t))) {
         found.add(section);
       }
+    }
+  }
+  // The pages nested under a category are not menu rows, but the search
+  // still finds them by their own words.
+  for (final section in settingsSearchSections(groups)) {
+    if (!section.isNested) continue;
+    if ((hasAll(section.label(t)) || hasAll(section.description(t))) && !found.contains(section)) {
+      found.add(section);
     }
   }
   return found;
@@ -259,7 +318,7 @@ final class _SettingsMenuListState extends ConsumerState<_SettingsMenuList> {
         section.description(t).toLowerCase().contains(query);
     final hits = query.isEmpty
         ? const <SettingsSearchHit>[]
-        : settingsSearchHits(t, query, groups.expand((group) => group.sections));
+        : settingsSearchHits(t, query, settingsSearchSections(groups));
     final rows = <Widget>[
       Padding(
         padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, 0),
@@ -277,8 +336,15 @@ final class _SettingsMenuListState extends ConsumerState<_SettingsMenuList> {
         for (final hit in hits)
           if (hit.section == section) hit.title,
       ];
+      // A search reaches the pages nested under each category too; the
+      // plain menu keeps them out of the row list.
+      final sections = [
+        ...group.sections,
+        if (query.isNotEmpty)
+          for (final category in group.sections) ...settingsDescendantsOf(category),
+      ];
       final kept = [
-        for (final section in group.sections)
+        for (final section in sections)
           if (byGroup || matches(section) || rowMatches(section).isNotEmpty) section,
       ];
       if (kept.isEmpty) continue;
@@ -352,25 +418,38 @@ final class SettingsSectionPane extends ConsumerWidget {
     // section the module does not carry has no overline.
     final groups = navigationOf(ref.watch(selectedModuleProvider)).settingsGroups;
     final groupKey = settingsGroupKeyOf(groups, section);
+    final groupLabel = groupKey == null ? null : settingsGroupLabel(t, groupKey);
     final body = switch (section) {
+      SettingsSection.personalization => const _PersonalizationPane(),
+      SettingsSection.live => const _SettingsCategoryPane(category: SettingsSection.live),
+      SettingsSection.playback => const _SettingsCategoryPane(category: SettingsSection.playback),
+      SettingsSection.system => const _SettingsCategoryPane(category: SettingsSection.system),
       SettingsSection.general => const _GeneralPane(),
       SettingsSection.appearance => const _AppearancePane(),
-      SettingsSection.background => const _BackgroundPane(),
+      SettingsSection.background => const BackgroundOverviewPane(),
+      SettingsSection.backgroundImages => const BackgroundLibraryPane(video: false),
+      SettingsSection.backgroundRandom => const BackgroundRandomPane(),
+      SettingsSection.backgroundVideos => const BackgroundLibraryPane(video: true),
+      SettingsSection.backgroundColors => const BackgroundColorsPane(),
+      SettingsSection.backgroundDevice => const BackgroundDevicePane(),
       SettingsSection.nav => const _NavPane(),
-      SettingsSection.refresh => const _RefreshPane(),
-      SettingsSection.network => const _NetworkPane(),
-      SettingsSection.video => const _VideoPane(),
+      SettingsSection.sources => const _SourcesPane(),
       SettingsSection.danmaku => const _DanmakuPane(),
-      SettingsSection.miniDanmaku => const _MiniDanmakuPane(),
-      SettingsSection.kernel => const _KernelPane(),
       SettingsSection.recording => const _RecordingPane(),
-      SettingsSection.sites => const _SitesPane(),
+      SettingsSection.video => const _VideoPane(),
+      SettingsSection.kernel => const PlayerKernelPane(),
+      SettingsSection.network => const _NetworkPane(),
+      SettingsSection.nodes => const PlatformNodesPane(),
+      SettingsSection.logs => const LogsPane(),
+      SettingsSection.dataCache => const _DataCachePane(),
+      SettingsSection.backup => const BackupPane(),
+      SettingsSection.about => const _AboutPane(),
       SettingsSection.iptv => const IptvSettingsPane(),
       SettingsSection.vod => const VodSettingsPane(),
+      SettingsSection.refresh => const _SourcesPane(),
+      SettingsSection.miniDanmaku => const _MiniDanmakuPane(),
       SettingsSection.data => const _DataPane(),
-      SettingsSection.backup => const BackupPane(),
       SettingsSection.cache => const _CachePane(),
-      SettingsSection.about => const _AboutPane(),
     };
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s20, DsSpace.s24, DsSpace.s24),
@@ -378,15 +457,374 @@ final class SettingsSectionPane extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s4,
         children: [
-          // The reference's area, above the page's own name: Interface, Live
-          // sources, Playback, General & network or Data.
-          if (groupKey != null)
-            Text(settingsGroupLabel(t, groupKey), style: theme.typography.overline.copyWith(color: colors.textSubtle)),
+          // The reference's area, above the page's own name. A category
+          // whose group carries the same name (Live, IPTV) does not repeat
+          // it as an overline. The parent category is carried by the
+          // shell's location breadcrumb above the pane, not repeated here.
+          if (groupLabel != null && groupLabel.isNotEmpty && groupLabel != section.label(t))
+            Text(groupLabel, style: theme.typography.overline.copyWith(color: colors.textSubtle)),
           Text(section.label(t), style: theme.typography.display.copyWith(color: colors.text)),
           Text(section.description(t), style: theme.typography.body.copyWith(color: colors.textMuted)),
           const SizedBox(height: DsSpace.s12),
           body,
         ],
+      ),
+    );
+  }
+}
+
+/// The Personalization overview (the Windows setting's own page): the
+/// current theme preview with the three theme modes, then the pages nested
+/// under it — Background and Appearance. Desktop switches the settings
+/// pane in place and keeps the sidebar; a touch shell pushes each nested
+/// page as its own route.
+final class _PersonalizationPane extends ConsumerWidget {
+  const _PersonalizationPane();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final themeScope = AppThemeScope.of(context);
+    final appTheme = themeScope.settings;
+    final background = ref.watch(backgroundSettingsProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        _ThemePreviewSection(
+          settings: appTheme,
+          dynamicSeed: themeScope.dynamicSeedColor,
+          onChanged: (mode) {
+            if (mode != appTheme.mode) themeScope.onChanged(appTheme.rebuild((b) => b..mode = mode));
+          },
+        ),
+        DsListSection(
+          header: Text(t.settings.personalizationSettings),
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.wallpaper),
+              title: Text(t.settings.navBackground),
+              description: Text(t.settings.backgroundDescription),
+              detail: Text(_backgroundKindLabel(t, background.kind)),
+              showChevron: true,
+              onPressed: () => openSettingsChild(context, ref, SettingsSection.background),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.palette),
+              title: Text(t.settings.navAppearance),
+              description: Text(t.settings.appearanceDescription),
+              detail: Text(themeModeLabel(t, appTheme.mode)),
+              showChevron: true,
+              onPressed: () => openSettingsChild(context, ref, SettingsSection.appearance),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.panelLeft),
+              title: Text(t.settings.navNavigation),
+              description: Text(t.settings.navigationDescription),
+              showChevron: true,
+              onPressed: () => openSettingsChild(context, ref, SettingsSection.nav),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// A category's overview: one card of the pages nested under it. The rows
+/// use the children's own names and descriptions, so the overview and the
+/// sidebar can never drift; picking one opens the child in place on desktop
+/// or as its own route on a touch shell.
+final class _SettingsCategoryPane extends ConsumerWidget {
+  const _SettingsCategoryPane({required this.category});
+
+  final SettingsSection category;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final children = settingsChildrenOf(category);
+    return DsListSection(
+      children: [
+        for (final child in children)
+          DsListRow(
+            leading: DsIcon(child.icon),
+            title: Text(child.label(t)),
+            description: Text(child.description(t)),
+            detail: _childDetail(context, ref, child),
+            showChevron: true,
+            onPressed: () => openSettingsChild(context, ref, child),
+          ),
+      ],
+    );
+  }
+
+  /// The value a child page currently holds, shown on its row.
+  Widget? _childDetail(BuildContext context, WidgetRef ref, SettingsSection child) {
+    final t = context.t;
+    return switch (child) {
+      SettingsSection.video => Text(
+        preferredQualityLabel(
+          t,
+          ref.watch(playbackSettingsProvider).preferredQuality ?? kPreferredResolutionChoices.first,
+        ),
+      ),
+      SettingsSection.kernel => Text(ref.watch(playerKernelBackendProvider).label),
+      _ => null,
+    };
+  }
+}
+
+/// The current background kind in the overview's own words.
+String _backgroundKindLabel(Translations t, BackgroundKind kind) => switch (kind) {
+  BackgroundKind.none => t.settings.backgroundNone,
+  BackgroundKind.solid => t.settings.backgroundSolid,
+  BackgroundKind.gradient => t.settings.backgroundGradient,
+  BackgroundKind.image => t.settings.backgroundImage,
+  BackgroundKind.video => t.settings.backgroundVideo,
+};
+
+/// The theme picker at the top of Personalization: a window drawn in the
+/// current theme on the start side, the three theme modes as previews on
+/// the end side. Picking a preview applies it at once, as Windows' theme
+/// thumbnails do.
+final class _ThemePreviewSection extends StatelessWidget {
+  const _ThemePreviewSection({required this.settings, required this.onChanged, this.dynamicSeed});
+
+  final AppThemeSettings settings;
+
+  /// The palette seed in force while dynamic colour is on; the previews show
+  /// the colours the app actually uses.
+  final Color? dynamicSeed;
+
+  final ValueChanged<DsThemeMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final platformDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    DsThemeData preview(DsThemeMode mode) {
+      final brightness = switch (mode) {
+        DsThemeMode.light => Brightness.light,
+        DsThemeMode.dark => Brightness.dark,
+        DsThemeMode.system => platformDark ? Brightness.dark : Brightness.light,
+      };
+      return DsThemeData(
+        brightness: brightness,
+        seed: dynamicSeed == null ? settings.seed ?? DsSeed.blue : DsSeed.color(dynamicSeed!),
+        contrast: settings.contrast,
+        cornerStyle: settings.cornerStyle,
+        selectionStyle: settings.selectionStyle,
+        autoClashRule: settings.autoClashRule,
+        density: settings.density,
+        platform: settings.platform,
+        adjustColors: settings.adjustColors,
+      );
+    }
+
+    final current = preview(settings.mode);
+    final ui = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        Text(t.settings.personalizationChooseTheme, style: ui.typography.heading.copyWith(color: colors.text)),
+        DsListSection(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(DsSpace.s16),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final wide = constraints.maxWidth >= 680;
+                  final choices = Wrap(
+                    spacing: DsSpace.s12,
+                    runSpacing: DsSpace.s12,
+                    children: [
+                      for (final mode in DsThemeMode.values)
+                        SizedBox(
+                          width: 150,
+                          child: _ThemeModeTile(
+                            theme: preview(mode),
+                            selected: settings.mode == mode,
+                            label: themeModeLabel(t, mode),
+                            onPressed: () => onChanged(mode),
+                          ),
+                        ),
+                    ],
+                  );
+                  final previewCard = _ThemeWindow(theme: current);
+                  if (!wide) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: DsSpace.s16,
+                      children: [previewCard, choices],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: DsSpace.s24,
+                    children: [
+                      Expanded(flex: 4, child: previewCard),
+                      Expanded(flex: 5, child: choices),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// One theme mode as a thumbnail: a window in that theme, the mode's name
+/// under it, and the accent edge plus a check while it is the theme in force.
+final class _ThemeModeTile extends StatelessWidget {
+  const _ThemeModeTile({required this.theme, required this.selected, required this.label, required this.onPressed});
+
+  final DsThemeData theme;
+  final bool selected;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return DsPressable(
+      onPressed: onPressed,
+      selected: selected,
+      semanticLabel: label,
+      builder: (context, states, _) {
+        final hovered = states.contains(WidgetState.hovered);
+        final focused = states.contains(WidgetState.focused);
+        final edge = selected
+            ? colors.accent
+            : focused
+            ? colors.focus
+            : hovered
+            ? colors.textSubtle
+            : colors.border;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s8,
+          children: [
+            AnimatedContainer(
+              duration: ui.motion.toneDuration,
+              curve: ui.motion.toneCurve,
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(ui.radii.card),
+                border: Border.all(color: edge, width: selected || focused ? 2 : 1),
+              ),
+              child: Stack(
+                children: [
+                  _ThemeWindow(theme: theme),
+                  if (selected)
+                    PositionedDirectional(
+                      top: 7,
+                      end: 7,
+                      child: Container(
+                        width: 18,
+                        height: 18,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: colors.accent),
+                        child: DsIcon(DsIcons.check, size: 12, color: colors.onAccent),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: ui.typography.caption.copyWith(color: selected ? colors.text : colors.textMuted),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// A small app window drawn from one theme's own tokens: chrome, a rail,
+/// text bars and an accent action. It is the theme preview, not a picture.
+final class _ThemeWindow extends StatelessWidget {
+  const _ThemeWindow({required this.theme});
+
+  final DsThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = theme.colors;
+    Widget dot() => Container(
+      width: 5,
+      height: 5,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: colors.textSubtle.withValues(alpha: 0.55)),
+    );
+    Widget bar(double width, {double height = 5, Color? color}) => Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(color: color ?? colors.border, borderRadius: BorderRadius.circular(3)),
+    );
+    return AspectRatio(
+      aspectRatio: 16 / 10,
+      child: Container(
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: colors.border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            Container(
+              height: 18,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              color: colors.field,
+              child: Row(spacing: 4, children: [dot(), dot(), dot()]),
+            ),
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    color: colors.field.withValues(alpha: 0.55),
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 6,
+                      children: [bar(22, height: 4), bar(16, height: 4), bar(20, height: 4), bar(14, height: 4)],
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 6,
+                        children: [
+                          bar(58, height: 6, color: colors.textMuted.withValues(alpha: 0.6)),
+                          bar(96, height: 4),
+                          bar(72, height: 4),
+                          const Spacer(),
+                          Container(
+                            width: 44,
+                            height: 9,
+                            decoration: BoxDecoration(color: colors.accent, borderRadius: BorderRadius.circular(5)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -406,108 +844,182 @@ final class _GeneralPane extends ConsumerWidget {
     final module = ref.watch(selectedModuleProvider);
     final showsCardExtent = module == AppModule.live || module == AppModule.vod;
     final window = ref.watch(shellWindowSettingsProvider);
+    final startup = ref.watch(startupProvider);
+    final primary = ref.watch(isPrimaryWindowProvider);
 
-    return DsListSection(
-      header: Text(t.settings.browsingTitle),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
       children: [
-        if (showsCardExtent)
-          SettingsConfigRow(
-            leading: const DsIcon(DsIcons.columns2),
-            title: t.settings.cardExtent,
-            description: t.settings.cardExtentDescription,
-            detail: Text('${settings.homeCardExtent.round()} px'),
-            controlWidth: 220,
-            control: DsSlider(
-              value: settings.homeCardExtent,
-              min: 160,
-              max: 420,
-              divisions: 26,
-              onChanged: (value) => ref.read(browseSettingsProvider.notifier).homeCardExtent = value,
-              semanticLabel: t.settings.cardExtent,
+        DsListSection(
+          header: Text(t.settings.browsingTitle),
+          children: [
+            if (showsCardExtent)
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.columns2),
+                title: t.settings.cardExtent,
+                description: t.settings.cardExtentDescription,
+                detail: Text('${settings.homeCardExtent.round()} px'),
+                controlWidth: 220,
+                control: DsSlider(
+                  value: settings.homeCardExtent,
+                  min: 160,
+                  max: 420,
+                  divisions: 26,
+                  onChanged: (value) => ref.read(browseSettingsProvider.notifier).homeCardExtent = value,
+                  semanticLabel: t.settings.cardExtent,
+                ),
+              ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.list),
+              title: t.settings.pageSize,
+              description: t.settings.pageSizeDescription,
+              detail: Text('${settings.homePageSize}'),
+              controlWidth: 220,
+              control: DsSlider(
+                value: settings.homePageSize.toDouble(),
+                min: 10,
+                max: 90,
+                divisions: 16,
+                onChanged: (value) => ref.read(browseSettingsProvider.notifier).homePageSize = value.round(),
+                semanticLabel: t.settings.pageSize,
+              ),
             ),
-          ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.list),
-          title: t.settings.pageSize,
-          description: t.settings.pageSizeDescription,
-          detail: Text('${settings.homePageSize}'),
-          controlWidth: 220,
-          control: DsSlider(
-            value: settings.homePageSize.toDouble(),
-            min: 10,
-            max: 90,
-            divisions: 16,
-            onChanged: (value) => ref.read(browseSettingsProvider.notifier).homePageSize = value.round(),
-            semanticLabel: t.settings.pageSize,
-          ),
-        ),
-        if (module == AppModule.live)
-          SettingsConfigRow(
-            leading: const DsIcon(DsIcons.eye),
-            title: t.settings.audienceMetric,
-            description: t.settings.audienceMetricDesc,
-            controlWidth: 220,
-            control: DsSelect<AudienceMetricChoice>(
-              value: ref.watch(audienceMetricProvider),
-              onChanged: (value) {
-                if (value != null) unawaited(ref.read(audienceMetricProvider.notifier).select(value));
-              },
-              options: [
-                DsSelectOption(value: AudienceMetricChoice.automatic, label: t.settings.audienceAutomatic),
-                DsSelectOption(value: AudienceMetricChoice.onlineViewers, label: t.settings.audienceOnline),
-                DsSelectOption(value: AudienceMetricChoice.popularity, label: t.settings.audiencePopularity),
-                DsSelectOption(value: AudienceMetricChoice.totalViewers, label: t.settings.audienceTotal),
-              ],
-              semanticLabel: t.settings.audienceMetric,
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.layoutGrid),
+              title: t.settings.favoritesDense,
+              description: t.settings.favoritesDenseDescription,
+              control: DsSwitch(
+                value: ref.watch(favoritesDensityProvider),
+                onChanged: (value) => unawaited(ref.read(favoritesDensityProvider.notifier).set(dense: value)),
+              ),
             ),
-          ),
-        // The window's own choices belong to every viewer: the title bar
-        // and the close button are always offered (the reference keeps them
-        // in the general page).
-        if (WindowChromeState.configurable) ...[
-          SettingsConfigRow(
-            leading: const DsIcon(DsIcons.appWindow),
-            title: t.settings.windowChrome,
-            description: t.settings.windowChromeDesc,
-            controlWidth: 220,
-            control: DsSelect<WindowChrome>(
-              value: WindowChromeState.chrome,
-              onChanged: (value) => unawaited(_setWindowChrome(context, value)),
-              options: [
-                DsSelectOption(value: WindowChrome.system, label: t.settings.windowChromeSystem),
-                DsSelectOption(value: WindowChrome.custom, label: t.settings.windowChromeCustom),
-              ],
-              semanticLabel: t.settings.windowChrome,
-            ),
-          ),
-        ],
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.panelLeftClose),
-          title: t.settings.closeAction,
-          // The tray is not wired yet, so its choice is named but dimmed
-          // rather than offered: an honest row over a lying one.
-          description: t.settings.closeTrayUnavailable,
-          control: DsSelect<CloseAction>(
-            value: window.closeAction == CloseAction.hideToTray ? CloseAction.quit : window.closeAction,
-            onChanged: (value) {
-              if (value != null) unawaited(ref.read(shellWindowSettingsProvider.notifier).setCloseAction(value));
-            },
-            options: [
-              DsSelectOption(value: CloseAction.quit, label: t.settings.closeQuit),
-              DsSelectOption(value: CloseAction.minimise, label: t.settings.closeMinimise),
+            if (module == AppModule.live)
+              SettingsChoiceRow<AudienceMetricChoice>(
+                leading: const DsIcon(DsIcons.eye),
+                title: t.settings.audienceMetric,
+                description: t.settings.audienceMetricDesc,
+                value: ref.watch(audienceMetricProvider),
+                options: [
+                  DsSelectOption(value: AudienceMetricChoice.automatic, label: t.settings.audienceAutomatic),
+                  DsSelectOption(value: AudienceMetricChoice.onlineViewers, label: t.settings.audienceOnline),
+                  DsSelectOption(value: AudienceMetricChoice.popularity, label: t.settings.audiencePopularity),
+                  DsSelectOption(value: AudienceMetricChoice.totalViewers, label: t.settings.audienceTotal),
+                ],
+                onChanged: (value) => unawaited(ref.read(audienceMetricProvider.notifier).select(value)),
+              ),
+            // The window's own choices belong to every viewer: the title bar
+            // and the close button are always offered (the reference keeps them
+            // in the general page).
+            if (WindowChromeState.configurable) ...[
+              SettingsChoiceRow<WindowChrome>(
+                leading: const DsIcon(DsIcons.appWindow),
+                title: t.settings.windowChrome,
+                description: t.settings.windowChromeDesc,
+                value: WindowChromeState.chrome,
+                options: [
+                  DsSelectOption(value: WindowChrome.system, label: t.settings.windowChromeSystem),
+                  DsSelectOption(value: WindowChrome.custom, label: t.settings.windowChromeCustom),
+                ],
+                onChanged: (value) => unawaited(_setWindowChrome(context, value)),
+              ),
             ],
-            semanticLabel: t.settings.closeAction,
-          ),
+            // The room windows: a desktop-only choice, the chat app's shape of
+            // browsing — one window per room — with the in-app push as the
+            // alternative.
+            if (ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.desktop)
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.appWindow),
+                title: t.settings.roomWindow,
+                description: t.settings.roomWindowDesc,
+                control: DsSwitch(
+                  value: ref.watch(roomWindowsProvider),
+                  onChanged: (value) => unawaited(ref.read(roomWindowsProvider.notifier).setEnabled(value: value)),
+                ),
+              ),
+            if (primary)
+              SettingsChoiceRow<CloseAction>(
+                leading: const DsIcon(DsIcons.panelLeftClose),
+                title: t.settings.closeAction,
+                description: t.settings.closeActionDesc,
+                value: window.closeAction,
+                options: [
+                  DsSelectOption(value: CloseAction.quit, label: t.settings.closeQuit),
+                  DsSelectOption(value: CloseAction.minimise, label: t.settings.closeMinimise),
+                  DsSelectOption(value: CloseAction.hideToTray, label: t.settings.closeHideToTray),
+                ],
+                onChanged: (value) => unawaited(ref.read(shellWindowSettingsProvider.notifier).setCloseAction(value)),
+              ),
+            // The reference's `dontAskExit`: the close question only exists
+            // where closing the window can end the app (macOS keeps it open).
+            if (primary &&
+                ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.desktop &&
+                ref.watch(platformRuntimeProvider).environment.runtime.kind != PlatformKind.macos)
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.panelLeftClose),
+                title: t.settings.noExitConfirm,
+                description: t.settings.noExitConfirmDescription,
+                control: DsSwitch(
+                  value: window.dontAskExit,
+                  onChanged: (value) =>
+                      unawaited(ref.read(shellWindowSettingsProvider.notifier).setDontAskExit(value: value)),
+                ),
+              ),
+            if (primary && ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.desktop)
+              const WindowSizeRow(),
+            if (primary && startup.supported)
+              DsListRow(
+                leading: const DsIcon(DsIcons.rocket),
+                title: Text(t.settings.startup),
+                description: Text(
+                  startup.error.isEmpty ? t.settings.startupDesc : '${t.settings.startupFailed}: ${startup.error}',
+                ),
+                trailing: startup.loading
+                    ? const SizedBox.square(dimension: 18, child: DsSpinner())
+                    : DsSwitch(
+                        value: startup.enabled,
+                        onChanged: (value) => unawaited(ref.read(startupProvider.notifier).setEnabled(value: value)),
+                      ),
+              ),
+            if (primary)
+              DsListRow(
+                leading: const DsIcon(DsIcons.playCircle),
+                title: Text(t.settings.splashAnimation),
+                description: Text(t.settings.splashAnimationDesc),
+                trailing: DsSwitch(
+                  value: ref.watch(splashSettingsProvider),
+                  onChanged: (value) => ref.read(splashSettingsProvider.notifier).enabled = value,
+                ),
+              ),
+          ],
         ),
+        const RefreshRateSection(),
+        DsListSection(
+          header: Text(t.settings.updateGroup),
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.refreshCw),
+              title: Text(t.settings.autoCheckUpdate),
+              description: Text(t.settings.autoCheckUpdateDesc),
+              trailing: DsSwitch(
+                value: ref.watch(updateSettingsProvider),
+                onChanged: (value) => ref.read(updateSettingsProvider.notifier).enabled = value,
+              ),
+            ),
+          ],
+        ),
+        // The countdown ends the process, not one window: it belongs to the
+        // primary, like the close action and the startup switch.
+        if (primary) const AutoShutdownSection(),
       ],
     );
   }
 }
 
-/// The refresh pane (the reference's Refresh): the follows page's auto
-/// refresh and its interval — the timer the follows page itself runs, so
-/// every change applies on the next arm. The cover refresh needs a
-/// thumbnail pref this app does not keep yet, so it is not offered.
+/// The refresh pane (the reference's Refresh): the follows page's periodic
+/// and one-shot foreground refresh, its interval and queue bound, plus the
+/// periodic cover cache refresh. The follows page owns its timers; the cover
+/// timer is process-wide and re-arms from the app root.
 final class _RefreshPane extends ConsumerWidget {
   const _RefreshPane();
 
@@ -515,8 +1027,11 @@ final class _RefreshPane extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final autoRefresh = ref.watch(followsAutoRefreshProvider);
+    final maxConcurrent = ref.watch(maxConcurrentRefreshProvider);
+    final thumbnails = ref.watch(thumbnailRefreshProvider);
     // A stored interval the choices do not list still shows as chosen.
     final intervals = {...kRefreshIntervalChoices, autoRefresh.minutes}.toList()..sort();
+    final thumbnailIntervals = {...kThumbnailRefreshIntervalChoices, thumbnails.minutes}.toList()..sort();
 
     return DsListSection(
       header: Text(t.settings.refreshGroup),
@@ -530,23 +1045,57 @@ final class _RefreshPane extends ConsumerWidget {
             onChanged: (value) => unawaited(ref.read(followsAutoRefreshProvider.notifier).setEnabled(value: value)),
           ),
         ),
+        DsListRow(
+          leading: const DsIcon(DsIcons.rotateCcw),
+          title: Text(t.settings.refreshOnResume),
+          description: Text(t.settings.refreshOnResumeDesc),
+          trailing: DsSwitch(
+            value: autoRefresh.onResume,
+            onChanged: (value) => unawaited(ref.read(followsAutoRefreshProvider.notifier).setOnResume(value: value)),
+          ),
+        ),
         if (autoRefresh.enabled) ...[
-          SettingsConfigRow(
+          SettingsChoiceRow<int>(
             leading: const DsIcon(DsIcons.timer),
             title: t.settings.refreshInterval,
-            controlWidth: 180,
-            control: DsSelect<int>(
-              value: autoRefresh.minutes,
-              onChanged: (value) {
-                if (value != null) unawaited(ref.read(followsAutoRefreshProvider.notifier).setMinutes(value));
-              },
-              options: [
-                for (final minutes in intervals) DsSelectOption(value: minutes, label: _intervalLabel(minutes)),
-              ],
-              semanticLabel: t.settings.refreshInterval,
-            ),
+            value: autoRefresh.minutes,
+            options: [for (final minutes in intervals) DsSelectOption(value: minutes, label: _intervalLabel(minutes))],
+            onChanged: (value) => unawaited(ref.read(followsAutoRefreshProvider.notifier).setMinutes(value)),
           ),
         ],
+        SettingsChoiceRow<int>(
+          leading: const DsIcon(DsIcons.layers),
+          title: t.settings.maxConcurrentRefresh,
+          description: t.settings.maxConcurrentRefreshDesc,
+          value: maxConcurrent,
+          options: [
+            for (var value = kMaxConcurrentRefreshMin; value <= kMaxConcurrentRefreshMax; value++)
+              DsSelectOption(
+                value: value,
+                label: value == kMaxConcurrentRefreshDefault ? '$value · ${t.settings.recommended}' : '$value',
+              ),
+          ],
+          onChanged: (value) => unawaited(ref.read(maxConcurrentRefreshProvider.notifier).set(value)),
+        ),
+        DsListRow(
+          leading: const DsIcon(DsIcons.image),
+          title: Text(t.settings.refreshThumbnails),
+          description: Text(t.settings.refreshThumbnailsDesc),
+          trailing: DsSwitch(
+            value: thumbnails.enabled,
+            onChanged: (value) => unawaited(ref.read(thumbnailRefreshProvider.notifier).setEnabled(value: value)),
+          ),
+        ),
+        if (thumbnails.enabled)
+          SettingsChoiceRow<int>(
+            leading: const DsIcon(DsIcons.timer),
+            title: t.settings.thumbnailRefreshInterval,
+            value: thumbnails.minutes,
+            options: [
+              for (final minutes in thumbnailIntervals) DsSelectOption(value: minutes, label: _intervalLabel(minutes)),
+            ],
+            onChanged: (value) => unawaited(ref.read(thumbnailRefreshProvider.notifier).setMinutes(value)),
+          ),
       ],
     );
   }
@@ -630,6 +1179,19 @@ Future<void> _setWindowChrome(BuildContext context, WindowChrome? value) async {
   }
 }
 
+/// A resolution tier's localized name; an unknown tier shows as stored.
+String preferredQualityLabel(Translations t, String quality) => switch (quality) {
+  '原画' => t.settings.qualityOriginal,
+  '蓝光8M' => t.settings.qualityBluRay8M,
+  '蓝光4M' => t.settings.qualityBluRay4M,
+  '蓝光' => t.settings.qualityBluRay,
+  '超清' => t.settings.qualityUltra,
+  '高清' => t.settings.qualityHigh,
+  '标清' => t.settings.qualityStandard,
+  '流畅' => t.settings.qualitySmooth,
+  _ => quality,
+};
+
 /// A refresh interval's label: minutes under an hour, whole hours above,
 /// half hours as the decimal the reference shows ("1.5 h").
 String _intervalLabel(int minutes) {
@@ -654,10 +1216,20 @@ final class _AppearancePane extends ConsumerWidget {
     final localeScope = AppLocaleScope.of(context);
     final settings = scope.settings;
     final browse = ref.watch(browseSettingsProvider);
+    final textScale = ref.watch(textScaleFactorProvider);
     String? seedName;
     for (final (name, seed) in kNamedSeeds) {
       if (seed == settings.seed) seedName = name;
     }
+    final customSeed = scope.seedColor;
+    final dynamicSeed = scope.dynamicSeedColor;
+    final dynamicSupported = ref.watch(dynamicColorSeedProvider).value != null;
+    final dynamicEnabled = ref.watch(dynamicColorProvider);
+    final seedDetail = seedName != null
+        ? themeSeedToneLabel(t, seedName)
+        : customSeed != null
+        ? ThemePersistence.encodeSeedColor(customSeed)
+        : t.settings.themeSeedSystem;
     void update(AppThemeSettings next) => scope.onChanged(next);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -666,47 +1238,65 @@ final class _AppearancePane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.groupTheme),
           children: [
-            SettingsConfigRow(
+            SettingsChoiceRow<DsThemeMode>(
               leading: const DsIcon(DsIcons.sun),
               title: t.settings.themeMode,
               description: t.settings.appearanceDescription,
-              controlWidth: 280,
-              control: DsSegmentedControl<DsThemeMode>(
-                value: settings.mode,
-                onChanged: (value) => update(settings.rebuild((b) => b..mode = value)),
-                segments: [
-                  DsSegment(value: DsThemeMode.system, label: Text(t.settings.themeModeSystem)),
-                  DsSegment(value: DsThemeMode.light, label: Text(t.settings.themeModeLight)),
-                  DsSegment(value: DsThemeMode.dark, label: Text(t.settings.themeModeDark)),
-                ],
-              ),
+              value: settings.mode,
+              options: [
+                for (final mode in DsThemeMode.values) DsSelectOption(value: mode, label: themeModeLabel(t, mode)),
+              ],
+              onChanged: (mode) => update(settings.rebuild((b) => b..mode = mode)),
             ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.palette),
-              title: t.settings.themeSeed,
-              description: t.settings.themeSeedSystem,
-              controlWidth: 220,
-              control: DsSelect<String>(
-                value: seedName ?? '',
-                onChanged: (value) {
-                  if (value == null) return;
-                  DsSeed? seed;
-                  for (final (name, candidate) in kNamedSeeds) {
-                    if (name == value) seed = candidate;
-                  }
-                  update(withSeed(settings, seed));
-                },
-                options: [
-                  DsSelectOption(value: '', label: t.settings.themeSeedSystem, leading: const DsIcon(DsIcons.monitor)),
-                  for (final (name, seed) in kNamedSeeds)
-                    DsSelectOption(
-                      value: name,
-                      label: _seedLabel(t, name),
-                      leading: _SeedSwatch(seed: seed),
-                    ),
-                ],
-                semanticLabel: t.settings.themeSeed,
+            DsListRow(
+              leading: dynamicSeed != null
+                  ? _SeedSwatch.color(dynamicSeed)
+                  : seedName != null
+                  ? _SeedSwatch(seed: settings.seed)
+                  : customSeed != null
+                  ? _SeedSwatch.color(customSeed)
+                  : const DsIcon(DsIcons.palette),
+              title: Text(t.settings.themeSeed),
+              // While dynamic colour is on the wallpaper decides; the picker
+              // would write a seed the theme never uses.
+              description: Text(
+                dynamicSeed != null ? t.settings.themeSeedDynamicDescription : t.settings.themeSeedDescription,
               ),
+              detail: Text(dynamicSeed != null ? t.settings.themeSeedDynamic : seedDetail),
+              showChevron: dynamicSeed == null,
+              onPressed: dynamicSeed == null
+                  ? () => unawaited(
+                      showThemeColorDialog(
+                        context,
+                        settings: settings,
+                        seedColor: customSeed,
+                        onChanged: scope.onChanged,
+                      ),
+                    )
+                  : null,
+            ),
+            if (dynamicSupported)
+              DsListRow(
+                leading: const DsIcon(DsIcons.wandSparkles),
+                title: Text(t.settings.dynamicColor),
+                description: Text(t.settings.dynamicColorDescription),
+                trailing: DsSwitch(
+                  value: dynamicEnabled,
+                  onChanged: (value) => ref.read(dynamicColorProvider.notifier).enabled = value,
+                ),
+              ),
+            DsListRow(
+              // A still frame: the gallery plays the styles; a settings visit
+              // should not keep an animation running.
+              leading: const TickerMode(
+                enabled: false,
+                child: SizedBox.square(dimension: 22, child: AppLoadingIndicator(size: 22)),
+              ),
+              title: Text(t.settings.loadingStyle),
+              description: Text(t.settings.loadingStyleDescription),
+              detail: Text(loadingStyleLabel(t, ref.watch(loadingStyleProvider))),
+              showChevron: true,
+              onPressed: () => unawaited(showLoadingStyleDialog(context)),
             ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.contrast),
@@ -817,44 +1407,62 @@ final class _AppearancePane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.groupType),
           children: [
-            SettingsConfigRow(
+            SettingsChoiceRow<String>(
               leading: const DsIcon(DsIcons.type),
               title: t.settings.font,
               description: t.settings.fontDescription,
-              controlWidth: 220,
-              control: DsSelect<String>(
-                value: settings.fontFamily ?? '',
-                onChanged: (value) {
-                  if (value == null) return;
-                  update(
-                    settings.rebuild((b) {
-                      // Empty is the platform's own face; a preset id is this
-                      // app's bundled family, never a package one.
-                      b
-                        ..fontFamily = value.isEmpty ? null : value
-                        ..fontPackage = null;
-                    }),
-                  );
-                },
-                options: [
-                  DsSelectOption(value: '', label: t.settings.fontPlatform),
-                  for (final (id, label) in kBundledFontPresets) DsSelectOption(value: id, label: label),
-                ],
-                semanticLabel: t.settings.font,
+              value: settings.fontFamily ?? '',
+              options: [
+                DsSelectOption(value: '', label: t.settings.fontPlatform),
+                for (final (id, label) in kBundledFontPresets) DsSelectOption(value: id, label: label),
+              ],
+              onChanged: (value) => update(
+                settings.rebuild((b) {
+                  // Empty is the platform's own face; a preset id is this
+                  // app's bundled family, never a package one.
+                  b
+                    ..fontFamily = value.isEmpty ? null : value
+                    ..fontPackage = null;
+                }),
               ),
             ),
-            SettingsConfigRow(
+            SettingsChoiceRow<String>(
               leading: const DsIcon(DsIcons.languages),
               title: t.settings.language,
-              control: DsSelect<String>(
-                value: localeScope.localeCode ?? '',
-                onChanged: (value) => localeScope.onChanged(value == null || value.isEmpty ? null : value),
-                options: [
-                  DsSelectOption(value: '', label: t.settings.languageSystem),
-                  const DsSelectOption(value: 'zh-CN', label: '简体中文'),
-                  const DsSelectOption(value: 'en', label: 'English'),
-                ],
-                semanticLabel: t.settings.language,
+              value: localeScope.localeCode ?? '',
+              options: [
+                DsSelectOption(value: '', label: t.settings.languageSystem),
+                DsSelectOption(
+                  value: ThemePersistence.localeSimplifiedChinese,
+                  label: t.settings.languageSimplifiedChinese,
+                ),
+                DsSelectOption(value: ThemePersistence.localeEnglish, label: t.settings.languageEnglish),
+              ],
+              onChanged: (value) => localeScope.onChanged(value.isEmpty ? null : value),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.fontSize),
+              title: t.settings.textScale,
+              description: t.settings.textScaleDescription,
+              detail: Text('${(textScale * 100).round()}%'),
+              controlWidth: 220,
+              control: DsSlider(
+                value: textScale,
+                min: kMinTextScaleFactor,
+                max: kMaxTextScaleFactor,
+                divisions: 30,
+                onChanged: (value) => ref.read(textScaleFactorProvider.notifier).factor = value,
+                semanticLabel: t.settings.textScale,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Align(
+                child: Text(
+                  t.settings.textScalePreview,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: DsTheme.colorsOf(context).textMuted),
+                ),
               ),
             ),
           ],
@@ -862,34 +1470,25 @@ final class _AppearancePane extends ConsumerWidget {
       ],
     );
   }
-
-  String _seedLabel(Translations t, String name) => switch (name) {
-    'seedBlue' => t.settings.seedBlue,
-    'seedNavy' => t.settings.seedNavy,
-    'seedIndigo' => t.settings.seedIndigo,
-    'seedGraphite' => t.settings.seedGraphite,
-    'seedOxblood' => t.settings.seedOxblood,
-    'seedForest' => t.settings.seedForest,
-    _ => name,
-  };
 }
 
-/// A named seed as a small color dot, so the palette choice reads as a
-/// color rather than a word.
+/// A seed as a small color dot, so the palette choice reads as a color
+/// rather than a word.
 final class _SeedSwatch extends StatelessWidget {
-  const _SeedSwatch({required this.seed});
+  const _SeedSwatch({required this.seed}) : color = null;
 
-  final DsSeed seed;
+  const _SeedSwatch.color(this.color) : seed = null;
+
+  final DsSeed? seed;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final dot = color ?? (_seedAccents[seed!] ??= DsThemeData(seed: seed!).colors.accent);
     return Container(
       width: 14,
       height: 14,
-      decoration: DsBoxDecoration(
-        color: _seedAccents[seed] ??= DsThemeData(seed: seed).colors.accent,
-        borderRadius: BorderRadius.circular(7),
-      ),
+      decoration: DsBoxDecoration(color: dot, borderRadius: BorderRadius.circular(7)),
     );
   }
 }
@@ -1066,9 +1665,24 @@ final class _DanmakuPane extends ConsumerWidget {
             ),
           ],
         ),
+        const _MiniDanmakuPane(),
       ],
     );
   }
+}
+
+/// Live resources: the platform table (display, order and accounts) and
+/// the follows auto-refresh that keeps it fresh, in one page — the two
+/// halves are one subject and were split across two sidebar rows before.
+final class _SourcesPane extends StatelessWidget {
+  const _SourcesPane();
+
+  @override
+  Widget build(BuildContext context) => const Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    spacing: DsSpace.s16,
+    children: [_SitesPane(), _RefreshPane()],
+  );
 }
 
 /// The sites pane: the platform display (the reference's hot-areas
@@ -1110,28 +1724,20 @@ final class _SitesPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.sitesDisplay),
           children: [
-            SettingsConfigRow(
+            SettingsChoiceRow<String>(
               leading: localizedSiteIcon(selectedSite, size: 20) ?? const DsIcon(DsIcons.tv),
               title: t.settings.site,
-              controlWidth: 220,
-              control: DsSelect<String>(
-                value: selectedId,
-                // The select reports null only when cleared (clearable is
-                // off), so a null never reaches the site setter.
-                onChanged: (id) {
-                  if (id != null) ref.read(selectedSiteIdProvider.notifier).selected = id;
-                },
-                options: [
-                  for (final site in sites)
-                    DsSelectOption(
-                      value: site.manifest.id,
-                      label: localizedSiteName(site),
-                      leading: localizedSiteIcon(site, size: 20),
-                    ),
-                ],
-                placeholder: t.settings.site,
-                semanticLabel: t.settings.site,
-              ),
+              value: selectedId,
+              options: [
+                for (final site in sites)
+                  DsSelectOption(
+                    value: site.manifest.id,
+                    label: localizedSiteName(site),
+                    leading: localizedSiteIcon(site, size: 20),
+                  ),
+              ],
+              placeholder: t.settings.site,
+              onChanged: (id) => ref.read(selectedSiteIdProvider.notifier).selected = id,
             ),
             if (hidden.isEmpty)
               DsListRow(leading: const DsIcon(DsIcons.antenna), title: Text(t.settings.sitesAllShown)),
@@ -1163,23 +1769,17 @@ final class _SitesPane extends ConsumerWidget {
               },
               onReorder: (from, to) => unawaited(orderController.move(from, to)),
             ),
-            SettingsConfigRow(
+            SettingsChoiceRow<String>(
               leading: const DsIcon(DsIcons.pin),
               title: t.settings.preferPlatform,
               description: t.settings.preferPlatformDesc,
-              controlWidth: 220,
-              control: DsSelect<String>(
-                value: visibleOrder.contains(order.preferred) ? order.preferred : null,
-                onChanged: (value) {
-                  if (value != null) unawaited(orderController.setPreferred(value));
-                },
-                options: [
-                  for (final id in visibleOrder)
-                    DsSelectOption(value: id, label: name(id), leading: localizedSiteIcon(sitesById[id], size: 20)),
-                ],
-                placeholder: t.settings.preferPlatform,
-                semanticLabel: t.settings.preferPlatform,
-              ),
+              value: visibleOrder.contains(order.preferred) ? order.preferred : null,
+              options: [
+                for (final id in visibleOrder)
+                  DsSelectOption(value: id, label: name(id), leading: localizedSiteIcon(sitesById[id], size: 20)),
+              ],
+              placeholder: t.settings.preferPlatform,
+              onChanged: (value) => unawaited(orderController.setPreferred(value)),
             ),
             DsListRow(
               leading: const DsIcon(DsIcons.listRestart),
@@ -1193,6 +1793,20 @@ final class _SitesPane extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// Data and cache in one page: the watch history and follows round trip,
+/// then the cover/avatar cache the same browsing feeds fill. They share a
+/// subject — what the app keeps locally — and were two menu rows before.
+final class _DataCachePane extends StatelessWidget {
+  const _DataCachePane();
+
+  @override
+  Widget build(BuildContext context) => const Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    spacing: DsSpace.s16,
+    children: [_DataPane(), _CachePane()],
+  );
 }
 
 /// The live data pane: the watch history's cap, clearing the watch history
@@ -1216,20 +1830,13 @@ final class _DataPane extends ConsumerWidget {
     return DsListSection(
       header: Text(t.settings.navData),
       children: [
-        SettingsConfigRow(
+        SettingsChoiceRow<int>(
           leading: const DsIcon(DsIcons.clock),
           title: t.settings.historyLimit,
           description: t.settings.historyLimitDesc,
-          detail: Text('$historyLimit'),
-          controlWidth: 160,
-          control: DsSelect<int>(
-            value: historyLimit,
-            onChanged: (value) {
-              if (value != null) unawaited(ref.read(historyLimitProvider.notifier).setLimit(value));
-            },
-            options: [for (final limit in limits) DsSelectOption(value: limit, label: '$limit')],
-            semanticLabel: t.settings.historyLimit,
-          ),
+          value: historyLimit,
+          options: [for (final limit in limits) DsSelectOption(value: limit, label: '$limit')],
+          onChanged: (value) => unawaited(ref.read(historyLimitProvider.notifier).setLimit(value)),
         ),
         DsListRow(
           leading: const DsIcon(DsIcons.history),
@@ -1373,19 +1980,16 @@ final class _CachePaneState extends State<_CachePane> {
             child: Text(t.settings.cacheClear),
           ),
         ),
-        SettingsConfigRow(
+        SettingsChoiceRow<int>(
           leading: const DsIcon(DsIcons.settings),
           title: t.settings.cacheLimit,
           description: t.settings.cacheLimitDesc,
-          control: DsSelect<int>(
-            value: _limitMb,
-            onChanged: (value) => unawaited(_setLimit(value)),
-            options: [
-              DsSelectOption(value: 0, label: t.settings.cacheLimitOff),
-              for (final mb in const [100, 200, 500, 1024, 2048]) DsSelectOption(value: mb, label: '$mb MB'),
-            ],
-            semanticLabel: t.settings.cacheLimit,
-          ),
+          value: _limitMb,
+          options: [
+            DsSelectOption(value: 0, label: t.settings.cacheLimitOff),
+            for (final mb in const [100, 200, 500, 1024, 2048]) DsSelectOption(value: mb, label: '$mb MB'),
+          ],
+          onChanged: (value) => unawaited(_setLimit(value)),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s16),
@@ -1458,6 +2062,12 @@ final class _AboutPane extends ConsumerWidget {
           onPressed: () => unawaited(showReleaseHistory(context)),
         ),
         DsListRow(
+          leading: const DsIcon(DsIcons.fileText),
+          title: Text(t.settings.configPreview),
+          description: Text(t.settings.configPreviewDesc),
+          onPressed: () => unawaited(showConfigPreview(context)),
+        ),
+        DsListRow(
           leading: const DsIcon(DsIcons.link),
           title: Text(t.settings.aboutProject),
           description: const Text(_projectUrl),
@@ -1484,35 +2094,39 @@ final class _AboutPane extends ConsumerWidget {
 final class _VideoPane extends ConsumerWidget {
   const _VideoPane();
 
-  /// The quality labels the picker offers, raw as sites spell them; the
-  /// stored value is this label, so the choice matches the site's catalogue.
-  static const List<String> _qualities = ['原画', '蓝光', '超清', '高清', '标清', '流畅'];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final settings = ref.watch(playbackSettingsProvider);
     final controller = ref.read(playbackSettingsProvider.notifier);
-    final stored = settings.preferredQuality;
-    final choices = {..._qualities, if (stored != null && stored.isNotEmpty) stored}.toList();
+    final network = ref.watch(networkTypeProvider);
+    final stored = settings.preferredQuality ?? kPreferredResolutionChoices.first;
     return DsListSection(
-      header: Text(t.settings.navVideo),
+      header: Text(t.settings.navPlaybackPreferences),
       children: [
-        SettingsConfigRow(
+        SettingsChoiceRow<String>(
           leading: const DsIcon(DsIcons.gauge),
           title: t.settings.preferredQuality,
           description: t.settings.preferredQualityDesc,
-          control: DsSelect<String>(
-            value: stored ?? '',
-            onChanged: (value) =>
-                unawaited(controller.setPreferredQuality(value == null || value.isEmpty ? null : value)),
-            options: [
-              DsSelectOption(value: '', label: t.settings.qualityAuto),
-              for (final quality in choices) DsSelectOption(value: quality, label: _qualityLabel(t, quality)),
-            ],
-            semanticLabel: t.settings.preferredQuality,
-          ),
+          value: stored,
+          options: [
+            for (final quality in kPreferredResolutionChoices)
+              DsSelectOption(value: quality, label: preferredQualityLabel(t, quality)),
+          ],
+          onChanged: (value) => unawaited(controller.setPreferredQuality(value)),
         ),
+        if (network.reportsCellular)
+          SettingsChoiceRow<String>(
+            leading: const DsIcon(DsIcons.smartphone),
+            title: t.settings.preferredQualityCellular,
+            description: t.settings.preferredQualityCellularDesc,
+            value: settings.preferredQualityCellular ?? kPreferredResolutionChoices.first,
+            options: [
+              for (final quality in kPreferredResolutionChoices)
+                DsSelectOption(value: quality, label: preferredQualityLabel(t, quality)),
+            ],
+            onChanged: (value) => unawaited(controller.setPreferredQualityCellular(value)),
+          ),
         DsListRow(
           leading: const DsIcon(DsIcons.volumeOff),
           title: Text(t.settings.defaultMuted),
@@ -1522,14 +2136,23 @@ final class _VideoPane extends ConsumerWidget {
             onChanged: (value) => unawaited(controller.setMuted(value: value)),
           ),
         ),
+        DsListRow(
+          leading: const DsIcon(DsIcons.volumeX),
+          title: Text(t.settings.globalMute),
+          description: Text(t.settings.globalMuteDesc),
+          trailing: DsSwitch(
+            value: settings.globalMute,
+            onChanged: (value) => unawaited(controller.setGlobalMute(value: value)),
+          ),
+        ),
         SettingsConfigRow(
           leading: const DsIcon(DsIcons.volume),
           title: t.settings.defaultVolume,
           description: t.settings.defaultVolumeDesc,
-          detail: Text('${(settings.volume * 100).round()}%'),
+          detail: Text('${(controller.volume * 100).round()}%'),
           controlWidth: 220,
           control: DsSlider(
-            value: settings.volume,
+            value: controller.volume,
             onChanged: (value) => unawaited(controller.setVolume(value)),
             semanticLabel: t.settings.defaultVolume,
           ),
@@ -1558,21 +2181,18 @@ final class _VideoPane extends ConsumerWidget {
             onChanged: (value) => unawaited(controller.setAutoPipOnLeave(value: value)),
           ),
         ),
+        DsListRow(
+          leading: const DsIcon(DsIcons.sun),
+          title: Text(t.settings.keepScreenOn),
+          description: Text(t.settings.keepScreenOnDesc),
+          trailing: DsSwitch(
+            value: ref.watch(keepScreenOnProvider),
+            onChanged: (value) => ref.read(keepScreenOnProvider.notifier).enabled = value,
+          ),
+        ),
       ],
     );
   }
-
-  /// The picker's words for a site's raw quality label; a label the app
-  /// does not know shows as the site spelled it.
-  String _qualityLabel(Translations t, String quality) => switch (quality) {
-    '原画' => t.settings.qualityOriginal,
-    '蓝光' => t.settings.qualityBluRay,
-    '超清' => t.settings.qualityUltra,
-    '高清' => t.settings.qualityHigh,
-    '标清' => t.settings.qualityStandard,
-    '流畅' => t.settings.qualitySmooth,
-    _ => quality,
-  };
 }
 
 /// The small-window danmaku pane (the reference's mini-window danmaku): whether the
@@ -1613,44 +2233,6 @@ final class _MiniDanmakuPane extends ConsumerWidget {
 /// The player-kernel pane (the reference's player kernel): the engine in use and
 /// its hardware-decoding choice, applied to each attached engine through
 /// media_core's engine-option surface.
-final class _KernelPane extends ConsumerWidget {
-  const _KernelPane();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final settings = ref.watch(playbackSettingsProvider);
-    return DsListSection(
-      header: Text(t.settings.navKernel),
-      children: [
-        DsListRow(
-          leading: const DsIcon(DsIcons.cpu),
-          title: Text(t.settings.engineTitle),
-          description: Text(t.settings.engineDesc),
-          detail: const Text('mpv · media_kit'),
-        ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.gauge),
-          title: Text(t.settings.hardwareDecoding),
-          description: Text(t.settings.hardwareDecodingDesc),
-          trailing: DsSwitch(
-            value: settings.hardwareDecoding,
-            onChanged: (value) =>
-                unawaited(ref.read(playbackSettingsProvider.notifier).setHardwareDecoding(value: value)),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s16),
-          child: Text(
-            t.settings.hardwareDecodingHint,
-            style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// The recording pane (the reference's Recording): the recorder's own settings,
 /// shared with the recording centre's header so both surfaces write the
 /// same stored truth.
@@ -1659,518 +2241,4 @@ final class _RecordingPane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const RecordingSettingsPane();
-}
-
-/// A flat colour preset: a 40×40 swatch, ringed while it is the chosen
-/// background.
-final class _BackgroundSwatch extends StatelessWidget {
-  const _BackgroundSwatch({
-    required this.color,
-    required this.selected,
-    required this.semanticLabel,
-    required this.onPressed,
-  });
-
-  final Color color;
-  final bool selected;
-  final String semanticLabel;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return DsPressable(
-      semanticLabel: semanticLabel,
-      onPressed: onPressed,
-      builder: (context, states, _) => Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(theme.radii.card),
-          border: Border.all(
-            color: selected
-                ? colors.accent
-                : states.contains(WidgetState.hovered)
-                ? colors.textSubtle
-                : colors.border,
-            width: selected ? 2.5 : 1,
-          ),
-        ),
-        child: selected ? const Center(child: DsIcon(DsIcons.check, size: 16, color: Color(0xFFFFFFFF))) : null,
-      ),
-    );
-  }
-}
-
-/// A gradient preset tile, previewed with its own stops and alignment.
-final class _BackgroundGradientSwatch extends StatelessWidget {
-  const _BackgroundGradientSwatch({
-    required this.colors,
-    required this.begin,
-    required this.end,
-    required this.selected,
-    required this.semanticLabel,
-    required this.onPressed,
-  });
-
-  final List<Color> colors;
-  final Alignment begin;
-  final Alignment end;
-  final bool selected;
-  final String semanticLabel;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return DsPressable(
-      semanticLabel: semanticLabel,
-      onPressed: onPressed,
-      builder: (context, states, _) => Container(
-        width: 96,
-        height: 52,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: colors, begin: begin, end: end),
-          borderRadius: BorderRadius.circular(theme.radii.card),
-          border: Border.all(
-            color: selected
-                ? palette.accent
-                : states.contains(WidgetState.hovered)
-                ? palette.textSubtle
-                : palette.border,
-            width: selected ? 2.5 : 1,
-          ),
-        ),
-        child: selected ? const Center(child: DsIcon(DsIcons.check, size: 16, color: Color(0xFFFFFFFF))) : null,
-      ),
-    );
-  }
-}
-
-/// One picture from the TV wallpaper set's public deepin collection.
-final class _BackgroundGalleryTile extends StatelessWidget {
-  const _BackgroundGalleryTile({
-    required this.url,
-    required this.selected,
-    required this.semanticLabel,
-    required this.onPressed,
-  });
-
-  final String url;
-  final bool selected;
-  final String semanticLabel;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return DsPressable(
-      semanticLabel: semanticLabel,
-      onPressed: onPressed,
-      builder: (context, states, _) => Container(
-        width: 120,
-        height: 68,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(theme.radii.card),
-          border: Border.all(
-            color: selected
-                ? colors.accent
-                : states.contains(WidgetState.hovered)
-                ? colors.textSubtle
-                : colors.border,
-            width: selected ? 2.5 : 1,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            DsImage(
-              image: cachedImage(url),
-              width: 120,
-              height: 68,
-              semanticLabel: semanticLabel,
-              fallback: ColoredBox(color: colors.control),
-            ),
-            if (selected)
-              const PositionedDirectional(
-                top: 4,
-                end: 4,
-                child: DsIcon(DsIcons.checkCircle, size: 16, color: Color(0xFFFFFFFF)),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The background pane: a still image or a looping muted video behind every
-/// page, uploaded into the app's data area or loaded from an http(s) URL.
-///
-/// The pane itself sits over the wallpaper, so every change is its own
-/// preview; the display knobs (fit, scrim, blur) apply live.
-final class _BackgroundPane extends ConsumerStatefulWidget {
-  const _BackgroundPane();
-
-  @override
-  ConsumerState<_BackgroundPane> createState() => _BackgroundPaneState();
-}
-
-final class _BackgroundPaneState extends ConsumerState<_BackgroundPane> {
-  final TextEditingController _imageUrl = TextEditingController();
-  final TextEditingController _videoUrl = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    final settings = ref.read(backgroundSettingsProvider);
-    _imageUrl.text = settings.imageUrl;
-    _videoUrl.text = settings.videoUrl;
-  }
-
-  @override
-  void dispose() {
-    _imageUrl.dispose();
-    _videoUrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final settings = ref.watch(backgroundSettingsProvider);
-    final controller = ref.read(backgroundSettingsProvider.notifier);
-    final busy = settings.busy;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: DsSpace.s16,
-      children: [
-        if (settings.error.isNotEmpty)
-          DsAlert(
-            status: DsStatus.danger,
-            title: Text(t.settings.backgroundImportFailed),
-            description: Text(settings.error, maxLines: 3, overflow: TextOverflow.ellipsis),
-          ),
-        if (busy)
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              const SizedBox(width: 14, height: 14, child: DsSpinner()),
-              Text(t.settings.backgroundBusy, style: DsTheme.of(context).typography.caption),
-            ],
-          ),
-        DsListSection(
-          header: Text(t.settings.backgroundSource),
-          children: [
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.wallpaper),
-              title: t.settings.backgroundKind,
-              description: t.settings.backgroundDescription,
-              controlWidth: 300,
-              control: DsSegmentedControl<BackgroundKind>(
-                value: settings.kind,
-                onChanged: controller.selectKind,
-                segments: [
-                  DsSegment(value: BackgroundKind.none, label: Text(t.settings.backgroundNone)),
-                  DsSegment(value: BackgroundKind.solid, label: Text(t.settings.backgroundSolid)),
-                  DsSegment(value: BackgroundKind.gradient, label: Text(t.settings.backgroundGradient)),
-                  DsSegment(value: BackgroundKind.image, label: Text(t.settings.backgroundImage)),
-                  DsSegment(value: BackgroundKind.video, label: Text(t.settings.backgroundVideo)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        if (settings.kind == BackgroundKind.solid)
-          DsListSection(
-            header: Text(t.settings.backgroundPresets),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(DsSpace.s12),
-                child: Wrap(
-                  spacing: DsSpace.s8,
-                  runSpacing: DsSpace.s8,
-                  children: [
-                    for (final color in kBackgroundSolidPresets)
-                      _BackgroundSwatch(
-                        color: color,
-                        selected: settings.solidColor == color,
-                        semanticLabel: t.settings.backgroundSolid,
-                        onPressed: () => controller.setSolid(color),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        if (settings.kind == BackgroundKind.gradient)
-          DsListSection(
-            header: Text(t.settings.backgroundPresets),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(DsSpace.s12),
-                child: Wrap(
-                  spacing: DsSpace.s8,
-                  runSpacing: DsSpace.s8,
-                  children: [
-                    for (final (index, preset) in kBackgroundGradientPresets.indexed)
-                      _BackgroundGradientSwatch(
-                        colors: preset.colors,
-                        begin: preset.begin,
-                        end: preset.end,
-                        selected: listEquals(settings.gradientColors, preset.colors),
-                        semanticLabel: '${t.settings.backgroundGradient} ${index + 1}',
-                        onPressed: () => controller.setGradient(preset.colors),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        if (settings.kind == BackgroundKind.image || settings.kind == BackgroundKind.none)
-          DsListSection(
-            header: Text(t.settings.backgroundGallery),
-            children: [
-              DsListRow(
-                leading: const DsIcon(DsIcons.image),
-                title: Text(t.settings.backgroundLibraryBrowse),
-                description: Text(t.settings.backgroundLibraryNetworkHint),
-                onPressed: () => unawaited(showBackgroundLibrary(context)),
-                showChevron: true,
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s4),
-                child: Text(
-                  t.settings.backgroundGalleryHint,
-                  style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
-                ),
-              ),
-              SizedBox(
-                height: 84,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
-                  itemCount: kBackgroundGalleryUrls.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: DsSpace.s8),
-                  itemBuilder: (context, index) {
-                    final url = kBackgroundGalleryUrls[index];
-                    return _BackgroundGalleryTile(
-                      url: url,
-                      selected: settings.imageUrl == url,
-                      semanticLabel: '${t.settings.backgroundGallery} ${index + 1}',
-                      onPressed: () => controller.setImageUrl(url),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        if (settings.kind == BackgroundKind.image)
-          _sourceSection(
-            context,
-            title: t.settings.backgroundImage,
-            addressLabel: t.settings.backgroundImageAddress,
-            controller: _imageUrl,
-            path: settings.imagePath,
-            busy: busy,
-            onApply: () => _apply(image: true),
-            onUpload: () => _upload(image: true),
-          ),
-        if (settings.kind == BackgroundKind.video)
-          _sourceSection(
-            context,
-            title: t.settings.backgroundVideo,
-            addressLabel: t.settings.backgroundVideoAddress,
-            controller: _videoUrl,
-            path: settings.videoPath,
-            busy: busy,
-            onApply: () => _apply(image: false),
-            onUpload: () => _upload(image: false),
-          ),
-        if (settings.kind == BackgroundKind.none)
-          Padding(
-            padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s4),
-            child: Text(
-              t.settings.backgroundEmpty,
-              style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
-            ),
-          ),
-        DsListSection(
-          header: Text(t.settings.backgroundDisplay),
-          children: [
-            if (settings.kind == BackgroundKind.image || settings.kind == BackgroundKind.video)
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.scan),
-                title: t.settings.backgroundFit,
-                controlWidth: 220,
-                control: DsSelect<BoxFit>(
-                  value: settings.fit,
-                  onChanged: (value) {
-                    if (value != null) controller.setFit(value);
-                  },
-                  options: [for (final fit in kBackgroundFits) DsSelectOption(value: fit, label: _fitLabel(t, fit))],
-                  semanticLabel: t.settings.backgroundFit,
-                ),
-              ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.contrast),
-              title: t.settings.backgroundMask,
-              description: t.settings.backgroundMaskDescription,
-              detail: Text('${(settings.maskOpacity * 100).round()}%'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: settings.maskOpacity,
-                max: 0.8,
-                divisions: 16,
-                onChanged: controller.setMaskOpacity,
-                semanticLabel: t.settings.backgroundMask,
-              ),
-            ),
-            if (settings.kind == BackgroundKind.image || settings.kind == BackgroundKind.video)
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.waves),
-                title: t.settings.backgroundBlur,
-                description: t.settings.backgroundBlurDescription,
-                detail: Text('${settings.blurSigma.round()}'),
-                controlWidth: 220,
-                control: DsSlider(
-                  value: settings.blurSigma,
-                  max: 40,
-                  divisions: 40,
-                  onChanged: controller.setBlurSigma,
-                  semanticLabel: t.settings.backgroundBlur,
-                ),
-              ),
-          ],
-        ),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: DsButton(
-            variant: DsButtonVariant.secondary,
-            onPressed: controller.clear,
-            leading: const DsIcon(DsIcons.eraser),
-            child: Text(t.settings.backgroundClear),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// One media kind's URL field and actions.
-  Widget _sourceSection(
-    BuildContext context, {
-    required String title,
-    required String addressLabel,
-    required TextEditingController controller,
-    required String path,
-    required bool busy,
-    required VoidCallback onApply,
-    required VoidCallback onUpload,
-  }) {
-    final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return DsListSection(
-      header: Text(title),
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s8,
-            children: [
-              Text(addressLabel, style: theme.typography.body.copyWith(color: colors.text)),
-              DsTextField(
-                controller: controller,
-                placeholder: t.settings.backgroundAddressHint,
-                semanticLabel: addressLabel,
-                onSubmitted: (_) => onApply(),
-              ),
-              Wrap(
-                spacing: DsSpace.s8,
-                runSpacing: DsSpace.s8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  DsButton(
-                    onPressed: busy ? null : onApply,
-                    leading: const DsIcon(DsIcons.check),
-                    child: Text(t.settings.backgroundApply),
-                  ),
-                  DsButton(
-                    variant: DsButtonVariant.secondary,
-                    onPressed: busy ? null : onUpload,
-                    leading: const DsIcon(DsIcons.upload),
-                    child: Text(t.settings.backgroundUpload),
-                  ),
-                  if (path.isNotEmpty)
-                    Text(
-                      t.settings.backgroundLocalFile(name: p.basename(path)),
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _apply({required bool image}) {
-    final t = context.t;
-    final settings = ref.read(backgroundSettingsProvider);
-    final url = (image ? _imageUrl : _videoUrl).text.trim();
-    // An empty field over an uploaded file is not "remove the file": the
-    // upload wrote that source, and a stray Apply should not drop it.
-    if (url.isEmpty && (image ? settings.imagePath : settings.videoPath).isNotEmpty) return;
-    if (url.isNotEmpty) {
-      final uri = Uri.tryParse(url);
-      if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https') || uri.host.isEmpty) {
-        showDsToast(context: context, title: t.settings.backgroundInvalidUrl, status: DsStatus.danger);
-        return;
-      }
-    }
-    final controller = ref.read(backgroundSettingsProvider.notifier);
-    image ? controller.setImageUrl(url) : controller.setVideoUrl(url);
-  }
-
-  Future<void> _upload({required bool image}) async {
-    final t = context.t;
-    final controller = ref.read(backgroundSettingsProvider.notifier);
-    if (image) {
-      await controller.uploadImage(dialogTitle: t.settings.backgroundUploadImage);
-    } else {
-      await controller.uploadVideo(dialogTitle: t.settings.backgroundUploadVideo);
-    }
-    if (!mounted) return;
-    final settings = ref.read(backgroundSettingsProvider);
-    if (image) {
-      _imageUrl.text = settings.imageUrl;
-    } else {
-      _videoUrl.text = settings.videoUrl;
-    }
-    if (settings.error.isNotEmpty) {
-      showDsToast(
-        context: context,
-        title: t.settings.backgroundImportFailed,
-        description: settings.error,
-        status: DsStatus.danger,
-      );
-    }
-  }
-
-  static String _fitLabel(Translations t, BoxFit fit) => switch (fit) {
-    BoxFit.cover => t.settings.backgroundFitCover,
-    BoxFit.contain => t.settings.backgroundFitContain,
-    BoxFit.fill => t.settings.backgroundFitFill,
-    BoxFit.fitWidth => t.settings.backgroundFitWidth,
-    BoxFit.fitHeight => t.settings.backgroundFitHeight,
-    BoxFit.none => t.settings.backgroundFitNone,
-    BoxFit.scaleDown => t.settings.backgroundFitScaleDown,
-  };
 }

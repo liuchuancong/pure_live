@@ -6,6 +6,8 @@ import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_danmaku/media_core_danmaku.dart';
 import 'package:media_core_live/media_core_live.dart';
+import 'package:pure_live/app/providers/network_type_provider.dart' show networkTypeProvider;
+import 'package:pure_live/app/providers/player_backend_providers.dart' show playerKernelBackendProvider;
 import 'package:pure_live/app/providers/player_providers.dart'
     show createRoomPlayback, playerKernelProvider, roomSourcesOf;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
@@ -13,8 +15,13 @@ import 'package:pure_live/features/favorites/follow_repository.dart' show follow
 import 'package:pure_live/features/history/history_repository.dart' show historyProvider;
 import 'package:pure_live/features/recorder/recorder_engine.dart' show recorderEngineProvider;
 import 'package:pure_live/features/recorder/recording_task.dart' show RecordingTask, RecordingTaskState;
-import 'package:pure_live/features/settings/playback_settings_providers.dart' show playbackSettingsProvider;
+import 'package:pure_live/features/settings/playback_settings_providers.dart'
+    show playbackSettingsProvider, preferredQualityIndex;
+import 'package:pure_live/features/settings/player_tuning.dart'
+    show PlayerTuning, playerProxyProvider, playerTuningOptions, playerTuningProvider;
 import 'package:pure_live/features/shield/shield_repository.dart' show ShieldRules, shieldRulesProvider;
+import 'package:pure_live/shared/player/super_resolution.dart'
+    show SuperResolutionMode, superResolutionModeProvider, superResolutionOption;
 
 /// How many chat lines the page keeps; older leave first.
 const int kRoomChatLimit = 200;
@@ -190,15 +197,48 @@ final class RoomController extends Notifier<RoomState> {
   /// switch, a recovery) must come back at the same mute and volume, not at
   /// the engine's defaults.
   bool _muted = false;
+
+  /// The app-wide mute (the reference's `globalVolumeMute`); it overrides
+  /// the room's own mute without erasing the viewer's choice.
+  bool _globalMute = false;
   double _volume = 1;
 
-  /// Whether the decoder choice went to an engine already; it is a
-  /// configuration, not a per-handle command.
-  bool _preferencesApplied = false;
+  /// The handle the engine configuration went to; a replacement engine (a
+  /// line switch, a recovery) gets it again, a repeated event does not.
+  PlayerHandle? _preparedHandle;
+
+  /// Read before the provider tree can go away: teardown may not touch ref.
+  bool _forceDestroy = false;
 
   @override
   RoomState build() {
+    _forceDestroy = ref.read(playerTuningProvider).forceDestroy;
     ref.onDispose(_teardown);
+    // A super-resolution choice applies to the live handle at once; the
+    // next handle also reads it in `_applyEnginePreferences`.
+    ref.listen(superResolutionModeProvider, (_, mode) {
+      final handle = state.handle;
+      if (handle != null) unawaited(_applySuperResolution(handle, mode));
+    });
+    ref.listen(playerTuningProvider, (previous, next) {
+      final handle = state.handle;
+      if (handle != null) unawaited(_applyTuning(handle, previous, next));
+    });
+    ref.listen(playerProxyProvider, (_, _) {
+      final handle = state.handle;
+      if (handle != null) unawaited(_applyTuning(handle, null, ref.read(playerTuningProvider)));
+    });
+    ref.listen(playbackSettingsProvider.select((settings) => settings.hardwareDecoding), (previous, next) {
+      final handle = state.handle;
+      if (previous != next && handle != null) unawaited(_applyTuning(handle, null, ref.read(playerTuningProvider)));
+    });
+    ref.listen(playbackSettingsProvider.select((settings) => settings.globalMute), (previous, next) {
+      if (previous == next) return;
+      _globalMute = next;
+      state = _with();
+      final handle = state.handle;
+      if (handle != null) unawaited(_setHandleMute(handle));
+    });
     return _initial();
   }
 
@@ -213,8 +253,9 @@ final class RoomController extends Notifier<RoomState> {
     state = _initial();
     final settings = ref.read(playbackSettingsProvider);
     _muted = settings.muted;
-    _volume = settings.volume;
-    _preferencesApplied = false;
+    _globalMute = settings.globalMute;
+    _volume = ref.read(playbackSettingsProvider.notifier).volume;
+    _preparedHandle = null;
     ref.read(roomChatProvider.notifier).clear();
     final site = ref.read(sitesProvider).getById(platform);
     final roomProvider = site?.capability<LiveRoomProvider>();
@@ -306,16 +347,33 @@ final class RoomController extends Notifier<RoomState> {
   }
 
   /// Mutes or unmutes, remembering the choice for the next engine.
+  ///
+  /// An unmute from the player while the app-wide mute is on clears that
+  /// setting: otherwise the button would look alive and do nothing.
   Future<void> setMuted({required bool value}) async {
+    if (!value && _globalMute) {
+      _globalMute = false;
+      unawaited(ref.read(playbackSettingsProvider.notifier).setGlobalMute(value: false));
+    }
     _muted = value;
     // Mute is not on the transport stream; a state echo rebuilds the bar's
     // icon now rather than on the next unrelated event.
     state = _with();
-    await state.handle?.setMute(muted: value);
+    final handle = state.handle;
+    if (handle != null) await _setHandleMute(handle);
   }
 
-  /// The audio the room holds (and hands every replacement engine).
-  bool get muted => _muted;
+  /// The audio the room holds (and hands every replacement engine), after
+  /// the app-wide mute has had its say.
+  bool get muted => _muted || _globalMute;
+
+  Future<void> _setHandleMute(PlayerHandle handle) async {
+    try {
+      await handle.setMute(muted: _muted || _globalMute);
+    } on Object {
+      // A preference the engine refused is not a playback failure.
+    }
+  }
 
   /// The volume the room holds.
   double get volume => _volume;
@@ -342,20 +400,59 @@ final class RoomController extends Notifier<RoomState> {
   Future<void> _applyAudioPreferences(PlayerHandle handle) async {
     try {
       await handle.setVolume(_volume);
-      await handle.setMute(muted: _muted);
+      await handle.setMute(muted: _muted || _globalMute);
     } on Object {
       // A preference the engine refused is not a playback failure.
     }
   }
 
-  /// Sends the decoder choice to an engine once per room (an mpv property
-  /// write, so it takes effect on the running engine).
-  Future<void> _applyDecoderPreference(PlayerHandle handle) async {
-    if (_preferencesApplied) return;
-    _preferencesApplied = true;
+  /// Sends the engine configuration to a handle once: the decoder choice and
+  /// the super-resolution shader chain (mpv property writes, so they take
+  /// effect on the running engine). A replacement handle gets both again.
+  Future<void> _applyEnginePreferences(PlayerHandle handle) async {
+    if (identical(_preparedHandle, handle)) return;
+    _preparedHandle = handle;
     try {
       final settings = ref.read(playbackSettingsProvider);
-      await handle.applyEngineOptions([EngineOption('hwdec', settings.hardwareDecoding ? 'auto' : 'no')]);
+      final options = <EngineOption>[EngineOption('hwdec', settings.hardwareDecoding ? 'auto' : 'no')];
+      final shader = await superResolutionOption(ref.read(superResolutionModeProvider));
+      if (shader != null) options.add(shader);
+      await handle.applyEngineOptions(options);
+    } on Object {
+      // A preference the engine refused is not a playback failure.
+    }
+  }
+
+  /// Applies a changed super-resolution choice to the running engine; an
+  /// empty list clears the shader chain when the choice goes back to off.
+  Future<void> _applySuperResolution(PlayerHandle handle, SuperResolutionMode mode) async {
+    try {
+      final option = await superResolutionOption(mode);
+      await handle.applyEngineOptions([option ?? const EngineOption('glsl-shaders', <String>[])]);
+    } on Object {
+      // The picture is already playing; a shader the engine refused must not
+      // turn into a playback error.
+    }
+  }
+
+  /// Applies a changed tuning/proxy choice to the running engine. A video
+  /// or audio output change needs a new render context, so the engine is
+  /// rebuilt after the options are recorded; everything else applies live.
+  Future<void> _applyTuning(PlayerHandle handle, PlayerTuning? previous, PlayerTuning next) async {
+    _forceDestroy = next.forceDestroy;
+    try {
+      final settings = ref.read(playbackSettingsProvider);
+      await handle.applyEngineOptions(
+        playerTuningOptions(
+          tuning: next,
+          hardwareDecoding: settings.hardwareDecoding,
+          proxy: ref.read(playerProxyProvider),
+        ),
+      );
+      final outputChanged =
+          previous != null &&
+          (previous.customOutput != next.customOutput || previous.vo != next.vo || previous.ao != next.ao);
+      if (outputChanged) await handle.rebuildEngine(reason: 'video output settings changed');
     } on Object {
       // A preference the engine refused is not a playback failure.
     }
@@ -457,17 +554,18 @@ final class RoomController extends Notifier<RoomState> {
     state = _with();
   }
 
-  /// The quality a room opens on: the viewer's preferred label when the
-  /// site offers it, the site's own first otherwise.
+  /// The quality a room opens on: the viewer's preferred tier at an exact
+  /// label, or the nearest tier by position when the site spells them
+  /// differently (the reference's ratio).
   LivePlayQuality? _pickQuality(List<LivePlayQuality> qualities) {
     if (qualities.isEmpty) return null;
-    final wanted = ref.read(playbackSettingsProvider).preferredQuality?.trim().toLowerCase();
-    if (wanted != null && wanted.isNotEmpty) {
-      for (final quality in qualities) {
-        if (quality.label.trim().toLowerCase() == wanted) return quality;
-      }
-    }
-    return qualities.first;
+    final settings = ref.read(playbackSettingsProvider);
+    final cellular = ref.read(networkTypeProvider.notifier).usesCellular;
+    final index = preferredQualityIndex(
+      qualities.map((quality) => quality.label),
+      cellular ? settings.preferredQualityCellular : settings.preferredQuality,
+    );
+    return qualities[index];
   }
 
   Future<void> _startPlayback(LivePlaybackProvider capability, LiveRoom room) async {
@@ -500,10 +598,11 @@ final class RoomController extends Notifier<RoomState> {
         // goes to the first one.
         _pipeline?.bind(handle);
         unawaited(_applyAudioPreferences(handle));
-        unawaited(_applyDecoderPreference(handle));
+        unawaited(_applyEnginePreferences(handle));
       });
       await playback.play(
         LiveSourceRequest(sources: roomSourcesOf(lines), title: room.content.title, allowEngineFallback: true),
+        preferredBackend: ref.read(playerKernelBackendProvider).id,
       );
     });
   }
@@ -589,8 +688,13 @@ final class RoomController extends Notifier<RoomState> {
     _handles = null;
     _failures = null;
     _chat = null;
+    if (_forceDestroy) {
+      final handle = state.handle;
+      if (handle != null) unawaited(handle.dispose());
+    }
     unawaited(_playback?.dispose() ?? Future<void>.value());
     _playback = null;
+    _preparedHandle = null;
     unawaited(_danmaku?.disconnect() ?? Future<void>.value());
     unawaited(_danmaku?.dispose() ?? Future<void>.value());
     _danmaku = null;

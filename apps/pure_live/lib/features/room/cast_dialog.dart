@@ -29,11 +29,7 @@ final castControllerProvider = Provider<CastController>((ref) {
 /// The receiver fetches the line itself, so only a line it can reach works —
 /// a signed header the TV cannot send surfaces as a cast failure, never as a
 /// fake success.
-Future<void> showCastDialog(
-  BuildContext context, {
-  required LivePlayLine line,
-  required String? title,
-}) {
+Future<void> showCastDialog(BuildContext context, {required LivePlayLine line, required String? title}) {
   return showDsDialog<void>(
     context: context,
     builder: (context) => _CastDialog(line: line, title: title ?? context.t.room.castTitle),

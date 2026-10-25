@@ -4,7 +4,7 @@
 /// KODIPROP options, `url|headers` tails, `tvg-chno`) and TXT (`name,url`,
 /// `group,#genre#`, `#` alternatives) playlists tolerantly; `IptvLibrary`
 /// persists the channels, playlists, group arrangement and line probe
-/// verdicts through the `IptvStore` seam (a Hivez box in production),
+/// verdicts through the `IptvStore` seam (the app's shared JSON store in production),
 /// reconciles re-imports by URL so favourites, numbers, hiding and ordering
 /// survive a playlist update, and `LibraryIptvChannelSource` reads the
 /// library back in zap order, as the player and the screens list it.

@@ -60,6 +60,22 @@ void main() {
       expect(response.setCookies.last, startsWith('LTP0=abc'));
     });
 
+    test('a malformed Secure attribute does not fail a valid response', () async {
+      // Douyin has served `Set-Cookie: …; Secure=<value>`; dart:io rejects
+      // that attribute, but the page's 200 must still reach the caller.
+      final server = await startServer((request) async {
+        request.response.headers.add('set-cookie', 'acf_jwt_token=NEW; path=/; Secure=abc');
+        request.response.write('ok');
+        await request.response.close();
+      });
+
+      final response = await http.send(LiveRequest.get(server.url));
+
+      expect(response.statusCode, 200);
+      expect(response.isOk, isTrue);
+      expect(response.text, 'ok');
+    });
+
     test('form POST reaches the server as urlencoded fields', () async {
       final server = await startServer((request) async {
         final body = await utf8.decoder.bind(request).join();

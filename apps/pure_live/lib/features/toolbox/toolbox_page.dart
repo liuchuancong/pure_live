@@ -8,239 +8,38 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_log/live_log.dart' show LogLevel, LogRecord;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/logging/app_log.dart'
-    show
-        appLogFileEnabled,
-        appLogLevel,
-        clearAppLog,
-        exportAppLog,
-        setAppLogFileEnabled,
-        setAppLogLevel;
+    show appLogFileEnabled, appLogLevel, clearAppLog, exportAppLog, setAppLogFileEnabled, setAppLogLevel;
 import 'package:pure_live/app/providers/log_providers.dart' show appLogRecordsProvider;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
 import 'package:pure_live/features/toolbox/toolbox_controllers.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon, localizedSiteName;
+import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
+import 'package:pure_live/shared/widgets/choice_dialog.dart' show AdaptiveChoiceField;
 
-/// The master-detail breakpoint (the settings page's own): below it the
-/// tools are one list and a tool opens in place; above it the list sits in
-/// a sidebar beside the open tool's pane.
-const double _kToolboxSplitWidth = 768;
-
-/// One tool the toolbox offers.
-enum ToolboxTool {
-  link(DsIcons.link),
-  network(DsIcons.activity),
-  cache(DsIcons.broom),
-  logs(DsIcons.terminal);
-
-  ToolboxTool(this.icon);
-
-  /// The tool's icon.
-  final DsIconData icon;
-
-  /// The tool's name.
-  String label(Translations t) => switch (this) {
-    ToolboxTool.link => t.toolbox.toolLinkTitle,
-    ToolboxTool.network => t.toolbox.toolNetworkTitle,
-    ToolboxTool.cache => t.toolbox.toolCacheTitle,
-    ToolboxTool.logs => t.toolbox.toolLogsTitle,
-  };
-
-  /// One line on what the tool does.
-  String description(Translations t) => switch (this) {
-    ToolboxTool.link => t.toolbox.toolLinkDescription,
-    ToolboxTool.network => t.toolbox.toolNetworkDescription,
-    ToolboxTool.cache => t.toolbox.toolCacheDescription,
-    ToolboxTool.logs => t.toolbox.toolLogsDescription,
-  };
-}
-
-/// The toolbox's groups, top to bottom: (slang key of the group label, its
-/// tools). Group labels resolve through the toolbox namespace.
-const List<(String, List<ToolboxTool>)> kToolboxGroups = [
-  ('groupLinks', [ToolboxTool.link]),
-  ('groupNetwork', [ToolboxTool.network]),
-  ('groupData', [ToolboxTool.cache, ToolboxTool.logs]),
-];
-
-/// A group label's words.
-String toolboxGroupLabel(Translations t, String key) => switch (key) {
-  'groupLinks' => t.toolbox.groupLinks,
-  'groupNetwork' => t.toolbox.groupNetwork,
-  'groupData' => t.toolbox.groupData,
-  _ => key,
-};
-
-/// The link parser (the reference's link parser; its link tool, grown into a
-/// surface of its own): the tools as grouped list rows — a wide window shows
-/// the groups in a sidebar beside the open tool's pane, and under the
-/// breakpoint the list stands alone and a tool opens in its place.
-///
-/// The tools that can already work do: the link resolver walks the sites'
-/// own `LiveLinkResolver` capabilities, the network check probes one
-/// site's real feed endpoint, the cache pane clears the image cache. The
-/// log viewer is honest about the wait.
-final class ToolboxPage extends ConsumerStatefulWidget {
-  /// The toolbox page.
+/// The home navigation's link parser: the reference's link tool as one
+/// page. The network probe, image-cache clear and log viewer that used to
+/// sit behind the same entry are settings utilities now, under System.
+final class ToolboxPage extends StatelessWidget {
+  /// The link parser page.
   const ToolboxPage({super.key});
-
-  @override
-  ConsumerState<ToolboxPage> createState() => _ToolboxPageState();
-}
-
-final class _ToolboxPageState extends ConsumerState<ToolboxPage> {
-  /// The open tool; null on a narrow window means the list is showing.
-  ToolboxTool? _selected;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final compact = MediaQuery.sizeOf(context).width < _kToolboxSplitWidth;
-    if (compact) {
-      final selected = _selected;
-      if (selected == null) return _ToolList(onSelected: (tool) => setState(() => _selected = tool));
-      return _ToolPane(tool: selected, onBack: () => setState(() => _selected = null));
-    }
-    // A wide window always shows a pane; the link tool opens with the page.
-    final selected = _selected ?? ToolboxTool.link;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // The navigation column, scrollable on its own; the pane beside it
-        // never scrolls with it.
-        SizedBox(
-          width: 264,
-          child: ColoredBox(
-            color: colors.sidebar,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s16, DsSpace.s12, DsSpace.s24),
-              child: _ToolMenu(selected: selected, onSelected: (tool) => setState(() => _selected = tool)),
-            ),
-          ),
-        ),
-        Expanded(child: _ToolPane(tool: selected)),
-      ],
-    );
-  }
-}
-
-/// The tool groups as list sections: the mobile list's body and the
-/// desktop column's body, one card per group. A desktop row marks the open
-/// tool ([selected]); a mobile row carries the chevron that says "opens".
-final class _ToolSections extends StatelessWidget {
-  const _ToolSections({required this.selected, required this.onSelected, required this.markSelected});
-
-  /// The open tool, marked on its row (desktop only).
-  final ToolboxTool selected;
-
-  /// Fired when a tool's row is pressed.
-  final ValueChanged<ToolboxTool> onSelected;
-
-  /// Whether the open tool's row takes the selection style (desktop) or
-  /// every row stays plain with a chevron (mobile).
-  final bool markSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s16,
-      children: [
-        for (final (groupKey, tools) in kToolboxGroups)
-          DsListSection(
-            header: Text(toolboxGroupLabel(t, groupKey)),
-            children: [
-              for (final tool in tools)
-                DsListRow(
-                  leading: DsIcon(tool.icon),
-                  title: Text(tool.label(t)),
-                  description: Text(tool.description(t)),
-                  selected: markSelected && tool == selected,
-                  onPressed: () => onSelected(tool),
-                  trailing: markSelected ? null : const DsIcon(DsIcons.chevronRight),
-                ),
-            ],
-          ),
-      ],
-    );
-  }
-}
-
-/// The mobile list: the tools, one card per group, each row opening its
-/// tool in place.
-final class _ToolList extends StatelessWidget {
-  const _ToolList({required this.onSelected});
-
-  /// Fired when a tool's row is pressed.
-  final ValueChanged<ToolboxTool> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: DsSpace.s24),
-      child: _ToolSections(selected: ToolboxTool.link, onSelected: onSelected, markSelected: false),
-    );
-  }
-}
-
-/// The desktop column: the same groups, the open tool's row highlighted.
-final class _ToolMenu extends StatelessWidget {
-  const _ToolMenu({required this.selected, required this.onSelected});
-
-  /// The highlighted tool.
-  final ToolboxTool selected;
-
-  /// Fired when a tool's row is pressed.
-  final ValueChanged<ToolboxTool> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ToolSections(selected: selected, onSelected: onSelected, markSelected: true);
-  }
-}
-
-/// One tool's pane: the tool's name as the headline, its description, then
-/// the tool's own surface. A narrow window carries the back affordance
-/// that returns to the list.
-final class _ToolPane extends StatelessWidget {
-  const _ToolPane({required this.tool, this.onBack});
-
-  /// The tool whose surface shows.
-  final ToolboxTool tool;
-
-  /// Returns to the list (mobile only; null on the desktop pane).
-  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final body = switch (tool) {
-      ToolboxTool.link => const _LinkPane(),
-      ToolboxTool.network => const _NetworkPane(),
-      ToolboxTool.cache => const _CachePane(),
-      ToolboxTool.logs => const _LogsPane(),
-    };
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s20, DsSpace.s24, DsSpace.s24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s4,
         children: [
-          if (onBack != null)
-            DsButton(
-              variant: DsButtonVariant.ghost,
-              onPressed: onBack,
-              leading: const DsIcon(DsIcons.chevronLeft),
-              child: Text(t.toolbox.back),
-            ),
-          Text(tool.label(t), style: theme.typography.display.copyWith(color: colors.text)),
-          Text(tool.description(t), style: theme.typography.body.copyWith(color: colors.textMuted)),
+          Text(t.toolbox.toolLinkTitle, style: theme.typography.display.copyWith(color: colors.text)),
+          Text(t.toolbox.toolLinkDescription, style: theme.typography.body.copyWith(color: colors.textMuted)),
           const SizedBox(height: DsSpace.s12),
-          body,
+          const _LinkPane(),
         ],
       ),
     );
@@ -599,10 +398,11 @@ final class _DirectLinkDialogState extends ConsumerState<_DirectLinkDialog> {
           spacing: DsSpace.s12,
           children: [
             if (widget.qualities.length > 1)
-              DsSelect<int>(
+              AdaptiveChoiceField<int>(
                 value: _quality,
+                title: t.toolbox.linkDirectQuality,
                 onChanged: (value) {
-                  if (value == null || value == _quality) return;
+                  if (value == _quality) return;
                   setState(() => _quality = value);
                   unawaited(_load());
                 },
@@ -615,14 +415,10 @@ final class _DirectLinkDialogState extends ConsumerState<_DirectLinkDialog> {
             if (_loading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: DsSpace.s24),
-                child: Center(child: DsSpinner()),
+                child: Center(child: AppLoadingIndicator(size: 24)),
               )
             else if (_error != null)
-              DsAlert(
-                status: DsStatus.danger,
-                title: Text(t.toolbox.linkDirectFailed),
-                description: Text(_error!),
-              )
+              DsAlert(status: DsStatus.danger, title: Text(t.toolbox.linkDirectFailed), description: Text(_error!))
             else if (_lines.isEmpty)
               DsEmptyState(icon: const DsIcon(DsIcons.link2), title: Text(t.toolbox.linkDirectEmpty))
             else
@@ -677,18 +473,15 @@ String _siteName(LiveSite site) => localizedSiteName(site);
 /// the last measured latency and a per-card test, plus a sweep that checks
 /// them four at a time. The design system's badges carry the state; no
 /// fake endpoint strings are shown.
-final class _NetworkPane extends ConsumerWidget {
-  const _NetworkPane();
+final class PlatformNodesPane extends ConsumerWidget {
+  const PlatformNodesPane({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final sites = probeSites(ref.watch(sitesProvider).all);
     if (sites.isEmpty) {
-      return DsEmptyState(
-        icon: const DsIcon(DsIcons.cloudOff),
-        title: Text(t.toolbox.nodeNoSites),
-      );
+      return DsEmptyState(icon: const DsIcon(DsIcons.cloudOff), title: Text(t.toolbox.nodeNoSites));
     }
     final probe = ref.watch(platformProbeProvider);
     final controller = ref.read(platformProbeProvider.notifier);
@@ -840,10 +633,7 @@ final class _PlatformNodeCard extends StatelessWidget {
               ),
             )
           else
-            Text(
-              t.toolbox.nodeHint,
-              style: theme.typography.caption.copyWith(color: colors.textSubtle),
-            ),
+            Text(t.toolbox.nodeHint, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
           Align(
             alignment: AlignmentDirectional.centerEnd,
             child: DsButton(
@@ -861,97 +651,18 @@ final class _PlatformNodeCard extends StatelessWidget {
   }
 }
 
-/// The cache pane: what the image cache holds right now and the confirm
-/// that releases it — the only cache this codebase keeps (the images load
-/// through Flutter's own [ImageCache]).
-final class _CachePane extends ConsumerStatefulWidget {
-  const _CachePane();
-
-  @override
-  ConsumerState<_CachePane> createState() => _CachePaneState();
-}
-
-final class _CachePaneState extends ConsumerState<_CachePane> {
-  /// Asks, then releases: the loaded pictures download again; the stored
-  /// data (favorites, history) never touches the image cache.
-  Future<void> _clear() async {
-    final t = context.t;
-    final confirmed = await showDsConfirm(
-      context: context,
-      title: t.toolbox.cacheConfirmTitle,
-      description: t.toolbox.cacheConfirmDesc,
-      confirmLabel: t.toolbox.confirm,
-      cancelLabel: t.toolbox.cancel,
-      destructive: true,
-      icon: const DsIcon(DsIcons.broom),
-    );
-    if (!confirmed || !mounted) return;
-    PaintingBinding.instance.imageCache
-      ..clear()
-      ..clearLiveImages();
-    if (!mounted) return;
-    setState(() {});
-    showDsToast(context: context, title: t.toolbox.cacheDone);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final cache = PaintingBinding.instance.imageCache;
-    final entries = cache.currentSize;
-    final bytes = cache.currentSizeBytes;
-    return DsListSection(
-      header: Text(t.toolbox.cacheSection),
-      children: [
-        DsListRow(
-          leading: const DsIcon(DsIcons.image),
-          title: Text(t.toolbox.cacheEntries),
-          detail: Text(entries == 0 ? t.toolbox.cacheEmpty : '$entries'),
-        ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.database),
-          title: Text(t.toolbox.cacheSize),
-          detail: Text(entries == 0 ? t.toolbox.cacheEmpty : _formatBytes(bytes)),
-        ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.broom),
-          title: Text(t.toolbox.cacheClear),
-          description: Text(t.toolbox.cacheClearDesc),
-          destructive: true,
-          onPressed: entries == 0 ? null : () => unawaited(_clear()),
-        ),
-        // The disk cache (a download directory, a media cache) arrives with
-        // the features that own it.
-        Padding(
-          padding: const EdgeInsets.all(DsSpace.s12),
-          child: Text(t.toolbox.comingSoonDesc, style: theme.typography.small.copyWith(color: colors.textSubtle)),
-        ),
-      ],
-    );
-  }
-
-  /// A byte figure at the unit the figure itself picks.
-  static String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-}
-
 /// The log page: the live tree's memory ring (the rotating file writes the
 /// same records), a level control, a file-write switch, search, and a log
 /// panel that follows the newest line until the viewer scrolls away from
 /// the bottom.
-final class _LogsPane extends ConsumerStatefulWidget {
-  const _LogsPane();
+final class LogsPane extends ConsumerStatefulWidget {
+  const LogsPane({super.key});
 
   @override
-  ConsumerState<_LogsPane> createState() => _LogsPaneState();
+  ConsumerState<LogsPane> createState() => _LogsPaneState();
 }
 
-final class _LogsPaneState extends ConsumerState<_LogsPane> {
+final class _LogsPaneState extends ConsumerState<LogsPane> {
   final ScrollController _scroll = ScrollController();
   final TextEditingController _search = TextEditingController();
   LogLevel _level = appLogLevel;
@@ -1029,9 +740,7 @@ final class _LogsPaneState extends ConsumerState<_LogsPane> {
             (query.isEmpty ||
                 record.message.toLowerCase().contains(query) ||
                 record.category.toLowerCase().contains(query) ||
-                record.fields.entries.any(
-                  (entry) => '${entry.key} ${entry.value}'.toLowerCase().contains(query),
-                )))
+                record.fields.entries.any((entry) => '${entry.key} ${entry.value}'.toLowerCase().contains(query))))
           record,
     ];
     if (_autoScroll && shown.length != _lastShown) {
@@ -1052,10 +761,10 @@ final class _LogsPaneState extends ConsumerState<_LogsPane> {
               title: Text(t.toolbox.logsLevel),
               trailing: SizedBox(
                 width: 160,
-                child: DsSelect<LogLevel>(
+                child: AdaptiveChoiceField<LogLevel>(
                   value: _level,
+                  title: t.toolbox.logsLevel,
                   onChanged: (level) {
-                    if (level == null) return;
                     setAppLogLevel(level);
                     setState(() => _level = level);
                   },
@@ -1101,11 +810,7 @@ final class _LogsPaneState extends ConsumerState<_LogsPane> {
             ),
           ],
         ),
-        DsSearchField(
-          controller: _search,
-          placeholder: t.toolbox.logsSearch,
-          onChanged: (_) => setState(() {}),
-        ),
+        DsSearchField(controller: _search, placeholder: t.toolbox.logsSearch, onChanged: (_) => setState(() {})),
         Container(
           height: 440,
           decoration: DsBoxDecoration(
@@ -1198,7 +903,8 @@ final class _LogLine extends StatelessWidget {
         TextSpan(
           children: [
             TextSpan(
-              text: '${two(time.hour)}:${two(time.minute)}:${two(time.second)}.${two(time.millisecond).padLeft(3, '0')} ',
+              text:
+                  '${two(time.hour)}:${two(time.minute)}:${two(time.second)}.${two(time.millisecond).padLeft(3, '0')} ',
               style: mono.copyWith(color: colors.textSubtle),
             ),
             TextSpan(
@@ -1209,8 +915,15 @@ final class _LogLine extends StatelessWidget {
               text: '[${record.category}] ',
               style: mono.copyWith(color: colors.accent),
             ),
-            TextSpan(text: record.message, style: mono.copyWith(color: colors.text)),
-            if (fields.isNotEmpty) TextSpan(text: fields, style: mono.copyWith(color: colors.textMuted)),
+            TextSpan(
+              text: record.message,
+              style: mono.copyWith(color: colors.text),
+            ),
+            if (fields.isNotEmpty)
+              TextSpan(
+                text: fields,
+                style: mono.copyWith(color: colors.textMuted),
+              ),
             if (record.error != null)
               TextSpan(
                 text: '\n${record.error}',

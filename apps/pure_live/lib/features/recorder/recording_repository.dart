@@ -13,38 +13,37 @@ import 'package:pure_live/features/recorder/recording_task.dart';
 /// player stack (`media_core_recording_ffmpeg`); until then the store and
 /// the state transitions it will need stand ready.
 final class RecordingTaskRepository {
-  /// Serves the [box] (opened as `recordings` over the storage manager,
-  /// its values the tasks' JSON as plain objects).
-  RecordingTaskRepository(this.box);
+  /// Serves the [store] (the `recordings` namespace).
+  RecordingTaskRepository(this.store);
 
-  /// The recordings box: task id → the task's JSON.
-  final HiveStorageRepository<Object> box;
+  /// The recordings store: task id → the task's JSON.
+  final JsonStore store;
 
   /// Emits after every committed change.
-  Stream<void> watch() => box.watch();
+  Stream<void> watch() => store.watch();
 
   /// The tasks, newest session first.
   List<RecordingTask> list() {
-    final tasks = [for (final value in box.getAll()) RecordingTask.fromJson(value)];
+    final tasks = [for (final value in store.values) RecordingTask.fromJson(value)];
     return tasks..sort((a, b) => b.startedAt.compareTo(a.startedAt));
   }
 
   /// Stores [task] whole, replacing any entry behind its id.
-  Future<void> save(RecordingTask task) => box.save(task.id, task.toJson());
+  Future<void> save(RecordingTask task) => store.put(task.id, task.toJson());
 
   /// Drops the task behind [id]; a task never stored is a no-op.
-  Future<void> remove(String id) => box.delete(id);
+  Future<void> remove(String id) => store.delete(id);
 
   /// Drops every task.
   Future<void> clear() async {
-    await box.deleteAll(box.getAllKeys());
+    await store.deleteAll(store.keys);
   }
 
   /// Marks the task behind [id] as recording: a new session starts now, and
   /// the last one's facts (file, size, error) are cleared with it. A task
   /// never stored is a no-op — the engine adds its stub first.
   Future<void> setRunning(String id) async {
-    final stored = box.get(id);
+    final stored = store.get(id);
     if (stored == null) return;
     final task = RecordingTask.fromJson(stored);
     await save(
@@ -63,7 +62,7 @@ final class RecordingTaskRepository {
   /// Marks the task behind [id] as ended in [state], stamping the end and
   /// what the session left behind. A task never stored is a no-op.
   Future<void> setEnded(String id, RecordingTaskState state, {String? filePath, int? bytes, String? errorText}) async {
-    final stored = box.get(id);
+    final stored = store.get(id);
     if (stored == null) return;
     final task = RecordingTask.fromJson(stored);
     await save(
@@ -81,16 +80,16 @@ final class RecordingTaskRepository {
   /// state or start: the engine's progress line, written on its own clock.
   /// A task never stored is a no-op.
   Future<void> setProgress(String id, int bytes) async {
-    final stored = box.get(id);
+    final stored = store.get(id);
     if (stored == null) return;
     await save(RecordingTask.fromJson(stored).copyWith(bytes: bytes));
   }
 }
 
-/// The recordings repository (one box, one process).
+/// The recordings repository (one namespace, one process).
 final recordingRepositoryProvider = FutureProvider<RecordingTaskRepository>((ref) async {
-  final box = await StorageBoxManager().keyed<Object>('recordings');
-  return RecordingTaskRepository(HiveStorageRepository(box: box));
+  final store = await StorageStores.instance.openStore('recordings');
+  return RecordingTaskRepository(store);
 });
 
 /// What the recorder page holds: the tasks and whether the repository has
@@ -100,8 +99,9 @@ typedef RecordingTasksState = ({bool ready, List<RecordingTask> tasks});
 /// Mirrors the recordings repository into the widget tree: it lists once
 /// the repository opens and follows its watch stream, so every change
 /// lands at once. The recording engine (arriving with the player stack)
-/// will call these same methods from wherever it runs.
-final class RecordingTasksController extends Notifier<RecordingTasksState> {
+/// will call these same methods from wherever it runs. Open, not final: a
+/// room window mirrors the tasks from its seed, as its own subclass does.
+class RecordingTasksController extends Notifier<RecordingTasksState> {
   StreamSubscription<void>? _subscription;
 
   @override

@@ -12,7 +12,12 @@ import 'package:meta/meta.dart';
 @immutable
 class IptvSyncPolicy {
   /// A policy naming each interval and whether it is in force.
-  const IptvSyncPolicy({required this.playlistInterval, required this.guideInterval, this.playlists = true, this.guides = true});
+  const IptvSyncPolicy({
+    required this.playlistInterval,
+    required this.guideInterval,
+    this.playlists = true,
+    this.guides = true,
+  });
 
   /// Nothing automatic: only a round the viewer starts by hand.
   const IptvSyncPolicy.manual()

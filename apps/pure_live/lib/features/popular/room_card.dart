@@ -2,7 +2,8 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/features/settings/audience_metric_provider.dart' show audienceFigureOf, audienceMetricProvider;
+import 'package:pure_live/features/settings/audience_metric_provider.dart'
+    show audienceFigureOf, audienceMetricProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/room_cover_chip.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart';
@@ -32,10 +33,7 @@ final class RoomCard extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final live = room.broadcast.isLiveNow;
     final figure = audienceFigureOf(room, ref.watch(audienceMetricProvider));
-    final meta = [
-      room.anchor?.name ?? room.ref.roomId,
-      ?roomBroadcastText(context.t, room),
-    ].join(' · ');
+    final meta = [room.anchor?.name ?? room.ref.roomId, ?roomBroadcastText(context.t, room)].join(' · ');
     if (compact) {
       return DsCard(
         onPressed: onOpen,
@@ -52,9 +50,7 @@ final class RoomCard extends ConsumerWidget {
                   height: 84,
                   semanticLabel: room.content.title,
                   fallback: _CoverFallback(title: room.content.title),
-                  style: DsImageStyle(
-                    borderRadius: BorderRadius.horizontal(left: Radius.circular(theme.radii.card)),
-                  ),
+                  style: DsImageStyle(borderRadius: BorderRadius.horizontal(left: Radius.circular(theme.radii.card))),
                 ),
               ),
               Expanded(
@@ -157,11 +153,7 @@ final class RoomCard extends ConsumerWidget {
                     ),
                     if (figure != null) ...[
                       const Spacer(),
-                      RoomCoverChip(
-                        text: AudienceFormat.format(figure),
-                        icon: DsIcons.flame,
-                        maxWidth: 120,
-                      ),
+                      RoomCoverChip(text: AudienceFormat.format(figure), icon: DsIcons.flame, maxWidth: 120),
                     ],
                   ],
                 ),

@@ -28,6 +28,8 @@
   "activeGuideCardHint": "频道的正在播出与进度都按这份节目单显示。",
   "autoUpdate": "自动更新",
   "autoUpdateHint": "应用会按此间隔在后台检查，并重新拉取已开启自动更新的节目单。",
+  "customUserAgent": "自定义 User-Agent",
+  "customUserAgentDesc": "导入播放列表、节目单和播放请求使用的 User-Agent；留空使用应用默认值。播放列表自带的 User-Agent 优先。",
   "updateInterval": "更新间隔",
   "updateIntervalHours": "{hours: int} 小时",
   "updateIntervalDays": "{days: int} 天",

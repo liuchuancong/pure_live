@@ -7,6 +7,7 @@ import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:pure_live/app/providers/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/features/version/update_feed.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// Opens one release's page: what changed, its build, and the way to the
@@ -38,11 +39,9 @@ final class _UpdatePanel extends StatelessWidget {
         Row(
           spacing: DsSpace.s8,
           children: [
-            Text(
-              info.version,
-              style: theme.typography.heading.copyWith(color: colors.text),
-            ),
-            if (info.prerelease) DsBadge(dot: false, label: Text(t.settings.updatePanelTitle), status: DsStatus.warning),
+            Text(info.version, style: theme.typography.heading.copyWith(color: colors.text)),
+            if (info.prerelease)
+              DsBadge(dot: false, label: Text(t.settings.updatePanelTitle), status: DsStatus.warning),
             const Spacer(),
             Text(
               t.settings.updateBuild(build: '${info.buildNumber}'),
@@ -55,10 +54,7 @@ final class _UpdatePanel extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.all(DsSpace.s12),
-                child: Text(
-                  plainReleaseText(info.log),
-                  style: theme.typography.body.copyWith(color: colors.textMuted),
-                ),
+                child: Text(plainReleaseText(info.log), style: theme.typography.body.copyWith(color: colors.textMuted)),
               ),
             ],
           ),
@@ -76,10 +72,7 @@ final class _UpdatePanel extends StatelessWidget {
 /// newest first, with its notes and its page.
 Future<void> showReleaseHistory(BuildContext context) => showDsPanel<void>(
   context: context,
-  builder: (context) => DsPanel(
-    title: Text(context.t.settings.releaseHistory),
-    child: const _ReleaseHistory(),
-  ),
+  builder: (context) => DsPanel(title: Text(context.t.settings.releaseHistory), child: const _ReleaseHistory()),
 );
 
 final class _ReleaseHistory extends ConsumerStatefulWidget {
@@ -106,7 +99,7 @@ final class _ReleaseHistoryState extends ConsumerState<_ReleaseHistory> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: DsSpinner());
+          return const Center(child: AppLoadingIndicator(size: 24));
         }
         if (snapshot.hasError) {
           return DsEmptyState(
@@ -120,9 +113,7 @@ final class _ReleaseHistoryState extends ConsumerState<_ReleaseHistory> {
         if (releases.isEmpty) {
           return DsEmptyState(icon: const DsIcon(DsIcons.info), title: Text(t.settings.releaseHistoryEmpty));
         }
-        return DsListSection(
-          children: [for (final release in releases) _ReleaseRow(release: release)],
-        );
+        return DsListSection(children: [for (final release in releases) _ReleaseRow(release: release)]);
       },
     );
   }
@@ -150,10 +141,7 @@ final class _ReleaseRow extends StatelessWidget {
           Row(
             spacing: DsSpace.s8,
             children: [
-              Text(
-                release.version,
-                style: theme.typography.bodyStrong.copyWith(color: colors.text),
-              ),
+              Text(release.version, style: theme.typography.bodyStrong.copyWith(color: colors.text)),
               if (release.title.isNotEmpty && release.title != release.version)
                 Expanded(
                   child: Text(
@@ -173,10 +161,7 @@ final class _ReleaseRow extends StatelessWidget {
             ],
           ),
           if (release.author.isNotEmpty)
-            Text(
-              release.author,
-              style: theme.typography.caption.copyWith(color: colors.textSubtle),
-            ),
+            Text(release.author, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
           if (notes.isNotEmpty)
             Text(
               notes,

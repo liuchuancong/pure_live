@@ -198,7 +198,12 @@ final class DioLiveHttp implements LiveHttp {
     );
     instance.interceptors.addAll([
       if (log != null) NetworkLogInterceptor(log!),
-      if (cookieJar != null) CookieManager(cookieJar!),
+      if (cookieJar != null)
+        // Some sites (Douyin among them) send Set-Cookie attributes dart:io
+        // rejects (`Secure` with an unexpected value). Letting the cookie
+        // manager rethrow turns an otherwise valid 200 into a failed
+        // request, so an unusable cookie is skipped instead.
+        CookieManager(cookieJar!, ignoreInvalidCookies: true),
       if (cacheOptions != null) DioCacheInterceptor(options: cacheOptions!),
       if (maxRetries > 0)
         RetryInterceptor(

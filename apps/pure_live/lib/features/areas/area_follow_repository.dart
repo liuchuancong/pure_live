@@ -11,33 +11,33 @@ import 'package:live_storage/live_storage.dart';
 /// `LiveArea` itself has no `toJson`, and the follow outlives any one
 /// adapter's exact model shape.
 final class AreaFollowRepository {
-  /// Serves the [box] (opened as `area_follows`, its values the stored
-  /// maps above).
-  AreaFollowRepository(this.box);
+  /// Serves the [store] (the `area_follows` namespace, its values the
+  /// stored maps above).
+  AreaFollowRepository(this.store);
 
-  /// The follows box: identity key → the area's stored fields.
-  final HiveStorageRepository<Object> box;
+  /// The follows store: identity key → the area's stored fields.
+  final JsonStore store;
 
   /// Emits after every committed change.
-  Stream<void> watch() => box.watch();
+  Stream<void> watch() => store.watch();
 
   /// The followed areas, in storage order (insertion).
   List<LiveArea> list() {
     return [
-      for (final value in box.getAll())
+      for (final value in store.values)
         if (value is Map) _areaOf(Map<String, Object?>.from(value)),
     ];
   }
 
   /// Whether the area behind [identityKey] is followed.
-  bool contains(String identityKey) => box.contains(identityKey);
+  bool contains(String identityKey) => store.contains(identityKey);
 
   /// Follows [area]; an existing entry for its identity is replaced whole.
-  Future<void> add(LiveArea area) => box.save(area.identityKey, _mapOf(area));
+  Future<void> add(LiveArea area) => store.put(area.identityKey, _mapOf(area));
 
   /// Unfollows the area behind [identityKey]; a never-followed area is a
   /// no-op.
-  Future<void> remove(String identityKey) => box.delete(identityKey);
+  Future<void> remove(String identityKey) => store.delete(identityKey);
 
   /// Toggles [area]; answers whether it is followed afterwards.
   Future<bool> toggle(LiveArea area) async {
@@ -66,10 +66,10 @@ final class AreaFollowRepository {
   };
 }
 
-/// The area-follows repository (one box, one process).
+/// The area-follows repository (one namespace, one process).
 final areaFollowRepositoryProvider = FutureProvider<AreaFollowRepository>((ref) async {
-  final box = await StorageBoxManager().keyed<Object>('area_follows');
-  return AreaFollowRepository(HiveStorageRepository(box: box));
+  final store = await StorageStores.instance.openStore('area_follows');
+  return AreaFollowRepository(store);
 });
 
 /// What the followed-areas view holds: the followed areas and whether the

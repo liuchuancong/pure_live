@@ -7,13 +7,7 @@ import 'package:pure_live/features/version/update_feed.dart';
 
 /// What the about page knows after a check: the newest release when it is
 /// newer than this build, why the check failed, and whether one has run.
-typedef VersionCheck = ({
-  bool checking,
-  UpdateInfo? latest,
-  String? error,
-  bool checked,
-  String? installed,
-});
+typedef VersionCheck = ({bool checking, UpdateInfo? latest, String? error, bool checked, String? installed});
 
 VersionCheck _initial() => (checking: false, latest: null, error: null, checked: false, installed: null);
 

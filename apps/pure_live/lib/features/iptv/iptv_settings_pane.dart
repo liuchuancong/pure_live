@@ -9,7 +9,8 @@ import 'package:pure_live/features/iptv/iptv_controller.dart' show iptvPlaylistI
 import 'package:pure_live/features/iptv/iptv_epg_controller.dart';
 import 'package:pure_live/features/iptv/iptv_panels.dart' show syncAllIptvSources;
 import 'package:pure_live/features/iptv/iptv_sources_controller.dart';
-import 'package:pure_live/features/settings/settings_widgets.dart' show SettingsConfigRow;
+import 'package:pure_live/features/iptv/iptv_user_agent.dart' show iptvUserAgentProvider;
+import 'package:pure_live/features/settings/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 
 /// The IPTV module's own settings: the guide-update interval, the bulk
@@ -26,6 +27,7 @@ final class IptvSettingsPane extends ConsumerWidget {
     final epg = ref.watch(iptvEpgProvider);
     final sources = ref.watch(iptvSourcesProvider);
     final interval = ref.watch(iptvUpdateIntervalProvider);
+    final userAgent = ref.watch(iptvUserAgentProvider);
     final remoteGuides = [
       for (final source in epg.sources)
         if (source.isRemote) source,
@@ -53,20 +55,25 @@ final class IptvSettingsPane extends ConsumerWidget {
     return DsListSection(
       header: Text(t.settings.iptvGuideUpdates),
       children: [
-        SettingsConfigRow(
+        SettingsChoiceRow<IptvUpdateInterval>(
           leading: const DsIcon(DsIcons.timer),
           title: t.iptv.updateInterval,
           description: t.iptv.autoUpdateHint,
-          controlWidth: 170,
-          control: DsSelect<IptvUpdateInterval>(
-            value: interval,
-            onChanged: (value) {
-              if (value != null) ref.read(iptvUpdateIntervalProvider.notifier).select(value);
-            },
-            options: [
-              for (final value in IptvUpdateInterval.values) DsSelectOption(value: value, label: value.label(t)),
-            ],
-            semanticLabel: t.iptv.updateInterval,
+          value: interval,
+          options: [for (final value in IptvUpdateInterval.values) DsSelectOption(value: value, label: value.label(t))],
+          onChanged: ref.read(iptvUpdateIntervalProvider.notifier).select,
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.user),
+          title: t.iptv.customUserAgent,
+          description: t.iptv.customUserAgentDesc,
+          controlWidth: 280,
+          control: DsTextField(
+            initialValue: userAgent,
+            clearable: true,
+            placeholder: t.iptv.customUserAgent,
+            onChanged: (value) => unawaited(ref.read(iptvUserAgentProvider.notifier).set(value)),
+            semanticLabel: t.iptv.customUserAgent,
           ),
         ),
         DsListRow(

@@ -40,13 +40,7 @@ final class WebDavFailure implements Exception {
 /// its [uri] in `/`) or a file, with the size and time the server gave.
 final class WebDavEntry {
   /// Creates the entry.
-  const WebDavEntry({
-    required this.name,
-    required this.uri,
-    required this.isDirectory,
-    this.size,
-    this.modified,
-  });
+  const WebDavEntry({required this.name, required this.uri, required this.isDirectory, this.size, this.modified});
 
   /// The display name; a folder's ends in `/`.
   final String name;
@@ -104,8 +98,7 @@ final class WebDavBackupClient {
   Uri get _fileUrl => _base.resolve(BackupDocument.backupFileName);
 
   /// The Basic authorization header's value.
-  String get _authorization =>
-      'Basic ${base64Encode(utf8.encode('$username:$password'))}';
+  String get _authorization => 'Basic ${base64Encode(utf8.encode('$username:$password'))}';
 
   /// Checks the server: a `PROPFIND` on the collection itself (depth 0)
   /// answers reachability and the credentials in one round trip; the
@@ -129,13 +122,14 @@ final class WebDavBackupClient {
       if (name.isEmpty) continue;
       final isDirectory =
           block.contains(':collection') || RegExp(r'<[^>]*collection\b', caseSensitive: false).hasMatch(block);
-      final size = RegExp(r'<[^>]*getcontentlength[^>]*>\s*(\d+)\s*<', caseSensitive: false)
-          .firstMatch(block)
-          ?.group(1);
-      final modified = RegExp(r'<[^>]*getlastmodified[^>]*>\s*([^<]+)\s*<', caseSensitive: false)
-          .firstMatch(block)
-          ?.group(1)
-          ?.trim();
+      final size = RegExp(
+        r'<[^>]*getcontentlength[^>]*>\s*(\d+)\s*<',
+        caseSensitive: false,
+      ).firstMatch(block)?.group(1);
+      final modified = RegExp(
+        r'<[^>]*getlastmodified[^>]*>\s*([^<]+)\s*<',
+        caseSensitive: false,
+      ).firstMatch(block)?.group(1)?.trim();
       entries.add(
         WebDavEntry(
           name: isDirectory ? '$name/' : name,
@@ -205,10 +199,7 @@ final class WebDavBackupClient {
       .replaceAll('&#39;', "'")
       .replaceAll('&#x27;', "'");
 
-  static const Map<String, String> _propfindHeaders = {
-    'depth': '0',
-    'content-type': 'application/xml; charset=utf-8',
-  };
+  static const Map<String, String> _propfindHeaders = {'depth': '0', 'content-type': 'application/xml; charset=utf-8'};
 
   static final Uint8List _propfindBody = Uint8List.fromList(
     utf8.encode(
@@ -217,10 +208,7 @@ final class WebDavBackupClient {
     ),
   );
 
-  static const Map<String, String> _listHeaders = {
-    'depth': '1',
-    'content-type': 'application/xml; charset=utf-8',
-  };
+  static const Map<String, String> _listHeaders = {'depth': '1', 'content-type': 'application/xml; charset=utf-8'};
 
   /// The list's properties: resource type, size and modification time.
   static final Uint8List _listBody = Uint8List.fromList(
@@ -250,13 +238,10 @@ final class WebDavBackupClient {
       throw const WebDavFailure(WebDavProblem.network);
     }
     if (response.isOk) return response;
-    throw WebDavFailure(
-      switch (response.statusCode) {
-        401 || 403 => WebDavProblem.auth,
-        404 || 409 => WebDavProblem.notFound,
-        _ => WebDavProblem.server,
-      },
-      status: response.statusCode,
-    );
+    throw WebDavFailure(switch (response.statusCode) {
+      401 || 403 => WebDavProblem.auth,
+      404 || 409 => WebDavProblem.notFound,
+      _ => WebDavProblem.server,
+    }, status: response.statusCode);
   }
 }

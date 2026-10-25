@@ -61,6 +61,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$sites$zh_CN sites = Translations$sites$zh_CN.internal(_root);
 	late final Translations$toolbox$zh_CN toolbox = Translations$toolbox$zh_CN.internal(_root);
 	late final Translations$vod$zh_CN vod = Translations$vod$zh_CN.internal(_root);
+	late final Translations$wallpaper$zh_CN wallpaper = Translations$wallpaper$zh_CN.internal(_root);
 }
 
 // Path: account
@@ -565,6 +566,9 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '删除'
 	String get delete => '删除';
+
+	/// zh-CN: '新建窗口'
+	String get newWindow => '新建窗口';
 }
 
 // Path: favorites
@@ -901,6 +905,12 @@ class Translations$iptv$zh_CN {
 
 	/// zh-CN: '应用会按此间隔在后台检查，并重新拉取已开启自动更新的节目单。'
 	String get autoUpdateHint => '应用会按此间隔在后台检查，并重新拉取已开启自动更新的节目单。';
+
+	/// zh-CN: '自定义 User-Agent'
+	String get customUserAgent => '自定义 User-Agent';
+
+	/// zh-CN: '导入播放列表、节目单和播放请求使用的 User-Agent；留空使用应用默认值。播放列表自带的 User-Agent 优先。'
+	String get customUserAgentDesc => '导入播放列表、节目单和播放请求使用的 User-Agent；留空使用应用默认值。播放列表自带的 User-Agent 优先。';
 
 	/// zh-CN: '更新间隔'
 	String get updateInterval => '更新间隔';
@@ -2222,6 +2232,24 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '浏览与窗口'
 	String get navGeneral => '浏览与窗口';
 
+	/// zh-CN: '个性化'
+	String get navPersonalization => '个性化';
+
+	/// zh-CN: '直播'
+	String get navLive => '直播';
+
+	/// zh-CN: '直播资源'
+	String get navLiveSources => '直播资源';
+
+	/// zh-CN: '播放偏好'
+	String get navPlaybackPreferences => '播放偏好';
+
+	/// zh-CN: '系统'
+	String get navSystem => '系统';
+
+	/// zh-CN: '数据与缓存'
+	String get navDataCache => '数据与缓存';
+
 	/// zh-CN: '外观'
 	String get navAppearance => '外观';
 
@@ -2269,6 +2297,30 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '主题模式、对比度、圆角与字体。'
 	String get appearanceDescription => '主题模式、对比度、圆角与字体。';
+
+	/// zh-CN: '主题、外观、背景与导航。'
+	String get personalizationDescription => '主题、外观、背景与导航。';
+
+	/// zh-CN: '直播资源、弹幕与录制。'
+	String get liveSettingsDescription => '直播资源、弹幕与录制。';
+
+	/// zh-CN: '平台显示、排序与关注自动刷新。'
+	String get liveSourcesDescription => '平台显示、排序与关注自动刷新。';
+
+	/// zh-CN: '播放偏好与播放器内核。'
+	String get playbackSettingsDescription => '播放偏好与播放器内核。';
+
+	/// zh-CN: '常规、网络、诊断、数据与备份。'
+	String get systemDescription => '常规、网络、诊断、数据与备份。';
+
+	/// zh-CN: '观看历史、关注导入导出与封面缓存。'
+	String get dataCacheDescription => '观看历史、关注导入导出与封面缓存。';
+
+	/// zh-CN: '选择要应用的主题'
+	String get personalizationChooseTheme => '选择要应用的主题';
+
+	/// zh-CN: '个性化设置'
+	String get personalizationSettings => '个性化设置';
 
 	/// zh-CN: '画质、比例与播放器行为。'
 	String get playbackDescription => '画质、比例与播放器行为。';
@@ -2333,11 +2385,161 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '首页与分区流里一张卡片的宽度；越小一排越多。'
 	String get cardExtentDescription => '首页与分区流里一张卡片的宽度；越小一排越多。';
 
+	/// zh-CN: '显示'
+	String get refreshRateGroup => '显示';
+
+	/// zh-CN: '刷新率'
+	String get refreshRateDisplay => '刷新率';
+
+	/// zh-CN: '重新读取刷新率'
+	String get refreshRateRefresh => '重新读取刷新率';
+
+	/// zh-CN: '当前 {current} · 最高 {max}'
+	String refreshRateCurrentMax({required Object current, required Object max}) => '当前 ${current} · 最高 ${max}';
+
+	/// zh-CN: '未知'
+	String get refreshRateUnknown => '未知';
+
+	/// zh-CN: '低电量模式'
+	String get refreshRateLowPower => '低电量模式';
+
+	/// zh-CN: '刷新率模式'
+	String get refreshRateMode => '刷新率模式';
+
+	/// zh-CN: '节能把刷新率交给系统（支持内容匹配的平台固定 60 Hz）；均衡在 Android 上只在触摸或滚动时升频，停手 1.5 秒后释放；性能在前台保持最高刷新率。平台不支持的选项不会出现。'
+	String get refreshRateModeDesc => '节能把刷新率交给系统（支持内容匹配的平台固定 60 Hz）；均衡在 Android 上只在触摸或滚动时升频，停手 1.5 秒后释放；性能在前台保持最高刷新率。平台不支持的选项不会出现。';
+
+	/// zh-CN: '节能'
+	String get refreshRatePowerSaving => '节能';
+
+	/// zh-CN: '均衡（交互自适应）'
+	String get refreshRateBalanced => '均衡（交互自适应）';
+
+	/// zh-CN: '性能（最高刷新率）'
+	String get refreshRatePerformance => '性能（最高刷新率）';
+
+	/// zh-CN: '此平台只支持读取刷新率'
+	String get refreshRateReadOnly => '此平台只支持读取刷新率';
+
+	/// zh-CN: '系统没有向应用开放刷新率请求接口；上面显示的是当前显示器的实际值。'
+	String get refreshRateReadOnlyDesc => '系统没有向应用开放刷新率请求接口；上面显示的是当前显示器的实际值。';
+
+	/// zh-CN: '更新'
+	String get updateGroup => '更新';
+
+	/// zh-CN: '启动时自动检查更新'
+	String get autoCheckUpdate => '启动时自动检查更新';
+
+	/// zh-CN: '每次启动静默读取一次发布源；结果在“关于”里显示，失败不打扰。'
+	String get autoCheckUpdateDesc => '每次启动静默读取一次发布源；结果在“关于”里显示，失败不打扰。';
+
+	/// zh-CN: '窗口尺寸'
+	String get windowSize => '窗口尺寸';
+
+	/// zh-CN: '启动时使用的窗口大小；应用后立即居中并记住。'
+	String get windowSizeDesc => '启动时使用的窗口大小；应用后立即居中并记住。';
+
+	/// zh-CN: '宽度'
+	String get windowWidth => '宽度';
+
+	/// zh-CN: '高度'
+	String get windowHeight => '高度';
+
+	/// zh-CN: '宽度 400–16384，高度 300–16384（逻辑像素）。'
+	String get windowSizeRangeHint => '宽度 400–16384，高度 300–16384（逻辑像素）。';
+
+	/// zh-CN: '尺寸超出范围：宽 400–16384，高 300–16384。'
+	String get windowSizeOutOfRange => '尺寸超出范围：宽 400–16384，高 300–16384。';
+
+	/// zh-CN: '窗口尺寸应用失败。'
+	String get windowSizeApplyFailed => '窗口尺寸应用失败。';
+
+	/// zh-CN: '窗口尺寸已应用。'
+	String get windowSizeApplied => '窗口尺寸已应用。';
+
+	/// zh-CN: '开机启动'
+	String get startup => '开机启动';
+
+	/// zh-CN: '登录系统后自动打开 Pure Live；开关读取的是系统里的真实启动项。'
+	String get startupDesc => '登录系统后自动打开 Pure Live；开关读取的是系统里的真实启动项。';
+
+	/// zh-CN: '开机启动设置失败'
+	String get startupFailed => '开机启动设置失败';
+
+	/// zh-CN: '启动动画'
+	String get splashAnimation => '启动动画';
+
+	/// zh-CN: '启动时先显示应用标记，再进入主界面；下次启动生效。'
+	String get splashAnimationDesc => '启动时先显示应用标记，再进入主界面；下次启动生效。';
+
+	/// zh-CN: '配置预览'
+	String get configPreview => '配置预览';
+
+	/// zh-CN: '备份所携带的设置项，只读；JSON 格式，可复制。'
+	String get configPreviewDesc => '备份所携带的设置项，只读；JSON 格式，可复制。';
+
+	/// zh-CN: '复制'
+	String get configPreviewCopy => '复制';
+
+	/// zh-CN: '配置已复制'
+	String get configPreviewCopied => '配置已复制';
+
+	/// zh-CN: '定时关机'
+	String get autoShutdownGroup => '定时关机';
+
+	/// zh-CN: '启用定时关机'
+	String get autoShutdown => '启用定时关机';
+
+	/// zh-CN: '倒计时结束后自动退出应用；关闭后立即取消。'
+	String get autoShutdownDesc => '倒计时结束后自动退出应用；关闭后立即取消。';
+
+	/// zh-CN: '关机倒计时'
+	String get autoShutdownDuration => '关机倒计时';
+
+	/// zh-CN: '剩余 {time}'
+	String autoShutdownRemaining({required Object time}) => '剩余 ${time}';
+
+	/// zh-CN: '{count} 分钟'
+	String autoShutdownMinutes({required Object count}) => '${count} 分钟';
+
+	/// zh-CN: '{minutes} 分钟'
+	String autoShutdownPreset({required Object minutes}) => '${minutes} 分钟';
+
+	/// zh-CN: '自定义分钟数'
+	String get autoShutdownCustom => '自定义分钟数';
+
+	/// zh-CN: '范围 1–525600 分钟。'
+	String get autoShutdownRange => '范围 1–525600 分钟。';
+
+	/// zh-CN: '请输入 1–525600 之间的分钟数。'
+	String get autoShutdownInvalid => '请输入 1–525600 之间的分钟数。';
+
+	/// zh-CN: '关机时长已设置。'
+	String get autoShutdownSaved => '关机时长已设置。';
+
+	/// zh-CN: '刷新率读取失败'
+	String get refreshRateFailed => '刷新率读取失败';
+
+	/// zh-CN: '刷新率请求未生效'
+	String get refreshRateApplyFailed => '刷新率请求未生效';
+
+	/// zh-CN: '检测到 {count} 台显示器'
+	String refreshRateMultiMonitor({required Object count}) => '检测到 ${count} 台显示器';
+
+	/// zh-CN: '刷新率读数来自当前窗口所在的那一台显示器。'
+	String get refreshRateMultiMonitorDesc => '刷新率读数来自当前窗口所在的那一台显示器。';
+
 	/// zh-CN: '每页显示数量'
 	String get pageSize => '每页显示数量';
 
 	/// zh-CN: '桌面分页每页显示多少个房间；站点按自己的窗口取回，应用在本地切片，换页不会跳过房间。'
 	String get pageSizeDescription => '桌面分页每页显示多少个房间；站点按自己的窗口取回，应用在本地切片，换页不会跳过房间。';
+
+	/// zh-CN: '紧凑模式'
+	String get favoritesDense => '紧凑模式';
+
+	/// zh-CN: '关注页面可显示更多直播间；关闭后改用大卡片。'
+	String get favoritesDenseDescription => '关注页面可显示更多直播间；关闭后改用大卡片。';
 
 	/// zh-CN: '平台显示'
 	String get sitesDisplay => '平台显示';
@@ -2402,6 +2604,102 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '跟随系统取色'
 	String get themeSeedSystem => '跟随系统取色';
 
+	/// zh-CN: '用于按钮、选中态和强调色。'
+	String get themeSeedDescription => '用于按钮、选中态和强调色。';
+
+	/// zh-CN: '跟随系统动态取色'
+	String get themeSeedDynamic => '跟随系统动态取色';
+
+	/// zh-CN: '动态取色开启时由系统决定；关闭后可自选主题色。'
+	String get themeSeedDynamicDescription => '动态取色开启时由系统决定；关闭后可自选主题色。';
+
+	/// zh-CN: '动态取色'
+	String get dynamicColor => '动态取色';
+
+	/// zh-CN: '使用系统壁纸或强调色生成主题，覆盖当前主题色。'
+	String get dynamicColorDescription => '使用系统壁纸或强调色生成主题，覆盖当前主题色。';
+
+	/// zh-CN: '加载样式'
+	String get loadingStyle => '加载样式';
+
+	/// zh-CN: '页面、列表与播放器加载时的动画。'
+	String get loadingStyleDescription => '页面、列表与播放器加载时的动画。';
+
+	/// zh-CN: '选择加载样式'
+	String get loadingStyleChoose => '选择加载样式';
+
+	/// zh-CN: '选择后立即应用到所有加载状态。'
+	String get loadingStyleChooseHint => '选择后立即应用到所有加载状态。';
+
+	/// zh-CN: '默认圆环'
+	String get loadingStyleDefault => '默认圆环';
+
+	/// zh-CN: '脉冲水波'
+	String get loadingStylePulse => '脉冲水波';
+
+	/// zh-CN: '双重大圆'
+	String get loadingStyleDoubleBounce => '双重大圆';
+
+	/// zh-CN: '三点弹跳'
+	String get loadingStyleThreeBounce => '三点弹跳';
+
+	/// zh-CN: '波浪跳跃'
+	String get loadingStyleWave => '波浪跳跃';
+
+	/// zh-CN: '渐隐圆圈'
+	String get loadingStyleFadingCircle => '渐隐圆圈';
+
+	/// zh-CN: '九宫方格'
+	String get loadingStyleCubeGrid => '九宫方格';
+
+	/// zh-CN: '震荡涟漪'
+	String get loadingStyleRipple => '震荡涟漪';
+
+	/// zh-CN: '行星轨道'
+	String get loadingStyleOrbit => '行星轨道';
+
+	/// zh-CN: '五线谱律动'
+	String get loadingStyleLineScale => '五线谱律动';
+
+	/// zh-CN: '加载颜色'
+	String get loadingColor => '加载颜色';
+
+	/// zh-CN: '加载动画的颜色；为空时跟随主题强调色。'
+	String get loadingColorDescription => '加载动画的颜色；为空时跟随主题强调色。';
+
+	/// zh-CN: '跟随主题'
+	String get loadingColorFollowTheme => '跟随主题';
+
+	/// zh-CN: '预设颜色'
+	String get loadingColorPresets => '预设颜色';
+
+	/// zh-CN: '颜色代码'
+	String get loadingColorHex => '颜色代码';
+
+	/// zh-CN: '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。'
+	String get loadingColorHexInvalid => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。';
+
+	/// zh-CN: '主题色'
+	String get themeColorTitle => '主题色';
+
+	/// zh-CN: '预设颜色'
+	String get themeColorPresets => '预设颜色';
+
+	/// zh-CN: '自定义颜色'
+	String get themeColorCustom => '自定义颜色';
+
+	/// zh-CN: '十六进制颜色'
+	String get themeColorHex => '十六进制颜色';
+
+	/// zh-CN: '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。'
+	String get themeColorHexInvalid => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。';
+
+	/// zh-CN: '色相'
+	String get themeColorHue => '色相';
+
+	/// zh-CN: '饱和度与明度'
+	String get themeColorSaturation => '饱和度与明度';
+
 	/// zh-CN: '蓝'
 	String get seedBlue => '蓝';
 
@@ -2449,6 +2747,12 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '跟随系统'
 	String get languageSystem => '跟随系统';
+
+	/// zh-CN: '简体中文'
+	String get languageSimplifiedChinese => '简体中文';
+
+	/// zh-CN: 'English'
+	String get languageEnglish => 'English';
 
 	/// zh-CN: '刷新'
 	String get refreshGroup => '刷新';
@@ -2525,11 +2829,32 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '恢复默认'
 	String get styleReset => '恢复默认';
 
+	/// zh-CN: '设置生效范围'
+	String get prefScope => '设置生效范围';
+
+	/// zh-CN: '选择这些更改只在本窗口生效，还是应用到主窗口和所有直播间窗口。'
+	String get prefScopeDesc => '选择这些更改只在本窗口生效，还是应用到主窗口和所有直播间窗口。';
+
+	/// zh-CN: '仅本窗口'
+	String get prefScopeLocal => '仅本窗口';
+
+	/// zh-CN: '所有窗口'
+	String get prefScopeGlobal => '所有窗口';
+
 	/// zh-CN: '窗口'
 	String get windowGroup => '窗口';
 
+	/// zh-CN: '直播间在独立窗口打开'
+	String get roomWindow => '直播间在独立窗口打开';
+
+	/// zh-CN: '每个直播间一个独立窗口，像聊天软件一样；关闭后在主窗口内浏览。仅桌面端。'
+	String get roomWindowDesc => '每个直播间一个独立窗口，像聊天软件一样；关闭后在主窗口内浏览。仅桌面端。';
+
 	/// zh-CN: '关闭窗口时'
 	String get closeAction => '关闭窗口时';
+
+	/// zh-CN: '关闭按钮的行为；隐藏到托盘时应用保持运行，点击托盘图标即可恢复窗口。'
+	String get closeActionDesc => '关闭按钮的行为；隐藏到托盘时应用保持运行，点击托盘图标即可恢复窗口。';
 
 	/// zh-CN: '退出应用'
 	String get closeQuit => '退出应用';
@@ -2537,8 +2862,29 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '最小化到任务栏'
 	String get closeMinimise => '最小化到任务栏';
 
-	/// zh-CN: '隐藏到托盘(需托盘,暂未接入)'
-	String get closeTrayUnavailable => '隐藏到托盘(需托盘,暂未接入)';
+	/// zh-CN: '隐藏到托盘'
+	String get closeHideToTray => '隐藏到托盘';
+
+	/// zh-CN: '退出不再询问'
+	String get noExitConfirm => '退出不再询问';
+
+	/// zh-CN: '开启后，点关闭按钮直接执行上面的行为；关闭此项则每次关闭都先确认。'
+	String get noExitConfirmDescription => '开启后，点关闭按钮直接执行上面的行为；关闭此项则每次关闭都先确认。';
+
+	/// zh-CN: '关闭窗口'
+	String get closeWindowTitle => '关闭窗口';
+
+	/// zh-CN: '要退出应用，还是最小化后继续运行？'
+	String get closeWindowQuestion => '要退出应用，还是最小化后继续运行？';
+
+	/// zh-CN: '不再询问'
+	String get closeDontAskAgain => '不再询问';
+
+	/// zh-CN: '显示主窗口'
+	String get trayShow => '显示主窗口';
+
+	/// zh-CN: '隐藏到托盘'
+	String get trayHide => '隐藏到托盘';
 
 	/// zh-CN: '字体'
 	String get font => '字体';
@@ -2548,6 +2894,15 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '跟随平台（系统字体）'
 	String get fontPlatform => '跟随平台（系统字体）';
+
+	/// zh-CN: '文本缩放'
+	String get textScale => '文本缩放';
+
+	/// zh-CN: '按比例放大或缩小整个应用的文字；100% 为平台原始大小。'
+	String get textScaleDescription => '按比例放大或缩小整个应用的文字；100% 为平台原始大小。';
+
+	/// zh-CN: '预览：设置会立即应用到所有界面。'
+	String get textScalePreview => '预览：设置会立即应用到所有界面。';
 
 	/// zh-CN: '返回应用'
 	String get backHome => '返回应用';
@@ -2630,6 +2985,12 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '通用'
 	String get groupGeneral => '通用';
 
+	/// zh-CN: '应用'
+	String get groupApp => '应用';
+
+	/// zh-CN: '直播'
+	String get groupLive => '直播';
+
 	/// zh-CN: '导航栏'
 	String get navNavigation => '导航栏';
 
@@ -2711,8 +3072,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '小窗弹幕'
 	String get navMiniDanmaku => '小窗弹幕';
 
-	/// zh-CN: '播放内核'
-	String get navKernel => '播放内核';
+	/// zh-CN: '播放器内核'
+	String get navKernel => '播放器内核';
 
 	/// zh-CN: '录制'
 	String get navRecording => '录制';
@@ -2726,8 +3087,218 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '画中画小窗里的弹幕。'
 	String get miniDanmakuDescription => '画中画小窗里的弹幕。';
 
-	/// zh-CN: '播放内核与硬件解码。'
-	String get kernelDescription => '播放内核与硬件解码。';
+	/// zh-CN: '内核、代理、硬件解码、预设与画质增强。'
+	String get kernelDescription => '内核、代理、硬件解码、预设与画质增强。';
+
+	/// zh-CN: '当前内核'
+	String get kernelCurrent => '当前内核';
+
+	/// zh-CN: '当前平台只有 mpv 内核。'
+	String get kernelOnlyOne => '当前平台只有 mpv 内核。';
+
+	/// zh-CN: '切换后新打开的播放器使用该内核。'
+	String get kernelSwitchHint => '切换后新打开的播放器使用该内核。';
+
+	/// zh-CN: '画质增强'
+	String get superResolutionGroup => '画质增强';
+
+	/// zh-CN: '播放预设'
+	String get playerPresets => '播放预设';
+
+	/// zh-CN: '一键切换解码、输出与缓冲策略；只影响播放器。'
+	String get playerPresetsHint => '一键切换解码、输出与缓冲策略；只影响播放器。';
+
+	/// zh-CN: '均衡'
+	String get presetBalanced => '均衡';
+
+	/// zh-CN: '引擎默认配置，兼顾画质与性能。'
+	String get presetBalancedDesc => '引擎默认配置，兼顾画质与性能。';
+
+	/// zh-CN: '安卓兼容'
+	String get presetCompat => '安卓兼容';
+
+	/// zh-CN: '使用 mediacodec 表面与解码，修复花屏。'
+	String get presetCompatDesc => '使用 mediacodec 表面与解码，修复花屏。';
+
+	/// zh-CN: 'RTX 视频超分'
+	String get presetRtxVsr => 'RTX 视频超分';
+
+	/// zh-CN: 'D3D11VA 解码加 d3d11vpp，NVIDIA 显卡适用。'
+	String get presetRtxVsrDesc => 'D3D11VA 解码加 d3d11vpp，NVIDIA 显卡适用。';
+
+	/// zh-CN: '低配设备'
+	String get presetLowEnd => '低配设备';
+
+	/// zh-CN: '软件解码、低分辨率与更小缓冲，优先流畅。'
+	String get presetLowEndDesc => '软件解码、低分辨率与更小缓冲，优先流畅。';
+
+	/// zh-CN: '弱网稳定'
+	String get presetStableNetwork => '弱网稳定';
+
+	/// zh-CN: '加大缓冲并自动重连，减少卡顿。'
+	String get presetStableNetworkDesc => '加大缓冲并自动重连，减少卡顿。';
+
+	/// zh-CN: '低延迟'
+	String get presetLowLatency => '低延迟';
+
+	/// zh-CN: '小缓冲与丢帧，适合高速网络。'
+	String get presetLowLatencyDesc => '小缓冲与丢帧，适合高速网络。';
+
+	/// zh-CN: '已应用预设'
+	String get playerPresetApplied => '已应用预设';
+
+	/// zh-CN: '播放器代理'
+	String get playerProxy => '播放器代理';
+
+	/// zh-CN: '只影响播放器请求，不改变应用接口的代理。'
+	String get playerProxyDesc => '只影响播放器请求，不改变应用接口的代理。';
+
+	/// zh-CN: '启用播放器代理'
+	String get playerProxyEnable => '启用播放器代理';
+
+	/// zh-CN: '请填写有效的主机和端口（1–65535）。'
+	String get playerProxyInvalid => '请填写有效的主机和端口（1–65535）。';
+
+	/// zh-CN: '硬件解码器'
+	String get hardwareDecoder => '硬件解码器';
+
+	/// zh-CN: '选择 mpv 的 hwdec 解码器。'
+	String get hardwareDecoderDesc => '选择 mpv 的 hwdec 解码器。';
+
+	/// zh-CN: '自定义输出'
+	String get customOutput => '自定义输出';
+
+	/// zh-CN: '手动选择视频与音频输出驱动。'
+	String get customOutputDesc => '手动选择视频与音频输出驱动。';
+
+	/// zh-CN: '视频输出'
+	String get videoOutput => '视频输出';
+
+	/// zh-CN: 'gpu / gpu-next / direct3d 可能让 mpv 另开窗口；嵌入画面通常保持 libmpv 或 auto。'
+	String get videoOutputHint => 'gpu / gpu-next / direct3d 可能让 mpv 另开窗口；嵌入画面通常保持 libmpv 或 auto。';
+
+	/// zh-CN: '音频输出'
+	String get audioOutput => '音频输出';
+
+	/// zh-CN: '视频同步'
+	String get videoSync => '视频同步';
+
+	/// zh-CN: '音画同步与显示刷新策略。'
+	String get videoSyncDesc => '音画同步与显示刷新策略。';
+
+	/// zh-CN: '插帧'
+	String get interpolation => '插帧';
+
+	/// zh-CN: '运动插值，仅桌面 GPU 建议开启。'
+	String get interpolationDesc => '运动插值，仅桌面 GPU 建议开启。';
+
+	/// zh-CN: '缩放算法'
+	String get scaleKernel => '缩放算法';
+
+	/// zh-CN: '放大画面时的重采样算法。'
+	String get scaleKernelDesc => '放大画面时的重采样算法。';
+
+	/// zh-CN: '反交错'
+	String get deinterlace => '反交错';
+
+	/// zh-CN: '处理隔行扫描视频。'
+	String get deinterlaceDesc => '处理隔行扫描视频。';
+
+	/// zh-CN: '硬件解码格式'
+	String get hwdecCodecs => '硬件解码格式';
+
+	/// zh-CN: '哪些编码交给硬件解码。'
+	String get hwdecCodecsDesc => '哪些编码交给硬件解码。';
+
+	/// zh-CN: '独占音频'
+	String get audioExclusive => '独占音频';
+
+	/// zh-CN: 'Windows WASAPI 独占模式。'
+	String get audioExclusiveDesc => 'Windows WASAPI 独占模式。';
+
+	/// zh-CN: '强制销毁播放器'
+	String get forceDestroy => '强制销毁播放器';
+
+	/// zh-CN: '退出房间时立刻销毁播放器，避免残留。'
+	String get forceDestroyDesc => '退出房间时立刻销毁播放器，避免残留。';
+
+	/// zh-CN: 'mpv 高级设置'
+	String get mpvAdvanced => 'mpv 高级设置';
+
+	/// zh-CN: '恢复 mpv 默认设置'
+	String get mpvReset => '恢复 mpv 默认设置';
+
+	/// zh-CN: '重置输出、同步、缩放与解码选项，不影响超分辨率。'
+	String get mpvResetDesc => '重置输出、同步、缩放与解码选项，不影响超分辨率。';
+
+	/// zh-CN: '打开 mpv 官方文档'
+	String get mpvDocs => '打开 mpv 官方文档';
+
+	/// zh-CN: '每个属性的完整说明。'
+	String get mpvDocsDesc => '每个属性的完整说明。';
+
+	/// zh-CN: '播放器指南'
+	String get playerGuide => '播放器指南';
+
+	/// zh-CN: '预设、调参与常见问题的说明。'
+	String get playerGuideDesc => '预设、调参与常见问题的说明。';
+
+	/// zh-CN: '播放器基于 mpv。先用预设覆盖大多数场景，仍不正常时再改高级选项。'
+	String get playerGuideIntro => '播放器基于 mpv。先用预设覆盖大多数场景，仍不正常时再改高级选项。';
+
+	/// zh-CN: '花屏或绿屏：尝试「安卓兼容」，或在高级设置里换解码器。'
+	String get playerGuideTip1 => '花屏或绿屏：尝试「安卓兼容」，或在高级设置里换解码器。';
+
+	/// zh-CN: '画面模糊：关闭低配预设，选择质量型缩放或超分辨率。'
+	String get playerGuideTip2 => '画面模糊：关闭低配预设，选择质量型缩放或超分辨率。';
+
+	/// zh-CN: '卡顿：使用「弱网稳定」；风扇狂转：关闭插帧与超分。'
+	String get playerGuideTip3 => '卡顿：使用「弱网稳定」；风扇狂转：关闭插帧与超分。';
+
+	/// zh-CN: '没有声音：检查音频输出驱动，Windows 可尝试关闭独占音频。'
+	String get playerGuideTip4 => '没有声音：检查音频输出驱动，Windows 可尝试关闭独占音频。';
+
+	/// zh-CN: '自动'
+	String get optionAuto => '自动';
+
+	/// zh-CN: '关闭'
+	String get optionOff => '关闭';
+
+	/// zh-CN: '开启'
+	String get optionOn => '开启';
+
+	/// zh-CN: '无输出'
+	String get optionNoOutput => '无输出';
+
+	/// zh-CN: '关闭着色器，保持原始画面。'
+	String get superResolutionOffDesc => '关闭着色器，保持原始画面。';
+
+	/// zh-CN: '较轻的 CNN 链，适合中端 GPU。'
+	String get superResolutionEfficiencyDesc => '较轻的 CNN 链，适合中端 GPU。';
+
+	/// zh-CN: '最重的 CNN 链，画质最好。'
+	String get superResolutionQualityDesc => '最重的 CNN 链，画质最好。';
+
+	/// zh-CN: '这些选项只对 mpv 内核生效。'
+	String get playerAdvancedRequiresMpv => '这些选项只对 mpv 内核生效。';
+
+	/// zh-CN: '超分辨率'
+	String get superResolution => '超分辨率';
+
+	/// zh-CN: '用 Anime4K 着色器实时放大画面；需要桌面 GPU。'
+	String get superResolutionDescription => '用 Anime4K 着色器实时放大画面；需要桌面 GPU。';
+
+	/// zh-CN: '仅 Windows 桌面生效；切换后应用到当前与之后的播放器。'
+	String get superResolutionHint => '仅 Windows 桌面生效；切换后应用到当前与之后的播放器。';
+
+	/// zh-CN: '关闭'
+	String get superResolutionOff => '关闭';
+
+	/// zh-CN: '效率'
+	String get superResolutionEfficiency => '效率';
+
+	/// zh-CN: '质量'
+	String get superResolutionQuality => '质量';
 
 	/// zh-CN: '录制目录、文件命名与容量上限。'
 	String get recordingDescription => '录制目录、文件命名与容量上限。';
@@ -2735,14 +3306,26 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '首选画质'
 	String get preferredQuality => '首选画质';
 
-	/// zh-CN: '进入房间时优先选用的画质；站点没有时用它的第一个。'
-	String get preferredQualityDesc => '进入房间时优先选用的画质；站点没有时用它的第一个。';
+	/// zh-CN: '进入房间时优先选用的清晰度档位；站点没有同名画质时，按档位比例选最接近的。默认原画。'
+	String get preferredQualityDesc => '进入房间时优先选用的清晰度档位；站点没有同名画质时，按档位比例选最接近的。默认原画。';
+
+	/// zh-CN: '蜂窝网络首选画质'
+	String get preferredQualityCellular => '蜂窝网络首选画质';
+
+	/// zh-CN: '使用移动数据时优先选用的清晰度档位；Wi-Fi 与有线仍使用上面的首选画质。'
+	String get preferredQualityCellularDesc => '使用移动数据时优先选用的清晰度档位；Wi-Fi 与有线仍使用上面的首选画质。';
 
 	/// zh-CN: '自动（站点默认）'
 	String get qualityAuto => '自动（站点默认）';
 
 	/// zh-CN: '原画'
 	String get qualityOriginal => '原画';
+
+	/// zh-CN: '蓝光 8M'
+	String get qualityBluRay8M => '蓝光 8M';
+
+	/// zh-CN: '蓝光 4M'
+	String get qualityBluRay4M => '蓝光 4M';
 
 	/// zh-CN: '蓝光'
 	String get qualityBluRay => '蓝光';
@@ -2768,8 +3351,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '默认音量'
 	String get defaultVolume => '默认音量';
 
-	/// zh-CN: '每个新房间打开时的音量。'
-	String get defaultVolumeDesc => '每个新房间打开时的音量。';
+	/// zh-CN: '手机/平板新播放器默认 50%，桌面默认 100%；滑杆调整当前平台。'
+	String get defaultVolumeDesc => '手机/平板新播放器默认 50%，桌面默认 100%；滑杆调整当前平台。';
+
+	/// zh-CN: '全局静音'
+	String get globalMute => '全局静音';
+
+	/// zh-CN: '立即静音所有正在播放和之后打开的房间、频道与视频；关闭后恢复各播放器自身的静音设置。'
+	String get globalMuteDesc => '立即静音所有正在播放和之后打开的房间、频道与视频；关闭后恢复各播放器自身的静音设置。';
 
 	/// zh-CN: '画面比例'
 	String get fit => '画面比例';
@@ -2815,6 +3404,24 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '切回应用时刷新一遍关注列表的状态。'
 	String get refreshOnResumeDesc => '切回应用时刷新一遍关注列表的状态。';
+
+	/// zh-CN: '最大并发刷新'
+	String get maxConcurrentRefresh => '最大并发刷新';
+
+	/// zh-CN: '同时向平台查询的房间数，参考推荐 4，范围 1–20。'
+	String get maxConcurrentRefreshDesc => '同时向平台查询的房间数，参考推荐 4，范围 1–20。';
+
+	/// zh-CN: '推荐'
+	String get recommended => '推荐';
+
+	/// zh-CN: '自动刷新封面'
+	String get refreshThumbnails => '自动刷新封面';
+
+	/// zh-CN: '定期清空图片缓存，让封面、头像和台标重新下载；不会清空观看历史或关注。'
+	String get refreshThumbnailsDesc => '定期清空图片缓存，让封面、头像和台标重新下载；不会清空观看历史或关注。';
+
+	/// zh-CN: '封面刷新间隔'
+	String get thumbnailRefreshInterval => '封面刷新间隔';
 
 	/// zh-CN: '首页入口：多画面'
 	String get multiviewVisible => '首页入口：多画面';
@@ -2867,11 +3474,53 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '用图片或视频铺在应用后面，可上传本地文件或填写地址。'
 	String get backgroundDescription => '用图片或视频铺在应用后面，可上传本地文件或填写地址。';
 
+	/// zh-CN: '在线图片'
+	String get backgroundImagesTitle => '在线图片';
+
+	/// zh-CN: '官方、Wallhaven、Bing 与 deepin 图片源，选中后预览再应用。'
+	String get backgroundImagesDescription => '官方、Wallhaven、Bing 与 deepin 图片源，选中后预览再应用。';
+
+	/// zh-CN: '在线视频'
+	String get backgroundVideosTitle => '在线视频';
+
+	/// zh-CN: '随机图源'
+	String get navRandomWallpaper => '随机图源';
+
+	/// zh-CN: '按分组从公开随机接口取图，预览后再应用。'
+	String get randomWallpaperDescription => '按分组从公开随机接口取图，预览后再应用。';
+
+	/// zh-CN: 'iTab 动态壁纸，选中后预览再应用。'
+	String get backgroundVideosDescription => 'iTab 动态壁纸，选中后预览再应用。';
+
+	/// zh-CN: '纯色与渐变'
+	String get backgroundColorsTitle => '纯色与渐变';
+
+	/// zh-CN: '调色板与渐变预设。'
+	String get backgroundColorsDescription => '调色板与渐变预设。';
+
+	/// zh-CN: '从设备'
+	String get backgroundDeviceTitle => '从设备';
+
+	/// zh-CN: '上传图片或视频，或填写网络地址。'
+	String get backgroundDeviceDescription => '上传图片或视频，或填写网络地址。';
+
+	/// zh-CN: '当前背景'
+	String get backgroundPreview => '当前背景';
+
+	/// zh-CN: '视频背景在应用界面后方播放。'
+	String get backgroundPreviewVideoHint => '视频背景在应用界面后方播放。';
+
+	/// zh-CN: '壁纸预览'
+	String get backgroundPreviewTitle => '壁纸预览';
+
+	/// zh-CN: '图片无法加载。'
+	String get backgroundPreviewUnavailable => '图片无法加载。';
+
+	/// zh-CN: '更换背景'
+	String get backgroundChange => '更换背景';
+
 	/// zh-CN: '背景来源'
 	String get backgroundSource => '背景来源';
-
-	/// zh-CN: '类型'
-	String get backgroundKind => '类型';
 
 	/// zh-CN: '无'
 	String get backgroundNone => '无';
@@ -2957,6 +3606,9 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '对图片或视频做模糊，适合花哨的壁纸。'
 	String get backgroundBlurDescription => '对图片或视频做模糊，适合花哨的壁纸。';
 
+	/// zh-CN: '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。'
+	String get backgroundClearDescription => '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。';
+
 	/// zh-CN: '清除背景'
 	String get backgroundClear => '清除背景';
 
@@ -3014,6 +3666,12 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '播放中切到后台时进入画中画；系统未开启画中画时不会生效。'
 	String get autoPipDesc => '播放中切到后台时进入画中画；系统未开启画中画时不会生效。';
 
+	/// zh-CN: '播放时保持屏幕常亮'
+	String get keepScreenOn => '播放时保持屏幕常亮';
+
+	/// zh-CN: '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。'
+	String get keepScreenOnDesc => '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。';
+
 	/// zh-CN: '分区'
 	String get searchSections => '分区';
 
@@ -3050,17 +3708,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '预设'
 	String get backgroundPresets => '预设';
 
-	/// zh-CN: '图库'
-	String get backgroundGallery => '图库';
-
-	/// zh-CN: '点选一张图片直接应用；图片来自公开图库，需要网络加载。'
-	String get backgroundGalleryHint => '点选一张图片直接应用；图片来自公开图库，需要网络加载。';
-
 	/// zh-CN: '壁纸图库'
 	String get backgroundLibraryTitle => '壁纸图库';
-
-	/// zh-CN: '浏览全部壁纸'
-	String get backgroundLibraryBrowse => '浏览全部壁纸';
 
 	/// zh-CN: '加载更多'
 	String get backgroundLibraryLoadMore => '加载更多';
@@ -3720,6 +4369,318 @@ class Translations$vod$zh_CN {
 	String get up => 'UP主';
 }
 
+// Path: wallpaper
+class Translations$wallpaper$zh_CN {
+	Translations$wallpaper$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '随机图源'
+	String get title => '随机图源';
+
+	/// zh-CN: '按分组从公开随机接口取图，预览后再应用。'
+	String get description => '按分组从公开随机接口取图，预览后再应用。';
+
+	/// zh-CN: '{count} 个来源'
+	String sourceCount({required Object count}) => '${count} 个来源';
+
+	/// zh-CN: '换一张'
+	String get another => '换一张';
+
+	/// zh-CN: '正在取图…'
+	String get fetching => '正在取图…';
+
+	/// zh-CN: '这张图没有取到'
+	String get fetchFailed => '这张图没有取到';
+
+	/// zh-CN: '图源返回了无法显示的图片格式'
+	String get unsupported => '图源返回了无法显示的图片格式';
+
+	/// zh-CN: '随机图片预览'
+	String get previewTitle => '随机图片预览';
+
+	/// zh-CN: '已应用为背景'
+	String get applied => '已应用为背景';
+
+	/// zh-CN: '图片直接来自公开随机接口，可用性会变化；应用代理对它生效。'
+	String get networkHint => '图片直接来自公开随机接口，可用性会变化；应用代理对它生效。';
+
+	/// zh-CN: '来源'
+	String get sourceLabel => '来源';
+
+	/// zh-CN: '重试'
+	String get retry => '重试';
+
+	/// zh-CN: '必应壁纸'
+	String get groupBing => '必应壁纸';
+
+	/// zh-CN: '必应随机Biturl'
+	String get sourceBingBiturl => '必应随机Biturl';
+
+	/// zh-CN: '必应随机Jason Zeng'
+	String get sourceBingJasonZeng => '必应随机Jason Zeng';
+
+	/// zh-CN: '必应随机UAPI'
+	String get sourceBingUapi => '必应随机UAPI';
+
+	/// zh-CN: '必应随机YingJoy'
+	String get sourceBingYingJoy => '必应随机YingJoy';
+
+	/// zh-CN: '必应W3H5'
+	String get sourceBingW3h5 => '必应W3H5';
+
+	/// zh-CN: '无铭必应每日壁纸'
+	String get sourceBingWumingDaily => '无铭必应每日壁纸';
+
+	/// zh-CN: '栗次元'
+	String get groupAlcy => '栗次元';
+
+	/// zh-CN: '栗次元 · 随机'
+	String get sourceAlcyRandom => '栗次元 · 随机';
+
+	/// zh-CN: '栗次元 · ycy'
+	String get sourceAlcyYcy => '栗次元 · ycy';
+
+	/// zh-CN: '栗次元 · moez'
+	String get sourceAlcyMoez => '栗次元 · moez';
+
+	/// zh-CN: '栗次元 · ysz'
+	String get sourceAlcyYsz => '栗次元 · ysz';
+
+	/// zh-CN: '栗次元 · ys'
+	String get sourceAlcyYs => '栗次元 · ys';
+
+	/// zh-CN: '栗次元 · mp'
+	String get sourceAlcyMp => '栗次元 · mp';
+
+	/// zh-CN: '栗次元 · moemp'
+	String get sourceAlcyMoemp => '栗次元 · moemp';
+
+	/// zh-CN: '栗次元 · ysmp'
+	String get sourceAlcyYsmp => '栗次元 · ysmp';
+
+	/// zh-CN: '栗次元 · tx'
+	String get sourceAlcyTx => '栗次元 · tx';
+
+	/// zh-CN: '栗次元 · lai'
+	String get sourceAlcyLai => '栗次元 · lai';
+
+	/// zh-CN: '栗次元 · xhl'
+	String get sourceAlcyXhl => '栗次元 · xhl';
+
+	/// zh-CN: '栗次元 · bd'
+	String get sourceAlcyBd => '栗次元 · bd';
+
+	/// zh-CN: '无铭 API'
+	String get groupWuming => '无铭 API';
+
+	/// zh-CN: '无铭随机美囡图片'
+	String get sourceWumingGirl => '无铭随机美囡图片';
+
+	/// zh-CN: '无铭随机黑丝图片'
+	String get sourceWumingBlackStocking => '无铭随机黑丝图片';
+
+	/// zh-CN: '抖音美女·无铭API'
+	String get sourceWumingDouyinGirl => '抖音美女·无铭API';
+
+	/// zh-CN: '无铭随机白丝图片'
+	String get sourceWumingWhiteStocking => '无铭随机白丝图片';
+
+	/// zh-CN: '无铭随机抖音美女图片'
+	String get sourceWumingDouyinGirlAlt => '无铭随机抖音美女图片';
+
+	/// zh-CN: '无铭半次元cosplay'
+	String get sourceWumingBcyCos => '无铭半次元cosplay';
+
+	/// zh-CN: '无铭动漫壁纸'
+	String get sourceWumingAnimeWallpaper => '无铭动漫壁纸';
+
+	/// zh-CN: '无铭随机唯美女生图片'
+	String get sourceWumingAestheticGirl => '无铭随机唯美女生图片';
+
+	/// zh-CN: 'UAPI 随机图'
+	String get groupUapi => 'UAPI 随机图';
+
+	/// zh-CN: 'UAPI全部随机'
+	String get sourceUapiAll => 'UAPI全部随机';
+
+	/// zh-CN: 'UAPI二次元动漫'
+	String get sourceUapiAcg => 'UAPI二次元动漫';
+
+	/// zh-CN: 'UAPI二次元·电脑'
+	String get sourceUapiAcgPc => 'UAPI二次元·电脑';
+
+	/// zh-CN: 'UAPI二次元·手机'
+	String get sourceUapiAcgMobile => 'UAPI二次元·手机';
+
+	/// zh-CN: 'UAPI风景图'
+	String get sourceUapiLandscape => 'UAPI风景图';
+
+	/// zh-CN: 'UAPI混合动漫'
+	String get sourceUapiAnime => 'UAPI混合动漫';
+
+	/// zh-CN: 'UAPI电脑壁纸'
+	String get sourceUapiPcWallpaper => 'UAPI电脑壁纸';
+
+	/// zh-CN: 'UAPI手机壁纸'
+	String get sourceUapiMobileWallpaper => 'UAPI手机壁纸';
+
+	/// zh-CN: 'UAPI动漫图'
+	String get sourceUapiGeneralAnime => 'UAPI动漫图';
+
+	/// zh-CN: 'UAPI福瑞'
+	String get sourceUapiFurry => 'UAPI福瑞';
+
+	/// zh-CN: 'UAPI福瑞·z4k'
+	String get sourceUapiFurryZ4k => 'UAPI福瑞·z4k';
+
+	/// zh-CN: 'UAPI福瑞·szs8k'
+	String get sourceUapiFurrySzs8k => 'UAPI福瑞·szs8k';
+
+	/// zh-CN: 'UAPI福瑞·s4k'
+	String get sourceUapiFurryS4k => 'UAPI福瑞·s4k';
+
+	/// zh-CN: 'UAPI福瑞·4k'
+	String get sourceUapiFurry4k => 'UAPI福瑞·4k';
+
+	/// zh-CN: '360壁纸'
+	String get group360 => '360壁纸';
+
+	/// zh-CN: '360壁纸美女'
+	String get source360Beauty => '360壁纸美女';
+
+	/// zh-CN: '360壁纸风景'
+	String get source360Landscape => '360壁纸风景';
+
+	/// zh-CN: '360壁纸游戏'
+	String get source360Game => '360壁纸游戏';
+
+	/// zh-CN: '360壁纸影视'
+	String get source360Movie => '360壁纸影视';
+
+	/// zh-CN: '360壁纸时尚'
+	String get source360Fashion => '360壁纸时尚';
+
+	/// zh-CN: '360壁纸明星'
+	String get source360Star => '360壁纸明星';
+
+	/// zh-CN: '360壁纸汽车'
+	String get source360Car => '360壁纸汽车';
+
+	/// zh-CN: '360壁纸萌宠'
+	String get source360Pet => '360壁纸萌宠';
+
+	/// zh-CN: '360壁纸清新'
+	String get source360Fresh => '360壁纸清新';
+
+	/// zh-CN: '360壁纸体育'
+	String get source360Sport => '360壁纸体育';
+
+	/// zh-CN: '360壁纸萌娃'
+	String get source360Child => '360壁纸萌娃';
+
+	/// zh-CN: '360壁纸军事'
+	String get source360Military => '360壁纸军事';
+
+	/// zh-CN: '360壁纸动漫'
+	String get source360Anime => '360壁纸动漫';
+
+	/// zh-CN: '360壁纸日历'
+	String get source360Calendar => '360壁纸日历';
+
+	/// zh-CN: '360壁纸爱情'
+	String get source360Love => '360壁纸爱情';
+
+	/// zh-CN: '360壁纸格言'
+	String get source360Motto => '360壁纸格言';
+
+	/// zh-CN: '其他图源'
+	String get groupMisc => '其他图源';
+
+	/// zh-CN: '小晓API'
+	String get sourceXxapi => '小晓API';
+
+	/// zh-CN: 'mtyqx'
+	String get sourceMtyqx => 'mtyqx';
+
+	/// zh-CN: 'picsum'
+	String get sourcePicsum => 'picsum';
+
+	/// zh-CN: 'dmoe'
+	String get sourceDmoe => 'dmoe';
+
+	/// zh-CN: 'loliApi'
+	String get sourceLoliapi => 'loliApi';
+
+	/// zh-CN: 'catvod'
+	String get sourceCatvod => 'catvod';
+
+	/// zh-CN: '性感美女'
+	String get groupSexy => '性感美女';
+
+	/// zh-CN: '随机黑丝·小小API'
+	String get sourceSexyBlackStockingXxapi => '随机黑丝·小小API';
+
+	/// zh-CN: '随机白丝·小小API'
+	String get sourceSexyWhiteStockingXxapi => '随机白丝·小小API';
+
+	/// zh-CN: '随机JK·小小API'
+	String get sourceSexyJkXxapi => '随机JK·小小API';
+
+	/// zh-CN: '随机小姐姐·素颜API'
+	String get sourceSexyGirlSuyan => '随机小姐姐·素颜API';
+
+	/// zh-CN: '随机美女·素颜API'
+	String get sourceSexyBeautySuyan => '随机美女·素颜API';
+
+	/// zh-CN: '随机妹子·素颜API'
+	String get sourceSexyMeiziSuyan => '随机妹子·素颜API';
+
+	/// zh-CN: '随机黑丝·素颜API'
+	String get sourceSexyBlackStockingSuyan => '随机黑丝·素颜API';
+
+	/// zh-CN: '随机妹子·小渡API'
+	String get sourceSexyMeiziXiaodu => '随机妹子·小渡API';
+
+	/// zh-CN: '随机丝袜·Nonebot'
+	String get sourceSexyStockingNonebot => '随机丝袜·Nonebot';
+
+	/// zh-CN: 'PC美女壁纸·Ltywl'
+	String get sourceSexyPcLtywl => 'PC美女壁纸·Ltywl';
+
+	/// zh-CN: 'PE美女壁纸·Ltywl'
+	String get sourceSexyPeLtywl => 'PE美女壁纸·Ltywl';
+
+	/// zh-CN: '美女壁纸·极数本源'
+	String get sourceSexyBeautyApizero => '美女壁纸·极数本源';
+
+	/// zh-CN: '电脑端小姐姐·Nsuuu'
+	String get sourceSexyPcNsuuu => '电脑端小姐姐·Nsuuu';
+
+	/// zh-CN: '随机白丝·Nsuuu'
+	String get sourceSexyWhiteStockingNsuuu => '随机白丝·Nsuuu';
+
+	/// zh-CN: '随机美女·搏天API'
+	String get sourceSexyBeautyBtstu => '随机美女·搏天API';
+
+	/// zh-CN: '随机二次元·搏天API'
+	String get sourceSexyAnimeBtstu => '随机二次元·搏天API';
+
+	/// zh-CN: '随机小姐姐·快手'
+	String get sourceSexyGirlKuaishou => '随机小姐姐·快手';
+
+	/// zh-CN: '随机Cos·Nonebot'
+	String get sourceSexyCosNonebot => '随机Cos·Nonebot';
+
+	/// zh-CN: '随机美女·CZL'
+	String get sourceSexyBeautyCzl => '随机美女·CZL';
+
+	/// zh-CN: '随机美女·Mioical'
+	String get sourceSexyBeautyMioical => '随机美女·Mioical';
+}
+
 /// The flat map containing all translations for locale <zh-CN>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -3884,6 +4845,7 @@ extension on Translations {
 			'common.backToTop' => '回到顶部',
 			'common.more' => '更多',
 			'common.delete' => '删除',
+			'common.newWindow' => '新建窗口',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
@@ -3987,6 +4949,8 @@ extension on Translations {
 			'iptv.activeGuideCardHint' => '频道的正在播出与进度都按这份节目单显示。',
 			'iptv.autoUpdate' => '自动更新',
 			'iptv.autoUpdateHint' => '应用会按此间隔在后台检查，并重新拉取已开启自动更新的节目单。',
+			'iptv.customUserAgent' => '自定义 User-Agent',
+			'iptv.customUserAgentDesc' => '导入播放列表、节目单和播放请求使用的 User-Agent；留空使用应用默认值。播放列表自带的 User-Agent 优先。',
 			'iptv.updateInterval' => '更新间隔',
 			'iptv.updateIntervalHours' => ({required int hours}) => '${hours} 小时',
 			'iptv.updateIntervalDays' => ({required int days}) => '${days} 天',
@@ -4237,11 +5201,11 @@ extension on Translations {
 			'recorder.queueTitle' => '输入队列',
 			'recorder.queueDescription' => 'FFmpeg 输入包队列大小；直播突发时越大越不容易丢包。',
 			'recorder.preferBestTitle' => '只录首路音视频',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.preferBestDescription' => '开启时只映射首个视频和音频流，避免多码率文件变成多轨。',
 			'recorder.keepAliveTitle' => '后台保持录制',
 			'recorder.keepAliveDescription' => '录制期间持有后台会话与唤醒锁（Android 前台服务/通知）。',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.verifyTitle' => '结束时校验文件',
 			'recorder.verifyDescription' => '结束前检查分段是否可播放。',
 			'recorder.restartTitle' => '断流重试次数',
@@ -4402,6 +5366,12 @@ extension on Translations {
 			'search.linkFailed' => '没有解析到直播间',
 			'settings.title' => '设置',
 			'settings.navGeneral' => '浏览与窗口',
+			'settings.navPersonalization' => '个性化',
+			'settings.navLive' => '直播',
+			'settings.navLiveSources' => '直播资源',
+			'settings.navPlaybackPreferences' => '播放偏好',
+			'settings.navSystem' => '系统',
+			'settings.navDataCache' => '数据与缓存',
 			'settings.navAppearance' => '外观',
 			'settings.navPlayback' => '播放',
 			'settings.navSites' => '站点',
@@ -4418,6 +5388,14 @@ extension on Translations {
 			'settings.groupVod' => 'Bilibili 视频',
 			'settings.generalDescription' => '卡片宽度、每页数量与窗口行为。',
 			'settings.appearanceDescription' => '主题模式、对比度、圆角与字体。',
+			'settings.personalizationDescription' => '主题、外观、背景与导航。',
+			'settings.liveSettingsDescription' => '直播资源、弹幕与录制。',
+			'settings.liveSourcesDescription' => '平台显示、排序与关注自动刷新。',
+			'settings.playbackSettingsDescription' => '播放偏好与播放器内核。',
+			'settings.systemDescription' => '常规、网络、诊断、数据与备份。',
+			'settings.dataCacheDescription' => '观看历史、关注导入导出与封面缓存。',
+			'settings.personalizationChooseTheme' => '选择要应用的主题',
+			'settings.personalizationSettings' => '个性化设置',
 			'settings.playbackDescription' => '画质、比例与播放器行为。',
 			'settings.sitesDescription' => '浏览站点与登录账号。',
 			'settings.iptvDescription' => '节目单自动更新与来源同步。',
@@ -4439,8 +5417,58 @@ extension on Translations {
 			'settings.site' => '默认站点',
 			'settings.cardExtent' => '卡片宽度',
 			'settings.cardExtentDescription' => '首页与分区流里一张卡片的宽度；越小一排越多。',
+			'settings.refreshRateGroup' => '显示',
+			'settings.refreshRateDisplay' => '刷新率',
+			'settings.refreshRateRefresh' => '重新读取刷新率',
+			'settings.refreshRateCurrentMax' => ({required Object current, required Object max}) => '当前 ${current} · 最高 ${max}',
+			'settings.refreshRateUnknown' => '未知',
+			'settings.refreshRateLowPower' => '低电量模式',
+			'settings.refreshRateMode' => '刷新率模式',
+			'settings.refreshRateModeDesc' => '节能把刷新率交给系统（支持内容匹配的平台固定 60 Hz）；均衡在 Android 上只在触摸或滚动时升频，停手 1.5 秒后释放；性能在前台保持最高刷新率。平台不支持的选项不会出现。',
+			'settings.refreshRatePowerSaving' => '节能',
+			'settings.refreshRateBalanced' => '均衡（交互自适应）',
+			'settings.refreshRatePerformance' => '性能（最高刷新率）',
+			'settings.refreshRateReadOnly' => '此平台只支持读取刷新率',
+			'settings.refreshRateReadOnlyDesc' => '系统没有向应用开放刷新率请求接口；上面显示的是当前显示器的实际值。',
+			'settings.updateGroup' => '更新',
+			'settings.autoCheckUpdate' => '启动时自动检查更新',
+			'settings.autoCheckUpdateDesc' => '每次启动静默读取一次发布源；结果在“关于”里显示，失败不打扰。',
+			'settings.windowSize' => '窗口尺寸',
+			'settings.windowSizeDesc' => '启动时使用的窗口大小；应用后立即居中并记住。',
+			'settings.windowWidth' => '宽度',
+			'settings.windowHeight' => '高度',
+			'settings.windowSizeRangeHint' => '宽度 400–16384，高度 300–16384（逻辑像素）。',
+			'settings.windowSizeOutOfRange' => '尺寸超出范围：宽 400–16384，高 300–16384。',
+			'settings.windowSizeApplyFailed' => '窗口尺寸应用失败。',
+			'settings.windowSizeApplied' => '窗口尺寸已应用。',
+			'settings.startup' => '开机启动',
+			'settings.startupDesc' => '登录系统后自动打开 Pure Live；开关读取的是系统里的真实启动项。',
+			'settings.startupFailed' => '开机启动设置失败',
+			'settings.splashAnimation' => '启动动画',
+			'settings.splashAnimationDesc' => '启动时先显示应用标记，再进入主界面；下次启动生效。',
+			'settings.configPreview' => '配置预览',
+			'settings.configPreviewDesc' => '备份所携带的设置项，只读；JSON 格式，可复制。',
+			'settings.configPreviewCopy' => '复制',
+			'settings.configPreviewCopied' => '配置已复制',
+			'settings.autoShutdownGroup' => '定时关机',
+			'settings.autoShutdown' => '启用定时关机',
+			'settings.autoShutdownDesc' => '倒计时结束后自动退出应用；关闭后立即取消。',
+			'settings.autoShutdownDuration' => '关机倒计时',
+			'settings.autoShutdownRemaining' => ({required Object time}) => '剩余 ${time}',
+			'settings.autoShutdownMinutes' => ({required Object count}) => '${count} 分钟',
+			'settings.autoShutdownPreset' => ({required Object minutes}) => '${minutes} 分钟',
+			'settings.autoShutdownCustom' => '自定义分钟数',
+			'settings.autoShutdownRange' => '范围 1–525600 分钟。',
+			'settings.autoShutdownInvalid' => '请输入 1–525600 之间的分钟数。',
+			'settings.autoShutdownSaved' => '关机时长已设置。',
+			'settings.refreshRateFailed' => '刷新率读取失败',
+			'settings.refreshRateApplyFailed' => '刷新率请求未生效',
+			'settings.refreshRateMultiMonitor' => ({required Object count}) => '检测到 ${count} 台显示器',
+			'settings.refreshRateMultiMonitorDesc' => '刷新率读数来自当前窗口所在的那一台显示器。',
 			'settings.pageSize' => '每页显示数量',
 			'settings.pageSizeDescription' => '桌面分页每页显示多少个房间；站点按自己的窗口取回，应用在本地切片，换页不会跳过房间。',
+			'settings.favoritesDense' => '紧凑模式',
+			'settings.favoritesDenseDescription' => '关注页面可显示更多直播间；关闭后改用大卡片。',
 			'settings.sitesDisplay' => '平台显示',
 			'settings.sitesDisplayDesc' => '关闭的平台不再出现在热门与分区的平台列表里。',
 			'settings.sitesAllShown' => '全部平台都在显示中。',
@@ -4462,6 +5490,38 @@ extension on Translations {
 			'settings.aboutLicenseDesc' => '查看本应用使用的开源组件。',
 			'settings.themeSeed' => '主题色',
 			'settings.themeSeedSystem' => '跟随系统取色',
+			'settings.themeSeedDescription' => '用于按钮、选中态和强调色。',
+			'settings.themeSeedDynamic' => '跟随系统动态取色',
+			'settings.themeSeedDynamicDescription' => '动态取色开启时由系统决定；关闭后可自选主题色。',
+			'settings.dynamicColor' => '动态取色',
+			'settings.dynamicColorDescription' => '使用系统壁纸或强调色生成主题，覆盖当前主题色。',
+			'settings.loadingStyle' => '加载样式',
+			'settings.loadingStyleDescription' => '页面、列表与播放器加载时的动画。',
+			'settings.loadingStyleChoose' => '选择加载样式',
+			'settings.loadingStyleChooseHint' => '选择后立即应用到所有加载状态。',
+			'settings.loadingStyleDefault' => '默认圆环',
+			'settings.loadingStylePulse' => '脉冲水波',
+			'settings.loadingStyleDoubleBounce' => '双重大圆',
+			'settings.loadingStyleThreeBounce' => '三点弹跳',
+			'settings.loadingStyleWave' => '波浪跳跃',
+			'settings.loadingStyleFadingCircle' => '渐隐圆圈',
+			'settings.loadingStyleCubeGrid' => '九宫方格',
+			'settings.loadingStyleRipple' => '震荡涟漪',
+			'settings.loadingStyleOrbit' => '行星轨道',
+			'settings.loadingStyleLineScale' => '五线谱律动',
+			'settings.loadingColor' => '加载颜色',
+			'settings.loadingColorDescription' => '加载动画的颜色；为空时跟随主题强调色。',
+			'settings.loadingColorFollowTheme' => '跟随主题',
+			'settings.loadingColorPresets' => '预设颜色',
+			'settings.loadingColorHex' => '颜色代码',
+			'settings.loadingColorHexInvalid' => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。',
+			'settings.themeColorTitle' => '主题色',
+			'settings.themeColorPresets' => '预设颜色',
+			'settings.themeColorCustom' => '自定义颜色',
+			'settings.themeColorHex' => '十六进制颜色',
+			'settings.themeColorHexInvalid' => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。',
+			'settings.themeColorHue' => '色相',
+			'settings.themeColorSaturation' => '饱和度与明度',
 			'settings.seedBlue' => '蓝',
 			'settings.seedNavy' => '藏青',
 			'settings.seedGraphite' => '石墨',
@@ -4478,6 +5538,8 @@ extension on Translations {
 			'settings.densityCompact' => '紧凑',
 			'settings.densityTouch' => '触控',
 			'settings.languageSystem' => '跟随系统',
+			'settings.languageSimplifiedChinese' => '简体中文',
+			'settings.languageEnglish' => 'English',
 			'settings.refreshGroup' => '刷新',
 			'settings.followsAutoRefresh' => '关注自动刷新',
 			'settings.followsAutoRefreshDesc' => '停留在关注页时按间隔刷新关注列表。',
@@ -4503,14 +5565,31 @@ extension on Translations {
 			'settings.styleOpacity' => '不透明度',
 			'settings.styleStroke' => '描边',
 			'settings.styleReset' => '恢复默认',
+			'settings.prefScope' => '设置生效范围',
+			'settings.prefScopeDesc' => '选择这些更改只在本窗口生效，还是应用到主窗口和所有直播间窗口。',
+			'settings.prefScopeLocal' => '仅本窗口',
+			'settings.prefScopeGlobal' => '所有窗口',
 			'settings.windowGroup' => '窗口',
+			'settings.roomWindow' => '直播间在独立窗口打开',
+			'settings.roomWindowDesc' => '每个直播间一个独立窗口，像聊天软件一样；关闭后在主窗口内浏览。仅桌面端。',
 			'settings.closeAction' => '关闭窗口时',
+			'settings.closeActionDesc' => '关闭按钮的行为；隐藏到托盘时应用保持运行，点击托盘图标即可恢复窗口。',
 			'settings.closeQuit' => '退出应用',
 			'settings.closeMinimise' => '最小化到任务栏',
-			'settings.closeTrayUnavailable' => '隐藏到托盘(需托盘,暂未接入)',
+			'settings.closeHideToTray' => '隐藏到托盘',
+			'settings.noExitConfirm' => '退出不再询问',
+			'settings.noExitConfirmDescription' => '开启后，点关闭按钮直接执行上面的行为；关闭此项则每次关闭都先确认。',
+			'settings.closeWindowTitle' => '关闭窗口',
+			'settings.closeWindowQuestion' => '要退出应用，还是最小化后继续运行？',
+			'settings.closeDontAskAgain' => '不再询问',
+			'settings.trayShow' => '显示主窗口',
+			'settings.trayHide' => '隐藏到托盘',
 			'settings.font' => '字体',
 			'settings.fontDescription' => '界面字体：跟随平台官方字体，或选一款内置官方字体。',
 			'settings.fontPlatform' => '跟随平台（系统字体）',
+			'settings.textScale' => '文本缩放',
+			'settings.textScaleDescription' => '按比例放大或缩小整个应用的文字；100% 为平台原始大小。',
+			'settings.textScalePreview' => '预览：设置会立即应用到所有界面。',
 			'settings.backHome' => '返回应用',
 			'settings.navCache' => '缓存',
 			'settings.cacheDescription' => '封面与头像的磁盘缓存、清理上限。',
@@ -4538,6 +5617,8 @@ extension on Translations {
 			'settings.groupSources' => '直播来源',
 			'settings.groupPlayback' => '播放',
 			'settings.groupGeneral' => '通用',
+			'settings.groupApp' => '应用',
+			'settings.groupLive' => '直播',
 			'settings.navNavigation' => '导航栏',
 			'settings.navRefresh' => '自动刷新',
 			'settings.navProxy' => '网络代理',
@@ -4565,17 +5646,93 @@ extension on Translations {
 			'settings.iptvSyncDesc' => '重新下载网络播放列表与节目单；本地来源不受影响。',
 			'settings.navDanmaku' => '弹幕',
 			'settings.navMiniDanmaku' => '小窗弹幕',
-			'settings.navKernel' => '播放内核',
+			'settings.navKernel' => '播放器内核',
 			'settings.navRecording' => '录制',
 			'settings.videoDescription' => '画质、音量与画面比例。',
 			'settings.danmakuDescription' => '弹幕显示、样式与屏蔽。',
 			'settings.miniDanmakuDescription' => '画中画小窗里的弹幕。',
-			'settings.kernelDescription' => '播放内核与硬件解码。',
+			'settings.kernelDescription' => '内核、代理、硬件解码、预设与画质增强。',
+			'settings.kernelCurrent' => '当前内核',
+			'settings.kernelOnlyOne' => '当前平台只有 mpv 内核。',
+			'settings.kernelSwitchHint' => '切换后新打开的播放器使用该内核。',
+			'settings.superResolutionGroup' => '画质增强',
+			'settings.playerPresets' => '播放预设',
+			'settings.playerPresetsHint' => '一键切换解码、输出与缓冲策略；只影响播放器。',
+			'settings.presetBalanced' => '均衡',
+			'settings.presetBalancedDesc' => '引擎默认配置，兼顾画质与性能。',
+			'settings.presetCompat' => '安卓兼容',
+			'settings.presetCompatDesc' => '使用 mediacodec 表面与解码，修复花屏。',
+			'settings.presetRtxVsr' => 'RTX 视频超分',
+			'settings.presetRtxVsrDesc' => 'D3D11VA 解码加 d3d11vpp，NVIDIA 显卡适用。',
+			'settings.presetLowEnd' => '低配设备',
+			'settings.presetLowEndDesc' => '软件解码、低分辨率与更小缓冲，优先流畅。',
+			'settings.presetStableNetwork' => '弱网稳定',
+			'settings.presetStableNetworkDesc' => '加大缓冲并自动重连，减少卡顿。',
+			'settings.presetLowLatency' => '低延迟',
+			'settings.presetLowLatencyDesc' => '小缓冲与丢帧，适合高速网络。',
+			'settings.playerPresetApplied' => '已应用预设',
+			'settings.playerProxy' => '播放器代理',
+			'settings.playerProxyDesc' => '只影响播放器请求，不改变应用接口的代理。',
+			'settings.playerProxyEnable' => '启用播放器代理',
+			'settings.playerProxyInvalid' => '请填写有效的主机和端口（1–65535）。',
+			'settings.hardwareDecoder' => '硬件解码器',
+			'settings.hardwareDecoderDesc' => '选择 mpv 的 hwdec 解码器。',
+			'settings.customOutput' => '自定义输出',
+			'settings.customOutputDesc' => '手动选择视频与音频输出驱动。',
+			'settings.videoOutput' => '视频输出',
+			'settings.videoOutputHint' => 'gpu / gpu-next / direct3d 可能让 mpv 另开窗口；嵌入画面通常保持 libmpv 或 auto。',
+			'settings.audioOutput' => '音频输出',
+			'settings.videoSync' => '视频同步',
+			'settings.videoSyncDesc' => '音画同步与显示刷新策略。',
+			'settings.interpolation' => '插帧',
+			'settings.interpolationDesc' => '运动插值，仅桌面 GPU 建议开启。',
+			'settings.scaleKernel' => '缩放算法',
+			'settings.scaleKernelDesc' => '放大画面时的重采样算法。',
+			'settings.deinterlace' => '反交错',
+			'settings.deinterlaceDesc' => '处理隔行扫描视频。',
+			'settings.hwdecCodecs' => '硬件解码格式',
+			'settings.hwdecCodecsDesc' => '哪些编码交给硬件解码。',
+			'settings.audioExclusive' => '独占音频',
+			'settings.audioExclusiveDesc' => 'Windows WASAPI 独占模式。',
+			'settings.forceDestroy' => '强制销毁播放器',
+			'settings.forceDestroyDesc' => '退出房间时立刻销毁播放器，避免残留。',
+			'settings.mpvAdvanced' => 'mpv 高级设置',
+			'settings.mpvReset' => '恢复 mpv 默认设置',
+			'settings.mpvResetDesc' => '重置输出、同步、缩放与解码选项，不影响超分辨率。',
+			'settings.mpvDocs' => '打开 mpv 官方文档',
+			'settings.mpvDocsDesc' => '每个属性的完整说明。',
+			'settings.playerGuide' => '播放器指南',
+			'settings.playerGuideDesc' => '预设、调参与常见问题的说明。',
+			'settings.playerGuideIntro' => '播放器基于 mpv。先用预设覆盖大多数场景，仍不正常时再改高级选项。',
+			'settings.playerGuideTip1' => '花屏或绿屏：尝试「安卓兼容」，或在高级设置里换解码器。',
+			'settings.playerGuideTip2' => '画面模糊：关闭低配预设，选择质量型缩放或超分辨率。',
+			'settings.playerGuideTip3' => '卡顿：使用「弱网稳定」；风扇狂转：关闭插帧与超分。',
+			'settings.playerGuideTip4' => '没有声音：检查音频输出驱动，Windows 可尝试关闭独占音频。',
+			'settings.optionAuto' => '自动',
+			'settings.optionOff' => '关闭',
+			'settings.optionOn' => '开启',
+			'settings.optionNoOutput' => '无输出',
+			'settings.superResolutionOffDesc' => '关闭着色器，保持原始画面。',
+			'settings.superResolutionEfficiencyDesc' => '较轻的 CNN 链，适合中端 GPU。',
+			'settings.superResolutionQualityDesc' => '最重的 CNN 链，画质最好。',
+			_ => null,
+		} ?? switch (path) {
+			'settings.playerAdvancedRequiresMpv' => '这些选项只对 mpv 内核生效。',
+			'settings.superResolution' => '超分辨率',
+			'settings.superResolutionDescription' => '用 Anime4K 着色器实时放大画面；需要桌面 GPU。',
+			'settings.superResolutionHint' => '仅 Windows 桌面生效；切换后应用到当前与之后的播放器。',
+			'settings.superResolutionOff' => '关闭',
+			'settings.superResolutionEfficiency' => '效率',
+			'settings.superResolutionQuality' => '质量',
 			'settings.recordingDescription' => '录制目录、文件命名与容量上限。',
 			'settings.preferredQuality' => '首选画质',
-			'settings.preferredQualityDesc' => '进入房间时优先选用的画质；站点没有时用它的第一个。',
+			'settings.preferredQualityDesc' => '进入房间时优先选用的清晰度档位；站点没有同名画质时，按档位比例选最接近的。默认原画。',
+			'settings.preferredQualityCellular' => '蜂窝网络首选画质',
+			'settings.preferredQualityCellularDesc' => '使用移动数据时优先选用的清晰度档位；Wi-Fi 与有线仍使用上面的首选画质。',
 			'settings.qualityAuto' => '自动（站点默认）',
 			'settings.qualityOriginal' => '原画',
+			'settings.qualityBluRay8M' => '蓝光 8M',
+			'settings.qualityBluRay4M' => '蓝光 4M',
 			'settings.qualityBluRay' => '蓝光',
 			'settings.qualityUltra' => '超清',
 			'settings.qualityHigh' => '高清',
@@ -4584,7 +5741,9 @@ extension on Translations {
 			'settings.defaultMuted' => '默认静音',
 			'settings.defaultMutedDesc' => '每个新房间打开时保持静音。',
 			'settings.defaultVolume' => '默认音量',
-			'settings.defaultVolumeDesc' => '每个新房间打开时的音量。',
+			'settings.defaultVolumeDesc' => '手机/平板新播放器默认 50%，桌面默认 100%；滑杆调整当前平台。',
+			'settings.globalMute' => '全局静音',
+			'settings.globalMuteDesc' => '立即静音所有正在播放和之后打开的房间、频道与视频；关闭后恢复各播放器自身的静音设置。',
 			'settings.fit' => '画面比例',
 			'settings.fitDesc' => '画面在播放区域里的铺法。',
 			'settings.fitContain' => '适应（留黑边）',
@@ -4600,6 +5759,12 @@ extension on Translations {
 			'settings.hardwareDecodingHint' => '在下一个播放器实例上生效。',
 			'settings.refreshOnResume' => '返回应用时刷新关注',
 			'settings.refreshOnResumeDesc' => '切回应用时刷新一遍关注列表的状态。',
+			'settings.maxConcurrentRefresh' => '最大并发刷新',
+			'settings.maxConcurrentRefreshDesc' => '同时向平台查询的房间数，参考推荐 4，范围 1–20。',
+			'settings.recommended' => '推荐',
+			'settings.refreshThumbnails' => '自动刷新封面',
+			'settings.refreshThumbnailsDesc' => '定期清空图片缓存，让封面、头像和台标重新下载；不会清空观看历史或关注。',
+			'settings.thumbnailRefreshInterval' => '封面刷新间隔',
 			'settings.multiviewVisible' => '首页入口：多画面',
 			'settings.multiviewVisibleDesc' => '关闭后侧栏不再显示多画面入口。',
 			'settings.groupTheme' => '主题',
@@ -4617,8 +5782,22 @@ extension on Translations {
 			'settings.autoClashDesc' => '主题色接近危险或成功色时自动调整，避免选中状态被误读。',
 			'settings.navBackground' => '背景',
 			'settings.backgroundDescription' => '用图片或视频铺在应用后面，可上传本地文件或填写地址。',
+			'settings.backgroundImagesTitle' => '在线图片',
+			'settings.backgroundImagesDescription' => '官方、Wallhaven、Bing 与 deepin 图片源，选中后预览再应用。',
+			'settings.backgroundVideosTitle' => '在线视频',
+			'settings.navRandomWallpaper' => '随机图源',
+			'settings.randomWallpaperDescription' => '按分组从公开随机接口取图，预览后再应用。',
+			'settings.backgroundVideosDescription' => 'iTab 动态壁纸，选中后预览再应用。',
+			'settings.backgroundColorsTitle' => '纯色与渐变',
+			'settings.backgroundColorsDescription' => '调色板与渐变预设。',
+			'settings.backgroundDeviceTitle' => '从设备',
+			'settings.backgroundDeviceDescription' => '上传图片或视频，或填写网络地址。',
+			'settings.backgroundPreview' => '当前背景',
+			'settings.backgroundPreviewVideoHint' => '视频背景在应用界面后方播放。',
+			'settings.backgroundPreviewTitle' => '壁纸预览',
+			'settings.backgroundPreviewUnavailable' => '图片无法加载。',
+			'settings.backgroundChange' => '更换背景',
 			'settings.backgroundSource' => '背景来源',
-			'settings.backgroundKind' => '类型',
 			'settings.backgroundNone' => '无',
 			'settings.backgroundImage' => '图片',
 			'settings.backgroundVideo' => '视频',
@@ -4647,6 +5826,7 @@ extension on Translations {
 			'settings.backgroundMaskDescription' => '压暗或提亮背景，保证文字可读。',
 			'settings.backgroundBlur' => '高斯模糊',
 			'settings.backgroundBlurDescription' => '对图片或视频做模糊，适合花哨的壁纸。',
+			'settings.backgroundClearDescription' => '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。',
 			'settings.backgroundClear' => '清除背景',
 			'settings.checkUpdate' => '检查更新',
 			'settings.checkUpdateDesc' => '从项目的发行页读取最新版本。',
@@ -4666,6 +5846,8 @@ extension on Translations {
 			'settings.sitesKeepOne' => '至少保留一个平台',
 			'settings.autoPip' => '离开应用时自动小窗',
 			'settings.autoPipDesc' => '播放中切到后台时进入画中画；系统未开启画中画时不会生效。',
+			'settings.keepScreenOn' => '播放时保持屏幕常亮',
+			'settings.keepScreenOnDesc' => '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。',
 			'settings.searchSections' => '分区',
 			'settings.searchRows' => '具体设置',
 			'settings.searchRowMatches' => ({required String items}) => '匹配：${items}',
@@ -4678,10 +5860,7 @@ extension on Translations {
 			'settings.backgroundSolid' => '纯色',
 			'settings.backgroundGradient' => '渐变',
 			'settings.backgroundPresets' => '预设',
-			'settings.backgroundGallery' => '图库',
-			'settings.backgroundGalleryHint' => '点选一张图片直接应用；图片来自公开图库，需要网络加载。',
 			'settings.backgroundLibraryTitle' => '壁纸图库',
-			'settings.backgroundLibraryBrowse' => '浏览全部壁纸',
 			'settings.backgroundLibraryLoadMore' => '加载更多',
 			'settings.backgroundLibraryEmpty' => '没有可用的壁纸',
 			'settings.backgroundLibraryFailed' => '图库加载失败',
@@ -4754,8 +5933,6 @@ extension on Translations {
 			'toolbox.toolCacheTitle' => '缓存清理',
 			'toolbox.toolCacheDescription' => '查看并清理图片占用的内存缓存。',
 			'toolbox.toolLogsTitle' => '日志',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.toolLogsDescription' => '查看应用运行日志与诊断信息。',
 			'toolbox.back' => '返回',
 			'toolbox.confirm' => '确认',
@@ -4891,6 +6068,107 @@ extension on Translations {
 			'vod.openFailed' => '视频打开失败',
 			'vod.progress' => '播放进度',
 			'vod.up' => 'UP主',
+			'wallpaper.title' => '随机图源',
+			'wallpaper.description' => '按分组从公开随机接口取图，预览后再应用。',
+			'wallpaper.sourceCount' => ({required Object count}) => '${count} 个来源',
+			'wallpaper.another' => '换一张',
+			'wallpaper.fetching' => '正在取图…',
+			'wallpaper.fetchFailed' => '这张图没有取到',
+			'wallpaper.unsupported' => '图源返回了无法显示的图片格式',
+			'wallpaper.previewTitle' => '随机图片预览',
+			'wallpaper.applied' => '已应用为背景',
+			'wallpaper.networkHint' => '图片直接来自公开随机接口，可用性会变化；应用代理对它生效。',
+			'wallpaper.sourceLabel' => '来源',
+			'wallpaper.retry' => '重试',
+			'wallpaper.groupBing' => '必应壁纸',
+			'wallpaper.sourceBingBiturl' => '必应随机Biturl',
+			'wallpaper.sourceBingJasonZeng' => '必应随机Jason Zeng',
+			'wallpaper.sourceBingUapi' => '必应随机UAPI',
+			'wallpaper.sourceBingYingJoy' => '必应随机YingJoy',
+			'wallpaper.sourceBingW3h5' => '必应W3H5',
+			'wallpaper.sourceBingWumingDaily' => '无铭必应每日壁纸',
+			'wallpaper.groupAlcy' => '栗次元',
+			'wallpaper.sourceAlcyRandom' => '栗次元 · 随机',
+			'wallpaper.sourceAlcyYcy' => '栗次元 · ycy',
+			'wallpaper.sourceAlcyMoez' => '栗次元 · moez',
+			'wallpaper.sourceAlcyYsz' => '栗次元 · ysz',
+			'wallpaper.sourceAlcyYs' => '栗次元 · ys',
+			'wallpaper.sourceAlcyMp' => '栗次元 · mp',
+			'wallpaper.sourceAlcyMoemp' => '栗次元 · moemp',
+			'wallpaper.sourceAlcyYsmp' => '栗次元 · ysmp',
+			'wallpaper.sourceAlcyTx' => '栗次元 · tx',
+			'wallpaper.sourceAlcyLai' => '栗次元 · lai',
+			'wallpaper.sourceAlcyXhl' => '栗次元 · xhl',
+			'wallpaper.sourceAlcyBd' => '栗次元 · bd',
+			'wallpaper.groupWuming' => '无铭 API',
+			'wallpaper.sourceWumingGirl' => '无铭随机美囡图片',
+			'wallpaper.sourceWumingBlackStocking' => '无铭随机黑丝图片',
+			'wallpaper.sourceWumingDouyinGirl' => '抖音美女·无铭API',
+			'wallpaper.sourceWumingWhiteStocking' => '无铭随机白丝图片',
+			'wallpaper.sourceWumingDouyinGirlAlt' => '无铭随机抖音美女图片',
+			'wallpaper.sourceWumingBcyCos' => '无铭半次元cosplay',
+			'wallpaper.sourceWumingAnimeWallpaper' => '无铭动漫壁纸',
+			'wallpaper.sourceWumingAestheticGirl' => '无铭随机唯美女生图片',
+			'wallpaper.groupUapi' => 'UAPI 随机图',
+			'wallpaper.sourceUapiAll' => 'UAPI全部随机',
+			'wallpaper.sourceUapiAcg' => 'UAPI二次元动漫',
+			'wallpaper.sourceUapiAcgPc' => 'UAPI二次元·电脑',
+			'wallpaper.sourceUapiAcgMobile' => 'UAPI二次元·手机',
+			'wallpaper.sourceUapiLandscape' => 'UAPI风景图',
+			'wallpaper.sourceUapiAnime' => 'UAPI混合动漫',
+			'wallpaper.sourceUapiPcWallpaper' => 'UAPI电脑壁纸',
+			'wallpaper.sourceUapiMobileWallpaper' => 'UAPI手机壁纸',
+			'wallpaper.sourceUapiGeneralAnime' => 'UAPI动漫图',
+			'wallpaper.sourceUapiFurry' => 'UAPI福瑞',
+			'wallpaper.sourceUapiFurryZ4k' => 'UAPI福瑞·z4k',
+			'wallpaper.sourceUapiFurrySzs8k' => 'UAPI福瑞·szs8k',
+			'wallpaper.sourceUapiFurryS4k' => 'UAPI福瑞·s4k',
+			'wallpaper.sourceUapiFurry4k' => 'UAPI福瑞·4k',
+			'wallpaper.group360' => '360壁纸',
+			'wallpaper.source360Beauty' => '360壁纸美女',
+			'wallpaper.source360Landscape' => '360壁纸风景',
+			'wallpaper.source360Game' => '360壁纸游戏',
+			'wallpaper.source360Movie' => '360壁纸影视',
+			'wallpaper.source360Fashion' => '360壁纸时尚',
+			'wallpaper.source360Star' => '360壁纸明星',
+			'wallpaper.source360Car' => '360壁纸汽车',
+			'wallpaper.source360Pet' => '360壁纸萌宠',
+			'wallpaper.source360Fresh' => '360壁纸清新',
+			'wallpaper.source360Sport' => '360壁纸体育',
+			'wallpaper.source360Child' => '360壁纸萌娃',
+			'wallpaper.source360Military' => '360壁纸军事',
+			'wallpaper.source360Anime' => '360壁纸动漫',
+			'wallpaper.source360Calendar' => '360壁纸日历',
+			'wallpaper.source360Love' => '360壁纸爱情',
+			'wallpaper.source360Motto' => '360壁纸格言',
+			'wallpaper.groupMisc' => '其他图源',
+			'wallpaper.sourceXxapi' => '小晓API',
+			'wallpaper.sourceMtyqx' => 'mtyqx',
+			'wallpaper.sourcePicsum' => 'picsum',
+			'wallpaper.sourceDmoe' => 'dmoe',
+			'wallpaper.sourceLoliapi' => 'loliApi',
+			'wallpaper.sourceCatvod' => 'catvod',
+			'wallpaper.groupSexy' => '性感美女',
+			'wallpaper.sourceSexyBlackStockingXxapi' => '随机黑丝·小小API',
+			'wallpaper.sourceSexyWhiteStockingXxapi' => '随机白丝·小小API',
+			'wallpaper.sourceSexyJkXxapi' => '随机JK·小小API',
+			'wallpaper.sourceSexyGirlSuyan' => '随机小姐姐·素颜API',
+			'wallpaper.sourceSexyBeautySuyan' => '随机美女·素颜API',
+			'wallpaper.sourceSexyMeiziSuyan' => '随机妹子·素颜API',
+			'wallpaper.sourceSexyBlackStockingSuyan' => '随机黑丝·素颜API',
+			'wallpaper.sourceSexyMeiziXiaodu' => '随机妹子·小渡API',
+			'wallpaper.sourceSexyStockingNonebot' => '随机丝袜·Nonebot',
+			'wallpaper.sourceSexyPcLtywl' => 'PC美女壁纸·Ltywl',
+			'wallpaper.sourceSexyPeLtywl' => 'PE美女壁纸·Ltywl',
+			'wallpaper.sourceSexyBeautyApizero' => '美女壁纸·极数本源',
+			'wallpaper.sourceSexyPcNsuuu' => '电脑端小姐姐·Nsuuu',
+			'wallpaper.sourceSexyWhiteStockingNsuuu' => '随机白丝·Nsuuu',
+			'wallpaper.sourceSexyBeautyBtstu' => '随机美女·搏天API',
+			'wallpaper.sourceSexyAnimeBtstu' => '随机二次元·搏天API',
+			'wallpaper.sourceSexyGirlKuaishou' => '随机小姐姐·快手',
+			'wallpaper.sourceSexyCosNonebot' => '随机Cos·Nonebot',
+			'wallpaper.sourceSexyBeautyCzl' => '随机美女·CZL',
+			'wallpaper.sourceSexyBeautyMioical' => '随机美女·Mioical',
 			_ => null,
 		};
 	}

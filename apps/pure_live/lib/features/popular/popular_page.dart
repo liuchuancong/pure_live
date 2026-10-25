@@ -8,16 +8,18 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/app/routing/app_router.dart' show RoomRoute, SettingsSectionRoute;
+import 'package:pure_live/app/routing/app_router.dart' show SettingsSectionRoute;
 import 'package:pure_live/features/popular/popular_controller.dart';
 import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
 import 'package:pure_live/features/search/search_controller.dart';
 import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
+import 'package:pure_live/shared/navigation/room_opener.dart';
 import 'package:pure_live/shared/paging/room_paging.dart';
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
 import 'package:pure_live/shared/platforms/platform_picker.dart';
+import 'package:pure_live/shared/widgets/choice_dialog.dart' show AdaptiveChoiceField;
 
 /// How a platform's rooms are ordered on screen: the platform's own
 /// recommendation or the largest audience first. The order is local — the
@@ -160,7 +162,7 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
               size: DsSize.sm,
               leading: const DsIcon(DsIcons.antenna, size: 16),
               onPressed: () =>
-                  unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sites.name).location)),
+                  unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sources.name).location)),
               child: Text(t.settings.sitesDisplay),
             ),
           ],
@@ -190,10 +192,11 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
               const SizedBox(width: DsSpace.s12),
               SizedBox(
                 width: 148,
-                child: DsSelect<_PopularSort>(
+                child: AdaptiveChoiceField<_PopularSort>(
                   value: _sort,
+                  title: t.popular.sortLabel,
                   onChanged: (value) {
-                    if (value == null || value == _sort) return;
+                    if (value == _sort) return;
                     setState(() => _sort = value);
                     final controller = _scrolls[platform];
                     if (controller?.hasClients ?? false) controller!.jumpTo(0);
@@ -283,7 +286,7 @@ final class _PlatformFeed extends ConsumerWidget {
       listItemBuilder: (context, room) => RoomCard(
         room: room,
         compact: true,
-        onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
       ),
       cardExtent: settings.homeCardExtent,
       crossSpacing: settings.crossSpacing,
@@ -301,7 +304,7 @@ final class _PlatformFeed extends ConsumerWidget {
       refreshError: state.error?.message,
       itemBuilder: (context, room) => RoomCard(
         room: room,
-        onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
       ),
     );
     // A wide window pages by number (the reference's desktop feed) — the
@@ -322,16 +325,18 @@ final class _PlatformFeed extends ConsumerWidget {
               children: [
                 SizedBox(
                   width: 108,
-                  child: DsSelect<int>(
+                  child: AdaptiveChoiceField<int>(
                     value: state.pageSize,
+                    title: t.popular.perPage,
                     onChanged: state.loading
                         ? null
-                        : (value) {
-                            if (value != null) ref.read(browseSettingsProvider.notifier).homePageSize = value;
-                          },
+                        : (value) => ref.read(browseSettingsProvider.notifier).homePageSize = value,
                     options: [
                       for (final size in const [20, 30, 40, 60, 80])
-                        DsSelectOption(value: size, label: t.popular.pageSize(size: size)),
+                        DsSelectOption(
+                          value: size,
+                          label: t.popular.pageSize(size: size),
+                        ),
                     ],
                     placeholder: t.popular.perPage,
                     semanticLabel: t.popular.perPage,
@@ -500,7 +505,7 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
       listItemBuilder: (context, room) => RoomCard(
         room: room,
         compact: true,
-        onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
       ),
       cardExtent: settings.homeCardExtent,
       crossSpacing: settings.crossSpacing,
@@ -515,7 +520,7 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
       emptyTitle: t.search.noResultsTitle,
       itemBuilder: (context, room) => RoomCard(
         room: room,
-        onOpen: () => context.push(RoomRoute(platform: room.ref.platform, roomId: room.ref.roomId).location),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
       ),
     );
     if (!wide) return grid;

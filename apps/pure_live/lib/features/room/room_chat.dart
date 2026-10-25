@@ -14,6 +14,7 @@ import 'package:pure_live/features/shield/shield_pane.dart' show ShieldPane;
 import 'package:pure_live/features/shield/shield_repository.dart' show shieldRulesProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart' show cachedImage;
+import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
 /// The room's chat column: four tabs, as the reference's `ChatPanel` has —
 /// the danmaku list with its composer, the super chats where the platform
@@ -65,7 +66,10 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
             child: switch (tab) {
               _ChatTab.danmaku => const Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [Expanded(child: _ChatFeed()), _ChatComposer()],
+                children: [
+                  Expanded(child: _ChatFeed()),
+                  _ChatComposer(),
+                ],
               ),
               _ChatTab.superChats => _SuperChatTab(room: room!),
               _ChatTab.settings => const _RoomDanmakuSettings(),
@@ -318,13 +322,13 @@ final class _RoomDanmakuSettings extends ConsumerWidget {
     final settings = ref.watch(playbackSettingsProvider);
     final style = ref.watch(danmakuStyleProvider);
     final controller = ref.read(danmakuStyleProvider.notifier);
+    // Clones share one settings store; there is no per-window scope here.
     return ListView(
       padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s20),
       children: [
         DsSwitch(
           value: settings.danmakuVisible,
-          onChanged: (value) =>
-              unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: value)),
+          onChanged: (value) => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: value)),
           label: Text(t.room.danmakuOn),
           description: Text(t.room.danmakuSettingsDesc),
         ),
@@ -421,13 +425,7 @@ final class _StyleSlider extends StatelessWidget {
               Text(shown, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
             ],
           ),
-          DsSlider(
-            value: value,
-            min: min,
-            max: max,
-            onChanged: onChanged,
-            semanticLabel: label,
-          ),
+          DsSlider(value: value, min: min, max: max, onChanged: onChanged, semanticLabel: label),
         ],
       ),
     );
@@ -470,7 +468,7 @@ final class _SuperChatTabState extends ConsumerState<_SuperChatTab> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: DsSpinner());
+          return const Center(child: AppLoadingIndicator(size: 24));
         }
         final result = snapshot.data;
         if (result == null) {
@@ -520,16 +518,10 @@ final class _SuperChatCard extends StatelessWidget {
     final face = message.faceUrl.trim();
     final price = message.price.displayText.trim().isNotEmpty
         ? message.price.displayText.trim()
-        : [
-            ?message.price.currency,
-            if (message.price.amount case final amount?) '$amount',
-          ].join();
+        : [?message.price.currency, if (message.price.amount case final amount?) '$amount'].join();
     return Container(
       padding: const EdgeInsets.all(DsSpace.s12),
-      decoration: DsBoxDecoration(
-        color: colors.control,
-        borderRadius: BorderRadius.circular(theme.radii.card),
-      ),
+      decoration: DsBoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s8,
@@ -556,16 +548,12 @@ final class _SuperChatCard extends StatelessWidget {
                         style: theme.typography.bodyStrong.copyWith(color: colors.text),
                       ),
                     ),
-                    if (price.isNotEmpty)
-                      DsBadge(dot: false, label: Text(price), status: DsStatus.warning),
+                    if (price.isNotEmpty) DsBadge(dot: false, label: Text(price), status: DsStatus.warning),
                   ],
                 ),
                 Text(message.text, style: theme.typography.body.copyWith(color: colors.text)),
                 if (_shownAt() case final shown?)
-                  Text(
-                    shown,
-                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                  ),
+                  Text(shown, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
               ],
             ),
           ),
@@ -592,8 +580,6 @@ final class _ShieldTab extends StatelessWidget {
   const _ShieldTab();
 
   @override
-  Widget build(BuildContext context) => const SingleChildScrollView(
-    padding: EdgeInsets.all(DsSpace.s16),
-    child: ShieldPane(),
-  );
+  Widget build(BuildContext context) =>
+      const SingleChildScrollView(padding: EdgeInsets.all(DsSpace.s16), child: ShieldPane());
 }

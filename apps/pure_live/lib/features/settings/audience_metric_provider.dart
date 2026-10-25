@@ -35,25 +35,21 @@ int? audienceFigureOf(LiveRoom room, AudienceMetricChoice choice) {
 
   return switch (choice) {
     AudienceMetricChoice.automatic => switch (audience.primaryMetric) {
-      LiveAudienceMetricType.onlineViewers => firstOf([audience.onlineViewers, audience.popularity, audience.totalViewers]),
-      LiveAudienceMetricType.totalViewers => firstOf([audience.totalViewers, audience.popularity, audience.onlineViewers]),
+      LiveAudienceMetricType.onlineViewers => firstOf([
+        audience.onlineViewers,
+        audience.popularity,
+        audience.totalViewers,
+      ]),
+      LiveAudienceMetricType.totalViewers => firstOf([
+        audience.totalViewers,
+        audience.popularity,
+        audience.onlineViewers,
+      ]),
       _ => firstOf([audience.popularity, audience.onlineViewers, audience.totalViewers]),
     },
-    AudienceMetricChoice.onlineViewers => firstOf([
-      audience.onlineViewers,
-      audience.popularity,
-      audience.totalViewers,
-    ]),
-    AudienceMetricChoice.popularity => firstOf([
-      audience.popularity,
-      audience.onlineViewers,
-      audience.totalViewers,
-    ]),
-    AudienceMetricChoice.totalViewers => firstOf([
-      audience.totalViewers,
-      audience.popularity,
-      audience.onlineViewers,
-    ]),
+    AudienceMetricChoice.onlineViewers => firstOf([audience.onlineViewers, audience.popularity, audience.totalViewers]),
+    AudienceMetricChoice.popularity => firstOf([audience.popularity, audience.onlineViewers, audience.totalViewers]),
+    AudienceMetricChoice.totalViewers => firstOf([audience.totalViewers, audience.popularity, audience.onlineViewers]),
   };
 }
 

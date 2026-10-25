@@ -6,13 +6,7 @@ import 'package:flutter/widgets.dart';
 /// covers alike; the words ellipsize inside [maxWidth].
 final class RoomCoverChip extends StatelessWidget {
   /// A chip over [text], optionally led by [icon].
-  const RoomCoverChip({
-    required this.text,
-    this.icon,
-    this.maxWidth = 200,
-    this.style,
-    super.key,
-  });
+  const RoomCoverChip({required this.text, this.icon, this.maxWidth = 200, this.style, super.key});
 
   /// The words shown.
   final String text;
@@ -33,10 +27,7 @@ final class RoomCoverChip extends StatelessWidget {
       constraints: BoxConstraints(maxWidth: maxWidth),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0x8C000000),
-          borderRadius: BorderRadius.circular(6),
-        ),
+        decoration: BoxDecoration(color: const Color(0x8C000000), borderRadius: BorderRadius.circular(6)),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           spacing: 4,

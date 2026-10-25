@@ -24,7 +24,7 @@ abstract final class DanmakuStyleRange {
 
 /// Owns the danmaku style, persisted under `danmaku.style.*`; the player
 /// surface rebuilds its barrage config on every change.
-final class DanmakuStyleController extends Notifier<DanmakuStyle> {
+class DanmakuStyleController extends Notifier<DanmakuStyle> {
   @override
   DanmakuStyle build() {
     try {

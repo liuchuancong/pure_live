@@ -6,17 +6,32 @@ import 'package:media_core/media_core.dart';
 import 'package:media_core_fullscreen/media_core_fullscreen.dart';
 import 'package:media_core_pip/media_core_pip.dart';
 import 'package:pure_live/app/providers/player_providers.dart' show playerKernelProvider;
+import 'package:pure_live/app/providers/window_providers.dart'
+    show isPrimaryWindowProvider, presentationWindowHandleProvider;
+
+/// The window a Windows presentation backend drives: null makes it resolve
+/// the primary's runner window, a handle (including zero, for a clone whose
+/// handle could not be read) pins it. A clone must never fall back to the
+/// process lookup, which always finds the primary first.
+int? _desktopWindowHandle(Ref ref) {
+  if (ref.watch(isPrimaryWindowProvider)) return null;
+  return ref.watch(presentationWindowHandleProvider) ?? 0;
+}
 
 /// The app's fullscreen driver: media_core's own, over the Windows-native
 /// window bridge, one instance for the process. It owns both fullscreen
 /// variants — the system one and the app-window one — so the two can hand
 /// over to each other inside the driver that knows both.
 final Provider<FullscreenDriver> fullscreenDriverProvider = Provider<FullscreenDriver>((ref) {
-  // A hidden-caption Windows window needs the direct user32 bridge; the
-  // window_manager fast path silently skips its style updates. Other
-  // desktops take the driver's own platform backend.
+  final windows = defaultTargetPlatform == TargetPlatform.windows;
+  // A clone pins its own top-level window: the backend's process-wide
+  // lookup finds the primary, and the clone would take that window
+  // fullscreen instead of itself. The primary's handle is null and keeps
+  // the lookup. A hidden-caption Windows window needs the direct user32
+  // bridge; the window_manager fast path silently skips its style updates.
+  // Other desktops take the driver's own platform backend.
   final driver = FullscreenDriver(
-    desktopWindow: defaultTargetPlatform == TargetPlatform.windows ? Win32FullscreenWindow() : null,
+    desktopWindow: windows ? Win32FullscreenWindow(windowHandle: _desktopWindowHandle(ref)) : null,
   );
   unawaited(driver.initialize());
   return driver;
@@ -26,7 +41,11 @@ final Provider<FullscreenDriver> fullscreenDriverProvider = Provider<FullscreenD
 /// watched window becomes a compact always-shaped window; on a phone the
 /// system's PiP window takes over through media_core_pip's mobile path.
 final Provider<PipDriver> pipDriverProvider = Provider<PipDriver>((ref) {
+  final windows = defaultTargetPlatform == TargetPlatform.windows;
   final driver = PipDriver(
+    // A clone pins its own window for the same reason as fullscreen: the
+    // compact window must be this one, never the primary.
+    desktopWindow: windows ? Win32PipWindow(windowHandle: _desktopWindowHandle(ref)) : null,
     // Android hands the stream to a second engine; only a plain HTTP(S)
     // address can be opened by it. A signed, loopback-proxied source
     // resolves to null and the driver refuses the entry instead of showing

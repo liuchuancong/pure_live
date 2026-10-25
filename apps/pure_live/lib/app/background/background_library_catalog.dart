@@ -1,10 +1,11 @@
 import 'package:pure_live/app/background/background_library_models.dart';
 import 'package:pure_live/app/background/background_presets.dart' show kBackgroundDeepinWallpapers;
 
-WallpaperCategory _category(WallpaperCategoryId id, String query) =>
-    WallpaperCategory((b) => b
-      ..id = id
-      ..query = query);
+WallpaperCategory _category(WallpaperCategoryId id, String query) => WallpaperCategory(
+  (b) => b
+    ..id = id
+    ..query = query,
+);
 
 WallpaperSource _source(WallpaperSourceId id, int pageSize, List<WallpaperCategory> categories) => WallpaperSource(
   (b) => b

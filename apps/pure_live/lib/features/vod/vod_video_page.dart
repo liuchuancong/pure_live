@@ -10,15 +10,18 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:live_vod/live_vod.dart';
 import 'package:media_core/media_core.dart';
+import 'package:pure_live/app/providers/player_backend_providers.dart' show playerKernelBackendProvider;
 import 'package:pure_live/app/providers/player_providers.dart' show playerKernelProvider;
 import 'package:pure_live/app/providers/presentation_providers.dart' show roomPresentationProvider;
 import 'package:pure_live/app/routing/route_observer.dart' show routeObserver;
+import 'package:pure_live/features/settings/playback_settings_providers.dart' show playbackSettingsProvider;
 import 'package:pure_live/features/vod/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/features/vod/vod_settings.dart' show vodQualityProvider;
 import 'package:pure_live/features/vod/vod_widgets.dart' show VodVideoRow, vodDurationText;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart' show cachedImage;
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
+import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
 /// One Bilibili archive's page: the player over media_core, the archive's
 /// metadata, its parts, and related archives — Bilibili's own video page,
@@ -66,12 +69,17 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   double? _dragSeconds;
   double? _resumeSeconds;
   bool _muted = false;
+  bool _globalMute = false;
   double _volume = 1;
   double _speed = 1;
+
+  bool get _effectivelyMuted => _muted || _globalMute;
 
   @override
   void initState() {
     super.initState();
+    _globalMute = ref.read(playbackSettingsProvider).globalMute;
+    _volume = ref.read(playbackSettingsProvider.notifier).volume;
     // The station's setting names the rendition the first part asks for;
     // the source may still answer lower, and the menu follows what it
     // actually served.
@@ -198,7 +206,12 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       final info = await client.playPart(bvid: widget.bvid, cid: part.cid, qn: qn ?? _qn);
       if (!mounted || _disposed) return;
       final existing = _handle;
-      final handle = existing ?? await kernel.create(config: const PlayerConfig(name: 'vod'));
+      final handle =
+          existing ??
+          await kernel.create(
+            config: const PlayerConfig(name: 'vod'),
+            preferredBackend: ref.read(playerKernelBackendProvider).id,
+          );
       if (!mounted || _disposed) {
         if (existing == null) unawaited(kernel.release(handle.id));
         return;
@@ -219,7 +232,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         autoPlay: true,
       );
       await handle.setVolume(_volume);
-      await handle.setMute(muted: _muted);
+      await handle.setMute(muted: _effectivelyMuted);
       await handle.setRate(_speed);
       final seekTo = resume ?? _resumeSeconds;
       _resumeSeconds = null;
@@ -301,11 +314,27 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
 
   Future<void> _setMuted({required bool muted}) async {
     final handle = _handle;
+    if (!muted && _globalMute) {
+      // The global mute overrides this page's own choice; using the unmute
+      // button clears it rather than silently doing nothing.
+      _globalMute = false;
+      unawaited(ref.read(playbackSettingsProvider.notifier).setGlobalMute(value: false));
+    }
+    if (mounted) setState(() => _muted = muted);
     if (handle == null) return;
-    setState(() => _muted = muted);
     try {
-      await handle.setMute(muted: muted);
+      await handle.setMute(muted: _effectivelyMuted);
     } on Object catch (_) {
+      // A refused mute is not a playback failure.
+    }
+  }
+
+  Future<void> _applyGlobalMute() async {
+    final handle = _handle;
+    if (handle == null) return;
+    try {
+      await handle.setMute(muted: _effectivelyMuted);
+    } on Object {
       // A refused mute is not a playback failure.
     }
   }
@@ -400,6 +429,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   @override
   Widget build(BuildContext context) {
     final presentation = ref.watch(roomPresentationProvider);
+    ref.listen(playbackSettingsProvider.select((settings) => settings.globalMute), (previous, next) {
+      if (previous == next) return;
+      if (mounted) setState(() => _globalMute = next);
+      unawaited(_applyGlobalMute());
+    });
     // Leaving fullscreen or PiP — by any hand, including the system's —
     // puts the keyboard back on the play button, whose node outlives both
     // surfaces.
@@ -435,7 +469,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           title: Text(detail?.title ?? t.vod.opening, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
         body: _loading && detail == null
-            ? const Center(child: DsSpinner())
+            ? const Center(child: AppLoadingIndicator(size: 28))
             : _error != null && detail == null
             ? Center(
                 child: DsEmptyState(
@@ -570,8 +604,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     ),
                   ),
                 ),
-              if (_opening || (transport?.isBuffering ?? false))
-                const Center(child: SizedBox(width: 40, height: 40, child: DsSpinner())),
+              if (_opening || (transport?.isBuffering ?? false)) const Center(child: AppLoadingIndicator(size: 40)),
               PositionedDirectional(
                 bottom: 0,
                 start: 0,
@@ -651,16 +684,18 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                                 onDark: true,
                               ),
                               _PlayerIconButton(
-                                icon: _muted ? DsIcons.volumeOff : DsIcons.volume,
-                                label: _muted ? t.vod.unmute : t.vod.mute,
-                                onPressed: handle == null ? null : () => unawaited(_setMuted(muted: !_muted)),
+                                icon: _effectivelyMuted ? DsIcons.volumeOff : DsIcons.volume,
+                                label: _effectivelyMuted ? t.vod.unmute : t.vod.mute,
+                                onPressed: handle == null
+                                    ? null
+                                    : () => unawaited(_setMuted(muted: !_effectivelyMuted)),
                                 onDark: true,
                               ),
                               if (!compact)
                                 SizedBox(
                                   width: 100,
                                   child: DsSlider(
-                                    value: _muted ? 0 : _volume,
+                                    value: _effectivelyMuted ? 0 : _volume,
                                     onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
                                     semanticLabel: t.vod.volume,
                                   ),

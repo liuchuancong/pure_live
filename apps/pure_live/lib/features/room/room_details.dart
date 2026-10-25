@@ -59,11 +59,9 @@ final class RoomDetailsPanel extends ConsumerWidget {
       children: [
         _Streamer(room: room, platform: platform),
         _State(room: room),
-        if (title.isNotEmpty)
-          Text(title, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
+        if (title.isNotEmpty) Text(title, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
         _Figures(room: room),
-        if (notice.isNotEmpty)
-          _TextSection(label: t.room.notice, text: notice),
+        if (notice.isNotEmpty) _TextSection(label: t.room.notice, text: notice),
         if (introduction.isNotEmpty && introduction != notice)
           _TextSection(label: t.room.introduction, text: introduction),
         Column(
@@ -169,9 +167,7 @@ final class _DetailsFollow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final followed = ref.watch(
-      followsProvider.select(
-        (follows) => follows.rooms.any((entry) => entry.ref.identityKey == room.ref.identityKey),
-      ),
+      followsProvider.select((follows) => follows.rooms.any((entry) => entry.ref.identityKey == room.ref.identityKey)),
     );
     return DsButton(
       variant: followed ? DsButtonVariant.secondary : DsButtonVariant.primary,
@@ -256,10 +252,7 @@ final class _Figures extends StatelessWidget {
             spacing: DsSpace.s4,
             children: [
               DsIcon(icon, size: theme.sizes.iconXs, color: colors.textSubtle),
-              Text(
-                label,
-                style: theme.typography.caption.copyWith(color: colors.textSubtle),
-              ),
+              Text(label, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
               Text(
                 AudienceFormat.format(value),
                 style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
@@ -380,7 +373,8 @@ Future<void> openRoomExternally(BuildContext context, LiveRoom room) async {
     showDsToast(context: context, title: t.room.openUnavailable);
     return;
   }
-  final mobile = !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
+  final mobile =
+      !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
   var opened = false;
   if (mobile && app.isNotEmpty) opened = await _launch(app);
   if (!opened && web.isNotEmpty) opened = await _launch(web);

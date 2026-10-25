@@ -49,3 +49,5 @@ export 'src/system/device_identity/device_identity_capabilities.dart' show Devic
 export 'src/system/device_identity/device_identity_exception.dart' show DeviceIdentityException;
 export 'src/system/device_identity/device_identity_service.dart' show DeviceIdentityService;
 export 'src/system/device_identity/platform_device_identity_service.dart' show PlatformDeviceIdentityService;
+export 'src/system/startup/platform_startup_service.dart' show PlatformStartupService;
+export 'src/system/startup/startup_service.dart' show StartupCapabilities, StartupException, StartupService;

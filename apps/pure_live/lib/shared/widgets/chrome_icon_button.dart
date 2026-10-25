@@ -78,7 +78,9 @@ final class ChromeIconButton extends StatelessWidget {
           }
           return ColoredBox(
             color: background ?? const Color(0x00000000),
-            child: Center(child: DsIcon(icon, size: iconSize, color: enabled ? colors.text : colors.textSubtle)),
+            child: Center(
+              child: DsIcon(icon, size: iconSize, color: enabled ? colors.text : colors.textSubtle),
+            ),
           );
         },
       ),

@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:live_iptv/live_iptv.dart' show IptvChannel;
 import 'package:live_sites/live_sites.dart' show LiveArea;
+import 'package:media_core/media_core.dart' show PresentationMode;
+import 'package:pure_live/app/providers/presentation_providers.dart' show roomPresentationProvider;
+import 'package:pure_live/app/routing/root_navigator.dart' show rootNavigatorKey;
 import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
 import 'package:pure_live/app/routing/route_observer.dart' show routeObserver;
 import 'package:pure_live/features/areas/area_rooms_page.dart' show AreaRoomsPage;
@@ -23,11 +26,10 @@ import 'package:pure_live/features/toolbox/toolbox_page.dart' show ToolboxPage;
 import 'package:pure_live/features/vod/vod_video_page.dart' show VodVideoPage;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_layout.dart' show AppLayout;
+import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowChromeFrame;
 import 'package:pure_live/shared/enums/navigation_item.dart' show NavigationItem;
 
 part 'app_router.g.dart';
-
-final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
 /// The shell route: one indexed stack, seven branches — one per navigation
 /// destination — laid out by [AppLayout] (which picks the desktop, mobile
@@ -239,7 +241,7 @@ final class SettingsSectionRoute extends GoRouteData with $SettingsSectionRoute 
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    final parsed = SettingsSection.of(section) ?? SettingsSection.general;
+    final parsed = SettingsSection.of(section) ?? SettingsSection.personalization;
     return _SettingsSectionScreen(section: parsed);
   }
 }
@@ -255,15 +257,17 @@ final class _SettingsSectionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final t = context.t;
-    return Scaffold(
-      backgroundColor: colors.surface,
-      appBar: AppBar(
+    return WindowChromeFrame(
+      child: Scaffold(
         backgroundColor: colors.surface,
-        surfaceTintColor: const Color(0x00000000),
-        elevation: 0,
-        title: Text(t.settings.title),
+        appBar: AppBar(
+          backgroundColor: colors.surface,
+          surfaceTintColor: const Color(0x00000000),
+          elevation: 0,
+          title: Text(t.settings.title),
+        ),
+        body: SettingsSectionPane(section: section),
       ),
-      body: SettingsSectionPane(section: section),
     );
   }
 }
@@ -282,7 +286,9 @@ final class RoomRoute extends GoRouteData with $RoomRoute {
   final String roomId;
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => RoomPage(platform: platform, roomId: roomId);
+  Widget build(BuildContext context, GoRouterState state) => _PlayerWindowChrome(
+    child: RoomPage(platform: platform, roomId: roomId),
+  );
 }
 
 /// One area's rooms (the reference's `kAreaRooms`), pushed on the root
@@ -301,42 +307,52 @@ final class AreaRoomsRoute extends GoRouteData with $AreaRoomsRoute {
   final String areaId;
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => AreaRoomsPage(
-    platform: platform,
-    areaId: areaId,
-    area: switch (state.extra) {
-      final LiveArea area => area,
-      _ => null,
-    },
+  Widget build(BuildContext context, GoRouterState state) => WindowChromeFrame(
+    child: AreaRoomsPage(
+      platform: platform,
+      areaId: areaId,
+      area: switch (state.extra) {
+        final LiveArea area => area,
+        _ => null,
+      },
+    ),
   );
 }
+
+/// Where a freshly started engine opens. The primary uses the home branch;
+/// a clone overrides it with the route in its launch arguments.
+final windowInitialRouteProvider = Provider<String>((ref) => const PopularRoute().location);
 
 /// The app's router: the generated typed routes under the shell route, the
 /// route observer installed for the features that need visibility later.
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: rootNavigatorKey,
     observers: [routeObserver],
-    initialLocation: const PopularRoute().location,
+    initialLocation: ref.watch(windowInitialRouteProvider),
     routes: [
       ...$appRoutes,
       GoRoute(
         path: RouteNames.iptvPlay,
-        builder: (context, state) => IptvPlayPage(
-          channelId: state.pathParameters['channelId']!,
-          channel: switch (state.extra) {
-            final IptvChannel channel => channel,
-            _ => null,
-          },
+        builder: (context, state) => _PlayerWindowChrome(
+          child: IptvPlayPage(
+            channelId: state.pathParameters['channelId']!,
+            channel: switch (state.extra) {
+              final IptvChannel channel => channel,
+              _ => null,
+            },
+          ),
         ),
       ),
       GoRoute(
         path: RouteNames.webSearch,
-        builder: (context, state) => WebSearchPage(
-          request: switch (state.extra) {
-            final WebSearchRequest request => request,
-            _ => null,
-          },
+        builder: (context, state) => WindowChromeFrame(
+          child: WebSearchPage(
+            request: switch (state.extra) {
+              final WebSearchRequest request => request,
+              _ => null,
+            },
+          ),
         ),
       ),
       // The video station's cards push one archive's page; the route is
@@ -344,11 +360,28 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // needs a build_runner pass (which would rewrite the l10n output).
       GoRoute(
         path: RouteNames.vodVideo,
-        builder: (context, state) => VodVideoPage(bvid: state.pathParameters['bvid']!),
+        builder: (context, state) => _PlayerWindowChrome(child: VodVideoPage(bvid: state.pathParameters['bvid']!)),
       ),
     ],
   );
 });
+
+/// A player route keeps the window's caption strip while it is a windowed
+/// page; a presentation that fills the window (fullscreen or the in-window
+/// fullscreen) hides it, exactly as the system caption would. PiP and a
+/// floating player keep it: those are still ordinary windows.
+final class _PlayerWindowChrome extends ConsumerWidget {
+  const _PlayerWindowChrome({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(roomPresentationProvider);
+    final immersive = mode == PresentationMode.fullscreen || mode == PresentationMode.windowFullscreen;
+    return WindowChromeFrame(enabled: !immersive, child: child);
+  }
+}
 
 /// The branch content until the pages arrive: an honest empty state naming
 /// the destination.

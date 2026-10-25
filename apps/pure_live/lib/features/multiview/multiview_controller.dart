@@ -32,7 +32,7 @@ enum MultiviewLayout {
 /// default arrangement).
 const MultiviewLayout _defaultLayout = MultiviewLayout.quad;
 
-/// The key the wall document sits under (the box holds exactly this one
+/// The key the wall document sits under (the store holds exactly this one
 /// entry).
 const String _documentKey = 'current';
 
@@ -42,34 +42,30 @@ const String _documentKey = 'current';
 typedef MultiviewState = ({bool ready, MultiviewLayout layout, List<String?> slots});
 
 /// The multiview store (the reference's last-arrangement meta entry): one
-/// box holding one JSON map — the layout and the slots — so a revisit
+/// store holding one JSON map — the layout and the slots — so a revisit
 /// opens the same wall. The video tiles themselves arrive later with the
 /// player stack (`media_core_multiview`); until then the wall and its
 /// pane picker arrange rooms, and the store keeps the arrangement between
 /// visits.
 final class MultiviewRepository {
-  /// Serves the [box] (opened as `multiview` over the storage manager,
-  /// its one value the wall's JSON as a plain object).
-  MultiviewRepository(this.box);
+  /// Serves the [store] (the `multiview` namespace, its one value the
+  /// wall's JSON as a plain object).
+  MultiviewRepository(this.store);
 
-  /// The multiview box: the wall document under its one key.
-  final HiveStorageRepository<Object> box;
+  /// The multiview store: the wall document under its one key.
+  final JsonStore store;
 
   /// Emits after every committed change.
-  Stream<void> watch() => box.watch();
+  Stream<void> watch() => store.watch();
 
-  /// The wall as it was last stored; a box without one starts a four-slot
+  /// The wall as it was last stored; a store without one starts a four-slot
   /// wall with every slot empty, and a document that lost its shape
   /// (an unknown layout, entries that are not room identities) keeps
   /// what still reads.
   MultiviewState load() {
-    final stored = box.get(_documentKey);
+    final stored = store.get(_documentKey);
     if (stored == null) {
-      return (
-        ready: true,
-        layout: _defaultLayout,
-        slots: List<String?>.filled(_defaultLayout.panes, null),
-      );
+      return (ready: true, layout: _defaultLayout, slots: List<String?>.filled(_defaultLayout.panes, null));
     }
     final json = stored is Map<String, Object?> ? stored : Map<String, Object?>.from(stored as Map);
     final layout = _layoutOf(json['layout']);
@@ -78,7 +74,7 @@ final class MultiviewRepository {
 
   /// Stores [layout] and [slots] whole, replacing the wall document.
   Future<void> save({required MultiviewLayout layout, required List<String?> slots}) =>
-      box.save(_documentKey, {'layout': layout.name, 'slots': slots});
+      store.put(_documentKey, {'layout': layout.name, 'slots': slots});
 
   /// The stored layout; the pane counts walls stored before the focus
   /// layout existed still read, and a value out of the enum is the
@@ -111,10 +107,10 @@ final class MultiviewRepository {
   }
 }
 
-/// The multiview repository (one box, one process).
+/// The multiview repository (one namespace, one process).
 final multiviewRepositoryProvider = FutureProvider<MultiviewRepository>((ref) async {
-  final box = await StorageBoxManager().keyed<Object>('multiview');
-  return MultiviewRepository(HiveStorageRepository(box: box));
+  final store = await StorageStores.instance.openStore('multiview');
+  return MultiviewRepository(store);
 });
 
 /// Mirrors the multiview repository into the widget tree: it loads once

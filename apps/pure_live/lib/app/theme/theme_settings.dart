@@ -194,10 +194,28 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
 /// rebuilds exactly the widgets that look.
 class AppThemeScope extends InheritedWidget {
   /// Exposes [settings] with [onChanged] to [child].
-  const AppThemeScope({required this.settings, required this.onChanged, required super.child, super.key});
+  const AppThemeScope({
+    required this.settings,
+    required this.onChanged,
+    required super.child,
+    this.seedColor,
+    this.dynamicSeedColor,
+    super.key,
+  });
 
   /// The current appearance settings.
   final AppThemeSettings settings;
+
+  /// The arbitrary accent colour in force, or null when [settings] uses a
+  /// named tone or the platform accent. The settings value alone cannot
+  /// tell those last two apart, and the appearance row labels them
+  /// differently.
+  final Color? seedColor;
+
+  /// The platform palette seed overriding [settings] while dynamic colour is
+  /// on, or null while it is off or unavailable. The stored settings keep the
+  /// viewer's own accent so turning dynamic colour off restores it.
+  final Color? dynamicSeedColor;
 
   /// Applies a new set; the root keeps it in state.
   final ValueChanged<AppThemeSettings> onChanged;
@@ -206,5 +224,6 @@ class AppThemeScope extends InheritedWidget {
   static AppThemeScope of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<AppThemeScope>()!;
 
   @override
-  bool updateShouldNotify(AppThemeScope old) => old.settings != settings;
+  bool updateShouldNotify(AppThemeScope old) =>
+      old.settings != settings || old.seedColor != seedColor || old.dynamicSeedColor != dynamicSeedColor;
 }

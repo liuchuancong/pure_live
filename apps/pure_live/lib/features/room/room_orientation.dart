@@ -20,19 +20,29 @@ enum RoomOrientation {
   landscape,
 }
 
-const String _orientationKey = 'room.orientation';
+/// The settings key the per-room framing choices live under.
+const String roomOrientationPrefKey = 'room.orientation';
 
 /// The viewer's per-room framing choices, stored as one JSON object under
 /// `room.orientation` (room identity → orientation name).
 ///
 /// The choice belongs to the room, not to the page: coming back to a room
 /// keeps the frame the viewer picked, and another room is unaffected.
-final class RoomOrientationChoices extends Notifier<Map<String, RoomOrientation>> {
+base class RoomOrientationChoices extends Notifier<Map<String, RoomOrientation>> {
   @override
   Map<String, RoomOrientation> build() {
     try {
-      final raw = StoragePrefs.getString(_orientationKey);
-      if (raw == null || raw.trim().isEmpty) return const {};
+      return decode(StoragePrefs.getString(roomOrientationPrefKey));
+    } on Object {
+      return const {};
+    }
+  }
+
+  /// Reads the stored JSON into the room → orientation map; malformed
+  /// values answer empty, so a broken pref never breaks a room.
+  static Map<String, RoomOrientation> decode(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return const {};
+    try {
       final decoded = jsonDecode(raw);
       if (decoded is! Map) return const {};
       final choices = <String, RoomOrientation>{};
@@ -45,6 +55,15 @@ final class RoomOrientationChoices extends Notifier<Map<String, RoomOrientation>
     } on Object {
       return const {};
     }
+  }
+
+  /// Encodes [choices] as the stored JSON.
+  static String encode(Map<String, RoomOrientation> choices) =>
+      jsonEncode({for (final entry in choices.entries) entry.key: entry.value.name});
+
+  /// Applies choices pushed by another window without writing the store.
+  void applyRemote(String? raw) {
+    state = Map.unmodifiable(decode(raw));
   }
 
   /// The choice for [identityKey]; automatic when none was made.
@@ -60,11 +79,14 @@ final class RoomOrientationChoices extends Notifier<Map<String, RoomOrientation>
       next[identityKey] = orientation;
     }
     state = Map.unmodifiable(next);
+    await persist(encode(next));
+  }
+
+  /// Writes the encoded choices. In a clone this goes through the remote
+  /// store, so the primary persists it and broadcasts it to every window.
+  Future<void> persist(String raw) async {
     try {
-      await StoragePrefs.setString(
-        _orientationKey,
-        jsonEncode({for (final entry in next.entries) entry.key: entry.value.name}),
-      );
+      await StoragePrefs.setString(roomOrientationPrefKey, raw);
     } on Object {
       // The choice is a preference; a closed store loses it.
     }
@@ -77,11 +99,13 @@ final roomOrientationChoicesProvider = NotifierProvider<RoomOrientationChoices, 
 );
 
 /// One room's chosen framing.
-final Provider<RoomOrientation> Function(String) roomOrientationProvider =
-    Provider.family<RoomOrientation, String>((ref, identityKey) {
-      final choices = ref.watch(roomOrientationChoicesProvider);
-      return choices[identityKey] ?? RoomOrientation.automatic;
-    });
+final Provider<RoomOrientation> Function(String) roomOrientationProvider = Provider.family<RoomOrientation, String>((
+  ref,
+  identityKey,
+) {
+  final choices = ref.watch(roomOrientationChoicesProvider);
+  return choices[identityKey] ?? RoomOrientation.automatic;
+});
 
 /// The ratio a frame follows for [orientation]: the stream's [detected]
 /// ratio when automatic, else the canonical shape of the chosen one.

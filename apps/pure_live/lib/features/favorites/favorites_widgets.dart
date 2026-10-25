@@ -3,12 +3,14 @@ import 'package:flutter/services.dart' show FilteringTextInputFormatter, TextInp
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/features/settings/audience_metric_provider.dart' show audienceFigureOf, audienceMetricProvider;
+import 'package:pure_live/features/settings/audience_metric_provider.dart'
+    show audienceFigureOf, audienceMetricProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/room_cover_chip.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart';
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
 import 'package:pure_live/shared/utils/room_broadcast_text.dart' show roomBroadcastText;
+import 'package:pure_live/shared/widgets/choice_dialog.dart' show AdaptiveChoiceField;
 
 /// A followed room's card: the feed card's cover hints — the title at the
 /// bottom-left, the audience with its flame at the bottom-right, the
@@ -71,9 +73,7 @@ final class FollowedRoomCard extends ConsumerWidget {
                   height: 84,
                   semanticLabel: room.content.title,
                   fallback: _CoverFallback(title: room.content.title),
-                  style: DsImageStyle(
-                    borderRadius: BorderRadius.horizontal(left: Radius.circular(theme.radii.card)),
-                  ),
+                  style: DsImageStyle(borderRadius: BorderRadius.horizontal(left: Radius.circular(theme.radii.card))),
                 ),
               ),
               Expanded(
@@ -417,15 +417,15 @@ final class _FavoritesPagerState extends State<FavoritesPager> {
         ),
         const SizedBox(width: DsSpace.s8),
         Text(t.favorites.perPage, style: muted),
-        DsSelect<int>(
-          value: widget.pageSize,
-          onChanged: busy
-              ? null
-              : (value) {
-                  if (value != null) widget.onPageSize(value);
-                },
-          options: [for (final size in widget.pageSizes) DsSelectOption(value: size, label: '$size')],
-          semanticLabel: t.favorites.perPage,
+        SizedBox(
+          width: 88,
+          child: AdaptiveChoiceField<int>(
+            value: widget.pageSize,
+            title: t.favorites.perPage,
+            onChanged: busy ? null : widget.onPageSize,
+            options: [for (final size in widget.pageSizes) DsSelectOption(value: size, label: '$size')],
+            semanticLabel: t.favorites.perPage,
+          ),
         ),
         const SizedBox(width: DsSpace.s8),
         Text(t.favorites.goTo, style: muted),

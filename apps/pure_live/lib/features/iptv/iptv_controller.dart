@@ -6,18 +6,19 @@ import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/network_providers.dart' show networkFactoryProvider;
+import 'package:pure_live/features/iptv/iptv_user_agent.dart' show iptvUserAgentProvider, normalizedIptvUserAgent;
 
-/// The IPTV library over its Hive box (one box, one process).
+/// The IPTV library over its shared JSON store (one namespace, one process).
 ///
-/// Opened the way the follows and history boxes are: through the storage
-/// box manager, behind the `IptvStore` seam the live_iptv package defines.
+/// Opened the way the follows and history stores are: through the process's
+/// SQLite store, behind the `IptvStore` seam the live_iptv package defines.
 /// Nothing in the app reads a channel anywhere else, so every surface that
 /// changes the library (this page's heart button, the importer when it
 /// arrives) lands on every other through the library's own `changes`
 /// stream.
 final iptvLibraryProvider = FutureProvider<IptvLibrary>((ref) async {
-  final box = await StorageBoxManager().list<Object?>('iptv');
-  final library = IptvLibrary(BoxIptvStore(HiveStorageListRepository<Object?>(box: box)));
+  final store = await StorageStores.instance.openStore(IptvKeys.table);
+  final library = IptvLibrary(StorageIptvStore(JsonListStore(store)));
   await library.load();
   ref.onDispose(() => unawaited(library.dispose()));
   return library;
@@ -35,7 +36,14 @@ final iptvImporterProvider = Provider<IptvImporter?>((ref) {
   if (library == null) return null;
   final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
   ref.onDispose(http.close);
-  return IptvImporter(library: library, fetch: iptvFetcherFor(http), fetchBytes: iptvBytesFetcherFor(http));
+  // The viewer's override applies to playlist and guide downloads; a change
+  // rebuilds the importer, so the next import uses the new value.
+  final userAgent = normalizedIptvUserAgent(ref.watch(iptvUserAgentProvider));
+  return IptvImporter(
+    library: library,
+    fetch: iptvFetcherFor(http, userAgent: userAgent),
+    fetchBytes: iptvBytesFetcherFor(http, userAgent: userAgent),
+  );
 });
 
 /// Whether [playlist] was imported from a web address, so a sync has

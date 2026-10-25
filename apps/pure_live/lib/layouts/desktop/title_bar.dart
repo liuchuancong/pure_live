@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 // Every import stays on one line with no `show` clause: the save-time
 // import organizer used to tear wrapped imports apart, so nothing here
 // may wrap. Do not add a wrapped import to this file.
@@ -7,7 +9,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/background/app_background.dart' show BackgroundActiveScope;
 import 'package:pure_live/app/providers/window_providers.dart';
 import 'package:pure_live/app/theme/theme_mode_toggle.dart';
+import 'package:pure_live/app/window_chrome.dart' show WindowChromeState;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/navigation/window_opener.dart' show openAppWindow;
 import 'package:pure_live/shared/widgets/chrome_icon_button.dart';
 
 /// The height of the title bar: the drag band and the caption row.
@@ -123,17 +127,107 @@ final class WindowTitleBar extends ConsumerWidget {
                     shortcut: mac ? '⌘K' : 'Ctrl K',
                     onPressed: onSearch,
                   ),
-                const ThemeModeToggle(),
-                Container(
-                  width: 1,
-                  height: 20,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  color: colors.border,
+                ChromeIconButton(
+                  icon: DsIcons.appWindow,
+                  semanticLabel: t.common.newWindow,
+                  tooltip: t.common.newWindow,
+                  shortcut: mac ? '⌘N' : 'Ctrl N',
+                  onPressed: () => unawaited(openAppWindow(context)),
                 ),
-                const _CaptionControls(),
+                const ThemeModeToggle(),
+                if (WindowChromeState.drawsCaptionControls) ...[
+                  Container(
+                    width: 1,
+                    height: 20,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    color: colors.border,
+                  ),
+                  const _CaptionControls(),
+                ],
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// The window strip above a page that sits outside the shell — a settings
+/// subpage, a room, a pushed screen. Those routes replace the shell, so no
+/// layout draws the window's own chrome; without this strip a self-drawn
+/// window would lose its drag band and its caption controls. The decision
+/// is the window's, not the layout's: a narrow desktop window gets the same
+/// strip as a wide one, and the OS caption keeps its place everywhere else.
+final class WindowChromeFrame extends StatelessWidget {
+  /// Wraps a route's [child] in the window strip when the app draws it.
+  const WindowChromeFrame({required this.child, this.enabled = true, super.key});
+
+  /// The route's screen.
+  final Widget child;
+
+  /// Whether this route wants the strip. Immersive player modes that fill
+  /// the window hide it; every ordinary route keeps it.
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!enabled || !WindowChromeState.drawsStrip) return child;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const WindowCaptionBar(),
+        Expanded(child: child),
+      ],
+    );
+  }
+}
+
+/// The minimal caption strip for a route outside the shell: the drag band,
+/// the app's name, the theme switch and the window's own controls. The
+/// route's app bar already carries its back and its title, so this strip
+/// does not repeat the sidebar toggle, the trail or the search.
+final class WindowCaptionBar extends ConsumerWidget {
+  /// A caption strip.
+  const WindowCaptionBar({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = DsTheme.colorsOf(context);
+    final t = context.t;
+    final host = ref.watch(desktopWindowHostProvider);
+    final wallpaper = BackgroundActiveScope.isActiveOf(context);
+    return ColoredBox(
+      color: wallpaper ? colors.surface.withValues(alpha: 0.86) : colors.surface,
+      child: SizedBox(
+        height: kTitleBarHeight,
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanStart: (_) => host.startDragging(),
+                onDoubleTap: host.toggleMaximize,
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      t.common.appTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const ThemeModeToggle(),
+            if (WindowChromeState.drawsCaptionControls) ...[
+              Container(width: 1, height: 20, margin: const EdgeInsets.symmetric(horizontal: 4), color: colors.border),
+              const _CaptionControls(),
+            ],
+          ],
         ),
       ),
     );

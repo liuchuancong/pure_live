@@ -3,6 +3,7 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
+import 'package:pure_live/app/providers/refresh_settings_providers.dart' show maxConcurrentRefreshProvider;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 
 /// The stored rooms the viewer follows, one entry per room identity.
@@ -13,61 +14,52 @@ import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider
 /// one. The entry's key is the room's identity — `platform:roomId` — and
 /// the entry's value is the room's storage JSON.
 final class FollowRepository {
-  /// Serves the [box] (opened as `follows` over the storage manager, its
-  /// values the rooms' JSON as plain objects).
-  FollowRepository(this.box);
+  /// Serves the [store] (the `follows` namespace).
+  FollowRepository(this.store);
 
-  /// The follows box: identity key → the room's JSON.
-  final HiveStorageRepository<Object> box;
+  /// The follows store: identity key → the room's JSON.
+  final JsonStore store;
 
   /// Emits after every committed change.
-  Stream<void> watch() => box.watch();
+  Stream<void> watch() => store.watch();
 
   /// The followed rooms, in storage order (insertion).
-  List<LiveRoom> list() => [for (final value in box.getAll()) LiveRoom.fromJson(_jsonOf(value))];
+  List<LiveRoom> list() => [for (final value in store.values) LiveRoom.fromJson(_jsonOf(value))];
 
   /// Whether the room behind [identityKey] is followed.
-  bool contains(String identityKey) => box.contains(identityKey);
+  bool contains(String identityKey) => store.contains(identityKey);
 
   /// Follows [room]: an existing entry for its identity is replaced whole.
-  Future<void> add(LiveRoom room) => box.save(room.ref.identityKey, room.toJson());
+  Future<void> add(LiveRoom room) => store.put(room.ref.identityKey, room.toJson());
 
   /// Merges what a refresh learned into the stored entry, keeping the
   /// stored copy when the refresh carries nothing new. A room never
   /// followed is stored as given.
   Future<void> merge(LiveRoom incoming) {
     final key = incoming.ref.identityKey;
-    final stored = box.get(key);
+    final stored = store.get(key);
     final merged = stored == null ? incoming : LiveRoom.fromJson(_jsonOf(stored)).mergedWith(incoming);
-    return box.save(key, merged.toJson());
+    return store.put(key, merged.toJson());
   }
 
   /// Unfollows the room behind [identityKey]; a room never followed is a
   /// no-op.
-  Future<void> remove(String identityKey) => box.delete(identityKey);
+  Future<void> remove(String identityKey) => store.delete(identityKey);
 
-  /// The storage value as the JSON the room serializer reads; Hive hands
-  /// back the map it stored with dynamic keys.
-  static Map<String, Object?> _jsonOf(Object value) =>
-      value is Map<String, Object?> ? value : Map<String, Object?>.from(value as Map);
+  /// The storage value as the JSON the room serializer reads.
+  static Map<String, Object?> _jsonOf(Object? value) =>
+      value is Map<String, Object?> ? value : Map<String, Object?>.from(value! as Map);
 }
 
-/// How long a box may take to open before the wait is declared: the open
-/// is normally a few milliseconds. The one slow case is real — another
-/// app instance still holds the box's file lock (hive_ce locks are
-/// exclusive across processes), and waiting forever there is exactly the
-/// silent skeleton the viewer would never understand.
-const Duration _boxOpenTimeout = Duration(seconds: 8);
+/// How long a namespace may take to open before the wait is declared: the
+/// open is normally a few milliseconds. A failure surfaces as the future's
+/// error instead of hanging the page forever.
+const Duration _storeOpenTimeout = Duration(seconds: 8);
 
-/// Opens a keyed box with [_boxOpenTimeout]; a timeout or a failure
-/// surfaces as the future's error instead of hanging the page forever.
-Future<KeyedBox<Object, String>> _openKeyedBox(String name) =>
-    StorageBoxManager().keyed<Object>(name).timeout(_boxOpenTimeout);
-
-/// The follows repository (one box, one process).
+/// The follows repository (one namespace, one process).
 final followRepositoryProvider = FutureProvider<FollowRepository>((ref) async {
-  final box = await _openKeyedBox('follows');
-  return FollowRepository(HiveStorageRepository(box: box));
+  final store = await StorageStores.instance.openStore('follows').timeout(_storeOpenTimeout);
+  return FollowRepository(store);
 });
 
 /// What the favorites page holds: the followed rooms, whether the
@@ -76,8 +68,9 @@ typedef FollowsState = ({bool ready, List<LiveRoom> rooms, String? error});
 
 /// Mirrors the follows repository into the widget tree: it lists once the
 /// repository opens and follows its watch stream, so every change from any
-/// surface (the page, a room's follow button) lands at once.
-final class FollowsController extends Notifier<FollowsState> {
+/// surface (the page, a room's follow button) lands at once — including a
+/// change another window committed.
+class FollowsController extends Notifier<FollowsState> {
   StreamSubscription<void>? _subscription;
 
   @override
@@ -85,8 +78,8 @@ final class FollowsController extends Notifier<FollowsState> {
     ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
     final repository = ref.watch(followRepositoryProvider);
     // Every state the open can be in lands here: loading keeps the page's
-    // skeleton, an error (a locked box from a second instance, a broken
-    // store) reaches the page as words with a retry, and data mirrors.
+    // skeleton, an error (a failed database open, a broken store) reaches
+    // the page as words with a retry, and data mirrors.
     switch (repository) {
       case AsyncData(:final value):
         _subscription ??= value.watch().listen((_) => _refresh(value));
@@ -135,10 +128,11 @@ final class FollowsController extends Notifier<FollowsState> {
     for (final room in state.rooms) {
       if (!room.local.tagIds.contains(tagId)) continue;
       final updated = room.rebuild(
-        (b) => b..local.tagIds.replace([
-          for (final id in room.local.tagIds)
-            if (id != tagId) id,
-        ]),
+        (b) => b
+          ..local.tagIds.replace([
+            for (final id in room.local.tagIds)
+              if (id != tagId) id,
+          ]),
       );
       await repository.add(updated);
     }
@@ -169,9 +163,9 @@ final class FollowsController extends Notifier<FollowsState> {
     var failed = 0;
     var done = 0;
     onProgress?.call(done, targets.length);
-    // A handful of asks at a time keeps a full list from stampeding one
-    // platform's endpoints.
-    const batchSize = 4;
+    // The refresh pane's bound keeps a full list from stampeding one
+    // platform's endpoints; the reference recommends four.
+    final batchSize = ref.read(maxConcurrentRefreshProvider);
     for (var start = 0; start < targets.length; start += batchSize) {
       final batch = targets.sublist(start, (start + batchSize).clamp(0, targets.length));
       Future<void> refreshOne(LiveRoom room) async {

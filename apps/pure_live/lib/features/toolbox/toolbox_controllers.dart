@@ -210,10 +210,7 @@ final class PlatformProbeController extends Notifier<PlatformProbeState> {
     final sites = probeSites(ref.read(sitesProvider).all);
     if (sites.isEmpty) return;
     final generation = ++_generation;
-    state = (
-      running: true,
-      nodes: {for (final site in sites) site.manifest.id: (probing: false, outcome: null)},
-    );
+    state = (running: true, nodes: {for (final site in sites) site.manifest.id: (probing: false, outcome: null)});
     var next = 0;
     Future<void> worker() async {
       while (next < sites.length) {
@@ -226,9 +223,7 @@ final class PlatformProbeController extends Notifier<PlatformProbeState> {
       }
     }
 
-    await Future.wait([
-      for (var index = 0; index < _sweepConcurrency && index < sites.length; index++) worker(),
-    ]);
+    await Future.wait([for (var index = 0; index < _sweepConcurrency && index < sites.length; index++) worker()]);
     if (!ref.mounted || generation != _generation) return;
     state = (running: false, nodes: state.nodes);
   }

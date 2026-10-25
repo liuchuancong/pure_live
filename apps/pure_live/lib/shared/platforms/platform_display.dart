@@ -19,9 +19,8 @@ Widget? localizedSiteIcon(LiveSite? site, {double size = 16}) {
   // what lets the null fall through to DsImage's type.
   // ignore: omit_local_variable_types
   final ImageProvider<Object>? image = switch (icon.type) {
-    LiveAssetType.bundled => (icon.path ?? '').trim().isEmpty
-        ? null
-        : AssetImage(icon.path!.trim(), package: 'live_sites'),
+    LiveAssetType.bundled =>
+      (icon.path ?? '').trim().isEmpty ? null : AssetImage(icon.path!.trim(), package: 'live_sites'),
     LiveAssetType.remote => icon.uri == null ? null : NetworkImage(icon.uri.toString()),
     LiveAssetType.platformDefault => null,
   };
