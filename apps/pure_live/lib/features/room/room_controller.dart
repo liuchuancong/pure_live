@@ -11,6 +11,9 @@ import 'package:pure_live/app/providers/player_providers.dart'
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
 import 'package:pure_live/features/history/history_repository.dart' show historyProvider;
+import 'package:pure_live/features/recorder/recorder_engine.dart' show recorderEngineProvider;
+import 'package:pure_live/features/recorder/recording_task.dart' show RecordingTask, RecordingTaskState;
+import 'package:pure_live/features/settings/playback_settings_providers.dart' show playbackSettingsProvider;
 import 'package:pure_live/features/shield/shield_repository.dart' show ShieldRules, shieldRulesProvider;
 
 /// How many chat lines the page keeps; older leave first.
@@ -23,6 +26,7 @@ typedef RoomState = ({
   LiveRoom? room,
   List<LivePlayQuality> qualities,
   List<LivePlayLine> lines,
+  int lineIndex,
   LivePlayQuality? quality,
   PlayerCoreState playback,
   PlayerHandle? handle,
@@ -33,6 +37,7 @@ RoomState _initial() => (
   room: null,
   qualities: const [],
   lines: const [],
+  lineIndex: 0,
   quality: null,
   playback: PlayerCoreState.idle,
   handle: null,
@@ -99,9 +104,11 @@ final class RoomDanmakuPipeline {
   }
 
   Future<void> dispose() async {
-    await danmaku.stop(clearRenderer: false);
     await binding?.dispose();
-    barrage.detach();
+    binding = null;
+    await danmaku.dispose();
+    barrage.dispose();
+    await overlay.dispose();
   }
 }
 
@@ -168,14 +175,26 @@ final class RoomController extends Notifier<RoomState> {
   LivePlaybackController? _playback;
   StreamSubscription<PlayerCoreState>? _states;
   StreamSubscription<PlayerHandle>? _handles;
+  StreamSubscription<PlayerFailure>? _failures;
   StreamSubscription<LiveMessage>? _chat;
   LiveDanmakuSession? _danmaku;
   RoomDanmakuPipeline? _pipeline;
-  // Held for the room's lifetime; the cancel happens in teardown.
-  // Held for the room's lifetime; the cancel happens in teardown.
-  // ignore: unused_field, cancel_subscriptions, use_late_for_private_fields_and_variables
-  StreamSubscription<LiveMessage>? _sessionChat;
   LivePlayQuality? _wantedQuality;
+
+  /// The request the current page asked for, so a detail failure can be
+  /// retried even before a room object exists.
+  String? _requestedPlatform;
+  String? _requestedRoomId;
+
+  /// The audio the viewer set in this room: a replacement engine (a line
+  /// switch, a recovery) must come back at the same mute and volume, not at
+  /// the engine's defaults.
+  bool _muted = false;
+  double _volume = 1;
+
+  /// Whether the decoder choice went to an engine already; it is a
+  /// configuration, not a per-handle command.
+  bool _preferencesApplied = false;
 
   @override
   RoomState build() {
@@ -188,8 +207,14 @@ final class RoomController extends Notifier<RoomState> {
   /// danmaku session connects. A room that cannot open says why in the
   /// state error field — the page shows it, never a blank.
   Future<void> open({required String platform, required String roomId}) async {
+    _requestedPlatform = platform;
+    _requestedRoomId = roomId;
     _teardown();
     state = _initial();
+    final settings = ref.read(playbackSettingsProvider);
+    _muted = settings.muted;
+    _volume = settings.volume;
+    _preferencesApplied = false;
     ref.read(roomChatProvider.notifier).clear();
     final site = ref.read(sitesProvider).getById(platform);
     final roomProvider = site?.capability<LiveRoomProvider>();
@@ -208,7 +233,7 @@ final class RoomController extends Notifier<RoomState> {
       }
       final qualitiesAnswer = await playbackProvider.getQualities(room: room);
       qualitiesAnswer.match((error) => state = _with(error: error.message), (qualities) async {
-        _wantedQuality = qualities.isEmpty ? null : qualities.first;
+        _wantedQuality = _pickQuality(qualities);
         state = _with(qualities: qualities, quality: _wantedQuality);
         await _startPlayback(playbackProvider, room);
       });
@@ -222,23 +247,118 @@ final class RoomController extends Notifier<RoomState> {
     final playbackProvider = _playbackCapabilityOf(room);
     if (room == null || playbackProvider == null) return;
     _wantedQuality = quality;
-    state = _with(quality: quality);
+    state = _with(quality: quality, lineIndex: 0);
     await _startPlayback(playbackProvider, room);
   }
 
   /// Moves playback to the line at [index] without re-reading the plan.
   Future<void> selectLine(int index) async {
+    state = _with(lineIndex: index);
     await _playback?.switchLine(index);
   }
 
   /// The recovery button: the live controller's retry.
   Future<void> retry() async {
-    await _playback?.retry();
+    final playback = _playback;
+    if (playback != null && state.room != null) {
+      await playback.retry();
+      return;
+    }
+    final platform = _requestedPlatform;
+    final roomId = _requestedRoomId;
+    if (platform != null && roomId != null) {
+      await open(platform: platform, roomId: roomId);
+    }
+  }
+
+  /// Re-reads the room's display state without tearing playback down: the
+  /// site's own refresh read is sparse, so the stored room keeps what it
+  /// already knew and takes the new status, figures and text. A listener
+  /// holding an offline room learns the streamer is back without losing
+  /// the room's identity; a platform without a refresh read replays the
+  /// detail request only when nothing is playing.
+  Future<void> refreshRoom() async {
+    final room = state.room;
+    final platform = _requestedPlatform;
+    final roomId = _requestedRoomId;
+    if (room == null || platform == null || roomId == null) return;
+    final capability = ref.read(sitesProvider).getById(platform)?.capability<LiveRoomRefresh>();
+    if (capability == null) {
+      if (state.handle == null) await open(platform: platform, roomId: roomId);
+      return;
+    }
+    final answer = await capability.getRoomForRefresh(roomId: roomId);
+    if (!ref.mounted) return;
+    answer.match(
+      (error) => state = _with(error: error.message),
+      (fresh) => state = _with(room: room.mergedWith(fresh)),
+    );
+  }
+
+  /// Pauses (the sleep timer's stop; never resumes a paused room).
+  Future<void> pause() async {
+    await _playback?.pause();
   }
 
   /// Pauses or resumes.
   Future<void> togglePlayPause() async {
     await _playback?.togglePlayPause();
+  }
+
+  /// Mutes or unmutes, remembering the choice for the next engine.
+  Future<void> setMuted({required bool value}) async {
+    _muted = value;
+    // Mute is not on the transport stream; a state echo rebuilds the bar's
+    // icon now rather than on the next unrelated event.
+    state = _with();
+    await state.handle?.setMute(muted: value);
+  }
+
+  /// The audio the room holds (and hands every replacement engine).
+  bool get muted => _muted;
+
+  /// The volume the room holds.
+  double get volume => _volume;
+
+  /// Sets the volume, remembering it for the next engine.
+  Future<void> setVolume(double value) async {
+    final clamped = value.clamp(0.0, 1.0);
+    _volume = clamped;
+    await state.handle?.setVolume(clamped);
+  }
+
+  /// Stops the room: playback released, the danmaku session closed, the
+  /// state empty. The page calls this when it leaves the route; the room's
+  /// provider outlives a page on purpose so a rebuild does not restart the
+  /// stream, which is exactly why the page must say when it is done.
+  Future<void> close() async {
+    _teardown();
+    state = _initial();
+    ref.read(roomChatProvider.notifier).clear();
+  }
+
+  /// Lands the viewer's current audio on a freshly attached engine; a line
+  /// switch or recovery must not unmute or reset the volume.
+  Future<void> _applyAudioPreferences(PlayerHandle handle) async {
+    try {
+      await handle.setVolume(_volume);
+      await handle.setMute(muted: _muted);
+    } on Object {
+      // A preference the engine refused is not a playback failure.
+    }
+  }
+
+  /// Sends the decoder choice to an engine once per room (an mpv property
+  /// write, so it takes effect on the running engine).
+  Future<void> _applyDecoderPreference(PlayerHandle handle) async {
+    if (_preferencesApplied) return;
+    _preferencesApplied = true;
+    try {
+      final settings = ref.read(playbackSettingsProvider);
+      await handle.applyEngineOptions([EngineOption('hwdec', settings.hardwareDecoding ? 'auto' : 'no')]);
+    } on Object {
+      // A preference the engine refused is not a playback failure.
+    }
   }
 
   /// The flying danmaku pipeline the page draws with (the flame widget's
@@ -275,16 +395,52 @@ final class RoomController extends Notifier<RoomState> {
       // The local echo: what the viewer sent flies at once, in the theme's
       // own voice rather than waiting for a platform round trip.
       _pipeline?.accept(
-        LiveMessage.normalized(
-          messageId: 'local-${DateTime.now().microsecondsSinceEpoch}',
-          text: word,
-          isLocal: true,
-        ),
+        LiveMessage.normalized(messageId: 'local-${DateTime.now().microsecondsSinceEpoch}', text: word, isLocal: true),
       );
       return null;
     } on Object catch (error) {
       return error.toString();
     }
+  }
+
+  /// The room's recording identity (`platform:roomId`), or null before the
+  /// room opens.
+  String? get recordingId => state.room?.ref.identityKey;
+
+  /// Whether the recorder engine is capturing this room right now.
+  bool get isRecording {
+    final id = recordingId;
+    return id != null && ref.read(recorderEngineProvider).isRecording(id);
+  }
+
+  /// Starts or stops the room's recording; answers the engine's reason when
+  /// the action failed, null on success.
+  Future<String?> toggleRecording() async {
+    final id = recordingId;
+    final room = state.room;
+    if (id == null || room == null) return 'no room';
+    final engine = ref.read(recorderEngineProvider);
+    if (engine.isRecording(id)) return await engine.stop(id);
+    final line = state.lines.isEmpty ? null : state.lines[state.lineIndex.clamp(0, state.lines.length - 1)];
+    if (line == null) return 'the room has no line to record';
+    final task = RecordingTask(
+      id: id,
+      platform: room.ref.platform,
+      roomId: room.ref.roomId,
+      roomTitle: room.content.title,
+      quality: state.quality?.label ?? '',
+      state: RecordingTaskState.stopped,
+      startedAt: DateTime.now().toUtc(),
+    );
+    final capability = _playbackCapabilityOf(room);
+    Future<String?> refresh() async {
+      if (capability == null) return null;
+      final answer = await capability.getLines(room: room, quality: _wantedQuality);
+      final url = answer.fold((_) => null, (lines) => lines.isEmpty ? null : lines.first.url);
+      return url;
+    }
+
+    return await engine.start(task, line, refreshUrl: capability == null ? null : refresh);
   }
 
   /// Follows or unfollows the room.
@@ -299,6 +455,19 @@ final class RoomController extends Notifier<RoomState> {
     }
     // The follow state lives in another controller; wake a rebuild.
     state = _with();
+  }
+
+  /// The quality a room opens on: the viewer's preferred label when the
+  /// site offers it, the site's own first otherwise.
+  LivePlayQuality? _pickQuality(List<LivePlayQuality> qualities) {
+    if (qualities.isEmpty) return null;
+    final wanted = ref.read(playbackSettingsProvider).preferredQuality?.trim().toLowerCase();
+    if (wanted != null && wanted.isNotEmpty) {
+      for (final quality in qualities) {
+        if (quality.label.trim().toLowerCase() == wanted) return quality;
+      }
+    }
+    return qualities.first;
   }
 
   Future<void> _startPlayback(LivePlaybackProvider capability, LiveRoom room) async {
@@ -321,10 +490,17 @@ final class RoomController extends Notifier<RoomState> {
       _states ??= playback.onStateChanged.listen((playback_) {
         state = _with(playback: playback_);
       });
+      _failures ??= playback.onError.listen((failure) {
+        state = _with(error: failure.message ?? failure.code.name);
+      });
       _handles ??= playback.onHandleChanged.listen((handle) {
-        state = _with(handle: handle);
-        // The player's pause and seek carry into the flying layer.
+        state = _with(handle: handle, lineIndex: _playback?.sourceIndex ?? state.lineIndex);
+        // The player's pause and seek carry into the flying layer; the
+        // viewer's current audio follows every engine, the decoder choice
+        // goes to the first one.
         _pipeline?.bind(handle);
+        unawaited(_applyAudioPreferences(handle));
+        unawaited(_applyDecoderPreference(handle));
       });
       await playback.play(
         LiveSourceRequest(sources: roomSourcesOf(lines), title: room.content.title, allowEngineFallback: true),
@@ -388,6 +564,7 @@ final class RoomController extends Notifier<RoomState> {
     LiveRoom? room,
     List<LivePlayQuality>? qualities,
     List<LivePlayLine>? lines,
+    int? lineIndex,
     LivePlayQuality? quality,
     PlayerCoreState? playback,
     PlayerHandle? handle,
@@ -396,6 +573,7 @@ final class RoomController extends Notifier<RoomState> {
     room: room ?? state.room,
     qualities: qualities ?? state.qualities,
     lines: lines ?? state.lines,
+    lineIndex: lineIndex ?? state.lineIndex,
     quality: quality ?? state.quality,
     playback: playback ?? state.playback,
     handle: handle ?? state.handle,
@@ -405,9 +583,11 @@ final class RoomController extends Notifier<RoomState> {
   void _teardown() {
     unawaited(_states?.cancel() ?? Future<void>.value());
     unawaited(_handles?.cancel() ?? Future<void>.value());
+    unawaited(_failures?.cancel() ?? Future<void>.value());
     unawaited(_chat?.cancel() ?? Future<void>.value());
     _states = null;
     _handles = null;
+    _failures = null;
     _chat = null;
     unawaited(_playback?.dispose() ?? Future<void>.value());
     _playback = null;

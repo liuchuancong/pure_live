@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/features/room/room_controller.dart';
+import 'package:pure_live/l10n/translations.dart';
 
 /// Why the room's picture is not the stream right now, and what the viewer
 /// can do about it — the derivation the overlay draws from.
@@ -130,21 +131,25 @@ const Duration slowAfter = Duration(seconds: 8);
 /// the playback's states (it is the more specific answer); a room that is
 /// not live answers from its broadcast state; everything else reads the
 /// playback.
-RoomPictureState pictureStateOf(RoomState state, {bool slow = false}) {
-  if (state.room == null) {
-    return _of(RoomPictureKind.entering, '正在打开房间', busy: true);
-  }
+RoomPictureState pictureStateOf(Translations t, RoomState state, {bool slow = false}) {
+  // The failure wins over the missing detail: a room that never loaded
+  // would otherwise stay on the "opening" spinner forever.
   if (state.error != null) {
+    final opening = state.room == null;
     return _of(
-      RoomPictureKind.detailFailed,
-      state.error!,
+      opening ? RoomPictureKind.detailFailed : RoomPictureKind.playbackFailed,
+      opening ? t.room.detailFailed : t.room.playbackFailed,
+      reason: state.error,
       actions: const [RoomPictureAction.retry, RoomPictureAction.back],
       dim: RoomPictureDim.heavy,
     );
   }
+  if (state.room == null) {
+    return _of(RoomPictureKind.entering, t.room.openingRoom, busy: true);
+  }
   final room = state.room!;
   if (!room.broadcast.isLiveNow) {
-    return _offline(room);
+    return _offline(t, room);
   }
   // Playback reads: the handle is the room's proof of a stream.
   final playback = state.playback;
@@ -154,29 +159,30 @@ RoomPictureState pictureStateOf(RoomState state, {bool slow = false}) {
   if (playback.playback == PlayerPlaybackState.error) {
     return _of(
       RoomPictureKind.playbackFailed,
-      '播放失败',
+      t.room.playbackFailed,
+      reason: state.error,
       actions: [RoomPictureAction.retry, ...lines],
       dim: RoomPictureDim.heavy,
     );
   }
   if (playback.playback == PlayerPlaybackState.buffering) {
-    return _of(RoomPictureKind.buffering, '缓冲中', busy: true);
+    return _of(RoomPictureKind.buffering, t.room.buffering, busy: true);
   }
   return switch (playback.playback) {
     PlayerPlaybackState.idle || PlayerPlaybackState.opening =>
       slow
           ? _of(
               RoomPictureKind.slow,
-              '正在连接直播流',
-              reason: '时间有点长，线路可能不稳定',
+              t.room.connecting,
+              reason: t.room.slowReason,
               actions: [...lines, RoomPictureAction.retry],
               busy: true,
             )
-          : _of(RoomPictureKind.connecting, '正在连接直播流', busy: true),
-    PlayerPlaybackState.paused => _of(RoomPictureKind.paused, '已暂停'),
+          : _of(RoomPictureKind.connecting, t.room.connecting, busy: true),
+    PlayerPlaybackState.paused => _of(RoomPictureKind.paused, t.room.paused),
     PlayerPlaybackState.completed => _of(
       RoomPictureKind.replayEnded,
-      '回放已结束',
+      t.room.replayEnded,
       actions: const [RoomPictureAction.playAgain, RoomPictureAction.back],
       dim: RoomPictureDim.heavy,
     ),
@@ -190,29 +196,44 @@ RoomPictureState pictureStateOf(RoomState state, {bool slow = false}) {
 }
 
 /// The offline room's picture, named by what the platform said.
-RoomPictureState _offline(LiveRoom room) {
+RoomPictureState _offline(Translations t, LiveRoom room) {
   final state = switch (room.broadcast.effectiveLiveStatus) {
     LiveStatus.banned => _of(
       RoomPictureKind.banned,
-      '该直播间已被封禁',
+      t.room.banned,
       actions: const [RoomPictureAction.refresh, RoomPictureAction.back],
       dim: RoomPictureDim.cover,
     ),
-    LiveStatus.carousel => _of(RoomPictureKind.carousel, '轮播中', reason: '主播暂时不在，平台正在播放轮播内容', dim: RoomPictureDim.cover),
-    LiveStatus.replay => _of(RoomPictureKind.offline, '主播暂时不在', reason: '有回放可看，回到列表后可从卡片进入', dim: RoomPictureDim.cover),
-    LiveStatus.offline ||
-    LiveStatus.unknown => _of(RoomPictureKind.offline, '主播暂时不在', reason: '开播后这里会看到直播画面', dim: RoomPictureDim.cover),
-    _ => _of(RoomPictureKind.offline, '主播暂时不在', dim: RoomPictureDim.cover),
+    LiveStatus.carousel => _of(
+      RoomPictureKind.carousel,
+      t.room.carousel,
+      reason: t.room.carouselReason,
+      actions: const [RoomPictureAction.refresh, RoomPictureAction.back],
+      dim: RoomPictureDim.cover,
+    ),
+    LiveStatus.replay => _of(
+      RoomPictureKind.offline,
+      t.room.offlineTitle,
+      reason: t.room.offlineReplayReason,
+      actions: const [RoomPictureAction.refresh, RoomPictureAction.back],
+      dim: RoomPictureDim.cover,
+    ),
+    LiveStatus.offline || LiveStatus.unknown => _of(
+      RoomPictureKind.offline,
+      t.room.offlineTitle,
+      reason: t.room.offlineReason,
+      actions: const [RoomPictureAction.refresh, RoomPictureAction.back],
+      dim: RoomPictureDim.cover,
+    ),
+    _ => _of(
+      RoomPictureKind.offline,
+      t.room.offlineTitle,
+      actions: const [RoomPictureAction.refresh, RoomPictureAction.back],
+      dim: RoomPictureDim.cover,
+    ),
   };
   return state;
 }
-
-/// The picture state of the open room, derived fresh on every watch of
-/// [roomProvider]; the page's slow flag rides with the room's state — the
-/// controller keeps it, so no parameter is needed here.
-final roomPictureProvider = Provider<RoomPictureState>((ref) {
-  return pictureStateOf(ref.watch(roomProvider), slow: ref.watch(roomSlowProvider));
-});
 
 /// Whether the room's opening stream has outlived the overlay's patience;
 /// the room page's timer owns it and the overlay reads it from here.
