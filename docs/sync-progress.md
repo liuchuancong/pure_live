@@ -229,6 +229,20 @@
 
 | 2026-10-25 11:34 | 图库模型 built_value + 来源国际化 | ✅ | analyze 0 / build bundle exit 0 | `WallpaperSource`/`WallpaperCategory`/`WallpaperItem` 由 record 改为 built_value（生成 `.g.dart`，builder/不可变），目录只保留 id/query/pageSize；5 个来源名与 26 个分类名全部移入 slang（`wallpaperSource*`/`wallpaperCategory*`），删除 Dart 内硬编码中英文；图库请求增加 generation 守卫，切源/切分类时旧请求不会写回；移除旧的 `backgroundOfficial/backgroundBing/backgroundLiveWallpapers`。deepin 作品标题保留原名。运行期未目视 |
 
+| 2026-10-25 15:48 | 背景路由拆分 + 来源预览 | ✅ | analyze 0 / build bundle exit 0 / 1280×800 运行期目视 | 「背景」改为总览 + 4 个来源路由（在线图片 / 在线视频 / 纯色与渐变 / 从设备），桌面内容区切换、手机平板推 `SettingsSectionRoute`；图片与视频各自列出来源 chips（图片 4 源、视频 iTab 动态壁纸）、分类 chips、分页网格；点缩略图打开预览对话框，视频预览用独立 `PureBackground` 播放，确认「应用」才替换背景，取消不变；总览保留当前背景预览、填充/遮罩/模糊/清除；删除旧混排 `_BackgroundPane` 与 `showBackgroundLibrary` 面板，搜索索引改指向 4 个子页。未同步随机图片 API 组。运行期已看总览/图片/视频/纯色/设备与预览对话框；本机网络未取到 CDN 缩略图，失败占位可见 |
+
+| 2026-10-25 16:42 | 随机图源（背景） | ✅ | dart analyze lib 0 / flutter build bundle exit 0 / Windows 运行期取图+应用+换一张 | 新增「随机图源」背景子页：参考的 7 组 82 个随机图源（必应/栗次元/无铭/UAPI/360/其他/性感），支持 direct、JSON 取址、alcy 随机分类三种请求；桌面 UA、代理复用、JSON 键递归取址、`&amp;` 反转义、25s 超时、字节魔数校验（JPEG/PNG/GIF/BMP/WebP，拒绝 AVIF/HEIC 与 HTML/JSON 信封）；取到的字节按 FNV 内容哈希写入 `data/background/random-*.ext`，旧图删除；预览对话框可“换一张”、重试，确认后才替换背景。分组/来源名全部进新 slang 命名空间 `wallpaper`。运行期验证 UAPI 组：11.4s 取到并显示，应用后背景与 toast 生效；发现共享 HTTP 缓存会让“换一张”返回同一张，随机请求改为 `cache: false`，复测第二张不同。
+
+### 背景设置：路由与预览（2026-10-25）
+
+- 结构对齐参考的分来源页面，不再把所有来源塞进一张长页：设置 → 个性化 → 背景是总览（当前背景、来源入口、显示项），四个子页分别是「在线图片」「在线视频」「纯色与渐变」「从设备」。桌面在内容区切换并保留侧栏，手机/平板走路由；面包屑递归显示 `设置 › 个性化 › 背景 › 子页`。
+- 在线图片页：官方 / Wallhaven / Bing / deepin 四个来源 chips，各自分类 chips、缩略图网格、加载更多；点缩略图弹大图预览，「应用」才写入背景。
+- 在线视频页：iTab 动态壁纸来源，缩略图带播放标记；预览对话框内用 `PureBackground` + `AppBackgroundVideoSource` 实际播放，关闭即释放播放器。
+- 纯色与渐变页保留调色板与渐变块；从设备页保留图片/视频的本地上传与 http(s) 地址输入。总览页显示当前背景预览（视频不重复创建解码器，只提示应用后播放）、填充、遮罩、模糊与清除。
+- 图库客户端（`background_library.dart`）只保留取数与分页；旧的图库面板、6 张快捷图与 `showBackgroundLibrary` 一并移除，避免两套来源入口并存。设置搜索覆盖新的四个子页及其行。
+- 总览的当前背景预览限制在 480px 宽（16:9），不会再把来源入口挤出首屏；图片加载失败时显示「图片无法加载」占位，而不是一块空白。预览对话框标题用固定的「壁纸预览」，不拿 iTab 官方源的哈希文件名当标题；网格的选中环只在对应类型确实生效时出现。
+- 验证：`dart analyze lib` 0、`flutter build bundle` exit 0；Windows debug 1280×800 实际点击走查：总览 / 在线图片 / 在线视频（预览对话框）/ 纯色与渐变（应用后背景实时变化）/ 从设备 / 面包屑返回。本机网络未加载到 CDN 缩略图与视频帧，所以只验证了占位与对话框结构，未验证真实图像/视频像素。
+
 ### Bilibili 视频站（2026-10-25）
 
 - 入口：VOD 模块 `VodPage` 四个表面 —— 热门（`/x/web-interface/popular`，`no_more` 收尾、请求窗口 ≤50）、排行（`ranking/v2`，经典 rid、单页）、分区（`region/feed/rcmd`，channel id 1005/1008/… 分页，空页收尾）、搜索（`search/type`，综合/播放/最新/弹幕/收藏 + 时长档，窗口 ≤50）。
@@ -269,6 +283,26 @@
 - 播放器的暗底文字/控制条/进度线改用固定白色等级（浅色主题下不再深字压深底）；错误遮罩标题本地化（房间信息失败/播放失败），原始错误只作为两行截断说明，两个操作仍走 desen_ui 按钮。
 - 未完成：聊天列的详情面板、超级聊天/弹幕设置 tabs、聊天折叠手柄、本地发送器，以及参考的完整播放器手势；TwitCasting 示例流没有重放，实际播放失败是否仍发生取决于源。
 
+### 设置：个性化总览（2026-10-25）
+
+- 参考 Windows「个性化」：设置侧栏不再单列「外观」「背景」，改成一个「个性化」入口。入口页顶部是当前主题预览 + 跟随系统/浅色/深色三张主题缩略图（点选立即应用），下面是个性化设置行：背景（显示当前类型）与外观（显示当前模式）。
+- 子页是可返回的独立页面：手机/平板走 `SettingsSectionRoute` 路由；桌面在设置内容区切换并保留侧栏，页头显示「个性化 › 背景/外观」面包屑，返回键回总览。侧栏在子页时仍高亮「个性化」。
+- 设置搜索改为内容区顶部居中的搜索框（最大 560px），没有在标题栏新增搜索图标；搜索结果包含嵌套在个性化里的外观/背景页及其行。
+- 窗口标题条不再跟随 mobile/desktop 内容布局：自绘窗口在窄窗仍显示标题条，推入的设置/分区/网页/房间/IPTV/Bilibili 路由也补上标题条（播放全屏与窗口全屏时隐藏）；系统标题栏和手机平台仍由平台负责。
+- 验证：`dart analyze lib` 0、`flutter build bundle` exit 0；未做运行期目视。
+
+### 设置信息架构与播放器（2026-10-25）
+
+- 侧栏改成 Windows 式分类：直播模块为「直播 / 个性化 / 播放 / 系统」，IPTV、Bilibili 视频各自把模块分类放在最前，最后是「关于」。每个分类进入总览页，再打开子页；桌面保留侧栏并在内容区切换，手机/平板走 `SettingsSectionRoute`。
+- 子页路径只保留顶部一条面包屑：桌面内容头的「设置 › 分类 › 子页」可点分类返回，设置面板内不再重复大号面包屑，只显示子页标题与说明；手机仍用路由 AppBar 的返回。
+- 合并重复页面：直播资源 = 平台显示/排序/账号 + 关注自动刷新；弹幕 = 屏蔽关键字/用户 + 样式 + 小窗弹幕；数据与缓存 = 观看历史/关注导入导出 + 封面缓存。播放分类下保留「播放偏好」与「播放器内核」两个子页；系统分类含浏览与窗口、网络代理、平台节点、日志、数据与缓存、备份与恢复。
+- 首页导航也按平台定义：Windows/macOS/Linux 在任何窗口宽度都保留桌面侧栏（窄窗自动收成图标轨），手机/平板才用底部栏/抽屉；桌面窄窗隐藏内容区 320px 工具栏搜索，避免挤掉面包屑。
+- 播放器内核：桌面只注册 mpv（与旧参考一致，页面如实说明）；Android/iOS 额外注册 IJK 与 BetterPlayer，设置中可切换并以 `preferredBackend` 传给直播/VOD 播放，选择持久化到 `player.backend`。
+- 播放器内核页按旧参考补全：播放器代理（独立 host/port，应用到 mpv `http-proxy`）、硬件解码开关与 hwdec 解码器、强制销毁播放器、6 个播放预设（均衡/安卓兼容/RTX VSR/低配/弱网/低延迟，含额外 mpv 属性）、Anime4K 三档、mpv 高级设置（自定义 vo/ao、video-sync、插帧、缩放、反交错、hwdec-codecs、WASAPI 独占）、恢复默认、mpv 官方文档和播放器指南。调参持久化到 `player.tuning` / `player.proxy`，对当前与之后的 handle 生效；输出驱动变化会重建引擎。
+- 首页「链接解析」现在只做链接解析；原先塞在同一入口的「平台节点」「日志」移到设置 → 系统，「缓存清理」由设置 → 系统 → 数据与缓存承担。
+- Anime4K 超分辨率：复制旧参考的 9 个 shader；关闭/效率/质量三档持久化到 `player.superResolution`，通过 mpv `glsl-shaders` 应用到当前 handle 与之后打开的播放器，仅 Windows 显示与生效。硬件解码仍通过 `hwdec` 写入。
+- 验证：`dart analyze lib` 0、`flutter build bundle` exit 0，shader 已进入 bundle；未做运行期目视。
+
 ## 运行注意事项（2026-10-25）
 
 - 两个自动化（「合并」与「PureLive 页面同步续跑」）在 01:40–01:56 同时改过 multiview/recorder，导致页面与控制器短暂不匹配；已停止两个运行并暂停任务，人工核对后已恢复一致。
@@ -278,5 +312,78 @@
 
 - 账号/备份的具体范围与优先级需用户确认（TV 已改为复用桌面外壳，不再单独排期）。
 - 音乐的数据来源需产品决策；VOD 已定为 Bilibili（2026-10-25）。
-- 参考里没有后端支撑的偏好（封面自动刷新、液体玻璃、动态取色、字号微调、底部导航栏开关）不伪造。
+- 参考里没有后端支撑的偏好（封面自动刷新、液体玻璃、字号微调、底部导航栏开关）不伪造。
+- 加载样式全量画廊：参考的 85 种动画来自 `flutter_spinkit`、`loading_animation_widget`、`loading_indicator` 三个包；用户未批准新增依赖，THEME-06 现提供 10 种 Flutter 原语实现，其余 75 种隐藏而不伪造。若同意加包再补齐。
 - 更新检查指向 fork `liuchuancong/pure_live` 的 master `assets/version.json`；当前 feed 仍是 3.1.19（build 4108），应用版本 0.1.0。发布 v2 时需同步该文件（版本/构建号/平台下载地址），否则会一直提示可更新。应用内下载需要发布产物的命名约定，暂只打开下载页。
+
+### 设置全量同步清单（2026-10-25）
+
+- 新增 `docs/settings-sync-inventory.md`：按参考 `pure_live-master` 的 10 个入口 + 全部子页逐项列出控件键、类型/默认值、存储键、消费点和我们的现状，给出 8 个批次（房间卡片/页面/导航 → 通用/窗口/配置预览 → 视频/PiP/播放行为 → 弹幕 → 竖屏 → 刷新/缓存/字体/加载 → 本机互动 → 域设置复核）。
+- 明确验收规则：每个控件必须有真实消费点；平台不支持的项隐藏而不是做假开关；新设置进入备份、搜索与重置路径。
+- 当前最大缺口：视频页 61 键（仅对齐约 8 项）、弹幕约 30 项（约 1/3）、房间卡片 35 键（仅观众指标）、竖屏 39 键、主题/字体/加载样式、通用/窗口/启动、分页/导航。
+- 本轮先补了背景的随机图源；下一批从房间卡片 + 页面 + 导航开始。
+
+### 设置逐项审查清单（2026-10-25）
+
+- 新增 `docs/settings-review-checklist.md`：从参考的 185 个持久化 `hive*` 键 + 设置页动作/链接逐条展开，共 263 项，一行一项，标注参考文件:行号、默认值、消费点、当前状态，供逐项审查后再实现。
+- 顶部保留 17 个分区（通用/主题/页面导航/刷新/视频/内核/竖屏/弹幕/房间卡片/字体/加载/观众/代理/缓存/背景/IPTV/录制/备份/本机互动/内部键）。
+- 工作流改为：审查一项 → 只实现该项的 prefs + 消费点 + UI + l10n + 备份 + 验证 → 勾选并记录，不再按页面一次性大改。
+
+| 2026-10-25 17:00 | 设置 GEN-01/02 刷新率 | ✅ | dart analyze lib 0 / flutter build bundle exit 0 / Windows 实机只读 | 用 `live_device` 的 `DisplayRefreshRateService` 接刷新率：`display_refresh_rate_provider.dart` 读 current/max/supported/monitorCount、观察 watch、持久化 `display.refreshRateMode`，按平台能力映射节能 `matchContent(60)` / 均衡 `preferDefault` / 性能 `preferMaximum`；Windows 请求接口不可用时只读，不显示假下拉。新增通用页“显示 → 刷新率”行（当前/最高 Hz、多显示器提示、重新读取），加入备份与设置搜索。Windows 实机显示 240 Hz 只读；Android/iOS 模式选择待真机。 |
+
+| 2026-10-25 17:20 | 设置 VID-18 播放保持屏幕常亮 | ✅ | dart analyze lib 0 / Windows debug build / 设置行实机 | 新增 `keepScreenOnProvider`（`playback.keepScreenOn`，默认 true）与播放偏好页开关；房间页与 IPTV 播放页的 `_syncScreenWake` 改为读取偏好后再取/放 live_device `ScreenAwakeService` 的 wakelock，暂停/失败/关闭设置时释放。加入备份与设置搜索。 |
+
+| 2026-10-25 17:35 | 设置 GEN-05 启动自动检查更新 | ✅ | dart analyze lib 0 / flutter build bundle exit 0 / Windows 实机 version.json 200 | 新增 `updateSettingsProvider`（`updates.autoCheck`，默认 true）与通用页“更新”分组开关；`PureLiveApp` 首帧后若开关开启且尚未检查，静默调用 `versionCheckProvider.check()`，结果由关于页渲染，失败不打断。加入备份与设置搜索。GEN-06 因只有一个 GitHub 发布源，标注为不适用，不造镜像开关。 |
+
+| 2026-10-25 17:50 | 设置 GEN-10 窗口尺寸 | ✅ | dart analyze lib 0 / flutter build bundle exit 0 / Windows 实机应用+重启恢复 | 新增 `windowSizeProvider`（`window.width`/`window.height`）与通用页“窗口尺寸”行/对话框：五个参考预设 + 自定义宽高（400–16384 × 300–16384），应用后通过 `WindowHost.setGeometry` 居中；启动时应用存储尺寸，窗口边缘拖拽 450ms 后回写，加入备份与设置搜索。实机从 1280×800 改为 1600×900，行值更新，重启仍为 1600×900。 |
+
+| 2026-10-25 18:10 | 设置 GEN-09 开机启动（live_device） | ◐ | dart analyze lib/packages 0 / Windows build / CLI 服务直测通过；GUI 运行期被本机策略拒绝 | `live_device` 新增 `StartupService`/`StartupCapabilities`/`StartupException`/`PlatformStartupService`：Windows 写 HKCU Run 键（reg.exe），失败回退到 Startup 文件夹 `.cmd`；读状态按可执行文件目标比对。App 新增 `startupProvider`（系统状态为准，读写超时 6/8s）与通用页开关，失败不再是无限 spinner。CLI 直测 enable/disable 成功；代理启动的 GUI 进程写 Run 返回 Access Denied，回退文件未落盘，需用普通启动方式复测；不伪报成功。 |
+
+| 2026-10-25 18:25 | 设置 GEN-07/08 定时关机 | ✅ 代码完成，未运行期测试 | dart analyze lib 0 / flutter build bundle exit 0 | 参考是“自动关机倒计时”而非关闭按钮倒计时：新增 `autoShutdownProvider`（`exit.autoShutdown.enabled` / `.minutes`，默认关 / 120 分钟，范围 1–525600），启用即从完整时长开始、改时长重启、关闭立即取消；到时桌面 `WindowHost.destroy`+`exit(0)`、移动 `SystemNavigator.pop`。通用页新增“定时关机”分组：开关 + 剩余时间/时长行 + 预设与自定义时长对话框；加入备份与设置搜索。按要求跳过运行期测试。 |
+
+| 2026-10-25 18:40 | 设置 GEN-04 启动动画 | ✅ 代码完成，未运行期测试 | dart analyze lib 0 / flutter build bundle exit 0 | 新增 `splashSettingsProvider`（`ui.splash`，默认 true）与根层 `StartupSplash`：启动时以应用标记覆盖内容区，900ms 保持 + 280ms 淡出后移除；关闭后下次启动直接进主界面。通用页加“启动动画”开关（主窗口），加入备份与设置搜索。按要求跳过运行期测试。 |
+
+| 2026-10-25 18:55 | 设置 PREVIEW-01 配置预览 | ✅ 代码完成，未运行期测试 | dart analyze lib 0 / flutter build bundle exit 0 | 新增 `config_preview_dialog.dart`：以 `captureSettingsSnapshot()` 生成缩进 JSON，只读可选文本 + 复制；关于页加入“配置预览”入口，加入设置搜索。仅展示备份携带的键，不提供编辑。未运行期测试。 |
+
+| 2026-10-25 19:27 | 设置 GEN-11 退出确认 | ✅ 代码完成，未运行期点击测试 | dart analyze lib 0 / live_shell analyze 0 / live_shell 147 tests passed / flutter build bundle exit 0 | 改动：`packages/live_shell` 的 `close_disposition.dart`（`CloseChoice`）、`shell_settings.dart`（`dontAskExit`）、`desktop_shell.dart`（`confirmClose` + 单飞关闭流程）；应用新增 `app/window_close_dialog.dart`、`app/routing/root_navigator.dart`，改 `app_router.dart`、`app_bootstrap.dart`（`storedDontAskExit`、Windows/Linux 确认、macOS 不接）、`shell_settings_provider.dart`（`rememberCloseChoice/setDontAskExit`）、`settings_page.dart`、`settings_search.dart`、`backup_settings.dart`、settings 中英文 JSON 与 slang 生成文件。消费点：`DesktopShell._handleClose` 读取 `ShellSettings.dontAskExit` 并询问，回答回写 `shell.closeAction`/`shell.dontAskExit`；勾选后直接执行关闭动作。未做运行期点击验证，也未实现参考在关闭动作失败时回滚 `dontAskExit` 的分支。 |
+
+| 2026-10-25 19:46 | 设置 GEN-12 Android 交互自适应刷新率 | ✅ 代码完成，未在 Android 真机验证 | dart analyze lib 0 / flutter build bundle exit 0 | 对照参考 `AdaptiveRefreshRateController`/`AdaptiveRefreshRateScope`：新增 `app/refresh_rate_interaction_scope.dart` 包住根内容，收集指针按下/移动/抬起、滚动开始/更新/结束与 resumed/inactive/paused 生命周期；`display_refresh_rate_provider.dart` 增加 Android 策略：节能与均衡先 `preferDefault`，均衡仅交互时 `preferMaximum`、停手 1.5s 回落，性能前台保持最高、切后台释放；请求串行合并，选择新档清除旧 burst；Android 上节能/均衡不再依赖内容匹配、节能不固定 60 Hz，其他平台保持原映射。更新 settings 中英文刷新率说明与档位名称（slang 已生成）。 | 
+
+| 2026-10-25 19:47 | 设置 GEN-14 `autoRefreshTime` 审查 | ➖ 参考自身不适用 | 全文检索确认 | 参考只有声明、备份/恢复和旧配置迁移（`app_settings_controller.dart:43/196/222/249/272`），没有任何设置控件或运行期读取；关注页定时刷新实际由 `refreshConfigController.autoRefreshFavorite/autoRefreshInterval` 驱动。我们不为遗留键造无效开关，清单标为已核实不适用。 |
+
+| 2026-10-25 19:58 | 设置 GEN-15 关注页紧凑模式 | ✅ 代码完成，未运行期点击测试 | dart analyze lib 0 / flutter build bundle exit 0 | 改动：`browse_settings_providers.dart`（`FavoritesDensityController`，键 `browse.denseFavorites`，默认 true）、`settings_refresh.dart`（恢复/跨窗口刷新）、`favorites_page.dart`（消费网格列宽）、`settings_page.dart`（通用页浏览偏好开关）、`settings_search.dart`、`backup_settings.dart`、settings 中英文 JSON 与 slang 生成文件。消费点：`FavoritesPage` 按开关选择 cardExtent；紧凑模式小卡片（上限 280px、多列），关闭后按参考 300px 下限计算列宽（手机单列、大卡片）。未验证部分：未做运行期点击/目视，未在真机确认列宽切换。 |
+
+| 2026-10-25 20:02 | 设置 REF-01/02/03 关注刷新 | ✅ 代码完成，未运行期测试 | dart analyze lib 0 / flutter build bundle exit 0 | REF-01 复核已有周期刷新开关、时钟重挂、备份/搜索；REF-02 新增 `refresh.follows.onResume`（默认 true）与设置开关，`FavoritesPage` 在 `resumed` 后 450ms 静默刷新全部关注，15s 内刚刷新则跳过，离开前台取消待执行；REF-03 把默认间隔从 15 改为参考的 30，并在读写处夹取 5–360。改动：`refresh_settings_providers.dart`、`favorites_page.dart`、`settings_page.dart`、`backup_settings.dart`。文案与搜索项原已存在，未改 slang。 | 
+
+| 2026-10-25 20:03 | 设置 REF-04 最大并发刷新 | ✅ 代码完成，未运行期测试 | dart analyze lib 0 / flutter build bundle exit 0 | 新增 `refresh.maxConcurrent`（默认 4，范围 1–20）与 `maxConcurrentRefreshProvider`；设置 → 资源 → 刷新加入 20 档选择（4 标推荐）；关注页刷新批大小由硬编码 4 改为读设置，观看历史刷新由逐条串行改为同一边界分批并发，并让单个房间异常不再中断整轮；加入备份、搜索、恢复后 provider 刷新与中英文文案（slang 已生成）。 | 
+
+| 2026-10-25 20:06 | 设置 REF-05/06 封面自动刷新 | ✅ 代码完成，未运行期等待周期 | dart analyze lib 0 / flutter build bundle exit 0 | 新增 `thumbnail_refresh_provider.dart`：`refresh.thumbnails.auto`（默认 false）与 `refresh.thumbnails.minutes`（默认 30，5–360），每个窗口首帧启动计时器，跨窗口 revision/备份恢复后重排；到点同时清空图片磁盘缓存与内存图片缓存，房间窗口清自己的 manager；设置 → 资源 → 刷新新增开关与八档间隔（仅开关开启时显示）；加入备份、搜索与中英文文案（slang 已生成）。未验证部分：未实际等待 5 分钟观察缓存清空/重新下载。 | 
+
+| 2026-10-25 20:15 | 设置 THEME-01/04/05 主题与网格间距 | ✅ | dart analyze lib 0 / flutter build bundle exit 0 | 复核主题模式（默认跟随系统、三档、备份/搜索）；把网格横/纵间距的范围与默认值从 0–32 / 16 改为参考的 0–64 / 6，`browse_settings_providers.dart` 的常量同时驱动设置滑杆与所有共享 `CardGrid`，已进备份与搜索。未运行期目视间距变化。 | 
+
+| 2026-10-25 20:27 | 设置 IPTV-04 自定义 User-Agent | ✅ 代码完成，未运行期验证 | dart analyze lib 0 / flutter build bundle exit 0 | 新增 `iptv_user_agent.dart`（`iptv.userAgent`，默认空；空白清除）与设置 → IPTV 文本框；`iptvImporterProvider` 把 UA 传给播放列表/节目单下载 fetcher，IPTV 播放与投屏在条目未自带 UA 时补上（条目自带优先）；加入备份、搜索、`settings_refresh` 与 iptv 中英文文案（slang 已生成）。未验证部分：未实际抓包确认 UA 到达服务端、未播放验证。 | 
+
+| 2026-10-25 20:42 | 设置 VID-01 全局静音 | ✅ 代码完成，未运行期播放验证 | 定向 dart analyze 0；全量 `dart analyze lib` 无 error（仅并行会话 `window_media_session.dart` 的 1 条 info）；`flutter build bundle` exit 0（20:45，产物已更新） | 新增 `playback.globalMute`（默认 false）与播放偏好「全局静音」开关；直播间按 `_muted || _globalMute` 生效并实时监听，IPTV/VOD 在句柄到达与设置变化时应用，多画面墙把全局静音计入可听判断且按钮可清除；各播放器的取消静音会关闭全局静音，避免假按钮；预置静音 `playback.muted` 保留为用户自己的选择；加入备份、搜索、中英文文案（slang 已生成）。未验证部分：未实际播放并切换全局静音。 | 
+
+| 2026-10-25 20:45 | 设置 THEME-02 任意主题色 | ✅ 代码完成，未运行期点击测试 | dart analyze lib 0 / flutter build bundle exit 0（最终复跑；并发会话的 `window_media_session.dart` 收尾前曾阻塞全量分析，未修改该外部文件） | 改动 `theme_persistence.dart`（`theme.seed` 现可存命名名或 `#RRGGBB`，新增 `parseSeedColor`/`encodeSeedColor`/`storeSeed`）、`stored_theme.dart`（启动解析自定义色）、`theme_settings.dart`（`AppThemeScope.seedColor` 区分自定义与系统/命名色）、`pure_live_app.dart`（`_customSeedColor`，仅 seed 真正变化时写盘，避免冻结系统取色）、新增 `theme_color_dialog.dart`（系统取色 + 6 命名色 + 参考 14 预设色 + HSV 色板/色相条/hex 输入，确认后应用）、`settings_page.dart`（主题色行改为取色对话框）、`settings_search.dart`（自定义/色盘/十六进制关键词）、settings 中英文 JSON + slang 生成文件。消费点：`DsThemeData(seed: settings.seed)` 即时重建按钮/选中态/强调色；重启由 `readStoredAppThemeSettings` 从 `theme.seed` 恢复；备份沿用 `theme.seed`。未验证：未运行期点击取色、未重启验证自定义色恢复。 | 
+
+| 2026-10-25 21:01 | 设置 VID-02/03 移动/桌面默认音量 | ✅ 代码完成，未运行期验证 | dart analyze lib 0 / flutter build bundle exit 0 | 把单一 `playback.volume` 拆成 `playback.mobileVolume`（默认 0.5）与 `playback.desktopVolume`（默认 1.0），读写夹取 0–1；设置 → 播放偏好「默认音量」按当前平台（Android/iOS 含 TV 为移动，其余桌面）读取/写入，旧 `playback.volume` 只在对应平台作为迁移回退并在改动后移除；直播间、IPTV、VOD、多画面新播放器都用当前平台默认音量（IPTV/VOD 原先未消费默认音量，本次补上）；加入备份两键、搜索关键词与默认值说明（slang 已生成）。未验证部分：未在手机/桌面分别打开播放器确认初始音量。 | 
+
+| 2026-10-25 21:05 | 设置 THEME-03 动态取色 | ✅ 代码完成，未运行期点击测试 | dart analyze lib 0 / flutter build bundle exit 0 | 新增 `lib/app/providers/dynamic_color_provider.dart`：`theme.dynamicColor`（默认 false）与 `dynamicColorProvider`；`dynamicColorSeedProvider` 用已有的 `dynamic_color` 读平台调色板（Android 12+ 壁纸 CorePalette 主色，Windows/macOS/Linux 系统强调色，iOS/web 返回 null）。消费点：`PureLiveApp` 在开关开启且调色板可用时把主色作为 `DsThemeData` 的 seed 覆盖存储主题色，`DsThemeData(seed)` 驱动全应用强调色；`AppThemeScope.dynamicSeedColor` 供外观页与个性化预览读取。外观页新增「动态取色」开关（无调色板的平台不渲染），开启时主题色行只读并显示「跟随系统动态取色」；个性化三张主题预览同步使用动态 seed。改动：`theme_persistence.dart`（读写）、`theme_settings.dart`（scope 字段）、`pure_live_app.dart`、`settings_refresh.dart`（跨窗口/恢复失效）、`settings_page.dart`、`settings_search.dart`、`backup_settings.dart`（`theme.dynamicColor`）、settings 中英文 JSON + slang 生成文件。未验证部分：未运行期点击；Android 壁纸调色板未在真机验证；Windows 默认 seed 本就取系统强调色，默认外观下开关前后颜色相同，选过自定义/命名主题色后差异可见。 | 
+
+| 2026-10-25 21:13 | 设置 VID-04 首选清晰度 | ✅ 代码完成，未运行期验证 | 本项定向 `dart analyze` 0；`flutter build bundle` exit 0（21:12，产物已更新，包含本项）；21:14 起另一会话在改 loading style / live_storage，当前全量 analyze 被其半成品打断，与本项无关 | `playback.quality` 从“站点原始标签或自动”改为参考的五档优先清晰度（原画/蓝光8M/蓝光4M/超清/流畅，默认原画）；设置 → 播放偏好五档选择；新增 `preferredQualityIndex`，先精确匹配标签、否则按档位比例选最近的站点画质；房间 `RoomController._pickQuality` 与多画面 `_pickQuality` 共用；旧存值蓝光/高清/标清映射到最近档位；加入蓝光 8M/4M 中英文文案、搜索关键词与备份沿用。未验证部分：未在各平台/各站点实际对比画质映射。 | 
+
+| 2026-10-25 21:19 | 设置 THEME-06 加载样式 | ◐ 代码完成，参考 85 种中实现 10 种，未运行期点击测试 | dart analyze lib 0 / flutter build bundle exit 0（21:19，产物已更新） | 新增 `lib/app/providers/loading_style_provider.dart`（`theme.loadingStyle`，默认 `default`，未知键归一）与 `lib/shared/widgets/app_loading_indicator.dart`（10 种 Flutter 原语动画：default/pulse/doubleBounce/threeBounce/wave/fadingCircle/cubeGrid/ripple/orbit/lineScale；default 仍用 `DsSpinner`；遵守 reduced-motion；无新增依赖）。新增 `lib/features/settings/loading_style_dialog.dart`：外观页「加载样式」行带静态预览，打开画廊对话框，10 种动画实时预览、选中即写。消费点：`CardGrid` 加载页脚/下拉刷新、房间聊天与播放器、IPTV 频道/来源/播放页、多画面、VOD、WebDAV、背景图库、版本记录、工具箱等页面加载状态。改动另含 `theme_persistence.dart`、`settings_page.dart`、`settings_search.dart`、`backup_settings.dart`（`theme.loadingStyle`）、`settings_refresh.dart`、settings 中英文 JSON + slang 生成文件。参考其余 75 种动画依赖 `flutter_spinkit`/`loading_animation_widget`/`loading_indicator`，未获准新增依赖，故不展示。未验证：未运行期点击/目视各动画尺寸与画廊排版；75 种外部动画未同步。 |
+
+| 2026-10-25 21:25 | 设置 THEME-07 加载颜色 | ✅ 代码完成，未运行期点击测试 | dart analyze lib 0 / flutter build bundle exit 0（21:24，产物已更新） | 新增 `theme.loadingColor`（默认空=跟随主题强调色；读取接受 `#RRGGBB`/`#AARRGGBB`，空白即清除）与 `loadingColorProvider`；`AppLoadingIndicator` 的着色顺序改为“显式 color > 加载颜色设置 > 图标色 > 强调色”，因此 `CardGrid`、房间聊天/播放器、IPTV、多画面、VOD、WebDAV、背景图库、版本、工具箱等加载状态统一换色，视频暗底等显式白色仍优先。加载样式对话框中新增「加载颜色」行与取色对话框：跟随主题、14 个参考预设色、任意 6/8 位十六进制（8 位含透明度），确认后写入。改动：`theme_persistence.dart`（读写/ARGB 编码）、`loading_style_provider.dart`（provider）、`app_loading_indicator.dart`（消费）、`loading_style_dialog.dart`（行+取色）、`settings_search.dart`、`backup_settings.dart`（`theme.loadingColor`）、`settings_refresh.dart`、settings 中英文 JSON + slang 生成文件。未验证：未运行期点击取色/目视半透明加载圈；THEME-06 已由并发会话于 21:19 完成并记录，本轮按下一未勾选项推进。 |
+
+| 2026-10-25 21:29 | 设置 THEME-08 语言 | ✅ 复核完成（无代码改动） | dart analyze lib 0 / flutter build bundle exit 0（21:27） | 复核参考 `appearance_pages.dart:143-179`（未选择时跟随系统，行内显示当前语言）与 3.x `theme_settings_controller.dart:20`（键 `language`，默认简体中文）后确认现有实现完整：`app.locale`（null=跟随系统，slang `base_locale` 为 zh-CN）；`PureLiveApp` 启动与跨窗口/恢复时 `LocaleSettings.setLocaleRawSync`，`AppLocaleScope` 供外观页读写，`_updateLocale` 写盘并立即应用；设置行（跟随系统/简体中文/English）、备份 `app.locale`、搜索与中英文文案均已有。只提供已翻译的两种语言。未验证部分：未运行期点击切换/重启确认持久化。 |
+
+| 2026-10-25 21:33 | 设置 THEME-08 语言（并发收口补强） | ✅ 代码完成，未运行期切换 | dart analyze lib 0 / flutter build bundle exit 0（21:33，产物已更新） | 本轮开始时按旧清单选中 THEME-08；执行中另一会话于 21:29 已复核并勾选该项，保留其记录、未覆盖。本轮补的代码：`ThemePersistence.normalizeLocaleCode` 归一化 `zh`/`zh-*`/`简体中文`/`中文`/`English` 等旧值或参考显示名，`readLocale` 与 `PureLiveApp._updateLocale` 只读写规范代码 `zh-CN`/`en`，未知值回退跟随系统；外观页语言选项改用 slang 新键 `settings.languageSimplifiedChinese`/`languageEnglish`（中英文 JSON 已生成）。消费点：根 `TranslationProvider` + `DsApp.locale` + `AppLocaleScope`；备份键 `app.locale` 与设置搜索原已存在。未验证部分：未运行期切换语言/重启恢复；保留现有“跟随系统”选项与默认（参考仅英语/简体中文且默认简体中文）。 |
+
+| 2026-10-25 21:53 | 设置 THEME-09 文本缩放 | ✅ 代码完成，未运行期点击测试 | dart analyze lib 0 / flutter build bundle exit 0（21:52，kernel_blob 已更新） | 对照参考 `font_settings_controller.dart:18-20/41`（默认 `defaultTextScaleFactor` 1.0，范围 0.5–2.0）与 `theme_settings_page.dart:160-185`（主题页滑杆 + 预览），新增 `app/providers/text_scale_provider.dart`：键 `theme.textScale`（floating，默认 1.0，读写/归一化夹取 0.5–2.0，非有限值回退默认）与 `textScaleFactorProvider`；消费点 `PureLiveApp` 的 builder 用 `MediaQuery.copyWith(textScaler: TextScaler.linear(textScale))` 包住全部路由与启动遮罩，主窗口和克隆窗口都走同一根；外观页“字体和语言”新增文本缩放行（0.5×–2.0×、15 档、显示百分比）和实时预览行；加入备份 `theme.textScale`、设置搜索（文本/字号/缩放/倍率）、`settings_refresh` 的 provider 失效列表和中英文文案（slang 已生成）。未验证部分：未运行期拖动滑杆/目视 0.5×–2.0× 下各页面排版，未重启确认恢复。 |
+
+## 自动化（2026-10-25）
+
+- 已启用本地自动任务「PureLive 设置清单逐项同步」：每 30 分钟独立运行，读取 `docs/settings-review-checklist.md`，每轮只完成第一项未勾选项，补持久化/消费点/UI/l10n/备份/搜索并更新清单与台账；验证 `dart analyze lib` 与 `flutter build bundle`，不当场做 GUI 点击测试。
+- 另外两个旧自动化（「合并」「PureLive 页面同步续跑」）保持 disabled；只保留这一个启用，避免并发写。
