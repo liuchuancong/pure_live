@@ -4,12 +4,16 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/app/background/app_background.dart' show AppBackground;
 import 'package:pure_live/app/routing/app_router.dart' show appRouterProvider;
 import 'package:pure_live/app/theme/system_accent_color.dart' show readSystemAccentColor;
 import 'package:pure_live/app/theme/theme_persistence.dart';
 import 'package:pure_live/app/theme/theme_settings.dart' show AppThemeScope, AppThemeSettings;
+import 'package:pure_live/features/iptv/iptv_auto_update.dart' show iptvAutoUpdaterProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/focus/focus_auto_scroll.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart';
+import 'package:pure_uikit_background/pure_uikit_background.dart' show AppVisibilityObserver;
 
 /// The root: `DsApp` over the viewer's theme settings — the seed from the
 /// platform accent or the appearance pane's named tone, light/dark, density
@@ -49,6 +53,12 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       if (mode != null) b.mode = mode;
       final corners = ThemePersistence.readCorners();
       if (corners != null) b.cornerStyle = corners;
+      final contrast = ThemePersistence.readContrast();
+      if (contrast != null) b.contrast = contrast;
+      final selection = ThemePersistence.readSelectionStyle();
+      if (selection != null) b.selectionStyle = selection;
+      final autoClash = ThemePersistence.readAutoClashRule();
+      if (autoClash != null) b.autoClashRule = autoClash;
       b
         ..pureBlack = ThemePersistence.readPureBlack()
         ..density = ThemePersistence.readDensity();
@@ -58,6 +68,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     // The image cache's configured cap is applied once per start, off the
     // first frame so a big tree never waits on the disk walk.
     WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(enforceConfiguredImageCacheLimit()));
+    // The guide updater belongs to the process, not to the IPTV page: it
+    // starts here and keeps the schedule across tabs and pages.
+    ref.read(iptvAutoUpdaterProvider);
     _localeCode = ThemePersistence.readLocale();
     if (_localeCode != null) {
       LocaleSettings.setLocaleRawSync(_localeCode!);
@@ -70,6 +83,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     // them back on the next boot.
     unawaited(ThemePersistence.storeMode(settings.mode));
     unawaited(ThemePersistence.storeCorners(settings.cornerStyle));
+    unawaited(ThemePersistence.storeContrast(settings.contrast));
+    unawaited(ThemePersistence.storeSelectionStyle(settings.selectionStyle));
+    unawaited(ThemePersistence.storeAutoClashRule(value: settings.autoClashRule));
     unawaited(ThemePersistence.storePureBlack(value: settings.pureBlack));
     unawaited(ThemePersistence.storeDensity(settings.density));
     unawaited(ThemePersistence.storeFont(settings.fontFamily));
@@ -104,17 +120,26 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
         // RefreshIndicator's semantics) need MaterialLocalizations; DsApp
         // supplies only the widgets-level ones. Desen's own strings stay —
         // they live under their own type and DsApp appends its delegate.
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
+        localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
         debugShowCheckedModeBanner: false,
         themeMode: _settings.mode,
         theme: _settings.theme(),
-        builder: (context, child) => AppThemeScope(
-          settings: _settings,
-          onChanged: _updateSettings,
-          child: AppLocaleScope(localeCode: _localeCode, onChanged: _updateLocale, child: child!),
+        builder: (context, child) => AppVisibilityObserver(
+          // The wallpaper is the bottom layer of the app: every route sits
+          // over it, and the shell's own fill turns translucent while one
+          // is set. The observer feeds the video's pause signal.
+          child: AppBackground(
+            child: FocusAutoScroll(
+              // A remote or keyboard moves focus by geometry; this reveals
+              // the stop in whichever sidebar, list or settings column
+              // holds it.
+              child: AppThemeScope(
+                settings: _settings,
+                onChanged: _updateSettings,
+                child: AppLocaleScope(localeCode: _localeCode, onChanged: _updateLocale, child: child!),
+              ),
+            ),
+          ),
         ),
       ),
     );

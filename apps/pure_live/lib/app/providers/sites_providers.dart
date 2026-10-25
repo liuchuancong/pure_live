@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
+import 'package:pure_live/app/providers/network_providers.dart' show networkFactoryProvider;
+
 /// The registry of every built-in site, built once per process.
 ///
 /// The sites own no credentials or settings yet; the composition root of
@@ -12,7 +14,10 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 /// H.264 preference) are handed in when the settings store learns to keep
 /// them.
 final sitesProvider = Provider<LiveSiteRegistry>((ref) {
-  return LiveSiteRegistry(createBuiltInLiveSites());
+  // One transport for every site: the proxy and the network log configured
+  // once, rather than each adapter opening its own silent client.
+  final http = ref.watch(networkFactoryProvider).create();
+  return LiveSiteRegistry(createBuiltInLiveSites(http: http));
 });
 
 /// The site the browsing surfaces (the home feed, the areas, the search)

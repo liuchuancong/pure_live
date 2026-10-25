@@ -14,12 +14,7 @@ import 'package:pure_live/shared/enums/app_module.dart';
 /// the current type's tile alone.
 final class AppSwitcher extends StatelessWidget {
   /// A switcher over [module].
-  const AppSwitcher({
-    required this.module,
-    required this.onModule,
-    this.collapsed = false,
-    super.key,
-  });
+  const AppSwitcher({required this.module, required this.onModule, this.collapsed = false, super.key});
 
   /// The content type the shell shows now.
   final AppModule module;
@@ -43,9 +38,7 @@ final class AppSwitcher extends StatelessWidget {
           DsMenuItem(
             label: Text(candidate.label(t)),
             leading: ModuleTile(module: candidate, size: 22),
-            trailing: candidate == module
-                ? const DsIcon(DsIcons.check, size: 16)
-                : null,
+            trailing: candidate == module ? const DsIcon(DsIcons.check, size: 16) : null,
             onPressed: () => onModule(candidate),
           ),
       ],
@@ -129,7 +122,11 @@ final class AppMark extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(size * 0.3),
         boxShadow: [
-          BoxShadow(color: const Color(0x370B84F3).withValues(alpha: 0.4), blurRadius: size * 0.4, offset: Offset(0, size * 0.12)),
+          BoxShadow(
+            color: const Color(0x370B84F3).withValues(alpha: 0.4),
+            blurRadius: size * 0.4,
+            offset: Offset(0, size * 0.12),
+          ),
         ],
       ),
       child: Center(
@@ -163,10 +160,16 @@ final class ModuleTile extends StatelessWidget {
         color: module.tile,
         borderRadius: BorderRadius.circular(size * 0.3),
         boxShadow: [
-          BoxShadow(color: module.tile.withValues(alpha: 0.30), blurRadius: size * 0.35, offset: Offset(0, size * 0.12)),
+          BoxShadow(
+            color: module.tile.withValues(alpha: 0.30),
+            blurRadius: size * 0.35,
+            offset: Offset(0, size * 0.12),
+          ),
         ],
       ),
-      child: Center(child: DsIcon(module.icon, size: size * 0.6, color: const Color(0xFFFFFFFF))),
+      child: Center(
+        child: DsIcon(module.icon, size: size * 0.6, color: const Color(0xFFFFFFFF)),
+      ),
     );
   }
 }

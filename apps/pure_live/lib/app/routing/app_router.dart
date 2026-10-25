@@ -2,6 +2,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:live_iptv/live_iptv.dart' show IptvChannel;
 import 'package:live_sites/live_sites.dart' show LiveArea;
 import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
 import 'package:pure_live/app/routing/route_observer.dart' show routeObserver;
@@ -9,14 +10,17 @@ import 'package:pure_live/features/areas/area_rooms_page.dart' show AreaRoomsPag
 import 'package:pure_live/features/areas/areas_page.dart' show AreasPage;
 import 'package:pure_live/features/favorites/favorites_page.dart' show FavoritesPage;
 import 'package:pure_live/features/history/history_page.dart' show HistoryPage;
+import 'package:pure_live/features/iptv/iptv_play_page.dart' show IptvPlayPage;
 import 'package:pure_live/features/multiview/multiview_page.dart' show MultiviewPage;
 import 'package:pure_live/features/popular/popular_page.dart' show PopularPage;
 import 'package:pure_live/features/recorder/recorder_page.dart' show RecorderPage;
 import 'package:pure_live/features/room/room_page.dart' show RoomPage;
 import 'package:pure_live/features/search/search_page.dart' show SearchPage;
+import 'package:pure_live/features/search/web_search_page.dart' show WebSearchPage, WebSearchRequest;
 import 'package:pure_live/features/settings/settings_page.dart' show SettingsPage, SettingsSectionPane;
 import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/toolbox/toolbox_page.dart' show ToolboxPage;
+import 'package:pure_live/features/vod/vod_video_page.dart' show VodVideoPage;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_layout.dart' show AppLayout;
 import 'package:pure_live/shared/enums/navigation_item.dart' show NavigationItem;
@@ -314,7 +318,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootNavigatorKey,
     observers: [routeObserver],
     initialLocation: const PopularRoute().location,
-    routes: $appRoutes,
+    routes: [
+      ...$appRoutes,
+      GoRoute(
+        path: RouteNames.iptvPlay,
+        builder: (context, state) => IptvPlayPage(
+          channelId: state.pathParameters['channelId']!,
+          channel: switch (state.extra) {
+            final IptvChannel channel => channel,
+            _ => null,
+          },
+        ),
+      ),
+      GoRoute(
+        path: RouteNames.webSearch,
+        builder: (context, state) => WebSearchPage(
+          request: switch (state.extra) {
+            final WebSearchRequest request => request,
+            _ => null,
+          },
+        ),
+      ),
+      // The video station's cards push one archive's page; the route is
+      // written by hand rather than generated, so a cards-only change never
+      // needs a build_runner pass (which would rewrite the l10n output).
+      GoRoute(
+        path: RouteNames.vodVideo,
+        builder: (context, state) => VodVideoPage(bvid: state.pathParameters['bvid']!),
+      ),
+    ],
   );
 });
 

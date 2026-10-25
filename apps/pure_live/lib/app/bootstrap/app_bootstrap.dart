@@ -1,7 +1,8 @@
 import 'dart:async' show unawaited;
+import 'dart:io' show Directory;
 
 import 'package:flutter/widgets.dart';
-import 'package:live_log/live_log.dart' show ErrorReporter, LiveLog, LoggerConsoleSink;
+import 'package:live_log/live_log.dart' show ErrorReporter, LiveLog;
 import 'package:live_platform/live_platform.dart'
     show FormFactor, PlatformBootstrap, PlatformKind, PlatformRuntime;
 import 'package:live_shell/live_shell.dart'
@@ -10,8 +11,11 @@ import 'package:live_shell_desktop/live_shell_desktop.dart'
     show WindowManagerHost, configureMainWindow, primaryChromePlan;
 import 'package:live_storage/live_storage.dart'
     show StorageAdapterRegistry, StorageBootstrap, StoragePathProvider, StoragePrefs;
+import 'package:path/path.dart' as p;
+import 'package:pure_live/app/logging/app_log.dart' show appLog, initAppLog;
 import 'package:pure_live/app/providers/media_session_providers.dart' show enableMediaSession;
 import 'package:pure_live/app/providers/player_providers.dart' show primePlayerEngine;
+import 'package:pure_live/app/providers/user_notification_providers.dart' show enableUserNotifications;
 import 'package:pure_live/app/theme/system_accent_color.dart' show preloadSystemAccent;
 import 'package:pure_live/app/window_chrome.dart' show WindowChrome, WindowChromeState;
 import 'package:pure_live/infrastructure/storage/storage_paths.dart' show StoragePaths;
@@ -63,12 +67,18 @@ Future<Boot> bootstrap() async {
     // ignore: avoid_redundant_argument_values
     formFactor: const bool.fromEnvironment('PURE_LIVE_TV') ? FormFactor.tv : null,
   );
-  final log = LiveLog.root(sinks: const [LoggerConsoleSink()]);
+  final log = appLog;
   final bootLog = log.forCategory('boot');
 
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
-    ErrorReporter.report(bootLog, details.exception, details.stack, message: 'framework error');
+    ErrorReporter.report(log.forCategory('errors'), details.exception, details.stack, message: 'framework error');
+  };
+  // Async errors outside a widget's zone would otherwise only reach the
+  // console; they belong in the same diagnostic stream.
+  WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
+    log.forCategory('errors').error('uncaught asynchronous error', error: error, stackTrace: stack);
+    return true;
   };
 
   try {
@@ -80,6 +90,9 @@ Future<Boot> bootstrap() async {
     // after — a failure here only costs the controls, never the app.
     primePlayerEngine();
     unawaited(enableMediaSession());
+    // Job outcomes (a finished or failed recording) reach the system tray;
+    // the permission is asked when a job starts, not here.
+    unawaited(enableUserNotifications());
     final formFactor = runtime.environment.runtime.formFactor;
     // The storage bootstrap comes first: the window's caption style is one
     // of its preferences, and the caption is dressed once, at creation.
@@ -94,6 +107,8 @@ Future<Boot> bootstrap() async {
       );
       await storageBootstrap.initialize();
       await StoragePrefs.init();
+      initAppLog(directory: Directory(p.join(storagePaths.data.path, 'logs')));
+      bootLog.info('storage ready', fields: {'data': storagePaths.data.path});
     } on Object catch (error, stackTrace) {
       log.forCategory('storage').error('storage bootstrap failed', error: error, stackTrace: stackTrace);
     }

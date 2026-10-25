@@ -4,8 +4,11 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/app/background/app_background.dart' show BackgroundActiveScope;
 import 'package:pure_live/app/providers/window_providers.dart';
+import 'package:pure_live/app/theme/theme_mode_toggle.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/widgets/chrome_icon_button.dart';
 
 /// The height of the title bar: the drag band and the caption row.
 const double kTitleBarHeight = 44;
@@ -24,6 +27,7 @@ final class WindowTitleBar extends ConsumerWidget {
     required this.canForward,
     required this.onBack,
     required this.onForward,
+    this.onSearch,
     super.key,
   });
 
@@ -45,59 +49,91 @@ final class WindowTitleBar extends ConsumerWidget {
   /// Fired when the forward arrow is pressed.
   final VoidCallback onForward;
 
+  /// Opens the global search — the toolbar field takes focus on desktop,
+  /// the search page opens on the phone. Null leaves the magnifier out,
+  /// for a host without a search.
+  final VoidCallback? onSearch;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
     final t = context.t;
     final host = ref.watch(desktopWindowHostProvider);
+    final mac = DsTheme.of(context).platform == TargetPlatform.macOS;
+    final wallpaper = BackgroundActiveScope.isActiveOf(context);
     return ColoredBox(
-      color: colors.surface,
+      color: wallpaper ? colors.surface.withValues(alpha: 0.86) : colors.surface,
       child: SizedBox(
         height: kTitleBarHeight,
-        child: Row(
-          children: [
-            _SidebarToggleButton(expanded: expanded, onPressed: onToggleSidebar),
-            DsTooltip(
-              message: t.common.back,
-              side: DsSide.bottom,
-              child: _CaptionButton(
-                semanticLabel: t.common.back,
-                icon: DsIcons.arrowLeft,
-                enabled: canBack,
-                onPressed: onBack,
-              ),
-            ),
-            DsTooltip(
-              message: t.common.forward,
-              side: DsSide.bottom,
-              child: _CaptionButton(
-                semanticLabel: t.common.forward,
-                icon: DsIcons.arrowRight,
-                enabled: canForward,
-                onPressed: onForward,
-              ),
-            ),
-            Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onPanStart: (_) => host.startDragging(),
-                onDoubleTap: host.toggleMaximize,
-                child: Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 8),
-                  child: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: Text(
-                      t.common.appTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // A narrow window keeps its drag band: the trail arrows and the
+            // search give way first, the toggle and the caption never do.
+            final trail = constraints.maxWidth >= 480;
+            final search = onSearch != null && constraints.maxWidth >= 560;
+            return Row(
+              children: [
+                _SidebarToggleButton(expanded: expanded, onPressed: onToggleSidebar),
+                if (trail) ...[
+                  DsTooltip(
+                    message: t.common.back,
+                    side: DsSide.bottom,
+                    child: _CaptionButton(
+                      semanticLabel: t.common.back,
+                      icon: DsIcons.arrowLeft,
+                      enabled: canBack,
+                      onPressed: onBack,
+                    ),
+                  ),
+                  DsTooltip(
+                    message: t.common.forward,
+                    side: DsSide.bottom,
+                    child: _CaptionButton(
+                      semanticLabel: t.common.forward,
+                      icon: DsIcons.arrowRight,
+                      enabled: canForward,
+                      onPressed: onForward,
+                    ),
+                  ),
+                ],
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onPanStart: (_) => host.startDragging(),
+                    onDoubleTap: host.toggleMaximize,
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 8),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          t.common.appTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            const _CaptionControls(),
-          ],
+                if (search)
+                  ChromeIconButton(
+                    icon: DsIcons.search,
+                    semanticLabel: t.navigation.search,
+                    tooltip: t.navigation.search,
+                    shortcut: mac ? '⌘K' : 'Ctrl K',
+                    onPressed: onSearch,
+                  ),
+                const ThemeModeToggle(),
+                Container(
+                  width: 1,
+                  height: 20,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  color: colors.border,
+                ),
+                const _CaptionControls(),
+              ],
+            );
+          },
         ),
       ),
     );

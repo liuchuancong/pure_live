@@ -2,10 +2,10 @@ import 'package:desen_ui/desen_ui.dart';
 
 import 'package:pure_live/l10n/translations.dart' show Translations;
 
-/// The shell's navigation destinations. The v4 navigation design keeps
-/// three blocks apart: each content type's business menu (no section
-/// headings — live's is exactly 关注 / 热门 / 分区), the shared tools under
-/// a divider, and settings pinned to the sidebar's foot.
+/// The shell's navigation destinations. A module's menu is several blocks
+/// with a divider between them (the live module reads the reference's rail
+/// block for block: Search Live / Watch history, Link Parser / Multi-view, Favorites / Popular / Areas,
+/// Recording centre), and settings is pinned to the sidebar's foot.
 enum NavigationItem {
   /// The live branch.
   live(DsIcons.tv),
@@ -34,7 +34,8 @@ enum NavigationItem {
   /// The search branch.
   search(DsIcons.search),
 
-  /// The toolbox branch.
+  /// The link-parser branch (the reference's link parser; the toolbox surface
+  /// still lives behind it).
   toolbox(DsIcons.wrench),
 
   /// The recording branch.
@@ -74,7 +75,9 @@ enum NavigationItem {
     NavigationItem.hot => t.navigation.hot,
     NavigationItem.zones => t.navigation.zones,
     NavigationItem.search => t.navigation.search,
-    NavigationItem.toolbox => t.navigation.toolbox,
+    // The reference's link parser: the toolbox surface's own link-parser title,
+    // which already reads as the link parser in every locale.
+    NavigationItem.toolbox => t.toolbox.toolLinkTitle,
     NavigationItem.record => t.navigation.record,
     NavigationItem.settings => t.navigation.settings,
     NavigationItem.appearance => t.navigation.appearance,

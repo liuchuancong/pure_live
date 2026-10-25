@@ -38,6 +38,56 @@ abstract final class ThemePersistence {
   /// Stores the seed's name; null clears it back to the platform accent.
   static Future<void> storeSeedName(String? name) => name == null ? _remove('theme.seed') : _store('theme.seed', name);
 
+  /// The stored contrast, or null to let the settings default stand.
+  static DsContrast? readContrast() {
+    try {
+      return switch (StoragePrefs.getString('theme.contrast')) {
+        'soft' => DsContrast.soft,
+        'standard' => DsContrast.standard,
+        _ => null,
+      };
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Stores the contrast.
+  static Future<void> storeContrast(DsContrast contrast) => _store('theme.contrast', contrast.name);
+
+  /// The stored selection style, or null for the default.
+  static DsSelectionStyle? readSelectionStyle() {
+    try {
+      return switch (StoragePrefs.getString('theme.selection')) {
+        'soft' => DsSelectionStyle.soft,
+        'strong' => DsSelectionStyle.strong,
+        _ => null,
+      };
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Stores the selection style.
+  static Future<void> storeSelectionStyle(DsSelectionStyle style) => _store('theme.selection', style.name);
+
+  /// Whether the clash rule is stored off; null keeps the default.
+  static bool? readAutoClashRule() {
+    try {
+      return StoragePrefs.getBool('theme.autoClash');
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Stores the clash rule.
+  static Future<void> storeAutoClashRule({required bool value}) async {
+    try {
+      await StoragePrefs.setBool('theme.autoClash', value);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
   /// The stored corner style, or null for the default.
   static DsCornerStyle? readCorners() {
     try {
@@ -82,7 +132,7 @@ abstract final class ThemePersistence {
     }
   }
 
-  /// Stores the 纯黑 choice.
+  /// Stores the true-black choice.
   static Future<void> storePureBlack({required bool value}) =>
       _store('theme.pureBlack', value ? 'true' : 'false');
 

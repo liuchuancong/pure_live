@@ -39,6 +39,17 @@ abstract final class RouteNames {
   /// `kAreaRooms`); the area object rides in as `extra`.
   static const String areaRooms = '/zones/:platform/:areaId';
 
+  /// One IPTV channel's player, pushed on the root navigator.
+  static const String iptvPlay = '/iptv/play/:channelId';
+
+  /// A platform's web-search page, pushed on the root navigator; the
+  /// search request rides in as `extra`.
+  static const String webSearch = '/web-search';
+
+  /// One Bilibili archive's page, pushed on the root navigator above the
+  /// shell: the video station's cards open it.
+  static const String vodVideo = '/vod/:bvid';
+
   /// The settings branch.
   static const String settings = '/settings';
 

@@ -9,53 +9,51 @@ import 'package:pure_live/features/music/music_page.dart' show MusicPage;
 import 'package:pure_live/features/popular/popular_page.dart' show PopularPage;
 import 'package:pure_live/features/recorder/recorder_page.dart' show RecorderPage;
 import 'package:pure_live/features/search/search_page.dart' show SearchPage;
-import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
+import 'package:pure_live/features/settings/settings_sections.dart' show SettingsGroup, SettingsSection;
 import 'package:pure_live/features/toolbox/toolbox_page.dart' show ToolboxPage;
 import 'package:pure_live/features/vod/vod_page.dart' show VodPage;
 import 'package:pure_live/shared/enums/app_module.dart' show AppModule;
 import 'package:pure_live/shared/enums/navigation_item.dart' show NavigationItem;
 
-/// One group of a module's settings menu: a label key (resolved through the
-/// settings namespace) and its sections.
-typedef SettingsGroup = ({String labelKey, List<SettingsSection> sections});
-
 /// One module's whole navigation surface, in one place.
 ///
 /// A module is one content type (live, IPTV, VOD, music) and everything the
-/// shell shows while it is selected: its business menu ([business]), the
-/// shared tools it offers ([tools]), and the settings sections its settings
-/// surface carries ([settingsGroups]). Adding a module or reshaping one is
-/// one table edit here — the desktop sidebar, the phone drawer and the
+/// shell shows while it is selected: its app menu ([menu] — one list per
+/// block, a divider drawn between blocks) and the settings sections its
+/// settings surface carries ([settingsGroups]). Adding a module or reshaping
+/// one is one table edit here — the desktop sidebar, the phone drawer and the
 /// settings page all read this registry, so they cannot drift apart.
 ///
-/// The live module is the one whose pages are router branches (they keep
+/// The live module's blocks read the reference's rail block for block:
+/// Search Live / Watch history, then Link Parser / Multi-view, then
+/// Favorites / Popular / Areas, then Recording centre. Settings is not part of [menu]; the shell pins it to the foot.
+///
+/// The live module is also the one whose pages are router branches (they keep
 /// their state and own deep links); every other module's pages are looked up
 /// per menu entry in [kModulePages] and rendered in place.
 final class ModuleNavigation {
   /// A module's navigation definition.
-  const ModuleNavigation({required this.business, required this.tools, required this.settingsGroups});
+  const ModuleNavigation({required this.menu, required this.landing, required this.settingsGroups});
 
-  /// The module's business menu, flat and in order (the sidebar's top
-  /// block, no headings). Its first entry is the module's landing page.
-  final List<NavigationItem> business;
+  /// The app menu's blocks, top to bottom; the sidebar draws a divider
+  /// between them. Every entry is a page the menu can open.
+  final List<List<NavigationItem>> menu;
 
-  /// The shared tools under the divider; [kToolItems] in the viewer's own
-  /// order unless the module offers a different set.
-  final List<NavigationItem> tools;
+  /// Where the module lands when chosen in the app switcher: live opens on
+  /// its feed (Popular), the other modules on their own entry.
+  final NavigationItem landing;
 
   /// The settings menu's groups, top to bottom.
   final List<SettingsGroup> settingsGroups;
 
   /// The module's settings sections, flat and in menu order.
-  List<SettingsSection> get settingsSections => [
-    for (final group in settingsGroups) ...group.sections,
-  ];
-
-  /// Where the module lands when chosen in the app switcher.
-  NavigationItem get landing => business.first;
+  List<SettingsSection> get settingsSections => [for (final group in settingsGroups) ...group.sections];
 }
 
-/// The shared tools under the divider below a business menu.
+/// The shared tools in their default order: multi-view, search, the recording
+/// centre and the link parser. The non-live modules show them as their tools
+/// block under their own entries; the settings tool-order editor persists
+/// this order.
 const List<NavigationItem> kToolItems = [
   NavigationItem.multiview,
   NavigationItem.search,
@@ -63,58 +61,100 @@ const List<NavigationItem> kToolItems = [
   NavigationItem.toolbox,
 ];
 
-/// The settings every module shares: the app-wide surface. A module adds
-/// its own group on top of these (live adds 站点; a future downloader would
-/// add its downloads group), never edits another module's.
-const List<SettingsGroup> _mediaSettings = [
-  (
-    labelKey: 'groupBasics',
-    sections: [
-      SettingsSection.general,
-      SettingsSection.appearance,
-      SettingsSection.network,
-      SettingsSection.playback,
-    ],
-  ),
-  (labelKey: 'groupData', sections: [SettingsSection.data, SettingsSection.cache]),
+/// The settings every module shares: the app's own surface. A module adds
+/// its own group on top of these (live its sources and danmaku, IPTV its
+/// guide updates, video its Bilibili account), never borrows another
+/// module's. Only what genuinely belongs to the whole app lives here —
+/// theme, app navigation, the network proxy, backups, the cache and about.
+const List<SettingsGroup> _appearanceSettings = [
+  (labelKey: 'groupInterface', sections: [SettingsSection.appearance, SettingsSection.background, SettingsSection.nav]),
+];
+
+const List<SettingsGroup> _generalSettings = [
+  (labelKey: 'groupGeneral', sections: [SettingsSection.general, SettingsSection.network]),
+];
+
+const List<SettingsGroup> _dataSettings = [
+  (labelKey: 'groupData', sections: [SettingsSection.backup, SettingsSection.cache]),
+];
+
+const List<SettingsGroup> _aboutSettings = [
   (labelKey: 'groupAbout', sections: [SettingsSection.about]),
 ];
 
 /// The module registry: one row per content type.
 const Map<AppModule, ModuleNavigation> kModuleNavigation = {
+  // The reference's menu, block for block: the ways to find a room, the
+  // tools, the three feeds, and the recording centre.
   AppModule.live: ModuleNavigation(
-    business: [NavigationItem.favorites, NavigationItem.hot, NavigationItem.zones],
-    tools: kToolItems,
+    menu: [
+      [NavigationItem.search, NavigationItem.history],
+      [NavigationItem.toolbox, NavigationItem.multiview],
+      [NavigationItem.favorites, NavigationItem.hot, NavigationItem.zones],
+      [NavigationItem.record],
+    ],
+    landing: NavigationItem.hot,
     settingsGroups: [
+      ..._appearanceSettings,
+      (labelKey: 'groupSources', sections: [SettingsSection.sites, SettingsSection.refresh]),
       (
-        labelKey: 'groupBasics',
+        labelKey: 'groupPlayback',
         sections: [
-          SettingsSection.general,
-          SettingsSection.appearance,
-          SettingsSection.network,
-          SettingsSection.playback,
-          SettingsSection.shield,
+          SettingsSection.video,
+          SettingsSection.danmaku,
+          SettingsSection.miniDanmaku,
+          SettingsSection.kernel,
+          SettingsSection.recording,
         ],
       ),
-      (labelKey: 'groupContent', sections: [SettingsSection.sites]),
-      (labelKey: 'groupData', sections: [SettingsSection.data, SettingsSection.cache]),
-      (labelKey: 'groupAbout', sections: [SettingsSection.about]),
+      ..._generalSettings,
+      (labelKey: 'groupData', sections: [SettingsSection.data, SettingsSection.backup, SettingsSection.cache]),
+      ..._aboutSettings,
     ],
   ),
   AppModule.iptv: ModuleNavigation(
-    business: [NavigationItem.channels, NavigationItem.favorites, NavigationItem.history],
-    tools: kToolItems,
-    settingsGroups: _mediaSettings,
+    menu: [
+      [NavigationItem.channels, NavigationItem.favorites, NavigationItem.history],
+      kToolItems,
+    ],
+    landing: NavigationItem.channels,
+    // IPTV's own surface is guide updates and source syncing; the app-wide
+    // groups follow unchanged. Nothing from the live room (danmaku,
+    // recording, platforms) or the Bilibili station belongs here.
+    settingsGroups: [
+      (labelKey: 'groupIptv', sections: [SettingsSection.iptv]),
+      ..._appearanceSettings,
+      ..._generalSettings,
+      ..._dataSettings,
+      ..._aboutSettings,
+    ],
   ),
   AppModule.vod: ModuleNavigation(
-    business: [NavigationItem.vod, NavigationItem.favorites, NavigationItem.history],
-    tools: kToolItems,
-    settingsGroups: _mediaSettings,
+    menu: [
+      [NavigationItem.vod, NavigationItem.favorites, NavigationItem.history],
+      kToolItems,
+    ],
+    landing: NavigationItem.vod,
+    // The video station's own page: its Bilibili account, the quality a
+    // video opens with and its playback behaviour. Live's sources and
+    // danmaku stay out of it.
+    settingsGroups: [
+      (labelKey: 'groupVod', sections: [SettingsSection.vod]),
+      ..._appearanceSettings,
+      ..._generalSettings,
+      ..._dataSettings,
+      ..._aboutSettings,
+    ],
   ),
   AppModule.music: ModuleNavigation(
-    business: [NavigationItem.music, NavigationItem.favorites, NavigationItem.history],
-    tools: kToolItems,
-    settingsGroups: _mediaSettings,
+    menu: [
+      [NavigationItem.music, NavigationItem.favorites, NavigationItem.history],
+      kToolItems,
+    ],
+    landing: NavigationItem.music,
+    // No music source feeds the module yet; it carries only the app's own
+    // settings rather than borrowing another module's playback or sources.
+    settingsGroups: [..._appearanceSettings, ..._generalSettings, ..._dataSettings, ..._aboutSettings],
   ),
 };
 

@@ -21,7 +21,7 @@ final class SettingsSectionController extends Notifier<SettingsSection> {
 
   /// Keeps the selection inside [sections]: a module switch may leave the
   /// surface on a section that module's settings does not carry (IPTV has
-  /// no 站点, for one), and the pane must never point at a menu row that
+  /// no Sites section, for one), and the pane must never point at a menu row that
   /// is not there.
   void ensureWithin(Iterable<SettingsSection> sections) {
     if (!sections.contains(state)) {

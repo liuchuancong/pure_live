@@ -7,16 +7,17 @@ import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:pure_live/app/navigation/module_navigation.dart';
 import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
 import 'package:pure_live/app/providers/module_providers.dart';
+import 'package:pure_live/app/providers/nav_visibility_providers.dart' show showMultiviewProvider;
 import 'package:pure_live/app/providers/navigation_providers.dart';
 import 'package:pure_live/app/providers/settings_section_provider.dart' show settingsSectionProvider;
 import 'package:pure_live/app/providers/sidebar_providers.dart';
 import 'package:pure_live/features/settings/settings_page.dart' show SettingsPage;
 import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
-import 'package:pure_live/features/tv/tv_shell.dart' show TvShell;
 import 'package:pure_live/layouts/desktop/desktop_layout.dart';
 import 'package:pure_live/layouts/mobile/mobile_layout.dart';
 import 'package:pure_live/shared/enums/app_module.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart';
+import 'package:pure_live/shared/enums/tool_order.dart' show toolOrderProvider;
 import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
 
 // No `show` clause: a wrapped import is what the save-time import
@@ -59,9 +60,14 @@ int? _branchIndexOf(NavigationItem item) {
 }
 
 /// The shell every branch renders inside: the device profile and the
-/// window width pick the layout — desktop expanded, desktop compact,
-/// mobile bottom bar, or the TV rail — and the content area is the
-/// router's indexed stack, one navigator per branch.
+/// window width pick the layout — desktop expanded, desktop compact, or
+/// the mobile bottom bar — and the content area is the router's indexed
+/// stack, one navigator per branch.
+///
+/// A TV runs the desktop shell too: every page is already reachable by a
+/// D-pad (the sidebar takes the first focus, the card grids walk by index
+/// and scroll their target into view), so there is no second UI to keep in
+/// step.
 ///
 /// The desktop title bar's back and forward arrows walk the trail of
 /// destinations the viewer visited, this widget's own record: go_router's
@@ -88,7 +94,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
 
   int _cursor = 0;
 
-  /// The last destination shown outside settings: 返回应用 goes back here.
+  /// The last destination shown outside settings: "Back to app" goes back here.
   NavigationItem? _lastAppItem;
 
   /// The window width the last dependency pass saw, null on the first;
@@ -120,12 +126,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
   Widget build(BuildContext context) {
     final breakpoint = _breakpointOf(MediaQuery.sizeOf(context).width);
     final selected = ref.watch(selectedNavItemProvider);
-
-    // A TV build (the leanback launcher, the dart-define at boot) gets the
-    // TV shell from the first frame: a remote cannot reach a touch UI.
-    if (ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv) {
-      return const TvShell();
-    }
+    final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
     final sidebar = ref.watch(sidebarProvider);
     final module = ref.watch(selectedModuleProvider);
 
@@ -168,24 +169,43 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     }
 
     // Settings is a destination of the same shell: while it is selected the
-    // sidebar lists the settings sections instead of the module's business
-    // entries — one menu, not a menu inside a menu. The section on screen
+    // sidebar lists the settings sections instead of the module's menu
+    // blocks — one menu, not a menu inside a menu. The section on screen
     // lives in a provider, because the sidebar picks it and the page shows
     // it across the shell.
     final inSettings = selected == NavigationItem.settings;
     final settingsSection = ref.watch(settingsSectionProvider);
     // One registry row per module decides both menus: the settings menu
-    // shows the module's settings groups (alone — no home tools mixed in),
-    // the app's menu its business block and shared tools.
+    // shows the module's settings groups (alone — no app entries mixed in),
+    // the app's menu its blocks, a divider between them.
     final navigation = navigationOf(module);
-    final menuGroups = <List<Object>>[
-      if (inSettings) ...[
-        for (final group in navigation.settingsGroups) group.sections,
-      ] else ...[
-        navigation.business,
-        navigation.tools,
-      ],
-    ];
+    // The navigation setting's entry toggle: a switched-off multi-view is
+    // not listed, and an emptied block takes its divider with it.
+    final showMultiview = ref.watch(showMultiviewProvider);
+    // The tools block follows the order the settings pane edits, not the
+    // registry's fixed list; a hidden multi-view stays out, and a stored
+    // order never drops a tool the registry added later.
+    final toolOrder = ref.watch(toolOrderProvider);
+    final toolSet = toolOrder.toSet();
+    final appMenu = [
+      for (final block in navigation.menu)
+        _orderedMenuBlock(block, toolSet: toolSet, toolOrder: toolOrder, showMultiview: showMultiview),
+    ]..removeWhere((block) => block.isEmpty);
+    final menuGroups = <List<Object>>[];
+    final menuGroupLabels = <String?>[];
+    if (inSettings) {
+      // The module's own settings groups, exactly as its registry row
+      // declares them; the label is the group's name in the rail.
+      for (final group in navigation.settingsGroups) {
+        menuGroups.add(group.sections);
+        menuGroupLabels.add(group.labelKey);
+      }
+    } else {
+      for (final block in appMenu) {
+        menuGroups.add(block);
+        menuGroupLabels.add(null);
+      }
+    }
     final Object menuValue = inSettings ? settingsSection : selected;
 
     void handleMenu(Object value) {
@@ -246,13 +266,19 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       moduleContent = page();
     }
 
-    if (breakpoint.index < kBottomBarBreakpoint.index) {
+    // A TV keeps the desktop shell even on a narrow logical canvas: the
+    // drawer and bottom bar belong to thumbs, and this shell's sidebar is
+    // what a remote starts on.
+    if (breakpoint.index < kBottomBarBreakpoint.index && !tv) {
       return MobileLayout(
         content: moduleContent,
         module: module,
         selected: selected,
         onSelected: handleSelected,
         onModuleSelected: selectModule,
+        onSearch: () => handleSelected(NavigationItem.search),
+        settingsSection: inSettings ? settingsSection : null,
+        showMultiview: showMultiview,
       );
     }
     return DesktopLayout(
@@ -260,6 +286,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       module: module,
       onModuleSelected: selectModule,
       menuGroups: menuGroups,
+      menuGroupLabels: menuGroupLabels,
       menuValue: menuValue,
       onMenu: handleMenu,
       settingsSection: inSettings ? settingsSection : null,
@@ -274,7 +301,41 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       canForward: _cursor < _trail.length - 1,
       onBack: goBack,
       onForward: goForward,
+      tv: tv,
     );
   }
 
+  /// One module menu block with its tools in the viewer's saved order.
+  /// Blocks without tools keep their registry order.
+  static List<NavigationItem> _orderedMenuBlock(
+    List<NavigationItem> block, {
+    required Set<NavigationItem> toolSet,
+    required List<NavigationItem> toolOrder,
+    required bool showMultiview,
+  }) {
+    bool shown(NavigationItem item) => showMultiview || item != NavigationItem.multiview;
+    if (!block.any(toolSet.contains)) {
+      return [
+        for (final item in block)
+          if (shown(item)) item,
+      ];
+    }
+    final rest = [
+      for (final item in block)
+        if (!toolSet.contains(item) && shown(item)) item,
+    ];
+    final ordered = [
+      for (final item in toolOrder)
+        if (block.contains(item) && shown(item)) item,
+    ];
+    // A registry tool the editor has not stored yet keeps its place after
+    // the ordered ones rather than disappearing.
+    final orderedSet = ordered.toSet();
+    return [
+      ...rest,
+      ...ordered,
+      for (final item in block)
+        if (toolSet.contains(item) && !orderedSet.contains(item) && shown(item)) item,
+    ];
+  }
 }

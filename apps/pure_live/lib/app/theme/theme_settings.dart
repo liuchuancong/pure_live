@@ -48,7 +48,7 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
   DsThemeMode get mode;
 
   /// Whether dark surfaces collapse to true black (OLED screens): the
-  /// reference's 纯黑, applied to the generated palette through the colour
+  /// reference's true black, applied to the generated palette through the colour
   /// adjuster so every regeneration keeps it.
   bool get pureBlack;
 
@@ -152,7 +152,7 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
     extensions: extensions,
   );
 
-  /// [adjustColors] with 纯黑 folded in: in a dark palette the three
+  /// [adjustColors] with true black folded in: in a dark palette the three
   /// ground roles go true black, controls and fields keep their generated
   /// lift so edges stay visible.
   DsColorsAdjuster? _colorsAdjuster() {

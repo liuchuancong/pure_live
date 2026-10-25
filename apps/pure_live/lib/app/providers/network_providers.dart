@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart';
 import 'package:live_storage/live_storage.dart';
 
+import 'package:pure_live/app/logging/app_log.dart' show appLog;
+
 /// The app-wide proxy: off, or an HTTP CONNECT proxy that every module's
 /// transport routes through (the reference's network settings, applied at
 /// the shared factory so a change reaches every client's next request
@@ -69,5 +71,8 @@ final class _SettingsProxyPolicy implements ProxyPolicy {
 /// so the player-adjacent modules (vod, iptv, backups) all honour the
 /// same network settings.
 final networkFactoryProvider = Provider<DioFactory>((ref) {
-  return DioFactory(proxyPolicy: _SettingsProxyPolicy(() => ref.read(proxySettingsProvider.notifier).route));
+  return DioFactory(
+    log: appLog.forCategory('network'),
+    proxyPolicy: _SettingsProxyPolicy(() => ref.read(proxySettingsProvider.notifier).route),
+  );
 });

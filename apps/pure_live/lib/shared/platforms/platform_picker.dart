@@ -1,7 +1,11 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/grids/layout_toggle.dart' show LayoutToggle;
+import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon;
 
 /// The special scope meaning "every platform" — the platform tabs' first
 /// entry on the pages that offer one (follows, search).
@@ -14,7 +18,7 @@ const String kAllPlatforms = 'all';
 ///
 /// The current platform follows the theme's selection; choosing from the
 /// menu behaves exactly like tapping its tab.
-final class PlatformTabRow extends StatelessWidget {
+final class PlatformTabRow extends ConsumerWidget {
   /// Tabs over [platforms], [current] selected.
   const PlatformTabRow({
     required this.platforms,
@@ -41,16 +45,18 @@ final class PlatformTabRow extends StatelessWidget {
   final String? semanticLabel;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sites = ref.watch(sitesProvider);
+    // A platform's own icon rides its tab and its picker row; the "all"
+    // sentinel has none.
+    Widget? iconOf(String id) => id == kAllPlatforms ? null : localizedSiteIcon(sites.getById(id));
     final children = <Widget>[
       Expanded(
         child: DsTopNav<String>(
           semanticLabel: semanticLabel,
           value: current,
           onChanged: onChanged,
-          items: [
-            for (final id in platforms) DsTopNavItem(value: id, label: Text(nameOf(id))),
-          ],
+          items: [for (final id in platforms) DsTopNavItem(value: id, label: Text(nameOf(id)), icon: iconOf(id))],
         ),
       ),
       const SizedBox(width: DsSpace.s8),
@@ -71,8 +77,12 @@ final class PlatformTabRow extends StatelessWidget {
               children: [
                 for (final id in platforms)
                   DsListRow(
+                    leading: id == kAllPlatforms ? null : localizedSiteIcon(sites.getById(id), size: 20),
                     title: Text(nameOf(id)),
                     trailing: id == current ? const DsIcon(DsIcons.check, size: 16) : null,
+                    // A remote opens the panel with no pointer: the shown
+                    // platform is the first stop.
+                    autofocus: id == current,
                     onPressed: () {
                       onChanged(id);
                       Navigator.of(context).pop();
@@ -84,7 +94,9 @@ final class PlatformTabRow extends StatelessWidget {
         ),
         child: const DsIcon(DsIcons.chevronDown, size: 16),
       ),
+      const SizedBox(width: DsSpace.s8),
+      const LayoutToggle(),
     ];
-    return SizedBox(height: 36, child: Row(children: children));
+    return SizedBox(height: 44, child: Row(children: children));
   }
 }

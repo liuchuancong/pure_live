@@ -1,5 +1,5 @@
-/// Audience figures as the Chinese web reads them: `1.2万`, `3.4亿`,
-/// bare under ten thousand, and nothing at all for an unknown count.
+/// Audience figures in the Chinese web's own units: ten-thousands and
+/// hundred-millions, bare under ten thousand, and nothing for an unknown count.
 extension AudienceFormat on int {
   /// The display text of this figure; an empty string when null.
   static String format(int? value) {

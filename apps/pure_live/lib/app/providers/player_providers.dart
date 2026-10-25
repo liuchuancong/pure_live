@@ -3,15 +3,19 @@ import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
+import 'package:pure_live/app/providers/presentation_providers.dart' show presentationDriverProvider;
 
-/// The process's one player kernel: the mpv backend registered, ready to
-/// hand a controller to any room.
+/// The process's one player kernel: the mpv backend registered, the
+/// presentation chain attached (fullscreen, window fullscreen and PiP), ready
+/// to hand a controller to any room.
 ///
 /// `MediaKitPlayerAdapter.ensureInitialized` runs once at boot (the app's
 /// bootstrap calls [primePlayerEngine] before the first frame); the kernel
 /// itself is cheap to hold and never disposed.
-final playerKernelProvider = Provider<PlayerKernel>((ref) {
-  return PlayerKernel()..registerBackend(const MediaKitAdapterFactory().registration());
+final Provider<PlayerKernel> playerKernelProvider = Provider<PlayerKernel>((ref) {
+  return PlayerKernel()
+    ..registerBackend(const MediaKitAdapterFactory().registration())
+    ..presentationDriver = ref.watch(presentationDriverProvider);
 });
 
 /// The one-time native engine prime the boot path calls. Safe to call
