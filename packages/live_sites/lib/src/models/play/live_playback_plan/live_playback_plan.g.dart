@@ -16,16 +16,23 @@ class _$LivePlaybackPlan extends LivePlaybackPlan {
   @override
   final Duration? start;
 
-  factory _$LivePlaybackPlan([void Function(LivePlaybackPlanBuilder)? updates]) =>
-      (LivePlaybackPlanBuilder()..update(updates))._build();
+  factory _$LivePlaybackPlan([
+    void Function(LivePlaybackPlanBuilder)? updates,
+  ]) => (LivePlaybackPlanBuilder()..update(updates))._build();
 
-  _$LivePlaybackPlan._({required this.lines, this.appliedQuality, required this.qualityUnconfirmed, this.start})
-    : super._();
+  _$LivePlaybackPlan._({
+    required this.lines,
+    this.appliedQuality,
+    required this.qualityUnconfirmed,
+    this.start,
+  }) : super._();
   @override
-  LivePlaybackPlan rebuild(void Function(LivePlaybackPlanBuilder) updates) => (toBuilder()..update(updates)).build();
+  LivePlaybackPlan rebuild(void Function(LivePlaybackPlanBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
-  LivePlaybackPlanBuilder toBuilder() => LivePlaybackPlanBuilder()..replace(this);
+  LivePlaybackPlanBuilder toBuilder() =>
+      LivePlaybackPlanBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -59,20 +66,25 @@ class _$LivePlaybackPlan extends LivePlaybackPlan {
   }
 }
 
-class LivePlaybackPlanBuilder implements Builder<LivePlaybackPlan, LivePlaybackPlanBuilder> {
+class LivePlaybackPlanBuilder
+    implements Builder<LivePlaybackPlan, LivePlaybackPlanBuilder> {
   _$LivePlaybackPlan? _$v;
 
   ListBuilder<LivePlayLine>? _lines;
-  ListBuilder<LivePlayLine> get lines => _$this._lines ??= ListBuilder<LivePlayLine>();
+  ListBuilder<LivePlayLine> get lines =>
+      _$this._lines ??= ListBuilder<LivePlayLine>();
   set lines(ListBuilder<LivePlayLine>? lines) => _$this._lines = lines;
 
   LivePlayQualityBuilder? _appliedQuality;
-  LivePlayQualityBuilder get appliedQuality => _$this._appliedQuality ??= LivePlayQualityBuilder();
-  set appliedQuality(LivePlayQualityBuilder? appliedQuality) => _$this._appliedQuality = appliedQuality;
+  LivePlayQualityBuilder get appliedQuality =>
+      _$this._appliedQuality ??= LivePlayQualityBuilder();
+  set appliedQuality(LivePlayQualityBuilder? appliedQuality) =>
+      _$this._appliedQuality = appliedQuality;
 
   bool? _qualityUnconfirmed;
   bool? get qualityUnconfirmed => _$this._qualityUnconfirmed;
-  set qualityUnconfirmed(bool? qualityUnconfirmed) => _$this._qualityUnconfirmed = qualityUnconfirmed;
+  set qualityUnconfirmed(bool? qualityUnconfirmed) =>
+      _$this._qualityUnconfirmed = qualityUnconfirmed;
 
   Duration? _start;
   Duration? get start => _$this._start;
@@ -130,7 +142,11 @@ class LivePlaybackPlanBuilder implements Builder<LivePlaybackPlan, LivePlaybackP
         _$failedField = 'appliedQuality';
         _appliedQuality?.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(r'LivePlaybackPlan', _$failedField, e.toString());
+        throw BuiltValueNestedFieldError(
+          r'LivePlaybackPlan',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

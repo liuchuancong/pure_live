@@ -22,14 +22,21 @@ class _$RoomLocalSerializer implements StructuredSerializer<RoomLocal> {
   }) {
     final result = <Object?>[
       'tagIds',
-      serializers.serialize(object.tagIds, specifiedType: const FullType(BuiltList, const [const FullType(String)])),
+      serializers.serialize(
+        object.tagIds,
+        specifiedType: const FullType(BuiltList, const [
+          const FullType(String),
+        ]),
+      ),
     ];
     Object? value;
     value = object.lastWatchedAt;
     if (value != null) {
       result
         ..add('lastWatchedAt')
-        ..add(serializers.serialize(value, specifiedType: const FullType(DateTime)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(DateTime)),
+        );
     }
     value = object.watchDurationMs;
     if (value != null) {
@@ -55,16 +62,27 @@ class _$RoomLocalSerializer implements StructuredSerializer<RoomLocal> {
       final Object? value = iterator.current;
       switch (key) {
         case 'lastWatchedAt':
-          result.lastWatchedAt = serializers.deserialize(value, specifiedType: const FullType(DateTime)) as DateTime?;
+          result.lastWatchedAt = serializers.deserialize(
+            value,
+            specifiedType: const FullType(DateTime),
+          ) as DateTime?;
           break;
         case 'tagIds':
           result.tagIds.replace(
-            serializers.deserialize(value, specifiedType: const FullType(BuiltList, const [const FullType(String)]))!
+            serializers.deserialize(
+                  value,
+                  specifiedType: const FullType(BuiltList, const [
+                    const FullType(String),
+                  ]),
+                )!
                 as BuiltList<Object?>,
           );
           break;
         case 'watchDurationMs':
-          result.watchDurationMs = serializers.deserialize(value, specifiedType: const FullType(int)) as int?;
+          result.watchDurationMs = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int?;
           break;
       }
     }
@@ -81,11 +99,17 @@ class _$RoomLocal extends RoomLocal {
   @override
   final int? watchDurationMs;
 
-  factory _$RoomLocal([void Function(RoomLocalBuilder)? updates]) => (RoomLocalBuilder()..update(updates))._build();
+  factory _$RoomLocal([void Function(RoomLocalBuilder)? updates]) =>
+      (RoomLocalBuilder()..update(updates))._build();
 
-  _$RoomLocal._({this.lastWatchedAt, required this.tagIds, this.watchDurationMs}) : super._();
+  _$RoomLocal._({
+    this.lastWatchedAt,
+    required this.tagIds,
+    this.watchDurationMs,
+  }) : super._();
   @override
-  RoomLocal rebuild(void Function(RoomLocalBuilder) updates) => (toBuilder()..update(updates)).build();
+  RoomLocal rebuild(void Function(RoomLocalBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   RoomLocalBuilder toBuilder() => RoomLocalBuilder()..replace(this);
@@ -124,7 +148,8 @@ class RoomLocalBuilder implements Builder<RoomLocal, RoomLocalBuilder> {
 
   DateTime? _lastWatchedAt;
   DateTime? get lastWatchedAt => _$this._lastWatchedAt;
-  set lastWatchedAt(DateTime? lastWatchedAt) => _$this._lastWatchedAt = lastWatchedAt;
+  set lastWatchedAt(DateTime? lastWatchedAt) =>
+      _$this._lastWatchedAt = lastWatchedAt;
 
   ListBuilder<String>? _tagIds;
   ListBuilder<String> get tagIds => _$this._tagIds ??= ListBuilder<String>();
@@ -132,7 +157,8 @@ class RoomLocalBuilder implements Builder<RoomLocal, RoomLocalBuilder> {
 
   int? _watchDurationMs;
   int? get watchDurationMs => _$this._watchDurationMs;
-  set watchDurationMs(int? watchDurationMs) => _$this._watchDurationMs = watchDurationMs;
+  set watchDurationMs(int? watchDurationMs) =>
+      _$this._watchDurationMs = watchDurationMs;
 
   RoomLocalBuilder();
 
@@ -164,14 +190,23 @@ class RoomLocalBuilder implements Builder<RoomLocal, RoomLocalBuilder> {
     _$RoomLocal _$result;
     try {
       _$result =
-          _$v ?? _$RoomLocal._(lastWatchedAt: lastWatchedAt, tagIds: tagIds.build(), watchDurationMs: watchDurationMs);
+          _$v ??
+          _$RoomLocal._(
+            lastWatchedAt: lastWatchedAt,
+            tagIds: tagIds.build(),
+            watchDurationMs: watchDurationMs,
+          );
     } catch (_) {
       late String _$failedField;
       try {
         _$failedField = 'tagIds';
         tagIds.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(r'RoomLocal', _$failedField, e.toString());
+        throw BuiltValueNestedFieldError(
+          r'RoomLocal',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }

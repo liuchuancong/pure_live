@@ -6,9 +6,11 @@ part of 'live_super_chat_price.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-Serializer<SuperChatPrice> _$superChatPriceSerializer = _$SuperChatPriceSerializer();
+Serializer<SuperChatPrice> _$superChatPriceSerializer =
+    _$SuperChatPriceSerializer();
 
-class _$SuperChatPriceSerializer implements StructuredSerializer<SuperChatPrice> {
+class _$SuperChatPriceSerializer
+    implements StructuredSerializer<SuperChatPrice> {
   @override
   final Iterable<Type> types = const [SuperChatPrice, _$SuperChatPrice];
   @override
@@ -22,7 +24,10 @@ class _$SuperChatPriceSerializer implements StructuredSerializer<SuperChatPrice>
   }) {
     final result = <Object?>[
       'displayText',
-      serializers.serialize(object.displayText, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.displayText,
+        specifiedType: const FullType(String),
+      ),
     ];
     Object? value;
     value = object.amount;
@@ -35,7 +40,9 @@ class _$SuperChatPriceSerializer implements StructuredSerializer<SuperChatPrice>
     if (value != null) {
       result
         ..add('currency')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     return result;
   }
@@ -55,13 +62,24 @@ class _$SuperChatPriceSerializer implements StructuredSerializer<SuperChatPrice>
       final Object? value = iterator.current;
       switch (key) {
         case 'amount':
-          result.amount = serializers.deserialize(value, specifiedType: const FullType(int)) as int?;
+          result.amount = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int?;
           break;
         case 'currency':
-          result.currency = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.currency = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'displayText':
-          result.displayText = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.displayText =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
       }
     }
@@ -81,9 +99,11 @@ class _$SuperChatPrice extends SuperChatPrice {
   factory _$SuperChatPrice([void Function(SuperChatPriceBuilder)? updates]) =>
       (SuperChatPriceBuilder()..update(updates))._build();
 
-  _$SuperChatPrice._({this.amount, this.currency, required this.displayText}) : super._();
+  _$SuperChatPrice._({this.amount, this.currency, required this.displayText})
+    : super._();
   @override
-  SuperChatPrice rebuild(void Function(SuperChatPriceBuilder) updates) => (toBuilder()..update(updates)).build();
+  SuperChatPrice rebuild(void Function(SuperChatPriceBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   SuperChatPriceBuilder toBuilder() => SuperChatPriceBuilder()..replace(this);
@@ -117,7 +137,8 @@ class _$SuperChatPrice extends SuperChatPrice {
   }
 }
 
-class SuperChatPriceBuilder implements Builder<SuperChatPrice, SuperChatPriceBuilder> {
+class SuperChatPriceBuilder
+    implements Builder<SuperChatPrice, SuperChatPriceBuilder> {
   _$SuperChatPrice? _$v;
 
   int? _amount;
@@ -166,7 +187,11 @@ class SuperChatPriceBuilder implements Builder<SuperChatPrice, SuperChatPriceBui
         _$SuperChatPrice._(
           amount: amount,
           currency: currency,
-          displayText: BuiltValueNullFieldError.checkNotNull(displayText, r'SuperChatPrice', 'displayText'),
+          displayText: BuiltValueNullFieldError.checkNotNull(
+            displayText,
+            r'SuperChatPrice',
+            'displayText',
+          ),
         );
     replace(_$result);
     return _$result;

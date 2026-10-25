@@ -6,7 +6,8 @@ part of 'room_broadcast.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-Serializer<RoomBroadcast> _$roomBroadcastSerializer = _$RoomBroadcastSerializer();
+Serializer<RoomBroadcast> _$roomBroadcastSerializer =
+    _$RoomBroadcastSerializer();
 
 class _$RoomBroadcastSerializer implements StructuredSerializer<RoomBroadcast> {
   @override
@@ -22,26 +23,41 @@ class _$RoomBroadcastSerializer implements StructuredSerializer<RoomBroadcast> {
   }) {
     final result = <Object?>[
       'activity',
-      serializers.serialize(object.activity, specifiedType: const FullType(LiveRoomActivity)),
+      serializers.serialize(
+        object.activity,
+        specifiedType: const FullType(LiveRoomActivity),
+      ),
     ];
     Object? value;
     value = object.liveStatus;
     if (value != null) {
       result
         ..add('liveStatus')
-        ..add(serializers.serialize(value, specifiedType: const FullType(LiveStatus)));
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(LiveStatus),
+          ),
+        );
     }
     value = object.startedAt;
     if (value != null) {
       result
         ..add('startedAt')
-        ..add(serializers.serialize(value, specifiedType: const FullType(DateTime)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(DateTime)),
+        );
     }
     value = object.restriction;
     if (value != null) {
       result
         ..add('restriction')
-        ..add(serializers.serialize(value, specifiedType: const FullType(LiveRestriction)));
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(LiveRestriction),
+          ),
+        );
     }
     return result;
   }
@@ -61,18 +77,30 @@ class _$RoomBroadcastSerializer implements StructuredSerializer<RoomBroadcast> {
       final Object? value = iterator.current;
       switch (key) {
         case 'liveStatus':
-          result.liveStatus = serializers.deserialize(value, specifiedType: const FullType(LiveStatus)) as LiveStatus?;
+          result.liveStatus = serializers.deserialize(
+            value,
+            specifiedType: const FullType(LiveStatus),
+          ) as LiveStatus?;
           break;
         case 'startedAt':
-          result.startedAt = serializers.deserialize(value, specifiedType: const FullType(DateTime)) as DateTime?;
+          result.startedAt = serializers.deserialize(
+            value,
+            specifiedType: const FullType(DateTime),
+          ) as DateTime?;
           break;
         case 'restriction':
-          result.restriction =
-              serializers.deserialize(value, specifiedType: const FullType(LiveRestriction)) as LiveRestriction?;
+          result.restriction = serializers.deserialize(
+            value,
+            specifiedType: const FullType(LiveRestriction),
+          ) as LiveRestriction?;
           break;
         case 'activity':
           result.activity =
-              serializers.deserialize(value, specifiedType: const FullType(LiveRoomActivity))! as LiveRoomActivity;
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(LiveRoomActivity),
+                  )!
+                  as LiveRoomActivity;
           break;
       }
     }
@@ -94,9 +122,15 @@ class _$RoomBroadcast extends RoomBroadcast {
   factory _$RoomBroadcast([void Function(RoomBroadcastBuilder)? updates]) =>
       (RoomBroadcastBuilder()..update(updates))._build();
 
-  _$RoomBroadcast._({this.liveStatus, this.startedAt, this.restriction, required this.activity}) : super._();
+  _$RoomBroadcast._({
+    this.liveStatus,
+    this.startedAt,
+    this.restriction,
+    required this.activity,
+  }) : super._();
   @override
-  RoomBroadcast rebuild(void Function(RoomBroadcastBuilder) updates) => (toBuilder()..update(updates)).build();
+  RoomBroadcast rebuild(void Function(RoomBroadcastBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   RoomBroadcastBuilder toBuilder() => RoomBroadcastBuilder()..replace(this);
@@ -133,7 +167,8 @@ class _$RoomBroadcast extends RoomBroadcast {
   }
 }
 
-class RoomBroadcastBuilder implements Builder<RoomBroadcast, RoomBroadcastBuilder> {
+class RoomBroadcastBuilder
+    implements Builder<RoomBroadcast, RoomBroadcastBuilder> {
   _$RoomBroadcast? _$v;
 
   LiveStatus? _liveStatus;
@@ -146,7 +181,8 @@ class RoomBroadcastBuilder implements Builder<RoomBroadcast, RoomBroadcastBuilde
 
   LiveRestriction? _restriction;
   LiveRestriction? get restriction => _$this._restriction;
-  set restriction(LiveRestriction? restriction) => _$this._restriction = restriction;
+  set restriction(LiveRestriction? restriction) =>
+      _$this._restriction = restriction;
 
   LiveRoomActivity? _activity;
   LiveRoomActivity? get activity => _$this._activity;
@@ -188,7 +224,11 @@ class RoomBroadcastBuilder implements Builder<RoomBroadcast, RoomBroadcastBuilde
           liveStatus: liveStatus,
           startedAt: startedAt,
           restriction: restriction,
-          activity: BuiltValueNullFieldError.checkNotNull(activity, r'RoomBroadcast', 'activity'),
+          activity: BuiltValueNullFieldError.checkNotNull(
+            activity,
+            r'RoomBroadcast',
+            'activity',
+          ),
         );
     replace(_$result);
     return _$result;

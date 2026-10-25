@@ -6,7 +6,8 @@ part of 'live_gift_combo.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-Serializer<LiveGiftCombo> _$liveGiftComboSerializer = _$LiveGiftComboSerializer();
+Serializer<LiveGiftCombo> _$liveGiftComboSerializer =
+    _$LiveGiftComboSerializer();
 
 class _$LiveGiftComboSerializer implements StructuredSerializer<LiveGiftCombo> {
   @override
@@ -20,7 +21,13 @@ class _$LiveGiftComboSerializer implements StructuredSerializer<LiveGiftCombo> {
     LiveGiftCombo object, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = <Object?>['comboKey', serializers.serialize(object.comboKey, specifiedType: const FullType(String))];
+    final result = <Object?>[
+      'comboKey',
+      serializers.serialize(
+        object.comboKey,
+        specifiedType: const FullType(String),
+      ),
+    ];
     Object? value;
     value = object.comboTotal;
     if (value != null) {
@@ -46,10 +53,18 @@ class _$LiveGiftComboSerializer implements StructuredSerializer<LiveGiftCombo> {
       final Object? value = iterator.current;
       switch (key) {
         case 'comboKey':
-          result.comboKey = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.comboKey =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'comboTotal':
-          result.comboTotal = serializers.deserialize(value, specifiedType: const FullType(int)) as int?;
+          result.comboTotal = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int?;
           break;
       }
     }
@@ -69,7 +84,8 @@ class _$LiveGiftCombo extends LiveGiftCombo {
 
   _$LiveGiftCombo._({required this.comboKey, this.comboTotal}) : super._();
   @override
-  LiveGiftCombo rebuild(void Function(LiveGiftComboBuilder) updates) => (toBuilder()..update(updates)).build();
+  LiveGiftCombo rebuild(void Function(LiveGiftComboBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   LiveGiftComboBuilder toBuilder() => LiveGiftComboBuilder()..replace(this);
@@ -77,7 +93,9 @@ class _$LiveGiftCombo extends LiveGiftCombo {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is LiveGiftCombo && comboKey == other.comboKey && comboTotal == other.comboTotal;
+    return other is LiveGiftCombo &&
+        comboKey == other.comboKey &&
+        comboTotal == other.comboTotal;
   }
 
   @override
@@ -98,7 +116,8 @@ class _$LiveGiftCombo extends LiveGiftCombo {
   }
 }
 
-class LiveGiftComboBuilder implements Builder<LiveGiftCombo, LiveGiftComboBuilder> {
+class LiveGiftComboBuilder
+    implements Builder<LiveGiftCombo, LiveGiftComboBuilder> {
   _$LiveGiftCombo? _$v;
 
   String? _comboKey;
@@ -140,7 +159,11 @@ class LiveGiftComboBuilder implements Builder<LiveGiftCombo, LiveGiftComboBuilde
     final _$result =
         _$v ??
         _$LiveGiftCombo._(
-          comboKey: BuiltValueNullFieldError.checkNotNull(comboKey, r'LiveGiftCombo', 'comboKey'),
+          comboKey: BuiltValueNullFieldError.checkNotNull(
+            comboKey,
+            r'LiveGiftCombo',
+            'comboKey',
+          ),
           comboTotal: comboTotal,
         );
     replace(_$result);

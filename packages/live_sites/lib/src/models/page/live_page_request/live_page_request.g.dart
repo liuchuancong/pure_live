@@ -19,9 +19,15 @@ class _$LivePageRequest extends LivePageRequest {
   factory _$LivePageRequest([void Function(LivePageRequestBuilder)? updates]) =>
       (LivePageRequestBuilder()..update(updates))._build();
 
-  _$LivePageRequest._({required this.page, required this.pageSize, this.offset, this.cursor}) : super._();
+  _$LivePageRequest._({
+    required this.page,
+    required this.pageSize,
+    this.offset,
+    this.cursor,
+  }) : super._();
   @override
-  LivePageRequest rebuild(void Function(LivePageRequestBuilder) updates) => (toBuilder()..update(updates)).build();
+  LivePageRequest rebuild(void Function(LivePageRequestBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   LivePageRequestBuilder toBuilder() => LivePageRequestBuilder()..replace(this);
@@ -58,7 +64,8 @@ class _$LivePageRequest extends LivePageRequest {
   }
 }
 
-class LivePageRequestBuilder implements Builder<LivePageRequest, LivePageRequestBuilder> {
+class LivePageRequestBuilder
+    implements Builder<LivePageRequest, LivePageRequestBuilder> {
   _$LivePageRequest? _$v;
 
   int? _page;
@@ -110,8 +117,16 @@ class LivePageRequestBuilder implements Builder<LivePageRequest, LivePageRequest
     final _$result =
         _$v ??
         _$LivePageRequest._(
-          page: BuiltValueNullFieldError.checkNotNull(page, r'LivePageRequest', 'page'),
-          pageSize: BuiltValueNullFieldError.checkNotNull(pageSize, r'LivePageRequest', 'pageSize'),
+          page: BuiltValueNullFieldError.checkNotNull(
+            page,
+            r'LivePageRequest',
+            'page',
+          ),
+          pageSize: BuiltValueNullFieldError.checkNotNull(
+            pageSize,
+            r'LivePageRequest',
+            'pageSize',
+          ),
           offset: offset,
           cursor: cursor,
         );

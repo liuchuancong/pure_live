@@ -38,14 +38,23 @@ Serializers _$serializers =
             const FullType(BuiltList, const [const FullType(LiveBadge)]),
             () => ListBuilder<LiveBadge>(),
           )
-          ..addBuilderFactory(const FullType(BuiltList, const [const FullType(String)]), () => ListBuilder<String>())
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(LiveEmote)]),
             () => ListBuilder<LiveEmote>(),
           )
-          ..addBuilderFactory(const FullType(BuiltList, const [const FullType(String)]), () => ListBuilder<String>())
           ..addBuilderFactory(
-            const FullType(BuiltMap, const [const FullType(String), const FullType(String)]),
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltMap, const [
+              const FullType(String),
+              const FullType(String),
+            ]),
             () => MapBuilder<String, String>(),
           ))
         .build();

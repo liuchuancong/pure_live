@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/anchor/live_anchor/live_anchor.dart';
 import 'package:live_sites/src/models/area/live_area/live_area.dart';
 import 'package:live_sites/src/models/asset/live_asset_ref/live_asset_ref.dart';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
+import 'package:live_sites/src/models/enums/enums.dart';
 import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/gift/live_gift_combo/live_gift_combo.dart';
 import 'package:live_sites/src/models/gift/live_gift_value/live_gift_value.dart';
@@ -64,9 +65,79 @@ part 'serializers.g.dart';
 final Serializers serializers =
     (_$serializers.toBuilder()
           ..add(LiveMessageColor.serializer)
+          // The generated table registers the model classes; their enum
+          // fields need a serializer of their own, or writing a room (the
+          // history record) throws "No serializer for ...". Persisted as
+          // the value's name, as the model docs promise.
+          ..add(const _EnumSerializer<LiveAnchorRole>([LiveAnchorRole], 'LiveAnchorRole', LiveAnchorRole.values))
+          ..add(
+            const _EnumSerializer<LiveAudienceMetricType>(
+              [LiveAudienceMetricType],
+              'LiveAudienceMetricType',
+              LiveAudienceMetricType.values,
+            ),
+          )
+          ..add(const _EnumSerializer<LiveGiftKind>([LiveGiftKind], 'LiveGiftKind', LiveGiftKind.values))
+          ..add(const _EnumSerializer<LiveGiftUnit>([LiveGiftUnit], 'LiveGiftUnit', LiveGiftUnit.values))
+          ..add(const _EnumSerializer<LiveMessageType>([LiveMessageType], 'LiveMessageType', LiveMessageType.values))
+          ..add(
+            const _EnumSerializer<LiveRestriction>(
+              [LiveRestriction],
+              'LiveRestriction',
+              LiveRestriction.values,
+              fallback: LiveRestriction.none,
+            ),
+          )
+          ..add(
+            const _EnumSerializer<LiveRoomActivity>(
+              [LiveRoomActivity],
+              'LiveRoomActivity',
+              LiveRoomActivity.values,
+              fallback: LiveRoomActivity.none,
+            ),
+          )
+          ..add(
+            const _EnumSerializer<LiveStatus>(
+              [LiveStatus],
+              'LiveStatus',
+              LiveStatus.values,
+              fallback: LiveStatus.unknown,
+            ),
+          )
           ..addPlugin(StandardJsonPlugin())
           ..addPlugin(const _UriPlugin()))
         .build();
+
+/// An enum field's serializer: the value's name on the wire, the value
+/// itself coming back. [fallback] stands in for a name this build no
+/// longer knows, so an older record never makes a room unreadable.
+final class _EnumSerializer<T extends Enum> implements PrimitiveSerializer<T> {
+  const _EnumSerializer(this.types, this.wireName, this.values, {this.fallback});
+
+  @override
+  final Iterable<Type> types;
+
+  @override
+  final String wireName;
+
+  /// Every value of the enum, in declaration order.
+  final List<T> values;
+
+  /// The value an unknown stored name maps to; the first when null.
+  final T? fallback;
+
+  @override
+  Object serialize(Serializers serializers, T object, {FullType specifiedType = FullType.unspecified}) => object.name;
+
+  @override
+  T deserialize(Serializers serializers, Object serialized, {FullType specifiedType = FullType.unspecified}) {
+    final name = serialized.toString();
+    for (final value in values) {
+      if (value.name == name) return value;
+    }
+    return fallback ?? values.first;
+  }
+}
 
 // Constructors spell their class name by convention here; the `.new`
 // shorthand hurts readability more than the lint helps.

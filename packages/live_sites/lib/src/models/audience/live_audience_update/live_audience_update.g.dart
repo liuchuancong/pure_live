@@ -12,21 +12,26 @@ class _$LiveAudienceUpdate extends LiveAudienceUpdate {
   @override
   final int value;
 
-  factory _$LiveAudienceUpdate([void Function(LiveAudienceUpdateBuilder)? updates]) =>
-      (LiveAudienceUpdateBuilder()..update(updates))._build();
+  factory _$LiveAudienceUpdate([
+    void Function(LiveAudienceUpdateBuilder)? updates,
+  ]) => (LiveAudienceUpdateBuilder()..update(updates))._build();
 
   _$LiveAudienceUpdate._({required this.kind, required this.value}) : super._();
   @override
-  LiveAudienceUpdate rebuild(void Function(LiveAudienceUpdateBuilder) updates) =>
-      (toBuilder()..update(updates)).build();
+  LiveAudienceUpdate rebuild(
+    void Function(LiveAudienceUpdateBuilder) updates,
+  ) => (toBuilder()..update(updates)).build();
 
   @override
-  LiveAudienceUpdateBuilder toBuilder() => LiveAudienceUpdateBuilder()..replace(this);
+  LiveAudienceUpdateBuilder toBuilder() =>
+      LiveAudienceUpdateBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is LiveAudienceUpdate && kind == other.kind && value == other.value;
+    return other is LiveAudienceUpdate &&
+        kind == other.kind &&
+        value == other.value;
   }
 
   @override
@@ -47,7 +52,8 @@ class _$LiveAudienceUpdate extends LiveAudienceUpdate {
   }
 }
 
-class LiveAudienceUpdateBuilder implements Builder<LiveAudienceUpdate, LiveAudienceUpdateBuilder> {
+class LiveAudienceUpdateBuilder
+    implements Builder<LiveAudienceUpdate, LiveAudienceUpdateBuilder> {
   _$LiveAudienceUpdate? _$v;
 
   LiveAudienceSignalKind? _kind;
@@ -87,8 +93,16 @@ class LiveAudienceUpdateBuilder implements Builder<LiveAudienceUpdate, LiveAudie
     final _$result =
         _$v ??
         _$LiveAudienceUpdate._(
-          kind: BuiltValueNullFieldError.checkNotNull(kind, r'LiveAudienceUpdate', 'kind'),
-          value: BuiltValueNullFieldError.checkNotNull(value, r'LiveAudienceUpdate', 'value'),
+          kind: BuiltValueNullFieldError.checkNotNull(
+            kind,
+            r'LiveAudienceUpdate',
+            'kind',
+          ),
+          value: BuiltValueNullFieldError.checkNotNull(
+            value,
+            r'LiveAudienceUpdate',
+            'value',
+          ),
         );
     replace(_$result);
     return _$result;

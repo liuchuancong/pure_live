@@ -139,6 +139,7 @@ abstract class LiveRoom implements Built<LiveRoom, LiveRoomBuilder> {
   RoomLocal get local;
 
   /// The transient handles; never serialized.
+  @BuiltValueField(serialize: false)
   RoomRuntime get runtime;
 
   /// The broadcaster, when the source carries one.

@@ -22,36 +22,53 @@ class _$LiveAreaSerializer implements StructuredSerializer<LiveArea> {
   }) {
     final result = <Object?>[
       'platform',
-      serializers.serialize(object.platform, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.platform,
+        specifiedType: const FullType(String),
+      ),
       'areaId',
-      serializers.serialize(object.areaId, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.areaId,
+        specifiedType: const FullType(String),
+      ),
       'areaName',
-      serializers.serialize(object.areaName, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.areaName,
+        specifiedType: const FullType(String),
+      ),
     ];
     Object? value;
     value = object.parentAreaId;
     if (value != null) {
       result
         ..add('parentAreaId')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.parentAreaName;
     if (value != null) {
       result
         ..add('parentAreaName')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.iconUrl;
     if (value != null) {
       result
         ..add('iconUrl')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.shortName;
     if (value != null) {
       result
         ..add('shortName')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.position;
     if (value != null) {
@@ -77,28 +94,58 @@ class _$LiveAreaSerializer implements StructuredSerializer<LiveArea> {
       final Object? value = iterator.current;
       switch (key) {
         case 'platform':
-          result.platform = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.platform =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'areaId':
-          result.areaId = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.areaId =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'areaName':
-          result.areaName = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.areaName =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'parentAreaId':
-          result.parentAreaId = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.parentAreaId = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'parentAreaName':
-          result.parentAreaName = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.parentAreaName = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'iconUrl':
-          result.iconUrl = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.iconUrl = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'shortName':
-          result.shortName = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.shortName = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'position':
-          result.position = serializers.deserialize(value, specifiedType: const FullType(int)) as int?;
+          result.position = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int?;
           break;
       }
     }
@@ -125,7 +172,8 @@ class _$LiveArea extends LiveArea {
   @override
   final int? position;
 
-  factory _$LiveArea([void Function(LiveAreaBuilder)? updates]) => (LiveAreaBuilder()..update(updates))._build();
+  factory _$LiveArea([void Function(LiveAreaBuilder)? updates]) =>
+      (LiveAreaBuilder()..update(updates))._build();
 
   _$LiveArea._({
     required this.platform,
@@ -138,7 +186,8 @@ class _$LiveArea extends LiveArea {
     this.position,
   }) : super._();
   @override
-  LiveArea rebuild(void Function(LiveAreaBuilder) updates) => (toBuilder()..update(updates)).build();
+  LiveArea rebuild(void Function(LiveAreaBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   LiveAreaBuilder toBuilder() => LiveAreaBuilder()..replace(this);
@@ -208,7 +257,8 @@ class LiveAreaBuilder implements Builder<LiveArea, LiveAreaBuilder> {
 
   String? _parentAreaName;
   String? get parentAreaName => _$this._parentAreaName;
-  set parentAreaName(String? parentAreaName) => _$this._parentAreaName = parentAreaName;
+  set parentAreaName(String? parentAreaName) =>
+      _$this._parentAreaName = parentAreaName;
 
   String? _iconUrl;
   String? get iconUrl => _$this._iconUrl;
@@ -259,9 +309,21 @@ class LiveAreaBuilder implements Builder<LiveArea, LiveAreaBuilder> {
     final _$result =
         _$v ??
         _$LiveArea._(
-          platform: BuiltValueNullFieldError.checkNotNull(platform, r'LiveArea', 'platform'),
-          areaId: BuiltValueNullFieldError.checkNotNull(areaId, r'LiveArea', 'areaId'),
-          areaName: BuiltValueNullFieldError.checkNotNull(areaName, r'LiveArea', 'areaName'),
+          platform: BuiltValueNullFieldError.checkNotNull(
+            platform,
+            r'LiveArea',
+            'platform',
+          ),
+          areaId: BuiltValueNullFieldError.checkNotNull(
+            areaId,
+            r'LiveArea',
+            'areaId',
+          ),
+          areaName: BuiltValueNullFieldError.checkNotNull(
+            areaName,
+            r'LiveArea',
+            'areaName',
+          ),
           parentAreaId: parentAreaId,
           parentAreaName: parentAreaName,
           iconUrl: iconUrl,

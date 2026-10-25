@@ -22,9 +22,15 @@ class _$LiveAnchorSerializer implements StructuredSerializer<LiveAnchor> {
   }) {
     final result = <Object?>[
       'platform',
-      serializers.serialize(object.platform, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.platform,
+        specifiedType: const FullType(String),
+      ),
       'anchorId',
-      serializers.serialize(object.anchorId, specifiedType: const FullType(String)),
+      serializers.serialize(
+        object.anchorId,
+        specifiedType: const FullType(String),
+      ),
       'name',
       serializers.serialize(object.name, specifiedType: const FullType(String)),
     ];
@@ -33,13 +39,17 @@ class _$LiveAnchorSerializer implements StructuredSerializer<LiveAnchor> {
     if (value != null) {
       result
         ..add('avatarUrl')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.profileUrl;
     if (value != null) {
       result
         ..add('profileUrl')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.followerCount;
     if (value != null) {
@@ -51,13 +61,17 @@ class _$LiveAnchorSerializer implements StructuredSerializer<LiveAnchor> {
     if (value != null) {
       result
         ..add('introduction')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.isVerified;
     if (value != null) {
       result
         ..add('isVerified')
-        ..add(serializers.serialize(value, specifiedType: const FullType(bool)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(bool)),
+        );
     }
     value = object.anchorLevel;
     if (value != null) {
@@ -69,7 +83,12 @@ class _$LiveAnchorSerializer implements StructuredSerializer<LiveAnchor> {
     if (value != null) {
       result
         ..add('liveStatus')
-        ..add(serializers.serialize(value, specifiedType: const FullType(LiveStatus)));
+        ..add(
+          serializers.serialize(
+            value,
+            specifiedType: const FullType(LiveStatus),
+          ),
+        );
     }
     return result;
   }
@@ -89,34 +108,70 @@ class _$LiveAnchorSerializer implements StructuredSerializer<LiveAnchor> {
       final Object? value = iterator.current;
       switch (key) {
         case 'platform':
-          result.platform = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.platform =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'anchorId':
-          result.anchorId = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.anchorId =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'name':
-          result.name = serializers.deserialize(value, specifiedType: const FullType(String))! as String;
+          result.name =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(String),
+                  )!
+                  as String;
           break;
         case 'avatarUrl':
-          result.avatarUrl = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.avatarUrl = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'profileUrl':
-          result.profileUrl = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.profileUrl = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'followerCount':
-          result.followerCount = serializers.deserialize(value, specifiedType: const FullType(int)) as int?;
+          result.followerCount = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int?;
           break;
         case 'introduction':
-          result.introduction = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.introduction = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'isVerified':
-          result.isVerified = serializers.deserialize(value, specifiedType: const FullType(bool)) as bool?;
+          result.isVerified = serializers.deserialize(
+            value,
+            specifiedType: const FullType(bool),
+          ) as bool?;
           break;
         case 'anchorLevel':
-          result.anchorLevel = serializers.deserialize(value, specifiedType: const FullType(int)) as int?;
+          result.anchorLevel = serializers.deserialize(
+            value,
+            specifiedType: const FullType(int),
+          ) as int?;
           break;
         case 'liveStatus':
-          result.liveStatus = serializers.deserialize(value, specifiedType: const FullType(LiveStatus)) as LiveStatus?;
+          result.liveStatus = serializers.deserialize(
+            value,
+            specifiedType: const FullType(LiveStatus),
+          ) as LiveStatus?;
           break;
       }
     }
@@ -147,7 +202,8 @@ class _$LiveAnchor extends LiveAnchor {
   @override
   final LiveStatus? liveStatus;
 
-  factory _$LiveAnchor([void Function(LiveAnchorBuilder)? updates]) => (LiveAnchorBuilder()..update(updates))._build();
+  factory _$LiveAnchor([void Function(LiveAnchorBuilder)? updates]) =>
+      (LiveAnchorBuilder()..update(updates))._build();
 
   _$LiveAnchor._({
     required this.platform,
@@ -162,7 +218,8 @@ class _$LiveAnchor extends LiveAnchor {
     this.liveStatus,
   }) : super._();
   @override
-  LiveAnchor rebuild(void Function(LiveAnchorBuilder) updates) => (toBuilder()..update(updates)).build();
+  LiveAnchor rebuild(void Function(LiveAnchorBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   LiveAnchorBuilder toBuilder() => LiveAnchorBuilder()..replace(this);
@@ -242,7 +299,8 @@ class LiveAnchorBuilder implements Builder<LiveAnchor, LiveAnchorBuilder> {
 
   int? _followerCount;
   int? get followerCount => _$this._followerCount;
-  set followerCount(int? followerCount) => _$this._followerCount = followerCount;
+  set followerCount(int? followerCount) =>
+      _$this._followerCount = followerCount;
 
   String? _introduction;
   String? get introduction => _$this._introduction;
@@ -299,9 +357,21 @@ class LiveAnchorBuilder implements Builder<LiveAnchor, LiveAnchorBuilder> {
     final _$result =
         _$v ??
         _$LiveAnchor._(
-          platform: BuiltValueNullFieldError.checkNotNull(platform, r'LiveAnchor', 'platform'),
-          anchorId: BuiltValueNullFieldError.checkNotNull(anchorId, r'LiveAnchor', 'anchorId'),
-          name: BuiltValueNullFieldError.checkNotNull(name, r'LiveAnchor', 'name'),
+          platform: BuiltValueNullFieldError.checkNotNull(
+            platform,
+            r'LiveAnchor',
+            'platform',
+          ),
+          anchorId: BuiltValueNullFieldError.checkNotNull(
+            anchorId,
+            r'LiveAnchor',
+            'anchorId',
+          ),
+          name: BuiltValueNullFieldError.checkNotNull(
+            name,
+            r'LiveAnchor',
+            'name',
+          ),
           avatarUrl: avatarUrl,
           profileUrl: profileUrl,
           followerCount: followerCount,

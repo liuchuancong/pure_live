@@ -6,9 +6,11 @@ part of 'live_retraction.dart';
 // BuiltValueGenerator
 // **************************************************************************
 
-Serializer<LiveRetraction> _$liveRetractionSerializer = _$LiveRetractionSerializer();
+Serializer<LiveRetraction> _$liveRetractionSerializer =
+    _$LiveRetractionSerializer();
 
-class _$LiveRetractionSerializer implements StructuredSerializer<LiveRetraction> {
+class _$LiveRetractionSerializer
+    implements StructuredSerializer<LiveRetraction> {
   @override
   final Iterable<Type> types = const [LiveRetraction, _$LiveRetraction];
   @override
@@ -20,19 +22,26 @@ class _$LiveRetractionSerializer implements StructuredSerializer<LiveRetraction>
     LiveRetraction object, {
     FullType specifiedType = FullType.unspecified,
   }) {
-    final result = <Object?>['all', serializers.serialize(object.all, specifiedType: const FullType(bool))];
+    final result = <Object?>[
+      'all',
+      serializers.serialize(object.all, specifiedType: const FullType(bool)),
+    ];
     Object? value;
     value = object.userId;
     if (value != null) {
       result
         ..add('userId')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.messageId;
     if (value != null) {
       result
         ..add('messageId')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     return result;
   }
@@ -52,13 +61,24 @@ class _$LiveRetractionSerializer implements StructuredSerializer<LiveRetraction>
       final Object? value = iterator.current;
       switch (key) {
         case 'userId':
-          result.userId = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.userId = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'messageId':
-          result.messageId = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.messageId = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'all':
-          result.all = serializers.deserialize(value, specifiedType: const FullType(bool))! as bool;
+          result.all =
+              serializers.deserialize(
+                    value,
+                    specifiedType: const FullType(bool),
+                  )!
+                  as bool;
           break;
       }
     }
@@ -78,9 +98,11 @@ class _$LiveRetraction extends LiveRetraction {
   factory _$LiveRetraction([void Function(LiveRetractionBuilder)? updates]) =>
       (LiveRetractionBuilder()..update(updates))._build();
 
-  _$LiveRetraction._({this.userId, this.messageId, required this.all}) : super._();
+  _$LiveRetraction._({this.userId, this.messageId, required this.all})
+    : super._();
   @override
-  LiveRetraction rebuild(void Function(LiveRetractionBuilder) updates) => (toBuilder()..update(updates)).build();
+  LiveRetraction rebuild(void Function(LiveRetractionBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   LiveRetractionBuilder toBuilder() => LiveRetractionBuilder()..replace(this);
@@ -88,7 +110,10 @@ class _$LiveRetraction extends LiveRetraction {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is LiveRetraction && userId == other.userId && messageId == other.messageId && all == other.all;
+    return other is LiveRetraction &&
+        userId == other.userId &&
+        messageId == other.messageId &&
+        all == other.all;
   }
 
   @override
@@ -111,7 +136,8 @@ class _$LiveRetraction extends LiveRetraction {
   }
 }
 
-class LiveRetractionBuilder implements Builder<LiveRetraction, LiveRetractionBuilder> {
+class LiveRetractionBuilder
+    implements Builder<LiveRetraction, LiveRetractionBuilder> {
   _$LiveRetraction? _$v;
 
   String? _userId;
@@ -160,7 +186,11 @@ class LiveRetractionBuilder implements Builder<LiveRetraction, LiveRetractionBui
         _$LiveRetraction._(
           userId: userId,
           messageId: messageId,
-          all: BuiltValueNullFieldError.checkNotNull(all, r'LiveRetraction', 'all'),
+          all: BuiltValueNullFieldError.checkNotNull(
+            all,
+            r'LiveRetraction',
+            'all',
+          ),
         );
     replace(_$result);
     return _$result;

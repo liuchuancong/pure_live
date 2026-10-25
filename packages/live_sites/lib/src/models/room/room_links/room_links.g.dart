@@ -26,19 +26,25 @@ class _$RoomLinksSerializer implements StructuredSerializer<RoomLinks> {
     if (value != null) {
       result
         ..add('webUrl')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.appUrl;
     if (value != null) {
       result
         ..add('appUrl')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     value = object.shareUrl;
     if (value != null) {
       result
         ..add('shareUrl')
-        ..add(serializers.serialize(value, specifiedType: const FullType(String)));
+        ..add(
+          serializers.serialize(value, specifiedType: const FullType(String)),
+        );
     }
     return result;
   }
@@ -58,13 +64,22 @@ class _$RoomLinksSerializer implements StructuredSerializer<RoomLinks> {
       final Object? value = iterator.current;
       switch (key) {
         case 'webUrl':
-          result.webUrl = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.webUrl = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'appUrl':
-          result.appUrl = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.appUrl = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
         case 'shareUrl':
-          result.shareUrl = serializers.deserialize(value, specifiedType: const FullType(String)) as String?;
+          result.shareUrl = serializers.deserialize(
+            value,
+            specifiedType: const FullType(String),
+          ) as String?;
           break;
       }
     }
@@ -81,11 +96,13 @@ class _$RoomLinks extends RoomLinks {
   @override
   final String? shareUrl;
 
-  factory _$RoomLinks([void Function(RoomLinksBuilder)? updates]) => (RoomLinksBuilder()..update(updates))._build();
+  factory _$RoomLinks([void Function(RoomLinksBuilder)? updates]) =>
+      (RoomLinksBuilder()..update(updates))._build();
 
   _$RoomLinks._({this.webUrl, this.appUrl, this.shareUrl}) : super._();
   @override
-  RoomLinks rebuild(void Function(RoomLinksBuilder) updates) => (toBuilder()..update(updates)).build();
+  RoomLinks rebuild(void Function(RoomLinksBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   RoomLinksBuilder toBuilder() => RoomLinksBuilder()..replace(this);
@@ -93,7 +110,10 @@ class _$RoomLinks extends RoomLinks {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is RoomLinks && webUrl == other.webUrl && appUrl == other.appUrl && shareUrl == other.shareUrl;
+    return other is RoomLinks &&
+        webUrl == other.webUrl &&
+        appUrl == other.appUrl &&
+        shareUrl == other.shareUrl;
   }
 
   @override
@@ -158,7 +178,9 @@ class RoomLinksBuilder implements Builder<RoomLinks, RoomLinksBuilder> {
   RoomLinks build() => _build();
 
   _$RoomLinks _build() {
-    final _$result = _$v ?? _$RoomLinks._(webUrl: webUrl, appUrl: appUrl, shareUrl: shareUrl);
+    final _$result =
+        _$v ??
+        _$RoomLinks._(webUrl: webUrl, appUrl: appUrl, shareUrl: shareUrl);
     replace(_$result);
     return _$result;
   }
