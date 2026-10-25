@@ -70,7 +70,6 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('theme.selection', BackupPrefKind.string),
   ('theme.autoClash', BackupPrefKind.string),
   ('theme.font', BackupPrefKind.string),
-  ('theme.pureBlack', BackupPrefKind.boolean),
   ('app.locale', BackupPrefKind.string),
   // The wallpaper: its kind and every source it can hold.
   ('background.kind', BackupPrefKind.string),

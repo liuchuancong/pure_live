@@ -29,7 +29,6 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
   static void _defaults(AppThemeSettingsBuilder b) {
     b
       ..mode = DsThemeMode.system
-      ..pureBlack = false
       ..contrast = DsContrast.standard
       ..cornerStyle = DsCornerStyle.standard
       ..selectionStyle = DsSelectionStyle.soft
@@ -46,11 +45,6 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
   /// Light / dark / follow the system. Consumed by `DsApp`, which derives
   /// the dark variant from the same [seed].
   DsThemeMode get mode;
-
-  /// Whether dark surfaces collapse to true black (OLED screens): the
-  /// reference's true black, applied to the generated palette through the colour
-  /// adjuster so every regeneration keeps it.
-  bool get pureBlack;
 
   /// Soft or standard contrast.
   DsContrast get contrast;
@@ -142,7 +136,7 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
     dangerOverride: dangerOverride,
     successOverride: successOverride,
     warningOverride: warningOverride,
-    adjustColors: _colorsAdjuster(),
+    adjustColors: adjustColors,
     adjustShadows: adjustShadows,
     adjustRadii: adjustRadii,
     adjustSizes: adjustSizes,
@@ -151,27 +145,6 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
     haptics: haptics,
     extensions: extensions,
   );
-
-  /// [adjustColors] with true black folded in: in a dark palette the three
-  /// ground roles go true black, controls and fields keep their generated
-  /// lift so edges stay visible.
-  DsColorsAdjuster? _colorsAdjuster() {
-    final custom = adjustColors;
-    if (!pureBlack) {
-      return custom;
-    }
-    return (colors, brightness) {
-      final adjusted = custom?.call(colors, brightness) ?? colors;
-      if (brightness != Brightness.dark) {
-        return adjusted;
-      }
-      return adjusted.copyWith(
-        canvas: const Color(0xFF000000),
-        surface: const Color(0xFF000000),
-        sidebar: const Color(0xFF000000),
-      );
-    };
-  }
 
   /// Builds the typography override. A stored [fontFamily] wins; without
   /// one the platform's own face is named where this app can

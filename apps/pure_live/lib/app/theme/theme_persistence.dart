@@ -123,19 +123,6 @@ abstract final class ThemePersistence {
   static Future<void> storeDensity(DsDensity? density) =>
       density == null ? _remove('theme.density') : _store('theme.density', density.name);
 
-  /// Whether dark surfaces collapse to true black.
-  static bool readPureBlack() {
-    try {
-      return StoragePrefs.getBool('theme.pureBlack') ?? false;
-    } on Object {
-      return false;
-    }
-  }
-
-  /// Stores the true-black choice.
-  static Future<void> storePureBlack({required bool value}) =>
-      _store('theme.pureBlack', value ? 'true' : 'false');
-
   /// The stored font family (an app preset id), or null for the platform's
   /// own face.
   static String? readFont() {

@@ -111,8 +111,6 @@
   "fontDescription": "界面字体：跟随平台官方字体，或选一款内置官方字体。",
   "fontPlatform": "跟随平台（系统字体）",
   "backHome": "返回应用",
-  "pureBlack": "纯黑（OLED）",
-  "pureBlackDesc": "深色模式下把背景收成纯黑，OLED 屏更省电。",
   "navCache": "缓存",
   "cacheDescription": "封面与头像的磁盘缓存、清理上限。",
   "cacheSize": "当前缓存大小",

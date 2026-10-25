@@ -985,8 +985,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get fontDescription => 'UI typeface: the platform\'s own face, or one of the bundled official ones.';
 	@override String get fontPlatform => 'Follow the platform (system font)';
 	@override String get backHome => 'Back to app';
-	@override String get pureBlack => 'True black (OLED)';
-	@override String get pureBlackDesc => 'Collapses dark backgrounds to true black for OLED screens.';
 	@override String get navCache => 'Cache';
 	@override String get cacheDescription => 'The disk cache for covers and avatars, and its cleanup cap.';
 	@override String get cacheSize => 'Current cache size';
@@ -2194,8 +2192,6 @@ extension on TranslationsEn {
 			'settings.fontDescription' => 'UI typeface: the platform\'s own face, or one of the bundled official ones.',
 			'settings.fontPlatform' => 'Follow the platform (system font)',
 			'settings.backHome' => 'Back to app',
-			'settings.pureBlack' => 'True black (OLED)',
-			'settings.pureBlackDesc' => 'Collapses dark backgrounds to true black for OLED screens.',
 			'settings.navCache' => 'Cache',
 			'settings.cacheDescription' => 'The disk cache for covers and avatars, and its cleanup cap.',
 			'settings.cacheSize' => 'Current cache size',
@@ -2436,10 +2432,10 @@ extension on TranslationsEn {
 			'toolbox.toolNetworkTitle' => 'Platform nodes',
 			'toolbox.toolNetworkDescription' => 'Test each platform\'s endpoint for reachability and latency.',
 			'toolbox.toolCacheTitle' => 'Cache cleanup',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.toolCacheDescription' => 'Inspect and clear the memory the image cache holds.',
 			'toolbox.toolLogsTitle' => 'Logs',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.toolLogsDescription' => 'Inspect the app\'s runtime log and diagnostics.',
 			'toolbox.back' => 'Back',
 			'toolbox.confirm' => 'Confirm',

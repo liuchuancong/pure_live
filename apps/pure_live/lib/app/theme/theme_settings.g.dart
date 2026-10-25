@@ -12,8 +12,6 @@ class _$AppThemeSettings extends AppThemeSettings {
   @override
   final DsThemeMode mode;
   @override
-  final bool pureBlack;
-  @override
   final DsContrast contrast;
   @override
   final DsCornerStyle cornerStyle;
@@ -65,7 +63,6 @@ class _$AppThemeSettings extends AppThemeSettings {
   _$AppThemeSettings._({
     this.seed,
     required this.mode,
-    required this.pureBlack,
     required this.contrast,
     required this.cornerStyle,
     this.density,
@@ -103,7 +100,6 @@ class _$AppThemeSettings extends AppThemeSettings {
     return other is AppThemeSettings &&
         seed == other.seed &&
         mode == other.mode &&
-        pureBlack == other.pureBlack &&
         contrast == other.contrast &&
         cornerStyle == other.cornerStyle &&
         density == other.density &&
@@ -133,7 +129,6 @@ class _$AppThemeSettings extends AppThemeSettings {
     var _$hash = 0;
     _$hash = $jc(_$hash, seed.hashCode);
     _$hash = $jc(_$hash, mode.hashCode);
-    _$hash = $jc(_$hash, pureBlack.hashCode);
     _$hash = $jc(_$hash, contrast.hashCode);
     _$hash = $jc(_$hash, cornerStyle.hashCode);
     _$hash = $jc(_$hash, density.hashCode);
@@ -165,7 +160,6 @@ class _$AppThemeSettings extends AppThemeSettings {
     return (newBuiltValueToStringHelper(r'AppThemeSettings')
           ..add('seed', seed)
           ..add('mode', mode)
-          ..add('pureBlack', pureBlack)
           ..add('contrast', contrast)
           ..add('cornerStyle', cornerStyle)
           ..add('density', density)
@@ -203,10 +197,6 @@ class AppThemeSettingsBuilder
   DsThemeMode? _mode;
   DsThemeMode? get mode => _$this._mode;
   set mode(DsThemeMode? mode) => _$this._mode = mode;
-
-  bool? _pureBlack;
-  bool? get pureBlack => _$this._pureBlack;
-  set pureBlack(bool? pureBlack) => _$this._pureBlack = pureBlack;
 
   DsContrast? _contrast;
   DsContrast? get contrast => _$this._contrast;
@@ -321,7 +311,6 @@ class AppThemeSettingsBuilder
     if ($v != null) {
       _seed = $v.seed;
       _mode = $v.mode;
-      _pureBlack = $v.pureBlack;
       _contrast = $v.contrast;
       _cornerStyle = $v.cornerStyle;
       _density = $v.density;
@@ -373,11 +362,6 @@ class AppThemeSettingsBuilder
               mode,
               r'AppThemeSettings',
               'mode',
-            ),
-            pureBlack: BuiltValueNullFieldError.checkNotNull(
-              pureBlack,
-              r'AppThemeSettings',
-              'pureBlack',
             ),
             contrast: BuiltValueNullFieldError.checkNotNull(
               contrast,

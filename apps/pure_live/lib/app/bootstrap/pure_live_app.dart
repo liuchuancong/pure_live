@@ -61,9 +61,7 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       if (selection != null) b.selectionStyle = selection;
       final autoClash = ThemePersistence.readAutoClashRule();
       if (autoClash != null) b.autoClashRule = autoClash;
-      b
-        ..pureBlack = ThemePersistence.readPureBlack()
-        ..density = ThemePersistence.readDensity();
+      b.density = ThemePersistence.readDensity();
     });
     final font = ThemePersistence.readFont();
     if (font != null) _settings = _settings.rebuild((b) => b..fontFamily = font);
@@ -88,7 +86,6 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     unawaited(ThemePersistence.storeContrast(settings.contrast));
     unawaited(ThemePersistence.storeSelectionStyle(settings.selectionStyle));
     unawaited(ThemePersistence.storeAutoClashRule(value: settings.autoClashRule));
-    unawaited(ThemePersistence.storePureBlack(value: settings.pureBlack));
     unawaited(ThemePersistence.storeDensity(settings.density));
     unawaited(ThemePersistence.storeFont(settings.fontFamily));
     // Only a named tone persists; the platform accent is re-read at boot

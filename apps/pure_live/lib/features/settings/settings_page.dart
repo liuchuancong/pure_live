@@ -735,15 +735,6 @@ final class _AppearancePane extends ConsumerWidget {
               ),
             ),
             DsListRow(
-              leading: const DsIcon(DsIcons.circle),
-              title: Text(t.settings.pureBlack),
-              description: Text(t.settings.pureBlackDesc),
-              trailing: DsSwitch(
-                value: settings.pureBlack,
-                onChanged: (value) => update(settings.rebuild((b) => b..pureBlack = value)),
-              ),
-            ),
-            DsListRow(
               leading: const DsIcon(DsIcons.wandSparkles),
               title: Text(t.settings.autoClash),
               description: Text(t.settings.autoClashDesc),

@@ -38,7 +38,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.appearance, s.font, 'font typeface 字体 字型'),
     _hit(SettingsSection.appearance, s.language, 'language locale 语言 中文 english'),
     _hit(SettingsSection.appearance, s.density, 'density compact touch 密度 紧凑 触控'),
-    _hit(SettingsSection.appearance, s.pureBlack, 'oled black dark 纯黑 深色'),
     // Background.
     _hit(SettingsSection.background, s.backgroundKind, 'background image video wallpaper 背景 图片 视频'),
     _hit(SettingsSection.background, s.backgroundImageAddress, 'image url 图片 地址'),

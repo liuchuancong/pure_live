@@ -2552,12 +2552,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '返回应用'
 	String get backHome => '返回应用';
 
-	/// zh-CN: '纯黑（OLED）'
-	String get pureBlack => '纯黑（OLED）';
-
-	/// zh-CN: '深色模式下把背景收成纯黑，OLED 屏更省电。'
-	String get pureBlackDesc => '深色模式下把背景收成纯黑，OLED 屏更省电。';
-
 	/// zh-CN: '缓存'
 	String get navCache => '缓存';
 
@@ -4518,8 +4512,6 @@ extension on Translations {
 			'settings.fontDescription' => '界面字体：跟随平台官方字体，或选一款内置官方字体。',
 			'settings.fontPlatform' => '跟随平台（系统字体）',
 			'settings.backHome' => '返回应用',
-			'settings.pureBlack' => '纯黑（OLED）',
-			'settings.pureBlackDesc' => '深色模式下把背景收成纯黑，OLED 屏更省电。',
 			'settings.navCache' => '缓存',
 			'settings.cacheDescription' => '封面与头像的磁盘缓存、清理上限。',
 			'settings.cacheSize' => '当前缓存大小',
@@ -4760,10 +4752,10 @@ extension on Translations {
 			'toolbox.toolNetworkTitle' => '平台节点',
 			'toolbox.toolNetworkDescription' => '测试各平台接口的连通性与延迟。',
 			'toolbox.toolCacheTitle' => '缓存清理',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.toolCacheDescription' => '查看并清理图片占用的内存缓存。',
 			'toolbox.toolLogsTitle' => '日志',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.toolLogsDescription' => '查看应用运行日志与诊断信息。',
 			'toolbox.back' => '返回',
 			'toolbox.confirm' => '确认',

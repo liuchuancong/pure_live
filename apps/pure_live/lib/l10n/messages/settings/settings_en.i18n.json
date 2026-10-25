@@ -111,8 +111,6 @@
   "fontDescription": "UI typeface: the platform's own face, or one of the bundled official ones.",
   "fontPlatform": "Follow the platform (system font)",
   "backHome": "Back to app",
-  "pureBlack": "True black (OLED)",
-  "pureBlackDesc": "Collapses dark backgrounds to true black for OLED screens.",
   "navCache": "Cache",
   "cacheDescription": "The disk cache for covers and avatars, and its cleanup cap.",
   "cacheSize": "Current cache size",
