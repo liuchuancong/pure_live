@@ -75,7 +75,7 @@ class SecondaryWindows {
   /// Asks every window of [role] to close, and forgets them.
   Future<void> dismissRole(WindowRole role) async {
     for (final window in _byId.values.where((entry) => entry.role == role).toList()) {
-      await window.send<void>('shell_dismiss');
+      await _dismiss(window);
       _byId.remove(window.id);
     }
   }
@@ -84,9 +84,23 @@ class SecondaryWindows {
   /// forgotten panel cannot keep the process alive after the main window is gone.
   Future<void> dismissAll() async {
     for (final window in _byId.values.toList()) {
-      await window.send<void>('shell_dismiss');
+      await _dismiss(window);
     }
     _byId.clear();
+  }
+
+  /// Sends the dismiss and forgets the window either way. A window that
+  /// answers nothing — its engine dying mid-quit, its handler not armed yet —
+  /// is already as good as gone, and a failure here would run through the quit
+  /// path: the viewer pressed quit and the app stayed, the worst possible
+  /// moment for a channel to have opinions.
+  Future<void> _dismiss(SecondaryWindow window) async {
+    try {
+      await window.send<void>('shell_dismiss');
+    } on Object {
+      // Already gone, or gone by the time the send landed.
+    }
+    _byId.remove(window.id);
   }
 
   /// Raises every window the viewer can see, used when the app is reactivated
