@@ -40,9 +40,9 @@ final class RecordingTaskRepository {
     await box.deleteAll(box.getAllKeys());
   }
 
-  /// Marks the task behind [id] as recording: a new session starts now,
-  /// leaving the last one's facts behind. A task never stored is a no-op
-  /// — the engine adds its stub first.
+  /// Marks the task behind [id] as recording: a new session starts now, and
+  /// the last one's facts (file, size, error) are cleared with it. A task
+  /// never stored is a no-op — the engine adds its stub first.
   Future<void> setRunning(String id) async {
     final stored = box.get(id);
     if (stored == null) return;
@@ -62,7 +62,7 @@ final class RecordingTaskRepository {
 
   /// Marks the task behind [id] as ended in [state], stamping the end and
   /// what the session left behind. A task never stored is a no-op.
-  Future<void> setEnded(String id, RecordingTaskState state, {String? filePath, int? bytes}) async {
+  Future<void> setEnded(String id, RecordingTaskState state, {String? filePath, int? bytes, String? errorText}) async {
     final stored = box.get(id);
     if (stored == null) return;
     final task = RecordingTask.fromJson(stored);
@@ -72,8 +72,18 @@ final class RecordingTaskRepository {
         endedAt: DateTime.now().toUtc(),
         filePath: filePath ?? task.filePath,
         bytes: bytes ?? task.bytes,
+        errorText: errorText ?? task.errorText,
       ),
     );
+  }
+
+  /// Puts the running session's [bytes] on the task without touching its
+  /// state or start: the engine's progress line, written on its own clock.
+  /// A task never stored is a no-op.
+  Future<void> setProgress(String id, int bytes) async {
+    final stored = box.get(id);
+    if (stored == null) return;
+    await save(RecordingTask.fromJson(stored).copyWith(bytes: bytes));
   }
 }
 
@@ -137,17 +147,24 @@ final class RecordingTasksController extends Notifier<RecordingTasksState> {
   }
 
   /// Marks the task behind [id] as ended with its file saved.
-  Future<void> setStopped(String id, {String? filePath, int? bytes}) async {
+  Future<void> setStopped(String id, {String? filePath, int? bytes, String? errorText}) async {
     final repository = ref.read(recordingRepositoryProvider).value;
     if (repository == null) return;
-    await repository.setEnded(id, RecordingTaskState.stopped, filePath: filePath, bytes: bytes);
+    await repository.setEnded(id, RecordingTaskState.stopped, filePath: filePath, bytes: bytes, errorText: errorText);
   }
 
   /// Marks the task behind [id] as failed (its session ended in an error).
-  Future<void> setFailed(String id, {String? filePath, int? bytes}) async {
+  Future<void> setFailed(String id, {String? filePath, int? bytes, String? errorText}) async {
     final repository = ref.read(recordingRepositoryProvider).value;
     if (repository == null) return;
-    await repository.setEnded(id, RecordingTaskState.failed, filePath: filePath, bytes: bytes);
+    await repository.setEnded(id, RecordingTaskState.failed, filePath: filePath, bytes: bytes, errorText: errorText);
+  }
+
+  /// Puts the running session's [bytes] on the task (the engine's progress).
+  Future<void> setProgress(String id, int bytes) async {
+    final repository = ref.read(recordingRepositoryProvider).value;
+    if (repository == null) return;
+    await repository.setProgress(id, bytes);
   }
 }
 

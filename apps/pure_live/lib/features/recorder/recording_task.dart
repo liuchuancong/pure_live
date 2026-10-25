@@ -1,12 +1,11 @@
 /// One recording task: a room the recorder is set to capture, with the
 /// session it last ran.
 ///
-/// The model is deliberately a plain immutable class: the recording engine
-/// itself arrives later with the player stack (media_core_recording_ffmpeg);
-/// until then the repository stores these tasks and the surfaces read them.
-/// A task keeps its room's identity as its id — `platform:roomId`, like a
-/// follow — so re-recording a room updates its entry instead of piling up
-/// copies.
+/// The model is deliberately a plain immutable class: the engine drives it
+/// through `recorder_engine.dart` (FFmpeg over the media_core recording
+/// stack), and the surfaces read the facts it leaves behind. A task keeps
+/// its room's identity as its id — `platform:roomId`, like a follow — so
+/// re-recording a room updates its entry instead of piling up copies.
 enum RecordingTaskState {
   /// The engine is capturing the room's stream.
   recording,
@@ -45,6 +44,7 @@ final class RecordingTask {
     this.endedAt,
     this.filePath,
     this.bytes = 0,
+    this.errorText = '',
   });
 
   /// Reads a task from its storage JSON; a map without a moment reads as
@@ -66,6 +66,7 @@ final class RecordingTask {
       endedAt: DateTime.tryParse(map['endedAt'] as String? ?? ''),
       filePath: map['filePath'] as String?,
       bytes: (map['bytes'] as num?)?.toInt() ?? 0,
+      errorText: map['errorText'] as String? ?? '',
     );
   }
 
@@ -101,6 +102,10 @@ final class RecordingTask {
   /// The last session's file size; the engine reports it as it records.
   final int bytes;
 
+  /// Why the last session failed ('' while it tells nothing). The engine
+  /// writes the FFmpeg/backend's own words, trimmed to one paragraph.
+  final String errorText;
+
   /// Whether the engine would be capturing this task right now.
   bool get isRunning => state == RecordingTaskState.recording;
 
@@ -116,6 +121,7 @@ final class RecordingTask {
     'endedAt': endedAt?.toUtc().toIso8601String(),
     'filePath': filePath,
     'bytes': bytes,
+    'errorText': errorText,
   };
 
   /// Copies the task with the given fields replaced.
@@ -130,6 +136,7 @@ final class RecordingTask {
     DateTime? endedAt,
     String? filePath,
     int? bytes,
+    String? errorText,
   }) {
     return RecordingTask(
       id: id ?? this.id,
@@ -142,6 +149,7 @@ final class RecordingTask {
       endedAt: endedAt ?? this.endedAt,
       filePath: filePath ?? this.filePath,
       bytes: bytes ?? this.bytes,
+      errorText: errorText ?? this.errorText,
     );
   }
 }

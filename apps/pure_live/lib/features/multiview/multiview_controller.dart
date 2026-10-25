@@ -4,23 +4,42 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom, LiveRoomRefIdentity;
 import 'package:live_storage/live_storage.dart';
 
-/// The pane counts the wall offers: one, two side by side, two by two,
-/// two columns by three rows, and three by three (the reference's
-/// 1×1, 1×2, 2×2, 2×3 and 3×3 walls).
-const List<int> kMultiviewLayouts = [1, 2, 4, 6, 9];
+/// The arrangements of the wall: one pane, two side by side, two by two,
+/// and the reference's focus layout (one large pane with a column of three
+/// small ones). Six and nine streams are not offered: they cost more than
+/// a wall is worth and the reference does not ship them either.
+enum MultiviewLayout {
+  /// One pane.
+  single(1),
+
+  /// Two side by side.
+  dual(2),
+
+  /// Two by two.
+  quad(4),
+
+  /// One large pane and three small ones beside it (or below it, when
+  /// that leaves the large pane more room).
+  focus(4);
+
+  MultiviewLayout(this.panes);
+
+  /// Panes the layout holds.
+  final int panes;
+}
 
 /// The layout a wall that never stored one starts with (the reference's
 /// default arrangement).
-const int _defaultLayout = 4;
+const MultiviewLayout _defaultLayout = MultiviewLayout.quad;
 
 /// The key the wall document sits under (the box holds exactly this one
 /// entry).
 const String _documentKey = 'current';
 
-/// The wall's arrangement: the layout's pane count and, per slot, the
-/// identity of the room it holds — `platform:roomId`, like a follow — or
-/// null while the slot is empty.
-typedef MultiviewState = ({bool ready, int layout, List<String?> slots});
+/// The wall's arrangement: the layout and, per slot, the identity of the
+/// room it holds — `platform:roomId`, like a follow — or null while the
+/// slot is empty.
+typedef MultiviewState = ({bool ready, MultiviewLayout layout, List<String?> slots});
 
 /// The multiview store (the reference's last-arrangement meta entry): one
 /// box holding one JSON map — the layout and the slots — so a revisit
@@ -46,17 +65,39 @@ final class MultiviewRepository {
   MultiviewState load() {
     final stored = box.get(_documentKey);
     if (stored == null) {
-      return (ready: true, layout: _defaultLayout, slots: List<String?>.filled(_defaultLayout, null));
+      return (
+        ready: true,
+        layout: _defaultLayout,
+        slots: List<String?>.filled(_defaultLayout.panes, null),
+      );
     }
     final json = stored is Map<String, Object?> ? stored : Map<String, Object?>.from(stored as Map);
-    final rawLayout = json['layout'];
-    final layout = rawLayout is int && kMultiviewLayouts.contains(rawLayout) ? rawLayout : _defaultLayout;
-    return (ready: true, layout: layout, slots: _slotsOf(json['slots'], layout));
+    final layout = _layoutOf(json['layout']);
+    return (ready: true, layout: layout, slots: _slotsOf(json['slots'], layout.panes));
   }
 
   /// Stores [layout] and [slots] whole, replacing the wall document.
-  Future<void> save({required int layout, required List<String?> slots}) =>
-      box.save(_documentKey, {'layout': layout, 'slots': slots});
+  Future<void> save({required MultiviewLayout layout, required List<String?> slots}) =>
+      box.save(_documentKey, {'layout': layout.name, 'slots': slots});
+
+  /// The stored layout; the pane counts walls stored before the focus
+  /// layout existed still read, and a value out of the enum is the
+  /// default.
+  static MultiviewLayout _layoutOf(Object? raw) {
+    if (raw is String) {
+      for (final layout in MultiviewLayout.values) {
+        if (layout.name == raw) return layout;
+      }
+    }
+    if (raw is int) {
+      return switch (raw) {
+        1 => MultiviewLayout.single,
+        2 => MultiviewLayout.dual,
+        _ => MultiviewLayout.quad,
+      };
+    }
+    return _defaultLayout;
+  }
 
   /// The stored slots cut or padded to [count]; an entry that is not a
   /// room identity reads as an empty slot.
@@ -91,7 +132,7 @@ final class MultiviewController extends Notifier<MultiviewState> {
       _refresh(repository);
     });
     ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
-    return (ready: false, layout: _defaultLayout, slots: List<String?>.filled(_defaultLayout, null));
+    return (ready: false, layout: _defaultLayout, slots: List<String?>.filled(_defaultLayout.panes, null));
   }
 
   void _refresh(MultiviewRepository repository) {
@@ -107,16 +148,16 @@ final class MultiviewController extends Notifier<MultiviewState> {
     return repository;
   }
 
-  /// Changes the layout to [count] panes: the first slots keep their
-  /// rooms, the ones beyond the new size give them up.
-  Future<void> setLayout(int count) async {
+  /// Changes the layout: the first slots keep their rooms, the ones beyond
+  /// the new layout's size give them up.
+  Future<void> setLayout(MultiviewLayout layout) async {
     final repository = _repository;
-    if (repository == null || !kMultiviewLayouts.contains(count)) return;
+    if (repository == null) return;
     final slots = [
-      for (var index = 0; index < count; index++)
+      for (var index = 0; index < layout.panes; index++)
         if (index < state.slots.length) state.slots[index] else null,
     ];
-    await repository.save(layout: count, slots: slots);
+    await repository.save(layout: layout, slots: slots);
   }
 
   /// Puts [room] into slot [index], replacing whoever was there.

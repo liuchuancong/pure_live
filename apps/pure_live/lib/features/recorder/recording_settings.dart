@@ -3,34 +3,161 @@ import 'dart:async' show unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
-/// The file naming the recorder will use when the engine arrives: a
-/// template with the placeholders the engine will fill in — the date, the
-/// time, the platform, the room id and the room title.
+/// The file naming the recorder will use: a template with the placeholders
+/// the engine fills in — the date, the time, the platform, the room id and
+/// the room title.
 const String kDefaultNamingTemplate = '{date}_{title}';
 
-/// The recorder's own tunables, until the engine arrives and grows them.
-typedef RecordingSettings = ({String saveDir, String namingTemplate, double maxSizeGb});
+/// The container each recording segment is written into.
+enum RecordingFileContainer {
+  /// Segmented MPEG-TS: every segment stands alone and joining them is a
+  /// byte copy; the most forgiving container for a live capture.
+  mpegTs,
+
+  /// Fragmented MP4: ordinary players open it, at the cost of a remux when
+  /// segments join.
+  mp4,
+}
+
+/// The recorder's own tunables, consumed by `recorder_engine.dart`.
+///
+/// Every field maps to an FFmpeg argument or the engine's own session
+/// policy; nothing here is a note without an effect.
+final class RecordingSettings {
+  /// Creates a settings set; the fields default to the engine's own
+  /// choices.
+  const RecordingSettings({
+    this.saveDir = '',
+    this.namingTemplate = kDefaultNamingTemplate,
+    this.maxSizeMb = 2048,
+    this.segmentSeconds = 300,
+    this.readTimeoutSeconds = 15,
+    this.queueSize = 2048,
+    this.preferBestStream = true,
+    this.keepAlive = true,
+    this.verifyOutput = true,
+    this.restartLimit = 3,
+    this.restartBackoffSeconds = 3,
+    this.stallTimeoutSeconds = 30,
+    this.diskWatermarkMb = 200,
+    this.maxTasks = 1,
+    this.container = RecordingFileContainer.mpegTs,
+  });
+
+  /// The designed defaults.
+  static const RecordingSettings defaults = RecordingSettings();
+
+  /// Where recordings land; '' means the engine's own default directory.
+  final String saveDir;
+
+  /// The file naming template the engine fills in.
+  final String namingTemplate;
+
+  /// How large one recording may grow before it is ended, in megabytes.
+  final int maxSizeMb;
+
+  /// Length of one segment, in seconds.
+  final int segmentSeconds;
+
+  /// How long FFmpeg waits for input before failing the read, in seconds.
+  final int readTimeoutSeconds;
+
+  /// Input packet queue size.
+  final int queueSize;
+
+  /// Whether only the first video and audio stream are mapped.
+  final bool preferBestStream;
+
+  /// Whether a recording holds a background session and a wake lock.
+  final bool keepAlive;
+
+  /// Whether the output is verified when the session ends.
+  final bool verifyOutput;
+
+  /// How many times a broken stream is reopened; 0 disables retries.
+  final int restartLimit;
+
+  /// The pause before a restart, in seconds.
+  final int restartBackoffSeconds;
+
+  /// How long without new data counts as a stalled stream, in seconds.
+  final int stallTimeoutSeconds;
+
+  /// Free space below which a recording stops, in megabytes.
+  final int diskWatermarkMb;
+
+  /// How many recordings may run at once.
+  final int maxTasks;
+
+  /// The segment container.
+  final RecordingFileContainer container;
+
+  /// A copy with the named fields replaced.
+  RecordingSettings copyWith({
+    String? saveDir,
+    String? namingTemplate,
+    int? maxSizeMb,
+    int? segmentSeconds,
+    int? readTimeoutSeconds,
+    int? queueSize,
+    bool? preferBestStream,
+    bool? keepAlive,
+    bool? verifyOutput,
+    int? restartLimit,
+    int? restartBackoffSeconds,
+    int? stallTimeoutSeconds,
+    int? diskWatermarkMb,
+    int? maxTasks,
+    RecordingFileContainer? container,
+  }) => RecordingSettings(
+    saveDir: saveDir ?? this.saveDir,
+    namingTemplate: namingTemplate ?? this.namingTemplate,
+    maxSizeMb: maxSizeMb ?? this.maxSizeMb,
+    segmentSeconds: segmentSeconds ?? this.segmentSeconds,
+    readTimeoutSeconds: readTimeoutSeconds ?? this.readTimeoutSeconds,
+    queueSize: queueSize ?? this.queueSize,
+    preferBestStream: preferBestStream ?? this.preferBestStream,
+    keepAlive: keepAlive ?? this.keepAlive,
+    verifyOutput: verifyOutput ?? this.verifyOutput,
+    restartLimit: restartLimit ?? this.restartLimit,
+    restartBackoffSeconds: restartBackoffSeconds ?? this.restartBackoffSeconds,
+    stallTimeoutSeconds: stallTimeoutSeconds ?? this.stallTimeoutSeconds,
+    diskWatermarkMb: diskWatermarkMb ?? this.diskWatermarkMb,
+    maxTasks: maxTasks ?? this.maxTasks,
+    container: container ?? this.container,
+  );
+}
 
 /// Owns the recorder settings the pane in `recorder_page.dart` edits.
 ///
 /// The values live here, not in the widgets, so every setter writes the
 /// stored key back at once and any later surface (the engine's own) reads
-/// the same truth; the initial values come from the stored
-/// `recorder.dir`/`recorder.naming`/`recorder.maxSizeGb`, like the
-/// browsing settings beside them.
+/// the same truth.
 final class RecordingSettingsController extends Notifier<RecordingSettings> {
   @override
   RecordingSettings build() {
-    return (
-      saveDir: _readStoredString('recorder.dir') ?? '',
-      namingTemplate: _readStoredString('recorder.naming') ?? kDefaultNamingTemplate,
-      maxSizeGb: _readStoredSize() ?? 4,
+    final saved = _storedString('recorder.saveDir') ?? _storedString('recorder.dir') ?? '';
+    return RecordingSettings(
+      saveDir: saved,
+      namingTemplate: _storedString('recorder.naming') ?? kDefaultNamingTemplate,
+      maxSizeMb: _storedSize() ?? RecordingSettings.defaults.maxSizeMb,
+      segmentSeconds: (_storedInt('recorder.segment') ?? 300).clamp(10, 86400),
+      readTimeoutSeconds: (_storedInt('recorder.rwTimeout') ?? 15).clamp(5, 120),
+      queueSize: (_storedInt('recorder.queue') ?? 2048).clamp(256, 32768),
+      preferBestStream: _storedBool('recorder.preferBest') ?? true,
+      keepAlive: _storedBool('recorder.keepAlive') ?? true,
+      verifyOutput: _storedBool('recorder.verify') ?? true,
+      restartLimit: (_storedInt('recorder.restartLimit') ?? 3).clamp(0, 20),
+      restartBackoffSeconds: (_storedInt('recorder.restartBackoff') ?? 3).clamp(1, 120),
+      stallTimeoutSeconds: (_storedInt('recorder.stallTimeout') ?? 30).clamp(10, 600),
+      diskWatermarkMb: (_storedInt('recorder.diskWatermark') ?? 200).clamp(50, 4096),
+      maxTasks: (_storedInt('recorder.maxTasks') ?? 1).clamp(1, 10),
+      container: RecordingFileContainer.values.asNameMap()[_storedString('recorder.container') ?? ''] ??
+          RecordingFileContainer.mpegTs,
     );
   }
 
-  /// The stored string under [key], or null when storage never opened
-  /// (its boot failure is logged); the defaults then stay.
-  static String? _readStoredString(String key) {
+  static String? _storedString(String key) {
     try {
       return StoragePrefs.getString(key);
     } on Object {
@@ -38,10 +165,32 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
     }
   }
 
-  /// The stored size cap, or null when storage never opened.
-  static double? _readStoredSize() {
+  static int? _storedInt(String key) {
     try {
-      return StoragePrefs.getDouble('recorder.maxSizeGb');
+      return StoragePrefs.getInt(key);
+    } on Object {
+      return null;
+    }
+  }
+
+  static bool? _storedBool(String key) {
+    try {
+      return StoragePrefs.getBool(key);
+    } on Object {
+      return null;
+    }
+  }
+
+  /// The stored size cap, or null when storage never opened. The old key
+  /// counted gigabytes as a double; a stored figure at or below 20 is read
+  /// as gigabytes once, so an upgraded setting keeps its meaning.
+  static int? _storedSize() {
+    try {
+      final megabytes = _storedInt('recorder.maxSizeMb');
+      if (megabytes != null) return megabytes.clamp(100, 20480);
+      final gigabytes = StoragePrefs.getDouble('recorder.maxSizeGb');
+      if (gigabytes != null && gigabytes <= 20) return (gigabytes * 1024).round().clamp(100, 20480);
+      return null;
     } on Object {
       return null;
     }
@@ -53,14 +202,62 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
   /// The file naming template the engine will fill in.
   String get namingTemplate => state.namingTemplate;
 
-  /// How large one recording file may grow before it is split, in GB.
-  double get maxSizeGb => state.maxSizeGb;
+  /// How large one recording may grow before the engine ends the take,
+  /// in megabytes.
+  int get maxSizeMb => state.maxSizeMb;
 
-  /// Moves the recording directory; the row shows it at once. An empty
-  /// path means the engine's own default.
+  /// One segment's length, in seconds.
+  int get segmentSeconds => state.segmentSeconds;
+
+  /// The input read timeout, in seconds.
+  int get readTimeoutSeconds => state.readTimeoutSeconds;
+
+  /// The input packet queue size.
+  int get queueSize => state.queueSize;
+
+  /// Whether only the first video and audio streams are recorded.
+  bool get preferBestStream => state.preferBestStream;
+
+  /// Whether a recording keeps a background session alive.
+  bool get keepAlive => state.keepAlive;
+
+  /// Whether the output is verified on stop.
+  bool get verifyOutput => state.verifyOutput;
+
+  /// How often a broken stream is reopened.
+  int get restartLimit => state.restartLimit;
+
+  /// The pause before a restart, in seconds.
+  int get restartBackoffSeconds => state.restartBackoffSeconds;
+
+  /// How long silence counts as a stalled stream, in seconds.
+  int get stallTimeoutSeconds => state.stallTimeoutSeconds;
+
+  /// The free-space floor a recording stops at, in megabytes.
+  int get diskWatermarkMb => state.diskWatermarkMb;
+
+  /// How many recordings may run at once.
+  int get maxTasks => state.maxTasks;
+
+  /// The segment container.
+  RecordingFileContainer get container => state.container;
+
+  Future<void> _write(String key, Object value) async {
+    try {
+      if (value is String) await StoragePrefs.setString(key, value);
+      if (value is int) await StoragePrefs.setInt(key, value);
+      if (value is bool) await StoragePrefs.setBool(key, value);
+    } on Object {
+      // The recorder settings are preferences; a closed store loses them.
+    }
+  }
+
+  /// Moves the recording directory; an empty path means the engine's own
+  /// default.
   set saveDir(String dir) {
-    state = (saveDir: dir.trim(), namingTemplate: state.namingTemplate, maxSizeGb: state.maxSizeGb);
-    unawaited(StoragePrefs.setString('recorder.dir', state.saveDir));
+    final value = dir.trim();
+    state = state.copyWith(saveDir: value);
+    unawaited(_write('recorder.dir', value));
   }
 
   /// Changes the naming template; a blank one falls back to the default,
@@ -68,16 +265,95 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
   set namingTemplate(String template) {
     final trimmed = template.trim();
     final next = trimmed.isEmpty ? kDefaultNamingTemplate : trimmed;
-    state = (saveDir: state.saveDir, namingTemplate: next, maxSizeGb: state.maxSizeGb);
-    unawaited(StoragePrefs.setString('recorder.naming', next));
+    state = state.copyWith(namingTemplate: next);
+    unawaited(_write('recorder.naming', next));
   }
 
-  /// Changes the single-file size cap, in GB.
-  set maxSizeGb(double gigabytes) {
-    // num.clamp answers num; the setting is a double.
-    final clamped = gigabytes.clamp(1, 20).toDouble();
-    state = (saveDir: state.saveDir, namingTemplate: state.namingTemplate, maxSizeGb: clamped);
-    unawaited(StoragePrefs.setDouble('recorder.maxSizeGb', clamped));
+  /// Changes the recording size cap, in megabytes.
+  set maxSizeMb(int megabytes) {
+    final clamped = megabytes.clamp(100, 20480);
+    state = state.copyWith(maxSizeMb: clamped);
+    unawaited(_write('recorder.maxSizeMb', clamped));
+  }
+
+  /// Changes one segment's length.
+  set segmentSeconds(int seconds) {
+    final clamped = seconds.clamp(10, 86400);
+    state = state.copyWith(segmentSeconds: clamped);
+    unawaited(_write('recorder.segment', clamped));
+  }
+
+  /// Changes the input read timeout.
+  set readTimeoutSeconds(int seconds) {
+    final clamped = seconds.clamp(5, 120);
+    state = state.copyWith(readTimeoutSeconds: clamped);
+    unawaited(_write('recorder.rwTimeout', clamped));
+  }
+
+  /// Changes the input queue size.
+  set queueSize(int size) {
+    final clamped = size.clamp(256, 32768);
+    state = state.copyWith(queueSize: clamped);
+    unawaited(_write('recorder.queue', clamped));
+  }
+
+  /// Chooses whether only the first video and audio stream are recorded.
+  set preferBestStream(bool value) {
+    state = state.copyWith(preferBestStream: value);
+    unawaited(_write('recorder.preferBest', value));
+  }
+
+  /// Chooses whether a recording keeps a background session alive.
+  set keepAlive(bool value) {
+    state = state.copyWith(keepAlive: value);
+    unawaited(_write('recorder.keepAlive', value));
+  }
+
+  /// Chooses whether the output is verified on stop.
+  set verifyOutput(bool value) {
+    state = state.copyWith(verifyOutput: value);
+    unawaited(_write('recorder.verify', value));
+  }
+
+  /// Changes how often a broken stream is reopened.
+  set restartLimit(int count) {
+    final clamped = count.clamp(0, 20);
+    state = state.copyWith(restartLimit: clamped);
+    unawaited(_write('recorder.restartLimit', clamped));
+  }
+
+  /// Changes the pause before a restart.
+  set restartBackoffSeconds(int seconds) {
+    final clamped = seconds.clamp(1, 120);
+    state = state.copyWith(restartBackoffSeconds: clamped);
+    unawaited(_write('recorder.restartBackoff', clamped));
+  }
+
+  /// Changes how long silence counts as a stalled stream.
+  set stallTimeoutSeconds(int seconds) {
+    final clamped = seconds.clamp(10, 600);
+    state = state.copyWith(stallTimeoutSeconds: clamped);
+    unawaited(_write('recorder.stallTimeout', clamped));
+  }
+
+  /// Changes the free-space floor a recording stops at.
+  set diskWatermarkMb(int megabytes) {
+    final clamped = megabytes.clamp(50, 4096);
+    state = state.copyWith(diskWatermarkMb: clamped);
+    unawaited(_write('recorder.diskWatermark', clamped));
+  }
+
+  /// Changes how many recordings may run at once.
+  set maxTasks(int count) {
+    final clamped = count.clamp(1, 10);
+    state = state.copyWith(maxTasks: clamped);
+    unawaited(_write('recorder.maxTasks', clamped));
+  }
+
+  /// Chooses the segment container.
+  set container(RecordingFileContainer value) {
+    state = state.copyWith(container: value);
+    unawaited(_write('recorder.container', value.name));
   }
 }
 

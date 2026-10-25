@@ -5,6 +5,7 @@ import 'package:live_sites/live_sites.dart'
     show LiveAuthCapability, LiveAuthSession, LiveCredential, LiveSite, LiveSiteError;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/features/account/account_repository.dart';
+import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
 
 /// The accounts repository (one secret store, one process).
 final accountRepositoryProvider = FutureProvider<AccountRepository>((ref) => AccountRepository.open());
@@ -136,7 +137,7 @@ bool siteSupportsQrLogin(LiveAuthCapability auth) {
 }
 
 /// The site's display name (its zh-CN manifest name, else its id).
-String siteDisplayName(LiveSite site) => site.manifest.name['zh-CN'] ?? site.manifest.id;
+String siteDisplayName(LiveSite site) => localizedSiteName(site);
 
 /// What a sign-in failure says to the viewer: a site error carries its
 /// own words (what the paste is missing, what the poll hit).

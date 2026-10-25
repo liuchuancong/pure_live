@@ -54,7 +54,7 @@ final class LinkToolController extends Notifier<LinkToolState> {
       state = (resolving: false, resolved: null, failure: LinkToolFailure.empty);
       return;
     }
-    final uri = _linkOf(link);
+    final uri = linkUriOf(link);
     if (uri == null) {
       state = (resolving: false, resolved: null, failure: LinkToolFailure.unsupported);
       return;
@@ -124,8 +124,9 @@ final class LinkToolController extends Notifier<LinkToolState> {
   }
 
   /// The first http(s) address in [text] — share texts lead with words —
-  /// or the text itself as a bare host when it names one.
-  static Uri? _linkOf(String text) {
+  /// or the text itself as a bare host when it names one. Public so the
+  /// link pane can decide whether a clipboard's text is worth offering.
+  static Uri? linkUriOf(String text) {
     final embedded = RegExp(r'https?://[^\s，。；“”‘’<>]+').firstMatch(text)?.group(0);
     for (final candidate in <String?>[embedded, text.trim()]) {
       if (candidate == null || candidate.isEmpty) continue;
@@ -168,85 +169,117 @@ final class ProbeFailure extends ProbeOutcome {
   final LiveSiteError error;
 }
 
-/// What the network check holds: the site's id the last run probed, its
-/// run in flight, and that run's outcome.
-typedef ProbeState = ({bool probing, String? siteId, ProbeOutcome? outcome});
+/// One platform's node test: whether its check is running and the last
+/// answer, or null before the first run.
+typedef PlatformProbeNode = ({bool probing, ProbeOutcome? outcome});
 
-/// The network check's requests: one site, one cheap capability call —
-/// the discovery feed, or the hot list when a site ships no discovery —
-/// exactly the calls the browsing surfaces run, timed end to end.
-///
-/// A newer check replaces an older one; answers from a superseded run are
-/// dropped, not written over the newer one's state.
-final class NetworkProbeController extends Notifier<ProbeState> {
-  /// How long the one probe may take before it counts as unreachable.
+/// The node test's state: one entry per platform it has seen, and whether
+/// a sweep is running.
+typedef PlatformProbeState = ({bool running, Map<String, PlatformProbeNode> nodes});
+
+/// Tests the platforms' endpoints the way the network tool does — the
+/// discovery feed, else the hot list — for one platform on demand or for
+/// every probe-able platform in a bounded sweep.
+final class PlatformProbeController extends Notifier<PlatformProbeState> {
+  /// How long one probe may take before it counts as unreachable.
   static const Duration _timeout = Duration(seconds: 15);
 
-  /// One more than the newest check this controller started.
+  /// How many platforms a sweep probes at once: enough to make a wall
+  /// useful, few enough that it does not look like an attack.
+  static const int _sweepConcurrency = 4;
+
+  /// One more than the newest sweep this controller started.
   int _generation = 0;
 
   @override
-  ProbeState build() => (probing: false, siteId: null, outcome: null);
+  PlatformProbeState build() => (running: false, nodes: const {});
 
-  /// Probes [siteId]: its discovery feed, else its hot list, else an
-  /// honest unsupported answer.
-  Future<void> run(String siteId) async {
+  /// Tests [siteId] alone; a check already running for it is left alone.
+  Future<void> probe(String siteId) async {
+    if (state.nodes[siteId]?.probing ?? false) return;
+    _set(siteId, (probing: true, outcome: null));
+    final outcome = await _measure(siteId);
+    if (!ref.mounted) return;
+    _set(siteId, (probing: false, outcome: outcome));
+  }
+
+  /// Tests every probe-able platform, at most [_sweepConcurrency] at a
+  /// time; results land on the wall as each one answers.
+  Future<void> probeAll() async {
+    if (state.running) return;
+    final sites = probeSites(ref.read(sitesProvider).all);
+    if (sites.isEmpty) return;
     final generation = ++_generation;
+    state = (
+      running: true,
+      nodes: {for (final site in sites) site.manifest.id: (probing: false, outcome: null)},
+    );
+    var next = 0;
+    Future<void> worker() async {
+      while (next < sites.length) {
+        final site = sites[next++];
+        if (generation != _generation) return;
+        _set(site.manifest.id, (probing: true, outcome: null));
+        final outcome = await _measure(site.manifest.id);
+        if (!ref.mounted || generation != _generation) return;
+        _set(site.manifest.id, (probing: false, outcome: outcome));
+      }
+    }
+
+    await Future.wait([
+      for (var index = 0; index < _sweepConcurrency && index < sites.length; index++) worker(),
+    ]);
+    if (!ref.mounted || generation != _generation) return;
+    state = (running: false, nodes: state.nodes);
+  }
+
+  /// Forgets every result (a new wall starts from nothing).
+  void clear() {
+    _generation++;
+    state = (running: false, nodes: const {});
+  }
+
+  /// Times one platform's cheap call; failures carry the site's own words.
+  Future<ProbeOutcome> _measure(String siteId) async {
     final site = ref.read(sitesProvider).getById(siteId);
     final discovery = site?.capability<LiveDiscoveryProvider>();
     final hot = site?.capability<LiveHotProvider>();
     if (site == null || (discovery == null && hot == null)) {
-      state = (
-        probing: false,
-        siteId: siteId,
-        outcome: ProbeOutcome.failure(
-          error: LiveSiteError.unsupported(siteId: siteId, message: 'no probe target'),
-        ),
+      return ProbeOutcome.failure(
+        error: LiveSiteError.unsupported(siteId: siteId, message: 'no probe target'),
       );
-      return;
     }
-    state = (probing: true, siteId: siteId, outcome: null);
     final watch = Stopwatch()..start();
     try {
       final answer = discovery != null
           ? await discovery.getRecommendedRooms().timeout(_timeout)
           : await hot!.getHotRooms().timeout(_timeout);
       watch.stop();
-      if (generation != _generation) return;
-      state = (
-        probing: false,
-        siteId: siteId,
-        outcome: answer.match(
-          (error) => ProbeOutcome.failure(error: error),
-          (page) => ProbeOutcome.success(rooms: page.items.length, elapsed: watch.elapsed),
-        ),
+      final outcome = answer.match(
+        (error) => ProbeOutcome.failure(error: error),
+        (page) => ProbeOutcome.success(rooms: page.items.length, elapsed: watch.elapsed),
       );
+      return outcome;
     } on TimeoutException {
       watch.stop();
-      if (generation != _generation) return;
-      state = (
-        probing: false,
-        siteId: siteId,
-        outcome: ProbeOutcome.failure(
-          error: LiveSiteError.network(siteId: siteId, message: 'probe timed out'),
-        ),
+      return ProbeOutcome.failure(
+        error: LiveSiteError.network(siteId: siteId, message: 'probe timed out'),
       );
     } on Object catch (error) {
       watch.stop();
-      if (generation != _generation) return;
-      state = (
-        probing: false,
-        siteId: siteId,
-        outcome: ProbeOutcome.failure(
-          error: LiveSiteError.network(siteId: siteId, message: '$error', cause: error),
-        ),
+      return ProbeOutcome.failure(
+        error: LiveSiteError.network(siteId: siteId, message: '$error', cause: error),
       );
     }
   }
+
+  void _set(String siteId, PlatformProbeNode node) {
+    state = (running: state.running, nodes: {...state.nodes, siteId: node});
+  }
 }
 
-/// The platforms a network check can probe: every site that answers one of
-/// the two cheap page calls, in registration order.
+/// The platforms a node test can probe: every site that answers one of the
+/// two cheap page calls, in registration order.
 List<LiveSite> probeSites(Iterable<LiveSite> sites) => [
   for (final site in sites)
     if (site.capability<LiveDiscoveryProvider>() != null || site.capability<LiveHotProvider>() != null) site,
@@ -255,5 +288,7 @@ List<LiveSite> probeSites(Iterable<LiveSite> sites) => [
 /// The link tool's state.
 final linkToolProvider = NotifierProvider<LinkToolController, LinkToolState>(LinkToolController.new);
 
-/// The network check's state.
-final networkProbeProvider = NotifierProvider<NetworkProbeController, ProbeState>(NetworkProbeController.new);
+/// The node test's state.
+final platformProbeProvider = NotifierProvider<PlatformProbeController, PlatformProbeState>(
+  PlatformProbeController.new,
+);

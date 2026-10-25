@@ -11,6 +11,7 @@ import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider
 import 'package:pure_live/features/account/account_providers.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart';
+import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon;
 
 /// The account pane: one row per site that offers the auth capability —
 /// the account's avatar and display name when the viewer is signed in, an
@@ -18,15 +19,20 @@ import 'package:pure_live/shared/images/app_image_cache.dart';
 /// scan, a pasted cookie, whichever it supports) and the destructive
 /// sign-out behind a confirm.
 final class AccountPane extends ConsumerWidget {
-  /// The pane.
-  const AccountPane({super.key});
+  /// The pane, or the accounts of [siteIds] alone (the Bilibili station
+  /// shows just its own sign-in).
+  const AccountPane({this.siteIds, super.key});
+
+  /// The platform ids to keep; null lists every platform with a sign-in.
+  final Set<String>? siteIds;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
+    final only = siteIds;
     final authSites = [
       for (final site in ref.watch(sitesProvider).all)
-        if (site.capability<LiveAuthCapability>() != null) site,
+        if ((only == null || only.contains(site.manifest.id)) && site.capability<LiveAuthCapability>() != null) site,
     ];
     return DsListSection(
       header: Text(t.account.sectionHeader),
@@ -60,7 +66,7 @@ final class _AccountRow extends ConsumerWidget {
     final signedIn = credential != null;
     return DsListRow(
       leading: credential?.avatar == null
-          ? const DsIcon(DsIcons.user)
+          ? (localizedSiteIcon(site, size: 32) ?? const DsIcon(DsIcons.user))
           : DsAvatar(image: cachedImage(credential!.avatar!), initials: name, semanticLabel: name),
       title: Text(name),
       description: Text(signedIn ? t.account.signedInAs(name: _displayName(credential)) : t.account.notSignedIn),
