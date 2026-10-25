@@ -523,7 +523,8 @@ final class _ControlBar extends ConsumerWidget {
               final pip = presentation == PresentationMode.pip;
               final compact = constraints.maxWidth < 560;
               final narrow = constraints.maxWidth < 420;
-              return Row(
+              final bar = Row(
+                mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
                 spacing: DsSpace.s4,
                 children: [
                   _BarIcon(
@@ -555,7 +556,10 @@ final class _ControlBar extends ConsumerWidget {
                         semanticLabel: t.room.volume,
                       ),
                     ),
-                  const Spacer(),
+                  // A fitted bar keeps a gap before the stream menus; a
+                  // compact one scrolls, so nine controls cannot push the
+                  // last button off the picture.
+                  if (compact) const SizedBox(width: DsSpace.s4) else const Spacer(),
                   if (!pip && quality != null)
                     _StreamMenu(
                       label: quality.label,
@@ -652,6 +656,9 @@ final class _ControlBar extends ConsumerWidget {
                     ),
                 ],
               );
+              return compact
+                  ? SingleChildScrollView(scrollDirection: Axis.horizontal, child: bar)
+                  : bar;
             },
           ),
         ],

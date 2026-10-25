@@ -1,4 +1,5 @@
 import 'dart:async' show Timer, unawaited;
+import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
@@ -249,26 +250,23 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         final wide = constraints.maxWidth >= _wideBreakpoint;
         if (!wide) {
           // The reference's narrow room: the picture, the strip with the
-          // room's facts, then the chat below it. A portrait stream keeps
-          // its own tall shape in a bounded stage instead of the landscape
-          // frame's letterbox bars.
-          final picture = pictureRatio < 1
-              ? SizedBox(
-                  height: constraints.maxHeight * 0.58,
-                  child: ColoredBox(
-                    color: colors.overlay,
-                    child: Center(
-                      child: AspectRatio(
-                        aspectRatio: pictureRatio.clamp(0.5, 0.8),
-                        child: player,
-                      ),
-                    ),
-                  ),
-                )
-              : AspectRatio(
-                  aspectRatio: pictureRatio.clamp(1.0, 2.4),
-                  child: ColoredBox(color: colors.overlay, child: player),
-                );
+          // room's facts, then the chat below it. The picture keeps its
+          // shape but never takes the chat's last 150 px: a short window
+          // shrinks it instead of overflowing the column.
+          final maxPicture = math.max<double>(
+            0,
+            (constraints.maxHeight.isFinite ? constraints.maxHeight - 150 : 480).toDouble(),
+          );
+          final portrait = pictureRatio < 1;
+          final ratio = portrait ? pictureRatio.clamp(0.5, 0.8) : pictureRatio.clamp(1.0, 2.4);
+          final desired = portrait ? constraints.maxHeight * 0.58 : constraints.maxWidth / ratio;
+          final picture = SizedBox(
+            height: math.min(desired, maxPicture),
+            child: ColoredBox(
+              color: colors.overlay,
+              child: Center(child: AspectRatio(aspectRatio: ratio, child: player)),
+            ),
+          );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
