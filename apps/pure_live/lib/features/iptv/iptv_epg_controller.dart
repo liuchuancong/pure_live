@@ -161,6 +161,18 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
     await library.updateGuideSource(current.copyWith(autoUpdate: value));
   }
 
+  /// Turns automatic refresh on or off for every network guide — the
+  /// header switch's bulk action. Local guides cannot be re-downloaded, so
+  /// their flags stay as they are.
+  Future<void> setAllAutoUpdate({required bool value}) async {
+    final library = _library();
+    if (library == null) return;
+    for (final source in library.guideSources) {
+      if (!source.isRemote || source.autoUpdate == value) continue;
+      await library.updateGuideSource(source.copyWith(autoUpdate: value));
+    }
+  }
+
   /// Makes [source] the guide in use, or clears the choice with null.
   Future<void> selectGuide(EpgSource? source) => _choose(source?.id);
 

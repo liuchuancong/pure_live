@@ -112,13 +112,10 @@ final class _PlaylistImportDialogState extends ConsumerState<_PlaylistImportDial
 
   Future<void> _submit() async {
     final t = context.t;
-    final name = _name.text.trim();
-    if (name.isEmpty) {
-      _toast(t.iptv.importNameRequired);
-      return;
-    }
+    final typedName = _name.text.trim();
     final controller = ref.read(iptvSourcesProvider.notifier);
     final IptvImportResult result;
+    final String name;
     if (_origin == _ImportOrigin.link) {
       final raw = _url.text.trim();
       if (raw.isEmpty) {
@@ -130,12 +127,16 @@ final class _PlaylistImportDialogState extends ConsumerState<_PlaylistImportDial
         _toast(t.iptv.importAddressInvalid);
         return;
       }
+      // An empty name is named after the address, as the guide import
+      // already does; the provider still requires a non-empty label.
+      name = typedName.isEmpty ? uri.host : typedName;
       result = await controller.importPlaylistUrl(url: uri, name: name, confirmReplace: _confirmReplace);
     } else {
       if (_text.text.trim().isEmpty) {
         _toast(t.iptv.importTextRequired);
         return;
       }
+      name = typedName.isEmpty ? t.iptv.importDefaultName : typedName;
       result = await controller.importPlaylistText(text: _text.text, name: name, confirmReplace: _confirmReplace);
     }
     _finish(result, name);

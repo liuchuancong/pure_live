@@ -67,6 +67,7 @@ typedef IptvChannelsState = ({
   int totalCount,
   String? selectedGroup,
   IptvChannelScope scope,
+  String query,
   List<IptvChannel> channels,
   int shown,
   bool loadingMore,
@@ -81,6 +82,7 @@ IptvChannelsState _initial() => (
   totalCount: 0,
   selectedGroup: null,
   scope: IptvChannelScope.all,
+  query: '',
   channels: const [],
   shown: 0,
   loadingMore: false,
@@ -141,6 +143,17 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
   void selectScope(IptvChannelScope scope) {
     if (scope == state.scope) return;
     state = _with(scope: scope);
+    _remirrorFromFirstPage();
+  }
+
+  /// Filters the open list by [value] — a channel's name, number or group,
+  /// case-insensitively. A search shows every match at once rather than
+  /// revealing them page by page: the viewer is looking for one name, not
+  /// browsing. Empty clears the filter.
+  void setQuery(String value) {
+    final query = value.trim().toLowerCase();
+    if (query == state.query) return;
+    state = _with(query: query);
     _remirrorFromFirstPage();
   }
 
@@ -225,13 +238,26 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
       final key = iptvGroupKeyOf(channel);
       counts[key] = (counts[key] ?? 0) + 1;
     }
-    final channels = library.zapSequence(group: selected, favouritesOnly: favouritesOnly).channels;
+    final channels = [
+      for (final channel in library.zapSequence(group: selected, favouritesOnly: favouritesOnly).channels)
+        if (_matches(channel, current.query)) channel,
+    ];
     final pageSize = ref.read(browseSettingsProvider).homePageSize;
-    // A list that just gained its first channels opens on the first page;
-    // an established reveal survives a change, capped by what is there.
-    final kept = current.shown == 0 ? _capped(pageSize, channels.length) : _capped(current.shown, channels.length);
-    final base = resetReveal ? _capped(pageSize, channels.length) : (reveal ?? kept);
-    final shown = _capped(base, channels.length);
+    // A search is complete at once — the viewer names what they look for —
+    // while browsing reveals a page at a time. A list that just gained its
+    // first channels opens on the first page; an established reveal
+    // survives a change, capped by what is there.
+    final shown = current.query.isNotEmpty
+        ? channels.length
+        : _capped(
+            resetReveal
+                ? _capped(pageSize, channels.length)
+                : (reveal ??
+                      (current.shown == 0
+                          ? _capped(pageSize, channels.length)
+                          : _capped(current.shown, channels.length))),
+            channels.length,
+          );
     state = (
       ready: true,
       groups: groups,
@@ -240,11 +266,22 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
       totalCount: walk.length,
       selectedGroup: selected,
       scope: current.scope,
+      query: current.query,
       channels: channels,
       shown: shown,
       loadingMore: false,
       slots: _slotsOf(library, channels, shown),
     );
+  }
+
+  /// Whether [channel] answers [query] by its name, number, id or group;
+  /// [query] is already lower-cased, and empty matches everything.
+  static bool _matches(IptvChannel channel, String query) {
+    if (query.isEmpty) return true;
+    if (channel.entry.name.toLowerCase().contains(query)) return true;
+    if ((channel.number?.toString() ?? '').contains(query)) return true;
+    if ((channel.entry.tvgId ?? '').toLowerCase().contains(query)) return true;
+    return iptvGroupKeyOf(channel).toLowerCase().contains(query);
   }
 
   /// The slot of every channel the grid shows, read at one shared moment
@@ -261,6 +298,7 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
     String? selectedGroup,
     bool dropGroup = false,
     IptvChannelScope? scope,
+    String? query,
     bool? loadingMore,
     Map<String, IptvProgrammeSlot>? slots,
   }) => (
@@ -271,6 +309,7 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
     totalCount: state.totalCount,
     selectedGroup: dropGroup ? null : (selectedGroup ?? state.selectedGroup),
     scope: scope ?? state.scope,
+    query: query ?? state.query,
     channels: state.channels,
     shown: state.shown,
     loadingMore: loadingMore ?? state.loadingMore,
