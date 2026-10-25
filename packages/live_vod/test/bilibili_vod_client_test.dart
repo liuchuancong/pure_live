@@ -93,7 +93,7 @@ void main() {
 
     expect(info.url, 'https://cdn/video.m4s');
     expect(info.format, 'm4s');
-    expect(info.quality, 'silent');
+    expect(info.silent, isTrue);
   });
 
   test('a source failure is a VodFailure with its message', () async {
