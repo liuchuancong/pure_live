@@ -54,7 +54,7 @@
 
 - [ ] App 业务页面全面替换为 fluent_ui 原生控件(逐 feature)。
 - [ ] `pure_settings_ui` 收敛评估。
-- [ ] TV 焦点、手机 / 平板布局验收。
+- [ ] TV 焦点（复用桌面外壳）、手机 / 平板布局验收。
 - [x] 旧依赖拆除(fluent_2、macos_ui、forui、yaru、glass、neumorphic、wind)。
 
 ## 进度记录
@@ -91,5 +91,5 @@
   连锁引用(src/pure 表收缩 fluent);vendor/ 下仍保留 adwaita/android/ios/macos/web
   等多平台 settings_section 与 split 的完整 vendored 实现,收敛与否、收敛到什么
   程度尚无评估结论,需架构决策。
-- [需人工] TV 焦点、手机 / 平板布局验收:未做。需真机与人工走查,非代理可机械
+- [需人工] TV 焦点（复用桌面外壳，无独立 TV UI）、手机 / 平板布局验收:未做。需真机与人工走查,非代理可机械
   完成,B1–B3 亦未覆盖;完成前不视为重构终验通过项。
