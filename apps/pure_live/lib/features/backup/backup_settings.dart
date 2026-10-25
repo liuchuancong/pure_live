@@ -3,14 +3,11 @@ import 'package:live_storage/live_storage.dart';
 /// The settings subset the backup document carries: the simple prefs a
 /// restore writes back through `StoragePrefs`' typed setters.
 ///
-/// The list is the known keys at the time of writing; a new surface that
+/// The list is the current keys at the time of writing; a new surface that
 /// adds a pref adds it here and every older backup keeps restoring (the
 /// document's `settings` section is read per key, absent keys stay
-/// untouched). The `danmaku.block.*` pair is what the danmaku filter will
-/// persist when its settings UI arrives with the player stack
-/// (`DanmakuFilterPolicy`'s blocked users and keywords); nothing writes
-/// them yet, and the backup handles them defensively — absent means
-/// skipped.
+/// untouched). The danmaku shield, playback, IPTV, recording, follow tags
+/// and per-room orientation all carry their prefs here.
 enum BackupPrefKind {
   /// A string value.
   string,
@@ -32,15 +29,35 @@ enum BackupPrefKind {
 typedef BackupPrefEntry = (String key, BackupPrefKind kind);
 
 /// The backed-up keys, grouped as the settings surface presents them.
+///
+/// The list is the current prefs at the time of writing. A key that later
+/// disappears is harmless — capture simply finds no value; a new surface
+/// adds its pref here so its first backup carries it. Restoring only ever
+/// writes keys the document carries, so an older backup never resets a
+/// newer pref.
 const List<BackupPrefEntry> kBackedUpPrefs = [
-  // Browsing: which site each surface opens on, which module leads.
+  // Browsing: which site each surface opens on, which module leads, the
+  // grid's card/page measure, the tools' order, the search history.
   ('browse.site', BackupPrefKind.string),
   ('browse.module', BackupPrefKind.string),
   ('browse.popular.site', BackupPrefKind.string),
   ('browse.areas.site', BackupPrefKind.string),
   ('browse.search.site', BackupPrefKind.string),
+  ('browse.layout', BackupPrefKind.string),
+  ('browse.pageSize', BackupPrefKind.integer),
+  ('browse.cardExtent', BackupPrefKind.floating),
+  ('browse.crossSpacing', BackupPrefKind.floating),
+  ('browse.mainSpacing', BackupPrefKind.floating),
+  ('browse.audienceMetric', BackupPrefKind.string),
+  ('nav.multiview', BackupPrefKind.boolean),
+  ('tools.order', BackupPrefKind.stringList),
+  ('shell.closeAction', BackupPrefKind.string),
+  ('search.history', BackupPrefKind.stringList),
+  // The platform display and its order/preference.
   ('sites.display', BackupPrefKind.stringList),
-  // The follows page's auto refresh and the history's cap.
+  ('sites.display.order', BackupPrefKind.stringList),
+  ('sites.display.preferred', BackupPrefKind.string),
+  // Follows refresh and the history cap.
   ('refresh.follows.auto', BackupPrefKind.boolean),
   ('refresh.follows.minutes', BackupPrefKind.integer),
   ('history.limit', BackupPrefKind.integer),
@@ -49,15 +66,70 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('theme.seed', BackupPrefKind.string),
   ('theme.corners', BackupPrefKind.string),
   ('theme.density', BackupPrefKind.string),
+  ('theme.contrast', BackupPrefKind.string),
+  ('theme.selection', BackupPrefKind.string),
+  ('theme.autoClash', BackupPrefKind.string),
+  ('theme.font', BackupPrefKind.string),
+  ('theme.pureBlack', BackupPrefKind.boolean),
   ('app.locale', BackupPrefKind.string),
-  // IPTV guide source and the recorder's tunables.
-  ('iptv.epg.url', BackupPrefKind.string),
-  ('recorder.dir', BackupPrefKind.string),
-  ('recorder.naming', BackupPrefKind.string),
-  ('recorder.maxSizeGb', BackupPrefKind.floating),
-  // The danmaku filter's block lists (written once its UI arrives).
+  // The wallpaper: its kind and every source it can hold.
+  ('background.kind', BackupPrefKind.string),
+  ('background.imageUrl', BackupPrefKind.string),
+  ('background.imagePath', BackupPrefKind.string),
+  ('background.videoUrl', BackupPrefKind.string),
+  ('background.videoPath', BackupPrefKind.string),
+  ('background.solid', BackupPrefKind.string),
+  ('background.gradient', BackupPrefKind.string),
+  ('background.fit', BackupPrefKind.string),
+  ('background.mask', BackupPrefKind.floating),
+  ('background.blur', BackupPrefKind.floating),
+  // Playback and the flying layer's own look.
+  ('playback.quality', BackupPrefKind.string),
+  ('playback.muted', BackupPrefKind.boolean),
+  ('playback.volume', BackupPrefKind.floating),
+  ('playback.fit', BackupPrefKind.string),
+  ('playback.danmaku', BackupPrefKind.boolean),
+  ('playback.miniDanmaku', BackupPrefKind.boolean),
+  ('playback.hwdec', BackupPrefKind.boolean),
+  ('playback.autoPip', BackupPrefKind.boolean),
+  ('danmaku.style.fontSize', BackupPrefKind.floating),
+  ('danmaku.style.baseSpeed', BackupPrefKind.floating),
+  ('danmaku.style.area', BackupPrefKind.floating),
+  ('danmaku.style.opacity', BackupPrefKind.floating),
+  ('danmaku.style.showStroke', BackupPrefKind.boolean),
+  // The network and the danmaku shield.
+  ('proxy.enabled', BackupPrefKind.boolean),
+  ('proxy.host', BackupPrefKind.string),
+  ('proxy.port', BackupPrefKind.integer),
+  ('danmaku.block.enabled', BackupPrefKind.boolean),
   ('danmaku.block.users', BackupPrefKind.stringList),
   ('danmaku.block.keywords', BackupPrefKind.stringList),
+  // The image cache's cap.
+  ('cache.maxMB', BackupPrefKind.integer),
+  // IPTV: the schedule, the active guide and the source order.
+  ('iptv.update.hours', BackupPrefKind.integer),
+  ('iptv.guide.active', BackupPrefKind.string),
+  ('iptv.sources.order', BackupPrefKind.stringList),
+  // The recorder's 15 tunables (and the old gigabyte cap for upgrades).
+  ('recorder.dir', BackupPrefKind.string),
+  ('recorder.naming', BackupPrefKind.string),
+  ('recorder.maxSizeMb', BackupPrefKind.integer),
+  ('recorder.maxSizeGb', BackupPrefKind.floating),
+  ('recorder.segment', BackupPrefKind.integer),
+  ('recorder.rwTimeout', BackupPrefKind.integer),
+  ('recorder.queue', BackupPrefKind.integer),
+  ('recorder.preferBest', BackupPrefKind.boolean),
+  ('recorder.keepAlive', BackupPrefKind.boolean),
+  ('recorder.verify', BackupPrefKind.boolean),
+  ('recorder.restartLimit', BackupPrefKind.integer),
+  ('recorder.restartBackoff', BackupPrefKind.integer),
+  ('recorder.stallTimeout', BackupPrefKind.integer),
+  ('recorder.diskWatermark', BackupPrefKind.integer),
+  ('recorder.maxTasks', BackupPrefKind.integer),
+  ('recorder.container', BackupPrefKind.string),
+  // Local follow tags and per-room picture orientation.
+  ('follow.tags', BackupPrefKind.string),
+  ('room.orientation', BackupPrefKind.string),
 ];
 
 /// Reads every backed-up pref that currently has a value.

@@ -28,7 +28,8 @@ final class BackupDocument {
     this.history = const {},
     this.areaFollows = const {},
     this.settings = const {},
-  });
+    Set<String>? presentSections,
+  }) : presentSections = presentSections ?? const {'follows', 'history', 'areaFollows', 'settings'};
 
   factory BackupDocument._fromRoot(Map<String, Object?> root) {
     final version = _objectMap(root['version']);
@@ -41,6 +42,12 @@ final class BackupDocument {
       history: _entries(root['history']),
       areaFollows: _entries(root['areaFollows']),
       settings: _settingsOf(root['settings']),
+      // Only the sections the document actually carries may be restored:
+      // an older writer that never knew a section must not clear it.
+      presentSections: {
+        for (final section in const ['follows', 'history', 'areaFollows', 'settings'])
+          if (root[section] is Map) section,
+      },
     );
   }
 
@@ -68,6 +75,23 @@ final class BackupDocument {
   /// The backed-up settings: pref key → the stored value (bool, int,
   /// double, String or String list).
   final Map<String, Object?> settings;
+
+  /// The sections the document actually carries. A document from an older
+  /// writer that lacked one leaves that box untouched on restore, rather
+  /// than clearing data the document never knew about.
+  final Set<String> presentSections;
+
+  /// Whether the document carries followed rooms.
+  bool get hasFollows => presentSections.contains('follows');
+
+  /// Whether it carries watch history.
+  bool get hasHistory => presentSections.contains('history');
+
+  /// Whether it carries followed areas.
+  bool get hasAreas => presentSections.contains('areaFollows');
+
+  /// Whether it carries settings.
+  bool get hasSettings => presentSections.contains('settings');
 
   /// The schema this writer emits; a reader accepts any, and reports what
   /// it saw so a future migration can branch on it.

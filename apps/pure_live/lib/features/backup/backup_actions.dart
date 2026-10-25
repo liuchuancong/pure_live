@@ -209,7 +209,7 @@ Future<({String url, String username, String password})?> webdavCredentials(Widg
 /// hold. Throws [WebDavFailure] with the reason when it does not, and a
 /// [StateError] when no server is configured.
 Future<void> testWebDav(WidgetRef ref) async {
-  final client = await _client(ref);
+  final client = await webDavClient(ref);
   await client.test();
 }
 
@@ -219,14 +219,14 @@ Future<void> testWebDav(WidgetRef ref) async {
 Future<void> uploadBackupToWebDav(WidgetRef ref) async {
   final document = await captureBackupDocument(ref);
   if (document.isEmpty) throw StateError('nothing to back up');
-  final client = await _client(ref);
+  final client = await webDavClient(ref);
   await client.upload(utf8.encode(document.encode()));
 }
 
 /// Downloads the server's backup file and parses it. Answers the
 /// document, or null when the payload is not a backup.
 Future<BackupDocument?> downloadBackupFromWebDav(WidgetRef ref) async {
-  final client = await _client(ref);
+  final client = await webDavClient(ref);
   final bytes = await client.download();
   return BackupDocument.tryDecode(utf8.decode(bytes, allowMalformed: true));
 }
@@ -234,8 +234,8 @@ Future<BackupDocument?> downloadBackupFromWebDav(WidgetRef ref) async {
 /// The WebDAV client over the app's shared transport — the same
 /// per-profile client every module's remote reads go through, so the
 /// proxy settings apply. The factory caches it per profile; nobody closes
-/// it here.
-Future<WebDavBackupClient> _client(WidgetRef ref) async {
+/// it here. Throws a [StateError] when no server is configured.
+Future<WebDavBackupClient> webDavClient(WidgetRef ref) async {
   final credentials = await webdavCredentials(ref);
   if (credentials == null) throw StateError('no WebDAV server configured');
   return WebDavBackupClient(

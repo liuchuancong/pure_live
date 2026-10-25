@@ -8,6 +8,7 @@ import 'package:pure_live/app/providers/environment_providers.dart' show deviceP
 import 'package:pure_live/features/backup/backup_actions.dart';
 import 'package:pure_live/features/backup/backup_document.dart';
 import 'package:pure_live/features/backup/backup_repository.dart';
+import 'package:pure_live/features/backup/webdav_browser.dart' show showWebDavBrowser;
 import 'package:pure_live/features/backup/webdav_client.dart';
 import 'package:pure_live/features/backup/webdav_settings.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -541,6 +542,13 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
               title: Text(t.backup.webdavPassword),
               detail: Text(settings.hasPassword ? t.backup.webdavPasswordKeep : t.backup.webdavPasswordEmpty),
               onPressed: () => unawaited(_editWebDav()),
+              showChevron: true,
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.folderOpen),
+              title: Text(t.backup.webdavBrowse),
+              description: Text(t.backup.webdavDescription(file: BackupDocument.backupFileName)),
+              onPressed: settings.url.isEmpty ? null : () => unawaited(showWebDavBrowser(context)),
               showChevron: true,
             ),
             DsListRow(

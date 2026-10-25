@@ -53,11 +53,14 @@ final class BackupRepository {
   /// back. A follows-only document touches only the two follows boxes, so
   /// the history and settings of this device stay as they are.
   Future<void> apply(BackupDocument document) async {
-    await _restore(follows.box, document.follows);
-    await _restore(areaFollows.box, document.areaFollows);
-    if (document.followsOnly) return;
-    await _restore(history.box, document.history);
-    await applySettingsSnapshot(document.settings);
+    // A section the document does not carry is left alone: an old export
+    // that predates a box must not empty it. A section it does carry,
+    // even empty, is the document's word on that data and replaces it.
+    if (document.hasFollows) await _restore(follows.box, document.follows);
+    if (document.hasAreas) await _restore(areaFollows.box, document.areaFollows);
+    if (document.scope == BackupScope.follows) return;
+    if (document.hasHistory) await _restore(history.box, document.history);
+    if (document.hasSettings) await applySettingsSnapshot(document.settings);
   }
 
   /// Clears [box] and writes [entries] back, key for key, then flushes —
