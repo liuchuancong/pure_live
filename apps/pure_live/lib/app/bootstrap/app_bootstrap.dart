@@ -180,7 +180,16 @@ Future<Boot> bootstrap() async {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         unawaited(reapplyMainWindowChrome(plan: plan, title: 'Pure Live'));
       });
-      final host = WindowManagerHost(role: WindowRole.main, verifyOwnWindow: _verifyPrimaryWindowId)..attach();
+      // The identity oracle exists on Windows only, where the native layer
+      // keeps a NativeAPIWindowId property the runner can read back.
+      // macOS and Linux pass null: their hosts pin on the first focus,
+      // which is correct in every release run — the primary takes focus at
+      // startup, before any clone can exist — and can only miss across a
+      // hot restart with a clone focused, a development-only flow. Wiring
+      // the channel there anyway would answer "not ours" forever and leave
+      // the primary's close button dead.
+      final oracle = kind == PlatformKind.windows ? _verifyPrimaryWindowId : null;
+      final host = WindowManagerHost(role: WindowRole.main, verifyOwnWindow: oracle)..attach();
       windowHost = host;
       // The room windows: one launcher for the whole process, so the shell's
       // quit path and the room opener see the same set.
