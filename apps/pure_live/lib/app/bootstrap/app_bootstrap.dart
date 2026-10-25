@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 import 'dart:io' show Directory, exit;
 
 import 'package:desktop_multi_window/desktop_multi_window.dart' show WindowController, onWindowsChanged;
+import 'package:flutter/services.dart' show MethodChannel, MissingPluginException;
 import 'package:flutter/widgets.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter, LiveLog;
 import 'package:live_platform/live_platform.dart' show FormFactor, PlatformBootstrap, PlatformKind, PlatformRuntime;
@@ -21,7 +22,13 @@ import 'package:live_shell/live_shell.dart'
         WindowHost,
         WindowRole;
 import 'package:live_shell_desktop/live_shell_desktop.dart'
-    show DesktopWindowLauncher, TrayManagerHost, WindowManagerHost, configureMainWindow, primaryChromePlan;
+    show
+        DesktopWindowLauncher,
+        TrayManagerHost,
+        WindowManagerHost,
+        configureMainWindow,
+        primaryChromePlan,
+        reapplyMainWindowChrome;
 import 'package:live_storage/live_storage.dart'
     show StorageBootstrap, StoragePathProvider, StoragePrefs, StorageStores;
 import 'package:path/path.dart' as p;
@@ -167,7 +174,13 @@ Future<Boot> bootstrap() async {
         title: 'Pure Live',
         background: const Color(0xFF101418),
       );
-      final host = WindowManagerHost(role: WindowRole.main)..attach();
+      // A boot that raced the plugin's window registration would otherwise
+      // leave the native caption under the app's own strip, and the default
+      // runner title in the taskbar. Re-apply after the first frame.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(reapplyMainWindowChrome(plan: plan, title: 'Pure Live'));
+      });
+      final host = WindowManagerHost(role: WindowRole.main, verifyOwnWindow: _verifyPrimaryWindowId)..attach();
       windowHost = host;
       // The room windows: one launcher for the whole process, so the shell's
       // quit path and the room opener see the same set.
@@ -341,6 +354,28 @@ Future<void> _dismissEveryWindow(LiveLog log) async {
           }
         }(),
   ]);
+}
+
+/// The runner's identity oracle for the primary window: the Dart host asks
+/// whether a candidate window id belongs to this engine's own top-level
+/// window, and the runner answers by reading the window's NativeAPIWindowId
+/// property — set the moment the native layer first wrapped this window,
+/// which is during the boot that precedes any focus event. Armed in the
+/// runner's create, which can trail the Dart boot by a beat, hence the
+/// brief retry; an unreachable oracle answers "not ours", and the host
+/// asks again on the next focus rather than guessing.
+Future<bool> _verifyPrimaryWindowId(int windowId) async {
+  const channel = MethodChannel('pure_live/primary_window');
+  for (var attempt = 0;; attempt++) {
+    try {
+      return await channel.invokeMethod<bool>('verifyOwnWindow', windowId) ?? false;
+    } on MissingPluginException {
+      if (attempt >= 5) {
+        return false;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+  }
 }
 
 /// The stored close choice, read outside the widget tree (the bootstrap

@@ -24,10 +24,22 @@ const _screenRetrieverDisplays = ScreenRetrieverDisplays();
 /// too, and the first symptom is a caption button that toggles twice.
 final class WindowManagerHost implements WindowHost {
   /// A host for [role], resolving displays through [readDisplays].
-  new({required this.role, DisplayReader? readDisplays})
+  ///
+  /// [verifyOwnWindow] is the identity oracle a multi-window app provides:
+  /// given a candidate window id it answers whether that window is *this
+  /// engine's own*. With one, the host pins its window on the first focus
+  /// event that verifies; a secondary window's focus, arriving while this
+  /// engine has not pinned yet, is then rejected instead of mistaken for
+  /// the primary — the mistake that made a clone's close quit the whole
+  /// process. Without one, the first focus pins unconditionally, which is
+  /// correct wherever the engine owns the only window that can take focus.
+  new({required this.role, DisplayReader? readDisplays, this.verifyOwnWindow})
     : _readDisplays = readDisplays ?? const ScreenRetrieverDisplays().read {
     _events = StreamController<WindowEvent>.broadcast();
   }
+
+  /// Whether a candidate window id belongs to this engine's own window.
+  final Future<bool> Function(int windowId)? verifyOwnWindow;
 
   /// What this window is for.
   @override
@@ -97,6 +109,20 @@ final class WindowManagerHost implements WindowHost {
     _listener = wm.WindowManager.instance.addListener(_onEvent);
   }
 
+  /// Pins [candidate] once the identity oracle accepts it. A rejection —
+  /// or an oracle that answered nothing — leaves the host unpinned, and
+  /// the next focus event asks again; a wrong pin is the bug this whole
+  /// path exists to prevent, so a doubt is never resolved by guessing.
+  Future<void> _pinVerified(wm.Window candidate, Future<bool> Function(int windowId) verify) async {
+    try {
+      if (await verify(candidate.id)) {
+        _self = candidate;
+      }
+    } on Object {
+      // The oracle answered nothing; the next focus event asks again.
+    }
+  }
+
   /// The manager's global event stream, narrowed to this window and folded
   /// into `live_shell`'s vocabulary.
   ///
@@ -120,7 +146,13 @@ final class WindowManagerHost implements WindowHost {
     // secondary window happens to be the active one, must be ignored
     // rather than answered with the primary's quit.
     if (_self == null && event is wm.WindowFocusedEvent) {
-      _self = window;
+      final candidate = window;
+      final verify = verifyOwnWindow;
+      if (verify == null) {
+        _self = candidate;
+      } else {
+        unawaited(_pinVerified(candidate, verify));
+      }
     }
     if (_self == null || event.windowId != _self!.id) {
       return; // another engine's window, or not pinned yet.

@@ -28,6 +28,11 @@ std::vector<std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>>& R
   return channels;
 }
 
+std::vector<std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>>& PrimaryWindowChannels() {
+  static std::vector<std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>> channels;
+  return channels;
+}
+
 std::wstring ToWide(const std::string& utf8) {
   if (utf8.empty()) {
     return std::wstring();
@@ -190,6 +195,37 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  // The primary's identity channel: the Dart window host pins its own
+  // window by verifying a candidate's nativeapi id against this window's
+  // NativeAPIWindowId property. Without it the host answers the manager's
+  // "current window", which — once a clone takes focus — is the clone, and
+  // a clone's close request answered as the primary's quits the whole
+  // process. The property is set by the native layer when it first wraps
+  // the window, which happens during the Dart boot that precedes the first
+  // focus event this verification is asked about.
+  HWND primary_hwnd = ::GetAncestor(flutter_controller_->view()->GetNativeWindow(), GA_ROOT);
+  if (primary_hwnd == nullptr) {
+    primary_hwnd = flutter_controller_->view()->GetNativeWindow();
+  }
+  auto primary_channel = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+      flutter_controller_->engine()->messenger(), "pure_live/primary_window",
+      &flutter::StandardMethodCodec::GetInstance());
+  primary_channel->SetMethodCallHandler(
+      [primary_hwnd](const flutter::MethodCall<flutter::EncodableValue>& call,
+                     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+        if (call.method_name() == "verifyOwnWindow") {
+          bool own = false;
+          if (const auto* id = std::get_if<int64_t>(call.arguments())) {
+            HANDLE prop = ::GetPropW(primary_hwnd, L"NativeAPIWindowId");
+            own = prop != nullptr &&
+                  static_cast<int64_t>(reinterpret_cast<uintptr_t>(prop)) == *id;
+          }
+          result->Success(flutter::EncodableValue(own));
+        } else {
+          result->NotImplemented();
+        }
+      });
+  PrimaryWindowChannels().push_back(std::move(primary_channel));
   // Sub-windows created by desktop_multi_window run their own engines; each
   // one needs the plugins registered too, or the room windows come up
   // without window_manager, the player and the rest of the stack. The room
