@@ -1,11 +1,13 @@
 import 'dart:async' show unawaited;
+import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fpdart/fpdart.dart' show Either;
+import 'package:fpdart/fpdart.dart' show Either, left;
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
-import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider;
+import 'package:pure_live/shared/paging/room_paging.dart' show searchRequestSize;
 
 /// What the search page holds: the committed query, the target it runs on,
 /// that search's typed results, where the next page asks, the in-flight
@@ -51,10 +53,35 @@ final class SearchController extends Notifier<SearchState> {
   int _searchGeneration = 0;
   int _suggestGeneration = 0;
 
+  /// Search pages in a row that brought no new result; two end the walk
+  /// (the reference's `maxConsecutiveStagnantSearchPages`).
+  int _stagnant = 0;
+
+  /// Cancels an in-flight [ensureResultsFor] loop when a newer search
+  /// starts; the loop must never append an old query's pages to it.
+  int _ensureToken = 0;
+
+  /// The fill in flight: one page-filling walk at a time, so a page jump
+  /// and an endless list cannot ask the same server page twice.
+  Future<void>? _fill;
+
+  /// Per platform in an "all" search: whether another page may follow, and
+  /// its streak of unchanged pages (search answers often overlap by one).
+  final Map<String, bool> _everywhereMore = {};
+  final Map<String, int> _everywhereStagnant = {};
+
   @override
   SearchState build() {
     final scope = ref.watch(searchSiteIdProvider);
+    _ensureToken++;
+    _resetWalks();
     return _initial(_firstTargetOf(scope));
+  }
+
+  void _resetWalks() {
+    _stagnant = 0;
+    _everywhereMore.clear();
+    _everywhereStagnant.clear();
   }
 
   /// The targets [scope] actually searches, in the canonical rooms,
@@ -62,9 +89,13 @@ final class SearchController extends Notifier<SearchState> {
   /// all-platforms scope), one platform the targets it offers.
   List<LiveSearchTarget> supportedTargetsOf(String scope) {
     if (scope == kSearchAllPlatforms) return const [LiveSearchTarget.rooms];
-    final offered = ref.read(sitesProvider).getById(scope)?.capability<LiveSearchProvider>()?.supportedTargets ??
+    final offered =
+        ref.read(sitesProvider).getById(scope)?.capability<LiveSearchProvider>()?.supportedTargets ??
         const <LiveSearchTarget>{};
-    return [for (final target in LiveSearchTarget.values) if (offered.contains(target)) target];
+    return [
+      for (final target in LiveSearchTarget.values)
+        if (offered.contains(target)) target,
+    ];
   }
 
   /// The target a fresh search starts on: the first one the scope supports,
@@ -76,9 +107,11 @@ final class SearchController extends Notifier<SearchState> {
 
   /// Searches [query] from its first page; a blank query clears the search.
   Future<void> search(String query) {
+    _ensureToken++;
     final word = query.trim();
     if (word.isEmpty) {
       _searchGeneration++;
+      _resetWalks();
       state = _initial(state.target);
       return Future.value();
     }
@@ -87,21 +120,53 @@ final class SearchController extends Notifier<SearchState> {
 
   /// Loads the next page of the current query when one is left.
   Future<void> loadMore() {
-    if (state.loading || !state.hasMore || state.query.isEmpty) return Future.value();
+    if (_fill != null || state.loading || !state.hasMore || state.query.isEmpty) return Future.value();
     return _load(query: state.query, target: state.target, page: state.nextPage);
   }
 
-  /// Loads [page] of the current query for the desktop pager: a jump
-  /// replaces the page whole, a continuous turn appends (the popular
-  /// feed's rule, the same pager on both).
-  Future<void> loadPage(int page) {
-    if (state.loading || state.query.isEmpty || page < 1) return Future.value();
-    if (page == state.nextPage) return loadMore();
-    return _load(query: state.query, target: state.target, page: page);
+  /// Fetches server pages until the results hold enough for a desktop page
+  /// [page] of [pageSize] hits, or the walk ends.
+  ///
+  /// The viewer's page size is a display slice here, never a server page
+  /// size: the search keeps asking its next server page, so jumping pages
+  /// never moves a platform's page boundaries. The caller slices the
+  /// accumulated rooms and owns the page number.
+  Future<void> ensureResultsFor({required int page, required int pageSize}) async {
+    // A second ask (another jump, a size change) joins the fill in flight
+    // and re-checks its own target once that one is done.
+    while (_fill != null) {
+      await _fill;
+    }
+    if (state.query.isEmpty || page < 1 || pageSize < 1 || state.loading) return;
+    final target = page * pageSize;
+    if (state.rooms.length >= target || !state.hasMore) return;
+    final token = ++_ensureToken;
+    late final Future<void> task;
+    task = _fillTo(token, target).whenComplete(() {
+      if (identical(_fill, task)) _fill = null;
+    });
+    _fill = task;
+    await task;
+  }
+
+  /// Appends server pages until [target] hits are held, the walk ends, or
+  /// twenty pages were asked. The page size stays the search's own window;
+  /// the caller measures its display pages over the result.
+  Future<void> _fillTo(int token, int target) async {
+    var requests = 0;
+    while (state.rooms.length < target && state.hasMore && requests < 20) {
+      if (token != _ensureToken) return;
+      final before = state.rooms.length;
+      await _load(query: state.query, target: state.target, page: state.nextPage);
+      if (token != _ensureToken) return;
+      requests++;
+      if (state.rooms.length == before && !state.hasMore) break;
+    }
   }
 
   /// Runs the current query again from its first page (the retry button).
   Future<void> retry() {
+    _ensureToken++;
     if (state.query.isEmpty) return Future.value();
     return _load(query: state.query, target: state.target, page: 1);
   }
@@ -114,7 +179,9 @@ final class SearchController extends Notifier<SearchState> {
     if (target == state.target || !supportedTargetsOf(ref.read(searchSiteIdProvider)).contains(target)) {
       return Future.value();
     }
+    _ensureToken++;
     if (state.query.isEmpty) {
+      _resetWalks();
       state = _initial(target);
       return Future.value();
     }
@@ -158,22 +225,29 @@ final class SearchController extends Notifier<SearchState> {
 
   Future<void> _load({required String query, required LiveSearchTarget target, required int page}) async {
     final generation = ++_searchGeneration;
-    // The page the call continues from — a jump (the pager) replaces, a
-    // continuous turn appends; the answer handler reads it below.
-    final current = (nextPage: state.nextPage, rooms: state.rooms);
+    // The call continues the current walk, or jumps (the pager) and
+    // replaces the page whole.
+    final replace = page == 1 || page != state.nextPage;
     final scope = ref.read(searchSiteIdProvider);
     final site = scope == kSearchAllPlatforms ? null : ref.read(sitesProvider).getById(scope);
+    if (replace) {
+      _stagnant = 0;
+      if (site == null) {
+        _everywhereMore.clear();
+        _everywhereStagnant.clear();
+      }
+    }
     state = (
       query: query,
       target: target,
-      rooms: page == 1 ? const [] : state.rooms,
-      anchors: page == 1 ? const [] : state.anchors,
-      areas: page == 1 ? const [] : state.areas,
+      rooms: replace ? const [] : state.rooms,
+      anchors: replace ? const [] : state.anchors,
+      areas: replace ? const [] : state.areas,
       nextPage: state.nextPage,
       hasMore: state.hasMore,
       loading: true,
       error: null,
-      suggestions: page == 1 ? const [] : state.suggestions,
+      suggestions: replace ? const [] : state.suggestions,
     );
     final capability = site?.capability<LiveSearchProvider>();
     if (capability == null || !capability.supportedTargets.contains(target)) {
@@ -195,17 +269,19 @@ final class SearchController extends Notifier<SearchState> {
       return;
     }
     if (site == null) {
-      await _loadEverywhere(query: query, target: target, page: page, generation: generation);
+      await _loadEverywhere(query: query, target: target, page: page, generation: generation, replace: replace);
       return;
     }
-    final answer = await capability.search(
-      LiveSearchRequest.of(
-        query: query,
-        target: target,
-        page: page,
-        pageSize: ref.read(browseSettingsProvider).homePageSize,
-      ),
-    );
+    // A fixed request window: a viewer's display page size never moves a
+    // server page boundary mid-search (the reference's search page size).
+    Either<LiveSiteError, LivePage<LiveSearchResult>> answer;
+    try {
+      answer = await capability.search(
+        LiveSearchRequest.of(query: query, target: target, page: page, pageSize: searchRequestSize),
+      );
+    } on Object catch (error) {
+      answer = left(LiveSiteError.network(siteId: site.manifest.id, message: '$error', cause: error));
+    }
     // A search that was replaced (a newer query, target or site) drains its
     // answer without writing it.
     if (!ref.mounted || generation != _searchGeneration) return;
@@ -222,71 +298,139 @@ final class SearchController extends Notifier<SearchState> {
         error: error,
         suggestions: state.suggestions,
       ),
-      (pageAnswer) => state = (
-        query: query,
-        target: target,
-        // A continuous turn appends; a jump (the pager) replaces the page
-        // whole.
-        rooms: page == 1 || page != current.nextPage
-            ? _roomsOf(pageAnswer)
-            : [...state.rooms, ..._roomsOf(pageAnswer)],
-        anchors: page == 1 || page != current.nextPage
-            ? _anchorsOf(pageAnswer)
-            : [...state.anchors, ..._anchorsOf(pageAnswer)],
-        areas: page == 1 || page != current.nextPage
-            ? _areasOf(pageAnswer)
-            : [...state.areas, ..._areasOf(pageAnswer)],
-        nextPage: page + 1,
-        hasMore: pageAnswer.hasMore ?? pageAnswer.items.isNotEmpty,
-        loading: false,
-        error: null,
-        suggestions: state.suggestions,
-      ),
+      (pageAnswer) {
+        final before = state.rooms.length + state.anchors.length + state.areas.length;
+        final rooms = replace
+            ? _mergeRooms(const [], _roomsOf(pageAnswer))
+            : _mergeRooms(state.rooms, _roomsOf(pageAnswer));
+        final anchors = replace
+            ? _mergeAnchors(const [], _anchorsOf(pageAnswer))
+            : _mergeAnchors(state.anchors, _anchorsOf(pageAnswer));
+        final areas = replace
+            ? _mergeAreas(const [], _areasOf(pageAnswer))
+            : _mergeAreas(state.areas, _areasOf(pageAnswer));
+        final added = rooms.length + anchors.length + areas.length - before;
+        final stagnant = added == 0 && !replace ? _stagnant + 1 : 0;
+        _stagnant = stagnant;
+        state = (
+          query: query,
+          target: target,
+          rooms: rooms,
+          anchors: anchors,
+          areas: areas,
+          nextPage: page + 1,
+          // A page that repeated itself is given one more chance, then the
+          // walk ends even if the endpoint keeps claiming more.
+          hasMore: (pageAnswer.hasMore ?? pageAnswer.items.isNotEmpty) && stagnant < 2,
+          loading: false,
+          error: null,
+          suggestions: state.suggestions,
+        );
+      },
     );
   }
 
   /// Searches every search-capable platform at once ("all"): the same page
   /// of each site's rooms, merged in registry order — the reference's
   /// all-platforms search. A platform that fails (an overseas one without a
-  /// proxy, say) keeps out of the way: the page shows what answered.
+  /// proxy, say) keeps out of the way: the page shows what answered, and
+  /// every platform's own walk is asked only while it may have more.
   Future<void> _loadEverywhere({
     required String query,
     required LiveSearchTarget target,
     required int page,
     required int generation,
+    required bool replace,
   }) async {
-    final pageSize = ref.read(browseSettingsProvider).homePageSize;
-    final candidates = <({LiveSite site, LiveSearchProvider capability})>[
+    final visible = ref.read(sitesDisplayProvider.notifier).visibleIds();
+    final all = <({LiveSite site, LiveSearchProvider capability})>[
       for (final site in ref.read(sitesProvider).all)
-        if (site.capability<LiveSearchProvider>() case final capability?)
-          if (capability.supportedTargets.contains(target)) (site: site, capability: capability),
+        if (visible.contains(site.manifest.id))
+          if (site.capability<LiveSearchProvider>() case final capability?)
+            if (capability.supportedTargets.contains(target)) (site: site, capability: capability),
     ];
-    final asks = <Future<Either<LiveSiteError, LivePage<LiveSearchResult>>>>[
-      for (final candidate in candidates)
-        candidate.capability.search(
-          LiveSearchRequest.of(query: query, target: target, page: page, pageSize: pageSize),
-        ),
+    if (replace) {
+      for (final candidate in all) {
+        final id = candidate.site.manifest.id;
+        _everywhereMore[id] = true;
+        _everywhereStagnant[id] = 0;
+      }
+    }
+    final candidates = [
+      for (final candidate in all)
+        if (replace || (_everywhereMore[candidate.site.manifest.id] ?? true)) candidate,
     ];
-    final answers = await Future.wait(asks);
+    if (candidates.isEmpty) {
+      // Every platform's walk ended: nothing more to ask for the old list.
+      state = (
+        query: query,
+        target: target,
+        rooms: state.rooms,
+        anchors: state.anchors,
+        areas: state.areas,
+        nextPage: state.nextPage,
+        hasMore: false,
+        loading: false,
+        error: null,
+        suggestions: state.suggestions,
+      );
+      return;
+    }
+    // Bounded fan-out: a few platforms in flight at a time, each worker
+    // taking the next platform as it finishes instead of every batch
+    // waiting for its slowest member (the reference's
+    // maxConcurrentSearchSites).
+    const maxConcurrent = 8;
+    final answers = List<Either<LiveSiteError, LivePage<LiveSearchResult>>?>.filled(candidates.length, null);
+    var next = 0;
+    Future<void> ask() async {
+      while (true) {
+        final index = next++;
+        if (index >= candidates.length) return;
+        final candidate = candidates[index];
+        Either<LiveSiteError, LivePage<LiveSearchResult>> answer;
+        try {
+          answer = await candidate.capability.search(
+            LiveSearchRequest.of(query: query, target: target, page: page, pageSize: searchRequestSize),
+          );
+        } on Object catch (error) {
+          answer = left(LiveSiteError.network(siteId: candidate.site.manifest.id, message: '$error', cause: error));
+        }
+        if (!ref.mounted || generation != _searchGeneration) return;
+        answers[index] = answer;
+      }
+    }
+
+    await Future.wait([for (var worker = 0; worker < math.min(maxConcurrent, candidates.length); worker++) ask()]);
     if (!ref.mounted || generation != _searchGeneration) return;
-    final rooms = <LiveRoom>[];
-    final anchors = <LiveAnchor>[];
-    final areas = <LiveArea>[];
-    var anyMore = false;
-    for (final answer in answers) {
+    var rooms = replace ? <LiveRoom>[] : [...state.rooms];
+    var anchors = replace ? <LiveAnchor>[] : [...state.anchors];
+    var areas = replace ? <LiveArea>[] : [...state.areas];
+    var succeeded = false;
+    for (var index = 0; index < candidates.length; index++) {
+      final answer = answers[index];
+      if (answer == null) continue;
+      final id = candidates[index].site.manifest.id;
       answer.match(
-        (_) {},
+        (_) {
+          _everywhereMore[id] = false;
+        },
         (pageAnswer) {
-          rooms.addAll(_roomsOf(pageAnswer));
-          anchors.addAll(_anchorsOf(pageAnswer));
-          areas.addAll(_areasOf(pageAnswer));
-          if (pageAnswer.hasMore ?? pageAnswer.items.isNotEmpty) anyMore = true;
+          succeeded = true;
+          final before = rooms.length + anchors.length + areas.length;
+          rooms = _mergeRooms(rooms, _roomsOf(pageAnswer));
+          anchors = _mergeAnchors(anchors, _anchorsOf(pageAnswer));
+          areas = _mergeAreas(areas, _areasOf(pageAnswer));
+          final added = rooms.length + anchors.length + areas.length - before;
+          final stagnant = added == 0 ? (_everywhereStagnant[id] ?? 0) + 1 : 0;
+          _everywhereStagnant[id] = stagnant;
+          _everywhereMore[id] = (pageAnswer.hasMore ?? pageAnswer.items.isNotEmpty) && stagnant < 2;
         },
       );
     }
     // Nothing at all answered (every platform failed): the error state says
     // so instead of an empty page.
-    if (rooms.isEmpty && anchors.isEmpty && areas.isEmpty) {
+    if (!succeeded) {
       state = (
         query: query,
         target: target,
@@ -304,15 +448,51 @@ final class SearchController extends Notifier<SearchState> {
     state = (
       query: query,
       target: target,
-      rooms: page == 1 ? rooms : [...state.rooms, ...rooms],
-      anchors: page == 1 ? anchors : [...state.anchors, ...anchors],
-      areas: page == 1 ? areas : [...state.areas, ...areas],
+      rooms: rooms,
+      anchors: anchors,
+      areas: areas,
       nextPage: page + 1,
-      hasMore: anyMore,
+      hasMore: _everywhereMore.values.any((more) => more),
       loading: false,
       error: null,
       suggestions: state.suggestions,
     );
+  }
+
+  /// Merges [incoming] into [current] by identity, keeping first-seen
+  /// order — search endpoints overlap pages by one, so a repeated hit is
+  /// dropped instead of shown twice.
+  static List<LiveRoom> _mergeRooms(List<LiveRoom> current, Iterable<LiveRoom> incoming) {
+    final seen = {for (final room in current) room.identityKey};
+    return [
+      ...current,
+      for (final room in incoming)
+        if (seen.add(room.identityKey)) room,
+    ];
+  }
+
+  /// Anchor identity: the platform's uid, e.g. `bilibili:123`.
+  static String _anchorKey(LiveAnchor anchor) =>
+      '${anchor.platform}:${anchor.anchorId.isEmpty ? anchor.name : anchor.anchorId}';
+
+  /// Merges [incoming] anchors into [current] by identity.
+  static List<LiveAnchor> _mergeAnchors(List<LiveAnchor> current, Iterable<LiveAnchor> incoming) {
+    final seen = {for (final anchor in current) _anchorKey(anchor)};
+    return [
+      ...current,
+      for (final anchor in incoming)
+        if (seen.add(_anchorKey(anchor))) anchor,
+    ];
+  }
+
+  /// Merges [incoming] areas into [current] by identity.
+  static List<LiveArea> _mergeAreas(List<LiveArea> current, Iterable<LiveArea> incoming) {
+    final seen = {for (final area in current) area.identityKey};
+    return [
+      ...current,
+      for (final area in incoming)
+        if (seen.add(area.identityKey)) area,
+    ];
   }
 
   /// The room hits of [page] — the ones a rooms search answered.
