@@ -3,12 +3,15 @@ import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_device/live_device.dart'
     show
+        DisplayPlaybackRefreshMode,
         DisplayRefreshRate,
         DisplayRefreshRateCapabilities,
         DisplayRefreshRateException,
         DisplayRefreshRatePreference,
         DisplayRefreshRateService,
-        PlatformDisplayRefreshRateService;
+        PlatformDisplayRefreshRateService,
+        normalizePlaybackFrameRate,
+        playbackRefreshRateForDisplay;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
 /// How the app asks the display to pace itself.
@@ -136,6 +139,16 @@ final class DisplayRefreshRateController extends Notifier<DisplayRefreshRateStat
   bool _highTarget = false;
   bool _applyingHigh = false;
 
+  /// The live room's declared video rate while it plays; null when nothing
+  /// should be matched. The room coordinator writes it from the playing
+  /// line's geometry, so no rate is invented when a platform declares none.
+  double? _playbackFrameRate;
+
+  /// The rate last declared to the display while a video played; null when
+  /// the last request was a release.
+  double? _playbackAppliedHz;
+  bool _playbackReleased = false;
+
   @override
   DisplayRefreshRateState build() {
     ref.onDispose(() {
@@ -194,6 +207,25 @@ final class DisplayRefreshRateController extends Notifier<DisplayRefreshRateStat
     await _apply(mode);
   }
 
+  /// Declares the rate of the video the live room plays, or null when
+  /// nothing should be matched (paused, background, audio only, the setting
+  /// off or the room left).
+  ///
+  /// Only a backend that can match content carries this; elsewhere the
+  /// stored rate is inert and the selected mode keeps its normal policy.
+  Future<void> setPlaybackFrameRate(double? frameRate) async {
+    final next = frameRate != null && frameRate.isFinite && frameRate > 0
+        ? normalizePlaybackFrameRate(frameRate)
+        : null;
+    if (next == _playbackFrameRate) return;
+    _playbackFrameRate = next;
+    _playbackAppliedHz = null;
+    _playbackReleased = false;
+    _highApplied = null;
+    final caps = state.capabilities;
+    if (caps != null && _usesAdaptivePolicy(caps)) await _setHigh(_highTarget);
+  }
+
   Future<void> _apply(RefreshRateMode mode) async {
     final caps = state.capabilities;
     if (caps == null) return;
@@ -206,6 +238,8 @@ final class DisplayRefreshRateController extends Notifier<DisplayRefreshRateStat
       _settleTimer?.cancel();
       _activePointers = 0;
       _highApplied = null;
+      _playbackAppliedHz = null;
+      _playbackReleased = false;
       outcome = await _setHigh(mode == RefreshRateMode.performance && _foreground);
     } else {
       try {
@@ -302,35 +336,87 @@ final class DisplayRefreshRateController extends Notifier<DisplayRefreshRateStat
     });
   }
 
-  /// Applies the latest high/low target; a target that arrives mid-flight is
-  /// not dropped. Only a successfully submitted request is remembered, so a
-  /// backend failure is retried by the next interaction.
+  /// Applies the latest high/low or playback target; a target that arrives
+  /// mid-flight is not dropped. Only a successfully submitted request is
+  /// remembered, so a backend failure is retried by the next interaction.
   Future<DisplayRefreshRatePreference> _setHigh(bool high) async {
     _highTarget = high;
     if (_applyingHigh) return DisplayRefreshRatePreference.submitted;
     _applyingHigh = true;
     var outcome = DisplayRefreshRatePreference.submitted;
     try {
-      while (_highApplied != _highTarget) {
-        final target = _highTarget;
-        try {
-          outcome = target ? await _service.preferMaximum() : await _service.preferDefault();
-        } on DisplayRefreshRateException {
-          outcome = DisplayRefreshRatePreference.failed;
-        } on Object {
-          outcome = DisplayRefreshRatePreference.failed;
+      while (true) {
+        final frameRate = _playbackFrameRate;
+        if (frameRate != null && _supportsPlaybackRate(state.capabilities)) {
+          final target = _playbackTargetHz(frameRate);
+          if (target == null) {
+            if (_playbackReleased) break;
+            outcome = await _submit(_service.preferDefault);
+            if (outcome != DisplayRefreshRatePreference.submitted) {
+              _playbackReleased = false;
+              _playbackAppliedHz = null;
+              break;
+            }
+            _playbackReleased = true;
+            _playbackAppliedHz = null;
+          } else {
+            if (!_playbackReleased && _playbackAppliedHz == target) break;
+            outcome = await _submit(() => _service.matchContent(hz: target));
+            if (outcome != DisplayRefreshRatePreference.submitted) {
+              _playbackReleased = false;
+              _playbackAppliedHz = null;
+              break;
+            }
+            _playbackAppliedHz = target;
+            _playbackReleased = false;
+          }
+        } else {
+          if (_highApplied == _highTarget) break;
+          final target = _highTarget;
+          outcome = await _submit(target ? _service.preferMaximum : _service.preferDefault);
+          if (outcome != DisplayRefreshRatePreference.submitted) {
+            _highApplied = null;
+            break;
+          }
+          _highApplied = target;
         }
-        if (outcome != DisplayRefreshRatePreference.submitted) {
-          _highApplied = null;
-          break;
-        }
-        _highApplied = target;
       }
     } finally {
       _applyingHigh = false;
     }
     return outcome;
   }
+
+  Future<DisplayRefreshRatePreference> _submit(Future<DisplayRefreshRatePreference> Function() request) async {
+    try {
+      return await request();
+    } on DisplayRefreshRateException {
+      return DisplayRefreshRatePreference.failed;
+    } on Object {
+      return DisplayRefreshRatePreference.failed;
+    }
+  }
+
+  /// The rate to declare on the surface while [frameRate] plays; null while
+  /// the app is backgrounded, where the request is released.
+  double? _playbackTargetHz(double frameRate) {
+    if (!_foreground) return null;
+    return playbackRefreshRateForDisplay(
+      frameRate: frameRate,
+      mode: switch (state.mode) {
+        RefreshRateMode.powerSaving => DisplayPlaybackRefreshMode.powerSaving,
+        RefreshRateMode.balanced => DisplayPlaybackRefreshMode.balanced,
+        RefreshRateMode.performance => DisplayPlaybackRefreshMode.performance,
+      },
+      high: _highTarget,
+      supportedHz: state.snapshot?.supportedHz ?? const <double>[],
+    );
+  }
+
+  /// Content matching is the reference's Android surface declaration path;
+  /// other backends keep their selected mode untouched.
+  static bool _supportsPlaybackRate(DisplayRefreshRateCapabilities? caps) =>
+      caps != null && caps.platformName == 'android' && caps.canMatchContent;
 
   /// Keeps the snapshot live when the display/monitor changes; the stream is
   /// shared by the backend and only opened when it can observe.
@@ -381,4 +467,38 @@ bool _usesAdaptivePolicy(DisplayRefreshRateCapabilities? caps) =>
 /// The display-rate setting.
 final displayRefreshRateProvider = NotifierProvider<DisplayRefreshRateController, DisplayRefreshRateState>(
   DisplayRefreshRateController.new,
+);
+
+/// Whether a playing live room declares its video frame rate to the display
+/// (the reference's `matchVideoFrameRate`, default on).
+///
+/// The room coordinator feeds the playing line's declared rate to
+/// [DisplayRefreshRateController.setPlaybackFrameRate] only while this is on;
+/// a platform that declares no frame rate leaves the selected mode alone
+/// instead of inventing a rate.
+final class MatchVideoFrameRateController extends Notifier<bool> {
+  /// The persisted key.
+  static const String prefsKey = 'display.matchVideoFrameRate';
+
+  @override
+  bool build() {
+    try {
+      return StoragePrefs.getBool(prefsKey) ?? true;
+    } on Object {
+      return true;
+    }
+  }
+
+  /// Stores the choice; a room already playing reads it through its
+  /// coordinator and applies or releases the declaration immediately.
+  Future<void> setEnabled({required bool value}) async {
+    if (state == value) return;
+    state = value;
+    await StoragePrefs.setBool(prefsKey, value);
+  }
+}
+
+/// The match-video-frame-rate setting.
+final matchVideoFrameRateProvider = NotifierProvider<MatchVideoFrameRateController, bool>(
+  MatchVideoFrameRateController.new,
 );

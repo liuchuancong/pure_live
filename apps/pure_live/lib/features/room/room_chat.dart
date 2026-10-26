@@ -1,18 +1,25 @@
 import 'dart:async' show unawaited;
+import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/features/room/gift_text.dart';
 import 'package:pure_live/features/room/local_interaction_tab.dart' show LocalInteractionTab;
+import 'package:pure_live/features/room/membership_cards.dart' show isMembershipCard;
 import 'package:pure_live/features/room/room_controller.dart';
 import 'package:pure_live/features/room/room_message_actions.dart'
     show blockRoomMessageKeyword, blockRoomMessageSender, copyRoomMessageText;
+import 'package:pure_live/features/room/room_super_chats.dart' show roomSuperChatsProvider;
 import 'package:pure_live/features/settings/chat_display_settings.dart'
-    show chatListFontSizeProvider, chatListLineSpacingProvider, chatListStyleProvider, chatNamesProvider;
+    show
+        chatGiftValueInYuanProvider,
+        chatListFontSizeProvider,
+        chatListLineSpacingProvider,
+        chatListStyleProvider,
+        chatNamesProvider;
 import 'package:pure_live/features/settings/danmaku_style_providers.dart';
 import 'package:pure_live/features/settings/local_interaction_settings.dart' show localInteractionProvider;
 import 'package:pure_live/features/settings/playback_settings_providers.dart';
@@ -44,18 +51,12 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
   Widget build(BuildContext context) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
-    final room = ref.watch(roomProvider).room;
-    final site = room == null ? null : ref.watch(sitesProvider).getById(room.ref.platform);
-    final superChats = site?.capability<LiveSuperChatFeed>() != null;
     final localEnabled = ref.watch(localInteractionProvider).enabled;
-    // A room change can take the board away; the tab falls back to the
-    // list rather than to an empty super-chat page. The local tab disappears
-    // with its master switch.
-    final tab = _tab == _ChatTab.superChats && !superChats
-        ? _ChatTab.danmaku
-        : _tab == _ChatTab.local && !localEnabled
-        ? _ChatTab.danmaku
-        : _tab;
+    // The local tab disappears with its master switch; the super chat tab
+    // stays for every room, as the reference's chat panel does, because a
+    // membership or a subscription can arrive where the platform keeps no
+    // board.
+    final tab = _tab == _ChatTab.local && !localEnabled ? _ChatTab.danmaku : _tab;
     return ColoredBox(
       color: colors.surface,
       child: Column(
@@ -67,7 +68,7 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
             semanticLabel: t.room.chatTitle,
             tabs: [
               DsTab(value: _ChatTab.danmaku, label: Text(t.room.danmakuList)),
-              if (superChats) DsTab(value: _ChatTab.superChats, label: Text(t.room.superChats)),
+              DsTab(value: _ChatTab.superChats, label: Text(t.room.superChats)),
               if (localEnabled) DsTab(value: _ChatTab.local, label: Text(t.settings.localInteractionTitle)),
               DsTab(value: _ChatTab.settings, label: Text(t.room.danmakuSettings)),
               DsTab(value: _ChatTab.shield, label: Text(t.room.blockList)),
@@ -83,7 +84,7 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
                   _ChatComposer(),
                 ],
               ),
-              _ChatTab.superChats => _SuperChatTab(room: room!),
+              _ChatTab.superChats => const _SuperChatTab(),
               _ChatTab.local => const LocalInteractionTab(),
               _ChatTab.settings => const _RoomDanmakuSettings(),
               _ChatTab.shield => const _ShieldTab(),
@@ -225,7 +226,9 @@ final class _ChatLine extends ConsumerWidget {
           : Color.fromARGB(255, message.color!.r, message.color!.g, message.color!.b),
     );
     final gift = _giftOf(message);
-    final words = gift == null ? message.text : _giftSentence(t, gift, anchorName);
+    final replayed = message.messageId.startsWith('local-replay-');
+    final valueInYuan = ref.watch(chatGiftValueInYuanProvider);
+    final words = gift == null ? message.text : _giftSentence(t, gift, anchorName, inYuan: valueInYuan);
     Widget content = Padding(
       padding: EdgeInsets.symmetric(vertical: vertical),
       child: Row(
@@ -240,6 +243,11 @@ final class _ChatLine extends ConsumerWidget {
             child: Text.rich(
               TextSpan(
                 children: [
+                  if (replayed)
+                    TextSpan(
+                      text: '[${t.room.replayed}] ',
+                      style: nameStyle.copyWith(color: colors.textSubtle),
+                    ),
                   if (showNames && senderName.isEmpty)
                     TextSpan(text: '${t.room.system}: ', style: nameStyle),
                   if (showNames && senderName.isNotEmpty)
@@ -319,10 +327,30 @@ String _yuanText(int fen) {
   return trimmed.endsWith('.') ? trimmed.substring(0, trimmed.length - 1) : trimmed;
 }
 
-String? _giftValueText(Translations t, LiveGift gift) {
+/// The units whose rate in yuan a platform fixes, so "礼物价值换算成元" can
+/// write them as yuan; the overseas rates only rank gifts and stay in their
+/// own unit (the reference's A08.12 list, plus our [LiveGiftUnit.rmb]).
+const Set<LiveGiftUnit> _giftYuanUnits = {
+  LiveGiftUnit.fen,
+  LiveGiftUnit.rmb,
+  LiveGiftUnit.yuan,
+  LiveGiftUnit.goldSeed,
+  LiveGiftUnit.diamond,
+  LiveGiftUnit.douyinCoin,
+  LiveGiftUnit.acCoin,
+  LiveGiftUnit.starCoin,
+};
+
+String? _giftValueText(Translations t, LiveGift gift, {bool inYuan = false}) {
   final value = _giftShownValue(gift);
   if (value == null || value <= 0) return null;
   final room = t.room;
+  if (inYuan && _giftYuanUnits.contains(gift.value.unit)) {
+    final rate = giftUnitsPerYuan[gift.value.unit]!;
+    // At least a fen: a paid gift is never "0 元".
+    final fen = math.max(1, (value * 100 / rate).round());
+    return room.giftValueYuan(value: _yuanText(fen));
+  }
   return switch (gift.value.unit) {
     LiveGiftUnit.fen => room.giftValueYuan(value: _yuanText(value)),
     LiveGiftUnit.rmb || LiveGiftUnit.yuan => room.giftValueYuan(value: '$value'),
@@ -346,8 +374,8 @@ String? _giftValueText(Translations t, LiveGift gift) {
 }
 
 /// The gift in words: "送出 小心心 ×3", plus its value when known.
-String _giftSentence(Translations t, LiveGift gift, String anchorName) {
-  final value = _giftValueText(t, gift);
+String _giftSentence(Translations t, LiveGift gift, String anchorName, {bool inYuan = false}) {
+  final value = _giftValueText(t, gift, inYuan: inYuan);
   final words = giftSentenceText(t, gift, anchorName);
   return value == null ? words : '$words  $value';
 }
@@ -593,74 +621,42 @@ final class _StyleSlider extends StatelessWidget {
   }
 }
 
-/// The super chat board: the platform's own list, read when the tab opens;
-/// a failure names the reason and offers a retry.
-final class _SuperChatTab extends ConsumerStatefulWidget {
-  const _SuperChatTab({required this.room});
-
-  final LiveRoom room;
-
-  @override
-  ConsumerState<_SuperChatTab> createState() => _SuperChatTabState();
-}
-
-typedef _SuperChats = ({List<LiveSuperChatMessage> messages, String? error});
-
-final class _SuperChatTabState extends ConsumerState<_SuperChatTab> {
-  late Future<_SuperChats> _future = _load();
-
-  Future<_SuperChats> _load() async {
-    final capability = ref.read(sitesProvider).getById(widget.room.ref.platform)?.capability<LiveSuperChatFeed>();
-    if (capability == null) return (messages: const <LiveSuperChatMessage>[], error: null);
-    final answer = await capability.getSuperChatMessages(room: widget.room);
-    final result = answer.fold(
-      (error) => (messages: const <LiveSuperChatMessage>[], error: error.message),
-      (messages) => (messages: messages, error: null),
-    );
-    return result;
-  }
-
-  void _retry() => setState(() => _future = _load());
+/// The super chat board: the platform's own list merged with the paid
+/// messages and membership cards that arrive while the room is open; a
+/// failure names the reason and offers a retry.
+final class _SuperChatTab extends ConsumerWidget {
+  const _SuperChatTab();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    return FutureBuilder<_SuperChats>(
-      future: _future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: AppLoadingIndicator(size: 24));
-        }
-        final result = snapshot.data;
-        if (result == null) {
-          return DsEmptyState(
-            icon: const DsIcon(DsIcons.badgeDollarSign),
-            title: Text(t.room.superChatFailed),
-            actions: [DsButton(onPressed: _retry, child: Text(t.common.retry))],
-          );
-        }
-        if (result.error != null) {
-          return DsEmptyState(
-            icon: const DsIcon(DsIcons.badgeDollarSign),
-            title: Text(t.room.superChatFailed),
-            description: Text(result.error!),
-            actions: [DsButton(onPressed: _retry, child: Text(t.common.retry))],
-          );
-        }
-        if (result.messages.isEmpty) {
-          return DsEmptyState(
-            icon: const DsIcon(DsIcons.badgeDollarSign),
-            title: Text(t.room.superChatEmpty),
-            actions: [DsButton(variant: DsButtonVariant.secondary, onPressed: _retry, child: Text(t.common.retry))],
-          );
-        }
-        return ListView.separated(
-          padding: const EdgeInsets.all(DsSpace.s16),
-          itemCount: result.messages.length,
-          separatorBuilder: (context, index) => const SizedBox(height: DsSpace.s8),
-          itemBuilder: (context, index) => _SuperChatCard(message: result.messages[index]),
-        );
-      },
+    final board = ref.watch(roomSuperChatsProvider);
+    void retry() => unawaited(ref.read(roomProvider.notifier).reloadSuperChats());
+    if (board.loading && board.messages.isEmpty) {
+      return const Center(child: AppLoadingIndicator(size: 24));
+    }
+    final error = board.error;
+    if (error != null && board.messages.isEmpty) {
+      return DsEmptyState(
+        icon: const DsIcon(DsIcons.badgeDollarSign),
+        title: Text(t.room.superChatFailed),
+        description: Text(error),
+        actions: [DsButton(onPressed: retry, child: Text(t.common.retry))],
+      );
+    }
+    if (board.messages.isEmpty) {
+      return DsEmptyState(
+        icon: const DsIcon(DsIcons.badgeDollarSign),
+        title: Text(t.room.superChatEmpty),
+      );
+    }
+    final messages = board.messages;
+    return ListView.separated(
+      padding: const EdgeInsets.all(DsSpace.s16),
+      itemCount: messages.length,
+      separatorBuilder: (context, index) => const SizedBox(height: DsSpace.s8),
+      // Newest on top, as the reference's super chat page keeps them.
+      itemBuilder: (context, index) => _SuperChatCard(message: messages[messages.length - 1 - index]),
     );
   }
 }
@@ -677,6 +673,7 @@ final class _SuperChatCard extends StatelessWidget {
     final theme = DsTheme.of(context);
     final name = message.userName.trim();
     final face = message.faceUrl.trim();
+    final membership = isMembershipCard(message);
     final price = message.price.displayText.trim().isNotEmpty
         ? message.price.displayText.trim()
         : [?message.price.currency, if (message.price.amount case final amount?) '$amount'].join();
@@ -687,12 +684,15 @@ final class _SuperChatCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s8,
         children: [
-          DsAvatar(
-            initials: name,
-            image: face.isEmpty ? null : cachedImage(face),
-            size: DsSize.sm,
-            semanticLabel: name,
-          ),
+          // A membership card has no avatar of its own (the reference's
+          // D07.2 cards), only the buyer's name.
+          if (!membership)
+            DsAvatar(
+              initials: name,
+              image: face.isEmpty ? null : cachedImage(face),
+              size: DsSize.sm,
+              semanticLabel: name,
+            ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,8 +1,13 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_platform/live_platform.dart' show PlatformKind;
 
 import 'package:pure_live/app/background/app_background.dart' show BackgroundActiveScope;
 import 'package:pure_live/app/navigation/module_navigation.dart';
+import 'package:pure_live/app/providers/environment_providers.dart' show platformKindProvider;
+import 'package:pure_live/app/providers/liquid_glass_provider.dart'
+    show deviceMemoryMegabytesProvider, liquidGlassBlurs, liquidGlassProvider;
 import 'package:pure_live/app/providers/nav_visibility_providers.dart' show kHomeMenuItems;
 import 'package:pure_live/app/theme/theme_mode_toggle.dart';
 import 'package:pure_live/app/window_chrome.dart' show WindowChromeState;
@@ -10,6 +15,7 @@ import 'package:pure_live/features/settings/settings_sections.dart' show Setting
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowCaptionBar;
+import 'package:pure_live/layouts/mobile/liquid_glass.dart';
 import 'package:pure_live/shared/enums/app_module.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart';
 import 'package:pure_live/shared/widgets/chrome_icon_button.dart';
@@ -25,7 +31,7 @@ const double kNavigationDrawerWidth = 320;
 /// The drawer closes on a selection; a destination whose page has not
 /// arrived yet still closes it, so the drawer never hangs open on a dead
 /// tap.
-final class MobileLayout extends StatelessWidget {
+final class MobileLayout extends ConsumerWidget {
   /// A mobile layout over [content].
   const MobileLayout({
     required this.content,
@@ -108,7 +114,7 @@ final class MobileLayout extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
@@ -125,11 +131,38 @@ final class MobileLayout extends StatelessWidget {
         : selected == NavigationItem.settings
         ? NavigationItem.settings
         : tabs.first;
+    // Liquid glass (A01.5, the reference's `liquidGlass`): on the phone
+    // shell the bottom bar floats over the page as a frosted capsule and
+    // the page scrolls visibly under it; off keeps the full-width bar.
+    final glass = ref.watch(liquidGlassProvider);
+    final glassBlur = liquidGlassBlurs(
+      android: ref.watch(platformKindProvider) == PlatformKind.android,
+      memoryMegabytes: ref.watch(deviceMemoryMegabytesProvider).value,
+    );
+    final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
+    final navBar = DsBottomNav<NavigationItem>(
+      variant: DsBottomNavVariant.bar,
+      // The capsule behind the floating bar does the painting; the bar
+      // itself turns clear so the glass shows through it.
+      style: glass ? const DsBottomNavStyle(background: Color(0x00000000)) : null,
+      value: current,
+      onChanged: onSelected,
+      items: [
+        for (final item in tabs)
+          DsBottomNavItem<NavigationItem>(
+            value: item,
+            icon: DsIcon(item.icon),
+            label: Text(item.label(t)),
+            semanticLabel: item.label(t),
+          ),
+      ],
+    );
     // The window's own strip first: on Windows the caption is hidden at
     // creation (seamless self-drawn), so a narrow window still needs the
     // drag band and the window controls — without this strip a small
     // window could not be moved or closed by its own chrome.
     final scaffold = Scaffold(
+      extendBody: glass,
       backgroundColor: wallpaper ? const Color(0x00000000) : colors.surface,
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -168,20 +201,28 @@ final class MobileLayout extends StatelessWidget {
           const SizedBox(width: DsSpace.s4),
         ],
       ),
-      bottomNavigationBar: DsBottomNav<NavigationItem>(
-        variant: DsBottomNavVariant.bar,
-        value: current,
-        onChanged: onSelected,
-        items: [
-          for (final item in tabs)
-            DsBottomNavItem<NavigationItem>(
-              value: item,
-              icon: DsIcon(item.icon),
-              label: Text(item.label(t)),
-              semanticLabel: item.label(t),
-            ),
-        ],
-      ),
+      bottomNavigationBar: glass
+          ? Padding(
+              key: const ValueKey('home-glass-bar'),
+              padding: EdgeInsets.fromLTRB(
+                LiquidGlassMetrics.barMargin,
+                0,
+                LiquidGlassMetrics.barMargin,
+                safeBottom + LiquidGlassMetrics.barMargin,
+              ),
+              child: LiquidGlassPane(
+                blur: glassBlur,
+                // The capsule's safe area sits outside it; the bar keeps
+                // the system's gesture strip to itself.
+                child: MediaQuery.removePadding(
+                  context: context,
+                  removeTop: true,
+                  removeBottom: true,
+                  child: navBar,
+                ),
+              ),
+            )
+          : navBar,
       drawer: Builder(
         builder: (context) {
           void pick(NavigationItem item) {
@@ -232,7 +273,17 @@ final class MobileLayout extends StatelessWidget {
           );
         },
       ),
-      body: content,
+      body: glass
+          ? MediaQuery(
+              // Scrolled content must be able to clear the floating capsule
+              // (the reference's GlassBarInset): the bar's reach plus the
+              // system strip, handed down as the bottom padding pages add.
+              data: MediaQuery.of(context).copyWith(
+                padding: MediaQuery.of(context).padding.copyWith(bottom: safeBottom + LiquidGlassMetrics.barOverlap),
+              ),
+              child: content,
+            )
+          : content,
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -11,7 +11,8 @@ import 'package:pure_live/app/providers/browse_settings_providers.dart'
         showGotoButtonProvider,
         showPageSizeSelectorProvider,
         showScrollToTopProvider;
-import 'package:pure_live/app/providers/display_refresh_rate_provider.dart' show displayRefreshRateProvider;
+import 'package:pure_live/app/providers/display_refresh_rate_provider.dart'
+    show displayRefreshRateProvider, matchVideoFrameRateProvider;
 import 'package:pure_live/app/providers/download_directory_provider.dart' show downloadDirectoryProvider;
 import 'package:pure_live/app/providers/dynamic_color_provider.dart'
     show dynamicColorProvider, dynamicColorSeedProvider;
@@ -19,6 +20,7 @@ import 'package:pure_live/app/providers/font_face_provider.dart'
     show appFontFaceProvider, danmakuFontFaceProvider;
 import 'package:pure_live/app/providers/font_size_provider.dart' show appFontSizesProvider;
 import 'package:pure_live/app/providers/keep_screen_on_provider.dart' show keepScreenOnProvider;
+import 'package:pure_live/app/providers/liquid_glass_provider.dart' show liquidGlassProvider;
 import 'package:pure_live/app/providers/loading_style_provider.dart' show loadingColorProvider, loadingStyleProvider;
 import 'package:pure_live/app/providers/nav_visibility_providers.dart' show navMenuProvider, showMultiviewProvider;
 import 'package:pure_live/app/providers/network_providers.dart' show proxySettingsProvider;
@@ -47,6 +49,8 @@ import 'package:pure_live/features/settings/audience_metric_provider.dart'
     show audienceMetricProvider, audiencePolicyProvider;
 import 'package:pure_live/features/settings/chat_display_settings.dart'
     show
+        chatGiftValueInYuanProvider,
+        chatGiftsAboveTierProvider,
         chatListFontSizeProvider,
         chatListLineSpacingProvider,
         chatListStyleProvider,
@@ -64,6 +68,7 @@ import 'package:pure_live/features/settings/danmaku_style_providers.dart'
         danmakuStyleProvider,
         danmakuTapInteractionProvider;
 import 'package:pure_live/features/settings/floating_window_settings.dart' show floatingWindowSettingsProvider;
+import 'package:pure_live/features/settings/live_alert_settings.dart' show liveAlertSettingsProvider;
 import 'package:pure_live/features/settings/local_interaction_settings.dart'
     show localInteractionProvider;
 import 'package:pure_live/features/settings/pip_danmaku_scale_provider.dart' show pipDanmakuScaleProvider;
@@ -74,8 +79,11 @@ import 'package:pure_live/features/settings/player_tuning.dart' show playerProxy
 import 'package:pure_live/features/settings/portrait_fullscreen_settings.dart' show portraitFullscreenProvider;
 import 'package:pure_live/features/settings/portrait_settings_providers.dart' show portraitSettingsProvider;
 import 'package:pure_live/features/settings/room_card_settings.dart' show roomCardSettingsProvider;
+import 'package:pure_live/features/settings/room_switcher_settings.dart'
+    show portraitSwipeSwitchProvider, roomSwitcherLayoutProvider;
 import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider, sitesOrderProvider;
-import 'package:pure_live/features/settings/tv_preferences.dart' show tvMenuExpandedProvider;
+import 'package:pure_live/features/settings/super_chat_settings.dart' show superChatIncludesMembershipProvider;
+import 'package:pure_live/features/settings/tv_preferences.dart' show tvFocusZoomProvider, tvMenuExpandedProvider;
 import 'package:pure_live/features/settings/twitch_languages_provider.dart' show twitchLanguagesProvider;
 import 'package:pure_live/features/shield/danmaku_filter_settings.dart' show danmakuFilterProvider;
 import 'package:pure_live/features/shield/shield_repository.dart' show shieldRulesProvider;
@@ -103,6 +111,9 @@ final List<ProviderOrFamily> kSettingsProviders = [
   danmakuRepeatProvider,
   chatNamesProvider,
   chatShowGiftsProvider,
+  chatGiftsAboveTierProvider,
+  chatGiftValueInYuanProvider,
+  superChatIncludesMembershipProvider,
   danmakuShowGiftsProvider,
   detectClipboardRoomsProvider,
   chatListStyleProvider,
@@ -118,6 +129,8 @@ final List<ProviderOrFamily> kSettingsProviders = [
   browseLayoutProvider,
   browseSettingsProvider,
   roomCardSettingsProvider,
+  roomSwitcherLayoutProvider,
+  portraitSwipeSwitchProvider,
   favoritesDensityProvider,
   showUnplayableProvider,
   showPageSizeSelectorProvider,
@@ -130,6 +143,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   backgroundSettingsProvider,
   proxySettingsProvider,
   followsAutoRefreshProvider,
+  liveAlertSettingsProvider,
   maxConcurrentRefreshProvider,
   thumbnailRefreshProvider,
   downloadDirectoryProvider,
@@ -154,6 +168,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   sitesOrderProvider,
   twitchLanguagesProvider,
   tvMenuExpandedProvider,
+  tvFocusZoomProvider,
   youtubeAllChatProvider,
   preferH264Provider,
   douyuForceRenewProvider,
@@ -161,9 +176,11 @@ final List<ProviderOrFamily> kSettingsProviders = [
   roomWindowsProvider,
   keepScreenOnProvider,
   displayRefreshRateProvider,
+  matchVideoFrameRateProvider,
   dynamicColorProvider,
   dynamicColorSeedProvider,
   pureBlackThemeProvider,
+  liquidGlassProvider,
   loadingStyleProvider,
   loadingColorProvider,
   splashSettingsProvider,

@@ -17,13 +17,20 @@ import 'package:pure_live/features/history/history_repository.dart' show history
 import 'package:pure_live/features/recorder/recorder_engine.dart' show recorderEngineProvider;
 import 'package:pure_live/features/recorder/recording_settings.dart' show recordingSettingsProvider;
 import 'package:pure_live/features/recorder/recording_task.dart' show RecordingTask, RecordingTaskState;
+import 'package:pure_live/features/room/gift_chat_filter.dart' show GiftChatFilter;
 import 'package:pure_live/features/room/gift_flights.dart' show GiftFlights;
-import 'package:pure_live/features/settings/chat_display_settings.dart' show chatShowGiftsProvider;
+import 'package:pure_live/features/room/gift_text.dart' show giftLineTier;
+import 'package:pure_live/features/room/membership_cards.dart' show membershipCard;
+import 'package:pure_live/features/room/room_super_chats.dart' show roomSuperChatsProvider;
+import 'package:pure_live/features/settings/chat_display_settings.dart'
+    show chatGiftsAboveTierProvider, chatShowGiftsProvider;
 import 'package:pure_live/features/settings/danmaku_repeat_provider.dart'
     show DanmakuRepeatSettings, danmakuRepeatProvider;
 import 'package:pure_live/features/settings/danmaku_show_gifts_provider.dart' show danmakuShowGiftsProvider;
 import 'package:pure_live/features/settings/danmaku_style_providers.dart'
     show DanmakuPausedBehavior, danmakuPausedBehaviorProvider;
+import 'package:pure_live/features/settings/local_interaction_settings.dart'
+    show LocalDanmakuPlacement, localInteractionProvider;
 import 'package:pure_live/features/settings/playback_settings_providers.dart'
     show playbackSettingsProvider, preferredQualityIndex;
 import 'package:pure_live/features/settings/player_tuning.dart'
@@ -35,6 +42,7 @@ import 'package:pure_live/features/settings/player_tuning.dart'
         playerStoredEngineOptions,
         playerTuningOptions,
         playerTuningProvider;
+import 'package:pure_live/features/settings/super_chat_settings.dart' show superChatIncludesMembershipProvider;
 import 'package:pure_live/features/shield/danmaku_filter_settings.dart'
     show DanmakuFilterRules, danmakuFilterProvider, danmakuShapeBlockedByRules;
 import 'package:pure_live/features/shield/shield_repository.dart' show ShieldRules, shieldRulesProvider;
@@ -130,12 +138,14 @@ final class RoomDanmakuPipeline {
   RoomDanmakuPipeline(
     this.onChat, {
     required this.showChatGifts,
+    required this.chatGiftsAboveTier,
     required this.showFlyGifts,
     required String Function() streamer,
     required DanmakuFilterRules filter,
     required DanmakuRepeatSettings repeat,
     required DanmakuPausedBehavior pausedBehavior,
   }) : barrage = RoomBarrageController(behavior: pausedBehavior) {
+    chatGifts = GiftChatFilter(clock: DateTime.now)..aboveTier = chatGiftsAboveTier();
     danmaku = DanmakuController(
       sink: DanmakuFanOutSink(
         primary: _ChatMirrorSink(onChat: onChat, inner: FlameBarrageSink(barrage)),
@@ -164,12 +174,17 @@ final class RoomDanmakuPipeline {
   /// The danmaku controller running the reference pipeline's filters.
   late final DanmakuController danmaku;
 
-  /// Where the accepted chat lands (the room state subscribes).
-  final void Function(LiveMessage message) onChat;
+  /// Where the accepted chat lands (the room state subscribes); `replaceId`
+  /// names a gift line a growing combo updates.
+  final void Function(LiveMessage message, {String? replaceId}) onChat;
 
   /// Whether a platform gift gets a chat line (read per gift, so the switch
   /// bites the very next one).
   final bool Function() showChatGifts;
+
+  /// Whether the chat list keeps only valuable gifts (read per gift, so the
+  /// switch bites the very next one).
+  final bool Function() chatGiftsAboveTier;
 
   /// Whether the platform's valuable gifts fly over the picture (read per
   /// gift, like the chat switch).
@@ -178,6 +193,9 @@ final class RoomDanmakuPipeline {
   /// The gifts that fly over the picture, with the reference's tier, combo
   /// and rate rules.
   late final GiftFlights giftFlights;
+
+  /// The chat list's gift lines under "只显示值钱的礼物".
+  late final GiftChatFilter chatGifts;
 
   /// The player binding carrying pause and seek into the barrage.
   DanmakuPlayerBinding? binding;
@@ -208,12 +226,27 @@ final class RoomDanmakuPipeline {
     if (!enabled) giftFlights.clear();
   }
 
+  /// Applies the chat list's gift switch: off forgets the combos counted
+  /// out of sight.
+  void setChatGifts({required bool enabled}) {
+    if (!enabled) chatGifts.clear();
+  }
+
+  /// Whether the chat list keeps only valuable gifts.
+  bool get chatAboveTier => chatGifts.aboveTier;
+
+  /// Applies a changed "只显示值钱的礼物" choice to the next gift.
+  set chatAboveTier(bool enabled) => chatGifts.aboveTier = enabled;
+
   /// Feeds one accepted site message through the pipeline.
   void accept(LiveMessage message) {
     // A gift is a line of its own, never flying chat: the list's switch
     // decides it, and the flying layer's own switch is its own setting.
     if (message.type == LiveMessageType.gift) {
-      if (showChatGifts()) onChat(message);
+      if (showChatGifts()) {
+        final line = chatGifts.add(message);
+        if (line != null) onChat(line.message, replaceId: line.replaceId);
+      }
       if (showFlyGifts()) giftFlights.add(message);
       return;
     }
@@ -253,7 +286,7 @@ final class RoomDanmakuPipeline {
 final class _ChatMirrorSink implements DanmakuSink {
   const _ChatMirrorSink({required this.onChat, required this.inner});
 
-  final void Function(LiveMessage message) onChat;
+  final void Function(LiveMessage message, {String? replaceId}) onChat;
   final DanmakuSink inner;
 
   @override
@@ -337,8 +370,18 @@ final class RoomChatController extends Notifier<List<LiveMessage>> {
   @override
   List<LiveMessage> build() => const [];
 
-  /// Appends [message], keeping the newest [kRoomChatLimit].
-  void add(LiveMessage message) {
+  /// Appends [message], keeping the newest [kRoomChatLimit]; with
+  /// [replaceId] it replaces that line instead, moving it to the bottom as
+  /// a growing combo does.
+  void add(LiveMessage message, {String? replaceId}) {
+    if (replaceId != null) {
+      final index = state.indexWhere((line) => line.messageId == replaceId);
+      if (index >= 0) {
+        final next = [...state]..removeAt(index)..add(message);
+        state = next.length > kRoomChatLimit ? next.sublist(next.length - kRoomChatLimit) : next;
+        return;
+      }
+    }
     final next = [...state, message];
     state = next.length > kRoomChatLimit ? next.sublist(next.length - kRoomChatLimit) : next;
   }
@@ -346,10 +389,34 @@ final class RoomChatController extends Notifier<List<LiveMessage>> {
   /// Clears the list (a new room opens).
   void clear() => state = const [];
 
+  /// Puts local danmaku sent in this room before this visit at the top,
+  /// oldest first; they are already filtered and do not fly again.
+  void replayOldest(Iterable<LiveMessage> messages) {
+    final replay = [
+      for (final message in messages)
+        if (message.text.trim().isNotEmpty) message,
+    ];
+    if (replay.isEmpty) return;
+    final next = [...replay, ...state];
+    state = next.length > kRoomChatLimit ? next.sublist(next.length - kRoomChatLimit) : next;
+  }
+
   /// Drops every gift line (the chat gift switch was turned off).
   void removeGifts() {
     if (!state.any((message) => message.type == LiveMessageType.gift)) return;
     state = state.where((message) => message.type != LiveMessageType.gift).toList(growable: false);
+  }
+
+  /// Drops the gift lines below "值钱" (the tier switch was turned on).
+  void removeNormalTierGifts() {
+    bool belowTier(LiveMessage message) {
+      if (message.type != LiveMessageType.gift || message.isLocal) return false;
+      final gift = message.payload;
+      return gift is LiveGift && giftLineTier(gift) == LiveGiftTier.normal;
+    }
+
+    if (!state.any(belowTier)) return;
+    state = state.where((message) => !belowTier(message)).toList(growable: false);
   }
 }
 
@@ -373,6 +440,13 @@ final class RoomController extends Notifier<RoomState> {
   StreamSubscription<LiveMessage>? _chat;
   LiveDanmakuSession? _danmaku;
   RoomDanmakuPipeline? _pipeline;
+
+  /// The local interaction's own echo layer: no player pause binding, so a
+  /// local message keeps flying when the platform's danmaku are paused.
+  final BarrageController _localBarrage = BarrageController();
+
+  /// The local echo layer's engine.
+  BarrageController get localBarrage => _localBarrage;
   LivePlayQuality? _wantedQuality;
 
   /// The request the current page asked for, so a detail failure can be
@@ -404,7 +478,9 @@ final class RoomController extends Notifier<RoomState> {
   RoomState build() {
     _forceDestroy = ref.read(playerTuningProvider).forceDestroy;
     _standby = ref.read(roomPlaybackStandbyProvider);
-    ref.onDispose(_teardown);
+    ref
+      ..onDispose(_teardown)
+      ..onDispose(_localBarrage.dispose);
     ref.listen(playerTuningProvider.select((tuning) => tuning.forceDestroy), (_, next) => _forceDestroy = next);
     // A super-resolution choice applies to the live handle at once; the
     // next handle also reads it in `_applyEnginePreferences`.
@@ -437,11 +513,22 @@ final class RoomController extends Notifier<RoomState> {
     });
     ref.listen(chatShowGiftsProvider, (previous, next) {
       if (previous == next) return;
+      _pipeline?.setChatGifts(enabled: next);
       if (!next) ref.read(roomChatProvider.notifier).removeGifts();
+    });
+    ref.listen(chatGiftsAboveTierProvider, (previous, next) {
+      if (previous == next) return;
+      final pipeline = _pipeline;
+      if (pipeline != null) pipeline.chatAboveTier = next;
+      if (next) ref.read(roomChatProvider.notifier).removeNormalTierGifts();
     });
     ref.listen(danmakuShowGiftsProvider, (previous, next) {
       if (previous == next) return;
       _pipeline?.setFlyGifts(enabled: next);
+    });
+    ref.listen(superChatIncludesMembershipProvider, (previous, next) {
+      if (previous == next) return;
+      if (!next) ref.read(roomSuperChatsProvider.notifier).removeMembershipCards();
     });
     ref.listen(playbackSettingsProvider.select((settings) => settings.globalMute), (previous, next) {
       if (previous == next) return;
@@ -461,6 +548,8 @@ final class RoomController extends Notifier<RoomState> {
     _requestedPlatform = platform;
     _requestedRoomId = roomId;
     _teardown();
+    ref.read(localInteractionProvider.notifier).stopWatch();
+    ref.read(roomSuperChatsProvider.notifier).clear();
     final settings = ref.read(playbackSettingsProvider);
     // ASMR is an Android-only automatic audio-only entry (the reference's
     // `enableAsmrSleepMode`); the room page starts its sleep timer beside it.
@@ -482,6 +571,8 @@ final class RoomController extends Notifier<RoomState> {
     roomAnswer.match((error) => state = _with(error: error.message), (room) async {
       state = _with(room: room);
       unawaited(_recordHistory(room));
+      unawaited(_loadSuperChats(room));
+      _resumeLocalInteraction(room);
       if (room.broadcast.isLiveNow) {
         final danmakuProvider = site.capability<LiveDanmakuProvider>();
         if (danmakuProvider != null) await _openDanmaku(danmakuProvider, room);
@@ -622,8 +713,31 @@ final class RoomController extends Notifier<RoomState> {
   /// stream, which is exactly why the page must say when it is done.
   Future<void> close() async {
     _teardown();
+    ref.read(localInteractionProvider.notifier).stopWatch();
     state = _initial();
     ref.read(roomChatProvider.notifier).clear();
+    ref.read(roomSuperChatsProvider.notifier).clear();
+  }
+
+  /// Starts the local watch clock and puts this room's last-day local danmaku
+  /// back at the top of the chat list, when the interaction asks for it.
+  void _resumeLocalInteraction(LiveRoom room) {
+    final local = ref.read(localInteractionProvider);
+    if (!local.enabled) return;
+    ref.read(localInteractionProvider.notifier).startWatch();
+    if (!local.replayOnEnter) return;
+    final controller = ref.read(localInteractionProvider.notifier);
+    final chats = controller.replayChatsFor(room.ref.platform, room.ref.roomId);
+    if (chats.isEmpty) return;
+    ref.read(roomChatProvider.notifier).replayOldest([
+      for (final (index, chat) in chats.indexed)
+        LiveMessage.normalized(
+          messageId: 'local-replay-${chat.at.millisecondsSinceEpoch}-$index',
+          text: chat.text,
+          sender: MessageSender.of(userName: local.userName),
+          isLocal: true,
+        ),
+    ]);
   }
 
   /// Lands the viewer's current audio on a freshly attached engine; a line
@@ -763,19 +877,60 @@ final class RoomController extends Notifier<RoomState> {
     }
   }
 
-  /// Injects a local message into the room's own pipeline: the chat list and
-  /// the flying layer see it, the platform does not. [badges] is the local
-  /// interaction's badge line (level/platform) when it shows.
+  /// Injects a local message into the room's chat list and the local echo
+  /// layer: the platform does not see it, and the echo layer has no player
+  /// pause binding, so it keeps flying while the platform's danmaku are
+  /// paused (the reference's "本地自发弹幕两种模式都继续"). [badges] is the
+  /// local interaction's badge line (level/platform) when it shows.
   void injectLocalMessage(String text, {String badges = '', String senderName = ''}) {
     final word = text.trim();
     if (word.isEmpty) return;
     final line = badges.isEmpty ? word : '[$badges] $word';
-    _pipeline?.accept(
-      LiveMessage.normalized(
-        messageId: 'local-${DateTime.now().microsecondsSinceEpoch}',
-        text: line,
-        sender: senderName.trim().isEmpty ? null : MessageSender.of(userName: senderName.trim()),
-        isLocal: true,
+    final message = LiveMessage.normalized(
+      messageId: 'local-${DateTime.now().microsecondsSinceEpoch}',
+      text: line,
+      sender: senderName.trim().isEmpty ? null : MessageSender.of(userName: senderName.trim()),
+      isLocal: true,
+    );
+    ref.read(roomChatProvider.notifier).add(message);
+    final local = ref.read(localInteractionProvider);
+    final style = local.style;
+    _localBarrage.send(
+      BarrageItemMapper.toItem(
+        DanmakuMessage(
+          type: DanmakuMessageType.chat,
+          userName: senderName,
+          text: line,
+          color: DanmakuColor.fromInt(style.color),
+          isLocal: true,
+          messageId: message.messageId,
+          style: DanmakuStyle(
+            fontSize: style.fontSize,
+            baseSpeed: style.speed,
+            fontWeight: style.fontWeight,
+            showStroke: style.showStroke,
+            strokeWidth: style.strokeWidth,
+            placement: switch (style.placement) {
+              LocalDanmakuPlacement.top => DanmakuPlacement.top,
+              LocalDanmakuPlacement.bottom => DanmakuPlacement.bottom,
+              _ => DanmakuPlacement.scroll,
+            },
+            fontFamily: switch (style.fontFamily) {
+              'system' => null,
+              'mono' => 'monospace',
+              final family => family,
+            },
+            italic: style.italic,
+            opacity: style.opacity,
+            letterSpacing: style.letterSpacing,
+            strokeColor: style.strokeColor,
+            showShadow: style.showShadow,
+            shadowColor: style.shadowColor,
+            shadowBlur: style.shadowBlur,
+            shadowOffset: style.shadowOffset,
+            fixedDurationMs: style.fixedDurationMs,
+          ),
+        ),
       ),
     );
   }
@@ -954,6 +1109,7 @@ final class RoomController extends Notifier<RoomState> {
       final pipeline = RoomDanmakuPipeline(
         ref.read(roomChatProvider.notifier).add,
         showChatGifts: () => ref.read(chatShowGiftsProvider),
+        chatGiftsAboveTier: () => ref.read(chatGiftsAboveTierProvider),
         showFlyGifts: () => ref.read(danmakuShowGiftsProvider),
         streamer: () => room.anchor?.name ?? '',
         filter: ref.read(danmakuFilterProvider),
@@ -970,10 +1126,49 @@ final class RoomController extends Notifier<RoomState> {
   }
 
   /// One site message: the shield's word, then the content blocks (纯表情 /
-  /// 超长, the reference's 屏蔽页), then the pipeline's own filters.
+  /// 超长, the reference's 屏蔽页), then the super chat board and the
+  /// pipeline's own filters.
   void _onSiteMessage(LiveMessage message) {
     if (_shielded(message) || _shapeBlocked(message)) return;
+    _collectSuperChat(message);
     _pipeline?.accept(message);
+  }
+
+  /// Sends the paid messages to the board: the platform's own super chats
+  /// and, while "上舰和开会员进醒目留言" is on, a card for a subscription
+  /// gift, a subscription notice or a membership join.
+  void _collectSuperChat(LiveMessage message) {
+    final board = ref.read(roomSuperChatsProvider.notifier);
+    if (message.type == LiveMessageType.superChat && message.payload is LiveSuperChatMessage) {
+      board.add(message.payload! as LiveSuperChatMessage);
+      return;
+    }
+    if (!ref.read(superChatIncludesMembershipProvider)) return;
+    final card = membershipCard(
+      message,
+      platform: state.room?.ref.platform ?? '',
+      now: DateTime.now(),
+    );
+    if (card != null) board.add(card);
+  }
+
+  /// Re-reads the platform's super chat board on the viewer's request (the
+  /// page's retry); the cards that arrived live stay while it reads.
+  Future<void> reloadSuperChats() async {
+    final room = state.room;
+    if (room != null) await _loadSuperChats(room);
+  }
+
+  Future<void> _loadSuperChats(LiveRoom room) async {
+    final capability = ref.read(sitesProvider).getById(room.ref.platform)?.capability<LiveSuperChatFeed>();
+    if (capability == null) return;
+    final board = ref.read(roomSuperChatsProvider.notifier)..beginLoad();
+    final answer = await capability.getSuperChatMessages(room: room);
+    if (!ref.mounted || state.room?.ref != room.ref) return;
+    answer.match(
+      (error) => board.fail(error.message),
+      board.addAll,
+    );
   }
 
   /// Whether the reference's content blocks drop [message]: emoticon-only
@@ -1056,6 +1251,7 @@ final class RoomController extends Notifier<RoomState> {
     _danmaku = null;
     unawaited(_pipeline?.dispose() ?? Future<void>.value());
     _pipeline = null;
+    _localBarrage.clear();
   }
 }
 
@@ -1067,4 +1263,10 @@ final roomProvider = NotifierProvider<RoomController, RoomState>(RoomController.
 final barrageProvider = Provider<BarrageController?>((ref) {
   ref.watch(roomProvider);
   return ref.read(roomProvider.notifier).barrage;
+});
+
+/// The local interaction's echo layer; it has no player pause binding.
+final localBarrageProvider = Provider<BarrageController>((ref) {
+  ref.watch(roomProvider);
+  return ref.read(roomProvider.notifier).localBarrage;
 });

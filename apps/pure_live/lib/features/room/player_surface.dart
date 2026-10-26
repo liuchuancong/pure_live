@@ -37,6 +37,7 @@ import 'package:pure_live/features/settings/playback_settings_providers.dart'
 import 'package:pure_live/features/settings/portrait_fullscreen_settings.dart'
     show PortraitDanmakuMode, PortraitFullscreenMode;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/focus/tv_focus_scale.dart';
 import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
 /// The picture's own ink: the frame is dark whatever the app's theme, so
@@ -98,7 +99,9 @@ final class PictureActionButton extends ConsumerWidget {
       ),
       RoomPictureAction.playAgain => (t.room.play, () => unawaited(controller.retry())),
     };
-    return DsButton(onPressed: onPressed, autofocus: autofocus, child: Text(label));
+    return TvFocusScale(
+      child: DsButton(onPressed: onPressed, autofocus: autofocus, child: Text(label)),
+    );
   }
 }
 
@@ -125,6 +128,7 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.portraitDanmaku = PortraitDanmakuMode.followGlobal,
     this.canEnterPortraitFullscreen = false,
     this.onPortraitFullscreen,
+    this.onPortraitSwipe,
     super.key,
   });
 
@@ -165,6 +169,10 @@ final class PlayerSurface extends ConsumerStatefulWidget {
   /// Enter portrait full screen (the page owns the presentation).
   final VoidCallback? onPortraitFullscreen;
 
+  /// A vertical swipe in the middle third of the portrait full screen: +1
+  /// for the next room, -1 for the previous (the page owns the list).
+  final ValueChanged<int>? onPortraitSwipe;
+
   @override
   ConsumerState<PlayerSurface> createState() => _PlayerSurfaceState();
 }
@@ -179,6 +187,11 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   double? _volumeHud;
   Timer? _volumeHudTimer;
   double _dragVolume = 0;
+
+  /// A vertical drag in the portrait full screen's middle third that may
+  /// switch rooms instead of changing the volume.
+  double _portraitSwipeDy = 0;
+  bool _swipingPortrait = false;
 
   /// The flying danmaku held under the finger from pointer-down until the
   /// tap is confirmed (its panel opens) or the gesture turns out to be a
@@ -475,6 +488,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     final danmakuFamily = effectiveFontFamily(style.fontFamily, ref.watch(danmakuFontFaceProvider));
     final playback = ref.watch(playbackSettingsProvider);
     final presentation = ref.watch(roomPresentationProvider);
+    final localBarrage = ref.watch(localBarrageProvider);
     final mini = presentation == PresentationMode.pip;
     final portraitHidden = widget.portraitFullscreen && widget.portraitDanmaku == PortraitDanmakuMode.hidden;
     final showDanmaku =
@@ -569,6 +583,39 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                       ),
               ),
             ),
+          // The local interaction's echo layer: the same look, with no
+          // player pause binding, so "暂停时的弹幕" never freezes the
+          // viewer's own messages.
+          if (showDanmaku)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: mini
+                    ? LayoutBuilder(
+                        builder: (context, constraints) => FlameBarrageWidget(
+                          config: _barrageConfig(
+                            style,
+                            danmakuFps,
+                            family: danmakuFamily,
+                            area: danmakuArea,
+                            compact: CompactDanmakuMetrics.resolve(
+                              width: constraints.maxWidth,
+                              auto: pipScale.auto,
+                              pinnedScale: pipScale.scale,
+                              configuredFontSize: style.fontSize,
+                              configuredSpeed: style.baseSpeed,
+                            ),
+                          ),
+                          emojiAtlas: EmojiAtlas.instance,
+                          controller: localBarrage,
+                        ),
+                      )
+                    : FlameBarrageWidget(
+                        config: _barrageConfig(style, danmakuFps, family: danmakuFamily, area: danmakuArea),
+                        emojiAtlas: EmojiAtlas.instance,
+                        controller: localBarrage,
+                      ),
+              ),
+            ),
           // The gesture layer: a tap shows or hides the bar, a double tap
           // plays or pauses, a vertical drag and the wheel set the volume.
           // The overlay's own buttons stay above it.
@@ -595,11 +642,39 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   _releaseDanmaku();
                   unawaited(ref.read(roomProvider.notifier).togglePlayPause());
                 },
-                onVerticalDragStart: (_) {
+                onVerticalDragStart: (details) {
                   _releaseDanmaku();
+                  final width = MediaQuery.sizeOf(context).width;
+                  final swipe = widget.onPortraitSwipe;
+                  if (widget.portraitFullscreen &&
+                      swipe != null &&
+                      details.localPosition.dx >= width / 3 &&
+                      details.localPosition.dx <= width * 2 / 3) {
+                    _swipingPortrait = true;
+                    _portraitSwipeDy = 0;
+                    return;
+                  }
                   _beginVolumeDrag();
                 },
-                onVerticalDragUpdate: (details) => _dragVolumeBy(details.delta.dy),
+                onVerticalDragUpdate: (details) {
+                  if (_swipingPortrait) {
+                    _portraitSwipeDy += details.delta.dy;
+                    return;
+                  }
+                  _dragVolumeBy(details.delta.dy);
+                },
+                onVerticalDragEnd: (details) {
+                  if (!_swipingPortrait) return;
+                  _swipingPortrait = false;
+                  final dy = _portraitSwipeDy + (details.primaryVelocity ?? 0) * 0.08;
+                  _portraitSwipeDy = 0;
+                  if (dy.abs() < 80) return;
+                  widget.onPortraitSwipe?.call(dy < 0 ? 1 : -1);
+                },
+                onVerticalDragCancel: () {
+                  _swipingPortrait = false;
+                  _portraitSwipeDy = 0;
+                },
                 child: const SizedBox.expand(),
               ),
             ),
@@ -1031,36 +1106,38 @@ final class _StreamMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
-    return DsMenuAnchor(
-      side: DsSide.top,
-      semanticLabel: semanticLabel,
-      items: items,
-      builder: (context, controller, child) => DsPressable(
+    return TvFocusScale(
+      child: DsMenuAnchor(
+        side: DsSide.top,
         semanticLabel: semanticLabel,
-        onPressed: controller.toggle,
-        builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
-          return DsTooltip(
-            message: '$label · $semanticLabel',
-            child: Container(
-              height: theme.sizes.sm,
-              padding: EdgeInsets.symmetric(horizontal: showLabel ? DsSpace.s8 : DsSpace.s6),
-              decoration: DsBoxDecoration(
-                color: hovered ? _onVideoHover : null,
-                borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+        items: items,
+        builder: (context, controller, child) => DsPressable(
+          semanticLabel: semanticLabel,
+          onPressed: controller.toggle,
+          builder: (context, states, _) {
+            final hovered = states.contains(WidgetState.hovered);
+            return DsTooltip(
+              message: '$label · $semanticLabel',
+              child: Container(
+                height: theme.sizes.sm,
+                padding: EdgeInsets.symmetric(horizontal: showLabel ? DsSpace.s8 : DsSpace.s6),
+                decoration: DsBoxDecoration(
+                  color: hovered ? _onVideoHover : null,
+                  borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: DsSpace.s4,
+                  children: [
+                    DsIcon(icon, size: theme.sizes.iconSm, color: _onVideoMuted),
+                    if (showLabel) Text(label, style: theme.typography.caption.copyWith(color: _onVideo)),
+                    const DsIcon(DsIcons.chevronUp, size: 12, color: _onVideoMuted),
+                  ],
+                ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s4,
-                children: [
-                  DsIcon(icon, size: theme.sizes.iconSm, color: _onVideoMuted),
-                  if (showLabel) Text(label, style: theme.typography.caption.copyWith(color: _onVideo)),
-                  const DsIcon(DsIcons.chevronUp, size: 12, color: _onVideoMuted),
-                ],
-              ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -1120,26 +1197,28 @@ final class _BarIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
-    return DsTooltip(
-      message: label,
-      child: DsPressable(
-        semanticLabel: label,
-        onPressed: onPressed,
-        autofocus: autofocus,
-        builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
-          return Container(
-            width: theme.sizes.sm,
-            height: theme.sizes.sm,
-            decoration: DsBoxDecoration(
-              color: hovered ? _onVideoHover : null,
-              borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
-            ),
-            child: Center(
-              child: DsIcon(icon, size: theme.sizes.iconSm, color: selected ? _onVideo : _onVideoMuted),
-            ),
-          );
-        },
+    return TvFocusScale(
+      child: DsTooltip(
+        message: label,
+        child: DsPressable(
+          semanticLabel: label,
+          onPressed: onPressed,
+          autofocus: autofocus,
+          builder: (context, states, _) {
+            final hovered = states.contains(WidgetState.hovered);
+            return Container(
+              width: theme.sizes.sm,
+              height: theme.sizes.sm,
+              decoration: DsBoxDecoration(
+                color: hovered ? _onVideoHover : null,
+                borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+              ),
+              child: Center(
+                child: DsIcon(icon, size: theme.sizes.iconSm, color: selected ? _onVideo : _onVideoMuted),
+              ),
+            );
+          },
+        ),
       ),
     );
   }

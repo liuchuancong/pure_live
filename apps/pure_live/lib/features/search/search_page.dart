@@ -13,8 +13,7 @@ import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
 import 'package:pure_live/features/search/search_controller.dart';
 import 'package:pure_live/features/search/web_search_page.dart' show WebSearchRequest;
 import 'package:pure_live/features/search/web_search_urls.dart' show webSearchUrl;
-import 'package:pure_live/features/settings/room_card_settings.dart'
-    show RoomCardLayout, roomCardAppearanceProvider;
+import 'package:pure_live/features/settings/room_card_settings.dart' show RoomCardLayout, roomCardAppearanceProvider;
 import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider;
 import 'package:pure_live/features/toolbox/toolbox_controllers.dart' show linkToolProvider;
 import 'package:pure_live/l10n/translations.dart';
@@ -606,7 +605,7 @@ final class _RoomResults extends ConsumerWidget {
       listItemBuilder: (context, room) => RoomCard(
         room: room,
         compact: true,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: search.rooms),
       ),
       cardExtent: cardExtent,
       isLoading: search.loading,
@@ -614,7 +613,7 @@ final class _RoomResults extends ConsumerWidget {
       onLoadMore: controller.loadMore,
       itemBuilder: (context, room) => RoomCard(
         room: room,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: search.rooms),
       ),
     );
   }

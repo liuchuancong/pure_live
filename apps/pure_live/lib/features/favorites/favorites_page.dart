@@ -15,8 +15,7 @@ import 'package:pure_live/features/favorites/favorites_widgets.dart';
 import 'package:pure_live/features/favorites/follow_repository.dart';
 import 'package:pure_live/features/favorites/follow_tag_picker.dart' show showFollowTagPicker;
 import 'package:pure_live/features/favorites/follow_tags.dart' show followTagsProvider;
-import 'package:pure_live/features/settings/room_card_settings.dart'
-    show RoomCardLayout, roomCardAppearanceProvider;
+import 'package:pure_live/features/settings/room_card_settings.dart' show RoomCardLayout, roomCardAppearanceProvider;
 import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider, sitesOrderProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
@@ -213,7 +212,12 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     try {
       final failed = await ref
           .read(followsProvider.notifier)
-          .refreshRooms(targets, onProgress: showProgress ? _onRefreshProgress : null);
+          .refreshRooms(
+            targets,
+            onProgress: showProgress ? _onRefreshProgress : null,
+            // A manual pass is one the viewer is watching: no alerts.
+            quiet: showProgress,
+          );
       if (showProgress && failed > 0 && mounted) {
         showDsToast(
           context: context,
@@ -396,7 +400,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
           compact: compact,
           tags: names,
           platformName: platform == kAllPlatforms ? _platformName(room.ref.platform) : null,
-          onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
+          onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
           onUnfollow: () => unawaited(ref.read(followsProvider.notifier).remove(room.ref.identityKey)),
         ),
       );

@@ -85,6 +85,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tool/check_settings_ia.ps1
 2. **运行期效果**：§10.10 取消 build/run 后，「设置改动真的生效」「备份往返」「既有数据兼容」只能靠代码
    链路审读与门禁覆盖，凡未运行期证实的都按未验证处理。
 
+门禁自身还有一个已知盲区：`check_prefs_manifest.ps1` 只管「读 StoragePrefs 的 provider 必须进
+`kSettingsProviders`」。**组件把值直接读进 `State` 字段**没有 provider，恢复与跨窗口重建都检不到它
+（实例：`features/iptv/iptv_sources_view.dart` 的 `iptv.sources.order`，低危自愈，见裁定文档）。
+新设置若必须由组件直接读盘，要在评审记录里说明它为什么不需要重建信号。
+
 ## 7. 仍待确认的产品决策（保留原行为，等裁定）
 
 - **未知设置段名的处置**：`app/routing/app_router.dart:244` 用 `SettingsSection.of(section) ?? SettingsSection.theme`，

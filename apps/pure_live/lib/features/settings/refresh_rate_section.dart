@@ -1,6 +1,7 @@
 import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_device/live_device.dart' show DisplayRefreshRate, DisplayRefreshRatePreference;
@@ -27,6 +28,16 @@ final class RefreshRateSection extends ConsumerWidget {
     final notifier = ref.read(displayRefreshRateProvider.notifier);
     final snapshot = state.snapshot;
     final modes = state.modes;
+    final matchVideo = ref.watch(matchVideoFrameRateProvider);
+    final android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    final supportedRates = snapshot?.supportedHz ?? const <double>[];
+    final singleRate = supportedRates.length == 1;
+    final canMatchContent = state.capabilities?.canMatchContent ?? true;
+    final matchVideoDescription = singleRate
+        ? t.settings.refreshRateMatchVideoSingle(rate: _hz(supportedRates.single))
+        : canMatchContent
+        ? t.settings.refreshRateMatchVideoDesc
+        : t.settings.refreshRateMatchVideoUnsupported;
     return DsListSection(
       header: Text(t.settings.refreshRateGroup),
       children: [
@@ -63,6 +74,18 @@ final class RefreshRateSection extends ConsumerWidget {
             leading: const DsIcon(DsIcons.info),
             title: Text(t.settings.refreshRateReadOnly),
             description: Text(t.settings.refreshRateReadOnlyDesc),
+          ),
+        if (android)
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.gauge),
+            title: t.settings.refreshRateMatchVideo,
+            description: matchVideoDescription,
+            control: DsSwitch(
+              value: !singleRate && canMatchContent && matchVideo,
+              onChanged: singleRate || !canMatchContent
+                  ? null
+                  : (value) => unawaited(ref.read(matchVideoFrameRateProvider.notifier).setEnabled(value: value)),
+            ),
           ),
         if (snapshot != null && (snapshot.monitorCount ?? 0) > 1)
           DsListRow(

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:math' as math;
 
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/painting.dart' show Color;
@@ -68,19 +67,19 @@ final class GiftFlights {
     if (gift is! LiveGift || message.isLocal) return;
     final now = clock();
     _endBefore(now);
-    final key = _comboKey(message, gift);
+    final key = giftComboKeyOf(message, gift);
     _ended.removeWhere((_, ended) => now.difference(ended.at) > summaryWindow);
-    if (_isComboSummary(gift) && !_combos.containsKey(key)) {
+    if (giftIsComboSummary(gift) && !_combos.containsKey(key)) {
       // The summary of a combo that already ended (and flew its total).
       final ended = _ended[key];
-      if (ended != null && _comboStart(gift) <= ended.total) return;
+      if (ended != null && giftComboStart(gift) <= ended.total) return;
     }
     var combo = _combos.remove(key);
-    if (combo != null && _comboRestarted(combo.running, gift)) {
+    if (combo != null && giftComboRestarted(combo.running, gift)) {
       _end(combo, now: now);
       combo = null;
     }
-    final total = combo == null ? _comboStart(gift) : _comboTotal(combo.total, gift);
+    final total = combo == null ? giftComboStart(gift) : giftComboTotal(combo.total, gift);
     var flown = combo?.flown ?? 0;
     if (flown == 0 && _worthFlying(gift, total) && _fly(message, gift, total, now)) flown = total;
     _combos[key] = _Flight(
@@ -135,7 +134,7 @@ final class GiftFlights {
   }
 
   bool _worthFlying(LiveGift gift, int total) =>
-      giftShownTier(gift.value.unit, _valueOfCount(gift, total)) != LiveGiftTier.normal;
+      giftShownTier(gift.value.unit, giftValueOfCount(gift, total)) != LiveGiftTier.normal;
 
   bool _fly(LiveMessage message, LiveGift gift, int total, DateTime now) {
     while (_flown.isNotEmpty && now.difference(_flown.first) >= _second) {
@@ -148,7 +147,7 @@ final class GiftFlights {
   }
 
   BarrageItem _itemFor(LiveMessage message, LiveGift gift, int total) {
-    final tier = giftShownTier(gift.value.unit, _valueOfCount(gift, total));
+    final tier = giftShownTier(gift.value.unit, giftValueOfCount(gift, total));
     final precious = tier == LiveGiftTier.precious;
     final name = message.sender?.userName.trim() ?? '';
     final sentence = giftSentenceText(l10n.t, gift, streamer(), count: total);
@@ -162,48 +161,6 @@ final class GiftFlights {
     );
   }
 
-  /// The key that groups one combo: the platform's own when it has one,
-  /// else the sender, kind and gift (and receiver, for a cross-room gift).
-  static String _comboKey(LiveMessage message, LiveGift gift) {
-    final platform = gift.combo.comboKey.trim();
-    if (platform.isNotEmpty) return 'combo:$platform';
-    final sender = message.sender;
-    final id = gift.giftId.trim().isNotEmpty ? gift.giftId.trim() : gift.name.trim();
-    final receiver = gift.recipientName.trim();
-    return 'sender:${gift.kind.name}:${sender?.userId ?? ''}\u0000${sender?.userName ?? ''}\u0000$id'
-        '${receiver.isEmpty ? '' : '\u0000→$receiver'}';
-  }
-
-  /// The count a combo starts with: the platform's running count when it
-  /// joined during a combo, else the message's.
-  static int _comboStart(LiveGift gift) => math.max(gift.combo.comboTotal ?? 0, gift.count);
-
-  /// The count of a combo that showed [shown] once [gift] counts on it.
-  static int _comboTotal(int shown, LiveGift gift) {
-    final running = gift.combo.comboTotal;
-    if (running == null) return shown + gift.count;
-    if (running == gift.count) return math.max(shown, running);
-    return math.max(running, shown + gift.count);
-  }
-
-  /// Whether a combo whose last gift said [running] started again at [gift].
-  static bool _comboRestarted(int? running, LiveGift gift) {
-    final next = gift.combo.comboTotal;
-    return next != null && running != null && next <= running;
-  }
-
-  /// Whether [gift] is the platform's summary of a combo.
-  static bool _isComboSummary(LiveGift gift) =>
-      gift.combo.comboKey.trim().isNotEmpty && gift.combo.comboTotal == gift.count;
-
-  /// The value of [count] gifts like [gift], in its unit.
-  static double? _valueOfCount(LiveGift gift, int count) {
-    final unitPrice = gift.value.unitPrice;
-    if (unitPrice != null) return unitPrice * count;
-    final value = gift.value.totalValue;
-    if (value == null) return null;
-    return value * count / math.max(gift.count, 1);
-  }
 }
 
 /// One combo on its way: the newest message and its gift, when it came,

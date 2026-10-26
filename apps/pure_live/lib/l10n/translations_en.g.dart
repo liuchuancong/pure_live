@@ -835,6 +835,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get link => 'Link';
 	@override String get copy => 'Copy';
 	@override String get copied => 'Copied';
+	@override String get replayed => 'sent before';
 	@override String get share => 'Share';
 	@override String get shareFailed => 'The share failed';
 	@override String openIn({required Object platform}) => 'Open in ${platform}';
@@ -852,6 +853,8 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get superChats => 'Super chats';
 	@override String get superChatEmpty => 'No super chats now';
 	@override String get superChatFailed => 'The super chats did not load';
+	@override String get superChatCardMembership => 'Membership';
+	@override String get superChatCardSubscription => 'Subscription';
 	@override String get onlineViewers => 'Live viewers';
 	@override String get popularity => 'Popularity';
 	@override String get totalViewers => 'Total viewers';
@@ -913,6 +916,14 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String giftValueNote({required Object value}) => '${value} notes';
 	@override String get collapseChat => 'Collapse chat';
 	@override String get expandChat => 'Expand chat';
+	@override String get switchRoom => 'Switch room';
+	@override String get switchOnAir => 'Followed · live';
+	@override String get switchHistory => 'Watch history';
+	@override String get switchReplays => 'Followed replays';
+	@override String get switchEmpty => 'No rooms to switch to';
+	@override String get switchLive => 'Live';
+	@override String get switchShowGrid => 'Show as grid';
+	@override String get switchShowList => 'Show as list';
 }
 
 // Path: search
@@ -1057,6 +1068,10 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get refreshRatePerformance => 'Performance (highest rate)';
 	@override String get refreshRateReadOnly => 'This platform exposes reading only';
 	@override String get refreshRateReadOnlyDesc => 'The system gives the app no refresh-rate request path; the values above are the actual reading of this display.';
+	@override String get refreshRateMatchVideo => 'Match the video frame rate while playing';
+	@override String get refreshRateMatchVideoDesc => 'The screen refreshes at a whole multiple of the frame rate for smoother motion; it switches only when seamless. Rooms whose platform declares no frame rate are left unchanged.';
+	@override String refreshRateMatchVideoSingle({required Object rate}) => 'This device only has ${rate} Hz, so there is nothing to match';
+	@override String get refreshRateMatchVideoUnsupported => 'This device\'s system interface cannot switch the refresh rate to match video content';
 	@override String get updateGroup => 'Updates';
 	@override String get autoCheckUpdate => 'Check for updates at startup';
 	@override String get autoCheckUpdateDesc => 'Reads the release feed once per start, silently; the result appears under About, and a failure stays quiet.';
@@ -1140,6 +1155,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get pureBlack => 'Pure black background';
 	@override String get pureBlackDescription => 'A black background in dark mode; saves power on OLED screens.';
 	@override String get pureBlackLightReason => 'Has no effect in light mode: set the theme mode to dark or follow system first.';
+	@override String get liquidGlass => 'Liquid glass';
+	@override String get liquidGlassDescription => 'The home bottom bar floats as frosted glass over the page; on phones with 4 GB of memory or less it is see-through without blur.';
 	@override String get loadingStyle => 'Loading style';
 	@override String get loadingStyleDescription => 'The animation shown while pages, lists and players load.';
 	@override String get loadingStyleChoose => 'Choose a loading style';
@@ -1154,6 +1171,81 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get loadingStyleRipple => 'Ripple';
 	@override String get loadingStyleOrbit => 'Orbit';
 	@override String get loadingStyleLineScale => 'Line scale';
+	@override String get loadingStyleRotatingPlain => 'Rotating Plain';
+	@override String get loadingStyleWanderingCubes => 'Wandering Cubes';
+	@override String get loadingStyleFadingFour => 'Fading Four';
+	@override String get loadingStyleFadingCube => 'Fading Cube';
+	@override String get loadingStyleChasingDots => 'Chasing Dots';
+	@override String get loadingStyleCircle => 'Circle';
+	@override String get loadingStyleRotatingCircle => 'Rotating Circle';
+	@override String get loadingStyleFoldingCube => 'Folding Cube';
+	@override String get loadingStylePumpingHeart => 'Pumping Heart';
+	@override String get loadingStyleHourGlass => 'Hour Glass';
+	@override String get loadingStylePouringHourGlass => 'Pouring Hour Glass';
+	@override String get loadingStylePouringHourGlassRefined => 'Hour Glass Refined';
+	@override String get loadingStyleFadingGrid => 'Fading Grid';
+	@override String get loadingStyleRing => 'Ring';
+	@override String get loadingStyleSpinningCircle => 'Spinning Circle';
+	@override String get loadingStyleSpinningLines => 'Spinning Lines';
+	@override String get loadingStyleSquareCircle => 'Square Circle';
+	@override String get loadingStyleDualRing => 'Dual Ring';
+	@override String get loadingStylePianoWave => 'Piano Wave';
+	@override String get loadingStyleDancingSquare => 'Dancing Square';
+	@override String get loadingStyleThreeInOut => 'Three In Out';
+	@override String get loadingStyleWaveSpinner => 'Wave Spinner';
+	@override String get loadingStylePulsingGrid => 'Pulsing Grid';
+	@override String get loadingStyleWaveDots => 'Wave Dots';
+	@override String get loadingStyleInkDrop => 'Ink Drop';
+	@override String get loadingStyleTwistingDots => 'Twisting Dots';
+	@override String get loadingStyleThreeRotatingDots => 'Three Rotating';
+	@override String get loadingStyleStaggeredDotsWave => 'Staggered Wave';
+	@override String get loadingStyleFourRotatingDots => 'Four Rotating';
+	@override String get loadingStyleFallingDot => 'Falling Dot';
+	@override String get loadingStyleProgressiveDots => 'Progressive Dots';
+	@override String get loadingStyleDiscreteCircular => 'Discrete Circle';
+	@override String get loadingStyleThreeArchedCircle => 'Three Arched';
+	@override String get loadingStyleBouncingBall => 'Bouncing Ball';
+	@override String get loadingStyleFlickr => 'Flickr';
+	@override String get loadingStyleHexagonDots => 'Hexagon Dots';
+	@override String get loadingStyleBeat => 'Beat';
+	@override String get loadingStyleTwoRotatingArc => 'Two Rotating Arc';
+	@override String get loadingStyleHorizontalRotatingDots => 'Horizontal Dots';
+	@override String get loadingStyleNewtonCradle => 'Newton Cradle';
+	@override String get loadingStyleStretchedDots => 'Stretched Dots';
+	@override String get loadingStyleHalfTriangleDot => 'Half Triangle';
+	@override String get loadingStyleDotsTriangle => 'Dots Triangle';
+	@override String get loadingStyleBallPulse => 'Ball Pulse';
+	@override String get loadingStyleBallGridPulse => 'Ball Grid Pulse';
+	@override String get loadingStyleBallClipRotate => 'Ball Clip Rotate';
+	@override String get loadingStyleBallClipRotatePulse => 'Ball Clip Rotate Pulse';
+	@override String get loadingStyleSquareSpin => 'Square Spin';
+	@override String get loadingStyleBallClipRotateMultiple => 'Ball Clip Rotate Multiple';
+	@override String get loadingStyleBallPulseRise => 'Ball Pulse Rise';
+	@override String get loadingStyleBallRotate => 'Ball Rotate';
+	@override String get loadingStyleCubeTransition => 'Cube Transition';
+	@override String get loadingStyleBallZigZag => 'Ball ZigZag';
+	@override String get loadingStyleBallZigZagDeflect => 'Ball ZigZag Deflect';
+	@override String get loadingStyleBallTrianglePath => 'Ball Triangle Path';
+	@override String get loadingStyleBallTrianglePathColored => 'Ball Triangle Path Colored';
+	@override String get loadingStyleBallTrianglePathColoredFilled => 'Ball Triangle Filled';
+	@override String get loadingStyleBallScale => 'Ball Scale';
+	@override String get loadingStyleLineScaleParty => 'Line Scale Party';
+	@override String get loadingStyleBallScaleMultiple => 'Ball Scale Multiple';
+	@override String get loadingStyleBallPulseSync => 'Ball Pulse Sync';
+	@override String get loadingStyleBallBeat => 'Ball Beat';
+	@override String get loadingStyleLineScalePulseOut => 'Line Scale Pulse Out';
+	@override String get loadingStyleLineScalePulseOutRapid => 'Line Scale Pulse Out Rapid';
+	@override String get loadingStyleBallScaleRipple => 'Ball Scale Ripple';
+	@override String get loadingStyleBallScaleRippleMultiple => 'Ball Scale Ripple Multiple';
+	@override String get loadingStyleBallSpinFadeLoader => 'Ball Spin Fade Loader';
+	@override String get loadingStyleLineSpinFadeLoader => 'Line Spin Fade Loader';
+	@override String get loadingStyleTriangleSkewSpin => 'Triangle Skew Spin';
+	@override String get loadingStylePacman => 'Pacman';
+	@override String get loadingStyleBallGridBeat => 'Ball Grid Beat';
+	@override String get loadingStyleSemiCircleSpin => 'Semi Circle Spin';
+	@override String get loadingStyleBallRotateChase => 'Ball Rotate Chase';
+	@override String get loadingStyleAudioEqualizer => 'Audio Equalizer';
+	@override String get loadingStyleCircleStrokeSpin => 'Circle Stroke Spin';
 	@override String get loadingColor => 'Loading colour';
 	@override String get loadingColorDescription => 'The loaders\' colour; empty follows the theme\'s accent.';
 	@override String get loadingColorFollowTheme => 'Follow the theme';
@@ -1188,6 +1280,15 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get refreshGroup => 'Refresh';
 	@override String get followsAutoRefresh => 'Refresh follows automatically';
 	@override String get followsAutoRefreshDesc => 'Refreshes the follow list on an interval while the page is open.';
+	@override String get liveAlert => 'Live alerts';
+	@override String get liveAlertDesc => 'Post a system notification when a followed room starts broadcasting; checked every 15 minutes while the app runs.';
+	@override String get liveAlertTags => 'Alert tags';
+	@override String get liveAlertTagsDesc => 'Only these tags\' follows notify; no tag covers every follow.';
+	@override String get liveAlertTagsAll => 'All follows';
+	@override String get liveAlertTagsNone => 'No tags yet; alerts cover every follow.';
+	@override String liveAlertTagCount({required Object selected}) => '${selected} selected';
+	@override String liveAlertFallbackTitle({required Object roomId, required Object platform}) => 'Room ${roomId} on ${platform}';
+	@override String liveAlertNotificationBody({required Object platform}) => 'Live now on ${platform}';
 	@override String get refreshInterval => 'Interval';
 	@override String get historyLimit => 'History limit';
 	@override String get historyLimitDesc => 'The oldest records past the limit are dropped.';
@@ -1948,6 +2049,29 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get localShowLevelBadgeDesc => 'Show the experience level on local messages.';
 	@override String get localGiftEffects => 'Gift effects';
 	@override String get localGiftEffectsDesc => 'Play the local banner effect when a gift is sent.';
+	@override String get localGiftEffectsAll => 'All gifts';
+	@override String get localGiftEffectsBigOnly => 'Big gifts only';
+	@override String get localGiftEffectsOff => 'Off';
+	@override String get localReplayOnEnter => 'Replay local danmaku on entry';
+	@override String get localReplayOnEnterDesc => 'Put this room\'s local danmaku from the last 24 hours back at the top of the chat, marked as sent before.';
+	@override String get localGrowth => 'Local growth';
+	@override String get localGrowthDesc => 'Watching, the first room of the day and local danmaku earn coins and experience.';
+	@override String localGrowthToday({required Object checked, required Object watch, required Object watchLimit, required Object chat, required Object chatLimit}) => 'Today: ${checked} · watching +${watch}/${watchLimit} · danmaku +${chat}/${chatLimit}';
+	@override String get localGrowthCheckedIn => 'checked in';
+	@override String get localGrowthNotCheckedIn => 'not checked in';
+	@override String get localPhrases => 'Quick phrases';
+	@override String get localPhrasesDesc => 'Chips above the local composer; a tap sends one.';
+	@override String localPhrasesEmpty({required Object limit}) => 'No phrases yet. Add up to ${limit}.';
+	@override String get localPhraseAdd => 'Add';
+	@override String localPhraseHint({required Object limit}) => 'A phrase (up to ${limit} characters)';
+	@override String localPhraseCount({required Object count, required Object limit}) => '${count} / ${limit}';
+	@override String get localPhraseEdit => 'Edit phrase';
+	@override String get localPhraseDelete => 'Delete phrase';
+	@override String get localPhraseMoveUp => 'Move phrase up';
+	@override String get localPhraseMoveDown => 'Move phrase down';
+	@override String get localPhraseEmptyError => 'The phrase is empty.';
+	@override String get localPhraseDuplicate => 'That phrase is already saved.';
+	@override String localPhraseFull({required Object count}) => 'At most ${count} phrases.';
 	@override String get localPreviewPlatform => 'Preview platform';
 	@override String get localPreviewPlatformDesc => 'The platform mark used by the preview and local messages.';
 	@override String get localStyle => 'Danmaku style';
@@ -2006,6 +2130,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get portraitDanmakuModeDesc => 'How much of the portrait full-screen surface flying danmaku may use.';
 	@override String get portraitRememberRoom => 'Remember each room’s choice';
 	@override String get portraitRememberRoomDesc => 'Save picture and danmaku choices per room when changed in portrait full screen; turning it off clears saved room choices.';
+	@override String get portraitSwipeSwitch => 'Swipe between rooms in portrait full screen';
+	@override String get portraitSwipeSwitchDesc => 'For rooms opened from follows, popular, categories or search: in portrait full screen, swipe up in the middle of the picture for the next room and down for the previous.';
 	@override String get portraitDiagnostics => 'Show portrait diagnostics';
 	@override String get portraitDiagnosticsDesc => 'Show resolution, aspect ratio, picture and danmaku modes at the bottom-left in portrait full screen.';
 	@override String get portraitClearOverrides => 'Clear room overrides';
@@ -2062,8 +2188,16 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get clipboardRoomOpen => 'Open room';
 	@override String get backgroundAudioOnly => 'Audio only in background';
 	@override String get backgroundAudioOnlyDesc => 'Stop video decoding while in the background and keep the sound; the picture returns when the app comes back.';
+	@override String get pauseOnPipClose => 'Pause when picture-in-picture closes';
+	@override String get pauseOnPipCloseDesc => 'With background play on, closing the picture-in-picture window pauses instead of playing on; it resumes when you return.';
 	@override String get chatShowGifts => 'Show gifts in the chat';
 	@override String get chatShowGiftsDesc => 'Gifts the platform reports appear as gift lines in the chat; turning it off removes the existing lines at once.';
+	@override String get chatGiftsAboveTier => 'Only valuable gifts';
+	@override String get chatGiftsAboveTierDesc => 'Free and cheap gifts stay out of the chat list; a combo shows once it adds up.';
+	@override String get chatGiftValueInYuan => 'Gift values in yuan';
+	@override String get chatGiftValueInYuanDesc => 'Gold seeds, diamonds and Douyin coins are written in yuan at the platform\'s fixed rate; overseas currencies stay as they are.';
+	@override String get superChatIncludesMembership => 'Memberships in Super Chats';
+	@override String get superChatIncludesMembershipDesc => 'Bilibili guards, YouTube memberships and Twitch, CHZZK and other subscriptions also get a card among the Super Chats; the chat list keeps its one line.';
 	@override String get danmakuShowGifts => 'Gifts in flying danmaku';
 	@override String get danmakuShowGiftsDesc => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.';
 	@override String get floatWindowSize => 'Floating window size';
@@ -2075,6 +2209,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundPauseDanmakuDesc => 'Disconnect the platform danmaku while in the background and reconnect on return; the chat log stays.';
 	@override String get douyuForceRenew => 'Renew the Douyu login every 5 minutes';
 	@override String get douyuForceRenewDesc => 'Refresh the Douyu cookie periodically after signing in so long sessions keep their login.';
+	@override String get tvFocusZoom => 'Grow the focused item';
+	@override String get tvFocusZoomDesc => 'Focused cards, menu entries and player controls grow a little; turn it off on a slow box to keep only the outline.';
 	@override String get tvMenuExpanded => 'Always expand the TV sidebar';
 	@override String get tvMenuExpandedDesc => 'Keep the sidebar labels visible; off, it is an icon rail that opens when focused.';
 }
@@ -3082,6 +3218,7 @@ extension on TranslationsEn {
 			'room.link' => 'Link',
 			'room.copy' => 'Copy',
 			'room.copied' => 'Copied',
+			'room.replayed' => 'sent before',
 			'room.share' => 'Share',
 			'room.shareFailed' => 'The share failed',
 			'room.openIn' => ({required Object platform}) => 'Open in ${platform}',
@@ -3099,6 +3236,8 @@ extension on TranslationsEn {
 			'room.superChats' => 'Super chats',
 			'room.superChatEmpty' => 'No super chats now',
 			'room.superChatFailed' => 'The super chats did not load',
+			'room.superChatCardMembership' => 'Membership',
+			'room.superChatCardSubscription' => 'Subscription',
 			'room.onlineViewers' => 'Live viewers',
 			'room.popularity' => 'Popularity',
 			'room.totalViewers' => 'Total viewers',
@@ -3160,6 +3299,14 @@ extension on TranslationsEn {
 			'room.giftValueNote' => ({required Object value}) => '${value} notes',
 			'room.collapseChat' => 'Collapse chat',
 			'room.expandChat' => 'Expand chat',
+			'room.switchRoom' => 'Switch room',
+			'room.switchOnAir' => 'Followed · live',
+			'room.switchHistory' => 'Watch history',
+			'room.switchReplays' => 'Followed replays',
+			'room.switchEmpty' => 'No rooms to switch to',
+			'room.switchLive' => 'Live',
+			'room.switchShowGrid' => 'Show as grid',
+			'room.switchShowList' => 'Show as list',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -3286,6 +3433,10 @@ extension on TranslationsEn {
 			'settings.refreshRatePerformance' => 'Performance (highest rate)',
 			'settings.refreshRateReadOnly' => 'This platform exposes reading only',
 			'settings.refreshRateReadOnlyDesc' => 'The system gives the app no refresh-rate request path; the values above are the actual reading of this display.',
+			'settings.refreshRateMatchVideo' => 'Match the video frame rate while playing',
+			'settings.refreshRateMatchVideoDesc' => 'The screen refreshes at a whole multiple of the frame rate for smoother motion; it switches only when seamless. Rooms whose platform declares no frame rate are left unchanged.',
+			'settings.refreshRateMatchVideoSingle' => ({required Object rate}) => 'This device only has ${rate} Hz, so there is nothing to match',
+			'settings.refreshRateMatchVideoUnsupported' => 'This device\'s system interface cannot switch the refresh rate to match video content',
 			'settings.updateGroup' => 'Updates',
 			'settings.autoCheckUpdate' => 'Check for updates at startup',
 			'settings.autoCheckUpdateDesc' => 'Reads the release feed once per start, silently; the result appears under About, and a failure stays quiet.',
@@ -3369,6 +3520,8 @@ extension on TranslationsEn {
 			'settings.pureBlack' => 'Pure black background',
 			'settings.pureBlackDescription' => 'A black background in dark mode; saves power on OLED screens.',
 			'settings.pureBlackLightReason' => 'Has no effect in light mode: set the theme mode to dark or follow system first.',
+			'settings.liquidGlass' => 'Liquid glass',
+			'settings.liquidGlassDescription' => 'The home bottom bar floats as frosted glass over the page; on phones with 4 GB of memory or less it is see-through without blur.',
 			'settings.loadingStyle' => 'Loading style',
 			'settings.loadingStyleDescription' => 'The animation shown while pages, lists and players load.',
 			'settings.loadingStyleChoose' => 'Choose a loading style',
@@ -3383,6 +3536,83 @@ extension on TranslationsEn {
 			'settings.loadingStyleRipple' => 'Ripple',
 			'settings.loadingStyleOrbit' => 'Orbit',
 			'settings.loadingStyleLineScale' => 'Line scale',
+			'settings.loadingStyleRotatingPlain' => 'Rotating Plain',
+			'settings.loadingStyleWanderingCubes' => 'Wandering Cubes',
+			'settings.loadingStyleFadingFour' => 'Fading Four',
+			'settings.loadingStyleFadingCube' => 'Fading Cube',
+			'settings.loadingStyleChasingDots' => 'Chasing Dots',
+			'settings.loadingStyleCircle' => 'Circle',
+			'settings.loadingStyleRotatingCircle' => 'Rotating Circle',
+			'settings.loadingStyleFoldingCube' => 'Folding Cube',
+			'settings.loadingStylePumpingHeart' => 'Pumping Heart',
+			'settings.loadingStyleHourGlass' => 'Hour Glass',
+			'settings.loadingStylePouringHourGlass' => 'Pouring Hour Glass',
+			'settings.loadingStylePouringHourGlassRefined' => 'Hour Glass Refined',
+			'settings.loadingStyleFadingGrid' => 'Fading Grid',
+			'settings.loadingStyleRing' => 'Ring',
+			'settings.loadingStyleSpinningCircle' => 'Spinning Circle',
+			'settings.loadingStyleSpinningLines' => 'Spinning Lines',
+			'settings.loadingStyleSquareCircle' => 'Square Circle',
+			'settings.loadingStyleDualRing' => 'Dual Ring',
+			'settings.loadingStylePianoWave' => 'Piano Wave',
+			'settings.loadingStyleDancingSquare' => 'Dancing Square',
+			'settings.loadingStyleThreeInOut' => 'Three In Out',
+			'settings.loadingStyleWaveSpinner' => 'Wave Spinner',
+			'settings.loadingStylePulsingGrid' => 'Pulsing Grid',
+			'settings.loadingStyleWaveDots' => 'Wave Dots',
+			'settings.loadingStyleInkDrop' => 'Ink Drop',
+			'settings.loadingStyleTwistingDots' => 'Twisting Dots',
+			'settings.loadingStyleThreeRotatingDots' => 'Three Rotating',
+			'settings.loadingStyleStaggeredDotsWave' => 'Staggered Wave',
+			'settings.loadingStyleFourRotatingDots' => 'Four Rotating',
+			'settings.loadingStyleFallingDot' => 'Falling Dot',
+			'settings.loadingStyleProgressiveDots' => 'Progressive Dots',
+			'settings.loadingStyleDiscreteCircular' => 'Discrete Circle',
+			'settings.loadingStyleThreeArchedCircle' => 'Three Arched',
+			'settings.loadingStyleBouncingBall' => 'Bouncing Ball',
+			'settings.loadingStyleFlickr' => 'Flickr',
+			'settings.loadingStyleHexagonDots' => 'Hexagon Dots',
+			'settings.loadingStyleBeat' => 'Beat',
+			'settings.loadingStyleTwoRotatingArc' => 'Two Rotating Arc',
+			'settings.loadingStyleHorizontalRotatingDots' => 'Horizontal Dots',
+			'settings.loadingStyleNewtonCradle' => 'Newton Cradle',
+			'settings.loadingStyleStretchedDots' => 'Stretched Dots',
+			'settings.loadingStyleHalfTriangleDot' => 'Half Triangle',
+			'settings.loadingStyleDotsTriangle' => 'Dots Triangle',
+			'settings.loadingStyleBallPulse' => 'Ball Pulse',
+			'settings.loadingStyleBallGridPulse' => 'Ball Grid Pulse',
+			'settings.loadingStyleBallClipRotate' => 'Ball Clip Rotate',
+			'settings.loadingStyleBallClipRotatePulse' => 'Ball Clip Rotate Pulse',
+			'settings.loadingStyleSquareSpin' => 'Square Spin',
+			'settings.loadingStyleBallClipRotateMultiple' => 'Ball Clip Rotate Multiple',
+			'settings.loadingStyleBallPulseRise' => 'Ball Pulse Rise',
+			'settings.loadingStyleBallRotate' => 'Ball Rotate',
+			'settings.loadingStyleCubeTransition' => 'Cube Transition',
+			'settings.loadingStyleBallZigZag' => 'Ball ZigZag',
+			'settings.loadingStyleBallZigZagDeflect' => 'Ball ZigZag Deflect',
+			'settings.loadingStyleBallTrianglePath' => 'Ball Triangle Path',
+			'settings.loadingStyleBallTrianglePathColored' => 'Ball Triangle Path Colored',
+			'settings.loadingStyleBallTrianglePathColoredFilled' => 'Ball Triangle Filled',
+			_ => null,
+		} ?? switch (path) {
+			'settings.loadingStyleBallScale' => 'Ball Scale',
+			'settings.loadingStyleLineScaleParty' => 'Line Scale Party',
+			'settings.loadingStyleBallScaleMultiple' => 'Ball Scale Multiple',
+			'settings.loadingStyleBallPulseSync' => 'Ball Pulse Sync',
+			'settings.loadingStyleBallBeat' => 'Ball Beat',
+			'settings.loadingStyleLineScalePulseOut' => 'Line Scale Pulse Out',
+			'settings.loadingStyleLineScalePulseOutRapid' => 'Line Scale Pulse Out Rapid',
+			'settings.loadingStyleBallScaleRipple' => 'Ball Scale Ripple',
+			'settings.loadingStyleBallScaleRippleMultiple' => 'Ball Scale Ripple Multiple',
+			'settings.loadingStyleBallSpinFadeLoader' => 'Ball Spin Fade Loader',
+			'settings.loadingStyleLineSpinFadeLoader' => 'Line Spin Fade Loader',
+			'settings.loadingStyleTriangleSkewSpin' => 'Triangle Skew Spin',
+			'settings.loadingStylePacman' => 'Pacman',
+			'settings.loadingStyleBallGridBeat' => 'Ball Grid Beat',
+			'settings.loadingStyleSemiCircleSpin' => 'Semi Circle Spin',
+			'settings.loadingStyleBallRotateChase' => 'Ball Rotate Chase',
+			'settings.loadingStyleAudioEqualizer' => 'Audio Equalizer',
+			'settings.loadingStyleCircleStrokeSpin' => 'Circle Stroke Spin',
 			'settings.loadingColor' => 'Loading colour',
 			'settings.loadingColorDescription' => 'The loaders\' colour; empty follows the theme\'s accent.',
 			'settings.loadingColorFollowTheme' => 'Follow the theme',
@@ -3417,6 +3647,15 @@ extension on TranslationsEn {
 			'settings.refreshGroup' => 'Refresh',
 			'settings.followsAutoRefresh' => 'Refresh follows automatically',
 			'settings.followsAutoRefreshDesc' => 'Refreshes the follow list on an interval while the page is open.',
+			'settings.liveAlert' => 'Live alerts',
+			'settings.liveAlertDesc' => 'Post a system notification when a followed room starts broadcasting; checked every 15 minutes while the app runs.',
+			'settings.liveAlertTags' => 'Alert tags',
+			'settings.liveAlertTagsDesc' => 'Only these tags\' follows notify; no tag covers every follow.',
+			'settings.liveAlertTagsAll' => 'All follows',
+			'settings.liveAlertTagsNone' => 'No tags yet; alerts cover every follow.',
+			'settings.liveAlertTagCount' => ({required Object selected}) => '${selected} selected',
+			'settings.liveAlertFallbackTitle' => ({required Object roomId, required Object platform}) => 'Room ${roomId} on ${platform}',
+			'settings.liveAlertNotificationBody' => ({required Object platform}) => 'Live now on ${platform}',
 			'settings.refreshInterval' => 'Interval',
 			'settings.historyLimit' => 'History limit',
 			'settings.historyLimitDesc' => 'The oldest records past the limit are dropped.',
@@ -3457,8 +3696,6 @@ extension on TranslationsEn {
 			'settings.styleWeightMedium' => 'Medium',
 			'settings.styleWeightSemiBold' => 'Semi Bold',
 			'settings.styleWeightBold' => 'Bold',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleWeightExtraBold' => 'Extra Bold',
 			'settings.styleWeightBlack' => 'Black',
 			'settings.styleSpeed' => 'Speed',
@@ -3870,6 +4107,8 @@ extension on TranslationsEn {
 			'settings.maxConcurrentRefreshDesc' => 'How many rooms are queried at once. The reference recommends 4; range 1–20.',
 			'settings.recommended' => 'Recommended',
 			'settings.refreshThumbnails' => 'Refresh covers',
+			_ => null,
+		} ?? switch (path) {
 			'settings.refreshThumbnailsDesc' => 'Periodically clears the image cache so covers, avatars and logos are downloaded again; history and follows stay.',
 			'settings.thumbnailRefreshInterval' => 'Cover refresh interval',
 			'settings.navHomeMenuGroup' => 'Home menu',
@@ -3971,8 +4210,6 @@ extension on TranslationsEn {
 			'settings.fullscreenDefault' => 'Auto Full Screen',
 			'settings.fullscreenDefaultDesc' => 'When enter live play, auto into full screen',
 			'settings.keepScreenOn' => 'Keep the screen awake while playing',
-			_ => null,
-		} ?? switch (path) {
 			'settings.keepScreenOnDesc' => 'Prevents the display from sleeping while a room or channel plays; pausing returns to the system policy.',
 			'settings.navPortrait' => 'Portrait Live Adaptation',
 			'settings.portraitPageDescription' => 'Detects the source orientation and adjusts the room\'s viewing area and layout.',
@@ -4181,6 +4418,29 @@ extension on TranslationsEn {
 			'settings.localShowLevelBadgeDesc' => 'Show the experience level on local messages.',
 			'settings.localGiftEffects' => 'Gift effects',
 			'settings.localGiftEffectsDesc' => 'Play the local banner effect when a gift is sent.',
+			'settings.localGiftEffectsAll' => 'All gifts',
+			'settings.localGiftEffectsBigOnly' => 'Big gifts only',
+			'settings.localGiftEffectsOff' => 'Off',
+			'settings.localReplayOnEnter' => 'Replay local danmaku on entry',
+			'settings.localReplayOnEnterDesc' => 'Put this room\'s local danmaku from the last 24 hours back at the top of the chat, marked as sent before.',
+			'settings.localGrowth' => 'Local growth',
+			'settings.localGrowthDesc' => 'Watching, the first room of the day and local danmaku earn coins and experience.',
+			'settings.localGrowthToday' => ({required Object checked, required Object watch, required Object watchLimit, required Object chat, required Object chatLimit}) => 'Today: ${checked} · watching +${watch}/${watchLimit} · danmaku +${chat}/${chatLimit}',
+			'settings.localGrowthCheckedIn' => 'checked in',
+			'settings.localGrowthNotCheckedIn' => 'not checked in',
+			'settings.localPhrases' => 'Quick phrases',
+			'settings.localPhrasesDesc' => 'Chips above the local composer; a tap sends one.',
+			'settings.localPhrasesEmpty' => ({required Object limit}) => 'No phrases yet. Add up to ${limit}.',
+			'settings.localPhraseAdd' => 'Add',
+			'settings.localPhraseHint' => ({required Object limit}) => 'A phrase (up to ${limit} characters)',
+			'settings.localPhraseCount' => ({required Object count, required Object limit}) => '${count} / ${limit}',
+			'settings.localPhraseEdit' => 'Edit phrase',
+			'settings.localPhraseDelete' => 'Delete phrase',
+			'settings.localPhraseMoveUp' => 'Move phrase up',
+			'settings.localPhraseMoveDown' => 'Move phrase down',
+			'settings.localPhraseEmptyError' => 'The phrase is empty.',
+			'settings.localPhraseDuplicate' => 'That phrase is already saved.',
+			'settings.localPhraseFull' => ({required Object count}) => 'At most ${count} phrases.',
 			'settings.localPreviewPlatform' => 'Preview platform',
 			'settings.localPreviewPlatformDesc' => 'The platform mark used by the preview and local messages.',
 			'settings.localStyle' => 'Danmaku style',
@@ -4239,6 +4499,8 @@ extension on TranslationsEn {
 			'settings.portraitDanmakuModeDesc' => 'How much of the portrait full-screen surface flying danmaku may use.',
 			'settings.portraitRememberRoom' => 'Remember each room’s choice',
 			'settings.portraitRememberRoomDesc' => 'Save picture and danmaku choices per room when changed in portrait full screen; turning it off clears saved room choices.',
+			'settings.portraitSwipeSwitch' => 'Swipe between rooms in portrait full screen',
+			'settings.portraitSwipeSwitchDesc' => 'For rooms opened from follows, popular, categories or search: in portrait full screen, swipe up in the middle of the picture for the next room and down for the previous.',
 			'settings.portraitDiagnostics' => 'Show portrait diagnostics',
 			'settings.portraitDiagnosticsDesc' => 'Show resolution, aspect ratio, picture and danmaku modes at the bottom-left in portrait full screen.',
 			'settings.portraitClearOverrides' => 'Clear room overrides',
@@ -4295,8 +4557,16 @@ extension on TranslationsEn {
 			'settings.clipboardRoomOpen' => 'Open room',
 			'settings.backgroundAudioOnly' => 'Audio only in background',
 			'settings.backgroundAudioOnlyDesc' => 'Stop video decoding while in the background and keep the sound; the picture returns when the app comes back.',
+			'settings.pauseOnPipClose' => 'Pause when picture-in-picture closes',
+			'settings.pauseOnPipCloseDesc' => 'With background play on, closing the picture-in-picture window pauses instead of playing on; it resumes when you return.',
 			'settings.chatShowGifts' => 'Show gifts in the chat',
 			'settings.chatShowGiftsDesc' => 'Gifts the platform reports appear as gift lines in the chat; turning it off removes the existing lines at once.',
+			'settings.chatGiftsAboveTier' => 'Only valuable gifts',
+			'settings.chatGiftsAboveTierDesc' => 'Free and cheap gifts stay out of the chat list; a combo shows once it adds up.',
+			'settings.chatGiftValueInYuan' => 'Gift values in yuan',
+			'settings.chatGiftValueInYuanDesc' => 'Gold seeds, diamonds and Douyin coins are written in yuan at the platform\'s fixed rate; overseas currencies stay as they are.',
+			'settings.superChatIncludesMembership' => 'Memberships in Super Chats',
+			'settings.superChatIncludesMembershipDesc' => 'Bilibili guards, YouTube memberships and Twitch, CHZZK and other subscriptions also get a card among the Super Chats; the chat list keeps its one line.',
 			'settings.danmakuShowGifts' => 'Gifts in flying danmaku',
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',
@@ -4308,6 +4578,8 @@ extension on TranslationsEn {
 			'settings.backgroundPauseDanmakuDesc' => 'Disconnect the platform danmaku while in the background and reconnect on return; the chat log stays.',
 			'settings.douyuForceRenew' => 'Renew the Douyu login every 5 minutes',
 			'settings.douyuForceRenewDesc' => 'Refresh the Douyu cookie periodically after signing in so long sessions keep their login.',
+			'settings.tvFocusZoom' => 'Grow the focused item',
+			'settings.tvFocusZoomDesc' => 'Focused cards, menu entries and player controls grow a little; turn it off on a slow box to keep only the outline.',
 			'settings.tvMenuExpanded' => 'Always expand the TV sidebar',
 			'settings.tvMenuExpandedDesc' => 'Keep the sidebar labels visible; off, it is an icon rail that opens when focused.',
 			'shield.title' => 'Danmaku shield',
@@ -4349,6 +4621,8 @@ extension on TranslationsEn {
 			'shield.blockEmoteOnly' => 'Block emoticon-only danmaku',
 			'shield.blockEmoteOnlyDescription' => 'Danmaku with emoticons and no text are not shown; your own lines are never blocked.',
 			'shield.blockLong' => 'Block over-long danmaku',
+			_ => null,
+		} ?? switch (path) {
 			'shield.blockLongDescription' => 'Danmaku longer than the set length are not shown (an emoticon counts as one).',
 			'shield.blockLongLength' => 'Most characters',
 			'shield.blockLongLengthDescription' => 'The longest line still shown, 10–100 (an emoticon counts as one).',
@@ -4485,8 +4759,6 @@ extension on TranslationsEn {
 			'vod.related' => 'Related',
 			'vod.parts' => 'Parts',
 			'vod.views' => 'Views',
-			_ => null,
-		} ?? switch (path) {
 			'vod.danmaku' => 'Danmaku',
 			'vod.likes' => 'Likes',
 			'vod.coins' => 'Coins',

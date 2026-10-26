@@ -1,4 +1,4 @@
-import 'dart:async' show Timer, unawaited;
+import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -21,15 +21,15 @@ import 'package:media_core/media_core.dart' show PlayerId, PresentationMode;
 import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
 import 'package:pure_live/app/providers/keep_screen_on_provider.dart' show keepScreenOnProvider;
 import 'package:pure_live/app/providers/presentation_providers.dart'
-    show RoomPresentationController, roomPresentationProvider;
+    show RoomPresentationController, pipDriverProvider, roomPresentationProvider;
 import 'package:pure_live/app/providers/room_leave_provider.dart' show roomLeaveProvider;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
 import 'package:pure_live/app/routing/route_observer.dart' show routeObserver;
 import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
+import 'package:pure_live/features/history/history_repository.dart' show historyProvider;
 import 'package:pure_live/features/recorder/recording_repository.dart' show recordingTasksProvider;
-import 'package:pure_live/features/recorder/recording_settings.dart'
-    show recordingSettingsProvider;
+import 'package:pure_live/features/recorder/recording_settings.dart' show recordingSettingsProvider;
 import 'package:pure_live/features/recorder/recording_task.dart' show RecordingTask, RecordingTaskState;
 import 'package:pure_live/features/room/floating_room_player.dart' show FloatingRoomPlayer;
 import 'package:pure_live/features/room/player_surface.dart' show PlayerSurface;
@@ -39,7 +39,10 @@ import 'package:pure_live/features/room/room_details.dart'
     show copyRoomLink, openRoomExternally, roomLinkOf, shareRoom, showRoomDetails;
 import 'package:pure_live/features/room/room_orientation.dart'
     show RoomOrientation, roomFrameRatio, roomOrientationProvider, showRoomOrientationDialog;
+import 'package:pure_live/features/room/room_playlist.dart' show roomPlaylistProvider;
+import 'package:pure_live/features/room/room_refresh_rate.dart' show roomRefreshRateProvider;
 import 'package:pure_live/features/room/room_status.dart' show roomSlowProvider, slowAfter;
+import 'package:pure_live/features/room/room_switcher.dart' show roomSwipeList, showRoomSwitcher;
 import 'package:pure_live/features/room/sleep_timer.dart';
 import 'package:pure_live/features/settings/playback_settings_providers.dart' show playbackSettingsProvider;
 import 'package:pure_live/features/settings/portrait_fullscreen_settings.dart'
@@ -51,6 +54,7 @@ import 'package:pure_live/features/settings/portrait_fullscreen_settings.dart'
         portraitFullscreenProvider;
 import 'package:pure_live/features/settings/portrait_settings_providers.dart'
     show PortraitFullscreenPolicy, PortraitLayoutMode, portraitSettingsProvider;
+import 'package:pure_live/features/settings/room_switcher_settings.dart' show portraitSwipeSwitchProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart' show cachedImage;
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
@@ -109,6 +113,17 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// Whether the page is showing its portrait full-screen surface.
   bool _portraitFullscreen = false;
 
+  /// Whether a room switch from the portrait full screen is in flight; the
+  /// page keeps its surface while the next room opens on the same controller.
+  bool _switchingPortraitRoom = false;
+
+  /// The room the viewer swiped to, kept in the portrait surface even when
+  /// its stream is landscape (the reference's ambient surface).
+  String? _portraitSwipeTarget;
+
+  /// The room this page shows; the source list is cleared on the way out.
+  String _currentRoomKey = '';
+
   /// The auto-fullscreen preference this open started with; flipping it
   /// mid-room applies to the next room, as in the reference.
   bool _autoFullscreenArmed = false;
@@ -127,6 +142,13 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   bool _audioOnlyBeforeBackground = false;
   bool _backgroundDanmakuPaused = false;
 
+  /// Whether the room was paused by closing the picture-in-picture window,
+  /// so returning to the app can resume it (V5-23).
+  bool _pausedByPipClose = false;
+  bool _appInForeground = true;
+  bool _pipWasActive = false;
+  StreamSubscription<bool>? _pipSubscription;
+
   /// The route this page asked the observer about, so a theme change does not
   /// subscribe it twice.
   ModalRoute<void>? _observedRoute;
@@ -139,6 +161,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _currentRoomKey = '${widget.platform.trim().toLowerCase()}:${widget.roomId.trim()}';
     // A new room page supersedes any older floating handoff; open() below
     // tears the old handle down.
     FloatingRoomPlayer.hide();
@@ -183,6 +206,9 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(ref.read(roomProvider.notifier).open(platform: widget.platform, roomId: widget.roomId));
     });
+    // A PiP window closed while the app is away means "stop", when the
+    // setting says so; the system ends the window without a lifecycle event.
+    _pipSubscription = ref.read(pipDriverProvider).onPipChanged.listen(_onPipChanged);
   }
 
   /// The timer fired: pause the stream (never resume a paused room) and say
@@ -224,8 +250,17 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
   @override
   void dispose() {
+    try {
+      if (ref.read(roomPlaylistProvider)?.current.ref.identityKey == _currentRoomKey) {
+        ref.read(roomPlaylistProvider.notifier).clear();
+      }
+    } on Object {
+      // The container is already gone; the list goes with it.
+    }
     routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_pipSubscription?.cancel() ?? Future<void>.value());
+    _pipSubscription = null;
     _backgroundGate?.dispose();
     _backgroundGate = null;
     _slowTimer?.cancel();
@@ -320,6 +355,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) _appInForeground = false;
+    if (state == AppLifecycleState.resumed) _appInForeground = true;
     _backgroundGate?.handleLifecycle(state);
     if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
       _applyBackgroundAudioOnly();
@@ -329,11 +366,38 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       _autoPipRequested = false;
       _restoreBackgroundAudioOnly();
       _resumeBackgroundDanmaku();
+      _resumeAfterPipClose();
       return;
     }
     // The moment the app starts leaving is the one Android's PiP entry
     // needs; by `paused` the activity is already backgrounded.
     if (state == AppLifecycleState.inactive) _maybeAutoPip();
+  }
+
+  /// The PiP window went away: pause only when the room would otherwise keep
+  /// playing in the background, as the reference's "关闭画中画时暂停".
+  void _onPipChanged(bool active) {
+    if (active) {
+      _pipWasActive = true;
+      return;
+    }
+    if (!_pipWasActive) return;
+    _pipWasActive = false;
+    if (_appInForeground || kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    final settings = ref.read(playbackSettingsProvider);
+    if (!settings.pauseOnPipClose || !settings.backgroundPlay) return;
+    final room = ref.read(roomProvider);
+    if (room.handle == null || !room.playback.playing) return;
+    _pausedByPipClose = true;
+    unawaited(ref.read(roomProvider.notifier).pause());
+  }
+
+  void _resumeAfterPipClose() {
+    if (!_pausedByPipClose) return;
+    _pausedByPipClose = false;
+    final room = ref.read(roomProvider);
+    if (room.handle == null || room.playback.playing) return;
+    unawaited(ref.read(roomProvider.notifier).togglePlayPause());
   }
 
   /// Android background playback may keep only the audio: the video decoder
@@ -421,12 +485,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       PortraitDanmakuMode.hidden => t.room.portraitDanmakuHidden,
     };
     void choose({PortraitFullscreenMode? display, PortraitDanmakuMode? danmaku}) {
-      unawaited(
-        controller.remember(
-          roomKey,
-          (display: display ?? choice.display, danmaku: danmaku ?? choice.danmaku),
-        ),
-      );
+      unawaited(controller.remember(roomKey, (display: display ?? choice.display, danmaku: danmaku ?? choice.danmaku)));
     }
 
     return ColoredBox(
@@ -451,9 +510,18 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                           label: t.room.portraitFullscreenDisplay,
                           value: choice.display,
                           options: [
-                            DsChipOption(value: PortraitFullscreenMode.complete, label: Text(t.room.portraitDisplayComplete)),
-                            DsChipOption(value: PortraitFullscreenMode.ambient, label: Text(t.room.portraitDisplayAmbient)),
-                            DsChipOption(value: PortraitFullscreenMode.balanced, label: Text(t.room.portraitDisplayBalanced)),
+                            DsChipOption(
+                              value: PortraitFullscreenMode.complete,
+                              label: Text(t.room.portraitDisplayComplete),
+                            ),
+                            DsChipOption(
+                              value: PortraitFullscreenMode.ambient,
+                              label: Text(t.room.portraitDisplayAmbient),
+                            ),
+                            DsChipOption(
+                              value: PortraitFullscreenMode.balanced,
+                              label: Text(t.room.portraitDisplayBalanced),
+                            ),
                             DsChipOption(value: PortraitFullscreenMode.cover, label: Text(t.room.portraitDisplayCover)),
                           ],
                           onChanged: (value) => choose(display: value),
@@ -462,9 +530,18 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                           label: t.room.portraitDanmakuTitle,
                           value: choice.danmaku,
                           options: [
-                            DsChipOption(value: PortraitDanmakuMode.followGlobal, label: Text(t.room.portraitDanmakuFollow)),
-                            DsChipOption(value: PortraitDanmakuMode.upperQuarter, label: Text(t.room.portraitDanmakuUpper)),
-                            DsChipOption(value: PortraitDanmakuMode.reduced, label: Text(t.room.portraitDanmakuReduced)),
+                            DsChipOption(
+                              value: PortraitDanmakuMode.followGlobal,
+                              label: Text(t.room.portraitDanmakuFollow),
+                            ),
+                            DsChipOption(
+                              value: PortraitDanmakuMode.upperQuarter,
+                              label: Text(t.room.portraitDanmakuUpper),
+                            ),
+                            DsChipOption(
+                              value: PortraitDanmakuMode.reduced,
+                              label: Text(t.room.portraitDanmakuReduced),
+                            ),
                             DsChipOption(value: PortraitDanmakuMode.hidden, label: Text(t.room.portraitDanmakuHidden)),
                           ],
                           onChanged: (value) => choose(danmaku: value),
@@ -474,6 +551,15 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                   ),
                 ),
                 const SizedBox(width: DsSpace.s8),
+                if (room.room case final detail?)
+                  DsButton.icon(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: () => unawaited(showRoomSwitcher(context, current: detail)),
+                    icon: const DsIcon(DsIcons.arrowLeftRight),
+                    semanticLabel: t.room.switchRoom,
+                  ),
+                if (room.room != null) const SizedBox(width: DsSpace.s8),
                 DsButton.icon(
                   variant: DsButtonVariant.secondary,
                   size: DsSize.sm,
@@ -515,10 +601,52 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     return roomFrameRatio(orientation, detected: ratio).clamp(0.5, 2.4);
   }
 
+  /// The portrait fullscreen's vertical swipe: +1 for the next room in the
+  /// list the room was opened from, -1 for the previous. A room opened from
+  /// no list swipes through the switcher's followed-on-air/history rooms.
+  /// The new room opens on this page's controller, so the portrait surface
+  /// and the player stay.
+  void _switchPortraitRoom(int step) {
+    if (_switchingPortraitRoom) return;
+    final current = ref.read(roomProvider).room;
+    if (current == null) return;
+    final playlist = ref.read(roomPlaylistProvider);
+    final fromSource = playlist != null && playlist.current.ref.identityKey == current.ref.identityKey;
+    final target = fromSource ? playlist.neighbour(step) : _switcherSwipeTarget(current, step);
+    if (target == null) return;
+    _switchingPortraitRoom = true;
+    _portraitSwipeTarget = target.ref.identityKey;
+    _currentRoomKey = target.ref.identityKey;
+    if (fromSource) ref.read(roomPlaylistProvider.notifier).move(step);
+    unawaited(
+      ref.read(roomProvider.notifier).open(platform: target.ref.platform, roomId: target.ref.roomId).whenComplete(() {
+        if (mounted) _switchingPortraitRoom = false;
+      }),
+    );
+  }
+
+  /// The neighbour in the switcher's list when the room carries no source
+  /// list; a current room absent from it starts from the first/last, as the
+  /// switcher panel does.
+  LiveRoom? _switcherSwipeTarget(LiveRoom current, int step) {
+    final rooms = roomSwipeList(
+      follows: ref.read(followsProvider).rooms,
+      history: [for (final (room, _) in ref.read(historyProvider).records) room],
+      current: current,
+    );
+    if (rooms.isEmpty) return null;
+    final index = rooms.indexWhere((room) => room.ref.identityKey == current.ref.identityKey);
+    if (index < 0) return step > 0 ? rooms.first : rooms.last;
+    return rooms[(index + step) % rooms.length];
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final room = ref.watch(roomProvider);
+    // Declares the playing line's frame rate to the display while this page
+    // exists; disposing the page releases it.
+    ref.watch(roomRefreshRateProvider);
     _syncScreenWake(room.playback.playing && ref.watch(keepScreenOnProvider));
     final presentation = ref.watch(roomPresentationProvider);
     _maybeAutoFullscreen(room, presentation);
@@ -536,7 +664,9 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     final colors = DsTheme.colorsOf(context);
     // A TV remote uses the arrows to move focus and its own volume keys
     // for sound; a desktop keyboard keeps the arrows on the volume.
-    final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
+    final formFactor = ref.watch(platformRuntimeProvider).environment.runtime.formFactor;
+    final tv = formFactor == FormFactor.tv;
+    final mobile = formFactor == FormFactor.phone || formFactor == FormFactor.tablet;
     _watchSlow(room);
     final presentationController = ref.read(roomPresentationProvider.notifier);
     _presentationController = presentationController;
@@ -588,16 +718,20 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
     final pictureRatio = _pictureRatio(room);
     final portraitSettings = ref.watch(portraitSettingsProvider);
-    // A source that rotates back to landscape leaves the portrait surface;
-    // the post-frame callback keeps setState out of build.
-    if (_portraitFullscreen && pictureRatio >= 1) {
+    final swipeSwitch = ref.watch(portraitSwipeSwitchProvider);
+    final roomKey = room.room?.ref.identityKey ?? '';
+    // A source that rotates back to landscape leaves the portrait surface,
+    // unless the viewer swiped to it: the reference keeps that room on the
+    // portrait surface (ambient) while the list still has neighbours. The
+    // post-frame callback keeps setState out of build.
+    final keepPortrait = swipeSwitch && _portraitSwipeTarget == roomKey;
+    if (_portraitFullscreen && room.handle != null && !keepPortrait && !_switchingPortraitRoom && pictureRatio >= 1) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _portraitFullscreen) setState(() => _portraitFullscreen = false);
       });
     }
     final portraitState = ref.watch(portraitFullscreenProvider);
     final chatCollapsed = ref.watch(playbackSettingsProvider.select((settings) => settings.chatCollapsed));
-    final roomKey = room.room?.ref.identityKey ?? '';
     final portraitChoice = portraitState.modeFor(roomKey);
     final player = PlayerSurface(
       roomState: room,
@@ -613,131 +747,132 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       portraitDanmaku: portraitChoice.danmaku,
       canEnterPortraitFullscreen: pictureRatio < 1,
       onPortraitFullscreen: () => setState(() => _portraitFullscreen = true),
+      onPortraitSwipe: _portraitFullscreen && swipeSwitch && mobile ? _switchPortraitRoom : null,
     );
 
     final body = _portraitFullscreen
         ? _buildPortraitFullscreen(context, room, portraitState, player, roomKey)
         : LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= _wideBreakpoint;
-        if (!wide) {
-          // The reference's narrow room: the picture, the strip with the
-          // room's facts, then the chat below it. The picture keeps its
-          // shape but never takes the chat's last 150 px: a short window
-          // shrinks it instead of overflowing the column.
-          final maxPicture = math.max<double>(
-            0,
-            (constraints.maxHeight.isFinite ? constraints.maxHeight - 150 : 480).toDouble(),
-          );
-          final portraitStream = pictureRatio < 1;
-          // The reference's portrait panel needs detection, the adaptive
-          // height and a layout other than "compatibility 16:9"; without
-          // them a portrait source uses the regular 16:9 room page.
-          final tallPortrait =
-              portraitStream &&
-              portraitSettings.adaptation &&
-              portraitSettings.adaptiveHeight &&
-              portraitSettings.layoutMode != PortraitLayoutMode.compatibility;
-          final ratio = tallPortrait
-              ? pictureRatio.clamp(0.5, 0.8)
-              : portraitStream
-              ? 16 / 9
-              : pictureRatio.clamp(1.0, 2.4);
-          final desired = tallPortrait
-              ? constraints.maxHeight *
-                    (portraitSettings.layoutMode == PortraitLayoutMode.immersive ? 0.72 : 0.58)
-              : constraints.maxWidth / ratio;
-          final picture = SizedBox(
-            height: math.min(desired, maxPicture),
-            child: ColoredBox(
-              color: colors.overlay,
-              child: Center(
-                child: AspectRatio(aspectRatio: ratio, child: player),
-              ),
-            ),
-          );
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              picture,
-              _RoomInfoBar(room: room),
-              DsLine(color: colors.border),
-              const Expanded(child: RoomChatPanel()),
-            ],
-          );
-        }
-        // The reference's wide room: the picture centred in the stage at its
-        // own shape, and the chat column with the strip above it. The
-        // column can fold away; the choice is remembered for the next room.
-        final chatWidth = (constraints.maxWidth * 0.34).clamp(300.0, 400.0);
-        void toggleChat() {
-          unawaited(
-            ref.read(playbackSettingsProvider.notifier).setChatCollapsed(value: !chatCollapsed),
-          );
-        }
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= _wideBreakpoint;
+              if (!wide) {
+                // The reference's narrow room: the picture, the strip with the
+                // room's facts, then the chat below it. The picture keeps its
+                // shape but never takes the chat's last 150 px: a short window
+                // shrinks it instead of overflowing the column.
+                final maxPicture = math.max<double>(
+                  0,
+                  (constraints.maxHeight.isFinite ? constraints.maxHeight - 150 : 480).toDouble(),
+                );
+                final portraitStream = pictureRatio < 1;
+                // The reference's portrait panel needs detection, the adaptive
+                // height and a layout other than "compatibility 16:9"; without
+                // them a portrait source uses the regular 16:9 room page.
+                final tallPortrait =
+                    portraitStream &&
+                    portraitSettings.adaptation &&
+                    portraitSettings.adaptiveHeight &&
+                    portraitSettings.layoutMode != PortraitLayoutMode.compatibility;
+                final ratio = tallPortrait
+                    ? pictureRatio.clamp(0.5, 0.8)
+                    : portraitStream
+                    ? 16 / 9
+                    : pictureRatio.clamp(1.0, 2.4);
+                final desired = tallPortrait
+                    ? constraints.maxHeight *
+                          (portraitSettings.layoutMode == PortraitLayoutMode.immersive ? 0.72 : 0.58)
+                    : constraints.maxWidth / ratio;
+                final picture = SizedBox(
+                  height: math.min(desired, maxPicture),
+                  child: ColoredBox(
+                    color: colors.overlay,
+                    child: Center(
+                      child: AspectRatio(aspectRatio: ratio, child: player),
+                    ),
+                  ),
+                );
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    picture,
+                    _RoomInfoBar(room: room),
+                    DsLine(color: colors.border),
+                    const Expanded(child: RoomChatPanel()),
+                  ],
+                );
+              }
+              // The reference's wide room: the picture centred in the stage at its
+              // own shape, and the chat column with the strip above it. The
+              // column can fold away; the choice is remembered for the next room.
+              final chatWidth = (constraints.maxWidth * 0.34).clamp(300.0, 400.0);
+              void toggleChat() {
+                unawaited(ref.read(playbackSettingsProvider.notifier).setChatCollapsed(value: !chatCollapsed));
+              }
 
-        final stage = Expanded(
-          child: ColoredBox(
-            color: colors.overlay,
-            child: Center(
-              child: AspectRatio(aspectRatio: pictureRatio, child: player),
-            ),
-          ),
-        );
-        if (chatCollapsed) {
-          return Stack(
-            children: [
-              Positioned.fill(
+              final stage = Expanded(
                 child: ColoredBox(
                   color: colors.overlay,
-                  child: Center(child: AspectRatio(aspectRatio: pictureRatio, child: player)),
+                  child: Center(
+                    child: AspectRatio(aspectRatio: pictureRatio, child: player),
+                  ),
                 ),
-              ),
-              PositionedDirectional(
-                top: DsSpace.s8,
-                end: DsSpace.s8,
-                child: DsButton.icon(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  onPressed: toggleChat,
-                  icon: const DsIcon(DsIcons.panelRightOpen),
-                  semanticLabel: t.room.expandChat,
-                ),
-              ),
-            ],
-          );
-        }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            stage,
-            Container(width: 1, color: colors.border),
-            SizedBox(
-              width: chatWidth,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(child: _RoomInfoBar(room: room)),
-                      DsButton.icon(
-                        variant: DsButtonVariant.ghost,
+              );
+              if (chatCollapsed) {
+                return Stack(
+                  children: [
+                    Positioned.fill(
+                      child: ColoredBox(
+                        color: colors.overlay,
+                        child: Center(
+                          child: AspectRatio(aspectRatio: pictureRatio, child: player),
+                        ),
+                      ),
+                    ),
+                    PositionedDirectional(
+                      top: DsSpace.s8,
+                      end: DsSpace.s8,
+                      child: DsButton.icon(
+                        variant: DsButtonVariant.secondary,
                         size: DsSize.sm,
                         onPressed: toggleChat,
-                        icon: const DsIcon(DsIcons.panelRightClose),
-                        semanticLabel: t.room.collapseChat,
+                        icon: const DsIcon(DsIcons.panelRightOpen),
+                        semanticLabel: t.room.expandChat,
                       ),
-                    ],
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  stage,
+                  Container(width: 1, color: colors.border),
+                  SizedBox(
+                    width: chatWidth,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(child: _RoomInfoBar(room: room)),
+                            DsButton.icon(
+                              variant: DsButtonVariant.ghost,
+                              size: DsSize.sm,
+                              onPressed: toggleChat,
+                              icon: const DsIcon(DsIcons.panelRightClose),
+                              semanticLabel: t.room.collapseChat,
+                            ),
+                          ],
+                        ),
+                        DsLine(color: colors.border),
+                        const Expanded(child: RoomChatPanel()),
+                      ],
+                    ),
                   ),
-                  DsLine(color: colors.border),
-                  const Expanded(child: RoomChatPanel()),
                 ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
+              );
+            },
+          );
 
     // The page, not the body, holds the shortcuts: Space and the arrows
     // must work while an AppBar action or a chat field has focus too.
@@ -917,6 +1052,12 @@ final class _RoomMenu extends ConsumerWidget {
       child: DsMenuAnchor(
         semanticLabel: t.common.more,
         items: [
+          if (detail != null)
+            DsMenuItem(
+              leading: const DsIcon(DsIcons.arrowLeftRight),
+              label: Text(t.room.switchRoom),
+              onPressed: () => unawaited(showRoomSwitcher(context, current: detail)),
+            ),
           DsMenuItem(
             leading: const DsIcon(DsIcons.info),
             label: Text(t.room.details),
@@ -991,12 +1132,7 @@ final class _RoomMenu extends ConsumerWidget {
   /// what the monitor polls; turning the check on here matches the
   /// reference, where "Record when live" opens the live check as it adds
   /// the room.
-  Future<void> _toggleAutoRecord(
-    BuildContext context,
-    WidgetRef ref,
-    LiveRoom detail,
-    RecordingTask? task,
-  ) async {
+  Future<void> _toggleAutoRecord(BuildContext context, WidgetRef ref, LiveRoom detail, RecordingTask? task) async {
     final t = context.t;
     final tasks = ref.read(recordingTasksProvider.notifier);
     if (task?.state == RecordingTaskState.waiting) {
@@ -1014,23 +1150,22 @@ final class _RoomMenu extends ConsumerWidget {
       ref.read(recordingSettingsProvider.notifier).pollingEnabled = true;
     }
     final now = DateTime.now().toUtc();
-    final waiting =
-        task == null
-            ? RecordingTask(
-                id: '${detail.ref.platform}:${detail.ref.roomId}',
-                platform: detail.ref.platform,
-                roomId: detail.ref.roomId,
-                roomTitle: detail.content.title,
-                quality: settings.defaultQuality,
-                state: RecordingTaskState.waiting,
-                startedAt: now,
-              )
-            : task.copyWith(
-                roomTitle: detail.content.title,
-                quality: settings.defaultQuality,
-                state: RecordingTaskState.waiting,
-                startedAt: now,
-              );
+    final waiting = task == null
+        ? RecordingTask(
+            id: '${detail.ref.platform}:${detail.ref.roomId}',
+            platform: detail.ref.platform,
+            roomId: detail.ref.roomId,
+            roomTitle: detail.content.title,
+            quality: settings.defaultQuality,
+            state: RecordingTaskState.waiting,
+            startedAt: now,
+          )
+        : task.copyWith(
+            roomTitle: detail.content.title,
+            quality: settings.defaultQuality,
+            state: RecordingTaskState.waiting,
+            startedAt: now,
+          );
     await tasks.add(waiting);
     if (!context.mounted) return;
     showDsToast(
@@ -1219,16 +1354,10 @@ final class _SleepChip extends ConsumerWidget {
   }
 }
 
-
 /// A labelled, horizontally scrollable chip group used by the portrait
 /// full-screen chrome.
 final class _PortraitChoiceBar<T> extends StatelessWidget {
-  const _PortraitChoiceBar({
-    required this.label,
-    required this.value,
-    required this.options,
-    required this.onChanged,
-  });
+  const _PortraitChoiceBar({required this.label, required this.value, required this.options, required this.onChanged});
 
   final String label;
   final T value;
@@ -1241,21 +1370,13 @@ final class _PortraitChoiceBar<T> extends StatelessWidget {
     final colors = DsTheme.colorsOf(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
-      decoration: BoxDecoration(
-        color: const Color(0xB3000000),
-        borderRadius: BorderRadius.circular(theme.radii.card),
-      ),
+      decoration: BoxDecoration(color: const Color(0xB3000000), borderRadius: BorderRadius.circular(theme.radii.card)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: DsSpace.s8,
         children: [
           Text(label, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
-          DsChoiceChips<T>(
-            value: value,
-            onChanged: onChanged,
-            semanticLabel: label,
-            options: options,
-          ),
+          DsChoiceChips<T>(value: value, onChanged: onChanged, semanticLabel: label, options: options),
         ],
       ),
     );

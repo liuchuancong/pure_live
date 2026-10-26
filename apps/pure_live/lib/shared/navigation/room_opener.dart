@@ -5,20 +5,43 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_shell/live_shell.dart' show WindowRole;
 import 'package:live_shell_desktop/live_shell_desktop.dart' show DesktopSecondaryWindow, WindowArguments;
+import 'package:live_sites/live_sites.dart' show LiveRoom;
 
 import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
 import 'package:pure_live/app/providers/shell_settings_provider.dart' show roomWindowsProvider;
 import 'package:pure_live/app/providers/window_providers.dart' show secondaryWindowsProvider;
 import 'package:pure_live/app/providers/window_storage_bridge.dart' show WindowStorageMethods;
 import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
+import 'package:pure_live/features/room/room_playlist.dart' show roomPlaylistProvider;
 
 /// Opens a live room the host's way: in its own window on the desktop —
 /// the chat app's shape, one window per room the viewer is watching — or
 /// pushed onto the app's navigator everywhere else, and on the desktop too
 /// whenever the viewer turned the windowed rooms off or the window could
 /// not be created.
-Future<void> openRoom(BuildContext context, {required String platform, required String roomId}) async {
+///
+/// [playlist] is the list the viewer picked the room from, in its order:
+/// the portrait full screen swipes through it. A room opened any other way
+/// leaves no list behind.
+Future<void> openRoom(
+  BuildContext context, {
+  required String platform,
+  required String roomId,
+  List<LiveRoom>? playlist,
+}) async {
   final container = ProviderScope.containerOf(context, listen: false);
+  final identityPlatform = platform.trim().toLowerCase();
+  final identityRoomId = roomId.trim();
+  final index = playlist == null
+      ? -1
+      : playlist.indexWhere(
+          (room) => room.ref.platform == identityPlatform && room.ref.roomId == identityRoomId,
+        );
+  if (playlist == null || index < 0) {
+    container.read(roomPlaylistProvider.notifier).clear();
+  } else {
+    container.read(roomPlaylistProvider.notifier).open(rooms: playlist, current: playlist[index]);
+  }
   final desktop = container.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.desktop;
   final windows = container.read(secondaryWindowsProvider);
   if (desktop && container.read(roomWindowsProvider) && windows != null) {

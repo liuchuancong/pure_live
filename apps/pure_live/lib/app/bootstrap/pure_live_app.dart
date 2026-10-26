@@ -38,6 +38,7 @@ import 'package:pure_live/app/theme/fonts/font_library.dart' show CloudFontIds;
 import 'package:pure_live/app/theme/stored_theme.dart' show readStoredAppThemeSettings;
 import 'package:pure_live/app/theme/theme_persistence.dart';
 import 'package:pure_live/app/theme/theme_settings.dart' show AppThemeScope, AppThemeSettings;
+import 'package:pure_live/features/favorites/live_alerts.dart' show LiveAlertWatcher;
 import 'package:pure_live/features/iptv/iptv_auto_update.dart' show iptvAutoUpdaterProvider;
 import 'package:pure_live/features/recorder/recording_monitor.dart' show recordingLiveMonitorProvider;
 import 'package:pure_live/features/settings/clipboard_rooms.dart' show ClipboardRoomWatcher;
@@ -336,8 +337,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
           fontFamilyOverride: lockedFamily == appFamily ? null : lockedFamily,
         ),
         builder: (context, child) {
-          final app = ClipboardRoomWatcher(
-            child: AppVisibilityObserver(
+          final app = LiveAlertWatcher(
+            child: ClipboardRoomWatcher(
+              child: AppVisibilityObserver(
               // The wallpaper is the bottom layer of the app: every route sits
             // over it, and the shell's own fill turns translucent while one
             // is set. The observer feeds the video's pause signal.
@@ -356,7 +358,8 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
               ),
             ),
           ),
-          );
+        ),
+      );
           final content = desktop
               ? CallbackShortcuts(
                   bindings: {

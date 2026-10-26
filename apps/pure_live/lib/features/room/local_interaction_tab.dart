@@ -33,17 +33,20 @@ final class _LocalInteractionTabState extends ConsumerState<LocalInteractionTab>
     super.dispose();
   }
 
-  void _showBanner(String message) {
-    if (!ref.read(localInteractionProvider).enableGiftEffects) return;
+  void _showBanner(LocalGift gift, String message) {
+    final local = ref.read(localInteractionProvider);
+    if (!local.giftEffectLevel.shows(gift.price)) return;
+    final big = gift.price >= kLocalGiftBigPrice;
     _bannerTimer?.cancel();
     setState(() => _banner = message);
-    _bannerTimer = Timer(const Duration(milliseconds: 1600), () {
+    _bannerTimer = Timer(Duration(milliseconds: big ? 2800 : 1600), () {
       if (mounted) setState(() => _banner = null);
     });
   }
 
-  Future<void> _send() async {
-    final text = _field.text.trim();
+  Future<void> _send([String? phrase]) async {
+    final fromField = phrase == null;
+    final text = (phrase ?? _field.text).trim();
     if (text.isEmpty) return;
     final local = ref.read(localInteractionProvider);
     final controller = ref.read(localInteractionProvider.notifier);
@@ -56,7 +59,12 @@ final class _LocalInteractionTabState extends ConsumerState<LocalInteractionTab>
       );
     }
     await controller.addHistory('${_stamp()} $line');
-    if (mounted) _field.clear();
+    await controller.rewardChat();
+    final room = ref.read(roomProvider).room;
+    if (room != null) {
+      await controller.recordRoomChat(room.ref.platform, room.ref.roomId, text);
+    }
+    if (fromField && mounted) _field.clear();
   }
 
   Future<void> _sendGift(LocalGift gift) async {
@@ -75,7 +83,7 @@ final class _LocalInteractionTabState extends ConsumerState<LocalInteractionTab>
         senderName: local.userName,
       );
     }
-    _showBanner('${gift.emoji} ${gift.name}');
+    _showBanner(gift, '${gift.emoji} ${gift.name}');
     showDsToast(context: context, title: context.t.settings.localGiftSent);
   }
 
@@ -176,6 +184,23 @@ final class _LocalInteractionTabState extends ConsumerState<LocalInteractionTab>
             ],
           ),
         ),
+        if (local.phrases.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+            child: Wrap(
+              spacing: DsSpace.s8,
+              runSpacing: DsSpace.s4,
+              children: [
+                for (final phrase in local.phrases)
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: () => unawaited(_send(phrase)),
+                    child: Text(phrase),
+                  ),
+              ],
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
           child: Row(

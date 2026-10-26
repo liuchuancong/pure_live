@@ -15,11 +15,9 @@ import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
 import 'package:pure_live/features/search/search_controller.dart';
 import 'package:pure_live/features/settings/audience_metric_provider.dart'
     show AudienceMetricChoice, AudiencePolicy, audienceFigureOf, audienceMetricProvider, audiencePolicyProvider;
-import 'package:pure_live/features/settings/room_card_settings.dart'
-    show RoomCardLayout, roomCardAppearanceProvider;
+import 'package:pure_live/features/settings/room_card_settings.dart' show RoomCardLayout, roomCardAppearanceProvider;
 import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
-import 'package:pure_live/features/settings/sites_display_provider.dart'
-    show sitesDisplayProvider, sitesOrderProvider;
+import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider, sitesOrderProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 import 'package:pure_live/shared/navigation/room_opener.dart';
@@ -350,7 +348,7 @@ final class _PlatformFeed extends ConsumerWidget {
       listItemBuilder: (context, room) => RoomCard(
         room: room,
         compact: true,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
       ),
       cardExtent: settings.homeCardExtent,
       crossSpacing: settings.crossSpacing,
@@ -368,7 +366,7 @@ final class _PlatformFeed extends ConsumerWidget {
       refreshError: state.error?.message,
       itemBuilder: (context, room) => RoomCard(
         room: room,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
       ),
     );
     // The reference's hidden-count line: rooms the discovery filter keeps
@@ -401,7 +399,10 @@ final class _PlatformFeed extends ConsumerWidget {
         ? grid
         : Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [Expanded(child: grid), hiddenNote],
+            children: [
+              Expanded(child: grid),
+              hiddenNote,
+            ],
           );
     // A wide window pages by number (the reference's desktop feed) — the
     // kit's pagination: numbers with gaps, arrows at the ends; a narrow
@@ -605,7 +606,7 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
       listItemBuilder: (context, room) => RoomCard(
         room: room,
         compact: true,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
       ),
       cardExtent: settings.homeCardExtent,
       crossSpacing: settings.crossSpacing,
@@ -620,7 +621,7 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
       emptyTitle: t.search.noResultsTitle,
       itemBuilder: (context, room) => RoomCard(
         room: room,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
       ),
     );
     if (!wide) return grid;

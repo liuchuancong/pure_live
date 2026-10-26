@@ -10,8 +10,7 @@ import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteP
 import 'package:pure_live/features/areas/area_follow_repository.dart';
 import 'package:pure_live/features/areas/area_rooms_controller.dart';
 import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
-import 'package:pure_live/features/settings/room_card_settings.dart'
-    show RoomCardLayout, roomCardAppearanceProvider;
+import 'package:pure_live/features/settings/room_card_settings.dart' show RoomCardLayout, roomCardAppearanceProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 import 'package:pure_live/shared/grids/layout_toggle.dart' show LayoutToggle;
@@ -131,7 +130,7 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
       listItemBuilder: (context, room) => RoomCard(
         room: room,
         compact: true,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
       ),
       cardExtent: settings.homeCardExtent,
       crossSpacing: settings.crossSpacing,
@@ -148,7 +147,7 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
       refreshError: open.error?.message,
       itemBuilder: (context, room) => RoomCard(
         room: room,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
+        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
       ),
     );
 

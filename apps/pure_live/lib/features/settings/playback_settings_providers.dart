@@ -119,6 +119,7 @@ typedef PlaybackSettings = ({
   bool backgroundPlay,
   bool backgroundAudioOnly,
   bool backgroundPauseDanmaku,
+  bool pauseOnPipClose,
   bool chatCollapsed,
   double mobileVolume,
   double desktopVolume,
@@ -147,6 +148,7 @@ const PlaybackSettings _defaults = (
   backgroundPlay: false,
   backgroundAudioOnly: false,
   backgroundPauseDanmaku: false,
+  pauseOnPipClose: false,
   chatCollapsed: false,
   mobileVolume: 0.5,
   desktopVolume: 1,
@@ -222,6 +224,7 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
             StoragePrefs.getBool('playback.backgroundAudioOnly') ?? _defaults.backgroundAudioOnly,
         backgroundPauseDanmaku:
             StoragePrefs.getBool('playback.backgroundPauseDanmaku') ?? _defaults.backgroundPauseDanmaku,
+        pauseOnPipClose: StoragePrefs.getBool('playback.pauseOnPipClose') ?? _defaults.pauseOnPipClose,
         chatCollapsed: StoragePrefs.getBool('playback.chatCollapsed') ?? _defaults.chatCollapsed,
         mobileVolume:
             _readVolume('playback.mobileVolume') ?? (usesMobileVolumeDefault ? legacy : null) ?? _defaults.mobileVolume,
@@ -286,6 +289,7 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     bool? backgroundPlay,
     bool? backgroundAudioOnly,
     bool? backgroundPauseDanmaku,
+    bool? pauseOnPipClose,
     bool? chatCollapsed,
     double? mobileVolume,
     double? desktopVolume,
@@ -312,6 +316,7 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     backgroundPlay: backgroundPlay ?? state.backgroundPlay,
     backgroundAudioOnly: backgroundAudioOnly ?? state.backgroundAudioOnly,
     backgroundPauseDanmaku: backgroundPauseDanmaku ?? state.backgroundPauseDanmaku,
+    pauseOnPipClose: pauseOnPipClose ?? state.pauseOnPipClose,
     chatCollapsed: chatCollapsed ?? state.chatCollapsed,
     mobileVolume: mobileVolume ?? state.mobileVolume,
     desktopVolume: desktopVolume ?? state.desktopVolume,
@@ -359,6 +364,9 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
   /// Whether Android playback continues after the app leaves the foreground
   /// (the reference's `enableBackgroundPlay`).
   bool get backgroundPlay => state.backgroundPlay;
+
+  /// Whether closing the picture-in-picture window pauses the room.
+  bool get pauseOnPipClose => state.pauseOnPipClose;
 
   /// How the picture sits in its box.
   PlaybackFit get fit => state.fit;
@@ -518,6 +526,13 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
   Future<void> setBackgroundPauseDanmaku({required bool value}) async {
     state = _with(backgroundPauseDanmaku: value);
     await _write(() => StoragePrefs.setBool('playback.backgroundPauseDanmaku', value));
+  }
+
+  /// Whether closing the picture-in-picture window pauses a room that would
+  /// otherwise keep playing in the background.
+  Future<void> setPauseOnPipClose({required bool value}) async {
+    state = _with(pauseOnPipClose: value);
+    await _write(() => StoragePrefs.setBool('playback.pauseOnPipClose', value));
   }
 
   /// Remembers whether the wide room's chat column is folded away.

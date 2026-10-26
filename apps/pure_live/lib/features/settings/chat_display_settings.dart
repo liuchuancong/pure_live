@@ -150,3 +150,65 @@ final class ChatShowGiftsController extends Notifier<bool> {
 
 /// The room chat's gift-line switch.
 final chatShowGiftsProvider = NotifierProvider<ChatShowGiftsController, bool>(ChatShowGiftsController.new);
+
+/// Whether the chat list keeps only valuable gifts (the reference's
+/// `chatGiftsAboveTier`): free and cheap gifts stay out, and a combo shows
+/// once it adds up.
+const String kChatGiftsAboveTierKey = 'danmaku.chatGiftsAboveTier';
+
+/// Owns the valuable-gifts switch; off by default, the reference's value.
+final class ChatGiftsAboveTierController extends Notifier<bool> {
+  @override
+  bool build() {
+    try {
+      return StoragePrefs.getBool(kChatGiftsAboveTierKey) ?? false;
+    } on Object {
+      return false;
+    }
+  }
+
+  Future<void> set({required bool value}) async {
+    state = value;
+    try {
+      await StoragePrefs.setBool(kChatGiftsAboveTierKey, value);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The chat list's valuable-gifts switch.
+final chatGiftsAboveTierProvider = NotifierProvider<ChatGiftsAboveTierController, bool>(
+  ChatGiftsAboveTierController.new,
+);
+
+/// Whether gift values fixed in yuan are written as yuan (the reference's
+/// `giftValueInYuan`): gold seeds, diamonds and Douyin coins at the
+/// platform's rate; overseas currencies stay in their own unit.
+const String kChatGiftValueInYuanKey = 'danmaku.giftValueInYuan';
+
+/// Owns the yuan-value switch; off by default, the reference's value.
+final class ChatGiftValueInYuanController extends Notifier<bool> {
+  @override
+  bool build() {
+    try {
+      return StoragePrefs.getBool(kChatGiftValueInYuanKey) ?? false;
+    } on Object {
+      return false;
+    }
+  }
+
+  Future<void> set({required bool value}) async {
+    state = value;
+    try {
+      await StoragePrefs.setBool(kChatGiftValueInYuanKey, value);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The chat list's yuan-value switch.
+final chatGiftValueInYuanProvider = NotifierProvider<ChatGiftValueInYuanController, bool>(
+  ChatGiftValueInYuanController.new,
+);

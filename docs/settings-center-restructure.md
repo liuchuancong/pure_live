@@ -701,3 +701,149 @@ height`、`double Function(double)` 传成 `double`），同一条并发会话�
 
 **仍未覆盖**：§10.10 不许 build/运行，所以真机 360dp + 大字阶下的实际溢出、触屏对话框高度、
 键盘弹起时的滚动都未验证；本表只证明**代码路径**与约定，不证明像素。
+
+# 规范 §3.3 / §6 交叉审计：设置面之外谁在读写配置（2026-10-26 13:0x，只读）
+
+规范 §7 允许多页快捷入口但要求共享同一份定义，§6 要求状态只有一处。检查方法是列出设置面之外的
+`StoragePrefs` 读写点，再逐条看它是不是该键的**状态层**（provider/controller/repository/service）——
+只有绕过状态层、把值缓存进组件自己的字段才算问题。
+
+写点全部落在状态层：`app/providers/*`（browse/shell/font_face/display_refresh_rate）、
+`shared/*`（room_visibility、super_resolution、app_image_cache、tool_order）、
+`features/*` 的控制器与仓储（search_controller、shield_repository、danmaku_filter_settings、
+recording_settings、vod_settings）。设置页本身不直接写盘，走控制器。
+
+组件级读写只有 2 处，其中 1 处是真发现：
+
+| 位置 | 性质 | 判定 |
+| --- | --- | --- |
+| `features/iptv/iptv_sources_view.dart:50/:60/:204` 把 `iptv.sources.order` 读进 `State` 字段 | 该键没有任何 provider 读它，因此不在 `kSettingsProviders` 里，`settings_refresh` 恢复/跨窗口重建不到它 | **低危、自愈**：同一窗口内 `_saveOrder()` 会同步 `_savedOrder`；备份恢复或另一窗口改序后本页显示旧序，重新进入即读新值。排序只用于展示（`:204` 建 rank，空则不重排），不丢数据、不写错值 |
+| `features/vod/vod_video_page.dart:476` 读 `vod.progress.<bvid>` | 每次进入该视频都新读，无缓存陈旧问题 | 不是本类缺陷；仍是 §2.10 那条「计算键无上界、无清理策略」的待确认项 |
+
+结论：**这不是系统性问题**，是单点。修法有两种（把序收进 provider 并进 `kSettingsProviders`；或在
+`didChangeDependencies`/恢复信号里重读），都落在 `features/iptv/` 而不是设置面；本轮不动，因为它只影响
+IPTV 页的显示顺序且重进即自愈，而 §10.10 取消 build/run 后，改状态层重建路径这类逻辑只有一道
+analyze 兜底。已按 §9 记为待确认项，与本节两条候选一并提交。
+
+顺带补一条门禁盲区给 `docs/settings-center-governance.md`：`check_prefs_manifest.ps1` 要求「读 StoragePrefs
+的 provider 必须进 `kSettingsProviders`」，但**组件把值缓存进 `State` 字段**这条路径没有 provider，门禁看不见。
+新设置若必须由组件直接读盘，就得自己说明为什么它不需要重建信号。
+
+# 阶段 B：用户可见密度与拆页方案（2026-10-26，只读产出，等执行窗口）
+
+> 本节先于下一节写作，其中「一行 = 三个行控件外壳的实例化」与据此得到的 26/23/15… 数字**已被下一节修正**
+> （漏计了自带 `label:` 的裸控件行）。密度表与「切四组」的方案都以下一节为准。
+
+§10.5 的「页面不应太长」有两种读法：代码文件太长（= D2）与**用户一屏要滚太多行**。前者一直在记账，
+后者此前没有量化。本轮量化后者，并给出可执行切法。
+
+## 度量口径与被否定的两种算法
+
+- **单位**：一个用户可见行 = `DsListRow(` / `SettingsConfigRow(` / `SettingsChoiceRow<` 的一次实例化
+  （三者是嵌套实现：`SettingsChoiceRow → SettingsConfigRow → DsListRow`，定义文件本身不计入，否则每页虚增 2 行）。
+- 归属范围 = pane **自己的类范围**，外加同文件私有 helper 控件里的实例（一跳，且限定同文件）。
+- **否定算法一（跨文件闭包）**：早前按「pane 引用的任何 app 内类」累加，danmaku 报 78 行；手算其类范围
+  （[settings_page.dart:1926](apps/pure_live/lib/features/settings/settings_page.dart) 起 492 行）只有 25 行。
+  闭包把结构件与其他页的控件算进来了。**任何按引用闭包的行数统计都会静默虚增。**
+- **否定算法二（用代码跨度当长度）**：`_NavPane` 跨度 206 行却只有 2 个行控件——那 200 行是列表/拖拽 UI 代码。
+  代码行数是 D2 的账，不是用户密度。
+
+## 当前密度（前 12 页，共 193 行）
+
+| 页 | 行 | 其中 helper | 代码跨度 |
+| --- | --- | --- | --- |
+| danmaku | 26 | 1 | 492 |
+| localInteraction | 23 | 1 | 482 |
+| theme | 15 | 0 | 264 |
+| picture | 14 | 0 | 194 |
+| kernelAdvanced | 13 | 13 | 26 |
+| sites | 11 | 0 | 196 |
+| quality | 10 | 0 | 130 |
+| portrait | 10 | 8 | 80 |
+| kernel | 9 | 4 | 116 |
+| refresh | 8 | 8 | 126 |
+| browsing | 8 | 0 | 105 |
+| roomCard | 8 | 8 | 8 |
+
+## 方案：只切两页，切沿已有的分组标题
+
+**弹幕页（26 行）拆 4 个子页**。依据不是行数而是 §4.2「不同设置群组的业务目标明显不同」：该页自己已经写着
+四个分组标题（`danmakuStyleGroup` / `danmakuInteractionGroup` / `danmakuDisplayGroup` / `danmakuTemplatesGroup`），
+即产品语义上已是四个任务——样式调参（字体/字号/描边/速度/透明度/边距/FPS/同屏上限，14 行）、
+交互行为（暂停时行为、点按与长按动作）、显示（弹幕与聊天列表字号行距、小窗弹幕缩放与自动缩放）、
+模板（存取与对话框流程，§3.4 属低频复杂交互）。父页只留弹幕总开关与默认项 + 四个 `SettingsChildEntry`
+入口，符合 §5「页面层级尽可能浅」：仍是 2 级，移动端已由 `openSettingsChild` 自动走独立路由（上轮已验）。
+
+**本地直播互动页（23 行）同样按其自身分组切子页**；具体切点执行前按同法读出分组标题再定，本轮不预设。
+
+**不切**：theme(15)、picture(14)、sites(11)、quality(10)。它们没有第二个用户任务，且 sites/portrait 的行数会随
+平台与来源数量浮动——按条数阈值机械拆页正是规范 §4.3 禁止的做法。kernelAdvanced/roomCard/refresh 的多数行来自
+共享 helper，属于同一任务的重复行，不是密度问题。
+
+## 执行顺序与兼容要求（等无人写窗口，按 §8-D 风险从低到高）
+
+1. 拆页属「步骤 2 拆分或合并页面」：新增 4 个子 section 值 + `parentSection`/`settingsChildrenOf` 各一处，
+   把四组行搬进四个子 pane；**键名、默认值、范围、消费方一律不动**（§7：页面调整不得改变配置身份）。
+2. 步骤 4 导航与搜索：四组搜索命中改指各自子页（IA 门要求命中指向承载该行的真实页）；
+   若某旧段名需要保留，用 `aliasTarget` 指向新子页，不新增 index-only 页。
+3. 门禁先跑：`check_settings_ia.ps1` 会验 `parentSection` ↔ `settingsChildrenOf` 互逆、子页确实由父页 pane 打开、
+   每页有 pane 分支、层级与面包屑；`dart analyze lib` 兜底。**按 §10.10 不 build 不 run**，所以运行期表现
+   （子页滚动、模板对话框高度）在执行后仍标未验证。
+4. 密度拆完落地后再做 D2（每页一文件）：先改结构再搬文件，可以避免在同一次改动里既动 IA 又动 49 个 pane 的
+   文件位置；D2 完成后才可能把「命中归属」做成行粒度门（见 governance §6）。
+
+# 阶段 C：对上轮拆页方案的一致性检查（2026-10-26，方案已据此修订）
+
+按 §8-C 的清单逐条自查，结果是我**否掉了自己上一轮的方案**，并发现度量单位本身漏计。
+
+## 先修正量：一行 = 外壳 或 裸控件
+
+上一轮把「用户可见行」定义为 `DsListRow`/`SettingsConfigRow`/`SettingsChoiceRow` 的实例化。这个定义漏掉了
+**直接作为 `DsListSection.children` 出现的控件**——它们自带 `label:`，本身就是一行。弹幕页的交互分组就是这样
+写着 3 个 `DsSwitch`，被上一轮数成 0 行，进而让我误判「交互分组是空的」。
+
+修正后的单位：外壳实例 + 深度 1 处带 `label:` 的 `DsSwitch`/`DsSlider`/`DsTextField`/`DsNumberField`。
+判据必须是 `label:` 出现在该控件参数层的深度 1，否则 `SettingsConfigRow(control: DsSwitch(...))` 会被数两次
+（用 `),` 截断来找 `label:` 的廉价写法会让全部裸控件归零，我踩过）。
+
+## 弹幕页真实构成（35 行，四组各按页面自己的分组标题切）
+
+| 分组 | 外壳 | 裸控件 | 合计 | 内容 |
+| --- | --- | --- | --- | --- |
+| danmakuStyleGroup | 18 | 1 | **19** | 字号/字重/字距/速度/区域/上下边距/透明度/描边/FPS… |
+| danmakuDisplayGroup | 5 | 6 | **11** | 暂停时行为、聊天列表样式/字号/行距、小窗弹幕缩放与自动 |
+| danmakuInteractionGroup | 0 | 3 | **3** | 点按、长按、按住显示 |
+| danmakuTemplatesGroup | 2 | 0 | **2** | 模板存取（对话框流程） |
+
+## 逐条检查结论
+
+- **是否拆分过度**：❌ 上一轮「四组各开一子页」会造出 2 行页与 3 行页，直接撞 §4.1「页面内容过少，独立存在没有
+  明显价值」与 §4.3「为每个开关创建独立页面」。**方案作废**。
+- **修订后的方案：只切两个子页**——`danmakuStyle`（19 行，高级参数，正是 §4.2「高级参数明显干扰常用设置」）与
+  `danmakuDisplay`（11 行，覆盖层显示这一独立任务）。父页保留交互 3 行 + 模板 2 行 + 页首总开关，约 6 行，
+  与全页面密度中位（约 5–6 行）一致，不是 index-only 页（它有真实控件与写入）。弹幕已有的子页 `shield`
+  不动，父页因此是 3 个子页（样式 / 显示 / 屏蔽词与用户），层级仍是 2 级、面包屑 3 段，IA 门的
+  「子页不得再嵌套子页」不受影响。
+- **是否把无关配置放在同一页面**：⚠️ 确认一处——聊天列表的样式/字号/行距 3 行写在**弹幕页**的显示分组里，
+  而它们的状态层是独立文件 `chat_display_settings.dart`（`chat.*` 键，另有 `chat.names`）。§3.2 会说这属于
+  房间聊天显示而非弹幕样式。三个候选：(a) 跟随新的「显示」子页——用户任务同为「播放器上叠的字」，且不会产生
+  小页；(b) 独立「聊天显示」子页——语义最纯，但只有 4 行，又落回 §4.1 的过小页；(c) 迁到房间/聊天设置页——
+  注册表里目前没有这一页，§4.3 禁止为尚不存在的结构预留页面。**选 (a)**，(b)/(c) 记为待确认；本轮不改行归属。
+- **是否遗漏现有设置项**：✅ 35 行全部计入四组，无残留；父页与两子页的行数之和等于原页数。
+- **是否错误改变了配置语义**：✅ 键名、默认值、范围、消费方、备份与失效登记一概不动；移动只是 §7 允许的
+  「页面调整不改变配置身份」。
+- **是否需要调整平台可见性**：✅ 不新增也不移除任何平台判定——门控写在行代码里，随行一起移动。执行时唯一
+  风险是搬动过程中丢掉判定（如 `styleFpsFollow` 与刷新率能力、`danmaku.pip.*` 与小窗能力），故搬完要用
+  `dart analyze` + IA 门复核，且这条属于「代码搬运正确性」而非跨平台行为改变（§9 禁止后者）。
+- **是否会影响既有配置数据**：✅ 无迁移写入，无重置。
+
+## 修订后的执行清单（等无人写窗口）
+
+1. `SettingsSection` 增加 `danmakuStyle`、`danmakuDisplay` 两个值；`parentSection` 指 `danmaku`，
+   `settingsChildrenOf(danmaku)` 加到 3 个；各配 label/description 文案键（slang 中英）。
+2. 把 19 行与 11 行分别搬进两个新 pane 类；父页留交互 3 行 + 模板 2 行，并用 `SettingsChildEntry` 开两个入口。
+3. 分派 switch 加两个臂；搜索命中按分组改指新子页；`vod`/`iptv` 模块菜单不受影响（模块自有分类不变）。
+4. 复核：`dart analyze lib`、`check_settings_ia.ps1`（分区互逆、每页有 pane 分支、子页由父页打开、层级与
+   面包屑、每页可搜到）、`check_prefs_manifest.ps1`（键与备份/失效登记不变，应仍然通过且计数不变）。
+   按 §10.10 不 build 不运行，运行期滚动与对话框表现标为未验证。
+5. 密度拆完后再排 D2 文件抽取。

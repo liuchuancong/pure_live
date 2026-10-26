@@ -16,10 +16,12 @@ import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/download_directory_provider.dart' show downloadDirectoryProvider;
 import 'package:pure_live/app/providers/dynamic_color_provider.dart'
     show dynamicColorProvider, dynamicColorSeedProvider;
-import 'package:pure_live/app/providers/environment_providers.dart' show deviceProfileProvider, platformRuntimeProvider;
+import 'package:pure_live/app/providers/environment_providers.dart'
+    show DeviceProfile, deviceProfileProvider, platformRuntimeProvider;
 import 'package:pure_live/app/providers/font_library_provider.dart' show fontLibraryProvider;
 import 'package:pure_live/app/providers/font_size_provider.dart' show appFontSizesProvider;
 import 'package:pure_live/app/providers/keep_screen_on_provider.dart' show keepScreenOnProvider;
+import 'package:pure_live/app/providers/liquid_glass_provider.dart' show liquidGlassProvider;
 import 'package:pure_live/app/providers/loading_style_provider.dart' show loadingStyleProvider;
 import 'package:pure_live/app/providers/module_providers.dart' show selectedModuleProvider;
 import 'package:pure_live/app/providers/nav_visibility_providers.dart'
@@ -42,6 +44,7 @@ import 'package:pure_live/app/providers/text_scale_provider.dart'
 import 'package:pure_live/app/providers/thumbnail_refresh_provider.dart'
     show kThumbnailRefreshIntervalChoices, thumbnailRefreshProvider;
 import 'package:pure_live/app/providers/update_settings_provider.dart' show updateSettingsProvider;
+import 'package:pure_live/app/providers/user_notification_providers.dart' show requestUserNotificationPermission;
 import 'package:pure_live/app/providers/window_providers.dart' show isPrimaryWindowProvider;
 import 'package:pure_live/app/routing/app_router.dart' show SettingsSectionRoute;
 import 'package:pure_live/app/theme/font_defaults.dart' show platformFontFamilyLabel;
@@ -54,6 +57,7 @@ import 'package:pure_live/features/account/account_pane.dart' show AccountPane;
 import 'package:pure_live/features/backup/backup_pane.dart' show BackupPane;
 import 'package:pure_live/features/backup/webdav_pane.dart' show WebDavSyncPane;
 import 'package:pure_live/features/favorites/follow_repository.dart' show followRepositoryProvider, followsProvider;
+import 'package:pure_live/features/favorites/follow_tags.dart' show followTagsProvider;
 import 'package:pure_live/features/favorites/follow_tags_pane.dart' show FollowTagsPane;
 import 'package:pure_live/features/history/history_repository.dart' show historyProvider;
 import 'package:pure_live/features/iptv/iptv_settings_pane.dart' show IptvSettingsPane;
@@ -71,6 +75,8 @@ import 'package:pure_live/features/settings/background_panes.dart'
         BackgroundRandomPane;
 import 'package:pure_live/features/settings/chat_display_settings.dart'
     show
+        chatGiftValueInYuanProvider,
+        chatGiftsAboveTierProvider,
         chatListFontSizeProvider,
         chatListLineSpacingProvider,
         chatListStyleProvider,
@@ -83,9 +89,10 @@ import 'package:pure_live/features/settings/danmaku_presets.dart' show DanmakuPr
 import 'package:pure_live/features/settings/danmaku_show_gifts_provider.dart' show danmakuShowGiftsProvider;
 import 'package:pure_live/features/settings/danmaku_style_providers.dart';
 import 'package:pure_live/features/settings/danmaku_templates.dart';
-import 'package:pure_live/features/settings/floating_window_settings.dart'
-    show floatingWindowSettingsProvider;
+import 'package:pure_live/features/settings/floating_window_settings.dart' show floatingWindowSettingsProvider;
 import 'package:pure_live/features/settings/font_manager_dialog.dart' show fontFamilyLabel, showFontManagerDialog;
+import 'package:pure_live/features/settings/live_alert_settings.dart' show liveAlertSettingsProvider;
+import 'package:pure_live/features/settings/live_alert_tags_dialog.dart' show showLiveAlertTagsDialog;
 import 'package:pure_live/features/settings/loading_style_dialog.dart' show loadingStyleLabel, showLoadingStyleDialog;
 import 'package:pure_live/features/settings/local_interaction_pane.dart' show LocalInteractionPane;
 import 'package:pure_live/features/settings/page_size_options_dialog.dart' show showPageSizeOptionsDialog;
@@ -106,12 +113,14 @@ import 'package:pure_live/features/settings/portrait_settings_providers.dart'
 import 'package:pure_live/features/settings/prefer_platform_dialog.dart' show showPreferPlatformDialog;
 import 'package:pure_live/features/settings/refresh_rate_section.dart' show RefreshRateSection;
 import 'package:pure_live/features/settings/room_card_pane.dart' show RoomCardPane;
+import 'package:pure_live/features/settings/room_switcher_settings.dart' show portraitSwipeSwitchProvider;
 import 'package:pure_live/features/settings/settings_search.dart' show SettingsSearchHit, settingsSearchHits;
 import 'package:pure_live/features/settings/settings_sections.dart';
 import 'package:pure_live/features/settings/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/features/settings/sites_display_provider.dart';
+import 'package:pure_live/features/settings/super_chat_settings.dart' show superChatIncludesMembershipProvider;
 import 'package:pure_live/features/settings/theme_color_dialog.dart' show showThemeColorDialog, themeSeedToneLabel;
-import 'package:pure_live/features/settings/tv_preferences.dart' show tvMenuExpandedProvider;
+import 'package:pure_live/features/settings/tv_preferences.dart' show tvFocusZoomProvider, tvMenuExpandedProvider;
 import 'package:pure_live/features/settings/twitch_languages_dialog.dart'
     show showTwitchLanguagesDialog, twitchLanguagesSummary;
 import 'package:pure_live/features/settings/twitch_languages_provider.dart' show twitchLanguagesProvider;
@@ -1057,6 +1066,8 @@ final class _RefreshPane extends ConsumerWidget {
     final autoRefresh = ref.watch(followsAutoRefreshProvider);
     final maxConcurrent = ref.watch(maxConcurrentRefreshProvider);
     final thumbnails = ref.watch(thumbnailRefreshProvider);
+    final liveAlerts = ref.watch(liveAlertSettingsProvider);
+    final tags = ref.watch(followTagsProvider);
     // A stored interval the choices do not list still shows as chosen.
     final intervals = {...kRefreshIntervalChoices, autoRefresh.minutes}.toList()..sort();
     final thumbnailIntervals = {...kThumbnailRefreshIntervalChoices, thumbnails.minutes}.toList()..sort();
@@ -1098,6 +1109,31 @@ final class _RefreshPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(ref.read(followsAutoRefreshProvider.notifier).setMinutes(value)),
               ),
             ],
+            DsListRow(
+              leading: const DsIcon(DsIcons.bell),
+              title: Text(t.settings.liveAlert),
+              description: Text(t.settings.liveAlertDesc),
+              trailing: DsSwitch(
+                value: liveAlerts.enabled,
+                onChanged: (value) {
+                  if (value) unawaited(requestUserNotificationPermission());
+                  unawaited(ref.read(liveAlertSettingsProvider.notifier).setEnabled(value: value));
+                },
+              ),
+            ),
+            if (liveAlerts.enabled)
+              DsListRow(
+                leading: const DsIcon(DsIcons.tag),
+                title: Text(t.settings.liveAlertTags),
+                description: Text(tags.isEmpty ? t.settings.liveAlertTagsNone : t.settings.liveAlertTagsDesc),
+                detail: Text(
+                  liveAlerts.tagIds.isEmpty
+                      ? t.settings.liveAlertTagsAll
+                      : t.settings.liveAlertTagCount(selected: liveAlerts.tagIds.length),
+                ),
+                showChevron: tags.isNotEmpty,
+                onPressed: tags.isEmpty ? null : () => unawaited(showLiveAlertTagsDialog(context)),
+              ),
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.layers),
               title: t.settings.maxConcurrentRefresh,
@@ -1453,6 +1489,19 @@ final class _ThemePane extends ConsumerWidget {
                     : (value) => unawaited(ref.read(pureBlackThemeProvider.notifier).set(value: value)),
               ),
             ),
+            // A01.5: the phone shell's bottom bar is the only place this
+            // paints, so the desktop profile hides the switch outright
+            // rather than offer a choice that changes nothing there.
+            if (ref.watch(deviceProfileProvider) == DeviceProfile.mobile)
+              DsListRow(
+                leading: const DsIcon(DsIcons.layers),
+                title: Text(t.settings.liquidGlass),
+                description: Text(t.settings.liquidGlassDescription),
+                trailing: DsSwitch(
+                  value: ref.watch(liquidGlassProvider),
+                  onChanged: (value) => unawaited(ref.read(liquidGlassProvider.notifier).set(value: value)),
+                ),
+              ),
             DsListRow(
               // A still frame: the gallery plays the styles; a settings visit
               // should not keep an animation running.
@@ -1917,10 +1966,7 @@ final class _DanmakuPane extends ConsumerWidget {
                         DsChipOption(value: preset, label: Text(_presetLabel(t, preset))),
                     ],
                   ),
-                  Text(
-                    t.settings.danmakuPresetHint,
-                    style: theme.typography.small.copyWith(color: colors.textSubtle),
-                  ),
+                  Text(t.settings.danmakuPresetHint, style: theme.typography.small.copyWith(color: colors.textSubtle)),
                 ],
               ),
             ),
@@ -1978,6 +2024,28 @@ final class _DanmakuPane extends ConsumerWidget {
               label: Text(t.settings.chatShowGifts),
               description: Text(t.settings.chatShowGiftsDesc),
             ),
+            DsSwitch(
+              value: ref.watch(chatGiftsAboveTierProvider),
+              onChanged: ref.watch(chatShowGiftsProvider)
+                  ? (value) => unawaited(ref.read(chatGiftsAboveTierProvider.notifier).set(value: value))
+                  : null,
+              label: Text(t.settings.chatGiftsAboveTier),
+              description: Text(t.settings.chatGiftsAboveTierDesc),
+            ),
+            DsSwitch(
+              value: ref.watch(chatGiftValueInYuanProvider),
+              onChanged: ref.watch(chatShowGiftsProvider)
+                  ? (value) => unawaited(ref.read(chatGiftValueInYuanProvider.notifier).set(value: value))
+                  : null,
+              label: Text(t.settings.chatGiftValueInYuan),
+              description: Text(t.settings.chatGiftValueInYuanDesc),
+            ),
+            DsSwitch(
+              value: ref.watch(superChatIncludesMembershipProvider),
+              onChanged: (value) => unawaited(ref.read(superChatIncludesMembershipProvider.notifier).set(value: value)),
+              label: Text(t.settings.superChatIncludesMembership),
+              description: Text(t.settings.superChatIncludesMembershipDesc),
+            ),
             SettingsChoiceRow<String>(
               leading: const DsIcon(DsIcons.list),
               title: t.settings.chatListStyle,
@@ -1995,7 +2063,10 @@ final class _DanmakuPane extends ConsumerWidget {
               options: [
                 DsSelectOption(value: 0, label: t.settings.chatListFollowTheme),
                 for (final size in const [12, 14, 16, 18, 20, 22])
-                  DsSelectOption(value: size, label: t.settings.chatListFontSizeValue(size: size)),
+                  DsSelectOption(
+                    value: size,
+                    label: t.settings.chatListFontSizeValue(size: size),
+                  ),
               ],
               onChanged: (value) => unawaited(ref.read(chatListFontSizeProvider.notifier).set(value)),
             ),
@@ -2387,7 +2458,16 @@ final class _SitesPane extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: DsSpace.s16,
       children: [
-        if (ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv)
+        if (ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv) ...[
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.focus),
+            title: t.settings.tvFocusZoom,
+            description: t.settings.tvFocusZoomDesc,
+            control: DsSwitch(
+              value: ref.watch(tvFocusZoomProvider),
+              onChanged: (value) => unawaited(ref.read(tvFocusZoomProvider.notifier).set(value: value)),
+            ),
+          ),
           SettingsConfigRow(
             leading: const DsIcon(DsIcons.panelLeft),
             title: t.settings.tvMenuExpanded,
@@ -2397,6 +2477,7 @@ final class _SitesPane extends ConsumerWidget {
               onChanged: (value) => unawaited(ref.read(tvMenuExpandedProvider.notifier).set(value: value)),
             ),
           ),
+        ],
         DsListSection(
           header: Text(t.settings.sitesDisplay),
           children: [
@@ -2510,10 +2591,7 @@ final class _SitesPane extends ConsumerWidget {
               detail: Text(twitchLanguagesSummary(t, ref.watch(twitchLanguagesProvider))),
               showChevron: true,
               onPressed: () async {
-                final result = await showTwitchLanguagesDialog(
-                  context,
-                  initial: ref.read(twitchLanguagesProvider),
-                );
+                final result = await showTwitchLanguagesDialog(context, initial: ref.read(twitchLanguagesProvider));
                 if (result != null) await ref.read(twitchLanguagesProvider.notifier).set(result);
               },
             ),
@@ -2716,11 +2794,7 @@ final class _CachePaneState extends ConsumerState<_CachePane> {
       final saved = await ref.read(downloadDirectoryProvider.notifier).setDirectory(selected);
       if (!mounted) return;
       if (!saved) {
-        showDsToast(
-          context: context,
-          title: t.settings.downloadDirectoryPermissionHint,
-          status: DsStatus.danger,
-        );
+        showDsToast(context: context, title: t.settings.downloadDirectoryPermissionHint, status: DsStatus.danger);
         return;
       }
       showDsToast(context: context, title: t.settings.downloadDirectoryUpdated);
@@ -3005,6 +3079,15 @@ final class _QualityAudioPane extends ConsumerWidget {
                 trailing: DsSwitch(
                   value: settings.backgroundAudioOnly,
                   onChanged: (value) => unawaited(controller.setBackgroundAudioOnly(value: value)),
+                ),
+              ),
+              DsListRow(
+                leading: const DsIcon(DsIcons.pictureInPicture),
+                title: Text(t.settings.pauseOnPipClose),
+                description: Text(t.settings.pauseOnPipCloseDesc),
+                trailing: DsSwitch(
+                  value: settings.pauseOnPipClose,
+                  onChanged: (value) => unawaited(controller.setPauseOnPipClose(value: value)),
                 ),
               ),
               DsListRow(
@@ -3329,6 +3412,8 @@ final class _PortraitFullscreenSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final controller = ref.read(portraitFullscreenProvider.notifier);
+    final formFactor = ref.watch(platformRuntimeProvider).environment.runtime.formFactor;
+    final mobile = formFactor == FormFactor.phone || formFactor == FormFactor.tablet;
     return DsListSection(
       header: Text(t.settings.portraitFullscreenGroup),
       children: [
@@ -3367,6 +3452,16 @@ final class _PortraitFullscreenSection extends ConsumerWidget {
             onChanged: (value) => unawaited(controller.setRemember(value: value)),
           ),
         ),
+        if (mobile)
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.arrowUpDown),
+            title: t.settings.portraitSwipeSwitch,
+            description: t.settings.portraitSwipeSwitchDesc,
+            control: DsSwitch(
+              value: ref.watch(portraitSwipeSwitchProvider),
+              onChanged: (value) => unawaited(ref.read(portraitSwipeSwitchProvider.notifier).set(value: value)),
+            ),
+          ),
         SettingsConfigRow(
           leading: const DsIcon(DsIcons.activity),
           title: t.settings.portraitDiagnostics,

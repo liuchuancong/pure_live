@@ -73,6 +73,7 @@
   "link": "Link",
   "copy": "Copy",
   "copied": "Copied",
+  "replayed": "sent before",
   "share": "Share",
   "shareFailed": "The share failed",
   "openIn": "Open in {platform}",
@@ -90,6 +91,8 @@
   "superChats": "Super chats",
   "superChatEmpty": "No super chats now",
   "superChatFailed": "The super chats did not load",
+  "superChatCardMembership": "Membership",
+  "superChatCardSubscription": "Subscription",
   "onlineViewers": "Live viewers",
   "popularity": "Popularity",
   "totalViewers": "Total viewers",
@@ -150,5 +153,13 @@
   "giftValueHeart": "{value} hearts",
   "giftValueNote": "{value} notes",
   "collapseChat": "Collapse chat",
-  "expandChat": "Expand chat"
+  "expandChat": "Expand chat",
+  "switchRoom": "Switch room",
+  "switchOnAir": "Followed · live",
+  "switchHistory": "Watch history",
+  "switchReplays": "Followed replays",
+  "switchEmpty": "No rooms to switch to",
+  "switchLive": "Live",
+  "switchShowGrid": "Show as grid",
+  "switchShowList": "Show as list"
 }

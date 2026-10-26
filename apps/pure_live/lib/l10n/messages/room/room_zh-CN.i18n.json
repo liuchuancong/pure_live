@@ -73,6 +73,7 @@
   "link": "链接",
   "copy": "复制",
   "copied": "已复制",
+  "replayed": "之前发的",
   "share": "分享",
   "shareFailed": "分享失败",
   "openIn": "在 {platform} 打开",
@@ -90,6 +91,8 @@
   "superChats": "超级聊天",
   "superChatEmpty": "暂无超级聊天",
   "superChatFailed": "超级聊天加载失败",
+  "superChatCardMembership": "会员",
+  "superChatCardSubscription": "订阅",
   "onlineViewers": "在线",
   "popularity": "热度",
   "totalViewers": "累计观看",
@@ -150,5 +153,13 @@
   "giftValueHeart": "{value} 爱心",
   "giftValueNote": "{value} 音符",
   "collapseChat": "收起聊天",
-  "expandChat": "展开聊天"
+  "expandChat": "展开聊天",
+  "switchRoom": "切换直播间",
+  "switchOnAir": "关注在播",
+  "switchHistory": "观看记录",
+  "switchReplays": "关注回放",
+  "switchEmpty": "没有可切换的直播间",
+  "switchLive": "直播中",
+  "switchShowGrid": "切换为网格",
+  "switchShowList": "切换为列表"
 }

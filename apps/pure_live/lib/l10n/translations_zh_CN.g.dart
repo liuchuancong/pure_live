@@ -2136,6 +2136,9 @@ class Translations$room$zh_CN {
 	/// zh-CN: '已复制'
 	String get copied => '已复制';
 
+	/// zh-CN: '之前发的'
+	String get replayed => '之前发的';
+
 	/// zh-CN: '分享'
 	String get share => '分享';
 
@@ -2186,6 +2189,12 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '超级聊天加载失败'
 	String get superChatFailed => '超级聊天加载失败';
+
+	/// zh-CN: '会员'
+	String get superChatCardMembership => '会员';
+
+	/// zh-CN: '订阅'
+	String get superChatCardSubscription => '订阅';
 
 	/// zh-CN: '在线'
 	String get onlineViewers => '在线';
@@ -2369,6 +2378,30 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '展开聊天'
 	String get expandChat => '展开聊天';
+
+	/// zh-CN: '切换直播间'
+	String get switchRoom => '切换直播间';
+
+	/// zh-CN: '关注在播'
+	String get switchOnAir => '关注在播';
+
+	/// zh-CN: '观看记录'
+	String get switchHistory => '观看记录';
+
+	/// zh-CN: '关注回放'
+	String get switchReplays => '关注回放';
+
+	/// zh-CN: '没有可切换的直播间'
+	String get switchEmpty => '没有可切换的直播间';
+
+	/// zh-CN: '直播中'
+	String get switchLive => '直播中';
+
+	/// zh-CN: '切换为网格'
+	String get switchShowGrid => '切换为网格';
+
+	/// zh-CN: '切换为列表'
+	String get switchShowList => '切换为列表';
 }
 
 // Path: search
@@ -2766,6 +2799,18 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '系统没有向应用开放刷新率请求接口；上面显示的是当前显示器的实际值。'
 	String get refreshRateReadOnlyDesc => '系统没有向应用开放刷新率请求接口；上面显示的是当前显示器的实际值。';
 
+	/// zh-CN: '播放时匹配视频帧率'
+	String get refreshRateMatchVideo => '播放时匹配视频帧率';
+
+	/// zh-CN: '让屏幕刷新率是视频帧率的整数倍，画面更匀；只在不闪屏时切换。直播源未声明帧率时不做调整。'
+	String get refreshRateMatchVideoDesc => '让屏幕刷新率是视频帧率的整数倍，画面更匀；只在不闪屏时切换。直播源未声明帧率时不做调整。';
+
+	/// zh-CN: '这台设备只有 {rate} Hz，用不上'
+	String refreshRateMatchVideoSingle({required Object rate}) => '这台设备只有 ${rate} Hz，用不上';
+
+	/// zh-CN: '此设备的系统接口不支持按视频内容切换刷新率'
+	String get refreshRateMatchVideoUnsupported => '此设备的系统接口不支持按视频内容切换刷新率';
+
 	/// zh-CN: '更新'
 	String get updateGroup => '更新';
 
@@ -3015,6 +3060,12 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '浅色模式下不起作用：先把主题模式换成深色或跟随系统。'
 	String get pureBlackLightReason => '浅色模式下不起作用：先把主题模式换成深色或跟随系统。';
 
+	/// zh-CN: '液体玻璃'
+	String get liquidGlass => '液体玻璃';
+
+	/// zh-CN: '首页底栏悬浮成毛玻璃，页面从下面透出来；内存 4 GB 及以下的安卓手机不模糊，只半透明。'
+	String get liquidGlassDescription => '首页底栏悬浮成毛玻璃，页面从下面透出来；内存 4 GB 及以下的安卓手机不模糊，只半透明。';
+
 	/// zh-CN: '加载样式'
 	String get loadingStyle => '加载样式';
 
@@ -3056,6 +3107,231 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '五线谱律动'
 	String get loadingStyleLineScale => '五线谱律动';
+
+	/// zh-CN: '旋转方块'
+	String get loadingStyleRotatingPlain => '旋转方块';
+
+	/// zh-CN: '双块漫游'
+	String get loadingStyleWanderingCubes => '双块漫游';
+
+	/// zh-CN: '交替隐藏'
+	String get loadingStyleFadingFour => '交替隐藏';
+
+	/// zh-CN: '渐隐方块'
+	String get loadingStyleFadingCube => '渐隐方块';
+
+	/// zh-CN: '追逐双圆'
+	String get loadingStyleChasingDots => '追逐双圆';
+
+	/// zh-CN: '时钟小点'
+	String get loadingStyleCircle => '时钟小点';
+
+	/// zh-CN: '旋转大圆'
+	String get loadingStyleRotatingCircle => '旋转大圆';
+
+	/// zh-CN: '折叠魔方'
+	String get loadingStyleFoldingCube => '折叠魔方';
+
+	/// zh-CN: '心跳波动'
+	String get loadingStylePumpingHeart => '心跳波动';
+
+	/// zh-CN: '翻转沙漏'
+	String get loadingStyleHourGlass => '翻转沙漏';
+
+	/// zh-CN: '流动沙漏'
+	String get loadingStylePouringHourGlass => '流动沙漏';
+
+	/// zh-CN: '质感沙漏'
+	String get loadingStylePouringHourGlassRefined => '质感沙漏';
+
+	/// zh-CN: '矩阵渐隐'
+	String get loadingStyleFadingGrid => '矩阵渐隐';
+
+	/// zh-CN: '纯净圆环'
+	String get loadingStyleRing => '纯净圆环';
+
+	/// zh-CN: '半圆飞旋'
+	String get loadingStyleSpinningCircle => '半圆飞旋';
+
+	/// zh-CN: '流动线条'
+	String get loadingStyleSpinningLines => '流动线条';
+
+	/// zh-CN: '方变圆弧'
+	String get loadingStyleSquareCircle => '方变圆弧';
+
+	/// zh-CN: '双轨游环'
+	String get loadingStyleDualRing => '双轨游环';
+
+	/// zh-CN: '琴键节奏'
+	String get loadingStylePianoWave => '琴键节奏';
+
+	/// zh-CN: '律动方块'
+	String get loadingStyleDancingSquare => '律动方块';
+
+	/// zh-CN: '三点缩放'
+	String get loadingStyleThreeInOut => '三点缩放';
+
+	/// zh-CN: '声波雷达'
+	String get loadingStyleWaveSpinner => '声波雷达';
+
+	/// zh-CN: '脉冲网格'
+	String get loadingStylePulsingGrid => '脉冲网格';
+
+	/// zh-CN: '律动圆点'
+	String get loadingStyleWaveDots => '律动圆点';
+
+	/// zh-CN: '动态水滴'
+	String get loadingStyleInkDrop => '动态水滴';
+
+	/// zh-CN: '基因螺旋'
+	String get loadingStyleTwistingDots => '基因螺旋';
+
+	/// zh-CN: '三星环绕'
+	String get loadingStyleThreeRotatingDots => '三星环绕';
+
+	/// zh-CN: '错落波浪'
+	String get loadingStyleStaggeredDotsWave => '错落波浪';
+
+	/// zh-CN: '四星环绕'
+	String get loadingStyleFourRotatingDots => '四星环绕';
+
+	/// zh-CN: '重力落点'
+	String get loadingStyleFallingDot => '重力落点';
+
+	/// zh-CN: '线性生长'
+	String get loadingStyleProgressiveDots => '线性生长';
+
+	/// zh-CN: '分离圆环'
+	String get loadingStyleDiscreteCircular => '分离圆环';
+
+	/// zh-CN: '三重连环'
+	String get loadingStyleThreeArchedCircle => '三重连环';
+
+	/// zh-CN: '地面弹球'
+	String get loadingStyleBouncingBall => '地面弹球';
+
+	/// zh-CN: '环绕互换'
+	String get loadingStyleFlickr => '环绕互换';
+
+	/// zh-CN: '六角矩阵'
+	String get loadingStyleHexagonDots => '六角矩阵';
+
+	/// zh-CN: '心率电波'
+	String get loadingStyleBeat => '心率电波';
+
+	/// zh-CN: '双轴弧旋'
+	String get loadingStyleTwoRotatingArc => '双轴弧旋';
+
+	/// zh-CN: '水平环绕'
+	String get loadingStyleHorizontalRotatingDots => '水平环绕';
+
+	/// zh-CN: '牛顿摆球'
+	String get loadingStyleNewtonCradle => '牛顿摆球';
+
+	/// zh-CN: '拉伸光点'
+	String get loadingStyleStretchedDots => '拉伸光点';
+
+	/// zh-CN: '三角错落'
+	String get loadingStyleHalfTriangleDot => '三角错落';
+
+	/// zh-CN: '动态三角'
+	String get loadingStyleDotsTriangle => '动态三角';
+
+	/// zh-CN: '三点渐变'
+	String get loadingStyleBallPulse => '三点渐变';
+
+	/// zh-CN: '九宫格闪烁'
+	String get loadingStyleBallGridPulse => '九宫格闪烁';
+
+	/// zh-CN: '裁剪圆环旋转'
+	String get loadingStyleBallClipRotate => '裁剪圆环旋转';
+
+	/// zh-CN: '双层环球旋转'
+	String get loadingStyleBallClipRotatePulse => '双层环球旋转';
+
+	/// zh-CN: '方块翻转'
+	String get loadingStyleSquareSpin => '方块翻转';
+
+	/// zh-CN: '多重碎片圆环'
+	String get loadingStyleBallClipRotateMultiple => '多重碎片圆环';
+
+	/// zh-CN: '交错交替上升'
+	String get loadingStyleBallPulseRise => '交错交替上升';
+
+	/// zh-CN: '三球围绕旋转'
+	String get loadingStyleBallRotate => '三球围绕旋转';
+
+	/// zh-CN: '双对角方块位移'
+	String get loadingStyleCubeTransition => '双对角方块位移';
+
+	/// zh-CN: '双球Z字错位'
+	String get loadingStyleBallZigZag => '双球Z字错位';
+
+	/// zh-CN: '双球曲线反弹'
+	String get loadingStyleBallZigZagDeflect => '双球曲线反弹';
+
+	/// zh-CN: '三角轨迹循环'
+	String get loadingStyleBallTrianglePath => '三角轨迹循环';
+
+	/// zh-CN: '三角彩轨循环'
+	String get loadingStyleBallTrianglePathColored => '三角彩轨循环';
+
+	/// zh-CN: '三角实心循环'
+	String get loadingStyleBallTrianglePathColoredFilled => '三角实心循环';
+
+	/// zh-CN: '单圆水波脉冲'
+	String get loadingStyleBallScale => '单圆水波脉冲';
+
+	/// zh-CN: '律动线条'
+	String get loadingStyleLineScaleParty => '律动线条';
+
+	/// zh-CN: '多重水波涟漪'
+	String get loadingStyleBallScaleMultiple => '多重水波涟漪';
+
+	/// zh-CN: '三点波浪同步'
+	String get loadingStyleBallPulseSync => '三点波浪同步';
+
+	/// zh-CN: '三点心跳缩放'
+	String get loadingStyleBallBeat => '三点心跳缩放';
+
+	/// zh-CN: '线条由内向外扩散'
+	String get loadingStyleLineScalePulseOut => '线条由内向外扩散';
+
+	/// zh-CN: '线条高频向外扩散'
+	String get loadingStyleLineScalePulseOutRapid => '线条高频向外扩散';
+
+	/// zh-CN: '空心圆环震荡'
+	String get loadingStyleBallScaleRipple => '空心圆环震荡';
+
+	/// zh-CN: '多重空心涟漪'
+	String get loadingStyleBallScaleRippleMultiple => '多重空心涟漪';
+
+	/// zh-CN: '经典菊花圆点'
+	String get loadingStyleBallSpinFadeLoader => '经典菊花圆点';
+
+	/// zh-CN: '经典时钟线条'
+	String get loadingStyleLineSpinFadeLoader => '经典时钟线条';
+
+	/// zh-CN: '三角倾斜翻转'
+	String get loadingStyleTriangleSkewSpin => '三角倾斜翻转';
+
+	/// zh-CN: '吃豆人游戏'
+	String get loadingStylePacman => '吃豆人游戏';
+
+	/// zh-CN: '九宫格心跳闪烁'
+	String get loadingStyleBallGridBeat => '九宫格心跳闪烁';
+
+	/// zh-CN: '半圆飞速旋转'
+	String get loadingStyleSemiCircleSpin => '半圆飞速旋转';
+
+	/// zh-CN: '圆点接力追逐'
+	String get loadingStyleBallRotateChase => '圆点接力追逐';
+
+	/// zh-CN: '音频均衡器'
+	String get loadingStyleAudioEqualizer => '音频均衡器';
+
+	/// zh-CN: '纯净描边圆环'
+	String get loadingStyleCircleStrokeSpin => '纯净描边圆环';
 
 	/// zh-CN: '加载颜色'
 	String get loadingColor => '加载颜色';
@@ -3158,6 +3434,33 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '停留在关注页时按间隔刷新关注列表。'
 	String get followsAutoRefreshDesc => '停留在关注页时按间隔刷新关注列表。';
+
+	/// zh-CN: '开播提醒'
+	String get liveAlert => '开播提醒';
+
+	/// zh-CN: '关注的主播开播时发一条系统通知；应用运行时每 15 分钟检查一次。'
+	String get liveAlertDesc => '关注的主播开播时发一条系统通知；应用运行时每 15 分钟检查一次。';
+
+	/// zh-CN: '提醒标签'
+	String get liveAlertTags => '提醒标签';
+
+	/// zh-CN: '只提醒带有所选标签的关注；不选则覆盖全部关注。'
+	String get liveAlertTagsDesc => '只提醒带有所选标签的关注；不选则覆盖全部关注。';
+
+	/// zh-CN: '全部关注'
+	String get liveAlertTagsAll => '全部关注';
+
+	/// zh-CN: '还没有标签；提醒将覆盖全部关注。'
+	String get liveAlertTagsNone => '还没有标签；提醒将覆盖全部关注。';
+
+	/// zh-CN: '已选 {selected} 个'
+	String liveAlertTagCount({required Object selected}) => '已选 ${selected} 个';
+
+	/// zh-CN: '{platform} 房间 {roomId}'
+	String liveAlertFallbackTitle({required Object platform, required Object roomId}) => '${platform} 房间 ${roomId}';
+
+	/// zh-CN: '正在 {platform} 直播'
+	String liveAlertNotificationBody({required Object platform}) => '正在 ${platform} 直播';
 
 	/// zh-CN: '刷新间隔'
 	String get refreshInterval => '刷新间隔';
@@ -5439,6 +5742,75 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '送出礼物时播放本地面板内的横幅特效。'
 	String get localGiftEffectsDesc => '送出礼物时播放本地面板内的横幅特效。';
 
+	/// zh-CN: '全部礼物'
+	String get localGiftEffectsAll => '全部礼物';
+
+	/// zh-CN: '仅高价值礼物'
+	String get localGiftEffectsBigOnly => '仅高价值礼物';
+
+	/// zh-CN: '关闭'
+	String get localGiftEffectsOff => '关闭';
+
+	/// zh-CN: '进场回放本地弹幕'
+	String get localReplayOnEnter => '进场回放本地弹幕';
+
+	/// zh-CN: '进入直播间时，把该房间最近 24 小时的本地弹幕放回聊天列表顶部，并标注为之前发的。'
+	String get localReplayOnEnterDesc => '进入直播间时，把该房间最近 24 小时的本地弹幕放回聊天列表顶部，并标注为之前发的。';
+
+	/// zh-CN: '本地成长'
+	String get localGrowth => '本地成长';
+
+	/// zh-CN: '观看直播、每日首个房间与发送本地弹幕都能获得金币和经验。'
+	String get localGrowthDesc => '观看直播、每日首个房间与发送本地弹幕都能获得金币和经验。';
+
+	/// zh-CN: '今日：{checked} · 观看 +{watch}/{watchLimit} · 弹幕 +{chat}/{chatLimit}'
+	String localGrowthToday({required Object checked, required Object watch, required Object watchLimit, required Object chat, required Object chatLimit}) => '今日：${checked} · 观看 +${watch}/${watchLimit} · 弹幕 +${chat}/${chatLimit}';
+
+	/// zh-CN: '已签到'
+	String get localGrowthCheckedIn => '已签到';
+
+	/// zh-CN: '未签到'
+	String get localGrowthNotCheckedIn => '未签到';
+
+	/// zh-CN: '快捷短语'
+	String get localPhrases => '快捷短语';
+
+	/// zh-CN: '显示在本地弹幕输入框上方，点一下直接发送。'
+	String get localPhrasesDesc => '显示在本地弹幕输入框上方，点一下直接发送。';
+
+	/// zh-CN: '还没有短语，最多可添加 {limit} 条。'
+	String localPhrasesEmpty({required Object limit}) => '还没有短语，最多可添加 ${limit} 条。';
+
+	/// zh-CN: '添加'
+	String get localPhraseAdd => '添加';
+
+	/// zh-CN: '输入短语（最多 {limit} 个字）'
+	String localPhraseHint({required Object limit}) => '输入短语（最多 ${limit} 个字）';
+
+	/// zh-CN: '{count} / {limit}'
+	String localPhraseCount({required Object count, required Object limit}) => '${count} / ${limit}';
+
+	/// zh-CN: '编辑短语'
+	String get localPhraseEdit => '编辑短语';
+
+	/// zh-CN: '删除短语'
+	String get localPhraseDelete => '删除短语';
+
+	/// zh-CN: '上移短语'
+	String get localPhraseMoveUp => '上移短语';
+
+	/// zh-CN: '下移短语'
+	String get localPhraseMoveDown => '下移短语';
+
+	/// zh-CN: '短语不能为空。'
+	String get localPhraseEmptyError => '短语不能为空。';
+
+	/// zh-CN: '这条短语已经存在。'
+	String get localPhraseDuplicate => '这条短语已经存在。';
+
+	/// zh-CN: '最多只能添加 {count} 条短语。'
+	String localPhraseFull({required Object count}) => '最多只能添加 ${count} 条短语。';
+
 	/// zh-CN: '预览平台'
 	String get localPreviewPlatform => '预览平台';
 
@@ -5613,6 +5985,12 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '在竖屏全屏里切换画面/弹幕后，按房间保存；关闭会清除已保存的房间选择。'
 	String get portraitRememberRoomDesc => '在竖屏全屏里切换画面/弹幕后，按房间保存；关闭会清除已保存的房间选择。';
 
+	/// zh-CN: '竖屏全屏上下滑换台'
+	String get portraitSwipeSwitch => '竖屏全屏上下滑换台';
+
+	/// zh-CN: '从关注、热门、分区或搜索进的直播间，竖屏全屏时在画面中间上滑看下一场、下滑上一场。'
+	String get portraitSwipeSwitchDesc => '从关注、热门、分区或搜索进的直播间，竖屏全屏时在画面中间上滑看下一场、下滑上一场。';
+
 	/// zh-CN: '显示竖屏诊断'
 	String get portraitDiagnostics => '显示竖屏诊断';
 
@@ -5781,11 +6159,35 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '后台播放时关闭视频解码，只保留声音；回到前台恢复画面。'
 	String get backgroundAudioOnlyDesc => '后台播放时关闭视频解码，只保留声音；回到前台恢复画面。';
 
+	/// zh-CN: '关闭画中画时暂停'
+	String get pauseOnPipClose => '关闭画中画时暂停';
+
+	/// zh-CN: '开着后台播放时，关掉画中画小窗就暂停，不在后台继续出声；回到应用再继续。'
+	String get pauseOnPipCloseDesc => '开着后台播放时，关掉画中画小窗就暂停，不在后台继续出声；回到应用再继续。';
+
 	/// zh-CN: '在聊天列表显示礼物'
 	String get chatShowGifts => '在聊天列表显示礼物';
 
 	/// zh-CN: '平台上报的礼物显示为聊天里的礼物行；关闭后已有礼物行立即移除。'
 	String get chatShowGiftsDesc => '平台上报的礼物显示为聊天里的礼物行；关闭后已有礼物行立即移除。';
+
+	/// zh-CN: '只显示值钱的礼物'
+	String get chatGiftsAboveTier => '只显示值钱的礼物';
+
+	/// zh-CN: '免费和便宜的礼物不进聊天列表；连击加起来够了再显示。'
+	String get chatGiftsAboveTierDesc => '免费和便宜的礼物不进聊天列表；连击加起来够了再显示。';
+
+	/// zh-CN: '礼物价值换算成元'
+	String get chatGiftValueInYuan => '礼物价值换算成元';
+
+	/// zh-CN: '金瓜子、钻石、抖币按平台的固定比例写成元；海外的币种不换算。'
+	String get chatGiftValueInYuanDesc => '金瓜子、钻石、抖币按平台的固定比例写成元；海外的币种不换算。';
+
+	/// zh-CN: '上舰和开会员进醒目留言'
+	String get superChatIncludesMembership => '上舰和开会员进醒目留言';
+
+	/// zh-CN: '哔哩哔哩上舰、YouTube 会员和各平台的订阅也在醒目留言里显示一张卡；聊天列表照旧。'
+	String get superChatIncludesMembershipDesc => '哔哩哔哩上舰、YouTube 会员和各平台的订阅也在醒目留言里显示一张卡；聊天列表照旧。';
 
 	/// zh-CN: '飞行弹幕显示礼物'
 	String get danmakuShowGifts => '飞行弹幕显示礼物';
@@ -5819,6 +6221,12 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '登录斗鱼后定期续期 Cookie，降低长时间观看时掉登录的概率。'
 	String get douyuForceRenewDesc => '登录斗鱼后定期续期 Cookie，降低长时间观看时掉登录的概率。';
+
+	/// zh-CN: '焦点放大'
+	String get tvFocusZoom => '焦点放大';
+
+	/// zh-CN: '获得焦点的卡片、菜单项和播放控制放大一点；盒子卡顿时可以关掉，只留描边。'
+	String get tvFocusZoomDesc => '获得焦点的卡片、菜单项和播放控制放大一点；盒子卡顿时可以关掉，只留描边。';
 
 	/// zh-CN: 'TV 侧栏始终展开'
 	String get tvMenuExpanded => 'TV 侧栏始终展开';
@@ -7428,6 +7836,7 @@ extension on Translations {
 			'room.link' => '链接',
 			'room.copy' => '复制',
 			'room.copied' => '已复制',
+			'room.replayed' => '之前发的',
 			'room.share' => '分享',
 			'room.shareFailed' => '分享失败',
 			'room.openIn' => ({required Object platform}) => '在 ${platform} 打开',
@@ -7445,6 +7854,8 @@ extension on Translations {
 			'room.superChats' => '超级聊天',
 			'room.superChatEmpty' => '暂无超级聊天',
 			'room.superChatFailed' => '超级聊天加载失败',
+			'room.superChatCardMembership' => '会员',
+			'room.superChatCardSubscription' => '订阅',
 			'room.onlineViewers' => '在线',
 			'room.popularity' => '热度',
 			'room.totalViewers' => '累计观看',
@@ -7506,6 +7917,14 @@ extension on Translations {
 			'room.giftValueNote' => ({required Object value}) => '${value} 音符',
 			'room.collapseChat' => '收起聊天',
 			'room.expandChat' => '展开聊天',
+			'room.switchRoom' => '切换直播间',
+			'room.switchOnAir' => '关注在播',
+			'room.switchHistory' => '观看记录',
+			'room.switchReplays' => '关注回放',
+			'room.switchEmpty' => '没有可切换的直播间',
+			'room.switchLive' => '直播中',
+			'room.switchShowGrid' => '切换为网格',
+			'room.switchShowList' => '切换为列表',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -7632,6 +8051,10 @@ extension on Translations {
 			'settings.refreshRatePerformance' => '性能（最高刷新率）',
 			'settings.refreshRateReadOnly' => '此平台只支持读取刷新率',
 			'settings.refreshRateReadOnlyDesc' => '系统没有向应用开放刷新率请求接口；上面显示的是当前显示器的实际值。',
+			'settings.refreshRateMatchVideo' => '播放时匹配视频帧率',
+			'settings.refreshRateMatchVideoDesc' => '让屏幕刷新率是视频帧率的整数倍，画面更匀；只在不闪屏时切换。直播源未声明帧率时不做调整。',
+			'settings.refreshRateMatchVideoSingle' => ({required Object rate}) => '这台设备只有 ${rate} Hz，用不上',
+			'settings.refreshRateMatchVideoUnsupported' => '此设备的系统接口不支持按视频内容切换刷新率',
 			'settings.updateGroup' => '更新',
 			'settings.autoCheckUpdate' => '启动时自动检查更新',
 			'settings.autoCheckUpdateDesc' => '每次启动静默读取一次发布源；结果在“关于”里显示，失败不打扰。',
@@ -7715,6 +8138,8 @@ extension on Translations {
 			'settings.pureBlack' => '纯黑背景',
 			'settings.pureBlackDescription' => '深色时用纯黑背景，OLED 屏更省电。',
 			'settings.pureBlackLightReason' => '浅色模式下不起作用：先把主题模式换成深色或跟随系统。',
+			'settings.liquidGlass' => '液体玻璃',
+			'settings.liquidGlassDescription' => '首页底栏悬浮成毛玻璃，页面从下面透出来；内存 4 GB 及以下的安卓手机不模糊，只半透明。',
 			'settings.loadingStyle' => '加载样式',
 			'settings.loadingStyleDescription' => '页面、列表与播放器加载时的动画。',
 			'settings.loadingStyleChoose' => '选择加载样式',
@@ -7729,6 +8154,83 @@ extension on Translations {
 			'settings.loadingStyleRipple' => '震荡涟漪',
 			'settings.loadingStyleOrbit' => '行星轨道',
 			'settings.loadingStyleLineScale' => '五线谱律动',
+			'settings.loadingStyleRotatingPlain' => '旋转方块',
+			'settings.loadingStyleWanderingCubes' => '双块漫游',
+			'settings.loadingStyleFadingFour' => '交替隐藏',
+			'settings.loadingStyleFadingCube' => '渐隐方块',
+			'settings.loadingStyleChasingDots' => '追逐双圆',
+			'settings.loadingStyleCircle' => '时钟小点',
+			'settings.loadingStyleRotatingCircle' => '旋转大圆',
+			'settings.loadingStyleFoldingCube' => '折叠魔方',
+			'settings.loadingStylePumpingHeart' => '心跳波动',
+			'settings.loadingStyleHourGlass' => '翻转沙漏',
+			'settings.loadingStylePouringHourGlass' => '流动沙漏',
+			'settings.loadingStylePouringHourGlassRefined' => '质感沙漏',
+			'settings.loadingStyleFadingGrid' => '矩阵渐隐',
+			'settings.loadingStyleRing' => '纯净圆环',
+			'settings.loadingStyleSpinningCircle' => '半圆飞旋',
+			'settings.loadingStyleSpinningLines' => '流动线条',
+			'settings.loadingStyleSquareCircle' => '方变圆弧',
+			'settings.loadingStyleDualRing' => '双轨游环',
+			'settings.loadingStylePianoWave' => '琴键节奏',
+			'settings.loadingStyleDancingSquare' => '律动方块',
+			'settings.loadingStyleThreeInOut' => '三点缩放',
+			'settings.loadingStyleWaveSpinner' => '声波雷达',
+			'settings.loadingStylePulsingGrid' => '脉冲网格',
+			'settings.loadingStyleWaveDots' => '律动圆点',
+			'settings.loadingStyleInkDrop' => '动态水滴',
+			'settings.loadingStyleTwistingDots' => '基因螺旋',
+			'settings.loadingStyleThreeRotatingDots' => '三星环绕',
+			'settings.loadingStyleStaggeredDotsWave' => '错落波浪',
+			'settings.loadingStyleFourRotatingDots' => '四星环绕',
+			'settings.loadingStyleFallingDot' => '重力落点',
+			'settings.loadingStyleProgressiveDots' => '线性生长',
+			'settings.loadingStyleDiscreteCircular' => '分离圆环',
+			'settings.loadingStyleThreeArchedCircle' => '三重连环',
+			'settings.loadingStyleBouncingBall' => '地面弹球',
+			'settings.loadingStyleFlickr' => '环绕互换',
+			'settings.loadingStyleHexagonDots' => '六角矩阵',
+			'settings.loadingStyleBeat' => '心率电波',
+			'settings.loadingStyleTwoRotatingArc' => '双轴弧旋',
+			'settings.loadingStyleHorizontalRotatingDots' => '水平环绕',
+			'settings.loadingStyleNewtonCradle' => '牛顿摆球',
+			'settings.loadingStyleStretchedDots' => '拉伸光点',
+			'settings.loadingStyleHalfTriangleDot' => '三角错落',
+			'settings.loadingStyleDotsTriangle' => '动态三角',
+			'settings.loadingStyleBallPulse' => '三点渐变',
+			'settings.loadingStyleBallGridPulse' => '九宫格闪烁',
+			'settings.loadingStyleBallClipRotate' => '裁剪圆环旋转',
+			'settings.loadingStyleBallClipRotatePulse' => '双层环球旋转',
+			'settings.loadingStyleSquareSpin' => '方块翻转',
+			'settings.loadingStyleBallClipRotateMultiple' => '多重碎片圆环',
+			'settings.loadingStyleBallPulseRise' => '交错交替上升',
+			'settings.loadingStyleBallRotate' => '三球围绕旋转',
+			'settings.loadingStyleCubeTransition' => '双对角方块位移',
+			'settings.loadingStyleBallZigZag' => '双球Z字错位',
+			'settings.loadingStyleBallZigZagDeflect' => '双球曲线反弹',
+			'settings.loadingStyleBallTrianglePath' => '三角轨迹循环',
+			'settings.loadingStyleBallTrianglePathColored' => '三角彩轨循环',
+			'settings.loadingStyleBallTrianglePathColoredFilled' => '三角实心循环',
+			_ => null,
+		} ?? switch (path) {
+			'settings.loadingStyleBallScale' => '单圆水波脉冲',
+			'settings.loadingStyleLineScaleParty' => '律动线条',
+			'settings.loadingStyleBallScaleMultiple' => '多重水波涟漪',
+			'settings.loadingStyleBallPulseSync' => '三点波浪同步',
+			'settings.loadingStyleBallBeat' => '三点心跳缩放',
+			'settings.loadingStyleLineScalePulseOut' => '线条由内向外扩散',
+			'settings.loadingStyleLineScalePulseOutRapid' => '线条高频向外扩散',
+			'settings.loadingStyleBallScaleRipple' => '空心圆环震荡',
+			'settings.loadingStyleBallScaleRippleMultiple' => '多重空心涟漪',
+			'settings.loadingStyleBallSpinFadeLoader' => '经典菊花圆点',
+			'settings.loadingStyleLineSpinFadeLoader' => '经典时钟线条',
+			'settings.loadingStyleTriangleSkewSpin' => '三角倾斜翻转',
+			'settings.loadingStylePacman' => '吃豆人游戏',
+			'settings.loadingStyleBallGridBeat' => '九宫格心跳闪烁',
+			'settings.loadingStyleSemiCircleSpin' => '半圆飞速旋转',
+			'settings.loadingStyleBallRotateChase' => '圆点接力追逐',
+			'settings.loadingStyleAudioEqualizer' => '音频均衡器',
+			'settings.loadingStyleCircleStrokeSpin' => '纯净描边圆环',
 			'settings.loadingColor' => '加载颜色',
 			'settings.loadingColorDescription' => '加载动画的颜色；为空时跟随主题强调色。',
 			'settings.loadingColorFollowTheme' => '跟随主题',
@@ -7763,6 +8265,15 @@ extension on Translations {
 			'settings.refreshGroup' => '刷新',
 			'settings.followsAutoRefresh' => '关注自动刷新',
 			'settings.followsAutoRefreshDesc' => '停留在关注页时按间隔刷新关注列表。',
+			'settings.liveAlert' => '开播提醒',
+			'settings.liveAlertDesc' => '关注的主播开播时发一条系统通知；应用运行时每 15 分钟检查一次。',
+			'settings.liveAlertTags' => '提醒标签',
+			'settings.liveAlertTagsDesc' => '只提醒带有所选标签的关注；不选则覆盖全部关注。',
+			'settings.liveAlertTagsAll' => '全部关注',
+			'settings.liveAlertTagsNone' => '还没有标签；提醒将覆盖全部关注。',
+			'settings.liveAlertTagCount' => ({required Object selected}) => '已选 ${selected} 个',
+			'settings.liveAlertFallbackTitle' => ({required Object platform, required Object roomId}) => '${platform} 房间 ${roomId}',
+			'settings.liveAlertNotificationBody' => ({required Object platform}) => '正在 ${platform} 直播',
 			'settings.refreshInterval' => '刷新间隔',
 			'settings.historyLimit' => '观看历史上限',
 			'settings.historyLimitDesc' => '超过上限的最早记录会被删除。',
@@ -7803,8 +8314,6 @@ extension on Translations {
 			'settings.styleWeightMedium' => '稍粗',
 			'settings.styleWeightSemiBold' => '中粗',
 			'settings.styleWeightBold' => '粗体',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleWeightExtraBold' => '很粗',
 			'settings.styleWeightBlack' => '特粗',
 			'settings.styleSpeed' => '速度',
@@ -8216,6 +8725,8 @@ extension on Translations {
 			'settings.maxConcurrentRefreshDesc' => '同时向平台查询的房间数，参考推荐 4，范围 1–20。',
 			'settings.recommended' => '推荐',
 			'settings.refreshThumbnails' => '自动刷新封面',
+			_ => null,
+		} ?? switch (path) {
 			'settings.refreshThumbnailsDesc' => '定期清空图片缓存，让封面、头像和台标重新下载；不会清空观看历史或关注。',
 			'settings.thumbnailRefreshInterval' => '封面刷新间隔',
 			'settings.navHomeMenuGroup' => '首页菜单',
@@ -8317,8 +8828,6 @@ extension on Translations {
 			'settings.fullscreenDefault' => '自动全屏',
 			'settings.fullscreenDefaultDesc' => '当进入直播播放页，自动进入全屏',
 			'settings.keepScreenOn' => '播放时保持屏幕常亮',
-			_ => null,
-		} ?? switch (path) {
 			'settings.keepScreenOnDesc' => '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。',
 			'settings.navPortrait' => '竖屏直播适配',
 			'settings.portraitPageDescription' => '自动识别直播源方向，并调整普通页的观看区域与布局。',
@@ -8527,6 +9036,29 @@ extension on Translations {
 			'settings.localShowLevelBadgeDesc' => '在本地消息里显示经验等级。',
 			'settings.localGiftEffects' => '礼物特效',
 			'settings.localGiftEffectsDesc' => '送出礼物时播放本地面板内的横幅特效。',
+			'settings.localGiftEffectsAll' => '全部礼物',
+			'settings.localGiftEffectsBigOnly' => '仅高价值礼物',
+			'settings.localGiftEffectsOff' => '关闭',
+			'settings.localReplayOnEnter' => '进场回放本地弹幕',
+			'settings.localReplayOnEnterDesc' => '进入直播间时，把该房间最近 24 小时的本地弹幕放回聊天列表顶部，并标注为之前发的。',
+			'settings.localGrowth' => '本地成长',
+			'settings.localGrowthDesc' => '观看直播、每日首个房间与发送本地弹幕都能获得金币和经验。',
+			'settings.localGrowthToday' => ({required Object checked, required Object watch, required Object watchLimit, required Object chat, required Object chatLimit}) => '今日：${checked} · 观看 +${watch}/${watchLimit} · 弹幕 +${chat}/${chatLimit}',
+			'settings.localGrowthCheckedIn' => '已签到',
+			'settings.localGrowthNotCheckedIn' => '未签到',
+			'settings.localPhrases' => '快捷短语',
+			'settings.localPhrasesDesc' => '显示在本地弹幕输入框上方，点一下直接发送。',
+			'settings.localPhrasesEmpty' => ({required Object limit}) => '还没有短语，最多可添加 ${limit} 条。',
+			'settings.localPhraseAdd' => '添加',
+			'settings.localPhraseHint' => ({required Object limit}) => '输入短语（最多 ${limit} 个字）',
+			'settings.localPhraseCount' => ({required Object count, required Object limit}) => '${count} / ${limit}',
+			'settings.localPhraseEdit' => '编辑短语',
+			'settings.localPhraseDelete' => '删除短语',
+			'settings.localPhraseMoveUp' => '上移短语',
+			'settings.localPhraseMoveDown' => '下移短语',
+			'settings.localPhraseEmptyError' => '短语不能为空。',
+			'settings.localPhraseDuplicate' => '这条短语已经存在。',
+			'settings.localPhraseFull' => ({required Object count}) => '最多只能添加 ${count} 条短语。',
 			'settings.localPreviewPlatform' => '预览平台',
 			'settings.localPreviewPlatformDesc' => '选择预览与本地消息使用的平台标记。',
 			'settings.localStyle' => '弹幕样式',
@@ -8585,6 +9117,8 @@ extension on Translations {
 			'settings.portraitDanmakuModeDesc' => '竖屏全屏中飞行弹幕可占用的区域。',
 			'settings.portraitRememberRoom' => '记住每个房间的选择',
 			'settings.portraitRememberRoomDesc' => '在竖屏全屏里切换画面/弹幕后，按房间保存；关闭会清除已保存的房间选择。',
+			'settings.portraitSwipeSwitch' => '竖屏全屏上下滑换台',
+			'settings.portraitSwipeSwitchDesc' => '从关注、热门、分区或搜索进的直播间，竖屏全屏时在画面中间上滑看下一场、下滑上一场。',
 			'settings.portraitDiagnostics' => '显示竖屏诊断',
 			'settings.portraitDiagnosticsDesc' => '在竖屏全屏左下角显示分辨率、宽高比、画面与弹幕模式。',
 			'settings.portraitClearOverrides' => '清除房间覆盖',
@@ -8641,8 +9175,16 @@ extension on Translations {
 			'settings.clipboardRoomOpen' => '打开直播间',
 			'settings.backgroundAudioOnly' => '后台仅音频',
 			'settings.backgroundAudioOnlyDesc' => '后台播放时关闭视频解码，只保留声音；回到前台恢复画面。',
+			'settings.pauseOnPipClose' => '关闭画中画时暂停',
+			'settings.pauseOnPipCloseDesc' => '开着后台播放时，关掉画中画小窗就暂停，不在后台继续出声；回到应用再继续。',
 			'settings.chatShowGifts' => '在聊天列表显示礼物',
 			'settings.chatShowGiftsDesc' => '平台上报的礼物显示为聊天里的礼物行；关闭后已有礼物行立即移除。',
+			'settings.chatGiftsAboveTier' => '只显示值钱的礼物',
+			'settings.chatGiftsAboveTierDesc' => '免费和便宜的礼物不进聊天列表；连击加起来够了再显示。',
+			'settings.chatGiftValueInYuan' => '礼物价值换算成元',
+			'settings.chatGiftValueInYuanDesc' => '金瓜子、钻石、抖币按平台的固定比例写成元；海外的币种不换算。',
+			'settings.superChatIncludesMembership' => '上舰和开会员进醒目留言',
+			'settings.superChatIncludesMembershipDesc' => '哔哩哔哩上舰、YouTube 会员和各平台的订阅也在醒目留言里显示一张卡；聊天列表照旧。',
 			'settings.danmakuShowGifts' => '飞行弹幕显示礼物',
 			'settings.danmakuShowGiftsDesc' => '值钱的礼物飞过画面，很值钱的在顶部停 4 秒；连击只飞开头和总数，每秒最多 3 条。',
 			'settings.floatWindowSize' => '小窗大小',
@@ -8654,6 +9196,8 @@ extension on Translations {
 			'settings.backgroundPauseDanmakuDesc' => '进入后台时断开平台弹幕连接，回到前台重新连接；聊天记录保留。',
 			'settings.douyuForceRenew' => '斗鱼每 5 分钟自动续期',
 			'settings.douyuForceRenewDesc' => '登录斗鱼后定期续期 Cookie，降低长时间观看时掉登录的概率。',
+			'settings.tvFocusZoom' => '焦点放大',
+			'settings.tvFocusZoomDesc' => '获得焦点的卡片、菜单项和播放控制放大一点；盒子卡顿时可以关掉，只留描边。',
 			'settings.tvMenuExpanded' => 'TV 侧栏始终展开',
 			'settings.tvMenuExpandedDesc' => '保持侧栏显示名称；关闭后可用图标轨并在聚焦时展开。',
 			'shield.title' => '弹幕屏蔽',
@@ -8695,6 +9239,8 @@ extension on Translations {
 			'shield.blockEmoteOnly' => '屏蔽只有表情的弹幕',
 			'shield.blockEmoteOnlyDescription' => '只有表情、没有文字的弹幕不显示；自己发送的弹幕不会被屏蔽。',
 			'shield.blockLong' => '屏蔽超长弹幕',
+			_ => null,
+		} ?? switch (path) {
 			'shield.blockLongDescription' => '超过设定字数的弹幕不显示（一个表情算一个字）。',
 			'shield.blockLongLength' => '最多字数',
 			'shield.blockLongLengthDescription' => '允许显示的最大字数，范围 10–100（一个表情算一个字）。',
@@ -8831,8 +9377,6 @@ extension on Translations {
 			'vod.related' => '相关推荐',
 			'vod.parts' => '分P',
 			'vod.views' => '播放',
-			_ => null,
-		} ?? switch (path) {
 			'vod.danmaku' => '弹幕',
 			'vod.likes' => '点赞',
 			'vod.coins' => '投币',

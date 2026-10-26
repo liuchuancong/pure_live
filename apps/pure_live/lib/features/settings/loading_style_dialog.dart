@@ -12,15 +12,90 @@ import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
 /// The current language's name for a loading style.
 String loadingStyleLabel(Translations t, String key) => switch (key) {
-  'pulse' => t.settings.loadingStylePulse,
+  'rotatingPlain' => t.settings.loadingStyleRotatingPlain,
   'doubleBounce' => t.settings.loadingStyleDoubleBounce,
-  'threeBounce' => t.settings.loadingStyleThreeBounce,
   'wave' => t.settings.loadingStyleWave,
-  'fadingCircle' => t.settings.loadingStyleFadingCircle,
+  'wanderingCubes' => t.settings.loadingStyleWanderingCubes,
+  'fadingFour' => t.settings.loadingStyleFadingFour,
+  'fadingCube' => t.settings.loadingStyleFadingCube,
+  'pulse' => t.settings.loadingStylePulse,
+  'chasingDots' => t.settings.loadingStyleChasingDots,
+  'threeBounce' => t.settings.loadingStyleThreeBounce,
+  'circle' => t.settings.loadingStyleCircle,
   'cubeGrid' => t.settings.loadingStyleCubeGrid,
+  'fadingCircle' => t.settings.loadingStyleFadingCircle,
+  'rotatingCircle' => t.settings.loadingStyleRotatingCircle,
+  'foldingCube' => t.settings.loadingStyleFoldingCube,
+  'pumpingHeart' => t.settings.loadingStylePumpingHeart,
+  'hourGlass' => t.settings.loadingStyleHourGlass,
+  'pouringHourGlass' => t.settings.loadingStylePouringHourGlass,
+  'pouringHourGlassRefined' => t.settings.loadingStylePouringHourGlassRefined,
+  'fadingGrid' => t.settings.loadingStyleFadingGrid,
+  'ring' => t.settings.loadingStyleRing,
   'ripple' => t.settings.loadingStyleRipple,
-  'orbit' => t.settings.loadingStyleOrbit,
+  'spinningCircle' => t.settings.loadingStyleSpinningCircle,
+  'spinningLines' => t.settings.loadingStyleSpinningLines,
+  'squareCircle' => t.settings.loadingStyleSquareCircle,
+  'dualRing' => t.settings.loadingStyleDualRing,
+  'pianoWave' => t.settings.loadingStylePianoWave,
+  'dancingSquare' => t.settings.loadingStyleDancingSquare,
+  'threeInOut' => t.settings.loadingStyleThreeInOut,
+  'waveSpinner' => t.settings.loadingStyleWaveSpinner,
+  'pulsingGrid' => t.settings.loadingStylePulsingGrid,
+  'waveDots' => t.settings.loadingStyleWaveDots,
+  'inkDrop' => t.settings.loadingStyleInkDrop,
+  'twistingDots' => t.settings.loadingStyleTwistingDots,
+  'threeRotatingDots' => t.settings.loadingStyleThreeRotatingDots,
+  'staggeredDotsWave' => t.settings.loadingStyleStaggeredDotsWave,
+  'fourRotatingDots' => t.settings.loadingStyleFourRotatingDots,
+  'fallingDot' => t.settings.loadingStyleFallingDot,
+  'progressiveDots' => t.settings.loadingStyleProgressiveDots,
+  'discreteCircular' => t.settings.loadingStyleDiscreteCircular,
+  'threeArchedCircle' => t.settings.loadingStyleThreeArchedCircle,
+  'bouncingBall' => t.settings.loadingStyleBouncingBall,
+  'flickr' => t.settings.loadingStyleFlickr,
+  'hexagonDots' => t.settings.loadingStyleHexagonDots,
+  'beat' => t.settings.loadingStyleBeat,
+  'twoRotatingArc' => t.settings.loadingStyleTwoRotatingArc,
+  'horizontalRotatingDots' => t.settings.loadingStyleHorizontalRotatingDots,
+  'newtonCradle' => t.settings.loadingStyleNewtonCradle,
+  'stretchedDots' => t.settings.loadingStyleStretchedDots,
+  'halfTriangleDot' => t.settings.loadingStyleHalfTriangleDot,
+  'dotsTriangle' => t.settings.loadingStyleDotsTriangle,
+  'ballPulse' => t.settings.loadingStyleBallPulse,
+  'ballGridPulse' => t.settings.loadingStyleBallGridPulse,
+  'ballClipRotate' => t.settings.loadingStyleBallClipRotate,
+  'ballClipRotatePulse' => t.settings.loadingStyleBallClipRotatePulse,
+  'squareSpin' => t.settings.loadingStyleSquareSpin,
+  'ballClipRotateMultiple' => t.settings.loadingStyleBallClipRotateMultiple,
+  'ballPulseRise' => t.settings.loadingStyleBallPulseRise,
+  'ballRotate' => t.settings.loadingStyleBallRotate,
+  'cubeTransition' => t.settings.loadingStyleCubeTransition,
+  'ballZigZag' => t.settings.loadingStyleBallZigZag,
+  'ballZigZagDeflect' => t.settings.loadingStyleBallZigZagDeflect,
+  'ballTrianglePath' => t.settings.loadingStyleBallTrianglePath,
+  'ballTrianglePathColored' => t.settings.loadingStyleBallTrianglePathColored,
+  'ballTrianglePathColoredFilled' => t.settings.loadingStyleBallTrianglePathColoredFilled,
+  'ballScale' => t.settings.loadingStyleBallScale,
   'lineScale' => t.settings.loadingStyleLineScale,
+  'lineScaleParty' => t.settings.loadingStyleLineScaleParty,
+  'ballScaleMultiple' => t.settings.loadingStyleBallScaleMultiple,
+  'ballPulseSync' => t.settings.loadingStyleBallPulseSync,
+  'ballBeat' => t.settings.loadingStyleBallBeat,
+  'lineScalePulseOut' => t.settings.loadingStyleLineScalePulseOut,
+  'lineScalePulseOutRapid' => t.settings.loadingStyleLineScalePulseOutRapid,
+  'ballScaleRipple' => t.settings.loadingStyleBallScaleRipple,
+  'ballScaleRippleMultiple' => t.settings.loadingStyleBallScaleRippleMultiple,
+  'ballSpinFadeLoader' => t.settings.loadingStyleBallSpinFadeLoader,
+  'lineSpinFadeLoader' => t.settings.loadingStyleLineSpinFadeLoader,
+  'triangleSkewSpin' => t.settings.loadingStyleTriangleSkewSpin,
+  'pacman' => t.settings.loadingStylePacman,
+  'ballGridBeat' => t.settings.loadingStyleBallGridBeat,
+  'semiCircleSpin' => t.settings.loadingStyleSemiCircleSpin,
+  'ballRotateChase' => t.settings.loadingStyleBallRotateChase,
+  'orbit' => t.settings.loadingStyleOrbit,
+  'audioEqualizer' => t.settings.loadingStyleAudioEqualizer,
+  'circleStrokeSpin' => t.settings.loadingStyleCircleStrokeSpin,
   _ => t.settings.loadingStyleDefault,
 };
 
@@ -40,41 +115,46 @@ final class _LoadingStyleDialog extends ConsumerWidget {
     final loadingColor = ref.watch(loadingColorProvider);
     return DsDialog(
       title: Text(t.settings.loadingStyleChoose),
-      description: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s16,
-        children: [
-          DsListSection(
+      description: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.65),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s16,
             children: [
-              DsListRow(
-                leading: _LoadingColorDot(color: loadingColor ?? DsTheme.colorsOf(context).accent),
-                title: Text(t.settings.loadingColor),
-                description: Text(t.settings.loadingColorDescription),
-                detail: Text(
-                  loadingColor == null
-                      ? t.settings.loadingColorFollowTheme
-                      : ThemePersistence.encodeArgbColor(loadingColor),
-                ),
-                showChevron: true,
-                onPressed: () => unawaited(showLoadingColorDialog(context)),
+              DsListSection(
+                children: [
+                  DsListRow(
+                    leading: _LoadingColorDot(color: loadingColor ?? DsTheme.colorsOf(context).accent),
+                    title: Text(t.settings.loadingColor),
+                    description: Text(t.settings.loadingColorDescription),
+                    detail: Text(
+                      loadingColor == null
+                          ? t.settings.loadingColorFollowTheme
+                          : ThemePersistence.encodeArgbColor(loadingColor),
+                    ),
+                    showChevron: true,
+                    onPressed: () => unawaited(showLoadingColorDialog(context)),
+                  ),
+                ],
+              ),
+              Text(t.settings.loadingStyleChooseHint),
+              Wrap(
+                spacing: DsSpace.s8,
+                runSpacing: DsSpace.s8,
+                children: [
+                  for (final key in kLoadingStyleKeys)
+                    _LoadingStyleCell(
+                      styleKey: key,
+                      label: loadingStyleLabel(t, key),
+                      selected: key == selected,
+                      onPressed: () => ref.read(loadingStyleProvider.notifier).style = key,
+                    ),
+                ],
               ),
             ],
           ),
-          Text(t.settings.loadingStyleChooseHint),
-          Wrap(
-            spacing: DsSpace.s8,
-            runSpacing: DsSpace.s8,
-            children: [
-              for (final key in kLoadingStyleKeys)
-                _LoadingStyleCell(
-                  styleKey: key,
-                  label: loadingStyleLabel(t, key),
-                  selected: key == selected,
-                  onPressed: () => ref.read(loadingStyleProvider.notifier).style = key,
-                ),
-            ],
-          ),
-        ],
+        ),
       ),
       style: const DsDialogStyle(width: 560),
       actions: [

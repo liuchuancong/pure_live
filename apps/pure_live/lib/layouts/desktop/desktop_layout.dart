@@ -20,6 +20,7 @@ import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart';
 import 'package:pure_live/shared/enums/app_module.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart';
+import 'package:pure_live/shared/focus/tv_focus_scale.dart';
 import 'package:pure_live/shared/navigation/window_opener.dart' show openAppWindow;
 
 // Every import stays on one line with no `show` clause: the save-time
@@ -221,27 +222,34 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
   /// pointer to start from, and every arrow needs a focused stop. It is
   /// keyed by its value so a menu swap (settings in, settings out, another
   /// module) gives the new current row a fresh mount and the focus again.
-  Widget _menuItem(Translations t, Object value) => switch (value) {
-    final NavigationItem item => DsSidebarItem<Object>(
-      key: ValueKey(item),
-      value: item,
-      leading: DsIcon(item.icon),
-      label: Text(item.label(t)),
-      style: widget.expanded ? null : _collapsedItem,
-      focusNode: item == widget.menuValue ? _selectedFocus : null,
-      autofocus: item == widget.menuValue,
-    ),
-    final SettingsSection section => DsSidebarItem<Object>(
-      key: ValueKey(section),
-      value: section,
-      leading: DsIcon(section.icon),
-      label: Text(section.label(t)),
-      style: widget.expanded ? null : _collapsedItem,
-      focusNode: section == widget.menuValue ? _selectedFocus : null,
-      autofocus: section == widget.menuValue,
-    ),
-    _ => const SizedBox.shrink(),
-  };
+  /// On TV the focused row grows with the rest of the shell (`tvFocusZoom`).
+  Widget _menuItem(Translations t, Object value) {
+    final row = switch (value) {
+      final NavigationItem item => DsSidebarItem<Object>(
+        key: ValueKey(item),
+        value: item,
+        leading: DsIcon(item.icon),
+        label: Text(item.label(t)),
+        style: widget.expanded ? null : _collapsedItem,
+        focusNode: item == widget.menuValue ? _selectedFocus : null,
+        autofocus: item == widget.menuValue,
+      ),
+      final SettingsSection section => DsSidebarItem<Object>(
+        key: ValueKey(section),
+        value: section,
+        leading: DsIcon(section.icon),
+        label: Text(section.label(t)),
+        style: widget.expanded ? null : _collapsedItem,
+        focusNode: section == widget.menuValue ? _selectedFocus : null,
+        autofocus: section == widget.menuValue,
+      ),
+      _ => const SizedBox.shrink(),
+    };
+    return _zoomOnTv(row);
+  }
+
+  /// A sidebar row that grows while focused on TV.
+  Widget _zoomOnTv(Widget row) => widget.tv ? TvFocusScale(child: row) : row;
 
   /// The lead above a menu block: a named heading for a settings group in
   /// the expanded rail, the plain divider elsewhere, nothing above the
@@ -374,25 +382,31 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                             onChanged: _footerChanged,
                             style: sidebarStyle,
                             children: [
-                              DsSidebarItem<Object>(
-                                value: const _NewWindowAction(),
-                                leading: const DsIcon(DsIcons.appWindow),
-                                label: Text(t.common.newWindow),
-                                style: widget.expanded ? null : _collapsedItem,
+                              _zoomOnTv(
+                                DsSidebarItem<Object>(
+                                  value: const _NewWindowAction(),
+                                  leading: const DsIcon(DsIcons.appWindow),
+                                  label: Text(t.common.newWindow),
+                                  style: widget.expanded ? null : _collapsedItem,
+                                ),
                               ),
                               if (widget.settingsSection == null)
-                                DsSidebarItem<Object>(
-                                  value: NavigationItem.settings,
-                                  leading: const DsIcon(DsIcons.settings),
-                                  label: Text(t.navigation.settings),
-                                  style: widget.expanded ? null : _collapsedItem,
+                                _zoomOnTv(
+                                  DsSidebarItem<Object>(
+                                    value: NavigationItem.settings,
+                                    leading: const DsIcon(DsIcons.settings),
+                                    label: Text(t.navigation.settings),
+                                    style: widget.expanded ? null : _collapsedItem,
+                                  ),
                                 )
                               else
-                                DsSidebarItem<Object>(
-                                  value: NavigationItem.settings,
-                                  leading: const DsIcon(DsIcons.arrowLeft),
-                                  label: Text(t.settings.backHome),
-                                  style: widget.expanded ? null : _collapsedItem,
+                                _zoomOnTv(
+                                  DsSidebarItem<Object>(
+                                    value: NavigationItem.settings,
+                                    leading: const DsIcon(DsIcons.arrowLeft),
+                                    label: Text(t.settings.backHome),
+                                    style: widget.expanded ? null : _collapsedItem,
+                                  ),
                                 ),
                             ],
                           ),

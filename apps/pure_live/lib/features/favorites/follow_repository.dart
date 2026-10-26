@@ -5,6 +5,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/providers/refresh_settings_providers.dart' show maxConcurrentRefreshProvider;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/features/favorites/live_alert_events.dart' show liveAlertObserver;
 
 /// The stored rooms the viewer follows, one entry per room identity.
 ///
@@ -154,12 +155,19 @@ class FollowsController extends Notifier<FollowsState> {
   /// Refreshes [rooms] and answers how many asks failed; [onProgress] gets
   /// the number done and the total after every ask, so the page can show
   /// the bar. A platform without the room capability keeps its stored copy
-  /// and is not counted as a failure; a failed ask is.
-  Future<int> refreshRooms(Iterable<LiveRoom> rooms, {void Function(int done, int total)? onProgress}) async {
+  /// and is not counted as a failure; a failed ask is. [quiet] marks a pass
+  /// the user started and is watching, so live alerts only update what they
+  /// saw instead of posting.
+  Future<int> refreshRooms(
+    Iterable<LiveRoom> rooms, {
+    void Function(int done, int total)? onProgress,
+    bool quiet = false,
+  }) async {
     final repository = ref.read(followRepositoryProvider).value;
     if (repository == null) return 0;
     final targets = rooms.toList(growable: false);
     final sites = ref.read(sitesProvider);
+    final fresh = <LiveRoom>[];
     var failed = 0;
     var done = 0;
     onProgress?.call(done, targets.length);
@@ -175,7 +183,10 @@ class FollowsController extends Notifier<FollowsState> {
           final answer = await provider.getRoom(room.ref.roomId);
           await answer.match<Future<void>>((_) async {
             failed++;
-          }, repository.merge);
+          }, (room) async {
+            await repository.merge(room);
+            fresh.add(room);
+          });
         } on Object {
           failed++;
         } finally {
@@ -185,7 +196,41 @@ class FollowsController extends Notifier<FollowsState> {
 
       await Future.wait(<Future<void>>[for (final room in batch) refreshOne(room)]);
     }
+    if (fresh.isNotEmpty) liveAlertObserver?.call(fresh, quiet: quiet);
     return failed;
+  }
+
+  /// Fetches [rooms] as they are now, merges each answer into the stored
+  /// copy and answers the fresh states (a failed ask and a platform without
+  /// the capability are left out). The live-alert check and the recorder's
+  /// waiting checks share this path; a caller that wants a failure count
+  /// uses [refreshRooms].
+  Future<List<LiveRoom>> fetchLiveStates(Iterable<LiveRoom> rooms) async {
+    final repository = ref.read(followRepositoryProvider).value;
+    if (repository == null) return const [];
+    final targets = rooms.toList(growable: false);
+    final sites = ref.read(sitesProvider);
+    final fresh = <LiveRoom>[];
+    final batchSize = ref.read(maxConcurrentRefreshProvider);
+    for (var start = 0; start < targets.length; start += batchSize) {
+      final batch = targets.sublist(start, (start + batchSize).clamp(0, targets.length));
+      Future<void> fetchOne(LiveRoom room) async {
+        try {
+          final provider = sites.getById(room.ref.platform)?.capability<LiveRoomProvider>();
+          if (provider == null) return;
+          final answer = await provider.getRoom(room.ref.roomId);
+          await answer.match<Future<void>>((_) async {}, (room) async {
+            await repository.merge(room);
+            fresh.add(room);
+          });
+        } on Object {
+          // The stored copy stays; the next pass tries again.
+        }
+      }
+
+      await Future.wait(<Future<void>>[for (final room in batch) fetchOne(room)]);
+    }
+    return fresh;
   }
 }
 

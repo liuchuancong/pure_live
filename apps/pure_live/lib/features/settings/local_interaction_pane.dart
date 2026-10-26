@@ -5,7 +5,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveSite;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/features/settings/local_growth.dart' show LocalGrowthRules;
 import 'package:pure_live/features/settings/local_interaction_settings.dart';
+import 'package:pure_live/features/settings/local_phrases_dialog.dart' show showLocalPhrasesDialog;
 import 'package:pure_live/features/settings/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
@@ -159,6 +161,31 @@ final class LocalInteractionPane extends ConsumerWidget {
                   },
                 ),
               ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.sprout),
+                title: t.settings.localGrowth,
+                description: t.settings.localGrowthDesc,
+                control: DsSwitch(
+                  value: local.growthEnabled,
+                  onChanged: (value) => unawaited(controller.setGrowthEnabled(value: value)),
+                ),
+              ),
+              if (local.growthEnabled)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s16),
+                  child: Text(
+                    t.settings.localGrowthToday(
+                      checked: local.growthDay.checkedIn
+                          ? t.settings.localGrowthCheckedIn
+                          : t.settings.localGrowthNotCheckedIn,
+                      watch: '${local.growthDay.watchExperience}',
+                      watchLimit: '${LocalGrowthRules.watchDailyExperience}',
+                      chat: '${local.growthDay.chatExperience}',
+                      chatLimit: '${LocalGrowthRules.chatDailyExperience}',
+                    ),
+                    style: theme.typography.small.copyWith(color: colors.textMuted),
+                  ),
+                ),
             ],
           ),
           DsListSection(
@@ -192,13 +219,25 @@ final class LocalInteractionPane extends ConsumerWidget {
                 ),
               ),
               SettingsConfigRow(
+                leading: const DsIcon(DsIcons.history),
+                title: t.settings.localReplayOnEnter,
+                description: t.settings.localReplayOnEnterDesc,
+                control: DsSwitch(
+                  value: local.replayOnEnter,
+                  onChanged: (value) => unawaited(controller.setReplayOnEnter(value: value)),
+                ),
+              ),
+              SettingsChoiceRow<LocalGiftEffectLevel>(
                 leading: const DsIcon(DsIcons.sparkles),
                 title: t.settings.localGiftEffects,
                 description: t.settings.localGiftEffectsDesc,
-                control: DsSwitch(
-                  value: local.enableGiftEffects,
-                  onChanged: (value) => unawaited(controller.setFlag('enableGiftEffects', value: value)),
-                ),
+                value: local.giftEffectLevel,
+                options: [
+                  DsSelectOption(value: LocalGiftEffectLevel.all, label: t.settings.localGiftEffectsAll),
+                  DsSelectOption(value: LocalGiftEffectLevel.bigOnly, label: t.settings.localGiftEffectsBigOnly),
+                  DsSelectOption(value: LocalGiftEffectLevel.off, label: t.settings.localGiftEffectsOff),
+                ],
+                onChanged: (value) => unawaited(controller.setGiftEffectLevel(value)),
               ),
               SettingsChoiceRow<String>(
                 leading: const DsIcon(DsIcons.antenna),
@@ -399,6 +438,19 @@ final class LocalInteractionPane extends ConsumerWidget {
                   level: controller.level,
                   platformName: previewPlatformName,
                 ),
+              ),
+            ],
+          ),
+          DsListSection(
+            header: Text(t.settings.localPhrases),
+            children: [
+              DsListRow(
+                leading: const DsIcon(DsIcons.messageCircle),
+                title: Text(t.settings.localPhrases),
+                description: Text(t.settings.localPhrasesDesc),
+                detail: Text(t.settings.localPhraseCount(count: local.phrases.length, limit: kLocalPhraseLimit)),
+                showChevron: true,
+                onPressed: () => unawaited(showLocalPhrasesDialog(context)),
               ),
             ],
           ),

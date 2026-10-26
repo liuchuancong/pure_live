@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart' show showScrollToTopProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/focus/tv_focus_scale.dart';
 import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
 /// How a collection of items is laid out: the responsive card grid, or one
@@ -342,14 +343,15 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     if ((target - position.pixels).abs() > 0.5) position.jumpTo(target);
   }
 
-  /// Wraps one card with its D-pad stop and index.
-  Widget _focusableItem(int index, Widget child) => _GridFocusItem(
+  /// Wraps one card with its D-pad stop and index. [zoom] grows the card
+  /// while it holds focus on TV; full-width list rows keep only the ring.
+  Widget _focusableItem(int index, Widget child, {bool zoom = false}) => _GridFocusItem(
     index: index,
     register: _registerItem,
     unregister: _unregisterItem,
     onKey: _onItemKey,
     onFocusChanged: _onItemFocus,
-    child: child,
+    child: zoom ? TvFocusScale(child: child) : child,
   );
 
   void _scrollToTop() {
@@ -500,7 +502,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
                 if (index >= widget.items.length) {
                   return const Center(child: AppLoadingIndicator(size: 24));
                 }
-                return _focusableItem(index, widget.itemBuilder(context, widget.items[index]));
+                return _focusableItem(index, widget.itemBuilder(context, widget.items[index]), zoom: true);
               },
             );
           },
