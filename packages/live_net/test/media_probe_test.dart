@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:live_net/live_net.dart';
-import 'package:live_net/src/dio_http.dart';
+import 'package:live_net/src/http/dio_http.dart';
 import 'package:test/test.dart';
 
 import 'support/test_server.dart';

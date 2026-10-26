@@ -1,5 +1,5 @@
-import 'package:live_log/src/record.dart';
-import 'package:live_log/src/sink.dart';
+import 'package:live_log/src/model/record.dart';
+import 'package:live_log/src/model/sink.dart';
 
 /// Fans one record out to several sinks.
 ///

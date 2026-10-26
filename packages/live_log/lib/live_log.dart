@@ -10,18 +10,7 @@
 /// wired by the app shell, not here.
 library;
 
-export 'src/context.dart';
-export 'src/dispatcher.dart';
-export 'src/error_reporter.dart';
-export 'src/filter.dart';
-export 'src/formatter.dart';
-export 'src/level.dart';
-export 'src/live_log.dart';
-export 'src/record.dart';
-export 'src/sanitizer.dart';
-export 'src/sink.dart';
-export 'src/sinks/console_sink.dart';
-export 'src/sinks/fan_out_sink.dart';
-export 'src/sinks/file_sink.dart';
-export 'src/sinks/logger_sink.dart';
-export 'src/sinks/memory_sink.dart';
+export 'src/log/live_log.dart';
+export 'src/model/model.dart';
+export 'src/pipeline/pipeline.dart';
+export 'src/sinks/sinks.dart';

@@ -24,26 +24,16 @@
 /// package a function that can be tested without a display server.
 library;
 
-export 'src/instance/instance_channel.dart';
-export 'src/instance/launch_intent.dart';
-export 'src/instance/launch_router.dart';
-export 'src/instance/socket_instance_channel.dart';
-export 'src/shell/desktop_shell.dart';
-export 'src/shell/shell_settings.dart';
-export 'src/startup/command_startup_registration.dart';
-export 'src/startup/protocol_registration.dart';
-export 'src/startup/startup_registration.dart';
-export 'src/tray/tray_entry.dart';
-export 'src/tray/tray_host.dart';
+export 'src/instance/instance.dart';
+export 'src/shell/shell.dart';
+export 'src/startup/startup.dart';
+export 'src/tray/tray.dart';
 export 'src/window_chrome/chrome_plan.dart';
 export 'src/window_geometry/popup_anchor.dart';
 export 'src/window_geometry/window_geometry.dart';
 export 'src/window_host/window_host.dart';
-export 'src/window_input/drag_throttle.dart';
-export 'src/window_input/idle_watcher.dart';
-export 'src/window_lifecycle/background_policy.dart';
-export 'src/window_lifecycle/close_disposition.dart';
-export 'src/window_lifecycle/quit_ledger.dart';
+export 'src/window_input/window_input.dart';
+export 'src/window_lifecycle/window_lifecycle.dart';
 export 'src/window_opening/single_window_gate.dart';
 export 'src/window_recovery/window_recovery.dart';
 export 'src/window_role/window_role.dart';

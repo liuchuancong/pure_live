@@ -1,10 +1,10 @@
 import 'dart:developer' as developer;
 import 'dart:io';
 
-import 'package:live_log/src/formatter.dart';
-import 'package:live_log/src/record.dart';
-import 'package:live_log/src/sanitizer.dart';
-import 'package:live_log/src/sink.dart';
+import 'package:live_log/src/model/formatter.dart';
+import 'package:live_log/src/model/record.dart';
+import 'package:live_log/src/model/sink.dart';
+import 'package:live_log/src/pipeline/sanitizer.dart';
 
 /// Forwards formatted records to `dart:developer` `log()`.
 ///

@@ -14,28 +14,16 @@ export 'src/database/json_store.dart';
 export 'src/database/storage_stores.dart';
 
 /// Storage diagnostics and health reporting.
-export 'src/diagnostics/storage_diagnostics.dart';
-
-/// The storage error model.
-export 'src/diagnostics/storage_error.dart';
+export 'src/diagnostics/diagnostics.dart';
 
 /// Storage migration contracts.
-export 'src/migration/storage_migration.dart';
-
-/// Storage migration execution.
-export 'src/migration/storage_migration_runner.dart';
+export 'src/migration/migration.dart';
 
 /// Application-provided storage path resolution.
 export 'src/paths/storage_path_provider.dart';
 
 /// Write-through reactive pref values.
-export 'src/prefs/storage_pref_value.dart';
-
-/// The simple typed settings facade.
-export 'src/prefs/storage_prefs.dart';
+export 'src/prefs/prefs.dart';
 
 /// Sealed secret storage.
-export 'src/secrets/secret_store.dart';
-
-/// The device secret vault contract and secret ref names.
-export 'src/secrets/secret_vault.dart';
+export 'src/secrets/secrets.dart';

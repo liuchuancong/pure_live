@@ -4,7 +4,8 @@ import 'package:test/test.dart';
 
 /// Guards the package's export surface: every hand-written library under
 /// `src/platforms/<site>/` and `src/common/` must be reachable through its
-/// barrel, every site barrel through `platforms.dart`, and both barrels
+/// barrel — a nested role barrel counts, because its own exports are followed
+/// — every site barrel through `platforms.dart`, and both barrels
 /// through the package's public `live_sites.dart`. A new file or a new site
 /// that skips its barrel fails here, not in an app's IDE weeks later.
 void main() {
@@ -17,11 +18,24 @@ void main() {
       .where((path) => !path.endsWith('/$barrelName'))
       .toList();
 
-  Set<String> exportsOf(File barrel) => {
-    for (final line in barrel.readAsLinesSync())
-      if (RegExp("^export '([^']+)'").firstMatch(line) case final match?)
-        barrel.parent.uri.resolve(match.group(1)!).toFilePath().replaceAll(r'\', '/'),
-  };
+  Set<String> exportsOf(File barrel) {
+    final seen = <String>{};
+    void visit(File file) {
+      for (final line in file.readAsLinesSync()) {
+        final match = RegExp("^export '([^']+)'").firstMatch(line);
+        if (match == null) continue;
+        final path = file.parent.uri.resolve(match.group(1)!).toFilePath().replaceAll(r'\', '/');
+        if (!seen.add(path)) continue;
+        final nested = File(path);
+        final segments = path.split('/');
+        final isBarrel = segments.length > 1 && segments.last == '${segments[segments.length - 2]}.dart';
+        if (nested.existsSync() && isBarrel) visit(nested);
+      }
+    }
+
+    visit(barrel);
+    return seen;
+  }
 
   test('every site ships a barrel and every hand-written lib is in it', () {
     final sites = Directory('lib/src/platforms').listSync().whereType<Directory>().toList();

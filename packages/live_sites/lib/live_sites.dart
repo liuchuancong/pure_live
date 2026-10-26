@@ -2,34 +2,9 @@
 ///
 library;
 
-export 'src/capabilities/live_anchor_provider.dart';
-export 'src/capabilities/live_area_provider.dart';
-export 'src/capabilities/live_auth_capability.dart';
-export 'src/capabilities/live_danmaku_provider.dart';
-export 'src/capabilities/live_danmaku_sending.dart';
-export 'src/capabilities/live_discovery_provider.dart';
-export 'src/capabilities/live_hot_provider.dart';
-export 'src/capabilities/live_link_resolver.dart';
-export 'src/capabilities/live_play_lease_lookup.dart';
-export 'src/capabilities/live_play_recovery.dart';
-export 'src/capabilities/live_playback_plan_resolver.dart';
-export 'src/capabilities/live_playback_provider.dart';
-export 'src/capabilities/live_room_provider.dart';
-export 'src/capabilities/live_room_refresh.dart';
-export 'src/capabilities/live_search_provider.dart';
-export 'src/capabilities/live_site_capability.dart';
-export 'src/capabilities/live_status_check.dart';
-export 'src/capabilities/live_suggest_capability.dart';
-export 'src/capabilities/live_super_chat_feed.dart';
-export 'src/capabilities/live_web_search_provider.dart';
+export 'src/capabilities/capabilities.dart';
 export 'src/common/common.dart';
-export 'src/core/live_site.dart';
-export 'src/core/live_site_context.dart';
-export 'src/core/live_site_error.dart';
-export 'src/core/live_site_manifest.dart';
-export 'src/core/live_site_registry.dart';
-export 'src/core/live_site_runtime_info.dart';
-export 'src/core/site_facts.dart';
+export 'src/core/core.dart';
 export 'src/internal/built_in_sites.dart';
 export 'src/models/anchor/anchor.dart';
 export 'src/models/area/area.dart';
