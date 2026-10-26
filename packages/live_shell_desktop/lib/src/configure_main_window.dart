@@ -40,7 +40,15 @@ Future<void> configureMainWindow({
   bool materialDark = false,
   WindowMaterialApplier? applyMaterial,
 }) async {
-  final window = WindowManager.instance.getCurrent();
+  // A hot restart can leave the plugin's window registration a moment behind
+  // the first boot task. Retry briefly instead of returning undressed: a
+  // window that keeps its native caption while the shell believes it owns the
+  // strip ends up with two title bars, and the title never reaches the taskbar.
+  var window = WindowManager.instance.getCurrent();
+  for (var attempt = 0; window == null && attempt < 20; attempt++) {
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    window = WindowManager.instance.getCurrent();
+  }
   if (window == null) {
     // The runner always creates the current engine's window before Dart runs;
     // a null here means this engine owns no top-level window, and there is
@@ -84,6 +92,27 @@ Future<void> configureMainWindow({
       window.backgroundColor = const Color(0x00000000).toNative();
     }
   }
+}
+
+/// Re-applies the caption choice and title to the current window.
+///
+/// Called once after the first frame as a safety net for a boot that found no
+/// window yet: geometry and minimum size already belong to the first pass, but
+/// a window left with its native caption would show two title bars while the
+/// shell draws its own strip.
+Future<void> reapplyMainWindowChrome({required ChromePlan plan, required String title}) async {
+  var window = WindowManager.instance.getCurrent();
+  if (window == null) {
+    for (var attempt = 0; attempt < 20; attempt++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      window = WindowManager.instance.getCurrent();
+      if (window != null) break;
+    }
+  }
+  if (window == null) return;
+  window
+    ..title = title
+    ..titleBarStyle = plan.mode == ChromeMode.nativeCaption ? TitleBarStyle.normal : TitleBarStyle.hidden;
 }
 
 /// The plan for the platform's shipping arrangement.

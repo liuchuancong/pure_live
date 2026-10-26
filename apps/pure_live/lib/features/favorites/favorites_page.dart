@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
+import 'package:pure_live/app/providers/page_size_options_provider.dart' show pageSizeOptionsProvider;
 import 'package:pure_live/app/providers/refresh_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/app/routing/app_router.dart' show SearchRoute;
@@ -14,6 +15,8 @@ import 'package:pure_live/features/favorites/favorites_widgets.dart';
 import 'package:pure_live/features/favorites/follow_repository.dart';
 import 'package:pure_live/features/favorites/follow_tag_picker.dart' show showFollowTagPicker;
 import 'package:pure_live/features/favorites/follow_tags.dart' show followTagsProvider;
+import 'package:pure_live/features/settings/room_card_settings.dart'
+    show RoomCardLayout, roomCardAppearanceProvider;
 import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider, sitesOrderProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
@@ -83,11 +86,13 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   /// The page shown on the bottom pager, from 1.
   int _page = 1;
 
-  /// How many follows one page holds.
+  /// How many follows one page holds; the shared default until the pager
+  /// is changed.
   int _pageSize = 20;
 
-  /// The pager's page sizes (the reference's desktop choices).
-  static const List<int> _pageSizes = [20, 40, 60, 80];
+  /// The pager's choices from the shared options, keeping the current size
+  /// visible even if it was just removed from the list.
+  List<int> _pagerSizes(List<int> options) => {...options, _pageSize}.toList()..sort();
 
   /// The grid's position, so a new page starts at its top.
   final ScrollController _gridScroll = ScrollController();
@@ -108,6 +113,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   @override
   void initState() {
     super.initState();
+    _pageSize = ref.read(browseSettingsProvider).homePageSize.clamp(1, 100);
     WidgetsBinding.instance.addObserver(this);
     // A change from the settings surface re-arms the clock in place.
     ref.listenManual(followsAutoRefreshProvider, (_, _) {
@@ -313,6 +319,9 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
         builder: (context, constraints) => CardGrid<LiveRoom>(
           items: const [],
           layout: layout,
+          aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
+              ? CardGrid.roomCardCompactAspectRatio
+              : CardGrid.roomCardAspectRatio,
           cardExtent: _favoriteCardExtent(dense: dense, width: constraints.maxWidth, preferred: browseCardExtent),
           isLoading: true,
           itemBuilder: (_, _) => const SizedBox.shrink(),
@@ -494,6 +503,9 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                   builder: (context, constraints) => CardGrid<LiveRoom>(
                     items: visibleRooms,
                     layout: layout,
+                    aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
+                        ? CardGrid.roomCardCompactAspectRatio
+                        : CardGrid.roomCardAspectRatio,
                     listItemBuilder: (context, room) => cardFor(room, compact: true),
                     cardExtent: _favoriteCardExtent(
                       dense: dense,
@@ -511,7 +523,9 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
             pageCount: lastPage,
             pageSize: _pageSize,
             busy: _refreshing,
-            pageSizes: _pageSizes,
+            showPageSize: ref.watch(showPageSizeSelectorProvider),
+            showGoto: ref.watch(showGotoButtonProvider),
+            pageSizes: _pagerSizes(ref.watch(pageSizeOptionsProvider)),
             onPage: _goToPage,
             onPageSize: _changePageSize,
             onRefresh: _runRefresh,

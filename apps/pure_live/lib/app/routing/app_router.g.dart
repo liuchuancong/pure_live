@@ -6,40 +6,105 @@ part of 'app_router.dart';
 // GoRouterGenerator
 // **************************************************************************
 
-List<RouteBase> get $appRoutes => [$appShellRoute, $settingsSectionRoute, $roomRoute, $areaRoomsRoute];
+List<RouteBase> get $appRoutes => [
+  $appShellRoute,
+  $settingsSectionRoute,
+  $roomRoute,
+  $areaRoomsRoute,
+];
 
 RouteBase get $appShellRoute => StatefulShellRouteData.$route(
   factory: $AppShellRouteExtension._fromState,
   branches: [
     StatefulShellBranchData.$branch(
-      routes: [GoRouteData.$route(path: '/popular', hasOverriddenOnExit: false, factory: $PopularRoute._fromState)],
+      routes: [
+        GoRouteData.$route(
+          path: '/popular',
+          hasOverriddenOnExit: false,
+          factory: $PopularRoute._fromState,
+        ),
+      ],
     ),
     StatefulShellBranchData.$branch(
-      routes: [GoRouteData.$route(path: '/zones', hasOverriddenOnExit: false, factory: $ZonesRoute._fromState)],
+      routes: [
+        GoRouteData.$route(
+          path: '/zones',
+          hasOverriddenOnExit: false,
+          factory: $ZonesRoute._fromState,
+        ),
+      ],
     ),
     StatefulShellBranchData.$branch(
-      routes: [GoRouteData.$route(path: '/live', hasOverriddenOnExit: false, factory: $LiveRoute._fromState)],
+      routes: [
+        GoRouteData.$route(
+          path: '/live',
+          hasOverriddenOnExit: false,
+          factory: $LiveRoute._fromState,
+        ),
+      ],
     ),
     StatefulShellBranchData.$branch(
-      routes: [GoRouteData.$route(path: '/favorites', hasOverriddenOnExit: false, factory: $FavoritesRoute._fromState)],
+      routes: [
+        GoRouteData.$route(
+          path: '/favorites',
+          hasOverriddenOnExit: false,
+          factory: $FavoritesRoute._fromState,
+        ),
+      ],
     ),
     StatefulShellBranchData.$branch(
-      routes: [GoRouteData.$route(path: '/history', hasOverriddenOnExit: false, factory: $HistoryRoute._fromState)],
+      routes: [
+        GoRouteData.$route(
+          path: '/history',
+          hasOverriddenOnExit: false,
+          factory: $HistoryRoute._fromState,
+        ),
+      ],
     ),
     StatefulShellBranchData.$branch(
-      routes: [GoRouteData.$route(path: '/search', hasOverriddenOnExit: false, factory: $SearchRoute._fromState)],
+      routes: [
+        GoRouteData.$route(
+          path: '/search',
+          hasOverriddenOnExit: false,
+          factory: $SearchRoute._fromState,
+        ),
+      ],
     ),
     StatefulShellBranchData.$branch(
-      routes: [GoRouteData.$route(path: '/multiview', hasOverriddenOnExit: false, factory: $MultiviewRoute._fromState)],
+      routes: [
+        GoRouteData.$route(
+          path: '/multiview',
+          hasOverriddenOnExit: false,
+          factory: $MultiviewRoute._fromState,
+        ),
+      ],
     ),
     StatefulShellBranchData.$branch(
-      routes: [GoRouteData.$route(path: '/recorder', hasOverriddenOnExit: false, factory: $RecorderRoute._fromState)],
+      routes: [
+        GoRouteData.$route(
+          path: '/recorder',
+          hasOverriddenOnExit: false,
+          factory: $RecorderRoute._fromState,
+        ),
+      ],
     ),
     StatefulShellBranchData.$branch(
-      routes: [GoRouteData.$route(path: '/toolbox', hasOverriddenOnExit: false, factory: $ToolboxRoute._fromState)],
+      routes: [
+        GoRouteData.$route(
+          path: '/toolbox',
+          hasOverriddenOnExit: false,
+          factory: $ToolboxRoute._fromState,
+        ),
+      ],
     ),
     StatefulShellBranchData.$branch(
-      routes: [GoRouteData.$route(path: '/settings', hasOverriddenOnExit: false, factory: $SettingsRoute._fromState)],
+      routes: [
+        GoRouteData.$route(
+          path: '/settings',
+          hasOverriddenOnExit: false,
+          factory: $SettingsRoute._fromState,
+        ),
+      ],
     ),
   ],
 );
@@ -61,7 +126,8 @@ mixin $PopularRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -80,7 +146,8 @@ mixin $ZonesRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -99,14 +166,16 @@ mixin $LiveRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
 }
 
 mixin $FavoritesRoute on GoRouteData {
-  static FavoritesRoute _fromState(GoRouterState state) => const FavoritesRoute();
+  static FavoritesRoute _fromState(GoRouterState state) =>
+      const FavoritesRoute();
 
   @override
   String get location => GoRouteData.$location('/favorites');
@@ -118,7 +187,8 @@ mixin $FavoritesRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -137,7 +207,8 @@ mixin $HistoryRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -156,14 +227,16 @@ mixin $SearchRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
 }
 
 mixin $MultiviewRoute on GoRouteData {
-  static MultiviewRoute _fromState(GoRouterState state) => const MultiviewRoute();
+  static MultiviewRoute _fromState(GoRouterState state) =>
+      const MultiviewRoute();
 
   @override
   String get location => GoRouteData.$location('/multiview');
@@ -175,7 +248,8 @@ mixin $MultiviewRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -194,7 +268,8 @@ mixin $RecorderRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -213,7 +288,8 @@ mixin $ToolboxRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -232,7 +308,8 @@ mixin $SettingsRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -251,7 +328,8 @@ mixin $SettingsSectionRoute on GoRouteData {
   SettingsSectionRoute get _self => this as SettingsSectionRoute;
 
   @override
-  String get location => GoRouteData.$location('/settings/${Uri.encodeComponent(_self.section)}');
+  String get location =>
+      GoRouteData.$location('/settings/${Uri.encodeComponent(_self.section)}');
 
   @override
   void go(BuildContext context) => context.go(location);
@@ -260,24 +338,31 @@ mixin $SettingsSectionRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $roomRoute =>
-    GoRouteData.$route(path: '/room/:platform/:roomId', hasOverriddenOnExit: false, factory: $RoomRoute._fromState);
+RouteBase get $roomRoute => GoRouteData.$route(
+  path: '/room/:platform/:roomId',
+  hasOverriddenOnExit: false,
+  factory: $RoomRoute._fromState,
+);
 
 mixin $RoomRoute on GoRouteData {
-  static RoomRoute _fromState(GoRouterState state) =>
-      RoomRoute(platform: state.pathParameters['platform']!, roomId: state.pathParameters['roomId']!);
+  static RoomRoute _fromState(GoRouterState state) => RoomRoute(
+    platform: state.pathParameters['platform']!,
+    roomId: state.pathParameters['roomId']!,
+  );
 
   RoomRoute get _self => this as RoomRoute;
 
   @override
-  String get location =>
-      GoRouteData.$location('/room/${Uri.encodeComponent(_self.platform)}/${Uri.encodeComponent(_self.roomId)}');
+  String get location => GoRouteData.$location(
+    '/room/${Uri.encodeComponent(_self.platform)}/${Uri.encodeComponent(_self.roomId)}',
+  );
 
   @override
   void go(BuildContext context) => context.go(location);
@@ -286,7 +371,8 @@ mixin $RoomRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);
@@ -299,14 +385,17 @@ RouteBase get $areaRoomsRoute => GoRouteData.$route(
 );
 
 mixin $AreaRoomsRoute on GoRouteData {
-  static AreaRoomsRoute _fromState(GoRouterState state) =>
-      AreaRoomsRoute(platform: state.pathParameters['platform']!, areaId: state.pathParameters['areaId']!);
+  static AreaRoomsRoute _fromState(GoRouterState state) => AreaRoomsRoute(
+    platform: state.pathParameters['platform']!,
+    areaId: state.pathParameters['areaId']!,
+  );
 
   AreaRoomsRoute get _self => this as AreaRoomsRoute;
 
   @override
-  String get location =>
-      GoRouteData.$location('/zones/${Uri.encodeComponent(_self.platform)}/${Uri.encodeComponent(_self.areaId)}');
+  String get location => GoRouteData.$location(
+    '/zones/${Uri.encodeComponent(_self.platform)}/${Uri.encodeComponent(_self.areaId)}',
+  );
 
   @override
   void go(BuildContext context) => context.go(location);
@@ -315,7 +404,8 @@ mixin $AreaRoomsRoute on GoRouteData {
   Future<T?> push<T>(BuildContext context) => context.push<T>(location);
 
   @override
-  void pushReplacement(BuildContext context) => context.pushReplacement(location);
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
 
   @override
   void replace(BuildContext context) => context.replace(location);

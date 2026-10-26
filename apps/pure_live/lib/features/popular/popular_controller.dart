@@ -6,11 +6,14 @@ import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/features/account/account_providers.dart' show accountsProvider;
 import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider, sitesOrderProvider;
 import 'package:pure_live/shared/paging/room_paging.dart';
+import 'package:pure_live/shared/rooms/room_visibility.dart' show cannotPlayHere, showUnplayableProvider;
 
 /// What one platform's popular feed holds: every room fetched so far, the
-/// desktop page shown over them, and the size that page is measured in.
+/// desktop page shown over them, the size that page is measured in, and how
+/// many of the fetched rooms the viewer's discovery filter hides.
 ///
 /// The rooms are the catalogue, not one server page: fixed-window platforms
 /// (Douyu's 40, Huya's ~120) and page-numbered ones both accumulate here,
@@ -21,6 +24,7 @@ typedef PopularFeedState = ({
   List<LiveRoom> rooms,
   int page,
   int pageSize,
+  int hidden,
   bool hasMore,
   bool loading,
   LiveSiteError? error,
@@ -35,7 +39,7 @@ int pageCountOf(PopularFeedState feed) =>
     roomPageCount(page: feed.page, roomCount: feed.rooms.length, pageSize: feed.pageSize, hasMore: feed.hasMore);
 
 PopularFeedState _initial(int pageSize) =>
-    (rooms: const [], page: 1, pageSize: pageSize, hasMore: true, loading: false, error: null);
+    (rooms: const [], page: 1, pageSize: pageSize, hidden: 0, hasMore: true, loading: false, error: null);
 
 /// The popular page's catalogues: one feed per platform, kept while the
 /// app runs (the reference's `PopularCatalog`), so switching tabs or
@@ -56,8 +60,49 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
   /// Every room identity already in a platform's catalogue.
   final Map<String, Set<String>> _seen = {};
 
+  /// Each platform's fetched rooms in full, before the discovery filter.
+  ///
+  /// The filter is the viewer's answer, not the platform's, so it must not
+  /// cost requests and must be reversible in place: the catalogue stays
+  /// whole here and the feed's `rooms` is what passes the rule.
+  final Map<String, List<LiveRoom>> _fullRooms = {};
+
+  /// Whether [room] belongs on a discovery page as the settings stand: the
+  /// reference keeps such rooms out of 热门/分区 unless the viewer shows
+  /// them, and a stored credential makes a 需要登录/成年 room playable.
+  bool _playable(LiveRoom room) {
+    if (ref.read(showUnplayableProvider)) return true;
+    final signedIn = ref.read(accountsProvider).credentials.containsKey(room.ref.platform);
+    return !cannotPlayHere(room, signedIn: signedIn);
+  }
+
+  /// Re-applies the discovery filter to every loaded feed (the settings'
+  /// "显示不能直接播放的直播" changed, or a sign-in altered the login part).
+  /// A walk that hid rooms under the old answer starts a fresh walk for the
+  /// next fill, since its seen set holds the ones it never published.
+  void refreshVisibility() {
+    for (final entry in state.entries.toList()) {
+      final platform = entry.key;
+      final feed = entry.value;
+      final full = _fullRooms[platform] ?? feed.rooms;
+      final visible = [for (final room in full) if (_playable(room)) room];
+      if (visible.length == feed.rooms.length && visible.length == full.length) continue;
+      state = {...state, platform: _with(feed, rooms: visible, hidden: full.length - visible.length)};
+      _walks.remove(platform);
+      _seen.remove(platform);
+    }
+  }
+
   @override
-  Map<String, PopularFeedState> build() => const {};
+  Map<String, PopularFeedState> build() {
+    // The filter answer and the sign-ins live outside this controller: a
+    // change re-runs the rule over the loaded catalogues at once (the
+    // reference's setting-change listener + `visibilityChanged`).
+    ref
+      ..listen(showUnplayableProvider, (_, _) => refreshVisibility())
+      ..listen(accountsProvider, (_, _) => refreshVisibility());
+    return const {};
+  }
 
   /// The ids of the platforms that have recommendations, in registry
   /// order; the tabs show these.
@@ -81,7 +126,7 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
   /// and idle. Re-selecting a loaded tab is a no-op.
   Future<void> open(String platform) async {
     final feed = feedOf(platform);
-    if (feed.rooms.isNotEmpty || feed.loading) return;
+    if (_accumulated(platform).isNotEmpty || feed.loading) return;
     await _refresh(platform);
   }
 
@@ -95,15 +140,15 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
   /// swipes (the reference's 700 ms warm-up).
   Future<void> warm(String platform) async {
     final feed = feedOf(platform);
-    if (feed.rooms.isEmpty && !feed.loading) await _refresh(platform);
+    if (_accumulated(platform).isEmpty && !feed.loading) await _refresh(platform);
   }
 
   /// Loads at least one more room for the phone's endless list. A chunk is
   /// shown whole: the platform's own window decides its size.
   Future<void> loadMore(String platform) async {
     final feed = feedOf(platform);
-    if (feed.loading || !feed.hasMore || feed.rooms.isEmpty) return;
-    await _fill(platform, target: feed.rooms.length + 1, page: feed.page, pageSize: feed.pageSize);
+    if (feed.loading || !feed.hasMore || _accumulated(platform).isEmpty) return;
+    await _fill(platform, target: _accumulated(platform).length + 1, page: feed.page, pageSize: feed.pageSize);
   }
 
   /// Shows [page] of the catalogue for the desktop pager, fetching as many
@@ -112,9 +157,10 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
   Future<void> loadPage(String platform, int page) async {
     final feed = feedOf(platform);
     if (page < 1 || feed.loading) return;
+    final held = _accumulated(platform).length;
     final target = page * feed.pageSize;
-    if (feed.rooms.length >= target || !feed.hasMore) {
-      final last = roomLastPage(feed.rooms.length, feed.pageSize);
+    if (held >= target || !feed.hasMore) {
+      final last = roomLastPage(held, feed.pageSize);
       final shown = feed.hasMore ? page : math.min(page, last);
       state = {...state, platform: _with(feed, page: shown)};
       return;
@@ -127,12 +173,13 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
   Future<void> resize(String platform, int pageSize) async {
     final feed = feedOf(platform);
     if (pageSize < 1 || feed.pageSize == pageSize || feed.loading) return;
+    final held = _accumulated(platform).length;
     final first = (feed.page - 1) * feed.pageSize;
     final requested = first ~/ pageSize + 1;
-    final last = roomLastPage(feed.rooms.length, pageSize);
+    final last = roomLastPage(held, pageSize);
     final page = feed.hasMore ? requested : math.min(requested, last);
     state = {...state, platform: _with(feed, page: page, pageSize: pageSize)};
-    if (feed.rooms.length >= page * pageSize || !feed.hasMore) return;
+    if (held >= page * pageSize || !feed.hasMore) return;
     await _fill(platform, target: page * pageSize, page: page, pageSize: pageSize);
   }
 
@@ -162,26 +209,42 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
     final rooms = <LiveRoom>[];
     final seen = <String>{};
     state = {...state, platform: _with(current, loading: true, clearError: true)};
-    final failure = await fillRoomFeed(walk: walk, rooms: rooms, seen: seen, target: pageSize);
-    final open = state[platform];
-    if (open == null) return;
+    // The whole fetched catalogue publishes through the discovery filter,
+    // so a settings change re-shows hidden rooms without another request.
+    void publish({required bool loading, required bool hasMore}) {
+      _walks[platform] = walk;
+      _seen[platform] = seen;
+      _fullRooms[platform] = List<LiveRoom>.unmodifiable(rooms);
+      final visible = [for (final room in rooms) if (_playable(room)) room];
+      state = {
+        ...state,
+        platform: (
+          rooms: List.unmodifiable(visible),
+          page: 1,
+          pageSize: pageSize,
+          hidden: rooms.length - visible.length,
+          hasMore: hasMore,
+          loading: loading,
+          error: null,
+        ),
+      };
+    }
+
+    final failure = await fillRoomFeed(
+      walk: walk,
+      rooms: rooms,
+      seen: seen,
+      target: pageSize,
+      onProgress: () => publish(loading: true, hasMore: walk.hasMore),
+    );
+    if (state[platform] == null) return;
     if (failure != null) {
-      state = {...state, platform: _with(open, loading: false, error: failure)};
+      // A failure keeps what arrived: the catalogue and the shown page stay.
+      _fullRooms[platform] = List<LiveRoom>.unmodifiable(rooms);
+      state = {...state, platform: _with(state[platform]!, loading: false, error: failure)};
       return;
     }
-    _walks[platform] = walk;
-    _seen[platform] = seen;
-    state = {
-      ...state,
-      platform: (
-        rooms: List.unmodifiable(rooms),
-        page: 1,
-        pageSize: pageSize,
-        hasMore: walk.hasMore,
-        loading: false,
-        error: null,
-      ),
-    };
+    publish(loading: false, hasMore: walk.hasMore);
   }
 
   /// Fetches from the platform's walk until [target] rooms are held, then
@@ -206,19 +269,22 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
       fetch: (request) => discovery.getRecommendedRooms(request: request),
       pageSize: roomFeedRequestSize(platform),
     );
-    final seen = _seen[platform] ??= {for (final room in current.rooms) room.identityKey};
-    final rooms = [...current.rooms];
+    final seen = _seen[platform] ??= {for (final room in _accumulated(platform)) room.identityKey};
+    final rooms = [..._accumulated(platform)];
     state = {...state, platform: _with(current, loading: true, clearError: true, pageSize: pageSize)};
     // Each fetched page lands at once: a later failure keeps the rooms and
     // the walk stays on the page that failed, so nothing is stranded.
     void publishProgress() {
       _seen[platform] = seen;
+      _fullRooms[platform] = List<LiveRoom>.unmodifiable(rooms);
+      final visible = [for (final room in rooms) if (_playable(room)) room];
       state = {
         ...state,
         platform: (
-          rooms: List.unmodifiable(rooms),
-          page: math.min(page, roomLastPage(rooms.length, pageSize)),
+          rooms: List.unmodifiable(visible),
+          page: math.min(page, roomLastPage(visible.length, pageSize)),
           pageSize: pageSize,
+          hidden: rooms.length - visible.length,
           hasMore: walk.hasMore,
           loading: true,
           error: null,
@@ -236,18 +302,22 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
     final open = state[platform];
     if (open == null) return;
     if (failure != null) {
+      _fullRooms[platform] = List<LiveRoom>.unmodifiable(rooms);
       state = {...state, platform: _with(open, loading: false, error: failure)};
       return;
     }
     _seen[platform] = seen;
-    final last = roomLastPage(rooms.length, pageSize);
+    _fullRooms[platform] = List<LiveRoom>.unmodifiable(rooms);
+    final visible = [for (final room in rooms) if (_playable(room)) room];
+    final last = roomLastPage(visible.length, pageSize);
     final shown = walk.hasMore ? page : math.min(page, last);
     state = {
       ...state,
       platform: (
-        rooms: List.unmodifiable(rooms),
+        rooms: List.unmodifiable(visible),
         page: shown,
         pageSize: pageSize,
+        hidden: rooms.length - visible.length,
         hasMore: walk.hasMore,
         loading: false,
         error: null,
@@ -255,11 +325,15 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
     };
   }
 
+  /// The catalogue as fetched, hidden rooms included.
+  List<LiveRoom> _accumulated(String platform) => _fullRooms[platform] ?? const [];
+
   PopularFeedState _with(
     PopularFeedState from, {
     List<LiveRoom>? rooms,
     int? page,
     int? pageSize,
+    int? hidden,
     bool? hasMore,
     bool? loading,
     LiveSiteError? error,
@@ -269,6 +343,7 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
       rooms: rooms ?? from.rooms,
       page: page ?? from.page,
       pageSize: pageSize ?? from.pageSize,
+      hidden: hidden ?? from.hidden,
       hasMore: hasMore ?? from.hasMore,
       loading: loading ?? from.loading,
       error: clearError ? null : (error ?? from.error),

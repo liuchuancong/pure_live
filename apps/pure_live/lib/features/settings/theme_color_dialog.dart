@@ -217,11 +217,7 @@ final class _ThemeColorDialogState extends State<_ThemeColorDialog> {
                   },
                 ),
               for (final color in kThemeColorPresets)
-                _PresetSwatch(
-                  color: color,
-                  selected: _custom == color,
-                  onPressed: () => _selectColor(color),
-                ),
+                _PresetSwatch(color: color, selected: _custom == color, onPressed: () => _selectColor(color)),
             ],
           ),
           Text(t.settings.themeColorCustom, style: sectionStyle),
@@ -250,12 +246,13 @@ final class _ThemeColorDialogState extends State<_ThemeColorDialog> {
             ],
           ),
           if (_hexInvalid)
-            Text(
-              t.settings.themeColorHexInvalid,
-              style: theme.typography.small.copyWith(color: colors.danger.text),
-            ),
+            Text(t.settings.themeColorHexInvalid, style: theme.typography.small.copyWith(color: colors.danger.text)),
           _ColorField(hsv: _hsv, onChanged: _pickHsv, semanticLabel: t.settings.themeColorSaturation),
-          _HueBar(hue: _hsv.hue, onChanged: (hue) => _pickHsv(_hsv.withHue(hue)), semanticLabel: t.settings.themeColorHue),
+          _HueBar(
+            hue: _hsv.hue,
+            onChanged: (hue) => _pickHsv(_hsv.withHue(hue)),
+            semanticLabel: t.settings.themeColorHue,
+          ),
         ],
       ),
       style: const DsDialogStyle(width: 560),
@@ -389,13 +386,7 @@ final class _ColorFieldPainter extends CustomPainter {
     final rect = Offset.zero & size;
     final hue = HSVColor.fromAHSV(1, hsv.hue, 1, 1).toColor();
     canvas
-      ..drawRect(
-        rect,
-        Paint()
-          ..shader = LinearGradient(
-            colors: [const Color(0xFFFFFFFF), hue],
-          ).createShader(rect),
-      )
+      ..drawRect(rect, Paint()..shader = LinearGradient(colors: [const Color(0xFFFFFFFF), hue]).createShader(rect))
       ..drawRect(
         rect,
         Paint()

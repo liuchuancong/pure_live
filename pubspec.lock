@@ -170,6 +170,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.1"
+  better_player_plus:
+    dependency: transitive
+    description:
+      name: better_player_plus
+      sha256: "49c02ec4d975cf0da3f55c3bf07a4eb3eeab2b417790d8fa3e29a77947cb02f1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.1"
   blit:
     dependency: transitive
     description:
@@ -266,14 +274,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.5"
-  cached_network_image_ce:
-    dependency: transitive
-    description:
-      name: cached_network_image_ce
-      sha256: "8bc77b763c571dc3736cf00f011619315d06b917ae986a0a8191813e70c014b2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.13.1"
   cached_network_image_platform_interface:
     dependency: transitive
     description:
@@ -282,14 +282,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.3"
-  cached_network_image_platform_interface_ce:
-    dependency: transitive
-    description:
-      name: cached_network_image_platform_interface_ce
-      sha256: "95343645becaeac01dd6eeb9f3a85448b6076d211010ff1973e8bbfd840b571d"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.2.0"
   cached_network_image_web:
     dependency: transitive
     description:
@@ -298,14 +290,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.3"
-  cached_network_image_web_ce:
-    dependency: transitive
-    description:
-      name: cached_network_image_web_ce
-      sha256: "22cdf044cd013ff8d6eb06ce148bfe3f1106388ca2af244e2358739debb4459c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.2"
   catcher_2:
     dependency: transitive
     description:
@@ -474,6 +458,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.7"
+  csslib:
+    dependency: transitive
+    description:
+      name: csslib
+      sha256: "09bad715f418841f976c77db72d5398dc1253c21fb9c0c7f0b0b985860b2d58e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   cupertino_ui:
     dependency: transitive
     description:
@@ -602,6 +594,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.2"
+  drift:
+    dependency: transitive
+    description:
+      name: drift
+      sha256: "3179e7323b36d1852b42997b92ac72e8abcb61b1d58cfa8c6da9b540ab02a540"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.35.3"
+  drift_dev:
+    dependency: transitive
+    description:
+      name: drift_dev
+      sha256: ff4201b38dfbbbc85ffcd85597ad63c7146d2303126241623ebfce89fc4c4bfe
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.35.2"
   dynamic_app_icon_flutter_plus:
     dependency: transitive
     description:
@@ -618,6 +626,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.9.0"
+  dynamic_fonts:
+    dependency: transitive
+    description:
+      name: dynamic_fonts
+      sha256: "8f7722e603fd4e2931dbc0a44a446a3052e72f333a5cd639ddbcf9a99e524b6a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.0"
   envied:
     dependency: transitive
     description:
@@ -1039,6 +1055,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_widget_from_html_core:
+    dependency: transitive
+    description:
+      name: flutter_widget_from_html_core
+      sha256: "530f2e3cc57be1a00f8bfae1b0000064e8a6df0cf1fb4d48a80f85afde9b39b7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.17.4"
   fluttertoast:
     dependency: transitive
     description:
@@ -1047,6 +1071,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "10.0.2"
+  flv_lzc:
+    dependency: transitive
+    description:
+      path: "."
+      ref: "162030d642857109048a8e6858d502b8d73c754a"
+      resolved-ref: "162030d642857109048a8e6858d502b8d73c754a"
+      url: "https://github.com/liuchuancong/flv_lzc.git"
+    source: git
+    version: "1.0.4+purelive.2"
   fpdart:
     dependency: transitive
     description:
@@ -1119,30 +1152,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
-  hive_box_manager:
-    dependency: transitive
-    description:
-      name: hive_box_manager
-      sha256: "651c38e2768cb6783affd7ab1eddf2d40faf8df0c7d446c62709fb2c5abc33b8"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.3.0"
-  hive_ce:
-    dependency: transitive
-    description:
-      name: hive_ce
-      sha256: "8b6eea82b06a7e2bb298a6a279139c45838b82491a66f3972bf609d48681392a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.22.0"
-  hive_ce_generator:
-    dependency: transitive
-    description:
-      name: hive_ce_generator
-      sha256: "4b377a9e7323f2f9933d652ec6face3352b81a0decf6401e29912950e01ea34e"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.12.0"
   hls:
     dependency: transitive
     description:
@@ -1159,6 +1168,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  html:
+    dependency: transitive
+    description:
+      name: html
+      sha256: "43b67b8f43321ab066817dfac5619596c98bb1b61624e77203bb4351785f9699"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.15.7"
   http:
     dependency: transitive
     description:
@@ -1239,14 +1256,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.1"
-  isolate_channel:
-    dependency: transitive
-    description:
-      name: isolate_channel
-      sha256: a9d3d620695bc984244dafae00b95e4319d6974b2d77f4b9e1eb4f2efe099094
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.6.1"
   jni:
     dependency: transitive
     description:
@@ -1429,6 +1438,13 @@ packages:
       relative: false
     source: path
     version: "0.1.0"
+  media_core_better_player:
+    dependency: transitive
+    description:
+      path: "F:/media_core/packages/media_core_better_player"
+      relative: false
+    source: path
+    version: "0.1.0"
   media_core_cast_dlna:
     dependency: transitive
     description:
@@ -1447,6 +1463,13 @@ packages:
     dependency: transitive
     description:
       path: "F:/media_core/packages/media_core_fullscreen"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_ijk_player:
+    dependency: transitive
+    description:
+      path: "F:/media_core/packages/media_core_ijk_player"
       relative: false
     source: path
     version: "0.1.0"
@@ -2222,6 +2245,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.3"
+  sqlite3:
+    dependency: transitive
+    description:
+      name: sqlite3
+      sha256: "5340531ad17f386ae444873f643f281060b6238cc702edeee6b1e90bc4c6874e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.8.0"
+  sqlparser:
+    dependency: transitive
+    description:
+      name: sqlparser
+      sha256: "8121dae2c5de4a1e39153d95c55f7fd1816e32d1232fe270bc415a4a370d6e47"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.45.1"
   stack_trace:
     dependency: transitive
     description:
@@ -2687,14 +2726,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.4"
-  yaml_writer:
-    dependency: transitive
-    description:
-      name: yaml_writer
-      sha256: "69651cd7238411179ac32079937d4aa9a2970150d6b2ae2c6fe6de09402a5dc5"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
 sdks:
   dart: ">=3.13.5 <4.0.0"
   flutter: ">=3.47.7"

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/widgets.dart' hide Builder; // Builder resolves to built_value's in the part file.
 
 import 'package:pure_live/app/theme/font_defaults.dart';
+import 'package:pure_live/app/theme/font_sizes.dart';
 
 part 'theme_settings.g.dart';
 
@@ -124,8 +125,11 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
 
   /// The theme this setting describes, every factory parameter fed from a
   /// getter of this class. `DsApp` derives the dark variant from the same
-  /// expression.
-  DsThemeData theme() => DsThemeData(
+  /// expression. [fontSizes] are the viewer's adjustable body and title
+  /// sizes; the settings surface passes the stored choice. [fontFamilyOverride]
+  /// names a pinned cloud face, used instead of [fontFamily] without changing
+  /// the stored family.
+  DsThemeData theme({AppFontSizes fontSizes = const AppFontSizes(), String? fontFamilyOverride}) => DsThemeData(
     seed: seed ?? DsSeed.blue,
     contrast: contrast,
     cornerStyle: cornerStyle,
@@ -140,7 +144,7 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
     adjustShadows: adjustShadows,
     adjustRadii: adjustRadii,
     adjustSizes: adjustSizes,
-    typography: _typography(),
+    typography: _typography(fontSizes, fontFamilyOverride: fontFamilyOverride),
     motion: motion,
     haptics: haptics,
     extensions: extensions,
@@ -151,37 +155,39 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
   /// ([platformFontFamily]: Segoe UI on Windows, Roboto on Android), and
   /// Apple/Linux/web keep the library's defaults (San Francisco,
   /// Schibsted Grotesk). The bundled presets are app fonts, so they are
-  /// looked up with a null package.
-  DsTypography? _typography() {
-    final family = fontFamily ?? platformFontFamily();
-    final package = fontFamily == null ? null : fontPackage;
-    if (family == null &&
-        monoFontFamily == null &&
-        displayFontFamily == null &&
-        fontPackage == null &&
-        monoFontPackage == null &&
-        displayFontPackage == null) {
-      return null;
-    }
+  /// looked up with a null package. The viewer's body and title sizes are
+  /// applied on top of the chosen face and density.
+  DsTypography _typography(AppFontSizes fontSizes, {String? fontFamilyOverride}) {
+    final family = fontFamilyOverride ?? fontFamily ?? platformFontFamily();
+    final package = fontFamilyOverride != null ? null : (fontFamily == null ? null : fontPackage);
     final density = this.density ?? DsDensity.forPlatform(platform ?? defaultTargetPlatform);
-    if (monoFontFamily != null || monoFontPackage != null) {
-      return DsTypography(
-        family: family,
-        package: package,
-        monoFamily: monoFontFamily!,
-        monoPackage: monoFontPackage,
-        displayFamily: displayFontFamily,
-        displayPackage: displayFontPackage,
-        density: density,
-      );
-    }
-    return DsTypography(
-      family: family,
-      package: package,
-      displayFamily: displayFontFamily,
-      displayPackage: displayFontPackage,
-      density: density,
-    );
+    final hasFontChoice =
+        family != null ||
+        monoFontFamily != null ||
+        displayFontFamily != null ||
+        fontPackage != null ||
+        monoFontPackage != null ||
+        displayFontPackage != null;
+    final base = !hasFontChoice
+        ? DsTypography(density: density)
+        : monoFontFamily != null || monoFontPackage != null
+        ? DsTypography(
+            family: family,
+            package: package,
+            monoFamily: monoFontFamily!,
+            monoPackage: monoFontPackage,
+            displayFamily: displayFontFamily,
+            displayPackage: displayFontPackage,
+            density: density,
+          )
+        : DsTypography(
+            family: family,
+            package: package,
+            displayFamily: displayFontFamily,
+            displayPackage: displayFontPackage,
+            density: density,
+          );
+    return applyAppFontSizes(base, fontSizes);
   }
 
   /// The density the viewer's platform gets when none is pinned.

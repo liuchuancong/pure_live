@@ -154,5 +154,7 @@
   "copySourceAddress": "复制源地址",
   "openSourceAddress": "打开源地址",
   "sourceAddressCopied": "源地址已复制",
-  "sourceAddressOpenFailed": "无法打开源地址"
+  "sourceAddressOpenFailed": "无法打开源地址",
+  "autoSyncTitle": "启动时全自动同步",
+  "autoSyncDesc": "应用冷启动时自动在后台静默检查并更新网络资源。"
 }

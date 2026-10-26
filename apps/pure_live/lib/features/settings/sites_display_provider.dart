@@ -76,6 +76,11 @@ final sitesDisplayProvider = NotifierProvider<SitesDisplayController, Set<String
 /// platform the surfaces prefer (3.x's `preferPlatform`).
 typedef SitesOrder = ({List<String> order, String preferred});
 
+/// The reference's preferred platform when nothing is stored: Bilibili when
+/// the build carries it, the first registered platform otherwise.
+String defaultPreferredSiteId(Iterable<String> ids) =>
+    ids.contains(SiteIds.bilibili) ? SiteIds.bilibili : (ids.isEmpty ? '' : ids.first);
+
 /// Owns the platform order and the preferred platform. The order persists
 /// under `sites.display.order`, the preference under
 /// `sites.display.preferred`; a stored id the registry no longer knows is
@@ -102,7 +107,7 @@ final class SitesOrderController extends Notifier<SitesOrder> {
     final order = _sanitize(storedOrder, ids);
     final preferred = storedPreferred != null && ids.contains(storedPreferred)
         ? storedPreferred
-        : (order.isEmpty ? '' : order.first);
+        : defaultPreferredSiteId(ids);
     return (order: order, preferred: preferred);
   }
 
@@ -135,7 +140,7 @@ final class SitesOrderController extends Notifier<SitesOrder> {
   /// the preferred platform stays unless the registry no longer knows it.
   Future<void> resetOrder() async {
     final ids = [for (final site in ref.read(sitesProvider).all) site.manifest.id];
-    final preferred = ids.contains(state.preferred) ? state.preferred : (ids.isEmpty ? '' : ids.first);
+    final preferred = ids.contains(state.preferred) ? state.preferred : defaultPreferredSiteId(ids);
     state = (order: ids, preferred: preferred);
     await _writeOrder(ids);
   }

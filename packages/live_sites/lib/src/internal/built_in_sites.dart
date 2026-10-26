@@ -81,18 +81,26 @@ import 'package:live_sites/src/platforms/yy/yy_site.dart';
 /// [twitchLanguages] reads the Twitch directory filter (lower-case codes);
 /// null keeps every language. [youtubeAllChat] reads "YouTube 显示全部聊天";
 /// null keeps the web's Top chat. [huyaPreferH264] reads huya's "优先 H.264"
-/// (on by default).
+/// (on by default). [douyuFilterSuspectedAutomated] reads douyu's
+/// "过滤疑似机器人弹幕" for every suspected chat; null keeps them.
 List<LiveSite> createBuiltInLiveSites({
   LiveHttp? http,
   DouyuLoginStore? douyuLogin,
   List<String> Function()? twitchLanguages,
   bool Function()? youtubeAllChat,
   bool Function()? huyaPreferH264,
+  bool Function()? douyuFilterSuspectedAutomated,
+  bool Function()? douyuForceRenew,
   List<LiveHttp>? twitchGqlFallbacks,
 }) {
   final transport = http ?? DioFactory().create();
   return <LiveSite>[
-    DouyuSite(http: DouyuHttp(transport), login: douyuLogin),
+    DouyuSite(
+      http: DouyuHttp(transport),
+      login: douyuLogin,
+      filterSuspectedAutomated: douyuFilterSuspectedAutomated,
+      forceRenew: douyuForceRenew,
+    ),
     HuyaSite(http: HuyaHttp(transport), preferH264: huyaPreferH264),
     DouyinSite(http: DouyinHttp(transport)),
     BilibiliSite(http: BilibiliHttp(transport)),

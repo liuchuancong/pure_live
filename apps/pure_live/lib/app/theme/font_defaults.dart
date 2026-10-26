@@ -27,6 +27,18 @@ String? platformFontFamily({bool? web, TargetPlatform? platform}) {
   };
 }
 
+/// The face [platformFontFamily] resolves to (or the library's designed
+/// face where it answers null), named for the font manager's preview row.
+String platformFontFamilyLabel({bool? web, TargetPlatform? platform}) {
+  if (web ?? kIsWeb) return 'Schibsted Grotesk';
+  return switch (platform ?? defaultTargetPlatform) {
+    TargetPlatform.windows => 'Segoe UI',
+    TargetPlatform.android => 'Roboto',
+    TargetPlatform.iOS || TargetPlatform.macOS => 'San Francisco',
+    TargetPlatform.linux || TargetPlatform.fuchsia => 'Schibsted Grotesk',
+  };
+}
+
 /// The official faces bundled with this app (`pubspec.yaml`'s
 /// `flutter: fonts:`), offered as presets in the appearance pane. They are
 /// app fonts, so a selected one is looked up with a null package; the two

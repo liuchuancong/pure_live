@@ -93,5 +93,8 @@
   "logsLines": "{count: int} 行",
   "logsScrollBottom": "滚动到底部",
   "logsCopied": "日志已复制",
-  "logsCopyEmpty": "没有可复制的日志"
+  "logsCopyEmpty": "没有可复制的日志",
+  "logsDirectory": "日志目录",
+  "logsDirectoryDefault": "仅内存日志：开启「写入日志文件」后这里会显示目录。",
+  "logsOpenFailed": "无法打开日志目录"
 }

@@ -8,5 +8,6 @@
   "noPlatforms": "No platform to browse",
   "unfollow": "Unfollow",
   "categoryAll": "All categories",
-  "follow": "Follow area"
+  "follow": "Follow area",
+  "hiddenUnplayable": "{count: int} streams that cannot play here are hidden (paid, password, app only…)"
 }

@@ -14,6 +14,7 @@ import 'package:pure_live/features/recorder/recorder_engine.dart' show recorderE
 import 'package:pure_live/features/recorder/recording_repository.dart';
 import 'package:pure_live/features/recorder/recording_settings.dart';
 import 'package:pure_live/features/recorder/recording_task.dart';
+import 'package:pure_live/features/settings/playback_settings_providers.dart' show kPreferredResolutionChoices;
 import 'package:pure_live/features/settings/settings_widgets.dart' show SettingsChoiceRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
@@ -75,6 +76,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final store = ref.watch(recordingTasksProvider);
+    final polling = ref.watch(recordingSettingsProvider).pollingEnabled;
     // The tasks store their room's identity only; the room itself (cover,
     // streamer, audience) is the snapshot the follows and history stores
     // keep under the same key (`platform:roomId`), so the card shows real
@@ -117,6 +119,9 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           platformName: _platformName(task.platform),
           onOpen: () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId)),
           onStop: ref.read(recorderEngineProvider).isRecording(task.id) ? () => unawaited(_stop(task.id)) : null,
+          onCancelWaiting: task.state == RecordingTaskState.waiting
+              ? () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id))
+              : null,
           onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
         ),
       );
@@ -155,6 +160,36 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             ],
           ),
         ),
+        if (!polling && (counts[_RecorderFilter.waiting] ?? 0) > 0)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: Text(
+                    t.recorder.pollingOff,
+                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                  ),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: () {
+                    ref.read(recordingSettingsProvider.notifier).pollingEnabled = true;
+                    showDsToast(
+                      context: context,
+                      title: t.recorder.pollingEnabledToast(
+                        seconds: ref.read(recordingSettingsProvider).liveCheckSeconds,
+                      ),
+                      status: DsStatus.success,
+                    );
+                  },
+                  child: Text(t.recorder.pollingEnable),
+                ),
+              ],
+            ),
+          ),
         Expanded(child: content),
       ],
     );
@@ -225,6 +260,7 @@ final class _TaskCard extends StatelessWidget {
     required this.onOpen,
     required this.onDelete,
     this.onStop,
+    this.onCancelWaiting,
   });
 
   final RecordingTask task;
@@ -243,6 +279,9 @@ final class _TaskCard extends StatelessWidget {
 
   /// Stops a running capture, null when the task is not being recorded.
   final VoidCallback? onStop;
+
+  /// Takes a waiting task out of the live check, null for other states.
+  final VoidCallback? onCancelWaiting;
 
   @override
   Widget build(BuildContext context) {
@@ -330,6 +369,7 @@ final class _TaskCard extends StatelessWidget {
             hasFile: (task.filePath ?? '').trim().isNotEmpty,
             onOpen: onOpen,
             onStop: onStop,
+            onCancelWaiting: onCancelWaiting,
             onDelete: onDelete,
           ),
         ],
@@ -362,8 +402,8 @@ final class _TaskCard extends StatelessWidget {
 }
 
 /// The card's "⋮" menu: the room, the saved file's folder (when the task
-/// has one), and the confirmed delete. The reference's "auto-record when live" switch
-/// has no field behind it yet and is left out rather than faked.
+/// has one), taking a waiting task out of the live check, and the confirmed
+/// delete.
 final class _TaskMenu extends StatelessWidget {
   const _TaskMenu({
     required this.task,
@@ -371,6 +411,7 @@ final class _TaskMenu extends StatelessWidget {
     required this.onOpen,
     required this.onDelete,
     this.onStop,
+    this.onCancelWaiting,
   });
 
   final RecordingTask task;
@@ -383,6 +424,9 @@ final class _TaskMenu extends StatelessWidget {
 
   /// Stops a running capture, null when the task is not being recorded.
   final VoidCallback? onStop;
+
+  /// Takes a waiting task out of the live check, null for other states.
+  final VoidCallback? onCancelWaiting;
 
   @override
   Widget build(BuildContext context) {
@@ -421,6 +465,12 @@ final class _TaskMenu extends StatelessWidget {
             label: Text(t.recorder.stop),
             destructive: true,
             onPressed: stop,
+          ),
+        if (onCancelWaiting case final cancel?)
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.clock),
+            label: Text(t.room.autoRecordOff),
+            onPressed: cancel,
           ),
         const DsMenuDivider(),
         DsMenuItem(
@@ -653,10 +703,24 @@ final class RecordingSettingsPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.recorder.settingsFiles),
           children: [
+            SettingsChoiceRow<String>(
+              leading: const DsIcon(DsIcons.gauge),
+              title: t.recorder.defaultQualityTitle,
+              description: t.recorder.defaultQualityDesc,
+              value: settings.defaultQuality,
+              options: [
+                for (final quality in kPreferredResolutionChoices) DsSelectOption(value: quality, label: quality),
+              ],
+              onChanged: (value) => controller.defaultQuality = value,
+            ),
             DsListRow(
               leading: const DsIcon(DsIcons.folder),
               title: Text(t.recorder.saveDirTitle),
-              description: Text(settings.saveDir.isEmpty ? t.recorder.saveDirDefault : settings.saveDir),
+              description: Text(
+                settings.saveDir.isEmpty
+                    ? t.recorder.saveDirDefault
+                    : '${settings.saveDir}${p.separator}PureLiveRecords',
+              ),
               onPressed: () => unawaited(_editSaveDir(context, ref)),
               showChevron: true,
             ),
@@ -697,6 +761,13 @@ final class RecordingSettingsPane extends ConsumerWidget {
                   DsSegment(value: RecordingFileContainer.mp4, label: Text(t.recorder.containerMp4)),
                 ],
               ),
+            ),
+            _RecordSwitch(
+              icon: DsIcons.messageCircle,
+              title: t.recorder.recordChatTitle,
+              description: t.recorder.recordChatDescription,
+              value: settings.recordDanmaku,
+              onChanged: (value) => controller.recordDanmaku = value,
             ),
           ],
         ),
@@ -745,9 +816,9 @@ final class RecordingSettingsPane extends ConsumerWidget {
               description: t.recorder.backoffDescription,
               detail: t.recorder.seconds(count: settings.restartBackoffSeconds),
               value: settings.restartBackoffSeconds.toDouble(),
-              min: 1,
-              max: 60,
-              divisions: 59,
+              min: 5,
+              max: 120,
+              divisions: 23,
               onChanged: (value) => controller.restartBackoffSeconds = value.round(),
               semanticLabel: t.recorder.backoffTitle,
             ),
@@ -825,6 +896,60 @@ final class RecordingSettingsPane extends ConsumerWidget {
             ),
           ],
         ),
+        DsListSection(
+          header: Text(t.recorder.liveCheckGroup),
+          children: [
+            _RecordSwitch(
+              icon: DsIcons.clock,
+              title: t.recorder.enablePolling,
+              description: t.recorder.enablePollingDesc,
+              value: settings.pollingEnabled,
+              onChanged: (value) => controller.pollingEnabled = value,
+            ),
+            if (settings.pollingEnabled) ...[
+              _RecordSlider(
+                icon: DsIcons.timer,
+                title: t.recorder.liveCheckSecondsTitle,
+                description: t.recorder.liveCheckSecondsDesc,
+                detail: t.recorder.seconds(count: settings.liveCheckSeconds),
+                value: settings.liveCheckSeconds.toDouble(),
+                min: 10,
+                max: 300,
+                divisions: 29,
+                onChanged: (value) => controller.liveCheckSeconds = value.round(),
+                semanticLabel: t.recorder.liveCheckSecondsTitle,
+              ),
+              _RecordSwitch(
+                icon: DsIcons.activity,
+                title: t.recorder.checkBackoff,
+                description: t.recorder.checkBackoffDesc,
+                value: settings.checkBackoffEnabled,
+                onChanged: (value) => controller.checkBackoffEnabled = value,
+              ),
+              if (settings.checkBackoffEnabled)
+                _RecordSlider(
+                  icon: DsIcons.hourglass,
+                  title: t.recorder.maxCheckSecondsTitle,
+                  description: t.recorder.maxCheckSecondsDesc,
+                  detail: t.recorder.seconds(count: settings.maxCheckSeconds),
+                  value: settings.maxCheckSeconds.toDouble(),
+                  min: 60,
+                  max: 3600,
+                  divisions: 59,
+                  onChanged: (value) => controller.maxCheckSeconds = (value / 60).round() * 60,
+                  semanticLabel: t.recorder.maxCheckSecondsTitle,
+                ),
+            ],
+            _RecordSwitch(
+              icon: DsIcons.rocket,
+              title: t.recorder.autoStartOnBoot,
+              description: t.recorder.autoStartOnBootDesc,
+              value: settings.autoStartOnBoot,
+              onChanged: (value) => controller.autoStartOnBoot = value,
+            ),
+          ],
+        ),
+        const _RecordingCacheSection(),
       ],
     );
   }
@@ -915,5 +1040,201 @@ final class RecordingSettingsPane extends ConsumerWidget {
       ),
     );
     field.dispose();
+  }
+}
+
+/// The recorder's cache section: the managed folder's size, the automatic
+/// trim switch and cap, and the confirmed clear that skips active takes.
+final class _RecordingCacheSection extends ConsumerStatefulWidget {
+  const _RecordingCacheSection();
+
+  @override
+  ConsumerState<_RecordingCacheSection> createState() => _RecordingCacheSectionState();
+}
+
+final class _RecordingCacheSectionState extends ConsumerState<_RecordingCacheSection> {
+  int? _bytes;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_measure());
+  }
+
+  Future<void> _measure() async {
+    try {
+      final bytes = await ref.read(recorderEngineProvider).cacheBytes();
+      if (mounted) setState(() => _bytes = bytes);
+    } on Object {
+      if (mounted) setState(() => _bytes = 0);
+    }
+  }
+
+  Future<void> _enforce() async {
+    try {
+      final bytes = await ref.read(recorderEngineProvider).enforceCacheLimit();
+      if (mounted) setState(() => _bytes = bytes);
+    } on Object {
+      if (mounted) {
+        showDsToast(context: context, title: context.t.recorder.cacheFailed, status: DsStatus.danger);
+      }
+    }
+  }
+
+  Future<void> _editLimit() async {
+    final value = await showDsDialog<int>(
+      context: context,
+      builder: (_) => _CacheLimitDialog(
+        initialMb: ref.read(recordingSettingsProvider).cacheLimitMb,
+      ),
+    );
+    if (value == null || !mounted) return;
+    ref.read(recordingSettingsProvider.notifier).cacheLimitMb = value;
+    await _enforce();
+  }
+
+  Future<void> _clear() async {
+    final t = context.t;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.recorder.cacheClearConfirm,
+      description: t.recorder.cacheClearConfirmDesc,
+      confirmLabel: t.recorder.cacheClear,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.trash2),
+    );
+    if (!confirmed || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      final bytes = await ref.read(recorderEngineProvider).clearCache();
+      if (!mounted) return;
+      setState(() => _bytes = bytes);
+      showDsToast(context: context, title: t.recorder.cacheCleared);
+    } on Object {
+      if (mounted) {
+        showDsToast(context: context, title: t.recorder.cacheFailed, status: DsStatus.danger);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final settings = ref.watch(recordingSettingsProvider);
+    final controller = ref.read(recordingSettingsProvider.notifier);
+    final recording = ref
+        .watch(recordingTasksProvider)
+        .tasks
+        .any((task) => task.state == RecordingTaskState.recording);
+    return DsListSection(
+      header: Text(t.recorder.cacheTitle),
+      children: [
+        _RecordSwitch(
+          icon: DsIcons.database,
+          title: t.recorder.cacheLimitEnabled,
+          description: t.recorder.cacheLimitEnabledDesc,
+          value: settings.cacheLimitEnabled,
+          onChanged: (value) {
+            controller.cacheLimitEnabled = value;
+            if (value) unawaited(_enforce());
+          },
+        ),
+        if (settings.cacheLimitEnabled)
+          DsListRow(
+            leading: const DsIcon(DsIcons.hardDrive),
+            title: Text(t.recorder.cacheLimit),
+            description: Text(t.recorder.cacheLimitDesc),
+            detail: Text(_formatMb(settings.cacheLimitMb)),
+            onPressed: () => unawaited(_editLimit()),
+            showChevron: true,
+          ),
+        DsListRow(
+          leading: const DsIcon(DsIcons.archive),
+          title: Text(t.recorder.cacheSize),
+          description: Text(recording ? t.recorder.cacheBusy : t.recorder.cacheSizeDesc),
+          detail: Text(_bytes == null ? '…' : _formatMb((_bytes! / (1024 * 1024)).round())),
+          trailing: DsButton(
+            variant: DsButtonVariant.ghost,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.refreshCw, size: 16),
+            onPressed: _busy ? null : () => unawaited(_measure()),
+            child: Text(t.recorder.cacheRefresh),
+          ),
+        ),
+        DsListRow(
+          leading: const DsIcon(DsIcons.trash2),
+          title: Text(t.recorder.cacheClear),
+          description: Text(t.recorder.cacheClearDesc),
+          destructive: true,
+          trailing: DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            onPressed: _busy || recording ? null : () => unawaited(_clear()),
+            child: Text(t.recorder.cacheClear),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s16),
+          child: Text(t.recorder.cacheManagedHint, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+        ),
+      ],
+    );
+  }
+}
+
+/// The cap editor: typed freely, committed on Confirm so a half-typed
+/// "2048" never trims the folder at "2" MB.
+final class _CacheLimitDialog extends StatefulWidget {
+  const _CacheLimitDialog({required this.initialMb});
+
+  final int initialMb;
+
+  @override
+  State<_CacheLimitDialog> createState() => _CacheLimitDialogState();
+}
+
+final class _CacheLimitDialogState extends State<_CacheLimitDialog> {
+  late num? _draft = widget.initialMb;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return DsDialog(
+      title: Text(t.recorder.cacheLimit),
+      icon: const DsIcon(DsIcons.database),
+      description: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s12,
+        children: [
+          Text(t.recorder.cacheLimitDesc),
+          DsNumberField(
+            value: _draft,
+            min: kRecordingCacheLimitMinMb,
+            max: kRecordingCacheLimitMaxMb,
+            unit: 'MB',
+            autofocus: true,
+            semanticLabel: t.recorder.cacheLimit,
+            onChanged: (value) => setState(() => _draft = value),
+          ),
+        ],
+      ),
+      actions: [
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(t.common.cancel),
+        ),
+        DsButton(
+          onPressed: _draft == null ? null : () => Navigator.of(context).pop(_draft!.round()),
+          child: Text(t.common.confirm),
+        ),
+      ],
+    );
   }
 }

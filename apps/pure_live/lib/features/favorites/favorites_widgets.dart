@@ -4,7 +4,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/features/settings/audience_metric_provider.dart'
-    show audienceFigureOf, audienceMetricProvider;
+    show audienceFigureOf, audienceMetricProvider, audiencePolicyProvider;
+import 'package:pure_live/features/settings/room_card_settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/room_cover_chip.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart';
@@ -55,27 +56,47 @@ final class FollowedRoomCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final audience = _audienceText(ref);
-    final meta = _metaText(context);
-    if (compact) {
+    final appearance = ref.watch(roomCardAppearanceProvider);
+    final radius = BorderRadius.circular(appearance.cornerRadius);
+    final audience = appearance.showAudience ? _audienceText(ref) : null;
+    final showPlatform = platformName != null && appearance.platformBadge != RoomCardPlatformBadgeMode.hidden;
+    final replay = appearance.showReplayBadge && room.broadcast.isRecord;
+    final meta = _metaText(context, showAnchor: appearance.showAnchorName);
+    final anchorName = (room.anchor?.name ?? '').trim();
+    final avatarUrl = (room.anchor?.avatarUrl ?? '').trim();
+    final row = compact || appearance.layout == RoomCardLayout.compact;
+    if (row) {
       return DsCard(
         onPressed: onOpen,
-        style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: BorderRadius.circular(theme.radii.card)),
+        style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: radius),
         child: SizedBox(
           height: 84,
           child: Row(
             children: [
-              SizedBox(
-                width: 148,
-                child: DsImage(
-                  image: cachedImage(room.content.coverUrl),
+              if (compact)
+                SizedBox(
                   width: 148,
-                  height: 84,
-                  semanticLabel: room.content.title,
-                  fallback: _CoverFallback(title: room.content.title),
-                  style: DsImageStyle(borderRadius: BorderRadius.horizontal(left: Radius.circular(theme.radii.card))),
+                  child: DsImage(
+                    image: cachedImage(room.content.coverUrl),
+                    width: 148,
+                    height: 84,
+                    semanticLabel: room.content.title,
+                    fallback: _CoverFallback(title: room.content.title),
+                    style: DsImageStyle(
+                      borderRadius: BorderRadius.horizontal(left: Radius.circular(appearance.cornerRadius)),
+                    ),
+                  ),
                 ),
-              ),
+              if (appearance.showAvatar)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 10),
+                  child: DsAvatar(
+                    initials: anchorName.isEmpty ? room.content.title : anchorName,
+                    image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+                    size: DsSize.sm,
+                    semanticLabel: anchorName.isEmpty ? room.content.title : anchorName,
+                  ),
+                ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -91,7 +112,7 @@ final class FollowedRoomCard extends ConsumerWidget {
                         style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                       ),
                       Text(
-                        [?platformName, ?meta].join(' · '),
+                        [if (showPlatform) platformName, ?meta].join(' · '),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.typography.caption.copyWith(color: colors.textMuted),
@@ -107,6 +128,21 @@ final class FollowedRoomCard extends ConsumerWidget {
                   ),
                 ),
               ),
+              if (replay)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 3,
+                    children: [
+                      DsIcon(DsIcons.history, size: 13, color: colors.textMuted),
+                      Text(
+                        context.t.settings.roomCardReplay,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                    ],
+                  ),
+                ),
               if (audience != null)
                 Padding(
                   padding: const EdgeInsetsDirectional.only(end: 8),
@@ -152,7 +188,7 @@ final class FollowedRoomCard extends ConsumerWidget {
       children: [
         DsCard(
           onPressed: onOpen,
-          style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: BorderRadius.circular(theme.radii.card)),
+          style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: radius),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -163,7 +199,9 @@ final class FollowedRoomCard extends ConsumerWidget {
                     aspectRatio: 16 / 9,
                     semanticLabel: room.content.title,
                     fallback: _CoverFallback(title: room.content.title),
-                    style: DsImageStyle(borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card))),
+                    style: DsImageStyle(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(appearance.cornerRadius)),
+                    ),
                   ),
                   const PositionedDirectional(
                     start: 0,
@@ -174,11 +212,23 @@ final class FollowedRoomCard extends ConsumerWidget {
                       child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
                     ),
                   ),
-                  if (platformName != null)
+                  if (showPlatform || replay)
                     PositionedDirectional(
                       top: DsSpace.s8,
                       start: DsSpace.s8,
-                      child: RoomCoverChip(text: platformName!, maxWidth: 132),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: 6,
+                        children: [
+                          if (showPlatform) RoomCoverChip(text: platformName!, maxWidth: 132),
+                          if (replay)
+                            RoomCoverChip(
+                              text: context.t.settings.roomCardReplay,
+                              icon: DsIcons.history,
+                              maxWidth: 120,
+                            ),
+                        ],
+                      ),
                     ),
                   PositionedDirectional(
                     start: DsSpace.s8,
@@ -218,32 +268,47 @@ final class FollowedRoomCard extends ConsumerWidget {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 3,
+                  child: Row(
+                    spacing: 8,
                     children: [
-                      Flexible(
-                        child: Text(
-                          room.content.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                      if (appearance.showAvatar)
+                        DsAvatar(
+                          initials: anchorName.isEmpty ? room.content.title : anchorName,
+                          image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+                          size: DsSize.sm,
+                          semanticLabel: anchorName.isEmpty ? room.content.title : anchorName,
+                        ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          spacing: 3,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                room.content.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                              ),
+                            ),
+                            if (meta != null)
+                              Text(
+                                meta,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.caption.copyWith(color: colors.textMuted),
+                              ),
+                            if (tags.isNotEmpty)
+                              Text(
+                                tags.join(' · '),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                              ),
+                          ],
                         ),
                       ),
-                      if (_metaText(context) case final meta?)
-                        Text(
-                          meta,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.caption.copyWith(color: colors.textMuted),
-                        ),
-                      if (tags.isNotEmpty)
-                        Text(
-                          tags.join(' · '),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                        ),
                     ],
                   ),
                 ),
@@ -281,17 +346,21 @@ final class FollowedRoomCard extends ConsumerWidget {
   /// the first figure the source gave; null when it gave none.
   /// The audience badge's words, or null when no figure exists.
   String? _audienceText(WidgetRef ref) {
-    final figure = audienceFigureOf(room, ref.watch(audienceMetricProvider));
+    final figure = audienceFigureOf(
+      room,
+      ref.watch(audienceMetricProvider),
+      policy: ref.watch(audiencePolicyProvider),
+    );
     if (figure == null) return null;
     return AudienceFormat.format(figure);
   }
 
   /// Streamer · broadcast, each only where the room has it; the audience
-  /// stays on the cover.
-  String? _metaText(BuildContext context) {
+  /// stays on the cover. [showAnchor] hides the streamer's name only.
+  String? _metaText(BuildContext context, {required bool showAnchor}) {
     final streamer = room.anchor?.name.trim() ?? '';
     final status = roomBroadcastText(context.t, room);
-    final parts = [if (streamer.isNotEmpty) streamer, ?status];
+    final parts = [if (showAnchor && streamer.isNotEmpty) streamer, ?status];
     return parts.isEmpty ? null : parts.join(' · ');
   }
 }
@@ -335,6 +404,8 @@ final class FavoritesPager extends StatefulWidget {
     required this.pageCount,
     required this.pageSize,
     required this.busy,
+    required this.showPageSize,
+    required this.showGoto,
     required this.pageSizes,
     required this.onPage,
     required this.onPageSize,
@@ -353,6 +424,14 @@ final class FavoritesPager extends StatefulWidget {
 
   /// A refresh is running: the buttons are inert.
   final bool busy;
+
+  /// Whether the rooms-per-page selector shows (the reference's
+  /// `showPageSizeSelector`); [pageSize] keeps paging when it is hidden.
+  final bool showPageSize;
+
+  /// Whether the jump-to-page field shows (the reference's
+  /// `showGotoButton`); the page numbers keep paging when it is hidden.
+  final bool showGoto;
 
   /// The rooms-per-page choices.
   final List<int> pageSizes;
@@ -415,34 +494,38 @@ final class _FavoritesPagerState extends State<FavoritesPager> {
           previousLabel: t.popular.prevPage,
           nextLabel: t.popular.nextPage,
         ),
-        const SizedBox(width: DsSpace.s8),
-        Text(t.favorites.perPage, style: muted),
-        SizedBox(
-          width: 88,
-          child: AdaptiveChoiceField<int>(
-            value: widget.pageSize,
-            title: t.favorites.perPage,
-            onChanged: busy ? null : widget.onPageSize,
-            options: [for (final size in widget.pageSizes) DsSelectOption(value: size, label: '$size')],
-            semanticLabel: t.favorites.perPage,
+        if (widget.showPageSize) ...[
+          const SizedBox(width: DsSpace.s8),
+          Text(t.favorites.perPage, style: muted),
+          SizedBox(
+            width: 88,
+            child: AdaptiveChoiceField<int>(
+              value: widget.pageSize,
+              title: t.favorites.perPage,
+              onChanged: busy ? null : widget.onPageSize,
+              options: [for (final size in widget.pageSizes) DsSelectOption(value: size, label: '$size')],
+              semanticLabel: t.favorites.perPage,
+            ),
           ),
-        ),
-        const SizedBox(width: DsSpace.s8),
-        Text(t.favorites.goTo, style: muted),
-        SizedBox(
-          width: 56,
-          child: DsTextField(
-            controller: _input,
-            enabled: !busy,
-            keyboardType: TextInputType.number,
-            textAlign: TextAlign.center,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            onSubmitted: (_) => _jump(),
-            semanticLabel: t.favorites.goTo,
-            style: const DsTextFieldStyle(height: 30, padding: EdgeInsets.symmetric(horizontal: 6)),
+        ],
+        if (widget.showGoto) ...[
+          const SizedBox(width: DsSpace.s8),
+          Text(t.favorites.goTo, style: muted),
+          SizedBox(
+            width: 56,
+            child: DsTextField(
+              controller: _input,
+              enabled: !busy,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onSubmitted: (_) => _jump(),
+              semanticLabel: t.favorites.goTo,
+              style: const DsTextFieldStyle(height: 30, padding: EdgeInsets.symmetric(horizontal: 6)),
+            ),
           ),
-        ),
-        Text(t.favorites.pageUnit, style: muted),
+          Text(t.favorites.pageUnit, style: muted),
+        ],
       ],
     );
     return LayoutBuilder(

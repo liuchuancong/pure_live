@@ -124,6 +124,7 @@ final class _FollowTagPickerState extends ConsumerState<_FollowTagPicker> {
               child: DsTextField(
                 controller: _field,
                 clearable: true,
+                maxLength: kFollowTagNameMaxLength,
                 placeholder: t.favorites.tagFieldHint,
                 onSubmitted: (_) => unawaited(_add()),
               ),

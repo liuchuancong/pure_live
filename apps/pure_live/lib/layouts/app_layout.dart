@@ -7,12 +7,14 @@ import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:pure_live/app/navigation/module_navigation.dart';
 import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
 import 'package:pure_live/app/providers/module_providers.dart';
-import 'package:pure_live/app/providers/nav_visibility_providers.dart' show showMultiviewProvider;
+import 'package:pure_live/app/providers/nav_visibility_providers.dart'
+    show kHomeMenuItems, navMenuProvider, showMultiviewProvider;
 import 'package:pure_live/app/providers/navigation_providers.dart';
 import 'package:pure_live/app/providers/settings_section_provider.dart' show settingsSectionProvider;
 import 'package:pure_live/app/providers/sidebar_providers.dart';
 import 'package:pure_live/features/settings/settings_page.dart' show SettingsPage;
 import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
+import 'package:pure_live/features/settings/tv_preferences.dart' show tvMenuExpandedProvider;
 import 'package:pure_live/layouts/desktop/desktop_layout.dart';
 import 'package:pure_live/layouts/mobile/mobile_layout.dart';
 import 'package:pure_live/shared/enums/app_module.dart';
@@ -102,6 +104,37 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
   /// [kExpandedSidebarBreakpoint].
   double? _lastWidth;
 
+  /// Whether a selected home entry that the navigation setting just hid is
+  /// already waiting to fall back to the first visible one.
+  bool _homeFallbackScheduled = false;
+
+  /// Moves a selection off a home entry the navigation setting hides. The
+  /// fallback is a microtask because a provider write during build is
+  /// rejected; the build calls it after reading the selection.
+  void _scheduleHomeFallback() {
+    if (_homeFallbackScheduled) return;
+    _homeFallbackScheduled = true;
+    unawaited(Future<void>.microtask(() {
+      _homeFallbackScheduled = false;
+      if (!mounted) return;
+      final home = ref.read(navMenuProvider);
+      if (home.isEmpty) return;
+      final target = home.first;
+      _lastAppItem = target;
+      ref.read(selectedNavItemProvider.notifier).selected = target;
+      final branch = _branchIndexOf(target);
+      if (branch != null) {
+        widget.shell.goBranch(branch, initialLocation: branch == widget.shell.currentIndex);
+      }
+      setState(() {
+        _trail
+          ..clear()
+          ..add(target);
+        _cursor = 0;
+      });
+    }));
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -134,43 +167,60 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     final desktopShell = formFactor == FormFactor.desktop || tv;
     final sidebar = ref.watch(sidebarProvider);
     final module = ref.watch(selectedModuleProvider);
+    final homeMenu = ref.watch(navMenuProvider);
+
+    /// A home entry the navigation setting hides falls back to the first
+    /// one still shown: no page may sit behind an absent menu row.
+    NavigationItem visibleHomeItem(NavigationItem item) =>
+        module == AppModule.live && kHomeMenuItems.contains(item) && !homeMenu.contains(item)
+        ? homeMenu.first
+        : item;
 
     /// Shows [item]: the live module's entries are router branches (state
     /// and deep links live there), every other module renders the entry's
     /// page in place from [kModulePages].
     void showItem(NavigationItem item) {
-      ref.read(selectedNavItemProvider.notifier).selected = item;
+      final target = visibleHomeItem(item);
+      ref.read(selectedNavItemProvider.notifier).selected = target;
       if (module != AppModule.live) {
         setState(() {});
         return;
       }
-      final branch = _branchIndexOf(item);
+      final branch = _branchIndexOf(target);
       if (branch != null) {
         widget.shell.goBranch(branch, initialLocation: branch == widget.shell.currentIndex);
       }
     }
 
     void handleSelected(NavigationItem item) {
+      final target = visibleHomeItem(item);
       if (module == AppModule.live) {
-        if (_branchIndexOf(item) == null) {
+        if (_branchIndexOf(target) == null) {
           return; // the page has not arrived yet.
         }
-      } else if (item != NavigationItem.settings && !kModulePages.containsKey(item)) {
+      } else if (target != NavigationItem.settings && !kModulePages.containsKey(target)) {
         return;
       }
       setState(() {
         // A fresh selection cuts the trail's future: forward is gone
         // until back has run.
         _trail.removeRange(_cursor + 1, _trail.length);
-        if (_trail[_cursor] != item) {
-          _trail.add(item);
+        if (_trail[_cursor] != target) {
+          _trail.add(target);
           _cursor = _trail.length - 1;
         }
       });
-      if (item != NavigationItem.settings) {
-        _lastAppItem = item;
+      if (target != NavigationItem.settings) {
+        _lastAppItem = target;
       }
-      showItem(item);
+      showItem(target);
+    }
+
+    // A selection left on an entry the navigation setting hid (startup with
+    // a restored menu list, or a restore while the page is open) moves to
+    // the first visible one after this frame.
+    if (module == AppModule.live && kHomeMenuItems.contains(selected) && !homeMenu.contains(selected)) {
+      _scheduleHomeFallback();
     }
 
     // Settings is a destination of the same shell: while it is selected the
@@ -194,7 +244,13 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     final toolSet = toolOrder.toSet();
     final appMenu = [
       for (final block in navigation.menu)
-        _orderedMenuBlock(block, toolSet: toolSet, toolOrder: toolOrder, showMultiview: showMultiview),
+        _orderedMenuBlock(
+          block,
+          toolSet: toolSet,
+          toolOrder: toolOrder,
+          showMultiview: showMultiview,
+          homeMenuOrder: module == AppModule.live ? homeMenu : null,
+        ),
     ]..removeWhere((block) => block.isEmpty);
     final menuGroups = <List<Object>>[];
     final menuGroupLabels = <String?>[];
@@ -286,6 +342,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
         onSearch: () => handleSelected(NavigationItem.search),
         settingsSection: inSettings ? settingsSection : null,
         showMultiview: showMultiview,
+        homeMenuItems: homeMenu,
       );
     }
     return DesktopLayout(
@@ -300,9 +357,15 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       onBackToApp: () => handleSelected(_lastAppItem ?? defaultNavigationItemFor(AppModule.live)),
       // The toggle rules; a window crossing under the breakpoint folds
       // the sidebar once (didChangeDependencies), never outvoting this.
-      expanded: sidebar.expanded,
+      expanded: (tv && ref.watch(tvMenuExpandedProvider)) || sidebar.expanded,
       sidebarWidth: sidebar.width,
-      onToggleSidebar: () => ref.read(sidebarProvider.notifier).toggle(),
+      onToggleSidebar: () {
+        if (tv && ref.read(tvMenuExpandedProvider)) {
+          unawaited(ref.read(tvMenuExpandedProvider.notifier).set(value: false));
+        } else {
+          ref.read(sidebarProvider.notifier).toggle();
+        }
+      },
       onSidebarWidthChanged: ref.read(sidebarProvider.notifier).setWidth,
       canBack: _cursor > 0,
       canForward: _cursor < _trail.length - 1,
@@ -319,8 +382,18 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     required Set<NavigationItem> toolSet,
     required List<NavigationItem> toolOrder,
     required bool showMultiview,
+    required List<NavigationItem>? homeMenuOrder,
   }) {
     bool shown(NavigationItem item) => showMultiview || item != NavigationItem.multiview;
+    // The home entries are one block: the navigation setting owns both
+    // membership and order, so the tools' order must not treat the
+    // recording centre's page as a tool.
+    if (homeMenuOrder != null && block.every(kHomeMenuItems.contains)) {
+      return [
+        for (final item in homeMenuOrder)
+          if (block.contains(item)) item,
+      ];
+    }
     if (!block.any(toolSet.contains)) {
       return [
         for (final item in block)

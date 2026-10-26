@@ -7,18 +7,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
+import 'package:pure_live/app/providers/page_size_options_provider.dart' show pageSizeOptionsProvider;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/app/routing/app_router.dart' show SettingsSectionRoute;
 import 'package:pure_live/features/popular/popular_controller.dart';
 import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
 import 'package:pure_live/features/search/search_controller.dart';
+import 'package:pure_live/features/settings/audience_metric_provider.dart'
+    show AudienceMetricChoice, AudiencePolicy, audienceFigureOf, audienceMetricProvider, audiencePolicyProvider;
+import 'package:pure_live/features/settings/room_card_settings.dart'
+    show RoomCardLayout, roomCardAppearanceProvider;
 import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
+import 'package:pure_live/features/settings/sites_display_provider.dart'
+    show sitesDisplayProvider, sitesOrderProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 import 'package:pure_live/shared/navigation/room_opener.dart';
 import 'package:pure_live/shared/paging/room_paging.dart';
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
 import 'package:pure_live/shared/platforms/platform_picker.dart';
+import 'package:pure_live/shared/rooms/room_visibility.dart' show showUnplayableProvider;
 import 'package:pure_live/shared/widgets/choice_dialog.dart' show AdaptiveChoiceField;
 
 /// How a platform's rooms are ordered on screen: the platform's own
@@ -26,18 +34,24 @@ import 'package:pure_live/shared/widgets/choice_dialog.dart' show AdaptiveChoice
 /// catalogue is already in hand, so switching never refetches.
 enum _PopularSort { platform, audience }
 
-/// One platform's audience figure for the sort: the shown metric's figure,
-/// else any figure the source gave, else zero.
-int _audienceRank(LiveRoom room) =>
-    room.audience.onlineViewers ?? room.audience.popularity ?? room.audience.totalViewers ?? 0;
+/// One platform's audience figure for the sort: the figure the card shows,
+/// else zero. The choice and the real-online policy are the same ones the
+/// cards use, so the order follows what the viewer sees.
+int _audienceRank(LiveRoom room, AudienceMetricChoice choice, AudiencePolicy policy) =>
+    audienceFigureOf(room, choice, policy: policy) ?? 0;
 
 /// [rooms] in [sort]'s order; the platform's own order is left untouched,
 /// and the audience order is stable (ties keep the platform's order).
-List<LiveRoom> _sortedRooms(List<LiveRoom> rooms, _PopularSort sort) {
+List<LiveRoom> _sortedRooms(
+  List<LiveRoom> rooms,
+  _PopularSort sort, {
+  required AudienceMetricChoice choice,
+  required AudiencePolicy policy,
+}) {
   if (sort == _PopularSort.platform) return rooms;
   final indexed = rooms.indexed.toList()
     ..sort((a, b) {
-      final byAudience = _audienceRank(b.$2).compareTo(_audienceRank(a.$2));
+      final byAudience = _audienceRank(b.$2, choice, policy).compareTo(_audienceRank(a.$2, choice, policy));
       return byAudience != 0 ? byAudience : a.$1.compareTo(b.$1);
     });
   return [for (final (_, room) in indexed) room];
@@ -79,6 +93,10 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
 
   Timer? _warmTimer;
   DateTime? _backgroundedAt;
+
+  /// Whether a platform-display fallback is already waiting for the frame:
+  /// one move per hidden selection, not one per build.
+  bool _platformFallbackScheduled = false;
 
   /// The local order of each platform's rooms.
   _PopularSort _sort = _PopularSort.platform;
@@ -138,10 +156,39 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
     });
   }
 
+  /// The shown platform was hidden in the settings while another one is
+  /// still visible: move to the first visible one and load its feed, rather
+  /// than leaving the hidden platform's rooms behind an absent tab.
+  void _schedulePlatformFallback() {
+    if (_platformFallbackScheduled) return;
+    _platformFallbackScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _platformFallbackScheduled = false;
+      if (!mounted) return;
+      final current = ref.read(popularSiteProvider);
+      final visible = ref.read(popularCatalogProvider.notifier).platformIds();
+      if (visible.isEmpty || visible.contains(current)) return;
+      final next = visible.first;
+      ref.read(popularSiteProvider.notifier).selected = next;
+      unawaited(ref.read(popularCatalogProvider.notifier).open(next));
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final platform = ref.watch(popularSiteProvider);
+    // The platform list and its order are settings this page follows live:
+    // watching the notifier alone would leave the tabs stale until another
+    // rebuild.
+    ref
+      ..watch(sitesDisplayProvider)
+      ..watch(sitesOrderProvider);
+    final ids = ref.watch(popularCatalogProvider.notifier).platformIds();
+    // The platform list can change under an open page (the settings hide
+    // the shown platform, or a backup restores another display set): move
+    // to a visible one instead of showing rooms behind an absent tab.
+    if (ids.isNotEmpty && !ids.contains(platform)) _schedulePlatformFallback();
     final inline = ref.watch(popularInlineSearchProvider);
     // An inline search (the toolbar's word) takes the page: the platform's
     // own results grid under a search bar, browsing one keypress away.
@@ -150,7 +197,6 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
     if (inline != null) {
       return _InlineSearchFeed(platform: platform, query: inline);
     }
-    final ids = ref.watch(popularCatalogProvider.notifier).platformIds();
     if (ids.isEmpty) {
       return Center(
         child: DsEmptyState(
@@ -162,7 +208,7 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
               size: DsSize.sm,
               leading: const DsIcon(DsIcons.antenna, size: 16),
               onPressed: () =>
-                  unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sources.name).location)),
+                  unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sites.name).location)),
               child: Text(t.settings.sitesDisplay),
             ),
           ],
@@ -243,19 +289,29 @@ final class _PlatformFeed extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     final controller = ref.read(popularCatalogProvider.notifier);
     final feed = ref.watch(popularCatalogProvider.select((catalog) => catalog[platform]));
+
     final settings = ref.watch(browseSettingsProvider);
+    final showPageSizeSelector = ref.watch(showPageSizeSelectorProvider);
+    final pageSizeOptions = ref.watch(pageSizeOptionsProvider);
     final state =
         feed ??
         (
           rooms: const <LiveRoom>[],
           page: 1,
           pageSize: settings.homePageSize,
+          hidden: 0,
           hasMore: true,
           loading: false,
           error: null,
         );
+    // The shared choices, with the page's own size kept visible while a
+    // resize catches up.
+    final pagerSizes = {...pageSizeOptions, state.pageSize}.toList()..sort();
     // The viewer may change the display page size anywhere; re-measure the
     // open catalogue (the first room of the page stays in view) and do the
     // same for a tab that was loaded under another size.
@@ -274,7 +330,12 @@ final class _PlatformFeed extends ConsumerWidget {
     // The chosen order is applied to the catalogue before the desktop
     // slices it, so a page holds the right rooms rather than a reordered
     // window of one page.
-    final ordered = _sortedRooms(state.rooms, sort);
+    final ordered = _sortedRooms(
+      state.rooms,
+      sort,
+      choice: ref.watch(audienceMetricProvider),
+      policy: ref.watch(audiencePolicyProvider),
+    );
     // Desktop pages slice the platform catalogue locally, so fixed-window
     // platforms (Douyu 40, Huya ~120) and asked-size ones page the same
     // way, and the viewer's page size never moves a server boundary.
@@ -283,6 +344,9 @@ final class _PlatformFeed extends ConsumerWidget {
       scrollController: scrollController,
       items: rooms,
       layout: ref.watch(browseLayoutProvider),
+      aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
+          ? CardGrid.roomCardCompactAspectRatio
+          : CardGrid.roomCardAspectRatio,
       listItemBuilder: (context, room) => RoomCard(
         room: room,
         compact: true,
@@ -307,15 +371,47 @@ final class _PlatformFeed extends ConsumerWidget {
         onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId),
       ),
     );
+    // The reference's hidden-count line: rooms the discovery filter keeps
+    // out of the page are counted, not dropped silently, and one action
+    // turns the setting over so they show.
+    final hiddenNote = state.hidden > 0 && !ref.watch(showUnplayableProvider)
+        ? Padding(
+            padding: EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, wide ? DsSpace.s4 : DsSpace.s20),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                DsIcon(DsIcons.circleAlert, size: 16, color: colors.textMuted),
+                Expanded(
+                  child: Text(
+                    t.popular.hiddenUnplayable(count: state.hidden),
+                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                  ),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  onPressed: () => ref.read(showUnplayableProvider.notifier).setShow(value: true),
+                  child: Text(t.common.show),
+                ),
+              ],
+            ),
+          )
+        : null;
+    final feedView = hiddenNote == null
+        ? grid
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [Expanded(child: grid), hiddenNote],
+          );
     // A wide window pages by number (the reference's desktop feed) — the
     // kit's pagination: numbers with gaps, arrows at the ends; a narrow
     // one keeps the infinite scroll, thumbs do not page. The count is the
     // local slices plus one while the platform may still have rooms.
-    if (!wide) return grid;
+    if (!wide) return feedView;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(child: grid),
+        Expanded(child: feedView),
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
           child: Center(
@@ -323,25 +419,26 @@ final class _PlatformFeed extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               spacing: DsSpace.s8,
               children: [
-                SizedBox(
-                  width: 108,
-                  child: AdaptiveChoiceField<int>(
-                    value: state.pageSize,
-                    title: t.popular.perPage,
-                    onChanged: state.loading
-                        ? null
-                        : (value) => ref.read(browseSettingsProvider.notifier).homePageSize = value,
-                    options: [
-                      for (final size in const [20, 30, 40, 60, 80])
-                        DsSelectOption(
-                          value: size,
-                          label: t.popular.pageSize(size: size),
-                        ),
-                    ],
-                    placeholder: t.popular.perPage,
-                    semanticLabel: t.popular.perPage,
+                if (showPageSizeSelector)
+                  SizedBox(
+                    width: 108,
+                    child: AdaptiveChoiceField<int>(
+                      value: state.pageSize,
+                      title: t.popular.perPage,
+                      onChanged: state.loading
+                          ? null
+                          : (value) => ref.read(browseSettingsProvider.notifier).homePageSize = value,
+                      options: [
+                        for (final size in pagerSizes)
+                          DsSelectOption(
+                            value: size,
+                            label: t.popular.pageSize(size: size),
+                          ),
+                      ],
+                      placeholder: t.popular.perPage,
+                      semanticLabel: t.popular.perPage,
+                    ),
                   ),
-                ),
                 if (state.loading) const SizedBox(width: 14, height: 14, child: DsSpinner()),
                 DsPagination(
                   page: state.page,
@@ -502,6 +599,9 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
       scrollController: _scroll,
       items: rooms,
       layout: ref.watch(browseLayoutProvider),
+      aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
+          ? CardGrid.roomCardCompactAspectRatio
+          : CardGrid.roomCardAspectRatio,
       listItemBuilder: (context, room) => RoomCard(
         room: room,
         compact: true,

@@ -329,6 +329,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
   Widget _pane(List<_Slot> slots, MultiviewPlaybackState playback, int at, {bool compact = false}) {
     final slot = slots[at];
     return _PaneTile(
+      fit: ref.watch(playbackSettingsProvider).fit.boxFit,
       slot: slot,
       playback: playback.panes[slot.index],
       selected: playback.selected == slot.index,
@@ -412,6 +413,7 @@ typedef _Slot = ({int index, String? key, LiveRoom? room, String title});
 /// rings and each tap elsewhere exchanges.
 final class _PaneTile extends StatelessWidget {
   const _PaneTile({
+    required this.fit,
     required this.slot,
     required this.playback,
     required this.selected,
@@ -425,6 +427,9 @@ final class _PaneTile extends StatelessWidget {
     required this.onSwapStart,
     required this.onSwapWith,
   });
+
+  /// The picture's fit, the viewer's shared 画面比例 setting (KER-02).
+  final BoxFit fit;
 
   /// The pane's data: its place in the wall, the identity it holds and
   /// the room that identity resolves to.
@@ -531,6 +536,7 @@ final class _PaneTile extends StatelessWidget {
           IgnorePointer(
             child: MediaPlayerView(
               handle: handle,
+              fit: fit,
               backgroundColor: colors.overlay,
               // A wall of players pays for no capture boundary it never uses.
               captureBoundary: false,

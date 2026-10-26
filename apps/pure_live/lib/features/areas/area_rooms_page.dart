@@ -10,11 +10,14 @@ import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteP
 import 'package:pure_live/features/areas/area_follow_repository.dart';
 import 'package:pure_live/features/areas/area_rooms_controller.dart';
 import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
+import 'package:pure_live/features/settings/room_card_settings.dart'
+    show RoomCardLayout, roomCardAppearanceProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 import 'package:pure_live/shared/grids/layout_toggle.dart' show LayoutToggle;
 import 'package:pure_live/shared/navigation/room_opener.dart';
 import 'package:pure_live/shared/paging/room_paging.dart';
+import 'package:pure_live/shared/rooms/room_visibility.dart' show showUnplayableProvider;
 
 /// One area's rooms (the reference's `kAreaRooms`): its own page under the
 /// areas grid, on the root navigator on both desktop and mobile — back
@@ -82,11 +85,49 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
       });
     }
     final wide = MediaQuery.sizeOf(context).width >= 768;
+    final showUnplayable = ref.watch(showUnplayableProvider);
+
+    // The reference's hidden-count line under the rooms: what the discovery
+    // filter keeps out is counted, not dropped silently, and one action
+    // turns the setting over so they show.
+    Widget withHiddenNote(AreaRoomsState open, Widget content) {
+      if (open.hidden <= 0 || showUnplayable) return content;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: content),
+          Padding(
+            padding: EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, wide ? DsSpace.s4 : DsSpace.s20),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                DsIcon(DsIcons.circleAlert, size: 16, color: colors.textMuted),
+                Expanded(
+                  child: Text(
+                    context.t.areas.hiddenUnplayable(count: open.hidden),
+                    style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
+                  ),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  onPressed: () => ref.read(showUnplayableProvider.notifier).setShow(value: true),
+                  child: Text(context.t.common.show),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
 
     Widget grid(AreaRoomsState open, List<LiveRoom> rooms, {required bool endless}) => CardGrid<LiveRoom>(
       scrollController: _scroll,
       items: rooms,
       layout: ref.watch(browseLayoutProvider),
+      aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
+          ? CardGrid.roomCardCompactAspectRatio
+          : CardGrid.roomCardAspectRatio,
       listItemBuilder: (context, room) => RoomCard(
         room: room,
         compact: true,
@@ -117,12 +158,17 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
         child: DsEmptyState(icon: const DsIcon(DsIcons.tag), title: Text(title)),
       );
     } else if (!wide) {
-      body = grid(state, state.rooms, endless: true);
+      body = withHiddenNote(state, grid(state, state.rooms, endless: true));
     } else {
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(child: grid(state, roomPageOf(state.rooms, state.page, state.pageSize), endless: false)),
+          Expanded(
+            child: withHiddenNote(
+              state,
+              grid(state, roomPageOf(state.rooms, state.page, state.pageSize), endless: false),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
             child: Center(

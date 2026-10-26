@@ -9,31 +9,48 @@ typedef ShellWindowSettings = ({CloseAction closeAction, bool dontAskExit});
 
 const ShellWindowSettings _defaults = (closeAction: CloseAction.quit, dontAskExit: false);
 
+/// Where the close behaviour persists.
+const String kCloseActionPref = 'shell.closeAction';
+
+/// Where the skip-confirmation choice persists.
+const String kDontAskExitPref = 'shell.dontAskExit';
+
+/// The stored close behaviour, read straight from the facade: the bootstrap's
+/// close handler runs outside the widget tree and has no ref, so this is the
+/// one parse both it and the controller use.
+CloseAction storedCloseAction() {
+  try {
+    return switch (StoragePrefs.getString(kCloseActionPref)) {
+      'minimise' => CloseAction.minimise,
+      'hideToTray' => CloseAction.hideToTray,
+      'quit' => CloseAction.quit,
+      _ => _defaults.closeAction,
+    };
+  } on Object {
+    return _defaults.closeAction;
+  }
+}
+
+/// Whether the viewer asked the close button to skip the confirmation.
+bool storedDontAskExit() {
+  try {
+    return StoragePrefs.getBool(kDontAskExitPref) ?? _defaults.dontAskExit;
+  } on Object {
+    return _defaults.dontAskExit;
+  }
+}
+
 /// Owns the window settings, persisted under `shell.*`; the bootstrap's
 /// close handler reads the choice fresh on every press.
 final class ShellWindowSettingsController extends Notifier<ShellWindowSettings> {
   @override
-  ShellWindowSettings build() {
-    try {
-      return (
-        closeAction: switch (StoragePrefs.getString('shell.closeAction')) {
-          'minimise' => CloseAction.minimise,
-          'hideToTray' => CloseAction.hideToTray,
-          'quit' => CloseAction.quit,
-          _ => _defaults.closeAction,
-        },
-        dontAskExit: StoragePrefs.getBool('shell.dontAskExit') ?? _defaults.dontAskExit,
-      );
-    } on Object {
-      return _defaults;
-    }
-  }
+  ShellWindowSettings build() => (closeAction: storedCloseAction(), dontAskExit: storedDontAskExit());
 
   /// Moves the close behaviour, writing through.
   Future<void> setCloseAction(CloseAction action) async {
     state = (closeAction: action, dontAskExit: state.dontAskExit);
     try {
-      await StoragePrefs.setString('shell.closeAction', action.name);
+      await StoragePrefs.setString(kCloseActionPref, action.name);
     } on Object {
       // The choice is a preference; a closed store loses it.
     }
@@ -43,7 +60,7 @@ final class ShellWindowSettingsController extends Notifier<ShellWindowSettings> 
   Future<void> setDontAskExit({required bool value}) async {
     state = (closeAction: state.closeAction, dontAskExit: value);
     try {
-      await StoragePrefs.setBool('shell.dontAskExit', value);
+      await StoragePrefs.setBool(kDontAskExitPref, value);
     } on Object {
       // The choice is a preference; a closed store loses it.
     }
@@ -54,8 +71,8 @@ final class ShellWindowSettingsController extends Notifier<ShellWindowSettings> 
   Future<void> rememberCloseChoice({required CloseAction action, required bool dontAskAgain}) async {
     state = (closeAction: action, dontAskExit: dontAskAgain);
     try {
-      await StoragePrefs.setString('shell.closeAction', action.name);
-      await StoragePrefs.setBool('shell.dontAskExit', dontAskAgain);
+      await StoragePrefs.setString(kCloseActionPref, action.name);
+      await StoragePrefs.setBool(kDontAskExitPref, dontAskAgain);
     } on Object {
       // The choice is a preference; a closed store loses it.
     }

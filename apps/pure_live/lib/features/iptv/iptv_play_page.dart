@@ -12,6 +12,7 @@ import 'package:live_sites/live_sites.dart'
 import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/app/providers/keep_screen_on_provider.dart' show keepScreenOnProvider;
+import 'package:pure_live/app/providers/player_backend_providers.dart' show playerKernelBackendProvider;
 import 'package:pure_live/app/providers/player_providers.dart' show playerKernelProvider;
 import 'package:pure_live/app/providers/presentation_providers.dart' show roomPresentationProvider;
 import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
@@ -20,7 +21,18 @@ import 'package:pure_live/features/iptv/iptv_guide_panel.dart' show catchupUrlOf
 import 'package:pure_live/features/iptv/iptv_user_agent.dart' show iptvHeadersWithUserAgent, iptvUserAgentProvider;
 import 'package:pure_live/features/room/cast_dialog.dart' show showCastDialog;
 import 'package:pure_live/features/settings/playback_settings_providers.dart' show playbackSettingsProvider;
+import 'package:pure_live/features/settings/player_tuning.dart'
+    show
+        PlayerTuning,
+        playerOutputChanged,
+        playerPresetTransitionOptions,
+        playerProxyProvider,
+        playerStoredEngineOptions,
+        playerTuningProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/player/background_playback_gate.dart' show BackgroundPlaybackGate;
+import 'package:pure_live/shared/player/super_resolution.dart'
+    show applySuperResolution, superResolutionModeProvider, withSuperResolution;
 import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
 /// One IPTV channel on media_core's own player: the playlist entry's URL
@@ -41,7 +53,7 @@ final class IptvPlayPage extends ConsumerStatefulWidget {
   ConsumerState<IptvPlayPage> createState() => _IptvPlayPageState();
 }
 
-final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
+final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsBindingObserver {
   LivePlaybackController? _playback;
   StreamSubscription<PlayerHandle>? _handles;
   StreamSubscription<PlayerCoreState>? _states;
@@ -56,6 +68,10 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
   bool _muted = false;
   bool _globalMute = false;
   double _volume = 1;
+
+  /// The Android background-playback gate and the channel it paused.
+  BackgroundPlaybackGate? _backgroundGate;
+  String? _backgroundPausedChannel;
 
   /// The programme being replayed, null while the live stream plays.
   EpgProgramme? _catchup;
@@ -75,8 +91,31 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _globalMute = ref.read(playbackSettingsProvider).globalMute;
     _volume = ref.read(playbackSettingsProvider.notifier).volume;
+    _backgroundGate = BackgroundPlaybackGate(
+      backgroundEnabled: () => ref.read(playbackSettingsProvider).backgroundPlay,
+      shouldPause: () {
+        final presentation = ref.read(roomPresentationProvider);
+        return _playbackState.playing &&
+            presentation != PresentationMode.pip &&
+            presentation != PresentationMode.floating;
+      },
+      pause: () async {
+        _backgroundPausedChannel = _channel?.id;
+        await _playback?.pause();
+      },
+      canResume: () =>
+          _backgroundPausedChannel != null &&
+          _playback != null &&
+          !_playbackState.playing &&
+          _channel?.id == _backgroundPausedChannel,
+      resume: () async {
+        _backgroundPausedChannel = null;
+        await _playback?.resume();
+      },
+    );
     _channel = widget.channel ?? ref.read(iptvLibraryProvider).value?.channelById(widget.channelId);
     _tick = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
@@ -88,6 +127,9 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _backgroundGate?.dispose();
+    _backgroundGate = null;
     _tick?.cancel();
     unawaited(_screenAwake.disable().catchError((Object _) {}));
     final player = _handle?.id;
@@ -177,12 +219,19 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
     _handles ??= playback.onHandleChanged.listen((handle) {
       if (mounted) setState(() => _handle = handle);
       unawaited(_applyAudio(handle));
+      unawaited(_applyEngineOptions(handle));
     });
     _failures ??= playback.onError.listen((failure) {
       if (mounted) setState(() => _error = failure.message ?? failure.code.name);
     });
     await playback.play(
-      LiveSourceRequest(sources: sources, title: replay?.title ?? channel.entry.name, allowEngineFallback: true),
+      LiveSourceRequest(
+        sources: sources,
+        title: replay?.title ?? channel.entry.name,
+        allowEngineFallback: true,
+        engineOptions: await _engineOptions(),
+      ),
+      preferredBackend: ref.read(playerKernelBackendProvider).id,
     );
   }
 
@@ -233,6 +282,11 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
     unawaited(showCastDialog(context, line: line, title: channel.entry.name));
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _backgroundGate?.handleLifecycle(state);
+  }
+
   bool get _effectivelyMuted => _muted || _globalMute;
 
   Future<void> _applyAudio(PlayerHandle handle) async {
@@ -241,6 +295,51 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
       await handle.setMute(muted: _effectivelyMuted);
     } on Object {
       // A refused audio preference is not a playback failure.
+    }
+  }
+
+  /// The engine options every IPTV channel keeps for its next line or
+  /// recovery: hardware decoding and the player proxy.
+  List<EngineOption> _storedEngineOptions() => playerStoredEngineOptions(
+    hardwareDecoding: ref.read(playbackSettingsProvider).hardwareDecoding,
+    tuning: ref.read(playerTuningProvider),
+    proxy: ref.read(playerProxyProvider),
+  );
+
+  /// The stored options plus the chosen shader chain; the chain lives on disk
+  /// and the engine mounts it as a list option.
+  Future<List<EngineOption>> _engineOptions() =>
+      withSuperResolution(_storedEngineOptions(), ref.read(superResolutionModeProvider));
+
+  /// Routes and decodes this channel like every other live player; every
+  /// handle gets the stored options, so a channel switch cannot keep an old
+  /// decoder or route. [extra] carries the previous preset's key resets when
+  /// a recipe change happens on the running channel.
+  Future<void> _applyEngineOptions(PlayerHandle handle, {List<EngineOption> extra = const []}) async {
+    try {
+      await handle.applyEngineOptions(<EngineOption>[...await _engineOptions(), ...extra]);
+    } on Object {
+      // A refused engine option is not a playback failure.
+    }
+  }
+
+  /// A custom-output or driver change applies to the running channel: the
+  /// stored options feed the next line, the handle gets them now, and a
+  /// changed video/audio output rebuilds the render context in place.
+  Future<void> _applyTuning(PlayerTuning? previous, PlayerTuning next) async {
+    final playback = _playback;
+    if (playback != null) unawaited(playback.updateEngineOptions(_storedEngineOptions()));
+    final handle = _handle;
+    if (handle == null) return;
+    await _applyEngineOptions(
+      handle,
+      extra: previous == null ? const <EngineOption>[] : playerPresetTransitionOptions(previous, next),
+    );
+    if (previous == null || !playerOutputChanged(previous, next)) return;
+    try {
+      await handle.rebuildEngine(reason: 'video output settings changed');
+    } on Object {
+      // A rebuild the engine refused must not fail the page.
     }
   }
 
@@ -290,6 +389,25 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
       if (mounted) setState(() => _globalMute = next);
       final current = _handle;
       if (current != null) unawaited(_applyAudio(current));
+    });
+    ref.listen(playerProxyProvider, (previous, next) {
+      if (previous == next) return;
+      final playback = _playback;
+      if (playback != null) unawaited(playback.updateEngineOptions(_storedEngineOptions()));
+    });
+    ref.listen(playbackSettingsProvider.select((settings) => settings.hardwareDecoding), (previous, next) {
+      if (previous == next) return;
+      final playback = _playback;
+      if (playback != null) unawaited(playback.updateEngineOptions(_storedEngineOptions()));
+    });
+    ref.listen(playerTuningProvider, (previous, next) {
+      if (previous == next) return;
+      unawaited(_applyTuning(previous, next));
+    });
+    ref.listen(superResolutionModeProvider, (previous, next) {
+      if (previous == next) return;
+      final current = _handle;
+      if (current != null) unawaited(applySuperResolution(current, next));
     });
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
@@ -437,7 +555,11 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> {
                     fit: StackFit.expand,
                     children: [
                       if (handle != null)
-                        MediaPlayerView(handle: handle, backgroundColor: colors.overlay)
+                        MediaPlayerView(
+                          handle: handle,
+                          fit: ref.watch(playbackSettingsProvider).fit.boxFit,
+                          backgroundColor: colors.overlay,
+                        )
                       else
                         const Center(child: AppLoadingIndicator(size: 28)),
                       if (_error != null)

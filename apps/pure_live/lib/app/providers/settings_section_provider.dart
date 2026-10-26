@@ -11,7 +11,7 @@ import 'package:pure_live/features/settings/settings_sections.dart' show Setting
 /// page follows.
 final class SettingsSectionController extends Notifier<SettingsSection> {
   @override
-  SettingsSection build() => SettingsSection.personalization;
+  SettingsSection build() => SettingsSection.theme;
 
   /// The section the shell is showing.
   SettingsSection get section => state;

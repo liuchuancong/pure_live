@@ -5,6 +5,10 @@ import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
 import 'package:pure_live/app/providers/network_providers.dart' show networkFactoryProvider;
+import 'package:pure_live/features/settings/platform_preferences_provider.dart'
+    show douyuForceRenewProvider, preferH264Provider, youtubeAllChatProvider;
+import 'package:pure_live/features/settings/twitch_languages_provider.dart' show twitchLanguagesProvider;
+import 'package:pure_live/features/shield/danmaku_filter_settings.dart' show danmakuFilterProvider;
 
 /// The registry of every built-in site, built once per process.
 ///
@@ -17,7 +21,18 @@ final sitesProvider = Provider<LiveSiteRegistry>((ref) {
   // One transport for every site: the proxy and the network log configured
   // once, rather than each adapter opening its own silent client.
   final http = ref.watch(networkFactoryProvider).create();
-  return LiveSiteRegistry(createBuiltInLiveSites(http: http));
+  return LiveSiteRegistry(
+    createBuiltInLiveSites(
+      http: http,
+      // The douyu protocol reads this for every suspected chat, so the
+      // shield page's switch bites the next line without a re-open.
+      douyuFilterSuspectedAutomated: () => ref.read(danmakuFilterProvider).douyuSuspectedAutomated,
+      douyuForceRenew: () => ref.read(douyuForceRenewProvider),
+      twitchLanguages: () => ref.read(twitchLanguagesProvider),
+      youtubeAllChat: () => ref.read(youtubeAllChatProvider),
+      huyaPreferH264: () => ref.read(preferH264Provider),
+    ),
+  );
 });
 
 /// The site the browsing surfaces (the home feed, the areas, the search)

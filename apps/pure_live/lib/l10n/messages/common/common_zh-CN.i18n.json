@@ -29,5 +29,7 @@
   "backToTop": "回到顶部",
   "more": "更多",
   "delete": "删除",
-  "newWindow": "新建窗口"
+  "newWindow": "新建窗口",
+  "show": "显示",
+  "save": "保存"
 }

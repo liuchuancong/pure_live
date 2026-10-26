@@ -8,6 +8,13 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 /// the room title.
 const String kDefaultNamingTemplate = '{date}_{title}';
 
+/// The smallest recording-cache cap: the reference's one megabyte.
+const int kRecordingCacheLimitMinMb = 1;
+
+/// A generous ceiling for the cap (1 TB), so a malformed backup cannot ask
+/// the trim walk for an unbounded directory.
+const int kRecordingCacheLimitMaxMb = 1024 * 1024;
+
 /// The container each recording segment is written into.
 enum RecordingFileContainer {
   /// Segmented MPEG-TS: every segment stands alone and joining them is a
@@ -27,6 +34,8 @@ final class RecordingSettings {
   /// Creates a settings set; the fields default to the engine's own
   /// choices.
   const RecordingSettings({
+    this.defaultQuality = '原画',
+    this.recordDanmaku = false,
     this.saveDir = '',
     this.namingTemplate = kDefaultNamingTemplate,
     this.maxSizeMb = 2048,
@@ -36,16 +45,32 @@ final class RecordingSettings {
     this.preferBestStream = true,
     this.keepAlive = true,
     this.verifyOutput = true,
-    this.restartLimit = 3,
-    this.restartBackoffSeconds = 3,
+    this.restartLimit = 5,
+    this.restartBackoffSeconds = 30,
     this.stallTimeoutSeconds = 30,
     this.diskWatermarkMb = 200,
-    this.maxTasks = 1,
+    this.maxTasks = 3,
     this.container = RecordingFileContainer.mpegTs,
+    this.cacheLimitEnabled = false,
+    this.cacheLimitMb = 1024,
+    this.pollingEnabled = false,
+    this.liveCheckSeconds = 30,
+    this.checkBackoffEnabled = false,
+    this.maxCheckSeconds = 300,
+    this.autoStartOnBoot = false,
   });
 
   /// The designed defaults.
   static const RecordingSettings defaults = RecordingSettings();
+
+  /// The quality a new recording asks the platform for; the room falls back
+  /// to its current line when the platform does not offer it. The reference's
+  /// default is the first resolution.
+  final String defaultQuality;
+
+  /// Whether the live chat is saved beside the video as a same-name XML
+  /// (the reference's "record chat" switch).
+  final bool recordDanmaku;
 
   /// Where recordings land; '' means the engine's own default directory.
   final String saveDir;
@@ -92,8 +117,32 @@ final class RecordingSettings {
   /// The segment container.
   final RecordingFileContainer container;
 
+  /// Whether completed takes are trimmed to [cacheLimitMb].
+  final bool cacheLimitEnabled;
+
+  /// The managed recording folder's cap, in megabytes.
+  final int cacheLimitMb;
+
+  /// Whether waiting tasks check their rooms for a live stream and start
+  /// recording when one begins.
+  final bool pollingEnabled;
+
+  /// Seconds between two checks of one waiting task.
+  final int liveCheckSeconds;
+
+  /// Whether repeated failures stretch the check interval.
+  final bool checkBackoffEnabled;
+
+  /// The ceiling the stretched interval approaches, in seconds.
+  final int maxCheckSeconds;
+
+  /// Whether interrupted (still recording) tasks return as waiting on boot.
+  final bool autoStartOnBoot;
+
   /// A copy with the named fields replaced.
   RecordingSettings copyWith({
+    String? defaultQuality,
+    bool? recordDanmaku,
     String? saveDir,
     String? namingTemplate,
     int? maxSizeMb,
@@ -109,7 +158,16 @@ final class RecordingSettings {
     int? diskWatermarkMb,
     int? maxTasks,
     RecordingFileContainer? container,
+    bool? cacheLimitEnabled,
+    int? cacheLimitMb,
+    bool? pollingEnabled,
+    int? liveCheckSeconds,
+    bool? checkBackoffEnabled,
+    int? maxCheckSeconds,
+    bool? autoStartOnBoot,
   }) => RecordingSettings(
+    defaultQuality: defaultQuality ?? this.defaultQuality,
+    recordDanmaku: recordDanmaku ?? this.recordDanmaku,
     saveDir: saveDir ?? this.saveDir,
     namingTemplate: namingTemplate ?? this.namingTemplate,
     maxSizeMb: maxSizeMb ?? this.maxSizeMb,
@@ -125,6 +183,13 @@ final class RecordingSettings {
     diskWatermarkMb: diskWatermarkMb ?? this.diskWatermarkMb,
     maxTasks: maxTasks ?? this.maxTasks,
     container: container ?? this.container,
+    cacheLimitEnabled: cacheLimitEnabled ?? this.cacheLimitEnabled,
+    cacheLimitMb: cacheLimitMb ?? this.cacheLimitMb,
+    pollingEnabled: pollingEnabled ?? this.pollingEnabled,
+    liveCheckSeconds: liveCheckSeconds ?? this.liveCheckSeconds,
+    checkBackoffEnabled: checkBackoffEnabled ?? this.checkBackoffEnabled,
+    maxCheckSeconds: maxCheckSeconds ?? this.maxCheckSeconds,
+    autoStartOnBoot: autoStartOnBoot ?? this.autoStartOnBoot,
   );
 }
 
@@ -138,6 +203,8 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
   RecordingSettings build() {
     final saved = _storedString('recorder.saveDir') ?? _storedString('recorder.dir') ?? '';
     return RecordingSettings(
+      defaultQuality: _storedString('recorder.defaultQuality') ?? RecordingSettings.defaults.defaultQuality,
+      recordDanmaku: _storedBool('recorder.recordDanmaku') ?? false,
       saveDir: saved,
       namingTemplate: _storedString('recorder.naming') ?? kDefaultNamingTemplate,
       maxSizeMb: _storedSize() ?? RecordingSettings.defaults.maxSizeMb,
@@ -147,14 +214,24 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
       preferBestStream: _storedBool('recorder.preferBest') ?? true,
       keepAlive: _storedBool('recorder.keepAlive') ?? true,
       verifyOutput: _storedBool('recorder.verify') ?? true,
-      restartLimit: (_storedInt('recorder.restartLimit') ?? 3).clamp(0, 20),
-      restartBackoffSeconds: (_storedInt('recorder.restartBackoff') ?? 3).clamp(1, 120),
+      restartLimit: (_storedInt('recorder.restartLimit') ?? 5).clamp(0, 20),
+      restartBackoffSeconds: (_storedInt('recorder.restartBackoff') ?? 30).clamp(5, 120),
       stallTimeoutSeconds: (_storedInt('recorder.stallTimeout') ?? 30).clamp(10, 600),
       diskWatermarkMb: (_storedInt('recorder.diskWatermark') ?? 200).clamp(50, 4096),
-      maxTasks: (_storedInt('recorder.maxTasks') ?? 1).clamp(1, 10),
+      maxTasks: (_storedInt('recorder.maxTasks') ?? 3).clamp(1, 10),
       container:
           RecordingFileContainer.values.asNameMap()[_storedString('recorder.container') ?? ''] ??
           RecordingFileContainer.mpegTs,
+      cacheLimitEnabled: _storedBool('recorder.cacheLimitEnabled') ?? false,
+      cacheLimitMb: (_storedInt('recorder.cacheLimitMb') ?? 1024).clamp(
+        kRecordingCacheLimitMinMb,
+        kRecordingCacheLimitMaxMb,
+      ),
+      pollingEnabled: _storedBool('recorder.pollingEnabled') ?? false,
+      liveCheckSeconds: (_storedInt('recorder.liveCheckSeconds') ?? 30).clamp(10, 300),
+      checkBackoffEnabled: _storedBool('recorder.checkBackoffEnabled') ?? false,
+      maxCheckSeconds: (_storedInt('recorder.maxCheckSeconds') ?? 300).clamp(60, 3600),
+      autoStartOnBoot: _storedBool('recorder.autoStartOnBoot') ?? false,
     );
   }
 
@@ -200,6 +277,12 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
   /// Where recordings land; '' means the engine's own default directory.
   String get saveDir => state.saveDir;
 
+  /// The quality a new recording asks the platform for.
+  String get defaultQuality => state.defaultQuality;
+
+  /// Whether a recording saves the room's chat beside its video.
+  bool get recordDanmaku => state.recordDanmaku;
+
   /// The file naming template the engine will fill in.
   String get namingTemplate => state.namingTemplate;
 
@@ -243,6 +326,62 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
   /// The segment container.
   RecordingFileContainer get container => state.container;
 
+  /// Whether completed takes are trimmed to the cap.
+  bool get cacheLimitEnabled => state.cacheLimitEnabled;
+
+  /// The managed folder's cap, in megabytes.
+  int get cacheLimitMb => state.cacheLimitMb;
+
+  /// Whether waiting tasks are checked for a live stream.
+  bool get pollingEnabled => state.pollingEnabled;
+
+  int get liveCheckSeconds => state.liveCheckSeconds;
+
+  bool get checkBackoffEnabled => state.checkBackoffEnabled;
+
+  int get maxCheckSeconds => state.maxCheckSeconds;
+
+  bool get autoStartOnBoot => state.autoStartOnBoot;
+
+  set cacheLimitEnabled(bool value) {
+    state = state.copyWith(cacheLimitEnabled: value);
+    unawaited(_write('recorder.cacheLimitEnabled', value));
+  }
+
+  set cacheLimitMb(int value) {
+    final next = value.clamp(kRecordingCacheLimitMinMb, kRecordingCacheLimitMaxMb);
+    state = state.copyWith(cacheLimitMb: next);
+    unawaited(_write('recorder.cacheLimitMb', next));
+  }
+
+  /// Turns the live check of waiting tasks on or off.
+  set pollingEnabled(bool value) {
+    state = state.copyWith(pollingEnabled: value);
+    unawaited(_write('recorder.pollingEnabled', value));
+  }
+
+  set liveCheckSeconds(int value) {
+    final next = value.clamp(10, 300);
+    state = state.copyWith(liveCheckSeconds: next);
+    unawaited(_write('recorder.liveCheckSeconds', next));
+  }
+
+  set checkBackoffEnabled(bool value) {
+    state = state.copyWith(checkBackoffEnabled: value);
+    unawaited(_write('recorder.checkBackoffEnabled', value));
+  }
+
+  set maxCheckSeconds(int value) {
+    final next = value.clamp(60, 3600);
+    state = state.copyWith(maxCheckSeconds: next);
+    unawaited(_write('recorder.maxCheckSeconds', next));
+  }
+
+  set autoStartOnBoot(bool value) {
+    state = state.copyWith(autoStartOnBoot: value);
+    unawaited(_write('recorder.autoStartOnBoot', value));
+  }
+
   Future<void> _write(String key, Object value) async {
     try {
       if (value is String) await StoragePrefs.setString(key, value);
@@ -251,6 +390,20 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
     } on Object {
       // The recorder settings are preferences; a closed store loses them.
     }
+  }
+
+  /// Moves the recording quality; a blank value falls back to the first
+  /// resolution.
+  set defaultQuality(String quality) {
+    final value = quality.trim().isEmpty ? RecordingSettings.defaults.defaultQuality : quality.trim();
+    state = state.copyWith(defaultQuality: value);
+    unawaited(_write('recorder.defaultQuality', value));
+  }
+
+  /// Chooses whether recordings save the room's chat as a same-name XML.
+  set recordDanmaku(bool value) {
+    state = state.copyWith(recordDanmaku: value);
+    unawaited(_write('recorder.recordDanmaku', value));
   }
 
   /// Moves the recording directory; an empty path means the engine's own

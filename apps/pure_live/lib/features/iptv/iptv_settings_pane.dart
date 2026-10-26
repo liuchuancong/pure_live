@@ -27,6 +27,7 @@ final class IptvSettingsPane extends ConsumerWidget {
     final epg = ref.watch(iptvEpgProvider);
     final sources = ref.watch(iptvSourcesProvider);
     final interval = ref.watch(iptvUpdateIntervalProvider);
+    final autoSync = ref.watch(iptvAutoSyncProvider);
     final userAgent = ref.watch(iptvUserAgentProvider);
     final remoteGuides = [
       for (final source in epg.sources)
@@ -55,14 +56,24 @@ final class IptvSettingsPane extends ConsumerWidget {
     return DsListSection(
       header: Text(t.settings.iptvGuideUpdates),
       children: [
-        SettingsChoiceRow<IptvUpdateInterval>(
-          leading: const DsIcon(DsIcons.timer),
-          title: t.iptv.updateInterval,
-          description: t.iptv.autoUpdateHint,
-          value: interval,
-          options: [for (final value in IptvUpdateInterval.values) DsSelectOption(value: value, label: value.label(t))],
-          onChanged: ref.read(iptvUpdateIntervalProvider.notifier).select,
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.refreshCw),
+          title: t.iptv.autoSyncTitle,
+          description: t.iptv.autoSyncDesc,
+          control: DsSwitch(
+            value: autoSync,
+            onChanged: (value) => unawaited(ref.read(iptvAutoSyncProvider.notifier).set(value: value)),
+          ),
         ),
+        if (autoSync)
+          SettingsChoiceRow<IptvUpdateInterval>(
+            leading: const DsIcon(DsIcons.timer),
+            title: t.iptv.updateInterval,
+            description: t.iptv.autoUpdateHint,
+            value: interval,
+            options: [for (final value in IptvUpdateInterval.values) DsSelectOption(value: value, label: value.label(t))],
+            onChanged: ref.read(iptvUpdateIntervalProvider.notifier).select,
+          ),
         SettingsConfigRow(
           leading: const DsIcon(DsIcons.user),
           title: t.iptv.customUserAgent,
@@ -76,17 +87,18 @@ final class IptvSettingsPane extends ConsumerWidget {
             semanticLabel: t.iptv.customUserAgent,
           ),
         ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.calendarClock),
-          title: Text(t.iptv.autoUpdate),
-          description: status == null ? null : Text(status),
-          trailing: DsSwitch(
-            value: allOn,
-            onChanged: remoteGuides.isEmpty || blocked
-                ? null
-                : (value) => unawaited(ref.read(iptvEpgProvider.notifier).setAllAutoUpdate(value: value)),
+        if (autoSync)
+          DsListRow(
+            leading: const DsIcon(DsIcons.calendarClock),
+            title: Text(t.iptv.autoUpdate),
+            description: status == null ? null : Text(status),
+            trailing: DsSwitch(
+              value: allOn,
+              onChanged: remoteGuides.isEmpty || blocked
+                  ? null
+                  : (value) => unawaited(ref.read(iptvEpgProvider.notifier).setAllAutoUpdate(value: value)),
+            ),
           ),
-        ),
         DsListRow(
           leading: const DsIcon(DsIcons.refreshCw),
           title: Text(t.iptv.syncAll),

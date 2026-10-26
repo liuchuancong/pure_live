@@ -9,7 +9,8 @@ import 'package:pure_live/features/music/music_page.dart' show MusicPage;
 import 'package:pure_live/features/popular/popular_page.dart' show PopularPage;
 import 'package:pure_live/features/recorder/recorder_page.dart' show RecorderPage;
 import 'package:pure_live/features/search/search_page.dart' show SearchPage;
-import 'package:pure_live/features/settings/settings_sections.dart' show SettingsGroup, SettingsSection;
+import 'package:pure_live/features/settings/settings_sections.dart'
+    show SettingsGroup, SettingsSection, settingsDescendantsOf;
 import 'package:pure_live/features/toolbox/toolbox_page.dart' show ToolboxPage;
 import 'package:pure_live/features/vod/vod_page.dart' show VodPage;
 import 'package:pure_live/shared/enums/app_module.dart' show AppModule;
@@ -46,8 +47,13 @@ final class ModuleNavigation {
   /// The settings menu's groups, top to bottom.
   final List<SettingsGroup> settingsGroups;
 
-  /// The module's settings sections, flat and in menu order.
-  List<SettingsSection> get settingsSections => [for (final group in settingsGroups) ...group.sections];
+  /// The module's settings pages, flat and in menu order: the sidebar's
+  /// rows plus the subpages they carry, so a selection landing on a
+  /// subpage survives a module switch when the module offers its parent.
+  List<SettingsSection> get settingsSections => [
+    for (final group in settingsGroups)
+      for (final section in group.sections) ...[section, ...settingsDescendantsOf(section)],
+  ];
 }
 
 /// The shared tools in their default order: multi-view, search, the recording
@@ -61,42 +67,64 @@ const List<NavigationItem> kToolItems = [
   NavigationItem.toolbox,
 ];
 
-/// The settings every module shares: the app's own surface. A module adds
-/// its own category on top of these (live its sources, danmaku and
-/// recording; IPTV its guide updates; video its Bilibili account), never
-/// borrows another module's. Categories are the sidebar's entries; the
-/// pages inside them are reached from the category's overview.
-const List<SettingsGroup> _appCategories = [
-  (labelKey: 'groupApp', sections: [SettingsSection.personalization, SettingsSection.playback, SettingsSection.system]),
-];
+/// The settings every module shares, grouped the way the new settings
+/// center reads: a non-clickable group heading over clickable page rows.
+/// Each module registers its own group first (its business pages), then the
+/// app-wide ones; live inserts its business group between Personalization
+/// and Playback. Nothing here is an index page — every section listed is a
+/// pane that carries settings rows.
+const SettingsGroup _personalizationGroup = (
+  labelKey: 'groupPersonalization',
+  sections: [
+    SettingsSection.theme,
+    SettingsSection.typography,
+    SettingsSection.background,
+    SettingsSection.nav,
+    SettingsSection.browsing,
+  ],
+);
 
-/// Live's categories sit in the app list with the shared ones: a group
-/// header repeating the category's own name ("Live / Live") is noise, not
-/// structure.
-const List<SettingsGroup> _liveAppCategories = [
-  (
-    labelKey: 'groupApp',
-    sections: [SettingsSection.live, SettingsSection.personalization, SettingsSection.playback, SettingsSection.system],
-  ),
-];
+const SettingsGroup _liveGroup = (
+  labelKey: 'groupLive',
+  sections: [SettingsSection.sites, SettingsSection.refresh, SettingsSection.danmaku, SettingsSection.localInteraction, SettingsSection.recording],
+);
 
-const List<SettingsGroup> _aboutCategories = [
-  (labelKey: 'groupAbout', sections: [SettingsSection.about]),
-];
+const SettingsGroup _playbackGroup = (
+  labelKey: 'groupPlayback',
+  sections: [SettingsSection.quality, SettingsSection.picture, SettingsSection.kernel],
+);
+
+const SettingsGroup _systemGroup = (
+  labelKey: 'groupSystem',
+  sections: [
+    SettingsSection.startup,
+    SettingsSection.window,
+    SettingsSection.network,
+    SettingsSection.dataCache,
+    SettingsSection.backup,
+    SettingsSection.logs,
+  ],
+);
+
+const SettingsGroup _aboutGroup = (labelKey: 'groupAbout', sections: [SettingsSection.about]);
+
+/// The app-wide groups in reading order; live's own group is spliced in
+/// after Personalization.
+const List<SettingsGroup> _appGroups = [_personalizationGroup, _playbackGroup, _systemGroup, _aboutGroup];
 
 /// The module registry: one row per content type.
 const Map<AppModule, ModuleNavigation> kModuleNavigation = {
-  // The reference's menu, block for block: the ways to find a room, the
-  // tools, the three feeds, and the recording centre.
+  // The reference's menu: the ways to find a room, the tools, then the four
+  // home destinations as one block — the navigation setting's saved order
+  // (favorites, hot, zones, recording centre) has to read across all four.
   AppModule.live: ModuleNavigation(
     menu: [
       [NavigationItem.search, NavigationItem.history],
       [NavigationItem.toolbox, NavigationItem.multiview],
-      [NavigationItem.favorites, NavigationItem.hot, NavigationItem.zones],
-      [NavigationItem.record],
+      [NavigationItem.favorites, NavigationItem.hot, NavigationItem.zones, NavigationItem.record],
     ],
     landing: NavigationItem.hot,
-    settingsGroups: [..._liveAppCategories, ..._aboutCategories],
+    settingsGroups: [_personalizationGroup, _liveGroup, _playbackGroup, _systemGroup, _aboutGroup],
   ),
   AppModule.iptv: ModuleNavigation(
     menu: [
@@ -109,8 +137,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // recording, platforms) or the Bilibili station belongs here.
     settingsGroups: [
       (labelKey: 'groupIptv', sections: [SettingsSection.iptv]),
-      ..._appCategories,
-      ..._aboutCategories,
+      ..._appGroups,
     ],
   ),
   AppModule.vod: ModuleNavigation(
@@ -124,8 +151,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // danmaku stay out of it.
     settingsGroups: [
       (labelKey: 'groupVod', sections: [SettingsSection.vod]),
-      ..._appCategories,
-      ..._aboutCategories,
+      ..._appGroups,
     ],
   ),
   AppModule.music: ModuleNavigation(
@@ -136,7 +162,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     landing: NavigationItem.music,
     // No music source feeds the module yet; it carries only the app's own
     // settings rather than borrowing another module's playback or sources.
-    settingsGroups: [..._appCategories, ..._aboutCategories],
+    settingsGroups: _appGroups,
   ),
 };
 

@@ -11,19 +11,9 @@ import 'package:live_device/live_device.dart'
 
 /// What the active network interfaces report, plus whether this platform can
 /// ever identify a cellular link.
-typedef NetworkTypeState = ({
-  bool ready,
-  bool reportsCellular,
-  Set<NetworkInterface> interfaces,
-  String error,
-});
+typedef NetworkTypeState = ({bool ready, bool reportsCellular, Set<NetworkInterface> interfaces, String error});
 
-const NetworkTypeState _initial = (
-  ready: false,
-  reportsCellular: false,
-  interfaces: <NetworkInterface>{},
-  error: '',
-);
+const NetworkTypeState _initial = (ready: false, reportsCellular: false, interfaces: <NetworkInterface>{}, error: '');
 
 /// Keeps a live reading of the device's network interfaces for the quality
 /// policy and the settings capability gate.
@@ -55,38 +45,18 @@ final class NetworkTypeController extends Notifier<NetworkTypeState> {
     try {
       final capabilities = await _service.getCapabilities();
       if (!ref.mounted) return;
-      state = (
-        ready: true,
-        reportsCellular: capabilities.reportsCellular,
-        interfaces: state.interfaces,
-        error: '',
-      );
+      state = (ready: true, reportsCellular: capabilities.reportsCellular, interfaces: state.interfaces, error: '');
       if (!capabilities.canRead) return;
       final reading = await _service.read();
       if (!ref.mounted) return;
-      state = (
-        ready: true,
-        reportsCellular: capabilities.reportsCellular,
-        interfaces: reading.interfaces,
-        error: '',
-      );
+      state = (ready: true, reportsCellular: capabilities.reportsCellular, interfaces: reading.interfaces, error: '');
       if (capabilities.canObserve) _listen(capabilities.reportsCellular);
     } on NetworkConnectivityException catch (error) {
       if (!ref.mounted) return;
-      state = (
-        ready: true,
-        reportsCellular: state.reportsCellular,
-        interfaces: state.interfaces,
-        error: error.message,
-      );
+      state = (ready: true, reportsCellular: state.reportsCellular, interfaces: state.interfaces, error: error.message);
     } on Object catch (error) {
       if (!ref.mounted) return;
-      state = (
-        ready: true,
-        reportsCellular: state.reportsCellular,
-        interfaces: state.interfaces,
-        error: '$error',
-      );
+      state = (ready: true, reportsCellular: state.reportsCellular, interfaces: state.interfaces, error: '$error');
     }
   }
 
@@ -95,12 +65,7 @@ final class NetworkTypeController extends Notifier<NetworkTypeState> {
       _watch = _service.watch().listen(
         (reading) {
           if (!ref.mounted) return;
-          state = (
-            ready: true,
-            reportsCellular: reportsCellular,
-            interfaces: reading.interfaces,
-            error: '',
-          );
+          state = (ready: true, reportsCellular: reportsCellular, interfaces: reading.interfaces, error: '');
         },
         onError: (Object _) {
           // A missed change leaves the last reading; the next explicit read

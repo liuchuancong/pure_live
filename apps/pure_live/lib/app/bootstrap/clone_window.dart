@@ -14,6 +14,8 @@ import 'package:path_provider/path_provider.dart' show getTemporaryDirectory;
 import 'package:pure_live/app/bootstrap/clone_window_host.dart' show CloneWindowChannel, CloneWindowHost;
 import 'package:pure_live/app/bootstrap/pure_live_app.dart' show PureLiveApp;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
+import 'package:pure_live/app/providers/download_directory_provider.dart'
+    show defaultDownloadRoot, fontsRootOf, refreshCloudFontSnapshot;
 import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
 import 'package:pure_live/app/providers/player_providers.dart' show primePlayerEngine;
 import 'package:pure_live/app/providers/storage_providers.dart' show storagePathsProvider;
@@ -30,6 +32,7 @@ import 'package:pure_live/app/providers/window_providers.dart'
 import 'package:pure_live/app/providers/window_storage_bridge.dart' show WindowStorageClient, windowStorageBridgeProvider;
 import 'package:pure_live/app/routing/app_router.dart' show windowInitialRouteProvider;
 import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
+import 'package:pure_live/app/theme/fonts/font_library.dart' show CloudFontIds, FontLibrary;
 import 'package:pure_live/app/theme/system_accent_color.dart' show preloadSystemAccent;
 import 'package:pure_live/app/window_chrome.dart' show WindowChrome, WindowChromeState;
 import 'package:pure_live/infrastructure/storage/storage_paths.dart' show StoragePaths;
@@ -83,6 +86,15 @@ Future<void> runCloneWindow(String rawArguments) async {
   }
 
   final storagePaths = await StoragePaths.resolve(environment: runtime.environment, log: log);
+  // The same synchronous cloud font snapshot the primary boot takes: a
+  // clone validates the projected family the same way and registers it
+  // from the shared folder for its own isolate.
+  CloudFontIds.replace(
+    FontLibrary.scanInstalledRoots([
+      Directory(p.join(storagePaths.data.path, 'fonts')),
+      fontsRootOf(defaultDownloadRoot(storagePaths)),
+    ]),
+  );
   try {
     // The remote projection exists before anything is read; its namespaces
     // open lazily. Setting it up first also means a broadcast that lands
@@ -158,6 +170,9 @@ Future<void> runCloneWindow(String rawArguments) async {
   try {
     await container.read(windowStorageBridgeProvider).register();
     await StoragePrefs.init();
+    // A custom download folder moves the fonts with it; the pre-prefs scan
+    // above could not know the choice, so fold its families in now.
+    refreshCloudFontSnapshot();
   } on Object catch (error, stackTrace) {
     // The primary's bridge may not be armed yet, or it refused the snapshot.
     // An app whose stores are empty is worse than a window that goes away.

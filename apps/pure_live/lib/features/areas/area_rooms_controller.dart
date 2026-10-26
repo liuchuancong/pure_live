@@ -3,14 +3,18 @@ import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/providers/browse_settings_providers.dart';
+import 'package:pure_live/features/account/account_providers.dart' show accountsProvider;
 import 'package:pure_live/shared/paging/room_paging.dart';
+import 'package:pure_live/shared/rooms/room_visibility.dart' show cannotPlayHere, showUnplayableProvider;
 
 /// What an area-rooms page holds: the open area, every room fetched so far,
-/// the desktop page shown over them and its size.
+/// the desktop page shown over them, its size, and how many of the fetched
+/// rooms the viewer's discovery filter hides.
 typedef AreaRoomsState = ({
   LiveSite site,
   LiveArea area,
   List<LiveRoom> rooms,
+  int hidden,
   int page,
   int pageSize,
   bool hasMore,
@@ -27,12 +31,40 @@ typedef AreaRoomsState = ({
 /// its cursor where it has one and dedupes across pages; the desktop pager
 /// slices the accumulated rooms locally, so fixed 120-room pages (Douyu)
 /// and 30-room ones page the same way.
+///
+/// Rooms that cannot play here stay out of the shown list unless the
+/// viewer shows them (the reference's `showUnplayableInDiscover`), but they
+/// stay in the fetched catalogue: the filter is re-applied in place, never
+/// by asking the platform again.
 final class AreaRoomsController extends Notifier<AreaRoomsState?> {
   RoomWalk? _walk;
   Set<String> _seen = {};
 
+  /// Every room fetched, hidden ones included (the reference's
+  /// `RoomFeed.allRooms`).
+  List<LiveRoom> _fullRooms = const [];
+
+  /// Whether [room] belongs on the page as the settings stand: the
+  /// reference's `cannotPlayHere` rule, with a stored credential making a
+  /// 需要登录/成年 room playable.
+  bool _playable(LiveRoom room) {
+    if (ref.read(showUnplayableProvider)) return true;
+    final signedIn = ref.read(accountsProvider).credentials.containsKey(room.ref.platform);
+    return !cannotPlayHere(room, signedIn: signedIn);
+  }
+
+  List<LiveRoom> _visibleOf(List<LiveRoom> full) => [for (final room in full) if (_playable(room)) room];
+
   @override
-  AreaRoomsState? build() => null;
+  AreaRoomsState? build() {
+    // The filter answer and the sign-ins live outside this controller: a
+    // change re-runs the rule over the fetched rooms at once (the
+    // reference's setting listener + `visibilityChanged`).
+    ref
+      ..listen(showUnplayableProvider, (_, _) => _refreshVisibility())
+      ..listen(accountsProvider, (_, _) => _refreshVisibility());
+    return null;
+  }
 
   /// Opens [area] on [site] and asks for its first rooms. A second call
   /// while the same area is open is a no-op — the page's re-init on hot
@@ -42,11 +74,13 @@ final class AreaRoomsController extends Notifier<AreaRoomsState?> {
     if (current != null && current.site == site && current.area == area) return;
     _walk = null;
     _seen = {};
+    _fullRooms = const [];
     final pageSize = ref.read(browseSettingsProvider).homePageSize;
     state = (
       site: site,
       area: area,
       rooms: const [],
+      hidden: 0,
       page: 1,
       pageSize: pageSize,
       hasMore: true,
@@ -116,7 +150,7 @@ final class AreaRoomsController extends Notifier<AreaRoomsState?> {
     final rooms = <LiveRoom>[];
     final seen = <String>{};
     state = _with(current, loading: true, clearError: true, page: 1);
-    final failure = await fillRoomFeed(walk: walk, rooms: rooms, seen: seen, target: current.pageSize);
+    final failure = await _collect(walk: walk, rooms: rooms, seen: seen, target: current.pageSize);
     final open = state;
     if (open == null || open.area != current.area) return;
     if (failure != null) {
@@ -125,10 +159,13 @@ final class AreaRoomsController extends Notifier<AreaRoomsState?> {
     }
     _walk = walk;
     _seen = seen;
+    _fullRooms = List.unmodifiable(rooms);
+    final visible = _visibleOf(rooms);
     state = (
       site: open.site,
       area: open.area,
-      rooms: List.unmodifiable(rooms),
+      rooms: List.unmodifiable(visible),
+      hidden: rooms.length - visible.length,
       page: 1,
       pageSize: current.pageSize,
       hasMore: walk.hasMore,
@@ -153,18 +190,21 @@ final class AreaRoomsController extends Notifier<AreaRoomsState?> {
       fetch: (request) => capability.getAreaRooms(area: current.area, request: request),
       pageSize: areaRequestSize(current.site.manifest.id),
     );
-    final seen = _seen.isEmpty ? {for (final room in current.rooms) room.identityKey} : _seen;
-    final rooms = [...current.rooms];
+    final seen = _seen.isEmpty ? {for (final room in _fullRooms) room.identityKey} : _seen;
+    final rooms = [..._fullRooms];
     state = _with(current, loading: true, clearError: true);
     // Each fetched page lands at once: a later failure keeps the rooms and
     // the walk stays on the page that failed, so nothing is stranded.
     void publishProgress() {
       _seen = seen;
+      _fullRooms = List.unmodifiable(rooms);
+      final visible = _visibleOf(rooms);
       state = (
         site: current.site,
         area: current.area,
-        rooms: List.unmodifiable(rooms),
-        page: math.min(page, roomLastPage(rooms.length, current.pageSize)),
+        rooms: List.unmodifiable(visible),
+        hidden: rooms.length - visible.length,
+        page: math.min(page, roomLastPage(visible.length, current.pageSize)),
         pageSize: current.pageSize,
         hasMore: walk.hasMore,
         loading: true,
@@ -172,7 +212,7 @@ final class AreaRoomsController extends Notifier<AreaRoomsState?> {
       );
     }
 
-    final failure = await fillRoomFeed(
+    final failure = await _collect(
       walk: walk,
       rooms: rooms,
       seen: seen,
@@ -182,16 +222,27 @@ final class AreaRoomsController extends Notifier<AreaRoomsState?> {
     final open = state;
     if (open == null || open.area != current.area) return;
     if (failure != null) {
-      state = _with(open, loading: false, error: failure);
+      _fullRooms = List.unmodifiable(rooms);
+      final visible = _visibleOf(rooms);
+      state = _with(
+        open,
+        rooms: List.unmodifiable(visible),
+        hidden: rooms.length - visible.length,
+        loading: false,
+        error: failure,
+      );
       return;
     }
     _seen = seen;
-    final last = roomLastPage(rooms.length, open.pageSize);
+    _fullRooms = List.unmodifiable(rooms);
+    final visible = _visibleOf(rooms);
+    final last = roomLastPage(visible.length, open.pageSize);
     final shown = walk.hasMore ? page : math.min(page, last);
     state = (
       site: open.site,
       area: open.area,
-      rooms: List.unmodifiable(rooms),
+      rooms: List.unmodifiable(visible),
+      hidden: rooms.length - visible.length,
       page: shown,
       pageSize: open.pageSize,
       hasMore: walk.hasMore,
@@ -200,9 +251,55 @@ final class AreaRoomsController extends Notifier<AreaRoomsState?> {
     );
   }
 
+  /// Fetches from [walk] until [target] rooms pass the discovery filter,
+  /// the walk ends, or twenty pages were asked (the reference's
+  /// `RoomFeed.maxRequests`). [rooms] holds every fetched room; [seen]
+  /// dedupes across calls. Answers the failure that stopped the walk.
+  Future<LiveSiteError?> _collect({
+    required RoomWalk walk,
+    required List<LiveRoom> rooms,
+    required Set<String> seen,
+    required int target,
+    void Function()? onProgress,
+  }) async {
+    var requests = 0;
+    var visible = rooms.where(_playable).length;
+    while (visible < target && walk.hasMore && requests < 20) {
+      final answer = await walk.next(seen);
+      final failure = answer.fold<LiveSiteError?>((error) => error, (fresh) {
+        rooms.addAll(fresh);
+        visible += fresh.where(_playable).length;
+        return null;
+      });
+      if (failure != null) return failure;
+      // Each page is handed over before the next is asked, so a later
+      // failure never strands rooms the walk has already moved past.
+      onProgress?.call();
+      requests++;
+    }
+    return null;
+  }
+
+  /// Re-applies the discovery filter to the fetched rooms (the setting
+  /// changed, or a sign-in altered the login part).
+  void _refreshVisibility() {
+    final current = state;
+    if (current == null) return;
+    final visible = _visibleOf(_fullRooms);
+    final last = roomLastPage(visible.length, current.pageSize);
+    final page = current.hasMore ? current.page : math.min(current.page, last);
+    state = _with(
+      current,
+      rooms: List.unmodifiable(visible),
+      hidden: _fullRooms.length - visible.length,
+      page: page,
+    );
+  }
+
   AreaRoomsState _with(
     AreaRoomsState from, {
     List<LiveRoom>? rooms,
+    int? hidden,
     int? page,
     int? pageSize,
     bool? hasMore,
@@ -214,6 +311,7 @@ final class AreaRoomsController extends Notifier<AreaRoomsState?> {
       site: from.site,
       area: from.area,
       rooms: rooms ?? from.rooms,
+      hidden: hidden ?? from.hidden,
       page: page ?? from.page,
       pageSize: pageSize ?? from.pageSize,
       hasMore: hasMore ?? from.hasMore,

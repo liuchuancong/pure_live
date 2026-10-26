@@ -13,6 +13,8 @@ import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
 import 'package:pure_live/features/search/search_controller.dart';
 import 'package:pure_live/features/search/web_search_page.dart' show WebSearchRequest;
 import 'package:pure_live/features/search/web_search_urls.dart' show webSearchUrl;
+import 'package:pure_live/features/settings/room_card_settings.dart'
+    show RoomCardLayout, roomCardAppearanceProvider;
 import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider;
 import 'package:pure_live/features/toolbox/toolbox_controllers.dart' show linkToolProvider;
 import 'package:pure_live/l10n/translations.dart';
@@ -598,6 +600,9 @@ final class _RoomResults extends ConsumerWidget {
     return CardGrid<LiveRoom>(
       items: search.rooms,
       layout: ref.watch(browseLayoutProvider),
+      aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
+          ? CardGrid.roomCardCompactAspectRatio
+          : CardGrid.roomCardAspectRatio,
       listItemBuilder: (context, room) => RoomCard(
         room: room,
         compact: true,
@@ -847,6 +852,9 @@ final class _RoomSkeletonGrid extends ConsumerWidget {
     return CardGrid<LiveRoom>(
       items: const [],
       layout: ref.watch(browseLayoutProvider),
+      aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
+          ? CardGrid.roomCardCompactAspectRatio
+          : CardGrid.roomCardAspectRatio,
       cardExtent: cardExtent,
       isLoading: true,
       itemBuilder: (context, room) => const SizedBox.shrink(),

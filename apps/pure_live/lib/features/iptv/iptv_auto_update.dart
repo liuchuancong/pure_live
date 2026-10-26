@@ -10,6 +10,9 @@ import 'package:pure_live/l10n/translations.dart';
 /// The intervals the guide updater offers, in the reference's own scale:
 /// six and twelve hours, a day, three days and a week.
 enum IptvUpdateInterval {
+  /// Every two hours.
+  twoHours(2),
+
   /// Every six hours.
   sixHours(6),
 
@@ -19,11 +22,11 @@ enum IptvUpdateInterval {
   /// Every day.
   day(24),
 
-  /// Every three days.
-  threeDays(72),
+  /// Every two days.
+  twoDays(48),
 
-  /// Every week.
-  week(168);
+  /// Every three days.
+  threeDays(72);
 
   IptvUpdateInterval(this.hours);
 
@@ -74,6 +77,36 @@ final iptvUpdateIntervalProvider = NotifierProvider<IptvUpdateIntervalController
   IptvUpdateIntervalController.new,
 );
 
+/// The reference's launch auto-sync switch: off by default, so an ordinary
+/// launch stays network-idle. When off, the guide updater does nothing even
+/// for sources whose own auto-update flag is on.
+const String _autoSyncPref = 'iptv.autoSync';
+
+/// Owns that switch.
+final class IptvAutoSyncController extends Notifier<bool> {
+  @override
+  bool build() {
+    try {
+      return StoragePrefs.getBool(_autoSyncPref) ?? false;
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Flips auto-sync, writing through.
+  Future<void> set({required bool value}) async {
+    state = value;
+    try {
+      await StoragePrefs.setBool(_autoSyncPref, value);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The launch auto-sync switch.
+final iptvAutoSyncProvider = NotifierProvider<IptvAutoSyncController, bool>(IptvAutoSyncController.new);
+
 /// Keeps the network guides that asked for automatic updates current.
 ///
 /// Every minute it looks for a remote guide whose `autoUpdate` flag is on
@@ -110,7 +143,7 @@ final class IptvAutoUpdater {
   }
 
   Future<void> _tick() async {
-    if (_running) return;
+    if (_running || !_ref.read(iptvAutoSyncProvider)) return;
     final epg = _ref.read(iptvEpgProvider);
     final sources = _ref.read(iptvSourcesProvider);
     // A manual import, a sync round or a single-source operation owns the

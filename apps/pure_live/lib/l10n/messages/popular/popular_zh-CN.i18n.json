@@ -9,5 +9,6 @@
   "sortPlatform": "平台推荐",
   "sortAudience": "按观众",
   "perPage": "每页",
-  "pageSize": "每页 {size: int} 个"
+  "pageSize": "每页 {size: int} 个",
+  "hiddenUnplayable": "已隐藏 {count: int} 个暂时不能播放的直播（付费、加锁、仅限 App 等）"
 }

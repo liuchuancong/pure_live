@@ -12,10 +12,17 @@ import 'package:pure_live/app/background/app_background.dart' show AppBackground
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/auto_shutdown_provider.dart' show autoShutdownProvider;
 import 'package:pure_live/app/providers/display_refresh_rate_provider.dart' show displayRefreshRateProvider;
-import 'package:pure_live/app/providers/network_type_provider.dart' show networkTypeProvider;
+import 'package:pure_live/app/providers/download_directory_provider.dart' show refreshCloudFontSnapshot;
 import 'package:pure_live/app/providers/dynamic_color_provider.dart'
     show dynamicColorProvider, dynamicColorSeedProvider;
 import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
+import 'package:pure_live/app/providers/font_face_provider.dart'
+    show appFontFaceProvider, danmakuFontFaceProvider, effectiveFontFamily;
+import 'package:pure_live/app/providers/font_library_provider.dart' show fontLibraryProvider;
+import 'package:pure_live/app/providers/font_size_provider.dart' show appFontSizesProvider;
+import 'package:pure_live/app/providers/network_type_provider.dart' show networkTypeProvider;
+import 'package:pure_live/app/providers/pure_black_theme_provider.dart'
+    show dsPureBlackColors, pureBlackThemeProvider;
 import 'package:pure_live/app/providers/settings_sync.dart' show settingsRevisionProvider;
 import 'package:pure_live/app/providers/splash_settings_provider.dart' show splashSettingsProvider;
 import 'package:pure_live/app/providers/text_scale_provider.dart' show AppTextScaler, textScaleFactorProvider;
@@ -27,10 +34,14 @@ import 'package:pure_live/app/providers/window_size_provider.dart' show windowSi
 import 'package:pure_live/app/providers/window_storage_bridge.dart' show windowStorageBridgeProvider;
 import 'package:pure_live/app/refresh_rate_interaction_scope.dart' show RefreshRateInteractionScope;
 import 'package:pure_live/app/routing/app_router.dart' show appRouterProvider;
+import 'package:pure_live/app/theme/fonts/font_library.dart' show CloudFontIds;
 import 'package:pure_live/app/theme/stored_theme.dart' show readStoredAppThemeSettings;
 import 'package:pure_live/app/theme/theme_persistence.dart';
 import 'package:pure_live/app/theme/theme_settings.dart' show AppThemeScope, AppThemeSettings;
 import 'package:pure_live/features/iptv/iptv_auto_update.dart' show iptvAutoUpdaterProvider;
+import 'package:pure_live/features/recorder/recording_monitor.dart' show recordingLiveMonitorProvider;
+import 'package:pure_live/features/settings/clipboard_rooms.dart' show ClipboardRoomWatcher;
+import 'package:pure_live/features/settings/danmaku_style_providers.dart' show danmakuStyleProvider;
 import 'package:pure_live/features/version/version_controller.dart' show versionCheckProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart' show AppMark;
@@ -73,6 +84,7 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     // the defaults; the store only overrides what the viewer pinned.
     _settings = readStoredAppThemeSettings();
     _customSeedColor = _readStoredCustomSeedColor();
+    _ensureCloudFontLoaded();
     _showSplash = ref.read(splashSettingsProvider);
     // The image cache's configured cap is applied once per start, off the
     // first frame so a big tree never waits on the disk walk.
@@ -108,6 +120,10 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       // The guide updater belongs to the process, not to the IPTV page: it
       // starts here and keeps the schedule across tabs and pages.
       ..read(iptvAutoUpdaterProvider);
+    // Waiting recording tasks keep checking after their room page closes.
+    // Only the primary polls: a clone shares the task store, and two
+    // windows starting the same task would capture it twice.
+    if (ref.read(isPrimaryWindowProvider)) ref.read(recordingLiveMonitorProvider);
     // The clone windows' store bridge: the primary serves snapshots and
     // commands and broadcasts changes; a clone applies them. Desktop only —
     // a phone has no windows.
@@ -133,6 +149,28 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     }
   }
 
+  /// Stored cloud families are registered before their first paint:
+  /// `dynamic_fonts` loads them from this device's own font files and the
+  /// text repaints on its own when the loader completes. The flying danmaku
+  /// names the same kind of family, so both are armed here.
+  void _ensureCloudFontLoaded() {
+    final appFamily = _settings.fontFamily;
+    if (appFamily != null && CloudFontIds.contains(appFamily)) {
+      unawaited(
+        ref.read(fontLibraryProvider).ensureRegistered(appFamily, face: ref.read(appFontFaceProvider)),
+      );
+    }
+    final danmakuFamily = ref.read(danmakuStyleProvider).fontFamily;
+    if (danmakuFamily != null && CloudFontIds.contains(danmakuFamily)) {
+      unawaited(
+        ref.read(fontLibraryProvider).ensureRegistered(
+          danmakuFamily,
+          face: ref.read(danmakuFontFaceProvider),
+        ),
+      );
+    }
+  }
+
   void _updateSettings(AppThemeSettings settings) {
     // The seed is written only when the viewer changed it: boot's platform
     // accent and restored colours already describe the store, and rewriting
@@ -154,6 +192,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       _settings = settings;
       if (seedChanged) _customSeedColor = customSeed;
     });
+    // A cloud family applied in the font manager (here or projected from
+    // another window) needs the same registration pass the boot does.
+    _ensureCloudFontLoaded();
     // The pane writes every change the moment it happens; the root reads
     // them back on the next boot.
     unawaited(ThemePersistence.storeMode(settings.mode));
@@ -233,12 +274,16 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       }
       // A restore or another window replaced the choice; re-arm the timer.
       ref.read(thumbnailRefreshProvider.notifier).start();
+      // A changed download folder can hold families the boot snapshot never
+      // saw; fold them in before the theme validates its stored family.
+      refreshCloudFontSnapshot();
       setState(() {
         _settings = readStoredAppThemeSettings();
         _customSeedColor = _readStoredCustomSeedColor();
         _showSplash = ref.read(splashSettingsProvider);
         _localeCode = code;
       });
+      _ensureCloudFontLoaded();
     });
     // A desktop list row is a row a pointer can rest on: the extra 12 px
     // over the compact default and the larger leading icon are the
@@ -249,9 +294,31 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     final dynamicSeed = ref.watch(dynamicColorSeedProvider).value;
     final activeDynamicSeed = ref.watch(dynamicColorProvider) ? dynamicSeed : null;
     final textScale = ref.watch(textScaleFactorProvider);
-    final themeSettings = activeDynamicSeed == null
+    final fontSizes = ref.watch(appFontSizesProvider);
+    final appFace = ref.watch(appFontFaceProvider);
+    final appFamily = _settings.fontFamily;
+    final lockedFamily = effectiveFontFamily(appFamily, appFace);
+    // A weight lock reaches this device from the manager, a backup restore or
+    // another window: arm its registration whenever it changes.
+    ref.listen(appFontFaceProvider, (_, next) {
+      if (appFamily != null && CloudFontIds.contains(appFamily)) {
+        unawaited(ref.read(fontLibraryProvider).ensureRegistered(appFamily, face: next));
+      }
+    });
+    ref.listen(danmakuFontFaceProvider, (_, next) {
+      final family = ref.read(danmakuStyleProvider).fontFamily;
+      if (family != null && CloudFontIds.contains(family)) {
+        unawaited(ref.read(fontLibraryProvider).ensureRegistered(family, face: next));
+      }
+    });
+    final pureBlack = ref.watch(pureBlackThemeProvider);
+    var themeSettings = activeDynamicSeed == null
         ? _settings
         : _settings.rebuild((b) => b..seed = DsSeed.color(activeDynamicSeed));
+    if (pureBlack) {
+      // A11.2 C-4: the dark grounds fall to black; light passes through.
+      themeSettings = themeSettings.rebuild((b) => b..adjustColors = dsPureBlackColors);
+    }
     return TranslationProvider(
       child: DsApp.router(
         routerConfig: ref.watch(appRouterProvider),
@@ -264,10 +331,14 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
         localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
         debugShowCheckedModeBanner: false,
         themeMode: _settings.mode,
-        theme: themeSettings.theme(),
+        theme: themeSettings.theme(
+          fontSizes: fontSizes,
+          fontFamilyOverride: lockedFamily == appFamily ? null : lockedFamily,
+        ),
         builder: (context, child) {
-          final app = AppVisibilityObserver(
-            // The wallpaper is the bottom layer of the app: every route sits
+          final app = ClipboardRoomWatcher(
+            child: AppVisibilityObserver(
+              // The wallpaper is the bottom layer of the app: every route sits
             // over it, and the shell's own fill turns translucent while one
             // is set. The observer feeds the video's pause signal.
             child: AppBackground(
@@ -284,6 +355,7 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
                 ),
               ),
             ),
+          ),
           );
           final content = desktop
               ? CallbackShortcuts(
@@ -312,9 +384,8 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
           // The text-size preference multiplies the platform's own scale for
           // every route at once, the splash overlay included.
           return MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: AppTextScaler(MediaQuery.textScalerOf(context), textScale),
-            ),
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: AppTextScaler(MediaQuery.textScalerOf(context), textScale)),
             child: Stack(
               fit: StackFit.expand,
               children: [

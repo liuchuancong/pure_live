@@ -154,5 +154,7 @@
   "copySourceAddress": "Copy the source address",
   "openSourceAddress": "Open the source address",
   "sourceAddressCopied": "Source address copied",
-  "sourceAddressOpenFailed": "The address could not be opened"
+  "sourceAddressOpenFailed": "The address could not be opened",
+  "autoSyncTitle": "Auto-Sync on Launch",
+  "autoSyncDesc": "Automatically check and update network resources silently when the app starts."
 }

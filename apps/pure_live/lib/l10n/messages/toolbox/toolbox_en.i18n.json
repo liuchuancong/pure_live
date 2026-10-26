@@ -93,5 +93,8 @@
   "logsLines": "{count: int} lines",
   "logsScrollBottom": "Scroll to bottom",
   "logsCopied": "Log copied",
-  "logsCopyEmpty": "No logs to copy"
+  "logsCopyEmpty": "No logs to copy",
+  "logsDirectory": "Log directory",
+  "logsDirectoryDefault": "Memory only: turn on file logging to get a folder here.",
+  "logsOpenFailed": "Could not open the log directory"
 }

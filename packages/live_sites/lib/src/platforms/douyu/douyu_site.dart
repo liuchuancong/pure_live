@@ -80,15 +80,30 @@ final class DouyuSite implements LiveSite {
   /// Creates the adapter over [http]; [login] supplies the account cookie
   /// (null: every request goes out as a guest); [now] and [random] are
   /// injectable for tests.
-  DouyuSite({required this.http, this.login, DateTime Function()? now, Random? random})
-    : now = now ?? DateTime.now,
-      processDid = DouyuAccountDevice.generate(random ?? Random.secure());
+  DouyuSite({
+    required this.http,
+    this.login,
+    this.filterSuspectedAutomated,
+    this.forceRenew,
+    DateTime Function()? now,
+    Random? random,
+  }) : now = now ?? DateTime.now,
+       processDid = DouyuAccountDevice.generate(random ?? Random.secure());
 
   /// Transport.
   final DouyuHttp http;
 
   /// The account cookie source, when the viewer is signed in.
   final DouyuLoginStore? login;
+
+  /// The 过滤斗鱼疑似机器人弹幕 seam, read for every suspected chat so a
+  /// changed setting applies at once; null keeps those chats (the setting's
+  /// own default is off).
+  final bool Function()? filterSuspectedAutomated;
+
+  /// The 每 5 分钟自动续期 seam: true asks for a renewal even before the
+  /// stored login is near its end, rate-limited to one per five minutes.
+  final bool Function()? forceRenew;
 
   /// Injectable clock.
   final DateTime Function() now;
@@ -292,6 +307,7 @@ final class DouyuSite implements LiveSite {
   // Login renewal -------------------------------------------------------------
 
   Future<void>? _renewal;
+  DateTime? _lastForcedRenew;
 
   /// With a login store, a stored login that has LTP0 and its device id is
   /// renewed when it is within a day of its end (or has no token). Never
@@ -313,7 +329,13 @@ final class DouyuSite implements LiveSite {
     final ltp0 = credentials.ltp0;
     final did = credentials.did;
     if (ltp0 == null || did == null) return;
-    if (!force && !DouyuAccount.shouldRenew(cookie, now: now(), savedAt: store.savedAt)) return;
+    final forced = force || (forceRenew?.call() ?? false);
+    final due = DouyuAccount.shouldRenew(cookie, now: now(), savedAt: store.savedAt);
+    if (!forced && !due) return;
+    if (forced && !force) {
+      final last = _lastForcedRenew;
+      if (!due && last != null && now().difference(last) < const Duration(minutes: 5)) return;
+    }
     final running = _renewal;
     if (running != null) {
       await running;
@@ -335,6 +357,7 @@ final class DouyuSite implements LiveSite {
           await store.saveRenewed(renewed, now());
           // The renewed cookie leads from now on, in memory as in the store.
           applyLoginCredential(renewed);
+          if (forced) _lastForcedRenew = now();
         }
       } on DouyuFailure {
         // Keep the current cookie; the request may go out as a guest.
@@ -366,7 +389,7 @@ final class DouyuSite implements LiveSite {
     final discovery = _discovery ??= DouyuDiscoveryProvider(site: this);
     final search = _search ??= DouyuSearchProvider(site: this);
     final playback = _playback ??= DouyuPlaybackProvider(site: this);
-    final danmaku = _danmaku ??= DouyuDanmakuProvider(site: this);
+    final danmaku = _danmaku ??= DouyuDanmakuProvider(site: this, filterSuspectedAutomated: filterSuspectedAutomated);
     final link = _link ??= DouyuLinkResolver(site: this);
     final auth = _auth ??= DouyuAuthProvider(site: this);
     return switch (T) {

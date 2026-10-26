@@ -88,6 +88,9 @@ final class ThumbnailRefreshController extends Notifier<ThumbnailRefresh> {
     _timer = null;
   }
 
+  /// Empties both caches now (the settings pane's manual refresh).
+  Future<void> refreshNow() => _refresh();
+
   Future<void> _refresh() async {
     try {
       await clearImageCache();

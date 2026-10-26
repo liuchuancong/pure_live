@@ -38,6 +38,7 @@ final class StoragePaths {
     required this.data,
     required this.config,
     required this.cache,
+    required this.downloads,
   });
 
   /// The platform runtime snapshot (OS family, form factor, distribution).
@@ -58,6 +59,13 @@ final class StoragePaths {
 
   /// The clearable cache area.
   final StorageLocation cache;
+
+  /// The shared download area (the viewer's folder on an installed desktop
+  /// build, the bundle's own tree when portable, the app tree where the
+  /// platform has no user-visible download folder). Null when no candidate
+  /// could be written: the download-folder surface then falls back to the
+  /// data tree and says so instead of offering an unusable path.
+  final StorageLocation? downloads;
 
   /// Resolves the layout for [environment] once at boot; every later
   /// reader takes the resolved locations from here instead of asking the
@@ -95,6 +103,14 @@ final class StoragePaths {
         : StorageLocation(area: StorageArea.data, path: dataDirOverride, isPersistent: true);
     final config = await manager.resolve(StorageArea.config);
     final cache = await manager.resolve(StorageArea.cache);
+    // The downloads area is optional: some platforms offer no user-visible
+    // download folder, and a missing one must not keep the app from booting.
+    StorageLocation? downloads;
+    try {
+      downloads = await manager.resolve(StorageArea.downloads);
+    } on Object catch (error) {
+      log?.forCategory('paths').warning('the downloads area is unavailable', fields: {'error': '$error'});
+    }
     log
         ?.forCategory('paths')
         .info(
@@ -105,6 +121,7 @@ final class StoragePaths {
             'data': data.path,
             'config': config.path,
             'cache': cache.path,
+            'downloads': downloads?.path ?? 'unavailable',
           },
         );
     return StoragePaths._(
@@ -114,6 +131,7 @@ final class StoragePaths {
       data: data,
       config: config,
       cache: cache,
+      downloads: downloads,
     );
   }
 

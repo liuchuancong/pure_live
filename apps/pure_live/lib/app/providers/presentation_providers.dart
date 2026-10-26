@@ -1,13 +1,17 @@
 import 'dart:async' show StreamSubscription, unawaited;
 
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
+import 'package:flutter/widgets.dart' show Size;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_fullscreen/media_core_fullscreen.dart';
 import 'package:media_core_pip/media_core_pip.dart';
+import 'package:pure_live/app/providers/pip_geometry.dart' show readPipSavedBounds, writePipSavedBounds;
 import 'package:pure_live/app/providers/player_providers.dart' show playerKernelProvider;
 import 'package:pure_live/app/providers/window_providers.dart'
     show isPrimaryWindowProvider, presentationWindowHandleProvider;
+import 'package:pure_live/features/settings/playback_settings_providers.dart'
+    show PlaybackSettings, playbackSettingsProvider;
 
 /// The window a Windows presentation backend drives: null makes it resolve
 /// the primary's runner window, a handle (including zero, for a clone whose
@@ -37,15 +41,83 @@ final Provider<FullscreenDriver> fullscreenDriverProvider = Provider<FullscreenD
   return driver;
 });
 
+/// The Windows compact window: the placement policy around the native Win32
+/// backend, with the z-order setting applied on every entry and live while
+/// compact. Null on other platforms, where PiP uses their own backend.
+final Provider<DisplayAwarePipWindow?> windowsPipWindowProvider = Provider<DisplayAwarePipWindow?>((ref) {
+  if (defaultTargetPlatform != TargetPlatform.windows) return null;
+  final handle = _desktopWindowHandle(ref);
+  return DisplayAwarePipWindow(
+    // A clone pins its own window for the same reason as fullscreen: the
+    // compact window must be this one, never the primary.
+    windowBuilder: () => Win32PipWindow(windowHandle: handle),
+    alwaysOnTop: () => ref.read(playbackSettingsProvider).windowsPipAlwaysOnTop,
+    smallWindowSize: (aspectRatio) =>
+        windowsPipWindowSizeFor(ref.read(playbackSettingsProvider), aspectRatio),
+    minWidth: () => ref.read(playbackSettingsProvider).windowsPipMinWidth,
+    minHeight: () => ref.read(playbackSettingsProvider).windowsPipMinHeight,
+    readSavedBounds: () {
+      if (!ref.read(playbackSettingsProvider).rememberPipPosition) return null;
+      return readPipSavedBounds(portrait: _pipShowsPortrait(ref));
+    },
+    writeSavedBounds: (size, position, displayId) =>
+        writePipSavedBounds(portrait: _pipShowsPortrait(ref), size: size, position: position, displayId: displayId),
+    // Re-apply the app's normal window floor when leaving the compact window.
+    normalMinSize: const Size(400, 300),
+  );
+});
+
+/// Whether the PiP driver currently holds a portrait video. The driver owns
+/// the stream's real dimensions; an unknown size (before the first report)
+/// keeps the landscape slot.
+bool _pipShowsPortrait(Ref ref) {
+  try {
+    final driver = ref.read(pipDriverProvider);
+    final width = driver.videoWidth;
+    final height = driver.videoHeight;
+    if (width <= 0 || height <= 0) return false;
+    return height > width;
+  } on Object {
+    return false;
+  }
+}
+
+/// The compact-window policy the current settings ask for. The base size is
+/// the long side: the driver derives a portrait stream's height from it too.
+PipConfig windowsPipConfigFor(PlaybackSettings settings) => PipConfig(
+  width: settings.windowsPipBaseSize,
+  height: settings.windowsPipBaseSize * 9 / 16,
+  minWidth: settings.windowsPipMinWidth,
+  minHeight: settings.windowsPipMinHeight,
+  lockAspectRatio: !settings.windowsPipFreeAspect,
+  title: 'PureLive',
+);
+
+/// The compact window's initial shape for [aspectRatio], from the viewer's
+/// base long side and resize floors. The floors win when they exceed the
+/// base: an aspect-exact floor is still the floor the viewer asked for.
+Size windowsPipWindowSizeFor(PlaybackSettings settings, double aspectRatio) {
+  final ratio = aspectRatio.isFinite && aspectRatio > 0 ? aspectRatio : 16 / 9;
+  var width = ratio >= 1 ? settings.windowsPipBaseSize : settings.windowsPipBaseSize * ratio;
+  var height = ratio >= 1 ? settings.windowsPipBaseSize / ratio : settings.windowsPipBaseSize;
+  if (width < settings.windowsPipMinWidth) {
+    width = settings.windowsPipMinWidth;
+    height = width / ratio;
+  }
+  if (height < settings.windowsPipMinHeight) {
+    height = settings.windowsPipMinHeight;
+    width = height * ratio;
+  }
+  return Size(width, height);
+}
+
 /// The app's picture-in-picture driver: media_core's own. On a desktop the
 /// watched window becomes a compact always-shaped window; on a phone the
 /// system's PiP window takes over through media_core_pip's mobile path.
 final Provider<PipDriver> pipDriverProvider = Provider<PipDriver>((ref) {
-  final windows = defaultTargetPlatform == TargetPlatform.windows;
   final driver = PipDriver(
-    // A clone pins its own window for the same reason as fullscreen: the
-    // compact window must be this one, never the primary.
-    desktopWindow: windows ? Win32PipWindow(windowHandle: _desktopWindowHandle(ref)) : null,
+    config: windowsPipConfigFor(ref.read(playbackSettingsProvider)),
+    desktopWindow: ref.watch(windowsPipWindowProvider),
     // Android hands the stream to a second engine; only a plain HTTP(S)
     // address can be opened by it. A signed, loopback-proxied source
     // resolves to null and the driver refuses the entry instead of showing

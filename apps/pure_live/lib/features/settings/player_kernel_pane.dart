@@ -7,15 +7,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/providers/player_backend_providers.dart'
     show PlayerKernelBackend, availablePlayerKernelBackends, playerKernelBackendProvider;
 import 'package:pure_live/features/settings/playback_settings_providers.dart' show playbackSettingsProvider;
+import 'package:pure_live/features/settings/player_guide_dialog.dart' show showPlayerGuide;
 import 'package:pure_live/features/settings/player_tuning.dart';
+import 'package:pure_live/features/settings/settings_page.dart' show SettingsChildEntry;
+import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/settings/settings_widgets.dart' show SettingsChoiceRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/player/super_resolution.dart'
     show SuperResolutionMode, superResolutionAvailable, superResolutionModeProvider;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
-/// The full player kernel page: the engine and its proxy, the one-click
-/// recipes, Anime4K, and the mpv advanced table the old client shipped.
+/// The player kernel page: the engine in use, its hardware decoding and
+/// force-destroy switches, the one-click recipes and Anime4K. The mpv knob
+/// table — outputs, sync, scaling, the engine's own proxy, the reset —
+/// lives on the advanced subpage so the common rows are not drowned.
 final class PlayerKernelPane extends ConsumerWidget {
   /// The kernel page's content.
   const PlayerKernelPane({super.key});
@@ -27,12 +32,11 @@ final class PlayerKernelPane extends ConsumerWidget {
     final backends = availablePlayerKernelBackends();
     final selected = ref.watch(playerKernelBackendProvider);
     final tuning = ref.watch(playerTuningProvider);
-    final proxy = ref.watch(playerProxyProvider);
     final platform = defaultTargetPlatform;
     final mpv = selected == PlayerKernelBackend.mpv;
     final muted = DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted);
-    final decoders = playerHardwareDecoderOptions(platform).where((value) => value != 'no').toList(growable: false);
-    final decoder = tuning.hwdec == 'no' ? 'auto-safe' : tuning.hwdec;
+    final decoders = playerHardwareDecoderOptions(platform);
+    final decoder = effectivePlayerHardwareDecoder(tuning.hwdec, platform);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -46,7 +50,9 @@ final class PlayerKernelPane extends ConsumerWidget {
                 title: t.settings.engineTitle,
                 description: t.settings.engineDesc,
                 value: selected,
-                options: [for (final backend in backends) DsSelectOption(value: backend, label: backend.label)],
+                options: [
+                  for (final backend in backends) DsSelectOption(value: backend, label: _engineLabel(t, backend)),
+                ],
                 onChanged: (backend) => unawaited(ref.read(playerKernelBackendProvider.notifier).select(backend)),
               )
             else
@@ -54,44 +60,55 @@ final class PlayerKernelPane extends ConsumerWidget {
                 leading: const DsIcon(DsIcons.cpu),
                 title: Text(t.settings.engineTitle),
                 description: Text(t.settings.engineDesc),
-                detail: Text(selected.label),
+                detail: Text(_engineLabel(t, selected)),
               ),
             Padding(
               padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
               child: Text(backends.length > 1 ? t.settings.kernelSwitchHint : t.settings.kernelOnlyOne, style: muted),
             ),
-            if (mpv)
+            if (mpv) ...[
               DsListRow(
-                leading: const DsIcon(DsIcons.globe),
-                title: Text(t.settings.playerProxy),
-                description: Text(t.settings.playerProxyDesc),
-                detail: Text(proxy.enabled ? '${proxy.host}:${proxy.port}' : t.settings.optionOff),
-                showChevron: true,
-                onPressed: () => unawaited(_showPlayerProxyDialog(context)),
+                leading: const DsIcon(DsIcons.gauge),
+                title: Text(t.settings.hardwareDecoding),
+                description: Text(
+                  tuning.customOutput
+                      ? t.settings.customOutputHardwareTakeover
+                      : t.settings.hardwareDecodingDesc,
+                ),
+                trailing: DsSwitch(
+                  value: settings.hardwareDecoding,
+                  // Custom output arms the decoder pick and replaces this
+                  // switch (reference `custom_output_hwdec`).
+                  onChanged: tuning.customOutput
+                      ? null
+                      : (value) =>
+                            unawaited(ref.read(playbackSettingsProvider.notifier).setHardwareDecoding(value: value)),
+                ),
               ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.gauge),
-              title: Text(t.settings.hardwareDecoding),
-              description: Text(t.settings.hardwareDecodingDesc),
-              trailing: DsSwitch(
-                value: settings.hardwareDecoding,
-                onChanged: (value) =>
-                    unawaited(ref.read(playbackSettingsProvider.notifier).setHardwareDecoding(value: value)),
+              if (tuning.customOutput)
+                SettingsChoiceRow<String>(
+                  leading: const DsIcon(DsIcons.cpu),
+                  title: t.settings.hardwareDecoder,
+                  description: tuning.preset.lockedOutputKeys.contains('hwdec')
+                      ? '${t.settings.playerOutputLockedByPreset} · ${t.settings.hardwareDecoderDesc}'
+                      : t.settings.hardwareDecoderDesc,
+                  value: decoder,
+                  options: [
+                    for (final value in decoders)
+                      DsSelectOption(value: value, label: _hardwareDecoderLabel(t, value)),
+                  ],
+                  onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setHwdec(value)),
+                ),
+              if (settings.hardwareDecoding && !tuning.customOutput)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s4),
+                  child: Text(t.settings.hardwareDecoderAutoHint, style: muted),
+                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+                child: Text(t.settings.hardwareDecodingHint, style: muted),
               ),
-            ),
-            if (mpv && settings.hardwareDecoding)
-              SettingsChoiceRow<String>(
-                leading: const DsIcon(DsIcons.cpu),
-                title: t.settings.hardwareDecoder,
-                description: t.settings.hardwareDecoderDesc,
-                value: decoders.contains(decoder) ? decoder : decoders.first,
-                options: [for (final value in decoders) DsSelectOption(value: value, label: _optionLabel(t, value))],
-                onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setHwdec(value)),
-              ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
-              child: Text(t.settings.hardwareDecodingHint, style: muted),
-            ),
+            ],
             DsListRow(
               leading: const DsIcon(DsIcons.power),
               title: Text(t.settings.forceDestroy),
@@ -106,12 +123,66 @@ final class PlayerKernelPane extends ConsumerWidget {
         if (mpv) ...[
           const _PlayerPresetSection(),
           if (superResolutionAvailable) const _SuperResolutionSection(),
-          const _PlayerAdvancedSection(),
         ] else
           Padding(
             padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s20),
             child: Text(t.settings.playerAdvancedRequiresMpv, style: muted),
           ),
+        const DsListSection(children: [SettingsChildEntry(child: SettingsSection.kernelAdvanced)]),
+      ],
+    );
+  }
+}
+
+/// The kernel's advanced subpage: the mpv output, sync, scaling and
+/// decoder rows, the engine's own proxy (separate from the app's, because
+/// mpv opens the streams itself) and the reset and documentation entries.
+final class PlayerKernelAdvancedPane extends ConsumerWidget {
+  /// The advanced page's content.
+  const PlayerKernelAdvancedPane({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final mpv = ref.watch(playerKernelBackendProvider) == PlayerKernelBackend.mpv;
+    if (!mpv) {
+      return Padding(
+        padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s20),
+        child: Text(
+          t.settings.playerAdvancedRequiresMpv,
+          style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
+        ),
+      );
+    }
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [_PlayerProxySection(), _PlayerAdvancedSection()],
+    );
+  }
+}
+
+/// The mpv proxy's entry row: the editor dialog carries the switches.
+final class _PlayerProxySection extends ConsumerWidget {
+  const _PlayerProxySection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final proxy = ref.watch(playerProxyProvider);
+    return DsListSection(
+      header: Text(t.settings.playerProxy),
+      children: [
+        DsListRow(
+          leading: const DsIcon(DsIcons.globe),
+          title: Text(t.settings.playerProxy),
+          description: Text(t.settings.playerProxyDesc),
+          detail: Text(
+            proxy.enabled && proxy.host.isNotEmpty ? '${proxy.host}:${proxy.port}' : t.settings.optionOff,
+          ),
+          showChevron: true,
+          onPressed: () => unawaited(_showPlayerProxyDialog(context)),
+        ),
       ],
     );
   }
@@ -133,6 +204,25 @@ final class _PlayerPresetSection extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
           child: Text(t.settings.playerPresetsHint, style: muted),
         ),
+        DsListRow(
+          leading: const DsIcon(DsIcons.wandSparkles),
+          title: Text(t.settings.playerOneClick),
+          description: Text(t.settings.playerOneClickDesc),
+          showChevron: true,
+          onPressed: () => unawaited(
+            _applyOneClickPreset(context, ref, preset: PlayerPresetId.balanced, icon: DsIcons.wandSparkles),
+          ),
+        ),
+        if (PlayerPresetId.compat.availableHere)
+          DsListRow(
+            leading: const DsIcon(DsIcons.smartphone),
+            title: Text(t.settings.playerCompatFix),
+            description: Text(t.settings.playerCompatFixDesc),
+            showChevron: true,
+            onPressed: () => unawaited(
+              _applyOneClickPreset(context, ref, preset: PlayerPresetId.compat, icon: DsIcons.smartphone),
+            ),
+          ),
         for (final preset in PlayerPresetId.values)
           if (preset.availableHere)
             DsListRow(
@@ -148,6 +238,31 @@ final class _PlayerPresetSection extends ConsumerWidget {
             ),
       ],
     );
+  }
+}
+
+/// The reference's one-click actions (recommended setup and Android
+/// compatibility): name the preset, confirm, then apply it, so a broken
+/// picture needs no tour of the six recipes.
+Future<void> _applyOneClickPreset(
+  BuildContext context,
+  WidgetRef ref, {
+  required PlayerPresetId preset,
+  required DsIconData icon,
+}) async {
+  final t = context.t;
+  final confirmed = await showDsConfirm(
+    context: context,
+    title: t.settings.playerOneClickConfirmTitle,
+    description: t.settings.playerOneClickConfirmBody(preset: _presetName(t, preset)),
+    confirmLabel: t.common.confirm,
+    cancelLabel: t.common.cancel,
+    icon: DsIcon(icon),
+  );
+  if (!confirmed) return;
+  await ref.read(playerTuningProvider.notifier).applyPreset(preset);
+  if (context.mounted) {
+    showDsToast(context: context, title: t.settings.playerOneClickApplied(preset: _presetName(t, preset)));
   }
 }
 
@@ -211,9 +326,13 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
           SettingsChoiceRow<String>(
             leading: const DsIcon(DsIcons.monitor),
             title: t.settings.videoOutput,
-            description: t.settings.videoOutputHint,
+            description: tuning.preset.lockedOutputKeys.contains('vo')
+                ? '${t.settings.playerOutputLockedByPreset} · ${t.settings.videoOutputHint}'
+                : t.settings.videoOutputHint,
             value: tuning.vo,
-            options: [for (final value in videoOutputs) DsSelectOption(value: value, label: _optionLabel(t, value))],
+            options: [
+              for (final value in videoOutputs) DsSelectOption(value: value, label: _videoOutputLabel(t, value)),
+            ],
             onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setVo(value)),
           ),
         if (tuning.customOutput)
@@ -221,7 +340,7 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
             leading: const DsIcon(DsIcons.volume),
             title: t.settings.audioOutput,
             value: tuning.ao,
-            options: [for (final value in audioOutputs) DsSelectOption(value: value, label: _optionLabel(t, value))],
+            options: [for (final value in audioOutputs) DsSelectOption(value: value, label: _audioOutputLabel(t, value))],
             onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setAo(value)),
           ),
         if (desktop)
@@ -231,7 +350,7 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
             description: t.settings.videoSyncDesc,
             value: tuning.videoSync,
             options: [
-              for (final value in playerVideoSyncOptions) DsSelectOption(value: value, label: _optionLabel(t, value)),
+              for (final value in playerVideoSyncOptions) DsSelectOption(value: value, label: _videoSyncLabel(t, value)),
             ],
             onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setVideoSync(value)),
           ),
@@ -252,7 +371,7 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
           value: tuning.scale,
           options: [
             for (final value in playerScaleOptions(platform))
-              DsSelectOption(value: value, label: _optionLabel(t, value)),
+              DsSelectOption(value: value, label: _scaleLabel(t, value)),
           ],
           onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setScale(value)),
         ),
@@ -262,11 +381,13 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
           description: t.settings.deinterlaceDesc,
           value: tuning.deinterlace,
           options: [
-            for (final value in playerDeinterlaceOptions) DsSelectOption(value: value, label: _optionLabel(t, value)),
+            for (final value in playerDeinterlaceOptions)
+              DsSelectOption(value: value, label: _deinterlaceLabel(t, value)),
           ],
           onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setDeinterlace(value)),
         ),
-        if (settings.hardwareDecoding && (platform == TargetPlatform.android || platform == TargetPlatform.windows))
+        if ((platform == TargetPlatform.android || platform == TargetPlatform.windows) &&
+            playerHardwareDecodingActive(hardwareDecoding: settings.hardwareDecoding, tuning: tuning))
           SettingsChoiceRow<String>(
             leading: const DsIcon(DsIcons.fileText),
             title: t.settings.hwdecCodecs,
@@ -274,11 +395,11 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
             value: tuning.hwdecCodecs,
             options: [
               for (final value in playerHwdecCodecOptions(platform))
-                DsSelectOption(value: value, label: _optionLabel(t, value)),
+                DsSelectOption(value: value, label: _hwdecCodecLabel(t, value)),
             ],
             onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setHwdecCodecs(value)),
           ),
-        if (platform == TargetPlatform.windows)
+        if (playerAudioExclusiveOptions(platform).isNotEmpty)
           DsListRow(
             leading: const DsIcon(DsIcons.headphones),
             title: Text(t.settings.audioExclusive),
@@ -308,7 +429,7 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
           title: Text(t.settings.playerGuide),
           description: Text(t.settings.playerGuideDesc),
           showChevron: true,
-          onPressed: () => unawaited(_showPlayerGuide(context)),
+          onPressed: () => unawaited(showPlayerGuide(context)),
         ),
       ],
     );
@@ -320,16 +441,25 @@ Future<void> _resetMpvSettings(BuildContext context, WidgetRef ref) async {
   final confirmed = await showDsConfirm(
     context: context,
     title: t.settings.mpvReset,
-    description: t.settings.mpvResetDesc,
-    confirmLabel: t.common.confirm,
+    description: t.settings.mpvResetConfirm,
+    confirmLabel: t.settings.styleReset,
     cancelLabel: t.common.cancel,
     destructive: true,
     icon: const DsIcon(DsIcons.rotateCcw),
   );
   if (!confirmed) return;
-  await ref.read(playerTuningProvider.notifier).reset();
+  await ref.read(playerTuningProvider.notifier).resetKernelDefaults();
   await ref.read(playbackSettingsProvider.notifier).setHardwareDecoding(value: true);
+  if (context.mounted) {
+    showDsToast(context: context, title: t.settings.mpvResetDone);
+  }
 }
+
+String _engineLabel(Translations t, PlayerKernelBackend backend) => switch (backend) {
+  PlayerKernelBackend.mpv => t.settings.playerEngineMpv,
+  PlayerKernelBackend.ijk => t.settings.playerEngineIjk,
+  PlayerKernelBackend.betterPlayer => t.settings.playerEngineBetterPlayer,
+};
 
 String _presetName(Translations t, PlayerPresetId preset) => switch (preset) {
   PlayerPresetId.balanced => t.settings.presetBalanced,
@@ -378,6 +508,98 @@ DsIconData _superResolutionIcon(SuperResolutionMode mode) => switch (mode) {
 
 /// A technical mpv value's readable word; unknown values keep their engine
 /// spelling, which is what the manual calls them.
+String _videoOutputLabel(Translations t, String value) => switch (value) {
+  'auto' => t.settings.videoOutputAuto,
+  'libmpv' => t.settings.videoOutputLibmpv,
+  'gpu' => t.settings.videoOutputGpu,
+  'gpu-next' => t.settings.videoOutputGpuNext,
+  'direct3d' => t.settings.videoOutputDirect3d,
+  'null' => t.settings.videoOutputNull,
+  'mediacodec_embed' => t.settings.videoOutputMediacodecEmbed,
+  _ => _optionLabel(t, value),
+};
+
+String _hardwareDecoderLabel(Translations t, String value) => switch (value) {
+  'auto' => t.settings.hardwareDecoderAuto,
+  'auto-safe' => t.settings.hardwareDecoderAutoSafe,
+  'auto-unsafe' => t.settings.hardwareDecoderAutoUnsafe,
+  'yes' => t.settings.hardwareDecoderYes,
+  'auto-copy' => t.settings.hardwareDecoderAutoCopy,
+  'd3d11va' => t.settings.hardwareDecoderD3d11va,
+  'd3d11va-copy' => t.settings.hardwareDecoderD3d11vaCopy,
+  'nvdec' => t.settings.hardwareDecoderNvdec,
+  'nvdec-copy' => t.settings.hardwareDecoderNvdecCopy,
+  'videotoolbox' => t.settings.hardwareDecoderVideotoolbox,
+  'videotoolbox-copy' => t.settings.hardwareDecoderVideotoolboxCopy,
+  'vaapi' => t.settings.hardwareDecoderVaapi,
+  'vaapi-copy' => t.settings.hardwareDecoderVaapiCopy,
+  'vdpau' => t.settings.hardwareDecoderVdpau,
+  'vdpau-copy' => t.settings.hardwareDecoderVdpauCopy,
+  'mediacodec' => t.settings.hardwareDecoderMediacodec,
+  'mediacodec-copy' => t.settings.hardwareDecoderMediacodecCopy,
+  'no' => t.settings.hardwareDecoderSoftware,
+  _ => _optionLabel(t, value),
+};
+
+String _audioOutputLabel(Translations t, String value) => switch (value) {
+  'auto' => t.settings.audioOutputAuto,
+  'audiotrack' => t.settings.audioOutputAudiotrack,
+  'aaudio' => t.settings.audioOutputAaudio,
+  'opensles' => t.settings.audioOutputOpensles,
+  'audiounit' => t.settings.audioOutputAudiounit,
+  'wasapi' => t.settings.audioOutputWasapi,
+  'win32' => t.settings.audioOutputWin32,
+  'sdl' => t.settings.audioOutputSdl,
+  'pcm' => t.settings.audioOutputPcm,
+  'alsa' => t.settings.audioOutputAlsa,
+  'pipewire' => t.settings.audioOutputPipewire,
+  'null' => t.settings.audioOutputNull,
+  _ => _optionLabel(t, value),
+};
+
+String _videoSyncLabel(Translations t, String value) => switch (value) {
+  'audio' => t.settings.videoSyncAudio,
+  'display-resample' => t.settings.videoSyncDisplayResample,
+  'display-resample-vdrop' => t.settings.videoSyncDisplayResampleVdrop,
+  'display-resample-drop' => t.settings.videoSyncDisplayResampleDrop,
+  'display-adrop' => t.settings.videoSyncDisplayAdrop,
+  'display-vdrop' => t.settings.videoSyncDisplayVdrop,
+  'display-desync' => t.settings.videoSyncDisplayDesync,
+  'desync' => t.settings.videoSyncDesync,
+  _ => value,
+};
+
+String _scaleLabel(Translations t, String value) => switch (value) {
+  'lanczos' => t.settings.scaleLanczos,
+  'ewa_lanczossharp' => t.settings.scaleEwaLanczosSharp,
+  'ewa_lanczos4sharpest' => t.settings.scaleEwaLanczos4Sharpest,
+  'ewa_lanczos' => t.settings.scaleEwaLanczos,
+  'spline36' => t.settings.scaleSpline36,
+  'spline16' => t.settings.scaleSpline16,
+  'catmull_rom' => t.settings.scaleCatmullRom,
+  'mitchell' => t.settings.scaleMitchell,
+  'hermite' => t.settings.scaleHermite,
+  'bicubic_fast' => t.settings.scaleBicubicFast,
+  'bilinear' => t.settings.scaleBilinear,
+  'nearest' => t.settings.scaleNearest,
+  _ => value,
+};
+
+String _deinterlaceLabel(Translations t, String value) => switch (value) {
+  'auto' => t.settings.deinterlaceAuto,
+  'no' => t.settings.deinterlaceOff,
+  'yes' => t.settings.deinterlaceOn,
+  _ => value,
+};
+
+String _hwdecCodecLabel(Translations t, String value) => switch (value) {
+  'all' => t.settings.hwdecCodecsAll,
+  'h264,hevc' => t.settings.hwdecCodecsH264Hevc,
+  'h264,hevc,vp9' => t.settings.hwdecCodecsH264HevcVp9,
+  'h264,hevc,vp9,av1' => t.settings.hwdecCodecsH264HevcVp9Av1,
+  _ => value,
+};
+
 String _optionLabel(Translations t, String value) => switch (value) {
   'auto' => t.settings.optionAuto,
   'no' => t.settings.optionOff,
@@ -402,9 +624,7 @@ final class _PlayerProxyDialog extends ConsumerStatefulWidget {
 final class _PlayerProxyDialogState extends ConsumerState<_PlayerProxyDialog> {
   late bool _enabled = ref.read(playerProxyProvider).enabled;
   late final TextEditingController _host = TextEditingController(text: ref.read(playerProxyProvider).host);
-  late final TextEditingController _port = TextEditingController(
-    text: ref.read(playerProxyProvider).port > 0 ? '${ref.read(playerProxyProvider).port}' : '',
-  );
+  late final TextEditingController _port = TextEditingController(text: '${ref.read(playerProxyProvider).port}');
 
   @override
   void dispose() {
@@ -474,43 +694,3 @@ final class _PlayerProxyDialogState extends ConsumerState<_PlayerProxyDialog> {
     );
   }
 }
-
-/// A short manual: the concepts and the symptoms the presets exist for.
-Future<void> _showPlayerGuide(BuildContext context) => showDsDialog<void>(
-  context: context,
-  builder: (context) {
-    final t = context.t;
-    final tips = [
-      (DsIcons.circleAlert, t.settings.playerGuideTip1),
-      (DsIcons.sparkles, t.settings.playerGuideTip2),
-      (DsIcons.wifi, t.settings.playerGuideTip3),
-      (DsIcons.volume, t.settings.playerGuideTip4),
-    ];
-    return DsDialog(
-      title: Text(t.settings.playerGuide),
-      description: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s12,
-        children: [
-          Text(t.settings.playerGuideIntro),
-          for (final (icon, text) in tips)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s8,
-              children: [
-                DsIcon(icon, size: 16),
-                Expanded(child: Text(text)),
-              ],
-            ),
-        ],
-      ),
-      actions: [
-        DsButton(
-          variant: DsButtonVariant.secondary,
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(t.common.close),
-        ),
-      ],
-    );
-  },
-);

@@ -9,9 +9,8 @@ import 'package:pure_live/features/recorder/recording_task.dart';
 ///
 /// A task keeps its room's identity as its key — `platform:roomId`, like a
 /// follow — so re-recording a room updates its entry instead of piling up
-/// copies. The engine that would drive these tasks arrives later with the
-/// player stack (`media_core_recording_ffmpeg`); until then the store and
-/// the state transitions it will need stand ready.
+/// copies. The engine records the sessions; the live check in
+/// `recording_monitor.dart` starts the waiting ones.
 final class RecordingTaskRepository {
   /// Serves the [store] (the `recordings` namespace).
   RecordingTaskRepository(this.store);

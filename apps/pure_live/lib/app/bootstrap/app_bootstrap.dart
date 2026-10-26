@@ -10,7 +10,6 @@ import 'package:live_shell/live_shell.dart'
     show
         ChromePlan,
         ChromeStage,
-        CloseAction,
         DesktopShell,
         RenderFallbacks,
         SecondaryWindows,
@@ -33,11 +32,15 @@ import 'package:live_storage/live_storage.dart'
     show StorageBootstrap, StoragePathProvider, StoragePrefs, StorageStores;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/logging/app_log.dart' show appLog, initAppLog;
+import 'package:pure_live/app/providers/download_directory_provider.dart'
+    show defaultDownloadRoot, fontsRootOf, refreshCloudFontSnapshot;
 import 'package:pure_live/app/providers/media_session_providers.dart' show enableMediaSession;
 import 'package:pure_live/app/providers/player_providers.dart' show primePlayerEngine;
+import 'package:pure_live/app/providers/shell_settings_provider.dart' show storedCloseAction, storedDontAskExit;
 import 'package:pure_live/app/providers/user_notification_providers.dart' show enableUserNotifications;
 import 'package:pure_live/app/providers/window_storage_bridge.dart' show WindowStorageMethods;
 import 'package:pure_live/app/routing/root_navigator.dart' show rootNavigatorKey;
+import 'package:pure_live/app/theme/fonts/font_library.dart' show CloudFontIds, FontLibrary;
 import 'package:pure_live/app/theme/system_accent_color.dart' show preloadSystemAccent;
 import 'package:pure_live/app/window_chrome.dart' show WindowChrome, WindowChromeState;
 import 'package:pure_live/app/window_close_dialog.dart' show showCloseWindowDialog;
@@ -131,6 +134,17 @@ Future<Boot> bootstrap() async {
     // The storage bootstrap comes first: the window's caption style is one
     // of its preferences, and the caption is dressed once, at creation.
     final storagePaths = await StoragePaths.resolve(environment: runtime.environment, log: bootLog);
+    // The cloud font snapshot is a plain folder scan and stays synchronous:
+    // the theme validates its stored family before the first frame, and a
+    // downloaded family must answer that check on the very first read. The
+    // data folder is the pre-shared-download location; both are scanned so
+    // an upgrade keeps every installed family.
+    CloudFontIds.replace(
+      FontLibrary.scanInstalledRoots([
+        Directory(p.join(storagePaths.data.path, 'fonts')),
+        fontsRootOf(defaultDownloadRoot(storagePaths)),
+      ]),
+    );
     // The storage layer is best-effort: a failure logs and the boot carries
     // on — browsing works without storage, and the providers fall back to
     // their defaults when the SQLite database never opened.
@@ -140,6 +154,9 @@ Future<Boot> bootstrap() async {
       );
       await storageBootstrap.initialize();
       await StoragePrefs.init();
+      // A custom download folder moves the fonts with it; the pre-prefs scan
+      // above could not know the choice, so fold its families in now.
+      refreshCloudFontSnapshot();
       initAppLog(directory: Directory(p.join(storagePaths.data.path, 'logs')));
       bootLog.info('storage ready', fields: {'data': storagePaths.data.path});
     } on Object catch (error, stackTrace) {
@@ -384,29 +401,5 @@ Future<bool> _verifyPrimaryWindowId(int windowId) async {
       }
       await Future<void>.delayed(const Duration(milliseconds: 50));
     }
-  }
-}
-
-/// The stored close choice, read outside the widget tree (the bootstrap
-/// has no ref): the storage facade directly, its default on any failure.
-CloseAction storedCloseAction() {
-  try {
-    return switch (StoragePrefs.getString('shell.closeAction')) {
-      'minimise' => CloseAction.minimise,
-      'hideToTray' => CloseAction.hideToTray,
-      'quit' => CloseAction.quit,
-      _ => CloseAction.quit,
-    };
-  } on Object {
-    return CloseAction.quit;
-  }
-}
-
-/// Whether the viewer asked the close button to skip the confirmation.
-bool storedDontAskExit() {
-  try {
-    return StoragePrefs.getBool('shell.dontAskExit') ?? false;
-  } on Object {
-    return false;
   }
 }

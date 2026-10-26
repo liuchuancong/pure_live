@@ -5,6 +5,8 @@ import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyUpEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/app/providers/browse_settings_providers.dart' show showScrollToTopProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
@@ -26,7 +28,7 @@ enum CardLayout {
 ///
 /// Every room/area feed in the app renders through this one widget, so
 /// paging, spacing and the loading states stay the same everywhere.
-final class CardGrid<T> extends StatefulWidget {
+final class CardGrid<T> extends ConsumerStatefulWidget {
   /// A grid over [items].
   const CardGrid({
     required this.items,
@@ -34,7 +36,7 @@ final class CardGrid<T> extends StatefulWidget {
     required this.cardExtent,
     this.crossSpacing = DsSpace.s16,
     this.mainSpacing = DsSpace.s16,
-    this.aspectRatio = _roomCardAspectRatio,
+    this.aspectRatio = roomCardAspectRatio,
     this.isLoading = false,
     this.hasMore = false,
     this.onLoadMore,
@@ -55,7 +57,12 @@ final class CardGrid<T> extends StatefulWidget {
 
   /// The room card's tile ratio: a 16:9 cover on top and a title row
   /// beneath it. Wide row cards (areas, history) pass their own.
-  static const double _roomCardAspectRatio = 1.25;
+  static const double roomCardAspectRatio = 1.25;
+
+  /// A compact room card's tile ratio: the coverless identity row's height
+  /// against a typical grid width, so a compact layout does not reserve a
+  /// cover's worth of empty tile.
+  static const double roomCardCompactAspectRatio = 3.6;
 
   /// The items shown.
   final List<T> items;
@@ -124,10 +131,10 @@ final class CardGrid<T> extends StatefulWidget {
   final ScrollController? scrollController;
 
   @override
-  State<CardGrid<T>> createState() => _CardGridState<T>();
+  ConsumerState<CardGrid<T>> createState() => _CardGridState<T>();
 }
 
-final class _CardGridState<T> extends State<CardGrid<T>> {
+final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
   /// How close to the end the next page may be asked for.
   static const double _loadMoreThreshold = 600;
 
@@ -367,7 +374,7 @@ final class _CardGridState<T> extends State<CardGrid<T>> {
   /// Lays the floating back-to-top button over [child] once the viewer has
   /// scrolled past the head.
   Widget _withBackToTop(BuildContext context, Widget child) {
-    if (!_backToTop) return child;
+    if (!_backToTop || !ref.watch(showScrollToTopProvider)) return child;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final t = context.t;

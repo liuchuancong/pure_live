@@ -29,13 +29,29 @@ final class AccountPane extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     final only = siteIds;
+    final allSites = only == null;
     final authSites = [
       for (final site in ref.watch(sitesProvider).all)
         if ((only == null || only.contains(site.manifest.id)) && site.capability<LiveAuthCapability>() != null) site,
     ];
     return DsListSection(
-      header: Text(t.account.sectionHeader),
+      // The live platform page shows the reference's third-party
+      // authorization block; the video station keeps the narrower
+      // sign-in-state title for its own Bilibili account.
+      header: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(allSites ? t.account.thirdPartyAuth : t.account.sectionHeader),
+          if (allSites)
+            Text(
+              t.account.thirdPartyAuthDesc,
+              style: theme.typography.caption.copyWith(color: colors.textMuted),
+            ),
+        ],
+      ),
       children: [
         if (authSites.isEmpty)
           Padding(

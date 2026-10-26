@@ -52,7 +52,7 @@
 | 弹幕 | 约 30 | ◐ 约 10 | 模板/保存、边距、字重/字距、最大同屏、海量、小窗缩放、FPS、折叠、相似度过滤 |
 | 房间卡片 | 35 | ○ | 双目标、预设、可见性、平台角标、圆角、布局、预览 |
 | 竖屏直播 | 39 | ○ | 检测/高度/布局/全屏策略/画面模式/弹幕模式/房间覆盖/诊断/重置 |
-| 观众指标 | 6 | ◐ 约 2 | 每平台真实在线开关、排序说明 |
+| 观众指标 | 6 | ✅ | 4 档显示、真实在线优先、每平台开关、热度/累计说明 |
 | 字体 | 17 + 23 | ◐ 约 1 | 五档字族、字体下载/应用/删除、字重锁定 |
 | 加载样式 | 4 | ○ | 样式、颜色、恢复默认 |
 | 本机互动 | 23 | ○ | 本机服务、浮层、资料、礼物动效、经验经济 |
@@ -147,7 +147,7 @@
 | `prefer_resolution` | 原画/蓝光8M/蓝光4M/超清/流畅；默认原画 | `preferResolution`；`_setDefaultResolution` | ◐ 有清晰度枚举，缺蜂窝分档 |
 | `mobile_quality` | 同上；移动网络 | `preferResolutionCellular` | ○ |
 | `portrait_live_settings` | 跳转竖屏直播 | — | ○ |
-| `audience_metric_settings` | 跳转观众指标 | — | ◐ |
+| `audience_metric_settings` | 跳转观众指标 | — | ✅ 播放 → 画面入口，独立观众指标页 |
 | `enable_background_play` | Android 开关；默认 false | `app.enableBackgroundPlay`；`LiveAudioService` | ○（需后台音频服务） |
 | `asmr_sleep_mode` + `asmr_sleep_timer` | 开关 + 15…1440 分钟；默认 60 | `app.enableAsmrSleepMode` / `asmrSleepMinutes`；睡眠定时 | ○ |
 | `exit_float_window` | 开关；默认 false | `floatPlay`；返回时浮窗 | ○ |
@@ -174,9 +174,9 @@
 | `kernel_switch` | 手机 mpv/ijk/exo；桌面 mpv；默认 mpv；归一化 | ✅ |
 | `network_proxy` | 播放器独立 proxy，host 归一化/端口校验 | ✅（样式/校验待核） |
 | `enable_codec` | 默认 true；关闭后强制 hwdec=no | ✅ |
-| 预设 one-click / compat | 均衡一键 + Android 兼容修复，确认框 | ◐ 有 6 预设，缺入口动作 |
+| 预设 one-click / compat | 均衡一键 + Android 兼容修复，确认框 | ◐ 均衡一键（KER-05）已接入；Android 兼容一键待 KER-06 |
 | `force_destroy_player` | 参考只存不消费（装饰） | ✅ 我们用于 teardown，按真实逻辑保留 |
-| `custom_output_hwdec` | 控制 vo/hwdec/ao 是否下发；变更重建引擎 | ✅/◐ 需核对重建路径 |
+| `custom_output_hwdec` | 控制 vo/hwdec/ao 是否下发；变更重建引擎 | ✅ 自定义输出开启才下发所选 vo/hwdec/ao（hwdec 接管硬解开关），关闭时 hwdec 由硬解开关决定 auto-safe/no；直播间/IPTV/VOD/多画面均接 tuning 监听并在输出变化时重建（KER-09） |
 | 所有 mpv 选项平台表 | Windows/Android/iOS/macOS/Linux 选项不同；默认 auto/lanczos/audio 等 | ✅/◐ 需逐平台核对 |
 | `reset` | 只重置部分字段（参考语义） | ◐ 我们的恢复默认范围可能不同，需逐项定义 |
 | `player_guide` | 6 章完整指南 | ◐ 现有提示简短 |
@@ -221,10 +221,11 @@
 
 ### 1.12 观众指标 `audience_metric_settings_page.dart`（6 键）
 
-- 展示模式：跟随平台 / 在线 / 热度 / 累计；每平台“真实在线”开关（默认 8 个平台：抖音/快手/CC/Twitch/SOOP/AcFun/Picarto/TwitCasting）。
+- 展示模式：跟随平台 / 在线 / 热度 / 累计（`browse.audienceMetric`，原先在浏览页，现移入独立观众指标页）。
+- 每平台「真实在线」开关 + 真实在线人数优先（`browse.preferRealOnline` / `browse.realOnlinePlatforms`，默认 8 平台；能力表见 `live_sites` 的 `LiveAudienceCapability`），只列出公开提供并发人数的平台；其余平台在「仅热度或累计观看」组说明。
 - 标题下方的排序规则说明、未开放来源说明。
-- 迁移：`audienceMetricMigration` 版本化补齐平台。
-现状：◐（4 模式已有，平台开关/说明缺）。
+- 迁移：参考的 `audienceMetricMigration` 无需落地——默认集合已包含历次补入的平台，读取时按能力表归一化。
+现状：✅（显示/排序消费点：热门与关注卡片、热门页「按观众」排序；备份、搜索、刷新齐全）。
 
 ### 1.13 字体 `font_settings_page.dart`（17 键）+ 字体管理（23 键）
 
@@ -276,7 +277,7 @@
 | IPTV 自动同步 | `auto_sync_title/desc`、`sync_interval_title`（小时）、`epg_source_switched`、`active_epg_source`、`select_epg_source` | ◐ 有间隔/自动更新/批量同步；EPG 源切换与状态待核 |
 | IPTV 导入/管理 | `import_playlist`、`import_epg_source`、`local_import`、`network_import`、`download_guide_sub`、`custom_ua_title`、`iptv_list_manage`、`edit_ua_title` | ◐ 来源管理/导入已有；自定义 UA、网络导入细节待核 |
 | 录制基础 | `default_record_quality`、`use_pinyin_folder`、`record_danmaku`、`storage_directory`、`auto_start_boot` | ◐ 目录/命名/质量已有，拼音目录/开机启动/录弹幕待核 |
-| 录制存储 | `enable_cache_limit`、`cache_limit`、`current_cache_size`、`clear_all_cache` | ◐ 有限额与清理，范围/确认待核 |
+| 录制存储 | `enable_cache_limit`、`cache_limit`、`current_cache_size`、`clear_all_cache` | ✅ 开关默认 false、上限默认 1024 MB（1 MB 起）、受管 PureLiveRecords 目录、当前大小只读、确认清理；录制前/结束/每分钟/设置变更按最旧文件裁剪，活跃录制永不删除 |
 | 录制流参数 | `prefer_best_stream`、`rw_timeout`、`queue_size`、`segment_duration`、`max_record_tasks` | ◐ 大部分已有，逐项核消费 |
 | 录制重连 | `auto_reconnect`、`max_retry_count`、`retry_delay`、`enable_polling`、`check_interval`、`enable_backoff`、`max_check_interval` | ◐ 有重试/轮询，字段名/默认值需对齐 |
 | 备份 | Firebase 云备份（账号/连接）、WebDAV、远程同步 TV、本地备份/恢复、备份目录、日志目录与开关 | ◐ 本地/WebDAV/远程已有；Firebase 是新依赖，需用户决策（默认不做） |

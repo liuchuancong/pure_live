@@ -30,6 +30,7 @@ dependencies:
 
   # 文件与外部操作
   archive: ^4.5.2 # 压缩包读写
+  crypto: ^3.0.0 # 字体文件的 SHA-256 校验
   file_picker: ^13.1.0 # 选择文件或目录
   file_selector: ^1.1.0 # 原生文件选择器
   open_file: ^4.0.0 # 调用系统打开文件
@@ -47,6 +48,7 @@ dependencies:
   custom_refresh_indicator: ^4.0.2 # 自定义下拉刷新
   desen_ui: ^0.3.2 # 设计令牌、主题与组件
   dynamic_color: ^1.7.0 # Android 12+ 动态取色
+  dynamic_fonts: ^3.1.0 # 云端字体的运行时下载、校验、缓存与注册
   flutter_helper_utils: ^10.0.0
   flutter_keyboard_visibility: ^7.0.1 # 监听软键盘状态
   flutter_screenutil_plus: ^2.0.0 # 自适应布局辅助
@@ -65,6 +67,7 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^3.3.2 # 状态管理与依赖注入
   flutter_secure_storage: 11.2.0 # 安全存储密钥
+  http: ^1.0.0 # dynamic_fonts 的取字接口（本地文件适配器）
   go_router: ^18.0.2 # 路由管理
   slang: ^4.19.2 # 多语言代码生成基础
   slang_flutter: ^4.19.0 # Flutter 多语言集成
@@ -156,6 +159,8 @@ flutter:
     - assets/tray/ # 系统托盘图标
     - assets/icon/ # 启动页的品牌图（母图）
     - assets/shaders/ # Anime4K 超分辨率着色器
+    # 云端字体目录：只随包携带清单，字体文件由 dynamic_fonts 按需下载并缓存。
+    - assets/fonts/fonts-manifest.json
 
 # 启动图标：assets/icon/app_icon.png 是唯一母图，各平台的图标资源全部由它生成。
 # 换图标只改母图，然后跑：dart run icons_launcher:launch

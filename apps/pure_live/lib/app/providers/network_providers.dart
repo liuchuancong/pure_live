@@ -10,7 +10,29 @@ import 'package:pure_live/app/logging/app_log.dart' show appLog;
 /// without restarting).
 typedef ProxySettings = ({bool enabled, String host, int port});
 
-const ProxySettings _defaults = (enabled: false, host: '127.0.0.1', port: 7897);
+/// The reference's default app-proxy port.
+const int kDefaultAppProxyPort = 7897;
+
+const ProxySettings _defaults = (enabled: false, host: '', port: kDefaultAppProxyPort);
+
+/// Repairs a typed or restored app-proxy host the way the reference's
+/// `normalizeProxyHost` does: a Chinese keyboard's full-width dot, colon and
+/// brackets would otherwise resolve as one DNS name, and whitespace inside
+/// the endpoint is never meaningful.
+String normalizeAppProxyHost(String value) => value
+    .trim()
+    .replaceAll('。', '.')
+    .replaceAll('．', '.')
+    .replaceAll('：', ':')
+    .replaceAll('［', '[')
+    .replaceAll('］', ']')
+    .replaceAll(RegExp(r'\s+'), '');
+
+/// Repairs a persisted or imported app-proxy port; an invalid value falls
+/// back to the reference's 7897 instead of leaving every request routed to a
+/// meaningless endpoint.
+int normalizeAppProxyPort(int? port) =>
+    port != null && port >= 1 && port <= 65535 ? port : kDefaultAppProxyPort;
 
 /// Owns the proxy choice, persisted under `proxy.*`.
 final class ProxySettingsController extends Notifier<ProxySettings> {
@@ -19,8 +41,8 @@ final class ProxySettingsController extends Notifier<ProxySettings> {
     try {
       return (
         enabled: StoragePrefs.getBool('proxy.enabled') ?? _defaults.enabled,
-        host: StoragePrefs.getString('proxy.host') ?? _defaults.host,
-        port: StoragePrefs.getInt('proxy.port') ?? _defaults.port,
+        host: normalizeAppProxyHost(StoragePrefs.getString('proxy.host') ?? _defaults.host),
+        port: normalizeAppProxyPort(StoragePrefs.getInt('proxy.port') ?? _defaults.port),
       );
     } on Object {
       return _defaults;
@@ -31,14 +53,18 @@ final class ProxySettingsController extends Notifier<ProxySettings> {
   Future<void> setEnabled({required bool value}) => _write((enabled: value, host: state.host, port: state.port));
 
   /// Moves the host, writing through.
-  Future<void> setHost(String host) => _write((enabled: state.enabled, host: host.trim(), port: state.port));
+  Future<void> setHost(String host) =>
+      _write((enabled: state.enabled, host: normalizeAppProxyHost(host), port: state.port));
 
   /// Moves the port, writing through.
-  Future<void> setPort(int port) => _write((enabled: state.enabled, host: state.host, port: port));
+  Future<void> setPort(int port) =>
+      _write((enabled: state.enabled, host: state.host, port: normalizeAppProxyPort(port)));
 
   /// The route the shared factory's policy hands out: the configured proxy
-  /// when enabled, direct otherwise.
-  ProxyRoute get route => state.enabled ? HttpProxyRoute(host: state.host, port: state.port) : const DirectRoute();
+  /// when enabled and given a host, direct otherwise.
+  ProxyRoute get route => state.enabled && state.host.isNotEmpty
+      ? HttpProxyRoute(host: state.host, port: state.port)
+      : const DirectRoute();
 
   Future<void> _write(ProxySettings next) async {
     state = next;

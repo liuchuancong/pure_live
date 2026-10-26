@@ -241,7 +241,7 @@ final class SettingsSectionRoute extends GoRouteData with $SettingsSectionRoute 
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    final parsed = SettingsSection.of(section) ?? SettingsSection.personalization;
+    final parsed = SettingsSection.of(section) ?? SettingsSection.theme;
     return _SettingsSectionScreen(section: parsed);
   }
 }

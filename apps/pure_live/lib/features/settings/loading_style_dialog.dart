@@ -78,6 +78,18 @@ final class _LoadingStyleDialog extends ConsumerWidget {
       ),
       style: const DsDialogStyle(width: 560),
       actions: [
+        // The reference's restore action clears both the animation and its
+        // ink, so the default ring goes back to the theme's accent.
+        DsButton(
+          variant: DsButtonVariant.ghost,
+          onPressed: selected == 'default' && loadingColor == null
+              ? null
+              : () {
+                  ref.read(loadingStyleProvider.notifier).style = 'default';
+                  ref.read(loadingColorProvider.notifier).color = null;
+                },
+          child: Text(t.settings.styleReset),
+        ),
         DsButton(
           variant: DsButtonVariant.secondary,
           onPressed: () => Navigator.of(context).pop(),
@@ -207,10 +219,7 @@ final class _LoadingColorDialogState extends ConsumerState<_LoadingColorDialog> 
             ],
           ),
           if (_invalid)
-            Text(
-              t.settings.loadingColorHexInvalid,
-              style: theme.typography.small.copyWith(color: colors.danger.text),
-            ),
+            Text(t.settings.loadingColorHexInvalid, style: theme.typography.small.copyWith(color: colors.danger.text)),
         ],
       ),
       style: const DsDialogStyle(width: 520),

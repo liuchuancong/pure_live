@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:pure_live/app/background/app_background.dart' show BackgroundActiveScope;
 import 'package:pure_live/app/navigation/module_navigation.dart';
+import 'package:pure_live/app/providers/nav_visibility_providers.dart' show kHomeMenuItems;
 import 'package:pure_live/app/theme/theme_mode_toggle.dart';
 import 'package:pure_live/app/window_chrome.dart' show WindowChromeState;
 import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
@@ -35,6 +36,7 @@ final class MobileLayout extends StatelessWidget {
     required this.onSearch,
     this.settingsSection,
     this.showMultiview = true,
+    this.homeMenuItems = kHomeMenuItems,
     super.key,
   });
 
@@ -64,13 +66,16 @@ final class MobileLayout extends StatelessWidget {
   /// setting's toggle, shared with the desktop sidebar).
   final bool showMultiview;
 
+  /// The live home menu's visible entries in the viewer's order (the
+  /// navigation setting's `nav.menuIds`); other modules keep their own tabs.
+  final List<NavigationItem> homeMenuItems;
+
   /// The bar's destinations: the module's feeds plus settings, the shape a
-  /// phone's tab bar takes in every common client.
-  static List<NavigationItem> bottomTabsOf(AppModule module) => switch (module) {
-    AppModule.live => const [
-      NavigationItem.hot,
-      NavigationItem.zones,
-      NavigationItem.favorites,
+  /// phone's tab bar takes in every common client. Live follows the
+  /// navigation setting's saved menu, the recording centre included.
+  List<NavigationItem> bottomTabsOf(AppModule module) => switch (module) {
+    AppModule.live => [
+      if (homeMenuItems.isEmpty) ...kHomeMenuItems else ...homeMenuItems,
       NavigationItem.settings,
     ],
     AppModule.iptv => const [
@@ -207,7 +212,11 @@ final class MobileLayout extends StatelessWidget {
                   // block for block). Settings follows under its own divider.
                   for (final (index, group) in navigationOf(module).menu.indexed) ...[
                     if (index > 0) const SidebarDivider(),
-                    for (final item in group)
+                    // Live's home block is the navigation setting's list:
+                    // membership and order, not the registry's fixed order.
+                    for (final item in module == AppModule.live && group.every(kHomeMenuItems.contains)
+                        ? (homeMenuItems.isEmpty ? kHomeMenuItems : homeMenuItems)
+                        : group)
                       if (showMultiview || item != NavigationItem.multiview)
                         DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
                   ],

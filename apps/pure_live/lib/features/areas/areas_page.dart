@@ -11,6 +11,8 @@ import 'package:pure_live/app/routing/app_router.dart' show AreaRoomsRoute, Sett
 import 'package:pure_live/features/areas/area_follow_repository.dart';
 import 'package:pure_live/features/areas/areas_controller.dart';
 import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
+import 'package:pure_live/features/settings/sites_display_provider.dart'
+    show sitesDisplayProvider, sitesOrderProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/card_grid.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart';
@@ -40,6 +42,10 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
 
   /// Warms the next platform after the viewer settles on this one.
   Timer? _warmTimer;
+
+  /// Whether a platform-display fallback is already waiting for the frame:
+  /// one move per hidden selection, not one per build.
+  bool _platformFallbackScheduled = false;
 
   static const Duration _warmDelay = Duration(milliseconds: 800);
   static const Duration _resumeRefreshAfter = Duration(seconds: 15);
@@ -88,6 +94,24 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
 
   ScrollController _scrollOf(String platform) => _scrolls[platform] ??= ScrollController();
 
+  /// The shown platform was hidden in the settings while another one is
+  /// still visible: move to the first visible one and load its catalogue,
+  /// rather than leaving the hidden platform's areas behind an absent tab.
+  void _schedulePlatformFallback() {
+    if (_platformFallbackScheduled) return;
+    _platformFallbackScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _platformFallbackScheduled = false;
+      if (!mounted) return;
+      final current = ref.read(areasSiteProvider);
+      final visible = ref.read(areasCatalogProvider.notifier).platformIds();
+      if (visible.isEmpty || visible.contains(current)) return;
+      final next = visible.first;
+      ref.read(areasSiteProvider.notifier).selected = next;
+      unawaited(ref.read(areasCatalogProvider.notifier).open(next));
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -104,7 +128,17 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
   Widget build(BuildContext context) {
     final t = context.t;
     final platform = ref.watch(areasSiteProvider);
+    // The platform list and its order are settings this page follows live:
+    // watching the notifier alone would leave the tabs stale until another
+    // rebuild.
+    ref
+      ..watch(sitesDisplayProvider)
+      ..watch(sitesOrderProvider);
     final ids = ref.watch(areasCatalogProvider.notifier).platformIds();
+    // The platform list can change under an open page (the settings hide
+    // the shown platform, or a backup restores another display set): move
+    // to a visible one instead of showing areas behind an absent tab.
+    if (ids.isNotEmpty && !ids.contains(platform)) _schedulePlatformFallback();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -156,7 +190,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
                               size: DsSize.sm,
                               leading: const DsIcon(DsIcons.antenna, size: 16),
                               onPressed: () => unawaited(
-                                context.push(SettingsSectionRoute(section: SettingsSection.sources.name).location),
+                                context.push(SettingsSectionRoute(section: SettingsSection.sites.name).location),
                               ),
                               child: Text(t.settings.sitesDisplay),
                             ),

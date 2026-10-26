@@ -8,5 +8,6 @@
   "noPlatforms": "没有可浏览的平台",
   "unfollow": "取消关注",
   "categoryAll": "全部分类",
-  "follow": "关注分区"
+  "follow": "关注分区",
+  "hiddenUnplayable": "已隐藏 {count: int} 个不能播放的直播（付费、加密、仅限 App 等）"
 }

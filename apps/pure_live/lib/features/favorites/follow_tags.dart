@@ -6,9 +6,15 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
 import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
 
-/// One local follow group: a name the viewer made and the id rooms carry in
-/// their `RoomLocal.tagIds`.
-typedef FollowTag = ({String id, String name});
+/// The longest tag name the editor takes (the reference's `TagStore.maxNameLength`).
+const int kFollowTagNameMaxLength = 15;
+
+/// The longest tag note the editor takes (the reference's `maxDescriptionLength`).
+const int kFollowTagDescriptionMaxLength = 40;
+
+/// One local follow group: a name (and an optional note) the viewer made and
+/// the id rooms carry in their `RoomLocal.tagIds`.
+typedef FollowTag = ({String id, String name, String description});
 
 const String _tagsKey = 'follow.tags';
 
@@ -17,6 +23,7 @@ const String _tagsKey = 'follow.tags';
 /// Tags are local (never a platform's own): a room joins them through its
 /// stored `RoomLocal.tagIds`, and removing a tag strips its id from every
 /// follow, so no room keeps pointing at a tag the picker no longer offers.
+/// The list's own order is the order the favorites' tag strip shows.
 final class FollowTagsController extends Notifier<List<FollowTag>> {
   @override
   List<FollowTag> build() {
@@ -28,23 +35,55 @@ final class FollowTagsController extends Notifier<List<FollowTag>> {
       return [
         for (final entry in decoded)
           if (entry is Map && entry['id'] is String && entry['name'] is String)
-            (id: entry['id'] as String, name: (entry['name'] as String).trim()),
+            (
+              id: entry['id'] as String,
+              name: (entry['name'] as String).trim(),
+              description: (entry['description'] as String?)?.trim() ?? '',
+            ),
       ].where((tag) => tag.name.isNotEmpty).toList(growable: false);
     } on Object {
       return const [];
     }
   }
 
-  /// Adds [raw] as a tag; null when it is blank or already present (names
-  /// compare without case, since two "游戏" tags would only confuse).
-  Future<FollowTag?> add(String raw) async {
-    final name = raw.trim();
-    if (name.isEmpty) return null;
-    if (state.any((tag) => tag.name.toLowerCase() == name.toLowerCase())) return null;
-    final tag = (id: 'tag-${DateTime.now().microsecondsSinceEpoch}', name: name);
+  /// Whether [name] is usable: not blank, and not another tag's name
+  /// (names compare without case — two “游戏” tags would only confuse).
+  bool nameUsable(String name, {String? excludingId}) {
+    final folded = name.trim().toLowerCase();
+    if (folded.isEmpty) return false;
+    return !state.any((tag) => tag.id != excludingId && tag.name.toLowerCase() == folded);
+  }
+
+  /// Adds [raw] with an optional note as a tag; null when the name is blank
+  /// or already present.
+  Future<FollowTag?> add(String raw, {String description = ''}) async {
+    final name = _clip(raw.trim(), kFollowTagNameMaxLength);
+    if (name.isEmpty || !nameUsable(name)) return null;
+    final tag = (
+      id: 'tag-${DateTime.now().microsecondsSinceEpoch}',
+      name: name,
+      description: _clip(description.trim(), kFollowTagDescriptionMaxLength),
+    );
     state = [...state, tag];
     _write();
     return tag;
+  }
+
+  /// Renames the tag behind [id], replacing its note; false when the tag is
+  /// gone or the name is refused (blank, or another tag's).
+  Future<bool> rename(String id, {required String name, String description = ''}) async {
+    final clean = _clip(name.trim(), kFollowTagNameMaxLength);
+    if (clean.isEmpty || !nameUsable(clean, excludingId: id)) return false;
+    if (!state.any((tag) => tag.id == id)) return false;
+    state = [
+      for (final tag in state)
+        if (tag.id == id)
+          (id: id, name: clean, description: _clip(description.trim(), kFollowTagDescriptionMaxLength))
+        else
+          tag,
+    ];
+    _write();
+    return true;
   }
 
   /// Removes the tag behind [id] from the list and from every follow's
@@ -57,6 +96,23 @@ final class FollowTagsController extends Notifier<List<FollowTag>> {
     ];
     _write();
     await ref.read(followsProvider.notifier).stripTag(id);
+  }
+
+  /// Moves the item at [from] to [to] in the list's order (the favorites'
+  /// tag strip follows it).
+  Future<void> move(int from, int to) async {
+    if (from == to || from < 0 || to < 0 || from >= state.length || to >= state.length) return;
+    final next = [...state];
+    next.insert(to, next.removeAt(from));
+    state = next;
+    _write();
+  }
+
+  /// Puts the tag behind [id] first (the reference's `pinToTop`).
+  Future<void> pinToTop(String id) async {
+    final index = state.indexWhere((tag) => tag.id == id);
+    if (index <= 0) return;
+    await move(index, 0);
   }
 
   /// The tag [id] names, when it still exists.
@@ -76,10 +132,14 @@ final class FollowTagsController extends Notifier<List<FollowTag>> {
     ];
   }
 
+  /// Drops a tag name that is too long, rather than refusing a paste.
+  static String _clip(String value, int maxLength) =>
+      value.runes.length <= maxLength ? value : String.fromCharCodes(value.runes.take(maxLength));
+
   void _write() {
     try {
       final encoded = jsonEncode([
-        for (final tag in state) {'id': tag.id, 'name': tag.name},
+        for (final tag in state) {'id': tag.id, 'name': tag.name, 'description': tag.description},
       ]);
       unawaited(StoragePrefs.setString(_tagsKey, encoded));
     } on Object {

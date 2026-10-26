@@ -8,17 +8,15 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 /// mobile engines only exist on Android and iOS; on a desktop the selector
 /// honestly has one choice.
 enum PlayerKernelBackend {
-  mpv('mpv', 'mpv · media_kit'),
-  ijk('ijk', 'IJKPlayer'),
-  betterPlayer('better_player', 'BetterPlayer');
+  mpv('mpv'),
+  ijk('ijk'),
+  betterPlayer('better_player');
 
-  PlayerKernelBackend(this.id, this.label);
+  PlayerKernelBackend(this.id);
 
-  /// The adapter id the kernel registry knows.
+  /// The adapter id the kernel registry knows; it is also the `player.backend`
+  /// value, so a registry rename has to migrate the stored preference.
   final String id;
-
-  /// The name shown in settings.
-  final String label;
 
   static PlayerKernelBackend fromId(String? id) =>
       PlayerKernelBackend.values.firstWhere((backend) => backend.id == id, orElse: () => PlayerKernelBackend.mpv);

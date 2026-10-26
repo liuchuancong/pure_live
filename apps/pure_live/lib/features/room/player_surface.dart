@@ -3,22 +3,39 @@ import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
-import 'package:flutter/gestures.dart' show PointerScrollEvent;
+import 'package:flutter/gestures.dart' show PointerScrollEvent, kTouchSlop;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:media_core/media_core.dart';
+import 'package:pure_live/app/providers/font_face_provider.dart'
+    show danmakuFontFaceProvider, effectiveFontFamily;
 import 'package:pure_live/app/providers/presentation_providers.dart' show roomPresentationProvider;
 import 'package:pure_live/app/providers/room_leave_provider.dart' show roomLeaveProvider;
 import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
 import 'package:pure_live/features/recorder/recording_repository.dart' show recordingTasksProvider;
 import 'package:pure_live/features/recorder/recording_task.dart' show RecordingTaskState;
+import 'package:pure_live/features/room/audio_only_cover.dart' show AudioOnlyCover;
 import 'package:pure_live/features/room/cast_dialog.dart' show showCastDialog;
+import 'package:pure_live/features/room/compact_danmaku_metrics.dart' show CompactDanmakuMetrics;
 import 'package:pure_live/features/room/room_controller.dart';
+import 'package:pure_live/features/room/room_message_actions.dart' show showRoomMessageActions;
 import 'package:pure_live/features/room/room_status.dart'
     show RoomPictureAction, RoomPictureDim, RoomPictureKind, pictureStateOf, roomSlowProvider;
-import 'package:pure_live/features/settings/danmaku_style_providers.dart' show danmakuStyleProvider;
-import 'package:pure_live/features/settings/playback_settings_providers.dart' show playbackSettingsProvider;
+import 'package:pure_live/features/settings/danmaku_hold_provider.dart' show danmakuHoldProvider;
+import 'package:pure_live/features/settings/danmaku_style_providers.dart'
+    show
+        DanmakuStyle,
+        danmakuEffectiveFpsProvider,
+        danmakuLongPressInteractionProvider,
+        danmakuStyleProvider,
+        danmakuTapInteractionProvider,
+        kDanmakuMassModeMaxVisibleCount;
+import 'package:pure_live/features/settings/pip_danmaku_scale_provider.dart' show pipDanmakuScaleProvider;
+import 'package:pure_live/features/settings/playback_settings_providers.dart'
+    show PlaybackFit, fitLabels, playbackSettingsProvider;
+import 'package:pure_live/features/settings/portrait_fullscreen_settings.dart'
+    show PortraitDanmakuMode, PortraitFullscreenMode;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
@@ -103,6 +120,11 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.immersive = false,
     this.keepControls = false,
     this.autofocusFirstControl = false,
+    this.portraitFullscreen = false,
+    this.portraitDisplay = PortraitFullscreenMode.ambient,
+    this.portraitDanmaku = PortraitDanmakuMode.followGlobal,
+    this.canEnterPortraitFullscreen = false,
+    this.onPortraitFullscreen,
     super.key,
   });
 
@@ -128,6 +150,21 @@ final class PlayerSurface extends ConsumerStatefulWidget {
   /// first build: the TV room's starting stop for the remote.
   final bool autofocusFirstControl;
 
+  /// Whether the room is in its portrait full-screen presentation.
+  final bool portraitFullscreen;
+
+  /// How the portrait picture fills that surface.
+  final PortraitFullscreenMode portraitDisplay;
+
+  /// Where the flying layer sits in that surface.
+  final PortraitDanmakuMode portraitDanmaku;
+
+  /// Whether a portrait stream offers the entry button.
+  final bool canEnterPortraitFullscreen;
+
+  /// Enter portrait full screen (the page owns the presentation).
+  final VoidCallback? onPortraitFullscreen;
+
   @override
   ConsumerState<PlayerSurface> createState() => _PlayerSurfaceState();
 }
@@ -142,6 +179,13 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   double? _volumeHud;
   Timer? _volumeHudTimer;
   double _dragVolume = 0;
+
+  /// The flying danmaku held under the finger from pointer-down until the
+  /// tap is confirmed (its panel opens) or the gesture turns out to be a
+  /// double tap, a drag or a scroll (it is released).
+  BarrageItem? _heldDanmaku;
+  Offset? _holdOrigin;
+  Offset? _pressLocal;
 
   /// Watches the bars' controls: while one of them holds the focus the
   /// bars stay (a remote cannot tap the picture to bring them back).
@@ -168,6 +212,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   void dispose() {
     _hideTimer?.cancel();
     _volumeHudTimer?.cancel();
+    _releaseDanmaku();
     _controlsFocus
       ..removeListener(_onControlsFocus)
       ..dispose();
@@ -227,6 +272,97 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     }
   }
 
+  /// A tap on the picture: with tap actions on, a message under the finger
+  /// is held while its panel shows; a tap that hits nothing — or every tap
+  /// with the switch off — wakes or dismisses the bars as before.
+  Future<void> _onPictureTap() async {
+    if (!ref.read(danmakuTapInteractionProvider)) {
+      _releaseDanmaku();
+      _toggleControls();
+      return;
+    }
+    final item = _takeHeldDanmaku();
+    if (item == null) {
+      _toggleControls();
+      return;
+    }
+    await _showDanmakuActions(item);
+  }
+
+  /// A long press pins the message under the finger and opens the same
+  /// actions as a tap; empty space keeps the normal controls behaviour.
+  Future<void> _onPictureLongPress() async {
+    if (!ref.read(danmakuLongPressInteractionProvider)) {
+      _releaseDanmaku();
+      return;
+    }
+    final item = _takeHeldDanmaku();
+    if (item == null) return;
+    await _showDanmakuActions(item);
+  }
+
+  BarrageItem? _takeHeldDanmaku() {
+    var item = _heldDanmaku;
+    final press = _pressLocal;
+    if (item == null && !ref.read(danmakuHoldProvider) && press != null) {
+      // Holding is off, so the message was not frozen on pointer-down; find
+      // it under the press now, just before the panel opens.
+      item = widget.barrage?.pauseItemAt(press.dx, press.dy);
+    }
+    _heldDanmaku = null;
+    _holdOrigin = null;
+    _pressLocal = null;
+    return item;
+  }
+
+  Future<void> _showDanmakuActions(BarrageItem item) async {
+    try {
+      await showRoomMessageActions(
+        context,
+        ref,
+        text: item.content,
+        userName: item.userName ?? '',
+        // The viewer's own echo is the only local message on the flying
+        // layer; it carries no platform identity to block.
+        isLocal: item.id?.startsWith('local-') ?? false,
+      );
+    } finally {
+      widget.barrage?.resumeAllPaused();
+    }
+  }
+
+  /// Pins the flying danmaku under a finger the moment it goes down, so the
+  /// actions target the message the tap started on rather than the one that
+  /// has flown there by the time the gesture resolves. Either interaction
+  /// switch may own the press: a long press still targets its message with
+  /// tap actions off.
+  void _holdDanmaku(PointerDownEvent event) {
+    if (_holdOrigin != null) return;
+    if (!ref.read(danmakuTapInteractionProvider) && !ref.read(danmakuLongPressInteractionProvider)) return;
+    _holdOrigin = event.position;
+    _pressLocal = event.localPosition;
+    if (!ref.read(danmakuHoldProvider)) return;
+    final item = widget.barrage?.pauseItemAt(event.localPosition.dx, event.localPosition.dy);
+    if (item != null) _heldDanmaku = item;
+  }
+
+  /// A finger that moves past the touch slop is a drag, not a press: the
+  /// message flies on and the release wakes or dismisses the bars instead.
+  void _releaseDanmakuOnMove(PointerMoveEvent event) {
+    final origin = _holdOrigin;
+    if (origin != null && (event.position - origin).distance > kTouchSlop) _releaseDanmaku();
+  }
+
+  /// Lets a held message fly on when the gesture turned out not to be its
+  /// tap (a double tap plays or pauses, a drag sets the volume).
+  void _releaseDanmaku() {
+    _holdOrigin = null;
+    _pressLocal = null;
+    if (_heldDanmaku == null) return;
+    _heldDanmaku = null;
+    widget.barrage?.resumeAllPaused();
+  }
+
   /// Shows the volume the viewer is setting and lets the bar go after a
   /// moment on its own.
   void _showVolume(double value) {
@@ -259,6 +395,73 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     unawaited(ref.read(roomProvider.notifier).setVolume(next));
   }
 
+  /// The flying layer's config from the live look; a compact surface passes
+  /// its scaled geometry and the reference's smaller pending queue/caches,
+  /// everything else comes from the one main configuration.
+  BarrageConfig _barrageConfig(
+    DanmakuStyle style,
+    int fps, {
+    String? family,
+    double? area,
+    CompactDanmakuMetrics? compact,
+  }) {
+    final scale = compact?.scale ?? 1.0;
+    return BarrageConfig(
+      fontSize: compact?.fontSize ?? style.fontSize,
+      // The reference's 字体粗细: 100–900, the flame layout's own default
+      // being w500.
+      fontWeight: FontWeight(style.fontWeight),
+      // The reference's 文字间距 (danmakuLetterSpacing): pixels of extra space
+      // between glyphs, negative to tighten; the compact factor scales it
+      // with the text.
+      letterSpacing: style.letterSpacing * scale,
+      baseSpeed: compact?.baseSpeed ?? style.baseSpeed,
+      area: area ?? style.area,
+      // The reference's 顶部留白: pixels kept message-free at the top edge
+      // before the area's share is measured.
+      topAreaDistance: style.topMargin,
+      // The reference's 底部留白: pixels kept message-free at the bottom edge,
+      // so subtitles stay readable.
+      bottomAreaDistance: style.bottomMargin,
+      opacity: style.opacity,
+      showStroke: style.showStroke,
+      // The reference's 描边宽度 (danmakuFontBorder): the flame layout strokes
+      // each glyph with this width when the outline is on.
+      strokeWidth: style.strokeWidth,
+      // The reference's 纯文字模式: the flame layout skips the emoji pictures
+      // and keeps the words.
+      noEmojiMode: style.noEmoji,
+      fontFamily: family ?? style.fontFamily,
+      // The reference's 海量模式: realtime dispatch and a fixed 1000-message
+      // ceiling; otherwise the chosen 10–120 cap.
+      realtimeMode: style.massMode,
+      maxVisibleCount: style.massMode ? kDanmakuMassModeMaxVisibleCount : style.maxVisibleCount,
+      // The reference's 弹幕帧率: the manual rate, or the display policy's cap
+      // (60 FPS in power saving/balanced).
+      fps: fps,
+      // The room surface keeps the engine defaults; the compact surface's
+      // lane geometry and pool sizes come from CompactDanmakuMetrics.
+      trackHeight: compact?.trackHeight ?? 36,
+      emojiSize: compact?.emojiSize ?? 24,
+      overlapSafeGap: compact?.overlapSafeGap ?? 40,
+      safeArea: compact == null,
+      maxPendingCount: compact == null ? 120 : CompactDanmakuMetrics.maxPendingCount,
+      maxPendingAge: compact == null ? const Duration(seconds: 5) : CompactDanmakuMetrics.maxPendingAge,
+      fixedDuration: compact == null ? const Duration(seconds: 4) : CompactDanmakuMetrics.fixedDuration,
+      barragePoolMaxSize: compact == null ? 150 : CompactDanmakuMetrics.barragePoolMaxSize,
+      pictureCacheMaxSize: compact == null ? 200 : CompactDanmakuMetrics.pictureCacheMaxSize,
+      textCacheMaxSize: compact == null ? 1000 : CompactDanmakuMetrics.textCacheMaxSize,
+    );
+  }
+
+  BoxFit _portraitFit() => switch (widget.portraitDisplay) {
+    PortraitFullscreenMode.complete || PortraitFullscreenMode.ambient => BoxFit.contain,
+    PortraitFullscreenMode.balanced || PortraitFullscreenMode.cover => BoxFit.cover,
+  };
+
+  Alignment _portraitAlignment() =>
+      widget.portraitDisplay == PortraitFullscreenMode.balanced ? Alignment.topCenter : Alignment.center;
+
   @override
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
@@ -267,10 +470,24 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     final transport = _transport;
     final picture = pictureStateOf(context.t, room, slow: ref.watch(roomSlowProvider));
     final style = ref.watch(danmakuStyleProvider);
+    final danmakuFps = ref.watch(danmakuEffectiveFpsProvider);
+    final pipScale = ref.watch(pipDanmakuScaleProvider);
+    final danmakuFamily = effectiveFontFamily(style.fontFamily, ref.watch(danmakuFontFaceProvider));
     final playback = ref.watch(playbackSettingsProvider);
     final presentation = ref.watch(roomPresentationProvider);
     final mini = presentation == PresentationMode.pip;
-    final showDanmaku = playback.danmakuVisible && (!mini || playback.miniDanmakuVisible);
+    final portraitHidden = widget.portraitFullscreen && widget.portraitDanmaku == PortraitDanmakuMode.hidden;
+    final showDanmaku =
+        playback.danmakuVisible && (!mini || playback.miniDanmakuVisible) && !portraitHidden;
+    final danmakuArea = widget.portraitFullscreen
+        ? switch (widget.portraitDanmaku) {
+            PortraitDanmakuMode.upperQuarter => 0.25,
+            PortraitDanmakuMode.reduced => style.area * 0.5,
+            PortraitDanmakuMode.hidden => 0.0,
+            PortraitDanmakuMode.followGlobal => style.area,
+          }
+        : style.area;
+    final longPressInteraction = showDanmaku && ref.watch(danmakuLongPressInteractionProvider);
     final playing = room.playback.playing;
     // A paused or failed stream keeps the bar up; a playing one lets it go.
     final showBar = handle != null && picture.kind == RoomPictureKind.none && (_controlsVisible || !playing);
@@ -293,24 +510,63 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
         children: [
           if (handle == null)
             ColoredBox(color: colors.overlay, child: const SizedBox.expand())
+          else if (room.audioOnly && room.room != null)
+            AudioOnlyCover(room: room.room!)
+          else if (widget.portraitFullscreen && widget.portraitDisplay == PortraitFullscreenMode.ambient)
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [colors.channel, colors.overlay],
+                ),
+              ),
+              child: MediaPlayerView(
+                handle: handle,
+                fit: _portraitFit(),
+                alignment: _portraitAlignment(),
+                backgroundColor: colors.overlay,
+              ),
+            )
           else
-            MediaPlayerView(handle: handle, fit: playback.fit.boxFit, backgroundColor: colors.overlay),
+            MediaPlayerView(
+              handle: handle,
+              fit: widget.portraitFullscreen ? _portraitFit() : playback.fit.boxFit,
+              alignment: widget.portraitFullscreen ? _portraitAlignment() : Alignment.center,
+              backgroundColor: colors.overlay,
+            ),
           if (widget.barrage case final barrage? when showDanmaku)
             Positioned.fill(
               child: IgnorePointer(
-                child: FlameBarrageWidget(
-                  // The settings surface's danmaku style, applied live: every
-                  // slider there rebuilds this config on its next frame.
-                  config: BarrageConfig(
-                    fontSize: style.fontSize,
-                    baseSpeed: style.baseSpeed,
-                    area: style.area,
-                    opacity: style.opacity,
-                    showStroke: style.showStroke,
-                  ),
-                  emojiAtlas: EmojiAtlas.instance,
-                  controller: barrage,
-                ),
+                child: mini
+                    ? LayoutBuilder(
+                        builder: (context, constraints) => FlameBarrageWidget(
+                          // The compact (PiP) surface keeps the main look and
+                          // adds one width-derived or pinned factor; its own
+                          // lane geometry and smaller caches follow the
+                          // reference's CompactDanmakuMetrics.
+                          config: _barrageConfig(
+                            style,
+                            danmakuFps,
+                            family: danmakuFamily,
+                            area: danmakuArea,
+                            compact: CompactDanmakuMetrics.resolve(
+                              width: constraints.maxWidth,
+                              auto: pipScale.auto,
+                              pinnedScale: pipScale.scale,
+                              configuredFontSize: style.fontSize,
+                              configuredSpeed: style.baseSpeed,
+                            ),
+                          ),
+                          emojiAtlas: EmojiAtlas.instance,
+                          controller: barrage,
+                        ),
+                      )
+                    : FlameBarrageWidget(
+                        config: _barrageConfig(style, danmakuFps, family: danmakuFamily, area: danmakuArea),
+                        emojiAtlas: EmojiAtlas.instance,
+                        controller: barrage,
+                      ),
               ),
             ),
           // The gesture layer: a tap shows or hides the bar, a double tap
@@ -323,11 +579,26 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   _wheelVolume(event.scrollDelta.dy);
                 }
               },
+              onPointerDown: _holdDanmaku,
+              onPointerMove: _releaseDanmakuOnMove,
+              onPointerCancel: (_) => _releaseDanmaku(),
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: _toggleControls,
-                onDoubleTap: () => unawaited(ref.read(roomProvider.notifier).togglePlayPause()),
-                onVerticalDragStart: (_) => _beginVolumeDrag(),
+                onTapUp: (_) => unawaited(_onPictureTap()),
+                // With the switch off no long-press recognizer is registered,
+                // so it never holds back a drag.
+                onLongPressStart: longPressInteraction ? (_) => unawaited(_onPictureLongPress()) : null,
+                // A long press cancels the tap first; releasing here would
+                // drop the message before _onPictureLongPress can take it.
+                onLongPressCancel: _releaseDanmaku,
+                onDoubleTap: () {
+                  _releaseDanmaku();
+                  unawaited(ref.read(roomProvider.notifier).togglePlayPause());
+                },
+                onVerticalDragStart: (_) {
+                  _releaseDanmaku();
+                  _beginVolumeDrag();
+                },
                 onVerticalDragUpdate: (details) => _dragVolumeBy(details.delta.dy),
                 child: const SizedBox.expand(),
               ),
@@ -422,6 +693,9 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                 transport: transport,
                 onWake: _wake,
                 autofocusPlay: widget.autofocusFirstControl,
+                canEnterPortraitFullscreen: widget.canEnterPortraitFullscreen,
+                portraitFullscreen: widget.portraitFullscreen,
+                onPortraitFullscreen: widget.onPortraitFullscreen,
               ),
             ),
         ],
@@ -476,7 +750,15 @@ final class _PlayerTopBar extends StatelessWidget {
 /// The bar itself: the live position over the buffer, then the transport,
 /// the stream pickers, the danmaku switch and the presentation buttons.
 final class _ControlBar extends ConsumerWidget {
-  const _ControlBar({required this.handle, required this.transport, required this.onWake, this.autofocusPlay = false});
+  const _ControlBar({
+    required this.handle,
+    required this.transport,
+    required this.onWake,
+    this.autofocusPlay = false,
+    this.canEnterPortraitFullscreen = false,
+    this.portraitFullscreen = false,
+    this.onPortraitFullscreen,
+  });
 
   final PlayerHandle handle;
 
@@ -488,6 +770,15 @@ final class _ControlBar extends ConsumerWidget {
 
   /// Focuses the play button when it first builds (the TV room's start).
   final bool autofocusPlay;
+
+  /// Whether a portrait stream offers the entry button.
+  final bool canEnterPortraitFullscreen;
+
+  /// Whether the portrait full-screen surface is already showing.
+  final bool portraitFullscreen;
+
+  /// Enters portrait full screen.
+  final VoidCallback? onPortraitFullscreen;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -550,6 +841,14 @@ final class _ControlBar extends ConsumerWidget {
                       unawaited(controller.setMuted(value: !muted));
                     },
                   ),
+                  _BarIcon(
+                    icon: room.audioOnly ? DsIcons.video : DsIcons.headphones,
+                    label: room.audioOnly ? t.room.restoreVideo : t.room.audioOnlyMode,
+                    onPressed: () {
+                      onWake();
+                      unawaited(controller.setAudioOnly(value: !room.audioOnly));
+                    },
+                  ),
                   if (!compact)
                     SizedBox(
                       width: 90,
@@ -602,6 +901,27 @@ final class _ControlBar extends ConsumerWidget {
                           ),
                       ],
                     ),
+                  // The picture's shape: the reference's 画面比例 button on the
+                  // control bar, six entries, the tick on the one in force;
+                  // the choice writes the setting every surface reads.
+                  if (!pip)
+                    _StreamMenu(
+                      label: fitLabels(context.t)[settings.fit.index],
+                      showLabel: !compact,
+                      icon: DsIcons.aspectRatio,
+                      semanticLabel: context.t.settings.fit,
+                      items: [
+                        for (final (index, option) in PlaybackFit.values.indexed)
+                          DsMenuItem(
+                            label: Text(fitLabels(context.t)[index]),
+                            checked: option == settings.fit,
+                            onPressed: () {
+                              onWake();
+                              unawaited(ref.read(playbackSettingsProvider.notifier).setFit(option));
+                            },
+                          ),
+                      ],
+                    ),
                   if (!pip && line != null) _RecordButton(room: room),
                   if (!pip)
                     _BarIcon(
@@ -636,6 +956,15 @@ final class _ControlBar extends ConsumerWidget {
                       onPressed: () {
                         onWake();
                         unawaited(presentationController.toggleWindowFullscreen(player));
+                      },
+                    ),
+                  if (!pip && canEnterPortraitFullscreen && !portraitFullscreen && presentation == PresentationMode.normal)
+                    _BarIcon(
+                      icon: DsIcons.rectangleVertical,
+                      label: t.room.portraitFullscreen,
+                      onPressed: () {
+                        onWake();
+                        onPortraitFullscreen?.call();
                       },
                     ),
                   if (!pip && player != null)

@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 import 'package:flutter/services.dart' show AssetManifest, rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
-import 'package:media_core/media_core.dart' show EngineOption;
+import 'package:media_core/media_core.dart' show EngineOption, PlayerHandle, PlayerHandleEngineOptions;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart' show getApplicationSupportDirectory;
 
@@ -95,6 +95,26 @@ Future<EngineOption?> superResolutionOption(SuperResolutionMode mode) async {
     return files == null ? null : EngineOption('glsl-shaders', files);
   } on Object {
     return null;
+  }
+}
+
+/// [options] plus [mode]'s shader chain for a fresh handle; unchanged when
+/// nothing is mounted.
+Future<List<EngineOption>> withSuperResolution(List<EngineOption> options, SuperResolutionMode mode) async {
+  final shader = await superResolutionOption(mode);
+  return shader == null ? options : <EngineOption>[...options, shader];
+}
+
+/// Applies [mode] to a running engine: mounts its chain, or clears the
+/// previously mounted one. A refused property is not a playback failure.
+Future<void> applySuperResolution(PlayerHandle handle, SuperResolutionMode mode) async {
+  try {
+    final option = await superResolutionOption(mode);
+    await handle.applyEngineOptions(<EngineOption>[
+      option ?? const EngineOption('glsl-shaders', <String>[]),
+    ]);
+  } on Object {
+    // A picture that keeps playing beats a playback error over a decoration.
   }
 }
 

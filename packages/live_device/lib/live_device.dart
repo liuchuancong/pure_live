@@ -13,6 +13,9 @@ export 'src/display/brightness/screen_brightness_capabilities.dart'
 export 'src/display/brightness/screen_brightness_exception.dart' show ScreenBrightnessException;
 export 'src/display/brightness/screen_brightness_scope.dart' show ScreenBrightnessScope;
 export 'src/display/brightness/screen_brightness_service.dart' show ScreenBrightnessService;
+export 'src/display/orientation/platform_screen_orientation_service.dart' show PlatformScreenOrientationService;
+export 'src/display/orientation/screen_orientation.dart' show ScreenOrientationPreference;
+export 'src/display/orientation/screen_orientation_service.dart' show ScreenOrientationService;
 export 'src/display/refresh_rate/display_refresh_rate.dart' show DisplayRefreshRate, DisplayThermalState;
 export 'src/display/refresh_rate/display_refresh_rate_capabilities.dart' show DisplayRefreshRateCapabilities;
 export 'src/display/refresh_rate/display_refresh_rate_exception.dart' show DisplayRefreshRateException;

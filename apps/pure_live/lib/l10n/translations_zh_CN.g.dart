@@ -81,6 +81,12 @@ class Translations$account$zh_CN {
 	/// zh-CN: '登录状态'
 	String get sectionHeader => '登录状态';
 
+	/// zh-CN: '三方认证'
+	String get thirdPartyAuth => '三方认证';
+
+	/// zh-CN: '管理主流平台的绑定授权'
+	String get thirdPartyAuthDesc => '管理主流平台的绑定授权';
+
 	/// zh-CN: '暂无支持登录的平台'
 	String get empty => '暂无支持登录的平台';
 
@@ -173,6 +179,9 @@ class Translations$areas$zh_CN {
 
 	/// zh-CN: '关注分区'
 	String get follow => '关注分区';
+
+	/// zh-CN: '已隐藏 {count: int} 个不能播放的直播（付费、加密、仅限 App 等）'
+	String hiddenUnplayable({required int count}) => '已隐藏 ${count} 个不能播放的直播（付费、加密、仅限 App 等）';
 }
 
 // Path: backup
@@ -569,6 +578,12 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '新建窗口'
 	String get newWindow => '新建窗口';
+
+	/// zh-CN: '显示'
+	String get show => '显示';
+
+	/// zh-CN: '保存'
+	String get save => '保存';
 }
 
 // Path: favorites
@@ -1286,6 +1301,12 @@ class Translations$iptv$zh_CN {
 
 	/// zh-CN: '无法打开源地址'
 	String get sourceAddressOpenFailed => '无法打开源地址';
+
+	/// zh-CN: '启动时全自动同步'
+	String get autoSyncTitle => '启动时全自动同步';
+
+	/// zh-CN: '应用冷启动时自动在后台静默检查并更新网络资源。'
+	String get autoSyncDesc => '应用冷启动时自动在后台静默检查并更新网络资源。';
 }
 
 // Path: multiview
@@ -1553,6 +1574,9 @@ class Translations$popular$zh_CN {
 
 	/// zh-CN: '每页 {size: int} 个'
 	String pageSize({required int size}) => '每页 ${size} 个';
+
+	/// zh-CN: '已隐藏 {count: int} 个暂时不能播放的直播（付费、加锁、仅限 App 等）'
+	String hiddenUnplayable({required int count}) => '已隐藏 ${count} 个暂时不能播放的直播（付费、加锁、仅限 App 等）';
 }
 
 // Path: recorder
@@ -1778,6 +1802,108 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '分段 MP4'
 	String get containerMp4 => '分段 MP4';
+
+	/// zh-CN: '同时录制弹幕'
+	String get recordChatTitle => '同时录制弹幕';
+
+	/// zh-CN: '在录像旁存同名 .xml 弹幕文件（B 站格式）；平台需已接入弹幕'
+	String get recordChatDescription => '在录像旁存同名 .xml 弹幕文件（B 站格式）；平台需已接入弹幕';
+
+	/// zh-CN: '默认录制画质'
+	String get defaultQualityTitle => '默认录制画质';
+
+	/// zh-CN: '开始录制时优先请求这个清晰度；平台不提供时使用当前播放线路。'
+	String get defaultQualityDesc => '开始录制时优先请求这个清晰度；平台不提供时使用当前播放线路。';
+
+	/// zh-CN: '录制缓存'
+	String get cacheTitle => '录制缓存';
+
+	/// zh-CN: '开播检测'
+	String get liveCheckGroup => '开播检测';
+
+	/// zh-CN: '启用开播检测'
+	String get enablePolling => '启用开播检测';
+
+	/// zh-CN: '主播未开播时自动轮询；在直播间的更多菜单里选择「开播自动录」加入检测。'
+	String get enablePollingDesc => '主播未开播时自动轮询；在直播间的更多菜单里选择「开播自动录」加入检测。';
+
+	/// zh-CN: '「开播检测」关着，等待开播的任务不会自动开始。'
+	String get pollingOff => '「开播检测」关着，等待开播的任务不会自动开始。';
+
+	/// zh-CN: '打开'
+	String get pollingEnable => '打开';
+
+	/// zh-CN: '已打开开播检测（每 {seconds} 秒检查一次）'
+	String pollingEnabledToast({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）';
+
+	/// zh-CN: '限制录制缓存'
+	String get cacheLimitEnabled => '限制录制缓存';
+
+	/// zh-CN: '超过上限时自动删除最旧的已完成录制；正在录制的文件不会被删除。'
+	String get cacheLimitEnabledDesc => '超过上限时自动删除最旧的已完成录制；正在录制的文件不会被删除。';
+
+	/// zh-CN: '缓存上限'
+	String get cacheLimit => '缓存上限';
+
+	/// zh-CN: '按 MB 计；超过后从最旧的录像开始删除，正在录制的文件不会删除。'
+	String get cacheLimitDesc => '按 MB 计；超过后从最旧的录像开始删除，正在录制的文件不会删除。';
+
+	/// zh-CN: '当前录制缓存'
+	String get cacheSize => '当前录制缓存';
+
+	/// zh-CN: '录制目录中已完成与正在录制的文件总大小。'
+	String get cacheSizeDesc => '录制目录中已完成与正在录制的文件总大小。';
+
+	/// zh-CN: '刷新'
+	String get cacheRefresh => '刷新';
+
+	/// zh-CN: '清理录制缓存'
+	String get cacheClear => '清理录制缓存';
+
+	/// zh-CN: '删除全部已完成的录制文件与弹幕 XML，正在录制的保留。'
+	String get cacheClearDesc => '删除全部已完成的录制文件与弹幕 XML，正在录制的保留。';
+
+	/// zh-CN: '清理全部已完成录制？'
+	String get cacheClearConfirm => '清理全部已完成录制？';
+
+	/// zh-CN: '此操作会删除录制目录中的已完成视频、分段与弹幕文件，无法恢复；正在录制的任务会跳过。'
+	String get cacheClearConfirmDesc => '此操作会删除录制目录中的已完成视频、分段与弹幕文件，无法恢复；正在录制的任务会跳过。';
+
+	/// zh-CN: '录制缓存已清理'
+	String get cacheCleared => '录制缓存已清理';
+
+	/// zh-CN: '缓存操作失败，请重试'
+	String get cacheFailed => '缓存操作失败，请重试';
+
+	/// zh-CN: '为保护其他文件，自定义目录下只会创建并管理 PureLiveRecords 子目录。'
+	String get cacheManagedHint => '为保护其他文件，自定义目录下只会创建并管理 PureLiveRecords 子目录。';
+
+	/// zh-CN: '检测间隔（秒）'
+	String get liveCheckSecondsTitle => '检测间隔（秒）';
+
+	/// zh-CN: '每个等待开播的任务多久检查一次，10–300 秒。'
+	String get liveCheckSecondsDesc => '每个等待开播的任务多久检查一次，10–300 秒。';
+
+	/// zh-CN: '启用指数退避'
+	String get checkBackoff => '启用指数退避';
+
+	/// zh-CN: '连续失败越多，下一次检测间隔越长，避免频繁请求平台。'
+	String get checkBackoffDesc => '连续失败越多，下一次检测间隔越长，避免频繁请求平台。';
+
+	/// zh-CN: '最大检测间隔（秒）'
+	String get maxCheckSecondsTitle => '最大检测间隔（秒）';
+
+	/// zh-CN: '退避后的间隔上限，60–3600 秒。'
+	String get maxCheckSecondsDesc => '退避后的间隔上限，60–3600 秒。';
+
+	/// zh-CN: '应用启动时恢复待录任务'
+	String get autoStartOnBoot => '应用启动时恢复待录任务';
+
+	/// zh-CN: '把上次进程中断时仍在录制的任务恢复为等待开播，交给开播检测继续；已停止/完成的保持原状态。'
+	String get autoStartOnBootDesc => '把上次进程中断时仍在录制的任务恢复为等待开播，交给开播检测继续；已停止/完成的保持原状态。';
+
+	/// zh-CN: '有录制任务正在进行（可能在另一个窗口），缓存不会被清理或自动裁剪。'
+	String get cacheBusy => '有录制任务正在进行（可能在另一个窗口），缓存不会被清理或自动裁剪。';
 }
 
 // Path: room
@@ -1899,6 +2025,15 @@ class Translations$room$zh_CN {
 	/// zh-CN: '睡眠定时已到，播放已暂停'
 	String get sleepDone => '睡眠定时已到，播放已暂停';
 
+	/// zh-CN: '音频模式'
+	String get audioOnlyMode => '音频模式';
+
+	/// zh-CN: '恢复视频'
+	String get restoreVideo => '恢复视频';
+
+	/// zh-CN: '返回直播间'
+	String get backToRoom => '返回直播间';
+
 	/// zh-CN: '正在打开房间'
 	String get openingRoom => '正在打开房间';
 
@@ -1961,6 +2096,21 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '录制操作失败'
 	String get recordFailed => '录制操作失败';
+
+	/// zh-CN: '开播自动录'
+	String get autoRecordOn => '开播自动录';
+
+	/// zh-CN: '取消开播自动录'
+	String get autoRecordOff => '取消开播自动录';
+
+	/// zh-CN: '已打开开播检测（每 {seconds} 秒检查一次）；开播后自动录制'
+	String autoRecordArmed({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）；开播后自动录制';
+
+	/// zh-CN: '已取消开播自动录制'
+	String get autoRecordRemoved => '已取消开播自动录制';
+
+	/// zh-CN: '无法加入开播检测，请稍后重试'
+	String get autoRecordFailed => '无法加入开播检测，请稍后重试';
 
 	/// zh-CN: '直播间详情'
 	String get details => '直播间详情';
@@ -2105,6 +2255,120 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '画面方向已更新'
 	String get orientationUpdated => '画面方向已更新';
+
+	/// zh-CN: '竖屏全屏'
+	String get portraitFullscreen => '竖屏全屏';
+
+	/// zh-CN: '退出竖屏全屏'
+	String get portraitFullscreenExit => '退出竖屏全屏';
+
+	/// zh-CN: '画面模式'
+	String get portraitFullscreenDisplay => '画面模式';
+
+	/// zh-CN: '完整'
+	String get portraitDisplayComplete => '完整';
+
+	/// zh-CN: '沉浸'
+	String get portraitDisplayAmbient => '沉浸';
+
+	/// zh-CN: '均衡'
+	String get portraitDisplayBalanced => '均衡';
+
+	/// zh-CN: '铺满'
+	String get portraitDisplayCover => '铺满';
+
+	/// zh-CN: '弹幕区域'
+	String get portraitDanmakuTitle => '弹幕区域';
+
+	/// zh-CN: '跟随全局'
+	String get portraitDanmakuFollow => '跟随全局';
+
+	/// zh-CN: '上部 1/4'
+	String get portraitDanmakuUpper => '上部 1/4';
+
+	/// zh-CN: '减半'
+	String get portraitDanmakuReduced => '减半';
+
+	/// zh-CN: '隐藏'
+	String get portraitDanmakuHidden => '隐藏';
+
+	/// zh-CN: '竖屏诊断'
+	String get portraitDiagnostics => '竖屏诊断';
+
+	/// zh-CN: '送出'
+	String get giftLineSent => '送出';
+
+	/// zh-CN: '送给 {name}'
+	String giftLineSentTo({required Object name}) => '送给 ${name}';
+
+	/// zh-CN: '赠送'
+	String get giftLineGifted => '赠送';
+
+	/// zh-CN: '打赏'
+	String get giftLineTipped => '打赏';
+
+	/// zh-CN: '×{count}'
+	String giftLineCount({required Object count}) => '×${count}';
+
+	/// zh-CN: '×{count} 个月'
+	String giftLineMonths({required Object count}) => '×${count} 个月';
+
+	/// zh-CN: '礼物'
+	String get giftLineUnnamed => '礼物';
+
+	/// zh-CN: '礼物 {id}'
+	String giftLineNumbered({required Object id}) => '礼物 ${id}';
+
+	/// zh-CN: '{value} 元'
+	String giftValueYuan({required Object value}) => '${value} 元';
+
+	/// zh-CN: '{value} 金瓜子'
+	String giftValueGoldSeed({required Object value}) => '${value} 金瓜子';
+
+	/// zh-CN: '{value} 钻石'
+	String giftValueDiamond({required Object value}) => '${value} 钻石';
+
+	/// zh-CN: '{value} 红豆'
+	String giftValueRedBean({required Object value}) => '${value} 红豆';
+
+	/// zh-CN: '{value} 点'
+	String giftValuePoint({required Object value}) => '${value} 点';
+
+	/// zh-CN: '{value} Bits'
+	String giftValueBits({required Object value}) => '${value} Bits';
+
+	/// zh-CN: '{value} Kicks'
+	String giftValueKicks({required Object value}) => '${value} Kicks';
+
+	/// zh-CN: '{value} 奶酪'
+	String giftValueCheese({required Object value}) => '${value} 奶酪';
+
+	/// zh-CN: '{value} 星气球'
+	String giftValueStarBalloon({required Object value}) => '${value} 星气球';
+
+	/// zh-CN: '{value} 抖币'
+	String giftValueDouyinCoin({required Object value}) => '${value} 抖币';
+
+	/// zh-CN: '{value} 六币'
+	String giftValueSixCoin({required Object value}) => '${value} 六币';
+
+	/// zh-CN: '{value} AC币'
+	String giftValueAcCoin({required Object value}) => '${value} AC币';
+
+	/// zh-CN: '{value} 星币'
+	String giftValueStarCoin({required Object value}) => '${value} 星币';
+
+	/// zh-CN: '{value} 爱心'
+	String giftValueHeart({required Object value}) => '${value} 爱心';
+
+	/// zh-CN: '{value} 音符'
+	String giftValueNote({required Object value}) => '${value} 音符';
+
+	/// zh-CN: '收起聊天'
+	String get collapseChat => '收起聊天';
+
+	/// zh-CN: '展开聊天'
+	String get expandChat => '展开聊天';
 }
 
 // Path: search
@@ -2274,6 +2538,54 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '版本与许可'
 	String get navAbout => '版本与许可';
 
+	/// zh-CN: '浏览'
+	String get navBrowsing => '浏览';
+
+	/// zh-CN: '窗口'
+	String get navWindow => '窗口';
+
+	/// zh-CN: '启动与退出'
+	String get navStartup => '启动与退出';
+
+	/// zh-CN: '账号'
+	String get navAccounts => '账号';
+
+	/// zh-CN: '主题与颜色'
+	String get navTheme => '主题与颜色';
+
+	/// zh-CN: '字体与字号'
+	String get navTypography => '字体与字号';
+
+	/// zh-CN: '画质与声音'
+	String get qualityAudioTitle => '画质与声音';
+
+	/// zh-CN: '默认清晰度、音量与后台播放。'
+	String get qualityAudioDescription => '默认清晰度、音量与后台播放。';
+
+	/// zh-CN: '内核高级参数'
+	String get kernelAdvancedTitle => '内核高级参数';
+
+	/// zh-CN: '输出驱动、同步、缩放与解码高级项，仅 mpv 内核生效。'
+	String get kernelAdvancedDescription => '输出驱动、同步、缩放与解码高级项，仅 mpv 内核生效。';
+
+	/// zh-CN: 'WebDAV 同步'
+	String get webdavSyncTitle => 'WebDAV 同步';
+
+	/// zh-CN: '配置 WebDAV 服务器，上传与恢复备份。'
+	String get webdavSyncDescription => '配置 WebDAV 服务器，上传与恢复备份。';
+
+	/// zh-CN: '关闭与退出'
+	String get closeExitGroup => '关闭与退出';
+
+	/// zh-CN: '画质'
+	String get navQuality => '画质';
+
+	/// zh-CN: '音频与音量'
+	String get navAudio => '音频与音量';
+
+	/// zh-CN: '画面与浮窗'
+	String get navPicture => '画面与浮窗';
+
 	/// zh-CN: '基础设置'
 	String get groupBasics => '基础设置';
 
@@ -2292,11 +2604,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: 'Bilibili 视频'
 	String get groupVod => 'Bilibili 视频';
 
-	/// zh-CN: '卡片宽度、每页数量与窗口行为。'
-	String get generalDescription => '卡片宽度、每页数量与窗口行为。';
+	/// zh-CN: '浏览、窗口与启动设置。'
+	String get generalDescription => '浏览、窗口与启动设置。';
 
-	/// zh-CN: '主题模式、对比度、圆角与字体。'
-	String get appearanceDescription => '主题模式、对比度、圆角与字体。';
+	/// zh-CN: '主题、字体与配色。'
+	String get appearanceDescription => '主题、字体与配色。';
 
 	/// zh-CN: '主题、外观、背景与导航。'
 	String get personalizationDescription => '主题、外观、背景与导航。';
@@ -2304,17 +2616,17 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '直播资源、弹幕与录制。'
 	String get liveSettingsDescription => '直播资源、弹幕与录制。';
 
-	/// zh-CN: '平台显示、排序与关注自动刷新。'
-	String get liveSourcesDescription => '平台显示、排序与关注自动刷新。';
+	/// zh-CN: '平台、账号与自动刷新。'
+	String get liveSourcesDescription => '平台、账号与自动刷新。';
 
 	/// zh-CN: '播放偏好与播放器内核。'
 	String get playbackSettingsDescription => '播放偏好与播放器内核。';
 
-	/// zh-CN: '常规、网络、诊断、数据与备份。'
-	String get systemDescription => '常规、网络、诊断、数据与备份。';
+	/// zh-CN: '浏览、网络、诊断、数据与备份。'
+	String get systemDescription => '浏览、网络、诊断、数据与备份。';
 
-	/// zh-CN: '观看历史、关注导入导出与封面缓存。'
-	String get dataCacheDescription => '观看历史、关注导入导出与封面缓存。';
+	/// zh-CN: '观看数据与封面缓存。'
+	String get dataCacheDescription => '观看数据与封面缓存。';
 
 	/// zh-CN: '选择要应用的主题'
 	String get personalizationChooseTheme => '选择要应用的主题';
@@ -2322,11 +2634,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '个性化设置'
 	String get personalizationSettings => '个性化设置';
 
-	/// zh-CN: '画质、比例与播放器行为。'
-	String get playbackDescription => '画质、比例与播放器行为。';
+	/// zh-CN: '画质、音频、画面与播放器行为。'
+	String get playbackDescription => '画质、音频、画面与播放器行为。';
 
-	/// zh-CN: '浏览站点与登录账号。'
-	String get sitesDescription => '浏览站点与登录账号。';
+	/// zh-CN: '平台显示与排序。'
+	String get sitesDescription => '平台显示与排序。';
 
 	/// zh-CN: '节目单自动更新与来源同步。'
 	String get iptvDescription => '节目单自动更新与来源同步。';
@@ -2342,6 +2654,36 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '版本、开源许可与项目链接。'
 	String get aboutDescription => '版本、开源许可与项目链接。';
+
+	/// zh-CN: '列表卡片、每页数量与分页控件。'
+	String get browsingPageDescription => '列表卡片、每页数量与分页控件。';
+
+	/// zh-CN: '标题栏、直播间窗口、关闭行为、窗口尺寸与显示刷新率。'
+	String get windowPageDescription => '标题栏、直播间窗口、关闭行为、窗口尺寸与显示刷新率。';
+
+	/// zh-CN: '开机启动、启动动画、关闭窗口行为与定时关机。'
+	String get startupPageDescription => '开机启动、启动动画、关闭窗口行为与定时关机。';
+
+	/// zh-CN: '各平台账号与授权。'
+	String get accountsPageDescription => '各平台账号与授权。';
+
+	/// zh-CN: '主题模式、配色、对比度、加载样式、卡片间距与语言。'
+	String get themePageDescription => '主题模式、配色、对比度、加载样式、卡片间距与语言。';
+
+	/// zh-CN: '字体、文本缩放与各级字号。'
+	String get typographyPageDescription => '字体、文本缩放与各级字号。';
+
+	/// zh-CN: 'Wi-Fi 与移动网络下的默认清晰度。'
+	String get qualityPageDescription => 'Wi-Fi 与移动网络下的默认清晰度。';
+
+	/// zh-CN: '默认音量、静音与后台音频。'
+	String get audioPageDescription => '默认音量、静音与后台音频。';
+
+	/// zh-CN: '画面比例、悬浮窗与画中画。'
+	String get picturePageDescription => '画面比例、悬浮窗与画中画。';
+
+	/// zh-CN: '是否在画面上显示弹幕，以及字号、速度、显示区域、透明度与描边。'
+	String get danmakuStyleDescription => '是否在画面上显示弹幕，以及字号、速度、显示区域、透明度与描边。';
 
 	/// zh-CN: '播放设置将在播放器接入后开放。'
 	String get playbackComingSoon => '播放设置将在播放器接入后开放。';
@@ -2535,6 +2877,51 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '桌面分页每页显示多少个房间；站点按自己的窗口取回，应用在本地切片，换页不会跳过房间。'
 	String get pageSizeDescription => '桌面分页每页显示多少个房间；站点按自己的窗口取回，应用在本地切片，换页不会跳过房间。';
 
+	/// zh-CN: '显示每页数量选择器'
+	String get pageSizeSelector => '显示每页数量选择器';
+
+	/// zh-CN: '在关注与热门的分页条显示每页数量下拉；关闭后仍按当前数量分页，只隐藏这个控件。'
+	String get pageSizeSelectorDescription => '在关注与热门的分页条显示每页数量下拉；关闭后仍按当前数量分页，只隐藏这个控件。';
+
+	/// zh-CN: '显示跳页输入框'
+	String get showGotoButton => '显示跳页输入框';
+
+	/// zh-CN: '在关注页分页条显示页码输入框；关闭后只隐藏输入框，页码与翻页按钮仍可正常翻页。'
+	String get showGotoButtonDescription => '在关注页分页条显示页码输入框；关闭后只隐藏输入框，页码与翻页按钮仍可正常翻页。';
+
+	/// zh-CN: '显示回到顶部按钮'
+	String get showScrollToTop => '显示回到顶部按钮';
+
+	/// zh-CN: '列表滚动超过一屏后显示回到顶部的浮钮；关闭后只隐藏按钮，滚动与翻页不受影响。'
+	String get showScrollToTopDescription => '列表滚动超过一屏后显示回到顶部的浮钮；关闭后只隐藏按钮，滚动与翻页不受影响。';
+
+	/// zh-CN: '每页数量选项'
+	String get pageSizeOptions => '每页数量选项';
+
+	/// zh-CN: '分页条可选的每页数量，范围 1–100；可增删档位，至少保留一项。'
+	String get pageSizeOptionsDescription => '分页条可选的每页数量，范围 1–100；可增删档位，至少保留一项。';
+
+	/// zh-CN: '管理每页数量选项'
+	String get pageSizeOptionsDialogTitle => '管理每页数量选项';
+
+	/// zh-CN: '按窗口推荐'
+	String get pageSizeOptionsRecommend => '按窗口推荐';
+
+	/// zh-CN: '自定义档位（1–100）'
+	String get pageSizeOptionCustom => '自定义档位（1–100）';
+
+	/// zh-CN: '添加'
+	String get pageSizeOptionAdd => '添加';
+
+	/// zh-CN: '请输入 1–100 之间的整数。'
+	String get pageSizeOptionInvalid => '请输入 1–100 之间的整数。';
+
+	/// zh-CN: '该档位已存在。'
+	String get pageSizeOptionDuplicate => '该档位已存在。';
+
+	/// zh-CN: '移除每页 {size: int} 个'
+	String pageSizeOptionRemove({required int size}) => '移除每页 ${size} 个';
+
 	/// zh-CN: '紧凑模式'
 	String get favoritesDense => '紧凑模式';
 
@@ -2544,8 +2931,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '平台显示'
 	String get sitesDisplay => '平台显示';
 
-	/// zh-CN: '关闭的平台不再出现在热门与分区的平台列表里。'
-	String get sitesDisplayDesc => '关闭的平台不再出现在热门与分区的平台列表里。';
+	/// zh-CN: '关闭的平台不再出现在热门、分区、关注与搜索的平台列表里。'
+	String get sitesDisplayDesc => '关闭的平台不再出现在热门、分区、关注与搜索的平台列表里。';
 
 	/// zh-CN: '全部平台都在显示中。'
 	String get sitesAllShown => '全部平台都在显示中。';
@@ -2618,6 +3005,15 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '使用系统壁纸或强调色生成主题，覆盖当前主题色。'
 	String get dynamicColorDescription => '使用系统壁纸或强调色生成主题，覆盖当前主题色。';
+
+	/// zh-CN: '纯黑背景'
+	String get pureBlack => '纯黑背景';
+
+	/// zh-CN: '深色时用纯黑背景，OLED 屏更省电。'
+	String get pureBlackDescription => '深色时用纯黑背景，OLED 屏更省电。';
+
+	/// zh-CN: '浅色模式下不起作用：先把主题模式换成深色或跟随系统。'
+	String get pureBlackLightReason => '浅色模式下不起作用：先把主题模式换成深色或跟随系统。';
 
 	/// zh-CN: '加载样式'
 	String get loadingStyle => '加载样式';
@@ -2805,20 +3201,98 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '弹幕屏蔽'
 	String get navShield => '弹幕屏蔽';
 
-	/// zh-CN: '屏蔽关键词与用户，直播间弹幕按此过滤。'
-	String get shieldDescription => '屏蔽关键词与用户，直播间弹幕按此过滤。';
+	/// zh-CN: '屏蔽关键词、用户与相似弹幕，直播间弹幕按此过滤。'
+	String get shieldDescription => '屏蔽关键词、用户与相似弹幕，直播间弹幕按此过滤。';
+
+	/// zh-CN: '弹幕过滤'
+	String get danmakuFilter => '弹幕过滤';
+
+	/// zh-CN: '关键词、用户与相似弹幕过滤。'
+	String get danmakuFilterDesc => '关键词、用户与相似弹幕过滤。';
+
+	/// zh-CN: '弹幕显示'
+	String get danmakuDisplayGroup => '弹幕显示';
+
+	/// zh-CN: '在画面上显示飞行弹幕'
+	String get showFlyingDanmaku => '在画面上显示飞行弹幕';
+
+	/// zh-CN: '关闭后弹幕只在聊天列表里显示。'
+	String get showFlyingDanmakuDesc => '关闭后弹幕只在聊天列表里显示。';
+
+	/// zh-CN: '画面弹幕交互'
+	String get danmakuInteractionGroup => '画面弹幕交互';
+
+	/// zh-CN: '观看模板'
+	String get danmakuTemplatesGroup => '观看模板';
+
+	/// zh-CN: '点击画面弹幕查看操作'
+	String get styleTapInteraction => '点击画面弹幕查看操作';
+
+	/// zh-CN: '点按画面上的弹幕打开操作面板，可复制内容、屏蔽用户或关键词。关闭后点按画面只显示或隐藏控制条。'
+	String get styleTapInteractionDesc => '点按画面上的弹幕打开操作面板，可复制内容、屏蔽用户或关键词。关闭后点按画面只显示或隐藏控制条。';
+
+	/// zh-CN: '长按画面弹幕查看操作'
+	String get styleLongPressInteraction => '长按画面弹幕查看操作';
+
+	/// zh-CN: '长按画面上的弹幕打开同一操作面板；关闭后长按不再命中弹幕。'
+	String get styleLongPressInteractionDesc => '长按画面上的弹幕打开同一操作面板；关闭后长按不再命中弹幕。';
 
 	/// zh-CN: '弹幕样式'
 	String get danmakuStyleGroup => '弹幕样式';
 
-	/// zh-CN: '字号'
-	String get styleFontSize => '字号';
+	/// zh-CN: '弹幕字体'
+	String get danmakuFont => '弹幕字体';
+
+	/// zh-CN: '画面飞行弹幕使用的字体；聊天列表保持界面字体。'
+	String get danmakuFontDescription => '画面飞行弹幕使用的字体；聊天列表保持界面字体。';
+
+	/// zh-CN: '从平台字体、随应用内置的官方字体或云端字体目录中选择弹幕字体；选中立即应用到所有直播间的飞行弹幕。'
+	String get danmakuFontManagerDescription => '从平台字体、随应用内置的官方字体或云端字体目录中选择弹幕字体；选中立即应用到所有直播间的飞行弹幕。';
+
+	/// zh-CN: '字体大小'
+	String get styleFontSize => '字体大小';
+
+	/// zh-CN: '字体粗细'
+	String get styleFontWeight => '字体粗细';
+
+	/// zh-CN: '文字间距'
+	String get styleLetterSpacing => '文字间距';
+
+	/// zh-CN: '极细'
+	String get styleWeightThin => '极细';
+
+	/// zh-CN: '很细'
+	String get styleWeightExtraLight => '很细';
+
+	/// zh-CN: '偏细'
+	String get styleWeightLight => '偏细';
+
+	/// zh-CN: '正常'
+	String get styleWeightNormal => '正常';
+
+	/// zh-CN: '稍粗'
+	String get styleWeightMedium => '稍粗';
+
+	/// zh-CN: '中粗'
+	String get styleWeightSemiBold => '中粗';
+
+	/// zh-CN: '粗体'
+	String get styleWeightBold => '粗体';
+
+	/// zh-CN: '很粗'
+	String get styleWeightExtraBold => '很粗';
+
+	/// zh-CN: '特粗'
+	String get styleWeightBlack => '特粗';
 
 	/// zh-CN: '速度'
 	String get styleSpeed => '速度';
 
-	/// zh-CN: '显示区域'
-	String get styleArea => '显示区域';
+	/// zh-CN: '画面顶部占用高度'
+	String get styleArea => '画面顶部占用高度';
+
+	/// zh-CN: '弹幕最多占用画面高度的比例（0–100%）。'
+	String get styleAreaDesc => '弹幕最多占用画面高度的比例（0–100%）。';
 
 	/// zh-CN: '不透明度'
 	String get styleOpacity => '不透明度';
@@ -2826,8 +3300,86 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '描边'
 	String get styleStroke => '描边';
 
+	/// zh-CN: '给弹幕文字加描边，浅色画面上更清楚。'
+	String get styleStrokeDesc => '给弹幕文字加描边，浅色画面上更清楚。';
+
+	/// zh-CN: '描边宽度'
+	String get styleStrokeWidth => '描边宽度';
+
+	/// zh-CN: '描边开启时文字外圈的粗细（0–4 像素）。'
+	String get styleStrokeWidthDesc => '描边开启时文字外圈的粗细（0–4 像素）。';
+
+	/// zh-CN: '弹幕帧率跟随界面刷新率'
+	String get styleFpsFollow => '弹幕帧率跟随界面刷新率';
+
+	/// zh-CN: '跟随「通用」里的省电、均衡或最高档位；关闭后可以手动设帧率。'
+	String get styleFpsFollowDesc => '跟随「通用」里的省电、均衡或最高档位；关闭后可以手动设帧率。';
+
+	/// zh-CN: '弹幕帧率'
+	String get styleFps => '弹幕帧率';
+
+	/// zh-CN: '{count} FPS'
+	String styleFpsValue({required Object count}) => '${count} FPS';
+
+	/// zh-CN: '同屏最大弹幕条数'
+	String get styleMaxVisible => '同屏最大弹幕条数';
+
+	/// zh-CN: '画面上同时飞的弹幕最多几条，默认 48；少一些更清楚、更省电。'
+	String get styleMaxVisibleDesc => '画面上同时飞的弹幕最多几条，默认 48；少一些更清楚、更省电。';
+
+	/// zh-CN: '{count} 条'
+	String styleMaxVisibleValue({required Object count}) => '${count} 条';
+
+	/// zh-CN: '海量模式'
+	String get styleMassMode => '海量模式';
+
+	/// zh-CN: '提高同屏上限到 1000 条并使用实时渲染，适合弹幕非常密集的直播间。'
+	String get styleMassModeDesc => '提高同屏上限到 1000 条并使用实时渲染，适合弹幕非常密集的直播间。';
+
+	/// zh-CN: '小窗弹幕比例自动'
+	String get pipDanmakuScaleAuto => '小窗弹幕比例自动';
+
+	/// zh-CN: '开启后按画中画窗口宽度自动缩小弹幕，最大不超过主弹幕大小；关闭后使用下方固定比例。'
+	String get pipDanmakuScaleAutoDesc => '开启后按画中画窗口宽度自动缩小弹幕，最大不超过主弹幕大小；关闭后使用下方固定比例。';
+
+	/// zh-CN: '小窗弹幕比例'
+	String get pipDanmakuScale => '小窗弹幕比例';
+
 	/// zh-CN: '恢复默认'
 	String get styleReset => '恢复默认';
+
+	/// zh-CN: '把当前设置存为我的模板'
+	String get danmakuTemplateSaveMine => '把当前设置存为我的模板';
+
+	/// zh-CN: '用我的模板'
+	String get danmakuTemplateUseMine => '用我的模板';
+
+	/// zh-CN: '当前弹幕样式已保存'
+	String get danmakuTemplateSaved => '当前弹幕样式已保存';
+
+	/// zh-CN: '还没有保存弹幕模板'
+	String get danmakuTemplateEmpty => '还没有保存弹幕模板';
+
+	/// zh-CN: '已保存的弹幕模板损坏或数值超出范围'
+	String get danmakuTemplateInvalid => '已保存的弹幕模板损坏或数值超出范围';
+
+	/// zh-CN: '弹幕模板已应用'
+	String get danmakuTemplateApplied => '弹幕模板已应用';
+
+	/// zh-CN: '顶部 20% · 均衡'
+	String get danmakuPresetBest => '顶部 20% · 均衡';
+
+	/// zh-CN: '顶部 35% · 舒适'
+	String get danmakuPresetComfort => '顶部 35% · 舒适';
+
+	/// zh-CN: '顶部 55% · 高密度'
+	String get danmakuPresetDense => '顶部 55% · 高密度';
+
+	/// zh-CN: '全屏全量'
+	String get danmakuPresetFull => '全屏全量';
+
+	/// zh-CN: '全屏全量=弹幕铺满整个画面；其它预设只占用顶部区域'
+	String get danmakuPresetHint => '全屏全量=弹幕铺满整个画面；其它预设只占用顶部区域';
 
 	/// zh-CN: '设置生效范围'
 	String get prefScope => '设置生效范围';
@@ -2889,11 +3441,68 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '字体'
 	String get font => '字体';
 
-	/// zh-CN: '界面字体：跟随平台官方字体，或选一款内置官方字体。'
-	String get fontDescription => '界面字体：跟随平台官方字体，或选一款内置官方字体。';
+	/// zh-CN: '界面字体：跟随平台官方字体、选一款内置官方字体，或从云端目录下载。'
+	String get fontDescription => '界面字体：跟随平台官方字体、选一款内置官方字体，或从云端目录下载。';
 
 	/// zh-CN: '跟随平台（系统字体）'
 	String get fontPlatform => '跟随平台（系统字体）';
+
+	/// zh-CN: '字体管理器'
+	String get fontManagerTitle => '字体管理器';
+
+	/// zh-CN: '从平台字体、随应用内置的官方字体或云端字体目录中选择一个界面字体；选中立即应用到全部界面。'
+	String get fontManagerDescription => '从平台字体、随应用内置的官方字体或云端字体目录中选择一个界面字体；选中立即应用到全部界面。';
+
+	/// zh-CN: '由平台决定，本机使用 {face}。'
+	String fontManagerSystemDescription({required Object face}) => '由平台决定，本机使用 ${face}。';
+
+	/// zh-CN: '内置字体'
+	String get fontManagerBundled => '内置字体';
+
+	/// zh-CN: '随应用内置'
+	String get fontManagerBundledNote => '随应用内置';
+
+	/// zh-CN: '使用中'
+	String get fontManagerInUse => '使用中';
+
+	/// zh-CN: '永远相信美好的事情即将发生 · The quick brown fox jumps over the lazy dog 0123456789'
+	String get fontManagerPreview => '永远相信美好的事情即将发生 · The quick brown fox jumps over the lazy dog 0123456789';
+
+	/// zh-CN: '云端字体'
+	String get fontManagerCloud => '云端字体';
+
+	/// zh-CN: '按需从字体仓库下载并缓存到本机，不随应用打包。'
+	String get fontManagerCloudDescription => '按需从字体仓库下载并缓存到本机，不随应用打包。';
+
+	/// zh-CN: '下载'
+	String get fontManagerDownload => '下载';
+
+	/// zh-CN: '下载中 {done}/{total}'
+	String fontManagerDownloading({required Object done, required Object total}) => '下载中 ${done}/${total}';
+
+	/// zh-CN: '取消下载'
+	String get fontManagerCancelDownload => '取消下载';
+
+	/// zh-CN: '下载失败'
+	String get fontManagerDownloadFailed => '下载失败';
+
+	/// zh-CN: '已下载（{size}）'
+	String fontManagerDownloadedSize({required Object size}) => '已下载（${size}）';
+
+	/// zh-CN: '未下载'
+	String get fontManagerNotDownloaded => '未下载';
+
+	/// zh-CN: '许可证：{name}'
+	String fontManagerLicenseNote({required Object name}) => '许可证：${name}';
+
+	/// zh-CN: '删除已下载的字体'
+	String get fontManagerDeleteFont => '删除已下载的字体';
+
+	/// zh-CN: '要删除{name}已下载的字体文件吗？之后可随时重新下载。'
+	String fontManagerDeleteQuestion({required Object name}) => '要删除${name}已下载的字体文件吗？之后可随时重新下载。';
+
+	/// zh-CN: '字体删除后，重启应用前界面可能仍在使用它。'
+	String get fontManagerRestartNote => '字体删除后，重启应用前界面可能仍在使用它。';
 
 	/// zh-CN: '文本缩放'
 	String get textScale => '文本缩放';
@@ -2903,6 +3512,42 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '预览：设置会立即应用到所有界面。'
 	String get textScalePreview => '预览：设置会立即应用到所有界面。';
+
+	/// zh-CN: '正文及次要文本层级'
+	String get fontBodyGroup => '正文及次要文本层级';
+
+	/// zh-CN: '微型辅助文本（正文小号）'
+	String get fontBodySmall => '微型辅助文本（正文小号）';
+
+	/// zh-CN: '观众数、徽标、时间戳等微小标识，默认 12 px。'
+	String get fontBodySmallDescription => '观众数、徽标、时间戳等微小标识，默认 12 px。';
+
+	/// zh-CN: '标准正文大小（正文中号）'
+	String get fontBodyMedium => '标准正文大小（正文中号）';
+
+	/// zh-CN: '常规描述、副标题与列表标签，默认 13 px。'
+	String get fontBodyMediumDescription => '常规描述、副标题与列表标签，默认 13 px。';
+
+	/// zh-CN: '加粗段落正文（正文大号）'
+	String get fontBodyLarge => '加粗段落正文（正文大号）';
+
+	/// zh-CN: '列表项目名称、弹窗说明等长文本，默认 14 px。'
+	String get fontBodyLargeDescription => '列表项目名称、弹窗说明等长文本，默认 14 px。';
+
+	/// zh-CN: '标题层级'
+	String get fontTitleGroup => '标题层级';
+
+	/// zh-CN: '卡片与区块标题（标题中号）'
+	String get fontTitleMedium => '卡片与区块标题（标题中号）';
+
+	/// zh-CN: '设置分组、卡片头部与面板标题，默认 15 px。'
+	String get fontTitleMediumDescription => '设置分组、卡片头部与面板标题，默认 15 px。';
+
+	/// zh-CN: '页面与弹窗标题（标题大号）'
+	String get fontTitleLarge => '页面与弹窗标题（标题大号）';
+
+	/// zh-CN: '页面标题、弹窗与空状态标题，默认 20 px。'
+	String get fontTitleLargeDescription => '页面标题、弹窗与空状态标题，默认 20 px。';
 
 	/// zh-CN: '返回应用'
 	String get backHome => '返回应用';
@@ -2945,6 +3590,12 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '进入热门或分区时优先显示的平台。'
 	String get preferPlatformDesc => '进入热门或分区时优先显示的平台。';
+
+	/// zh-CN: '搜索平台'
+	String get preferPlatformFilterHint => '搜索平台';
+
+	/// zh-CN: '没有匹配的平台'
+	String get preferPlatformFilterEmpty => '没有匹配的平台';
 
 	/// zh-CN: '恢复默认顺序'
 	String get sitesOrderReset => '恢复默认顺序';
@@ -3003,8 +3654,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '平台与账号'
 	String get navPlatforms => '平台与账号';
 
-	/// zh-CN: '侧栏入口的显示与顺序。'
-	String get navigationDescription => '侧栏入口的显示与顺序。';
+	/// zh-CN: '侧栏与手机导航的入口显示和顺序；拖动把手即可排序，至少保留一个首页菜单。'
+	String get navigationDescription => '侧栏与手机导航的入口显示和顺序；拖动把手即可排序，至少保留一个首页菜单。';
 
 	/// zh-CN: '关注列表与直播缩略图的自动刷新。'
 	String get refreshDescription => '关注列表与直播缩略图的自动刷新。';
@@ -3099,8 +3750,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '切换后新打开的播放器使用该内核。'
 	String get kernelSwitchHint => '切换后新打开的播放器使用该内核。';
 
-	/// zh-CN: '画质增强'
-	String get superResolutionGroup => '画质增强';
+	/// zh-CN: '超分辨率 (Anime4K)'
+	String get superResolutionGroup => '超分辨率 (Anime4K)';
 
 	/// zh-CN: '播放预设'
 	String get playerPresets => '播放预设';
@@ -3108,44 +3759,68 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '一键切换解码、输出与缓冲策略；只影响播放器。'
 	String get playerPresetsHint => '一键切换解码、输出与缓冲策略；只影响播放器。';
 
-	/// zh-CN: '均衡'
-	String get presetBalanced => '均衡';
+	/// zh-CN: '一键推荐配置'
+	String get playerOneClick => '一键推荐配置';
 
-	/// zh-CN: '引擎默认配置，兼顾画质与性能。'
-	String get presetBalancedDesc => '引擎默认配置，兼顾画质与性能。';
+	/// zh-CN: '把播放内核参数恢复到「标准」预设，撤销之前的手动调优；正在播放的直播立即重新应用，其他播放器下次打开生效。'
+	String get playerOneClickDesc => '把播放内核参数恢复到「标准」预设，撤销之前的手动调优；正在播放的直播立即重新应用，其他播放器下次打开生效。';
 
-	/// zh-CN: '安卓兼容'
-	String get presetCompat => '安卓兼容';
+	/// zh-CN: '应用推荐配置？'
+	String get playerOneClickConfirmTitle => '应用推荐配置？';
 
-	/// zh-CN: '使用 mediacodec 表面与解码，修复花屏。'
-	String get presetCompatDesc => '使用 mediacodec 表面与解码，修复花屏。';
+	/// zh-CN: '将把播放内核设为「{preset}」，撤销手动输出与解码器选择；正在播放的直播会短暂重建画面。'
+	String playerOneClickConfirmBody({required Object preset}) => '将把播放内核设为「${preset}」，撤销手动输出与解码器选择；正在播放的直播会短暂重建画面。';
 
-	/// zh-CN: 'RTX 视频超分'
-	String get presetRtxVsr => 'RTX 视频超分';
+	/// zh-CN: '已应用「{preset}」'
+	String playerOneClickApplied({required Object preset}) => '已应用「${preset}」';
 
-	/// zh-CN: 'D3D11VA 解码加 d3d11vpp，NVIDIA 显卡适用。'
-	String get presetRtxVsrDesc => 'D3D11VA 解码加 d3d11vpp，NVIDIA 显卡适用。';
+	/// zh-CN: '花屏 / 绿屏修复'
+	String get playerCompatFix => '花屏 / 绿屏修复';
 
-	/// zh-CN: '低配设备'
-	String get presetLowEnd => '低配设备';
+	/// zh-CN: '改用 mediacodec_embed 直出表面并强制硬解，仅 Android 提供；音画不同步或画面撕裂时也先试这个。'
+	String get playerCompatFixDesc => '改用 mediacodec_embed 直出表面并强制硬解，仅 Android 提供；音画不同步或画面撕裂时也先试这个。';
 
-	/// zh-CN: '软件解码、低分辨率与更小缓冲，优先流畅。'
-	String get presetLowEndDesc => '软件解码、低分辨率与更小缓冲，优先流畅。';
+	/// zh-CN: '标准（引擎默认）'
+	String get presetBalanced => '标准（引擎默认）';
+
+	/// zh-CN: '全部交给引擎自己决定，仅附加直播所需的解复用与缓存调优。大多数设备和网络下这是最稳的选择，也是其它预设的基线。'
+	String get presetBalancedDesc => '全部交给引擎自己决定，仅附加直播所需的解复用与缓存调优。大多数设备和网络下这是最稳的选择，也是其它预设的基线。';
+
+	/// zh-CN: 'Android 硬解兼容'
+	String get presetCompat => 'Android 硬解兼容';
+
+	/// zh-CN: 'Android 上改用 mediacodec_embed 直出表面并强制 mediacodec 硬解。适合默认 gl/ffmpeg 路径出现花屏、绿屏或音画不同步的机型。'
+	String get presetCompatDesc => 'Android 上改用 mediacodec_embed 直出表面并强制 mediacodec 硬解。适合默认 gl/ffmpeg 路径出现花屏、绿屏或音画不同步的机型。';
+
+	/// zh-CN: 'RTX 视频超分辨率'
+	String get presetRtxVsr => 'RTX 视频超分辨率';
+
+	/// zh-CN: 'Windows + NVIDIA 显卡专用：d3d11va 硬解并启用 RTX Video Super Resolution 超分滤镜，把低清晰度源放大到高分辨率屏幕上观看。'
+	String get presetRtxVsrDesc => 'Windows + NVIDIA 显卡专用：d3d11va 硬解并启用 RTX Video Super Resolution 超分滤镜，把低清晰度源放大到高分辨率屏幕上观看。';
+
+	/// zh-CN: '低配流畅'
+	String get presetLowEnd => '低配流畅';
+
+	/// zh-CN: '软解线程数上限 2、lowres 降采样、跳过非参考帧环路滤波、缩小缓冲。把 CPU 交给画面本身，适合核显或老机器。'
+	String get presetLowEndDesc => '软解线程数上限 2、lowres 降采样、跳过非参考帧环路滤波、缩小缓冲。把 CPU 交给画面本身，适合核显或老机器。';
 
 	/// zh-CN: '弱网稳定'
 	String get presetStableNetwork => '弱网稳定';
 
-	/// zh-CN: '加大缓冲并自动重连，减少卡顿。'
-	String get presetStableNetworkDesc => '加大缓冲并自动重连，减少卡顿。';
+	/// zh-CN: '加大解复用缓冲与预读、开启强制可拖动与重连退避。用内存换卡顿，适合跨网、跨运营商或信号边缘的直播源。'
+	String get presetStableNetworkDesc => '加大解复用缓冲与预读、开启强制可拖动与重连退避。用内存换卡顿，适合跨网、跨运营商或信号边缘的直播源。';
 
 	/// zh-CN: '低延迟'
 	String get presetLowLatency => '低延迟';
 
-	/// zh-CN: '小缓冲与丢帧，适合高速网络。'
-	String get presetLowLatencyDesc => '小缓冲与丢帧，适合高速网络。';
+	/// zh-CN: '最小缓冲 + 解码/渲染双端丢帧，牺牲抗抖动换低延迟。适合赛事直播、连麦互动等时效优先的场景。'
+	String get presetLowLatencyDesc => '最小缓冲 + 解码/渲染双端丢帧，牺牲抗抖动换低延迟。适合赛事直播、连麦互动等时效优先的场景。';
 
 	/// zh-CN: '已应用预设'
 	String get playerPresetApplied => '已应用预设';
+
+	/// zh-CN: '已由当前预设固定'
+	String get playerOutputLockedByPreset => '已由当前预设固定';
 
 	/// zh-CN: '播放器代理'
 	String get playerProxy => '播放器代理';
@@ -3159,17 +3834,77 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '请填写有效的主机和端口（1–65535）。'
 	String get playerProxyInvalid => '请填写有效的主机和端口（1–65535）。';
 
-	/// zh-CN: '硬件解码器'
-	String get hardwareDecoder => '硬件解码器';
+	/// zh-CN: '硬件解码器 (--hwdec)'
+	String get hardwareDecoder => '硬件解码器 (--hwdec)';
 
-	/// zh-CN: '选择 mpv 的 hwdec 解码器。'
-	String get hardwareDecoderDesc => '选择 mpv 的 hwdec 解码器。';
+	/// zh-CN: '选择 mpv 的 hwdec 解码器（自定义输出开启时生效）。'
+	String get hardwareDecoderDesc => '选择 mpv 的 hwdec 解码器（自定义输出开启时生效）。';
 
-	/// zh-CN: '自定义输出'
-	String get customOutput => '自定义输出';
+	/// zh-CN: '未开启自定义输出，解码器由 mpv 自动选择（auto-safe）；如需指定，请在「高级设置」开启「自定义驱动与硬件加速」。'
+	String get hardwareDecoderAutoHint => '未开启自定义输出，解码器由 mpv 自动选择（auto-safe）；如需指定，请在「高级设置」开启「自定义驱动与硬件加速」。';
 
-	/// zh-CN: '手动选择视频与音频输出驱动。'
-	String get customOutputDesc => '手动选择视频与音频输出驱动。';
+	/// zh-CN: 'no（软件解码，兼容性最好）'
+	String get hardwareDecoderSoftware => 'no（软件解码，兼容性最好）';
+
+	/// zh-CN: 'auto（任意硬解路径，兼容性有风险）'
+	String get hardwareDecoderAuto => 'auto（任意硬解路径，兼容性有风险）';
+
+	/// zh-CN: 'auto-safe（白名单内安全硬解，推荐）'
+	String get hardwareDecoderAutoSafe => 'auto-safe（白名单内安全硬解，推荐）';
+
+	/// zh-CN: 'auto-unsafe（不做安全校验）'
+	String get hardwareDecoderAutoUnsafe => 'auto-unsafe（不做安全校验）';
+
+	/// zh-CN: 'yes（强制硬解，失败即报错）'
+	String get hardwareDecoderYes => 'yes（强制硬解，失败即报错）';
+
+	/// zh-CN: 'auto-copy（安全硬解 + 拷回内存，滤镜/截图可用）'
+	String get hardwareDecoderAutoCopy => 'auto-copy（安全硬解 + 拷回内存，滤镜/截图可用）';
+
+	/// zh-CN: 'd3d11va（Direct3D 11 直通，Windows 8+）'
+	String get hardwareDecoderD3d11va => 'd3d11va（Direct3D 11 直通，Windows 8+）';
+
+	/// zh-CN: 'd3d11va-copy（D3D11 + 拷回内存）'
+	String get hardwareDecoderD3d11vaCopy => 'd3d11va-copy（D3D11 + 拷回内存）';
+
+	/// zh-CN: 'nvdec（NVIDIA 直通，低开销）'
+	String get hardwareDecoderNvdec => 'nvdec（NVIDIA 直通，低开销）';
+
+	/// zh-CN: 'nvdec-copy（NVIDIA + 拷回内存）'
+	String get hardwareDecoderNvdecCopy => 'nvdec-copy（NVIDIA + 拷回内存）';
+
+	/// zh-CN: 'videotoolbox（Apple 直通，推荐）'
+	String get hardwareDecoderVideotoolbox => 'videotoolbox（Apple 直通，推荐）';
+
+	/// zh-CN: 'videotoolbox-copy（Apple + 拷回内存）'
+	String get hardwareDecoderVideotoolboxCopy => 'videotoolbox-copy（Apple + 拷回内存）';
+
+	/// zh-CN: 'vaapi（Intel/AMD Linux 直通）'
+	String get hardwareDecoderVaapi => 'vaapi（Intel/AMD Linux 直通）';
+
+	/// zh-CN: 'vaapi-copy（vaapi + 拷回内存）'
+	String get hardwareDecoderVaapiCopy => 'vaapi-copy（vaapi + 拷回内存）';
+
+	/// zh-CN: 'vdpau（NVIDIA Linux 旧接口）'
+	String get hardwareDecoderVdpau => 'vdpau（NVIDIA Linux 旧接口）';
+
+	/// zh-CN: 'vdpau-copy（VDPAU + 拷回内存）'
+	String get hardwareDecoderVdpauCopy => 'vdpau-copy（VDPAU + 拷回内存）';
+
+	/// zh-CN: 'mediacodec（Android 直通，推荐）'
+	String get hardwareDecoderMediacodec => 'mediacodec（Android 直通，推荐）';
+
+	/// zh-CN: 'mediacodec-copy（Android + 拷回内存）'
+	String get hardwareDecoderMediacodecCopy => 'mediacodec-copy（Android + 拷回内存）';
+
+	/// zh-CN: '自定义驱动与硬件加速'
+	String get customOutput => '自定义驱动与硬件加速';
+
+	/// zh-CN: '开启后用所选视频输出、音频输出与解码器，代替「硬件解码」开关。'
+	String get customOutputDesc => '开启后用所选视频输出、音频输出与解码器，代替「硬件解码」开关。';
+
+	/// zh-CN: '已由「自定义驱动与硬件加速」接管，解码器在下方选择。'
+	String get customOutputHardwareTakeover => '已由「自定义驱动与硬件加速」接管，解码器在下方选择。';
 
 	/// zh-CN: '视频输出'
 	String get videoOutput => '视频输出';
@@ -3177,20 +3912,101 @@ class Translations$settings$zh_CN {
 	/// zh-CN: 'gpu / gpu-next / direct3d 可能让 mpv 另开窗口；嵌入画面通常保持 libmpv 或 auto。'
 	String get videoOutputHint => 'gpu / gpu-next / direct3d 可能让 mpv 另开窗口；嵌入画面通常保持 libmpv 或 auto。';
 
-	/// zh-CN: '音频输出'
-	String get audioOutput => '音频输出';
+	/// zh-CN: 'auto（跟随 mpv 默认，推荐）'
+	String get videoOutputAuto => 'auto（跟随 mpv 默认，推荐）';
 
-	/// zh-CN: '视频同步'
-	String get videoSync => '视频同步';
+	/// zh-CN: 'libmpv（内嵌 Flutter 纹理）'
+	String get videoOutputLibmpv => 'libmpv（内嵌 Flutter 纹理）';
 
-	/// zh-CN: '音画同步与显示刷新策略。'
-	String get videoSyncDesc => '音画同步与显示刷新策略。';
+	/// zh-CN: 'gpu（独立 mpv 窗口，完整着色器）'
+	String get videoOutputGpu => 'gpu（独立 mpv 窗口，完整着色器）';
 
-	/// zh-CN: '插帧'
-	String get interpolation => '插帧';
+	/// zh-CN: 'gpu-next（独立窗口，libplacebo 新管线，支持 HDR）'
+	String get videoOutputGpuNext => 'gpu-next（独立窗口，libplacebo 新管线，支持 HDR）';
 
-	/// zh-CN: '运动插值，仅桌面 GPU 建议开启。'
-	String get interpolationDesc => '运动插值，仅桌面 GPU 建议开启。';
+	/// zh-CN: 'direct3d（独立窗口，旧 D3D9 兼容）'
+	String get videoOutputDirect3d => 'direct3d（独立窗口，旧 D3D9 兼容）';
+
+	/// zh-CN: 'null（不渲染画面，只有声音）'
+	String get videoOutputNull => 'null（不渲染画面，只有声音）';
+
+	/// zh-CN: 'MediaCodec Embed（仅 Android，直通 Surface）'
+	String get videoOutputMediacodecEmbed => 'MediaCodec Embed（仅 Android，直通 Surface）';
+
+	/// zh-CN: '音频输出驱动（--ao）'
+	String get audioOutput => '音频输出驱动（--ao）';
+
+	/// zh-CN: '自动（引擎按平台挑选，推荐）'
+	String get audioOutputAuto => '自动（引擎按平台挑选，推荐）';
+
+	/// zh-CN: 'AudioTrack（Android 系统混音器，推荐）'
+	String get audioOutputAudiotrack => 'AudioTrack（Android 系统混音器，推荐）';
+
+	/// zh-CN: 'AAudio（Android 8.0+，低延迟）'
+	String get audioOutputAaudio => 'AAudio（Android 8.0+，低延迟）';
+
+	/// zh-CN: 'OpenSL ES（Android 旧通道，兼容用）'
+	String get audioOutputOpensles => 'OpenSL ES（Android 旧通道，兼容用）';
+
+	/// zh-CN: 'AudioUnit（iOS / macOS）'
+	String get audioOutputAudiounit => 'AudioUnit（iOS / macOS）';
+
+	/// zh-CN: 'WASAPI（Windows 默认通道，推荐）'
+	String get audioOutputWasapi => 'WASAPI（Windows 默认通道，推荐）';
+
+	/// zh-CN: 'win32（waveOut 旧通道）'
+	String get audioOutputWin32 => 'win32（waveOut 旧通道）';
+
+	/// zh-CN: 'SDL（跨平台兜底）'
+	String get audioOutputSdl => 'SDL（跨平台兜底）';
+
+	/// zh-CN: 'PCM（原始数据转储到文件，调试用）'
+	String get audioOutputPcm => 'PCM（原始数据转储到文件，调试用）';
+
+	/// zh-CN: 'ALSA（Linux 直通，可能独占声卡）'
+	String get audioOutputAlsa => 'ALSA（Linux 直通，可能独占声卡）';
+
+	/// zh-CN: 'PipeWire（Linux 新声音栈）'
+	String get audioOutputPipewire => 'PipeWire（Linux 新声音栈）';
+
+	/// zh-CN: 'null（不输出声音，静音调试）'
+	String get audioOutputNull => 'null（不输出声音，静音调试）';
+
+	/// zh-CN: '视频同步模式 (--video-sync)'
+	String get videoSync => '视频同步模式 (--video-sync)';
+
+	/// zh-CN: '画面跟随音频时钟还是显示刷新；显示重采样最平滑，但更吃 GPU。'
+	String get videoSyncDesc => '画面跟随音频时钟还是显示刷新；显示重采样最平滑，但更吃 GPU。';
+
+	/// zh-CN: '音频时钟（mpv 默认）'
+	String get videoSyncAudio => '音频时钟（mpv 默认）';
+
+	/// zh-CN: '显示重采样（最平滑，吃 GPU）'
+	String get videoSyncDisplayResample => '显示重采样（最平滑，吃 GPU）';
+
+	/// zh-CN: '显示重采样 + 视频丢帧'
+	String get videoSyncDisplayResampleVdrop => '显示重采样 + 视频丢帧';
+
+	/// zh-CN: '显示重采样 + 整帧丢弃'
+	String get videoSyncDisplayResampleDrop => '显示重采样 + 整帧丢弃';
+
+	/// zh-CN: '显示时钟 + 音频丢样'
+	String get videoSyncDisplayAdrop => '显示时钟 + 音频丢样';
+
+	/// zh-CN: '显示时钟 + 视频丢帧'
+	String get videoSyncDisplayVdrop => '显示时钟 + 视频丢帧';
+
+	/// zh-CN: '显示时钟 + 不同步'
+	String get videoSyncDisplayDesync => '显示时钟 + 不同步';
+
+	/// zh-CN: '完全不同步（调试）'
+	String get videoSyncDesync => '完全不同步（调试）';
+
+	/// zh-CN: '运动插帧 (--interpolation)'
+	String get interpolation => '运动插帧 (--interpolation)';
+
+	/// zh-CN: '需配合「显示重采样」同步模式；提升平移画面平滑度，消耗 GPU。'
+	String get interpolationDesc => '需配合「显示重采样」同步模式；提升平移画面平滑度，消耗 GPU。';
 
 	/// zh-CN: '缩放算法'
 	String get scaleKernel => '缩放算法';
@@ -3198,38 +4014,101 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '放大画面时的重采样算法。'
 	String get scaleKernelDesc => '放大画面时的重采样算法。';
 
-	/// zh-CN: '反交错'
-	String get deinterlace => '反交错';
+	/// zh-CN: 'Lanczos（均衡推荐）'
+	String get scaleLanczos => 'Lanczos（均衡推荐）';
 
-	/// zh-CN: '处理隔行扫描视频。'
-	String get deinterlaceDesc => '处理隔行扫描视频。';
+	/// zh-CN: 'EWA Lanczos Sharp（锐利，吃 GPU）'
+	String get scaleEwaLanczosSharp => 'EWA Lanczos Sharp（锐利，吃 GPU）';
 
-	/// zh-CN: '硬件解码格式'
-	String get hwdecCodecs => '硬件解码格式';
+	/// zh-CN: 'EWA Lanczos 4 Sharpest（配合插帧）'
+	String get scaleEwaLanczos4Sharpest => 'EWA Lanczos 4 Sharpest（配合插帧）';
 
-	/// zh-CN: '哪些编码交给硬件解码。'
-	String get hwdecCodecsDesc => '哪些编码交给硬件解码。';
+	/// zh-CN: 'EWA Lanczos'
+	String get scaleEwaLanczos => 'EWA Lanczos';
 
-	/// zh-CN: '独占音频'
-	String get audioExclusive => '独占音频';
+	/// zh-CN: 'Spline36'
+	String get scaleSpline36 => 'Spline36';
 
-	/// zh-CN: 'Windows WASAPI 独占模式。'
-	String get audioExclusiveDesc => 'Windows WASAPI 独占模式。';
+	/// zh-CN: 'Spline16（快）'
+	String get scaleSpline16 => 'Spline16（快）';
 
-	/// zh-CN: '强制销毁播放器'
-	String get forceDestroy => '强制销毁播放器';
+	/// zh-CN: 'Catmull-Rom'
+	String get scaleCatmullRom => 'Catmull-Rom';
 
-	/// zh-CN: '退出房间时立刻销毁播放器，避免残留。'
-	String get forceDestroyDesc => '退出房间时立刻销毁播放器，避免残留。';
+	/// zh-CN: 'Mitchell'
+	String get scaleMitchell => 'Mitchell';
+
+	/// zh-CN: 'Hermite（柔和）'
+	String get scaleHermite => 'Hermite（柔和）';
+
+	/// zh-CN: 'Bicubic Fast（快）'
+	String get scaleBicubicFast => 'Bicubic Fast（快）';
+
+	/// zh-CN: '双线性（最快，最糊）'
+	String get scaleBilinear => '双线性（最快，最糊）';
+
+	/// zh-CN: '最近邻（块状）'
+	String get scaleNearest => '最近邻（块状）';
+
+	/// zh-CN: '反交错 (--deinterlace)'
+	String get deinterlace => '反交错 (--deinterlace)';
+
+	/// zh-CN: '直播源基本都是逐行的，保持自动即可；只有老电视信号或采集卡源才需要开启。'
+	String get deinterlaceDesc => '直播源基本都是逐行的，保持自动即可；只有老电视信号或采集卡源才需要开启。';
+
+	/// zh-CN: '自动'
+	String get deinterlaceAuto => '自动';
+
+	/// zh-CN: '关闭'
+	String get deinterlaceOff => '关闭';
+
+	/// zh-CN: '开启（隔行源才需要）'
+	String get deinterlaceOn => '开启（隔行源才需要）';
+
+	/// zh-CN: '硬解编码范围 (--hwdec-codecs)'
+	String get hwdecCodecs => '硬解编码范围 (--hwdec-codecs)';
+
+	/// zh-CN: '限制哪些编码格式走硬解；某编码黑屏或花屏时，把它从列表移除即可回退软解。'
+	String get hwdecCodecsDesc => '限制哪些编码格式走硬解；某编码黑屏或花屏时，把它从列表移除即可回退软解。';
+
+	/// zh-CN: '全部编码格式'
+	String get hwdecCodecsAll => '全部编码格式';
+
+	/// zh-CN: 'H264 + HEVC'
+	String get hwdecCodecsH264Hevc => 'H264 + HEVC';
+
+	/// zh-CN: 'H264 + HEVC + VP9'
+	String get hwdecCodecsH264HevcVp9 => 'H264 + HEVC + VP9';
+
+	/// zh-CN: 'H264 + HEVC + VP9 + AV1'
+	String get hwdecCodecsH264HevcVp9Av1 => 'H264 + HEVC + VP9 + AV1';
+
+	/// zh-CN: '音频独占 (--audio-exclusive)'
+	String get audioExclusive => '音频独占 (--audio-exclusive)';
+
+	/// zh-CN: '独占 WASAPI 设备，其他应用将无法出声。'
+	String get audioExclusiveDesc => '独占 WASAPI 设备，其他应用将无法出声。';
+
+	/// zh-CN: '播放器强制销毁'
+	String get forceDestroy => '播放器强制销毁';
+
+	/// zh-CN: '退出房间后立即销毁播放器；关闭时保留已停止的播放器，供下个房间复用。'
+	String get forceDestroyDesc => '退出房间后立即销毁播放器；关闭时保留已停止的播放器，供下个房间复用。';
 
 	/// zh-CN: 'mpv 高级设置'
 	String get mpvAdvanced => 'mpv 高级设置';
 
-	/// zh-CN: '恢复 mpv 默认设置'
-	String get mpvReset => '恢复 mpv 默认设置';
+	/// zh-CN: '恢复播放内核默认设置'
+	String get mpvReset => '恢复播放内核默认设置';
 
-	/// zh-CN: '重置输出、同步、缩放与解码选项，不影响超分辨率。'
-	String get mpvResetDesc => '重置输出、同步、缩放与解码选项，不影响超分辨率。';
+	/// zh-CN: '恢复本页的设置；视频设置里的首选清晰度不受影响。'
+	String get mpvResetDesc => '恢复本页的设置；视频设置里的首选清晰度不受影响。';
+
+	/// zh-CN: '下面这些恢复默认值： • 开启硬解码：开 • 兼容模式、RTX VSR、播放器强制销毁：关 • 自定义驱动与硬件加速：关；三个驱动：默认 视频设置里的首选清晰度不变。'
+	String get mpvResetConfirm => '下面这些恢复默认值：\n• 开启硬解码：开\n• 兼容模式、RTX VSR、播放器强制销毁：关\n• 自定义驱动与硬件加速：关；三个驱动：默认\n视频设置里的首选清晰度不变。';
+
+	/// zh-CN: '已恢复默认设置'
+	String get mpvResetDone => '已恢复默认设置';
 
 	/// zh-CN: '打开 mpv 官方文档'
 	String get mpvDocs => '打开 mpv 官方文档';
@@ -3243,20 +4122,203 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '预设、调参与常见问题的说明。'
 	String get playerGuideDesc => '预设、调参与常见问题的说明。';
 
-	/// zh-CN: '播放器基于 mpv。先用预设覆盖大多数场景，仍不正常时再改高级选项。'
-	String get playerGuideIntro => '播放器基于 mpv。先用预设覆盖大多数场景，仍不正常时再改高级选项。';
+	/// zh-CN: '播放搭配指南'
+	String get playerGuideTitle => '播放搭配指南';
 
-	/// zh-CN: '花屏或绿屏：尝试「安卓兼容」，或在高级设置里换解码器。'
-	String get playerGuideTip1 => '花屏或绿屏：尝试「安卓兼容」，或在高级设置里换解码器。';
+	/// zh-CN: '名词解释 · 各平台推荐搭配 · 症状对照'
+	String get playerGuideSubtitle => '名词解释 · 各平台推荐搭配 · 症状对照';
 
-	/// zh-CN: '画面模糊：关闭低配预设，选择质量型缩放或超分辨率。'
-	String get playerGuideTip2 => '画面模糊：关闭低配预设，选择质量型缩放或超分辨率。';
+	/// zh-CN: '指南中的内核选项仅对 mpv 内核生效；先用一键预设覆盖大多数场景，仍不正常时再改高级选项。'
+	String get playerGuideIntro => '指南中的内核选项仅对 mpv 内核生效；先用一键预设覆盖大多数场景，仍不正常时再改高级选项。';
 
-	/// zh-CN: '卡顿：使用「弱网稳定」；风扇狂转：关闭插帧与超分。'
-	String get playerGuideTip3 => '卡顿：使用「弱网稳定」；风扇狂转：关闭插帧与超分。';
+	/// zh-CN: '播放手册：mpv 官方文档'
+	String get playerGuideManualTitle => '播放手册：mpv 官方文档';
 
-	/// zh-CN: '没有声音：检查音频输出驱动，Windows 可尝试关闭独占音频。'
-	String get playerGuideTip4 => '没有声音：检查音频输出驱动，Windows 可尝试关闭独占音频。';
+	/// zh-CN: '遇到问题先看「症状对照」；想理解某个设置是什么，在「基础概念」和各章里查。'
+	String get playerGuideManualHint => '遇到问题先看「症状对照」；想理解某个设置是什么，在「基础概念」和各章里查。';
+
+	/// zh-CN: '基础概念'
+	String get playerGuideChapterConcepts => '基础概念';
+
+	/// zh-CN: '一键播放方案'
+	String get playerGuideChapterPresets => '一键播放方案';
+
+	/// zh-CN: '画面与同步'
+	String get playerGuideChapterPictureSync => '画面与同步';
+
+	/// zh-CN: '画质增强'
+	String get playerGuideChapterQuality => '画质增强';
+
+	/// zh-CN: '声音'
+	String get playerGuideChapterAudio => '声音';
+
+	/// zh-CN: '症状对照'
+	String get playerGuideChapterSymptoms => '症状对照';
+
+	/// zh-CN: 'hwdec'
+	String get playerGuideBadgeHwdec => 'hwdec';
+
+	/// zh-CN: 'vo'
+	String get playerGuideBadgeVo => 'vo';
+
+	/// zh-CN: 'ao'
+	String get playerGuideBadgeAo => 'ao';
+
+	/// zh-CN: 'Android'
+	String get playerGuidePlatformAndroid => 'Android';
+
+	/// zh-CN: 'Windows'
+	String get playerGuidePlatformWindows => 'Windows';
+
+	/// zh-CN: '硬解码开关'
+	String get playerGuideEntryHardwareSwitchTitle => '硬解码开关';
+
+	/// zh-CN: '让显卡代替 CPU 解码视频。开启后 CPU 占用低、发热小；关闭则走软解，兼容性最好，老机器反而可能更流畅。'
+	String get playerGuideEntryHardwareSwitchBody => '让显卡代替 CPU 解码视频。开启后 CPU 占用低、发热小；关闭则走软解，兼容性最好，老机器反而可能更流畅。';
+
+	/// zh-CN: '--hwdec'
+	String get playerGuideEntryHwdecTitle => '--hwdec';
+
+	/// zh-CN: '具体用哪种硬解路径。auto 全部尝试（个别机型可能花屏）；auto-safe 只用白名单内的安全路径（推荐）；带 -copy 的变体把解码结果拷回内存，滤镜和截图需要它。'
+	String get playerGuideEntryHwdecBody => '具体用哪种硬解路径。auto 全部尝试（个别机型可能花屏）；auto-safe 只用白名单内的安全路径（推荐）；带 -copy 的变体把解码结果拷回内存，滤镜和截图需要它。';
+
+	/// zh-CN: '--vo'
+	String get playerGuideEntryVoTitle => '--vo';
+
+	/// zh-CN: 'mpv 把画面画到哪里。libmpv 画进 Flutter 纹理（内嵌播放器，默认）；gpu/gpu-next/direct3d 会打开独立的 mpv 原生窗口（不在应用画面内）；null 不渲染画面。'
+	String get playerGuideEntryVoBody => 'mpv 把画面画到哪里。libmpv 画进 Flutter 纹理（内嵌播放器，默认）；gpu/gpu-next/direct3d 会打开独立的 mpv 原生窗口（不在应用画面内）；null 不渲染画面。';
+
+	/// zh-CN: '--ao'
+	String get playerGuideEntryAoTitle => '--ao';
+
+	/// zh-CN: 'mpv 把声音送到哪个系统通道。Windows 用 wasapi，Android 用 audiotrack/aaudio/opensles；null 表示静音。'
+	String get playerGuideEntryAoBody => 'mpv 把声音送到哪个系统通道。Windows 用 wasapi，Android 用 audiotrack/aaudio/opensles；null 表示静音。';
+
+	/// zh-CN: '均衡（推荐起点）'
+	String get playerGuideEntryPresetDefaultTitle => '均衡（推荐起点）';
+
+	/// zh-CN: '清除自定义输出与解码器选择，交给 mpv 自动决定。大多数设备和网络的首选。'
+	String get playerGuideEntryPresetDefaultBody => '清除自定义输出与解码器选择，交给 mpv 自动决定。大多数设备和网络的首选。';
+
+	/// zh-CN: 'Android 硬解兼容'
+	String get playerGuideEntryPresetAndroidCompatTitle => 'Android 硬解兼容';
+
+	/// zh-CN: '改用 mediacodec_embed 直通表面并强制 mediacodec 硬解，花屏、绿屏或音画不同步时使用。仅 Android 显示。'
+	String get playerGuideEntryPresetAndroidCompatBody => '改用 mediacodec_embed 直通表面并强制 mediacodec 硬解，花屏、绿屏或音画不同步时使用。仅 Android 显示。';
+
+	/// zh-CN: 'NVIDIA RTX 视频超分'
+	String get playerGuideEntryPresetRtxSrTitle => 'NVIDIA RTX 视频超分';
+
+	/// zh-CN: '使用 d3d11va 硬解并叠加 RTX Video Super Resolution 滤镜，把低清源放大观看；会锁定解码器为 d3d11va。仅 Windows 显示。'
+	String get playerGuideEntryPresetRtxSrBody => '使用 d3d11va 硬解并叠加 RTX Video Super Resolution 滤镜，把低清源放大观看；会锁定解码器为 d3d11va。仅 Windows 显示。';
+
+	/// zh-CN: '低配流畅'
+	String get playerGuideEntryPresetLowEndTitle => '低配流畅';
+
+	/// zh-CN: '软解 + 线程上限 2 + lowres 降采样 + 小缓冲。把 CPU 让给画面本身，核显或老机器使用。'
+	String get playerGuideEntryPresetLowEndBody => '软解 + 线程上限 2 + lowres 降采样 + 小缓冲。把 CPU 让给画面本身，核显或老机器使用。';
+
+	/// zh-CN: '弱网稳定'
+	String get playerGuideEntryPresetWeakNetworkTitle => '弱网稳定';
+
+	/// zh-CN: '加大缓冲与预读、开启重连退避。用内存换卡顿，跨网或信号边缘时使用。'
+	String get playerGuideEntryPresetWeakNetworkBody => '加大缓冲与预读、开启重连退避。用内存换卡顿，跨网或信号边缘时使用。';
+
+	/// zh-CN: '低延迟'
+	String get playerGuideEntryPresetLowLatencyTitle => '低延迟';
+
+	/// zh-CN: '最小缓冲 + 双端丢帧。时效优先，代价是更容易卡。'
+	String get playerGuideEntryPresetLowLatencyBody => '最小缓冲 + 双端丢帧。时效优先，代价是更容易卡。';
+
+	/// zh-CN: '--video-sync'
+	String get playerGuideEntryVideoSyncTitle => '--video-sync';
+
+	/// zh-CN: '音画时钟对齐方式。audio 是 mpv 默认；display-resample 最平滑但吃 GPU，配合运动插帧使用；带 vdrop/drop 的变体在节奏对不上时丢帧。仅桌面显示。'
+	String get playerGuideEntryVideoSyncBody => '音画时钟对齐方式。audio 是 mpv 默认；display-resample 最平滑但吃 GPU，配合运动插帧使用；带 vdrop/drop 的变体在节奏对不上时丢帧。仅桌面显示。';
+
+	/// zh-CN: '--interpolation'
+	String get playerGuideEntryInterpolationTitle => '--interpolation';
+
+	/// zh-CN: '运动插帧。平移画面时按帧间计算补帧，显著更顺滑；必须配合 display-resample 同步模式，GPU 消耗明显。仅桌面显示。'
+	String get playerGuideEntryInterpolationBody => '运动插帧。平移画面时按帧间计算补帧，显著更顺滑；必须配合 display-resample 同步模式，GPU 消耗明显。仅桌面显示。';
+
+	/// zh-CN: '--scale'
+	String get playerGuideEntryScaleTitle => '--scale';
+
+	/// zh-CN: '画面放大算法。lanczos 均衡推荐；ewa_lanczossharp 最锐利；ewa_lanczos4sharpest 专为插帧设计；bilinear/nearest 最快但糊或块状。移动端只提供 lanczos 与 bilinear。'
+	String get playerGuideEntryScaleBody => '画面放大算法。lanczos 均衡推荐；ewa_lanczossharp 最锐利；ewa_lanczos4sharpest 专为插帧设计；bilinear/nearest 最快但糊或块状。移动端只提供 lanczos 与 bilinear。';
+
+	/// zh-CN: '--deinterlace'
+	String get playerGuideEntryDeinterlaceTitle => '--deinterlace';
+
+	/// zh-CN: '反交错处理。直播源基本都是逐行的，保持自动即可；只有老电视信号或采集卡源才需要开启。'
+	String get playerGuideEntryDeinterlaceBody => '反交错处理。直播源基本都是逐行的，保持自动即可；只有老电视信号或采集卡源才需要开启。';
+
+	/// zh-CN: '超分辨率（Anime4K）'
+	String get playerGuideEntryRtxSuperResolutionTitle => '超分辨率（Anime4K）';
+
+	/// zh-CN: '设置 → 播放内核 → 超分辨率：效率档或质量档。仅 Windows 桌面 GPU 可实时运行，把低清源放大到高分屏仍然清晰。'
+	String get playerGuideEntryRtxSuperResolutionBody => '设置 → 播放内核 → 超分辨率：效率档或质量档。仅 Windows 桌面 GPU 可实时运行，把低清源放大到高分屏仍然清晰。';
+
+	/// zh-CN: '弹幕较多时减轻负担'
+	String get playerGuideEntryDanmakuLoadTitle => '弹幕较多时减轻负担';
+
+	/// zh-CN: '在设置 → 弹幕样式里调低字号、速度或不透明度，或关闭画面飞行弹幕，可显著减轻低配设备的负担。'
+	String get playerGuideEntryDanmakuLoadBody => '在设置 → 弹幕样式里调低字号、速度或不透明度，或关闭画面飞行弹幕，可显著减轻低配设备的负担。';
+
+	/// zh-CN: '--hwdec-codecs'
+	String get playerGuideEntryHwdecCodecsTitle => '--hwdec-codecs';
+
+	/// zh-CN: '限制哪些编码格式走硬解。默认全部编码格式；某编码黑屏或花屏时，把范围收窄到不含它的档位（回退软解）。'
+	String get playerGuideEntryHwdecCodecsBody => '限制哪些编码格式走硬解。默认全部编码格式；某编码黑屏或花屏时，把范围收窄到不含它的档位（回退软解）。';
+
+	/// zh-CN: '--audio-exclusive'
+	String get playerGuideEntryAudioExclusiveTitle => '--audio-exclusive';
+
+	/// zh-CN: '仅 Windows。独占 WASAPI 设备，绕过系统混音器，可能有更好的音质；代价是其他应用无法出声。'
+	String get playerGuideEntryAudioExclusiveBody => '仅 Windows。独占 WASAPI 设备，绕过系统混音器，可能有更好的音质；代价是其他应用无法出声。';
+
+	/// zh-CN: '--ao 选择建议'
+	String get playerGuideEntryAoAdviceTitle => '--ao 选择建议';
+
+	/// zh-CN: '不确定就用 auto。声音断续时 Windows 换 win32，Android 换 opensles；蓝牙耳机延迟大时可尝试不同通道对比。'
+	String get playerGuideEntryAoAdviceBody => '不确定就用 auto。声音断续时 Windows 换 win32，Android 换 opensles；蓝牙耳机延迟大时可尝试不同通道对比。';
+
+	/// zh-CN: '花屏 / 绿屏 / 音画不同步'
+	String get playerGuideEntrySymGlitchTitle => '花屏 / 绿屏 / 音画不同步';
+
+	/// zh-CN: 'Android：一键方案切「安卓兼容」。其它平台：关闭硬解开关走软解，或在自定义驱动与硬件加速里把解码器改 auto-safe。'
+	String get playerGuideEntrySymGlitchBody => 'Android：一键方案切「安卓兼容」。其它平台：关闭硬解开关走软解，或在自定义驱动与硬件加速里把解码器改 auto-safe。';
+
+	/// zh-CN: '低清源在高分屏发糊'
+	String get playerGuideEntrySymBlurryTitle => '低清源在高分屏发糊';
+
+	/// zh-CN: 'Windows + NVIDIA：选「RTX VSR」预设；其它 GPU：放大算法改 ewa_lanczossharp，或在播放内核里开启 Anime4K 超分辨率（仅 Windows）。'
+	String get playerGuideEntrySymBlurryBody => 'Windows + NVIDIA：选「RTX VSR」预设；其它 GPU：放大算法改 ewa_lanczossharp，或在播放内核里开启 Anime4K 超分辨率（仅 Windows）。';
+
+	/// zh-CN: '风扇狂转 / 掉帧'
+	String get playerGuideEntrySymFanTitle => '风扇狂转 / 掉帧';
+
+	/// zh-CN: '选「低配流畅」方案；仍不行就关闭硬解码开关（老设备软解反而快）。'
+	String get playerGuideEntrySymFanBody => '选「低配流畅」方案；仍不行就关闭硬解码开关（老设备软解反而快）。';
+
+	/// zh-CN: '频繁缓冲'
+	String get playerGuideEntrySymBufferingTitle => '频繁缓冲';
+
+	/// zh-CN: '选「弱网稳定」；同时检查播放器代理设置——代理是直播卡顿的常见来源。'
+	String get playerGuideEntrySymBufferingBody => '选「弱网稳定」；同时检查播放器代理设置——代理是直播卡顿的常见来源。';
+
+	/// zh-CN: '延迟高（连麦 / 赛事情景）'
+	String get playerGuideEntrySymLatencyTitle => '延迟高（连麦 / 赛事情景）';
+
+	/// zh-CN: '选「低延迟」方案，并调低缓冲相关属性。'
+	String get playerGuideEntrySymLatencyBody => '选「低延迟」方案，并调低缓冲相关属性。';
+
+	/// zh-CN: '有声音没画面'
+	String get playerGuideEntrySymNoVideoTitle => '有声音没画面';
+
+	/// zh-CN: '检查视频输出驱动是否被改过（null = 不渲染画面）；恢复「自动」即可。恢复播放内核默认设置也能解决。'
+	String get playerGuideEntrySymNoVideoBody => '检查视频输出驱动是否被改过（null = 不渲染画面）；恢复「自动」即可。恢复播放内核默认设置也能解决。';
 
 	/// zh-CN: '自动'
 	String get optionAuto => '自动';
@@ -3270,14 +4332,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '无输出'
 	String get optionNoOutput => '无输出';
 
-	/// zh-CN: '关闭着色器，保持原始画面。'
-	String get superResolutionOffDesc => '关闭着色器，保持原始画面。';
+	/// zh-CN: '默认渲染，不挂载任何超分滤镜。'
+	String get superResolutionOffDesc => '默认渲染，不挂载任何超分滤镜。';
 
-	/// zh-CN: '较轻的 CNN 链，适合中端 GPU。'
-	String get superResolutionEfficiencyDesc => '较轻的 CNN 链，适合中端 GPU。';
+	/// zh-CN: '轻量 Anime4K 卷积链，GPU 负担小，适合核显或高刷屏。'
+	String get superResolutionEfficiencyDesc => '轻量 Anime4K 卷积链，GPU 负担小，适合核显或高刷屏。';
 
-	/// zh-CN: '最重的 CNN 链，画质最好。'
-	String get superResolutionQualityDesc => '最重的 CNN 链，画质最好。';
+	/// zh-CN: '完整 Anime4K 卷积链，效果最好，需要独立显卡。'
+	String get superResolutionQualityDesc => '完整 Anime4K 卷积链，效果最好，需要独立显卡。';
 
 	/// zh-CN: '这些选项只对 mpv 内核生效。'
 	String get playerAdvancedRequiresMpv => '这些选项只对 mpv 内核生效。';
@@ -3288,17 +4350,17 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '用 Anime4K 着色器实时放大画面；需要桌面 GPU。'
 	String get superResolutionDescription => '用 Anime4K 着色器实时放大画面；需要桌面 GPU。';
 
-	/// zh-CN: '仅 Windows 桌面生效；切换后应用到当前与之后的播放器。'
-	String get superResolutionHint => '仅 Windows 桌面生效；切换后应用到当前与之后的播放器。';
+	/// zh-CN: '基于 Anime4K 的实时超分，仅桌面 GPU 可实时运行；当前仅 Windows 生效。'
+	String get superResolutionHint => '基于 Anime4K 的实时超分，仅桌面 GPU 可实时运行；当前仅 Windows 生效。';
 
 	/// zh-CN: '关闭'
 	String get superResolutionOff => '关闭';
 
-	/// zh-CN: '效率'
-	String get superResolutionEfficiency => '效率';
+	/// zh-CN: '效率档'
+	String get superResolutionEfficiency => '效率档';
 
-	/// zh-CN: '质量'
-	String get superResolutionQuality => '质量';
+	/// zh-CN: '质量档'
+	String get superResolutionQuality => '质量档';
 
 	/// zh-CN: '录制目录、文件命名与容量上限。'
 	String get recordingDescription => '录制目录、文件命名与容量上限。';
@@ -3360,20 +4422,44 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '立即静音所有正在播放和之后打开的房间、频道与视频；关闭后恢复各播放器自身的静音设置。'
 	String get globalMuteDesc => '立即静音所有正在播放和之后打开的房间、频道与视频；关闭后恢复各播放器自身的静音设置。';
 
+	/// zh-CN: '后台播放'
+	String get backgroundPlay => '后台播放';
+
+	/// zh-CN: '离开应用后继续播放声音；关闭时切到后台会暂停，回到应用后继续。'
+	String get backgroundPlayDesc => '离开应用后继续播放声音；关闭时切到后台会暂停，回到应用后继续。';
+
+	/// zh-CN: 'ASMR 睡眠模式'
+	String get asmrSleepMode => 'ASMR 睡眠模式';
+
+	/// zh-CN: '进入直播间时自动切换为音频模式，并在设定时间后暂停。仅 Android。'
+	String get asmrSleepModeDesc => '进入直播间时自动切换为音频模式，并在设定时间后暂停。仅 Android。';
+
+	/// zh-CN: 'ASMR 睡眠时长'
+	String get asmrSleepTimer => 'ASMR 睡眠时长';
+
+	/// zh-CN: '音频模式自动停止前的分钟数，范围 15–1440。'
+	String get asmrSleepTimerDesc => '音频模式自动停止前的分钟数，范围 15–1440。';
+
+	/// zh-CN: '自定义分钟数'
+	String get asmrSleepCustomMinutes => '自定义分钟数';
+
+	/// zh-CN: '15–1440 分钟'
+	String get asmrSleepRange => '15–1440 分钟';
+
 	/// zh-CN: '画面比例'
 	String get fit => '画面比例';
 
 	/// zh-CN: '画面在播放区域里的铺法。'
 	String get fitDesc => '画面在播放区域里的铺法。';
 
-	/// zh-CN: '适应（留黑边）'
-	String get fitContain => '适应（留黑边）';
+	/// zh-CN: '默认比例'
+	String get fitContain => '默认比例';
 
-	/// zh-CN: '裁切填满'
-	String get fitCover => '裁切填满';
+	/// zh-CN: '居中裁剪'
+	String get fitCover => '居中裁剪';
 
-	/// zh-CN: '拉伸'
-	String get fitFill => '拉伸';
+	/// zh-CN: '填充屏幕'
+	String get fitFill => '填充屏幕';
 
 	/// zh-CN: '画中画中显示弹幕'
 	String get miniDanmakuVisible => '画中画中显示弹幕';
@@ -3387,8 +4473,17 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '播放内核'
 	String get engineTitle => '播放内核';
 
-	/// zh-CN: '由 media_core 的内核注册表提供，当前只注册了 mpv。'
-	String get engineDesc => '由 media_core 的内核注册表提供，当前只注册了 mpv。';
+	/// zh-CN: '选择直播与视频使用的播放内核；mpv 为默认，移动端还可选 IJK 或 BetterPlayer。'
+	String get engineDesc => '选择直播与视频使用的播放内核；mpv 为默认，移动端还可选 IJK 或 BetterPlayer。';
+
+	/// zh-CN: 'mpv 播放器'
+	String get playerEngineMpv => 'mpv 播放器';
+
+	/// zh-CN: 'IJK 播放器'
+	String get playerEngineIjk => 'IJK 播放器';
+
+	/// zh-CN: 'BetterPlayer'
+	String get playerEngineBetterPlayer => 'BetterPlayer';
 
 	/// zh-CN: '硬件解码'
 	String get hardwareDecoding => '硬件解码';
@@ -3396,8 +4491,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '用 GPU 解码视频，关闭则交给 CPU。'
 	String get hardwareDecodingDesc => '用 GPU 解码视频，关闭则交给 CPU。';
 
-	/// zh-CN: '在下一个播放器实例上生效。'
-	String get hardwareDecodingHint => '在下一个播放器实例上生效。';
+	/// zh-CN: '对当前与之后打开的播放器生效。'
+	String get hardwareDecodingHint => '对当前与之后打开的播放器生效。';
 
 	/// zh-CN: '返回应用时刷新关注'
 	String get refreshOnResume => '返回应用时刷新关注';
@@ -3423,11 +4518,20 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '封面刷新间隔'
 	String get thumbnailRefreshInterval => '封面刷新间隔';
 
+	/// zh-CN: '首页菜单'
+	String get navHomeMenuGroup => '首页菜单';
+
+	/// zh-CN: '已隐藏'
+	String get navMenuHidden => '已隐藏';
+
+	/// zh-CN: '至少保留一个菜单'
+	String get navMenuKeepOne => '至少保留一个菜单';
+
 	/// zh-CN: '首页入口：多画面'
 	String get multiviewVisible => '首页入口：多画面';
 
-	/// zh-CN: '关闭后侧栏不再显示多画面入口。'
-	String get multiviewVisibleDesc => '关闭后侧栏不再显示多画面入口。';
+	/// zh-CN: '关闭后侧栏与手机抽屉不再显示多画面入口。'
+	String get multiviewVisibleDesc => '关闭后侧栏与手机抽屉不再显示多画面入口。';
 
 	/// zh-CN: '主题'
 	String get groupTheme => '主题';
@@ -3666,11 +4770,101 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '播放中切到后台时进入画中画；系统未开启画中画时不会生效。'
 	String get autoPipDesc => '播放中切到后台时进入画中画；系统未开启画中画时不会生效。';
 
+	/// zh-CN: '返回时悬浮播放'
+	String get floatPlay => '返回时悬浮播放';
+
+	/// zh-CN: '离开直播间返回其他页面时，把正在播放的画面留在一个可拖动的小窗里；关闭小窗会停止播放。'
+	String get floatPlayDesc => '离开直播间返回其他页面时，把正在播放的画面留在一个可拖动的小窗里；关闭小窗会停止播放。';
+
+	/// zh-CN: '小窗始终置顶'
+	String get windowsPipAlwaysOnTop => '小窗始终置顶';
+
+	/// zh-CN: 'Windows 画中画小窗保持在其他窗口之上；正在播放的小窗会立即应用。'
+	String get windowsPipAlwaysOnTopDesc => 'Windows 画中画小窗保持在其他窗口之上；正在播放的小窗会立即应用。';
+
+	/// zh-CN: '记住小窗位置'
+	String get rememberPipPosition => '记住小窗位置';
+
+	/// zh-CN: '再次进入小窗时回到上次的尺寸、位置和显示器；关闭后每次使用默认位置。'
+	String get rememberPipPositionDesc => '再次进入小窗时回到上次的尺寸、位置和显示器；关闭后每次使用默认位置。';
+
+	/// zh-CN: '小窗基准尺寸'
+	String get windowsPipBaseSize => '小窗基准尺寸';
+
+	/// zh-CN: '横向视频的长边；竖向视频时作为高。范围 200–720。'
+	String get windowsPipBaseSizeDesc => '横向视频的长边；竖向视频时作为高。范围 200–720。';
+
+	/// zh-CN: '小窗最小宽度'
+	String get windowsPipMinWidth => '小窗最小宽度';
+
+	/// zh-CN: '小窗可拖动到的最小宽度，范围 100–320；只作用于小窗，离开后恢复应用窗口的常规下限。'
+	String get windowsPipMinWidthDesc => '小窗可拖动到的最小宽度，范围 100–320；只作用于小窗，离开后恢复应用窗口的常规下限。';
+
+	/// zh-CN: '小窗最小高度'
+	String get windowsPipMinHeight => '小窗最小高度';
+
+	/// zh-CN: '小窗可拖动到的最小高度，范围 60–240；只作用于小窗，离开后恢复应用窗口的常规下限。'
+	String get windowsPipMinHeightDesc => '小窗可拖动到的最小高度，范围 60–240；只作用于小窗，离开后恢复应用窗口的常规下限。';
+
+	/// zh-CN: '自动全屏'
+	String get fullscreenDefault => '自动全屏';
+
+	/// zh-CN: '当进入直播播放页，自动进入全屏'
+	String get fullscreenDefaultDesc => '当进入直播播放页，自动进入全屏';
+
 	/// zh-CN: '播放时保持屏幕常亮'
 	String get keepScreenOn => '播放时保持屏幕常亮';
 
 	/// zh-CN: '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。'
 	String get keepScreenOnDesc => '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。';
+
+	/// zh-CN: '竖屏直播适配'
+	String get navPortrait => '竖屏直播适配';
+
+	/// zh-CN: '自动识别直播源方向，并调整普通页的观看区域与布局。'
+	String get portraitPageDescription => '自动识别直播源方向，并调整普通页的观看区域与布局。';
+
+	/// zh-CN: '观众指标'
+	String get navAudience => '观众指标';
+
+	/// zh-CN: '卡片人数口径、真实在线优先与平台开关。'
+	String get audiencePageDescription => '卡片人数口径、真实在线优先与平台开关。';
+
+	/// zh-CN: '已关闭'
+	String get portraitEntryOff => '已关闭';
+
+	/// zh-CN: '识别与普通页布局'
+	String get portraitDetectionGroup => '识别与普通页布局';
+
+	/// zh-CN: '智能识别竖屏直播源'
+	String get portraitSmartDetection => '智能识别竖屏直播源';
+
+	/// zh-CN: '根据解码后的真实画面尺寸识别竖屏直播；关闭后竖屏源按普通横屏页面显示。'
+	String get portraitSmartDetectionDesc => '根据解码后的真实画面尺寸识别竖屏直播；关闭后竖屏源按普通横屏页面显示。';
+
+	/// zh-CN: '普通页自适应视频高度'
+	String get portraitAdaptiveHeight => '普通页自适应视频高度';
+
+	/// zh-CN: '竖屏源增大观看区域，同时保留足够的聊天与弹幕列表空间。'
+	String get portraitAdaptiveHeightDesc => '竖屏源增大观看区域，同时保留足够的聊天与弹幕列表空间。';
+
+	/// zh-CN: '普通页布局模式'
+	String get portraitLayoutMode => '普通页布局模式';
+
+	/// zh-CN: '仅影响竖屏直播源，不改变普通横屏直播。'
+	String get portraitLayoutModeDesc => '仅影响竖屏直播源，不改变普通横屏直播。';
+
+	/// zh-CN: '均衡（推荐）'
+	String get portraitLayoutBalanced => '均衡（推荐）';
+
+	/// zh-CN: '沉浸'
+	String get portraitLayoutImmersive => '沉浸';
+
+	/// zh-CN: '兼容 16:9'
+	String get portraitLayoutCompatibility => '兼容 16:9';
+
+	/// zh-CN: '开启智能识别后才能调整高度与布局。'
+	String get portraitDetectionOff => '开启智能识别后才能调整高度与布局。';
 
 	/// zh-CN: '分区'
 	String get searchSections => '分区';
@@ -3698,6 +4892,45 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '累计观看'
 	String get audienceTotal => '累计观看';
+
+	/// zh-CN: '卡片显示与排行方式'
+	String get audienceDisplayGroup => '卡片显示与排行方式';
+
+	/// zh-CN: '按观众排序使用卡片当前显示的数值；「真实在线人数优先」只在「跟随平台」显示方式下、且只对已开启的平台生效。'
+	String get audienceRankingNote => '按观众排序使用卡片当前显示的数值；「真实在线人数优先」只在「跟随平台」显示方式下、且只对已开启的平台生效。';
+
+	/// zh-CN: '真实在线人数'
+	String get audienceRealOnlineGroup => '真实在线人数';
+
+	/// zh-CN: '真实在线人数优先'
+	String get audienceRealOnline => '真实在线人数优先';
+
+	/// zh-CN: '跟随平台显示时，对已开启的平台优先使用同时在线人数；其余平台保留热度或累计观看。'
+	String get audienceRealOnlineDesc => '跟随平台显示时，对已开启的平台优先使用同时在线人数；其余平台保留热度或累计观看。';
+
+	/// zh-CN: '先在「观众数显示」中选择「跟随平台」，真实在线优先才会生效。'
+	String get audienceNeedsAutomaticMode => '先在「观众数显示」中选择「跟随平台」，真实在线优先才会生效。';
+
+	/// zh-CN: '真实在线平台'
+	String get audiencePlatformsGroup => '真实在线平台';
+
+	/// zh-CN: '只有公开返回明确并发人数的平台会出现在这里；关闭后该平台仍按热度或累计观看显示。'
+	String get audiencePlatformsDesc => '只有公开返回明确并发人数的平台会出现在这里；关闭后该平台仍按热度或累计观看显示。';
+
+	/// zh-CN: '来源：房间列表/详情，可直接排行'
+	String get audienceSourceRoomList => '来源：房间列表/详情，可直接排行';
+
+	/// zh-CN: '来源：进入直播间后的实时消息'
+	String get audienceSourceRoomRealtime => '来源：进入直播间后的实时消息';
+
+	/// zh-CN: '先开启「真实在线人数优先」'
+	String get audiencePlatformNeedsOnline => '先开启「真实在线人数优先」';
+
+	/// zh-CN: '仅热度或累计观看的平台'
+	String get audienceHeatOnlyGroup => '仅热度或累计观看的平台';
+
+	/// zh-CN: '这些平台的公开接口没有同时在线人数，卡片照常标明热度或累计观看。'
+	String get audienceHeatOnlyDesc => '这些平台的公开接口没有同时在线人数，卡片照常标明热度或累计观看。';
 
 	/// zh-CN: '纯色'
 	String get backgroundSolid => '纯色';
@@ -3818,6 +5051,780 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '最终幻想'
 	String get wallpaperCategoryFinalFantasy => '最终幻想';
+
+	/// zh-CN: '标签管理'
+	String get tagManagement => '标签管理';
+
+	/// zh-CN: '自定义和管理直播间的过滤标签'
+	String get tagManagementDesc => '自定义和管理直播间的过滤标签';
+
+	/// zh-CN: '添加标签'
+	String get tagAdd => '添加标签';
+
+	/// zh-CN: '编辑标签'
+	String get tagEdit => '编辑标签';
+
+	/// zh-CN: '移到最前'
+	String get tagPin => '移到最前';
+
+	/// zh-CN: '保存'
+	String get tagSaveAction => '保存';
+
+	/// zh-CN: '标签名称'
+	String get tagNameLabel => '标签名称';
+
+	/// zh-CN: '例如“常看”“睡前听”'
+	String get tagNameHint => '例如“常看”“睡前听”';
+
+	/// zh-CN: '备注描述（可选）'
+	String get tagNoteLabel => '备注描述（可选）';
+
+	/// zh-CN: '给这个标签写一句备注'
+	String get tagNoteHint => '给这个标签写一句备注';
+
+	/// zh-CN: '标签名称不能为空'
+	String get tagNameEmpty => '标签名称不能为空';
+
+	/// zh-CN: '已存在同名标签'
+	String get tagNameDuplicate => '已存在同名标签';
+
+	/// zh-CN: '标签更改未保存，请重试'
+	String get tagSaveFailed => '标签更改未保存，请重试';
+
+	/// zh-CN: '这个标签已在别处被删除或修改'
+	String get tagStale => '这个标签已在别处被删除或修改';
+
+	/// zh-CN: '已添加标签“{name: String}”'
+	String tagAddedToast({required String name}) => '已添加标签“${name}”';
+
+	/// zh-CN: '已保存标签“{name: String}”'
+	String tagSavedToast({required String name}) => '已保存标签“${name}”';
+
+	/// zh-CN: '已删除标签“{name: String}”'
+	String tagDeletedToast({required String name}) => '已删除标签“${name}”';
+
+	/// zh-CN: '确定要永久删除标签“{name: String}”吗？'
+	String tagDeleteTitle({required String name}) => '确定要永久删除标签“${name}”吗？';
+
+	/// zh-CN: '{count: int} 个关注直播间会移出这个标签，直播间本身不会被取消关注。'
+	String tagDeleteRoomsHint({required int count}) => '${count} 个关注直播间会移出这个标签，直播间本身不会被取消关注。';
+
+	/// zh-CN: '该标签还没有直播间在使用。'
+	String get tagDeleteBody => '该标签还没有直播间在使用。';
+
+	/// zh-CN: '暂无自定义标签'
+	String get tagEmptyTitle => '暂无自定义标签';
+
+	/// zh-CN: '标签用来给关注的直播间分组：在关注页的卡片菜单里给直播间加标签，关注页可以按标签筛选。'
+	String get tagEmptyHint => '标签用来给关注的直播间分组：在关注页的卡片菜单里给直播间加标签，关注页可以按标签筛选。';
+
+	/// zh-CN: '拖动左侧把手调整顺序，关注页的标签栏按这个顺序显示。'
+	String get tagSortTip => '拖动左侧把手调整顺序，关注页的标签栏按这个顺序显示。';
+
+	/// zh-CN: '{count: int} 个直播间'
+	String tagRooms({required int count}) => '${count} 个直播间';
+
+	/// zh-CN: '显示不能直接播放的直播'
+	String get showUnplayableTitle => '显示不能直接播放的直播';
+
+	/// zh-CN: '不能直接播放（付费、加锁、仅限 App 等）的直播也显示在热门与分区房间；关注和搜索始终显示'
+	String get showUnplayableDesc => '不能直接播放（付费、加锁、仅限 App 等）的直播也显示在热门与分区房间；关注和搜索始终显示';
+
+	/// zh-CN: '小窗自由比例'
+	String get windowsPipFreeAspect => '小窗自由比例';
+
+	/// zh-CN: '开启后可单独压小高度或拉宽窗口；画面按比例适配，形状不符的一侧会留黑边。关闭时窗口始终等于视频形状。'
+	String get windowsPipFreeAspectDesc => '开启后可单独压小高度或拉宽窗口；画面按比例适配，形状不符的一侧会留黑边。关闭时窗口始终等于视频形状。';
+
+	/// zh-CN: '重置小窗位置和大小'
+	String get windowsPipResetPosition => '重置小窗位置和大小';
+
+	/// zh-CN: '清除已保存的小窗尺寸与位置，下次从应用所在显示器右下角打开。'
+	String get windowsPipResetPositionDesc => '清除已保存的小窗尺寸与位置，下次从应用所在显示器右下角打开。';
+
+	/// zh-CN: '确定要清除已保存的小窗位置和大小吗？'
+	String get windowsPipResetPositionConfirm => '确定要清除已保存的小窗位置和大小吗？';
+
+	/// zh-CN: '重置'
+	String get windowsPipResetAction => '重置';
+
+	/// zh-CN: '已清除保存的小窗位置和大小'
+	String get windowsPipResetPositionSuccess => '已清除保存的小窗位置和大小';
+
+	/// zh-CN: '适应高度'
+	String get fitHeight => '适应高度';
+
+	/// zh-CN: '适应宽度'
+	String get fitWidth => '适应宽度';
+
+	/// zh-CN: '等比缩小'
+	String get fitScaleDown => '等比缩小';
+
+	/// zh-CN: '纯文字模式（隐藏表情）'
+	String get styleNoEmoji => '纯文字模式（隐藏表情）';
+
+	/// zh-CN: '画面飞行弹幕只画文字，表情图片跳过；聊天列表不受影响。'
+	String get styleNoEmojiDesc => '画面飞行弹幕只画文字，表情图片跳过；聊天列表不受影响。';
+
+	/// zh-CN: '全屏呈现'
+	String get portraitPresentationGroup => '全屏呈现';
+
+	/// zh-CN: '进入全屏时的方向'
+	String get portraitFullscreenPolicy => '进入全屏时的方向';
+
+	/// zh-CN: '大屏和分屏设备自动交给系统布局，手机可跟随直播源'
+	String get portraitFullscreenPolicyDesc => '大屏和分屏设备自动交给系统布局，手机可跟随直播源';
+
+	/// zh-CN: '跟随直播源（推荐）'
+	String get portraitFullscreenFollowSource => '跟随直播源（推荐）';
+
+	/// zh-CN: '跟随系统'
+	String get portraitFullscreenFollowSystem => '跟随系统';
+
+	/// zh-CN: '始终横屏'
+	String get portraitFullscreenLandscape => '始终横屏';
+
+	/// zh-CN: '恢复竖屏适配默认设置'
+	String get portraitReset => '恢复竖屏适配默认设置';
+
+	/// zh-CN: '把识别、自适应高度、布局模式与全屏方向恢复为默认值。'
+	String get portraitResetDesc => '把识别、自适应高度、布局模式与全屏方向恢复为默认值。';
+
+	/// zh-CN: '本页的竖屏设置将恢复默认值；普通横屏直播不受影响。'
+	String get portraitResetConfirm => '本页的竖屏设置将恢复默认值；普通横屏直播不受影响。';
+
+	/// zh-CN: '顶部留白（像素）'
+	String get styleTopMargin => '顶部留白（像素）';
+
+	/// zh-CN: '画面顶部不显示弹幕的高度，0–300。'
+	String get styleTopMarginDesc => '画面顶部不显示弹幕的高度，0–300。';
+
+	/// zh-CN: '底部留白（像素）'
+	String get styleBottomMargin => '底部留白（像素）';
+
+	/// zh-CN: '画面底部不显示弹幕的高度，避免挡住字幕，0–300。'
+	String get styleBottomMarginDesc => '画面底部不显示弹幕的高度，避免挡住字幕，0–300。';
+
+	/// zh-CN: '房间卡片'
+	String get roomCardSettingsTitle => '房间卡片';
+
+	/// zh-CN: '分别定制移动端和桌面端房间卡片的可见信息。'
+	String get roomCardSettingsDescription => '分别定制移动端和桌面端房间卡片的可见信息。';
+
+	/// zh-CN: '应用到'
+	String get roomCardTarget => '应用到';
+
+	/// zh-CN: '移动端'
+	String get roomCardMobile => '移动端';
+
+	/// zh-CN: '桌面端'
+	String get roomCardDesktop => '桌面端';
+
+	/// zh-CN: '实时预览'
+	String get roomCardPreview => '实时预览';
+
+	/// zh-CN: '直播间预览'
+	String get roomCardPreviewTitle => '直播间预览';
+
+	/// zh-CN: '预览主播'
+	String get roomCardPreviewAnchor => '预览主播';
+
+	/// zh-CN: '快捷预设'
+	String get roomCardPresets => '快捷预设';
+
+	/// zh-CN: '简洁'
+	String get roomCardPresetCompact => '简洁';
+
+	/// zh-CN: '标准'
+	String get roomCardPresetStandard => '标准';
+
+	/// zh-CN: '详细'
+	String get roomCardPresetDetailed => '详细';
+
+	/// zh-CN: '自定义'
+	String get roomCardPresetCustom => '自定义';
+
+	/// zh-CN: '显示内容'
+	String get roomCardVisibleContent => '显示内容';
+
+	/// zh-CN: '显示主播头像'
+	String get roomCardShowAvatar => '显示主播头像';
+
+	/// zh-CN: '在房间标题旁保留主播身份图片。'
+	String get roomCardShowAvatarDesc => '在房间标题旁保留主播身份图片。';
+
+	/// zh-CN: '显示主播名称'
+	String get roomCardShowAnchor => '显示主播名称';
+
+	/// zh-CN: '在房间标题下方显示主播名称。'
+	String get roomCardShowAnchorDesc => '在房间标题下方显示主播名称。';
+
+	/// zh-CN: '显示平台徽章'
+	String get roomCardShowPlatform => '显示平台徽章';
+
+	/// zh-CN: '可让宽卡片自动显示、始终在封面显示或保持隐藏。'
+	String get roomCardShowPlatformDesc => '可让宽卡片自动显示、始终在封面显示或保持隐藏。';
+
+	/// zh-CN: '自动'
+	String get roomCardPlatformAutomatic => '自动';
+
+	/// zh-CN: '始终显示'
+	String get roomCardPlatformAlways => '始终显示';
+
+	/// zh-CN: '隐藏'
+	String get roomCardPlatformHidden => '隐藏';
+
+	/// zh-CN: '显示观众指标'
+	String get roomCardShowAudience => '显示观众指标';
+
+	/// zh-CN: '在直播卡片上显示平台支持的观众数据。'
+	String get roomCardShowAudienceDesc => '在直播卡片上显示平台支持的观众数据。';
+
+	/// zh-CN: '显示回放徽章'
+	String get roomCardShowReplay => '显示回放徽章';
+
+	/// zh-CN: '标记回放和录播房间。'
+	String get roomCardShowReplayDesc => '标记回放和录播房间。';
+
+	/// zh-CN: '回放'
+	String get roomCardReplay => '回放';
+
+	/// zh-CN: '外观'
+	String get roomCardAppearance => '外观';
+
+	/// zh-CN: '卡片布局'
+	String get roomCardLayout => '卡片布局';
+
+	/// zh-CN: '选择大图封面卡片，或不显示大封面的紧凑主播信息行。'
+	String get roomCardLayoutDesc => '选择大图封面卡片，或不显示大封面的紧凑主播信息行。';
+
+	/// zh-CN: '封面卡片'
+	String get roomCardLayoutCover => '封面卡片';
+
+	/// zh-CN: '紧凑信息行'
+	String get roomCardLayoutCompact => '紧凑信息行';
+
+	/// zh-CN: '圆角大小'
+	String get roomCardCornerRadius => '圆角大小';
+
+	/// zh-CN: '同步调整卡片和封面圆角。'
+	String get roomCardCornerRadiusDesc => '同步调整卡片和封面圆角。';
+
+	/// zh-CN: '重置当前布局'
+	String get roomCardResetCurrent => '重置当前布局';
+
+	/// zh-CN: '移动端和桌面端设置分别保存；状态核验与历史删除控件会在需要时继续显示。'
+	String get roomCardScopeHint => '移动端和桌面端设置分别保存；状态核验与历史删除控件会在需要时继续显示。';
+
+	/// zh-CN: '更换字重'
+	String get fontWeightChange => '更换字重';
+
+	/// zh-CN: '当前字体包含多个字重，可锁定其中一个。'
+	String get fontWeightChangeDesc => '当前字体包含多个字重，可锁定其中一个。';
+
+	/// zh-CN: '自动字重（推荐）'
+	String get fontWeightAuto => '自动字重（推荐）';
+
+	/// zh-CN: '随系统与界面自动使用常规或加粗。'
+	String get fontWeightAutoDesc => '随系统与界面自动使用常规或加粗。';
+
+	/// zh-CN: '锁定「{name}」'
+	String fontWeightLock({required Object name}) => '锁定「${name}」';
+
+	/// zh-CN: '全应用文字将固定使用这个字面。'
+	String get fontWeightLockDesc => '全应用文字将固定使用这个字面。';
+
+	/// zh-CN: '已锁定字重：{name}'
+	String fontWeightLockedDetail({required Object name}) => '已锁定字重：${name}';
+
+	/// zh-CN: '刷新缩略图'
+	String get cacheRefreshThumbnails => '刷新缩略图';
+
+	/// zh-CN: '清空封面、头像与图标缓存，下一次显示时重新下载。'
+	String get cacheRefreshThumbnailsDesc => '清空封面、头像与图标缓存，下一次显示时重新下载。';
+
+	/// zh-CN: '缩略图已刷新'
+	String get cacheRefreshThumbnailsDone => '缩略图已刷新';
+
+	/// zh-CN: '下载目录'
+	String get downloadDirectory => '下载目录';
+
+	/// zh-CN: '下载的字体与文件存放在此目录。'
+	String get downloadDirectoryDesc => '下载的字体与文件存放在此目录。';
+
+	/// zh-CN: '当前使用默认目录'
+	String get downloadDirectoryDefaultLabel => '当前使用默认目录';
+
+	/// zh-CN: '恢复默认目录'
+	String get downloadDirectoryReset => '恢复默认目录';
+
+	/// zh-CN: '下载目录已更新'
+	String get downloadDirectoryUpdated => '下载目录已更新';
+
+	/// zh-CN: '无法选择下载目录'
+	String get downloadDirectoryPickFailed => '无法选择下载目录';
+
+	/// zh-CN: '所选目录无法写入：请授予存储权限，或改用默认目录。'
+	String get downloadDirectoryPermissionHint => '所选目录无法写入：请授予存储权限，或改用默认目录。';
+
+	/// zh-CN: '本机互动'
+	String get localInteractionTitle => '本机互动';
+
+	/// zh-CN: '在本机模拟观众弹幕、礼物、等级与金币；不会向直播平台发送任何内容。'
+	String get localInteractionDesc => '在本机模拟观众弹幕、礼物、等级与金币；不会向直播平台发送任何内容。';
+
+	/// zh-CN: '启用本机互动'
+	String get localEnabled => '启用本机互动';
+
+	/// zh-CN: '关闭后房间内的本机互动页签隐藏，历史与设置保留。'
+	String get localEnabledDesc => '关闭后房间内的本机互动页签隐藏，历史与设置保留。';
+
+	/// zh-CN: '本地身份'
+	String get localIdentity => '本地身份';
+
+	/// zh-CN: '昵称'
+	String get localUserName => '昵称';
+
+	/// zh-CN: '显示在本地弹幕与互动的发送者名称。'
+	String get localUserNameDesc => '显示在本地弹幕与互动的发送者名称。';
+
+	/// zh-CN: '头衔'
+	String get localTitle => '头衔';
+
+	/// zh-CN: '本地观众的称呼，例如「听众」「观众」。'
+	String get localTitleDesc => '本地观众的称呼，例如「听众」「观众」。';
+
+	/// zh-CN: '金币'
+	String get localCoins => '金币';
+
+	/// zh-CN: '本机互动的余额，送礼物时扣除。'
+	String get localCoinsDesc => '本机互动的余额，送礼物时扣除。';
+
+	/// zh-CN: '经验'
+	String get localExperience => '经验';
+
+	/// zh-CN: '每 100 经验升一级，仅用于本机徽章。'
+	String get localExperienceDesc => '每 100 经验升一级，仅用于本机徽章。';
+
+	/// zh-CN: '等级'
+	String get localLevel => '等级';
+
+	/// zh-CN: 'Lv.{level}'
+	String localLevelValue({required Object level}) => 'Lv.${level}';
+
+	/// zh-CN: '金币 {coins} · 经验 {experience} · Lv.{level}'
+	String localStatusValue({required Object coins, required Object experience, required Object level}) => '金币 ${coins} · 经验 ${experience} · Lv.${level}';
+
+	/// zh-CN: '在画面弹幕中显示'
+	String get localShowAsDanmaku => '在画面弹幕中显示';
+
+	/// zh-CN: '发送时同时进入房间的飞行弹幕与聊天列表。'
+	String get localShowAsDanmakuDesc => '发送时同时进入房间的飞行弹幕与聊天列表。';
+
+	/// zh-CN: '显示平台徽章'
+	String get localShowPlatformBadge => '显示平台徽章';
+
+	/// zh-CN: '在本地消息里带上所选平台的身份标记。'
+	String get localShowPlatformBadgeDesc => '在本地消息里带上所选平台的身份标记。';
+
+	/// zh-CN: '显示等级徽章'
+	String get localShowLevelBadge => '显示等级徽章';
+
+	/// zh-CN: '在本地消息里显示经验等级。'
+	String get localShowLevelBadgeDesc => '在本地消息里显示经验等级。';
+
+	/// zh-CN: '礼物特效'
+	String get localGiftEffects => '礼物特效';
+
+	/// zh-CN: '送出礼物时播放本地面板内的横幅特效。'
+	String get localGiftEffectsDesc => '送出礼物时播放本地面板内的横幅特效。';
+
+	/// zh-CN: '预览平台'
+	String get localPreviewPlatform => '预览平台';
+
+	/// zh-CN: '选择预览与本地消息使用的平台标记。'
+	String get localPreviewPlatformDesc => '选择预览与本地消息使用的平台标记。';
+
+	/// zh-CN: '弹幕样式'
+	String get localStyle => '弹幕样式';
+
+	/// zh-CN: '只影响本机互动预览与本地消息样式。'
+	String get localStyleDesc => '只影响本机互动预览与本地消息样式。';
+
+	/// zh-CN: '清爽'
+	String get localPresetClean => '清爽';
+
+	/// zh-CN: '醒目'
+	String get localPresetHighlight => '醒目';
+
+	/// zh-CN: '霓虹'
+	String get localPresetNeon => '霓虹';
+
+	/// zh-CN: '极简'
+	String get localPresetMinimal => '极简';
+
+	/// zh-CN: '字幕'
+	String get localPresetCaption => '字幕';
+
+	/// zh-CN: '赛博'
+	String get localPresetCyber => '赛博';
+
+	/// zh-CN: '自定义'
+	String get localPresetCustom => '自定义';
+
+	/// zh-CN: '字号'
+	String get localFontSize => '字号';
+
+	/// zh-CN: '速度'
+	String get localSpeed => '速度';
+
+	/// zh-CN: '字重'
+	String get localWeight => '字重';
+
+	/// zh-CN: '不透明度'
+	String get localOpacity => '不透明度';
+
+	/// zh-CN: '字距'
+	String get localLetterSpacing => '字距';
+
+	/// zh-CN: '描边宽度'
+	String get localStrokeWidth => '描边宽度';
+
+	/// zh-CN: '阴影模糊'
+	String get localShadowBlur => '阴影模糊';
+
+	/// zh-CN: '阴影偏移'
+	String get localShadowOffset => '阴影偏移';
+
+	/// zh-CN: '固定弹幕停留'
+	String get localFixedDuration => '固定弹幕停留';
+
+	/// zh-CN: '描边'
+	String get localShowStroke => '描边';
+
+	/// zh-CN: '斜体'
+	String get localItalic => '斜体';
+
+	/// zh-CN: '阴影'
+	String get localShowShadow => '阴影';
+
+	/// zh-CN: '弹幕位置'
+	String get localPlacement => '弹幕位置';
+
+	/// zh-CN: '滚动'
+	String get localPlacementScroll => '滚动';
+
+	/// zh-CN: '顶部'
+	String get localPlacementTop => '顶部';
+
+	/// zh-CN: '底部'
+	String get localPlacementBottom => '底部';
+
+	/// zh-CN: '字体'
+	String get localFontFamily => '字体';
+
+	/// zh-CN: '系统字体'
+	String get localFontSystem => '系统字体';
+
+	/// zh-CN: '等宽字体'
+	String get localFontMono => '等宽字体';
+
+	/// zh-CN: '文字颜色'
+	String get localTextColor => '文字颜色';
+
+	/// zh-CN: '描边颜色'
+	String get localStrokeColor => '描边颜色';
+
+	/// zh-CN: '阴影颜色'
+	String get localShadowColor => '阴影颜色';
+
+	/// zh-CN: '实时预览'
+	String get localPreview => '实时预览';
+
+	/// zh-CN: '本机互动预览'
+	String get localPreviewText => '本机互动预览';
+
+	/// zh-CN: '互动历史'
+	String get localHistory => '互动历史';
+
+	/// zh-CN: '还没有本机互动记录'
+	String get localHistoryEmpty => '还没有本机互动记录';
+
+	/// zh-CN: '清空历史'
+	String get localClearHistory => '清空历史';
+
+	/// zh-CN: '只清除历史记录，金币、经验与样式保留。'
+	String get localClearHistoryDesc => '只清除历史记录，金币、经验与样式保留。';
+
+	/// zh-CN: '清空历史与经济'
+	String get localClearAll => '清空历史与经济';
+
+	/// zh-CN: '历史、金币与经验回到默认值。'
+	String get localClearAllDesc => '历史、金币与经验回到默认值。';
+
+	/// zh-CN: '清空本机互动？'
+	String get localClearAllConfirm => '清空本机互动？';
+
+	/// zh-CN: '历史、金币（1000）与经验（0）会重置，样式与身份保留。'
+	String get localClearAllConfirmDesc => '历史、金币（1000）与经验（0）会重置，样式与身份保留。';
+
+	/// zh-CN: '已清空'
+	String get localCleared => '已清空';
+
+	/// zh-CN: '金币不足'
+	String get localNoCoins => '金币不足';
+
+	/// zh-CN: '已送出礼物'
+	String get localGiftSent => '已送出礼物';
+
+	/// zh-CN: '发送'
+	String get localSend => '发送';
+
+	/// zh-CN: '输入本地弹幕…'
+	String get localMessageHint => '输入本地弹幕…';
+
+	/// zh-CN: '礼物'
+	String get localGifts => '礼物';
+
+	/// zh-CN: '设置与样式'
+	String get localSettingsEntry => '设置与样式';
+
+	/// zh-CN: '页面设置'
+	String get pageSettingsEntry => '页面设置';
+
+	/// zh-CN: '竖屏全屏'
+	String get portraitFullscreenGroup => '竖屏全屏';
+
+	/// zh-CN: '画面模式'
+	String get portraitDisplayMode => '画面模式';
+
+	/// zh-CN: '完整=整幅画面；沉浸=整幅画面配柔和背景；均衡=轻微裁切；铺满=裁切两侧填满屏幕。'
+	String get portraitDisplayModeDesc => '完整=整幅画面；沉浸=整幅画面配柔和背景；均衡=轻微裁切；铺满=裁切两侧填满屏幕。';
+
+	/// zh-CN: '弹幕区域'
+	String get portraitDanmakuMode => '弹幕区域';
+
+	/// zh-CN: '竖屏全屏中飞行弹幕可占用的区域。'
+	String get portraitDanmakuModeDesc => '竖屏全屏中飞行弹幕可占用的区域。';
+
+	/// zh-CN: '记住每个房间的选择'
+	String get portraitRememberRoom => '记住每个房间的选择';
+
+	/// zh-CN: '在竖屏全屏里切换画面/弹幕后，按房间保存；关闭会清除已保存的房间选择。'
+	String get portraitRememberRoomDesc => '在竖屏全屏里切换画面/弹幕后，按房间保存；关闭会清除已保存的房间选择。';
+
+	/// zh-CN: '显示竖屏诊断'
+	String get portraitDiagnostics => '显示竖屏诊断';
+
+	/// zh-CN: '在竖屏全屏左下角显示分辨率、宽高比、画面与弹幕模式。'
+	String get portraitDiagnosticsDesc => '在竖屏全屏左下角显示分辨率、宽高比、画面与弹幕模式。';
+
+	/// zh-CN: '清除房间覆盖'
+	String get portraitClearOverrides => '清除房间覆盖';
+
+	/// zh-CN: '删除所有按房间保存的竖屏画面与弹幕选择，保留全局默认。'
+	String get portraitClearOverridesDesc => '删除所有按房间保存的竖屏画面与弹幕选择，保留全局默认。';
+
+	/// zh-CN: '房间覆盖已清除'
+	String get portraitOverridesCleared => '房间覆盖已清除';
+
+	/// zh-CN: '已保存 {count: int} 个房间'
+	String portraitOverridesCount({required int count}) => '已保存 ${count} 个房间';
+
+	/// zh-CN: '显示聊天用户名'
+	String get chatShowNames => '显示聊天用户名';
+
+	/// zh-CN: '关闭后聊天列表只显示内容；长按操作仍知道发送者。'
+	String get chatShowNamesDesc => '关闭后聊天列表只显示内容；长按操作仍知道发送者。';
+
+	/// zh-CN: '聊天列表'
+	String get chatListGroup => '聊天列表';
+
+	/// zh-CN: '列表样式'
+	String get chatListStyle => '列表样式';
+
+	/// zh-CN: '紧凑'
+	String get chatListStyleCompact => '紧凑';
+
+	/// zh-CN: '卡片'
+	String get chatListStyleCard => '卡片';
+
+	/// zh-CN: '列表文字大小'
+	String get chatListFontSize => '列表文字大小';
+
+	/// zh-CN: '跟随主题'
+	String get chatListFollowTheme => '跟随主题';
+
+	/// zh-CN: '{size: int} px'
+	String chatListFontSizeValue({required int size}) => '${size} px';
+
+	/// zh-CN: '列表行距'
+	String get chatListLineSpacing => '列表行距';
+
+	/// zh-CN: '紧凑'
+	String get chatListSpacingCompact => '紧凑';
+
+	/// zh-CN: '标准'
+	String get chatListSpacingStandard => '标准';
+
+	/// zh-CN: '宽松'
+	String get chatListSpacingLoose => '宽松';
+
+	/// zh-CN: '暂停时的弹幕'
+	String get danmakuPausedBehavior => '暂停时的弹幕';
+
+	/// zh-CN: '视频暂停后，弹幕跟着停住还是照常飘过。'
+	String get danmakuPausedBehaviorDesc => '视频暂停后，弹幕跟着停住还是照常飘过。';
+
+	/// zh-CN: '随视频暂停'
+	String get danmakuPausedPause => '随视频暂停';
+
+	/// zh-CN: '继续飘过'
+	String get danmakuPausedFly => '继续飘过';
+
+	/// zh-CN: 'Twitch 目录语言'
+	String get twitchLanguages => 'Twitch 目录语言';
+
+	/// zh-CN: '只显示所选语言的直播；不选则显示全部。'
+	String get twitchLanguagesDesc => '只显示所选语言的直播；不选则显示全部。';
+
+	/// zh-CN: '全部语言'
+	String get twitchAllLanguages => '全部语言';
+
+	/// zh-CN: '中文 + 韩语'
+	String get twitchLegacyLanguages => '中文 + 韩语';
+
+	/// zh-CN: '按主播语言过滤 Twitch 热门与分区目录。'
+	String get twitchLanguagesHint => '按主播语言过滤 Twitch 热门与分区目录。';
+
+	/// zh-CN: '中文'
+	String get twitchLanguage_zh => '中文';
+
+	/// zh-CN: '英语'
+	String get twitchLanguage_en => '英语';
+
+	/// zh-CN: '韩语'
+	String get twitchLanguage_ko => '韩语';
+
+	/// zh-CN: '日语'
+	String get twitchLanguage_ja => '日语';
+
+	/// zh-CN: '西班牙语'
+	String get twitchLanguage_es => '西班牙语';
+
+	/// zh-CN: '葡萄牙语'
+	String get twitchLanguage_pt => '葡萄牙语';
+
+	/// zh-CN: '德语'
+	String get twitchLanguage_de => '德语';
+
+	/// zh-CN: '法语'
+	String get twitchLanguage_fr => '法语';
+
+	/// zh-CN: '俄语'
+	String get twitchLanguage_ru => '俄语';
+
+	/// zh-CN: '意大利语'
+	String get twitchLanguage_it => '意大利语';
+
+	/// zh-CN: '泰语'
+	String get twitchLanguage_th => '泰语';
+
+	/// zh-CN: '越南语'
+	String get twitchLanguage_vi => '越南语';
+
+	/// zh-CN: '印度尼西亚语'
+	String get twitchLanguage_id => '印度尼西亚语';
+
+	/// zh-CN: '土耳其语'
+	String get twitchLanguage_tr => '土耳其语';
+
+	/// zh-CN: '波兰语'
+	String get twitchLanguage_pl => '波兰语';
+
+	/// zh-CN: '按住时冻结弹幕'
+	String get holdDanmakuOnPress => '按住时冻结弹幕';
+
+	/// zh-CN: '手指按住画面弹幕时先冻结，便于点按或长按；关闭后点按/长按仍会命中，但弹幕不会在按住期间停住。'
+	String get holdDanmakuOnPressDesc => '手指按住画面弹幕时先冻结，便于点按或长按；关闭后点按/长按仍会命中，但弹幕不会在按住期间停住。';
+
+	/// zh-CN: 'YouTube 显示全部聊天'
+	String get youtubeAllChat => 'YouTube 显示全部聊天';
+
+	/// zh-CN: '关闭时使用网页默认的 Top chat；开启后请求全部直播聊天。'
+	String get youtubeAllChatDesc => '关闭时使用网页默认的 Top chat；开启后请求全部直播聊天。';
+
+	/// zh-CN: '虎牙优先 H.264'
+	String get preferH264 => '虎牙优先 H.264';
+
+	/// zh-CN: '平台同时提供多种编码时优先选择 H.264，兼容性更好。'
+	String get preferH264Desc => '平台同时提供多种编码时优先选择 H.264，兼容性更好。';
+
+	/// zh-CN: '识别剪贴板直播间链接'
+	String get clipboardRooms => '识别剪贴板直播间链接';
+
+	/// zh-CN: '回到应用时读取剪贴板，发现支持的直播平台链接会询问是否打开；不会自动跳转。'
+	String get clipboardRoomsDesc => '回到应用时读取剪贴板，发现支持的直播平台链接会询问是否打开；不会自动跳转。';
+
+	/// zh-CN: '打开剪贴板中的直播间？'
+	String get clipboardRoomTitle => '打开剪贴板中的直播间？';
+
+	/// zh-CN: '检测到 {platform} 的直播间 {roomId}，是否打开？'
+	String clipboardRoomDesc({required Object platform, required Object roomId}) => '检测到 ${platform} 的直播间 ${roomId}，是否打开？';
+
+	/// zh-CN: '打开直播间'
+	String get clipboardRoomOpen => '打开直播间';
+
+	/// zh-CN: '后台仅音频'
+	String get backgroundAudioOnly => '后台仅音频';
+
+	/// zh-CN: '后台播放时关闭视频解码，只保留声音；回到前台恢复画面。'
+	String get backgroundAudioOnlyDesc => '后台播放时关闭视频解码，只保留声音；回到前台恢复画面。';
+
+	/// zh-CN: '在聊天列表显示礼物'
+	String get chatShowGifts => '在聊天列表显示礼物';
+
+	/// zh-CN: '平台上报的礼物显示为聊天里的礼物行；关闭后已有礼物行立即移除。'
+	String get chatShowGiftsDesc => '平台上报的礼物显示为聊天里的礼物行；关闭后已有礼物行立即移除。';
+
+	/// zh-CN: '飞行弹幕显示礼物'
+	String get danmakuShowGifts => '飞行弹幕显示礼物';
+
+	/// zh-CN: '值钱的礼物飞过画面，很值钱的在顶部停 4 秒；连击只飞开头和总数，每秒最多 3 条。'
+	String get danmakuShowGiftsDesc => '值钱的礼物飞过画面，很值钱的在顶部停 4 秒；连击只飞开头和总数，每秒最多 3 条。';
+
+	/// zh-CN: '小窗大小'
+	String get floatWindowSize => '小窗大小';
+
+	/// zh-CN: '应用内悬浮窗的基础大小；拖动缩放会按横屏/竖屏分别记住。'
+	String get floatWindowSizeDesc => '应用内悬浮窗的基础大小；拖动缩放会按横屏/竖屏分别记住。';
+
+	/// zh-CN: '小'
+	String get floatWindowSmall => '小';
+
+	/// zh-CN: '中'
+	String get floatWindowMedium => '中';
+
+	/// zh-CN: '大'
+	String get floatWindowLarge => '大';
+
+	/// zh-CN: '后台暂停弹幕连接'
+	String get backgroundPauseDanmaku => '后台暂停弹幕连接';
+
+	/// zh-CN: '进入后台时断开平台弹幕连接，回到前台重新连接；聊天记录保留。'
+	String get backgroundPauseDanmakuDesc => '进入后台时断开平台弹幕连接，回到前台重新连接；聊天记录保留。';
+
+	/// zh-CN: '斗鱼每 5 分钟自动续期'
+	String get douyuForceRenew => '斗鱼每 5 分钟自动续期';
+
+	/// zh-CN: '登录斗鱼后定期续期 Cookie，降低长时间观看时掉登录的概率。'
+	String get douyuForceRenewDesc => '登录斗鱼后定期续期 Cookie，降低长时间观看时掉登录的概率。';
+
+	/// zh-CN: 'TV 侧栏始终展开'
+	String get tvMenuExpanded => 'TV 侧栏始终展开';
+
+	/// zh-CN: '保持侧栏显示名称；关闭后可用图标轨并在聚焦时展开。'
+	String get tvMenuExpandedDesc => '保持侧栏显示名称；关闭后可用图标轨并在聚焦时展开。';
 }
 
 // Path: shield
@@ -3831,8 +5838,8 @@ class Translations$shield$zh_CN {
 	/// zh-CN: '弹幕屏蔽'
 	String get title => '弹幕屏蔽';
 
-	/// zh-CN: '按关键词与用户屏蔽直播间弹幕，规则保存在本机。'
-	String get description => '按关键词与用户屏蔽直播间弹幕，规则保存在本机。';
+	/// zh-CN: '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。'
+	String get description => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。';
 
 	/// zh-CN: '总开关'
 	String get masterTitle => '总开关';
@@ -3842,6 +5849,48 @@ class Translations$shield$zh_CN {
 
 	/// zh-CN: '关闭后所有屏蔽规则临时失效'
 	String get enabledDescription => '关闭后所有屏蔽规则临时失效';
+
+	/// zh-CN: '相似弹幕过滤'
+	String get similarityTitle => '相似弹幕过滤';
+
+	/// zh-CN: '启用相似弹幕过滤'
+	String get similarityEnabled => '启用相似弹幕过滤';
+
+	/// zh-CN: '自动过滤短时间内高度相似的弹幕，仅作用于平台消息。'
+	String get similarityEnabledDescription => '自动过滤短时间内高度相似的弹幕，仅作用于平台消息。';
+
+	/// zh-CN: '相似度阈值'
+	String get similarityThreshold => '相似度阈值';
+
+	/// zh-CN: '相似度越高，过滤越严格'
+	String get similarityThresholdDescription => '相似度越高，过滤越严格';
+
+	/// zh-CN: '缓存时间'
+	String get similarityCacheDuration => '缓存时间';
+
+	/// zh-CN: '相同或相似的弹幕在这段时间内不会重复显示'
+	String get similarityCacheDurationDescription => '相同或相似的弹幕在这段时间内不会重复显示';
+
+	/// zh-CN: '最大缓存数量'
+	String get similarityMaxCacheSize => '最大缓存数量';
+
+	/// zh-CN: '限制相似弹幕缓存占用的内存'
+	String get similarityMaxCacheSizeDescription => '限制相似弹幕缓存占用的内存';
+
+	/// zh-CN: '{seconds} 秒'
+	String similaritySeconds({required Object seconds}) => '${seconds} 秒';
+
+	/// zh-CN: '重复弹幕过滤'
+	String get repeatTitle => '重复弹幕过滤';
+
+	/// zh-CN: '合并短时间内的相同弹幕'
+	String get repeatEnabled => '合并短时间内的相同弹幕';
+
+	/// zh-CN: '不同用户发送相同内容时只保留第一条；本地弹幕和系统消息不受影响。'
+	String get repeatEnabledDescription => '不同用户发送相同内容时只保留第一条；本地弹幕和系统消息不受影响。';
+
+	/// zh-CN: '相同内容合并时间（秒）'
+	String get repeatWindow => '相同内容合并时间（秒）';
 
 	/// zh-CN: '关键词'
 	String get keywordsTitle => '关键词';
@@ -3890,6 +5939,36 @@ class Translations$shield$zh_CN {
 
 	/// zh-CN: '屏蔽在直播间弹幕中立即生效。'
 	String get effectNote => '屏蔽在直播间弹幕中立即生效。';
+
+	/// zh-CN: '内容屏蔽'
+	String get contentTitle => '内容屏蔽';
+
+	/// zh-CN: '屏蔽只有表情的弹幕'
+	String get blockEmoteOnly => '屏蔽只有表情的弹幕';
+
+	/// zh-CN: '只有表情、没有文字的弹幕不显示；自己发送的弹幕不会被屏蔽。'
+	String get blockEmoteOnlyDescription => '只有表情、没有文字的弹幕不显示；自己发送的弹幕不会被屏蔽。';
+
+	/// zh-CN: '屏蔽超长弹幕'
+	String get blockLong => '屏蔽超长弹幕';
+
+	/// zh-CN: '超过设定字数的弹幕不显示（一个表情算一个字）。'
+	String get blockLongDescription => '超过设定字数的弹幕不显示（一个表情算一个字）。';
+
+	/// zh-CN: '最多字数'
+	String get blockLongLength => '最多字数';
+
+	/// zh-CN: '允许显示的最大字数，范围 10–100（一个表情算一个字）。'
+	String get blockLongLengthDescription => '允许显示的最大字数，范围 10–100（一个表情算一个字）。';
+
+	/// zh-CN: '{count: int} 字'
+	String blockLongLengthValue({required int count}) => '${count} 字';
+
+	/// zh-CN: '过滤斗鱼疑似自动弹幕'
+	String get douyuSuspected => '过滤斗鱼疑似自动弹幕';
+
+	/// zh-CN: '开启后按启发式标记隐藏疑似自动或活动弹幕，也可能隐藏普通聊天'
+	String get douyuSuspectedDescription => '开启后按启发式标记隐藏疑似自动或活动弹幕，也可能隐藏普通聊天';
 }
 
 // Path: sites
@@ -4205,6 +6284,15 @@ class Translations$toolbox$zh_CN {
 
 	/// zh-CN: '没有可复制的日志'
 	String get logsCopyEmpty => '没有可复制的日志';
+
+	/// zh-CN: '日志目录'
+	String get logsDirectory => '日志目录';
+
+	/// zh-CN: '仅内存日志：开启「写入日志文件」后这里会显示目录。'
+	String get logsDirectoryDefault => '仅内存日志：开启「写入日志文件」后这里会显示目录。';
+
+	/// zh-CN: '无法打开日志目录'
+	String get logsOpenFailed => '无法打开日志目录';
 }
 
 // Path: vod
@@ -4692,6 +6780,8 @@ extension on Translations {
 			'account.title' => '账号',
 			'account.description' => '各直播平台的登录状态，凭证只保存在本机安全存储中。',
 			'account.sectionHeader' => '登录状态',
+			'account.thirdPartyAuth' => '三方认证',
+			'account.thirdPartyAuthDesc' => '管理主流平台的绑定授权',
 			'account.empty' => '暂无支持登录的平台',
 			'account.notSignedIn' => '未登录',
 			'account.signedInAs' => ({required Object name}) => '已登录：${name}',
@@ -4720,6 +6810,7 @@ extension on Translations {
 			'areas.unfollow' => '取消关注',
 			'areas.categoryAll' => '全部分类',
 			'areas.follow' => '关注分区',
+			'areas.hiddenUnplayable' => ({required int count}) => '已隐藏 ${count} 个不能播放的直播（付费、加密、仅限 App 等）',
 			'backup.title' => '备份与恢复',
 			'backup.localSection' => '本地备份',
 			'backup.summaryTitle' => '当前数据',
@@ -4846,6 +6937,8 @@ extension on Translations {
 			'common.more' => '更多',
 			'common.delete' => '删除',
 			'common.newWindow' => '新建窗口',
+			'common.show' => '显示',
+			'common.save' => '保存',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
@@ -5076,6 +7169,8 @@ extension on Translations {
 			'iptv.openSourceAddress' => '打开源地址',
 			'iptv.sourceAddressCopied' => '源地址已复制',
 			'iptv.sourceAddressOpenFailed' => '无法打开源地址',
+			'iptv.autoSyncTitle' => '启动时全自动同步',
+			'iptv.autoSyncDesc' => '应用冷启动时自动在后台静默检查并更新网络资源。',
 			'multiview.layoutLabel' => '布局',
 			'multiview.selectHint' => '点击格子选中，只有选中的格子有声音',
 			'multiview.selectedPane' => ({required Object index}) => '第 ${index} 格 · 有声',
@@ -5150,6 +7245,7 @@ extension on Translations {
 			'popular.sortAudience' => '按观众',
 			'popular.perPage' => '每页',
 			'popular.pageSize' => ({required int size}) => '每页 ${size} 个',
+			'popular.hiddenUnplayable' => ({required int count}) => '已隐藏 ${count} 个暂时不能播放的直播（付费、加锁、仅限 App 等）',
 			'recorder.tabRunning' => '进行中',
 			'recorder.tabFinished' => '已完成',
 			'recorder.clearFinished' => '清空已完成',
@@ -5193,6 +7289,8 @@ extension on Translations {
 			'recorder.settingsRecovery' => '分段与恢复',
 			'recorder.settingsRuntime' => '后台与上限',
 			'recorder.segmentTitle' => '分段时长',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.segmentDescription' => '每段录制的长度；段文件在崩溃后仍可播放。',
 			'recorder.segmentMinutes' => ({required int count}) => '${count} 分钟',
 			'recorder.readTimeoutTitle' => '读取超时',
@@ -5201,8 +7299,6 @@ extension on Translations {
 			'recorder.queueTitle' => '输入队列',
 			'recorder.queueDescription' => 'FFmpeg 输入包队列大小；直播突发时越大越不容易丢包。',
 			'recorder.preferBestTitle' => '只录首路音视频',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.preferBestDescription' => '开启时只映射首个视频和音频流，避免多码率文件变成多轨。',
 			'recorder.keepAliveTitle' => '后台保持录制',
 			'recorder.keepAliveDescription' => '录制期间持有后台会话与唤醒锁（Android 前台服务/通知）。',
@@ -5224,6 +7320,40 @@ extension on Translations {
 			'recorder.containerDescription' => 'TS 更耐中断，MP4 更易被普通播放器打开。',
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => '分段 MP4',
+			'recorder.recordChatTitle' => '同时录制弹幕',
+			'recorder.recordChatDescription' => '在录像旁存同名 .xml 弹幕文件（B 站格式）；平台需已接入弹幕',
+			'recorder.defaultQualityTitle' => '默认录制画质',
+			'recorder.defaultQualityDesc' => '开始录制时优先请求这个清晰度；平台不提供时使用当前播放线路。',
+			'recorder.cacheTitle' => '录制缓存',
+			'recorder.liveCheckGroup' => '开播检测',
+			'recorder.enablePolling' => '启用开播检测',
+			'recorder.enablePollingDesc' => '主播未开播时自动轮询；在直播间的更多菜单里选择「开播自动录」加入检测。',
+			'recorder.pollingOff' => '「开播检测」关着，等待开播的任务不会自动开始。',
+			'recorder.pollingEnable' => '打开',
+			'recorder.pollingEnabledToast' => ({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）',
+			'recorder.cacheLimitEnabled' => '限制录制缓存',
+			'recorder.cacheLimitEnabledDesc' => '超过上限时自动删除最旧的已完成录制；正在录制的文件不会被删除。',
+			'recorder.cacheLimit' => '缓存上限',
+			'recorder.cacheLimitDesc' => '按 MB 计；超过后从最旧的录像开始删除，正在录制的文件不会删除。',
+			'recorder.cacheSize' => '当前录制缓存',
+			'recorder.cacheSizeDesc' => '录制目录中已完成与正在录制的文件总大小。',
+			'recorder.cacheRefresh' => '刷新',
+			'recorder.cacheClear' => '清理录制缓存',
+			'recorder.cacheClearDesc' => '删除全部已完成的录制文件与弹幕 XML，正在录制的保留。',
+			'recorder.cacheClearConfirm' => '清理全部已完成录制？',
+			'recorder.cacheClearConfirmDesc' => '此操作会删除录制目录中的已完成视频、分段与弹幕文件，无法恢复；正在录制的任务会跳过。',
+			'recorder.cacheCleared' => '录制缓存已清理',
+			'recorder.cacheFailed' => '缓存操作失败，请重试',
+			'recorder.cacheManagedHint' => '为保护其他文件，自定义目录下只会创建并管理 PureLiveRecords 子目录。',
+			'recorder.liveCheckSecondsTitle' => '检测间隔（秒）',
+			'recorder.liveCheckSecondsDesc' => '每个等待开播的任务多久检查一次，10–300 秒。',
+			'recorder.checkBackoff' => '启用指数退避',
+			'recorder.checkBackoffDesc' => '连续失败越多，下一次检测间隔越长，避免频繁请求平台。',
+			'recorder.maxCheckSecondsTitle' => '最大检测间隔（秒）',
+			'recorder.maxCheckSecondsDesc' => '退避后的间隔上限，60–3600 秒。',
+			'recorder.autoStartOnBoot' => '应用启动时恢复待录任务',
+			'recorder.autoStartOnBootDesc' => '把上次进程中断时仍在录制的任务恢复为等待开播，交给开播检测继续；已停止/完成的保持原状态。',
+			'recorder.cacheBusy' => '有录制任务正在进行（可能在另一个窗口），缓存不会被清理或自动裁剪。',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -5261,6 +7391,9 @@ extension on Translations {
 			'room.castStarted' => '已开始投屏',
 			'room.castFailed' => '投屏失败，设备可能无法访问这条线路',
 			'room.sleepDone' => '睡眠定时已到，播放已暂停',
+			'room.audioOnlyMode' => '音频模式',
+			'room.restoreVideo' => '恢复视频',
+			'room.backToRoom' => '返回直播间',
 			'room.openingRoom' => '正在打开房间',
 			'room.playbackFailed' => '播放失败',
 			'room.buffering' => '缓冲中',
@@ -5282,6 +7415,11 @@ extension on Translations {
 			'room.recordStarted' => '开始录制',
 			'room.recordStopped' => '录制已停止',
 			'room.recordFailed' => '录制操作失败',
+			'room.autoRecordOn' => '开播自动录',
+			'room.autoRecordOff' => '取消开播自动录',
+			'room.autoRecordArmed' => ({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）；开播后自动录制',
+			'room.autoRecordRemoved' => '已取消开播自动录制',
+			'room.autoRecordFailed' => '无法加入开播检测，请稍后重试',
 			'room.details' => '直播间详情',
 			'room.detailsHint' => '查看直播间详情',
 			'room.notice' => '公告',
@@ -5330,6 +7468,44 @@ extension on Translations {
 			'room.orientationPortrait' => '竖屏',
 			'room.orientationLandscape' => '横屏',
 			'room.orientationUpdated' => '画面方向已更新',
+			'room.portraitFullscreen' => '竖屏全屏',
+			'room.portraitFullscreenExit' => '退出竖屏全屏',
+			'room.portraitFullscreenDisplay' => '画面模式',
+			'room.portraitDisplayComplete' => '完整',
+			'room.portraitDisplayAmbient' => '沉浸',
+			'room.portraitDisplayBalanced' => '均衡',
+			'room.portraitDisplayCover' => '铺满',
+			'room.portraitDanmakuTitle' => '弹幕区域',
+			'room.portraitDanmakuFollow' => '跟随全局',
+			'room.portraitDanmakuUpper' => '上部 1/4',
+			'room.portraitDanmakuReduced' => '减半',
+			'room.portraitDanmakuHidden' => '隐藏',
+			'room.portraitDiagnostics' => '竖屏诊断',
+			'room.giftLineSent' => '送出',
+			'room.giftLineSentTo' => ({required Object name}) => '送给 ${name}',
+			'room.giftLineGifted' => '赠送',
+			'room.giftLineTipped' => '打赏',
+			'room.giftLineCount' => ({required Object count}) => '×${count}',
+			'room.giftLineMonths' => ({required Object count}) => '×${count} 个月',
+			'room.giftLineUnnamed' => '礼物',
+			'room.giftLineNumbered' => ({required Object id}) => '礼物 ${id}',
+			'room.giftValueYuan' => ({required Object value}) => '${value} 元',
+			'room.giftValueGoldSeed' => ({required Object value}) => '${value} 金瓜子',
+			'room.giftValueDiamond' => ({required Object value}) => '${value} 钻石',
+			'room.giftValueRedBean' => ({required Object value}) => '${value} 红豆',
+			'room.giftValuePoint' => ({required Object value}) => '${value} 点',
+			'room.giftValueBits' => ({required Object value}) => '${value} Bits',
+			'room.giftValueKicks' => ({required Object value}) => '${value} Kicks',
+			'room.giftValueCheese' => ({required Object value}) => '${value} 奶酪',
+			'room.giftValueStarBalloon' => ({required Object value}) => '${value} 星气球',
+			'room.giftValueDouyinCoin' => ({required Object value}) => '${value} 抖币',
+			'room.giftValueSixCoin' => ({required Object value}) => '${value} 六币',
+			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC币',
+			'room.giftValueStarCoin' => ({required Object value}) => '${value} 星币',
+			'room.giftValueHeart' => ({required Object value}) => '${value} 爱心',
+			'room.giftValueNote' => ({required Object value}) => '${value} 音符',
+			'room.collapseChat' => '收起聊天',
+			'room.expandChat' => '展开聊天',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -5380,29 +7556,55 @@ extension on Translations {
 			'settings.navData' => '观看数据',
 			'settings.navBackup' => '备份与恢复',
 			'settings.navAbout' => '版本与许可',
+			'settings.navBrowsing' => '浏览',
+			'settings.navWindow' => '窗口',
+			'settings.navStartup' => '启动与退出',
+			'settings.navAccounts' => '账号',
+			'settings.navTheme' => '主题与颜色',
+			'settings.navTypography' => '字体与字号',
+			'settings.qualityAudioTitle' => '画质与声音',
+			'settings.qualityAudioDescription' => '默认清晰度、音量与后台播放。',
+			'settings.kernelAdvancedTitle' => '内核高级参数',
+			'settings.kernelAdvancedDescription' => '输出驱动、同步、缩放与解码高级项，仅 mpv 内核生效。',
+			'settings.webdavSyncTitle' => 'WebDAV 同步',
+			'settings.webdavSyncDescription' => '配置 WebDAV 服务器，上传与恢复备份。',
+			'settings.closeExitGroup' => '关闭与退出',
+			'settings.navQuality' => '画质',
+			'settings.navAudio' => '音频与音量',
+			'settings.navPicture' => '画面与浮窗',
 			'settings.groupBasics' => '基础设置',
 			'settings.groupContent' => '站点',
 			'settings.groupData' => '数据',
 			'settings.groupAbout' => '关于',
 			'settings.groupIptv' => 'IPTV',
 			'settings.groupVod' => 'Bilibili 视频',
-			'settings.generalDescription' => '卡片宽度、每页数量与窗口行为。',
-			'settings.appearanceDescription' => '主题模式、对比度、圆角与字体。',
+			'settings.generalDescription' => '浏览、窗口与启动设置。',
+			'settings.appearanceDescription' => '主题、字体与配色。',
 			'settings.personalizationDescription' => '主题、外观、背景与导航。',
 			'settings.liveSettingsDescription' => '直播资源、弹幕与录制。',
-			'settings.liveSourcesDescription' => '平台显示、排序与关注自动刷新。',
+			'settings.liveSourcesDescription' => '平台、账号与自动刷新。',
 			'settings.playbackSettingsDescription' => '播放偏好与播放器内核。',
-			'settings.systemDescription' => '常规、网络、诊断、数据与备份。',
-			'settings.dataCacheDescription' => '观看历史、关注导入导出与封面缓存。',
+			'settings.systemDescription' => '浏览、网络、诊断、数据与备份。',
+			'settings.dataCacheDescription' => '观看数据与封面缓存。',
 			'settings.personalizationChooseTheme' => '选择要应用的主题',
 			'settings.personalizationSettings' => '个性化设置',
-			'settings.playbackDescription' => '画质、比例与播放器行为。',
-			'settings.sitesDescription' => '浏览站点与登录账号。',
+			'settings.playbackDescription' => '画质、音频、画面与播放器行为。',
+			'settings.sitesDescription' => '平台显示与排序。',
 			'settings.iptvDescription' => '节目单自动更新与来源同步。',
 			'settings.vodDescription' => 'Bilibili 账号、默认清晰度与视频站行为。',
 			'settings.dataDescription' => '直播观看历史与关注数据。',
 			'settings.backupDescription' => '本地备份、恢复与 WebDAV 同步。',
 			'settings.aboutDescription' => '版本、开源许可与项目链接。',
+			'settings.browsingPageDescription' => '列表卡片、每页数量与分页控件。',
+			'settings.windowPageDescription' => '标题栏、直播间窗口、关闭行为、窗口尺寸与显示刷新率。',
+			'settings.startupPageDescription' => '开机启动、启动动画、关闭窗口行为与定时关机。',
+			'settings.accountsPageDescription' => '各平台账号与授权。',
+			'settings.themePageDescription' => '主题模式、配色、对比度、加载样式、卡片间距与语言。',
+			'settings.typographyPageDescription' => '字体、文本缩放与各级字号。',
+			'settings.qualityPageDescription' => 'Wi-Fi 与移动网络下的默认清晰度。',
+			'settings.audioPageDescription' => '默认音量、静音与后台音频。',
+			'settings.picturePageDescription' => '画面比例、悬浮窗与画中画。',
+			'settings.danmakuStyleDescription' => '是否在画面上显示弹幕，以及字号、速度、显示区域、透明度与描边。',
 			'settings.playbackComingSoon' => '播放设置将在播放器接入后开放。',
 			'settings.sitesComingSoon' => '站点管理与账号登录即将接入。',
 			'settings.dataComingSoon' => '数据管理即将接入。',
@@ -5467,10 +7669,25 @@ extension on Translations {
 			'settings.refreshRateMultiMonitorDesc' => '刷新率读数来自当前窗口所在的那一台显示器。',
 			'settings.pageSize' => '每页显示数量',
 			'settings.pageSizeDescription' => '桌面分页每页显示多少个房间；站点按自己的窗口取回，应用在本地切片，换页不会跳过房间。',
+			'settings.pageSizeSelector' => '显示每页数量选择器',
+			'settings.pageSizeSelectorDescription' => '在关注与热门的分页条显示每页数量下拉；关闭后仍按当前数量分页，只隐藏这个控件。',
+			'settings.showGotoButton' => '显示跳页输入框',
+			'settings.showGotoButtonDescription' => '在关注页分页条显示页码输入框；关闭后只隐藏输入框，页码与翻页按钮仍可正常翻页。',
+			'settings.showScrollToTop' => '显示回到顶部按钮',
+			'settings.showScrollToTopDescription' => '列表滚动超过一屏后显示回到顶部的浮钮；关闭后只隐藏按钮，滚动与翻页不受影响。',
+			'settings.pageSizeOptions' => '每页数量选项',
+			'settings.pageSizeOptionsDescription' => '分页条可选的每页数量，范围 1–100；可增删档位，至少保留一项。',
+			'settings.pageSizeOptionsDialogTitle' => '管理每页数量选项',
+			'settings.pageSizeOptionsRecommend' => '按窗口推荐',
+			'settings.pageSizeOptionCustom' => '自定义档位（1–100）',
+			'settings.pageSizeOptionAdd' => '添加',
+			'settings.pageSizeOptionInvalid' => '请输入 1–100 之间的整数。',
+			'settings.pageSizeOptionDuplicate' => '该档位已存在。',
+			'settings.pageSizeOptionRemove' => ({required int size}) => '移除每页 ${size} 个',
 			'settings.favoritesDense' => '紧凑模式',
 			'settings.favoritesDenseDescription' => '关注页面可显示更多直播间；关闭后改用大卡片。',
 			'settings.sitesDisplay' => '平台显示',
-			'settings.sitesDisplayDesc' => '关闭的平台不再出现在热门与分区的平台列表里。',
+			'settings.sitesDisplayDesc' => '关闭的平台不再出现在热门、分区、关注与搜索的平台列表里。',
 			'settings.sitesAllShown' => '全部平台都在显示中。',
 			'settings.dataClearHistory' => '清空观看历史',
 			'settings.dataClearHistoryDesc' => '删除全部观看记录，不可恢复。',
@@ -5495,6 +7712,9 @@ extension on Translations {
 			'settings.themeSeedDynamicDescription' => '动态取色开启时由系统决定；关闭后可自选主题色。',
 			'settings.dynamicColor' => '动态取色',
 			'settings.dynamicColorDescription' => '使用系统壁纸或强调色生成主题，覆盖当前主题色。',
+			'settings.pureBlack' => '纯黑背景',
+			'settings.pureBlackDescription' => '深色时用纯黑背景，OLED 屏更省电。',
+			'settings.pureBlackLightReason' => '浅色模式下不起作用：先把主题模式换成深色或跟随系统。',
 			'settings.loadingStyle' => '加载样式',
 			'settings.loadingStyleDescription' => '页面、列表与播放器加载时的动画。',
 			'settings.loadingStyleChoose' => '选择加载样式',
@@ -5557,14 +7777,68 @@ extension on Translations {
 			'settings.moveUp' => '上移',
 			'settings.moveDown' => '下移',
 			'settings.navShield' => '弹幕屏蔽',
-			'settings.shieldDescription' => '屏蔽关键词与用户，直播间弹幕按此过滤。',
+			'settings.shieldDescription' => '屏蔽关键词、用户与相似弹幕，直播间弹幕按此过滤。',
+			'settings.danmakuFilter' => '弹幕过滤',
+			'settings.danmakuFilterDesc' => '关键词、用户与相似弹幕过滤。',
+			'settings.danmakuDisplayGroup' => '弹幕显示',
+			'settings.showFlyingDanmaku' => '在画面上显示飞行弹幕',
+			'settings.showFlyingDanmakuDesc' => '关闭后弹幕只在聊天列表里显示。',
+			'settings.danmakuInteractionGroup' => '画面弹幕交互',
+			'settings.danmakuTemplatesGroup' => '观看模板',
+			'settings.styleTapInteraction' => '点击画面弹幕查看操作',
+			'settings.styleTapInteractionDesc' => '点按画面上的弹幕打开操作面板，可复制内容、屏蔽用户或关键词。关闭后点按画面只显示或隐藏控制条。',
+			'settings.styleLongPressInteraction' => '长按画面弹幕查看操作',
+			'settings.styleLongPressInteractionDesc' => '长按画面上的弹幕打开同一操作面板；关闭后长按不再命中弹幕。',
 			'settings.danmakuStyleGroup' => '弹幕样式',
-			'settings.styleFontSize' => '字号',
+			'settings.danmakuFont' => '弹幕字体',
+			'settings.danmakuFontDescription' => '画面飞行弹幕使用的字体；聊天列表保持界面字体。',
+			'settings.danmakuFontManagerDescription' => '从平台字体、随应用内置的官方字体或云端字体目录中选择弹幕字体；选中立即应用到所有直播间的飞行弹幕。',
+			'settings.styleFontSize' => '字体大小',
+			'settings.styleFontWeight' => '字体粗细',
+			'settings.styleLetterSpacing' => '文字间距',
+			'settings.styleWeightThin' => '极细',
+			'settings.styleWeightExtraLight' => '很细',
+			'settings.styleWeightLight' => '偏细',
+			'settings.styleWeightNormal' => '正常',
+			'settings.styleWeightMedium' => '稍粗',
+			'settings.styleWeightSemiBold' => '中粗',
+			'settings.styleWeightBold' => '粗体',
+			_ => null,
+		} ?? switch (path) {
+			'settings.styleWeightExtraBold' => '很粗',
+			'settings.styleWeightBlack' => '特粗',
 			'settings.styleSpeed' => '速度',
-			'settings.styleArea' => '显示区域',
+			'settings.styleArea' => '画面顶部占用高度',
+			'settings.styleAreaDesc' => '弹幕最多占用画面高度的比例（0–100%）。',
 			'settings.styleOpacity' => '不透明度',
 			'settings.styleStroke' => '描边',
+			'settings.styleStrokeDesc' => '给弹幕文字加描边，浅色画面上更清楚。',
+			'settings.styleStrokeWidth' => '描边宽度',
+			'settings.styleStrokeWidthDesc' => '描边开启时文字外圈的粗细（0–4 像素）。',
+			'settings.styleFpsFollow' => '弹幕帧率跟随界面刷新率',
+			'settings.styleFpsFollowDesc' => '跟随「通用」里的省电、均衡或最高档位；关闭后可以手动设帧率。',
+			'settings.styleFps' => '弹幕帧率',
+			'settings.styleFpsValue' => ({required Object count}) => '${count} FPS',
+			'settings.styleMaxVisible' => '同屏最大弹幕条数',
+			'settings.styleMaxVisibleDesc' => '画面上同时飞的弹幕最多几条，默认 48；少一些更清楚、更省电。',
+			'settings.styleMaxVisibleValue' => ({required Object count}) => '${count} 条',
+			'settings.styleMassMode' => '海量模式',
+			'settings.styleMassModeDesc' => '提高同屏上限到 1000 条并使用实时渲染，适合弹幕非常密集的直播间。',
+			'settings.pipDanmakuScaleAuto' => '小窗弹幕比例自动',
+			'settings.pipDanmakuScaleAutoDesc' => '开启后按画中画窗口宽度自动缩小弹幕，最大不超过主弹幕大小；关闭后使用下方固定比例。',
+			'settings.pipDanmakuScale' => '小窗弹幕比例',
 			'settings.styleReset' => '恢复默认',
+			'settings.danmakuTemplateSaveMine' => '把当前设置存为我的模板',
+			'settings.danmakuTemplateUseMine' => '用我的模板',
+			'settings.danmakuTemplateSaved' => '当前弹幕样式已保存',
+			'settings.danmakuTemplateEmpty' => '还没有保存弹幕模板',
+			'settings.danmakuTemplateInvalid' => '已保存的弹幕模板损坏或数值超出范围',
+			'settings.danmakuTemplateApplied' => '弹幕模板已应用',
+			'settings.danmakuPresetBest' => '顶部 20% · 均衡',
+			'settings.danmakuPresetComfort' => '顶部 35% · 舒适',
+			'settings.danmakuPresetDense' => '顶部 55% · 高密度',
+			'settings.danmakuPresetFull' => '全屏全量',
+			'settings.danmakuPresetHint' => '全屏全量=弹幕铺满整个画面；其它预设只占用顶部区域',
 			'settings.prefScope' => '设置生效范围',
 			'settings.prefScopeDesc' => '选择这些更改只在本窗口生效，还是应用到主窗口和所有直播间窗口。',
 			'settings.prefScopeLocal' => '仅本窗口',
@@ -5585,11 +7859,42 @@ extension on Translations {
 			'settings.trayShow' => '显示主窗口',
 			'settings.trayHide' => '隐藏到托盘',
 			'settings.font' => '字体',
-			'settings.fontDescription' => '界面字体：跟随平台官方字体，或选一款内置官方字体。',
+			'settings.fontDescription' => '界面字体：跟随平台官方字体、选一款内置官方字体，或从云端目录下载。',
 			'settings.fontPlatform' => '跟随平台（系统字体）',
+			'settings.fontManagerTitle' => '字体管理器',
+			'settings.fontManagerDescription' => '从平台字体、随应用内置的官方字体或云端字体目录中选择一个界面字体；选中立即应用到全部界面。',
+			'settings.fontManagerSystemDescription' => ({required Object face}) => '由平台决定，本机使用 ${face}。',
+			'settings.fontManagerBundled' => '内置字体',
+			'settings.fontManagerBundledNote' => '随应用内置',
+			'settings.fontManagerInUse' => '使用中',
+			'settings.fontManagerPreview' => '永远相信美好的事情即将发生 · The quick brown fox jumps over the lazy dog 0123456789',
+			'settings.fontManagerCloud' => '云端字体',
+			'settings.fontManagerCloudDescription' => '按需从字体仓库下载并缓存到本机，不随应用打包。',
+			'settings.fontManagerDownload' => '下载',
+			'settings.fontManagerDownloading' => ({required Object done, required Object total}) => '下载中 ${done}/${total}',
+			'settings.fontManagerCancelDownload' => '取消下载',
+			'settings.fontManagerDownloadFailed' => '下载失败',
+			'settings.fontManagerDownloadedSize' => ({required Object size}) => '已下载（${size}）',
+			'settings.fontManagerNotDownloaded' => '未下载',
+			'settings.fontManagerLicenseNote' => ({required Object name}) => '许可证：${name}',
+			'settings.fontManagerDeleteFont' => '删除已下载的字体',
+			'settings.fontManagerDeleteQuestion' => ({required Object name}) => '要删除${name}已下载的字体文件吗？之后可随时重新下载。',
+			'settings.fontManagerRestartNote' => '字体删除后，重启应用前界面可能仍在使用它。',
 			'settings.textScale' => '文本缩放',
 			'settings.textScaleDescription' => '按比例放大或缩小整个应用的文字；100% 为平台原始大小。',
 			'settings.textScalePreview' => '预览：设置会立即应用到所有界面。',
+			'settings.fontBodyGroup' => '正文及次要文本层级',
+			'settings.fontBodySmall' => '微型辅助文本（正文小号）',
+			'settings.fontBodySmallDescription' => '观众数、徽标、时间戳等微小标识，默认 12 px。',
+			'settings.fontBodyMedium' => '标准正文大小（正文中号）',
+			'settings.fontBodyMediumDescription' => '常规描述、副标题与列表标签，默认 13 px。',
+			'settings.fontBodyLarge' => '加粗段落正文（正文大号）',
+			'settings.fontBodyLargeDescription' => '列表项目名称、弹窗说明等长文本，默认 14 px。',
+			'settings.fontTitleGroup' => '标题层级',
+			'settings.fontTitleMedium' => '卡片与区块标题（标题中号）',
+			'settings.fontTitleMediumDescription' => '设置分组、卡片头部与面板标题，默认 15 px。',
+			'settings.fontTitleLarge' => '页面与弹窗标题（标题大号）',
+			'settings.fontTitleLargeDescription' => '页面标题、弹窗与空状态标题，默认 20 px。',
 			'settings.backHome' => '返回应用',
 			'settings.navCache' => '缓存',
 			'settings.cacheDescription' => '封面与头像的磁盘缓存、清理上限。',
@@ -5604,6 +7909,8 @@ extension on Translations {
 			'settings.cacheHint' => '封面与头像会在本机缓存 30 天，过期或超限时自动清理。',
 			'settings.preferPlatform' => '首选平台',
 			'settings.preferPlatformDesc' => '进入热门或分区时优先显示的平台。',
+			'settings.preferPlatformFilterHint' => '搜索平台',
+			'settings.preferPlatformFilterEmpty' => '没有匹配的平台',
 			'settings.sitesOrderReset' => '恢复默认顺序',
 			'settings.sitesOrderResetDesc' => '平台回到内置的排列顺序；显示开关不受影响。',
 			'settings.windowChrome' => '窗口标题栏',
@@ -5623,7 +7930,7 @@ extension on Translations {
 			'settings.navRefresh' => '自动刷新',
 			'settings.navProxy' => '网络代理',
 			'settings.navPlatforms' => '平台与账号',
-			'settings.navigationDescription' => '侧栏入口的显示与顺序。',
+			'settings.navigationDescription' => '侧栏与手机导航的入口显示和顺序；拖动把手即可排序，至少保留一个首页菜单。',
 			'settings.refreshDescription' => '关注列表与直播缩略图的自动刷新。',
 			'settings.proxyDescription' => '应用级网络代理，所有站点请求都走它。',
 			'settings.platformsDescription' => '平台显示、排列顺序与账号登录。',
@@ -5655,75 +7962,210 @@ extension on Translations {
 			'settings.kernelCurrent' => '当前内核',
 			'settings.kernelOnlyOne' => '当前平台只有 mpv 内核。',
 			'settings.kernelSwitchHint' => '切换后新打开的播放器使用该内核。',
-			'settings.superResolutionGroup' => '画质增强',
+			'settings.superResolutionGroup' => '超分辨率 (Anime4K)',
 			'settings.playerPresets' => '播放预设',
 			'settings.playerPresetsHint' => '一键切换解码、输出与缓冲策略；只影响播放器。',
-			'settings.presetBalanced' => '均衡',
-			'settings.presetBalancedDesc' => '引擎默认配置，兼顾画质与性能。',
-			'settings.presetCompat' => '安卓兼容',
-			'settings.presetCompatDesc' => '使用 mediacodec 表面与解码，修复花屏。',
-			'settings.presetRtxVsr' => 'RTX 视频超分',
-			'settings.presetRtxVsrDesc' => 'D3D11VA 解码加 d3d11vpp，NVIDIA 显卡适用。',
-			'settings.presetLowEnd' => '低配设备',
-			'settings.presetLowEndDesc' => '软件解码、低分辨率与更小缓冲，优先流畅。',
+			'settings.playerOneClick' => '一键推荐配置',
+			'settings.playerOneClickDesc' => '把播放内核参数恢复到「标准」预设，撤销之前的手动调优；正在播放的直播立即重新应用，其他播放器下次打开生效。',
+			'settings.playerOneClickConfirmTitle' => '应用推荐配置？',
+			'settings.playerOneClickConfirmBody' => ({required Object preset}) => '将把播放内核设为「${preset}」，撤销手动输出与解码器选择；正在播放的直播会短暂重建画面。',
+			'settings.playerOneClickApplied' => ({required Object preset}) => '已应用「${preset}」',
+			'settings.playerCompatFix' => '花屏 / 绿屏修复',
+			'settings.playerCompatFixDesc' => '改用 mediacodec_embed 直出表面并强制硬解，仅 Android 提供；音画不同步或画面撕裂时也先试这个。',
+			'settings.presetBalanced' => '标准（引擎默认）',
+			'settings.presetBalancedDesc' => '全部交给引擎自己决定，仅附加直播所需的解复用与缓存调优。大多数设备和网络下这是最稳的选择，也是其它预设的基线。',
+			'settings.presetCompat' => 'Android 硬解兼容',
+			'settings.presetCompatDesc' => 'Android 上改用 mediacodec_embed 直出表面并强制 mediacodec 硬解。适合默认 gl/ffmpeg 路径出现花屏、绿屏或音画不同步的机型。',
+			'settings.presetRtxVsr' => 'RTX 视频超分辨率',
+			'settings.presetRtxVsrDesc' => 'Windows + NVIDIA 显卡专用：d3d11va 硬解并启用 RTX Video Super Resolution 超分滤镜，把低清晰度源放大到高分辨率屏幕上观看。',
+			'settings.presetLowEnd' => '低配流畅',
+			'settings.presetLowEndDesc' => '软解线程数上限 2、lowres 降采样、跳过非参考帧环路滤波、缩小缓冲。把 CPU 交给画面本身，适合核显或老机器。',
 			'settings.presetStableNetwork' => '弱网稳定',
-			'settings.presetStableNetworkDesc' => '加大缓冲并自动重连，减少卡顿。',
+			'settings.presetStableNetworkDesc' => '加大解复用缓冲与预读、开启强制可拖动与重连退避。用内存换卡顿，适合跨网、跨运营商或信号边缘的直播源。',
 			'settings.presetLowLatency' => '低延迟',
-			'settings.presetLowLatencyDesc' => '小缓冲与丢帧，适合高速网络。',
+			'settings.presetLowLatencyDesc' => '最小缓冲 + 解码/渲染双端丢帧，牺牲抗抖动换低延迟。适合赛事直播、连麦互动等时效优先的场景。',
 			'settings.playerPresetApplied' => '已应用预设',
+			'settings.playerOutputLockedByPreset' => '已由当前预设固定',
 			'settings.playerProxy' => '播放器代理',
 			'settings.playerProxyDesc' => '只影响播放器请求，不改变应用接口的代理。',
 			'settings.playerProxyEnable' => '启用播放器代理',
 			'settings.playerProxyInvalid' => '请填写有效的主机和端口（1–65535）。',
-			'settings.hardwareDecoder' => '硬件解码器',
-			'settings.hardwareDecoderDesc' => '选择 mpv 的 hwdec 解码器。',
-			'settings.customOutput' => '自定义输出',
-			'settings.customOutputDesc' => '手动选择视频与音频输出驱动。',
+			'settings.hardwareDecoder' => '硬件解码器 (--hwdec)',
+			'settings.hardwareDecoderDesc' => '选择 mpv 的 hwdec 解码器（自定义输出开启时生效）。',
+			'settings.hardwareDecoderAutoHint' => '未开启自定义输出，解码器由 mpv 自动选择（auto-safe）；如需指定，请在「高级设置」开启「自定义驱动与硬件加速」。',
+			'settings.hardwareDecoderSoftware' => 'no（软件解码，兼容性最好）',
+			'settings.hardwareDecoderAuto' => 'auto（任意硬解路径，兼容性有风险）',
+			'settings.hardwareDecoderAutoSafe' => 'auto-safe（白名单内安全硬解，推荐）',
+			'settings.hardwareDecoderAutoUnsafe' => 'auto-unsafe（不做安全校验）',
+			'settings.hardwareDecoderYes' => 'yes（强制硬解，失败即报错）',
+			'settings.hardwareDecoderAutoCopy' => 'auto-copy（安全硬解 + 拷回内存，滤镜/截图可用）',
+			'settings.hardwareDecoderD3d11va' => 'd3d11va（Direct3D 11 直通，Windows 8+）',
+			'settings.hardwareDecoderD3d11vaCopy' => 'd3d11va-copy（D3D11 + 拷回内存）',
+			'settings.hardwareDecoderNvdec' => 'nvdec（NVIDIA 直通，低开销）',
+			'settings.hardwareDecoderNvdecCopy' => 'nvdec-copy（NVIDIA + 拷回内存）',
+			'settings.hardwareDecoderVideotoolbox' => 'videotoolbox（Apple 直通，推荐）',
+			'settings.hardwareDecoderVideotoolboxCopy' => 'videotoolbox-copy（Apple + 拷回内存）',
+			'settings.hardwareDecoderVaapi' => 'vaapi（Intel/AMD Linux 直通）',
+			'settings.hardwareDecoderVaapiCopy' => 'vaapi-copy（vaapi + 拷回内存）',
+			'settings.hardwareDecoderVdpau' => 'vdpau（NVIDIA Linux 旧接口）',
+			'settings.hardwareDecoderVdpauCopy' => 'vdpau-copy（VDPAU + 拷回内存）',
+			'settings.hardwareDecoderMediacodec' => 'mediacodec（Android 直通，推荐）',
+			'settings.hardwareDecoderMediacodecCopy' => 'mediacodec-copy（Android + 拷回内存）',
+			'settings.customOutput' => '自定义驱动与硬件加速',
+			'settings.customOutputDesc' => '开启后用所选视频输出、音频输出与解码器，代替「硬件解码」开关。',
+			'settings.customOutputHardwareTakeover' => '已由「自定义驱动与硬件加速」接管，解码器在下方选择。',
 			'settings.videoOutput' => '视频输出',
 			'settings.videoOutputHint' => 'gpu / gpu-next / direct3d 可能让 mpv 另开窗口；嵌入画面通常保持 libmpv 或 auto。',
-			'settings.audioOutput' => '音频输出',
-			'settings.videoSync' => '视频同步',
-			'settings.videoSyncDesc' => '音画同步与显示刷新策略。',
-			'settings.interpolation' => '插帧',
-			'settings.interpolationDesc' => '运动插值，仅桌面 GPU 建议开启。',
+			'settings.videoOutputAuto' => 'auto（跟随 mpv 默认，推荐）',
+			'settings.videoOutputLibmpv' => 'libmpv（内嵌 Flutter 纹理）',
+			'settings.videoOutputGpu' => 'gpu（独立 mpv 窗口，完整着色器）',
+			'settings.videoOutputGpuNext' => 'gpu-next（独立窗口，libplacebo 新管线，支持 HDR）',
+			'settings.videoOutputDirect3d' => 'direct3d（独立窗口，旧 D3D9 兼容）',
+			'settings.videoOutputNull' => 'null（不渲染画面，只有声音）',
+			'settings.videoOutputMediacodecEmbed' => 'MediaCodec Embed（仅 Android，直通 Surface）',
+			'settings.audioOutput' => '音频输出驱动（--ao）',
+			'settings.audioOutputAuto' => '自动（引擎按平台挑选，推荐）',
+			'settings.audioOutputAudiotrack' => 'AudioTrack（Android 系统混音器，推荐）',
+			'settings.audioOutputAaudio' => 'AAudio（Android 8.0+，低延迟）',
+			'settings.audioOutputOpensles' => 'OpenSL ES（Android 旧通道，兼容用）',
+			'settings.audioOutputAudiounit' => 'AudioUnit（iOS / macOS）',
+			'settings.audioOutputWasapi' => 'WASAPI（Windows 默认通道，推荐）',
+			'settings.audioOutputWin32' => 'win32（waveOut 旧通道）',
+			'settings.audioOutputSdl' => 'SDL（跨平台兜底）',
+			'settings.audioOutputPcm' => 'PCM（原始数据转储到文件，调试用）',
+			'settings.audioOutputAlsa' => 'ALSA（Linux 直通，可能独占声卡）',
+			'settings.audioOutputPipewire' => 'PipeWire（Linux 新声音栈）',
+			'settings.audioOutputNull' => 'null（不输出声音，静音调试）',
+			'settings.videoSync' => '视频同步模式 (--video-sync)',
+			'settings.videoSyncDesc' => '画面跟随音频时钟还是显示刷新；显示重采样最平滑，但更吃 GPU。',
+			'settings.videoSyncAudio' => '音频时钟（mpv 默认）',
+			'settings.videoSyncDisplayResample' => '显示重采样（最平滑，吃 GPU）',
+			'settings.videoSyncDisplayResampleVdrop' => '显示重采样 + 视频丢帧',
+			'settings.videoSyncDisplayResampleDrop' => '显示重采样 + 整帧丢弃',
+			'settings.videoSyncDisplayAdrop' => '显示时钟 + 音频丢样',
+			'settings.videoSyncDisplayVdrop' => '显示时钟 + 视频丢帧',
+			'settings.videoSyncDisplayDesync' => '显示时钟 + 不同步',
+			'settings.videoSyncDesync' => '完全不同步（调试）',
+			'settings.interpolation' => '运动插帧 (--interpolation)',
+			'settings.interpolationDesc' => '需配合「显示重采样」同步模式；提升平移画面平滑度，消耗 GPU。',
 			'settings.scaleKernel' => '缩放算法',
 			'settings.scaleKernelDesc' => '放大画面时的重采样算法。',
-			'settings.deinterlace' => '反交错',
-			'settings.deinterlaceDesc' => '处理隔行扫描视频。',
-			'settings.hwdecCodecs' => '硬件解码格式',
-			'settings.hwdecCodecsDesc' => '哪些编码交给硬件解码。',
-			'settings.audioExclusive' => '独占音频',
-			'settings.audioExclusiveDesc' => 'Windows WASAPI 独占模式。',
-			'settings.forceDestroy' => '强制销毁播放器',
-			'settings.forceDestroyDesc' => '退出房间时立刻销毁播放器，避免残留。',
+			'settings.scaleLanczos' => 'Lanczos（均衡推荐）',
+			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp（锐利，吃 GPU）',
+			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest（配合插帧）',
+			'settings.scaleEwaLanczos' => 'EWA Lanczos',
+			'settings.scaleSpline36' => 'Spline36',
+			'settings.scaleSpline16' => 'Spline16（快）',
+			'settings.scaleCatmullRom' => 'Catmull-Rom',
+			'settings.scaleMitchell' => 'Mitchell',
+			'settings.scaleHermite' => 'Hermite（柔和）',
+			'settings.scaleBicubicFast' => 'Bicubic Fast（快）',
+			'settings.scaleBilinear' => '双线性（最快，最糊）',
+			'settings.scaleNearest' => '最近邻（块状）',
+			'settings.deinterlace' => '反交错 (--deinterlace)',
+			'settings.deinterlaceDesc' => '直播源基本都是逐行的，保持自动即可；只有老电视信号或采集卡源才需要开启。',
+			'settings.deinterlaceAuto' => '自动',
+			'settings.deinterlaceOff' => '关闭',
+			'settings.deinterlaceOn' => '开启（隔行源才需要）',
+			'settings.hwdecCodecs' => '硬解编码范围 (--hwdec-codecs)',
+			'settings.hwdecCodecsDesc' => '限制哪些编码格式走硬解；某编码黑屏或花屏时，把它从列表移除即可回退软解。',
+			'settings.hwdecCodecsAll' => '全部编码格式',
+			'settings.hwdecCodecsH264Hevc' => 'H264 + HEVC',
+			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
+			'settings.hwdecCodecsH264HevcVp9Av1' => 'H264 + HEVC + VP9 + AV1',
+			'settings.audioExclusive' => '音频独占 (--audio-exclusive)',
+			'settings.audioExclusiveDesc' => '独占 WASAPI 设备，其他应用将无法出声。',
+			'settings.forceDestroy' => '播放器强制销毁',
+			'settings.forceDestroyDesc' => '退出房间后立即销毁播放器；关闭时保留已停止的播放器，供下个房间复用。',
 			'settings.mpvAdvanced' => 'mpv 高级设置',
-			'settings.mpvReset' => '恢复 mpv 默认设置',
-			'settings.mpvResetDesc' => '重置输出、同步、缩放与解码选项，不影响超分辨率。',
+			'settings.mpvReset' => '恢复播放内核默认设置',
+			'settings.mpvResetDesc' => '恢复本页的设置；视频设置里的首选清晰度不受影响。',
+			'settings.mpvResetConfirm' => '下面这些恢复默认值：\n• 开启硬解码：开\n• 兼容模式、RTX VSR、播放器强制销毁：关\n• 自定义驱动与硬件加速：关；三个驱动：默认\n视频设置里的首选清晰度不变。',
+			'settings.mpvResetDone' => '已恢复默认设置',
 			'settings.mpvDocs' => '打开 mpv 官方文档',
 			'settings.mpvDocsDesc' => '每个属性的完整说明。',
 			'settings.playerGuide' => '播放器指南',
 			'settings.playerGuideDesc' => '预设、调参与常见问题的说明。',
-			'settings.playerGuideIntro' => '播放器基于 mpv。先用预设覆盖大多数场景，仍不正常时再改高级选项。',
-			'settings.playerGuideTip1' => '花屏或绿屏：尝试「安卓兼容」，或在高级设置里换解码器。',
-			'settings.playerGuideTip2' => '画面模糊：关闭低配预设，选择质量型缩放或超分辨率。',
-			'settings.playerGuideTip3' => '卡顿：使用「弱网稳定」；风扇狂转：关闭插帧与超分。',
-			'settings.playerGuideTip4' => '没有声音：检查音频输出驱动，Windows 可尝试关闭独占音频。',
+			'settings.playerGuideTitle' => '播放搭配指南',
+			'settings.playerGuideSubtitle' => '名词解释 · 各平台推荐搭配 · 症状对照',
+			'settings.playerGuideIntro' => '指南中的内核选项仅对 mpv 内核生效；先用一键预设覆盖大多数场景，仍不正常时再改高级选项。',
+			'settings.playerGuideManualTitle' => '播放手册：mpv 官方文档',
+			'settings.playerGuideManualHint' => '遇到问题先看「症状对照」；想理解某个设置是什么，在「基础概念」和各章里查。',
+			'settings.playerGuideChapterConcepts' => '基础概念',
+			'settings.playerGuideChapterPresets' => '一键播放方案',
+			'settings.playerGuideChapterPictureSync' => '画面与同步',
+			'settings.playerGuideChapterQuality' => '画质增强',
+			'settings.playerGuideChapterAudio' => '声音',
+			'settings.playerGuideChapterSymptoms' => '症状对照',
+			'settings.playerGuideBadgeHwdec' => 'hwdec',
+			'settings.playerGuideBadgeVo' => 'vo',
+			'settings.playerGuideBadgeAo' => 'ao',
+			'settings.playerGuidePlatformAndroid' => 'Android',
+			'settings.playerGuidePlatformWindows' => 'Windows',
+			'settings.playerGuideEntryHardwareSwitchTitle' => '硬解码开关',
+			'settings.playerGuideEntryHardwareSwitchBody' => '让显卡代替 CPU 解码视频。开启后 CPU 占用低、发热小；关闭则走软解，兼容性最好，老机器反而可能更流畅。',
+			'settings.playerGuideEntryHwdecTitle' => '--hwdec',
+			'settings.playerGuideEntryHwdecBody' => '具体用哪种硬解路径。auto 全部尝试（个别机型可能花屏）；auto-safe 只用白名单内的安全路径（推荐）；带 -copy 的变体把解码结果拷回内存，滤镜和截图需要它。',
+			'settings.playerGuideEntryVoTitle' => '--vo',
+			'settings.playerGuideEntryVoBody' => 'mpv 把画面画到哪里。libmpv 画进 Flutter 纹理（内嵌播放器，默认）；gpu/gpu-next/direct3d 会打开独立的 mpv 原生窗口（不在应用画面内）；null 不渲染画面。',
+			'settings.playerGuideEntryAoTitle' => '--ao',
+			'settings.playerGuideEntryAoBody' => 'mpv 把声音送到哪个系统通道。Windows 用 wasapi，Android 用 audiotrack/aaudio/opensles；null 表示静音。',
+			'settings.playerGuideEntryPresetDefaultTitle' => '均衡（推荐起点）',
+			'settings.playerGuideEntryPresetDefaultBody' => '清除自定义输出与解码器选择，交给 mpv 自动决定。大多数设备和网络的首选。',
+			'settings.playerGuideEntryPresetAndroidCompatTitle' => 'Android 硬解兼容',
+			'settings.playerGuideEntryPresetAndroidCompatBody' => '改用 mediacodec_embed 直通表面并强制 mediacodec 硬解，花屏、绿屏或音画不同步时使用。仅 Android 显示。',
+			'settings.playerGuideEntryPresetRtxSrTitle' => 'NVIDIA RTX 视频超分',
+			'settings.playerGuideEntryPresetRtxSrBody' => '使用 d3d11va 硬解并叠加 RTX Video Super Resolution 滤镜，把低清源放大观看；会锁定解码器为 d3d11va。仅 Windows 显示。',
+			'settings.playerGuideEntryPresetLowEndTitle' => '低配流畅',
+			'settings.playerGuideEntryPresetLowEndBody' => '软解 + 线程上限 2 + lowres 降采样 + 小缓冲。把 CPU 让给画面本身，核显或老机器使用。',
+			'settings.playerGuideEntryPresetWeakNetworkTitle' => '弱网稳定',
+			'settings.playerGuideEntryPresetWeakNetworkBody' => '加大缓冲与预读、开启重连退避。用内存换卡顿，跨网或信号边缘时使用。',
+			'settings.playerGuideEntryPresetLowLatencyTitle' => '低延迟',
+			'settings.playerGuideEntryPresetLowLatencyBody' => '最小缓冲 + 双端丢帧。时效优先，代价是更容易卡。',
+			'settings.playerGuideEntryVideoSyncTitle' => '--video-sync',
+			'settings.playerGuideEntryVideoSyncBody' => '音画时钟对齐方式。audio 是 mpv 默认；display-resample 最平滑但吃 GPU，配合运动插帧使用；带 vdrop/drop 的变体在节奏对不上时丢帧。仅桌面显示。',
+			'settings.playerGuideEntryInterpolationTitle' => '--interpolation',
+			'settings.playerGuideEntryInterpolationBody' => '运动插帧。平移画面时按帧间计算补帧，显著更顺滑；必须配合 display-resample 同步模式，GPU 消耗明显。仅桌面显示。',
+			'settings.playerGuideEntryScaleTitle' => '--scale',
+			'settings.playerGuideEntryScaleBody' => '画面放大算法。lanczos 均衡推荐；ewa_lanczossharp 最锐利；ewa_lanczos4sharpest 专为插帧设计；bilinear/nearest 最快但糊或块状。移动端只提供 lanczos 与 bilinear。',
+			'settings.playerGuideEntryDeinterlaceTitle' => '--deinterlace',
+			'settings.playerGuideEntryDeinterlaceBody' => '反交错处理。直播源基本都是逐行的，保持自动即可；只有老电视信号或采集卡源才需要开启。',
+			'settings.playerGuideEntryRtxSuperResolutionTitle' => '超分辨率（Anime4K）',
+			'settings.playerGuideEntryRtxSuperResolutionBody' => '设置 → 播放内核 → 超分辨率：效率档或质量档。仅 Windows 桌面 GPU 可实时运行，把低清源放大到高分屏仍然清晰。',
+			'settings.playerGuideEntryDanmakuLoadTitle' => '弹幕较多时减轻负担',
+			'settings.playerGuideEntryDanmakuLoadBody' => '在设置 → 弹幕样式里调低字号、速度或不透明度，或关闭画面飞行弹幕，可显著减轻低配设备的负担。',
+			'settings.playerGuideEntryHwdecCodecsTitle' => '--hwdec-codecs',
+			'settings.playerGuideEntryHwdecCodecsBody' => '限制哪些编码格式走硬解。默认全部编码格式；某编码黑屏或花屏时，把范围收窄到不含它的档位（回退软解）。',
+			'settings.playerGuideEntryAudioExclusiveTitle' => '--audio-exclusive',
+			'settings.playerGuideEntryAudioExclusiveBody' => '仅 Windows。独占 WASAPI 设备，绕过系统混音器，可能有更好的音质；代价是其他应用无法出声。',
+			'settings.playerGuideEntryAoAdviceTitle' => '--ao 选择建议',
+			'settings.playerGuideEntryAoAdviceBody' => '不确定就用 auto。声音断续时 Windows 换 win32，Android 换 opensles；蓝牙耳机延迟大时可尝试不同通道对比。',
+			'settings.playerGuideEntrySymGlitchTitle' => '花屏 / 绿屏 / 音画不同步',
+			'settings.playerGuideEntrySymGlitchBody' => 'Android：一键方案切「安卓兼容」。其它平台：关闭硬解开关走软解，或在自定义驱动与硬件加速里把解码器改 auto-safe。',
+			'settings.playerGuideEntrySymBlurryTitle' => '低清源在高分屏发糊',
+			'settings.playerGuideEntrySymBlurryBody' => 'Windows + NVIDIA：选「RTX VSR」预设；其它 GPU：放大算法改 ewa_lanczossharp，或在播放内核里开启 Anime4K 超分辨率（仅 Windows）。',
+			'settings.playerGuideEntrySymFanTitle' => '风扇狂转 / 掉帧',
+			'settings.playerGuideEntrySymFanBody' => '选「低配流畅」方案；仍不行就关闭硬解码开关（老设备软解反而快）。',
+			'settings.playerGuideEntrySymBufferingTitle' => '频繁缓冲',
+			'settings.playerGuideEntrySymBufferingBody' => '选「弱网稳定」；同时检查播放器代理设置——代理是直播卡顿的常见来源。',
+			'settings.playerGuideEntrySymLatencyTitle' => '延迟高（连麦 / 赛事情景）',
+			'settings.playerGuideEntrySymLatencyBody' => '选「低延迟」方案，并调低缓冲相关属性。',
+			'settings.playerGuideEntrySymNoVideoTitle' => '有声音没画面',
+			'settings.playerGuideEntrySymNoVideoBody' => '检查视频输出驱动是否被改过（null = 不渲染画面）；恢复「自动」即可。恢复播放内核默认设置也能解决。',
 			'settings.optionAuto' => '自动',
 			'settings.optionOff' => '关闭',
 			'settings.optionOn' => '开启',
 			'settings.optionNoOutput' => '无输出',
-			'settings.superResolutionOffDesc' => '关闭着色器，保持原始画面。',
-			'settings.superResolutionEfficiencyDesc' => '较轻的 CNN 链，适合中端 GPU。',
-			'settings.superResolutionQualityDesc' => '最重的 CNN 链，画质最好。',
-			_ => null,
-		} ?? switch (path) {
+			'settings.superResolutionOffDesc' => '默认渲染，不挂载任何超分滤镜。',
+			'settings.superResolutionEfficiencyDesc' => '轻量 Anime4K 卷积链，GPU 负担小，适合核显或高刷屏。',
+			'settings.superResolutionQualityDesc' => '完整 Anime4K 卷积链，效果最好，需要独立显卡。',
 			'settings.playerAdvancedRequiresMpv' => '这些选项只对 mpv 内核生效。',
 			'settings.superResolution' => '超分辨率',
 			'settings.superResolutionDescription' => '用 Anime4K 着色器实时放大画面；需要桌面 GPU。',
-			'settings.superResolutionHint' => '仅 Windows 桌面生效；切换后应用到当前与之后的播放器。',
+			'settings.superResolutionHint' => '基于 Anime4K 的实时超分，仅桌面 GPU 可实时运行；当前仅 Windows 生效。',
 			'settings.superResolutionOff' => '关闭',
-			'settings.superResolutionEfficiency' => '效率',
-			'settings.superResolutionQuality' => '质量',
+			'settings.superResolutionEfficiency' => '效率档',
+			'settings.superResolutionQuality' => '质量档',
 			'settings.recordingDescription' => '录制目录、文件命名与容量上限。',
 			'settings.preferredQuality' => '首选画质',
 			'settings.preferredQualityDesc' => '进入房间时优先选用的清晰度档位；站点没有同名画质时，按档位比例选最接近的。默认原画。',
@@ -5744,19 +8186,30 @@ extension on Translations {
 			'settings.defaultVolumeDesc' => '手机/平板新播放器默认 50%，桌面默认 100%；滑杆调整当前平台。',
 			'settings.globalMute' => '全局静音',
 			'settings.globalMuteDesc' => '立即静音所有正在播放和之后打开的房间、频道与视频；关闭后恢复各播放器自身的静音设置。',
+			'settings.backgroundPlay' => '后台播放',
+			'settings.backgroundPlayDesc' => '离开应用后继续播放声音；关闭时切到后台会暂停，回到应用后继续。',
+			'settings.asmrSleepMode' => 'ASMR 睡眠模式',
+			'settings.asmrSleepModeDesc' => '进入直播间时自动切换为音频模式，并在设定时间后暂停。仅 Android。',
+			'settings.asmrSleepTimer' => 'ASMR 睡眠时长',
+			'settings.asmrSleepTimerDesc' => '音频模式自动停止前的分钟数，范围 15–1440。',
+			'settings.asmrSleepCustomMinutes' => '自定义分钟数',
+			'settings.asmrSleepRange' => '15–1440 分钟',
 			'settings.fit' => '画面比例',
 			'settings.fitDesc' => '画面在播放区域里的铺法。',
-			'settings.fitContain' => '适应（留黑边）',
-			'settings.fitCover' => '裁切填满',
-			'settings.fitFill' => '拉伸',
+			'settings.fitContain' => '默认比例',
+			'settings.fitCover' => '居中裁剪',
+			'settings.fitFill' => '填充屏幕',
 			'settings.miniDanmakuVisible' => '画中画中显示弹幕',
 			'settings.miniDanmakuVisibleDesc' => '缩成小窗时是否继续显示飞行弹幕。',
 			'settings.miniDanmakuHint' => '弹幕样式与「弹幕」页共用。',
 			'settings.engineTitle' => '播放内核',
-			'settings.engineDesc' => '由 media_core 的内核注册表提供，当前只注册了 mpv。',
+			'settings.engineDesc' => '选择直播与视频使用的播放内核；mpv 为默认，移动端还可选 IJK 或 BetterPlayer。',
+			'settings.playerEngineMpv' => 'mpv 播放器',
+			'settings.playerEngineIjk' => 'IJK 播放器',
+			'settings.playerEngineBetterPlayer' => 'BetterPlayer',
 			'settings.hardwareDecoding' => '硬件解码',
 			'settings.hardwareDecodingDesc' => '用 GPU 解码视频，关闭则交给 CPU。',
-			'settings.hardwareDecodingHint' => '在下一个播放器实例上生效。',
+			'settings.hardwareDecodingHint' => '对当前与之后打开的播放器生效。',
 			'settings.refreshOnResume' => '返回应用时刷新关注',
 			'settings.refreshOnResumeDesc' => '切回应用时刷新一遍关注列表的状态。',
 			'settings.maxConcurrentRefresh' => '最大并发刷新',
@@ -5765,8 +8218,11 @@ extension on Translations {
 			'settings.refreshThumbnails' => '自动刷新封面',
 			'settings.refreshThumbnailsDesc' => '定期清空图片缓存，让封面、头像和台标重新下载；不会清空观看历史或关注。',
 			'settings.thumbnailRefreshInterval' => '封面刷新间隔',
+			'settings.navHomeMenuGroup' => '首页菜单',
+			'settings.navMenuHidden' => '已隐藏',
+			'settings.navMenuKeepOne' => '至少保留一个菜单',
 			'settings.multiviewVisible' => '首页入口：多画面',
-			'settings.multiviewVisibleDesc' => '关闭后侧栏不再显示多画面入口。',
+			'settings.multiviewVisibleDesc' => '关闭后侧栏与手机抽屉不再显示多画面入口。',
 			'settings.groupTheme' => '主题',
 			'settings.groupCards' => '卡片与列表',
 			'settings.groupType' => '字体和语言',
@@ -5846,8 +8302,40 @@ extension on Translations {
 			'settings.sitesKeepOne' => '至少保留一个平台',
 			'settings.autoPip' => '离开应用时自动小窗',
 			'settings.autoPipDesc' => '播放中切到后台时进入画中画；系统未开启画中画时不会生效。',
+			'settings.floatPlay' => '返回时悬浮播放',
+			'settings.floatPlayDesc' => '离开直播间返回其他页面时，把正在播放的画面留在一个可拖动的小窗里；关闭小窗会停止播放。',
+			'settings.windowsPipAlwaysOnTop' => '小窗始终置顶',
+			'settings.windowsPipAlwaysOnTopDesc' => 'Windows 画中画小窗保持在其他窗口之上；正在播放的小窗会立即应用。',
+			'settings.rememberPipPosition' => '记住小窗位置',
+			'settings.rememberPipPositionDesc' => '再次进入小窗时回到上次的尺寸、位置和显示器；关闭后每次使用默认位置。',
+			'settings.windowsPipBaseSize' => '小窗基准尺寸',
+			'settings.windowsPipBaseSizeDesc' => '横向视频的长边；竖向视频时作为高。范围 200–720。',
+			'settings.windowsPipMinWidth' => '小窗最小宽度',
+			'settings.windowsPipMinWidthDesc' => '小窗可拖动到的最小宽度，范围 100–320；只作用于小窗，离开后恢复应用窗口的常规下限。',
+			'settings.windowsPipMinHeight' => '小窗最小高度',
+			'settings.windowsPipMinHeightDesc' => '小窗可拖动到的最小高度，范围 60–240；只作用于小窗，离开后恢复应用窗口的常规下限。',
+			'settings.fullscreenDefault' => '自动全屏',
+			'settings.fullscreenDefaultDesc' => '当进入直播播放页，自动进入全屏',
 			'settings.keepScreenOn' => '播放时保持屏幕常亮',
+			_ => null,
+		} ?? switch (path) {
 			'settings.keepScreenOnDesc' => '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。',
+			'settings.navPortrait' => '竖屏直播适配',
+			'settings.portraitPageDescription' => '自动识别直播源方向，并调整普通页的观看区域与布局。',
+			'settings.navAudience' => '观众指标',
+			'settings.audiencePageDescription' => '卡片人数口径、真实在线优先与平台开关。',
+			'settings.portraitEntryOff' => '已关闭',
+			'settings.portraitDetectionGroup' => '识别与普通页布局',
+			'settings.portraitSmartDetection' => '智能识别竖屏直播源',
+			'settings.portraitSmartDetectionDesc' => '根据解码后的真实画面尺寸识别竖屏直播；关闭后竖屏源按普通横屏页面显示。',
+			'settings.portraitAdaptiveHeight' => '普通页自适应视频高度',
+			'settings.portraitAdaptiveHeightDesc' => '竖屏源增大观看区域，同时保留足够的聊天与弹幕列表空间。',
+			'settings.portraitLayoutMode' => '普通页布局模式',
+			'settings.portraitLayoutModeDesc' => '仅影响竖屏直播源，不改变普通横屏直播。',
+			'settings.portraitLayoutBalanced' => '均衡（推荐）',
+			'settings.portraitLayoutImmersive' => '沉浸',
+			'settings.portraitLayoutCompatibility' => '兼容 16:9',
+			'settings.portraitDetectionOff' => '开启智能识别后才能调整高度与布局。',
 			'settings.searchSections' => '分区',
 			'settings.searchRows' => '具体设置',
 			'settings.searchRowMatches' => ({required String items}) => '匹配：${items}',
@@ -5857,6 +8345,19 @@ extension on Translations {
 			'settings.audienceOnline' => '在线观众',
 			'settings.audiencePopularity' => '热度',
 			'settings.audienceTotal' => '累计观看',
+			'settings.audienceDisplayGroup' => '卡片显示与排行方式',
+			'settings.audienceRankingNote' => '按观众排序使用卡片当前显示的数值；「真实在线人数优先」只在「跟随平台」显示方式下、且只对已开启的平台生效。',
+			'settings.audienceRealOnlineGroup' => '真实在线人数',
+			'settings.audienceRealOnline' => '真实在线人数优先',
+			'settings.audienceRealOnlineDesc' => '跟随平台显示时，对已开启的平台优先使用同时在线人数；其余平台保留热度或累计观看。',
+			'settings.audienceNeedsAutomaticMode' => '先在「观众数显示」中选择「跟随平台」，真实在线优先才会生效。',
+			'settings.audiencePlatformsGroup' => '真实在线平台',
+			'settings.audiencePlatformsDesc' => '只有公开返回明确并发人数的平台会出现在这里；关闭后该平台仍按热度或累计观看显示。',
+			'settings.audienceSourceRoomList' => '来源：房间列表/详情，可直接排行',
+			'settings.audienceSourceRoomRealtime' => '来源：进入直播间后的实时消息',
+			'settings.audiencePlatformNeedsOnline' => '先开启「真实在线人数优先」',
+			'settings.audienceHeatOnlyGroup' => '仅热度或累计观看的平台',
+			'settings.audienceHeatOnlyDesc' => '这些平台的公开接口没有同时在线人数，卡片照常标明热度或累计观看。',
 			'settings.backgroundSolid' => '纯色',
 			'settings.backgroundGradient' => '渐变',
 			'settings.backgroundPresets' => '预设',
@@ -5897,11 +8398,283 @@ extension on Translations {
 			'settings.wallpaperCategoryDigitalArt' => '数字艺术',
 			'settings.wallpaperCategoryFantasyArt' => '奇幻艺术',
 			'settings.wallpaperCategoryFinalFantasy' => '最终幻想',
+			'settings.tagManagement' => '标签管理',
+			'settings.tagManagementDesc' => '自定义和管理直播间的过滤标签',
+			'settings.tagAdd' => '添加标签',
+			'settings.tagEdit' => '编辑标签',
+			'settings.tagPin' => '移到最前',
+			'settings.tagSaveAction' => '保存',
+			'settings.tagNameLabel' => '标签名称',
+			'settings.tagNameHint' => '例如“常看”“睡前听”',
+			'settings.tagNoteLabel' => '备注描述（可选）',
+			'settings.tagNoteHint' => '给这个标签写一句备注',
+			'settings.tagNameEmpty' => '标签名称不能为空',
+			'settings.tagNameDuplicate' => '已存在同名标签',
+			'settings.tagSaveFailed' => '标签更改未保存，请重试',
+			'settings.tagStale' => '这个标签已在别处被删除或修改',
+			'settings.tagAddedToast' => ({required String name}) => '已添加标签“${name}”',
+			'settings.tagSavedToast' => ({required String name}) => '已保存标签“${name}”',
+			'settings.tagDeletedToast' => ({required String name}) => '已删除标签“${name}”',
+			'settings.tagDeleteTitle' => ({required String name}) => '确定要永久删除标签“${name}”吗？',
+			'settings.tagDeleteRoomsHint' => ({required int count}) => '${count} 个关注直播间会移出这个标签，直播间本身不会被取消关注。',
+			'settings.tagDeleteBody' => '该标签还没有直播间在使用。',
+			'settings.tagEmptyTitle' => '暂无自定义标签',
+			'settings.tagEmptyHint' => '标签用来给关注的直播间分组：在关注页的卡片菜单里给直播间加标签，关注页可以按标签筛选。',
+			'settings.tagSortTip' => '拖动左侧把手调整顺序，关注页的标签栏按这个顺序显示。',
+			'settings.tagRooms' => ({required int count}) => '${count} 个直播间',
+			'settings.showUnplayableTitle' => '显示不能直接播放的直播',
+			'settings.showUnplayableDesc' => '不能直接播放（付费、加锁、仅限 App 等）的直播也显示在热门与分区房间；关注和搜索始终显示',
+			'settings.windowsPipFreeAspect' => '小窗自由比例',
+			'settings.windowsPipFreeAspectDesc' => '开启后可单独压小高度或拉宽窗口；画面按比例适配，形状不符的一侧会留黑边。关闭时窗口始终等于视频形状。',
+			'settings.windowsPipResetPosition' => '重置小窗位置和大小',
+			'settings.windowsPipResetPositionDesc' => '清除已保存的小窗尺寸与位置，下次从应用所在显示器右下角打开。',
+			'settings.windowsPipResetPositionConfirm' => '确定要清除已保存的小窗位置和大小吗？',
+			'settings.windowsPipResetAction' => '重置',
+			'settings.windowsPipResetPositionSuccess' => '已清除保存的小窗位置和大小',
+			'settings.fitHeight' => '适应高度',
+			'settings.fitWidth' => '适应宽度',
+			'settings.fitScaleDown' => '等比缩小',
+			'settings.styleNoEmoji' => '纯文字模式（隐藏表情）',
+			'settings.styleNoEmojiDesc' => '画面飞行弹幕只画文字，表情图片跳过；聊天列表不受影响。',
+			'settings.portraitPresentationGroup' => '全屏呈现',
+			'settings.portraitFullscreenPolicy' => '进入全屏时的方向',
+			'settings.portraitFullscreenPolicyDesc' => '大屏和分屏设备自动交给系统布局，手机可跟随直播源',
+			'settings.portraitFullscreenFollowSource' => '跟随直播源（推荐）',
+			'settings.portraitFullscreenFollowSystem' => '跟随系统',
+			'settings.portraitFullscreenLandscape' => '始终横屏',
+			'settings.portraitReset' => '恢复竖屏适配默认设置',
+			'settings.portraitResetDesc' => '把识别、自适应高度、布局模式与全屏方向恢复为默认值。',
+			'settings.portraitResetConfirm' => '本页的竖屏设置将恢复默认值；普通横屏直播不受影响。',
+			'settings.styleTopMargin' => '顶部留白（像素）',
+			'settings.styleTopMarginDesc' => '画面顶部不显示弹幕的高度，0–300。',
+			'settings.styleBottomMargin' => '底部留白（像素）',
+			'settings.styleBottomMarginDesc' => '画面底部不显示弹幕的高度，避免挡住字幕，0–300。',
+			'settings.roomCardSettingsTitle' => '房间卡片',
+			'settings.roomCardSettingsDescription' => '分别定制移动端和桌面端房间卡片的可见信息。',
+			'settings.roomCardTarget' => '应用到',
+			'settings.roomCardMobile' => '移动端',
+			'settings.roomCardDesktop' => '桌面端',
+			'settings.roomCardPreview' => '实时预览',
+			'settings.roomCardPreviewTitle' => '直播间预览',
+			'settings.roomCardPreviewAnchor' => '预览主播',
+			'settings.roomCardPresets' => '快捷预设',
+			'settings.roomCardPresetCompact' => '简洁',
+			'settings.roomCardPresetStandard' => '标准',
+			'settings.roomCardPresetDetailed' => '详细',
+			'settings.roomCardPresetCustom' => '自定义',
+			'settings.roomCardVisibleContent' => '显示内容',
+			'settings.roomCardShowAvatar' => '显示主播头像',
+			'settings.roomCardShowAvatarDesc' => '在房间标题旁保留主播身份图片。',
+			'settings.roomCardShowAnchor' => '显示主播名称',
+			'settings.roomCardShowAnchorDesc' => '在房间标题下方显示主播名称。',
+			'settings.roomCardShowPlatform' => '显示平台徽章',
+			'settings.roomCardShowPlatformDesc' => '可让宽卡片自动显示、始终在封面显示或保持隐藏。',
+			'settings.roomCardPlatformAutomatic' => '自动',
+			'settings.roomCardPlatformAlways' => '始终显示',
+			'settings.roomCardPlatformHidden' => '隐藏',
+			'settings.roomCardShowAudience' => '显示观众指标',
+			'settings.roomCardShowAudienceDesc' => '在直播卡片上显示平台支持的观众数据。',
+			'settings.roomCardShowReplay' => '显示回放徽章',
+			'settings.roomCardShowReplayDesc' => '标记回放和录播房间。',
+			'settings.roomCardReplay' => '回放',
+			'settings.roomCardAppearance' => '外观',
+			'settings.roomCardLayout' => '卡片布局',
+			'settings.roomCardLayoutDesc' => '选择大图封面卡片，或不显示大封面的紧凑主播信息行。',
+			'settings.roomCardLayoutCover' => '封面卡片',
+			'settings.roomCardLayoutCompact' => '紧凑信息行',
+			'settings.roomCardCornerRadius' => '圆角大小',
+			'settings.roomCardCornerRadiusDesc' => '同步调整卡片和封面圆角。',
+			'settings.roomCardResetCurrent' => '重置当前布局',
+			'settings.roomCardScopeHint' => '移动端和桌面端设置分别保存；状态核验与历史删除控件会在需要时继续显示。',
+			'settings.fontWeightChange' => '更换字重',
+			'settings.fontWeightChangeDesc' => '当前字体包含多个字重，可锁定其中一个。',
+			'settings.fontWeightAuto' => '自动字重（推荐）',
+			'settings.fontWeightAutoDesc' => '随系统与界面自动使用常规或加粗。',
+			'settings.fontWeightLock' => ({required Object name}) => '锁定「${name}」',
+			'settings.fontWeightLockDesc' => '全应用文字将固定使用这个字面。',
+			'settings.fontWeightLockedDetail' => ({required Object name}) => '已锁定字重：${name}',
+			'settings.cacheRefreshThumbnails' => '刷新缩略图',
+			'settings.cacheRefreshThumbnailsDesc' => '清空封面、头像与图标缓存，下一次显示时重新下载。',
+			'settings.cacheRefreshThumbnailsDone' => '缩略图已刷新',
+			'settings.downloadDirectory' => '下载目录',
+			'settings.downloadDirectoryDesc' => '下载的字体与文件存放在此目录。',
+			'settings.downloadDirectoryDefaultLabel' => '当前使用默认目录',
+			'settings.downloadDirectoryReset' => '恢复默认目录',
+			'settings.downloadDirectoryUpdated' => '下载目录已更新',
+			'settings.downloadDirectoryPickFailed' => '无法选择下载目录',
+			'settings.downloadDirectoryPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
+			'settings.localInteractionTitle' => '本机互动',
+			'settings.localInteractionDesc' => '在本机模拟观众弹幕、礼物、等级与金币；不会向直播平台发送任何内容。',
+			'settings.localEnabled' => '启用本机互动',
+			'settings.localEnabledDesc' => '关闭后房间内的本机互动页签隐藏，历史与设置保留。',
+			'settings.localIdentity' => '本地身份',
+			'settings.localUserName' => '昵称',
+			'settings.localUserNameDesc' => '显示在本地弹幕与互动的发送者名称。',
+			'settings.localTitle' => '头衔',
+			'settings.localTitleDesc' => '本地观众的称呼，例如「听众」「观众」。',
+			'settings.localCoins' => '金币',
+			'settings.localCoinsDesc' => '本机互动的余额，送礼物时扣除。',
+			'settings.localExperience' => '经验',
+			'settings.localExperienceDesc' => '每 100 经验升一级，仅用于本机徽章。',
+			'settings.localLevel' => '等级',
+			'settings.localLevelValue' => ({required Object level}) => 'Lv.${level}',
+			'settings.localStatusValue' => ({required Object coins, required Object experience, required Object level}) => '金币 ${coins} · 经验 ${experience} · Lv.${level}',
+			'settings.localShowAsDanmaku' => '在画面弹幕中显示',
+			'settings.localShowAsDanmakuDesc' => '发送时同时进入房间的飞行弹幕与聊天列表。',
+			'settings.localShowPlatformBadge' => '显示平台徽章',
+			'settings.localShowPlatformBadgeDesc' => '在本地消息里带上所选平台的身份标记。',
+			'settings.localShowLevelBadge' => '显示等级徽章',
+			'settings.localShowLevelBadgeDesc' => '在本地消息里显示经验等级。',
+			'settings.localGiftEffects' => '礼物特效',
+			'settings.localGiftEffectsDesc' => '送出礼物时播放本地面板内的横幅特效。',
+			'settings.localPreviewPlatform' => '预览平台',
+			'settings.localPreviewPlatformDesc' => '选择预览与本地消息使用的平台标记。',
+			'settings.localStyle' => '弹幕样式',
+			'settings.localStyleDesc' => '只影响本机互动预览与本地消息样式。',
+			'settings.localPresetClean' => '清爽',
+			'settings.localPresetHighlight' => '醒目',
+			'settings.localPresetNeon' => '霓虹',
+			'settings.localPresetMinimal' => '极简',
+			'settings.localPresetCaption' => '字幕',
+			'settings.localPresetCyber' => '赛博',
+			'settings.localPresetCustom' => '自定义',
+			'settings.localFontSize' => '字号',
+			'settings.localSpeed' => '速度',
+			'settings.localWeight' => '字重',
+			'settings.localOpacity' => '不透明度',
+			'settings.localLetterSpacing' => '字距',
+			'settings.localStrokeWidth' => '描边宽度',
+			'settings.localShadowBlur' => '阴影模糊',
+			'settings.localShadowOffset' => '阴影偏移',
+			'settings.localFixedDuration' => '固定弹幕停留',
+			'settings.localShowStroke' => '描边',
+			'settings.localItalic' => '斜体',
+			'settings.localShowShadow' => '阴影',
+			'settings.localPlacement' => '弹幕位置',
+			'settings.localPlacementScroll' => '滚动',
+			'settings.localPlacementTop' => '顶部',
+			'settings.localPlacementBottom' => '底部',
+			'settings.localFontFamily' => '字体',
+			'settings.localFontSystem' => '系统字体',
+			'settings.localFontMono' => '等宽字体',
+			'settings.localTextColor' => '文字颜色',
+			'settings.localStrokeColor' => '描边颜色',
+			'settings.localShadowColor' => '阴影颜色',
+			'settings.localPreview' => '实时预览',
+			'settings.localPreviewText' => '本机互动预览',
+			'settings.localHistory' => '互动历史',
+			'settings.localHistoryEmpty' => '还没有本机互动记录',
+			'settings.localClearHistory' => '清空历史',
+			'settings.localClearHistoryDesc' => '只清除历史记录，金币、经验与样式保留。',
+			'settings.localClearAll' => '清空历史与经济',
+			'settings.localClearAllDesc' => '历史、金币与经验回到默认值。',
+			'settings.localClearAllConfirm' => '清空本机互动？',
+			'settings.localClearAllConfirmDesc' => '历史、金币（1000）与经验（0）会重置，样式与身份保留。',
+			'settings.localCleared' => '已清空',
+			'settings.localNoCoins' => '金币不足',
+			'settings.localGiftSent' => '已送出礼物',
+			'settings.localSend' => '发送',
+			'settings.localMessageHint' => '输入本地弹幕…',
+			'settings.localGifts' => '礼物',
+			'settings.localSettingsEntry' => '设置与样式',
+			'settings.pageSettingsEntry' => '页面设置',
+			'settings.portraitFullscreenGroup' => '竖屏全屏',
+			'settings.portraitDisplayMode' => '画面模式',
+			'settings.portraitDisplayModeDesc' => '完整=整幅画面；沉浸=整幅画面配柔和背景；均衡=轻微裁切；铺满=裁切两侧填满屏幕。',
+			'settings.portraitDanmakuMode' => '弹幕区域',
+			'settings.portraitDanmakuModeDesc' => '竖屏全屏中飞行弹幕可占用的区域。',
+			'settings.portraitRememberRoom' => '记住每个房间的选择',
+			'settings.portraitRememberRoomDesc' => '在竖屏全屏里切换画面/弹幕后，按房间保存；关闭会清除已保存的房间选择。',
+			'settings.portraitDiagnostics' => '显示竖屏诊断',
+			'settings.portraitDiagnosticsDesc' => '在竖屏全屏左下角显示分辨率、宽高比、画面与弹幕模式。',
+			'settings.portraitClearOverrides' => '清除房间覆盖',
+			'settings.portraitClearOverridesDesc' => '删除所有按房间保存的竖屏画面与弹幕选择，保留全局默认。',
+			'settings.portraitOverridesCleared' => '房间覆盖已清除',
+			'settings.portraitOverridesCount' => ({required int count}) => '已保存 ${count} 个房间',
+			'settings.chatShowNames' => '显示聊天用户名',
+			'settings.chatShowNamesDesc' => '关闭后聊天列表只显示内容；长按操作仍知道发送者。',
+			'settings.chatListGroup' => '聊天列表',
+			'settings.chatListStyle' => '列表样式',
+			'settings.chatListStyleCompact' => '紧凑',
+			'settings.chatListStyleCard' => '卡片',
+			'settings.chatListFontSize' => '列表文字大小',
+			'settings.chatListFollowTheme' => '跟随主题',
+			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
+			'settings.chatListLineSpacing' => '列表行距',
+			'settings.chatListSpacingCompact' => '紧凑',
+			'settings.chatListSpacingStandard' => '标准',
+			'settings.chatListSpacingLoose' => '宽松',
+			'settings.danmakuPausedBehavior' => '暂停时的弹幕',
+			'settings.danmakuPausedBehaviorDesc' => '视频暂停后，弹幕跟着停住还是照常飘过。',
+			'settings.danmakuPausedPause' => '随视频暂停',
+			'settings.danmakuPausedFly' => '继续飘过',
+			'settings.twitchLanguages' => 'Twitch 目录语言',
+			'settings.twitchLanguagesDesc' => '只显示所选语言的直播；不选则显示全部。',
+			'settings.twitchAllLanguages' => '全部语言',
+			'settings.twitchLegacyLanguages' => '中文 + 韩语',
+			'settings.twitchLanguagesHint' => '按主播语言过滤 Twitch 热门与分区目录。',
+			'settings.twitchLanguage_zh' => '中文',
+			'settings.twitchLanguage_en' => '英语',
+			'settings.twitchLanguage_ko' => '韩语',
+			'settings.twitchLanguage_ja' => '日语',
+			'settings.twitchLanguage_es' => '西班牙语',
+			'settings.twitchLanguage_pt' => '葡萄牙语',
+			'settings.twitchLanguage_de' => '德语',
+			'settings.twitchLanguage_fr' => '法语',
+			'settings.twitchLanguage_ru' => '俄语',
+			'settings.twitchLanguage_it' => '意大利语',
+			'settings.twitchLanguage_th' => '泰语',
+			'settings.twitchLanguage_vi' => '越南语',
+			'settings.twitchLanguage_id' => '印度尼西亚语',
+			'settings.twitchLanguage_tr' => '土耳其语',
+			'settings.twitchLanguage_pl' => '波兰语',
+			'settings.holdDanmakuOnPress' => '按住时冻结弹幕',
+			'settings.holdDanmakuOnPressDesc' => '手指按住画面弹幕时先冻结，便于点按或长按；关闭后点按/长按仍会命中，但弹幕不会在按住期间停住。',
+			'settings.youtubeAllChat' => 'YouTube 显示全部聊天',
+			'settings.youtubeAllChatDesc' => '关闭时使用网页默认的 Top chat；开启后请求全部直播聊天。',
+			'settings.preferH264' => '虎牙优先 H.264',
+			'settings.preferH264Desc' => '平台同时提供多种编码时优先选择 H.264，兼容性更好。',
+			'settings.clipboardRooms' => '识别剪贴板直播间链接',
+			'settings.clipboardRoomsDesc' => '回到应用时读取剪贴板，发现支持的直播平台链接会询问是否打开；不会自动跳转。',
+			'settings.clipboardRoomTitle' => '打开剪贴板中的直播间？',
+			'settings.clipboardRoomDesc' => ({required Object platform, required Object roomId}) => '检测到 ${platform} 的直播间 ${roomId}，是否打开？',
+			'settings.clipboardRoomOpen' => '打开直播间',
+			'settings.backgroundAudioOnly' => '后台仅音频',
+			'settings.backgroundAudioOnlyDesc' => '后台播放时关闭视频解码，只保留声音；回到前台恢复画面。',
+			'settings.chatShowGifts' => '在聊天列表显示礼物',
+			'settings.chatShowGiftsDesc' => '平台上报的礼物显示为聊天里的礼物行；关闭后已有礼物行立即移除。',
+			'settings.danmakuShowGifts' => '飞行弹幕显示礼物',
+			'settings.danmakuShowGiftsDesc' => '值钱的礼物飞过画面，很值钱的在顶部停 4 秒；连击只飞开头和总数，每秒最多 3 条。',
+			'settings.floatWindowSize' => '小窗大小',
+			'settings.floatWindowSizeDesc' => '应用内悬浮窗的基础大小；拖动缩放会按横屏/竖屏分别记住。',
+			'settings.floatWindowSmall' => '小',
+			'settings.floatWindowMedium' => '中',
+			'settings.floatWindowLarge' => '大',
+			'settings.backgroundPauseDanmaku' => '后台暂停弹幕连接',
+			'settings.backgroundPauseDanmakuDesc' => '进入后台时断开平台弹幕连接，回到前台重新连接；聊天记录保留。',
+			'settings.douyuForceRenew' => '斗鱼每 5 分钟自动续期',
+			'settings.douyuForceRenewDesc' => '登录斗鱼后定期续期 Cookie，降低长时间观看时掉登录的概率。',
+			'settings.tvMenuExpanded' => 'TV 侧栏始终展开',
+			'settings.tvMenuExpandedDesc' => '保持侧栏显示名称；关闭后可用图标轨并在聚焦时展开。',
 			'shield.title' => '弹幕屏蔽',
-			'shield.description' => '按关键词与用户屏蔽直播间弹幕，规则保存在本机。',
+			'shield.description' => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
 			'shield.enabled' => '启用弹幕屏蔽',
 			'shield.enabledDescription' => '关闭后所有屏蔽规则临时失效',
+			'shield.similarityTitle' => '相似弹幕过滤',
+			'shield.similarityEnabled' => '启用相似弹幕过滤',
+			'shield.similarityEnabledDescription' => '自动过滤短时间内高度相似的弹幕，仅作用于平台消息。',
+			'shield.similarityThreshold' => '相似度阈值',
+			'shield.similarityThresholdDescription' => '相似度越高，过滤越严格',
+			'shield.similarityCacheDuration' => '缓存时间',
+			'shield.similarityCacheDurationDescription' => '相同或相似的弹幕在这段时间内不会重复显示',
+			'shield.similarityMaxCacheSize' => '最大缓存数量',
+			'shield.similarityMaxCacheSizeDescription' => '限制相似弹幕缓存占用的内存',
+			'shield.similaritySeconds' => ({required Object seconds}) => '${seconds} 秒',
+			'shield.repeatTitle' => '重复弹幕过滤',
+			'shield.repeatEnabled' => '合并短时间内的相同弹幕',
+			'shield.repeatEnabledDescription' => '不同用户发送相同内容时只保留第一条；本地弹幕和系统消息不受影响。',
+			'shield.repeatWindow' => '相同内容合并时间（秒）',
 			'shield.keywordsTitle' => '关键词',
 			'shield.usersTitle' => '用户',
 			'shield.keywordFieldHint' => '输入要屏蔽的关键词',
@@ -5918,6 +8691,16 @@ extension on Translations {
 			'shield.cleared' => '已清空',
 			'shield.removeEntry' => '移除这条屏蔽规则',
 			'shield.effectNote' => '屏蔽在直播间弹幕中立即生效。',
+			'shield.contentTitle' => '内容屏蔽',
+			'shield.blockEmoteOnly' => '屏蔽只有表情的弹幕',
+			'shield.blockEmoteOnlyDescription' => '只有表情、没有文字的弹幕不显示；自己发送的弹幕不会被屏蔽。',
+			'shield.blockLong' => '屏蔽超长弹幕',
+			'shield.blockLongDescription' => '超过设定字数的弹幕不显示（一个表情算一个字）。',
+			'shield.blockLongLength' => '最多字数',
+			'shield.blockLongLengthDescription' => '允许显示的最大字数，范围 10–100（一个表情算一个字）。',
+			'shield.blockLongLengthValue' => ({required int count}) => '${count} 字',
+			'shield.douyuSuspected' => '过滤斗鱼疑似自动弹幕',
+			'shield.douyuSuspectedDescription' => '开启后按启发式标记隐藏疑似自动或活动弹幕，也可能隐藏普通聊天',
 			'sites.title' => '站点',
 			'sites.live' => '直播',
 			'sites.search' => '搜索',
@@ -6017,6 +8800,9 @@ extension on Translations {
 			'toolbox.logsScrollBottom' => '滚动到底部',
 			'toolbox.logsCopied' => '日志已复制',
 			'toolbox.logsCopyEmpty' => '没有可复制的日志',
+			'toolbox.logsDirectory' => '日志目录',
+			'toolbox.logsDirectoryDefault' => '仅内存日志：开启「写入日志文件」后这里会显示目录。',
+			'toolbox.logsOpenFailed' => '无法打开日志目录',
 			'vod.searchHint' => '搜索 Bilibili 视频',
 			'vod.idleTitle' => '搜索点播视频',
 			'vod.idleDescription' => '输入关键词搜索 Bilibili 的视频。',
@@ -6045,6 +8831,8 @@ extension on Translations {
 			'vod.related' => '相关推荐',
 			'vod.parts' => '分P',
 			'vod.views' => '播放',
+			_ => null,
+		} ?? switch (path) {
 			'vod.danmaku' => '弹幕',
 			'vod.likes' => '点赞',
 			'vod.coins' => '投币',

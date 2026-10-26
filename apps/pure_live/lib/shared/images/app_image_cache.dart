@@ -22,10 +22,16 @@ final CacheManager appImageCache = CacheManager(
 /// share cache bookkeeping.
 CacheManager? _roomWindowImageCache;
 
+/// The room window's cache folder, when one is installed: its settings
+/// surface measures and prunes that folder, not the app-wide one this
+/// engine never draws.
+Directory? _roomWindowCacheDirectory;
+
 /// Points the shared image cache at [directory] for this engine. Call it
 /// from a room window's boot, before the first image is asked for.
 Future<void> installWindowImageCache(Directory directory) async {
   await directory.create(recursive: true);
+  _roomWindowCacheDirectory = directory;
   // The default file system for [CacheManager] puts files under the temp
   // directory under the cache key; the key therefore carries the room's
   // folder. The metadata goes beside them instead of a shared database.
@@ -85,6 +91,10 @@ Future<Directory?> _cacheDirectory() async {
   }
 }
 
+/// The folder this engine's images actually live in: the room window's own
+/// when one is installed, the app-wide one otherwise.
+Future<Directory?> _activeCacheDirectory() async => _roomWindowCacheDirectory ?? await _cacheDirectory();
+
 /// The image files under [root].
 List<(File, DateTime, int)> _imageFiles(Directory root) {
   final files = <(File, DateTime, int)>[];
@@ -106,7 +116,7 @@ List<(File, DateTime, int)> _imageFiles(Directory root) {
 
 /// The bytes the image cache occupies on disk.
 Future<int> imageCacheBytes() async {
-  final directory = await _cacheDirectory();
+  final directory = await _activeCacheDirectory();
   if (directory == null || !directory.existsSync()) {
     return 0;
   }
@@ -130,7 +140,7 @@ Future<int> enforceImageCacheLimit(int maxBytes) async {
   if (maxBytes <= 0) {
     return await imageCacheBytes();
   }
-  final directory = await _cacheDirectory();
+  final directory = await _activeCacheDirectory();
   if (directory == null || !directory.existsSync()) {
     return 0;
   }

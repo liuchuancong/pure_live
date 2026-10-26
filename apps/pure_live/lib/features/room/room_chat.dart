@@ -1,17 +1,22 @@
 import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/features/room/gift_text.dart';
+import 'package:pure_live/features/room/local_interaction_tab.dart' show LocalInteractionTab;
 import 'package:pure_live/features/room/room_controller.dart';
+import 'package:pure_live/features/room/room_message_actions.dart'
+    show blockRoomMessageKeyword, blockRoomMessageSender, copyRoomMessageText;
+import 'package:pure_live/features/settings/chat_display_settings.dart'
+    show chatListFontSizeProvider, chatListLineSpacingProvider, chatListStyleProvider, chatNamesProvider;
 import 'package:pure_live/features/settings/danmaku_style_providers.dart';
+import 'package:pure_live/features/settings/local_interaction_settings.dart' show localInteractionProvider;
 import 'package:pure_live/features/settings/playback_settings_providers.dart';
 import 'package:pure_live/features/shield/shield_pane.dart' show ShieldPane;
-import 'package:pure_live/features/shield/shield_repository.dart' show shieldRulesProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart' show cachedImage;
 import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
@@ -21,7 +26,7 @@ import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 /// keeps a board, the flying layer's own settings, and the shield's lists.
 /// The tab is the panel's own state; a narrow column scrolls its bar rather
 /// than cutting a label.
-enum _ChatTab { danmaku, superChats, settings, shield }
+enum _ChatTab { danmaku, superChats, local, settings, shield }
 
 /// The chat column under (or beside) the picture.
 final class RoomChatPanel extends ConsumerStatefulWidget {
@@ -42,9 +47,15 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
     final room = ref.watch(roomProvider).room;
     final site = room == null ? null : ref.watch(sitesProvider).getById(room.ref.platform);
     final superChats = site?.capability<LiveSuperChatFeed>() != null;
+    final localEnabled = ref.watch(localInteractionProvider).enabled;
     // A room change can take the board away; the tab falls back to the
-    // list rather than to an empty super-chat page.
-    final tab = _tab == _ChatTab.superChats && !superChats ? _ChatTab.danmaku : _tab;
+    // list rather than to an empty super-chat page. The local tab disappears
+    // with its master switch.
+    final tab = _tab == _ChatTab.superChats && !superChats
+        ? _ChatTab.danmaku
+        : _tab == _ChatTab.local && !localEnabled
+        ? _ChatTab.danmaku
+        : _tab;
     return ColoredBox(
       color: colors.surface,
       child: Column(
@@ -57,6 +68,7 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
             tabs: [
               DsTab(value: _ChatTab.danmaku, label: Text(t.room.danmakuList)),
               if (superChats) DsTab(value: _ChatTab.superChats, label: Text(t.room.superChats)),
+              if (localEnabled) DsTab(value: _ChatTab.local, label: Text(t.settings.localInteractionTitle)),
               DsTab(value: _ChatTab.settings, label: Text(t.room.danmakuSettings)),
               DsTab(value: _ChatTab.shield, label: Text(t.room.blockList)),
             ],
@@ -72,6 +84,7 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
                 ],
               ),
               _ChatTab.superChats => _SuperChatTab(room: room!),
+              _ChatTab.local => const LocalInteractionTab(),
               _ChatTab.settings => const _RoomDanmakuSettings(),
               _ChatTab.shield => const _ShieldTab(),
             },
@@ -92,6 +105,7 @@ final class _ChatFeed extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final chat = ref.watch(roomChatProvider);
+    final anchorName = ref.watch(roomProvider.select((state) => state.room?.anchor?.name ?? ''));
     if (chat.isEmpty) {
       return Center(
         child: DsEmptyState(icon: const DsIcon(DsIcons.messageCircle), title: Text(t.room.noChat)),
@@ -104,7 +118,8 @@ final class _ChatFeed extends ConsumerWidget {
       reverse: true,
       padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s16),
       itemCount: chat.length,
-      itemBuilder: (context, index) => _ChatLine(message: chat[chat.length - 1 - index]),
+      itemBuilder: (context, index) =>
+          _ChatLine(message: chat[chat.length - 1 - index], anchorName: anchorName),
     );
   }
 }
@@ -168,9 +183,12 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
 /// it gave one. Its context menu copies the line, blocks the sender, or
 /// blocks a keyword to cut out of the line.
 final class _ChatLine extends ConsumerWidget {
-  const _ChatLine({required this.message});
+  const _ChatLine({required this.message, this.anchorName = ''});
 
   final LiveMessage message;
+
+  /// The room's streamer: a gift names its receiver only when it differs.
+  final String anchorName;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -178,136 +196,185 @@ final class _ChatLine extends ConsumerWidget {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final sender = message.sender;
-    final nameStyle = theme.typography.caption.copyWith(
+    var nameStyle = theme.typography.caption;
+    final senderName = sender?.userName.trim() ?? '';
+    final showNames = ref.watch(chatNamesProvider);
+    final listStyle = ref.watch(chatListStyleProvider);
+    final fontSize = ref.watch(chatListFontSizeProvider);
+    final lineSpacing = ref.watch(chatListLineSpacingProvider);
+    final height = switch (lineSpacing) {
+      'compact' => 1.4,
+      'loose' => 1.7,
+      _ => 1.5,
+    };
+    final vertical = switch (lineSpacing) {
+      'compact' => DsSpace.s3,
+      'loose' => DsSpace.s6,
+      _ => DsSpace.s3,
+    };
+    final lineStyle = theme.typography.caption.copyWith(
+      fontSize: fontSize > 0 ? fontSize.toDouble() : null,
+      height: height,
+      color: colors.text,
+    );
+    nameStyle = theme.typography.caption.copyWith(
+      fontSize: fontSize > 0 ? fontSize.toDouble() : null,
+      height: height,
       color: message.color == null
           ? colors.textMuted
           : Color.fromARGB(255, message.color!.r, message.color!.g, message.color!.b),
     );
-    final senderName = sender?.userName.trim() ?? '';
+    final gift = _giftOf(message);
+    final words = gift == null ? message.text : _giftSentence(t, gift, anchorName);
+    Widget content = Padding(
+      padding: EdgeInsets.symmetric(vertical: vertical),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (gift != null)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(top: 1, end: DsSpace.s6),
+              child: _GiftIcon(gift: gift, size: fontSize > 0 ? fontSize.toDouble() : 16),
+            ),
+          Expanded(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  if (showNames && senderName.isEmpty)
+                    TextSpan(text: '${t.room.system}: ', style: nameStyle),
+                  if (showNames && senderName.isNotEmpty)
+                    TextSpan(text: '$senderName: ', style: nameStyle),
+                  TextSpan(text: words, style: lineStyle),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (listStyle == 'card') {
+      content = Container(
+        margin: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s6),
+        decoration: BoxDecoration(
+          color: colors.control,
+          borderRadius: BorderRadius.circular(theme.radii.card),
+        ),
+        child: content,
+      );
+    }
     return DsContextMenuRegion(
       semanticLabel: t.room.messageActions,
       items: [
         DsMenuItem(
           leading: const DsIcon(DsIcons.copy),
           label: Text(t.room.copy),
-          onPressed: () => unawaited(_copy(context, message.text)),
+          onPressed: () => unawaited(
+            copyRoomMessageText(
+              context,
+              gift == null ? message.text : (senderName.isEmpty ? words : '$senderName: $words'),
+            ),
+          ),
         ),
         if (!message.isLocal && senderName.isNotEmpty)
           DsMenuItem(
             leading: const DsIcon(DsIcons.ban),
             label: Text(t.room.blockUser),
-            onPressed: () => unawaited(_blockUser(context, ref, senderName)),
+            onPressed: () => unawaited(blockRoomMessageSender(context, ref, senderName)),
           ),
         if (!message.isLocal)
           DsMenuItem(
             leading: const DsIcon(DsIcons.shield),
             label: Text(t.room.blockKeyword),
-            onPressed: () => unawaited(_blockKeyword(context, ref, message)),
+            onPressed: () => unawaited(blockRoomMessageKeyword(context, ref, message.text)),
           ),
       ],
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: DsSpace.s3),
-        child: Text.rich(
-          TextSpan(
-            children: [
-              if (senderName.isEmpty)
-                TextSpan(text: '${t.room.system}: ', style: nameStyle)
-              else
-                TextSpan(text: '$senderName: ', style: nameStyle),
-              TextSpan(
-                text: message.text,
-                style: theme.typography.caption.copyWith(color: colors.text),
-              ),
-            ],
-          ),
-        ),
-      ),
+      child: content,
     );
-  }
-
-  Future<void> _copy(BuildContext context, String text) async {
-    await Clipboard.setData(ClipboardData(text: text));
-    if (context.mounted) showDsToast(context: context, title: context.t.room.copied);
-  }
-
-  Future<void> _blockUser(BuildContext context, WidgetRef ref, String name) async {
-    final added = await ref.read(shieldRulesProvider.notifier).addUser(name);
-    if (!context.mounted) return;
-    showDsToast(context: context, title: added ? context.t.room.userBlocked : context.t.shield.duplicateEntry);
-  }
-
-  Future<void> _blockKeyword(BuildContext context, WidgetRef ref, LiveMessage message) async {
-    final t = context.t;
-    final key = GlobalKey<_KeywordEditorState>();
-    final picked = await showDsDialog<String>(
-      context: context,
-      builder: (dialogContext) => DsDialog(
-        title: Text(t.room.blockKeyword),
-        icon: const DsIcon(DsIcons.shield),
-        description: _KeywordEditor(
-          key: key,
-          initial: message.text,
-          onSubmit: (word) => Navigator.of(dialogContext).pop(word),
-        ),
-        actions: [
-          DsButton(
-            variant: DsButtonVariant.secondary,
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(t.common.cancel),
-          ),
-          DsButton(
-            variant: DsButtonVariant.danger,
-            onPressed: () {
-              final word = key.currentState?.value ?? '';
-              if (word.isNotEmpty) Navigator.of(dialogContext).pop(word);
-            },
-            child: Text(t.room.block),
-          ),
-        ],
-      ),
-    );
-    if (picked == null || picked.isEmpty) return;
-    final added = await ref.read(shieldRulesProvider.notifier).addKeyword(picked);
-    if (!context.mounted) return;
-    showDsToast(context: context, title: added ? t.room.keywordBlocked : t.shield.duplicateEntry);
   }
 }
 
-/// The keyword field of the block dialog: the whole line is offered, cut
-/// down to the word that should be dropped; Enter confirms.
-final class _KeywordEditor extends StatefulWidget {
-  const _KeywordEditor({required this.initial, required this.onSubmit, super.key});
+/// The [LiveGift] a platform gift line carries; null for anything else (a
+/// local gift carries a map and keeps its plain text).
+LiveGift? _giftOf(LiveMessage message) =>
+    message.type == LiveMessageType.gift && message.payload is LiveGift ? message.payload! as LiveGift : null;
 
-  final String initial;
-  final ValueChanged<String> onSubmit;
-
-  @override
-  State<_KeywordEditor> createState() => _KeywordEditorState();
+/// The value of the whole line in the gift's unit, when it has one: a free
+/// gift, an unknown unit and a platform without a price show nothing.
+int? _giftShownValue(LiveGift gift) {
+  if (giftUnitIsFree(gift.value.unit)) return null;
+  final shown = giftShownCount(gift);
+  final unitPrice = gift.value.unitPrice;
+  if (shown > gift.count && unitPrice != null && unitPrice > 0) return (unitPrice * shown).round();
+  final total = gift.value.totalValue;
+  if (total == null || total <= 0) return null;
+  return total.round();
 }
 
-final class _KeywordEditorState extends State<_KeywordEditor> {
-  late final TextEditingController _field = TextEditingController(text: widget.initial);
+/// A fen amount as yuan, without trailing zeros ("100", "0.5", "12.34").
+String _yuanText(int fen) {
+  if (fen % 100 == 0) return '${fen ~/ 100}';
+  final text = (fen / 100).toStringAsFixed(2);
+  final trimmed = text.replaceFirst(RegExp(r'0+$'), '');
+  return trimmed.endsWith('.') ? trimmed.substring(0, trimmed.length - 1) : trimmed;
+}
 
-  String get value => _field.text.trim();
+String? _giftValueText(Translations t, LiveGift gift) {
+  final value = _giftShownValue(gift);
+  if (value == null || value <= 0) return null;
+  final room = t.room;
+  return switch (gift.value.unit) {
+    LiveGiftUnit.fen => room.giftValueYuan(value: _yuanText(value)),
+    LiveGiftUnit.rmb || LiveGiftUnit.yuan => room.giftValueYuan(value: '$value'),
+    LiveGiftUnit.goldSeed => room.giftValueGoldSeed(value: '$value'),
+    LiveGiftUnit.diamond => room.giftValueDiamond(value: '$value'),
+    LiveGiftUnit.redBean => room.giftValueRedBean(value: '$value'),
+    LiveGiftUnit.point => room.giftValuePoint(value: '$value'),
+    LiveGiftUnit.bits => room.giftValueBits(value: '$value'),
+    LiveGiftUnit.kicks => room.giftValueKicks(value: '$value'),
+    LiveGiftUnit.cheese => room.giftValueCheese(value: '$value'),
+    LiveGiftUnit.starBalloon => room.giftValueStarBalloon(value: '$value'),
+    LiveGiftUnit.douyinCoin => room.giftValueDouyinCoin(value: '$value'),
+    LiveGiftUnit.sixCoin => room.giftValueSixCoin(value: '$value'),
+    LiveGiftUnit.acCoin => room.giftValueAcCoin(value: '$value'),
+    LiveGiftUnit.starCoin => room.giftValueStarCoin(value: '$value'),
+    LiveGiftUnit.heart => room.giftValueHeart(value: '$value'),
+    LiveGiftUnit.note => room.giftValueNote(value: '$value'),
+    LiveGiftUnit.free || LiveGiftUnit.silver || LiveGiftUnit.banana || LiveGiftUnit.gold || LiveGiftUnit.other =>
+      null,
+  };
+}
+
+/// The gift in words: "送出 小心心 ×3", plus its value when known.
+String _giftSentence(Translations t, LiveGift gift, String anchorName) {
+  final value = _giftValueText(t, gift);
+  final words = giftSentenceText(t, gift, anchorName);
+  return value == null ? words : '$words  $value';
+}
+
+/// A gift's picture at its line's text size, with the generic gift mark
+/// when the platform gave none or it failed to load.
+final class _GiftIcon extends StatelessWidget {
+  const _GiftIcon({required this.gift, required this.size});
+
+  final LiveGift gift;
+  final double size;
 
   @override
-  void dispose() {
-    _field.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final fallback = DsIcon(DsIcons.gift, size: size, color: colors.textSubtle);
+    final url = gift.iconUrl?.trim() ?? '';
+    final uri = Uri.tryParse(url);
+    if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) return fallback;
+    return Image(
+      image: cachedImage(url, width: (size * 2).round(), height: (size * 2).round()),
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      errorBuilder: (_, _, _) => fallback,
+    );
   }
-
-  @override
-  Widget build(BuildContext context) => DsTextField(
-    controller: _field,
-    autofocus: true,
-    clearable: true,
-    maxLength: 40,
-    placeholder: context.t.room.blockKeywordHint,
-    onSubmitted: (word) {
-      final value = word.trim();
-      if (value.isNotEmpty) widget.onSubmit(value);
-    },
-  );
 }
 
 /// The flying danmaku's own settings, right beside the list: whether it
@@ -322,6 +389,9 @@ final class _RoomDanmakuSettings extends ConsumerWidget {
     final settings = ref.watch(playbackSettingsProvider);
     final style = ref.watch(danmakuStyleProvider);
     final controller = ref.read(danmakuStyleProvider.notifier);
+    final frameRate = ref.watch(danmakuFrameRateProvider);
+    final frameRateController = ref.read(danmakuFrameRateProvider.notifier);
+    final effectiveFps = ref.watch(danmakuEffectiveFpsProvider);
     // Clones share one settings store; there is no per-window scope here.
     return ListView(
       padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s20),
@@ -336,20 +406,43 @@ final class _RoomDanmakuSettings extends ConsumerWidget {
         _StyleSlider(
           icon: DsIcons.type,
           label: t.settings.styleFontSize,
-          shown: '${style.fontSize.round()}',
+          shown: '${style.fontSize.toStringAsFixed(1)} px',
           value: style.fontSize,
           min: DanmakuStyleRange.fontSizeMin,
           max: DanmakuStyleRange.fontSizeMax,
           onChanged: (value) => unawaited(controller.setFontSize(value)),
+          semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
+        ),
+        _StyleSlider(
+          icon: DsIcons.bold,
+          label: t.settings.styleFontWeight,
+          shown: danmakuFontWeightLabel(t, style.fontWeight),
+          value: style.fontWeight.toDouble(),
+          min: DanmakuStyleRange.fontWeightMin.toDouble(),
+          max: DanmakuStyleRange.fontWeightMax.toDouble(),
+          divisions: DanmakuStyleRange.fontWeightDivisions,
+          onChanged: (value) => unawaited(controller.setFontWeight(value.round())),
+          semanticFormatter: (value) => danmakuFontWeightLabel(t, value.round()),
+        ),
+        _StyleSlider(
+          icon: DsIcons.letterSpacing,
+          label: t.settings.styleLetterSpacing,
+          shown: '${style.letterSpacing.toStringAsFixed(1)} px',
+          value: style.letterSpacing,
+          min: DanmakuStyleRange.letterSpacingMin,
+          max: DanmakuStyleRange.letterSpacingMax,
+          onChanged: (value) => unawaited(controller.setLetterSpacing(value)),
+          semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
         ),
         _StyleSlider(
           icon: DsIcons.wind,
           label: t.settings.styleSpeed,
-          shown: '${style.baseSpeed.round()}',
+          shown: '${style.baseSpeed.round()} px/s',
           value: style.baseSpeed,
           min: DanmakuStyleRange.speedMin,
           max: DanmakuStyleRange.speedMax,
           onChanged: (value) => unawaited(controller.setBaseSpeed(value)),
+          semanticFormatter: (value) => '${value.round()} px/s',
         ),
         _StyleSlider(
           icon: DsIcons.moveVertical,
@@ -357,7 +450,8 @@ final class _RoomDanmakuSettings extends ConsumerWidget {
           shown: '${(style.area * 100).round()}%',
           value: style.area,
           min: DanmakuStyleRange.areaMin,
-          max: 1,
+          max: DanmakuStyleRange.areaMax,
+          divisions: DanmakuStyleRange.areaDivisions,
           onChanged: (value) => unawaited(controller.setArea(value)),
         ),
         _StyleSlider(
@@ -375,10 +469,61 @@ final class _RoomDanmakuSettings extends ConsumerWidget {
           onChanged: (value) => unawaited(controller.setShowStroke(value: value)),
           label: Text(t.settings.styleStroke),
         ),
+        _StyleSlider(
+          icon: DsIcons.square,
+          label: t.settings.styleStrokeWidth,
+          shown: '${style.strokeWidth.toStringAsFixed(1)} px',
+          value: style.strokeWidth,
+          min: DanmakuStyleRange.strokeWidthMin,
+          max: DanmakuStyleRange.strokeWidthMax,
+          // Greyed out while the outline is off, as in the reference.
+          onChanged: style.showStroke ? (value) => unawaited(controller.setStrokeWidth(value)) : null,
+          semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: DsSpace.s8),
+          child: DsSwitch(
+            value: frameRate.autoFps,
+            onChanged: (value) => unawaited(frameRateController.setAutoFps(value: value)),
+            label: Text(t.settings.styleFpsFollow),
+            description: Text(t.settings.styleFpsFollowDesc),
+          ),
+        ),
+        _StyleSlider(
+          icon: DsIcons.gauge,
+          label: t.settings.styleFps,
+          shown: t.settings.styleFpsValue(count: '${frameRate.autoFps ? effectiveFps : frameRate.fps}'),
+          value: (frameRate.autoFps ? effectiveFps : frameRate.fps).toDouble(),
+          min: DanmakuStyleRange.fpsMin.toDouble(),
+          max: DanmakuStyleRange.fpsMax.toDouble(),
+          divisions: DanmakuStyleRange.fpsDivisions,
+          onChanged: frameRate.autoFps ? null : (value) => unawaited(frameRateController.setFps(value.round())),
+          semanticFormatter: (value) => t.settings.styleFpsValue(count: '${value.round()}'),
+        ),
+        _StyleSlider(
+          icon: DsIcons.layers,
+          label: t.settings.styleMaxVisible,
+          shown: t.settings.styleMaxVisibleValue(count: '${style.maxVisibleCount}'),
+          value: style.maxVisibleCount.toDouble(),
+          min: DanmakuStyleRange.maxVisibleMin.toDouble(),
+          max: DanmakuStyleRange.maxVisibleMax.toDouble(),
+          divisions: DanmakuStyleRange.maxVisibleDivisions,
+          onChanged: style.massMode ? null : (value) => unawaited(controller.setMaxVisibleCount(value.round())),
+          semanticFormatter: (value) => t.settings.styleMaxVisibleValue(count: '${value.round()}'),
+        ),
+        DsSwitch(
+          value: style.massMode,
+          onChanged: (value) => unawaited(controller.setMassMode(value: value)),
+          label: Text(t.settings.styleMassMode),
+          description: Text(t.settings.styleMassModeDesc),
+        ),
         DsListRow(
           leading: const DsIcon(DsIcons.rotateCw),
           title: Text(t.settings.styleReset),
-          onPressed: () => unawaited(controller.reset()),
+          onPressed: () {
+            unawaited(controller.reset());
+            unawaited(frameRateController.reset());
+          },
         ),
       ],
     );
@@ -395,6 +540,8 @@ final class _StyleSlider extends StatelessWidget {
     required this.min,
     required this.max,
     required this.onChanged,
+    this.divisions,
+    this.semanticFormatter,
   });
 
   final DsIconData icon;
@@ -403,12 +550,15 @@ final class _StyleSlider extends StatelessWidget {
   final double value;
   final double min;
   final double max;
-  final ValueChanged<double> onChanged;
+  final int? divisions;
+  final String Function(double value)? semanticFormatter;
+  final ValueChanged<double>? onChanged;
 
   @override
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    final enabled = onChanged != null;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: DsSpace.s6),
       child: Column(
@@ -418,14 +568,25 @@ final class _StyleSlider extends StatelessWidget {
           Row(
             spacing: DsSpace.s6,
             children: [
-              DsIcon(icon, size: theme.sizes.iconSm, color: colors.textMuted),
+              DsIcon(icon, size: theme.sizes.iconSm, color: enabled ? colors.textMuted : colors.textSubtle),
               Expanded(
-                child: Text(label, style: theme.typography.body.copyWith(color: colors.text)),
+                child: Text(
+                  label,
+                  style: theme.typography.body.copyWith(color: enabled ? colors.text : colors.textMuted),
+                ),
               ),
               Text(shown, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
             ],
           ),
-          DsSlider(value: value, min: min, max: max, onChanged: onChanged, semanticLabel: label),
+          DsSlider(
+            value: value,
+            min: min,
+            max: max,
+            divisions: divisions,
+            onChanged: onChanged,
+            semanticLabel: label,
+            semanticFormatter: semanticFormatter,
+          ),
         ],
       ),
     );

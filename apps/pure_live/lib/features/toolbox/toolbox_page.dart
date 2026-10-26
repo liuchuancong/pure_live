@@ -7,8 +7,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_log/live_log.dart' show LogLevel, LogRecord;
 import 'package:live_sites/live_sites.dart';
+import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:pure_live/app/logging/app_log.dart'
-    show appLogFileEnabled, appLogLevel, clearAppLog, exportAppLog, setAppLogFileEnabled, setAppLogLevel;
+    show
+        appLogDirectory,
+        appLogFileEnabled,
+        appLogLevel,
+        clearAppLog,
+        exportAppLog,
+        setAppLogFileEnabled,
+        setAppLogLevel;
 import 'package:pure_live/app/providers/log_providers.dart' show appLogRecordsProvider;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
 import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
@@ -711,6 +719,15 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
     if (mounted) showDsToast(context: context, title: context.t.toolbox.logsCopied);
   }
 
+  Future<void> _openLogDirectory() async {
+    final directory = appLogDirectory;
+    if (directory == null) return;
+    final opened = await OpenFile.open(directory.path);
+    if (opened.type != ResultType.done && mounted) {
+      showDsToast(context: context, title: context.t.toolbox.logsOpenFailed, status: DsStatus.danger);
+    }
+  }
+
   Future<void> _clear() async {
     final t = context.t;
     final confirmed = await showDsConfirm(
@@ -794,6 +811,12 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
                   setState(() => _fileEnabled = value);
                 },
               ),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.folder),
+              title: Text(t.toolbox.logsDirectory),
+              description: Text(appLogDirectory?.path ?? t.toolbox.logsDirectoryDefault),
+              onPressed: appLogDirectory == null ? null : () => unawaited(_openLogDirectory()),
             ),
             DsListRow(
               leading: const DsIcon(DsIcons.copy),

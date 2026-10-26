@@ -8,34 +8,22 @@ import 'package:pure_live/app/providers/environment_providers.dart' show deviceP
 import 'package:pure_live/features/backup/backup_actions.dart';
 import 'package:pure_live/features/backup/backup_document.dart';
 import 'package:pure_live/features/backup/backup_repository.dart';
-import 'package:pure_live/features/backup/webdav_browser.dart' show showWebDavBrowser;
-import 'package:pure_live/features/backup/webdav_client.dart';
-import 'package:pure_live/features/backup/webdav_settings.dart';
+import 'package:pure_live/features/settings/settings_page.dart' show SettingsChildEntry;
+import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/l10n/translations.dart';
 
 /// The one action running: the other rows grey out and the running row
 /// spins until it settles.
-enum _BackupAction {
-  createAll,
-  createFollows,
-  folder,
-  openFolder,
-  restoreFile,
-  deleteFile,
-  webdavTest,
-  webdavUpload,
-  webdavDownload,
-}
+enum _BackupAction { createAll, createFollows, folder, openFolder, restoreFile, deleteFile }
 
-/// The backup and restore pane: one JSON document bundles the followed
+/// The backup and restore page: one JSON document bundles the followed
 /// rooms, the watch history, the followed areas and the settings subset.
-/// The pane writes it as a file in a local backup folder — a full document
+/// The page writes it as a file in a local backup folder — a full document
 /// or a follows-only one — lists what the folder holds (newest first) and
-/// restores or deletes one file at a time behind a confirm. The same
-/// document syncs over WebDAV — test the server, upload the backup,
-/// download and restore it.
+/// restores or deletes one file at a time behind a confirm. The WebDAV
+/// transport is its own subpage beside these local rows.
 ///
-/// Public for the settings surface to embed; the pane owns nothing beyond
+/// Public for the settings surface to embed; the page owns nothing beyond
 /// its own busy and folder state.
 final class BackupPane extends ConsumerStatefulWidget {
   /// The backup pane.
@@ -76,8 +64,6 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
     });
     try {
       await work();
-    } on WebDavFailure catch (failure) {
-      if (mounted) _toast(_webDavMessage(failure));
     } on Object {
       if (mounted) _toast(_failureMessage(action));
     } finally {
@@ -90,16 +76,6 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
     }
   }
 
-  String _webDavMessage(WebDavFailure failure) {
-    final t = context.t;
-    return switch (failure.problem) {
-      WebDavProblem.auth => t.backup.webdavAuthFailed,
-      WebDavProblem.notFound => t.backup.webdavNotFound,
-      WebDavProblem.server => t.backup.webdavServerFailed(status: failure.status ?? 0),
-      WebDavProblem.network => t.backup.webdavNetworkFailed,
-    };
-  }
-
   String _failureMessage(_BackupAction action) {
     final t = context.t;
     return switch (action) {
@@ -108,7 +84,6 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
       _BackupAction.openFolder => t.backup.openFolderFailed,
       _BackupAction.restoreFile => t.backup.restoreFailed,
       _BackupAction.deleteFile => t.backup.deleteFileFailed,
-      _BackupAction.webdavTest || _BackupAction.webdavUpload || _BackupAction.webdavDownload => t.backup.webdavFailed,
     };
   }
 
@@ -245,47 +220,6 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
     }, path: entry.file.path);
   }
 
-  // -- WebDAV sync --------------------------------------------------------
-
-  Future<void> _test() => _run(_BackupAction.webdavTest, () async {
-    final t = context.t;
-    await testWebDav(ref);
-    if (!mounted) return;
-    _toast(t.backup.webdavTestOk);
-  });
-
-  Future<void> _upload() => _run(_BackupAction.webdavUpload, () async {
-    final t = context.t;
-    final document = await captureBackupDocument(ref);
-    if (document.isEmpty) {
-      _toast(t.backup.exportEmpty);
-      return;
-    }
-    await uploadBackupToWebDav(ref);
-    if (!mounted) return;
-    _toast(t.backup.webdavUploadDone(file: BackupDocument.backupFileName));
-  });
-
-  Future<void> _download() => _run(_BackupAction.webdavDownload, () async {
-    final t = context.t;
-    final document = await downloadBackupFromWebDav(ref);
-    if (!mounted) return;
-    if (document == null) {
-      _toast(t.backup.importBadData);
-      return;
-    }
-    final confirmed = await _confirm(
-      t.backup.webdavDownloadConfirmTitle,
-      description:
-          '${t.backup.webdavDownloadConfirmDesc(file: BackupDocument.backupFileName)}'
-          '\n${_summaryLine(document)}',
-    );
-    if (!confirmed) return;
-    await applyBackup(ref, document);
-    ref.invalidate(backupSummaryProvider);
-    if (mounted) _toast(t.backup.importDone);
-  });
-
   // -- Dialogs ------------------------------------------------------------
 
   /// The one line on what a restore would change, shown in the confirms.
@@ -312,76 +246,6 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
     cancelLabel: context.t.common.cancel,
     destructive: true,
   );
-
-  /// Edits the WebDAV connection: server URL, username and password. An
-  /// empty password field keeps the stored one when there is one; typing
-  /// a new one replaces it in the vault.
-  Future<void> _editWebDav() async {
-    final t = context.t;
-    final settings = ref.read(webdavSettingsProvider);
-    final urlField = TextEditingController(text: settings.url);
-    final userField = TextEditingController(text: settings.user);
-    final passwordField = TextEditingController();
-    await showDsDialog<void>(
-      context: context,
-      builder: (context) => DsDialog(
-        title: Text(t.backup.webdavConfigTitle),
-        description: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s8,
-          children: [
-            Text(t.backup.webdavConfigDescription),
-            DsTextField(
-              controller: urlField,
-              autofocus: true,
-              clearable: true,
-              placeholder: t.backup.webdavUrlHint,
-              semanticLabel: t.backup.webdavUrl,
-            ),
-            DsTextField(
-              controller: userField,
-              clearable: true,
-              placeholder: t.backup.webdavUserHint,
-              semanticLabel: t.backup.webdavUser,
-            ),
-            DsTextField(
-              controller: passwordField,
-              obscureText: true,
-              revealable: true,
-              placeholder: settings.hasPassword ? t.backup.webdavPasswordKeep : t.backup.webdavPasswordHint,
-              semanticLabel: t.backup.webdavPassword,
-            ),
-          ],
-        ),
-        actions: [
-          DsButton(
-            variant: DsButtonVariant.secondary,
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(t.common.cancel),
-          ),
-          DsButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await ref
-                  .read(webdavSettingsProvider.notifier)
-                  .save(
-                    url: urlField.text,
-                    user: userField.text,
-                    // Empty keeps the stored password when there is one,
-                    // and clears it when there is none to keep.
-                    password: passwordField.text.isEmpty ? (settings.hasPassword ? null : '') : passwordField.text,
-                  );
-              if (mounted) _toast(t.backup.webdavSaved);
-            },
-            child: Text(t.common.confirm),
-          ),
-        ],
-      ),
-    );
-    urlField.dispose();
-    userField.dispose();
-    passwordField.dispose();
-  }
 
   // -- Build --------------------------------------------------------------
 
@@ -422,9 +286,6 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final settings = ref.watch(webdavSettingsProvider);
     final summary = ref.watch(backupSummaryProvider).value;
     final files = _files;
     final opensFolder = ref.watch(deviceProfileProvider).isDesktop;
@@ -520,56 +381,8 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
           ],
         ),
         DsListSection(
-          header: Text(t.backup.webdavSection),
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
-              child: Text(
-                t.backup.webdavDescription(file: BackupDocument.backupFileName),
-                style: theme.typography.caption.copyWith(color: colors.textSubtle),
-              ),
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.server),
-              title: Text(t.backup.webdavConfigTitle),
-              description: Text(t.backup.webdavConfigDescription),
-              detail: Text(settings.url.isEmpty ? t.backup.webdavUrlMissing : settings.url),
-              onPressed: () => unawaited(_editWebDav()),
-              showChevron: true,
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.keyRound),
-              title: Text(t.backup.webdavPassword),
-              detail: Text(settings.hasPassword ? t.backup.webdavPasswordKeep : t.backup.webdavPasswordEmpty),
-              onPressed: () => unawaited(_editWebDav()),
-              showChevron: true,
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.folderOpen),
-              title: Text(t.backup.webdavBrowse),
-              description: Text(t.backup.webdavDescription(file: BackupDocument.backupFileName)),
-              onPressed: settings.url.isEmpty ? null : () => unawaited(showWebDavBrowser(context)),
-              showChevron: true,
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.plugZap),
-              title: Text(t.backup.webdavTest),
-              onPressed: free(_BackupAction.webdavTest) ? () => unawaited(_test()) : null,
-              trailing: spinner(_BackupAction.webdavTest),
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.cloudUpload),
-              title: Text(t.backup.webdavUpload),
-              onPressed: free(_BackupAction.webdavUpload) ? () => unawaited(_upload()) : null,
-              trailing: spinner(_BackupAction.webdavUpload),
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.cloudDownload),
-              title: Text(t.backup.webdavDownload),
-              onPressed: free(_BackupAction.webdavDownload) ? () => unawaited(_download()) : null,
-              trailing: spinner(_BackupAction.webdavDownload),
-            ),
-          ],
+          header: Text(t.settings.webdavSyncTitle),
+          children: const [SettingsChildEntry(child: SettingsSection.webdavSync)],
         ),
       ],
     );

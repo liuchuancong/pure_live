@@ -2,6 +2,8 @@
   "title": "Accounts",
   "description": "The platforms' sign-in state; credentials live only in this device's secure storage.",
   "sectionHeader": "Sign-in state",
+  "thirdPartyAuth": "Third-party Authentication",
+  "thirdPartyAuthDesc": "Manage platform authorizations",
   "empty": "No platform supports signing in yet",
   "notSignedIn": "Not signed in",
   "signedInAs": "Signed in as {name}",

@@ -1,8 +1,22 @@
 import 'dart:async' show unawaited;
 
+import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/shared/grids/card_grid.dart' show CardLayout;
+
+/// The page size before the viewer picks one: the reference's
+/// `defaultPageSize` — 20 on a window wider than 960 logical pixels, 12
+/// otherwise.
+int defaultBrowsePageSize() {
+  try {
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final ratio = view.devicePixelRatio > 0 ? view.devicePixelRatio : 1;
+    return view.physicalSize.width / ratio > 960 ? 20 : 12;
+  } on Object {
+    return 12;
+  }
+}
 
 /// The browsing surfaces' tunables: what a settings page will own.
 typedef BrowseSettings = ({double homeCardExtent, int homePageSize, double crossSpacing, double mainSpacing});
@@ -27,7 +41,7 @@ final class BrowseSettingsController extends Notifier<BrowseSettings> {
   BrowseSettings build() {
     return (
       homeCardExtent: _readStoredExtent() ?? 250,
-      homePageSize: _readStoredSize() ?? 30,
+      homePageSize: _readStoredSize() ?? defaultBrowsePageSize(),
       crossSpacing: _readStoredSpacing('browse.crossSpacing'),
       mainSpacing: _readStoredSpacing('browse.mainSpacing'),
     );
@@ -91,7 +105,7 @@ final class BrowseSettingsController extends Notifier<BrowseSettings> {
 
   /// Changes how many rooms one feed page asks for.
   set homePageSize(int size) {
-    final clamped = size.clamp(10, 90);
+    final clamped = size.clamp(1, 100);
     state = (
       homeCardExtent: state.homeCardExtent,
       homePageSize: clamped,
@@ -183,6 +197,93 @@ final class FavoritesDensityController extends Notifier<bool> {
 
 /// Whether the follows page uses compact cards.
 final favoritesDensityProvider = NotifierProvider<FavoritesDensityController, bool>(FavoritesDensityController.new);
+
+/// Whether pagers show the rooms-per-page selector (the reference's
+/// `showPageSizeSelector`). Turning it off hides the control only: the
+/// current size keeps paging the list.
+final class PageSizeSelectorController extends Notifier<bool> {
+  static const String prefsKey = 'page.showSizeSelector';
+
+  @override
+  bool build() {
+    try {
+      return StoragePrefs.getBool(prefsKey) ?? true;
+    } on Object {
+      return true;
+    }
+  }
+
+  /// Shows or hides the selector and writes it through.
+  Future<void> set({required bool show}) async {
+    state = show;
+    try {
+      await StoragePrefs.setBool(prefsKey, show);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// Whether pagers show their rooms-per-page selector.
+final showPageSizeSelectorProvider = NotifierProvider<PageSizeSelectorController, bool>(PageSizeSelectorController.new);
+
+/// Whether pagers show the jump-to-page field (the reference's
+/// `showGotoButton`). Turning it off hides the field only: the page numbers
+/// and their arrows keep paging.
+final class PageGotoButtonController extends Notifier<bool> {
+  static const String prefsKey = 'page.showGotoButton';
+
+  @override
+  bool build() {
+    try {
+      return StoragePrefs.getBool(prefsKey) ?? true;
+    } on Object {
+      return true;
+    }
+  }
+
+  /// Shows or hides the field and writes it through.
+  Future<void> set({required bool show}) async {
+    state = show;
+    try {
+      await StoragePrefs.setBool(prefsKey, show);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// Whether pagers show their jump-to-page field.
+final showGotoButtonProvider = NotifierProvider<PageGotoButtonController, bool>(PageGotoButtonController.new);
+
+/// Whether lists show their floating back-to-top button (the reference's
+/// `showScrollToTopBtn`). Turning it off hides the button only; scrolling
+/// and paging still work.
+final class PageScrollToTopController extends Notifier<bool> {
+  static const String prefsKey = 'page.showScrollToTop';
+
+  @override
+  bool build() {
+    try {
+      return StoragePrefs.getBool(prefsKey) ?? true;
+    } on Object {
+      return true;
+    }
+  }
+
+  /// Shows or hides the button and writes it through.
+  Future<void> set({required bool show}) async {
+    state = show;
+    try {
+      await StoragePrefs.setBool(prefsKey, show);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// Whether lists show their floating back-to-top button.
+final showScrollToTopProvider = NotifierProvider<PageScrollToTopController, bool>(PageScrollToTopController.new);
 
 /// The browsing settings.
 final browseSettingsProvider = NotifierProvider<BrowseSettingsController, BrowseSettings>(BrowseSettingsController.new);

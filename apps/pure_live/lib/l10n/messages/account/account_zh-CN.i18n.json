@@ -2,6 +2,8 @@
   "title": "账号",
   "description": "各直播平台的登录状态，凭证只保存在本机安全存储中。",
   "sectionHeader": "登录状态",
+  "thirdPartyAuth": "三方认证",
+  "thirdPartyAuthDesc": "管理主流平台的绑定授权",
   "empty": "暂无支持登录的平台",
   "notSignedIn": "未登录",
   "signedInAs": "已登录：{name}",

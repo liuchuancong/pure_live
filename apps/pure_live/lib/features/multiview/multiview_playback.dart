@@ -5,6 +5,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/app/providers/network_type_provider.dart' show networkTypeProvider;
+import 'package:pure_live/app/providers/player_backend_providers.dart' show playerKernelBackendProvider;
 import 'package:pure_live/app/providers/player_providers.dart'
     show createRoomPlayback, playerKernelProvider, roomSourcesOf;
 import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
@@ -12,6 +13,16 @@ import 'package:pure_live/features/favorites/follow_repository.dart' show follow
 import 'package:pure_live/features/multiview/multiview_controller.dart' show multiviewProvider;
 import 'package:pure_live/features/settings/playback_settings_providers.dart'
     show playbackSettingsProvider, preferredQualityIndex;
+import 'package:pure_live/features/settings/player_tuning.dart'
+    show
+        PlayerTuning,
+        playerOutputChanged,
+        playerPresetTransitionOptions,
+        playerProxyProvider,
+        playerStoredEngineOptions,
+        playerTuningProvider;
+import 'package:pure_live/shared/player/super_resolution.dart'
+    show applySuperResolution, superResolutionModeProvider, withSuperResolution;
 
 /// Where one pane's session stands.
 enum MultiviewPaneStage {
@@ -75,6 +86,25 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       _globalMuted = next;
       if (_active) _applyFocus();
       _publish();
+    });
+    ref.listen(playerProxyProvider, (previous, next) {
+      if (previous == next) return;
+      _applyStoredEngineOptions();
+    });
+    ref.listen(playbackSettingsProvider.select((settings) => settings.hardwareDecoding), (previous, next) {
+      if (previous == next) return;
+      _applyStoredEngineOptions();
+    });
+    ref.listen(playerTuningProvider, (previous, next) {
+      if (previous == next) return;
+      unawaited(_applyTuning(previous, next));
+    });
+    ref.listen(superResolutionModeProvider, (previous, next) {
+      if (previous == next) return;
+      for (final session in _sessions) {
+        final handle = session.handle;
+        if (handle != null) unawaited(applySuperResolution(handle, next));
+      }
     });
     ref.listen(multiviewProvider, (previous, next) {
       if (_active) _sync();
@@ -154,7 +184,9 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
           sources: roomSourcesOf(lines),
           title: session.room?.content.title ?? '',
           allowEngineFallback: true,
+          engineOptions: await _engineOptions(),
         ),
+        preferredBackend: ref.read(playerKernelBackendProvider).id,
       );
       return true;
     } on Object {
@@ -289,7 +321,13 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       session.playback = playback;
       _wire(session, playback);
       await playback.play(
-        LiveSourceRequest(sources: roomSourcesOf(lines), title: room.content.title, allowEngineFallback: true),
+        LiveSourceRequest(
+          sources: roomSourcesOf(lines),
+          title: room.content.title,
+          allowEngineFallback: true,
+          engineOptions: await _engineOptions(),
+        ),
+        preferredBackend: ref.read(playerKernelBackendProvider).id,
       );
     } on Object catch (error) {
       if (stale()) return;
@@ -325,6 +363,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
         ..stage = MultiviewPaneStage.playing
         ..error = null;
       unawaited(_applyAudio(session));
+      unawaited(_applyEngineOptions(session));
       _publish();
     });
     session.states = playback.onStateChanged.listen((state) {
@@ -401,6 +440,63 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       await handle.setMute(muted: !_audible(session));
     } on Object {
       // A pane the engine refused to mute is not a playback failure.
+    }
+  }
+
+  /// The engine options every pane keeps for its next line, engine fallback
+  /// or recovery: hardware decoding and the player proxy.
+  List<EngineOption> _storedEngineOptions() => playerStoredEngineOptions(
+    hardwareDecoding: ref.read(playbackSettingsProvider).hardwareDecoding,
+    tuning: ref.read(playerTuningProvider),
+    proxy: ref.read(playerProxyProvider),
+  );
+
+  /// The stored options plus the chosen shader chain, for a pane's first
+  /// engine and every later line or recovery.
+  Future<List<EngineOption>> _engineOptions() =>
+      withSuperResolution(_storedEngineOptions(), ref.read(superResolutionModeProvider));
+
+  /// Pushes the stored options into every playing pane when the proxy or the
+  /// hardware-decoding switch changes; the walls' next open uses the same
+  /// list.
+  void _applyStoredEngineOptions() {
+    final options = _storedEngineOptions();
+    for (final session in _sessions) {
+      final playback = session.playback;
+      if (playback != null) unawaited(playback.updateEngineOptions(options));
+    }
+  }
+
+  /// A custom-output or driver change reaches every running pane: the stored
+  /// options feed each pane's next line, each handle gets them now, and a
+  /// changed video/audio output rebuilds that pane's render context in place.
+  Future<void> _applyTuning(PlayerTuning? previous, PlayerTuning next) async {
+    final options = _storedEngineOptions();
+    final rebuild = previous != null && playerOutputChanged(previous, next);
+    final transition = previous == null ? const <EngineOption>[] : playerPresetTransitionOptions(previous, next);
+    for (final session in [..._sessions]) {
+      final playback = session.playback;
+      if (playback != null) unawaited(playback.updateEngineOptions(options));
+      final handle = session.handle;
+      if (handle == null) continue;
+      try {
+        await handle.applyEngineOptions(<EngineOption>[...await _engineOptions(), ...transition]);
+        if (rebuild) await handle.rebuildEngine(reason: 'video output settings changed');
+      } on Object {
+        // A pane the engine refused an option is not a playback failure.
+      }
+    }
+  }
+
+  /// Gives a fresh handle the same stored options; a line switch, engine
+  /// fallback or recovery must not keep an old decoder or route.
+  Future<void> _applyEngineOptions(_PaneSession session) async {
+    final handle = session.handle;
+    if (handle == null) return;
+    try {
+      await handle.applyEngineOptions(await _engineOptions());
+    } on Object {
+      // A pane the engine refused an option is not a playback failure.
     }
   }
 

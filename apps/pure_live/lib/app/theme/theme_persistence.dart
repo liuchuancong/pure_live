@@ -2,6 +2,9 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart' show Color;
 import 'package:live_storage/live_storage.dart';
 
+import 'package:pure_live/app/theme/font_defaults.dart' show kBundledFontPresets;
+import 'package:pure_live/app/theme/fonts/font_library.dart' show CloudFontIds;
+
 /// The theme's persisted subset: the choices the settings surface writes
 /// and the root reads back on boot.
 ///
@@ -200,15 +203,27 @@ abstract final class ThemePersistence {
   static Future<void> storeDensity(DsDensity? density) =>
       density == null ? _remove('theme.density') : _store('theme.density', density.name);
 
-  /// The stored font family (an app preset id), or null for the platform's
-  /// own face.
+  /// The stored font family (a bundled preset id or a downloaded cloud
+  /// family), or null for the platform's own face.
   static String? readFont() {
     try {
-      final stored = StoragePrefs.getString('theme.font');
-      return (stored == null || stored.isEmpty) ? null : stored;
+      return normalizeFontFamily(StoragePrefs.getString('theme.font'));
     } on Object {
       return null;
     }
+  }
+
+  /// The stored family when this build can draw it. Empty values, the
+  /// reference's `Default` and 3.x's system aliases, ids from builds that
+  /// bundled fewer faces and cloud ids whose folder is gone all fall back
+  /// to the platform face instead of naming a family the app cannot load.
+  static String? normalizeFontFamily(String? value) {
+    final id = value?.trim();
+    if (id == null || id.isEmpty) return null;
+    for (final (preset, _) in kBundledFontPresets) {
+      if (preset == id) return id;
+    }
+    return CloudFontIds.contains(id) ? id : null;
   }
 
   /// Stores the font family; null clears it back to the platform face.

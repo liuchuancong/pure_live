@@ -4,27 +4,39 @@ import 'package:live_sites/live_sites.dart';
 final class NoRecordableStream implements Exception {
   const NoRecordableStream(this.reason);
 
-  /// The room is not broadcasting; the reference's recorder then keeps the
-  /// task as waiting for the room to go live rather than starting a take.
+  /// The room is not broadcasting; the recorder keeps the task waiting for
+  /// the room to go live rather than starting a take.
   const NoRecordableStream.offline() : reason = 'offline';
 
   /// The room, its qualities or its lines could not be read, or offer
   /// nothing playable.
   const NoRecordableStream.noStream() : reason = 'no-stream';
 
-  /// The stable reason word; the page maps it to the viewer's own words.
+  /// The stable reason word; callers map it to the viewer's own words.
   final String reason;
 }
 
-/// Resolves the room behind [platform]/[roomId] to the line a recording
-/// takes: the quality named by [qualityLabel] when the room offers it
-/// (otherwise its first, the platform's best), the line beside it with the
-/// headers its address needs.
+/// A room that is live and the line a recording takes from it.
+final class RecordableStream {
+  const RecordableStream({required this.room, required this.line});
+
+  /// The room as the platform just answered it (the chat connection and the
+  /// recording session both need it).
+  final LiveRoom room;
+
+  /// The line the take opens.
+  final LivePlayLine line;
+}
+
+/// Resolves the room behind [platform]/[roomId] to the live stream a
+/// recording takes: the quality named by [qualityLabel] when the room offers
+/// it (otherwise its first, the platform's best), the line beside it with
+/// the headers its address needs.
 ///
 /// The room's own API answers — the same call the player makes, run for the
 /// recorder so a task whose room is not the open one records the real
 /// current stream, not a stale address.
-Future<LivePlayLine> resolveRecordableLine({
+Future<RecordableStream> resolveRecordableStream({
   required LiveSite site,
   required String platform,
   required String roomId,
@@ -47,5 +59,5 @@ Future<LivePlayLine> resolveRecordableLine({
   final linesAnswer = await playbackProvider.getLines(room: room, quality: quality);
   final lines = linesAnswer.fold((_) => const <LivePlayLine>[], (answer) => answer);
   if (lines.isEmpty) throw const NoRecordableStream.noStream();
-  return lines.first;
+  return RecordableStream(room: room, line: lines.first);
 }

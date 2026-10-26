@@ -193,3 +193,21 @@ final class DanmakuMessageFilter {
     similarity.clear();
   }
 }
+
+/// Whether [message] is a content block — nothing but emoticons, or longer
+/// than [blockLongLength] — without a filter instance: the room's pipeline
+/// runs its own gate, collapsing and similarity, and needs only step 2's
+/// shape half here. A local line the viewer just sent is never blocked, as
+/// in the class's own shape step.
+bool danmakuShapeBlocked(
+  LiveMessage message, {
+  required bool blockEmoteOnly,
+  required bool blockLong,
+  required int blockLongLength,
+  DanmakuTextShaper shapeOf = danmakuMessageShape,
+}) {
+  if (message.isLocal || !(blockEmoteOnly || blockLong)) return false;
+  final shape = shapeOf(message);
+  return (blockEmoteOnly && shape.emoteOnly) ||
+      (blockLong && shape.length > blockLongLength.clamp(10, 100));
+}

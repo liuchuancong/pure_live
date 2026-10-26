@@ -15,11 +15,22 @@ import 'package:pure_live/app/providers/player_providers.dart' show playerKernel
 import 'package:pure_live/app/providers/presentation_providers.dart' show roomPresentationProvider;
 import 'package:pure_live/app/routing/route_observer.dart' show routeObserver;
 import 'package:pure_live/features/settings/playback_settings_providers.dart' show playbackSettingsProvider;
+import 'package:pure_live/features/settings/player_tuning.dart'
+    show
+        PlayerTuning,
+        playerOutputChanged,
+        playerPresetTransitionOptions,
+        playerProxyProvider,
+        playerStoredEngineOptions,
+        playerTuningProvider;
 import 'package:pure_live/features/vod/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/features/vod/vod_settings.dart' show vodQualityProvider;
 import 'package:pure_live/features/vod/vod_widgets.dart' show VodVideoRow, vodDurationText;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/images/app_image_cache.dart' show cachedImage;
+import 'package:pure_live/shared/player/background_playback_gate.dart' show BackgroundPlaybackGate;
+import 'package:pure_live/shared/player/super_resolution.dart'
+    show applySuperResolution, superResolutionModeProvider, withSuperResolution;
 import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
 import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
@@ -42,7 +53,7 @@ final class VodVideoPage extends ConsumerStatefulWidget {
   ConsumerState<VodVideoPage> createState() => _VodVideoPageState();
 }
 
-final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAware {
+final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAware, WidgetsBindingObserver {
   /// The progressive mp4's default qn (720P); the source may serve lower.
   static const int _defaultQn = 64;
 
@@ -73,13 +84,40 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   double _volume = 1;
   double _speed = 1;
 
+  /// The Android background-playback gate and the handle it paused.
+  BackgroundPlaybackGate? _backgroundGate;
+  PlayerId? _backgroundPausedHandle;
+
   bool get _effectivelyMuted => _muted || _globalMute;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _globalMute = ref.read(playbackSettingsProvider).globalMute;
     _volume = ref.read(playbackSettingsProvider.notifier).volume;
+    _backgroundGate = BackgroundPlaybackGate(
+      backgroundEnabled: () => ref.read(playbackSettingsProvider).backgroundPlay,
+      shouldPause: () {
+        final presentation = ref.read(roomPresentationProvider);
+        return (_transport?.isPlaying ?? false) &&
+            presentation != PresentationMode.pip &&
+            presentation != PresentationMode.floating;
+      },
+      pause: () async {
+        _backgroundPausedHandle = _handle?.id;
+        await _handle?.pause();
+      },
+      canResume: () =>
+          _backgroundPausedHandle != null &&
+          _handle != null &&
+          _handle?.id == _backgroundPausedHandle &&
+          !(_transport?.isPlaying ?? false),
+      resume: () async {
+        _backgroundPausedHandle = null;
+        await _handle?.play();
+      },
+    );
     // The station's setting names the rendition the first part asks for;
     // the source may still answer lower, and the menu follows what it
     // actually served.
@@ -98,6 +136,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     }
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _backgroundGate?.handleLifecycle(state);
+  }
+
   /// Another page covers this one (a related archive, a menu route): the
   /// picture pauses rather than playing under it.
   @override
@@ -110,6 +153,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _backgroundGate?.dispose();
+    _backgroundGate = null;
     routeObserver.unsubscribe(this);
     _saveProgress(force: true);
     _disposed = true;
@@ -218,6 +264,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       }
       _handle = handle;
       _bind(handle);
+      await _applyEngineOptions(handle);
       final uri = Uri.parse(info.url);
       await handle.open(
         PlayerSource(
@@ -339,6 +386,46 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     }
   }
 
+  /// The engine options this page keeps for every part and handle:
+  /// hardware decoding and the player proxy.
+  List<EngineOption> _storedEngineOptions() => playerStoredEngineOptions(
+    hardwareDecoding: ref.read(playbackSettingsProvider).hardwareDecoding,
+    tuning: ref.read(playerTuningProvider),
+    proxy: ref.read(playerProxyProvider),
+  );
+
+  Future<void> _applyEngineOptions(PlayerHandle handle, {List<EngineOption> extra = const []}) async {
+    try {
+      final options = <EngineOption>[
+        ...await withSuperResolution(_storedEngineOptions(), ref.read(superResolutionModeProvider)),
+        ...extra,
+      ];
+      await handle.applyEngineOptions(options);
+    } on Object {
+      // A refused engine option is not a playback failure.
+    }
+  }
+
+  /// A custom-output or driver change reaches the running part: the stored
+  /// options feed the next part, the handle gets them now, and a changed
+  /// video/audio output rebuilds the render context in place (the open part
+  /// and position are preserved by the handle). [playerPresetTransitionOptions]
+  /// clears the previous recipe's keys when only the preset changed.
+  Future<void> _applyTuning(PlayerTuning? previous, PlayerTuning next) async {
+    final handle = _handle;
+    if (handle == null) return;
+    await _applyEngineOptions(
+      handle,
+      extra: previous == null ? const <EngineOption>[] : playerPresetTransitionOptions(previous, next),
+    );
+    if (previous == null || !playerOutputChanged(previous, next)) return;
+    try {
+      await handle.rebuildEngine(reason: 'video output settings changed');
+    } on Object {
+      // A rebuild the engine refused must not fail the page.
+    }
+  }
+
   Future<void> _setVolume(double volume) async {
     final handle = _handle;
     if (handle == null) return;
@@ -433,6 +520,25 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       if (previous == next) return;
       if (mounted) setState(() => _globalMute = next);
       unawaited(_applyGlobalMute());
+    });
+    ref.listen(playerProxyProvider, (previous, next) {
+      if (previous == next) return;
+      final handle = _handle;
+      if (handle != null) unawaited(_applyEngineOptions(handle));
+    });
+    ref.listen(playbackSettingsProvider.select((settings) => settings.hardwareDecoding), (previous, next) {
+      if (previous == next) return;
+      final handle = _handle;
+      if (handle != null) unawaited(_applyEngineOptions(handle));
+    });
+    ref.listen(playerTuningProvider, (previous, next) {
+      if (previous == next) return;
+      unawaited(_applyTuning(previous, next));
+    });
+    ref.listen(superResolutionModeProvider, (previous, next) {
+      if (previous == next) return;
+      final handle = _handle;
+      if (handle != null) unawaited(applySuperResolution(handle, next));
     });
     // Leaving fullscreen or PiP — by any hand, including the system's —
     // puts the keyboard back on the play button, whose node outlives both
@@ -565,7 +671,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             fit: StackFit.expand,
             children: [
               if (handle != null)
-                MediaPlayerView(handle: handle, backgroundColor: colors.overlay)
+                MediaPlayerView(
+                handle: handle,
+                fit: ref.watch(playbackSettingsProvider).fit.boxFit,
+                backgroundColor: colors.overlay,
+              )
               else
                 const ColoredBox(color: Color(0xFF000000)),
               if (immersive)
