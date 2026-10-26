@@ -3906,27 +3906,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '平台回到内置的排列顺序；显示开关不受影响。'
 	String get sitesOrderResetDesc => '平台回到内置的排列顺序；显示开关不受影响。';
 
-	/// zh-CN: '窗口标题栏'
-	String get windowChrome => '窗口标题栏';
-
-	/// zh-CN: '使用系统标题栏，或由应用自绘标题栏；切换后需要重启。'
-	String get windowChromeDesc => '使用系统标题栏，或由应用自绘标题栏；切换后需要重启。';
-
-	/// zh-CN: '系统标题栏'
-	String get windowChromeSystem => '系统标题栏';
-
-	/// zh-CN: '自定义标题栏'
-	String get windowChromeCustom => '自定义标题栏';
-
-	/// zh-CN: '重启以应用标题栏？'
-	String get windowChromeRestartTitle => '重启以应用标题栏？';
-
-	/// zh-CN: '标题栏样式在窗口创建时决定，重启应用后生效。'
-	String get windowChromeRestartDesc => '标题栏样式在窗口创建时决定，重启应用后生效。';
-
-	/// zh-CN: '立即重启'
-	String get windowChromeRestartNow => '立即重启';
-
 	/// zh-CN: '界面'
 	String get groupInterface => '界面';
 
@@ -8422,13 +8401,6 @@ extension on Translations {
 			'settings.preferPlatformFilterEmpty' => '没有匹配的平台',
 			'settings.sitesOrderReset' => '恢复默认顺序',
 			'settings.sitesOrderResetDesc' => '平台回到内置的排列顺序；显示开关不受影响。',
-			'settings.windowChrome' => '窗口标题栏',
-			'settings.windowChromeDesc' => '使用系统标题栏，或由应用自绘标题栏；切换后需要重启。',
-			'settings.windowChromeSystem' => '系统标题栏',
-			'settings.windowChromeCustom' => '自定义标题栏',
-			'settings.windowChromeRestartTitle' => '重启以应用标题栏？',
-			'settings.windowChromeRestartDesc' => '标题栏样式在窗口创建时决定，重启应用后生效。',
-			'settings.windowChromeRestartNow' => '立即重启',
 			'settings.groupInterface' => '界面',
 			'settings.groupSources' => '直播来源',
 			'settings.groupPlayback' => '播放',
@@ -8725,8 +8697,6 @@ extension on Translations {
 			'settings.maxConcurrentRefreshDesc' => '同时向平台查询的房间数，参考推荐 4，范围 1–20。',
 			'settings.recommended' => '推荐',
 			'settings.refreshThumbnails' => '自动刷新封面',
-			_ => null,
-		} ?? switch (path) {
 			'settings.refreshThumbnailsDesc' => '定期清空图片缓存，让封面、头像和台标重新下载；不会清空观看历史或关注。',
 			'settings.thumbnailRefreshInterval' => '封面刷新间隔',
 			'settings.navHomeMenuGroup' => '首页菜单',
@@ -8734,6 +8704,8 @@ extension on Translations {
 			'settings.navMenuKeepOne' => '至少保留一个菜单',
 			'settings.multiviewVisible' => '首页入口：多画面',
 			'settings.multiviewVisibleDesc' => '关闭后侧栏与手机抽屉不再显示多画面入口。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.groupTheme' => '主题',
 			'settings.groupCards' => '卡片与列表',
 			'settings.groupType' => '字体和语言',
@@ -9239,8 +9211,6 @@ extension on Translations {
 			'shield.blockEmoteOnly' => '屏蔽只有表情的弹幕',
 			'shield.blockEmoteOnlyDescription' => '只有表情、没有文字的弹幕不显示；自己发送的弹幕不会被屏蔽。',
 			'shield.blockLong' => '屏蔽超长弹幕',
-			_ => null,
-		} ?? switch (path) {
 			'shield.blockLongDescription' => '超过设定字数的弹幕不显示（一个表情算一个字）。',
 			'shield.blockLongLength' => '最多字数',
 			'shield.blockLongLengthDescription' => '允许显示的最大字数，范围 10–100（一个表情算一个字）。',
@@ -9248,6 +9218,8 @@ extension on Translations {
 			'shield.douyuSuspected' => '过滤斗鱼疑似自动弹幕',
 			'shield.douyuSuspectedDescription' => '开启后按启发式标记隐藏疑似自动或活动弹幕，也可能隐藏普通聊天',
 			'sites.title' => '站点',
+			_ => null,
+		} ?? switch (path) {
 			'sites.live' => '直播',
 			'sites.search' => '搜索',
 			'sites.rooms' => '房间',

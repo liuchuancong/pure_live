@@ -5,7 +5,7 @@ import 'package:desktop_multi_window/desktop_multi_window.dart' show WindowContr
 import 'package:flutter/widgets.dart' show WidgetsFlutterBinding, runApp;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor, PlatformBootstrap, PlatformKind;
-import 'package:live_shell/live_shell.dart' show ChromeMode, ChromePlan, ChromeStage, SecondaryWindows, WindowRole;
+import 'package:live_shell/live_shell.dart' show ChromeMode, SecondaryWindows, WindowRole;
 import 'package:live_shell_desktop/live_shell_desktop.dart'
     show DesktopWindowLauncher, WindowArguments, primaryChromePlan;
 import 'package:live_storage/live_storage.dart' show StoragePrefs, StorageStores;
@@ -29,12 +29,13 @@ import 'package:pure_live/app/providers/window_providers.dart'
         windowHostProvider,
         windowIdProvider,
         windowInvokePrimaryProvider;
-import 'package:pure_live/app/providers/window_storage_bridge.dart' show WindowStorageClient, windowStorageBridgeProvider;
+import 'package:pure_live/app/providers/window_storage_bridge.dart'
+    show WindowStorageClient, windowStorageBridgeProvider;
 import 'package:pure_live/app/routing/app_router.dart' show windowInitialRouteProvider;
 import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
 import 'package:pure_live/app/theme/fonts/font_library.dart' show CloudFontIds, FontLibrary;
 import 'package:pure_live/app/theme/system_accent_color.dart' show preloadSystemAccent;
-import 'package:pure_live/app/window_chrome.dart' show WindowChrome, WindowChromeState;
+import 'package:pure_live/app/window_chrome.dart' show WindowChromeState;
 import 'package:pure_live/infrastructure/storage/storage_paths.dart' show StoragePaths;
 import 'package:pure_live/shared/images/app_image_cache.dart' show installWindowImageCache, prepareImageCache;
 
@@ -106,22 +107,14 @@ Future<void> runCloneWindow(String rawArguments) async {
     return;
   }
 
-  // The clone follows the same stored chrome as the primary. The runner
-  // channel dresses its own window on every desktop: Windows strips the
-  // caption bits, macOS hides the title and extends the content view, and
-  // GTK drops the window-manager decoration.
-  final chrome = WindowChromeState.readStored();
+  // The clone draws the same strip as the primary. The runner channel dresses
+  // its own window on every desktop: Windows strips the caption bits, macOS
+  // hides the title and extends the content view, and GTK drops the
+  // window-manager decoration.
   final kind = runtime.environment.runtime.kind;
-  final plan = kind == PlatformKind.windows
-      ? ChromePlan.select(
-          platform: kind,
-          stage: chrome == WindowChrome.custom ? ChromeStage.seamlessSelfDrawn : ChromeStage.nativeFirst,
-        )
-      : primaryChromePlan(kind);
-  final mode = plan.mode;
-  WindowChromeState.chrome = chrome;
-  WindowChromeState.mode = mode;
-  await window.setChrome(custom: mode != ChromeMode.nativeCaption);
+  final plan = primaryChromePlan(kind);
+  WindowChromeState.mode = plan.mode;
+  await window.setChrome(custom: plan.mode != ChromeMode.nativeCaption);
 
   // The presentation drivers pin this window's native handle; their
   // process-wide lookup would find the primary. Null on desktop window

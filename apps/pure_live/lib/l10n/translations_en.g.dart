@@ -1437,13 +1437,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get preferPlatformFilterEmpty => 'No platforms match';
 	@override String get sitesOrderReset => 'Restore default order';
 	@override String get sitesOrderResetDesc => 'Platforms return to the built-in order; the show switches stay as they are.';
-	@override String get windowChrome => 'Window title bar';
-	@override String get windowChromeDesc => 'Use the system caption, or the app\'s own strip; a restart applies the change.';
-	@override String get windowChromeSystem => 'System title bar';
-	@override String get windowChromeCustom => 'Custom title bar';
-	@override String get windowChromeRestartTitle => 'Restart to apply the title bar?';
-	@override String get windowChromeRestartDesc => 'The caption style is chosen when the window is created; it applies after a restart.';
-	@override String get windowChromeRestartNow => 'Restart now';
 	@override String get groupInterface => 'Interface';
 	@override String get groupSources => 'Live sources';
 	@override String get groupPlayback => 'Playback';
@@ -3804,13 +3797,6 @@ extension on TranslationsEn {
 			'settings.preferPlatformFilterEmpty' => 'No platforms match',
 			'settings.sitesOrderReset' => 'Restore default order',
 			'settings.sitesOrderResetDesc' => 'Platforms return to the built-in order; the show switches stay as they are.',
-			'settings.windowChrome' => 'Window title bar',
-			'settings.windowChromeDesc' => 'Use the system caption, or the app\'s own strip; a restart applies the change.',
-			'settings.windowChromeSystem' => 'System title bar',
-			'settings.windowChromeCustom' => 'Custom title bar',
-			'settings.windowChromeRestartTitle' => 'Restart to apply the title bar?',
-			'settings.windowChromeRestartDesc' => 'The caption style is chosen when the window is created; it applies after a restart.',
-			'settings.windowChromeRestartNow' => 'Restart now',
 			'settings.groupInterface' => 'Interface',
 			'settings.groupSources' => 'Live sources',
 			'settings.groupPlayback' => 'Playback',
@@ -4107,8 +4093,6 @@ extension on TranslationsEn {
 			'settings.maxConcurrentRefreshDesc' => 'How many rooms are queried at once. The reference recommends 4; range 1–20.',
 			'settings.recommended' => 'Recommended',
 			'settings.refreshThumbnails' => 'Refresh covers',
-			_ => null,
-		} ?? switch (path) {
 			'settings.refreshThumbnailsDesc' => 'Periodically clears the image cache so covers, avatars and logos are downloaded again; history and follows stay.',
 			'settings.thumbnailRefreshInterval' => 'Cover refresh interval',
 			'settings.navHomeMenuGroup' => 'Home menu',
@@ -4116,6 +4100,8 @@ extension on TranslationsEn {
 			'settings.navMenuKeepOne' => 'Keep at least one menu',
 			'settings.multiviewVisible' => 'Home entry: multi-view',
 			'settings.multiviewVisibleDesc' => 'Hides the multi-view entry from the sidebar and phone drawer.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.groupTheme' => 'Theme',
 			'settings.groupCards' => 'Cards & lists',
 			'settings.groupType' => 'Type & language',
@@ -4621,8 +4607,6 @@ extension on TranslationsEn {
 			'shield.blockEmoteOnly' => 'Block emoticon-only danmaku',
 			'shield.blockEmoteOnlyDescription' => 'Danmaku with emoticons and no text are not shown; your own lines are never blocked.',
 			'shield.blockLong' => 'Block over-long danmaku',
-			_ => null,
-		} ?? switch (path) {
 			'shield.blockLongDescription' => 'Danmaku longer than the set length are not shown (an emoticon counts as one).',
 			'shield.blockLongLength' => 'Most characters',
 			'shield.blockLongLengthDescription' => 'The longest line still shown, 10–100 (an emoticon counts as one).',
@@ -4630,6 +4614,8 @@ extension on TranslationsEn {
 			'shield.douyuSuspected' => 'Filter Suspected Automated Douyu Chat',
 			'shield.douyuSuspectedDescription' => 'Turn on to hide suspected automated or event chat heuristically; ordinary chat may also be hidden',
 			'sites.title' => 'Sites',
+			_ => null,
+		} ?? switch (path) {
 			'sites.live' => 'Live',
 			'sites.search' => 'Search',
 			'sites.rooms' => 'Rooms',

@@ -52,7 +52,6 @@ import 'package:pure_live/app/theme/font_sizes.dart';
 import 'package:pure_live/app/theme/theme_mode_dialog.dart' show themeModeLabel;
 import 'package:pure_live/app/theme/theme_persistence.dart';
 import 'package:pure_live/app/theme/theme_settings.dart';
-import 'package:pure_live/app/window_chrome.dart' show WindowChrome, WindowChromeState;
 import 'package:pure_live/features/account/account_pane.dart' show AccountPane;
 import 'package:pure_live/features/backup/backup_pane.dart' show BackupPane;
 import 'package:pure_live/features/backup/webdav_pane.dart' show WebDavSyncPane;
@@ -139,7 +138,6 @@ import 'package:pure_live/shared/images/app_image_cache.dart';
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon, localizedSiteName;
 import 'package:pure_live/shared/rooms/room_visibility.dart' show showUnplayableProvider;
 import 'package:pure_live/shared/widgets/app_loading_indicator.dart' show AppLoadingIndicator;
-import 'package:restart_app/restart_app.dart' show Restart, RestartMode;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// The width below which the settings surface takes the pushed-menu layout.
@@ -939,18 +937,6 @@ final class _WindowPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.windowGroup),
           children: [
-            if (WindowChromeState.configurable)
-              SettingsChoiceRow<WindowChrome>(
-                leading: const DsIcon(DsIcons.appWindow),
-                title: t.settings.windowChrome,
-                description: t.settings.windowChromeDesc,
-                value: WindowChromeState.chrome,
-                options: [
-                  DsSelectOption(value: WindowChrome.system, label: t.settings.windowChromeSystem),
-                  DsSelectOption(value: WindowChrome.custom, label: t.settings.windowChromeCustom),
-                ],
-                onChanged: (value) => unawaited(_setWindowChrome(context, value)),
-              ),
             if (desktop)
               SettingsConfigRow(
                 leading: const DsIcon(DsIcons.appWindow),
@@ -1289,34 +1275,6 @@ final class _NavPane extends ConsumerWidget {
         ),
       ],
     );
-  }
-}
-
-/// The title bar's owner is a creation-time choice: store it, ask about a
-/// restart, and put the old value back when the viewer would rather not
-/// restart now (so the row never shows a choice the window does not have).
-Future<void> _setWindowChrome(BuildContext context, WindowChrome? value) async {
-  if (value == null || value == WindowChromeState.chrome) {
-    return;
-  }
-  await WindowChromeState.store(value);
-  if (!context.mounted) {
-    return;
-  }
-  final t = context.t;
-  final restart = await showDsConfirm(
-    context: context,
-    title: t.settings.windowChromeRestartTitle,
-    description: t.settings.windowChromeRestartDesc,
-    confirmLabel: t.settings.windowChromeRestartNow,
-    cancelLabel: t.common.cancel,
-  );
-  if (restart) {
-    // The caption lives on the native window, so an engine-only restart keeps
-    // the old frame and would draw the app strip under it. Replace the process.
-    unawaited(Restart.restartApp(mode: RestartMode.process));
-  } else {
-    await WindowChromeState.store(WindowChromeState.chrome);
   }
 }
 

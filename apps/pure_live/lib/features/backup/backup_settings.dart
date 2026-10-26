@@ -79,7 +79,6 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('shell.closeAction', BackupPrefKind.string),
   ('shell.dontAskExit', BackupPrefKind.boolean),
   ('shell.roomWindows', BackupPrefKind.boolean),
-  ('window.chrome', BackupPrefKind.string),
   ('ui.splash', BackupPrefKind.boolean),
   ('search.history', BackupPrefKind.stringList),
   // The platform display and its order/preference.

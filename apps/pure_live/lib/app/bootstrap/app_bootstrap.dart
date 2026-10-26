@@ -8,8 +8,6 @@ import 'package:live_log/live_log.dart' show ErrorReporter, LiveLog;
 import 'package:live_platform/live_platform.dart' show FormFactor, PlatformBootstrap, PlatformKind, PlatformRuntime;
 import 'package:live_shell/live_shell.dart'
     show
-        ChromePlan,
-        ChromeStage,
         DesktopShell,
         RenderFallbacks,
         SecondaryWindows,
@@ -28,8 +26,7 @@ import 'package:live_shell_desktop/live_shell_desktop.dart'
         configureMainWindow,
         primaryChromePlan,
         reapplyMainWindowChrome;
-import 'package:live_storage/live_storage.dart'
-    show StorageBootstrap, StoragePathProvider, StoragePrefs, StorageStores;
+import 'package:live_storage/live_storage.dart' show StorageBootstrap, StoragePathProvider, StoragePrefs, StorageStores;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/logging/app_log.dart' show appLog, initAppLog;
 import 'package:pure_live/app/providers/download_directory_provider.dart'
@@ -42,7 +39,7 @@ import 'package:pure_live/app/providers/window_storage_bridge.dart' show WindowS
 import 'package:pure_live/app/routing/root_navigator.dart' show rootNavigatorKey;
 import 'package:pure_live/app/theme/fonts/font_library.dart' show CloudFontIds, FontLibrary;
 import 'package:pure_live/app/theme/system_accent_color.dart' show preloadSystemAccent;
-import 'package:pure_live/app/window_chrome.dart' show WindowChrome, WindowChromeState;
+import 'package:pure_live/app/window_chrome.dart' show WindowChromeState;
 import 'package:pure_live/app/window_close_dialog.dart' show showCloseWindowDialog;
 import 'package:pure_live/infrastructure/storage/storage_paths.dart' show StoragePaths;
 import 'package:pure_live/l10n/translations.dart' show t;
@@ -168,20 +165,12 @@ Future<Boot> bootstrap() async {
     WindowHost? windowHost;
     SecondaryWindows? secondaryWindows;
     if (formFactor == FormFactor.desktop) {
-      // The window is dressed before the first frame: the caption style —
-      // the system's own or the app's self-drawn strip — is a creation-time
-      // choice, not a live one. Windows offers both; macOS keeps the
-      // system's traffic lights inset in the app's bar, Linux draws its
-      // whole strip either way.
+      // The window is dressed before the first frame: the caption style is a
+      // creation-time choice, not a live one. Every desktop window draws its
+      // own strip — Windows and Linux draw the buttons too, macOS keeps the
+      // system's traffic lights inset in that strip.
       final kind = runtime.environment.runtime.kind;
-      final chrome = WindowChromeState.readStored();
-      final plan = kind == PlatformKind.windows
-          ? ChromePlan.select(
-              platform: kind,
-              stage: chrome == WindowChrome.custom ? ChromeStage.seamlessSelfDrawn : ChromeStage.nativeFirst,
-            )
-          : primaryChromePlan(kind);
-      WindowChromeState.chrome = chrome;
+      final plan = primaryChromePlan(kind);
       WindowChromeState.mode = plan.mode;
       await configureMainWindow(
         plan: plan,
@@ -298,10 +287,10 @@ Future<void> _wireDesktopShell({
       try {
         await windows.open(role: WindowRole.panel);
       } on Object catch (error, stackTrace) {
-        log.warning('a new window could not be opened from the tray', fields: {
-          'error': '$error',
-          'stack': '$stackTrace',
-        });
+        log.warning(
+          'a new window could not be opened from the tray',
+          fields: {'error': '$error', 'stack': '$stackTrace'},
+        );
       }
     },
     // The shell's tracked set only knows windows this engine opened; a room
@@ -372,9 +361,7 @@ Future<void> _dismissEveryWindow(LiveLog log) async {
       if (self == null || window.windowId != self)
         () async {
           try {
-            await window
-                .invokeMethod<Object>(WindowStorageMethods.dismiss)
-                .timeout(const Duration(milliseconds: 800));
+            await window.invokeMethod<Object>(WindowStorageMethods.dismiss).timeout(const Duration(milliseconds: 800));
           } on Object {
             // Already gone, or its bridge never armed.
           }
@@ -392,7 +379,7 @@ Future<void> _dismissEveryWindow(LiveLog log) async {
 /// asks again on the next focus rather than guessing.
 Future<bool> _verifyPrimaryWindowId(int windowId) async {
   const channel = MethodChannel('pure_live/primary_window');
-  for (var attempt = 0;; attempt++) {
+  for (var attempt = 0; ; attempt++) {
     try {
       return await channel.invokeMethod<bool>('verifyOwnWindow', windowId) ?? false;
     } on MissingPluginException {
