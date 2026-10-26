@@ -1422,33 +1422,30 @@ final class _ThemePane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.groupCards),
           children: [
-            SettingsConfigRow(
+            // The gaps are desen_ui's spacing tokens, chosen from the same
+            // dropdown the rest of the theme page uses — not a free pixel
+            // range the grids then have to guess at.
+            SettingsChoiceRow<double>(
               leading: const DsIcon(DsIcons.columns2),
               title: t.settings.crossSpacing,
               description: t.settings.crossSpacingDescription,
-              detail: Text('${browse.crossSpacing.round()} px'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: browse.crossSpacing,
-                max: kBrowseSpacingMax,
-                divisions: kBrowseSpacingMax.round(),
-                onChanged: (value) => ref.read(browseSettingsProvider.notifier).crossSpacing = value,
-                semanticLabel: t.settings.crossSpacing,
-              ),
+              value: browse.crossSpacing,
+              options: [
+                for (final spacing in kBrowseSpacingChoices)
+                  DsSelectOption(value: spacing, label: '${spacing.round()} px'),
+              ],
+              onChanged: (value) => ref.read(browseSettingsProvider.notifier).crossSpacing = value,
             ),
-            SettingsConfigRow(
+            SettingsChoiceRow<double>(
               leading: const DsIcon(DsIcons.rows3),
               title: t.settings.mainSpacing,
               description: t.settings.mainSpacingDescription,
-              detail: Text('${browse.mainSpacing.round()} px'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: browse.mainSpacing,
-                max: kBrowseSpacingMax,
-                divisions: kBrowseSpacingMax.round(),
-                onChanged: (value) => ref.read(browseSettingsProvider.notifier).mainSpacing = value,
-                semanticLabel: t.settings.mainSpacing,
-              ),
+              value: browse.mainSpacing,
+              options: [
+                for (final spacing in kBrowseSpacingChoices)
+                  DsSelectOption(value: spacing, label: '${spacing.round()} px'),
+              ],
+              onChanged: (value) => ref.read(browseSettingsProvider.notifier).mainSpacing = value,
             ),
           ],
         ),

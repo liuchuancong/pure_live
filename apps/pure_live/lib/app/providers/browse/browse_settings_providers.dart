@@ -1,5 +1,6 @@
 import 'dart:async' show unawaited;
 
+import 'package:desen_ui/desen_ui.dart' show DsSpace;
 import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
@@ -21,13 +22,30 @@ int defaultBrowsePageSize() {
 /// The browsing surfaces' tunables: what a settings page will own.
 typedef BrowseSettings = ({double homeCardExtent, int homePageSize, double crossSpacing, double mainSpacing});
 
-/// The grid gaps' floor, ceiling and default (the reference's
-/// `crossAxisSpacing`/`mainAxisSpacing`): the settings sliders and the stored
-/// values share them, so a stored value can never leave the range the
-/// settings page offers.
-const double kBrowseSpacingMin = 0;
-const double kBrowseSpacingMax = 64;
-const double kBrowseSpacingDefault = 6;
+/// The grid gaps a viewer may pick: desen_ui's own spacing tokens up to
+/// `DsSpace.s12`, with 0 for "no gap". The scale, not a free pixel range, is
+/// what the setting offers, so a feed's gaps are numbers every other surface
+/// already uses; the reference's 6 px default is one of the steps.
+const List<double> kBrowseSpacingChoices = [0, DsSpace.s4, DsSpace.s6, DsSpace.s8, DsSpace.s12];
+
+/// The gap a feed starts with when the store never answered: the reference's
+/// 6, which is one of the tokens above.
+const double kBrowseSpacingDefault = DsSpace.s6;
+
+/// The token nearest [value]: what a gap becomes when it arrives from a
+/// backup, another window or the days when this setting was a free slider.
+double nearestBrowseSpacing(double value) {
+  var best = kBrowseSpacingDefault;
+  var bestGap = double.infinity;
+  for (final choice in kBrowseSpacingChoices) {
+    final gap = (value - choice).abs();
+    if (gap < bestGap) {
+      best = choice;
+      bestGap = gap;
+    }
+  }
+  return best;
+}
 
 /// Owns the browsing settings the home feed and its grid read.
 ///
@@ -66,13 +84,13 @@ final class BrowseSettingsController extends Notifier<BrowseSettings> {
     }
   }
 
-  /// One stored grid gap, clamped to the range the settings offer; the
-  /// default when the store never opened (or holds nonsense).
+  /// One stored grid gap, on the token scale; the default when the store
+  /// never opened (or holds nonsense).
   static double _readStoredSpacing(String key) {
     try {
       final stored = StoragePrefs.getDouble(key);
       if (stored == null) return kBrowseSpacingDefault;
-      return stored.clamp(kBrowseSpacingMin, kBrowseSpacingMax);
+      return nearestBrowseSpacing(stored);
     } on Object {
       return kBrowseSpacingDefault;
     }
@@ -115,9 +133,9 @@ final class BrowseSettingsController extends Notifier<BrowseSettings> {
     unawaited(StoragePrefs.setInt('browse.pageSize', clamped));
   }
 
-  /// Moves the gap between cards across a row.
+  /// Moves the gap between cards across a row to the nearest token.
   set crossSpacing(double spacing) {
-    final clamped = spacing.clamp(kBrowseSpacingMin, kBrowseSpacingMax);
+    final clamped = nearestBrowseSpacing(spacing);
     state = (
       homeCardExtent: state.homeCardExtent,
       homePageSize: state.homePageSize,
@@ -127,9 +145,9 @@ final class BrowseSettingsController extends Notifier<BrowseSettings> {
     unawaited(StoragePrefs.setDouble('browse.crossSpacing', clamped));
   }
 
-  /// Moves the gap between rows of cards.
+  /// Moves the gap between rows of cards to the nearest token.
   set mainSpacing(double spacing) {
-    final clamped = spacing.clamp(kBrowseSpacingMin, kBrowseSpacingMax);
+    final clamped = nearestBrowseSpacing(spacing);
     state = (
       homeCardExtent: state.homeCardExtent,
       homePageSize: state.homePageSize,
