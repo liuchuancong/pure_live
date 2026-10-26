@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'package:live_platform/src/contracts/platform_environment.dart';
-import 'package:live_platform/src/runtime/desktop_distribution.dart';
-import 'package:live_platform/src/runtime/distribution_resolver.dart';
-import 'package:live_platform/src/runtime/form_factor.dart';
-import 'package:live_platform/src/runtime/package_identity.dart';
-import 'package:live_platform/src/runtime/platform_capabilities.dart';
-import 'package:live_platform/src/runtime/platform_kind.dart';
-import 'package:live_platform/src/runtime/platform_runtime_info.dart';
+import 'package:live_platform/src/runtime/distribution/desktop_distribution.dart';
+import 'package:live_platform/src/runtime/distribution/distribution_resolver.dart';
+import 'package:live_platform/src/runtime/facts/form_factor.dart';
+import 'package:live_platform/src/runtime/facts/package_identity.dart';
+import 'package:live_platform/src/runtime/facts/platform_capabilities.dart';
+import 'package:live_platform/src/runtime/facts/platform_kind.dart';
+import 'package:live_platform/src/runtime/facts/platform_runtime_info.dart';
 
 /// Everything bootstrap produced: the environment snapshot the app and the
 /// sibling packages (path provider, file access) read their platform facts

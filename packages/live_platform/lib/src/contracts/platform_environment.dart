@@ -1,5 +1,5 @@
-import 'package:live_platform/src/runtime/platform_capabilities.dart';
-import 'package:live_platform/src/runtime/platform_runtime_info.dart';
+import 'package:live_platform/src/runtime/facts/platform_capabilities.dart';
+import 'package:live_platform/src/runtime/facts/platform_runtime_info.dart';
 
 /// Answers "what am I running on and what can it do".
 ///

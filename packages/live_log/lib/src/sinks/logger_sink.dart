@@ -1,7 +1,7 @@
-import 'package:live_log/src/level.dart';
-import 'package:live_log/src/record.dart';
-import 'package:live_log/src/sanitizer.dart';
-import 'package:live_log/src/sink.dart';
+import 'package:live_log/src/model/level.dart';
+import 'package:live_log/src/model/record.dart';
+import 'package:live_log/src/model/sink.dart';
+import 'package:live_log/src/pipeline/sanitizer.dart';
 import 'package:logger/logger.dart' as logger;
 
 /// Writes records through the `logger` package's [logger.PrettyPrinter].

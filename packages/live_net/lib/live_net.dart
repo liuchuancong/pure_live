@@ -13,13 +13,9 @@
 /// by reading the head of the body and matching the container signature.
 library;
 
-export 'src/calls.dart';
-export 'src/client_profile.dart';
-export 'src/dio_factory.dart';
-export 'src/live_http.dart';
-export 'src/media_probe.dart';
-export 'src/proxy.dart';
-export 'src/request.dart';
-export 'src/response.dart';
-export 'src/streamed_response.dart';
-export 'src/transport_failure.dart';
+export 'src/contracts/contracts.dart';
+export 'src/http/calls.dart';
+export 'src/http/client_profile.dart';
+export 'src/http/dio_factory.dart';
+export 'src/http/proxy.dart';
+export 'src/media/media.dart';

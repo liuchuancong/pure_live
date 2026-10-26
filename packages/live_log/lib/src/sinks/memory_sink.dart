@@ -1,10 +1,10 @@
 import 'dart:collection';
 
-import 'package:live_log/src/formatter.dart';
-import 'package:live_log/src/level.dart';
-import 'package:live_log/src/record.dart';
-import 'package:live_log/src/sanitizer.dart';
-import 'package:live_log/src/sink.dart';
+import 'package:live_log/src/model/formatter.dart';
+import 'package:live_log/src/model/level.dart';
+import 'package:live_log/src/model/record.dart';
+import 'package:live_log/src/model/sink.dart';
+import 'package:live_log/src/pipeline/sanitizer.dart';
 
 /// Keeps the most recent records in a fixed-capacity ring buffer.
 ///

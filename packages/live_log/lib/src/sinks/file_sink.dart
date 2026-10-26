@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:live_log/src/formatter.dart';
-import 'package:live_log/src/record.dart';
-import 'package:live_log/src/sanitizer.dart';
-import 'package:live_log/src/sink.dart';
+import 'package:live_log/src/model/formatter.dart';
+import 'package:live_log/src/model/record.dart';
+import 'package:live_log/src/model/sink.dart';
+import 'package:live_log/src/pipeline/sanitizer.dart';
 import 'package:path/path.dart' as p;
 
 /// Writes formatted records to `<directory>/<baseName>.log`, rotating to

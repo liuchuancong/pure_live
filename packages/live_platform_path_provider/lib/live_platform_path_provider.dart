@@ -19,15 +19,8 @@ library;
 
 export 'src/bootstrap/path_provider_bootstrap.dart';
 export 'src/conflicts/storage_conflicts.dart';
-export 'src/contracts/file_access_service.dart';
-export 'src/contracts/platform_exception.dart';
-export 'src/contracts/storage_area.dart';
-export 'src/contracts/storage_location.dart';
-export 'src/contracts/storage_manager.dart';
+export 'src/contracts/contracts.dart';
 export 'src/diagnostics/storage_diagnostics.dart';
-export 'src/insights/path_insights.dart';
-export 'src/insights/path_privacy.dart';
+export 'src/insights/insights.dart';
 export 'src/migration/storage_adoption.dart';
-export 'src/storage/atomic_file_writer.dart';
-export 'src/storage/default_storage_manager.dart';
-export 'src/storage/storage_policy.dart';
+export 'src/storage/storage.dart';
