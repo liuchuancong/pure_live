@@ -482,7 +482,7 @@ final class _BackgroundLibraryPaneState extends ConsumerState<BackgroundLibraryP
         else if (_items.isEmpty && _loading)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: DsSpace.s32),
-            child: Center(child: AppLoadingIndicator(size: 24)),
+            child: Center(child: DsSpinner(style: DsSpinnerStyle(size: 24))),
           )
         else if (_items.isEmpty)
           Padding(
@@ -513,7 +513,7 @@ final class _BackgroundLibraryPaneState extends ConsumerState<BackgroundLibraryP
           if (_loading)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: DsSpace.s12),
-              child: Center(child: AppLoadingIndicator(size: 20)),
+              child: Center(child: DsSpinner(style: DsSpinnerStyle(size: 20))),
             )
           else if (_hasMore)
             Align(
@@ -805,7 +805,7 @@ final class _RandomWallpaperPreviewDialogState extends ConsumerState<_RandomWall
         aspectRatio: 16 / 10,
         child: ColoredBox(
           color: Color(0xFF101418),
-          child: Center(child: AppLoadingIndicator(size: 24)),
+          child: Center(child: DsSpinner(style: DsSpinnerStyle(size: 24))),
         ),
       );
     } else if (picture != null) {

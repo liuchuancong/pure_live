@@ -410,7 +410,7 @@ final class _DirectLinkDialogState extends ConsumerState<_DirectLinkDialog> {
             if (_loading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: DsSpace.s24),
-                child: Center(child: AppLoadingIndicator(size: 24)),
+                child: Center(child: DsSpinner(style: DsSpinnerStyle(size: 24))),
               )
             else if (_error != null)
               DsAlert(status: DsStatus.danger, title: Text(t.toolbox.linkDirectFailed), description: Text(_error!))

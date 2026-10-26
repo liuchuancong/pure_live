@@ -162,10 +162,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               spacing: DsSpace.s8,
               children: [
                 Expanded(
-                  child: Text(
-                    t.recorder.pollingOff,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
-                  ),
+                  child: Text(t.recorder.pollingOff, style: theme.typography.caption.copyWith(color: colors.textMuted)),
                 ),
                 DsButton(
                   variant: DsButtonVariant.secondary,
@@ -462,11 +459,7 @@ final class _TaskMenu extends StatelessWidget {
             onPressed: stop,
           ),
         if (onCancelWaiting case final cancel?)
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.clock),
-            label: Text(t.room.autoRecordOff),
-            onPressed: cancel,
-          ),
+          DsMenuItem(leading: const DsIcon(DsIcons.clock), label: Text(t.room.autoRecordOff), onPressed: cancel),
         const DsMenuDivider(),
         DsMenuItem(
           leading: const DsIcon(DsIcons.trash2),
@@ -568,8 +561,10 @@ String _formatMoment(DateTime utc) {
   return sameDay ? clock : '${two(local.month)}-${two(local.day)} $clock';
 }
 
-/// One labelled slider of the recorder settings: the row names the knob
-/// and its current value, the slider below it sets it.
+/// One labelled slider of the recorder settings: the row every settings
+/// bar uses — the knob and its description on the left, the current value
+/// and the bar at the row's end (the bar drops under the row when the pane
+/// is too narrow to carry it).
 final class _RecordSlider extends StatelessWidget {
   const _RecordSlider({
     required this.icon,
@@ -596,22 +591,21 @@ final class _RecordSlider extends StatelessWidget {
   final String semanticLabel;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      DsListRow(leading: DsIcon(icon), title: Text(title), description: Text(description), detail: Text(detail)),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
-        child: DsSlider(
-          value: value,
-          min: min,
-          max: max,
-          divisions: divisions,
-          onChanged: onChanged,
-          semanticLabel: semanticLabel,
-        ),
-      ),
-    ],
+  Widget build(BuildContext context) => SettingsConfigRow(
+    leading: DsIcon(icon),
+    title: title,
+    description: description,
+    detail: Text(detail),
+    controlWidth: 220,
+    control: DsSlider(
+      value: value.clamp(min, max),
+      min: min,
+      max: max,
+      divisions: divisions,
+      onChanged: onChanged,
+      semanticLabel: semanticLabel,
+      semanticFormatter: (value) => detail,
+    ),
   );
 }
 
@@ -727,22 +721,17 @@ final class RecordingSettingsPane extends ConsumerWidget {
               onPressed: () => unawaited(_editNaming(context, ref)),
               showChevron: true,
             ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.hardDrive),
-              title: Text(t.recorder.maxSizeTitle),
-              description: Text(t.recorder.maxSizeDescription),
-              detail: Text(_formatMb(settings.maxSizeMb)),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
-              child: DsSlider(
-                value: settings.maxSizeMb.toDouble(),
-                min: 100,
-                max: 20480,
-                divisions: 203,
-                onChanged: (value) => controller.maxSizeMb = value.round(),
-                semanticLabel: t.recorder.maxSizeTitle,
-              ),
+            _RecordSlider(
+              icon: DsIcons.hardDrive,
+              title: t.recorder.maxSizeTitle,
+              description: t.recorder.maxSizeDescription,
+              detail: _formatMb(settings.maxSizeMb),
+              value: settings.maxSizeMb.toDouble(),
+              min: 100,
+              max: 20480,
+              divisions: 203,
+              onChanged: (value) => controller.maxSizeMb = value.round(),
+              semanticLabel: t.recorder.maxSizeTitle,
             ),
             _RecordChoice(
               icon: DsIcons.fileVideo,
@@ -1080,9 +1069,7 @@ final class _RecordingCacheSectionState extends ConsumerState<_RecordingCacheSec
   Future<void> _editLimit() async {
     final value = await showDsDialog<int>(
       context: context,
-      builder: (_) => _CacheLimitDialog(
-        initialMb: ref.read(recordingSettingsProvider).cacheLimitMb,
-      ),
+      builder: (_) => _CacheLimitDialog(initialMb: ref.read(recordingSettingsProvider).cacheLimitMb),
     );
     if (value == null || !mounted) return;
     ref.read(recordingSettingsProvider.notifier).cacheLimitMb = value;
@@ -1123,10 +1110,7 @@ final class _RecordingCacheSectionState extends ConsumerState<_RecordingCacheSec
     final colors = DsTheme.colorsOf(context);
     final settings = ref.watch(recordingSettingsProvider);
     final controller = ref.read(recordingSettingsProvider.notifier);
-    final recording = ref
-        .watch(recordingTasksProvider)
-        .tasks
-        .any((task) => task.state == RecordingTaskState.recording);
+    final recording = ref.watch(recordingTasksProvider).tasks.any((task) => task.state == RecordingTaskState.recording);
     return DsListSection(
       header: Text(t.recorder.cacheTitle),
       children: [

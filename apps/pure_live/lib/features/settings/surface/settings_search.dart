@@ -81,18 +81,11 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       s.dynamicColor,
       'dynamic color monet material you wallpaper system accent 动态取色 壁纸 系统取色 莫奈',
     ),
-    _hit(SettingsSection.theme, s.pureBlack, 'pure black oled amoled night background 纯黑 黑色 夜间 省电'),
     _hit(
       SettingsSection.theme,
       s.liquidGlass,
       'liquid glass frosted blur capsule bottom bar transparency 液体玻璃 毛玻璃 玻璃 悬浮 底栏 透明 模糊',
     ),
-    _hit(
-      SettingsSection.theme,
-      s.loadingStyle,
-      'loading spinner animation style ring pulse wave reset default 加载 动画 样式 圆环 脉冲 波浪 恢复默认 重置',
-    ),
-    _hit(SettingsSection.theme, s.loadingColor, 'loading spinner color tint accent hex 加载 动画 颜色 取色 强调色'),
     _hit(SettingsSection.theme, s.corners, 'corner radius round 圆角 直角 胶囊'),
     _hit(SettingsSection.theme, s.contrast, 'contrast border 对比度 边界'),
     _hit(SettingsSection.theme, s.selectionStyle, 'selection highlight 选中 高亮'),

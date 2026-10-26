@@ -9,7 +9,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/focus/tv_focus_scale.dart';
-import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
 
 /// How a collection of items is laid out: the responsive card grid, or one
 /// full-width row per item.
@@ -465,7 +464,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
           separatorBuilder: (context, index) => SizedBox(height: widget.mainSpacing),
           itemBuilder: (context, index) {
             if (index >= widget.items.length) {
-              return const Center(child: AppLoadingIndicator(size: 24));
+              return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
             }
             return _focusableItem(index, listBuilder(context, widget.items[index]));
           },
@@ -500,7 +499,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
               itemCount: widget.items.length + (loadingRow ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index >= widget.items.length) {
-                  return const Center(child: AppLoadingIndicator(size: 24));
+                  return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
                 }
                 return _focusableItem(index, widget.itemBuilder(context, widget.items[index]), zoom: true);
               },
@@ -565,7 +564,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
                     ),
                     child: IconTheme.merge(
                       data: IconThemeData(size: 18, color: colors.accent),
-                      child: const AppLoadingIndicator(size: 18),
+                      child: const DsSpinner(style: DsSpinnerStyle(size: 18)),
                     ),
                   ),
                 ),
@@ -838,7 +837,7 @@ final class CardList<T> extends StatelessWidget {
         separatorBuilder: (context, index) => SizedBox(height: gap),
         itemBuilder: (context, index) {
           if (index >= items.length) {
-            return const Center(child: AppLoadingIndicator(size: 24));
+            return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
           }
           final builder = itemBuilder;
           return builder == null ? const SizedBox.shrink() : builder(context, items[index]);

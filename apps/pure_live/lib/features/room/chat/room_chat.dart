@@ -108,8 +108,7 @@ final class _ChatFeed extends ConsumerWidget {
       reverse: true,
       padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s16),
       itemCount: chat.length,
-      itemBuilder: (context, index) =>
-          _ChatLine(message: chat[chat.length - 1 - index], anchorName: anchorName),
+      itemBuilder: (context, index) => _ChatLine(message: chat[chat.length - 1 - index], anchorName: anchorName),
     );
   }
 }
@@ -237,10 +236,8 @@ final class _ChatLine extends ConsumerWidget {
                       text: '[${t.room.replayed}] ',
                       style: nameStyle.copyWith(color: colors.textSubtle),
                     ),
-                  if (showNames && senderName.isEmpty)
-                    TextSpan(text: '${t.room.system}: ', style: nameStyle),
-                  if (showNames && senderName.isNotEmpty)
-                    TextSpan(text: '$senderName: ', style: nameStyle),
+                  if (showNames && senderName.isEmpty) TextSpan(text: '${t.room.system}: ', style: nameStyle),
+                  if (showNames && senderName.isNotEmpty) TextSpan(text: '$senderName: ', style: nameStyle),
                   TextSpan(text: words, style: lineStyle),
                 ],
               ),
@@ -253,10 +250,7 @@ final class _ChatLine extends ConsumerWidget {
       content = Container(
         margin: const EdgeInsets.symmetric(vertical: 2),
         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s6),
-        decoration: BoxDecoration(
-          color: colors.control,
-          borderRadius: BorderRadius.circular(theme.radii.card),
-        ),
+        decoration: BoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
         child: content,
       );
     }
@@ -357,8 +351,7 @@ String? _giftValueText(Translations t, LiveGift gift, {bool inYuan = false}) {
     LiveGiftUnit.starCoin => room.giftValueStarCoin(value: '$value'),
     LiveGiftUnit.heart => room.giftValueHeart(value: '$value'),
     LiveGiftUnit.note => room.giftValueNote(value: '$value'),
-    LiveGiftUnit.free || LiveGiftUnit.silver || LiveGiftUnit.banana || LiveGiftUnit.gold || LiveGiftUnit.other =>
-      null,
+    LiveGiftUnit.free || LiveGiftUnit.silver || LiveGiftUnit.banana || LiveGiftUnit.gold || LiveGiftUnit.other => null,
   };
 }
 
@@ -547,7 +540,9 @@ final class _RoomDanmakuSettings extends ConsumerWidget {
   }
 }
 
-/// One labelled slider of the in-room danmaku settings.
+/// One labelled slider of the in-room danmaku settings: the same bar row the
+/// settings centre uses — the name and its current value on the line, the
+/// bar at its end (under the line while the column is narrow).
 final class _StyleSlider extends StatelessWidget {
   const _StyleSlider({
     required this.icon,
@@ -573,38 +568,19 @@ final class _StyleSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final enabled = onChanged != null;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: DsSpace.s6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s4,
-        children: [
-          Row(
-            spacing: DsSpace.s6,
-            children: [
-              DsIcon(icon, size: theme.sizes.iconSm, color: enabled ? colors.textMuted : colors.textSubtle),
-              Expanded(
-                child: Text(
-                  label,
-                  style: theme.typography.body.copyWith(color: enabled ? colors.text : colors.textMuted),
-                ),
-              ),
-              Text(shown, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
-            ],
-          ),
-          DsSlider(
-            value: value,
-            min: min,
-            max: max,
-            divisions: divisions,
-            onChanged: onChanged,
-            semanticLabel: label,
-            semanticFormatter: semanticFormatter,
-          ),
-        ],
+    return SettingsConfigRow(
+      leading: DsIcon(icon),
+      title: label,
+      detail: Text(shown),
+      controlWidth: 220,
+      control: DsSlider(
+        value: value.clamp(min, max),
+        min: min,
+        max: max,
+        divisions: divisions,
+        onChanged: onChanged,
+        semanticLabel: label,
+        semanticFormatter: semanticFormatter,
       ),
     );
   }
@@ -622,7 +598,7 @@ final class _SuperChatTab extends ConsumerWidget {
     final board = ref.watch(roomSuperChatsProvider);
     void retry() => unawaited(ref.read(roomProvider.notifier).reloadSuperChats());
     if (board.loading && board.messages.isEmpty) {
-      return const Center(child: AppLoadingIndicator(size: 24));
+      return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
     }
     final error = board.error;
     if (error != null && board.messages.isEmpty) {
@@ -634,10 +610,7 @@ final class _SuperChatTab extends ConsumerWidget {
       );
     }
     if (board.messages.isEmpty) {
-      return DsEmptyState(
-        icon: const DsIcon(DsIcons.badgeDollarSign),
-        title: Text(t.room.superChatEmpty),
-      );
+      return DsEmptyState(icon: const DsIcon(DsIcons.badgeDollarSign), title: Text(t.room.superChatEmpty));
     }
     final messages = board.messages;
     return ListView.separated(

@@ -3051,305 +3051,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '使用系统壁纸或强调色生成主题，覆盖当前主题色。'
 	String get dynamicColorDescription => '使用系统壁纸或强调色生成主题，覆盖当前主题色。';
 
-	/// zh-CN: '纯黑背景'
-	String get pureBlack => '纯黑背景';
-
-	/// zh-CN: '深色时用纯黑背景，OLED 屏更省电。'
-	String get pureBlackDescription => '深色时用纯黑背景，OLED 屏更省电。';
-
-	/// zh-CN: '浅色模式下不起作用：先把主题模式换成深色或跟随系统。'
-	String get pureBlackLightReason => '浅色模式下不起作用：先把主题模式换成深色或跟随系统。';
-
 	/// zh-CN: '液体玻璃'
 	String get liquidGlass => '液体玻璃';
 
 	/// zh-CN: '首页底栏悬浮成毛玻璃，页面从下面透出来；内存 4 GB 及以下的安卓手机不模糊，只半透明。'
 	String get liquidGlassDescription => '首页底栏悬浮成毛玻璃，页面从下面透出来；内存 4 GB 及以下的安卓手机不模糊，只半透明。';
-
-	/// zh-CN: '加载样式'
-	String get loadingStyle => '加载样式';
-
-	/// zh-CN: '页面、列表与播放器加载时的动画。'
-	String get loadingStyleDescription => '页面、列表与播放器加载时的动画。';
-
-	/// zh-CN: '选择加载样式'
-	String get loadingStyleChoose => '选择加载样式';
-
-	/// zh-CN: '选择后立即应用到所有加载状态。'
-	String get loadingStyleChooseHint => '选择后立即应用到所有加载状态。';
-
-	/// zh-CN: '默认圆环'
-	String get loadingStyleDefault => '默认圆环';
-
-	/// zh-CN: '脉冲水波'
-	String get loadingStylePulse => '脉冲水波';
-
-	/// zh-CN: '双重大圆'
-	String get loadingStyleDoubleBounce => '双重大圆';
-
-	/// zh-CN: '三点弹跳'
-	String get loadingStyleThreeBounce => '三点弹跳';
-
-	/// zh-CN: '波浪跳跃'
-	String get loadingStyleWave => '波浪跳跃';
-
-	/// zh-CN: '渐隐圆圈'
-	String get loadingStyleFadingCircle => '渐隐圆圈';
-
-	/// zh-CN: '九宫方格'
-	String get loadingStyleCubeGrid => '九宫方格';
-
-	/// zh-CN: '震荡涟漪'
-	String get loadingStyleRipple => '震荡涟漪';
-
-	/// zh-CN: '行星轨道'
-	String get loadingStyleOrbit => '行星轨道';
-
-	/// zh-CN: '五线谱律动'
-	String get loadingStyleLineScale => '五线谱律动';
-
-	/// zh-CN: '旋转方块'
-	String get loadingStyleRotatingPlain => '旋转方块';
-
-	/// zh-CN: '双块漫游'
-	String get loadingStyleWanderingCubes => '双块漫游';
-
-	/// zh-CN: '交替隐藏'
-	String get loadingStyleFadingFour => '交替隐藏';
-
-	/// zh-CN: '渐隐方块'
-	String get loadingStyleFadingCube => '渐隐方块';
-
-	/// zh-CN: '追逐双圆'
-	String get loadingStyleChasingDots => '追逐双圆';
-
-	/// zh-CN: '时钟小点'
-	String get loadingStyleCircle => '时钟小点';
-
-	/// zh-CN: '旋转大圆'
-	String get loadingStyleRotatingCircle => '旋转大圆';
-
-	/// zh-CN: '折叠魔方'
-	String get loadingStyleFoldingCube => '折叠魔方';
-
-	/// zh-CN: '心跳波动'
-	String get loadingStylePumpingHeart => '心跳波动';
-
-	/// zh-CN: '翻转沙漏'
-	String get loadingStyleHourGlass => '翻转沙漏';
-
-	/// zh-CN: '流动沙漏'
-	String get loadingStylePouringHourGlass => '流动沙漏';
-
-	/// zh-CN: '质感沙漏'
-	String get loadingStylePouringHourGlassRefined => '质感沙漏';
-
-	/// zh-CN: '矩阵渐隐'
-	String get loadingStyleFadingGrid => '矩阵渐隐';
-
-	/// zh-CN: '纯净圆环'
-	String get loadingStyleRing => '纯净圆环';
-
-	/// zh-CN: '半圆飞旋'
-	String get loadingStyleSpinningCircle => '半圆飞旋';
-
-	/// zh-CN: '流动线条'
-	String get loadingStyleSpinningLines => '流动线条';
-
-	/// zh-CN: '方变圆弧'
-	String get loadingStyleSquareCircle => '方变圆弧';
-
-	/// zh-CN: '双轨游环'
-	String get loadingStyleDualRing => '双轨游环';
-
-	/// zh-CN: '琴键节奏'
-	String get loadingStylePianoWave => '琴键节奏';
-
-	/// zh-CN: '律动方块'
-	String get loadingStyleDancingSquare => '律动方块';
-
-	/// zh-CN: '三点缩放'
-	String get loadingStyleThreeInOut => '三点缩放';
-
-	/// zh-CN: '声波雷达'
-	String get loadingStyleWaveSpinner => '声波雷达';
-
-	/// zh-CN: '脉冲网格'
-	String get loadingStylePulsingGrid => '脉冲网格';
-
-	/// zh-CN: '律动圆点'
-	String get loadingStyleWaveDots => '律动圆点';
-
-	/// zh-CN: '动态水滴'
-	String get loadingStyleInkDrop => '动态水滴';
-
-	/// zh-CN: '基因螺旋'
-	String get loadingStyleTwistingDots => '基因螺旋';
-
-	/// zh-CN: '三星环绕'
-	String get loadingStyleThreeRotatingDots => '三星环绕';
-
-	/// zh-CN: '错落波浪'
-	String get loadingStyleStaggeredDotsWave => '错落波浪';
-
-	/// zh-CN: '四星环绕'
-	String get loadingStyleFourRotatingDots => '四星环绕';
-
-	/// zh-CN: '重力落点'
-	String get loadingStyleFallingDot => '重力落点';
-
-	/// zh-CN: '线性生长'
-	String get loadingStyleProgressiveDots => '线性生长';
-
-	/// zh-CN: '分离圆环'
-	String get loadingStyleDiscreteCircular => '分离圆环';
-
-	/// zh-CN: '三重连环'
-	String get loadingStyleThreeArchedCircle => '三重连环';
-
-	/// zh-CN: '地面弹球'
-	String get loadingStyleBouncingBall => '地面弹球';
-
-	/// zh-CN: '环绕互换'
-	String get loadingStyleFlickr => '环绕互换';
-
-	/// zh-CN: '六角矩阵'
-	String get loadingStyleHexagonDots => '六角矩阵';
-
-	/// zh-CN: '心率电波'
-	String get loadingStyleBeat => '心率电波';
-
-	/// zh-CN: '双轴弧旋'
-	String get loadingStyleTwoRotatingArc => '双轴弧旋';
-
-	/// zh-CN: '水平环绕'
-	String get loadingStyleHorizontalRotatingDots => '水平环绕';
-
-	/// zh-CN: '牛顿摆球'
-	String get loadingStyleNewtonCradle => '牛顿摆球';
-
-	/// zh-CN: '拉伸光点'
-	String get loadingStyleStretchedDots => '拉伸光点';
-
-	/// zh-CN: '三角错落'
-	String get loadingStyleHalfTriangleDot => '三角错落';
-
-	/// zh-CN: '动态三角'
-	String get loadingStyleDotsTriangle => '动态三角';
-
-	/// zh-CN: '三点渐变'
-	String get loadingStyleBallPulse => '三点渐变';
-
-	/// zh-CN: '九宫格闪烁'
-	String get loadingStyleBallGridPulse => '九宫格闪烁';
-
-	/// zh-CN: '裁剪圆环旋转'
-	String get loadingStyleBallClipRotate => '裁剪圆环旋转';
-
-	/// zh-CN: '双层环球旋转'
-	String get loadingStyleBallClipRotatePulse => '双层环球旋转';
-
-	/// zh-CN: '方块翻转'
-	String get loadingStyleSquareSpin => '方块翻转';
-
-	/// zh-CN: '多重碎片圆环'
-	String get loadingStyleBallClipRotateMultiple => '多重碎片圆环';
-
-	/// zh-CN: '交错交替上升'
-	String get loadingStyleBallPulseRise => '交错交替上升';
-
-	/// zh-CN: '三球围绕旋转'
-	String get loadingStyleBallRotate => '三球围绕旋转';
-
-	/// zh-CN: '双对角方块位移'
-	String get loadingStyleCubeTransition => '双对角方块位移';
-
-	/// zh-CN: '双球Z字错位'
-	String get loadingStyleBallZigZag => '双球Z字错位';
-
-	/// zh-CN: '双球曲线反弹'
-	String get loadingStyleBallZigZagDeflect => '双球曲线反弹';
-
-	/// zh-CN: '三角轨迹循环'
-	String get loadingStyleBallTrianglePath => '三角轨迹循环';
-
-	/// zh-CN: '三角彩轨循环'
-	String get loadingStyleBallTrianglePathColored => '三角彩轨循环';
-
-	/// zh-CN: '三角实心循环'
-	String get loadingStyleBallTrianglePathColoredFilled => '三角实心循环';
-
-	/// zh-CN: '单圆水波脉冲'
-	String get loadingStyleBallScale => '单圆水波脉冲';
-
-	/// zh-CN: '律动线条'
-	String get loadingStyleLineScaleParty => '律动线条';
-
-	/// zh-CN: '多重水波涟漪'
-	String get loadingStyleBallScaleMultiple => '多重水波涟漪';
-
-	/// zh-CN: '三点波浪同步'
-	String get loadingStyleBallPulseSync => '三点波浪同步';
-
-	/// zh-CN: '三点心跳缩放'
-	String get loadingStyleBallBeat => '三点心跳缩放';
-
-	/// zh-CN: '线条由内向外扩散'
-	String get loadingStyleLineScalePulseOut => '线条由内向外扩散';
-
-	/// zh-CN: '线条高频向外扩散'
-	String get loadingStyleLineScalePulseOutRapid => '线条高频向外扩散';
-
-	/// zh-CN: '空心圆环震荡'
-	String get loadingStyleBallScaleRipple => '空心圆环震荡';
-
-	/// zh-CN: '多重空心涟漪'
-	String get loadingStyleBallScaleRippleMultiple => '多重空心涟漪';
-
-	/// zh-CN: '经典菊花圆点'
-	String get loadingStyleBallSpinFadeLoader => '经典菊花圆点';
-
-	/// zh-CN: '经典时钟线条'
-	String get loadingStyleLineSpinFadeLoader => '经典时钟线条';
-
-	/// zh-CN: '三角倾斜翻转'
-	String get loadingStyleTriangleSkewSpin => '三角倾斜翻转';
-
-	/// zh-CN: '吃豆人游戏'
-	String get loadingStylePacman => '吃豆人游戏';
-
-	/// zh-CN: '九宫格心跳闪烁'
-	String get loadingStyleBallGridBeat => '九宫格心跳闪烁';
-
-	/// zh-CN: '半圆飞速旋转'
-	String get loadingStyleSemiCircleSpin => '半圆飞速旋转';
-
-	/// zh-CN: '圆点接力追逐'
-	String get loadingStyleBallRotateChase => '圆点接力追逐';
-
-	/// zh-CN: '音频均衡器'
-	String get loadingStyleAudioEqualizer => '音频均衡器';
-
-	/// zh-CN: '纯净描边圆环'
-	String get loadingStyleCircleStrokeSpin => '纯净描边圆环';
-
-	/// zh-CN: '加载颜色'
-	String get loadingColor => '加载颜色';
-
-	/// zh-CN: '加载动画的颜色；为空时跟随主题强调色。'
-	String get loadingColorDescription => '加载动画的颜色；为空时跟随主题强调色。';
-
-	/// zh-CN: '跟随主题'
-	String get loadingColorFollowTheme => '跟随主题';
-
-	/// zh-CN: '预设颜色'
-	String get loadingColorPresets => '预设颜色';
-
-	/// zh-CN: '颜色代码'
-	String get loadingColorHex => '颜色代码';
-
-	/// zh-CN: '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。'
-	String get loadingColorHexInvalid => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。';
 
 	/// zh-CN: '主题色'
 	String get themeColorTitle => '主题色';
@@ -8081,108 +7787,8 @@ extension on Translations {
 			'settings.themeSeedDynamicDescription' => '动态取色开启时由系统决定；关闭后可自选主题色。',
 			'settings.dynamicColor' => '动态取色',
 			'settings.dynamicColorDescription' => '使用系统壁纸或强调色生成主题，覆盖当前主题色。',
-			'settings.pureBlack' => '纯黑背景',
-			'settings.pureBlackDescription' => '深色时用纯黑背景，OLED 屏更省电。',
-			'settings.pureBlackLightReason' => '浅色模式下不起作用：先把主题模式换成深色或跟随系统。',
 			'settings.liquidGlass' => '液体玻璃',
 			'settings.liquidGlassDescription' => '首页底栏悬浮成毛玻璃，页面从下面透出来；内存 4 GB 及以下的安卓手机不模糊，只半透明。',
-			'settings.loadingStyle' => '加载样式',
-			'settings.loadingStyleDescription' => '页面、列表与播放器加载时的动画。',
-			'settings.loadingStyleChoose' => '选择加载样式',
-			'settings.loadingStyleChooseHint' => '选择后立即应用到所有加载状态。',
-			'settings.loadingStyleDefault' => '默认圆环',
-			'settings.loadingStylePulse' => '脉冲水波',
-			'settings.loadingStyleDoubleBounce' => '双重大圆',
-			'settings.loadingStyleThreeBounce' => '三点弹跳',
-			'settings.loadingStyleWave' => '波浪跳跃',
-			'settings.loadingStyleFadingCircle' => '渐隐圆圈',
-			'settings.loadingStyleCubeGrid' => '九宫方格',
-			'settings.loadingStyleRipple' => '震荡涟漪',
-			'settings.loadingStyleOrbit' => '行星轨道',
-			'settings.loadingStyleLineScale' => '五线谱律动',
-			'settings.loadingStyleRotatingPlain' => '旋转方块',
-			'settings.loadingStyleWanderingCubes' => '双块漫游',
-			'settings.loadingStyleFadingFour' => '交替隐藏',
-			'settings.loadingStyleFadingCube' => '渐隐方块',
-			'settings.loadingStyleChasingDots' => '追逐双圆',
-			'settings.loadingStyleCircle' => '时钟小点',
-			'settings.loadingStyleRotatingCircle' => '旋转大圆',
-			'settings.loadingStyleFoldingCube' => '折叠魔方',
-			'settings.loadingStylePumpingHeart' => '心跳波动',
-			'settings.loadingStyleHourGlass' => '翻转沙漏',
-			'settings.loadingStylePouringHourGlass' => '流动沙漏',
-			'settings.loadingStylePouringHourGlassRefined' => '质感沙漏',
-			'settings.loadingStyleFadingGrid' => '矩阵渐隐',
-			'settings.loadingStyleRing' => '纯净圆环',
-			'settings.loadingStyleSpinningCircle' => '半圆飞旋',
-			'settings.loadingStyleSpinningLines' => '流动线条',
-			'settings.loadingStyleSquareCircle' => '方变圆弧',
-			'settings.loadingStyleDualRing' => '双轨游环',
-			'settings.loadingStylePianoWave' => '琴键节奏',
-			'settings.loadingStyleDancingSquare' => '律动方块',
-			'settings.loadingStyleThreeInOut' => '三点缩放',
-			'settings.loadingStyleWaveSpinner' => '声波雷达',
-			'settings.loadingStylePulsingGrid' => '脉冲网格',
-			'settings.loadingStyleWaveDots' => '律动圆点',
-			'settings.loadingStyleInkDrop' => '动态水滴',
-			'settings.loadingStyleTwistingDots' => '基因螺旋',
-			'settings.loadingStyleThreeRotatingDots' => '三星环绕',
-			'settings.loadingStyleStaggeredDotsWave' => '错落波浪',
-			'settings.loadingStyleFourRotatingDots' => '四星环绕',
-			'settings.loadingStyleFallingDot' => '重力落点',
-			'settings.loadingStyleProgressiveDots' => '线性生长',
-			'settings.loadingStyleDiscreteCircular' => '分离圆环',
-			'settings.loadingStyleThreeArchedCircle' => '三重连环',
-			'settings.loadingStyleBouncingBall' => '地面弹球',
-			'settings.loadingStyleFlickr' => '环绕互换',
-			'settings.loadingStyleHexagonDots' => '六角矩阵',
-			'settings.loadingStyleBeat' => '心率电波',
-			'settings.loadingStyleTwoRotatingArc' => '双轴弧旋',
-			'settings.loadingStyleHorizontalRotatingDots' => '水平环绕',
-			'settings.loadingStyleNewtonCradle' => '牛顿摆球',
-			'settings.loadingStyleStretchedDots' => '拉伸光点',
-			'settings.loadingStyleHalfTriangleDot' => '三角错落',
-			'settings.loadingStyleDotsTriangle' => '动态三角',
-			'settings.loadingStyleBallPulse' => '三点渐变',
-			'settings.loadingStyleBallGridPulse' => '九宫格闪烁',
-			'settings.loadingStyleBallClipRotate' => '裁剪圆环旋转',
-			'settings.loadingStyleBallClipRotatePulse' => '双层环球旋转',
-			'settings.loadingStyleSquareSpin' => '方块翻转',
-			'settings.loadingStyleBallClipRotateMultiple' => '多重碎片圆环',
-			'settings.loadingStyleBallPulseRise' => '交错交替上升',
-			'settings.loadingStyleBallRotate' => '三球围绕旋转',
-			'settings.loadingStyleCubeTransition' => '双对角方块位移',
-			'settings.loadingStyleBallZigZag' => '双球Z字错位',
-			'settings.loadingStyleBallZigZagDeflect' => '双球曲线反弹',
-			'settings.loadingStyleBallTrianglePath' => '三角轨迹循环',
-			'settings.loadingStyleBallTrianglePathColored' => '三角彩轨循环',
-			'settings.loadingStyleBallTrianglePathColoredFilled' => '三角实心循环',
-			_ => null,
-		} ?? switch (path) {
-			'settings.loadingStyleBallScale' => '单圆水波脉冲',
-			'settings.loadingStyleLineScaleParty' => '律动线条',
-			'settings.loadingStyleBallScaleMultiple' => '多重水波涟漪',
-			'settings.loadingStyleBallPulseSync' => '三点波浪同步',
-			'settings.loadingStyleBallBeat' => '三点心跳缩放',
-			'settings.loadingStyleLineScalePulseOut' => '线条由内向外扩散',
-			'settings.loadingStyleLineScalePulseOutRapid' => '线条高频向外扩散',
-			'settings.loadingStyleBallScaleRipple' => '空心圆环震荡',
-			'settings.loadingStyleBallScaleRippleMultiple' => '多重空心涟漪',
-			'settings.loadingStyleBallSpinFadeLoader' => '经典菊花圆点',
-			'settings.loadingStyleLineSpinFadeLoader' => '经典时钟线条',
-			'settings.loadingStyleTriangleSkewSpin' => '三角倾斜翻转',
-			'settings.loadingStylePacman' => '吃豆人游戏',
-			'settings.loadingStyleBallGridBeat' => '九宫格心跳闪烁',
-			'settings.loadingStyleSemiCircleSpin' => '半圆飞速旋转',
-			'settings.loadingStyleBallRotateChase' => '圆点接力追逐',
-			'settings.loadingStyleAudioEqualizer' => '音频均衡器',
-			'settings.loadingStyleCircleStrokeSpin' => '纯净描边圆环',
-			'settings.loadingColor' => '加载颜色',
-			'settings.loadingColorDescription' => '加载动画的颜色；为空时跟随主题强调色。',
-			'settings.loadingColorFollowTheme' => '跟随主题',
-			'settings.loadingColorPresets' => '预设颜色',
-			'settings.loadingColorHex' => '颜色代码',
-			'settings.loadingColorHexInvalid' => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。',
 			'settings.themeColorTitle' => '主题色',
 			'settings.themeColorPresets' => '预设颜色',
 			'settings.themeColorCustom' => '自定义颜色',
@@ -8257,6 +7863,8 @@ extension on Translations {
 			'settings.styleWeightExtraLight' => '很细',
 			'settings.styleWeightLight' => '偏细',
 			'settings.styleWeightNormal' => '正常',
+			_ => null,
+		} ?? switch (path) {
 			'settings.styleWeightMedium' => '稍粗',
 			'settings.styleWeightSemiBold' => '中粗',
 			'settings.styleWeightBold' => '粗体',
@@ -8671,8 +8279,6 @@ extension on Translations {
 			'settings.selectionStyle' => '选中样式',
 			'settings.selectionDescription' => '选中行与控件的高亮方式。',
 			'settings.selectionSoft' => '柔和',
-			_ => null,
-		} ?? switch (path) {
 			'settings.selectionStrong' => '强烈',
 			'settings.autoClash' => '自动避让状态色',
 			'settings.autoClashDesc' => '主题色接近危险或成功色时自动调整，避免选中状态被误读。',
@@ -8771,6 +8377,8 @@ extension on Translations {
 			'settings.portraitLayoutModeDesc' => '仅影响竖屏直播源，不改变普通横屏直播。',
 			'settings.portraitLayoutBalanced' => '均衡（推荐）',
 			'settings.portraitLayoutImmersive' => '沉浸',
+			_ => null,
+		} ?? switch (path) {
 			'settings.portraitLayoutCompatibility' => '兼容 16:9',
 			'settings.portraitDetectionOff' => '开启智能识别后才能调整高度与布局。',
 			'settings.searchSections' => '分区',
@@ -9185,8 +8793,6 @@ extension on Translations {
 			'toolbox.toolLinkDescription' => '粘贴平台链接，打开直播间或复制房间地址。',
 			'toolbox.toolNetworkTitle' => '平台节点',
 			'toolbox.toolNetworkDescription' => '测试各平台接口的连通性与延迟。',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.toolCacheTitle' => '缓存清理',
 			'toolbox.toolCacheDescription' => '查看并清理图片占用的内存缓存。',
 			'toolbox.toolLogsTitle' => '日志',
@@ -9285,6 +8891,8 @@ extension on Translations {
 			'vod.errorTitle' => '视频没有加载出来',
 			'vod.retry' => '重试',
 			'vod.popular' => '热门',
+			_ => null,
+		} ?? switch (path) {
 			'vod.ranking' => '排行',
 			'vod.regions' => '分区',
 			'vod.search' => '搜索',

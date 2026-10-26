@@ -41,19 +41,22 @@ import 'package:pure_live/features/settings/danmaku/danmaku_templates.dart';
 import 'package:pure_live/features/settings/danmaku/super_chat_settings.dart' show superChatIncludesMembershipProvider;
 import 'package:pure_live/features/settings/dialogs/asmr_sleep_dialog.dart' show showAsmrSleepMinutesDialog;
 import 'package:pure_live/features/settings/dialogs/config_preview_dialog.dart' show showConfigPreview;
-import 'package:pure_live/features/settings/dialogs/font_manager_dialog.dart' show fontFamilyLabel, showFontManagerDialog;
+import 'package:pure_live/features/settings/dialogs/font_manager_dialog.dart'
+    show fontFamilyLabel, showFontManagerDialog;
 import 'package:pure_live/features/settings/dialogs/live_alert_tags_dialog.dart' show showLiveAlertTagsDialog;
-import 'package:pure_live/features/settings/dialogs/loading_style_dialog.dart' show loadingStyleLabel, showLoadingStyleDialog;
 import 'package:pure_live/features/settings/dialogs/page_size_options_dialog.dart' show showPageSizeOptionsDialog;
 import 'package:pure_live/features/settings/dialogs/prefer_platform_dialog.dart' show showPreferPlatformDialog;
-import 'package:pure_live/features/settings/dialogs/theme_color_dialog.dart' show showThemeColorDialog, themeSeedToneLabel;
+import 'package:pure_live/features/settings/dialogs/theme_color_dialog.dart'
+    show showThemeColorDialog, themeSeedToneLabel;
 import 'package:pure_live/features/settings/dialogs/twitch_languages_dialog.dart'
     show showTwitchLanguagesDialog, twitchLanguagesSummary;
 import 'package:pure_live/features/settings/general/auto_shutdown_section.dart' show AutoShutdownSection;
 import 'package:pure_live/features/settings/general/refresh_rate_section.dart' show RefreshRateSection;
-import 'package:pure_live/features/settings/general/tv_preferences.dart' show tvFocusZoomProvider, tvMenuExpandedProvider;
+import 'package:pure_live/features/settings/general/tv_preferences.dart'
+    show tvFocusZoomProvider, tvMenuExpandedProvider;
 import 'package:pure_live/features/settings/general/window_size_row.dart' show WindowSizeRow;
-import 'package:pure_live/features/settings/panes/audience_settings_pane.dart' show AudienceSettingsPane, audienceModeLabel;
+import 'package:pure_live/features/settings/panes/audience_settings_pane.dart'
+    show AudienceSettingsPane, audienceModeLabel;
 import 'package:pure_live/features/settings/panes/background_panes.dart'
     show
         BackgroundColorsPane,
@@ -62,7 +65,8 @@ import 'package:pure_live/features/settings/panes/background_panes.dart'
         BackgroundOverviewPane,
         BackgroundRandomPane;
 import 'package:pure_live/features/settings/panes/local_interaction_pane.dart' show LocalInteractionPane;
-import 'package:pure_live/features/settings/panes/player_kernel_pane.dart' show PlayerKernelAdvancedPane, PlayerKernelPane;
+import 'package:pure_live/features/settings/panes/player_kernel_pane.dart'
+    show PlayerKernelAdvancedPane, PlayerKernelPane;
 import 'package:pure_live/features/settings/panes/room_card_pane.dart' show RoomCardPane;
 import 'package:pure_live/features/settings/playback/floating_window_settings.dart' show floatingWindowSettingsProvider;
 import 'package:pure_live/features/settings/playback/pip_danmaku_scale_provider.dart'
@@ -1325,21 +1329,6 @@ final class _ThemePane extends ConsumerWidget {
                   onChanged: (value) => ref.read(dynamicColorProvider.notifier).enabled = value,
                 ),
               ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.moon),
-              title: Text(t.settings.pureBlack),
-              // The reference greys the switch in light mode and says why in
-              // the description instead of hiding a choice that cannot apply.
-              description: Text(
-                settings.mode == DsThemeMode.light ? t.settings.pureBlackLightReason : t.settings.pureBlackDescription,
-              ),
-              trailing: DsSwitch(
-                value: ref.watch(pureBlackThemeProvider),
-                onChanged: settings.mode == DsThemeMode.light
-                    ? null
-                    : (value) => unawaited(ref.read(pureBlackThemeProvider.notifier).set(value: value)),
-              ),
-            ),
             // A01.5: the phone shell's bottom bar is the only place this
             // paints, so the desktop profile hides the switch outright
             // rather than offer a choice that changes nothing there.
@@ -1353,19 +1342,6 @@ final class _ThemePane extends ConsumerWidget {
                   onChanged: (value) => unawaited(ref.read(liquidGlassProvider.notifier).set(value: value)),
                 ),
               ),
-            DsListRow(
-              // A still frame: the gallery plays the styles; a settings visit
-              // should not keep an animation running.
-              leading: const TickerMode(
-                enabled: false,
-                child: SizedBox.square(dimension: 22, child: AppLoadingIndicator(size: 22)),
-              ),
-              title: Text(t.settings.loadingStyle),
-              description: Text(t.settings.loadingStyleDescription),
-              detail: Text(loadingStyleLabel(t, ref.watch(loadingStyleProvider))),
-              showChevron: true,
-              onPressed: () => unawaited(showLoadingStyleDialog(context)),
-            ),
             SettingsChoiceRow<DsContrast>(
               leading: const DsIcon(DsIcons.contrast),
               title: t.settings.contrast,

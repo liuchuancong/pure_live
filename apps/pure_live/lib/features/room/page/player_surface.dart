@@ -472,8 +472,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     final localBarrage = ref.watch(localBarrageProvider);
     final mini = presentation == PresentationMode.pip;
     final portraitHidden = widget.portraitFullscreen && widget.portraitDanmaku == PortraitDanmakuMode.hidden;
-    final showDanmaku =
-        playback.danmakuVisible && (!mini || playback.miniDanmakuVisible) && !portraitHidden;
+    final showDanmaku = playback.danmakuVisible && (!mini || playback.miniDanmakuVisible) && !portraitHidden;
     final danmakuArea = widget.portraitFullscreen
         ? switch (widget.portraitDanmaku) {
             PortraitDanmakuMode.upperQuarter => 0.25,
@@ -701,7 +700,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   mainAxisSize: MainAxisSize.min,
                   spacing: DsSpace.s12,
                   children: [
-                    if (picture.busy) const AppLoadingIndicator(size: 20, color: _onVideoSubtle),
+                    if (picture.busy) const DsSpinner(style: DsSpinnerStyle(size: 20, color: _onVideoSubtle)),
                     Text(
                       picture.title,
                       textAlign: TextAlign.center,
@@ -1014,7 +1013,10 @@ final class _ControlBar extends ConsumerWidget {
                         unawaited(presentationController.toggleWindowFullscreen(player));
                       },
                     ),
-                  if (!pip && canEnterPortraitFullscreen && !portraitFullscreen && presentation == PresentationMode.normal)
+                  if (!pip &&
+                      canEnterPortraitFullscreen &&
+                      !portraitFullscreen &&
+                      presentation == PresentationMode.normal)
                     _BarIcon(
                       icon: DsIcons.rectangleVertical,
                       label: t.room.portraitFullscreen,

@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/features/favorites/data/follow_repository.dart' show followsProvider;
 import 'package:pure_live/features/favorites/data/follow_tags.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/shared.dart';
 
 /// Follow tags (the reference's `TagsPage`, reached from its platforms
 /// group): the viewer's own groups for followed rooms. One row per tag —
@@ -99,7 +98,7 @@ final class _FollowTagsPaneState extends ConsumerState<FollowTagsPane> {
             ),
           ],
         ),
-        if (_busy) const Center(child: AppLoadingIndicator(size: 18)),
+        if (_busy) const Center(child: DsSpinner(style: DsSpinnerStyle(size: 18))),
         if (tags.isEmpty)
           DsEmptyState(
             icon: const DsIcon(DsIcons.tag),

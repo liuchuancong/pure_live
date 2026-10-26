@@ -277,14 +277,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
         unawaited(ref.read(fontLibraryProvider).ensureRegistered(family, face: next));
       }
     });
-    final pureBlack = ref.watch(pureBlackThemeProvider);
-    var themeSettings = activeDynamicSeed == null
+    final themeSettings = activeDynamicSeed == null
         ? _settings
         : _settings.rebuild((b) => b..seed = DsSeed.color(activeDynamicSeed));
-    if (pureBlack) {
-      // A11.2 C-4: the dark grounds fall to black; light passes through.
-      themeSettings = themeSettings.rebuild((b) => b..adjustColors = dsPureBlackColors);
-    }
     // The translation provider is one per process, above every window (see
     // the entry points): slang keys it with a process-wide GlobalKey, so a
     // second copy inside a second window's tree is a duplicate key.
@@ -301,7 +296,7 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       themeMode: _settings.mode,
       theme: themeSettings.theme(fontFamilyOverride: lockedFamily == appFamily ? null : lockedFamily),
       builder: (context, child) {
-        final app = LiveAlertWatcher(
+        final core = LiveAlertWatcher(
           child: ClipboardRoomWatcher(
             child: AppVisibilityObserver(
               // The wallpaper is the bottom layer of the app: every route
@@ -324,6 +319,15 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
               ),
             ),
           ),
+        );
+        // No bar in the app draws step marks: `divisions` still quantizes the
+        // value a setting stores, it only stops painting the dots on the
+        // track. One theme layer reaches every slider at once — the settings
+        // pages and the dialogs they open, the room's danmaku column, the
+        // player's own bars.
+        final app = DsSliderTheme(
+          data: const DsSliderThemeData(style: DsSliderStyle(tickSize: 0)),
+          child: core,
         );
         final content = desktop
             ? CallbackShortcuts(

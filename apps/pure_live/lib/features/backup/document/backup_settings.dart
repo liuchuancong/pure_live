@@ -105,10 +105,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   // Appearance.
   ('theme.mode', BackupPrefKind.string),
   ('theme.dynamicColor', BackupPrefKind.boolean),
-  ('theme.pureBlack', BackupPrefKind.boolean),
   ('theme.liquidGlass', BackupPrefKind.boolean),
-  ('theme.loadingStyle', BackupPrefKind.string),
-  ('theme.loadingColor', BackupPrefKind.string),
   ('theme.seed', BackupPrefKind.string),
   ('theme.corners', BackupPrefKind.string),
   ('theme.density', BackupPrefKind.string),

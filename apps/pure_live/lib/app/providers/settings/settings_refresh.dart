@@ -32,9 +32,6 @@ import 'package:pure_live/app/providers/theme/dynamic_color_provider.dart'
 import 'package:pure_live/app/providers/theme/font_face_provider.dart'
     show appFontFaceProvider, danmakuFontFaceProvider;
 import 'package:pure_live/app/providers/theme/liquid_glass_provider.dart' show liquidGlassProvider;
-import 'package:pure_live/app/providers/theme/loading_style_provider.dart'
-    show loadingColorProvider, loadingStyleProvider;
-import 'package:pure_live/app/providers/theme/pure_black_theme_provider.dart' show pureBlackThemeProvider;
 import 'package:pure_live/app/providers/theme/text_scale_provider.dart' show textScaleFactorProvider;
 import 'package:pure_live/features/backup/backup.dart';
 import 'package:pure_live/features/favorites/favorites.dart';
@@ -135,10 +132,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   matchVideoFrameRateProvider,
   dynamicColorProvider,
   dynamicColorSeedProvider,
-  pureBlackThemeProvider,
   liquidGlassProvider,
-  loadingStyleProvider,
-  loadingColorProvider,
   splashSettingsProvider,
   textScaleFactorProvider,
   appFontFaceProvider,

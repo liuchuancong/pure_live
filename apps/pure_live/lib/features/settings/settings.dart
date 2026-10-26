@@ -21,7 +21,6 @@ export 'dialogs/asmr_sleep_dialog.dart';
 export 'dialogs/config_preview_dialog.dart';
 export 'dialogs/font_manager_dialog.dart';
 export 'dialogs/live_alert_tags_dialog.dart';
-export 'dialogs/loading_style_dialog.dart';
 export 'dialogs/local_phrases_dialog.dart';
 export 'dialogs/page_size_options_dialog.dart';
 export 'dialogs/player_guide_dialog.dart';
