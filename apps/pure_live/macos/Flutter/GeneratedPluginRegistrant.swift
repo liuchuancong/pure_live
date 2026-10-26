@@ -9,7 +9,7 @@ import audio_service
 import audio_session
 import battery_plus
 import connectivity_plus
-import desktop_multi_window
+import desktop_drop
 import device_info_plus
 import device_screen_brightness
 import dynamic_color
@@ -22,6 +22,7 @@ import macos_window_utils
 import media_core_audio
 import media_core_native
 import media_kit_video
+import multiview_desktop
 import network_info_plus
 import open_file_mac
 import package_info_plus
@@ -40,7 +41,7 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   AudioSessionPlugin.register(with: registry.registrar(forPlugin: "AudioSessionPlugin"))
   BatteryPlusMacosPlugin.register(with: registry.registrar(forPlugin: "BatteryPlusMacosPlugin"))
   ConnectivityPlusPlugin.register(with: registry.registrar(forPlugin: "ConnectivityPlusPlugin"))
-  FlutterMultiWindowPlugin.register(with: registry.registrar(forPlugin: "FlutterMultiWindowPlugin"))
+  DesktopDropPlugin.register(with: registry.registrar(forPlugin: "DesktopDropPlugin"))
   DeviceInfoPlusMacosPlugin.register(with: registry.registrar(forPlugin: "DeviceInfoPlusMacosPlugin"))
   DeviceScreenBrightnessPlugin.register(with: registry.registrar(forPlugin: "DeviceScreenBrightnessPlugin"))
   DynamicColorPlugin.register(with: registry.registrar(forPlugin: "DynamicColorPlugin"))
@@ -53,6 +54,7 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   MediaCoreAudioPlugin.register(with: registry.registrar(forPlugin: "MediaCoreAudioPlugin"))
   MediaCoreNativePlugin.register(with: registry.registrar(forPlugin: "MediaCoreNativePlugin"))
   MediaKitVideoPlugin.register(with: registry.registrar(forPlugin: "MediaKitVideoPlugin"))
+  MultiviewDesktopPlugin.register(with: registry.registrar(forPlugin: "MultiviewDesktopPlugin"))
   NetworkInfoPlusPlugin.register(with: registry.registrar(forPlugin: "NetworkInfoPlusPlugin"))
   OpenFilePlugin.register(with: registry.registrar(forPlugin: "OpenFilePlugin"))
   FPPPackageInfoPlusPlugin.register(with: registry.registrar(forPlugin: "FPPPackageInfoPlusPlugin"))

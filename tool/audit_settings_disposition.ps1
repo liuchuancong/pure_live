@@ -18,7 +18,7 @@ $appLibRel = 'apps/pure_live/lib'
 $appLib = Join-Path $Root $appLibRel
 $packagesRoot = Join-Path $Root 'packages'
 $checklistPath = Join-Path $Root 'docs/settings-review-checklist.md'
-$backupFile = Join-Path $appLib 'features/backup/backup_settings.dart'
+$backupFile = Join-Path $appLib 'features/backup/document/backup_settings.dart'
 
 $dartFiles = @(Get-ChildItem -Path $appLib -Recurse -File -Filter '*.dart' | Where-Object { -not $_.Name.EndsWith('.g.dart') })
 if (Test-Path $packagesRoot) {

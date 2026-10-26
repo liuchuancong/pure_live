@@ -8,23 +8,10 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_log/live_log.dart' show LogLevel, LogRecord;
 import 'package:live_sites/live_sites.dart';
 import 'package:open_file/open_file.dart' show OpenFile, ResultType;
-import 'package:pure_live/app/logging/app_log.dart'
-    show
-        appLogDirectory,
-        appLogFileEnabled,
-        appLogLevel,
-        clearAppLog,
-        exportAppLog,
-        setAppLogFileEnabled,
-        setAppLogLevel;
-import 'package:pure_live/app/providers/log_providers.dart' show appLogRecordsProvider;
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/app/routing/app_router.dart' show RoomRoute;
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/toolbox/toolbox_controllers.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon, localizedSiteName;
-import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
-import 'package:pure_live/shared/widgets/choice_dialog.dart' show AdaptiveChoiceField;
+import 'package:pure_live/shared/shared.dart';
 
 /// The home navigation's link parser: the reference's link tool as one
 /// page. The network probe, image-cache clear and log viewer that used to

@@ -4,12 +4,10 @@ import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
-import 'package:pure_live/app/providers/browse_settings_providers.dart';
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/features/account/account_providers.dart' show accountsProvider;
-import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider, sitesOrderProvider;
-import 'package:pure_live/shared/paging/room_paging.dart';
-import 'package:pure_live/shared/rooms/room_visibility.dart' show cannotPlayHere, showUnplayableProvider;
+import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/account/account.dart';
+import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/shared/shared.dart';
 
 /// What one platform's popular feed holds: every room fetched so far, the
 /// desktop page shown over them, the size that page is measured in, and how

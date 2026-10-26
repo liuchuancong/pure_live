@@ -9,7 +9,7 @@
 #include <audio_service_win/audio_service_win_plugin_c_api.h>
 #include <battery_plus/battery_plus_windows_plugin.h>
 #include <connectivity_plus/connectivity_plus_windows_plugin.h>
-#include <desktop_multi_window/desktop_multi_window_plugin.h>
+#include <desktop_drop/desktop_drop_plugin.h>
 #include <device_screen_brightness/device_screen_brightness_plugin_c_api.h>
 #include <dynamic_color/dynamic_color_plugin_c_api.h>
 #include <ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter_plugin.h>
@@ -19,6 +19,7 @@
 #include <media_core_audio/media_core_audio_plugin_c_api.h>
 #include <media_core_native/media_core_native_plugin_c_api.h>
 #include <media_kit_video/media_kit_video_plugin_c_api.h>
+#include <multiview_desktop/multi_view_desktop_plugin.h>
 #include <refresh_rate/refresh_rate_plugin_c_api.h>
 #include <restart_app/restart_app_plugin_c_api.h>
 #include <share_plus/share_plus_windows_plugin_c_api.h>
@@ -33,8 +34,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("BatteryPlusWindowsPlugin"));
   ConnectivityPlusWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("ConnectivityPlusWindowsPlugin"));
-  DesktopMultiWindowPluginRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("DesktopMultiWindowPlugin"));
+  DesktopDropPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("DesktopDropPlugin"));
   DeviceScreenBrightnessPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("DeviceScreenBrightnessPluginCApi"));
   DynamicColorPluginCApiRegisterWithRegistrar(
@@ -53,6 +54,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("MediaCoreNativePluginCApi"));
   MediaKitVideoPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("MediaKitVideoPluginCApi"));
+  MultiViewDesktopPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("MultiViewDesktopPlugin"));
   RefreshRatePluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("RefreshRatePluginCApi"));
   RestartAppPluginCApiRegisterWithRegistrar(

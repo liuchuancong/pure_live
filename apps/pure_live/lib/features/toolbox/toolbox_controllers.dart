@@ -2,7 +2,7 @@ import 'dart:async' show TimeoutException;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/app/app.dart';
 
 /// The room a resolved link points at.
 typedef ResolvedRoom = ({String platform, String roomId, Uri url});

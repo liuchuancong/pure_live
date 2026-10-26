@@ -6,7 +6,7 @@
 
 #include "generated_plugin_registrant.h"
 
-#include <desktop_multi_window/desktop_multi_window_plugin.h>
+#include <desktop_drop/desktop_drop_plugin.h>
 #include <device_screen_brightness/device_screen_brightness_plugin.h>
 #include <dynamic_color/dynamic_color_plugin.h>
 #include <ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter_plugin.h>
@@ -16,6 +16,7 @@
 #include <media_core_audio/media_core_audio_plugin.h>
 #include <media_core_native/media_core_native_plugin.h>
 #include <media_kit_video/media_kit_video_plugin.h>
+#include <multiview_desktop/multiview_desktop_plugin.h>
 #include <open_file_linux/open_file_linux_plugin.h>
 #include <refresh_rate/refresh_rate_plugin.h>
 #include <restart_app/restart_app_plugin.h>
@@ -24,9 +25,9 @@
 #include <volume_controller/volume_controller_plugin.h>
 
 void fl_register_plugins(FlPluginRegistry* registry) {
-  g_autoptr(FlPluginRegistrar) desktop_multi_window_registrar =
-      fl_plugin_registry_get_registrar_for_plugin(registry, "DesktopMultiWindowPlugin");
-  desktop_multi_window_plugin_register_with_registrar(desktop_multi_window_registrar);
+  g_autoptr(FlPluginRegistrar) desktop_drop_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "DesktopDropPlugin");
+  desktop_drop_plugin_register_with_registrar(desktop_drop_registrar);
   g_autoptr(FlPluginRegistrar) device_screen_brightness_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "DeviceScreenBrightnessPlugin");
   device_screen_brightness_plugin_register_with_registrar(device_screen_brightness_registrar);
@@ -54,6 +55,9 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) media_kit_video_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "MediaKitVideoPlugin");
   media_kit_video_plugin_register_with_registrar(media_kit_video_registrar);
+  g_autoptr(FlPluginRegistrar) multiview_desktop_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "MultiviewDesktopPlugin");
+  multiview_desktop_plugin_register_with_registrar(multiview_desktop_registrar);
   g_autoptr(FlPluginRegistrar) open_file_linux_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "OpenFileLinuxPlugin");
   open_file_linux_plugin_register_with_registrar(open_file_linux_registrar);

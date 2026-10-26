@@ -1,8 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/grids/layout_toggle.dart' show LayoutToggle;
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon;
@@ -61,8 +60,9 @@ final class PlatformTabRow extends ConsumerWidget {
       ),
       const SizedBox(width: DsSpace.s8),
       // The dropdown: every platform in a panel — a side sheet on a wide
-      // window, a half-height (pullable to full) sheet on a narrow one;
-      // the current one checked.
+      // window, a half-height (pullable to full) sheet on a narrow one.
+      // The platforms sit as a grid of choice cards, so a long catalogue
+      // stays two rows shorter than a list would need.
       DsButton(
         variant: DsButtonVariant.secondary,
         onPressed: () => showDsPanel<void>(
@@ -72,23 +72,38 @@ final class PlatformTabRow extends ConsumerWidget {
           detents: const [0.5, 1],
           builder: (context) => DsPanel(
             title: Text(context.t.popular.allPlatforms),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final id in platforms)
-                  DsListRow(
-                    leading: id == kAllPlatforms ? null : localizedSiteIcon(sites.getById(id), size: 20),
-                    title: Text(nameOf(id)),
-                    trailing: id == current ? const DsIcon(DsIcons.check, size: 16) : null,
-                    // A remote opens the panel with no pointer: the shown
-                    // platform is the first stop.
-                    autofocus: id == current,
-                    onPressed: () {
-                      onChanged(id);
-                      Navigator.of(context).pop();
-                    },
+            // The grid scrolls itself; the panel hands it the room it has.
+            scrollable: false,
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 200,
+                mainAxisExtent: 56,
+                mainAxisSpacing: DsSpace.s8,
+                crossAxisSpacing: DsSpace.s8,
+              ),
+              itemCount: platforms.length,
+              itemBuilder: (context, index) {
+                final id = platforms[index];
+                final name = nameOf(id);
+                return DsCard(
+                  // A remote opens the panel with no pointer: the shown
+                  // platform is the first stop.
+                  autofocus: id == current,
+                  semanticLabel: name,
+                  onPressed: () {
+                    onChanged(id);
+                    Navigator.of(context).pop();
+                  },
+                  child: Row(
+                    spacing: DsSpace.s8,
+                    children: [
+                      ?iconOf(id),
+                      Expanded(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      if (id == current) const DsIcon(DsIcons.check, size: 16),
+                    ],
                   ),
-              ],
+                );
+              },
             ),
           ),
         ),

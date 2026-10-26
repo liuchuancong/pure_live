@@ -4,11 +4,10 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/features/toolbox/toolbox_controllers.dart' show linkToolProvider;
+import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/toolbox/toolbox.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/navigation/room_opener.dart';
-import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
+import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 import 'package:webview_flutter/webview_flutter.dart';
 

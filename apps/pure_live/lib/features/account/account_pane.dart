@@ -7,11 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart'
     show LiveAuthCapability, LiveAuthPollStatus, LiveAuthSession, LiveCredential, LiveSite;
 import 'package:pretty_qr_code/pretty_qr_code.dart';
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account_providers.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/images/app_image_cache.dart';
-import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon;
+import 'package:pure_live/shared/shared.dart';
 
 /// The account pane: one row per site that offers the auth capability —
 /// the account's avatar and display name when the viewer is signed in, an

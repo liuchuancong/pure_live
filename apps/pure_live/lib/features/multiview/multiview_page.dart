@@ -6,19 +6,14 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LivePlayQuality, LiveRoom, LiveRoomRefIdentity;
 import 'package:media_core/media_core.dart' show MediaPlayerView;
-import 'package:pure_live/app/providers/navigation_providers.dart' show selectedNavItemProvider;
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
-import 'package:pure_live/features/history/history_repository.dart' show historyProvider;
+import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/favorites/favorites.dart';
+import 'package:pure_live/features/history/history.dart';
 import 'package:pure_live/features/multiview/multiview_controller.dart';
 import 'package:pure_live/features/multiview/multiview_playback.dart';
-import 'package:pure_live/features/settings/playback_settings_providers.dart' show playbackSettingsProvider;
+import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/enums/navigation_item.dart' show NavigationItem;
-import 'package:pure_live/shared/images/app_image_cache.dart';
-import 'package:pure_live/shared/navigation/room_opener.dart';
-import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon, localizedSiteName;
-import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
+import 'package:pure_live/shared/shared.dart';
 
 /// The multi-view wall (the reference's multiview): the 1×1, 1×2, 2×2 and
 /// 1+3 arrangements, each pane holding a followed room, with the layout

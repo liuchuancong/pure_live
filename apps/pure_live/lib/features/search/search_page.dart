@@ -5,25 +5,16 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/app/providers/browse_settings_providers.dart';
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/app/routing/app_router.dart' show AreaRoomsRoute;
-import 'package:pure_live/app/routing/route_names.dart' show RouteNames;
-import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
+import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/popular/popular.dart';
 import 'package:pure_live/features/search/search_controller.dart';
 import 'package:pure_live/features/search/web_search_page.dart' show WebSearchRequest;
 import 'package:pure_live/features/search/web_search_urls.dart' show webSearchUrl;
-import 'package:pure_live/features/settings/room_card_settings.dart' show RoomCardLayout, roomCardAppearanceProvider;
-import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider;
-import 'package:pure_live/features/toolbox/toolbox_controllers.dart' show linkToolProvider;
+import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/features/toolbox/toolbox.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/grids/card_grid.dart';
-import 'package:pure_live/shared/images/app_image_cache.dart';
-import 'package:pure_live/shared/navigation/room_opener.dart';
-import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
-import 'package:pure_live/shared/platforms/platform_picker.dart';
-import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
-import 'package:pure_live/shared/widgets/choice_dialog.dart' show AdaptiveChoiceField;
+import 'package:pure_live/shared/shared.dart';
+
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// How many completions the panel shows at most: a handful keeps the field's

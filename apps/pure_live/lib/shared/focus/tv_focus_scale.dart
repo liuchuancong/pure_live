@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor;
-import 'package:pure_live/app/providers/environment_providers.dart';
-import 'package:pure_live/features/settings/tv_preferences.dart';
+import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/settings.dart';
 
 /// How much a focused card or menu row grows on TV (the reference's
 /// `tvFocusZoom`, U.15a c2).

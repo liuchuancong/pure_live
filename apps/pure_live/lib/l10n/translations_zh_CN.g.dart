@@ -3684,6 +3684,12 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '全屏全量=弹幕铺满整个画面；其它预设只占用顶部区域'
 	String get danmakuPresetHint => '全屏全量=弹幕铺满整个画面；其它预设只占用顶部区域';
 
+	/// zh-CN: '自定义'
+	String get danmakuPresetCustom => '自定义';
+
+	/// zh-CN: '预设'
+	String get preset => '预设';
+
 	/// zh-CN: '设置生效范围'
 	String get prefScope => '设置生效范围';
 
@@ -3815,42 +3821,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '预览：设置会立即应用到所有界面。'
 	String get textScalePreview => '预览：设置会立即应用到所有界面。';
-
-	/// zh-CN: '正文及次要文本层级'
-	String get fontBodyGroup => '正文及次要文本层级';
-
-	/// zh-CN: '微型辅助文本（正文小号）'
-	String get fontBodySmall => '微型辅助文本（正文小号）';
-
-	/// zh-CN: '观众数、徽标、时间戳等微小标识，默认 12 px。'
-	String get fontBodySmallDescription => '观众数、徽标、时间戳等微小标识，默认 12 px。';
-
-	/// zh-CN: '标准正文大小（正文中号）'
-	String get fontBodyMedium => '标准正文大小（正文中号）';
-
-	/// zh-CN: '常规描述、副标题与列表标签，默认 13 px。'
-	String get fontBodyMediumDescription => '常规描述、副标题与列表标签，默认 13 px。';
-
-	/// zh-CN: '加粗段落正文（正文大号）'
-	String get fontBodyLarge => '加粗段落正文（正文大号）';
-
-	/// zh-CN: '列表项目名称、弹窗说明等长文本，默认 14 px。'
-	String get fontBodyLargeDescription => '列表项目名称、弹窗说明等长文本，默认 14 px。';
-
-	/// zh-CN: '标题层级'
-	String get fontTitleGroup => '标题层级';
-
-	/// zh-CN: '卡片与区块标题（标题中号）'
-	String get fontTitleMedium => '卡片与区块标题（标题中号）';
-
-	/// zh-CN: '设置分组、卡片头部与面板标题，默认 15 px。'
-	String get fontTitleMediumDescription => '设置分组、卡片头部与面板标题，默认 15 px。';
-
-	/// zh-CN: '页面与弹窗标题（标题大号）'
-	String get fontTitleLarge => '页面与弹窗标题（标题大号）';
-
-	/// zh-CN: '页面标题、弹窗与空状态标题，默认 20 px。'
-	String get fontTitleLargeDescription => '页面标题、弹窗与空状态标题，默认 20 px。';
 
 	/// zh-CN: '返回应用'
 	String get backHome => '返回应用';
@@ -4929,23 +4899,20 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '应用'
 	String get backgroundApply => '应用';
 
-	/// zh-CN: '上传'
-	String get backgroundUpload => '上传';
-
 	/// zh-CN: '选择图片'
 	String get backgroundUploadImage => '选择图片';
 
 	/// zh-CN: '选择视频'
 	String get backgroundUploadVideo => '选择视频';
 
-	/// zh-CN: '本地文件：{name}'
-	String backgroundLocalFile({required Object name}) => '本地文件：${name}';
-
 	/// zh-CN: '地址需要是 http(s) 链接'
 	String get backgroundInvalidUrl => '地址需要是 http(s) 链接';
 
 	/// zh-CN: '导入失败'
 	String get backgroundImportFailed => '导入失败';
+
+	/// zh-CN: '拖入的文件类型不支持'
+	String get backgroundDropUnsupported => '拖入的文件类型不支持';
 
 	/// zh-CN: '正在复制文件…'
 	String get backgroundBusy => '正在复制文件…';
@@ -8327,6 +8294,8 @@ extension on Translations {
 			'settings.danmakuPresetDense' => '顶部 55% · 高密度',
 			'settings.danmakuPresetFull' => '全屏全量',
 			'settings.danmakuPresetHint' => '全屏全量=弹幕铺满整个画面；其它预设只占用顶部区域',
+			'settings.danmakuPresetCustom' => '自定义',
+			'settings.preset' => '预设',
 			'settings.prefScope' => '设置生效范围',
 			'settings.prefScopeDesc' => '选择这些更改只在本窗口生效，还是应用到主窗口和所有直播间窗口。',
 			'settings.prefScopeLocal' => '仅本窗口',
@@ -8371,18 +8340,6 @@ extension on Translations {
 			'settings.textScale' => '文本缩放',
 			'settings.textScaleDescription' => '按比例放大或缩小整个应用的文字；100% 为平台原始大小。',
 			'settings.textScalePreview' => '预览：设置会立即应用到所有界面。',
-			'settings.fontBodyGroup' => '正文及次要文本层级',
-			'settings.fontBodySmall' => '微型辅助文本（正文小号）',
-			'settings.fontBodySmallDescription' => '观众数、徽标、时间戳等微小标识，默认 12 px。',
-			'settings.fontBodyMedium' => '标准正文大小（正文中号）',
-			'settings.fontBodyMediumDescription' => '常规描述、副标题与列表标签，默认 13 px。',
-			'settings.fontBodyLarge' => '加粗段落正文（正文大号）',
-			'settings.fontBodyLargeDescription' => '列表项目名称、弹窗说明等长文本，默认 14 px。',
-			'settings.fontTitleGroup' => '标题层级',
-			'settings.fontTitleMedium' => '卡片与区块标题（标题中号）',
-			'settings.fontTitleMediumDescription' => '设置分组、卡片头部与面板标题，默认 15 px。',
-			'settings.fontTitleLarge' => '页面与弹窗标题（标题大号）',
-			'settings.fontTitleLargeDescription' => '页面标题、弹窗与空状态标题，默认 20 px。',
 			'settings.backHome' => '返回应用',
 			'settings.navCache' => '缓存',
 			'settings.cacheDescription' => '封面与头像的磁盘缓存、清理上限。',
@@ -8704,8 +8661,6 @@ extension on Translations {
 			'settings.navMenuKeepOne' => '至少保留一个菜单',
 			'settings.multiviewVisible' => '首页入口：多画面',
 			'settings.multiviewVisibleDesc' => '关闭后侧栏与手机抽屉不再显示多画面入口。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.groupTheme' => '主题',
 			'settings.groupCards' => '卡片与列表',
 			'settings.groupType' => '字体和语言',
@@ -8716,6 +8671,8 @@ extension on Translations {
 			'settings.selectionStyle' => '选中样式',
 			'settings.selectionDescription' => '选中行与控件的高亮方式。',
 			'settings.selectionSoft' => '柔和',
+			_ => null,
+		} ?? switch (path) {
 			'settings.selectionStrong' => '强烈',
 			'settings.autoClash' => '自动避让状态色',
 			'settings.autoClashDesc' => '主题色接近危险或成功色时自动调整，避免选中状态被误读。',
@@ -8744,12 +8701,11 @@ extension on Translations {
 			'settings.backgroundVideoAddress' => '视频地址',
 			'settings.backgroundAddressHint' => 'https://…',
 			'settings.backgroundApply' => '应用',
-			'settings.backgroundUpload' => '上传',
 			'settings.backgroundUploadImage' => '选择图片',
 			'settings.backgroundUploadVideo' => '选择视频',
-			'settings.backgroundLocalFile' => ({required Object name}) => '本地文件：${name}',
 			'settings.backgroundInvalidUrl' => '地址需要是 http(s) 链接',
 			'settings.backgroundImportFailed' => '导入失败',
+			'settings.backgroundDropUnsupported' => '拖入的文件类型不支持',
 			'settings.backgroundBusy' => '正在复制文件…',
 			'settings.backgroundEmpty' => '还没有设置媒体；选择图片或视频后填写地址或上传。',
 			'settings.backgroundDisplay' => '显示',
@@ -9218,8 +9174,6 @@ extension on Translations {
 			'shield.douyuSuspected' => '过滤斗鱼疑似自动弹幕',
 			'shield.douyuSuspectedDescription' => '开启后按启发式标记隐藏疑似自动或活动弹幕，也可能隐藏普通聊天',
 			'sites.title' => '站点',
-			_ => null,
-		} ?? switch (path) {
 			'sites.live' => '直播',
 			'sites.search' => '搜索',
 			'sites.rooms' => '房间',
@@ -9231,6 +9185,8 @@ extension on Translations {
 			'toolbox.toolLinkDescription' => '粘贴平台链接，打开直播间或复制房间地址。',
 			'toolbox.toolNetworkTitle' => '平台节点',
 			'toolbox.toolNetworkDescription' => '测试各平台接口的连通性与延迟。',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.toolCacheTitle' => '缓存清理',
 			'toolbox.toolCacheDescription' => '查看并清理图片占用的内存缓存。',
 			'toolbox.toolLogsTitle' => '日志',

@@ -1,8 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
-
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/enums/app_module.dart';
+import 'package:pure_live/shared/shared.dart';
 
 /// The sidebar's head: the app mark and "Pure Live" beside a dropdown
 /// chevron — the app switcher. Pressing it opens a popover under the name

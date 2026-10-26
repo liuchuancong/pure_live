@@ -1,0 +1,486 @@
+import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
+import 'package:pure_live/l10n/translations.dart';
+
+/// One searchable row of the settings surface: the section it lives in, its
+/// own words, and the words a viewer might type for it. The catalogue is
+/// the search's memory of rows — the panes themselves stay widgets, so a
+/// row that exists here is a row the viewer can be taken to.
+typedef SettingsSearchHit = ({SettingsSection section, String title, String keywords});
+
+SettingsSearchHit _hit(SettingsSection section, String title, String keywords) =>
+    (section: section, title: title, keywords: keywords);
+
+/// Every row the settings search knows, in section order.
+///
+/// This is a curated index rather than a reflection of the widgets: a row
+/// is added when its control is added, and its keywords carry the words
+/// the label itself does not (English names, synonyms, the thing being
+/// configured). The search result opens the row's section; the exact-row
+/// jump waits for the panes to expose row keys.
+List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
+  final s = t.settings;
+  return [
+    // Browsing and window.
+    _hit(SettingsSection.browsing, s.cardExtent, 'card width grid 卡片 宽度 每排'),
+    _hit(SettingsSection.browsing, s.pageSize, 'page size rows 每页 数量 分页'),
+    _hit(SettingsSection.browsing, s.pageSizeSelector, 'page size selector hide rows 每页 数量 选择器 显示 隐藏 分页'),
+    _hit(SettingsSection.browsing, s.showGotoButton, 'go to page jump goto pager page number 跳页 页码 输入 分页'),
+    _hit(SettingsSection.browsing, s.showScrollToTop, 'scroll to top back top button 回顶 回到顶部 顶部 按钮 列表'),
+    _hit(
+      SettingsSection.browsing,
+      s.pageSizeOptions,
+      'page size options choices custom add remove 1 100 每页 数量 选项 档位 自定义 添加 删除 分页',
+    ),
+    _hit(SettingsSection.browsing, s.clipboardRooms, 'clipboard room link detect paste 剪贴板 直播间 链接 识别'),
+    _hit(SettingsSection.browsing, s.favoritesDense, 'dense compact favorites follows large card grid 紧凑 关注 卡片 密度 大卡片'),
+    _hit(
+      SettingsSection.roomCard,
+      s.roomCardTarget,
+      'room card card display mobile desktop appearance layout 房间 卡片 设置 移动端 桌面端 布局',
+    ),
+    _hit(SettingsSection.roomCard, s.roomCardShowAvatar, 'avatar anchor avatar image 头像 主播 卡片'),
+    _hit(SettingsSection.roomCard, s.roomCardShowAnchor, 'anchor name streamer 主播 名称 卡片'),
+    _hit(SettingsSection.roomCard, s.roomCardShowPlatform, 'platform badge logo label 平台 徽章 角标 卡片'),
+    _hit(SettingsSection.roomCard, s.roomCardShowAudience, 'audience viewers metric 观众 人数 指标 卡片'),
+    _hit(SettingsSection.roomCard, s.roomCardShowReplay, 'replay record badge 回放 录播 徽章 卡片'),
+    _hit(SettingsSection.roomCard, s.roomCardCornerRadius, 'corner radius rounded 圆角 半径 卡片'),
+    _hit(SettingsSection.roomCard, s.roomCardPresets, 'preset compact standard detailed quick 预设 简洁 标准 详细 卡片'),
+    _hit(SettingsSection.theme, s.pageSettingsEntry, 'theme page settings browsing 主题 页面 设置 浏览'),
+    _hit(SettingsSection.theme, s.mainSpacing, 'row gap spacing 行间距 网格'),
+    _hit(SettingsSection.audience, s.audienceMetric, 'audience viewers metric 观众 在线 热度 累计 人数 口径'),
+    _hit(SettingsSection.audience, s.audienceRealOnline, 'real online concurrent viewers prefer 真实在线 同时在线 人数 优先 并发'),
+    _hit(
+      SettingsSection.audience,
+      s.audiencePlatformsGroup,
+      'audience platforms switches room list realtime 观众 平台 开关 房间列表 实时消息',
+    ),
+    _hit(SettingsSection.audience, s.audienceHeatOnlyGroup, 'heat total views platform 热度 累计观看 平台 人数'),
+    _hit(SettingsSection.window, s.windowSize, 'window size resolution 1920 1080 窗口 尺寸 分辨率 宽度 高度'),
+    _hit(SettingsSection.window, s.roomWindow, 'room window separate multi window 直播 独立 窗口 多窗口'),
+    _hit(
+      SettingsSection.window,
+      s.refreshRateMode,
+      'refresh rate hz monitor display high refresh power saving 刷新率 高刷 显示器 节能',
+    ),
+    _hit(
+      SettingsSection.window,
+      s.refreshRateMatchVideo,
+      'match video frame rate fps hz playback smooth 匹配 视频 帧率 刷新率 播放 流畅',
+    ),
+    _hit(SettingsSection.startup, s.closeAction, 'close window quit minimise tray 关闭 退出 最小化'),
+    _hit(SettingsSection.startup, s.noExitConfirm, 'exit confirm ask close dialog dont ask 不再询问 退出 确认 关闭 对话框'),
+    _hit(SettingsSection.about, s.autoCheckUpdate, 'auto update check release new version 自动检查 更新 新版本'),
+    _hit(SettingsSection.startup, s.startup, 'start at login launch startup 开机 启动 登录 自启动'),
+    _hit(SettingsSection.startup, s.splashAnimation, 'splash startup animation 启动 动画 闪屏'),
+    _hit(SettingsSection.startup, s.autoShutdown, 'shutdown timer quit 定时 关机 退出 倒计时'),
+    // Appearance.
+    _hit(SettingsSection.theme, s.themeMode, 'theme dark light system 主题 深色 浅色 跟随系统'),
+    _hit(SettingsSection.theme, s.themeSeed, 'accent seed color custom hex picker palette 主题色 取色 配色 自定义 色盘 十六进制'),
+    _hit(
+      SettingsSection.theme,
+      s.dynamicColor,
+      'dynamic color monet material you wallpaper system accent 动态取色 壁纸 系统取色 莫奈',
+    ),
+    _hit(SettingsSection.theme, s.pureBlack, 'pure black oled amoled night background 纯黑 黑色 夜间 省电'),
+    _hit(
+      SettingsSection.theme,
+      s.liquidGlass,
+      'liquid glass frosted blur capsule bottom bar transparency 液体玻璃 毛玻璃 玻璃 悬浮 底栏 透明 模糊',
+    ),
+    _hit(
+      SettingsSection.theme,
+      s.loadingStyle,
+      'loading spinner animation style ring pulse wave reset default 加载 动画 样式 圆环 脉冲 波浪 恢复默认 重置',
+    ),
+    _hit(SettingsSection.theme, s.loadingColor, 'loading spinner color tint accent hex 加载 动画 颜色 取色 强调色'),
+    _hit(SettingsSection.theme, s.corners, 'corner radius round 圆角 直角 胶囊'),
+    _hit(SettingsSection.theme, s.contrast, 'contrast border 对比度 边界'),
+    _hit(SettingsSection.theme, s.selectionStyle, 'selection highlight 选中 高亮'),
+    _hit(SettingsSection.theme, s.autoClash, 'clash danger success 撞色 避让 状态色'),
+    _hit(SettingsSection.typography, s.font, 'font typeface manager bundled preview 字体 字型 管理器 预览 内置'),
+    _hit(SettingsSection.typography, s.fontWeightChange, 'font weight lock face change 字重 锁定 更换 字体'),
+    _hit(
+      SettingsSection.typography,
+      s.textScale,
+      'text size scale factor typography accessibility zoom 文本 字号 缩放 大小 倍率',
+    ),
+    _hit(SettingsSection.theme, s.language, 'language locale 语言 中文 english'),
+    _hit(SettingsSection.theme, s.density, 'density compact touch 密度 紧凑 触控'),
+    // Background.
+    _hit(
+      SettingsSection.backgroundImages,
+      s.backgroundImagesTitle,
+      'wallpaper library image official wallhaven bing deepin 图库 壁纸 在线图片',
+    ),
+    _hit(
+      SettingsSection.backgroundRandom,
+      s.navRandomWallpaper,
+      'random wallpaper api wuming uapi 360 bing alcy sexy picsum 随机图 图源 必应 360 栗次元 无铭',
+    ),
+    _hit(SettingsSection.backgroundVideos, s.backgroundVideosTitle, 'video wallpaper itab live 动态壁纸 在线视频'),
+    _hit(SettingsSection.backgroundColors, s.backgroundSolid, 'solid color fill palette 纯色 颜色 调色板'),
+    _hit(SettingsSection.backgroundColors, s.backgroundGradient, 'gradient 渐变 背景'),
+    _hit(SettingsSection.backgroundDevice, s.backgroundImageAddress, 'image url upload local file 图片 地址 上传 本机'),
+    _hit(SettingsSection.backgroundDevice, s.backgroundVideoAddress, 'video url upload local file 视频 地址 上传 本机'),
+    _hit(SettingsSection.background, s.backgroundFit, 'fit fill cover 填充 裁切'),
+    _hit(SettingsSection.background, s.backgroundMask, 'mask dim 遮罩 压暗'),
+    _hit(SettingsSection.background, s.backgroundBlur, 'blur 模糊 高斯'),
+    _hit(SettingsSection.background, s.backgroundClear, 'remove background 清除 背景'),
+    // Navigation.
+    _hit(SettingsSection.nav, s.navHomeMenuGroup, 'home menu show hide order drag 首页 菜单 显示 隐藏 排序 拖动'),
+    _hit(SettingsSection.nav, t.navigation.favorites, 'favorites home menu show hide 关注 首页 菜单 显示 隐藏'),
+    _hit(SettingsSection.nav, t.navigation.hot, 'popular hot home menu show hide 热门 首页 菜单 显示 隐藏'),
+    _hit(SettingsSection.nav, t.navigation.zones, 'areas zones home menu show hide 分区 首页 菜单 显示 隐藏'),
+    _hit(SettingsSection.nav, t.navigation.record, 'record recording home menu show hide 录制 录制中心 首页 菜单 显示 隐藏'),
+    _hit(SettingsSection.nav, s.multiviewVisible, 'multiview 多画面 入口 侧栏 抽屉 drawer 首页'),
+    _hit(SettingsSection.nav, s.toolsOrder, 'tool order sidebar 工具 排序 侧栏'),
+    // Refresh.
+    _hit(SettingsSection.refresh, s.followsAutoRefresh, 'auto refresh follows 自动刷新 关注'),
+    _hit(SettingsSection.refresh, s.liveAlert, 'live alert notification followed room go live 开播 提醒 通知 关注'),
+    _hit(SettingsSection.refresh, s.liveAlertTags, 'live alert tags filter follow 开播 提醒 标签 过滤'),
+    _hit(SettingsSection.refresh, s.refreshInterval, 'interval 刷新 间隔'),
+    _hit(SettingsSection.refresh, s.refreshOnResume, 'resume refresh 返回应用 刷新'),
+    _hit(SettingsSection.refresh, s.maxConcurrentRefresh, 'concurrency parallel queue 并发 刷新 队列'),
+    _hit(SettingsSection.refresh, s.refreshThumbnails, 'thumbnail cover image cache 封面 图片 缓存 刷新'),
+    _hit(SettingsSection.refresh, s.thumbnailRefreshInterval, 'thumbnail interval 封面 间隔'),
+    // Network.
+    _hit(SettingsSection.network, s.proxy, 'proxy http 代理 网络'),
+    _hit(SettingsSection.network, s.proxyHost, 'proxy host 主机 代理'),
+    _hit(SettingsSection.network, s.proxyPort, 'proxy port 端口 代理'),
+    _hit(SettingsSection.nodes, t.toolbox.toolNetworkTitle, 'platform node probe latency 平台 节点 测速 延迟 网络'),
+    _hit(SettingsSection.logs, t.toolbox.toolLogsTitle, 'logs diagnostics level 日志 诊断'),
+    // Video.
+    _hit(SettingsSection.quality, s.preferredQuality, 'quality resolution 画质 清晰度 分辨率'),
+    _hit(SettingsSection.quality, s.preferredQualityCellular, 'cellular mobile data quality 蜂窝 移动网络 流量 画质 清晰度'),
+    _hit(SettingsSection.quality, s.defaultMuted, 'mute audio 静音 声音'),
+    _hit(SettingsSection.quality, s.defaultVolume, 'volume audio mobile desktop 音量 声音 手机 桌面 默认'),
+    _hit(SettingsSection.quality, s.globalMute, 'mute all global audio silence 全局静音 所有 声音'),
+    _hit(SettingsSection.quality, s.backgroundPlay, 'background audio keep playing 后台 播放 声音'),
+    _hit(SettingsSection.quality, s.pauseOnPipClose, 'pause pip picture in picture close background 画中画 小窗 关闭 暂停 后台'),
+    _hit(SettingsSection.quality, s.asmrSleepMode, 'asmr sleep audio only 睡眠 音频模式'),
+    _hit(SettingsSection.quality, s.asmrSleepTimer, 'asmr sleep timer duration 睡眠 时长 分钟'),
+    _hit(
+      SettingsSection.picture,
+      s.fit,
+      'fit aspect ratio crop letterbox stretch scale 画面比例 铺法 黑边 居中裁剪 填充 拉伸 适应高度 适应宽度 等比缩小',
+    ),
+    _hit(SettingsSection.picture, s.autoPip, 'picture in picture pip background 画中画 小窗 后台'),
+    _hit(SettingsSection.picture, s.floatPlay, 'floating mini window leave room 悬浮窗 小窗 返回'),
+    _hit(SettingsSection.picture, s.windowsPipAlwaysOnTop, 'windows pip topmost always on top 小窗 置顶 画中画'),
+    _hit(SettingsSection.picture, s.rememberPipPosition, 'remember pip position 小窗 位置 记忆'),
+    _hit(SettingsSection.picture, s.rememberPipPosition, 'remember pip position geometry 小窗 位置 记住 尺寸'),
+    _hit(SettingsSection.picture, s.windowsPipBaseSize, 'windows pip base size 小窗 尺寸 基准'),
+    _hit(SettingsSection.picture, s.windowsPipMinWidth, 'windows pip minimum width min 小窗 最小 宽度'),
+    _hit(SettingsSection.picture, s.windowsPipMinHeight, 'windows pip minimum height min 小窗 最小 高度'),
+    _hit(SettingsSection.picture, s.windowsPipFreeAspect, 'windows pip aspect ratio lock free shape 小窗 比例 宽高比 自由 锁定'),
+    _hit(SettingsSection.picture, s.danmakuFilter, 'danmaku filter shield keyword similarity 弹幕 过滤 屏蔽 关键词 相似'),
+    _hit(SettingsSection.picture, s.windowsPipResetPosition, 'reset pip position size geometry 小窗 重置 位置 大小 清除'),
+    _hit(SettingsSection.picture, s.keepScreenOn, 'keep screen awake wakelock 屏幕常亮 不熄屏'),
+    _hit(SettingsSection.picture, s.fullscreenDefault, 'auto fullscreen enter live room play 自动 全屏 进入 直播 播放'),
+    _hit(
+      SettingsSection.portrait,
+      s.navPortrait,
+      'portrait live adaptation vertical source detect orientation 竖屏 直播 适配 识别 方向',
+    ),
+    _hit(
+      SettingsSection.portrait,
+      s.portraitSmartDetection,
+      'portrait detection smart vertical source orientation 竖屏 识别 智能 方向 直播源',
+    ),
+    _hit(SettingsSection.portrait, s.portraitAdaptiveHeight, 'portrait adaptive height viewing area 竖屏 自适应 高度 观看区域'),
+    _hit(
+      SettingsSection.portrait,
+      s.portraitLayoutMode,
+      'portrait layout mode balanced immersive compatibility 16:9 竖屏 布局 模式 均衡 沉浸 兼容',
+    ),
+    _hit(
+      SettingsSection.portrait,
+      s.portraitFullscreenPolicy,
+      'fullscreen orientation follow source system landscape portrait 全屏 方向 跟随 直播源 系统 横屏 竖屏',
+    ),
+    _hit(SettingsSection.portrait, s.portraitReset, 'portrait reset restore defaults clear vertical 竖屏 重置 恢复默认 清空'),
+    _hit(
+      SettingsSection.portrait,
+      s.portraitSwipeSwitch,
+      'portrait fullscreen swipe next previous room switch 竖屏 全屏 滑动 换台 上一个 下一个',
+    ),
+    _hit(SettingsSection.portrait, t.room.switchRoom, 'room switcher layout grid list panel 切换直播间 布局 网格 列表'),
+    // Danmaku.
+    _hit(SettingsSection.shield, t.shield.enabled, 'shield block danmaku 屏蔽 弹幕'),
+    _hit(SettingsSection.shield, t.shield.keywordsTitle, 'keyword block 屏蔽 关键词'),
+    _hit(SettingsSection.shield, t.shield.usersTitle, 'user block 屏蔽 用户'),
+    _hit(SettingsSection.shield, t.shield.similarityTitle, 'similar duplicate fuzzy danmaku filter 相似 弹幕 过滤 重复'),
+    _hit(SettingsSection.shield, t.shield.similarityThreshold, 'similarity threshold percent 相似度 阈值 百分比'),
+    _hit(SettingsSection.shield, t.shield.similarityCacheDuration, 'cache duration seconds window 缓存 时间 秒'),
+    _hit(SettingsSection.shield, t.shield.similarityMaxCacheSize, 'cache size memory 缓存 数量 内存 上限'),
+    _hit(SettingsSection.shield, t.shield.repeatTitle, 'repeat identical collapse duplicate burst 重复 相同 合并 弹幕'),
+    _hit(SettingsSection.shield, t.shield.repeatEnabled, 'collapse identical repeated danmaku 合并 相同 重复 弹幕'),
+    _hit(SettingsSection.shield, t.shield.repeatWindow, 'repeat window seconds duration 合并 时间 秒 窗口'),
+    _hit(SettingsSection.shield, t.shield.contentTitle, 'content block emote long bot 内容 屏蔽 表情 超长 机器人'),
+    _hit(SettingsSection.shield, t.shield.blockEmoteOnly, 'emoticon only emoji block 纯表情 表情 屏蔽 弹幕'),
+    _hit(SettingsSection.shield, t.shield.blockLong, 'long danmaku length threshold block 超长 字数 屏蔽 弹幕'),
+    _hit(SettingsSection.shield, t.shield.blockLongLength, 'length characters threshold 长度 字数 阈值'),
+    _hit(SettingsSection.shield, t.shield.douyuSuspected, 'douyu bot suspected automated 斗鱼 机器人 疑似 过滤'),
+    _hit(
+      SettingsSection.danmaku,
+      s.showFlyingDanmaku,
+      'danmaku show hide flying overlay video chat list 弹幕 显示 隐藏 画面 聊天列表',
+    ),
+    _hit(SettingsSection.danmaku, s.styleTapInteraction, 'tap click interaction actions copy block 点按 点击 弹幕 操作 复制 屏蔽'),
+    _hit(SettingsSection.danmaku, s.styleLongPressInteraction, 'long press interaction actions 长按 弹幕 操作 复制 屏蔽'),
+    _hit(SettingsSection.danmaku, s.holdDanmakuOnPress, 'hold freeze press danmaku 按住 冻结 弹幕'),
+    _hit(SettingsSection.danmaku, s.danmakuFont, 'danmaku font typeface family flying 弹幕 字体 字族 飞行'),
+    _hit(SettingsSection.danmaku, s.styleFontSize, 'font size type size 字体大小 字号 弹幕'),
+    _hit(SettingsSection.danmaku, s.styleFontWeight, 'font weight thickness bold thin 字重 粗细 字体 加粗 弹幕'),
+    _hit(SettingsSection.danmaku, s.styleLetterSpacing, 'letter spacing tracking gap tight loose 文字间距 字距 间距 弹幕'),
+    _hit(SettingsSection.danmaku, s.styleSpeed, 'speed px/s range 速度 弹幕 范围'),
+    _hit(SettingsSection.danmaku, s.styleNoEmoji, 'pure text emoji hide 纯文字 表情 隐藏 弹幕 emoji'),
+    _hit(SettingsSection.danmaku, s.styleArea, 'area screen top height ratio percent occupied 显示区域 画面顶部 占用 高度 比例 弹幕'),
+    _hit(SettingsSection.danmaku, s.styleTopMargin, 'top margin inset pixels free space 顶部 留白 边距 弹幕'),
+    _hit(SettingsSection.danmaku, s.styleBottomMargin, 'bottom margin inset pixels free space subtitle 底部 留白 边距 字幕 弹幕'),
+    _hit(SettingsSection.danmaku, s.styleOpacity, 'opacity 透明 弹幕'),
+    _hit(SettingsSection.danmaku, s.styleStroke, 'stroke outline bright light contrast 描边 浅色 清晰 弹幕'),
+    _hit(SettingsSection.danmaku, s.styleStrokeWidth, 'stroke width outline border thickness px 描边 宽度 粗细 弹幕'),
+    _hit(
+      SettingsSection.danmaku,
+      s.styleFpsFollow,
+      'frame rate fps refresh display follow auto smooth 帧率 刷新率 跟随 自动 流畅 弹幕',
+    ),
+    _hit(SettingsSection.danmaku, s.styleFps, 'frame rate fps manual limit 帧率 手动 上限 弹幕'),
+    _hit(
+      SettingsSection.danmaku,
+      s.styleMaxVisible,
+      'max visible count on screen same time limit density 同屏 最大 数量 条数 上限 弹幕',
+    ),
+    _hit(SettingsSection.danmaku, s.styleMassMode, 'mass realtime density 海量 密度 实时 弹幕'),
+    _hit(
+      SettingsSection.danmaku,
+      s.danmakuPausedBehavior,
+      'danmaku while paused pause video freeze keep flying 暂停 弹幕 跟随 继续 飘过',
+    ),
+    _hit(SettingsSection.danmaku, s.chatShowNames, 'chat names user sender chat list 聊天 用户名 发送者'),
+    _hit(
+      SettingsSection.danmaku,
+      s.danmakuShowGifts,
+      'flying gifts picture valuable precious combo gift 飞行 礼物 画面 连击 值钱 弹幕',
+    ),
+    _hit(SettingsSection.danmaku, s.chatShowGifts, 'gift gifts chat list present 礼物 聊天 列表 显示'),
+    _hit(
+      SettingsSection.danmaku,
+      s.chatGiftsAboveTier,
+      'valuable gifts chat list cheap free combo filter 礼物 值钱 聊天 列表 便宜 免费 连击 过滤',
+    ),
+    _hit(
+      SettingsSection.danmaku,
+      s.chatGiftValueInYuan,
+      'gift value yuan price currency convert chat list 礼物 价值 元 换算 金额 聊天 列表',
+    ),
+    _hit(
+      SettingsSection.danmaku,
+      s.superChatIncludesMembership,
+      'super chat membership guard subscription bilibili youtube twitch 醒目留言 超级聊天 上舰 会员 订阅 舰长',
+    ),
+    _hit(SettingsSection.danmaku, s.chatListStyle, 'chat list style compact card 聊天 列表 样式 紧凑 卡片'),
+    _hit(SettingsSection.danmaku, s.chatListFontSize, 'chat list font size 聊天 列表 字号 大小'),
+    _hit(SettingsSection.danmaku, s.chatListLineSpacing, 'chat list line spacing 聊天 列表 行距'),
+    _hit(
+      SettingsSection.danmaku,
+      s.pipDanmakuScaleAuto,
+      'pip compact picture-in-picture small window danmaku scale auto 小窗 画中画 弹幕 比例 自动',
+    ),
+    _hit(SettingsSection.danmaku, s.pipDanmakuScale, 'pip compact danmaku scale factor 小窗 画中画 弹幕 比例 缩放'),
+    _hit(SettingsSection.danmaku, s.danmakuTemplateSaveMine, 'template save current look style 模板 保存 当前 弹幕 样式'),
+    _hit(SettingsSection.danmaku, s.danmakuTemplateUseMine, 'template restore apply saved 模板 恢复 应用 已保存 弹幕 样式'),
+    _hit(SettingsSection.danmaku, s.danmakuPresetBest, 'preset best balanced top 20 预设 最佳 均衡 顶部 弹幕'),
+    _hit(SettingsSection.danmaku, s.danmakuPresetComfort, 'preset comfort top 35 预设 舒适 顶部 弹幕'),
+    _hit(SettingsSection.danmaku, s.danmakuPresetDense, 'preset dense top 55 预设 高密度 密集 顶部 弹幕'),
+    _hit(SettingsSection.danmaku, s.danmakuPresetFull, 'preset full screen all 预设 全屏 全量 弹幕'),
+    _hit(SettingsSection.danmaku, s.styleReset, 'reset default 恢复默认 弹幕'),
+    _hit(SettingsSection.danmaku, s.miniDanmakuVisible, 'pip danmaku 小窗 弹幕 画中画'),
+    _hit(
+      SettingsSection.localInteraction,
+      s.localInteractionTitle,
+      'local interaction viewer gift coin level 本机 互动 礼物 金币 等级',
+    ),
+    _hit(SettingsSection.localInteraction, s.localShowAsDanmaku, 'local danmaku overlay send 本机 弹幕 发送 画面'),
+    _hit(SettingsSection.localInteraction, s.localStyle, 'local danmaku style preset 本机 弹幕 样式 预设'),
+    _hit(SettingsSection.localInteraction, s.localHistory, 'local interaction history 本机 互动 历史'),
+    _hit(SettingsSection.localInteraction, s.localCoins, 'local coins balance gift 本机 金币 余额 礼物'),
+    _hit(SettingsSection.localInteraction, s.localUserName, 'local user name nickname profile 本机 昵称 身份 名称'),
+    _hit(SettingsSection.localInteraction, s.localTitle, 'local title listener profile 本机 头衔 身份'),
+    _hit(
+      SettingsSection.localInteraction,
+      s.localGiftEffects,
+      'local gift effect banner all big only off 本机 礼物 特效 横幅 全部 高价值 关闭',
+    ),
+    _hit(SettingsSection.localInteraction, s.localPhrases, 'local quick phrases chips composer send 本机 快捷 短语 输入 发送'),
+    _hit(SettingsSection.localInteraction, s.localReplayOnEnter, 'local replay room chat history enter 本机 回放 进场 聊天 历史'),
+    _hit(
+      SettingsSection.localInteraction,
+      s.localGrowth,
+      'local growth experience coins check in watch 本机 成长 经验 金币 签到 观看',
+    ),
+    _hit(SettingsSection.localInteraction, s.localPreviewPlatform, 'local platform badge preview 本机 平台 徽章 预览'),
+    _hit(SettingsSection.localInteraction, s.localClearHistory, 'local clear history reset 本机 清空 历史'),
+    _hit(
+      SettingsSection.localInteraction,
+      s.localClearAll,
+      'local clear economy coins experience reset 本机 清空 经济 金币 经验',
+    ),
+    // Kernel.
+    _hit(SettingsSection.kernel, s.engineTitle, 'player kernel engine mpv ijk better_player exo 播放内核 引擎 切换播放器'),
+    _hit(SettingsSection.kernel, s.hardwareDecoding, 'hardware decoder hwdec gpu 硬件解码'),
+    _hit(SettingsSection.kernel, s.superResolution, 'super resolution anime4k upscale shader 超分 超分辨率 画质增强'),
+    _hit(
+      SettingsSection.kernel,
+      s.playerPresets,
+      'preset standard balanced compat rtx vsr low end latency network stable smooth 预设 标准 均衡 兼容 低配 流畅 弱网 稳定 低延迟 画质',
+    ),
+    _hit(
+      SettingsSection.kernel,
+      s.playerOneClick,
+      'one click recommended setup restore standard balanced reset 一键 推荐 配置 恢复 标准 均衡 预设',
+    ),
+    _hit(
+      SettingsSection.kernel,
+      s.playerCompatFix,
+      'glitch green screen compatibility mediacodec android fix 花屏 绿屏 兼容 安卓 修复 硬解',
+    ),
+    _hit(SettingsSection.kernelAdvanced, s.playerProxy, 'player proxy player network http-proxy 7897 播放器 代理 内核 主机 端口'),
+    _hit(
+      SettingsSection.kernel,
+      s.hardwareDecoder,
+      'hwdec decoder auto auto-safe auto-unsafe auto-copy d3d11va nvdec videotoolbox vaapi vdpau mediacodec 硬件 解码器 硬解 软解 软件 hw 解码 自定义输出',
+    ),
+    _hit(SettingsSection.kernelAdvanced, s.customOutput, 'vo ao hwdec decoder custom output 自定义 驱动 硬件加速 输出 解码器'),
+    _hit(
+      SettingsSection.kernelAdvanced,
+      s.videoOutput,
+      'vo video output gpu gpu-next libmpv direct3d mediacodec 视频输出 驱动 输出驱动',
+    ),
+    _hit(
+      SettingsSection.kernelAdvanced,
+      s.audioOutput,
+      'ao audio output wasapi audiotrack aaudio opensles audiounit alsa pipewire 音频输出 驱动 输出驱动',
+    ),
+    _hit(SettingsSection.kernelAdvanced, s.videoSync, 'video sync 视频同步 音画 display-resample adrop vdrop desync 丢帧 重采样'),
+    _hit(SettingsSection.kernelAdvanced, s.interpolation, 'interpolation 插帧 运动插帧 display-resample 重采样'),
+    _hit(
+      SettingsSection.kernelAdvanced,
+      s.scaleKernel,
+      'scale scaler kernel lanczos ewa spline catmull mitchell hermite bicubic bilinear nearest 缩放 算法 内核',
+    ),
+    _hit(SettingsSection.kernelAdvanced, s.deinterlace, 'deinterlace 反交错 隔行 逐行 interlaced 自动 关闭 开启'),
+    _hit(SettingsSection.kernelAdvanced, s.hwdecCodecs, 'hwdec codecs h264 hevc vp9 av1 硬解 编码 格式 范围 硬件解码'),
+    _hit(SettingsSection.kernelAdvanced, s.audioExclusive, 'audio exclusive --audio-exclusive wasapi 独占 音频 共享模式'),
+    _hit(SettingsSection.kernel, s.forceDestroy, 'force destroy player standby session 强制 销毁 播放器 复用 会话'),
+    _hit(SettingsSection.kernelAdvanced, s.mpvReset, 'reset mpv kernel player defaults 恢复 默认 内核 播放器 重置'),
+    _hit(SettingsSection.kernelAdvanced, s.mpvDocs, 'mpv manual official docs properties 官方 文档 手册 属性 说明'),
+    _hit(
+      SettingsSection.kernelAdvanced,
+      s.playerGuide,
+      'player guide playback glossary presets symptoms concepts audio 播放器 指南 播放搭配 名词 预设 症状 花屏 绿屏 音画 缓冲 延迟 风扇 硬解 声卡',
+    ),
+    // Recording.
+    _hit(SettingsSection.recording, t.recorder.defaultQualityTitle, 'recording quality resolution 录制 画质 清晰度'),
+    _hit(SettingsSection.recording, t.recorder.cacheLimitEnabled, 'recording cache limit trim 录制 缓存 上限 清理'),
+    _hit(SettingsSection.recording, t.recorder.cacheLimit, 'recording cache cap MB size 录制 缓存 上限 大小 自动 删除 录像'),
+    _hit(SettingsSection.recording, t.recorder.cacheSize, 'recording cache size 录制 缓存 大小'),
+    _hit(SettingsSection.recording, t.recorder.cacheClear, 'recording cache clear delete 录制 缓存 清理 删除'),
+    _hit(SettingsSection.recording, t.recorder.liveCheckSecondsTitle, 'recording live check interval poll 录制 开播 检测 间隔'),
+    _hit(SettingsSection.recording, t.recorder.checkBackoff, 'recording polling backoff retry 录制 轮询 退避'),
+    _hit(SettingsSection.recording, t.recorder.maxCheckSecondsTitle, 'recording max check interval 录制 最大 检测 间隔'),
+    _hit(SettingsSection.recording, t.recorder.autoStartOnBoot, 'recording resume boot startup 录制 恢复 开机 启动'),
+    _hit(SettingsSection.recording, t.recorder.saveDirTitle, 'recording folder directory 录制 目录 文件夹'),
+    _hit(SettingsSection.recording, t.recorder.namingTitle, 'recording name template 录制 命名 模板'),
+    _hit(SettingsSection.recording, t.recorder.maxSizeTitle, 'recording size cap 录制 大小 上限'),
+    _hit(SettingsSection.recording, t.recorder.segmentTitle, 'segment duration 录制 分段 时长'),
+    _hit(SettingsSection.recording, t.recorder.readTimeoutTitle, 'read timeout 录制 超时'),
+    _hit(SettingsSection.recording, t.recorder.restartTitle, 'retry reconnect 录制 重试 重连'),
+    _hit(SettingsSection.recording, t.recorder.backoffTitle, 'retry delay 录制 重试 间隔'),
+    _hit(SettingsSection.recording, t.recorder.stallTitle, 'stall 卡流 录制'),
+    _hit(SettingsSection.recording, t.recorder.preferBestTitle, 'best stream audio video 录制 首路'),
+    _hit(SettingsSection.recording, t.recorder.verifyTitle, 'verify 录制 校验 文件'),
+    _hit(SettingsSection.recording, t.recorder.containerTitle, 'container ts mp4 录制 格式'),
+    _hit(SettingsSection.recording, t.recorder.recordChatTitle, 'record chat danmaku xml bilibili 录制 弹幕 聊天 xml B站'),
+    _hit(SettingsSection.recording, t.recorder.keepAliveTitle, 'background keep alive 录制 后台'),
+    _hit(SettingsSection.recording, t.recorder.queueTitle, 'queue 录制 队列'),
+    _hit(SettingsSection.recording, t.recorder.maxTasksTitle, 'concurrent tasks 录制 并发 任务'),
+    _hit(SettingsSection.recording, t.recorder.watermarkTitle, 'disk space 录制 磁盘 余量'),
+    _hit(
+      SettingsSection.recording,
+      t.recorder.enablePolling,
+      'live check polling offline waiting auto record 开播 检测 轮询 等待 自动 录制',
+    ),
+    // Sites and accounts.
+    _hit(SettingsSection.sites, s.sitesDisplay, 'platform show hide 平台 显示 隐藏 热门 分区 关注 搜索 favorites search'),
+    _hit(SettingsSection.sites, s.preferPlatform, 'preferred platform filter search empty 首选 平台 筛选 搜索 空态'),
+    _hit(SettingsSection.sites, s.sitesOrderReset, 'platform order 平台 顺序 恢复'),
+    _hit(SettingsSection.sites, s.showUnplayableTitle, 'unplayable restriction paid locked hidden 不能播放 付费 加锁 隐藏'),
+    _hit(SettingsSection.sites, s.tvFocusZoom, 'tv focus zoom grow scale card menu remote 电视 焦点 放大 缩放 卡片 菜单 遥控器'),
+    _hit(SettingsSection.followTags, s.tagManagement, 'tag tags management group filter follow 标签 分组 筛选 关注 添加 删除 置顶'),
+    _hit(SettingsSection.followTags, s.tagAdd, 'add tag new label 添加 标签 新建'),
+    _hit(SettingsSection.followTags, s.tagEdit, 'rename tag note edit 编辑 重命名 备注 标签'),
+    _hit(
+      SettingsSection.accounts,
+      t.account.thirdPartyAuth,
+      'third party auth authorization account login bind 三方 第三方 授权 认证 绑定 账号 登录',
+    ),
+    _hit(SettingsSection.accounts, t.account.cookieLogin, 'account cookie login 账号 登录 cookie'),
+    _hit(SettingsSection.accounts, t.account.signOut, 'logout account 退出 登录'),
+    _hit(SettingsSection.followTags, s.tagManagement, 'follow tags custom manage 关注 标签 管理 自定义'),
+    // Data.
+    _hit(SettingsSection.dataCache, s.historyLimit, 'history limit 历史 上限'),
+    _hit(SettingsSection.dataCache, s.dataClearHistory, 'clear history 清空 历史'),
+    _hit(SettingsSection.dataCache, s.dataExportFollows, 'export follows clipboard 导出 关注'),
+    _hit(SettingsSection.dataCache, s.dataImportFollows, 'import follows clipboard 导入 关注'),
+    // Backup.
+    _hit(SettingsSection.backup, t.backup.createTitle, 'backup create 备份 创建'),
+    _hit(SettingsSection.backup, t.backup.createFollowsTitle, 'follows backup 关注 备份'),
+    _hit(SettingsSection.backup, t.backup.folderTitle, 'backup folder 备份 文件夹'),
+    _hit(SettingsSection.webdavSync, t.backup.webdavConfigTitle, 'webdav server 服务器 同步'),
+    _hit(SettingsSection.webdavSync, t.backup.webdavUpload, 'webdav upload 上传 备份'),
+    _hit(SettingsSection.webdavSync, t.backup.webdavDownload, 'webdav download restore 下载 恢复'),
+    // Cache.
+    _hit(SettingsSection.dataCache, s.cacheSize, 'cache size 缓存 大小'),
+    _hit(SettingsSection.dataCache, s.cacheClear, 'clear cache 清除 缓存'),
+    _hit(SettingsSection.dataCache, s.cacheLimit, 'cache limit 缓存 上限'),
+    _hit(
+      SettingsSection.dataCache,
+      s.downloadDirectory,
+      'download folder directory path fonts file 下载 目录 文件夹 路径 字体 文件',
+    ),
+    _hit(SettingsSection.dataCache, s.downloadDirectoryReset, 'reset download folder default 恢复 默认 下载 目录'),
+    // IPTV.
+    _hit(SettingsSection.iptv, t.iptv.autoSyncTitle, 'auto sync launch cold start background 自动 同步 启动 后台 节目单'),
+    _hit(SettingsSection.iptv, t.iptv.updateInterval, 'epg interval 节目单 更新 间隔'),
+    _hit(SettingsSection.iptv, t.iptv.autoUpdate, 'epg auto update 节目单 自动更新'),
+    _hit(SettingsSection.iptv, t.iptv.syncAll, 'sync all playlists 同步 全部 播放列表'),
+    _hit(SettingsSection.iptv, t.iptv.customUserAgent, 'user agent ua header 请求头 自定义'),
+    // VOD.
+    _hit(SettingsSection.vod, s.vodQuality, 'bilibili quality 视频 清晰度'),
+    _hit(SettingsSection.accounts, t.account.cookieLogin, 'bilibili account login 账号 登录'),
+    // About.
+    _hit(SettingsSection.about, s.aboutVersion, 'version build 版本'),
+    _hit(SettingsSection.about, s.checkUpdate, 'update latest 更新 检查'),
+    _hit(SettingsSection.about, s.releaseHistory, 'release changelog 版本记录 更新内容'),
+    _hit(SettingsSection.about, s.configPreview, 'config json backup export 配置 预览 导出 json'),
+    _hit(SettingsSection.about, s.aboutProject, 'project github 项目 主页'),
+    _hit(SettingsSection.about, s.aboutLicense, 'license open source 开源 许可'),
+  ];
+}
+
+/// The catalogue's rows whose title or keywords contain [query] (already
+/// trimmed and lower case), inside [sections] and its menu order.
+List<SettingsSearchHit> settingsSearchHits(Translations t, String query, Iterable<SettingsSection> sections) {
+  if (query.isEmpty) return const [];
+  final allowed = sections.toSet();
+  final seen = <String>{};
+  return [
+    for (final hit in settingsSearchCatalog(t))
+      if (allowed.contains(hit.section) &&
+          (hit.title.toLowerCase().contains(query) || hit.keywords.toLowerCase().contains(query)) &&
+          seen.add('${hit.section.name}\u0000${hit.title}'))
+        hit,
+  ];
+}

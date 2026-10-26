@@ -29,7 +29,7 @@ class _FakeLauncher implements WindowLauncher {
   int created = 0;
 
   @override
-  Future<SecondaryWindow> open({required WindowRole role, String? route}) async {
+  Future<SecondaryWindow> open({required WindowRole role, String? route, String? businessKey}) async {
     created++;
     return _FakeSecondary('w$created', role);
   }

@@ -3,15 +3,15 @@ import 'package:live_shell/src/window_role/window_role.dart';
 
 /// The windows other than the primary one, and what may exist twice.
 ///
-/// Why this is a type and not a `List` in the app: a secondary window is a
-/// separate engine that costs memory, and the two mistakes that follow from
-/// forgetting that are both common. The first is a **second floating video
-/// window** appearing because the viewer pressed the button twice and the code
-/// had nowhere to ask "is there already one" — the float is a view of one
-/// session, so two of them are always a bug. The second is a **panel that
-/// multiplies**: the log view and the cast panel are genuinely allowed to be
-/// open several times, over different content, and an app that treats them like
-/// the float makes the viewer close one to see the other.
+/// Why this is a type and not a `List` in the app: a secondary window costs
+/// memory and attention, and the two mistakes that follow from forgetting that
+/// are both common. The first is a **second floating video window** appearing
+/// because the viewer pressed the button twice and the code had nowhere to ask
+/// "is there already one" — the float is a view of one session, so two of them
+/// are always a bug. The second is a **panel that multiplies**: the log view and
+/// the cast panel are genuinely allowed to be open several times, over different
+/// content, and an app that treats them like the float makes the viewer close one
+/// to see the other.
 ///
 /// So the rule is per role, stated once here, and every entry point goes through
 /// it: [open] raises what already exists where the role is a singleton, and
@@ -53,13 +53,13 @@ class SecondaryWindows {
   /// Returning the existing window rather than failing is what makes a double
   /// press feel correct: the viewer asked for the float, they get the float, and
   /// it comes forward rather than a second one appearing behind it.
-  Future<SecondaryWindow> open({required WindowRole role, String? route}) async {
+  Future<SecondaryWindow> open({required WindowRole role, String? route, String? businessKey}) async {
     final existing = isSingleton(role) ? lone(role) : null;
     if (existing != null) {
       await existing.show();
       return existing;
     }
-    final window = await launcher.open(role: role, route: route);
+    final window = await launcher.open(role: role, route: route, businessKey: businessKey);
     _byId[window.id] = window;
     return window;
   }

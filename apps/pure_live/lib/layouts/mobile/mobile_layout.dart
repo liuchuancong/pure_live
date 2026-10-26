@@ -3,22 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 
-import 'package:pure_live/app/background/app_background.dart' show BackgroundActiveScope;
-import 'package:pure_live/app/navigation/module_navigation.dart';
-import 'package:pure_live/app/providers/environment_providers.dart' show platformKindProvider;
-import 'package:pure_live/app/providers/liquid_glass_provider.dart'
-    show deviceMemoryMegabytesProvider, liquidGlassBlurs, liquidGlassProvider;
-import 'package:pure_live/app/providers/nav_visibility_providers.dart' show kHomeMenuItems;
-import 'package:pure_live/app/theme/theme_mode_toggle.dart';
-import 'package:pure_live/app/window_chrome.dart' show WindowChromeState;
-import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
+import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowCaptionBar;
 import 'package:pure_live/layouts/mobile/liquid_glass.dart';
-import 'package:pure_live/shared/enums/app_module.dart';
-import 'package:pure_live/shared/enums/navigation_item.dart';
-import 'package:pure_live/shared/widgets/chrome_icon_button.dart';
+import 'package:pure_live/shared/shared.dart';
 
 /// The width the navigation drawer opens to.
 const double kNavigationDrawerWidth = 320;

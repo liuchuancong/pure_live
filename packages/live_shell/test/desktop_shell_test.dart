@@ -649,7 +649,7 @@ class _FakeLauncher implements WindowLauncher {
   int _n = 0;
 
   @override
-  Future<SecondaryWindow> open({required WindowRole role, String? route}) async {
+  Future<SecondaryWindow> open({required WindowRole role, String? route, String? businessKey}) async {
     _n++;
     return _FakeSecondaryWindow('panel-$_n');
   }

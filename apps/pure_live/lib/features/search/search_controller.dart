@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart' show Either, left;
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider;
-import 'package:pure_live/shared/paging/room_paging.dart' show searchRequestSize;
+import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/shared/shared.dart';
 
 /// What the search page holds: the committed query, the target it runs on,
 /// that search's typed results, where the next page asks, the in-flight

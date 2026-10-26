@@ -3,9 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/features/settings/danmaku_repeat_provider.dart'
-    show danmakuRepeatProvider, kDanmakuRepeatWindowMax, kDanmakuRepeatWindowMin;
-import 'package:pure_live/features/settings/settings_widgets.dart' show SettingsConfigRow;
+import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/features/shield/danmaku_filter_settings.dart';
 import 'package:pure_live/features/shield/shield_repository.dart';
 import 'package:pure_live/l10n/translations.dart';

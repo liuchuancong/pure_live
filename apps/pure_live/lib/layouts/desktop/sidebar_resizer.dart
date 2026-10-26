@@ -6,7 +6,7 @@ import 'dart:math' as math;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
-import 'package:pure_live/app/providers/sidebar_providers.dart';
+import 'package:pure_live/app/app.dart';
 
 /// The resizer's hit strip; the visible line sits centered in it. Wide on
 /// purpose: the line is 1px, the hand should not have to be.

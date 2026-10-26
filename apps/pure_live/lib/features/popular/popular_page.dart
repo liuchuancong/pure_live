@@ -6,26 +6,13 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/app/providers/browse_settings_providers.dart';
-import 'package:pure_live/app/providers/page_size_options_provider.dart' show pageSizeOptionsProvider;
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/app/routing/app_router.dart' show SettingsSectionRoute;
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/popular/popular_controller.dart';
 import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
-import 'package:pure_live/features/search/search_controller.dart';
-import 'package:pure_live/features/settings/audience_metric_provider.dart'
-    show AudienceMetricChoice, AudiencePolicy, audienceFigureOf, audienceMetricProvider, audiencePolicyProvider;
-import 'package:pure_live/features/settings/room_card_settings.dart' show RoomCardLayout, roomCardAppearanceProvider;
-import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
-import 'package:pure_live/features/settings/sites_display_provider.dart' show sitesDisplayProvider, sitesOrderProvider;
+import 'package:pure_live/features/search/search.dart';
+import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/grids/card_grid.dart';
-import 'package:pure_live/shared/navigation/room_opener.dart';
-import 'package:pure_live/shared/paging/room_paging.dart';
-import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
-import 'package:pure_live/shared/platforms/platform_picker.dart';
-import 'package:pure_live/shared/rooms/room_visibility.dart' show showUnplayableProvider;
-import 'package:pure_live/shared/widgets/choice_dialog.dart' show AdaptiveChoiceField;
+import 'package:pure_live/shared/shared.dart';
 
 /// How a platform's rooms are ordered on screen: the platform's own
 /// recommendation or the largest audience first. The order is local — the

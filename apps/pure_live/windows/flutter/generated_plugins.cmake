@@ -6,7 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   audio_service_win
   battery_plus
   connectivity_plus
-  desktop_multi_window
+  desktop_drop
   device_screen_brightness
   dynamic_color
   ffmpeg_kit_extended_flutter
@@ -16,6 +16,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   media_core_audio
   media_core_native
   media_kit_video
+  multiview_desktop
   refresh_rate
   restart_app
   share_plus

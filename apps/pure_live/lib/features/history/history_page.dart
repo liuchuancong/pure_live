@@ -5,19 +5,12 @@ import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/app/providers/browse_settings_providers.dart'
-    show browseLayoutProvider, browseSettingsProvider;
-import 'package:pure_live/app/providers/refresh_settings_providers.dart' show historyLimitProvider;
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/history/history_limit_dialog.dart';
 import 'package:pure_live/features/history/history_repository.dart';
-import 'package:pure_live/features/room/room_details.dart' show copyRoomLink, roomLinkOf;
+import 'package:pure_live/features/room/room.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/grids/card_grid.dart' show CardLayout;
-import 'package:pure_live/shared/grids/room_cover_chip.dart' show RoomCoverChip;
-import 'package:pure_live/shared/images/app_image_cache.dart';
-import 'package:pure_live/shared/navigation/room_opener.dart';
-import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
+import 'package:pure_live/shared/shared.dart';
 
 /// The live module's history (the reference's `HistoryPage`): the watched
 /// rooms grouped by day — Today / Yesterday / Earlier, like the reference's history

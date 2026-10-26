@@ -4,22 +4,12 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show StatefulNavigationShell;
 import 'package:live_platform/live_platform.dart' show FormFactor;
-import 'package:pure_live/app/navigation/module_navigation.dart';
-import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
-import 'package:pure_live/app/providers/module_providers.dart';
-import 'package:pure_live/app/providers/nav_visibility_providers.dart'
-    show kHomeMenuItems, navMenuProvider, showMultiviewProvider;
-import 'package:pure_live/app/providers/navigation_providers.dart';
-import 'package:pure_live/app/providers/settings_section_provider.dart' show settingsSectionProvider;
-import 'package:pure_live/app/providers/sidebar_providers.dart';
-import 'package:pure_live/features/settings/settings_page.dart' show SettingsPage;
-import 'package:pure_live/features/settings/settings_sections.dart' show SettingsSection;
-import 'package:pure_live/features/settings/tv_preferences.dart' show tvMenuExpandedProvider;
+import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/layouts/desktop/desktop_layout.dart';
 import 'package:pure_live/layouts/mobile/mobile_layout.dart';
-import 'package:pure_live/shared/enums/app_module.dart';
-import 'package:pure_live/shared/enums/navigation_item.dart';
-import 'package:pure_live/shared/enums/tool_order.dart' show toolOrderProvider;
+import 'package:pure_live/shared/shared.dart';
+
 import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
 
 // No `show` clause: a wrapped import is what the save-time import

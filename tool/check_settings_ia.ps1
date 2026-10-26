@@ -75,9 +75,13 @@ function Get-ReachableFiles {
         $seen[$item.Path] = $true
         if ($item.Level -eq $Depth) { continue }
         $source = Get-Content -Raw -LiteralPath $item.Path
-        foreach ($match in [regex]::Matches($source, "import '(?:package:pure_live/|)([^']*\.dart)'")) {
-            $relative = $match.Groups[1].Value -replace '^lib/', ''
-            $candidate = Join-Path $Lib ($relative -replace '/', [IO.Path]::DirectorySeparatorChar)
+        foreach ($match in [regex]::Matches($source, "(?:import|export) '(?:(package:pure_live/)|)([^']*\.dart)'")) {
+            $relative = $match.Groups[2].Value -replace '^lib/', ''
+            $candidate = if ($match.Groups[1].Success) {
+                Join-Path $Lib ($relative -replace '/', [IO.Path]::DirectorySeparatorChar)
+            } else {
+                Join-Path (Split-Path -Parent $item.Path) ($relative -replace '/', [IO.Path]::DirectorySeparatorChar)
+            }
             if (Test-Path -LiteralPath $candidate) { $queue.Enqueue(@{ Path = $candidate; Level = $item.Level + 1 }) }
         }
     }
@@ -86,10 +90,10 @@ function Get-ReachableFiles {
 
 $root = if ($Root) { $Root } elseif ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
 $lib = Join-Path $root 'apps/pure_live/lib'
-$sectionsPath = Join-Path $lib 'features/settings/settings_sections.dart'
+$sectionsPath = Join-Path $lib 'features/settings/surface/settings_sections.dart'
 $navPath = Join-Path $lib 'app/navigation/module_navigation.dart'
-$pagePath = Join-Path $lib 'features/settings/settings_page.dart'
-$searchPath = Join-Path $lib 'features/settings/settings_search.dart'
+$pagePath = Join-Path $lib 'features/settings/surface/settings_page.dart'
+$searchPath = Join-Path $lib 'features/settings/surface/settings_search.dart'
 
 foreach ($path in @($sectionsPath, $navPath, $pagePath, $searchPath)) {
     if (-not (Test-Path -LiteralPath $path)) { Write-Error "settings IA gate: missing $path" }

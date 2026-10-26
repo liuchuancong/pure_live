@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart';
-import 'package:pure_live/app/navigation/module_navigation.dart';
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/shared/enums/navigation_item.dart';
 
 /// The tools the sidebar shows under its divider, in the viewer's order.

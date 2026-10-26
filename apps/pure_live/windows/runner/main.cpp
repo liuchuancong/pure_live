@@ -1,36 +1,39 @@
 #include <flutter/dart_project.h>
-#include <flutter/flutter_view_controller.h>
-#include <windows.h>
-
 #include "flutter_window.h"
+#include <windows.h>
+#include <optional>
+#include <flutter/flutter_engine.h>
+#include <multiview_desktop/multi_view_desktop_plugin.h>
+#include <flutter/generated_plugin_registrant.h>
+#include "win32_window.h"
 #include "utils.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
-                      _In_ wchar_t *command_line, _In_ int show_command) {
-  // Attach to console when present (e.g., 'flutter run') or create a
-  // new console when running with a debugger.
+                      _In_ wchar_t* command_line, _In_ int show_command) {
   if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {
     CreateAndAttachConsole();
   }
 
-  // Initialize COM, so that it is available for use in the library and/or
-  // plugins.
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
+  MultiViewDesktopInitializeShellIntegration();
+
+  if (MultiViewDesktopTryForwardTaskbarMenuActivation()) {
+    ::CoUninitialize();
+    return EXIT_SUCCESS;
+  }
+
   flutter::DartProject project(L"data");
-
-  std::vector<std::string> command_line_arguments =
-      GetCommandLineArguments();
-
+  std::vector<std::string> command_line_arguments = GetCommandLineArguments();
   project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
 
   FlutterWindow window(project);
-  Win32Window::Point origin(10, 10);
-  Win32Window::Size size(1280, 720);
-  if (!window.Create(L"pure_live", origin, size)) {
+  Win32Window::Point origin(0, 0);
+  Win32Window::Size size(800, 600);
+  if (!window.Create(L"Pure Live", origin, size)) {
     return EXIT_FAILURE;
   }
-  window.SetQuitOnClose(true);
+  window.SetQuitOnClose(false);
 
   ::MSG msg;
   while (::GetMessage(&msg, nullptr, 0, 0)) {

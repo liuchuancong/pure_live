@@ -5,23 +5,15 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/app/background/app_background.dart' show BackgroundActiveScope;
-import 'package:pure_live/app/providers/settings_section_provider.dart' show settingsSectionProvider;
-import 'package:pure_live/app/providers/sidebar_providers.dart';
-import 'package:pure_live/app/providers/sites_providers.dart' show selectedSiteIdProvider;
-import 'package:pure_live/app/theme/theme_mode_toggle.dart';
-import 'package:pure_live/app/window_chrome.dart' show WindowChromeState;
-import 'package:pure_live/features/popular/popular_controller.dart';
-import 'package:pure_live/features/search/search_controller.dart';
-import 'package:pure_live/features/settings/settings_sections.dart';
+import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/popular/popular.dart';
+import 'package:pure_live/features/search/search.dart';
+import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart';
-import 'package:pure_live/shared/enums/app_module.dart';
-import 'package:pure_live/shared/enums/navigation_item.dart';
-import 'package:pure_live/shared/focus/tv_focus_scale.dart';
-import 'package:pure_live/shared/navigation/window_opener.dart' show openAppWindow;
+import 'package:pure_live/shared/shared.dart';
 
 // Every import stays on one line with no `show` clause: the save-time
 // import organizer used to tear wrapped imports apart, so nothing here

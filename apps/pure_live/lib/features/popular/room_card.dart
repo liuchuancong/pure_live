@@ -2,16 +2,10 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/features/settings/audience_metric_provider.dart'
-    show audienceFigureOf, audienceMetricProvider, audiencePolicyProvider;
-import 'package:pure_live/features/settings/room_card_settings.dart';
+import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/grids/room_cover_chip.dart';
-import 'package:pure_live/shared/images/app_image_cache.dart';
-import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon, localizedSiteName;
-import 'package:pure_live/shared/utils/audience_format.dart' show AudienceFormat;
-import 'package:pure_live/shared/utils/room_broadcast_text.dart' show roomBroadcastText;
+import 'package:pure_live/shared/shared.dart';
 
 /// One recommended room as a card: the cover, the title, the streamer and
 /// the room's audience figure. Opening the room is [onOpen] — the player
@@ -73,111 +67,112 @@ final class RoomCard extends ConsumerWidget {
         final badgeOnCover = appearance.platformBadge == RoomCardPlatformBadgeMode.always;
         final badgeAutomatic = appearance.platformBadge == RoomCardPlatformBadgeMode.automatic && wide;
         if (row) {
+          // The list row is a card of its own: the cover sits inside its
+          // padding instead of running to the card's edge, so the rows read
+          // as cards rather than one full-width band.
+          final line = SizedBox(
+            height: 84,
+            child: Row(
+              children: [
+                // The list layout keeps the small cover; a compact grid
+                // card is the identity row alone, as in the reference.
+                if (compact) ...[
+                  SizedBox(
+                    width: 148,
+                    child: DsImage(
+                      image: cachedImage(room.content.coverUrl),
+                      width: 148,
+                      height: 84,
+                      semanticLabel: room.content.title,
+                      fallback: _CoverFallback(title: room.content.title),
+                      style: const DsImageStyle(borderRadius: BorderRadius.all(Radius.circular(8))),
+                    ),
+                  ),
+                  const SizedBox(width: DsSpace.s12),
+                ],
+                if (appearance.showAvatar)
+                  Padding(
+                    padding: EdgeInsetsDirectional.only(start: compact ? 0 : DsSpace.s8),
+                    child: DsAvatar(
+                      initials: anchorName.isEmpty ? room.content.title : anchorName,
+                      image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+                      size: DsSize.sm,
+                      semanticLabel: anchorName.isEmpty ? room.content.title : anchorName,
+                    ),
+                  ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 4,
+                      children: [
+                        Text(
+                          room.content.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                        ),
+                        if (meta.isNotEmpty)
+                          Text(
+                            meta,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.caption.copyWith(color: colors.textMuted),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (appearance.platformBadge == RoomCardPlatformBadgeMode.always ||
+                    (appearance.platformBadge == RoomCardPlatformBadgeMode.automatic && constraints.maxWidth >= 300))
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: DsSpace.s6),
+                    child: DsBadge(icon: platformIcon, label: Text(platformName)),
+                  ),
+                if (appearance.showReplayBadge && replay)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: DsSpace.s6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 3,
+                      children: [
+                        DsIcon(DsIcons.history, size: 13, color: colors.textMuted),
+                        Text(
+                          context.t.settings.roomCardReplay,
+                          style: theme.typography.caption.copyWith(color: colors.textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (figure != null)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: DsSpace.s8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 4,
+                      children: [
+                        DsIcon(DsIcons.flame, size: 14, color: colors.accent),
+                        Text(
+                          AudienceFormat.format(figure),
+                          style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (!live)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: DsSpace.s12),
+                    child: DsIcon(DsIcons.circleSlash, size: 14, color: colors.textSubtle),
+                  ),
+              ],
+            ),
+          );
           return DsCard(
             onPressed: onOpen,
             style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: radius),
-            child: SizedBox(
-              height: 84,
-              child: Row(
-                children: [
-                  // The list layout keeps the small cover; a compact grid
-                  // card is the identity row alone, as in the reference.
-                  if (compact)
-                    SizedBox(
-                      width: 148,
-                      child: DsImage(
-                        image: cachedImage(room.content.coverUrl),
-                        width: 148,
-                        height: 84,
-                        semanticLabel: room.content.title,
-                        fallback: _CoverFallback(title: room.content.title),
-                        style: DsImageStyle(
-                          borderRadius: BorderRadius.horizontal(left: Radius.circular(appearance.cornerRadius)),
-                        ),
-                      ),
-                    ),
-                  if (appearance.showAvatar)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(start: 10),
-                      child: DsAvatar(
-                        initials: anchorName.isEmpty ? room.content.title : anchorName,
-                        image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
-                        size: DsSize.sm,
-                        semanticLabel: anchorName.isEmpty ? room.content.title : anchorName,
-                      ),
-                    ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 4,
-                        children: [
-                          Text(
-                            room.content.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                          ),
-                          if (meta.isNotEmpty)
-                            Text(
-                              meta,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.caption.copyWith(color: colors.textMuted),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (appearance.platformBadge == RoomCardPlatformBadgeMode.always ||
-                      (appearance.platformBadge == RoomCardPlatformBadgeMode.automatic &&
-                          constraints.maxWidth >= 300))
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(end: 6),
-                      child: _PlatformBadge(icon: platformIcon, name: platformName, onCover: false),
-                    ),
-                  if (appearance.showReplayBadge && replay)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(end: 6),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        spacing: 3,
-                        children: [
-                          DsIcon(DsIcons.history, size: 13, color: colors.textMuted),
-                          Text(
-                            context.t.settings.roomCardReplay,
-                            style: theme.typography.caption.copyWith(color: colors.textMuted),
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (figure != null)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(end: 8),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        spacing: 4,
-                        children: [
-                          DsIcon(DsIcons.flame, size: 14, color: colors.accent),
-                          Text(
-                            AudienceFormat.format(figure),
-                            style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(color: colors.textMuted),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (!live)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(end: 12),
-                      child: DsIcon(DsIcons.circleSlash, size: 14, color: colors.textSubtle),
-                    ),
-                ],
-              ),
-            ),
+            child: compact ? Padding(padding: const EdgeInsets.all(DsSpace.s8), child: line) : line,
           );
         }
         // The card component carries the theme's fill, hover lift and focus
@@ -186,169 +181,140 @@ final class RoomCard extends ConsumerWidget {
           onPressed: onOpen,
           style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: radius),
           child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // The cover keeps 16:9 whatever the tile's height; the text
-          // row absorbs the remainder of the grid tile. DsImage needs
-          // its own reserved box — the ratio is its parameter, not an
-          // outer wrapper's.
-          Stack(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DsImage(
-                image: cachedImage(room.content.coverUrl),
-                aspectRatio: 16 / 9,
-                semanticLabel: room.content.title,
-                fallback: _CoverFallback(title: room.content.title),
-                style: DsImageStyle(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(appearance.cornerRadius)),
-                ),
-              ),
-              // The reference's cover hints: the room's own words and its
-              // audience over the picture, where a feed can be read without
-              // leaving the image.
-              const PositionedDirectional(
-                start: 0,
-                end: 0,
-                bottom: 0,
-                height: 56,
-                child: IgnorePointer(
-                  child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
-                ),
-              ),
-              if (badgeOnCover)
-                PositionedDirectional(
-                  start: 8,
-                  top: 8,
-                  child: _PlatformBadge(icon: platformIcon, name: platformName, onCover: true),
-                ),
-              if (appearance.showReplayBadge && replay)
-                PositionedDirectional(
-                  end: 8,
-                  top: 8,
-                  child: RoomCoverChip(
-                    text: context.t.settings.roomCardReplay,
-                    icon: DsIcons.history,
-                    maxWidth: 120,
+              // The cover keeps 16:9 whatever the tile's height; the text
+              // row absorbs the remainder of the grid tile. DsImage needs
+              // its own reserved box — the ratio is its parameter, not an
+              // outer wrapper's.
+              Stack(
+                children: [
+                  DsImage(
+                    image: cachedImage(room.content.coverUrl),
+                    aspectRatio: 16 / 9,
+                    semanticLabel: room.content.title,
+                    fallback: _CoverFallback(title: room.content.title),
+                    style: DsImageStyle(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(appearance.cornerRadius)),
+                    ),
                   ),
-                ),
-              PositionedDirectional(
-                start: 8,
-                end: 8,
-                bottom: 8,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Flexible(
-                      child: RoomCoverChip(
-                        text: room.content.title,
-                        style: theme.typography.caption.copyWith(
-                          color: const Color(0xFFFFFFFF),
-                          fontWeight: FontWeight.w600,
+                  // The reference's cover hints: the room's own words and its
+                  // audience over the picture, where a feed can be read without
+                  // leaving the image.
+                  const PositionedDirectional(
+                    start: 0,
+                    end: 0,
+                    bottom: 0,
+                    height: 56,
+                    child: IgnorePointer(
+                      child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
+                    ),
+                  ),
+                  if (badgeOnCover)
+                    PositionedDirectional(
+                      start: 8,
+                      top: 8,
+                      child: DsBadge(
+                        icon: platformIcon,
+                        label: Text(platformName),
+                        style: DsBadgeStyle(
+                          background: const Color(0x94000000),
+                          foreground: const Color(0xFFFFFFFF),
+                          textStyle: theme.typography.caption.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
-                    if (figure != null) ...[
-                      const Spacer(),
-                      RoomCoverChip(text: AudienceFormat.format(figure), icon: DsIcons.flame, maxWidth: 120),
+                  if (appearance.showReplayBadge && replay)
+                    PositionedDirectional(
+                      end: 8,
+                      top: 8,
+                      child: RoomCoverChip(
+                        text: context.t.settings.roomCardReplay,
+                        icon: DsIcons.history,
+                        maxWidth: 120,
+                      ),
+                    ),
+                  PositionedDirectional(
+                    start: 8,
+                    end: 8,
+                    bottom: 8,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Flexible(
+                          child: RoomCoverChip(
+                            text: room.content.title,
+                            style: theme.typography.caption.copyWith(
+                              color: const Color(0xFFFFFFFF),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (figure != null) ...[
+                          const Spacer(),
+                          RoomCoverChip(text: AudienceFormat.format(figure), icon: DsIcons.flame, maxWidth: 120),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  child: Row(
+                    spacing: 8,
+                    children: [
+                      if (appearance.showAvatar)
+                        DsAvatar(
+                          initials: anchorName.isEmpty ? room.content.title : anchorName,
+                          image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
+                          size: DsSize.sm,
+                          semanticLabel: anchorName.isEmpty ? room.content.title : anchorName,
+                        ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          spacing: 3,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                room.content.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                              ),
+                            ),
+                            if (meta.isNotEmpty)
+                              Row(
+                                spacing: 6,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      meta,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                    ),
+                                  ),
+                                  // An off-air room keeps its place in the feed;
+                                  // the room page will say why it cannot play.
+                                  if (!live) DsIcon(DsIcons.circleSlash, size: 12, color: colors.textSubtle),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (badgeAutomatic) DsBadge(icon: platformIcon, label: Text(platformName)),
                     ],
-                  ],
+                  ),
                 ),
               ),
             ],
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              child: Row(
-                spacing: 8,
-                children: [
-                  if (appearance.showAvatar)
-                    DsAvatar(
-                      initials: anchorName.isEmpty ? room.content.title : anchorName,
-                      image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
-                      size: DsSize.sm,
-                      semanticLabel: anchorName.isEmpty ? room.content.title : anchorName,
-                    ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      spacing: 3,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            room.content.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                          ),
-                        ),
-                        if (meta.isNotEmpty)
-                          Row(
-                            spacing: 6,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  meta,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                                ),
-                              ),
-                              // An off-air room keeps its place in the feed;
-                              // the room page will say why it cannot play.
-                              if (!live) DsIcon(DsIcons.circleSlash, size: 12, color: colors.textSubtle),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
-                  if (badgeAutomatic) _PlatformBadge(icon: platformIcon, name: platformName, onCover: false),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+        );
       },
-    );
-  }
-}
-
-/// The platform badge: the manifest's icon and localized name, on a dark
-/// chip over a cover or a quiet surface chip in a caption/row.
-final class _PlatformBadge extends StatelessWidget {
-  const _PlatformBadge({required this.icon, required this.name, required this.onCover});
-
-  final Widget? icon;
-  final String name;
-  final bool onCover;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: onCover ? const Color(0x94000000) : colors.control,
-        borderRadius: BorderRadius.circular(7),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: 4,
-        children: [
-          ?icon,
-          Text(
-            name,
-            style: theme.typography.caption.copyWith(
-              color: onCover ? const Color(0xFFFFFFFF) : colors.textMuted,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

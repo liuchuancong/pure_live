@@ -3,11 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_shell/live_shell.dart' show WindowRole;
 
-import 'package:pure_live/app/providers/environment_providers.dart' show platformRuntimeProvider;
-import 'package:pure_live/app/providers/window_providers.dart' show secondaryWindowsProvider;
+import 'package:pure_live/app/app.dart';
 
-/// Opens a complete application clone at the home route. Every desktop
-/// window can do this; a phone has no windows and ignores it.
+/// Opens another application window at the home route. Every desktop window
+/// can do this; a phone has no windows and ignores it.
 Future<void> openAppWindow(BuildContext context) async {
   final container = ProviderScope.containerOf(context, listen: false);
   final desktop = container.read(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.desktop;

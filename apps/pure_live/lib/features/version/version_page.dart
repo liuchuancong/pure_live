@@ -4,10 +4,10 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
-import 'package:pure_live/app/providers/network_providers.dart' show networkFactoryProvider;
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/version/update_feed.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
+import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// Opens one release's page: what changed, its build, and the way to the

@@ -3,7 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter/widgets.dart';
-import 'package:pure_live/app/providers/refresh_settings_providers.dart' show HistoryLimitController;
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 
 /// Asks for the history cap, the number of watch records the history keeps;

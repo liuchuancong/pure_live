@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
 
-import 'package:pure_live/app/providers/network_providers.dart' show networkFactoryProvider;
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/version/app_version.dart';
 import 'package:pure_live/features/version/update_feed.dart';
 

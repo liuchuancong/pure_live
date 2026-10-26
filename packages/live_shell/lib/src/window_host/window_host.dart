@@ -75,10 +75,10 @@ enum WindowEvent {
 
 /// One window the shell controls.
 ///
-/// The application implements this over `window_manager` (main window) or
-/// `desktop_multi_window` (secondary ones); everything in `live_shell` decides
-/// behaviour against this interface instead of against a plugin, which is what
-/// lets the policy code be tested without a display server.
+/// The application implements this over the desktop window backend; everything
+/// in `live_shell` decides behaviour against this interface instead of against
+/// a plugin, which is what lets the policy code be tested without a display
+/// server.
 abstract interface class WindowHost {
   /// What this window is for.
   WindowRole get role;
@@ -180,29 +180,34 @@ final class WindowState {
 
 /// Creates additional OS-level windows.
 ///
-/// The seam exists because a second window on the desktop is a second engine,
-/// not a widget: with `desktop_multi_window` each one is its own isolate with its
-/// own Dart heap, so the rules that follow from that belong to the shell and not
-/// to a call site —
+/// The seam exists because a second window on the desktop is a window, not a
+/// widget: even when every window shares one isolate, its geometry, focus and
+/// lifetime belong to the operating system, so the rules that follow belong to
+/// the shell and not to a call site —
 ///
-/// * the new window cannot share the main window's in-memory state, only its
-///   persisted state and messages sent through the launcher;
 /// * it must be told its [WindowRole] at creation, because it cannot ask;
 /// * closing it is never an app-level event, which is why the role, not a
-///   window count, decides what a close means.
+///   window count, decides what a close means;
+/// * the opener records a business key so a second request can raise the
+///   existing window instead of showing the same subject twice.
 abstract interface class WindowLauncher {
   /// Opens a window of [role], starting at [route] where the role has one.
   ///
-  /// The answer is a [SecondaryWindow], not a [WindowHost]: from the primary's
-  /// side a window belonging to another engine can be raised, lowered and sent
-  /// messages, but not measured or moved — its geometry belongs to its own
-  /// isolate, which is the one holding the surface. A caller that needs the
-  /// window sized should pass the size in as part of [route]/launch arguments
-  /// and let the new window apply it, rather than reaching for it afterwards.
-  Future<SecondaryWindow> open({required WindowRole role, String? route});
+  /// [businessKey] names the thing the window shows (for example
+  /// `bilibili/12345`) when the role allows only one window per subject. The
+  /// launcher records it so an opener can raise the existing window instead of
+  /// opening a duplicate.
+  ///
+  /// The answer is a [SecondaryWindow], not a [WindowHost]: from the opener's
+  /// side a window can be raised, lowered and sent commands, but not measured
+  /// or moved — its geometry belongs to the window itself. A caller that needs
+  /// the window sized should pass the size in as part of [route]/launch
+  /// arguments and let the new window apply it, rather than reaching for it
+  /// afterwards.
+  Future<SecondaryWindow> open({required WindowRole role, String? route, String? businessKey});
 }
 
-/// A window in another engine, reachable only by message.
+/// A window other than this one, reachable by id and message.
 abstract interface class SecondaryWindow {
   /// The id the window manager gave this window.
   String get id;
@@ -213,33 +218,26 @@ abstract interface class SecondaryWindow {
   /// Brings it on screen.
   ///
   /// Addressed by window id through the native layer, so this works as soon as
-  /// the window exists — it does not wait for the other isolate to be listening.
+  /// the window exists — it does not wait for its widget tree to be listening.
   Future<void> show();
 
-  /// Hides it, keeping the engine alive.
-  ///
-  /// Native, like [show]. There is no way to destroy a secondary window through
-  /// this seam: `desktop_multi_window`'s controller exposes show, hide and
-  /// messages only, so a window that was created and then failed to configure
-  /// stays in the process until it exits. Worth knowing before anything is built
-  /// that opens windows speculatively.
+  /// Hides it, keeping its content and subscriptions alive.
   Future<void> hide();
 
-  /// Sends [method] with [arguments] into that window's isolate.
+  /// Sends [method] with [arguments] to that window.
   ///
-  /// The only way anything crosses between engines here, which is why the
-  /// arguments must be encodable — pass an identifier and let the other side
-  /// load what it needs, rather than trying to hand it a live object.
+  /// In-process windows may deliver a live object, but callers should keep the
+  /// vocabulary serialisable so the transport can change without touching the
+  /// call sites.
   ///
   /// **This is not the same transport as [show], and the difference is a race.**
-  /// Show and hide are carried out by the operating system on a window the plugin
-  /// already owns; a message goes to the *engine* on the other side and is only
-  /// delivered once that isolate has registered its handler, which happens some
-  /// time after creation. So `open()` followed immediately by `send()` can arrive
-  /// before anybody is listening, and the receiving end — not the sender — decides
-  /// whether that is an error. The reliable shape is the other way round: let the
-  /// new window ask for what it needs through [WindowLauncher] arguments at
-  /// start-up, and reserve [send] for telling an already-visible window to change
-  /// something it is showing.
+  /// Show and hide are carried out by the operating system on a window the
+  /// backend already owns; a message is delivered once the target view has
+  /// subscribed, which happens some time after creation. So `open()` followed
+  /// immediately by `send()` can arrive before anybody is listening, and the
+  /// receiving end — not the sender — decides whether that is an error. The
+  /// reliable shape is the other way round: let the new window ask for what it
+  /// needs through [WindowLauncher] arguments at start-up, and reserve [send]
+  /// for telling an already-visible window to change something it is showing.
   Future<T?> send<T>(String method, [Object? arguments]);
 }

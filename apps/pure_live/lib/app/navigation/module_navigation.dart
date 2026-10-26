@@ -1,20 +1,18 @@
 import 'package:flutter/widgets.dart' show Widget;
 
-import 'package:pure_live/features/areas/areas_page.dart' show AreasPage;
-import 'package:pure_live/features/favorites/favorites_page.dart' show FavoritesPage;
-import 'package:pure_live/features/history/history_page.dart' show HistoryPage;
-import 'package:pure_live/features/iptv/iptv_page.dart' show IptvPage;
-import 'package:pure_live/features/multiview/multiview_page.dart' show MultiviewPage;
-import 'package:pure_live/features/music/music_page.dart' show MusicPage;
-import 'package:pure_live/features/popular/popular_page.dart' show PopularPage;
-import 'package:pure_live/features/recorder/recorder_page.dart' show RecorderPage;
-import 'package:pure_live/features/search/search_page.dart' show SearchPage;
-import 'package:pure_live/features/settings/settings_sections.dart'
-    show SettingsGroup, SettingsSection, settingsDescendantsOf;
-import 'package:pure_live/features/toolbox/toolbox_page.dart' show ToolboxPage;
-import 'package:pure_live/features/vod/vod_page.dart' show VodPage;
-import 'package:pure_live/shared/enums/app_module.dart' show AppModule;
-import 'package:pure_live/shared/enums/navigation_item.dart' show NavigationItem;
+import 'package:pure_live/features/areas/areas.dart';
+import 'package:pure_live/features/favorites/favorites.dart';
+import 'package:pure_live/features/history/history.dart';
+import 'package:pure_live/features/iptv/iptv.dart';
+import 'package:pure_live/features/multiview/multiview.dart';
+import 'package:pure_live/features/music/music.dart';
+import 'package:pure_live/features/popular/popular.dart';
+import 'package:pure_live/features/recorder/recorder.dart';
+import 'package:pure_live/features/search/search.dart';
+import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/features/toolbox/toolbox.dart';
+import 'package:pure_live/features/vod/vod.dart';
+import 'package:pure_live/shared/shared.dart';
 
 /// One module's whole navigation surface, in one place.
 ///

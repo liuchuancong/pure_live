@@ -1,8 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:pure_live/app/providers/loading_style_provider.dart';
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/shared/widgets/loading_style_animations.dart';
 
 /// The app's loading animation, following the appearance choice.

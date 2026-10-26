@@ -22,8 +22,8 @@ $issues = [System.Collections.Generic.List[string]]::new()
 # it.
 $appLib = Join-Path $Root "apps/pure_live/lib"
 $packagesRoot = Join-Path $Root "packages"
-$backupFile = Join-Path $appLib "features/backup/backup_settings.dart"
-$refreshFile = Join-Path $appLib "app/providers/settings_refresh.dart"
+$backupFile = Join-Path $appLib "features/backup/document/backup_settings.dart"
+$refreshFile = Join-Path $appLib "app/providers/settings/settings_refresh.dart"
 
 foreach ($required in @($appLib, $backupFile, $refreshFile)) {
     if (-not (Test-Path $required)) {

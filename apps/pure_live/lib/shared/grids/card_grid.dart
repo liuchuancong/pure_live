@@ -6,7 +6,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyUpEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/app/providers/browse_settings_providers.dart' show showScrollToTopProvider;
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/focus/tv_focus_scale.dart';
 import 'package:pure_live/shared/widgets/app_loading_indicator.dart';
@@ -871,7 +871,7 @@ final class _SkeletonList extends StatelessWidget {
       padding: padding,
       itemCount: count,
       separatorBuilder: (context, index) => SizedBox(height: gap),
-      itemBuilder: (context, index) => const DsSkeleton(width: double.infinity, height: 84),
+      itemBuilder: (context, index) => const DsSkeleton(width: double.infinity, height: 100),
     );
   }
 }

@@ -43,7 +43,7 @@ class _RecordingLauncher implements WindowLauncher {
   final List<SecondaryWindow> _opened = [];
 
   @override
-  Future<SecondaryWindow> open({required WindowRole role, String? route}) async {
+  Future<SecondaryWindow> open({required WindowRole role, String? route, String? businessKey}) async {
     created++;
     _opened.add(_NullSecondary());
     return _opened.last;

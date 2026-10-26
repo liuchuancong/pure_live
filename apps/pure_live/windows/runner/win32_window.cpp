@@ -149,6 +149,30 @@ bool Win32Window::Create(const std::wstring& title,
   return OnCreate();
 }
 
+void Win32Window::CenterOnScreen() {
+  if (!window_handle_) {
+    return;
+  }
+  RECT rect{};
+  GetWindowRect(window_handle_, &rect);
+  const int width = rect.right - rect.left;
+  const int height = rect.bottom - rect.top;
+  const HMONITOR monitor =
+      MonitorFromWindow(window_handle_, MONITOR_DEFAULTTONEAREST);
+  MONITORINFO monitor_info{};
+  monitor_info.cbSize = sizeof(MONITORINFO);
+  GetMonitorInfo(monitor, &monitor_info);
+  const int x = monitor_info.rcWork.left +
+                (monitor_info.rcWork.right - monitor_info.rcWork.left - width) /
+                    2;
+  const int y = monitor_info.rcWork.top +
+                (monitor_info.rcWork.bottom - monitor_info.rcWork.top -
+                 height) /
+                    2;
+  SetWindowPos(window_handle_, nullptr, x, y, width, height,
+               SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
 bool Win32Window::Show() {
   return ShowWindow(window_handle_, SW_SHOWNORMAL);
 }

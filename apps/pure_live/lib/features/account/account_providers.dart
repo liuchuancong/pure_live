@@ -3,9 +3,9 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart'
     show LiveAuthCapability, LiveAuthSession, LiveCredential, LiveSite, LiveSiteError;
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account_repository.dart';
-import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteName;
+import 'package:pure_live/shared/shared.dart';
 
 /// The accounts repository (one secret store, one process).
 final accountRepositoryProvider = FutureProvider<AccountRepository>((ref) => AccountRepository.open());

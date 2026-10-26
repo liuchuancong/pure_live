@@ -6,13 +6,9 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/app/background/app_background.dart' show BackgroundActiveScope;
-import 'package:pure_live/app/providers/window_providers.dart';
-import 'package:pure_live/app/theme/theme_mode_toggle.dart';
-import 'package:pure_live/app/window_chrome.dart' show WindowChromeState;
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/navigation/window_opener.dart' show openAppWindow;
-import 'package:pure_live/shared/widgets/chrome_icon_button.dart';
+import 'package:pure_live/shared/shared.dart';
 
 /// The height of the title bar: the drag band and the caption row.
 const double kTitleBarHeight = 44;

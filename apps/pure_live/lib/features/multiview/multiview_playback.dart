@@ -4,25 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
-import 'package:pure_live/app/providers/network_type_provider.dart' show networkTypeProvider;
-import 'package:pure_live/app/providers/player_backend_providers.dart' show playerKernelBackendProvider;
-import 'package:pure_live/app/providers/player_providers.dart'
-    show createRoomPlayback, playerKernelProvider, roomSourcesOf;
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
-import 'package:pure_live/features/favorites/follow_repository.dart' show followsProvider;
+import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/favorites/favorites.dart';
 import 'package:pure_live/features/multiview/multiview_controller.dart' show multiviewProvider;
-import 'package:pure_live/features/settings/playback_settings_providers.dart'
-    show playbackSettingsProvider, preferredQualityIndex;
-import 'package:pure_live/features/settings/player_tuning.dart'
-    show
-        PlayerTuning,
-        playerOutputChanged,
-        playerPresetTransitionOptions,
-        playerProxyProvider,
-        playerStoredEngineOptions,
-        playerTuningProvider;
-import 'package:pure_live/shared/player/super_resolution.dart'
-    show applySuperResolution, superResolutionModeProvider, withSuperResolution;
+import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/shared/shared.dart';
 
 /// Where one pane's session stands.
 enum MultiviewPaneStage {

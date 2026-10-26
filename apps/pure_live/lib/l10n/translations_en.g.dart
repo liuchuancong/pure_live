@@ -1363,6 +1363,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get danmakuPresetDense => 'Top 55% · Dense';
 	@override String get danmakuPresetFull => 'Full-screen';
 	@override String get danmakuPresetHint => 'Full-screen = danmaku covers the entire video; other presets use the top region only';
+	@override String get danmakuPresetCustom => 'Custom';
+	@override String get preset => 'Preset';
 	@override String get prefScope => 'Where settings apply';
 	@override String get prefScopeDesc => 'Keep these changes in this window, or apply them to the main window and every room window.';
 	@override String get prefScopeLocal => 'This window';
@@ -1407,18 +1409,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get textScale => 'Text scale';
 	@override String get textScaleDescription => 'Scales the app\'s text as a whole; 100% keeps the platform size.';
 	@override String get textScalePreview => 'Preview: the change applies to every screen at once.';
-	@override String get fontBodyGroup => 'Body & metadata hierarchy';
-	@override String get fontBodySmall => 'Micro metadata (Body small)';
-	@override String get fontBodySmallDescription => 'Viewer counts, badges and timestamps. Default 12 px.';
-	@override String get fontBodyMedium => 'Standard body text (Body medium)';
-	@override String get fontBodyMediumDescription => 'Descriptions, subtitles and list labels. Default 13 px.';
-	@override String get fontBodyLarge => 'Prominent body text (Body large)';
-	@override String get fontBodyLargeDescription => 'List item names and dialog descriptions. Default 14 px.';
-	@override String get fontTitleGroup => 'Title hierarchy';
-	@override String get fontTitleMedium => 'Card and section titles (Title medium)';
-	@override String get fontTitleMediumDescription => 'Settings groups, card headers and panel titles. Default 15 px.';
-	@override String get fontTitleLarge => 'Page and dialog titles (Title large)';
-	@override String get fontTitleLargeDescription => 'Page titles, dialogs and empty-state headings. Default 20 px.';
 	@override String get backHome => 'Back to app';
 	@override String get navCache => 'Cache';
 	@override String get cacheDescription => 'The disk cache for covers and avatars, and its cleanup cap.';
@@ -1778,11 +1768,10 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundVideoAddress => 'Video URL';
 	@override String get backgroundAddressHint => 'https://…';
 	@override String get backgroundApply => 'Apply';
-	@override String get backgroundUpload => 'Upload';
 	@override String get backgroundUploadImage => 'Choose image';
 	@override String get backgroundUploadVideo => 'Choose video';
-	@override String backgroundLocalFile({required Object name}) => 'Local file: ${name}';
 	@override String get backgroundInvalidUrl => 'The address must be an http(s) link';
+	@override String get backgroundDropUnsupported => 'That file type is not supported';
 	@override String get backgroundImportFailed => 'Import failed';
 	@override String get backgroundBusy => 'Copying the file…';
 	@override String get backgroundEmpty => 'No media yet; choose Image or Video, then enter a URL or upload a file.';
@@ -3723,6 +3712,8 @@ extension on TranslationsEn {
 			'settings.danmakuPresetDense' => 'Top 55% · Dense',
 			'settings.danmakuPresetFull' => 'Full-screen',
 			'settings.danmakuPresetHint' => 'Full-screen = danmaku covers the entire video; other presets use the top region only',
+			'settings.danmakuPresetCustom' => 'Custom',
+			'settings.preset' => 'Preset',
 			'settings.prefScope' => 'Where settings apply',
 			'settings.prefScopeDesc' => 'Keep these changes in this window, or apply them to the main window and every room window.',
 			'settings.prefScopeLocal' => 'This window',
@@ -3767,18 +3758,6 @@ extension on TranslationsEn {
 			'settings.textScale' => 'Text scale',
 			'settings.textScaleDescription' => 'Scales the app\'s text as a whole; 100% keeps the platform size.',
 			'settings.textScalePreview' => 'Preview: the change applies to every screen at once.',
-			'settings.fontBodyGroup' => 'Body & metadata hierarchy',
-			'settings.fontBodySmall' => 'Micro metadata (Body small)',
-			'settings.fontBodySmallDescription' => 'Viewer counts, badges and timestamps. Default 12 px.',
-			'settings.fontBodyMedium' => 'Standard body text (Body medium)',
-			'settings.fontBodyMediumDescription' => 'Descriptions, subtitles and list labels. Default 13 px.',
-			'settings.fontBodyLarge' => 'Prominent body text (Body large)',
-			'settings.fontBodyLargeDescription' => 'List item names and dialog descriptions. Default 14 px.',
-			'settings.fontTitleGroup' => 'Title hierarchy',
-			'settings.fontTitleMedium' => 'Card and section titles (Title medium)',
-			'settings.fontTitleMediumDescription' => 'Settings groups, card headers and panel titles. Default 15 px.',
-			'settings.fontTitleLarge' => 'Page and dialog titles (Title large)',
-			'settings.fontTitleLargeDescription' => 'Page titles, dialogs and empty-state headings. Default 20 px.',
 			'settings.backHome' => 'Back to app',
 			'settings.navCache' => 'Cache',
 			'settings.cacheDescription' => 'The disk cache for covers and avatars, and its cleanup cap.',
@@ -4100,8 +4079,6 @@ extension on TranslationsEn {
 			'settings.navMenuKeepOne' => 'Keep at least one menu',
 			'settings.multiviewVisible' => 'Home entry: multi-view',
 			'settings.multiviewVisibleDesc' => 'Hides the multi-view entry from the sidebar and phone drawer.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.groupTheme' => 'Theme',
 			'settings.groupCards' => 'Cards & lists',
 			'settings.groupType' => 'Type & language',
@@ -4112,6 +4089,8 @@ extension on TranslationsEn {
 			'settings.selectionStyle' => 'Selection',
 			'settings.selectionDescription' => 'How selected rows and controls are highlighted.',
 			'settings.selectionSoft' => 'Soft',
+			_ => null,
+		} ?? switch (path) {
 			'settings.selectionStrong' => 'Strong',
 			'settings.autoClash' => 'Keep status colors apart',
 			'settings.autoClashDesc' => 'Shifts nearby danger and success colors automatically, so a selection is not read as an alert.',
@@ -4140,11 +4119,10 @@ extension on TranslationsEn {
 			'settings.backgroundVideoAddress' => 'Video URL',
 			'settings.backgroundAddressHint' => 'https://…',
 			'settings.backgroundApply' => 'Apply',
-			'settings.backgroundUpload' => 'Upload',
 			'settings.backgroundUploadImage' => 'Choose image',
 			'settings.backgroundUploadVideo' => 'Choose video',
-			'settings.backgroundLocalFile' => ({required Object name}) => 'Local file: ${name}',
 			'settings.backgroundInvalidUrl' => 'The address must be an http(s) link',
+			'settings.backgroundDropUnsupported' => 'That file type is not supported',
 			'settings.backgroundImportFailed' => 'Import failed',
 			'settings.backgroundBusy' => 'Copying the file…',
 			'settings.backgroundEmpty' => 'No media yet; choose Image or Video, then enter a URL or upload a file.',
@@ -4614,8 +4592,6 @@ extension on TranslationsEn {
 			'shield.douyuSuspected' => 'Filter Suspected Automated Douyu Chat',
 			'shield.douyuSuspectedDescription' => 'Turn on to hide suspected automated or event chat heuristically; ordinary chat may also be hidden',
 			'sites.title' => 'Sites',
-			_ => null,
-		} ?? switch (path) {
 			'sites.live' => 'Live',
 			'sites.search' => 'Search',
 			'sites.rooms' => 'Rooms',
@@ -4627,6 +4603,8 @@ extension on TranslationsEn {
 			'toolbox.toolLinkDescription' => 'Paste a platform link to open the room or copy its address.',
 			'toolbox.toolNetworkTitle' => 'Platform nodes',
 			'toolbox.toolNetworkDescription' => 'Test each platform\'s endpoint for reachability and latency.',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.toolCacheTitle' => 'Cache cleanup',
 			'toolbox.toolCacheDescription' => 'Inspect and clear the memory the image cache holds.',
 			'toolbox.toolLogsTitle' => 'Logs',

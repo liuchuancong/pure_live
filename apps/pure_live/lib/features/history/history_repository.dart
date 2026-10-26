@@ -3,9 +3,7 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
-import 'package:pure_live/app/providers/refresh_settings_providers.dart'
-    show historyLimitProvider, maxConcurrentRefreshProvider;
-import 'package:pure_live/app/providers/sites_providers.dart' show sitesProvider;
+import 'package:pure_live/app/app.dart';
 
 /// How many watch records the history keeps; the oldest leave first.
 const int kHistoryLimit = 500;

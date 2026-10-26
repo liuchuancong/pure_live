@@ -3,8 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:pure_live/app/providers/environment_providers.dart' show deviceProfileProvider;
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 
 /// Opens [options] as one radio group and returns the value confirmed, or
