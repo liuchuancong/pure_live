@@ -178,7 +178,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     }
     // The playlist line's own User-Agent wins; otherwise the viewer's custom
     // one is sent, matching what the importer uses for downloads.
-    final playbackHeaders = iptvHeadersWithUserAgent(channel.entry.headers, ref.read(iptvUserAgentProvider));
+    final playbackHeaders = iptvHeadersWithUserAgent(channel.entry.headers.asMap(), ref.read(iptvUserAgentProvider));
     final headers = playbackHeaders.isEmpty ? null : SourceHeaders(playbackHeaders);
     final replay = _catchup;
     final idPrefix = replay == null
@@ -261,7 +261,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
       url: url,
       format: inferStreamFormat(url) ?? LiveStreamFormat.other,
       formatSource: LivePlayFormatSource.inferred,
-      headers: iptvHeadersWithUserAgent(channel.entry.headers, ref.read(iptvUserAgentProvider)),
+      headers: iptvHeadersWithUserAgent(channel.entry.headers.asMap(), ref.read(iptvUserAgentProvider)),
       lineLabel: channel.entry.name,
     );
     unawaited(showCastDialog(context, line: line, title: channel.entry.name));

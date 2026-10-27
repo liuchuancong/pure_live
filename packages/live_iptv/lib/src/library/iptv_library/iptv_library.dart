@@ -332,7 +332,7 @@ final class IptvLibrary {
     _mappings = [
       for (final mapping in _mappings)
         if (mapping.channelId != channelId) mapping,
-      EpgMapping(
+      EpgMapping.of(
         channelId: channelId,
         epgChannelKey: epgChannelKey,
         playlistId: playlistId,
@@ -435,11 +435,11 @@ final class IptvLibrary {
       seenUrls.add(entry.url);
       final existing = byUrl[entry.url];
       if (existing != null) {
-        reconciled.add(existing.copyWith(entry: entry));
+        reconciled.add(existing.rebuild((b) => b..entry.replace(entry)));
         updated++;
       } else {
         reconciled.add(
-          IptvChannel(
+          IptvChannel.of(
             id: 'c${DateTime.now().microsecondsSinceEpoch}_${reconciled.length}',
             entry: entry,
             position: nextPosition++,
@@ -459,7 +459,7 @@ final class IptvLibrary {
     _channels = reconciled;
     final existing = replaceId == null ? null : _playlistById(replaceId);
     final id = existing?.id ?? 'p${DateTime.now().microsecondsSinceEpoch}';
-    final record = IptvPlaylist(
+    final record = IptvPlaylist.of(
       id: id,
       name: name,
       importedAt: DateTime.now(),
@@ -510,10 +510,10 @@ final class IptvLibrary {
       final existing = byUrl[entry.url];
       if (existing != null) {
         // Keep the user's flags; refresh the parsed fields.
-        reconciled.add(existing.copyWith(entry: entry));
+        reconciled.add(existing.rebuild((b) => b..entry.replace(entry)));
       } else {
         reconciled.add(
-          IptvChannel(
+          IptvChannel.of(
             id: 'c${DateTime.now().microsecondsSinceEpoch}_${reconciled.length}',
             entry: entry,
             position: nextPosition++,
@@ -532,7 +532,7 @@ final class IptvLibrary {
     _channels = reconciled;
     _playlists = [
       ..._playlists,
-      IptvPlaylist(
+      IptvPlaylist.of(
         id: 'p${DateTime.now().microsecondsSinceEpoch}',
         name: name,
         importedAt: DateTime.now(),
@@ -576,10 +576,10 @@ final class IptvLibrary {
   IptvPlaylist? playlistById(String id) => _playlistById(id);
 
   /// Toggles the favourite flag of [id].
-  Future<void> toggleFavorite(String id) => _update(id, (channel) => channel.copyWith(favorite: !channel.favorite));
+  Future<void> toggleFavorite(String id) => _update(id, (channel) => channel.rebuild((b) => b..favorite = !channel.favorite));
 
   /// Toggles the hidden flag of [id].
-  Future<void> toggleHidden(String id) => _update(id, (channel) => channel.copyWith(hidden: !channel.hidden));
+  Future<void> toggleHidden(String id) => _update(id, (channel) => channel.rebuild((b) => b..hidden = !channel.hidden));
 
   /// Moves [id] to [position] in the channel order.
   Future<void> reorder(String id, int position) async {
@@ -590,7 +590,7 @@ final class IptvLibrary {
     }
     final moved = ordered.removeAt(index);
     ordered.insert(position.clamp(0, ordered.length), moved);
-    _channels = [for (final (index, channel) in ordered.indexed) channel.copyWith(position: index)];
+    _channels = [for (final (index, channel) in ordered.indexed) channel.rebuild((b) => b..position = index)];
     await _commit();
   }
 
@@ -641,7 +641,7 @@ final class IptvLibrary {
             return channel;
           }
           changed++;
-          return channel.copyWith(number: number);
+          return channel.rebuild((b) => b..number = number);
         }(),
     ];
     if (changed > 0) {
@@ -692,7 +692,7 @@ final class IptvLibrary {
         placed[channel.id] = held;
       }
     }
-    _channels = [for (final channel in ordered) channel.copyWith(number: placed[channel.id])];
+    _channels = [for (final channel in ordered) channel.rebuild((b) => b..number = placed[channel.id])];
     await _commit();
     return displaced;
   }
@@ -702,11 +702,11 @@ final class IptvLibrary {
   /// An unnumbered channel sorts after the numbered ones, which is where a
   /// viewer expects it to go when they delete the number they had typed;
   /// its old number is left free for whatever they put there next.
-  Future<void> clearChannelNumber(String id) => _update(id, (channel) => channel.copyWith(number: null));
+  Future<void> clearChannelNumber(String id) => _update(id, (channel) => channel.rebuild((b) => b..number = null));
 
   /// Pins channel [id] to the front of the walk, or unpins it.
   Future<void> setChannelPinned(String id, {required bool pinned}) =>
-      _update(id, (channel) => channel.copyWith(pinned: pinned));
+      _update(id, (channel) => channel.rebuild((b) => b..pinned = pinned));
 
   // Groups -------------------------------------------------------------------
 
@@ -729,7 +729,7 @@ final class IptvLibrary {
     final records = <IptvGroup>[];
     for (final (position, groupName) in arranged.indexed) {
       final existing = _recordOf(groupName);
-      records.add(existing?.copyWith(order: position) ?? IptvGroup(name: groupName, order: position));
+      records.add(existing?.rebuild((b) => b..order = position) ?? IptvGroup.of(name: groupName, order: position));
     }
     // A group that is in neither the reordered run nor the channels any
     // more keeps its record: the user may re-import tomorrow.
@@ -744,7 +744,7 @@ final class IptvLibrary {
 
   /// Pins the group [name] to the front of the group list, or unpins it.
   Future<void> setGroupPinned(String name, {required bool pinned}) =>
-      _updateGroup(name, (group) => group.copyWith(pinned: pinned));
+      _updateGroup(name, (group) => group.rebuild((b) => b..pinned = pinned));
 
   /// Takes the group [name] out of the walks and lists, or puts it back.
   ///
@@ -752,7 +752,7 @@ final class IptvLibrary {
   /// the group back on gives back exactly the line-up that was there before
   /// it was switched off — including the favourites and numbers inside it.
   Future<void> setGroupHidden(String name, {required bool hidden}) =>
-      _updateGroup(name, (group) => group.copyWith(hidden: hidden));
+      _updateGroup(name, (group) => group.rebuild((b) => b..hidden = hidden));
 
   /// Whether the group [name] is switched off.
   ///
@@ -850,7 +850,7 @@ final class IptvLibrary {
 
   Future<void> _updateGroup(String name, IptvGroup Function(IptvGroup) transform) async {
     final existing = _recordOf(name);
-    _groups = [..._groups, if (existing == null) IptvGroup(name: name)];
+    _groups = [..._groups, if (existing == null) IptvGroup.of(name: name)];
     _groups = [
       for (final group in _groups)
         if (group.name == name) transform(group) else group,

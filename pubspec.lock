@@ -1096,14 +1096,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.0"
-  freezed:
-    dependency: transitive
-    description:
-      name: freezed
-      sha256: cb910646cb09265d49077b63b600ef1f5a718c1d6031836432237ddeabae1b12
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.0.3"
   freezed_annotation:
     dependency: transitive
     description:
@@ -1304,14 +1296,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.12.0"
-  json_serializable:
-    dependency: transitive
-    description:
-      name: json_serializable
-      sha256: cc7822761b40be9237bcaae62b755ffe5453ceff96a0001f1f5f2439251c66f1
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.15.2"
   kareki:
     dependency: "direct dev"
     description:

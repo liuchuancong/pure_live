@@ -8,9 +8,9 @@ import 'package:test/test.dart';
 
 /// The channel a real list would carry: one `rtmp://` line the HTTP probe
 /// cannot speak to, one working HLS mirror, and one dead mirror.
-IptvChannel mixedChannel() => const IptvChannel(
+IptvChannel mixedChannel() => IptvChannel.of(
   id: 'cctv1',
-  entry: IptvEntry(
+  entry: IptvEntry.of(
     name: 'CCTV-1',
     url: 'rtmp://live.example.com/live/cctv1',
     alternatives: ['http://mirror.example.com/cctv1.m3u8', 'http://dead.example.com/cctv1.m3u8'],
@@ -93,9 +93,9 @@ void main() {
     });
 
     test('a channel of nothing but unprobeable lines is unsure, not dead', () async {
-      const rtmpOnly = IptvChannel(
+      final rtmpOnly = IptvChannel.of(
         id: 'radio',
-        entry: IptvEntry(
+        entry: IptvEntry.of(
           name: 'Radio',
           url: 'rtmp://live.example.com/live/radio',
           alternatives: ['rtsp://live.example.com/live/radio'],

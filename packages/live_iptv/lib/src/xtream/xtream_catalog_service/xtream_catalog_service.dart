@@ -112,9 +112,9 @@ final class XtreamCatalogService {
       return null;
     }
     final group = _text(stream['group_title']) ?? categories[_text(stream['category_id']) ?? ''];
-    return IptvChannel(
+    return IptvChannel.of(
       id: 'xtream://$host/$id',
-      entry: IptvEntry(
+      entry: IptvEntry.of(
         name: _text(stream['name']) ?? '',
         url: source.liveStreamUrl(id).toString(),
         group: group,

@@ -76,16 +76,16 @@ void main() {
     then = at;
     final store = InMemoryIptvStore();
     await store.saveChannels([
-      const IptvChannel(
+      IptvChannel.of(
         id: 'c1',
-        entry: IptvEntry(name: 'CCTV-1', url: 'http://a/1.m3u8', tvgId: 'cctv1'),
+        entry: IptvEntry.of(name: 'CCTV-1', url: 'http://a/1.m3u8', tvgId: 'cctv1'),
       ),
     ]);
     await store.savePlaylists([
-      IptvPlaylist(id: 'p1', name: '电视家', importedAt: then, url: playlistUrl, channelCount: 1),
+      IptvPlaylist.of(id: 'p1', name: '电视家', importedAt: then, url: playlistUrl, channelCount: 1),
     ]);
     await store.saveGuideSources([
-      EpgSource(id: 'epg-1', name: '中央台', source: guideUrl, lastRefresh: then, createdAt: then),
+      EpgSource.of(id: 'epg-1', name: '中央台', source: guideUrl, lastRefresh: then, createdAt: then),
     ]);
     library = IptvLibrary(store);
     await library.load();
@@ -130,7 +130,7 @@ void main() {
     test('a guide whose automatic refresh is off is never due', () async {
       final now = DateTime.utc(2026, 10, 12, 12);
       await seed(now.subtract(const Duration(days: 9)));
-      await library.updateGuideSource(library.guideSources.single.copyWith(autoUpdate: false));
+      await library.updateGuideSource(library.guideSources.single.rebuild((b) => b..autoUpdate = false));
       const policy = IptvSyncPolicy(playlistInterval: Duration(hours: 1), guideInterval: Duration(hours: 1));
 
       expect(coordinator.dueGuides(policy, now: now), isEmpty);

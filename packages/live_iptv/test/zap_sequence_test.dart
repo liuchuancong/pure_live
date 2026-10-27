@@ -2,9 +2,9 @@ import 'package:live_iptv/src/model/model.dart';
 import 'package:live_iptv/src/order/iptv_zap_sequence.dart';
 import 'package:test/test.dart';
 
-IptvChannel channel(String name, {int? number}) => IptvChannel(
+IptvChannel channel(String name, {int? number}) => IptvChannel.of(
   id: name,
-  entry: IptvEntry(name: name, url: 'http://a/$name.m3u8'),
+  entry: IptvEntry.of(name: name, url: 'http://a/$name.m3u8'),
   number: number,
 );
 

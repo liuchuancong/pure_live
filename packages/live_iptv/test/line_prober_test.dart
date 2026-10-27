@@ -6,9 +6,9 @@ import 'package:test/test.dart';
 
 /// A channel with one primary address and however many alternatives the
 /// test wants; every address of a channel shares its request headers.
-IptvChannel channel(String id, List<String> urls, {Map<String, String> headers = const {}}) => IptvChannel(
+IptvChannel channel(String id, List<String> urls, {Map<String, String> headers = const {}}) => IptvChannel.of(
   id: id,
-  entry: IptvEntry(name: id, url: urls.first, alternatives: urls.skip(1).toList(), headers: headers),
+  entry: IptvEntry.of(name: id, url: urls.first, alternatives: urls.skip(1).toList(), headers: headers),
 );
 
 IptvLineHealth health(String url, {required bool ok, int? latencyMs, int failures = 0, DateTime? checkedAt}) =>
@@ -29,13 +29,13 @@ void main() {
     });
 
     test('drops the blanks and the repeats', () {
-      const entry = IptvEntry(name: 'x', url: 'http://a/1', alternatives: ['http://a/1', '  ', 'http://b/1']);
+      final entry = IptvEntry.of(name: 'x', url: 'http://a/1', alternatives: ['http://a/1', '  ', 'http://b/1']);
 
       expect(iptvLineUrls(entry), ['http://a/1', 'http://b/1']);
     });
 
     test('trims the address it reports', () {
-      const entry = IptvEntry(name: 'x', url: ' http://a/1 ');
+      final entry = IptvEntry.of(name: 'x', url: ' http://a/1 ');
 
       expect(iptvLineUrls(entry), ['http://a/1']);
     });
@@ -176,9 +176,9 @@ void main() {
 
     test('a channel with no address at all reports down rather than hanging', () async {
       final prober = IptvLineProber(probe: (url, headers) async => const IptvProbeOutcome(ok: true));
-      const blank = IptvChannel(
+      final blank = IptvChannel.of(
         id: 'blank',
-        entry: IptvEntry(name: 'blank', url: '  '),
+        entry: IptvEntry.of(name: 'blank', url: '  '),
       );
 
       final report = await prober.probeChannel(blank);

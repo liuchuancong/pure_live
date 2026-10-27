@@ -1,8 +1,8 @@
 /// The data records of the IPTV and guide domains.
 ///
 /// One public unit per folder, the folder named after the unit: the record
-/// `X` is `model/x/x.dart`, and its generated `x.freezed.dart` and `x.g.dart`
-/// sit beside it. A file holding several unrelated records is how a model
+/// `X` is `model/x/x.dart`, and its generated `x.g.dart` sits beside it. A
+/// file holding several unrelated records is how a model
 /// file stops being reviewable — every change to one of them shows up as a
 /// change to all, and the imports of a module say nothing about which record
 /// it actually uses.

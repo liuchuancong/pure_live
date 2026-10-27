@@ -33,7 +33,7 @@ abstract final class XmltvParser {
               final id = _attribute(start, 'id');
               if (start.isSelfClosing) {
                 if (id != null) {
-                  channels.add(GuideChannel(id: id));
+                  channels.add(GuideChannel.of(id: id));
                 }
               } else {
                 channel = _Channel(id);
@@ -77,7 +77,7 @@ abstract final class XmltvParser {
             } else if (name == 'channel' && channel != null) {
               final id = channel.id;
               if (id != null) {
-                channels.add(GuideChannel(id: id, displayNames: channel.names, iconUrl: channel.icon));
+                channels.add(GuideChannel.of(id: id, displayNames: channel.names, iconUrl: channel.icon));
               }
               channel = null;
             } else if (name == 'programme' && programme != null) {
@@ -167,7 +167,7 @@ class _Programme {
     if (channel == null || startTime == null || stopTime == null || title == null) {
       return null;
     }
-    return EpgProgramme(
+    return EpgProgramme.of(
       channelId: channel!,
       start: startTime,
       stop: stopTime,

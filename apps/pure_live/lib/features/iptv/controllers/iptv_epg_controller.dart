@@ -158,7 +158,7 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
     final library = _library();
     final current = library?.guideSource(source.id);
     if (library == null || current == null || current.autoUpdate == value) return;
-    await library.updateGuideSource(current.copyWith(autoUpdate: value));
+    await library.updateGuideSource(current.rebuild((b) => b..autoUpdate = value));
   }
 
   /// Turns automatic refresh on or off for every network guide — the
@@ -169,7 +169,7 @@ final class IptvEpgController extends Notifier<IptvEpgState> {
     if (library == null) return;
     for (final source in library.guideSources) {
       if (!source.isRemote || source.autoUpdate == value) continue;
-      await library.updateGuideSource(source.copyWith(autoUpdate: value));
+      await library.updateGuideSource(source.rebuild((b) => b..autoUpdate = value));
     }
   }
 

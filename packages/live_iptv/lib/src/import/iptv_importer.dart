@@ -431,21 +431,21 @@ final class IptvImporter {
     final existing = matched.isEmpty ? null : matched.first;
     final id = existing?.id ?? 'epg-${moment.microsecondsSinceEpoch}-${parsed.channels.length}';
     final saved =
-        existing?.copyWith(name: cleanName, source: source, lastRefresh: moment) ??
-        EpgSource(id: id, name: cleanName, source: source, lastRefresh: moment, createdAt: moment);
+        existing?.rebuild((b) => b..name = cleanName..source = source..lastRefresh = moment) ??
+        EpgSource.of(id: id, name: cleanName, source: source, lastRefresh: moment, createdAt: moment);
     try {
       await library.saveGuide(
         saved,
         [
           for (final channel in parsed.channels)
-            EpgChannel(
+            EpgChannel.of(
               sourceId: id,
               channelId: channel.id,
               displayName: channel.displayNames.isEmpty ? '' : channel.displayNames.first,
               iconUrl: channel.iconUrl,
             ),
         ],
-        [for (final programme in parsed.programmes) programme.copyWith(sourceId: id)],
+        [for (final programme in parsed.programmes) programme.rebuild((b) => b..sourceId = id)],
         duplicates: matched.skip(1).toList(),
       );
       await library.pruneProgrammes(moment.subtract(programmeRetention));

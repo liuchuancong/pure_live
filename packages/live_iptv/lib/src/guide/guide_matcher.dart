@@ -112,7 +112,7 @@ class GuideIndex {
     if (old?.epgChannelKey == key && old?.epgSourceId == sourceId) {
       continue;
     }
-    upserts.add(EpgMapping(channelId: channel.id, playlistId: playlistId, epgChannelKey: key, epgSourceId: sourceId));
+    upserts.add(EpgMapping.of(channelId: channel.id, playlistId: playlistId, epgChannelKey: key, epgSourceId: sourceId));
   }
   final deletes = [
     for (final old in previous)

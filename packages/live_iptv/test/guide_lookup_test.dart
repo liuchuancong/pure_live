@@ -3,7 +3,7 @@ import 'package:live_iptv/src/model/model.dart';
 import 'package:test/test.dart';
 
 /// One guide source, shared by every expectation below.
-const epgSource = EpgSource(id: 'epg-1', name: '中央台', source: 'http://guide.example/epg.xml');
+final epgSource = EpgSource.of(id: 'epg-1', name: '中央台', source: 'http://guide.example/epg.xml');
 
 /// The storage key of guide channel [channelId] under [epgSource].
 String keyOf(String channelId) => epgChannelKey('epg-1', channelId);
@@ -38,25 +38,25 @@ void main() {
     await library.saveGuide(
       epgSource,
       [
-        const EpgChannel(sourceId: 'epg-1', channelId: 'cctv1', displayName: 'CCTV 1 综合'),
-        const EpgChannel(sourceId: 'epg-1', channelId: 'hunan', displayName: '湖南卫视 综合'),
+        EpgChannel.of(sourceId: 'epg-1', channelId: 'cctv1', displayName: 'CCTV 1 综合'),
+        EpgChannel.of(sourceId: 'epg-1', channelId: 'hunan', displayName: '湖南卫视 综合'),
       ],
       [
-        EpgProgramme(
+        EpgProgramme.of(
           channelId: 'cctv1',
           sourceId: 'epg-1',
           start: firstStart,
           stop: firstStart.add(const Duration(hours: 2)),
           title: '新闻联播',
         ),
-        EpgProgramme(
+        EpgProgramme.of(
           channelId: 'cctv1',
           sourceId: 'epg-1',
           start: firstStart.add(const Duration(hours: 2)),
           stop: firstStart.add(const Duration(hours: 4)),
           title: '焦点访谈',
         ),
-        EpgProgramme(
+        EpgProgramme.of(
           channelId: 'hunan',
           sourceId: 'epg-1',
           start: firstStart,

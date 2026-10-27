@@ -70,7 +70,7 @@ List<IptvLineCandidate> rankIptvLines(
     final verdict = stale ? null : record;
     ranked.add(
       _RankedLine(
-        candidate: IptvLineCandidate(url: url, headers: channel.entry.headers, health: verdict),
+        candidate: IptvLineCandidate(url: url, headers: channel.entry.headers.asMap(), health: verdict),
         index: index,
         bucket: verdict == null ? 1 : (verdict.ok ? 0 : 2),
       ),

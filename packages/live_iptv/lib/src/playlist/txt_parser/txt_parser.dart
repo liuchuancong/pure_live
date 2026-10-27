@@ -40,7 +40,7 @@ PlaylistParseResult parseTxtResult(String text) {
     }
     final parsed = splitUrlHeaders(urls.first);
     entries.add(
-      IptvEntry(
+      IptvEntry.of(
         name: name.isEmpty ? parsed.url : name,
         url: parsed.url,
         group: group.isEmpty ? null : group,

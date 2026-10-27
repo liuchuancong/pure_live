@@ -14,9 +14,9 @@ IptvChannel channel(
   bool pinned = false,
   bool hidden = false,
   int? providerNumber,
-}) => IptvChannel(
+}) => IptvChannel.of(
   id: name,
-  entry: IptvEntry(name: name, url: 'http://a/$name.m3u8', group: group, channelNumber: providerNumber),
+  entry: IptvEntry.of(name: name, url: 'http://a/$name.m3u8', group: group, channelNumber: providerNumber),
   position: position,
   number: number,
   pinned: pinned,
@@ -32,8 +32,8 @@ void main() {
           channel('b', group: '央视'),
         ],
         groups: [
-          const IptvGroup(name: '卫视'),
-          const IptvGroup(name: '央视', order: 1),
+          IptvGroup.of(name: '卫视'),
+          IptvGroup.of(name: '央视', order: 1),
         ],
       );
 
@@ -48,8 +48,8 @@ void main() {
           channel('b', group: '央视'),
         ],
         groups: [
-          const IptvGroup(name: '卫视', order: 5),
-          const IptvGroup(name: '央视', pinned: true),
+          IptvGroup.of(name: '卫视', order: 5),
+          IptvGroup.of(name: '央视', pinned: true),
         ],
       );
 
@@ -66,8 +66,8 @@ void main() {
           channel('d', group: '体育', position: 40),
         ],
         groups: [
-          const IptvGroup(name: '卫视'),
-          const IptvGroup(name: '央视', order: 1),
+          IptvGroup.of(name: '卫视'),
+          IptvGroup.of(name: '央视', order: 1),
         ],
       );
 
@@ -91,8 +91,8 @@ void main() {
           channel('b', group: 'Alpha'),
         ],
         groups: [
-          const IptvGroup(name: 'Beta'),
-          const IptvGroup(name: 'Alpha'),
+          IptvGroup.of(name: 'Beta'),
+          IptvGroup.of(name: 'Alpha'),
         ],
       );
 
@@ -304,7 +304,7 @@ void main() {
     });
 
     test('a group record travels through JSON', () {
-      const saved = IptvGroup(name: '央视', order: 4, pinned: true, hidden: true);
+      final saved = IptvGroup.of(name: '央视', order: 4, pinned: true, hidden: true);
       final restored = IptvGroup.fromJson(saved.toJson());
 
       expect(restored, saved);

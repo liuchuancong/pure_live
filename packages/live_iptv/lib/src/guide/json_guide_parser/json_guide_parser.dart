@@ -60,7 +60,7 @@ abstract final class JsonGuideParser {
     if (id == null || id.isEmpty) {
       return null;
     }
-    return GuideChannel(
+    return GuideChannel.of(
       id: id,
       displayNames: [
         _text(item, const ['displayName', 'name']) ?? id,
@@ -86,7 +86,7 @@ abstract final class JsonGuideParser {
     final stop =
         _time(item['endTime'] ?? item['end'] ?? item['endtime'] ?? item['stop']) ??
         start.add(Duration(minutes: duration is int ? duration : 30));
-    return EpgProgramme(
+    return EpgProgramme.of(
       channelId: channel,
       start: start,
       stop: stop,

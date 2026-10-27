@@ -71,7 +71,7 @@ final class IptvLineProber {
         if (index >= urls.length) {
           return;
         }
-        final outcome = await _ask(urls[index], channel.entry.headers);
+        final outcome = await _ask(urls[index], channel.entry.headers.asMap());
         answers[index] = IptvLineResult(urls[index], outcome);
         if (outcome.ok) {
           settled = true;

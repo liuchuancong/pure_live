@@ -44,7 +44,7 @@ PlaylistParseResult parseM3uResult(String text) {
       return;
     }
     final allHeaders = {...headers, ...parsed.headers};
-    final entry = IptvEntry(
+    final entry = IptvEntry.of(
       name: (pendingName ?? '').trim().isEmpty ? url : pendingName!.trim(),
       url: url,
       group: pendingAttributes['group-title'] ?? currentGroup,
