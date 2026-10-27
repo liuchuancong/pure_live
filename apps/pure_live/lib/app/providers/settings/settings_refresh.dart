@@ -2,14 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderOrFamily;
 import 'package:pure_live/app/background/settings/background_settings.dart' show backgroundSettingsProvider;
 import 'package:pure_live/app/providers/browse/browse_settings_providers.dart'
-    show
-        browseLayoutProvider,
-        browseSettingsProvider,
-        favoritesDensityProvider,
-        showGotoButtonProvider,
-        showPageSizeSelectorProvider,
-        showScrollToTopProvider;
-import 'package:pure_live/app/providers/browse/page_size_options_provider.dart' show pageSizeOptionsProvider;
+    show browseLayoutProvider, browseSettingsProvider, favoritesDensityProvider;
 import 'package:pure_live/app/providers/browse/refresh_settings_providers.dart'
     show followsAutoRefreshProvider, historyLimitProvider, maxConcurrentRefreshProvider;
 import 'package:pure_live/app/providers/browse/thumbnail_refresh_provider.dart' show thumbnailRefreshProvider;
@@ -32,10 +25,8 @@ import 'package:pure_live/app/providers/theme/dynamic_color_provider.dart'
 import 'package:pure_live/app/providers/theme/font_face_provider.dart'
     show appFontFaceProvider, danmakuFontFaceProvider;
 import 'package:pure_live/app/providers/theme/liquid_glass_provider.dart' show liquidGlassProvider;
-import 'package:pure_live/app/providers/theme/loading_style_provider.dart'
-    show loadingColorProvider, loadingStyleProvider;
-import 'package:pure_live/app/providers/theme/pure_black_theme_provider.dart' show pureBlackThemeProvider;
 import 'package:pure_live/app/providers/theme/text_scale_provider.dart' show textScaleFactorProvider;
+import 'package:pure_live/features/account/douyu_cookie_saved_at.dart' show douyuCookieSavedAtProvider;
 import 'package:pure_live/features/backup/backup.dart';
 import 'package:pure_live/features/favorites/favorites.dart';
 import 'package:pure_live/features/iptv/iptv.dart';
@@ -78,7 +69,6 @@ final List<ProviderOrFamily> kSettingsProviders = [
   danmakuPausedBehaviorProvider,
   pipDanmakuScaleProvider,
   floatingWindowSettingsProvider,
-  localInteractionProvider,
   shieldRulesProvider,
   danmakuFilterProvider,
   roomOrientationChoicesProvider,
@@ -89,10 +79,6 @@ final List<ProviderOrFamily> kSettingsProviders = [
   portraitSwipeSwitchProvider,
   favoritesDensityProvider,
   showUnplayableProvider,
-  showPageSizeSelectorProvider,
-  showGotoButtonProvider,
-  showScrollToTopProvider,
-  pageSizeOptionsProvider,
   audienceMetricProvider,
   audiencePolicyProvider,
   toolOrderProvider,
@@ -128,6 +114,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   youtubeAllChatProvider,
   preferH264Provider,
   douyuForceRenewProvider,
+  douyuCookieSavedAtProvider,
   shellWindowSettingsProvider,
   roomWindowsProvider,
   keepScreenOnProvider,
@@ -135,10 +122,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   matchVideoFrameRateProvider,
   dynamicColorProvider,
   dynamicColorSeedProvider,
-  pureBlackThemeProvider,
   liquidGlassProvider,
-  loadingStyleProvider,
-  loadingColorProvider,
   splashSettingsProvider,
   textScaleFactorProvider,
   appFontFaceProvider,

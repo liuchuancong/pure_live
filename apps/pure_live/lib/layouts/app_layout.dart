@@ -318,13 +318,22 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       final page = kModulePages[selected] ?? kModulePages[navigation.landing]!;
       moduleContent = page();
     }
+    // The scroll pair every page carries, mounted once here so the desktop,
+    // mobile and TV shells all get it from the content area — under the
+    // sidebar and the bottom bar, over the page. What is shown names it: a
+    // tab the viewer switches to is kept alive off screen and never scrolls
+    // on its own, so the pair has to be told to look again.
+    final shownContent = ScrollEdgeControls(
+      pageIdentity: '${module.name}/${selected.name}/${inSettings ? settingsSection.name : ''}',
+      child: moduleContent,
+    );
 
     // A TV keeps the desktop shell even on a narrow logical canvas: the
     // drawer and bottom bar belong to thumbs, and this shell's sidebar is
     // what a remote starts on.
     if (breakpoint.index < kBottomBarBreakpoint.index && !desktopShell) {
       return MobileLayout(
-        content: moduleContent,
+        content: shownContent,
         module: module,
         selected: selected,
         onSelected: handleSelected,
@@ -336,7 +345,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       );
     }
     return DesktopLayout(
-      content: moduleContent,
+      content: shownContent,
       module: module,
       onModuleSelected: selectModule,
       menuGroups: menuGroups,

@@ -87,9 +87,7 @@ final class ChatListFontSizeController extends Notifier<int> {
 }
 
 /// The room chat's font size.
-final chatListFontSizeProvider = NotifierProvider<ChatListFontSizeController, int>(
-  ChatListFontSizeController.new,
-);
+final chatListFontSizeProvider = NotifierProvider<ChatListFontSizeController, int>(ChatListFontSizeController.new);
 
 /// The room chat's line spacing: compact / standard / loose.
 const String kChatListLineSpacingKey = 'danmaku.list.lineSpacing';
@@ -212,3 +210,41 @@ final class ChatGiftValueInYuanController extends Notifier<bool> {
 final chatGiftValueInYuanProvider = NotifierProvider<ChatGiftValueInYuanController, bool>(
   ChatGiftValueInYuanController.new,
 );
+
+/// The room page's chat column width bounds, in px.
+const double kChatPanelWidthMin = 280;
+const double kChatPanelWidthMax = 520;
+
+const String _kChatPanelWidthKey = 'danmaku.chatPanelWidth';
+
+const double _kChatPanelWidthDefault = 340;
+
+/// Owns the room page's chat column width: the wide room layout gives the
+/// chat this many px instead of its proportional share.
+base class ChatPanelWidthController extends Notifier<double> {
+  @override
+  double build() {
+    try {
+      return (StoragePrefs.getDouble(_kChatPanelWidthKey) ?? _kChatPanelWidthDefault).clamp(
+        kChatPanelWidthMin,
+        kChatPanelWidthMax,
+      );
+    } on Object {
+      return _kChatPanelWidthDefault;
+    }
+  }
+
+  /// Stores the width, clamped to the bounds.
+  Future<void> set(double value) async {
+    final next = value.clamp(kChatPanelWidthMin, kChatPanelWidthMax);
+    state = next;
+    try {
+      await StoragePrefs.setDouble(_kChatPanelWidthKey, next);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The room page's chat column width.
+final chatPanelWidthProvider = NotifierProvider<ChatPanelWidthController, double>(ChatPanelWidthController.new);

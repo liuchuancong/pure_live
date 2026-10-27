@@ -1,5 +1,6 @@
 import 'package:pure_live/features/settings/danmaku/danmaku_style_providers.dart'
     show DanmakuFrameRate, DanmakuFrameRateController, DanmakuStyle, DanmakuStyleController;
+import 'package:pure_live/l10n/translations.dart';
 
 /// The reference's four viewing presets: one tap writes the look's nine
 /// visual fields (area, both margins, speed, size, weight, border, opacity
@@ -101,3 +102,11 @@ enum DanmakuPreset {
     await frameRate.applyTemplate(fps: fps, autoFps: true);
   }
 }
+
+/// What a preset is called in the settings list.
+String presetLabel(Translations t, DanmakuPreset preset) => switch (preset) {
+  DanmakuPreset.best => t.settings.danmakuPresetBest,
+  DanmakuPreset.comfort => t.settings.danmakuPresetComfort,
+  DanmakuPreset.dense => t.settings.danmakuPresetDense,
+  DanmakuPreset.full => t.settings.danmakuPresetFull,
+};

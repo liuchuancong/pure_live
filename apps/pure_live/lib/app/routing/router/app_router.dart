@@ -262,7 +262,12 @@ final class _SettingsSectionScreen extends StatelessWidget {
           elevation: 0,
           title: Text(section.label(t)),
         ),
-        body: SettingsSectionPane(section: section),
+        // A pushed page is outside the shell's content area, so it carries
+        // the scroll pair itself.
+        body: ScrollEdgeControls(
+          pageIdentity: 'settings/${section.name}',
+          child: SettingsSectionPane(section: section),
+        ),
       ),
     );
   }
@@ -304,13 +309,18 @@ final class AreaRoomsRoute extends GoRouteData with $AreaRoomsRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => WindowChromeFrame(
-    child: AreaRoomsPage(
-      platform: platform,
-      areaId: areaId,
-      area: switch (state.extra) {
-        final LiveArea area => area,
-        _ => null,
-      },
+    // Outside the shell's content area, so this page carries the scroll
+    // pair itself.
+    child: ScrollEdgeControls(
+      pageIdentity: 'areaRooms/$platform/$areaId',
+      child: AreaRoomsPage(
+        platform: platform,
+        areaId: areaId,
+        area: switch (state.extra) {
+          final LiveArea area => area,
+          _ => null,
+        },
+      ),
     ),
   );
 }

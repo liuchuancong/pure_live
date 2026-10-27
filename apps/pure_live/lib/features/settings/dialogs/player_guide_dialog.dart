@@ -14,13 +14,7 @@ Future<void> showPlayerGuide(BuildContext context) =>
 final Uri _mpvManual = Uri.parse('https://mpv.io/manual/');
 
 final class _GuideEntry {
-  const _GuideEntry({
-    required this.title,
-    required this.body,
-    this.badge,
-    this.onlyOn,
-    this.mono = false,
-  });
+  const _GuideEntry({required this.title, required this.body, this.badge, this.onlyOn, this.mono = false});
 
   final String title;
   final String body;
@@ -88,9 +82,7 @@ final class _PlayerGuideDialog extends StatelessWidget {
         ],
       ),
       style: const DsDialogStyle(width: 640),
-      actions: [
-        DsButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.common.close)),
-      ],
+      actions: [DsButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.common.close))],
     );
   }
 
@@ -101,10 +93,7 @@ final class _PlayerGuideDialog extends StatelessWidget {
         icon: DsIcons.school,
         title: s.playerGuideChapterConcepts,
         entries: [
-          _GuideEntry(
-            title: s.playerGuideEntryHardwareSwitchTitle,
-            body: s.playerGuideEntryHardwareSwitchBody,
-          ),
+          _GuideEntry(title: s.playerGuideEntryHardwareSwitchTitle, body: s.playerGuideEntryHardwareSwitchBody),
           _GuideEntry(
             title: s.playerGuideEntryHwdecTitle,
             body: s.playerGuideEntryHwdecBody,
@@ -129,10 +118,7 @@ final class _PlayerGuideDialog extends StatelessWidget {
         icon: DsIcons.wandSparkles,
         title: s.playerGuideChapterPresets,
         entries: [
-          _GuideEntry(
-            title: s.playerGuideEntryPresetDefaultTitle,
-            body: s.playerGuideEntryPresetDefaultBody,
-          ),
+          _GuideEntry(title: s.playerGuideEntryPresetDefaultTitle, body: s.playerGuideEntryPresetDefaultBody),
           _GuideEntry(
             title: s.playerGuideEntryPresetAndroidCompatTitle,
             body: s.playerGuideEntryPresetAndroidCompatBody,
@@ -143,44 +129,23 @@ final class _PlayerGuideDialog extends StatelessWidget {
             body: s.playerGuideEntryPresetRtxSrBody,
             onlyOn: TargetPlatform.windows,
           ),
-          _GuideEntry(
-            title: s.playerGuideEntryPresetLowEndTitle,
-            body: s.playerGuideEntryPresetLowEndBody,
-          ),
-          _GuideEntry(
-            title: s.playerGuideEntryPresetWeakNetworkTitle,
-            body: s.playerGuideEntryPresetWeakNetworkBody,
-          ),
-          _GuideEntry(
-            title: s.playerGuideEntryPresetLowLatencyTitle,
-            body: s.playerGuideEntryPresetLowLatencyBody,
-          ),
+          _GuideEntry(title: s.playerGuideEntryPresetLowEndTitle, body: s.playerGuideEntryPresetLowEndBody),
+          _GuideEntry(title: s.playerGuideEntryPresetWeakNetworkTitle, body: s.playerGuideEntryPresetWeakNetworkBody),
+          _GuideEntry(title: s.playerGuideEntryPresetLowLatencyTitle, body: s.playerGuideEntryPresetLowLatencyBody),
         ],
       ),
       _GuideChapter(
         icon: DsIcons.slidersHorizontal,
         title: s.playerGuideChapterPictureSync,
         entries: [
-          _GuideEntry(
-            title: s.playerGuideEntryVideoSyncTitle,
-            body: s.playerGuideEntryVideoSyncBody,
-            mono: true,
-          ),
+          _GuideEntry(title: s.playerGuideEntryVideoSyncTitle, body: s.playerGuideEntryVideoSyncBody, mono: true),
           _GuideEntry(
             title: s.playerGuideEntryInterpolationTitle,
             body: s.playerGuideEntryInterpolationBody,
             mono: true,
           ),
-          _GuideEntry(
-            title: s.playerGuideEntryScaleTitle,
-            body: s.playerGuideEntryScaleBody,
-            mono: true,
-          ),
-          _GuideEntry(
-            title: s.playerGuideEntryDeinterlaceTitle,
-            body: s.playerGuideEntryDeinterlaceBody,
-            mono: true,
-          ),
+          _GuideEntry(title: s.playerGuideEntryScaleTitle, body: s.playerGuideEntryScaleBody, mono: true),
+          _GuideEntry(title: s.playerGuideEntryDeinterlaceTitle, body: s.playerGuideEntryDeinterlaceBody, mono: true),
         ],
       ),
       _GuideChapter(
@@ -192,10 +157,7 @@ final class _PlayerGuideDialog extends StatelessWidget {
             body: s.playerGuideEntryRtxSuperResolutionBody,
             onlyOn: TargetPlatform.windows,
           ),
-          _GuideEntry(
-            title: s.playerGuideEntryDanmakuLoadTitle,
-            body: s.playerGuideEntryDanmakuLoadBody,
-          ),
+          _GuideEntry(title: s.playerGuideEntryDanmakuLoadTitle, body: s.playerGuideEntryDanmakuLoadBody),
           _GuideEntry(
             title: s.playerGuideEntryHwdecCodecsTitle,
             body: s.playerGuideEntryHwdecCodecsBody,
@@ -225,30 +187,12 @@ final class _PlayerGuideDialog extends StatelessWidget {
         icon: DsIcons.stethoscope,
         title: s.playerGuideChapterSymptoms,
         entries: [
-          _GuideEntry(
-            title: s.playerGuideEntrySymGlitchTitle,
-            body: s.playerGuideEntrySymGlitchBody,
-          ),
-          _GuideEntry(
-            title: s.playerGuideEntrySymBlurryTitle,
-            body: s.playerGuideEntrySymBlurryBody,
-          ),
-          _GuideEntry(
-            title: s.playerGuideEntrySymFanTitle,
-            body: s.playerGuideEntrySymFanBody,
-          ),
-          _GuideEntry(
-            title: s.playerGuideEntrySymBufferingTitle,
-            body: s.playerGuideEntrySymBufferingBody,
-          ),
-          _GuideEntry(
-            title: s.playerGuideEntrySymLatencyTitle,
-            body: s.playerGuideEntrySymLatencyBody,
-          ),
-          _GuideEntry(
-            title: s.playerGuideEntrySymNoVideoTitle,
-            body: s.playerGuideEntrySymNoVideoBody,
-          ),
+          _GuideEntry(title: s.playerGuideEntrySymGlitchTitle, body: s.playerGuideEntrySymGlitchBody),
+          _GuideEntry(title: s.playerGuideEntrySymBlurryTitle, body: s.playerGuideEntrySymBlurryBody),
+          _GuideEntry(title: s.playerGuideEntrySymFanTitle, body: s.playerGuideEntrySymFanBody),
+          _GuideEntry(title: s.playerGuideEntrySymBufferingTitle, body: s.playerGuideEntrySymBufferingBody),
+          _GuideEntry(title: s.playerGuideEntrySymLatencyTitle, body: s.playerGuideEntrySymLatencyBody),
+          _GuideEntry(title: s.playerGuideEntrySymNoVideoTitle, body: s.playerGuideEntrySymNoVideoBody),
         ],
       ),
     ];
@@ -285,9 +229,7 @@ final class _GuideChapterTileState extends State<_GuideChapterTile> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: DsSpace.s12,
-              children: [
-                for (final entry in widget.chapter.entries) _GuideEntryView(entry: entry),
-              ],
+              children: [for (final entry in widget.chapter.entries) _GuideEntryView(entry: entry)],
             ),
           ),
       ],
@@ -324,10 +266,7 @@ final class _GuideEntryView extends StatelessWidget {
           children: [
             if (entry.mono)
               DecoratedBox(
-                decoration: BoxDecoration(
-                  color: colors.accentTint,
-                  borderRadius: BorderRadius.circular(6),
-                ),
+                decoration: BoxDecoration(color: colors.accentTint, borderRadius: BorderRadius.circular(6)),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   child: Text(entry.title, style: titleStyle),

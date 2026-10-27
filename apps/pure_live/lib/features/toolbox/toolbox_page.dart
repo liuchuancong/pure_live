@@ -9,6 +9,7 @@ import 'package:live_log/live_log.dart' show LogLevel, LogRecord;
 import 'package:live_sites/live_sites.dart';
 import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/room/clipboard_rooms.dart' show detectClipboardRoomsProvider;
 import 'package:pure_live/features/toolbox/toolbox_controllers.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -323,6 +324,23 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
               ),
           ],
         ),
+        // The same errand, run by itself: this is where a copied link is
+        // read, so the switch that lets the app read the clipboard on its
+        // own belongs here rather than on a browsing page.
+        DsListSection(
+          header: Text(t.toolbox.linkClipboardGroup),
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.clipboard),
+              title: Text(t.toolbox.linkClipboardRooms),
+              description: Text(t.toolbox.linkClipboardRoomsDesc),
+              trailing: DsSwitch(
+                value: ref.watch(detectClipboardRoomsProvider),
+                onChanged: (value) => unawaited(ref.read(detectClipboardRoomsProvider.notifier).set(value: value)),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -410,7 +428,7 @@ final class _DirectLinkDialogState extends ConsumerState<_DirectLinkDialog> {
             if (_loading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: DsSpace.s24),
-                child: Center(child: AppLoadingIndicator(size: 24)),
+                child: Center(child: DsSpinner(style: DsSpinnerStyle(size: 24))),
               )
             else if (_error != null)
               DsAlert(status: DsStatus.danger, title: Text(t.toolbox.linkDirectFailed), description: Text(_error!))

@@ -125,15 +125,13 @@ final class SitesOrderController extends Notifier<SitesOrder> {
     ];
   }
 
-  /// Moves the platform at [from] to [to] — the index it holds after the
-  /// move, as the reorderable list reports it — writing the order through.
-  Future<void> move(int from, int to) async {
-    final order = List.of(state.order);
-    if (from < 0 || from >= order.length || to < 0) return;
-    final id = order.removeAt(from);
-    order.insert(to.clamp(0, order.length), id);
-    state = (order: order, preferred: state.preferred);
-    await _writeOrder(order);
+  /// Stores [ids] as the platform order. Only a full rearrangement of the
+  /// platforms now ordered is accepted: the order editor hands back the same
+  /// list it was shown, and anything else would drop a platform.
+  Future<void> setOrder(List<String> ids) async {
+    if (ids.length != state.order.length || ids.toSet() != state.order.toSet()) return;
+    state = (order: ids, preferred: state.preferred);
+    await _writeOrder(ids);
   }
 
   /// Puts the platforms back in the registry's order ("restore default");
@@ -166,6 +164,20 @@ final class SitesOrderController extends Notifier<SitesOrder> {
 
 /// The browsing pages' platform order and preferred platform.
 final sitesOrderProvider = NotifierProvider<SitesOrderController, SitesOrder>(SitesOrderController.new);
+
+/// The site the viewer names as their own: the preferred platform, resolved
+/// against the registry so a caller always gets a live site. A registry that
+/// has lost the preferred id — a platform removed, or a preference from
+/// another build — falls back to the first one, the same way the old
+/// per-surface default did.
+///
+/// This is the single answer to "which platform do I mostly watch": the
+/// areas' room list opens on it, and the desktop search box hands it to the
+/// search page as the starting scope.
+final preferredSiteProvider = Provider<LiveSite>((ref) {
+  final sites = ref.watch(sitesProvider);
+  return sites.getById(ref.watch(sitesOrderProvider).preferred) ?? sites.all.first;
+});
 
 /// The follow list as one JSON document: an array of the rooms' own
 /// storage JSON. The export and the import share the shape.

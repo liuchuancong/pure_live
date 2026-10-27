@@ -308,7 +308,6 @@ final class _VodFeedView extends ConsumerWidget {
       items: state.videos,
       layout: ref.watch(browseLayoutProvider),
       listItemBuilder: (context, video) => VodVideoRow(video: video, onOpen: () => onOpen(video)),
-      cardExtent: settings.homeCardExtent,
       crossSpacing: settings.crossSpacing,
       mainSpacing: settings.mainSpacing,
       isLoading: state.loading,
@@ -440,7 +439,6 @@ final class _VodSearchResults extends StatelessWidget {
     }
     return CardGrid<VodVideo>(
       items: state.videos,
-      cardExtent: settings.homeCardExtent,
       crossSpacing: settings.crossSpacing,
       mainSpacing: settings.mainSpacing,
       isLoading: state.loading,

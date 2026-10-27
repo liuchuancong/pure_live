@@ -116,9 +116,9 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
     ];
   }
 
-  /// The feed of [platform], made on first ask with the current page size.
-  PopularFeedState feedOf(String platform) =>
-      state[platform] ?? _initial(ref.read(browseSettingsProvider).homePageSize);
+  /// The feed of [platform], made on first ask measured in that platform's
+  /// own feed window: the pager's size follows the site, not a setting.
+  PopularFeedState feedOf(String platform) => state[platform] ?? _initial(roomFeedRequestSize(platform));
 
   /// Opens [platform]: its first rooms load when the feed is still empty
   /// and idle. Re-selecting a loaded tab is a no-op.
@@ -186,7 +186,9 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
   Future<void> _refresh(String platform) async {
     final current = feedOf(platform);
     if (current.loading) return;
-    final pageSize = ref.read(browseSettingsProvider).homePageSize;
+    // One display page is one of the platform's own windows, so the pager
+    // and the walk agree on the size without a viewer setting it.
+    final pageSize = roomFeedRequestSize(platform);
     final discovery = ref.read(sitesProvider).getById(platform)?.capability<LiveDiscoveryProvider>();
     if (discovery == null) {
       state = {

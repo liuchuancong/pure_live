@@ -7,7 +7,6 @@ import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/version/update_feed.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// Opens one release's page: what changed, its build, and the way to the
@@ -99,7 +98,7 @@ final class _ReleaseHistoryState extends ConsumerState<_ReleaseHistory> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: AppLoadingIndicator(size: 24));
+          return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
         }
         if (snapshot.hasError) {
           return DsEmptyState(

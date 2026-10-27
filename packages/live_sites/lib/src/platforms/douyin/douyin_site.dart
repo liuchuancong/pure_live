@@ -6,6 +6,7 @@ import 'dart:math';
 // ignore_for_file: switch_on_type
 
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
+import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
@@ -22,6 +23,7 @@ import 'package:live_sites/src/platforms/douyin/api/douyin_endpoints.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_http.dart';
 import 'package:live_sites/src/platforms/douyin/api/douyin_sign.dart';
 import 'package:live_sites/src/platforms/douyin/capabilities/douyin_area_provider.dart';
+import 'package:live_sites/src/platforms/douyin/capabilities/douyin_auth_provider.dart';
 import 'package:live_sites/src/platforms/douyin/capabilities/douyin_discovery_provider.dart';
 import 'package:live_sites/src/platforms/douyin/capabilities/douyin_link_resolver.dart';
 import 'package:live_sites/src/platforms/douyin/capabilities/douyin_playback_provider.dart';
@@ -170,10 +172,36 @@ final class DouyinSite implements LiveSite {
   // Session -------------------------------------------------------------------
 
   /// The login cookie, control characters and a pasted `Cookie:` prefix
-  /// stripped.
+  /// stripped. The credential applied through [applyLoginCredential] wins
+  /// over the constructor's [loginCookie] until [clearLoginCredential].
   String login() {
-    final raw = loginCookie().replaceAll(_controlCharacters, '').trim();
+    final raw = (_appliedLogin ?? loginCookie()).replaceAll(_controlCharacters, '').trim();
     return raw.replaceFirst(RegExp(r'^Cookie:\s*', caseSensitive: false), '').trim();
+  }
+
+  /// The credential applied through [applyLoginCredential], or null when the
+  /// constructor's [loginCookie] answers (in-memory only: storing a login is
+  /// the application's business).
+  String? _appliedLogin;
+
+  /// Makes every request carry [cookie] as the user's login. A new login is a
+  /// new session: the anonymous bootstrap of the old one must not answer its
+  /// requests (see [_current]).
+  void applyLoginCredential(String cookie) {
+    _appliedLogin = cookie;
+    _session = _DouyinSession(login());
+  }
+
+  /// Drops the applied login; requests go back to what the constructor was
+  /// given (an anonymous `ttwid` when that is empty).
+  void clearLoginCredential() => _appliedLogin = null;
+
+  /// The signed-in account's nickname (`webcast/user/me/`) as [cookie] names
+  /// it. A cookie that is not a login fails as the platform's `needsLogin`,
+  /// which is how a stored cookie that expired since is found out.
+  Future<String> accountNickname({required String cookie}) async {
+    final response = await http.get(DouyinEndpoints.account(), headers: apiHeaders(cookie));
+    return DouyinRoomParser.account(response.text, status: response.status, headers: response.headers);
   }
 
   /// The session of the current cookie; a changed cookie starts a new one.
@@ -422,6 +450,7 @@ final class DouyinSite implements LiveSite {
   DouyinPlaybackProvider? _playback;
   DouyinDanmakuProvider? _danmaku;
   DouyinLinkResolver? _link;
+  DouyinAuthProvider? _auth;
 
   /// The capability of type [T], or null when douyin does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -434,6 +463,7 @@ final class DouyinSite implements LiveSite {
     final playback = _playback ??= DouyinPlaybackProvider(site: this);
     final danmaku = _danmaku ??= DouyinDanmakuProvider(site: this);
     final link = _link ??= DouyinLinkResolver(site: this);
+    final auth = _auth ??= DouyinAuthProvider(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -442,6 +472,7 @@ final class DouyinSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveAuthCapability) => auth as T,
       _ => null,
     };
   }

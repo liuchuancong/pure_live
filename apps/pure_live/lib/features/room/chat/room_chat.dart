@@ -6,7 +6,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/features/room/chat/gift_text.dart';
-import 'package:pure_live/features/room/chat/local_interaction_tab.dart' show LocalInteractionTab;
 import 'package:pure_live/features/room/chat/membership_cards.dart' show isMembershipCard;
 import 'package:pure_live/features/room/chat/room_message_actions.dart'
     show blockRoomMessageKeyword, blockRoomMessageSender, copyRoomMessageText;
@@ -22,7 +21,7 @@ import 'package:pure_live/shared/shared.dart';
 /// keeps a board, the flying layer's own settings, and the shield's lists.
 /// The tab is the panel's own state; a narrow column scrolls its bar rather
 /// than cutting a label.
-enum _ChatTab { danmaku, superChats, local, settings, shield }
+enum _ChatTab { danmaku, superChats, settings, shield }
 
 /// The chat column under (or beside) the picture.
 final class RoomChatPanel extends ConsumerStatefulWidget {
@@ -40,12 +39,10 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
   Widget build(BuildContext context) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
-    final localEnabled = ref.watch(localInteractionProvider).enabled;
-    // The local tab disappears with its master switch; the super chat tab
-    // stays for every room, as the reference's chat panel does, because a
-    // membership or a subscription can arrive where the platform keeps no
-    // board.
-    final tab = _tab == _ChatTab.local && !localEnabled ? _ChatTab.danmaku : _tab;
+    // The super chat tab stays for every room, as the reference's chat
+    // panel does, because a membership or a subscription can arrive where
+    // the platform keeps no board.
+    final tab = _tab;
     return ColoredBox(
       color: colors.surface,
       child: Column(
@@ -58,7 +55,6 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
             tabs: [
               DsTab(value: _ChatTab.danmaku, label: Text(t.room.danmakuList)),
               DsTab(value: _ChatTab.superChats, label: Text(t.room.superChats)),
-              if (localEnabled) DsTab(value: _ChatTab.local, label: Text(t.settings.localInteractionTitle)),
               DsTab(value: _ChatTab.settings, label: Text(t.room.danmakuSettings)),
               DsTab(value: _ChatTab.shield, label: Text(t.room.blockList)),
             ],
@@ -74,7 +70,6 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
                 ],
               ),
               _ChatTab.superChats => const _SuperChatTab(),
-              _ChatTab.local => const LocalInteractionTab(),
               _ChatTab.settings => const _RoomDanmakuSettings(),
               _ChatTab.shield => const _ShieldTab(),
             },
@@ -108,8 +103,7 @@ final class _ChatFeed extends ConsumerWidget {
       reverse: true,
       padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s16),
       itemCount: chat.length,
-      itemBuilder: (context, index) =>
-          _ChatLine(message: chat[chat.length - 1 - index], anchorName: anchorName),
+      itemBuilder: (context, index) => _ChatLine(message: chat[chat.length - 1 - index], anchorName: anchorName),
     );
   }
 }
@@ -237,10 +231,8 @@ final class _ChatLine extends ConsumerWidget {
                       text: '[${t.room.replayed}] ',
                       style: nameStyle.copyWith(color: colors.textSubtle),
                     ),
-                  if (showNames && senderName.isEmpty)
-                    TextSpan(text: '${t.room.system}: ', style: nameStyle),
-                  if (showNames && senderName.isNotEmpty)
-                    TextSpan(text: '$senderName: ', style: nameStyle),
+                  if (showNames && senderName.isEmpty) TextSpan(text: '${t.room.system}: ', style: nameStyle),
+                  if (showNames && senderName.isNotEmpty) TextSpan(text: '$senderName: ', style: nameStyle),
                   TextSpan(text: words, style: lineStyle),
                 ],
               ),
@@ -253,10 +245,7 @@ final class _ChatLine extends ConsumerWidget {
       content = Container(
         margin: const EdgeInsets.symmetric(vertical: 2),
         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s6),
-        decoration: BoxDecoration(
-          color: colors.control,
-          borderRadius: BorderRadius.circular(theme.radii.card),
-        ),
+        decoration: BoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
         child: content,
       );
     }
@@ -357,8 +346,7 @@ String? _giftValueText(Translations t, LiveGift gift, {bool inYuan = false}) {
     LiveGiftUnit.starCoin => room.giftValueStarCoin(value: '$value'),
     LiveGiftUnit.heart => room.giftValueHeart(value: '$value'),
     LiveGiftUnit.note => room.giftValueNote(value: '$value'),
-    LiveGiftUnit.free || LiveGiftUnit.silver || LiveGiftUnit.banana || LiveGiftUnit.gold || LiveGiftUnit.other =>
-      null,
+    LiveGiftUnit.free || LiveGiftUnit.silver || LiveGiftUnit.banana || LiveGiftUnit.gold || LiveGiftUnit.other => null,
   };
 }
 
@@ -547,7 +535,9 @@ final class _RoomDanmakuSettings extends ConsumerWidget {
   }
 }
 
-/// One labelled slider of the in-room danmaku settings.
+/// One labelled slider of the in-room danmaku settings: the same bar row the
+/// settings centre uses — the name and its current value on the line, the
+/// bar at its end (under the line while the column is narrow).
 final class _StyleSlider extends StatelessWidget {
   const _StyleSlider({
     required this.icon,
@@ -573,38 +563,19 @@ final class _StyleSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final enabled = onChanged != null;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: DsSpace.s6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s4,
-        children: [
-          Row(
-            spacing: DsSpace.s6,
-            children: [
-              DsIcon(icon, size: theme.sizes.iconSm, color: enabled ? colors.textMuted : colors.textSubtle),
-              Expanded(
-                child: Text(
-                  label,
-                  style: theme.typography.body.copyWith(color: enabled ? colors.text : colors.textMuted),
-                ),
-              ),
-              Text(shown, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
-            ],
-          ),
-          DsSlider(
-            value: value,
-            min: min,
-            max: max,
-            divisions: divisions,
-            onChanged: onChanged,
-            semanticLabel: label,
-            semanticFormatter: semanticFormatter,
-          ),
-        ],
+    return SettingsConfigRow(
+      leading: DsIcon(icon),
+      title: label,
+      detail: Text(shown),
+      controlWidth: 220,
+      control: DsSlider(
+        value: value.clamp(min, max),
+        min: min,
+        max: max,
+        divisions: divisions,
+        onChanged: onChanged,
+        semanticLabel: label,
+        semanticFormatter: semanticFormatter,
       ),
     );
   }
@@ -622,7 +593,7 @@ final class _SuperChatTab extends ConsumerWidget {
     final board = ref.watch(roomSuperChatsProvider);
     void retry() => unawaited(ref.read(roomProvider.notifier).reloadSuperChats());
     if (board.loading && board.messages.isEmpty) {
-      return const Center(child: AppLoadingIndicator(size: 24));
+      return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
     }
     final error = board.error;
     if (error != null && board.messages.isEmpty) {
@@ -634,10 +605,7 @@ final class _SuperChatTab extends ConsumerWidget {
       );
     }
     if (board.messages.isEmpty) {
-      return DsEmptyState(
-        icon: const DsIcon(DsIcons.badgeDollarSign),
-        title: Text(t.room.superChatEmpty),
-      );
+      return DsEmptyState(icon: const DsIcon(DsIcons.badgeDollarSign), title: Text(t.room.superChatEmpty));
     }
     final messages = board.messages;
     return ListView.separated(

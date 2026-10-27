@@ -8,6 +8,7 @@ import 'package:media_core/media_core.dart';
 import 'package:media_core_danmaku/media_core_danmaku.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/account/account_providers.dart' show accountsProvider;
 import 'package:pure_live/features/favorites/favorites.dart';
 import 'package:pure_live/features/history/history.dart';
 import 'package:pure_live/features/recorder/recorder.dart';
@@ -21,10 +22,16 @@ import 'package:pure_live/features/room/chat/room_super_chats.dart' show roomSup
 // media_core_danmaku's.
 import 'package:pure_live/features/settings/settings.dart' hide DanmakuStyle;
 import 'package:pure_live/features/shield/shield.dart';
+import 'package:pure_live/l10n/translations.dart' as l10n;
 import 'package:pure_live/shared/shared.dart';
 
 /// How many chat lines the page keeps; older leave first.
 const int kRoomChatLimit = 200;
+
+/// How many masked Bilibili nicknames, with no full one among them, make a
+/// connection say the room is not reading chat as the account it thinks it
+/// is (the reference's `maskedChatsForExpiredLogin`).
+const int kRoomMaskedChatsForExpiredLogin = 3;
 
 /// What the room page holds: the room as it stands, the qualities and the
 /// lines behind the chosen one, the playback's state and handle, and the
@@ -52,6 +59,14 @@ RoomState _initial({bool audioOnly = false}) => (
   audioOnly: audioOnly,
   error: null,
 );
+
+/// The viewer's shield as media_core's policy slot: the pipeline's documented
+/// order runs the viewer's own blocks first (gate → policy → repeated →
+/// similarity → sink), and the policy normalizes entries once, so matching
+/// is case-insensitive for free. An off master switch means no policy.
+DanmakuFilterPolicy _shieldPolicyFor(ShieldRules rules) => rules.enabled
+    ? DanmakuFilterPolicy(blockedUsers: rules.users, blockedKeywords: rules.keywords)
+    : DanmakuFilterPolicy.none;
 
 /// The controller config for the viewer's fuzzy and repeated filter rules.
 /// The gate and timing values stay media_core's tuned defaults.
@@ -104,10 +119,11 @@ final class RoomBarrageController extends BarrageController {
 }
 
 /// The room's flying danmaku pipeline, one per open room: the site's
-/// session events are accepted into the media_core danmaku controller
-/// (whose gate and filters run first), and its sink fans every accepted
-/// message into the flame engine (the flying layer) and the chat list at
-/// once; the player binding carries pause and seek along.
+/// session events are accepted into the media_core danmaku controller,
+/// whose pipeline (the viewer's shield policy, then the gate and the
+/// duplicate/similarity filters) runs first; the sink hands every accepted
+/// message to the chat list and the flame engine (the flying layer) at
+/// once, and the player binding carries pause and seek along.
 final class RoomDanmakuPipeline {
   RoomDanmakuPipeline(
     this.onChat, {
@@ -115,17 +131,16 @@ final class RoomDanmakuPipeline {
     required this.chatGiftsAboveTier,
     required this.showFlyGifts,
     required String Function() streamer,
+    required ShieldRules shield,
     required DanmakuFilterRules filter,
     required DanmakuRepeatSettings repeat,
     required DanmakuPausedBehavior pausedBehavior,
   }) : barrage = RoomBarrageController(behavior: pausedBehavior) {
     chatGifts = GiftChatFilter(clock: DateTime.now)..aboveTier = chatGiftsAboveTier();
     danmaku = DanmakuController(
-      sink: DanmakuFanOutSink(
-        primary: _ChatMirrorSink(onChat: onChat, inner: FlameBarrageSink(barrage)),
-        overlay: overlay,
-      ),
+      sink: _ChatMirrorSink(onChat: onChat, inner: FlameBarrageSink(barrage)),
       config: _danmakuConfigFor(filter, repeat),
+      policy: _shieldPolicyFor(shield),
     );
     giftFlights = GiftFlights(
       clock: DateTime.now,
@@ -141,9 +156,6 @@ final class RoomDanmakuPipeline {
 
   /// The flame engine the flying layer draws with.
   final RoomBarrageController barrage;
-
-  /// The chat list's mirror of the flying layer's source.
-  final DanmakuOverlaySession overlay = DanmakuOverlaySession();
 
   /// The danmaku controller running the reference pipeline's filters.
   late final DanmakuController danmaku;
@@ -189,6 +201,13 @@ final class RoomDanmakuPipeline {
   /// texts.
   void configure(DanmakuFilterRules filter, DanmakuRepeatSettings repeat) {
     danmaku.updateConfig(_danmakuConfigFor(filter, repeat));
+  }
+
+  /// Applies a changed shield rule set to the following messages: the
+  /// policy is a plain object the controller swaps in place, so the next
+  /// line is judged by the new words without reconnecting.
+  void setShieldPolicy(ShieldRules rules) {
+    danmaku.policy = _shieldPolicyFor(rules);
   }
 
   /// Applies a changed "暂停时的弹幕" choice to the running layer.
@@ -250,7 +269,6 @@ final class RoomDanmakuPipeline {
     giftFlights.dispose();
     await danmaku.dispose();
     barrage.dispose();
-    await overlay.dispose();
   }
 }
 
@@ -397,6 +415,27 @@ final class RoomChatController extends Notifier<List<LiveMessage>> {
 /// The open room's chat lines.
 final roomChatProvider = NotifierProvider<RoomChatController, List<LiveMessage>>(RoomChatController.new);
 
+/// One line the room raises for the viewer about a login (a Bilibili
+/// connection that only sees masked names, a Twitch cookie the server
+/// refused). Its `id` rises with every hint, so the same words twice in
+/// a row are still a new event for the page's listener.
+typedef RoomHint = ({int id, String text});
+
+/// The room's hint channel: the controller has no context to toast with, so
+/// it pushes here and the visible page shows it.
+final class RoomHintController extends Notifier<RoomHint?> {
+  int _lastId = 0;
+
+  @override
+  RoomHint? build() => null;
+
+  /// Raises [text] once for the room page to toast.
+  void show(String text) => state = (id: ++_lastId, text: text);
+}
+
+/// The open room's one-line hints.
+final roomHintProvider = NotifierProvider<RoomHintController, RoomHint?>(RoomHintController.new);
+
 /// One open live room: its detail, its play plan, the playback over
 /// media_core's live controller, and the danmaku session beside it.
 ///
@@ -415,12 +454,26 @@ final class RoomController extends Notifier<RoomState> {
   LiveDanmakuSession? _danmaku;
   RoomDanmakuPipeline? _pipeline;
 
-  /// The local interaction's own echo layer: no player pause binding, so a
-  /// local message keeps flying when the platform's danmaku are paused.
-  final BarrageController _localBarrage = BarrageController();
+  /// Rises with every danmaku open the room starts (a platform account change
+  /// re-opens it); an answer that arrives after a newer open, a room switch
+  /// or a close installs nothing.
+  int _danmakuEpoch = 0;
 
-  /// The local echo layer's engine.
-  BarrageController get localBarrage => _localBarrage;
+  /// The epoch of the room's first danmaku open while it is still in flight,
+  /// else null. A login that lands inside that window (the account pane
+  /// applies the stored cookies just as a room opens) has no session to
+  /// re-new yet, and must not be lost.
+  int? _danmakuOpeningEpoch;
+
+  /// The names this danmaku connection has seen on Bilibili: masked ones
+  /// (a guest's view) and full ones, with the hint raised once per connection
+  /// ([_nameHintShown]). The Twitch cookie refusal gets the same one-per
+  /// connection treatment ([_twitchRefusalShown]).
+  int _maskedChats = 0;
+  int _namedChats = 0;
+  bool _nameHintShown = false;
+  bool _twitchRefusalShown = false;
+
   LivePlayQuality? _wantedQuality;
 
   /// The request the current page asked for, so a detail failure can be
@@ -452,9 +505,7 @@ final class RoomController extends Notifier<RoomState> {
   RoomState build() {
     _forceDestroy = ref.read(playerTuningProvider).forceDestroy;
     _standby = ref.read(roomPlaybackStandbyProvider);
-    ref
-      ..onDispose(_teardown)
-      ..onDispose(_localBarrage.dispose);
+    ref.onDispose(_teardown);
     ref.listen(playerTuningProvider.select((tuning) => tuning.forceDestroy), (_, next) => _forceDestroy = next);
     // A super-resolution choice applies to the live handle at once; the
     // next handle also reads it in `_applyEnginePreferences`.
@@ -480,6 +531,9 @@ final class RoomController extends Notifier<RoomState> {
     });
     ref.listen(danmakuRepeatProvider, (previous, next) {
       if (previous != next) _pipeline?.configure(ref.read(danmakuFilterProvider), next);
+    });
+    ref.listen(shieldRulesProvider, (previous, next) {
+      if (previous != next) _pipeline?.setShieldPolicy(next);
     });
     ref.listen(danmakuPausedBehaviorProvider, (previous, next) {
       if (previous == next) return;
@@ -511,6 +565,16 @@ final class RoomController extends Notifier<RoomState> {
       final handle = state.handle;
       if (handle != null) unawaited(_setHandleMute(handle));
     });
+    // A platform account changed (signed in, a renewed cookie, signed out).
+    // The site adapters already read the new cookies from the store, so only
+    // the room's danmaku has to ask for its credentials again — the
+    // reference's `secrets.cookieChanges` seam. The playback keeps running.
+    ref.listen(accountsProvider, (previous, next) {
+      final siteId = state.room?.ref.platform;
+      if (siteId == null) return;
+      if (_sameCredential(previous?.credentials[siteId], next.credentials[siteId])) return;
+      unawaited(_onLoginChanged(siteId));
+    });
     return _initial();
   }
 
@@ -522,7 +586,6 @@ final class RoomController extends Notifier<RoomState> {
     _requestedPlatform = platform;
     _requestedRoomId = roomId;
     _teardown();
-    ref.read(localInteractionProvider.notifier).stopWatch();
     ref.read(roomSuperChatsProvider.notifier).clear();
     final settings = ref.read(playbackSettingsProvider);
     // ASMR is an Android-only automatic audio-only entry (the reference's
@@ -546,7 +609,6 @@ final class RoomController extends Notifier<RoomState> {
       state = _with(room: room);
       unawaited(_recordHistory(room));
       unawaited(_loadSuperChats(room));
-      _resumeLocalInteraction(room);
       if (room.broadcast.isLiveNow) {
         final danmakuProvider = site.capability<LiveDanmakuProvider>();
         if (danmakuProvider != null) await _openDanmaku(danmakuProvider, room);
@@ -687,31 +749,9 @@ final class RoomController extends Notifier<RoomState> {
   /// stream, which is exactly why the page must say when it is done.
   Future<void> close() async {
     _teardown();
-    ref.read(localInteractionProvider.notifier).stopWatch();
     state = _initial();
     ref.read(roomChatProvider.notifier).clear();
     ref.read(roomSuperChatsProvider.notifier).clear();
-  }
-
-  /// Starts the local watch clock and puts this room's last-day local danmaku
-  /// back at the top of the chat list, when the interaction asks for it.
-  void _resumeLocalInteraction(LiveRoom room) {
-    final local = ref.read(localInteractionProvider);
-    if (!local.enabled) return;
-    ref.read(localInteractionProvider.notifier).startWatch();
-    if (!local.replayOnEnter) return;
-    final controller = ref.read(localInteractionProvider.notifier);
-    final chats = controller.replayChatsFor(room.ref.platform, room.ref.roomId);
-    if (chats.isEmpty) return;
-    ref.read(roomChatProvider.notifier).replayOldest([
-      for (final (index, chat) in chats.indexed)
-        LiveMessage.normalized(
-          messageId: 'local-replay-${chat.at.millisecondsSinceEpoch}-$index',
-          text: chat.text,
-          sender: MessageSender.of(userName: local.userName),
-          isLocal: true,
-        ),
-    ]);
   }
 
   /// Lands the viewer's current audio on a freshly attached engine; a line
@@ -790,9 +830,6 @@ final class RoomController extends Notifier<RoomState> {
   /// controller); null until the room's danmaku session opened.
   BarrageController? get barrage => _pipeline?.barrage;
 
-  /// The pipeline's overlay session the chat list mirrors.
-  DanmakuOverlaySession? get overlay => _pipeline?.overlay;
-
   /// Whether the room is followed right now.
   bool get followed {
     final room = state.room;
@@ -849,64 +886,6 @@ final class RoomController extends Notifier<RoomState> {
     } on Object {
       // The next room open retries; background return is not a failure path.
     }
-  }
-
-  /// Injects a local message into the room's chat list and the local echo
-  /// layer: the platform does not see it, and the echo layer has no player
-  /// pause binding, so it keeps flying while the platform's danmaku are
-  /// paused (the reference's "本地自发弹幕两种模式都继续"). [badges] is the
-  /// local interaction's badge line (level/platform) when it shows.
-  void injectLocalMessage(String text, {String badges = '', String senderName = ''}) {
-    final word = text.trim();
-    if (word.isEmpty) return;
-    final line = badges.isEmpty ? word : '[$badges] $word';
-    final message = LiveMessage.normalized(
-      messageId: 'local-${DateTime.now().microsecondsSinceEpoch}',
-      text: line,
-      sender: senderName.trim().isEmpty ? null : MessageSender.of(userName: senderName.trim()),
-      isLocal: true,
-    );
-    ref.read(roomChatProvider.notifier).add(message);
-    final local = ref.read(localInteractionProvider);
-    final style = local.style;
-    _localBarrage.send(
-      BarrageItemMapper.toItem(
-        DanmakuMessage(
-          type: DanmakuMessageType.chat,
-          userName: senderName,
-          text: line,
-          color: DanmakuColor.fromInt(style.color),
-          isLocal: true,
-          messageId: message.messageId,
-          style: DanmakuStyle(
-            fontSize: style.fontSize,
-            baseSpeed: style.speed,
-            fontWeight: style.fontWeight,
-            showStroke: style.showStroke,
-            strokeWidth: style.strokeWidth,
-            placement: switch (style.placement) {
-              LocalDanmakuPlacement.top => DanmakuPlacement.top,
-              LocalDanmakuPlacement.bottom => DanmakuPlacement.bottom,
-              _ => DanmakuPlacement.scroll,
-            },
-            fontFamily: switch (style.fontFamily) {
-              'system' => null,
-              'mono' => 'monospace',
-              final family => family,
-            },
-            italic: style.italic,
-            opacity: style.opacity,
-            letterSpacing: style.letterSpacing,
-            strokeColor: style.strokeColor,
-            showShadow: style.showShadow,
-            shadowColor: style.shadowColor,
-            shadowBlur: style.shadowBlur,
-            shadowOffset: style.shadowOffset,
-            fixedDurationMs: style.fixedDurationMs,
-          ),
-        ),
-      ),
-    );
   }
 
   /// The room's recording identity (`platform:roomId`), or null before the
@@ -1072,40 +1051,207 @@ final class RoomController extends Notifier<RoomState> {
   }
 
   Future<void> _openDanmaku(LiveDanmakuProvider provider, LiveRoom room) async {
-    final sessionAnswer = await provider.createSession(room: room);
-    sessionAnswer.match((error) => state = _with(error: error.message), (session) async {
-      _danmaku = session;
-      await session.connect();
-      // The pipeline (the flying layer over the site session) starts with
-      // the session: the bridge settles the controller, every site message
-      // runs the shield first, and what passes flies and lands in the chat
-      // list at once.
-      final pipeline = RoomDanmakuPipeline(
-        ref.read(roomChatProvider.notifier).add,
-        showChatGifts: () => ref.read(chatShowGiftsProvider),
-        chatGiftsAboveTier: () => ref.read(chatGiftsAboveTierProvider),
-        showFlyGifts: () => ref.read(danmakuShowGiftsProvider),
-        streamer: () => room.anchor?.name ?? '',
-        filter: ref.read(danmakuFilterProvider),
-        repeat: ref.read(danmakuRepeatProvider),
-        pausedBehavior: ref.read(danmakuPausedBehaviorProvider),
-      );
-      _pipeline = pipeline;
-      await pipeline.start(platform: room.ref.platform, roomId: room.ref.roomId);
-      _chat = session.events.listen(_onSiteMessage);
-      // The page reads the pipeline's barrage engine through the notifier;
-      // this rebuild is what picks it up the moment it exists.
-      state = _with();
-    });
+    final epoch = _danmakuEpoch;
+    _danmakuOpeningEpoch = epoch;
+    try {
+      final sessionAnswer = await provider.createSession(room: room);
+      sessionAnswer.match((error) => state = _with(error: error.message), (session) async {
+        await _installDanmaku(session, room, epoch: epoch);
+      });
+    } finally {
+      // Only this open's own marker: a room switch already put its open there.
+      if (_danmakuOpeningEpoch == epoch) _danmakuOpeningEpoch = null;
+    }
   }
 
-  /// One site message: the shield's word, then the content blocks (纯表情 /
-  /// 超长, the reference's 屏蔽页), then the super chat board and the
-  /// pipeline's own filters.
+  /// The viewer's login for [siteId] changed while this room is showing: the
+  /// room re-reads its danmaku credentials over the new login and connects
+  /// again, so the names come as the account sees them. Only the room's own
+  /// platform answers, and only while its chat is open or being opened — an
+  /// offline room, a closed page or another platform's change leave it alone.
+  Future<void> _onLoginChanged(String siteId) async {
+    if (!ref.mounted) return;
+    final room = state.room;
+    if (room == null || room.ref.platform != siteId) return;
+    if (_pipeline == null && _danmakuOpeningEpoch == null) return;
+    final provider = _danmakuCapabilityOf(siteId);
+    if (provider == null) return;
+    await _reopenDanmaku(room, provider);
+  }
+
+  /// The room's danmaku over the login the site now carries: a fresh session
+  /// is read (the platform hands out its danmaku credentials to the request,
+  /// which is what a new login changes) and connected before the running one
+  /// leaves, so a credential the platform refuses costs the viewer nothing —
+  /// the old chat stays up rather than a gap where a reconnect failed.
+  Future<void> _reopenDanmaku(LiveRoom room, LiveDanmakuProvider provider) async {
+    final epoch = ++_danmakuEpoch;
+    final answer = await provider.createSession(room: room);
+    final session = answer.match<LiveDanmakuSession?>((_) => null, (created) => created);
+    if (session == null) return;
+    if (!_danmakuCurrent(epoch, room)) {
+      unawaited(session.dispose());
+      return;
+    }
+    await _installDanmaku(session, room, epoch: epoch);
+  }
+
+  /// Brings [session] up as the room's danmaku: connect it, retire whatever
+  /// session and pipeline the room held, and start the pipeline beside the new
+  /// one. The player is not touched — only the pipeline's own binding to the
+  /// handle is remade, so pause and seek keep carrying into the flying layer.
+  /// Every await checks [_danmakuCurrent], so a room that closed or moved on
+  /// mid-flight installs nothing.
+  Future<void> _installDanmaku(LiveDanmakuSession session, LiveRoom room, {required int epoch}) async {
+    await session.connect();
+    if (!_danmakuCurrent(epoch, room)) {
+      unawaited(session.dispose());
+      return;
+    }
+    await _closeDanmaku();
+    if (!_danmakuCurrent(epoch, room)) {
+      unawaited(session.dispose());
+      return;
+    }
+    _danmaku = session;
+    // The name and cookie hints are per connection: a masked run before a
+    // login change must not silence the one after it.
+    _maskedChats = 0;
+    _namedChats = 0;
+    _nameHintShown = false;
+    _twitchRefusalShown = false;
+    // The pipeline (the flying layer over the site session) starts with
+    // the session: the bridge settles the controller, every site message
+    // runs the pipeline's shield policy and filters, and what passes
+    // flies and lands in the chat list at once.
+    final pipeline = RoomDanmakuPipeline(
+      ref.read(roomChatProvider.notifier).add,
+      showChatGifts: () => ref.read(chatShowGiftsProvider),
+      chatGiftsAboveTier: () => ref.read(chatGiftsAboveTierProvider),
+      showFlyGifts: () => ref.read(danmakuShowGiftsProvider),
+      streamer: () => room.anchor?.name ?? '',
+      shield: ref.read(shieldRulesProvider),
+      filter: ref.read(danmakuFilterProvider),
+      repeat: ref.read(danmakuRepeatProvider),
+      pausedBehavior: ref.read(danmakuPausedBehaviorProvider),
+    );
+    _pipeline = pipeline;
+    await pipeline.start(platform: room.ref.platform, roomId: room.ref.roomId);
+    if (!_danmakuCurrent(epoch, room)) {
+      // This install lost: what it already opened (pipeline and session)
+      // leaves together, the room's own teardown of them.
+      await _closeDanmaku();
+      return;
+    }
+    _chat = session.events.listen(_onSiteMessage);
+    final handle = state.handle;
+    if (handle != null) pipeline.bind(handle);
+    // The page reads the pipeline's barrage engine through the notifier;
+    // this rebuild is what picks it up the moment it exists.
+    state = _with();
+  }
+
+  /// Whether the danmaku open of [epoch] still owns the page: the provider is
+  /// alive (a room being disposed is not reconnected), no newer open started,
+  /// and [room] is still the room being watched.
+  bool _danmakuCurrent(int epoch, LiveRoom room) =>
+      ref.mounted && epoch == _danmakuEpoch && state.room?.ref == room.ref;
+
+  /// Retires the room's danmaku session and pipeline only: the playback, its
+  /// handle and the recorder keep running exactly as they were.
+  Future<void> _closeDanmaku() async {
+    unawaited(_chat?.cancel() ?? Future<void>.value());
+    _chat = null;
+    final pipeline = _pipeline;
+    final session = _danmaku;
+    _pipeline = null;
+    _danmaku = null;
+    if (pipeline != null) await pipeline.dispose();
+    if (session == null) return;
+    try {
+      await session.disconnect();
+    } on Object {
+      // A connection that is already gone needs no goodbye.
+    }
+    await session.dispose();
+  }
+
+  /// The room's platform's danmaku capability, or null when it has none.
+  LiveDanmakuProvider? _danmakuCapabilityOf(String siteId) =>
+      ref.read(sitesProvider).getById(siteId)?.capability<LiveDanmakuProvider>();
+
+  /// Whether two snapshots of a platform account are the same login: the
+  /// credential object has no value equality of its own, and the pane
+  /// republishes its whole map on every store event, so the room compares
+  /// what a danmaku connection actually depends on.
+  bool _sameCredential(LiveCredential? before, LiveCredential? after) {
+    if (identical(before, after)) return true;
+    if (before == null || after == null) return false;
+    if (before.siteId != after.siteId ||
+        before.userId != after.userId ||
+        before.nickname != after.nickname ||
+        before.avatar != after.avatar ||
+        before.expiry != after.expiry ||
+        before.cookies.length != after.cookies.length) {
+      return false;
+    }
+    for (final entry in before.cookies.entries) {
+      if (after.cookies[entry.key] != entry.value) return false;
+    }
+    return true;
+  }
+
+  /// One site message: the content blocks (纯表情 / 超长, the reference's
+  /// 屏蔽页), then the super chat board and the pipeline. The viewer's
+  /// shield (keywords, users) runs inside the pipeline as media_core's own
+  /// policy slot, ahead of the duplicate and similarity filters — so a
+  /// shielded viewer's paid super chat still reaches the board.
   void _onSiteMessage(LiveMessage message) {
-    if (_shielded(message) || _shapeBlocked(message)) return;
+    if (message.type == LiveMessageType.notice) _onTwitchNotice(message);
+    if (message.type == LiveMessageType.chat) _trackBilibiliNames(message);
+    if (_shapeBlocked(message)) return;
     _collectSuperChat(message);
     _pipeline?.accept(message);
+  }
+
+  /// The words Twitch's session puts on the stream when the server refused the
+  /// stored chat login and the danmaku went on anonymously; the package owns
+  /// them, so they are matched as a marker and said again in the viewer's own
+  /// language. Built once, because every message reads it.
+  static final String _twitchCookieRefusalText = TwitchDanmakuCodec.cookieExpiredNotice().text;
+
+  /// B-7: Twitch is the one platform that reports a refused cookie. The
+  /// session tells once per connection, and the room says it once too — the
+  /// chat keeps running, anonymously.
+  void _onTwitchNotice(LiveMessage message) {
+    if (_twitchRefusalShown || message.text != _twitchCookieRefusalText) return;
+    if (!ref.mounted) return;
+    _twitchRefusalShown = true;
+    ref.read(roomHintProvider.notifier).show(l10n.t.room.twitchCookieExpired);
+  }
+
+  /// B06: what Bilibili's names say about this connection. A guest's socket
+  /// gets every nickname masked (`观***`), and a stored login that the platform
+  /// no longer accepts looks exactly the same from here: [kRoomMaskedChatsForExpiredLogin]
+  /// masked names with no full one among them. One hint per connection; the
+  /// package's own mask test decides, nothing is guessed.
+  void _trackBilibiliNames(LiveMessage message) {
+    if (_nameHintShown || state.room?.ref.platform != SiteIds.bilibili) return;
+    final name = message.sender?.userName.trim() ?? '';
+    if (name.isEmpty) return;
+    if (!BilibiliDanmakuProtocol.isMaskedName(name)) {
+      // A full name answers the question: this connection sees names, so
+      // there is nothing to tell.
+      _namedChats++;
+      return;
+    }
+    _maskedChats++;
+    if (_maskedChats < kRoomMaskedChatsForExpiredLogin || _namedChats > 0) return;
+    _nameHintShown = true;
+    if (!ref.mounted) return;
+    final signedIn = ref.read(accountsProvider).credentials[SiteIds.bilibili] != null;
+    final hint = signedIn ? l10n.t.room.bilibiliLoginExpired : l10n.t.room.bilibiliGuestNames;
+    ref.read(roomHintProvider.notifier).show(hint);
   }
 
   /// Sends the paid messages to the board: the platform's own super chats
@@ -1118,11 +1264,7 @@ final class RoomController extends Notifier<RoomState> {
       return;
     }
     if (!ref.read(superChatIncludesMembershipProvider)) return;
-    final card = membershipCard(
-      message,
-      platform: state.room?.ref.platform ?? '',
-      now: DateTime.now(),
-    );
+    final card = membershipCard(message, platform: state.room?.ref.platform ?? '', now: DateTime.now());
     if (card != null) board.add(card);
   }
 
@@ -1139,10 +1281,7 @@ final class RoomController extends Notifier<RoomState> {
     final board = ref.read(roomSuperChatsProvider.notifier)..beginLoad();
     final answer = await capability.getSuperChatMessages(room: room);
     if (!ref.mounted || state.room?.ref != room.ref) return;
-    answer.match(
-      (error) => board.fail(error.message),
-      board.addAll,
-    );
+    answer.match((error) => board.fail(error.message), board.addAll);
   }
 
   /// Whether the reference's content blocks drop [message]: emoticon-only
@@ -1150,23 +1289,6 @@ final class RoomController extends Notifier<RoomState> {
   /// change on the shield page bites the very next line. The viewer's own
   /// echo is never blocked.
   bool _shapeBlocked(LiveMessage message) => danmakuShapeBlockedByRules(message, ref.read(danmakuFilterProvider));
-
-  /// Whether the shield drops [message]: the settings surface's rules,
-  /// read per message (a change there takes effect on the very next line).
-  bool _shielded(LiveMessage message) {
-    final rules = ref.read(shieldRulesProvider);
-    return _shielded_(message, rules);
-  }
-
-  static bool _shielded_(LiveMessage message, ShieldRules rules) {
-    if (!rules.enabled) return false;
-    final sender = message.sender?.userName;
-    if (sender != null && rules.users.contains(sender)) return true;
-    for (final keyword in rules.keywords) {
-      if (keyword.isNotEmpty && message.text.contains(keyword)) return true;
-    }
-    return false;
-  }
 
   Future<void> _recordHistory(LiveRoom room) async {
     await ref.read(historyProvider.notifier).record(room);
@@ -1201,6 +1323,9 @@ final class RoomController extends Notifier<RoomState> {
   );
 
   void _teardown() {
+    // Nothing a closing room has in flight may install itself afterwards.
+    _danmakuEpoch++;
+    _danmakuOpeningEpoch = null;
     unawaited(_states?.cancel() ?? Future<void>.value());
     unawaited(_handles?.cancel() ?? Future<void>.value());
     unawaited(_failures?.cancel() ?? Future<void>.value());
@@ -1220,12 +1345,7 @@ final class RoomController extends Notifier<RoomState> {
       }
     }
     _preparedHandle = null;
-    unawaited(_danmaku?.disconnect() ?? Future<void>.value());
-    unawaited(_danmaku?.dispose() ?? Future<void>.value());
-    _danmaku = null;
-    unawaited(_pipeline?.dispose() ?? Future<void>.value());
-    _pipeline = null;
-    _localBarrage.clear();
+    unawaited(_closeDanmaku());
   }
 }
 
@@ -1237,10 +1357,4 @@ final roomProvider = NotifierProvider<RoomController, RoomState>(RoomController.
 final barrageProvider = Provider<BarrageController?>((ref) {
   ref.watch(roomProvider);
   return ref.read(roomProvider.notifier).barrage;
-});
-
-/// The local interaction's echo layer; it has no player pause binding.
-final localBarrageProvider = Provider<BarrageController>((ref) {
-  ref.watch(roomProvider);
-  return ref.read(roomProvider.notifier).localBarrage;
 });

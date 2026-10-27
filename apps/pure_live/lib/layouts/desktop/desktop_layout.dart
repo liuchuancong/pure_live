@@ -465,8 +465,8 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                                           widget.onMenu(NavigationItem.hot);
                                         } else {
                                           ref.read(searchSiteIdProvider.notifier).selected = ref.read(
-                                            selectedSiteIdProvider,
-                                          );
+                                            preferredSiteProvider,
+                                          ).manifest.id;
                                           ref.read(pendingSearchProvider.notifier).hand(word);
                                           widget.onMenu(NavigationItem.search);
                                         }

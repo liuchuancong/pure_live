@@ -55,9 +55,11 @@ final class BackgroundSettings {
     this.videoPath = '',
     this.solidColor = const Color(0xFF141E30),
     this.gradientColors = const [Color(0xFFA18CD1), Color(0xFFFBC2EB)],
+    this.gradientStops = const [0, 1],
+    this.gradientDeg = 0,
     this.fit = BoxFit.cover,
     this.maskOpacity = 0.45,
-    this.blurSigma = 0,
+    this.overlayBlurSigma = 0,
     this.busy = false,
     this.error = '',
   });
@@ -74,9 +76,20 @@ final class BackgroundSettings {
   /// The stops when [kind] is [BackgroundKind.gradient]; at least two.
   final List<Color> gradientColors;
 
+  /// Where each stop sits along the gradient line (0–1). The preset table
+  /// carries positions; a value saved before it did comes back evenly spread.
+  final List<double>? gradientStops;
+
+  /// The gradient's CSS angle (0° points up, positive is clockwise), as the
+  /// preset table publishes it.
+  final int gradientDeg;
+
   final BoxFit fit;
   final double maskOpacity;
-  final double blurSigma;
+
+  /// Gaussian sigma of the frosted scrim: what the mask blurs behind it,
+  /// so the pages read over any background. 0 keeps the flat wash.
+  final double overlayBlurSigma;
 
   /// An upload is being copied into the app's data area.
   final bool busy;
@@ -101,9 +114,11 @@ final class BackgroundSettings {
     String? videoPath,
     Color? solidColor,
     List<Color>? gradientColors,
+    List<double>? gradientStops,
+    int? gradientDeg,
     BoxFit? fit,
     double? maskOpacity,
-    double? blurSigma,
+    double? overlayBlurSigma,
     bool? busy,
     String? error,
   }) => BackgroundSettings(
@@ -114,9 +129,11 @@ final class BackgroundSettings {
     videoPath: videoPath ?? this.videoPath,
     solidColor: solidColor ?? this.solidColor,
     gradientColors: gradientColors ?? this.gradientColors,
+    gradientStops: gradientStops ?? this.gradientStops,
+    gradientDeg: gradientDeg ?? this.gradientDeg,
     fit: fit ?? this.fit,
     maskOpacity: maskOpacity ?? this.maskOpacity,
-    blurSigma: blurSigma ?? this.blurSigma,
+    overlayBlurSigma: overlayBlurSigma ?? this.overlayBlurSigma,
     busy: busy ?? this.busy,
     error: error ?? this.error,
   );
@@ -135,7 +152,7 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
   static const _gradientKey = 'background.gradient';
   static const _fitKey = 'background.fit';
   static const _maskKey = 'background.mask';
-  static const _blurKey = 'background.blur';
+  static const _overlayBlurKey = 'background.overlayBlur';
 
   @override
   BackgroundSettings build() {
@@ -148,6 +165,7 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
         (value) => value.name == StoragePrefs.getString(_fitKey),
         orElse: () => BoxFit.cover,
       );
+      final storedGradient = _parseGradient(StoragePrefs.getString(_gradientKey));
       return BackgroundSettings(
         kind: kind,
         imageUrl: StoragePrefs.getString(_imageUrlKey) ?? '',
@@ -155,11 +173,12 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
         videoUrl: StoragePrefs.getString(_videoUrlKey) ?? '',
         videoPath: StoragePrefs.getString(_videoPathKey) ?? '',
         solidColor: _parseColor(StoragePrefs.getString(_solidKey)) ?? const Color(0xFF141E30),
-        gradientColors:
-            _parseGradient(StoragePrefs.getString(_gradientKey)) ?? const [Color(0xFFA18CD1), Color(0xFFFBC2EB)],
+        gradientColors: storedGradient.colors,
+        gradientStops: storedGradient.stops,
+        gradientDeg: storedGradient.deg,
         fit: fit,
         maskOpacity: (StoragePrefs.getDouble(_maskKey) ?? 0.45).clamp(0.0, 0.8),
-        blurSigma: (StoragePrefs.getDouble(_blurKey) ?? 0).clamp(0.0, 40.0),
+        overlayBlurSigma: (StoragePrefs.getDouble(_overlayBlurKey) ?? 0).clamp(0.0, 24.0),
       );
     } on Object {
       // Storage never opened: the defaults stand.
@@ -168,23 +187,35 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
   }
 
   /// Paints [kind] behind the pages, source or not.
-  void selectKind(BackgroundKind kind) => _update(
-    state.copyWith(
-      kind: kind,
-      gradientColors: kind == BackgroundKind.gradient && state.gradientColors.length < 2
-          ? kDefaultBackgroundGradient
-          : state.gradientColors,
-      error: '',
-    ),
-  );
+  void selectKind(BackgroundKind kind) {
+    final gradient = state.gradientColors.length < 2 ? kDefaultGradientPreset : null;
+    _update(
+      state.copyWith(
+        kind: kind,
+        gradientColors: gradient?.colors,
+        gradientStops: gradient?.stops,
+        gradientDeg: gradient?.deg,
+        error: '',
+      ),
+    );
+  }
 
   /// Uses [color] as the flat fill (and switches to the solid kind).
   void setSolid(Color color) => _update(state.copyWith(kind: BackgroundKind.solid, solidColor: color, error: ''));
 
-  /// Uses [colors] as the gradient (and switches to the gradient kind).
-  void setGradient(List<Color> colors) {
-    if (colors.length < 2) return;
-    _update(state.copyWith(kind: BackgroundKind.gradient, gradientColors: List.unmodifiable(colors), error: ''));
+  /// Uses the preset's colours, stop positions and angle (and switches to
+  /// the gradient kind).
+  void setGradient(BackgroundGradientPreset preset) {
+    if (preset.colors.length < 2) return;
+    _update(
+      state.copyWith(
+        kind: BackgroundKind.gradient,
+        gradientColors: List.unmodifiable(preset.colors),
+        gradientStops: List.unmodifiable(preset.stops),
+        gradientDeg: preset.deg,
+        error: '',
+      ),
+    );
   }
 
   /// Uses [url] as the image and drops the uploaded file it replaces.
@@ -205,7 +236,10 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
 
   void setMaskOpacity(double opacity) => _update(state.copyWith(maskOpacity: opacity.clamp(0.0, 0.8)));
 
-  void setBlurSigma(double sigma) => _update(state.copyWith(blurSigma: sigma.clamp(0.0, 40.0)));
+  /// How frosted the scrim is: the mask stops being a flat wash and blurs
+  /// the background behind it. Capped lower than the media blur, which is
+  /// a one-off paint cost; this one runs on the backdrop every frame.
+  void setOverlayBlurSigma(double sigma) => _update(state.copyWith(overlayBlurSigma: sigma.clamp(0.0, 24.0)));
 
   /// Back to the theme's surface; the saved media stays for a reselect.
   void clear() => _update(state.copyWith(kind: BackgroundKind.none, error: ''));
@@ -381,10 +415,10 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
         _videoUrlKey: value.videoUrl,
         _videoPathKey: value.videoPath,
         _solidKey: _colorHex(value.solidColor),
-        _gradientKey: value.gradientColors.map(_colorHex).join(','),
+        _gradientKey: _encodeGradient(value),
         _fitKey: value.fit.name,
         _maskKey: value.maskOpacity,
-        _blurKey: value.blurSigma,
+        _overlayBlurKey: value.overlayBlurSigma,
       }).catchError((Object _) {
         // A preference; a closed store loses it.
       }),
@@ -411,10 +445,58 @@ Color? _parseColor(String? text) {
   return Color(text!.replaceFirst('#', '').length <= 6 ? 0xFF000000 | value : value);
 }
 
-List<Color>? _parseGradient(String? text) {
-  if (text == null || text.trim().isEmpty) return null;
-  final colors = [for (final part in text.split(',')) ?_parseColor(part.trim())];
-  return colors.length >= 2 ? colors : null;
+/// One stored gradient: `120|#A1C4FD@0,#C2E9FB@100`.
+///
+/// The older form — a bare comma list of colours, no angle, no positions —
+/// still parses: the stops spread evenly and the angle falls back to the
+/// diagonal the app painted before the preset table carried one (135°).
+({List<Color> colors, List<double>? stops, int deg}) _parseGradient(String? text) {
+  const fallback = (colors: [Color(0xFFA18CD1), Color(0xFFFBC2EB)], stops: <double>[0, 1], deg: 0);
+  final value = text?.trim() ?? '';
+  if (value.isEmpty) return fallback;
+  final (String? head, String rest) = value.contains('|')
+      ? (value.substring(0, value.indexOf('|')), value.substring(value.indexOf('|') + 1))
+      : (null, value);
+  final parts = [
+    for (final part in rest.split(','))
+      if (part.trim().isNotEmpty) part.trim(),
+  ];
+  final colors = <Color>[];
+  final stops = <double>[];
+  for (final part in parts) {
+    final at = part.indexOf('@');
+    final body = at < 0 ? part : part.substring(0, at);
+    final color = _parseColor(body);
+    if (color == null) continue;
+    colors.add(color);
+    if (at >= 0) {
+      final position = double.tryParse(part.substring(at + 1));
+      if (position == null) continue;
+      stops.add((position / 100).clamp(0.0, 1.0));
+    }
+  }
+  if (colors.length < 2) return fallback;
+  final deg = head == null ? _legacyGradientDeg : int.tryParse(head) ?? _legacyGradientDeg;
+  return (
+    colors: List.unmodifiable(colors),
+    stops: stops.length == colors.length ? List.unmodifiable(stops) : null,
+    deg: deg,
+  );
+}
+
+/// The angle a saved gradient without one was painted at.
+const int _legacyGradientDeg = 135;
+
+/// The gradient in the form [_parseGradient] reads.
+String _encodeGradient(BackgroundSettings value) {
+  final colors = value.gradientColors;
+  final stops = value.gradientStops;
+  final parts = <String>[];
+  for (var i = 0; i < colors.length; i++) {
+    final position = stops != null && i < stops.length ? '@${(stops[i] * 100).round()}' : '';
+    parts.add('${_colorHex(colors[i])}$position');
+  }
+  return '${value.gradientDeg}|${parts.join(',')}';
 }
 
 /// The background choices.

@@ -39,7 +39,21 @@ final class SettingsConfigRow extends StatelessWidget {
   final Widget control;
 
   /// The control's width in the wide layout.
+  ///
+  /// Ignored for a control that carries its own size, e.g. a switch: it gets
+  /// its natural track and sits at the end of this width.
   final double controlWidth;
+
+  /// Whether [control] brings its own size, so the row must not stretch it.
+  /// A stretched switch reads as a progress bar, not a toggle.
+  bool get _controlIsIntrinsic => control is DsSwitch || control is DsCheckbox;
+
+  /// The control in a slot of [controlWidth] that it is allowed to shrink
+  /// inside of.
+  Widget _slot({required AlignmentGeometry alignment}) {
+    final sized = _controlIsIntrinsic ? Align(alignment: alignment, child: control) : control;
+    return SizedBox(width: controlWidth, child: sized);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,14 +65,17 @@ final class SettingsConfigRow extends StatelessWidget {
           title: Text(title),
           description: description == null ? null : Text(description!),
           detail: detail,
-          trailing: wide ? SizedBox(width: controlWidth, child: control) : null,
+          trailing: wide ? _slot(alignment: Alignment.centerRight) : null,
         );
         if (wide) return row;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             row,
-            Padding(padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12), child: control),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+              child: _slot(alignment: Alignment.centerLeft),
+            ),
           ],
         );
       },

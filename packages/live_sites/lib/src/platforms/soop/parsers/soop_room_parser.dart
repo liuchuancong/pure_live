@@ -601,7 +601,9 @@ abstract final class SoopRoomParser {
   /// `buildDanmakuWebSocketUrl`): the chat host is `CHDOMAIN`, else
   /// `chat-<CHIP as hex>.sooplive.com`, and the TLS port is `CHPT + 1`.
   /// Null without `CHATNO`, a host or a plain port below 65535 (3.x
-  /// connected nothing then).
+  /// connected nothing then). The handshake headers are the API headers asked
+  /// without the user's login — the chat joins anonymously whatever the room
+  /// requests carried (see [SoopDanmakuArgs]).
   static SoopDanmakuArgs? danmakuArgs(Map<String, dynamic> channel, {required String roomId}) {
     final id = roomId.trim();
     final chatNo = SoopJson.text(channel['CHATNO']).trim();

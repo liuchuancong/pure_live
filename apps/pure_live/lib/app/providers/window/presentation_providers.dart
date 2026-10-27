@@ -135,6 +135,23 @@ PipDriver createPipDriver(Ref ref) {
       return SystemPipMedia(url: uri.toString());
     },
   );
+  // The compact window's shape follows the viewer's settings live: a
+  // changed base size, floor or aspect lock rewrites the driver's config in
+  // place, so the next entry uses it without a restart. The placement
+  // callbacks already read the settings at call time.
+  ref.listen(
+    playbackSettingsProvider.select(
+      (settings) => (
+        settings.windowsPipBaseSize,
+        settings.windowsPipMinWidth,
+        settings.windowsPipMinHeight,
+        settings.windowsPipFreeAspect,
+      ),
+    ),
+    (previous, next) {
+      if (previous != next) driver.config = windowsPipConfigFor(ref.read(playbackSettingsProvider));
+    },
+  );
   unawaited(driver.initialize());
   ref.onDispose(() => unawaited(driver.dispose()));
   return driver;

@@ -6,6 +6,7 @@ import 'dart:math';
 // ignore_for_file: switch_on_type
 
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
+import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
@@ -23,6 +24,7 @@ import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_endpoints.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_http.dart';
 import 'package:live_sites/src/platforms/twitch/capabilities/twitch_area_provider.dart';
+import 'package:live_sites/src/platforms/twitch/capabilities/twitch_auth_provider.dart';
 import 'package:live_sites/src/platforms/twitch/capabilities/twitch_discovery_provider.dart';
 import 'package:live_sites/src/platforms/twitch/capabilities/twitch_link_resolver.dart';
 import 'package:live_sites/src/platforms/twitch/capabilities/twitch_playback_provider.dart';
@@ -242,9 +244,24 @@ final class TwitchSite implements LiveSite {
   /// The user's cookie ('' when signed out), control characters and a pasted
   /// `Cookie:` prefix stripped.
   String login() {
-    final raw = loginCookie().replaceAll(_controlCharacters, '').trim();
+    final raw = (_appliedLogin ?? loginCookie()).replaceAll(_controlCharacters, '').trim();
     return raw.toLowerCase().startsWith('cookie:') ? raw.substring(7).trim() : raw;
   }
+
+  /// The credential applied through [applyLoginCredential], or null while the
+  /// constructor's [loginCookie] answers (in-memory only: storing a login is
+  /// the application's business).
+  String? _appliedLogin;
+
+  /// Makes every request that asks for the user's session carry [cookie],
+  /// stripped the way [login] strips it.
+  void applyLoginCredential(String cookie) {
+    _appliedLogin = cookie.replaceAll(_controlCharacters, '').trim();
+  }
+
+  /// Drops the applied login; requests go back to what the constructor was
+  /// given (the anonymous session when that is empty).
+  void clearLoginCredential() => _appliedLogin = null;
 
   // Requests ------------------------------------------------------------------
 
@@ -574,6 +591,7 @@ final class TwitchSite implements LiveSite {
   TwitchPlaybackProvider? _playback;
   TwitchDanmakuProvider? _danmaku;
   TwitchLinkResolver? _link;
+  TwitchAuthProvider? _auth;
 
   /// The capability of type [T], or null when twitch does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -586,6 +604,7 @@ final class TwitchSite implements LiveSite {
     final playback = _playback ??= TwitchPlaybackProvider(site: this);
     final danmaku = _danmaku ??= TwitchDanmakuProvider(site: this);
     final link = _link ??= TwitchLinkResolver(site: this);
+    final auth = _auth ??= TwitchAuthProvider(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -594,6 +613,7 @@ final class TwitchSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveAuthCapability) => auth as T,
       _ => null,
     };
   }

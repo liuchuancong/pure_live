@@ -10,7 +10,6 @@ import 'package:pure_live/features/backup/panes/backup_actions.dart'
     show applyBackup, captureBackupDocument, formatBackupSize, formatBackupTime, webDavClient;
 import 'package:pure_live/features/backup/webdav/webdav_client.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/shared.dart';
 
 /// Opens the server's own folder browser: walk collections, upload the
 /// current backup under a chosen name, restore any file, or delete one.
@@ -250,7 +249,7 @@ final class _WebDavBrowserState extends ConsumerState<_WebDavBrowser> {
             future: _future,
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: AppLoadingIndicator(size: 24));
+                return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
               }
               if (snapshot.hasError) {
                 return DsEmptyState(

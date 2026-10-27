@@ -124,10 +124,6 @@ final class _AppWindowRootState extends State<AppWindowRoot> {
           ref.watch(roomProvider);
           return ref.read(roomProvider.notifier).barrage;
         }),
-        localBarrageProvider.overrideWith((ref) {
-          ref.watch(roomProvider);
-          return ref.read(roomProvider.notifier).localBarrage;
-        }),
       ],
       child: _WindowMessages(
         child: _MainWindowShell(

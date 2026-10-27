@@ -127,15 +127,11 @@ String normalizePlayerProxyHost(String value) => value
 
 /// Repairs a persisted or imported port; an invalid value falls back to the
 /// reference's 7897 instead of leaving playback without a proxy.
-int normalizePlayerProxyPort(int? port) =>
-    port != null && port >= 1 && port <= 65535 ? port : kDefaultPlayerProxyPort;
+int normalizePlayerProxyPort(int? port) => port != null && port >= 1 && port <= 65535 ? port : kDefaultPlayerProxyPort;
 
 /// The stored endpoint with its host and port repaired.
-PlayerProxySettings normalizePlayerProxy(PlayerProxySettings value) => (
-  enabled: value.enabled,
-  host: normalizePlayerProxyHost(value.host),
-  port: normalizePlayerProxyPort(value.port),
-);
+PlayerProxySettings normalizePlayerProxy(PlayerProxySettings value) =>
+    (enabled: value.enabled, host: normalizePlayerProxyHost(value.host), port: normalizePlayerProxyPort(value.port));
 
 /// The engine option for [proxy].
 ///
@@ -253,8 +249,7 @@ const List<String> playerDeinterlaceOptions = ['auto', 'no', 'yes'];
 /// The deinterlace mode in use. The reference keeps only these three values;
 /// anything else is sent to mpv verbatim, which can be rejected, so unknown
 /// values fall back to the engine default instead.
-String normalizePlayerDeinterlace(String value) =>
-    playerDeinterlaceOptions.contains(value) ? value : 'auto';
+String normalizePlayerDeinterlace(String value) => playerDeinterlaceOptions.contains(value) ? value : 'auto';
 
 List<String> playerHwdecCodecOptions(TargetPlatform platform) => switch (platform) {
   TargetPlatform.android => const ['h264,hevc', 'h264,hevc,vp9', 'all'],
@@ -350,8 +345,7 @@ List<EngineOption> playerStoredEngineOptions({
   // The reference narrows the engine's codec list only when the pick differs
   // from `all`; the default leaves the engine's own list alone. Stored with
   // the outputs so a new line, engine or app start keeps a narrowed mask.
-  if (playerHardwareDecodingActive(hardwareDecoding: hardwareDecoding, tuning: tuning) &&
-      tuning.hwdecCodecs != 'all')
+  if (playerHardwareDecodingActive(hardwareDecoding: hardwareDecoding, tuning: tuning) && tuning.hwdecCodecs != 'all')
     EngineOption('hwdec-codecs', tuning.hwdecCodecs),
   // Stored with the outputs: a new line, engine or app start must keep the
   // viewer's interpolation choice, not only a live tuning change.
@@ -423,8 +417,7 @@ List<EngineOption> playerTuningOptions({
     EngineOption('deinterlace', tuning.deinterlace),
     // Same gate as the stored set: custom output may decode in software, and
     // `all` is the engine's own list rather than a mask to write.
-    if (playerHardwareDecodingActive(hardwareDecoding: hardwareDecoding, tuning: tuning) &&
-        tuning.hwdecCodecs != 'all')
+    if (playerHardwareDecodingActive(hardwareDecoding: hardwareDecoding, tuning: tuning) && tuning.hwdecCodecs != 'all')
       EngineOption('hwdec-codecs', tuning.hwdecCodecs),
     if (playerAudioExclusiveOptions(platform).isNotEmpty)
       EngineOption('audio-exclusive', tuning.audioExclusive ? 'yes' : 'no'),

@@ -265,7 +265,7 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
     final t = context.t;
     final channels = widget.channels;
     if (!channels.ready) {
-      return const Center(child: AppLoadingIndicator(size: 28));
+      return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)));
     }
     if (channels.libraryCount == 0) {
       return Center(

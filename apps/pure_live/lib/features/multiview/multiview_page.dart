@@ -67,7 +67,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     );
     final wall = ref.watch(multiviewProvider);
     if (!wall.ready) {
-      return const Center(child: AppLoadingIndicator(size: 24));
+      return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
     }
     final rooms = ref.watch(followsProvider.select((state) => state.rooms));
     final playback = ref.watch(multiviewPlaybackProvider);
@@ -539,12 +539,15 @@ final class _PaneTile extends StatelessWidget {
           )
         else ...[
           _cover(colors, theme, hovered),
-          if (playback?.stage == MultiviewPaneStage.opening) const Center(child: AppLoadingIndicator(size: 22)),
+          if (playback?.stage == MultiviewPaneStage.opening)
+            const Center(child: DsSpinner(style: DsSpinnerStyle(size: 22))),
           if (playback?.stage == MultiviewPaneStage.failed) _failure(context, colors, theme),
         ],
         if (handle != null && playback?.switching == true)
           const Positioned.fill(
-            child: IgnorePointer(child: Center(child: AppLoadingIndicator(size: 22))),
+            child: IgnorePointer(
+              child: Center(child: DsSpinner(style: DsSpinnerStyle(size: 22))),
+            ),
           ),
         if (handle != null && playback?.paused == true) _pausedBadge(context, theme),
       ],
@@ -1065,7 +1068,7 @@ final class _PanePickerDialogState extends ConsumerState<_PanePickerDialog> {
           ];
     final Widget content;
     if (!follows.ready || !history.ready) {
-      content = const Center(child: AppLoadingIndicator(size: 24));
+      content = const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
     } else if (rooms.isEmpty) {
       content = DsEmptyState(
         icon: const DsIcon(DsIcons.heart),

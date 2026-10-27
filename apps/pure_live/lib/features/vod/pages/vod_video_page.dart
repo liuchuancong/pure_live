@@ -567,7 +567,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           title: Text(detail?.title ?? t.vod.opening, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
         body: _loading && detail == null
-            ? const Center(child: AppLoadingIndicator(size: 28))
+            ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
             : _error != null && detail == null
             ? Center(
                 child: DsEmptyState(
@@ -706,7 +706,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     ),
                   ),
                 ),
-              if (_opening || (transport?.isBuffering ?? false)) const Center(child: AppLoadingIndicator(size: 40)),
+              if (_opening || (transport?.isBuffering ?? false))
+                const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
               PositionedDirectional(
                 bottom: 0,
                 start: 0,

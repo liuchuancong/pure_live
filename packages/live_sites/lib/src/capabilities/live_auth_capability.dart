@@ -104,9 +104,36 @@ final class LiveCredential {
 /// (ARCHITECTURE.md §4.1: an optional capability, null from
 /// `LiveSite.capability<T>()` when the site does not support it).
 ///
+/// The three `supports…`/`can…` answers are what the application's account
+/// surface shows: which way(s) this platform can be signed in, and whether a
+/// stored login can be asked who it belongs to over the network. Probing by
+/// calling [startQrLogin] and catching `UnsupportedError` would build a QR
+/// session as a side effect, so the flags are stated instead.
+///
 /// The failure of every method is thrown — a login flow has no useful
 /// "result so far" to return alongside an error.
 abstract interface class LiveAuthCapability implements LiveSiteCapability {
+  /// Whether the viewer may sign in by pasting a browser cookie
+  /// ([applyPastedCookie]).
+  bool get supportsCookiePaste;
+
+  /// Whether the platform issues a login QR the viewer can scan
+  /// ([startQrLogin]).
+  bool get supportsQrLogin;
+
+  /// Whether [fetchAccount] can ask the platform who the applied login is.
+  /// False when the platform gives outside clients no such endpoint, and the
+  /// login is judged out of the cookie's own fields (huya's `yyuid`,
+  /// Twitch's `auth-token`).
+  bool get canVerifyOnline;
+
+  /// Who the applied credential belongs to: the platform's own answer, with
+  /// its nickname (and picture, when it has one). Throws the site's
+  /// authentication failure when the platform rejects the stored login —
+  /// that is how a cookie that expired since it was saved is found out. A
+  /// platform [canVerifyOnline] is false for throws `UnsupportedError`.
+  Future<LiveCredential> fetchAccount();
+
   /// Starts a QR login and returns the session to render and poll. The QR
   /// content may still be in flight; see [LiveAuthSession]. A platform
   /// without a QR flow throws `UnsupportedError`.

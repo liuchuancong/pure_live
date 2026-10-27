@@ -73,18 +73,12 @@ const List<NavigationItem> kToolItems = [
 /// pane that carries settings rows.
 const SettingsGroup _personalizationGroup = (
   labelKey: 'groupPersonalization',
-  sections: [
-    SettingsSection.theme,
-    SettingsSection.typography,
-    SettingsSection.background,
-    SettingsSection.nav,
-    SettingsSection.browsing,
-  ],
+  sections: [SettingsSection.theme, SettingsSection.background, SettingsSection.nav, SettingsSection.browsing],
 );
 
 const SettingsGroup _liveGroup = (
   labelKey: 'groupLive',
-  sections: [SettingsSection.sites, SettingsSection.refresh, SettingsSection.danmaku, SettingsSection.localInteraction, SettingsSection.recording],
+  sections: [SettingsSection.sites, SettingsSection.refresh, SettingsSection.danmaku, SettingsSection.recording],
 );
 
 const SettingsGroup _playbackGroup = (

@@ -128,10 +128,9 @@ final class PortraitSettingsController extends Notifier<PortraitSettings> {
   }
 
   /// Restores every portrait preference to its default (the reference's
-  /// `resetPortraitStreamSettings`) and stores them. The reference also
-  /// clears remembered room orientations; those are not stored here (the
-  /// room-override setting is not implemented), so there is nothing else to
-  /// forget.
+  /// `resetPortraitStreamSettings`) and stores them. The remembered room
+  /// framings (the room page's own `room.orientation` map) are reset by the
+  /// same flow, through the room's choices provider.
   Future<void> resetToDefaults() async {
     state = _defaults;
     await _write(() async {

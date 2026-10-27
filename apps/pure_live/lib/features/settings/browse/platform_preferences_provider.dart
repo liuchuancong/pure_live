@@ -52,9 +52,7 @@ final class PreferH264Controller extends Notifier<bool> {
 }
 
 /// Whether YouTube shows all live chat.
-final youtubeAllChatProvider = NotifierProvider<YoutubeAllChatController, bool>(
-  YoutubeAllChatController.new,
-);
+final youtubeAllChatProvider = NotifierProvider<YoutubeAllChatController, bool>(YoutubeAllChatController.new);
 
 /// Whether Huya prefers H.264.
 final preferH264Provider = NotifierProvider<PreferH264Controller, bool>(PreferH264Controller.new);
@@ -85,6 +83,4 @@ final class DouyuForceRenewController extends Notifier<bool> {
 }
 
 /// The Douyu forced renewal switch.
-final douyuForceRenewProvider = NotifierProvider<DouyuForceRenewController, bool>(
-  DouyuForceRenewController.new,
-);
+final douyuForceRenewProvider = NotifierProvider<DouyuForceRenewController, bool>(DouyuForceRenewController.new);

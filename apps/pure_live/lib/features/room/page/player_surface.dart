@@ -17,6 +17,7 @@ import 'package:pure_live/features/room/page/room_status.dart'
     show RoomPictureAction, RoomPictureDim, RoomPictureKind, pictureStateOf, roomSlowProvider;
 import 'package:pure_live/features/room/player/cast_dialog.dart' show showCastDialog;
 import 'package:pure_live/features/room/player/compact_danmaku_metrics.dart' show CompactDanmakuMetrics;
+import 'package:pure_live/features/room/player/room_barrage_config.dart' show roomBarrageConfig;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -244,7 +245,9 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     // A TV room keeps its bars: with no pointer there is no way to wake a
     // hidden bar, and the focused control would go with it.
     if (widget.keepControls || _controlsFocus.hasFocus) return;
-    _hideTimer = Timer(const Duration(seconds: 3), () {
+    // The viewer's own delay (the 画面与浮窗 setting).
+    final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;
+    _hideTimer = Timer(Duration(seconds: seconds), () {
       if (mounted && widget.roomState.playback.playing && !_controlsFocus.hasFocus) {
         setState(() => _controlsVisible = false);
       }
@@ -381,10 +384,12 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     unawaited(ref.read(roomProvider.notifier).setVolume(next));
   }
 
-  /// A wheel step takes a twentieth of the range, so a desktop mouse has a
-  /// usable granularity without a slider.
+  /// A wheel step takes the viewer's chosen share of the range (the
+  /// 画质与音频 setting), so a desktop mouse has a usable granularity
+  /// without a slider.
   void _wheelVolume(double delta) {
-    final next = (ref.read(roomProvider.notifier).volume + (delta > 0 ? -0.05 : 0.05)).clamp(0.0, 1.0);
+    final step = ref.read(playbackSettingsProvider).volumeWheelStepPercent / 100;
+    final next = (ref.read(roomProvider.notifier).volume + (delta > 0 ? -step : step)).clamp(0.0, 1.0);
     _showVolume(next);
     unawaited(ref.read(roomProvider.notifier).setVolume(next));
   }
@@ -398,55 +403,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     String? family,
     double? area,
     CompactDanmakuMetrics? compact,
-  }) {
-    final scale = compact?.scale ?? 1.0;
-    return BarrageConfig(
-      fontSize: compact?.fontSize ?? style.fontSize,
-      // The reference's 字体粗细: 100–900, the flame layout's own default
-      // being w500.
-      fontWeight: FontWeight(style.fontWeight),
-      // The reference's 文字间距 (danmakuLetterSpacing): pixels of extra space
-      // between glyphs, negative to tighten; the compact factor scales it
-      // with the text.
-      letterSpacing: style.letterSpacing * scale,
-      baseSpeed: compact?.baseSpeed ?? style.baseSpeed,
-      area: area ?? style.area,
-      // The reference's 顶部留白: pixels kept message-free at the top edge
-      // before the area's share is measured.
-      topAreaDistance: style.topMargin,
-      // The reference's 底部留白: pixels kept message-free at the bottom edge,
-      // so subtitles stay readable.
-      bottomAreaDistance: style.bottomMargin,
-      opacity: style.opacity,
-      showStroke: style.showStroke,
-      // The reference's 描边宽度 (danmakuFontBorder): the flame layout strokes
-      // each glyph with this width when the outline is on.
-      strokeWidth: style.strokeWidth,
-      // The reference's 纯文字模式: the flame layout skips the emoji pictures
-      // and keeps the words.
-      noEmojiMode: style.noEmoji,
-      fontFamily: family ?? style.fontFamily,
-      // The reference's 海量模式: realtime dispatch and a fixed 1000-message
-      // ceiling; otherwise the chosen 10–120 cap.
-      realtimeMode: style.massMode,
-      maxVisibleCount: style.massMode ? kDanmakuMassModeMaxVisibleCount : style.maxVisibleCount,
-      // The reference's 弹幕帧率: the manual rate, or the display policy's cap
-      // (60 FPS in power saving/balanced).
-      fps: fps,
-      // The room surface keeps the engine defaults; the compact surface's
-      // lane geometry and pool sizes come from CompactDanmakuMetrics.
-      trackHeight: compact?.trackHeight ?? 36,
-      emojiSize: compact?.emojiSize ?? 24,
-      overlapSafeGap: compact?.overlapSafeGap ?? 40,
-      safeArea: compact == null,
-      maxPendingCount: compact == null ? 120 : CompactDanmakuMetrics.maxPendingCount,
-      maxPendingAge: compact == null ? const Duration(seconds: 5) : CompactDanmakuMetrics.maxPendingAge,
-      fixedDuration: compact == null ? const Duration(seconds: 4) : CompactDanmakuMetrics.fixedDuration,
-      barragePoolMaxSize: compact == null ? 150 : CompactDanmakuMetrics.barragePoolMaxSize,
-      pictureCacheMaxSize: compact == null ? 200 : CompactDanmakuMetrics.pictureCacheMaxSize,
-      textCacheMaxSize: compact == null ? 1000 : CompactDanmakuMetrics.textCacheMaxSize,
-    );
-  }
+  }) => roomBarrageConfig(style, fps, family: family, area: area, compact: compact);
 
   BoxFit _portraitFit() => switch (widget.portraitDisplay) {
     PortraitFullscreenMode.complete || PortraitFullscreenMode.ambient => BoxFit.contain,
@@ -469,11 +426,9 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     final danmakuFamily = effectiveFontFamily(style.fontFamily, ref.watch(danmakuFontFaceProvider));
     final playback = ref.watch(playbackSettingsProvider);
     final presentation = ref.watch(roomPresentationProvider);
-    final localBarrage = ref.watch(localBarrageProvider);
     final mini = presentation == PresentationMode.pip;
     final portraitHidden = widget.portraitFullscreen && widget.portraitDanmaku == PortraitDanmakuMode.hidden;
-    final showDanmaku =
-        playback.danmakuVisible && (!mini || playback.miniDanmakuVisible) && !portraitHidden;
+    final showDanmaku = playback.danmakuVisible && (!mini || playback.miniDanmakuVisible) && !portraitHidden;
     final danmakuArea = widget.portraitFullscreen
         ? switch (widget.portraitDanmaku) {
             PortraitDanmakuMode.upperQuarter => 0.25,
@@ -561,39 +516,6 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                         config: _barrageConfig(style, danmakuFps, family: danmakuFamily, area: danmakuArea),
                         emojiAtlas: EmojiAtlas.instance,
                         controller: barrage,
-                      ),
-              ),
-            ),
-          // The local interaction's echo layer: the same look, with no
-          // player pause binding, so "暂停时的弹幕" never freezes the
-          // viewer's own messages.
-          if (showDanmaku)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: mini
-                    ? LayoutBuilder(
-                        builder: (context, constraints) => FlameBarrageWidget(
-                          config: _barrageConfig(
-                            style,
-                            danmakuFps,
-                            family: danmakuFamily,
-                            area: danmakuArea,
-                            compact: CompactDanmakuMetrics.resolve(
-                              width: constraints.maxWidth,
-                              auto: pipScale.auto,
-                              pinnedScale: pipScale.scale,
-                              configuredFontSize: style.fontSize,
-                              configuredSpeed: style.baseSpeed,
-                            ),
-                          ),
-                          emojiAtlas: EmojiAtlas.instance,
-                          controller: localBarrage,
-                        ),
-                      )
-                    : FlameBarrageWidget(
-                        config: _barrageConfig(style, danmakuFps, family: danmakuFamily, area: danmakuArea),
-                        emojiAtlas: EmojiAtlas.instance,
-                        controller: localBarrage,
                       ),
               ),
             ),
@@ -701,7 +623,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   mainAxisSize: MainAxisSize.min,
                   spacing: DsSpace.s12,
                   children: [
-                    if (picture.busy) const AppLoadingIndicator(size: 20, color: _onVideoSubtle),
+                    if (picture.busy) const DsSpinner(style: DsSpinnerStyle(size: 20, color: _onVideoSubtle)),
                     Text(
                       picture.title,
                       textAlign: TextAlign.center,
@@ -1014,7 +936,10 @@ final class _ControlBar extends ConsumerWidget {
                         unawaited(presentationController.toggleWindowFullscreen(player));
                       },
                     ),
-                  if (!pip && canEnterPortraitFullscreen && !portraitFullscreen && presentation == PresentationMode.normal)
+                  if (!pip &&
+                      canEnterPortraitFullscreen &&
+                      !portraitFullscreen &&
+                      presentation == PresentationMode.normal)
                     _BarIcon(
                       icon: DsIcons.rectangleVertical,
                       label: t.room.portraitFullscreen,

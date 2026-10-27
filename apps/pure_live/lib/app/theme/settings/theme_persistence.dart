@@ -30,39 +30,6 @@ abstract final class ThemePersistence {
     }
   }
 
-  /// The stored loading-animation key, or null before the viewer picks one.
-  static String? readLoadingStyle() {
-    try {
-      final stored = StoragePrefs.getString('theme.loadingStyle');
-      return (stored == null || stored.isEmpty) ? null : stored;
-    } on Object {
-      return null;
-    }
-  }
-
-  /// Stores the loading-animation key.
-  static Future<void> storeLoadingStyle(String key) => _store('theme.loadingStyle', key);
-
-  /// The stored loading-animation colour, or null to follow the accent.
-  ///
-  /// The reference keeps `AARRGGBB`; the parser also accepts `#RRGGBB`.
-  static Color? readLoadingColor() {
-    try {
-      return parseSeedColor(StoragePrefs.getString('theme.loadingColor'));
-    } on Object {
-      return null;
-    }
-  }
-
-  /// Stores the loading-animation colour; null clears it back to the accent.
-  static Future<void> storeLoadingColor(Color? color) => color == null
-      ? _remove('theme.loadingColor')
-      : _store('theme.loadingColor', encodeArgbColor(color));
-
-  /// The `#AARRGGBB` form the loading-colour field shows.
-  static String encodeArgbColor(Color color) =>
-      '#${color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}';
-
   /// The stored mode, or null to let the settings default stand.
   static DsThemeMode? readMode() {
     try {

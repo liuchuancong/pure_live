@@ -21,10 +21,7 @@ final class DanmakuRepeatController extends Notifier<DanmakuRepeatSettings> {
       final seconds = StoragePrefs.getInt('danmaku.repeat.windowSeconds');
       return (
         enabled: StoragePrefs.getBool('danmaku.repeat.collapse') ?? _defaults.enabled,
-        windowSeconds: (seconds ?? _defaults.windowSeconds).clamp(
-          kDanmakuRepeatWindowMin,
-          kDanmakuRepeatWindowMax,
-        ),
+        windowSeconds: (seconds ?? _defaults.windowSeconds).clamp(kDanmakuRepeatWindowMin, kDanmakuRepeatWindowMax),
       );
     } on Object {
       return _defaults;
@@ -32,8 +29,7 @@ final class DanmakuRepeatController extends Notifier<DanmakuRepeatSettings> {
   }
 
   /// Flips the collapse, writing through.
-  Future<void> setEnabled({required bool value}) =>
-      _write((enabled: value, windowSeconds: state.windowSeconds));
+  Future<void> setEnabled({required bool value}) => _write((enabled: value, windowSeconds: state.windowSeconds));
 
   /// Moves the window, writing through.
   Future<void> setWindowSeconds(int value) =>

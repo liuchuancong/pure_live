@@ -82,6 +82,12 @@ base class RoomOrientationChoices extends Notifier<Map<String, RoomOrientation>>
     await persist(encode(next));
   }
 
+  /// Forgets every room's framing (the portrait settings' reset flow).
+  Future<void> reset() async {
+    state = const {};
+    await persist(encode(const {}));
+  }
+
   /// Writes the encoded choices. In a clone this goes through the remote
   /// store, so the primary persists it and broadcasts it to every window.
   Future<void> persist(String raw) async {

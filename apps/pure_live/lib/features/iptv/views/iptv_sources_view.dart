@@ -14,7 +14,6 @@ import 'package:pure_live/features/iptv/views/iptv_import_dialog.dart'
     show iptvImportFailureText, runIptvGuideImport, runIptvPlaylistImport;
 import 'package:pure_live/features/iptv/views/iptv_panels.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// What the resources table shows: everything, only playlists or only
@@ -280,7 +279,7 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
     final sources = ref.watch(iptvSourcesProvider);
     final epg = ref.watch(iptvEpgProvider);
     if (!sources.ready || !epg.ready) {
-      return const Center(child: AppLoadingIndicator(size: 28));
+      return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)));
     }
     final interval = ref.watch(iptvUpdateIntervalProvider);
     final active = _activeOf(epg);

@@ -13,7 +13,8 @@ import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
-import 'package:pure_live/features/iptv/controllers/iptv_user_agent.dart' show iptvHeadersWithUserAgent, iptvUserAgentProvider;
+import 'package:pure_live/features/iptv/controllers/iptv_user_agent.dart'
+    show iptvHeadersWithUserAgent, iptvUserAgentProvider;
 import 'package:pure_live/features/iptv/views/iptv_guide_panel.dart' show catchupUrlOf, showIptvGuide;
 import 'package:pure_live/features/room/room.dart';
 import 'package:pure_live/features/settings/settings.dart';
@@ -546,7 +547,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                           backgroundColor: colors.overlay,
                         )
                       else
-                        const Center(child: AppLoadingIndicator(size: 28)),
+                        const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28))),
                       if (_error != null)
                         ColoredBox(
                           color: const Color(0xB3000000),

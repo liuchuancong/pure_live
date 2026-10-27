@@ -34,15 +34,9 @@ final class _LiveAlertTagsDialog extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s12,
             children: [
-              Text(
-                t.settings.liveAlertTagsDesc,
-                style: theme.typography.small.copyWith(color: colors.textMuted),
-              ),
+              Text(t.settings.liveAlertTagsDesc, style: theme.typography.small.copyWith(color: colors.textMuted)),
               if (tags.isEmpty)
-                Text(
-                  t.settings.liveAlertTagsNone,
-                  style: theme.typography.small.copyWith(color: colors.textSubtle),
-                )
+                Text(t.settings.liveAlertTagsNone, style: theme.typography.small.copyWith(color: colors.textSubtle))
               else
                 DsListSection(
                   children: [
