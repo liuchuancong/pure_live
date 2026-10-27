@@ -306,7 +306,10 @@ final class IptvImporter {
   ///
   /// A source whose guide is a local file cannot be synced here: the path is
   /// the application's filesystem, which this package does not touch.
-  Future<IptvImportResult> syncGuide(EpgSource source) => _serial(() async {
+  ///
+  /// [now] is when the sync happened — [syncExpiredGuides] passes the round's
+  /// instant so every write of one round carries its own time.
+  Future<IptvImportResult> syncGuide(EpgSource source, {DateTime? now}) => _serial(() async {
     final current = library.guideSource(source.id);
     if (current == null) {
       return IptvImportResult(IptvImportStatus.stale);
@@ -341,6 +344,7 @@ final class IptvImporter {
       force: true,
       expected: current,
       confirmReplace: null,
+      now: now,
     );
   });
 
@@ -368,7 +372,7 @@ final class IptvImporter {
     ];
     final results = <IptvImportResult>[];
     for (final source in expired) {
-      results.add(await syncGuide(source));
+      results.add(await syncGuide(source, now: moment));
     }
     return results;
   }
@@ -383,6 +387,12 @@ final class IptvImporter {
   }
 
   /// Parses [text], decides about the name, and writes the guide.
+  ///
+  /// [now] is when the import happened; it stamps the source's refresh dates
+  /// and fixes the programme-retention cutoff. It defaults to the wall clock,
+  /// and [syncGuide] passes the sync round's own instant through — a test (or
+  /// a replay) that runs an old round must not prune what that round's guide
+  /// covers just because the real clock has moved on.
   Future<IptvImportResult> _importGuide({
     required String text,
     required String name,
@@ -390,6 +400,7 @@ final class IptvImporter {
     required bool force,
     required EpgSource? expected,
     required IptvReplaceConfirm? confirmReplace,
+    DateTime? now,
   }) async {
     final ParsedGuide parsed;
     try {
@@ -427,7 +438,7 @@ final class IptvImporter {
         return IptvImportResult(IptvImportStatus.cancelled, id: matched.first.id);
       }
     }
-    final moment = DateTime.now();
+    final moment = now ?? DateTime.now();
     final existing = matched.isEmpty ? null : matched.first;
     final id = existing?.id ?? 'epg-${moment.microsecondsSinceEpoch}-${parsed.channels.length}';
     final saved =
