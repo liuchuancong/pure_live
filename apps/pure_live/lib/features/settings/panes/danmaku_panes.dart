@@ -35,7 +35,7 @@ import 'package:pure_live/features/settings/playback/playback_settings_providers
 import 'package:pure_live/features/settings/surface/settings_page.dart' show SettingsChildEntry;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart'
-    show SettingsChoiceRow, SettingsConfigRow;
+    show SettingsChoiceRow, SettingsConfigRow, SettingsHint, SettingsSegmentedRow;
 import 'package:pure_live/l10n/translations.dart';
 
 /// The danmaku settings, split across three pages: this one is the switch and
@@ -79,9 +79,11 @@ final class DanmakuPane extends ConsumerWidget {
                 ),
               ),
             ),
-            const DanmakuPreviewCard(),
           ],
         ),
+        // The master switch above decides whether the layer draws; the
+        // sample sits right under it so the answer to "on" is visible.
+        const DanmakuPreviewCard(),
         DsListSection(
           header: Text(t.settings.danmakuInteractionGroup),
           children: [
@@ -137,8 +139,6 @@ final class DanmakuStylePane extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final playback = ref.watch(playbackSettingsProvider);
     final style = ref.watch(danmakuStyleProvider);
     final controller = ref.read(danmakuStyleProvider.notifier);
@@ -180,7 +180,7 @@ final class DanmakuStylePane extends ConsumerWidget {
                       ),
               ),
               showChevron: true,
-              onPressed: () => unawaited(showFontManagerPage(context, danmaku: true)),
+              onPressed: () => showFontManagerPage(context, ref, danmaku: true),
             ),
           ],
         ),
@@ -188,7 +188,7 @@ final class DanmakuStylePane extends ConsumerWidget {
           header: Text(t.settings.danmakuStyleGroup),
           children: [
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.type),
+              leading: const DsIcon(DsIcons.caseSensitive),
               title: t.settings.styleFontSize,
               description: t.settings.styleFontSizeDesc,
               detail: Text('${style.fontSize.toStringAsFixed(1)} px'),
@@ -294,7 +294,7 @@ final class DanmakuStylePane extends ConsumerWidget {
               ),
             ),
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.circle),
+              leading: const DsIcon(DsIcons.blend),
               title: t.settings.styleOpacity,
               description: t.settings.styleOpacityDesc,
               detail: Text('${(style.opacity * 100).round()}%'),
@@ -306,7 +306,7 @@ final class DanmakuStylePane extends ConsumerWidget {
               ),
             ),
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.baseline),
+              leading: const DsIcon(DsIcons.typeOutline),
               title: t.settings.styleStroke,
               description: t.settings.styleStrokeDesc,
               control: DsSwitch(
@@ -315,7 +315,7 @@ final class DanmakuStylePane extends ConsumerWidget {
               ),
             ),
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.square),
+              leading: const DsIcon(DsIcons.penTool),
               title: t.settings.styleStrokeWidth,
               description: t.settings.styleStrokeWidthDesc,
               detail: Text('${style.strokeWidth.toStringAsFixed(1)} px'),
@@ -340,7 +340,7 @@ final class DanmakuStylePane extends ConsumerWidget {
               ),
             ),
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.layers),
+              leading: const DsIcon(DsIcons.sparkles),
               title: t.settings.styleFpsFollow,
               description: t.settings.styleFpsFollowDesc,
               control: DsSwitch(
@@ -381,7 +381,7 @@ final class DanmakuStylePane extends ConsumerWidget {
               ),
             ),
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.flame),
+              leading: const DsIcon(DsIcons.waves),
               title: t.settings.styleMassMode,
               description: t.settings.styleMassModeDesc,
               control: DsSwitch(
@@ -442,13 +442,7 @@ final class DanmakuStylePane extends ConsumerWidget {
                 semanticFormatter: (value) => 'x${value.toStringAsFixed(2)}',
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s16),
-              child: Text(
-                t.settings.miniDanmakuHint,
-                style: theme.typography.caption.copyWith(color: colors.textMuted),
-              ),
-            ),
+            SettingsHint(t.settings.miniDanmakuHint),
           ],
         ),
         DsListSection(
@@ -553,38 +547,41 @@ final class DanmakuDisplayPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.chatListLayoutGroup),
           children: [
-            SettingsChoiceRow<String>(
+            SettingsSegmentedRow<String>(
               leading: const DsIcon(DsIcons.list),
               title: t.settings.chatListStyle,
               description: t.settings.chatListStyleDesc,
               value: ref.watch(chatListStyleProvider),
               options: [
-                DsSelectOption(value: 'compact', label: t.settings.chatListStyleCompact),
-                DsSelectOption(value: 'card', label: t.settings.chatListStyleCard),
+                (value: 'compact', label: t.settings.chatListStyleCompact),
+                (value: 'card', label: t.settings.chatListStyleCard),
               ],
               onChanged: (value) => unawaited(ref.read(chatListStyleProvider.notifier).set(value)),
             ),
             SettingsChoiceRow<int>(
-              leading: const DsIcon(DsIcons.type),
+              leading: const DsIcon(DsIcons.caseSensitive),
               title: t.settings.chatListFontSize,
               description: t.settings.chatListFontSizeDesc,
               value: ref.watch(chatListFontSizeProvider),
               options: [
                 DsSelectOption(value: 0, label: t.settings.chatListFollowTheme),
                 for (final size in const [12, 14, 16, 18, 20, 22])
-                  DsSelectOption(value: size, label: t.settings.chatListFontSizeValue(size: size)),
+                  DsSelectOption(
+                    value: size,
+                    label: t.settings.chatListFontSizeValue(size: size),
+                  ),
               ],
               onChanged: (value) => unawaited(ref.read(chatListFontSizeProvider.notifier).set(value)),
             ),
-            SettingsChoiceRow<String>(
+            SettingsSegmentedRow<String>(
               leading: const DsIcon(DsIcons.moveVertical),
               title: t.settings.chatListLineSpacing,
               description: t.settings.chatListLineSpacingDesc,
               value: ref.watch(chatListLineSpacingProvider),
               options: [
-                DsSelectOption(value: 'compact', label: t.settings.chatListSpacingCompact),
-                DsSelectOption(value: 'standard', label: t.settings.chatListSpacingStandard),
-                DsSelectOption(value: 'loose', label: t.settings.chatListSpacingLoose),
+                (value: 'compact', label: t.settings.chatListSpacingCompact),
+                (value: 'standard', label: t.settings.chatListSpacingStandard),
+                (value: 'loose', label: t.settings.chatListSpacingLoose),
               ],
               onChanged: (value) => unawaited(ref.read(chatListLineSpacingProvider.notifier).set(value)),
             ),
@@ -671,35 +668,84 @@ final class _DanmakuPreviewCardState extends ConsumerState<DanmakuPreviewCard> {
     );
   }
 
+  /// Restarts the sample from the first line: a viewer tuning a slider
+  /// often wants the frame cleared rather than wait for the loop to come
+  /// around.
+  void _replay() {
+    _controller.clear();
+    _cursor = 0;
+    _send();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     final style = ref.watch(danmakuStyleProvider);
+    final rate = ref.watch(danmakuFrameRateProvider);
     final fps = ref.watch(danmakuEffectiveFpsProvider);
     final family = effectiveFontFamily(style.fontFamily, ref.watch(danmakuFontFaceProvider));
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s12),
+    final preset = DanmakuPreset.matching(style, rate);
+    return DsCard(
+      style: const DsCardStyle(padding: EdgeInsets.zero),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s6,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(DsTheme.of(context).radii.card),
-            child: ColoredBox(
-              color: const Color(0xFF101418),
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: FlameBarrageWidget(
-                  config: roomBarrageConfig(style, fps, family: family),
-                  emojiAtlas: EmojiAtlas.instance,
-                  controller: _controller,
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s8, DsSpace.s8, DsSpace.s8),
+            child: Row(
+              children: [
+                const DsIcon(DsIcons.captions, size: 16),
+                const SizedBox(width: DsSpace.s8),
+                Text(t.settings.navDanmaku, style: theme.typography.bodyStrong.copyWith(color: colors.text)),
+                const SizedBox(width: DsSpace.s8),
+                DsBadge(
+                  label: Text(preset == null ? t.settings.danmakuPresetCustom : presetLabel(t, preset)),
+                  dot: false,
+                ),
+                const Spacer(),
+                DsButton.icon(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  onPressed: _replay,
+                  icon: const DsIcon(DsIcons.rotateCcw),
+                  semanticLabel: t.common.retry,
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16),
+            // The frame keeps a preview's size on a wide pane: a 16:9 box
+            // at the settings column's full 960px would be a half-screen
+            // picture, not a sample.
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(theme.radii.nested(theme.radii.card, DsSpace.s16)),
+                  child: ColoredBox(
+                    color: const Color(0xFF101418),
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: FlameBarrageWidget(
+                        config: roomBarrageConfig(style, fps, family: family),
+                        emojiAtlas: EmojiAtlas.instance,
+                        controller: _controller,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
-          Text(
-            t.settings.danmakuPreviewHint,
-            style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textSubtle),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s12),
+            child: Text(
+              t.settings.danmakuPreviewHint,
+              style: theme.typography.small.copyWith(color: colors.textSubtle),
+            ),
           ),
         ],
       ),

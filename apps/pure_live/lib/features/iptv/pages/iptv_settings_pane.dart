@@ -88,11 +88,11 @@ final class IptvSettingsPane extends ConsumerWidget {
           ),
         ),
         if (autoSync)
-          DsListRow(
+          SettingsConfigRow(
             leading: const DsIcon(DsIcons.calendarClock),
-            title: Text(t.iptv.autoUpdate),
-            description: status == null ? null : Text(status),
-            trailing: DsSwitch(
+            title: t.iptv.autoUpdate,
+            description: status,
+            control: DsSwitch(
               value: allOn,
               onChanged: remoteGuides.isEmpty || blocked
                   ? null
@@ -100,7 +100,7 @@ final class IptvSettingsPane extends ConsumerWidget {
             ),
           ),
         DsListRow(
-          leading: const DsIcon(DsIcons.refreshCw),
+          leading: const DsIcon(DsIcons.cloudUpload),
           title: Text(t.iptv.syncAll),
           description: Text(
             round == null ? t.settings.iptvSyncDesc : t.iptv.syncAllRunning(done: round.done, total: round.total),

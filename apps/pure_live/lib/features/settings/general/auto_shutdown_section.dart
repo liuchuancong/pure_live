@@ -5,6 +5,7 @@ import 'package:flutter/services.dart' show FilteringTextInputFormatter, TextInp
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 
 /// The automatic-shutdown section of the General pane: the switch and the
@@ -22,11 +23,11 @@ final class AutoShutdownSection extends ConsumerWidget {
     return DsListSection(
       header: Text(t.settings.autoShutdownGroup),
       children: [
-        DsListRow(
+        SettingsConfigRow(
           leading: const DsIcon(DsIcons.timer),
-          title: Text(t.settings.autoShutdown),
-          description: Text(t.settings.autoShutdownDesc),
-          trailing: DsSwitch(
+          title: t.settings.autoShutdown,
+          description: t.settings.autoShutdownDesc,
+          control: DsSwitch(
             value: state.enabled,
             onChanged: (value) => unawaited(ref.read(autoShutdownProvider.notifier).setEnabled(enabled: value)),
           ),

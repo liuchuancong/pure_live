@@ -86,25 +86,10 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
       for (final platform in platforms)
         if (platform.overseas) _row(state, sites, platform),
     ];
-    final allSites = widget.siteIds == null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        // The live platform page shows the reference's third-party
-        // authorization block; the video station keeps the narrower
-        // sign-in-state title for its own Bilibili account.
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(allSites ? t.account.thirdPartyAuth : t.account.sectionHeader),
-            if (allSites)
-              Text(
-                t.account.thirdPartyAuthDesc,
-                style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
-              ),
-          ],
-        ),
         if (domestic.isNotEmpty) DsListSection(header: Text(t.account.groupDomestic), children: domestic),
         if (overseas.isNotEmpty) DsListSection(header: Text(t.account.groupOverseas), children: overseas),
       ],

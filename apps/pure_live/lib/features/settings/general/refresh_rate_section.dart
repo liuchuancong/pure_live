@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_device/live_device.dart' show DisplayRefreshRate, DisplayRefreshRatePreference;
 
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
+import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow, SettingsSegmentedRow;
 import 'package:pure_live/l10n/translations.dart';
 
 /// The display-rate section of the general pane: what the monitor reports,
@@ -61,12 +61,12 @@ final class RefreshRateSection extends ConsumerWidget {
             description: Text(state.error, maxLines: 2, overflow: TextOverflow.ellipsis),
           ),
         if (modes.isNotEmpty)
-          SettingsChoiceRow<RefreshRateMode>(
+          SettingsSegmentedRow<RefreshRateMode>(
             leading: const DsIcon(DsIcons.gauge),
             title: t.settings.refreshRateMode,
             description: t.settings.refreshRateModeDesc,
             value: modes.contains(state.mode) ? state.mode : modes.first,
-            options: [for (final mode in modes) DsSelectOption(value: mode, label: _modeLabel(t, mode))],
+            options: [for (final mode in modes) (value: mode, label: _modeLabel(t, mode))],
             onChanged: (mode) => unawaited(_select(context, ref, mode)),
           )
         else if (state.capabilities != null)

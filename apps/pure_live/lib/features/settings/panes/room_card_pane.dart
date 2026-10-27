@@ -9,7 +9,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/popular/popular.dart';
 import 'package:pure_live/features/settings/pages/room_card_preview_page.dart' show showRoomCardPreview;
 import 'package:pure_live/features/settings/room/room_card_settings.dart';
-import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
+import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow, SettingsSegmentedRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart' show CardGrid;
 
@@ -54,25 +54,31 @@ final class _RoomCardPaneState extends ConsumerState<RoomCardPane> {
       children: [
         DsListSection(
           children: [
-            SettingsChoiceRow<RoomCardViewport>(
+            SettingsSegmentedRow<RoomCardViewport>(
               leading: const DsIcon(DsIcons.monitor),
               title: t.settings.roomCardTarget,
               value: _viewport,
               options: [
-                DsSelectOption(value: RoomCardViewport.mobile, label: t.settings.roomCardMobile),
-                DsSelectOption(value: RoomCardViewport.desktop, label: t.settings.roomCardDesktop),
+                (value: RoomCardViewport.mobile, label: t.settings.roomCardMobile),
+                (value: RoomCardViewport.desktop, label: t.settings.roomCardDesktop),
               ],
               onChanged: (viewport) => setState(() => _viewport = viewport),
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.rotateCcw),
-              title: Text(t.settings.roomCardResetCurrent),
-              onPressed: () => unawaited(controller.reset(_viewport)),
             ),
           ],
         ),
         DsListSection(
-          header: Text(t.settings.roomCardPreview),
+          header: Row(
+            children: [
+              Text(t.settings.roomCardPreview),
+              const SizedBox(width: DsSpace.s8),
+              DsBadge(
+                label: Text(
+                  _viewport == RoomCardViewport.mobile ? t.settings.roomCardMobile : t.settings.roomCardDesktop,
+                ),
+                dot: false,
+              ),
+            ],
+          ),
           children: [
             Padding(
               padding: const EdgeInsets.all(DsSpace.s16),
@@ -102,17 +108,23 @@ final class _RoomCardPaneState extends ConsumerState<RoomCardPane> {
         ),
         DsListSection(
           children: [
-            SettingsChoiceRow<RoomCardPreset>(
+            SettingsSegmentedRow<RoomCardPreset?>(
               leading: const DsIcon(DsIcons.layoutTemplate),
               title: t.settings.roomCardPresets,
+              // A hand-tuned card matches no preset: the control selects
+              // nothing and the badge says why.
               value: preset == RoomCardPreset.custom ? null : preset,
-              placeholder: t.settings.roomCardPresetCustom,
+              detail: preset == RoomCardPreset.custom
+                  ? DsBadge(label: Text(t.settings.roomCardPresetCustom), dot: false)
+                  : null,
               options: [
-                DsSelectOption(value: RoomCardPreset.compact, label: t.settings.roomCardPresetCompact),
-                DsSelectOption(value: RoomCardPreset.standard, label: t.settings.roomCardPresetStandard),
-                DsSelectOption(value: RoomCardPreset.detailed, label: t.settings.roomCardPresetDetailed),
+                (value: RoomCardPreset.compact, label: t.settings.roomCardPresetCompact),
+                (value: RoomCardPreset.standard, label: t.settings.roomCardPresetStandard),
+                (value: RoomCardPreset.detailed, label: t.settings.roomCardPresetDetailed),
               ],
-              onChanged: (next) => unawaited(controller.applyPreset(_viewport, next)),
+              onChanged: (next) {
+                if (next != null) unawaited(controller.applyPreset(_viewport, next));
+              },
             ),
           ],
         ),
@@ -129,7 +141,7 @@ final class _RoomCardPaneState extends ConsumerState<RoomCardPane> {
               ),
             ),
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.userRound),
+              leading: const DsIcon(DsIcons.atSign),
               title: t.settings.roomCardShowAnchor,
               description: t.settings.roomCardShowAnchorDesc,
               control: DsSwitch(
@@ -137,15 +149,15 @@ final class _RoomCardPaneState extends ConsumerState<RoomCardPane> {
                 onChanged: (value) => update(appearance.copyWith(showAnchorName: value)),
               ),
             ),
-            SettingsChoiceRow<RoomCardPlatformBadgeMode>(
-              leading: const DsIcon(DsIcons.layoutGrid),
+            SettingsSegmentedRow<RoomCardPlatformBadgeMode>(
+              leading: const DsIcon(DsIcons.badge),
               title: t.settings.roomCardShowPlatform,
               description: t.settings.roomCardShowPlatformDesc,
               value: appearance.platformBadge,
               options: [
-                DsSelectOption(value: RoomCardPlatformBadgeMode.automatic, label: t.settings.roomCardPlatformAutomatic),
-                DsSelectOption(value: RoomCardPlatformBadgeMode.always, label: t.settings.roomCardPlatformAlways),
-                DsSelectOption(value: RoomCardPlatformBadgeMode.hidden, label: t.settings.roomCardPlatformHidden),
+                (value: RoomCardPlatformBadgeMode.automatic, label: t.settings.roomCardPlatformAutomatic),
+                (value: RoomCardPlatformBadgeMode.always, label: t.settings.roomCardPlatformAlways),
+                (value: RoomCardPlatformBadgeMode.hidden, label: t.settings.roomCardPlatformHidden),
               ],
               onChanged: (value) => update(appearance.copyWith(platformBadge: value)),
             ),
@@ -159,7 +171,7 @@ final class _RoomCardPaneState extends ConsumerState<RoomCardPane> {
               ),
             ),
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.video),
+              leading: const DsIcon(DsIcons.history),
               title: t.settings.roomCardShowReplay,
               description: t.settings.roomCardShowReplayDesc,
               control: DsSwitch(
@@ -172,19 +184,19 @@ final class _RoomCardPaneState extends ConsumerState<RoomCardPane> {
         DsListSection(
           header: Text(t.settings.roomCardAppearance),
           children: [
-            SettingsChoiceRow<RoomCardLayout>(
+            SettingsSegmentedRow<RoomCardLayout>(
               leading: const DsIcon(DsIcons.layoutGrid),
               title: t.settings.roomCardLayout,
               description: t.settings.roomCardLayoutDesc,
               value: appearance.layout,
               options: [
-                DsSelectOption(value: RoomCardLayout.cover, label: t.settings.roomCardLayoutCover),
-                DsSelectOption(value: RoomCardLayout.compact, label: t.settings.roomCardLayoutCompact),
+                (value: RoomCardLayout.cover, label: t.settings.roomCardLayoutCover),
+                (value: RoomCardLayout.compact, label: t.settings.roomCardLayoutCompact),
               ],
               onChanged: (value) => update(appearance.copyWith(layout: value)),
             ),
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.scale),
+              leading: const DsIcon(DsIcons.radius),
               title: t.settings.roomCardCornerRadius,
               description: t.settings.roomCardCornerRadiusDesc,
               detail: Text('${appearance.cornerRadius.round()} px'),
@@ -197,6 +209,15 @@ final class _RoomCardPaneState extends ConsumerState<RoomCardPane> {
                 semanticLabel: t.settings.roomCardCornerRadius,
                 semanticFormatter: (value) => '${value.round()} px',
               ),
+            ),
+          ],
+        ),
+        DsListSection(
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.rotateCcw),
+              title: Text(t.settings.roomCardResetCurrent),
+              onPressed: () => unawaited(controller.reset(_viewport)),
             ),
           ],
         ),

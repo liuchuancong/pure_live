@@ -5,6 +5,7 @@ import 'package:live_sites/live_sites.dart';
 
 import 'package:pure_live/features/popular/popular.dart';
 import 'package:pure_live/features/settings/room/room_card_settings.dart';
+import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow, SettingsHint;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart' show CardGrid;
 
@@ -178,8 +179,6 @@ final class _WhereSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final controller = ref.read(roomCardSettingsProvider.notifier);
     void update(RoomCardAppearance next) => controller.update(viewport, next);
     return DsListSection(
@@ -219,13 +218,7 @@ final class _WhereSection extends ConsumerWidget {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
-          child: Text(
-            t.settings.roomCardPreviewFollowsTheme,
-            style: theme.typography.small.copyWith(color: colors.textSubtle),
-          ),
-        ),
+        SettingsHint(t.settings.roomCardPreviewFollowsTheme),
       ],
     );
   }
@@ -242,12 +235,10 @@ final class _SlotRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    return DsListRow(
-      title: Text(title),
-      description: Text(where, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-      trailing: DsSwitch(value: on, onChanged: onChanged),
+    return SettingsConfigRow(
+      title: title,
+      description: where,
+      control: DsSwitch(value: on, onChanged: onChanged, semanticLabel: title),
     );
   }
 }

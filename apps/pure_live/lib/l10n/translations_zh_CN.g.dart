@@ -3765,6 +3765,45 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '字体删除后，重启应用前界面可能仍在使用它。'
 	String get fontManagerRestartNote => '字体删除后，重启应用前界面可能仍在使用它。';
 
+	/// zh-CN: '搜索字体名称或关键词'
+	String get fontManagerSearchPlaceholder => '搜索字体名称或关键词';
+
+	/// zh-CN: '当前字体'
+	String get fontManagerCurrent => '当前字体';
+
+	/// zh-CN: '下载更多字体'
+	String get fontManagerDownloadMore => '下载更多字体';
+
+	/// zh-CN: '全部'
+	String get fontManagerFilterAll => '全部';
+
+	/// zh-CN: '内置字体'
+	String get fontManagerFilterBundled => '内置字体';
+
+	/// zh-CN: '已安装'
+	String get fontManagerFilterInstalled => '已安装';
+
+	/// zh-CN: '可下载'
+	String get fontManagerFilterAvailable => '可下载';
+
+	/// zh-CN: '共 {count} 款字体'
+	String fontManagerCount({required Object count}) => '共 ${count} 款字体';
+
+	/// zh-CN: '内置'
+	String get fontManagerTagBundled => '内置';
+
+	/// zh-CN: '云端'
+	String get fontManagerTagCloud => '云端';
+
+	/// zh-CN: '{count} 个字重'
+	String fontManagerTagWeights({required Object count}) => '${count} 个字重';
+
+	/// zh-CN: '使用'
+	String get fontManagerUse => '使用';
+
+	/// zh-CN: '没有找到匹配的字体。'
+	String get fontManagerNoResults => '没有找到匹配的字体。';
+
 	/// zh-CN: '文本缩放'
 	String get textScale => '文本缩放';
 
@@ -8069,6 +8108,19 @@ extension on Translations {
 			'settings.fontManagerDeleteFont' => '删除已下载的字体',
 			'settings.fontManagerDeleteQuestion' => ({required Object name}) => '要删除${name}已下载的字体文件吗？之后可随时重新下载。',
 			'settings.fontManagerRestartNote' => '字体删除后，重启应用前界面可能仍在使用它。',
+			'settings.fontManagerSearchPlaceholder' => '搜索字体名称或关键词',
+			'settings.fontManagerCurrent' => '当前字体',
+			'settings.fontManagerDownloadMore' => '下载更多字体',
+			'settings.fontManagerFilterAll' => '全部',
+			'settings.fontManagerFilterBundled' => '内置字体',
+			'settings.fontManagerFilterInstalled' => '已安装',
+			'settings.fontManagerFilterAvailable' => '可下载',
+			'settings.fontManagerCount' => ({required Object count}) => '共 ${count} 款字体',
+			'settings.fontManagerTagBundled' => '内置',
+			'settings.fontManagerTagCloud' => '云端',
+			'settings.fontManagerTagWeights' => ({required Object count}) => '${count} 个字重',
+			'settings.fontManagerUse' => '使用',
+			'settings.fontManagerNoResults' => '没有找到匹配的字体。',
 			'settings.textScale' => '文本缩放',
 			'settings.textScaleDescription' => '按比例放大或缩小整个应用的文字；100% 为平台原始大小。',
 			'settings.backHome' => '返回应用',
@@ -8406,6 +8458,8 @@ extension on Translations {
 			'settings.groupCards' => '卡片与列表',
 			'settings.groupLanguage' => '语言',
 			'settings.contrast' => '对比度',
+			_ => null,
+		} ?? switch (path) {
 			'settings.contrastDescription' => '控件边界与文字的对比强度。',
 			'settings.contrastSoft' => '柔和',
 			'settings.contrastStandard' => '标准',
@@ -8419,8 +8473,6 @@ extension on Translations {
 			'settings.backgroundDescription' => '用图片或视频铺在应用后面，可上传本地文件或填写地址。',
 			'settings.backgroundImagesTitle' => '在线图片',
 			'settings.backgroundImagesDescription' => '官方、Wallhaven、Bing 与 deepin 图片源，选中后预览再应用。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundVideosTitle' => '在线视频',
 			'settings.navRandomWallpaper' => '随机图源',
 			'settings.randomWallpaperDescription' => '按分组从公开随机接口取图，预览后再应用。',
@@ -8920,6 +8972,8 @@ extension on Translations {
 			'toolbox.logsLevel' => '日志级别',
 			'toolbox.logsFile' => '写入日志文件',
 			'toolbox.logsFileDesc' => '在应用数据目录保存轮转日志（pure_live.log）；关闭后只保留内存日志。',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsExport' => '复制日志',
 			'toolbox.logsExportDesc' => '把内存中的日志复制到剪贴板。',
 			'toolbox.logsClear' => '清空日志',
@@ -8933,8 +8987,6 @@ extension on Translations {
 			'toolbox.logsAutoOff' => '自动滚动已关闭（滚动到底部可开启）',
 			'toolbox.logsLines' => ({required int count}) => '${count} 行',
 			'toolbox.logsScrollBottom' => '滚动到底部',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsCopied' => '日志已复制',
 			'toolbox.logsCopyEmpty' => '没有可复制的日志',
 			'toolbox.logsDirectory' => '日志目录',

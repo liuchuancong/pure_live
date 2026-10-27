@@ -39,7 +39,8 @@ import 'package:pure_live/features/settings/general/settings_order_list.dart' sh
 import 'package:pure_live/features/settings/general/tv_preferences.dart'
     show tvFocusZoomProvider, tvMenuExpandedProvider;
 import 'package:pure_live/features/settings/general/window_size_row.dart' show WindowSizeRow;
-import 'package:pure_live/features/settings/pages/font_manager_page.dart' show fontFamilyLabel, showFontManagerPage;
+import 'package:pure_live/features/settings/pages/font_manager_page.dart'
+    show FontManagerPage, fontFamilyLabel, showFontManagerPage;
 import 'package:pure_live/features/settings/panes/audience_settings_pane.dart'
     show AudienceSettingsPane, audienceModeLabel;
 import 'package:pure_live/features/settings/panes/background_panes.dart'
@@ -69,7 +70,8 @@ import 'package:pure_live/features/settings/surface/settings_navigation.dart'
     show openSettingsCategory, openSettingsChild, openSettingsSection;
 import 'package:pure_live/features/settings/surface/settings_search.dart' show SettingsSearchHit, settingsSearchHits;
 import 'package:pure_live/features/settings/surface/settings_sections.dart';
-import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
+import 'package:pure_live/features/settings/surface/settings_widgets.dart'
+    show SettingsChoiceRow, SettingsConfigRow, SettingsHint, SettingsSegmentedRow;
 import 'package:pure_live/features/shield/shield.dart';
 import 'package:pure_live/features/toolbox/toolbox.dart';
 import 'package:pure_live/features/version/version.dart';
@@ -153,6 +155,12 @@ final class _SettingsBodyWithSearchState extends ConsumerState<_SettingsBodyWith
     // A remote's arrows belong to the focus, not a caret: the settings
     // search would trap them, and the menu is the TV's way around.
     final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
+    // The font manager carries the catalogue's own search; a second field
+    // above it would search settings rows while the viewer reads fonts.
+    final section = ref.watch(settingsSectionProvider);
+    final paneOwnsSearch =
+        ref.watch(settingsSectionOpenProvider) &&
+        (section == SettingsSection.fontApp || section == SettingsSection.fontDanmaku);
     final query = _query.text.trim().toLowerCase();
     // The module's own sections, in the shared areas' order — the search
     // never offers a page this module does not carry.
@@ -164,7 +172,7 @@ final class _SettingsBodyWithSearchState extends ConsumerState<_SettingsBodyWith
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!tv)
+        if (!tv && !paneOwnsSearch)
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s16, DsSpace.s24, 0),
             child: Center(
@@ -477,6 +485,7 @@ final class SettingsSectionPane extends StatelessWidget {
     final body = switch (section) {
       SettingsSection.theme || SettingsSection.personalization || SettingsSection.appearance => const _ThemePane(),
       SettingsSection.typography => const _ThemePane(),
+      SettingsSection.fontApp => const FontManagerPage(),
       SettingsSection.background => const BackgroundOverviewPane(),
       SettingsSection.backgroundImages => const BackgroundLibraryPane(video: false),
       SettingsSection.backgroundRandom => const BackgroundRandomPane(),
@@ -495,6 +504,7 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.followTags => const FollowTagsPane(),
       SettingsSection.danmaku => const DanmakuPane(),
       SettingsSection.danmakuStyle || SettingsSection.miniDanmaku => const DanmakuStylePane(),
+      SettingsSection.fontDanmaku => const FontManagerPage(danmaku: true),
       SettingsSection.danmakuDisplay => const DanmakuDisplayPane(),
       SettingsSection.shield => const ShieldPane(),
       SettingsSection.recording => const _RecordingPane(),
@@ -898,25 +908,28 @@ final class _StartupPane extends ConsumerWidget {
           header: Text(t.settings.navStartup),
           children: [
             if (primary && startup.supported)
-              DsListRow(
+              SettingsConfigRow(
                 leading: const DsIcon(DsIcons.rocket),
-                title: Text(t.settings.startup),
-                description: Text(
-                  startup.error.isEmpty ? t.settings.startupDesc : '${t.settings.startupFailed}: ${startup.error}',
-                ),
-                trailing: startup.loading
-                    ? const SizedBox.square(dimension: 18, child: DsSpinner())
+                title: t.settings.startup,
+                description: startup.error.isEmpty
+                    ? t.settings.startupDesc
+                    : '${t.settings.startupFailed}: ${startup.error}',
+                control: startup.loading
+                    ? const Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: SizedBox.square(dimension: 18, child: DsSpinner()),
+                      )
                     : DsSwitch(
                         value: startup.enabled,
                         onChanged: (value) => unawaited(ref.read(startupProvider.notifier).setEnabled(value: value)),
                       ),
               ),
             if (primary)
-              DsListRow(
+              SettingsConfigRow(
                 leading: const DsIcon(DsIcons.playCircle),
-                title: Text(t.settings.splashAnimation),
-                description: Text(t.settings.splashAnimationDesc),
-                trailing: DsSwitch(
+                title: t.settings.splashAnimation,
+                description: t.settings.splashAnimationDesc,
+                control: DsSwitch(
                   value: ref.watch(splashSettingsProvider),
                   onChanged: (value) => ref.read(splashSettingsProvider.notifier).enabled = value,
                 ),
@@ -928,7 +941,7 @@ final class _StartupPane extends ConsumerWidget {
           children: [
             if (primary)
               SettingsChoiceRow<CloseAction>(
-                leading: const DsIcon(DsIcons.panelLeftClose),
+                leading: const DsIcon(DsIcons.x),
                 title: t.settings.closeAction,
                 description: t.settings.closeActionDesc,
                 value: window.closeAction,
@@ -941,7 +954,7 @@ final class _StartupPane extends ConsumerWidget {
               ),
             if (primary && desktop && kind != PlatformKind.macos)
               SettingsConfigRow(
-                leading: const DsIcon(DsIcons.panelLeftClose),
+                leading: const DsIcon(DsIcons.messageCircleWarning),
                 title: t.settings.noExitConfirm,
                 description: t.settings.noExitConfirmDescription,
                 control: DsSwitch(
@@ -984,20 +997,20 @@ final class _RefreshPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.refreshGroup),
           children: [
-            DsListRow(
+            SettingsConfigRow(
               leading: const DsIcon(DsIcons.heart),
-              title: Text(t.settings.followsAutoRefresh),
-              description: Text(t.settings.followsAutoRefreshDesc),
-              trailing: DsSwitch(
+              title: t.settings.followsAutoRefresh,
+              description: t.settings.followsAutoRefreshDesc,
+              control: DsSwitch(
                 value: autoRefresh.enabled,
                 onChanged: (value) => unawaited(ref.read(followsAutoRefreshProvider.notifier).setEnabled(value: value)),
               ),
             ),
-            DsListRow(
+            SettingsConfigRow(
               leading: const DsIcon(DsIcons.rotateCcw),
-              title: Text(t.settings.refreshOnResume),
-              description: Text(t.settings.refreshOnResumeDesc),
-              trailing: DsSwitch(
+              title: t.settings.refreshOnResume,
+              description: t.settings.refreshOnResumeDesc,
+              control: DsSwitch(
                 value: autoRefresh.onResume,
                 onChanged: (value) =>
                     unawaited(ref.read(followsAutoRefreshProvider.notifier).setOnResume(value: value)),
@@ -1014,11 +1027,11 @@ final class _RefreshPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(ref.read(followsAutoRefreshProvider.notifier).setMinutes(value)),
               ),
             ],
-            DsListRow(
+            SettingsConfigRow(
               leading: const DsIcon(DsIcons.bell),
-              title: Text(t.settings.liveAlert),
-              description: Text(t.settings.liveAlertDesc),
-              trailing: DsSwitch(
+              title: t.settings.liveAlert,
+              description: t.settings.liveAlertDesc,
+              control: DsSwitch(
                 value: liveAlerts.enabled,
                 onChanged: (value) {
                   if (value) unawaited(requestUserNotificationPermission());
@@ -1040,7 +1053,7 @@ final class _RefreshPane extends ConsumerWidget {
                 onPressed: tags.isEmpty ? null : () => unawaited(showLiveAlertTagsDialog(context)),
               ),
             SettingsChoiceRow<int>(
-              leading: const DsIcon(DsIcons.layers),
+              leading: const DsIcon(DsIcons.waypoints),
               title: t.settings.maxConcurrentRefresh,
               description: t.settings.maxConcurrentRefreshDesc,
               value: maxConcurrent,
@@ -1053,11 +1066,11 @@ final class _RefreshPane extends ConsumerWidget {
               ],
               onChanged: (value) => unawaited(ref.read(maxConcurrentRefreshProvider.notifier).set(value)),
             ),
-            DsListRow(
+            SettingsConfigRow(
               leading: const DsIcon(DsIcons.image),
-              title: Text(t.settings.refreshThumbnails),
-              description: Text(t.settings.refreshThumbnailsDesc),
-              trailing: DsSwitch(
+              title: t.settings.refreshThumbnails,
+              description: t.settings.refreshThumbnailsDesc,
+              control: DsSwitch(
                 value: thumbnails.enabled,
                 onChanged: (value) => unawaited(ref.read(thumbnailRefreshProvider.notifier).setEnabled(value: value)),
               ),
@@ -1096,8 +1109,12 @@ final class _NavPane extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        SettingsChildEntry(child: SettingsSection.navHomeMenu),
-        SettingsChildEntry(child: SettingsSection.navToolOrder),
+        DsListSection(
+          children: [
+            SettingsChildEntry(child: SettingsSection.navHomeMenu),
+            SettingsChildEntry(child: SettingsSection.navToolOrder),
+          ],
+        ),
       ],
     );
   }
@@ -1460,7 +1477,7 @@ final class _ThemePane extends ConsumerWidget {
                       ),
               ),
               showChevron: true,
-              onPressed: () => unawaited(showFontManagerPage(context)),
+              onPressed: () => showFontManagerPage(context, ref),
             ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.fontSize),
@@ -1622,29 +1639,32 @@ final class _SitesPane extends ConsumerWidget {
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        if (ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv) ...[
-          SettingsConfigRow(
-            leading: const DsIcon(DsIcons.focus),
-            title: t.settings.tvFocusZoom,
-            description: t.settings.tvFocusZoomDesc,
-            control: DsSwitch(
-              value: ref.watch(tvFocusZoomProvider),
-              onChanged: (value) => unawaited(ref.read(tvFocusZoomProvider.notifier).set(value: value)),
-            ),
+        if (ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv)
+          DsListSection(
+            children: [
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.focus),
+                title: t.settings.tvFocusZoom,
+                description: t.settings.tvFocusZoomDesc,
+                control: DsSwitch(
+                  value: ref.watch(tvFocusZoomProvider),
+                  onChanged: (value) => unawaited(ref.read(tvFocusZoomProvider.notifier).set(value: value)),
+                ),
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.panelLeft),
+                title: t.settings.tvMenuExpanded,
+                description: t.settings.tvMenuExpandedDesc,
+                control: DsSwitch(
+                  value: ref.watch(tvMenuExpandedProvider),
+                  onChanged: (value) => unawaited(ref.read(tvMenuExpandedProvider.notifier).set(value: value)),
+                ),
+              ),
+            ],
           ),
-          SettingsConfigRow(
-            leading: const DsIcon(DsIcons.panelLeft),
-            title: t.settings.tvMenuExpanded,
-            description: t.settings.tvMenuExpandedDesc,
-            control: DsSwitch(
-              value: ref.watch(tvMenuExpandedProvider),
-              onChanged: (value) => unawaited(ref.read(tvMenuExpandedProvider.notifier).set(value: value)),
-            ),
-          ),
-        ],
         DsListSection(
           children: [
             DsListRow(
@@ -1669,13 +1689,16 @@ final class _SitesPane extends ConsumerWidget {
             ),
           ],
         ),
-        const DsListSection(children: [SettingsChildEntry(child: SettingsSection.sitesDisplay)]),
+        // The pages that carry their own controls, in one block: a settings
+        // page reads as a list of destinations, not three one-row cards.
         DsListSection(
           children: [
+            const SettingsChildEntry(child: SettingsSection.sitesDisplay),
             SettingsChildEntry(
               child: SettingsSection.audience,
               detail: Text(audienceModeLabel(t, ref.watch(audienceMetricProvider))),
             ),
+            const SettingsChildEntry(child: SettingsSection.accounts),
           ],
         ),
         DsListSection(
@@ -1721,7 +1744,6 @@ final class _SitesPane extends ConsumerWidget {
             ),
           ],
         ),
-        const DsListSection(children: [SettingsChildEntry(child: SettingsSection.accounts)]),
       ],
     );
   }
@@ -1832,6 +1854,7 @@ final class _DataPane extends ConsumerWidget {
           leading: const DsIcon(DsIcons.history),
           title: Text(t.settings.dataClearHistory),
           description: Text(t.settings.dataClearHistoryDesc),
+          destructive: true,
           onPressed: () async {
             final confirmed = await showDsConfirm(
               context: context,
@@ -1994,8 +2017,6 @@ final class _CachePaneState extends ConsumerState<_CachePane> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final download = ref.watch(downloadDirectoryProvider);
     return DsListSection(
       header: Text(t.settings.navCache),
@@ -2028,14 +2049,14 @@ final class _CachePaneState extends ConsumerState<_CachePane> {
           title: Text(t.settings.cacheClear),
           description: Text(t.settings.cacheClearDesc),
           trailing: DsButton(
-            variant: DsButtonVariant.secondary,
+            variant: DsButtonVariant.dangerSoft,
             size: DsSize.sm,
             onPressed: _busy ? null : () => unawaited(_clear()),
             child: Text(t.settings.cacheClear),
           ),
         ),
         SettingsChoiceRow<int>(
-          leading: const DsIcon(DsIcons.settings),
+          leading: const DsIcon(DsIcons.database),
           title: t.settings.cacheLimit,
           description: t.settings.cacheLimitDesc,
           value: _limitMb,
@@ -2058,10 +2079,7 @@ final class _CachePaneState extends ConsumerState<_CachePane> {
             title: Text(t.settings.downloadDirectoryReset),
             onPressed: _busy ? null : () => unawaited(_resetDownloadDirectory()),
           ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s16),
-          child: Text(t.settings.cacheHint, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-        ),
+        SettingsHint(t.settings.cacheHint),
       ],
     );
   }
@@ -2105,7 +2123,7 @@ final class _AboutPane extends ConsumerWidget {
           },
         ),
         DsListRow(
-          leading: const DsIcon(DsIcons.refreshCw),
+          leading: const DsIcon(DsIcons.cloudDownload),
           title: Text(t.settings.checkUpdate),
           description: Text(status),
           trailing: latest != null
@@ -2122,17 +2140,17 @@ final class _AboutPane extends ConsumerWidget {
                   child: Text(t.settings.checkUpdate),
                 ),
         ),
-        DsListRow(
+        SettingsConfigRow(
           leading: const DsIcon(DsIcons.refreshCw),
-          title: Text(t.settings.autoCheckUpdate),
-          description: Text(t.settings.autoCheckUpdateDesc),
-          trailing: DsSwitch(
+          title: t.settings.autoCheckUpdate,
+          description: t.settings.autoCheckUpdateDesc,
+          control: DsSwitch(
             value: ref.watch(updateSettingsProvider),
             onChanged: (value) => ref.read(updateSettingsProvider.notifier).enabled = value,
           ),
         ),
         DsListRow(
-          leading: const DsIcon(DsIcons.list),
+          leading: const DsIcon(DsIcons.history),
           title: Text(t.settings.releaseHistory),
           description: Text(t.settings.releaseHistoryDesc),
           onPressed: () => unawaited(showReleaseHistory(context)),
@@ -2150,7 +2168,7 @@ final class _AboutPane extends ConsumerWidget {
           onPressed: () => unawaited(launchUrl(Uri.parse(_projectUrl), mode: LaunchMode.externalApplication)),
         ),
         DsListRow(
-          leading: const DsIcon(DsIcons.scale),
+          leading: const DsIcon(DsIcons.scrollText),
           title: Text(t.settings.aboutLicense),
           description: Text(t.settings.aboutLicenseDesc),
           onPressed: () => showLicensePage(
@@ -2214,66 +2232,66 @@ final class _QualityAudioPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.navAudio),
           children: [
-            DsListRow(
+            SettingsConfigRow(
               leading: const DsIcon(DsIcons.volumeOff),
-              title: Text(t.settings.defaultMuted),
-              description: Text(t.settings.defaultMutedDesc),
-              trailing: DsSwitch(
+              title: t.settings.defaultMuted,
+              description: t.settings.defaultMutedDesc,
+              control: DsSwitch(
                 value: settings.muted,
                 onChanged: (value) => unawaited(controller.setMuted(value: value)),
               ),
             ),
-            DsListRow(
+            SettingsConfigRow(
               leading: const DsIcon(DsIcons.volumeX),
-              title: Text(t.settings.globalMute),
-              description: Text(t.settings.globalMuteDesc),
-              trailing: DsSwitch(
+              title: t.settings.globalMute,
+              description: t.settings.globalMuteDesc,
+              control: DsSwitch(
                 value: settings.globalMute,
                 onChanged: (value) => unawaited(controller.setGlobalMute(value: value)),
               ),
             ),
             if (ref.watch(platformRuntimeProvider).environment.runtime.kind == PlatformKind.android) ...[
-              DsListRow(
+              SettingsConfigRow(
                 leading: const DsIcon(DsIcons.music),
-                title: Text(t.settings.backgroundPlay),
-                description: Text(t.settings.backgroundPlayDesc),
-                trailing: DsSwitch(
+                title: t.settings.backgroundPlay,
+                description: t.settings.backgroundPlayDesc,
+                control: DsSwitch(
                   value: settings.backgroundPlay,
                   onChanged: (value) => unawaited(controller.setBackgroundPlay(value: value)),
                 ),
               ),
-              DsListRow(
+              SettingsConfigRow(
                 leading: const DsIcon(DsIcons.captions),
-                title: Text(t.settings.backgroundPauseDanmaku),
-                description: Text(t.settings.backgroundPauseDanmakuDesc),
-                trailing: DsSwitch(
+                title: t.settings.backgroundPauseDanmaku,
+                description: t.settings.backgroundPauseDanmakuDesc,
+                control: DsSwitch(
                   value: settings.backgroundPauseDanmaku,
                   onChanged: (value) => unawaited(controller.setBackgroundPauseDanmaku(value: value)),
                 ),
               ),
-              DsListRow(
+              SettingsConfigRow(
                 leading: const DsIcon(DsIcons.headphones),
-                title: Text(t.settings.backgroundAudioOnly),
-                description: Text(t.settings.backgroundAudioOnlyDesc),
-                trailing: DsSwitch(
+                title: t.settings.backgroundAudioOnly,
+                description: t.settings.backgroundAudioOnlyDesc,
+                control: DsSwitch(
                   value: settings.backgroundAudioOnly,
                   onChanged: (value) => unawaited(controller.setBackgroundAudioOnly(value: value)),
                 ),
               ),
-              DsListRow(
+              SettingsConfigRow(
                 leading: const DsIcon(DsIcons.pictureInPicture),
-                title: Text(t.settings.pauseOnPipClose),
-                description: Text(t.settings.pauseOnPipCloseDesc),
-                trailing: DsSwitch(
+                title: t.settings.pauseOnPipClose,
+                description: t.settings.pauseOnPipCloseDesc,
+                control: DsSwitch(
                   value: settings.pauseOnPipClose,
                   onChanged: (value) => unawaited(controller.setPauseOnPipClose(value: value)),
                 ),
               ),
-              DsListRow(
+              SettingsConfigRow(
                 leading: const DsIcon(DsIcons.moon),
-                title: Text(t.settings.asmrSleepMode),
-                description: Text(t.settings.asmrSleepModeDesc),
-                trailing: DsSwitch(
+                title: t.settings.asmrSleepMode,
+                description: t.settings.asmrSleepModeDesc,
+                control: DsSwitch(
                   value: settings.asmrSleepMode,
                   onChanged: (value) => unawaited(controller.setAsmrSleepMode(value: value)),
                 ),
@@ -2299,17 +2317,14 @@ final class _QualityAudioPane extends ConsumerWidget {
                 semanticLabel: t.settings.defaultVolume,
               ),
             ),
-            SettingsChoiceRow<int>(
+            SettingsSegmentedRow<int>(
               leading: const DsIcon(DsIcons.volume2),
               title: t.settings.volumeWheelStep,
               description: t.settings.volumeWheelStepDesc,
               value: settings.volumeWheelStepPercent,
               options: [
                 for (final percent in kVolumeWheelStepChoices)
-                  DsSelectOption(
-                    value: percent,
-                    label: t.settings.volumeWheelStepValue(percent: percent),
-                  ),
+                  (value: percent, label: t.settings.volumeWheelStepValue(percent: percent)),
               ],
               onChanged: (value) => unawaited(controller.setVolumeWheelStepPercent(value)),
             ),
@@ -2361,7 +2376,7 @@ final class _PicturePane extends ConsumerWidget {
               ),
             ),
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.eye),
+              leading: const DsIcon(DsIcons.eyeOff),
               title: t.settings.controlsAutoHide,
               description: t.settings.controlsAutoHideDesc,
               detail: Text(t.settings.controlsAutoHideValue(count: settings.controlsAutoHideSeconds)),
@@ -2432,15 +2447,15 @@ final class _FloatingWindowPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setFloatPlay(value: value)),
               ),
             ),
-            SettingsChoiceRow<String>(
+            SettingsSegmentedRow<String>(
               leading: const DsIcon(DsIcons.maximize),
               title: t.settings.floatWindowSize,
               description: t.settings.floatWindowSizeDesc,
               value: ref.watch(floatingWindowSettingsProvider).size,
               options: [
-                DsSelectOption(value: 'small', label: t.settings.floatWindowSmall),
-                DsSelectOption(value: 'medium', label: t.settings.floatWindowMedium),
-                DsSelectOption(value: 'large', label: t.settings.floatWindowLarge),
+                (value: 'small', label: t.settings.floatWindowSmall),
+                (value: 'medium', label: t.settings.floatWindowMedium),
+                (value: 'large', label: t.settings.floatWindowLarge),
               ],
               onChanged: (value) => unawaited(ref.read(floatingWindowSettingsProvider.notifier).setSize(value)),
             ),
@@ -2580,24 +2595,15 @@ final class _PortraitPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.portraitPresentationGroup),
           children: [
-            SettingsChoiceRow<PortraitFullscreenPolicy>(
+            SettingsSegmentedRow<PortraitFullscreenPolicy>(
               leading: const DsIcon(DsIcons.fullscreen),
               title: t.settings.portraitFullscreenPolicy,
               description: t.settings.portraitFullscreenPolicyDesc,
               value: settings.fullscreenPolicy,
               options: [
-                DsSelectOption(
-                  value: PortraitFullscreenPolicy.followSource,
-                  label: t.settings.portraitFullscreenFollowSource,
-                ),
-                DsSelectOption(
-                  value: PortraitFullscreenPolicy.followSystem,
-                  label: t.settings.portraitFullscreenFollowSystem,
-                ),
-                DsSelectOption(
-                  value: PortraitFullscreenPolicy.landscape,
-                  label: t.settings.portraitFullscreenLandscape,
-                ),
+                (value: PortraitFullscreenPolicy.followSource, label: t.settings.portraitFullscreenFollowSource),
+                (value: PortraitFullscreenPolicy.followSystem, label: t.settings.portraitFullscreenFollowSystem),
+                (value: PortraitFullscreenPolicy.landscape, label: t.settings.portraitFullscreenLandscape),
               ],
               onChanged: (policy) => unawaited(controller.setFullscreenPolicy(policy)),
             ),
@@ -2746,46 +2752,40 @@ Widget _portraitDetectionSection(
 ) => DsListSection(
   header: Text(t.settings.portraitDetectionGroup),
   children: [
-    DsListRow(
+    SettingsConfigRow(
       leading: const DsIcon(DsIcons.rectangleVertical),
-      title: Text(t.settings.portraitSmartDetection),
-      description: Text(t.settings.portraitSmartDetectionDesc),
-      trailing: DsSwitch(
+      title: t.settings.portraitSmartDetection,
+      description: t.settings.portraitSmartDetectionDesc,
+      control: DsSwitch(
         value: settings.adaptation,
         onChanged: (value) => unawaited(controller.setAdaptation(value: value)),
       ),
     ),
     if (settings.adaptation) ...[
-      DsListRow(
+      SettingsConfigRow(
         leading: const DsIcon(DsIcons.moveVertical),
-        title: Text(t.settings.portraitAdaptiveHeight),
-        description: Text(t.settings.portraitAdaptiveHeightDesc),
-        trailing: DsSwitch(
+        title: t.settings.portraitAdaptiveHeight,
+        description: t.settings.portraitAdaptiveHeightDesc,
+        control: DsSwitch(
           value: settings.adaptiveHeight,
           onChanged: (value) => unawaited(controller.setAdaptiveHeight(value: value)),
         ),
       ),
       if (settings.adaptiveHeight)
-        SettingsChoiceRow<PortraitLayoutMode>(
+        SettingsSegmentedRow<PortraitLayoutMode>(
           leading: const DsIcon(DsIcons.layoutGrid),
           title: t.settings.portraitLayoutMode,
           description: t.settings.portraitLayoutModeDesc,
           value: settings.layoutMode,
           options: [
-            DsSelectOption(value: PortraitLayoutMode.balanced, label: t.settings.portraitLayoutBalanced),
-            DsSelectOption(value: PortraitLayoutMode.immersive, label: t.settings.portraitLayoutImmersive),
-            DsSelectOption(value: PortraitLayoutMode.compatibility, label: t.settings.portraitLayoutCompatibility),
+            (value: PortraitLayoutMode.balanced, label: t.settings.portraitLayoutBalanced),
+            (value: PortraitLayoutMode.immersive, label: t.settings.portraitLayoutImmersive),
+            (value: PortraitLayoutMode.compatibility, label: t.settings.portraitLayoutCompatibility),
           ],
           onChanged: (mode) => unawaited(controller.setLayoutMode(mode)),
         ),
     ] else
-      Padding(
-        padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s16),
-        child: Text(
-          t.settings.portraitDetectionOff,
-          style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
-        ),
-      ),
+      SettingsHint(t.settings.portraitDetectionOff),
   ],
 );
 

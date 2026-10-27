@@ -10,7 +10,8 @@ import 'package:pure_live/features/settings/playback/playback_settings_providers
 import 'package:pure_live/features/settings/playback/player_tuning.dart';
 import 'package:pure_live/features/settings/surface/settings_page.dart' show SettingsChildEntry;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
-import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow;
+import 'package:pure_live/features/settings/surface/settings_widgets.dart'
+    show SettingsChoiceRow, SettingsConfigRow, SettingsHint, SettingsSegmentedRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
@@ -32,7 +33,6 @@ final class PlayerKernelPane extends ConsumerWidget {
     final tuning = ref.watch(playerTuningProvider);
     final platform = defaultTargetPlatform;
     final mpv = selected == PlayerKernelBackend.mpv;
-    final muted = DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted);
     final decoders = playerHardwareDecoderOptions(platform);
     final decoder = effectivePlayerHardwareDecoder(tuning.hwdec, platform);
     return Column(
@@ -43,14 +43,12 @@ final class PlayerKernelPane extends ConsumerWidget {
           header: Text(t.settings.navKernel),
           children: [
             if (backends.length > 1)
-              SettingsChoiceRow<PlayerKernelBackend>(
+              SettingsSegmentedRow<PlayerKernelBackend>(
                 leading: const DsIcon(DsIcons.cpu),
                 title: t.settings.engineTitle,
                 description: t.settings.engineDesc,
                 value: selected,
-                options: [
-                  for (final backend in backends) DsSelectOption(value: backend, label: _engineLabel(t, backend)),
-                ],
+                options: [for (final backend in backends) (value: backend, label: _engineLabel(t, backend))],
                 onChanged: (backend) => unawaited(ref.read(playerKernelBackendProvider.notifier).select(backend)),
               )
             else
@@ -60,18 +58,15 @@ final class PlayerKernelPane extends ConsumerWidget {
                 description: Text(t.settings.engineDesc),
                 detail: Text(_engineLabel(t, selected)),
               ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
-              child: Text(backends.length > 1 ? t.settings.kernelSwitchHint : t.settings.kernelOnlyOne, style: muted),
-            ),
+            SettingsHint(backends.length > 1 ? t.settings.kernelSwitchHint : t.settings.kernelOnlyOne),
             if (mpv) ...[
-              DsListRow(
-                leading: const DsIcon(DsIcons.gauge),
-                title: Text(t.settings.hardwareDecoding),
-                description: Text(
-                  tuning.customOutput ? t.settings.customOutputHardwareTakeover : t.settings.hardwareDecodingDesc,
-                ),
-                trailing: DsSwitch(
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.microchip),
+                title: t.settings.hardwareDecoding,
+                description: tuning.customOutput
+                    ? t.settings.customOutputHardwareTakeover
+                    : t.settings.hardwareDecodingDesc,
+                control: DsSwitch(
                   value: settings.hardwareDecoding,
                   // Custom output arms the decoder pick and replaces this
                   // switch (reference `custom_output_hwdec`).
@@ -83,7 +78,7 @@ final class PlayerKernelPane extends ConsumerWidget {
               ),
               if (tuning.customOutput)
                 SettingsChoiceRow<String>(
-                  leading: const DsIcon(DsIcons.cpu),
+                  leading: const DsIcon(DsIcons.circuitBoard),
                   title: t.settings.hardwareDecoder,
                   description: tuning.preset.lockedOutputKeys.contains('hwdec')
                       ? '${t.settings.playerOutputLockedByPreset} · ${t.settings.hardwareDecoderDesc}'
@@ -94,21 +89,14 @@ final class PlayerKernelPane extends ConsumerWidget {
                   ],
                   onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setHwdec(value)),
                 ),
-              if (settings.hardwareDecoding && !tuning.customOutput)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s4),
-                  child: Text(t.settings.hardwareDecoderAutoHint, style: muted),
-                ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
-                child: Text(t.settings.hardwareDecodingHint, style: muted),
-              ),
+              if (settings.hardwareDecoding && !tuning.customOutput) SettingsHint(t.settings.hardwareDecoderAutoHint),
+              SettingsHint(t.settings.hardwareDecodingHint),
             ],
-            DsListRow(
+            SettingsConfigRow(
               leading: const DsIcon(DsIcons.power),
-              title: Text(t.settings.forceDestroy),
-              description: Text(t.settings.forceDestroyDesc),
-              trailing: DsSwitch(
+              title: t.settings.forceDestroy,
+              description: t.settings.forceDestroyDesc,
+              control: DsSwitch(
                 value: tuning.forceDestroy,
                 onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setForceDestroy(value: value)),
               ),
@@ -121,7 +109,10 @@ final class PlayerKernelPane extends ConsumerWidget {
         ] else
           Padding(
             padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s20),
-            child: Text(t.settings.playerAdvancedRequiresMpv, style: muted),
+            child: Text(
+              t.settings.playerAdvancedRequiresMpv,
+              style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
+            ),
           ),
         DsListSection(
           children: [
@@ -207,14 +198,10 @@ final class _PlayerPresetSection extends ConsumerWidget {
     final t = context.t;
     final tuning = ref.watch(playerTuningProvider);
     final active = tuning.preset;
-    final muted = DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted);
     return DsListSection(
       header: Text(t.settings.playerPresets),
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
-          child: Text(t.settings.playerPresetsHint, style: muted),
-        ),
+        SettingsHint(t.settings.playerPresetsHint),
         SettingsChoiceRow<PlayerPresetId>(
           leading: DsIcon(_presetIcon(active)),
           title: t.settings.preset,
@@ -298,25 +285,21 @@ final class _SuperResolutionSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final mode = ref.watch(superResolutionModeProvider);
-    final muted = DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted);
     return DsListSection(
       header: Text(t.settings.superResolutionGroup),
       children: [
-        SettingsChoiceRow<SuperResolutionMode>(
+        SettingsSegmentedRow<SuperResolutionMode>(
           leading: DsIcon(_superResolutionIcon(mode)),
           title: t.settings.superResolution,
           description: _superResolutionDescription(t, mode),
           value: mode,
           options: [
             for (final candidate in SuperResolutionMode.values)
-              DsSelectOption(value: candidate, label: _superResolutionName(t, candidate)),
+              (value: candidate, label: _superResolutionName(t, candidate)),
           ],
           onChanged: (next) => unawaited(ref.read(superResolutionModeProvider.notifier).select(next)),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
-          child: Text(t.settings.superResolutionHint, style: muted),
-        ),
+        SettingsHint(t.settings.superResolutionHint),
       ],
     );
   }
@@ -339,11 +322,11 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
     return DsListSection(
       header: Text(t.settings.mpvAdvanced),
       children: [
-        DsListRow(
+        SettingsConfigRow(
           leading: const DsIcon(DsIcons.slidersHorizontal),
-          title: Text(t.settings.customOutput),
-          description: Text(t.settings.customOutputDesc),
-          trailing: DsSwitch(
+          title: t.settings.customOutput,
+          description: t.settings.customOutputDesc,
+          control: DsSwitch(
             value: tuning.customOutput,
             onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setCustomOutput(value: value)),
           ),
@@ -384,17 +367,17 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
             onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setVideoSync(value)),
           ),
         if (desktop)
-          DsListRow(
+          SettingsConfigRow(
             leading: const DsIcon(DsIcons.activity),
-            title: Text(t.settings.interpolation),
-            description: Text(t.settings.interpolationDesc),
-            trailing: DsSwitch(
+            title: t.settings.interpolation,
+            description: t.settings.interpolationDesc,
+            control: DsSwitch(
               value: tuning.interpolation,
               onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setInterpolation(value: value)),
             ),
           ),
         SettingsChoiceRow<String>(
-          leading: const DsIcon(DsIcons.scale),
+          leading: const DsIcon(DsIcons.expand),
           title: t.settings.scaleKernel,
           description: t.settings.scaleKernelDesc,
           value: tuning.scale,
@@ -405,7 +388,7 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
           onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setScale(value)),
         ),
         SettingsChoiceRow<String>(
-          leading: const DsIcon(DsIcons.layoutGrid),
+          leading: const DsIcon(DsIcons.scanLine),
           title: t.settings.deinterlace,
           description: t.settings.deinterlaceDesc,
           value: tuning.deinterlace,
@@ -429,11 +412,11 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
             onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setHwdecCodecs(value)),
           ),
         if (playerAudioExclusiveOptions(platform).isNotEmpty)
-          DsListRow(
+          SettingsConfigRow(
             leading: const DsIcon(DsIcons.headphones),
-            title: Text(t.settings.audioExclusive),
-            description: Text(t.settings.audioExclusiveDesc),
-            trailing: DsSwitch(
+            title: t.settings.audioExclusive,
+            description: t.settings.audioExclusiveDesc,
+            control: DsSwitch(
               value: tuning.audioExclusive,
               onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setAudioExclusive(value: value)),
             ),

@@ -23,6 +23,7 @@ typedef SettingsGroup = ({String labelKey, List<SettingsSection> sections});
 enum SettingsSection {
   // 个性化 group.
   theme(DsIcons.palette),
+  fontApp(DsIcons.type),
   background(DsIcons.wallpaper),
   backgroundImages(DsIcons.image),
   backgroundRandom(DsIcons.shuffle),
@@ -33,7 +34,7 @@ enum SettingsSection {
   navHomeMenu(DsIcons.listTodo),
   navToolOrder(DsIcons.listOrdered),
   browsing(DsIcons.layoutGrid),
-  roomCard(DsIcons.layoutGrid),
+  roomCard(DsIcons.idCard),
   // 直播 group.
   sites(DsIcons.antenna),
   sitesDisplay(DsIcons.listOrdered),
@@ -42,6 +43,7 @@ enum SettingsSection {
   followTags(DsIcons.tag),
   danmaku(DsIcons.captions),
   danmakuStyle(DsIcons.type),
+  fontDanmaku(DsIcons.type),
   danmakuDisplay(DsIcons.list),
   shield(DsIcons.shield),
   recording(DsIcons.disc),
@@ -90,6 +92,7 @@ enum SettingsSection {
   /// The entry's name.
   String label(Translations t) => switch (this) {
     SettingsSection.theme => t.settings.navTheme,
+    SettingsSection.fontApp => t.settings.fontManagerTitle,
     SettingsSection.background => t.settings.navBackground,
     SettingsSection.backgroundImages => t.settings.backgroundImagesTitle,
     SettingsSection.backgroundRandom => t.settings.navRandomWallpaper,
@@ -108,6 +111,7 @@ enum SettingsSection {
     SettingsSection.followTags => t.settings.tagManagement,
     SettingsSection.danmaku => t.settings.navDanmaku,
     SettingsSection.danmakuStyle => t.settings.danmakuStyleGroup,
+    SettingsSection.fontDanmaku => t.settings.danmakuFont,
     SettingsSection.danmakuDisplay => t.settings.danmakuDisplayGroup,
     SettingsSection.shield => t.settings.navShield,
     SettingsSection.recording => t.settings.navRecording,
@@ -148,6 +152,7 @@ enum SettingsSection {
   /// One line on what the section manages.
   String description(Translations t) => switch (this) {
     SettingsSection.theme => t.settings.themePageDescription,
+    SettingsSection.fontApp => t.settings.fontManagerDescription,
     SettingsSection.background => t.settings.backgroundDescription,
     SettingsSection.backgroundImages => t.settings.backgroundImagesDescription,
     SettingsSection.backgroundRandom => t.settings.randomWallpaperDescription,
@@ -165,6 +170,7 @@ enum SettingsSection {
     SettingsSection.refresh => t.settings.refreshDescription,
     SettingsSection.followTags => t.settings.tagManagementDesc,
     SettingsSection.danmaku => t.settings.danmakuDescription,
+    SettingsSection.fontDanmaku => t.settings.danmakuFontManagerDescription,
     SettingsSection.shield => t.settings.shieldDescription,
     SettingsSection.recording => t.settings.recordingDescription,
     SettingsSection.quality => t.settings.qualityAudioDescription,
@@ -206,6 +212,8 @@ enum SettingsSection {
   /// directly (every alias answers null; it resolves through [aliasTarget]
   /// before the tree is consulted).
   SettingsSection? get parentSection => switch (this) {
+    SettingsSection.fontApp => SettingsSection.theme,
+    SettingsSection.fontDanmaku => SettingsSection.danmakuStyle,
     SettingsSection.backgroundImages ||
     SettingsSection.backgroundRandom ||
     SettingsSection.backgroundVideos ||

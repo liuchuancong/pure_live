@@ -626,50 +626,12 @@ final class _RecordSwitch extends StatelessWidget {
   final ValueChanged<bool> onChanged;
 
   @override
-  Widget build(BuildContext context) => DsListRow(
+  Widget build(BuildContext context) => SettingsConfigRow(
     leading: DsIcon(icon),
-    title: Text(title),
-    description: Text(description),
-    trailing: DsSwitch(value: value, onChanged: onChanged),
+    title: title,
+    description: description,
+    control: DsSwitch(value: value, onChanged: onChanged, semanticLabel: title),
   );
-}
-
-/// A choice with its explanation above a full-width control (the container
-/// picker): the segmented control needs the row's width, not the trailing
-/// column.
-final class _RecordChoice extends StatelessWidget {
-  const _RecordChoice({required this.icon, required this.title, required this.description, required this.child});
-
-  final DsIconData icon;
-  final String title;
-  final String description;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s8,
-        children: [
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              DsIcon(icon, size: theme.sizes.iconSm, color: colors.textMuted),
-              Expanded(
-                child: Text(title, style: theme.typography.body.copyWith(color: colors.text)),
-              ),
-            ],
-          ),
-          Text(description, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-          child,
-        ],
-      ),
-    );
-  }
 }
 
 /// The recorder's settings pane: where files land and how they name
@@ -733,18 +695,16 @@ final class RecordingSettingsPane extends ConsumerWidget {
               onChanged: (value) => controller.maxSizeMb = value.round(),
               semanticLabel: t.recorder.maxSizeTitle,
             ),
-            _RecordChoice(
-              icon: DsIcons.fileVideo,
+            SettingsSegmentedRow<RecordingFileContainer>(
+              leading: const DsIcon(DsIcons.fileVideo),
               title: t.recorder.containerTitle,
               description: t.recorder.containerDescription,
-              child: DsSegmentedControl<RecordingFileContainer>(
-                value: settings.container,
-                onChanged: (value) => controller.container = value,
-                segments: [
-                  DsSegment(value: RecordingFileContainer.mpegTs, label: Text(t.recorder.containerTs)),
-                  DsSegment(value: RecordingFileContainer.mp4, label: Text(t.recorder.containerMp4)),
-                ],
-              ),
+              value: settings.container,
+              options: [
+                (value: RecordingFileContainer.mpegTs, label: t.recorder.containerTs),
+                (value: RecordingFileContainer.mp4, label: t.recorder.containerMp4),
+              ],
+              onChanged: (value) => controller.container = value,
             ),
             _RecordSwitch(
               icon: DsIcons.messageCircle,
@@ -819,7 +779,7 @@ final class RecordingSettingsPane extends ConsumerWidget {
               semanticLabel: t.recorder.stallTitle,
             ),
             _RecordSwitch(
-              icon: DsIcons.layers,
+              icon: DsIcons.trophy,
               title: t.recorder.preferBestTitle,
               description: t.recorder.preferBestDescription,
               value: settings.preferBestStream,

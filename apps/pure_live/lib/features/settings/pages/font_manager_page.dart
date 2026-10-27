@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/danmaku/danmaku_style_providers.dart' show danmakuStyleProvider;
-import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow;
+import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openSettingsChild;
+import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
+import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 
 /// The current family's shown name: the bundled preset's label, the cloud
@@ -31,15 +33,53 @@ String formatFontBytes(int bytes) {
   return unit == 0 ? '$bytes B' : '${value.toStringAsFixed(1)} ${units[unit]}';
 }
 
-/// Opens the font manager as a page of its own: the typeface the app (or the
-/// flying danmaku, with [danmaku]) draws in, chosen from the platform's own
-/// face, the bundled official ones and the cloud catalogue.
-///
-/// The bundled choices are one dropdown; the cloud families are a transfer
-/// list — each one downloads on its own, shows its progress, and can only be
-/// applied once its files are all on this device.
-Future<void> showFontManagerPage(BuildContext context, {bool danmaku = false}) {
-  return Navigator.of(context).push(DsPageRoute<void>(builder: (context) => FontManagerPage(danmaku: danmaku)));
+/// Opens the font manager — the typeface the app (or the flying danmaku, with
+/// [danmaku]) draws in — as a page of the settings surface: the centre pane on
+/// desktop, a pushed section route on a touch shell, the way every other
+/// section page is entered.
+void showFontManagerPage(BuildContext context, WidgetRef ref, {bool danmaku = false}) {
+  openSettingsChild(context, ref, danmaku ? SettingsSection.fontDanmaku : SettingsSection.fontApp);
+}
+
+/// Which slice of the catalogue the list shows.
+enum _FontFilter {
+  /// Everything this build can draw in: the bundled faces and the cloud ones.
+  all,
+
+  /// The official faces shipped inside the app.
+  bundled,
+
+  /// Cloud families whose files are already on this device.
+  installed,
+
+  /// Cloud families that still need a download.
+  available,
+}
+
+/// One row's data: a bundled preset (no [family]) or a cloud catalogue entry.
+final class _FontEntry {
+  const _FontEntry({required this.id, required this.name, required this.description, this.family});
+
+  /// The family id the theme names.
+  final String id;
+
+  /// The shown name.
+  final String name;
+
+  /// One sentence about the face.
+  final String description;
+
+  /// The catalogue entry; null for a bundled preset.
+  final FontFamily? family;
+
+  /// Whether the face ships with the app.
+  bool get bundled => family == null;
+
+  /// The licence name, when the catalogue has one.
+  String get license => family?.license ?? '';
+
+  /// The catalogue's files (empty for a bundled preset).
+  List<String> get files => family?.files ?? const [];
 }
 
 /// The page itself.
@@ -57,11 +97,28 @@ final class FontManagerPage extends ConsumerStatefulWidget {
 final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
   List<FontFamily>? _families;
   final Set<String> _failed = {};
+  final TextEditingController _query = TextEditingController();
+  final GlobalKey _listAnchor = GlobalKey();
+  _FontFilter _filter = _FontFilter.all;
 
   @override
   void initState() {
     super.initState();
+    // A transfer reports progress through the library's notifier: without
+    // listening, the buttons and the bar would keep their first frame.
+    ref.read(fontLibraryProvider).addListener(_onLibraryChanged);
     unawaited(_loadCatalog());
+  }
+
+  void _onLibraryChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    ref.read(fontLibraryProvider).removeListener(_onLibraryChanged);
+    _query.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCatalog() async {
@@ -214,252 +271,441 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
     return parts.length > 1 ? parts.last : name;
   }
 
+  /// Switches to the catalogue's not-yet-downloaded entries and brings the
+  /// list into view, so "download more" lands on the action it names.
+  void _showDownloads() {
+    setState(() => _filter = _FontFilter.available);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final anchor = _listAnchor.currentContext;
+      if (anchor == null) return;
+      Scrollable.ensureVisible(
+        anchor,
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+        alignment: 0.05,
+      );
+    });
+  }
+
+  List<_FontEntry> _entries(Translations t) => [
+    for (final (id, label) in kBundledFontPresets)
+      _FontEntry(id: id, name: label, description: t.settings.fontManagerBundledNote),
+    for (final family in _families ?? const <FontFamily>[])
+      _FontEntry(id: family.id, name: family.name, description: family.description, family: family),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final library = ref.watch(fontLibraryProvider);
     final family = widget.danmaku
         ? ref.watch(danmakuStyleProvider).fontFamily
         : AppThemeScope.of(context).settings.fontFamily;
-    final face = widget.danmaku ? ref.watch(danmakuFontFaceProvider) : ref.watch(appFontFaceProvider);
-    final families = _families ?? const <FontFamily>[];
-    // Only a downloaded family can be chosen, and only one with more than one
-    // file has a weight to pin.
-    final downloaded = [
-      for (final item in families)
-        if (library.isDownloaded(item.id)) item,
+    final entries = _entries(t);
+    final query = _query.text.trim().toLowerCase();
+    final filtered = [
+      for (final entry in entries)
+        if (_matchesFilter(entry, library) &&
+            (query.isEmpty ||
+                entry.name.toLowerCase().contains(query) ||
+                entry.description.toLowerCase().contains(query) ||
+                entry.license.toLowerCase().contains(query)))
+          entry,
     ];
-    final active = downloaded.where((item) => item.id == family).firstOrNull;
-    return ColoredBox(
-      color: colors.canvas,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s16, DsSpace.s4),
-              child: Row(
-                children: [
-                  DsButton.icon(
-                    variant: DsButtonVariant.ghost,
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const DsIcon(DsIcons.chevronLeft),
-                    semanticLabel: t.common.back,
-                  ),
-                  Expanded(
-                    child: Text(
-                      widget.danmaku ? t.settings.danmakuFont : t.settings.fontManagerTitle,
-                      style: theme.typography.title.copyWith(color: colors.text),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 860;
+        final rowActions = constraints.maxWidth >= 640;
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 960),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: DsSpace.s16,
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 560),
+                    child: DsSearchField(
+                      controller: _query,
+                      placeholder: t.settings.fontManagerSearchPlaceholder,
+                      semanticLabel: t.settings.fontManagerSearchPlaceholder,
+                      onChanged: (_) => setState(() {}),
                     ),
+                  ),
+                ),
+                _buildCurrentSection(context, family: family, library: library, entries: entries),
+                KeyedSubtree(
+                  key: _listAnchor,
+                  child: _buildFilters(context, count: filtered.length, wide: wide),
+                ),
+                if (filtered.isEmpty)
+                  DsCard(
+                    child: DsEmptyState(
+                      icon: const DsIcon(DsIcons.search),
+                      title: Text(t.settings.fontManagerNoResults, style: theme.typography.heading),
+                    ),
+                  )
+                else
+                  for (final entry in filtered)
+                    _buildFontCard(
+                      context,
+                      entry: entry,
+                      family: family,
+                      library: library,
+                      rowActions: rowActions,
+                    ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  bool _matchesFilter(_FontEntry entry, FontLibrary library) => switch (_filter) {
+    _FontFilter.all => true,
+    _FontFilter.bundled => entry.bundled,
+    _FontFilter.installed => !entry.bundled && library.isDownloaded(entry.id),
+    _FontFilter.available => !entry.bundled && !library.isDownloaded(entry.id),
+  };
+
+  /// The face in force, its switcher and the way to more faces — the same
+  /// section rhythm the rest of settings uses, instead of a hero card.
+  Widget _buildCurrentSection(
+    BuildContext context, {
+    required String? family,
+    required FontLibrary library,
+    required List<_FontEntry> entries,
+  }) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final current = entries.where((entry) => entry.id == family).firstOrNull;
+    final name = family == null
+        ? t.settings.fontPlatform
+        : fontFamilyLabel(t, family, cloudName: library.nameOf(family));
+    final description = family == null
+        ? t.settings.fontManagerSystemDescription(face: platformFontFamilyLabel())
+        : current != null && current.description.isNotEmpty
+        ? current.description
+        : t.settings.fontManagerBundledNote;
+    final select = DsSelect<String>(
+      value: family ?? '',
+      onChanged: (value) => _apply(value == null || value.isEmpty ? null : value),
+      options: [
+        DsSelectOption(value: '', label: t.settings.fontPlatform),
+        for (final (id, label) in kBundledFontPresets) DsSelectOption(value: id, label: label),
+        for (final entry in entries)
+          if (!entry.bundled && library.isDownloaded(entry.id)) DsSelectOption(value: entry.id, label: entry.name),
+      ],
+      semanticLabel: t.settings.font,
+    );
+    return DsListSection(
+      header: Text(t.settings.fontManagerCurrent),
+      children: [
+        SettingsConfigRow(
+          leading: _FontPreviewTile(family: family, size: 52, background: colors.control),
+          title: name,
+          description: description,
+          controlWidth: 220,
+          control: select,
+        ),
+        DsListRow(
+          leading: const DsIcon(DsIcons.download),
+          title: Text(t.settings.fontManagerDownloadMore),
+          showChevron: true,
+          onPressed: _showDownloads,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilters(BuildContext context, {required int count, required bool wide}) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final chips = DsChoiceChips<_FontFilter>(
+      value: _filter,
+      onChanged: (value) => setState(() => _filter = value),
+      semanticLabel: t.settings.font,
+      options: [
+        DsChipOption(
+          value: _FontFilter.all,
+          label: Text(t.settings.fontManagerFilterAll),
+          leading: const DsIcon(DsIcons.layoutGrid),
+        ),
+        DsChipOption(
+          value: _FontFilter.bundled,
+          label: Text(t.settings.fontManagerFilterBundled),
+          leading: const DsIcon(DsIcons.package),
+        ),
+        DsChipOption(
+          value: _FontFilter.installed,
+          label: Text(t.settings.fontManagerFilterInstalled),
+          leading: const DsIcon(DsIcons.circleCheck),
+        ),
+        DsChipOption(
+          value: _FontFilter.available,
+          label: Text(t.settings.fontManagerFilterAvailable),
+          leading: const DsIcon(DsIcons.cloudDownload),
+        ),
+      ],
+    );
+    final total = Text(
+      t.settings.fontManagerCount(count: '$count'),
+      style: theme.typography.caption.copyWith(color: colors.textMuted),
+    );
+    if (!wide) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s8,
+        children: [
+          chips,
+          Align(alignment: AlignmentDirectional.centerEnd, child: total),
+        ],
+      );
+    }
+    return Row(
+      spacing: DsSpace.s16,
+      children: [
+        Expanded(child: chips),
+        total,
+      ],
+    );
+  }
+
+  Widget _buildFontCard(
+    BuildContext context, {
+    required _FontEntry entry,
+    required String? family,
+    required FontLibrary library,
+    required bool rowActions,
+  }) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final installed = entry.bundled || library.isDownloaded(entry.id);
+    final inUse = entry.id == family;
+    final progress = library.progressOf(entry.id);
+    final failed = _failed.contains(entry.id);
+    final cloud = entry.family;
+    final tags = <Widget>[
+      if (!entry.bundled) _FontTag(label: t.settings.fontManagerTagCloud),
+      if (entry.files.length > 1) _FontTag(label: t.settings.fontManagerTagWeights(count: '${entry.files.length}')),
+      if (entry.license.isNotEmpty) _FontTag(label: entry.license),
+    ];
+    final preview = _FontPreviewTile(
+      family: installed ? entry.id : null,
+      size: 64,
+      background: inUse ? colors.surface : colors.control,
+    );
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: DsSpace.s6,
+      children: [
+        Wrap(
+          spacing: DsSpace.s8,
+          runSpacing: DsSpace.s4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              entry.name,
+              style: theme.typography.bodyStrong.copyWith(color: colors.text, fontFamily: installed ? entry.id : null),
+            ),
+            if (inUse)
+              DsBadge(
+                label: Text(t.settings.fontManagerInUse),
+                dot: false,
+                style: DsBadgeStyle(background: colors.surface, foreground: colors.accentText),
+              ),
+          ],
+        ),
+        if (entry.description.isNotEmpty)
+          Text(
+            entry.description,
+            style: theme.typography.small.copyWith(color: colors.textMuted),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        if (tags.isNotEmpty) Wrap(spacing: DsSpace.s6, runSpacing: DsSpace.s6, children: tags),
+      ],
+    );
+    final actions = <Widget>[
+      if (progress != null) ...[
+        DsButton.icon(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
+          loading: true,
+          onPressed: () {},
+          icon: const DsIcon(DsIcons.download),
+          semanticLabel: t.settings.fontManagerDownloading(done: '${progress.done}', total: '${progress.total}'),
+        ),
+        DsButton.icon(
+          variant: DsButtonVariant.ghost,
+          size: DsSize.sm,
+          onPressed: () => library.cancelDownload(entry.id),
+          icon: const DsIcon(DsIcons.x),
+          semanticLabel: t.settings.fontManagerCancelDownload,
+        ),
+      ] else if (inUse)
+        DsButton(
+          variant: DsButtonVariant.tinted,
+          size: DsSize.sm,
+          leading: const DsIcon(DsIcons.check),
+          onPressed: null,
+          style: DsButtonStyle(
+            disabled: DsButtonStyle(background: colors.accent, foreground: colors.onAccent, shadows: const []),
+          ),
+          child: Text(t.settings.fontManagerInUse),
+        )
+      else if (installed)
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
+          onPressed: () => _apply(entry.id),
+          child: Text(t.settings.fontManagerUse),
+        )
+      else
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
+          leading: DsIcon(failed ? DsIcons.refreshCw : DsIcons.download),
+          onPressed: () => unawaited(_download(cloud!)),
+          child: Text(failed ? t.common.retry : t.settings.fontManagerDownload),
+        ),
+      if (cloud != null && installed)
+        DsMenuAnchor(
+          semanticLabel: t.common.more,
+          align: DsAlign.end,
+          builder: (context, controller, child) => DsButton.icon(
+            variant: DsButtonVariant.ghost,
+            size: DsSize.sm,
+            onPressed: controller.toggle,
+            icon: const DsIcon(DsIcons.ellipsisVertical),
+            semanticLabel: t.common.more,
+          ),
+          items: [
+            if (entry.files.length > 1)
+              DsMenuItem(
+                leading: const DsIcon(DsIcons.layers),
+                label: Text(t.settings.fontWeightChange),
+                onPressed: () => unawaited(_chooseFace(cloud)),
+              ),
+            DsMenuItem(
+              leading: const DsIcon(DsIcons.trash2),
+              label: Text(t.settings.fontManagerDeleteFont),
+              destructive: true,
+              onPressed: () => unawaited(_delete(cloud)),
+            ),
+          ],
+        ),
+    ];
+    final actionRow = Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s8, children: actions);
+    return DsCard(
+      style: DsCardStyle(
+        padding: const EdgeInsets.all(DsSpace.s16),
+        background: inUse ? colors.accentTint : null,
+        shadows: inUse ? [DsShadow.innerRing(colors.accent)] : [DsShadow.innerRing(colors.border)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (rowActions)
+            Row(
+              spacing: DsSpace.s16,
+              children: [
+                preview,
+                Expanded(child: details),
+                actionRow,
+              ],
+            )
+          else ...[
+            Row(
+              spacing: DsSpace.s16,
+              children: [
+                preview,
+                Expanded(child: details),
+              ],
+            ),
+            const SizedBox(height: DsSpace.s12),
+            Align(alignment: AlignmentDirectional.centerEnd, child: actionRow),
+          ],
+          if (progress != null)
+            Padding(
+              padding: const EdgeInsets.only(top: DsSpace.s12),
+              child: Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: DsProgressBar(
+                      // The transport answers whole files, so the bar steps per
+                      // file and glides between them; the sweep runs until the
+                      // first answer lands.
+                      value: progress.done == 0 ? null : progress.done / progress.total,
+                      semanticLabel: entry.name,
+                    ),
+                  ),
+                  Text(
+                    formatFontBytes(progress.bytes),
+                    style: theme.typography.small.copyWith(color: colors.textSubtle),
                   ),
                 ],
               ),
             ),
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 760),
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s32),
-                    children: [
-                      DsListSection(
-                        header: Text(t.settings.font),
-                        children: [
-                          // One dropdown for the faces this build carries: the
-                          // platform's own, the bundled official ones, and any
-                          // cloud family whose files are already here.
-                          SettingsChoiceRow<String>(
-                            leading: const DsIcon(DsIcons.type),
-                            title: t.settings.font,
-                            description: t.settings.fontDescription,
-                            value: family ?? '',
-                            placeholder: t.settings.fontPlatform,
-                            options: [
-                              DsSelectOption(value: '', label: t.settings.fontPlatform),
-                              for (final (id, label) in kBundledFontPresets) DsSelectOption(value: id, label: label),
-                              for (final item in downloaded) DsSelectOption(value: item.id, label: item.name),
-                            ],
-                            onChanged: (value) => _apply(value.isEmpty ? null : value),
-                          ),
-                          if (family == null)
-                            DsListRow(
-                              leading: const DsIcon(DsIcons.info),
-                              title: Text(t.settings.fontManagerSystemDescription(face: platformFontFamilyLabel())),
-                            ),
-                          if (active != null && active.files.length > 1)
-                            DsListRow(
-                              leading: const DsIcon(DsIcons.layers),
-                              title: Text(t.settings.fontWeightChange),
-                              description: Text(t.settings.fontWeightChangeDesc),
-                              detail: Text(
-                                face.isEmpty
-                                    ? t.settings.fontWeightAuto
-                                    : t.settings.fontWeightLockedDetail(name: _faceLabel(face)),
-                              ),
-                              showChevron: true,
-                              onPressed: () => unawaited(_chooseFace(active)),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: DsSpace.s16),
-                      DsListSection(
-                        header: Text(t.settings.fontManagerCloud),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s4),
-                            child: Text(
-                              _families == null
-                                  ? t.settings.fontManagerDownloading(done: '0', total: '0')
-                                  : t.settings.fontManagerCloudDescription,
-                              style: theme.typography.small.copyWith(color: colors.textSubtle),
-                            ),
-                          ),
-                          for (final item in families)
-                            _CloudFontRow(
-                              family: item,
-                              library: library,
-                              inUse: item.id == family,
-                              failed: _failed.contains(item.id),
-                              onDownload: () => unawaited(_download(item)),
-                              onCancel: () => library.cancelDownload(item.id),
-                              onApply: () => _apply(item.id),
-                              onDelete: () => unawaited(_delete(item)),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The "Aa" specimen square: the family's own face once its files are here,
+/// the fallback face in muted ink while it still needs a download.
+final class _FontPreviewTile extends StatelessWidget {
+  const _FontPreviewTile({required this.family, required this.size, required this.background});
+
+  final String? family;
+  final double size;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return DsCard(
+      style: DsCardStyle(
+        padding: EdgeInsets.zero,
+        background: background,
+        shadows: const [],
+        borderRadius: BorderRadius.circular(theme.radii.card),
+      ),
+      child: SizedBox.square(
+        dimension: size,
+        child: Center(
+          child: Text(
+            'Aa',
+            style: theme.typography.title.copyWith(
+              fontFamily: family,
+              fontSize: size * 0.4,
+              height: 1,
+              color: family == null ? colors.textSubtle : colors.text,
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// One cloud family: its name in its own face once it is here, its state, and
-/// the transfer's own controls. A family that is still coming down cannot be
-/// applied — the row says so rather than offering a choice that would draw in
-/// the fallback face.
-final class _CloudFontRow extends StatelessWidget {
-  const _CloudFontRow({
-    required this.family,
-    required this.library,
-    required this.inUse,
-    required this.failed,
-    required this.onDownload,
-    required this.onCancel,
-    required this.onApply,
-    required this.onDelete,
-  });
+/// A small grey pill under a font's description: where it comes from, how
+/// many weights it ships and under what licence.
+final class _FontTag extends StatelessWidget {
+  const _FontTag({required this.label});
 
-  final FontFamily family;
-  final FontLibrary library;
-  final bool inUse;
-  final bool failed;
-  final VoidCallback onDownload;
-  final VoidCallback onCancel;
-  final VoidCallback onApply;
-  final VoidCallback onDelete;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final downloaded = library.isDownloaded(family.id);
-    final progress = library.progressOf(family.id);
-    final size = library.sizeOf(family.id);
-    final detail = downloaded
-        ? t.settings.fontManagerDownloadedSize(size: formatFontBytes(size ?? 0))
-        : failed
-        ? t.settings.fontManagerDownloadFailed
-        : t.settings.fontManagerNotDownloaded;
-    final transferring = t.settings.fontManagerDownloading(
-      done: '${progress?.done ?? 0}',
-      total: '${progress?.total ?? family.files.length}',
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        DsListRow(
-          leading: DsIcon(
-            downloaded
-                ? DsIcons.checkCircle
-                : failed
-                ? DsIcons.cloudOff
-                : DsIcons.cloudDownload,
-          ),
-          title: Text(family.name, style: downloaded ? TextStyle(fontFamily: family.id) : null),
-          description: Text(
-            [
-              if (family.description.isNotEmpty) family.description,
-              if (family.license.isNotEmpty) t.settings.fontManagerLicenseNote(name: family.license),
-            ].join(' · '),
-          ),
-          detail: Text(inUse ? t.settings.fontManagerInUse : detail),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: DsSpace.s8,
-            children: [
-              if (progress != null)
-                DsButton(
-                  variant: DsButtonVariant.ghost,
-                  size: DsSize.sm,
-                  onPressed: onCancel,
-                  child: Text(t.settings.fontManagerCancelDownload),
-                )
-              else if (downloaded) ...[
-                if (!inUse)
-                  DsButton(
-                    variant: DsButtonVariant.secondary,
-                    size: DsSize.sm,
-                    onPressed: onApply,
-                    child: Text(t.settings.fontManagerApply),
-                  ),
-                DsButton.icon(
-                  variant: DsButtonVariant.ghost,
-                  size: DsSize.sm,
-                  onPressed: onDelete,
-                  icon: const DsIcon(DsIcons.trash2),
-                  semanticLabel: t.settings.fontManagerDeleteFont,
-                ),
-              ] else
-                DsButton(
-                  size: DsSize.sm,
-                  onPressed: onDownload,
-                  child: Text(failed ? t.common.retry : t.settings.fontManagerDownload),
-                ),
-            ],
-          ),
-        ),
-        if (progress != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
-            child: Row(
-              spacing: DsSpace.s8,
-              children: [
-                Expanded(
-                  child: DsProgressBar(
-                    // The transport answers whole files, so the bar steps per
-                    // file and glides between them; the sweep runs until the
-                    // first answer lands.
-                    value: progress.total == 0 ? null : progress.done / progress.total,
-                    semanticLabel: family.name,
-                  ),
-                ),
-                Text(
-                  '$transferring · ${formatFontBytes(progress.bytes)}',
-                  style: theme.typography.small.copyWith(color: colors.textSubtle),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
+    return DsBadge(label: Text(label), dot: false);
   }
 }

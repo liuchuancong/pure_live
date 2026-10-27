@@ -1390,6 +1390,19 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get fontManagerDeleteFont => 'Delete the downloaded font';
 	@override String fontManagerDeleteQuestion({required Object name}) => 'Delete the files ${name} downloaded? They can be fetched again at any time.';
 	@override String get fontManagerRestartNote => 'A deleted font can keep drawing until the app restarts.';
+	@override String get fontManagerSearchPlaceholder => 'Search fonts by name or keyword';
+	@override String get fontManagerCurrent => 'Current font';
+	@override String get fontManagerDownloadMore => 'Get more fonts';
+	@override String get fontManagerFilterAll => 'All';
+	@override String get fontManagerFilterBundled => 'Bundled';
+	@override String get fontManagerFilterInstalled => 'Installed';
+	@override String get fontManagerFilterAvailable => 'Available';
+	@override String fontManagerCount({required Object count}) => '${count} fonts';
+	@override String get fontManagerTagBundled => 'Bundled';
+	@override String get fontManagerTagCloud => 'Cloud';
+	@override String fontManagerTagWeights({required Object count}) => '${count} weights';
+	@override String get fontManagerUse => 'Use';
+	@override String get fontManagerNoResults => 'No fonts match.';
 	@override String get textScale => 'Text scale';
 	@override String get textScaleDescription => 'Scales the app\'s text as a whole; 100% keeps the platform size.';
 	@override String get backHome => 'Back to app';
@@ -3655,6 +3668,19 @@ extension on TranslationsEn {
 			'settings.fontManagerDeleteFont' => 'Delete the downloaded font',
 			'settings.fontManagerDeleteQuestion' => ({required Object name}) => 'Delete the files ${name} downloaded? They can be fetched again at any time.',
 			'settings.fontManagerRestartNote' => 'A deleted font can keep drawing until the app restarts.',
+			'settings.fontManagerSearchPlaceholder' => 'Search fonts by name or keyword',
+			'settings.fontManagerCurrent' => 'Current font',
+			'settings.fontManagerDownloadMore' => 'Get more fonts',
+			'settings.fontManagerFilterAll' => 'All',
+			'settings.fontManagerFilterBundled' => 'Bundled',
+			'settings.fontManagerFilterInstalled' => 'Installed',
+			'settings.fontManagerFilterAvailable' => 'Available',
+			'settings.fontManagerCount' => ({required Object count}) => '${count} fonts',
+			'settings.fontManagerTagBundled' => 'Bundled',
+			'settings.fontManagerTagCloud' => 'Cloud',
+			'settings.fontManagerTagWeights' => ({required Object count}) => '${count} weights',
+			'settings.fontManagerUse' => 'Use',
+			'settings.fontManagerNoResults' => 'No fonts match.',
 			'settings.textScale' => 'Text scale',
 			'settings.textScaleDescription' => 'Scales the app\'s text as a whole; 100% keeps the platform size.',
 			'settings.backHome' => 'Back to app',
@@ -3992,6 +4018,8 @@ extension on TranslationsEn {
 			'settings.groupCards' => 'Cards & lists',
 			'settings.groupLanguage' => 'Language',
 			'settings.contrast' => 'Contrast',
+			_ => null,
+		} ?? switch (path) {
 			'settings.contrastDescription' => 'How strongly control edges and text stand out.',
 			'settings.contrastSoft' => 'Soft',
 			'settings.contrastStandard' => 'Standard',
@@ -4005,8 +4033,6 @@ extension on TranslationsEn {
 			'settings.backgroundDescription' => 'An image or video behind the app, uploaded from a file or loaded from a URL.',
 			'settings.backgroundImagesTitle' => 'Online images',
 			'settings.backgroundImagesDescription' => 'Official, Wallhaven, Bing and deepin sources; preview before applying.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundVideosTitle' => 'Live wallpapers',
 			'settings.navRandomWallpaper' => 'Random pictures',
 			'settings.randomWallpaperDescription' => 'Fetch from public random APIs, grouped; preview before applying.',
@@ -4506,6 +4532,8 @@ extension on TranslationsEn {
 			'toolbox.logsLevel' => 'Log level',
 			'toolbox.logsFile' => 'Write log file',
 			'toolbox.logsFileDesc' => 'Keep a rotating log (pure_live.log) in the app data directory; off keeps only the in-memory ring.',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsExport' => 'Copy log',
 			'toolbox.logsExportDesc' => 'Copy the in-memory records to the clipboard.',
 			'toolbox.logsClear' => 'Clear logs',
@@ -4519,8 +4547,6 @@ extension on TranslationsEn {
 			'toolbox.logsAutoOff' => 'Auto-scroll off (scroll to the bottom to resume)',
 			'toolbox.logsLines' => ({required int count}) => '${count} lines',
 			'toolbox.logsScrollBottom' => 'Scroll to bottom',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsCopied' => 'Log copied',
 			'toolbox.logsCopyEmpty' => 'No logs to copy',
 			'toolbox.logsDirectory' => 'Log directory',

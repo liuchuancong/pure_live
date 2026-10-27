@@ -6,7 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveAudienceCapability, LiveAudienceOnlineAvailability, LiveSite;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/browse/audience_metric_provider.dart';
-import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow;
+import 'package:pure_live/features/settings/surface/settings_widgets.dart'
+    show SettingsChoiceRow, SettingsConfigRow, SettingsHint;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -38,7 +39,6 @@ final class AudienceSettingsPane extends ConsumerWidget {
       for (final site in sites)
         if (heatOrTotalOnly(site)) site,
     ];
-    final noteStyle = DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -60,51 +60,49 @@ final class AudienceSettingsPane extends ConsumerWidget {
               ],
               onChanged: (value) => unawaited(ref.read(audienceMetricProvider.notifier).select(value)),
             ),
-            _Note(text: t.settings.audienceRankingNote, style: noteStyle),
+            SettingsHint(t.settings.audienceRankingNote),
           ],
         ),
         DsListSection(
           header: Text(t.settings.audienceRealOnlineGroup),
           children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.eye),
-              title: Text(t.settings.audienceRealOnline),
-              description: Text(t.settings.audienceRealOnlineDesc),
-              trailing: DsSwitch(
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.activity),
+              title: t.settings.audienceRealOnline,
+              description: t.settings.audienceRealOnlineDesc,
+              control: DsSwitch(
                 value: policy.preferRealOnline,
                 onChanged: automatic
                     ? (value) => unawaited(ref.read(audiencePolicyProvider.notifier).setPreferRealOnline(value: value))
                     : null,
               ),
             ),
-            if (!automatic) _Note(text: t.settings.audienceNeedsAutomaticMode, style: noteStyle),
+            if (!automatic) SettingsHint(t.settings.audienceNeedsAutomaticMode),
           ],
         ),
         DsListSection(
           header: Text(t.settings.audiencePlatformsGroup),
           children: [
-            _Note(text: t.settings.audiencePlatformsDesc, style: noteStyle),
+            SettingsHint(t.settings.audiencePlatformsDesc),
             for (final site in onlineSites)
               _PlatformRow(
                 site: site,
                 enabled: policy.enabledFor(site.manifest.id),
                 interactive: automatic && policy.preferRealOnline,
               ),
-            if (automatic && !policy.preferRealOnline)
-              _Note(text: t.settings.audiencePlatformNeedsOnline, style: noteStyle),
+            if (automatic && !policy.preferRealOnline) SettingsHint(t.settings.audiencePlatformNeedsOnline),
           ],
         ),
         if (heatOnlySites.isNotEmpty)
           DsListSection(
             header: Text('${t.settings.audienceHeatOnlyGroup} (${heatOnlySites.length})'),
             children: [
-              _Note(
-                text: heatOnlySites
+              SettingsHint(
+                heatOnlySites
                     .map(localizedSiteName)
                     .join(LocaleSettings.currentLocale.languageCode == 'zh' ? '、' : ', '),
-                style: noteStyle,
               ),
-              _Note(text: t.settings.audienceHeatOnlyDesc, style: noteStyle),
+              SettingsHint(t.settings.audienceHeatOnlyDesc),
             ],
           ),
       ],
@@ -173,15 +171,13 @@ final class _PlatformRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final capability = LiveAudienceCapability.of(site.manifest.id);
-    return DsListRow(
+    return SettingsConfigRow(
       leading: localizedSiteIcon(site, size: 20) ?? const DsIcon(DsIcons.antenna),
-      title: Text(localizedSiteName(site)),
-      description: Text(
-        capability.onlineAvailability == LiveAudienceOnlineAvailability.roomList
-            ? t.settings.audienceSourceRoomList
-            : t.settings.audienceSourceRoomRealtime,
-      ),
-      trailing: DsSwitch(
+      title: localizedSiteName(site),
+      description: capability.onlineAvailability == LiveAudienceOnlineAvailability.roomList
+          ? t.settings.audienceSourceRoomList
+          : t.settings.audienceSourceRoomRealtime,
+      control: DsSwitch(
         value: enabled,
         onChanged: interactive
             ? (value) => unawaited(
@@ -192,18 +188,4 @@ final class _PlatformRow extends ConsumerWidget {
       ),
     );
   }
-}
-
-/// A muted paragraph inside a settings card.
-final class _Note extends StatelessWidget {
-  const _Note({required this.text, required this.style});
-
-  final String text;
-  final TextStyle style;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
-    child: Text(text, style: style),
-  );
 }

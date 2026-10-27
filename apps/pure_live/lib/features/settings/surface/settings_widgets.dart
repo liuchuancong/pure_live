@@ -83,6 +83,110 @@ final class SettingsConfigRow extends StatelessWidget {
   }
 }
 
+/// A muted paragraph inside a settings card: the explanation a row cannot
+/// carry, or the caveat that would make its description too long. Every page
+/// uses this so notes share one measure, one tone and one distance from the
+/// row above them.
+final class SettingsHint extends StatelessWidget {
+  /// The note's [text]; [style] overrides the muted caption for a warning.
+  const SettingsHint(this.text, {this.style, super.key});
+
+  /// What the note says.
+  final String text;
+
+  /// Overrides the muted caption; used for a danger-toned caveat.
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
+      child: Text(text, style: style ?? theme.typography.caption.copyWith(color: colors.textMuted)),
+    );
+  }
+}
+
+/// A row for a short choice — two or three options whose labels fit side by
+/// side — drawn as one segmented control: the current value stays visible,
+/// and changing it is one tap rather than a dialog. A wider pane keeps the
+/// control on the row's end; a phone puts it under the label at full width.
+final class SettingsSegmentedRow<T> extends StatelessWidget {
+  /// A row choosing [value] among [options].
+  const SettingsSegmentedRow({
+    required this.title,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+    this.leading,
+    this.description,
+    this.detail,
+    this.controlWidth = 240,
+    super.key,
+  });
+
+  /// The row's name.
+  final String title;
+
+  /// One line under the name.
+  final String? description;
+
+  /// A leading glyph.
+  final Widget? leading;
+
+  /// A value printed before the control, e.g. the "custom" badge.
+  final Widget? detail;
+
+  /// The value in force; a value no option names selects none.
+  final T value;
+
+  /// The labels and their values, in reading order.
+  final List<({T value, String label})> options;
+
+  /// Called with the picked value; null disables the control.
+  final ValueChanged<T>? onChanged;
+
+  /// The control's width on a wide pane.
+  final double controlWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final control = DsSegmentedControl<T>(
+      value: value,
+      onChanged: onChanged,
+      semanticLabel: title,
+      segments: [for (final option in options) DsSegment(value: option.value, label: Text(option.label))],
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 640) {
+          return SettingsConfigRow(
+            leading: leading,
+            title: title,
+            description: description,
+            detail: detail,
+            controlWidth: controlWidth,
+            control: control,
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DsListRow(
+              leading: leading,
+              title: Text(title),
+              description: description == null ? null : Text(description!),
+              detail: detail,
+            ),
+            Padding(padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12), child: control),
+          ],
+        );
+      },
+    );
+  }
+}
+
 /// A setting row whose value follows the shell: desktop keeps the select's
 /// dropdown, and touch opens a full-row radio dialog whose Confirm applies
 /// the choice. The dialog's rows and actions are ordinary focus stops, so a

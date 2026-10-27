@@ -416,7 +416,7 @@ final class _DisplaySettingsDialog extends ConsumerWidget {
         spacing: DsSpace.s4,
         children: [
           SettingsChoiceRow<BoxFit>(
-            leading: const DsIcon(DsIcons.scan),
+            leading: const DsIcon(DsIcons.expand),
             title: t.settings.backgroundFit,
             description: t.settings.backgroundFitDescription,
             value: settings.fit,

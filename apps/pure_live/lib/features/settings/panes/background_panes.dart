@@ -43,7 +43,7 @@ final class BackgroundOverviewPane extends ConsumerWidget {
           header: Text(t.settings.backgroundDisplay),
           children: [
             SettingsChoiceRow<BoxFit>(
-              leading: const DsIcon(DsIcons.scan),
+              leading: const DsIcon(DsIcons.expand),
               title: t.settings.backgroundFit,
               description: t.settings.backgroundFitDescription,
               value: settings.fit,
@@ -67,7 +67,7 @@ final class BackgroundOverviewPane extends ConsumerWidget {
               ),
             ),
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.dropletLines),
+              leading: const DsIcon(DsIcons.layers),
               title: t.settings.backgroundOverlayBlur,
               description: t.settings.backgroundOverlayBlurDescription,
               detail: Text('${settings.overlayBlurSigma.round()}'),

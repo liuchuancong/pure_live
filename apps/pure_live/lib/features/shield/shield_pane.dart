@@ -20,8 +20,6 @@ final class ShieldPane extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final rules = ref.watch(shieldRulesProvider);
     final filter = ref.watch(danmakuFilterProvider);
     final filterController = ref.read(danmakuFilterProvider.notifier);
@@ -33,26 +31,29 @@ final class ShieldPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.shield.masterTitle),
           children: [
-            DsSwitch(
-              value: rules.enabled,
-              onChanged: (value) => unawaited(ref.read(shieldRulesProvider.notifier).setEnabled(value: value)),
-              label: Text(t.shield.enabled),
-              description: Text(t.shield.enabledDescription),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.shield),
+              title: t.shield.enabled,
+              description: t.shield.enabledDescription,
+              control: DsSwitch(
+                value: rules.enabled,
+                onChanged: (value) => unawaited(ref.read(shieldRulesProvider.notifier).setEnabled(value: value)),
+              ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(DsSpace.s12),
-              child: Text(t.shield.effectNote, style: theme.typography.small.copyWith(color: colors.textSubtle)),
-            ),
+            SettingsHint(t.shield.effectNote),
           ],
         ),
         DsListSection(
           header: Text(t.shield.similarityTitle),
           children: [
-            DsSwitch(
-              value: filter.similarityEnabled,
-              onChanged: (value) => unawaited(filterController.setSimilarityEnabled(value: value)),
-              label: Text(t.shield.similarityEnabled),
-              description: Text(t.shield.similarityEnabledDescription),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.scanText),
+              title: t.shield.similarityEnabled,
+              description: t.shield.similarityEnabledDescription,
+              control: DsSwitch(
+                value: filter.similarityEnabled,
+                onChanged: (value) => unawaited(filterController.setSimilarityEnabled(value: value)),
+              ),
             ),
             if (filter.similarityEnabled) ...[
               SettingsConfigRow(
@@ -100,8 +101,7 @@ final class ShieldPane extends ConsumerWidget {
                       DanmakuFilterRange.maxCacheSizeStep,
                   onChanged: (value) => unawaited(
                     filterController.setSimilarityMaxCacheSize(
-                      (value / DanmakuFilterRange.maxCacheSizeStep).round() *
-                          DanmakuFilterRange.maxCacheSizeStep,
+                      (value / DanmakuFilterRange.maxCacheSizeStep).round() * DanmakuFilterRange.maxCacheSizeStep,
                     ),
                   ),
                   semanticLabel: t.shield.similarityMaxCacheSize,
@@ -113,11 +113,14 @@ final class ShieldPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.shield.repeatTitle),
           children: [
-            DsSwitch(
-              value: repeat.enabled,
-              onChanged: (value) => unawaited(ref.read(danmakuRepeatProvider.notifier).setEnabled(value: value)),
-              label: Text(t.shield.repeatEnabled),
-              description: Text(t.shield.repeatEnabledDescription),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.repeat),
+              title: t.shield.repeatEnabled,
+              description: t.shield.repeatEnabledDescription,
+              control: DsSwitch(
+                value: repeat.enabled,
+                onChanged: (value) => unawaited(ref.read(danmakuRepeatProvider.notifier).setEnabled(value: value)),
+              ),
             ),
             if (repeat.enabled)
               SettingsConfigRow(
@@ -140,17 +143,23 @@ final class ShieldPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.shield.contentTitle),
           children: [
-            DsSwitch(
-              value: filter.blockEmoteOnly,
-              onChanged: (value) => unawaited(filterController.setBlockEmoteOnly(value: value)),
-              label: Text(t.shield.blockEmoteOnly),
-              description: Text(t.shield.blockEmoteOnlyDescription),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.smile),
+              title: t.shield.blockEmoteOnly,
+              description: t.shield.blockEmoteOnlyDescription,
+              control: DsSwitch(
+                value: filter.blockEmoteOnly,
+                onChanged: (value) => unawaited(filterController.setBlockEmoteOnly(value: value)),
+              ),
             ),
-            DsSwitch(
-              value: filter.blockLong,
-              onChanged: (value) => unawaited(filterController.setBlockLong(value: value)),
-              label: Text(t.shield.blockLong),
-              description: Text(t.shield.blockLongDescription),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.fileText),
+              title: t.shield.blockLong,
+              description: t.shield.blockLongDescription,
+              control: DsSwitch(
+                value: filter.blockLong,
+                onChanged: (value) => unawaited(filterController.setBlockLong(value: value)),
+              ),
             ),
             if (filter.blockLong)
               SettingsConfigRow(
@@ -168,18 +177,20 @@ final class ShieldPane extends ConsumerWidget {
                       DanmakuFilterRange.blockLongLengthStep,
                   onChanged: (value) => unawaited(
                     filterController.setBlockLongLength(
-                      (value / DanmakuFilterRange.blockLongLengthStep).round() *
-                          DanmakuFilterRange.blockLongLengthStep,
+                      (value / DanmakuFilterRange.blockLongLengthStep).round() * DanmakuFilterRange.blockLongLengthStep,
                     ),
                   ),
                   semanticLabel: t.shield.blockLongLength,
                 ),
               ),
-            DsSwitch(
-              value: filter.douyuSuspectedAutomated,
-              onChanged: (value) => unawaited(filterController.setDouyuSuspectedAutomated(value: value)),
-              label: Text(t.shield.douyuSuspected),
-              description: Text(t.shield.douyuSuspectedDescription),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.bot),
+              title: t.shield.douyuSuspected,
+              description: t.shield.douyuSuspectedDescription,
+              control: DsSwitch(
+                value: filter.douyuSuspectedAutomated,
+                onChanged: (value) => unawaited(filterController.setDouyuSuspectedAutomated(value: value)),
+              ),
             ),
           ],
         ),
