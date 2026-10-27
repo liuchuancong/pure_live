@@ -259,7 +259,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       await _applyEngineOptions(handle);
       final uri = Uri.parse(info.url);
       await handle.open(
-        PlayerSource(
+        PlayerSource.of(
           id: SourceId('vod:${widget.bvid}:${part.cid}:${DateTime.now().microsecondsSinceEpoch}'),
           uri: uri,
           type: SourceType.remote,

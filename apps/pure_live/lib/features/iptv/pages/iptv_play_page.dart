@@ -186,7 +186,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
         : 'iptv:${channel.id}:catchup:${replay.start.millisecondsSinceEpoch}';
     final sources = [
       for (final (index, url) in urls.indexed)
-        PlayerSource(
+        PlayerSource.of(
           id: SourceId('$idPrefix:$index'),
           uri: Uri.parse(url),
           type: SourceType.live,

@@ -172,7 +172,7 @@ final class _BackgroundVideoViewState extends State<_BackgroundVideoView> {
 
   PlayerSource _sourceOf(Uri uri) {
     final type = uri.scheme == 'file' ? SourceType.file : SourceType.remote;
-    return PlayerSource(
+    return PlayerSource.of(
       id: SourceId('background:${uri.toString().hashCode}'),
       uri: uri,
       type: type,

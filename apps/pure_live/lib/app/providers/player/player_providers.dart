@@ -67,7 +67,7 @@ LivePlaybackController createRoomPlayback({
 List<PlayerSource> roomSourcesOf(List<LivePlayLine> lines) {
   return [
     for (final line in lines)
-      PlayerSource(
+      PlayerSource.of(
         id: SourceId('live:${line.lineLabel ?? ''}:${line.url.hashCode}'),
         uri: Uri.parse(line.url),
         type: SourceType.live,
