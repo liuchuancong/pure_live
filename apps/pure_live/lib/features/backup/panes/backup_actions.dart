@@ -3,7 +3,6 @@ import 'dart:io' show Directory, File, FileSystemException;
 
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_net/live_net.dart' show ClientProfile, LiveHttp;
 import 'package:live_storage/live_storage.dart';
 import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:path/path.dart' as p;
@@ -11,8 +10,9 @@ import 'package:path_provider/path_provider.dart' show getApplicationDocumentsDi
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart';
+import 'package:pure_live/features/backup/webdav/webdav_accounts.dart';
 import 'package:pure_live/features/backup/webdav/webdav_client.dart';
-import 'package:pure_live/features/backup/webdav/webdav_settings.dart';
+import 'package:pure_live/features/backup/webdav/webdav_settings.dart' show webDavVault;
 
 // The backup pane's actions, one function per row: capture the document,
 // read and write it as a local file, apply a file or a downloaded one, and
@@ -194,25 +194,30 @@ Future<Directory?> _tryDirectory(Future<Directory?> Function() find) async {
 
 // -- WebDAV sync ----------------------------------------------------------
 
-/// The configured WebDAV connection, or null when no server URL is
-/// stored. The password comes from the secret vault; a vault that never
-/// opened leaves it empty (the server then answers 401 and the pane says
-/// so).
-Future<({String url, String username, String password})?> webdavCredentials(WidgetRef ref) async {
-  final url = _stored(kWebDavUrlPref).trim();
-  if (url.isEmpty) return null;
-  var password = '';
-  try {
-    final store = await ref.read(webdavSecretStoreProvider.future);
-    password = store.value(SecretRefs.webdav(kWebDavVault)) ?? '';
-  } on Object {
-    // The vault failed to open; the empty password fails auth loudly.
-  }
-  return (url: url, username: _stored(kWebDavUserPref), password: password);
+/// The client for one saved account, its password read from the vault.
+///
+/// A vault that never opened leaves the password empty; the server then
+/// answers 401 and the page says so, which is the reference's behaviour.
+Future<WebDavBackupClient> webDavClientFor(WidgetRef ref, WebDavAccount account) async {
+  return WebDavBackupClient(
+    url: account.url,
+    username: account.user,
+    password: await readAccountPassword(await webDavVault(ref), account.id),
+  );
 }
 
-/// Asks the configured server whether it answers and the credentials
-/// hold. Throws [WebDavFailure] with the reason when it does not, and a
+/// The client for the account the pages have selected.
+///
+/// Throws a [StateError] when no account is saved, which is what the pages'
+/// one "先填写服务器地址" message already keys on.
+Future<WebDavBackupClient> webDavClient(WidgetRef ref) async {
+  final account = ref.read(webdavAccountsProvider.notifier).current;
+  if (account == null) throw StateError('no WebDAV server configured');
+  return await webDavClientFor(ref, account);
+}
+
+/// Asks the selected server whether it answers and the credentials hold.
+/// Throws [WebDavFailure] with the reason when it does not, and a
 /// [StateError] when no server is configured.
 Future<void> testWebDav(WidgetRef ref) async {
   final client = await webDavClient(ref);
@@ -236,25 +241,6 @@ Future<BackupDocument?> downloadBackupFromWebDav(WidgetRef ref) async {
   final bytes = await client.download();
   return BackupDocument.tryDecode(utf8.decode(bytes, allowMalformed: true));
 }
-
-/// The WebDAV client over the app's shared transport — the same
-/// per-profile client every module's remote reads go through, so the
-/// proxy settings apply. The factory caches it per profile; nobody closes
-/// it here. Throws a [StateError] when no server is configured.
-Future<WebDavBackupClient> webDavClient(WidgetRef ref) async {
-  final credentials = await webdavCredentials(ref);
-  if (credentials == null) throw StateError('no WebDAV server configured');
-  return WebDavBackupClient(
-    _sharedHttp(ref),
-    baseUrl: credentials.url,
-    username: credentials.username,
-    password: credentials.password,
-  );
-}
-
-/// The shared `ClientProfile.api` client the app routes its remote reads
-/// through (see `networkFactoryProvider`).
-LiveHttp _sharedHttp(WidgetRef ref) => ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
 
 String _stored(String key) {
   try {

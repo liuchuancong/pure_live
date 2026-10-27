@@ -24,5 +24,12 @@
   "unmuteAll": "取消全部静音",
   "qualityFailed": "画质切换失败",
   "pickerSearch": "搜索关注或历史房间…",
+  "pickerHint": "点直播间放进这一格",
+  "pickerTabFollows": "关注",
+  "pickerTabHistory": "历史记录",
+  "pickerSearchShort": "搜索主播或标题",
+  "paneEmpty": "点击选台",
+  "panePicking": "正在为这一格选台",
+  "wallFailed": "无法读取多画面记录",
   "pickerNoMatch": "没有匹配的房间"
 }

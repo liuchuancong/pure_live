@@ -143,6 +143,7 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
               clearable: true,
               placeholder: t.room.sendHint,
               onSubmitted: (word) => unawaited(_send(word)),
+              style: DsTextFieldStyle(borderRadius: BorderRadius.circular(DsRadii.pill)),
             ),
           ),
           DsButton(onPressed: () => unawaited(_send(_field.text)), child: Text(t.room.send)),
@@ -212,8 +213,45 @@ final class _ChatLine extends ConsumerWidget {
     final replayed = message.messageId.startsWith('local-replay-');
     final valueInYuan = ref.watch(chatGiftValueInYuanProvider);
     final words = gift == null ? message.text : _giftSentence(t, gift, anchorName, inYuan: valueInYuan);
+    // The room's own notices (the platform's system lines) sit apart from
+    // the conversation: centred, quiet, no "系统:" voice.
+    final isSystem = gift == null && senderName.isEmpty;
+    if (isSystem) {
+      final line = Padding(
+        padding: EdgeInsets.symmetric(vertical: vertical),
+        child: Align(
+          alignment: AlignmentDirectional.center,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s3),
+            decoration: BoxDecoration(
+              color: colors.control.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(DsRadii.pill),
+            ),
+            child: Text(
+              words,
+              textAlign: TextAlign.center,
+              style: theme.typography.caption.copyWith(
+                fontSize: fontSize > 0 ? fontSize.toDouble() : null,
+                color: colors.textSubtle,
+              ),
+            ),
+          ),
+        ),
+      );
+      return DsContextMenuRegion(
+        semanticLabel: t.room.messageActions,
+        items: [
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.copy),
+            label: Text(t.room.copy),
+            onPressed: () => unawaited(copyRoomMessageText(context, words)),
+          ),
+        ],
+        child: line,
+      );
+    }
     Widget content = Padding(
-      padding: EdgeInsets.symmetric(vertical: vertical),
+      padding: EdgeInsets.symmetric(vertical: gift == null ? vertical : 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -231,7 +269,6 @@ final class _ChatLine extends ConsumerWidget {
                       text: '[${t.room.replayed}] ',
                       style: nameStyle.copyWith(color: colors.textSubtle),
                     ),
-                  if (showNames && senderName.isEmpty) TextSpan(text: '${t.room.system}: ', style: nameStyle),
                   if (showNames && senderName.isNotEmpty) TextSpan(text: '$senderName: ', style: nameStyle),
                   TextSpan(text: words, style: lineStyle),
                 ],
@@ -241,7 +278,19 @@ final class _ChatLine extends ConsumerWidget {
         ],
       ),
     );
-    if (listStyle == 'card') {
+    if (gift != null) {
+      // A gift is money on the page: the accent's own tint behind the line,
+      // a hairline edge, so it reads apart from ordinary talk.
+      content = Container(
+        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s6),
+        decoration: BoxDecoration(
+          color: colors.accent.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(theme.radii.card),
+          border: Border.fromBorderSide(BorderSide(color: colors.accent.withValues(alpha: 0.18))),
+        ),
+        child: content,
+      );
+    } else if (listStyle == 'card') {
       content = Container(
         margin: const EdgeInsets.symmetric(vertical: 2),
         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s6),
@@ -634,9 +683,20 @@ final class _SuperChatCard extends StatelessWidget {
     final price = message.price.displayText.trim().isNotEmpty
         ? message.price.displayText.trim()
         : [?message.price.currency, if (message.price.amount case final amount?) '$amount'].join();
+    // The price's warmth: the tint deepens with the money on the line, so
+    // the board reads by value at a glance (reference's graded cards).
+    final amount = message.price.amount ?? 0;
+    final tint = amount >= 100
+        ? 0.16
+        : amount >= 10
+        ? 0.10
+        : 0.05;
     return Container(
       padding: const EdgeInsets.all(DsSpace.s12),
-      decoration: DsBoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
+      decoration: DsBoxDecoration(
+        color: colors.accent.withValues(alpha: tint),
+        borderRadius: BorderRadius.circular(theme.radii.card),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s8,
@@ -692,12 +752,11 @@ final class _SuperChatCard extends StatelessWidget {
   }
 }
 
-/// The shield's lists inside the room: the same pane the settings page
-/// shows, so a rule added here is the one that page lists.
+/// The shield inside the room: the compact tag-based panel the chat
+/// column's width was squeezing out of the settings pane.
 final class _ShieldTab extends StatelessWidget {
   const _ShieldTab();
 
   @override
-  Widget build(BuildContext context) =>
-      const SingleChildScrollView(padding: EdgeInsets.all(DsSpace.s16), child: ShieldPane());
+  Widget build(BuildContext context) => const RoomShieldPanel();
 }

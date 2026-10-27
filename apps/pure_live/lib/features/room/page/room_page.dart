@@ -24,7 +24,8 @@ import 'package:pure_live/features/history/history.dart';
 import 'package:pure_live/features/recorder/recorder.dart';
 import 'package:pure_live/features/room/chat/room_chat.dart' show RoomChatPanel;
 import 'package:pure_live/features/room/controller/room_controller.dart';
-import 'package:pure_live/features/room/page/player_surface.dart' show PlayerSurface;
+import 'package:pure_live/features/room/page/player_surface.dart'
+    show PlayerSurface, kPlayerStageColor;
 import 'package:pure_live/features/room/page/room_details.dart'
     show copyRoomLink, openRoomExternally, roomLinkOf, shareRoom, showRoomDetails;
 import 'package:pure_live/features/room/page/room_orientation.dart'
@@ -138,6 +139,12 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// The room's width at which the chat moves beside the picture (the
   /// reference's `wide` layout).
   static const double _wideBreakpoint = 840;
+
+  /// The player's own identity across the page's layout branches: normal,
+  /// immersive (fullscreen/window fullscreen/PiP) and the portrait surface
+  /// all embed the same [PlayerSurface] state, so a mode switch reparents
+  /// the subtree instead of tearing the video texture down and back.
+  final GlobalKey _playerKey = GlobalKey();
 
   @override
   void initState() {
@@ -255,8 +262,21 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         ..start(null);
       if (_leaveToFloating && FloatingRoomPlayer.canShow) {
         // The room controller outlives this page; the overlay takes over its
-        // handle until the viewer closes or re-enters the room.
-        FloatingRoomPlayer.show();
+        // handle until the viewer closes or re-enters the room. A handoff
+        // that did not land (a same-frame hide won, the host is gone) stops
+        // the room here instead of leaving it playing behind the pages. The
+        // stops are read before the await: this State's ref is gone by the
+        // time the answer arrives.
+        final notifier = ref.read(roomProvider.notifier);
+        final controller = _presentationController;
+        final player = _player;
+        unawaited(
+          FloatingRoomPlayer.show().then((shown) {
+            if (shown) return;
+            unawaited(notifier.close());
+            if (controller != null && player != null) unawaited(controller.exit(player));
+          }),
+        );
       } else {
         // Leaving the route stops the stream rather than keeping it behind
         // the next page.
@@ -729,6 +749,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     final chatCollapsed = ref.watch(playbackSettingsProvider.select((settings) => settings.chatCollapsed));
     final portraitChoice = portraitState.modeFor(roomKey);
     final player = PlayerSurface(
+      key: _playerKey,
       roomState: room,
       barrage: ref.read(roomProvider.notifier).barrage,
       onLeave: leave,
@@ -780,7 +801,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 final picture = SizedBox(
                   height: math.min(desired, maxPicture),
                   child: ColoredBox(
-                    color: colors.overlay,
+                    color: kPlayerStageColor,
                     child: Center(
                       child: AspectRatio(aspectRatio: ratio, child: player),
                     ),
@@ -807,7 +828,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
               final stage = Expanded(
                 child: ColoredBox(
-                  color: colors.overlay,
+                  color: kPlayerStageColor,
                   child: Center(
                     child: AspectRatio(aspectRatio: pictureRatio, child: player),
                   ),
@@ -818,7 +839,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                   children: [
                     Positioned.fill(
                       child: ColoredBox(
-                        color: colors.overlay,
+                        color: kPlayerStageColor,
                         child: Center(
                           child: AspectRatio(aspectRatio: pictureRatio, child: player),
                         ),
@@ -880,9 +901,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     );
 
     // A presentation mode owns the whole page; the inline room keeps the
-    // app bar with its header, follow button and menu.
+    // app bar with its header, follow button and menu. The mode surface is
+    // the stage's own black: a transition's missing frame reads dark.
     if (presentation != PresentationMode.normal) {
-      return withShortcuts(ColoredBox(color: colors.overlay, child: player));
+      return withShortcuts(ColoredBox(color: kPlayerStageColor, child: player));
     }
     return withShortcuts(
       Scaffold(
@@ -1172,9 +1194,9 @@ final class _RoomMenu extends ConsumerWidget {
   }
 }
 
-/// The strip above the chat (the reference's `RoomInfoBar`): the room's
-/// state and title on the first line, the audience figures and the sleep
-/// timer on the second. It sits in the chat column on a wide window and
+/// The strip above the chat (the reference's `RoomInfoBar`): one compact
+/// row — live state, title, audience, start time, the sleep timer — that
+/// opens the details sheet. It sits in the chat column on a wide window and
 /// under the picture on a phone, never over the picture itself.
 final class _RoomInfoBar extends ConsumerWidget {
   const _RoomInfoBar({required this.room});
@@ -1190,10 +1212,9 @@ final class _RoomInfoBar extends ConsumerWidget {
     if (detail == null) {
       return const Padding(
         padding: EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s6,
-          children: [DsSkeleton(width: 168, height: 14), DsSkeleton(width: 96, height: 10)],
+        child: Row(
+          spacing: DsSpace.s8,
+          children: [DsSkeleton(width: 220, height: 14), Spacer(), DsSkeleton(width: 56, height: 20)],
         ),
       );
     }
@@ -1205,76 +1226,64 @@ final class _RoomInfoBar extends ConsumerWidget {
       builder: (context, states, child) =>
           ColoredBox(color: states.contains(WidgetState.hovered) ? colors.hover : colors.surface, child: child),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s8, DsSpace.s12, DsSpace.s6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s4,
+        padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s8, DsSpace.s6),
+        child: Row(
+          spacing: DsSpace.s8,
           children: [
-            Row(
-              spacing: DsSpace.s6,
-              children: [
-                if (detail.broadcast.isRecord)
-                  DsBadge(dot: false, label: Text(t.favorites.statusReplay), status: DsStatus.info)
-                else if (detail.broadcast.isLiveNow)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: DsSpace.s4,
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(shape: BoxShape.circle, color: colors.accent),
-                      ),
-                      Text(
-                        t.favorites.statusLiveNow,
-                        style: theme.typography.caption.copyWith(color: colors.accent, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  )
-                else
-                  DsBadge(dot: false, label: Text(t.favorites.statusOfflineNow)),
-                Flexible(
-                  child: Text(
-                    detail.content.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.title.copyWith(color: colors.text),
+            if (detail.broadcast.isRecord)
+              DsBadge(dot: false, label: Text(t.favorites.statusReplay), status: DsStatus.info)
+            else if (detail.broadcast.isLiveNow)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s4,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: colors.accent),
                   ),
-                ),
-                DsIcon(DsIcons.chevronDown, size: theme.sizes.iconXs, color: colors.textSubtle),
-              ],
+                  Text(
+                    t.favorites.statusLiveNow,
+                    style: theme.typography.caption.copyWith(color: colors.accent, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              )
+            else
+              DsBadge(dot: false, label: Text(t.favorites.statusOfflineNow)),
+            Flexible(
+              child: Text(
+                detail.content.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.bodyStrong.copyWith(color: colors.text),
+              ),
             ),
-            Row(
-              spacing: DsSpace.s8,
-              children: [
-                if (audience != null)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: DsSpace.s3,
-                    children: [
-                      DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: colors.textSubtle),
-                      Text(
-                        AudienceFormat.format(audience),
-                        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
-                      ),
-                    ],
+            if (audience != null)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s3,
+                children: [
+                  DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: colors.textSubtle),
+                  Text(
+                    AudienceFormat.format(audience),
+                    style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
                   ),
-                if (started != null)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: DsSpace.s3,
-                    children: [
-                      DsIcon(DsIcons.clock, size: theme.sizes.iconXs, color: colors.textSubtle),
-                      Text(
-                        _clock(started),
-                        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
-                      ),
-                    ],
+                ],
+              ),
+            if (started != null)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s3,
+                children: [
+                  DsIcon(DsIcons.clock, size: theme.sizes.iconXs, color: colors.textSubtle),
+                  Text(
+                    _clock(started),
+                    style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
                   ),
-                const Spacer(),
-                const _SleepChip(),
-              ],
-            ),
+                ],
+              ),
+            DsIcon(DsIcons.chevronDown, size: theme.sizes.iconXs, color: colors.textSubtle),
+            const _SleepChip(),
           ],
         ),
       ),

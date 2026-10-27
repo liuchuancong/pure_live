@@ -289,7 +289,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   List<EngineOption> _storedEngineOptions() => playerStoredEngineOptions(
     hardwareDecoding: ref.read(playbackSettingsProvider).hardwareDecoding,
     tuning: ref.read(playerTuningProvider),
-    proxy: ref.read(playerProxyProvider),
+    proxy: ref.read(effectivePlayerProxyProvider),
   );
 
   /// The stored options plus the chosen shader chain; the chain lives on disk
@@ -376,7 +376,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
       final current = _handle;
       if (current != null) unawaited(_applyAudio(current));
     });
-    ref.listen(playerProxyProvider, (previous, next) {
+    ref.listen(effectivePlayerProxyProvider, (previous, next) {
       if (previous == next) return;
       final playback = _playback;
       if (playback != null) unawaited(playback.updateEngineOptions(_storedEngineOptions()));

@@ -231,6 +231,29 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get importFailed => 'Import failed';
 	@override String summary({required Object follows, required Object history, required Object areas, required Object settings}) => 'Follows ${follows} · History ${history} · Areas ${areas} · Settings ${settings}';
 	@override String get webdavSection => 'WebDAV sync';
+	@override String get webdavAccounts => 'WebDAV accounts';
+	@override String get webdavAccountsHint => 'Opening an account makes it the current one and walks its folders; the pencil edits or deletes it.';
+	@override String get webdavAddAccount => 'Add account';
+	@override String get webdavEditAccount => 'Edit account';
+	@override String get webdavAccountName => 'Account name';
+	@override String get webdavAccountNameHint => 'Left blank, the server\'s host names it';
+	@override String get webdavCurrent => 'Current';
+	@override String get webdavNoAccounts => 'No WebDAV account yet';
+	@override String get webdavNoAccountsDesc => 'Add a server before uploading a backup or restoring from one.';
+	@override String webdavAccountDeleteTitle({required Object name}) => 'Delete the "${name}" account?';
+	@override String get webdavAccountDeleteDesc => 'Removes the saved address and password on this device only; the server\'s files stay as they are.';
+	@override String get webdavAccountDeleted => 'Account deleted';
+	@override String get webdavRefresh => 'Refresh';
+	@override String get webdavRoot => 'Root';
+	@override String get webdavNewFolder => 'New folder';
+	@override String get webdavNewFolderName => 'Folder name';
+	@override String get webdavFolderCreated => 'Folder created';
+	@override String get webdavEnterFolder => 'Open folder';
+	@override String get webdavDeleteFolderDesc => 'Deletes the folder and everything inside it on the server.';
+	@override String get webdavTestDesc => 'Checks the address and the password without sending any data.';
+	@override String get webdavUploadDesc => 'Writes this device\'s data and uploads it to the current account\'s root, replacing the same-named file.';
+	@override String get webdavDownloadDesc => 'Reads the current account\'s backup file and overwrites this device with it.';
+	@override String get webdavBrowseDesc => 'Walk the server like a folder: open directories, make one, upload or restore any file.';
 	@override String webdavDescription({required Object file}) => 'The backup lives on the server as ${file}: upload overwrites it, download restores it.';
 	@override String get webdavConfigTitle => 'Server';
 	@override String get webdavConfigDescription => 'Fill in the WebDAV server address and account; the password is kept in the system\'s secure storage and never enters a backup.';
@@ -639,6 +662,13 @@ class _Translations$multiview$en extends Translations$multiview$zh_CN {
 	@override String get unmuteAll => 'Unmute all';
 	@override String get qualityFailed => 'The quality switch failed';
 	@override String get pickerSearch => 'Search followed or watched rooms…';
+	@override String get pickerHint => 'Tap a room to drop it into this cell';
+	@override String get pickerTabFollows => 'Follows';
+	@override String get pickerTabHistory => 'History';
+	@override String get pickerSearchShort => 'Search streamers or titles';
+	@override String get paneEmpty => 'Tap to pick';
+	@override String get panePicking => 'Picking for this cell';
+	@override String get wallFailed => 'The wall could not be read';
 	@override String get pickerNoMatch => 'No matching room';
 }
 
@@ -1270,11 +1300,24 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get navNetwork => 'Network';
 	@override String get networkDescription => 'The app proxy and transport behaviour.';
 	@override String get proxy => 'App proxy';
-	@override String get proxyDesc => 'When on, the vod, guide and backup requests all route through it.';
 	@override String get proxyHost => 'Host';
 	@override String get proxyHostDesc => 'The proxy server\'s host name or address.';
 	@override String get proxyPort => 'Port';
 	@override String get proxyPortDesc => 'The port that proxy server listens on.';
+	@override String get proxyModeOff => 'No proxy';
+	@override String get proxyModeOffDesc => 'The vod, guide and backup requests all go direct.';
+	@override String get proxyModeSystem => 'Follow the system proxy';
+	@override String get proxyModeSystemDesc => 'Uses the HTTP proxy the operating system itself is configured to use, or goes direct when it names none.';
+	@override String get proxyModeManual => 'Manual proxy';
+	@override String get proxyModeManualDesc => 'Uses the host and port typed below.';
+	@override String get proxySystemProbing => 'Checking the system proxy…';
+	@override String proxySystemResolved({required Object host}) => 'System proxy: ${host}';
+	@override String get proxySystemNone => 'No system proxy found; requests go direct.';
+	@override String get proxySystemNotExpressible => 'The system proxy is a PAC script or a non-HTTP proxy, which cannot be applied automatically; set a manual proxy instead.';
+	@override String get proxySystemUnsupported => 'This platform exposes no readable system proxy; set a manual proxy instead.';
+	@override String get proxySystemFailed => 'The system proxy check failed; requests go direct.';
+	@override String get proxySystemRecheck => 'Check the system proxy again';
+	@override String get proxySystemRecheckDesc => 'A proxy client started or stopped after launch is picked up without restarting the app.';
 	@override String get toolsOrder => 'Tools order';
 	@override String get toolsOrderDesc => 'The order of the tools under the sidebar\'s divider.';
 	@override String get moveUp => 'Move up';
@@ -1367,6 +1410,11 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get closeDontAskAgain => 'Don\'t ask again';
 	@override String get trayShow => 'Show the main window';
 	@override String get trayHide => 'Hide to the tray';
+	@override String get trayScreenshot => 'Screenshot';
+	@override String get traySoundOn => 'Unmute sound';
+	@override String get traySoundOff => 'Mute sound';
+	@override String trayScreenshotSaved({required Object path}) => 'Saved to ${path}';
+	@override String get trayScreenshotFailed => 'Screenshot failed: no room is playing, or the engine cannot capture';
 	@override String get font => 'Font';
 	@override String get fontDescription => 'UI typeface: the platform\'s own face, a bundled official one, or a cloud font.';
 	@override String get fontPlatform => 'Follow the platform (system font)';
@@ -1490,9 +1538,11 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get playerPresetApplied => 'Preset applied';
 	@override String get playerOutputLockedByPreset => 'Locked by the current preset';
 	@override String get playerProxy => 'Player proxy';
-	@override String get playerProxyDesc => 'Only the player\'s requests; the app\'s own proxy is unchanged.';
-	@override String get playerProxyEnable => 'Enable player proxy';
+	@override String get playerProxyDesc => 'Only the player\'s requests; it can follow the app proxy above.';
 	@override String get playerProxyInvalid => 'Enter a valid host and port (1–65535).';
+	@override String get playerProxyMode => 'Proxy mode';
+	@override String get playerProxyFollow => 'Follow the app proxy';
+	@override String get playerProxyManual => 'Set separately';
 	@override String get hardwareDecoder => 'Hardware decoder (--hwdec)';
 	@override String get hardwareDecoderDesc => 'Choose mpv\'s hwdec decoder (applies while custom output is on).';
 	@override String get hardwareDecoderAutoHint => 'Custom output is off, so mpv picks the decoder (auto-safe). Turn on "Custom driver & hardware acceleration" under Advanced to choose one.';
@@ -1812,6 +1862,43 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get releaseHistoryEmpty => 'No releases yet';
 	@override String get releaseHistoryFailed => 'The releases did not load';
 	@override String releasedOn({required Object date}) => 'Released ${date}';
+	@override String get prerelease => 'Pre-release';
+	@override String get updateLater => 'Later';
+	@override String get downloadInstaller => 'Download the installer';
+	@override String get downloadOtherBuilds => 'Other builds';
+	@override String get downloadTitle => 'Downloads';
+	@override String get downloadLatest => 'The latest release';
+	@override String get downloadHint => 'Pick the package that matches this device; a download is saved to the folder shown under Data & cache.';
+	@override String get downloadAction => 'Download';
+	@override String downloadCount({required Object count}) => '${count} downloads';
+	@override String get downloadFailed => 'The release\'s files could not be read';
+	@override String get downloadEmpty => 'This release publishes no files';
+	@override String get downloadNoBuild => 'This release has no package for this device; its page is open.';
+	@override String downloadProgress({required Object received, required Object total}) => '${received} of ${total}';
+	@override String downloadProgressUnknown({required Object received}) => '${received} downloaded';
+	@override String downloadSavedTo({required Object path}) => 'Saved to ${path}';
+	@override String get downloadCancelled => 'Download cancelled; no partial file was kept.';
+	@override String get downloadOpenFile => 'Open the file';
+	@override String get downloadOpenFolder => 'Open the folder';
+	@override String get downloadOpenFailed => 'Could not open it';
+	@override String get openReleasePage => 'Release page';
+	@override String get releaseExpand => 'Show the notes';
+	@override String get releaseCollapse => 'Hide the notes';
+	@override String get releaseOsAndroid => 'Android';
+	@override String get releaseOsIos => 'iOS';
+	@override String get releaseOsWindows => 'Windows';
+	@override String get releaseOsMacos => 'macOS';
+	@override String get releaseOsLinux => 'Linux';
+	@override String get releaseOsOther => 'Other platform';
+	@override String get releaseKindApk => 'APK';
+	@override String get releaseKindIpa => 'IPA';
+	@override String get releaseKindInstaller => 'Installer';
+	@override String get releaseKindDmg => 'DMG disk image';
+	@override String get releaseKindMsix => 'MSIX package';
+	@override String get releaseKindDeb => 'DEB package';
+	@override String get releaseKindTarGz => 'tar.gz archive';
+	@override String get releaseKindPortable => 'Portable archive';
+	@override String get releaseKindOther => 'File';
 	@override String get sitesKeepOne => 'Keep at least one platform visible';
 	@override String get autoPip => 'Picture-in-picture on app leave';
 	@override String get autoPipDesc => 'Enter picture-in-picture when the app goes to the background while playing; needs the system permission.';
@@ -2022,8 +2109,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get cacheRefreshThumbnailsDesc => 'Empty the cover, avatar and icon caches so they download again on the next draw.';
 	@override String get cacheRefreshThumbnailsDone => 'Thumbnails refreshed';
 	@override String get downloadDirectory => 'Download folder';
-	@override String get downloadDirectoryDesc => 'Downloaded fonts and files are stored in this folder.';
-	@override String get downloadDirectoryDefaultLabel => 'Default folder in use';
+	@override String get downloadDirectoryDefaultLabel => 'Default';
+	@override String get downloadDirectoryCustomLabel => 'Custom';
 	@override String get downloadDirectoryReset => 'Use default folder';
 	@override String get downloadDirectoryUpdated => 'Download folder updated';
 	@override String get downloadDirectoryPickFailed => 'Could not select a download folder';
@@ -2294,8 +2381,11 @@ class _Translations$toolbox$en extends Translations$toolbox$zh_CN {
 	@override String get logsScrollBottom => 'Scroll to bottom';
 	@override String get logsCopied => 'Log copied';
 	@override String get logsCopyEmpty => 'No logs to copy';
-	@override String get logsDirectory => 'Log directory';
-	@override String get logsDirectoryDefault => 'Memory only: turn on file logging to get a folder here.';
+	@override String get logsDirectoryDefault => 'The log file is not ready yet.';
+	@override String get logsFileTitle => 'Log file';
+	@override String get logsOpenFolder => 'Open the folder';
+	@override String get logsCopyPath => 'Copy path';
+	@override String get logsPathCopied => 'Path copied to the clipboard';
 	@override String get logsOpenFailed => 'Could not open the log directory';
 }
 
@@ -2622,6 +2712,29 @@ extension on TranslationsEn {
 			'backup.importFailed' => 'Import failed',
 			'backup.summary' => ({required Object follows, required Object history, required Object areas, required Object settings}) => 'Follows ${follows} · History ${history} · Areas ${areas} · Settings ${settings}',
 			'backup.webdavSection' => 'WebDAV sync',
+			'backup.webdavAccounts' => 'WebDAV accounts',
+			'backup.webdavAccountsHint' => 'Opening an account makes it the current one and walks its folders; the pencil edits or deletes it.',
+			'backup.webdavAddAccount' => 'Add account',
+			'backup.webdavEditAccount' => 'Edit account',
+			'backup.webdavAccountName' => 'Account name',
+			'backup.webdavAccountNameHint' => 'Left blank, the server\'s host names it',
+			'backup.webdavCurrent' => 'Current',
+			'backup.webdavNoAccounts' => 'No WebDAV account yet',
+			'backup.webdavNoAccountsDesc' => 'Add a server before uploading a backup or restoring from one.',
+			'backup.webdavAccountDeleteTitle' => ({required Object name}) => 'Delete the "${name}" account?',
+			'backup.webdavAccountDeleteDesc' => 'Removes the saved address and password on this device only; the server\'s files stay as they are.',
+			'backup.webdavAccountDeleted' => 'Account deleted',
+			'backup.webdavRefresh' => 'Refresh',
+			'backup.webdavRoot' => 'Root',
+			'backup.webdavNewFolder' => 'New folder',
+			'backup.webdavNewFolderName' => 'Folder name',
+			'backup.webdavFolderCreated' => 'Folder created',
+			'backup.webdavEnterFolder' => 'Open folder',
+			'backup.webdavDeleteFolderDesc' => 'Deletes the folder and everything inside it on the server.',
+			'backup.webdavTestDesc' => 'Checks the address and the password without sending any data.',
+			'backup.webdavUploadDesc' => 'Writes this device\'s data and uploads it to the current account\'s root, replacing the same-named file.',
+			'backup.webdavDownloadDesc' => 'Reads the current account\'s backup file and overwrites this device with it.',
+			'backup.webdavBrowseDesc' => 'Walk the server like a folder: open directories, make one, upload or restore any file.',
 			'backup.webdavDescription' => ({required Object file}) => 'The backup lives on the server as ${file}: upload overwrites it, download restores it.',
 			'backup.webdavConfigTitle' => 'Server',
 			'backup.webdavConfigDescription' => 'Fill in the WebDAV server address and account; the password is kept in the system\'s secure storage and never enters a backup.',
@@ -2967,6 +3080,8 @@ extension on TranslationsEn {
 			'multiview.openRoom' => 'Open room',
 			'multiview.clearPane' => 'Clear this pane',
 			'multiview.swapPane' => 'Swap panes',
+			_ => null,
+		} ?? switch (path) {
 			'multiview.swapHere' => 'Move here',
 			'multiview.paneFailed' => 'This pane could not play',
 			'multiview.retryPane' => 'Retry this pane',
@@ -2985,13 +3100,18 @@ extension on TranslationsEn {
 			'multiview.unmuteAll' => 'Unmute all',
 			'multiview.qualityFailed' => 'The quality switch failed',
 			'multiview.pickerSearch' => 'Search followed or watched rooms…',
+			'multiview.pickerHint' => 'Tap a room to drop it into this cell',
+			'multiview.pickerTabFollows' => 'Follows',
+			'multiview.pickerTabHistory' => 'History',
+			'multiview.pickerSearchShort' => 'Search streamers or titles',
+			'multiview.paneEmpty' => 'Tap to pick',
+			'multiview.panePicking' => 'Picking for this cell',
+			'multiview.wallFailed' => 'The wall could not be read',
 			'multiview.pickerNoMatch' => 'No matching room',
 			'music.title' => 'Music',
 			'music.tagline' => 'Songs, playlists and charts are on their way',
 			'music.viewsLabel' => 'Music views',
 			'music.tabLibrary' => 'Library',
-			_ => null,
-		} ?? switch (path) {
 			'music.tabPlaylists' => 'Playlists',
 			'music.tabCharts' => 'Charts',
 			'music.libraryEmptyTitle' => 'The song library is on its way',
@@ -3474,6 +3594,8 @@ extension on TranslationsEn {
 			'settings.refreshRateMultiMonitor' => ({required Object count}) => '${count} displays detected',
 			'settings.refreshRateMultiMonitorDesc' => 'The reading belongs to the display the current window is on.',
 			'settings.favoritesDense' => 'Dense mode',
+			_ => null,
+		} ?? switch (path) {
 			'settings.favoritesDenseDescription' => 'Display more favorite rooms at once; off uses large cards.',
 			'settings.sitesDisplay' => 'Platforms shown',
 			'settings.sitesDisplayDesc' => 'Switched-off platforms leave the popular, areas, follows and search platform lists.',
@@ -3504,8 +3626,6 @@ extension on TranslationsEn {
 			'settings.liquidGlass' => 'Liquid glass',
 			'settings.liquidGlassDescription' => 'The home bottom bar floats as frosted glass over the page; on phones with 4 GB of memory or less it is see-through without blur.',
 			'settings.themeColorTitle' => 'Accent colour',
-			_ => null,
-		} ?? switch (path) {
 			'settings.themeColorPresets' => 'Presets',
 			'settings.themeColorCustom' => 'Custom colour',
 			'settings.themeColorHex' => 'Hex colour',
@@ -3548,11 +3668,24 @@ extension on TranslationsEn {
 			'settings.navNetwork' => 'Network',
 			'settings.networkDescription' => 'The app proxy and transport behaviour.',
 			'settings.proxy' => 'App proxy',
-			'settings.proxyDesc' => 'When on, the vod, guide and backup requests all route through it.',
 			'settings.proxyHost' => 'Host',
 			'settings.proxyHostDesc' => 'The proxy server\'s host name or address.',
 			'settings.proxyPort' => 'Port',
 			'settings.proxyPortDesc' => 'The port that proxy server listens on.',
+			'settings.proxyModeOff' => 'No proxy',
+			'settings.proxyModeOffDesc' => 'The vod, guide and backup requests all go direct.',
+			'settings.proxyModeSystem' => 'Follow the system proxy',
+			'settings.proxyModeSystemDesc' => 'Uses the HTTP proxy the operating system itself is configured to use, or goes direct when it names none.',
+			'settings.proxyModeManual' => 'Manual proxy',
+			'settings.proxyModeManualDesc' => 'Uses the host and port typed below.',
+			'settings.proxySystemProbing' => 'Checking the system proxy…',
+			'settings.proxySystemResolved' => ({required Object host}) => 'System proxy: ${host}',
+			'settings.proxySystemNone' => 'No system proxy found; requests go direct.',
+			'settings.proxySystemNotExpressible' => 'The system proxy is a PAC script or a non-HTTP proxy, which cannot be applied automatically; set a manual proxy instead.',
+			'settings.proxySystemUnsupported' => 'This platform exposes no readable system proxy; set a manual proxy instead.',
+			'settings.proxySystemFailed' => 'The system proxy check failed; requests go direct.',
+			'settings.proxySystemRecheck' => 'Check the system proxy again',
+			'settings.proxySystemRecheckDesc' => 'A proxy client started or stopped after launch is picked up without restarting the app.',
 			'settings.toolsOrder' => 'Tools order',
 			'settings.toolsOrderDesc' => 'The order of the tools under the sidebar\'s divider.',
 			'settings.moveUp' => 'Move up',
@@ -3645,6 +3778,11 @@ extension on TranslationsEn {
 			'settings.closeDontAskAgain' => 'Don\'t ask again',
 			'settings.trayShow' => 'Show the main window',
 			'settings.trayHide' => 'Hide to the tray',
+			'settings.trayScreenshot' => 'Screenshot',
+			'settings.traySoundOn' => 'Unmute sound',
+			'settings.traySoundOff' => 'Mute sound',
+			'settings.trayScreenshotSaved' => ({required Object path}) => 'Saved to ${path}',
+			'settings.trayScreenshotFailed' => 'Screenshot failed: no room is playing, or the engine cannot capture',
 			'settings.font' => 'Font',
 			'settings.fontDescription' => 'UI typeface: the platform\'s own face, a bundled official one, or a cloud font.',
 			'settings.fontPlatform' => 'Follow the platform (system font)',
@@ -3768,9 +3906,11 @@ extension on TranslationsEn {
 			'settings.playerPresetApplied' => 'Preset applied',
 			'settings.playerOutputLockedByPreset' => 'Locked by the current preset',
 			'settings.playerProxy' => 'Player proxy',
-			'settings.playerProxyDesc' => 'Only the player\'s requests; the app\'s own proxy is unchanged.',
-			'settings.playerProxyEnable' => 'Enable player proxy',
+			'settings.playerProxyDesc' => 'Only the player\'s requests; it can follow the app proxy above.',
 			'settings.playerProxyInvalid' => 'Enter a valid host and port (1–65535).',
+			'settings.playerProxyMode' => 'Proxy mode',
+			'settings.playerProxyFollow' => 'Follow the app proxy',
+			'settings.playerProxyManual' => 'Set separately',
 			'settings.hardwareDecoder' => 'Hardware decoder (--hwdec)',
 			'settings.hardwareDecoderDesc' => 'Choose mpv\'s hwdec decoder (applies while custom output is on).',
 			'settings.hardwareDecoderAutoHint' => 'Custom output is off, so mpv picks the decoder (auto-safe). Turn on "Custom driver & hardware acceleration" under Advanced to choose one.',
@@ -3981,6 +4121,8 @@ extension on TranslationsEn {
 			'settings.fit' => 'Picture fit',
 			'settings.fitDesc' => 'How the frame fills its box.',
 			'settings.fitContain' => 'Default Ratio',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fitCover' => 'Center Crop',
 			'settings.fitFill' => 'Fill Screen',
 			'settings.miniDanmakuVisible' => 'Danmaku in picture-in-picture',
@@ -4092,6 +4234,43 @@ extension on TranslationsEn {
 			'settings.releaseHistoryEmpty' => 'No releases yet',
 			'settings.releaseHistoryFailed' => 'The releases did not load',
 			'settings.releasedOn' => ({required Object date}) => 'Released ${date}',
+			'settings.prerelease' => 'Pre-release',
+			'settings.updateLater' => 'Later',
+			'settings.downloadInstaller' => 'Download the installer',
+			'settings.downloadOtherBuilds' => 'Other builds',
+			'settings.downloadTitle' => 'Downloads',
+			'settings.downloadLatest' => 'The latest release',
+			'settings.downloadHint' => 'Pick the package that matches this device; a download is saved to the folder shown under Data & cache.',
+			'settings.downloadAction' => 'Download',
+			'settings.downloadCount' => ({required Object count}) => '${count} downloads',
+			'settings.downloadFailed' => 'The release\'s files could not be read',
+			'settings.downloadEmpty' => 'This release publishes no files',
+			'settings.downloadNoBuild' => 'This release has no package for this device; its page is open.',
+			'settings.downloadProgress' => ({required Object received, required Object total}) => '${received} of ${total}',
+			'settings.downloadProgressUnknown' => ({required Object received}) => '${received} downloaded',
+			'settings.downloadSavedTo' => ({required Object path}) => 'Saved to ${path}',
+			'settings.downloadCancelled' => 'Download cancelled; no partial file was kept.',
+			'settings.downloadOpenFile' => 'Open the file',
+			'settings.downloadOpenFolder' => 'Open the folder',
+			'settings.downloadOpenFailed' => 'Could not open it',
+			'settings.openReleasePage' => 'Release page',
+			'settings.releaseExpand' => 'Show the notes',
+			'settings.releaseCollapse' => 'Hide the notes',
+			'settings.releaseOsAndroid' => 'Android',
+			'settings.releaseOsIos' => 'iOS',
+			'settings.releaseOsWindows' => 'Windows',
+			'settings.releaseOsMacos' => 'macOS',
+			'settings.releaseOsLinux' => 'Linux',
+			'settings.releaseOsOther' => 'Other platform',
+			'settings.releaseKindApk' => 'APK',
+			'settings.releaseKindIpa' => 'IPA',
+			'settings.releaseKindInstaller' => 'Installer',
+			'settings.releaseKindDmg' => 'DMG disk image',
+			'settings.releaseKindMsix' => 'MSIX package',
+			'settings.releaseKindDeb' => 'DEB package',
+			'settings.releaseKindTarGz' => 'tar.gz archive',
+			'settings.releaseKindPortable' => 'Portable archive',
+			'settings.releaseKindOther' => 'File',
 			'settings.sitesKeepOne' => 'Keep at least one platform visible',
 			'settings.autoPip' => 'Picture-in-picture on app leave',
 			'settings.autoPipDesc' => 'Enter picture-in-picture when the app goes to the background while playing; needs the system permission.',
@@ -4302,8 +4481,8 @@ extension on TranslationsEn {
 			'settings.cacheRefreshThumbnailsDesc' => 'Empty the cover, avatar and icon caches so they download again on the next draw.',
 			'settings.cacheRefreshThumbnailsDone' => 'Thumbnails refreshed',
 			'settings.downloadDirectory' => 'Download folder',
-			'settings.downloadDirectoryDesc' => 'Downloaded fonts and files are stored in this folder.',
-			'settings.downloadDirectoryDefaultLabel' => 'Default folder in use',
+			'settings.downloadDirectoryDefaultLabel' => 'Default',
+			'settings.downloadDirectoryCustomLabel' => 'Custom',
 			'settings.downloadDirectoryReset' => 'Use default folder',
 			'settings.downloadDirectoryUpdated' => 'Download folder updated',
 			'settings.downloadDirectoryPickFailed' => 'Could not select a download folder',
@@ -4458,6 +4637,8 @@ extension on TranslationsEn {
 			'toolbox.toolNetworkTitle' => 'Platform nodes',
 			'toolbox.toolNetworkDescription' => 'Test each platform\'s endpoint for reachability and latency.',
 			'toolbox.toolCacheTitle' => 'Cache cleanup',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.toolCacheDescription' => 'Inspect and clear the memory the image cache holds.',
 			'toolbox.toolLogsTitle' => 'Logs',
 			'toolbox.toolLogsDescription' => 'Inspect the app\'s runtime log and diagnostics.',
@@ -4549,8 +4730,11 @@ extension on TranslationsEn {
 			'toolbox.logsScrollBottom' => 'Scroll to bottom',
 			'toolbox.logsCopied' => 'Log copied',
 			'toolbox.logsCopyEmpty' => 'No logs to copy',
-			'toolbox.logsDirectory' => 'Log directory',
-			'toolbox.logsDirectoryDefault' => 'Memory only: turn on file logging to get a folder here.',
+			'toolbox.logsDirectoryDefault' => 'The log file is not ready yet.',
+			'toolbox.logsFileTitle' => 'Log file',
+			'toolbox.logsOpenFolder' => 'Open the folder',
+			'toolbox.logsCopyPath' => 'Copy path',
+			'toolbox.logsPathCopied' => 'Path copied to the clipboard',
 			'toolbox.logsOpenFailed' => 'Could not open the log directory',
 			'vod.searchHint' => 'Search Bilibili videos',
 			'vod.idleTitle' => 'Search for videos',

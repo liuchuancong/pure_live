@@ -1,15 +1,14 @@
-import 'dart:convert' show base64Encode, utf8;
 import 'dart:typed_data' show Uint8List;
 
-import 'package:live_net/live_net.dart' show LiveHttp, LiveRequest, LiveResponse, TransportFailure;
 import 'package:pure_live/features/backup/document/backup_document.dart' show BackupDocument;
+import 'package:webdav_client_plus/webdav_client_plus.dart';
 
 /// Why a WebDAV request failed.
 enum WebDavProblem {
   /// The server refused the credentials (401, 403).
   auth,
 
-  /// The folder or the backup file is not there (404, 409).
+  /// The folder or the backup file is not there (404, 409, 412).
   notFound,
 
   /// The server answered with something else.
@@ -19,7 +18,7 @@ enum WebDavProblem {
   network,
 }
 
-/// A failed WebDAV request; the pane translates the problem into one
+/// A failed WebDAV request; the surface translates the problem into one
 /// message.
 final class WebDavFailure implements Exception {
   /// The failure with what went wrong and the status, when there was an
@@ -36,17 +35,27 @@ final class WebDavFailure implements Exception {
   String toString() => 'WebDavFailure(${problem.name}, $status)';
 }
 
-/// One entry of a WebDAV collection: a folder (its [name] ends in `/` and
-/// its [uri] in `/`) or a file, with the size and time the server gave.
+/// One entry of a WebDAV collection: a folder or a file, with the size and
+/// time the server gave.
+///
+/// [path] is the account-root-relative path the client takes back for every
+/// other call, which is what lets the browser page build a breadcrumb out of
+/// the list it just read.
 final class WebDavEntry {
   /// Creates the entry.
-  const WebDavEntry({required this.name, required this.uri, required this.isDirectory, this.size, this.modified});
+  const WebDavEntry({
+    required this.name,
+    required this.path,
+    required this.isDirectory,
+    this.size,
+    this.modified,
+  });
 
-  /// The display name; a folder's ends in `/`.
+  /// The display name, as the server spells it.
   final String name;
 
-  /// The address to list (folder) or fetch/delete (file).
-  final Uri uri;
+  /// The path below the account's root, without a trailing slash.
+  final String path;
 
   /// Whether this is a collection.
   final bool isDirectory;
@@ -58,190 +67,120 @@ final class WebDavEntry {
   final DateTime? modified;
 }
 
-/// The three WebDAV verbs the backup pane needs — `PROPFIND` (test the
-/// server), `PUT` (upload the backup) and `GET` (download it) — over the
-/// app's shared [LiveHttp], so the proxy settings apply like to every
-/// other module's remote reads.
+/// One WebDAV account's server, rooted at the collection the viewer named.
 ///
-/// Authentication is a Basic header built from the stored credentials,
-/// what Jianguoyun, Nextcloud and Alist ask for.
+/// The protocol work belongs to `webdav_client_plus`; what is kept here is the
+/// app's own vocabulary — the four failure kinds the pages have a message for,
+/// folders-before-files ordering, and the root-relative paths the browser's
+/// breadcrumb is built from.
+///
+/// The proxy is not this client's business: it builds a `dart:io` HTTP client,
+/// and the app-wide `HttpOverrides` installed at start-up is what points that
+/// client at the proxy the viewer configured.
 final class WebDavBackupClient {
-  /// The client for the server at [baseUrl] (the collection the backup
-  /// file lives in), signed with [username] and [password].
-  WebDavBackupClient(this._http, {required this.baseUrl, required this.username, required this.password});
+  /// The client for [url] (the collection the backup lives in), signed with
+  /// [username] and [password]. An empty [username] means an anonymous server.
+  WebDavBackupClient({required String url, required String username, required String password})
+    : _client = username.isEmpty
+          ? WebdavClient.noAuth(url: url.trim(), options: _options)
+          : WebdavClient.basicAuth(url: url.trim(), user: username, pwd: password, options: _options);
 
-  final LiveHttp _http;
+  static const WebdavOptions _options = WebdavOptions(
+    connectTimeout: Duration(seconds: 15),
+    sendTimeout: Duration(seconds: 60),
+    receiveTimeout: Duration(seconds: 60),
+  );
 
-  /// The server's collection address.
-  final String baseUrl;
+  final WebdavClient _client;
 
-  /// The account's name, empty on anonymous servers.
-  final String username;
+  /// The account's root, as the client sees it: `/`.
+  static const String root = '/';
 
-  /// The account's password, from the secret vault.
-  final String password;
+  /// The backup file's path below the root.
+  static String get backupPath => '/${BackupDocument.backupFileName}';
 
-  /// The configured collection as a directory [Uri]: a trailing slash is
-  /// added when missing, so a child name resolves below it.
-  Uri get directory => _base;
+  /// Checks the server: listing the root answers reachability and the
+  /// credentials in one round trip.
+  Future<void> test() => _guard(() => _client.readDir(root, depth: PropsDepth.zero));
 
-  /// The base as a directory [Uri]: a trailing slash is added when
-  /// missing, so the file name resolves below the collection and never
-  /// replaces its last segment.
-  Uri get _base {
-    final parsed = Uri.parse(baseUrl.trim());
-    final path = parsed.path.endsWith('/') ? parsed.path : '${parsed.path}/';
-    return parsed.replace(path: path);
-  }
-
-  /// The backup file's address below the collection.
-  Uri get _fileUrl => _base.resolve(BackupDocument.backupFileName);
-
-  /// The Basic authorization header's value.
-  String get _authorization => 'Basic ${base64Encode(utf8.encode('$username:$password'))}';
-
-  /// Checks the server: a `PROPFIND` on the collection itself (depth 0)
-  /// answers reachability and the credentials in one round trip; the
-  /// backup file may still not exist.
-  Future<void> test() => _send('PROPFIND', _base, headers: _propfindHeaders, body: _propfindBody);
-
-  /// Lists [directory] (the configured collection when null): folders and
-  /// files, folders first, names in the server's own order within each
-  /// group. A `PROPFIND` with depth 1.
-  Future<List<WebDavEntry>> list({Uri? directory}) async {
-    final url = _directoryUrl(directory ?? _base);
-    final response = await _send('PROPFIND', url, headers: _listHeaders, body: _listBody);
-    final entries = <WebDavEntry>[];
-    for (final block in _responseBlocks(response.text)) {
-      final href = _hrefOf(block);
-      if (href == null) continue;
-      final uri = _resolveHref(url, href);
-      // The collection itself answers too: its href ends in the same path.
-      if (uri.path == url.path || '${uri.path}/' == url.path) continue;
-      final name = Uri.decodeComponent(uri.pathSegments.isEmpty ? '' : uri.pathSegments.last).trim();
-      if (name.isEmpty) continue;
-      final isDirectory =
-          block.contains(':collection') || RegExp(r'<[^>]*collection\b', caseSensitive: false).hasMatch(block);
-      final size = RegExp(
-        r'<[^>]*getcontentlength[^>]*>\s*(\d+)\s*<',
-        caseSensitive: false,
-      ).firstMatch(block)?.group(1);
-      final modified = RegExp(
-        r'<[^>]*getlastmodified[^>]*>\s*([^<]+)\s*<',
-        caseSensitive: false,
-      ).firstMatch(block)?.group(1)?.trim();
-      entries.add(
-        WebDavEntry(
-          name: isDirectory ? '$name/' : name,
-          uri: isDirectory ? _directoryUrl(uri) : uri,
-          isDirectory: isDirectory,
-          size: int.tryParse(size ?? ''),
-          modified: modified == null ? null : DateTime.tryParse(modified),
-        ),
-      );
-    }
-    entries.sort((a, b) {
+  /// Lists [path] (the root when null): folders first, then files, each group
+  /// in the server's own order.
+  Future<List<WebDavEntry>> list({String path = root}) async {
+    final files = await _guard(() => _client.readDir(path));
+    final entries = [
+      for (final file in files)
+        if (file.name.trim().isNotEmpty)
+          WebDavEntry(
+            name: file.name,
+            path: _rooted(file.path, file.name, isDirectory: file.isDir),
+            isDirectory: file.isDir,
+            size: file.size,
+            modified: file.modified,
+          ),
+    ]..sort((a, b) {
       if (a.isDirectory != b.isDirectory) return a.isDirectory ? -1 : 1;
       return a.name.toLowerCase().compareTo(b.name.toLowerCase());
     });
     return entries;
   }
 
-  /// Reads [url]'s bytes (a `GET` on a listed file).
-  Future<List<int>> downloadFile(Uri url) async => (await _send('GET', url)).bodyBytes;
+  /// Reads one file's bytes.
+  Future<Uint8List> readFile(String path) => _guard(() => _client.read(path));
 
-  /// Writes [bytes] at [url] (a `PUT`, replacing what is there).
-  Future<void> uploadFile(Uri url, List<int> bytes) =>
-      _send('PUT', url, headers: {'content-type': 'application/json; charset=utf-8'}, body: bytes);
+  /// Writes [bytes] at [path], replacing what is there.
+  Future<void> writeFile(String path, List<int> bytes) =>
+      _guard(() => _client.write(path, bytes is Uint8List ? bytes : Uint8List.fromList(bytes)));
 
-  /// Deletes [url] (a `DELETE`).
-  Future<void> deleteFile(Uri url) => _send('DELETE', url);
+  /// Creates a folder; the parent must already exist, which is what the
+  /// browser's own error message is for.
+  Future<void> createFolder(String path) => _guard(() => _client.mkdir(path));
 
-  /// Reads the backup file's bytes (a `GET`).
-  Future<List<int>> download() => downloadFile(_fileUrl);
+  /// Deletes one entry. A collection's path keeps its trailing slash, which
+  /// several servers insist on.
+  Future<void> delete(WebDavEntry entry) =>
+      _guard(() => _client.remove(entry.isDirectory ? '${entry.path}/' : entry.path));
 
-  /// Writes [bytes] as the backup file (a `PUT`, replacing what is there).
-  Future<void> upload(List<int> bytes) => uploadFile(_fileUrl, bytes);
+  /// Reads the backup file.
+  Future<Uint8List> download() => readFile(backupPath);
 
-  /// [url] as a directory address: a trailing slash is part of the
-  /// identity of a WebDAV collection.
-  static Uri _directoryUrl(Uri url) {
-    final path = url.path.endsWith('/') ? url.path : '${url.path}/';
-    return url.replace(path: path);
+  /// Writes the backup file.
+  Future<void> upload(List<int> bytes) => writeFile(backupPath, bytes);
+
+  /// The path a listing answers with, made root-relative.
+  ///
+  /// The client reports either a base-relative path or a full href depending on
+  /// what the server put in its PROPFIND body, and a name is always available;
+  /// the parent the caller asked for is the one thing both forms agree on.
+  static String _rooted(String reported, String name, {required bool isDirectory}) {
+    final trimmed = reported.trim();
+    final asPath = trimmed.startsWith('/') ? trimmed : '/$trimmed';
+    if (trimmed.isNotEmpty && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      return isDirectory && asPath.endsWith('/') ? asPath.substring(0, asPath.length - 1) : asPath;
+    }
+    final suffix = isDirectory ? '/' : '';
+    return '/${name.trim()}$suffix';
   }
 
-  /// The `<response>` blocks of a multistatus body, namespace prefixes
-  /// ignored (the body may be `d:response`, `D:response` or unprefixed).
-  static Iterable<String> _responseBlocks(String xml) => RegExp(
-    r'<[^>]*response\b[^>]*>([\s\S]*?)</[^>]*response>',
-    caseSensitive: false,
-  ).allMatches(xml).map((match) => match.group(1) ?? '');
-
-  static String? _hrefOf(String block) {
-    final match = RegExp(r'<[^>]*href[^>]*>\s*([^<]+?)\s*</[^>]*href>', caseSensitive: false).firstMatch(block);
-    return match == null ? null : _unescapeXml(match.group(1) ?? '').trim();
-  }
-
-  /// Resolves a server href (absolute or relative) against [directory].
-  static Uri _resolveHref(Uri directory, String href) {
-    final decoded = Uri.tryParse(href);
-    if (decoded == null) return directory;
-    if (decoded.hasScheme) return decoded;
-    if (href.startsWith('/')) return directory.replace(path: decoded.path, query: decoded.query);
-    return directory.resolveUri(decoded);
-  }
-
-  static String _unescapeXml(String text) => text
-      .replaceAll('&amp;', '&')
-      .replaceAll('&lt;', '<')
-      .replaceAll('&gt;', '>')
-      .replaceAll('&quot;', '"')
-      .replaceAll('&#39;', "'")
-      .replaceAll('&#x27;', "'");
-
-  static const Map<String, String> _propfindHeaders = {'depth': '0', 'content-type': 'application/xml; charset=utf-8'};
-
-  static final Uint8List _propfindBody = Uint8List.fromList(
-    utf8.encode(
-      '<?xml version="1.0" encoding="utf-8"?> '
-      '<d:propfind xmlns:d="DAV:"><d:prop><d:resourcetype/></d:prop></d:propfind>',
-    ),
-  );
-
-  static const Map<String, String> _listHeaders = {'depth': '1', 'content-type': 'application/xml; charset=utf-8'};
-
-  /// The list's properties: resource type, size and modification time.
-  static final Uint8List _listBody = Uint8List.fromList(
-    utf8.encode(
-      '<?xml version="1.0" encoding="utf-8"?> '
-      '<d:propfind xmlns:d="DAV:"><d:prop> '
-      '<d:resourcetype/><d:getcontentlength/><d:getlastmodified/>'
-      '</d:prop></d:propfind>',
-    ),
-  );
-
-  /// Sends one request with the Basic header; a non-2xx answer and a
-  /// transport breakdown both surface as [WebDavFailure].
-  Future<LiveResponse> _send(String method, Uri url, {Map<String, String> headers = const {}, List<int>? body}) async {
-    final LiveResponse response;
+  /// Runs one call and turns whatever it throws into the app's own failure.
+  Future<T> _guard<T>(Future<T> Function() operation) async {
     try {
-      response = await _http.send(
-        LiveRequest.custom(
-          method: method,
-          url: url,
-          headers: {'authorization': _authorization, ...headers},
-          bodyBytes: body == null ? null : Uint8List.fromList(body),
-          timeout: const Duration(seconds: 30),
-        ),
-      );
-    } on TransportFailure {
+      return await operation();
+    } on WebdavException catch (error) {
+      throw WebDavFailure(_problemOf(error.statusCode), status: error.statusCode);
+    } on DioException catch (error) {
+      final status = error.response?.statusCode;
+      throw WebDavFailure(status == null ? WebDavProblem.network : _problemOf(status), status: status);
+    } on WebDavFailure {
+      rethrow;
+    } on Object {
       throw const WebDavFailure(WebDavProblem.network);
     }
-    if (response.isOk) return response;
-    throw WebDavFailure(switch (response.statusCode) {
-      401 || 403 => WebDavProblem.auth,
-      404 || 409 => WebDavProblem.notFound,
-      _ => WebDavProblem.server,
-    }, status: response.statusCode);
   }
+
+  static WebDavProblem _problemOf(int? status) => switch (status) {
+    401 || 403 => WebDavProblem.auth,
+    404 || 409 || 412 => WebDavProblem.notFound,
+    null => WebDavProblem.network,
+    _ => WebDavProblem.server,
+  };
 }

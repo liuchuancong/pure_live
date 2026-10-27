@@ -24,5 +24,12 @@
   "unmuteAll": "Unmute all",
   "qualityFailed": "The quality switch failed",
   "pickerSearch": "Search followed or watched rooms…",
+  "pickerHint": "Tap a room to drop it into this cell",
+  "pickerTabFollows": "Follows",
+  "pickerTabHistory": "History",
+  "pickerSearchShort": "Search streamers or titles",
+  "paneEmpty": "Tap to pick",
+  "panePicking": "Picking for this cell",
+  "wallFailed": "The wall could not be read",
   "pickerNoMatch": "No matching room"
 }

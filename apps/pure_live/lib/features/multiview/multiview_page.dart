@@ -41,6 +41,12 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
   /// Whether the wall is the branch on screen; the branch keeps its widgets
   /// while another branch shows, so this — not disposal — ends playback.
   bool _visible = false;
+  /// The cell the picker dock is choosing for, or null while the dock is
+  /// closed.
+  int? _pickingSlot;
+  /// Whether the first ready wall has been looked at once; the dock opens
+  /// on arrival, not on every rebuild.
+  bool _dockConsidered = false;
 
   @override
   void dispose() {
@@ -62,11 +68,31 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.t;
     _syncVisibility(
       TickerMode.valuesOf(context).enabled && ref.watch(selectedNavItemProvider) == NavigationItem.multiview,
     );
     final wall = ref.watch(multiviewProvider);
+    if (wall.ready) _openDockForFirstEmptyCell(wall);
     if (!wall.ready) {
+      // An open that failed is not an open still running: the page
+      // names what went wrong and offers the retry the spinner never
+      // could.
+      if (wall.error case final error?) {
+        return Center(
+          child: DsEmptyState(
+            icon: const DsIcon(DsIcons.cloudOff),
+            title: Text(t.multiview.wallFailed),
+            description: Text(error),
+            actions: [
+              DsButton(
+                onPressed: () => ref.invalidate(multiviewRepositoryProvider),
+                child: Text(t.common.retry),
+              ),
+            ],
+          ),
+        );
+      }
       return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
     }
     final rooms = ref.watch(followsProvider.select((state) => state.rooms));
@@ -106,7 +132,39 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
             ],
           ),
         ),
-        Expanded(child: _wall(wall, slots, playback)),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final picking = _pickingSlot;
+              if (picking == null || picking >= slots.length) {
+                return _wall(wall, slots, playback);
+              }
+              final dock = _PanePickerDock(
+                slotIndex: picking,
+                onAssign: (room) => unawaited(_assign(picking, room)),
+                onClose: () => setState(() => _pickingSlot = null),
+              );
+              // A wide window docks the picker beside the wall so the
+              // cell it fills stays in sight; a narrow one is already
+              // stacked, so the picker goes under it.
+              if (constraints.maxWidth >= 760) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: _wall(wall, slots, playback)),
+                    SizedBox(width: 340, child: dock),
+                  ],
+                );
+              }
+              return Column(
+                children: [
+                  Expanded(child: _wall(wall, slots, playback)),
+                  SizedBox(height: 300, child: dock),
+                ],
+              );
+            },
+          ),
+        ),
       ],
     );
   }
@@ -139,6 +197,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
               MultiviewLayout.dual => '1×2',
               MultiviewLayout.quad => '2×2',
               MultiviewLayout.focus => '1+3',
+              MultiviewLayout.strip => '1×4',
             }),
           ),
       ],
@@ -231,7 +290,10 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
           if (wall.layout == MultiviewLayout.focus) {
             return _focusWall(slots, playback, gap, constraints);
           }
-          final (columns, rows) = _gridOf(wall.layout);
+          final (columns, rows) = _gridOf(
+            wall.layout,
+            wide: constraints.maxWidth >= constraints.maxHeight,
+          );
           return Column(
             spacing: gap,
             children: [
@@ -312,10 +374,12 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
 
   /// The (columns, rows) a layout's pane count fills (the 1+3 arrangement
   /// lays itself out and never asks).
-  static (int, int) _gridOf(MultiviewLayout layout) => switch (layout) {
+  static (int, int) _gridOf(MultiviewLayout layout, {required bool wide}) => switch (layout) {
     MultiviewLayout.single => (1, 1),
     MultiviewLayout.dual => (2, 1),
     MultiviewLayout.quad || MultiviewLayout.focus => (2, 2),
+    // Four across when the wall is wide, stacked when it is tall.
+    MultiviewLayout.strip => wide ? (4, 1) : (1, 4),
   };
 
   /// One pane of the wall, wired to the page's handlers; [compact] leaves
@@ -330,7 +394,8 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
       selected: playback.selected == slot.index,
       compact: compact,
       swapSource: _swapSource,
-      onPick: () => unawaited(_pickForSlot(slot.index)),
+      picking: _pickingSlot == slot.index,
+      onPick: () => _pickForSlot(slot.index),
       onSelect: () => ref.read(multiviewPlaybackProvider.notifier).select(slot.index),
       onOpen: () => unawaited(_openSlot(slot.key, slot.room)),
       onRetry: () => unawaited(ref.read(multiviewPlaybackProvider.notifier).retry(slot.index)),
@@ -386,13 +451,45 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     unawaited(ref.read(multiviewProvider.notifier).swapSlots(source, index));
   }
 
-  /// The pane picker over the wall: the followed and recently watched
-  /// rooms, each row assigning into the pane that asked.
-  Future<void> _pickForSlot(int index) {
-    return showDsDialog<void>(
-      context: context,
-      builder: (context) => _PanePickerDialog(slotIndex: index),
-    );
+  /// A wall that has never been arranged opens with its picker dock on the
+  /// first empty cell: an empty wall with nothing to look at is the one case
+  /// where the picker is the page's subject, and the reference opens there too.
+  void _openDockForFirstEmptyCell(MultiviewState wall) {
+    if (_dockConsidered) return;
+    _dockConsidered = true;
+    if (_pickingSlot != null) return;
+    if (wall.slots.every((slot) => slot != null)) return;
+    final at = wall.slots.indexOf(null);
+    if (at < 0) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _pickingSlot = at);
+    });
+  }
+  /// Opens the picker dock for slot [index]: the wall shrinks beside
+  /// it rather than losing itself behind a dialog, so a viewer can
+  /// still see which cell the room is landing in.
+  void _pickForSlot(int index) => setState(() => _pickingSlot = index);
+
+  /// Puts [room] in slot [index] and moves the dock to the next empty
+  /// cell — filling a wall is a run of picks, not one — closing it
+  /// once the wall is full.
+  Future<void> _assign(int index, LiveRoom room) async {
+    await ref.read(multiviewProvider.notifier).assign(index, room);
+    if (!mounted) return;
+    setState(() => _pickingSlot = _nextFreeSlot(index));
+  }
+
+  /// The next cell with nothing in it, after [after]; null when the
+  /// wall is full, which is where the dock closes itself.
+  int? _nextFreeSlot(int after) {
+    final slots = ref.read(multiviewProvider).slots;
+    for (var index = after + 1; index < slots.length; index++) {
+      if (slots[index] == null) return index;
+    }
+    for (var index = 0; index < after; index++) {
+      if (slots[index] == null) return index;
+    }
+    return null;
   }
 }
 
@@ -414,6 +511,7 @@ final class _PaneTile extends StatelessWidget {
     required this.selected,
     required this.compact,
     required this.swapSource,
+    required this.picking,
     required this.onPick,
     required this.onSelect,
     required this.onOpen,
@@ -441,6 +539,8 @@ final class _PaneTile extends StatelessWidget {
 
   /// The pane a pending swap starts from, null while none is pending.
   final int? swapSource;
+  /// Whether the picker dock is choosing for this cell right now.
+  final bool picking;
 
   final VoidCallback onPick;
   final VoidCallback onSelect;
@@ -495,23 +595,42 @@ final class _PaneTile extends StatelessWidget {
                           _bar(context, colors, theme),
                         ],
                       )
-              : Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: DsSpace.s8,
-                    children: [
-                      DsIcon(
-                        swapping ? DsIcons.arrowLeftRight : DsIcons.plus,
-                        size: theme.sizes.iconLg,
-                        color: colors.textSubtle,
+              : Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: DsSpace.s8,
+                        children: [
+                          DsIcon(
+                            swapping ? DsIcons.arrowLeftRight : DsIcons.plus,
+                            size: theme.sizes.iconLg,
+                            color: colors.textSubtle,
+                          ),
+                          Text(
+                            swapping
+                                ? t.multiview.swapHere
+                                : picking
+                                ? t.multiview.panePicking
+                                : t.multiview.paneEmpty,
+                            style: theme.typography.caption.copyWith(color: colors.textMuted),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
-                      Text(
-                        swapping ? t.multiview.swapHere : t.multiview.pickRoom,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                        textAlign: TextAlign.center,
+                    ),
+                    // The cell's number, so the picker's "第 N 格"
+                    // names a cell the viewer can see.
+                    PositionedDirectional(
+                      top: DsSpace.s8,
+                      start: DsSpace.s12,
+                      child: Text(
+                        '${slot.index + 1}',
+                        style: theme.typography.caption.copyWith(color: colors.textSubtle),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
         );
       },
@@ -1020,27 +1139,43 @@ final class _PaneVolumeState extends State<_PaneVolume> {
   }
 }
 
-/// The pane picker: the followed and watched rooms as list rows, each
-/// assigning its room into the pane that asked; a room already on the wall
-/// is refused with a word about where it plays. A search field narrows the
-/// list by title, streamer, room id or platform.
-final class _PanePickerDialog extends ConsumerStatefulWidget {
-  const _PanePickerDialog({required this.slotIndex});
+/// The picker dock: the followed rooms and the watched ones, in a panel
+/// beside the wall rather than over it — the cell a pick lands in stays
+/// visible while the list is read. Its header names the cell, its tabs
+/// choose where the rooms come from, and its search field narrows by
+/// title, streamer, room id or platform.
+final class _PanePickerDock extends ConsumerStatefulWidget {
+  const _PanePickerDock({
+    required this.slotIndex,
+    required this.onAssign,
+    required this.onClose,
+  });
 
   /// The pane (0-based) the picked room lands in.
   final int slotIndex;
 
+  /// Hands the picked room to the wall.
+  final void Function(LiveRoom room) onAssign;
+
+  /// Closes the dock.
+  final VoidCallback onClose;
+
   @override
-  ConsumerState<_PanePickerDialog> createState() => _PanePickerDialogState();
+  ConsumerState<_PanePickerDock> createState() => _PanePickerDockState();
 }
 
-final class _PanePickerDialogState extends ConsumerState<_PanePickerDialog> {
+final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
   /// The filter's current words.
   String _query = '';
+
+  /// Which list the dock is showing: follows, or what was watched.
+  bool _fromHistory = false;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     final follows = ref.watch(followsProvider);
     final history = ref.watch(historyProvider);
     final wall = ref.watch(multiviewProvider);
@@ -1049,59 +1184,111 @@ final class _PanePickerDialogState extends ConsumerState<_PanePickerDialog> {
       final key = wall.slots[index];
       if (key != null && index != widget.slotIndex) shown[key] = index;
     }
-    // The reference's picker: follows first, then the rooms already
-    // watched — one row per identity, no duplicates.
+    // One row per identity, no duplicates: a room followed and watched
+    // still appears once, in whichever list the tab is showing.
     final rooms = <LiveRoom>[];
     final seen = <String>{};
-    for (final room in follows.rooms) {
-      if (seen.add(room.ref.identityKey)) rooms.add(room);
-    }
-    for (final (room, _) in history.records) {
+    final source = _fromHistory ? [for (final (room, _) in history.records) room] : follows.rooms;
+    for (final room in source) {
       if (seen.add(room.ref.identityKey)) rooms.add(room);
     }
     final needle = _query.trim().toLowerCase();
-    final visible = needle.isEmpty
-        ? rooms
-        : [
-            for (final room in rooms)
-              if (_matches(room, needle)) room,
-          ];
-    final Widget content;
-    if (!follows.ready || !history.ready) {
-      content = const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
-    } else if (rooms.isEmpty) {
-      content = DsEmptyState(
-        icon: const DsIcon(DsIcons.heart),
-        title: Text(t.multiview.pickerEmptyTitle),
-        description: Text(t.multiview.pickerEmptyHint),
-      );
-    } else {
-      content = Column(
+    final visible = needle.isEmpty ? rooms : [for (final room in rooms) if (_matches(room, needle)) room];
+    final loading = !follows.ready || !history.ready;
+    return Container(
+      decoration: DsBoxDecoration(
+        color: colors.channel,
+        borderRadius: BorderRadius.circular(theme.radii.card),
+        shadows: [DsShadow.innerRing(colors.border)],
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s8,
         children: [
-          DsSearchField(
-            autofocus: true,
-            placeholder: t.multiview.pickerSearch,
-            semanticLabel: t.multiview.pickerSearch,
-            onChanged: (value) => setState(() => _query = value),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s12, DsSpace.s6, DsSpace.s4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: DsSpace.s4,
+                    children: [
+                      Row(
+                        spacing: DsSpace.s6,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              t.multiview.pickerTitle(index: widget.slotIndex + 1),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                            ),
+                          ),
+                          Text(
+                            t.multiview.pickerHint,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                DsButton.icon(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  semanticLabel: t.common.close,
+                  onPressed: widget.onClose,
+                  icon: const DsIcon(DsIcons.x, size: 16),
+                ),
+              ],
+            ),
           ),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 340),
-            child: visible.isEmpty
-                ? DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.multiview.pickerNoMatch))
-                : SingleChildScrollView(
-                    child: DsListSection(
-                      children: [for (final room in visible) _row(context, ref, room, shown[room.ref.identityKey])],
-                    ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12),
+            child: DsSegmentedControl<bool>(
+              segments: [
+                DsSegment(value: false, label: Text(t.multiview.pickerTabFollows)),
+                DsSegment(value: true, label: Text(t.multiview.pickerTabHistory)),
+              ],
+              value: _fromHistory,
+              semanticLabel: t.multiview.pickerTitle(index: widget.slotIndex + 1),
+              onChanged: (value) => setState(() => _fromHistory = value),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
+            child: DsSearchField(
+              placeholder: t.multiview.pickerSearchShort,
+              semanticLabel: t.multiview.pickerSearch,
+              onChanged: (value) => setState(() => _query = value),
+            ),
+          ),
+          Expanded(
+            child: loading
+                ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 22)))
+                : rooms.isEmpty
+                ? DsEmptyState(
+                    icon: const DsIcon(DsIcons.heart),
+                    title: Text(t.multiview.pickerEmptyTitle),
+                    description: Text(t.multiview.pickerEmptyHint),
+                  )
+                : visible.isEmpty
+                ? Center(child: Text(t.multiview.pickerNoMatch, style: theme.typography.caption))
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(DsSpace.s8, 0, DsSpace.s8, DsSpace.s8),
+                    children: [
+                      DsListSection(
+                        children: [
+                          for (final room in visible) _row(context, ref, room, shown[room.ref.identityKey]),
+                        ],
+                      ),
+                    ],
                   ),
           ),
         ],
-      );
-    }
-    return DsDialog(
-      title: Text(t.multiview.pickerTitle(index: widget.slotIndex + 1)),
-      description: content,
+      ),
     );
   }
 
@@ -1140,8 +1327,7 @@ final class _PanePickerDialogState extends ConsumerState<_PanePickerDialog> {
           );
           return;
         }
-        unawaited(ref.read(multiviewProvider.notifier).assign(widget.slotIndex, room));
-        Navigator.of(context).pop();
+        widget.onAssign(room);
       },
     );
   }

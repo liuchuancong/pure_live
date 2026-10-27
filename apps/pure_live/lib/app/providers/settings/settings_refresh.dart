@@ -102,7 +102,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   iptvEpgProvider,
   vodQualityProvider,
   searchHistoryProvider,
-  webdavSettingsProvider,
+  webdavAccountsProvider,
   autoShutdownProvider,
   showMultiviewProvider,
   navMenuProvider,

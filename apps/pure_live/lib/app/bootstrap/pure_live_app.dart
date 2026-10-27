@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_shell/live_shell.dart' show WindowRole;
 import 'package:pure_live/app/background/wallpaper/app_background.dart' show AppBackground;
+import 'package:pure_live/app/bootstrap/proxy_http_overrides.dart' show appProxyLookup;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/providers.dart';
 import 'package:pure_live/app/routing/router/app_router.dart' show appRouterProvider;
@@ -61,6 +62,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
   @override
   void initState() {
     super.initState();
+    // The process-wide proxy hook: a client created by any package asks here
+    // which route is in force at the moment it opens its connection.
+    appProxyLookup = () => ref.read(appProxyRouteProvider);
     // The stored choices land before the first frame builds, so the boot
     // never flashes the defaults. The settings' own builder hook supplies
     // the defaults; the store only overrides what the viewer pinned.

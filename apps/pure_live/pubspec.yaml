@@ -113,6 +113,7 @@ dependencies:
   markdown: ^7.3.1 # Markdown 内容渲染
   pub_semver: ^2.2.1 # 语义化版本比较
   riverpod_annotation: ^4.0.7 # Riverpod 生成器注解
+  webdav_client_plus: ^3.0.0 # WebDAV 目录浏览与文件读写
   webview_flutter: ^4.14.1 # 内嵌网页视图
   catcher_2: ^3.0.0-alpha.0
   desktop_drop: ^0.8.4

@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Completer, unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -40,33 +40,64 @@ final class FloatingRoomPlayer {
     return context != null && Overlay.maybeOf(context, rootOverlay: true) != null;
   }
 
-  /// Inserts the window above every route once the current frame is done.
-  static void show() {
-    if (_entry != null || _scheduled) return;
+  /// Inserts the window above every route once the current frame is done;
+  /// the future answers whether the window is (or will be) on screen. A
+  /// caller that is about to lose its State must treat a false answer as
+  /// "no handoff happened" and stop the room itself — the overlay never
+  /// silently swallows a live handle.
+  static Future<bool> show() {
+    if (_entry != null) return Future.value(true);
+    if (_scheduled) return _showCompleter!.future;
     _scheduled = true;
+    _showCompleter = Completer<bool>();
     final generation = ++_generation;
+    final completer = _showCompleter!;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (generation != _generation) return;
-      _scheduled = false;
-      if (_entry != null) return;
+      // Anything but a successful insert must complete false and release
+      // the schedule flag, or the next show would be blocked forever.
+      void abort() {
+        _scheduled = false;
+        if (_showCompleter == completer) _showCompleter = null;
+        if (!completer.isCompleted) completer.complete(false);
+      }
+
+      if (generation != _generation) {
+        abort();
+        return;
+      }
       final context = rootNavigatorKey.currentContext;
-      if (context == null) return;
+      if (context == null) {
+        abort();
+        return;
+      }
       final overlay = Overlay.maybeOf(context, rootOverlay: true);
-      if (overlay == null) return;
+      if (overlay == null) {
+        abort();
+        return;
+      }
       final entry = OverlayEntry(builder: (_) => const FloatingRoomPlayerView());
       overlay.insert(entry);
       _entry = entry;
+      _scheduled = false;
+      if (_showCompleter == completer) _showCompleter = null;
+      if (!completer.isCompleted) completer.complete(true);
     });
+    return completer.future;
   }
 
   /// Removes the window; the caller decides whether to stop the room.
   static void hide() {
     _generation++;
     _scheduled = false;
+    final completer = _showCompleter;
+    _showCompleter = null;
+    if (completer != null && !completer.isCompleted) completer.complete(false);
     final entry = _entry;
     _entry = null;
     if (entry != null && entry.mounted) entry.remove();
   }
+
+  static Completer<bool>? _showCompleter;
 }
 
 /// The mini window: the live picture (or audio-only cover), a drag bar and a

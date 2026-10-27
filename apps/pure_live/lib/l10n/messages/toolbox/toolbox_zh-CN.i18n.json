@@ -97,7 +97,10 @@
   "logsScrollBottom": "滚动到底部",
   "logsCopied": "日志已复制",
   "logsCopyEmpty": "没有可复制的日志",
-  "logsDirectory": "日志目录",
-  "logsDirectoryDefault": "仅内存日志：开启「写入日志文件」后这里会显示目录。",
+  "logsDirectoryDefault": "日志文件尚未就绪。",
+  "logsFileTitle": "日志文件",
+  "logsOpenFolder": "打开所在文件夹",
+  "logsCopyPath": "复制路径",
+  "logsPathCopied": "路径已复制到剪贴板",
   "logsOpenFailed": "无法打开日志目录"
 }

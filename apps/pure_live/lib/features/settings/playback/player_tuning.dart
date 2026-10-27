@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core/media_core.dart' show EngineOption;
 
+import 'package:pure_live/app/providers/network/network_providers.dart' show appProxyEndpoint, proxySettingsProvider;
+import 'package:pure_live/app/providers/network/system_proxy_provider.dart' show systemProxyProvider;
 import 'package:pure_live/features/settings/playback/playback_settings_providers.dart' show playbackSettingsProvider;
 
 /// One-click tuning recipes, the old client's six presets.
@@ -103,14 +105,38 @@ const PlayerTuning kDefaultPlayerTuning = (
   preset: PlayerPresetId.balanced,
 );
 
-/// The player's own HTTP proxy. It is separate from the app proxy: mpv
-/// opens its own streams, and the two must not silently share a host.
-typedef PlayerProxySettings = ({bool enabled, String host, int port});
+/// How the player's own streams reach the network.
+///
+/// mpv opens those streams itself — the app's transport never carries them —
+/// so the choice stays the player's. [followApp] is what makes one proxy
+/// enough for both: the endpoint is taken from the app proxy, already resolved
+/// from its own mode and the system reading.
+enum PlayerProxyMode {
+  /// Direct, no proxy.
+  off,
+
+  /// Whatever the app proxy resolves to, host and port included.
+  followApp,
+
+  /// The host and port typed on the player's own proxy page.
+  manual,
+}
+
+/// The player's proxy: the mode in force and, for [PlayerProxyMode.manual],
+/// the endpoint mpv is given.
+typedef PlayerProxySettings = ({PlayerProxyMode mode, String host, int port});
 
 /// The reference's default player proxy port (`defaultProxyPort`).
 const int kDefaultPlayerProxyPort = 7897;
 
-const PlayerProxySettings kDefaultPlayerProxy = (enabled: false, host: '', port: kDefaultPlayerProxyPort);
+/// A fresh store follows the app proxy: one switch then covers the player too,
+/// and while the app proxy is off the route resolves to a direct one, which is
+/// exactly what the old default meant. An existing store keeps its own answer.
+const PlayerProxySettings kDefaultPlayerProxy = (
+  mode: PlayerProxyMode.followApp,
+  host: '',
+  port: kDefaultPlayerProxyPort,
+);
 
 /// Repairs a typed or restored proxy host the way the reference's
 /// `normalizeProxyHost` does: a Chinese keyboard's full-width dot, colon and
@@ -131,7 +157,7 @@ int normalizePlayerProxyPort(int? port) => port != null && port >= 1 && port <= 
 
 /// The stored endpoint with its host and port repaired.
 PlayerProxySettings normalizePlayerProxy(PlayerProxySettings value) =>
-    (enabled: value.enabled, host: normalizePlayerProxyHost(value.host), port: normalizePlayerProxyPort(value.port));
+    (mode: value.mode, host: normalizePlayerProxyHost(value.host), port: normalizePlayerProxyPort(value.port));
 
 /// The engine option for [proxy].
 ///
@@ -141,7 +167,7 @@ PlayerProxySettings normalizePlayerProxy(PlayerProxySettings value) =>
 /// the URL stays parseable.
 EngineOption playerProxyEngineOption(PlayerProxySettings proxy) {
   final normalized = normalizePlayerProxy(proxy);
-  if (!normalized.enabled || normalized.host.isEmpty) {
+  if (normalized.mode == PlayerProxyMode.off || normalized.host.isEmpty) {
     return const EngineOption('http-proxy', '');
   }
   final host = normalized.host;
@@ -724,7 +750,14 @@ final class PlayerProxyController extends Notifier<PlayerProxySettings> {
       final decoded = jsonDecode(raw);
       if (decoded is! Map) return kDefaultPlayerProxy;
       return normalizePlayerProxy((
-        enabled: decoded['enabled'] == true,
+        mode: switch (decoded['mode']) {
+          'followApp' => PlayerProxyMode.followApp,
+          'manual' => PlayerProxyMode.manual,
+          'off' => PlayerProxyMode.off,
+          // The builds before the modes stored one boolean, whose "on" could
+          // only ever have meant the typed endpoint beside it.
+          _ => decoded['enabled'] == true ? PlayerProxyMode.manual : PlayerProxyMode.off,
+        },
         host: decoded['host'] is String ? decoded['host'] as String : '',
         port: decoded['port'] is int ? decoded['port'] as int : kDefaultPlayerProxyPort,
       ));
@@ -739,7 +772,7 @@ final class PlayerProxyController extends Notifier<PlayerProxySettings> {
     try {
       await StoragePrefs.setString(
         _key,
-        jsonEncode({'enabled': normalized.enabled, 'host': normalized.host, 'port': normalized.port}),
+        jsonEncode({'mode': normalized.mode.name, 'host': normalized.host, 'port': normalized.port}),
       );
     } on Object {
       // A preference; a closed store loses it.
@@ -748,3 +781,17 @@ final class PlayerProxyController extends Notifier<PlayerProxySettings> {
 }
 
 final playerProxyProvider = NotifierProvider<PlayerProxyController, PlayerProxySettings>(PlayerProxyController.new);
+
+/// The proxy the player actually runs with: [playerProxyProvider] with a
+/// follow-the-app choice answered by the app's own resolved endpoint.
+///
+/// Every playback surface reads and listens to this rather than the stored
+/// choice, so typing an address on the network page — or a system proxy
+/// appearing after start-up — reaches a player that is already open.
+final effectivePlayerProxyProvider = Provider<PlayerProxySettings>((ref) {
+  final proxy = ref.watch(playerProxyProvider);
+  if (proxy.mode != PlayerProxyMode.followApp) return proxy;
+  final endpoint = appProxyEndpoint(ref.watch(proxySettingsProvider), ref.watch(systemProxyProvider));
+  if (endpoint == null) return kDefaultPlayerProxy;
+  return (mode: PlayerProxyMode.manual, host: endpoint.host, port: endpoint.port);
+});

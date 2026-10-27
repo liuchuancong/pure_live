@@ -522,6 +522,75 @@ class Translations$backup$zh_CN {
 	/// zh-CN: 'WebDAV 同步'
 	String get webdavSection => 'WebDAV 同步';
 
+	/// zh-CN: 'WebDAV 账号'
+	String get webdavAccounts => 'WebDAV 账号';
+
+	/// zh-CN: '点选账号即设为当前并打开它的文件夹；铅笔图标用于修改或删除该账号。'
+	String get webdavAccountsHint => '点选账号即设为当前并打开它的文件夹；铅笔图标用于修改或删除该账号。';
+
+	/// zh-CN: '添加账号'
+	String get webdavAddAccount => '添加账号';
+
+	/// zh-CN: '编辑账号'
+	String get webdavEditAccount => '编辑账号';
+
+	/// zh-CN: '账号名称'
+	String get webdavAccountName => '账号名称';
+
+	/// zh-CN: '留空则使用服务器主机名'
+	String get webdavAccountNameHint => '留空则使用服务器主机名';
+
+	/// zh-CN: '当前'
+	String get webdavCurrent => '当前';
+
+	/// zh-CN: '还没有 WebDAV 账号'
+	String get webdavNoAccounts => '还没有 WebDAV 账号';
+
+	/// zh-CN: '添加一个服务器后才能上传备份或从这里恢复。'
+	String get webdavNoAccountsDesc => '添加一个服务器后才能上传备份或从这里恢复。';
+
+	/// zh-CN: '删除“{name}”账号？'
+	String webdavAccountDeleteTitle({required Object name}) => '删除“${name}”账号？';
+
+	/// zh-CN: '只删除本机保存的地址与密码，服务器上的文件不受影响。'
+	String get webdavAccountDeleteDesc => '只删除本机保存的地址与密码，服务器上的文件不受影响。';
+
+	/// zh-CN: '账号已删除'
+	String get webdavAccountDeleted => '账号已删除';
+
+	/// zh-CN: '刷新'
+	String get webdavRefresh => '刷新';
+
+	/// zh-CN: '根目录'
+	String get webdavRoot => '根目录';
+
+	/// zh-CN: '新建文件夹'
+	String get webdavNewFolder => '新建文件夹';
+
+	/// zh-CN: '文件夹名称'
+	String get webdavNewFolderName => '文件夹名称';
+
+	/// zh-CN: '文件夹已创建'
+	String get webdavFolderCreated => '文件夹已创建';
+
+	/// zh-CN: '打开文件夹'
+	String get webdavEnterFolder => '打开文件夹';
+
+	/// zh-CN: '删除服务器上的这个文件夹及其中的全部内容。'
+	String get webdavDeleteFolderDesc => '删除服务器上的这个文件夹及其中的全部内容。';
+
+	/// zh-CN: '确认地址与密码可用，不传输任何数据。'
+	String get webdavTestDesc => '确认地址与密码可用，不传输任何数据。';
+
+	/// zh-CN: '把本机数据写成备份文件上传到当前账号根目录，覆盖同名文件。'
+	String get webdavUploadDesc => '把本机数据写成备份文件上传到当前账号根目录，覆盖同名文件。';
+
+	/// zh-CN: '读取当前账号根目录的备份文件并覆盖本机数据。'
+	String get webdavDownloadDesc => '读取当前账号根目录的备份文件并覆盖本机数据。';
+
+	/// zh-CN: '像文件夹一样浏览服务器：进入目录、新建文件夹、上传或恢复任意文件。'
+	String get webdavBrowseDesc => '像文件夹一样浏览服务器：进入目录、新建文件夹、上传或恢复任意文件。';
+
 	/// zh-CN: '备份以 {file} 存放在服务器目录，上传覆盖、下载恢复。'
 	String webdavDescription({required Object file}) => '备份以 ${file} 存放在服务器目录，上传覆盖、下载恢复。';
 
@@ -1655,6 +1724,27 @@ class Translations$multiview$zh_CN {
 
 	/// zh-CN: '搜索关注或历史房间…'
 	String get pickerSearch => '搜索关注或历史房间…';
+
+	/// zh-CN: '点直播间放进这一格'
+	String get pickerHint => '点直播间放进这一格';
+
+	/// zh-CN: '关注'
+	String get pickerTabFollows => '关注';
+
+	/// zh-CN: '历史记录'
+	String get pickerTabHistory => '历史记录';
+
+	/// zh-CN: '搜索主播或标题'
+	String get pickerSearchShort => '搜索主播或标题';
+
+	/// zh-CN: '点击选台'
+	String get paneEmpty => '点击选台';
+
+	/// zh-CN: '正在为这一格选台'
+	String get panePicking => '正在为这一格选台';
+
+	/// zh-CN: '无法读取多画面记录'
+	String get wallFailed => '无法读取多画面记录';
 
 	/// zh-CN: '没有匹配的房间'
 	String get pickerNoMatch => '没有匹配的房间';
@@ -3405,9 +3495,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '应用代理'
 	String get proxy => '应用代理';
 
-	/// zh-CN: '开启后，点播、节目单与备份的请求都经过该代理。'
-	String get proxyDesc => '开启后，点播、节目单与备份的请求都经过该代理。';
-
 	/// zh-CN: '主机'
 	String get proxyHost => '主机';
 
@@ -3419,6 +3506,48 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '代理服务器监听的端口。'
 	String get proxyPortDesc => '代理服务器监听的端口。';
+
+	/// zh-CN: '不使用代理'
+	String get proxyModeOff => '不使用代理';
+
+	/// zh-CN: '点播、节目单与备份的请求都直连。'
+	String get proxyModeOffDesc => '点播、节目单与备份的请求都直连。';
+
+	/// zh-CN: '跟随系统代理'
+	String get proxyModeSystem => '跟随系统代理';
+
+	/// zh-CN: '使用操作系统自己配置的 HTTP 代理，没有配置时直连。'
+	String get proxyModeSystemDesc => '使用操作系统自己配置的 HTTP 代理，没有配置时直连。';
+
+	/// zh-CN: '手动代理'
+	String get proxyModeManual => '手动代理';
+
+	/// zh-CN: '使用下方填写的主机与端口。'
+	String get proxyModeManualDesc => '使用下方填写的主机与端口。';
+
+	/// zh-CN: '正在检测系统代理…'
+	String get proxySystemProbing => '正在检测系统代理…';
+
+	/// zh-CN: '系统代理：{host}'
+	String proxySystemResolved({required Object host}) => '系统代理：${host}';
+
+	/// zh-CN: '未检测到系统代理，当前直连。'
+	String get proxySystemNone => '未检测到系统代理，当前直连。';
+
+	/// zh-CN: '系统代理是 PAC 脚本或非 HTTP 代理，无法自动套用；请改用手动代理。'
+	String get proxySystemNotExpressible => '系统代理是 PAC 脚本或非 HTTP 代理，无法自动套用；请改用手动代理。';
+
+	/// zh-CN: '当前平台没有可读的系统代理设置；请改用手动代理。'
+	String get proxySystemUnsupported => '当前平台没有可读的系统代理设置；请改用手动代理。';
+
+	/// zh-CN: '系统代理检测失败，当前直连。'
+	String get proxySystemFailed => '系统代理检测失败，当前直连。';
+
+	/// zh-CN: '重新检测系统代理'
+	String get proxySystemRecheck => '重新检测系统代理';
+
+	/// zh-CN: '代理客户端在启动后才开启或关闭时，不必重启应用。'
+	String get proxySystemRecheckDesc => '代理客户端在启动后才开启或关闭时，不必重启应用。';
 
 	/// zh-CN: '工具区排序'
 	String get toolsOrder => '工具区排序';
@@ -3695,6 +3824,21 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '隐藏到托盘'
 	String get trayHide => '隐藏到托盘';
+
+	/// zh-CN: '截图'
+	String get trayScreenshot => '截图';
+
+	/// zh-CN: '打开声音'
+	String get traySoundOn => '打开声音';
+
+	/// zh-CN: '关闭声音'
+	String get traySoundOff => '关闭声音';
+
+	/// zh-CN: '已保存到 {path}'
+	String trayScreenshotSaved({required Object path}) => '已保存到 ${path}';
+
+	/// zh-CN: '截图失败：没有正在播放的房间或引擎不支持'
+	String get trayScreenshotFailed => '截图失败：没有正在播放的房间或引擎不支持';
 
 	/// zh-CN: '字体'
 	String get font => '字体';
@@ -4065,14 +4209,20 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '播放器代理'
 	String get playerProxy => '播放器代理';
 
-	/// zh-CN: '只影响播放器请求，不改变应用接口的代理。'
-	String get playerProxyDesc => '只影响播放器请求，不改变应用接口的代理。';
-
-	/// zh-CN: '启用播放器代理'
-	String get playerProxyEnable => '启用播放器代理';
+	/// zh-CN: '只影响播放器请求；可以跟随上面的应用代理。'
+	String get playerProxyDesc => '只影响播放器请求；可以跟随上面的应用代理。';
 
 	/// zh-CN: '请填写有效的主机和端口（1–65535）。'
 	String get playerProxyInvalid => '请填写有效的主机和端口（1–65535）。';
+
+	/// zh-CN: '代理方式'
+	String get playerProxyMode => '代理方式';
+
+	/// zh-CN: '跟随应用代理'
+	String get playerProxyFollow => '跟随应用代理';
+
+	/// zh-CN: '单独设置'
+	String get playerProxyManual => '单独设置';
 
 	/// zh-CN: '硬件解码器 (--hwdec)'
 	String get hardwareDecoder => '硬件解码器 (--hwdec)';
@@ -5031,6 +5181,117 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '发布于 {date}'
 	String releasedOn({required Object date}) => '发布于 ${date}';
 
+	/// zh-CN: '预览版'
+	String get prerelease => '预览版';
+
+	/// zh-CN: '稍后再说'
+	String get updateLater => '稍后再说';
+
+	/// zh-CN: '下载安装包'
+	String get downloadInstaller => '下载安装包';
+
+	/// zh-CN: '其他构建'
+	String get downloadOtherBuilds => '其他构建';
+
+	/// zh-CN: '获取安装包'
+	String get downloadTitle => '获取安装包';
+
+	/// zh-CN: '最新版本'
+	String get downloadLatest => '最新版本';
+
+	/// zh-CN: '选择与本机匹配的包；下载保存到「数据与缓存」里的下载目录。'
+	String get downloadHint => '选择与本机匹配的包；下载保存到「数据与缓存」里的下载目录。';
+
+	/// zh-CN: '下载'
+	String get downloadAction => '下载';
+
+	/// zh-CN: '{count} 次下载'
+	String downloadCount({required Object count}) => '${count} 次下载';
+
+	/// zh-CN: '无法读取发布文件列表'
+	String get downloadFailed => '无法读取发布文件列表';
+
+	/// zh-CN: '这个发布没有可下载的文件'
+	String get downloadEmpty => '这个发布没有可下载的文件';
+
+	/// zh-CN: '这个发布没有匹配本机的安装包，已打开发布页。'
+	String get downloadNoBuild => '这个发布没有匹配本机的安装包，已打开发布页。';
+
+	/// zh-CN: '{received} / {total}'
+	String downloadProgress({required Object received, required Object total}) => '${received} / ${total}';
+
+	/// zh-CN: '已下载 {received}'
+	String downloadProgressUnknown({required Object received}) => '已下载 ${received}';
+
+	/// zh-CN: '已保存到 {path}'
+	String downloadSavedTo({required Object path}) => '已保存到 ${path}';
+
+	/// zh-CN: '下载已取消，未保留部分文件。'
+	String get downloadCancelled => '下载已取消，未保留部分文件。';
+
+	/// zh-CN: '打开文件'
+	String get downloadOpenFile => '打开文件';
+
+	/// zh-CN: '打开所在文件夹'
+	String get downloadOpenFolder => '打开所在文件夹';
+
+	/// zh-CN: '无法打开该文件'
+	String get downloadOpenFailed => '无法打开该文件';
+
+	/// zh-CN: '发布页'
+	String get openReleasePage => '发布页';
+
+	/// zh-CN: '展开更新内容'
+	String get releaseExpand => '展开更新内容';
+
+	/// zh-CN: '收起更新内容'
+	String get releaseCollapse => '收起更新内容';
+
+	/// zh-CN: '安卓'
+	String get releaseOsAndroid => '安卓';
+
+	/// zh-CN: 'iOS'
+	String get releaseOsIos => 'iOS';
+
+	/// zh-CN: 'Windows'
+	String get releaseOsWindows => 'Windows';
+
+	/// zh-CN: 'macOS'
+	String get releaseOsMacos => 'macOS';
+
+	/// zh-CN: 'Linux'
+	String get releaseOsLinux => 'Linux';
+
+	/// zh-CN: '其他平台'
+	String get releaseOsOther => '其他平台';
+
+	/// zh-CN: 'APK 安装包'
+	String get releaseKindApk => 'APK 安装包';
+
+	/// zh-CN: 'IPA'
+	String get releaseKindIpa => 'IPA';
+
+	/// zh-CN: '安装程序'
+	String get releaseKindInstaller => '安装程序';
+
+	/// zh-CN: 'DMG 磁盘映像'
+	String get releaseKindDmg => 'DMG 磁盘映像';
+
+	/// zh-CN: 'MSIX 应用包'
+	String get releaseKindMsix => 'MSIX 应用包';
+
+	/// zh-CN: 'DEB 软件包'
+	String get releaseKindDeb => 'DEB 软件包';
+
+	/// zh-CN: 'tar.gz 归档'
+	String get releaseKindTarGz => 'tar.gz 归档';
+
+	/// zh-CN: '便携版压缩包'
+	String get releaseKindPortable => '便携版压缩包';
+
+	/// zh-CN: '文件'
+	String get releaseKindOther => '文件';
+
 	/// zh-CN: '至少保留一个平台'
 	String get sitesKeepOne => '至少保留一个平台';
 
@@ -5661,11 +5922,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '下载目录'
 	String get downloadDirectory => '下载目录';
 
-	/// zh-CN: '下载的字体与文件存放在此目录。'
-	String get downloadDirectoryDesc => '下载的字体与文件存放在此目录。';
+	/// zh-CN: '默认'
+	String get downloadDirectoryDefaultLabel => '默认';
 
-	/// zh-CN: '当前使用默认目录'
-	String get downloadDirectoryDefaultLabel => '当前使用默认目录';
+	/// zh-CN: '自定义'
+	String get downloadDirectoryCustomLabel => '自定义';
 
 	/// zh-CN: '恢复默认目录'
 	String get downloadDirectoryReset => '恢复默认目录';
@@ -6423,11 +6684,20 @@ class Translations$toolbox$zh_CN {
 	/// zh-CN: '没有可复制的日志'
 	String get logsCopyEmpty => '没有可复制的日志';
 
-	/// zh-CN: '日志目录'
-	String get logsDirectory => '日志目录';
+	/// zh-CN: '日志文件尚未就绪。'
+	String get logsDirectoryDefault => '日志文件尚未就绪。';
 
-	/// zh-CN: '仅内存日志：开启「写入日志文件」后这里会显示目录。'
-	String get logsDirectoryDefault => '仅内存日志：开启「写入日志文件」后这里会显示目录。';
+	/// zh-CN: '日志文件'
+	String get logsFileTitle => '日志文件';
+
+	/// zh-CN: '打开所在文件夹'
+	String get logsOpenFolder => '打开所在文件夹';
+
+	/// zh-CN: '复制路径'
+	String get logsCopyPath => '复制路径';
+
+	/// zh-CN: '路径已复制到剪贴板'
+	String get logsPathCopied => '路径已复制到剪贴板';
 
 	/// zh-CN: '无法打开日志目录'
 	String get logsOpenFailed => '无法打开日志目录';
@@ -7062,6 +7332,29 @@ extension on Translations {
 			'backup.importFailed' => '导入失败',
 			'backup.summary' => ({required Object follows, required Object history, required Object areas, required Object settings}) => '关注 ${follows} · 历史 ${history} · 分区 ${areas} · 设置 ${settings} 项',
 			'backup.webdavSection' => 'WebDAV 同步',
+			'backup.webdavAccounts' => 'WebDAV 账号',
+			'backup.webdavAccountsHint' => '点选账号即设为当前并打开它的文件夹；铅笔图标用于修改或删除该账号。',
+			'backup.webdavAddAccount' => '添加账号',
+			'backup.webdavEditAccount' => '编辑账号',
+			'backup.webdavAccountName' => '账号名称',
+			'backup.webdavAccountNameHint' => '留空则使用服务器主机名',
+			'backup.webdavCurrent' => '当前',
+			'backup.webdavNoAccounts' => '还没有 WebDAV 账号',
+			'backup.webdavNoAccountsDesc' => '添加一个服务器后才能上传备份或从这里恢复。',
+			'backup.webdavAccountDeleteTitle' => ({required Object name}) => '删除“${name}”账号？',
+			'backup.webdavAccountDeleteDesc' => '只删除本机保存的地址与密码，服务器上的文件不受影响。',
+			'backup.webdavAccountDeleted' => '账号已删除',
+			'backup.webdavRefresh' => '刷新',
+			'backup.webdavRoot' => '根目录',
+			'backup.webdavNewFolder' => '新建文件夹',
+			'backup.webdavNewFolderName' => '文件夹名称',
+			'backup.webdavFolderCreated' => '文件夹已创建',
+			'backup.webdavEnterFolder' => '打开文件夹',
+			'backup.webdavDeleteFolderDesc' => '删除服务器上的这个文件夹及其中的全部内容。',
+			'backup.webdavTestDesc' => '确认地址与密码可用，不传输任何数据。',
+			'backup.webdavUploadDesc' => '把本机数据写成备份文件上传到当前账号根目录，覆盖同名文件。',
+			'backup.webdavDownloadDesc' => '读取当前账号根目录的备份文件并覆盖本机数据。',
+			'backup.webdavBrowseDesc' => '像文件夹一样浏览服务器：进入目录、新建文件夹、上传或恢复任意文件。',
 			'backup.webdavDescription' => ({required Object file}) => '备份以 ${file} 存放在服务器目录，上传覆盖、下载恢复。',
 			'backup.webdavConfigTitle' => '服务器配置',
 			'backup.webdavConfigDescription' => '填写 WebDAV 服务器地址与账号；密码保存在系统安全存储中，不进入备份。',
@@ -7407,6 +7700,8 @@ extension on Translations {
 			'multiview.openRoom' => '进入直播间',
 			'multiview.clearPane' => '清空这一格',
 			'multiview.swapPane' => '交换格子',
+			_ => null,
+		} ?? switch (path) {
 			'multiview.swapHere' => '换到这格',
 			'multiview.paneFailed' => '这一格无法播放',
 			'multiview.retryPane' => '重试这一格',
@@ -7425,13 +7720,18 @@ extension on Translations {
 			'multiview.unmuteAll' => '取消全部静音',
 			'multiview.qualityFailed' => '画质切换失败',
 			'multiview.pickerSearch' => '搜索关注或历史房间…',
+			'multiview.pickerHint' => '点直播间放进这一格',
+			'multiview.pickerTabFollows' => '关注',
+			'multiview.pickerTabHistory' => '历史记录',
+			'multiview.pickerSearchShort' => '搜索主播或标题',
+			'multiview.paneEmpty' => '点击选台',
+			'multiview.panePicking' => '正在为这一格选台',
+			'multiview.wallFailed' => '无法读取多画面记录',
 			'multiview.pickerNoMatch' => '没有匹配的房间',
 			'music.title' => '音乐',
 			'music.tagline' => '歌曲、歌单与榜单正在路上',
 			'music.viewsLabel' => '音乐视图',
 			'music.tabLibrary' => '乐库',
-			_ => null,
-		} ?? switch (path) {
 			'music.tabPlaylists' => '歌单',
 			'music.tabCharts' => '榜单',
 			'music.libraryEmptyTitle' => '曲库还在路上',
@@ -7914,6 +8214,8 @@ extension on Translations {
 			'settings.refreshRateMultiMonitor' => ({required Object count}) => '检测到 ${count} 台显示器',
 			'settings.refreshRateMultiMonitorDesc' => '刷新率读数来自当前窗口所在的那一台显示器。',
 			'settings.favoritesDense' => '紧凑模式',
+			_ => null,
+		} ?? switch (path) {
 			'settings.favoritesDenseDescription' => '关注页面可显示更多直播间；关闭后改用大卡片。',
 			'settings.sitesDisplay' => '平台显示',
 			'settings.sitesDisplayDesc' => '关闭的平台不再出现在热门、分区、关注与搜索的平台列表里。',
@@ -7944,8 +8246,6 @@ extension on Translations {
 			'settings.liquidGlass' => '液体玻璃',
 			'settings.liquidGlassDescription' => '首页底栏悬浮成毛玻璃，页面从下面透出来；内存 4 GB 及以下的安卓手机不模糊，只半透明。',
 			'settings.themeColorTitle' => '主题色',
-			_ => null,
-		} ?? switch (path) {
 			'settings.themeColorPresets' => '预设颜色',
 			'settings.themeColorCustom' => '自定义颜色',
 			'settings.themeColorHex' => '十六进制颜色',
@@ -7988,11 +8288,24 @@ extension on Translations {
 			'settings.navNetwork' => '网络',
 			'settings.networkDescription' => '应用代理与传输行为。',
 			'settings.proxy' => '应用代理',
-			'settings.proxyDesc' => '开启后，点播、节目单与备份的请求都经过该代理。',
 			'settings.proxyHost' => '主机',
 			'settings.proxyHostDesc' => '代理服务器的主机名或地址。',
 			'settings.proxyPort' => '端口',
 			'settings.proxyPortDesc' => '代理服务器监听的端口。',
+			'settings.proxyModeOff' => '不使用代理',
+			'settings.proxyModeOffDesc' => '点播、节目单与备份的请求都直连。',
+			'settings.proxyModeSystem' => '跟随系统代理',
+			'settings.proxyModeSystemDesc' => '使用操作系统自己配置的 HTTP 代理，没有配置时直连。',
+			'settings.proxyModeManual' => '手动代理',
+			'settings.proxyModeManualDesc' => '使用下方填写的主机与端口。',
+			'settings.proxySystemProbing' => '正在检测系统代理…',
+			'settings.proxySystemResolved' => ({required Object host}) => '系统代理：${host}',
+			'settings.proxySystemNone' => '未检测到系统代理，当前直连。',
+			'settings.proxySystemNotExpressible' => '系统代理是 PAC 脚本或非 HTTP 代理，无法自动套用；请改用手动代理。',
+			'settings.proxySystemUnsupported' => '当前平台没有可读的系统代理设置；请改用手动代理。',
+			'settings.proxySystemFailed' => '系统代理检测失败，当前直连。',
+			'settings.proxySystemRecheck' => '重新检测系统代理',
+			'settings.proxySystemRecheckDesc' => '代理客户端在启动后才开启或关闭时，不必重启应用。',
 			'settings.toolsOrder' => '工具区排序',
 			'settings.toolsOrderDesc' => '侧栏分区线下方工具的显示顺序。',
 			'settings.moveUp' => '上移',
@@ -8085,6 +8398,11 @@ extension on Translations {
 			'settings.closeDontAskAgain' => '不再询问',
 			'settings.trayShow' => '显示主窗口',
 			'settings.trayHide' => '隐藏到托盘',
+			'settings.trayScreenshot' => '截图',
+			'settings.traySoundOn' => '打开声音',
+			'settings.traySoundOff' => '关闭声音',
+			'settings.trayScreenshotSaved' => ({required Object path}) => '已保存到 ${path}',
+			'settings.trayScreenshotFailed' => '截图失败：没有正在播放的房间或引擎不支持',
 			'settings.font' => '字体',
 			'settings.fontDescription' => '界面字体：跟随平台官方字体、选一款内置官方字体，或从云端目录下载。',
 			'settings.fontPlatform' => '跟随平台（系统字体）',
@@ -8208,9 +8526,11 @@ extension on Translations {
 			'settings.playerPresetApplied' => '已应用预设',
 			'settings.playerOutputLockedByPreset' => '已由当前预设固定',
 			'settings.playerProxy' => '播放器代理',
-			'settings.playerProxyDesc' => '只影响播放器请求，不改变应用接口的代理。',
-			'settings.playerProxyEnable' => '启用播放器代理',
+			'settings.playerProxyDesc' => '只影响播放器请求；可以跟随上面的应用代理。',
 			'settings.playerProxyInvalid' => '请填写有效的主机和端口（1–65535）。',
+			'settings.playerProxyMode' => '代理方式',
+			'settings.playerProxyFollow' => '跟随应用代理',
+			'settings.playerProxyManual' => '单独设置',
 			'settings.hardwareDecoder' => '硬件解码器 (--hwdec)',
 			'settings.hardwareDecoderDesc' => '选择 mpv 的 hwdec 解码器（自定义输出开启时生效）。',
 			'settings.hardwareDecoderAutoHint' => '未开启自定义输出，解码器由 mpv 自动选择（auto-safe）；如需指定，请在「高级设置」开启「自定义驱动与硬件加速」。',
@@ -8421,6 +8741,8 @@ extension on Translations {
 			'settings.fit' => '画面比例',
 			'settings.fitDesc' => '画面在播放区域里的铺法。',
 			'settings.fitContain' => '默认比例',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fitCover' => '居中裁剪',
 			'settings.fitFill' => '填充屏幕',
 			'settings.miniDanmakuVisible' => '画中画中显示弹幕',
@@ -8532,6 +8854,43 @@ extension on Translations {
 			'settings.releaseHistoryEmpty' => '暂无发布记录',
 			'settings.releaseHistoryFailed' => '发行记录加载失败',
 			'settings.releasedOn' => ({required Object date}) => '发布于 ${date}',
+			'settings.prerelease' => '预览版',
+			'settings.updateLater' => '稍后再说',
+			'settings.downloadInstaller' => '下载安装包',
+			'settings.downloadOtherBuilds' => '其他构建',
+			'settings.downloadTitle' => '获取安装包',
+			'settings.downloadLatest' => '最新版本',
+			'settings.downloadHint' => '选择与本机匹配的包；下载保存到「数据与缓存」里的下载目录。',
+			'settings.downloadAction' => '下载',
+			'settings.downloadCount' => ({required Object count}) => '${count} 次下载',
+			'settings.downloadFailed' => '无法读取发布文件列表',
+			'settings.downloadEmpty' => '这个发布没有可下载的文件',
+			'settings.downloadNoBuild' => '这个发布没有匹配本机的安装包，已打开发布页。',
+			'settings.downloadProgress' => ({required Object received, required Object total}) => '${received} / ${total}',
+			'settings.downloadProgressUnknown' => ({required Object received}) => '已下载 ${received}',
+			'settings.downloadSavedTo' => ({required Object path}) => '已保存到 ${path}',
+			'settings.downloadCancelled' => '下载已取消，未保留部分文件。',
+			'settings.downloadOpenFile' => '打开文件',
+			'settings.downloadOpenFolder' => '打开所在文件夹',
+			'settings.downloadOpenFailed' => '无法打开该文件',
+			'settings.openReleasePage' => '发布页',
+			'settings.releaseExpand' => '展开更新内容',
+			'settings.releaseCollapse' => '收起更新内容',
+			'settings.releaseOsAndroid' => '安卓',
+			'settings.releaseOsIos' => 'iOS',
+			'settings.releaseOsWindows' => 'Windows',
+			'settings.releaseOsMacos' => 'macOS',
+			'settings.releaseOsLinux' => 'Linux',
+			'settings.releaseOsOther' => '其他平台',
+			'settings.releaseKindApk' => 'APK 安装包',
+			'settings.releaseKindIpa' => 'IPA',
+			'settings.releaseKindInstaller' => '安装程序',
+			'settings.releaseKindDmg' => 'DMG 磁盘映像',
+			'settings.releaseKindMsix' => 'MSIX 应用包',
+			'settings.releaseKindDeb' => 'DEB 软件包',
+			'settings.releaseKindTarGz' => 'tar.gz 归档',
+			'settings.releaseKindPortable' => '便携版压缩包',
+			'settings.releaseKindOther' => '文件',
 			'settings.sitesKeepOne' => '至少保留一个平台',
 			'settings.autoPip' => '离开应用时自动小窗',
 			'settings.autoPipDesc' => '播放中切到后台时进入画中画；系统未开启画中画时不会生效。',
@@ -8742,8 +9101,8 @@ extension on Translations {
 			'settings.cacheRefreshThumbnailsDesc' => '清空封面、头像与图标缓存，下一次显示时重新下载。',
 			'settings.cacheRefreshThumbnailsDone' => '缩略图已刷新',
 			'settings.downloadDirectory' => '下载目录',
-			'settings.downloadDirectoryDesc' => '下载的字体与文件存放在此目录。',
-			'settings.downloadDirectoryDefaultLabel' => '当前使用默认目录',
+			'settings.downloadDirectoryDefaultLabel' => '默认',
+			'settings.downloadDirectoryCustomLabel' => '自定义',
 			'settings.downloadDirectoryReset' => '恢复默认目录',
 			'settings.downloadDirectoryUpdated' => '下载目录已更新',
 			'settings.downloadDirectoryPickFailed' => '无法选择下载目录',
@@ -8898,6 +9257,8 @@ extension on Translations {
 			'toolbox.toolNetworkTitle' => '平台节点',
 			'toolbox.toolNetworkDescription' => '测试各平台接口的连通性与延迟。',
 			'toolbox.toolCacheTitle' => '缓存清理',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.toolCacheDescription' => '查看并清理图片占用的内存缓存。',
 			'toolbox.toolLogsTitle' => '日志',
 			'toolbox.toolLogsDescription' => '查看应用运行日志与诊断信息。',
@@ -8989,8 +9350,11 @@ extension on Translations {
 			'toolbox.logsScrollBottom' => '滚动到底部',
 			'toolbox.logsCopied' => '日志已复制',
 			'toolbox.logsCopyEmpty' => '没有可复制的日志',
-			'toolbox.logsDirectory' => '日志目录',
-			'toolbox.logsDirectoryDefault' => '仅内存日志：开启「写入日志文件」后这里会显示目录。',
+			'toolbox.logsDirectoryDefault' => '日志文件尚未就绪。',
+			'toolbox.logsFileTitle' => '日志文件',
+			'toolbox.logsOpenFolder' => '打开所在文件夹',
+			'toolbox.logsCopyPath' => '复制路径',
+			'toolbox.logsPathCopied' => '路径已复制到剪贴板',
 			'toolbox.logsOpenFailed' => '无法打开日志目录',
 			'vod.searchHint' => '搜索 Bilibili 视频',
 			'vod.idleTitle' => '搜索点播视频',

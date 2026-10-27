@@ -383,7 +383,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   List<EngineOption> _storedEngineOptions() => playerStoredEngineOptions(
     hardwareDecoding: ref.read(playbackSettingsProvider).hardwareDecoding,
     tuning: ref.read(playerTuningProvider),
-    proxy: ref.read(playerProxyProvider),
+    proxy: ref.read(effectivePlayerProxyProvider),
   );
 
   Future<void> _applyEngineOptions(PlayerHandle handle, {List<EngineOption> extra = const []}) async {
@@ -513,7 +513,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       if (mounted) setState(() => _globalMute = next);
       unawaited(_applyGlobalMute());
     });
-    ref.listen(playerProxyProvider, (previous, next) {
+    ref.listen(effectivePlayerProxyProvider, (previous, next) {
       if (previous == next) return;
       final handle = _handle;
       if (handle != null) unawaited(_applyEngineOptions(handle));
