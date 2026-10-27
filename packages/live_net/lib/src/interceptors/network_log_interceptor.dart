@@ -9,8 +9,8 @@ import 'package:live_log/live_log.dart' show LiveLog, LogLevel;
 /// cookies are redacted again at the `LiveLog` emit boundary (defence in
 /// depth — this interceptor only ever builds lines that are safe to keep).
 final class NetworkLogInterceptor extends dio.Interceptor {
-  /// Logs through [log] at [level] for successful phases (errors always
-  /// log at warning).
+  /// Logs through [log] at [level] for successful phases and for a caller's
+  /// own cancellation; other failures log at warning.
   new(this.log, {this.level = LogLevel.debug});
 
   /// The tree view network traffic is reported under.
@@ -49,11 +49,15 @@ final class NetworkLogInterceptor extends dio.Interceptor {
   @override
   void onError(dio.DioException err, dio.ErrorInterceptorHandler handler) {
     final options = err.requestOptions;
+    // A caller's own cancellation stops work on purpose (a download the
+    // viewer cancelled); it is not a fault, so it stays out of the error
+    // report and carries no stack.
+    final cancelled = err.type == dio.DioExceptionType.cancel;
     log.log(
-      LogLevel.warning,
+      cancelled ? level : LogLevel.warning,
       '✕ [#${options.extra[_idKey]}] ${options.method} '
       '${_category(err)} ${options.uri}',
-      error: err,
+      error: cancelled ? null : err,
     );
     handler.next(err);
   }
