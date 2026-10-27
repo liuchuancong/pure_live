@@ -4108,6 +4108,8 @@ extension on TranslationsEn {
 			'settings.volumeWheelStep' => 'Volume wheel step',
 			'settings.volumeWheelStepDesc' => 'How much the mouse wheel and the arrow keys change the volume at a time.',
 			'settings.volumeWheelStepValue' => ({required int percent}) => '${percent}%',
+			_ => null,
+		} ?? switch (path) {
 			'settings.globalMute' => 'Mute all playback',
 			'settings.globalMuteDesc' => 'Silences every room, channel and video now and when opened; turning it off restores each player\'s own mute choice.',
 			'settings.backgroundPlay' => 'Background playback',
@@ -4121,8 +4123,6 @@ extension on TranslationsEn {
 			'settings.fit' => 'Picture fit',
 			'settings.fitDesc' => 'How the frame fills its box.',
 			'settings.fitContain' => 'Default Ratio',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fitCover' => 'Center Crop',
 			'settings.fitFill' => 'Fill Screen',
 			'settings.miniDanmakuVisible' => 'Danmaku in picture-in-picture',
@@ -4160,8 +4160,6 @@ extension on TranslationsEn {
 			'settings.groupCards' => 'Cards & lists',
 			'settings.groupLanguage' => 'Language',
 			'settings.contrast' => 'Contrast',
-			_ => null,
-		} ?? switch (path) {
 			'settings.contrastDescription' => 'How strongly control edges and text stand out.',
 			'settings.contrastSoft' => 'Soft',
 			'settings.contrastStandard' => 'Standard',
@@ -4624,6 +4622,8 @@ extension on TranslationsEn {
 			'shield.blockLongLengthValue' => ({required int count}) => '${count} characters',
 			'shield.douyuSuspected' => 'Filter Suspected Automated Douyu Chat',
 			'shield.douyuSuspectedDescription' => 'Turn on to hide suspected automated or event chat heuristically; ordinary chat may also be hidden',
+			_ => null,
+		} ?? switch (path) {
 			'sites.title' => 'Sites',
 			'sites.live' => 'Live',
 			'sites.search' => 'Search',
@@ -4637,8 +4637,6 @@ extension on TranslationsEn {
 			'toolbox.toolNetworkTitle' => 'Platform nodes',
 			'toolbox.toolNetworkDescription' => 'Test each platform\'s endpoint for reachability and latency.',
 			'toolbox.toolCacheTitle' => 'Cache cleanup',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.toolCacheDescription' => 'Inspect and clear the memory the image cache holds.',
 			'toolbox.toolLogsTitle' => 'Logs',
 			'toolbox.toolLogsDescription' => 'Inspect the app\'s runtime log and diagnostics.',
@@ -4713,8 +4711,6 @@ extension on TranslationsEn {
 			'toolbox.logsLevel' => 'Log level',
 			'toolbox.logsFile' => 'Write log file',
 			'toolbox.logsFileDesc' => 'Keep a rotating log (pure_live.log) in the app data directory; off keeps only the in-memory ring.',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsExport' => 'Copy log',
 			'toolbox.logsExportDesc' => 'Copy the in-memory records to the clipboard.',
 			'toolbox.logsClear' => 'Clear logs',

@@ -8728,6 +8728,8 @@ extension on Translations {
 			'settings.volumeWheelStep' => '滚轮音量步长',
 			'settings.volumeWheelStepDesc' => '鼠标滚轮与方向键每次调节的音量幅度。',
 			'settings.volumeWheelStepValue' => ({required int percent}) => '${percent}%',
+			_ => null,
+		} ?? switch (path) {
 			'settings.globalMute' => '全局静音',
 			'settings.globalMuteDesc' => '立即静音所有正在播放和之后打开的房间、频道与视频；关闭后恢复各播放器自身的静音设置。',
 			'settings.backgroundPlay' => '后台播放',
@@ -8741,8 +8743,6 @@ extension on Translations {
 			'settings.fit' => '画面比例',
 			'settings.fitDesc' => '画面在播放区域里的铺法。',
 			'settings.fitContain' => '默认比例',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fitCover' => '居中裁剪',
 			'settings.fitFill' => '填充屏幕',
 			'settings.miniDanmakuVisible' => '画中画中显示弹幕',
@@ -8780,8 +8780,6 @@ extension on Translations {
 			'settings.groupCards' => '卡片与列表',
 			'settings.groupLanguage' => '语言',
 			'settings.contrast' => '对比度',
-			_ => null,
-		} ?? switch (path) {
 			'settings.contrastDescription' => '控件边界与文字的对比强度。',
 			'settings.contrastSoft' => '柔和',
 			'settings.contrastStandard' => '标准',
@@ -9244,6 +9242,8 @@ extension on Translations {
 			'shield.blockLongLengthValue' => ({required int count}) => '${count} 字',
 			'shield.douyuSuspected' => '过滤斗鱼疑似自动弹幕',
 			'shield.douyuSuspectedDescription' => '开启后按启发式标记隐藏疑似自动或活动弹幕，也可能隐藏普通聊天',
+			_ => null,
+		} ?? switch (path) {
 			'sites.title' => '站点',
 			'sites.live' => '直播',
 			'sites.search' => '搜索',
@@ -9257,8 +9257,6 @@ extension on Translations {
 			'toolbox.toolNetworkTitle' => '平台节点',
 			'toolbox.toolNetworkDescription' => '测试各平台接口的连通性与延迟。',
 			'toolbox.toolCacheTitle' => '缓存清理',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.toolCacheDescription' => '查看并清理图片占用的内存缓存。',
 			'toolbox.toolLogsTitle' => '日志',
 			'toolbox.toolLogsDescription' => '查看应用运行日志与诊断信息。',
@@ -9333,8 +9331,6 @@ extension on Translations {
 			'toolbox.logsLevel' => '日志级别',
 			'toolbox.logsFile' => '写入日志文件',
 			'toolbox.logsFileDesc' => '在应用数据目录保存轮转日志（pure_live.log）；关闭后只保留内存日志。',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsExport' => '复制日志',
 			'toolbox.logsExportDesc' => '把内存中的日志复制到剪贴板。',
 			'toolbox.logsClear' => '清空日志',
