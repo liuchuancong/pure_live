@@ -30,6 +30,11 @@ const Color _onVideoMuted = Color(0xCCFFFFFF);
 const Color _onVideoSubtle = Color(0x99FFFFFF);
 const Color _onVideoHover = Color(0x24FFFFFF);
 
+/// The stage around and behind the video: always black, in every theme —
+/// a missing frame reads as a dark screen, never as a flash of the theme's
+/// surface while the window changes size.
+const Color kPlayerStageColor = Color(0xFF000000);
+
 /// One action the overlay offers, pressed through the room controller.
 final class PictureActionButton extends ConsumerWidget {
   const PictureActionButton({required this.action, this.autofocus = false, super.key});
@@ -415,7 +420,6 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
     final room = widget.roomState;
     final handle = room.handle;
     final transport = _transport;
@@ -459,23 +463,22 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
         fit: StackFit.expand,
         children: [
           if (handle == null)
-            ColoredBox(color: colors.overlay, child: const SizedBox.expand())
+            const ColoredBox(color: kPlayerStageColor, child: SizedBox.expand())
           else if (room.audioOnly && room.room != null)
             AudioOnlyCover(room: room.room!)
           else if (widget.portraitFullscreen && widget.portraitDisplay == PortraitFullscreenMode.ambient)
             DecoratedBox(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [colors.channel, colors.overlay],
+                  colors: [Color(0xFF17191E), kPlayerStageColor],
                 ),
               ),
               child: MediaPlayerView(
                 handle: handle,
                 fit: _portraitFit(),
                 alignment: _portraitAlignment(),
-                backgroundColor: colors.overlay,
               ),
             )
           else
@@ -483,7 +486,6 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
               handle: handle,
               fit: widget.portraitFullscreen ? _portraitFit() : playback.fit.boxFit,
               alignment: widget.portraitFullscreen ? _portraitAlignment() : Alignment.center,
-              backgroundColor: colors.overlay,
             ),
           if (widget.barrage case final barrage? when showDanmaku)
             Positioned.fill(
@@ -683,7 +685,8 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
 }
 
 /// The strip over the picture: the way out (back to the page, or out of a
-/// presentation mode) and the room's name in the viewer's own type.
+/// presentation mode), the room's name in the viewer's own type, and the
+/// live audience on the far end.
 final class _PlayerTopBar extends StatelessWidget {
   const _PlayerTopBar({required this.room, required this.onLeave});
 
@@ -695,6 +698,7 @@ final class _PlayerTopBar extends StatelessWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final title = room.room?.content.title;
+    final audience = room.room?.audience.onlineViewers ?? room.room?.audience.popularity ?? room.room?.audience.totalViewers;
     return Container(
       padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s8),
       decoration: const BoxDecoration(
@@ -719,6 +723,13 @@ final class _PlayerTopBar extends StatelessWidget {
             )
           else
             const Spacer(),
+          if (audience != null) ...[
+            DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: _onVideoSubtle),
+            Text(
+              AudienceFormat.format(audience),
+              style: theme.typography.caption.copyWith(color: _onVideoSubtle),
+            ),
+          ],
         ],
       ),
     );

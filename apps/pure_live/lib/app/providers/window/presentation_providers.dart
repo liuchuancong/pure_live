@@ -253,6 +253,11 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
   }
 
   Future<void> _apply(PlayerId player, PresentationMode mode) async {
+    // Optimistic first: the page lays its immersive bare-player surface out
+    // before the native window changes size, so the transition never paints
+    // the inline layout squeezed into the new bounds. `_sync` corrects the
+    // state when a host refuses the mode.
+    if (state != mode) state = mode;
     try {
       await ref.read(presentationDriverProvider).apply(player, PresentationRequest(mode: mode));
     } on Object {

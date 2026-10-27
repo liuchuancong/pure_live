@@ -120,6 +120,17 @@ final class _AppWindowRootState extends State<AppWindowRoot> {
         sleepTimerProvider.overrideWith(SleepTimerController.new),
         roomPresentationProvider.overrideWith(RoomPresentationController.new),
         castControllerProvider.overrideWith(createCastController),
+        // A room window's leave verb is closing its own window (the provider's
+        // documented host override): the back button and the menu's close stop
+        // this room instead of pushing the primary's popular page, and the
+        // floatPlay handoff never crosses into the primary's scope — the
+        // overlay there cannot see this window's container.
+        roomLeaveProvider.overrideWith((ref) {
+          if (ref.watch(appWindowContextProvider).isMain) return null;
+          final host = ref.watch(windowHostProvider);
+          if (host == null) return null;
+          return host.close;
+        }),
         barrageProvider.overrideWith((ref) {
           ref.watch(roomProvider);
           return ref.read(roomProvider.notifier).barrage;
