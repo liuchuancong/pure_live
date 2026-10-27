@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart' show WindowCaptionBar;
@@ -31,7 +30,6 @@ final class MobileLayout extends ConsumerWidget {
     required this.onSelected,
     required this.onModuleSelected,
     required this.onSearch,
-    this.settingsSection,
     this.showMultiview = true,
     this.homeMenuItems = kHomeMenuItems,
     super.key,
@@ -54,10 +52,6 @@ final class MobileLayout extends ConsumerWidget {
 
   /// Opens the search destination — the top bar's magnifier.
   final VoidCallback onSearch;
-
-  /// The settings section on screen, for the top bar's title; null outside
-  /// the settings surface.
-  final SettingsSection? settingsSection;
 
   /// Whether the drawer lists the multi-view entry (the navigation
   /// setting's toggle, shared with the desktop sidebar).
@@ -96,13 +90,10 @@ final class MobileLayout extends ConsumerWidget {
   };
 
   /// The top bar's title: the page on screen, not the app's name (the
-  /// drawer's head already carries the name) — a section's own label while
-  /// settings is open.
-  String _title(Translations t) {
-    final section = settingsSection;
-    if (section != null) return section.label(t);
-    return selected == NavigationItem.settings ? t.navigation.settings : selected.label(t);
-  }
+  /// drawer's head already carries the name). The settings list is the
+  /// settings surface; its categories and sections are pushed routes with
+  /// their own headers.
+  String _title(Translations t) => selected == NavigationItem.settings ? t.navigation.settings : selected.label(t);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

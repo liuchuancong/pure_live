@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:live_iptv/live_iptv.dart' show IptvChannel;
 import 'package:live_sites/live_sites.dart' show LiveArea;
 import 'package:media_core/media_core.dart' show PresentationMode;
+import 'package:pure_live/app/navigation/navigation.dart' show navigationOf;
 import 'package:pure_live/app/providers/providers.dart';
 import 'package:pure_live/app/routing/navigation/root_navigator.dart' show rootNavigatorKey;
 import 'package:pure_live/app/routing/navigation/route_names.dart' show RouteNames;
@@ -242,8 +245,8 @@ final class SettingsSectionRoute extends GoRouteData with $SettingsSectionRoute 
   }
 }
 
-/// The pushed section's screen: the pane alone under an app bar whose back
-/// leads to the settings menu.
+/// The pushed section's screen: the pane alone under a page header whose
+/// back leads to its category.
 final class _SettingsSectionScreen extends StatelessWidget {
   const _SettingsSectionScreen({required this.section});
 
@@ -251,22 +254,96 @@ final class _SettingsSectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return _SettingsSubpage(
+      title: section.label(context.t),
+      pageIdentity: 'settings/${section.name}',
+      child: SettingsSectionPane(section: section),
+    );
+  }
+}
+
+/// One category's screen: its sections as rows, each opening its own page.
+/// The phone's second level — the settings list opens a category, the
+/// category opens a section.
+final class _SettingsCategoryScreen extends ConsumerWidget {
+  const _SettingsCategoryScreen({required this.category});
+
+  /// The group key from the route.
+  final String category;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final groups = navigationOf(ref.watch(selectedModuleProvider)).settingsGroups;
+    final group = groups.where((group) => group.labelKey == category).firstOrNull ?? groups.first;
+    return _SettingsSubpage(
+      title: settingsGroupLabel(t, group.labelKey),
+      pageIdentity: 'settings/category/${group.labelKey}',
+      child: SettingsCategoryPane(
+        group: group,
+        onOpen: (section) {
+          openSettingsSection(ref, section);
+          unawaited(context.push(SettingsSectionRoute(section: section.name).location));
+        },
+      ),
+    );
+  }
+}
+
+/// The shared shell of a pushed settings page: the window's caption strip,
+/// a desen page header with its back button, then the page's own scroll.
+final class _SettingsSubpage extends StatelessWidget {
+  const _SettingsSubpage({required this.title, required this.pageIdentity, required this.child});
+
+  /// The page's name in the header.
+  final String title;
+
+  /// What the scroll pair watches.
+  final String pageIdentity;
+
+  /// The page under the header.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final t = context.t;
     return WindowChromeFrame(
       child: Scaffold(
         backgroundColor: colors.surface,
-        appBar: AppBar(
-          backgroundColor: colors.surface,
-          surfaceTintColor: const Color(0x00000000),
-          elevation: 0,
-          title: Text(section.label(t)),
-        ),
-        // A pushed page is outside the shell's content area, so it carries
-        // the scroll pair itself.
-        body: ScrollEdgeControls(
-          pageIdentity: 'settings/${section.name}',
-          child: SettingsSectionPane(section: section),
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DsPaneHeader(
+                title: Row(
+                  children: [
+                    DsButton.icon(
+                      variant: DsButtonVariant.ghost,
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      icon: const DsIcon(DsIcons.chevronLeft),
+                      semanticLabel: t.common.back,
+                    ),
+                    const SizedBox(width: DsSpace.s4),
+                    Flexible(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.title.copyWith(color: colors.text),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // A pushed page is outside the shell's content area, so it
+              // carries the scroll pair itself.
+              Expanded(
+                child: ScrollEdgeControls(pageIdentity: pageIdentity, child: child),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -357,6 +434,13 @@ GoRouter buildAppRouter({
     redirect: (context, state) => state.uri.path == '/' ? const PopularRoute().location : null,
     routes: [
       ...$appRoutes,
+      // A category's page, written by hand beside the generated section
+      // route: the phone's settings list pushes it, and its rows push the
+      // section pages above it.
+      GoRoute(
+        path: RouteNames.settingsCategory,
+        builder: (context, state) => _SettingsCategoryScreen(category: state.pathParameters['category']!),
+      ),
       GoRoute(
         path: RouteNames.iptvPlay,
         builder: (context, state) => _PlayerWindowChrome(

@@ -202,6 +202,8 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       });
       if (target != NavigationItem.settings) {
         _lastAppItem = target;
+        // Settings opens on its categories again next time.
+        ref.read(settingsSectionOpenProvider.notifier).open = false;
       }
       showItem(target);
     }
@@ -214,12 +216,14 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     }
 
     // Settings is a destination of the same shell: while it is selected the
-    // sidebar lists the settings sections instead of the module's menu
-    // blocks — one menu, not a menu inside a menu. The section on screen
-    // lives in a provider, because the sidebar picks it and the page shows
-    // it across the shell.
+    // sidebar lists the settings categories instead of the module's menu
+    // blocks — one menu, not a menu inside a menu. The category and the
+    // section page inside it live in providers, because the sidebar picks
+    // the category and the page shows it across the shell.
     final inSettings = selected == NavigationItem.settings;
     final settingsSection = ref.watch(settingsSectionProvider);
+    final settingsCategory = ref.watch(settingsCategoryProvider);
+    final sectionOpen = ref.watch(settingsSectionOpenProvider);
     // One registry row per module decides both menus: the settings menu
     // shows the module's settings groups (alone — no app entries mixed in),
     // the app's menu its blocks, a divider between them.
@@ -245,32 +249,41 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     final menuGroups = <List<Object>>[];
     final menuGroupLabels = <String?>[];
     if (inSettings) {
-      // The module's own settings groups, exactly as its registry row
-      // declares them; the label is the group's name in the rail.
-      for (final group in navigation.settingsGroups) {
-        menuGroups.add(group.sections);
-        menuGroupLabels.add(group.labelKey);
-      }
+      // One rail row per first-level category; the category's own page in
+      // the content area lists the section pages under it.
+      menuGroups.add([for (final group in navigation.settingsGroups) group.labelKey]);
+      menuGroupLabels.add(null);
     } else {
       for (final block in appMenu) {
         menuGroups.add(block);
         menuGroupLabels.add(null);
       }
     }
-    // A page nested under Personalization keeps that row lit: the menu no
-    // longer lists the children themselves.
-    final Object menuValue = inSettings ? settingsSection.menuSection : selected;
+    // A section page keeps its category row lit.
+    final menuValue = inSettings ? settingsCategory : selected;
 
     void handleMenu(Object value) {
       switch (value) {
         case final NavigationItem item:
           handleSelected(item);
-        case final SettingsSection section:
-          ref.read(settingsSectionProvider.notifier).section = section;
+        case final String category:
+          openSettingsCategory(ref, category);
       }
     }
 
     void goBack() {
+      // Settings is a stack of its own: a nested section steps up to its
+      // parent, a section closes to its category page, and only the
+      // category level leaves the surface for the app trail.
+      if (inSettings && sectionOpen) {
+        final parent = settingsSection.canonical.parentSection;
+        if (parent != null) {
+          openSettingsSection(ref, parent);
+        } else {
+          closeSettingsSection(ref);
+        }
+        return;
+      }
       if (_cursor == 0) return;
       setState(() => _cursor--);
       showItem(_trail[_cursor]);
@@ -291,9 +304,13 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       ref.read(selectedModuleProvider.notifier).selected = next;
       final landing = defaultNavigationItemFor(next);
       ref.read(selectedNavItemProvider.notifier).selected = landing;
-      // The module's settings menu may not carry the section the last
-      // module was on; keep the pane on a row that exists.
+      // The module's settings menu may not carry the category or section
+      // the last module was on; land on ones it does and show the category
+      // page, not a stale section.
+      final groups = navigationOf(next).settingsGroups;
+      ref.read(settingsCategoryProvider.notifier).ensureWithin(groups);
       ref.read(settingsSectionProvider.notifier).ensureWithin(navigationOf(next).settingsSections);
+      ref.read(settingsSectionOpenProvider.notifier).open = false;
       _lastAppItem = landing;
       if (next == AppModule.live) {
         handleSelected(landing);
@@ -324,7 +341,9 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     // tab the viewer switches to is kept alive off screen and never scrolls
     // on its own, so the pair has to be told to look again.
     final shownContent = ScrollEdgeControls(
-      pageIdentity: '${module.name}/${selected.name}/${inSettings ? settingsSection.name : ''}',
+      pageIdentity: inSettings
+          ? '${module.name}/settings/${sectionOpen ? settingsSection.name : 'category/$settingsCategory'}'
+          : '${module.name}/${selected.name}/',
       child: moduleContent,
     );
 
@@ -339,7 +358,6 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
         onSelected: handleSelected,
         onModuleSelected: selectModule,
         onSearch: () => handleSelected(NavigationItem.search),
-        settingsSection: inSettings ? settingsSection : null,
         showMultiview: showMultiview,
         homeMenuItems: homeMenu,
       );
@@ -353,6 +371,8 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       menuValue: menuValue,
       onMenu: handleMenu,
       settingsSection: inSettings ? settingsSection : null,
+      settingsCategoryKey: inSettings ? settingsCategory : null,
+      settingsSectionOpen: inSettings && sectionOpen,
       onBackToApp: () => handleSelected(_lastAppItem ?? defaultNavigationItemFor(AppModule.live)),
       // The toggle rules; a window crossing under the breakpoint folds
       // the sidebar once (didChangeDependencies), never outvoting this.
@@ -366,7 +386,9 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
         }
       },
       onSidebarWidthChanged: ref.read(sidebarProvider.notifier).setWidth,
-      canBack: _cursor > 0,
+      // A settings section page can step up even when the destination trail
+      // has nothing behind it.
+      canBack: _cursor > 0 || (inSettings && sectionOpen),
       canForward: _cursor < _trail.length - 1,
       onBack: goBack,
       onForward: goForward,

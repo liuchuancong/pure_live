@@ -65,12 +65,11 @@ const List<NavigationItem> kToolItems = [
   NavigationItem.toolbox,
 ];
 
-/// The settings every module shares, grouped the way the new settings
-/// center reads: a non-clickable group heading over clickable page rows.
-/// Each module registers its own group first (its business pages), then the
-/// app-wide ones; live inserts its business group between Personalization
-/// and Playback. Nothing here is an index page — every section listed is a
-/// pane that carries settings rows.
+/// The settings every module shares, grouped into first-level categories.
+/// Each module registers its own category first (its business pages), then
+/// the app-wide ones; live inserts its business category between
+/// Personalization and Playback. A category is a page listing its sections,
+/// and every section listed is a pane that carries settings rows.
 const SettingsGroup _personalizationGroup = (
   labelKey: 'groupPersonalization',
   sections: [SettingsSection.theme, SettingsSection.background, SettingsSection.nav, SettingsSection.browsing],

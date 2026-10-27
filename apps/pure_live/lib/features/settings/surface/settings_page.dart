@@ -65,6 +65,8 @@ import 'package:pure_live/features/settings/playback/portrait_settings_providers
         PortraitSettingsController,
         portraitSettingsProvider;
 import 'package:pure_live/features/settings/room/room_switcher_settings.dart' show portraitSwipeSwitchProvider;
+import 'package:pure_live/features/settings/surface/settings_navigation.dart'
+    show openSettingsCategory, openSettingsChild, openSettingsSection;
 import 'package:pure_live/features/settings/surface/settings_search.dart' show SettingsSearchHit, settingsSearchHits;
 import 'package:pure_live/features/settings/surface/settings_sections.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
@@ -78,62 +80,65 @@ import 'package:pure_live/shared/shared.dart';
 
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
-/// The width below which the settings surface takes the pushed-menu layout.
-const double kSettingsCompactWidth = 768;
+/// The widest a settings column grows on a wide window: rows keep a readable
+/// measure instead of stretching edge to edge.
+const double kSettingsContentMaxWidth = 960;
 
-/// Opens [section] from a category overview: desktop switches the pane in
-/// place and keeps the sidebar; a touch shell pushes the page as its own
-/// route, the same way the settings menu does.
-void openSettingsChild(BuildContext context, WidgetRef ref, SettingsSection section) {
-  ref.read(settingsSectionProvider.notifier).section = section;
-  // Only the touch menu pushes a page. A desktop window keeps the sidebar
-  // and switches its pane, however narrow the window is.
-  final compact =
-      !ref.read(deviceProfileProvider).isDesktop && MediaQuery.sizeOf(context).width < kSettingsCompactWidth;
-  if (compact) {
-    unawaited(context.push(SettingsSectionRoute(section: section.name).location));
-  }
-}
-
-/// The settings surface. On a desktop window the shell's own sidebar lists
-/// the categories — the same menu the module destinations live in, so
-/// entering settings swaps the menu's entries rather than stacking a second
-/// menu beside it — and this page is the selected category or its child
-/// page. On a phone, where there is no sidebar, the page is the grouped
-/// list whose entries push their category as its own route
-/// ([SettingsSectionRoute]); the category's rows push its children.
+/// The settings surface. One category at a time, then the sections that
+/// category carries: the category page is a list of pages (icon, name, one
+/// line, chevron), never every setting in one column.
 ///
-/// Both read and write [settingsSectionProvider]: the sidebar and the list
-/// agree on which page is on screen, and the pane is always that one.
+/// A desktop window puts the categories in the shell's own sidebar and this
+/// page in the centre. A touch shell, which has no sidebar, shows the
+/// categories here and pushes each one's page as its own route, then the
+/// section's page above that.
 final class SettingsPage extends ConsumerWidget {
   /// The settings page.
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final compact = MediaQuery.sizeOf(context).width < kSettingsCompactWidth;
-    final desktop = ref.watch(deviceProfileProvider).isDesktop;
-    if (compact && !desktop) return const _SettingsMenuList();
+    if (!ref.watch(deviceProfileProvider).isDesktop) return const _SettingsMenuList();
     final section = ref.watch(settingsSectionProvider);
-    return _SettingsPaneWithSearch(section: section);
+    final open = ref.watch(settingsSectionOpenProvider);
+    return _SettingsBodyWithSearch(
+      body: open ? SettingsSectionPane(key: ValueKey(section), section: section) : const _CategoryPage(),
+    );
+  }
+}
+
+/// The centre page's category selection: the module's groups by key.
+final class _CategoryPage extends ConsumerWidget {
+  const _CategoryPage();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final groups = navigationOf(ref.watch(selectedModuleProvider)).settingsGroups;
+    final key = ref.watch(settingsCategoryProvider);
+    final group = groups.where((group) => group.labelKey == key).firstOrNull ?? groups.first;
+    return SettingsCategoryPane(
+      key: ValueKey(group.labelKey),
+      group: group,
+      onOpen: (section) => openSettingsSection(ref, section),
+    );
   }
 }
 
 /// The desktop pane with the search field over it: the sidebar itself is
 /// the shell's, so the search that filters the sections lives at the top of
-/// the pane — a query lists the matching sections, and picking one moves
-/// the selection the sidebar and the pane share.
-final class _SettingsPaneWithSearch extends ConsumerStatefulWidget {
-  const _SettingsPaneWithSearch({required this.section});
+/// the pane — a query lists the matching sections, and picking one opens
+/// its page below its category.
+final class _SettingsBodyWithSearch extends ConsumerStatefulWidget {
+  const _SettingsBodyWithSearch({required this.body});
 
-  /// The section the sidebar selected.
-  final SettingsSection section;
+  /// The surface under the search field: the category page or a section's.
+  final Widget body;
 
   @override
-  ConsumerState<_SettingsPaneWithSearch> createState() => _SettingsPaneWithSearchState();
+  ConsumerState<_SettingsBodyWithSearch> createState() => _SettingsBodyWithSearchState();
 }
 
-final class _SettingsPaneWithSearchState extends ConsumerState<_SettingsPaneWithSearch> {
+final class _SettingsBodyWithSearchState extends ConsumerState<_SettingsBodyWithSearch> {
   final TextEditingController _query = TextEditingController();
 
   @override
@@ -146,7 +151,7 @@ final class _SettingsPaneWithSearchState extends ConsumerState<_SettingsPaneWith
   Widget build(BuildContext context) {
     final t = context.t;
     // A remote's arrows belong to the focus, not a caret: the settings
-    // search would trap them, and the section menu is the TV's way around.
+    // search would trap them, and the menu is the TV's way around.
     final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
     final query = _query.text.trim().toLowerCase();
     // The module's own sections, in the shared areas' order — the search
@@ -176,18 +181,78 @@ final class _SettingsPaneWithSearchState extends ConsumerState<_SettingsPaneWith
           ),
         Expanded(
           child: query.isEmpty
-              ? SettingsSectionPane(key: ValueKey(widget.section), section: widget.section)
+              ? widget.body
               : _SectionSearchResults(
                   sections: results,
                   hits: hits,
                   onOpen: (section) {
                     _query.clear();
-                    ref.read(settingsSectionProvider.notifier).section = section;
+                    openSettingsSection(ref, section);
                     setState(() {});
                   },
                 ),
         ),
       ],
+    );
+  }
+}
+
+/// A settings column centred at [kSettingsContentMaxWidth]: a wide window
+/// gets margins, not rows that run the whole screen.
+final class _SettingsColumn extends StatelessWidget {
+  /// The column's [children], top to bottom.
+  const _SettingsColumn({required this.children, this.spacing = 0});
+
+  /// The rows and sections the page carries.
+  final List<Widget> children;
+
+  /// Space between [children].
+  final double spacing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: kSettingsContentMaxWidth),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: spacing, children: children),
+      ),
+    );
+  }
+}
+
+/// One category's page: the sections it carries, each row naming the page
+/// and what it manages, with the chevron into that page.
+final class SettingsCategoryPane extends StatelessWidget {
+  /// The page for [group].
+  const SettingsCategoryPane({required this.group, required this.onOpen, super.key});
+
+  /// The group whose sections are listed here.
+  final SettingsGroup group;
+
+  /// Opens one of the group's sections.
+  final ValueChanged<SettingsSection> onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s20, DsSpace.s24, DsSpace.s24),
+      child: _SettingsColumn(
+        children: [
+          DsListSection(
+            children: [
+              for (final section in group.sections)
+                DsListRow(
+                  leading: DsIcon(section.icon),
+                  title: Text(section.label(t)),
+                  description: Text(section.description(t)),
+                  showChevron: true,
+                  onPressed: () => onOpen(section),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -246,8 +311,7 @@ final class _SectionSearchResults extends StatelessWidget {
     }
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s16, DsSpace.s24, DsSpace.s24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: _SettingsColumn(
         spacing: DsSpace.s16,
         children: [
           if (sections.isNotEmpty)
@@ -259,8 +323,8 @@ final class _SectionSearchResults extends StatelessWidget {
                     leading: DsIcon(section.icon),
                     title: Text(section.label(t)),
                     description: Text(section.description(t)),
+                    showChevron: true,
                     onPressed: () => onOpen(section),
-                    trailing: const DsIcon(DsIcons.chevronRight),
                   ),
               ],
             ),
@@ -273,8 +337,8 @@ final class _SectionSearchResults extends StatelessWidget {
                     leading: DsIcon(hit.section.icon),
                     title: Text(hit.title),
                     description: Text(hit.section.label(t)),
+                    showChevron: true,
                     onPressed: () => onOpen(hit.section),
-                    trailing: const DsIcon(DsIcons.chevronRight),
                   ),
               ],
             ),
@@ -284,9 +348,10 @@ final class _SectionSearchResults extends StatelessWidget {
   }
 }
 
-/// The mobile menu: the same areas as full-width rows, each pushing its
-/// section as a route — the phone's way into a submenu. The search field
-/// filters the rows by their words.
+/// The phone's settings page: the first-level categories as one list, each
+/// pushing its own page — the desktop sidebar's categories, reshaped for a
+/// thumb. A search skips the category step and opens the matching section
+/// directly, which is what a typed query is after.
 final class _SettingsMenuList extends ConsumerStatefulWidget {
   const _SettingsMenuList();
 
@@ -300,22 +365,18 @@ final class _SettingsMenuListState extends ConsumerState<_SettingsMenuList> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     // The areas are the shared grouping; the module's registry decides
     // which of their sections this module carries.
     final groups = navigationOf(ref.watch(selectedModuleProvider)).settingsGroups;
     final query = _query.trim().toLowerCase();
     bool matches(SettingsSection section) =>
-        query.isEmpty ||
-        section.label(t).toLowerCase().contains(query) ||
-        section.description(t).toLowerCase().contains(query);
+        section.label(t).toLowerCase().contains(query) || section.description(t).toLowerCase().contains(query);
     final hits = query.isEmpty
         ? const <SettingsSearchHit>[]
         : settingsSearchHits(t, query, settingsSearchSections(groups));
-    final rows = <Widget>[
+    final blocks = <Widget>[
       Padding(
-        padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, 0),
+        padding: const EdgeInsets.only(top: DsSpace.s12),
         child: DsSearchField(
           placeholder: t.settings.searchSettings,
           semanticLabel: t.settings.searchSettings,
@@ -324,61 +385,70 @@ final class _SettingsMenuListState extends ConsumerState<_SettingsMenuList> {
       ),
     ];
     var shown = 0;
-    for (final group in groups) {
-      final byGroup = settingsGroupLabel(t, group.labelKey).toLowerCase().contains(query);
-      List<String> rowMatches(SettingsSection section) => [
-        for (final hit in hits)
-          if (hit.section == section) hit.title,
-      ];
-      // A search reaches the pages nested under each category too; the
-      // plain menu keeps them out of the row list.
-      final sections = [
-        ...group.sections,
-        if (query.isNotEmpty)
-          for (final category in group.sections) ...settingsDescendantsOf(category),
-      ];
-      final kept = [
-        for (final section in sections)
-          if (byGroup || matches(section) || rowMatches(section).isNotEmpty) section,
-      ];
-      if (kept.isEmpty) continue;
-      shown += kept.length;
-      rows.add(
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s16, DsSpace.s20, DsSpace.s4),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: Text(
-              settingsGroupLabel(t, group.labelKey),
-              style: theme.typography.overline.copyWith(color: colors.textSubtle),
-            ),
-          ),
+    if (query.isEmpty) {
+      shown = groups.length;
+      blocks.add(
+        DsListSection(
+          children: [
+            for (final group in groups)
+              DsListRow(
+                leading: DsIcon(settingsGroupIcon(group.labelKey)),
+                title: Text(settingsGroupLabel(t, group.labelKey)),
+                description: Text(settingsGroupDescription(t, group.labelKey)),
+                showChevron: true,
+                onPressed: () {
+                  openSettingsCategory(ref, group.labelKey);
+                  unawaited(context.push(RouteNames.settingsCategoryFor(group.labelKey)));
+                },
+              ),
+          ],
         ),
       );
-      for (final section in kept) {
-        rows.add(
-          DsListRow(
-            leading: DsIcon(section.icon),
-            title: Text(section.label(t)),
-            description: Text(
-              !byGroup && !matches(section) && rowMatches(section).isNotEmpty
-                  ? t.settings.searchRowMatches(items: rowMatches(section).join(' · '))
-                  : section.description(t),
-            ),
-            onPressed: () {
-              // The pane the route pushes is the provider's section; keeping
-              // it in step also carries the last visit over to a desktop
-              // window the app may be resized into.
-              ref.read(settingsSectionProvider.notifier).section = section;
-              unawaited(context.push(SettingsSectionRoute(section: section.name).location));
-            },
-            trailing: const DsIcon(DsIcons.chevronRight),
+    } else {
+      for (final group in groups) {
+        final byGroup = settingsGroupLabel(t, group.labelKey).toLowerCase().contains(query);
+        List<String> rowMatches(SettingsSection section) => [
+          for (final hit in hits)
+            if (hit.section == section) hit.title,
+        ];
+        // A search reaches the pages nested under each category too; the
+        // plain menu keeps them out of the row list.
+        final sections = [...group.sections, for (final category in group.sections) ...settingsDescendantsOf(category)];
+        final kept = [
+          for (final section in sections)
+            if (byGroup || matches(section) || rowMatches(section).isNotEmpty) section,
+        ];
+        if (kept.isEmpty) continue;
+        shown += kept.length;
+        blocks.add(
+          DsListSection(
+            header: Text(settingsGroupLabel(t, group.labelKey)),
+            children: [
+              for (final section in kept)
+                DsListRow(
+                  leading: DsIcon(section.icon),
+                  title: Text(section.label(t)),
+                  description: Text(
+                    !byGroup && !matches(section) && rowMatches(section).isNotEmpty
+                        ? t.settings.searchRowMatches(items: rowMatches(section).join(' · '))
+                        : section.description(t),
+                  ),
+                  showChevron: true,
+                  onPressed: () {
+                    // The route pushes the page the provider names; keeping
+                    // it in step also carries the visit over to a desktop
+                    // window the app may be resized into.
+                    openSettingsSection(ref, section);
+                    unawaited(context.push(SettingsSectionRoute(section: section.name).location));
+                  },
+                ),
+            ],
           ),
         );
       }
     }
     if (shown == 0) {
-      rows.add(
+      blocks.add(
         Padding(
           padding: const EdgeInsets.symmetric(vertical: DsSpace.s32),
           child: DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.settings.searchNoResults)),
@@ -386,14 +456,15 @@ final class _SettingsMenuListState extends ConsumerState<_SettingsMenuList> {
       );
     }
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(bottom: DsSpace.s24),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows),
+      padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s24),
+      child: _SettingsColumn(spacing: DsSpace.s16, children: blocks),
     );
   }
 }
 
 /// One section's content pane: the section's own controls. Desktop shows it
-/// beside the menu; the mobile route shows it alone under the section's name.
+/// as the page below its category; the mobile route shows it alone under the
+/// section's name.
 final class SettingsSectionPane extends StatelessWidget {
   /// The pane for [section].
   const SettingsSectionPane({required this.section, super.key});
@@ -451,7 +522,7 @@ final class SettingsSectionPane extends StatelessWidget {
     };
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s20, DsSpace.s24, DsSpace.s24),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [body]),
+      child: _SettingsColumn(children: [body]),
     );
   }
 }

@@ -33,3 +33,44 @@ final class SettingsSectionController extends Notifier<SettingsSection> {
 final settingsSectionProvider = NotifierProvider<SettingsSectionController, SettingsSection>(
   SettingsSectionController.new,
 );
+
+/// The settings category on screen: the desktop sidebar and the phone's
+/// settings page list these first, and a category's page lists its sections.
+final class SettingsCategoryController extends Notifier<String> {
+  @override
+  String build() => kSettingsDefaultGroupKey;
+
+  /// The group key the surface is on.
+  String get categoryKey => state;
+
+  /// Selects a category; the surface shows its page.
+  set categoryKey(String value) => state = value;
+
+  /// Keeps the category inside [groups]: a module switch may not carry the
+  /// last one. IPTV has no live group, for one.
+  void ensureWithin(Iterable<SettingsGroup> groups) {
+    final keys = [for (final group in groups) group.labelKey];
+    if (keys.contains(state)) return;
+    state = keys.isEmpty ? kSettingsDefaultGroupKey : keys.first;
+  }
+}
+
+/// The selected settings category.
+final settingsCategoryProvider = NotifierProvider<SettingsCategoryController, String>(SettingsCategoryController.new);
+
+/// Whether the settings surface is showing a section below its category:
+/// false means the category's own page, true one of its section pages.
+final class SettingsSectionOpenController extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  /// Whether a section page is open below the category.
+  bool get open => state;
+
+  set open(bool value) => state = value;
+}
+
+/// Whether a settings section page is open.
+final settingsSectionOpenProvider = NotifierProvider<SettingsSectionOpenController, bool>(
+  SettingsSectionOpenController.new,
+);

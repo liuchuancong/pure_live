@@ -44,6 +44,7 @@ export 'playback/portrait_settings_providers.dart';
 export 'room/clipboard_rooms.dart';
 export 'room/room_card_settings.dart';
 export 'room/room_switcher_settings.dart';
+export 'surface/settings_navigation.dart';
 export 'surface/settings_page.dart';
 export 'surface/settings_search.dart';
 export 'surface/settings_sections.dart';

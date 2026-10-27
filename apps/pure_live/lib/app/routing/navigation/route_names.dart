@@ -53,6 +53,13 @@ abstract final class RouteNames {
   /// The settings branch.
   static const String settings = '/settings';
 
+  /// One settings category, pushed as its own route on the phone: the
+  /// settings list opens a category, the category opens its sections.
+  static const String settingsCategory = '/settings/category/:category';
+
+  /// The location of [category]'s page.
+  static String settingsCategoryFor(String category) => '/settings/category/${Uri.encodeComponent(category)}';
+
   /// One settings section, pushed as its own route on the phone: the
   /// mobile settings menu navigates into submenus, the desktop pane does
   /// not leave the page.

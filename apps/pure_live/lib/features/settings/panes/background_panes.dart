@@ -5,25 +5,20 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:desktop_drop/desktop_drop.dart' show DropDoneDetails, DropTarget;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:path/path.dart' as p;
 
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_preview_page.dart';
+import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openSettingsChild;
 import 'package:pure_live/features/settings/surface/settings_sections.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart';
 
-const double _kBackgroundCompactWidth = 768;
-
 /// Opens a background source page: desktop switches the settings pane in
 /// place, a touch shell pushes the route.
 void _openBackgroundChild(BuildContext context, WidgetRef ref, SettingsSection section) {
-  ref.read(settingsSectionProvider.notifier).section = section;
-  final compact =
-      !ref.read(deviceProfileProvider).isDesktop && MediaQuery.sizeOf(context).width < _kBackgroundCompactWidth;
-  if (compact) unawaited(context.push(SettingsSectionRoute(section: section.name).location));
+  openSettingsChild(context, ref, section);
 }
 
 /// Background settings' landing page: the display controls that apply to

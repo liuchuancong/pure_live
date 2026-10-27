@@ -2,18 +2,19 @@ import 'package:desen_ui/desen_ui.dart';
 
 import 'package:pure_live/l10n/translations.dart';
 
-/// One group of a module's settings menu: a label key (resolved through the
-/// settings namespace) and its sections. The module registry owns the
-/// groups; this shared type lets the session helpers read them without the
-/// settings page importing a widget.
+/// One first-level settings category: a label key (resolved through the
+/// settings namespace) and the section pages it carries. The module registry
+/// owns the groups; this shared type lets the settings surface and the
+/// session helpers read them without importing a widget.
 typedef SettingsGroup = ({String labelKey, List<SettingsSection> sections});
 
 /// The settings surface's pages.
 ///
-/// The sidebar lists every group's sections as clickable rows under a
-/// non-clickable group heading; each row opens a real page — no value here
-/// is a pure index. A subpage (an entry in [settingsChildrenOf]) is reached
-/// from its parent row's pane and keeps the parent's sidebar row lit.
+/// The surface is two levels: the menus list first-level categories
+/// ([SettingsGroup]s), and a category's page lists the section pages it
+/// carries — no value here is a pure index. A subpage (an entry in
+/// [settingsChildrenOf]) is reached from its parent section's pane and
+/// keeps the parent's category lit.
 ///
 /// Fourteen values are deep-link aliases only: the old category and
 /// overview pages they name no longer exist, [of] resolves them to the
@@ -322,3 +323,45 @@ String settingsGroupLabel(Translations t, String key) => switch (key) {
   'groupAbout' => t.settings.groupAbout,
   _ => key,
 };
+
+/// One line on what a group carries: the category rows' description.
+String settingsGroupDescription(Translations t, String key) => switch (key) {
+  'groupPersonalization' => t.settings.personalizationDescription,
+  'groupLive' => t.settings.liveSettingsDescription,
+  'groupPlayback' => t.settings.playbackSettingsDescription,
+  'groupSystem' => t.settings.systemDescription,
+  'groupApp' => t.settings.generalDescription,
+  'groupIptv' => t.settings.iptvDescription,
+  'groupVod' => t.settings.vodDescription,
+  'groupData' => t.settings.dataCacheDescription,
+  'groupAbout' => t.settings.aboutDescription,
+  _ => '',
+};
+
+/// The glyph a group's row carries in the category menus.
+DsIconData settingsGroupIcon(String key) => switch (key) {
+  'groupPersonalization' => DsIcons.palette,
+  'groupLive' => DsIcons.live,
+  'groupPlayback' => DsIcons.play,
+  'groupSystem' => DsIcons.settings,
+  'groupApp' => DsIcons.appWindow,
+  'groupIptv' => DsIcons.antenna,
+  'groupVod' => DsIcons.film,
+  'groupData' => DsIcons.database,
+  'groupAbout' => DsIcons.info,
+  _ => DsIcons.settings,
+};
+
+/// The group [section] belongs to: the group that lists its top-level page.
+/// A nested page follows its menu section up to the row the group carries.
+SettingsGroup? settingsGroupOf(Iterable<SettingsGroup> groups, SettingsSection section) {
+  final menu = section.canonical.menuSection;
+  for (final group in groups) {
+    if (group.sections.contains(menu)) return group;
+  }
+  return null;
+}
+
+/// The group the settings surface opens on when nothing else is chosen: the
+/// app-wide first group every module carries.
+const String kSettingsDefaultGroupKey = 'groupPersonalization';

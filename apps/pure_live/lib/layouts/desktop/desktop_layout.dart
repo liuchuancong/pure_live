@@ -65,6 +65,8 @@ final class DesktopLayout extends ConsumerStatefulWidget {
     required this.onForward,
     required this.onBackToApp,
     this.settingsSection,
+    this.settingsCategoryKey,
+    this.settingsSectionOpen = false,
     this.tv = false,
     super.key,
   });
@@ -74,9 +76,9 @@ final class DesktopLayout extends ConsumerStatefulWidget {
 
   /// The sidebar's menu, one list per block; a divider separates the
   /// blocks. The app menu's entries are [NavigationItem]s (the module's
-  /// blocks, read from the navigation registry), the settings surface's are
-  /// [SettingsSection]s — the same menu either way, which is the point:
-  /// entering settings swaps the entries, not the sidebar.
+  /// blocks, read from the navigation registry); the settings surface's are
+  /// first-level category keys — the same menu either way, which is the
+  /// point: entering settings swaps the entries, not the sidebar.
   final List<List<Object>> menuGroups;
 
   /// One label key per [menuGroups] entry, or null for an unlabelled block.
@@ -93,6 +95,13 @@ final class DesktopLayout extends ConsumerStatefulWidget {
   /// The section on screen while the settings surface is showing; null
   /// elsewhere, where only the foot's settings entry highlights.
   final SettingsSection? settingsSection;
+
+  /// The settings category the surface is on, for the breadcrumb; null
+  /// outside settings.
+  final String? settingsCategoryKey;
+
+  /// Whether a section page is open below [settingsCategoryKey].
+  final bool settingsSectionOpen;
 
   /// A TV build: the sidebar and pages are the same, but the toolbar's
   /// text field is left out — a remote's arrows would move its caret
@@ -208,7 +217,7 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
   }
 
   /// One entry of either menu as the same sidebar row: a module
-  /// destination or a settings section.
+  /// destination or a settings category.
   ///
   /// The current page takes the focus on first build: a remote has no
   /// pointer to start from, and every arrow needs a focused stop. It is
@@ -226,14 +235,16 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
         focusNode: item == widget.menuValue ? _selectedFocus : null,
         autofocus: item == widget.menuValue,
       ),
-      final SettingsSection section => DsSidebarItem<Object>(
-        key: ValueKey(section),
-        value: section,
-        leading: DsIcon(section.icon),
-        label: Text(section.label(t)),
+      // A settings category: the rail lists these first, and the content
+      // area shows the chosen one's page.
+      final String category => DsSidebarItem<Object>(
+        key: ValueKey(category),
+        value: category,
+        leading: DsIcon(settingsGroupIcon(category)),
+        label: Text(settingsGroupLabel(t, category)),
         style: widget.expanded ? null : _collapsedItem,
-        focusNode: section == widget.menuValue ? _selectedFocus : null,
-        autofocus: section == widget.menuValue,
+        focusNode: category == widget.menuValue ? _selectedFocus : null,
+        autofocus: category == widget.menuValue,
       ),
       _ => const SizedBox.shrink(),
     };
@@ -430,6 +441,8 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                                     module: widget.module,
                                     selected: widget.menuValue,
                                     settings: widget.settingsSection,
+                                    categoryKey: widget.settingsCategoryKey,
+                                    sectionOpen: widget.settingsSectionOpen,
                                   ),
                                 ),
                                 // The settings surface has its own section
@@ -506,31 +519,48 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
 /// the query inside the search page — is that page's own breadcrumb, one
 /// level below this one.
 final class _LocationBreadcrumb extends ConsumerWidget {
-  const _LocationBreadcrumb({required this.module, required this.selected, this.settings});
+  const _LocationBreadcrumb({
+    required this.module,
+    required this.selected,
+    this.settings,
+    this.categoryKey,
+    this.sectionOpen = false,
+  });
 
   final AppModule module;
   final Object? selected;
   final SettingsSection? settings;
+  final String? categoryKey;
+  final bool sectionOpen;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final section = settings;
     if (section != null) {
-      // Walk the whole tree: Personalized › Background › Online images.
+      // Walk the whole tree: Settings › Personalization › Background ›
+      // Online images. The category steps back to its page of sections.
+      final category = categoryKey;
       final ancestors = <SettingsSection>[];
-      for (var parent = section.parentSection; parent != null; parent = parent.parentSection) {
-        ancestors.add(parent);
+      if (sectionOpen) {
+        for (var parent = section.parentSection; parent != null; parent = parent.parentSection) {
+          ancestors.add(parent);
+        }
       }
       return DsBreadcrumb(
         items: [
           DsBreadcrumbItem(label: t.navigation.settings, icon: const DsIcon(DsIcons.settings, size: 14)),
-          for (final ancestor in ancestors.reversed)
+          if (category != null)
             DsBreadcrumbItem(
-              label: ancestor.label(t),
-              onPressed: () => ref.read(settingsSectionProvider.notifier).section = ancestor,
+              label: settingsGroupLabel(t, category),
+              icon: DsIcon(settingsGroupIcon(category), size: 14),
+              onPressed: sectionOpen ? () => closeSettingsSection(ref) : null,
             ),
-          DsBreadcrumbItem(label: section.label(t)),
+          if (sectionOpen) ...[
+            for (final ancestor in ancestors.reversed)
+              DsBreadcrumbItem(label: ancestor.label(t), onPressed: () => openSettingsSection(ref, ancestor)),
+            DsBreadcrumbItem(label: section.label(t)),
+          ],
         ],
       );
     }
