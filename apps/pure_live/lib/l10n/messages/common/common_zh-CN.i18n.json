@@ -32,5 +32,6 @@
   "delete": "删除",
   "newWindow": "新建窗口",
   "show": "显示",
-  "save": "保存"
+  "save": "保存",
+  "copied": "已复制"
 }

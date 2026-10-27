@@ -16,88 +16,153 @@ enum RoomCardViewport {
   desktop,
 }
 
-/// The card's two shapes (the reference's `RoomCardLayout`).
-enum RoomCardLayout {
-  /// The 16:9 cover over a caption.
-  cover,
+/// One piece a card can draw. The card and row designs are fixed; a choice
+/// only decides whether the piece appears.
+enum RoomCardElement {
+  /// The room's title.
+  title,
 
-  /// A coverless identity row.
-  compact,
+  /// The title chip over the grid card's cover.
+  coverTitle,
+
+  /// The anchor's avatar.
+  avatar,
+
+  /// The anchor's name.
+  anchorName,
+
+  /// The platform mark.
+  platformBadge,
+
+  /// The audience figure.
+  audience,
+
+  /// The replay/recording mark.
+  replayBadge,
+
+  /// The broadcast state, e.g. "live".
+  status,
 }
 
-/// When the platform badge appears (the reference's
-/// `RoomCardPlatformBadgeMode`).
-enum RoomCardPlatformBadgeMode {
-  /// On when the card is wide enough for a caption badge.
-  automatic,
+/// The list row's design height, padding included; a feed's list layout
+/// keeps its tiles this tall so the row design is never stretched.
+const double kRoomCardListDesignHeight = 100;
 
-  /// Always on the cover (compact rows show it when wide enough).
-  always,
+/// Which pieces a card draws. Both shapes read the same set: the grid card
+/// places them on its cover and information line, the list row folds them
+/// into its text and trailing figures — the cover-only chip simply has no
+/// place there.
+@immutable
+final class RoomCardVisibility {
+  /// Creates a visibility set.
+  const RoomCardVisibility(this.hidden);
 
-  /// Never.
-  hidden,
+  /// Hides exactly [hidden].
+  factory RoomCardVisibility.hiding(Iterable<RoomCardElement> hidden) => RoomCardVisibility(Set.unmodifiable(hidden));
+
+  /// Reads stored visibility: the current list, the old canvas placements'
+  /// visible flags, or the older boolean flags.
+  factory RoomCardVisibility.fromJson(Object? value) {
+    if (value is! Map) return standard;
+    final hidden = value['hidden'];
+    if (hidden is List) {
+      return RoomCardVisibility.hiding(_elementsNamed(hidden));
+    }
+    final placements = value['gridLayout'] ?? value['listLayout'];
+    if (placements is Map) {
+      final hiddenElements = <RoomCardElement>{};
+      for (final element in RoomCardElement.values) {
+        final stored = placements[element.name];
+        if (stored is Map && stored['visible'] == false) hiddenElements.add(element);
+      }
+      return RoomCardVisibility.hiding(hiddenElements);
+    }
+    // The pre-canvas flags: absent means shown.
+    final platform = value['platformBadge'];
+    final legacyHidden = <RoomCardElement>{
+      if (value['showAvatar'] == false) RoomCardElement.avatar,
+      if (value['showAnchorName'] == false) RoomCardElement.anchorName,
+      if (value['showAudience'] == false) RoomCardElement.audience,
+      if (value['showReplayBadge'] == false) RoomCardElement.replayBadge,
+      if (platform == 'hidden') RoomCardElement.platformBadge,
+    };
+    return RoomCardVisibility.hiding(legacyHidden);
+  }
+
+  /// Every piece.
+  static const RoomCardVisibility all = RoomCardVisibility({});
+
+  /// The designed default: every piece except the chip over the cover.
+  static const RoomCardVisibility standard = RoomCardVisibility({RoomCardElement.coverTitle});
+
+  /// The pieces not drawn.
+  final Set<RoomCardElement> hidden;
+
+  /// Whether [element] is drawn.
+  bool shows(RoomCardElement element) => !hidden.contains(element);
+
+  /// A copy with [element] on or off.
+  RoomCardVisibility withElement(RoomCardElement element, {required bool visible}) {
+    final next = {...hidden};
+    visible ? next.remove(element) : next.add(element);
+    return RoomCardVisibility.hiding(next);
+  }
+
+  /// The stored form.
+  Map<String, Object?> toJson() => {
+    'hidden': [
+      for (final element in RoomCardElement.values)
+        if (hidden.contains(element)) element.name,
+    ],
+  };
+
+  @override
+  bool operator ==(Object other) =>
+      other is RoomCardVisibility && other.hidden.length == hidden.length && other.hidden.containsAll(hidden);
+
+  @override
+  int get hashCode => Object.hashAllUnordered(hidden);
+
+  static Iterable<RoomCardElement> _elementsNamed(Iterable<Object?> names) sync* {
+    for (final name in names) {
+      if (name is! String) continue;
+      for (final element in RoomCardElement.values) {
+        if (element.name == name) {
+          yield element;
+          break;
+        }
+      }
+    }
+  }
 }
 
-/// The reference's four quick presets; [custom] is derived, never applied.
+/// The quick presets; [custom] is derived, never applied.
 enum RoomCardPreset {
-  /// Coverless compact row, small radius.
-  compact,
-
-  /// The standard cover card.
+  /// Every piece except the cover chip.
   standard,
 
-  /// The standard cover card with the platform badge pinned on.
+  /// Every piece, including the chip over the cover.
   detailed,
 
   /// Anything the viewer changed by hand.
   custom,
 }
 
-/// One viewport's card appearance (the reference's `RoomCardAppearance`),
-/// stored as one JSON object under `interface.roomCard.<viewport>`.
+/// One viewport's card appearance: the corner radius and which pieces show.
+/// The designs themselves are fixed.
 @immutable
 final class RoomCardAppearance {
   /// Creates an appearance.
-  const RoomCardAppearance({
-    required this.layout,
-    required this.showAvatar,
-    required this.showAnchorName,
-    required this.showAudience,
-    required this.showReplayBadge,
-    required this.platformBadge,
-    required this.cornerRadius,
-  });
+  const RoomCardAppearance({required this.cornerRadius, required this.visibility});
 
-  /// Reads a stored object; malformed fields fall back to [fallback]'s,
-  /// out-of-range radii are clamped, and a damaged value never half-applies.
+  /// Reads a stored object, including the older arrangement and flag forms.
   factory RoomCardAppearance.fromJson(Object? value, {RoomCardAppearance fallback = standard}) {
     if (value is! Map) return fallback;
     final json = Map<String, Object?>.from(value);
-
-    bool flag(String name, {required bool otherwise}) {
-      final field = json[name];
-      return field is bool ? field : otherwise;
-    }
-
     final radius = json['cornerRadius'];
-    final badge = json['platformBadge'];
     return RoomCardAppearance(
-      layout: switch (json['layout']) {
-        'compact' => RoomCardLayout.compact,
-        'cover' => RoomCardLayout.cover,
-        _ => fallback.layout,
-      },
-      showAvatar: flag('showAvatar', otherwise: fallback.showAvatar),
-      showAnchorName: flag('showAnchorName', otherwise: fallback.showAnchorName),
-      showAudience: flag('showAudience', otherwise: fallback.showAudience),
-      showReplayBadge: flag('showReplayBadge', otherwise: fallback.showReplayBadge),
-      platformBadge: switch (badge) {
-        'automatic' => RoomCardPlatformBadgeMode.automatic,
-        'always' => RoomCardPlatformBadgeMode.always,
-        'hidden' => RoomCardPlatformBadgeMode.hidden,
-        _ => fallback.platformBadge,
-      },
       cornerRadius: radius is num ? normalizeCornerRadius(radius) : fallback.cornerRadius,
+      visibility: RoomCardVisibility.fromJson(json),
     );
   }
 
@@ -110,76 +175,38 @@ final class RoomCardAppearance {
   /// The largest corner radius.
   static const double maxCornerRadius = 32;
 
-  /// The reference's compact preset.
-  static const RoomCardAppearance compact = RoomCardAppearance(
-    layout: RoomCardLayout.compact,
-    showAvatar: true,
-    showAnchorName: true,
-    showAudience: true,
-    showReplayBadge: true,
-    platformBadge: RoomCardPlatformBadgeMode.hidden,
-    cornerRadius: 12,
-  );
-
-  /// The reference's standard preset.
+  /// The standard preset.
   static const RoomCardAppearance standard = RoomCardAppearance(
-    layout: RoomCardLayout.cover,
-    showAvatar: true,
-    showAnchorName: true,
-    showAudience: true,
-    showReplayBadge: true,
-    platformBadge: RoomCardPlatformBadgeMode.automatic,
     cornerRadius: defaultCornerRadius,
+    visibility: RoomCardVisibility.standard,
   );
 
-  /// The reference's detailed preset.
+  /// The detailed preset: every piece, the cover chip included.
   static const RoomCardAppearance detailed = RoomCardAppearance(
-    layout: RoomCardLayout.cover,
-    showAvatar: true,
-    showAnchorName: true,
-    showAudience: true,
-    showReplayBadge: true,
-    platformBadge: RoomCardPlatformBadgeMode.always,
     cornerRadius: defaultCornerRadius,
+    visibility: RoomCardVisibility.all,
   );
-
-  /// The card's shape.
-  final RoomCardLayout layout;
-
-  /// Whether the anchor's avatar is drawn beside the title.
-  final bool showAvatar;
-
-  /// Whether the anchor's name sits under the title.
-  final bool showAnchorName;
-
-  /// Whether the audience figure is drawn.
-  final bool showAudience;
-
-  /// Whether replay/recording rooms carry the replay chip.
-  final bool showReplayBadge;
-
-  /// The platform badge's mode.
-  final RoomCardPlatformBadgeMode platformBadge;
 
   /// The card's corner radius.
   final double cornerRadius;
 
-  /// The appearance a preset stands for.
-  static RoomCardAppearance fromPreset(RoomCardPreset preset) => switch (preset) {
-    RoomCardPreset.compact => compact,
-    RoomCardPreset.standard || RoomCardPreset.custom => standard,
-    RoomCardPreset.detailed => detailed,
-  };
+  /// Which pieces the card draws.
+  final RoomCardVisibility visibility;
 
   /// The preset this appearance matches, [RoomCardPreset.custom] otherwise.
   RoomCardPreset get preset {
-    if (this == compact) return RoomCardPreset.compact;
-    if (this == standard) return RoomCardPreset.standard;
-    if (this == detailed) return RoomCardPreset.detailed;
+    if (visibility == RoomCardVisibility.standard) return RoomCardPreset.standard;
+    if (visibility == RoomCardVisibility.all) return RoomCardPreset.detailed;
     return RoomCardPreset.custom;
   }
 
-  /// Clamps a radius to the reference's range.
+  /// The visibility a preset stands for.
+  static RoomCardVisibility visibilityOf(RoomCardPreset preset) => switch (preset) {
+    RoomCardPreset.standard || RoomCardPreset.custom => RoomCardVisibility.standard,
+    RoomCardPreset.detailed => RoomCardVisibility.all,
+  };
+
+  /// Clamps a radius to the design's range.
   static double normalizeCornerRadius(num value) {
     final converted = value.toDouble();
     if (!converted.isFinite) return defaultCornerRadius;
@@ -187,49 +214,24 @@ final class RoomCardAppearance {
   }
 
   /// A copy with selected fields replaced.
-  RoomCardAppearance copyWith({
-    RoomCardLayout? layout,
-    bool? showAvatar,
-    bool? showAnchorName,
-    bool? showAudience,
-    bool? showReplayBadge,
-    RoomCardPlatformBadgeMode? platformBadge,
-    double? cornerRadius,
-  }) => RoomCardAppearance(
-    layout: layout ?? this.layout,
-    showAvatar: showAvatar ?? this.showAvatar,
-    showAnchorName: showAnchorName ?? this.showAnchorName,
-    showAudience: showAudience ?? this.showAudience,
-    showReplayBadge: showReplayBadge ?? this.showReplayBadge,
-    platformBadge: platformBadge ?? this.platformBadge,
+  RoomCardAppearance copyWith({double? cornerRadius, RoomCardVisibility? visibility}) => RoomCardAppearance(
     cornerRadius: normalizeCornerRadius(cornerRadius ?? this.cornerRadius),
+    visibility: visibility ?? this.visibility,
   );
 
+  /// Shows or hides one piece.
+  RoomCardAppearance withElement(RoomCardElement element, {required bool visible}) =>
+      copyWith(visibility: visibility.withElement(element, visible: visible));
+
   /// The stored form.
-  Map<String, Object?> toJson() => {
-    'layout': layout.name,
-    'showAvatar': showAvatar,
-    'showAnchorName': showAnchorName,
-    'showAudience': showAudience,
-    'showReplayBadge': showReplayBadge,
-    'platformBadge': platformBadge.name,
-    'cornerRadius': normalizeCornerRadius(cornerRadius),
-  };
+  Map<String, Object?> toJson() => {'cornerRadius': normalizeCornerRadius(cornerRadius), ...visibility.toJson()};
 
   @override
   bool operator ==(Object other) =>
-      other is RoomCardAppearance &&
-      other.layout == layout &&
-      other.showAvatar == showAvatar &&
-      other.showAnchorName == showAnchorName &&
-      other.showAudience == showAudience &&
-      other.showReplayBadge == showReplayBadge &&
-      other.platformBadge == platformBadge &&
-      other.cornerRadius == cornerRadius;
+      other is RoomCardAppearance && other.cornerRadius == cornerRadius && other.visibility == visibility;
 
   @override
-  int get hashCode =>
-      Object.hash(layout, showAvatar, showAnchorName, showAudience, showReplayBadge, platformBadge, cornerRadius);
+  int get hashCode => Object.hash(cornerRadius, visibility);
 }
 
 /// Both viewports' appearances (the reference keeps two independent sets).
@@ -295,13 +297,14 @@ final class RoomCardSettingsController extends Notifier<RoomCardTargets> {
     }
   }
 
-  /// Applies a quick preset; [RoomCardPreset.custom] never applies.
+  /// Applies a quick preset, keeping the corner radius.
   Future<void> applyPreset(RoomCardViewport viewport, RoomCardPreset preset) async {
     if (preset == RoomCardPreset.custom) return;
-    await update(viewport, RoomCardAppearance.fromPreset(preset));
+    final current = forViewport(viewport);
+    await update(viewport, current.copyWith(visibility: RoomCardAppearance.visibilityOf(preset)));
   }
 
-  /// Puts one viewport back to the standard preset.
+  /// Puts one viewport back to the standard preset, keeping its radius.
   Future<void> reset(RoomCardViewport viewport) => applyPreset(viewport, RoomCardPreset.standard);
 }
 

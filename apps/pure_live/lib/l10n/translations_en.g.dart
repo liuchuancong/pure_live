@@ -372,6 +372,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get newWindow => 'New window';
 	@override String get show => 'Show';
 	@override String get save => 'Save';
+	@override String get copied => 'Copied';
 }
 
 // Path: favorites
@@ -1227,8 +1228,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get refreshRateApplyFailed => 'The refresh-rate request did not take effect';
 	@override String refreshRateMultiMonitor({required Object count}) => '${count} displays detected';
 	@override String get refreshRateMultiMonitorDesc => 'The reading belongs to the display the current window is on.';
-	@override String get favoritesDense => 'Dense mode';
-	@override String get favoritesDenseDescription => 'Display more favorite rooms at once; off uses large cards.';
 	@override String get sitesDisplay => 'Platforms shown';
 	@override String get sitesDisplayDesc => 'Switched-off platforms leave the popular, areas, follows and search platform lists.';
 	@override String get sitesAllShown => 'Every platform is shown.';
@@ -2048,56 +2047,32 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get styleBottomMargin => 'Bottom inset (pixels)';
 	@override String get styleBottomMarginDesc => 'Height at the bottom kept free of danmaku so subtitles stay visible, 0–300.';
 	@override String get roomCardSettingsTitle => 'Room cards';
-	@override String get roomCardSettingsDescription => 'Customize visible card details separately for mobile and desktop.';
-	@override String get roomCardTarget => 'Apply to';
-	@override String get roomCardMobile => 'Mobile';
-	@override String get roomCardDesktop => 'Desktop';
-	@override String get roomCardPreview => 'Live preview';
-	@override String get roomCardPreviewTitle => 'Room card preview';
-	@override String get roomCardPreviewHint => 'These use the real card widget at real grid sizes; type size and colour follow the theme and are not set here.';
-	@override String get roomCardPreviewGrid => 'Grid cards';
-	@override String get roomCardPreviewList => 'List rows';
-	@override String get roomCardPreviewWhere => 'Where each piece shows';
-	@override String get roomCardPreviewFollowsTheme => 'Sizes, line heights and colours come from the theme; this only decides which information shows and the card shape.';
-	@override String get roomCardPreviewLongTitle => 'A very long live room title, to watch the single-line ellipsis';
-	@override String get roomCardPreviewReplayTitle => 'Yesterday\'s replay · highlights';
-	@override String get roomCardPreviewOfflineTitle => 'A room that is offline';
-	@override String get roomCardWhereAvatar => 'At the start of the line under the cover';
-	@override String get roomCardWhereAnchor => 'In the line under the cover, joined to the broadcast state';
-	@override String get roomCardWhereAudience => 'Bottom-right of the cover in a grid card; at the row end in a list';
-	@override String get roomCardWhereReplay => 'Top-right of the cover in a grid card; at the row end in a list';
-	@override String get roomCardWherePlatform => 'Automatic: top-left of the cover on a wide card; always or hidden';
-	@override String get roomCardPreviewRoomTitle => 'Live room preview';
-	@override String get roomCardPreviewAnchor => 'Preview anchor';
+	@override String get roomCardSettingsDescription => 'The card and list row have fixed designs; choose which details they show. Settings apply to the current device type automatically.';
 	@override String get roomCardPresets => 'Quick presets';
-	@override String get roomCardPresetCompact => 'Compact';
 	@override String get roomCardPresetStandard => 'Standard';
 	@override String get roomCardPresetDetailed => 'Detailed';
 	@override String get roomCardPresetCustom => 'Custom';
-	@override String get roomCardVisibleContent => 'Visible content';
-	@override String get roomCardShowAvatar => 'Show anchor avatar';
-	@override String get roomCardShowAvatarDesc => 'Keep the anchor identity image beside the room title.';
-	@override String get roomCardShowAnchor => 'Show anchor name';
-	@override String get roomCardShowAnchorDesc => 'Show the anchor name below the room title.';
-	@override String get roomCardShowPlatform => 'Show platform badge';
-	@override String get roomCardShowPlatformDesc => 'Choose automatic display for spacious cards, always show it on the cover, or hide it.';
-	@override String get roomCardPlatformAutomatic => 'Automatic';
-	@override String get roomCardPlatformAlways => 'Always show';
-	@override String get roomCardPlatformHidden => 'Hidden';
-	@override String get roomCardShowAudience => 'Show audience metric';
-	@override String get roomCardShowAudienceDesc => 'Show the platform-supported audience value on live cards.';
-	@override String get roomCardShowReplay => 'Show replay badge';
-	@override String get roomCardShowReplayDesc => 'Identify replay and recording cards.';
+	@override String get roomCardVisibleContent => 'Shown information';
+	@override String get roomCardShowTitle => 'Title';
+	@override String get roomCardShowCoverTitle => 'Title on cover';
+	@override String get roomCardShowStatus => 'Broadcast state';
+	@override String get roomCardShowAvatar => 'Anchor avatar';
+	@override String get roomCardShowAnchor => 'Anchor name';
+	@override String get roomCardShowPlatform => 'Platform badge';
+	@override String get roomCardShowAudience => 'Audience figure';
+	@override String get roomCardShowReplay => 'Replay badge';
 	@override String get roomCardReplay => 'Replay';
 	@override String get roomCardAppearance => 'Appearance';
-	@override String get roomCardLayout => 'Card layout';
-	@override String get roomCardLayoutDesc => 'Use a visual cover card or a compact identity row without the large cover.';
-	@override String get roomCardLayoutCover => 'Cover card';
-	@override String get roomCardLayoutCompact => 'Compact row';
 	@override String get roomCardCornerRadius => 'Corner radius';
 	@override String get roomCardCornerRadiusDesc => 'Adjust the card and cover corner radius together.';
-	@override String get roomCardResetCurrent => 'Reset current layout';
-	@override String get roomCardScopeHint => 'Mobile and desktop settings are stored independently. Status verification and history delete controls remain visible when required.';
+	@override String get roomCardResetCurrent => 'Restore the default details';
+	@override String get roomCardScopeHint => 'Mobile and desktop keep their own sets, applied automatically to the card and list row on the current device.';
+	@override String get backgroundPreviewMedia => 'Preview';
+	@override String get backgroundCopyColor => 'Copy color value';
+	@override String get backgroundCopyGradient => 'Copy gradient';
+	@override String get backgroundCopyAddress => 'Copy address';
+	@override String get backgroundDownloadFailed => 'Download failed';
+	@override String get backgroundPreviewVideoHint => 'Transport controls are for this preview only; the applied wallpaper loops muted.';
 	@override String get fontWeightChange => 'Change weight';
 	@override String get fontWeightChangeDesc => 'This family ships several weights; pin one.';
 	@override String get fontWeightAuto => 'Automatic weight (recommended)';
@@ -2207,6 +2182,14 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get tvFocusZoomDesc => 'Focused cards, menu entries and player controls grow a little; turn it off on a slow box to keep only the outline.';
 	@override String get tvMenuExpanded => 'Always expand the TV sidebar';
 	@override String get tvMenuExpandedDesc => 'Keep the sidebar labels visible; off, it is an icon rail that opens when focused.';
+	@override String get backgroundPreviewSettingsTitle => 'Playback settings';
+	@override String get backgroundMoreImages => 'More images';
+	@override String get backgroundMoreVideos => 'More videos';
+	@override String get backgroundDisplayMode => 'Display mode';
+	@override String get backgroundAutoPlay => 'Autoplay';
+	@override String get backgroundPlayInterval => 'Play interval';
+	@override String backgroundIntervalSeconds({required Object count}) => '${count}s';
+	@override String get backgroundPreviewLooping => 'Loops';
 }
 
 // Path: shield
@@ -2844,6 +2827,7 @@ extension on TranslationsEn {
 			'common.newWindow' => 'New window',
 			'common.show' => 'Show',
 			'common.save' => 'Save',
+			'common.copied' => 'Copied',
 			'favorites.emptyTitle' => 'No followed rooms yet',
 			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			'favorites.unfollow' => 'Unfollow',
@@ -3079,9 +3063,9 @@ extension on TranslationsEn {
 			'multiview.pickRoom' => 'Pick a room',
 			'multiview.openRoom' => 'Open room',
 			'multiview.clearPane' => 'Clear this pane',
-			'multiview.swapPane' => 'Swap panes',
 			_ => null,
 		} ?? switch (path) {
+			'multiview.swapPane' => 'Swap panes',
 			'multiview.swapHere' => 'Move here',
 			'multiview.paneFailed' => 'This pane could not play',
 			'multiview.retryPane' => 'Retry this pane',
@@ -3593,10 +3577,8 @@ extension on TranslationsEn {
 			'settings.refreshRateApplyFailed' => 'The refresh-rate request did not take effect',
 			'settings.refreshRateMultiMonitor' => ({required Object count}) => '${count} displays detected',
 			'settings.refreshRateMultiMonitorDesc' => 'The reading belongs to the display the current window is on.',
-			'settings.favoritesDense' => 'Dense mode',
 			_ => null,
 		} ?? switch (path) {
-			'settings.favoritesDenseDescription' => 'Display more favorite rooms at once; off uses large cards.',
 			'settings.sitesDisplay' => 'Platforms shown',
 			'settings.sitesDisplayDesc' => 'Switched-off platforms leave the popular, areas, follows and search platform lists.',
 			'settings.sitesAllShown' => 'Every platform is shown.',
@@ -4108,9 +4090,9 @@ extension on TranslationsEn {
 			'settings.volumeWheelStep' => 'Volume wheel step',
 			'settings.volumeWheelStepDesc' => 'How much the mouse wheel and the arrow keys change the volume at a time.',
 			'settings.volumeWheelStepValue' => ({required int percent}) => '${percent}%',
+			'settings.globalMute' => 'Mute all playback',
 			_ => null,
 		} ?? switch (path) {
-			'settings.globalMute' => 'Mute all playback',
 			'settings.globalMuteDesc' => 'Silences every room, channel and video now and when opened; turning it off restores each player\'s own mute choice.',
 			'settings.backgroundPlay' => 'Background playback',
 			'settings.backgroundPlayDesc' => 'Keep playing audio after the app leaves the foreground; when off, playback pauses and resumes when you return.',
@@ -4418,56 +4400,32 @@ extension on TranslationsEn {
 			'settings.styleBottomMargin' => 'Bottom inset (pixels)',
 			'settings.styleBottomMarginDesc' => 'Height at the bottom kept free of danmaku so subtitles stay visible, 0–300.',
 			'settings.roomCardSettingsTitle' => 'Room cards',
-			'settings.roomCardSettingsDescription' => 'Customize visible card details separately for mobile and desktop.',
-			'settings.roomCardTarget' => 'Apply to',
-			'settings.roomCardMobile' => 'Mobile',
-			'settings.roomCardDesktop' => 'Desktop',
-			'settings.roomCardPreview' => 'Live preview',
-			'settings.roomCardPreviewTitle' => 'Room card preview',
-			'settings.roomCardPreviewHint' => 'These use the real card widget at real grid sizes; type size and colour follow the theme and are not set here.',
-			'settings.roomCardPreviewGrid' => 'Grid cards',
-			'settings.roomCardPreviewList' => 'List rows',
-			'settings.roomCardPreviewWhere' => 'Where each piece shows',
-			'settings.roomCardPreviewFollowsTheme' => 'Sizes, line heights and colours come from the theme; this only decides which information shows and the card shape.',
-			'settings.roomCardPreviewLongTitle' => 'A very long live room title, to watch the single-line ellipsis',
-			'settings.roomCardPreviewReplayTitle' => 'Yesterday\'s replay · highlights',
-			'settings.roomCardPreviewOfflineTitle' => 'A room that is offline',
-			'settings.roomCardWhereAvatar' => 'At the start of the line under the cover',
-			'settings.roomCardWhereAnchor' => 'In the line under the cover, joined to the broadcast state',
-			'settings.roomCardWhereAudience' => 'Bottom-right of the cover in a grid card; at the row end in a list',
-			'settings.roomCardWhereReplay' => 'Top-right of the cover in a grid card; at the row end in a list',
-			'settings.roomCardWherePlatform' => 'Automatic: top-left of the cover on a wide card; always or hidden',
-			'settings.roomCardPreviewRoomTitle' => 'Live room preview',
-			'settings.roomCardPreviewAnchor' => 'Preview anchor',
+			'settings.roomCardSettingsDescription' => 'The card and list row have fixed designs; choose which details they show. Settings apply to the current device type automatically.',
 			'settings.roomCardPresets' => 'Quick presets',
-			'settings.roomCardPresetCompact' => 'Compact',
 			'settings.roomCardPresetStandard' => 'Standard',
 			'settings.roomCardPresetDetailed' => 'Detailed',
 			'settings.roomCardPresetCustom' => 'Custom',
-			'settings.roomCardVisibleContent' => 'Visible content',
-			'settings.roomCardShowAvatar' => 'Show anchor avatar',
-			'settings.roomCardShowAvatarDesc' => 'Keep the anchor identity image beside the room title.',
-			'settings.roomCardShowAnchor' => 'Show anchor name',
-			'settings.roomCardShowAnchorDesc' => 'Show the anchor name below the room title.',
-			'settings.roomCardShowPlatform' => 'Show platform badge',
-			'settings.roomCardShowPlatformDesc' => 'Choose automatic display for spacious cards, always show it on the cover, or hide it.',
-			'settings.roomCardPlatformAutomatic' => 'Automatic',
-			'settings.roomCardPlatformAlways' => 'Always show',
-			'settings.roomCardPlatformHidden' => 'Hidden',
-			'settings.roomCardShowAudience' => 'Show audience metric',
-			'settings.roomCardShowAudienceDesc' => 'Show the platform-supported audience value on live cards.',
-			'settings.roomCardShowReplay' => 'Show replay badge',
-			'settings.roomCardShowReplayDesc' => 'Identify replay and recording cards.',
+			'settings.roomCardVisibleContent' => 'Shown information',
+			'settings.roomCardShowTitle' => 'Title',
+			'settings.roomCardShowCoverTitle' => 'Title on cover',
+			'settings.roomCardShowStatus' => 'Broadcast state',
+			'settings.roomCardShowAvatar' => 'Anchor avatar',
+			'settings.roomCardShowAnchor' => 'Anchor name',
+			'settings.roomCardShowPlatform' => 'Platform badge',
+			'settings.roomCardShowAudience' => 'Audience figure',
+			'settings.roomCardShowReplay' => 'Replay badge',
 			'settings.roomCardReplay' => 'Replay',
 			'settings.roomCardAppearance' => 'Appearance',
-			'settings.roomCardLayout' => 'Card layout',
-			'settings.roomCardLayoutDesc' => 'Use a visual cover card or a compact identity row without the large cover.',
-			'settings.roomCardLayoutCover' => 'Cover card',
-			'settings.roomCardLayoutCompact' => 'Compact row',
 			'settings.roomCardCornerRadius' => 'Corner radius',
 			'settings.roomCardCornerRadiusDesc' => 'Adjust the card and cover corner radius together.',
-			'settings.roomCardResetCurrent' => 'Reset current layout',
-			'settings.roomCardScopeHint' => 'Mobile and desktop settings are stored independently. Status verification and history delete controls remain visible when required.',
+			'settings.roomCardResetCurrent' => 'Restore the default details',
+			'settings.roomCardScopeHint' => 'Mobile and desktop keep their own sets, applied automatically to the card and list row on the current device.',
+			'settings.backgroundPreviewMedia' => 'Preview',
+			'settings.backgroundCopyColor' => 'Copy color value',
+			'settings.backgroundCopyGradient' => 'Copy gradient',
+			'settings.backgroundCopyAddress' => 'Copy address',
+			'settings.backgroundDownloadFailed' => 'Download failed',
+			'settings.backgroundPreviewVideoHint' => 'Transport controls are for this preview only; the applied wallpaper loops muted.',
 			'settings.fontWeightChange' => 'Change weight',
 			'settings.fontWeightChangeDesc' => 'This family ships several weights; pin one.',
 			'settings.fontWeightAuto' => 'Automatic weight (recommended)',
@@ -4577,6 +4535,14 @@ extension on TranslationsEn {
 			'settings.tvFocusZoomDesc' => 'Focused cards, menu entries and player controls grow a little; turn it off on a slow box to keep only the outline.',
 			'settings.tvMenuExpanded' => 'Always expand the TV sidebar',
 			'settings.tvMenuExpandedDesc' => 'Keep the sidebar labels visible; off, it is an icon rail that opens when focused.',
+			'settings.backgroundPreviewSettingsTitle' => 'Playback settings',
+			'settings.backgroundMoreImages' => 'More images',
+			'settings.backgroundMoreVideos' => 'More videos',
+			'settings.backgroundDisplayMode' => 'Display mode',
+			'settings.backgroundAutoPlay' => 'Autoplay',
+			'settings.backgroundPlayInterval' => 'Play interval',
+			'settings.backgroundIntervalSeconds' => ({required Object count}) => '${count}s',
+			'settings.backgroundPreviewLooping' => 'Loops',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -4622,8 +4588,6 @@ extension on TranslationsEn {
 			'shield.blockLongLengthValue' => ({required int count}) => '${count} characters',
 			'shield.douyuSuspected' => 'Filter Suspected Automated Douyu Chat',
 			'shield.douyuSuspectedDescription' => 'Turn on to hide suspected automated or event chat heuristically; ordinary chat may also be hidden',
-			_ => null,
-		} ?? switch (path) {
 			'sites.title' => 'Sites',
 			'sites.live' => 'Live',
 			'sites.search' => 'Search',
@@ -4641,6 +4605,8 @@ extension on TranslationsEn {
 			'toolbox.toolLogsTitle' => 'Logs',
 			'toolbox.toolLogsDescription' => 'Inspect the app\'s runtime log and diagnostics.',
 			'toolbox.back' => 'Back',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.confirm' => 'Confirm',
 			'toolbox.cancel' => 'Cancel',
 			'toolbox.linkFieldLabel' => 'Platform link',

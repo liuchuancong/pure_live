@@ -926,6 +926,9 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '保存'
 	String get save => '保存';
+
+	/// zh-CN: '已复制'
+	String get copied => '已复制';
 }
 
 // Path: favorites
@@ -3275,12 +3278,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '刷新率读数来自当前窗口所在的那一台显示器。'
 	String get refreshRateMultiMonitorDesc => '刷新率读数来自当前窗口所在的那一台显示器。';
-
-	/// zh-CN: '紧凑模式'
-	String get favoritesDense => '紧凑模式';
-
-	/// zh-CN: '关注页面可显示更多直播间；关闭后改用大卡片。'
-	String get favoritesDenseDescription => '关注页面可显示更多直播间；关闭后改用大卡片。';
 
 	/// zh-CN: '平台显示'
 	String get sitesDisplay => '平台显示';
@@ -5739,74 +5736,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '房间卡片'
 	String get roomCardSettingsTitle => '房间卡片';
 
-	/// zh-CN: '分别定制移动端和桌面端房间卡片的可见信息。'
-	String get roomCardSettingsDescription => '分别定制移动端和桌面端房间卡片的可见信息。';
-
-	/// zh-CN: '应用到'
-	String get roomCardTarget => '应用到';
-
-	/// zh-CN: '移动端'
-	String get roomCardMobile => '移动端';
-
-	/// zh-CN: '桌面端'
-	String get roomCardDesktop => '桌面端';
-
-	/// zh-CN: '实时预览'
-	String get roomCardPreview => '实时预览';
-
-	/// zh-CN: '房间卡片预览'
-	String get roomCardPreviewTitle => '房间卡片预览';
-
-	/// zh-CN: '下面用的是真实卡片组件与真实网格尺寸；字号与颜色跟随主题，这里不单独设置。'
-	String get roomCardPreviewHint => '下面用的是真实卡片组件与真实网格尺寸；字号与颜色跟随主题，这里不单独设置。';
-
-	/// zh-CN: '网格卡片'
-	String get roomCardPreviewGrid => '网格卡片';
-
-	/// zh-CN: '列表行'
-	String get roomCardPreviewList => '列表行';
-
-	/// zh-CN: '信息出现在哪里'
-	String get roomCardPreviewWhere => '信息出现在哪里';
-
-	/// zh-CN: '字号、行高与颜色都来自主题；这里只决定显示哪些信息和卡片形状。'
-	String get roomCardPreviewFollowsTheme => '字号、行高与颜色都来自主题；这里只决定显示哪些信息和卡片形状。';
-
-	/// zh-CN: '一个很长很长的直播间标题，用来看单行截断'
-	String get roomCardPreviewLongTitle => '一个很长很长的直播间标题，用来看单行截断';
-
-	/// zh-CN: '昨日回放 · 精选集锦'
-	String get roomCardPreviewReplayTitle => '昨日回放 · 精选集锦';
-
-	/// zh-CN: '未开播的房间'
-	String get roomCardPreviewOfflineTitle => '未开播的房间';
-
-	/// zh-CN: '在封面下方信息行的最左侧'
-	String get roomCardWhereAvatar => '在封面下方信息行的最左侧';
-
-	/// zh-CN: '在封面下方信息行里，与开播状态用「·」相连'
-	String get roomCardWhereAnchor => '在封面下方信息行里，与开播状态用「·」相连';
-
-	/// zh-CN: '网格卡片在封面右下角，列表行在行末'
-	String get roomCardWhereAudience => '网格卡片在封面右下角，列表行在行末';
-
-	/// zh-CN: '网格卡片在封面右上角，列表行在行末'
-	String get roomCardWhereReplay => '网格卡片在封面右上角，列表行在行末';
-
-	/// zh-CN: '自动：宽卡显示在封面左上角；也可始终显示或隐藏'
-	String get roomCardWherePlatform => '自动：宽卡显示在封面左上角；也可始终显示或隐藏';
-
-	/// zh-CN: '直播间预览'
-	String get roomCardPreviewRoomTitle => '直播间预览';
-
-	/// zh-CN: '预览主播'
-	String get roomCardPreviewAnchor => '预览主播';
+	/// zh-CN: '卡片与列表的版式固定，这里只选择显示哪些信息；设置自动应用到当前设备类型。'
+	String get roomCardSettingsDescription => '卡片与列表的版式固定，这里只选择显示哪些信息；设置自动应用到当前设备类型。';
 
 	/// zh-CN: '快捷预设'
 	String get roomCardPresets => '快捷预设';
-
-	/// zh-CN: '简洁'
-	String get roomCardPresetCompact => '简洁';
 
 	/// zh-CN: '标准'
 	String get roomCardPresetStandard => '标准';
@@ -5820,44 +5754,29 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '显示内容'
 	String get roomCardVisibleContent => '显示内容';
 
-	/// zh-CN: '显示主播头像'
-	String get roomCardShowAvatar => '显示主播头像';
+	/// zh-CN: '标题'
+	String get roomCardShowTitle => '标题';
 
-	/// zh-CN: '在房间标题旁保留主播身份图片。'
-	String get roomCardShowAvatarDesc => '在房间标题旁保留主播身份图片。';
+	/// zh-CN: '封面标题'
+	String get roomCardShowCoverTitle => '封面标题';
 
-	/// zh-CN: '显示主播名称'
-	String get roomCardShowAnchor => '显示主播名称';
+	/// zh-CN: '开播状态'
+	String get roomCardShowStatus => '开播状态';
 
-	/// zh-CN: '在房间标题下方显示主播名称。'
-	String get roomCardShowAnchorDesc => '在房间标题下方显示主播名称。';
+	/// zh-CN: '主播头像'
+	String get roomCardShowAvatar => '主播头像';
 
-	/// zh-CN: '显示平台徽章'
-	String get roomCardShowPlatform => '显示平台徽章';
+	/// zh-CN: '主播名称'
+	String get roomCardShowAnchor => '主播名称';
 
-	/// zh-CN: '可让宽卡片自动显示、始终在封面显示或保持隐藏。'
-	String get roomCardShowPlatformDesc => '可让宽卡片自动显示、始终在封面显示或保持隐藏。';
+	/// zh-CN: '平台徽章'
+	String get roomCardShowPlatform => '平台徽章';
 
-	/// zh-CN: '自动'
-	String get roomCardPlatformAutomatic => '自动';
+	/// zh-CN: '观众指标'
+	String get roomCardShowAudience => '观众指标';
 
-	/// zh-CN: '始终显示'
-	String get roomCardPlatformAlways => '始终显示';
-
-	/// zh-CN: '隐藏'
-	String get roomCardPlatformHidden => '隐藏';
-
-	/// zh-CN: '显示观众指标'
-	String get roomCardShowAudience => '显示观众指标';
-
-	/// zh-CN: '在直播卡片上显示平台支持的观众数据。'
-	String get roomCardShowAudienceDesc => '在直播卡片上显示平台支持的观众数据。';
-
-	/// zh-CN: '显示回放徽章'
-	String get roomCardShowReplay => '显示回放徽章';
-
-	/// zh-CN: '标记回放和录播房间。'
-	String get roomCardShowReplayDesc => '标记回放和录播房间。';
+	/// zh-CN: '回放徽章'
+	String get roomCardShowReplay => '回放徽章';
 
 	/// zh-CN: '回放'
 	String get roomCardReplay => '回放';
@@ -5865,29 +5784,35 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '外观'
 	String get roomCardAppearance => '外观';
 
-	/// zh-CN: '卡片布局'
-	String get roomCardLayout => '卡片布局';
-
-	/// zh-CN: '选择大图封面卡片，或不显示大封面的紧凑主播信息行。'
-	String get roomCardLayoutDesc => '选择大图封面卡片，或不显示大封面的紧凑主播信息行。';
-
-	/// zh-CN: '封面卡片'
-	String get roomCardLayoutCover => '封面卡片';
-
-	/// zh-CN: '紧凑信息行'
-	String get roomCardLayoutCompact => '紧凑信息行';
-
 	/// zh-CN: '圆角大小'
 	String get roomCardCornerRadius => '圆角大小';
 
 	/// zh-CN: '同步调整卡片和封面圆角。'
 	String get roomCardCornerRadiusDesc => '同步调整卡片和封面圆角。';
 
-	/// zh-CN: '重置当前布局'
-	String get roomCardResetCurrent => '重置当前布局';
+	/// zh-CN: '恢复默认显示'
+	String get roomCardResetCurrent => '恢复默认显示';
 
-	/// zh-CN: '移动端和桌面端设置分别保存；状态核验与历史删除控件会在需要时继续显示。'
-	String get roomCardScopeHint => '移动端和桌面端设置分别保存；状态核验与历史删除控件会在需要时继续显示。';
+	/// zh-CN: '移动端与桌面端各自保存，并自动应用到当前设备类型的卡片与列表。'
+	String get roomCardScopeHint => '移动端与桌面端各自保存，并自动应用到当前设备类型的卡片与列表。';
+
+	/// zh-CN: '预览'
+	String get backgroundPreviewMedia => '预览';
+
+	/// zh-CN: '复制色值'
+	String get backgroundCopyColor => '复制色值';
+
+	/// zh-CN: '复制渐变'
+	String get backgroundCopyGradient => '复制渐变';
+
+	/// zh-CN: '复制地址'
+	String get backgroundCopyAddress => '复制地址';
+
+	/// zh-CN: '下载失败'
+	String get backgroundDownloadFailed => '下载失败';
+
+	/// zh-CN: '播放控制仅用于本次预览；应用的动态壁纸始终静音循环。'
+	String get backgroundPreviewVideoHint => '播放控制仅用于本次预览；应用的动态壁纸始终静音循环。';
 
 	/// zh-CN: '更换字重'
 	String get fontWeightChange => '更换字重';
@@ -6215,6 +6140,30 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '保持侧栏显示名称；关闭后可用图标轨并在聚焦时展开。'
 	String get tvMenuExpandedDesc => '保持侧栏显示名称；关闭后可用图标轨并在聚焦时展开。';
+
+	/// zh-CN: '播放设置'
+	String get backgroundPreviewSettingsTitle => '播放设置';
+
+	/// zh-CN: '更多图片'
+	String get backgroundMoreImages => '更多图片';
+
+	/// zh-CN: '更多视频'
+	String get backgroundMoreVideos => '更多视频';
+
+	/// zh-CN: '显示模式'
+	String get backgroundDisplayMode => '显示模式';
+
+	/// zh-CN: '自动播放'
+	String get backgroundAutoPlay => '自动播放';
+
+	/// zh-CN: '播放间隔'
+	String get backgroundPlayInterval => '播放间隔';
+
+	/// zh-CN: '{count} 秒'
+	String backgroundIntervalSeconds({required Object count}) => '${count} 秒';
+
+	/// zh-CN: '循环播放'
+	String get backgroundPreviewLooping => '循环播放';
 }
 
 // Path: shield
@@ -7464,6 +7413,7 @@ extension on Translations {
 			'common.newWindow' => '新建窗口',
 			'common.show' => '显示',
 			'common.save' => '保存',
+			'common.copied' => '已复制',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
@@ -7699,9 +7649,9 @@ extension on Translations {
 			'multiview.pickRoom' => '选择房间',
 			'multiview.openRoom' => '进入直播间',
 			'multiview.clearPane' => '清空这一格',
-			'multiview.swapPane' => '交换格子',
 			_ => null,
 		} ?? switch (path) {
+			'multiview.swapPane' => '交换格子',
 			'multiview.swapHere' => '换到这格',
 			'multiview.paneFailed' => '这一格无法播放',
 			'multiview.retryPane' => '重试这一格',
@@ -8213,10 +8163,8 @@ extension on Translations {
 			'settings.refreshRateApplyFailed' => '刷新率请求未生效',
 			'settings.refreshRateMultiMonitor' => ({required Object count}) => '检测到 ${count} 台显示器',
 			'settings.refreshRateMultiMonitorDesc' => '刷新率读数来自当前窗口所在的那一台显示器。',
-			'settings.favoritesDense' => '紧凑模式',
 			_ => null,
 		} ?? switch (path) {
-			'settings.favoritesDenseDescription' => '关注页面可显示更多直播间；关闭后改用大卡片。',
 			'settings.sitesDisplay' => '平台显示',
 			'settings.sitesDisplayDesc' => '关闭的平台不再出现在热门、分区、关注与搜索的平台列表里。',
 			'settings.sitesAllShown' => '全部平台都在显示中。',
@@ -8728,9 +8676,9 @@ extension on Translations {
 			'settings.volumeWheelStep' => '滚轮音量步长',
 			'settings.volumeWheelStepDesc' => '鼠标滚轮与方向键每次调节的音量幅度。',
 			'settings.volumeWheelStepValue' => ({required int percent}) => '${percent}%',
+			'settings.globalMute' => '全局静音',
 			_ => null,
 		} ?? switch (path) {
-			'settings.globalMute' => '全局静音',
 			'settings.globalMuteDesc' => '立即静音所有正在播放和之后打开的房间、频道与视频；关闭后恢复各播放器自身的静音设置。',
 			'settings.backgroundPlay' => '后台播放',
 			'settings.backgroundPlayDesc' => '离开应用后继续播放声音；关闭时切到后台会暂停，回到应用后继续。',
@@ -9038,56 +8986,32 @@ extension on Translations {
 			'settings.styleBottomMargin' => '底部留白（像素）',
 			'settings.styleBottomMarginDesc' => '画面底部不显示弹幕的高度，避免挡住字幕，0–300。',
 			'settings.roomCardSettingsTitle' => '房间卡片',
-			'settings.roomCardSettingsDescription' => '分别定制移动端和桌面端房间卡片的可见信息。',
-			'settings.roomCardTarget' => '应用到',
-			'settings.roomCardMobile' => '移动端',
-			'settings.roomCardDesktop' => '桌面端',
-			'settings.roomCardPreview' => '实时预览',
-			'settings.roomCardPreviewTitle' => '房间卡片预览',
-			'settings.roomCardPreviewHint' => '下面用的是真实卡片组件与真实网格尺寸；字号与颜色跟随主题，这里不单独设置。',
-			'settings.roomCardPreviewGrid' => '网格卡片',
-			'settings.roomCardPreviewList' => '列表行',
-			'settings.roomCardPreviewWhere' => '信息出现在哪里',
-			'settings.roomCardPreviewFollowsTheme' => '字号、行高与颜色都来自主题；这里只决定显示哪些信息和卡片形状。',
-			'settings.roomCardPreviewLongTitle' => '一个很长很长的直播间标题，用来看单行截断',
-			'settings.roomCardPreviewReplayTitle' => '昨日回放 · 精选集锦',
-			'settings.roomCardPreviewOfflineTitle' => '未开播的房间',
-			'settings.roomCardWhereAvatar' => '在封面下方信息行的最左侧',
-			'settings.roomCardWhereAnchor' => '在封面下方信息行里，与开播状态用「·」相连',
-			'settings.roomCardWhereAudience' => '网格卡片在封面右下角，列表行在行末',
-			'settings.roomCardWhereReplay' => '网格卡片在封面右上角，列表行在行末',
-			'settings.roomCardWherePlatform' => '自动：宽卡显示在封面左上角；也可始终显示或隐藏',
-			'settings.roomCardPreviewRoomTitle' => '直播间预览',
-			'settings.roomCardPreviewAnchor' => '预览主播',
+			'settings.roomCardSettingsDescription' => '卡片与列表的版式固定，这里只选择显示哪些信息；设置自动应用到当前设备类型。',
 			'settings.roomCardPresets' => '快捷预设',
-			'settings.roomCardPresetCompact' => '简洁',
 			'settings.roomCardPresetStandard' => '标准',
 			'settings.roomCardPresetDetailed' => '详细',
 			'settings.roomCardPresetCustom' => '自定义',
 			'settings.roomCardVisibleContent' => '显示内容',
-			'settings.roomCardShowAvatar' => '显示主播头像',
-			'settings.roomCardShowAvatarDesc' => '在房间标题旁保留主播身份图片。',
-			'settings.roomCardShowAnchor' => '显示主播名称',
-			'settings.roomCardShowAnchorDesc' => '在房间标题下方显示主播名称。',
-			'settings.roomCardShowPlatform' => '显示平台徽章',
-			'settings.roomCardShowPlatformDesc' => '可让宽卡片自动显示、始终在封面显示或保持隐藏。',
-			'settings.roomCardPlatformAutomatic' => '自动',
-			'settings.roomCardPlatformAlways' => '始终显示',
-			'settings.roomCardPlatformHidden' => '隐藏',
-			'settings.roomCardShowAudience' => '显示观众指标',
-			'settings.roomCardShowAudienceDesc' => '在直播卡片上显示平台支持的观众数据。',
-			'settings.roomCardShowReplay' => '显示回放徽章',
-			'settings.roomCardShowReplayDesc' => '标记回放和录播房间。',
+			'settings.roomCardShowTitle' => '标题',
+			'settings.roomCardShowCoverTitle' => '封面标题',
+			'settings.roomCardShowStatus' => '开播状态',
+			'settings.roomCardShowAvatar' => '主播头像',
+			'settings.roomCardShowAnchor' => '主播名称',
+			'settings.roomCardShowPlatform' => '平台徽章',
+			'settings.roomCardShowAudience' => '观众指标',
+			'settings.roomCardShowReplay' => '回放徽章',
 			'settings.roomCardReplay' => '回放',
 			'settings.roomCardAppearance' => '外观',
-			'settings.roomCardLayout' => '卡片布局',
-			'settings.roomCardLayoutDesc' => '选择大图封面卡片，或不显示大封面的紧凑主播信息行。',
-			'settings.roomCardLayoutCover' => '封面卡片',
-			'settings.roomCardLayoutCompact' => '紧凑信息行',
 			'settings.roomCardCornerRadius' => '圆角大小',
 			'settings.roomCardCornerRadiusDesc' => '同步调整卡片和封面圆角。',
-			'settings.roomCardResetCurrent' => '重置当前布局',
-			'settings.roomCardScopeHint' => '移动端和桌面端设置分别保存；状态核验与历史删除控件会在需要时继续显示。',
+			'settings.roomCardResetCurrent' => '恢复默认显示',
+			'settings.roomCardScopeHint' => '移动端与桌面端各自保存，并自动应用到当前设备类型的卡片与列表。',
+			'settings.backgroundPreviewMedia' => '预览',
+			'settings.backgroundCopyColor' => '复制色值',
+			'settings.backgroundCopyGradient' => '复制渐变',
+			'settings.backgroundCopyAddress' => '复制地址',
+			'settings.backgroundDownloadFailed' => '下载失败',
+			'settings.backgroundPreviewVideoHint' => '播放控制仅用于本次预览；应用的动态壁纸始终静音循环。',
 			'settings.fontWeightChange' => '更换字重',
 			'settings.fontWeightChangeDesc' => '当前字体包含多个字重，可锁定其中一个。',
 			'settings.fontWeightAuto' => '自动字重（推荐）',
@@ -9197,6 +9121,14 @@ extension on Translations {
 			'settings.tvFocusZoomDesc' => '获得焦点的卡片、菜单项和播放控制放大一点；盒子卡顿时可以关掉，只留描边。',
 			'settings.tvMenuExpanded' => 'TV 侧栏始终展开',
 			'settings.tvMenuExpandedDesc' => '保持侧栏显示名称；关闭后可用图标轨并在聚焦时展开。',
+			'settings.backgroundPreviewSettingsTitle' => '播放设置',
+			'settings.backgroundMoreImages' => '更多图片',
+			'settings.backgroundMoreVideos' => '更多视频',
+			'settings.backgroundDisplayMode' => '显示模式',
+			'settings.backgroundAutoPlay' => '自动播放',
+			'settings.backgroundPlayInterval' => '播放间隔',
+			'settings.backgroundIntervalSeconds' => ({required Object count}) => '${count} 秒',
+			'settings.backgroundPreviewLooping' => '循环播放',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
@@ -9242,8 +9174,6 @@ extension on Translations {
 			'shield.blockLongLengthValue' => ({required int count}) => '${count} 字',
 			'shield.douyuSuspected' => '过滤斗鱼疑似自动弹幕',
 			'shield.douyuSuspectedDescription' => '开启后按启发式标记隐藏疑似自动或活动弹幕，也可能隐藏普通聊天',
-			_ => null,
-		} ?? switch (path) {
 			'sites.title' => '站点',
 			'sites.live' => '直播',
 			'sites.search' => '搜索',
@@ -9261,6 +9191,8 @@ extension on Translations {
 			'toolbox.toolLogsTitle' => '日志',
 			'toolbox.toolLogsDescription' => '查看应用运行日志与诊断信息。',
 			'toolbox.back' => '返回',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.confirm' => '确认',
 			'toolbox.cancel' => '取消',
 			'toolbox.linkFieldLabel' => '平台链接',

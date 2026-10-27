@@ -21,7 +21,7 @@ final class FollowedRoomCard extends ConsumerWidget {
     required this.onUnfollow,
     this.platformName,
     this.tags = const [],
-    this.compact = false,
+    this.listRow = false,
     super.key,
   });
 
@@ -42,8 +42,8 @@ final class FollowedRoomCard extends ConsumerWidget {
   /// list shows no line.
   final List<String> tags;
 
-  /// Whether this is the list layout's compact row.
-  final bool compact;
+  /// Whether this is the feed's list layout, not its grid.
+  final bool listRow;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -51,65 +51,58 @@ final class FollowedRoomCard extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final appearance = ref.watch(roomCardAppearanceProvider);
     final radius = BorderRadius.circular(appearance.cornerRadius);
-    final audience = appearance.showAudience ? _audienceText(ref) : null;
-    final showPlatform = platformName != null && appearance.platformBadge != RoomCardPlatformBadgeMode.hidden;
-    final replay = appearance.showReplayBadge && room.broadcast.isRecord;
-    final meta = _metaText(context, showAnchor: appearance.showAnchorName);
+    final visibility = appearance.visibility;
+    final audience = visibility.shows(RoomCardElement.audience) ? _audienceText(ref) : null;
+    final showPlatform = platformName != null && visibility.shows(RoomCardElement.platformBadge);
+    final replay = visibility.shows(RoomCardElement.replayBadge) && room.broadcast.isRecord;
+    final meta = _metaText(context, showAnchor: visibility.shows(RoomCardElement.anchorName));
+    final showAvatar = visibility.shows(RoomCardElement.avatar);
+    final showTitle = visibility.shows(RoomCardElement.title);
     final anchorName = (room.anchor?.name ?? '').trim();
     final avatarUrl = (room.anchor?.avatarUrl ?? '').trim();
-    final row = compact || appearance.layout == RoomCardLayout.compact;
-    if (row) {
-      // The list row is a card of its own: the cover sits inside its
-      // padding instead of running to the card's edge, so the rows read as
-      // cards rather than one full-width band.
+    if (listRow) {
+      // The list row is a card of its own and follows the feed's fixed
+      // design: a round avatar, the title over a muted line, the audience,
+      // and the unfollow heart instead of the feed's chevron.
+      final subtitle = [
+        if (showPlatform) platformName!,
+        ?meta,
+        if (replay) context.t.settings.roomCardReplay,
+      ].join(' · ');
       final line = SizedBox(
-        height: 84,
-        child: Row(
-          children: [
-            if (compact) ...[
-              SizedBox(
-                width: 148,
-                child: DsImage(
-                  image: cachedImage(room.content.coverUrl),
-                  width: 148,
-                  height: 84,
-                  semanticLabel: room.content.title,
-                  fallback: _CoverFallback(title: room.content.title),
-                  style: const DsImageStyle(borderRadius: BorderRadius.all(Radius.circular(8))),
-                ),
-              ),
-              const SizedBox(width: DsSpace.s12),
-            ],
-            if (appearance.showAvatar)
-              Padding(
-                padding: EdgeInsetsDirectional.only(start: compact ? 0 : DsSpace.s8),
-                child: DsAvatar(
+        height: kRoomCardListDesignHeight,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
+          child: Row(
+            spacing: DsSpace.s12,
+            children: [
+              if (showAvatar)
+                DsAvatar(
                   initials: anchorName.isEmpty ? room.content.title : anchorName,
                   image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
-                  size: DsSize.sm,
+                  size: DsSize.lg,
                   semanticLabel: anchorName.isEmpty ? room.content.title : anchorName,
                 ),
-              ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12),
+              Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: 4,
                   children: [
-                    Text(
-                      room.content.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                    ),
-                    Text(
-                      [if (showPlatform) platformName, ?meta].join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
+                    if (showTitle)
+                      Text(
+                        room.content.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                      ),
+                    if (subtitle.isNotEmpty)
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
                     if (tags.isNotEmpty)
                       Text(
                         tags.join(' · '),
@@ -120,26 +113,8 @@ final class FollowedRoomCard extends ConsumerWidget {
                   ],
                 ),
               ),
-            ),
-            if (replay)
-              Padding(
-                padding: const EdgeInsetsDirectional.only(end: DsSpace.s6),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: 3,
-                  children: [
-                    DsIcon(DsIcons.history, size: 13, color: colors.textMuted),
-                    Text(
-                      context.t.settings.roomCardReplay,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                  ],
-                ),
-              ),
-            if (audience != null)
-              Padding(
-                padding: const EdgeInsetsDirectional.only(end: DsSpace.s8),
-                child: Row(
+              if (audience != null)
+                Row(
                   mainAxisSize: MainAxisSize.min,
                   spacing: 4,
                   children: [
@@ -150,10 +125,7 @@ final class FollowedRoomCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-              ),
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: DsSpace.s8),
-              child: DsPressable(
+              DsPressable(
                 semanticLabel: context.t.favorites.unfollow,
                 onPressed: onUnfollow,
                 builder: (context, states, _) {
@@ -171,14 +143,14 @@ final class FollowedRoomCard extends ConsumerWidget {
                   );
                 },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
       return DsCard(
         onPressed: onOpen,
         style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: radius),
-        child: compact ? Padding(padding: const EdgeInsets.all(DsSpace.s8), child: line) : line,
+        child: line,
       );
     }
     return Stack(
@@ -268,7 +240,7 @@ final class FollowedRoomCard extends ConsumerWidget {
                   child: Row(
                     spacing: 8,
                     children: [
-                      if (appearance.showAvatar)
+                      if (showAvatar)
                         DsAvatar(
                           initials: anchorName.isEmpty ? room.content.title : anchorName,
                           image: avatarUrl.isEmpty ? null : cachedImage(avatarUrl),
@@ -281,14 +253,18 @@ final class FollowedRoomCard extends ConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           spacing: 3,
                           children: [
-                            Flexible(
-                              child: Text(
-                                room.content.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                            if (showTitle)
+                              Flexible(
+                                child: Text(
+                                  room.content.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.typography.body.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: colors.text,
+                                  ),
+                                ),
                               ),
-                            ),
                             if (meta != null)
                               Text(
                                 meta,

@@ -3,107 +3,52 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_sites/live_sites.dart';
 
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/popular/popular.dart';
-import 'package:pure_live/features/settings/pages/room_card_preview_page.dart' show showRoomCardPreview;
 import 'package:pure_live/features/settings/room/room_card_settings.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow, SettingsSegmentedRow;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/shared.dart' show CardGrid;
 
-/// The room-card settings page (the reference's `room_card_settings_page`):
-/// one target at a time (mobile or desktop), a live preview, the three quick
-/// presets, the visible-content toggles, the layout and corner radius, and a
-/// reset to the standard look. Both targets are stored independently.
-final class RoomCardPane extends ConsumerStatefulWidget {
+/// The room-card settings page. The card and the list row have fixed
+/// designs; the switches only decide which pieces of information they draw.
+/// The page edits the set for the device it runs on, and the appearance
+/// follows the device wherever it is used.
+final class RoomCardPane extends ConsumerWidget {
   /// The pane.
   const RoomCardPane({super.key});
 
   @override
-  ConsumerState<RoomCardPane> createState() => _RoomCardPaneState();
-}
-
-final class _RoomCardPaneState extends ConsumerState<RoomCardPane> {
-  late RoomCardViewport _viewport;
-
-  @override
-  void initState() {
-    super.initState();
-    _viewport = ref.read(deviceProfileProvider) == DeviceProfile.mobile
-        ? RoomCardViewport.mobile
-        : RoomCardViewport.desktop;
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    final viewport = ref.watch(deviceProfileProvider) == DeviceProfile.mobile
+        ? RoomCardViewport.mobile
+        : RoomCardViewport.desktop;
     final targets = ref.watch(roomCardSettingsProvider);
-    final appearance = _viewport == RoomCardViewport.mobile ? targets.mobile : targets.desktop;
+    final appearance = viewport == RoomCardViewport.mobile ? targets.mobile : targets.desktop;
     final controller = ref.read(roomCardSettingsProvider.notifier);
     final preset = appearance.preset;
 
-    void update(RoomCardAppearance next) => unawaited(controller.update(_viewport, next));
+    void update(RoomCardAppearance next) => unawaited(controller.update(viewport, next));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
         DsListSection(
+          header: Text(t.settings.roomCardVisibleContent),
           children: [
-            SettingsSegmentedRow<RoomCardViewport>(
-              leading: const DsIcon(DsIcons.monitor),
-              title: t.settings.roomCardTarget,
-              value: _viewport,
-              options: [
-                (value: RoomCardViewport.mobile, label: t.settings.roomCardMobile),
-                (value: RoomCardViewport.desktop, label: t.settings.roomCardDesktop),
-              ],
-              onChanged: (viewport) => setState(() => _viewport = viewport),
-            ),
-          ],
-        ),
-        DsListSection(
-          header: Row(
-            children: [
-              Text(t.settings.roomCardPreview),
-              const SizedBox(width: DsSpace.s8),
-              DsBadge(
-                label: Text(
-                  _viewport == RoomCardViewport.mobile ? t.settings.roomCardMobile : t.settings.roomCardDesktop,
-                ),
-                dot: false,
-              ),
-            ],
-          ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(DsSpace.s16),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 320),
-                  // The card is built for a grid tile: its text row is an
-                  // `Expanded`, so the preview has to hand it the tile's
-                  // fixed box rather than let it size from its content.
-                  child: AspectRatio(
-                    aspectRatio: appearance.layout == RoomCardLayout.compact
-                        ? CardGrid.roomCardCompactAspectRatio
-                        : CardGrid.roomCardAspectRatio,
-                    child: RoomCard(room: _previewRoom(t), viewport: _viewport),
-                  ),
+            for (final element in RoomCardElement.values)
+              SettingsConfigRow(
+                leading: DsIcon(_elementIcon(element)),
+                title: _elementLabel(t, element),
+                control: DsSwitch(
+                  value: appearance.visibility.shows(element),
+                  onChanged: (visible) => update(appearance.withElement(element, visible: visible)),
+                  semanticLabel: _elementLabel(t, element),
                 ),
               ),
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.eye),
-              title: Text(t.settings.roomCardPreviewTitle),
-              description: Text(t.settings.roomCardPreviewHint),
-              showChevron: true,
-              onPressed: () => unawaited(showRoomCardPreview(context, _viewport)),
-            ),
           ],
         ),
         DsListSection(
@@ -118,83 +63,18 @@ final class _RoomCardPaneState extends ConsumerState<RoomCardPane> {
                   ? DsBadge(label: Text(t.settings.roomCardPresetCustom), dot: false)
                   : null,
               options: [
-                (value: RoomCardPreset.compact, label: t.settings.roomCardPresetCompact),
                 (value: RoomCardPreset.standard, label: t.settings.roomCardPresetStandard),
                 (value: RoomCardPreset.detailed, label: t.settings.roomCardPresetDetailed),
               ],
               onChanged: (next) {
-                if (next != null) unawaited(controller.applyPreset(_viewport, next));
+                if (next != null) unawaited(controller.applyPreset(viewport, next));
               },
-            ),
-          ],
-        ),
-        DsListSection(
-          header: Text(t.settings.roomCardVisibleContent),
-          children: [
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.userRound),
-              title: t.settings.roomCardShowAvatar,
-              description: t.settings.roomCardShowAvatarDesc,
-              control: DsSwitch(
-                value: appearance.showAvatar,
-                onChanged: (value) => update(appearance.copyWith(showAvatar: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.atSign),
-              title: t.settings.roomCardShowAnchor,
-              description: t.settings.roomCardShowAnchorDesc,
-              control: DsSwitch(
-                value: appearance.showAnchorName,
-                onChanged: (value) => update(appearance.copyWith(showAnchorName: value)),
-              ),
-            ),
-            SettingsSegmentedRow<RoomCardPlatformBadgeMode>(
-              leading: const DsIcon(DsIcons.badge),
-              title: t.settings.roomCardShowPlatform,
-              description: t.settings.roomCardShowPlatformDesc,
-              value: appearance.platformBadge,
-              options: [
-                (value: RoomCardPlatformBadgeMode.automatic, label: t.settings.roomCardPlatformAutomatic),
-                (value: RoomCardPlatformBadgeMode.always, label: t.settings.roomCardPlatformAlways),
-                (value: RoomCardPlatformBadgeMode.hidden, label: t.settings.roomCardPlatformHidden),
-              ],
-              onChanged: (value) => update(appearance.copyWith(platformBadge: value)),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.eye),
-              title: t.settings.roomCardShowAudience,
-              description: t.settings.roomCardShowAudienceDesc,
-              control: DsSwitch(
-                value: appearance.showAudience,
-                onChanged: (value) => update(appearance.copyWith(showAudience: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.history),
-              title: t.settings.roomCardShowReplay,
-              description: t.settings.roomCardShowReplayDesc,
-              control: DsSwitch(
-                value: appearance.showReplayBadge,
-                onChanged: (value) => update(appearance.copyWith(showReplayBadge: value)),
-              ),
             ),
           ],
         ),
         DsListSection(
           header: Text(t.settings.roomCardAppearance),
           children: [
-            SettingsSegmentedRow<RoomCardLayout>(
-              leading: const DsIcon(DsIcons.layoutGrid),
-              title: t.settings.roomCardLayout,
-              description: t.settings.roomCardLayoutDesc,
-              value: appearance.layout,
-              options: [
-                (value: RoomCardLayout.cover, label: t.settings.roomCardLayoutCover),
-                (value: RoomCardLayout.compact, label: t.settings.roomCardLayoutCompact),
-              ],
-              onChanged: (value) => update(appearance.copyWith(layout: value)),
-            ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.radius),
               title: t.settings.roomCardCornerRadius,
@@ -217,7 +97,7 @@ final class _RoomCardPaneState extends ConsumerState<RoomCardPane> {
             DsListRow(
               leading: const DsIcon(DsIcons.rotateCcw),
               title: Text(t.settings.roomCardResetCurrent),
-              onPressed: () => unawaited(controller.reset(_viewport)),
+              onPressed: () => unawaited(controller.reset(viewport)),
             ),
           ],
         ),
@@ -228,14 +108,26 @@ final class _RoomCardPaneState extends ConsumerState<RoomCardPane> {
       ],
     );
   }
-
-  /// The preview's stand-in room, mirroring the reference's synthetic card.
-  static LiveRoom _previewRoom(Translations t) => LiveRoom.normalized(
-    platform: 'bilibili',
-    roomId: 'room-card-preview',
-    content: RoomContent.of(title: 'Pure Live · ${t.settings.roomCardPreviewRoomTitle}'),
-    anchor: LiveAnchor.of(name: t.settings.roomCardPreviewAnchor),
-    audience: RoomAudience.of(popularity: 12800),
-    broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live),
-  );
 }
+
+String _elementLabel(Translations t, RoomCardElement element) => switch (element) {
+  RoomCardElement.title => t.settings.roomCardShowTitle,
+  RoomCardElement.coverTitle => t.settings.roomCardShowCoverTitle,
+  RoomCardElement.avatar => t.settings.roomCardShowAvatar,
+  RoomCardElement.anchorName => t.settings.roomCardShowAnchor,
+  RoomCardElement.platformBadge => t.settings.roomCardShowPlatform,
+  RoomCardElement.audience => t.settings.roomCardShowAudience,
+  RoomCardElement.replayBadge => t.settings.roomCardShowReplay,
+  RoomCardElement.status => t.settings.roomCardShowStatus,
+};
+
+DsIconData _elementIcon(RoomCardElement element) => switch (element) {
+  RoomCardElement.title => DsIcons.heading,
+  RoomCardElement.coverTitle => DsIcons.image,
+  RoomCardElement.avatar => DsIcons.userRound,
+  RoomCardElement.anchorName => DsIcons.atSign,
+  RoomCardElement.platformBadge => DsIcons.badge,
+  RoomCardElement.audience => DsIcons.flame,
+  RoomCardElement.replayBadge => DsIcons.history,
+  RoomCardElement.status => DsIcons.signal,
+};
