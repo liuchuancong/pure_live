@@ -54,9 +54,9 @@ dependency_overrides:
   equatable: ^3.0.0
   ffmpeg_kit_extended_flutter: ^1.0.0
   hooks: ^2.2.0
-  # 播放内核走本地 F:/media_core（与应用侧的 path 依赖同源，避免 git/path 双源冲突）
-  media_core: { path: F:/media_core/packages/media_core }
-  media_core_native: { path: F:/media_core/packages/media_core_native }
+  # 播放内核走本地 C:/Users/XA-158/projects/flutter/media_core（与应用侧的 path 依赖同源，避免 git/path 双源冲突）
+  media_core: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core }
+  media_core_native: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_native }
   platform: ^3.2.0
   test_api: ^0.7.15
   wakelock_plus: 1.8.1
@@ -93,7 +93,6 @@ melos:
     kareki:
       description: Workspace-wide dead code scan; new findings fail, baselined ones pass.
       run: dart run kareki --baseline .kareki-baseline.json
-
 
 ffmpeg_kit_extended_config:
   type: "base"

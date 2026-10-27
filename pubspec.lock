@@ -830,10 +830,10 @@ packages:
     dependency: transitive
     description:
       name: flame_barrage
-      sha256: "15541ff9c2b9afc003b3a607754a8dbcce8679b6868e9c1da83927f6389b9bc5"
+      sha256: "60413ec23c49d163d2cf33aaf2060fff304a56f4527fa885c8e09bfbd3792ac9"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.9"
+    version: "0.0.10"
   flutter:
     dependency: transitive
     description: flutter
@@ -1411,126 +1411,126 @@ packages:
   media_core:
     dependency: "direct overridden"
     description:
-      path: "F:/media_core/packages/media_core"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core"
       relative: false
     source: path
     version: "0.1.0"
   media_core_audio:
     dependency: transitive
     description:
-      path: "F:/media_core/packages/media_core_audio"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_audio"
       relative: false
     source: path
     version: "0.1.0"
   media_core_better_player:
     dependency: transitive
     description:
-      path: "F:/media_core/packages/media_core_better_player"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_better_player"
       relative: false
     source: path
     version: "0.1.0"
   media_core_cast_dlna:
     dependency: transitive
     description:
-      path: "F:/media_core/packages/media_core_cast_dlna"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_cast_dlna"
       relative: false
     source: path
     version: "0.1.0"
   media_core_danmaku:
     dependency: transitive
     description:
-      path: "F:/media_core/packages/media_core_danmaku"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_danmaku"
       relative: false
     source: path
     version: "0.1.0"
   media_core_fullscreen:
     dependency: transitive
     description:
-      path: "F:/media_core/packages/media_core_fullscreen"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_fullscreen"
       relative: false
     source: path
     version: "0.1.0"
   media_core_ijk_player:
     dependency: transitive
     description:
-      path: "F:/media_core/packages/media_core_ijk_player"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_ijk_player"
       relative: false
     source: path
     version: "0.1.0"
   media_core_live:
     dependency: transitive
     description:
-      path: "F:/media_core/packages/media_core_live"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_live"
       relative: false
     source: path
     version: "0.1.0"
   media_core_logging:
     dependency: transitive
     description:
-      path: "../../media_core/packages/media_core_logging"
+      path: "C:\\/Users/XA-158/projects/flutter/media_core/packages/media_core_logging"
       relative: true
     source: path
     version: "0.1.0"
   media_core_media_kit:
     dependency: transitive
     description:
-      path: "F:/media_core/packages/media_core_media_kit"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_media_kit"
       relative: false
     source: path
     version: "0.1.0"
   media_core_mediasession:
     dependency: transitive
     description:
-      path: "F:/media_core/packages/media_core_mediasession"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_mediasession"
       relative: false
     source: path
     version: "0.1.0"
   media_core_memory:
     dependency: transitive
     description:
-      path: "../../media_core/packages/media_core_memory"
+      path: "C:\\/Users/XA-158/projects/flutter/media_core/packages/media_core_memory"
       relative: true
     source: path
     version: "0.1.0"
   media_core_native:
     dependency: "direct overridden"
     description:
-      path: "F:/media_core/packages/media_core_native"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_native"
       relative: false
     source: path
     version: "0.2.0"
   media_core_notify:
     dependency: transitive
     description:
-      path: "F:/media_core/packages/media_core_notify"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_notify"
       relative: false
     source: path
     version: "0.1.0"
   media_core_pip:
     dependency: transitive
     description:
-      path: "F:/media_core/packages/media_core_pip"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_pip"
       relative: false
     source: path
     version: "0.1.0"
   media_core_presentation:
     dependency: transitive
     description:
-      path: "F:/media_core/packages/media_core_presentation"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_presentation"
       relative: false
     source: path
     version: "0.1.0"
   media_core_recording_ffmpeg:
     dependency: transitive
     description:
-      path: "F:/media_core/packages/media_core_recording_ffmpeg"
+      path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_recording_ffmpeg"
       relative: false
     source: path
     version: "0.1.0"
   media_core_win32:
     dependency: transitive
     description:
-      path: "../../media_core/packages/media_core_win32"
+      path: "C:\\/Users/XA-158/projects/flutter/media_core/packages/media_core_win32"
       relative: true
     source: path
     version: "0.1.0"
