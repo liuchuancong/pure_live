@@ -192,9 +192,8 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
               variant: DsButtonVariant.secondary,
               size: DsSize.sm,
               leading: const DsIcon(DsIcons.antenna, size: 16),
-              onPressed: () => unawaited(
-                context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
-              ),
+              onPressed: () =>
+                  unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
               child: Text(t.settings.sitesDisplay),
             ),
           ],
@@ -202,52 +201,47 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
       );
     }
 
+    final toolbar = <Widget>[
+      Expanded(
+        child: PlatformTabRow(
+          platforms: ids,
+          current: platform,
+          nameOf: _platformName,
+          semanticLabel: t.navigation.hot,
+          onManagePlatforms: () =>
+              unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
+          onChanged: (id) {
+            ref.read(popularSiteProvider.notifier).selected = id;
+            unawaited(ref.read(popularCatalogProvider.notifier).open(id));
+          },
+        ),
+      ),
+      SizedBox(
+        width: 148,
+        child: AdaptiveChoiceField<_PopularSort>(
+          value: _sort,
+          title: t.popular.sortLabel,
+          onChanged: (value) {
+            if (value == _sort) return;
+            setState(() => _sort = value);
+            final controller = _scrolls[platform];
+            if (controller?.hasClients ?? false) controller!.jumpTo(0);
+          },
+          options: [
+            DsSelectOption(value: _PopularSort.platform, label: t.popular.sortPlatform),
+            DsSelectOption(value: _PopularSort.audience, label: t.popular.sortAudience),
+          ],
+          placeholder: t.popular.sortLabel,
+          semanticLabel: t.popular.sortLabel,
+        ),
+      ),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
-          child: Row(
-            children: [
-              Expanded(
-                child: PlatformTabRow(
-                  platforms: ids,
-                  current: platform,
-                  nameOf: _platformName,
-                  semanticLabel: t.navigation.hot,
-                  // The panel's own way to the setting that hides and
-                  // reorders the platforms it lists.
-                  onManagePlatforms: () => unawaited(
-                    context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
-                  ),
-                  onChanged: (id) {
-                    ref.read(popularSiteProvider.notifier).selected = id;
-                    unawaited(ref.read(popularCatalogProvider.notifier).open(id));
-                  },
-                ),
-              ),
-              const SizedBox(width: DsSpace.s12),
-              SizedBox(
-                width: 148,
-                child: AdaptiveChoiceField<_PopularSort>(
-                  value: _sort,
-                  title: t.popular.sortLabel,
-                  onChanged: (value) {
-                    if (value == _sort) return;
-                    setState(() => _sort = value);
-                    final controller = _scrolls[platform];
-                    if (controller?.hasClients ?? false) controller!.jumpTo(0);
-                  },
-                  options: [
-                    DsSelectOption(value: _PopularSort.platform, label: t.popular.sortPlatform),
-                    DsSelectOption(value: _PopularSort.audience, label: t.popular.sortAudience),
-                  ],
-                  placeholder: t.popular.sortLabel,
-                  semanticLabel: t.popular.sortLabel,
-                ),
-              ),
-            ],
-          ),
+          child: Row(spacing: DsSpace.s12, children: toolbar),
         ),
         Expanded(
           child: _PlatformFeed(
@@ -316,12 +310,10 @@ final class _PlatformFeed extends ConsumerWidget {
       scrollController: scrollController,
       items: rooms,
       layout: ref.watch(browseLayoutProvider),
-      aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
-          ? CardGrid.roomCardCompactAspectRatio
-          : CardGrid.roomCardAspectRatio,
+      listMainAxisExtent: kRoomCardListDesignHeight,
       listItemBuilder: (context, room) => RoomCard(
         room: room,
-        compact: true,
+        listRow: true,
         onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
       ),
       crossSpacing: settings.crossSpacing,
@@ -344,8 +336,7 @@ final class _PlatformFeed extends ConsumerWidget {
         await controller.loadPage(platform, next);
         // Only a page that really moved starts at its head; a load the feed
         // refused (still working) leaves the viewer where they are.
-        if (ref.read(popularCatalogProvider)[platform]?.page == next &&
-            (scrollController?.hasClients ?? false)) {
+        if (ref.read(popularCatalogProvider)[platform]?.page == next && (scrollController?.hasClients ?? false)) {
           scrollController!.jumpTo(0);
         }
       },
@@ -560,12 +551,10 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
       scrollController: _scroll,
       items: rooms,
       layout: ref.watch(browseLayoutProvider),
-      aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
-          ? CardGrid.roomCardCompactAspectRatio
-          : CardGrid.roomCardAspectRatio,
+      listMainAxisExtent: kRoomCardListDesignHeight,
       listItemBuilder: (context, room) => RoomCard(
         room: room,
-        compact: true,
+        listRow: true,
         onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
       ),
       crossSpacing: settings.crossSpacing,

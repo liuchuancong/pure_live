@@ -307,6 +307,9 @@ final class _VodFeedView extends ConsumerWidget {
       scrollController: scrollController,
       items: state.videos,
       layout: ref.watch(browseLayoutProvider),
+      // The archive row is a cover beside two text lines: a hair taller
+      // than the room row so a two-line title never presses on its edge.
+      listMainAxisExtent: 104,
       listItemBuilder: (context, video) => VodVideoRow(video: video, onOpen: () => onOpen(video)),
       crossSpacing: settings.crossSpacing,
       mainSpacing: settings.mainSpacing,

@@ -107,12 +107,10 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
       scrollController: _scroll,
       items: rooms,
       layout: ref.watch(browseLayoutProvider),
-      aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
-          ? CardGrid.roomCardCompactAspectRatio
-          : CardGrid.roomCardAspectRatio,
+      listMainAxisExtent: kRoomCardListDesignHeight,
       listItemBuilder: (context, room) => RoomCard(
         room: room,
-        compact: true,
+        listRow: true,
         onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
       ),
       crossSpacing: settings.crossSpacing,

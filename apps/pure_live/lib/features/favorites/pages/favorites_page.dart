@@ -1,5 +1,4 @@
 import 'dart:async' show Timer, unawaited;
-import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
@@ -15,30 +14,6 @@ import 'package:pure_live/features/favorites/widgets/follow_tag_picker.dart' sho
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart';
-
-/// The narrowest card the follows grid uses when dense mode is off (the
-/// reference's large follows card).
-const double _favoriteLargeCardMinWidth = 300;
-
-/// The gap and padding the follows grid's [CardGrid] uses (its defaults):
-/// the card measure is worked out from the same box, so the columns match
-/// the reference's minimum width.
-const double _favoriteGridGap = DsSpace.s16;
-const EdgeInsets _favoriteGridPadding = EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24);
-
-/// A card measure for [width] that gives the follows grid its columns: dense
-/// mode keeps the browsing grid's own width-derived measure, while large
-/// cards are as wide as the row allows around the 300 px floor — the one
-/// place a feed still overrides the grid's measure, because the viewer's
-/// density choice is what decides it.
-double _favoriteCardExtent({required bool dense, required double width}) {
-  final content = math.max(0, width - _favoriteGridPadding.horizontal).toDouble();
-  if (dense) return browseCardExtentForWidth(content);
-  final columns = math.max(1, ((content + _favoriteGridGap) / (_favoriteLargeCardMinWidth + _favoriteGridGap)).floor());
-  // A hair above the exact item width keeps the grid's own ceil() on the
-  // intended column count instead of tipping into one more.
-  return (content - _favoriteGridGap * (columns - 1)) / columns + 0.01;
-}
 
 /// The follows page (the reference's `FavoritePage`): the group tabs (live,
 /// replay, offline, all — each with its count on the shown platform) above
@@ -258,7 +233,6 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   Widget build(BuildContext context) {
     final t = context.t;
     final follows = ref.watch(followsProvider);
-    final dense = ref.watch(favoritesDensityProvider);
     final layout = ref.watch(browseLayoutProvider);
     // The page size follows the platform tab, which resets the page itself;
     // nothing re-slices from the settings surface any more.
@@ -296,10 +270,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
         builder: (context, constraints) => CardGrid<LiveRoom>(
           items: const [],
           layout: layout,
-          aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
-              ? CardGrid.roomCardCompactAspectRatio
-              : CardGrid.roomCardAspectRatio,
-          cardExtent: _favoriteCardExtent(dense: dense, width: constraints.maxWidth),
+          listMainAxisExtent: kRoomCardListDesignHeight,
           isLoading: true,
           itemBuilder: (_, _) => const SizedBox.shrink(),
         ),
@@ -352,7 +323,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     final end = start + pageSize > rooms.length ? rooms.length : start + pageSize;
     final visibleRooms = rooms.sublist(start, end);
 
-    Widget cardFor(LiveRoom room, {required bool compact}) {
+    Widget cardFor(LiveRoom room, {bool listRow = false}) {
       final names = [for (final id in room.local.tagIds) ?tagNames[id]];
       return DsContextMenuRegion(
         semanticLabel: t.common.more,
@@ -371,7 +342,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
         ],
         child: FollowedRoomCard(
           room: room,
-          compact: compact,
+          listRow: listRow,
           tags: names,
           platformName: platform == kAllPlatforms ? _platformName(room.ref.platform) : null,
           onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
@@ -470,24 +441,15 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                   builder: (context, constraints) => CardGrid<LiveRoom>(
                     items: visibleRooms,
                     layout: layout,
-                    aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
-                        ? CardGrid.roomCardCompactAspectRatio
-                        : CardGrid.roomCardAspectRatio,
-                    listItemBuilder: (context, room) => cardFor(room, compact: true),
-                    cardExtent: _favoriteCardExtent(dense: dense, width: constraints.maxWidth),
+                    listMainAxisExtent: kRoomCardListDesignHeight,
+                    listItemBuilder: (context, room) => cardFor(room, listRow: true),
                     scrollController: _gridScroll,
-                    itemBuilder: (context, room) => cardFor(room, compact: false),
+                    itemBuilder: (context, room) => cardFor(room),
                   ),
                 ),
         ),
         if (lastPage > 1)
-          FavoritesPager(
-            page: page,
-            pageCount: lastPage,
-            busy: _refreshing,
-            onPage: _goToPage,
-            onRefresh: _runRefresh,
-          ),
+          FavoritesPager(page: page, pageCount: lastPage, busy: _refreshing, onPage: _goToPage, onRefresh: _runRefresh),
       ],
     );
   }

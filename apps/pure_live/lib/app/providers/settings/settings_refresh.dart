@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderOrFamily;
 import 'package:pure_live/app/background/settings/background_settings.dart' show backgroundSettingsProvider;
 import 'package:pure_live/app/providers/browse/browse_settings_providers.dart'
-    show browseLayoutProvider, browseSettingsProvider, favoritesDensityProvider;
+    show browseLayoutProvider, browseSettingsProvider;
 import 'package:pure_live/app/providers/browse/refresh_settings_providers.dart'
     show followsAutoRefreshProvider, historyLimitProvider, maxConcurrentRefreshProvider;
 import 'package:pure_live/app/providers/browse/thumbnail_refresh_provider.dart' show thumbnailRefreshProvider;
@@ -77,7 +77,6 @@ final List<ProviderOrFamily> kSettingsProviders = [
   roomCardSettingsProvider,
   roomSwitcherLayoutProvider,
   portraitSwipeSwitchProvider,
-  favoritesDensityProvider,
   showUnplayableProvider,
   audienceMetricProvider,
   audiencePolicyProvider,

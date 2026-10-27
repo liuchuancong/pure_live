@@ -18,6 +18,19 @@ const double kBrowseCardMinWidth = 220;
 /// The most columns a feed takes, however wide its window.
 const int kBrowseCardMaxColumns = 12;
 
+/// The narrowest a list-layout card keeps before its row gives a column
+/// back. The column count follows the window; no surface fixes it at two
+/// or three.
+const double kListCardMinWidth = 360;
+
+/// The card width the list layout gives itself in [content] pixels: the
+/// widest that still leaves whole columns at least [kListCardMinWidth] wide.
+double listCardExtentForWidth(double content, {double spacing = DsSpace.s12}) {
+  if (content <= 0) return kListCardMinWidth;
+  final columns = math.max(1, ((content + spacing) / (kListCardMinWidth + spacing)).floor());
+  return (content - spacing * (columns - 1)) / columns + 0.01;
+}
+
 /// The card width a feed of [content] pixels gives itself.
 ///
 /// The columns are the fewest that keep a card within [kBrowseCardMaxWidth],
@@ -37,13 +50,14 @@ double browseCardExtentForWidth(double content, {double crossSpacing = DsSpace.s
   return width(columns) + 0.01;
 }
 
-/// How a collection of items is laid out: the responsive card grid, or one
-/// full-width row per item.
+/// How a collection of items is laid out: the responsive card grid, or the
+/// row card in as many columns as the window can hold.
 enum CardLayout {
   /// Cards in columns.
   grid,
 
-  /// One row per item, spanning the pane.
+  /// Row cards side by side; the columns follow the window, so a wide
+  /// desktop shows several rows' worth across instead of one band each.
   list,
 }
 
@@ -68,6 +82,7 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
     this.crossSpacing = DsSpace.s16,
     this.mainSpacing = DsSpace.s16,
     this.aspectRatio = roomCardAspectRatio,
+    this.listMainAxisExtent,
     this.isLoading = false,
     this.hasMore = false,
     this.onLoadMore,
@@ -90,11 +105,6 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   /// The room card's tile ratio: a 16:9 cover on top and a title row
   /// beneath it. Wide row cards (areas, history) pass their own.
   static const double roomCardAspectRatio = 1.25;
-
-  /// A compact room card's tile ratio: the coverless identity row's height
-  /// against a typical grid width, so a compact layout does not reserve a
-  /// cover's worth of empty tile.
-  static const double roomCardCompactAspectRatio = 3.6;
 
   /// The items shown.
   final List<T> items;
@@ -124,6 +134,11 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
 
   /// The tile's width over height; the card fills its tile.
   final double aspectRatio;
+
+  /// The fixed height of a card in the list layout's multi-column rows, so
+  /// a row design keeps its proportions however wide its column gets. Null
+  /// falls back to [aspectRatio].
+  final double? listMainAxisExtent;
 
   /// Whether a page is in flight: the grid's footer shows a spinner, and
   /// the first page shows skeletons instead of the empty state.
@@ -230,6 +245,16 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     return math.max(1, (extent / (_extentFor(width) + widget.crossSpacing)).ceil());
   }
 
+  /// The list layout's delegate: the same responsive columns as the grid,
+  /// but the row's own height so a wide column never stretches a row card.
+  SliverGridDelegateWithMaxCrossAxisExtent _listDelegate(double content) => SliverGridDelegateWithMaxCrossAxisExtent(
+    maxCrossAxisExtent: listCardExtentForWidth(content, spacing: widget.crossSpacing),
+    mainAxisSpacing: widget.mainSpacing,
+    crossAxisSpacing: widget.crossSpacing,
+    mainAxisExtent: widget.listMainAxisExtent,
+    childAspectRatio: widget.listMainAxisExtent == null ? widget.aspectRatio : 1,
+  );
+
   @override
   void dispose() {
     _itemNodes.clear();
@@ -289,7 +314,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     if (widget.pagesOnScrollToEnd) return;
     // The last two rows pre-load the next page, so the D-pad never stops
     // one row short of the end of an infinite feed.
-    final columns = widget.layout == CardLayout.list ? 1 : math.max(1, _columns);
+    final columns = math.max(1, _columns);
     if (index >= widget.items.length - columns * 2) _askForMore();
   }
 
@@ -305,7 +330,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
       return KeyEventResult.ignored;
     }
     final key = event.logicalKey;
-    final columns = widget.layout == CardLayout.list ? 1 : math.max(1, _columns);
+    final columns = math.max(1, _columns);
     final row = index ~/ columns;
     final lastRow = (count - 1) ~/ columns;
     int? target;
@@ -318,8 +343,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
         return KeyEventResult.ignored;
       }
       target = math.min(index + columns, count - 1);
-    } else if (widget.layout == CardLayout.grid &&
-        (key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight)) {
+    } else if (key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight) {
       final forward = key == LogicalKeyboardKey.arrowRight;
       final step = forward != (Directionality.of(context) == TextDirection.rtl) ? 1 : -1;
       final column = index % columns;
@@ -367,22 +391,16 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     final padding = widget.padding.resolve(Directionality.of(context));
     final double start;
     final double extent;
-    if (widget.layout == CardLayout.list) {
-      final count = math.max(1, widget.items.length);
-      final content = position.maxScrollExtent + position.viewportDimension;
-      final approximate = math.max(0, (content - padding.top - padding.bottom) / count).toDouble();
-      start = padding.top + index * approximate;
-      extent = approximate;
-    } else {
-      if (_gridWidth <= 0) return;
-      final columns = math.max(1, _columns);
-      final width = math.max(0, _gridWidth - padding.horizontal);
-      if (width <= 0) return;
-      final itemWidth = (width - widget.crossSpacing * (columns - 1)) / columns;
-      final itemHeight = itemWidth / widget.aspectRatio;
-      start = padding.top + (index ~/ columns) * (itemHeight + widget.mainSpacing);
-      extent = itemHeight;
-    }
+    if (_gridWidth <= 0) return;
+    final columns = math.max(1, _columns);
+    final width = math.max(0, _gridWidth - padding.horizontal);
+    if (width <= 0) return;
+    final itemWidth = (width - widget.crossSpacing * (columns - 1)) / columns;
+    final itemHeight = widget.layout == CardLayout.list
+        ? widget.listMainAxisExtent ?? itemWidth / widget.aspectRatio
+        : itemWidth / widget.aspectRatio;
+    start = padding.top + (index ~/ columns) * (itemHeight + widget.mainSpacing);
+    extent = itemHeight;
     var target = position.pixels;
     if (start < target + _focusMargin) {
       target = start - _focusMargin;
@@ -421,7 +439,14 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
   Widget build(BuildContext context) {
     if (widget.items.isEmpty && widget.isLoading) {
       return widget.layout == CardLayout.list
-          ? _SkeletonList(count: widget.skeletonCount, gap: widget.mainSpacing, padding: widget.padding)
+          ? _SkeletonListGrid(
+              crossSpacing: widget.crossSpacing,
+              mainSpacing: widget.mainSpacing,
+              aspectRatio: widget.aspectRatio,
+              mainAxisExtent: widget.listMainAxisExtent,
+              count: widget.skeletonCount,
+              padding: widget.padding,
+            )
           : _SkeletonGrid(
               cardExtent: widget.cardExtent,
               crossSpacing: widget.crossSpacing,
@@ -453,24 +478,35 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     final refresh = widget.onRefresh;
     final Widget collection;
     if (widget.layout == CardLayout.list) {
-      _columns = 1;
       final listBuilder = widget.listItemBuilder ?? widget.itemBuilder;
       collection = NotificationListener<ScrollNotification>(
         onNotification: (notification) {
           _onScroll(notification);
           return false;
         },
-        child: ListView.separated(
-          controller: _scroll,
-          padding: widget.padding,
-          physics: refresh == null ? null : const AlwaysScrollableScrollPhysics(),
-          itemCount: widget.items.length + (loadingRow ? 1 : 0),
-          separatorBuilder: (context, index) => SizedBox(height: widget.mainSpacing),
-          itemBuilder: (context, index) {
-            if (index >= widget.items.length) {
-              return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
-            }
-            return _focusableItem(index, listBuilder(context, widget.items[index]));
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // The rows flow into as many columns as the window can hold at
+            // a row card's own width, so a wide window shows three or four
+            // side by side instead of one full-width band each.
+            final padding = widget.padding.resolve(Directionality.of(context));
+            final content = math.max(0, constraints.maxWidth - padding.horizontal).toDouble();
+            final delegate = _listDelegate(content);
+            _gridWidth = constraints.maxWidth;
+            _columns = math.max(1, (content / (delegate.maxCrossAxisExtent + widget.crossSpacing)).ceil());
+            return GridView.builder(
+              controller: _scroll,
+              padding: widget.padding,
+              physics: refresh == null ? null : const AlwaysScrollableScrollPhysics(),
+              gridDelegate: delegate,
+              itemCount: widget.items.length + (loadingRow ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index >= widget.items.length) {
+                  return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
+                }
+                return _focusableItem(index, listBuilder(context, widget.items[index]));
+              },
+            );
           },
         ),
       );
@@ -871,21 +907,46 @@ final class CardList<T> extends StatelessWidget {
   }
 }
 
-/// The list's first-page placeholder: the same row rhythm, no content.
-final class _SkeletonList extends StatelessWidget {
-  const _SkeletonList({required this.count, required this.gap, required this.padding});
+/// The list layout's first-page placeholder: the same responsive columns,
+/// no content.
+final class _SkeletonListGrid extends StatelessWidget {
+  const _SkeletonListGrid({
+    required this.crossSpacing,
+    required this.mainSpacing,
+    required this.aspectRatio,
+    required this.mainAxisExtent,
+    required this.count,
+    required this.padding,
+  });
 
+  final double crossSpacing;
+  final double mainSpacing;
+  final double aspectRatio;
+  final double? mainAxisExtent;
   final int count;
-  final double gap;
   final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: padding,
-      itemCount: count,
-      separatorBuilder: (context, index) => SizedBox(height: gap),
-      itemBuilder: (context, index) => const DsSkeleton(width: double.infinity, height: 100),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final resolved = padding.resolve(Directionality.of(context));
+        final content = math.max(0, constraints.maxWidth - resolved.horizontal).toDouble();
+        return GridView.builder(
+          padding: padding,
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: listCardExtentForWidth(content, spacing: crossSpacing),
+            mainAxisSpacing: mainSpacing,
+            crossAxisSpacing: crossSpacing,
+            mainAxisExtent: mainAxisExtent,
+            childAspectRatio: mainAxisExtent == null ? aspectRatio : 1,
+          ),
+          itemCount: count,
+          itemBuilder: (context, index) => const DsShimmer(
+            child: DsSkeleton.block(width: double.infinity, height: double.infinity),
+          ),
+        );
+      },
     );
   }
 }
