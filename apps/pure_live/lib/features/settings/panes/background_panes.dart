@@ -3,8 +3,11 @@ import 'dart:io' show File;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:desktop_drop/desktop_drop.dart' show DropDoneDetails, DropTarget;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_net/live_net.dart' show ClientProfile;
+import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:path/path.dart' as p;
 
 import 'package:pure_live/app/app.dart';
@@ -112,21 +115,26 @@ final class BackgroundOverviewPane extends ConsumerWidget {
 /// size before the first width is known.
 const int _kSwatchTileWidth = 108;
 
-/// Rows a page holds. The page size is always a whole number of rows, so a
-/// page never ends with one tile short of a line however wide the window is.
+/// Rows a page of swatches holds. The page size is always a whole number of
+/// rows, so a page never ends with one tile short of a line however wide the
+/// window is.
 const int _kPageRows = 4;
 
 /// Columns of a max-extent grid at [width]: the same arithmetic
-/// `SliverGridDelegateWithMaxCrossAxisExtent` uses.
+/// `SliverGridDelegateWithMaxCrossAxisExtent` uses — it rounds up, so a
+/// width even slightly past one extent's worth asks for another column.
 int gridColumnsFor(double width, double maxExtent, double spacing) =>
-    ((width + spacing) / (maxExtent + spacing)).floor().clamp(1, 1 << 12);
+    (width / (maxExtent + spacing)).ceil().clamp(1, 1 << 12);
+
+/// The two swatch groups the colour page switches between.
+enum _SwatchGroup { solid, gradient }
 
 /// Solid colours and gradients, each pointing at the live app background;
 /// a tap is the preview and the choice at once.
 ///
-/// Both groups are paged. The ported table is twelve flats and 139 gradients,
-/// and one scroll of 151 swatches is neither readable nor quick to walk with a
-/// keyboard or a remote.
+/// The groups have a switch of their own rather than one scroll: the tables
+/// carry hundreds of swatches apiece, which is neither readable nor quick to
+/// walk with a keyboard or a remote in one list.
 final class BackgroundColorsPane extends ConsumerStatefulWidget {
   const BackgroundColorsPane({super.key});
 
@@ -137,6 +145,7 @@ final class BackgroundColorsPane extends ConsumerStatefulWidget {
 final class _BackgroundColorsPaneState extends ConsumerState<BackgroundColorsPane> {
   int _solidPage = 1;
   int _gradientPage = 1;
+  _SwatchGroup _group = _SwatchGroup.solid;
 
   /// The swatches of [page], [pageSize] apiece.
   static List<T> _slice<T>(List<T> items, int page, int pageSize) {
@@ -183,62 +192,88 @@ final class _BackgroundColorsPaneState extends ConsumerState<BackgroundColorsPan
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s16,
           children: [
-            DsListSection(
-              header: Text(t.settings.backgroundSolid),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(DsSpace.s12),
-                  child: Wrap(
-                    spacing: DsSpace.s8,
-                    runSpacing: DsSpace.s8,
-                    children: [
-                      for (final preset in solids)
-                        _Swatch(
-                          name: preset.name,
-                          decoration: BoxDecoration(color: preset.color),
-                          selected: settings.kind == BackgroundKind.solid && settings.solidColor == preset.color,
-                          onPressed: () => controller.setSolid(preset.color),
-                        ),
-                    ],
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: DsChoiceChips<_SwatchGroup>(
+                value: _group,
+                semanticLabel: t.settings.backgroundColorsTitle,
+                options: [
+                  DsChipOption(
+                    value: _SwatchGroup.solid,
+                    label: Text(t.settings.backgroundSolid),
+                    leading: const DsIcon(DsIcons.square),
                   ),
-                ),
-                _pager(
-                  page: _solidPage,
-                  total: kBackgroundSolidPresets.length,
-                  pageSize: pageSize,
-                  onPage: (page) => setState(() => _solidPage = page),
-                  label: t.settings.backgroundSolid,
-                ),
-              ],
-            ),
-            DsListSection(
-              header: Text(t.settings.backgroundGradient),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(DsSpace.s12),
-                  child: Wrap(
-                    spacing: DsSpace.s8,
-                    runSpacing: DsSpace.s8,
-                    children: [
-                      for (final preset in gradients)
-                        _Swatch(
-                          name: preset.name,
-                          decoration: _gradientOf(preset),
-                          selected: settings.kind == BackgroundKind.gradient && _sameGradient(settings, preset),
-                          onPressed: () => controller.setGradient(preset),
-                        ),
-                    ],
+                  DsChipOption(
+                    value: _SwatchGroup.gradient,
+                    label: Text(t.settings.backgroundGradient),
+                    leading: const DsIcon(DsIcons.contrast),
                   ),
-                ),
-                _pager(
-                  page: _gradientPage,
-                  total: kBackgroundGradientPresets.length,
-                  pageSize: pageSize,
-                  onPage: (page) => setState(() => _gradientPage = page),
-                  label: t.settings.backgroundGradient,
-                ),
-              ],
+                ],
+                onChanged: (value) => setState(() => _group = value),
+              ),
             ),
+            if (_group == _SwatchGroup.solid)
+              DsListSection(
+                header: Text(t.settings.backgroundSolid),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(DsSpace.s12),
+                    child: Wrap(
+                      spacing: DsSpace.s8,
+                      runSpacing: DsSpace.s8,
+                      children: [
+                        for (final preset in solids)
+                          _Swatch(
+                            name: preset.name,
+                            decoration: BoxDecoration(color: preset.color),
+                            selected: settings.kind == BackgroundKind.solid && settings.solidColor == preset.color,
+                            copyLabel: t.settings.backgroundCopyColor,
+                            copyValue: preset.name,
+                            onPressed: () => controller.setSolid(preset.color),
+                          ),
+                      ],
+                    ),
+                  ),
+                  _pager(
+                    page: _solidPage,
+                    total: kBackgroundSolidPresets.length,
+                    pageSize: pageSize,
+                    onPage: (page) => setState(() => _solidPage = page),
+                    label: t.settings.backgroundSolid,
+                  ),
+                ],
+              )
+            else
+              DsListSection(
+                header: Text(t.settings.backgroundGradient),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(DsSpace.s12),
+                    child: Wrap(
+                      spacing: DsSpace.s8,
+                      runSpacing: DsSpace.s8,
+                      children: [
+                        for (final preset in gradients)
+                          _Swatch(
+                            name: preset.name,
+                            decoration: _gradientOf(preset),
+                            selected: settings.kind == BackgroundKind.gradient && _sameGradient(settings, preset),
+                            copyLabel: t.settings.backgroundCopyGradient,
+                            copyValue: _cssGradient(preset),
+                            onPressed: () => controller.setGradient(preset),
+                          ),
+                      ],
+                    ),
+                  ),
+                  _pager(
+                    page: _gradientPage,
+                    total: kBackgroundGradientPresets.length,
+                    pageSize: pageSize,
+                    onPage: (page) => setState(() => _gradientPage = page),
+                    label: t.settings.backgroundGradient,
+                  ),
+                ],
+              ),
           ],
         );
       },
@@ -252,6 +287,17 @@ final class _BackgroundColorsPaneState extends ConsumerState<BackgroundColorsPan
       gradient: LinearGradient(begin: begin, end: end, colors: preset.colors, stops: preset.stops),
     );
   }
+
+  /// The preset as a CSS gradient, for the copy action.
+  static String _cssGradient(BackgroundGradientPreset preset) {
+    final stops = [
+      for (var i = 0; i < preset.colors.length; i++) '${_hexOf(preset.colors[i])} ${(preset.stops[i] * 100).round()}%',
+    ];
+    return 'linear-gradient(${preset.deg}deg, ${stops.join(', ')})';
+  }
+
+  static String _hexOf(Color color) =>
+      '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
   /// Whether the live background is this preset — colours, positions and the
   /// angle, so two tables sharing a palette still mark one swatch.
@@ -272,9 +318,17 @@ final class _BackgroundColorsPaneState extends ConsumerState<BackgroundColorsPan
 }
 
 /// One palette swatch: the paint, its name under it, and the ring that says
-/// this is what the app is wearing.
+/// this is what the app is wearing. A long press or right click offers the
+/// same apply plus copying the colour in a form another app understands.
 final class _Swatch extends StatelessWidget {
-  const _Swatch({required this.name, required this.decoration, required this.selected, required this.onPressed});
+  const _Swatch({
+    required this.name,
+    required this.decoration,
+    required this.selected,
+    required this.copyLabel,
+    required this.copyValue,
+    required this.onPressed,
+  });
 
   /// The colour or gradient, in the form the background paints with.
   final BoxDecoration decoration;
@@ -282,49 +336,70 @@ final class _Swatch extends StatelessWidget {
   /// What the source table calls it.
   final String name;
 
+  /// What the copy action is called: a colour value or a gradient.
+  final String copyLabel;
+
+  /// The text the copy action puts on the clipboard.
+  final String copyValue;
+
   final bool selected;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
+    final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    return SizedBox(
-      width: _kSwatchTileWidth.toDouble(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s4,
-        children: [
-          DsPressable(
-            semanticLabel: name,
-            selected: selected,
-            onPressed: onPressed,
-            builder: (context, states, _) => Container(
-              width: _kSwatchTileWidth.toDouble(),
-              height: 64,
-              decoration: BoxDecoration(
-                color: decoration.color,
-                gradient: decoration.gradient,
-                borderRadius: BorderRadius.circular(theme.radii.card),
-                border: Border.all(
-                  color: selected
-                      ? colors.accent
-                      : states.contains(WidgetState.hovered)
-                      ? colors.textSubtle
-                      : colors.border,
-                  width: selected ? 3 : 1,
+    return DsContextMenuRegion(
+      semanticLabel: t.common.more,
+      items: [
+        DsMenuItem(leading: const DsIcon(DsIcons.check), label: Text(t.settings.backgroundApply), onPressed: onPressed),
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.copy),
+          label: Text(copyLabel),
+          onPressed: () async {
+            await Clipboard.setData(ClipboardData(text: copyValue));
+            if (context.mounted) showDsToast(context: context, title: t.common.copied);
+          },
+        ),
+      ],
+      child: SizedBox(
+        width: _kSwatchTileWidth.toDouble(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: DsSpace.s4,
+          children: [
+            DsPressable(
+              semanticLabel: name,
+              selected: selected,
+              onPressed: onPressed,
+              builder: (context, states, _) => Container(
+                width: _kSwatchTileWidth.toDouble(),
+                height: 64,
+                decoration: BoxDecoration(
+                  color: decoration.color,
+                  gradient: decoration.gradient,
+                  borderRadius: BorderRadius.circular(theme.radii.card),
+                  border: Border.all(
+                    color: selected
+                        ? colors.accent
+                        : states.contains(WidgetState.hovered)
+                        ? colors.textSubtle
+                        : colors.border,
+                    width: selected ? 3 : 1,
+                  ),
                 ),
+                child: selected ? Center(child: DsIcon(DsIcons.check, size: 20, color: colors.onAccent)) : null,
               ),
-              child: selected ? Center(child: DsIcon(DsIcons.check, size: 20, color: colors.onAccent)) : null,
             ),
-          ),
-          Text(
-            name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.small.copyWith(color: colors.textSubtle),
-          ),
-        ],
+            Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.small.copyWith(color: colors.textSubtle),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -470,12 +545,56 @@ final class _BackgroundLibraryPaneState extends ConsumerState<BackgroundLibraryP
     _error = null;
   }
 
+  /// Puts an entry behind the app without walking through the preview.
+  void _applyItem(WallpaperItem item) {
+    final t = context.t;
+    final controller = ref.read(backgroundSettingsProvider.notifier);
+    if (item.video) {
+      controller.setVideoUrl(item.url);
+    } else {
+      controller.setImageUrl(item.url);
+    }
+    showDsToast(context: context, title: t.settings.backgroundLibraryApplied);
+  }
+
+  /// Fetches an entry into the shared download folder: the grid shows
+  /// thumbnails, so keeping one is otherwise a trip through a browser.
+  Future<void> _download(WallpaperItem item) async {
+    final t = context.t;
+    final directory = ref.read(downloadDirectoryProvider).effectivePath;
+    try {
+      final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
+      await downloadMediaFile(
+        http: http,
+        url: Uri.parse(item.url),
+        directory: directory,
+        fileName: wallpaperFileName(title: item.name, fallback: item.id, address: item.url),
+      );
+      if (!mounted) return;
+      showDsToast(
+        context: context,
+        title: t.settings.downloadSavedTo(path: directory),
+      );
+    } on Object catch (error) {
+      if (!mounted) return;
+      showDsToast(
+        context: context,
+        title: t.settings.backgroundDownloadFailed,
+        description: '$error',
+        status: DsStatus.danger,
+      );
+    }
+  }
+
+  /// The tile's width over height.
+  static const double _kWallpaperAspectRatio = 16 / 10;
+
   /// The grid every page — and every skeleton row — is laid out with.
   static const SliverGridDelegateWithMaxCrossAxisExtent _gridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
     maxCrossAxisExtent: 220,
     mainAxisSpacing: DsSpace.s8,
     crossAxisSpacing: DsSpace.s8,
-    childAspectRatio: 16 / 10,
+    childAspectRatio: _kWallpaperAspectRatio,
   );
 
   @override
@@ -509,143 +628,180 @@ final class _BackgroundLibraryPaneState extends ConsumerState<BackgroundLibraryP
             options: [for (final category in categories) DsChipOption(value: category, label: Text(category.label(t)))],
             onChanged: _selectCategory,
           ),
-        if (_error != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: DsSpace.s24),
-            child: DsEmptyState(
-              icon: const DsIcon(DsIcons.cloudOff),
-              title: Text(t.settings.backgroundLibraryFailed),
-              description: Text(_error!, maxLines: 3, overflow: TextOverflow.ellipsis),
-              actions: [DsButton(onPressed: () => _goTo(_page), child: Text(t.common.retry))],
-            ),
-          )
-        else
-          LayoutBuilder(
-            builder: (context, constraints) {
-              // Whole rows of this width: a page that ended one tile short
-              // was the old scroll-append list's tell.
-              final columns = gridColumnsFor(constraints.maxWidth, _gridDelegate.maxCrossAxisExtent, DsSpace.s8);
-              final pageSize = columns * _kPageRows;
-              if (pageSize != _pageSize) {
-                _pageSize = pageSize;
-                // The resize may have left the current page past what the
-                // buffer covers; pull what it now needs.
-                if (!_loading && (pageSize * _page > _buffer.length) && _hasMore) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) unawaited(_load());
-                  });
-                }
-              }
-              final items = _slice(_page, pageSize);
-              if (items.isEmpty && !_loading) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: DsSpace.s32),
-                  child: Center(
-                    child: DsEmptyState(
-                      icon: const DsIcon(DsIcons.image),
-                      title: Text(t.settings.backgroundLibraryEmpty),
-                    ),
+        Expanded(
+          child: _error != null
+              ? Center(
+                  child: DsEmptyState(
+                    icon: const DsIcon(DsIcons.cloudOff),
+                    title: Text(t.settings.backgroundLibraryFailed),
+                    description: Text(_error!, maxLines: 3, overflow: TextOverflow.ellipsis),
+                    actions: [DsButton(onPressed: () => _goTo(_page), child: Text(t.common.retry))],
                   ),
-                );
-              }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: DsSpace.s12,
-                children: [
-                  // A page on its way in keeps the grid's shape: skeleton
-                  // tiles in the same slots, not a spinner in an empty box.
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: _gridDelegate,
-                    itemCount: items.isEmpty ? pageSize : items.length,
-                    itemBuilder: (context, index) {
-                      if (items.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: DsSpace.s4),
-                          child: DsSkeleton.block(),
-                        );
+                )
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    // The page fills the room the window gives it: whole
+                    // columns across, as many whole rows down as fit above
+                    // the pager, so a narrow window does not leave half the
+                    // space empty while showing four tiles.
+                    final columns = gridColumnsFor(constraints.maxWidth, _gridDelegate.maxCrossAxisExtent, DsSpace.s8);
+                    final tileWidth = (constraints.maxWidth - (columns - 1) * DsSpace.s8) / columns;
+                    final tileHeight = tileWidth / _kWallpaperAspectRatio;
+                    final rows = ((constraints.maxHeight + DsSpace.s8) / (tileHeight + DsSpace.s8)).floor().clamp(
+                      1,
+                      1 << 10,
+                    );
+                    final pageSize = columns * rows;
+                    if (pageSize != _pageSize) {
+                      _pageSize = pageSize;
+                      // The resize may have left the current page past what
+                      // the buffer covers; pull what it now needs.
+                      if (!_loading && (pageSize * _page > _buffer.length) && _hasMore) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) unawaited(_load());
+                        });
                       }
-                      final item = items[index];
-                      return _WallpaperTile(
-                        item: item,
-                        selected: settings.kind == selectedKind && item.url == selectedUrl,
-                        semanticLabel: '$title ${(_page - 1) * pageSize + index + 1}',
-                        // The whole page travels with the tap: the preview
-                        // steps through what the grid just showed.
-                        onPressed: () => unawaited(showWallpaperPreview(context, items, index)),
+                    }
+                    final items = _slice(_page, pageSize);
+                    if (items.isEmpty && !_loading) {
+                      return Center(
+                        child: DsEmptyState(
+                          icon: const DsIcon(DsIcons.image),
+                          title: Text(t.settings.backgroundLibraryEmpty),
+                        ),
                       );
-                    },
-                  ),
-                  Align(
-                    alignment: AlignmentDirectional.center,
-                    child: DsPagination(
-                      page: _page,
-                      pageCount: _pageCount,
-                      onChanged: _loading ? null : _goTo,
-                      semanticLabel: title,
-                    ),
-                  ),
-                ],
-              );
-            },
+                    }
+                    // A page on its way in keeps the grid's shape: skeleton
+                    // tiles in the same slots, not a spinner in an empty box.
+                    return GridView.builder(
+                      primary: false,
+                      padding: EdgeInsets.zero,
+                      gridDelegate: _gridDelegate,
+                      itemCount: items.isEmpty ? pageSize : items.length,
+                      itemBuilder: (context, index) {
+                        if (items.isEmpty) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: DsSpace.s4),
+                            child: DsSkeleton.block(),
+                          );
+                        }
+                        final item = items[index];
+                        return _WallpaperTile(
+                          item: item,
+                          selected: settings.kind == selectedKind && item.url == selectedUrl,
+                          semanticLabel: '$title ${(_page - 1) * pageSize + index + 1}',
+                          // The whole page travels with the tap: the preview
+                          // steps through what the grid just showed.
+                          onPressed: () => unawaited(showWallpaperPreview(context, items, index)),
+                          onApply: () => _applyItem(item),
+                          onDownload: () => unawaited(_download(item)),
+                        );
+                      },
+                    );
+                  },
+                ),
+        ),
+        if (_error == null)
+          Align(
+            alignment: AlignmentDirectional.center,
+            child: DsPagination(
+              page: _page,
+              pageCount: _pageCount,
+              onChanged: _loading ? null : _goTo,
+              semanticLabel: title,
+            ),
           ),
       ],
     );
   }
 }
 
+/// One grid entry. A tap opens the full preview; a long press or right click
+/// offers the same preview plus applying it as is and downloading it.
 final class _WallpaperTile extends StatelessWidget {
   const _WallpaperTile({
     required this.item,
     required this.selected,
     required this.semanticLabel,
     required this.onPressed,
+    required this.onApply,
+    required this.onDownload,
   });
 
   final WallpaperItem item;
   final bool selected;
   final String semanticLabel;
   final VoidCallback onPressed;
+  final VoidCallback onApply;
+  final VoidCallback onDownload;
 
   @override
   Widget build(BuildContext context) {
+    final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    return DsPressable(
+    final inset = selected ? 3.0 : 1.0;
+    final radius = theme.radii.card;
+    return DsContextMenuRegion(
       semanticLabel: semanticLabel,
-      selected: selected,
-      onPressed: onPressed,
-      builder: (context, states, _) => Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(theme.radii.card),
-          border: Border.all(
-            color: selected
-                ? colors.accent
-                : states.contains(WidgetState.hovered)
-                ? colors.textSubtle
-                : colors.border,
-            width: selected ? 3 : 1,
-          ),
+      items: [
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.eye),
+          label: Text(t.settings.backgroundPreviewMedia),
+          onPressed: onPressed,
         ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            DsImage(
-              image: cachedImage(item.thumb),
-              aspectRatio: 16 / 10,
-              semanticLabel: semanticLabel,
-              fallback: ColoredBox(color: colors.control),
+        DsMenuItem(leading: const DsIcon(DsIcons.check), label: Text(t.settings.backgroundApply), onPressed: onApply),
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.download),
+          label: Text(t.settings.downloadAction),
+          onPressed: onDownload,
+        ),
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.link),
+          label: Text(t.settings.backgroundCopyAddress),
+          onPressed: () async {
+            await Clipboard.setData(ClipboardData(text: item.url));
+            if (context.mounted) showDsToast(context: context, title: t.common.copied);
+          },
+        ),
+      ],
+      child: DsPressable(
+        semanticLabel: semanticLabel,
+        selected: selected,
+        onPressed: onPressed,
+        builder: (context, states, _) => Container(
+          padding: EdgeInsets.all(inset),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(
+              color: selected
+                  ? colors.accent
+                  : states.contains(WidgetState.hovered)
+                  ? colors.textSubtle
+                  : colors.border,
+              width: inset,
             ),
-            if (item.video) const Center(child: DsIcon(DsIcons.play, size: 26, color: Color(0xCCFFFFFF))),
-            if (selected)
-              const PositionedDirectional(
-                top: 6,
-                end: 6,
-                child: DsIcon(DsIcons.checkCircle, size: 20, color: Color(0xFFFFFFFF)),
-              ),
-          ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(radius - inset),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                DsImage(
+                  image: cachedImage(item.thumb),
+                  semanticLabel: semanticLabel,
+                  fallback: ColoredBox(color: colors.control),
+                ),
+                if (item.video) const Center(child: DsIcon(DsIcons.play, size: 26, color: Color(0xCCFFFFFF))),
+                if (selected)
+                  const PositionedDirectional(
+                    top: 6,
+                    end: 6,
+                    child: DsIcon(DsIcons.checkCircle, size: 20, color: Color(0xFFFFFFFF)),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -713,10 +869,9 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
   bool _imageDragging = false;
   bool _videoDragging = false;
 
-  /// The file types each zone accepts; the picker filters by kind, a drop
-  /// arrives with whatever the desktop had.
-  static const _imageExtensions = {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.avif'};
-  static const _videoExtensions = {'.mp4', '.webm', '.mkv', '.mov', '.m4v', '.avi'};
+  /// The formats under a drop zone, in the order the importer accepts them.
+  static String _formatsOf(List<String> extensions) =>
+      [for (final extension in extensions) extension.toUpperCase()].join(' · ');
 
   @override
   void initState() {
@@ -761,33 +916,33 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
           context,
           title: t.settings.backgroundImage,
           addressLabel: t.settings.backgroundImageAddress,
-          formats: 'PNG · JPG · WEBP · GIF',
+          formats: _formatsOf(kBackgroundImageExtensions),
           controller: _imageUrl,
           path: settings.imagePath,
           saved: settings.imageUrl,
           busy: settings.busy,
           dragging: _imageDragging,
           onDraggingChanged: (value) => setState(() => _imageDragging = value),
-          onBrowse: () => _upload(image: true),
+          onBrowse: _upload,
           onApply: () => _apply(image: true),
           onRemove: () => controller.removeFile(image: true),
-          onDrop: (details) => _drop(details, image: true),
+          onDrop: _drop,
         ),
         _sourceSection(
           context,
           title: t.settings.backgroundVideo,
           addressLabel: t.settings.backgroundVideoAddress,
-          formats: 'MP4 · WEBM · MKV',
+          formats: _formatsOf(kBackgroundVideoExtensions),
           controller: _videoUrl,
           path: settings.videoPath,
           saved: settings.videoUrl,
           busy: settings.busy,
           dragging: _videoDragging,
           onDraggingChanged: (value) => setState(() => _videoDragging = value),
-          onBrowse: () => _upload(image: false),
+          onBrowse: _upload,
           onApply: () => _apply(image: false),
           onRemove: () => controller.removeFile(image: false),
-          onDrop: (details) => _drop(details, image: false),
+          onDrop: _drop,
         ),
       ],
     );
@@ -834,7 +989,31 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
                   description: Text(formats),
                   files: [
                     if (path.isNotEmpty)
-                      DsFileItem(name: p.basename(path), size: _sizeOf(path), onRemove: busy ? null : onRemove),
+                      DsContextMenuRegion(
+                        semanticLabel: p.basename(path),
+                        items: [
+                          DsMenuItem(
+                            leading: const DsIcon(DsIcons.eye),
+                            label: Text(t.settings.backgroundPreviewMedia),
+                            onPressed: () => unawaited(_previewFile(path)),
+                          ),
+                          DsMenuItem(
+                            leading: const DsIcon(DsIcons.download),
+                            label: Text(t.settings.downloadAction),
+                            onPressed: () => unawaited(_saveCopy(path)),
+                          ),
+                          DsMenuItem(
+                            leading: const DsIcon(DsIcons.trash2),
+                            label: Text(t.common.delete),
+                            onPressed: busy ? null : onRemove,
+                          ),
+                        ],
+                        child: DsFileItem(
+                          name: p.basename(path),
+                          size: _sizeOf(path),
+                          onRemove: busy ? null : onRemove,
+                        ),
+                      ),
                   ],
                 ),
                 Text(addressLabel, style: theme.typography.body.copyWith(color: colors.text)),
@@ -867,22 +1046,24 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
     );
   }
 
-  /// Copies a file dropped on [image]'s zone; a drop the zone does not take
-  /// says so instead of failing later in the decoder.
-  Future<void> _drop(DropDoneDetails details, {required bool image}) async {
+  /// Copies a file dropped on either zone into the slot its own type names;
+  /// a drop of a type neither zone takes says so instead of failing later in
+  /// the decoder.
+  Future<void> _drop(DropDoneDetails details) async {
     final t = context.t;
-    if (image) {
-      setState(() => _imageDragging = false);
-    } else {
-      setState(() => _videoDragging = false);
-    }
+    setState(() {
+      _imageDragging = false;
+      _videoDragging = false;
+    });
     if (ref.read(backgroundSettingsProvider).busy) return;
     final file = details.files.firstOrNull;
     if (file == null) {
-      // A link dragged from a browser arrives as text, not as a file.
+      // A link dragged from a browser arrives as text, not as a file. Its
+      // path extension still says what it is; a link without one is a picture.
       final text = (details.rawText ?? '').trim();
       final uri = Uri.tryParse(text);
       if (text.isNotEmpty && uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+        final image = backgroundMediaKindOf(uri.path) != BackgroundMediaKind.video;
         (image ? _imageUrl : _videoUrl).text = text;
         _apply(image: image);
         return;
@@ -891,19 +1072,17 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
       return;
     }
     final path = file.path;
-    final extension = p.extension(path).toLowerCase();
-    if (!(image ? _imageExtensions : _videoExtensions).contains(extension)) {
+    final kind = backgroundMediaKindOf(path.isEmpty ? file.name : path);
+    if (kind == null) {
       showDsToast(context: context, title: t.settings.backgroundDropUnsupported, status: DsStatus.danger);
       return;
     }
-    await ref.read(backgroundSettingsProvider.notifier).importDroppedFile(path, image: image);
+    await ref
+        .read(backgroundSettingsProvider.notifier)
+        .importDroppedFile(path, image: kind == BackgroundMediaKind.image);
     if (!mounted) return;
+    _syncAddressFields();
     final settings = ref.read(backgroundSettingsProvider);
-    if (image) {
-      _imageUrl.text = settings.imageUrl;
-    } else {
-      _videoUrl.text = settings.videoUrl;
-    }
     if (settings.error.isNotEmpty) {
       showDsToast(
         context: context,
@@ -914,11 +1093,52 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
     }
   }
 
+  /// Shows the just-imported source in the matching address field.
+  void _syncAddressFields() {
+    final settings = ref.read(backgroundSettingsProvider);
+    _imageUrl.text = settings.imageUrl;
+    _videoUrl.text = settings.videoUrl;
+  }
+
   int? _sizeOf(String path) {
     try {
       return File(path).lengthSync();
     } on Object {
       return null;
+    }
+  }
+
+  /// Opens the imported file in whatever the system uses for its type.
+  Future<void> _previewFile(String path) async {
+    final t = context.t;
+    final result = await OpenFile.open(path);
+    if (result.type != ResultType.done && mounted) {
+      showDsToast(context: context, title: t.settings.downloadOpenFailed, status: DsStatus.danger);
+    }
+  }
+
+  /// Copies the imported file into the shared download folder, so the
+  /// original can be moved or cleaned up without losing the choice.
+  Future<void> _saveCopy(String path) async {
+    final t = context.t;
+    final directory = ref.read(downloadDirectoryProvider).effectivePath;
+    try {
+      final target = File(p.join(directory, p.basename(path)));
+      await target.parent.create(recursive: true);
+      await File(path).copy(target.path);
+      if (!mounted) return;
+      showDsToast(
+        context: context,
+        title: t.settings.downloadSavedTo(path: directory),
+      );
+    } on Object catch (error) {
+      if (!mounted) return;
+      showDsToast(
+        context: context,
+        title: t.settings.backgroundDownloadFailed,
+        description: '$error',
+        status: DsStatus.danger,
+      );
     }
   }
 
@@ -946,21 +1166,15 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
     image ? controller.setImageUrl(url) : controller.setVideoUrl(url);
   }
 
-  Future<void> _upload({required bool image}) async {
+  /// Opens one picker for both kinds: the file's own type decides which slot
+  /// it lands in, whichever card's browse button was pressed.
+  Future<void> _upload() async {
     final t = context.t;
     final controller = ref.read(backgroundSettingsProvider.notifier);
-    if (image) {
-      await controller.uploadImage(dialogTitle: t.settings.backgroundUploadImage);
-    } else {
-      await controller.uploadVideo(dialogTitle: t.settings.backgroundUploadVideo);
-    }
-    if (!mounted) return;
+    final kind = await controller.uploadMedia(dialogTitle: t.settings.backgroundDeviceTitle);
+    if (!mounted || kind == null) return;
+    _syncAddressFields();
     final settings = ref.read(backgroundSettingsProvider);
-    if (image) {
-      _imageUrl.text = settings.imageUrl;
-    } else {
-      _videoUrl.text = settings.videoUrl;
-    }
     if (settings.error.isNotEmpty) {
       showDsToast(
         context: context,

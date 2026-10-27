@@ -53,7 +53,16 @@ class BackgroundOverlayView extends StatelessWidget {
     }
 
     return IgnorePointer(
-      child: Blur(blur: sigma, blurColor: effective.color, colorOpacity: alpha, child: child),
+      // The frosted path goes through a widget whose inner stack lays its
+      // child out loosely; a cover image would then shrink to its own
+      // aspect and stop filling the surface. Asking for the full box keeps
+      // this path's geometry identical to the flat scrim's.
+      child: Blur(
+        blur: sigma,
+        blurColor: effective.color,
+        colorOpacity: alpha,
+        child: SizedBox.expand(child: child),
+      ),
     );
   }
 }

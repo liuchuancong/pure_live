@@ -28,6 +28,27 @@ enum BackgroundKind {
   video,
 }
 
+/// What a local file can become.
+enum BackgroundMediaKind { image, video }
+
+/// The image formats the importer accepts, in the order the page names them.
+const List<String> kBackgroundImageExtensions = [
+  'jpg', 'jpeg', 'jfif', 'png', 'webp', 'gif', 'bmp', 'avif', 'heic', 'heif', 'tif', 'tiff', 'ico',
+];
+
+/// The video formats the importer accepts, in the order the page names them.
+const List<String> kBackgroundVideoExtensions = [
+  'mp4', 'm4v', 'mov', 'webm', 'mkv', 'avi', 'flv', 'ts', 'm2ts', 'wmv', '3gp', 'ogv', 'mpg', 'mpeg', 'vob', 'asf',
+];
+
+/// What [path]'s extension says it is; null when neither table knows it.
+BackgroundMediaKind? backgroundMediaKindOf(String path) {
+  final extension = p.extension(path).toLowerCase().replaceFirst('.', '');
+  if (kBackgroundImageExtensions.contains(extension)) return BackgroundMediaKind.image;
+  if (kBackgroundVideoExtensions.contains(extension)) return BackgroundMediaKind.video;
+  return null;
+}
+
 /// The fits the background settings offer; a subset of [BoxFit] worded in
 /// the settings pane.
 const List<BoxFit> kBackgroundFits = [
@@ -244,32 +265,30 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
   /// Back to the theme's surface; the saved media stays for a reselect.
   void clear() => _update(state.copyWith(kind: BackgroundKind.none, error: ''));
 
-  /// Opens the picker and copies an image into the data area.
-  Future<void> uploadImage({required String dialogTitle}) async {
-    final file = await FilePicker.pickFile(dialogTitle: dialogTitle, type: FileType.image);
-    if (file == null) return;
-    final previous = state.imagePath;
+  /// Opens the picker for any supported image or video and copies it into the
+  /// slot its own type names: the viewer does not have to say which kind the
+  /// file is. Returns the kind imported, or null when the picker was closed.
+  Future<BackgroundMediaKind?> uploadMedia({required String dialogTitle}) async {
+    final file = await FilePicker.pickFile(
+      dialogTitle: dialogTitle,
+      type: FileType.custom,
+      allowedExtensions: [...kBackgroundImageExtensions, ...kBackgroundVideoExtensions],
+    );
+    if (file == null) return null;
+    final kind = backgroundMediaKindOf(file.name) ?? backgroundMediaKindOf(file.path ?? '');
+    if (kind == null) return null;
+    final image = kind == BackgroundMediaKind.image;
+    final previous = image ? state.imagePath : state.videoPath;
     await _importPicked(
       file,
-      prefix: 'background-image',
-      onDone: (path) => state.copyWith(kind: BackgroundKind.image, imagePath: path, imageUrl: ''),
+      prefix: image ? 'background-image' : 'background-video',
+      onDone: (path) => image
+          ? state.copyWith(kind: BackgroundKind.image, imagePath: path, imageUrl: '')
+          : state.copyWith(kind: BackgroundKind.video, videoPath: path, videoUrl: ''),
     );
-    if (!ref.mounted || state.error.isNotEmpty) return;
+    if (!ref.mounted || state.error.isNotEmpty) return kind;
     unawaited(_delete(previous));
-  }
-
-  /// Opens the picker and copies a video into the data area.
-  Future<void> uploadVideo({required String dialogTitle}) async {
-    final file = await FilePicker.pickFile(dialogTitle: dialogTitle, type: FileType.video);
-    if (file == null) return;
-    final previous = state.videoPath;
-    await _importPicked(
-      file,
-      prefix: 'background-video',
-      onDone: (path) => state.copyWith(kind: BackgroundKind.video, videoPath: path, videoUrl: ''),
-    );
-    if (!ref.mounted || state.error.isNotEmpty) return;
-    unawaited(_delete(previous));
+    return kind;
   }
 
   /// Copies a file dropped onto the settings page into the data area and

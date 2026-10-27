@@ -532,10 +532,13 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.vod => const VodSettingsPane(),
     };
     const padding = EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s20, DsSpace.s24, DsSpace.s24);
-    // The log page owns its own height: its console expands into whatever
-    // the settings above it leave, which only works when the pane is not
-    // already sitting inside a scrolling column.
-    if (section == SettingsSection.logs) {
+    // Some pages own their height instead of scrolling the whole pane with
+    // it: the log console expands into what the settings above leave, and a
+    // wallpaper page fills the window with as many whole rows as fit, keeping
+    // its pager at the bottom.
+    if (section == SettingsSection.logs ||
+        section == SettingsSection.backgroundImages ||
+        section == SettingsSection.backgroundVideos) {
       return Padding(padding: padding, child: body);
     }
     return SingleChildScrollView(
@@ -838,15 +841,6 @@ final class _BrowsingPane extends ConsumerWidget {
                   DsSelectOption(value: spacing, label: '${spacing.round()} px'),
               ],
               onChanged: (value) => ref.read(browseSettingsProvider.notifier).mainSpacing = value,
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.layoutGrid),
-              title: t.settings.favoritesDense,
-              description: t.settings.favoritesDenseDescription,
-              control: DsSwitch(
-                value: ref.watch(favoritesDensityProvider),
-                onChanged: (value) => unawaited(ref.read(favoritesDensityProvider.notifier).set(dense: value)),
-              ),
             ),
           ],
         ),
@@ -1497,7 +1491,7 @@ final class _ThemePane extends ConsumerWidget {
                 value: textScale,
                 min: kMinTextScaleFactor,
                 max: kMaxTextScaleFactor,
-                divisions: 30,
+                divisions: ((kMaxTextScaleFactor - kMinTextScaleFactor) / kTextScaleStep).round(),
                 onChanged: (value) => ref.read(textScaleFactorProvider.notifier).factor = value,
                 semanticLabel: t.settings.textScale,
               ),
@@ -2122,11 +2116,7 @@ final class _CachePaneState extends ConsumerState<_CachePane> {
           // the tooltip carries the whole thing when it still has to shorten.
           description: DsTooltip(
             message: download.effectivePath,
-            child: Text(
-              download.effectivePath,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: Text(download.effectivePath, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
           detail: Text(
             download.custom.isEmpty
