@@ -4,7 +4,6 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show Clipboard;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
 import 'package:pure_live/app/app.dart';
@@ -132,9 +131,15 @@ final class _ClipboardRoomWatcherState extends ConsumerState<ClipboardRoomWatche
     if (room == null) return;
     final key = '${room.platform}:${room.roomId}';
     if (!_handled.add(key) || !mounted) return;
-    final t = context.t;
+    // The watcher sits above the router (it wraps the app in DsApp's
+    // builder), so its own context has neither a Navigator nor a GoRouter
+    // below this app's tree. The root navigator's context does, and the
+    // router itself pushes the room.
+    final navigatorContext = rootNavigatorKey.currentContext;
+    if (navigatorContext == null || !navigatorContext.mounted) return;
+    final t = navigatorContext.t;
     final open = await showDsConfirm(
-      context: context,
+      context: navigatorContext,
       title: t.settings.clipboardRoomTitle,
       description: t.settings.clipboardRoomDesc(platform: room.label, roomId: room.roomId),
       confirmLabel: t.settings.clipboardRoomOpen,
@@ -142,7 +147,7 @@ final class _ClipboardRoomWatcherState extends ConsumerState<ClipboardRoomWatche
       icon: const DsIcon(DsIcons.clipboard),
     );
     if (open && mounted) {
-      await context.push(RoomRoute(platform: room.platform, roomId: room.roomId).location);
+      await ref.read(appRouterProvider).push(RoomRoute(platform: room.platform, roomId: room.roomId).location);
     }
   }
 
