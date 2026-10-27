@@ -90,10 +90,11 @@ final class VodController extends Notifier<VodState> {
     try {
       final answer = await ref
           .read(vodClientProvider)
+          // The site's own window: the client's default page size is what
+          // Bilibili asks for, not a number the viewer sets.
           .search(
             query,
             page: page,
-            pageSize: ref.read(browseSettingsProvider).homePageSize,
             order: _order,
             duration: _duration,
           );
@@ -200,7 +201,8 @@ final class VodFeedController extends Notifier<Map<String, VodFeedState>> {
         case 'region':
           answer = await client.regionFeed(tid: int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0, page: page);
         default:
-          answer = await client.popular(page: page, pageSize: ref.read(browseSettingsProvider).homePageSize);
+          // Again the client's own window for the popular list.
+          answer = await client.popular(page: page);
       }
       if (!ref.mounted) return;
       final open = state[key];

@@ -6,9 +6,36 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyUpEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/focus/tv_focus_scale.dart';
+
+/// The widest a feed card gets before the grid takes another column, and the
+/// narrowest it shrinks to before giving one back: the measure every card
+/// grid holds itself, since no setting sets a card width any more.
+const double kBrowseCardMaxWidth = 340;
+const double kBrowseCardMinWidth = 220;
+
+/// The most columns a feed takes, however wide its window.
+const int kBrowseCardMaxColumns = 12;
+
+/// The card width a feed of [content] pixels gives itself.
+///
+/// The columns are the fewest that keep a card within [kBrowseCardMaxWidth],
+/// less one when that would leave a card narrower than [kBrowseCardMinWidth] —
+/// so a phone shows a single wide card, a laptop three or four and an
+/// ultrawide six. The answer is the exact width one column then has (plus a
+/// hair), which is what [SliverGridDelegateWithMaxCrossAxisExtent] needs to
+/// stay on that column count instead of tipping into one more.
+double browseCardExtentForWidth(double content, {double crossSpacing = DsSpace.s16}) {
+  if (content <= 0) return kBrowseCardMaxWidth;
+  double width(int columns) => (content - crossSpacing * (columns - 1)) / columns;
+  var columns = 1;
+  while (columns < kBrowseCardMaxColumns && width(columns) > kBrowseCardMaxWidth) {
+    columns++;
+  }
+  if (columns > 1 && width(columns) < kBrowseCardMinWidth) columns--;
+  return width(columns) + 0.01;
+}
 
 /// How a collection of items is laid out: the responsive card grid, or one
 /// full-width row per item.
@@ -26,6 +53,10 @@ enum CardLayout {
 /// the first page loads, an honest error or empty state in their place,
 /// and the next page fetched as the viewer nears the end.
 ///
+/// With [CardGrid.pagesOnScrollToEnd] that end-of-list ask pages the feed
+/// instead of growing it: only a real scroll to the bottom moves on, so the
+/// wheel and a number row over the same catalogue stay in step.
+///
 /// Every room/area feed in the app renders through this one widget, so
 /// paging, spacing and the loading states stay the same everywhere.
 final class CardGrid<T> extends ConsumerStatefulWidget {
@@ -33,13 +64,14 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   const CardGrid({
     required this.items,
     required this.itemBuilder,
-    required this.cardExtent,
+    this.cardExtent,
     this.crossSpacing = DsSpace.s16,
     this.mainSpacing = DsSpace.s16,
     this.aspectRatio = roomCardAspectRatio,
     this.isLoading = false,
     this.hasMore = false,
     this.onLoadMore,
+    this.pagesOnScrollToEnd = false,
     this.error,
     this.onRetry,
     this.onRefresh,
@@ -77,8 +109,12 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   /// Whether the items are a card grid or a one-column list.
   final CardLayout layout;
 
-  /// The widest a card gets; the columns follow the width.
-  final double cardExtent;
+  /// The widest a card gets; the columns follow the width. Null — what every
+  /// feed passes now that the card width is no longer a setting — lets the
+  /// grid take the width its own columns imply for the space it is given
+  /// (see [browseCardExtentForWidth]); a caller with its own measure (the
+  /// follows page's density) passes one.
+  final double? cardExtent;
 
   /// The gap between cards across a row (the viewer's column spacing).
   final double crossSpacing;
@@ -98,6 +134,12 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
 
   /// Fetches the next page. Fired at most once while [isLoading].
   final Future<void> Function()? onLoadMore;
+
+  /// When true, [onLoadMore] means "show the next page" rather than "append
+  /// more rooms": only the real end of a page the viewer can actually scroll
+  /// asks for it, and a page that fits the viewport never runs on by itself.
+  /// A paged desktop feed sets this so its wheel and its number row agree.
+  final bool pagesOnScrollToEnd;
 
   /// The failure to show when [items] is empty.
   final String? error;
@@ -138,9 +180,9 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
   /// How close to the end the next page may be asked for.
   static const double _loadMoreThreshold = 600;
 
-  /// How far down the back-to-top button appears: past a screenful of
-  /// cards, where the head is no longer in sight.
-  static const double _backToTopAfter = 800;
+  /// How close to the end counts as "at the end" when the grid pages
+  /// ([CardGrid.pagesOnScrollToEnd]) instead of appending.
+  static const double _pageEndThreshold = 24;
 
   /// How much room a focused card keeps from the viewport's edge when the
   /// D-pad scrolls it into view.
@@ -149,10 +191,6 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
   /// One ask in flight at a time: the notification stream fires per frame
   /// while the viewer scrolls, and one page's load is enough.
   bool _asking = false;
-
-  /// Whether the collection scrolled far enough for its back-to-top
-  /// button.
-  bool _backToTop = false;
 
   /// The grid's own controller, used while the caller passes none.
   final ScrollController _ownScroll = ScrollController();
@@ -177,11 +215,19 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
 
   ScrollController get _scroll => widget.scrollController ?? _ownScroll;
 
+  /// The card width the collection uses in a box [width] wide: the caller's
+  /// measure when it brought one, the columns the window implies otherwise.
+  double _extentFor(double width) {
+    final padding = widget.padding.resolve(Directionality.of(context));
+    final content = math.max(0, width - padding.horizontal).toDouble();
+    return widget.cardExtent ?? browseCardExtentForWidth(content, crossSpacing: widget.crossSpacing);
+  }
+
   /// The columns a width gets from [SliverGridDelegateWithMaxCrossAxisExtent].
   int _columnsFor(double width) {
     final padding = widget.padding.resolve(Directionality.of(context));
     final extent = math.max(0, width - padding.horizontal);
-    return math.max(1, (extent / (widget.cardExtent + widget.crossSpacing)).ceil());
+    return math.max(1, (extent / (_extentFor(width) + widget.crossSpacing)).ceil());
   }
 
   @override
@@ -195,11 +241,6 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
   void didUpdateWidget(CardGrid<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.refreshError != widget.refreshError) _dismissedRefreshError = null;
-    // A layout switch rebuilds the collection from the top; the button
-    // belongs to the new scroll position, so it starts hidden.
-    if (oldWidget.layout != widget.layout || oldWidget.scrollController != widget.scrollController) {
-      if (_backToTop) _backToTop = false;
-    }
   }
 
   /// Asks for the next page, once: the scroll, a short viewport and the
@@ -221,8 +262,15 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     // feed's head or end.
     if (notification.depth != 0) return;
     final offset = notification.metrics.pixels;
-    final backToTop = offset > _backToTopAfter;
-    if (backToTop != _backToTop) setState(() => _backToTop = backToTop);
+    if (widget.pagesOnScrollToEnd) {
+      // Paging: the ask needs a page that scrolls and an end that is really
+      // reached. A page shorter than the viewport would otherwise chain
+      // forward the moment it is drawn.
+      if (notification.metrics.maxScrollExtent <= 0) return;
+      if (offset < notification.metrics.maxScrollExtent - _pageEndThreshold) return;
+      _askForMore();
+      return;
+    }
     if (offset < notification.metrics.maxScrollExtent - _loadMoreThreshold) return;
     _askForMore();
   }
@@ -236,6 +284,9 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
 
   void _onItemFocus(int index, bool focused) {
     if (!focused) return;
+    // Paging moves only when the viewer reaches the end on purpose: a D-pad
+    // stop in the last row would otherwise flip the page under them.
+    if (widget.pagesOnScrollToEnd) return;
     // The last two rows pre-load the next page, so the D-pad never stops
     // one row short of the end of an infinite feed.
     final columns = widget.layout == CardLayout.list ? 1 : math.max(1, _columns);
@@ -353,12 +404,6 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     child: zoom ? TvFocusScale(child: child) : child,
   );
 
-  void _scrollToTop() {
-    final controller = _scroll;
-    if (!controller.hasClients) return;
-    controller.animateTo(0, duration: const Duration(milliseconds: 320), curve: Curves.easeOutCubic);
-  }
-
   /// Asks for the next page when the shown one does not fill the viewport:
   /// a short list cannot be scrolled to its end, so its footer would never
   /// fire (the reference's `_fillViewport`).
@@ -370,47 +415,6 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
       if (!controller.hasClients || controller.position.maxScrollExtent > 0) return;
       _askForMore();
     });
-  }
-
-  /// Lays the floating back-to-top button over [child] once the viewer has
-  /// scrolled past the head.
-  Widget _withBackToTop(BuildContext context, Widget child) {
-    if (!_backToTop || !ref.watch(showScrollToTopProvider)) return child;
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final t = context.t;
-    return Stack(
-      children: [
-        Positioned.fill(child: child),
-        Positioned(
-          right: DsSpace.s20,
-          bottom: DsSpace.s20,
-          child: DsTooltip(
-            message: t.common.backToTop,
-            child: SizedBox(
-              width: 44,
-              height: 44,
-              child: DsPressable(
-                semanticLabel: t.common.backToTop,
-                onPressed: _scrollToTop,
-                builder: (context, states, _) {
-                  final hovered = states.contains(WidgetState.hovered);
-                  return Container(
-                    alignment: Alignment.center,
-                    decoration: DsBoxDecoration(
-                      color: colors.overlay,
-                      borderRadius: BorderRadius.circular(22),
-                      shadows: [...theme.shadows.overlay, if (hovered) ...theme.shadows.surfaceRaised],
-                    ),
-                    child: DsIcon(DsIcons.arrowUp, size: 18, color: hovered ? colors.accent : colors.text),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   @override
@@ -444,7 +448,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
         description: widget.emptyDescription == null ? null : Text(widget.emptyDescription!),
       );
     }
-    if (widget.hasMore && widget.onLoadMore != null) _fillViewportIfShort();
+    if (widget.hasMore && widget.onLoadMore != null && !widget.pagesOnScrollToEnd) _fillViewportIfShort();
     final loadingRow = widget.isLoading && widget.hasMore;
     final refresh = widget.onRefresh;
     final Widget collection;
@@ -489,7 +493,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
               // to pull (the reference's always-scrollable feeds).
               physics: refresh == null ? null : const AlwaysScrollableScrollPhysics(),
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: widget.cardExtent,
+                maxCrossAxisExtent: _extentFor(constraints.maxWidth),
                 mainAxisSpacing: widget.mainSpacing,
                 crossAxisSpacing: widget.crossSpacing,
                 childAspectRatio: widget.aspectRatio,
@@ -512,15 +516,19 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
         ? collection
         : CustomRefreshIndicator(onRefresh: refresh, builder: _buildRefreshIndicator, child: collection);
     final error = widget.refreshError;
-    if (error == null || error == _dismissedRefreshError) return _withBackToTop(context, content);
-    // The bar rides over the kept cards: a failed refresh never empties
-    // the grid, it explains itself on top of it.
-    return _withBackToTop(
-      context,
-      Stack(
-        children: [
-          Positioned.fill(child: content),
+    // One Stack for good: the error bar is a keyed layer over the collection,
+    // never a wrapper swapped in and out around it. A wrapper would change
+    // the widget at that slot, tear the grid's element down and let its
+    // scroll controller re-attach a fresh position at the head — the feed
+    // snapping back to the top the moment the viewer scrolled.
+    return Stack(
+      children: [
+        Positioned.fill(key: const ValueKey('cardGridContent'), child: content),
+        // The bar rides over the kept cards: a failed refresh never empties
+        // the grid, it explains itself on top of it.
+        if (error != null && error != _dismissedRefreshError)
           Positioned(
+            key: const ValueKey('cardGridRefreshError'),
             top: DsSpace.s4,
             left: DsSpace.s20,
             right: DsSpace.s20,
@@ -530,8 +538,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
               onDismiss: () => setState(() => _dismissedRefreshError = error),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -707,15 +714,15 @@ final class _RefreshErrorBanner extends StatelessWidget {
 /// The first page's placeholder: the same grid shape, no content.
 final class _SkeletonGrid extends StatelessWidget {
   const _SkeletonGrid({
-    required this.cardExtent,
     required this.crossSpacing,
     required this.mainSpacing,
     required this.aspectRatio,
     required this.count,
     required this.padding,
+    this.cardExtent,
   });
 
-  final double cardExtent;
+  final double? cardExtent;
   final double crossSpacing;
   final double mainSpacing;
   final double aspectRatio;
@@ -724,21 +731,29 @@ final class _SkeletonGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: padding,
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: cardExtent,
-        mainAxisSpacing: mainSpacing,
-        crossAxisSpacing: crossSpacing,
-        childAspectRatio: aspectRatio,
-      ),
-      itemCount: count,
-      // The shimmer's sweep over the plain block: one shared animation
-      // across the whole placeholder grid, the loading idiom the kit
-      // draws by.
-      itemBuilder: (context, index) => const DsShimmer(
-        child: DsSkeleton.block(width: double.infinity, height: double.infinity),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The same measure the live grid takes: the placeholder must not
+        // reflow the page when the first rooms arrive.
+        final resolved = padding.resolve(Directionality.of(context));
+        final content = math.max(0, constraints.maxWidth - resolved.horizontal).toDouble();
+        return GridView.builder(
+          padding: padding,
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: cardExtent ?? browseCardExtentForWidth(content, crossSpacing: crossSpacing),
+            mainAxisSpacing: mainSpacing,
+            crossAxisSpacing: crossSpacing,
+            childAspectRatio: aspectRatio,
+          ),
+          itemCount: count,
+          // The shimmer's sweep over the plain block: one shared animation
+          // across the whole placeholder grid, the loading idiom the kit
+          // draws by.
+          itemBuilder: (context, index) => const DsShimmer(
+            child: DsSkeleton.block(width: double.infinity, height: double.infinity),
+          ),
+        );
+      },
     );
   }
 }

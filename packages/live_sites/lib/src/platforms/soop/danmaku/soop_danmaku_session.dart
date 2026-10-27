@@ -66,6 +66,10 @@ typedef SoopTimers = ({
 
 /// One chat connection: one WebSocket per room.
 ///
+/// - The socket goes as a guest: [SoopDanmakuArgs.headers] carry no cookie
+///   even in a room whose API requests were signed with the user's login — the
+///   reference's chat edge does the same, and the login unlocks the streams,
+///   not the chat.
 /// - The socket's open counts as joined (3.x's reading): the login packet
 ///   goes out as soon as it opens, the join packet
 ///   [SoopDanmakuCodec.joinDelay] later; there is no join budget, because

@@ -15,10 +15,6 @@ const String _keywordsKey = 'danmaku.block.keywords';
 const String _usersKey = 'danmaku.block.users';
 const String _enabledKey = 'danmaku.block.enabled';
 
-/// The settings keys the shield owns, for the window bridge that carries
-/// a room window's edits to the engine holding the store.
-const Set<String> kShieldPrefKeys = {_enabledKey, _keywordsKey, _usersKey};
-
 /// Owns the danmaku shield's rules: every edit moves the state first and
 /// then writes through, so the pane answers at once and a closed store
 /// only loses the persistence (the refresh settings' pattern).
@@ -34,24 +30,6 @@ base class ShieldRulesController extends Notifier<ShieldRules> {
     } on Object {
       return _defaults;
     }
-  }
-
-  /// Applies values pushed by another window: the state moves, the store
-  /// does not — the window that made the change owns the write.
-  void applyRemote(Map<String, Object?> values) {
-    var enabled = state.enabled;
-    var keywords = state.keywords;
-    var users = state.users;
-    if (values.containsKey(_enabledKey)) {
-      enabled = _boolOf(values[_enabledKey], _defaults.enabled);
-    }
-    if (values.containsKey(_keywordsKey)) {
-      keywords = _listOf(values[_keywordsKey], _defaults.keywords);
-    }
-    if (values.containsKey(_usersKey)) {
-      users = _listOf(values[_usersKey], _defaults.users);
-    }
-    state = (enabled: enabled, keywords: keywords, users: users);
   }
 
   /// Flips the master switch, writing the choice through.
@@ -116,8 +94,7 @@ base class ShieldRulesController extends Notifier<ShieldRules> {
     await persist(_usersKey, const []);
   }
 
-  /// Writes one rule. The room window's subclass overrides this to send
-  /// the change to the engine that owns the store instead.
+  /// Writes one rule through to the store.
   Future<void> persist(String key, Object? value) async {
     try {
       await StoragePrefs.setAnyPref(key, value);
@@ -126,15 +103,6 @@ base class ShieldRulesController extends Notifier<ShieldRules> {
     }
   }
 }
-
-bool _boolOf(Object? value, bool fallback) => value is bool ? value : fallback;
-
-List<String> _listOf(Object? value, List<String> fallback) => value is List
-    ? [
-        for (final entry in value)
-          if (entry is String) entry,
-      ]
-    : fallback;
 
 /// The danmaku shield's rules.
 final shieldRulesProvider = NotifierProvider<ShieldRulesController, ShieldRules>(ShieldRulesController.new);

@@ -6,6 +6,7 @@ import 'dart:math';
 // ignore_for_file: switch_on_type
 
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
+import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
@@ -23,6 +24,7 @@ import 'package:live_sites/src/models/room/room_runtime/room_runtime.dart';
 import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_endpoints.dart';
 import 'package:live_sites/src/platforms/kuaishou/api/kuaishou_http.dart';
 import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_area_provider.dart';
+import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_auth_provider.dart';
 import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_discovery_provider.dart';
 import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_link_resolver.dart';
 import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_playback_provider.dart';
@@ -185,9 +187,28 @@ final class KuaishouSite implements LiveSite {
   /// The user's cookie ('' when signed out), control characters and a pasted
   /// `Cookie:` prefix stripped.
   String login() {
-    final raw = loginCookie();
+    final raw = _appliedLogin ?? loginCookie();
     final stripped = String.fromCharCodes(raw.codeUnits.where((unit) => unit >= 0x20 && unit != 0x7F)).trim();
     return stripped.toLowerCase().startsWith('cookie:') ? stripped.substring(7).trim() : stripped;
+  }
+
+  /// The credential applied through [applyLoginCredential], or null while the
+  /// constructor's [loginCookie] answers (in-memory only: storing a login is
+  /// the application's business).
+  String? _appliedLogin;
+
+  /// Makes every request carry [cookie] as the user's login, ahead of the
+  /// anonymous session cookie.
+  void applyLoginCredential(String cookie) {
+    _appliedLogin = cookie;
+    _session = null;
+  }
+
+  /// Drops the applied login; requests go back to what the constructor was
+  /// given (the anonymous session when that is empty).
+  void clearLoginCredential() {
+    _appliedLogin = null;
+    _session = null;
   }
 
   /// The anonymous session's cookie header while it is younger than 30 minutes,
@@ -401,6 +422,7 @@ final class KuaishouSite implements LiveSite {
   KuaishouPlaybackProvider? _playback;
   KuaishouDanmakuProvider? _danmaku;
   KuaishouLinkResolver? _link;
+  KuaishouAuthProvider? _auth;
 
   /// The capability of type [T], or null when kuaishou does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -413,6 +435,7 @@ final class KuaishouSite implements LiveSite {
     final playback = _playback ??= KuaishouPlaybackProvider(site: this);
     final danmaku = _danmaku ??= KuaishouDanmakuProvider(site: this);
     final link = _link ??= KuaishouLinkResolver(site: this);
+    final auth = _auth ??= KuaishouAuthProvider(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -421,6 +444,7 @@ final class KuaishouSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveAuthCapability) => auth as T,
       _ => null,
     };
   }

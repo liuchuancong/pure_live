@@ -27,9 +27,7 @@ final class TvMenuExpandedController extends Notifier<bool> {
 }
 
 /// The TV menu's always-expanded switch.
-final tvMenuExpandedProvider = NotifierProvider<TvMenuExpandedController, bool>(
-  TvMenuExpandedController.new,
-);
+final tvMenuExpandedProvider = NotifierProvider<TvMenuExpandedController, bool>(TvMenuExpandedController.new);
 
 /// Whether a focused card or menu row grows a little on TV (the
 /// reference's `tvFocusZoom`). On by default; off keeps only the ring.
@@ -57,6 +55,4 @@ final class TvFocusZoomController extends Notifier<bool> {
 }
 
 /// The TV focus-zoom switch.
-final tvFocusZoomProvider = NotifierProvider<TvFocusZoomController, bool>(
-  TvFocusZoomController.new,
-);
+final tvFocusZoomProvider = NotifierProvider<TvFocusZoomController, bool>(TvFocusZoomController.new);

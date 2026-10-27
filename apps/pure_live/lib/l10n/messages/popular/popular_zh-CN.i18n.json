@@ -1,5 +1,6 @@
 {
   "allPlatforms": "全部平台",
+  "allPlatformsHint": "点一个直接切过去；在「平台显示」里隐藏和排序。",
   "page": "第 {page: int} 页，共 {total: int} 页",
   "prevPage": "上一页",
   "nextPage": "下一页",
@@ -8,7 +9,5 @@
   "sortLabel": "排序",
   "sortPlatform": "平台推荐",
   "sortAudience": "按观众",
-  "perPage": "每页",
-  "pageSize": "每页 {size: int} 个",
   "hiddenUnplayable": "已隐藏 {count: int} 个暂时不能播放的直播（付费、加锁、仅限 App 等）"
 }

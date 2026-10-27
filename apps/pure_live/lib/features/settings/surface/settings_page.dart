@@ -18,33 +18,16 @@ import 'package:pure_live/features/favorites/favorites.dart';
 import 'package:pure_live/features/history/history.dart';
 import 'package:pure_live/features/iptv/iptv.dart';
 import 'package:pure_live/features/recorder/recorder.dart';
+import 'package:pure_live/features/room/page/room_orientation.dart' show roomOrientationChoicesProvider;
 import 'package:pure_live/features/settings/browse/audience_metric_provider.dart' show audienceMetricProvider;
 import 'package:pure_live/features/settings/browse/live_alert_settings.dart' show liveAlertSettingsProvider;
 import 'package:pure_live/features/settings/browse/platform_preferences_provider.dart'
     show douyuForceRenewProvider, preferH264Provider, youtubeAllChatProvider;
 import 'package:pure_live/features/settings/browse/sites_display_provider.dart';
 import 'package:pure_live/features/settings/browse/twitch_languages_provider.dart' show twitchLanguagesProvider;
-import 'package:pure_live/features/settings/danmaku/chat_display_settings.dart'
-    show
-        chatGiftValueInYuanProvider,
-        chatGiftsAboveTierProvider,
-        chatListFontSizeProvider,
-        chatListLineSpacingProvider,
-        chatListStyleProvider,
-        chatNamesProvider,
-        chatShowGiftsProvider;
-import 'package:pure_live/features/settings/danmaku/danmaku_hold_provider.dart' show danmakuHoldProvider;
-import 'package:pure_live/features/settings/danmaku/danmaku_presets.dart' show DanmakuPreset;
-import 'package:pure_live/features/settings/danmaku/danmaku_show_gifts_provider.dart' show danmakuShowGiftsProvider;
-import 'package:pure_live/features/settings/danmaku/danmaku_style_providers.dart';
-import 'package:pure_live/features/settings/danmaku/danmaku_templates.dart';
-import 'package:pure_live/features/settings/danmaku/super_chat_settings.dart' show superChatIncludesMembershipProvider;
 import 'package:pure_live/features/settings/dialogs/asmr_sleep_dialog.dart' show showAsmrSleepMinutesDialog;
 import 'package:pure_live/features/settings/dialogs/config_preview_dialog.dart' show showConfigPreview;
-import 'package:pure_live/features/settings/dialogs/font_manager_dialog.dart'
-    show fontFamilyLabel, showFontManagerDialog;
 import 'package:pure_live/features/settings/dialogs/live_alert_tags_dialog.dart' show showLiveAlertTagsDialog;
-import 'package:pure_live/features/settings/dialogs/page_size_options_dialog.dart' show showPageSizeOptionsDialog;
 import 'package:pure_live/features/settings/dialogs/prefer_platform_dialog.dart' show showPreferPlatformDialog;
 import 'package:pure_live/features/settings/dialogs/theme_color_dialog.dart'
     show showThemeColorDialog, themeSeedToneLabel;
@@ -52,9 +35,11 @@ import 'package:pure_live/features/settings/dialogs/twitch_languages_dialog.dart
     show showTwitchLanguagesDialog, twitchLanguagesSummary;
 import 'package:pure_live/features/settings/general/auto_shutdown_section.dart' show AutoShutdownSection;
 import 'package:pure_live/features/settings/general/refresh_rate_section.dart' show RefreshRateSection;
+import 'package:pure_live/features/settings/general/settings_order_list.dart' show SettingsOrderList;
 import 'package:pure_live/features/settings/general/tv_preferences.dart'
     show tvFocusZoomProvider, tvMenuExpandedProvider;
 import 'package:pure_live/features/settings/general/window_size_row.dart' show WindowSizeRow;
+import 'package:pure_live/features/settings/pages/font_manager_page.dart' show fontFamilyLabel, showFontManagerPage;
 import 'package:pure_live/features/settings/panes/audience_settings_pane.dart'
     show AudienceSettingsPane, audienceModeLabel;
 import 'package:pure_live/features/settings/panes/background_panes.dart'
@@ -64,13 +49,12 @@ import 'package:pure_live/features/settings/panes/background_panes.dart'
         BackgroundLibraryPane,
         BackgroundOverviewPane,
         BackgroundRandomPane;
-import 'package:pure_live/features/settings/panes/local_interaction_pane.dart' show LocalInteractionPane;
+import 'package:pure_live/features/settings/panes/danmaku_panes.dart'
+    show DanmakuDisplayPane, DanmakuPane, DanmakuStylePane;
 import 'package:pure_live/features/settings/panes/player_kernel_pane.dart'
     show PlayerKernelAdvancedPane, PlayerKernelPane;
 import 'package:pure_live/features/settings/panes/room_card_pane.dart' show RoomCardPane;
 import 'package:pure_live/features/settings/playback/floating_window_settings.dart' show floatingWindowSettingsProvider;
-import 'package:pure_live/features/settings/playback/pip_danmaku_scale_provider.dart'
-    show kPipDanmakuScaleMax, kPipDanmakuScaleMin, pipDanmakuScaleProvider;
 import 'package:pure_live/features/settings/playback/playback_settings_providers.dart';
 import 'package:pure_live/features/settings/playback/portrait_fullscreen_settings.dart';
 import 'package:pure_live/features/settings/playback/portrait_settings_providers.dart'
@@ -80,7 +64,6 @@ import 'package:pure_live/features/settings/playback/portrait_settings_providers
         PortraitSettings,
         PortraitSettingsController,
         portraitSettingsProvider;
-import 'package:pure_live/features/settings/room/clipboard_rooms.dart' show detectClipboardRoomsProvider;
 import 'package:pure_live/features/settings/room/room_switcher_settings.dart' show portraitSwipeSwitchProvider;
 import 'package:pure_live/features/settings/surface/settings_search.dart' show SettingsSearchHit, settingsSearchHits;
 import 'package:pure_live/features/settings/surface/settings_sections.dart';
@@ -422,7 +405,7 @@ final class SettingsSectionPane extends StatelessWidget {
   Widget build(BuildContext context) {
     final body = switch (section) {
       SettingsSection.theme || SettingsSection.personalization || SettingsSection.appearance => const _ThemePane(),
-      SettingsSection.typography => const _TypographyPane(),
+      SettingsSection.typography => const _ThemePane(),
       SettingsSection.background => const BackgroundOverviewPane(),
       SettingsSection.backgroundImages => const BackgroundLibraryPane(video: false),
       SettingsSection.backgroundRandom => const BackgroundRandomPane(),
@@ -430,21 +413,26 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.backgroundColors => const BackgroundColorsPane(),
       SettingsSection.backgroundDevice => const BackgroundDevicePane(),
       SettingsSection.nav => const _NavPane(),
+      SettingsSection.navHomeMenu => const _NavHomeMenuPane(),
+      SettingsSection.navToolOrder => const _NavToolOrderPane(),
       SettingsSection.browsing || SettingsSection.general => const _BrowsingPane(),
       SettingsSection.roomCard => const RoomCardPane(),
       SettingsSection.sites || SettingsSection.live || SettingsSection.sources => const _SitesPane(),
+      SettingsSection.sitesDisplay => const _SitesDisplayPane(),
       SettingsSection.accounts => const AccountPane(),
       SettingsSection.refresh => const _RefreshPane(),
       SettingsSection.followTags => const FollowTagsPane(),
-      SettingsSection.danmaku || SettingsSection.danmakuStyle || SettingsSection.miniDanmaku => const _DanmakuPane(),
+      SettingsSection.danmaku => const DanmakuPane(),
+      SettingsSection.danmakuStyle || SettingsSection.miniDanmaku => const DanmakuStylePane(),
+      SettingsSection.danmakuDisplay => const DanmakuDisplayPane(),
       SettingsSection.shield => const ShieldPane(),
-      SettingsSection.localInteraction => const LocalInteractionPane(),
       SettingsSection.recording => const _RecordingPane(),
       SettingsSection.quality ||
       SettingsSection.playback ||
       SettingsSection.video ||
       SettingsSection.audio => const _QualityAudioPane(),
       SettingsSection.picture => const _PicturePane(),
+      SettingsSection.floatingWindow => const _FloatingWindowPane(),
       SettingsSection.portrait => const _PortraitPane(),
       SettingsSection.audience => const AudienceSettingsPane(),
       SettingsSection.kernel => const PlayerKernelPane(),
@@ -718,11 +706,10 @@ final class _ThemeWindow extends StatelessWidget {
   }
 }
 
-/// The general pane: the browsing preferences that work end to end — how
-/// wide a feed card gets where the module browses cards, how many rows a
-/// page reveals, and the window's own title bar and close action. The
-/// default site belongs to the live module and lives in its Sites pane.
-/// The browsing page: feed cards, pagination and the audience metric.
+/// The browsing page: what the feed grids decide for themselves — the gaps
+/// between cards and the density of the follow page — plus the room card
+/// subpage. Card width and page size are not here: both follow the window
+/// and the site's own feed window now.
 final class _BrowsingPane extends ConsumerWidget {
   const _BrowsingPane();
 
@@ -730,95 +717,49 @@ final class _BrowsingPane extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final settings = ref.watch(browseSettingsProvider);
-    final module = ref.watch(selectedModuleProvider);
-    final showsCardExtent = module == AppModule.live || module == AppModule.vod;
 
-    return DsListSection(
-      header: Text(t.settings.browsingTitle),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
       children: [
-        if (showsCardExtent)
-          SettingsConfigRow(
-            leading: const DsIcon(DsIcons.columns2),
-            title: t.settings.cardExtent,
-            description: t.settings.cardExtentDescription,
-            detail: Text('${settings.homeCardExtent.round()} px'),
-            controlWidth: 220,
-            control: DsSlider(
-              value: settings.homeCardExtent,
-              min: 160,
-              max: 420,
-              divisions: 26,
-              onChanged: (value) => ref.read(browseSettingsProvider.notifier).homeCardExtent = value,
-              semanticLabel: t.settings.cardExtent,
+        DsListSection(
+          header: Text(t.settings.groupCards),
+          children: [
+            // The gaps are desen_ui's spacing tokens, chosen from the same
+            // dropdown the rest of the settings surface uses — not a free
+            // pixel range the grids then have to guess at.
+            SettingsChoiceRow<double>(
+              leading: const DsIcon(DsIcons.columns2),
+              title: t.settings.crossSpacing,
+              description: t.settings.crossSpacingDescription,
+              value: settings.crossSpacing,
+              options: [
+                for (final spacing in kBrowseSpacingChoices)
+                  DsSelectOption(value: spacing, label: '${spacing.round()} px'),
+              ],
+              onChanged: (value) => ref.read(browseSettingsProvider.notifier).crossSpacing = value,
             ),
-          ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.list),
-          title: t.settings.pageSize,
-          description: t.settings.pageSizeDescription,
-          detail: Text('${settings.homePageSize}'),
-          controlWidth: 220,
-          control: DsSlider(
-            value: settings.homePageSize.toDouble(),
-            min: 1,
-            max: 100,
-            divisions: 99,
-            onChanged: (value) => ref.read(browseSettingsProvider.notifier).homePageSize = value.round(),
-            semanticLabel: t.settings.pageSize,
-          ),
-        ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.listRestart),
-          title: Text(t.settings.pageSizeOptions),
-          description: Text(t.settings.pageSizeOptionsDescription),
-          detail: Text(ref.watch(pageSizeOptionsProvider).join(', ')),
-          showChevron: true,
-          onPressed: () => unawaited(showPageSizeOptionsDialog(context)),
-        ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.listOrdered),
-          title: t.settings.pageSizeSelector,
-          description: t.settings.pageSizeSelectorDescription,
-          control: DsSwitch(
-            value: ref.watch(showPageSizeSelectorProvider),
-            onChanged: (value) => unawaited(ref.read(showPageSizeSelectorProvider.notifier).set(show: value)),
-          ),
-        ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.hash),
-          title: t.settings.showGotoButton,
-          description: t.settings.showGotoButtonDescription,
-          control: DsSwitch(
-            value: ref.watch(showGotoButtonProvider),
-            onChanged: (value) => unawaited(ref.read(showGotoButtonProvider.notifier).set(show: value)),
-          ),
-        ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.aArrowUp),
-          title: t.settings.showScrollToTop,
-          description: t.settings.showScrollToTopDescription,
-          control: DsSwitch(
-            value: ref.watch(showScrollToTopProvider),
-            onChanged: (value) => unawaited(ref.read(showScrollToTopProvider.notifier).set(show: value)),
-          ),
-        ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.clipboard),
-          title: t.settings.clipboardRooms,
-          description: t.settings.clipboardRoomsDesc,
-          control: DsSwitch(
-            value: ref.watch(detectClipboardRoomsProvider),
-            onChanged: (value) => unawaited(ref.read(detectClipboardRoomsProvider.notifier).set(value: value)),
-          ),
-        ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.layoutGrid),
-          title: t.settings.favoritesDense,
-          description: t.settings.favoritesDenseDescription,
-          control: DsSwitch(
-            value: ref.watch(favoritesDensityProvider),
-            onChanged: (value) => unawaited(ref.read(favoritesDensityProvider.notifier).set(dense: value)),
-          ),
+            SettingsChoiceRow<double>(
+              leading: const DsIcon(DsIcons.rows3),
+              title: t.settings.mainSpacing,
+              description: t.settings.mainSpacingDescription,
+              value: settings.mainSpacing,
+              options: [
+                for (final spacing in kBrowseSpacingChoices)
+                  DsSelectOption(value: spacing, label: '${spacing.round()} px'),
+              ],
+              onChanged: (value) => ref.read(browseSettingsProvider.notifier).mainSpacing = value,
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.layoutGrid),
+              title: t.settings.favoritesDense,
+              description: t.settings.favoritesDenseDescription,
+              control: DsSwitch(
+                value: ref.watch(favoritesDensityProvider),
+                onChanged: (value) => unawaited(ref.read(favoritesDensityProvider.notifier).set(dense: value)),
+              ),
+            ),
+          ],
         ),
         const DsListSection(children: [SettingsChildEntry(child: SettingsSection.roomCard)]),
       ],
@@ -1069,51 +1010,57 @@ final class _RefreshPane extends ConsumerWidget {
   }
 }
 
-/// The navigation pane (the reference's navigation-bar controls): the live
-/// home menu's entries, their order and the multi-view entry, which the
-/// desktop sidebar and the phone drawer and bottom bar all read; then the
-/// shared tools block's order.
+/// The navigation page: the two orders the shell reads — which home entries
+/// the sidebar, drawer and bottom bar show, in what order, and the same for
+/// the tools block under the sidebar's divider.
 ///
-/// The four home entries persist as one visible order (`nav.menuIds`); the
-/// reference's `savedMenuIds` works the same way. At least one stays shown.
-final class _NavPane extends ConsumerWidget {
+/// Each is its own route: the lists are long enough, and the ordering edit
+/// is a mode of its own, so neither belongs flattened onto one page.
+final class _NavPane extends StatelessWidget {
   const _NavPane();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        SettingsChildEntry(child: SettingsSection.navHomeMenu),
+        SettingsChildEntry(child: SettingsSection.navToolOrder),
+      ],
+    );
+  }
+}
+
+/// The home menu page: the multi-view entry, then the four live destinations
+/// shown in their saved order and reordered through a draft.
+///
+/// The four entries persist as one visible order (`nav.menuIds`); the
+/// reference's `savedMenuIds` works the same way. At least one stays shown,
+/// and only the shown ones have an order to edit — a hidden entry joins the
+/// menu at its end when it is switched back on.
+final class _NavHomeMenuPane extends ConsumerWidget {
+  const _NavHomeMenuPane();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final toolOrder = ref.watch(toolOrderProvider);
     final showMultiview = ref.watch(showMultiviewProvider);
     final homeMenus = ref.watch(navMenuProvider);
     final hiddenMenus = [
       for (final item in kHomeMenuItems)
         if (!homeMenus.contains(item)) item,
     ];
-    final canReorder = homeMenus.length > 1;
 
-    Widget menuSwitch(NavigationItem item, {required bool shown, bool draggable = false}) {
-      return Row(
-        key: ValueKey(item.name),
-        children: [
-          Expanded(
-            child: DsSwitch(
-              value: shown,
-              onChanged: (value) async {
-                final changed = await ref.read(navMenuProvider.notifier).setVisible(item, value: value);
-                if (!changed && context.mounted) {
-                  showDsToast(context: context, title: t.settings.navMenuKeepOne);
-                }
-              },
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s6,
-                children: [DsIcon(item.icon, size: 18), Text(item.label(t))],
-              ),
-              description: shown ? null : Text(t.settings.navMenuHidden),
-            ),
-          ),
-          if (draggable) ...[const SizedBox(width: DsSpace.s8), const DsReorderableHandle()],
-        ],
+    Widget visibilitySwitch(NavigationItem item, {required bool shown}) {
+      return DsSwitch(
+        value: shown,
+        onChanged: (value) async {
+          final changed = await ref.read(navMenuProvider.notifier).setVisible(item, value: value);
+          if (!changed && context.mounted) {
+            showDsToast(context: context, title: t.settings.navMenuKeepOne);
+          }
+        },
       );
     }
 
@@ -1133,54 +1080,48 @@ final class _NavPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(ref.read(showMultiviewProvider.notifier).set(value: value)),
               ),
             ),
-            // The visible entries in their saved order; the hidden ones
-            // follow with no handle, as in the reference's page.
-            DsReorderableList(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              defaultHandles: false,
-              padding: EdgeInsets.zero,
-              itemCount: homeMenus.length,
-              onReorder: canReorder
-                  ? (from, to) {
-                      if (from < 0 || from >= homeMenus.length) return;
-                      final target = to.clamp(0, homeMenus.length - 1);
-                      if (from != target) unawaited(ref.read(navMenuProvider.notifier).move(from, target));
-                    }
-                  : null,
-              itemBuilder: (context, index) => menuSwitch(homeMenus[index], shown: true, draggable: canReorder),
-            ),
-            for (final item in hiddenMenus) menuSwitch(item, shown: false),
           ],
         ),
-        DsListSection(
-          header: Text(t.settings.toolsOrder),
-          children: [
-            for (final (index, item) in toolOrder.indexed)
+        SettingsOrderList<NavigationItem>(
+          header: t.settings.navHomeMenuTitle,
+          items: homeMenus,
+          identityOf: (item) => item.name,
+          labelOf: (item) => item.label(t),
+          leadingOf: (item) => DsIcon(item.icon),
+          trailingOf: (item) => visibilitySwitch(item, shown: homeMenus.contains(item)),
+          // The entries the menu does not show: switched back on from here,
+          // never reordered, because an order is what a shown entry has.
+          extraRows: [
+            for (final item in hiddenMenus)
               DsListRow(
                 leading: DsIcon(item.icon),
                 title: Text(item.label(t)),
-                trailing: Row(
-                  spacing: DsSpace.s4,
-                  children: [
-                    _OrderButton(
-                      icon: DsIcons.chevronUp,
-                      label: t.settings.moveUp,
-                      enabled: index > 0,
-                      onPressed: () => unawaited(ref.read(toolOrderProvider.notifier).move(index, index - 1)),
-                    ),
-                    _OrderButton(
-                      icon: DsIcons.chevronDown,
-                      label: t.settings.moveDown,
-                      enabled: index < toolOrder.length - 1,
-                      onPressed: () => unawaited(ref.read(toolOrderProvider.notifier).move(index, index + 1)),
-                    ),
-                  ],
-                ),
+                description: Text(t.settings.navMenuHidden),
+                trailing: visibilitySwitch(item, shown: false),
               ),
           ],
+          onSave: (draft) => unawaited(ref.read(navMenuProvider.notifier).setOrder(draft)),
         ),
       ],
+    );
+  }
+}
+
+/// The tools page: the sidebar's block under its divider, in the viewer's
+/// order. Every tool stays shown — the order is the only choice here.
+final class _NavToolOrderPane extends ConsumerWidget {
+  const _NavToolOrderPane();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    return SettingsOrderList<NavigationItem>(
+      header: t.settings.toolsOrder,
+      items: ref.watch(toolOrderProvider),
+      identityOf: (item) => item.name,
+      labelOf: (item) => item.label(t),
+      leadingOf: (item) => DsIcon(item.icon),
+      onSave: (draft) => unawaited(ref.read(toolOrderProvider.notifier).setOrder(draft)),
     );
   }
 }
@@ -1251,9 +1192,9 @@ String _intervalLabel(int minutes) {
 
 /// The theme page: the three theme modes as previews at the top, then the
 /// palette and the design system's own choices — contrast, selection style
-/// and the clash rule are as much a setting as light/dark — plus the card
-/// spacing and the app language. One labelled row per choice, the control
-/// inline on a wide pane and under the label on a narrow one.
+/// and the clash rule are as much a setting as light/dark — plus the type
+/// that carries them and the app language. One labelled row per choice, the
+/// control inline on a wide pane and under the label on a narrow one.
 final class _ThemePane extends ConsumerWidget {
   const _ThemePane();
 
@@ -1263,13 +1204,13 @@ final class _ThemePane extends ConsumerWidget {
     final scope = AppThemeScope.of(context);
     final localeScope = AppLocaleScope.of(context);
     final settings = scope.settings;
-    final browse = ref.watch(browseSettingsProvider);
     String? seedName;
     for (final (name, seed) in kNamedSeeds) {
       if (seed == settings.seed) seedName = name;
     }
     final customSeed = scope.seedColor;
     final dynamicSeed = scope.dynamicSeedColor;
+    final textScale = ref.watch(textScaleFactorProvider);
     final dynamicSupported = ref.watch(dynamicColorSeedProvider).value != null;
     final dynamicEnabled = ref.watch(dynamicColorProvider);
     final seedDetail = seedName != null
@@ -1403,6 +1344,13 @@ final class _ThemePane extends ConsumerWidget {
                 update(settings.rebuild((b) => b..density = density));
               },
             ),
+          ],
+        ),
+        // The language is the other thing this page decides for the whole
+        // app, so it gets its own card ahead of the type that carries it.
+        DsListSection(
+          header: Text(t.settings.groupLanguage),
+          children: [
             SettingsChoiceRow<String>(
               leading: const DsIcon(DsIcons.languages),
               title: t.settings.language,
@@ -1419,67 +1367,13 @@ final class _ThemePane extends ConsumerWidget {
             ),
           ],
         ),
+        // The typeface and the overall text scale belong to the theme: they
+        // change what every page is drawn with, which is what this page is
+        // for. They keep their own card so the colour rows stay one group.
+        // The card gaps are not here — they configure the feed grids, so they
+        // live on the browsing page with the rest of the cards.
         DsListSection(
-          header: Text(t.settings.groupCards),
-          children: [
-            // The gaps are desen_ui's spacing tokens, chosen from the same
-            // dropdown the rest of the theme page uses — not a free pixel
-            // range the grids then have to guess at.
-            SettingsChoiceRow<double>(
-              leading: const DsIcon(DsIcons.columns2),
-              title: t.settings.crossSpacing,
-              description: t.settings.crossSpacingDescription,
-              value: browse.crossSpacing,
-              options: [
-                for (final spacing in kBrowseSpacingChoices)
-                  DsSelectOption(value: spacing, label: '${spacing.round()} px'),
-              ],
-              onChanged: (value) => ref.read(browseSettingsProvider.notifier).crossSpacing = value,
-            ),
-            SettingsChoiceRow<double>(
-              leading: const DsIcon(DsIcons.rows3),
-              title: t.settings.mainSpacing,
-              description: t.settings.mainSpacingDescription,
-              value: browse.mainSpacing,
-              options: [
-                for (final spacing in kBrowseSpacingChoices)
-                  DsSelectOption(value: spacing, label: '${spacing.round()} px'),
-              ],
-              onChanged: (value) => ref.read(browseSettingsProvider.notifier).mainSpacing = value,
-            ),
-          ],
-        ),
-        DsListSection(
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.layoutGrid),
-              title: Text(t.settings.pageSettingsEntry),
-              description: Text(t.settings.browsingPageDescription),
-              showChevron: true,
-              onPressed: () => openSettingsChild(context, ref, SettingsSection.browsing),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-/// The typography page: the typeface manager and the overall text scale.
-final class _TypographyPane extends ConsumerWidget {
-  const _TypographyPane();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final settings = AppThemeScope.of(context).settings;
-    final textScale = ref.watch(textScaleFactorProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s16,
-      children: [
-        DsListSection(
-          header: Text(t.settings.groupType),
+          header: Text(t.settings.navTypography),
           children: [
             DsListRow(
               leading: const DsIcon(DsIcons.type),
@@ -1495,7 +1389,7 @@ final class _TypographyPane extends ConsumerWidget {
                       ),
               ),
               showChevron: true,
-              onPressed: () => unawaited(showFontManagerDialog(context)),
+              onPressed: () => unawaited(showFontManagerPage(context)),
             ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.fontSize),
@@ -1510,16 +1404,6 @@ final class _TypographyPane extends ConsumerWidget {
                 divisions: 30,
                 onChanged: (value) => ref.read(textScaleFactorProvider.notifier).factor = value,
                 semanticLabel: t.settings.textScale,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Align(
-                child: Text(
-                  t.settings.textScalePreview,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: DsTheme.colorsOf(context).textMuted),
-                ),
               ),
             ),
           ],
@@ -1571,556 +1455,55 @@ final class _NetworkPane extends ConsumerWidget {
       spacing: DsSpace.s16,
       children: [
         DsListSection(
-          header: Text(t.settings.proxy),
+          header: Text(t.settings.navNetwork),
           children: [
-            DsSwitch(
-              value: proxy.enabled,
-              onChanged: (value) => unawaited(controller.setEnabled(value: value)),
-              label: Text(t.settings.proxy),
-              description: Text(t.settings.proxyDesc),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.globe),
+              title: t.settings.proxy,
+              description: t.settings.proxyDesc,
+              control: DsSwitch(
+                value: proxy.enabled,
+                onChanged: (value) => unawaited(controller.setEnabled(value: value)),
+              ),
             ),
-            if (proxy.enabled) ...[
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.server),
-                title: t.settings.proxyHost,
-                controlWidth: 260,
-                control: DsTextField(
-                  initialValue: proxy.host,
-                  clearable: true,
-                  placeholder: t.settings.proxyHost,
-                  onChanged: (value) => unawaited(controller.setHost(value)),
-                  semanticLabel: t.settings.proxyHost,
-                ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.server),
+              title: t.settings.proxyHost,
+              description: t.settings.proxyHostDesc,
+              controlWidth: 220,
+              // The endpoint stays on screen with the proxy off, greyed out:
+              // a row that vanishes reads as a setting that went missing.
+              control: DsTextField(
+                initialValue: proxy.host,
+                clearable: true,
+                enabled: proxy.enabled,
+                placeholder: t.settings.proxyHost,
+                onChanged: (value) => unawaited(controller.setHost(value)),
+                semanticLabel: t.settings.proxyHost,
               ),
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.hash),
-                title: t.settings.proxyPort,
-                controlWidth: 160,
-                control: DsTextField(
-                  initialValue: '${proxy.port}',
-                  placeholder: t.settings.proxyPort,
-                  keyboardType: TextInputType.number,
-                  onChanged: (value) {
-                    final port = int.tryParse(value.trim());
-                    if (port != null) unawaited(controller.setPort(port));
-                  },
-                  semanticLabel: t.settings.proxyPort,
-                ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.hash),
+              title: t.settings.proxyPort,
+              description: t.settings.proxyPortDesc,
+              controlWidth: 220,
+              control: DsTextField(
+                initialValue: '${proxy.port}',
+                enabled: proxy.enabled,
+                placeholder: t.settings.proxyPort,
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  final port = int.tryParse(value.trim());
+                  if (port != null) unawaited(controller.setPort(port));
+                },
+                semanticLabel: t.settings.proxyPort,
               ),
-            ],
+            ),
           ],
         ),
         const DsListSection(children: [SettingsChildEntry(child: SettingsSection.nodes)]),
       ],
     );
-  }
-}
-
-/// One of the reorder buttons at a row's end: dimmed at its boundary.
-final class _OrderButton extends StatelessWidget {
-  const _OrderButton({required this.icon, required this.label, required this.enabled, required this.onPressed});
-
-  final DsIconData icon;
-  final String label;
-  final bool enabled;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    return DsPressable(
-      semanticLabel: label,
-      onPressed: enabled ? onPressed : null,
-      builder: (context, states, _) {
-        final hovered = states.contains(WidgetState.hovered);
-        return Container(
-          width: 26,
-          height: 26,
-          decoration: DsBoxDecoration(
-            color: hovered && enabled ? colors.hover : colors.control,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Center(child: DsIcon(icon, size: 14, color: enabled ? colors.textMuted : colors.textSubtle)),
-        );
-      },
-    );
-  }
-}
-
-/// The danmaku page: the flying layer's display switch, its look and
-/// motion, the compact window's own danmaku switch (the look is shared, so
-/// the two can never drift) and the entry to the shield's lists.
-final class _DanmakuPane extends ConsumerWidget {
-  const _DanmakuPane();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final style = ref.watch(danmakuStyleProvider);
-    final controller = ref.read(danmakuStyleProvider.notifier);
-    final frameRate = ref.watch(danmakuFrameRateProvider);
-    final frameRateController = ref.read(danmakuFrameRateProvider.notifier);
-    final effectiveFps = ref.watch(danmakuEffectiveFpsProvider);
-    final activePreset = DanmakuPreset.matching(style, frameRate);
-    final playback = ref.watch(playbackSettingsProvider);
-    final tapInteraction = ref.watch(danmakuTapInteractionProvider);
-    final longPressInteraction = ref.watch(danmakuLongPressInteractionProvider);
-    final pipScale = ref.watch(pipDanmakuScaleProvider);
-    final pipScaleController = ref.read(pipDanmakuScaleProvider.notifier);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s16,
-      children: [
-        DsListSection(
-          header: Text(t.settings.danmakuTemplatesGroup),
-          children: [
-            SettingsChoiceRow<DanmakuPreset>(
-              leading: const DsIcon(DsIcons.layoutTemplate),
-              title: t.settings.preset,
-              description: t.settings.danmakuPresetHint,
-              value: activePreset,
-              placeholder: t.settings.danmakuPresetCustom,
-              options: [
-                for (final preset in DanmakuPreset.values)
-                  DsSelectOption(value: preset, label: _presetLabel(t, preset)),
-              ],
-              onChanged: (preset) => unawaited(_applyPreset(context, ref, preset)),
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.bookmarkPlus),
-              title: Text(t.settings.danmakuTemplateSaveMine),
-              onPressed: () => unawaited(_saveTemplate(context, ref)),
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.rotateCcw),
-              title: Text(t.settings.danmakuTemplateUseMine),
-              onPressed: () => unawaited(_restoreTemplate(context, ref)),
-            ),
-          ],
-        ),
-        DsListSection(
-          header: Text(t.settings.danmakuDisplayGroup),
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.captions),
-              title: Text(t.settings.showFlyingDanmaku),
-              description: Text(t.settings.showFlyingDanmakuDesc),
-              trailing: DsSwitch(
-                value: playback.danmakuVisible,
-                onChanged: (value) =>
-                    unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: value)),
-              ),
-            ),
-            SettingsChoiceRow<DanmakuPausedBehavior>(
-              leading: const DsIcon(DsIcons.pause),
-              title: t.settings.danmakuPausedBehavior,
-              description: t.settings.danmakuPausedBehaviorDesc,
-              value: ref.watch(danmakuPausedBehaviorProvider),
-              options: [
-                DsSelectOption(value: DanmakuPausedBehavior.pause, label: t.settings.danmakuPausedPause),
-                DsSelectOption(value: DanmakuPausedBehavior.fly, label: t.settings.danmakuPausedFly),
-              ],
-              onChanged: (value) => unawaited(ref.read(danmakuPausedBehaviorProvider.notifier).set(value)),
-            ),
-            DsSwitch(
-              value: ref.watch(danmakuShowGiftsProvider),
-              onChanged: (value) => unawaited(ref.read(danmakuShowGiftsProvider.notifier).set(value: value)),
-              label: Text(t.settings.danmakuShowGifts),
-              description: Text(t.settings.danmakuShowGiftsDesc),
-            ),
-            DsSwitch(
-              value: ref.watch(chatNamesProvider),
-              onChanged: (value) => unawaited(ref.read(chatNamesProvider.notifier).set(value: value)),
-              label: Text(t.settings.chatShowNames),
-              description: Text(t.settings.chatShowNamesDesc),
-            ),
-            DsSwitch(
-              value: ref.watch(chatShowGiftsProvider),
-              onChanged: (value) => unawaited(ref.read(chatShowGiftsProvider.notifier).set(value: value)),
-              label: Text(t.settings.chatShowGifts),
-              description: Text(t.settings.chatShowGiftsDesc),
-            ),
-            DsSwitch(
-              value: ref.watch(chatGiftsAboveTierProvider),
-              onChanged: ref.watch(chatShowGiftsProvider)
-                  ? (value) => unawaited(ref.read(chatGiftsAboveTierProvider.notifier).set(value: value))
-                  : null,
-              label: Text(t.settings.chatGiftsAboveTier),
-              description: Text(t.settings.chatGiftsAboveTierDesc),
-            ),
-            DsSwitch(
-              value: ref.watch(chatGiftValueInYuanProvider),
-              onChanged: ref.watch(chatShowGiftsProvider)
-                  ? (value) => unawaited(ref.read(chatGiftValueInYuanProvider.notifier).set(value: value))
-                  : null,
-              label: Text(t.settings.chatGiftValueInYuan),
-              description: Text(t.settings.chatGiftValueInYuanDesc),
-            ),
-            DsSwitch(
-              value: ref.watch(superChatIncludesMembershipProvider),
-              onChanged: (value) => unawaited(ref.read(superChatIncludesMembershipProvider.notifier).set(value: value)),
-              label: Text(t.settings.superChatIncludesMembership),
-              description: Text(t.settings.superChatIncludesMembershipDesc),
-            ),
-            SettingsChoiceRow<String>(
-              leading: const DsIcon(DsIcons.list),
-              title: t.settings.chatListStyle,
-              value: ref.watch(chatListStyleProvider),
-              options: [
-                DsSelectOption(value: 'compact', label: t.settings.chatListStyleCompact),
-                DsSelectOption(value: 'card', label: t.settings.chatListStyleCard),
-              ],
-              onChanged: (value) => unawaited(ref.read(chatListStyleProvider.notifier).set(value)),
-            ),
-            SettingsChoiceRow<int>(
-              leading: const DsIcon(DsIcons.type),
-              title: t.settings.chatListFontSize,
-              value: ref.watch(chatListFontSizeProvider),
-              options: [
-                DsSelectOption(value: 0, label: t.settings.chatListFollowTheme),
-                for (final size in const [12, 14, 16, 18, 20, 22])
-                  DsSelectOption(
-                    value: size,
-                    label: t.settings.chatListFontSizeValue(size: size),
-                  ),
-              ],
-              onChanged: (value) => unawaited(ref.read(chatListFontSizeProvider.notifier).set(value)),
-            ),
-            SettingsChoiceRow<String>(
-              leading: const DsIcon(DsIcons.moveVertical),
-              title: t.settings.chatListLineSpacing,
-              value: ref.watch(chatListLineSpacingProvider),
-              options: [
-                DsSelectOption(value: 'compact', label: t.settings.chatListSpacingCompact),
-                DsSelectOption(value: 'standard', label: t.settings.chatListSpacingStandard),
-                DsSelectOption(value: 'loose', label: t.settings.chatListSpacingLoose),
-              ],
-              onChanged: (value) => unawaited(ref.read(chatListLineSpacingProvider.notifier).set(value)),
-            ),
-          ],
-        ),
-        DsListSection(
-          header: Text(t.settings.danmakuInteractionGroup),
-          children: [
-            DsSwitch(
-              value: tapInteraction,
-              onChanged: (value) => unawaited(ref.read(danmakuTapInteractionProvider.notifier).set(value: value)),
-              label: Text(t.settings.styleTapInteraction),
-              description: Text(t.settings.styleTapInteractionDesc),
-            ),
-            DsSwitch(
-              value: longPressInteraction,
-              onChanged: (value) => unawaited(ref.read(danmakuLongPressInteractionProvider.notifier).set(value: value)),
-              label: Text(t.settings.styleLongPressInteraction),
-              description: Text(t.settings.styleLongPressInteractionDesc),
-            ),
-            DsSwitch(
-              value: ref.watch(danmakuHoldProvider),
-              onChanged: (value) => unawaited(ref.read(danmakuHoldProvider.notifier).set(value: value)),
-              label: Text(t.settings.holdDanmakuOnPress),
-              description: Text(t.settings.holdDanmakuOnPressDesc),
-            ),
-          ],
-        ),
-        DsListSection(
-          header: Text(t.settings.danmakuStyleGroup),
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.type),
-              title: Text(t.settings.danmakuFont),
-              description: Text(t.settings.danmakuFontDescription),
-              detail: Text(
-                style.fontFamily == null
-                    ? platformFontFamilyLabel()
-                    : fontFamilyLabel(
-                        t,
-                        style.fontFamily,
-                        cloudName: ref.read(fontLibraryProvider).nameOf(style.fontFamily!),
-                      ),
-              ),
-              showChevron: true,
-              onPressed: () => unawaited(showFontManagerDialog(context, danmaku: true)),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.type),
-              title: t.settings.styleFontSize,
-              detail: Text('${style.fontSize.toStringAsFixed(1)} px'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.fontSize,
-                min: DanmakuStyleRange.fontSizeMin,
-                max: DanmakuStyleRange.fontSizeMax,
-                onChanged: (value) => unawaited(controller.setFontSize(value)),
-                semanticLabel: t.settings.styleFontSize,
-                semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.bold),
-              title: t.settings.styleFontWeight,
-              detail: Text(danmakuFontWeightLabel(t, style.fontWeight)),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.fontWeight.toDouble(),
-                min: DanmakuStyleRange.fontWeightMin.toDouble(),
-                max: DanmakuStyleRange.fontWeightMax.toDouble(),
-                divisions: DanmakuStyleRange.fontWeightDivisions,
-                onChanged: (value) => unawaited(controller.setFontWeight(value.round())),
-                semanticLabel: t.settings.styleFontWeight,
-                semanticFormatter: (value) => danmakuFontWeightLabel(t, value.round()),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.letterSpacing),
-              title: t.settings.styleLetterSpacing,
-              detail: Text('${style.letterSpacing.toStringAsFixed(1)} px'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.letterSpacing,
-                min: DanmakuStyleRange.letterSpacingMin,
-                max: DanmakuStyleRange.letterSpacingMax,
-                onChanged: (value) => unawaited(controller.setLetterSpacing(value)),
-                semanticLabel: t.settings.styleLetterSpacing,
-                semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.wind),
-              title: t.settings.styleSpeed,
-              detail: Text('${style.baseSpeed.round()} px/s'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.baseSpeed,
-                min: DanmakuStyleRange.speedMin,
-                max: DanmakuStyleRange.speedMax,
-                onChanged: (value) => unawaited(controller.setBaseSpeed(value)),
-                semanticLabel: t.settings.styleSpeed,
-                semanticFormatter: (value) => '${value.round()} px/s',
-              ),
-            ),
-            DsSwitch(
-              value: style.noEmoji,
-              onChanged: (value) => unawaited(controller.setNoEmoji(value: value)),
-              label: Text(t.settings.styleNoEmoji),
-              description: Text(t.settings.styleNoEmojiDesc),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.moveVertical),
-              title: t.settings.styleArea,
-              description: t.settings.styleAreaDesc,
-              detail: Text('${(style.area * 100).round()}%'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.area,
-                divisions: DanmakuStyleRange.areaDivisions,
-                onChanged: (value) => unawaited(controller.setArea(value)),
-                semanticLabel: t.settings.styleArea,
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.arrowUpToLine),
-              title: t.settings.styleTopMargin,
-              description: t.settings.styleTopMarginDesc,
-              detail: Text('${style.topMargin.round()}'),
-              control: DsNumberField(
-                value: style.topMargin.round(),
-                min: DanmakuStyleRange.topMarginMin,
-                max: DanmakuStyleRange.topMarginMax,
-                semanticLabel: t.settings.styleTopMargin,
-                onChanged: (value) {
-                  if (value != null) unawaited(controller.setTopMargin(value));
-                },
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.arrowDownToLine),
-              title: t.settings.styleBottomMargin,
-              description: t.settings.styleBottomMarginDesc,
-              detail: Text('${style.bottomMargin.round()}'),
-              control: DsNumberField(
-                value: style.bottomMargin.round(),
-                min: DanmakuStyleRange.bottomMarginMin,
-                max: DanmakuStyleRange.bottomMarginMax,
-                semanticLabel: t.settings.styleBottomMargin,
-                onChanged: (value) {
-                  if (value != null) unawaited(controller.setBottomMargin(value));
-                },
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.circle),
-              title: t.settings.styleOpacity,
-              detail: Text('${(style.opacity * 100).round()}%'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.opacity,
-                // The reference's 0–1 range is the slider's own default:
-                // transparent through fully opaque.
-                onChanged: (value) => unawaited(controller.setOpacity(value)),
-                semanticLabel: t.settings.styleOpacity,
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.baseline),
-              title: t.settings.styleStroke,
-              description: t.settings.styleStrokeDesc,
-              control: DsSwitch(
-                value: style.showStroke,
-                onChanged: (value) => unawaited(controller.setShowStroke(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.square),
-              title: t.settings.styleStrokeWidth,
-              description: t.settings.styleStrokeWidthDesc,
-              detail: Text('${style.strokeWidth.toStringAsFixed(1)} px'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.strokeWidth,
-                max: DanmakuStyleRange.strokeWidthMax,
-                // Greyed out while the outline is off, as in the reference;
-                // the stored width survives for when it is switched back on.
-                onChanged: style.showStroke ? (value) => unawaited(controller.setStrokeWidth(value)) : null,
-                semanticLabel: t.settings.styleStrokeWidth,
-                semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.layers),
-              title: t.settings.styleFpsFollow,
-              description: t.settings.styleFpsFollowDesc,
-              control: DsSwitch(
-                value: frameRate.autoFps,
-                onChanged: (value) => unawaited(frameRateController.setAutoFps(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.gauge),
-              title: t.settings.styleFps,
-              detail: Text(t.settings.styleFpsValue(count: '${frameRate.autoFps ? effectiveFps : frameRate.fps}')),
-              controlWidth: 220,
-              control: DsSlider(
-                value: (frameRate.autoFps ? effectiveFps : frameRate.fps).toDouble(),
-                min: DanmakuStyleRange.fpsMin.toDouble(),
-                max: DanmakuStyleRange.fpsMax.toDouble(),
-                divisions: DanmakuStyleRange.fpsDivisions,
-                onChanged: frameRate.autoFps ? null : (value) => unawaited(frameRateController.setFps(value.round())),
-                semanticLabel: t.settings.styleFps,
-                semanticFormatter: (value) => t.settings.styleFpsValue(count: '${value.round()}'),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.layers),
-              title: t.settings.styleMaxVisible,
-              description: t.settings.styleMaxVisibleDesc,
-              detail: Text(t.settings.styleMaxVisibleValue(count: '${style.maxVisibleCount}')),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.maxVisibleCount.toDouble(),
-                min: DanmakuStyleRange.maxVisibleMin.toDouble(),
-                max: DanmakuStyleRange.maxVisibleMax.toDouble(),
-                divisions: DanmakuStyleRange.maxVisibleDivisions,
-                onChanged: style.massMode ? null : (value) => unawaited(controller.setMaxVisibleCount(value.round())),
-                semanticLabel: t.settings.styleMaxVisible,
-                semanticFormatter: (value) => t.settings.styleMaxVisibleValue(count: '${value.round()}'),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.flame),
-              title: t.settings.styleMassMode,
-              description: t.settings.styleMassModeDesc,
-              control: DsSwitch(
-                value: style.massMode,
-                onChanged: (value) => unawaited(controller.setMassMode(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.appWindow),
-              title: t.settings.pipDanmakuScaleAuto,
-              description: t.settings.pipDanmakuScaleAutoDesc,
-              control: DsSwitch(
-                value: pipScale.auto,
-                onChanged: (value) => unawaited(pipScaleController.setAuto(value: value)),
-              ),
-            ),
-            if (!pipScale.auto)
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.scale),
-                title: t.settings.pipDanmakuScale,
-                detail: Text('x${pipScale.scale.toStringAsFixed(2)}'),
-                controlWidth: 220,
-                control: DsSlider(
-                  value: pipScale.scale,
-                  min: kPipDanmakuScaleMin,
-                  divisions: ((kPipDanmakuScaleMax - kPipDanmakuScaleMin) / 0.01).round(),
-                  onChanged: (value) => unawaited(pipScaleController.setScale(value)),
-                  semanticLabel: t.settings.pipDanmakuScale,
-                  semanticFormatter: (value) => 'x${value.toStringAsFixed(2)}',
-                ),
-              ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.rotateCw),
-              title: Text(t.settings.styleReset),
-              onPressed: () {
-                unawaited(controller.reset());
-                unawaited(frameRateController.reset());
-                unawaited(ref.read(danmakuTapInteractionProvider.notifier).reset());
-                unawaited(ref.read(danmakuLongPressInteractionProvider.notifier).reset());
-                unawaited(pipScaleController.reset());
-              },
-            ),
-          ],
-        ),
-        const _MiniDanmakuPane(),
-        const DsListSection(children: [SettingsChildEntry(child: SettingsSection.shield)]),
-      ],
-    );
-  }
-
-  String _presetLabel(Translations t, DanmakuPreset preset) => switch (preset) {
-    DanmakuPreset.best => t.settings.danmakuPresetBest,
-    DanmakuPreset.comfort => t.settings.danmakuPresetComfort,
-    DanmakuPreset.dense => t.settings.danmakuPresetDense,
-    DanmakuPreset.full => t.settings.danmakuPresetFull,
-  };
-
-  Future<void> _applyPreset(BuildContext context, WidgetRef ref, DanmakuPreset preset) async {
-    await preset.apply(
-      style: ref.read(danmakuStyleProvider.notifier),
-      frameRate: ref.read(danmakuFrameRateProvider.notifier),
-      noEmoji: ref.read(danmakuStyleProvider).noEmoji,
-      fps: ref.read(danmakuFrameRateProvider).fps,
-    );
-    if (!context.mounted) return;
-    showDsToast(context: context, title: context.t.settings.danmakuTemplateApplied);
-  }
-
-  Future<void> _saveTemplate(BuildContext context, WidgetRef ref) async {
-    final template = DanmakuTemplate.of(ref.read(danmakuStyleProvider), ref.read(danmakuFrameRateProvider));
-    await writeSavedDanmakuTemplate(template.encode());
-    if (!context.mounted) return;
-    showDsToast(context: context, title: context.t.settings.danmakuTemplateSaved);
-  }
-
-  Future<void> _restoreTemplate(BuildContext context, WidgetRef ref) async {
-    final raw = readSavedDanmakuTemplate();
-    if (raw == null) {
-      showDsToast(context: context, title: context.t.settings.danmakuTemplateEmpty);
-      return;
-    }
-    final fallback = DanmakuTemplate.of(ref.read(danmakuStyleProvider), ref.read(danmakuFrameRateProvider));
-    final template = DanmakuTemplate.tryDecode(raw, fallback);
-    if (template == null) {
-      showDsToast(context: context, title: context.t.settings.danmakuTemplateInvalid);
-      return;
-    }
-    await applyDanmakuTemplate(
-      template,
-      style: ref.read(danmakuStyleProvider.notifier),
-      frameRate: ref.read(danmakuFrameRateProvider.notifier),
-    );
-    if (!context.mounted) return;
-    showDsToast(context: context, title: context.t.settings.danmakuTemplateApplied);
   }
 }
 
@@ -2137,10 +1520,7 @@ final class _SitesPane extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final sites = ref.watch(sitesProvider).all;
-    final selectedId = ref.watch(selectedSiteIdProvider);
-    final selectedSite = sites.where((site) => site.manifest.id == selectedId).firstOrNull;
     final hidden = ref.watch(sitesDisplayProvider);
-    final display = ref.read(sitesDisplayProvider.notifier);
     final order = ref.watch(sitesOrderProvider);
     final orderController = ref.read(sitesOrderProvider.notifier);
     final names = {for (final site in sites) site.manifest.id: localizedSiteName(site)};
@@ -2195,53 +1575,7 @@ final class _SitesPane extends ConsumerWidget {
           ),
         ],
         DsListSection(
-          header: Text(t.settings.sitesDisplay),
           children: [
-            SettingsChoiceRow<String>(
-              leading: localizedSiteIcon(selectedSite, size: 20) ?? const DsIcon(DsIcons.tv),
-              title: t.settings.site,
-              value: selectedId,
-              options: [
-                for (final site in sites)
-                  DsSelectOption(
-                    value: site.manifest.id,
-                    label: localizedSiteName(site),
-                    leading: localizedSiteIcon(site, size: 20),
-                  ),
-              ],
-              placeholder: t.settings.site,
-              onChanged: (id) => ref.read(selectedSiteIdProvider.notifier).selected = id,
-            ),
-            if (hidden.isEmpty)
-              DsListRow(leading: const DsIcon(DsIcons.antenna), title: Text(t.settings.sitesAllShown)),
-            // The rows are the display order itself: a drag (or Alt+arrow
-            // on a focused row) moves a platform, and the provider keeps
-            // the new order for the browsing pages.
-            DsReorderableList(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: order.order.length,
-              itemBuilder: (context, index) {
-                final id = order.order[index];
-                return DsSwitch(
-                  key: ValueKey(id),
-                  value: shown(id),
-                  onChanged: (value) async {
-                    final changed = await display.toggle(id);
-                    if (!changed && context.mounted) {
-                      showDsToast(context: context, title: t.settings.sitesKeepOne);
-                    }
-                  },
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: 6,
-                    children: [?localizedSiteIcon(sitesById[id], size: 18), Text(name(id))],
-                  ),
-                  description: Text(id),
-                );
-              },
-              onReorder: (from, to) => unawaited(orderController.move(from, to)),
-            ),
             DsListRow(
               leading: const DsIcon(DsIcons.pin),
               title: Text(t.settings.preferPlatform),
@@ -2249,12 +1583,6 @@ final class _SitesPane extends ConsumerWidget {
               detail: Text(order.preferred.isEmpty ? t.settings.preferPlatform : name(order.preferred)),
               showChevron: true,
               onPressed: () => unawaited(pickPreferred()),
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.listRestart),
-              title: Text(t.settings.sitesOrderReset),
-              description: Text(t.settings.sitesOrderResetDesc),
-              onPressed: () => unawaited(orderController.resetOrder()),
             ),
             // The reference's discover filter, kept with the platforms it
             // applies to: the popular page counts what it hides and can be
@@ -2267,6 +1595,15 @@ final class _SitesPane extends ConsumerWidget {
                 value: ref.watch(showUnplayableProvider),
                 onChanged: (value) => ref.read(showUnplayableProvider.notifier).setShow(value: value),
               ),
+            ),
+          ],
+        ),
+        const DsListSection(children: [SettingsChildEntry(child: SettingsSection.sitesDisplay)]),
+        DsListSection(
+          children: [
+            SettingsChildEntry(
+              child: SettingsSection.audience,
+              detail: Text(audienceModeLabel(t, ref.watch(audienceMetricProvider))),
             ),
           ],
         ),
@@ -2315,6 +1652,61 @@ final class _SitesPane extends ConsumerWidget {
         ),
         const DsListSection(children: [SettingsChildEntry(child: SettingsSection.accounts)]),
       ],
+    );
+  }
+}
+
+/// The platform display page: every platform the build carries, in the
+/// viewer's order, each with its own show/hide switch — the order the browse
+/// surfaces read, the visibility they filter by.
+///
+/// The rows are the display order itself, but only a draft edits it:
+/// 「编辑顺序」 opens one and the order reaches storage on 保存顺序, the same
+/// two states the navigation pages use. Showing or hiding a platform stays
+/// immediate — it is a different choice from where a platform sits.
+final class _SitesDisplayPane extends ConsumerWidget {
+  const _SitesDisplayPane();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final sites = ref.watch(sitesProvider).all;
+    final hidden = ref.watch(sitesDisplayProvider);
+    final display = ref.read(sitesDisplayProvider.notifier);
+    final order = ref.watch(sitesOrderProvider);
+    final orderController = ref.read(sitesOrderProvider.notifier);
+    final names = {for (final site in sites) site.manifest.id: localizedSiteName(site)};
+    final sitesById = {for (final site in sites) site.manifest.id: site};
+    // The hidden set stores the platforms switched off; an empty set shows
+    // everything.
+    bool shown(String id) => hidden.isEmpty || !hidden.contains(id);
+
+    return SettingsOrderList<String>(
+      header: t.settings.sitesDisplay,
+      items: order.order,
+      identityOf: (id) => id,
+      labelOf: (id) => names[id] ?? id,
+      leadingOf: (id) => localizedSiteIcon(sitesById[id], size: 20) ?? const DsIcon(DsIcons.antenna),
+      descriptionOf: (id) => id,
+      trailingOf: (id) => DsSwitch(
+        value: shown(id),
+        onChanged: (value) async {
+          final changed = await display.toggle(id);
+          if (!changed && context.mounted) {
+            showDsToast(context: context, title: t.settings.sitesKeepOne);
+          }
+        },
+      ),
+      extraRows: [
+        if (hidden.isEmpty) DsListRow(leading: const DsIcon(DsIcons.antenna), title: Text(t.settings.sitesAllShown)),
+        DsListRow(
+          leading: const DsIcon(DsIcons.listRestart),
+          title: Text(t.settings.sitesOrderReset),
+          description: Text(t.settings.sitesOrderResetDesc),
+          onPressed: () => unawaited(orderController.resetOrder()),
+        ),
+      ],
+      onSave: (draft) => unawaited(orderController.setOrder(draft)),
     );
   }
 }
@@ -2836,6 +2228,20 @@ final class _QualityAudioPane extends ConsumerWidget {
                 semanticLabel: t.settings.defaultVolume,
               ),
             ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.volume2),
+              title: t.settings.volumeWheelStep,
+              description: t.settings.volumeWheelStepDesc,
+              value: settings.volumeWheelStepPercent,
+              options: [
+                for (final percent in kVolumeWheelStepChoices)
+                  DsSelectOption(
+                    value: percent,
+                    label: t.settings.volumeWheelStepValue(percent: percent),
+                  ),
+              ],
+              onChanged: (value) => unawaited(controller.setVolumeWheelStepPercent(value)),
+            ),
           ],
         ),
       ],
@@ -2843,8 +2249,9 @@ final class _QualityAudioPane extends ConsumerWidget {
   }
 }
 
-/// The picture-and-small-window page: video fit, the floating and automatic
-/// compact windows with their Windows geometry, fullscreen and keep-awake.
+/// The picture page: how the video fills its area and what the screen does
+/// around it. The floating and compact windows the picture can leave behind
+/// are their own page, as is the portrait-stream layout.
 final class _PicturePane extends ConsumerWidget {
   const _PicturePane();
 
@@ -2854,181 +2261,228 @@ final class _PicturePane extends ConsumerWidget {
     final settings = ref.watch(playbackSettingsProvider);
     final portrait = ref.watch(portraitSettingsProvider);
     final controller = ref.read(playbackSettingsProvider.notifier);
-    return DsListSection(
-      header: Text(t.settings.navPicture),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
       children: [
-        SettingsChoiceRow<PlaybackFit>(
-          leading: const DsIcon(DsIcons.rectangleHorizontal),
-          title: t.settings.fit,
-          description: t.settings.fitDesc,
-          value: settings.fit,
-          options: [
-            for (final (index, option) in PlaybackFit.values.indexed)
-              DsSelectOption(value: option, label: fitLabels(t)[index]),
+        DsListSection(
+          header: Text(t.settings.pictureDisplayGroup),
+          children: [
+            SettingsChoiceRow<PlaybackFit>(
+              leading: const DsIcon(DsIcons.rectangleHorizontal),
+              title: t.settings.fit,
+              description: t.settings.fitDesc,
+              value: settings.fit,
+              options: [
+                for (final (index, option) in PlaybackFit.values.indexed)
+                  DsSelectOption(value: option, label: fitLabels(t)[index]),
+              ],
+              placeholder: t.settings.fit,
+              onChanged: (value) => unawaited(controller.setFit(value)),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.fullscreen),
+              title: t.settings.fullscreenDefault,
+              description: t.settings.fullscreenDefaultDesc,
+              control: DsSwitch(
+                value: settings.fullscreenDefault,
+                onChanged: (value) => unawaited(controller.setFullscreenDefault(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.eye),
+              title: t.settings.controlsAutoHide,
+              description: t.settings.controlsAutoHideDesc,
+              detail: Text(t.settings.controlsAutoHideValue(count: settings.controlsAutoHideSeconds)),
+              controlWidth: 220,
+              control: DsSlider(
+                value: settings.controlsAutoHideSeconds.toDouble(),
+                min: kControlsAutoHideSecondsMin.toDouble(),
+                max: kControlsAutoHideSecondsMax.toDouble(),
+                divisions: kControlsAutoHideSecondsMax - kControlsAutoHideSecondsMin,
+                onChanged: (value) => unawaited(controller.setControlsAutoHideSeconds(value.round())),
+                semanticLabel: t.settings.controlsAutoHide,
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.sun),
+              title: t.settings.keepScreenOn,
+              description: t.settings.keepScreenOnDesc,
+              control: DsSwitch(
+                value: ref.watch(keepScreenOnProvider),
+                onChanged: (value) => ref.read(keepScreenOnProvider.notifier).enabled = value,
+              ),
+            ),
           ],
-          placeholder: t.settings.fit,
-          onChanged: (value) => unawaited(controller.setFit(value)),
         ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.pictureInPicture2),
-          title: Text(t.settings.floatPlay),
-          description: Text(t.settings.floatPlayDesc),
-          trailing: DsSwitch(
-            value: settings.floatPlay,
-            onChanged: (value) => unawaited(controller.setFloatPlay(value: value)),
-          ),
-        ),
-        SettingsChoiceRow<String>(
-          leading: const DsIcon(DsIcons.maximize),
-          title: t.settings.floatWindowSize,
-          description: t.settings.floatWindowSizeDesc,
-          value: ref.watch(floatingWindowSettingsProvider).size,
-          options: [
-            DsSelectOption(value: 'small', label: t.settings.floatWindowSmall),
-            DsSelectOption(value: 'medium', label: t.settings.floatWindowMedium),
-            DsSelectOption(value: 'large', label: t.settings.floatWindowLarge),
+        DsListSection(
+          children: [
+            const SettingsChildEntry(child: SettingsSection.floatingWindow),
+            SettingsChildEntry(
+              child: SettingsSection.portrait,
+              detail: Text(
+                portrait.adaptation && portrait.adaptiveHeight
+                    ? _portraitLayoutLabel(t, portrait.layoutMode)
+                    : t.settings.portraitEntryOff,
+              ),
+            ),
           ],
-          onChanged: (value) => unawaited(ref.read(floatingWindowSettingsProvider.notifier).setSize(value)),
         ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.pictureInPicture),
-          title: Text(t.settings.autoPip),
-          description: Text(t.settings.autoPipDesc),
-          trailing: DsSwitch(
-            value: settings.autoPipOnLeave,
-            onChanged: (value) => unawaited(controller.setAutoPipOnLeave(value: value)),
-          ),
+      ],
+    );
+  }
+}
+
+/// The floating-window page: the in-app window the player leaves behind when
+/// a room scrolls away, and the system picture-in-picture it hands the
+/// picture to — including the geometry only the Windows shell exposes.
+final class _FloatingWindowPane extends ConsumerWidget {
+  const _FloatingWindowPane();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final settings = ref.watch(playbackSettingsProvider);
+    final controller = ref.read(playbackSettingsProvider.notifier);
+    final windows = ref.watch(platformRuntimeProvider).environment.runtime.kind == PlatformKind.windows;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        DsListSection(
+          header: Text(t.settings.floatWindowGroup),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.pictureInPicture2),
+              title: t.settings.floatPlay,
+              description: t.settings.floatPlayDesc,
+              control: DsSwitch(
+                value: settings.floatPlay,
+                onChanged: (value) => unawaited(controller.setFloatPlay(value: value)),
+              ),
+            ),
+            SettingsChoiceRow<String>(
+              leading: const DsIcon(DsIcons.maximize),
+              title: t.settings.floatWindowSize,
+              description: t.settings.floatWindowSizeDesc,
+              value: ref.watch(floatingWindowSettingsProvider).size,
+              options: [
+                DsSelectOption(value: 'small', label: t.settings.floatWindowSmall),
+                DsSelectOption(value: 'medium', label: t.settings.floatWindowMedium),
+                DsSelectOption(value: 'large', label: t.settings.floatWindowLarge),
+              ],
+              onChanged: (value) => unawaited(ref.read(floatingWindowSettingsProvider.notifier).setSize(value)),
+            ),
+          ],
         ),
-        if (ref.watch(platformRuntimeProvider).environment.runtime.kind == PlatformKind.windows) ...[
-          DsListRow(
-            leading: const DsIcon(DsIcons.pin),
-            title: Text(t.settings.windowsPipAlwaysOnTop),
-            description: Text(t.settings.windowsPipAlwaysOnTopDesc),
-            trailing: DsSwitch(
-              value: settings.windowsPipAlwaysOnTop,
-              onChanged: (value) => unawaited(_setWindowsPipAlwaysOnTop(ref, value)),
+        DsListSection(
+          header: Text(t.settings.pipGroup),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.pictureInPicture),
+              title: t.settings.autoPip,
+              description: t.settings.autoPipDesc,
+              control: DsSwitch(
+                value: settings.autoPipOnLeave,
+                onChanged: (value) => unawaited(controller.setAutoPipOnLeave(value: value)),
+              ),
             ),
-          ),
-          DsListRow(
-            leading: const DsIcon(DsIcons.appWindow),
-            title: Text(t.settings.rememberPipPosition),
-            description: Text(t.settings.rememberPipPositionDesc),
-            trailing: DsSwitch(
-              value: settings.rememberPipPosition,
-              onChanged: (value) => unawaited(controller.setRememberPipPosition(value: value)),
-            ),
-          ),
-          SettingsConfigRow(
-            leading: const DsIcon(DsIcons.aspectRatio),
-            title: t.settings.windowsPipBaseSize,
-            description: t.settings.windowsPipBaseSizeDesc,
-            detail: Text('${settings.windowsPipBaseSize.round()} px'),
-            controlWidth: 220,
-            control: DsSlider(
-              value: settings.windowsPipBaseSize,
-              min: kWindowsPipBaseSizeMin,
-              max: kWindowsPipBaseSizeMax,
-              divisions: ((kWindowsPipBaseSizeMax - kWindowsPipBaseSizeMin) / 10).round(),
-              onChanged: (value) {
-                unawaited(controller.setWindowsPipBaseSize(value));
-                _syncWindowsPipConfig(ref);
-              },
-              semanticLabel: t.settings.windowsPipBaseSize,
-            ),
-          ),
-          SettingsConfigRow(
-            leading: const DsIcon(DsIcons.arrowLeftRight),
-            title: t.settings.windowsPipMinWidth,
-            description: t.settings.windowsPipMinWidthDesc,
-            detail: Text('${settings.windowsPipMinWidth.round()} px'),
-            controlWidth: 220,
-            control: DsSlider(
-              value: settings.windowsPipMinWidth,
-              min: kWindowsPipMinWidthMin,
-              max: kWindowsPipMinWidthMax,
-              divisions: ((kWindowsPipMinWidthMax - kWindowsPipMinWidthMin) / 10).round(),
-              onChanged: (value) {
-                unawaited(controller.setWindowsPipMinWidth(value));
-                _syncWindowsPipConfig(ref);
-              },
-              semanticLabel: t.settings.windowsPipMinWidth,
-            ),
-          ),
-          SettingsConfigRow(
-            leading: const DsIcon(DsIcons.moveVertical),
-            title: t.settings.windowsPipMinHeight,
-            description: t.settings.windowsPipMinHeightDesc,
-            detail: Text('${settings.windowsPipMinHeight.round()} px'),
-            controlWidth: 220,
-            control: DsSlider(
-              value: settings.windowsPipMinHeight,
-              min: kWindowsPipMinHeightMin,
-              max: kWindowsPipMinHeightMax,
-              divisions: ((kWindowsPipMinHeightMax - kWindowsPipMinHeightMin) / 10).round(),
-              onChanged: (value) {
-                unawaited(controller.setWindowsPipMinHeight(value));
-                _syncWindowsPipConfig(ref);
-              },
-              semanticLabel: t.settings.windowsPipMinHeight,
-            ),
-          ),
-          DsListRow(
-            leading: const DsIcon(DsIcons.aspectRatio),
-            title: Text(t.settings.windowsPipFreeAspect),
-            description: Text(t.settings.windowsPipFreeAspectDesc),
-            trailing: DsSwitch(
-              value: settings.windowsPipFreeAspect,
-              onChanged: (value) {
-                unawaited(controller.setWindowsPipFreeAspect(value: value));
-                _syncWindowsPipConfig(ref);
-              },
-            ),
-          ),
-          DsListRow(
-            leading: const DsIcon(DsIcons.locate),
-            title: Text(t.settings.windowsPipResetPosition),
-            description: Text(t.settings.windowsPipResetPositionDesc),
-            showChevron: true,
-            onPressed: () => unawaited(_resetWindowsPipGeometry(context)),
-          ),
-        ],
-        DsListRow(
-          leading: const DsIcon(DsIcons.fullscreen),
-          title: Text(t.settings.fullscreenDefault),
-          description: Text(t.settings.fullscreenDefaultDesc),
-          trailing: DsSwitch(
-            value: settings.fullscreenDefault,
-            onChanged: (value) => unawaited(controller.setFullscreenDefault(value: value)),
-          ),
-        ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.sun),
-          title: Text(t.settings.keepScreenOn),
-          description: Text(t.settings.keepScreenOnDesc),
-          trailing: DsSwitch(
-            value: ref.watch(keepScreenOnProvider),
-            onChanged: (value) => ref.read(keepScreenOnProvider.notifier).enabled = value,
-          ),
-        ),
-        SettingsChildEntry(
-          child: SettingsSection.portrait,
-          detail: Text(
-            portrait.adaptation && portrait.adaptiveHeight
-                ? _portraitLayoutLabel(t, portrait.layoutMode)
-                : t.settings.portraitEntryOff,
-          ),
-        ),
-        if (ref.watch(selectedModuleProvider) == AppModule.live)
-          SettingsChildEntry(
-            child: SettingsSection.audience,
-            detail: Text(audienceModeLabel(t, ref.watch(audienceMetricProvider))),
-          ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.filter),
-          title: Text(t.settings.danmakuFilter),
-          description: Text(t.settings.danmakuFilterDesc),
-          showChevron: true,
-          onPressed: () => openSettingsChild(context, ref, SettingsSection.shield),
+            // The other platforms give the picture to the operating system's
+            // own player, which has none of these knobs.
+            if (windows) ...[
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.pin),
+                title: t.settings.windowsPipAlwaysOnTop,
+                description: t.settings.windowsPipAlwaysOnTopDesc,
+                control: DsSwitch(
+                  value: settings.windowsPipAlwaysOnTop,
+                  onChanged: (value) => unawaited(_setWindowsPipAlwaysOnTop(ref, value)),
+                ),
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.appWindow),
+                title: t.settings.rememberPipPosition,
+                description: t.settings.rememberPipPositionDesc,
+                control: DsSwitch(
+                  value: settings.rememberPipPosition,
+                  onChanged: (value) => unawaited(controller.setRememberPipPosition(value: value)),
+                ),
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.aspectRatio),
+                title: t.settings.windowsPipBaseSize,
+                description: t.settings.windowsPipBaseSizeDesc,
+                detail: Text('${settings.windowsPipBaseSize.round()} px'),
+                controlWidth: 220,
+                control: DsSlider(
+                  value: settings.windowsPipBaseSize,
+                  min: kWindowsPipBaseSizeMin,
+                  max: kWindowsPipBaseSizeMax,
+                  divisions: ((kWindowsPipBaseSizeMax - kWindowsPipBaseSizeMin) / 10).round(),
+                  onChanged: (value) {
+                    unawaited(controller.setWindowsPipBaseSize(value));
+                    _syncWindowsPipConfig(ref);
+                  },
+                  semanticLabel: t.settings.windowsPipBaseSize,
+                ),
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.arrowLeftRight),
+                title: t.settings.windowsPipMinWidth,
+                description: t.settings.windowsPipMinWidthDesc,
+                detail: Text('${settings.windowsPipMinWidth.round()} px'),
+                controlWidth: 220,
+                control: DsSlider(
+                  value: settings.windowsPipMinWidth,
+                  min: kWindowsPipMinWidthMin,
+                  max: kWindowsPipMinWidthMax,
+                  divisions: ((kWindowsPipMinWidthMax - kWindowsPipMinWidthMin) / 10).round(),
+                  onChanged: (value) {
+                    unawaited(controller.setWindowsPipMinWidth(value));
+                    _syncWindowsPipConfig(ref);
+                  },
+                  semanticLabel: t.settings.windowsPipMinWidth,
+                ),
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.moveVertical),
+                title: t.settings.windowsPipMinHeight,
+                description: t.settings.windowsPipMinHeightDesc,
+                detail: Text('${settings.windowsPipMinHeight.round()} px'),
+                controlWidth: 220,
+                control: DsSlider(
+                  value: settings.windowsPipMinHeight,
+                  min: kWindowsPipMinHeightMin,
+                  max: kWindowsPipMinHeightMax,
+                  divisions: ((kWindowsPipMinHeightMax - kWindowsPipMinHeightMin) / 10).round(),
+                  onChanged: (value) {
+                    unawaited(controller.setWindowsPipMinHeight(value));
+                    _syncWindowsPipConfig(ref);
+                  },
+                  semanticLabel: t.settings.windowsPipMinHeight,
+                ),
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.aspectRatio),
+                title: t.settings.windowsPipFreeAspect,
+                description: t.settings.windowsPipFreeAspectDesc,
+                control: DsSwitch(
+                  value: settings.windowsPipFreeAspect,
+                  onChanged: (value) {
+                    unawaited(controller.setWindowsPipFreeAspect(value: value));
+                    _syncWindowsPipConfig(ref);
+                  },
+                ),
+              ),
+              DsListRow(
+                leading: const DsIcon(DsIcons.locate),
+                title: Text(t.settings.windowsPipResetPosition),
+                description: Text(t.settings.windowsPipResetPositionDesc),
+                showChevron: true,
+                onPressed: () => unawaited(_resetWindowsPipGeometry(context)),
+              ),
+            ],
+          ],
         ),
       ],
     );
@@ -3112,6 +2566,10 @@ Future<void> _resetPortraitSettings(BuildContext context, WidgetRef ref) async {
   if (!confirmed) return;
   await ref.read(portraitSettingsProvider.notifier).resetToDefaults();
   await ref.read(portraitFullscreenProvider.notifier).resetToDefaults();
+  // The rooms' remembered framings belong to the same surface: reset drops
+  // their overrides too (the store write reaches the other windows through
+  // the refresh list).
+  await ref.read(roomOrientationChoicesProvider.notifier).reset();
   if (context.mounted) {
     showDsToast(context: context, title: t.settings.mpvResetDone);
   }
@@ -3267,41 +2725,6 @@ String _portraitLayoutLabel(Translations t, PortraitLayoutMode mode) => switch (
   PortraitLayoutMode.immersive => t.settings.portraitLayoutImmersive,
   PortraitLayoutMode.compatibility => t.settings.portraitLayoutCompatibility,
 };
-
-/// The small-window danmaku pane (the reference's mini-window danmaku): whether the
-/// flying layer also draws while the window is the compact one. The look
-/// itself is shared with the danmaku pane, so the two can never drift.
-final class _MiniDanmakuPane extends ConsumerWidget {
-  const _MiniDanmakuPane();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final settings = ref.watch(playbackSettingsProvider);
-    return DsListSection(
-      header: Text(t.settings.navMiniDanmaku),
-      children: [
-        DsListRow(
-          leading: const DsIcon(DsIcons.pictureInPicture),
-          title: Text(t.settings.miniDanmakuVisible),
-          description: Text(t.settings.miniDanmakuVisibleDesc),
-          trailing: DsSwitch(
-            value: settings.miniDanmakuVisible,
-            onChanged: (value) =>
-                unawaited(ref.read(playbackSettingsProvider.notifier).setMiniDanmakuVisible(value: value)),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s16),
-          child: Text(
-            t.settings.miniDanmakuHint,
-            style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 /// The player-kernel pane (the reference's player kernel): the engine in use and
 /// its hardware-decoding choice, applied to each attached engine through

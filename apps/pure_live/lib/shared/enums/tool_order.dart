@@ -22,15 +22,14 @@ final class ToolOrderController extends Notifier<List<NavigationItem>> {
     }
   }
 
-  /// Moves the tool at [from] to [to], writing the order through.
-  Future<void> move(int from, int to) async {
-    if (from < 0 || to < 0 || from >= state.length || to >= state.length || from == to) return;
-    final next = [...state];
-    final item = next.removeAt(from);
-    next.insert(to, item);
-    state = next;
+  /// Stores [items] as the tools' order. Only a full rearrangement of the
+  /// tools this build knows is accepted: the order editor hands back the same
+  /// list it was shown, and anything else would drop a tool from the sidebar.
+  Future<void> setOrder(List<NavigationItem> items) async {
+    if (items.length != kToolItems.length || items.toSet() != kToolItems.toSet()) return;
+    state = items;
     try {
-      await StoragePrefs.setStringList('tools.order', [for (final item in next) item.name]);
+      await StoragePrefs.setStringList('tools.order', [for (final item in items) item.name]);
     } on Object {
       // The order is a preference; a closed store loses it.
     }

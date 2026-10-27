@@ -6,6 +6,7 @@ library;
 export 'api/cc_endpoints.dart';
 export 'api/cc_http.dart';
 export 'capabilities/cc_area_provider.dart';
+export 'capabilities/cc_auth_provider.dart';
 export 'capabilities/cc_discovery_provider.dart';
 export 'capabilities/cc_link_resolver.dart';
 export 'capabilities/cc_playback_provider.dart';

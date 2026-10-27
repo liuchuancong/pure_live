@@ -3,8 +3,7 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_sites/live_sites.dart'
-    show LiveAudienceCapability, LiveAudienceOnlineAvailability, LiveSite;
+import 'package:live_sites/live_sites.dart' show LiveAudienceCapability, LiveAudienceOnlineAvailability, LiveSite;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/browse/audience_metric_provider.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow;
@@ -74,9 +73,7 @@ final class AudienceSettingsPane extends ConsumerWidget {
               trailing: DsSwitch(
                 value: policy.preferRealOnline,
                 onChanged: automatic
-                    ? (value) => unawaited(
-                        ref.read(audiencePolicyProvider.notifier).setPreferRealOnline(value: value),
-                      )
+                    ? (value) => unawaited(ref.read(audiencePolicyProvider.notifier).setPreferRealOnline(value: value))
                     : null,
               ),
             ),
@@ -102,7 +99,9 @@ final class AudienceSettingsPane extends ConsumerWidget {
             header: Text('${t.settings.audienceHeatOnlyGroup} (${heatOnlySites.length})'),
             children: [
               _Note(
-                text: heatOnlySites.map(localizedSiteName).join(LocaleSettings.currentLocale.languageCode == 'zh' ? '、' : ', '),
+                text: heatOnlySites
+                    .map(localizedSiteName)
+                    .join(LocaleSettings.currentLocale.languageCode == 'zh' ? '、' : ', '),
                 style: noteStyle,
               ),
               _Note(text: t.settings.audienceHeatOnlyDesc, style: noteStyle),

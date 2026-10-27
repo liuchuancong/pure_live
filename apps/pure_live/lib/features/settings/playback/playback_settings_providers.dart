@@ -138,6 +138,8 @@ typedef PlaybackSettings = ({
   bool windowsPipFreeAspect,
   bool asmrSleepMode,
   int asmrSleepMinutes,
+  int controlsAutoHideSeconds,
+  int volumeWheelStepPercent,
 });
 
 const PlaybackSettings _defaults = (
@@ -167,6 +169,8 @@ const PlaybackSettings _defaults = (
   windowsPipFreeAspect: false,
   asmrSleepMode: false,
   asmrSleepMinutes: 60,
+  controlsAutoHideSeconds: 3,
+  volumeWheelStepPercent: 5,
 );
 
 /// The reference's compact-window base-size bounds.
@@ -182,6 +186,13 @@ const double kWindowsPipMinHeightMax = 240;
 /// The reference's ASMR sleep-timer bounds.
 const int kAsmrSleepMinutesMin = 15;
 const int kAsmrSleepMinutesMax = 1440;
+
+/// The control bar's auto-hide delay bounds, in seconds.
+const int kControlsAutoHideSecondsMin = 1;
+const int kControlsAutoHideSecondsMax = 10;
+
+/// The volume wheel's step choices, in percent of the full range.
+const List<int> kVolumeWheelStepChoices = [2, 5, 10];
 
 /// The reference's duration presets.
 const List<int> kAsmrSleepMinuteChoices = [15, 30, 45, 60, 90, 120, 240, 480, 720, 1440];
@@ -220,8 +231,7 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
         muted: StoragePrefs.getBool('playback.muted') ?? _defaults.muted,
         globalMute: StoragePrefs.getBool('playback.globalMute') ?? _defaults.globalMute,
         backgroundPlay: StoragePrefs.getBool('playback.background') ?? _defaults.backgroundPlay,
-        backgroundAudioOnly:
-            StoragePrefs.getBool('playback.backgroundAudioOnly') ?? _defaults.backgroundAudioOnly,
+        backgroundAudioOnly: StoragePrefs.getBool('playback.backgroundAudioOnly') ?? _defaults.backgroundAudioOnly,
         backgroundPauseDanmaku:
             StoragePrefs.getBool('playback.backgroundPauseDanmaku') ?? _defaults.backgroundPauseDanmaku,
         pauseOnPipClose: StoragePrefs.getBool('playback.pauseOnPipClose') ?? _defaults.pauseOnPipClose,
@@ -254,6 +264,10 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
           kAsmrSleepMinutesMin,
           kAsmrSleepMinutesMax,
         ),
+        controlsAutoHideSeconds: (StoragePrefs.getInt('playback.controlsAutoHide') ?? _defaults.controlsAutoHideSeconds)
+            .clamp(kControlsAutoHideSecondsMin, kControlsAutoHideSecondsMax),
+        volumeWheelStepPercent: (StoragePrefs.getInt('playback.volumeWheelStep') ?? _defaults.volumeWheelStepPercent)
+            .clamp(kVolumeWheelStepChoices.first, kVolumeWheelStepChoices.last),
       );
     } on Object {
       return _defaults;
@@ -308,6 +322,8 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     bool? windowsPipFreeAspect,
     bool? asmrSleepMode,
     int? asmrSleepMinutes,
+    int? controlsAutoHideSeconds,
+    int? volumeWheelStepPercent,
   }) => (
     preferredQuality: preferredQuality ?? state.preferredQuality,
     preferredQualityCellular: preferredQualityCellular ?? state.preferredQualityCellular,
@@ -335,6 +351,8 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     windowsPipFreeAspect: windowsPipFreeAspect ?? state.windowsPipFreeAspect,
     asmrSleepMode: asmrSleepMode ?? state.asmrSleepMode,
     asmrSleepMinutes: asmrSleepMinutes ?? state.asmrSleepMinutes,
+    controlsAutoHideSeconds: controlsAutoHideSeconds ?? state.controlsAutoHideSeconds,
+    volumeWheelStepPercent: volumeWheelStepPercent ?? state.volumeWheelStepPercent,
   );
 
   /// The resolution tier a room starts on; normalized to the reference's
@@ -481,6 +499,21 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     final next = value.clamp(kAsmrSleepMinutesMin, kAsmrSleepMinutesMax);
     state = _with(asmrSleepMinutes: next);
     await _write(() => StoragePrefs.setInt('playback.asmrMinutes', next));
+  }
+
+  /// Stores how long a playing picture keeps its controls before hiding
+  /// them, clamped to 1–10 seconds.
+  Future<void> setControlsAutoHideSeconds(int value) async {
+    final next = value.clamp(kControlsAutoHideSecondsMin, kControlsAutoHideSecondsMax);
+    state = _with(controlsAutoHideSeconds: next);
+    await _write(() => StoragePrefs.setInt('playback.controlsAutoHide', next));
+  }
+
+  /// Stores the volume wheel's step as one of the known percentages.
+  Future<void> setVolumeWheelStepPercent(int value) async {
+    final next = kVolumeWheelStepChoices.contains(value) ? value : _defaults.volumeWheelStepPercent;
+    state = _with(volumeWheelStepPercent: next);
+    await _write(() => StoragePrefs.setInt('playback.volumeWheelStep', next));
   }
 
   /// Stores the starting resolution tier; null/unknown falls back to 原画

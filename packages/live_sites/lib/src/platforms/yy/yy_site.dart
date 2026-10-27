@@ -5,6 +5,7 @@ import 'dart:async';
 // ignore_for_file: switch_on_type
 
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
+import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
@@ -25,6 +26,7 @@ import 'package:live_sites/src/models/room/room_runtime/room_runtime.dart';
 import 'package:live_sites/src/platforms/yy/api/yy_endpoints.dart';
 import 'package:live_sites/src/platforms/yy/api/yy_http.dart';
 import 'package:live_sites/src/platforms/yy/capabilities/yy_area_provider.dart';
+import 'package:live_sites/src/platforms/yy/capabilities/yy_auth_provider.dart';
 import 'package:live_sites/src/platforms/yy/capabilities/yy_discovery_provider.dart';
 import 'package:live_sites/src/platforms/yy/capabilities/yy_link_resolver.dart';
 import 'package:live_sites/src/platforms/yy/capabilities/yy_playback_provider.dart';
@@ -160,8 +162,28 @@ final class YySite implements LiveSite {
 
   // Requests ------------------------------------------------------------------
 
-  /// The user's cookie ('' when none), control characters removed.
-  String _login() => _cookie().replaceAll(_controlCharacters, '').trim();
+  /// The user's cookie ('' when none), control characters removed. The
+  /// credential applied through [applyLoginCredential] wins over the
+  /// constructor's until [clearLoginCredential].
+  String _login() {
+    final raw = (_appliedLogin ?? _cookie()).replaceAll(_controlCharacters, '').trim();
+    return raw.toLowerCase().startsWith('cookie:') ? raw.substring(7).trim() : raw;
+  }
+
+  /// The credential applied through [applyLoginCredential], or null while the
+  /// constructor's cookie answers (in-memory only: storing a login is the
+  /// application's business).
+  String? _appliedLogin;
+
+  /// Makes every request carry [cookie] as the user's login, stripped the way
+  /// [_login] strips it.
+  void applyLoginCredential(String cookie) {
+    _appliedLogin = cookie.replaceAll(_controlCharacters, '').trim();
+  }
+
+  /// Drops the applied login; requests go back to what the constructor was
+  /// given (no cookie when it was given none).
+  void clearLoginCredential() => _appliedLogin = null;
 
   /// A GET with 3.x's API headers.
   Future<YyResponse> _get(Uri url) => http.get(url, headers: YyEndpoints.apiHeaders(cookie: _login()));
@@ -592,6 +614,7 @@ final class YySite implements LiveSite {
   YyPlaybackProvider? _playback;
   YyDanmakuProvider? _danmaku;
   YyLinkResolver? _link;
+  YyAuthProvider? _auth;
 
   /// The capability of type [T], or null when YY does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -604,6 +627,7 @@ final class YySite implements LiveSite {
     final playback = _playback ??= YyPlaybackProvider(site: this);
     final danmaku = _danmaku ??= YyDanmakuProvider(site: this);
     final link = _link ??= const YyLinkResolver();
+    final auth = _auth ??= YyAuthProvider(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -612,6 +636,7 @@ final class YySite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveAuthCapability) => auth as T,
       _ => null,
     };
   }

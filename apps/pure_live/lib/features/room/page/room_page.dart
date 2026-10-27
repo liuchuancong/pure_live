@@ -165,9 +165,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         if (ref.read(sleepTimerProvider).endsAt != null) return false;
         final room = ref.read(roomProvider);
         final presentation = ref.read(roomPresentationProvider);
-        return room.playback.playing &&
-            presentation != PresentationMode.pip &&
-            presentation != PresentationMode.floating;
+        return room.playback.playing && presentation != PresentationMode.pip;
       },
       pause: () async {
         _backgroundPausedKey = ref.read(roomProvider).room?.ref.identityKey;
@@ -647,6 +645,13 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         setState(() => _portraitFullscreen = false);
       }
     });
+    // What the room says about a login (a Bilibili connection that only sees
+    // masked names, a Twitch cookie the server refused): the controller has
+    // no context to toast with, so the visible page carries its hints.
+    ref.listen(roomHintProvider, (previous, next) {
+      if (next == null || previous?.id == next.id) return;
+      showDsToast(context: context, title: next.text, status: DsStatus.warning);
+    });
     final colors = DsTheme.colorsOf(context);
     // A TV remote uses the arrows to move focus and its own volume keys
     // for sound; a desktop keyboard keeps the arrows on the volume.
@@ -689,6 +694,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       unawaited(ref.read(roomProvider.notifier).setVolume(handle.volume + delta));
     }
 
+    // The arrows take the wheel's step (the 画质与音频 setting); watching it
+    // keeps the bindings honest after a change.
+    final volumeStep = ref.watch(playbackSettingsProvider.select((settings) => settings.volumeWheelStepPercent)) / 100;
+
     final keys = <SingleActivator, VoidCallback>{
       const SingleActivator(LogicalKeyboardKey.keyF): () {
         final player = room.handle?.id;
@@ -697,8 +706,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       const SingleActivator(LogicalKeyboardKey.escape): leave,
       const SingleActivator(LogicalKeyboardKey.space): () =>
           unawaited(ref.read(roomProvider.notifier).togglePlayPause()),
-      if (!tv) const SingleActivator(LogicalKeyboardKey.arrowUp): () => nudgeVolume(0.05),
-      if (!tv) const SingleActivator(LogicalKeyboardKey.arrowDown): () => nudgeVolume(-0.05),
+      if (!tv) const SingleActivator(LogicalKeyboardKey.arrowUp): () => nudgeVolume(volumeStep),
+      if (!tv) const SingleActivator(LogicalKeyboardKey.arrowDown): () => nudgeVolume(-volumeStep),
       const SingleActivator(LogicalKeyboardKey.keyR): () => unawaited(ref.read(roomProvider.notifier).retry()),
     };
 
@@ -790,7 +799,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
               // The reference's wide room: the picture centred in the stage at its
               // own shape, and the chat column with the strip above it. The
               // column can fold away; the choice is remembered for the next room.
-              final chatWidth = (constraints.maxWidth * 0.34).clamp(300.0, 400.0);
+              // Its width is the viewer's own (the 弹幕 setting).
+              final chatWidth = ref.watch(chatPanelWidthProvider);
               void toggleChat() {
                 unawaited(ref.read(playbackSettingsProvider.notifier).setChatCollapsed(value: !chatCollapsed));
               }
@@ -1290,7 +1300,7 @@ final class _SleepChip extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final t = context.t;
     final running = timer.minutes != null;
-    final label = running ? '${timer.minutes} min' : t.room.sleep;
+    final label = running ? asmrSleepDurationLabel(timer.minutes!) : t.room.sleep;
     return DsMenuAnchor(
       semanticLabel: t.room.sleep,
       builder: (context, controller, child) => DsPressable(
@@ -1330,9 +1340,11 @@ final class _SleepChip extends ConsumerWidget {
       items: [
         if (running)
           DsMenuItem(label: Text(t.room.sleepOff), onPressed: () => ref.read(sleepTimerProvider.notifier).start(null)),
-        for (final minutes in const [15, 30, 60, 120, 240, 480])
+        // The settings page's own duration presets, read through the shared
+        // list: one set of choices, one wording.
+        for (final minutes in kAsmrSleepMinuteChoices)
           DsMenuItem(
-            label: Text('$minutes min'),
+            label: Text(asmrSleepDurationLabel(minutes)),
             onPressed: () => ref.read(sleepTimerProvider.notifier).start(minutes),
           ),
       ],

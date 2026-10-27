@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/favorites/data/favorite_rules.dart';
@@ -19,22 +20,20 @@ import 'package:pure_live/shared/shared.dart';
 /// reference's large follows card).
 const double _favoriteLargeCardMinWidth = 300;
 
-/// The widest a compact follows card gets, so dense mode always stays
-/// smaller than the large cards.
-const double _favoriteDenseCardMaxWidth = 280;
-
 /// The gap and padding the follows grid's [CardGrid] uses (its defaults):
 /// the card measure is worked out from the same box, so the columns match
 /// the reference's minimum width.
 const double _favoriteGridGap = DsSpace.s16;
 const EdgeInsets _favoriteGridPadding = EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24);
 
-/// A card measure for [width] that gives the follows grid the reference's
-/// columns: compact cards keep the browsing width (up to a small-card cap),
-/// while large cards are as wide as the row allows around the 300 px floor.
-double _favoriteCardExtent({required bool dense, required double width, required double preferred}) {
-  if (dense) return math.min(preferred, _favoriteDenseCardMaxWidth);
-  final content = math.max(0, width - _favoriteGridPadding.horizontal);
+/// A card measure for [width] that gives the follows grid its columns: dense
+/// mode keeps the browsing grid's own width-derived measure, while large
+/// cards are as wide as the row allows around the 300 px floor — the one
+/// place a feed still overrides the grid's measure, because the viewer's
+/// density choice is what decides it.
+double _favoriteCardExtent({required bool dense, required double width}) {
+  final content = math.max(0, width - _favoriteGridPadding.horizontal).toDouble();
+  if (dense) return browseCardExtentForWidth(content);
   final columns = math.max(1, ((content + _favoriteGridGap) / (_favoriteLargeCardMinWidth + _favoriteGridGap)).floor());
   // A hair above the exact item width keeps the grid's own ceil() on the
   // intended column count instead of tipping into one more.
@@ -73,16 +72,10 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   /// The tag shown, or null for every tag.
   String? _tag;
 
-  /// The page shown on the bottom pager, from 1.
+  /// The page shown on the bottom pager, from 1. The page is measured in the
+  /// shown platform's own feed window (see [roomFeedRequestSize]), so a page
+  /// is one refresh's worth of rooms rather than a number the viewer sets.
   int _page = 1;
-
-  /// How many follows one page holds; the shared default until the pager
-  /// is changed.
-  int _pageSize = 20;
-
-  /// The pager's choices from the shared options, keeping the current size
-  /// visible even if it was just removed from the list.
-  List<int> _pagerSizes(List<int> options) => {...options, _pageSize}.toList()..sort();
 
   /// The grid's position, so a new page starts at its top.
   final ScrollController _gridScroll = ScrollController();
@@ -103,7 +96,6 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   @override
   void initState() {
     super.initState();
-    _pageSize = ref.read(browseSettingsProvider).homePageSize.clamp(1, 100);
     WidgetsBinding.instance.addObserver(this);
     // A change from the settings surface re-arms the clock in place.
     ref.listenManual(followsAutoRefreshProvider, (_, _) {
@@ -258,17 +250,6 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     _jumpToTop();
   }
 
-  /// Changes the page size, keeping the first room the viewer was seeing
-  /// on the page it lands on (the reference's `onPageSize`).
-  void _changePageSize(int size) {
-    final firstIndex = (_page - 1) * _pageSize;
-    setState(() {
-      _pageSize = size;
-      _page = firstIndex ~/ size + 1;
-    });
-    _jumpToTop();
-  }
-
   void _jumpToTop() {
     if (_gridScroll.hasClients) _gridScroll.jumpTo(0);
   }
@@ -277,9 +258,10 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   Widget build(BuildContext context) {
     final t = context.t;
     final follows = ref.watch(followsProvider);
-    final browseCardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
     final dense = ref.watch(favoritesDensityProvider);
     final layout = ref.watch(browseLayoutProvider);
+    // The page size follows the platform tab, which resets the page itself;
+    // nothing re-slices from the settings surface any more.
     // A platform switched off, or the order dragged, in the settings
     // surface reorders the tabs.
     ref
@@ -317,7 +299,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
           aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
               ? CardGrid.roomCardCompactAspectRatio
               : CardGrid.roomCardAspectRatio,
-          cardExtent: _favoriteCardExtent(dense: dense, width: constraints.maxWidth, preferred: browseCardExtent),
+          cardExtent: _favoriteCardExtent(dense: dense, width: constraints.maxWidth),
           isLoading: true,
           itemBuilder: (_, _) => const SizedBox.shrink(),
         ),
@@ -363,10 +345,11 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     ];
     // The pager slices the loaded follows locally; the shown page is kept
     // inside the slice that is left after a filter or an unfollow.
-    final lastPage = rooms.isEmpty ? 1 : (rooms.length + _pageSize - 1) ~/ _pageSize;
+    final pageSize = roomFeedRequestSize(platform);
+    final lastPage = rooms.isEmpty ? 1 : (rooms.length + pageSize - 1) ~/ pageSize;
     final page = _page.clamp(1, lastPage);
-    final start = (page - 1) * _pageSize;
-    final end = start + _pageSize > rooms.length ? rooms.length : start + _pageSize;
+    final start = (page - 1) * pageSize;
+    final end = start + pageSize > rooms.length ? rooms.length : start + pageSize;
     final visibleRooms = rooms.sublist(start, end);
 
     Widget cardFor(LiveRoom room, {required bool compact}) {
@@ -436,33 +419,22 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                     ),
                   ),
                   const SizedBox(width: DsSpace.s12),
-                  const LayoutToggle(),
-                  const SizedBox(width: DsSpace.s8),
                   _RefreshButton(refreshing: _refreshing, onRefresh: _runRefresh),
                 ],
               ),
-              // The platform tabs: "all", then every platform with follows
-              // in the configured order, each with its count in the group.
-              DsTabs<String>(
-                value: platform,
+              // The platform tabs, the wall behind the chevron and the grid
+              // switch: one row, exactly as 热门 and 分区 lay them out. Each
+              // name carries how many follows it holds in the shown group,
+              // and the wall repeats that count under the logo.
+              PlatformTabRow(
+                platforms: [kAllPlatforms, ...platformTabs],
+                current: platform,
+                nameOf: _platformName,
+                semanticLabel: t.navigation.favorites,
+                countOf: (id) => followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
+                onManagePlatforms: () =>
+                    unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
                 onChanged: _selectPlatform,
-                tabs: [
-                  for (final id in <String>[kAllPlatforms, ...platformTabs])
-                    DsTab<String>(
-                      value: id,
-                      label: id == kAllPlatforms
-                          ? Text(_platformName(id))
-                          : Row(
-                              mainAxisSize: MainAxisSize.min,
-                              spacing: 6,
-                              children: [
-                                ?localizedSiteIcon(ref.read(sitesProvider).getById(id), size: 14),
-                                Text(_platformName(id)),
-                              ],
-                            ),
-                      count: followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
-                    ),
-                ],
               ),
               if (tags.isNotEmpty)
                 DsChoiceChips<String?>(
@@ -502,11 +474,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                         ? CardGrid.roomCardCompactAspectRatio
                         : CardGrid.roomCardAspectRatio,
                     listItemBuilder: (context, room) => cardFor(room, compact: true),
-                    cardExtent: _favoriteCardExtent(
-                      dense: dense,
-                      width: constraints.maxWidth,
-                      preferred: browseCardExtent,
-                    ),
+                    cardExtent: _favoriteCardExtent(dense: dense, width: constraints.maxWidth),
                     scrollController: _gridScroll,
                     itemBuilder: (context, room) => cardFor(room, compact: false),
                   ),
@@ -516,13 +484,8 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
           FavoritesPager(
             page: page,
             pageCount: lastPage,
-            pageSize: _pageSize,
             busy: _refreshing,
-            showPageSize: ref.watch(showPageSizeSelectorProvider),
-            showGoto: ref.watch(showGotoButtonProvider),
-            pageSizes: _pagerSizes(ref.watch(pageSizeOptionsProvider)),
             onPage: _goToPage,
-            onPageSize: _changePageSize,
             onRefresh: _runRefresh,
           ),
       ],

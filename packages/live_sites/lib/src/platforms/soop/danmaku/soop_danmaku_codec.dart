@@ -17,8 +17,13 @@ import 'package:live_sites/src/models/message/message_sender/message_sender.dart
 
 /// What the danmaku connection needs to join one room (3.x's
 /// `SoopDanmakuArgs`): the chat endpoints and the room's chat number, with
-/// the WebSocket handshake headers 3.x built for it. Anonymous: no cookie
-/// (3.x carried the user's; the v2 context hands a site no credentials).
+/// the WebSocket handshake headers 3.x built for it. Anonymous by design: the
+/// [headers] are `SoopEndpoints.apiHeaders` asked without a cookie, even when
+/// the site signs its API requests with the user's login. The reference agrees
+/// that the chat does not need the login — it strips `Cookie` from the
+/// handshake of the plain port, noting that the archived v4 joined anonymously
+/// — and this adapter keeps it out of both ports, so a viewer's login never
+/// reaches a chat edge.
 final class SoopDanmakuArgs {
   /// Creates the arguments.
   const SoopDanmakuArgs({required this.url, required this.plainUrl, required this.chatNo, required this.headers});
@@ -34,7 +39,8 @@ final class SoopDanmakuArgs {
   /// `CHATNO`, sent in the join packet.
   final String chatNo;
 
-  /// Handshake headers: the API headers with `Origin` of the player page.
+  /// Handshake headers: the API headers of a guest, with `Origin` of the
+  /// player page.
   final Map<String, String> headers;
 
   @override

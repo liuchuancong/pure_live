@@ -140,6 +140,276 @@ class Translations$account$zh_CN {
 
 	/// zh-CN: '已退出登录'
 	String get signOutSuccess => '已退出登录';
+
+	/// zh-CN: '退出登录失败'
+	String get signOutFailed => '退出登录失败';
+
+	/// zh-CN: '国内平台'
+	String get groupDomestic => '国内平台';
+
+	/// zh-CN: '海外平台'
+	String get groupOverseas => '海外平台';
+
+	/// zh-CN: '未设置'
+	String get statusNone => '未设置';
+
+	/// zh-CN: '无法读取，请重新粘贴 Cookie'
+	String get statusUnreadable => '无法读取，请重新粘贴 Cookie';
+
+	/// zh-CN: '正在核验…'
+	String get verifying => '正在核验…';
+
+	/// zh-CN: '登录已失效，请重新登录或更换 Cookie'
+	String get statusRejected => '登录已失效，请重新登录或更换 Cookie';
+
+	/// zh-CN: '已保存，暂时无法核验账号'
+	String get statusCheckFailed => '已保存，暂时无法核验账号';
+
+	/// zh-CN: '已保存'
+	String get statusSaved => '已保存';
+
+	/// zh-CN: '已保存，暂未用于请求'
+	String get statusStoredUnused => '已保存，暂未用于请求';
+
+	/// zh-CN: '未设置：Cookie 中没有会话令牌'
+	String get statusDouyuNoSession => '未设置：Cookie 中没有会话令牌';
+
+	/// zh-CN: '登录已过期，请重新粘贴 Cookie'
+	String get statusDouyuExpired => '登录已过期，请重新粘贴 Cookie';
+
+	/// zh-CN: '预计 {time} 到期'
+	String statusDouyuUntil({required Object time}) => '预计 ${time} 到期';
+
+	/// zh-CN: '登录有效，到期前自动续期'
+	String get statusDouyuAutoRenew => '登录有效，到期前自动续期';
+
+	/// zh-CN: '登录态已过期，播放时自动续期'
+	String get statusDouyuRenewsOnPlay => '登录态已过期，播放时自动续期';
+
+	/// zh-CN: '登录态已失效，点按重新粘贴 Cookie'
+	String get statusDouyuRepaste => '登录态已失效，点按重新粘贴 Cookie';
+
+	/// zh-CN: '已清除：没有保存斗鱼登录'
+	String get douyuCookieCleared => '已清除：没有保存斗鱼登录';
+
+	/// zh-CN: '游客：Cookie 中没有会话令牌，点按重新粘贴'
+	String get douyuCookieGuest => '游客：Cookie 中没有会话令牌，点按重新粘贴';
+
+	/// zh-CN: '已保存续期凭据，还没有登录 Cookie'
+	String get douyuPairOnly => '已保存续期凭据，还没有登录 Cookie';
+
+	/// zh-CN: '登录有效'
+	String get douyuCookieValidNoExpiry => '登录有效';
+
+	/// zh-CN: '登录有效，凭 LTP0 到期前自动续期（预计 {time}）'
+	String douyuCookieValidAutoRenew({required Object time}) => '登录有效，凭 LTP0 到期前自动续期（预计 ${time}）';
+
+	/// zh-CN: '登录有效（预计 {time}），但未保存续期凭据'
+	String douyuCookieValidRepaste({required Object time}) => '登录有效（预计 ${time}），但未保存续期凭据';
+
+	/// zh-CN: '登录已过期，可在播放时自动续期（凭据到期于 {time}）'
+	String douyuCookieRenewable({required Object time}) => '登录已过期，可在播放时自动续期（凭据到期于 ${time}）';
+
+	/// zh-CN: '登录已失效（{time}），请重新粘贴 Cookie'
+	String douyuCookieExpired({required Object time}) => '登录已失效（${time}），请重新粘贴 Cookie';
+
+	/// zh-CN: '续期凭据'
+	String get douyuRenewalTitle => '续期凭据';
+
+	/// zh-CN: 'LTP0（长期密钥）'
+	String get douyuLtp0Label => 'LTP0（长期密钥）';
+
+	/// zh-CN: '粘贴 passport.douyu.com 请求里的 LTP0'
+	String get douyuLtp0Hint => '粘贴 passport.douyu.com 请求里的 LTP0';
+
+	/// zh-CN: 'dy_did（设备号）'
+	String get douyuDidLabel => 'dy_did（设备号）';
+
+	/// zh-CN: '登录所属设备的 dy_did'
+	String get douyuDidHint => '登录所属设备的 dy_did';
+
+	/// zh-CN: '立即续期'
+	String get douyuRenewNow => '立即续期';
+
+	/// zh-CN: '用当前凭据立刻换一次会话，验证续期是否可用，无需等到临近到期。'
+	String get douyuRenewNowDesc => '用当前凭据立刻换一次会话，验证续期是否可用，无需等到临近到期。';
+
+	/// zh-CN: '已抽出续期凭据，保留原有登录'
+	String get douyuCredentialsAbsorbed => '已抽出续期凭据，保留原有登录';
+
+	/// zh-CN: '已保存续期凭据（斗鱼登录 Cookie 仍需单独粘贴）'
+	String get douyuCredentialsOnly => '已保存续期凭据（斗鱼登录 Cookie 仍需单独粘贴）';
+
+	/// zh-CN: '请先填写带登录的 Cookie 再续期'
+	String get douyuRenewNoCookie => '请先填写带登录的 Cookie 再续期';
+
+	/// zh-CN: '缺少 LTP0 或 dy_did，无法续期'
+	String get douyuRenewNoCredentials => '缺少 LTP0 或 dy_did，无法续期';
+
+	/// zh-CN: '这段 Cookie 里没有会话令牌，无法续期'
+	String get douyuRenewNoSession => '这段 Cookie 里没有会话令牌，无法续期';
+
+	/// zh-CN: '续期未返回新会话，登录保持不变'
+	String get douyuRenewNoChange => '续期未返回新会话，登录保持不变';
+
+	/// zh-CN: '已续期，预计 {time} 到期'
+	String douyuRenewOk({required Object time}) => '已续期，预计 ${time} 到期';
+
+	/// zh-CN: '续期失败，请稍后再试'
+	String get douyuRenewFailed => '续期失败，请稍后再试';
+
+	/// zh-CN: '聊天身份：{login}'
+	String statusTwitchChat({required Object login}) => '聊天身份：${login}';
+
+	/// zh-CN: '已保存，但 Cookie 里没有聊天身份'
+	String get statusTwitchNoChat => '已保存，但 Cookie 里没有聊天身份';
+
+	/// zh-CN: '账号 ID：{uid}'
+	String statusHuyaUid({required Object uid}) => '账号 ID：${uid}';
+
+	/// zh-CN: '已保存，但 Cookie 里没有账号 ID'
+	String get statusHuyaNoUid => '已保存，但 Cookie 里没有账号 ID';
+
+	/// zh-CN: 'B 站登录已失效，已自动退出登录'
+	String get bilibiliLoginExpired => 'B 站登录已失效，已自动退出登录';
+
+	/// zh-CN: '已记住的账号'
+	String get savedAccounts => '已记住的账号';
+
+	/// zh-CN: '登录过的账号记在这里（最多 {count} 个），切换不用重新扫码。登录信息只加密保存在本机，退出登录或删除就会清掉。'
+	String savedAccountsNote({required Object count}) => '登录过的账号记在这里（最多 ${count} 个），切换不用重新扫码。登录信息只加密保存在本机，退出登录或删除就会清掉。';
+
+	/// zh-CN: 'UID {uid}'
+	String accountUid({required Object uid}) => 'UID ${uid}';
+
+	/// zh-CN: '当前账号'
+	String get accountCurrent => '当前账号';
+
+	/// zh-CN: '添加账号'
+	String get addAccount => '添加账号';
+
+	/// zh-CN: '扫码登录另一个账号，现在的账号会留在这里'
+	String get addAccountHint => '扫码登录另一个账号，现在的账号会留在这里';
+
+	/// zh-CN: '已记住 {count} 个，再添加会删掉最久没用的那个'
+	String addAccountFull({required Object count}) => '已记住 ${count} 个，再添加会删掉最久没用的那个';
+
+	/// zh-CN: '已记住 {count} 个账号，再登录一个会删掉最久没用的那个。继续？'
+	String addFullConfirmDesc({required Object count}) => '已记住 ${count} 个账号，再登录一个会删掉最久没用的那个。继续？';
+
+	/// zh-CN: '切换'
+	String get switchAccount => '切换';
+
+	/// zh-CN: '切换账号'
+	String get switchTitle => '切换账号';
+
+	/// zh-CN: '切换到“{name}”？正在看的直播间会用这个账号重新连接弹幕。'
+	String switchConfirmDesc({required Object name}) => '切换到“${name}”？正在看的直播间会用这个账号重新连接弹幕。';
+
+	/// zh-CN: '已切换到“{name}”'
+	String switchedSuccess({required Object name}) => '已切换到“${name}”';
+
+	/// zh-CN: '删除这个账号'
+	String get forgetAccount => '删除这个账号';
+
+	/// zh-CN: '删除账号'
+	String get forgetTitle => '删除账号';
+
+	/// zh-CN: '从本机删除“{name}”的登录信息？以后要用这个账号需要重新登录。'
+	String forgetConfirmDesc({required Object name}) => '从本机删除“${name}”的登录信息？以后要用这个账号需要重新登录。';
+
+	/// zh-CN: '已删除“{name}”'
+	String forgottenSuccess({required Object name}) => '已删除“${name}”';
+
+	/// zh-CN: '登录信息没能保存：这台设备的加密存储出错，请重试'
+	String get accountsSaveFailed => '登录信息没能保存：这台设备的加密存储出错，请重试';
+
+	/// zh-CN: '扫不了？'
+	String get qrCannotScan => '扫不了？';
+
+	/// zh-CN: '网页登录（短信、密码）'
+	String get webLogin => '网页登录（短信、密码）';
+
+	/// zh-CN: '填写 Cookie'
+	String get pasteCookieEntry => '填写 Cookie';
+
+	/// zh-CN: '哔哩哔哩 网页登录'
+	String get webLoginTitle => '哔哩哔哩 网页登录';
+
+	/// zh-CN: '在页面里登录（短信或密码）'
+	String get webLoginSignInOnPage => '在页面里登录（短信或密码）';
+
+	/// zh-CN: '已回到主站，正在读取登录状态…'
+	String get webLoginReading => '已回到主站，正在读取登录状态…';
+
+	/// zh-CN: '网页登录未成功'
+	String get webLoginFailed => '网页登录未成功';
+
+	/// zh-CN: '这台设备没有可用的内置浏览器'
+	String get webLoginUnavailable => '这台设备没有可用的内置浏览器';
+
+	/// zh-CN: '网页登录需要内置浏览器。请改用扫码登录，或在其他浏览器登录后把 Cookie 粘贴进来。'
+	String get webLoginUnavailableDesc => '网页登录需要内置浏览器。请改用扫码登录，或在其他浏览器登录后把 Cookie 粘贴进来。';
+
+	/// zh-CN: '{site} 暂未接入登录方式'
+	String noLoginMethod({required Object site}) => '${site} 暂未接入登录方式';
+
+	/// zh-CN: '{site} Cookie'
+	String cookiePageTitle({required Object site}) => '${site} Cookie';
+
+	/// zh-CN: 'Cookie'
+	String get cookieSection => 'Cookie';
+
+	/// zh-CN: '如何获取 Cookie'
+	String get cookieHowToTitle => '如何获取 Cookie';
+
+	/// zh-CN: '打开 {site} 官网'
+	String openSiteWebsite({required Object site}) => '打开 ${site} 官网';
+
+	/// zh-CN: '没有打开系统浏览器'
+	String get browserNotOpened => '没有打开系统浏览器';
+
+	/// zh-CN: '粘贴'
+	String get paste => '粘贴';
+
+	/// zh-CN: '清空'
+	String get clearInput => '清空';
+
+	/// zh-CN: '重新核验'
+	String get recheck => '重新核验';
+
+	/// zh-CN: '粘贴的内容不像 Cookie，需要 name=value 的形式'
+	String get cookieInvalid => '粘贴的内容不像 Cookie，需要 name=value 的形式';
+
+	/// zh-CN: '这段 Cookie 没有登录或已失效，未保存'
+	String get cookieRejected => '这段 Cookie 没有登录或已失效，未保存';
+
+	/// zh-CN: 'Cookie 已保存在本机'
+	String get cookieSavedLocal => 'Cookie 已保存在本机';
+
+	/// zh-CN: '已保存，登录为 {name}'
+	String cookieSavedAs({required Object name}) => '已保存，登录为 ${name}';
+
+	/// zh-CN: '剪贴板是空的'
+	String get clipboardEmpty => '剪贴板是空的';
+
+	/// zh-CN: '舍弃 Cookie 修改？'
+	String get discardTitle => '舍弃 Cookie 修改？';
+
+	/// zh-CN: '这些修改还没有保存，离开后会丢失。'
+	String get discardDesc => '这些修改还没有保存，离开后会丢失。';
+
+	/// zh-CN: '舍弃'
+	String get discard => '舍弃';
+
+	/// zh-CN: '继续编辑'
+	String get keepEditing => '继续编辑';
+
+	/// zh-CN: 'Cookie 只加密保存在本机，不会上传；在公用设备上请在离开前退出登录。'
+	String get cookiePrivacy => 'Cookie 只加密保存在本机，不会上传；在公用设备上请在离开前退出登录。';
+
+	/// zh-CN: '保存：Ctrl + S（macOS 为 ⌘ + S）'
+	String get cookieSaveShortcut => '保存：Ctrl + S（macOS 为 ⌘ + S）';
 }
 
 // Path: areas
@@ -570,6 +840,9 @@ class Translations$common$zh_CN {
 	/// zh-CN: '回到顶部'
 	String get backToTop => '回到顶部';
 
+	/// zh-CN: '回到底部'
+	String get backToBottom => '回到底部';
+
 	/// zh-CN: '更多'
 	String get more => '更多';
 
@@ -665,15 +938,6 @@ class Translations$favorites$zh_CN {
 
 	/// zh-CN: '{d} 天 {h} 小时'
 	String durationDays({required Object d, required Object h}) => '${d} 天 ${h} 小时';
-
-	/// zh-CN: '每页'
-	String get perPage => '每页';
-
-	/// zh-CN: '跳转至'
-	String get goTo => '跳转至';
-
-	/// zh-CN: '页'
-	String get pageUnit => '页';
 
 	/// zh-CN: '设置标签'
 	String get setTags => '设置标签';
@@ -1545,6 +1809,9 @@ class Translations$popular$zh_CN {
 	/// zh-CN: '全部平台'
 	String get allPlatforms => '全部平台';
 
+	/// zh-CN: '点一个直接切过去；在「平台显示」里隐藏和排序。'
+	String get allPlatformsHint => '点一个直接切过去；在「平台显示」里隐藏和排序。';
+
 	/// zh-CN: '第 {page: int} 页，共 {total: int} 页'
 	String page({required int page, required int total}) => '第 ${page} 页，共 ${total} 页';
 
@@ -1568,12 +1835,6 @@ class Translations$popular$zh_CN {
 
 	/// zh-CN: '按观众'
 	String get sortAudience => '按观众';
-
-	/// zh-CN: '每页'
-	String get perPage => '每页';
-
-	/// zh-CN: '每页 {size: int} 个'
-	String pageSize({required int size}) => '每页 ${size} 个';
 
 	/// zh-CN: '已隐藏 {count: int} 个暂时不能播放的直播（付费、加锁、仅限 App 等）'
 	String hiddenUnplayable({required int count}) => '已隐藏 ${count} 个暂时不能播放的直播（付费、加锁、仅限 App 等）';
@@ -2402,6 +2663,15 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '切换为列表'
 	String get switchShowList => '切换为列表';
+
+	/// zh-CN: 'Twitch 的 Cookie 已失效，弹幕已改为匿名接收，请重新填写 Twitch Cookie'
+	String get twitchCookieExpired => 'Twitch 的 Cookie 已失效，弹幕已改为匿名接收，请重新填写 Twitch Cookie';
+
+	/// zh-CN: '当前以访客身份连接，B 站弹幕不会显示完整昵称'
+	String get bilibiliGuestNames => '当前以访客身份连接，B 站弹幕不会显示完整昵称';
+
+	/// zh-CN: 'B 站登录似乎已失效：昵称全部被打码，请重新登录'
+	String get bilibiliLoginExpired => 'B 站登录似乎已失效：昵称全部被打码，请重新登录';
 }
 
 // Path: search
@@ -2619,6 +2889,9 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '画面与浮窗'
 	String get navPicture => '画面与浮窗';
 
+	/// zh-CN: '小窗与画中画'
+	String get navFloatingWindow => '小窗与画中画';
+
 	/// zh-CN: '基础设置'
 	String get groupBasics => '基础设置';
 
@@ -2670,8 +2943,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '画质、音频、画面与播放器行为。'
 	String get playbackDescription => '画质、音频、画面与播放器行为。';
 
-	/// zh-CN: '平台显示与排序。'
-	String get sitesDescription => '平台显示与排序。';
+	/// zh-CN: '默认站点与首选平台；平台显示、排序与账号登录在子页。'
+	String get sitesDescription => '默认站点与首选平台；平台显示、排序与账号登录在子页。';
 
 	/// zh-CN: '节目单自动更新与来源同步。'
 	String get iptvDescription => '节目单自动更新与来源同步。';
@@ -2688,8 +2961,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '版本、开源许可与项目链接。'
 	String get aboutDescription => '版本、开源许可与项目链接。';
 
-	/// zh-CN: '列表卡片、每页数量与分页控件。'
-	String get browsingPageDescription => '列表卡片、每页数量与分页控件。';
+	/// zh-CN: '卡片间距、关注页密度与房间卡片。'
+	String get browsingPageDescription => '卡片间距、关注页密度与房间卡片。';
 
 	/// zh-CN: '标题栏、直播间窗口、关闭行为、窗口尺寸与显示刷新率。'
 	String get windowPageDescription => '标题栏、直播间窗口、关闭行为、窗口尺寸与显示刷新率。';
@@ -2700,8 +2973,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '各平台账号与授权。'
 	String get accountsPageDescription => '各平台账号与授权。';
 
-	/// zh-CN: '主题模式、配色、对比度、加载样式、卡片间距与语言。'
-	String get themePageDescription => '主题模式、配色、对比度、加载样式、卡片间距与语言。';
+	/// zh-CN: '主题模式、配色、对比度、字体与字号、语言。'
+	String get themePageDescription => '主题模式、配色、对比度、字体与字号、语言。';
 
 	/// zh-CN: '字体、文本缩放与各级字号。'
 	String get typographyPageDescription => '字体、文本缩放与各级字号。';
@@ -2715,8 +2988,17 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '画面比例、悬浮窗与画中画。'
 	String get picturePageDescription => '画面比例、悬浮窗与画中画。';
 
-	/// zh-CN: '是否在画面上显示弹幕，以及字号、速度、显示区域、透明度与描边。'
-	String get danmakuStyleDescription => '是否在画面上显示弹幕，以及字号、速度、显示区域、透明度与描边。';
+	/// zh-CN: '应用内悬浮窗与系统画中画的大小、位置与置顶。'
+	String get floatingWindowPageDescription => '应用内悬浮窗与系统画中画的大小、位置与置顶。';
+
+	/// zh-CN: '画面显示'
+	String get pictureDisplayGroup => '画面显示';
+
+	/// zh-CN: '应用内悬浮窗'
+	String get floatWindowGroup => '应用内悬浮窗';
+
+	/// zh-CN: '系统画中画'
+	String get pipGroup => '系统画中画';
 
 	/// zh-CN: '播放设置将在播放器接入后开放。'
 	String get playbackComingSoon => '播放设置将在播放器接入后开放。';
@@ -2747,18 +3029,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '关于'
 	String get about => '关于';
-
-	/// zh-CN: '浏览偏好'
-	String get browsingTitle => '浏览偏好';
-
-	/// zh-CN: '默认站点'
-	String get site => '默认站点';
-
-	/// zh-CN: '卡片宽度'
-	String get cardExtent => '卡片宽度';
-
-	/// zh-CN: '首页与分区流里一张卡片的宽度；越小一排越多。'
-	String get cardExtentDescription => '首页与分区流里一张卡片的宽度；越小一排越多。';
 
 	/// zh-CN: '显示'
 	String get refreshRateGroup => '显示';
@@ -2915,57 +3185,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '刷新率读数来自当前窗口所在的那一台显示器。'
 	String get refreshRateMultiMonitorDesc => '刷新率读数来自当前窗口所在的那一台显示器。';
-
-	/// zh-CN: '每页显示数量'
-	String get pageSize => '每页显示数量';
-
-	/// zh-CN: '桌面分页每页显示多少个房间；站点按自己的窗口取回，应用在本地切片，换页不会跳过房间。'
-	String get pageSizeDescription => '桌面分页每页显示多少个房间；站点按自己的窗口取回，应用在本地切片，换页不会跳过房间。';
-
-	/// zh-CN: '显示每页数量选择器'
-	String get pageSizeSelector => '显示每页数量选择器';
-
-	/// zh-CN: '在关注与热门的分页条显示每页数量下拉；关闭后仍按当前数量分页，只隐藏这个控件。'
-	String get pageSizeSelectorDescription => '在关注与热门的分页条显示每页数量下拉；关闭后仍按当前数量分页，只隐藏这个控件。';
-
-	/// zh-CN: '显示跳页输入框'
-	String get showGotoButton => '显示跳页输入框';
-
-	/// zh-CN: '在关注页分页条显示页码输入框；关闭后只隐藏输入框，页码与翻页按钮仍可正常翻页。'
-	String get showGotoButtonDescription => '在关注页分页条显示页码输入框；关闭后只隐藏输入框，页码与翻页按钮仍可正常翻页。';
-
-	/// zh-CN: '显示回到顶部按钮'
-	String get showScrollToTop => '显示回到顶部按钮';
-
-	/// zh-CN: '列表滚动超过一屏后显示回到顶部的浮钮；关闭后只隐藏按钮，滚动与翻页不受影响。'
-	String get showScrollToTopDescription => '列表滚动超过一屏后显示回到顶部的浮钮；关闭后只隐藏按钮，滚动与翻页不受影响。';
-
-	/// zh-CN: '每页数量选项'
-	String get pageSizeOptions => '每页数量选项';
-
-	/// zh-CN: '分页条可选的每页数量，范围 1–100；可增删档位，至少保留一项。'
-	String get pageSizeOptionsDescription => '分页条可选的每页数量，范围 1–100；可增删档位，至少保留一项。';
-
-	/// zh-CN: '管理每页数量选项'
-	String get pageSizeOptionsDialogTitle => '管理每页数量选项';
-
-	/// zh-CN: '按窗口推荐'
-	String get pageSizeOptionsRecommend => '按窗口推荐';
-
-	/// zh-CN: '自定义档位（1–100）'
-	String get pageSizeOptionCustom => '自定义档位（1–100）';
-
-	/// zh-CN: '添加'
-	String get pageSizeOptionAdd => '添加';
-
-	/// zh-CN: '请输入 1–100 之间的整数。'
-	String get pageSizeOptionInvalid => '请输入 1–100 之间的整数。';
-
-	/// zh-CN: '该档位已存在。'
-	String get pageSizeOptionDuplicate => '该档位已存在。';
-
-	/// zh-CN: '移除每页 {size: int} 个'
-	String pageSizeOptionRemove({required int size}) => '移除每页 ${size} 个';
 
 	/// zh-CN: '紧凑模式'
 	String get favoritesDense => '紧凑模式';
@@ -3192,8 +3411,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '主机'
 	String get proxyHost => '主机';
 
+	/// zh-CN: '代理服务器的主机名或地址。'
+	String get proxyHostDesc => '代理服务器的主机名或地址。';
+
 	/// zh-CN: '端口'
 	String get proxyPort => '端口';
+
+	/// zh-CN: '代理服务器监听的端口。'
+	String get proxyPortDesc => '代理服务器监听的端口。';
 
 	/// zh-CN: '工具区排序'
 	String get toolsOrder => '工具区排序';
@@ -3231,9 +3456,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '画面弹幕交互'
 	String get danmakuInteractionGroup => '画面弹幕交互';
 
-	/// zh-CN: '观看模板'
-	String get danmakuTemplatesGroup => '观看模板';
-
 	/// zh-CN: '点击画面弹幕查看操作'
 	String get styleTapInteraction => '点击画面弹幕查看操作';
 
@@ -3249,6 +3471,24 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '弹幕样式'
 	String get danmakuStyleGroup => '弹幕样式';
 
+	/// zh-CN: '弹幕的字体、大小、速度、区域、描边与帧率。'
+	String get danmakuStyleDescription => '弹幕的字体、大小、速度、区域、描边与帧率。';
+
+	/// zh-CN: '聊天列表显示谁、显示什么、怎么排。'
+	String get danmakuDisplayDescription => '聊天列表显示谁、显示什么、怎么排。';
+
+	/// zh-CN: '弹幕预设已应用'
+	String get danmakuPresetApplied => '弹幕预设已应用';
+
+	/// zh-CN: '这是真实弹幕引擎按当前设置画的样例；改动会立刻反映在这里。'
+	String get danmakuPreviewHint => '这是真实弹幕引擎按当前设置画的样例；改动会立刻反映在这里。';
+
+	/// zh-CN: '聊天列表内容'
+	String get chatListGroup => '聊天列表内容';
+
+	/// zh-CN: '聊天列表排版'
+	String get chatListLayoutGroup => '聊天列表排版';
+
 	/// zh-CN: '弹幕字体'
 	String get danmakuFont => '弹幕字体';
 
@@ -3261,11 +3501,20 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '字体大小'
 	String get styleFontSize => '字体大小';
 
+	/// zh-CN: '画面飞行弹幕字形的高度，单位像素。'
+	String get styleFontSizeDesc => '画面飞行弹幕字形的高度，单位像素。';
+
 	/// zh-CN: '字体粗细'
 	String get styleFontWeight => '字体粗细';
 
+	/// zh-CN: '字形的粗细；400 为常规，700 为加粗。'
+	String get styleFontWeightDesc => '字形的粗细；400 为常规，700 为加粗。';
+
 	/// zh-CN: '文字间距'
 	String get styleLetterSpacing => '文字间距';
+
+	/// zh-CN: '字符之间额外增加的间距，单位像素。'
+	String get styleLetterSpacingDesc => '字符之间额外增加的间距，单位像素。';
 
 	/// zh-CN: '极细'
 	String get styleWeightThin => '极细';
@@ -3297,6 +3546,9 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '速度'
 	String get styleSpeed => '速度';
 
+	/// zh-CN: '弹幕横穿画面的速度，单位像素每秒。'
+	String get styleSpeedDesc => '弹幕横穿画面的速度，单位像素每秒。';
+
 	/// zh-CN: '画面顶部占用高度'
 	String get styleArea => '画面顶部占用高度';
 
@@ -3305,6 +3557,9 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '不透明度'
 	String get styleOpacity => '不透明度';
+
+	/// zh-CN: '弹幕相对画面的厚实程度；100% 时完全遮住弹幕。'
+	String get styleOpacityDesc => '弹幕相对画面的厚实程度；100% 时完全遮住弹幕。';
 
 	/// zh-CN: '描边'
 	String get styleStroke => '描边';
@@ -3326,6 +3581,9 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '弹幕帧率'
 	String get styleFps => '弹幕帧率';
+
+	/// zh-CN: '飞行层每秒重绘的次数；越高越顺滑，也更耗性能。'
+	String get styleFpsDesc => '飞行层每秒重绘的次数；越高越顺滑，也更耗性能。';
 
 	/// zh-CN: '{count} FPS'
 	String styleFpsValue({required Object count}) => '${count} FPS';
@@ -3354,26 +3612,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '小窗弹幕比例'
 	String get pipDanmakuScale => '小窗弹幕比例';
 
+	/// zh-CN: '关闭自动小窗比例时使用的固定倍率。'
+	String get pipDanmakuScaleDesc => '关闭自动小窗比例时使用的固定倍率。';
+
 	/// zh-CN: '恢复默认'
 	String get styleReset => '恢复默认';
-
-	/// zh-CN: '把当前设置存为我的模板'
-	String get danmakuTemplateSaveMine => '把当前设置存为我的模板';
-
-	/// zh-CN: '用我的模板'
-	String get danmakuTemplateUseMine => '用我的模板';
-
-	/// zh-CN: '当前弹幕样式已保存'
-	String get danmakuTemplateSaved => '当前弹幕样式已保存';
-
-	/// zh-CN: '还没有保存弹幕模板'
-	String get danmakuTemplateEmpty => '还没有保存弹幕模板';
-
-	/// zh-CN: '已保存的弹幕模板损坏或数值超出范围'
-	String get danmakuTemplateInvalid => '已保存的弹幕模板损坏或数值超出范围';
-
-	/// zh-CN: '弹幕模板已应用'
-	String get danmakuTemplateApplied => '弹幕模板已应用';
 
 	/// zh-CN: '顶部 20% · 均衡'
 	String get danmakuPresetBest => '顶部 20% · 均衡';
@@ -3483,6 +3726,9 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '永远相信美好的事情即将发生 · The quick brown fox jumps over the lazy dog 0123456789'
 	String get fontManagerPreview => '永远相信美好的事情即将发生 · The quick brown fox jumps over the lazy dog 0123456789';
 
+	/// zh-CN: '应用'
+	String get fontManagerApply => '应用';
+
 	/// zh-CN: '云端字体'
 	String get fontManagerCloud => '云端字体';
 
@@ -3525,9 +3771,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '按比例放大或缩小整个应用的文字；100% 为平台原始大小。'
 	String get textScaleDescription => '按比例放大或缩小整个应用的文字；100% 为平台原始大小。';
 
-	/// zh-CN: '预览：设置会立即应用到所有界面。'
-	String get textScalePreview => '预览：设置会立即应用到所有界面。';
-
 	/// zh-CN: '返回应用'
 	String get backHome => '返回应用';
 
@@ -3567,8 +3810,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '首选平台'
 	String get preferPlatform => '首选平台';
 
-	/// zh-CN: '进入热门或分区时优先显示的平台。'
-	String get preferPlatformDesc => '进入热门或分区时优先显示的平台。';
+	/// zh-CN: '进入热门或分区时优先显示的平台，也是分区房间列表与搜索起始的平台。'
+	String get preferPlatformDesc => '进入热门或分区时优先显示的平台，也是分区房间列表与搜索起始的平台。';
 
 	/// zh-CN: '搜索平台'
 	String get preferPlatformFilterHint => '搜索平台';
@@ -3612,8 +3855,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '平台与账号'
 	String get navPlatforms => '平台与账号';
 
-	/// zh-CN: '侧栏与手机导航的入口显示和顺序；拖动把手即可排序，至少保留一个首页菜单。'
-	String get navigationDescription => '侧栏与手机导航的入口显示和顺序；拖动把手即可排序，至少保留一个首页菜单。';
+	/// zh-CN: '首页菜单与工具区各自的显示与排序。'
+	String get navigationDescription => '首页菜单与工具区各自的显示与排序。';
 
 	/// zh-CN: '关注列表与直播缩略图的自动刷新。'
 	String get refreshDescription => '关注列表与直播缩略图的自动刷新。';
@@ -4374,6 +4617,15 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '手机/平板新播放器默认 50%，桌面默认 100%；滑杆调整当前平台。'
 	String get defaultVolumeDesc => '手机/平板新播放器默认 50%，桌面默认 100%；滑杆调整当前平台。';
 
+	/// zh-CN: '滚轮音量步长'
+	String get volumeWheelStep => '滚轮音量步长';
+
+	/// zh-CN: '鼠标滚轮与方向键每次调节的音量幅度。'
+	String get volumeWheelStepDesc => '鼠标滚轮与方向键每次调节的音量幅度。';
+
+	/// zh-CN: '{percent: int}%'
+	String volumeWheelStepValue({required int percent}) => '${percent}%';
+
 	/// zh-CN: '全局静音'
 	String get globalMute => '全局静音';
 
@@ -4476,8 +4728,29 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '封面刷新间隔'
 	String get thumbnailRefreshInterval => '封面刷新间隔';
 
+	/// zh-CN: '首页入口'
+	String get navHomeMenuGroup => '首页入口';
+
 	/// zh-CN: '首页菜单'
-	String get navHomeMenuGroup => '首页菜单';
+	String get navHomeMenuTitle => '首页菜单';
+
+	/// zh-CN: '侧栏、抽屉与底栏显示的首页入口，以及它们的顺序。'
+	String get navHomeMenuDescription => '侧栏、抽屉与底栏显示的首页入口，以及它们的顺序。';
+
+	/// zh-CN: '编辑顺序'
+	String get editOrder => '编辑顺序';
+
+	/// zh-CN: '保存顺序'
+	String get saveOrder => '保存顺序';
+
+	/// zh-CN: '未保存的排序草稿'
+	String get unsavedOrderDraft => '未保存的排序草稿';
+
+	/// zh-CN: '置顶'
+	String get moveToTop => '置顶';
+
+	/// zh-CN: '置底'
+	String get moveToBottom => '置底';
 
 	/// zh-CN: '已隐藏'
 	String get navMenuHidden => '已隐藏';
@@ -4497,8 +4770,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '卡片与列表'
 	String get groupCards => '卡片与列表';
 
-	/// zh-CN: '字体和语言'
-	String get groupType => '字体和语言';
+	/// zh-CN: '语言'
+	String get groupLanguage => '语言';
 
 	/// zh-CN: '对比度'
 	String get contrast => '对比度';
@@ -4569,14 +4842,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '当前背景'
 	String get backgroundPreview => '当前背景';
 
-	/// zh-CN: '视频背景在应用界面后方播放。'
-	String get backgroundPreviewVideoHint => '视频背景在应用界面后方播放。';
+	/// zh-CN: '上一张'
+	String get backgroundPreviewPrevious => '上一张';
+
+	/// zh-CN: '下一张'
+	String get backgroundPreviewNext => '下一张';
 
 	/// zh-CN: '壁纸预览'
 	String get backgroundPreviewTitle => '壁纸预览';
-
-	/// zh-CN: '图片无法加载。'
-	String get backgroundPreviewUnavailable => '图片无法加载。';
 
 	/// zh-CN: '更换背景'
 	String get backgroundChange => '更换背景';
@@ -4598,6 +4871,9 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '视频地址'
 	String get backgroundVideoAddress => '视频地址';
+
+	/// zh-CN: '当前使用'
+	String get backgroundAddressInUse => '当前使用';
 
 	/// zh-CN: 'https://…'
 	String get backgroundAddressHint => 'https://…';
@@ -4623,14 +4899,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '正在复制文件…'
 	String get backgroundBusy => '正在复制文件…';
 
-	/// zh-CN: '还没有设置媒体；选择图片或视频后填写地址或上传。'
-	String get backgroundEmpty => '还没有设置媒体；选择图片或视频后填写地址或上传。';
-
 	/// zh-CN: '显示'
 	String get backgroundDisplay => '显示';
 
 	/// zh-CN: '填充方式'
 	String get backgroundFit => '填充方式';
+
+	/// zh-CN: '把图片或视频铺到窗口时的方式；纯色与渐变没有可填充的对象。'
+	String get backgroundFitDescription => '把图片或视频铺到窗口时的方式；纯色与渐变没有可填充的对象。';
 
 	/// zh-CN: '裁切填满'
 	String get backgroundFitCover => '裁切填满';
@@ -4659,11 +4935,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '压暗或提亮背景，保证文字可读。'
 	String get backgroundMaskDescription => '压暗或提亮背景，保证文字可读。';
 
-	/// zh-CN: '高斯模糊'
-	String get backgroundBlur => '高斯模糊';
+	/// zh-CN: '遮罩模糊'
+	String get backgroundOverlayBlur => '遮罩模糊';
 
-	/// zh-CN: '对图片或视频做模糊，适合花哨的壁纸。'
-	String get backgroundBlurDescription => '对图片或视频做模糊，适合花哨的壁纸。';
+	/// zh-CN: '让遮罩变成磨砂：把背景本身模糊掉，任何背景类型都生效；0 保持平面遮罩。'
+	String get backgroundOverlayBlurDescription => '让遮罩变成磨砂：把背景本身模糊掉，任何背景类型都生效；0 保持平面遮罩。';
 
 	/// zh-CN: '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。'
 	String get backgroundClearDescription => '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。';
@@ -4772,6 +5048,15 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。'
 	String get keepScreenOnDesc => '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。';
+
+	/// zh-CN: '控制条自动隐藏'
+	String get controlsAutoHide => '控制条自动隐藏';
+
+	/// zh-CN: '播放时经过该秒数后隐藏画面控制条；暂停时保持显示。'
+	String get controlsAutoHideDesc => '播放时经过该秒数后隐藏画面控制条；暂停时保持显示。';
+
+	/// zh-CN: '{count: int} 秒'
+	String controlsAutoHideValue({required int count}) => '${count} 秒';
 
 	/// zh-CN: '竖屏直播适配'
 	String get navPortrait => '竖屏直播适配';
@@ -4899,9 +5184,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '壁纸图库'
 	String get backgroundLibraryTitle => '壁纸图库';
 
-	/// zh-CN: '加载更多'
-	String get backgroundLibraryLoadMore => '加载更多';
-
 	/// zh-CN: '没有可用的壁纸'
 	String get backgroundLibraryEmpty => '没有可用的壁纸';
 
@@ -4910,12 +5192,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '已应用为背景'
 	String get backgroundLibraryApplied => '已应用为背景';
-
-	/// zh-CN: 'deepin 图库随应用内置，不用网络。'
-	String get backgroundLibraryLocalHint => 'deepin 图库随应用内置，不用网络。';
-
-	/// zh-CN: '图库来自公开的 iTab 接口；应用代理设置对它同样生效。'
-	String get backgroundLibraryNetworkHint => '图库来自公开的 iTab 接口；应用代理设置对它同样生效。';
 
 	/// zh-CN: '官方壁纸'
 	String get wallpaperSourceOfficial => '官方壁纸';
@@ -5178,8 +5454,50 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '实时预览'
 	String get roomCardPreview => '实时预览';
 
+	/// zh-CN: '房间卡片预览'
+	String get roomCardPreviewTitle => '房间卡片预览';
+
+	/// zh-CN: '下面用的是真实卡片组件与真实网格尺寸；字号与颜色跟随主题，这里不单独设置。'
+	String get roomCardPreviewHint => '下面用的是真实卡片组件与真实网格尺寸；字号与颜色跟随主题，这里不单独设置。';
+
+	/// zh-CN: '网格卡片'
+	String get roomCardPreviewGrid => '网格卡片';
+
+	/// zh-CN: '列表行'
+	String get roomCardPreviewList => '列表行';
+
+	/// zh-CN: '信息出现在哪里'
+	String get roomCardPreviewWhere => '信息出现在哪里';
+
+	/// zh-CN: '字号、行高与颜色都来自主题；这里只决定显示哪些信息和卡片形状。'
+	String get roomCardPreviewFollowsTheme => '字号、行高与颜色都来自主题；这里只决定显示哪些信息和卡片形状。';
+
+	/// zh-CN: '一个很长很长的直播间标题，用来看单行截断'
+	String get roomCardPreviewLongTitle => '一个很长很长的直播间标题，用来看单行截断';
+
+	/// zh-CN: '昨日回放 · 精选集锦'
+	String get roomCardPreviewReplayTitle => '昨日回放 · 精选集锦';
+
+	/// zh-CN: '未开播的房间'
+	String get roomCardPreviewOfflineTitle => '未开播的房间';
+
+	/// zh-CN: '在封面下方信息行的最左侧'
+	String get roomCardWhereAvatar => '在封面下方信息行的最左侧';
+
+	/// zh-CN: '在封面下方信息行里，与开播状态用「·」相连'
+	String get roomCardWhereAnchor => '在封面下方信息行里，与开播状态用「·」相连';
+
+	/// zh-CN: '网格卡片在封面右下角，列表行在行末'
+	String get roomCardWhereAudience => '网格卡片在封面右下角，列表行在行末';
+
+	/// zh-CN: '网格卡片在封面右上角，列表行在行末'
+	String get roomCardWhereReplay => '网格卡片在封面右上角，列表行在行末';
+
+	/// zh-CN: '自动：宽卡显示在封面左上角；也可始终显示或隐藏'
+	String get roomCardWherePlatform => '自动：宽卡显示在封面左上角；也可始终显示或隐藏';
+
 	/// zh-CN: '直播间预览'
-	String get roomCardPreviewTitle => '直播间预览';
+	String get roomCardPreviewRoomTitle => '直播间预览';
 
 	/// zh-CN: '预览主播'
 	String get roomCardPreviewAnchor => '预览主播';
@@ -5322,300 +5640,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '所选目录无法写入：请授予存储权限，或改用默认目录。'
 	String get downloadDirectoryPermissionHint => '所选目录无法写入：请授予存储权限，或改用默认目录。';
 
-	/// zh-CN: '本机互动'
-	String get localInteractionTitle => '本机互动';
-
-	/// zh-CN: '在本机模拟观众弹幕、礼物、等级与金币；不会向直播平台发送任何内容。'
-	String get localInteractionDesc => '在本机模拟观众弹幕、礼物、等级与金币；不会向直播平台发送任何内容。';
-
-	/// zh-CN: '启用本机互动'
-	String get localEnabled => '启用本机互动';
-
-	/// zh-CN: '关闭后房间内的本机互动页签隐藏，历史与设置保留。'
-	String get localEnabledDesc => '关闭后房间内的本机互动页签隐藏，历史与设置保留。';
-
-	/// zh-CN: '本地身份'
-	String get localIdentity => '本地身份';
-
-	/// zh-CN: '昵称'
-	String get localUserName => '昵称';
-
-	/// zh-CN: '显示在本地弹幕与互动的发送者名称。'
-	String get localUserNameDesc => '显示在本地弹幕与互动的发送者名称。';
-
-	/// zh-CN: '头衔'
-	String get localTitle => '头衔';
-
-	/// zh-CN: '本地观众的称呼，例如「听众」「观众」。'
-	String get localTitleDesc => '本地观众的称呼，例如「听众」「观众」。';
-
-	/// zh-CN: '金币'
-	String get localCoins => '金币';
-
-	/// zh-CN: '本机互动的余额，送礼物时扣除。'
-	String get localCoinsDesc => '本机互动的余额，送礼物时扣除。';
-
-	/// zh-CN: '经验'
-	String get localExperience => '经验';
-
-	/// zh-CN: '每 100 经验升一级，仅用于本机徽章。'
-	String get localExperienceDesc => '每 100 经验升一级，仅用于本机徽章。';
-
-	/// zh-CN: '等级'
-	String get localLevel => '等级';
-
-	/// zh-CN: 'Lv.{level}'
-	String localLevelValue({required Object level}) => 'Lv.${level}';
-
-	/// zh-CN: '金币 {coins} · 经验 {experience} · Lv.{level}'
-	String localStatusValue({required Object coins, required Object experience, required Object level}) => '金币 ${coins} · 经验 ${experience} · Lv.${level}';
-
-	/// zh-CN: '在画面弹幕中显示'
-	String get localShowAsDanmaku => '在画面弹幕中显示';
-
-	/// zh-CN: '发送时同时进入房间的飞行弹幕与聊天列表。'
-	String get localShowAsDanmakuDesc => '发送时同时进入房间的飞行弹幕与聊天列表。';
-
-	/// zh-CN: '显示平台徽章'
-	String get localShowPlatformBadge => '显示平台徽章';
-
-	/// zh-CN: '在本地消息里带上所选平台的身份标记。'
-	String get localShowPlatformBadgeDesc => '在本地消息里带上所选平台的身份标记。';
-
-	/// zh-CN: '显示等级徽章'
-	String get localShowLevelBadge => '显示等级徽章';
-
-	/// zh-CN: '在本地消息里显示经验等级。'
-	String get localShowLevelBadgeDesc => '在本地消息里显示经验等级。';
-
-	/// zh-CN: '礼物特效'
-	String get localGiftEffects => '礼物特效';
-
-	/// zh-CN: '送出礼物时播放本地面板内的横幅特效。'
-	String get localGiftEffectsDesc => '送出礼物时播放本地面板内的横幅特效。';
-
-	/// zh-CN: '全部礼物'
-	String get localGiftEffectsAll => '全部礼物';
-
-	/// zh-CN: '仅高价值礼物'
-	String get localGiftEffectsBigOnly => '仅高价值礼物';
-
-	/// zh-CN: '关闭'
-	String get localGiftEffectsOff => '关闭';
-
-	/// zh-CN: '进场回放本地弹幕'
-	String get localReplayOnEnter => '进场回放本地弹幕';
-
-	/// zh-CN: '进入直播间时，把该房间最近 24 小时的本地弹幕放回聊天列表顶部，并标注为之前发的。'
-	String get localReplayOnEnterDesc => '进入直播间时，把该房间最近 24 小时的本地弹幕放回聊天列表顶部，并标注为之前发的。';
-
-	/// zh-CN: '本地成长'
-	String get localGrowth => '本地成长';
-
-	/// zh-CN: '观看直播、每日首个房间与发送本地弹幕都能获得金币和经验。'
-	String get localGrowthDesc => '观看直播、每日首个房间与发送本地弹幕都能获得金币和经验。';
-
-	/// zh-CN: '今日：{checked} · 观看 +{watch}/{watchLimit} · 弹幕 +{chat}/{chatLimit}'
-	String localGrowthToday({required Object checked, required Object watch, required Object watchLimit, required Object chat, required Object chatLimit}) => '今日：${checked} · 观看 +${watch}/${watchLimit} · 弹幕 +${chat}/${chatLimit}';
-
-	/// zh-CN: '已签到'
-	String get localGrowthCheckedIn => '已签到';
-
-	/// zh-CN: '未签到'
-	String get localGrowthNotCheckedIn => '未签到';
-
-	/// zh-CN: '快捷短语'
-	String get localPhrases => '快捷短语';
-
-	/// zh-CN: '显示在本地弹幕输入框上方，点一下直接发送。'
-	String get localPhrasesDesc => '显示在本地弹幕输入框上方，点一下直接发送。';
-
-	/// zh-CN: '还没有短语，最多可添加 {limit} 条。'
-	String localPhrasesEmpty({required Object limit}) => '还没有短语，最多可添加 ${limit} 条。';
-
-	/// zh-CN: '添加'
-	String get localPhraseAdd => '添加';
-
-	/// zh-CN: '输入短语（最多 {limit} 个字）'
-	String localPhraseHint({required Object limit}) => '输入短语（最多 ${limit} 个字）';
-
-	/// zh-CN: '{count} / {limit}'
-	String localPhraseCount({required Object count, required Object limit}) => '${count} / ${limit}';
-
-	/// zh-CN: '编辑短语'
-	String get localPhraseEdit => '编辑短语';
-
-	/// zh-CN: '删除短语'
-	String get localPhraseDelete => '删除短语';
-
-	/// zh-CN: '上移短语'
-	String get localPhraseMoveUp => '上移短语';
-
-	/// zh-CN: '下移短语'
-	String get localPhraseMoveDown => '下移短语';
-
-	/// zh-CN: '短语不能为空。'
-	String get localPhraseEmptyError => '短语不能为空。';
-
-	/// zh-CN: '这条短语已经存在。'
-	String get localPhraseDuplicate => '这条短语已经存在。';
-
-	/// zh-CN: '最多只能添加 {count} 条短语。'
-	String localPhraseFull({required Object count}) => '最多只能添加 ${count} 条短语。';
-
-	/// zh-CN: '预览平台'
-	String get localPreviewPlatform => '预览平台';
-
-	/// zh-CN: '选择预览与本地消息使用的平台标记。'
-	String get localPreviewPlatformDesc => '选择预览与本地消息使用的平台标记。';
-
-	/// zh-CN: '弹幕样式'
-	String get localStyle => '弹幕样式';
-
-	/// zh-CN: '只影响本机互动预览与本地消息样式。'
-	String get localStyleDesc => '只影响本机互动预览与本地消息样式。';
-
-	/// zh-CN: '清爽'
-	String get localPresetClean => '清爽';
-
-	/// zh-CN: '醒目'
-	String get localPresetHighlight => '醒目';
-
-	/// zh-CN: '霓虹'
-	String get localPresetNeon => '霓虹';
-
-	/// zh-CN: '极简'
-	String get localPresetMinimal => '极简';
-
-	/// zh-CN: '字幕'
-	String get localPresetCaption => '字幕';
-
-	/// zh-CN: '赛博'
-	String get localPresetCyber => '赛博';
-
-	/// zh-CN: '自定义'
-	String get localPresetCustom => '自定义';
-
-	/// zh-CN: '字号'
-	String get localFontSize => '字号';
-
-	/// zh-CN: '速度'
-	String get localSpeed => '速度';
-
-	/// zh-CN: '字重'
-	String get localWeight => '字重';
-
-	/// zh-CN: '不透明度'
-	String get localOpacity => '不透明度';
-
-	/// zh-CN: '字距'
-	String get localLetterSpacing => '字距';
-
-	/// zh-CN: '描边宽度'
-	String get localStrokeWidth => '描边宽度';
-
-	/// zh-CN: '阴影模糊'
-	String get localShadowBlur => '阴影模糊';
-
-	/// zh-CN: '阴影偏移'
-	String get localShadowOffset => '阴影偏移';
-
-	/// zh-CN: '固定弹幕停留'
-	String get localFixedDuration => '固定弹幕停留';
-
-	/// zh-CN: '描边'
-	String get localShowStroke => '描边';
-
-	/// zh-CN: '斜体'
-	String get localItalic => '斜体';
-
-	/// zh-CN: '阴影'
-	String get localShowShadow => '阴影';
-
-	/// zh-CN: '弹幕位置'
-	String get localPlacement => '弹幕位置';
-
-	/// zh-CN: '滚动'
-	String get localPlacementScroll => '滚动';
-
-	/// zh-CN: '顶部'
-	String get localPlacementTop => '顶部';
-
-	/// zh-CN: '底部'
-	String get localPlacementBottom => '底部';
-
-	/// zh-CN: '字体'
-	String get localFontFamily => '字体';
-
-	/// zh-CN: '系统字体'
-	String get localFontSystem => '系统字体';
-
-	/// zh-CN: '等宽字体'
-	String get localFontMono => '等宽字体';
-
-	/// zh-CN: '文字颜色'
-	String get localTextColor => '文字颜色';
-
-	/// zh-CN: '描边颜色'
-	String get localStrokeColor => '描边颜色';
-
-	/// zh-CN: '阴影颜色'
-	String get localShadowColor => '阴影颜色';
-
-	/// zh-CN: '实时预览'
-	String get localPreview => '实时预览';
-
-	/// zh-CN: '本机互动预览'
-	String get localPreviewText => '本机互动预览';
-
-	/// zh-CN: '互动历史'
-	String get localHistory => '互动历史';
-
-	/// zh-CN: '还没有本机互动记录'
-	String get localHistoryEmpty => '还没有本机互动记录';
-
-	/// zh-CN: '清空历史'
-	String get localClearHistory => '清空历史';
-
-	/// zh-CN: '只清除历史记录，金币、经验与样式保留。'
-	String get localClearHistoryDesc => '只清除历史记录，金币、经验与样式保留。';
-
-	/// zh-CN: '清空历史与经济'
-	String get localClearAll => '清空历史与经济';
-
-	/// zh-CN: '历史、金币与经验回到默认值。'
-	String get localClearAllDesc => '历史、金币与经验回到默认值。';
-
-	/// zh-CN: '清空本机互动？'
-	String get localClearAllConfirm => '清空本机互动？';
-
-	/// zh-CN: '历史、金币（1000）与经验（0）会重置，样式与身份保留。'
-	String get localClearAllConfirmDesc => '历史、金币（1000）与经验（0）会重置，样式与身份保留。';
-
-	/// zh-CN: '已清空'
-	String get localCleared => '已清空';
-
-	/// zh-CN: '金币不足'
-	String get localNoCoins => '金币不足';
-
-	/// zh-CN: '已送出礼物'
-	String get localGiftSent => '已送出礼物';
-
-	/// zh-CN: '发送'
-	String get localSend => '发送';
-
-	/// zh-CN: '输入本地弹幕…'
-	String get localMessageHint => '输入本地弹幕…';
-
-	/// zh-CN: '礼物'
-	String get localGifts => '礼物';
-
-	/// zh-CN: '设置与样式'
-	String get localSettingsEntry => '设置与样式';
-
-	/// zh-CN: '页面设置'
-	String get pageSettingsEntry => '页面设置';
-
 	/// zh-CN: '竖屏全屏'
 	String get portraitFullscreenGroup => '竖屏全屏';
 
@@ -5667,11 +5691,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '关闭后聊天列表只显示内容；长按操作仍知道发送者。'
 	String get chatShowNamesDesc => '关闭后聊天列表只显示内容；长按操作仍知道发送者。';
 
-	/// zh-CN: '聊天列表'
-	String get chatListGroup => '聊天列表';
-
 	/// zh-CN: '列表样式'
 	String get chatListStyle => '列表样式';
+
+	/// zh-CN: '列表是紧凑排列，还是每条消息单独一张卡片。'
+	String get chatListStyleDesc => '列表是紧凑排列，还是每条消息单独一张卡片。';
 
 	/// zh-CN: '紧凑'
 	String get chatListStyleCompact => '紧凑';
@@ -5682,6 +5706,9 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '列表文字大小'
 	String get chatListFontSize => '列表文字大小';
 
+	/// zh-CN: '聊天列表的文字大小；跟随主题时与界面保持一致。'
+	String get chatListFontSizeDesc => '聊天列表的文字大小；跟随主题时与界面保持一致。';
+
 	/// zh-CN: '跟随主题'
 	String get chatListFollowTheme => '跟随主题';
 
@@ -5691,6 +5718,9 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '列表行距'
 	String get chatListLineSpacing => '列表行距';
 
+	/// zh-CN: '聊天列表两行之间的留白。'
+	String get chatListLineSpacingDesc => '聊天列表两行之间的留白。';
+
 	/// zh-CN: '紧凑'
 	String get chatListSpacingCompact => '紧凑';
 
@@ -5699,6 +5729,12 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '宽松'
 	String get chatListSpacingLoose => '宽松';
+
+	/// zh-CN: '聊天栏宽度'
+	String get chatPanelWidth => '聊天栏宽度';
+
+	/// zh-CN: '桌面宽布局下右侧聊天栏的宽度。'
+	String get chatPanelWidthDesc => '桌面宽布局下右侧聊天栏的宽度。';
 
 	/// zh-CN: '暂停时的弹幕'
 	String get danmakuPausedBehavior => '暂停时的弹幕';
@@ -5789,12 +5825,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '平台同时提供多种编码时优先选择 H.264，兼容性更好。'
 	String get preferH264Desc => '平台同时提供多种编码时优先选择 H.264，兼容性更好。';
-
-	/// zh-CN: '识别剪贴板直播间链接'
-	String get clipboardRooms => '识别剪贴板直播间链接';
-
-	/// zh-CN: '回到应用时读取剪贴板，发现支持的直播平台链接会询问是否打开；不会自动跳转。'
-	String get clipboardRoomsDesc => '回到应用时读取剪贴板，发现支持的直播平台链接会询问是否打开；不会自动跳转。';
 
 	/// zh-CN: '打开剪贴板中的直播间？'
 	String get clipboardRoomTitle => '打开剪贴板中的直播间？';
@@ -6122,6 +6152,15 @@ class Translations$toolbox$zh_CN {
 
 	/// zh-CN: '清空'
 	String get linkClear => '清空';
+
+	/// zh-CN: '剪贴板'
+	String get linkClipboardGroup => '剪贴板';
+
+	/// zh-CN: '识别剪贴板直播间链接'
+	String get linkClipboardRooms => '识别剪贴板直播间链接';
+
+	/// zh-CN: '回到应用时读取剪贴板，发现支持的直播平台链接会询问是否打开；不会自动跳转。'
+	String get linkClipboardRoomsDesc => '回到应用时读取剪贴板，发现支持的直播平台链接会询问是否打开；不会自动跳转。';
 
 	/// zh-CN: '正在解析链接…'
 	String get linkResolving => '正在解析链接…';
@@ -6546,14 +6585,17 @@ class Translations$wallpaper$zh_CN {
 	/// zh-CN: '图源返回了无法显示的图片格式'
 	String get unsupported => '图源返回了无法显示的图片格式';
 
+	/// zh-CN: '显示设置'
+	String get previewDisplay => '显示设置';
+
+	/// zh-CN: '应用后壁纸仍静音循环；这里的播放、暂停与声音只用于预览。'
+	String get previewVideoNote => '应用后壁纸仍静音循环；这里的播放、暂停与声音只用于预览。';
+
 	/// zh-CN: '随机图片预览'
 	String get previewTitle => '随机图片预览';
 
 	/// zh-CN: '已应用为背景'
 	String get applied => '已应用为背景';
-
-	/// zh-CN: '图片直接来自公开随机接口，可用性会变化；应用代理对它生效。'
-	String get networkHint => '图片直接来自公开随机接口，可用性会变化；应用代理对它生效。';
 
 	/// zh-CN: '来源'
 	String get sourceLabel => '来源';
@@ -6860,6 +6902,96 @@ extension on Translations {
 			'account.loginFailed' => ({required Object message}) => '登录失败：${message}',
 			'account.signOutConfirmDesc' => ({required Object site}) => '将清除本机保存的${site}登录凭证。',
 			'account.signOutSuccess' => '已退出登录',
+			'account.signOutFailed' => '退出登录失败',
+			'account.groupDomestic' => '国内平台',
+			'account.groupOverseas' => '海外平台',
+			'account.statusNone' => '未设置',
+			'account.statusUnreadable' => '无法读取，请重新粘贴 Cookie',
+			'account.verifying' => '正在核验…',
+			'account.statusRejected' => '登录已失效，请重新登录或更换 Cookie',
+			'account.statusCheckFailed' => '已保存，暂时无法核验账号',
+			'account.statusSaved' => '已保存',
+			'account.statusStoredUnused' => '已保存，暂未用于请求',
+			'account.statusDouyuNoSession' => '未设置：Cookie 中没有会话令牌',
+			'account.statusDouyuExpired' => '登录已过期，请重新粘贴 Cookie',
+			'account.statusDouyuUntil' => ({required Object time}) => '预计 ${time} 到期',
+			'account.statusDouyuAutoRenew' => '登录有效，到期前自动续期',
+			'account.statusDouyuRenewsOnPlay' => '登录态已过期，播放时自动续期',
+			'account.statusDouyuRepaste' => '登录态已失效，点按重新粘贴 Cookie',
+			'account.douyuCookieCleared' => '已清除：没有保存斗鱼登录',
+			'account.douyuCookieGuest' => '游客：Cookie 中没有会话令牌，点按重新粘贴',
+			'account.douyuPairOnly' => '已保存续期凭据，还没有登录 Cookie',
+			'account.douyuCookieValidNoExpiry' => '登录有效',
+			'account.douyuCookieValidAutoRenew' => ({required Object time}) => '登录有效，凭 LTP0 到期前自动续期（预计 ${time}）',
+			'account.douyuCookieValidRepaste' => ({required Object time}) => '登录有效（预计 ${time}），但未保存续期凭据',
+			'account.douyuCookieRenewable' => ({required Object time}) => '登录已过期，可在播放时自动续期（凭据到期于 ${time}）',
+			'account.douyuCookieExpired' => ({required Object time}) => '登录已失效（${time}），请重新粘贴 Cookie',
+			'account.douyuRenewalTitle' => '续期凭据',
+			'account.douyuLtp0Label' => 'LTP0（长期密钥）',
+			'account.douyuLtp0Hint' => '粘贴 passport.douyu.com 请求里的 LTP0',
+			'account.douyuDidLabel' => 'dy_did（设备号）',
+			'account.douyuDidHint' => '登录所属设备的 dy_did',
+			'account.douyuRenewNow' => '立即续期',
+			'account.douyuRenewNowDesc' => '用当前凭据立刻换一次会话，验证续期是否可用，无需等到临近到期。',
+			'account.douyuCredentialsAbsorbed' => '已抽出续期凭据，保留原有登录',
+			'account.douyuCredentialsOnly' => '已保存续期凭据（斗鱼登录 Cookie 仍需单独粘贴）',
+			'account.douyuRenewNoCookie' => '请先填写带登录的 Cookie 再续期',
+			'account.douyuRenewNoCredentials' => '缺少 LTP0 或 dy_did，无法续期',
+			'account.douyuRenewNoSession' => '这段 Cookie 里没有会话令牌，无法续期',
+			'account.douyuRenewNoChange' => '续期未返回新会话，登录保持不变',
+			'account.douyuRenewOk' => ({required Object time}) => '已续期，预计 ${time} 到期',
+			'account.douyuRenewFailed' => '续期失败，请稍后再试',
+			'account.statusTwitchChat' => ({required Object login}) => '聊天身份：${login}',
+			'account.statusTwitchNoChat' => '已保存，但 Cookie 里没有聊天身份',
+			'account.statusHuyaUid' => ({required Object uid}) => '账号 ID：${uid}',
+			'account.statusHuyaNoUid' => '已保存，但 Cookie 里没有账号 ID',
+			'account.bilibiliLoginExpired' => 'B 站登录已失效，已自动退出登录',
+			'account.savedAccounts' => '已记住的账号',
+			'account.savedAccountsNote' => ({required Object count}) => '登录过的账号记在这里（最多 ${count} 个），切换不用重新扫码。登录信息只加密保存在本机，退出登录或删除就会清掉。',
+			'account.accountUid' => ({required Object uid}) => 'UID ${uid}',
+			'account.accountCurrent' => '当前账号',
+			'account.addAccount' => '添加账号',
+			'account.addAccountHint' => '扫码登录另一个账号，现在的账号会留在这里',
+			'account.addAccountFull' => ({required Object count}) => '已记住 ${count} 个，再添加会删掉最久没用的那个',
+			'account.addFullConfirmDesc' => ({required Object count}) => '已记住 ${count} 个账号，再登录一个会删掉最久没用的那个。继续？',
+			'account.switchAccount' => '切换',
+			'account.switchTitle' => '切换账号',
+			'account.switchConfirmDesc' => ({required Object name}) => '切换到“${name}”？正在看的直播间会用这个账号重新连接弹幕。',
+			'account.switchedSuccess' => ({required Object name}) => '已切换到“${name}”',
+			'account.forgetAccount' => '删除这个账号',
+			'account.forgetTitle' => '删除账号',
+			'account.forgetConfirmDesc' => ({required Object name}) => '从本机删除“${name}”的登录信息？以后要用这个账号需要重新登录。',
+			'account.forgottenSuccess' => ({required Object name}) => '已删除“${name}”',
+			'account.accountsSaveFailed' => '登录信息没能保存：这台设备的加密存储出错，请重试',
+			'account.qrCannotScan' => '扫不了？',
+			'account.webLogin' => '网页登录（短信、密码）',
+			'account.pasteCookieEntry' => '填写 Cookie',
+			'account.webLoginTitle' => '哔哩哔哩 网页登录',
+			'account.webLoginSignInOnPage' => '在页面里登录（短信或密码）',
+			'account.webLoginReading' => '已回到主站，正在读取登录状态…',
+			'account.webLoginFailed' => '网页登录未成功',
+			'account.webLoginUnavailable' => '这台设备没有可用的内置浏览器',
+			'account.webLoginUnavailableDesc' => '网页登录需要内置浏览器。请改用扫码登录，或在其他浏览器登录后把 Cookie 粘贴进来。',
+			'account.noLoginMethod' => ({required Object site}) => '${site} 暂未接入登录方式',
+			'account.cookiePageTitle' => ({required Object site}) => '${site} Cookie',
+			'account.cookieSection' => 'Cookie',
+			'account.cookieHowToTitle' => '如何获取 Cookie',
+			'account.openSiteWebsite' => ({required Object site}) => '打开 ${site} 官网',
+			'account.browserNotOpened' => '没有打开系统浏览器',
+			'account.paste' => '粘贴',
+			'account.clearInput' => '清空',
+			'account.recheck' => '重新核验',
+			'account.cookieInvalid' => '粘贴的内容不像 Cookie，需要 name=value 的形式',
+			'account.cookieRejected' => '这段 Cookie 没有登录或已失效，未保存',
+			'account.cookieSavedLocal' => 'Cookie 已保存在本机',
+			'account.cookieSavedAs' => ({required Object name}) => '已保存，登录为 ${name}',
+			'account.clipboardEmpty' => '剪贴板是空的',
+			'account.discardTitle' => '舍弃 Cookie 修改？',
+			'account.discardDesc' => '这些修改还没有保存，离开后会丢失。',
+			'account.discard' => '舍弃',
+			'account.keepEditing' => '继续编辑',
+			'account.cookiePrivacy' => 'Cookie 只加密保存在本机，不会上传；在公用设备上请在离开前退出登录。',
+			'account.cookieSaveShortcut' => '保存：Ctrl + S（macOS 为 ⌘ + S）',
 			'areas.allAreas' => '全部分区',
 			'areas.noAreas' => '该平台没有分区',
 			'areas.viewPlatform' => '平台分区',
@@ -6994,6 +7126,7 @@ extension on Translations {
 			'common.switchToDark' => '切换到深色',
 			'common.switchToLight' => '切换到浅色',
 			'common.backToTop' => '回到顶部',
+			'common.backToBottom' => '回到底部',
 			'common.more' => '更多',
 			'common.delete' => '删除',
 			'common.newWindow' => '新建窗口',
@@ -7023,9 +7156,6 @@ extension on Translations {
 			'favorites.durationMinutes' => ({required Object m}) => '${m} 分钟',
 			'favorites.durationHours' => ({required Object h, required Object m}) => '${h} 小时 ${m} 分',
 			'favorites.durationDays' => ({required Object d, required Object h}) => '${d} 天 ${h} 小时',
-			'favorites.perPage' => '每页',
-			'favorites.goTo' => '跳转至',
-			'favorites.pageUnit' => '页',
 			'favorites.setTags' => '设置标签',
 			'favorites.tagsTitle' => '标签',
 			'favorites.tagsFilter' => '标签筛选',
@@ -7261,6 +7391,8 @@ extension on Translations {
 			'music.tagline' => '歌曲、歌单与榜单正在路上',
 			'music.viewsLabel' => '音乐视图',
 			'music.tabLibrary' => '乐库',
+			_ => null,
+		} ?? switch (path) {
 			'music.tabPlaylists' => '歌单',
 			'music.tabCharts' => '榜单',
 			'music.libraryEmptyTitle' => '曲库还在路上',
@@ -7295,6 +7427,7 @@ extension on Translations {
 			'player.fullscreen' => '全屏',
 			'player.danmaku' => '弹幕',
 			'popular.allPlatforms' => '全部平台',
+			'popular.allPlatformsHint' => '点一个直接切过去；在「平台显示」里隐藏和排序。',
 			'popular.page' => ({required int page, required int total}) => '第 ${page} 页，共 ${total} 页',
 			'popular.prevPage' => '上一页',
 			'popular.nextPage' => '下一页',
@@ -7303,8 +7436,6 @@ extension on Translations {
 			'popular.sortLabel' => '排序',
 			'popular.sortPlatform' => '平台推荐',
 			'popular.sortAudience' => '按观众',
-			'popular.perPage' => '每页',
-			'popular.pageSize' => ({required int size}) => '每页 ${size} 个',
 			'popular.hiddenUnplayable' => ({required int count}) => '已隐藏 ${count} 个暂时不能播放的直播（付费、加锁、仅限 App 等）',
 			'recorder.tabRunning' => '进行中',
 			'recorder.tabFinished' => '已完成',
@@ -7349,8 +7480,6 @@ extension on Translations {
 			'recorder.settingsRecovery' => '分段与恢复',
 			'recorder.settingsRuntime' => '后台与上限',
 			'recorder.segmentTitle' => '分段时长',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.segmentDescription' => '每段录制的长度；段文件在崩溃后仍可播放。',
 			'recorder.segmentMinutes' => ({required int count}) => '${count} 分钟',
 			'recorder.readTimeoutTitle' => '读取超时',
@@ -7577,6 +7706,9 @@ extension on Translations {
 			'room.switchLive' => '直播中',
 			'room.switchShowGrid' => '切换为网格',
 			'room.switchShowList' => '切换为列表',
+			'room.twitchCookieExpired' => 'Twitch 的 Cookie 已失效，弹幕已改为匿名接收，请重新填写 Twitch Cookie',
+			'room.bilibiliGuestNames' => '当前以访客身份连接，B 站弹幕不会显示完整昵称',
+			'room.bilibiliLoginExpired' => 'B 站登录似乎已失效：昵称全部被打码，请重新登录',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -7643,6 +7775,7 @@ extension on Translations {
 			'settings.navQuality' => '画质',
 			'settings.navAudio' => '音频与音量',
 			'settings.navPicture' => '画面与浮窗',
+			'settings.navFloatingWindow' => '小窗与画中画',
 			'settings.groupBasics' => '基础设置',
 			'settings.groupContent' => '站点',
 			'settings.groupData' => '数据',
@@ -7660,22 +7793,25 @@ extension on Translations {
 			'settings.personalizationChooseTheme' => '选择要应用的主题',
 			'settings.personalizationSettings' => '个性化设置',
 			'settings.playbackDescription' => '画质、音频、画面与播放器行为。',
-			'settings.sitesDescription' => '平台显示与排序。',
+			'settings.sitesDescription' => '默认站点与首选平台；平台显示、排序与账号登录在子页。',
 			'settings.iptvDescription' => '节目单自动更新与来源同步。',
 			'settings.vodDescription' => 'Bilibili 账号、默认清晰度与视频站行为。',
 			'settings.dataDescription' => '直播观看历史与关注数据。',
 			'settings.backupDescription' => '本地备份、恢复与 WebDAV 同步。',
 			'settings.aboutDescription' => '版本、开源许可与项目链接。',
-			'settings.browsingPageDescription' => '列表卡片、每页数量与分页控件。',
+			'settings.browsingPageDescription' => '卡片间距、关注页密度与房间卡片。',
 			'settings.windowPageDescription' => '标题栏、直播间窗口、关闭行为、窗口尺寸与显示刷新率。',
 			'settings.startupPageDescription' => '开机启动、启动动画、关闭窗口行为与定时关机。',
 			'settings.accountsPageDescription' => '各平台账号与授权。',
-			'settings.themePageDescription' => '主题模式、配色、对比度、加载样式、卡片间距与语言。',
+			'settings.themePageDescription' => '主题模式、配色、对比度、字体与字号、语言。',
 			'settings.typographyPageDescription' => '字体、文本缩放与各级字号。',
 			'settings.qualityPageDescription' => 'Wi-Fi 与移动网络下的默认清晰度。',
 			'settings.audioPageDescription' => '默认音量、静音与后台音频。',
 			'settings.picturePageDescription' => '画面比例、悬浮窗与画中画。',
-			'settings.danmakuStyleDescription' => '是否在画面上显示弹幕，以及字号、速度、显示区域、透明度与描边。',
+			'settings.floatingWindowPageDescription' => '应用内悬浮窗与系统画中画的大小、位置与置顶。',
+			'settings.pictureDisplayGroup' => '画面显示',
+			'settings.floatWindowGroup' => '应用内悬浮窗',
+			'settings.pipGroup' => '系统画中画',
 			'settings.playbackComingSoon' => '播放设置将在播放器接入后开放。',
 			'settings.sitesComingSoon' => '站点管理与账号登录即将接入。',
 			'settings.dataComingSoon' => '数据管理即将接入。',
@@ -7686,10 +7822,6 @@ extension on Translations {
 			'settings.themeModeDark' => '深色',
 			'settings.language' => '语言',
 			'settings.about' => '关于',
-			'settings.browsingTitle' => '浏览偏好',
-			'settings.site' => '默认站点',
-			'settings.cardExtent' => '卡片宽度',
-			'settings.cardExtentDescription' => '首页与分区流里一张卡片的宽度；越小一排越多。',
 			'settings.refreshRateGroup' => '显示',
 			'settings.refreshRateDisplay' => '刷新率',
 			'settings.refreshRateRefresh' => '重新读取刷新率',
@@ -7742,23 +7874,6 @@ extension on Translations {
 			'settings.refreshRateApplyFailed' => '刷新率请求未生效',
 			'settings.refreshRateMultiMonitor' => ({required Object count}) => '检测到 ${count} 台显示器',
 			'settings.refreshRateMultiMonitorDesc' => '刷新率读数来自当前窗口所在的那一台显示器。',
-			'settings.pageSize' => '每页显示数量',
-			'settings.pageSizeDescription' => '桌面分页每页显示多少个房间；站点按自己的窗口取回，应用在本地切片，换页不会跳过房间。',
-			'settings.pageSizeSelector' => '显示每页数量选择器',
-			'settings.pageSizeSelectorDescription' => '在关注与热门的分页条显示每页数量下拉；关闭后仍按当前数量分页，只隐藏这个控件。',
-			'settings.showGotoButton' => '显示跳页输入框',
-			'settings.showGotoButtonDescription' => '在关注页分页条显示页码输入框；关闭后只隐藏输入框，页码与翻页按钮仍可正常翻页。',
-			'settings.showScrollToTop' => '显示回到顶部按钮',
-			'settings.showScrollToTopDescription' => '列表滚动超过一屏后显示回到顶部的浮钮；关闭后只隐藏按钮，滚动与翻页不受影响。',
-			'settings.pageSizeOptions' => '每页数量选项',
-			'settings.pageSizeOptionsDescription' => '分页条可选的每页数量，范围 1–100；可增删档位，至少保留一项。',
-			'settings.pageSizeOptionsDialogTitle' => '管理每页数量选项',
-			'settings.pageSizeOptionsRecommend' => '按窗口推荐',
-			'settings.pageSizeOptionCustom' => '自定义档位（1–100）',
-			'settings.pageSizeOptionAdd' => '添加',
-			'settings.pageSizeOptionInvalid' => '请输入 1–100 之间的整数。',
-			'settings.pageSizeOptionDuplicate' => '该档位已存在。',
-			'settings.pageSizeOptionRemove' => ({required int size}) => '移除每页 ${size} 个',
 			'settings.favoritesDense' => '紧凑模式',
 			'settings.favoritesDenseDescription' => '关注页面可显示更多直播间；关闭后改用大卡片。',
 			'settings.sitesDisplay' => '平台显示',
@@ -7790,6 +7905,8 @@ extension on Translations {
 			'settings.liquidGlass' => '液体玻璃',
 			'settings.liquidGlassDescription' => '首页底栏悬浮成毛玻璃，页面从下面透出来；内存 4 GB 及以下的安卓手机不模糊，只半透明。',
 			'settings.themeColorTitle' => '主题色',
+			_ => null,
+		} ?? switch (path) {
 			'settings.themeColorPresets' => '预设颜色',
 			'settings.themeColorCustom' => '自定义颜色',
 			'settings.themeColorHex' => '十六进制颜色',
@@ -7834,7 +7951,9 @@ extension on Translations {
 			'settings.proxy' => '应用代理',
 			'settings.proxyDesc' => '开启后，点播、节目单与备份的请求都经过该代理。',
 			'settings.proxyHost' => '主机',
+			'settings.proxyHostDesc' => '代理服务器的主机名或地址。',
 			'settings.proxyPort' => '端口',
+			'settings.proxyPortDesc' => '代理服务器监听的端口。',
 			'settings.toolsOrder' => '工具区排序',
 			'settings.toolsOrderDesc' => '侧栏分区线下方工具的显示顺序。',
 			'settings.moveUp' => '上移',
@@ -7847,33 +7966,41 @@ extension on Translations {
 			'settings.showFlyingDanmaku' => '在画面上显示飞行弹幕',
 			'settings.showFlyingDanmakuDesc' => '关闭后弹幕只在聊天列表里显示。',
 			'settings.danmakuInteractionGroup' => '画面弹幕交互',
-			'settings.danmakuTemplatesGroup' => '观看模板',
 			'settings.styleTapInteraction' => '点击画面弹幕查看操作',
 			'settings.styleTapInteractionDesc' => '点按画面上的弹幕打开操作面板，可复制内容、屏蔽用户或关键词。关闭后点按画面只显示或隐藏控制条。',
 			'settings.styleLongPressInteraction' => '长按画面弹幕查看操作',
 			'settings.styleLongPressInteractionDesc' => '长按画面上的弹幕打开同一操作面板；关闭后长按不再命中弹幕。',
 			'settings.danmakuStyleGroup' => '弹幕样式',
+			'settings.danmakuStyleDescription' => '弹幕的字体、大小、速度、区域、描边与帧率。',
+			'settings.danmakuDisplayDescription' => '聊天列表显示谁、显示什么、怎么排。',
+			'settings.danmakuPresetApplied' => '弹幕预设已应用',
+			'settings.danmakuPreviewHint' => '这是真实弹幕引擎按当前设置画的样例；改动会立刻反映在这里。',
+			'settings.chatListGroup' => '聊天列表内容',
+			'settings.chatListLayoutGroup' => '聊天列表排版',
 			'settings.danmakuFont' => '弹幕字体',
 			'settings.danmakuFontDescription' => '画面飞行弹幕使用的字体；聊天列表保持界面字体。',
 			'settings.danmakuFontManagerDescription' => '从平台字体、随应用内置的官方字体或云端字体目录中选择弹幕字体；选中立即应用到所有直播间的飞行弹幕。',
 			'settings.styleFontSize' => '字体大小',
+			'settings.styleFontSizeDesc' => '画面飞行弹幕字形的高度，单位像素。',
 			'settings.styleFontWeight' => '字体粗细',
+			'settings.styleFontWeightDesc' => '字形的粗细；400 为常规，700 为加粗。',
 			'settings.styleLetterSpacing' => '文字间距',
+			'settings.styleLetterSpacingDesc' => '字符之间额外增加的间距，单位像素。',
 			'settings.styleWeightThin' => '极细',
 			'settings.styleWeightExtraLight' => '很细',
 			'settings.styleWeightLight' => '偏细',
 			'settings.styleWeightNormal' => '正常',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleWeightMedium' => '稍粗',
 			'settings.styleWeightSemiBold' => '中粗',
 			'settings.styleWeightBold' => '粗体',
 			'settings.styleWeightExtraBold' => '很粗',
 			'settings.styleWeightBlack' => '特粗',
 			'settings.styleSpeed' => '速度',
+			'settings.styleSpeedDesc' => '弹幕横穿画面的速度，单位像素每秒。',
 			'settings.styleArea' => '画面顶部占用高度',
 			'settings.styleAreaDesc' => '弹幕最多占用画面高度的比例（0–100%）。',
 			'settings.styleOpacity' => '不透明度',
+			'settings.styleOpacityDesc' => '弹幕相对画面的厚实程度；100% 时完全遮住弹幕。',
 			'settings.styleStroke' => '描边',
 			'settings.styleStrokeDesc' => '给弹幕文字加描边，浅色画面上更清楚。',
 			'settings.styleStrokeWidth' => '描边宽度',
@@ -7881,6 +8008,7 @@ extension on Translations {
 			'settings.styleFpsFollow' => '弹幕帧率跟随界面刷新率',
 			'settings.styleFpsFollowDesc' => '跟随「通用」里的省电、均衡或最高档位；关闭后可以手动设帧率。',
 			'settings.styleFps' => '弹幕帧率',
+			'settings.styleFpsDesc' => '飞行层每秒重绘的次数；越高越顺滑，也更耗性能。',
 			'settings.styleFpsValue' => ({required Object count}) => '${count} FPS',
 			'settings.styleMaxVisible' => '同屏最大弹幕条数',
 			'settings.styleMaxVisibleDesc' => '画面上同时飞的弹幕最多几条，默认 48；少一些更清楚、更省电。',
@@ -7890,13 +8018,8 @@ extension on Translations {
 			'settings.pipDanmakuScaleAuto' => '小窗弹幕比例自动',
 			'settings.pipDanmakuScaleAutoDesc' => '开启后按画中画窗口宽度自动缩小弹幕，最大不超过主弹幕大小；关闭后使用下方固定比例。',
 			'settings.pipDanmakuScale' => '小窗弹幕比例',
+			'settings.pipDanmakuScaleDesc' => '关闭自动小窗比例时使用的固定倍率。',
 			'settings.styleReset' => '恢复默认',
-			'settings.danmakuTemplateSaveMine' => '把当前设置存为我的模板',
-			'settings.danmakuTemplateUseMine' => '用我的模板',
-			'settings.danmakuTemplateSaved' => '当前弹幕样式已保存',
-			'settings.danmakuTemplateEmpty' => '还没有保存弹幕模板',
-			'settings.danmakuTemplateInvalid' => '已保存的弹幕模板损坏或数值超出范围',
-			'settings.danmakuTemplateApplied' => '弹幕模板已应用',
 			'settings.danmakuPresetBest' => '顶部 20% · 均衡',
 			'settings.danmakuPresetComfort' => '顶部 35% · 舒适',
 			'settings.danmakuPresetDense' => '顶部 55% · 高密度',
@@ -7933,6 +8056,7 @@ extension on Translations {
 			'settings.fontManagerBundledNote' => '随应用内置',
 			'settings.fontManagerInUse' => '使用中',
 			'settings.fontManagerPreview' => '永远相信美好的事情即将发生 · The quick brown fox jumps over the lazy dog 0123456789',
+			'settings.fontManagerApply' => '应用',
 			'settings.fontManagerCloud' => '云端字体',
 			'settings.fontManagerCloudDescription' => '按需从字体仓库下载并缓存到本机，不随应用打包。',
 			'settings.fontManagerDownload' => '下载',
@@ -7947,7 +8071,6 @@ extension on Translations {
 			'settings.fontManagerRestartNote' => '字体删除后，重启应用前界面可能仍在使用它。',
 			'settings.textScale' => '文本缩放',
 			'settings.textScaleDescription' => '按比例放大或缩小整个应用的文字；100% 为平台原始大小。',
-			'settings.textScalePreview' => '预览：设置会立即应用到所有界面。',
 			'settings.backHome' => '返回应用',
 			'settings.navCache' => '缓存',
 			'settings.cacheDescription' => '封面与头像的磁盘缓存、清理上限。',
@@ -7961,7 +8084,7 @@ extension on Translations {
 			'settings.cacheLimitOff' => '不自动清理',
 			'settings.cacheHint' => '封面与头像会在本机缓存 30 天，过期或超限时自动清理。',
 			'settings.preferPlatform' => '首选平台',
-			'settings.preferPlatformDesc' => '进入热门或分区时优先显示的平台。',
+			'settings.preferPlatformDesc' => '进入热门或分区时优先显示的平台，也是分区房间列表与搜索起始的平台。',
 			'settings.preferPlatformFilterHint' => '搜索平台',
 			'settings.preferPlatformFilterEmpty' => '没有匹配的平台',
 			'settings.sitesOrderReset' => '恢复默认顺序',
@@ -7976,7 +8099,7 @@ extension on Translations {
 			'settings.navRefresh' => '自动刷新',
 			'settings.navProxy' => '网络代理',
 			'settings.navPlatforms' => '平台与账号',
-			'settings.navigationDescription' => '侧栏与手机导航的入口显示和顺序；拖动把手即可排序，至少保留一个首页菜单。',
+			'settings.navigationDescription' => '首页菜单与工具区各自的显示与排序。',
 			'settings.refreshDescription' => '关注列表与直播缩略图的自动刷新。',
 			'settings.proxyDescription' => '应用级网络代理，所有站点请求都走它。',
 			'settings.platformsDescription' => '平台显示、排列顺序与账号登录。',
@@ -8230,6 +8353,9 @@ extension on Translations {
 			'settings.defaultMutedDesc' => '每个新房间打开时保持静音。',
 			'settings.defaultVolume' => '默认音量',
 			'settings.defaultVolumeDesc' => '手机/平板新播放器默认 50%，桌面默认 100%；滑杆调整当前平台。',
+			'settings.volumeWheelStep' => '滚轮音量步长',
+			'settings.volumeWheelStepDesc' => '鼠标滚轮与方向键每次调节的音量幅度。',
+			'settings.volumeWheelStepValue' => ({required int percent}) => '${percent}%',
 			'settings.globalMute' => '全局静音',
 			'settings.globalMuteDesc' => '立即静音所有正在播放和之后打开的房间、频道与视频；关闭后恢复各播放器自身的静音设置。',
 			'settings.backgroundPlay' => '后台播放',
@@ -8264,14 +8390,21 @@ extension on Translations {
 			'settings.refreshThumbnails' => '自动刷新封面',
 			'settings.refreshThumbnailsDesc' => '定期清空图片缓存，让封面、头像和台标重新下载；不会清空观看历史或关注。',
 			'settings.thumbnailRefreshInterval' => '封面刷新间隔',
-			'settings.navHomeMenuGroup' => '首页菜单',
+			'settings.navHomeMenuGroup' => '首页入口',
+			'settings.navHomeMenuTitle' => '首页菜单',
+			'settings.navHomeMenuDescription' => '侧栏、抽屉与底栏显示的首页入口，以及它们的顺序。',
+			'settings.editOrder' => '编辑顺序',
+			'settings.saveOrder' => '保存顺序',
+			'settings.unsavedOrderDraft' => '未保存的排序草稿',
+			'settings.moveToTop' => '置顶',
+			'settings.moveToBottom' => '置底',
 			'settings.navMenuHidden' => '已隐藏',
 			'settings.navMenuKeepOne' => '至少保留一个菜单',
 			'settings.multiviewVisible' => '首页入口：多画面',
 			'settings.multiviewVisibleDesc' => '关闭后侧栏与手机抽屉不再显示多画面入口。',
 			'settings.groupTheme' => '主题',
 			'settings.groupCards' => '卡片与列表',
-			'settings.groupType' => '字体和语言',
+			'settings.groupLanguage' => '语言',
 			'settings.contrast' => '对比度',
 			'settings.contrastDescription' => '控件边界与文字的对比强度。',
 			'settings.contrastSoft' => '柔和',
@@ -8286,6 +8419,8 @@ extension on Translations {
 			'settings.backgroundDescription' => '用图片或视频铺在应用后面，可上传本地文件或填写地址。',
 			'settings.backgroundImagesTitle' => '在线图片',
 			'settings.backgroundImagesDescription' => '官方、Wallhaven、Bing 与 deepin 图片源，选中后预览再应用。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundVideosTitle' => '在线视频',
 			'settings.navRandomWallpaper' => '随机图源',
 			'settings.randomWallpaperDescription' => '按分组从公开随机接口取图，预览后再应用。',
@@ -8295,9 +8430,9 @@ extension on Translations {
 			'settings.backgroundDeviceTitle' => '从设备',
 			'settings.backgroundDeviceDescription' => '上传图片或视频，或填写网络地址。',
 			'settings.backgroundPreview' => '当前背景',
-			'settings.backgroundPreviewVideoHint' => '视频背景在应用界面后方播放。',
+			'settings.backgroundPreviewPrevious' => '上一张',
+			'settings.backgroundPreviewNext' => '下一张',
 			'settings.backgroundPreviewTitle' => '壁纸预览',
-			'settings.backgroundPreviewUnavailable' => '图片无法加载。',
 			'settings.backgroundChange' => '更换背景',
 			'settings.backgroundSource' => '背景来源',
 			'settings.backgroundNone' => '无',
@@ -8305,6 +8440,7 @@ extension on Translations {
 			'settings.backgroundVideo' => '视频',
 			'settings.backgroundImageAddress' => '图片地址',
 			'settings.backgroundVideoAddress' => '视频地址',
+			'settings.backgroundAddressInUse' => '当前使用',
 			'settings.backgroundAddressHint' => 'https://…',
 			'settings.backgroundApply' => '应用',
 			'settings.backgroundUploadImage' => '选择图片',
@@ -8313,9 +8449,9 @@ extension on Translations {
 			'settings.backgroundImportFailed' => '导入失败',
 			'settings.backgroundDropUnsupported' => '拖入的文件类型不支持',
 			'settings.backgroundBusy' => '正在复制文件…',
-			'settings.backgroundEmpty' => '还没有设置媒体；选择图片或视频后填写地址或上传。',
 			'settings.backgroundDisplay' => '显示',
 			'settings.backgroundFit' => '填充方式',
+			'settings.backgroundFitDescription' => '把图片或视频铺到窗口时的方式；纯色与渐变没有可填充的对象。',
 			'settings.backgroundFitCover' => '裁切填满',
 			'settings.backgroundFitContain' => '完整显示',
 			'settings.backgroundFitFill' => '拉伸填满',
@@ -8325,8 +8461,8 @@ extension on Translations {
 			'settings.backgroundFitScaleDown' => '原始或缩小',
 			'settings.backgroundMask' => '遮罩',
 			'settings.backgroundMaskDescription' => '压暗或提亮背景，保证文字可读。',
-			'settings.backgroundBlur' => '高斯模糊',
-			'settings.backgroundBlurDescription' => '对图片或视频做模糊，适合花哨的壁纸。',
+			'settings.backgroundOverlayBlur' => '遮罩模糊',
+			'settings.backgroundOverlayBlurDescription' => '让遮罩变成磨砂：把背景本身模糊掉，任何背景类型都生效；0 保持平面遮罩。',
 			'settings.backgroundClearDescription' => '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。',
 			'settings.backgroundClear' => '清除背景',
 			'settings.checkUpdate' => '检查更新',
@@ -8363,6 +8499,9 @@ extension on Translations {
 			'settings.fullscreenDefaultDesc' => '当进入直播播放页，自动进入全屏',
 			'settings.keepScreenOn' => '播放时保持屏幕常亮',
 			'settings.keepScreenOnDesc' => '房间或频道播放时阻止屏幕自动熄灭；暂停后恢复系统休眠。',
+			'settings.controlsAutoHide' => '控制条自动隐藏',
+			'settings.controlsAutoHideDesc' => '播放时经过该秒数后隐藏画面控制条；暂停时保持显示。',
+			'settings.controlsAutoHideValue' => ({required int count}) => '${count} 秒',
 			'settings.navPortrait' => '竖屏直播适配',
 			'settings.portraitPageDescription' => '自动识别直播源方向，并调整普通页的观看区域与布局。',
 			'settings.navAudience' => '观众指标',
@@ -8377,8 +8516,6 @@ extension on Translations {
 			'settings.portraitLayoutModeDesc' => '仅影响竖屏直播源，不改变普通横屏直播。',
 			'settings.portraitLayoutBalanced' => '均衡（推荐）',
 			'settings.portraitLayoutImmersive' => '沉浸',
-			_ => null,
-		} ?? switch (path) {
 			'settings.portraitLayoutCompatibility' => '兼容 16:9',
 			'settings.portraitDetectionOff' => '开启智能识别后才能调整高度与布局。',
 			'settings.searchSections' => '分区',
@@ -8407,12 +8544,9 @@ extension on Translations {
 			'settings.backgroundGradient' => '渐变',
 			'settings.backgroundPresets' => '预设',
 			'settings.backgroundLibraryTitle' => '壁纸图库',
-			'settings.backgroundLibraryLoadMore' => '加载更多',
 			'settings.backgroundLibraryEmpty' => '没有可用的壁纸',
 			'settings.backgroundLibraryFailed' => '图库加载失败',
 			'settings.backgroundLibraryApplied' => '已应用为背景',
-			'settings.backgroundLibraryLocalHint' => 'deepin 图库随应用内置，不用网络。',
-			'settings.backgroundLibraryNetworkHint' => '图库来自公开的 iTab 接口；应用代理设置对它同样生效。',
 			'settings.wallpaperSourceOfficial' => '官方壁纸',
 			'settings.wallpaperSourceWallhaven' => 'Wallhaven',
 			'settings.wallpaperSourceBing' => '必应壁纸',
@@ -8500,7 +8634,21 @@ extension on Translations {
 			'settings.roomCardMobile' => '移动端',
 			'settings.roomCardDesktop' => '桌面端',
 			'settings.roomCardPreview' => '实时预览',
-			'settings.roomCardPreviewTitle' => '直播间预览',
+			'settings.roomCardPreviewTitle' => '房间卡片预览',
+			'settings.roomCardPreviewHint' => '下面用的是真实卡片组件与真实网格尺寸；字号与颜色跟随主题，这里不单独设置。',
+			'settings.roomCardPreviewGrid' => '网格卡片',
+			'settings.roomCardPreviewList' => '列表行',
+			'settings.roomCardPreviewWhere' => '信息出现在哪里',
+			'settings.roomCardPreviewFollowsTheme' => '字号、行高与颜色都来自主题；这里只决定显示哪些信息和卡片形状。',
+			'settings.roomCardPreviewLongTitle' => '一个很长很长的直播间标题，用来看单行截断',
+			'settings.roomCardPreviewReplayTitle' => '昨日回放 · 精选集锦',
+			'settings.roomCardPreviewOfflineTitle' => '未开播的房间',
+			'settings.roomCardWhereAvatar' => '在封面下方信息行的最左侧',
+			'settings.roomCardWhereAnchor' => '在封面下方信息行里，与开播状态用「·」相连',
+			'settings.roomCardWhereAudience' => '网格卡片在封面右下角，列表行在行末',
+			'settings.roomCardWhereReplay' => '网格卡片在封面右上角，列表行在行末',
+			'settings.roomCardWherePlatform' => '自动：宽卡显示在封面左上角；也可始终显示或隐藏',
+			'settings.roomCardPreviewRoomTitle' => '直播间预览',
 			'settings.roomCardPreviewAnchor' => '预览主播',
 			'settings.roomCardPresets' => '快捷预设',
 			'settings.roomCardPresetCompact' => '简洁',
@@ -8548,104 +8696,6 @@ extension on Translations {
 			'settings.downloadDirectoryUpdated' => '下载目录已更新',
 			'settings.downloadDirectoryPickFailed' => '无法选择下载目录',
 			'settings.downloadDirectoryPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
-			'settings.localInteractionTitle' => '本机互动',
-			'settings.localInteractionDesc' => '在本机模拟观众弹幕、礼物、等级与金币；不会向直播平台发送任何内容。',
-			'settings.localEnabled' => '启用本机互动',
-			'settings.localEnabledDesc' => '关闭后房间内的本机互动页签隐藏，历史与设置保留。',
-			'settings.localIdentity' => '本地身份',
-			'settings.localUserName' => '昵称',
-			'settings.localUserNameDesc' => '显示在本地弹幕与互动的发送者名称。',
-			'settings.localTitle' => '头衔',
-			'settings.localTitleDesc' => '本地观众的称呼，例如「听众」「观众」。',
-			'settings.localCoins' => '金币',
-			'settings.localCoinsDesc' => '本机互动的余额，送礼物时扣除。',
-			'settings.localExperience' => '经验',
-			'settings.localExperienceDesc' => '每 100 经验升一级，仅用于本机徽章。',
-			'settings.localLevel' => '等级',
-			'settings.localLevelValue' => ({required Object level}) => 'Lv.${level}',
-			'settings.localStatusValue' => ({required Object coins, required Object experience, required Object level}) => '金币 ${coins} · 经验 ${experience} · Lv.${level}',
-			'settings.localShowAsDanmaku' => '在画面弹幕中显示',
-			'settings.localShowAsDanmakuDesc' => '发送时同时进入房间的飞行弹幕与聊天列表。',
-			'settings.localShowPlatformBadge' => '显示平台徽章',
-			'settings.localShowPlatformBadgeDesc' => '在本地消息里带上所选平台的身份标记。',
-			'settings.localShowLevelBadge' => '显示等级徽章',
-			'settings.localShowLevelBadgeDesc' => '在本地消息里显示经验等级。',
-			'settings.localGiftEffects' => '礼物特效',
-			'settings.localGiftEffectsDesc' => '送出礼物时播放本地面板内的横幅特效。',
-			'settings.localGiftEffectsAll' => '全部礼物',
-			'settings.localGiftEffectsBigOnly' => '仅高价值礼物',
-			'settings.localGiftEffectsOff' => '关闭',
-			'settings.localReplayOnEnter' => '进场回放本地弹幕',
-			'settings.localReplayOnEnterDesc' => '进入直播间时，把该房间最近 24 小时的本地弹幕放回聊天列表顶部，并标注为之前发的。',
-			'settings.localGrowth' => '本地成长',
-			'settings.localGrowthDesc' => '观看直播、每日首个房间与发送本地弹幕都能获得金币和经验。',
-			'settings.localGrowthToday' => ({required Object checked, required Object watch, required Object watchLimit, required Object chat, required Object chatLimit}) => '今日：${checked} · 观看 +${watch}/${watchLimit} · 弹幕 +${chat}/${chatLimit}',
-			'settings.localGrowthCheckedIn' => '已签到',
-			'settings.localGrowthNotCheckedIn' => '未签到',
-			'settings.localPhrases' => '快捷短语',
-			'settings.localPhrasesDesc' => '显示在本地弹幕输入框上方，点一下直接发送。',
-			'settings.localPhrasesEmpty' => ({required Object limit}) => '还没有短语，最多可添加 ${limit} 条。',
-			'settings.localPhraseAdd' => '添加',
-			'settings.localPhraseHint' => ({required Object limit}) => '输入短语（最多 ${limit} 个字）',
-			'settings.localPhraseCount' => ({required Object count, required Object limit}) => '${count} / ${limit}',
-			'settings.localPhraseEdit' => '编辑短语',
-			'settings.localPhraseDelete' => '删除短语',
-			'settings.localPhraseMoveUp' => '上移短语',
-			'settings.localPhraseMoveDown' => '下移短语',
-			'settings.localPhraseEmptyError' => '短语不能为空。',
-			'settings.localPhraseDuplicate' => '这条短语已经存在。',
-			'settings.localPhraseFull' => ({required Object count}) => '最多只能添加 ${count} 条短语。',
-			'settings.localPreviewPlatform' => '预览平台',
-			'settings.localPreviewPlatformDesc' => '选择预览与本地消息使用的平台标记。',
-			'settings.localStyle' => '弹幕样式',
-			'settings.localStyleDesc' => '只影响本机互动预览与本地消息样式。',
-			'settings.localPresetClean' => '清爽',
-			'settings.localPresetHighlight' => '醒目',
-			'settings.localPresetNeon' => '霓虹',
-			'settings.localPresetMinimal' => '极简',
-			'settings.localPresetCaption' => '字幕',
-			'settings.localPresetCyber' => '赛博',
-			'settings.localPresetCustom' => '自定义',
-			'settings.localFontSize' => '字号',
-			'settings.localSpeed' => '速度',
-			'settings.localWeight' => '字重',
-			'settings.localOpacity' => '不透明度',
-			'settings.localLetterSpacing' => '字距',
-			'settings.localStrokeWidth' => '描边宽度',
-			'settings.localShadowBlur' => '阴影模糊',
-			'settings.localShadowOffset' => '阴影偏移',
-			'settings.localFixedDuration' => '固定弹幕停留',
-			'settings.localShowStroke' => '描边',
-			'settings.localItalic' => '斜体',
-			'settings.localShowShadow' => '阴影',
-			'settings.localPlacement' => '弹幕位置',
-			'settings.localPlacementScroll' => '滚动',
-			'settings.localPlacementTop' => '顶部',
-			'settings.localPlacementBottom' => '底部',
-			'settings.localFontFamily' => '字体',
-			'settings.localFontSystem' => '系统字体',
-			'settings.localFontMono' => '等宽字体',
-			'settings.localTextColor' => '文字颜色',
-			'settings.localStrokeColor' => '描边颜色',
-			'settings.localShadowColor' => '阴影颜色',
-			'settings.localPreview' => '实时预览',
-			'settings.localPreviewText' => '本机互动预览',
-			'settings.localHistory' => '互动历史',
-			'settings.localHistoryEmpty' => '还没有本机互动记录',
-			'settings.localClearHistory' => '清空历史',
-			'settings.localClearHistoryDesc' => '只清除历史记录，金币、经验与样式保留。',
-			'settings.localClearAll' => '清空历史与经济',
-			'settings.localClearAllDesc' => '历史、金币与经验回到默认值。',
-			'settings.localClearAllConfirm' => '清空本机互动？',
-			'settings.localClearAllConfirmDesc' => '历史、金币（1000）与经验（0）会重置，样式与身份保留。',
-			'settings.localCleared' => '已清空',
-			'settings.localNoCoins' => '金币不足',
-			'settings.localGiftSent' => '已送出礼物',
-			'settings.localSend' => '发送',
-			'settings.localMessageHint' => '输入本地弹幕…',
-			'settings.localGifts' => '礼物',
-			'settings.localSettingsEntry' => '设置与样式',
-			'settings.pageSettingsEntry' => '页面设置',
 			'settings.portraitFullscreenGroup' => '竖屏全屏',
 			'settings.portraitDisplayMode' => '画面模式',
 			'settings.portraitDisplayModeDesc' => '完整=整幅画面；沉浸=整幅画面配柔和背景；均衡=轻微裁切；铺满=裁切两侧填满屏幕。',
@@ -8663,17 +8713,21 @@ extension on Translations {
 			'settings.portraitOverridesCount' => ({required int count}) => '已保存 ${count} 个房间',
 			'settings.chatShowNames' => '显示聊天用户名',
 			'settings.chatShowNamesDesc' => '关闭后聊天列表只显示内容；长按操作仍知道发送者。',
-			'settings.chatListGroup' => '聊天列表',
 			'settings.chatListStyle' => '列表样式',
+			'settings.chatListStyleDesc' => '列表是紧凑排列，还是每条消息单独一张卡片。',
 			'settings.chatListStyleCompact' => '紧凑',
 			'settings.chatListStyleCard' => '卡片',
 			'settings.chatListFontSize' => '列表文字大小',
+			'settings.chatListFontSizeDesc' => '聊天列表的文字大小；跟随主题时与界面保持一致。',
 			'settings.chatListFollowTheme' => '跟随主题',
 			'settings.chatListFontSizeValue' => ({required int size}) => '${size} px',
 			'settings.chatListLineSpacing' => '列表行距',
+			'settings.chatListLineSpacingDesc' => '聊天列表两行之间的留白。',
 			'settings.chatListSpacingCompact' => '紧凑',
 			'settings.chatListSpacingStandard' => '标准',
 			'settings.chatListSpacingLoose' => '宽松',
+			'settings.chatPanelWidth' => '聊天栏宽度',
+			'settings.chatPanelWidthDesc' => '桌面宽布局下右侧聊天栏的宽度。',
 			'settings.danmakuPausedBehavior' => '暂停时的弹幕',
 			'settings.danmakuPausedBehaviorDesc' => '视频暂停后，弹幕跟着停住还是照常飘过。',
 			'settings.danmakuPausedPause' => '随视频暂停',
@@ -8704,8 +8758,6 @@ extension on Translations {
 			'settings.youtubeAllChatDesc' => '关闭时使用网页默认的 Top chat；开启后请求全部直播聊天。',
 			'settings.preferH264' => '虎牙优先 H.264',
 			'settings.preferH264Desc' => '平台同时提供多种编码时优先选择 H.264，兼容性更好。',
-			'settings.clipboardRooms' => '识别剪贴板直播间链接',
-			'settings.clipboardRoomsDesc' => '回到应用时读取剪贴板，发现支持的直播平台链接会询问是否打开；不会自动跳转。',
 			'settings.clipboardRoomTitle' => '打开剪贴板中的直播间？',
 			'settings.clipboardRoomDesc' => ({required Object platform, required Object roomId}) => '检测到 ${platform} 的直播间 ${roomId}，是否打开？',
 			'settings.clipboardRoomOpen' => '打开直播间',
@@ -8806,6 +8858,9 @@ extension on Translations {
 			'toolbox.linkCopy' => '复制房间链接',
 			'toolbox.linkPaste' => '粘贴',
 			'toolbox.linkClear' => '清空',
+			'toolbox.linkClipboardGroup' => '剪贴板',
+			'toolbox.linkClipboardRooms' => '识别剪贴板直播间链接',
+			'toolbox.linkClipboardRoomsDesc' => '回到应用时读取剪贴板，发现支持的直播平台链接会询问是否打开；不会自动跳转。',
 			'toolbox.linkResolving' => '正在解析链接…',
 			'toolbox.linkResolvedTitle' => '解析结果',
 			'toolbox.linkPlatform' => '平台',
@@ -8878,6 +8933,8 @@ extension on Translations {
 			'toolbox.logsAutoOff' => '自动滚动已关闭（滚动到底部可开启）',
 			'toolbox.logsLines' => ({required int count}) => '${count} 行',
 			'toolbox.logsScrollBottom' => '滚动到底部',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsCopied' => '日志已复制',
 			'toolbox.logsCopyEmpty' => '没有可复制的日志',
 			'toolbox.logsDirectory' => '日志目录',
@@ -8891,8 +8948,6 @@ extension on Translations {
 			'vod.errorTitle' => '视频没有加载出来',
 			'vod.retry' => '重试',
 			'vod.popular' => '热门',
-			_ => null,
-		} ?? switch (path) {
 			'vod.ranking' => '排行',
 			'vod.regions' => '分区',
 			'vod.search' => '搜索',
@@ -8943,9 +8998,10 @@ extension on Translations {
 			'wallpaper.fetching' => '正在取图…',
 			'wallpaper.fetchFailed' => '这张图没有取到',
 			'wallpaper.unsupported' => '图源返回了无法显示的图片格式',
+			'wallpaper.previewDisplay' => '显示设置',
+			'wallpaper.previewVideoNote' => '应用后壁纸仍静音循环；这里的播放、暂停与声音只用于预览。',
 			'wallpaper.previewTitle' => '随机图片预览',
 			'wallpaper.applied' => '已应用为背景',
-			'wallpaper.networkHint' => '图片直接来自公开随机接口，可用性会变化；应用代理对它生效。',
 			'wallpaper.sourceLabel' => '来源',
 			'wallpaper.retry' => '重试',
 			'wallpaper.groupBing' => '必应壁纸',

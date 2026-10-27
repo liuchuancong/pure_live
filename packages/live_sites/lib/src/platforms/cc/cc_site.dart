@@ -3,6 +3,7 @@
 // ignore_for_file: switch_on_type
 
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
+import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
@@ -21,6 +22,7 @@ import 'package:live_sites/src/models/room/room_runtime/room_runtime.dart';
 import 'package:live_sites/src/platforms/cc/api/cc_endpoints.dart';
 import 'package:live_sites/src/platforms/cc/api/cc_http.dart';
 import 'package:live_sites/src/platforms/cc/capabilities/cc_area_provider.dart';
+import 'package:live_sites/src/platforms/cc/capabilities/cc_auth_provider.dart';
 import 'package:live_sites/src/platforms/cc/capabilities/cc_discovery_provider.dart';
 import 'package:live_sites/src/platforms/cc/capabilities/cc_link_resolver.dart';
 import 'package:live_sites/src/platforms/cc/capabilities/cc_playback_provider.dart';
@@ -44,16 +46,23 @@ const _answerLimit = 8;
 /// The NetEase CC adapter (3.x's `CCSite`; parsing in `parsers/`): manifest +
 /// capability discovery + lifecycle (ARCHITECTURE.md §7.2).
 ///
-/// Every request is anonymous: there is no CC account or cookie. Lists,
-/// search and room details are the website's: the category feeds,
-/// `activitylives` then `live/channel`; an anchor without a live channel is
-/// offline, and room entry reads its room page, which also tells an unknown
-/// id. The catalog is the mobile site's, with 3.x's "官方房间/专题" entries
-/// from the Dashen registry and configuration beside it; their failure does
-/// not fail the catalog. The qualities are `video_play_url`'s real tiers,
-/// 3.x's redirect playlist being the fallback when the room carries its tier
-/// list. CC has no danmaku (3.x neither), so no danmaku capability exists.
-/// Failures are [CcFailure]s; nothing is disguised as an offline room.
+/// Every request is anonymous: lists, search and room details are the
+/// website's — the category feeds, `activitylives` then `live/channel`; an
+/// anchor without a live channel is offline, and room entry reads its room
+/// page, which also tells an unknown id. The catalog is the mobile site's,
+/// with 3.x's "官方房间/专题" entries from the Dashen registry and
+/// configuration beside it; their failure does not fail the catalog. The
+/// qualities are `video_play_url`'s real tiers, 3.x's redirect playlist being
+/// the fallback when the room carries its tier list. CC has no danmaku (3.x
+/// neither), so no danmaku capability exists. Failures are [CcFailure]s;
+/// nothing is disguised as an offline room.
+///
+/// A login may be saved and is not used: no request of this adapter reads it
+/// ([appliedLogin] is the store, [CcAuthProvider] the writer), because every
+/// answer above reads the same signed-in or not and there is no chat join to
+/// ask as the viewer. That is the reference's `usedByRequests = false` — its
+/// account surface says "已保存，暂未用于请求" rather than pretending the
+/// cookie works — and the consumer waits for an account-identified danmaku.
 final class CcSite implements LiveSite {
   /// Creates the adapter over [http]. [now] (the play answers' clock) is
   /// injectable for tests.
@@ -90,6 +99,35 @@ final class CcSite implements LiveSite {
   /// Releases the wrapped transport.
   @override
   Future<void> dispose() async => http.close();
+
+  // Session -------------------------------------------------------------------
+
+  /// The login saved through [applyLoginCredential], or null when nothing is
+  /// stored (in-memory only: storing a login is the application's business).
+  String? _appliedLogin;
+
+  /// The cookie the viewer saved as their CC login, or null when there is
+  /// none.
+  ///
+  /// Saved, not sent: no request of this adapter reads it, which is the
+  /// reference's `usedByRequests = false` — its account surface owns that the
+  /// cookie does nothing yet ("已保存，暂未用于请求") instead of claiming a
+  /// sign-in. What would consume it is a chat join made as the account, and CC
+  /// has no danmaku here (3.x neither); until that exists this is the place the
+  /// login waits, written by [CcAuthProvider].
+  String? get appliedLogin => _appliedLogin;
+
+  /// Remembers [cookie] as the viewer's login, control characters and a pasted
+  /// `Cookie:` prefix stripped; a paste left with nothing by that stripping
+  /// stores nothing. What is stored is not sent — see [appliedLogin].
+  void applyLoginCredential(String cookie) {
+    var stored = String.fromCharCodes(cookie.codeUnits.where((unit) => unit >= 0x20 && unit != 0x7F)).trim();
+    if (stored.toLowerCase().startsWith('cookie:')) stored = stored.substring(7).trim();
+    _appliedLogin = stored.isEmpty ? null : stored;
+  }
+
+  /// Forgets the stored login; nothing to send goes with it.
+  void clearLoginCredential() => _appliedLogin = null;
 
   // Catalog -------------------------------------------------------------------
 
@@ -326,6 +364,7 @@ final class CcSite implements LiveSite {
   CcSearchProvider? _search;
   CcPlaybackProvider? _playback;
   CcLinkResolver? _link;
+  CcAuthProvider? _auth;
 
   /// The capability of type [T], or null when CC does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site. CC has no
@@ -338,6 +377,7 @@ final class CcSite implements LiveSite {
     final search = _search ??= CcSearchProvider(site: this);
     final playback = _playback ??= CcPlaybackProvider(site: this);
     final link = _link ??= CcLinkResolver(site: this);
+    final auth = _auth ??= CcAuthProvider(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -345,6 +385,7 @@ final class CcSite implements LiveSite {
       const (LiveSearchProvider) => search as T,
       const (LivePlaybackProvider) => playback as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveAuthCapability) => auth as T,
       _ => null,
     };
   }

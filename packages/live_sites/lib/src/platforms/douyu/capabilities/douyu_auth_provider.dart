@@ -32,6 +32,22 @@ final class DouyuAuthProvider implements LiveAuthCapability {
   static const String _siteId = douyuSiteId;
 
   @override
+  bool get supportsCookiePaste => true;
+
+  @override
+  bool get supportsQrLogin => false;
+
+  @override
+  bool get canVerifyOnline => false;
+
+  /// Douyu gives an outside client no account endpoint: the login is judged
+  /// from its session token and the renewal pair the application keeps
+  /// beside it, so there is nothing to fetch.
+  @override
+  Future<LiveCredential> fetchAccount() =>
+      throw UnsupportedError('douyu judges its login from the cookie fields — it has no account endpoint');
+
+  @override
   LiveAuthSession startQrLogin() =>
       throw UnsupportedError('douyu signs in with a pasted www.douyu.com cookie, not a QR code');
 

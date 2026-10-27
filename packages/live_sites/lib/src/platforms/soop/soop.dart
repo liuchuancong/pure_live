@@ -6,6 +6,7 @@ library;
 export 'api/soop_endpoints.dart';
 export 'api/soop_http.dart';
 export 'capabilities/soop_area_provider.dart';
+export 'capabilities/soop_auth_provider.dart';
 export 'capabilities/soop_discovery_provider.dart';
 export 'capabilities/soop_link_resolver.dart';
 export 'capabilities/soop_playback_provider.dart';

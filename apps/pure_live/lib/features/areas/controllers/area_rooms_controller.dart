@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -74,7 +73,9 @@ final class AreaRoomsController extends Notifier<AreaRoomsState?> {
     _walk = null;
     _seen = {};
     _fullRooms = const [];
-    final pageSize = ref.read(browseSettingsProvider).homePageSize;
+    // One display page is one of the platform's own area windows: the pager
+    // follows the site rather than a setting the viewer no longer has.
+    final pageSize = areaRequestSize(site.manifest.id);
     state = (
       site: site,
       area: area,

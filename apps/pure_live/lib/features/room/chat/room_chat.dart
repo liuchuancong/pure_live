@@ -6,7 +6,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/features/room/chat/gift_text.dart';
-import 'package:pure_live/features/room/chat/local_interaction_tab.dart' show LocalInteractionTab;
 import 'package:pure_live/features/room/chat/membership_cards.dart' show isMembershipCard;
 import 'package:pure_live/features/room/chat/room_message_actions.dart'
     show blockRoomMessageKeyword, blockRoomMessageSender, copyRoomMessageText;
@@ -22,7 +21,7 @@ import 'package:pure_live/shared/shared.dart';
 /// keeps a board, the flying layer's own settings, and the shield's lists.
 /// The tab is the panel's own state; a narrow column scrolls its bar rather
 /// than cutting a label.
-enum _ChatTab { danmaku, superChats, local, settings, shield }
+enum _ChatTab { danmaku, superChats, settings, shield }
 
 /// The chat column under (or beside) the picture.
 final class RoomChatPanel extends ConsumerStatefulWidget {
@@ -40,12 +39,10 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
   Widget build(BuildContext context) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
-    final localEnabled = ref.watch(localInteractionProvider).enabled;
-    // The local tab disappears with its master switch; the super chat tab
-    // stays for every room, as the reference's chat panel does, because a
-    // membership or a subscription can arrive where the platform keeps no
-    // board.
-    final tab = _tab == _ChatTab.local && !localEnabled ? _ChatTab.danmaku : _tab;
+    // The super chat tab stays for every room, as the reference's chat
+    // panel does, because a membership or a subscription can arrive where
+    // the platform keeps no board.
+    final tab = _tab;
     return ColoredBox(
       color: colors.surface,
       child: Column(
@@ -58,7 +55,6 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
             tabs: [
               DsTab(value: _ChatTab.danmaku, label: Text(t.room.danmakuList)),
               DsTab(value: _ChatTab.superChats, label: Text(t.room.superChats)),
-              if (localEnabled) DsTab(value: _ChatTab.local, label: Text(t.settings.localInteractionTitle)),
               DsTab(value: _ChatTab.settings, label: Text(t.room.danmakuSettings)),
               DsTab(value: _ChatTab.shield, label: Text(t.room.blockList)),
             ],
@@ -74,7 +70,6 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
                 ],
               ),
               _ChatTab.superChats => const _SuperChatTab(),
-              _ChatTab.local => const LocalInteractionTab(),
               _ChatTab.settings => const _RoomDanmakuSettings(),
               _ChatTab.shield => const _ShieldTab(),
             },

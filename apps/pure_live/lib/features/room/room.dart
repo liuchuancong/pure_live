@@ -5,7 +5,6 @@ library;
 export 'chat/gift_chat_filter.dart';
 export 'chat/gift_flights.dart';
 export 'chat/gift_text.dart';
-export 'chat/local_interaction_tab.dart';
 export 'chat/membership_cards.dart';
 export 'chat/room_chat.dart';
 export 'chat/room_message_actions.dart';

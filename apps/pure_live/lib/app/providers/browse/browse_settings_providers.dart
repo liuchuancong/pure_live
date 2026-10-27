@@ -1,32 +1,25 @@
 import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart' show DsSpace;
-import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/shared/shared.dart';
 
-/// The page size before the viewer picks one: the reference's
-/// `defaultPageSize` — 20 on a window wider than 960 logical pixels, 12
-/// otherwise.
-int defaultBrowsePageSize() {
-  try {
-    final view = WidgetsBinding.instance.platformDispatcher.views.first;
-    final ratio = view.devicePixelRatio > 0 ? view.devicePixelRatio : 1;
-    return view.physicalSize.width / ratio > 960 ? 20 : 12;
-  } on Object {
-    return 12;
-  }
-}
-
 /// The browsing surfaces' tunables: what a settings page will own.
-typedef BrowseSettings = ({double homeCardExtent, int homePageSize, double crossSpacing, double mainSpacing});
+///
+/// Only the grid gaps are a viewer's choice. How wide a card is follows the
+/// window it is drawn in ([browseCardExtentForWidth]) and how many rooms a
+/// page holds follows the platform's own feed window
+/// ([roomFeedRequestSize], [areaRequestSize], [searchRequestSize]), so
+/// neither is a number the viewer has to set for a layout that already
+/// knows it.
+typedef BrowseSettings = ({double crossSpacing, double mainSpacing});
 
-/// The grid gaps a viewer may pick: desen_ui's own spacing tokens up to
-/// `DsSpace.s12`, with 0 for "no gap". The scale, not a free pixel range, is
+/// The grid gaps a viewer may pick: desen_ui's spacing tokens up to
+/// `DsSpace.s12` and nothing else — the scale, not a free pixel range, is
 /// what the setting offers, so a feed's gaps are numbers every other surface
 /// already uses; the reference's 6 px default is one of the steps.
-const List<double> kBrowseSpacingChoices = [0, DsSpace.s4, DsSpace.s6, DsSpace.s8, DsSpace.s12];
+const List<double> kBrowseSpacingChoices = [DsSpace.s3, DsSpace.s4, DsSpace.s5, DsSpace.s6, DsSpace.s8, DsSpace.s12];
 
 /// The gap a feed starts with when the store never answered: the reference's
 /// 6, which is one of the tokens above.
@@ -47,41 +40,19 @@ double nearestBrowseSpacing(double value) {
   return best;
 }
 
-/// Owns the browsing settings the home feed and its grid read.
+/// Owns the browsing settings the home feed and its grids read.
 ///
 /// The values live here, not in the widgets, so the settings page writes
 /// through `set` and every surface follows at once; the initial value
-/// comes from the stored `browse.cardExtent`/`browse.pageSize`/
-/// `browse.crossSpacing`/`browse.mainSpacing` and every setter writes it
-/// back, and no widget changes.
+/// comes from the stored `browse.crossSpacing`/`browse.mainSpacing` and every
+/// setter writes it back, and no widget changes.
 final class BrowseSettingsController extends Notifier<BrowseSettings> {
   @override
   BrowseSettings build() {
     return (
-      homeCardExtent: _readStoredExtent() ?? 250,
-      homePageSize: _readStoredSize() ?? defaultBrowsePageSize(),
       crossSpacing: _readStoredSpacing('browse.crossSpacing'),
       mainSpacing: _readStoredSpacing('browse.mainSpacing'),
     );
-  }
-
-  /// The stored card extent, or null when storage never opened (its boot
-  /// failure is logged); the defaults then stay.
-  static double? _readStoredExtent() {
-    try {
-      return StoragePrefs.getDouble('browse.cardExtent');
-    } on Object {
-      return null;
-    }
-  }
-
-  /// The stored page size, or null when storage never opened.
-  static int? _readStoredSize() {
-    try {
-      return StoragePrefs.getInt('browse.pageSize');
-    } on Object {
-      return null;
-    }
   }
 
   /// One stored grid gap, on the token scale; the default when the store
@@ -96,64 +67,23 @@ final class BrowseSettingsController extends Notifier<BrowseSettings> {
     }
   }
 
-  /// The widest a home card gets before the grid adds a column.
-  double get homeCardExtent => state.homeCardExtent;
-
-  /// How many rooms one feed page asks for.
-  int get homePageSize => state.homePageSize;
-
   /// The gap between cards across a row.
   double get crossSpacing => state.crossSpacing;
 
   /// The gap between rows of cards.
   double get mainSpacing => state.mainSpacing;
 
-  /// Widens or narrows the home cards (the grid reflows at once).
-  set homeCardExtent(double extent) {
-    // num.clamp answers num; the setting is a double.
-    final clamped = extent.clamp(160, 420).toDouble();
-    state = (
-      homeCardExtent: clamped,
-      homePageSize: state.homePageSize,
-      crossSpacing: state.crossSpacing,
-      mainSpacing: state.mainSpacing,
-    );
-    unawaited(StoragePrefs.setDouble('browse.cardExtent', clamped));
-  }
-
-  /// Changes how many rooms one feed page asks for.
-  set homePageSize(int size) {
-    final clamped = size.clamp(1, 100);
-    state = (
-      homeCardExtent: state.homeCardExtent,
-      homePageSize: clamped,
-      crossSpacing: state.crossSpacing,
-      mainSpacing: state.mainSpacing,
-    );
-    unawaited(StoragePrefs.setInt('browse.pageSize', clamped));
-  }
-
   /// Moves the gap between cards across a row to the nearest token.
   set crossSpacing(double spacing) {
     final clamped = nearestBrowseSpacing(spacing);
-    state = (
-      homeCardExtent: state.homeCardExtent,
-      homePageSize: state.homePageSize,
-      crossSpacing: clamped,
-      mainSpacing: state.mainSpacing,
-    );
+    state = (crossSpacing: clamped, mainSpacing: state.mainSpacing);
     unawaited(StoragePrefs.setDouble('browse.crossSpacing', clamped));
   }
 
   /// Moves the gap between rows of cards to the nearest token.
   set mainSpacing(double spacing) {
     final clamped = nearestBrowseSpacing(spacing);
-    state = (
-      homeCardExtent: state.homeCardExtent,
-      homePageSize: state.homePageSize,
-      crossSpacing: state.crossSpacing,
-      mainSpacing: clamped,
-    );
+    state = (crossSpacing: state.crossSpacing, mainSpacing: clamped);
     unawaited(StoragePrefs.setDouble('browse.mainSpacing', clamped));
   }
 }
@@ -215,93 +145,6 @@ final class FavoritesDensityController extends Notifier<bool> {
 
 /// Whether the follows page uses compact cards.
 final favoritesDensityProvider = NotifierProvider<FavoritesDensityController, bool>(FavoritesDensityController.new);
-
-/// Whether pagers show the rooms-per-page selector (the reference's
-/// `showPageSizeSelector`). Turning it off hides the control only: the
-/// current size keeps paging the list.
-final class PageSizeSelectorController extends Notifier<bool> {
-  static const String prefsKey = 'page.showSizeSelector';
-
-  @override
-  bool build() {
-    try {
-      return StoragePrefs.getBool(prefsKey) ?? true;
-    } on Object {
-      return true;
-    }
-  }
-
-  /// Shows or hides the selector and writes it through.
-  Future<void> set({required bool show}) async {
-    state = show;
-    try {
-      await StoragePrefs.setBool(prefsKey, show);
-    } on Object {
-      // A preference; a closed store loses it.
-    }
-  }
-}
-
-/// Whether pagers show their rooms-per-page selector.
-final showPageSizeSelectorProvider = NotifierProvider<PageSizeSelectorController, bool>(PageSizeSelectorController.new);
-
-/// Whether pagers show the jump-to-page field (the reference's
-/// `showGotoButton`). Turning it off hides the field only: the page numbers
-/// and their arrows keep paging.
-final class PageGotoButtonController extends Notifier<bool> {
-  static const String prefsKey = 'page.showGotoButton';
-
-  @override
-  bool build() {
-    try {
-      return StoragePrefs.getBool(prefsKey) ?? true;
-    } on Object {
-      return true;
-    }
-  }
-
-  /// Shows or hides the field and writes it through.
-  Future<void> set({required bool show}) async {
-    state = show;
-    try {
-      await StoragePrefs.setBool(prefsKey, show);
-    } on Object {
-      // A preference; a closed store loses it.
-    }
-  }
-}
-
-/// Whether pagers show their jump-to-page field.
-final showGotoButtonProvider = NotifierProvider<PageGotoButtonController, bool>(PageGotoButtonController.new);
-
-/// Whether lists show their floating back-to-top button (the reference's
-/// `showScrollToTopBtn`). Turning it off hides the button only; scrolling
-/// and paging still work.
-final class PageScrollToTopController extends Notifier<bool> {
-  static const String prefsKey = 'page.showScrollToTop';
-
-  @override
-  bool build() {
-    try {
-      return StoragePrefs.getBool(prefsKey) ?? true;
-    } on Object {
-      return true;
-    }
-  }
-
-  /// Shows or hides the button and writes it through.
-  Future<void> set({required bool show}) async {
-    state = show;
-    try {
-      await StoragePrefs.setBool(prefsKey, show);
-    } on Object {
-      // A preference; a closed store loses it.
-    }
-  }
-}
-
-/// Whether lists show their floating back-to-top button.
-final showScrollToTopProvider = NotifierProvider<PageScrollToTopController, bool>(PageScrollToTopController.new);
 
 /// The browsing settings.
 final browseSettingsProvider = NotifierProvider<BrowseSettingsController, BrowseSettings>(BrowseSettingsController.new);

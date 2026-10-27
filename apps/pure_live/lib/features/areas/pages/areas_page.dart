@@ -160,6 +160,10 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
                     current: platform,
                     nameOf: _platformName,
                     semanticLabel: t.areas.allAreas,
+                    // The panel's way to the hide/reorder setting.
+                    onManagePlatforms: () => unawaited(
+                      context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
+                    ),
                     onChanged: (id) {
                       ref.read(areasSiteProvider.notifier).selected = id;
                       unawaited(ref.read(areasCatalogProvider.notifier).open(id));
@@ -183,7 +187,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
                               size: DsSize.sm,
                               leading: const DsIcon(DsIcons.antenna, size: 16),
                               onPressed: () => unawaited(
-                                context.push(SettingsSectionRoute(section: SettingsSection.sites.name).location),
+                                context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
                               ),
                               child: Text(t.settings.sitesDisplay),
                             ),
@@ -312,7 +316,6 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
               scrollController: widget.scrollController,
               items: items,
               layout: ref.watch(browseLayoutProvider),
-              cardExtent: settings.homeCardExtent,
               crossSpacing: settings.crossSpacing,
               mainSpacing: settings.mainSpacing,
               aspectRatio: 3.4,
@@ -382,7 +385,6 @@ final class _FollowedAreas extends ConsumerWidget {
       return CardGrid<LiveArea>(
         items: const [],
         layout: ref.watch(browseLayoutProvider),
-        cardExtent: settings.homeCardExtent,
         crossSpacing: settings.crossSpacing,
         mainSpacing: settings.mainSpacing,
         aspectRatio: 3.4,
@@ -412,7 +414,6 @@ final class _FollowedAreas extends ConsumerWidget {
     return CardGrid<LiveArea>(
       items: followed.areas,
       layout: ref.watch(browseLayoutProvider),
-      cardExtent: settings.homeCardExtent,
       crossSpacing: settings.crossSpacing,
       mainSpacing: settings.mainSpacing,
       aspectRatio: 3.4,

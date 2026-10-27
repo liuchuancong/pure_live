@@ -3,7 +3,7 @@ import 'dart:io' show File;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/app/background/library/background_presets.dart' show kDefaultGradientBegin, kDefaultGradientEnd;
+import 'package:pure_live/app/background/library/background_presets.dart' show gradientAlignments;
 import 'package:pure_live/app/background/settings/background_settings.dart';
 import 'package:pure_live/app/background/wallpaper/background_video_source.dart';
 import 'package:pure_live/features/room/room.dart';
@@ -54,7 +54,10 @@ final class AppBackground extends ConsumerWidget {
     final settings = ref.watch(backgroundSettingsProvider);
     final config = _configOf(context, settings);
     final roomActive = ref.watch(roomProvider.select((state) => state.handle != null));
-    final paused = !AppVisibleScope.isVisibleOf(context) || roomActive;
+    // A preview page decodes its own clip; the wallpaper stands down
+    // while one is up so the shell never runs two players.
+    final previewing = ref.watch(backgroundPreviewOpenProvider);
+    final paused = !AppVisibleScope.isVisibleOf(context) || roomActive || previewing;
     return BackgroundActiveScope(
       active: config != null,
       child: PureBackground(config: config, paused: paused, child: child),
@@ -64,14 +67,7 @@ final class AppBackground extends ConsumerWidget {
   BackgroundConfig? _configOf(BuildContext context, BackgroundSettings settings) {
     if (!settings.active) return null;
     final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final light = theme.brightness == Brightness.light;
-    final overlay = BackgroundOverlay(
-      // A light palette needs a white wash over artwork; darkening it
-      // would leave dark text unreadable.
-      color: light ? const Color(0xFFFFFFFF) : const Color(0xFF000000),
-      opacity: settings.maskOpacity,
-    );
+    final overlay = appBackgroundOverlay(context, opacity: settings.maskOpacity, blurSigma: settings.overlayBlurSigma);
     final underlay = SolidBackground(color: colors.canvas);
     final letterbox = settings.fit == BoxFit.cover || settings.fit == BoxFit.fill ? null : 24.0;
     switch (settings.kind) {
@@ -80,10 +76,12 @@ final class AppBackground extends ConsumerWidget {
       case BackgroundKind.solid:
         return SolidBackground(color: settings.solidColor, overlay: overlay);
       case BackgroundKind.gradient:
+        final (begin, end) = gradientAlignments(settings.gradientDeg);
         return GradientBackground(
           colors: settings.gradientColors,
-          begin: kDefaultGradientBegin,
-          end: kDefaultGradientEnd,
+          stops: settings.gradientStops,
+          begin: begin,
+          end: end,
           overlay: overlay,
         );
       case BackgroundKind.image:
@@ -100,7 +98,6 @@ final class AppBackground extends ConsumerWidget {
           underlay: underlay,
           fallback: underlay,
           letterboxBlurSigma: letterbox,
-          blurSigma: settings.blurSigma,
           overlay: overlay,
         );
       case BackgroundKind.video:
@@ -111,7 +108,6 @@ final class AppBackground extends ConsumerWidget {
           fit: settings.fit,
           underlay: underlay,
           fallback: underlay,
-          blurSigma: settings.blurSigma,
           overlay: overlay,
         );
     }
@@ -128,3 +124,35 @@ final class AppBackground extends ConsumerWidget {
     return uri;
   }
 }
+
+/// The scrim the app paints over a background: a white wash on a light
+/// palette (darkening artwork there would leave dark text unreadable), a
+/// dark one otherwise, at [opacity] with [blurSigma] of frost behind it.
+///
+/// The preview page builds the same overlay, so what it shows is what the
+/// app would wear.
+BackgroundOverlay appBackgroundOverlay(BuildContext context, {required double opacity, required double blurSigma}) {
+  final light = DsTheme.of(context).brightness == Brightness.light;
+  return BackgroundOverlay(
+    color: light ? const Color(0xFFFFFFFF) : const Color(0xFF000000),
+    opacity: opacity,
+    blurSigma: blurSigma,
+  );
+}
+
+/// Whether a wallpaper preview page is on screen.
+final class BackgroundPreviewOpenController extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  /// The preview page opened.
+  void open() => state = true;
+
+  /// The preview page closed.
+  void close() => state = false;
+}
+
+/// See [BackgroundPreviewOpenController].
+final backgroundPreviewOpenProvider = NotifierProvider<BackgroundPreviewOpenController, bool>(
+  BackgroundPreviewOpenController.new,
+);

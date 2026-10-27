@@ -71,6 +71,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     // The image cache's configured cap is applied once per start, off the
     // first frame so a big tree never waits on the disk walk.
     WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(enforceConfiguredImageCacheLimit()));
+    // The emoticon atlas is one sheet decode for every platform's emoticons;
+    // the flying danmaku renders them as text until it lands.
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(loadEmojiAtlas()));
     // The display-rate preference is process-wide: read the monitor and
     // apply the stored mode after the first frame, then keep the reading
     // live while the app runs. All platform calls stay in live_device.

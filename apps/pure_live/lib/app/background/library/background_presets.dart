@@ -1,63 +1,383 @@
+import 'dart:math' as math;
+
 import 'package:flutter/painting.dart' show Alignment, Color;
 
-/// One gradient the background pane offers as a swatch. The stops are the
-/// TV wallpaper set's own colours, cut to a readable subset; there is no
-/// server and no random source.
-typedef BackgroundGradientPreset = ({List<Color> colors, Alignment begin, Alignment end});
+/// The built-in backgrounds: the iTab new-tab page's own palette, ported item
+/// for item — same order, same names, same angles and same stop positions —
+/// so a swatch here paints what the same swatch paints there.
+///
+/// The table never changes at runtime, so it is compiled in rather than
+/// fetched. Angles stay in the CSS convention the source uses (0° points up,
+/// positive is clockwise); [gradientAlignments] turns one into the begin/end
+/// pair Flutter wants, exactly as the source's own preview does.
+typedef BackgroundGradientPreset = ({String name, int deg, List<Color> colors, List<double> stops});
 
-/// A compact set of flat backgrounds, dark first so the app's text keeps
-/// its contrast on any of them.
-const List<Color> kBackgroundSolidPresets = [
-  Color(0xFF141E30),
-  Color(0xFF0B1B2B),
-  Color(0xFF243949),
-  Color(0xFF2B5876),
-  Color(0xFF353B48),
-  Color(0xFF1E3C72),
-  Color(0xFF3D1635),
-  Color(0xFF434343),
-  Color(0xFF0BA360),
-  Color(0xFFC71D6F),
-  Color(0xFF667EEA),
-  Color(0xFFF5F7FA),
+/// A flat background, named by the hex the source publishes.
+typedef BackgroundSolidPreset = ({String name, Color color});
+
+/// The CSS angle to the Flutter begin/end pair of the same gradient line.
+(Alignment, Alignment) gradientAlignments(int deg) {
+  final radians = deg * math.pi / 180;
+  final x = math.sin(radians);
+  final y = -math.cos(radians);
+  if (x == 0 && y == 0) return (Alignment.bottomCenter, Alignment.topCenter);
+  return (Alignment(-x, -y), Alignment(x, y));
+}
+
+/// The twelve flat backgrounds, in the source's order.
+const List<BackgroundSolidPreset> kBackgroundSolidPresets = [
+  (name: '#FFFFFF', color: Color(0xFFFFFFFF)),
+  (name: '#3B78DC', color: Color(0xFF3B78DC)),
+  (name: '#00AFC7', color: Color(0xFF00AFC7)),
+  (name: '#3B4BA8', color: Color(0xFF3B4BA8)),
+  (name: '#8D24A0', color: Color(0xFF8D24A0)),
+  (name: '#008B7D', color: Color(0xFF008B7D)),
+  (name: '#0F9251', color: Color(0xFF0F9251)),
+  (name: '#BBC934', color: Color(0xFFBBC934)),
+  (name: '#E2A600', color: Color(0xFFE2A600)),
+  (name: '#C83E32', color: Color(0xFFC83E32)),
+  (name: '#704F42', color: Color(0xFF704F42)),
+  (name: '#58727F', color: Color(0xFF58727F)),
 ];
 
-/// Gradients from the TV wallpaper set (Night Fade, Malibu Beach, Plum
-/// Plate, Midnight Bloom and friends), in the order the TV gallery shows
-/// them.
+/// The 139 gradients, in the source's order.
 const List<BackgroundGradientPreset> kBackgroundGradientPresets = [
-  (colors: [Color(0xFFA18CD1), Color(0xFFFBC2EB)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-  (colors: [Color(0xFF4FACFE), Color(0xFF00F2FE)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-  (colors: [Color(0xFF43E97B), Color(0xFF38F9D7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-  (colors: [Color(0xFF667EEA), Color(0xFF764BA2)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-  (colors: [Color(0xFF6A11CB), Color(0xFF2575FC)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-  (colors: [Color(0xFF2B5876), Color(0xFF4E4376)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-  (colors: [Color(0xFF13547A), Color(0xFF80D0C7)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-  (colors: [Color(0xFF0250C5), Color(0xFFD43F8D)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+  (name: 'Night Fade', deg: 0, colors: [Color(0xFFA18CD1), Color(0xFFFBC2EB)], stops: [0, 1]),
+  (name: 'Lady Lips', deg: 0, colors: [Color(0xFFFF9A9E), Color(0xFFFECFEF), Color(0xFFFECFEF)], stops: [0, 0.99, 1]),
+  (name: 'Rainy Ashville', deg: 0, colors: [Color(0xFFFBC2EB), Color(0xFFA6C1EE)], stops: [0, 1]),
   (
-    colors: [Color(0xFF7085B6), Color(0xFF87A7D9), Color(0xFFDEF3F8)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
+    name: 'Frozen Dreams',
+    deg: 0,
+    colors: [Color(0xFFFDCBF1), Color(0xFFFDCBF1), Color(0xFFE6DEE9)],
+    stops: [0, 0.01, 1],
+  ),
+  (name: 'Winter Neva', deg: 120, colors: [Color(0xFFA1C4FD), Color(0xFFC2E9FB)], stops: [0, 1]),
+  (name: 'Dusty Grass', deg: 120, colors: [Color(0xFFD4FC79), Color(0xFF96E6A1)], stops: [0, 1]),
+  (name: 'Tempting Azure', deg: 120, colors: [Color(0xFF84FAB0), Color(0xFF8FD3F4)], stops: [0, 1]),
+  (name: 'Heavy Rain', deg: 0, colors: [Color(0xFFCFD9DF), Color(0xFFE2EBF0)], stops: [0, 1]),
+  (name: 'Amy Crisp', deg: 120, colors: [Color(0xFFA6C0FE), Color(0xFFF68084)], stops: [0, 1]),
+  (name: 'Deep Blue', deg: 120, colors: [Color(0xFFE0C3FC), Color(0xFF8EC5FC)], stops: [0, 1]),
+  (name: 'Ripe Malinka', deg: 120, colors: [Color(0xFFF093FB), Color(0xFFF5576C)], stops: [0, 1]),
+  (name: 'Cloudy Knoxville', deg: 120, colors: [Color(0xFFFDFBFB), Color(0xFFEBEDEE)], stops: [0, 1]),
+  (name: 'Malibu Beach', deg: 0, colors: [Color(0xFF4FACFE), Color(0xFF00F2FE)], stops: [0, 1]),
+  (name: 'New Life', deg: 0, colors: [Color(0xFF43E97B), Color(0xFF38F9D7)], stops: [0, 1]),
+  (name: 'Morpheus Den', deg: 0, colors: [Color(0xFF30CFD0), Color(0xFF330867)], stops: [0, 1]),
+  (name: 'Rare Wind', deg: 0, colors: [Color(0xFFA8EDEA), Color(0xFFFED6E3)], stops: [0, 1]),
+  (name: 'Near Moon', deg: 0, colors: [Color(0xFF5EE7DF), Color(0xFFB490CA)], stops: [0, 1]),
+  (name: 'Wild Apple', deg: 0, colors: [Color(0xFFD299C2), Color(0xFFFEF9D7)], stops: [0, 1]),
+  (name: 'Saint Petersburg', deg: 135, colors: [Color(0xFFF5F7FA), Color(0xFFC3CFE2)], stops: [0, 1]),
+  (
+    name: 'Arielles Smile',
+    deg: 0,
+    colors: [Color(0xFF16D9E3), Color(0xFF30C7EC), Color(0xFF46AEF7)],
+    stops: [0, 0.47, 1],
+  ),
+  (name: 'Plum Plate', deg: 135, colors: [Color(0xFF667EEA), Color(0xFF764BA2)], stops: [0, 1]),
+  (name: 'Everlasting Sky', deg: 135, colors: [Color(0xFFFDFCFB), Color(0xFFE2D1C3)], stops: [0, 1]),
+  (name: 'Happy Fisher', deg: 120, colors: [Color(0xFF89F7FE), Color(0xFF66A6FF)], stops: [0, 1]),
+  (name: 'Sharpeye Eagle', deg: 0, colors: [Color(0xFF9890E3), Color(0xFFB1F4CF)], stops: [0, 1]),
+  (name: 'Ladoga Bottom', deg: 0, colors: [Color(0xFFEBC0FD), Color(0xFFD9DED8)], stops: [0, 1]),
+  (name: 'Itmeo Branding', deg: 180, colors: [Color(0xFF2AF598), Color(0xFF009EFD)], stops: [0, 1]),
+  (name: 'Zeus Miracle', deg: 0, colors: [Color(0xFFCD9CF2), Color(0xFFF6F3FF)], stops: [0, 1]),
+  (
+    name: 'Star Wine',
+    deg: 0,
+    colors: [
+      Color(0xFFB8CBB8),
+      Color(0xFFB8CBB8),
+      Color(0xFFB465DA),
+      Color(0xFFCF6CC9),
+      Color(0xFFEE609C),
+      Color(0xFFEE609C),
+    ],
+    stops: [0, 0, 0, 0.33, 0.66, 1],
+  ),
+  (name: 'Blue Velvet', deg: 0, colors: [Color(0xFF6A11CB), Color(0xFF2575FC)], stops: [0, 1]),
+  (name: 'Happy Acid', deg: 0, colors: [Color(0xFF37ECBA), Color(0xFF72AFD3)], stops: [0, 1]),
+  (name: 'New York', deg: 0, colors: [Color(0xFFFFF1EB), Color(0xFFACE0F9)], stops: [0, 1]),
+  (
+    name: 'Shy Rainbow',
+    deg: 0,
+    colors: [Color(0xFFEEA2A2), Color(0xFFBBC1BF), Color(0xFF57C6E1)],
+    stops: [0, 0.19, 0.42],
+  ),
+  (name: 'Mixed Hopes', deg: 0, colors: [Color(0xFFC471F5), Color(0xFFFA71CD)], stops: [0, 1]),
+  (name: 'Fly High', deg: 0, colors: [Color(0xFF48C6EF), Color(0xFF6F86D6)], stops: [0, 1]),
+  (name: 'Snow Again', deg: 0, colors: [Color(0xFFE6E9F0), Color(0xFFEEF1F5)], stops: [0, 1]),
+  (name: 'February Ink', deg: 0, colors: [Color(0xFFACCBEE), Color(0xFFE7F0FD)], stops: [0, 1]),
+  (name: 'Kind Steel', deg: -20, colors: [Color(0xFFE9DEFA), Color(0xFFFBFCDB)], stops: [0, 1]),
+  (name: 'Soft Grass', deg: 0, colors: [Color(0xFFC1DFC4), Color(0xFFDEECDD)], stops: [0, 1]),
+  (name: 'Grown Early', deg: 0, colors: [Color(0xFF0BA360), Color(0xFF3CBA92)], stops: [0, 1]),
+  (name: 'Sharp Blues', deg: 0, colors: [Color(0xFF00C6FB), Color(0xFF005BEA)], stops: [0, 1]),
+  (name: 'Shady Water', deg: 0, colors: [Color(0xFF74EBD5), Color(0xFF9FACE6)], stops: [0, 1]),
+  (name: 'Dirty Beauty', deg: 0, colors: [Color(0xFF6A85B6), Color(0xFFBAC8E0)], stops: [0, 1]),
+  (name: 'Great Whale', deg: 0, colors: [Color(0xFFA3BDED), Color(0xFF6991C7)], stops: [0, 1]),
+  (name: 'Teen Notebook', deg: 0, colors: [Color(0xFF9795F0), Color(0xFFFBC8D4)], stops: [0, 1]),
+  (
+    name: 'Polite Rumors',
+    deg: 0,
+    colors: [Color(0xFFA7A6CB), Color(0xFF8989BA), Color(0xFF8989BA)],
+    stops: [0, 0.52, 1],
   ),
   (
-    colors: [Color(0xFF2CD8D5), Color(0xFF6B8DD6), Color(0xFF8E37D7)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
+    name: 'Soft Cherish',
+    deg: 0,
+    colors: [
+      Color(0xFFDBDCD7),
+      Color(0xFFDDDCD7),
+      Color(0xFFE2C9CC),
+      Color(0xFFE7627D),
+      Color(0xFFB8235A),
+      Color(0xFF801357),
+      Color(0xFF3D1635),
+      Color(0xFF1C1A27),
+    ],
+    stops: [0, 0.24, 0.3, 0.46, 0.59, 0.71, 0.84, 1],
   ),
+  (name: 'Red Salvation', deg: 0, colors: [Color(0xFFF43B47), Color(0xFF453A94)], stops: [0, 1]),
   (
+    name: 'Burning Spring',
+    deg: 0,
+    colors: [
+      Color(0xFF4FB576),
+      Color(0xFF44C489),
+      Color(0xFF28A9AE),
+      Color(0xFF28A2B7),
+      Color(0xFF4C7788),
+      Color(0xFF6C4F63),
+      Color(0xFF432C39),
+    ],
+    stops: [0, 0.3, 0.46, 0.59, 0.71, 0.8, 1],
+  ),
+  (name: 'Night Party', deg: 0, colors: [Color(0xFF0250C5), Color(0xFFD43F8D)], stops: [0, 1]),
+  (name: 'Sky Glider', deg: 0, colors: [Color(0xFF88D3CE), Color(0xFF6E45E2)], stops: [0, 1]),
+  (name: 'Heaven Peach', deg: 0, colors: [Color(0xFFD9AFD9), Color(0xFF97D9E1)], stops: [0, 1]),
+  (name: 'Purple Division', deg: 0, colors: [Color(0xFF7028E4), Color(0xFFE5B2CA)], stops: [0, 1]),
+  (name: 'Aqua Splash', deg: 15, colors: [Color(0xFF13547A), Color(0xFF80D0C7)], stops: [0, 1]),
+  (name: 'Above Clouds', deg: 0, colors: [Color(0xFFBDBBBE), Color(0xFF9D9EA3)], stops: [0, 1]),
+  (
+    name: 'Spiky Naga',
+    deg: 0,
+    colors: [Color(0xFF505285), Color(0xFF585E92), Color(0xFF65689F)],
+    stops: [0, 0.12, 0.25],
+  ),
+  (name: 'Clean Mirror', deg: 45, colors: [Color(0xFF93A5CF), Color(0xFFE4EFE9)], stops: [0, 1]),
+  (name: 'Premium Dark', deg: 0, colors: [Color(0xFF434343), Color(0xFF000000)], stops: [0, 1]),
+  (name: 'Cold Evening', deg: 0, colors: [Color(0xFF0C3483), Color(0xFFA2B6DF), Color(0xFF6B8CCE)], stops: [0, 1, 1]),
+  (name: 'Cochiti Lake', deg: 45, colors: [Color(0xFF93A5CF), Color(0xFFE4EFE9)], stops: [0, 1]),
+  (name: 'Summer Games', deg: 0, colors: [Color(0xFF92FE9D), Color(0xFF00C9FF)], stops: [0, 1]),
+  (name: 'Mountain Rock', deg: 0, colors: [Color(0xFF868F96), Color(0xFF596164)], stops: [0, 1]),
+  (name: 'Jungle Day', deg: 45, colors: [Color(0xFF8BAAAA), Color(0xFFAE8B9C)], stops: [0, 1]),
+  (name: 'October Silenceiver', deg: -20, colors: [Color(0xFFB721FF), Color(0xFF21D4FD)], stops: [0, 1]),
+  (name: 'Faraway River', deg: -20, colors: [Color(0xFF6E45E2), Color(0xFF88D3CE)], stops: [0, 1]),
+  (name: 'Alchemist Lab', deg: -20, colors: [Color(0xFFD558C8), Color(0xFF24D292)], stops: [0, 1]),
+  (name: 'Over Sun', deg: 60, colors: [Color(0xFFABECD6), Color(0xFFFBED96)], stops: [0, 1]),
+  (
+    name: 'Premium White',
+    deg: 0,
+    colors: [Color(0xFFD5D4D0), Color(0xFFD5D4D0), Color(0xFFEEEEEC)],
+    stops: [0, 0.01, 0.31],
+  ),
+  (name: 'Mars Party', deg: 0, colors: [Color(0xFF5F72BD), Color(0xFF9B23EA)], stops: [0, 1]),
+  (name: 'Eternal Constance', deg: 0, colors: [Color(0xFF09203F), Color(0xFF537895)], stops: [0, 1]),
+  (name: 'Smiling Rain', deg: -20, colors: [Color(0xFFDCB0ED), Color(0xFF99C99C)], stops: [0, 1]),
+  (
+    name: 'Cloudy Apple',
+    deg: 0,
+    colors: [Color(0xFFF3E7E9), Color(0xFFE3EEFF), Color(0xFFE3EEFF)],
+    stops: [0, 0.99, 1],
+  ),
+  (name: 'Big Mango', deg: 0, colors: [Color(0xFFC71D6F), Color(0xFFD09693)], stops: [0, 1]),
+  (name: 'Healthy Water', deg: 60, colors: [Color(0xFF96DEDA), Color(0xFF50C9C3)], stops: [0, 1]),
+  (name: 'Amour Amour', deg: 0, colors: [Color(0xFFF77062), Color(0xFFFE5196)], stops: [0, 1]),
+  (
+    name: 'Risky Concrete',
+    deg: 0,
+    colors: [Color(0xFFC4C5C7), Color(0xFFDCDDDF), Color(0xFFEBEBEB)],
+    stops: [0, 0.52, 1],
+  ),
+  (name: 'Strong Stick', deg: 0, colors: [Color(0xFFA8CABA), Color(0xFF5D4157)], stops: [0, 1]),
+  (name: 'Vicious Stance', deg: 60, colors: [Color(0xFF29323C), Color(0xFF485563)], stops: [0, 1]),
+  (name: 'Palo Alto', deg: -60, colors: [Color(0xFF16A085), Color(0xFFF4D03F)], stops: [0, 1]),
+  (name: 'Midnight Bloom', deg: -20, colors: [Color(0xFF2B5876), Color(0xFF4E4376)], stops: [0, 1]),
+  (name: 'Crystalline', deg: -20, colors: [Color(0xFF00CDAC), Color(0xFF8DDAD5)], stops: [0, 1]),
+  (name: 'Raccoon Back', deg: -180, colors: [Color(0xFFBCC5CE), Color(0xFF929EAD)], stops: [0, 0.98]),
+  (name: 'Party Bliss', deg: 0, colors: [Color(0xFF4481EB), Color(0xFF04BEFE)], stops: [0, 1]),
+  (
+    name: 'Confident Cloud',
+    deg: 0,
+    colors: [Color(0xFFDAD4EC), Color(0xFFDAD4EC), Color(0xFFF3E7E9)],
+    stops: [0, 0.01, 1],
+  ),
+  (name: 'River City', deg: 0, colors: [Color(0xFF4481EB), Color(0xFF04BEFE)], stops: [0, 1]),
+  (name: 'Frozen Berry', deg: 0, colors: [Color(0xFFE8198B), Color(0xFFC7EAFD)], stops: [0, 1]),
+  (name: 'Elegance', deg: 0, colors: [Color(0xFFEADFDF), Color(0xFFECE2DF)], stops: [0.59, 1]),
+  (name: 'Flying Lemon', deg: 60, colors: [Color(0xFF64B3F4), Color(0xFFC2E59C)], stops: [0, 1]),
+  (name: 'Hidden Jaguar', deg: 0, colors: [Color(0xFF0FD850), Color(0xFFF9F047)], stops: [0, 1]),
+  (
+    name: 'Above The Sky',
+    deg: 0,
+    colors: [Color(0xFFD3D3D3), Color(0xFFD3D3D3), Color(0xFFE0E0E0)],
+    stops: [0, 0.01, 0.26],
+  ),
+  (name: 'Dense Water', deg: 0, colors: [Color(0xFF3AB5B0), Color(0xFF3D99BE), Color(0xFF56317A)], stops: [0, 0.31, 1]),
+  (name: 'Seashore', deg: 0, colors: [Color(0xFF209CFF), Color(0xFF68E0CF)], stops: [0, 1]),
+  (name: 'Marble Wall', deg: 0, colors: [Color(0xFFBDC2E8), Color(0xFFBDC2E8), Color(0xFFE6DEE9)], stops: [0, 0.01, 1]),
+  (name: 'Night Sky', deg: 0, colors: [Color(0xFF1E3C72), Color(0xFF1E3C72), Color(0xFF2A5298)], stops: [0, 0.01, 1]),
+  (name: 'Young Grass', deg: 0, colors: [Color(0xFF9BE15D), Color(0xFF00E3AE)], stops: [0, 1]),
+  (name: 'Plum Bath', deg: 0, colors: [Color(0xFFCC208E), Color(0xFF6713D2)], stops: [0, 1]),
+  (name: 'Happy Unicorn', deg: 0, colors: [Color(0xFFB3FFAB), Color(0xFF12FFF7)], stops: [0, 1]),
+  (name: 'Full Metal', deg: 0, colors: [Color(0xFFD5DEE7), Color(0xFFE8EBF2), Color(0xFFE2E7ED)], stops: [0, 0.5, 1]),
+  (name: 'Solid Stone', deg: 0, colors: [Color(0xFF243949), Color(0xFF517FA4)], stops: [0, 1]),
+  (name: 'Glass Water', deg: 0, colors: [Color(0xFFDFE9F3), Color(0xFFFFFFFF)], stops: [0, 1]),
+  (name: 'North Miracle', deg: 0, colors: [Color(0xFF00DBDE), Color(0xFFFC00FF)], stops: [0, 1]),
+  (name: 'Millennium Pine', deg: 0, colors: [Color(0xFF50CC7F), Color(0xFFF5D100)], stops: [0, 1]),
+  (name: 'High Flight', deg: 0, colors: [Color(0xFF0ACFFE), Color(0xFF495AFF)], stops: [0, 1]),
+  (name: 'Mole Hall', deg: -20, colors: [Color(0xFF616161), Color(0xFF9BC5C3)], stops: [0, 1]),
+  (
+    name: 'Space Shift',
+    deg: 60,
     colors: [Color(0xFF3D3393), Color(0xFF2B76B9), Color(0xFF2CACD1), Color(0xFF35EB93)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
+    stops: [0, 0.37, 0.65, 1],
   ),
-  (colors: [Color(0xFFFDFBFB), Color(0xFFEBEDEE)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-  (colors: [Color(0xFF434343), Color(0xFF000000)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-  (colors: [Color(0xFF0FD850), Color(0xFFF9F047)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+  (name: 'Forest Inei', deg: 0, colors: [Color(0xFFDF89B5), Color(0xFFBFD9FE)], stops: [0, 1]),
+  (name: 'Royal Garden', deg: 0, colors: [Color(0xFFED6EA0), Color(0xFFEC8C69)], stops: [0, 1]),
+  (name: 'Rich Metal', deg: 0, colors: [Color(0xFFD7D2CC), Color(0xFF304352)], stops: [0, 1]),
+  (name: 'Smart Indigo', deg: 0, colors: [Color(0xFFB224EF), Color(0xFF7579FF)], stops: [0, 1]),
+  (name: 'Sand Strike', deg: 0, colors: [Color(0xFFC1C161), Color(0xFFC1C161), Color(0xFFD4D4B1)], stops: [0, 0, 1]),
+  (name: 'Norse Beauty', deg: 0, colors: [Color(0xFFEC77AB), Color(0xFF7873F5)], stops: [0, 1]),
+  (name: 'Aqua Guidance', deg: 0, colors: [Color(0xFF007ADF), Color(0xFF00ECBC)], stops: [0, 1]),
+  (name: 'Sun Veggie', deg: -225, colors: [Color(0xFF20E2D7), Color(0xFFF9FEA5)], stops: [0, 1]),
+  (name: 'Sea Lord', deg: -225, colors: [Color(0xFF2CD8D5), Color(0xFFC5C1FF), Color(0xFFFFBAC3)], stops: [0, 0.56, 1]),
+  (
+    name: 'Black Sea',
+    deg: -225,
+    colors: [Color(0xFF2CD8D5), Color(0xFF6B8DD6), Color(0xFF8E37D7)],
+    stops: [0, 0.48, 1],
+  ),
+  (
+    name: 'Grass Shampoo',
+    deg: -225,
+    colors: [Color(0xFFDFFFCD), Color(0xFF90F9C4), Color(0xFF39F3BB)],
+    stops: [0, 0.48, 1],
+  ),
+  (
+    name: 'Landing Aircraft',
+    deg: -225,
+    colors: [Color(0xFF5D9FFF), Color(0xFFB8DCFF), Color(0xFF6BBBFF)],
+    stops: [0, 0.48, 1],
+  ),
+  (name: 'Witch Dance', deg: -225, colors: [Color(0xFFA8BFFF), Color(0xFF884D80)], stops: [0, 1]),
+  (
+    name: 'Sleepless Night',
+    deg: -225,
+    colors: [Color(0xFF5271C4), Color(0xFFB19FFF), Color(0xFFECA1FE)],
+    stops: [0, 0.48, 1],
+  ),
+  (
+    name: 'Crystal River',
+    deg: -225,
+    colors: [Color(0xFF22E1FF), Color(0xFF1D8FE1), Color(0xFF625EB1)],
+    stops: [0, 0.48, 1],
+  ),
+  (name: 'Soft Lipstick', deg: -225, colors: [Color(0xFFB6CEE8), Color(0xFFF578DC)], stops: [0, 1]),
+  (name: 'Salt Mountain', deg: -225, colors: [Color(0xFFFFFEFF), Color(0xFFD7FFFE)], stops: [0, 1]),
+  (name: 'Perfect White', deg: -225, colors: [Color(0xFFE3FDF5), Color(0xFFFFE6FA)], stops: [0, 1]),
+  (name: 'Fresh Oasis', deg: -225, colors: [Color(0xFF7DE2FC), Color(0xFFB9B6E5)], stops: [0, 1]),
+  (name: 'Strict November', deg: -225, colors: [Color(0xFFCBBACC), Color(0xFF2580B3)], stops: [0, 1]),
+  (name: 'Morning Salad', deg: -225, colors: [Color(0xFFB7F8DB), Color(0xFF50A7C2)], stops: [0, 1]),
+  (
+    name: 'Deep Relief',
+    deg: -225,
+    colors: [Color(0xFF7085B6), Color(0xFF87A7D9), Color(0xFFDEF3F8)],
+    stops: [0, 0.5, 1],
+  ),
+  (
+    name: 'Sea Strike',
+    deg: -225,
+    colors: [Color(0xFF77FFD2), Color(0xFF6297DB), Color(0xFF1EECFF)],
+    stops: [0, 0.48, 1],
+  ),
+  (
+    name: 'Night Call',
+    deg: -225,
+    colors: [Color(0xFFAC32E4), Color(0xFF7918F2), Color(0xFF4801FF)],
+    stops: [0, 0.48, 1],
+  ),
+  (
+    name: 'Supreme Sky',
+    deg: -225,
+    colors: [Color(0xFFD4FFEC), Color(0xFF57F2CC), Color(0xFF4596FB)],
+    stops: [0, 0.48, 1],
+  ),
+  (
+    name: 'Light Blue',
+    deg: -225,
+    colors: [Color(0xFF9EFBD3), Color(0xFF57E9F2), Color(0xFF45D4FB)],
+    stops: [0, 0.48, 1],
+  ),
+  (
+    name: 'Mind Crawl',
+    deg: -225,
+    colors: [Color(0xFF473B7B), Color(0xFF3584A7), Color(0xFF30D2BE)],
+    stops: [0, 0.51, 1],
+  ),
+  (
+    name: 'Lily Meadow',
+    deg: -225,
+    colors: [Color(0xFF65379B), Color(0xFF886AEA), Color(0xFF6457C6)],
+    stops: [0, 0.53, 1],
+  ),
+  (
+    name: 'Sugar Lollipop',
+    deg: -225,
+    colors: [Color(0xFFA445B2), Color(0xFFD41872), Color(0xFFFF0066)],
+    stops: [0, 0.52, 1],
+  ),
+  (
+    name: 'Sweet Dessert',
+    deg: -225,
+    colors: [Color(0xFF7742B2), Color(0xFFF180FF), Color(0xFFFD8BD9)],
+    stops: [0, 0.52, 1],
+  ),
+  (
+    name: 'Magic Ray',
+    deg: -225,
+    colors: [Color(0xFFFF3CAC), Color(0xFF562B7C), Color(0xFF2B86C5)],
+    stops: [0, 0.52, 1],
+  ),
+  (
+    name: 'Teen Party',
+    deg: -225,
+    colors: [Color(0xFFFF057C), Color(0xFF8D0B93), Color(0xFF321575)],
+    stops: [0, 0.5, 1],
+  ),
+  (
+    name: 'Frozen Heat',
+    deg: -225,
+    colors: [Color(0xFFFF057C), Color(0xFF7C64D5), Color(0xFF4CC3FF)],
+    stops: [0, 0.48, 1],
+  ),
+  (
+    name: 'Gagarin View',
+    deg: -225,
+    colors: [Color(0xFF69EACB), Color(0xFFEACCF8), Color(0xFF6654F1)],
+    stops: [0, 0.48, 1],
+  ),
+  (
+    name: 'Perfect Blue',
+    deg: -225,
+    colors: [Color(0xFF3D4E81), Color(0xFF5753C9), Color(0xFF6E7FF3)],
+    stops: [0, 0.48, 1],
+  ),
 ];
 
-/// The default gradient when the viewer first picks the gradient kind.
-List<Color> get kDefaultBackgroundGradient => kBackgroundGradientPresets.first.colors;
-Alignment get kDefaultGradientBegin => kBackgroundGradientPresets.first.begin;
-Alignment get kDefaultGradientEnd => kBackgroundGradientPresets.first.end;
+/// The gradient a viewer gets the first time the kind is picked: the
+/// source table's own first entry (Night Fade).
+BackgroundGradientPreset get kDefaultGradientPreset => kBackgroundGradientPresets.first;
+
+/// The default colours, for callers that only need those.
+List<Color> get kDefaultBackgroundGradient => kDefaultGradientPreset.colors;
 
 /// The full deepin/UOS set (26 files), named as the TV wallpaper library
 /// names them. The index is the file number on the public CDN.

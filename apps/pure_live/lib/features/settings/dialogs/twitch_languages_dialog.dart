@@ -27,9 +27,8 @@ String twitchLanguageLabel(Translations t, String code) => switch (code) {
 };
 
 /// A one-line summary of the current filter for the row.
-String twitchLanguagesSummary(Translations t, List<String> codes) => codes.isEmpty
-    ? t.settings.twitchAllLanguages
-    : [for (final code in codes) twitchLanguageLabel(t, code)].join('、');
+String twitchLanguagesSummary(Translations t, List<String> codes) =>
+    codes.isEmpty ? t.settings.twitchAllLanguages : [for (final code in codes) twitchLanguageLabel(t, code)].join('、');
 
 /// Opens the language picker; answers the chosen codes, or null when the
 /// viewer cancelled.
@@ -76,10 +75,7 @@ final class _TwitchLanguagesDialogState extends ConsumerState<_TwitchLanguagesDi
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s12,
         children: [
-          Text(
-            t.settings.twitchLanguagesHint,
-            style: theme.typography.small.copyWith(color: colors.textMuted),
-          ),
+          Text(t.settings.twitchLanguagesHint, style: theme.typography.small.copyWith(color: colors.textMuted)),
           Wrap(
             spacing: DsSpace.s8,
             runSpacing: DsSpace.s8,
@@ -93,9 +89,11 @@ final class _TwitchLanguagesDialogState extends ConsumerState<_TwitchLanguagesDi
               DsButton(
                 variant: DsButtonVariant.secondary,
                 size: DsSize.sm,
-                onPressed: () => setState(() => _selected
-                  ..clear()
-                  ..addAll(kTwitchLegacyLanguages)),
+                onPressed: () => setState(
+                  () => _selected
+                    ..clear()
+                    ..addAll(kTwitchLegacyLanguages),
+                ),
                 child: Text(t.settings.twitchLegacyLanguages),
               ),
             ],

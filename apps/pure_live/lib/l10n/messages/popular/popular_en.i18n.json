@@ -1,5 +1,6 @@
 {
   "allPlatforms": "All platforms",
+  "allPlatformsHint": "Tap one to switch to it right away; hide and reorder platforms under Platform display.",
   "page": "Page {page: int} of {total: int}",
   "prevPage": "Previous page",
   "nextPage": "Next page",
@@ -8,7 +9,5 @@
   "sortLabel": "Sort",
   "sortPlatform": "Platform order",
   "sortAudience": "By audience",
-  "perPage": "Per page",
-  "pageSize": "{size: int} per page",
   "hiddenUnplayable": "{count: int} streams that cannot play here are hidden (paid, locked, app only…)"
 }

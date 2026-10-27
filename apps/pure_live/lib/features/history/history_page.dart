@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
@@ -169,24 +170,36 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                   onRemove: _busy ? null : () => unawaited(_remove(room)),
                 )
             else
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: settings.homeCardExtent,
-                  crossAxisSpacing: settings.crossSpacing,
-                  mainAxisSpacing: settings.mainSpacing,
-                  childAspectRatio: 1.35,
-                ),
-                itemCount: records.length,
-                itemBuilder: (context, index) {
-                  final (room, watchedAt) = records[index];
-                  return _HistoryGridCard(
-                    room: room,
-                    watchedAt: watchedAt,
-                    onOpen: () => unawaited(openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId)),
-                    onRemove: _busy ? null : () => unawaited(_remove(room)),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final crossSpacing = settings.crossSpacing;
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    // The same width-derived measure the feeds hold: the
+                    // history grid's cards are as wide as its own columns
+                    // make them, not as a setting says.
+                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: browseCardExtentForWidth(
+                        math.max(0, constraints.maxWidth - 2 * DsSpace.s20),
+                        crossSpacing: crossSpacing,
+                      ),
+                      crossAxisSpacing: crossSpacing,
+                      mainAxisSpacing: settings.mainSpacing,
+                      childAspectRatio: 1.35,
+                    ),
+                    itemCount: records.length,
+                    itemBuilder: (context, index) {
+                      final (room, watchedAt) = records[index];
+                      return _HistoryGridCard(
+                        room: room,
+                        watchedAt: watchedAt,
+                        onOpen: () =>
+                            unawaited(openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId)),
+                        onRemove: _busy ? null : () => unawaited(_remove(room)),
+                      );
+                    },
                   );
                 },
               ),

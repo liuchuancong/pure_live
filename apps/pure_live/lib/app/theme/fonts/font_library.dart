@@ -83,6 +83,10 @@ final class _FontJob {
   final int total;
   final CancelToken cancel = CancelToken();
   int done = 0;
+
+  /// Bytes that have landed so far; the transport answers whole files at
+  /// once, so this grows per completed file.
+  int bytes = 0;
 }
 
 /// The cloud font library: the catalogue of `assets/fonts/fonts-manifest.json`,
@@ -204,10 +208,15 @@ final class FontLibrary extends ChangeNotifier {
   /// Whether [id] has a download running.
   bool isDownloading(String id) => _jobs.containsKey(id);
 
-  /// The files done and the total of the running download of [id].
-  ({int done, int total})? progressOf(String id) {
+  /// The files landed, the total and the bytes behind them for the running
+  /// download of [id]; null while nothing is running.
+  ///
+  /// The transport answers whole files at once, so the count steps per file
+  /// — enough for a transfer row to show real progress and stay honest about
+  /// when a family is complete enough to apply.
+  ({int done, int total, int bytes})? progressOf(String id) {
     final job = _jobs[id];
-    return job == null ? null : (done: job.done, total: job.total);
+    return job == null ? null : (done: job.done, total: job.total, bytes: job.bytes);
   }
 
   /// Bytes of [id]'s folder, or null when not downloaded.
@@ -370,6 +379,7 @@ final class FontLibrary extends ChangeNotifier {
           continue;
         }
         await _fetchMirrors(path, target, job.cancel);
+        job.bytes += target.lengthSync();
         if (!isFontFile(target)) {
           throw FontDownloadException(FontDownloadFailure.corrupt, name);
         }

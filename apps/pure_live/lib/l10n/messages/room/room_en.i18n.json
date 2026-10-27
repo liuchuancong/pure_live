@@ -161,5 +161,8 @@
   "switchEmpty": "No rooms to switch to",
   "switchLive": "Live",
   "switchShowGrid": "Show as grid",
-  "switchShowList": "Show as list"
+  "switchShowList": "Show as list",
+  "twitchCookieExpired": "Twitch's cookie no longer works — danmaku is anonymous again; please paste a new Twitch cookie",
+  "bilibiliGuestNames": "Connected as a guest — Bilibili chat hides the full nicknames",
+  "bilibiliLoginExpired": "Your Bilibili login looks expired — every nickname is masked; please sign in again"
 }

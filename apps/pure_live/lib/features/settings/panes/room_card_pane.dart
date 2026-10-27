@@ -4,11 +4,14 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
+
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/popular/popular.dart';
+import 'package:pure_live/features/settings/pages/room_card_preview_page.dart' show showRoomCardPreview;
 import 'package:pure_live/features/settings/room/room_card_settings.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/shared.dart' show CardGrid;
 
 /// The room-card settings page (the reference's `room_card_settings_page`):
 /// one target at a time (mobile or desktop), a live preview, the three quick
@@ -75,10 +78,25 @@ final class _RoomCardPaneState extends ConsumerState<RoomCardPane> {
               padding: const EdgeInsets.all(DsSpace.s16),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: RoomCard(room: _previewRoom(t), viewport: _viewport),
+                  constraints: const BoxConstraints(maxWidth: 320),
+                  // The card is built for a grid tile: its text row is an
+                  // `Expanded`, so the preview has to hand it the tile's
+                  // fixed box rather than let it size from its content.
+                  child: AspectRatio(
+                    aspectRatio: appearance.layout == RoomCardLayout.compact
+                        ? CardGrid.roomCardCompactAspectRatio
+                        : CardGrid.roomCardAspectRatio,
+                    child: RoomCard(room: _previewRoom(t), viewport: _viewport),
+                  ),
                 ),
               ),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.eye),
+              title: Text(t.settings.roomCardPreviewTitle),
+              description: Text(t.settings.roomCardPreviewHint),
+              showChevron: true,
+              onPressed: () => unawaited(showRoomCardPreview(context, _viewport)),
             ),
           ],
         ),
@@ -194,7 +212,7 @@ final class _RoomCardPaneState extends ConsumerState<RoomCardPane> {
   static LiveRoom _previewRoom(Translations t) => LiveRoom.normalized(
     platform: 'bilibili',
     roomId: 'room-card-preview',
-    content: RoomContent.of(title: 'Pure Live · ${t.settings.roomCardPreviewTitle}'),
+    content: RoomContent.of(title: 'Pure Live · ${t.settings.roomCardPreviewRoomTitle}'),
     anchor: LiveAnchor.of(name: t.settings.roomCardPreviewAnchor),
     audience: RoomAudience.of(popularity: 12800),
     broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live),

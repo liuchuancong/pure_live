@@ -30,6 +30,21 @@ final class HuyaAuthProvider implements LiveAuthCapability {
   static const String _siteId = huyaSiteId;
 
   @override
+  bool get supportsCookiePaste => true;
+
+  @override
+  bool get supportsQrLogin => false;
+
+  @override
+  bool get canVerifyOnline => false;
+
+  /// Huya's web front gives an outside client no account endpoint: the login
+  /// is judged from its own `yyuid` field, so there is nothing to fetch.
+  @override
+  Future<LiveCredential> fetchAccount() =>
+      throw UnsupportedError("huya judges its login from the cookie's yyuid field — it has no account endpoint");
+
+  @override
   LiveAuthSession startQrLogin() =>
       throw UnsupportedError('huya signs in with a pasted www.huya.com cookie, not a QR code');
 

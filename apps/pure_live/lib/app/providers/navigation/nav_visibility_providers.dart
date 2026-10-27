@@ -77,13 +77,12 @@ final class NavMenuController extends Notifier<List<NavigationItem>> {
     return true;
   }
 
-  /// Moves the entry at [from] to [to] — the index it holds after the
-  /// move, as the reorderable list reports it.
-  Future<void> move(int from, int to) async {
-    if (from < 0 || from >= state.length || to < 0 || to >= state.length || from == to) return;
-    final next = List.of(state);
-    next.insert(to, next.removeAt(from));
-    await _write(next);
+  /// Stores [items] as the home menu's order. Only a rearrangement of what is
+  /// shown now is accepted: the order editor hands back the list it was shown,
+  /// and anything else would show or hide an entry the viewer never touched.
+  Future<void> setOrder(List<NavigationItem> items) async {
+    if (items.isEmpty || items.length != state.length || items.toSet() != state.toSet()) return;
+    await _write(items);
   }
 
   Future<void> _write(List<NavigationItem> items) async {

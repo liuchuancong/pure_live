@@ -13,7 +13,8 @@ typedef SoopResponse = ({String text, int status});
 /// SOOP's transport: a [LiveHttp] wrapper that makes the API GETs and the
 /// player API's form POST, and hands the parsers `(text, status)` pairs.
 ///
-/// Every request carries [SoopEndpoints.apiHeaders] and goes as `soop`, so
+/// Every request carries [SoopEndpoints.apiHeaders] — with the caller's
+/// `cookie` when it hands one out, the user's login — and goes as `soop`, so
 /// the app routes the platform through its proxy setting. A transport
 /// breakdown becomes a network failure with the transport's own words; a bad
 /// status is an ordinary answer, whose meaning the parsers' status gate
@@ -25,12 +26,17 @@ final class SoopHttp {
   /// The wrapped transport.
   final LiveHttp http;
 
-  /// GETs [url] with the platform's headers.
-  Future<SoopResponse> get(Uri url, {CancelToken? cancel}) async {
+  /// GETs [url] with the platform's headers and [cookie] ('' for a guest).
+  Future<SoopResponse> get(Uri url, {CancelToken? cancel, String cookie = ''}) async {
     final LiveResponse response;
     try {
       response = await http.send(
-        LiveRequest.get(url, headers: SoopEndpoints.apiHeaders(), site: soopSiteId, cancelToken: cancel),
+        LiveRequest.get(
+          url,
+          headers: SoopEndpoints.apiHeaders(cookie: cookie),
+          site: soopSiteId,
+          cancelToken: cancel,
+        ),
       );
     } on TransportFailure catch (failure) {
       if (failure is CancelledFailure) rethrow;
@@ -39,15 +45,16 @@ final class SoopHttp {
     return (text: response.text, status: response.statusCode);
   }
 
-  /// POSTs [fields] as the player's form to [url].
-  Future<SoopResponse> postForm(Uri url, Map<String, String> fields, {CancelToken? cancel}) async {
+  /// POSTs [fields] as the player's form to [url], with [cookie] ('' for a
+  /// guest) — the player API reads it as the viewer's identity.
+  Future<SoopResponse> postForm(Uri url, Map<String, String> fields, {CancelToken? cancel, String cookie = ''}) async {
     final LiveResponse response;
     try {
       response = await http.send(
         LiveRequest.form(
           url,
           fields: fields,
-          headers: SoopEndpoints.apiHeaders(),
+          headers: SoopEndpoints.apiHeaders(cookie: cookie),
           site: soopSiteId,
           cancelToken: cancel,
         ),

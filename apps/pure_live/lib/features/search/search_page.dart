@@ -134,6 +134,10 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
             current: scope,
             nameOf: _platformName,
             semanticLabel: context.t.search.targetsLabel,
+            // The panel's way to the hide/reorder setting.
+            onManagePlatforms: () => unawaited(
+              context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
+            ),
             onChanged: (id) {
               if (id == scope) return;
               ref.read(searchSiteIdProvider.notifier).selected = id;
@@ -586,7 +590,6 @@ final class _RoomResults extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(searchProvider.notifier);
-    final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
     return CardGrid<LiveRoom>(
       items: search.rooms,
       layout: ref.watch(browseLayoutProvider),
@@ -598,7 +601,6 @@ final class _RoomResults extends ConsumerWidget {
         compact: true,
         onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: search.rooms),
       ),
-      cardExtent: cardExtent,
       isLoading: search.loading,
       hasMore: search.hasMore,
       onLoadMore: controller.loadMore,
@@ -838,14 +840,12 @@ final class _RoomSkeletonGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cardExtent = ref.watch(browseSettingsProvider.select((settings) => settings.homeCardExtent));
     return CardGrid<LiveRoom>(
       items: const [],
       layout: ref.watch(browseLayoutProvider),
       aspectRatio: ref.watch(roomCardAppearanceProvider).layout == RoomCardLayout.compact
           ? CardGrid.roomCardCompactAspectRatio
           : CardGrid.roomCardAspectRatio,
-      cardExtent: cardExtent,
       isLoading: true,
       itemBuilder: (context, room) => const SizedBox.shrink(),
     );

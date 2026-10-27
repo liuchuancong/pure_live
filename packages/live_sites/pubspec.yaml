@@ -32,13 +32,12 @@ dev_dependencies:
   very_good_analysis: ^11.0.0
 
 # Platform icons, bundled for the Flutter app that owns this package: every
-# manifest's icon is one of these files, referenced package-relative.
+# manifest's icon is one of these files, referenced package-relative. The
+# emoticons ship as one packed atlas (`tool/pack_emoji_atlas.py` builds it
+# from assets/emo/images/, which stays in the repo as the tool's input but
+# no longer ships).
 flutter:
   assets:
+    - assets/emo/atlas/
     - assets/emo/json/
-    - assets/emo/images/bilibili/
-    - assets/emo/images/douyin/
-    - assets/emo/images/douyu/
-    - assets/emo/images/huya/
-    - assets/emo/images/kuaishou/
     - assets/platforms/

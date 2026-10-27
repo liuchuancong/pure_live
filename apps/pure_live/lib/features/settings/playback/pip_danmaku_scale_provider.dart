@@ -23,11 +23,7 @@ const double kPipDanmakuAutoScaleMin = 0.65;
 /// Auto shrinks with the window (never above the main look); a pinned factor
 /// replaces that width-derived value, and the result stays inside the
 /// reference's 0.4–1.0 range either way.
-double resolvePipDanmakuScale({
-  required double width,
-  required bool auto,
-  required double pinned,
-}) {
+double resolvePipDanmakuScale({required double width, required bool auto, required double pinned}) {
   final safeWidth = width.isFinite && width > 0 ? width : kPipDanmakuReferenceWidth;
   final autoFactor = auto ? (safeWidth / kPipDanmakuReferenceWidth).clamp(kPipDanmakuAutoScaleMin, 1.0) : 1.0;
   final fixed = auto ? 1.0 : pinned.clamp(kPipDanmakuScaleMin, kPipDanmakuScaleMax);

@@ -96,6 +96,13 @@ IptvChannelsState _initial() => (
   slots: const {},
 );
 
+/// The channels the channel browser reveals at a time. A local playlist has
+/// no site feed window to follow (the browsing feeds take theirs from the
+/// platform's own request size), so the reveal is the list's own step: rows
+/// to fill a tall window twice over, small enough that the frame between
+/// pages stays smooth.
+const int kIptvRevealStep = 60;
+
 /// The IPTV module's channel browser: the library's groups as tabs, the
 /// open group's channels as a grid that reveals a page at a time.
 ///
@@ -104,7 +111,7 @@ IptvChannelsState _initial() => (
 /// notifier listens to its box, so a favourite toggled anywhere, or a
 /// playlist re-imported by whatever surface gains that job, arrives here
 /// without anyone telling this page. Nothing here knows a site: the
-/// library is the source, not `selectedSiteProvider`.
+/// library is the source, not `preferredSiteProvider`.
 final class IptvChannelsController extends Notifier<IptvChannelsState> {
   StreamSubscription<void>? _subscription;
   IptvLibrary? _listened;
@@ -176,8 +183,7 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
     if (library == null || state.loadingMore || state.shown >= state.channels.length) {
       return;
     }
-    final pageSize = ref.read(browseSettingsProvider).homePageSize;
-    final target = _capped(state.shown + pageSize, state.channels.length);
+    final target = _capped(state.shown + kIptvRevealStep, state.channels.length);
     final group = state.selectedGroup;
     final scope = state.scope;
     state = _with(loadingMore: true);
@@ -249,7 +255,6 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
       for (final channel in library.zapSequence(group: selected, favouritesOnly: favouritesOnly).channels)
         if (_matches(channel, current.query)) channel,
     ];
-    final pageSize = ref.read(browseSettingsProvider).homePageSize;
     // A search is complete at once — the viewer names what they look for —
     // while browsing reveals a page at a time. A list that just gained its
     // first channels opens on the first page; an established reveal
@@ -258,10 +263,10 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
         ? channels.length
         : _capped(
             resetReveal
-                ? _capped(pageSize, channels.length)
+                ? _capped(kIptvRevealStep, channels.length)
                 : (reveal ??
                       (current.shown == 0
-                          ? _capped(pageSize, channels.length)
+                          ? _capped(kIptvRevealStep, channels.length)
                           : _capped(current.shown, channels.length))),
             channels.length,
           );

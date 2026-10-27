@@ -19,8 +19,7 @@ enum PortraitFullscreenMode {
   cover;
 
   /// Parses a stored value; unknown answers [ambient], the reference default.
-  static PortraitFullscreenMode of(String? value) =>
-      values.where((mode) => mode.name == value).firstOrNull ?? ambient;
+  static PortraitFullscreenMode of(String? value) => values.where((mode) => mode.name == value).firstOrNull ?? ambient;
 }
 
 /// Where the flying danmaku may sit in portrait full screen (the reference's

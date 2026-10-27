@@ -1,5 +1,4 @@
 import 'package:desen_ui/desen_ui.dart';
-import 'package:flutter/services.dart' show FilteringTextInputFormatter, TextInputType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
@@ -386,8 +385,8 @@ final class _CoverFallback extends StatelessWidget {
   }
 }
 
-/// The follows' bottom pager (the reference's `PaginationBar`): refresh,
-/// the page numbers with their arrows, rooms per page, and "go to page".
+/// The follows' bottom pager: a refresh and the kit's pagination — the page
+/// numbers with their arrows, nothing else.
 ///
 /// The workspace has no shared pager, so the favorites page carries this
 /// one; it pages the already-loaded follows locally.
@@ -396,13 +395,8 @@ final class FavoritesPager extends StatefulWidget {
   const FavoritesPager({
     required this.page,
     required this.pageCount,
-    required this.pageSize,
     required this.busy,
-    required this.showPageSize,
-    required this.showGoto,
-    required this.pageSizes,
     required this.onPage,
-    required this.onPageSize,
     required this.onRefresh,
     super.key,
   });
@@ -413,28 +407,11 @@ final class FavoritesPager extends StatefulWidget {
   /// How many pages the follows fill.
   final int pageCount;
 
-  /// Rooms per page.
-  final int pageSize;
-
   /// A refresh is running: the buttons are inert.
   final bool busy;
 
-  /// Whether the rooms-per-page selector shows (the reference's
-  /// `showPageSizeSelector`); [pageSize] keeps paging when it is hidden.
-  final bool showPageSize;
-
-  /// Whether the jump-to-page field shows (the reference's
-  /// `showGotoButton`); the page numbers keep paging when it is hidden.
-  final bool showGoto;
-
-  /// The rooms-per-page choices.
-  final List<int> pageSizes;
-
   /// Shows another page.
   final ValueChanged<int> onPage;
-
-  /// Picks rooms per page.
-  final ValueChanged<int> onPageSize;
 
   /// Refreshes the visible slice.
   final VoidCallback onRefresh;
@@ -444,29 +421,10 @@ final class FavoritesPager extends StatefulWidget {
 }
 
 final class _FavoritesPagerState extends State<FavoritesPager> {
-  final TextEditingController _input = TextEditingController();
-
-  @override
-  void dispose() {
-    _input.dispose();
-    super.dispose();
-  }
-
-  void _jump() {
-    final target = int.tryParse(_input.text.trim());
-    if (target == null) return;
-    final page = target < 1 ? 1 : (target > widget.pageCount ? widget.pageCount : target);
-    widget.onPage(page);
-    _input.clear();
-    FocusManager.instance.primaryFocus?.unfocus();
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final muted = theme.typography.caption.copyWith(color: colors.textMuted);
     final busy = widget.busy;
     final row = Row(
       mainAxisSize: MainAxisSize.min,
@@ -488,38 +446,6 @@ final class _FavoritesPagerState extends State<FavoritesPager> {
           previousLabel: t.popular.prevPage,
           nextLabel: t.popular.nextPage,
         ),
-        if (widget.showPageSize) ...[
-          const SizedBox(width: DsSpace.s8),
-          Text(t.favorites.perPage, style: muted),
-          SizedBox(
-            width: 88,
-            child: AdaptiveChoiceField<int>(
-              value: widget.pageSize,
-              title: t.favorites.perPage,
-              onChanged: busy ? null : widget.onPageSize,
-              options: [for (final size in widget.pageSizes) DsSelectOption(value: size, label: '$size')],
-              semanticLabel: t.favorites.perPage,
-            ),
-          ),
-        ],
-        if (widget.showGoto) ...[
-          const SizedBox(width: DsSpace.s8),
-          Text(t.favorites.goTo, style: muted),
-          SizedBox(
-            width: 56,
-            child: DsTextField(
-              controller: _input,
-              enabled: !busy,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              onSubmitted: (_) => _jump(),
-              semanticLabel: t.favorites.goTo,
-              style: const DsTextFieldStyle(height: 30, padding: EdgeInsets.symmetric(horizontal: 6)),
-            ),
-          ),
-          Text(t.favorites.pageUnit, style: muted),
-        ],
       ],
     );
     return LayoutBuilder(

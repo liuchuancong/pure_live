@@ -105,10 +105,12 @@ abstract final class SoopEndpoints {
     return RegExp(r'^[a-z0-9_-]+$').hasMatch(id) ? id : null;
   }
 
-  /// The headers 3.x sent with every API request, names in lower case. No
-  /// cookie: this adapter is anonymous (3.x carried the user's cookie; the
-  /// v2 context hands a site no credentials).
-  static Map<String, String> apiHeaders() => {
+  /// The headers 3.x sent with every API request, names in lower case, plus
+  /// [cookie] — the user's login — only when there is one (3.x sent an empty
+  /// one, and so does a signed-out viewer; the player API reads this cookie as
+  /// the viewer's identity, which is what unlocks an age-restricted broadcast
+  /// and the presets above the guest ones).
+  static Map<String, String> apiHeaders({String cookie = ''}) => {
     'accept': '*/*',
     'origin': origin,
     'referer': '$origin/',
@@ -116,6 +118,7 @@ abstract final class SoopEndpoints {
     'sec-fetch-mode': 'cors',
     'sec-fetch-site': 'same-site',
     'user-agent': userAgent,
+    if (cookie.isNotEmpty) 'cookie': cookie,
   };
 
   /// Media request headers for streamer [roomId]: the media user agent, the

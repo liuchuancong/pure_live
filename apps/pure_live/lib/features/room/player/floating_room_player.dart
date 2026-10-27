@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flame_barrage/flame_barrage.dart' show EmojiAtlas, FlameBarrageWidget;
 import 'package:flutter/material.dart' show Icon, Icons;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,8 +10,10 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:media_core/media_core.dart' show MediaPlayerView, PlayerHandle;
 
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/room/controller/room_controller.dart' show roomProvider;
+import 'package:pure_live/features/room/controller/room_controller.dart' show barrageProvider, roomProvider;
 import 'package:pure_live/features/room/page/audio_only_cover.dart' show AudioOnlyCover;
+import 'package:pure_live/features/room/player/compact_danmaku_metrics.dart' show CompactDanmakuMetrics;
+import 'package:pure_live/features/room/player/room_barrage_config.dart' show roomBarrageConfig;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 
@@ -111,6 +114,16 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
 
     final screen = MediaQuery.sizeOf(context);
     final floating = ref.watch(floatingWindowSettingsProvider);
+    // The small-window danmaku settings (the same ones the PiP surface
+    // follows): the flying layer keeps running over the floating picture,
+    // scaled for the window's width.
+    final playback = ref.watch(playbackSettingsProvider);
+    final style = ref.watch(danmakuStyleProvider);
+    final danmakuFps = ref.watch(danmakuEffectiveFpsProvider);
+    final pipScale = ref.watch(pipDanmakuScaleProvider);
+    final danmakuFamily = effectiveFontFamily(style.fontFamily, ref.watch(danmakuFontFaceProvider));
+    final barrage = ref.watch(barrageProvider);
+    final showDanmaku = playback.danmakuVisible && playback.miniDanmakuVisible && !room.audioOnly && barrage != null;
     ref.listen(floatingWindowSettingsProvider.select((value) => value.size), (previous, next) {
       if (previous != next && mounted) setState(() => _width = null);
     });
@@ -149,10 +162,28 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
                   if (room.audioOnly)
                   AudioOnlyCover(room: liveRoom)
                 else
-                  MediaPlayerView(
-                    handle: handle,
-                    fit: ref.watch(playbackSettingsProvider).fit.boxFit,
-                  ),
+                  MediaPlayerView(handle: handle, fit: playback.fit.boxFit),
+                  if (showDanmaku)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: FlameBarrageWidget(
+                          config: roomBarrageConfig(
+                            style,
+                            danmakuFps,
+                            family: danmakuFamily,
+                            compact: CompactDanmakuMetrics.resolve(
+                              width: width,
+                              auto: pipScale.auto,
+                              pinnedScale: pipScale.scale,
+                              configuredFontSize: style.fontSize,
+                              configuredSpeed: style.baseSpeed,
+                            ),
+                          ),
+                          emojiAtlas: EmojiAtlas.instance,
+                          controller: barrage,
+                        ),
+                      ),
+                    ),
                   PositionedDirectional(
                     start: 0,
                     top: 0,

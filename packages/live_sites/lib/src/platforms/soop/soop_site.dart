@@ -5,6 +5,7 @@ import 'dart:async';
 // ignore_for_file: switch_on_type
 
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
+import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
@@ -25,6 +26,7 @@ import 'package:live_sites/src/models/room/room_runtime/room_runtime.dart';
 import 'package:live_sites/src/platforms/soop/api/soop_endpoints.dart';
 import 'package:live_sites/src/platforms/soop/api/soop_http.dart';
 import 'package:live_sites/src/platforms/soop/capabilities/soop_area_provider.dart';
+import 'package:live_sites/src/platforms/soop/capabilities/soop_auth_provider.dart';
 import 'package:live_sites/src/platforms/soop/capabilities/soop_discovery_provider.dart';
 import 'package:live_sites/src/platforms/soop/capabilities/soop_link_resolver.dart';
 import 'package:live_sites/src/platforms/soop/capabilities/soop_playback_provider.dart';
@@ -45,12 +47,14 @@ import 'package:live_websocket/live_websocket.dart';
 /// `danmaku/`): manifest + capability discovery + lifecycle
 /// (ARCHITECTURE.md §7.2).
 ///
-/// Anonymous, like the signed-out website: no cookie, no account; every
-/// request carries [SoopEndpoints.apiHeaders] and goes as `soop`, so the app
-/// routes the whole platform through its proxy setting (3.x carried the
-/// user's cookie with every request; the v2 context hands a site no
-/// credentials, so an age-restricted broadcast answers needs-login where 3.x
-/// could play it). The requests are the website's:
+/// Every request goes as `soop`, so the app routes the whole platform through
+/// its proxy setting, and carries [SoopEndpoints.apiHeaders] with the user's
+/// login cookie ([login]) when one is applied or configured — as 3.x and the
+/// reference do, since the player API reads that cookie as the viewer's
+/// identity and answers an age-restricted broadcast, and the presets above the
+/// guest ones, only for a signed-in viewer. Without a login every request is
+/// the signed-out website's. The chat socket deliberately carries no cookie at
+/// all (see `SoopDanmakuArgs`). The requests are the website's:
 /// - the catalog is one category (热门, id 1) whose areas are read in pages
 ///   of [SoopEndpoints.categoryPageSize] while `is_more` says so, at most
 ///   [SoopEndpoints.maxCategoryPages] pages;
@@ -66,14 +70,28 @@ import 'package:live_websocket/live_websocket.dart';
 /// with the restriction; asking for their stream explains it. Failures are
 /// [SoopFailure]s; nothing is disguised as an offline room.
 final class SoopSite implements LiveSite {
-  /// Creates the adapter over [http]. [connect] makes the chat's socket
-  /// (default [webSocketConnect]); [now] (the cover's cache buster) is
-  /// injectable for tests.
-  SoopSite({required this.http, this.connect = webSocketConnect, DateTime Function()? now})
-    : _now = now ?? DateTime.now;
+  /// Creates the adapter over [http]. [loginCookie] supplies the user's cookie
+  /// (null: every request goes out as a guest), read per request so a changed
+  /// login applies at once; [connect] makes the chat's socket (default
+  /// [webSocketConnect]); [now] (the cover's cache buster) is injectable for
+  /// tests.
+  factory SoopSite({
+    required SoopHttp http,
+    String Function()? loginCookie,
+    SocketConnector? connect,
+    DateTime Function()? now,
+  }) => SoopSite._(http, loginCookie ?? _guest, connect ?? webSocketConnect, now ?? DateTime.now);
+
+  SoopSite._(this.http, this.loginCookie, this.connect, this._now);
+
+  static String _guest() => '';
 
   /// Transport.
   final SoopHttp http;
+
+  /// The user's stored login cookie, read per request so a changed login
+  /// applies at once ('' when the viewer is signed out).
+  final String Function() loginCookie;
 
   /// How the chat's socket is connected.
   final SocketConnector connect;
@@ -103,6 +121,40 @@ final class SoopSite implements LiveSite {
   @override
   Future<void> dispose() async => http.close();
 
+  // Session -------------------------------------------------------------------
+
+  /// The user's cookie ('' when signed out), control characters and a pasted
+  /// `Cookie:` prefix stripped: the credential applied through
+  /// [applyLoginCredential] wins over the constructor's [loginCookie] until
+  /// [clearLoginCredential].
+  String login() {
+    final raw = _appliedLogin ?? loginCookie();
+    final stripped = String.fromCharCodes(raw.codeUnits.where((unit) => unit >= 0x20 && unit != 0x7F)).trim();
+    return stripped.toLowerCase().startsWith('cookie:') ? stripped.substring(7).trim() : stripped;
+  }
+
+  /// The credential applied through [applyLoginCredential], or null while the
+  /// constructor's [loginCookie] answers (in-memory only: storing a login is
+  /// the application's business).
+  String? _appliedLogin;
+
+  /// Makes every API request carry [cookie] as the user's login. The streams
+  /// the guest answers named go with it: the presets and keys are what the
+  /// player API hands out per viewer, so a login that arrives later must not
+  /// inherit the ones asked for without it (see [_broadcast]).
+  void applyLoginCredential(String cookie) {
+    _appliedLogin = cookie;
+    _streams.clear();
+  }
+
+  /// Drops the applied login; requests go back to what the constructor was
+  /// given (the signed-out website when that is empty), and the stream data
+  /// the login named goes with it.
+  void clearLoginCredential() {
+    _appliedLogin = null;
+    _streams.clear();
+  }
+
   // Catalog and directory -----------------------------------------------------
 
   /// The catalog: the one category with every area, read in pages of 120
@@ -114,7 +166,7 @@ final class SoopSite implements LiveSite {
     for (var page = 1; page <= SoopEndpoints.maxCategoryPages; page++) {
       final ({List<LiveArea> areas, bool hasMore}) result;
       try {
-        final response = await http.get(SoopEndpoints.categoryListUrl(page));
+        final response = await http.get(SoopEndpoints.categoryListUrl(page), cookie: login());
         result = SoopRoomParser.categoryPage(response.text, status: response.status);
       } on SoopFailure {
         if (page == 1) rethrow;
@@ -147,6 +199,7 @@ final class SoopSite implements LiveSite {
         page: page < 1 ? 1 : page,
         pageSize: pageSize.clamp(1, SoopEndpoints.areaPageSizeMax),
       ),
+      cookie: login(),
     );
     final rooms = SoopRoomParser.areaRooms(
       response.text,
@@ -160,7 +213,7 @@ final class SoopSite implements LiveSite {
   /// the caller's page size does not change); the list ends with an empty
   /// page.
   Future<({List<LiveRoom> rooms, bool hasMore})> recommend({int page = 1}) async {
-    final response = await http.get(SoopEndpoints.recommendUrl(page < 1 ? 1 : page));
+    final response = await http.get(SoopEndpoints.recommendUrl(page < 1 ? 1 : page), cookie: login());
     final rooms = SoopRoomParser.recommendRooms(response.text, status: response.status);
     return (rooms: rooms, hasMore: rooms.isNotEmpty);
   }
@@ -179,6 +232,7 @@ final class SoopSite implements LiveSite {
         page: page < 1 ? 1 : page,
         pageSize: pageSize.clamp(1, SoopEndpoints.searchPageSizeMax),
       ),
+      cookie: login(),
     );
     final rooms = SoopRoomParser.searchRooms(response.text, status: response.status);
     return (rooms: rooms, hasMore: rooms.isNotEmpty);
@@ -197,10 +251,16 @@ final class SoopSite implements LiveSite {
   }
 
   /// `player_live_api.php` `type=live` for [roomId]: the room alone, without
-  /// the station.
+  /// the station. The login cookie travels with it — the player API reads the
+  /// viewer out of it, which is what makes an age-restricted broadcast
+  /// answer instead of refusing.
   Future<SoopDetail> _detail(String roomId, {bool withDanmaku = false}) async {
     final id = _checked(roomId);
-    final response = await http.postForm(SoopEndpoints.playerLiveUrl(id), SoopEndpoints.playerFields(id, type: 'live'));
+    final response = await http.postForm(
+      SoopEndpoints.playerLiveUrl(id),
+      SoopEndpoints.playerFields(id, type: 'live'),
+      cookie: login(),
+    );
     return SoopRoomParser.roomDetail(
       response.text,
       requestedId: id,
@@ -216,7 +276,7 @@ final class SoopSite implements LiveSite {
   /// completes with an exception, so it can run beside the player API.
   Future<({SoopStation? station, bool missing})> _stationOf(String id) async {
     try {
-      final response = await http.get(SoopEndpoints.stationUrl(id));
+      final response = await http.get(SoopEndpoints.stationUrl(id), cookie: login());
       return (station: SoopRoomParser.station(response.text, status: response.status), missing: false);
     } on SoopFailure catch (failure) {
       if (failure.kind == SoopFailureKind.notFound) return (station: null, missing: true);
@@ -298,11 +358,15 @@ final class SoopSite implements LiveSite {
     if (name.isEmpty) {
       throw SoopFailure(SoopFailureKind.streamUnavailable, 'VIEWPRESET: no quality for ${roomId.trim()}');
     }
-    final assign = await http.get(SoopRoomParser.assignUrl(rmd: data.rmd, cdn: data.cdn, bno: data.bno, quality: name));
+    final assign = await http.get(
+      SoopRoomParser.assignUrl(rmd: data.rmd, cdn: data.cdn, bno: data.bno, quality: name),
+      cookie: login(),
+    );
     final playlist = SoopRoomParser.assignedPlaylist(assign.text, status: assign.status);
     final key = await http.postForm(
       SoopEndpoints.playerLiveUrl(roomId.trim()),
       SoopEndpoints.playerFields(roomId, type: 'aid', bno: data.bno, quality: name),
+      cookie: login(),
     );
     return [
       SoopRoomParser.resolution(
@@ -337,6 +401,7 @@ final class SoopSite implements LiveSite {
   SoopPlaybackProvider? _playback;
   SoopDanmakuProvider? _danmaku;
   SoopLinkResolver? _link;
+  SoopAuthProvider? _auth;
 
   /// The capability of type [T], or null when SOOP does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -349,6 +414,7 @@ final class SoopSite implements LiveSite {
     final playback = _playback ??= SoopPlaybackProvider(site: this);
     final danmaku = _danmaku ??= SoopDanmakuProvider(site: this);
     final link = _link ??= SoopLinkResolver(site: this);
+    final auth = _auth ??= SoopAuthProvider(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -357,6 +423,7 @@ final class SoopSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveAuthCapability) => auth as T,
       _ => null,
     };
   }

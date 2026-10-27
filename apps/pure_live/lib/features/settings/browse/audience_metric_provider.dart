@@ -77,11 +77,7 @@ final class AudiencePolicy {
 /// Under [AudienceMetricChoice.automatic] a room on a platform enabled in
 /// [policy] leads with its concurrent viewers (the reference's
 /// `preferRealOnlineCounts`) rather than the platform's own primary metric.
-int? audienceFigureOf(
-  LiveRoom room,
-  AudienceMetricChoice choice, {
-  AudiencePolicy policy = const AudiencePolicy(),
-}) {
+int? audienceFigureOf(LiveRoom room, AudienceMetricChoice choice, {AudiencePolicy policy = const AudiencePolicy()}) {
   final audience = room.audience;
   int? firstOf(Iterable<int?> values) {
     for (final value in values) {
@@ -158,9 +154,7 @@ final class AudiencePolicyController extends Notifier<AudiencePolicy> {
       final stored = StoragePrefs.getStringList(kRealOnlinePlatformsPref);
       return AudiencePolicy(
         preferRealOnline: StoragePrefs.getBool(kPreferRealOnlinePref) ?? false,
-        platforms: {
-          ...normalizeRealOnlinePlatforms(stored ?? kDefaultRealOnlinePlatforms),
-        },
+        platforms: {...normalizeRealOnlinePlatforms(stored ?? kDefaultRealOnlinePlatforms)},
       );
     } on Object {
       return AudiencePolicy(platforms: kDefaultRealOnlinePlatforms.toSet());
@@ -198,6 +192,4 @@ final class AudiencePolicyController extends Notifier<AudiencePolicy> {
 }
 
 /// The real-online preference and its platforms.
-final audiencePolicyProvider = NotifierProvider<AudiencePolicyController, AudiencePolicy>(
-  AudiencePolicyController.new,
-);
+final audiencePolicyProvider = NotifierProvider<AudiencePolicyController, AudiencePolicy>(AudiencePolicyController.new);

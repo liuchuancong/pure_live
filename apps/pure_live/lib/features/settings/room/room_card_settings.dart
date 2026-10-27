@@ -228,15 +228,8 @@ final class RoomCardAppearance {
       other.cornerRadius == cornerRadius;
 
   @override
-  int get hashCode => Object.hash(
-    layout,
-    showAvatar,
-    showAnchorName,
-    showAudience,
-    showReplayBadge,
-    platformBadge,
-    cornerRadius,
-  );
+  int get hashCode =>
+      Object.hash(layout, showAvatar, showAnchorName, showAudience, showReplayBadge, platformBadge, cornerRadius);
 }
 
 /// Both viewports' appearances (the reference keeps two independent sets).

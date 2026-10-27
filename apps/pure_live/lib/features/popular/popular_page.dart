@@ -192,8 +192,9 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
               variant: DsButtonVariant.secondary,
               size: DsSize.sm,
               leading: const DsIcon(DsIcons.antenna, size: 16),
-              onPressed: () =>
-                  unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sites.name).location)),
+              onPressed: () => unawaited(
+                context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
+              ),
               child: Text(t.settings.sitesDisplay),
             ),
           ],
@@ -214,6 +215,11 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
                   current: platform,
                   nameOf: _platformName,
                   semanticLabel: t.navigation.hot,
+                  // The panel's own way to the setting that hides and
+                  // reorders the platforms it lists.
+                  onManagePlatforms: () => unawaited(
+                    context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
+                  ),
                   onChanged: (id) {
                     ref.read(popularSiteProvider.notifier).selected = id;
                     unawaited(ref.read(popularCatalogProvider.notifier).open(id));
@@ -281,36 +287,17 @@ final class _PlatformFeed extends ConsumerWidget {
     final feed = ref.watch(popularCatalogProvider.select((catalog) => catalog[platform]));
 
     final settings = ref.watch(browseSettingsProvider);
-    final showPageSizeSelector = ref.watch(showPageSizeSelectorProvider);
-    final pageSizeOptions = ref.watch(pageSizeOptionsProvider);
     final state =
         feed ??
         (
           rooms: const <LiveRoom>[],
           page: 1,
-          pageSize: settings.homePageSize,
+          pageSize: roomFeedRequestSize(platform),
           hidden: 0,
           hasMore: true,
           loading: false,
           error: null,
         );
-    // The shared choices, with the page's own size kept visible while a
-    // resize catches up.
-    final pagerSizes = {...pageSizeOptions, state.pageSize}.toList()..sort();
-    // The viewer may change the display page size anywhere; re-measure the
-    // open catalogue (the first room of the page stays in view) and do the
-    // same for a tab that was loaded under another size.
-    ref.listen(browseSettingsProvider.select((s) => s.homePageSize), (previous, next) {
-      if (previous != next) {
-        if (scrollController?.hasClients ?? false) scrollController!.jumpTo(0);
-        unawaited(controller.resize(platform, next));
-      }
-    });
-    if (state.pageSize != settings.homePageSize && !state.loading) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        unawaited(controller.resize(platform, settings.homePageSize));
-      });
-    }
     final wide = MediaQuery.sizeOf(context).width >= 768;
     // The chosen order is applied to the catalogue before the desktop
     // slices it, so a page holds the right rooms rather than a reordered
@@ -337,14 +324,31 @@ final class _PlatformFeed extends ConsumerWidget {
         compact: true,
         onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
       ),
-      cardExtent: settings.homeCardExtent,
       crossSpacing: settings.crossSpacing,
       mainSpacing: settings.mainSpacing,
       isLoading: state.loading,
-      // The desktop grid holds exactly one page: the pager fetches the
-      // next one, not the grid's end.
-      hasMore: !wide && state.hasMore,
-      onLoadMore: wide ? null : () => controller.loadMore(platform),
+      // The end of the list pages it in both layouts: the phone appends the
+      // platform's next block, the desktop asks the pager for its next page —
+      // the same ask its arrows and numbers make — so the wheel and
+      // DsPagination never disagree about which page is shown.
+      hasMore: state.hasMore,
+      // Desktop: the wheel's end is the pager's next page, so it only moves
+      // on a scroll that really reached the bottom.
+      pagesOnScrollToEnd: wide,
+      onLoadMore: () async {
+        if (!wide) {
+          await controller.loadMore(platform);
+          return;
+        }
+        final next = state.page + 1;
+        await controller.loadPage(platform, next);
+        // Only a page that really moved starts at its head; a load the feed
+        // refused (still working) leaves the viewer where they are.
+        if (ref.read(popularCatalogProvider)[platform]?.page == next &&
+            (scrollController?.hasClients ?? false)) {
+          scrollController!.jumpTo(0);
+        }
+      },
       error: state.error?.message,
       onRetry: () => controller.refresh(platform),
       // A pull reloads the first page; a failure keeps the rooms and is
@@ -382,15 +386,16 @@ final class _PlatformFeed extends ConsumerWidget {
             ),
           )
         : null;
-    final feedView = hiddenNote == null
-        ? grid
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: grid),
-              hiddenNote,
-            ],
-          );
+    // The grid keeps one ancestry: the note is an optional row of the same
+    // Column, never a wrapper that swaps the Column in over the bare grid —
+    // a swap would tear the grid's element down and reset its scroll.
+    final feedView = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: grid),
+        ?hiddenNote,
+      ],
+    );
     // A wide window pages by number (the reference's desktop feed) — the
     // kit's pagination: numbers with gaps, arrows at the ends; a narrow
     // one keeps the infinite scroll, thumbs do not page. The count is the
@@ -407,26 +412,6 @@ final class _PlatformFeed extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               spacing: DsSpace.s8,
               children: [
-                if (showPageSizeSelector)
-                  SizedBox(
-                    width: 108,
-                    child: AdaptiveChoiceField<int>(
-                      value: state.pageSize,
-                      title: t.popular.perPage,
-                      onChanged: state.loading
-                          ? null
-                          : (value) => ref.read(browseSettingsProvider.notifier).homePageSize = value,
-                      options: [
-                        for (final size in pagerSizes)
-                          DsSelectOption(
-                            value: size,
-                            label: t.popular.pageSize(size: size),
-                          ),
-                      ],
-                      placeholder: t.popular.perPage,
-                      semanticLabel: t.popular.perPage,
-                    ),
-                  ),
                 if (state.loading) const SizedBox(width: 14, height: 14, child: DsSpinner()),
                 DsPagination(
                   page: state.page,
@@ -469,9 +454,9 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
   /// The desktop page shown, a local slice of the accumulated results.
   int _page = 1;
 
-  /// The size the page number is measured in; the viewer's display size,
-  /// never a server page size.
-  int _pageSize = 0;
+  /// The size the page number is measured in: search stays on the server's
+  /// own window, so a display page is one request's worth of rooms.
+  final int _pageSize = searchRequestSize;
 
   /// The results grid's scroll position across page jumps.
   final ScrollController _scroll = ScrollController();
@@ -479,7 +464,6 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
   @override
   void initState() {
     super.initState();
-    _pageSize = ref.read(browseSettingsProvider).homePageSize;
     // The search runs on arrival (and on a re-word, when the widget is
     // rebuilt by the provider) — pinned to the browsed platform.
     WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_run()));
@@ -506,7 +490,6 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
     ref.read(searchSiteIdProvider.notifier).selected = widget.platform;
     await ref.read(searchProvider.notifier).search(widget.query);
     if (!mounted) return;
-    _pageSize = ref.read(browseSettingsProvider).homePageSize;
     await _ensurePage();
   }
 
@@ -531,16 +514,6 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
     final theme = DsTheme.of(context);
     final search = ref.watch(searchProvider);
     final settings = ref.watch(browseSettingsProvider);
-    // A changed display size re-measures the page around its first room and
-    // fills it if the new page reaches past what is accumulated.
-    if (_pageSize != settings.homePageSize && _pageSize > 0) {
-      final first = (_page - 1) * _pageSize;
-      _page = first ~/ settings.homePageSize + 1;
-      _pageSize = settings.homePageSize;
-      WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_ensurePage()));
-    } else if (_pageSize == 0) {
-      _pageSize = settings.homePageSize;
-    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -581,7 +554,7 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
     final t = context.t;
     final wide = MediaQuery.sizeOf(context).width >= 768;
     final page = wide ? _page : 1;
-    final pageSize = settings.homePageSize;
+    final pageSize = _pageSize;
     final rooms = wide ? roomPageOf(search.rooms, page, pageSize) : search.rooms;
     final grid = CardGrid<LiveRoom>(
       scrollController: _scroll,
@@ -595,13 +568,23 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
         compact: true,
         onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
       ),
-      cardExtent: settings.homeCardExtent,
       crossSpacing: settings.crossSpacing,
       mainSpacing: settings.mainSpacing,
       isLoading: search.loading,
-      // The desktop grid holds one local page; its pager fetches the rest.
-      hasMore: !wide && search.hasMore,
-      onLoadMore: wide ? null : () => ref.read(searchProvider.notifier).loadMore(),
+      // The end of the results pages them, exactly as the browse feed does:
+      // the phone appends, the desktop moves its pager one page.
+      hasMore: search.hasMore,
+      pagesOnScrollToEnd: wide,
+      onLoadMore: () async {
+        if (!wide) {
+          await ref.read(searchProvider.notifier).loadMore();
+          return;
+        }
+        final next = page + 1;
+        await _showPage(next, pageSize);
+        // A page that really moved starts at its head.
+        if (_page == next && _scroll.hasClients) _scroll.jumpTo(0);
+      },
       error: search.error?.message,
       onRetry: () => ref.read(searchProvider.notifier).retry(),
       emptyIcon: DsIcons.searchX,

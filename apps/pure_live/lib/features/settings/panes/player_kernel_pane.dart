@@ -16,9 +16,9 @@ import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// The player kernel page: the engine in use, its hardware decoding and
-/// force-destroy switches, the one-click recipes and Anime4K. The mpv knob
-/// table — outputs, sync, scaling, the engine's own proxy, the reset —
-/// lives on the advanced subpage so the common rows are not drowned.
+/// force-destroy switches, the tuning recipe and Anime4K pickers, and the
+/// reset. The mpv knob table — outputs, sync, scaling and the engine's own
+/// proxy — lives on the advanced subpage so the common rows are not drowned.
 final class PlayerKernelPane extends ConsumerWidget {
   /// The kernel page's content.
   const PlayerKernelPane({super.key});
@@ -69,9 +69,7 @@ final class PlayerKernelPane extends ConsumerWidget {
                 leading: const DsIcon(DsIcons.gauge),
                 title: Text(t.settings.hardwareDecoding),
                 description: Text(
-                  tuning.customOutput
-                      ? t.settings.customOutputHardwareTakeover
-                      : t.settings.hardwareDecodingDesc,
+                  tuning.customOutput ? t.settings.customOutputHardwareTakeover : t.settings.hardwareDecodingDesc,
                 ),
                 trailing: DsSwitch(
                   value: settings.hardwareDecoding,
@@ -92,8 +90,7 @@ final class PlayerKernelPane extends ConsumerWidget {
                       : t.settings.hardwareDecoderDesc,
                   value: decoder,
                   options: [
-                    for (final value in decoders)
-                      DsSelectOption(value: value, label: _hardwareDecoderLabel(t, value)),
+                    for (final value in decoders) DsSelectOption(value: value, label: _hardwareDecoderLabel(t, value)),
                   ],
                   onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setHwdec(value)),
                 ),
@@ -126,7 +123,22 @@ final class PlayerKernelPane extends ConsumerWidget {
             padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s20),
             child: Text(t.settings.playerAdvancedRequiresMpv, style: muted),
           ),
-        const DsListSection(children: [SettingsChildEntry(child: SettingsSection.kernelAdvanced)]),
+        DsListSection(
+          children: [
+            const SettingsChildEntry(child: SettingsSection.kernelAdvanced),
+            // The reset belongs on the outer page, not buried in the knob
+            // table: it is the way out of anything the recipes or the
+            // advanced page changed.
+            if (mpv)
+              DsListRow(
+                leading: const DsIcon(DsIcons.rotateCcw),
+                title: Text(t.settings.mpvReset),
+                description: Text(t.settings.mpvResetDesc),
+                destructive: true,
+                onPressed: () => unawaited(_resetMpvSettings(context, ref)),
+              ),
+          ],
+        ),
       ],
     );
   }
@@ -134,7 +146,7 @@ final class PlayerKernelPane extends ConsumerWidget {
 
 /// The kernel's advanced subpage: the mpv output, sync, scaling and
 /// decoder rows, the engine's own proxy (separate from the app's, because
-/// mpv opens the streams itself) and the reset and documentation entries.
+/// mpv opens the streams itself) and the documentation entries.
 final class PlayerKernelAdvancedPane extends ConsumerWidget {
   /// The advanced page's content.
   const PlayerKernelAdvancedPane({super.key});
@@ -175,9 +187,7 @@ final class _PlayerProxySection extends ConsumerWidget {
           leading: const DsIcon(DsIcons.globe),
           title: Text(t.settings.playerProxy),
           description: Text(t.settings.playerProxyDesc),
-          detail: Text(
-            proxy.enabled && proxy.host.isNotEmpty ? '${proxy.host}:${proxy.port}' : t.settings.optionOff,
-          ),
+          detail: Text(proxy.enabled && proxy.host.isNotEmpty ? '${proxy.host}:${proxy.port}' : t.settings.optionOff),
           showChevron: true,
           onPressed: () => unawaited(_showPlayerProxyDialog(context)),
         ),
@@ -186,7 +196,9 @@ final class _PlayerProxySection extends ConsumerWidget {
   }
 }
 
-/// The six tuning recipes, platform-gated, as a card of full-row choices.
+/// The six tuning recipes, platform-gated, in one picker: the row names the
+/// recipe in force and spells out what it does, and the two one-click
+/// actions stay rows because they are actions, not a choice.
 final class _PlayerPresetSection extends ConsumerWidget {
   const _PlayerPresetSection();
 
@@ -194,6 +206,7 @@ final class _PlayerPresetSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final tuning = ref.watch(playerTuningProvider);
+    final active = tuning.preset;
     final muted = DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted);
     return DsListSection(
       header: Text(t.settings.playerPresets),
@@ -201,6 +214,22 @@ final class _PlayerPresetSection extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
           child: Text(t.settings.playerPresetsHint, style: muted),
+        ),
+        SettingsChoiceRow<PlayerPresetId>(
+          leading: DsIcon(_presetIcon(active)),
+          title: t.settings.preset,
+          // The chosen recipe's own explanation rides on the row, so the
+          // picker never hides what applying it would do.
+          description: _presetDescription(t, active),
+          // A recipe restored from another platform's backup is named but
+          // not offered: it stays visible until something available is picked.
+          value: active.availableHere ? active : null,
+          placeholder: _presetName(t, active),
+          options: [
+            for (final preset in PlayerPresetId.values)
+              if (preset.availableHere) DsSelectOption(value: preset, label: _presetName(t, preset)),
+          ],
+          onChanged: (preset) => unawaited(_applyPreset(context, ref, preset)),
         ),
         DsListRow(
           leading: const DsIcon(DsIcons.wandSparkles),
@@ -217,26 +246,19 @@ final class _PlayerPresetSection extends ConsumerWidget {
             title: Text(t.settings.playerCompatFix),
             description: Text(t.settings.playerCompatFixDesc),
             showChevron: true,
-            onPressed: () => unawaited(
-              _applyOneClickPreset(context, ref, preset: PlayerPresetId.compat, icon: DsIcons.smartphone),
-            ),
+            onPressed: () =>
+                unawaited(_applyOneClickPreset(context, ref, preset: PlayerPresetId.compat, icon: DsIcons.smartphone)),
           ),
-        for (final preset in PlayerPresetId.values)
-          if (preset.availableHere)
-            DsListRow(
-              leading: DsIcon(_presetIcon(preset)),
-              title: Text(_presetName(t, preset)),
-              description: Text(_presetDescription(t, preset)),
-              selected: tuning.preset == preset,
-              trailing: tuning.preset == preset ? const DsIcon(DsIcons.check) : null,
-              onPressed: () async {
-                await ref.read(playerTuningProvider.notifier).applyPreset(preset);
-                if (context.mounted) showDsToast(context: context, title: t.settings.playerPresetApplied);
-              },
-            ),
       ],
     );
   }
+}
+
+/// Applies one of the six recipes and says so; the picker's whole job.
+Future<void> _applyPreset(BuildContext context, WidgetRef ref, PlayerPresetId preset) async {
+  final t = context.t;
+  await ref.read(playerTuningProvider.notifier).applyPreset(preset);
+  if (context.mounted) showDsToast(context: context, title: t.settings.playerPresetApplied);
 }
 
 /// The reference's one-click actions (recommended setup and Android
@@ -260,11 +282,15 @@ Future<void> _applyOneClickPreset(
   if (!confirmed) return;
   await ref.read(playerTuningProvider.notifier).applyPreset(preset);
   if (context.mounted) {
-    showDsToast(context: context, title: t.settings.playerOneClickApplied(preset: _presetName(t, preset)));
+    showDsToast(
+      context: context,
+      title: t.settings.playerOneClickApplied(preset: _presetName(t, preset)),
+    );
   }
 }
 
-/// Anime4K modes as rows with their own explanations, not a bare picker.
+/// Anime4K's three modes in the same picker, with the mode's own explanation
+/// on the row and the platform caveat under it.
 final class _SuperResolutionSection extends ConsumerWidget {
   const _SuperResolutionSection();
 
@@ -276,15 +302,17 @@ final class _SuperResolutionSection extends ConsumerWidget {
     return DsListSection(
       header: Text(t.settings.superResolutionGroup),
       children: [
-        for (final candidate in SuperResolutionMode.values)
-          DsListRow(
-            leading: DsIcon(_superResolutionIcon(candidate)),
-            title: Text(_superResolutionName(t, candidate)),
-            description: Text(_superResolutionDescription(t, candidate)),
-            selected: mode == candidate,
-            trailing: mode == candidate ? const DsIcon(DsIcons.check) : null,
-            onPressed: () => unawaited(ref.read(superResolutionModeProvider.notifier).select(candidate)),
-          ),
+        SettingsChoiceRow<SuperResolutionMode>(
+          leading: DsIcon(_superResolutionIcon(mode)),
+          title: t.settings.superResolution,
+          description: _superResolutionDescription(t, mode),
+          value: mode,
+          options: [
+            for (final candidate in SuperResolutionMode.values)
+              DsSelectOption(value: candidate, label: _superResolutionName(t, candidate)),
+          ],
+          onChanged: (next) => unawaited(ref.read(superResolutionModeProvider.notifier).select(next)),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
           child: Text(t.settings.superResolutionHint, style: muted),
@@ -338,7 +366,9 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
             leading: const DsIcon(DsIcons.volume),
             title: t.settings.audioOutput,
             value: tuning.ao,
-            options: [for (final value in audioOutputs) DsSelectOption(value: value, label: _audioOutputLabel(t, value))],
+            options: [
+              for (final value in audioOutputs) DsSelectOption(value: value, label: _audioOutputLabel(t, value)),
+            ],
             onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setAo(value)),
           ),
         if (desktop)
@@ -348,7 +378,8 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
             description: t.settings.videoSyncDesc,
             value: tuning.videoSync,
             options: [
-              for (final value in playerVideoSyncOptions) DsSelectOption(value: value, label: _videoSyncLabel(t, value)),
+              for (final value in playerVideoSyncOptions)
+                DsSelectOption(value: value, label: _videoSyncLabel(t, value)),
             ],
             onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setVideoSync(value)),
           ),
@@ -407,13 +438,6 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
               onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setAudioExclusive(value: value)),
             ),
           ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.rotateCcw),
-          title: Text(t.settings.mpvReset),
-          description: Text(t.settings.mpvResetDesc),
-          destructive: true,
-          onPressed: () => unawaited(_resetMpvSettings(context, ref)),
-        ),
         DsListRow(
           leading: const DsIcon(DsIcons.bookOpen),
           title: Text(t.settings.mpvDocs),

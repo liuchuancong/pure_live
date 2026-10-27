@@ -52,7 +52,7 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final area = widget.area;
       if (area == null) return; // A deep link without the object cannot load.
-      unawaited(ref.read(areaRoomsProvider.notifier).init(site: ref.read(selectedSiteProvider), area: area));
+      unawaited(ref.read(areaRoomsProvider.notifier).init(site: ref.read(preferredSiteProvider), area: area));
     });
   }
 
@@ -64,31 +64,21 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
     final settings = ref.watch(browseSettingsProvider);
     final title = state?.area.areaName ?? widget.areaId;
     final controller = ref.read(areaRoomsProvider.notifier);
-    // The display page size is the viewer's; the platform is asked in its
-    // own window and the catalogue is sliced locally (see the controller).
-    ref.listen(browseSettingsProvider.select((s) => s.homePageSize), (previous, next) {
-      if (previous != next && state != null) {
-        if (_scroll.hasClients) _scroll.jumpTo(0);
-        unawaited(controller.resize(next));
-      }
-    });
-    if (state != null && state.pageSize != settings.homePageSize && !state.loading) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) unawaited(controller.resize(settings.homePageSize));
-      });
-    }
+    // The display page size is the platform's own area window (the
+    // controller seeds and slices it); nothing re-measures a page here.
     final wide = MediaQuery.sizeOf(context).width >= 768;
     final showUnplayable = ref.watch(showUnplayableProvider);
 
     // The reference's hidden-count line under the rooms: what the discovery
     // filter keeps out is counted, not dropped silently, and one action
-    // turns the setting over so they show.
-    Widget withHiddenNote(AreaRoomsState open, Widget content) {
-      if (open.hidden <= 0 || showUnplayable) return content;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(child: content),
+    // turns the setting over so they show. The grid keeps one ancestry —
+    // the note is an optional row of the same Column, so it appearing or
+    // vanishing never rebuilds the grid and resets its scroll.
+    Widget withHiddenNote(AreaRoomsState open, Widget content) => Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: content),
+        if (open.hidden > 0 && !showUnplayable)
           Padding(
             padding: EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, wide ? DsSpace.s4 : DsSpace.s20),
             child: Row(
@@ -110,9 +100,8 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
               ],
             ),
           ),
-        ],
-      );
-    }
+      ],
+    );
 
     Widget grid(AreaRoomsState open, List<LiveRoom> rooms, {required bool endless}) => CardGrid<LiveRoom>(
       scrollController: _scroll,
@@ -126,13 +115,26 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
         compact: true,
         onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
       ),
-      cardExtent: settings.homeCardExtent,
       crossSpacing: settings.crossSpacing,
       mainSpacing: settings.mainSpacing,
       isLoading: open.loading,
-      // A desktop page holds exactly one slice; its pager fetches the next.
-      hasMore: endless && open.hasMore,
-      onLoadMore: endless ? controller.loadMore : null,
+      // The end of the list pages it in both shapes: the endless list appends
+      // the platform's next block, a desktop page asks the pager for its next
+      // page — the same ask its arrows and numbers make — and only a scroll
+      // that really reached the bottom moves it on.
+      hasMore: open.hasMore,
+      pagesOnScrollToEnd: !endless,
+      onLoadMore: () async {
+        if (endless) {
+          await controller.loadMore();
+          return;
+        }
+        final next = open.page + 1;
+        await controller.loadPage(next);
+        // A page that really moved starts at its head; a refused or clamped
+        // load leaves the viewer where they are.
+        if (ref.read(areaRoomsProvider)?.page == next && _scroll.hasClients) _scroll.jumpTo(0);
+      },
       error: open.error?.message,
       onRetry: controller.reload,
       // A pull reloads the first page; a failure keeps the rooms and is
