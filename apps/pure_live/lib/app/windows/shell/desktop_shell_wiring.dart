@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Completer, unawaited;
 import 'dart:io' show exit;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +12,8 @@ import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/providers.dart';
 import 'package:pure_live/app/routing/navigation/root_navigator.dart' show rootNavigatorKey;
 import 'package:pure_live/app/windows/chrome/window_close_dialog.dart' show showCloseWindowDialog;
+import 'package:pure_live/app/windows/shell/tray_screenshot.dart' show captureRoomScreenshot;
+import 'package:pure_live/features/settings/settings.dart' show playbackSettingsProvider;
 import 'package:pure_live/l10n/translations.dart' show t;
 
 /// Starts the primary window's shell exactly once.
@@ -28,6 +30,14 @@ Future<DesktopShell> startDesktopShell(WidgetRef ref) async {
   final windows = ref.read(secondaryWindowsProvider);
   final platform = ref.read(platformRuntimeProvider).environment.runtime.kind;
   final tray = TrayManagerHost(iconAssets: const {TrayIconState.idle: 'assets/tray/pure_live_22.png'});
+  // Sound is one of the tray's own verbs: keep the menu's label honest by
+  // rebuilding the tray whenever the global mute moves, from anywhere. The
+  // subscription lives as long as the primary window — the tray with it.
+  final shellCompleter = Completer<DesktopShell>();
+  ref.listenManual(playbackSettingsProvider.select((settings) => settings.globalMute), (_, _) async {
+    final shell = await shellCompleter.future;
+    await shell.refreshTray();
+  });
 
   // If closing the primary was turned into a hide because another window
   // existed, bring it back once the last peer goes away.
@@ -63,14 +73,22 @@ Future<DesktopShell> startDesktopShell(WidgetRef ref) async {
       return others;
     },
     onMenuAction: (id) async {
-      if (id != 'newWindow') return;
-      try {
-        await windows?.open(role: WindowRole.panel);
-      } on Object catch (error, stackTrace) {
-        log.warning(
-          'a new window could not be opened from the tray',
-          fields: {'error': '$error', 'stack': '$stackTrace'},
-        );
+      switch (id) {
+        case 'newWindow':
+          try {
+            await windows?.open(role: WindowRole.panel);
+          } on Object catch (error, stackTrace) {
+            log.warning(
+              'a new window could not be opened from the tray',
+              fields: {'error': '$error', 'stack': '$stackTrace'},
+            );
+          }
+        case 'screenshot':
+          await captureRoomScreenshot(ref);
+        case 'toggleSound':
+          await ref
+              .read(playbackSettingsProvider.notifier)
+              .setGlobalMute(value: !ref.read(playbackSettingsProvider).globalMute);
       }
     },
     beforeQuit: () async {
@@ -84,16 +102,25 @@ Future<DesktopShell> startDesktopShell(WidgetRef ref) async {
         log.warning('storage could not close on quit', fields: {'error': '$error', 'stack': '$stackTrace'});
       }
     },
-    menuEntries: () => <TrayEntry>[
-      TrayAction(id: 'show', label: t.settings.trayShow),
-      TrayAction(id: 'hide', label: t.settings.trayHide),
-      TrayAction(id: 'newWindow', label: t.common.newWindow),
-      const TrayDivider(),
-      TrayAction(id: 'quit', label: t.settings.closeQuit),
-    ],
+    menuEntries: () {
+      // Read at menu-build time, so the sound verb carries the current
+      // mute state (QQ's 打开所有声音/关闭声音 pair, one line either way).
+      final muted = ref.read(playbackSettingsProvider).globalMute;
+      return <TrayEntry>[
+        TrayAction(id: 'show', label: t.settings.trayShow),
+        TrayAction(id: 'hide', label: t.settings.trayHide),
+        TrayAction(id: 'newWindow', label: t.common.newWindow),
+        const TrayDivider(),
+        TrayAction(id: 'screenshot', label: t.settings.trayScreenshot),
+        TrayAction(id: 'toggleSound', label: muted ? t.settings.traySoundOn : t.settings.traySoundOff),
+        const TrayDivider(),
+        TrayAction(id: 'quit', label: t.settings.closeQuit),
+      ];
+    },
     tooltip: () => 'Pure Live',
   );
   await shell.start();
+  shellCompleter.complete(shell);
   if (!shell.hasTray) {
     log.warning('tray icon unavailable', fields: {'error': '${tray.createError}'});
   }

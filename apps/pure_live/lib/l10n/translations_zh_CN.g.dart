@@ -3825,6 +3825,21 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '隐藏到托盘'
 	String get trayHide => '隐藏到托盘';
 
+	/// zh-CN: '截图'
+	String get trayScreenshot => '截图';
+
+	/// zh-CN: '打开声音'
+	String get traySoundOn => '打开声音';
+
+	/// zh-CN: '关闭声音'
+	String get traySoundOff => '关闭声音';
+
+	/// zh-CN: '已保存到 {path}'
+	String trayScreenshotSaved({required Object path}) => '已保存到 ${path}';
+
+	/// zh-CN: '截图失败：没有正在播放的房间或引擎不支持'
+	String get trayScreenshotFailed => '截图失败：没有正在播放的房间或引擎不支持';
+
 	/// zh-CN: '字体'
 	String get font => '字体';
 
@@ -8344,6 +8359,11 @@ extension on Translations {
 			'settings.closeDontAskAgain' => '不再询问',
 			'settings.trayShow' => '显示主窗口',
 			'settings.trayHide' => '隐藏到托盘',
+			'settings.trayScreenshot' => '截图',
+			'settings.traySoundOn' => '打开声音',
+			'settings.traySoundOff' => '关闭声音',
+			'settings.trayScreenshotSaved' => ({required Object path}) => '已保存到 ${path}',
+			'settings.trayScreenshotFailed' => '截图失败：没有正在播放的房间或引擎不支持',
 			'settings.font' => '字体',
 			'settings.fontDescription' => '界面字体：跟随平台官方字体、选一款内置官方字体，或从云端目录下载。',
 			'settings.fontPlatform' => '跟随平台（系统字体）',
@@ -8669,13 +8689,13 @@ extension on Translations {
 			'settings.fit' => '画面比例',
 			'settings.fitDesc' => '画面在播放区域里的铺法。',
 			'settings.fitContain' => '默认比例',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fitCover' => '居中裁剪',
 			'settings.fitFill' => '填充屏幕',
 			'settings.miniDanmakuVisible' => '画中画中显示弹幕',
 			'settings.miniDanmakuVisibleDesc' => '缩成小窗时是否继续显示飞行弹幕。',
 			'settings.miniDanmakuHint' => '弹幕样式与「弹幕」页共用。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.engineTitle' => '播放内核',
 			'settings.engineDesc' => '选择直播与视频使用的播放内核；mpv 为默认，移动端还可选 IJK 或 BetterPlayer。',
 			'settings.playerEngineMpv' => 'mpv 播放器',
@@ -9183,13 +9203,13 @@ extension on Translations {
 			'toolbox.toolNetworkTitle' => '平台节点',
 			'toolbox.toolNetworkDescription' => '测试各平台接口的连通性与延迟。',
 			'toolbox.toolCacheTitle' => '缓存清理',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.toolCacheDescription' => '查看并清理图片占用的内存缓存。',
 			'toolbox.toolLogsTitle' => '日志',
 			'toolbox.toolLogsDescription' => '查看应用运行日志与诊断信息。',
 			'toolbox.back' => '返回',
 			'toolbox.confirm' => '确认',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.cancel' => '取消',
 			'toolbox.linkFieldLabel' => '平台链接',
 			'toolbox.linkFieldHint' => '粘贴直播间链接或分享文字',

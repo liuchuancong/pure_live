@@ -1410,6 +1410,11 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get closeDontAskAgain => 'Don\'t ask again';
 	@override String get trayShow => 'Show the main window';
 	@override String get trayHide => 'Hide to the tray';
+	@override String get trayScreenshot => 'Screenshot';
+	@override String get traySoundOn => 'Unmute sound';
+	@override String get traySoundOff => 'Mute sound';
+	@override String trayScreenshotSaved({required Object path}) => 'Saved to ${path}';
+	@override String get trayScreenshotFailed => 'Screenshot failed: no room is playing, or the engine cannot capture';
 	@override String get font => 'Font';
 	@override String get fontDescription => 'UI typeface: the platform\'s own face, a bundled official one, or a cloud font.';
 	@override String get fontPlatform => 'Follow the platform (system font)';
@@ -3760,6 +3765,11 @@ extension on TranslationsEn {
 			'settings.closeDontAskAgain' => 'Don\'t ask again',
 			'settings.trayShow' => 'Show the main window',
 			'settings.trayHide' => 'Hide to the tray',
+			'settings.trayScreenshot' => 'Screenshot',
+			'settings.traySoundOn' => 'Unmute sound',
+			'settings.traySoundOff' => 'Mute sound',
+			'settings.trayScreenshotSaved' => ({required Object path}) => 'Saved to ${path}',
+			'settings.trayScreenshotFailed' => 'Screenshot failed: no room is playing, or the engine cannot capture',
 			'settings.font' => 'Font',
 			'settings.fontDescription' => 'UI typeface: the platform\'s own face, a bundled official one, or a cloud font.',
 			'settings.fontPlatform' => 'Follow the platform (system font)',
@@ -4085,13 +4095,13 @@ extension on TranslationsEn {
 			'settings.fit' => 'Picture fit',
 			'settings.fitDesc' => 'How the frame fills its box.',
 			'settings.fitContain' => 'Default Ratio',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fitCover' => 'Center Crop',
 			'settings.fitFill' => 'Fill Screen',
 			'settings.miniDanmakuVisible' => 'Danmaku in picture-in-picture',
 			'settings.miniDanmakuVisibleDesc' => 'Whether the flying layer still draws in the compact window.',
 			'settings.miniDanmakuHint' => 'The look is shared with the Danmaku page.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.engineTitle' => 'Playback engine',
 			'settings.engineDesc' => 'Choose the engine for live and video playback; mpv is the default, with IJK or BetterPlayer on mobile.',
 			'settings.playerEngineMpv' => 'MPV Player',
@@ -4599,13 +4609,13 @@ extension on TranslationsEn {
 			'toolbox.toolNetworkTitle' => 'Platform nodes',
 			'toolbox.toolNetworkDescription' => 'Test each platform\'s endpoint for reachability and latency.',
 			'toolbox.toolCacheTitle' => 'Cache cleanup',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.toolCacheDescription' => 'Inspect and clear the memory the image cache holds.',
 			'toolbox.toolLogsTitle' => 'Logs',
 			'toolbox.toolLogsDescription' => 'Inspect the app\'s runtime log and diagnostics.',
 			'toolbox.back' => 'Back',
 			'toolbox.confirm' => 'Confirm',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.cancel' => 'Cancel',
 			'toolbox.linkFieldLabel' => 'Platform link',
 			'toolbox.linkFieldHint' => 'Paste a room link or shared text',
