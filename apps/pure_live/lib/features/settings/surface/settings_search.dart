@@ -127,6 +127,8 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.network, s.proxy, 'proxy http 代理 网络'),
     _hit(SettingsSection.network, s.proxyHost, 'proxy host 主机 代理'),
     _hit(SettingsSection.network, s.proxyPort, 'proxy port 端口 代理'),
+    _hit(SettingsSection.network, s.proxySystemRecheck, 'system proxy detect recheck vpn 系统代理 检测 重新 代理客户端'),
+    _hit(SettingsSection.network, s.proxyModeSystem, 'follow system proxy automatic 跟随 系统 代理 自动'),
     _hit(SettingsSection.nodes, t.toolbox.toolNetworkTitle, 'platform node probe latency 平台 节点 测速 延迟 网络'),
     _hit(SettingsSection.logs, t.toolbox.toolLogsTitle, 'logs diagnostics level 日志 诊断'),
     // Video.
@@ -297,6 +299,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       'glitch green screen compatibility mediacodec android fix 花屏 绿屏 兼容 安卓 修复 硬解',
     ),
     _hit(SettingsSection.kernelAdvanced, s.playerProxy, 'player proxy player network http-proxy 7897 播放器 代理 内核 主机 端口'),
+    _hit(SettingsSection.kernelAdvanced, s.playerProxyFollow, 'player proxy follow the app proxy 播放器 代理 跟随 应用 共用'),
     _hit(
       SettingsSection.kernel,
       s.hardwareDecoder,
@@ -393,6 +396,8 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.backup, t.backup.createFollowsTitle, 'follows backup 关注 备份'),
     _hit(SettingsSection.backup, t.backup.folderTitle, 'backup folder 备份 文件夹'),
     _hit(SettingsSection.webdavSync, t.backup.webdavConfigTitle, 'webdav server 服务器 同步'),
+    _hit(SettingsSection.webdavSync, t.backup.webdavAddAccount, 'webdav account add more server 账号 添加 多 服务器'),
+    _hit(SettingsSection.webdavSync, t.backup.webdavBrowse, 'webdav folders browse breadcrumb directory 浏览 文件夹 目录 面包屑'),
     _hit(SettingsSection.webdavSync, t.backup.webdavUpload, 'webdav upload 上传 备份'),
     _hit(SettingsSection.webdavSync, t.backup.webdavDownload, 'webdav download restore 下载 恢复'),
     // Cache.
@@ -418,6 +423,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.about, s.aboutVersion, 'version build 版本'),
     _hit(SettingsSection.about, s.checkUpdate, 'update latest 更新 检查'),
     _hit(SettingsSection.about, s.releaseHistory, 'release changelog 版本记录 更新内容'),
+    _hit(SettingsSection.about, s.downloadTitle, 'download installer build package apk exe msix dmg 下载 安装包 构建 版本 包'),
     _hit(SettingsSection.about, s.configPreview, 'config json backup export 配置 预览 导出 json'),
     _hit(SettingsSection.about, s.aboutProject, 'project github 项目 主页'),
     _hit(SettingsSection.about, s.aboutLicense, 'license open source 开源 许可'),

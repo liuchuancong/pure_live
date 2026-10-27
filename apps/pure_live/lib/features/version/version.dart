@@ -3,6 +3,8 @@
 library;
 
 export 'app_version.dart';
+export 'release_builds.dart';
+export 'update_download.dart';
 export 'update_feed.dart';
 export 'version_controller.dart';
 export 'version_page.dart';

@@ -1,4 +1,5 @@
 import 'dart:async' show StreamSubscription, unawaited;
+import 'dart:convert' show jsonDecode;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveRoom, LiveRoomRefIdentity;
@@ -20,7 +21,11 @@ enum MultiviewLayout {
 
   /// One large pane and three small ones beside it (or below it, when
   /// that leaves the large pane more room).
-  focus(4);
+  focus(4),
+
+  /// Four equal panes in a row — or in a column, when the wall is taller
+  /// than it is wide.
+  strip(4);
 
   MultiviewLayout(this.panes);
 
@@ -38,9 +43,23 @@ const String _documentKey = 'current';
 
 /// The wall's arrangement: the layout and, per slot, the identity of the
 /// room it holds — `platform:roomId`, like a follow — or null while the
-/// slot is empty.
-typedef MultiviewState = ({bool ready, MultiviewLayout layout, List<String?> slots});
+/// slot is empty. `error` carries what went wrong when the store never
+/// opened, so the page can say so instead of spinning.
+typedef MultiviewState = ({
+  bool ready,
+  MultiviewLayout layout,
+  List<String?> slots,
+  String? error,
+});
 
+/// The wall before it can be read: the default arrangement, every slot empty,
+/// and whatever the open answered when it did not open.
+MultiviewState pendingMultiview({String? error}) => (
+  ready: false,
+  layout: _defaultLayout,
+  slots: List<String?>.filled(_defaultLayout.panes, null),
+  error: error,
+);
 /// The multiview store (the reference's last-arrangement meta entry): one
 /// store holding one JSON map — the layout and the slots — so a revisit
 /// opens the same wall. The video tiles themselves arrive later with the
@@ -65,11 +84,43 @@ final class MultiviewRepository {
   MultiviewState load() {
     final stored = store.get(_documentKey);
     if (stored == null) {
-      return (ready: true, layout: _defaultLayout, slots: List<String?>.filled(_defaultLayout.panes, null));
+      return (
+        ready: true,
+        layout: _defaultLayout,
+        slots: List<String?>.filled(_defaultLayout.panes, null),
+        error: null,
+      );
     }
-    final json = stored is Map<String, Object?> ? stored : Map<String, Object?>.from(stored as Map);
+    final json = _jsonOf(stored);
+    if (json == null) {
+      // A document this build cannot read is an empty wall, not a broken
+      // page: the layout and the slots both have honest defaults.
+      return (
+        ready: true,
+        layout: _defaultLayout,
+        slots: List<String?>.filled(_defaultLayout.panes, null),
+        error: null,
+      );
+    }
     final layout = _layoutOf(json['layout']);
-    return (ready: true, layout: layout, slots: _slotsOf(json['slots'], layout.panes));
+    return (ready: true, layout: layout, slots: _slotsOf(json['slots'], layout.panes), error: null);
+  }
+
+  /// The stored document as a map, however the store handed it over: a map
+  /// of its own, any other map shape, or JSON text. Anything else is no
+  /// document.
+  static Map<String, Object?>? _jsonOf(Object? value) {
+    if (value is Map<String, Object?>) return value;
+    if (value is Map) return Map<String, Object?>.from(value);
+    if (value is String && value.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(value);
+        if (decoded is Map) return Map<String, Object?>.from(decoded);
+      } on FormatException {
+        // Not JSON either; the caller falls back to the default wall.
+      }
+    }
+    return null;
   }
 
   /// Stores [layout] and [slots] whole, replacing the wall document.
@@ -107,9 +158,14 @@ final class MultiviewRepository {
   }
 }
 
+/// How long a namespace may take to open before the wait is declared: the
+/// open is normally a few milliseconds, and an undeclared one is a wall
+/// that never arrives — the page would only ever show its spinner.
+const Duration _storeOpenTimeout = Duration(seconds: 8);
+
 /// The multiview repository (one namespace, one process).
 final multiviewRepositoryProvider = FutureProvider<MultiviewRepository>((ref) async {
-  final store = await StorageStores.instance.openStore('multiview');
+  final store = await StorageStores.instance.openStore('multiview').timeout(_storeOpenTimeout);
   return MultiviewRepository(store);
 });
 
@@ -123,12 +179,23 @@ final class MultiviewController extends Notifier<MultiviewState> {
 
   @override
   MultiviewState build() {
-    ref.watch(multiviewRepositoryProvider).whenData((repository) {
-      _subscription ??= repository.watch().listen((_) => _refresh(repository));
-      _refresh(repository);
-    });
     ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
-    return (ready: false, layout: _defaultLayout, slots: List<String?>.filled(_defaultLayout.panes, null));
+    final repository = ref.watch(multiviewRepositoryProvider);
+    // Every state the open can be in lands here: loading keeps the page's
+    // spinner, an error (a failed database open, a store that never
+    // answered) reaches the page as words with a retry, and data mirrors
+    // the stored wall.
+    switch (repository) {
+      case AsyncData(:final value):
+        _subscription ??= value.watch().listen((_) => _refresh(value));
+        _refresh(value);
+        return state;
+      case AsyncError(:final error):
+        _subscription = null;
+        return pendingMultiview(error: error.toString());
+      default:
+        return pendingMultiview();
+    }
   }
 
   void _refresh(MultiviewRepository repository) {

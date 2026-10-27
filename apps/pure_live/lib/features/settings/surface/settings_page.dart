@@ -7,6 +7,7 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_device/live_device.dart' show SystemProxyEndpoint, SystemProxyStatus;
 import 'package:live_platform/live_platform.dart' show FormFactor, PlatformKind;
 import 'package:live_shell/live_shell.dart' show CloseAction;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -449,8 +450,15 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.iptv => const IptvSettingsPane(),
       SettingsSection.vod => const VodSettingsPane(),
     };
+    const padding = EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s20, DsSpace.s24, DsSpace.s24);
+    // The log page owns its own height: its console expands into whatever
+    // the settings above it leave, which only works when the pane is not
+    // already sitting inside a scrolling column.
+    if (section == SettingsSection.logs) {
+      return Padding(padding: padding, child: body);
+    }
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s20, DsSpace.s24, DsSpace.s24),
+      padding: padding,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [body]),
     );
   }
@@ -1449,6 +1457,11 @@ final class _NetworkPane extends ConsumerWidget {
     final t = context.t;
     final proxy = ref.watch(proxySettingsProvider);
     final controller = ref.read(proxySettingsProvider.notifier);
+    final system = ref.watch(systemProxyProvider);
+    // Only the manual mode types an endpoint; the other two answer from the
+    // platform or from nothing at all.
+    final manual = proxy.mode == ProxyMode.manual;
+    final muted = DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1457,14 +1470,21 @@ final class _NetworkPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.navNetwork),
           children: [
-            SettingsConfigRow(
+            SettingsChoiceRow<ProxyMode>(
               leading: const DsIcon(DsIcons.globe),
               title: t.settings.proxy,
-              description: t.settings.proxyDesc,
-              control: DsSwitch(
-                value: proxy.enabled,
-                onChanged: (value) => unawaited(controller.setEnabled(value: value)),
-              ),
+              description: switch (proxy.mode) {
+                ProxyMode.off => t.settings.proxyModeOffDesc,
+                ProxyMode.system => t.settings.proxyModeSystemDesc,
+                ProxyMode.manual => t.settings.proxyModeManualDesc,
+              },
+              value: proxy.mode,
+              options: [
+                DsSelectOption(value: ProxyMode.off, label: t.settings.proxyModeOff),
+                DsSelectOption(value: ProxyMode.system, label: t.settings.proxyModeSystem),
+                DsSelectOption(value: ProxyMode.manual, label: t.settings.proxyModeManual),
+              ],
+              onChanged: (mode) => unawaited(controller.setMode(mode)),
             ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.server),
@@ -1476,7 +1496,7 @@ final class _NetworkPane extends ConsumerWidget {
               control: DsTextField(
                 initialValue: proxy.host,
                 clearable: true,
-                enabled: proxy.enabled,
+                enabled: manual,
                 placeholder: t.settings.proxyHost,
                 onChanged: (value) => unawaited(controller.setHost(value)),
                 semanticLabel: t.settings.proxyHost,
@@ -1489,7 +1509,7 @@ final class _NetworkPane extends ConsumerWidget {
               controlWidth: 220,
               control: DsTextField(
                 initialValue: '${proxy.port}',
-                enabled: proxy.enabled,
+                enabled: manual,
                 placeholder: t.settings.proxyPort,
                 keyboardType: TextInputType.number,
                 onChanged: (value) {
@@ -1499,13 +1519,41 @@ final class _NetworkPane extends ConsumerWidget {
                 semanticLabel: t.settings.proxyPort,
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
+              child: Text(_systemProxyStatusText(t, system), style: muted),
+            ),
           ],
         ),
-        const DsListSection(children: [SettingsChildEntry(child: SettingsSection.nodes)]),
+        DsListSection(
+          children: [
+            const SettingsChildEntry(child: SettingsSection.nodes),
+            DsListRow(
+              leading: const DsIcon(DsIcons.refresh),
+              title: Text(t.settings.proxySystemRecheck),
+              description: Text(t.settings.proxySystemRecheckDesc),
+              onPressed: () => unawaited(ref.read(systemProxyProvider.notifier).refresh()),
+            ),
+          ],
+        ),
       ],
     );
   }
 }
+
+/// What the system-proxy reading amounts to, in the words the network page
+/// prints under the mode row.
+///
+/// A PAC script or a SOCKS-only setting says so rather than reporting "none":
+/// the difference is what tells a viewer to type the endpoint instead.
+String _systemProxyStatusText(Translations t, SystemProxyEndpoint endpoint) => switch (endpoint.status) {
+  SystemProxyStatus.probing => t.settings.proxySystemProbing,
+  SystemProxyStatus.resolved => t.settings.proxySystemResolved(host: endpoint.authority),
+  SystemProxyStatus.notConfigured => t.settings.proxySystemNone,
+  SystemProxyStatus.notExpressible => t.settings.proxySystemNotExpressible,
+  SystemProxyStatus.unsupported => t.settings.proxySystemUnsupported,
+  SystemProxyStatus.failed => t.settings.proxySystemFailed,
+};
 
 /// The sites pane: the platform display (the reference's hot-areas
 /// setting) — one switch per site, in the viewer's own order (drag a
@@ -1977,16 +2025,31 @@ final class _CachePaneState extends ConsumerState<_CachePane> {
         DsListRow(
           leading: const DsIcon(DsIcons.folder),
           title: Text(t.settings.downloadDirectory),
-          description: Text(t.settings.downloadDirectoryDesc),
-          detail: Text(download.custom.isEmpty ? t.settings.downloadDirectoryDefaultLabel : download.custom),
+          // The folder itself is what this row is for, and a Windows path is
+          // long: the description slot has the card's width to show it, and
+          // the tooltip carries the whole thing when it still has to shorten.
+          description: DsTooltip(
+            message: download.effectivePath,
+            child: Text(
+              download.effectivePath,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          detail: Text(
+            download.custom.isEmpty
+                ? t.settings.downloadDirectoryDefaultLabel
+                : t.settings.downloadDirectoryCustomLabel,
+          ),
           onPressed: _busy ? null : () => unawaited(_pickDownloadDirectory()),
         ),
-        if (download.custom.isNotEmpty)
-          DsListRow(
-            leading: const DsIcon(DsIcons.rotateCcw),
-            title: Text(t.settings.downloadDirectoryReset),
-            onPressed: _busy ? null : () => unawaited(_resetDownloadDirectory()),
-          ),
+        // Always on screen: with the default folder in place there is nothing
+        // to undo, so the row waits greyed rather than disappearing.
+        DsListRow(
+          leading: const DsIcon(DsIcons.rotateCcw),
+          title: Text(t.settings.downloadDirectoryReset),
+          onPressed: download.custom.isEmpty || _busy ? null : () => unawaited(_resetDownloadDirectory()),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s16),
           child: Text(t.settings.cacheHint, style: theme.typography.caption.copyWith(color: colors.textMuted)),
@@ -2041,7 +2104,7 @@ final class _AboutPane extends ConsumerWidget {
               ? DsButton(
                   variant: DsButtonVariant.secondary,
                   size: DsSize.sm,
-                  onPressed: () => unawaited(showUpdatePanel(context, latest)),
+                  onPressed: () => unawaited(showUpdateDialog(context, latest)),
                   child: Text(t.settings.viewUpdate),
                 )
               : DsButton(
@@ -2064,7 +2127,18 @@ final class _AboutPane extends ConsumerWidget {
           leading: const DsIcon(DsIcons.list),
           title: Text(t.settings.releaseHistory),
           description: Text(t.settings.releaseHistoryDesc),
+          showChevron: true,
           onPressed: () => unawaited(showReleaseHistory(context)),
+        ),
+        DsListRow(
+          leading: const DsIcon(DsIcons.cloudDownload),
+          // The installers are the release's own files; the page lists
+          // every build so a viewer on another architecture can still
+          // take the right one.
+          title: Text(t.settings.downloadTitle),
+          description: Text(t.settings.downloadHint),
+          showChevron: true,
+          onPressed: () => unawaited(showDownloadPage(context)),
         ),
         DsListRow(
           leading: const DsIcon(DsIcons.fileText),

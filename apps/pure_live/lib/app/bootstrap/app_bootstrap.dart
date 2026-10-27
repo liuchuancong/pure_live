@@ -1,11 +1,12 @@
 import 'dart:async' show unawaited;
-import 'dart:io' show Directory;
+import 'dart:io' show Directory, HttpOverrides;
 
 import 'package:flutter/widgets.dart';
 import 'package:live_log/live_log.dart' show ErrorReporter;
 import 'package:live_platform/live_platform.dart' show FormFactor, PlatformBootstrap, PlatformRuntime;
 import 'package:live_storage/live_storage.dart' show StorageBootstrap, StoragePathProvider, StoragePrefs;
 import 'package:path/path.dart' as p;
+import 'package:pure_live/app/bootstrap/proxy_http_overrides.dart' show AppProxyHttpOverrides;
 import 'package:pure_live/app/logging/app_log.dart' show appLog, initAppLog;
 import 'package:pure_live/app/providers/providers.dart';
 import 'package:pure_live/app/theme/fonts/font_library.dart' show CloudFontIds, FontLibrary;
@@ -47,6 +48,10 @@ final class Boot {
 /// because a half-initialised shell is worse than a visible failure.
 Future<Boot> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Every `dart:io` HTTP client the process builds — including the ones inside
+  // third-party packages that never see the app's own transport — follows the
+  // proxy the viewer set. The lookup itself lands with the first window.
+  HttpOverrides.global = AppProxyHttpOverrides();
   // A TV build is chosen at build time (`--dart-define=PURE_LIVE_TV=true`
   // on the leanback package): the leanback launcher cannot reach a touch
   // UI, so the shell must come up in its TV shape from the first frame.

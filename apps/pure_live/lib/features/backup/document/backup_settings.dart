@@ -207,6 +207,10 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('danmaku.interaction.longPress', BackupPrefKind.boolean),
   ('danmaku.holdOnPress', BackupPrefKind.boolean),
   // The network and the danmaku shield.
+  // The mode is the truth now; the boolean is the pre-mode store a first run
+  // still migrates from, and a backup has to carry it for that read to mean
+  // anything on another machine.
+  ('proxy.mode', BackupPrefKind.string),
   ('proxy.enabled', BackupPrefKind.boolean),
   ('proxy.host', BackupPrefKind.string),
   ('proxy.port', BackupPrefKind.integer),
@@ -269,6 +273,10 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   // The backup surface's own choices; the WebDAV password is a secret and
   // never enters the document.
   ('backup.dir', BackupPrefKind.string),
+  // The account list is one JSON pref; the two url/user keys below stay listed
+  // because the first read of an older store migrates from them.
+  ('backup.webdav.accounts', BackupPrefKind.string),
+  ('backup.webdav.selected', BackupPrefKind.string),
   ('backup.webdav.url', BackupPrefKind.string),
   ('backup.webdav.user', BackupPrefKind.string),
 ];

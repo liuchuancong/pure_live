@@ -73,7 +73,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       if (_active) _applyFocus();
       _publish();
     });
-    ref.listen(playerProxyProvider, (previous, next) {
+    ref.listen(effectivePlayerProxyProvider, (previous, next) {
       if (previous == next) return;
       _applyStoredEngineOptions();
     });
@@ -434,7 +434,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
   List<EngineOption> _storedEngineOptions() => playerStoredEngineOptions(
     hardwareDecoding: ref.read(playbackSettingsProvider).hardwareDecoding,
     tuning: ref.read(playerTuningProvider),
-    proxy: ref.read(playerProxyProvider),
+    proxy: ref.read(effectivePlayerProxyProvider),
   );
 
   /// The stored options plus the chosen shader chain, for a pane's first

@@ -9,6 +9,9 @@ export 'src/display/orientation/orientation.dart';
 export 'src/display/refresh_rate/refresh_rate.dart';
 export 'src/network/adapter/adapter.dart';
 export 'src/network/connectivity/connectivity.dart';
+export 'src/network/system_proxy/platform_system_proxy_service.dart' show PlatformSystemProxyService;
+export 'src/network/system_proxy/system_proxy.dart'
+    show SystemProxyCapabilities, SystemProxyEndpoint, SystemProxyService, SystemProxyStatus;
 export 'src/network/wifi/wifi.dart';
 export 'src/power/battery/battery.dart';
 export 'src/power/screen_awake/screen_awake.dart';

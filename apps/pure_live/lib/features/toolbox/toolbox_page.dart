@@ -724,6 +724,15 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
     if (mounted) showDsToast(context: context, title: context.t.toolbox.logsCopied);
   }
 
+  /// The log file's own path onto the clipboard: opening the folder is the
+  /// last step a viewer takes, and the path is what they paste into a report.
+  Future<void> _copyPath() async {
+    final path = appLogFile;
+    if (path == null) return;
+    await Clipboard.setData(ClipboardData(text: path));
+    if (mounted) showDsToast(context: context, title: context.t.toolbox.logsPathCopied);
+  }
+
   Future<void> _openLogDirectory() async {
     final directory = appLogDirectory;
     if (directory == null) return;
@@ -775,125 +784,150 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s12,
       children: [
-        DsListSection(
-          header: Text(t.toolbox.logsSection),
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.layers),
-              title: Text(t.toolbox.logsLevel),
-              trailing: SizedBox(
-                width: 160,
-                child: AdaptiveChoiceField<LogLevel>(
-                  value: _level,
-                  title: t.toolbox.logsLevel,
-                  onChanged: (level) {
-                    setAppLogLevel(level);
-                    setState(() => _level = level);
-                  },
-                  options: [
-                    for (final level in const [
-                      LogLevel.trace,
-                      LogLevel.debug,
-                      LogLevel.info,
-                      LogLevel.warning,
-                      LogLevel.error,
-                      LogLevel.fatal,
-                    ])
-                      DsSelectOption(value: level, label: level.label),
-                  ],
-                  semanticLabel: t.toolbox.logsLevel,
+        // The console is what this page is for, so the settings above it give
+        // way to it and scroll themselves when the window is short.
+        Flexible(
+          child: SingleChildScrollView(
+            child: DsListSection(
+              header: Text(t.toolbox.logsSection),
+              children: [
+                DsListRow(
+                  leading: const DsIcon(DsIcons.layers),
+                  title: Text(t.toolbox.logsLevel),
+                  trailing: SizedBox(
+                    width: 160,
+                    child: AdaptiveChoiceField<LogLevel>(
+                      value: _level,
+                      title: t.toolbox.logsLevel,
+                      onChanged: (level) {
+                        setAppLogLevel(level);
+                        setState(() => _level = level);
+                      },
+                      options: [
+                        for (final level in const [
+                          LogLevel.trace,
+                          LogLevel.debug,
+                          LogLevel.info,
+                          LogLevel.warning,
+                          LogLevel.error,
+                          LogLevel.fatal,
+                        ])
+                          DsSelectOption(value: level, label: level.label),
+                      ],
+                      semanticLabel: t.toolbox.logsLevel,
+                    ),
+                  ),
                 ),
-              ),
+                DsListRow(
+                  leading: const DsIcon(DsIcons.hardDrive),
+                  title: Text(t.toolbox.logsFile),
+                  description: Text(t.toolbox.logsFileDesc),
+                  trailing: DsSwitch(
+                    value: _fileEnabled,
+                    onChanged: (value) {
+                      setAppLogFileEnabled(enabled: value);
+                      setState(() => _fileEnabled = value);
+                    },
+                  ),
+                ),
+                DsListRow(
+                  leading: const DsIcon(DsIcons.folder),
+                  // The file rather than the folder: the folder is where the
+                  // rotating files live, and the path a viewer wants named is
+                  // this one, so it is the line the page prints.
+                  title: Text(t.toolbox.logsFileTitle),
+                  description: Text(appLogFile ?? t.toolbox.logsDirectoryDefault),
+                  onPressed: appLogFile == null ? null : () => unawaited(_openLogDirectory()),
+                  trailing: DsButton.icon(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    semanticLabel: t.toolbox.logsCopyPath,
+                    onPressed: appLogFile == null ? null : () => unawaited(_copyPath()),
+                    icon: const DsIcon(DsIcons.copy, size: 16),
+                  ),
+                ),
+              ],
             ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.hardDrive),
-              title: Text(t.toolbox.logsFile),
-              description: Text(t.toolbox.logsFileDesc),
-              trailing: DsSwitch(
-                value: _fileEnabled,
-                onChanged: (value) {
-                  setAppLogFileEnabled(enabled: value);
-                  setState(() => _fileEnabled = value);
-                },
-              ),
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.folder),
-              title: Text(t.toolbox.logsDirectory),
-              description: Text(appLogDirectory?.path ?? t.toolbox.logsDirectoryDefault),
-              onPressed: appLogDirectory == null ? null : () => unawaited(_openLogDirectory()),
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.copy),
-              title: Text(t.toolbox.logsExport),
-              description: Text(t.toolbox.logsExportDesc),
-              onPressed: () => unawaited(_copy()),
-            ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.trash2),
-              title: Text(t.toolbox.logsClear),
-              description: Text(t.toolbox.logsClearDesc),
-              destructive: true,
-              onPressed: () => unawaited(_clear()),
-            ),
-          ],
-        ),
-        DsSearchField(controller: _search, placeholder: t.toolbox.logsSearch, onChanged: (_) => setState(() {})),
-        Container(
-          height: 440,
-          decoration: DsBoxDecoration(
-            color: colors.channel,
-            borderRadius: BorderRadius.circular(theme.radii.card),
-            shadows: [DsShadow.innerRing(colors.border)],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: shown.isEmpty
-                    ? Center(
-                        child: DsEmptyState(
-                          icon: const DsIcon(DsIcons.terminal),
-                          title: Text(t.toolbox.logsEmptyTitle),
-                          description: Text(t.toolbox.logsEmptyDescription),
-                        ),
-                      )
-                    : ListView.builder(
-                        controller: _scroll,
-                        padding: const EdgeInsets.all(DsSpace.s8),
-                        itemCount: shown.length,
-                        itemBuilder: (context, index) => _LogLine(record: shown[index]),
-                      ),
-              ),
-              DsLine(color: colors.border),
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s6, DsSpace.s8, DsSpace.s6),
-                child: Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _autoScroll ? t.toolbox.logsAutoOn : t.toolbox.logsAutoOff,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                    ),
-                    Text(
-                      t.toolbox.logsLines(count: shown.length),
-                      style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
-                    ),
-                    DsButton(
-                      variant: DsButtonVariant.ghost,
-                      size: DsSize.sm,
-                      leading: const DsIcon(DsIcons.arrowDown, size: 14),
-                      onPressed: _toBottom,
-                      child: Text(t.toolbox.logsScrollBottom),
-                    ),
-                  ],
+        ),
+        Expanded(
+          child: Container(
+            decoration: DsBoxDecoration(
+              color: colors.channel,
+              borderRadius: BorderRadius.circular(theme.radii.card),
+              shadows: [DsShadow.innerRing(colors.border)],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s12, DsSpace.s12, DsSpace.s8),
+                  child: DsSearchField(
+                    controller: _search,
+                    placeholder: t.toolbox.logsSearch,
+                    onChanged: (_) => setState(() {}),
+                  ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: shown.isEmpty
+                      ? Center(
+                          child: DsEmptyState(
+                            icon: const DsIcon(DsIcons.terminal),
+                            title: Text(t.toolbox.logsEmptyTitle),
+                            description: Text(t.toolbox.logsEmptyDescription),
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: _scroll,
+                          padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s8),
+                          itemCount: shown.length,
+                          itemBuilder: (context, index) => _LogLine(record: shown[index]),
+                        ),
+                ),
+                DsLine(color: colors.border),
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s6, DsSpace.s8, DsSpace.s6),
+                  child: Row(
+                    spacing: DsSpace.s8,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _autoScroll ? t.toolbox.logsAutoOn : t.toolbox.logsAutoOff,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.caption.copyWith(color: colors.textMuted),
+                        ),
+                      ),
+                      Text(
+                        t.toolbox.logsLines(count: shown.length),
+                        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                      ),
+                      DsButton(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        leading: const DsIcon(DsIcons.copy, size: 14),
+                        onPressed: () => unawaited(_copy()),
+                        child: Text(t.toolbox.logsExport),
+                      ),
+                      DsButton(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        leading: const DsIcon(DsIcons.trash2, size: 14),
+                        onPressed: () => unawaited(_clear()),
+                        child: Text(t.toolbox.logsClear),
+                      ),
+                      DsButton(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        leading: const DsIcon(DsIcons.arrowDown, size: 14),
+                        onPressed: _toBottom,
+                        child: Text(t.toolbox.logsScrollBottom),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],

@@ -517,7 +517,7 @@ final class RoomController extends Notifier<RoomState> {
       final handle = state.handle;
       if (handle != null) unawaited(_applyTuning(handle, previous, next));
     });
-    ref.listen(playerProxyProvider, (_, _) {
+    ref.listen(effectivePlayerProxyProvider, (_, _) {
       final playback = _playback;
       if (playback != null) unawaited(playback.updateEngineOptions(_storedEngineOptions()));
     });
@@ -772,7 +772,7 @@ final class RoomController extends Notifier<RoomState> {
   List<EngineOption> _storedEngineOptions() => playerStoredEngineOptions(
     hardwareDecoding: ref.read(playbackSettingsProvider).hardwareDecoding,
     tuning: ref.read(playerTuningProvider),
-    proxy: ref.read(playerProxyProvider),
+    proxy: ref.read(effectivePlayerProxyProvider),
   );
 
   /// Sends the engine configuration to a handle once: the decoder choice, the
@@ -814,7 +814,7 @@ final class RoomController extends Notifier<RoomState> {
       final options = playerTuningOptions(
         tuning: next,
         hardwareDecoding: settings.hardwareDecoding,
-        proxy: ref.read(playerProxyProvider),
+        proxy: ref.read(effectivePlayerProxyProvider),
       );
       if (previous != null) options.addAll(playerPresetTransitionOptions(previous, next));
       await handle.applyEngineOptions(options);

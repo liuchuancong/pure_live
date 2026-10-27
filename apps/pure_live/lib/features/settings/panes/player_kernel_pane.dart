@@ -180,6 +180,7 @@ final class _PlayerProxySection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final proxy = ref.watch(playerProxyProvider);
+    final effective = ref.watch(effectivePlayerProxyProvider);
     return DsListSection(
       header: Text(t.settings.playerProxy),
       children: [
@@ -187,7 +188,17 @@ final class _PlayerProxySection extends ConsumerWidget {
           leading: const DsIcon(DsIcons.globe),
           title: Text(t.settings.playerProxy),
           description: Text(t.settings.playerProxyDesc),
-          detail: Text(proxy.enabled && proxy.host.isNotEmpty ? '${proxy.host}:${proxy.port}' : t.settings.optionOff),
+          // What the player will actually use: a follow-the-app choice reads
+          // through to the endpoint the app's own proxy resolved to.
+          detail: Text(
+            effective.host.isNotEmpty
+                ? '${effective.host}:${effective.port}'
+                : switch (proxy.mode) {
+                    PlayerProxyMode.off => t.settings.optionOff,
+                    PlayerProxyMode.followApp => t.settings.playerProxyFollow,
+                    PlayerProxyMode.manual => t.settings.playerProxyManual,
+                  },
+          ),
           showChevron: true,
           onPressed: () => unawaited(_showPlayerProxyDialog(context)),
         ),
@@ -644,7 +655,7 @@ final class _PlayerProxyDialog extends ConsumerStatefulWidget {
 }
 
 final class _PlayerProxyDialogState extends ConsumerState<_PlayerProxyDialog> {
-  late bool _enabled = ref.read(playerProxyProvider).enabled;
+  late PlayerProxyMode _mode = ref.read(playerProxyProvider).mode;
   late final TextEditingController _host = TextEditingController(text: ref.read(playerProxyProvider).host);
   late final TextEditingController _port = TextEditingController(text: '${ref.read(playerProxyProvider).port}');
 
@@ -655,15 +666,19 @@ final class _PlayerProxyDialogState extends ConsumerState<_PlayerProxyDialog> {
     super.dispose();
   }
 
+  /// Only the manual mode types an endpoint; the other two answer from the
+  /// app's proxy or from nothing at all.
+  bool get _manual => _mode == PlayerProxyMode.manual;
+
   bool get _valid {
-    if (!_enabled) return true;
+    if (!_manual) return true;
     final port = int.tryParse(_port.text.trim());
     return _host.text.trim().isNotEmpty && port != null && port > 0 && port <= 65535;
   }
 
   void _confirm() {
     final port = int.tryParse(_port.text.trim()) ?? 0;
-    unawaited(ref.read(playerProxyProvider.notifier).save((enabled: _enabled, host: _host.text.trim(), port: port)));
+    unawaited(ref.read(playerProxyProvider.notifier).save((mode: _mode, host: _host.text.trim(), port: port)));
     Navigator.of(context).pop();
   }
 
@@ -677,21 +692,28 @@ final class _PlayerProxyDialogState extends ConsumerState<_PlayerProxyDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s12,
         children: [
-          DsSwitch(
-            value: _enabled,
-            onChanged: (value) => setState(() => _enabled = value),
-            label: Text(t.settings.playerProxyEnable),
+          DsSelect<PlayerProxyMode>(
+            value: _mode,
+            semanticLabel: t.settings.playerProxyMode,
+            options: [
+              DsSelectOption(value: PlayerProxyMode.off, label: t.settings.proxyModeOff),
+              DsSelectOption(value: PlayerProxyMode.followApp, label: t.settings.playerProxyFollow),
+              DsSelectOption(value: PlayerProxyMode.manual, label: t.settings.playerProxyManual),
+            ],
+            onChanged: (value) {
+              if (value != null) setState(() => _mode = value);
+            },
           ),
           DsTextField(
             controller: _host,
-            enabled: _enabled,
+            enabled: _manual,
             placeholder: t.settings.proxyHost,
             onChanged: (_) => setState(() {}),
             semanticLabel: t.settings.proxyHost,
           ),
           DsTextField(
             controller: _port,
-            enabled: _enabled,
+            enabled: _manual,
             placeholder: t.settings.proxyPort,
             keyboardType: TextInputType.number,
             error: invalid,

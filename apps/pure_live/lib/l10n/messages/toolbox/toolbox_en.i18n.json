@@ -97,7 +97,10 @@
   "logsScrollBottom": "Scroll to bottom",
   "logsCopied": "Log copied",
   "logsCopyEmpty": "No logs to copy",
-  "logsDirectory": "Log directory",
-  "logsDirectoryDefault": "Memory only: turn on file logging to get a folder here.",
+  "logsDirectoryDefault": "The log file is not ready yet.",
+  "logsFileTitle": "Log file",
+  "logsOpenFolder": "Open the folder",
+  "logsCopyPath": "Copy path",
+  "logsPathCopied": "Path copied to the clipboard",
   "logsOpenFailed": "Could not open the log directory"
 }
