@@ -98,7 +98,9 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
   List<FontFamily>? _families;
   final Set<String> _failed = {};
   final TextEditingController _query = TextEditingController();
-  final GlobalKey _listAnchor = GlobalKey();
+  // Held, not read through `ref` in dispose: provider access needs a live
+  // BuildContext, which an unmounting widget no longer has.
+  late final FontLibrary _library;
   _FontFilter _filter = _FontFilter.all;
 
   @override
@@ -106,7 +108,8 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
     super.initState();
     // A transfer reports progress through the library's notifier: without
     // listening, the buttons and the bar would keep their first frame.
-    ref.read(fontLibraryProvider).addListener(_onLibraryChanged);
+    _library = ref.read(fontLibraryProvider);
+    _library.addListener(_onLibraryChanged);
     unawaited(_loadCatalog());
   }
 
@@ -116,13 +119,13 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
 
   @override
   void dispose() {
-    ref.read(fontLibraryProvider).removeListener(_onLibraryChanged);
+    _library.removeListener(_onLibraryChanged);
     _query.dispose();
     super.dispose();
   }
 
   Future<void> _loadCatalog() async {
-    final families = await ref.read(fontLibraryProvider).catalog();
+    final families = await _library.catalog();
     if (!mounted) return;
     setState(() => _families = families);
   }
@@ -271,22 +274,6 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
     return parts.length > 1 ? parts.last : name;
   }
 
-  /// Switches to the catalogue's not-yet-downloaded entries and brings the
-  /// list into view, so "download more" lands on the action it names.
-  void _showDownloads() {
-    setState(() => _filter = _FontFilter.available);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final anchor = _listAnchor.currentContext;
-      if (anchor == null) return;
-      Scrollable.ensureVisible(
-        anchor,
-        duration: const Duration(milliseconds: 240),
-        curve: Curves.easeOutCubic,
-        alignment: 0.05,
-      );
-    });
-  }
-
   List<_FontEntry> _entries(Translations t) => [
     for (final (id, label) in kBundledFontPresets)
       _FontEntry(id: id, name: label, description: t.settings.fontManagerBundledNote),
@@ -336,10 +323,7 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
                   ),
                 ),
                 _buildCurrentSection(context, family: family, library: library, entries: entries),
-                KeyedSubtree(
-                  key: _listAnchor,
-                  child: _buildFilters(context, count: filtered.length, wide: wide),
-                ),
+                _buildFilters(context, count: filtered.length, wide: wide),
                 if (filtered.isEmpty)
                   DsCard(
                     child: DsEmptyState(
@@ -371,8 +355,8 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
     _FontFilter.available => !entry.bundled && !library.isDownloaded(entry.id),
   };
 
-  /// The face in force, its switcher and the way to more faces — the same
-  /// section rhythm the rest of settings uses, instead of a hero card.
+  /// The face in force and its switcher — the same section rhythm the rest
+  /// of settings uses, instead of a hero card.
   Widget _buildCurrentSection(
     BuildContext context, {
     required String? family,
@@ -410,12 +394,6 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
           description: description,
           controlWidth: 220,
           control: select,
-        ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.download),
-          title: Text(t.settings.fontManagerDownloadMore),
-          showChevron: true,
-          onPressed: _showDownloads,
         ),
       ],
     );

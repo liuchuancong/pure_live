@@ -549,25 +549,30 @@ final class _LocationBreadcrumb extends ConsumerWidget {
       }
       return DsBreadcrumb(
         items: [
-          DsBreadcrumbItem(label: t.navigation.settings, icon: const DsIcon(DsIcons.settings, size: 14)),
+          DsBreadcrumbItem(label: t.navigation.settings, icon: const DsIcon(DsIcons.settings)),
           if (category != null)
             DsBreadcrumbItem(
               label: settingsGroupLabel(t, category),
-              icon: DsIcon(settingsGroupIcon(category), size: 14),
+              icon: DsIcon(settingsGroupIcon(category)),
               onPressed: sectionOpen ? () => closeSettingsSection(ref) : null,
             ),
           if (sectionOpen) ...[
             for (final ancestor in ancestors.reversed)
-              DsBreadcrumbItem(label: ancestor.label(t), onPressed: () => openSettingsSection(ref, ancestor)),
-            DsBreadcrumbItem(label: section.label(t)),
+              DsBreadcrumbItem(
+                label: ancestor.label(t),
+                icon: DsIcon(ancestor.icon),
+                onPressed: () => openSettingsSection(ref, ancestor),
+              ),
+            DsBreadcrumbItem(label: section.label(t), icon: DsIcon(section.icon)),
           ],
         ],
       );
     }
     return DsBreadcrumb(
       items: [
-        DsBreadcrumbItem(label: module.label(t), icon: DsIcon(module.icon, size: 14)),
-        if (selected case final NavigationItem item) DsBreadcrumbItem(label: item.label(t)),
+        DsBreadcrumbItem(label: module.label(t), icon: DsIcon(module.icon)),
+        if (selected case final NavigationItem item)
+          DsBreadcrumbItem(label: item.label(t), icon: DsIcon(item.icon)),
       ],
     );
   }

@@ -5,10 +5,13 @@ import 'package:flutter/widgets.dart' show TextScaler;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
-/// The reference's typography scale: 0.5×–2× over the platform's own size.
+/// The app's typography scale: 80 %–150 % over the platform's own size.
 const double kDefaultTextScaleFactor = 1;
-const double kMinTextScaleFactor = 0.5;
-const double kMaxTextScaleFactor = 2;
+const double kMinTextScaleFactor = 0.8;
+const double kMaxTextScaleFactor = 1.5;
+
+/// One slider notch: 5 %.
+const double kTextScaleStep = 0.05;
 
 /// The most the platform's text size and the app's factor may grow together.
 const double kAppTextScaleLimit = 2;
