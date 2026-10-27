@@ -167,15 +167,20 @@ final class FontRepository {
   ];
 
   /// Every source [filePath] can be tried on, in preference order.
+  ///
+  /// The accelerator prefixes come first: the raw host is unreachable on
+  /// some networks, and trying it first means waiting out its timeout
+  /// before a mirror that works is even asked. The CDNs follow, then the
+  /// raw host and kkgithub as direct fallbacks.
   List<Uri> mirrors(String filePath) {
     final raw = rawUrl(filePath);
     final rawText = raw.toString();
     return List.unmodifiable([
-      raw,
       for (final prefix in _rawPrefixes) Uri.parse('$prefix$rawText'),
-      Uri.parse('https://raw.kkgithub.com/$owner/$repo/$branch/$filePath'),
       jsdelivr(filePath),
       jsdelivrFastly(filePath),
+      raw,
+      Uri.parse('https://raw.kkgithub.com/$owner/$repo/$branch/$filePath'),
     ]);
   }
 

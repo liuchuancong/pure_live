@@ -1,4 +1,5 @@
-import 'dart:io' show Directory, File, FileSystemException;
+import 'dart:async' show Completer, unawaited;
+import 'dart:io' show Directory, File, FileSystemException, IOSink;
 import 'dart:typed_data' show Uint8List;
 import 'dart:ui' show FontStyle, FontWeight;
 
@@ -8,7 +9,7 @@ import 'package:dynamic_fonts/dynamic_fonts.dart' show DynamicFonts, DynamicFont
 import 'package:flutter/foundation.dart' show ChangeNotifier, setEquals;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
-import 'package:live_net/live_net.dart' show CancelToken, LiveHttp, LiveRequest;
+import 'package:live_net/live_net.dart' show CancelToken, LiveHttp, LiveRequest, LiveStreamedResponse;
 import 'package:path/path.dart' as p;
 
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
@@ -53,6 +54,9 @@ final class FontDownloadException implements Exception {
   @override
   String toString() => 'FontDownloadException(${reason.name}${detail == null ? '' : ': $detail'})';
 }
+
+/// The browser identity the repository's mirrors expect.
+const String _fontUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/151.0.0.0 Safari/537.36';
 
 /// The ids the data folder holds, scanned once per engine at boot and kept
 /// synchronously readable: the theme's stored family is validated against
@@ -364,6 +368,9 @@ final class FontLibrary extends ChangeNotifier {
     try {
       if (staged.existsSync()) staged.deleteSync(recursive: true);
       staged.createSync(recursive: true);
+      // The source that won the first file's race is tried first for the
+      // rest of the family; only a failure there races again.
+      int? preferred;
       for (final (index, path) in family.files.indexed) {
         if (job.cancel.isCancelled) throw const FontDownloadException(FontDownloadFailure.cancelled);
         job.done = index;
@@ -378,12 +385,25 @@ final class FontLibrary extends ChangeNotifier {
           await existing.copy(target.path);
           continue;
         }
-        await _fetchMirrors(path, target, job.cancel);
-        job.bytes += target.lengthSync();
+        final baseBytes = job.bytes;
+        var lastReport = DateTime.fromMillisecondsSinceEpoch(0);
+        void report(int received) {
+          job.bytes = baseBytes + received;
+          // Chunks arrive far faster than a frame; the row only needs a
+          // moving number.
+          final now = DateTime.now();
+          if (now.difference(lastReport).inMilliseconds < 100) return;
+          lastReport = now;
+          notifyListeners();
+        }
+
+        preferred = await _fetchMirrors(path, target, job.cancel, preferred: preferred, onBytes: report);
+        job.bytes = baseBytes + target.lengthSync();
         if (!isFontFile(target)) {
           throw FontDownloadException(FontDownloadFailure.corrupt, name);
         }
       }
+      if (job.cancel.isCancelled) throw const FontDownloadException(FontDownloadFailure.cancelled);
       job.done = job.total;
       final hadOld = folder.existsSync();
       if (hadOld) folder.renameSync(previous.path);
@@ -421,9 +441,7 @@ final class FontLibrary extends ChangeNotifier {
         if (folder.existsSync()) folder.deleteSync(recursive: true);
       }
     } on FileSystemException catch (error) {
-      appLog
-          .forCategory('fonts')
-          .warning('the cloud font was not deleted', fields: {'id': id, 'error': error.message});
+      appLog.forCategory('fonts').warning('the cloud font was not deleted', fields: {'id': id, 'error': error.message});
       return false;
     }
     _refreshInstalled();
@@ -431,40 +449,202 @@ final class FontLibrary extends ChangeNotifier {
     return true;
   }
 
-  /// Tries every mirror of [path] in order and writes the first complete
-  /// answer to [target].
-  Future<void> _fetchMirrors(String path, File target, CancelToken cancel) async {
+  /// How many mirrors one file is fetched from at once. The fastest
+  /// throughput wins, which is not the host that answers first: on a blocked
+  /// network a proxy can hand over headers in half a second and still take
+  /// minutes to deliver the file.
+  static const int _raceWidth = 6;
+
+  /// Downloads [path] into [target] and answers the source index that
+  /// worked, so the family's next file can start there. [preferred] is the
+  /// previous file's winner; when it fails the first [_raceWidth] mirrors
+  /// are raced again, and the rest are tried one at a time.
+  Future<int?> _fetchMirrors(
+    String path,
+    File target,
+    CancelToken cancel, {
+    int? preferred,
+    void Function(int bytes)? onBytes,
+  }) async {
+    final mirrors = kCloudFontRepository.mirrors(path);
+    // Several racers write at once; the row follows the one that is ahead,
+    // so the number never steps back when a slower transfer reports.
+    var leading = 0;
+    void report(int received) {
+      if (received <= leading) return;
+      leading = received;
+      onBytes?.call(received);
+    }
+
+    if (preferred != null && preferred < mirrors.length) {
+      try {
+        await _downloadFrom(mirrors[preferred], target, cancel, onBytes: report);
+        return preferred;
+      } on FontDownloadException catch (error) {
+        if (error.reason == FontDownloadFailure.cancelled) rethrow;
+      }
+    }
+    final racing = mirrors.take(_raceWidth).toList();
     Object? lastError;
-    for (final url in kCloudFontRepository.mirrors(path)) {
+    try {
+      return await _raceDownloads(racing, target, cancel, onBytes: report);
+    } on FontDownloadException catch (error) {
+      if (error.reason == FontDownloadFailure.cancelled) rethrow;
+      lastError = error;
+    }
+    final deadline = DateTime.now().add(const Duration(minutes: 1));
+    for (var index = racing.length; index < mirrors.length; index++) {
+      if (DateTime.now().isAfter(deadline)) break;
       if (cancel.isCancelled) throw const FontDownloadException(FontDownloadFailure.cancelled);
       try {
-        final response = await http.send(
-          LiveRequest.get(
-            url,
-            headers: const {
-              'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/151.0.0.0 Safari/537.36',
-            },
-            site: 'fonts',
-            timeout: const Duration(seconds: 60),
-            cancelToken: cancel,
-          ),
-        );
-        if (!response.isOk) {
-          lastError = 'status ${response.statusCode}';
-          continue;
-        }
-        if (response.bodyBytes.isEmpty) {
-          lastError = 'empty body';
-          continue;
-        }
-        await target.writeAsBytes(response.bodyBytes, flush: true);
-        return;
-      } on Object catch (error) {
-        if (cancel.isCancelled) throw const FontDownloadException(FontDownloadFailure.cancelled);
+        await _downloadFrom(mirrors[index], target, cancel, onBytes: report);
+        return index;
+      } on FontDownloadException catch (error) {
+        if (error.reason == FontDownloadFailure.cancelled) rethrow;
         lastError = error;
       }
     }
     throw FontDownloadException(FontDownloadFailure.network, '$lastError');
+  }
+
+  /// Fetches one file from every source in [urls] at once, each into its
+  /// own part file, and keeps the first complete answer: the others are
+  /// cancelled and their parts removed. Answers the winning index in
+  /// [urls].
+  Future<int> _raceDownloads(
+    List<Uri> urls,
+    File target,
+    CancelToken cancel, {
+    void Function(int bytes)? onBytes,
+  }) async {
+    if (urls.isEmpty) throw const FontDownloadException(FontDownloadFailure.network, 'no source');
+    final parts = [for (var index = 0; index < urls.length; index++) File('${target.path}.$index.part')];
+    final tokens = [for (final _ in urls) CancelToken()];
+    final winner = Completer<int>();
+    Object? lastError;
+    var pending = urls.length;
+
+    Future<void> attempt(int index) async {
+      try {
+        await _downloadFrom(urls[index], parts[index], tokens[index], onBytes: onBytes);
+        if (cancel.isCancelled) throw const FontDownloadException(FontDownloadFailure.cancelled);
+        if (!winner.isCompleted) {
+          try {
+            if (target.existsSync()) target.deleteSync();
+            parts[index].renameSync(target.path);
+          } on FileSystemException catch (error) {
+            throw FontDownloadException(FontDownloadFailure.disk, error.message);
+          }
+          winner.complete(index);
+        }
+      } on Object catch (error) {
+        lastError = error;
+        try {
+          if (parts[index].existsSync()) parts[index].deleteSync();
+        } on FileSystemException {
+          // Removed by the cleanup below.
+        }
+      } finally {
+        pending -= 1;
+        if (pending == 0 && !winner.isCompleted) {
+          winner.completeError(
+            cancel.isCancelled
+                ? const FontDownloadException(FontDownloadFailure.cancelled)
+                : FontDownloadException(FontDownloadFailure.network, '$lastError'),
+          );
+        }
+      }
+    }
+
+    // The viewer's cancel reaches every attempt.
+    unawaited(
+      cancel.whenCancel.then((_) {
+        for (final token in tokens) {
+          token.cancel();
+        }
+      }),
+    );
+    final attempts = [for (var index = 0; index < urls.length; index++) attempt(index)];
+    try {
+      return await winner.future;
+    } finally {
+      for (final token in tokens) {
+        token.cancel();
+      }
+      // A loser's sink must be closed before its part can be removed on
+      // Windows, and a partial part must never travel into the installed
+      // folder with the winner.
+      await Future.wait(attempts);
+      for (final part in parts) {
+        try {
+          if (part.existsSync()) part.deleteSync();
+        } on FileSystemException {
+          // Removed by the next download.
+        }
+      }
+    }
+  }
+
+  /// Streams one source into [part] and checks that what landed is a font.
+  Future<void> _downloadFrom(Uri url, File part, CancelToken cancel, {void Function(int bytes)? onBytes}) async {
+    final LiveStreamedResponse response;
+    try {
+      response = await http.open(
+        LiveRequest.get(
+          url,
+          headers: const {'user-agent': _fontUserAgent},
+          site: 'fonts',
+          timeout: const Duration(seconds: 20),
+          cancelToken: cancel,
+        ),
+      );
+    } on Object catch (error) {
+      if (cancel.isCancelled) throw const FontDownloadException(FontDownloadFailure.cancelled);
+      throw FontDownloadException(FontDownloadFailure.network, '$error');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      await response.close();
+      throw FontDownloadException(FontDownloadFailure.network, 'status ${response.statusCode}');
+    }
+    final IOSink sink;
+    try {
+      sink = part.openWrite();
+    } on FileSystemException catch (error) {
+      await response.close();
+      throw FontDownloadException(FontDownloadFailure.disk, error.message);
+    }
+    final expected = int.tryParse(response.headers['content-length'] ?? '');
+    var received = 0;
+    Object? closeError;
+    try {
+      await for (final chunk in response.stream) {
+        if (cancel.isCancelled) throw const FontDownloadException(FontDownloadFailure.cancelled);
+        sink.add(chunk);
+        received += chunk.length;
+        onBytes?.call(received);
+      }
+    } on FontDownloadException {
+      rethrow;
+    } on Object catch (error) {
+      if (cancel.isCancelled) throw const FontDownloadException(FontDownloadFailure.cancelled);
+      throw FontDownloadException(FontDownloadFailure.network, '$error');
+    } finally {
+      try {
+        await sink.flush();
+        await sink.close();
+      } on FileSystemException catch (error) {
+        closeError = error;
+      }
+    }
+    if (closeError case final FileSystemException error) {
+      throw FontDownloadException(FontDownloadFailure.disk, error.message);
+    }
+    // A truncated body still starts like a font; the length the mirror
+    // declared is the only way to tell it apart from a complete one.
+    if (expected != null && expected > 0 && received < expected) {
+      throw FontDownloadException(FontDownloadFailure.network, 'short body $received/$expected');
+    }
+    if (!isFontFile(part)) throw FontDownloadException(FontDownloadFailure.corrupt, url.host);
   }
 
   /// A download stopped between moving the old folder away and the new one
@@ -518,8 +698,7 @@ bool hasFontMagic(Uint8List bytes) {
 /// [DynamicFontsFile.url] the library's fetch client answers from the local
 /// folder, verified against the SHA-256 and length of those very bytes.
 final class _CatalogueFile extends DynamicFontsFile {
-  _CatalogueFile(this.repoPath, String expectedFileHash, int expectedLength)
-    : super(expectedFileHash, expectedLength);
+  _CatalogueFile(this.repoPath, String expectedFileHash, int expectedLength) : super(expectedFileHash, expectedLength);
 
   /// The path in the repository, `<folder>/<file>`.
   final String repoPath;
