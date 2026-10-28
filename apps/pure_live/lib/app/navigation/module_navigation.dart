@@ -1,17 +1,16 @@
 import 'package:flutter/widgets.dart' show Widget;
-
-import 'package:pure_live/features/areas/areas.dart';
-import 'package:pure_live/features/favorites/favorites.dart';
-import 'package:pure_live/features/history/history.dart';
-import 'package:pure_live/features/iptv/iptv.dart';
-import 'package:pure_live/features/multiview/multiview.dart';
-import 'package:pure_live/features/music/music.dart';
-import 'package:pure_live/features/popular/popular.dart';
-import 'package:pure_live/features/recorder/recorder.dart';
-import 'package:pure_live/features/search/search.dart';
 import 'package:pure_live/features/settings/settings.dart';
-import 'package:pure_live/features/toolbox/toolbox.dart';
-import 'package:pure_live/features/vod/vod.dart';
+import 'package:pure_live/modules/iptv/iptv.dart';
+import 'package:pure_live/modules/live/areas/areas.dart';
+import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/modules/live/history/history.dart';
+import 'package:pure_live/modules/live/multiview/multiview.dart';
+import 'package:pure_live/modules/live/popular/popular.dart';
+import 'package:pure_live/modules/live/recorder/recorder.dart';
+import 'package:pure_live/modules/live/search/search.dart';
+import 'package:pure_live/modules/live/toolbox/toolbox.dart';
+import 'package:pure_live/modules/music/music.dart';
+import 'package:pure_live/modules/vod/vod.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// One module's whole navigation surface, in one place.
@@ -54,16 +53,11 @@ final class ModuleNavigation {
   ];
 }
 
-/// The shared tools in their default order: multi-view, search, the recording
-/// centre and the link parser. The non-live modules show them as their tools
-/// block under their own entries; the settings tool-order editor persists
-/// this order.
-const List<NavigationItem> kToolItems = [
-  NavigationItem.multiview,
-  NavigationItem.search,
-  NavigationItem.record,
-  NavigationItem.toolbox,
-];
+/// The live module's tools in their default order: multi-view, search and
+/// the link parser. The settings tool-order editor persists this order; the
+/// recording centre is a home-menu destination, not a tool, so it is not
+/// listed here. The other modules keep their own menus.
+const List<NavigationItem> kToolItems = [NavigationItem.multiview, NavigationItem.search, NavigationItem.toolbox];
 
 /// The settings every module shares, grouped into first-level categories.
 /// Each module registers its own category first (its business pages), then
@@ -99,9 +93,18 @@ const SettingsGroup _systemGroup = (
 
 const SettingsGroup _aboutGroup = (labelKey: 'groupAbout', sections: [SettingsSection.about]);
 
-/// The app-wide groups in reading order; live's own group is spliced in
-/// after Personalization.
-const List<SettingsGroup> _appGroups = [_personalizationGroup, _playbackGroup, _systemGroup, _aboutGroup];
+/// What a non-live module shares: the appearance, the player's engine, the
+/// system pages and About — never the live page's own rows (the navigation
+/// menu, the card layout, the picture options). Live's own catalogue is
+/// left exactly as it was.
+const SettingsGroup _sharedAppearanceGroup = (
+  labelKey: 'groupPersonalization',
+  sections: [SettingsSection.theme, SettingsSection.background],
+);
+
+const SettingsGroup _sharedPlaybackGroup = (labelKey: 'groupPlayback', sections: [SettingsSection.kernel]);
+
+const List<SettingsGroup> _sharedGroups = [_sharedAppearanceGroup, _sharedPlaybackGroup, _systemGroup, _aboutGroup];
 
 /// The module registry: one row per content type.
 const Map<AppModule, ModuleNavigation> kModuleNavigation = {
@@ -118,10 +121,11 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     settingsGroups: [_personalizationGroup, _liveGroup, _playbackGroup, _systemGroup, _aboutGroup],
   ),
   AppModule.iptv: ModuleNavigation(
+    // The reference's home order: 直播 first, then the collected channels and
+    // the recent ones; the module's own sources sit under them.
     menu: [
-      [NavigationItem.channels, NavigationItem.iptvGuide, NavigationItem.iptvSources],
-      [NavigationItem.favorites, NavigationItem.history],
-      kToolItems,
+      [NavigationItem.channels, NavigationItem.iptvFavorites, NavigationItem.iptvRecent],
+      [NavigationItem.iptvGuide, NavigationItem.iptvSources],
     ],
     landing: NavigationItem.channels,
     // IPTV's own surface is guide updates and source syncing; the app-wide
@@ -129,14 +133,21 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // recording, platforms) or the Bilibili station belongs here.
     settingsGroups: [
       (labelKey: 'groupIptv', sections: [SettingsSection.iptv]),
-      ..._appGroups,
+      ..._sharedGroups,
     ],
   ),
   AppModule.vod: ModuleNavigation(
+    // The reference's rail, entry for entry: 搜索 / 个人 / 主页 / 分区 /
+    // 影视 / 直播, in that order and one block, as its LeftNaviItem list is.
     menu: [
-      [NavigationItem.vod, NavigationItem.vodRank, NavigationItem.vodRegions],
-      [NavigationItem.favorites, NavigationItem.history],
-      kToolItems,
+      [
+        NavigationItem.vodSearch,
+        NavigationItem.vodPersonal,
+        NavigationItem.vod,
+        NavigationItem.vodRegions,
+        NavigationItem.vodPgc,
+        NavigationItem.vodLive,
+      ],
     ],
     landing: NavigationItem.vod,
     // The video station's own page: its Bilibili account, the quality a
@@ -144,14 +155,12 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // danmaku stay out of it.
     settingsGroups: [
       (labelKey: 'groupVod', sections: [SettingsSection.vod]),
-      ..._appGroups,
+      ..._sharedGroups,
     ],
   ),
   AppModule.music: ModuleNavigation(
     menu: [
       [NavigationItem.music, NavigationItem.musicSonglist, NavigationItem.musicToplist, NavigationItem.musicLibrary],
-      [NavigationItem.favorites, NavigationItem.history],
-      kToolItems,
     ],
     landing: NavigationItem.music,
     // The music module's own page: the source a song is asked from, the
@@ -159,7 +168,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // borrows no live-platform or video-station page.
     settingsGroups: [
       (labelKey: 'groupMusic', sections: [SettingsSection.music]),
-      ..._appGroups,
+      ..._sharedGroups,
     ],
   ),
 };
@@ -179,9 +188,14 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.channels: IptvPage.new,
   NavigationItem.iptvGuide: IptvGuidePage.new,
   NavigationItem.iptvSources: () => const IptvPage(initialView: IptvView.sources),
+  NavigationItem.iptvFavorites: () => const IptvPage(initialScope: IptvChannelScope.favourites),
+  NavigationItem.iptvRecent: IptvRecentPage.new,
   NavigationItem.vod: VodPage.new,
-  NavigationItem.vodRank: () => const VodPage(initialTab: VodTab.ranking),
-  NavigationItem.vodRegions: () => const VodPage(initialTab: VodTab.regions),
+  NavigationItem.vodLive: VodLivePage.new,
+  NavigationItem.vodPgc: VodPgcPage.new,
+  NavigationItem.vodRegions: VodRegionsPage.new,
+  NavigationItem.vodSearch: VodSearchPage.new,
+  NavigationItem.vodPersonal: VodPersonalPage.new,
   NavigationItem.music: MusicPage.new,
   NavigationItem.musicSonglist: () => const MusicPage(view: MusicView.songlists),
   NavigationItem.musicToplist: () => const MusicPage(view: MusicView.toplists),

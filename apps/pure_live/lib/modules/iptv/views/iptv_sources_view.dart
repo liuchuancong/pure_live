@@ -6,14 +6,14 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
-import 'package:pure_live/features/iptv/controllers/iptv_auto_update.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_controller.dart' show iptvPlaylistIsRemote;
-import 'package:pure_live/features/iptv/controllers/iptv_epg_controller.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_sources_controller.dart';
-import 'package:pure_live/features/iptv/views/iptv_import_dialog.dart'
-    show iptvImportFailureText, runIptvGuideImport, runIptvPlaylistImport;
-import 'package:pure_live/features/iptv/views/iptv_panels.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_auto_update.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvPlaylistIsRemote;
+import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
+import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart'
+    show iptvImportFailureText, runIptvGuideImport, runIptvPlaylistImport;
+import 'package:pure_live/modules/iptv/views/iptv_panels.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// What the resources table shows: everything, only playlists or only
@@ -673,13 +673,8 @@ final class _SettingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(DsSpace.s16),
-      decoration: DsBoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(theme.radii.card),
-        shadows: theme.shadows.surface,
-      ),
+    return DsCard(
+      style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s12,
@@ -695,7 +690,7 @@ final class _SettingCard extends StatelessWidget {
               ?trailing,
             ],
           ),
-          SizedBox(height: 1, child: ColoredBox(color: colors.border)),
+          const DsDivider(),
           child,
         ],
       ),

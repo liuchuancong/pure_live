@@ -5,9 +5,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_epg_controller.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_sources_controller.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
 
 /// What an import dialog closed with: the importer's answer and the name
 /// the user (or the file) gave, for the toast.

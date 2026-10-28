@@ -3,7 +3,8 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
-import 'package:pure_live/features/iptv/controllers/iptv_controller.dart' show iptvImporterProvider, iptvLibraryProvider;
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart'
+    show iptvImporterProvider, iptvLibraryProvider;
 
 /// The preference the chosen guide source is kept under.
 const String _activeGuidePref = 'iptv.guide.active';

@@ -30,7 +30,6 @@ final class MobileLayout extends ConsumerWidget {
     required this.onSelected,
     required this.onModuleSelected,
     required this.onSearch,
-    this.showMultiview = true,
     this.homeMenuItems = kHomeMenuItems,
     super.key,
   });
@@ -53,12 +52,8 @@ final class MobileLayout extends ConsumerWidget {
   /// Opens the search destination — the top bar's magnifier.
   final VoidCallback onSearch;
 
-  /// Whether the drawer lists the multi-view entry (the navigation
-  /// setting's toggle, shared with the desktop sidebar).
-  final bool showMultiview;
-
   /// The live home menu's visible entries in the viewer's order (the
-  /// navigation setting's `nav.menuIds`); other modules keep their own tabs.
+  /// navigation setting's list); other modules keep their own tabs.
   final List<NavigationItem> homeMenuItems;
 
   /// The bar's destinations: the module's feeds plus settings, the shape a
@@ -68,16 +63,16 @@ final class MobileLayout extends ConsumerWidget {
     AppModule.live => [if (homeMenuItems.isEmpty) ...kHomeMenuItems else ...homeMenuItems, NavigationItem.settings],
     AppModule.iptv => const [
       NavigationItem.channels,
+      NavigationItem.iptvFavorites,
+      NavigationItem.iptvRecent,
       NavigationItem.iptvGuide,
-      NavigationItem.iptvSources,
-      NavigationItem.favorites,
       NavigationItem.settings,
     ],
     AppModule.vod => const [
+      NavigationItem.vodSearch,
       NavigationItem.vod,
-      NavigationItem.vodRank,
       NavigationItem.vodRegions,
-      NavigationItem.history,
+      NavigationItem.vodPgc,
       NavigationItem.settings,
     ],
     AppModule.music => const [
@@ -236,8 +231,7 @@ final class MobileLayout extends ConsumerWidget {
                         in module == AppModule.live && group.every(kHomeMenuItems.contains)
                             ? (homeMenuItems.isEmpty ? kHomeMenuItems : homeMenuItems)
                             : group)
-                      if (showMultiview || item != NavigationItem.multiview)
-                        DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
+                      DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
                   ],
                   const SidebarDivider(),
                   DsSidebarItem(

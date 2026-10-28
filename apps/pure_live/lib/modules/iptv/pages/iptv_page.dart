@@ -6,14 +6,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
-import 'package:pure_live/features/iptv/controllers/iptv_controller.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_epg_controller.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_sources_controller.dart';
-import 'package:pure_live/features/iptv/views/iptv_import_dialog.dart';
-import 'package:pure_live/features/iptv/views/iptv_panels.dart';
-import 'package:pure_live/features/iptv/views/iptv_sources_view.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show iptvRemindersProvider;
+import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
+import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart';
+import 'package:pure_live/modules/iptv/views/iptv_panels.dart';
+import 'package:pure_live/modules/iptv/views/iptv_sources_view.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// How often the page re-reads "what is on now": a programme that started
@@ -42,10 +43,14 @@ enum IptvView {
 /// playlists and guides.
 final class IptvPage extends ConsumerStatefulWidget {
   /// The IPTV module's channels page, opening on [initialView].
-  const IptvPage({this.initialView = IptvView.channels, super.key});
+  const IptvPage({this.initialView = IptvView.channels, this.initialScope, super.key});
 
   /// The surface the page opens on.
   final IptvView initialView;
+
+  /// The channel scope the browser opens on; null leaves the previous choice
+  /// alone. The module's 收藏 entry opens the same table, favourites only.
+  final IptvChannelScope? initialScope;
 
   @override
   ConsumerState<IptvPage> createState() => _IptvPageState();
@@ -59,6 +64,12 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
   @override
   void initState() {
     super.initState();
+    final scope = widget.initialScope;
+    if (scope != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.read(iptvChannelsProvider.notifier).selectScope(scope);
+      });
+    }
     _slotRefresh = Timer.periodic(_slotRefreshInterval, (_) {
       ref.read(iptvChannelsProvider.notifier).refreshSlots();
     });
@@ -82,6 +93,10 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    // Reading the reminders here arms the module's stored ones: the timer
+    // lives in the controller, and a reminder set before a restart has no
+    // other reason to bring it back.
+    ref.watch(iptvRemindersProvider);
     final library = ref.watch(iptvLibraryProvider);
     if (library.hasError) {
       return Center(
@@ -498,10 +513,10 @@ final class _ChannelsTable extends ConsumerWidget {
           DsTableColumn(
             id: 'now',
             label: t.iptv.colNow,
-          value: (channel) => channels.slots[channel.id]?.current?.title ?? '',
-          width: const DsTableColumnWidth.flex(2, 200),
-          cell: (context, channel) => _NowCell(slot: channels.slots[channel.id]),
-        ),
+            value: (channel) => channels.slots[channel.id]?.current?.title ?? '',
+            width: const DsTableColumnWidth.flex(2, 200),
+            cell: (context, channel) => _NowCell(slot: channels.slots[channel.id]),
+          ),
         DsTableColumn(
           id: 'favorite',
           label: t.iptv.colFavorite,

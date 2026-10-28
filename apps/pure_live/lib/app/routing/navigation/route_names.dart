@@ -50,6 +50,13 @@ abstract final class RouteNames {
   /// shell: the video station's cards open it.
   static const String vodVideo = '/vod/:bvid';
 
+  /// One cinema title's page (its blurb, episodes and player).
+  static const String vodSeason = '/vod/season/:seasonId';
+
+  /// The music module's player, pushed on the root navigator above the shell
+  /// (the reference's PlayDetail).
+  static const String musicPlayer = '/music/player';
+
   /// The settings branch.
   static const String settings = '/settings';
 

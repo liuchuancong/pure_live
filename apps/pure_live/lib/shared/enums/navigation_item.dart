@@ -53,14 +53,25 @@ enum NavigationItem {
   /// The user branch.
   user(DsIcons.circleUser),
 
-  /// The VOD module's own entry.
+  /// The VOD module's own entry: the station's home (推荐/热门/动态).
   vod(DsIcons.film),
 
-  /// The video station's leaderboard, the reference's 排行 rail entry.
-  vodRank(DsIcons.trophy),
+  /// The video station's cinema, the reference's 影视 rail entry.
+  vodPgc(DsIcons.clapperboard),
 
   /// The video station's region browse, the reference's 分区 rail entry.
   vodRegions(DsIcons.layoutList),
+
+  /// The video station's search, the reference's 搜索 rail entry.
+  vodSearch(DsIcons.search),
+
+  /// The video station's personal page, the reference's 个人 rail entry:
+  /// 稍后再看, 历史, 收藏 and 追番 behind its tabs.
+  vodPersonal(DsIcons.circleUser),
+
+  /// The video station's live page, the reference's 直播 rail entry: the
+  /// followed rooms, the site's areas and its recommended live feed.
+  vodLive(DsIcons.tvMinimal),
 
   /// The IPTV module's playlists and guide sources.
   iptvSources(DsIcons.radioTower),
@@ -68,8 +79,14 @@ enum NavigationItem {
   /// The IPTV module's programme guide, the reference's 节目单 surface.
   iptvGuide(DsIcons.calendarClock),
 
-  /// The music module's own entry.
-  music(DsIcons.music),
+  /// The IPTV module's favourite channels, the reference's 收藏.
+  iptvFavorites(DsIcons.heart),
+
+  /// The IPTV module's watch history, the reference's 最近观看.
+  iptvRecent(DsIcons.history),
+
+  /// The music module's own entry, the reference's 搜索 rail entry.
+  music(DsIcons.search),
 
   /// The music module's song lists, the reference's 歌单.
   musicSonglist(DsIcons.listMusic),
@@ -78,7 +95,7 @@ enum NavigationItem {
   musicToplist(DsIcons.chartColumn),
 
   /// The music module's own lists, the reference's 我的列表.
-  musicLibrary(DsIcons.library);
+  musicLibrary(DsIcons.heart);
 
   NavigationItem(this.icon);
 
@@ -88,7 +105,7 @@ enum NavigationItem {
   /// The localized label.
   String label(Translations t) => switch (this) {
     NavigationItem.live => t.navigation.live,
-    NavigationItem.channels => t.navigation.channels,
+    NavigationItem.channels => t.iptv.live,
     NavigationItem.discover => t.navigation.discover,
     NavigationItem.history => t.navigation.history,
     NavigationItem.multiview => t.navigation.multiview,
@@ -104,12 +121,17 @@ enum NavigationItem {
     NavigationItem.appearance => t.navigation.appearance,
     NavigationItem.proxy => t.navigation.proxy,
     NavigationItem.user => t.navigation.user,
-    NavigationItem.vod => t.common.moduleVod,
-    NavigationItem.vodRank => t.navigation.vodRank,
-    NavigationItem.vodRegions => t.navigation.vodRegions,
+    NavigationItem.vod => t.vod.home,
+    NavigationItem.vodPgc => t.vod.pgcTitle,
+    NavigationItem.vodRegions => t.vod.regions,
+    NavigationItem.vodSearch => t.vod.search,
+    NavigationItem.vodPersonal => t.vod.personal,
+    NavigationItem.vodLive => t.vod.live,
     NavigationItem.iptvSources => t.navigation.iptvSources,
     NavigationItem.iptvGuide => t.navigation.iptvGuide,
-    NavigationItem.music => t.common.moduleMusic,
+    NavigationItem.iptvFavorites => t.iptv.favouritesTitle,
+    NavigationItem.iptvRecent => t.iptv.recentTitle,
+    NavigationItem.music => t.music.search,
     NavigationItem.musicSonglist => t.navigation.musicSonglist,
     NavigationItem.musicToplist => t.navigation.musicToplist,
     NavigationItem.musicLibrary => t.navigation.musicLibrary,

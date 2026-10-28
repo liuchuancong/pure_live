@@ -12,20 +12,22 @@ import 'package:pure_live/app/providers/providers.dart';
 import 'package:pure_live/app/routing/navigation/root_navigator.dart' show rootNavigatorKey;
 import 'package:pure_live/app/routing/navigation/route_names.dart' show RouteNames;
 import 'package:pure_live/app/routing/navigation/route_observer.dart' show routeObserverProvider;
-import 'package:pure_live/features/areas/areas.dart';
-import 'package:pure_live/features/favorites/favorites.dart';
-import 'package:pure_live/features/history/history.dart';
-import 'package:pure_live/features/iptv/iptv.dart';
-import 'package:pure_live/features/multiview/multiview.dart';
-import 'package:pure_live/features/popular/popular.dart';
-import 'package:pure_live/features/recorder/recorder.dart';
-import 'package:pure_live/features/room/room.dart';
-import 'package:pure_live/features/search/search.dart';
+import 'package:pure_live/app/windows/chrome/window_chrome.dart' show WindowChromeState;
 import 'package:pure_live/features/settings/settings.dart';
-import 'package:pure_live/features/toolbox/toolbox.dart';
-import 'package:pure_live/features/vod/vod.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/layouts.dart';
+import 'package:pure_live/modules/iptv/iptv.dart';
+import 'package:pure_live/modules/live/areas/areas.dart';
+import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/modules/live/history/history.dart';
+import 'package:pure_live/modules/live/multiview/multiview.dart';
+import 'package:pure_live/modules/live/popular/popular.dart';
+import 'package:pure_live/modules/live/recorder/recorder.dart';
+import 'package:pure_live/modules/live/room/room.dart';
+import 'package:pure_live/modules/live/search/search.dart';
+import 'package:pure_live/modules/live/toolbox/toolbox.dart';
+import 'package:pure_live/modules/music/music.dart' show MusicPlayerPage;
+import 'package:pure_live/modules/vod/vod.dart';
 import 'package:pure_live/shared/shared.dart';
 
 part 'app_router.g.dart';
@@ -365,6 +367,7 @@ final class RoomRoute extends GoRouteData with $RoomRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => _PlayerWindowChrome(
+    drawsOwnChrome: true,
     child: RoomPage(platform: platform, roomId: roomId),
   );
 }
@@ -446,8 +449,15 @@ GoRouter buildAppRouter({
         builder: (context, state) => _PlayerWindowChrome(
           child: IptvPlayPage(
             channelId: state.pathParameters['channelId']!,
+            // A channel row hands over the channel; the programme guide hands
+            // over the channel with the programme to replay.
             channel: switch (state.extra) {
+              final IptvPlayLaunch launch => launch.channel,
               final IptvChannel channel => channel,
+              _ => null,
+            },
+            catchupProgramme: switch (state.extra) {
+              final IptvPlayLaunch launch => launch.catchupProgramme,
               _ => null,
             },
           ),
@@ -468,8 +478,18 @@ GoRouter buildAppRouter({
       // written by hand rather than generated, so a cards-only change never
       // needs a build_runner pass (which would rewrite the l10n output).
       GoRoute(
+        path: RouteNames.vodSeason,
+        builder: (context, state) => _PlayerWindowChrome(
+          child: VodSeasonPage(seasonId: int.tryParse(state.pathParameters['seasonId'] ?? '') ?? 0),
+        ),
+      ),
+      GoRoute(
         path: RouteNames.vodVideo,
         builder: (context, state) => _PlayerWindowChrome(child: VodVideoPage(bvid: state.pathParameters['bvid']!)),
+      ),
+      GoRoute(
+        path: RouteNames.musicPlayer,
+        builder: (context, state) => const WindowChromeFrame(child: MusicPlayerPage()),
       ),
     ],
   );
@@ -488,19 +508,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 });
 
 /// A player route keeps the window's caption strip while it is a windowed
-/// page; a presentation that fills the window (fullscreen or the in-window
-/// fullscreen) hides it, exactly as the system caption would. PiP and a
-/// floating player keep it: those are still ordinary windows.
+/// page; a presentation that fills the window hides it, exactly as the system
+/// caption would — fullscreen and the in-window fullscreen both do, and so
+/// does the compact window, which has no room for a second bar.
+///
+/// The room page is an exception in the other direction: on a desktop where
+/// the app draws its own caption it puts the three window buttons and the drag
+/// band in its own header, so the strip would be a second title bar.
+/// [drawsOwnChrome] names that arrangement; a page that does not offer the
+/// buttons (VOD, IPTV) keeps the strip everywhere.
 final class _PlayerWindowChrome extends ConsumerWidget {
-  const _PlayerWindowChrome({required this.child});
+  const _PlayerWindowChrome({required this.child, this.drawsOwnChrome = false});
 
   final Widget child;
+
+  /// Whether the page itself carries the window's drag band and buttons.
+  final bool drawsOwnChrome;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(roomPresentationProvider);
-    final immersive = mode == PresentationMode.fullscreen || mode == PresentationMode.windowFullscreen;
-    return WindowChromeFrame(enabled: !immersive, child: child);
+    final pageImmersive = ref.watch(roomImmersiveProvider);
+    final immersive =
+        mode == PresentationMode.fullscreen ||
+        mode == PresentationMode.windowFullscreen ||
+        // A compact window has no room for a second bar: the picture fills it
+        // and the PiP surface carries its own strip of controls.
+        mode == PresentationMode.pip ||
+        pageImmersive;
+    final selfChrome = drawsOwnChrome && WindowChromeState.drawsCaptionControls;
+    return WindowChromeFrame(enabled: !immersive && !selfChrome, child: child);
   }
 }
 

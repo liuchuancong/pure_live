@@ -5,11 +5,232 @@ import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account.dart';
 
-/// What the vod page holds: the committed query, its videos, where the next
-/// page asks, the in-flight flag, and the last failure.
-typedef VodState = ({String query, List<VodVideo> videos, int nextPage, bool hasMore, bool loading, VodFailure? error});
+/// The search page's tabs: the reference's five result kinds.
+enum VodSearchKind {
+  /// Archives (`search/type` with `search_type=video`).
+  video,
 
-VodState _initial() => (query: '', videos: const [], nextPage: 1, hasMore: true, loading: false, error: null);
+  /// 番剧 seasons (`media_bangumi`).
+  bangumi,
+
+  /// 影视 seasons (`media_ft`).
+  cinema,
+
+  /// Users (`bili_user`).
+  user,
+
+  /// Live rooms (`live_room`).
+  liveRoom;
+
+  /// Whether the sort/length filters apply — they are the video endpoint's.
+  bool get filterable => this == VodSearchKind.video;
+}
+
+/// What the search page holds: the committed query and kind, that kind's
+/// results, where the next page asks, the in-flight flag, and the last
+/// failure. The four result lists are separate because the platform answers
+/// a different shape per kind and only one kind is ever shown.
+typedef VodState = ({
+  VodSearchKind kind,
+  String query,
+  List<VodVideo> videos,
+  List<VodSeason> seasons,
+  List<VodUser> users,
+  List<VodLiveRoom> rooms,
+  int nextPage,
+  bool hasMore,
+  bool loading,
+  VodFailure? error,
+});
+
+VodState _initial(VodSearchKind kind) => (
+  kind: kind,
+  query: '',
+  videos: const [],
+  seasons: const [],
+  users: const [],
+  rooms: const [],
+  nextPage: 1,
+  hasMore: true,
+  loading: false,
+  error: null,
+);
+
+/// The vod page's state and requests, paged by scroll like the home feed.
+///
+/// The station's search commits a keyword and pages its hits; with no keyword
+/// there is nothing to load, and the page says so instead of asking. A newer
+/// query or kind always wins: an answer from a search that was replaced
+/// drains without writing. The page asks for every load — a notifier never
+/// loads from inside its own build.
+final class VodController extends Notifier<VodState> {
+  int _generation = 0;
+  int _stagnant = 0;
+
+  /// The current sort key (`totalrank`, `click`, `pubdate`, `dm`, `stow`)
+  /// and length tier (0 = any) — the video tab's two filters.
+  String _order = 'totalrank';
+  int _duration = 0;
+
+  @override
+  VodState build() => _initial(VodSearchKind.video);
+
+  /// Searches [query] from its first page; a blank query clears the results.
+  ///
+  /// [kind] switches the result tab (which re-asks the same query); [order]
+  /// and [duration] are the video tab's filters. All three stay for
+  /// [loadMore] and [retry] until the viewer changes them.
+  Future<void> search(String query, {VodSearchKind? kind, String? order, int? duration}) {
+    if (order != null) _order = order;
+    if (duration != null) _duration = duration;
+    final next = kind ?? state.kind;
+    final word = query.trim();
+    if (word.isEmpty) {
+      _generation++;
+      state = _initial(next);
+      return Future.value();
+    }
+    return _load(word, next, 1);
+  }
+
+  /// Loads the next page of the committed query when one is left.
+  Future<void> loadMore() {
+    if (state.loading || !state.hasMore || state.query.isEmpty) return Future.value();
+    return _load(state.query, state.kind, state.nextPage);
+  }
+
+  /// Runs the committed query again from its first page (the retry button).
+  Future<void> retry() {
+    if (state.query.isEmpty) return Future.value();
+    return _load(state.query, state.kind, 1);
+  }
+
+  Future<void> _load(String query, VodSearchKind kind, int page) async {
+    final generation = ++_generation;
+    state = (
+      kind: kind,
+      query: query,
+      videos: page == 1 ? const [] : state.videos,
+      seasons: page == 1 ? const [] : state.seasons,
+      users: page == 1 ? const [] : state.users,
+      rooms: page == 1 ? const [] : state.rooms,
+      nextPage: state.nextPage,
+      hasMore: state.hasMore,
+      loading: true,
+      error: null,
+    );
+    try {
+      final client = ref.read(vodClientProvider);
+      final bool hasMore;
+      switch (kind) {
+        case VodSearchKind.video:
+          final answer = await client.search(query, page: page, order: _order, duration: _duration);
+          hasMore = answer.hasMore;
+          if (!ref.mounted || generation != _generation) return;
+          final videos = _merged(state.videos, answer.videos, page == 1, (video) => video.bvid ?? video.id);
+          state = (
+            kind: kind,
+            query: query,
+            videos: videos,
+            seasons: const [],
+            users: const [],
+            rooms: const [],
+            nextPage: page + 1,
+            hasMore: hasMore && _freshWins(page, videos.length),
+            loading: false,
+            error: null,
+          );
+        case VodSearchKind.bangumi:
+        case VodSearchKind.cinema:
+          final answer = await client.searchMedia(query, bangumi: kind == VodSearchKind.bangumi, page: page);
+          hasMore = answer.hasMore;
+          if (!ref.mounted || generation != _generation) return;
+          final seasons = _merged(state.seasons, answer.seasons, page == 1, (season) => '${season.seasonId}');
+          state = (
+            kind: kind,
+            query: query,
+            videos: const [],
+            seasons: seasons,
+            users: const [],
+            rooms: const [],
+            nextPage: page + 1,
+            hasMore: hasMore && _freshWins(page, seasons.length),
+            loading: false,
+            error: null,
+          );
+        case VodSearchKind.user:
+          final answer = await client.searchUsers(query, page: page);
+          hasMore = answer.hasMore;
+          if (!ref.mounted || generation != _generation) return;
+          final users = _merged(state.users, answer.users, page == 1, (user) => '${user.mid}');
+          state = (
+            kind: kind,
+            query: query,
+            videos: const [],
+            seasons: const [],
+            users: users,
+            rooms: const [],
+            nextPage: page + 1,
+            hasMore: hasMore && _freshWins(page, users.length),
+            loading: false,
+            error: null,
+          );
+        case VodSearchKind.liveRoom:
+          final answer = await client.searchLiveRooms(query, page: page);
+          hasMore = answer.hasMore;
+          if (!ref.mounted || generation != _generation) return;
+          final rooms = _merged(state.rooms, answer.rooms, page == 1, (room) => '${room.roomId}');
+          state = (
+            kind: kind,
+            query: query,
+            videos: const [],
+            seasons: const [],
+            users: const [],
+            rooms: rooms,
+            nextPage: page + 1,
+            hasMore: hasMore && _freshWins(page, rooms.length),
+            loading: false,
+            error: null,
+          );
+      }
+    } on Object catch (failure) {
+      if (!ref.mounted || generation != _generation) return;
+      state = (
+        kind: kind,
+        query: query,
+        videos: state.videos,
+        seasons: state.seasons,
+        users: state.users,
+        rooms: state.rooms,
+        nextPage: state.nextPage,
+        hasMore: false,
+        loading: false,
+        error: failure is VodFailure ? failure : VodFailure(failure.toString()),
+      );
+    }
+  }
+
+  /// Appends [incoming] to [current], dropping what is already held; a first
+  /// page replaces the list.
+  static List<T> _merged<T>(List<T> current, List<T> incoming, bool first, String Function(T) keyOf) {
+    final merged = first ? <T>[] : [...current];
+    final seen = {for (final item in merged) keyOf(item)};
+    merged.addAll(incoming.where((item) => seen.add(keyOf(item))));
+    return merged;
+  }
+
+  /// Two pages in a row without a new hit end the walk even when the source
+  /// keeps claiming more: repeating a page must not spin the grid's load-more
+  /// forever.
+  bool _freshWins(int page, int total) {
+    final fresh = page == 1 || total > _lastTotal;
+    _lastTotal = total;
+    _stagnant = fresh ? 0 : _stagnant + 1;
+    return _stagnant < 2;
+  }
+
+  int _lastTotal = 0;
+}
 
 /// The vod source's client over the shared transport.
 ///
@@ -29,127 +250,22 @@ final vodClientProvider = Provider<BilibiliVodClient>((ref) {
   return BilibiliVodClient(http, cookie: cookie);
 });
 
-/// The vod page's state and requests, paged by scroll like the home feed.
-///
-/// The vod source only searches — it offers no regions, rankings or
-/// recommendations to browse — so the page commits a keyword and pages its
-/// hits; with no keyword there is nothing to load, and the page says so
-/// instead of asking. A newer query always wins: an answer from a search
-/// that was replaced drains without writing. The page asks for every load —
-/// a notifier never loads from inside its own build.
-final class VodController extends Notifier<VodState> {
-  int _generation = 0;
-  int _stagnant = 0;
-
-  /// The current sort key (`totalrank`, `click`, `pubdate`, `dm`, `stow`)
-  /// and length tier (0 = any) — the search bar's two filters.
-  String _order = 'totalrank';
-  int _duration = 0;
-
-  @override
-  VodState build() => _initial();
-
-  /// Searches [query] from its first page; a blank query clears the results.
-  ///
-  /// [order] and [duration] are the search bar's filters; they stay for
-  /// [loadMore] and [retry] until the viewer changes them.
-  Future<void> search(String query, {String? order, int? duration}) {
-    if (order != null) _order = order;
-    if (duration != null) _duration = duration;
-    final word = query.trim();
-    if (word.isEmpty) {
-      _generation++;
-      state = _initial();
-      return Future.value();
-    }
-    return _load(word, 1);
-  }
-
-  /// Loads the next page of the committed query when one is left.
-  Future<void> loadMore() {
-    if (state.loading || !state.hasMore || state.query.isEmpty) return Future.value();
-    return _load(state.query, state.nextPage);
-  }
-
-  /// Runs the committed query again from its first page (the retry button).
-  Future<void> retry() {
-    if (state.query.isEmpty) return Future.value();
-    return _load(state.query, 1);
-  }
-
-  Future<void> _load(String query, int page) async {
-    final generation = ++_generation;
-    state = (
-      query: query,
-      videos: page == 1 ? const [] : state.videos,
-      nextPage: state.nextPage,
-      hasMore: state.hasMore,
-      loading: true,
-      error: null,
-    );
-    try {
-      final answer = await ref
-          .read(vodClientProvider)
-          // The site's own window: the client's default page size is what
-          // Bilibili asks for, not a number the viewer sets.
-          .search(
-            query,
-            page: page,
-            order: _order,
-            duration: _duration,
-          );
-      // A search that was replaced (a newer query) drains its answer
-      // without writing it.
-      if (!ref.mounted || generation != _generation) return;
-      final videos = page == 1 ? answer.videos : [...state.videos];
-      if (page > 1) {
-        final seen = {for (final video in videos) video.bvid ?? video.id};
-        videos.addAll(answer.videos.where((video) => seen.add(video.bvid ?? video.id)));
-      }
-      // Two pages in a row without a new hit end the walk even when the
-      // source keeps claiming more: repeating a page must not spin the
-      // grid's load-more forever.
-      final fresh = page == 1 || videos.length > state.videos.length;
-      _stagnant = fresh ? 0 : _stagnant + 1;
-      state = (
-        query: query,
-        videos: videos,
-        nextPage: page + 1,
-        hasMore: answer.hasMore && _stagnant < 2,
-        loading: false,
-        error: null,
-      );
-    } on Object catch (failure) {
-      if (!ref.mounted || generation != _generation) return;
-      state = (
-        query: query,
-        videos: state.videos,
-        nextPage: state.nextPage,
-        hasMore: false,
-        loading: false,
-        error: failure is VodFailure ? failure : VodFailure(failure.toString()),
-      );
-    }
-  }
-}
-
 /// The vod page's state.
 final vodProvider = NotifierProvider<VodController, VodState>(VodController.new);
 
-/// The three browse feeds the video station opens: the site-wide popular
-/// list, a region's ranking (one fixed list), and a region's recommendation
-/// feed (paged).
-enum VodFeedKind { popular, ranking, region }
+/// The browse feeds the video station opens: the home recommendation feed,
+/// the site-wide popular list, and a region's recommendation feed (paged).
+enum VodFeedKind { recommend, popular, region }
 
 /// One feed's videos, the next page it asks, and its load state.
 typedef VodFeedState = ({List<VodVideo> videos, int nextPage, bool hasMore, bool loading, VodFailure? error});
 
 VodFeedState _feedInitial() => (videos: const [], nextPage: 1, hasMore: true, loading: false, error: null);
 
-/// A feed's cache key: `popular`, `ranking:<rid>` or `region:<tid>`.
+/// A feed's cache key: `recommend`, `popular` or `region:<tid>`.
 String vodFeedKey(VodFeedKind kind, {int id = 0}) => switch (kind) {
+  VodFeedKind.recommend => 'recommend',
   VodFeedKind.popular => 'popular',
-  VodFeedKind.ranking => 'ranking:$id',
   VodFeedKind.region => 'region:$id',
 };
 
@@ -186,18 +302,14 @@ final class VodFeedController extends Notifier<Map<String, VodFeedState>> {
     final current = feedOf(key);
     if (current.loading) return;
     final parts = key.split(':');
-    final ranking = parts.first == 'ranking';
-    // A leaderboard is one fixed list: only its first page exists, and the
-    // refusal must come before the loading flag is raised.
-    if (ranking && page > 1) return;
     state = {...state, key: _with(current, loading: true, clearError: true)};
     final client = ref.read(vodClientProvider);
     try {
       final VodVideoPage answer;
       switch (parts.first) {
-        case 'ranking':
-          final videos = await client.ranking(rid: int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0);
-          answer = VodVideoPage(videos: videos);
+        case 'recommend':
+          final pageAnswer = await client.recommend(page: page);
+          answer = VodVideoPage(videos: pageAnswer.videos, hasMore: pageAnswer.videos.isNotEmpty);
         case 'region':
           answer = await client.regionFeed(tid: int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0, page: page);
         default:

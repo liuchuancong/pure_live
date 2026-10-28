@@ -5,10 +5,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile, LiveHttpCalls;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
-import 'package:pure_live/features/music/controller/music_settings.dart';
-import 'package:pure_live/features/music/controller/music_sources.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/music/controller/music_settings.dart';
+import 'package:pure_live/modules/music/controller/music_sources.dart';
 
 /// The music module's own settings: the source a song is asked from, the
 /// rendition asked of it, and the two playback behaviours; the list page and
@@ -24,11 +24,7 @@ final class MusicSettingsPane extends ConsumerWidget {
     final settings = ref.watch(musicSettingsProvider);
     final sources = ref.watch(musicSourcesProvider);
     final controller = ref.read(musicSettingsProvider.notifier);
-    final enabled = [
-      for (final source in sources)
-        if (source.enabled) source,
-    ];
-    final selected = enabled.any((source) => source.id == settings.defaultSourceId) ? settings.defaultSourceId : '';
+    final selected = sources.any((source) => source.id == settings.defaultSourceId) ? settings.defaultSourceId : '';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -36,17 +32,21 @@ final class MusicSettingsPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.music.settingsPlayback),
           children: [
-            SettingsChoiceRow<String>(
-              leading: const DsIcon(DsIcons.plugZap),
-              title: t.music.defaultSource,
-              description: t.music.defaultSourceDesc,
-              value: selected,
-              options: [
-                DsSelectOption(value: '', label: t.music.defaultSourceAuto),
-                for (final source in enabled) DsSelectOption(value: source.id, label: source.name),
-              ],
-              onChanged: (id) => unawaited(controller.setDefaultSource(id)),
-            ),
+            if (sources.isEmpty)
+              DsListRow(
+                leading: const DsIcon(DsIcons.plugZap),
+                title: Text(t.music.defaultSource),
+                description: Text(t.music.defaultSourceEmpty),
+              )
+            else
+              SettingsChoiceRow<String>(
+                leading: const DsIcon(DsIcons.plugZap),
+                title: t.music.defaultSource,
+                description: t.music.defaultSourceDesc,
+                value: selected,
+                options: [for (final source in sources) DsSelectOption(value: source.id, label: source.name)],
+                onChanged: (id) => unawaited(controller.setDefaultSource(id)),
+              ),
             SettingsChoiceRow<MusicQuality>(
               leading: const DsIcon(DsIcons.gauge),
               title: t.music.quality,
@@ -273,6 +273,8 @@ final class MusicSourcesPane extends ConsumerWidget {
         title: switch (failure.reason) {
           MusicSourceFailureReason.empty => t.music.importMissing,
           MusicSourceFailureReason.notASource => t.music.importNotASource,
+          MusicSourceFailureReason.duplicate => t.music.importDuplicate,
+          MusicSourceFailureReason.limit => t.music.importLimit(count: kMusicSourceLimit),
         },
         status: DsStatus.danger,
       );
@@ -291,6 +293,9 @@ final class MusicSourcesPane extends ConsumerWidget {
     );
     if (!confirmed || !context.mounted) return;
     await ref.read(musicSourcesProvider.notifier).remove(source.id);
+    if (ref.read(musicSettingsProvider).defaultSourceId == source.id) {
+      await ref.read(musicSettingsProvider.notifier).setDefaultSource('');
+    }
     if (context.mounted) {
       showDsToast(
         context: context,
@@ -306,7 +311,7 @@ final class MusicSourcesPane extends ConsumerWidget {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final sources = ref.watch(musicSourcesProvider);
-    final controller = ref.read(musicSourcesProvider.notifier);
+    final active = ref.watch(musicSettingsProvider).defaultSourceId;
     String describe(MusicCustomSource source) {
       if (source.description.isNotEmpty) return source.description;
       final meta = [source.author, source.version].where((part) => part.isNotEmpty).join(' · ');
@@ -352,17 +357,22 @@ final class MusicSourcesPane extends ConsumerWidget {
             children: [
               for (final source in sources)
                 DsListRow(
-                  leading: DsIcon(source.enabled ? DsIcons.fileCode : DsIcons.fileX),
+                  leading: DsIcon(source.id == active ? DsIcons.circleCheck : DsIcons.fileCode),
                   title: Text(source.name),
                   description: Text(describe(source), maxLines: 2, overflow: TextOverflow.ellipsis),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     spacing: DsSpace.s4,
                     children: [
-                      DsSwitch(
-                        value: source.enabled,
-                        onChanged: (value) => unawaited(controller.setEnabled(source.id, enabled: value)),
-                      ),
+                      if (source.id != active)
+                        DsButton.icon(
+                          variant: DsButtonVariant.ghost,
+                          size: DsSize.sm,
+                          semanticLabel: t.music.sourceUse,
+                          onPressed: () =>
+                              unawaited(ref.read(musicSettingsProvider.notifier).setDefaultSource(source.id)),
+                          icon: const DsIcon(DsIcons.circleCheck, size: 16),
+                        ),
                       DsButton.icon(
                         variant: DsButtonVariant.ghost,
                         size: DsSize.sm,
@@ -376,7 +386,7 @@ final class MusicSourcesPane extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
                 child: Text(
-                  t.music.sourcesCount(count: sources.where((source) => source.enabled).length),
+                  t.music.sourcesCount(count: sources.length),
                   style: theme.typography.caption.copyWith(color: colors.textSubtle),
                 ),
               ),

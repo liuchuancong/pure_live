@@ -104,25 +104,27 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
   void _scheduleHomeFallback() {
     if (_homeFallbackScheduled) return;
     _homeFallbackScheduled = true;
-    unawaited(Future<void>.microtask(() {
-      _homeFallbackScheduled = false;
-      if (!mounted) return;
-      final home = ref.read(navMenuProvider);
-      if (home.isEmpty) return;
-      final target = home.first;
-      _lastAppItem = target;
-      ref.read(selectedNavItemProvider.notifier).selected = target;
-      final branch = _branchIndexOf(target);
-      if (branch != null) {
-        widget.shell.goBranch(branch, initialLocation: branch == widget.shell.currentIndex);
-      }
-      setState(() {
-        _trail
-          ..clear()
-          ..add(target);
-        _cursor = 0;
-      });
-    }));
+    unawaited(
+      Future<void>.microtask(() {
+        _homeFallbackScheduled = false;
+        if (!mounted) return;
+        final home = ref.read(navMenuProvider);
+        if (home.isEmpty) return;
+        final target = home.first;
+        _lastAppItem = target;
+        ref.read(selectedNavItemProvider.notifier).selected = target;
+        final branch = _branchIndexOf(target);
+        if (branch != null) {
+          widget.shell.goBranch(branch, initialLocation: branch == widget.shell.currentIndex);
+        }
+        setState(() {
+          _trail
+            ..clear()
+            ..add(target);
+          _cursor = 0;
+        });
+      }),
+    );
   }
 
   @override
@@ -162,9 +164,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     /// A home entry the navigation setting hides falls back to the first
     /// one still shown: no page may sit behind an absent menu row.
     NavigationItem visibleHomeItem(NavigationItem item) =>
-        module == AppModule.live && kHomeMenuItems.contains(item) && !homeMenu.contains(item)
-        ? homeMenu.first
-        : item;
+        module == AppModule.live && kHomeMenuItems.contains(item) && !homeMenu.contains(item) ? homeMenu.first : item;
 
     /// Shows [item]: the live module's entries are router branches (state
     /// and deep links live there), every other module renders the entry's
@@ -228,12 +228,9 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     // shows the module's settings groups (alone — no app entries mixed in),
     // the app's menu its blocks, a divider between them.
     final navigation = navigationOf(module);
-    // The navigation setting's entry toggle: a switched-off multi-view is
-    // not listed, and an emptied block takes its divider with it.
-    final showMultiview = ref.watch(showMultiviewProvider);
     // The tools block follows the order the settings pane edits, not the
-    // registry's fixed list; a hidden multi-view stays out, and a stored
-    // order never drops a tool the registry added later.
+    // registry's fixed list; a stored order never drops a tool the
+    // registry added later.
     final toolOrder = ref.watch(toolOrderProvider);
     final toolSet = toolOrder.toSet();
     final appMenu = [
@@ -242,7 +239,6 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
           block,
           toolSet: toolSet,
           toolOrder: toolOrder,
-          showMultiview: showMultiview,
           homeMenuOrder: module == AppModule.live ? homeMenu : null,
         ),
     ]..removeWhere((block) => block.isEmpty);
@@ -358,7 +354,6 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
         onSelected: handleSelected,
         onModuleSelected: selectModule,
         onSearch: () => handleSelected(NavigationItem.search),
-        showMultiview: showMultiview,
         homeMenuItems: homeMenu,
       );
     }
@@ -402,10 +397,8 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     List<NavigationItem> block, {
     required Set<NavigationItem> toolSet,
     required List<NavigationItem> toolOrder,
-    required bool showMultiview,
     required List<NavigationItem>? homeMenuOrder,
   }) {
-    bool shown(NavigationItem item) => showMultiview || item != NavigationItem.multiview;
     // The home entries are one block: the navigation setting owns both
     // membership and order, so the tools' order must not treat the
     // recording centre's page as a tool.
@@ -416,18 +409,15 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       ];
     }
     if (!block.any(toolSet.contains)) {
-      return [
-        for (final item in block)
-          if (shown(item)) item,
-      ];
+      return block;
     }
     final rest = [
       for (final item in block)
-        if (!toolSet.contains(item) && shown(item)) item,
+        if (!toolSet.contains(item)) item,
     ];
     final ordered = [
       for (final item in toolOrder)
-        if (block.contains(item) && shown(item)) item,
+        if (block.contains(item)) item,
     ];
     // A registry tool the editor has not stored yet keeps its place after
     // the ordered ones rather than disappearing.
@@ -436,7 +426,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       ...rest,
       ...ordered,
       for (final item in block)
-        if (toolSet.contains(item) && !orderedSet.contains(item) && shown(item)) item,
+        if (toolSet.contains(item) && !orderedSet.contains(item)) item,
     ];
   }
 }

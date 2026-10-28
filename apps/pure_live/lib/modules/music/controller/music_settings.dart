@@ -55,19 +55,20 @@ final class MusicSettings {
     required this.showSource,
   });
 
-  /// The reference's defaults: the first available source, 320k, skip a
-  /// source that fails, no autoplay, new songs at the bottom, sources shown.
+  /// The reference's defaults: no source until one is imported, 128k, skip a
+  /// source that fails, no autoplay, new songs at the top, sources shown.
   static const MusicSettings standard = MusicSettings(
     defaultSourceId: '',
-    quality: MusicQuality.high,
+    quality: MusicQuality.standard,
     skipOnError: true,
     autoplay: false,
-    addToTop: false,
+    addToTop: true,
     showSource: true,
   );
 
-  /// The custom source songs are asked from; empty means the first enabled
-  /// one in the source list's order.
+  /// The custom source songs are asked from; empty until one is imported.
+  /// One source is active at a time — the reference has no per-source
+  /// switches.
   final String defaultSourceId;
 
   /// The rendition asked of a source.
@@ -119,7 +120,7 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     quality: _readQuality(),
     skipOnError: _readBool(_skipOnErrorKey) ?? true,
     autoplay: _readBool(_autoplayKey) ?? false,
-    addToTop: _readBool(_addToTopKey) ?? false,
+    addToTop: _readBool(_addToTopKey) ?? true,
     showSource: _readBool(_showSourceKey) ?? true,
   );
 
@@ -128,7 +129,7 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     for (final quality in MusicQuality.values) {
       if (quality.name == name) return quality;
     }
-    return MusicQuality.high;
+    return MusicQuality.standard;
   }
 
   static String? _readString(String key) {
@@ -148,8 +149,7 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     }
   }
 
-  /// Chooses the source songs are asked from; empty means the first
-  /// enabled one.
+  /// Chooses the source songs are asked from; empty means none.
   Future<void> setDefaultSource(String id) async {
     state = state.copyWith(defaultSourceId: id);
     await _writeString(_sourceKey, id);
@@ -189,10 +189,10 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
   Future<void> reset() async {
     state = MusicSettings.standard;
     await setDefaultSource('');
-    await setQuality(MusicQuality.high);
+    await setQuality(MusicQuality.standard);
     await setSkipOnError(value: true);
     await setAutoplay(value: false);
-    await setAddToTop(value: false);
+    await setAddToTop(value: true);
     await setShowSource(value: true);
   }
 

@@ -5,11 +5,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_iptv/live_iptv.dart';
-
 import 'package:pure_live/app/app.dart' show RouteNames;
-import 'package:pure_live/features/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
-import 'package:pure_live/features/iptv/views/iptv_guide_panel.dart' show IptvGuideRow, iptvDayLabel, iptvStartOfDay;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
+import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show IptvGuideRow, iptvDayLabel, iptvStartOfDay;
 import 'package:pure_live/shared/shared.dart' show cachedImage;
 
 /// The IPTV module's programme guide as a page of its own: the channels on

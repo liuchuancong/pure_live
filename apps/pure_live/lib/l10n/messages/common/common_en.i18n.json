@@ -33,5 +33,6 @@
   "newWindow": "New window",
   "show": "Show",
   "save": "Save",
-  "copied": "Copied"
+  "copied": "Copied",
+  "pipUnavailable": "Picture-in-picture is not available for this device or player engine."
 }

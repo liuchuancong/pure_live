@@ -4,9 +4,8 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
-
-import 'package:pure_live/features/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
 
 /// Opens the channel's guide: one day of programmes, the one on air marked
 /// with its progress, the past ones replayable where the playlist offers

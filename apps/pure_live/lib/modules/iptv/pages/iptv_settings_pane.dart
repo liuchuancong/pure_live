@@ -4,15 +4,15 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show EpgSourceX;
-import 'package:pure_live/features/iptv/controllers/iptv_auto_update.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_browse_settings.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_controller.dart' show iptvPlaylistIsRemote;
-import 'package:pure_live/features/iptv/controllers/iptv_epg_controller.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_sources_controller.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_user_agent.dart' show iptvUserAgentProvider;
-import 'package:pure_live/features/iptv/views/iptv_panels.dart' show syncAllIptvSources;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_auto_update.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvPlaylistIsRemote;
+import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_user_agent.dart' show iptvUserAgentProvider;
+import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show syncAllIptvSources;
 
 /// The IPTV module's own settings: the guide-update interval, the bulk
 /// automatic-update switch and the manual sync round, with the two subpages
@@ -74,7 +74,9 @@ final class IptvSettingsPane extends ConsumerWidget {
             title: t.iptv.updateInterval,
             description: t.iptv.autoUpdateHint,
             value: interval,
-            options: [for (final value in IptvUpdateInterval.values) DsSelectOption(value: value, label: value.label(t))],
+            options: [
+              for (final value in IptvUpdateInterval.values) DsSelectOption(value: value, label: value.label(t)),
+            ],
             onChanged: ref.read(iptvUpdateIntervalProvider.notifier).select,
           ),
         SettingsConfigRow(

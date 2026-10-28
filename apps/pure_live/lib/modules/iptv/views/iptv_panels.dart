@@ -1,8 +1,8 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_sources_controller.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
 
 /// The surface that holds a toolbar and a data table, drawn as one card:
 /// the toolbar sits over a hairline, the table underneath is transparent
@@ -24,23 +24,23 @@ final class IptvTablePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: DsBoxDecoration(
-        color: colors.surface,
+    return DsCard(
+      style: const DsCardStyle(padding: EdgeInsets.zero),
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(theme.radii.card),
-        shadows: theme.shadows.surface,
-      ),
-      child: Column(
-        mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8), child: toolbar),
-          SizedBox(height: 1, child: ColoredBox(color: colors.border)),
-          if (fill) Expanded(child: child) else child,
-        ],
+        child: Column(
+          mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
+              child: toolbar,
+            ),
+            const DsDivider(),
+            if (fill) Expanded(child: child) else child,
+          ],
+        ),
       ),
     );
   }

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show IptvLibrary, iptvGroupKeyOf;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
-import 'package:pure_live/features/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
 
 /// What the module's channel lists and zapping show: the four switches the
 /// my-tv reference puts in its settings dialog — the dial number, the

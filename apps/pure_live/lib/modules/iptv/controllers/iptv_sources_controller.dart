@@ -2,8 +2,8 @@ import 'dart:async' show StreamSubscription, unawaited;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_controller.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_epg_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
 
 /// What the playlist-source manager holds: the library's playlists and its
 /// channel count, the import in flight, the per-source operations running,

@@ -5,7 +5,8 @@ import 'package:live_iptv/live_iptv.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_user_agent.dart' show iptvUserAgentProvider, normalizedIptvUserAgent;
+import 'package:pure_live/modules/iptv/controllers/iptv_user_agent.dart'
+    show iptvUserAgentProvider, normalizedIptvUserAgent;
 
 /// The IPTV library over its shared JSON store (one namespace, one process).
 ///

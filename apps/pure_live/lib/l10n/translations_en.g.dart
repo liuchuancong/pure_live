@@ -473,6 +473,7 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 
 	// Translations
 	@override String get tabAll => 'All';
+	@override String get live => 'Live';
 	@override String get scopeLabel => 'Channel scope';
 	@override String get scopeAll => 'All channels';
 	@override String get scopeFavourites => 'Favourites';
@@ -641,6 +642,40 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String get browseReset => 'Restore the default browse display';
 	@override String get groupsEmpty => 'No groups yet — import a playlist first.';
 	@override String get groupsHint => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.';
+	@override String get recentTitle => 'Recently watched';
+	@override String recentCount({required Object count}) => '${count} channels';
+	@override String recentWatched({required Object time}) => 'Watched ${time}';
+	@override String get recentRemove => 'Remove from recent';
+	@override String get recentClear => 'Clear recently watched';
+	@override String get recentClearTitle => 'Clear the recently watched list?';
+	@override String get recentClearDesc => 'Only this device\'s records are deleted; favourites and channels stay.';
+	@override String get recentEmptyTitle => 'Nothing watched yet';
+	@override String get recentEmptyDescription => 'Channels you play appear here, so you can jump back to what was on.';
+	@override String get favouritesTitle => 'Favourite channels';
+	@override String favouritesCount({required Object count}) => '${count} favourites';
+	@override String get favouritesEmptyTitle => 'No favourite channels yet';
+	@override String get favouritesEmptyDescription => 'Tap the favourite mark in the channel list and it appears here.';
+	@override String get zapperTitle => 'Channels';
+	@override String get zapperOpen => 'Channel panel';
+	@override String get zapperGroups => 'Groups';
+	@override String get zapperChannels => 'Channels';
+	@override String get zapperProgrammes => 'Programmes';
+	@override String get zapperHint => 'Arrow keys to move, OK to play or replay, back to close.';
+	@override String get zapperEmptyGroup => 'No channels in this group';
+	@override String lineCount({required Object current, required Object total}) => 'Line ${current}/${total}';
+	@override String get aspectLabel => 'Aspect';
+	@override String get aspectAuto => 'Default';
+	@override String get aspect16x9 => '16:9';
+	@override String get aspect4x3 => '4:3';
+	@override String get aspectFill => 'Fill';
+	@override String get aspectZoom => 'Crop';
+	@override String get digitHint => 'Type a channel number';
+	@override String digitNoChannel({required Object number}) => 'No channel numbered ${number}';
+	@override String get reminderAction => 'Remind';
+	@override String get reminderCancelAction => 'Cancel reminder';
+	@override String reminderSet({required Object title}) => 'Reminder set for “${title}”';
+	@override String get reminderRemoved => 'Reminder cancelled';
+	@override String reminderStarted({required Object title}) => 'Starting now: ${title}';
 }
 
 // Path: multiview
@@ -693,8 +728,9 @@ class _Translations$music$en extends Translations$music$zh_CN {
 
 	// Translations
 	@override String get title => 'Music';
-	@override String get tagline => 'Songs, playlists and charts are on their way';
+	@override String get tagline => 'Search songs and listen online';
 	@override String get viewsLabel => 'Music views';
+	@override String get search => 'Search';
 	@override String get tabLibrary => 'Library';
 	@override String get tabPlaylists => 'Playlists';
 	@override String get tabCharts => 'Charts';
@@ -710,8 +746,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String sourcesReady({required Object count}) => '${count} custom sources ready';
 	@override String get settingsPlayback => 'Source and playback';
 	@override String get defaultSource => 'Default source';
-	@override String get defaultSourceDesc => 'The custom source a song is asked from first; Automatic takes the first enabled one.';
-	@override String get defaultSourceAuto => 'Automatic';
+	@override String get defaultSourceDesc => 'The custom source a song is asked from; one source is active at a time.';
+	@override String get defaultSourceEmpty => 'No source yet — import a script under Custom sources below.';
 	@override String get quality => 'Playback quality';
 	@override String get qualityDesc => 'The rendition asked of a source; a source that lacks it answers with the best it has.';
 	@override String get qualityStandard => '128K';
@@ -739,17 +775,53 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get importUrlHint => 'https://…/source.js';
 	@override String get importMissing => 'Paste a script or fill in a link first.';
 	@override String get importNotASource => 'This is not an lx-music source: the header comment has no @name, or the lx.on(\'request\', …) contract is missing.';
+	@override String get importDuplicate => 'This script is already imported.';
+	@override String importLimit({required Object count}) => 'At most ${count} custom sources; remove one first.';
 	@override String importDownloadFailed({required Object error}) => 'The script did not download: ${error}';
 	@override String importDone({required Object name}) => 'Imported "${name}"';
 	@override String importUpdated({required Object name}) => 'Updated "${name}"';
 	@override String get sourcesEmpty => 'No custom sources yet';
 	@override String get sourcesEmptyDesc => 'Import an lx-music custom-source script and it appears here.';
 	@override String get sourceNoDescription => 'The script carries no description.';
+	@override String get sourceUse => 'Use this source';
 	@override String get sourceDelete => 'Remove the source';
 	@override String sourceDeleteTitle({required Object name}) => 'Remove "${name}"?';
 	@override String get sourceDeleteDesc => 'Its script is deleted too; importing it again restores it.';
 	@override String sourceDeleted({required Object name}) => 'Removed "${name}"';
-	@override String sourcesCount({required Object count}) => '${count} enabled';
+	@override String sourcesCount({required Object count}) => '${count} imported';
+	@override String get searchHint => 'Search songs, artists or BV ids…';
+	@override String get searchIdleTitle => 'Search for a song';
+	@override String get searchIdleDescription => 'Type a title, an artist or a BV id and press enter.';
+	@override String get noResultsTitle => 'No songs found';
+	@override String get noResultsDescription => 'Try another keyword.';
+	@override String get searchFailed => 'The search failed';
+	@override String songsCount({required Object count}) => '${count} songs';
+	@override String get play => 'Play';
+	@override String get pause => 'Pause';
+	@override String get next => 'Next';
+	@override String get previous => 'Previous';
+	@override String get modeList => 'Play in order';
+	@override String get modeListLoop => 'Loop the list';
+	@override String get modeSingleLoop => 'Loop one song';
+	@override String get modeRandom => 'Shuffle';
+	@override String get favourite => 'Collect the song';
+	@override String get unfavourite => 'Remove from the collection';
+	@override String get mineFavourites => 'Collected';
+	@override String get mineRecent => 'Recently played';
+	@override String get mineEmptyTitle => 'No songs yet';
+	@override String get mineEmptyDescription => 'Songs you collect or play appear here.';
+	@override String get removeSong => 'Remove';
+	@override String get chartsFailed => 'The chart did not load';
+	@override String get queueTitle => 'Queue';
+	@override String get nowPlaying => 'Now playing';
+	@override String get volume => 'Volume';
+	@override String get progress => 'Progress';
+	@override String get lyrics => 'Lyrics';
+	@override String get lyricsEmpty => 'This song has no lyrics yet.';
+	@override String get openPlayer => 'Open the player';
+	@override String playingSource({required Object source}) => 'From ${source}';
+	@override String get loadMore => 'Load more';
+	@override String get clearRecent => 'Clear recently played';
 }
 
 // Path: navigation
@@ -778,7 +850,6 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get appearance => 'Appearance';
 	@override String get proxy => 'Network proxy';
 	@override String get user => 'User';
-	@override String get vodRank => 'Ranking';
 	@override String get vodRegions => 'Regions';
 	@override String get iptvSources => 'Subscriptions';
 	@override String get iptvGuide => 'Guide';
@@ -1391,6 +1462,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get danmakuFilter => 'Danmaku filter';
 	@override String get danmakuFilterDesc => 'Keyword, user and near-duplicate filtering.';
 	@override String get danmakuDisplayGroup => 'Danmaku display';
+	@override String get danmakuList => 'Danmaku list';
 	@override String get showFlyingDanmaku => 'Show flying danmaku on the video';
 	@override String get showFlyingDanmakuDesc => 'When off, danmaku only shows in the chat list.';
 	@override String get danmakuInteractionGroup => 'Danmaku interaction';
@@ -1403,6 +1475,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get danmakuDisplayDescription => 'Who the chat list shows, what it keeps and how it is set.';
 	@override String get danmakuPresetApplied => 'Danmaku preset applied';
 	@override String get danmakuPreviewHint => 'This is the real barrage engine drawing a sample with the current settings.';
+	@override String get danmakuPreview => 'Danmaku preview';
 	@override String get chatListGroup => 'Chat list content';
 	@override String get chatListLayoutGroup => 'Chat list layout';
 	@override String get danmakuFont => 'Danmaku font';
@@ -1427,6 +1500,12 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get styleSpeedDesc => 'How fast a danmaku crosses the picture, in pixels per second.';
 	@override String get styleArea => 'Top-screen height used';
 	@override String get styleAreaDesc => 'How much of the picture height danmaku may use (0–100%).';
+	@override String get fixedTopTitle => 'Pinned top danmaku';
+	@override String get fixedTopDescription => 'A platform\'s top-pinned message stays at the top of the picture; when off it only shows in the chat list.';
+	@override String get fixedBottomTitle => 'Pinned bottom danmaku';
+	@override String get fixedBottomDescription => 'A platform\'s bottom-pinned message stays at the bottom of the picture; when off it only shows in the chat list.';
+	@override String get fixedDurationTitle => 'Pinned danmaku duration';
+	@override String get fixedDurationDescription => 'How long a top or bottom pinned message stays, 2–10 seconds.';
 	@override String get styleOpacity => 'Opacity';
 	@override String get styleOpacityDesc => 'How solid the danmaku is against the picture; 100% hides nothing.';
 	@override String get styleStroke => 'Outline';
@@ -1558,7 +1637,9 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get mainSpacingDescription => 'The gap between two rows of cards in a grid.';
 	@override String get navVideo => 'Video';
 	@override String get vodPlayback => 'Video playback';
-	@override String get navVodPlayback => 'Playback behaviour';
+	@override String get navVodPlayback => 'Playback';
+	@override String get navVodInterface => 'Interface';
+	@override String get vodInterfaceDescription => 'What the video page shows: the details block switch.';
 	@override String get vodPlaybackDescription => 'The opening rate, what a finished part leads to, and the details under the picture.';
 	@override String get groupMusic => 'Music';
 	@override String get navMusic => 'Music';
@@ -1851,7 +1932,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get refreshThumbnails => 'Refresh covers';
 	@override String get refreshThumbnailsDesc => 'Periodically clears the image cache so covers, avatars and logos are downloaded again; history and follows stay.';
 	@override String get thumbnailRefreshInterval => 'Cover refresh interval';
-	@override String get navHomeMenuGroup => 'Home entries';
 	@override String get navHomeMenuTitle => 'Home menu';
 	@override String get navHomeMenuDescription => 'The home entries the sidebar, drawer and bottom bar show, and their order.';
 	@override String get editOrder => 'Edit order';
@@ -1859,10 +1939,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get unsavedOrderDraft => 'Unsaved order draft';
 	@override String get moveToTop => 'Move to top';
 	@override String get moveToBottom => 'Move to bottom';
-	@override String get navMenuHidden => 'Hidden';
 	@override String get navMenuKeepOne => 'Keep at least one menu';
-	@override String get multiviewVisible => 'Home entry: multi-view';
-	@override String get multiviewVisibleDesc => 'Hides the multi-view entry from the sidebar and phone drawer.';
 	@override String get groupTheme => 'Theme';
 	@override String get groupCards => 'Cards & lists';
 	@override String get groupLanguage => 'Language';
@@ -2468,12 +2545,47 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get noResultsDescription => 'Try another keyword.';
 	@override String get errorTitle => 'The videos did not load';
 	@override String get retry => 'Retry';
-	@override String get popular => 'Popular';
-	@override String get ranking => 'Ranking';
+	@override String get tabRecommend => 'Recommended';
+	@override String get tabPopular => 'Popular';
+	@override String get tabDynamics => 'Dynamics';
+	@override String get dynamicsLoginTitle => 'Sign in to see your dynamics';
+	@override String get dynamicsLoginDescription => 'The feed comes from the uploaders you follow and needs a Bilibili sign-in.';
+	@override String get signIn => 'Sign in to Bilibili';
+	@override String get dynamicsFailed => 'The dynamics did not load';
+	@override String get dynamicsEmptyTitle => 'No dynamics yet';
+	@override String get dynamicsEmptyDescription => 'Posts from the uploaders you follow appear here.';
+	@override String get loadMore => 'Load more';
 	@override String get regions => 'Regions';
 	@override String get search => 'Search';
+	@override String get home => 'Home';
+	@override String get personal => 'Personal';
+	@override String get live => 'Live';
+	@override String get searchKindVideo => 'Videos';
+	@override String get searchKindBangumi => 'Anime';
+	@override String get searchKindCinema => 'Films';
+	@override String get searchKindUser => 'Users';
+	@override String get searchKindLiveRoom => 'Live rooms';
+	@override String get living => 'Live';
+	@override String get fans => 'Followers';
+	@override String get videoCount => 'Videos';
+	@override String get liveFollowTitle => 'Following';
+	@override String get liveAreasTitle => 'Areas';
+	@override String get liveRecommendTitle => 'Recommended live';
+	@override String get liveEmptyTitle => 'No live rooms recommended';
+	@override String get liveEmptyDescription => 'Refresh in a moment to try again.';
 	@override String get refresh => 'Refresh';
-	@override String get regionAll => 'All';
+	@override String get regionEmptyDescription => 'This region has no recommendations right now.';
+	@override String get pgcTitle => 'Cinema';
+	@override String get pgcAnime => 'Anime';
+	@override String get pgcMovie => 'Movies';
+	@override String get pgcDocumentary => 'Documentaries';
+	@override String get pgcGuochuang => 'Guochuang';
+	@override String get pgcTv => 'TV series';
+	@override String get pgcVariety => 'Variety';
+	@override String get pgcEmptyDescription => 'Nothing in this catalogue right now.';
+	@override String get episodes => 'Episodes';
+	@override String get following => 'Following';
+	@override String get pictureOnly => 'Picture only';
 	@override String get sort => 'Sort';
 	@override String get sortTotalrank => 'Relevance';
 	@override String get sortClick => 'Most played';
@@ -2524,6 +2636,38 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get showDetailsDesc => 'Off keeps the page on the player, the parts and the related rail, hiding the uploader, the counts and the description.';
 	@override String get playbackReset => 'Restore default playback';
 	@override String get playbackResetDesc => 'Normal speed, the next part when one ends, details shown.';
+	@override String get personalTitle => 'My videos';
+	@override String get personalToView => 'Watch later';
+	@override String get personalHistory => 'History';
+	@override String get personalFavourites => 'Favourites';
+	@override String get personalFollowing => 'Following';
+	@override String get followingBangumi => 'Anime';
+	@override String get followingCinema => 'Cinema';
+	@override String personalCount({required Object count}) => '${count} videos';
+	@override String get signInNeededTitle => 'Sign in to see this list';
+	@override String get signInNeededDescription => 'This list lives on your Bilibili account.';
+	@override String get toViewEmptyTitle => 'Watch later is empty';
+	@override String get toViewEmptyDescription => 'Videos you mark as watch later on Bilibili appear here.';
+	@override String get followingEmptyTitle => 'Nothing followed yet';
+	@override String get followingEmptyDescription => 'The anime and cinema you follow on Bilibili appear here.';
+	@override String get comments => 'Comments';
+	@override String get commentsEmpty => 'No comments yet.';
+	@override String get commentsFailed => 'The comments did not load';
+	@override String get historyEmptyTitle => 'Nothing watched yet';
+	@override String get historyEmptyDescription => 'Videos you watch appear here with the position you stopped at.';
+	@override String get historyCompleted => 'Finished';
+	@override String historyProgress({required Object position, required Object total}) => '${position} / ${total}';
+	@override String get historyRemove => 'Remove from history';
+	@override String get clearHistory => 'Clear history';
+	@override String get clearHistoryTitle => 'Clear the watch history?';
+	@override String get clearHistoryDesc => 'Only this device\'s records are deleted; progress on Bilibili stays.';
+	@override String get favouritesEmptyTitle => 'No favourites yet';
+	@override String get favouritesEmptyDescription => 'Tap the heart on a video and it appears here.';
+	@override String get favouriteRemove => 'Remove from favourites';
+	@override String get saveVideo => 'Favourite';
+	@override String get savedVideo => 'Favourited';
+	@override String get saveAdded => 'Added to favourites';
+	@override String get saveRemoved => 'Removed from favourites';
 }
 
 // Path: wallpaper
@@ -2995,6 +3139,7 @@ extension on TranslationsEn {
 			'history.refreshFailed' => ({required int count}) => '${count} records could not be refreshed',
 			'history.openRoom' => 'Open the room',
 			'iptv.tabAll' => 'All',
+			'iptv.live' => 'Live',
 			'iptv.scopeLabel' => 'Channel scope',
 			'iptv.scopeAll' => 'All channels',
 			'iptv.scopeFavourites' => 'Favourites',
@@ -3156,15 +3301,49 @@ extension on TranslationsEn {
 			'iptv.browseChannelNumberDesc' => 'Prints the dial number beside the channel name.',
 			'iptv.browseReverse' => 'Reverse channel stepping',
 			'iptv.browseReverseDesc' => 'Makes the up key step down the list and the down key step up.',
-			'iptv.browseClock' => 'Show the time',
 			_ => null,
 		} ?? switch (path) {
+			'iptv.browseClock' => 'Show the time',
 			'iptv.browseClockDesc' => 'Draws the current clock beside the title while a channel plays.',
 			'iptv.browseProgrammeLine' => 'Show the current programme',
 			'iptv.browseProgrammeLineDesc' => 'Names what is on air or coming next under the channel name.',
 			'iptv.browseReset' => 'Restore the default browse display',
 			'iptv.groupsEmpty' => 'No groups yet — import a playlist first.',
 			'iptv.groupsHint' => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.',
+			'iptv.recentTitle' => 'Recently watched',
+			'iptv.recentCount' => ({required Object count}) => '${count} channels',
+			'iptv.recentWatched' => ({required Object time}) => 'Watched ${time}',
+			'iptv.recentRemove' => 'Remove from recent',
+			'iptv.recentClear' => 'Clear recently watched',
+			'iptv.recentClearTitle' => 'Clear the recently watched list?',
+			'iptv.recentClearDesc' => 'Only this device\'s records are deleted; favourites and channels stay.',
+			'iptv.recentEmptyTitle' => 'Nothing watched yet',
+			'iptv.recentEmptyDescription' => 'Channels you play appear here, so you can jump back to what was on.',
+			'iptv.favouritesTitle' => 'Favourite channels',
+			'iptv.favouritesCount' => ({required Object count}) => '${count} favourites',
+			'iptv.favouritesEmptyTitle' => 'No favourite channels yet',
+			'iptv.favouritesEmptyDescription' => 'Tap the favourite mark in the channel list and it appears here.',
+			'iptv.zapperTitle' => 'Channels',
+			'iptv.zapperOpen' => 'Channel panel',
+			'iptv.zapperGroups' => 'Groups',
+			'iptv.zapperChannels' => 'Channels',
+			'iptv.zapperProgrammes' => 'Programmes',
+			'iptv.zapperHint' => 'Arrow keys to move, OK to play or replay, back to close.',
+			'iptv.zapperEmptyGroup' => 'No channels in this group',
+			'iptv.lineCount' => ({required Object current, required Object total}) => 'Line ${current}/${total}',
+			'iptv.aspectLabel' => 'Aspect',
+			'iptv.aspectAuto' => 'Default',
+			'iptv.aspect16x9' => '16:9',
+			'iptv.aspect4x3' => '4:3',
+			'iptv.aspectFill' => 'Fill',
+			'iptv.aspectZoom' => 'Crop',
+			'iptv.digitHint' => 'Type a channel number',
+			'iptv.digitNoChannel' => ({required Object number}) => 'No channel numbered ${number}',
+			'iptv.reminderAction' => 'Remind',
+			'iptv.reminderCancelAction' => 'Cancel reminder',
+			'iptv.reminderSet' => ({required Object title}) => 'Reminder set for “${title}”',
+			'iptv.reminderRemoved' => 'Reminder cancelled',
+			'iptv.reminderStarted' => ({required Object title}) => 'Starting now: ${title}',
 			'multiview.layoutLabel' => 'Layout',
 			'multiview.selectHint' => 'Tap a pane to select it; only the selected pane plays sound.',
 			'multiview.selectedPane' => ({required Object index}) => 'Pane ${index} · sound',
@@ -3199,8 +3378,9 @@ extension on TranslationsEn {
 			'multiview.wallFailed' => 'The wall could not be read',
 			'multiview.pickerNoMatch' => 'No matching room',
 			'music.title' => 'Music',
-			'music.tagline' => 'Songs, playlists and charts are on their way',
+			'music.tagline' => 'Search songs and listen online',
 			'music.viewsLabel' => 'Music views',
+			'music.search' => 'Search',
 			'music.tabLibrary' => 'Library',
 			'music.tabPlaylists' => 'Playlists',
 			'music.tabCharts' => 'Charts',
@@ -3216,8 +3396,8 @@ extension on TranslationsEn {
 			'music.sourcesReady' => ({required Object count}) => '${count} custom sources ready',
 			'music.settingsPlayback' => 'Source and playback',
 			'music.defaultSource' => 'Default source',
-			'music.defaultSourceDesc' => 'The custom source a song is asked from first; Automatic takes the first enabled one.',
-			'music.defaultSourceAuto' => 'Automatic',
+			'music.defaultSourceDesc' => 'The custom source a song is asked from; one source is active at a time.',
+			'music.defaultSourceEmpty' => 'No source yet — import a script under Custom sources below.',
 			'music.quality' => 'Playback quality',
 			'music.qualityDesc' => 'The rendition asked of a source; a source that lacks it answers with the best it has.',
 			'music.qualityStandard' => '128K',
@@ -3245,17 +3425,53 @@ extension on TranslationsEn {
 			'music.importUrlHint' => 'https://…/source.js',
 			'music.importMissing' => 'Paste a script or fill in a link first.',
 			'music.importNotASource' => 'This is not an lx-music source: the header comment has no @name, or the lx.on(\'request\', …) contract is missing.',
+			'music.importDuplicate' => 'This script is already imported.',
+			'music.importLimit' => ({required Object count}) => 'At most ${count} custom sources; remove one first.',
 			'music.importDownloadFailed' => ({required Object error}) => 'The script did not download: ${error}',
 			'music.importDone' => ({required Object name}) => 'Imported "${name}"',
 			'music.importUpdated' => ({required Object name}) => 'Updated "${name}"',
 			'music.sourcesEmpty' => 'No custom sources yet',
 			'music.sourcesEmptyDesc' => 'Import an lx-music custom-source script and it appears here.',
 			'music.sourceNoDescription' => 'The script carries no description.',
+			'music.sourceUse' => 'Use this source',
 			'music.sourceDelete' => 'Remove the source',
 			'music.sourceDeleteTitle' => ({required Object name}) => 'Remove "${name}"?',
 			'music.sourceDeleteDesc' => 'Its script is deleted too; importing it again restores it.',
 			'music.sourceDeleted' => ({required Object name}) => 'Removed "${name}"',
-			'music.sourcesCount' => ({required Object count}) => '${count} enabled',
+			'music.sourcesCount' => ({required Object count}) => '${count} imported',
+			'music.searchHint' => 'Search songs, artists or BV ids…',
+			'music.searchIdleTitle' => 'Search for a song',
+			'music.searchIdleDescription' => 'Type a title, an artist or a BV id and press enter.',
+			'music.noResultsTitle' => 'No songs found',
+			'music.noResultsDescription' => 'Try another keyword.',
+			'music.searchFailed' => 'The search failed',
+			'music.songsCount' => ({required Object count}) => '${count} songs',
+			'music.play' => 'Play',
+			'music.pause' => 'Pause',
+			'music.next' => 'Next',
+			'music.previous' => 'Previous',
+			'music.modeList' => 'Play in order',
+			'music.modeListLoop' => 'Loop the list',
+			'music.modeSingleLoop' => 'Loop one song',
+			'music.modeRandom' => 'Shuffle',
+			'music.favourite' => 'Collect the song',
+			'music.unfavourite' => 'Remove from the collection',
+			'music.mineFavourites' => 'Collected',
+			'music.mineRecent' => 'Recently played',
+			'music.mineEmptyTitle' => 'No songs yet',
+			'music.mineEmptyDescription' => 'Songs you collect or play appear here.',
+			'music.removeSong' => 'Remove',
+			'music.chartsFailed' => 'The chart did not load',
+			'music.queueTitle' => 'Queue',
+			'music.nowPlaying' => 'Now playing',
+			'music.volume' => 'Volume',
+			'music.progress' => 'Progress',
+			'music.lyrics' => 'Lyrics',
+			'music.lyricsEmpty' => 'This song has no lyrics yet.',
+			'music.openPlayer' => 'Open the player',
+			'music.playingSource' => ({required Object source}) => 'From ${source}',
+			'music.loadMore' => 'Load more',
+			'music.clearRecent' => 'Clear recently played',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -3275,7 +3491,6 @@ extension on TranslationsEn {
 			'navigation.appearance' => 'Appearance',
 			'navigation.proxy' => 'Network proxy',
 			'navigation.user' => 'User',
-			'navigation.vodRank' => 'Ranking',
 			'navigation.vodRegions' => 'Regions',
 			'navigation.iptvSources' => 'Subscriptions',
 			'navigation.iptvGuide' => 'Guide',
@@ -3600,6 +3815,8 @@ extension on TranslationsEn {
 			'search.sortPlatform' => 'By platform',
 			'search.sortAudience' => 'By audience',
 			'search.sortFollowers' => 'By followers',
+			_ => null,
+		} ?? switch (path) {
 			'search.includeOffline' => 'Include offline',
 			'search.linkDetected' => 'Live room link detected',
 			'search.linkOpen' => 'Open room',
@@ -3671,8 +3888,6 @@ extension on TranslationsEn {
 			'settings.audioPageDescription' => 'Default volume, mute and background audio.',
 			'settings.picturePageDescription' => 'Fit, floating window and picture-in-picture.',
 			'settings.floatingWindowPageDescription' => 'The in-app floating window and the system picture-in-picture: size, position and pinning.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.pictureDisplayGroup' => 'Picture',
 			'settings.floatWindowGroup' => 'In-app floating window',
 			'settings.pipGroup' => 'System picture-in-picture',
@@ -3836,6 +4051,7 @@ extension on TranslationsEn {
 			'settings.danmakuFilter' => 'Danmaku filter',
 			'settings.danmakuFilterDesc' => 'Keyword, user and near-duplicate filtering.',
 			'settings.danmakuDisplayGroup' => 'Danmaku display',
+			'settings.danmakuList' => 'Danmaku list',
 			'settings.showFlyingDanmaku' => 'Show flying danmaku on the video',
 			'settings.showFlyingDanmakuDesc' => 'When off, danmaku only shows in the chat list.',
 			'settings.danmakuInteractionGroup' => 'Danmaku interaction',
@@ -3848,6 +4064,7 @@ extension on TranslationsEn {
 			'settings.danmakuDisplayDescription' => 'Who the chat list shows, what it keeps and how it is set.',
 			'settings.danmakuPresetApplied' => 'Danmaku preset applied',
 			'settings.danmakuPreviewHint' => 'This is the real barrage engine drawing a sample with the current settings.',
+			'settings.danmakuPreview' => 'Danmaku preview',
 			'settings.chatListGroup' => 'Chat list content',
 			'settings.chatListLayoutGroup' => 'Chat list layout',
 			'settings.danmakuFont' => 'Danmaku font',
@@ -3872,6 +4089,12 @@ extension on TranslationsEn {
 			'settings.styleSpeedDesc' => 'How fast a danmaku crosses the picture, in pixels per second.',
 			'settings.styleArea' => 'Top-screen height used',
 			'settings.styleAreaDesc' => 'How much of the picture height danmaku may use (0–100%).',
+			'settings.fixedTopTitle' => 'Pinned top danmaku',
+			'settings.fixedTopDescription' => 'A platform\'s top-pinned message stays at the top of the picture; when off it only shows in the chat list.',
+			'settings.fixedBottomTitle' => 'Pinned bottom danmaku',
+			'settings.fixedBottomDescription' => 'A platform\'s bottom-pinned message stays at the bottom of the picture; when off it only shows in the chat list.',
+			'settings.fixedDurationTitle' => 'Pinned danmaku duration',
+			'settings.fixedDurationDescription' => 'How long a top or bottom pinned message stays, 2–10 seconds.',
 			'settings.styleOpacity' => 'Opacity',
 			'settings.styleOpacityDesc' => 'How solid the danmaku is against the picture; 100% hides nothing.',
 			'settings.styleStroke' => 'Outline',
@@ -4003,7 +4226,9 @@ extension on TranslationsEn {
 			'settings.mainSpacingDescription' => 'The gap between two rows of cards in a grid.',
 			'settings.navVideo' => 'Video',
 			'settings.vodPlayback' => 'Video playback',
-			'settings.navVodPlayback' => 'Playback behaviour',
+			'settings.navVodPlayback' => 'Playback',
+			'settings.navVodInterface' => 'Interface',
+			'settings.vodInterfaceDescription' => 'What the video page shows: the details block switch.',
 			'settings.vodPlaybackDescription' => 'The opening rate, what a finished part leads to, and the details under the picture.',
 			'settings.groupMusic' => 'Music',
 			'settings.navMusic' => 'Music',
@@ -4104,6 +4329,8 @@ extension on TranslationsEn {
 			'settings.audioOutputAaudio' => 'AAudio (Android 8.0+, low latency)',
 			'settings.audioOutputOpensles' => 'OpenSL ES (Android legacy)',
 			'settings.audioOutputAudiounit' => 'AudioUnit (iOS / macOS)',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audioOutputWasapi' => 'WASAPI (Windows default, recommended)',
 			'settings.audioOutputWin32' => 'win32 (waveOut, legacy)',
 			'settings.audioOutputSdl' => 'SDL (cross-platform fallback)',
@@ -4185,8 +4412,6 @@ extension on TranslationsEn {
 			'settings.playerGuideEntryVoBody' => 'Where mpv draws the picture. libmpv renders into the Flutter texture (embedded, default); gpu/gpu-next/direct3d open a standalone mpv window (outside the app); null renders nothing.',
 			'settings.playerGuideEntryAoTitle' => '--ao',
 			'settings.playerGuideEntryAoBody' => 'Which system channel carries the sound. Windows: wasapi; Android: audiotrack/aaudio/opensles; null mutes.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntryPresetDefaultTitle' => 'Balanced (recommended)',
 			'settings.playerGuideEntryPresetDefaultBody' => 'Clears custom output and decoder picks and leaves the choice to mpv. The first choice on most devices.',
 			'settings.playerGuideEntryPresetAndroidCompatTitle' => 'Android hardware-decode compat',
@@ -4298,7 +4523,6 @@ extension on TranslationsEn {
 			'settings.refreshThumbnails' => 'Refresh covers',
 			'settings.refreshThumbnailsDesc' => 'Periodically clears the image cache so covers, avatars and logos are downloaded again; history and follows stay.',
 			'settings.thumbnailRefreshInterval' => 'Cover refresh interval',
-			'settings.navHomeMenuGroup' => 'Home entries',
 			'settings.navHomeMenuTitle' => 'Home menu',
 			'settings.navHomeMenuDescription' => 'The home entries the sidebar, drawer and bottom bar show, and their order.',
 			'settings.editOrder' => 'Edit order',
@@ -4306,10 +4530,7 @@ extension on TranslationsEn {
 			'settings.unsavedOrderDraft' => 'Unsaved order draft',
 			'settings.moveToTop' => 'Move to top',
 			'settings.moveToBottom' => 'Move to bottom',
-			'settings.navMenuHidden' => 'Hidden',
 			'settings.navMenuKeepOne' => 'Keep at least one menu',
-			'settings.multiviewVisible' => 'Home entry: multi-view',
-			'settings.multiviewVisibleDesc' => 'Hides the multi-view entry from the sidebar and phone drawer.',
 			'settings.groupTheme' => 'Theme',
 			'settings.groupCards' => 'Cards & lists',
 			'settings.groupLanguage' => 'Language',
@@ -4622,6 +4843,8 @@ extension on TranslationsEn {
 			'settings.portraitFullscreenGroup' => 'Portrait full screen',
 			'settings.portraitDisplayMode' => 'Picture mode',
 			'settings.portraitDisplayModeDesc' => 'Complete fits the whole picture; Ambient adds a soft backdrop; Balanced crops slightly; Cover fills the screen.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.portraitDanmakuMode' => 'Danmaku area',
 			'settings.portraitDanmakuModeDesc' => 'How much of the portrait full-screen surface flying danmaku may use.',
 			'settings.portraitRememberRoom' => 'Remember each room’s choice',
@@ -4699,8 +4922,6 @@ extension on TranslationsEn {
 			'settings.danmakuShowGifts' => 'Gifts in flying danmaku',
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',
-			_ => null,
-		} ?? switch (path) {
 			'settings.floatWindowSizeDesc' => 'The in-app floating window’s base size; a resize is remembered separately for landscape and portrait.',
 			'settings.floatWindowSmall' => 'Small',
 			'settings.floatWindowMedium' => 'Medium',
@@ -4881,12 +5102,47 @@ extension on TranslationsEn {
 			'vod.noResultsDescription' => 'Try another keyword.',
 			'vod.errorTitle' => 'The videos did not load',
 			'vod.retry' => 'Retry',
-			'vod.popular' => 'Popular',
-			'vod.ranking' => 'Ranking',
+			'vod.tabRecommend' => 'Recommended',
+			'vod.tabPopular' => 'Popular',
+			'vod.tabDynamics' => 'Dynamics',
+			'vod.dynamicsLoginTitle' => 'Sign in to see your dynamics',
+			'vod.dynamicsLoginDescription' => 'The feed comes from the uploaders you follow and needs a Bilibili sign-in.',
+			'vod.signIn' => 'Sign in to Bilibili',
+			'vod.dynamicsFailed' => 'The dynamics did not load',
+			'vod.dynamicsEmptyTitle' => 'No dynamics yet',
+			'vod.dynamicsEmptyDescription' => 'Posts from the uploaders you follow appear here.',
+			'vod.loadMore' => 'Load more',
 			'vod.regions' => 'Regions',
 			'vod.search' => 'Search',
+			'vod.home' => 'Home',
+			'vod.personal' => 'Personal',
+			'vod.live' => 'Live',
+			'vod.searchKindVideo' => 'Videos',
+			'vod.searchKindBangumi' => 'Anime',
+			'vod.searchKindCinema' => 'Films',
+			'vod.searchKindUser' => 'Users',
+			'vod.searchKindLiveRoom' => 'Live rooms',
+			'vod.living' => 'Live',
+			'vod.fans' => 'Followers',
+			'vod.videoCount' => 'Videos',
+			'vod.liveFollowTitle' => 'Following',
+			'vod.liveAreasTitle' => 'Areas',
+			'vod.liveRecommendTitle' => 'Recommended live',
+			'vod.liveEmptyTitle' => 'No live rooms recommended',
+			'vod.liveEmptyDescription' => 'Refresh in a moment to try again.',
 			'vod.refresh' => 'Refresh',
-			'vod.regionAll' => 'All',
+			'vod.regionEmptyDescription' => 'This region has no recommendations right now.',
+			'vod.pgcTitle' => 'Cinema',
+			'vod.pgcAnime' => 'Anime',
+			'vod.pgcMovie' => 'Movies',
+			'vod.pgcDocumentary' => 'Documentaries',
+			'vod.pgcGuochuang' => 'Guochuang',
+			'vod.pgcTv' => 'TV series',
+			'vod.pgcVariety' => 'Variety',
+			'vod.pgcEmptyDescription' => 'Nothing in this catalogue right now.',
+			'vod.episodes' => 'Episodes',
+			'vod.following' => 'Following',
+			'vod.pictureOnly' => 'Picture only',
 			'vod.sort' => 'Sort',
 			'vod.sortTotalrank' => 'Relevance',
 			'vod.sortClick' => 'Most played',
@@ -4937,6 +5193,38 @@ extension on TranslationsEn {
 			'vod.showDetailsDesc' => 'Off keeps the page on the player, the parts and the related rail, hiding the uploader, the counts and the description.',
 			'vod.playbackReset' => 'Restore default playback',
 			'vod.playbackResetDesc' => 'Normal speed, the next part when one ends, details shown.',
+			'vod.personalTitle' => 'My videos',
+			'vod.personalToView' => 'Watch later',
+			'vod.personalHistory' => 'History',
+			'vod.personalFavourites' => 'Favourites',
+			'vod.personalFollowing' => 'Following',
+			'vod.followingBangumi' => 'Anime',
+			'vod.followingCinema' => 'Cinema',
+			'vod.personalCount' => ({required Object count}) => '${count} videos',
+			'vod.signInNeededTitle' => 'Sign in to see this list',
+			'vod.signInNeededDescription' => 'This list lives on your Bilibili account.',
+			'vod.toViewEmptyTitle' => 'Watch later is empty',
+			'vod.toViewEmptyDescription' => 'Videos you mark as watch later on Bilibili appear here.',
+			'vod.followingEmptyTitle' => 'Nothing followed yet',
+			'vod.followingEmptyDescription' => 'The anime and cinema you follow on Bilibili appear here.',
+			'vod.comments' => 'Comments',
+			'vod.commentsEmpty' => 'No comments yet.',
+			'vod.commentsFailed' => 'The comments did not load',
+			'vod.historyEmptyTitle' => 'Nothing watched yet',
+			'vod.historyEmptyDescription' => 'Videos you watch appear here with the position you stopped at.',
+			'vod.historyCompleted' => 'Finished',
+			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
+			'vod.historyRemove' => 'Remove from history',
+			'vod.clearHistory' => 'Clear history',
+			'vod.clearHistoryTitle' => 'Clear the watch history?',
+			'vod.clearHistoryDesc' => 'Only this device\'s records are deleted; progress on Bilibili stays.',
+			'vod.favouritesEmptyTitle' => 'No favourites yet',
+			'vod.favouritesEmptyDescription' => 'Tap the heart on a video and it appears here.',
+			'vod.favouriteRemove' => 'Remove from favourites',
+			'vod.saveVideo' => 'Favourite',
+			'vod.savedVideo' => 'Favourited',
+			'vod.saveAdded' => 'Added to favourites',
+			'vod.saveRemoved' => 'Removed from favourites',
 			'wallpaper.title' => 'Random pictures',
 			'wallpaper.description' => 'Fetch a picture from a public random source by group; preview before applying.',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} sources',

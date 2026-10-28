@@ -3,9 +3,9 @@ import 'dart:async' show Timer, unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show EpgSourceX;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
-import 'package:pure_live/features/iptv/controllers/iptv_epg_controller.dart';
-import 'package:pure_live/features/iptv/controllers/iptv_sources_controller.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
 
 /// The intervals the guide updater offers, in the reference's own scale:
 /// six and twelve hours, a day, three days and a week.

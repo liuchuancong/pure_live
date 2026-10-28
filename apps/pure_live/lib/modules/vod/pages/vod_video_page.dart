@@ -7,15 +7,19 @@ import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_device/live_device.dart' show PlatformScreenOrientationService, ScreenOrientationService;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:live_vod/live_vod.dart';
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
-import 'package:pure_live/features/vod/controller/vod_controller.dart' show vodClientProvider;
-import 'package:pure_live/features/vod/controller/vod_settings.dart' show vodQualityProvider;
-import 'package:pure_live/features/vod/widgets/vod_widgets.dart' show VodVideoRow, vodDurationText;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
+import 'package:pure_live/modules/vod/controller/vod_library.dart';
+import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart';
+import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
+import 'package:pure_live/modules/vod/controller/vod_social.dart' show vodCommentsProvider;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoRow, vodDateText, vodDurationText;
 import 'package:pure_live/shared/shared.dart';
 
 /// One Bilibili archive's page: the player over media_core, the archive's
@@ -41,8 +45,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// The progressive mp4's default qn (720P); the source may serve lower.
   static const int _defaultQn = 64;
 
-  static const List<double> _speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
-
   VodDetail? _detail;
   List<VodVideo> _related = const [];
   VodPlayInfo? _play;
@@ -53,6 +55,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   final FocusNode _playFocus = FocusNode(debugLabel: 'vod-play');
   StreamSubscription<PlayerTransportState>? _transportSub;
   StreamSubscription<PlayerAdapterEvent>? _eventSub;
+  StreamSubscription<GeometryState>? _geometrySub;
   PlayerTransportState? _transport;
   DateTime _lastSave = DateTime.fromMillisecondsSinceEpoch(0);
   bool _gaveInitialFocus = false;
@@ -68,19 +71,43 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   double _volume = 1;
   double _speed = 1;
 
+  /// Whether the end of the current part has already been acted on, so the
+  /// station's finish action runs once per part.
+  bool _finished = false;
+
   /// The Android background-playback gate and the handle it paused.
   BackgroundPlaybackGate? _backgroundGate;
   PlayerId? _backgroundPausedHandle;
 
+  /// The picture's aspect as the engine last reported it: the fullscreen
+  /// orientation policy reads it to decide which way a phone turns.
+  double _aspectRatio = 0;
+
+  /// The phone's orientation lock (inert on a desktop).
+  final ScreenOrientationService _screenOrientation = const PlatformScreenOrientationService();
+
   /// The window's observer, kept for `dispose` where the provider scope may
   /// already be gone.
   RouteObserver<ModalRoute<void>>? _routeObserver;
+
+  // Captured while the page is alive; `ref` is refused by the time dispose
+  // runs, and the leaving page must still exit its presentation mode and
+  // release its handle.
+  late final RoomPresentationController _presentationNotifier;
+  late final PlayerKernel _kernel;
+
+  /// The presentation mode, followed through a manual listener for the same
+  /// reason: the leaving page reads its own field, not `ref`.
+  PresentationMode _presentationMode = PresentationMode.normal;
 
   bool get _effectivelyMuted => _muted || _globalMute;
 
   @override
   void initState() {
     super.initState();
+    _presentationNotifier = ref.read(roomPresentationProvider.notifier);
+    _kernel = ref.read(playerKernelProvider);
+    ref.listenManual(roomPresentationProvider, (_, next) => _presentationMode = next, fireImmediately: true);
     WidgetsBinding.instance.addObserver(this);
     _globalMute = ref.read(playbackSettingsProvider).globalMute;
     _volume = ref.read(playbackSettingsProvider.notifier).volume;
@@ -110,6 +137,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     // the source may still answer lower, and the menu follows what it
     // actually served.
     _qn = ref.read(vodQualityProvider).qn;
+    // The station's playback choices: the rate a video opens with and what
+    // a finished part leads to.
+    _speed = ref.read(vodPlaybackSettingsProvider).speed.value;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_load());
     });
@@ -153,12 +183,14 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     _disposed = true;
     unawaited(_transportSub?.cancel() ?? Future<void>.value());
     unawaited(_eventSub?.cancel() ?? Future<void>.value());
+    unawaited(_geometrySub?.cancel() ?? Future<void>.value());
+    _geometrySub = null;
     final handle = _handle;
     if (handle != null) {
-      if (ref.read(roomPresentationProvider) != PresentationMode.normal) {
-        unawaited(ref.read(roomPresentationProvider.notifier).exit(handle.id));
+      if (_presentationMode != PresentationMode.normal) {
+        unawaited(_presentationNotifier.exit(handle.id));
       }
-      unawaited(ref.read(playerKernelProvider).release(handle.id));
+      unawaited(_kernel.release(handle.id));
     }
     _playFocus.dispose();
     super.dispose();
@@ -227,6 +259,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       _silent = false;
       _transport = null;
       _dragSeconds = null;
+      _finished = false;
     });
     final client = ref.read(vodClientProvider);
     final kernel = ref.read(playerKernelProvider);
@@ -311,6 +344,17 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     // reused; the new handle gets its own subscriptions.
     unawaited(_transportSub?.cancel() ?? Future<void>.value());
     unawaited(_eventSub?.cancel() ?? Future<void>.value());
+    unawaited(_geometrySub?.cancel() ?? Future<void>.value());
+    _geometrySub = handle.geometryController.state.listen((state) {
+      final size = state.geometry.videoSize;
+      if (size.width <= 0 || size.height <= 0) return;
+      _aspectRatio = size.width / size.height;
+      // The fullscreen and compact-window drivers shape their surfaces from
+      // the picture's size. VOD used to feed them nothing, so the compact
+      // window kept the config's 16:9 and never locked to the video.
+      ref.read(fullscreenDriverProvider).onVideoSize(size.width, size.height);
+      ref.read(pipDriverProvider).onVideoSize(size.width, size.height);
+    });
     _transportSub = handle.playbackStream.listen((state) {
       if (!mounted) return;
       setState(() {
@@ -322,12 +366,46 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       _saveProgress();
     });
     _eventSub = handle.adapterEvents.listen((event) {
-      if (!mounted || event is! PlayerAdapterErrorEvent) return;
-      setState(() {
-        _opening = false;
-        _error = event.message;
-      });
+      if (!mounted) return;
+      switch (event) {
+        case final PlayerAdapterErrorEvent error:
+          setState(() {
+            _opening = false;
+            _error = error.message;
+          });
+        case PlayerAdapterCompleted():
+          unawaited(_handleFinished());
+        default:
+          break;
+      }
     });
+  }
+
+  /// What a part's end leads to — the reference's 播放结束动作. The engine
+  /// already sits on the last frame, so leaving it alone is the "pause"
+  /// choice; the others move the page.
+  Future<void> _handleFinished() async {
+    if (_finished) return;
+    _finished = true;
+    switch (ref.read(vodPlaybackSettingsProvider).finish) {
+      case VodFinishAction.pause:
+        break;
+      case VodFinishAction.nextPart:
+        final parts = _detail?.parts ?? const <VodPart>[];
+        final current = _part;
+        final index = parts.indexWhere((part) => part.cid == current?.cid);
+        if (index >= 0 && index + 1 < parts.length) {
+          await _openPart(parts[index + 1], resume: _resumeFor(parts[index + 1]));
+        }
+      case VodFinishAction.exit:
+        if (mounted) context.pop();
+      case VodFinishAction.playRelated:
+        final next = _related.isEmpty ? null : _related.first;
+        if (next == null) return;
+        final bvid = next.bvid ?? next.id;
+        if (bvid.isEmpty) return;
+        unawaited(context.push('/vod/$bvid'));
+    }
   }
 
   Future<void> _togglePlay() async {
@@ -449,16 +527,35 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   Future<void> _togglePip() async {
     final handle = _handle;
     if (handle == null) return;
-    await ref.read(roomPresentationProvider.notifier).togglePip(handle.id);
+    final accepted = await ref.read(roomPresentationProvider.notifier).togglePip(handle.id);
+    if (accepted || !mounted) return;
+    showDsToast(context: context, title: context.t.common.pipUnavailable);
   }
 
   void _leave() {
     final handle = _handle;
-    if (handle != null && ref.read(roomPresentationProvider) != PresentationMode.normal) {
+    // A phone's picture-in-picture window floats over the page; leaving the
+    // page is the way out of it (the system owns its own close).
+    if (handle != null &&
+        ref.read(roomPresentationProvider.notifier).modeOwnsWindow(ref.read(roomPresentationProvider))) {
       unawaited(ref.read(roomPresentationProvider.notifier).exit(handle.id));
       return;
     }
     context.pop();
+  }
+
+  /// Collects the archive, or drops it; the station's 个人 page lists what
+  /// this writes.
+  Future<void> _toggleFavourite() async {
+    final detail = _detail;
+    if (detail == null) return;
+    final added = await ref.read(vodFavouritesProvider.notifier).toggle(VodSavedVideo.ofDetail(detail));
+    if (!mounted) return;
+    showDsToast(
+      context: context,
+      title: added ? context.t.vod.saveAdded : context.t.vod.saveRemoved,
+      status: DsStatus.success,
+    );
   }
 
   String get _progressKey => 'vod.progress.${widget.bvid}';
@@ -469,6 +566,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       if (raw == null || raw.isEmpty) return null;
       final json = jsonDecode(raw);
       if (json is! Map) return null;
+      // A finished archive keeps its history entry but is not resumed.
+      if (json['completed'] == true) return null;
       final cid = (json['cid'] as num?)?.toInt();
       final seconds = (json['seconds'] as num?)?.toDouble();
       if (cid == null || seconds == null || seconds <= 0) return null;
@@ -478,8 +577,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     }
   }
 
-  /// Saves the part and position at most once every few seconds; a position
-  /// at the archive's end clears the entry instead of resuming there.
+  /// Saves the part and position at most once every few seconds. The entry is
+  /// also the history record the station's 个人 page reads, so it carries the
+  /// archive's metadata; the end of an archive marks it finished instead of
+  /// clearing it.
   void _saveProgress({bool force = false}) {
     final part = _part;
     final transport = _transport;
@@ -487,27 +588,34 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final total = transport.duration.inMilliseconds;
     final position = transport.position.inMilliseconds;
     if (total <= 0 || position <= 0) return;
-    if (position >= total - 5000) {
-      try {
-        unawaited(StoragePrefs.remove(_progressKey));
-      } on Object {
-        // A preference; a closed store loses it.
-      }
-      return;
-    }
     final now = DateTime.now();
     if (!force && now.difference(_lastSave) < const Duration(seconds: 5)) return;
     _lastSave = now;
+    final completed = position >= total - 5000;
+    final detail = _detail;
     try {
-      unawaited(StoragePrefs.setString(_progressKey, jsonEncode({'cid': part.cid, 'seconds': position / 1000})));
+      unawaited(
+        StoragePrefs.setString(
+          _progressKey,
+          jsonEncode({
+            'cid': part.cid,
+            'seconds': completed ? total / 1000 : position / 1000,
+            'title': detail?.title ?? part.title,
+            'cover': detail?.coverUrl,
+            'uploader': detail?.uploader,
+            'durationSeconds': total / 1000,
+            'updatedAt': now.millisecondsSinceEpoch,
+            if (completed) 'completed': true,
+          }),
+        ),
+      );
     } on Object {
-      // Same as above.
+      // A preference; a closed store loses it.
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final presentation = ref.watch(roomPresentationProvider);
     ref.listen(playbackSettingsProvider.select((settings) => settings.globalMute), (previous, next) {
       if (previous == next) return;
       if (mounted) setState(() => _globalMute = next);
@@ -545,10 +653,25 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         }
       });
     });
-    final immersive = presentation != PresentationMode.normal;
+    // The room page's own rule, here too: a phone entering system fullscreen
+    // asks the viewer's portrait policy which way it turns. The driver's exit
+    // path puts the lock back.
+    ref.listen(roomPresentationProvider, (previous, next) {
+      if (next != PresentationMode.fullscreen || previous == PresentationMode.fullscreen) return;
+      applyFullscreenOrientation(
+        _screenOrientation,
+        policy: ref.read(portraitSettingsProvider).fullscreenPolicy,
+        aspectRatio: _aspectRatio,
+      );
+    });
+    final presentation = ref.watch(roomPresentationProvider);
+    final presentationController = ref.read(roomPresentationProvider.notifier);
     final t = context.t;
     final detail = _detail;
     final colors = DsTheme.colorsOf(context);
+    // Only a mode that owns the app's window replaces this page's layout; a
+    // phone's picture-in-picture window floats over it.
+    final immersive = presentationController.modeOwnsWindow(presentation);
     if (immersive) {
       return Scaffold(backgroundColor: colors.canvas, body: _playerSurface(context, immersive: true));
     }
@@ -653,12 +776,13 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         : transport?.position ?? Duration.zero;
     final playing = transport?.isPlaying ?? false;
     final qualities = _play?.qualities ?? const <VodQuality>[];
+    final presentation = ref.watch(roomPresentationProvider);
     return ClipRRect(
       borderRadius: BorderRadius.circular(immersive ? 0 : DsTheme.of(context).radii.overlay),
       child: ColoredBox(
         color: colors.overlay,
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
+        child: _PictureBox(
+          immersive: immersive,
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -846,23 +970,25 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                                   ],
                                 ),
                               _PlayerMenu(
-                                label: _speed == 1 ? t.vod.speed : '${_speed}x',
+                                label: VodSpeedChoice.nearest(_speed).label(t),
                                 icon: DsIcons.timer,
                                 semanticLabel: t.vod.speed,
                                 compact: compact,
                                 items: [
-                                  for (final speed in _speeds)
+                                  for (final choice in VodSpeedChoice.values)
                                     DsMenuItem(
-                                      label: Text('${speed}x'),
-                                      checked: speed == _speed,
-                                      onPressed: () => unawaited(_setSpeed(speed)),
+                                      label: Text(choice.label(t)),
+                                      checked: choice.value == _speed,
+                                      onPressed: () => unawaited(_setSpeed(choice.value)),
                                     ),
                                 ],
                               ),
                               if (handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable)
                                 _PlayerIconButton(
-                                  icon: DsIcons.pictureInPicture,
-                                  label: t.vod.pip,
+                                  icon: presentation == PresentationMode.pip
+                                      ? DsIcons.pictureInPictureExit
+                                      : DsIcons.pictureInPicture,
+                                  label: presentation == PresentationMode.pip ? t.room.pipOff : t.vod.pip,
                                   onPressed: () => unawaited(_togglePip()),
                                   onDark: true,
                                 ),
@@ -918,6 +1044,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       (DsIcons.star, AudienceFormat.format(detail.favoriteCount), t.vod.favorites),
     ];
     final silent = _play?.silent ?? _silent;
+    // The station's own switch: the archive's details under the picture are
+    // what a viewer hides to keep the page on the parts and the rail.
+    final showDetails = ref.watch(vodPlaybackSettingsProvider).showDetails;
+    final saved = ref.watch(vodFavouritesProvider).any((video) => video.bvid == detail.bvid);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s12,
@@ -937,55 +1067,73 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   ),
           ),
         if (silent) DsAlert(status: DsStatus.warning, title: Text(t.vod.silentNotice)),
-        Text(detail.title, style: theme.typography.title.copyWith(color: colors.text)),
         Row(
           spacing: DsSpace.s8,
           children: [
-            ClipOval(
-              child: detail.uploaderAvatar == null
-                  ? SizedBox(
-                      width: 36,
-                      height: 36,
-                      child: ColoredBox(color: colors.control, child: const DsIcon(DsIcons.user)),
-                    )
-                  : DsImage(
-                      image: cachedImage(detail.uploaderAvatar!),
-                      width: 36,
-                      height: 36,
-                      aspectRatio: 1,
-                      semanticLabel: detail.uploader,
-                    ),
-            ),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s3,
-                children: [
-                  if ((detail.uploader ?? '').isNotEmpty)
-                    Text(detail.uploader!, style: theme.typography.body.copyWith(color: colors.text)),
-                  Text(t.vod.up, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-                ],
-              ),
+              child: Text(detail.title, style: theme.typography.title.copyWith(color: colors.text)),
+            ),
+            DsButton.icon(
+              variant: DsButtonVariant.ghost,
+              size: DsSize.sm,
+              semanticLabel: saved ? t.vod.savedVideo : t.vod.saveVideo,
+              onPressed: () => unawaited(_toggleFavourite()),
+              icon: DsIcon(DsIcons.heart, size: 18, color: saved ? colors.accent : colors.textMuted),
             ),
           ],
         ),
-        Wrap(
-          spacing: DsSpace.s16,
-          runSpacing: DsSpace.s8,
-          children: [
-            for (final (icon, value, label) in stats)
-              if (value != null && value.isNotEmpty)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: DsSpace.s4,
+        if (showDetails) ...[
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              ClipOval(
+                child: detail.uploaderAvatar == null
+                    ? SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: ColoredBox(color: colors.control, child: const DsIcon(DsIcons.user)),
+                      )
+                    : DsImage(
+                        image: cachedImage(detail.uploaderAvatar!),
+                        width: 36,
+                        height: 36,
+                        semanticLabel: detail.uploader,
+                      ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s3,
                   children: [
-                    DsIcon(icon, size: theme.sizes.iconSm, color: colors.textSubtle),
-                    Text(value, style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.text))),
-                    Text(label, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
+                    if ((detail.uploader ?? '').isNotEmpty)
+                      Text(detail.uploader!, style: theme.typography.body.copyWith(color: colors.text)),
+                    Text(t.vod.up, style: theme.typography.caption.copyWith(color: colors.textMuted)),
                   ],
                 ),
-          ],
-        ),
+              ),
+            ],
+          ),
+          Wrap(
+            spacing: DsSpace.s16,
+            runSpacing: DsSpace.s8,
+            children: [
+              for (final (icon, value, label) in stats)
+                if (value != null && value.isNotEmpty)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: DsSpace.s4,
+                    children: [
+                      DsIcon(icon, size: theme.sizes.iconSm, color: colors.textSubtle),
+                      Text(
+                        value,
+                        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.text)),
+                      ),
+                      Text(label, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
+                    ],
+                  ),
+            ],
+          ),
+        ],
         if (detail.parts.length > 1)
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1008,13 +1156,16 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               ),
             ],
           ),
-        Text(t.vod.description, style: theme.typography.title.copyWith(color: colors.text)),
-        Text(
-          detail.description.isEmpty ? t.vod.noDescription : detail.description,
-          maxLines: 6,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography.body.copyWith(color: colors.textMuted),
-        ),
+        if (showDetails) ...[
+          Text(t.vod.description, style: theme.typography.title.copyWith(color: colors.text)),
+          Text(
+            detail.description.isEmpty ? t.vod.noDescription : detail.description,
+            maxLines: 6,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.body.copyWith(color: colors.textMuted),
+          ),
+          if (detail.aid > 0) _CommentsSection(aid: detail.aid, total: detail.danmakuCount),
+        ],
       ],
     );
   }
@@ -1129,6 +1280,172 @@ final class _PlayerMenu extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+/// The picture's box: a fixed 16:9 card inline, the container's own shape in
+/// the immersive modes.
+///
+/// The compact window is already shaped to the video, and a phone turned
+/// landscape has no room for bars around a card; a fixed 16:9 box there would
+/// letterbox the picture a second time inside it.
+final class _PictureBox extends StatelessWidget {
+  const _PictureBox({required this.immersive, required this.child});
+
+  /// Whether the surface takes the container's shape (the immersive modes).
+  final bool immersive;
+
+  /// The picture and its controls.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => immersive ? child : AspectRatio(aspectRatio: 16 / 9, child: child);
+}
+
+/// The archive's comments: the hot list, twenty at a time, read on demand.
+final class _CommentsSection extends ConsumerStatefulWidget {
+  const _CommentsSection({required this.aid, this.total});
+
+  final int aid;
+  final int? total;
+
+  @override
+  ConsumerState<_CommentsSection> createState() => _CommentsSectionState();
+}
+
+final class _CommentsSectionState extends ConsumerState<_CommentsSection> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(ref.read(vodCommentsProvider.notifier).open(widget.aid));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final state = ref.watch(vodCommentsProvider.select((comments) => comments[widget.aid]));
+    final comments = state?.comments ?? const <VodComment>[];
+    final controller = ref.read(vodCommentsProvider.notifier);
+    final count = state?.total ?? widget.total ?? 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        Text(
+          '${t.vod.comments} · ${AudienceFormat.format(count)}',
+          style: theme.typography.title.copyWith(color: colors.text),
+        ),
+        if (state?.error case final failure?)
+          DsAlert(
+            status: DsStatus.danger,
+            title: Text(t.vod.commentsFailed),
+            description: Text(failure.message),
+            action: DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: () => unawaited(controller.refresh(widget.aid)),
+              child: Text(t.vod.retry),
+            ),
+          ),
+        if (state != null && state.loading && comments.isEmpty)
+          const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)))
+        else if (state != null && state.error == null && comments.isEmpty)
+          Text(t.vod.commentsEmpty, style: theme.typography.body.copyWith(color: colors.textMuted)),
+        for (final comment in comments) _CommentRow(comment: comment),
+        if ((state?.hasMore ?? false) && comments.isNotEmpty)
+          Center(
+            child: (state?.loading ?? false)
+                ? const DsSpinner(style: DsSpinnerStyle(size: 24))
+                : DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: () => unawaited(controller.loadMore(widget.aid)),
+                    child: Text(t.vod.loadMore),
+                  ),
+          ),
+      ],
+    );
+  }
+}
+
+/// One comment: the author's avatar and name, when, the words, and the likes.
+final class _CommentRow extends StatelessWidget {
+  const _CommentRow({required this.comment});
+
+  final VodComment comment;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final avatar = comment.avatar;
+    final posted = comment.createdAt;
+    final likes = comment.likeCount ?? 0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: DsSpace.s8,
+        children: [
+          DsAvatar(
+            initials: comment.author,
+            image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar),
+            size: DsSize.xs,
+            toneIndex: DsAvatar.toneFor(comment.author),
+            semanticLabel: comment.author,
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: DsSpace.s3,
+              children: [
+                Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        comment.author,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                    ),
+                    if (posted != null)
+                      Text(
+                        vodDateText(posted),
+                        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                      ),
+                  ],
+                ),
+                Text(comment.message, style: theme.typography.body.copyWith(color: colors.text)),
+                Row(
+                  spacing: DsSpace.s4,
+                  children: [
+                    DsIcon(DsIcons.thumbsUp, size: theme.sizes.iconXs, color: colors.textSubtle),
+                    Text(
+                      AudienceFormat.format(likes),
+                      style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                    ),
+                    if ((comment.replyCount ?? 0) > 0) ...[
+                      const SizedBox(width: DsSpace.s8),
+                      DsIcon(DsIcons.messageCircle, size: theme.sizes.iconXs, color: colors.textSubtle),
+                      Text(
+                        AudienceFormat.format(comment.replyCount ?? 0),
+                        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

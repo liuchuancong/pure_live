@@ -6,9 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show SiteIds;
 import 'package:pure_live/features/account/account.dart';
 import 'package:pure_live/features/settings/settings.dart';
-import 'package:pure_live/features/vod/controller/vod_playback_settings.dart';
-import 'package:pure_live/features/vod/controller/vod_settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart';
+import 'package:pure_live/modules/vod/controller/vod_settings.dart';
 
 /// The Bilibili station's own settings: the Bilibili account the station
 /// reads (and only that account — the live platforms' sign-ins stay in the
@@ -42,15 +42,19 @@ final class VodSettingsPane extends ConsumerWidget {
             ),
           ],
         ),
-        const DsListSection(children: [SettingsChildEntry(child: SettingsSection.vodPlayback)]),
+        const DsListSection(
+          children: [
+            SettingsChildEntry(child: SettingsSection.vodPlayback),
+            SettingsChildEntry(child: SettingsSection.vodInterface),
+          ],
+        ),
       ],
     );
   }
 }
 
-/// The newBV reference's playback page: the rate a video opens with, what a
-/// finished part leads to, and whether the archive's details sit under the
-/// picture. The video page reads all three where it plays.
+/// The newBV reference's playback page: the rate a video opens with and what
+/// a finished part leads to. The video page reads both where it plays.
 final class VodPlaybackPane extends ConsumerWidget {
   /// The pane shown under Settings → Bilibili video → 播放行为.
   const VodPlaybackPane({super.key});
@@ -86,15 +90,6 @@ final class VodPlaybackPane extends ConsumerWidget {
               ],
               onChanged: (action) => unawaited(controller.setFinish(action)),
             ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.info),
-              title: t.vod.showDetails,
-              description: t.vod.showDetailsDesc,
-              control: DsSwitch(
-                value: settings.showDetails,
-                onChanged: (value) => unawaited(controller.setShowDetails(value: value)),
-              ),
-            ),
           ],
         ),
         DsListSection(
@@ -106,6 +101,33 @@ final class VodPlaybackPane extends ConsumerWidget {
               onPressed: () => unawaited(controller.reset()),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+/// The reference's interface page: whether the archive's details sit under
+/// the picture. The video page reads it where it paints.
+final class VodInterfacePane extends ConsumerWidget {
+  /// The pane shown under Settings → Bilibili video → 界面设置.
+  const VodInterfacePane({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final settings = ref.watch(vodPlaybackSettingsProvider);
+    final controller = ref.read(vodPlaybackSettingsProvider.notifier);
+    return DsListSection(
+      children: [
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.info),
+          title: t.vod.showDetails,
+          description: t.vod.showDetailsDesc,
+          control: DsSwitch(
+            value: settings.showDetails,
+            onChanged: (value) => unawaited(controller.setShowDetails(value: value)),
+          ),
         ),
       ],
     );

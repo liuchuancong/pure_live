@@ -18,7 +18,6 @@ final class MusicCustomSource {
     this.author = '',
     this.version = '',
     this.homepage = '',
-    this.enabled = true,
   });
 
   /// Reads a stored entry; null when the entry is damaged.
@@ -37,7 +36,6 @@ final class MusicCustomSource {
       author: json['author'] is String ? json['author'] as String : '',
       version: json['version'] is String ? json['version'] as String : '',
       homepage: json['homepage'] is String ? json['homepage'] as String : '',
-      enabled: json['enabled'] != false,
       importedAt: DateTime.fromMillisecondsSinceEpoch(importedAt),
     );
   }
@@ -63,15 +61,11 @@ final class MusicCustomSource {
   /// The script's `@homepage`.
   final String homepage;
 
-  /// Whether the module may ask this source for a song; disabling keeps the
-  /// script without offering it.
-  final bool enabled;
-
   /// When it was imported.
   final DateTime importedAt;
 
-  /// A copy with the identity or the enabled flag replaced.
-  MusicCustomSource copyWith({String? id, bool? enabled, DateTime? importedAt}) => MusicCustomSource(
+  /// A copy with the identity replaced.
+  MusicCustomSource copyWith({String? id, DateTime? importedAt}) => MusicCustomSource(
     id: id ?? this.id,
     name: name,
     script: script,
@@ -79,7 +73,6 @@ final class MusicCustomSource {
     author: author,
     version: version,
     homepage: homepage,
-    enabled: enabled ?? this.enabled,
     importedAt: importedAt ?? this.importedAt,
   );
 
@@ -92,7 +85,6 @@ final class MusicCustomSource {
     'author': author,
     'version': version,
     'homepage': homepage,
-    'enabled': enabled,
     'importedAt': importedAt.millisecondsSinceEpoch,
   };
 
@@ -130,6 +122,9 @@ final class MusicCustomSource {
   }
 }
 
+/// How many imported sources the module keeps — the reference's own cap.
+const int kMusicSourceLimit = 20;
+
 /// Why a script was rejected.
 enum MusicSourceFailureReason {
   /// Nothing was pasted, or the address answered an empty body.
@@ -137,6 +132,12 @@ enum MusicSourceFailureReason {
 
   /// No header comment with a name, or no `lx.on('request', …)`.
   notASource,
+
+  /// An identical script is already imported.
+  duplicate,
+
+  /// The list already holds [kMusicSourceLimit] sources.
+  limit,
 }
 
 /// A rejected import, carrying the reason the panes word.
@@ -186,8 +187,12 @@ final class MusicSourcesController extends Notifier<List<MusicCustomSource>> {
   /// Adds [script], or replaces the source it names.
   Future<MusicSourceImport> importScript(String script) async {
     if (script.trim().isEmpty) throw const MusicSourceFailure(MusicSourceFailureReason.empty);
+    if (state.length >= kMusicSourceLimit) throw const MusicSourceFailure(MusicSourceFailureReason.limit);
     final parsed = MusicCustomSource.parse(script, id: '');
     if (parsed == null) throw const MusicSourceFailure(MusicSourceFailureReason.notASource);
+    if (state.any((source) => source.script == script)) {
+      throw const MusicSourceFailure(MusicSourceFailureReason.duplicate);
+    }
     MusicCustomSource? existing;
     for (final source in state) {
       if (source.name == parsed.name) {
@@ -198,7 +203,6 @@ final class MusicSourcesController extends Notifier<List<MusicCustomSource>> {
     final source = parsed.copyWith(
       id: existing?.id ?? '${DateTime.now().microsecondsSinceEpoch}',
       importedAt: existing?.importedAt,
-      enabled: existing?.enabled ?? parsed.enabled,
     );
     state = existing == null
         ? [...state, source]
@@ -211,15 +215,6 @@ final class MusicSourcesController extends Notifier<List<MusicCustomSource>> {
       source: source,
       outcome: existing == null ? MusicSourceImportOutcome.added : MusicSourceImportOutcome.updated,
     );
-  }
-
-  /// Offers or withholds the source named by `id` from the module.
-  Future<void> setEnabled(String id, {required bool enabled}) async {
-    state = [
-      for (final source in state)
-        if (source.id == id) source.copyWith(enabled: enabled) else source,
-    ];
-    await _save();
   }
 
   /// Removes the source and its script.
