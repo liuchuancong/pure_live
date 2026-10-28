@@ -11,8 +11,10 @@ import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -28,7 +30,9 @@ import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadc
 import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadcast_link_resolver.dart';
 import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadcast_playback_provider.dart';
 import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadcast_room_provider.dart';
+import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadcast_room_refresh.dart';
 import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadcast_search_provider.dart';
+import 'package:live_sites/src/platforms/steambroadcast/capabilities/steambroadcast_status_check.dart';
 import 'package:live_sites/src/platforms/steambroadcast/danmaku/steambroadcast_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/steambroadcast/danmaku/steambroadcast_danmaku_session.dart';
 import 'package:live_sites/src/platforms/steambroadcast/parsers/steambroadcast_failure.dart';
@@ -433,6 +437,8 @@ final class SteambroadcastSite implements LiveSite {
   SteambroadcastPlaybackProvider? _playback;
   SteambroadcastDanmakuProvider? _danmaku;
   SteambroadcastLinkResolver? _link;
+  SteambroadcastRoomRefresh? _refresh;
+  SteambroadcastStatusCheck? _status;
 
   /// The capability of type [T], or null when Steam Broadcast does not
   /// support it (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -445,6 +451,8 @@ final class SteambroadcastSite implements LiveSite {
     final playback = _playback ??= SteambroadcastPlaybackProvider(site: this);
     final danmaku = _danmaku ??= SteambroadcastDanmakuProvider(site: this);
     final link = _link ??= SteambroadcastLinkResolver(site: this);
+    final refresh = _refresh ??= SteambroadcastRoomRefresh(site: this);
+    final status = _status ??= SteambroadcastStatusCheck(refresh: refresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -453,6 +461,8 @@ final class SteambroadcastSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }
