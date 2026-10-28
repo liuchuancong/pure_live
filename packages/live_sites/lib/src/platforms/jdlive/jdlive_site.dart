@@ -11,8 +11,10 @@ import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -27,7 +29,9 @@ import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_discovery_pr
 import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_link_resolver.dart';
 import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_playback_provider.dart';
 import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_room_provider.dart';
+import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_room_refresh.dart';
 import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_search_provider.dart';
+import 'package:live_sites/src/platforms/jdlive/capabilities/jdlive_status_check.dart';
 import 'package:live_sites/src/platforms/jdlive/danmaku/jdlive_danmaku_session.dart';
 import 'package:live_sites/src/platforms/jdlive/jdlive_manifest.dart';
 import 'package:live_sites/src/platforms/jdlive/parsers/jdlive_failure.dart';
@@ -346,6 +350,8 @@ final class JdliveSite implements LiveSite {
   JdlivePlaybackProvider? _playback;
   JdliveDanmakuProvider? _danmaku;
   JdliveLinkResolver? _link;
+  JdliveRoomRefresh? _refresh;
+  JdliveStatusCheck? _status;
 
   /// The capability of type [T], or null when JD Live does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -358,6 +364,8 @@ final class JdliveSite implements LiveSite {
     final playback = _playback ??= JdlivePlaybackProvider(site: this);
     final danmaku = _danmaku ??= JdliveDanmakuProvider(site: this);
     final link = _link ??= JdliveLinkResolver(site: this);
+    final refresh = _refresh ??= JdliveRoomRefresh(site: this);
+    final status = _status ??= JdliveStatusCheck(refresh: refresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -366,6 +374,8 @@ final class JdliveSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }
