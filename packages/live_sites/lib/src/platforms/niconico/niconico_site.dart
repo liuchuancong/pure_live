@@ -4,8 +4,10 @@ import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -20,7 +22,9 @@ import 'package:live_sites/src/platforms/niconico/capabilities/niconico_discover
 import 'package:live_sites/src/platforms/niconico/capabilities/niconico_link_resolver.dart';
 import 'package:live_sites/src/platforms/niconico/capabilities/niconico_playback_provider.dart';
 import 'package:live_sites/src/platforms/niconico/capabilities/niconico_room_provider.dart';
+import 'package:live_sites/src/platforms/niconico/capabilities/niconico_room_refresh.dart';
 import 'package:live_sites/src/platforms/niconico/capabilities/niconico_search_provider.dart';
+import 'package:live_sites/src/platforms/niconico/capabilities/niconico_status_check.dart';
 import 'package:live_sites/src/platforms/niconico/danmaku/niconico_danmaku_session.dart';
 import 'package:live_sites/src/platforms/niconico/danmaku/niconico_seat_session.dart';
 import 'package:live_sites/src/platforms/niconico/niconico_manifest.dart';
@@ -218,6 +222,8 @@ final class NiconicoSite implements LiveSite {
   NiconicoPlaybackProvider? _playback;
   NiconicoDanmakuProvider? _danmaku;
   NiconicoLinkResolver? _link;
+  NiconicoRoomRefresh? _refresh;
+  NiconicoStatusCheck? _status;
 
   /// The capability of type [T], or null when niconico does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -230,6 +236,8 @@ final class NiconicoSite implements LiveSite {
     final playback = _playback ??= NiconicoPlaybackProvider(site: this);
     final danmaku = _danmaku ??= NiconicoDanmakuProvider(site: this);
     final link = _link ??= NiconicoLinkResolver(site: this);
+    final refresh = _refresh ??= NiconicoRoomRefresh(site: this);
+    final status = _status ??= NiconicoStatusCheck(refresh: refresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -238,6 +246,8 @@ final class NiconicoSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }

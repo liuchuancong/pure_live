@@ -277,7 +277,12 @@ abstract final class NiconicoRoomParser {
     return LiveRoom.normalized(
       platform: _site,
       roomId: watch.room,
-      content: RoomContent.of(title: watch.title, coverUrl: watch.cover ?? '', introduction: watch.description),
+      content: RoomContent.of(
+        title: watch.title,
+        coverUrl: watch.cover ?? '',
+        introduction: watch.description,
+        notice: notice(watch),
+      ),
       anchor: watch.broadcaster.isEmpty
           ? null
           : LiveAnchor.normalized(
@@ -295,6 +300,36 @@ abstract final class NiconicoRoomParser {
       links: RoomLinks.of(webUrl: NiconicoEndpoints.watchPage(watch.room).toString()),
       runtime: RoomRuntime.of(streamHandle: watch, danmakuHandle: watch),
     );
+  }
+
+  /// The notice parts of a watch page (3.x's zh.json text), by key. The
+  /// program-scope part leaves out 3.x's closing "；弹幕暂未接入": comments
+  /// are connected.
+  static const Map<String, String> noticeText = {
+    'scheduled': '节目尚未开始。',
+    'loginRequired': '此节目要求登录官方站点。',
+    'regionRestricted': '此节目设有地区访问限制。',
+    'denied': '此节目的当前观看权限受限。',
+    'programScope': '收藏对应本次节目，主播的新节目需重新添加。',
+  };
+
+  /// The room's notice: that a scheduled program has not started, why an
+  /// on-air program an anonymous viewer cannot watch, and — for a program
+  /// room — that the follow belongs to this broadcast; null when none
+  /// applies.
+  static String? notice(NiconicoWatch watch) {
+    final restriction = switch (watch.access) {
+      NiconicoAccess.loginRequired => noticeText['loginRequired'],
+      NiconicoAccess.regionRestricted => noticeText['regionRestricted'],
+      NiconicoAccess.denied => noticeText['denied'],
+      NiconicoAccess.allowed => null,
+    };
+    final text = [
+      if (watch.status == NiconicoProgramStatus.scheduled) noticeText['scheduled']!,
+      if (watch.isOnAir && restriction != null) restriction,
+      if (NiconicoEndpoints.isProgramId(watch.room)) noticeText['programScope']!,
+    ].join(' ');
+    return text.isEmpty ? null : text;
   }
 
   // Lists ---------------------------------------------------------------------

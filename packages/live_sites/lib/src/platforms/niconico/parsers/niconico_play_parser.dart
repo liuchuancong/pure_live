@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:live_sites/src/common/hls/hls_master.dart';
 import 'package:live_sites/src/models/enums/live_play_format_source.dart';
+import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_lease/live_play_lease.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/play/play_geometry/play_geometry.dart';
 import 'package:live_sites/src/platforms/niconico/api/niconico_endpoints.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_failure.dart';
 import 'package:live_sites/src/platforms/niconico/parsers/niconico_json.dart';
@@ -114,9 +116,17 @@ final class NiconicoGrant {
   String toString() => 'NiconicoGrant(${uri.host}, $quality, ${_cookies.length} cookies)';
 }
 
-/// One video variant of the master playlist: its resolution, its `BANDWIDTH`
-/// and the variant playlist URL, resolved against the master.
-typedef NiconicoVariant = ({String url, int width, int height, int bandwidth});
+/// One video variant of the master playlist: its resolution, frame rate the
+/// `CODECS` names, its `BANDWIDTH` and the variant playlist URL, resolved
+/// against the master.
+typedef NiconicoVariant = ({
+  String url,
+  int width,
+  int height,
+  int bandwidth,
+  LiveStreamCodec? codec,
+  double frameRate,
+});
 
 /// Pure parsing of niconico's playback side: the seat's `stream` message
 /// (protocol `hls`, the master URI, `availableQualities` and the path-scoped
@@ -298,7 +308,14 @@ abstract final class NiconicoPlayParser {
         continue;
       }
       final key = '${width}x$height@$bandwidth';
-      variants[key] = (url: '$url', width: width, height: height, bandwidth: bandwidth);
+      variants[key] = (
+        url: '$url',
+        width: width,
+        height: height,
+        bandwidth: bandwidth,
+        codec: hlsVideoCodecOf(entry.codecs),
+        frameRate: entry.frameRate ?? 0,
+      );
     }
     if (variants.isEmpty) {
       throw const NiconicoFailure(NiconicoFailureKind.streamUnavailable, 'master: no video variant');
@@ -321,6 +338,7 @@ abstract final class NiconicoPlayParser {
           label: '${variant.width}x${variant.height}',
           qualityId: '${variant.width}x${variant.height}@${variant.bandwidth}',
           platformOrder: total - index,
+          codec: variant.codec,
         ),
     ];
   }
@@ -360,6 +378,13 @@ abstract final class NiconicoPlayParser {
         },
         lineLabel: grant.uri.host,
         lease: lease(expiresAt: grant.leaseExpiresAt, now: at),
+        codec: variant.codec,
+        geometry: PlayGeometry.of(
+          width: variant.width,
+          height: variant.height,
+          frameRate: variant.frameRate >= 1 ? variant.frameRate.round() : null,
+          bitrateKbps: variant.bandwidth ~/ 1000,
+        ),
       ),
     ];
   }
