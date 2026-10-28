@@ -4,12 +4,16 @@ import android.os.Build
 import android.os.Bundle
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 /**
  * The app's activity.
+ *
+ * `AudioServiceActivity` is what links the activity to audio_service's shared
+ * engine: without it the background service cannot reach the Dart side, and
+ * the music notification and lock-screen controls stay dead.
  *
  * `pure_live/predictive_back` is the live room's back arbitration: while a room
  * page holds it (Android 13+'s gesture at overlay priority, so the room runs
@@ -20,7 +24,7 @@ import io.flutter.plugin.common.MethodChannel
  * app is left with a room playing (`FloatingRoomOverlay`): the window is the
  * app on screen then, so the lifecycle must not tell Dart it went away.
  */
-class MainActivity : FlutterActivity() {
+class MainActivity : AudioServiceActivity() {
     private var predictiveBackEnabled = false
     private var predictiveBackRegistered = false
     private var predictiveBackChannel: MethodChannel? = null
