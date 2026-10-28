@@ -12,8 +12,10 @@ import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -29,7 +31,9 @@ import 'package:live_sites/src/platforms/bigo/capabilities/bigo_discovery_provid
 import 'package:live_sites/src/platforms/bigo/capabilities/bigo_link_resolver.dart';
 import 'package:live_sites/src/platforms/bigo/capabilities/bigo_playback_provider.dart';
 import 'package:live_sites/src/platforms/bigo/capabilities/bigo_room_provider.dart';
+import 'package:live_sites/src/platforms/bigo/capabilities/bigo_room_refresh.dart';
 import 'package:live_sites/src/platforms/bigo/capabilities/bigo_search_provider.dart';
+import 'package:live_sites/src/platforms/bigo/capabilities/bigo_status_check.dart';
 import 'package:live_sites/src/platforms/bigo/danmaku/bigo_danmaku_session.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_failure.dart';
 import 'package:live_sites/src/platforms/bigo/parsers/bigo_room_parser.dart';
@@ -405,6 +409,8 @@ final class BigoSite implements LiveSite {
   BigoPlaybackProvider? _playback;
   BigoDanmakuProvider? _danmaku;
   BigoLinkResolver? _link;
+  BigoRoomRefresh? _refresh;
+  BigoStatusCheck? _status;
 
   /// The capability of type [T], or null when bigo does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -417,6 +423,8 @@ final class BigoSite implements LiveSite {
     final playback = _playback ??= BigoPlaybackProvider(site: this);
     final danmaku = _danmaku ??= BigoDanmakuProvider(site: this);
     final link = _link ??= BigoLinkResolver(site: this);
+    final refresh = _refresh ??= BigoRoomRefresh(site: this);
+    final status = _status ??= BigoStatusCheck(refresh: refresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -425,6 +433,8 @@ final class BigoSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }
