@@ -12,6 +12,7 @@ import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/play/play_geometry/play_geometry.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/room/room_audience/room_audience.dart';
 import 'package:live_sites/src/models/room/room_broadcast/room_broadcast.dart';
@@ -29,7 +30,13 @@ import 'package:live_sites/src/platforms/picarto/parsers/picarto_json.dart';
 /// URLs on the edge it was read from.
 final class PicartoQuality {
   /// Creates the quality.
-  PicartoQuality({required this.quality, required List<String> urls}) : urls = List.unmodifiable(urls);
+  PicartoQuality({
+    required this.quality,
+    required List<String> urls,
+    this.height = 0,
+    this.frameRate = 0,
+    this.bitrateKbps = 0,
+  }) : urls = List.unmodifiable(urls);
 
   /// The quality as the playback capability reports it.
   final LivePlayQuality quality;
@@ -37,6 +44,16 @@ final class PicartoQuality {
   /// The variant playlist URLs of this profile; the auto quality's one URL
   /// is the master playlist itself.
   final List<String> urls;
+
+  /// The declared height in pixels; 0 for the auto quality (or no
+  /// `RESOLUTION`).
+  final int height;
+
+  /// The declared frame rate; 0 when not given.
+  final double frameRate;
+
+  /// The declared `BANDWIDTH` in kilobits per second; 0 when not given.
+  final int bitrateKbps;
 }
 
 /// The stream behind a live room: the master playlist on the edge the load
@@ -421,7 +438,7 @@ abstract final class PicartoRoomParser {
     if (body.trimLeft().split('\n').first.trim() != '#EXTM3U') {
       throw PicartoFailure(PicartoFailureKind.apiChanged, '$what: not a playlist${PicartoJson.snippet(body)}');
     }
-    final grouped = <String, ({String label, int height, int rank, Set<String> urls})>{};
+    final grouped = <String, ({String label, int height, double frameRate, int rank, Set<String> urls})>{};
     Map<String, String>? pending;
     var externalAudio = false;
     var media = false;
@@ -481,6 +498,7 @@ abstract final class PicartoRoomParser {
       grouped[id] = (
         label: previous?.label ?? label,
         height: size == null ? 0 : int.parse(size.group(2)!),
+        frameRate: previous != null && previous.frameRate > 0 ? previous.frameRate : fps,
         rank: previous != null && previous.rank >= bandwidth ? previous.rank : bandwidth,
         urls: {...?previous?.urls, uri.toString()},
       );
@@ -513,6 +531,9 @@ abstract final class PicartoRoomParser {
             codec: codecOfId(key),
           ),
           urls: value.urls.toList(),
+          height: value.height,
+          frameRate: value.frameRate,
+          bitrateKbps: value.rank ~/ 1000,
         ),
     ];
   }
@@ -553,6 +574,13 @@ abstract final class PicartoRoomParser {
           headers: PicartoEndpoints.headers,
           codec: quality.quality.codec,
           lineLabel: master.host,
+          geometry: quality.height > 0
+              ? PlayGeometry.of(
+                  height: quality.height,
+                  frameRate: quality.frameRate > 0 ? quality.frameRate.round() : null,
+                  bitrateKbps: quality.bitrateKbps > 0 ? quality.bitrateKbps : null,
+                )
+              : null,
         ),
     ];
   }

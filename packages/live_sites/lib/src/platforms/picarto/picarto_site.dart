@@ -8,10 +8,13 @@ import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -27,9 +30,12 @@ import 'package:live_sites/src/platforms/picarto/api/picarto_http.dart';
 import 'package:live_sites/src/platforms/picarto/capabilities/picarto_area_provider.dart';
 import 'package:live_sites/src/platforms/picarto/capabilities/picarto_discovery_provider.dart';
 import 'package:live_sites/src/platforms/picarto/capabilities/picarto_link_resolver.dart';
+import 'package:live_sites/src/platforms/picarto/capabilities/picarto_play_recovery.dart';
 import 'package:live_sites/src/platforms/picarto/capabilities/picarto_playback_provider.dart';
 import 'package:live_sites/src/platforms/picarto/capabilities/picarto_room_provider.dart';
+import 'package:live_sites/src/platforms/picarto/capabilities/picarto_room_refresh.dart';
 import 'package:live_sites/src/platforms/picarto/capabilities/picarto_search_provider.dart';
+import 'package:live_sites/src/platforms/picarto/capabilities/picarto_status_check.dart';
 import 'package:live_sites/src/platforms/picarto/danmaku/picarto_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/picarto/danmaku/picarto_danmaku_session.dart';
 import 'package:live_sites/src/platforms/picarto/parsers/picarto_failure.dart';
@@ -213,9 +219,9 @@ final class PicartoSite implements LiveSite {
   /// entry — the capabilities are asked by room id alone. A channel the
   /// platform called offline has no stream without a new request; a private
   /// one says it needs the streamer's key.
-  Future<PicartoStreamData> _stream(String roomId) async {
+  Future<PicartoStreamData> _stream(String roomId, {bool fresh = false}) async {
     final id = roomId.trim();
-    final held = _streams[id];
+    final held = fresh ? null : _streams[id];
     if (held != null) return held;
     final room = await detail(id);
     final data = room.runtime.streamHandle;
@@ -240,8 +246,8 @@ final class PicartoSite implements LiveSite {
   /// variant URL of the profile, on the edge the entry's playlist named. A
   /// quality the playlist no longer has — the streamer changed the profile
   /// since the entry — plays the best one instead, as recovery did.
-  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async {
-    final data = await _stream(roomId);
+  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality, bool fresh = false}) async {
+    final data = await _stream(roomId, fresh: fresh);
     final wanted = quality?.qualityId;
     final current = (wanted == null ? null : data.byId(wanted)) ?? data.qualities.firstOrNull;
     if (current == null) {
@@ -272,6 +278,9 @@ final class PicartoSite implements LiveSite {
   PicartoPlaybackProvider? _playback;
   PicartoDanmakuProvider? _danmaku;
   PicartoLinkResolver? _link;
+  PicartoRoomRefresh? _refresh;
+  PicartoStatusCheck? _status;
+  PicartoPlayRecovery? _recovery;
 
   /// The capability of type [T], or null when Picarto does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -284,6 +293,9 @@ final class PicartoSite implements LiveSite {
     final playback = _playback ??= PicartoPlaybackProvider(site: this);
     final danmaku = _danmaku ??= PicartoDanmakuProvider(site: this);
     final link = _link ??= PicartoLinkResolver(site: this);
+    final refresh = _refresh ??= PicartoRoomRefresh(site: this);
+    final status = _status ??= PicartoStatusCheck(refresh: refresh);
+    final recovery = _recovery ??= PicartoPlayRecovery(playback: playback);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -292,6 +304,9 @@ final class PicartoSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }

@@ -48,4 +48,19 @@ final class PicartoPlaybackProvider implements LivePlaybackProvider {
       return left(LiveSiteError.unexpected(siteId: picartoSiteId, message: '$error', cause: error));
     }
   }
+
+  /// Lines after a failure: the channel is read again even when a stream is
+  /// held, since a master playlist revoked early has no other way back.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+  }) async {
+    try {
+      return right(await site.linesOf(room.roomId, quality: quality, fresh: true));
+    } on PicartoFailure catch (failure) {
+      return left(failure.toLiveSiteError(picartoSiteId));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: picartoSiteId, message: '$error', cause: error));
+    }
+  }
 }
