@@ -7,6 +7,7 @@ import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_lease/live_play_lease.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/play/play_geometry/play_geometry.dart';
 import 'package:live_sites/src/platforms/chzzk/api/chzzk_endpoints.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_failure.dart';
 import 'package:live_sites/src/platforms/chzzk/parsers/chzzk_json.dart';
@@ -207,6 +208,11 @@ abstract final class ChzzkPlayParser {
               codec: variant.codec,
               lineLabel: variant.mediaId,
               lease: variant.lease,
+              geometry: PlayGeometry.of(
+                height: variant.height > 0 ? variant.height : null,
+                frameRate: variant.frameRate >= 1 ? variant.frameRate.round() : null,
+                bitrateKbps: variant.bandwidth > 0 ? variant.bandwidth ~/ 1000 : null,
+              ),
             ),
     ];
   }
