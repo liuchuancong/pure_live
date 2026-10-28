@@ -116,12 +116,14 @@ abstract final class KuaishouPlayParser {
   /// `ali-origin` `auth_key`; about 24 hours after issue. Renew [leaseLead]
   /// (at most a quarter of the lifetime) before. No expiry, or one already
   /// past, is no lease.
-  static LivePlayLease? lease(Uri url, DateTime issuedAt) {
+  static LivePlayLease? lease(Uri url, DateTime issuedAt, {bool allowExpired = false}) {
     final expiry = _expiry(url.query);
     if (expiry == null) return null;
     final expiresAt = DateTime.fromMillisecondsSinceEpoch(expiry * 1000, isUtc: true);
     final lifetime = expiresAt.difference(issuedAt);
-    if (lifetime <= Duration.zero) return null;
+    if (lifetime <= Duration.zero) {
+      return allowExpired ? LivePlayLease.of(refreshAt: expiresAt.subtract(leaseLead), expiresAt: expiresAt) : null;
+    }
     final lead = Duration(microseconds: math.min(leaseLead.inMicroseconds, lifetime.inMicroseconds ~/ 4));
     return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
   }

@@ -68,6 +68,13 @@ final class KuaishouPlaybackProvider implements LivePlaybackProvider {
     }
   }
 
+  /// Lines after a failure: every getLines call already re-reads the room
+  /// page, so the recovery read is the playback read.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+  }) => getLines(room: room, quality: quality);
+
   /// The `playUrls` a live room's stream handle carries; a room that is not
   /// living, or hands out none, is stream-unavailable.
   ({Object? playUrls, DateTime issuedAt}) _streams(LiveRoom room) {

@@ -10,10 +10,14 @@ import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_lease_lookup.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -27,9 +31,13 @@ import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_area_pro
 import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_auth_provider.dart';
 import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_discovery_provider.dart';
 import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_link_resolver.dart';
+import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_play_lease_lookup.dart';
+import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_play_recovery.dart';
 import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_playback_provider.dart';
 import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_room_provider.dart';
+import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_room_refresh.dart';
 import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_search_provider.dart';
+import 'package:live_sites/src/platforms/kuaishou/capabilities/kuaishou_status_check.dart';
 import 'package:live_sites/src/platforms/kuaishou/danmaku/kuaishou_danmaku_session.dart';
 import 'package:live_sites/src/platforms/kuaishou/kuaishou_manifest.dart';
 import 'package:live_sites/src/platforms/kuaishou/parsers/kuaishou_failure.dart';
@@ -423,6 +431,10 @@ final class KuaishouSite implements LiveSite {
   KuaishouDanmakuProvider? _danmaku;
   KuaishouLinkResolver? _link;
   KuaishouAuthProvider? _auth;
+  KuaishouRoomRefresh? _refresh;
+  KuaishouStatusCheck? _status;
+  KuaishouPlayRecovery? _recovery;
+  KuaishouPlayLeaseLookup? _lease;
 
   /// The capability of type [T], or null when kuaishou does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -436,6 +448,10 @@ final class KuaishouSite implements LiveSite {
     final danmaku = _danmaku ??= KuaishouDanmakuProvider(site: this);
     final link = _link ??= KuaishouLinkResolver(site: this);
     final auth = _auth ??= KuaishouAuthProvider(site: this);
+    final refresh = _refresh ??= KuaishouRoomRefresh(site: this);
+    final status = _status ??= KuaishouStatusCheck(refresh: refresh);
+    final recovery = _recovery ??= KuaishouPlayRecovery(playback: playback);
+    final lease = _lease ??= KuaishouPlayLeaseLookup(now: now);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -445,6 +461,10 @@ final class KuaishouSite implements LiveSite {
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
       const (LiveAuthCapability) => auth as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
+      const (LivePlayLeaseLookup) => lease as T,
       _ => null,
     };
   }
