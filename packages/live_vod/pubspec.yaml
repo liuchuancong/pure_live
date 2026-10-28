@@ -8,6 +8,7 @@ environment:
   sdk: ^3.13.0
 
 dependencies:
+  crypto: ^3.0.6
   live_net:
 
 dev_dependencies:
