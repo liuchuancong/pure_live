@@ -26,6 +26,7 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart'
         hongguoStreamProxyProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_comfort.dart'
     show HongguoRecoveryBudget, HongguoSleepTimer;
+import 'package:pure_live/modules/hongguo/controller/hongguo_danmaku.dart' show hongguoDanmakuSettingsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_decoder.dart' show hongguoDecoderLessonsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
@@ -42,6 +43,7 @@ import 'package:pure_live/modules/hongguo/official/hongguo_account.dart' show Ho
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoRendition;
 import 'package:pure_live/modules/hongguo/official/hongguo_public_reviews.dart' show HongguoPublicReview;
 import 'package:pure_live/modules/hongguo/official/hongguo_related.dart' show HongguoRelatedWork;
+import 'package:pure_live/modules/hongguo/widgets/hongguo_danmaku_layer.dart' show HongguoDanmakuLayer;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show HongguoSeriesRow, hongguoDurationText;
 import 'package:pure_live/shared/shared.dart';
 
@@ -935,6 +937,8 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
     // player — and the bar's menu writes it rather than a module copy.
     final fit = ref.watch(playbackSettingsProvider).fit;
     final lessons = ref.watch(hongguoDecoderLessonsProvider);
+    final danmaku = ref.watch(hongguoDanmakuSettingsProvider);
+    final danmakuItems = ref.watch(hongguoDanmakuProvider).items;
     final duration = transport?.duration ?? Duration.zero;
     final position = _dragSeconds != null
         ? Duration(milliseconds: (_dragSeconds! * 1000).round())
@@ -959,6 +963,15 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
                 MediaPlayerView(handle: handle, fit: fit.boxFit, backgroundColor: colors.overlay)
               else
                 const ColoredBox(color: Color(0xFF000000)),
+              if (handle != null && danmaku.enabled && danmakuItems.isNotEmpty)
+                Positioned.fill(
+                  child: HongguoDanmakuLayer(
+                    items: danmakuItems,
+                    positionMs: () => _transport?.position.inMilliseconds ?? 0,
+                    playing: () => _transport?.isPlaying ?? false,
+                    settings: danmaku,
+                  ),
+                ),
               if (immersive)
                 PositionedDirectional(
                   top: 0,
@@ -1160,6 +1173,14 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
                                     semanticLabel: t.hongguo.volume,
                                   ),
                                 ),
+                              _PlayerIconButton(
+                                icon: danmaku.enabled ? DsIcons.captions : DsIcons.captionsOff,
+                                label: danmaku.enabled ? t.hongguo.danmakuOn : t.hongguo.danmakuOff,
+                                onPressed: () => unawaited(
+                                  ref.read(hongguoDanmakuSettingsProvider.notifier).setEnabled(value: !danmaku.enabled),
+                                ),
+                                onDark: true,
+                              ),
                               const Spacer(),
                               if (next != null)
                                 _PlayerIconButton(

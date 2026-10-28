@@ -458,6 +458,11 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     // Hongguo: the station's rendition and the decoder notes learned on this
     // machine.
     _hit(SettingsSection.hongguo, s.hongguoQuality, 'hongguo quality rendition 红果 清晰度 画质'),
+    _hit(
+      SettingsSection.hongguo,
+      t.hongguo.danmaku,
+      'hongguo danmaku comment subtitle size opacity speed density 红果 弹幕 评论 字号 透明度 速度 密度',
+    ),
     _hit(SettingsSection.hongguo, t.hongguo.decoderLessons, 'hongguo decoder codec failure 红果 解码 能力 记录'),
     _hit(SettingsSection.accounts, t.account.cookieLogin, 'bilibili account login 账号 登录'),
     // About.

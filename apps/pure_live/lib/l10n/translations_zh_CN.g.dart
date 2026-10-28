@@ -1489,6 +1489,42 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '弹幕关'
 	String get danmakuOff => '弹幕关';
 
+	/// zh-CN: '在画面上飞行显示本集评论'
+	String get danmakuEnabledDesc => '在画面上飞行显示本集评论';
+
+	/// zh-CN: '弹幕字号'
+	String get danmakuFontSize => '弹幕字号';
+
+	/// zh-CN: '评论文字的大小'
+	String get danmakuFontSizeDesc => '评论文字的大小';
+
+	/// zh-CN: '弹幕不透明度'
+	String get danmakuOpacity => '弹幕不透明度';
+
+	/// zh-CN: '文字越亮越不透明'
+	String get danmakuOpacityDesc => '文字越亮越不透明';
+
+	/// zh-CN: '弹幕速度'
+	String get danmakuSpeed => '弹幕速度';
+
+	/// zh-CN: '评论横穿画面的快慢'
+	String get danmakuSpeedDesc => '评论横穿画面的快慢';
+
+	/// zh-CN: '弹幕密度'
+	String get danmakuDensity => '弹幕密度';
+
+	/// zh-CN: '同时最多占几行画面'
+	String get danmakuDensityDesc => '同时最多占几行画面';
+
+	/// zh-CN: '少'
+	String get danmakuDensitySparse => '少';
+
+	/// zh-CN: '中'
+	String get danmakuDensityNormal => '中';
+
+	/// zh-CN: '多'
+	String get danmakuDensityDense => '多';
+
 	/// zh-CN: '手机号登录'
 	String get phoneLogin => '手机号登录';
 
@@ -9503,6 +9539,18 @@ extension on Translations {
 			'hongguo.danmaku' => '弹幕',
 			'hongguo.danmakuOn' => '弹幕开',
 			'hongguo.danmakuOff' => '弹幕关',
+			'hongguo.danmakuEnabledDesc' => '在画面上飞行显示本集评论',
+			'hongguo.danmakuFontSize' => '弹幕字号',
+			'hongguo.danmakuFontSizeDesc' => '评论文字的大小',
+			'hongguo.danmakuOpacity' => '弹幕不透明度',
+			'hongguo.danmakuOpacityDesc' => '文字越亮越不透明',
+			'hongguo.danmakuSpeed' => '弹幕速度',
+			'hongguo.danmakuSpeedDesc' => '评论横穿画面的快慢',
+			'hongguo.danmakuDensity' => '弹幕密度',
+			'hongguo.danmakuDensityDesc' => '同时最多占几行画面',
+			'hongguo.danmakuDensitySparse' => '少',
+			'hongguo.danmakuDensityNormal' => '中',
+			'hongguo.danmakuDensityDense' => '多',
 			'hongguo.phoneLogin' => '手机号登录',
 			'hongguo.phonePlaceholder' => '手机号，如 138…（境外 +区号 号码）',
 			'hongguo.phoneSend' => '发送验证码',
@@ -9549,6 +9597,8 @@ extension on Translations {
 			'hongguo.historyFilterUnwatched' => '未看完',
 			'hongguo.sleep' => '定时停止',
 			'hongguo.sleepOff' => '关闭定时停止',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.sleepAfter' => ({required Object minutes}) => '${minutes} 分钟后',
 			'hongguo.sleepMinutes' => ({required Object count}) => '${count} 分钟后',
 			'hongguo.sleepThisEpisode' => '本集播完',
@@ -9561,8 +9611,6 @@ extension on Translations {
 			'hongguo.stopAutoRetry' => '停止自动重试',
 			'hongguo.autoRetry' => ({required Object attempt, required Object seconds}) => '即将重试 ${attempt}/3 · ${seconds} 秒后',
 			'hongguo.retryExhausted' => '已自动重试 3 次，仍无法播放。可手动重试或切换清晰度。',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.decoderLessons' => '设备解码记录',
 			'hongguo.decoderLessonsCount' => ({required Object count}) => '已记住 ${count} 条解码失败，选流时会跳过它们',
 			'hongguo.decoderLessonsEmpty' => '还没有解码失败记录，选流按平台声明',
@@ -10075,8 +10123,6 @@ extension on Translations {
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
-			_ => null,
-		} ?? switch (path) {
 			'navigation.channels' => '频道',
 			'navigation.discover' => '发现',
 			'navigation.history' => '观看记录',
@@ -10537,6 +10583,8 @@ extension on Translations {
 			'settings.startup' => '开机启动',
 			'settings.startupDesc' => '登录系统后自动打开 Pure Live；开关读取的是系统里的真实启动项。',
 			'settings.startupFailed' => '开机启动设置失败',
+			_ => null,
+		} ?? switch (path) {
 			'settings.splashAnimation' => '启动动画',
 			'settings.splashAnimationDesc' => '启动时先显示应用标记，再进入主界面；下次启动生效。',
 			'settings.configPreview' => '配置预览',
@@ -10589,8 +10637,6 @@ extension on Translations {
 			'settings.liquidGlass' => '液体玻璃',
 			'settings.liquidGlassDescription' => '首页底栏悬浮成毛玻璃，页面从下面透出来；内存 4 GB 及以下的安卓手机不模糊，只半透明。',
 			'settings.themeColorTitle' => '主题色',
-			_ => null,
-		} ?? switch (path) {
 			'settings.themeColorPresets' => '预设颜色',
 			'settings.themeColorCustom' => '自定义颜色',
 			'settings.themeColorHex' => '十六进制颜色',
@@ -11051,6 +11097,8 @@ extension on Translations {
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuidePlatformAndroid' => 'Android',
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => '硬解码开关',
@@ -11103,8 +11151,6 @@ extension on Translations {
 			'settings.playerGuideEntrySymLatencyBody' => '选「低延迟」方案，并调低缓冲相关属性。',
 			'settings.playerGuideEntrySymNoVideoTitle' => '有声音没画面',
 			'settings.playerGuideEntrySymNoVideoBody' => '检查视频输出驱动是否被改过（null = 不渲染画面）；恢复「自动」即可。恢复播放内核默认设置也能解决。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.optionAuto' => '自动',
 			'settings.optionOff' => '关闭',
 			'settings.optionOn' => '开启',
@@ -11565,6 +11611,8 @@ extension on Translations {
 			'settings.chatGiftValueInYuanDesc' => '金瓜子、钻石、抖币按平台的固定比例写成元；海外的币种不换算。',
 			'settings.superChatIncludesMembership' => '上舰和开会员进醒目留言',
 			'settings.superChatIncludesMembershipDesc' => '哔哩哔哩上舰、YouTube 会员和各平台的订阅也在醒目留言里显示一张卡；聊天列表照旧。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuShowGifts' => '飞行弹幕显示礼物',
 			'settings.danmakuShowGiftsDesc' => '值钱的礼物飞过画面，很值钱的在顶部停 4 秒；连击只飞开头和总数，每秒最多 3 条。',
 			'settings.floatWindowSize' => '小窗大小',
@@ -11617,8 +11665,6 @@ extension on Translations {
 			'shield.similaritySeconds' => ({required Object seconds}) => '${seconds} 秒',
 			'shield.repeatTitle' => '重复弹幕过滤',
 			'shield.repeatEnabled' => '合并短时间内的相同弹幕',
-			_ => null,
-		} ?? switch (path) {
 			'shield.repeatEnabledDescription' => '不同用户发送相同内容时只保留第一条；本地弹幕和系统消息不受影响。',
 			'shield.repeatWindow' => '相同内容合并时间（秒）',
 			'shield.keywordsTitle' => '关键词',

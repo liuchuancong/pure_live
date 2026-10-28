@@ -292,6 +292,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   // The hongguo station's rendition, learned decoder notes and the viewer's
   // own shelves.
   ('hongguo.quality', BackupPrefKind.string),
+  ('hongguo.danmaku', BackupPrefKind.string),
   ('hongguo.decoderFailures', BackupPrefKind.stringList),
   ('hongguo.library.favorites', BackupPrefKind.string),
   ('hongguo.library.history', BackupPrefKind.string),

@@ -578,6 +578,18 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get danmaku => 'Danmaku';
 	@override String get danmakuOn => 'Danmaku on';
 	@override String get danmakuOff => 'Danmaku off';
+	@override String get danmakuEnabledDesc => 'Fly this episode\'s comments over the picture';
+	@override String get danmakuFontSize => 'Comment size';
+	@override String get danmakuFontSizeDesc => 'How large the comment text is';
+	@override String get danmakuOpacity => 'Comment opacity';
+	@override String get danmakuOpacityDesc => 'Brighter text is more opaque';
+	@override String get danmakuSpeed => 'Comment speed';
+	@override String get danmakuSpeedDesc => 'How fast comments cross the picture';
+	@override String get danmakuDensity => 'Comment density';
+	@override String get danmakuDensityDesc => 'How many rows the comments may use';
+	@override String get danmakuDensitySparse => 'Sparse';
+	@override String get danmakuDensityNormal => 'Normal';
+	@override String get danmakuDensityDense => 'Dense';
 	@override String get phoneLogin => 'Sign in by phone';
 	@override String get phonePlaceholder => 'Mobile, e.g. 138… (intl +cc number)';
 	@override String get phoneSend => 'Send code';
@@ -3649,6 +3661,18 @@ extension on TranslationsEn {
 			'hongguo.danmaku' => 'Danmaku',
 			'hongguo.danmakuOn' => 'Danmaku on',
 			'hongguo.danmakuOff' => 'Danmaku off',
+			'hongguo.danmakuEnabledDesc' => 'Fly this episode\'s comments over the picture',
+			'hongguo.danmakuFontSize' => 'Comment size',
+			'hongguo.danmakuFontSizeDesc' => 'How large the comment text is',
+			'hongguo.danmakuOpacity' => 'Comment opacity',
+			'hongguo.danmakuOpacityDesc' => 'Brighter text is more opaque',
+			'hongguo.danmakuSpeed' => 'Comment speed',
+			'hongguo.danmakuSpeedDesc' => 'How fast comments cross the picture',
+			'hongguo.danmakuDensity' => 'Comment density',
+			'hongguo.danmakuDensityDesc' => 'How many rows the comments may use',
+			'hongguo.danmakuDensitySparse' => 'Sparse',
+			'hongguo.danmakuDensityNormal' => 'Normal',
+			'hongguo.danmakuDensityDense' => 'Dense',
 			'hongguo.phoneLogin' => 'Sign in by phone',
 			'hongguo.phonePlaceholder' => 'Mobile, e.g. 138… (intl +cc number)',
 			'hongguo.phoneSend' => 'Send code',
@@ -3695,6 +3719,8 @@ extension on TranslationsEn {
 			'hongguo.historyFilterUnwatched' => 'In progress',
 			'hongguo.sleep' => 'Sleep timer',
 			'hongguo.sleepOff' => 'Turn off',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.sleepAfter' => ({required Object minutes}) => 'In ${minutes} min',
 			'hongguo.sleepMinutes' => ({required Object count}) => '${count} min left',
 			'hongguo.sleepThisEpisode' => 'After this episode',
@@ -3707,8 +3733,6 @@ extension on TranslationsEn {
 			'hongguo.stopAutoRetry' => 'Stop auto-retry',
 			'hongguo.autoRetry' => ({required Object attempt, required Object seconds}) => 'Retrying ${attempt}/3 in ${seconds}s',
 			'hongguo.retryExhausted' => 'Three automatic retries did not help. Retry by hand or pick a lower quality.',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.decoderLessons' => 'Decoder notes',
 			'hongguo.decoderLessonsCount' => ({required Object count}) => '${count} decode failures remembered; those renditions are skipped',
 			'hongguo.decoderLessonsEmpty' => 'No decode failures yet; the ladder follows the platform\'s claims',
@@ -4221,8 +4245,6 @@ extension on TranslationsEn {
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
-			_ => null,
-		} ?? switch (path) {
 			'navigation.channels' => 'Channels',
 			'navigation.discover' => 'Discover',
 			'navigation.history' => 'Watch history',
@@ -4683,6 +4705,8 @@ extension on TranslationsEn {
 			'settings.startup' => 'Start at login',
 			'settings.startupDesc' => 'Open Pure Live after you sign in; the switch reads the real system entry.',
 			'settings.startupFailed' => 'The login setting could not be changed',
+			_ => null,
+		} ?? switch (path) {
 			'settings.splashAnimation' => 'Startup animation',
 			'settings.splashAnimationDesc' => 'Shows the app mark before the shell; applies on the next start.',
 			'settings.configPreview' => 'Config preview',
@@ -4735,8 +4759,6 @@ extension on TranslationsEn {
 			'settings.liquidGlass' => 'Liquid glass',
 			'settings.liquidGlassDescription' => 'The home bottom bar floats as frosted glass over the page; on phones with 4 GB of memory or less it is see-through without blur.',
 			'settings.themeColorTitle' => 'Accent colour',
-			_ => null,
-		} ?? switch (path) {
 			'settings.themeColorPresets' => 'Presets',
 			'settings.themeColorCustom' => 'Custom colour',
 			'settings.themeColorHex' => 'Hex colour',
@@ -5197,6 +5219,8 @@ extension on TranslationsEn {
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuidePlatformAndroid' => 'Android',
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => 'Hardware decoding switch',
@@ -5249,8 +5273,6 @@ extension on TranslationsEn {
 			'settings.playerGuideEntrySymLatencyBody' => 'Use the low-latency preset and shrink buffering properties.',
 			'settings.playerGuideEntrySymNoVideoTitle' => 'Sound but no picture',
 			'settings.playerGuideEntrySymNoVideoBody' => 'Check the video output driver: null renders nothing. Reset it to auto, or restore the player kernel defaults.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.optionAuto' => 'Auto',
 			'settings.optionOff' => 'Off',
 			'settings.optionOn' => 'On',
@@ -5711,6 +5733,8 @@ extension on TranslationsEn {
 			'settings.chatGiftValueInYuanDesc' => 'Gold seeds, diamonds and Douyin coins are written in yuan at the platform\'s fixed rate; overseas currencies stay as they are.',
 			'settings.superChatIncludesMembership' => 'Memberships in Super Chats',
 			'settings.superChatIncludesMembershipDesc' => 'Bilibili guards, YouTube memberships and Twitch, CHZZK and other subscriptions also get a card among the Super Chats; the chat list keeps its one line.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuShowGifts' => 'Gifts in flying danmaku',
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',
@@ -5763,8 +5787,6 @@ extension on TranslationsEn {
 			'shield.similaritySeconds' => ({required Object seconds}) => '${seconds} seconds',
 			'shield.repeatTitle' => 'Repeated danmaku filter',
 			'shield.repeatEnabled' => 'Collapse identical danmaku bursts',
-			_ => null,
-		} ?? switch (path) {
 			'shield.repeatEnabledDescription' => 'Keep the first copy when different users send the same text. Local and system messages are unaffected.',
 			'shield.repeatWindow' => 'Identical-text window (seconds)',
 			'shield.keywordsTitle' => 'Keywords',

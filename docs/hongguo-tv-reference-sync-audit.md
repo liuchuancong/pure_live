@@ -300,7 +300,7 @@ l10n 累计新增 27 个 key（中英各一份，`dart run slang` 已重生成�
 
 ### 8.7 下一轮继续
 
-P1 只剩：首页/侧栏的**新集徽标**（收藏检测已有计数，尚未挂到导航项上）、参考的**断网等待**。P2：弹幕渲染层（#7，`hongguo_social.dart` 已定，可以做了）、评论侧边面板 + 本集/整剧双 tab、选集分组与跳转、HUD 状态行。
+P1 只剩：首页/侧栏的**新集徽标**（收藏检测已有计数，尚未挂到导航项上）、参考的**断网等待**。P2：弹幕渲染层（#7）已在 8.9 完成；剩下评论侧边面板 + 本集/整剧双 tab、选集分组与跳转、HUD 状态行。
 
 ### 8.8 第六轮（2026-10-29）：签名器与 ttEncrypt 的四处错位
 
@@ -321,6 +321,17 @@ P1 只剩：首页/侧栏的**新集徽标**（收藏检测已有计数，尚未
 新增回归测试（`apps/pure_live/test/hongguo/`、`test/music/`，共 17 项）：签名向量（含 GET 无 body 形态）、睡眠定时器与恢复预算、选档/降档与已学失败档位、歌单去重/排序/移除/导出导入往返/坏文件拒绝。`dart analyze lib/modules/hongguo test` 0 issues。
 
 **旁注**：`fjs: ^3.3.2`（音乐模块新加的 QuickJS 运行时，未入库）在 Windows 上编不过——它 cargokit 的签名 recipe 只列 Apple 的 Rust target，本机又无 cargo 可退源码编译；这是 `flutter run` 失败的原因，与红果模块无关。
+
+### 8.9 第七轮（2026-10-29）：弹幕渲染层（P2 #7）
+
+`hongguo_social.dart` 早就把一集的弹幕按 5 秒轮询窗口取进 `hongguoDanmakuProvider.items`，但唯一消费者是系列页的 `stop()`——取到却不画。本轮补上消费端：
+
+- **`controller/hongguo_danmaku.dart`**（新）：`HongguoDanmakuSettings`（开/关、字号 14–40、不透明度 0.2–1、速度 0.5×–2×、密度 1/3·2/3·全屏行数）+ `fromJson` 逐项夹取 + `lanesFor(height)`（按行高 `fontSize × 1.7` 折行、按密度取份、1–8 行封顶）；`HongguoDanmakuSettingsController` 存 `hongguo.danmaku`；`HongguoDanmakuPlanner` 管同一行两个弹幕的最小间隔（默认 700ms，全忙则丢弃，与参考一致），seek 时 `reset()`。
+- **`widgets/hongguo_danmaku_layer.dart`**（新）：`Ticker` 驱动的 `CustomPaint` 覆盖层。时钟取播放器 `position`，帧间用墙钟插值——暂停即冻结；位置跳变超过 1.5s 视为 seek，清空在途弹幕并按新位置找游标。每条弹幕从右缘出发，按 `(width + textWidth) / 9000ms × speed` 飞完全程，离开左缘即回收；行号由 planner 分配，文字带双层阴影。
+- **接线**：`hongguo_series_page.dart` 在播放器 Stack 里插入该层（仅在有 handle、开关打开且本集有弹幕时），控制条加一枚 `captions/captionsOff` 开关，直接写同一个偏好；`hongguo_settings_pane.dart` 新增「弹幕」一节（开关 + 字号 + 不透明度 + 速度 + 密度五类行，`SettingsConfigRow`/`SettingsChoiceRow`）。l10n 中英各 +11 键。
+- **清单**：模块 barrel 导出两个新文件；`kSettingsProviders` 补 `hongguoDanmakuSettingsProvider`；备份补 `hongguo.danmaku`；设置搜索补一行（弹幕/字号/透明度/速度/密度）。
+
+新增 `test/hongguo/hongguo_danmaku_test.dart` 7 项：越界字段夹取、缺省值、各密度下的行数预算、planner 轮流/全忙/重置、控制器读盘与写盘。`dart analyze lib/modules/hongguo lib/features/settings lib/features/backup/document/backup_settings.dart lib/app/providers/settings test/hongguo` 0 issues；`flutter test test/hongguo` 19 项全绿。**未验证**：真机上的观感（字号/速度的默认值、密度在 16:9 外的画面比例、长时间播放的帧率）。
 
 ---
 
