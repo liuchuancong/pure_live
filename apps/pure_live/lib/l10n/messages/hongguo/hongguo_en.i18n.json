@@ -177,6 +177,8 @@
   "favoriteUpTo": "up to {count}",
   "favoriteBadge": "{count} with new episodes",
   "reviews": "Series reviews",
+  "reviewsEpisode": "This episode",
+  "reviewsSeries": "Whole series",
   "reviewsEmpty": "No reviews yet",
   "rating": "Rated {score}",
   "ratingCount": "{count} ratings"

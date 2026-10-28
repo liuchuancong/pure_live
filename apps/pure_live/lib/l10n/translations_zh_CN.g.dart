@@ -1753,6 +1753,12 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '剧评'
 	String get reviews => '剧评';
 
+	/// zh-CN: '本集评论'
+	String get reviewsEpisode => '本集评论';
+
+	/// zh-CN: '整剧剧评'
+	String get reviewsSeries => '整剧剧评';
+
 	/// zh-CN: '还没有剧评'
 	String get reviewsEmpty => '还没有剧评';
 
@@ -9641,6 +9647,8 @@ extension on Translations {
 			'hongguo.favoriteUpTo' => ({required Object count}) => '更新至 ${count} 集',
 			'hongguo.favoriteBadge' => ({required Object count}) => '${count} 部有新集',
 			'hongguo.reviews' => '剧评',
+			'hongguo.reviewsEpisode' => '本集评论',
+			'hongguo.reviewsSeries' => '整剧剧评',
 			'hongguo.reviewsEmpty' => '还没有剧评',
 			'hongguo.rating' => ({required Object score}) => '评分 ${score}',
 			'hongguo.ratingCount' => ({required Object count}) => '${count} 人评分',
@@ -10095,6 +10103,8 @@ extension on Translations {
 			'music.lyricOffsetDesc' => '正值让歌词更晚出现。',
 			'music.lyricOffsetReset' => '不偏移',
 			'music.lyricTranslation' => '显示翻译',
+			_ => null,
+		} ?? switch (path) {
 			'music.lyricTranslationDesc' => '歌词带翻译时一并显示。',
 			'music.lyricRomanization' => '显示音译',
 			'music.lyricRomanizationDesc' => '歌词带音译或罗马音时一并显示。',

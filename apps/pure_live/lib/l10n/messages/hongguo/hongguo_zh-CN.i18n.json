@@ -177,6 +177,8 @@
   "favoriteUpTo": "更新至 {count} 集",
   "favoriteBadge": "{count} 部有新集",
   "reviews": "剧评",
+  "reviewsEpisode": "本集评论",
+  "reviewsSeries": "整剧剧评",
   "reviewsEmpty": "还没有剧评",
   "rating": "评分 {score}",
   "ratingCount": "{count} 人评分"

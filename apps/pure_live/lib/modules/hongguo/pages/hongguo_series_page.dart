@@ -1868,6 +1868,10 @@ final class _SeriesReviewsSection extends ConsumerStatefulWidget {
 }
 
 final class _SeriesReviewsSectionState extends ConsumerState<_SeriesReviewsSection> {
+  /// Whether the list shows this episode's comments; the other tab is the
+  /// series' own reviews, the reference's two tabs.
+  bool _episodeTab = true;
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -1880,7 +1884,8 @@ final class _SeriesReviewsSectionState extends ConsumerState<_SeriesReviewsSecti
       unawaited(ref.read(hongguoPublicReviewsProvider.notifier).open(widget.seriesId, episode));
     });
     final data = state.data;
-    final reviews = data?.series.items ?? const <HongguoPublicReview>[];
+    final page = data == null ? null : (_episodeTab ? data.episode : data.series);
+    final reviews = page?.items ?? const <HongguoPublicReview>[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
@@ -1901,6 +1906,17 @@ final class _SeriesReviewsSectionState extends ConsumerState<_SeriesReviewsSecti
                 dot: false,
               ),
           ],
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: DsSegmentedControl<bool>(
+            value: _episodeTab,
+            onChanged: (value) => setState(() => _episodeTab = value),
+            segments: [
+              DsSegment(value: true, label: Text(t.hongguo.reviewsEpisode)),
+              DsSegment(value: false, label: Text(t.hongguo.reviewsSeries)),
+            ],
+          ),
         ),
         if (state.loading && data == null) const Center(child: DsSpinner()),
         if (state.error != null && data == null)

@@ -666,6 +666,8 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String favoriteUpTo({required Object count}) => 'up to ${count}';
 	@override String favoriteBadge({required Object count}) => '${count} with new episodes';
 	@override String get reviews => 'Series reviews';
+	@override String get reviewsEpisode => 'This episode';
+	@override String get reviewsSeries => 'Whole series';
 	@override String get reviewsEmpty => 'No reviews yet';
 	@override String rating({required Object score}) => 'Rated ${score}';
 	@override String ratingCount({required Object count}) => '${count} ratings';
@@ -3755,6 +3757,8 @@ extension on TranslationsEn {
 			'hongguo.favoriteUpTo' => ({required Object count}) => 'up to ${count}',
 			'hongguo.favoriteBadge' => ({required Object count}) => '${count} with new episodes',
 			'hongguo.reviews' => 'Series reviews',
+			'hongguo.reviewsEpisode' => 'This episode',
+			'hongguo.reviewsSeries' => 'Whole series',
 			'hongguo.reviewsEmpty' => 'No reviews yet',
 			'hongguo.rating' => ({required Object score}) => 'Rated ${score}',
 			'hongguo.ratingCount' => ({required Object count}) => '${count} ratings',
@@ -4209,6 +4213,8 @@ extension on TranslationsEn {
 			'music.lyricOffsetDesc' => 'Positive values show the lyric later.',
 			'music.lyricOffsetReset' => 'No delay',
 			'music.lyricTranslation' => 'Show translation',
+			_ => null,
+		} ?? switch (path) {
 			'music.lyricTranslationDesc' => 'Show the translation when the lyric has one.',
 			'music.lyricRomanization' => 'Show romanization',
 			'music.lyricRomanizationDesc' => 'Show the romanization when the lyric has one.',

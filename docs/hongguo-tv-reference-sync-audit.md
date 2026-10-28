@@ -365,6 +365,15 @@ P1 已清零：首页/侧栏的新集徽标见 8.10，断网等待见 8.11。P2�
 
 `dart analyze lib/modules/hongguo test/hongguo test/app` 0 issues；`flutter test test/hongguo test/app` 24 项全绿。**未验证**：真机观感（chips 内小图标与数字的间距、千集列表切组时的滚动位置、遥控器上跳转弹窗的数字输入）。
 
+### 8.13 第十一轮（2026-10-29）：评论双 tab（P2 #8 的前半）
+
+参考的评论面板有「本集评论 / 整剧剧评」两个 tab；目标一直只画整剧那一路，本集评论虽然已经取到（`HongguoPublicReviews.episode`）却没有任何入口。本轮把它接出来：
+
+- `_SeriesReviewsSection` 加 `DsSegmentedControl<bool>`（默认本集），列表按 tab 读 `data.episode.items` / `data.series.items`；评分徽标仍挂在整剧行，加载/错误/空态共用一套。
+- l10n 中英各 +2（`reviewsEpisode/reviewsSeries`）。
+
+**没做**：参考的「侧边停靠、不遮画面」版式（`TvSocial.kt` 的 END 抽屉）、到底自动续读、表情图替换——前者要重排系列页的播放器区域，留待版式决策。`dart analyze lib/modules/hongguo` 0 issues。
+
 ---
 
 ## 附：本文的验证方式与未验证项
