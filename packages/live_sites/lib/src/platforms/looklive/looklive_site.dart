@@ -11,8 +11,10 @@ import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -27,7 +29,9 @@ import 'package:live_sites/src/platforms/looklive/capabilities/looklive_discover
 import 'package:live_sites/src/platforms/looklive/capabilities/looklive_link_resolver.dart';
 import 'package:live_sites/src/platforms/looklive/capabilities/looklive_playback_provider.dart';
 import 'package:live_sites/src/platforms/looklive/capabilities/looklive_room_provider.dart';
+import 'package:live_sites/src/platforms/looklive/capabilities/looklive_room_refresh.dart';
 import 'package:live_sites/src/platforms/looklive/capabilities/looklive_search_provider.dart';
+import 'package:live_sites/src/platforms/looklive/capabilities/looklive_status_check.dart';
 import 'package:live_sites/src/platforms/looklive/danmaku/looklive_danmaku_session.dart';
 import 'package:live_sites/src/platforms/looklive/looklive_manifest.dart';
 import 'package:live_sites/src/platforms/looklive/parsers/looklive_failure.dart';
@@ -316,6 +320,8 @@ final class LookliveSite implements LiveSite {
   LooklivePlaybackProvider? _playback;
   LookliveDanmakuProvider? _danmaku;
   LookliveLinkResolver? _link;
+  LookliveRoomRefresh? _refresh;
+  LookliveStatusCheck? _status;
 
   /// The capability of type [T], or null when LOOK Live does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -328,6 +334,8 @@ final class LookliveSite implements LiveSite {
     final playback = _playback ??= LooklivePlaybackProvider(site: this);
     final danmaku = _danmaku ??= LookliveDanmakuProvider(site: this);
     final link = _link ??= LookliveLinkResolver(site: this);
+    final refresh = _refresh ??= LookliveRoomRefresh(site: this);
+    final status = _status ??= LookliveStatusCheck(refresh: refresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -336,6 +344,8 @@ final class LookliveSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }
