@@ -1,7 +1,7 @@
 import 'dart:convert' show jsonDecode;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_net/live_net.dart' show ClientProfile, LiveHttp, LiveRequest;
+import 'package:live_net/live_net.dart' show ClientProfile, DirectRoute, LiveHttp, LiveRequest;
 
 import 'package:pure_live/app/app.dart' show networkFactoryProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
@@ -161,6 +161,12 @@ final class HongguoClient {
           uri,
           headers: {'accept': 'application/json', if (settings.apiKey.isNotEmpty) 'x-api-key': settings.apiKey},
           timeout: const Duration(seconds: 20),
+          // The companion service is this machine's own, and the reference's
+          // backend likewise leaves its local sign service out of
+          // HONGGUO_PROXY: a proxy client asked for a loopback address
+          // usually refuses the connection. Direct whatever the app's proxy
+          // setting is.
+          proxyRoute: const DirectRoute(),
         ),
       );
       if (!response.isOk) {

@@ -373,11 +373,13 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage>
   }
 
   /// The engine options this page keeps for every episode and handle:
-  /// hardware decoding and the player proxy.
+  /// hardware decoding and the stored outputs. The player proxy is left out —
+  /// the stream is always the companion service on this machine, and a proxy
+  /// client asked for a loopback address usually refuses the connection.
   List<EngineOption> _storedEngineOptions() => playerStoredEngineOptions(
     hardwareDecoding: ref.read(playbackSettingsProvider).hardwareDecoding,
     tuning: ref.read(playerTuningProvider),
-    proxy: ref.read(effectivePlayerProxyProvider),
+    proxy: (mode: PlayerProxyMode.off, host: '', port: kDefaultPlayerProxyPort),
   );
 
   Future<void> _applyEngineOptions(PlayerHandle handle, {List<EngineOption> extra = const []}) async {
