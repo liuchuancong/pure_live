@@ -6,10 +6,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/favorites/favorites.dart';
-import 'package:pure_live/features/history/history.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The switcher's groups, in the reference's order minus the source list:
@@ -225,7 +225,13 @@ final class _SwitcherCard extends ConsumerWidget {
               borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
               child: cover.isEmpty
                   ? ColoredBox(color: colors.control)
-                  : DsImage(image: cachedImage(cover)),
+                  : LayoutBuilder(
+                      builder: (context, constraints) => DsImage(
+                        image: cachedImage(cover),
+                        width: constraints.maxWidth,
+                        height: constraints.maxHeight,
+                      ),
+                    ),
             ),
           ),
           Padding(
@@ -276,7 +282,7 @@ final class _SwitcherRow extends ConsumerWidget {
           height: 63,
           child: cover.isEmpty
               ? ColoredBox(color: colors.control)
-              : DsImage(image: cachedImage(cover)),
+              : DsImage(image: cachedImage(cover), width: 112, height: 63),
         ),
       ),
       title: Text(

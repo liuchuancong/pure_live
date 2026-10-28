@@ -4,10 +4,9 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
-
-import 'package:pure_live/features/favorites/data/follow_repository.dart' show followsProvider;
-import 'package:pure_live/features/favorites/data/follow_tags.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
+import 'package:pure_live/modules/live/favorites/data/follow_tags.dart';
 
 /// Opens the tags of one followed [room]: the tags it belongs to, a tap to
 /// join or leave one, an inline field for a new tag, and a remove action per

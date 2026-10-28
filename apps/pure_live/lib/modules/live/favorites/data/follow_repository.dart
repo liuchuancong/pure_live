@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/favorites/alerts/live_alert_events.dart' show liveAlertObserver;
+import 'package:pure_live/modules/live/favorites/alerts/live_alert_events.dart' show liveAlertObserver;
 
 /// The stored rooms the viewer follows, one entry per room identity.
 ///

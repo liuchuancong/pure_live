@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/areas/controllers/area_rooms_controller.dart';
-import 'package:pure_live/features/areas/data/area_follow_repository.dart';
-import 'package:pure_live/features/popular/popular.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/areas/controllers/area_rooms_controller.dart';
+import 'package:pure_live/modules/live/areas/data/area_follow_repository.dart';
+import 'package:pure_live/modules/live/popular/popular.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// One area's rooms (the reference's `kAreaRooms`): its own page under the
@@ -226,14 +226,15 @@ final class _AreaFollowButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final followed = ref.watch(followedAreasProvider);
     final isFollowed = followed.ready && followed.areas.any((item) => item.identityKey == area.identityKey);
-    final colors = DsTheme.colorsOf(context);
-    return IconButton(
-      tooltip: isFollowed ? context.t.areas.unfollow : context.t.areas.viewFollowed,
-      onPressed: () async {
-        final repository = ref.read(areaFollowRepositoryProvider).value;
-        if (repository != null) await repository.toggle(area);
-      },
-      icon: DsIcon(DsIcons.heart, size: 20, color: isFollowed ? colors.danger.fill : colors.textMuted),
+    return DsTooltip(
+      message: isFollowed ? context.t.areas.unfollow : context.t.areas.viewFollowed,
+      child: AreaFollowButton(
+        followed: isFollowed,
+        onPressed: () async {
+          final repository = ref.read(areaFollowRepositoryProvider).value;
+          if (repository != null) await repository.toggle(area);
+        },
+      ),
     );
   }
 }

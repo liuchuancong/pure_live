@@ -7,12 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LivePlayQuality, LiveRoom, LiveRoomRefIdentity;
 import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/favorites/favorites.dart';
-import 'package:pure_live/features/history/history.dart';
-import 'package:pure_live/features/multiview/multiview_controller.dart';
-import 'package:pure_live/features/multiview/multiview_playback.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/modules/live/history/history.dart';
+import 'package:pure_live/modules/live/multiview/multiview_controller.dart';
+import 'package:pure_live/modules/live/multiview/multiview_playback.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The multi-view wall (the reference's multiview): the 1×1, 1×2, 2×2 and
@@ -41,16 +41,28 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
   /// Whether the wall is the branch on screen; the branch keeps its widgets
   /// while another branch shows, so this — not disposal — ends playback.
   bool _visible = false;
+
   /// The cell the picker dock is choosing for, or null while the dock is
   /// closed.
   int? _pickingSlot;
+
   /// Whether the first ready wall has been looked at once; the dock opens
   /// on arrival, not on every rebuild.
   bool _dockConsidered = false;
 
+  /// Captured while the page is alive; `ref` is refused by the time dispose
+  /// runs, and leaving must still tell the playback owner the wall is gone.
+  late final MultiviewPlaybackController _playbackNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _playbackNotifier = ref.read(multiviewPlaybackProvider.notifier);
+  }
+
   @override
   void dispose() {
-    ref.read(multiviewPlaybackProvider.notifier).setActive(active: false);
+    _playbackNotifier.setActive(active: false);
     super.dispose();
   }
 
@@ -85,10 +97,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
             title: Text(t.multiview.wallFailed),
             description: Text(error),
             actions: [
-              DsButton(
-                onPressed: () => ref.invalidate(multiviewRepositoryProvider),
-                child: Text(t.common.retry),
-              ),
+              DsButton(onPressed: () => ref.invalidate(multiviewRepositoryProvider), child: Text(t.common.retry)),
             ],
           ),
         );
@@ -290,10 +299,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
           if (wall.layout == MultiviewLayout.focus) {
             return _focusWall(slots, playback, gap, constraints);
           }
-          final (columns, rows) = _gridOf(
-            wall.layout,
-            wide: constraints.maxWidth >= constraints.maxHeight,
-          );
+          final (columns, rows) = _gridOf(wall.layout, wide: constraints.maxWidth >= constraints.maxHeight);
           return Column(
             spacing: gap,
             children: [
@@ -465,6 +471,7 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
       if (mounted) setState(() => _pickingSlot = at);
     });
   }
+
   /// Opens the picker dock for slot [index]: the wall shrinks beside
   /// it rather than losing itself behind a dialog, so a viewer can
   /// still see which cell the room is landing in.
@@ -539,6 +546,7 @@ final class _PaneTile extends StatelessWidget {
 
   /// The pane a pending swap starts from, null while none is pending.
   final int? swapSource;
+
   /// Whether the picker dock is choosing for this cell right now.
   final bool picking;
 
@@ -1145,11 +1153,7 @@ final class _PaneVolumeState extends State<_PaneVolume> {
 /// choose where the rooms come from, and its search field narrows by
 /// title, streamer, room id or platform.
 final class _PanePickerDock extends ConsumerStatefulWidget {
-  const _PanePickerDock({
-    required this.slotIndex,
-    required this.onAssign,
-    required this.onClose,
-  });
+  const _PanePickerDock({required this.slotIndex, required this.onAssign, required this.onClose});
 
   /// The pane (0-based) the picked room lands in.
   final int slotIndex;
@@ -1193,7 +1197,12 @@ final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
       if (seen.add(room.ref.identityKey)) rooms.add(room);
     }
     final needle = _query.trim().toLowerCase();
-    final visible = needle.isEmpty ? rooms : [for (final room in rooms) if (_matches(room, needle)) room];
+    final visible = needle.isEmpty
+        ? rooms
+        : [
+            for (final room in rooms)
+              if (_matches(room, needle)) room,
+          ];
     final loading = !follows.ready || !history.ready;
     return Container(
       decoration: DsBoxDecoration(
@@ -1280,9 +1289,7 @@ final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
                     padding: const EdgeInsets.fromLTRB(DsSpace.s8, 0, DsSpace.s8, DsSpace.s8),
                     children: [
                       DsListSection(
-                        children: [
-                          for (final room in visible) _row(context, ref, room, shown[room.ref.identityKey]),
-                        ],
+                        children: [for (final room in visible) _row(context, ref, room, shown[room.ref.identityKey])],
                       ),
                     ],
                   ),

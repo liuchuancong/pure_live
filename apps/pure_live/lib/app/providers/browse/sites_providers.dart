@@ -4,7 +4,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/features/account/account.dart' show douyuLoginStoreProvider;
 import 'package:pure_live/features/settings/settings.dart';
-import 'package:pure_live/features/shield/shield.dart';
+import 'package:pure_live/modules/live/shield/shield.dart';
 
 /// The registry of every built-in site, built once per process.
 ///

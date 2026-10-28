@@ -10,8 +10,8 @@ import 'package:live_sites/live_sites.dart';
 import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/room/clipboard_rooms.dart' show detectClipboardRoomsProvider;
-import 'package:pure_live/features/toolbox/toolbox_controllers.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/toolbox/toolbox_controllers.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The home navigation's link parser: the reference's link tool as one

@@ -5,9 +5,9 @@ import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/favorites/favorites.dart';
-import 'package:pure_live/features/multiview/multiview_controller.dart' show multiviewProvider;
 import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/modules/live/multiview/multiview_controller.dart' show multiviewProvider;
 import 'package:pure_live/shared/shared.dart';
 
 /// Where one pane's session stands.

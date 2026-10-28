@@ -8,7 +8,7 @@ import 'package:live_sites/live_sites.dart' show LiveRoom;
 import 'package:multiview_desktop/multiview_desktop.dart' show MultiViewDesktop;
 
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/room/room.dart';
+import 'package:pure_live/modules/live/room/room.dart';
 
 /// Opens a live room the host's way: in its own window on the desktop —
 /// the chat app's shape, one window per room the viewer is watching — or

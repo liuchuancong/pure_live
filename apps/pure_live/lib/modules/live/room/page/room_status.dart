@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart';
-import 'package:pure_live/features/room/controller/room_controller.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 
 /// Why the room's picture is not the stream right now, and what the viewer
 /// can do about it — the derivation the overlay draws from.

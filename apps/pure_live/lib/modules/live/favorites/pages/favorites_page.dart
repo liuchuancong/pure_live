@@ -6,13 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/favorites/data/favorite_rules.dart';
-import 'package:pure_live/features/favorites/data/follow_repository.dart';
-import 'package:pure_live/features/favorites/data/follow_tags.dart' show followTagsProvider;
-import 'package:pure_live/features/favorites/widgets/favorites_widgets.dart';
-import 'package:pure_live/features/favorites/widgets/follow_tag_picker.dart' show showFollowTagPicker;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/favorites/data/favorite_rules.dart';
+import 'package:pure_live/modules/live/favorites/data/follow_repository.dart';
+import 'package:pure_live/modules/live/favorites/data/follow_tags.dart' show followTagsProvider;
+import 'package:pure_live/modules/live/favorites/widgets/favorites_widgets.dart';
+import 'package:pure_live/modules/live/favorites/widgets/follow_tag_picker.dart' show showFollowTagPicker;
 import 'package:pure_live/shared/shared.dart';
 
 /// The follows page (the reference's `FavoritePage`): the group tabs (live,
@@ -522,26 +522,13 @@ final class _RefreshButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    return DsPressable(
+    return DsButton.icon(
+      variant: DsButtonVariant.ghost,
+      size: DsSize.sm,
       semanticLabel: context.t.favorites.refresh,
-      onPressed: refreshing ? null : onRefresh,
-      builder: (context, states, _) {
-        final hovered = states.contains(WidgetState.hovered);
-        return Container(
-          width: 30,
-          height: 30,
-          decoration: DsBoxDecoration(
-            color: hovered && !refreshing ? colors.hover : null,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Center(
-            child: refreshing
-                ? const SizedBox(width: 14, height: 14, child: DsSpinner())
-                : DsIcon(DsIcons.refreshCw, size: 16, color: colors.textMuted),
-          ),
-        );
-      },
+      loading: refreshing,
+      onPressed: refreshing ? null : () => unawaited(onRefresh()),
+      icon: DsIcon(DsIcons.refreshCw, size: DsTheme.of(context).sizes.iconSm),
     );
   }
 }

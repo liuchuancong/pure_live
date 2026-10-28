@@ -7,11 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/popular/popular_controller.dart';
-import 'package:pure_live/features/popular/room_card.dart' show RoomCard;
-import 'package:pure_live/features/search/search.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/popular/popular_controller.dart';
+import 'package:pure_live/modules/live/popular/room_card.dart' show RoomCard;
+import 'package:pure_live/modules/live/search/search.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// How a platform's rooms are ordered on screen: the platform's own

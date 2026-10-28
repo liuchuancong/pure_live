@@ -4,8 +4,8 @@ import 'dart:collection';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/painting.dart' show Color;
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/features/room/chat/gift_text.dart';
 import 'package:pure_live/l10n/translations.dart' as l10n;
+import 'package:pure_live/modules/live/room/chat/gift_text.dart';
 
 /// Which of a room's gifts fly over the picture (the reference's
 /// `danmakuShowGifts`, A08.12), so a busy room's gifts never flood it:

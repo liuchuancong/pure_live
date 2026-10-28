@@ -4,9 +4,10 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/features/settings/settings.dart';
-import 'package:pure_live/features/shield/danmaku_filter_settings.dart';
-import 'package:pure_live/features/shield/shield_repository.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/shield/danmaku_filter_settings.dart';
+import 'package:pure_live/modules/live/shield/shield_add_field.dart';
+import 'package:pure_live/modules/live/shield/shield_repository.dart';
 
 /// The shield inside the room's chat column: the same rules the settings
 /// page edits, laid out for a narrow pane — the two block lists as
@@ -259,12 +260,16 @@ final class _SliderRow extends StatelessWidget {
               semanticLabel: semanticLabel,
             ),
           ),
-          SizedBox(
-            width: 44,
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+          Flexible(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 44),
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+              ),
             ),
           ),
         ],
@@ -336,7 +341,11 @@ final class _TagList extends ConsumerWidget {
                 ),
             ],
           ),
-        _ShieldAddField(fieldHint: fieldHint, onAdd: onAdd),
+        ShieldAddField(
+          fieldHint: fieldHint,
+          onAdd: onAdd,
+          padding: const EdgeInsetsDirectional.only(top: DsSpace.s8),
+        ),
       ],
     );
   }
@@ -369,7 +378,12 @@ final class _ShieldTag extends StatelessWidget {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     return Container(
-      padding: const EdgeInsetsDirectional.only(start: DsSpace.s12, end: DsSpace.s4, top: DsSpace.s3, bottom: DsSpace.s3),
+      padding: const EdgeInsetsDirectional.only(
+        start: DsSpace.s12,
+        end: DsSpace.s4,
+        top: DsSpace.s3,
+        bottom: DsSpace.s3,
+      ),
       decoration: BoxDecoration(
         color: colors.control,
         borderRadius: BorderRadius.circular(DsRadii.pill),
@@ -398,69 +412,5 @@ final class _ShieldTag extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-/// The inline add row: a pill field plus the add button; submitting from
-/// the field commits the same way.
-final class _ShieldAddField extends ConsumerStatefulWidget {
-  const _ShieldAddField({required this.fieldHint, required this.onAdd});
-
-  final String fieldHint;
-  final Future<bool> Function(String value) onAdd;
-
-  @override
-  ConsumerState<_ShieldAddField> createState() => _ShieldAddFieldState();
-}
-
-final class _ShieldAddFieldState extends ConsumerState<_ShieldAddField> {
-  final TextEditingController _field = TextEditingController();
-
-  @override
-  void dispose() {
-    _field.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(top: DsSpace.s8),
-      child: Row(
-        spacing: DsSpace.s8,
-        children: [
-          Expanded(
-            child: DsTextField(
-              controller: _field,
-              clearable: true,
-              placeholder: widget.fieldHint,
-              onSubmitted: (value) => unawaited(_commit()),
-              semanticLabel: widget.fieldHint,
-              style: DsTextFieldStyle(height: theme.sizes.sm),
-            ),
-          ),
-          DsButton(size: DsSize.sm, onPressed: () => unawaited(_commit()), child: Text(t.shield.add)),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _commit() async {
-    final t = context.t;
-    final value = _field.text;
-    final added = await widget.onAdd(value);
-    if (!mounted) return;
-    if (value.trim().isEmpty) {
-      showDsToast(context: context, title: t.shield.invalidEntry);
-      return;
-    }
-    if (!added) {
-      showDsToast(context: context, title: t.shield.duplicateEntry);
-      return;
-    }
-    _field.clear();
-    showDsToast(context: context, title: t.shield.added);
   }
 }

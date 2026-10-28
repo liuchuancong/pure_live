@@ -4,30 +4,40 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/features/settings/settings.dart';
-import 'package:pure_live/features/shield/danmaku_filter_settings.dart';
-import 'package:pure_live/features/shield/shield_repository.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/shield/danmaku_filter_settings.dart';
+import 'package:pure_live/modules/live/shield/shield_add_field.dart';
+import 'package:pure_live/modules/live/shield/shield_repository.dart';
 
 /// The danmaku filter's settings pane (the reference's video → danmaku
-/// filter page): the shield's master switch and its two managed lists —
-/// blocked keywords and blocked users — plus the similar-text filter and
-/// its threshold, cache window and cache size. Every rule applies in the
-/// live room's danmaku pipeline through the settings providers.
-final class ShieldPane extends ConsumerWidget {
+/// filter page): the shield's master switch, then its rules one group at a
+/// time — what a line may contain, the blocked keywords, the blocked users.
+/// Every rule applies in the live room's danmaku pipeline through the
+/// settings providers.
+final class ShieldPane extends ConsumerStatefulWidget {
   /// The pane.
   const ShieldPane({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ShieldPane> createState() => _ShieldPaneState();
+}
+
+/// The rule groups the segmented control switches between.
+enum _ShieldGroup { content, keywords, users }
+
+final class _ShieldPaneState extends ConsumerState<ShieldPane> {
+  _ShieldGroup _group = _ShieldGroup.content;
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.t;
     final rules = ref.watch(shieldRulesProvider);
-    final filter = ref.watch(danmakuFilterProvider);
-    final filterController = ref.read(danmakuFilterProvider.notifier);
-    final repeat = ref.watch(danmakuRepeatProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: DsSpace.s16,
       children: [
+        // The master switch governs every group, so it stays above the
+        // control rather than inside one of them.
         DsListSection(
           header: Text(t.shield.masterTitle),
           children: [
@@ -43,6 +53,69 @@ final class ShieldPane extends ConsumerWidget {
             SettingsHint(t.shield.effectNote),
           ],
         ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: DsSegmentedControl<_ShieldGroup>(
+            value: _group,
+            semanticLabel: t.shield.title,
+            segments: [
+              DsSegment(
+                value: _ShieldGroup.content,
+                label: Text(t.shield.contentTitle),
+                icon: const DsIcon(DsIcons.fileText, size: 16),
+              ),
+              DsSegment(
+                value: _ShieldGroup.keywords,
+                label: Text(t.shield.keywordsTitle),
+                icon: const DsIcon(DsIcons.filter, size: 16),
+              ),
+              DsSegment(
+                value: _ShieldGroup.users,
+                label: Text(t.shield.usersTitle),
+                icon: const DsIcon(DsIcons.users, size: 16),
+              ),
+            ],
+            onChanged: (value) => setState(() => _group = value),
+          ),
+        ),
+        switch (_group) {
+          _ShieldGroup.content => _content(context),
+          _ShieldGroup.keywords => _ShieldList(
+            icon: DsIcons.filter,
+            title: t.shield.keywordsTitle,
+            entries: rules.keywords,
+            fieldHint: t.shield.keywordFieldHint,
+            emptyText: t.shield.keywordsEmpty,
+            onAdd: (value) => ref.read(shieldRulesProvider.notifier).addKeyword(value),
+            onRemove: (value) => ref.read(shieldRulesProvider.notifier).removeKeyword(value),
+            onClear: () => ref.read(shieldRulesProvider.notifier).clearKeywords(),
+          ),
+          _ShieldGroup.users => _ShieldList(
+            icon: DsIcons.users,
+            title: t.shield.usersTitle,
+            entries: rules.users,
+            fieldHint: t.shield.userFieldHint,
+            emptyText: t.shield.usersEmpty,
+            onAdd: (value) => ref.read(shieldRulesProvider.notifier).addUser(value),
+            onRemove: (value) => ref.read(shieldRulesProvider.notifier).removeUser(value),
+            onClear: () => ref.read(shieldRulesProvider.notifier).clearUsers(),
+          ),
+        },
+      ],
+    );
+  }
+
+  /// The rules that judge a line's own words: the similarity filter, the
+  /// repeat filter, and the block switches.
+  Widget _content(BuildContext context) {
+    final t = context.t;
+    final filter = ref.watch(danmakuFilterProvider);
+    final filterController = ref.read(danmakuFilterProvider.notifier);
+    final repeat = ref.watch(danmakuRepeatProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
         DsListSection(
           header: Text(t.shield.similarityTitle),
           children: [
@@ -194,26 +267,6 @@ final class ShieldPane extends ConsumerWidget {
             ),
           ],
         ),
-        _ShieldList(
-          icon: DsIcons.filter,
-          title: t.shield.keywordsTitle,
-          entries: rules.keywords,
-          fieldHint: t.shield.keywordFieldHint,
-          emptyText: t.shield.keywordsEmpty,
-          onAdd: (value) => ref.read(shieldRulesProvider.notifier).addKeyword(value),
-          onRemove: (value) => ref.read(shieldRulesProvider.notifier).removeKeyword(value),
-          onClear: () => ref.read(shieldRulesProvider.notifier).clearKeywords(),
-        ),
-        _ShieldList(
-          icon: DsIcons.users,
-          title: t.shield.usersTitle,
-          entries: rules.users,
-          fieldHint: t.shield.userFieldHint,
-          emptyText: t.shield.usersEmpty,
-          onAdd: (value) => ref.read(shieldRulesProvider.notifier).addUser(value),
-          onRemove: (value) => ref.read(shieldRulesProvider.notifier).removeUser(value),
-          onClear: () => ref.read(shieldRulesProvider.notifier).clearUsers(),
-        ),
       ],
     );
   }
@@ -270,7 +323,11 @@ final class _ShieldList extends ConsumerWidget {
             title: Text(entry),
             trailing: _RemoveButton(onPressed: () => unawaited(_remove(context, ref, entry))),
           ),
-        _ShieldAddField(fieldHint: fieldHint, onAdd: onAdd),
+        ShieldAddField(
+          fieldHint: fieldHint,
+          onAdd: onAdd,
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
+        ),
         if (entries.isNotEmpty)
           DsListRow(
             leading: const DsIcon(DsIcons.delete),
@@ -319,70 +376,5 @@ final class _RemoveButton extends StatelessWidget {
       icon: const DsIcon(DsIcons.close),
       semanticLabel: context.t.shield.removeEntry,
     );
-  }
-}
-
-/// The inline add row: a text field plus the add button; submitting from
-/// the field commits the same way.
-final class _ShieldAddField extends ConsumerStatefulWidget {
-  const _ShieldAddField({required this.fieldHint, required this.onAdd});
-
-  /// The field's placeholder.
-  final String fieldHint;
-
-  /// Adds the entry; answers false when it is empty or a duplicate.
-  final Future<bool> Function(String value) onAdd;
-
-  @override
-  ConsumerState<_ShieldAddField> createState() => _ShieldAddFieldState();
-}
-
-final class _ShieldAddFieldState extends ConsumerState<_ShieldAddField> {
-  final TextEditingController _field = TextEditingController();
-
-  @override
-  void dispose() {
-    _field.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
-      child: Row(
-        spacing: DsSpace.s8,
-        children: [
-          Expanded(
-            child: DsTextField(
-              controller: _field,
-              clearable: true,
-              placeholder: widget.fieldHint,
-              onSubmitted: (value) => unawaited(_commit()),
-              semanticLabel: widget.fieldHint,
-            ),
-          ),
-          DsButton(onPressed: () => unawaited(_commit()), child: Text(t.shield.add)),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _commit() async {
-    final t = context.t;
-    final value = _field.text;
-    final added = await widget.onAdd(value);
-    if (!mounted) return;
-    if (value.trim().isEmpty) {
-      showDsToast(context: context, title: t.shield.invalidEntry);
-      return;
-    }
-    if (!added) {
-      showDsToast(context: context, title: t.shield.duplicateEntry);
-      return;
-    }
-    _field.clear();
-    showDsToast(context: context, title: t.shield.added);
   }
 }

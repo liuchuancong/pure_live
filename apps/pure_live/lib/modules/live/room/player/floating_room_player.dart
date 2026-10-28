@@ -3,19 +3,18 @@ import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show EmojiAtlas, FlameBarrageWidget;
-import 'package:flutter/material.dart' show Icon, Icons;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:media_core/media_core.dart' show MediaPlayerView, PlayerHandle;
-
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/room/controller/room_controller.dart' show barrageProvider, roomProvider;
-import 'package:pure_live/features/room/page/audio_only_cover.dart' show AudioOnlyCover;
-import 'package:pure_live/features/room/player/compact_danmaku_metrics.dart' show CompactDanmakuMetrics;
-import 'package:pure_live/features/room/player/room_barrage_config.dart' show roomBarrageConfig;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/room/controller/room_controller.dart' show barrageProvider, roomProvider;
+import 'package:pure_live/modules/live/room/page/audio_only_cover.dart' show AudioOnlyCover;
+import 'package:pure_live/modules/live/room/player/compact_danmaku_metrics.dart' show CompactDanmakuMetrics;
+import 'package:pure_live/modules/live/room/player/room_barrage_config.dart' show roomBarrageConfig;
+import 'package:pure_live/shared/shared.dart';
 
 /// The app-level floating live-room player (the reference's `floatPlay`).
 ///
@@ -116,9 +115,35 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
   double? _width;
   Offset? _origin;
 
+  @override
+  void initState() {
+    super.initState();
+    // The Android small window shows this same player; it fills the window.
+    FloatingOverlay.active.addListener(_overlayChanged);
+  }
+
+  @override
+  void dispose() {
+    FloatingOverlay.active.removeListener(_overlayChanged);
+    super.dispose();
+  }
+
+  void _overlayChanged() {
+    if (mounted) setState(() {});
+  }
+
   void _close() {
+    final inWindow = FloatingOverlay.active.value;
     FloatingRoomPlayer.hide();
+    // The ✕ means "I am done watching" on both hosts: the room stops, and the
+    // page under the window leaves rather than showing an ended room next
+    // time. The stop comes first — the page reads the still-playing room on a
+    // pop as a leave and would hand it straight back to this overlay.
     unawaited(ref.read(roomProvider.notifier).close());
+    if (inWindow) {
+      unawaited(FloatingOverlay.close());
+      if (context.canPop()) context.pop();
+    }
   }
 
   void _returnToRoom() {
@@ -130,13 +155,22 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
     unawaited(context.push('/room/${Uri.encodeComponent(room.ref.platform)}/${Uri.encodeComponent(room.ref.roomId)}'));
   }
 
+  /// Over other apps the window's expand brings the app back in front; the
+  /// window goes as the activity starts, and the room page is still there.
+  void _backToApp() => unawaited(FloatingOverlay.backToApp());
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final room = ref.watch(roomProvider);
     ref.listen<PlayerHandle?>(roomProvider.select((state) => state.handle), (previous, next) {
       if (next == null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => FloatingRoomPlayer.hide());
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          FloatingRoomPlayer.hide();
+          // A stream that stopped while the small window showed leaves nothing
+          // behind on the other apps.
+          if (FloatingOverlay.active.value) unawaited(FloatingOverlay.close());
+        });
       }
     });
     final handle = room.handle;
@@ -144,6 +178,9 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
     if (handle == null || liveRoom == null) return const SizedBox.shrink();
 
     final screen = MediaQuery.sizeOf(context);
+    // In the Android window the viewport *is* the small window: the player
+    // fills it rather than sitting in its usual corner of a page-sized screen.
+    final inWindow = FloatingOverlay.active.value;
     final floating = ref.watch(floatingWindowSettingsProvider);
     // The small-window danmaku settings (the same ones the PiP surface
     // follows): the flying layer keeps running over the floating picture,
@@ -163,16 +200,14 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
     final portrait = ratio < 1;
     final base = kFloatingWindowBaseWidth * floatingWindowSizeFactor(floating.size);
     final scale = portrait ? floating.portraitScale : floating.landscapeScale;
-    final maxWidth = math
-        .min(screen.width - 16, math.max(220, (screen.height - 16) * ratio))
-        .toDouble();
-    final width = (_width ?? base * scale).clamp(200, math.max(200, maxWidth)).toDouble();
-    final height = width / ratio;
-    final maxX = math.max(0, screen.width - width - 8).toDouble();
-    final maxY = math.max(0, screen.height - height - 8).toDouble();
+    final maxWidth = math.min(screen.width - 16, math.max(220, (screen.height - 16) * ratio)).toDouble();
+    final width = inWindow ? screen.width : (_width ?? base * scale).clamp(200, math.max(200, maxWidth)).toDouble();
+    final height = inWindow ? screen.height : width / ratio;
+    final maxX = inWindow ? 0.0 : math.max(0, screen.width - width - 8).toDouble();
+    final maxY = inWindow ? 0.0 : math.max(0, screen.height - height - 8).toDouble();
     final origin = _origin ?? Offset(maxX, maxY);
-    final left = origin.dx.clamp(0, maxX).toDouble();
-    final top = origin.dy.clamp(0, maxY).toDouble();
+    final left = inWindow ? 0.0 : origin.dx.clamp(0, maxX).toDouble();
+    final top = inWindow ? 0.0 : origin.dy.clamp(0, maxY).toDouble();
     final title = liveRoom.content.title.trim().isEmpty ? t.common.appTitle : liveRoom.content.title;
 
     return Stack(
@@ -191,9 +226,9 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
                 fit: StackFit.expand,
                 children: [
                   if (room.audioOnly)
-                  AudioOnlyCover(room: liveRoom)
-                else
-                  MediaPlayerView(handle: handle, fit: playback.fit.boxFit),
+                    AudioOnlyCover(room: liveRoom)
+                  else
+                    MediaPlayerView(handle: handle, fit: playback.fit.boxFit),
                   if (showDanmaku)
                     Positioned.fill(
                       child: IgnorePointer(
@@ -222,6 +257,13 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onPanUpdate: (details) {
+                        if (inWindow) {
+                          // Over other apps the native window itself moves;
+                          // local offsets would only slide the picture inside
+                          // an unmoving window.
+                          unawaited(FloatingOverlay.moveBy(details.delta));
+                          return;
+                        }
                         final base = _origin ?? Offset(left, top);
                         setState(() => _origin = base + details.delta);
                       },
@@ -240,82 +282,67 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
                                     .copyWith(color: const Color(0xE6FFFFFF), fontWeight: FontWeight.w600),
                               ),
                             ),
-                            _FloatingButton(
-                              icon: room.playback.playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                            MediaBarButton(
+                              icon: room.playback.playing ? DsIcons.pause : DsIcons.play,
                               label: room.playback.playing ? t.room.pause : t.room.play,
                               onPressed: () => unawaited(ref.read(roomProvider.notifier).togglePlayPause()),
+                              tooltip: false,
+                              zoomsOnTv: false,
                             ),
-                            _FloatingButton(
-                              icon: Icons.open_in_full_rounded,
+                            MediaBarButton(
+                              icon: DsIcons.expand,
                               label: t.room.backToRoom,
-                              onPressed: _returnToRoom,
+                              onPressed: inWindow ? _backToApp : _returnToRoom,
+                              tooltip: false,
+                              zoomsOnTv: false,
                             ),
-                            _FloatingButton(icon: Icons.close_rounded, label: t.common.close, onPressed: _close),
+                            MediaBarButton(
+                              icon: DsIcons.x,
+                              label: t.common.close,
+                              onPressed: _close,
+                              tooltip: false,
+                              zoomsOnTv: false,
+                            ),
                           ],
                         ),
                       ),
                     ),
                   ),
-                  PositionedDirectional(
-                    end: 0,
-                    bottom: 0,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onPanUpdate: (details) {
-                        final limit = math.max(220, math.min(720, math.max(220, maxWidth))).toDouble();
-                        setState(() {
-                          final current = _width ?? width;
-                          _width = (current + details.delta.dx).clamp(220, limit).toDouble();
-                        });
-                      },
-                      onPanEnd: (_) {
-                        final pulled = _width;
-                        if (pulled != null) {
-                          unawaited(
-                            ref
-                                .read(floatingWindowSettingsProvider.notifier)
-                                .setScale(portrait: portrait, value: pulled / base),
-                          );
-                        }
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.all(DsSpace.s4),
-                        child: Icon(Icons.open_in_full, size: 12, color: Color(0x80FFFFFF)),
+                  if (!inWindow)
+                    PositionedDirectional(
+                      end: 0,
+                      bottom: 0,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onPanUpdate: (details) {
+                          final limit = math.max(220, math.min(720, math.max(220, maxWidth))).toDouble();
+                          setState(() {
+                            final current = _width ?? width;
+                            _width = (current + details.delta.dx).clamp(220, limit).toDouble();
+                          });
+                        },
+                        onPanEnd: (_) {
+                          final pulled = _width;
+                          if (pulled != null) {
+                            unawaited(
+                              ref
+                                  .read(floatingWindowSettingsProvider.notifier)
+                                  .setScale(portrait: portrait, value: pulled / base),
+                            );
+                          }
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.all(DsSpace.s4),
+                          child: DsIcon(DsIcons.expand, size: 12, color: Color(0x80FFFFFF)),
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
           ),
         ),
       ],
-    );
-  }
-}
-
-/// A small overlay control: no Material dependency, just a hit target and an
-/// icon.
-final class _FloatingButton extends StatelessWidget {
-  const _FloatingButton({required this.icon, required this.label, required this.onPressed});
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onPressed,
-        child: Padding(
-          padding: const EdgeInsets.all(DsSpace.s6),
-          child: Icon(icon, size: 18, color: const Color(0xE6FFFFFF)),
-        ),
-      ),
     );
   }
 }

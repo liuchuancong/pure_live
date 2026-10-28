@@ -1,8 +1,7 @@
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/painting.dart' show FontWeight;
-
-import 'package:pure_live/features/room/player/compact_danmaku_metrics.dart';
 import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/modules/live/room/player/compact_danmaku_metrics.dart';
 
 /// The flame engine's config for one room surface, translated from the
 /// stored [DanmakuStyle]. The room page and the small surfaces (the PiP
@@ -15,6 +14,7 @@ BarrageConfig roomBarrageConfig(
   int fps, {
   String? family,
   double? area,
+  Duration? fixedDuration,
   CompactDanmakuMetrics? compact,
 }) {
   final scale = compact?.scale ?? 1.0;
@@ -59,7 +59,10 @@ BarrageConfig roomBarrageConfig(
     safeArea: compact == null,
     maxPendingCount: compact == null ? 120 : CompactDanmakuMetrics.maxPendingCount,
     maxPendingAge: compact == null ? const Duration(seconds: 5) : CompactDanmakuMetrics.maxPendingAge,
-    fixedDuration: compact == null ? const Duration(seconds: 4) : CompactDanmakuMetrics.fixedDuration,
+    // The reference's 固定弹幕停留时长: how long a top- or bottom-pinned
+    // message stays on a room surface (a compact surface keeps its own
+    // shorter stay, which is what fits inside a small window).
+    fixedDuration: compact == null ? (fixedDuration ?? const Duration(seconds: 4)) : CompactDanmakuMetrics.fixedDuration,
     barragePoolMaxSize: compact == null ? 150 : CompactDanmakuMetrics.barragePoolMaxSize,
     pictureCacheMaxSize: compact == null ? 200 : CompactDanmakuMetrics.pictureCacheMaxSize,
     textCacheMaxSize: compact == null ? 1000 : CompactDanmakuMetrics.textCacheMaxSize,

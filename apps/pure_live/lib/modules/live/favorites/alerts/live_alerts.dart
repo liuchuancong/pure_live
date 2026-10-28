@@ -4,11 +4,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/favorites/alerts/live_alert_events.dart' show LiveAlertObserver, liveAlertObserver;
-import 'package:pure_live/features/favorites/data/follow_repository.dart' show followsProvider;
-import 'package:pure_live/features/favorites/data/follow_tags.dart' show FollowTag, followTagsProvider;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/favorites/alerts/live_alert_events.dart' show LiveAlertObserver, liveAlertObserver;
+import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
+import 'package:pure_live/modules/live/favorites/data/follow_tags.dart' show FollowTag, followTagsProvider;
 import 'package:pure_live/shared/shared.dart';
 
 /// Tells which rooms began a broadcast, once per broadcast.

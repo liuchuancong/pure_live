@@ -5,15 +5,15 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/features/room/chat/gift_text.dart';
-import 'package:pure_live/features/room/chat/membership_cards.dart' show isMembershipCard;
-import 'package:pure_live/features/room/chat/room_message_actions.dart'
-    show blockRoomMessageKeyword, blockRoomMessageSender, copyRoomMessageText;
-import 'package:pure_live/features/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
-import 'package:pure_live/features/room/controller/room_controller.dart';
 import 'package:pure_live/features/settings/settings.dart';
-import 'package:pure_live/features/shield/shield.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/room/chat/gift_text.dart';
+import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show isMembershipCard;
+import 'package:pure_live/modules/live/room/chat/room_message_actions.dart'
+    show blockRoomMessageKeyword, blockRoomMessageSender, copyRoomMessageText;
+import 'package:pure_live/modules/live/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
+import 'package:pure_live/modules/live/room/controller/room_controller.dart';
+import 'package:pure_live/modules/live/shield/shield.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The room's chat column: four tabs, as the reference's `ChatPanel` has —
@@ -216,6 +216,17 @@ final class _ChatLine extends ConsumerWidget {
     // The room's own notices (the platform's system lines) sit apart from
     // the conversation: centred, quiet, no "系统:" voice.
     final isSystem = gift == null && senderName.isEmpty;
+    // The platform's own labels for who is talking: the fan badge (its name
+    // and level) and the viewer's level. They ride on the sender, so a line
+    // that has neither shows none.
+    final fanBadgeName = (sender?.fanBadgeName ?? '').trim();
+    final fanBadgeLevel = (sender?.fanBadgeLevel ?? '').trim();
+    final userLevel = (sender?.userLevel ?? '').trim();
+    final showBadges = showNames && !isSystem && (fanBadgeName.isNotEmpty || userLevel.isNotEmpty);
+    final badgeStyle = theme.typography.caption.copyWith(
+      fontSize: fontSize > 0 ? math.max(fontSize - 2, 9).toDouble() : 10,
+      height: 1.2,
+    );
     if (isSystem) {
       final line = Padding(
         padding: EdgeInsets.symmetric(vertical: vertical),
@@ -269,6 +280,30 @@ final class _ChatLine extends ConsumerWidget {
                       text: '[${t.room.replayed}] ',
                       style: nameStyle.copyWith(color: colors.textSubtle),
                     ),
+                  if (showBadges) ...[
+                    if (fanBadgeName.isNotEmpty)
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: _ChatBadge(
+                          text: fanBadgeLevel.isEmpty ? fanBadgeName : '$fanBadgeName $fanBadgeLevel',
+                          background: colors.accent.withValues(alpha: 0.16),
+                          foreground: colors.accent,
+                          style: badgeStyle,
+                        ),
+                      ),
+                    if (fanBadgeName.isNotEmpty) const WidgetSpan(child: SizedBox(width: DsSpace.s4)),
+                    if (userLevel.isNotEmpty)
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: _ChatBadge(
+                          text: 'Lv.$userLevel',
+                          background: colors.control,
+                          foreground: colors.textMuted,
+                          style: badgeStyle,
+                        ),
+                      ),
+                    const WidgetSpan(child: SizedBox(width: DsSpace.s4)),
+                  ],
                   if (showNames && senderName.isNotEmpty) TextSpan(text: '$senderName: ', style: nameStyle),
                   TextSpan(text: words, style: lineStyle),
                 ],
@@ -404,6 +439,24 @@ String _giftSentence(Translations t, LiveGift gift, String anchorName, {bool inY
   final value = _giftValueText(t, gift, inYuan: inYuan);
   final words = giftSentenceText(t, gift, anchorName);
   return value == null ? words : '$words  $value';
+}
+
+/// A small inline chip on a chat line: a fan badge (its name and level) or
+/// the viewer's level, in the platform's own labels.
+final class _ChatBadge extends StatelessWidget {
+  const _ChatBadge({required this.text, required this.background, required this.foreground, required this.style});
+
+  final String text;
+  final Color background;
+  final Color foreground;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4, vertical: 1),
+    decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(DsRadii.pill)),
+    child: Text(text, style: style.copyWith(color: foreground)),
+  );
 }
 
 /// A gift's picture at its line's text size, with the generic gift mark

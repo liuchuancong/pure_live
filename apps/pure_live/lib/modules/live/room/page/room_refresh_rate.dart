@@ -2,7 +2,7 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/room/controller/room_controller.dart' show RoomState, roomProvider;
+import 'package:pure_live/modules/live/room/controller/room_controller.dart' show RoomState, roomProvider;
 
 /// Declares what the open room plays to the display, so the refresh-rate
 /// policy can pick a rate for the video (the reference's

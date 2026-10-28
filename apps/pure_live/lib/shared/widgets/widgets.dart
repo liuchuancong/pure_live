@@ -4,4 +4,5 @@ library;
 
 export 'choice_dialog.dart';
 export 'chrome_icon_button.dart';
+export 'cover_fallback.dart';
 export 'scroll_edge_controls.dart';

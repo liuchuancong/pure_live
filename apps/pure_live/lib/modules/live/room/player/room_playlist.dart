@@ -59,6 +59,12 @@ final class RoomPlaylistController extends Notifier<RoomPlaylist?> {
 
   /// Forgets the source list.
   void clear() => state = null;
+
+  /// Forgets the source list only when it still shows the room [key]: the
+  /// leaving page reads no `ref`, so the comparison runs here.
+  void clearIfCurrent(String key) {
+    if (state?.current.ref.identityKey == key) clear();
+  }
 }
 
 /// The current room's source list.

@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/features/room/chat/gift_text.dart';
+import 'package:pure_live/modules/live/room/chat/gift_text.dart';
 
 /// One gift line for the chat list: [replaceId] names the line this one
 /// updates (a combo's count grew), null for a new line.

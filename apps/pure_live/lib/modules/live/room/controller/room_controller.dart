@@ -9,20 +9,19 @@ import 'package:media_core_danmaku/media_core_danmaku.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account_providers.dart' show accountsProvider;
-import 'package:pure_live/features/favorites/favorites.dart';
-import 'package:pure_live/features/history/history.dart';
-import 'package:pure_live/features/recorder/recorder.dart';
-
-import 'package:pure_live/features/room/chat/gift_chat_filter.dart' show GiftChatFilter;
-import 'package:pure_live/features/room/chat/gift_flights.dart' show GiftFlights;
-import 'package:pure_live/features/room/chat/gift_text.dart' show giftLineTier;
-import 'package:pure_live/features/room/chat/membership_cards.dart' show membershipCard;
-import 'package:pure_live/features/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
 // The settings barrel's DanmakuStyle is the stored look; this file builds
 // media_core_danmaku's.
 import 'package:pure_live/features/settings/settings.dart' hide DanmakuStyle;
-import 'package:pure_live/features/shield/shield.dart';
 import 'package:pure_live/l10n/translations.dart' as l10n;
+import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/modules/live/history/history.dart';
+import 'package:pure_live/modules/live/recorder/recorder.dart';
+import 'package:pure_live/modules/live/room/chat/gift_chat_filter.dart' show GiftChatFilter;
+import 'package:pure_live/modules/live/room/chat/gift_flights.dart' show GiftFlights;
+import 'package:pure_live/modules/live/room/chat/gift_text.dart' show giftLineTier;
+import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show membershipCard;
+import 'package:pure_live/modules/live/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
+import 'package:pure_live/modules/live/shield/shield.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// How many chat lines the page keeps; older leave first.
@@ -135,10 +134,17 @@ final class RoomDanmakuPipeline {
     required DanmakuFilterRules filter,
     required DanmakuRepeatSettings repeat,
     required DanmakuPausedBehavior pausedBehavior,
+    required bool Function() showFixedTop,
+    required bool Function() showFixedBottom,
   }) : barrage = RoomBarrageController(behavior: pausedBehavior) {
     chatGifts = GiftChatFilter(clock: DateTime.now)..aboveTier = chatGiftsAboveTier();
     danmaku = DanmakuController(
-      sink: _ChatMirrorSink(onChat: onChat, inner: FlameBarrageSink(barrage)),
+      sink: _ChatMirrorSink(
+        onChat: onChat,
+        inner: FlameBarrageSink(barrage),
+        showFixedTop: showFixedTop,
+        showFixedBottom: showFixedBottom,
+      ),
       config: _danmakuConfigFor(filter, repeat),
       policy: _shieldPolicyFor(shield),
     );
@@ -243,15 +249,22 @@ final class RoomDanmakuPipeline {
       if (showFlyGifts()) giftFlights.add(message);
       return;
     }
+    final sender = message.sender;
     danmaku.acceptExternal(
       DanmakuMessage(
         type: DanmakuMessageType.chat,
-        userName: message.sender?.userName ?? '',
+        userName: sender?.userName ?? '',
+        userId: sender?.userId ?? '',
+        userLevel: sender?.userLevel ?? '',
+        fansLevel: sender?.fanBadgeLevel ?? '',
+        fansName: sender?.fanBadgeName ?? '',
         text: message.text,
         color: message.color == null
             ? DanmakuColor.white
             : DanmakuColor(message.color!.r, message.color!.g, message.color!.b),
         messageId: message.messageId,
+        sentAt: message.sentAt,
+        isLocal: message.isLocal,
       ),
     );
   }
@@ -274,12 +287,21 @@ final class RoomDanmakuPipeline {
 
 /// Mirrors the messages the pipeline accepted onto the chat list, then hands
 /// them to the flying layer. The list must see exactly what the filters let
-/// through, so the mirror sits after them rather than at the site seam.
+/// through, so the mirror sits after them rather than at the site seam; the
+/// pinned lanes' switches drop a message from the picture only, never from
+/// the list.
 final class _ChatMirrorSink implements DanmakuSink {
-  const _ChatMirrorSink({required this.onChat, required this.inner});
+  const _ChatMirrorSink({
+    required this.onChat,
+    required this.inner,
+    required this.showFixedTop,
+    required this.showFixedBottom,
+  });
 
   final void Function(LiveMessage message, {String? replaceId}) onChat;
   final DanmakuSink inner;
+  final bool Function() showFixedTop;
+  final bool Function() showFixedBottom;
 
   @override
   void onDanmaku(DanmakuMessage message, {bool immediate = false}) {
@@ -301,7 +323,12 @@ final class _ChatMirrorSink implements DanmakuSink {
         ),
       );
     }
-    inner.onDanmaku(message, immediate: immediate);
+    final draws = switch (message.style?.placement) {
+      DanmakuPlacement.top => showFixedTop(),
+      DanmakuPlacement.bottom => showFixedBottom(),
+      _ => true,
+    };
+    if (draws) inner.onDanmaku(message, immediate: immediate);
   }
 
   @override
@@ -369,7 +396,9 @@ final class RoomChatController extends Notifier<List<LiveMessage>> {
     if (replaceId != null) {
       final index = state.indexWhere((line) => line.messageId == replaceId);
       if (index >= 0) {
-        final next = [...state]..removeAt(index)..add(message);
+        final next = [...state]
+          ..removeAt(index)
+          ..add(message);
         state = next.length > kRoomChatLimit ? next.sublist(next.length - kRoomChatLimit) : next;
         return;
       }
@@ -451,8 +480,16 @@ final class RoomController extends Notifier<RoomState> {
   StreamSubscription<PlayerHandle>? _handles;
   StreamSubscription<PlayerFailure>? _failures;
   StreamSubscription<LiveMessage>? _chat;
+  StreamSubscription<GeometryState>? _geometry;
   LiveDanmakuSession? _danmaku;
   RoomDanmakuPipeline? _pipeline;
+
+  /// Rises with every teardown, so an open still in flight (its detail,
+  /// qualities and lines reads are network awaits) cannot build a session
+  /// behind a closed or replaced room: the page is gone, the provider is
+  /// not, and an unguarded continuation would play its stream to no one.
+  /// The danmaku path has the same gate in [_danmakuCurrent].
+  int _openEpoch = 0;
 
   /// Rises with every danmaku open the room starts (a platform account change
   /// re-opens it); an answer that arrives after a newer open, a room switch
@@ -583,9 +620,23 @@ final class RoomController extends Notifier<RoomState> {
   /// danmaku session connects. A room that cannot open says why in the
   /// state error field — the page shows it, never a blank.
   Future<void> open({required String platform, required String roomId}) async {
+    // A room that is already playing for this very page is adopted, not
+    // reopened: the floating player hands the live handle back when its
+    // window returns, and tearing it down would restart the stream, drop the
+    // danmaku session and show a black frame for the length of a fresh
+    // handshake. Only a healthy handle whose room matches is adopted — a
+    // failed or stopped room takes the full path.
+    final existing = state;
+    final sameRoom = existing.room?.ref.platform == platform && existing.room?.ref.roomId == roomId;
+    if (sameRoom && existing.handle != null && existing.error == null) {
+      _requestedPlatform = platform;
+      _requestedRoomId = roomId;
+      return;
+    }
     _requestedPlatform = platform;
     _requestedRoomId = roomId;
     _teardown();
+    final epoch = _openEpoch;
     ref.read(roomSuperChatsProvider.notifier).clear();
     final settings = ref.read(playbackSettingsProvider);
     // ASMR is an Android-only automatic audio-only entry (the reference's
@@ -605,21 +656,37 @@ final class RoomController extends Notifier<RoomState> {
       return;
     }
     final roomAnswer = await roomProvider.getRoom(roomId);
-    roomAnswer.match((error) => state = _with(error: error.message), (room) async {
-      state = _with(room: room);
-      unawaited(_recordHistory(room));
-      unawaited(_loadSuperChats(room));
-      if (room.broadcast.isLiveNow) {
-        final danmakuProvider = site.capability<LiveDanmakuProvider>();
-        if (danmakuProvider != null) await _openDanmaku(danmakuProvider, room);
-      }
-      final qualitiesAnswer = await playbackProvider.getQualities(room: room);
-      qualitiesAnswer.match((error) => state = _with(error: error.message), (qualities) async {
-        _wantedQuality = _pickQuality(qualities);
-        state = _with(qualities: qualities, quality: _wantedQuality);
-        await _startPlayback(playbackProvider, room);
-      });
-    });
+    unawaited(
+      roomAnswer.match(
+        (error) async {
+          if (epoch == _openEpoch) state = _with(error: error.message);
+        },
+        (room) async {
+          if (epoch != _openEpoch) return;
+          state = _with(room: room);
+          unawaited(_recordHistory(room));
+          unawaited(_loadSuperChats(room));
+          if (room.broadcast.isLiveNow) {
+            final danmakuProvider = site.capability<LiveDanmakuProvider>();
+            if (danmakuProvider != null) await _openDanmaku(danmakuProvider, room);
+          }
+          final qualitiesAnswer = await playbackProvider.getQualities(room: room);
+          unawaited(
+            qualitiesAnswer.match(
+              (error) async {
+                if (epoch == _openEpoch) state = _with(error: error.message);
+              },
+              (qualities) async {
+                if (epoch != _openEpoch) return;
+                _wantedQuality = _pickQuality(qualities);
+                state = _with(qualities: qualities, quality: _wantedQuality);
+                await _startPlayback(playbackProvider, room);
+              },
+            ),
+          );
+        },
+      ),
+    );
   }
 
   /// Switches the quality: the plan is re-read at the new quality and
@@ -1015,38 +1082,67 @@ final class RoomController extends Notifier<RoomState> {
   }
 
   Future<void> _startPlayback(LivePlaybackProvider capability, LiveRoom room) async {
+    final epoch = _openEpoch;
     final linesAnswer = await capability.getLines(room: room, quality: _wantedQuality);
-    linesAnswer.match((error) => state = _with(error: error.message), (lines) async {
-      if (lines.isEmpty) {
-        state = _with(lines: const [], error: 'the room has nothing to play');
-        return;
-      }
-      state = _with(lines: lines);
-      final playback = _playback ??= _openSession(capability, room);
-      _states ??= playback.onStateChanged.listen((playback_) {
-        state = _with(playback: playback_);
-      });
-      _failures ??= playback.onError.listen((failure) {
-        state = _with(error: failure.message ?? failure.code.name);
-      });
-      _handles ??= playback.onHandleChanged.listen((handle) {
-        state = _with(handle: handle, lineIndex: _playback?.sourceIndex ?? state.lineIndex);
-        // The player's pause and seek carry into the flying layer; the
-        // viewer's current audio follows every engine, the decoder choice
-        // goes to the first one.
-        _pipeline?.bind(handle);
-        unawaited(_applyAudioPreferences(handle));
-        unawaited(_applyEnginePreferences(handle));
-      });
-      await playback.play(
-        LiveSourceRequest(
-          sources: roomSourcesOf(lines),
-          title: room.content.title,
-          allowEngineFallback: true,
-          engineOptions: _storedEngineOptions(),
-        ),
-        preferredBackend: ref.read(playerKernelBackendProvider).id,
-      );
+    unawaited(
+      linesAnswer.match(
+        (error) async {
+          if (epoch == _openEpoch) state = _with(error: error.message);
+        },
+        (lines) async {
+          if (epoch != _openEpoch) return;
+          if (lines.isEmpty) {
+            state = _with(lines: const [], error: 'the room has nothing to play');
+            return;
+          }
+          state = _with(lines: lines);
+          final playback = _playback ??= _openSession(capability, room);
+          _states ??= playback.onStateChanged.listen((playback_) {
+            state = _with(playback: playback_);
+          });
+          _failures ??= playback.onError.listen((failure) {
+            state = _with(error: failure.message ?? failure.code.name);
+          });
+          _handles ??= playback.onHandleChanged.listen((handle) {
+            state = _with(handle: handle, lineIndex: _playback?.sourceIndex ?? state.lineIndex);
+            _watchVideoSize(handle);
+            // The player's pause and seek carry into the flying layer; the
+            // viewer's current audio follows every engine, the decoder choice
+            // goes to the first one.
+            _pipeline?.bind(handle);
+            unawaited(_applyAudioPreferences(handle));
+            unawaited(_applyEnginePreferences(handle));
+          });
+          await playback.play(
+            LiveSourceRequest(
+              sources: roomSourcesOf(lines),
+              title: room.content.title,
+              allowEngineFallback: true,
+              engineOptions: _storedEngineOptions(),
+            ),
+            preferredBackend: ref.read(playerKernelBackendProvider).id,
+          );
+        },
+      ),
+    );
+  }
+
+  /// Feeds the stream's own shape to the presentation drivers.
+  ///
+  /// Both drivers read it as their window shape: Android's system PiP refuses
+  /// to open without a video size at all, and the desktop compact window
+  /// would fall back to a fixed landscape box, so a portrait stream would sit
+  /// letterboxed inside the wrong rectangle and its remembered placement
+  /// would be read from the landscape slot.
+  void _watchVideoSize(PlayerHandle handle) {
+    unawaited(_geometry?.cancel() ?? Future<void>.value());
+    // The controller's state stream replays its current value to a new
+    // listener, so a stream that already reported its size is fed at once.
+    _geometry = handle.geometryController.state.listen((state) {
+      final size = state.geometry.videoSize;
+      if (size.width <= 0 || size.height <= 0) return;
+      ref.read(fullscreenDriverProvider).onVideoSize(size.width, size.height);
+      ref.read(pipDriverProvider).onVideoSize(size.width, size.height);
     });
   }
 
@@ -1134,6 +1230,8 @@ final class RoomController extends Notifier<RoomState> {
       filter: ref.read(danmakuFilterProvider),
       repeat: ref.read(danmakuRepeatProvider),
       pausedBehavior: ref.read(danmakuPausedBehaviorProvider),
+      showFixedTop: () => ref.read(danmakuFixedTopProvider),
+      showFixedBottom: () => ref.read(danmakuFixedBottomProvider),
     );
     _pipeline = pipeline;
     await pipeline.start(platform: room.ref.platform, roomId: room.ref.roomId);
@@ -1324,16 +1422,19 @@ final class RoomController extends Notifier<RoomState> {
 
   void _teardown() {
     // Nothing a closing room has in flight may install itself afterwards.
+    _openEpoch++;
     _danmakuEpoch++;
     _danmakuOpeningEpoch = null;
     unawaited(_states?.cancel() ?? Future<void>.value());
     unawaited(_handles?.cancel() ?? Future<void>.value());
     unawaited(_failures?.cancel() ?? Future<void>.value());
     unawaited(_chat?.cancel() ?? Future<void>.value());
+    unawaited(_geometry?.cancel() ?? Future<void>.value());
     _states = null;
     _handles = null;
     _failures = null;
     _chat = null;
+    _geometry = null;
     final session = _session;
     _session = null;
     _playback = null;

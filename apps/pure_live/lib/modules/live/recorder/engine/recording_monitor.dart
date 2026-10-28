@@ -5,13 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveDanmakuProvider;
 
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/recorder/data/recording_repository.dart'
+import 'package:pure_live/modules/live/recorder/data/recording_repository.dart'
     show RecordingTasksState, recordingRepositoryProvider, recordingTasksProvider;
-import 'package:pure_live/features/recorder/data/recording_settings.dart'
+import 'package:pure_live/modules/live/recorder/data/recording_settings.dart'
     show RecordingSettings, recordingSettingsProvider;
-import 'package:pure_live/features/recorder/data/recording_task.dart' show RecordingTaskState;
-import 'package:pure_live/features/recorder/engine/recorder_engine.dart' show recorderEngineProvider;
-import 'package:pure_live/features/recorder/engine/stream_resolver.dart'
+import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show RecordingTaskState;
+import 'package:pure_live/modules/live/recorder/engine/recorder_engine.dart' show recorderEngineProvider;
+import 'package:pure_live/modules/live/recorder/engine/stream_resolver.dart'
     show NoRecordableStream, RecordableStream, resolveRecordableStream;
 
 /// How long one room's live check may take before the next tick tries again.

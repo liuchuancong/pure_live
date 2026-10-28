@@ -9,17 +9,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/recorder/recorder.dart';
-import 'package:pure_live/features/room/chat/room_message_actions.dart' show showRoomMessageActions;
-import 'package:pure_live/features/room/controller/room_controller.dart';
-import 'package:pure_live/features/room/page/audio_only_cover.dart' show AudioOnlyCover;
-import 'package:pure_live/features/room/page/room_status.dart'
-    show RoomPictureAction, RoomPictureDim, RoomPictureKind, pictureStateOf, roomSlowProvider;
-import 'package:pure_live/features/room/player/cast_dialog.dart' show showCastDialog;
-import 'package:pure_live/features/room/player/compact_danmaku_metrics.dart' show CompactDanmakuMetrics;
-import 'package:pure_live/features/room/player/room_barrage_config.dart' show roomBarrageConfig;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/recorder/recorder.dart';
+import 'package:pure_live/modules/live/room/chat/room_message_actions.dart' show showRoomMessageActions;
+import 'package:pure_live/modules/live/room/controller/room_controller.dart';
+import 'package:pure_live/modules/live/room/page/audio_only_cover.dart' show AudioOnlyCover;
+import 'package:pure_live/modules/live/room/page/room_status.dart'
+    show RoomPictureAction, RoomPictureDim, RoomPictureKind, pictureStateOf, roomSlowProvider;
+import 'package:pure_live/modules/live/room/player/cast_dialog.dart' show showCastDialog;
+import 'package:pure_live/modules/live/room/player/compact_danmaku_metrics.dart' show CompactDanmakuMetrics;
+import 'package:pure_live/modules/live/room/player/room_barrage_config.dart' show roomBarrageConfig;
 import 'package:pure_live/shared/shared.dart';
 
 /// The picture's own ink: the frame is dark whatever the app's theme, so
@@ -107,6 +107,7 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     required this.roomState,
     required this.barrage,
     required this.onLeave,
+    this.onCloseRoom,
     this.immersive = false,
     this.keepControls = false,
     this.autofocusFirstControl = false,
@@ -128,6 +129,11 @@ final class PlayerSurface extends ConsumerStatefulWidget {
   /// Leaves the surface: the page pops in its inline layout, and leaves the
   /// presentation mode while one holds the window.
   final VoidCallback onLeave;
+
+  /// Stops the room and leaves it. The compact window's close button uses
+  /// this: closing a small window means "I am done", not "return to the
+  /// page". Null falls back to [onLeave].
+  final VoidCallback? onCloseRoom;
 
   /// Whether the surface fills the page (fullscreen, window fullscreen or
   /// PiP), where the bar starts visible and the top bar carries the way out.
@@ -408,7 +414,14 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     String? family,
     double? area,
     CompactDanmakuMetrics? compact,
-  }) => roomBarrageConfig(style, fps, family: family, area: area, compact: compact);
+  }) => roomBarrageConfig(
+    style,
+    fps,
+    family: family,
+    area: area,
+    fixedDuration: Duration(milliseconds: (ref.read(danmakuFixedDurationProvider) * 1000).round()),
+    compact: compact,
+  );
 
   BoxFit _portraitFit() => switch (widget.portraitDisplay) {
     PortraitFullscreenMode.complete || PortraitFullscreenMode.ambient => BoxFit.contain,
@@ -430,7 +443,10 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     final danmakuFamily = effectiveFontFamily(style.fontFamily, ref.watch(danmakuFontFaceProvider));
     final playback = ref.watch(playbackSettingsProvider);
     final presentation = ref.watch(roomPresentationProvider);
-    final mini = presentation == PresentationMode.pip;
+    // The compact, bare surface belongs to a picture-in-picture window this
+    // app lays out (the desktop one). A phone's system window leaves the page
+    // — and this surface — exactly as it was.
+    final mini = presentation == PresentationMode.pip && ref.read(roomPresentationProvider.notifier).pipOwnsWindow;
     final portraitHidden = widget.portraitFullscreen && widget.portraitDanmaku == PortraitDanmakuMode.hidden;
     final showDanmaku = playback.danmakuVisible && (!mini || playback.miniDanmakuVisible) && !portraitHidden;
     final danmakuArea = widget.portraitFullscreen
@@ -475,11 +491,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                   colors: [Color(0xFF17191E), kPlayerStageColor],
                 ),
               ),
-              child: MediaPlayerView(
-                handle: handle,
-                fit: _portraitFit(),
-                alignment: _portraitAlignment(),
-              ),
+              child: MediaPlayerView(handle: handle, fit: _portraitFit(), alignment: _portraitAlignment()),
             )
           else
             MediaPlayerView(
@@ -523,7 +535,9 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
             ),
           // The gesture layer: a tap shows or hides the bar, a double tap
           // plays or pauses, a vertical drag and the wheel set the volume.
-          // The overlay's own buttons stay above it.
+          // The compact window keeps only the window verbs: dragging the
+          // picture moves the small window (its native caption is hidden) and
+          // a double press brings it back.
           if (picture.kind == RoomPictureKind.none)
             Listener(
               onPointerSignal: (event) {
@@ -536,7 +550,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
               onPointerCancel: (_) => _releaseDanmaku(),
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTapUp: (_) => unawaited(_onPictureTap()),
+                onTapUp: mini ? null : (_) => unawaited(_onPictureTap()),
                 // With the switch off no long-press recognizer is registered,
                 // so it never holds back a drag.
                 onLongPressStart: longPressInteraction ? (_) => unawaited(_onPictureLongPress()) : null,
@@ -545,41 +559,59 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                 onLongPressCancel: _releaseDanmaku,
                 onDoubleTap: () {
                   _releaseDanmaku();
+                  if (mini) {
+                    widget.onLeave();
+                    return;
+                  }
                   unawaited(ref.read(roomProvider.notifier).togglePlayPause());
                 },
-                onVerticalDragStart: (details) {
-                  _releaseDanmaku();
-                  final width = MediaQuery.sizeOf(context).width;
-                  final swipe = widget.onPortraitSwipe;
-                  if (widget.portraitFullscreen &&
-                      swipe != null &&
-                      details.localPosition.dx >= width / 3 &&
-                      details.localPosition.dx <= width * 2 / 3) {
-                    _swipingPortrait = true;
-                    _portraitSwipeDy = 0;
-                    return;
-                  }
-                  _beginVolumeDrag();
-                },
-                onVerticalDragUpdate: (details) {
-                  if (_swipingPortrait) {
-                    _portraitSwipeDy += details.delta.dy;
-                    return;
-                  }
-                  _dragVolumeBy(details.delta.dy);
-                },
-                onVerticalDragEnd: (details) {
-                  if (!_swipingPortrait) return;
-                  _swipingPortrait = false;
-                  final dy = _portraitSwipeDy + (details.primaryVelocity ?? 0) * 0.08;
-                  _portraitSwipeDy = 0;
-                  if (dy.abs() < 80) return;
-                  widget.onPortraitSwipe?.call(dy < 0 ? 1 : -1);
-                },
-                onVerticalDragCancel: () {
-                  _swipingPortrait = false;
-                  _portraitSwipeDy = 0;
-                },
+                onPanStart: mini
+                    ? (_) {
+                        final window = ref.read(windowsPipWindowProvider);
+                        if (window != null) unawaited(window.startDragging());
+                      }
+                    : null,
+                onVerticalDragStart: mini
+                    ? null
+                    : (details) {
+                        _releaseDanmaku();
+                        final width = MediaQuery.sizeOf(context).width;
+                        final swipe = widget.onPortraitSwipe;
+                        if (widget.portraitFullscreen &&
+                            swipe != null &&
+                            details.localPosition.dx >= width / 3 &&
+                            details.localPosition.dx <= width * 2 / 3) {
+                          _swipingPortrait = true;
+                          _portraitSwipeDy = 0;
+                          return;
+                        }
+                        _beginVolumeDrag();
+                      },
+                onVerticalDragUpdate: mini
+                    ? null
+                    : (details) {
+                        if (_swipingPortrait) {
+                          _portraitSwipeDy += details.delta.dy;
+                          return;
+                        }
+                        _dragVolumeBy(details.delta.dy);
+                      },
+                onVerticalDragEnd: mini
+                    ? null
+                    : (details) {
+                        if (!_swipingPortrait) return;
+                        _swipingPortrait = false;
+                        final dy = _portraitSwipeDy + (details.primaryVelocity ?? 0) * 0.08;
+                        _portraitSwipeDy = 0;
+                        if (dy.abs() < 80) return;
+                        widget.onPortraitSwipe?.call(dy < 0 ? 1 : -1);
+                      },
+                onVerticalDragCancel: mini
+                    ? null
+                    : () {
+                        _swipingPortrait = false;
+                        _portraitSwipeDy = 0;
+                      },
                 child: const SizedBox.expand(),
               ),
             ),
@@ -656,14 +688,24 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                 ),
               ),
             ),
-          if (showBar)
+          if (showBar && !mini)
             PositionedDirectional(
               top: 0,
               start: 0,
               end: 0,
               child: _PlayerTopBar(room: room, onLeave: widget.onLeave),
             ),
-          if (showBar)
+          // The compact window's own strip: its caption is hidden, so this is
+          // the only place that carries the window verbs. It never hides —
+          // without it the small window would have no way back.
+          if (mini)
+            PositionedDirectional(
+              top: 0,
+              start: 0,
+              end: 0,
+              child: _PipBar(room: room, onRestore: widget.onLeave, onClose: widget.onCloseRoom ?? widget.onLeave),
+            ),
+          if (showBar && !mini)
             Positioned(
               bottom: 0,
               left: 0,
@@ -697,8 +739,17 @@ final class _PlayerTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
-    final title = room.room?.content.title;
-    final audience = room.room?.audience.onlineViewers ?? room.room?.audience.popularity ?? room.room?.audience.totalViewers;
+    final detail = room.room;
+    final title = detail?.content.title;
+    final anchor = (detail?.anchor?.name ?? '').trim();
+    // The streamer's name leads: in fullscreen the room is a person, and the
+    // title alone does not say whose stream this is.
+    final label = title == null
+        ? null
+        : anchor.isEmpty || anchor == title
+        ? title
+        : '$anchor · $title';
+    final audience = detail?.audience.onlineViewers ?? detail?.audience.popularity ?? detail?.audience.totalViewers;
     return Container(
       padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s8),
       decoration: const BoxDecoration(
@@ -712,10 +763,10 @@ final class _PlayerTopBar extends StatelessWidget {
         spacing: DsSpace.s8,
         children: [
           _BarIcon(icon: DsIcons.chevronLeft, label: t.common.close, onPressed: onLeave),
-          if (title != null)
+          if (label != null)
             Expanded(
               child: Text(
-                title,
+                label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.typography.title.copyWith(color: _onVideo),
@@ -725,12 +776,117 @@ final class _PlayerTopBar extends StatelessWidget {
             const Spacer(),
           if (audience != null) ...[
             DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: _onVideoSubtle),
-            Text(
-              AudienceFormat.format(audience),
-              style: theme.typography.caption.copyWith(color: _onVideoSubtle),
-            ),
+            Text(AudienceFormat.format(audience), style: theme.typography.caption.copyWith(color: _onVideoSubtle)),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// The compact window's strip.
+///
+/// A small window has no native caption, so this row carries every window
+/// verb: the drag handle and the picture move it, the double press (here or
+/// on the picture) restores the page, and play, mute, restore and close sit
+/// at the far end. It never hides — without it the window would have no way
+/// back — and it stays 28 px tall so the picture keeps the rest.
+final class _PipBar extends ConsumerWidget {
+  const _PipBar({required this.room, required this.onRestore, required this.onClose});
+
+  final RoomState room;
+  final VoidCallback onRestore;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final controller = ref.read(roomProvider.notifier);
+    final window = ref.read(windowsPipWindowProvider);
+    final playing = room.playback.playing;
+    final muted = controller.muted;
+    final anchor = (room.room?.anchor?.name ?? '').trim();
+    final caption = anchor.isEmpty ? (room.room?.content.title ?? '') : anchor;
+    void drag() {
+      if (window != null) unawaited(window.startDragging());
+    }
+
+    return Container(
+      height: 28,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: AlignmentDirectional.topCenter,
+          end: AlignmentDirectional.bottomCenter,
+          colors: [Color(0xB3000000), Color(0x00000000)],
+        ),
+      ),
+      child: Row(
+        spacing: DsSpace.s3,
+        children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onPanStart: (_) => drag(),
+            onDoubleTap: onRestore,
+            child: const SizedBox(
+              width: 28,
+              height: 28,
+              child: Center(child: DsIcon(DsIcons.dragHandle, size: 14, color: _onVideoSubtle)),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanStart: (_) => drag(),
+              onDoubleTap: onRestore,
+              child: Text(
+                caption,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.caption.copyWith(color: _onVideoMuted),
+              ),
+            ),
+          ),
+          _PipButton(
+            icon: playing ? DsIcons.pause : DsIcons.play,
+            label: playing ? t.room.pause : t.room.play,
+            onPressed: () => unawaited(controller.togglePlayPause()),
+          ),
+          _PipButton(
+            icon: muted ? DsIcons.volumeOff : DsIcons.volume,
+            label: muted ? t.room.unmute : t.room.mute,
+            onPressed: () => unawaited(controller.setMuted(value: !muted)),
+          ),
+          _PipButton(icon: DsIcons.expand, label: t.room.pipOff, onPressed: onRestore),
+          _PipButton(icon: DsIcons.x, label: t.common.close, onPressed: onClose),
+        ],
+      ),
+    );
+  }
+}
+
+/// One control on the compact window's strip: 28 px square, no tooltip (there
+/// is no room for one in a small window), the label kept for screen readers.
+final class _PipButton extends StatelessWidget {
+  const _PipButton({required this.icon, required this.label, required this.onPressed});
+
+  final DsIconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onPressed,
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: Center(child: DsIcon(icon, size: 14, color: _onVideoMuted)),
+        ),
       ),
     );
   }
@@ -786,7 +942,7 @@ final class _ControlBar extends ConsumerWidget {
     final duration = transport?.duration ?? Duration.zero;
     final quality = room.quality ?? (room.qualities.isEmpty ? null : room.qualities.first);
     final line = room.lines.isEmpty ? null : room.lines[room.lineIndex.clamp(0, room.lines.length - 1)];
-    final immersive = presentation != PresentationMode.normal;
+    final immersive = presentationController.modeOwnsWindow(presentation);
     return Container(
       padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
       decoration: const BoxDecoration(
@@ -806,7 +962,7 @@ final class _ControlBar extends ConsumerWidget {
               // The compact window (and a phone's 16:9 strip) has no room
               // for labels: the pickers keep their icons, and a small
               // window only keeps the transport and the way out.
-              final pip = presentation == PresentationMode.pip;
+              final pip = presentation == PresentationMode.pip && presentationController.pipOwnsWindow;
               final compact = constraints.maxWidth < 560;
               final narrow = constraints.maxWidth < 420;
               final bar = Row(
@@ -978,7 +1134,14 @@ final class _ControlBar extends ConsumerWidget {
                       selected: presentation == PresentationMode.pip,
                       onPressed: () {
                         onWake();
-                        unawaited(presentationController.togglePip(player));
+                        // A phone's system window can refuse (no on-screen
+                        // player layer, a device that cannot present it):
+                        // saying so beats a button that did nothing.
+                        unawaited(() async {
+                          final accepted = await presentationController.togglePip(player);
+                          if (accepted || !context.mounted) return;
+                          showDsToast(context: context, title: t.common.pipUnavailable);
+                        }());
                       },
                     ),
                 ],
@@ -1113,31 +1276,7 @@ final class _BarIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    return TvFocusScale(
-      child: DsTooltip(
-        message: label,
-        child: DsPressable(
-          semanticLabel: label,
-          onPressed: onPressed,
-          autofocus: autofocus,
-          builder: (context, states, _) {
-            final hovered = states.contains(WidgetState.hovered);
-            return Container(
-              width: theme.sizes.sm,
-              height: theme.sizes.sm,
-              decoration: DsBoxDecoration(
-                color: hovered ? _onVideoHover : null,
-                borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
-              ),
-              child: Center(
-                child: DsIcon(icon, size: theme.sizes.iconSm, color: selected ? _onVideo : _onVideoMuted),
-              ),
-            );
-          },
-        ),
-      ),
-    );
+    return MediaBarButton(icon: icon, label: label, onPressed: onPressed, selected: selected, autofocus: autofocus);
   }
 }
 

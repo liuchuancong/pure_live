@@ -3,7 +3,7 @@ import 'dart:async' show Timer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 
-import 'package:pure_live/features/room/chat/membership_cards.dart' show isMembershipCard;
+import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show isMembershipCard;
 
 /// What the room's super chat board shows: the platform's own list plus the
 /// messages and membership cards that arrived while the room was open.

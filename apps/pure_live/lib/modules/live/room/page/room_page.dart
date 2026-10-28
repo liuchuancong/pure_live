@@ -3,41 +3,35 @@ import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
-import 'package:flutter/material.dart' show AppBar, IconButton, Scaffold;
+import 'package:flutter/material.dart' show AppBar, IconButton, Scaffold, kToolbarHeight;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_device/live_device.dart'
-    show
-        PlatformScreenAwakeService,
-        PlatformScreenOrientationService,
-        ScreenAwakeService,
-        ScreenOrientationPreference,
-        ScreenOrientationService;
+    show PlatformScreenAwakeService, PlatformScreenOrientationService, ScreenAwakeService, ScreenOrientationService;
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart' show PlayerId, PresentationMode;
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/favorites/favorites.dart';
-import 'package:pure_live/features/history/history.dart';
-import 'package:pure_live/features/recorder/recorder.dart';
-import 'package:pure_live/features/room/chat/room_chat.dart' show RoomChatPanel;
-import 'package:pure_live/features/room/controller/room_controller.dart';
-import 'package:pure_live/features/room/page/player_surface.dart'
-    show PlayerSurface, kPlayerStageColor;
-import 'package:pure_live/features/room/page/room_details.dart'
-    show copyRoomLink, openRoomExternally, roomLinkOf, shareRoom, showRoomDetails;
-import 'package:pure_live/features/room/page/room_orientation.dart'
-    show RoomOrientation, roomFrameRatio, roomOrientationProvider, showRoomOrientationDialog;
-import 'package:pure_live/features/room/page/room_refresh_rate.dart' show roomRefreshRateProvider;
-import 'package:pure_live/features/room/page/room_status.dart' show roomSlowProvider, slowAfter;
-import 'package:pure_live/features/room/player/floating_room_player.dart' show FloatingRoomPlayer;
-import 'package:pure_live/features/room/player/room_playlist.dart' show roomPlaylistProvider;
-import 'package:pure_live/features/room/player/room_switcher.dart' show roomSwipeList, showRoomSwitcher;
-import 'package:pure_live/features/room/player/sleep_timer.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/modules/live/history/history.dart';
+import 'package:pure_live/modules/live/recorder/recorder.dart';
+import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomChatPanel;
+import 'package:pure_live/modules/live/room/controller/room_controller.dart';
+import 'package:pure_live/modules/live/room/page/player_surface.dart' show PlayerSurface, kPlayerStageColor;
+import 'package:pure_live/modules/live/room/page/room_details.dart'
+    show copyRoomLink, openRoomExternally, roomLinkOf, shareRoom, showRoomDetails;
+import 'package:pure_live/modules/live/room/page/room_orientation.dart'
+    show RoomOrientation, roomFrameRatio, roomOrientationProvider, showRoomOrientationDialog;
+import 'package:pure_live/modules/live/room/page/room_refresh_rate.dart' show roomRefreshRateProvider;
+import 'package:pure_live/modules/live/room/page/room_status.dart' show roomSlowProvider, slowAfter;
+import 'package:pure_live/modules/live/room/player/floating_room_player.dart' show FloatingRoomPlayer;
+import 'package:pure_live/modules/live/room/player/room_playlist.dart' show RoomPlaylistController, roomPlaylistProvider;
+import 'package:pure_live/modules/live/room/player/room_switcher.dart' show roomSwipeList, showRoomSwitcher;
+import 'package:pure_live/modules/live/room/player/sleep_timer.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The live room: media_core's picture with the app's control layer over
@@ -72,6 +66,14 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   RoomPresentationController? _presentationController;
   PlayerId? _player;
 
+  // Riverpod refuses `ref` once the element is defunct, and State.dispose()
+  // runs exactly there: the leaving page says its goodbyes through
+  // notifiers captured while it was alive.
+  late final RoomController _roomNotifier;
+  late final RoomImmersiveController _immersiveNotifier;
+  late final RoomPlaylistController _playlistNotifier;
+  late final SleepTimerController _sleepTimerNotifier;
+
   /// The screen wakelock while the picture plays: a live room is watched,
   /// not read, and the display should not sleep under it.
   final ScreenAwakeService _screenAwake = const PlatformScreenAwakeService();
@@ -81,9 +83,11 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// (POR-04's policy target); inert on desktop.
   final ScreenOrientationService _screenOrientation = const PlatformScreenOrientationService();
 
-  /// Whether this background visit already asked for a small window: one
-  /// entry per leave, reset when the app comes back.
-  bool _autoPipRequested = false;
+  /// Whether the Android small window is armed for the next leave, and the
+  /// size it was armed for (arming is a channel call per change, not per
+  /// frame).
+  bool _floatingArmed = false;
+  Size? _floatingArmedSize;
 
   /// Whether this visit already handled the auto-fullscreen preference: the
   /// room asks once, when its stream first plays, and a later exit stays.
@@ -114,6 +118,11 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// Whether this route pop hands the live handle to the app-level floating
   /// player instead of stopping the room.
   bool _leaveToFloating = false;
+
+  /// Whether the room is being stopped by a small window's ✕. That close
+  /// leaves the route like any other pop, so without this the page would read
+  /// the still-playing room as a leave and hand it to the floating player.
+  bool _closingRoom = false;
 
   /// Whether going to the background applied audio-only, and the room's own
   /// mode to restore when it returns (V5-21).
@@ -149,6 +158,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   @override
   void initState() {
     super.initState();
+    _roomNotifier = ref.read(roomProvider.notifier);
+    _immersiveNotifier = ref.read(roomImmersiveProvider.notifier);
+    _playlistNotifier = ref.read(roomPlaylistProvider.notifier);
+    _sleepTimerNotifier = ref.read(sleepTimerProvider.notifier);
     WidgetsBinding.instance.addObserver(this);
     _currentRoomKey = '${widget.platform.trim().toLowerCase()}:${widget.roomId.trim()}';
     // A new room page supersedes any older floating handoff; open() below
@@ -196,6 +209,29 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // A PiP window closed while the app is away means "stop", when the
     // setting says so; the system ends the window without a lifecycle event.
     _pipSubscription = ref.read(pipDriverProvider).onPipChanged.listen(_onPipChanged);
+    // The Android small window takes the screen when the app is left; the
+    // room's floating player is what fills it.
+    FloatingOverlay.listen();
+    FloatingOverlay.active.addListener(_onFloatingWindowChanged);
+    FloatingOverlay.permitted.addListener(_onFloatingWindowPermitted);
+  }
+
+  /// Shows or leaves the portrait full-screen surface and publishes it: the
+  /// route's chrome hides the window strip while this page owns the window,
+  /// exactly as it does for fullscreen, and the page's own layout is the only
+  /// thing that can know.
+  void _setPortraitFullscreen(bool value) {
+    if (_portraitFullscreen == value) return;
+    if (mounted) {
+      setState(() => _portraitFullscreen = value);
+    } else {
+      _portraitFullscreen = value;
+    }
+    try {
+      ref.read(roomImmersiveProvider.notifier).set(value: value);
+    } on Object {
+      // The window's container is already gone with the page.
+    }
   }
 
   /// The timer fired: pause the stream (never resume a paused room) and say
@@ -232,7 +268,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// room are not handoffs.
   bool get _shouldFloatOnExit {
     final room = ref.read(roomProvider);
-    return ref.read(playbackSettingsProvider).floatPlay &&
+    return !_closingRoom &&
+        ref.read(playbackSettingsProvider).floatPlay &&
         room.playback.playing &&
         room.handle != null &&
         ref.read(roomLeaveProvider) == null &&
@@ -241,54 +278,50 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
   @override
   void dispose() {
-    try {
-      if (ref.read(roomPlaylistProvider)?.current.ref.identityKey == _currentRoomKey) {
-        ref.read(roomPlaylistProvider.notifier).clear();
-      }
-    } on Object {
-      // The container is already gone; the list goes with it.
-    }
+    // The page may be destroyed while it fills the window; the next route
+    // must get its window strip back.
+    _immersiveNotifier.set(value: false);
+    _playlistNotifier.clearIfCurrent(_currentRoomKey);
     _routeObserver?.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_pipSubscription?.cancel() ?? Future<void>.value());
     _pipSubscription = null;
+    FloatingOverlay.active.removeListener(_onFloatingWindowChanged);
+    FloatingOverlay.permitted.removeListener(_onFloatingWindowPermitted);
+    // The page that owned the arm is going; a room kept in the floating
+    // player arms nothing until it opens a page again.
+    _floatingArmed = false;
+    if (FloatingOverlay.supported) unawaited(FloatingOverlay.disarm());
     _backgroundGate?.dispose();
     _backgroundGate = null;
     _slowTimer?.cancel();
     unawaited(_screenAwake.disable().catchError((Object _) {}));
-    try {
-      ref.read(sleepTimerProvider.notifier)
-        ..onFire_ = null
-        ..start(null);
-      if (_leaveToFloating && FloatingRoomPlayer.canShow) {
-        // The room controller outlives this page; the overlay takes over its
-        // handle until the viewer closes or re-enters the room. A handoff
-        // that did not land (a same-frame hide won, the host is gone) stops
-        // the room here instead of leaving it playing behind the pages. The
-        // stops are read before the await: this State's ref is gone by the
-        // time the answer arrives.
-        final notifier = ref.read(roomProvider.notifier);
-        final controller = _presentationController;
-        final player = _player;
-        unawaited(
-          FloatingRoomPlayer.show().then((shown) {
-            if (shown) return;
-            unawaited(notifier.close());
-            if (controller != null && player != null) unawaited(controller.exit(player));
-          }),
-        );
-      } else {
-        // Leaving the route stops the stream rather than keeping it behind
-        // the next page.
-        unawaited(ref.read(roomProvider.notifier).close());
-        final controller = _presentationController;
-        final player = _player;
-        if (controller != null && player != null) {
-          unawaited(controller.exit(player));
-        }
+    _sleepTimerNotifier
+      ..onFire_ = null
+      ..start(null);
+    if (_leaveToFloating && FloatingRoomPlayer.canShow) {
+      // The room controller outlives this page; the overlay takes over its
+      // handle until the viewer closes or re-enters the room. A handoff
+      // that did not land (a same-frame hide won, the host is gone) stops
+      // the room here instead of leaving it playing behind the pages.
+      final controller = _presentationController;
+      final player = _player;
+      unawaited(
+        FloatingRoomPlayer.show().then((shown) {
+          if (shown) return;
+          unawaited(_roomNotifier.close());
+          if (controller != null && player != null) unawaited(controller.exit(player));
+        }),
+      );
+    } else {
+      // Leaving the route stops the stream rather than keeping it behind
+      // the next page.
+      unawaited(_roomNotifier.close());
+      final controller = _presentationController;
+      final player = _player;
+      if (controller != null && player != null) {
+        unawaited(controller.exit(player));
       }
-    } on Object {
-      // The container is already gone (app shutdown); nothing to stop.
     }
     super.dispose();
   }
@@ -297,18 +330,13 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// fullscreen orientation policy decides which way the device turns as
   /// the room goes system-fullscreen — upright for a portrait stream (or
   /// always, per the choice), sideways for the rest, or the lock released
-  /// to follow the accelerometer. Desktop and web answer inert there.
+  /// to follow the accelerometer. Desktop and web answer inert there. VOD and
+  /// IPTV ask the same rule for themselves.
   void _applyFullscreenOrientation() {
-    final policy = ref.read(portraitSettingsProvider).fullscreenPolicy;
-    final detected = ref.read(roomProvider).handle?.combinedSnapshot.geometry.aspectRatio ?? 0;
-    final portraitStream = detected.isFinite && detected > 0 && detected < 1;
-    unawaited(
-      _screenOrientation.apply(switch (policy) {
-        PortraitFullscreenPolicy.followSystem => ScreenOrientationPreference.followSystem,
-        PortraitFullscreenPolicy.landscape => ScreenOrientationPreference.landscape,
-        PortraitFullscreenPolicy.followSource =>
-          portraitStream ? ScreenOrientationPreference.portrait : ScreenOrientationPreference.landscape,
-      }),
+    applyFullscreenOrientation(
+      _screenOrientation,
+      policy: ref.read(portraitSettingsProvider).fullscreenPolicy,
+      aspectRatio: ref.read(roomProvider).handle?.combinedSnapshot.geometry.aspectRatio ?? 0,
     );
   }
 
@@ -367,19 +395,21 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       _pauseBackgroundDanmaku();
     }
     if (state == AppLifecycleState.resumed) {
-      _autoPipRequested = false;
       _restoreBackgroundAudioOnly();
       _resumeBackgroundDanmaku();
       _resumeAfterPipClose();
+      // The viewer may have granted "display over other apps" while away.
+      unawaited(FloatingOverlay.refresh());
       return;
     }
-    // The moment the app starts leaving is the one Android's PiP entry
-    // needs; by `paused` the activity is already backgrounded.
-    if (state == AppLifecycleState.inactive) _maybeAutoPip();
   }
 
   /// The PiP window went away: pause only when the room would otherwise keep
   /// playing in the background, as the reference's "关闭画中画时暂停".
+  ///
+  /// On iOS the system window is the one that closes this way; on Android the
+  /// switch lives next to background playback, which already keeps the app
+  /// quiet when it is off.
   void _onPipChanged(bool active) {
     if (active) {
       _pipWasActive = true;
@@ -387,9 +417,11 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     }
     if (!_pipWasActive) return;
     _pipWasActive = false;
-    if (_appInForeground || kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    final platform = defaultTargetPlatform;
+    if (_appInForeground || kIsWeb || (platform != TargetPlatform.android && platform != TargetPlatform.iOS)) return;
     final settings = ref.read(playbackSettingsProvider);
-    if (!settings.pauseOnPipClose || !settings.backgroundPlay) return;
+    if (!settings.pauseOnPipClose) return;
+    if (platform == TargetPlatform.android && !settings.backgroundPlay) return;
     final room = ref.read(roomProvider);
     if (room.handle == null || !room.playback.playing) return;
     _pausedByPipClose = true;
@@ -442,19 +474,87 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     unawaited(ref.read(roomProvider.notifier).resumeDanmakuConnection());
   }
 
-  /// "离开应用时自动小窗": a playing room becomes the system small window
-  /// once per leave. Phones only — a desktop loses focus all the time and
-  /// the setting names the app going away, not a window.
-  void _maybeAutoPip() {
-    if (_autoPipRequested || kIsWeb) return;
-    if (defaultTargetPlatform != TargetPlatform.android && defaultTargetPlatform != TargetPlatform.iOS) return;
-    final room = ref.read(roomProvider);
-    final handle = room.handle;
-    if (handle == null || !room.playback.playing) return;
-    if (!ref.read(playbackSettingsProvider).autoPipOnLeave) return;
-    if (ref.read(roomPresentationProvider) != PresentationMode.normal) return;
-    _autoPipRequested = true;
-    unawaited(ref.read(roomPresentationProvider.notifier).togglePip(handle.id));
+  /// The Android small window took the screen, or gave it back: while it shows,
+  /// the room's floating player is the whole content of the window; with it
+  /// gone, the page behind — still mounted and playing — is what the viewer
+  /// sees again.
+  void _onFloatingWindowChanged() {
+    if (FloatingOverlay.active.value) {
+      unawaited(FloatingRoomPlayer.show());
+    } else {
+      FloatingRoomPlayer.hide();
+      // The window takes its arm with it when it closes itself; re-decide for
+      // the next leave once the page draws again.
+      _floatingArmed = false;
+      _floatingArmedSize = null;
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// "离开应用时自动小窗": keeps the small window armed while a room plays, so
+  /// leaving the app (home, recents) shows the picture over the other apps.
+  ///
+  /// Armed here, ahead of the leave, because the native side decides in
+  /// `onUserLeaveHint` — before any Dart call could run. Phones only, and only
+  /// with the draw-over-other-apps grant: without it the app simply leaves.
+  void _syncFloatingWindowArm(
+    RoomState room, {
+    required Size screen,
+    required bool onTop,
+    required bool autoSmallWindow,
+    required FloatingWindowSettings floating,
+  }) {
+    if (!FloatingOverlay.supported) return;
+    final wanted =
+        onTop && autoSmallWindow && room.handle != null && room.playback.playing && !FloatingOverlay.active.value;
+    final size = wanted ? _floatingWindowSize(_floatingWindowRatio(room), floating, screen) : Size.zero;
+    if (wanted == _floatingArmed && (!wanted || size == _floatingArmedSize)) return;
+    _floatingArmed = wanted;
+    _floatingArmedSize = wanted ? size : null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!wanted) {
+        unawaited(FloatingOverlay.disarm());
+        return;
+      }
+      unawaited(_armFloatingWindow(size));
+    });
+  }
+
+  Future<void> _armFloatingWindow(Size size) async {
+    if (!await FloatingOverlay.refresh()) {
+      // No grant yet: leave the arm open so the next build arms the window
+      // once the viewer grants it (the setting's toggle asks for it).
+      _floatingArmed = false;
+      _floatingArmedSize = null;
+      return;
+    }
+    if (!mounted || !_floatingArmed) return;
+    await FloatingOverlay.arm(width: size.width, height: size.height);
+  }
+
+  /// The grant can arrive while the app is away (the system page) or after the
+  /// page armed without it: re-run the arm decision.
+  void _onFloatingWindowPermitted() {
+    if (mounted) setState(() {});
+  }
+
+  /// The small window's size: the floating player's, for the picture's shape,
+  /// kept inside [screen] the way the in-app window is.
+  Size _floatingWindowSize(double ratio, FloatingWindowSettings floating, Size screen) {
+    final portrait = ratio < 1;
+    final base =
+        kFloatingWindowBaseWidth *
+        floatingWindowSizeFactor(floating.size) *
+        (portrait ? floating.portraitScale : floating.landscapeScale);
+    final maxWidth = math.min(screen.width - 16, math.max(220, (screen.height - 16) * ratio)).toDouble();
+    final width = base.clamp(200, math.max(200, maxWidth)).toDouble();
+    return Size(width, width / ratio);
+  }
+
+  double _floatingWindowRatio(RoomState room) {
+    final detected = room.handle?.combinedSnapshot.geometry.aspectRatio ?? 0;
+    return detected > 0 && detected.isFinite ? detected.clamp(0.5, 2.4) : 16 / 9;
   }
 
   /// The frame's ratio: the room's own orientation choice when it made
@@ -567,7 +667,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 DsButton.icon(
                   variant: DsButtonVariant.secondary,
                   size: DsSize.sm,
-                  onPressed: () => setState(() => _portraitFullscreen = false),
+                  onPressed: () => _setPortraitFullscreen(false),
                   icon: const DsIcon(DsIcons.x),
                   semanticLabel: t.room.portraitFullscreenExit,
                 ),
@@ -646,6 +746,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
   @override
   Widget build(BuildContext context) {
+    // The Android small window shows the room through its floating player;
+    // the page behind it would only be laid out for the window's few hundred
+    // pixels and draw underneath it.
+    if (FloatingOverlay.active.value) return const ColoredBox(color: kPlayerStageColor);
     final t = context.t;
     final room = ref.watch(roomProvider);
     // Declares the playing line's frame rate to the display while this page
@@ -654,6 +758,15 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     _syncScreenWake(room.playback.playing && ref.watch(keepScreenOnProvider));
     final presentation = ref.watch(roomPresentationProvider);
     _maybeAutoFullscreen(room, presentation);
+    _syncFloatingWindowArm(
+      room,
+      screen: MediaQuery.sizeOf(context),
+      // The room must be what the viewer sees: leaving the app from settings
+      // or a dialog pushed over the room is not leaving the room.
+      onTop: ModalRoute.of(context)?.isCurrent ?? true,
+      autoSmallWindow: ref.watch(playbackSettingsProvider.select((settings) => settings.autoPipOnLeave)),
+      floating: ref.watch(floatingWindowSettingsProvider),
+    );
     // POR-04: the orientation policy is asked once per entry into system
     // fullscreen — the driver's own exit path puts the lock back to the
     // side the device was held in.
@@ -662,7 +775,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         _applyFullscreenOrientation();
       }
       if (next != PresentationMode.normal && _portraitFullscreen) {
-        setState(() => _portraitFullscreen = false);
+        _setPortraitFullscreen(false);
       }
     });
     // What the room says about a login (a Bilibili connection that only sees
@@ -682,17 +795,21 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     final presentationController = ref.read(roomPresentationProvider.notifier);
     _presentationController = presentationController;
     _player = room.handle?.id;
+    // Fullscreen and the desktop compact window take the app's window and
+    // lay out the bare picture. A phone's picture-in-picture is the system's
+    // window over the app, so this page keeps the layout it had.
+    final ownsWindow = presentationController.modeOwnsWindow(presentation);
 
     /// The back arrow and Escape: leave the presentation mode while one
     /// holds the page, otherwise leave the room — where "leave" is the
     /// host's verb: a route pop in the app, a window close in a room window.
     void leave() {
       if (_portraitFullscreen) {
-        setState(() => _portraitFullscreen = false);
+        _setPortraitFullscreen(false);
         return;
       }
       final player = room.handle?.id;
-      if (presentation != PresentationMode.normal && player != null) {
+      if (ownsWindow && player != null) {
         unawaited(presentationController.exit(player));
       } else if (ref.read(roomLeaveProvider) case final closeWindow?) {
         unawaited(closeWindow());
@@ -701,6 +818,22 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         context.pop();
       } else {
         if (_shouldFloatOnExit) _leaveToFloating = true;
+        context.go(RouteNames.popular);
+      }
+    }
+
+    /// Stops the room from a compact window: leave the mode, then leave the
+    /// room itself. The window's close button means "I am done watching",
+    /// where the back arrow means "put the page back".
+    void closeRoom() {
+      _closingRoom = true;
+      final player = room.handle?.id;
+      if (player != null) unawaited(presentationController.exit(player));
+      if (ref.read(roomLeaveProvider) case final closeWindow?) {
+        unawaited(closeWindow());
+      } else if (context.canPop()) {
+        context.pop();
+      } else {
         context.go(RouteNames.popular);
       }
     }
@@ -742,7 +875,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     final keepPortrait = swipeSwitch && _portraitSwipeTarget == roomKey;
     if (_portraitFullscreen && room.handle != null && !keepPortrait && !_switchingPortraitRoom && pictureRatio >= 1) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _portraitFullscreen) setState(() => _portraitFullscreen = false);
+        if (mounted && _portraitFullscreen) _setPortraitFullscreen(false);
       });
     }
     final portraitState = ref.watch(portraitFullscreenProvider);
@@ -753,7 +886,8 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       roomState: room,
       barrage: ref.read(roomProvider.notifier).barrage,
       onLeave: leave,
-      immersive: presentation != PresentationMode.normal || _portraitFullscreen,
+      onCloseRoom: closeRoom,
+      immersive: ownsWindow || _portraitFullscreen,
       // The TV room starts on its play button and keeps its bars: a remote
       // has no pointer to wake them, and arrows must walk controls.
       keepControls: tv,
@@ -762,7 +896,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       portraitDisplay: portraitChoice.display,
       portraitDanmaku: portraitChoice.danmaku,
       canEnterPortraitFullscreen: pictureRatio < 1,
-      onPortraitFullscreen: () => setState(() => _portraitFullscreen = true),
+      onPortraitFullscreen: () => _setPortraitFullscreen(true),
       onPortraitSwipe: _portraitFullscreen && swipeSwitch && mobile ? _switchPortraitRoom : null,
     );
 
@@ -863,7 +997,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   stage,
-                  Container(width: 1, color: colors.border),
+                  const DsDivider.vertical(),
                   SizedBox(
                     width: chatWidth,
                     child: Column(
@@ -900,35 +1034,56 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       child: CallbackShortcuts(bindings: keys, child: child),
     );
 
-    // A presentation mode owns the whole page; the inline room keeps the
-    // app bar with its header, follow button and menu. The mode surface is
-    // the stage's own black: a transition's missing frame reads dark.
-    if (presentation != PresentationMode.normal) {
-      return withShortcuts(ColoredBox(color: kPlayerStageColor, child: player));
-    }
+    // A presentation mode that owns the window keeps the whole page; the
+    // inline room (and a phone's picture-in-picture, whose window floats over
+    // the app) keeps the app bar with its header, follow button and menu.
+    // Both branches keep the same root (an opaque stage under a Scaffold), so
+    // a mode change never unmounts the player's ancestors wholesale and a
+    // transition's missing frame paints the picture's own black instead of
+    // the theme's surface.
+    final ownChrome = WindowChromeState.drawsCaptionControls;
     return withShortcuts(
-      Scaffold(
-        backgroundColor: colors.surface,
-        appBar: AppBar(
-          backgroundColor: colors.surface,
-          surfaceTintColor: const Color(0x00000000),
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          leadingWidth: 52,
-          leading: IconButton(
-            tooltip: t.common.back,
-            onPressed: leave,
-            icon: DsIcon(DsIcons.chevronLeft, size: 20, color: colors.text),
-          ),
-          titleSpacing: 0,
-          title: _RoomHeader(room: room),
-          actions: [
-            _FollowPill(room: room),
-            _RoomMenu(room: room, onClose: leave),
-            const SizedBox(width: DsSpace.s4),
-          ],
-        ),
-        body: SafeArea(child: body),
+      ColoredBox(
+        color: kPlayerStageColor,
+        child: ownsWindow
+            ? Scaffold(backgroundColor: kPlayerStageColor, body: player)
+            : Scaffold(
+                // The portrait full-screen surface is the page's own way of
+                // filling the window: it keeps its black stage and drops the
+                // app bar with it, so no header survives into the mode.
+                backgroundColor: _portraitFullscreen ? kPlayerStageColor : colors.surface,
+                appBar: _portraitFullscreen
+                    ? null
+                    : AppBar(
+                        backgroundColor: colors.surface,
+                        surfaceTintColor: const Color(0x00000000),
+                        elevation: 0,
+                        automaticallyImplyLeading: false,
+                        leadingWidth: 52,
+                        leading: IconButton(
+                          tooltip: t.common.back,
+                          onPressed: leave,
+                          icon: DsIcon(DsIcons.chevronLeft, size: 20, color: colors.text),
+                        ),
+                        titleSpacing: 0,
+                        // On a desktop where the app draws the window's own caption
+                        // this bar is the caption: the header doubles as the drag
+                        // band and the three buttons close the window here, so the
+                        // page never stacks two title bars.
+                        title: ownChrome ? WindowDragArea(child: _RoomHeader(room: room)) : _RoomHeader(room: room),
+                        actions: [
+                          _FollowPill(room: room),
+                          _RoomMenu(room: room, onClose: leave),
+                          if (ownChrome) ...[
+                            const SizedBox(width: DsSpace.s8),
+                            const SizedBox(height: 20, child: DsDivider.vertical()),
+                            const WindowCaptionControls(height: kToolbarHeight),
+                          ],
+                          const SizedBox(width: DsSpace.s4),
+                        ],
+                      ),
+                body: _portraitFullscreen ? body : SafeArea(child: body),
+              ),
       ),
     );
   }
@@ -1211,10 +1366,13 @@ final class _RoomInfoBar extends ConsumerWidget {
     final detail = room.room;
     if (detail == null) {
       return const Padding(
-        padding: EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s8),
+        padding: EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s8, DsSpace.s6),
         child: Row(
           spacing: DsSpace.s8,
-          children: [DsSkeleton(width: 220, height: 14), Spacer(), DsSkeleton(width: 56, height: 20)],
+          children: [
+            Expanded(child: DsSkeleton(height: 14)),
+            DsSkeleton(width: 56, height: 20),
+          ],
         ),
       );
     }
@@ -1259,28 +1417,40 @@ final class _RoomInfoBar extends ConsumerWidget {
               ),
             ),
             if (audience != null)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s3,
-                children: [
-                  DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: colors.textSubtle),
-                  Text(
-                    AudienceFormat.format(audience),
-                    style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
-                  ),
-                ],
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: DsSpace.s3,
+                  children: [
+                    DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: colors.textSubtle),
+                    Flexible(
+                      child: Text(
+                        AudienceFormat.format(audience),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             if (started != null)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s3,
-                children: [
-                  DsIcon(DsIcons.clock, size: theme.sizes.iconXs, color: colors.textSubtle),
-                  Text(
-                    _clock(started),
-                    style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
-                  ),
-                ],
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: DsSpace.s3,
+                  children: [
+                    DsIcon(DsIcons.clock, size: theme.sizes.iconXs, color: colors.textSubtle),
+                    Flexible(
+                      child: Text(
+                        _clock(started),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             DsIcon(DsIcons.chevronDown, size: theme.sizes.iconXs, color: colors.textSubtle),
             const _SleepChip(),

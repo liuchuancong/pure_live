@@ -6,10 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/areas/controllers/areas_controller.dart';
-import 'package:pure_live/features/areas/data/area_follow_repository.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/areas/controllers/areas_controller.dart';
+import 'package:pure_live/modules/live/areas/data/area_follow_repository.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The areas page (the reference's `AreasPage`): the platforms' own
@@ -267,15 +267,16 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
           ];
     Widget cardBuilder(BuildContext context, LiveArea area) {
       final followed = followedKeys.contains(area.identityKey);
-      return _AreaCard(
+      return AreaCard(
         area: area,
-        onSelect: () => unawaited(
+        filled: true,
+        onPressed: () => unawaited(
           context.push(
             AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location,
             extra: area,
           ),
         ),
-        trailing: _AreaFollowButton(
+        trailing: AreaFollowButton(
           followed: followed,
           onPressed: () => unawaited(ref.read(followedAreasProvider.notifier).toggle(area)),
         ),
@@ -338,39 +339,6 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
   }
 }
 
-/// The heart on a platform area's card: filled while followed, a hollow
-/// heart while not; pressing it follows or unfollows the area.
-final class _AreaFollowButton extends StatelessWidget {
-  const _AreaFollowButton({required this.followed, required this.onPressed});
-
-  final bool followed;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    return DsPressable(
-      semanticLabel: followed ? t.areas.unfollow : t.areas.follow,
-      onPressed: onPressed,
-      builder: (context, states, _) {
-        final hovered = states.contains(WidgetState.hovered);
-        return DsIcon(
-          DsIcons.heart,
-          size: DsTheme.of(context).sizes.iconSm,
-          color: followed
-              ? hovered
-                    ? colors.danger.fill
-                    : colors.accent
-              : hovered
-              ? colors.accent
-              : colors.textSubtle,
-        );
-      },
-    );
-  }
-}
-
 /// The followed areas: the areas the viewer follows, the platform they
 /// belong to named under each one; pressing the heart unfollows.
 final class _FollowedAreas extends ConsumerWidget {
@@ -423,74 +391,6 @@ final class _FollowedAreas extends ConsumerWidget {
   }
 }
 
-/// One area as a card: its picture, its name, and the parent group it sits
-/// in when the platform nests areas. Opening the area is [onSelect].
-final class _AreaCard extends StatelessWidget {
-  const _AreaCard({required this.area, required this.onSelect, this.trailing});
-
-  /// The area shown.
-  final LiveArea area;
-
-  /// Fired when the card opens the area.
-  final VoidCallback onSelect;
-
-  /// A small widget at the card's end, e.g. the follow toggle.
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final parent = area.parentAreaName;
-    return DsPressable(
-      semanticLabel: area.areaName,
-      onPressed: onSelect,
-      builder: (context, states, _) {
-        final hovered = states.contains(WidgetState.hovered);
-        return Container(
-          padding: const EdgeInsets.all(DsSpace.s12),
-          decoration: DsBoxDecoration(
-            color: hovered ? colors.hover : colors.control,
-            borderRadius: BorderRadius.circular(theme.radii.card),
-            shadows: hovered
-                ? [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))]
-                : const <DsShadow>[],
-          ),
-          child: Row(
-            spacing: DsSpace.s12,
-            children: [
-              _AreaIcon(area: area),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: DsSpace.s3,
-                  children: [
-                    Text(
-                      area.areaName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                    ),
-                    if (parent != null && parent.isNotEmpty)
-                      Text(
-                        parent,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                  ],
-                ),
-              ),
-              ?trailing,
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
 /// The followed area's card: the area card with an active heart that
 /// unfollows on press.
 final class _FollowedAreaCard extends StatelessWidget {
@@ -502,54 +402,11 @@ final class _FollowedAreaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
-    return _AreaCard(
+    return AreaCard(
       area: area,
-      onSelect: onSelect,
-      trailing: DsPressable(
-        semanticLabel: t.areas.unfollow,
-        onPressed: onUnfollow,
-        builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
-          return DsIcon(
-            DsIcons.heart,
-            size: DsTheme.of(context).sizes.iconSm,
-            color: hovered ? DsTheme.colorsOf(context).danger.fill : DsTheme.colorsOf(context).textSubtle,
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// The area's picture: the platform's icon when it names one, a tag glyph
-/// over the channel fill otherwise.
-final class _AreaIcon extends StatelessWidget {
-  const _AreaIcon({required this.area});
-
-  /// The area whose icon is shown.
-  final LiveArea area;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final fallback = ColoredBox(
-      color: colors.channel,
-      child: Center(
-        child: DsIcon(DsIcons.tag, size: theme.sizes.iconMd, color: colors.textMuted),
-      ),
-    );
-    final url = area.iconUrl;
-    if (url == null || url.isEmpty) {
-      return SizedBox(width: theme.sizes.md, height: theme.sizes.md, child: fallback);
-    }
-    return DsImage(
-      image: cachedImage(url),
-      width: theme.sizes.md,
-      height: theme.sizes.md,
-      semanticLabel: area.areaName,
-      fallback: fallback,
+      filled: true,
+      onPressed: onSelect,
+      trailing: AreaFollowButton(followed: true, onPressed: onUnfollow),
     );
   }
 }

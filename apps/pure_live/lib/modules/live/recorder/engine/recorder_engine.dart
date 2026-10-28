@@ -18,11 +18,11 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart' show getApplicationSupportDirectory;
 
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/recorder/data/recording_repository.dart';
-import 'package:pure_live/features/recorder/data/recording_settings.dart';
-import 'package:pure_live/features/recorder/data/recording_task.dart';
-import 'package:pure_live/features/recorder/engine/recording_chat_writer.dart';
-import 'package:pure_live/features/shield/shield.dart';
+import 'package:pure_live/modules/live/recorder/data/recording_repository.dart';
+import 'package:pure_live/modules/live/recorder/data/recording_settings.dart';
+import 'package:pure_live/modules/live/recorder/data/recording_task.dart';
+import 'package:pure_live/modules/live/recorder/engine/recording_chat_writer.dart';
+import 'package:pure_live/modules/live/shield/shield.dart';
 
 /// How often a running session's byte count is written to its task.
 const Duration _kProgressWrite = Duration(seconds: 10);

@@ -7,10 +7,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/history/history_limit_dialog.dart';
-import 'package:pure_live/features/history/history_repository.dart';
-import 'package:pure_live/features/room/room.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/history/history_limit_dialog.dart';
+import 'package:pure_live/modules/live/history/history_repository.dart';
+import 'package:pure_live/modules/live/room/room.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The live module's history (the reference's `HistoryPage`): the watched
@@ -545,69 +545,66 @@ final class _HistoryCard extends StatelessWidget {
     return DsContextMenuRegion(
       semanticLabel: t.common.more,
       items: _historyMenuItems(context, room, onOpen: onOpen, onRemove: onRemove),
-      child: DsPressable(
+      child: DsCard(
         onPressed: onOpen,
-        builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
-          return Container(
-            padding: const EdgeInsets.all(DsSpace.s8),
-            decoration: DsBoxDecoration(
-              color: hovered ? colors.hover : null,
-              borderRadius: BorderRadius.circular(theme.radii.card),
-              shadows: hovered
-                  ? [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))]
-                  : const <DsShadow>[],
+        semanticLabel: room.content.title,
+        style: DsCardStyle(
+          padding: const EdgeInsets.all(DsSpace.s8),
+          background: const Color(0x00000000),
+          shadows: const [],
+          hovered: DsCardStyle(
+            background: colors.hover,
+            shadows: [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))],
+          ),
+        ),
+        child: Row(
+          spacing: DsSpace.s12,
+          children: [
+            SizedBox(
+              width: theme.sizes.lg * 2,
+              child: DsImage(
+                image: cachedImage(room.content.coverUrl),
+                aspectRatio: 16 / 9,
+                semanticLabel: room.content.title,
+                style: DsImageStyle(
+                  borderRadius: BorderRadius.circular(theme.radii.nested(theme.radii.card, DsSpace.s8)),
+                ),
+              ),
             ),
-            child: Row(
-              spacing: DsSpace.s12,
-              children: [
-                SizedBox(
-                  width: theme.sizes.lg * 2,
-                  child: DsImage(
-                    image: cachedImage(room.content.coverUrl),
-                    aspectRatio: 16 / 9,
-                    semanticLabel: room.content.title,
-                    style: DsImageStyle(
-                      borderRadius: BorderRadius.circular(theme.radii.nested(theme.radii.card, DsSpace.s8)),
-                    ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: DsSpace.s3,
+                children: [
+                  Text(
+                    room.content.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                   ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: DsSpace.s3,
-                    children: [
-                      Text(
-                        room.content.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                      ),
-                      Text(
-                        room.anchor?.name ?? room.ref.roomId,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                    ],
+                  Text(
+                    room.anchor?.name ?? room.ref.roomId,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.caption.copyWith(color: colors.textMuted),
                   ),
-                ),
-                DsPressable(
-                  semanticLabel: context.t.history.remove,
-                  onPressed: onRemove,
-                  builder: (context, states, _) {
-                    final hovered = states.contains(WidgetState.hovered);
-                    return DsIcon(
-                      DsIcons.x,
-                      size: theme.sizes.iconSm,
-                      color: hovered ? colors.danger.fill : colors.textSubtle,
-                    );
-                  },
-                ),
-              ],
+                ],
+              ),
             ),
-          );
-        },
+            DsPressable(
+              semanticLabel: context.t.history.remove,
+              onPressed: onRemove,
+              builder: (context, states, _) {
+                final hovered = states.contains(WidgetState.hovered);
+                return DsIcon(
+                  DsIcons.x,
+                  size: theme.sizes.iconSm,
+                  color: hovered ? colors.danger.fill : colors.textSubtle,
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -687,17 +684,24 @@ final class _HistoryGridCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   spacing: 3,
                   children: [
-                    Text(
-                      room.content.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                    // Flexible: a narrow column leaves less height than the
+                    // two lines need at the viewer's text scale; the lines
+                    // then shrink their box instead of overflowing it.
+                    Flexible(
+                      child: Text(
+                        room.content.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                      ),
                     ),
-                    Text(
-                      room.anchor?.name ?? room.ref.roomId,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    Flexible(
+                      child: Text(
+                        room.anchor?.name ?? room.ref.roomId,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
                     ),
                   ],
                 ),

@@ -2,8 +2,8 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/features/shield/shield.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/shield/shield.dart';
 
 /// The actions one chat line offers: copy its words, block the sender, or
 /// block a keyword (the reference's danmaku message panel).

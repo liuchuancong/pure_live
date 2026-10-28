@@ -6,15 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/popular/popular.dart';
-import 'package:pure_live/features/search/search_controller.dart';
-import 'package:pure_live/features/search/web_search_page.dart' show WebSearchRequest;
-import 'package:pure_live/features/search/web_search_urls.dart' show webSearchUrl;
 import 'package:pure_live/features/settings/settings.dart';
-import 'package:pure_live/features/toolbox/toolbox.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/popular/popular.dart';
+import 'package:pure_live/modules/live/search/search_controller.dart';
+import 'package:pure_live/modules/live/search/web_search_page.dart' show WebSearchRequest;
+import 'package:pure_live/modules/live/search/web_search_urls.dart' show webSearchUrl;
+import 'package:pure_live/modules/live/toolbox/toolbox.dart';
 import 'package:pure_live/shared/shared.dart';
-
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// How many completions the panel shows at most: a handful keeps the field's
@@ -559,9 +558,9 @@ final class _SearchResults extends ConsumerWidget {
         itemBuilder: (context, item) {
           final area = item as LiveArea;
           final openable = area.platform.trim().isNotEmpty && area.areaId.trim().isNotEmpty;
-          return _AreaCard(
+          return AreaCard(
             area: area,
-            onOpen: openable
+            onPressed: openable
                 ? () => unawaited(
                     context.push(
                       AreaRoomsRoute(platform: area.platform, areaId: area.areaId).location,
@@ -660,171 +659,65 @@ final class _AnchorCard extends StatelessWidget {
     final theme = DsTheme.of(context);
     final live = anchor.liveStatus == LiveStatus.live;
     final followers = AudienceFormat.format(anchor.followerCount);
-    return DsPressable(
+    return DsCard(
       onPressed: onOpen,
-      builder: (context, states, _) {
-        final hovered = states.contains(WidgetState.hovered);
-        return Container(
-          padding: const EdgeInsets.all(DsSpace.s12),
-          decoration: DsBoxDecoration(
-            color: hovered ? colors.hover : colors.surface,
-            borderRadius: BorderRadius.circular(theme.radii.card),
-            shadows: hovered
-                ? [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))]
-                : theme.shadows.surface,
+      semanticLabel: anchor.name,
+      style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
+      child: Row(
+        spacing: DsSpace.s12,
+        children: [
+          DsAvatar(
+            initials: anchor.name,
+            image: anchor.avatarUrl == null ? null : cachedImage(anchor.avatarUrl!),
+            size: DsSize.md,
+            toneIndex: DsAvatar.toneFor(anchor.anchorId.isEmpty ? anchor.name : anchor.anchorId),
+            status: live ? DsStatus.success : null,
+            statusLabel: live ? context.t.search.liveBadge : null,
           ),
-          child: Row(
-            spacing: DsSpace.s12,
-            children: [
-              DsAvatar(
-                initials: anchor.name,
-                image: anchor.avatarUrl == null ? null : cachedImage(anchor.avatarUrl!),
-                size: DsSize.md,
-                toneIndex: DsAvatar.toneFor(anchor.anchorId.isEmpty ? anchor.name : anchor.anchorId),
-                status: live ? DsStatus.success : null,
-                statusLabel: live ? context.t.search.liveBadge : null,
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: DsSpace.s3,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: DsSpace.s3,
+              children: [
+                Row(
+                  spacing: DsSpace.s6,
                   children: [
-                    Row(
-                      spacing: DsSpace.s6,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            anchor.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                          ),
-                        ),
-                        if (anchor.isVerified ?? false)
-                          DsIcon(DsIcons.badgeCheck, size: theme.sizes.iconXs, color: colors.accentText),
-                      ],
-                    ),
-                    if ((anchor.introduction ?? '').trim().isNotEmpty)
-                      Text(
-                        anchor.introduction!,
+                    Flexible(
+                      child: Text(
+                        anchor.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                        style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                       ),
-                  ],
-                ),
-              ),
-              if (live)
-                DsBadge(label: Text(context.t.search.liveBadge), status: DsStatus.danger)
-              else if (followers.isNotEmpty)
-                Row(
-                  spacing: DsSpace.s4,
-                  children: [
-                    DsIcon(DsIcons.users, size: theme.sizes.iconXs, color: colors.textSubtle),
-                    Text(
-                      followers,
-                      style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
                     ),
+                    if (anchor.isVerified ?? false)
+                      DsIcon(DsIcons.badgeCheck, size: theme.sizes.iconXs, color: colors.accentText),
                   ],
                 ),
-            ],
+                if ((anchor.introduction ?? '').trim().isNotEmpty)
+                  Text(
+                    anchor.introduction!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                  ),
+              ],
+            ),
           ),
-        );
-      },
-    );
-  }
-}
-
-/// One area hit as a list card: the area's icon in a rounded tile (a hash
-/// tile when the site ships none), its name, and the parent group it nests
-/// under. The card opens the area's room list; null leaves it inert.
-final class _AreaCard extends StatelessWidget {
-  const _AreaCard({required this.area, this.onOpen});
-
-  /// The area shown.
-  final LiveArea area;
-
-  /// Opens the area's rooms; null leaves the card inert.
-  final VoidCallback? onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final parent = (area.parentAreaName ?? '').trim();
-    return DsPressable(
-      onPressed: onOpen,
-      builder: (context, states, _) {
-        final hovered = states.contains(WidgetState.hovered);
-        return Container(
-          padding: const EdgeInsets.all(DsSpace.s12),
-          decoration: DsBoxDecoration(
-            color: hovered ? colors.hover : colors.surface,
-            borderRadius: BorderRadius.circular(theme.radii.card),
-            shadows: hovered
-                ? [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))]
-                : theme.shadows.surface,
-          ),
-          child: Row(
-            spacing: DsSpace.s12,
-            children: [
-              _AreaIcon(area: area),
-              Expanded(
-                child: Text(
-                  area.areaName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                ),
-              ),
-              if (parent.isNotEmpty)
+          if (live)
+            DsBadge(label: Text(context.t.search.liveBadge), status: DsStatus.danger)
+          else if (followers.isNotEmpty)
+            Row(
+              spacing: DsSpace.s4,
+              children: [
+                DsIcon(DsIcons.users, size: theme.sizes.iconXs, color: colors.textSubtle),
                 Text(
-                  parent,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  followers,
+                  style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
                 ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// An area's picture: the icon the site ships, or a hash tile when it ships
-/// none — either way the tile keeps its square place beside the name.
-final class _AreaIcon extends StatelessWidget {
-  const _AreaIcon({required this.area});
-
-  /// The area whose icon shows.
-  final LiveArea area;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final icon = (area.iconUrl ?? '').trim();
-    final fallback = ColoredBox(
-      color: colors.control,
-      child: Center(
-        child: DsIcon(DsIcons.hash, size: theme.sizes.iconSm, color: colors.textMuted),
-      ),
-    );
-    return SizedBox(
-      width: theme.sizes.md,
-      height: theme.sizes.md,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(theme.radii.control(theme.sizes.md)),
-        child: icon.isEmpty
-            ? fallback
-            : DsImage(
-                image: cachedImage(icon),
-                width: theme.sizes.md,
-                height: theme.sizes.md,
-                semanticLabel: area.areaName,
-                fallback: fallback,
-              ),
+              ],
+            ),
+        ],
       ),
     );
   }

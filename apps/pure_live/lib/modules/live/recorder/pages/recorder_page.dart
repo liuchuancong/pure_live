@@ -6,16 +6,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show LiveAudienceMetricType, LiveRoom;
 import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:path/path.dart' as p;
-
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/favorites/favorites.dart';
-import 'package:pure_live/features/history/history.dart';
-import 'package:pure_live/features/recorder/data/recording_repository.dart';
-import 'package:pure_live/features/recorder/data/recording_settings.dart';
-import 'package:pure_live/features/recorder/data/recording_task.dart';
-import 'package:pure_live/features/recorder/engine/recorder_engine.dart' show recorderEngineProvider;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/modules/live/history/history.dart';
+import 'package:pure_live/modules/live/recorder/data/recording_repository.dart';
+import 'package:pure_live/modules/live/recorder/data/recording_settings.dart';
+import 'package:pure_live/modules/live/recorder/data/recording_task.dart';
+import 'package:pure_live/modules/live/recorder/engine/recorder_engine.dart' show recorderEngineProvider;
 import 'package:pure_live/shared/shared.dart';
 
 /// The recording centre (the reference's recorder page): five status

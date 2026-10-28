@@ -125,23 +125,12 @@ final class FollowedRoomCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-              DsPressable(
+              DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
                 semanticLabel: context.t.favorites.unfollow,
                 onPressed: onUnfollow,
-                builder: (context, states, _) {
-                  final hovered = states.contains(WidgetState.hovered);
-                  return Container(
-                    width: 30,
-                    height: 30,
-                    decoration: DsBoxDecoration(
-                      color: hovered ? colors.danger.fill : null,
-                      borderRadius: theme.radii.controlCorners(null, 30),
-                    ),
-                    child: Center(
-                      child: DsIcon(DsIcons.heart, size: theme.sizes.iconSm, color: colors.textMuted),
-                    ),
-                  );
-                },
+                icon: DsIcon(DsIcons.heart, size: theme.sizes.iconSm),
               ),
             ],
           ),
@@ -167,7 +156,7 @@ final class FollowedRoomCard extends ConsumerWidget {
                     image: cachedImage(room.content.coverUrl),
                     aspectRatio: 16 / 9,
                     semanticLabel: room.content.title,
-                    fallback: _CoverFallback(title: room.content.title),
+                    fallback: CoverFallback(title: room.content.title),
                     style: DsImageStyle(
                       borderRadius: BorderRadius.vertical(top: Radius.circular(appearance.cornerRadius)),
                     ),
@@ -331,33 +320,6 @@ final class FollowedRoomCard extends ConsumerWidget {
     final status = roomBroadcastText(context.t, room);
     final parts = [if (showAnchor && streamer.isNotEmpty) streamer, ?status];
     return parts.isEmpty ? null : parts.join(' · ');
-  }
-}
-
-/// The cover's stand-in when the picture does not load.
-final class _CoverFallback extends StatelessWidget {
-  const _CoverFallback({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    return ColoredBox(
-      color: colors.control,
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Align(
-          alignment: Alignment.bottomLeft,
-          child: Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
-          ),
-        ),
-      ),
-    );
   }
 }
 

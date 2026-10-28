@@ -335,36 +335,8 @@ final class _CoverImage extends StatelessWidget {
       image: cachedImage(url),
       aspectRatio: 16 / 9,
       semanticLabel: title,
-      fallback: _CoverFallback(title: title),
+      fallback: CoverFallback(title: title),
       style: DsImageStyle(borderRadius: BorderRadius.vertical(top: Radius.circular(radius))),
-    );
-  }
-}
-
-/// The cover's stand-in when the picture does not load: the room's title
-/// over the surface color, so the card keeps its shape.
-final class _CoverFallback extends StatelessWidget {
-  const _CoverFallback({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    return ColoredBox(
-      color: colors.control,
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Align(
-          alignment: Alignment.bottomLeft,
-          child: Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: DsTheme.of(context).typography.caption.copyWith(color: colors.textMuted),
-          ),
-        ),
-      ),
     );
   }
 }

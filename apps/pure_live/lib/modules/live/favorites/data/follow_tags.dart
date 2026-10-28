@@ -4,7 +4,7 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
-import 'package:pure_live/features/favorites/data/follow_repository.dart' show followsProvider;
+import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
 
 /// The longest tag name the editor takes (the reference's `TagStore.maxNameLength`).
 const int kFollowTagNameMaxLength = 15;

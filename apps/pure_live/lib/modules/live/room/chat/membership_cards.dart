@@ -1,6 +1,6 @@
 import 'package:live_sites/live_sites.dart';
-import 'package:pure_live/features/room/chat/gift_text.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/room/chat/gift_text.dart';
 
 /// The start of a membership card's id: the cards this app makes itself,
 /// which turning "上舰和开会员进醒目留言" off takes away again.

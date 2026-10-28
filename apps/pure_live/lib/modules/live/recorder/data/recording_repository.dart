@@ -3,7 +3,7 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart';
 
-import 'package:pure_live/features/recorder/data/recording_task.dart';
+import 'package:pure_live/modules/live/recorder/data/recording_task.dart';
 
 /// The recording tasks the viewer set up, newest session first.
 ///

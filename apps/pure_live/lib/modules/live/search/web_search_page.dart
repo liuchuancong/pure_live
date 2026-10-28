@@ -5,8 +5,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/toolbox/toolbox.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/toolbox/toolbox.dart';
 import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 import 'package:webview_flutter/webview_flutter.dart';
@@ -220,7 +220,7 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
                   fit: StackFit.expand,
                   children: [
                     WebViewWidget(controller: _controller!),
-                    if (_error != null) _failure(context, t, colors, theme),
+                    if (_error != null) _failure(context, t),
                   ],
                 ),
               },
@@ -267,25 +267,13 @@ final class _WebSearchPageState extends ConsumerState<WebSearchPage> {
     );
   }
 
-  Widget _failure(BuildContext context, Translations t, DsColors colors, DsThemeData theme) {
-    return ColoredBox(
-      color: colors.overlay,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          spacing: DsSpace.s12,
-          children: [
-            Text(t.search.webSearchFailed, style: theme.typography.title.copyWith(color: colors.text)),
-            if (_error != null)
-              Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: theme.typography.caption.copyWith(color: colors.textMuted),
-              ),
-            DsButton(onPressed: () => unawaited(_reload()), child: Text(t.common.retry)),
-          ],
-        ),
-      ),
+  Widget _failure(BuildContext context, Translations t) {
+    final error = _error;
+    return DsEmptyState(
+      icon: const DsIcon(DsIcons.cloudOff),
+      title: Text(t.search.webSearchFailed),
+      description: error == null ? null : Text(error, textAlign: TextAlign.center),
+      actions: [DsButton(onPressed: () => unawaited(_reload()), child: Text(t.common.retry))],
     );
   }
 }
@@ -300,32 +288,14 @@ final class _WebIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    return DsTooltip(
-      message: label,
-      child: DsPressable(
-        semanticLabel: label,
-        onPressed: onPressed,
-        builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
-          return Container(
-            width: theme.sizes.sm,
-            height: theme.sizes.sm,
-            decoration: DsBoxDecoration(
-              color: hovered && onPressed != null ? colors.hover : null,
-              borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
-            ),
-            child: Center(
-              child: DsIcon(
-                icon,
-                size: theme.sizes.iconSm,
-                color: onPressed == null ? colors.textSubtle : colors.textMuted,
-              ),
-            ),
-          );
-        },
-      ),
+    return ChromeIconButton(
+      icon: icon,
+      semanticLabel: label,
+      tooltip: label,
+      onPressed: onPressed,
+      size: theme.sizes.sm,
+      iconSize: theme.sizes.iconSm,
     );
   }
 }
