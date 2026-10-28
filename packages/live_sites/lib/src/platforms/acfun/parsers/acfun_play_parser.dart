@@ -140,12 +140,14 @@ abstract final class AcfunPlayParser {
   /// [leaseLead] before, at most a quarter of the lifetime. Null without a key
   /// or once it has expired — an established connection is not known to be cut
   /// by it.
-  static LivePlayLease? lease(Uri url, DateTime issuedAt) {
+  static LivePlayLease? lease(Uri url, DateTime issuedAt, {bool allowExpired = false}) {
     final seconds = int.tryParse(url.queryParameters['auth_key']?.split('-').first ?? '');
     if (seconds == null) return null;
     final expiresAt = DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
     final lifetime = expiresAt.difference(issuedAt);
-    if (lifetime <= Duration.zero) return null;
+    if (lifetime <= Duration.zero) {
+      return allowExpired ? LivePlayLease.of(refreshAt: expiresAt.subtract(leaseLead), expiresAt: expiresAt) : null;
+    }
     final quarter = lifetime ~/ 4;
     final lead = quarter < leaseLead ? quarter : leaseLead;
     return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);

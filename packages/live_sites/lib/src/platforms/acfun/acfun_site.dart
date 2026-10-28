@@ -11,10 +11,13 @@ import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_lease_lookup.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -29,9 +32,12 @@ import 'package:live_sites/src/platforms/acfun/api/acfun_http.dart';
 import 'package:live_sites/src/platforms/acfun/capabilities/acfun_area_provider.dart';
 import 'package:live_sites/src/platforms/acfun/capabilities/acfun_discovery_provider.dart';
 import 'package:live_sites/src/platforms/acfun/capabilities/acfun_link_resolver.dart';
+import 'package:live_sites/src/platforms/acfun/capabilities/acfun_play_lease_lookup.dart';
 import 'package:live_sites/src/platforms/acfun/capabilities/acfun_playback_provider.dart';
 import 'package:live_sites/src/platforms/acfun/capabilities/acfun_room_provider.dart';
+import 'package:live_sites/src/platforms/acfun/capabilities/acfun_room_refresh.dart';
 import 'package:live_sites/src/platforms/acfun/capabilities/acfun_search_provider.dart';
+import 'package:live_sites/src/platforms/acfun/capabilities/acfun_status_check.dart';
 import 'package:live_sites/src/platforms/acfun/danmaku/acfun_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/acfun/danmaku/acfun_danmaku_session.dart';
 import 'package:live_sites/src/platforms/acfun/parsers/acfun_failure.dart';
@@ -610,6 +616,9 @@ final class AcfunSite implements LiveSite {
   AcfunPlaybackProvider? _playback;
   AcfunDanmakuProvider? _danmaku;
   AcfunLinkResolver? _link;
+  AcfunRoomRefresh? _refresh;
+  AcfunStatusCheck? _status;
+  AcfunPlayLeaseLookup? _lease;
 
   /// The capability of type [T], or null when acfun does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -622,6 +631,9 @@ final class AcfunSite implements LiveSite {
     final playback = _playback ??= AcfunPlaybackProvider(site: this);
     final danmaku = _danmaku ??= AcfunDanmakuProvider(site: this);
     final link = _link ??= AcfunLinkResolver(site: this);
+    final refresh = _refresh ??= AcfunRoomRefresh(site: this);
+    final status = _status ??= AcfunStatusCheck(site: this);
+    final lease = _lease ??= AcfunPlayLeaseLookup(now: now);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -630,6 +642,9 @@ final class AcfunSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
+      const (LivePlayLeaseLookup) => lease as T,
       _ => null,
     };
   }
