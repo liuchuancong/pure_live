@@ -4,8 +4,10 @@ import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -21,7 +23,9 @@ import 'package:live_sites/src/platforms/showroom/capabilities/showroom_discover
 import 'package:live_sites/src/platforms/showroom/capabilities/showroom_link_resolver.dart';
 import 'package:live_sites/src/platforms/showroom/capabilities/showroom_playback_provider.dart';
 import 'package:live_sites/src/platforms/showroom/capabilities/showroom_room_provider.dart';
+import 'package:live_sites/src/platforms/showroom/capabilities/showroom_room_refresh.dart';
 import 'package:live_sites/src/platforms/showroom/capabilities/showroom_search_provider.dart';
+import 'package:live_sites/src/platforms/showroom/capabilities/showroom_status_check.dart';
 import 'package:live_sites/src/platforms/showroom/danmaku/showroom_danmaku_session.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_failure.dart';
 import 'package:live_sites/src/platforms/showroom/parsers/showroom_models.dart';
@@ -306,6 +310,20 @@ final class ShowroomSite implements LiveSite {
     );
   }
 
+  /// A refresh: the room's profile and live info only, without the stream
+  /// rows a first visit reads when the room is live.
+  Future<LiveRoom> refreshRoom(String roomId) async {
+    final number = await _roomNumber(roomId);
+    final id = '$number';
+    final answers = await Future.wait([
+      http.get(ShowroomEndpoints.roomProfileUrl(id)),
+      http.get(ShowroomEndpoints.liveInfoUrl(id)),
+    ]);
+    final profile = ShowroomParser.profile(answers[0].text, roomId: number, status: answers[0].status);
+    final info = ShowroomParser.liveInfo(answers[1].text, roomId: number, status: answers[1].status);
+    return ShowroomParser.room(profile, info);
+  }
+
   // Gifts ---------------------------------------------------------------------
 
   /// Room [roomId]'s gift table (`live/gift_list`), fetched once for
@@ -391,6 +409,8 @@ final class ShowroomSite implements LiveSite {
   ShowroomPlaybackProvider? _playback;
   ShowroomDanmakuProvider? _danmaku;
   ShowroomLinkResolver? _link;
+  ShowroomRoomRefresh? _refresh;
+  ShowroomStatusCheck? _status;
 
   /// The capability of type [T], or null when SHOWROOM does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site; the site
@@ -405,6 +425,8 @@ final class ShowroomSite implements LiveSite {
     final playback = _playback ??= ShowroomPlaybackProvider(site: this);
     final danmaku = _danmaku ??= ShowroomDanmakuProvider(site: this);
     final link = _link ??= ShowroomLinkResolver(site: this);
+    final refresh = _refresh ??= ShowroomRoomRefresh(site: this);
+    final status = _status ??= ShowroomStatusCheck(refresh: refresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -413,6 +435,8 @@ final class ShowroomSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }
