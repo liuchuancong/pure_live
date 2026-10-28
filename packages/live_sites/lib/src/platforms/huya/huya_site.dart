@@ -9,10 +9,14 @@ import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_lease_lookup.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/capabilities/live_super_chat_feed.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
@@ -26,9 +30,13 @@ import 'package:live_sites/src/platforms/huya/capabilities/huya_area_provider.da
 import 'package:live_sites/src/platforms/huya/capabilities/huya_auth_provider.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_discovery_provider.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_link_resolver.dart';
+import 'package:live_sites/src/platforms/huya/capabilities/huya_play_lease_lookup.dart';
+import 'package:live_sites/src/platforms/huya/capabilities/huya_play_recovery.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_playback_provider.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_room_provider.dart';
+import 'package:live_sites/src/platforms/huya/capabilities/huya_room_refresh.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_search_provider.dart';
+import 'package:live_sites/src/platforms/huya/capabilities/huya_status_check.dart';
 import 'package:live_sites/src/platforms/huya/capabilities/huya_super_chat_feed_provider.dart';
 import 'package:live_sites/src/platforms/huya/danmaku/huya_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/huya/danmaku/huya_danmaku_session.dart';
@@ -443,6 +451,10 @@ final class HuyaSite implements LiveSite {
   HuyaSuperChatFeedProvider? _superChats;
   HuyaLinkResolver? _link;
   HuyaAuthProvider? _auth;
+  HuyaStatusCheck? _status;
+  HuyaPlayRecovery? _recovery;
+  HuyaRoomRefresh? _refresh;
+  HuyaPlayLeaseLookup? _lease;
 
   /// The capability of type [T], or null when huya does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -457,6 +469,10 @@ final class HuyaSite implements LiveSite {
     final superChats = _superChats ??= HuyaSuperChatFeedProvider(site: this);
     final link = _link ??= HuyaLinkResolver(site: this);
     final auth = _auth ??= HuyaAuthProvider(site: this);
+    final status = _status ??= HuyaStatusCheck(site: this);
+    final recovery = _recovery ??= HuyaPlayRecovery(playback: playback);
+    final refresh = _refresh ??= HuyaRoomRefresh(site: this);
+    final lease = _lease ??= const HuyaPlayLeaseLookup();
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -467,6 +483,10 @@ final class HuyaSite implements LiveSite {
       const (LiveSuperChatFeed) => superChats as T,
       const (LiveLinkResolver) => link as T,
       const (LiveAuthCapability) => auth as T,
+      const (LiveStatusCheck) => status as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LivePlayLeaseLookup) => lease as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }
