@@ -6,10 +6,14 @@ import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_lease_lookup.dart';
+import 'package:live_sites/src/capabilities/live_playback_plan_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -25,9 +29,12 @@ import 'package:live_sites/src/platforms/cc/capabilities/cc_area_provider.dart';
 import 'package:live_sites/src/platforms/cc/capabilities/cc_auth_provider.dart';
 import 'package:live_sites/src/platforms/cc/capabilities/cc_discovery_provider.dart';
 import 'package:live_sites/src/platforms/cc/capabilities/cc_link_resolver.dart';
+import 'package:live_sites/src/platforms/cc/capabilities/cc_play_lease_lookup.dart';
 import 'package:live_sites/src/platforms/cc/capabilities/cc_playback_provider.dart';
 import 'package:live_sites/src/platforms/cc/capabilities/cc_room_provider.dart';
+import 'package:live_sites/src/platforms/cc/capabilities/cc_room_refresh.dart';
 import 'package:live_sites/src/platforms/cc/capabilities/cc_search_provider.dart';
+import 'package:live_sites/src/platforms/cc/capabilities/cc_status_check.dart';
 import 'package:live_sites/src/platforms/cc/cc_manifest.dart';
 import 'package:live_sites/src/platforms/cc/parsers/cc_failure.dart';
 import 'package:live_sites/src/platforms/cc/parsers/cc_json.dart';
@@ -314,18 +321,34 @@ final class CcSite implements LiveSite {
   ///
   /// A 3.x quality (the fallback) plays its own URLs, as 3.x did, without a
   /// request.
-  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async {
+  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async =>
+      (await planOf(roomId, quality: quality)).lines;
+
+  /// [linesOf] with what the answer confirms: the tier it says it played,
+  /// and whether it said. The 3.x fallback (no `video_play_url` answer)
+  /// cannot confirm its tier.
+  Future<({List<LivePlayLine> lines, LivePlayQuality? appliedQuality, bool unconfirmed})> planOf(
+    String roomId, {
+    LivePlayQuality? quality,
+  }) async {
     final ccid = roomId.trim();
     final code = quality?.qualityId?.trim();
     if (_legacy.contains(ccid)) {
       final data = _rooms[ccid];
-      if (data != null) return CcRoomParser.legacyLines(data, code, roomId: ccid);
+      if (data != null) {
+        return (lines: CcRoomParser.legacyLines(data, code, roomId: ccid), appliedQuality: null, unconfirmed: true);
+      }
     }
     final first = _takeQualityAnswer(ccid, code) ?? await _play(ccid, quality: code);
     final others = await Future.wait([
       for (final cdn in CcRoomParser.uncoveredCdns(first.data)) _otherCdn(ccid, quality: code, cdn: cdn),
     ]);
-    return CcRoomParser.resolution([first, ...others.nonNulls], roomId: ccid);
+    final resolution = CcRoomParser.resolutionWithApplied([first, ...others.nonNulls], roomId: ccid);
+    return (
+      lines: resolution.lines,
+      appliedQuality: CcRoomParser.appliedQuality(first.data),
+      unconfirmed: resolution.appliedQualityId == null,
+    );
   }
 
   /// The qualities answer of [roomId], taken (every call drops it), when it
@@ -364,7 +387,10 @@ final class CcSite implements LiveSite {
   CcSearchProvider? _search;
   CcPlaybackProvider? _playback;
   CcLinkResolver? _link;
+  CcRoomRefresh? _refresh;
+  CcStatusCheck? _status;
   CcAuthProvider? _auth;
+  CcPlayLeaseLookup? _lease;
 
   /// The capability of type [T], or null when CC does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site. CC has no
@@ -377,15 +403,22 @@ final class CcSite implements LiveSite {
     final search = _search ??= CcSearchProvider(site: this);
     final playback = _playback ??= CcPlaybackProvider(site: this);
     final link = _link ??= CcLinkResolver(site: this);
+    final refresh = _refresh ??= CcRoomRefresh(site: this);
+    final status = _status ??= CcStatusCheck(refresh: refresh);
     final auth = _auth ??= CcAuthProvider(site: this);
+    final lease = _lease ??= CcPlayLeaseLookup(now: _now);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
       const (LiveDiscoveryProvider) => discovery as T,
       const (LiveSearchProvider) => search as T,
       const (LivePlaybackProvider) => playback as T,
+      const (LivePlaybackPlanResolver) => playback as T,
       const (LiveLinkResolver) => link as T,
       const (LiveAuthCapability) => auth as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
+      const (LivePlayLeaseLookup) => lease as T,
       _ => null,
     };
   }

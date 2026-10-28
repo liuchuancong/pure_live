@@ -545,6 +545,13 @@ abstract final class CcRoomParser {
   static List<LivePlayLine> resolution(
     List<({Map<String, dynamic> data, DateTime issuedAt})> answers, {
     required String roomId,
+  }) => resolutionWithApplied(answers, roomId: roomId).lines;
+
+  /// [resolution] with the tier the first answer says it played
+  /// (`vbrname_sel`), or null when it does not say.
+  static ({List<LivePlayLine> lines, String? appliedQualityId}) resolutionWithApplied(
+    List<({Map<String, dynamic> data, DateTime issuedAt})> answers, {
+    required String roomId,
   }) {
     if (answers.isEmpty) throw const CcFailure(CcFailureKind.apiChanged, 'video_play_url: no answer');
     final applied = CcJson.string(answers.first.data['vbrname_sel']);
@@ -566,7 +573,19 @@ abstract final class CcRoomParser {
               ),
     ];
     if (lines.isEmpty) throw const CcFailure(CcFailureKind.apiChanged, 'video_play_url: no playable URL');
-    return lines;
+    return (lines: lines, appliedQualityId: applied);
+  }
+
+  /// The tier the answer says it played (`vbrname_sel`) as a quality, named
+  /// by the answer's own mapping; null when it does not say.
+  static LivePlayQuality? appliedQuality(Map<String, dynamic> data) {
+    final selected = CcJson.string(data['vbrname_sel']);
+    if (selected == null) return null;
+    final names = CcJson.fields(data['vbrname_mapping']);
+    return LivePlayQuality.of(
+      label: selected == 'original' ? '原画' : CcJson.string(names[selected]) ?? _siteNames[selected] ?? selected,
+      qualityId: selected,
+    );
   }
 
   static List<({String cdn, Uri url})> _answerLines(Map<String, dynamic> data) => [
@@ -743,13 +762,21 @@ abstract final class CcRoomParser {
   /// lifetime) before. Expiry refuses new connections only; an established
   /// one keeps flowing — an HLS playlist is fetched again and again, so only
   /// it must reconnect. No key, or one already past, is no lease.
-  static LivePlayLease? lease(Uri url, DateTime issuedAt) {
+  static LivePlayLease? lease(Uri url, DateTime issuedAt, {bool allowExpired = false}) {
     final match = RegExp(r'(?:^|&)auth_key=(\d+)-').firstMatch(url.query);
     final expires = match == null ? null : int.tryParse(match.group(1)!);
     if (expires == null || expires <= 0) return null;
     final expiresAt = DateTime.fromMillisecondsSinceEpoch(expires * 1000, isUtc: true);
     final lifetime = expiresAt.difference(issuedAt);
-    if (lifetime <= Duration.zero) return null;
+    if (lifetime <= Duration.zero) {
+      return allowExpired
+          ? LivePlayLease.of(
+              refreshAt: expiresAt.subtract(CcEndpoints.leaseLead),
+              expiresAt: expiresAt,
+              requiresReconnect: _format(url) == LiveStreamFormat.hls,
+            )
+          : null;
+    }
     final quarter = lifetime ~/ 4;
     final lead = quarter < CcEndpoints.leaseLead ? quarter : CcEndpoints.leaseLead;
     return LivePlayLease.of(
