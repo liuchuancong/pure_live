@@ -15,6 +15,22 @@ typedef NetworkTypeState = ({bool ready, bool reportsCellular, Set<NetworkInterf
 
 const NetworkTypeState _initial = (ready: false, reportsCellular: false, interfaces: <NetworkInterface>{}, error: '');
 
+/// Whether [state] names a usable connection.
+///
+/// Only the exclusive "nothing is connected" report is offline; a platform
+/// that cannot answer yet, or reports no interfaces at all, is taken as
+/// online so a missing backend never blocks playback on its own. The rule is
+/// [NetworkConnectivity.isOnline]'s, restated because the state carries more
+/// than the reading.
+bool isOnlineReading(NetworkTypeState state) {
+  if (!state.ready) return true;
+  final interfaces = state.interfaces;
+  return !(interfaces.length == 1 && interfaces.contains(NetworkInterface.none));
+}
+
+/// Whether the last reading says the device has a usable connection.
+final isOnlineProvider = Provider<bool>((ref) => isOnlineReading(ref.watch(networkTypeProvider)));
+
 /// Keeps a live reading of the device's network interfaces for the quality
 /// policy and the settings capability gate.
 ///

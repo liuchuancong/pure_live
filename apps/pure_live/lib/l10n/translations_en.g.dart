@@ -648,6 +648,7 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get stopAutoRetry => 'Stop auto-retry';
 	@override String autoRetry({required Object attempt, required Object seconds}) => 'Retrying ${attempt}/3 in ${seconds}s';
 	@override String get retryExhausted => 'Three automatic retries did not help. Retry by hand or pick a lower quality.';
+	@override String get waitingForNetwork => 'No network right now · playback resumes where it stopped once it is back';
 	@override String get decoderLessons => 'Decoder notes';
 	@override String decoderLessonsCount({required Object count}) => '${count} decode failures remembered; those renditions are skipped';
 	@override String get decoderLessonsEmpty => 'No decode failures yet; the ladder follows the platform\'s claims';
@@ -3733,6 +3734,7 @@ extension on TranslationsEn {
 			'hongguo.stopAutoRetry' => 'Stop auto-retry',
 			'hongguo.autoRetry' => ({required Object attempt, required Object seconds}) => 'Retrying ${attempt}/3 in ${seconds}s',
 			'hongguo.retryExhausted' => 'Three automatic retries did not help. Retry by hand or pick a lower quality.',
+			'hongguo.waitingForNetwork' => 'No network right now · playback resumes where it stopped once it is back',
 			'hongguo.decoderLessons' => 'Decoder notes',
 			'hongguo.decoderLessonsCount' => ({required Object count}) => '${count} decode failures remembered; those renditions are skipped',
 			'hongguo.decoderLessonsEmpty' => 'No decode failures yet; the ladder follows the platform\'s claims',

@@ -1699,6 +1699,9 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '已自动重试 3 次，仍无法播放。可手动重试或切换清晰度。'
 	String get retryExhausted => '已自动重试 3 次，仍无法播放。可手动重试或切换清晰度。';
 
+	/// zh-CN: '当前没有网络 · 联网后会自动接着播'
+	String get waitingForNetwork => '当前没有网络 · 联网后会自动接着播';
+
 	/// zh-CN: '设备解码记录'
 	String get decoderLessons => '设备解码记录';
 
@@ -9611,6 +9614,7 @@ extension on Translations {
 			'hongguo.stopAutoRetry' => '停止自动重试',
 			'hongguo.autoRetry' => ({required Object attempt, required Object seconds}) => '即将重试 ${attempt}/3 · ${seconds} 秒后',
 			'hongguo.retryExhausted' => '已自动重试 3 次，仍无法播放。可手动重试或切换清晰度。',
+			'hongguo.waitingForNetwork' => '当前没有网络 · 联网后会自动接着播',
 			'hongguo.decoderLessons' => '设备解码记录',
 			'hongguo.decoderLessonsCount' => ({required Object count}) => '已记住 ${count} 条解码失败，选流时会跳过它们',
 			'hongguo.decoderLessonsEmpty' => '还没有解码失败记录，选流按平台声明',

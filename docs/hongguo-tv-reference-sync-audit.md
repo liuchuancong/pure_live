@@ -300,7 +300,7 @@ l10n 累计新增 27 个 key（中英各一份，`dart run slang` 已重生成�
 
 ### 8.7 下一轮继续
 
-P1 只剩：参考的**断网等待**（没有联网监听，按恢复预算重试代替）；首页/侧栏的新集徽标已在 8.10 完成。P2：弹幕渲染层（#7）已在 8.9 完成；剩下评论侧边面板 + 本集/整剧双 tab、选集分组与跳转、HUD 状态行。
+P1 已清零：首页/侧栏的新集徽标见 8.10，断网等待见 8.11。P2：弹幕渲染层（#7）已在 8.9 完成；剩下评论侧边面板 + 本集/整剧双 tab、选集分组与跳转、HUD 状态行。
 
 ### 8.8 第六轮（2026-10-29）：签名器与 ttEncrypt 的四处错位
 
@@ -343,6 +343,16 @@ P1 只剩：参考的**断网等待**（没有联网监听，按恢复预算重�
 - 手机底部导航没有徽标位（`DsBottomNavItem` 无 count），因此这道徽标只出现在桌面侧栏与手机抽屉；参考的底部栏同样没有。
 
 新增 `test/hongguo/hongguo_library_test.dart` 2 项：合计与负数夹取、打开一部剧后其余徽标保留。`dart analyze lib/layouts lib/modules/hongguo` 0 issues；`flutter test test/hongguo` 21 项全绿。**未验证**：真机上的徽标观感（折叠侧栏的圆点、电视遥控聚焦时的行高）。
+
+### 8.11 第九轮（2026-10-29）：断网等待（P1 收尾）
+
+参考在断网时不自耗重试次数，而是等联网回来续播；目标之前只有 1s/2.5s/5s 三次定时重试，断网时三次必然全废。本轮补上等待：
+
+- `network_type_provider.dart` 新增纯函数 `isOnlineReading(state)` 与 `isOnlineProvider`：只有**唯一**接口是 `none` 才算离线；后端未就绪或读数为空一律按在线，缺插件不能反过来卡住播放（沿用 `NetworkConnectivity.isOnline` 的语义）。
+- 系列页 `_onPlaybackFailure` 在设置失败面板后先看在线状态：离线则 `_waitForNetwork()`——取消失败计时、置 `_waitingForNetwork`，用 `ref.listenManual(isOnlineProvider)` 等第一条在线读数，到了就按原位置 `_openEpisode(recovering: true)` 续播，**不消耗**恢复预算。面板状态行显示 `waitingForNetwork`（「当前没有网络 · 联网后会自动接着播」），手动重试/降档/换集都会关掉等待订阅。
+- 在线时的行为不变（预算 1s/2.5s/5s，面板四按钮也在）。
+
+新增 `test/app/network_type_test.dart` 3 项：`none` 独占才离线、live 与 `none+vpn` 在线、空读数/未就绪在线。`dart analyze lib/app/providers/network lib/modules/hongguo test/app` 0 issues；`flutter test test/app test/hongguo` 24 项全绿。**未验证**：真机拔网线的完整往返（依赖 `live_device` 的 `watch()` 推送；桌面若只给轮询读数，则等待可能直到下一次显式读数才结束）。
 
 ---
 

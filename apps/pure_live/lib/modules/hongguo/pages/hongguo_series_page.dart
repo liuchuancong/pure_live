@@ -103,6 +103,12 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
   Timer? _recoveryTimer;
   bool _autoRecovery = false;
 
+  /// Whether the last failure is waiting for the network to come back: the
+  /// device had no connection, so the retry budget is not spent on timers
+  /// that can only fail — the first reading that is online again plays on.
+  bool _waitingForNetwork = false;
+  ProviderSubscription<bool>? _networkWait;
+
   /// Where a failed play was, so a retry resumes there rather than at the
   /// episode's head.
   Duration _retryPosition = Duration.zero;
@@ -200,6 +206,8 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
     _sleepTicker = null;
     _recoveryTimer?.cancel();
     _recoveryTimer = null;
+    _networkWait?.close();
+    _networkWait = null;
     unawaited(_transportSub?.cancel() ?? Future<void>.value());
     unawaited(_eventSub?.cancel() ?? Future<void>.value());
     unawaited(_geometrySub?.cancel() ?? Future<void>.value());
@@ -217,6 +225,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
   }
 
   Future<void> _load() async {
+    _stopWaiting();
     setState(() {
       _loading = true;
       _error = null;
@@ -259,6 +268,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
     bool autoplay = true,
   }) async {
     if (_opening) return;
+    _stopWaiting();
     final sameEpisode = _episode?.vid == episode.vid;
     if (!recovering) _saveProgress(force: true);
     if (!sameEpisode) {
@@ -420,7 +430,45 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
       _error = failure;
       _autoRecovery = _recovery.remaining && !_sleepStopped;
     });
+    // No connection: the reference waits for it instead of burning retries
+    // on timers that can only fail.
+    if (!ref.read(isOnlineProvider)) {
+      _waitForNetwork();
+      return;
+    }
     _scheduleRecovery();
+  }
+
+  /// Holds the failed episode until a reading says the device is online
+  /// again, then continues where it stopped. The retry budget is untouched.
+  void _waitForNetwork() {
+    _cancelRecovery();
+    _networkWait?.close();
+    setState(() {
+      _waitingForNetwork = true;
+      _autoRecovery = false;
+    });
+    _networkWait = ref.listenManual<bool>(isOnlineProvider, (previous, next) {
+      if (!next) return;
+      _networkWait?.close();
+      _networkWait = null;
+      if (!mounted || _disposed || _error == null) return;
+      final episode = _episode;
+      if (episode == null) return;
+      setState(() => _waitingForNetwork = false);
+      unawaited(
+        _openEpisode(episode, resume: _retryPosition.inMilliseconds / 1000, recovering: true, autoplay: _retryAutoplay),
+      );
+    });
+  }
+
+  /// Drops a pending wait: the viewer took over, or another episode opened.
+  void _stopWaiting() {
+    _networkWait?.close();
+    _networkWait = null;
+    if (!_waitingForNetwork) return;
+    _waitingForNetwork = false;
+    if (mounted && !_disposed) setState(() {});
   }
 
   /// Arms the next automatic retry, if the budget has one left.
@@ -1037,7 +1085,9 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
                                 style: theme.typography.body.copyWith(color: colors.text),
                               ),
                               Text(
-                                _autoRecovery
+                                _waitingForNetwork
+                                    ? t.hongguo.waitingForNetwork
+                                    : _autoRecovery
                                     ? t.hongguo.autoRetry(
                                         attempt: _recovery.attempts + 1,
                                         seconds: (_recovery.delay?.inMilliseconds ?? 0) ~/ 1000,

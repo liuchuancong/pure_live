@@ -159,6 +159,7 @@
   "stopAutoRetry": "Stop auto-retry",
   "autoRetry": "Retrying {attempt}/3 in {seconds}s",
   "retryExhausted": "Three automatic retries did not help. Retry by hand or pick a lower quality.",
+  "waitingForNetwork": "No network right now · playback resumes where it stopped once it is back",
   "decoderLessons": "Decoder notes",
   "decoderLessonsCount": "{count} decode failures remembered; those renditions are skipped",
   "decoderLessonsEmpty": "No decode failures yet; the ladder follows the platform's claims",

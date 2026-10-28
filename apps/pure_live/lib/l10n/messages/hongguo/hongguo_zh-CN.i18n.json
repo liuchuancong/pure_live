@@ -159,6 +159,7 @@
   "stopAutoRetry": "停止自动重试",
   "autoRetry": "即将重试 {attempt}/3 · {seconds} 秒后",
   "retryExhausted": "已自动重试 3 次，仍无法播放。可手动重试或切换清晰度。",
+  "waitingForNetwork": "当前没有网络 · 联网后会自动接着播",
   "decoderLessons": "设备解码记录",
   "decoderLessonsCount": "已记住 {count} 条解码失败，选流时会跳过它们",
   "decoderLessonsEmpty": "还没有解码失败记录，选流按平台声明",
