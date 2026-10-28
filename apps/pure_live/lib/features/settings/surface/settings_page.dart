@@ -59,6 +59,7 @@ import 'package:pure_live/features/settings/playback/portrait_settings_providers
         PortraitSettings,
         PortraitSettingsController,
         portraitSettingsProvider;
+import 'package:pure_live/features/settings/room/room_card_settings.dart' show RoomCardCoverAspect;
 import 'package:pure_live/features/settings/room/room_switcher_settings.dart' show portraitSwipeSwitchProvider;
 import 'package:pure_live/features/settings/surface/settings_navigation.dart'
     show openSettingsCategory, openSettingsChild, openSettingsSection;
@@ -849,6 +850,34 @@ final class _BrowsingPane extends ConsumerWidget {
                   DsSelectOption(value: spacing, label: '${spacing.round()} px'),
               ],
               onChanged: (value) => ref.read(browseSettingsProvider.notifier).mainSpacing = value,
+            ),
+          ],
+        ),
+        // How many cards a screen holds: the columns are a choice now, not
+        // only a consequence of the window's width; the cover's shape and
+        // the title's lines decide how tall a card stands.
+        DsListSection(
+          header: Text(t.settings.browseLayoutGroup),
+          children: [
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.columns3),
+              title: t.settings.browseColumns,
+              value: settings.gridColumns,
+              options: [
+                DsSelectOption(value: 0, label: t.settings.browseAuto),
+                for (final columns in kBrowseGridColumnChoices) DsSelectOption(value: columns, label: '$columns'),
+              ],
+              onChanged: (value) => ref.read(browseSettingsProvider.notifier).gridColumns = value,
+            ),
+            SettingsSegmentedRow<RoomCardCoverAspect>(
+              leading: const DsIcon(DsIcons.rectangleHorizontal),
+              title: t.settings.browseCoverAspect,
+              value: settings.coverAspect,
+              options: const [
+                (value: RoomCardCoverAspect.wide, label: '16:9'),
+                (value: RoomCardCoverAspect.boxed, label: '4:3'),
+              ],
+              onChanged: (value) => ref.read(browseSettingsProvider.notifier).coverAspect = value,
             ),
           ],
         ),
@@ -1820,7 +1849,17 @@ final class _SitesDisplayPane extends ConsumerWidget {
         },
       ),
       extraRows: [
-        if (hidden.isEmpty) DsListRow(leading: const DsIcon(DsIcons.antenna), title: Text(t.settings.sitesAllShown)),
+        // With nothing hidden the line is a status; with anything hidden it
+        // is the one-step way back to every platform.
+        if (hidden.isEmpty)
+          DsListRow(leading: const DsIcon(DsIcons.antenna), title: Text(t.settings.sitesAllShown))
+        else
+          DsListRow(
+            leading: const DsIcon(DsIcons.antenna),
+            title: Text(t.settings.sitesShowAll),
+            description: Text(t.settings.sitesShowAllDesc),
+            onPressed: () => unawaited(display.showAll()),
+          ),
         DsListRow(
           leading: const DsIcon(DsIcons.listRestart),
           title: Text(t.settings.sitesOrderReset),
