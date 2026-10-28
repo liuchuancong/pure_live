@@ -300,7 +300,7 @@ l10n 累计新增 27 个 key（中英各一份，`dart run slang` 已重生成�
 
 ### 8.7 下一轮继续
 
-P1 只剩：首页/侧栏的**新集徽标**（收藏检测已有计数，尚未挂到导航项上）、参考的**断网等待**。P2：弹幕渲染层（#7）已在 8.9 完成；剩下评论侧边面板 + 本集/整剧双 tab、选集分组与跳转、HUD 状态行。
+P1 只剩：参考的**断网等待**（没有联网监听，按恢复预算重试代替）；首页/侧栏的新集徽标已在 8.10 完成。P2：弹幕渲染层（#7）已在 8.9 完成；剩下评论侧边面板 + 本集/整剧双 tab、选集分组与跳转、HUD 状态行。
 
 ### 8.8 第六轮（2026-10-29）：签名器与 ttEncrypt 的四处错位
 
@@ -332,6 +332,17 @@ P1 只剩：首页/侧栏的**新集徽标**（收藏检测已有计数，尚未
 - **清单**：模块 barrel 导出两个新文件；`kSettingsProviders` 补 `hongguoDanmakuSettingsProvider`；备份补 `hongguo.danmaku`；设置搜索补一行（弹幕/字号/透明度/速度/密度）。
 
 新增 `test/hongguo/hongguo_danmaku_test.dart` 7 项：越界字段夹取、缺省值、各密度下的行数预算、planner 轮流/全忙/重置、控制器读盘与写盘。`dart analyze lib/modules/hongguo lib/features/settings lib/features/backup/document/backup_settings.dart lib/app/providers/settings test/hongguo` 0 issues；`flutter test test/hongguo` 19 项全绿。**未验证**：真机上的观感（字号/速度的默认值、密度在 16:9 外的画面比例、长时间播放的帧率）。
+
+### 8.10 第八轮（2026-10-29）：收藏新集徽标（P1）
+
+收藏检测（8.6）已经算出每部剧 `added = total - seen`，但数字只出现在收藏页的行内文案里，侧栏的「收藏」入口看不出来。参考把新集数挂在菜单项上，本轮照做：
+
+- `HongguoLibraryState.addedCount`：整个书架的新集合计（负值按 0 计，平台回退集数时不会出现负数）。
+- `DesktopLayout`/`MobileLayout` 各加一个可选 `badges: Map<NavigationItem, int>`，行的 `count` 直接用 `DsSidebarItem.count`（>99 显示 `99+`，折叠侧栏退化成圆点），无障碍读作 `t.hongguo.favoriteAdded(count: N)`——复用已有的「新增 {count} 集」文案，不新增词条。
+- `AppLayout` 只在 `AppModule.hongguo` 时订阅书架（其他模块不持有该 provider），有值才传 `{hongguoFavorites: N}`。
+- 手机底部导航没有徽标位（`DsBottomNavItem` 无 count），因此这道徽标只出现在桌面侧栏与手机抽屉；参考的底部栏同样没有。
+
+新增 `test/hongguo/hongguo_library_test.dart` 2 项：合计与负数夹取、打开一部剧后其余徽标保留。`dart analyze lib/layouts lib/modules/hongguo` 0 issues；`flutter test test/hongguo` 21 项全绿。**未验证**：真机上的徽标观感（折叠侧栏的圆点、电视遥控聚焦时的行高）。
 
 ---
 

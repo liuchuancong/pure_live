@@ -68,6 +68,7 @@ final class DesktopLayout extends ConsumerStatefulWidget {
     this.settingsSection,
     this.settingsCategoryKey,
     this.settingsSectionOpen = false,
+    this.badges = const {},
     this.tv = false,
     super.key,
   });
@@ -103,6 +104,11 @@ final class DesktopLayout extends ConsumerStatefulWidget {
 
   /// Whether a section page is open below [settingsCategoryKey].
   final bool settingsSectionOpen;
+
+  /// Count badges the menu rows show at their end, keyed by destination —
+  /// the hongguo shelf's new episodes, for now. A destination missing here
+  /// shows none.
+  final Map<NavigationItem, int> badges;
 
   /// A TV build: the sidebar and pages are the same, but the toolbar's
   /// text field is left out — a remote's arrows would move its caret
@@ -232,6 +238,11 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
         value: item,
         leading: DsIcon(item.icon),
         label: Text(item.label(t)),
+        count: widget.badges[item],
+        countSemanticLabel: switch (widget.badges[item]) {
+          final count? => t.hongguo.favoriteAdded(count: count),
+          null => null,
+        },
         style: widget.expanded ? null : _collapsedItem,
         focusNode: item == widget.menuValue ? _selectedFocus : null,
         autofocus: item == widget.menuValue,

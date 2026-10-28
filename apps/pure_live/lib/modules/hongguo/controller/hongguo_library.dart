@@ -161,6 +161,10 @@ final class HongguoLibraryState {
   /// Whether [seriesId] is favorited.
   bool isFavorite(String seriesId) => favorites.any((series) => series.seriesId == seriesId);
 
+  /// How many episodes the whole shelf gained since each series was last
+  /// read — the number the rail's badge shows.
+  int get addedCount => updates.values.fold(0, (sum, row) => sum + row.added);
+
   /// The series' progress row, when one exists.
   HongguoWatchProgress? progressOf(String seriesId) {
     for (final row in history) {

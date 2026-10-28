@@ -8,6 +8,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/layouts/desktop/desktop_layout.dart';
 import 'package:pure_live/layouts/mobile/mobile_layout.dart';
+import 'package:pure_live/modules/hongguo/hongguo.dart' show hongguoLibraryProvider;
 import 'package:pure_live/shared/shared.dart';
 
 import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
@@ -228,6 +229,12 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     // shows the module's settings groups (alone — no app entries mixed in),
     // the app's menu its blocks, a divider between them.
     final navigation = navigationOf(module);
+    // The shelf's new episodes ride on the hongguo menu's favorites row,
+    // the reference's badge: the number each favorite gained since the
+    // series was last opened. Only the station that owns the shelf is
+    // followed, so other modules never subscribe to it.
+    final newEpisodes = module == AppModule.hongguo ? ref.watch(hongguoLibraryProvider).addedCount : 0;
+    final badges = newEpisodes > 0 ? {NavigationItem.hongguoFavorites: newEpisodes} : const <NavigationItem, int>{};
     // The tools block follows the order the settings pane edits, not the
     // registry's fixed list; a stored order never drops a tool the
     // registry added later.
@@ -355,6 +362,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
         onModuleSelected: selectModule,
         onSearch: () => handleSelected(NavigationItem.search),
         homeMenuItems: homeMenu,
+        badges: badges,
       );
     }
     return DesktopLayout(
@@ -365,6 +373,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       menuGroupLabels: menuGroupLabels,
       menuValue: menuValue,
       onMenu: handleMenu,
+      badges: badges,
       settingsSection: inSettings ? settingsSection : null,
       settingsCategoryKey: inSettings ? settingsCategory : null,
       settingsSectionOpen: inSettings && sectionOpen,

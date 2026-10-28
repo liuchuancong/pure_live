@@ -31,6 +31,7 @@ final class MobileLayout extends ConsumerWidget {
     required this.onModuleSelected,
     required this.onSearch,
     this.homeMenuItems = kHomeMenuItems,
+    this.badges = const {},
     super.key,
   });
 
@@ -55,6 +56,11 @@ final class MobileLayout extends ConsumerWidget {
   /// The live home menu's visible entries in the viewer's order (the
   /// navigation setting's list); other modules keep their own tabs.
   final List<NavigationItem> homeMenuItems;
+
+  /// Count badges the drawer's rows show at their end, keyed by
+  /// destination — the hongguo shelf's new episodes, for now. The bottom
+  /// bar has no badge slot; a destination missing here shows none.
+  final Map<NavigationItem, int> badges;
 
   /// The bar's destinations: the module's feeds plus settings, the shape a
   /// phone's tab bar takes in every common client. Live follows the
@@ -250,7 +256,16 @@ final class MobileLayout extends ConsumerWidget {
                   for (final (index, group) in navigationOf(module).menu.indexed) ...[
                     if (index > 0) const SidebarDivider(),
                     for (final item in _menuItems(group, ref.watch(toolOrderProvider)))
-                      DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
+                      DsSidebarItem(
+                        value: item,
+                        leading: DsIcon(item.icon),
+                        label: Text(item.label(t)),
+                        count: badges[item],
+                        countSemanticLabel: switch (badges[item]) {
+                          final count? => t.hongguo.favoriteAdded(count: count),
+                          null => null,
+                        },
+                      ),
                   ],
                   const SidebarDivider(),
                   DsSidebarItem(
