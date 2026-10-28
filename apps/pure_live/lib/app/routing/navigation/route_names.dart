@@ -57,6 +57,10 @@ abstract final class RouteNames {
   /// (the reference's PlayDetail).
   static const String musicPlayer = '/music/player';
 
+  /// One hongguo series' page (its metadata, episodes and player), pushed
+  /// on the root navigator above the shell: the station's cards open it.
+  static const String hongguoSeries = '/hongguo/series/:seriesId';
+
   /// The settings branch.
   static const String settings = '/settings';
 

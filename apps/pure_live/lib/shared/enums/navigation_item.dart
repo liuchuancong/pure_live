@@ -95,7 +95,25 @@ enum NavigationItem {
   musicToplist(DsIcons.chartColumn),
 
   /// The music module's own lists, the reference's 我的列表.
-  musicLibrary(DsIcons.heart);
+  musicLibrary(DsIcons.heart),
+
+  /// The hongguo station's live-action shelf (短剧).
+  hongguoDrama(DsIcons.clapperboard),
+
+  /// The hongguo station's comic shelf (漫剧).
+  hongguoComic(DsIcons.bookOpenText),
+
+  /// The hongguo station's AI shelf (AI短剧).
+  hongguoAi(DsIcons.sparkles),
+
+  /// The hongguo station's comic boards.
+  hongguoRank(DsIcons.trophy),
+
+  /// The hongguo station's newest arrivals.
+  hongguoLatest(DsIcons.rocket),
+
+  /// The hongguo station's search.
+  hongguoSearch(DsIcons.search);
 
   NavigationItem(this.icon);
 
@@ -135,5 +153,11 @@ enum NavigationItem {
     NavigationItem.musicSonglist => t.navigation.musicSonglist,
     NavigationItem.musicToplist => t.navigation.musicToplist,
     NavigationItem.musicLibrary => t.navigation.musicLibrary,
+    NavigationItem.hongguoDrama => t.hongguo.navDrama,
+    NavigationItem.hongguoComic => t.hongguo.navComic,
+    NavigationItem.hongguoAi => t.hongguo.navAi,
+    NavigationItem.hongguoRank => t.hongguo.navRank,
+    NavigationItem.hongguoLatest => t.hongguo.navLatest,
+    NavigationItem.hongguoSearch => t.hongguo.navSearch,
   };
 }

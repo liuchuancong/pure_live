@@ -41,16 +41,14 @@ const Map<String, String> _kBrowseParams = {
 /// surface and hands the player the mp4 the service decrypts.
 final class HongguoClient {
   /// Creates a client over [http] answering at [settings].
-  HongguoClient({required LiveHttp http, required HongguoSettings settings})
-    : _http = http,
-      _settings = settings;
+  HongguoClient({required this.http, required this.settings});
 
-  final LiveHttp _http;
-  HongguoSettings _settings;
+  /// The transport every ask goes through.
+  final LiveHttp http;
 
-  /// The settings the client currently speaks with; the settings provider
-  /// hands a fresh client on every change, so this is only read, never set.
-  HongguoSettings get settings => _settings;
+  /// The service the asks speak to; the settings provider hands a fresh
+  /// client on every change, so this is only read, never set.
+  final HongguoSettings settings;
 
   /// One shelf's listing under a filter selection: theme/setting/background
   /// (the panel's three category dimensions), the sort, the audience, the
@@ -130,8 +128,8 @@ final class HongguoClient {
       if (vid != null && vid.isNotEmpty) 'vid': vid,
       if (seriesId != null && seriesId.isNotEmpty) 'series_id': seriesId,
       if (episode != null) 'ep': '$episode',
-      'quality': _settings.quality.wire,
-      if (_settings.apiKey.isNotEmpty) 'api_key': _settings.apiKey,
+      'quality': settings.quality.wire,
+      if (settings.apiKey.isNotEmpty) 'api_key': settings.apiKey,
     };
     return base.replace(path: '${base.path}/stream', queryParameters: query).toString();
   }
@@ -143,7 +141,9 @@ final class HongguoClient {
   }
 
   Uri _baseUri() {
-    var base = Uri.parse(_settings.serverUrl.trim().isEmpty ? HongguoSettings.standard.serverUrl : _settings.serverUrl.trim());
+    var base = Uri.parse(
+      settings.serverUrl.trim().isEmpty ? HongguoSettings.standard.serverUrl : settings.serverUrl.trim(),
+    );
     if (base.path.endsWith('/')) {
       base = base.replace(path: base.path.substring(0, base.path.length - 1));
     }
@@ -155,35 +155,36 @@ final class HongguoClient {
       path: '${_baseUri().path}$path',
       queryParameters: query.isEmpty ? null : query,
     );
-    final LiveResponse response;
     try {
-      response = await _http.send(
+      final response = await http.send(
         LiveRequest.get(
           uri,
-          headers: {'accept': 'application/json', if (_settings.apiKey.isNotEmpty) 'x-api-key': _settings.apiKey},
+          headers: {'accept': 'application/json', if (settings.apiKey.isNotEmpty) 'x-api-key': settings.apiKey},
           timeout: const Duration(seconds: 20),
         ),
       );
+      if (!response.isOk) {
+        throw HongguoFailure(_failureText(response.statusCode, response.text));
+      }
+      try {
+        final decoded = jsonDecode(response.text);
+        if (decoded is Map<String, Object?>) return decoded;
+      } on Object {
+        // Falls through to the shape failure below.
+      }
+      throw const HongguoFailure('The companion service did not answer an object');
+    } on HongguoFailure {
+      rethrow;
     } on Object catch (error) {
       throw HongguoFailure('$error');
     }
-    if (!response.isOk) {
-      throw HongguoFailure(await _failureText(response));
-    }
-    try {
-      final decoded = jsonDecode(response.text);
-      if (decoded is Map<String, Object?>) return decoded;
-    } on Object {
-      // Falls through to the shape failure below.
-    }
-    throw const HongguoFailure('The companion service did not answer an object');
   }
 
   /// The service's own words for a refusal, when it sent any: FastAPI's
   /// `detail`, or the raw status when it did not.
-  static Future<String> _failureText(LiveResponse response) async {
+  static String _failureText(int statusCode, String body) {
     try {
-      final decoded = jsonDecode(response.text);
+      final decoded = jsonDecode(body);
       if (decoded is Map<String, Object?>) {
         final detail = decoded['detail'];
         if (detail is String && detail.trim().isNotEmpty) return detail;
@@ -194,7 +195,7 @@ final class HongguoClient {
     } on Object {
       // A non-JSON refusal is reported by status alone.
     }
-    return 'HTTP ${response.statusCode}';
+    return 'HTTP $statusCode';
   }
 
   static List<HongguoSeries> _seriesList(Object? json) {

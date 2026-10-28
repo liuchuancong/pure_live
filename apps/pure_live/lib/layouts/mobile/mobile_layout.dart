@@ -82,6 +82,13 @@ final class MobileLayout extends ConsumerWidget {
       NavigationItem.musicLibrary,
       NavigationItem.settings,
     ],
+    AppModule.hongguo => const [
+      NavigationItem.hongguoDrama,
+      NavigationItem.hongguoComic,
+      NavigationItem.hongguoRank,
+      NavigationItem.hongguoSearch,
+      NavigationItem.settings,
+    ],
   };
 
   /// The top bar's title: the page on screen, not the app's name (the

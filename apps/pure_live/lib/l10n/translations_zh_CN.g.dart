@@ -47,6 +47,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$common$zh_CN common = Translations$common$zh_CN.internal(_root);
 	late final Translations$favorites$zh_CN favorites = Translations$favorites$zh_CN.internal(_root);
 	late final Translations$history$zh_CN history = Translations$history$zh_CN.internal(_root);
+	late final Translations$hongguo$zh_CN hongguo = Translations$hongguo$zh_CN.internal(_root);
 	late final Translations$iptv$zh_CN iptv = Translations$iptv$zh_CN.internal(_root);
 	late final Translations$multiview$zh_CN multiview = Translations$multiview$zh_CN.internal(_root);
 	late final Translations$music$zh_CN music = Translations$music$zh_CN.internal(_root);
@@ -932,6 +933,9 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '当前设备或播放内核无法进入画中画。'
 	String get pipUnavailable => '当前设备或播放内核无法进入画中画。';
+
+	/// zh-CN: '红果短剧'
+	String get moduleHongguo => '红果短剧';
 }
 
 // Path: favorites
@@ -1163,6 +1167,147 @@ class Translations$history$zh_CN {
 
 	/// zh-CN: '进入直播间'
 	String get openRoom => '进入直播间';
+}
+
+// Path: hongguo
+class Translations$hongguo$zh_CN {
+	Translations$hongguo$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '红果短剧'
+	String get title => '红果短剧';
+
+	/// zh-CN: '短剧 · 漫剧 · AI 短剧，由红果伴侣服务提供'
+	String get tagline => '短剧 · 漫剧 · AI 短剧，由红果伴侣服务提供';
+
+	/// zh-CN: '短剧'
+	String get navDrama => '短剧';
+
+	/// zh-CN: '漫剧'
+	String get navComic => '漫剧';
+
+	/// zh-CN: 'AI短剧'
+	String get navAi => 'AI短剧';
+
+	/// zh-CN: '榜单'
+	String get navRank => '榜单';
+
+	/// zh-CN: '上新'
+	String get navLatest => '上新';
+
+	/// zh-CN: '搜索'
+	String get navSearch => '搜索';
+
+	/// zh-CN: '短剧'
+	String get genreShortPlay => '短剧';
+
+	/// zh-CN: '漫剧'
+	String get genreComicSeries => '漫剧';
+
+	/// zh-CN: 'AI短剧'
+	String get genreAiSeries => 'AI短剧';
+
+	/// zh-CN: '漫剧推荐榜'
+	String get boardRecommend => '漫剧推荐榜';
+
+	/// zh-CN: '漫剧热播榜'
+	String get boardHot => '漫剧热播榜';
+
+	/// zh-CN: '漫剧新剧榜'
+	String get boardNew => '漫剧新剧榜';
+
+	/// zh-CN: '今日上新'
+	String get latestToday => '今日上新';
+
+	/// zh-CN: '最新上架'
+	String get latestAll => '最新上架';
+
+	/// zh-CN: '全部'
+	String get filterAll => '全部';
+
+	/// zh-CN: '搜索'
+	String get search => '搜索';
+
+	/// zh-CN: '搜索短剧'
+	String get searchHint => '搜索短剧';
+
+	/// zh-CN: '搜索短剧'
+	String get searchIdleTitle => '搜索短剧';
+
+	/// zh-CN: '输入剧名搜索红果的短剧、漫剧和 AI 短剧。'
+	String get searchIdleDescription => '输入剧名搜索红果的短剧、漫剧和 AI 短剧。';
+
+	/// zh-CN: '换个条件再试试。'
+	String get noResultsDescription => '换个条件再试试。';
+
+	/// zh-CN: '红果伴侣服务没有应答；请确认服务已启动，并检查服务地址与密钥。'
+	String get serverHint => '红果伴侣服务没有应答；请确认服务已启动，并检查服务地址与密钥。';
+
+	/// zh-CN: '红果设置'
+	String get openSettings => '红果设置';
+
+	/// zh-CN: '剧集'
+	String get episodes => '剧集';
+
+	/// zh-CN: '第{index}集'
+	String episodeLabel({required Object index}) => '第${index}集';
+
+	/// zh-CN: '{count}集'
+	String episodesCount({required Object count}) => '${count}集';
+
+	/// zh-CN: '播放'
+	String get plays => '播放';
+
+	/// zh-CN: '追剧'
+	String get followers => '追剧';
+
+	/// zh-CN: '今日'
+	String get todayTag => '今日';
+
+	/// zh-CN: '剧集没有加载出来'
+	String get loadFailed => '剧集没有加载出来';
+
+	/// zh-CN: '正在打开…'
+	String get opening => '正在打开…';
+
+	/// zh-CN: '播放'
+	String get play => '播放';
+
+	/// zh-CN: '暂停'
+	String get pause => '暂停';
+
+	/// zh-CN: '静音'
+	String get mute => '静音';
+
+	/// zh-CN: '取消静音'
+	String get unmute => '取消静音';
+
+	/// zh-CN: '音量'
+	String get volume => '音量';
+
+	/// zh-CN: '播放进度'
+	String get progress => '播放进度';
+
+	/// zh-CN: '倍速'
+	String get speed => '倍速';
+
+	/// zh-CN: '下一集'
+	String get nextEpisode => '下一集';
+
+	/// zh-CN: '全屏'
+	String get fullscreen => '全屏';
+
+	/// zh-CN: '退出全屏'
+	String get exitFullscreen => '退出全屏';
+
+	/// zh-CN: '展开'
+	String get expand => '展开';
+
+	/// zh-CN: '收起'
+	String get collapse => '收起';
 }
 
 // Path: iptv
@@ -6641,6 +6786,60 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '循环播放'
 	String get backgroundPreviewLooping => '循环播放';
+
+	/// zh-CN: '红果短剧'
+	String get navHongguo => '红果短剧';
+
+	/// zh-CN: '红果伴侣服务与播放偏好。'
+	String get hongguoDescription => '红果伴侣服务与播放偏好。';
+
+	/// zh-CN: '伴侣服务'
+	String get hongguoService => '伴侣服务';
+
+	/// zh-CN: '服务地址'
+	String get hongguoServer => '服务地址';
+
+	/// zh-CN: '红果伴侣服务的地址，默认为本机 8000 端口。'
+	String get hongguoServerDesc => '红果伴侣服务的地址，默认为本机 8000 端口。';
+
+	/// zh-CN: '链路密钥'
+	String get hongguoApiKey => '链路密钥';
+
+	/// zh-CN: '服务启用鉴权时下发的密钥；未启用时留空。'
+	String get hongguoApiKeyDesc => '服务启用鉴权时下发的密钥；未启用时留空。';
+
+	/// zh-CN: '测试连接'
+	String get hongguoTest => '测试连接';
+
+	/// zh-CN: '向伴侣服务发一次探活请求，确认地址与密钥可用。'
+	String get hongguoTestDesc => '向伴侣服务发一次探活请求，确认地址与密钥可用。';
+
+	/// zh-CN: '连接正常。'
+	String get hongguoTestOk => '连接正常。';
+
+	/// zh-CN: '默认清晰度'
+	String get hongguoQuality => '默认清晰度';
+
+	/// zh-CN: '打开剧集时优先请求的清晰度；不存在时自动取更低一档。'
+	String get hongguoQualityDesc => '打开剧集时优先请求的清晰度；不存在时自动取更低一档。';
+
+	/// zh-CN: '最高'
+	String get hongguoQualityBest => '最高';
+
+	/// zh-CN: '1080P'
+	String get hongguoQuality1080 => '1080P';
+
+	/// zh-CN: '720P'
+	String get hongguoQuality720 => '720P';
+
+	/// zh-CN: '540P'
+	String get hongguoQuality540 => '540P';
+
+	/// zh-CN: '480P'
+	String get hongguoQuality480 => '480P';
+
+	/// zh-CN: '360P'
+	String get hongguoQuality360 => '360P';
 }
 
 // Path: shield
@@ -8129,6 +8328,7 @@ extension on Translations {
 			'common.save' => '保存',
 			'common.copied' => '已复制',
 			'common.pipUnavailable' => '当前设备或播放内核无法进入画中画。',
+			'common.moduleHongguo' => '红果短剧',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
@@ -8200,6 +8400,50 @@ extension on Translations {
 			'history.refresh' => '刷新',
 			'history.refreshFailed' => ({required int count}) => '${count} 条记录刷新失败',
 			'history.openRoom' => '进入直播间',
+			'hongguo.title' => '红果短剧',
+			'hongguo.tagline' => '短剧 · 漫剧 · AI 短剧，由红果伴侣服务提供',
+			'hongguo.navDrama' => '短剧',
+			'hongguo.navComic' => '漫剧',
+			'hongguo.navAi' => 'AI短剧',
+			'hongguo.navRank' => '榜单',
+			'hongguo.navLatest' => '上新',
+			'hongguo.navSearch' => '搜索',
+			'hongguo.genreShortPlay' => '短剧',
+			'hongguo.genreComicSeries' => '漫剧',
+			'hongguo.genreAiSeries' => 'AI短剧',
+			'hongguo.boardRecommend' => '漫剧推荐榜',
+			'hongguo.boardHot' => '漫剧热播榜',
+			'hongguo.boardNew' => '漫剧新剧榜',
+			'hongguo.latestToday' => '今日上新',
+			'hongguo.latestAll' => '最新上架',
+			'hongguo.filterAll' => '全部',
+			'hongguo.search' => '搜索',
+			'hongguo.searchHint' => '搜索短剧',
+			'hongguo.searchIdleTitle' => '搜索短剧',
+			'hongguo.searchIdleDescription' => '输入剧名搜索红果的短剧、漫剧和 AI 短剧。',
+			'hongguo.noResultsDescription' => '换个条件再试试。',
+			'hongguo.serverHint' => '红果伴侣服务没有应答；请确认服务已启动，并检查服务地址与密钥。',
+			'hongguo.openSettings' => '红果设置',
+			'hongguo.episodes' => '剧集',
+			'hongguo.episodeLabel' => ({required Object index}) => '第${index}集',
+			'hongguo.episodesCount' => ({required Object count}) => '${count}集',
+			'hongguo.plays' => '播放',
+			'hongguo.followers' => '追剧',
+			'hongguo.todayTag' => '今日',
+			'hongguo.loadFailed' => '剧集没有加载出来',
+			'hongguo.opening' => '正在打开…',
+			'hongguo.play' => '播放',
+			'hongguo.pause' => '暂停',
+			'hongguo.mute' => '静音',
+			'hongguo.unmute' => '取消静音',
+			'hongguo.volume' => '音量',
+			'hongguo.progress' => '播放进度',
+			'hongguo.speed' => '倍速',
+			'hongguo.nextEpisode' => '下一集',
+			'hongguo.fullscreen' => '全屏',
+			'hongguo.exitFullscreen' => '退出全屏',
+			'hongguo.expand' => '展开',
+			'hongguo.collapse' => '收起',
 			'iptv.tabAll' => '全部',
 			'iptv.live' => '直播',
 			'iptv.scopeLabel' => '频道范围',
@@ -8318,6 +8562,8 @@ extension on Translations {
 			'iptv.orderDraft' => '未保存的排序草稿',
 			'iptv.saveOrder' => '保存顺序',
 			'iptv.orderSaved' => '顺序已保存',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.moveUp' => '上移',
 			'iptv.moveToTop' => '移到顶部',
 			'iptv.moveDown' => '下移',
@@ -8363,8 +8609,6 @@ extension on Translations {
 			'iptv.browseChannelNumberDesc' => '在频道名旁边一起显示它的号码。',
 			'iptv.browseReverse' => '换台反转',
 			'iptv.browseReverseDesc' => '让上键向下走、下键向上走。',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.browseClock' => '显示时间',
 			'iptv.browseClockDesc' => '播放时在标题旁显示当前时间。',
 			'iptv.browseProgrammeLine' => '显示当前节目',
@@ -8832,6 +9076,8 @@ extension on Translations {
 			'room.giftValueDouyinCoin' => ({required Object value}) => '${value} 抖币',
 			'room.giftValueSixCoin' => ({required Object value}) => '${value} 六币',
 			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC币',
+			_ => null,
+		} ?? switch (path) {
 			'room.giftValueStarCoin' => ({required Object value}) => '${value} 星币',
 			'room.giftValueHeart' => ({required Object value}) => '${value} 爱心',
 			'room.giftValueNote' => ({required Object value}) => '${value} 音符',
@@ -8877,8 +9123,6 @@ extension on Translations {
 			'search.sortPlatform' => '按平台',
 			'search.sortAudience' => '按人气',
 			'search.sortFollowers' => '按关注',
-			_ => null,
-		} ?? switch (path) {
 			'search.includeOffline' => '显示离线',
 			'search.linkDetected' => '检测到直播间链接',
 			'search.linkOpen' => '打开直播间',
@@ -9346,6 +9590,8 @@ extension on Translations {
 			'settings.presetLowLatencyDesc' => '最小缓冲 + 解码/渲染双端丢帧，牺牲抗抖动换低延迟。适合赛事直播、连麦互动等时效优先的场景。',
 			'settings.playerPresetApplied' => '已应用预设',
 			'settings.playerOutputLockedByPreset' => '已由当前预设固定',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerProxy' => '播放器代理',
 			'settings.playerProxyDesc' => '只影响播放器请求；可以跟随上面的应用代理。',
 			'settings.playerProxyInvalid' => '请填写有效的主机和端口（1–65535）。',
@@ -9391,8 +9637,6 @@ extension on Translations {
 			'settings.audioOutputAaudio' => 'AAudio（Android 8.0+，低延迟）',
 			'settings.audioOutputOpensles' => 'OpenSL ES（Android 旧通道，兼容用）',
 			'settings.audioOutputAudiounit' => 'AudioUnit（iOS / macOS）',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioOutputWasapi' => 'WASAPI（Windows 默认通道，推荐）',
 			'settings.audioOutputWin32' => 'win32（waveOut 旧通道）',
 			'settings.audioOutputSdl' => 'SDL（跨平台兜底）',
@@ -9860,6 +10104,8 @@ extension on Translations {
 			'settings.roomCardPreviewTitle' => '今晚八点，一起聊聊新番和游戏',
 			'settings.roomCardPreviewAnchor' => '夜色电台',
 			'settings.roomCardPreviewHint' => '这是当前设备实际使用的卡片与列表，改动会立刻反映在这里。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.roomCardPresets' => '快捷预设',
 			'settings.roomCardPresetStandard' => '标准',
 			'settings.roomCardPresetDetailed' => '详细',
@@ -9905,8 +10151,6 @@ extension on Translations {
 			'settings.portraitFullscreenGroup' => '竖屏全屏',
 			'settings.portraitDisplayMode' => '画面模式',
 			'settings.portraitDisplayModeDesc' => '完整=整幅画面；沉浸=整幅画面配柔和背景；均衡=轻微裁切；铺满=裁切两侧填满屏幕。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.portraitDanmakuMode' => '弹幕区域',
 			'settings.portraitDanmakuModeDesc' => '竖屏全屏中飞行弹幕可占用的区域。',
 			'settings.portraitRememberRoom' => '记住每个房间的选择',
@@ -10004,6 +10248,24 @@ extension on Translations {
 			'settings.backgroundPlayInterval' => '播放间隔',
 			'settings.backgroundIntervalSeconds' => ({required Object count}) => '${count} 秒',
 			'settings.backgroundPreviewLooping' => '循环播放',
+			'settings.navHongguo' => '红果短剧',
+			'settings.hongguoDescription' => '红果伴侣服务与播放偏好。',
+			'settings.hongguoService' => '伴侣服务',
+			'settings.hongguoServer' => '服务地址',
+			'settings.hongguoServerDesc' => '红果伴侣服务的地址，默认为本机 8000 端口。',
+			'settings.hongguoApiKey' => '链路密钥',
+			'settings.hongguoApiKeyDesc' => '服务启用鉴权时下发的密钥；未启用时留空。',
+			'settings.hongguoTest' => '测试连接',
+			'settings.hongguoTestDesc' => '向伴侣服务发一次探活请求，确认地址与密钥可用。',
+			'settings.hongguoTestOk' => '连接正常。',
+			'settings.hongguoQuality' => '默认清晰度',
+			'settings.hongguoQualityDesc' => '打开剧集时优先请求的清晰度；不存在时自动取更低一档。',
+			'settings.hongguoQualityBest' => '最高',
+			'settings.hongguoQuality1080' => '1080P',
+			'settings.hongguoQuality720' => '720P',
+			'settings.hongguoQuality540' => '540P',
+			'settings.hongguoQuality480' => '480P',
+			'settings.hongguoQuality360' => '360P',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
@@ -10356,6 +10618,8 @@ extension on Translations {
 			'wallpaper.source360Fresh' => '360壁纸清新',
 			'wallpaper.source360Sport' => '360壁纸体育',
 			'wallpaper.source360Child' => '360壁纸萌娃',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.source360Military' => '360壁纸军事',
 			'wallpaper.source360Anime' => '360壁纸动漫',
 			'wallpaper.source360Calendar' => '360壁纸日历',

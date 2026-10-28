@@ -17,7 +17,11 @@ enum AppModule {
   vod(DsIcons.film, Color(0xFFFB7299)),
 
   /// The music module.
-  music(DsIcons.music, Color(0xFFFF9F2E));
+  music(DsIcons.music, Color(0xFFFF9F2E)),
+
+  /// The hongguo station (短剧 · 漫剧 · AI短剧), served by its companion
+  /// service.
+  hongguo(DsIcons.drama, Color(0xFFED4054));
 
   AppModule(this.icon, this.tile);
 
@@ -33,5 +37,6 @@ enum AppModule {
     AppModule.iptv => t.common.moduleIptv,
     AppModule.vod => t.common.moduleVod,
     AppModule.music => t.common.moduleMusic,
+    AppModule.hongguo => t.common.moduleHongguo,
   };
 }

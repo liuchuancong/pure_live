@@ -16,6 +16,7 @@ import 'package:pure_live/app/windows/chrome/window_chrome.dart' show WindowChro
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/layouts.dart';
+import 'package:pure_live/modules/hongguo/hongguo.dart' show HongguoSeriesPage;
 import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
@@ -490,6 +491,11 @@ GoRouter buildAppRouter({
       GoRoute(
         path: RouteNames.musicPlayer,
         builder: (context, state) => const WindowChromeFrame(child: MusicPlayerPage()),
+      ),
+      GoRoute(
+        path: RouteNames.hongguoSeries,
+        builder: (context, state) =>
+            _PlayerWindowChrome(child: HongguoSeriesPage(seriesId: state.pathParameters['seriesId']!)),
       ),
     ],
   );

@@ -73,6 +73,7 @@ enum SettingsSection {
   music(DsIcons.music),
   musicList(DsIcons.listOrdered),
   musicSources(DsIcons.fileCode),
+  hongguo(DsIcons.drama),
   // Deep-link aliases: their content lives on another page now (see
   // [aliasTarget]); kept readable so stored links never 404.
   personalization(DsIcons.brushFlat),
@@ -146,6 +147,7 @@ enum SettingsSection {
     SettingsSection.music => t.settings.navMusic,
     SettingsSection.musicList => t.settings.navMusicList,
     SettingsSection.musicSources => t.settings.navMusicSources,
+    SettingsSection.hongguo => t.settings.navHongguo,
     // Aliases: their pre-merge words, kept for anything still naming them.
     SettingsSection.personalization => t.settings.navPersonalization,
     SettingsSection.live => t.settings.navLive,
@@ -211,6 +213,7 @@ enum SettingsSection {
     SettingsSection.music => t.settings.musicSettingsDescription,
     SettingsSection.musicList => t.settings.musicListDescription,
     SettingsSection.musicSources => t.settings.musicSourcesDescription,
+    SettingsSection.hongguo => t.settings.hongguoDescription,
     SettingsSection.personalization => t.settings.personalizationDescription,
     SettingsSection.live => t.settings.liveSettingsDescription,
     SettingsSection.playback => t.settings.playbackSettingsDescription,
@@ -352,6 +355,7 @@ String settingsGroupLabel(Translations t, String key) => switch (key) {
   'groupIptv' => t.settings.navIptv,
   'groupVod' => t.settings.navVod,
   'groupMusic' => t.settings.navMusic,
+  'groupHongguo' => t.settings.navHongguo,
   'groupData' => t.settings.groupData,
   'groupAbout' => t.settings.groupAbout,
   _ => key,
@@ -367,6 +371,7 @@ String settingsGroupDescription(Translations t, String key) => switch (key) {
   'groupIptv' => t.settings.iptvDescription,
   'groupVod' => t.settings.vodDescription,
   'groupMusic' => t.settings.musicSettingsDescription,
+  'groupHongguo' => t.settings.hongguoDescription,
   'groupData' => t.settings.dataCacheDescription,
   'groupAbout' => t.settings.aboutDescription,
   _ => '',
@@ -382,6 +387,7 @@ DsIconData settingsGroupIcon(String key) => switch (key) {
   'groupIptv' => DsIcons.antenna,
   'groupVod' => DsIcons.film,
   'groupMusic' => DsIcons.music,
+  'groupHongguo' => DsIcons.drama,
   'groupData' => DsIcons.database,
   'groupAbout' => DsIcons.info,
   _ => DsIcons.settings,

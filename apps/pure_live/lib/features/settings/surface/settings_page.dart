@@ -69,6 +69,7 @@ import 'package:pure_live/features/settings/surface/settings_widgets.dart'
 import 'package:pure_live/features/version/version.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/layouts.dart';
+import 'package:pure_live/modules/hongguo/hongguo.dart';
 import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
@@ -533,6 +534,7 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.vodPlayback => const VodPlaybackPane(),
       SettingsSection.vodInterface => const VodInterfacePane(),
       SettingsSection.music => const MusicSettingsPane(),
+      SettingsSection.hongguo => const HongguoSettingsPane(),
       SettingsSection.musicList => const MusicListPane(),
       SettingsSection.musicSources => const MusicSourcesPane(),
     };

@@ -27,7 +27,7 @@ enum HongguoQualityChoice {
   /// 360P.
   p360('360p');
 
-  const HongguoQualityChoice(this.wire);
+  HongguoQualityChoice(this.wire);
 
   /// The value the stream endpoint's `quality` parameter takes.
   final String wire;

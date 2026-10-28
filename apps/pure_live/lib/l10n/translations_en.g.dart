@@ -45,6 +45,7 @@ class TranslationsEn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$en common = _Translations$common$en._(_root);
 	@override late final _Translations$favorites$en favorites = _Translations$favorites$en._(_root);
 	@override late final _Translations$history$en history = _Translations$history$en._(_root);
+	@override late final _Translations$hongguo$en hongguo = _Translations$hongguo$en._(_root);
 	@override late final _Translations$iptv$en iptv = _Translations$iptv$en._(_root);
 	@override late final _Translations$multiview$en multiview = _Translations$multiview$en._(_root);
 	@override late final _Translations$music$en music = _Translations$music$en._(_root);
@@ -374,6 +375,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get save => 'Save';
 	@override String get copied => 'Copied';
 	@override String get pipUnavailable => 'Picture-in-picture is not available for this device or player engine.';
+	@override String get moduleHongguo => 'Hongguo Drama';
 }
 
 // Path: favorites
@@ -463,6 +465,59 @@ class _Translations$history$en extends Translations$history$zh_CN {
 	@override String get refresh => 'Refresh';
 	@override String refreshFailed({required int count}) => '${count} records could not be refreshed';
 	@override String get openRoom => 'Open the room';
+}
+
+// Path: hongguo
+class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
+	_Translations$hongguo$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Hongguo Drama';
+	@override String get tagline => 'Short drama, comic drama and AI drama, served by the hongguo companion service';
+	@override String get navDrama => 'Drama';
+	@override String get navComic => 'Comics';
+	@override String get navAi => 'AI drama';
+	@override String get navRank => 'Boards';
+	@override String get navLatest => 'New';
+	@override String get navSearch => 'Search';
+	@override String get genreShortPlay => 'Short drama';
+	@override String get genreComicSeries => 'Comic drama';
+	@override String get genreAiSeries => 'AI drama';
+	@override String get boardRecommend => 'Recommended comics';
+	@override String get boardHot => 'Hot comics';
+	@override String get boardNew => 'New comics';
+	@override String get latestToday => 'Today\'s arrivals';
+	@override String get latestAll => 'Latest arrivals';
+	@override String get filterAll => 'All';
+	@override String get search => 'Search';
+	@override String get searchHint => 'Search drama';
+	@override String get searchIdleTitle => 'Search drama';
+	@override String get searchIdleDescription => 'Type a name to search Hongguo\'s short, comic and AI drama.';
+	@override String get noResultsDescription => 'Try another condition.';
+	@override String get serverHint => 'The hongguo companion service did not answer; make sure it is running and check its address and key.';
+	@override String get openSettings => 'Hongguo settings';
+	@override String get episodes => 'Episodes';
+	@override String episodeLabel({required Object index}) => 'Episode ${index}';
+	@override String episodesCount({required Object count}) => '${count} eps';
+	@override String get plays => 'plays';
+	@override String get followers => 'followers';
+	@override String get todayTag => 'New';
+	@override String get loadFailed => 'The series did not load';
+	@override String get opening => 'Opening…';
+	@override String get play => 'Play';
+	@override String get pause => 'Pause';
+	@override String get mute => 'Mute';
+	@override String get unmute => 'Unmute';
+	@override String get volume => 'Volume';
+	@override String get progress => 'Playback progress';
+	@override String get speed => 'Speed';
+	@override String get nextEpisode => 'Next episode';
+	@override String get fullscreen => 'Fullscreen';
+	@override String get exitFullscreen => 'Exit fullscreen';
+	@override String get expand => 'More';
+	@override String get collapse => 'Less';
 }
 
 // Path: iptv
@@ -2349,6 +2404,24 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundPlayInterval => 'Play interval';
 	@override String backgroundIntervalSeconds({required Object count}) => '${count}s';
 	@override String get backgroundPreviewLooping => 'Loops';
+	@override String get navHongguo => 'Hongguo drama';
+	@override String get hongguoDescription => 'The hongguo companion service and playback preferences.';
+	@override String get hongguoService => 'Companion service';
+	@override String get hongguoServer => 'Service address';
+	@override String get hongguoServerDesc => 'Where the hongguo companion service listens; the default is the loopback port 8000.';
+	@override String get hongguoApiKey => 'Link key';
+	@override String get hongguoApiKeyDesc => 'The key the service issued when authentication is on; leave empty when it is not.';
+	@override String get hongguoTest => 'Test connection';
+	@override String get hongguoTestDesc => 'Sends one probe request to the companion service to confirm the address and key.';
+	@override String get hongguoTestOk => 'Connected.';
+	@override String get hongguoQuality => 'Default quality';
+	@override String get hongguoQualityDesc => 'The rendition an episode opens with; a missing one falls back to the nearest lower.';
+	@override String get hongguoQualityBest => 'Best';
+	@override String get hongguoQuality1080 => '1080P';
+	@override String get hongguoQuality720 => '720P';
+	@override String get hongguoQuality540 => '540P';
+	@override String get hongguoQuality480 => '480P';
+	@override String get hongguoQuality360 => '360P';
 }
 
 // Path: shield
@@ -3067,6 +3140,7 @@ extension on TranslationsEn {
 			'common.save' => 'Save',
 			'common.copied' => 'Copied',
 			'common.pipUnavailable' => 'Picture-in-picture is not available for this device or player engine.',
+			'common.moduleHongguo' => 'Hongguo Drama',
 			'favorites.emptyTitle' => 'No followed rooms yet',
 			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			'favorites.unfollow' => 'Unfollow',
@@ -3138,6 +3212,50 @@ extension on TranslationsEn {
 			'history.refresh' => 'Refresh',
 			'history.refreshFailed' => ({required int count}) => '${count} records could not be refreshed',
 			'history.openRoom' => 'Open the room',
+			'hongguo.title' => 'Hongguo Drama',
+			'hongguo.tagline' => 'Short drama, comic drama and AI drama, served by the hongguo companion service',
+			'hongguo.navDrama' => 'Drama',
+			'hongguo.navComic' => 'Comics',
+			'hongguo.navAi' => 'AI drama',
+			'hongguo.navRank' => 'Boards',
+			'hongguo.navLatest' => 'New',
+			'hongguo.navSearch' => 'Search',
+			'hongguo.genreShortPlay' => 'Short drama',
+			'hongguo.genreComicSeries' => 'Comic drama',
+			'hongguo.genreAiSeries' => 'AI drama',
+			'hongguo.boardRecommend' => 'Recommended comics',
+			'hongguo.boardHot' => 'Hot comics',
+			'hongguo.boardNew' => 'New comics',
+			'hongguo.latestToday' => 'Today\'s arrivals',
+			'hongguo.latestAll' => 'Latest arrivals',
+			'hongguo.filterAll' => 'All',
+			'hongguo.search' => 'Search',
+			'hongguo.searchHint' => 'Search drama',
+			'hongguo.searchIdleTitle' => 'Search drama',
+			'hongguo.searchIdleDescription' => 'Type a name to search Hongguo\'s short, comic and AI drama.',
+			'hongguo.noResultsDescription' => 'Try another condition.',
+			'hongguo.serverHint' => 'The hongguo companion service did not answer; make sure it is running and check its address and key.',
+			'hongguo.openSettings' => 'Hongguo settings',
+			'hongguo.episodes' => 'Episodes',
+			'hongguo.episodeLabel' => ({required Object index}) => 'Episode ${index}',
+			'hongguo.episodesCount' => ({required Object count}) => '${count} eps',
+			'hongguo.plays' => 'plays',
+			'hongguo.followers' => 'followers',
+			'hongguo.todayTag' => 'New',
+			'hongguo.loadFailed' => 'The series did not load',
+			'hongguo.opening' => 'Opening…',
+			'hongguo.play' => 'Play',
+			'hongguo.pause' => 'Pause',
+			'hongguo.mute' => 'Mute',
+			'hongguo.unmute' => 'Unmute',
+			'hongguo.volume' => 'Volume',
+			'hongguo.progress' => 'Playback progress',
+			'hongguo.speed' => 'Speed',
+			'hongguo.nextEpisode' => 'Next episode',
+			'hongguo.fullscreen' => 'Fullscreen',
+			'hongguo.exitFullscreen' => 'Exit fullscreen',
+			'hongguo.expand' => 'More',
+			'hongguo.collapse' => 'Less',
 			'iptv.tabAll' => 'All',
 			'iptv.live' => 'Live',
 			'iptv.scopeLabel' => 'Channel scope',
@@ -3256,6 +3374,8 @@ extension on TranslationsEn {
 			'iptv.orderDraft' => 'Unsaved order draft',
 			'iptv.saveOrder' => 'Save order',
 			'iptv.orderSaved' => 'Order saved',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.moveUp' => 'Move up',
 			'iptv.moveToTop' => 'Move to top',
 			'iptv.moveDown' => 'Move down',
@@ -3301,8 +3421,6 @@ extension on TranslationsEn {
 			'iptv.browseChannelNumberDesc' => 'Prints the dial number beside the channel name.',
 			'iptv.browseReverse' => 'Reverse channel stepping',
 			'iptv.browseReverseDesc' => 'Makes the up key step down the list and the down key step up.',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.browseClock' => 'Show the time',
 			'iptv.browseClockDesc' => 'Draws the current clock beside the title while a channel plays.',
 			'iptv.browseProgrammeLine' => 'Show the current programme',
@@ -3770,6 +3888,8 @@ extension on TranslationsEn {
 			'room.giftValueDouyinCoin' => ({required Object value}) => '${value} Douyin coins',
 			'room.giftValueSixCoin' => ({required Object value}) => '${value} six coins',
 			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC coins',
+			_ => null,
+		} ?? switch (path) {
 			'room.giftValueStarCoin' => ({required Object value}) => '${value} star coins',
 			'room.giftValueHeart' => ({required Object value}) => '${value} hearts',
 			'room.giftValueNote' => ({required Object value}) => '${value} notes',
@@ -3815,8 +3935,6 @@ extension on TranslationsEn {
 			'search.sortPlatform' => 'By platform',
 			'search.sortAudience' => 'By audience',
 			'search.sortFollowers' => 'By followers',
-			_ => null,
-		} ?? switch (path) {
 			'search.includeOffline' => 'Include offline',
 			'search.linkDetected' => 'Live room link detected',
 			'search.linkOpen' => 'Open room',
@@ -4284,6 +4402,8 @@ extension on TranslationsEn {
 			'settings.presetLowLatencyDesc' => 'Minimum buffering with frame dropping on both decoder and render side, trading jitter tolerance for delay. For sports, duets and anything time-critical.',
 			'settings.playerPresetApplied' => 'Preset applied',
 			'settings.playerOutputLockedByPreset' => 'Locked by the current preset',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerProxy' => 'Player proxy',
 			'settings.playerProxyDesc' => 'Only the player\'s requests; it can follow the app proxy above.',
 			'settings.playerProxyInvalid' => 'Enter a valid host and port (1–65535).',
@@ -4329,8 +4449,6 @@ extension on TranslationsEn {
 			'settings.audioOutputAaudio' => 'AAudio (Android 8.0+, low latency)',
 			'settings.audioOutputOpensles' => 'OpenSL ES (Android legacy)',
 			'settings.audioOutputAudiounit' => 'AudioUnit (iOS / macOS)',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audioOutputWasapi' => 'WASAPI (Windows default, recommended)',
 			'settings.audioOutputWin32' => 'win32 (waveOut, legacy)',
 			'settings.audioOutputSdl' => 'SDL (cross-platform fallback)',
@@ -4798,6 +4916,8 @@ extension on TranslationsEn {
 			'settings.roomCardPreviewTitle' => 'Late-night anime and games',
 			'settings.roomCardPreviewAnchor' => 'Night Radio',
 			'settings.roomCardPreviewHint' => 'The card and list row this device actually uses; every change shows up here immediately.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.roomCardPresets' => 'Quick presets',
 			'settings.roomCardPresetStandard' => 'Standard',
 			'settings.roomCardPresetDetailed' => 'Detailed',
@@ -4843,8 +4963,6 @@ extension on TranslationsEn {
 			'settings.portraitFullscreenGroup' => 'Portrait full screen',
 			'settings.portraitDisplayMode' => 'Picture mode',
 			'settings.portraitDisplayModeDesc' => 'Complete fits the whole picture; Ambient adds a soft backdrop; Balanced crops slightly; Cover fills the screen.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.portraitDanmakuMode' => 'Danmaku area',
 			'settings.portraitDanmakuModeDesc' => 'How much of the portrait full-screen surface flying danmaku may use.',
 			'settings.portraitRememberRoom' => 'Remember each room’s choice',
@@ -4942,6 +5060,24 @@ extension on TranslationsEn {
 			'settings.backgroundPlayInterval' => 'Play interval',
 			'settings.backgroundIntervalSeconds' => ({required Object count}) => '${count}s',
 			'settings.backgroundPreviewLooping' => 'Loops',
+			'settings.navHongguo' => 'Hongguo drama',
+			'settings.hongguoDescription' => 'The hongguo companion service and playback preferences.',
+			'settings.hongguoService' => 'Companion service',
+			'settings.hongguoServer' => 'Service address',
+			'settings.hongguoServerDesc' => 'Where the hongguo companion service listens; the default is the loopback port 8000.',
+			'settings.hongguoApiKey' => 'Link key',
+			'settings.hongguoApiKeyDesc' => 'The key the service issued when authentication is on; leave empty when it is not.',
+			'settings.hongguoTest' => 'Test connection',
+			'settings.hongguoTestDesc' => 'Sends one probe request to the companion service to confirm the address and key.',
+			'settings.hongguoTestOk' => 'Connected.',
+			'settings.hongguoQuality' => 'Default quality',
+			'settings.hongguoQualityDesc' => 'The rendition an episode opens with; a missing one falls back to the nearest lower.',
+			'settings.hongguoQualityBest' => 'Best',
+			'settings.hongguoQuality1080' => '1080P',
+			'settings.hongguoQuality720' => '720P',
+			'settings.hongguoQuality540' => '540P',
+			'settings.hongguoQuality480' => '480P',
+			'settings.hongguoQuality360' => '360P',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -5294,6 +5430,8 @@ extension on TranslationsEn {
 			'wallpaper.source360Fresh' => '360 Wallpaper · Fresh',
 			'wallpaper.source360Sport' => '360 Wallpaper · Sports',
 			'wallpaper.source360Child' => '360 Wallpaper · Kids',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.source360Military' => '360 Wallpaper · Military',
 			'wallpaper.source360Anime' => '360 Wallpaper · Anime',
 			'wallpaper.source360Calendar' => '360 Wallpaper · Calendar',

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart' show Widget;
 import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/modules/hongguo/hongguo.dart';
 import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
@@ -110,12 +111,13 @@ const List<SettingsGroup> _sharedGroups = [_sharedAppearanceGroup, _sharedPlayba
 const Map<AppModule, ModuleNavigation> kModuleNavigation = {
   // The reference's menu: the ways to find a room, the tools, then the four
   // home destinations as one block — the navigation setting's saved order
-  // (favorites, hot, zones, recording centre) has to read across all four.
+  // (recording centre, favorites, areas, hot feed) has to read across all
+  // four.
   AppModule.live: ModuleNavigation(
     menu: [
       [NavigationItem.search, NavigationItem.history],
       [NavigationItem.toolbox, NavigationItem.multiview],
-      [NavigationItem.favorites, NavigationItem.hot, NavigationItem.zones, NavigationItem.record],
+      [NavigationItem.record, NavigationItem.favorites, NavigationItem.zones, NavigationItem.hot],
     ],
     landing: NavigationItem.hot,
     settingsGroups: [_personalizationGroup, _liveGroup, _playbackGroup, _systemGroup, _aboutGroup],
@@ -171,6 +173,23 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
       ..._sharedGroups,
     ],
   ),
+  AppModule.hongguo: ModuleNavigation(
+    // The station's own menu: its three shelves, then the boards, the
+    // newest arrivals and the search — the companion service's surfaces,
+    // entry for entry.
+    menu: [
+      [NavigationItem.hongguoDrama, NavigationItem.hongguoComic, NavigationItem.hongguoAi],
+      [NavigationItem.hongguoRank, NavigationItem.hongguoLatest, NavigationItem.hongguoSearch],
+    ],
+    landing: NavigationItem.hongguoDrama,
+    // The station's own page: the companion service it asks and the
+    // rendition an episode opens with. Nothing from the live room or the
+    // Bilibili station belongs here.
+    settingsGroups: [
+      (labelKey: 'groupHongguo', sections: [SettingsSection.hongguo]),
+      ..._sharedGroups,
+    ],
+  ),
 };
 
 /// The navigation of [module].
@@ -200,6 +219,12 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.musicSonglist: () => const MusicPage(view: MusicView.songlists),
   NavigationItem.musicToplist: () => const MusicPage(view: MusicView.toplists),
   NavigationItem.musicLibrary: () => const MusicPage(view: MusicView.mine),
+  NavigationItem.hongguoDrama: HongguoPage.new,
+  NavigationItem.hongguoComic: () => const HongguoPage(view: HongguoView.comic),
+  NavigationItem.hongguoAi: () => const HongguoPage(view: HongguoView.ai),
+  NavigationItem.hongguoRank: () => const HongguoPage(view: HongguoView.rank),
+  NavigationItem.hongguoLatest: () => const HongguoPage(view: HongguoView.latest),
+  NavigationItem.hongguoSearch: () => const HongguoPage(view: HongguoView.search),
   NavigationItem.favorites: FavoritesPage.new,
   NavigationItem.history: HistoryPage.new,
   NavigationItem.zones: AreasPage.new,
