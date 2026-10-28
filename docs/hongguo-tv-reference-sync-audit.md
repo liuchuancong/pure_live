@@ -300,7 +300,7 @@ l10n 累计新增 27 个 key（中英各一份，`dart run slang` 已重生成�
 
 ### 8.7 下一轮继续
 
-P1 已清零：首页/侧栏的新集徽标见 8.10，断网等待见 8.11。P2：弹幕渲染层（#7）已在 8.9 完成；剩下评论侧边面板 + 本集/整剧双 tab、选集分组与跳转、HUD 状态行。
+P1 已清零：首页/侧栏的新集徽标见 8.10，断网等待见 8.11。P2：弹幕渲染层（#7）见 8.9，选集分组/跳转/已看标记（#6）见 8.12；剩下评论侧边面板 + 本集/整剧双 tab、HUD 状态行。
 
 ### 8.8 第六轮（2026-10-29）：签名器与 ttEncrypt 的四处错位
 
@@ -353,6 +353,17 @@ P1 已清零：首页/侧栏的新集徽标见 8.10，断网等待见 8.11。P2�
 - 在线时的行为不变（预算 1s/2.5s/5s，面板四按钮也在）。
 
 新增 `test/app/network_type_test.dart` 3 项：`none` 独占才离线、live 与 `none+vpn` 在线、空读数/未就绪在线。`dart analyze lib/app/providers/network lib/modules/hongguo test/app` 0 issues；`flutter test test/app test/hongguo` 24 项全绿。**未验证**：真机拔网线的完整往返（依赖 `live_device` 的 `watch()` 推送；桌面若只给轮询读数，则等待可能直到下一次显式读数才结束）。
+
+### 8.12 第十轮（2026-10-29）：选集分组、跳转与已看标记（P2 #6）
+
+目标把整部剧的集数一次铺成 chips，千集剧会拉成一条长列表，也没有跳转和已看标记。本轮照参考补：
+
+- **分组**：选集区每 20 集一组（`_kEpisodeGroup`），标题行右侧显示 `起始–结束 / 总数` 与上一组/下一组（`DsButton.icon`），打开某集时自动切到它所在的组（`_groupOf` 按它在已加载列表里的位置算，不假设集号连续）。
+- **跳转集数**：`跳转集数` 按钮弹 `DsDialog` + 数字键盘输入（`FilteringTextInputFormatter.digitsOnly`），先按集号找、找不到再按序号夹取；回车或确认即打开，空/非法输入不动页面。
+- **三色标记**：当前集仍用 `selected`；**上次看到**的那集（历史行的 `episodeIndex`，未看完时）加播放图标；`已看`（更早的集，或历史行标记 completed）加对勾。历史行不存在时全部不标。
+- l10n 中英各 +3（`episodesJump/episodesPrevious/episodesNext`）。
+
+`dart analyze lib/modules/hongguo test/hongguo test/app` 0 issues；`flutter test test/hongguo test/app` 24 项全绿。**未验证**：真机观感（chips 内小图标与数字的间距、千集列表切组时的滚动位置、遥控器上跳转弹窗的数字输入）。
 
 ---
 

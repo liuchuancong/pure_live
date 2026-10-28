@@ -506,6 +506,9 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get episodes => 'Episodes';
 	@override String episodeLabel({required Object index}) => 'Episode ${index}';
 	@override String episodesCount({required Object count}) => '${count} eps';
+	@override String get episodesJump => 'Jump to episode';
+	@override String get episodesPrevious => 'Previous group';
+	@override String get episodesNext => 'Next group';
 	@override String get plays => 'plays';
 	@override String get followers => 'followers';
 	@override String get todayTag => 'New';
@@ -3590,6 +3593,9 @@ extension on TranslationsEn {
 			'hongguo.episodes' => 'Episodes',
 			'hongguo.episodeLabel' => ({required Object index}) => 'Episode ${index}',
 			'hongguo.episodesCount' => ({required Object count}) => '${count} eps',
+			'hongguo.episodesJump' => 'Jump to episode',
+			'hongguo.episodesPrevious' => 'Previous group',
+			'hongguo.episodesNext' => 'Next group',
 			'hongguo.plays' => 'plays',
 			'hongguo.followers' => 'followers',
 			'hongguo.todayTag' => 'New',
@@ -3717,11 +3723,11 @@ extension on TranslationsEn {
 			'hongguo.accountNotRead' => 'Not read yet',
 			'hongguo.accountReadCount' => ({required Object count}) => '${count} titles read',
 			'hongguo.historyFilterWatched' => 'Finished',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.historyFilterUnwatched' => 'In progress',
 			'hongguo.sleep' => 'Sleep timer',
 			'hongguo.sleepOff' => 'Turn off',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.sleepAfter' => ({required Object minutes}) => 'In ${minutes} min',
 			'hongguo.sleepMinutes' => ({required Object count}) => '${count} min left',
 			'hongguo.sleepThisEpisode' => 'After this episode',
@@ -4703,12 +4709,12 @@ extension on TranslationsEn {
 			'settings.windowSizeRangeHint' => 'Width 400–16384, height 300–16384 (logical pixels).',
 			'settings.windowSizeOutOfRange' => 'Out of range: width 400–16384, height 300–16384.',
 			'settings.windowSizeApplyFailed' => 'The window size could not be applied.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.windowSizeApplied' => 'Window size applied.',
 			'settings.startup' => 'Start at login',
 			'settings.startupDesc' => 'Open Pure Live after you sign in; the switch reads the real system entry.',
 			'settings.startupFailed' => 'The login setting could not be changed',
-			_ => null,
-		} ?? switch (path) {
 			'settings.splashAnimation' => 'Startup animation',
 			'settings.splashAnimationDesc' => 'Shows the app mark before the shell; applies on the next start.',
 			'settings.configPreview' => 'Config preview',
@@ -5217,12 +5223,12 @@ extension on TranslationsEn {
 			'settings.playerGuideChapterPictureSync' => 'Picture & sync',
 			'settings.playerGuideChapterQuality' => 'Quality enhancement',
 			'settings.playerGuideChapterAudio' => 'Audio',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideChapterSymptoms' => 'Symptom table',
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuidePlatformAndroid' => 'Android',
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => 'Hardware decoding switch',
@@ -5731,12 +5737,12 @@ extension on TranslationsEn {
 			'settings.chatShowGiftsDesc' => 'Gifts the platform reports appear as gift lines in the chat; turning it off removes the existing lines at once.',
 			'settings.chatGiftsAboveTier' => 'Only valuable gifts',
 			'settings.chatGiftsAboveTierDesc' => 'Free and cheap gifts stay out of the chat list; a combo shows once it adds up.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatGiftValueInYuan' => 'Gift values in yuan',
 			'settings.chatGiftValueInYuanDesc' => 'Gold seeds, diamonds and Douyin coins are written in yuan at the platform\'s fixed rate; overseas currencies stay as they are.',
 			'settings.superChatIncludesMembership' => 'Memberships in Super Chats',
 			'settings.superChatIncludesMembershipDesc' => 'Bilibili guards, YouTube memberships and Twitch, CHZZK and other subscriptions also get a card among the Super Chats; the chat list keeps its one line.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuShowGifts' => 'Gifts in flying danmaku',
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',

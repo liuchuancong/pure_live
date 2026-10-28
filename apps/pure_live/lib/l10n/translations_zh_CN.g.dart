@@ -1273,6 +1273,15 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '{count}集'
 	String episodesCount({required Object count}) => '${count}集';
 
+	/// zh-CN: '跳转集数'
+	String get episodesJump => '跳转集数';
+
+	/// zh-CN: '上一组'
+	String get episodesPrevious => '上一组';
+
+	/// zh-CN: '下一组'
+	String get episodesNext => '下一组';
+
 	/// zh-CN: '播放'
 	String get plays => '播放';
 
@@ -9470,6 +9479,9 @@ extension on Translations {
 			'hongguo.episodes' => '剧集',
 			'hongguo.episodeLabel' => ({required Object index}) => '第${index}集',
 			'hongguo.episodesCount' => ({required Object count}) => '${count}集',
+			'hongguo.episodesJump' => '跳转集数',
+			'hongguo.episodesPrevious' => '上一组',
+			'hongguo.episodesNext' => '下一组',
 			'hongguo.plays' => '播放',
 			'hongguo.followers' => '追剧',
 			'hongguo.todayTag' => '今日',
@@ -9597,11 +9609,11 @@ extension on Translations {
 			'hongguo.accountNotRead' => '尚未读取',
 			'hongguo.accountReadCount' => ({required Object count}) => '已读取 ${count} 部',
 			'hongguo.historyFilterWatched' => '已看完',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.historyFilterUnwatched' => '未看完',
 			'hongguo.sleep' => '定时停止',
 			'hongguo.sleepOff' => '关闭定时停止',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.sleepAfter' => ({required Object minutes}) => '${minutes} 分钟后',
 			'hongguo.sleepMinutes' => ({required Object count}) => '${count} 分钟后',
 			'hongguo.sleepThisEpisode' => '本集播完',
@@ -10583,12 +10595,12 @@ extension on Translations {
 			'settings.windowSizeRangeHint' => '宽度 400–16384，高度 300–16384（逻辑像素）。',
 			'settings.windowSizeOutOfRange' => '尺寸超出范围：宽 400–16384，高 300–16384。',
 			'settings.windowSizeApplyFailed' => '窗口尺寸应用失败。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.windowSizeApplied' => '窗口尺寸已应用。',
 			'settings.startup' => '开机启动',
 			'settings.startupDesc' => '登录系统后自动打开 Pure Live；开关读取的是系统里的真实启动项。',
 			'settings.startupFailed' => '开机启动设置失败',
-			_ => null,
-		} ?? switch (path) {
 			'settings.splashAnimation' => '启动动画',
 			'settings.splashAnimationDesc' => '启动时先显示应用标记，再进入主界面；下次启动生效。',
 			'settings.configPreview' => '配置预览',
@@ -11097,12 +11109,12 @@ extension on Translations {
 			'settings.playerGuideChapterPictureSync' => '画面与同步',
 			'settings.playerGuideChapterQuality' => '画质增强',
 			'settings.playerGuideChapterAudio' => '声音',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideChapterSymptoms' => '症状对照',
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
 			'settings.playerGuideBadgeAo' => 'ao',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuidePlatformAndroid' => 'Android',
 			'settings.playerGuidePlatformWindows' => 'Windows',
 			'settings.playerGuideEntryHardwareSwitchTitle' => '硬解码开关',
@@ -11611,12 +11623,12 @@ extension on Translations {
 			'settings.chatShowGiftsDesc' => '平台上报的礼物显示为聊天里的礼物行；关闭后已有礼物行立即移除。',
 			'settings.chatGiftsAboveTier' => '只显示值钱的礼物',
 			'settings.chatGiftsAboveTierDesc' => '免费和便宜的礼物不进聊天列表；连击加起来够了再显示。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatGiftValueInYuan' => '礼物价值换算成元',
 			'settings.chatGiftValueInYuanDesc' => '金瓜子、钻石、抖币按平台的固定比例写成元；海外的币种不换算。',
 			'settings.superChatIncludesMembership' => '上舰和开会员进醒目留言',
 			'settings.superChatIncludesMembershipDesc' => '哔哩哔哩上舰、YouTube 会员和各平台的订阅也在醒目留言里显示一张卡；聊天列表照旧。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuShowGifts' => '飞行弹幕显示礼物',
 			'settings.danmakuShowGiftsDesc' => '值钱的礼物飞过画面，很值钱的在顶部停 4 秒；连击只飞开头和总数，每秒最多 3 条。',
 			'settings.floatWindowSize' => '小窗大小',

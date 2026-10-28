@@ -2,7 +2,7 @@ import 'dart:async' show StreamSubscription, Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart' show AppBar, Scaffold;
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
+import 'package:flutter/services.dart' show FilteringTextInputFormatter, LogicalKeyboardKey, TextInputType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -46,6 +46,10 @@ import 'package:pure_live/modules/hongguo/official/hongguo_related.dart' show Ho
 import 'package:pure_live/modules/hongguo/widgets/hongguo_danmaku_layer.dart' show HongguoDanmakuLayer;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show HongguoSeriesRow, hongguoDurationText;
 import 'package:pure_live/shared/shared.dart';
+
+/// The episodes one group of the shelf lists before the pager takes over —
+/// the reference's twenty.
+const int _kEpisodeGroup = 20;
 
 /// One series' page: the player over media_core, the episodes as numbered
 /// tiles, and the series' own metadata — the station's series page, reduced
@@ -127,6 +131,9 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
 
   /// How many automatic downgrades this episode already took.
   int _autoDowngrades = 0;
+
+  /// Which group of [_kEpisodeGroup] episodes the shelf lists.
+  int _episodeGroup = 0;
 
   /// The picture's aspect as the engine last reported it: the fullscreen
   /// orientation policy reads it to decide which way a phone turns.
@@ -281,6 +288,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
       _opening = true;
       _error = null;
       _episode = episode;
+      _episodeGroup = _groupOf(episode);
       _transport = null;
       _dragSeconds = null;
       _finished = false;
@@ -1331,23 +1339,78 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
     return episodes[index + 1];
   }
 
-  /// The episodes as numbered tiles — the station's own shelf of squares,
-  /// with the one playing lit.
+  /// The episodes as numbered tiles, twenty at a time — the reference's
+  /// groups — with the one playing lit, the last one watched marked and the
+  /// ones behind it checked. A group with more than twenty offers the
+  /// pager and the jump box.
   Widget _episodes(BuildContext context, HongguoSeriesDetail detail, Translations t) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final current = _episode;
+    final episodes = detail.episodes;
+    final groups = (episodes.length + _kEpisodeGroup - 1) ~/ _kEpisodeGroup;
+    final group = _episodeGroup.clamp(0, groups <= 0 ? 0 : groups - 1);
+    final first = group * _kEpisodeGroup;
+    final shown = episodes.skip(first).take(_kEpisodeGroup).toList();
+    final last = first + shown.length;
+    final progress = ref.watch(hongguoLibraryProvider).progressOf(detail.meta.seriesId);
+    final watchedThrough = progress == null
+        ? 0
+        : progress.completed
+        ? progress.episodeIndex
+        : progress.episodeIndex - 1;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
-        Text(t.hongguo.episodes, style: theme.typography.title.copyWith(color: colors.text)),
+        Row(
+          spacing: DsSpace.s8,
+          children: [
+            Expanded(
+              child: Text(t.hongguo.episodes, style: theme.typography.title.copyWith(color: colors.text)),
+            ),
+            if (groups > 1) ...[
+              Text(
+                '$first–$last / ${episodes.length}',
+                style: theme.typography.caption.copyWith(color: colors.textMuted),
+              ),
+              DsButton.icon(
+                icon: const DsIcon(DsIcons.chevronLeft),
+                semanticLabel: t.hongguo.episodesPrevious,
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: group > 0 ? () => setState(() => _episodeGroup = group - 1) : null,
+              ),
+              DsButton.icon(
+                icon: const DsIcon(DsIcons.chevronRight),
+                semanticLabel: t.hongguo.episodesNext,
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: group < groups - 1 ? () => setState(() => _episodeGroup = group + 1) : null,
+              ),
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.listOrdered, size: 16),
+                onPressed: () => unawaited(_jumpToEpisode(detail)),
+                child: Text(t.hongguo.episodesJump),
+              ),
+            ],
+          ],
+        ),
         Wrap(
           spacing: DsSpace.s8,
           runSpacing: DsSpace.s8,
           children: [
-            for (final episode in detail.episodes)
+            for (final episode in shown)
               DsChip(
+                leading: episode.vid == current?.vid && episode.index == current?.index
+                    ? null
+                    : episode.index == progress?.episodeIndex && !(progress?.completed ?? false)
+                    ? const DsIcon(DsIcons.play, size: 12)
+                    : episode.index <= watchedThrough
+                    ? const DsIcon(DsIcons.check, size: 12)
+                    : null,
                 label: Text('${episode.index}'),
                 selected: episode.vid == current?.vid && episode.index == current?.index,
                 onChanged: episode.vid == current?.vid && episode.index == current?.index
@@ -1359,6 +1422,57 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
         ),
       ],
     );
+  }
+
+  /// The group [episode] sits in, by its place in the loaded list.
+  int _groupOf(HongguoEpisode episode) {
+    final episodes = _detail?.episodes ?? const <HongguoEpisode>[];
+    final position = episodes.indexWhere((row) => row.vid == episode.vid);
+    return position < 0 ? 0 : position ~/ _kEpisodeGroup;
+  }
+
+  /// Asks for an episode number and opens it; an empty or unknown answer
+  /// leaves the page where it was.
+  Future<void> _jumpToEpisode(HongguoSeriesDetail detail) async {
+    final episodes = detail.episodes;
+    if (episodes.isEmpty) return;
+    final controller = TextEditingController();
+    int? parse() {
+      final typed = int.tryParse(controller.text.trim());
+      if (typed == null) return null;
+      final byIndex = episodes.where((episode) => episode.index == typed);
+      if (byIndex.isNotEmpty) return episodes.indexOf(byIndex.first);
+      return typed >= 1 && typed <= episodes.length ? typed - 1 : null;
+    }
+
+    final position = await showDsDialog<int>(
+      context: context,
+      builder: (dialogContext) {
+        final t = dialogContext.t;
+        return DsDialog(
+          title: Text(t.hongguo.episodesJump),
+          description: DsTextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            placeholder: '1–${episodes.length}',
+            onSubmitted: (_) => Navigator.of(dialogContext).pop(parse()),
+          ),
+          actions: [
+            DsButton(
+              variant: DsButtonVariant.ghost,
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(t.common.cancel),
+            ),
+            DsButton(onPressed: () => Navigator.of(dialogContext).pop(parse()), child: Text(t.common.confirm)),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (position == null || !mounted || _disposed) return;
+    await _openEpisode(episodes[position]);
   }
 
   /// The series' own metadata: the status and figures, the shelf
