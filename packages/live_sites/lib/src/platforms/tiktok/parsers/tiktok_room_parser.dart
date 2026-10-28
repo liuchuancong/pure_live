@@ -8,6 +8,7 @@ import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_lease/live_play_lease.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/play/play_geometry/play_geometry.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/room/room_audience/room_audience.dart';
 import 'package:live_sites/src/models/room/room_broadcast/room_broadcast.dart';
@@ -512,6 +513,7 @@ abstract final class TiktokRoomParser {
     }
     final headers = TiktokEndpoints.mediaHeaders(data.username);
     final codec = stream.codec == 'h264' ? LiveStreamCodec.avc : LiveStreamCodec.hevc;
+    final geometry = _geometryOf(stream);
     final lines = <LivePlayLine>[];
     void add(String protocol, LiveStreamFormat format, List<Uri> urls) {
       for (final (index, url) in urls.indexed) {
@@ -524,6 +526,7 @@ abstract final class TiktokRoomParser {
             codec: codec,
             lineLabel: index == 0 ? protocol : '$protocol#${index + 1}',
             lease: lease(url, data.issuedAt),
+            geometry: geometry,
           ),
         );
       }
@@ -534,18 +537,45 @@ abstract final class TiktokRoomParser {
     return lines;
   }
 
+  /// The declared geometry of [stream]: `720x1280` names both sides,
+  /// `720p` a height, and `bitrate` (bits per second) a bitrate. Null when
+  /// the answer says none of them.
+  static PlayGeometry? _geometryOf(TiktokStream stream) {
+    final resolution = stream.resolution;
+    final size = RegExp(r'^([1-9][0-9]{1,4})x([1-9][0-9]{1,4})$').firstMatch(resolution);
+    final width = size == null ? null : int.tryParse(size.group(1)!);
+    final height = size == null
+        ? int.tryParse(resolution.replaceFirst(RegExp(r'p$'), ''))
+        : int.tryParse(size.group(2)!);
+    final bitrate = stream.bitrate;
+    if (width == null && height == null && bitrate == null) return null;
+    return PlayGeometry.of(
+      width: width,
+      height: height,
+      bitrateKbps: bitrate != null && bitrate > 0 ? bitrate ~/ 1000 : null,
+    );
+  }
+
   /// The lease of a pull URL received at [issuedAt], from its `expire` (Unix
   /// seconds; the site signs for about 14 days): renewed the lead
   /// ([TiktokEndpoints.leaseLead], at most a quarter of the lifetime) before
   /// its end. Expiry does not cut an established FLV connection, but an HLS
   /// playlist must be fetched again, so only an HLS line says so. No
   /// `expire`, or one already past, is no lease.
-  static LivePlayLease? lease(Uri url, DateTime issuedAt) {
+  static LivePlayLease? lease(Uri url, DateTime issuedAt, {bool allowExpired = false}) {
     final expire = int.tryParse(url.queryParameters['expire'] ?? '');
     if (expire == null || expire <= 0) return null;
     final expiresAt = DateTime.fromMillisecondsSinceEpoch(expire * 1000, isUtc: true);
     final lifetime = expiresAt.difference(issuedAt);
-    if (lifetime <= Duration.zero) return null;
+    if (lifetime <= Duration.zero) {
+      return allowExpired
+          ? LivePlayLease.of(
+              refreshAt: expiresAt.subtract(TiktokEndpoints.leaseLead),
+              expiresAt: expiresAt,
+              requiresReconnect: url.path.endsWith('.m3u8'),
+            )
+          : null;
+    }
     final quarter = lifetime ~/ 4;
     final lead = quarter < TiktokEndpoints.leaseLead ? quarter : TiktokEndpoints.leaseLead;
     return LivePlayLease.of(

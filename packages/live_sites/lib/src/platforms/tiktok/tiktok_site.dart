@@ -6,10 +6,13 @@ import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_lease_lookup.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -21,9 +24,12 @@ import 'package:live_sites/src/platforms/tiktok/api/tiktok_endpoints.dart';
 import 'package:live_sites/src/platforms/tiktok/api/tiktok_http.dart';
 import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_discovery_provider.dart';
 import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_link_resolver.dart';
+import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_play_lease_lookup.dart';
 import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_playback_provider.dart';
 import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_room_provider.dart';
+import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_room_refresh.dart';
 import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_search_provider.dart';
+import 'package:live_sites/src/platforms/tiktok/capabilities/tiktok_status_check.dart';
 import 'package:live_sites/src/platforms/tiktok/parsers/tiktok_failure.dart';
 import 'package:live_sites/src/platforms/tiktok/parsers/tiktok_link.dart';
 import 'package:live_sites/src/platforms/tiktok/parsers/tiktok_room_parser.dart';
@@ -134,6 +140,9 @@ final class TiktokSite implements LiveSite {
     return room;
   }
 
+  /// A refresh: the room page without media, as the follow lists ask.
+  Future<LiveRoom> refreshRoom(String roomId) => _room(_username(roomId), includeMedia: false);
+
   /// The owner of LIVE room [liveRoomId] (`webcast/room/info`).
   Future<String> owner(String liveRoomId) async {
     final response = await http.get(TiktokEndpoints.roomInfoUrl(liveRoomId), headers: TiktokEndpoints.requestHeaders());
@@ -224,7 +233,10 @@ final class TiktokSite implements LiveSite {
   TiktokDiscoveryProvider? _discovery;
   TiktokSearchProvider? _search;
   TiktokPlaybackProvider? _playback;
+  TiktokPlayLeaseLookup? _lease;
   TiktokLinkResolver? _link;
+  TiktokRoomRefresh? _refresh;
+  TiktokStatusCheck? _status;
 
   /// The capability of type [T], or null when TikTok does not support it
   /// (ARCHITECTURE.md §4.1): no chat (the reference adapter ships no
@@ -236,15 +248,21 @@ final class TiktokSite implements LiveSite {
     final discovery = _discovery ??= TiktokDiscoveryProvider(site: this);
     final search = _search ??= TiktokSearchProvider(site: this);
     final playback = _playback ??= TiktokPlaybackProvider(site: this);
+    final lease = _lease ??= TiktokPlayLeaseLookup(now: _now);
     final link = _link ??= TiktokLinkResolver(site: this);
+    final refresh = _refresh ??= TiktokRoomRefresh(site: this);
+    final status = _status ??= TiktokStatusCheck(refresh: refresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveDiscoveryProvider) => discovery as T,
       const (LiveSearchProvider) => search as T,
       const (LivePlaybackProvider) => playback as T,
+      const (LivePlayLeaseLookup) => lease as T,
       const (LiveLinkResolver) => link as T,
       const (LiveDanmakuProvider) => null,
       const (LiveAreaProvider) => null,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }
