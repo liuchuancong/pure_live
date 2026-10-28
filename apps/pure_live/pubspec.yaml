@@ -31,6 +31,7 @@ dependencies:
   # 文件与外部操作
   archive: ^4.5.2 # 压缩包读写
   crypto: ^3.0.0 # 字体文件的 SHA-256 校验
+  pointycastle: ^3.9.1 # 红果直连签名与媒体解密（SM3/AES）
   file_picker: ^13.1.0 # 选择文件或目录
   file_selector: ^1.1.0 # 原生文件选择器
   open_file: ^4.0.0 # 调用系统打开文件
@@ -162,6 +163,7 @@ flutter:
     - assets/tray/ # 系统托盘图标
     - assets/icon/ # 启动页的品牌图（母图）
     - assets/shaders/ # Anime4K 超分辨率着色器
+    - assets/preview/ # 设置预览页的舞台背景
     # 云端字体目录：只随包携带清单，字体文件由 dynamic_fonts 按需下载并缓存。
     - assets/fonts/fonts-manifest.json
 

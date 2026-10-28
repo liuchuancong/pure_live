@@ -35,30 +35,6 @@ enum HongguoGenre {
   }
 }
 
-/// The comic boards the rank endpoint serves.
-enum HongguoBoard {
-  /// The recommended board.
-  recommend('recommend'),
-
-  /// The most-played board.
-  hot('hot'),
-
-  /// The newest board.
-  newest('new');
-
-  HongguoBoard(this.wire);
-
-  /// The board's id, as the endpoint names it.
-  final String wire;
-
-  /// The board's own name.
-  String label(Translations t) => switch (this) {
-    HongguoBoard.recommend => t.hongguo.boardRecommend,
-    HongguoBoard.hot => t.hongguo.boardHot,
-    HongguoBoard.newest => t.hongguo.boardNew,
-  };
-}
-
 /// One series as the station's lists name it: the same shape the browse,
 /// rank, latest and search endpoints all answer, give or take a field.
 @immutable

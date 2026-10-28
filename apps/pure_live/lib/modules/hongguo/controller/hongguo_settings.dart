@@ -6,31 +6,31 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
 import 'package:pure_live/l10n/translations.dart';
 
-/// The rendition an episode asks the stream endpoint for. The source picks
-/// the nearest track at or below the request when the exact one is missing.
+/// The rendition tier an episode opens with. The platform answers the
+/// nearest track at or below the request when the exact one is missing.
 enum HongguoQualityChoice {
-  /// The largest track the source serves.
-  best('best'),
+  /// The best tier the platform serves a TV box (1080P).
+  best(1080),
 
   /// 1080P.
-  p1080('1080p'),
+  p1080(1080),
 
   /// 720P.
-  p720('720p'),
+  p720(720),
 
   /// 540P.
-  p540('540p'),
+  p540(540),
 
   /// 480P.
-  p480('480p'),
+  p480(480),
 
   /// 360P.
-  p360('360p');
+  p360(360);
 
-  HongguoQualityChoice(this.wire);
+  HongguoQualityChoice(this.maxHeight);
 
-  /// The value the stream endpoint's `quality` parameter takes.
-  final String wire;
+  /// The tallest rendition the ladder may pick.
+  final int maxHeight;
 
   /// The choice's short name.
   String label(Translations t) => switch (this) {
@@ -43,109 +43,51 @@ enum HongguoQualityChoice {
   };
 }
 
-/// The station's link to its companion service: where it listens and the
-/// key it presents, plus the rendition an episode opens with.
+/// The station's own preference: the tier an episode opens with. Everything
+/// else — the device identity, the signatures — the station manages itself.
 @immutable
 final class HongguoSettings {
   /// Creates the settings.
-  const HongguoSettings({required this.serverUrl, required this.apiKey, required this.quality});
+  const HongguoSettings({required this.quality});
 
-  /// The companion service's defaults: the loopback address the backend
-  /// binds by default, no key (the service is open until keys are issued)
-  /// and the best rendition.
-  static const HongguoSettings standard = HongguoSettings(
-    serverUrl: 'http://127.0.0.1:8000',
-    apiKey: '',
-    quality: HongguoQualityChoice.best,
-  );
-
-  /// The companion service's base URL, without a trailing slash.
-  final String serverUrl;
-
-  /// The key the service's `x-api-key` header carries, when one is issued.
-  final String apiKey;
+  /// The reference's default: the best tier a TV box decodes.
+  static const HongguoSettings standard = HongguoSettings(quality: HongguoQualityChoice.best);
 
   /// The rendition an episode opens with.
   final HongguoQualityChoice quality;
-
-  /// A copy with selected fields replaced.
-  HongguoSettings copyWith({String? serverUrl, String? apiKey, HongguoQualityChoice? quality}) => HongguoSettings(
-    serverUrl: serverUrl ?? this.serverUrl,
-    apiKey: apiKey ?? this.apiKey,
-    quality: quality ?? this.quality,
-  );
 }
 
-/// The keys the three choices are kept under.
-const String kHongguoServerPrefsKey = 'hongguo.server.url';
-const String kHongguoApiKeyPrefsKey = 'hongguo.api.key';
+/// The key the choice is kept under.
 const String kHongguoQualityPrefsKey = 'hongguo.quality';
 
-/// Owns the station's link to its companion service. Every change reaches
-/// the client provider, so the next request the feeds make already speaks
-/// to the new address.
+/// Owns the station's opening rendition.
 final class HongguoSettingsController extends Notifier<HongguoSettings> {
   @override
-  HongguoSettings build() => HongguoSettings(
-    serverUrl: _readString(kHongguoServerPrefsKey) ?? HongguoSettings.standard.serverUrl,
-    apiKey: _readString(kHongguoApiKeyPrefsKey) ?? '',
-    quality: _readQuality(),
-  );
-
-  static String? _readString(String key) {
-    try {
-      return StoragePrefs.getString(key);
-    } on Object {
-      // A closed store keeps the default.
-      return null;
-    }
-  }
+  HongguoSettings build() => HongguoSettings(quality: _readQuality());
 
   static HongguoQualityChoice _readQuality() {
-    final wire = _readString(kHongguoQualityPrefsKey);
-    for (final choice in HongguoQualityChoice.values) {
-      if (choice.wire == wire) return choice;
+    try {
+      final stored = StoragePrefs.getString(kHongguoQualityPrefsKey);
+      for (final choice in HongguoQualityChoice.values) {
+        if (choice.name == stored) return choice;
+      }
+    } on Object {
+      // A closed store keeps the default.
     }
     return HongguoQualityChoice.best;
   }
 
-  /// Points the station at [url]; trailing slashes are dropped so the
-  /// request URLs stay clean.
-  Future<void> setServerUrl(String url) async {
-    final trimmed = url.trim();
-    state = state.copyWith(serverUrl: trimmed.isEmpty ? null : trimmed);
-    try {
-      await StoragePrefs.setString(
-        kHongguoServerPrefsKey,
-        trimmed.isEmpty ? HongguoSettings.standard.serverUrl : trimmed,
-      );
-    } on Object {
-      // A preference; a closed store loses it.
-    }
-  }
-
-  /// Sets the key the requests present.
-  Future<void> setApiKey(String key) async {
-    final trimmed = key.trim();
-    state = state.copyWith(apiKey: trimmed);
-    try {
-      await StoragePrefs.setString(kHongguoApiKeyPrefsKey, trimmed);
-    } on Object {
-      // A preference; a closed store loses it.
-    }
-  }
-
   /// Sets the rendition an episode opens with.
   Future<void> setQuality(HongguoQualityChoice quality) async {
-    state = state.copyWith(quality: quality);
+    state = HongguoSettings(quality: quality);
     try {
-      unawaited(StoragePrefs.setString(kHongguoQualityPrefsKey, quality.wire));
+      unawaited(StoragePrefs.setString(kHongguoQualityPrefsKey, quality.name));
     } on Object {
       // A preference; a closed store loses it.
     }
   }
 }
 
-/// The station's companion link and opening rendition.
+/// The station's opening rendition.
 final hongguoSettingsProvider =
     NotifierProvider<HongguoSettingsController, HongguoSettings>(HongguoSettingsController.new);

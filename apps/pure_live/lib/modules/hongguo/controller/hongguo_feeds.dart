@@ -1,36 +1,36 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart';
+import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart'
+    show hongguoClientProvider, hongguoFailureText;
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
+import 'package:pure_live/modules/hongguo/official/hongguo_official.dart'
+    show HongguoDiscoveryCursor, HongguoSearchCursor, HongguoWebsiteBoard;
 
-/// One shelf's browse feed: the window it holds, the filter selection it
-/// holds it under, and the state of the ask.
+/// One shelf's browse feed: what it holds, the cursor the next page asks,
+/// the selection it holds it under, and the ask's state.
 typedef HongguoBrowseFeed = ({
   List<HongguoSeries> items,
-  int loaded,
+  HongguoDiscoveryCursor? cursor,
   bool loading,
   bool hasMore,
   String? error,
   Map<String, String> selection,
+  List<HongguoFilterRow> groups,
 });
 
 const HongguoBrowseFeed _idleFeed = (
   items: [],
-  loaded: 0,
+  cursor: null,
   loading: false,
   hasMore: true,
   error: null,
   selection: {},
+  groups: [],
 );
 
-/// The browse feeds, one per shelf. The endpoint answers a whole window at
-/// once, so "more" is the same ask with a larger window — raised a step at a
-/// time until the answer comes back short. A changed selection resets the
-/// window; a newer ask always wins over an older one's answer.
+/// The browse feeds, one per shelf, straight from the official landpage:
+/// the first page carries the selector panel, later pages ride the cursor.
+/// A changed selection resets the feed; a newer ask always wins.
 final class HongguoBrowseController extends Notifier<Map<String, HongguoBrowseFeed>> {
-  static const int _step = 30;
-  static const int _cap = 180;
-
   int _generation = 0;
 
   @override
@@ -39,90 +39,86 @@ final class HongguoBrowseController extends Notifier<Map<String, HongguoBrowseFe
   /// The shelf's feed, or the idle one before it first opens.
   HongguoBrowseFeed feedOf(HongguoGenre genre) => state[genre.name] ?? _idleFeed;
 
-  /// Loads the shelf's first window when it has nothing yet.
+  /// Loads the shelf's first page when it has nothing yet.
   Future<void> open(HongguoGenre genre) {
     final feed = feedOf(genre);
-    if (feed.items.isEmpty && !feed.loading && feed.error == null) return _load(genre);
+    if (feed.items.isEmpty && !feed.loading && feed.error == null) return _load(genre, feed.selection);
     return Future.value();
   }
 
-  /// Asks for the next step of the window.
+  /// Asks the shelf's next page.
   Future<void> loadMore(HongguoGenre genre) {
     final feed = feedOf(genre);
-    if (feed.loading || !feed.hasMore) return Future.value();
-    return _load(genre);
+    if (feed.loading || !feed.hasMore || feed.cursor == null) return Future.value();
+    return _load(genre, feed.selection, cursor: feed.cursor);
   }
 
-  /// Runs the shelf's ask again from its first window.
-  Future<void> retry(HongguoGenre genre) => _load(genre, fresh: true);
+  /// Runs the shelf's ask again from its first page.
+  Future<void> retry(HongguoGenre genre) => _load(genre, feedOf(genre).selection);
 
   /// Chooses [id] under [rowType], or clears the dimension when null; the
-  /// window resets and the ask goes out.
+  /// feed resets and the ask goes out. A new genre discards the previous
+  /// shelf's conditions, as the reference does.
   Future<void> select(HongguoGenre genre, String rowType, String? id) {
     final selection = Map<String, String>.of(feedOf(genre).selection);
     if (id == null || id.isEmpty) {
       selection.remove(rowType);
+    } else if (rowType == 'genre') {
+      selection.clear();
     } else {
       selection[rowType] = id;
     }
-    return _load(genre, selection: selection, fresh: true);
+    return _load(genre, selection);
   }
 
   /// Drops every dimension's choice and asks again.
-  Future<void> clear(HongguoGenre genre) => _load(genre, selection: const {}, fresh: true);
+  Future<void> clear(HongguoGenre genre) => _load(genre, const {});
 
-  Future<void> _load(HongguoGenre genre, {Map<String, String>? selection, bool fresh = false}) async {
+  Future<void> _load(HongguoGenre genre, Map<String, String> selection, {HongguoDiscoveryCursor? cursor}) async {
     final current = feedOf(genre);
-    final chosen = selection ?? current.selection;
-    final limit = fresh ? _step : (current.loaded + _step).clamp(_step, _cap);
     final generation = ++_generation;
     _write(genre, (
-      items: fresh ? const <HongguoSeries>[] : current.items,
-      loaded: limit,
+      items: cursor == null ? const <HongguoSeries>[] : current.items,
+      cursor: cursor,
       loading: true,
       hasMore: current.hasMore,
       error: null,
-      selection: chosen,
+      selection: selection,
+      groups: cursor == null ? const <HongguoFilterRow>[] : current.groups,
     ));
     try {
-      final items = await ref.read(hongguoClientProvider).browse(genre: genre, selection: chosen, limit: limit);
-      if (_stale(genre, generation, chosen)) return;
+      final page = await ref
+          .read(hongguoClientProvider)
+          .discovery(selection: _withGenre(genre, selection), cursor: cursor);
+      if (generation != _generation) return;
       _write(genre, (
-        items: items,
-        loaded: limit,
+        items: cursor == null ? page.items : [...current.items, ...page.items],
+        cursor: page.next,
         loading: false,
-        hasMore: items.length >= limit && limit < _cap,
+        hasMore: page.hasMore,
         error: null,
-        selection: chosen,
+        selection: selection,
+        groups: cursor == null ? page.groups : current.groups,
       ));
     } on Object catch (error) {
-      if (_stale(genre, generation, chosen)) return;
+      if (generation != _generation) return;
       _write(genre, (
         items: current.items,
-        loaded: limit,
+        cursor: null,
         loading: false,
         hasMore: false,
-        error: error is HongguoFailure ? error.message : '$error',
-        selection: chosen,
+        error: hongguoFailureText(error),
+        selection: selection,
+        groups: current.groups,
       ));
     }
   }
 
-  /// Whether an answer arrived after the shelf moved on: another ask of this
-  /// shelf started, or the selection it was asked under is gone.
-  bool _stale(HongguoGenre genre, int generation, Map<String, String> selection) {
-    if (generation != _generation) return true;
-    final feed = feedOf(genre);
-    return !_sameSelection(feed.selection, selection) && feed.loading;
-  }
-
-  static bool _sameSelection(Map<String, String> a, Map<String, String> b) {
-    if (a.length != b.length) return false;
-    for (final entry in a.entries) {
-      if (b[entry.key] != entry.value) return false;
-    }
-    return true;
-  }
+  /// The shelf's own genre rides along every ask.
+  static Map<String, String> _withGenre(HongguoGenre genre, Map<String, String> selection) => {
+    if (!selection.containsKey('genre')) 'genre': genre.wire,
+    ...selection,
+  };
 
   void _write(HongguoGenre genre, HongguoBrowseFeed feed) {
     state = {...state, genre.name: feed};
@@ -130,148 +126,157 @@ final class HongguoBrowseController extends Notifier<Map<String, HongguoBrowseFe
 }
 
 /// The browse feeds, one entry per shelf.
-final hongguoBrowseProvider =
-    NotifierProvider<HongguoBrowseController, Map<String, HongguoBrowseFeed>>(HongguoBrowseController.new);
+final hongguoBrowseProvider = NotifierProvider<HongguoBrowseController, Map<String, HongguoBrowseFeed>>(
+  HongguoBrowseController.new,
+);
 
-/// One shelf's selector panel and the state of the ask that carries it.
-typedef HongguoPanelState = ({List<HongguoFilterRow> rows, bool loading, String? error});
-
-/// The selector panels, one per shelf, loaded once on the shelf's first
-/// browse view; the source's own panel is live, but a shelf's dimensions
-/// do not change under a session.
-final class HongguoFilterPanelController extends Notifier<Map<String, HongguoPanelState>> {
-  @override
-  Map<String, HongguoPanelState> build() => const {};
-
-  /// The shelf's panel, or nothing before it first opens.
-  HongguoPanelState panelOf(HongguoGenre genre) =>
-      state[genre.name] ?? (rows: const [], loading: false, error: null);
-
-  /// Loads the shelf's panel when it has none yet.
-  Future<void> open(HongguoGenre genre) {
-    final panel = panelOf(genre);
-    if (panel.rows.isNotEmpty || panel.loading) return Future.value();
-    _write(genre, (rows: panel.rows, loading: true, error: null));
-    return ref
-        .read(hongguoClientProvider)
-        .filters(genre)
-        .then((rows) => _write(genre, (rows: rows, loading: false, error: null)))
-        .catchError((
-          Object error,
-        ) {
-          _write(genre, (rows: const [], loading: false, error: error is HongguoFailure ? error.message : '$error'));
-        });
-  }
-
-  void _write(HongguoGenre genre, HongguoPanelState panel) {
-    state = {...state, genre.name: panel};
-  }
-}
-
-/// The selector panels, one entry per shelf.
-final hongguoFilterPanelProvider =
-    NotifierProvider<HongguoFilterPanelController, Map<String, HongguoPanelState>>(HongguoFilterPanelController.new);
-
-/// The board the boards view holds, its ranked list, and the ask's state.
-typedef HongguoRankState = ({HongguoBoard board, List<HongguoSeries> items, bool loading, String? error});
-
-/// The comic boards: one board at a time, chosen by the view's chips.
-final class HongguoRankController extends Notifier<HongguoRankState> {
-  @override
-  HongguoRankState build() => (board: HongguoBoard.recommend, items: const [], loading: false, error: null);
-
-  /// Loads [board] when it is not the one already held.
-  Future<void> open(HongguoBoard board) {
-    if (state.board == board && (state.items.isNotEmpty || state.loading || state.error == null)) {
-      return Future.value();
-    }
-    return _load(board);
-  }
-
-  /// Runs the held board's ask again.
-  Future<void> retry() => _load(state.board);
-
-  Future<void> _load(HongguoBoard board) async {
-    state = (board: board, items: const [], loading: true, error: null);
-    try {
-      final items = await ref.read(hongguoClientProvider).rank(board);
-      state = (board: board, items: items, loading: false, error: null);
-    } on Object catch (error) {
-      state = (board: board, items: const [], loading: false, error: error is HongguoFailure ? error.message : '$error');
-    }
-  }
-}
-
-/// The comic boards.
-final hongguoRankProvider = NotifierProvider<HongguoRankController, HongguoRankState>(HongguoRankController.new);
-
-/// The new-arrivals view: one shelf at a time and, on the live-action shelf,
-/// whether only today's arrivals are asked for.
-typedef HongguoLatestState = ({
-  HongguoGenre genre,
-  bool onlyToday,
+/// The newest arrivals: the landpage sorted by shelf time with its
+/// seven-day window chosen — the freshest list the platform offers a shelf.
+typedef HongguoLatestFeed = ({
   List<HongguoSeries> items,
+  HongguoDiscoveryCursor? cursor,
   bool loading,
+  bool hasMore,
   String? error,
 });
 
-/// The newest shelf: one shelf at a time, chosen by the view's chips. The
-/// live-action shelf answers a real 今日 window; the other two answer their
-/// seven-day window whatever ask's own `onlyToday` says.
-final class HongguoLatestController extends Notifier<HongguoLatestState> {
+/// The newest-arrivals feed per shelf, the browse feed with the time sort
+/// pinned.
+final class HongguoLatestController extends Notifier<Map<String, HongguoLatestFeed>> {
   @override
-  HongguoLatestState build() =>
-      (genre: HongguoGenre.shortPlay, onlyToday: true, items: const [], loading: false, error: null);
+  Map<String, HongguoLatestFeed> build() => const {};
 
-  /// Loads [genre] (and its [onlyToday] window) when it is not the ask
-  /// already held.
-  Future<void> open(HongguoGenre genre, {bool? onlyToday}) {
-    final today = onlyToday ?? state.onlyToday;
-    if (state.genre == genre && state.onlyToday == today && (state.items.isNotEmpty || state.loading)) {
-      return Future.value();
-    }
-    return _load(genre, today);
+  HongguoLatestFeed feedOf(HongguoGenre genre) =>
+      state[genre.name] ?? (items: const [], cursor: null, loading: false, hasMore: true, error: null);
+
+  Future<void> open(HongguoGenre genre) {
+    final feed = feedOf(genre);
+    if (feed.items.isEmpty && !feed.loading && feed.error == null) return _load(genre, null);
+    return Future.value();
   }
 
-  /// Runs the held ask again.
-  Future<void> retry() => _load(state.genre, state.onlyToday);
+  Future<void> loadMore(HongguoGenre genre) {
+    final feed = feedOf(genre);
+    if (feed.loading || !feed.hasMore || feed.cursor == null) return Future.value();
+    return _load(genre, feed.cursor);
+  }
 
-  Future<void> _load(HongguoGenre genre, bool onlyToday) async {
-    state = (genre: genre, onlyToday: onlyToday, items: const [], loading: true, error: null);
+  Future<void> retry(HongguoGenre genre) => _load(genre, null);
+
+  Future<void> _load(HongguoGenre genre, HongguoDiscoveryCursor? cursor) async {
+    final current = feedOf(genre);
+    _write(genre, (
+      items: cursor == null ? const [] : current.items,
+      cursor: cursor,
+      loading: true,
+      hasMore: current.hasMore,
+      error: null,
+    ));
     try {
-      final items = await ref.read(hongguoClientProvider).latest(genre, onlyToday: onlyToday);
-      state = (genre: genre, onlyToday: onlyToday, items: items, loading: false, error: null);
+      final page = await ref
+          .read(hongguoClientProvider)
+          .discovery(selection: {'genre': genre.wire, 'sort': 'online_time', 'online_time': 'days_7'}, cursor: cursor);
+      _write(genre, (
+        items: cursor == null ? page.items : [...current.items, ...page.items],
+        cursor: page.next,
+        loading: false,
+        hasMore: page.hasMore,
+        error: null,
+      ));
     } on Object catch (error) {
-      state = (genre: genre, onlyToday: onlyToday, items: const [], loading: false, error: error is HongguoFailure ? error.message : '$error');
+      _write(genre, (
+        items: current.items,
+        cursor: null,
+        loading: false,
+        hasMore: false,
+        error: hongguoFailureText(error),
+      ));
+    }
+  }
+
+  void _write(HongguoGenre genre, HongguoLatestFeed feed) {
+    state = {...state, genre.name: feed};
+  }
+}
+
+/// The newest-arrivals feeds.
+final hongguoLatestProvider = NotifierProvider<HongguoLatestController, Map<String, HongguoLatestFeed>>(
+  HongguoLatestController.new,
+);
+
+/// One board's feed: the website's pages, walked page by page.
+typedef HongguoRankState = ({
+  HongguoWebsiteBoard board,
+  List<HongguoSeries> items,
+  int page,
+  bool loading,
+  bool hasMore,
+  String? error,
+});
+
+/// The website's four boards, one at a time.
+final class HongguoRankController extends Notifier<HongguoRankState> {
+  @override
+  HongguoRankState build() =>
+      (board: HongguoWebsiteBoard.all, items: const [], page: 1, loading: false, hasMore: true, error: null);
+
+  /// Loads [board]'s first page when it is not the one already held.
+  Future<void> open(HongguoWebsiteBoard board) {
+    if (state.board == board && (state.items.isNotEmpty || state.loading || state.error == null)) {
+      return Future.value();
+    }
+    return _load(board, 1, const []);
+  }
+
+  /// The board's next page.
+  Future<void> loadMore() {
+    if (state.loading || !state.hasMore) return Future.value();
+    return _load(state.board, state.page, state.items);
+  }
+
+  /// Runs the held board's ask again.
+  Future<void> retry() => _load(state.board, 1, const []);
+
+  Future<void> _load(HongguoWebsiteBoard board, int page, List<HongguoSeries> held) async {
+    state = (board: board, items: held, page: page, loading: true, hasMore: true, error: null);
+    try {
+      final result = await ref.read(hongguoClientProvider).websiteRank(board, page: page);
+      state = (
+        board: board,
+        items: [...held, ...result.items],
+        page: page + 1,
+        loading: false,
+        hasMore: result.hasMore,
+        error: null,
+      );
+    } on Object catch (error) {
+      state = (board: board, items: held, page: page, loading: false, hasMore: false, error: hongguoFailureText(error));
     }
   }
 }
 
-/// The newest shelf.
-final hongguoLatestProvider = NotifierProvider<HongguoLatestController, HongguoLatestState>(
-  HongguoLatestController.new,
-);
+/// The website's boards.
+final hongguoRankProvider = NotifierProvider<HongguoRankController, HongguoRankState>(HongguoRankController.new);
 
 /// What the search view holds: the committed query, its hits, the cursor the
 /// next page asks, and the ask's state.
 typedef HongguoSearchState = ({
   String query,
   List<HongguoSeries> items,
-  String? cursor,
+  HongguoSearchCursor? cursor,
   bool hasMore,
   bool loading,
   String? error,
 });
 
-/// The station's search, paged by the cursor the answer carries. A newer
-/// query always wins: an answer from a search that was replaced drains
-/// without writing.
+/// The station's search: the app's own endpoint (the richer one), paged by
+/// the tab's cursor; the website's page answers the first page whenever the
+/// app endpoint cannot. A newer query always wins.
 final class HongguoSearchController extends Notifier<HongguoSearchState> {
   int _generation = 0;
 
   @override
-  HongguoSearchState build() =>
-      (query: '', items: const [], cursor: null, hasMore: false, loading: false, error: null);
+  HongguoSearchState build() => (query: '', items: const [], cursor: null, hasMore: false, loading: false, error: null);
 
   /// Commits [query] from its first page; a blank query clears the results.
   Future<void> search(String query) {
@@ -281,51 +286,63 @@ final class HongguoSearchController extends Notifier<HongguoSearchState> {
       state = (query: '', items: const [], cursor: null, hasMore: false, loading: false, error: null);
       return Future.value();
     }
-    return _load(word, null);
+    return _load(word, null, const []);
   }
 
   /// Loads the next page of the committed query when one is left.
   Future<void> loadMore() {
-    if (state.loading || !state.hasMore || state.query.isEmpty) return Future.value();
-    return _load(state.query, state.cursor);
+    if (state.loading || !state.hasMore || state.query.isEmpty || state.cursor == null) return Future.value();
+    return _load(state.query, state.cursor, state.items);
   }
 
   /// Runs the committed query again from its first page.
   Future<void> retry() {
     if (state.query.isEmpty) return Future.value();
-    return _load(state.query, null);
+    return _load(state.query, null, const []);
   }
 
-  Future<void> _load(String query, String? cursor) async {
+  Future<void> _load(String query, HongguoSearchCursor? cursor, List<HongguoSeries> held) async {
     final generation = ++_generation;
-    state = (
-      query: query,
-      items: cursor == null ? const <HongguoSeries>[] : state.items,
-      cursor: cursor,
-      hasMore: state.hasMore,
-      loading: true,
-      error: null,
-    );
+    state = (query: query, items: held, cursor: cursor, hasMore: true, loading: true, error: null);
     try {
-      final page = await ref.read(hongguoClientProvider).searchPage(query, cursor: cursor);
+      final result = await ref.read(hongguoClientProvider).appSearch(query, cursor: cursor);
       if (generation != _generation) return;
       state = (
         query: query,
-        items: cursor == null ? page.items : [...state.items, ...page.items],
-        cursor: page.nextCursor,
-        hasMore: page.hasMore,
+        items: [...held, ...result.items],
+        cursor: result.next,
+        hasMore: result.hasMore,
         loading: false,
         error: null,
       );
     } on Object catch (error) {
+      // The website's page covers a first page the app endpoint could not
+      // serve; deeper pages simply report the app endpoint's failure.
+      if (cursor == null) {
+        try {
+          final fallback = await ref.read(hongguoClientProvider).websiteSearch(query);
+          if (generation != _generation) return;
+          state = (
+            query: query,
+            items: fallback.items,
+            cursor: const HongguoSearchCursor(page: 2),
+            hasMore: fallback.hasMore,
+            loading: false,
+            error: null,
+          );
+          return;
+        } on Object {
+          // Falls through with the app endpoint's own words below.
+        }
+      }
       if (generation != _generation) return;
       state = (
         query: query,
-        items: state.items,
+        items: held,
         cursor: cursor,
         hasMore: false,
         loading: false,
-        error: error is HongguoFailure ? error.message : '$error',
+        error: hongguoFailureText(error),
       );
     }
   }

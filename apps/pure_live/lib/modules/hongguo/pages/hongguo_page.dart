@@ -9,6 +9,7 @@ import 'package:pure_live/app/app.dart' show RouteNames, SettingsSectionRoute, b
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_feeds.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
+import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoWebsiteBoard;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show CardGrid;
 
@@ -205,20 +206,16 @@ final class _BrowseView extends ConsumerWidget {
         feed ??
         (
           items: const <HongguoSeries>[],
-          loaded: 0,
+          cursor: null,
           loading: false,
           hasMore: true,
           error: null,
           selection: const <String, String>{},
+          groups: const <HongguoFilterRow>[],
         );
     final controller = ref.read(hongguoBrowseProvider.notifier);
-    final panel = ref.watch(hongguoFilterPanelProvider.select((panels) => panels[genre.name]));
-    final panelState =
-        panel ?? (rows: const <HongguoFilterRow>[], loading: false, error: null);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!context.mounted) return;
-      unawaited(controller.open(genre));
-      unawaited(ref.read(hongguoFilterPanelProvider.notifier).open(genre));
+      if (context.mounted) unawaited(controller.open(genre));
     });
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -229,7 +226,7 @@ final class _BrowseView extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (final row in panelState.rows)
+              for (final row in state.groups)
                 HongguoFilterRowView(
                   row: row,
                   selection: state.selection,
@@ -277,6 +274,7 @@ final class _RankView extends ConsumerWidget {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (context.mounted) unawaited(controller.open(state.board));
     });
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -287,9 +285,9 @@ final class _RankView extends ConsumerWidget {
             spacing: DsSpace.s8,
             runSpacing: DsSpace.s8,
             children: [
-              for (final board in HongguoBoard.values)
+              for (final board in HongguoWebsiteBoard.values)
                 DsChip(
-                  label: Text(board.label(t)),
+                  label: Text(_boardLabel(t, board)),
                   selected: state.board == board,
                   onChanged: (_) => unawaited(controller.open(board)),
                 ),
@@ -321,18 +319,26 @@ final class _RankView extends ConsumerWidget {
   }
 }
 
-/// The newest arrivals: the shelf chips above the grid, with the
-/// live-action shelf's own 今日上新 / 最新上架 pair when it is the shelf held.
-final class _LatestView extends ConsumerWidget {
+/// The newest arrivals: one shelf at a time, its feed walked by cursor —
+/// the platform's freshest list, the seven-day window.
+final class _LatestView extends ConsumerStatefulWidget {
   const _LatestView();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_LatestView> createState() => _LatestViewState();
+}
+
+final class _LatestViewState extends ConsumerState<_LatestView> {
+  HongguoGenre _genre = HongguoGenre.shortPlay;
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.t;
-    final state = ref.watch(hongguoLatestProvider);
+    final feeds = ref.watch(hongguoLatestProvider);
+    final state = feeds[_genre.name] ?? (items: const <HongguoSeries>[], cursor: null, loading: false, hasMore: true, error: null);
     final controller = ref.read(hongguoLatestProvider.notifier);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted) unawaited(controller.open(state.genre, onlyToday: state.onlyToday));
+      if (mounted) unawaited(controller.open(_genre));
     });
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -347,21 +353,9 @@ final class _LatestView extends ConsumerWidget {
               for (final genre in HongguoGenre.values)
                 DsChip(
                   label: Text(genre.label(t)),
-                  selected: state.genre == genre,
-                  onChanged: (_) => unawaited(controller.open(genre)),
+                  selected: _genre == genre,
+                  onChanged: (_) => setState(() => _genre = genre),
                 ),
-              if (state.genre == HongguoGenre.shortPlay) ...[
-                DsChip(
-                  label: Text(t.hongguo.latestToday),
-                  selected: state.onlyToday,
-                  onChanged: (_) => unawaited(controller.open(HongguoGenre.shortPlay, onlyToday: true)),
-                ),
-                DsChip(
-                  label: Text(t.hongguo.latestAll),
-                  selected: !state.onlyToday,
-                  onChanged: (_) => unawaited(controller.open(HongguoGenre.shortPlay, onlyToday: false)),
-                ),
-              ],
             ],
           ),
         ),
@@ -371,14 +365,14 @@ final class _LatestView extends ConsumerWidget {
             layout: ref.watch(browseLayoutProvider),
             aspectRatio: 0.62,
             listMainAxisExtent: 124,
-            itemBuilder: (context, series) =>
-                HongguoSeriesCard(series: series, onOpen: () => _open(context, series)),
-            listItemBuilder: (context, series) =>
-                HongguoSeriesRow(series: series, onOpen: () => _open(context, series)),
+            itemBuilder: (context, series) => HongguoSeriesCard(series: series, onOpen: () => _open(context, series)),
+            listItemBuilder: (context, series) => HongguoSeriesRow(series: series, onOpen: () => _open(context, series)),
             isLoading: state.loading,
+            hasMore: state.hasMore,
+            onLoadMore: () => controller.loadMore(_genre),
             error: state.error,
-            onRetry: controller.retry,
-            onRefresh: controller.retry,
+            onRetry: () => controller.retry(_genre),
+            onRefresh: () => controller.retry(_genre),
             refreshError: state.error,
             emptyIcon: HongguoView.latest.icon,
             emptyTitle: t.common.empty,
@@ -463,6 +457,13 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
     );
   }
 }
+
+String _boardLabel(Translations t, HongguoWebsiteBoard board) => switch (board) {
+  HongguoWebsiteBoard.all => t.hongguo.boardAll,
+  HongguoWebsiteBoard.real => t.hongguo.boardReal,
+  HongguoWebsiteBoard.comic => t.hongguo.boardComic,
+  HongguoWebsiteBoard.ai => t.hongguo.boardAi,
+};
 
 void _open(BuildContext context, HongguoSeries series) {
   if (series.seriesId.isEmpty) return;

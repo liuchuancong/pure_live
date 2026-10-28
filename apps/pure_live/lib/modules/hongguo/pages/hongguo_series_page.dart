@@ -14,8 +14,10 @@ import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart';
+import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart'
+    show hongguoClientProvider, hongguoFailureText, hongguoPickRendition, hongguoStreamProxyProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
+import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart' show hongguoSettingsProvider;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
 import 'package:pure_live/shared/shared.dart';
 
@@ -152,7 +154,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage>
       _resumeSeconds = null;
     });
     try {
-      final detail = await ref.read(hongguoClientProvider).episodes(widget.seriesId);
+      final detail = await ref.read(hongguoClientProvider).detail(widget.seriesId);
       if (!mounted || _disposed) return;
       setState(() {
         _detail = detail;
@@ -171,7 +173,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage>
       if (!mounted || _disposed) return;
       setState(() {
         _loading = false;
-        _error = error is HongguoFailure ? error.message : '$error';
+        _error = hongguoFailureText(error);
       });
     }
   }
@@ -201,7 +203,13 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage>
       }
     }
     try {
-      final url = client.streamUrl(vid: episode.vid);
+      // The ladder answers the renditions the platform serves this episode;
+      // the pick rides through the local decrypting proxy so the player
+      // reads plain mp4 off the loopback.
+      final ladder = await client.playbackLadder(episode.vid);
+      if (!mounted || _disposed) return;
+      final rendition = hongguoPickRendition(ladder, ref.read(hongguoSettingsProvider).quality.maxHeight);
+      final url = await ref.read(hongguoStreamProxyProvider).register(rendition);
       if (!mounted || _disposed) return;
       final existing = _handle;
       final handle =
@@ -252,7 +260,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage>
       setState(() {
         _opening = false;
         _transport = null;
-        _error = error is HongguoFailure ? error.message : '$error';
+        _error = hongguoFailureText(error);
       });
     }
   }
