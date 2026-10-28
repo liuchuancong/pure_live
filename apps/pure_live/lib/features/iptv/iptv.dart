@@ -3,10 +3,12 @@
 library;
 
 export 'controllers/iptv_auto_update.dart';
+export 'controllers/iptv_browse_settings.dart';
 export 'controllers/iptv_controller.dart';
 export 'controllers/iptv_epg_controller.dart';
 export 'controllers/iptv_sources_controller.dart';
 export 'controllers/iptv_user_agent.dart';
+export 'pages/iptv_guide_page.dart';
 export 'pages/iptv_page.dart';
 export 'pages/iptv_play_page.dart';
 export 'pages/iptv_settings_pane.dart';

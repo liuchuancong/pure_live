@@ -18,6 +18,7 @@ import 'package:pure_live/features/favorites/favorites.dart';
 
 import 'package:pure_live/features/history/history.dart';
 import 'package:pure_live/features/iptv/iptv.dart';
+import 'package:pure_live/features/music/music.dart';
 import 'package:pure_live/features/recorder/recorder.dart';
 import 'package:pure_live/features/room/page/room_orientation.dart' show roomOrientationChoicesProvider;
 import 'package:pure_live/features/settings/browse/audience_metric_provider.dart' show audienceMetricProvider;
@@ -529,7 +530,13 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.logs => const LogsPane(),
       SettingsSection.about => const _AboutPane(),
       SettingsSection.iptv => const IptvSettingsPane(),
+      SettingsSection.iptvBrowse => const IptvBrowsePane(),
+      SettingsSection.iptvGroups => const IptvGroupsPane(),
       SettingsSection.vod => const VodSettingsPane(),
+      SettingsSection.vodPlayback => const VodPlaybackPane(),
+      SettingsSection.music => const MusicSettingsPane(),
+      SettingsSection.musicList => const MusicListPane(),
+      SettingsSection.musicSources => const MusicSourcesPane(),
     };
     const padding = EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s20, DsSpace.s24, DsSpace.s24);
     // Some pages own their height instead of scrolling the whole pane with

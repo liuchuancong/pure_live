@@ -929,6 +929,9 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '已复制'
 	String get copied => '已复制';
+
+	/// zh-CN: '当前设备或播放内核无法进入画中画。'
+	String get pipUnavailable => '当前设备或播放内核无法进入画中画。';
 }
 
 // Path: favorites
@@ -1643,6 +1646,39 @@ class Translations$iptv$zh_CN {
 
 	/// zh-CN: '应用冷启动时自动在后台静默检查并更新网络资源。'
 	String get autoSyncDesc => '应用冷启动时自动在后台静默检查并更新网络资源。';
+
+	/// zh-CN: '换台时显示频道号'
+	String get browseChannelNumber => '换台时显示频道号';
+
+	/// zh-CN: '在频道名旁边一起显示它的号码。'
+	String get browseChannelNumberDesc => '在频道名旁边一起显示它的号码。';
+
+	/// zh-CN: '换台反转'
+	String get browseReverse => '换台反转';
+
+	/// zh-CN: '让上键向下走、下键向上走。'
+	String get browseReverseDesc => '让上键向下走、下键向上走。';
+
+	/// zh-CN: '显示时间'
+	String get browseClock => '显示时间';
+
+	/// zh-CN: '播放时在标题旁显示当前时间。'
+	String get browseClockDesc => '播放时在标题旁显示当前时间。';
+
+	/// zh-CN: '显示当前节目'
+	String get browseProgrammeLine => '显示当前节目';
+
+	/// zh-CN: '在频道名下方写出正在播出或接下来播出的节目。'
+	String get browseProgrammeLineDesc => '在频道名下方写出正在播出或接下来播出的节目。';
+
+	/// zh-CN: '恢复默认的换台显示'
+	String get browseReset => '恢复默认的换台显示';
+
+	/// zh-CN: '还没有分组：先导入一份播放列表。'
+	String get groupsEmpty => '还没有分组：先导入一份播放列表。';
+
+	/// zh-CN: '关掉一个分组，它会从频道列表和换台里一起消失；重新打开还是原来的台单。'
+	String get groupsHint => '关掉一个分组，它会从频道列表和换台里一起消失；重新打开还是原来的台单。';
 }
 
 // Path: multiview
@@ -1779,6 +1815,15 @@ class Translations$music$zh_CN {
 	/// zh-CN: '榜单'
 	String get tabCharts => '榜单';
 
+	/// zh-CN: '我的列表'
+	String get tabMine => '我的列表';
+
+	/// zh-CN: '还没有你自己的列表'
+	String get myListsEmptyTitle => '还没有你自己的列表';
+
+	/// zh-CN: '收藏的歌曲和你自建的歌单会出现在这里；歌单与排行榜要先有音源。'
+	String get myListsEmptyDescription => '收藏的歌曲和你自建的歌单会出现在这里；歌单与排行榜要先有音源。';
+
 	/// zh-CN: '曲库还在路上'
 	String get libraryEmptyTitle => '曲库还在路上';
 
@@ -1796,6 +1841,135 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '来自各音乐源的热门榜单会出现在这里。'
 	String get chartsEmptyDescription => '来自各音乐源的热门榜单会出现在这里。';
+
+	/// zh-CN: '已就绪 {count} 个自定义源'
+	String sourcesReady({required Object count}) => '已就绪 ${count} 个自定义源';
+
+	/// zh-CN: '音源与播放'
+	String get settingsPlayback => '音源与播放';
+
+	/// zh-CN: '默认音源'
+	String get defaultSource => '默认音源';
+
+	/// zh-CN: '优先向哪个自定义源取歌；「自动」按列表中第一个已启用的源。'
+	String get defaultSourceDesc => '优先向哪个自定义源取歌；「自动」按列表中第一个已启用的源。';
+
+	/// zh-CN: '自动'
+	String get defaultSourceAuto => '自动';
+
+	/// zh-CN: '播放品质'
+	String get quality => '播放品质';
+
+	/// zh-CN: '向音源请求的音质；音源没有这一档时会给出它能提供的最高档。'
+	String get qualityDesc => '向音源请求的音质；音源没有这一档时会给出它能提供的最高档。';
+
+	/// zh-CN: '128K'
+	String get qualityStandard => '128K';
+
+	/// zh-CN: '320K'
+	String get qualityHigh => '320K';
+
+	/// zh-CN: '无损'
+	String get qualityLossless => '无损';
+
+	/// zh-CN: 'Hi-Res 无损'
+	String get qualityHiRes => 'Hi-Res 无损';
+
+	/// zh-CN: '出错自动跳过'
+	String get skipOnError => '出错自动跳过';
+
+	/// zh-CN: '某个音源取不到地址时换下一个，而不是停下。'
+	String get skipOnErrorDesc => '某个音源取不到地址时换下一个，而不是停下。';
+
+	/// zh-CN: '打开时继续播放'
+	String get autoplay => '打开时继续播放';
+
+	/// zh-CN: '打开音乐模块时继续上次的播放队列。'
+	String get autoplayDesc => '打开音乐模块时继续上次的播放队列。';
+
+	/// zh-CN: '新歌加到列表顶部'
+	String get addToTop => '新歌加到列表顶部';
+
+	/// zh-CN: '关闭时新歌排在列表末尾。'
+	String get addToTopDesc => '关闭时新歌排在列表末尾。';
+
+	/// zh-CN: '列表显示音源'
+	String get showSource => '列表显示音源';
+
+	/// zh-CN: '在歌曲行旁标出它来自哪个音源。'
+	String get showSourceDesc => '在歌曲行旁标出它来自哪个音源。';
+
+	/// zh-CN: '恢复默认'
+	String get playbackReset => '恢复默认';
+
+	/// zh-CN: '自动选源、320K、出错跳过、新歌排在末尾。'
+	String get playbackResetDesc => '自动选源、320K、出错跳过、新歌排在末尾。';
+
+	/// zh-CN: '自定义源'
+	String get sourcesSection => '自定义源';
+
+	/// zh-CN: 'lx-music 的自定义源是 JavaScript 脚本。导入时读取脚本头部注释并原样保存脚本；当前版本还不会执行脚本——执行需要内置 JS 引擎。'
+	String get sourcesHint => 'lx-music 的自定义源是 JavaScript 脚本。导入时读取脚本头部注释并原样保存脚本；当前版本还不会执行脚本——执行需要内置 JS 引擎。';
+
+	/// zh-CN: '粘贴脚本导入'
+	String get sourcesImportText => '粘贴脚本导入';
+
+	/// zh-CN: '把 lx-music 自定义源脚本的全文粘贴进来。'
+	String get sourcesImportTextDesc => '把 lx-music 自定义源脚本的全文粘贴进来。';
+
+	/// zh-CN: '从链接导入'
+	String get sourcesImportUrl => '从链接导入';
+
+	/// zh-CN: '下载链接指向的 .js 内容并导入。'
+	String get sourcesImportUrlDesc => '下载链接指向的 .js 内容并导入。';
+
+	/// zh-CN: '导入自定义源'
+	String get importTitle => '导入自定义源';
+
+	/// zh-CN: '在此粘贴脚本全文…'
+	String get importScriptHint => '在此粘贴脚本全文…';
+
+	/// zh-CN: 'https://…/source.js'
+	String get importUrlHint => 'https://…/source.js';
+
+	/// zh-CN: '先粘贴脚本或填写链接。'
+	String get importMissing => '先粘贴脚本或填写链接。';
+
+	/// zh-CN: '这段内容不是 lx-music 自定义源：脚本头注释里缺少 @name，或缺少 lx.on('request', …) 契约。'
+	String get importNotASource => '这段内容不是 lx-music 自定义源：脚本头注释里缺少 @name，或缺少 lx.on(\'request\', …) 契约。';
+
+	/// zh-CN: '脚本下载失败：{error}'
+	String importDownloadFailed({required Object error}) => '脚本下载失败：${error}';
+
+	/// zh-CN: '已导入「{name}」'
+	String importDone({required Object name}) => '已导入「${name}」';
+
+	/// zh-CN: '已更新「{name}」'
+	String importUpdated({required Object name}) => '已更新「${name}」';
+
+	/// zh-CN: '还没有自定义源'
+	String get sourcesEmpty => '还没有自定义源';
+
+	/// zh-CN: '导入 lx-music 自定义源脚本后，它会出现在这里。'
+	String get sourcesEmptyDesc => '导入 lx-music 自定义源脚本后，它会出现在这里。';
+
+	/// zh-CN: '脚本没有提供说明。'
+	String get sourceNoDescription => '脚本没有提供说明。';
+
+	/// zh-CN: '移除源'
+	String get sourceDelete => '移除源';
+
+	/// zh-CN: '移除「{name}」？'
+	String sourceDeleteTitle({required Object name}) => '移除「${name}」？';
+
+	/// zh-CN: '脚本会一并删除；重新导入即可恢复。'
+	String get sourceDeleteDesc => '脚本会一并删除；重新导入即可恢复。';
+
+	/// zh-CN: '已移除「{name}」'
+	String sourceDeleted({required Object name}) => '已移除「${name}」';
+
+	/// zh-CN: '已启用 {count} 个'
+	String sourcesCount({required Object count}) => '已启用 ${count} 个';
 }
 
 // Path: navigation
@@ -1862,6 +2036,27 @@ class Translations$navigation$zh_CN {
 
 	/// zh-CN: '用户'
 	String get user => '用户';
+
+	/// zh-CN: '排行榜'
+	String get vodRank => '排行榜';
+
+	/// zh-CN: '分区'
+	String get vodRegions => '分区';
+
+	/// zh-CN: '订阅源'
+	String get iptvSources => '订阅源';
+
+	/// zh-CN: '节目单'
+	String get iptvGuide => '节目单';
+
+	/// zh-CN: '歌单'
+	String get musicSonglist => '歌单';
+
+	/// zh-CN: '排行榜'
+	String get musicToplist => '排行榜';
+
+	/// zh-CN: '我的列表'
+	String get musicLibrary => '我的列表';
 }
 
 // Path: player
@@ -4074,6 +4269,33 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '视频播放'
 	String get vodPlayback => '视频播放';
 
+	/// zh-CN: '播放行为'
+	String get navVodPlayback => '播放行为';
+
+	/// zh-CN: '默认倍速、一集播完后的动作，以及播放器下方显示的详情。'
+	String get vodPlaybackDescription => '默认倍速、一集播完后的动作，以及播放器下方显示的详情。';
+
+	/// zh-CN: '音乐'
+	String get groupMusic => '音乐';
+
+	/// zh-CN: '音乐'
+	String get navMusic => '音乐';
+
+	/// zh-CN: '音源、播放品质与列表行为。'
+	String get musicSettingsDescription => '音源、播放品质与列表行为。';
+
+	/// zh-CN: '列表设置'
+	String get navMusicList => '列表设置';
+
+	/// zh-CN: '新歌的位置、单击行为与是否显示来源。'
+	String get musicListDescription => '新歌的位置、单击行为与是否显示来源。';
+
+	/// zh-CN: '自定义源'
+	String get navMusicSources => '自定义源';
+
+	/// zh-CN: '导入并管理 lx 风格的自定义音源脚本。'
+	String get musicSourcesDescription => '导入并管理 lx 风格的自定义音源脚本。';
+
 	/// zh-CN: '默认清晰度'
 	String get vodQuality => '默认清晰度';
 
@@ -4094,6 +4316,18 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '节目单更新'
 	String get iptvGuideUpdates => '节目单更新';
+
+	/// zh-CN: '换台与显示'
+	String get navIptvBrowse => '换台与显示';
+
+	/// zh-CN: '频道号、换台方向、时间和当前节目行怎么显示。'
+	String get iptvBrowseDescription => '频道号、换台方向、时间和当前节目行怎么显示。';
+
+	/// zh-CN: '分组显示'
+	String get navIptvGroups => '分组显示';
+
+	/// zh-CN: '决定哪些分组出现在频道列表和换台里。'
+	String get iptvGroupsDescription => '决定哪些分组出现在频道列表和换台里。';
 
 	/// zh-CN: '重新下载网络播放列表与节目单；本地来源不受影响。'
 	String get iptvSyncDesc => '重新下载网络播放列表与节目单；本地来源不受影响。';
@@ -5295,8 +5529,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '离开应用时自动小窗'
 	String get autoPip => '离开应用时自动小窗';
 
-	/// zh-CN: '播放中切到后台时进入画中画；系统未开启画中画时不会生效。'
-	String get autoPipDesc => '播放中切到后台时进入画中画；系统未开启画中画时不会生效。';
+	/// zh-CN: '播放中离开应用时，把画面留在其他应用上的小窗里；需要「显示在其他应用的上层」权限。'
+	String get autoPipDesc => '播放中离开应用时，把画面留在其他应用上的小窗里；需要「显示在其他应用的上层」权限。';
 
 	/// zh-CN: '返回时悬浮播放'
 	String get floatPlay => '返回时悬浮播放';
@@ -5738,6 +5972,18 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '卡片与列表的版式固定，这里只选择显示哪些信息；设置自动应用到当前设备类型。'
 	String get roomCardSettingsDescription => '卡片与列表的版式固定，这里只选择显示哪些信息；设置自动应用到当前设备类型。';
+
+	/// zh-CN: '卡片预览'
+	String get roomCardPreview => '卡片预览';
+
+	/// zh-CN: '今晚八点，一起聊聊新番和游戏'
+	String get roomCardPreviewTitle => '今晚八点，一起聊聊新番和游戏';
+
+	/// zh-CN: '夜色电台'
+	String get roomCardPreviewAnchor => '夜色电台';
+
+	/// zh-CN: '这是当前设备实际使用的卡片与列表，改动会立刻反映在这里。'
+	String get roomCardPreviewHint => '这是当前设备实际使用的卡片与列表，改动会立刻反映在这里。';
 
 	/// zh-CN: '快捷预设'
 	String get roomCardPresets => '快捷预设';
@@ -6812,6 +7058,42 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: 'UP主'
 	String get up => 'UP主';
+
+	/// zh-CN: '默认倍速'
+	String get openingSpeed => '默认倍速';
+
+	/// zh-CN: '打开视频时使用的播放速度；播放器里的倍速菜单只影响当前视频。'
+	String get openingSpeedDesc => '打开视频时使用的播放速度；播放器里的倍速菜单只影响当前视频。';
+
+	/// zh-CN: '播放结束动作'
+	String get finishAction => '播放结束动作';
+
+	/// zh-CN: '一集播完之后做什么。'
+	String get finishActionDesc => '一集播完之后做什么。';
+
+	/// zh-CN: '停在最后一帧'
+	String get finishPause => '停在最后一帧';
+
+	/// zh-CN: '播放下一分P'
+	String get finishNextPart => '播放下一分P';
+
+	/// zh-CN: '退出播放'
+	String get finishExit => '退出播放';
+
+	/// zh-CN: '播放相关推荐'
+	String get finishRelated => '播放相关推荐';
+
+	/// zh-CN: '显示视频详情'
+	String get showDetails => '显示视频详情';
+
+	/// zh-CN: '关闭后只看播放器、分P和相关推荐，隐藏UP主、数据和简介。'
+	String get showDetailsDesc => '关闭后只看播放器、分P和相关推荐，隐藏UP主、数据和简介。';
+
+	/// zh-CN: '恢复默认播放行为'
+	String get playbackReset => '恢复默认播放行为';
+
+	/// zh-CN: '默认倍速、播完下一分P、显示详情。'
+	String get playbackResetDesc => '默认倍速、播完下一分P、显示详情。';
 }
 
 // Path: wallpaper
@@ -7414,6 +7696,7 @@ extension on Translations {
 			'common.show' => '显示',
 			'common.save' => '保存',
 			'common.copied' => '已复制',
+			'common.pipUnavailable' => '当前设备或播放内核无法进入画中画。',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
 			'favorites.unfollow' => '取消关注',
@@ -7643,14 +7926,25 @@ extension on Translations {
 			'iptv.sourceAddressOpenFailed' => '无法打开源地址',
 			'iptv.autoSyncTitle' => '启动时全自动同步',
 			'iptv.autoSyncDesc' => '应用冷启动时自动在后台静默检查并更新网络资源。',
+			'iptv.browseChannelNumber' => '换台时显示频道号',
+			'iptv.browseChannelNumberDesc' => '在频道名旁边一起显示它的号码。',
+			'iptv.browseReverse' => '换台反转',
+			'iptv.browseReverseDesc' => '让上键向下走、下键向上走。',
+			'iptv.browseClock' => '显示时间',
+			_ => null,
+		} ?? switch (path) {
+			'iptv.browseClockDesc' => '播放时在标题旁显示当前时间。',
+			'iptv.browseProgrammeLine' => '显示当前节目',
+			'iptv.browseProgrammeLineDesc' => '在频道名下方写出正在播出或接下来播出的节目。',
+			'iptv.browseReset' => '恢复默认的换台显示',
+			'iptv.groupsEmpty' => '还没有分组：先导入一份播放列表。',
+			'iptv.groupsHint' => '关掉一个分组，它会从频道列表和换台里一起消失；重新打开还是原来的台单。',
 			'multiview.layoutLabel' => '布局',
 			'multiview.selectHint' => '点击格子选中，只有选中的格子有声音',
 			'multiview.selectedPane' => ({required Object index}) => '第 ${index} 格 · 有声',
 			'multiview.pickRoom' => '选择房间',
 			'multiview.openRoom' => '进入直播间',
 			'multiview.clearPane' => '清空这一格',
-			_ => null,
-		} ?? switch (path) {
 			'multiview.swapPane' => '交换格子',
 			'multiview.swapHere' => '换到这格',
 			'multiview.paneFailed' => '这一格无法播放',
@@ -7684,12 +7978,58 @@ extension on Translations {
 			'music.tabLibrary' => '乐库',
 			'music.tabPlaylists' => '歌单',
 			'music.tabCharts' => '榜单',
+			'music.tabMine' => '我的列表',
+			'music.myListsEmptyTitle' => '还没有你自己的列表',
+			'music.myListsEmptyDescription' => '收藏的歌曲和你自建的歌单会出现在这里；歌单与排行榜要先有音源。',
 			'music.libraryEmptyTitle' => '曲库还在路上',
 			'music.libraryEmptyDescription' => '音乐源接入后，歌曲会以瀑布流卡片在这里分页呈现。',
 			'music.playlistsEmptyTitle' => '歌单还在路上',
 			'music.playlistsEmptyDescription' => '整理与收藏的歌单会出现在这里。',
 			'music.chartsEmptyTitle' => '榜单还在路上',
 			'music.chartsEmptyDescription' => '来自各音乐源的热门榜单会出现在这里。',
+			'music.sourcesReady' => ({required Object count}) => '已就绪 ${count} 个自定义源',
+			'music.settingsPlayback' => '音源与播放',
+			'music.defaultSource' => '默认音源',
+			'music.defaultSourceDesc' => '优先向哪个自定义源取歌；「自动」按列表中第一个已启用的源。',
+			'music.defaultSourceAuto' => '自动',
+			'music.quality' => '播放品质',
+			'music.qualityDesc' => '向音源请求的音质；音源没有这一档时会给出它能提供的最高档。',
+			'music.qualityStandard' => '128K',
+			'music.qualityHigh' => '320K',
+			'music.qualityLossless' => '无损',
+			'music.qualityHiRes' => 'Hi-Res 无损',
+			'music.skipOnError' => '出错自动跳过',
+			'music.skipOnErrorDesc' => '某个音源取不到地址时换下一个，而不是停下。',
+			'music.autoplay' => '打开时继续播放',
+			'music.autoplayDesc' => '打开音乐模块时继续上次的播放队列。',
+			'music.addToTop' => '新歌加到列表顶部',
+			'music.addToTopDesc' => '关闭时新歌排在列表末尾。',
+			'music.showSource' => '列表显示音源',
+			'music.showSourceDesc' => '在歌曲行旁标出它来自哪个音源。',
+			'music.playbackReset' => '恢复默认',
+			'music.playbackResetDesc' => '自动选源、320K、出错跳过、新歌排在末尾。',
+			'music.sourcesSection' => '自定义源',
+			'music.sourcesHint' => 'lx-music 的自定义源是 JavaScript 脚本。导入时读取脚本头部注释并原样保存脚本；当前版本还不会执行脚本——执行需要内置 JS 引擎。',
+			'music.sourcesImportText' => '粘贴脚本导入',
+			'music.sourcesImportTextDesc' => '把 lx-music 自定义源脚本的全文粘贴进来。',
+			'music.sourcesImportUrl' => '从链接导入',
+			'music.sourcesImportUrlDesc' => '下载链接指向的 .js 内容并导入。',
+			'music.importTitle' => '导入自定义源',
+			'music.importScriptHint' => '在此粘贴脚本全文…',
+			'music.importUrlHint' => 'https://…/source.js',
+			'music.importMissing' => '先粘贴脚本或填写链接。',
+			'music.importNotASource' => '这段内容不是 lx-music 自定义源：脚本头注释里缺少 @name，或缺少 lx.on(\'request\', …) 契约。',
+			'music.importDownloadFailed' => ({required Object error}) => '脚本下载失败：${error}',
+			'music.importDone' => ({required Object name}) => '已导入「${name}」',
+			'music.importUpdated' => ({required Object name}) => '已更新「${name}」',
+			'music.sourcesEmpty' => '还没有自定义源',
+			'music.sourcesEmptyDesc' => '导入 lx-music 自定义源脚本后，它会出现在这里。',
+			'music.sourceNoDescription' => '脚本没有提供说明。',
+			'music.sourceDelete' => '移除源',
+			'music.sourceDeleteTitle' => ({required Object name}) => '移除「${name}」？',
+			'music.sourceDeleteDesc' => '脚本会一并删除；重新导入即可恢复。',
+			'music.sourceDeleted' => ({required Object name}) => '已移除「${name}」',
+			'music.sourcesCount' => ({required Object count}) => '已启用 ${count} 个',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -7709,6 +8049,13 @@ extension on Translations {
 			'navigation.appearance' => '外观',
 			'navigation.proxy' => '网络代理',
 			'navigation.user' => '用户',
+			'navigation.vodRank' => '排行榜',
+			'navigation.vodRegions' => '分区',
+			'navigation.iptvSources' => '订阅源',
+			'navigation.iptvGuide' => '节目单',
+			'navigation.musicSonglist' => '歌单',
+			'navigation.musicToplist' => '排行榜',
+			'navigation.musicLibrary' => '我的列表',
 			'player.title' => '播放',
 			'player.back' => '返回',
 			'player.quality' => '清晰度',
@@ -8098,6 +8445,8 @@ extension on Translations {
 			'settings.audioPageDescription' => '默认音量、静音与后台音频。',
 			'settings.picturePageDescription' => '画面比例、悬浮窗与画中画。',
 			'settings.floatingWindowPageDescription' => '应用内悬浮窗与系统画中画的大小、位置与置顶。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.pictureDisplayGroup' => '画面显示',
 			'settings.floatWindowGroup' => '应用内悬浮窗',
 			'settings.pipGroup' => '系统画中画',
@@ -8163,8 +8512,6 @@ extension on Translations {
 			'settings.refreshRateApplyFailed' => '刷新率请求未生效',
 			'settings.refreshRateMultiMonitor' => ({required Object count}) => '检测到 ${count} 台显示器',
 			'settings.refreshRateMultiMonitorDesc' => '刷新率读数来自当前窗口所在的那一台显示器。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.sitesDisplay' => '平台显示',
 			'settings.sitesDisplayDesc' => '关闭的平台不再出现在热门、分区、关注与搜索的平台列表里。',
 			'settings.sitesAllShown' => '全部平台都在显示中。',
@@ -8430,6 +8777,15 @@ extension on Translations {
 			'settings.mainSpacingDescription' => '卡片网格里上下两行之间的距离。',
 			'settings.navVideo' => '视频',
 			'settings.vodPlayback' => '视频播放',
+			'settings.navVodPlayback' => '播放行为',
+			'settings.vodPlaybackDescription' => '默认倍速、一集播完后的动作，以及播放器下方显示的详情。',
+			'settings.groupMusic' => '音乐',
+			'settings.navMusic' => '音乐',
+			'settings.musicSettingsDescription' => '音源、播放品质与列表行为。',
+			'settings.navMusicList' => '列表设置',
+			'settings.musicListDescription' => '新歌的位置、单击行为与是否显示来源。',
+			'settings.navMusicSources' => '自定义源',
+			'settings.musicSourcesDescription' => '导入并管理 lx 风格的自定义音源脚本。',
 			'settings.vodQuality' => '默认清晰度',
 			'settings.vodQualityDesc' => '打开视频时优先请求的清晰度；未登录时 Bilibili 可能只提供 720P 及以下。',
 			'settings.vodQuality720' => '720P',
@@ -8437,6 +8793,10 @@ extension on Translations {
 			'settings.vodQuality1080Plus' => '1080P+',
 			'settings.vodQuality4K' => '4K',
 			'settings.iptvGuideUpdates' => '节目单更新',
+			'settings.navIptvBrowse' => '换台与显示',
+			'settings.iptvBrowseDescription' => '频道号、换台方向、时间和当前节目行怎么显示。',
+			'settings.navIptvGroups' => '分组显示',
+			'settings.iptvGroupsDescription' => '决定哪些分组出现在频道列表和换台里。',
 			'settings.iptvSyncDesc' => '重新下载网络播放列表与节目单；本地来源不受影响。',
 			'settings.navDanmaku' => '弹幕',
 			'settings.navMiniDanmaku' => '小窗弹幕',
@@ -8599,6 +8959,8 @@ extension on Translations {
 			'settings.playerGuideEntryVoBody' => 'mpv 把画面画到哪里。libmpv 画进 Flutter 纹理（内嵌播放器，默认）；gpu/gpu-next/direct3d 会打开独立的 mpv 原生窗口（不在应用画面内）；null 不渲染画面。',
 			'settings.playerGuideEntryAoTitle' => '--ao',
 			'settings.playerGuideEntryAoBody' => 'mpv 把声音送到哪个系统通道。Windows 用 wasapi，Android 用 audiotrack/aaudio/opensles；null 表示静音。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryPresetDefaultTitle' => '均衡（推荐起点）',
 			'settings.playerGuideEntryPresetDefaultBody' => '清除自定义输出与解码器选择，交给 mpv 自动决定。大多数设备和网络的首选。',
 			'settings.playerGuideEntryPresetAndroidCompatTitle' => 'Android 硬解兼容',
@@ -8677,8 +9039,6 @@ extension on Translations {
 			'settings.volumeWheelStepDesc' => '鼠标滚轮与方向键每次调节的音量幅度。',
 			'settings.volumeWheelStepValue' => ({required int percent}) => '${percent}%',
 			'settings.globalMute' => '全局静音',
-			_ => null,
-		} ?? switch (path) {
 			'settings.globalMuteDesc' => '立即静音所有正在播放和之后打开的房间、频道与视频；关闭后恢复各播放器自身的静音设置。',
 			'settings.backgroundPlay' => '后台播放',
 			'settings.backgroundPlayDesc' => '离开应用后继续播放声音；关闭时切到后台会暂停，回到应用后继续。',
@@ -8839,7 +9199,7 @@ extension on Translations {
 			'settings.releaseKindOther' => '文件',
 			'settings.sitesKeepOne' => '至少保留一个平台',
 			'settings.autoPip' => '离开应用时自动小窗',
-			'settings.autoPipDesc' => '播放中切到后台时进入画中画；系统未开启画中画时不会生效。',
+			'settings.autoPipDesc' => '播放中离开应用时，把画面留在其他应用上的小窗里；需要「显示在其他应用的上层」权限。',
 			'settings.floatPlay' => '返回时悬浮播放',
 			'settings.floatPlayDesc' => '离开直播间返回其他页面时，把正在播放的画面留在一个可拖动的小窗里；关闭小窗会停止播放。',
 			'settings.windowsPipAlwaysOnTop' => '小窗始终置顶',
@@ -8987,6 +9347,10 @@ extension on Translations {
 			'settings.styleBottomMarginDesc' => '画面底部不显示弹幕的高度，避免挡住字幕，0–300。',
 			'settings.roomCardSettingsTitle' => '房间卡片',
 			'settings.roomCardSettingsDescription' => '卡片与列表的版式固定，这里只选择显示哪些信息；设置自动应用到当前设备类型。',
+			'settings.roomCardPreview' => '卡片预览',
+			'settings.roomCardPreviewTitle' => '今晚八点，一起聊聊新番和游戏',
+			'settings.roomCardPreviewAnchor' => '夜色电台',
+			'settings.roomCardPreviewHint' => '这是当前设备实际使用的卡片与列表，改动会立刻反映在这里。',
 			'settings.roomCardPresets' => '快捷预设',
 			'settings.roomCardPresetStandard' => '标准',
 			'settings.roomCardPresetDetailed' => '详细',
@@ -9109,6 +9473,8 @@ extension on Translations {
 			'settings.danmakuShowGifts' => '飞行弹幕显示礼物',
 			'settings.danmakuShowGiftsDesc' => '值钱的礼物飞过画面，很值钱的在顶部停 4 秒；连击只飞开头和总数，每秒最多 3 条。',
 			'settings.floatWindowSize' => '小窗大小',
+			_ => null,
+		} ?? switch (path) {
 			'settings.floatWindowSizeDesc' => '应用内悬浮窗的基础大小；拖动缩放会按横屏/竖屏分别记住。',
 			'settings.floatWindowSmall' => '小',
 			'settings.floatWindowMedium' => '中',
@@ -9191,8 +9557,6 @@ extension on Translations {
 			'toolbox.toolLogsTitle' => '日志',
 			'toolbox.toolLogsDescription' => '查看应用运行日志与诊断信息。',
 			'toolbox.back' => '返回',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.confirm' => '确认',
 			'toolbox.cancel' => '取消',
 			'toolbox.linkFieldLabel' => '平台链接',
@@ -9335,6 +9699,18 @@ extension on Translations {
 			'vod.openFailed' => '视频打开失败',
 			'vod.progress' => '播放进度',
 			'vod.up' => 'UP主',
+			'vod.openingSpeed' => '默认倍速',
+			'vod.openingSpeedDesc' => '打开视频时使用的播放速度；播放器里的倍速菜单只影响当前视频。',
+			'vod.finishAction' => '播放结束动作',
+			'vod.finishActionDesc' => '一集播完之后做什么。',
+			'vod.finishPause' => '停在最后一帧',
+			'vod.finishNextPart' => '播放下一分P',
+			'vod.finishExit' => '退出播放',
+			'vod.finishRelated' => '播放相关推荐',
+			'vod.showDetails' => '显示视频详情',
+			'vod.showDetailsDesc' => '关闭后只看播放器、分P和相关推荐，隐藏UP主、数据和简介。',
+			'vod.playbackReset' => '恢复默认播放行为',
+			'vod.playbackResetDesc' => '默认倍速、播完下一分P、显示详情。',
 			'wallpaper.title' => '随机图源',
 			'wallpaper.description' => '按分组从公开随机接口取图，预览后再应用。',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} 个来源',

@@ -77,7 +77,7 @@ final class _IptvGuidePanel extends ConsumerStatefulWidget {
 }
 
 final class _IptvGuidePanelState extends ConsumerState<_IptvGuidePanel> {
-  late DateTime _day = _startOfDay(DateTime.now());
+  late DateTime _day = iptvStartOfDay(DateTime.now());
   Timer? _tick;
 
   @override
@@ -122,7 +122,7 @@ final class _IptvGuidePanelState extends ConsumerState<_IptvGuidePanel> {
             ),
             Expanded(
               child: Text(
-                _dayLabel(t, _day, now),
+                iptvDayLabel(t, _day, now),
                 textAlign: TextAlign.center,
                 style: theme.typography.bodyStrong.copyWith(color: colors.text),
               ),
@@ -151,7 +151,7 @@ final class _IptvGuidePanelState extends ConsumerState<_IptvGuidePanel> {
           DsListSection(
             children: [
               for (final programme in schedule)
-                _GuideRow(
+                IptvGuideRow(
                   channel: widget.channel,
                   programme: programme,
                   now: now,
@@ -173,27 +173,18 @@ final class _IptvGuidePanelState extends ConsumerState<_IptvGuidePanel> {
     Navigator.of(context).pop();
     await widget.onBackToLive();
   }
-
-  static DateTime _startOfDay(DateTime time) => DateTime(time.year, time.month, time.day);
-
-  static String _dayLabel(Translations t, DateTime day, DateTime now) {
-    String two(int value) => value.toString().padLeft(2, '0');
-    final today = _startOfDay(now);
-    if (day == today) return t.iptv.today;
-    if (day == DateTime(today.year, today.month, today.day - 1)) return t.iptv.yesterday;
-    return '${two(day.month)}-${two(day.day)}';
-  }
 }
 
 /// One programme: its clock, its name (and subtitle), the on-air progress,
 /// and the replay button where the provider allows one.
-final class _GuideRow extends StatelessWidget {
-  const _GuideRow({
+final class IptvGuideRow extends StatelessWidget {
+  const IptvGuideRow({
     required this.channel,
     required this.programme,
     required this.now,
     required this.catchup,
     required this.onCatchup,
+    super.key,
   });
 
   final IptvChannel channel;
@@ -231,7 +222,7 @@ final class _GuideRow extends StatelessWidget {
               spacing: DsSpace.s3,
               children: [
                 Text(
-                  _clock(programme.start),
+                  iptvClockLabel(programme.start),
                   style: theme.typography.numeric(
                     theme.typography.caption.copyWith(
                       color: live ? colors.accent : colors.textMuted,
@@ -240,7 +231,7 @@ final class _GuideRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  _clock(programme.stop),
+                  iptvClockLabel(programme.stop),
                   style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
                 ),
               ],
@@ -290,10 +281,23 @@ final class _GuideRow extends StatelessWidget {
       ),
     );
   }
+}
 
-  static String _clock(DateTime time) {
-    final local = time.toLocal();
-    String two(int value) => value.toString().padLeft(2, '0');
-    return '${two(local.hour)}:${two(local.minute)}';
-  }
+/// The instant [time]'s day begins, in the device's own calendar.
+DateTime iptvStartOfDay(DateTime time) => DateTime(time.year, time.month, time.day);
+
+/// A day's name in the guide's own words: 今天, 昨天, then the month and day.
+String iptvDayLabel(Translations t, DateTime day, DateTime now) {
+  String two(int value) => value.toString().padLeft(2, '0');
+  final today = iptvStartOfDay(now);
+  if (day == today) return t.iptv.today;
+  if (day == DateTime(today.year, today.month, today.day - 1)) return t.iptv.yesterday;
+  return '${two(day.month)}-${two(day.day)}';
+}
+
+/// A programme's clock, `HH:mm` in the viewer's time.
+String iptvClockLabel(DateTime time) {
+  final local = time.toLocal();
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${two(local.hour)}:${two(local.minute)}';
 }

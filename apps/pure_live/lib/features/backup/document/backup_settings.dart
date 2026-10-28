@@ -50,7 +50,6 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('browse.areas.site', BackupPrefKind.string),
   ('browse.search.site', BackupPrefKind.string),
   ('browse.layout', BackupPrefKind.string),
-  ('browse.denseFavorites', BackupPrefKind.boolean),
   ('interface.roomCard.mobile', BackupPrefKind.string),
   ('interface.roomCard.desktop', BackupPrefKind.string),
   ('browse.showUnplayable', BackupPrefKind.boolean),
@@ -236,6 +235,10 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('iptv.guide.active', BackupPrefKind.string),
   ('iptv.sources.order', BackupPrefKind.stringList),
   ('iptv.userAgent', BackupPrefKind.string),
+  ('iptv.browse.channelNumber', BackupPrefKind.boolean),
+  ('iptv.browse.channelReversal', BackupPrefKind.boolean),
+  ('iptv.browse.clock', BackupPrefKind.boolean),
+  ('iptv.browse.programmeLine', BackupPrefKind.boolean),
   // The recorder's 15 tunables (and the old gigabyte cap for upgrades).
   ('recorder.dir', BackupPrefKind.string),
   ('recorder.defaultQuality', BackupPrefKind.string),
@@ -265,8 +268,20 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   // Local follow tags and per-room picture orientation.
   ('follow.tags', BackupPrefKind.string),
   ('room.orientation', BackupPrefKind.string),
-  // The default Bilibili quality number.
+  // The default Bilibili quality number and the station's playback choices.
   ('vod.quality.qn', BackupPrefKind.integer),
+  ('vod.playback.speed', BackupPrefKind.floating),
+  ('vod.playback.finish', BackupPrefKind.string),
+  ('vod.playback.showDetails', BackupPrefKind.boolean),
+  // The music module's source choice, rendition, list behaviour and the
+  // imported scripts themselves.
+  ('music.source.default', BackupPrefKind.string),
+  ('music.play.quality', BackupPrefKind.string),
+  ('music.play.skipOnError', BackupPrefKind.boolean),
+  ('music.play.autoplay', BackupPrefKind.boolean),
+  ('music.list.addToTop', BackupPrefKind.boolean),
+  ('music.list.showSource', BackupPrefKind.boolean),
+  ('music.customSources', BackupPrefKind.string),
   // The log surface.
   ('log.level', BackupPrefKind.string),
   ('log.file', BackupPrefKind.boolean),

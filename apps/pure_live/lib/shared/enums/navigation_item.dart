@@ -56,8 +56,29 @@ enum NavigationItem {
   /// The VOD module's own entry.
   vod(DsIcons.film),
 
+  /// The video station's leaderboard, the reference's 排行 rail entry.
+  vodRank(DsIcons.trophy),
+
+  /// The video station's region browse, the reference's 分区 rail entry.
+  vodRegions(DsIcons.layoutList),
+
+  /// The IPTV module's playlists and guide sources.
+  iptvSources(DsIcons.radioTower),
+
+  /// The IPTV module's programme guide, the reference's 节目单 surface.
+  iptvGuide(DsIcons.calendarClock),
+
   /// The music module's own entry.
-  music(DsIcons.music);
+  music(DsIcons.music),
+
+  /// The music module's song lists, the reference's 歌单.
+  musicSonglist(DsIcons.listMusic),
+
+  /// The music module's charts, the reference's 排行榜.
+  musicToplist(DsIcons.chartColumn),
+
+  /// The music module's own lists, the reference's 我的列表.
+  musicLibrary(DsIcons.library);
 
   NavigationItem(this.icon);
 
@@ -84,6 +105,13 @@ enum NavigationItem {
     NavigationItem.proxy => t.navigation.proxy,
     NavigationItem.user => t.navigation.user,
     NavigationItem.vod => t.common.moduleVod,
+    NavigationItem.vodRank => t.navigation.vodRank,
+    NavigationItem.vodRegions => t.navigation.vodRegions,
+    NavigationItem.iptvSources => t.navigation.iptvSources,
+    NavigationItem.iptvGuide => t.navigation.iptvGuide,
     NavigationItem.music => t.common.moduleMusic,
+    NavigationItem.musicSonglist => t.navigation.musicSonglist,
+    NavigationItem.musicToplist => t.navigation.musicToplist,
+    NavigationItem.musicLibrary => t.navigation.musicLibrary,
   };
 }

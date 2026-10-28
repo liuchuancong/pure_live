@@ -156,5 +156,16 @@
   "sourceAddressCopied": "Source address copied",
   "sourceAddressOpenFailed": "The address could not be opened",
   "autoSyncTitle": "Auto-Sync on Launch",
-  "autoSyncDesc": "Automatically check and update network resources silently when the app starts."
+  "autoSyncDesc": "Automatically check and update network resources silently when the app starts.",
+  "browseChannelNumber": "Show the channel number",
+  "browseChannelNumberDesc": "Prints the dial number beside the channel name.",
+  "browseReverse": "Reverse channel stepping",
+  "browseReverseDesc": "Makes the up key step down the list and the down key step up.",
+  "browseClock": "Show the time",
+  "browseClockDesc": "Draws the current clock beside the title while a channel plays.",
+  "browseProgrammeLine": "Show the current programme",
+  "browseProgrammeLineDesc": "Names what is on air or coming next under the channel name.",
+  "browseReset": "Restore the default browse display",
+  "groupsEmpty": "No groups yet — import a playlist first.",
+  "groupsHint": "Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up."
 }

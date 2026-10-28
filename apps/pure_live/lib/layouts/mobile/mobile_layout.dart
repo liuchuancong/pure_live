@@ -65,26 +65,26 @@ final class MobileLayout extends ConsumerWidget {
   /// phone's tab bar takes in every common client. Live follows the
   /// navigation setting's saved menu, the recording centre included.
   List<NavigationItem> bottomTabsOf(AppModule module) => switch (module) {
-    AppModule.live => [
-      if (homeMenuItems.isEmpty) ...kHomeMenuItems else ...homeMenuItems,
-      NavigationItem.settings,
-    ],
+    AppModule.live => [if (homeMenuItems.isEmpty) ...kHomeMenuItems else ...homeMenuItems, NavigationItem.settings],
     AppModule.iptv => const [
       NavigationItem.channels,
+      NavigationItem.iptvGuide,
+      NavigationItem.iptvSources,
       NavigationItem.favorites,
-      NavigationItem.history,
       NavigationItem.settings,
     ],
     AppModule.vod => const [
       NavigationItem.vod,
-      NavigationItem.favorites,
+      NavigationItem.vodRank,
+      NavigationItem.vodRegions,
       NavigationItem.history,
       NavigationItem.settings,
     ],
     AppModule.music => const [
       NavigationItem.music,
-      NavigationItem.favorites,
-      NavigationItem.history,
+      NavigationItem.musicSonglist,
+      NavigationItem.musicToplist,
+      NavigationItem.musicLibrary,
       NavigationItem.settings,
     ],
   };
@@ -196,12 +196,7 @@ final class MobileLayout extends ConsumerWidget {
                 blur: glassBlur,
                 // The capsule's safe area sits outside it; the bar keeps
                 // the system's gesture strip to itself.
-                child: MediaQuery.removePadding(
-                  context: context,
-                  removeTop: true,
-                  removeBottom: true,
-                  child: navBar,
-                ),
+                child: MediaQuery.removePadding(context: context, removeTop: true, removeBottom: true, child: navBar),
               ),
             )
           : navBar,
@@ -237,9 +232,10 @@ final class MobileLayout extends ConsumerWidget {
                     if (index > 0) const SidebarDivider(),
                     // Live's home block is the navigation setting's list:
                     // membership and order, not the registry's fixed order.
-                    for (final item in module == AppModule.live && group.every(kHomeMenuItems.contains)
-                        ? (homeMenuItems.isEmpty ? kHomeMenuItems : homeMenuItems)
-                        : group)
+                    for (final item
+                        in module == AppModule.live && group.every(kHomeMenuItems.contains)
+                            ? (homeMenuItems.isEmpty ? kHomeMenuItems : homeMenuItems)
+                            : group)
                       if (showMultiview || item != NavigationItem.multiview)
                         DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
                   ],

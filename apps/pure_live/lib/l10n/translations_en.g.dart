@@ -373,6 +373,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get show => 'Show';
 	@override String get save => 'Save';
 	@override String get copied => 'Copied';
+	@override String get pipUnavailable => 'Picture-in-picture is not available for this device or player engine.';
 }
 
 // Path: favorites
@@ -629,6 +630,17 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String get sourceAddressOpenFailed => 'The address could not be opened';
 	@override String get autoSyncTitle => 'Auto-Sync on Launch';
 	@override String get autoSyncDesc => 'Automatically check and update network resources silently when the app starts.';
+	@override String get browseChannelNumber => 'Show the channel number';
+	@override String get browseChannelNumberDesc => 'Prints the dial number beside the channel name.';
+	@override String get browseReverse => 'Reverse channel stepping';
+	@override String get browseReverseDesc => 'Makes the up key step down the list and the down key step up.';
+	@override String get browseClock => 'Show the time';
+	@override String get browseClockDesc => 'Draws the current clock beside the title while a channel plays.';
+	@override String get browseProgrammeLine => 'Show the current programme';
+	@override String get browseProgrammeLineDesc => 'Names what is on air or coming next under the channel name.';
+	@override String get browseReset => 'Restore the default browse display';
+	@override String get groupsEmpty => 'No groups yet — import a playlist first.';
+	@override String get groupsHint => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.';
 }
 
 // Path: multiview
@@ -686,12 +698,58 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get tabLibrary => 'Library';
 	@override String get tabPlaylists => 'Playlists';
 	@override String get tabCharts => 'Charts';
+	@override String get tabMine => 'My lists';
+	@override String get myListsEmptyTitle => 'No lists of your own yet';
+	@override String get myListsEmptyDescription => 'Collected songs and lists you create appear here; songlists and charts need a music source first.';
 	@override String get libraryEmptyTitle => 'The song library is on its way';
 	@override String get libraryEmptyDescription => 'Once a music source lands, songs will page in here as a masonry grid of cards.';
 	@override String get playlistsEmptyTitle => 'Playlists are on their way';
 	@override String get playlistsEmptyDescription => 'Playlists you curate and follow will live here.';
 	@override String get chartsEmptyTitle => 'Charts are on their way';
 	@override String get chartsEmptyDescription => 'Popular-song charts from the music sources will live here.';
+	@override String sourcesReady({required Object count}) => '${count} custom sources ready';
+	@override String get settingsPlayback => 'Source and playback';
+	@override String get defaultSource => 'Default source';
+	@override String get defaultSourceDesc => 'The custom source a song is asked from first; Automatic takes the first enabled one.';
+	@override String get defaultSourceAuto => 'Automatic';
+	@override String get quality => 'Playback quality';
+	@override String get qualityDesc => 'The rendition asked of a source; a source that lacks it answers with the best it has.';
+	@override String get qualityStandard => '128K';
+	@override String get qualityHigh => '320K';
+	@override String get qualityLossless => 'Lossless';
+	@override String get qualityHiRes => 'Hi-Res lossless';
+	@override String get skipOnError => 'Skip a failing source';
+	@override String get skipOnErrorDesc => 'Moves to the next source when one cannot answer, instead of stopping.';
+	@override String get autoplay => 'Resume on open';
+	@override String get autoplayDesc => 'Continues the last queue when the music module opens.';
+	@override String get addToTop => 'Add new songs on top';
+	@override String get addToTopDesc => 'Off keeps them at the end of a list.';
+	@override String get showSource => 'Show the source in lists';
+	@override String get showSourceDesc => 'Marks which source a song came from beside its row.';
+	@override String get playbackReset => 'Restore defaults';
+	@override String get playbackResetDesc => 'Automatic source, 320K, skip failures, new songs at the end.';
+	@override String get sourcesSection => 'Custom sources';
+	@override String get sourcesHint => 'lx-music custom sources are JavaScript scripts. Importing reads the header comment and keeps the script verbatim; this build does not execute scripts yet — that needs an embedded JS engine.';
+	@override String get sourcesImportText => 'Paste a script';
+	@override String get sourcesImportTextDesc => 'Paste the full text of an lx-music custom-source script.';
+	@override String get sourcesImportUrl => 'Import from a link';
+	@override String get sourcesImportUrlDesc => 'Downloads the .js at an address and imports it.';
+	@override String get importTitle => 'Import a custom source';
+	@override String get importScriptHint => 'Paste the script here…';
+	@override String get importUrlHint => 'https://…/source.js';
+	@override String get importMissing => 'Paste a script or fill in a link first.';
+	@override String get importNotASource => 'This is not an lx-music source: the header comment has no @name, or the lx.on(\'request\', …) contract is missing.';
+	@override String importDownloadFailed({required Object error}) => 'The script did not download: ${error}';
+	@override String importDone({required Object name}) => 'Imported "${name}"';
+	@override String importUpdated({required Object name}) => 'Updated "${name}"';
+	@override String get sourcesEmpty => 'No custom sources yet';
+	@override String get sourcesEmptyDesc => 'Import an lx-music custom-source script and it appears here.';
+	@override String get sourceNoDescription => 'The script carries no description.';
+	@override String get sourceDelete => 'Remove the source';
+	@override String sourceDeleteTitle({required Object name}) => 'Remove "${name}"?';
+	@override String get sourceDeleteDesc => 'Its script is deleted too; importing it again restores it.';
+	@override String sourceDeleted({required Object name}) => 'Removed "${name}"';
+	@override String sourcesCount({required Object count}) => '${count} enabled';
 }
 
 // Path: navigation
@@ -720,6 +778,13 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get appearance => 'Appearance';
 	@override String get proxy => 'Network proxy';
 	@override String get user => 'User';
+	@override String get vodRank => 'Ranking';
+	@override String get vodRegions => 'Regions';
+	@override String get iptvSources => 'Subscriptions';
+	@override String get iptvGuide => 'Guide';
+	@override String get musicSonglist => 'Songlists';
+	@override String get musicToplist => 'Charts';
+	@override String get musicLibrary => 'My lists';
 }
 
 // Path: player
@@ -1493,6 +1558,15 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get mainSpacingDescription => 'The gap between two rows of cards in a grid.';
 	@override String get navVideo => 'Video';
 	@override String get vodPlayback => 'Video playback';
+	@override String get navVodPlayback => 'Playback behaviour';
+	@override String get vodPlaybackDescription => 'The opening rate, what a finished part leads to, and the details under the picture.';
+	@override String get groupMusic => 'Music';
+	@override String get navMusic => 'Music';
+	@override String get musicSettingsDescription => 'Sources, playback quality and how lists behave.';
+	@override String get navMusicList => 'List settings';
+	@override String get musicListDescription => 'Where new songs land, what a click does, and whether sources show.';
+	@override String get navMusicSources => 'Custom sources';
+	@override String get musicSourcesDescription => 'Import and manage lx-style custom music-source scripts.';
 	@override String get vodQuality => 'Default quality';
 	@override String get vodQualityDesc => 'The quality the page asks for first; without a Bilibili sign-in the source may serve 720P or lower.';
 	@override String get vodQuality720 => '720P';
@@ -1500,6 +1574,10 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get vodQuality1080Plus => '1080P+';
 	@override String get vodQuality4K => '4K';
 	@override String get iptvGuideUpdates => 'Guide updates';
+	@override String get navIptvBrowse => 'Zapping and display';
+	@override String get iptvBrowseDescription => 'How the channel number, the zap direction, the clock and the programme line are shown.';
+	@override String get navIptvGroups => 'Group visibility';
+	@override String get iptvGroupsDescription => 'Chooses which groups appear in the channel lists and the zapping.';
 	@override String get iptvSyncDesc => 'Re-downloads network playlists and guides; local sources stay untouched.';
 	@override String get navDanmaku => 'Danmaku';
 	@override String get navMiniDanmaku => 'Mini-window danmaku';
@@ -1899,8 +1977,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get releaseKindPortable => 'Portable archive';
 	@override String get releaseKindOther => 'File';
 	@override String get sitesKeepOne => 'Keep at least one platform visible';
-	@override String get autoPip => 'Picture-in-picture on app leave';
-	@override String get autoPipDesc => 'Enter picture-in-picture when the app goes to the background while playing; needs the system permission.';
+	@override String get autoPip => 'Small window on app leave';
+	@override String get autoPipDesc => 'Keep a playing room in a small window over the other apps when you leave; needs the "display over other apps" permission.';
 	@override String get floatPlay => 'Floating player on exit';
 	@override String get floatPlayDesc => 'Leaving a live room keeps the picture in a draggable mini window over other pages; closing it stops playback.';
 	@override String get windowsPipAlwaysOnTop => 'Keep the small window on top';
@@ -2048,6 +2126,10 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get styleBottomMarginDesc => 'Height at the bottom kept free of danmaku so subtitles stay visible, 0–300.';
 	@override String get roomCardSettingsTitle => 'Room cards';
 	@override String get roomCardSettingsDescription => 'The card and list row have fixed designs; choose which details they show. Settings apply to the current device type automatically.';
+	@override String get roomCardPreview => 'Card preview';
+	@override String get roomCardPreviewTitle => 'Late-night anime and games';
+	@override String get roomCardPreviewAnchor => 'Night Radio';
+	@override String get roomCardPreviewHint => 'The card and list row this device actually uses; every change shows up here immediately.';
 	@override String get roomCardPresets => 'Quick presets';
 	@override String get roomCardPresetStandard => 'Standard';
 	@override String get roomCardPresetDetailed => 'Detailed';
@@ -2430,6 +2512,18 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get openFailed => 'The video could not be opened';
 	@override String get progress => 'Playback progress';
 	@override String get up => 'Uploader';
+	@override String get openingSpeed => 'Opening speed';
+	@override String get openingSpeedDesc => 'The rate a video opens with; the player\'s speed menu only affects the current video.';
+	@override String get finishAction => 'When a part ends';
+	@override String get finishActionDesc => 'What happens after the last frame of a part.';
+	@override String get finishPause => 'Stay on the last frame';
+	@override String get finishNextPart => 'Play the next part';
+	@override String get finishExit => 'Leave the player';
+	@override String get finishRelated => 'Play the first related video';
+	@override String get showDetails => 'Show video details';
+	@override String get showDetailsDesc => 'Off keeps the page on the player, the parts and the related rail, hiding the uploader, the counts and the description.';
+	@override String get playbackReset => 'Restore default playback';
+	@override String get playbackResetDesc => 'Normal speed, the next part when one ends, details shown.';
 }
 
 // Path: wallpaper
@@ -2828,6 +2922,7 @@ extension on TranslationsEn {
 			'common.show' => 'Show',
 			'common.save' => 'Save',
 			'common.copied' => 'Copied',
+			'common.pipUnavailable' => 'Picture-in-picture is not available for this device or player engine.',
 			'favorites.emptyTitle' => 'No followed rooms yet',
 			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			'favorites.unfollow' => 'Unfollow',
@@ -3057,14 +3152,25 @@ extension on TranslationsEn {
 			'iptv.sourceAddressOpenFailed' => 'The address could not be opened',
 			'iptv.autoSyncTitle' => 'Auto-Sync on Launch',
 			'iptv.autoSyncDesc' => 'Automatically check and update network resources silently when the app starts.',
+			'iptv.browseChannelNumber' => 'Show the channel number',
+			'iptv.browseChannelNumberDesc' => 'Prints the dial number beside the channel name.',
+			'iptv.browseReverse' => 'Reverse channel stepping',
+			'iptv.browseReverseDesc' => 'Makes the up key step down the list and the down key step up.',
+			'iptv.browseClock' => 'Show the time',
+			_ => null,
+		} ?? switch (path) {
+			'iptv.browseClockDesc' => 'Draws the current clock beside the title while a channel plays.',
+			'iptv.browseProgrammeLine' => 'Show the current programme',
+			'iptv.browseProgrammeLineDesc' => 'Names what is on air or coming next under the channel name.',
+			'iptv.browseReset' => 'Restore the default browse display',
+			'iptv.groupsEmpty' => 'No groups yet — import a playlist first.',
+			'iptv.groupsHint' => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.',
 			'multiview.layoutLabel' => 'Layout',
 			'multiview.selectHint' => 'Tap a pane to select it; only the selected pane plays sound.',
 			'multiview.selectedPane' => ({required Object index}) => 'Pane ${index} · sound',
 			'multiview.pickRoom' => 'Pick a room',
 			'multiview.openRoom' => 'Open room',
 			'multiview.clearPane' => 'Clear this pane',
-			_ => null,
-		} ?? switch (path) {
 			'multiview.swapPane' => 'Swap panes',
 			'multiview.swapHere' => 'Move here',
 			'multiview.paneFailed' => 'This pane could not play',
@@ -3098,12 +3204,58 @@ extension on TranslationsEn {
 			'music.tabLibrary' => 'Library',
 			'music.tabPlaylists' => 'Playlists',
 			'music.tabCharts' => 'Charts',
+			'music.tabMine' => 'My lists',
+			'music.myListsEmptyTitle' => 'No lists of your own yet',
+			'music.myListsEmptyDescription' => 'Collected songs and lists you create appear here; songlists and charts need a music source first.',
 			'music.libraryEmptyTitle' => 'The song library is on its way',
 			'music.libraryEmptyDescription' => 'Once a music source lands, songs will page in here as a masonry grid of cards.',
 			'music.playlistsEmptyTitle' => 'Playlists are on their way',
 			'music.playlistsEmptyDescription' => 'Playlists you curate and follow will live here.',
 			'music.chartsEmptyTitle' => 'Charts are on their way',
 			'music.chartsEmptyDescription' => 'Popular-song charts from the music sources will live here.',
+			'music.sourcesReady' => ({required Object count}) => '${count} custom sources ready',
+			'music.settingsPlayback' => 'Source and playback',
+			'music.defaultSource' => 'Default source',
+			'music.defaultSourceDesc' => 'The custom source a song is asked from first; Automatic takes the first enabled one.',
+			'music.defaultSourceAuto' => 'Automatic',
+			'music.quality' => 'Playback quality',
+			'music.qualityDesc' => 'The rendition asked of a source; a source that lacks it answers with the best it has.',
+			'music.qualityStandard' => '128K',
+			'music.qualityHigh' => '320K',
+			'music.qualityLossless' => 'Lossless',
+			'music.qualityHiRes' => 'Hi-Res lossless',
+			'music.skipOnError' => 'Skip a failing source',
+			'music.skipOnErrorDesc' => 'Moves to the next source when one cannot answer, instead of stopping.',
+			'music.autoplay' => 'Resume on open',
+			'music.autoplayDesc' => 'Continues the last queue when the music module opens.',
+			'music.addToTop' => 'Add new songs on top',
+			'music.addToTopDesc' => 'Off keeps them at the end of a list.',
+			'music.showSource' => 'Show the source in lists',
+			'music.showSourceDesc' => 'Marks which source a song came from beside its row.',
+			'music.playbackReset' => 'Restore defaults',
+			'music.playbackResetDesc' => 'Automatic source, 320K, skip failures, new songs at the end.',
+			'music.sourcesSection' => 'Custom sources',
+			'music.sourcesHint' => 'lx-music custom sources are JavaScript scripts. Importing reads the header comment and keeps the script verbatim; this build does not execute scripts yet — that needs an embedded JS engine.',
+			'music.sourcesImportText' => 'Paste a script',
+			'music.sourcesImportTextDesc' => 'Paste the full text of an lx-music custom-source script.',
+			'music.sourcesImportUrl' => 'Import from a link',
+			'music.sourcesImportUrlDesc' => 'Downloads the .js at an address and imports it.',
+			'music.importTitle' => 'Import a custom source',
+			'music.importScriptHint' => 'Paste the script here…',
+			'music.importUrlHint' => 'https://…/source.js',
+			'music.importMissing' => 'Paste a script or fill in a link first.',
+			'music.importNotASource' => 'This is not an lx-music source: the header comment has no @name, or the lx.on(\'request\', …) contract is missing.',
+			'music.importDownloadFailed' => ({required Object error}) => 'The script did not download: ${error}',
+			'music.importDone' => ({required Object name}) => 'Imported "${name}"',
+			'music.importUpdated' => ({required Object name}) => 'Updated "${name}"',
+			'music.sourcesEmpty' => 'No custom sources yet',
+			'music.sourcesEmptyDesc' => 'Import an lx-music custom-source script and it appears here.',
+			'music.sourceNoDescription' => 'The script carries no description.',
+			'music.sourceDelete' => 'Remove the source',
+			'music.sourceDeleteTitle' => ({required Object name}) => 'Remove "${name}"?',
+			'music.sourceDeleteDesc' => 'Its script is deleted too; importing it again restores it.',
+			'music.sourceDeleted' => ({required Object name}) => 'Removed "${name}"',
+			'music.sourcesCount' => ({required Object count}) => '${count} enabled',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -3123,6 +3275,13 @@ extension on TranslationsEn {
 			'navigation.appearance' => 'Appearance',
 			'navigation.proxy' => 'Network proxy',
 			'navigation.user' => 'User',
+			'navigation.vodRank' => 'Ranking',
+			'navigation.vodRegions' => 'Regions',
+			'navigation.iptvSources' => 'Subscriptions',
+			'navigation.iptvGuide' => 'Guide',
+			'navigation.musicSonglist' => 'Songlists',
+			'navigation.musicToplist' => 'Charts',
+			'navigation.musicLibrary' => 'My lists',
 			'player.title' => 'Player',
 			'player.back' => 'Back',
 			'player.quality' => 'Quality',
@@ -3512,6 +3671,8 @@ extension on TranslationsEn {
 			'settings.audioPageDescription' => 'Default volume, mute and background audio.',
 			'settings.picturePageDescription' => 'Fit, floating window and picture-in-picture.',
 			'settings.floatingWindowPageDescription' => 'The in-app floating window and the system picture-in-picture: size, position and pinning.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.pictureDisplayGroup' => 'Picture',
 			'settings.floatWindowGroup' => 'In-app floating window',
 			'settings.pipGroup' => 'System picture-in-picture',
@@ -3577,8 +3738,6 @@ extension on TranslationsEn {
 			'settings.refreshRateApplyFailed' => 'The refresh-rate request did not take effect',
 			'settings.refreshRateMultiMonitor' => ({required Object count}) => '${count} displays detected',
 			'settings.refreshRateMultiMonitorDesc' => 'The reading belongs to the display the current window is on.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.sitesDisplay' => 'Platforms shown',
 			'settings.sitesDisplayDesc' => 'Switched-off platforms leave the popular, areas, follows and search platform lists.',
 			'settings.sitesAllShown' => 'Every platform is shown.',
@@ -3844,6 +4003,15 @@ extension on TranslationsEn {
 			'settings.mainSpacingDescription' => 'The gap between two rows of cards in a grid.',
 			'settings.navVideo' => 'Video',
 			'settings.vodPlayback' => 'Video playback',
+			'settings.navVodPlayback' => 'Playback behaviour',
+			'settings.vodPlaybackDescription' => 'The opening rate, what a finished part leads to, and the details under the picture.',
+			'settings.groupMusic' => 'Music',
+			'settings.navMusic' => 'Music',
+			'settings.musicSettingsDescription' => 'Sources, playback quality and how lists behave.',
+			'settings.navMusicList' => 'List settings',
+			'settings.musicListDescription' => 'Where new songs land, what a click does, and whether sources show.',
+			'settings.navMusicSources' => 'Custom sources',
+			'settings.musicSourcesDescription' => 'Import and manage lx-style custom music-source scripts.',
 			'settings.vodQuality' => 'Default quality',
 			'settings.vodQualityDesc' => 'The quality the page asks for first; without a Bilibili sign-in the source may serve 720P or lower.',
 			'settings.vodQuality720' => '720P',
@@ -3851,6 +4019,10 @@ extension on TranslationsEn {
 			'settings.vodQuality1080Plus' => '1080P+',
 			'settings.vodQuality4K' => '4K',
 			'settings.iptvGuideUpdates' => 'Guide updates',
+			'settings.navIptvBrowse' => 'Zapping and display',
+			'settings.iptvBrowseDescription' => 'How the channel number, the zap direction, the clock and the programme line are shown.',
+			'settings.navIptvGroups' => 'Group visibility',
+			'settings.iptvGroupsDescription' => 'Chooses which groups appear in the channel lists and the zapping.',
 			'settings.iptvSyncDesc' => 'Re-downloads network playlists and guides; local sources stay untouched.',
 			'settings.navDanmaku' => 'Danmaku',
 			'settings.navMiniDanmaku' => 'Mini-window danmaku',
@@ -4013,6 +4185,8 @@ extension on TranslationsEn {
 			'settings.playerGuideEntryVoBody' => 'Where mpv draws the picture. libmpv renders into the Flutter texture (embedded, default); gpu/gpu-next/direct3d open a standalone mpv window (outside the app); null renders nothing.',
 			'settings.playerGuideEntryAoTitle' => '--ao',
 			'settings.playerGuideEntryAoBody' => 'Which system channel carries the sound. Windows: wasapi; Android: audiotrack/aaudio/opensles; null mutes.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryPresetDefaultTitle' => 'Balanced (recommended)',
 			'settings.playerGuideEntryPresetDefaultBody' => 'Clears custom output and decoder picks and leaves the choice to mpv. The first choice on most devices.',
 			'settings.playerGuideEntryPresetAndroidCompatTitle' => 'Android hardware-decode compat',
@@ -4091,8 +4265,6 @@ extension on TranslationsEn {
 			'settings.volumeWheelStepDesc' => 'How much the mouse wheel and the arrow keys change the volume at a time.',
 			'settings.volumeWheelStepValue' => ({required int percent}) => '${percent}%',
 			'settings.globalMute' => 'Mute all playback',
-			_ => null,
-		} ?? switch (path) {
 			'settings.globalMuteDesc' => 'Silences every room, channel and video now and when opened; turning it off restores each player\'s own mute choice.',
 			'settings.backgroundPlay' => 'Background playback',
 			'settings.backgroundPlayDesc' => 'Keep playing audio after the app leaves the foreground; when off, playback pauses and resumes when you return.',
@@ -4252,8 +4424,8 @@ extension on TranslationsEn {
 			'settings.releaseKindPortable' => 'Portable archive',
 			'settings.releaseKindOther' => 'File',
 			'settings.sitesKeepOne' => 'Keep at least one platform visible',
-			'settings.autoPip' => 'Picture-in-picture on app leave',
-			'settings.autoPipDesc' => 'Enter picture-in-picture when the app goes to the background while playing; needs the system permission.',
+			'settings.autoPip' => 'Small window on app leave',
+			'settings.autoPipDesc' => 'Keep a playing room in a small window over the other apps when you leave; needs the "display over other apps" permission.',
 			'settings.floatPlay' => 'Floating player on exit',
 			'settings.floatPlayDesc' => 'Leaving a live room keeps the picture in a draggable mini window over other pages; closing it stops playback.',
 			'settings.windowsPipAlwaysOnTop' => 'Keep the small window on top',
@@ -4401,6 +4573,10 @@ extension on TranslationsEn {
 			'settings.styleBottomMarginDesc' => 'Height at the bottom kept free of danmaku so subtitles stay visible, 0–300.',
 			'settings.roomCardSettingsTitle' => 'Room cards',
 			'settings.roomCardSettingsDescription' => 'The card and list row have fixed designs; choose which details they show. Settings apply to the current device type automatically.',
+			'settings.roomCardPreview' => 'Card preview',
+			'settings.roomCardPreviewTitle' => 'Late-night anime and games',
+			'settings.roomCardPreviewAnchor' => 'Night Radio',
+			'settings.roomCardPreviewHint' => 'The card and list row this device actually uses; every change shows up here immediately.',
 			'settings.roomCardPresets' => 'Quick presets',
 			'settings.roomCardPresetStandard' => 'Standard',
 			'settings.roomCardPresetDetailed' => 'Detailed',
@@ -4523,6 +4699,8 @@ extension on TranslationsEn {
 			'settings.danmakuShowGifts' => 'Gifts in flying danmaku',
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',
+			_ => null,
+		} ?? switch (path) {
 			'settings.floatWindowSizeDesc' => 'The in-app floating window’s base size; a resize is remembered separately for landscape and portrait.',
 			'settings.floatWindowSmall' => 'Small',
 			'settings.floatWindowMedium' => 'Medium',
@@ -4605,8 +4783,6 @@ extension on TranslationsEn {
 			'toolbox.toolLogsTitle' => 'Logs',
 			'toolbox.toolLogsDescription' => 'Inspect the app\'s runtime log and diagnostics.',
 			'toolbox.back' => 'Back',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.confirm' => 'Confirm',
 			'toolbox.cancel' => 'Cancel',
 			'toolbox.linkFieldLabel' => 'Platform link',
@@ -4749,6 +4925,18 @@ extension on TranslationsEn {
 			'vod.openFailed' => 'The video could not be opened',
 			'vod.progress' => 'Playback progress',
 			'vod.up' => 'Uploader',
+			'vod.openingSpeed' => 'Opening speed',
+			'vod.openingSpeedDesc' => 'The rate a video opens with; the player\'s speed menu only affects the current video.',
+			'vod.finishAction' => 'When a part ends',
+			'vod.finishActionDesc' => 'What happens after the last frame of a part.',
+			'vod.finishPause' => 'Stay on the last frame',
+			'vod.finishNextPart' => 'Play the next part',
+			'vod.finishExit' => 'Leave the player',
+			'vod.finishRelated' => 'Play the first related video',
+			'vod.showDetails' => 'Show video details',
+			'vod.showDetailsDesc' => 'Off keeps the page on the player, the parts and the related rail, hiding the uploader, the counts and the description.',
+			'vod.playbackReset' => 'Restore default playback',
+			'vod.playbackResetDesc' => 'Normal speed, the next part when one ends, details shown.',
 			'wallpaper.title' => 'Random pictures',
 			'wallpaper.description' => 'Fetch a picture from a public random source by group; preview before applying.',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} sources',

@@ -49,5 +49,17 @@
   "loadFailed": "视频信息加载失败",
   "openFailed": "视频打开失败",
   "progress": "播放进度",
-  "up": "UP主"
+  "up": "UP主",
+  "openingSpeed": "默认倍速",
+  "openingSpeedDesc": "打开视频时使用的播放速度；播放器里的倍速菜单只影响当前视频。",
+  "finishAction": "播放结束动作",
+  "finishActionDesc": "一集播完之后做什么。",
+  "finishPause": "停在最后一帧",
+  "finishNextPart": "播放下一分P",
+  "finishExit": "退出播放",
+  "finishRelated": "播放相关推荐",
+  "showDetails": "显示视频详情",
+  "showDetailsDesc": "关闭后只看播放器、分P和相关推荐，隐藏UP主、数据和简介。",
+  "playbackReset": "恢复默认播放行为",
+  "playbackResetDesc": "默认倍速、播完下一分P、显示详情。"
 }

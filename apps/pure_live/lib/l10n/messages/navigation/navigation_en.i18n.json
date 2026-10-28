@@ -17,5 +17,12 @@
   "settings": "Settings",
   "appearance": "Appearance",
   "proxy": "Network proxy",
-  "user": "User"
+  "user": "User",
+  "vodRank": "Ranking",
+  "vodRegions": "Regions",
+  "iptvSources": "Subscriptions",
+  "iptvGuide": "Guide",
+  "musicSonglist": "Songlists",
+  "musicToplist": "Charts",
+  "musicLibrary": "My lists"
 }

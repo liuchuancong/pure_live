@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
 import 'package:pure_live/features/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/features/iptv/controllers/iptv_epg_controller.dart';
 import 'package:pure_live/features/iptv/controllers/iptv_sources_controller.dart';
@@ -19,10 +20,11 @@ import 'package:pure_live/shared/shared.dart';
 /// on the minute should not wait for the viewer to reopen the page.
 const Duration _slotRefreshInterval = Duration(minutes: 1);
 
-/// The two surfaces of the IPTV module: the channel browser, and the
-/// source manager that imports, syncs and removes the playlists and guides
-/// behind it.
-enum _IptvView {
+/// The two surfaces of the IPTV module: the channel browser, and the source
+/// manager that imports, syncs and removes the playlists and guides behind
+/// it. The module's menu gives each one its own entry, so the page opens on
+/// the surface the entry names.
+enum IptvView {
   /// The library's channels, grouped and filterable.
   channels,
 
@@ -33,14 +35,17 @@ enum _IptvView {
 /// The IPTV module's entry page.
 ///
 /// A page header names the open surface and its counts, with the imports
-/// and the surface switch beside it. The channel surface is a resource
-/// table: scope and group filters, a name search, "sync all" and one row
-/// per channel — logo, group, what is on now with its progress, the
-/// favourite heart and the player action. The source surface keeps the
-/// same table language over the playlists and guides.
+/// beside it. The channel surface is a resource table: scope and group
+/// filters, a name search, "sync all" and one row per channel — logo, group,
+/// what is on now with its progress, the favourite heart and the player
+/// action. The source surface keeps the same table language over the
+/// playlists and guides.
 final class IptvPage extends ConsumerStatefulWidget {
-  /// The IPTV module's channels page.
-  const IptvPage({super.key});
+  /// The IPTV module's channels page, opening on [initialView].
+  const IptvPage({this.initialView = IptvView.channels, super.key});
+
+  /// The surface the page opens on.
+  final IptvView initialView;
 
   @override
   ConsumerState<IptvPage> createState() => _IptvPageState();
@@ -48,7 +53,7 @@ final class IptvPage extends ConsumerStatefulWidget {
 
 final class _IptvPageState extends ConsumerState<IptvPage> {
   Timer? _slotRefresh;
-  _IptvView _view = _IptvView.channels;
+  late IptvView _view = widget.initialView;
   final TextEditingController _channelSearch = TextEditingController();
 
   @override
@@ -57,6 +62,14 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
     _slotRefresh = Timer.periodic(_slotRefreshInterval, (_) {
       ref.read(iptvChannelsProvider.notifier).refreshSlots();
     });
+  }
+
+  @override
+  void didUpdateWidget(IptvPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The shell keeps this state while the menu moves between the module's
+    // entries, so a new entry has to move the page to its surface.
+    if (widget.initialView != _view) setState(() => _view = widget.initialView);
   }
 
   @override
@@ -84,7 +97,7 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
     final sources = ref.watch(iptvSourcesProvider);
     final epg = ref.watch(iptvEpgProvider);
     final blocked = sources.importing || epg.importing || sources.syncAll != null || !sources.ready || !epg.ready;
-    final channelsView = _view == _IptvView.channels;
+    final channelsView = _view == IptvView.channels;
     final title = channelsView ? t.iptv.viewChannels : t.iptv.viewSources;
     final description = channelsView
         ? channels.query.isNotEmpty
@@ -101,15 +114,13 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
         _IptvHeader(
           title: title,
           description: description,
-          view: _view,
-          onView: (next) => setState(() => _view = next),
           onImportPlaylist: blocked ? null : () => unawaited(runIptvPlaylistImport(context)),
           onImportGuide: blocked ? null : () => unawaited(runIptvGuideImport(context)),
         ),
         Expanded(
           child: switch (_view) {
-            _IptvView.channels => _ChannelsView(channels: channels, search: _channelSearch),
-            _IptvView.sources => const IptvSourcesView(),
+            IptvView.channels => _ChannelsView(channels: channels, search: _channelSearch),
+            IptvView.sources => const IptvSourcesView(),
           },
         ),
       ],
@@ -118,22 +129,19 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
 }
 
 /// The surface's head: the module above the page's own name, the counts
-/// under it, and the imports and surface switch at the end. A narrow window
-/// stacks the actions under the title instead of squeezing them.
+/// under it, and the imports at the end. A narrow window stacks the actions
+/// under the title instead of squeezing them. The module's menu, not this
+/// header, moves between the surfaces.
 final class _IptvHeader extends StatelessWidget {
   const _IptvHeader({
     required this.title,
     required this.description,
-    required this.view,
-    required this.onView,
     required this.onImportPlaylist,
     required this.onImportGuide,
   });
 
   final String title;
   final String description;
-  final _IptvView view;
-  final ValueChanged<_IptvView> onView;
   final VoidCallback? onImportPlaylist;
   final VoidCallback? onImportGuide;
 
@@ -169,15 +177,6 @@ final class _IptvHeader extends StatelessWidget {
           onPressed: onImportGuide,
           leading: const DsIcon(DsIcons.calendarClock, size: 15),
           child: Text(t.iptv.importGuide),
-        ),
-        DsSegmentedControl<_IptvView>(
-          value: view,
-          onChanged: onView,
-          semanticLabel: t.iptv.viewLabel,
-          segments: [
-            DsSegment(value: _IptvView.channels, icon: const DsIcon(DsIcons.tv), label: Text(t.iptv.viewChannels)),
-            DsSegment(value: _IptvView.sources, icon: const DsIcon(DsIcons.list), label: Text(t.iptv.viewSources)),
-          ],
         ),
       ],
     );
@@ -468,6 +467,7 @@ final class _ChannelsTable extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
+    final browse = ref.watch(iptvBrowseSettingsProvider);
     final rows = channels.channels.take(channels.shown).toList(growable: false);
     return DsTable<IptvChannel>(
       semanticLabel: t.iptv.viewChannels,
@@ -480,7 +480,7 @@ final class _ChannelsTable extends ConsumerWidget {
           label: t.iptv.colChannel,
           value: (channel) => channel.entry.name,
           width: const DsTableColumnWidth.flex(2, 220),
-          cell: (context, channel) => _ChannelNameCell(channel: channel),
+          cell: (context, channel) => _ChannelNameCell(channel: channel, showNumber: browse.showChannelNumber),
         ),
         DsTableColumn(
           id: 'group',
@@ -494,9 +494,10 @@ final class _ChannelsTable extends ConsumerWidget {
             style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textMuted),
           ),
         ),
-        DsTableColumn(
-          id: 'now',
-          label: t.iptv.colNow,
+        if (browse.showProgrammeLine)
+          DsTableColumn(
+            id: 'now',
+            label: t.iptv.colNow,
           value: (channel) => channels.slots[channel.id]?.current?.title ?? '',
           width: const DsTableColumnWidth.flex(2, 200),
           cell: (context, channel) => _NowCell(slot: channels.slots[channel.id]),
@@ -552,18 +553,19 @@ final class _ChannelsTable extends ConsumerWidget {
 }
 
 /// A channel's logo and name, with its dial number under the name when it
-/// has one.
+/// has one and the browse setting asks for it.
 final class _ChannelNameCell extends StatelessWidget {
-  const _ChannelNameCell({required this.channel});
+  const _ChannelNameCell({required this.channel, required this.showNumber});
 
   final IptvChannel channel;
+  final bool showNumber;
 
   @override
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final logo = (channel.entry.tvgLogo ?? '').trim();
-    final number = channel.number;
+    final number = showNumber ? channel.number : null;
     return Row(
       spacing: DsSpace.s8,
       children: [

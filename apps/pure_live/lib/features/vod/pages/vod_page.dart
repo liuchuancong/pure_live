@@ -64,15 +64,19 @@ const List<(int, String)> kVodRegionChannels = [
 /// The station's requests live in [vodFeedProvider] (one cached feed per
 /// tab/region) and [vodProvider] (the committed search); the page only asks.
 final class VodPage extends ConsumerStatefulWidget {
-  /// The station's entry page.
-  const VodPage({super.key});
+  /// The station's entry page, opening on [initialTab]; the module's menu
+  /// gives 排行 and 分区 their own entries.
+  const VodPage({this.initialTab = VodTab.popular, super.key});
+
+  /// The tab the station opens on.
+  final VodTab initialTab;
 
   @override
   ConsumerState<VodPage> createState() => _VodPageState();
 }
 
 final class _VodPageState extends ConsumerState<VodPage> {
-  VodTab _tab = VodTab.popular;
+  late VodTab _tab = widget.initialTab;
   int _rankRid = 0;
   int _regionTid = 1005;
   final TextEditingController _search = TextEditingController();
@@ -83,9 +87,15 @@ final class _VodPageState extends ConsumerState<VodPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(ref.read(vodFeedProvider.notifier).open(_popularKey));
-    });
+    _ensureFeed(_keyOf(_tab));
+  }
+
+  @override
+  void didUpdateWidget(VodPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The shell keeps this state while the menu moves between the station's
+    // entries, so a new entry has to move the page to its tab.
+    if (widget.initialTab != _tab) _selectTab(widget.initialTab);
   }
 
   @override
@@ -104,10 +114,19 @@ final class _VodPageState extends ConsumerState<VodPage> {
 
   String get _regionKey => vodFeedKey(VodFeedKind.region, id: _regionTid);
 
+  /// The feed [tab] reads, or null for the tab that owns no feed.
+  String? _keyOf(VodTab tab) => switch (tab) {
+    VodTab.popular => _popularKey,
+    VodTab.ranking => _rankingKey,
+    VodTab.regions => _regionKey,
+    VodTab.search => null,
+  };
+
   ScrollController _scrollOf(String key) => _scrolls.putIfAbsent(key, ScrollController.new);
 
   /// Loads [key]'s first page if it has none; safe to call on every visit.
-  void _ensureFeed(String key) {
+  void _ensureFeed(String? key) {
+    if (key == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(ref.read(vodFeedProvider.notifier).open(key));
     });

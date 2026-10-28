@@ -17,5 +17,12 @@
   "settings": "设置",
   "appearance": "外观",
   "proxy": "网络代理",
-  "user": "用户"
+  "user": "用户",
+  "vodRank": "排行榜",
+  "vodRegions": "分区",
+  "iptvSources": "订阅源",
+  "iptvGuide": "节目单",
+  "musicSonglist": "歌单",
+  "musicToplist": "排行榜",
+  "musicLibrary": "我的列表"
 }

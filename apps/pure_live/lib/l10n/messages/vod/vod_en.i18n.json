@@ -49,5 +49,17 @@
   "loadFailed": "The video did not load",
   "openFailed": "The video could not be opened",
   "progress": "Playback progress",
-  "up": "Uploader"
+  "up": "Uploader",
+  "openingSpeed": "Opening speed",
+  "openingSpeedDesc": "The rate a video opens with; the player's speed menu only affects the current video.",
+  "finishAction": "When a part ends",
+  "finishActionDesc": "What happens after the last frame of a part.",
+  "finishPause": "Stay on the last frame",
+  "finishNextPart": "Play the next part",
+  "finishExit": "Leave the player",
+  "finishRelated": "Play the first related video",
+  "showDetails": "Show video details",
+  "showDetailsDesc": "Off keeps the page on the player, the parts and the related rail, hiding the uploader, the counts and the description.",
+  "playbackReset": "Restore default playback",
+  "playbackResetDesc": "Normal speed, the next part when one ends, details shown."
 }

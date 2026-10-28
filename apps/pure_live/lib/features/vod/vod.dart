@@ -3,6 +3,7 @@
 library;
 
 export 'controller/vod_controller.dart';
+export 'controller/vod_playback_settings.dart';
 export 'controller/vod_settings.dart';
 export 'pages/vod_page.dart';
 export 'pages/vod_settings_pane.dart';

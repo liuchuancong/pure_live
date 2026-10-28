@@ -30,6 +30,7 @@ import 'package:pure_live/features/account/douyu_cookie_saved_at.dart' show douy
 import 'package:pure_live/features/backup/backup.dart';
 import 'package:pure_live/features/favorites/favorites.dart';
 import 'package:pure_live/features/iptv/iptv.dart';
+import 'package:pure_live/features/music/music.dart';
 
 import 'package:pure_live/features/recorder/recorder.dart';
 import 'package:pure_live/features/room/room.dart';
@@ -96,10 +97,14 @@ final List<ProviderOrFamily> kSettingsProviders = [
   recordingSettingsProvider,
   followTagsProvider,
   iptvUpdateIntervalProvider,
+  iptvBrowseSettingsProvider,
   iptvAutoSyncProvider,
   iptvUserAgentProvider,
   iptvEpgProvider,
   vodQualityProvider,
+  vodPlaybackSettingsProvider,
+  musicSettingsProvider,
+  musicSourcesProvider,
   searchHistoryProvider,
   webdavAccountsProvider,
   autoShutdownProvider,

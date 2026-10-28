@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_iptv/live_iptv.dart' show EpgSourceX;
 import 'package:pure_live/features/iptv/controllers/iptv_auto_update.dart';
+import 'package:pure_live/features/iptv/controllers/iptv_browse_settings.dart';
 import 'package:pure_live/features/iptv/controllers/iptv_controller.dart' show iptvPlaylistIsRemote;
 import 'package:pure_live/features/iptv/controllers/iptv_epg_controller.dart';
 import 'package:pure_live/features/iptv/controllers/iptv_sources_controller.dart';
@@ -14,9 +15,11 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 
 /// The IPTV module's own settings: the guide-update interval, the bulk
-/// automatic-update switch and the manual sync round. The source manager
-/// (playlists, guides, their order) lives on the IPTV page itself; this
-/// pane carries the schedule those pages read.
+/// automatic-update switch and the manual sync round, with the two subpages
+/// the reference keeps beside them — how a channel is shown and zapped, and
+/// which groups the module leaves out. The source manager (playlists,
+/// guides, their order) lives on the IPTV page itself; this pane carries the
+/// schedule those pages read.
 final class IptvSettingsPane extends ConsumerWidget {
   /// The pane shown under Settings → IPTV.
   const IptvSettingsPane({super.key});
@@ -53,7 +56,7 @@ final class IptvSettingsPane extends ConsumerWidget {
         : autoOn == 0
         ? t.iptv.autoUpdateStatusNone
         : t.iptv.autoUpdateStatusOn(count: autoOn);
-    return DsListSection(
+    final guideSection = DsListSection(
       header: Text(t.settings.iptvGuideUpdates),
       children: [
         SettingsConfigRow(
@@ -106,6 +109,138 @@ final class IptvSettingsPane extends ConsumerWidget {
             round == null ? t.settings.iptvSyncDesc : t.iptv.syncAllRunning(done: round.done, total: round.total),
           ),
           onPressed: canSync ? () => unawaited(syncAllIptvSources(context, ref)) : null,
+        ),
+      ],
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        guideSection,
+        const DsListSection(
+          children: [
+            SettingsChildEntry(child: SettingsSection.iptvBrowse),
+            SettingsChildEntry(child: SettingsSection.iptvGroups),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// The reference's own settings dialog, moved up into the module: the dial
+/// number beside a channel, the direction the up and down keys walk, the
+/// player's clock and the one line about what is on. Every switch lands on
+/// the next frame — the pages read it where they paint.
+final class IptvBrowsePane extends ConsumerWidget {
+  /// The pane shown under Settings → IPTV → 换台与显示.
+  const IptvBrowsePane({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final browse = ref.watch(iptvBrowseSettingsProvider);
+    final controller = ref.read(iptvBrowseSettingsProvider.notifier);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        DsListSection(
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.hash),
+              title: t.iptv.browseChannelNumber,
+              description: t.iptv.browseChannelNumberDesc,
+              control: DsSwitch(
+                value: browse.showChannelNumber,
+                onChanged: (value) => unawaited(controller.setShowChannelNumber(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.arrowUpDown),
+              title: t.iptv.browseReverse,
+              description: t.iptv.browseReverseDesc,
+              control: DsSwitch(
+                value: browse.reverseChannels,
+                onChanged: (value) => unawaited(controller.setReverseChannels(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.clock),
+              title: t.iptv.browseClock,
+              description: t.iptv.browseClockDesc,
+              control: DsSwitch(
+                value: browse.showClock,
+                onChanged: (value) => unawaited(controller.setShowClock(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.list),
+              title: t.iptv.browseProgrammeLine,
+              description: t.iptv.browseProgrammeLineDesc,
+              control: DsSwitch(
+                value: browse.showProgrammeLine,
+                onChanged: (value) => unawaited(controller.setShowProgrammeLine(value: value)),
+              ),
+            ),
+          ],
+        ),
+        DsListSection(
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.rotateCcw),
+              title: Text(t.iptv.browseReset),
+              onPressed: () => unawaited(controller.reset()),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Which groups the module leaves out of its lists and its zapping. The
+/// library keeps the flag, so un-hiding a group gives back exactly the
+/// line-up that was there before it was switched off.
+final class IptvGroupsPane extends ConsumerWidget {
+  /// The pane shown under Settings → IPTV → 分组显示.
+  const IptvGroupsPane({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final groups = ref.watch(iptvGroupsProvider);
+    final controller = ref.read(iptvGroupsProvider.notifier);
+    if (groups.isEmpty) {
+      return DsListSection(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(DsSpace.s16),
+            child: Text(t.iptv.groupsEmpty, style: theme.typography.body.copyWith(color: colors.textMuted)),
+          ),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        SettingsHint(t.iptv.groupsHint),
+        DsListSection(
+          children: [
+            for (final group in groups)
+              SettingsConfigRow(
+                leading: DsIcon(group.hidden ? DsIcons.eyeOff : DsIcons.eye),
+                title: group.name.isEmpty ? t.iptv.ungrouped : group.name,
+                detail: Text(t.iptv.channelCount(count: group.channels)),
+                control: DsSwitch(
+                  value: !group.hidden,
+                  onChanged: (value) => unawaited(controller.setHidden(group.name, hidden: !value)),
+                ),
+              ),
+          ],
         ),
       ],
     );

@@ -20,6 +20,8 @@ SettingsSearchHit _hit(SettingsSection section, String title, String keywords) =
 List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
   final s = t.settings;
   return [
+    _hit(SettingsSection.fontApp, s.fontManagerTitle, 'font family typeface download cloud local 字体 字族 下载 云端 本地 字体管理'),
+    _hit(SettingsSection.fontDanmaku, s.danmakuFont, 'danmaku font typeface family 弹幕 字体 字族 字体管理'),
     // Browsing and window.
     _hit(SettingsSection.browsing, s.crossSpacing, 'column gap spacing grid 列间距 间距 网格 卡片'),
     _hit(SettingsSection.browsing, s.mainSpacing, 'row gap spacing grid 行间距 间距 网格 卡片'),
@@ -429,8 +431,24 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.iptv, t.iptv.autoUpdate, 'epg auto update 节目单 自动更新'),
     _hit(SettingsSection.iptv, t.iptv.syncAll, 'sync all playlists 同步 全部 播放列表'),
     _hit(SettingsSection.iptv, t.iptv.customUserAgent, 'user agent ua header 请求头 自定义'),
+    _hit(SettingsSection.iptvBrowse, t.iptv.browseChannelNumber, 'channel number dial 频道号 号码 换台 显示'),
+    _hit(SettingsSection.iptvBrowse, t.iptv.browseReverse, 'reverse zap up down 换台 反转 上下键'),
+    _hit(SettingsSection.iptvBrowse, t.iptv.browseClock, 'clock time overlay 时间 时钟 显示'),
+    _hit(SettingsSection.iptvBrowse, t.iptv.browseProgrammeLine, 'programme epg line 节目 当前 提示'),
+    _hit(SettingsSection.iptvGroups, t.settings.navIptvGroups, 'group hide show category 分组 隐藏 显示 频道'),
     // VOD.
     _hit(SettingsSection.vod, s.vodQuality, 'bilibili quality 视频 清晰度'),
+    _hit(SettingsSection.vodPlayback, t.vod.openingSpeed, 'speed rate opening 倍速 播放 速度'),
+    _hit(SettingsSection.vodPlayback, t.vod.finishAction, 'finish end next part exit related 播完 结束 下一集 退出 推荐'),
+    _hit(SettingsSection.vodPlayback, t.vod.showDetails, 'details description uploader hide 详情 简介 隐藏'),
+    // Music.
+    _hit(SettingsSection.music, t.music.defaultSource, 'music source default 音源 默认 自定义'),
+    _hit(SettingsSection.music, t.music.quality, 'music quality lossless flac 音质 品质 无损'),
+    _hit(SettingsSection.music, t.music.skipOnError, 'music skip error next source 跳过 出错 音源'),
+    _hit(SettingsSection.music, t.music.autoplay, 'music autoplay resume 自动 播放 继续'),
+    _hit(SettingsSection.musicList, t.music.addToTop, 'music list top bottom order 列表 顶部 末尾 顺序'),
+    _hit(SettingsSection.musicList, t.music.showSource, 'music list source tag 列表 音源 标签'),
+    _hit(SettingsSection.musicSources, t.music.sourcesImportText, 'music custom source import script js lx 自定义源 导入 脚本'),
     _hit(SettingsSection.accounts, t.account.cookieLogin, 'bilibili account login 账号 登录'),
     // About.
     _hit(SettingsSection.about, s.aboutVersion, 'version build 版本'),

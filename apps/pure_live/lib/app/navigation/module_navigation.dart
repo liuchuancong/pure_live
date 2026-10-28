@@ -119,7 +119,8 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
   ),
   AppModule.iptv: ModuleNavigation(
     menu: [
-      [NavigationItem.channels, NavigationItem.favorites, NavigationItem.history],
+      [NavigationItem.channels, NavigationItem.iptvGuide, NavigationItem.iptvSources],
+      [NavigationItem.favorites, NavigationItem.history],
       kToolItems,
     ],
     landing: NavigationItem.channels,
@@ -133,7 +134,8 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
   ),
   AppModule.vod: ModuleNavigation(
     menu: [
-      [NavigationItem.vod, NavigationItem.favorites, NavigationItem.history],
+      [NavigationItem.vod, NavigationItem.vodRank, NavigationItem.vodRegions],
+      [NavigationItem.favorites, NavigationItem.history],
       kToolItems,
     ],
     landing: NavigationItem.vod,
@@ -147,13 +149,18 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
   ),
   AppModule.music: ModuleNavigation(
     menu: [
-      [NavigationItem.music, NavigationItem.favorites, NavigationItem.history],
+      [NavigationItem.music, NavigationItem.musicSonglist, NavigationItem.musicToplist, NavigationItem.musicLibrary],
+      [NavigationItem.favorites, NavigationItem.history],
       kToolItems,
     ],
     landing: NavigationItem.music,
-    // No music source feeds the module yet; it carries only the app's own
-    // settings rather than borrowing another module's playback or sources.
-    settingsGroups: _appGroups,
+    // The music module's own page: the source a song is asked from, the
+    // rendition, the list behaviour and the imported lx-style scripts. It
+    // borrows no live-platform or video-station page.
+    settingsGroups: [
+      (labelKey: 'groupMusic', sections: [SettingsSection.music]),
+      ..._appGroups,
+    ],
   ),
 };
 
@@ -165,11 +172,20 @@ NavigationItem defaultNavigationItemFor(AppModule module) => navigationOf(module
 
 /// The page a menu entry shows outside the live module. Live's entries are
 /// router branches; the other modules render these pages in place, so every
-/// item their menus list is a page that actually opens.
-const Map<NavigationItem, Widget Function()> kModulePages = {
+/// item their menus list is a page that actually opens. Entries that share a
+/// page differ only in where that page opens — the station's own tabs, the
+/// IPTV module's surfaces, the music module's lists.
+final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.channels: IptvPage.new,
+  NavigationItem.iptvGuide: IptvGuidePage.new,
+  NavigationItem.iptvSources: () => const IptvPage(initialView: IptvView.sources),
   NavigationItem.vod: VodPage.new,
+  NavigationItem.vodRank: () => const VodPage(initialTab: VodTab.ranking),
+  NavigationItem.vodRegions: () => const VodPage(initialTab: VodTab.regions),
   NavigationItem.music: MusicPage.new,
+  NavigationItem.musicSonglist: () => const MusicPage(view: MusicView.songlists),
+  NavigationItem.musicToplist: () => const MusicPage(view: MusicView.toplists),
+  NavigationItem.musicLibrary: () => const MusicPage(view: MusicView.mine),
   NavigationItem.favorites: FavoritesPage.new,
   NavigationItem.history: HistoryPage.new,
   NavigationItem.zones: AreasPage.new,
