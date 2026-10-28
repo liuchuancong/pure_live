@@ -282,13 +282,25 @@ l10n 累计新增 27 个 key（中英各一份，`dart run slang` 已重生成�
 
 > 本轮发现并行 lane 已在做 **定时停止 / 画面模式 / 播放失败重试 / 解码能力记录 / 官网剧评**（新增未跟踪 `controller/hongguo_comfort.dart`、`controller/hongguo_decoder.dart`、`official/hongguo_public_reviews.dart`，并已把 `sleep*`/`frame*`/`retry*`/`decoder*`/`reviews*`/`favorite*` 文案写进两份 l10n）。我的收藏检测因此**改用他们已存在的 key 名**（`favoriteChecking(done,total)`、`favoriteAdded(count)`、`favoriteBadge(count)` 等），没有再新增重复文案，也**没有去碰**上面那三块，避免双写。
 
-### 8.6 下一轮继续（按剩余价值排序）
+### 8.6 第五轮：播放舒适度与公开剧评（并行 lane 收口）
 
-第 6 节 P1 未做的：后两集播放模型预取（`metadataAhead`）。**定时停止、画面模式、播放失败恢复预算、解码能力记录、官网剧评** 由并行 lane 在做（见 8.5 的注），本轮不重复实现；P2 剩弹幕渲染层（#7，同样与 `hongguo_social.dart` 的并行改动撞车）。
+`hongguo_comfort.dart` / `hongguo_decoder.dart` / `hongguo_public_reviews.dart` 三块落地，并接进了播放页与设置页：
 
-**画面模式不用做**：参考的 完整/等比铺满/拉伸 三项在 pure_live 是全局 `playbackSettingsProvider.fit`，播放页已消费（`MediaPlayerView(fit: ...)`），模块内再放一份就是重复入口。
+- **定时停止**（`HongguoSleepTimer`，照 `PlaybackComfort.kt`）：播放条一颗 `定时` 菜单——关闭 / 15 / 30 / 60 / 90 分钟 / 本集播完 / 再播完 3、5 集；按分钟计时时按钮每分钟刷新一次剩余，到点暂停、保存位置并提示「定时停止已生效 · 观看位置已保存 · 按播放可继续」；按集计时在 `_handleFinished` 里扣减，归零即停。
+- **画面模式**：按 8.6 下方既有裁决**不做模块副本**；播放条新增 `画面` 菜单，直接写全局 `playbackSettingsProvider.fit`（完整画面/等比铺满/拉伸铺满 = `PlaybackFit.contain/cover/fill`），与「同项只留一个入口」一致。
+- **解码能力学习降档**（照 `CodecCapabilities.kt` + `LearningDowngrade`）：流已打开后引擎报错，就把这次 `codec|宽|高` 记进 `hongguo.decoderFailures`（持久化），选档时跳过已学习失败的档位；同一集自动降一档、至多两次，再失败才出面板。设置页新增「设备解码记录」行（显示条数、可重置），与参考的 `CodecCapabilities.resetLearned()` 对齐——注意它**不是**既有的「重置设备」（那是清匿名身份）。
+- **失败恢复预算**（照 `RecoveryBudget` + `scheduleRecovery`）：同一集 ≤3 次自动重试，间隔 1s / 2.5s / 5s，重试从失败位置续播；播放器上盖失败面板：`立即重试` / `尝试 NP`（面板自己的降档，同时把偏好降下去）/ `返回选集`（全屏时退出全屏）/ `停止自动重试`。**未做**参考的「断网时等联网再续播」——没有联网监听，改为按预算重试。
+- **后两集模型预取**（照 `streamLadder(id, metadataAhead)`）：`playbackLadder(vid, {ahead})` 一次请求带当前集 + 后两集，后两集的 inline 档位在内存留 60 秒、领用即删、最多 6 条；切集命中缓存不再请求。
+- **官网公开剧评/评分**（照 `PublicComments.kt`）：`official/hongguo_public_reviews.dart` 读 `hongguoduanju.com/player/<series>/<episode>` 与 `detail?series_id=` 的 loaderData，取整剧剧评、本集评论、评分与评分人数；**不带任何账号凭证**，详情页每剧缓存 30 秒、最多 16 条。系列页新增「剧评」区（评分徽标 + 评论卡）。
+- **手机号登录**：`HongguoWebLogin.sendCode/verifyCode`（官网 passport 的 `send_code → sms_login`，与扫码共用同一会话）接进登录控制器；账户页未登录时 `扫码登录 / 用手机号登录` 两枚 chip，手机号表单带发送倒计时与错误行。**与参考的差异**：参考走设备签名的 `passport/mobile` 四段链路，这里复用已在库的官网 passport 三段，登录态与会话 cookie 同源。
+- 收藏更新检测的副标题按 8.5 补成 `新增 N 集 · 更新至 M 集`；打开系列页即 `acknowledgeUpdates`（把 `seen` 追到本次读到的集数），取消收藏时连带删掉它的 update 行。
+- 设置清单：`kSettingsProviders` 补 `hongguoAccount/ Library/ Search/ Settings/ DecoderLessons`；备份补 `hongguo.quality` / `decoderFailures` / 三个 library 键 / `search.history`；设置搜索补 2 行（清晰度、设备解码记录）；l10n 中英各 +30 左右（`dart run slang` 已重生成）。
 
-第 6 节 P1 剩余：收藏更新检测、定时停止与画面模式、解码能力学习降档、失败恢复预算、后两集模型预取、手机号登录、官网剧评/评分；P2 的账号页资料头与「已看完/未看完」筛选（#4）、弹幕渲染层（#7，与并行 lane 的 `hongguo_social.dart` 撞车，等那边落定再做）。
+验证：`dart analyze lib`（apps/pure_live）0 issues；`check_settings_ia.ps1` 的 hongguo 条目通过（剩 music 三页与 roomCard 别名属并行 lane）；`check_prefs_manifest.ps1` 对 hongguo 只剩两类：`hongguo.account.credentials`（登录凭证，有意不备份）与 `hongguo_device.dart` 里 `value/pick` 两个局部 helper 的**误报**（门禁把它们当 pref helper，报出的是设备字段名，不是 pref 键）。未验证：真机播放的定时/降档/续播、公开剧评的真实页面结构、手机号真实验证码。
+
+### 8.7 下一轮继续
+
+P1 只剩：首页/侧栏的**新集徽标**（收藏检测已有计数，尚未挂到导航项上）、参考的**断网等待**。P2：弹幕渲染层（#7，`hongguo_social.dart` 已定，可以做了）、评论侧边面板 + 本集/整剧双 tab、选集分组与跳转、HUD 状态行。
 
 **旁注**：`fjs: ^3.3.2`（音乐模块新加的 QuickJS 运行时，未入库）在 Windows 上编不过——它 cargokit 的签名 recipe 只列 Apple 的 Rust target，本机又无 cargo 可退源码编译；这是 `flutter run` 失败的原因，与红果模块无关。
 
