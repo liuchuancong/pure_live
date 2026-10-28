@@ -1,7 +1,7 @@
 import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
-import 'package:file_picker/file_picker.dart' show FilePicker;
+import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -418,6 +418,62 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
     if (mounted) setState(() => _openId = null);
   }
 
+  /// Reads a playlist file the viewer picked; the list lands as a new playlist.
+  Future<void> _import() async {
+    final t = context.t;
+    try {
+      final file = await FilePicker.pickFile(
+        dialogTitle: t.music.playlistImport,
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+      );
+      final path = file?.path;
+      if (!mounted || path == null) return;
+      final playlist = await ref.read(musicPlaylistsProvider.notifier).importFromFile(path);
+      if (!mounted) return;
+      showDsToast(
+        context: context,
+        title: playlist == null
+            ? t.music.playlistImportFailed(error: t.music.playlistEmptyTitle)
+            : t.music.playlistImportDone(name: playlist.name),
+        status: playlist == null ? DsStatus.danger : DsStatus.success,
+      );
+      if (playlist != null) setState(() => _openId = playlist.id);
+    } on Object catch (failure) {
+      if (mounted) {
+        showDsToast(
+          context: context,
+          title: t.music.playlistImportFailed(error: '$failure'),
+          status: DsStatus.danger,
+        );
+      }
+    }
+  }
+
+  /// Writes a playlist into the download folder the module already uses.
+  Future<void> _export(MusicPlaylist playlist) async {
+    final t = context.t;
+    try {
+      final directory = ref.read(downloadDirectoryProvider).effectivePath;
+      final path = await ref.read(musicPlaylistsProvider.notifier).exportToDirectory(playlist, directory);
+      if (mounted) {
+        showDsToast(
+          context: context,
+          title: t.music.playlistExportDone(path: path),
+          status: DsStatus.success,
+        );
+      }
+    } on Object catch (failure) {
+      if (mounted) {
+        showDsToast(
+          context: context,
+          title: t.music.playlistExportFailed(error: '$failure'),
+          status: DsStatus.danger,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -456,6 +512,12 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                     onPressed: () => unawaited(_create()),
                     child: Text(t.music.playlistCreate),
                   ),
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    leading: const DsIcon(DsIcons.arrowDownToLine, size: 16),
+                    onPressed: () => unawaited(_import()),
+                    child: Text(t.music.playlistImport),
+                  ),
                 ],
               ),
             ),
@@ -476,6 +538,13 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                   t.music.playlistsCount(count: playlists.length),
                   style: theme.typography.caption.copyWith(color: colors.textSubtle),
                 ),
+              ),
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.arrowDownToLine, size: 16),
+                onPressed: () => unawaited(_import()),
+                child: Text(t.music.playlistImport),
               ),
               DsButton(
                 variant: DsButtonVariant.secondary,
@@ -514,6 +583,11 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                             leading: const DsIcon(DsIcons.pencil),
                             label: Text(t.music.playlistRename),
                             onPressed: () => unawaited(_rename(playlist)),
+                          ),
+                          DsMenuItem(
+                            leading: const DsIcon(DsIcons.arrowUpFromLine),
+                            label: Text(t.music.playlistExport),
+                            onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_export(playlist)),
                           ),
                           DsMenuItem(
                             leading: const DsIcon(DsIcons.trash2),
@@ -596,6 +670,16 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                     leading: const DsIcon(DsIcons.download),
                     label: Text(t.music.downloadAll),
                     onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_downloadAll(playlist)),
+                  ),
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.upload),
+                    label: Text(t.music.playlistExport),
+                    onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_export(playlist)),
+                  ),
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.arrowUpFromLine),
+                    label: Text(t.music.playlistExport),
+                    onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_export(playlist)),
                   ),
                   DsMenuItem(
                     leading: const DsIcon(DsIcons.pencil),
@@ -992,7 +1076,13 @@ final class _LocalView extends ConsumerWidget {
                             track: song,
                             playing: playingId == song.id,
                             favourite: favourites.contains(song),
-                            subtitle: song.localPath == null ? null : _fileNameOf(song.localPath!),
+                            // Tags name the song; the file name is the fallback
+                            // for the files that carry none.
+                            subtitle: song.artist.isNotEmpty
+                                ? (song.album.isEmpty ? null : '${song.artist} · ${song.album}')
+                                : song.localPath == null
+                                ? null
+                                : _fileNameOf(song.localPath!),
                             onPlay: () => unawaited(player.playAll(state.tracks, index: index)),
                             onFavourite: () => unawaited(favouritesController.toggle(song)),
                             onPlayNext: () => unawaited(player.playNext(song)),

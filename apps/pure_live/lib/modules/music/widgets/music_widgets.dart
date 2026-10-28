@@ -1,13 +1,21 @@
+import 'dart:async' show unawaited;
+
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/music/controller/music_local.dart' show musicLocalCoverProvider;
 import 'package:pure_live/shared/shared.dart' show cachedImage;
 
 /// A song's album art: its cover, or the title's initials on a tone when the
 /// platform gave none.
-final class MusicArtwork extends StatelessWidget {
+///
+/// Streamed tracks carry a cover URI; a local file carries its picture inside
+/// its own tags, read on demand and drawn from memory.
+final class MusicArtwork extends ConsumerWidget {
   /// The art of [track].
   const MusicArtwork({required this.track, this.size = DsSize.sm, super.key});
 
@@ -15,13 +23,21 @@ final class MusicArtwork extends StatelessWidget {
   final DsSize size;
 
   @override
-  Widget build(BuildContext context) => DsAvatar(
-    initials: track.title,
-    image: track.coverUri == null ? null : cachedImage(track.coverUri.toString()),
-    size: size,
-    toneIndex: DsAvatar.toneFor(track.id),
-    semanticLabel: track.title,
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final local = track.isLocal ? ref.watch(musicLocalCoverProvider(track)).value : null;
+
+    return DsAvatar(
+      initials: track.title,
+      image: local != null
+          ? MemoryImage(local)
+          : track.coverUri == null
+          ? null
+          : cachedImage(track.coverUri.toString()),
+      size: size,
+      toneIndex: DsAvatar.toneFor(track.id),
+      semanticLabel: track.title,
+    );
+  }
 }
 
 /// One song in a list: its art, name and artist, the favourite heart, and the
@@ -79,6 +95,70 @@ final class MusicSongRow extends StatelessWidget {
   /// A line under the title; the artist by default.
   final String? subtitle;
 
+  /// Puts the song's display name on the clipboard.
+  Future<void> _copyName(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: track.displayName));
+
+    if (context.mounted) {
+      showDsToast(context: context, title: context.t.music.copiedSongName, status: DsStatus.success);
+    }
+  }
+
+  /// Shows what the track knows about itself — the reference's 歌曲详情.
+  void _showDetails(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final empty = t.music.songDetailEmpty;
+
+    Widget row(String label, String value) => Padding(
+      padding: const EdgeInsets.only(bottom: DsSpace.s8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: DsSpace.s12,
+        children: [
+          SizedBox(
+            width: 64,
+            child: Text(label, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
+          ),
+          Expanded(child: Text(value.isEmpty ? empty : value, style: theme.typography.body)),
+        ],
+      ),
+    );
+
+    unawaited(
+      showDsDialog<void>(
+        context: context,
+        builder: (context) => DsDialog(
+          title: Text(t.music.songDetails),
+          icon: const DsIcon(DsIcons.info),
+          description: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              row(t.music.songDetailTitle, track.title),
+              row(t.music.songDetailArtist, track.artist),
+              row(t.music.songDetailAlbum, track.album),
+              row(t.music.songDetailDuration, _durationText(track.duration)),
+              row(t.music.songDetailSource, track.sourceId),
+              if (track.localPath != null) row(t.music.songDetailPath, track.localPath!),
+            ],
+          ),
+          actions: [DsButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.common.close))],
+        ),
+      ),
+    );
+  }
+
+  static String _durationText(Duration? duration) {
+    if (duration == null || duration.inMilliseconds <= 0) return '';
+    final totalSeconds = duration.inSeconds;
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
+
+    return hours > 0 ? '$hours:${minutes.toString().padLeft(2, '0')}:$seconds' : '$minutes:$seconds';
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -123,49 +203,46 @@ final class MusicSongRow extends StatelessWidget {
               onPressed: remove,
               icon: const DsIcon(DsIcons.x, size: 16),
             ),
-          if (onPlayNext != null ||
-              onAddToPlaylist != null ||
-              onDownload != null ||
-              onMoveUp != null ||
-              onMoveDown != null)
-            DsMenuAnchor(
-              semanticLabel: t.music.moreActions,
-              items: [
-                if (onMoveUp case final moveUp?)
-                  DsMenuItem(leading: const DsIcon(DsIcons.arrowUp), label: Text(t.music.moveUp), onPressed: moveUp),
-                if (onMoveDown case final moveDown?)
-                  DsMenuItem(
-                    leading: const DsIcon(DsIcons.arrowDown),
-                    label: Text(t.music.moveDown),
-                    onPressed: moveDown,
-                  ),
-                if (onPlayNext case final playNext?)
-                  DsMenuItem(
-                    leading: const DsIcon(DsIcons.listPlus),
-                    label: Text(t.music.playNext),
-                    onPressed: playNext,
-                  ),
-                if (onAddToPlaylist case final addToPlaylist?)
-                  DsMenuItem(
-                    leading: const DsIcon(DsIcons.listMusic),
-                    label: Text(t.music.addToPlaylist),
-                    onPressed: addToPlaylist,
-                  ),
-                if (onDownload case final download?)
-                  DsMenuItem(
-                    leading: const DsIcon(DsIcons.download),
-                    label: Text(t.music.download),
-                    onPressed: download,
-                  ),
-              ],
-              builder: (context, controller, _) => DsButton.icon(
-                variant: DsButtonVariant.ghost,
-                size: DsSize.sm,
-                semanticLabel: t.music.moreActions,
-                onPressed: controller.toggle,
-                icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
+          DsMenuAnchor(
+            semanticLabel: t.music.moreActions,
+            items: [
+              if (onMoveUp case final moveUp?)
+                DsMenuItem(leading: const DsIcon(DsIcons.arrowUp), label: Text(t.music.moveUp), onPressed: moveUp),
+              if (onMoveDown case final moveDown?)
+                DsMenuItem(
+                  leading: const DsIcon(DsIcons.arrowDown),
+                  label: Text(t.music.moveDown),
+                  onPressed: moveDown,
+                ),
+              if (onPlayNext case final playNext?)
+                DsMenuItem(leading: const DsIcon(DsIcons.listPlus), label: Text(t.music.playNext), onPressed: playNext),
+              if (onAddToPlaylist case final addToPlaylist?)
+                DsMenuItem(
+                  leading: const DsIcon(DsIcons.listMusic),
+                  label: Text(t.music.addToPlaylist),
+                  onPressed: addToPlaylist,
+                ),
+              if (onDownload case final download?)
+                DsMenuItem(leading: const DsIcon(DsIcons.download), label: Text(t.music.download), onPressed: download),
+              DsMenuItem(
+                leading: const DsIcon(DsIcons.info),
+                label: Text(t.music.songDetails),
+                onPressed: () => _showDetails(context),
               ),
+              DsMenuItem(
+                leading: const DsIcon(DsIcons.copy),
+                label: Text(t.music.copySongName),
+                onPressed: () => unawaited(_copyName(context)),
+              ),
+            ],
+            builder: (context, controller, _) => DsButton.icon(
+              variant: DsButtonVariant.ghost,
+              size: DsSize.sm,
+              semanticLabel: t.music.moreActions,
+              onPressed: controller.toggle,
+              icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
             ),
+          ),
         ],
       ),
       onPressed: onPlay,

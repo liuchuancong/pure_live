@@ -64,6 +64,46 @@ final class MusicQueueStore {
 /// The queue's storage.
 final musicQueueStoreProvider = Provider<MusicQueueStore>((ref) => const MusicQueueStore());
 
+/// The preference the per-song playback positions are kept under.
+const String kMusicProgressKey = 'music.playback.positions';
+
+/// How many songs keep a resume position; the oldest falls off first.
+const int kMusicProgressLimit = 200;
+
+/// Where each song stopped, keyed by `sourceId:id` in milliseconds.
+final class MusicProgressStore {
+  /// The store.
+  const MusicProgressStore();
+
+  /// The stored positions; an unreadable store answers empty.
+  Map<String, int> read() {
+    try {
+      final raw = StoragePrefs.getString(kMusicProgressKey);
+      if (raw == null || raw.isEmpty) return const <String, int>{};
+      final json = jsonDecode(raw);
+      if (json is! Map) return const <String, int>{};
+      return <String, int>{
+        for (final entry in json.entries)
+          if (entry.key is String && entry.value is num) entry.key as String: (entry.value as num).toInt(),
+      };
+    } on Object {
+      return const <String, int>{};
+    }
+  }
+
+  /// Keeps [positions] for the next run.
+  Future<void> write(Map<String, int> positions) async {
+    try {
+      await StoragePrefs.setString(kMusicProgressKey, jsonEncode(positions));
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The resume positions' storage.
+final musicProgressStoreProvider = Provider<MusicProgressStore>((ref) => const MusicProgressStore());
+
 /// The engine's tier for the module's preference: the source then resolves
 /// the platform's closest rendition at or below it.
 audio.MusicQuality musicQualityOf(MusicQuality quality) => switch (quality) {
@@ -82,6 +122,7 @@ audio.MusicQuality musicQualityOf(MusicQuality quality) => switch (quality) {
 /// the pages that watch it, so closing the player keeps the song playing.
 final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   late final audio.AudioPlaybackController _audio;
+  late final MusicProgressStore _progressStore;
   StreamSubscription<audio.AudioPlaybackState>? _states;
   audio.DesktopLyricController? _desktopLyric;
   StreamSubscription<bool>? _desktopVisibleChanges;
@@ -91,12 +132,19 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   String? _savedTrack;
   int _savedLength = -1;
   bool _askedNotifications = false;
+  Map<String, int> _positions = const <String, int>{};
+  String? _progressTrackKey;
+  String? _restoredProgressKey;
+  int _progressPositionMs = 0;
+  DateTime _lastProgressWrite = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   audio.AudioPlaybackState build() {
     // The kernel is read, not watched: rebuilding this controller would throw
     // its queue away, and a kernel that changes belongs to a new window.
     final settings = ref.read(musicSettingsProvider);
+    _progressStore = ref.read(musicProgressStoreProvider);
+    _positions = _progressStore.read();
     _audio = audio.AudioPlaybackController(
       ref.read(playerKernelProvider),
       // The local source is registered for its sidecar lyric reader: a local
@@ -152,19 +200,28 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
           settings.desktopLyricOpacity,
           settings.desktopLyricTextColor,
           settings.desktopLyricAlignment,
+          settings.desktopLyricStrokeColor,
+          settings.desktopLyricStrokeWidth,
           settings.desktopLyricLocked,
         ),
       ),
       (previous, next) {
         final desktop = _desktopLyric;
         if (desktop == null) return;
-        if (previous != null &&
-            (previous.$1 != next.$1 || previous.$2 != next.$2 || previous.$3 != next.$3 || previous.$4 != next.$4)) {
+        final restyled =
+            previous != null &&
+            (previous.$1 != next.$1 ||
+                previous.$2 != next.$2 ||
+                previous.$3 != next.$3 ||
+                previous.$4 != next.$4 ||
+                previous.$5 != next.$5 ||
+                previous.$6 != next.$6);
+        if (restyled) {
           final settings = ref.read(musicSettingsProvider);
           unawaited(desktop.setStyle(_desktopStyle(settings)));
         }
-        if (previous == null || previous.$5 != next.$5) {
-          unawaited(desktop.setLocked(locked: next.$5));
+        if (previous == null || previous.$7 != next.$7) {
+          unawaited(desktop.setLocked(locked: next.$7));
         }
       },
     );
@@ -172,6 +229,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       if (!ref.mounted) return;
       state = next;
       _follow(next);
+      _trackProgress(next);
       // Android 13+ hides the media notification without this permission; ask
       // when the viewer actually starts a song, not on some unrelated page.
       if (next.playing && !_askedNotifications) {
@@ -180,6 +238,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       }
     });
     ref.onDispose(() {
+      _flushProgress();
       unawaited(_states?.cancel() ?? Future<void>.value());
       unawaited(_desktopVisibleChanges?.cancel() ?? Future<void>.value());
       unawaited(_desktopLockChanges?.cancel() ?? Future<void>.value());
@@ -202,6 +261,8 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     fontSize: settings.desktopLyricFontSize,
     opacity: settings.desktopLyricOpacity,
     textColor: settings.desktopLyricTextColor,
+    strokeColor: settings.desktopLyricStrokeColor,
+    strokeWidth: settings.desktopLyricStrokeWidth,
     alignment: settings.desktopLyricAlignment,
   );
 
@@ -383,6 +444,86 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
 
   Future<void> _saveQueue() async {
     await ref.read(musicQueueStoreProvider).write(_audio.queue.tracks, _audio.queue.index);
+  }
+
+  /// Below this a stop is "the song was just opened", not a place to resume.
+  static const int _minResumeMs = 5000;
+
+  /// How close to the end counts as "played through", so the next open starts
+  /// at the beginning instead of a second before the fade-out.
+  static const int _resumeTailMs = 5000;
+
+  /// How often a running position is written; a seek or pause writes at once.
+  static const Duration _progressWriteInterval = Duration(seconds: 10);
+
+  static String _progressKeyOf(audio.MusicTrack track) => '${track.sourceId}:${track.id}';
+
+  /// Restores a song's last position on first play, and remembers where the
+  /// current one stopped. Mirrors the reference's 记住播放进度.
+  void _trackProgress(audio.AudioPlaybackState next) {
+    final track = next.track;
+    if (track == null) return;
+    if (!ref.read(musicSettingsProvider).rememberProgress) {
+      _progressTrackKey = null;
+      return;
+    }
+    final key = _progressKeyOf(track);
+    if (key != _progressTrackKey) {
+      _flushProgress();
+      _progressTrackKey = key;
+      _progressPositionMs = 0;
+    }
+    final durationMs = next.duration.inMilliseconds;
+    final positionMs = next.position.inMilliseconds;
+
+    // Wait for a real duration: it is what tells a saved position from a
+    // stale one that now points past the end.
+    if (key != _restoredProgressKey && next.playing && durationMs > 0) {
+      _restoredProgressKey = key;
+      final saved = _positions[key];
+      if (saved != null && saved >= _minResumeMs && saved <= durationMs - _resumeTailMs) {
+        unawaited(_audio.seek(Duration(milliseconds: saved)));
+      }
+    }
+
+    if (positionMs <= 0) return;
+
+    if (durationMs > 0 && positionMs >= durationMs - _resumeTailMs) {
+      // Played through: there is nothing to resume next time.
+      if (_positions.containsKey(key)) {
+        final positions = Map<String, int>.of(_positions)..remove(key);
+        _persistPositions(positions);
+      }
+      _progressPositionMs = 0;
+      return;
+    }
+
+    _progressPositionMs = positionMs;
+
+    if (!next.playing || DateTime.now().difference(_lastProgressWrite) >= _progressWriteInterval) {
+      _flushProgress();
+    }
+  }
+
+  /// Writes the current song's position into the map, keeping it bounded and
+  /// most-recently-used last.
+  void _flushProgress() {
+    final key = _progressTrackKey;
+    _lastProgressWrite = DateTime.now();
+    if (key == null || _progressPositionMs < _minResumeMs) return;
+    if (_positions[key] == _progressPositionMs) return;
+    final positions = Map<String, int>.of(_positions)
+      ..remove(key)
+      ..[key] = _progressPositionMs;
+    while (positions.length > kMusicProgressLimit) {
+      positions.remove(positions.keys.first);
+    }
+    _persistPositions(positions);
+  }
+
+  void _persistPositions(Map<String, int> positions) {
+    _positions = positions;
+    unawaited(_progressStore.write(positions));
   }
 
   /// Reopens the last queue when the viewer asked the module to continue;

@@ -1,7 +1,9 @@
 import 'dart:async' show unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
+import 'dart:typed_data' show Uint8List;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
@@ -96,3 +98,22 @@ final class MusicLocalController extends Notifier<MusicLocalState> {
 
 /// The device's own music folders and tracks.
 final musicLocalProvider = NotifierProvider<MusicLocalController, MusicLocalState>(MusicLocalController.new);
+
+/// Reads a track's embedded cover; the roots are irrelevant because
+/// [audio.LocalMusicSource.coverOf] opens the track's own file.
+final audio.LocalMusicSource _coverSource = audio.LocalMusicSource(roots: const <String>[]);
+
+/// A local file's embedded cover, read when a row asks for it.
+///
+/// Kept as a family so a song's cover is read once per session no matter how
+/// often the list rebuilds, and skipped entirely for the streamed tracks that
+/// carry a cover URI instead.
+final FutureProviderFamily<Uint8List?, audio.MusicTrack> musicLocalCoverProvider =
+    FutureProvider.family<Uint8List?, audio.MusicTrack>((ref, track) async {
+      if (!track.isLocal) return null;
+      try {
+        return (await _coverSource.coverOf(track))?.bytes;
+      } on Object {
+        return null;
+      }
+    });

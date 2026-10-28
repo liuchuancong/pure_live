@@ -948,6 +948,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get skipOnErrorDesc => 'Moves to the next source when one cannot answer, instead of stopping.';
 	@override String get autoplay => 'Resume on open';
 	@override String get autoplayDesc => 'Continues the last queue when the music module opens.';
+	@override String get rememberProgress => 'Remember playback position';
+	@override String get rememberProgressDesc => 'A song you open again resumes where it last stopped.';
 	@override String get addToTop => 'Add new songs on top';
 	@override String get addToTopDesc => 'Off keeps them at the end of a list.';
 	@override String get showSource => 'Show the source in lists';
@@ -1020,6 +1022,16 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get playNext => 'Play next';
 	@override String get addToPlaylist => 'Add to a playlist';
 	@override String get download => 'Download';
+	@override String get songDetails => 'Song details';
+	@override String get copySongName => 'Copy song name';
+	@override String get copiedSongName => 'Song name copied';
+	@override String get songDetailTitle => 'Title';
+	@override String get songDetailArtist => 'Artist';
+	@override String get songDetailAlbum => 'Album';
+	@override String get songDetailDuration => 'Duration';
+	@override String get songDetailSource => 'Source';
+	@override String get songDetailPath => 'File';
+	@override String get songDetailEmpty => '—';
 	@override String get downloadAll => 'Download all';
 	@override String downloadAllQueued({required Object count}) => 'Queued ${count} songs';
 	@override String get moveUp => 'Move up';
@@ -1043,6 +1055,12 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String playlistAdded({required Object name}) => 'Added to “${name}”';
 	@override String playlistAlreadyIn({required Object name}) => '“${name}” already has this song';
 	@override String playlistsCount({required Object count}) => '${count} playlists';
+	@override String get playlistImport => 'Import playlist';
+	@override String playlistImportDone({required Object name}) => 'Imported "${name}"';
+	@override String playlistImportFailed({required Object error}) => 'Import failed: ${error}';
+	@override String get playlistExport => 'Export playlist';
+	@override String playlistExportDone({required Object path}) => 'Exported to ${path}';
+	@override String playlistExportFailed({required Object error}) => 'Export failed: ${error}';
 	@override String downloadsActive({required Object count}) => 'Downloading ${count}';
 	@override String downloadQueued({required Object title}) => 'Queued for download: ${title}';
 	@override String get downloadDuplicate => 'This song is already in the download queue';
@@ -1132,6 +1150,13 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get desktopLyricOpacityDesc => 'The opacity of the whole overlay window.';
 	@override String get desktopLyricTextColor => 'Text colour';
 	@override String get desktopLyricTextColorDesc => 'The overlay’s main text colour.';
+	@override String get desktopLyricStrokeColor => 'Outline colour';
+	@override String get desktopLyricStrokeColorDesc => 'The text outline’s colour; unused when the outline width is 0.';
+	@override String get desktopLyricStrokeWidth => 'Outline width';
+	@override String get desktopLyricStrokeWidthDesc => 'How thick the text outline is; 0 turns it off.';
+	@override String get desktopLyricStrokeNone => 'None';
+	@override String get desktopLyricColorBlack => 'Black';
+	@override String get desktopLyricColorGray => 'Gray';
 	@override String get desktopLyricAlignment => 'Alignment';
 	@override String get desktopLyricAlignmentDesc => 'How the line is anchored in the window.';
 	@override String get desktopLyricAlignLeft => 'Left';
@@ -3969,6 +3994,8 @@ extension on TranslationsEn {
 			'music.skipOnErrorDesc' => 'Moves to the next source when one cannot answer, instead of stopping.',
 			'music.autoplay' => 'Resume on open',
 			'music.autoplayDesc' => 'Continues the last queue when the music module opens.',
+			'music.rememberProgress' => 'Remember playback position',
+			'music.rememberProgressDesc' => 'A song you open again resumes where it last stopped.',
 			'music.addToTop' => 'Add new songs on top',
 			'music.addToTopDesc' => 'Off keeps them at the end of a list.',
 			'music.showSource' => 'Show the source in lists',
@@ -4041,6 +4068,16 @@ extension on TranslationsEn {
 			'music.playNext' => 'Play next',
 			'music.addToPlaylist' => 'Add to a playlist',
 			'music.download' => 'Download',
+			'music.songDetails' => 'Song details',
+			'music.copySongName' => 'Copy song name',
+			'music.copiedSongName' => 'Song name copied',
+			'music.songDetailTitle' => 'Title',
+			'music.songDetailArtist' => 'Artist',
+			'music.songDetailAlbum' => 'Album',
+			'music.songDetailDuration' => 'Duration',
+			'music.songDetailSource' => 'Source',
+			'music.songDetailPath' => 'File',
+			'music.songDetailEmpty' => '—',
 			'music.downloadAll' => 'Download all',
 			'music.downloadAllQueued' => ({required Object count}) => 'Queued ${count} songs',
 			'music.moveUp' => 'Move up',
@@ -4064,6 +4101,12 @@ extension on TranslationsEn {
 			'music.playlistAdded' => ({required Object name}) => 'Added to “${name}”',
 			'music.playlistAlreadyIn' => ({required Object name}) => '“${name}” already has this song',
 			'music.playlistsCount' => ({required Object count}) => '${count} playlists',
+			'music.playlistImport' => 'Import playlist',
+			'music.playlistImportDone' => ({required Object name}) => 'Imported "${name}"',
+			'music.playlistImportFailed' => ({required Object error}) => 'Import failed: ${error}',
+			'music.playlistExport' => 'Export playlist',
+			'music.playlistExportDone' => ({required Object path}) => 'Exported to ${path}',
+			'music.playlistExportFailed' => ({required Object error}) => 'Export failed: ${error}',
 			'music.downloadsActive' => ({required Object count}) => 'Downloading ${count}',
 			'music.downloadQueued' => ({required Object title}) => 'Queued for download: ${title}',
 			'music.downloadDuplicate' => 'This song is already in the download queue',
@@ -4153,6 +4196,13 @@ extension on TranslationsEn {
 			'music.desktopLyricOpacityDesc' => 'The opacity of the whole overlay window.',
 			'music.desktopLyricTextColor' => 'Text colour',
 			'music.desktopLyricTextColorDesc' => 'The overlay’s main text colour.',
+			'music.desktopLyricStrokeColor' => 'Outline colour',
+			'music.desktopLyricStrokeColorDesc' => 'The text outline’s colour; unused when the outline width is 0.',
+			'music.desktopLyricStrokeWidth' => 'Outline width',
+			'music.desktopLyricStrokeWidthDesc' => 'How thick the text outline is; 0 turns it off.',
+			'music.desktopLyricStrokeNone' => 'None',
+			'music.desktopLyricColorBlack' => 'Black',
+			'music.desktopLyricColorGray' => 'Gray',
 			'music.desktopLyricAlignment' => 'Alignment',
 			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
 			'music.desktopLyricAlignLeft' => 'Left',
@@ -4171,6 +4221,8 @@ extension on TranslationsEn {
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
+			_ => null,
+		} ?? switch (path) {
 			'navigation.channels' => 'Channels',
 			'navigation.discover' => 'Discover',
 			'navigation.history' => 'Watch history',
@@ -4196,8 +4248,6 @@ extension on TranslationsEn {
 			'navigation.musicLocal' => 'Local music',
 			'navigation.musicDownloads' => 'Downloads',
 			'player.title' => 'Player',
-			_ => null,
-		} ?? switch (path) {
 			'player.back' => 'Back',
 			'player.quality' => 'Quality',
 			'player.line' => 'Line',
@@ -4685,6 +4735,8 @@ extension on TranslationsEn {
 			'settings.liquidGlass' => 'Liquid glass',
 			'settings.liquidGlassDescription' => 'The home bottom bar floats as frosted glass over the page; on phones with 4 GB of memory or less it is see-through without blur.',
 			'settings.themeColorTitle' => 'Accent colour',
+			_ => null,
+		} ?? switch (path) {
 			'settings.themeColorPresets' => 'Presets',
 			'settings.themeColorCustom' => 'Custom colour',
 			'settings.themeColorHex' => 'Hex colour',
@@ -4710,8 +4762,6 @@ extension on TranslationsEn {
 			'settings.languageSimplifiedChinese' => 'Simplified Chinese',
 			'settings.languageEnglish' => 'English',
 			'settings.refreshGroup' => 'Refresh',
-			_ => null,
-		} ?? switch (path) {
 			'settings.followsAutoRefresh' => 'Refresh follows automatically',
 			'settings.followsAutoRefreshDesc' => 'Refreshes the follow list on an interval while the page is open.',
 			'settings.liveAlert' => 'Live alerts',
@@ -5199,6 +5249,8 @@ extension on TranslationsEn {
 			'settings.playerGuideEntrySymLatencyBody' => 'Use the low-latency preset and shrink buffering properties.',
 			'settings.playerGuideEntrySymNoVideoTitle' => 'Sound but no picture',
 			'settings.playerGuideEntrySymNoVideoBody' => 'Check the video output driver: null renders nothing. Reset it to auto, or restore the player kernel defaults.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.optionAuto' => 'Auto',
 			'settings.optionOff' => 'Off',
 			'settings.optionOn' => 'On',
@@ -5224,8 +5276,6 @@ extension on TranslationsEn {
 			'settings.qualityBluRay4M' => 'Blu-ray 4M',
 			'settings.qualityBluRay' => 'Blu-ray',
 			'settings.qualityUltra' => 'Ultra HD',
-			_ => null,
-		} ?? switch (path) {
 			'settings.qualityHigh' => 'HD',
 			'settings.qualityStandard' => 'SD',
 			'settings.qualitySmooth' => 'Smooth',
@@ -5713,6 +5763,8 @@ extension on TranslationsEn {
 			'shield.similaritySeconds' => ({required Object seconds}) => '${seconds} seconds',
 			'shield.repeatTitle' => 'Repeated danmaku filter',
 			'shield.repeatEnabled' => 'Collapse identical danmaku bursts',
+			_ => null,
+		} ?? switch (path) {
 			'shield.repeatEnabledDescription' => 'Keep the first copy when different users send the same text. Local and system messages are unaffected.',
 			'shield.repeatWindow' => 'Identical-text window (seconds)',
 			'shield.keywordsTitle' => 'Keywords',
@@ -5738,8 +5790,6 @@ extension on TranslationsEn {
 			'shield.blockLongDescription' => 'Danmaku longer than the set length are not shown (an emoticon counts as one).',
 			'shield.blockLongLength' => 'Most characters',
 			'shield.blockLongLengthDescription' => 'The longest line still shown, 10–100 (an emoticon counts as one).',
-			_ => null,
-		} ?? switch (path) {
 			'shield.blockLongLengthValue' => ({required int count}) => '${count} characters',
 			'shield.douyuSuspected' => 'Filter Suspected Automated Douyu Chat',
 			'shield.douyuSuspectedDescription' => 'Turn on to hide suspected automated or event chat heuristically; ordinary chat may also be hidden',

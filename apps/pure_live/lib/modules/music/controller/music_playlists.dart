@@ -1,4 +1,5 @@
 import 'dart:convert' show jsonDecode, jsonEncode;
+import 'dart:io' show File;
 
 import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -175,6 +176,90 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
         if (playlist.id == id) playlist.copyWith(tracks: const []) else playlist,
     ];
     await _save();
+  }
+
+  /// Writes [playlist] into [directory] as a JSON file; returns its path.
+  ///
+  /// The shape is the store's own: a name and the tracks the module can
+  /// resolve again, so a list moves between installs without a platform
+  /// login. The reference's 导出歌单.
+  Future<String> exportToDirectory(MusicPlaylist playlist, String directory) async {
+    final safe = audio.MusicDownloadRequest.sanitizeFileName(playlist.name);
+    final file = File('$directory/${safe.isEmpty ? playlist.id : safe}.json');
+
+    await file.writeAsString(
+      jsonEncode({
+        'name': playlist.name,
+        'tracks': [for (final track in playlist.tracks) musicTrackToJson(track)],
+      }),
+      flush: true,
+    );
+
+    return file.path;
+  }
+
+  /// Imports a file written by [exportToDirectory]; null when it cannot be
+  /// read or holds no songs. A plain array of tracks is accepted too, which is
+  /// what a hand-written list looks like.
+  ///
+  /// The list always lands as a new playlist; an existing name gets a suffix
+  /// rather than being overwritten.
+  Future<MusicPlaylist?> importFromFile(String path) async {
+    try {
+      final json = jsonDecode(await File(path).readAsString());
+      final String name;
+      final Object? entries;
+
+      if (json is Map) {
+        name = (json['name'] as String?)?.trim() ?? '';
+        entries = json['tracks'];
+      } else if (json is List) {
+        name = '';
+        entries = json;
+      } else {
+        return null;
+      }
+
+      if (entries is! List || state.length >= kMusicPlaylistLimit) return null;
+
+      final tracks = [for (final entry in entries) ?musicTrackFromJson(entry)];
+
+      if (tracks.isEmpty) return null;
+
+      final base = name.isNotEmpty ? name : _nameOf(path);
+      final playlist = MusicPlaylist(
+        id: 'pl_${DateTime.now().microsecondsSinceEpoch}',
+        name: _uniqueName(base.isEmpty ? '歌单' : base),
+        tracks: tracks,
+        createdAt: DateTime.now(),
+      );
+
+      state = [...state, playlist];
+      await _save();
+
+      return playlist;
+    } on Object {
+      return null;
+    }
+  }
+
+  /// [base], or [base] with the first free ` (n)` suffix.
+  String _uniqueName(String base) {
+    final names = {for (final playlist in state) playlist.name};
+    if (!names.contains(base)) return base;
+
+    for (var index = 2; ; index++) {
+      final candidate = '$base ($index)';
+      if (!names.contains(candidate)) return candidate;
+    }
+  }
+
+  String _nameOf(String path) {
+    final separator = path.lastIndexOf(RegExp(r'[\\/]'));
+    final fileName = separator >= 0 ? path.substring(separator + 1) : path;
+    final dot = fileName.lastIndexOf('.');
+
+    return dot > 0 ? fileName.substring(0, dot) : fileName;
   }
 
   static String? _read() {

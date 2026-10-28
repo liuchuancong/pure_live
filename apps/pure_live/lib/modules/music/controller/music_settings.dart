@@ -96,6 +96,7 @@ final class MusicSettings {
     required this.quality,
     required this.skipOnError,
     required this.autoplay,
+    required this.rememberProgress,
     required this.addToTop,
     required this.showSource,
     required this.showTranslation,
@@ -106,6 +107,8 @@ final class MusicSettings {
     required this.desktopLyricFontSize,
     required this.desktopLyricOpacity,
     required this.desktopLyricTextColor,
+    required this.desktopLyricStrokeColor,
+    required this.desktopLyricStrokeWidth,
     required this.desktopLyricAlignment,
     required this.downloadType,
     required this.downloadPattern,
@@ -125,6 +128,7 @@ final class MusicSettings {
     quality: MusicQuality.standard,
     skipOnError: true,
     autoplay: false,
+    rememberProgress: true,
     addToTop: true,
     showSource: true,
     showTranslation: true,
@@ -135,6 +139,8 @@ final class MusicSettings {
     desktopLyricFontSize: 40,
     desktopLyricOpacity: 1,
     desktopLyricTextColor: 0xFFFFFFFF,
+    desktopLyricStrokeColor: 0xFF000000,
+    desktopLyricStrokeWidth: 2,
     desktopLyricAlignment: audio.DesktopLyricAlignment.center,
     downloadType: MusicDownloadType.original,
     downloadPattern: '{artist} - {title}',
@@ -159,6 +165,9 @@ final class MusicSettings {
 
   /// Whether opening the module resumes the last queue.
   final bool autoplay;
+
+  /// Whether a song opened again resumes at its last position.
+  final bool rememberProgress;
 
   /// Whether a song added to a list goes to its top rather than its end.
   final bool addToTop;
@@ -190,6 +199,12 @@ final class MusicSettings {
   /// The overlay's text colour as 0xAARRGGBB.
   final int desktopLyricTextColor;
 
+  /// The overlay's outline colour as 0xAARRGGBB.
+  final int desktopLyricStrokeColor;
+
+  /// The overlay's outline width in logical pixels; 0 turns it off.
+  final double desktopLyricStrokeWidth;
+
   /// The overlay's horizontal anchoring.
   final audio.DesktopLyricAlignment desktopLyricAlignment;
 
@@ -220,6 +235,7 @@ final class MusicSettings {
     MusicQuality? quality,
     bool? skipOnError,
     bool? autoplay,
+    bool? rememberProgress,
     bool? addToTop,
     bool? showSource,
     bool? showTranslation,
@@ -230,6 +246,8 @@ final class MusicSettings {
     double? desktopLyricFontSize,
     double? desktopLyricOpacity,
     int? desktopLyricTextColor,
+    int? desktopLyricStrokeColor,
+    double? desktopLyricStrokeWidth,
     audio.DesktopLyricAlignment? desktopLyricAlignment,
     MusicDownloadType? downloadType,
     String? downloadPattern,
@@ -243,6 +261,7 @@ final class MusicSettings {
     quality: quality ?? this.quality,
     skipOnError: skipOnError ?? this.skipOnError,
     autoplay: autoplay ?? this.autoplay,
+    rememberProgress: rememberProgress ?? this.rememberProgress,
     addToTop: addToTop ?? this.addToTop,
     showSource: showSource ?? this.showSource,
     showTranslation: showTranslation ?? this.showTranslation,
@@ -253,6 +272,8 @@ final class MusicSettings {
     desktopLyricFontSize: desktopLyricFontSize ?? this.desktopLyricFontSize,
     desktopLyricOpacity: desktopLyricOpacity ?? this.desktopLyricOpacity,
     desktopLyricTextColor: desktopLyricTextColor ?? this.desktopLyricTextColor,
+    desktopLyricStrokeColor: desktopLyricStrokeColor ?? this.desktopLyricStrokeColor,
+    desktopLyricStrokeWidth: desktopLyricStrokeWidth ?? this.desktopLyricStrokeWidth,
     desktopLyricAlignment: desktopLyricAlignment ?? this.desktopLyricAlignment,
     downloadType: downloadType ?? this.downloadType,
     downloadPattern: downloadPattern ?? this.downloadPattern,
@@ -268,6 +289,7 @@ const String _sourceKey = 'music.source.default';
 const String _qualityKey = 'music.play.quality';
 const String _skipOnErrorKey = 'music.play.skipOnError';
 const String _autoplayKey = 'music.play.autoplay';
+const String _rememberProgressKey = 'music.play.rememberProgress';
 const String _addToTopKey = 'music.list.addToTop';
 const String _showSourceKey = 'music.list.showSource';
 const String _showTranslationKey = 'music.lyric.showTranslation';
@@ -278,6 +300,8 @@ const String _desktopLyricLockedKey = 'music.lyric.desktop.locked';
 const String _desktopLyricFontSizeKey = 'music.lyric.desktop.fontSize';
 const String _desktopLyricOpacityKey = 'music.lyric.desktop.opacity';
 const String _desktopLyricTextColorKey = 'music.lyric.desktop.textColor';
+const String _desktopLyricStrokeColorKey = 'music.lyric.desktop.strokeColor';
+const String _desktopLyricStrokeWidthKey = 'music.lyric.desktop.strokeWidth';
 const String _desktopLyricAlignmentKey = 'music.lyric.desktop.alignment';
 const String _downloadTypeKey = 'music.download.type';
 const String _downloadPatternKey = 'music.download.pattern';
@@ -295,6 +319,7 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     quality: _readQuality(),
     skipOnError: _readBool(_skipOnErrorKey) ?? true,
     autoplay: _readBool(_autoplayKey) ?? false,
+    rememberProgress: _readBool(_rememberProgressKey) ?? true,
     addToTop: _readBool(_addToTopKey) ?? true,
     showSource: _readBool(_showSourceKey) ?? true,
     showTranslation: _readBool(_showTranslationKey) ?? true,
@@ -305,6 +330,8 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     desktopLyricFontSize: _readDouble(_desktopLyricFontSizeKey) ?? 40,
     desktopLyricOpacity: _readDouble(_desktopLyricOpacityKey) ?? 1,
     desktopLyricTextColor: _readInt(_desktopLyricTextColorKey) ?? 0xFFFFFFFF,
+    desktopLyricStrokeColor: _readInt(_desktopLyricStrokeColorKey) ?? 0xFF000000,
+    desktopLyricStrokeWidth: _readDouble(_desktopLyricStrokeWidthKey) ?? 2,
     desktopLyricAlignment: _readAlignment(),
     downloadType: _readDownloadType(),
     downloadPattern: _readString(_downloadPatternKey) ?? MusicSettings.standard.downloadPattern,
@@ -396,6 +423,12 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     await _writeBool(_autoplayKey, value);
   }
 
+  /// Remembers where each song stopped.
+  Future<void> setRememberProgress({required bool value}) async {
+    state = state.copyWith(rememberProgress: value);
+    await _writeBool(_rememberProgressKey, value);
+  }
+
   /// Adds new songs to the top of a list.
   Future<void> setAddToTop({required bool value}) async {
     state = state.copyWith(addToTop: value);
@@ -459,6 +492,19 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     await _writeInt(_desktopLyricTextColorKey, value);
   }
 
+  /// Sets the overlay's outline colour as 0xAARRGGBB.
+  Future<void> setDesktopLyricStrokeColor(int value) async {
+    state = state.copyWith(desktopLyricStrokeColor: value);
+    await _writeInt(_desktopLyricStrokeColorKey, value);
+  }
+
+  /// Sets the overlay's outline width; 0 turns the outline off.
+  Future<void> setDesktopLyricStrokeWidth(double value) async {
+    final clamped = value.clamp(0.0, 6.0);
+    state = state.copyWith(desktopLyricStrokeWidth: clamped);
+    await _writeDouble(_desktopLyricStrokeWidthKey, clamped);
+  }
+
   /// Sets the overlay's horizontal anchoring.
   Future<void> setDesktopLyricAlignment(audio.DesktopLyricAlignment value) async {
     state = state.copyWith(desktopLyricAlignment: value);
@@ -516,6 +562,7 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
       quality: MusicQuality.standard,
       skipOnError: true,
       autoplay: false,
+      rememberProgress: true,
       addToTop: true,
       showSource: true,
     );
@@ -523,6 +570,7 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     await setQuality(MusicQuality.standard);
     await setSkipOnError(value: true);
     await setAutoplay(value: false);
+    await setRememberProgress(value: true);
     await setAddToTop(value: true);
     await setShowSource(value: true);
   }

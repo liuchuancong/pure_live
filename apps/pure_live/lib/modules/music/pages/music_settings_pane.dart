@@ -73,6 +73,15 @@ final class MusicSettingsPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setAutoplay(value: value)),
               ),
             ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.history),
+              title: t.music.rememberProgress,
+              description: t.music.rememberProgressDesc,
+              control: DsSwitch(
+                value: settings.rememberProgress,
+                onChanged: (value) => unawaited(controller.setRememberProgress(value: value)),
+              ),
+            ),
           ],
         ),
         const DsListSection(
@@ -630,7 +639,9 @@ final class MusicDesktopLyricPane extends ConsumerWidget {
 
   static const List<double> _sizes = [24, 32, 40, 48, 56, 64];
   static const List<double> _opacities = [1, 0.9, 0.8, 0.7, 0.6, 0.5];
+  static const List<double> _strokeWidths = [0, 1, 2, 3, 4];
   static const List<int> _colors = [0xFFFFFFFF, 0xFFFFE066, 0xFF67E8F9, 0xFFF9A8D4, 0xFF86EFAC, 0xFFFDBA74];
+  static const List<int> _strokeColors = [0xFF000000, 0xFFFFFFFF, 0xFF9CA3AF];
 
   String _alignmentLabel(Translations t, audio.DesktopLyricAlignment alignment) => switch (alignment) {
     audio.DesktopLyricAlignment.left => t.music.desktopLyricAlignLeft,
@@ -644,6 +655,8 @@ final class MusicDesktopLyricPane extends ConsumerWidget {
     0xFF67E8F9 => t.music.desktopLyricColorCyan,
     0xFFF9A8D4 => t.music.desktopLyricColorPink,
     0xFF86EFAC => t.music.desktopLyricColorGreen,
+    0xFF000000 => t.music.desktopLyricColorBlack,
+    0xFF9CA3AF => t.music.desktopLyricColorGray,
     _ => t.music.desktopLyricColorOrange,
   };
 
@@ -733,6 +746,40 @@ final class MusicDesktopLyricPane extends ConsumerWidget {
                   ),
               ],
               onChanged: (value) => unawaited(controller.setDesktopLyricTextColor(value)),
+            ),
+            SettingsChoiceRow<double>(
+              leading: const DsIcon(DsIcons.contrast),
+              title: t.music.desktopLyricStrokeWidth,
+              description: t.music.desktopLyricStrokeWidthDesc,
+              value: settings.desktopLyricStrokeWidth,
+              options: [
+                for (final width in _strokeWidths)
+                  DsSelectOption(value: width, label: width == 0 ? t.music.desktopLyricStrokeNone : '${width.round()}'),
+              ],
+              onChanged: (value) => unawaited(controller.setDesktopLyricStrokeWidth(value)),
+            ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.palette),
+              title: t.music.desktopLyricStrokeColor,
+              description: t.music.desktopLyricStrokeColorDesc,
+              value: settings.desktopLyricStrokeColor,
+              options: [
+                for (final color in _strokeColors)
+                  DsSelectOption(
+                    value: color,
+                    label: _colorLabel(t, color),
+                    leading: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: Color(color),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: colors.border),
+                      ),
+                    ),
+                  ),
+              ],
+              onChanged: (value) => unawaited(controller.setDesktopLyricStrokeColor(value)),
             ),
             SettingsChoiceRow<audio.DesktopLyricAlignment>(
               leading: const DsIcon(DsIcons.alignLeft),

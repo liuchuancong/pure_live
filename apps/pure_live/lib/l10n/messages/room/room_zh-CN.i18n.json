@@ -53,6 +53,7 @@
   "offlineReplayReason": "有回放可看，回到列表后可从卡片进入",
   "offlineReason": "开播后这里会看到直播画面",
   "detailFailed": "房间信息加载失败",
+  "openRoom": "进入直播间",
   "copyLink": "复制房间链接",
   "linkCopied": "链接已复制",
   "record": "录制",

@@ -53,6 +53,7 @@
   "offlineReplayReason": "A replay is available; open it from the card in the list",
   "offlineReason": "The live picture appears here when the room goes live",
   "detailFailed": "The room details did not load",
+  "openRoom": "Open the room",
   "copyLink": "Copy room link",
   "linkCopied": "Link copied",
   "record": "Record",

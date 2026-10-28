@@ -2545,6 +2545,12 @@ class Translations$music$zh_CN {
 	/// zh-CN: '打开音乐模块时继续上次的播放队列。'
 	String get autoplayDesc => '打开音乐模块时继续上次的播放队列。';
 
+	/// zh-CN: '记住播放进度'
+	String get rememberProgress => '记住播放进度';
+
+	/// zh-CN: '再次打开同一首歌时，从上一次停止的位置继续。'
+	String get rememberProgressDesc => '再次打开同一首歌时，从上一次停止的位置继续。';
+
 	/// zh-CN: '新歌加到列表顶部'
 	String get addToTop => '新歌加到列表顶部';
 
@@ -2761,6 +2767,36 @@ class Translations$music$zh_CN {
 	/// zh-CN: '下载'
 	String get download => '下载';
 
+	/// zh-CN: '歌曲详情'
+	String get songDetails => '歌曲详情';
+
+	/// zh-CN: '复制歌名'
+	String get copySongName => '复制歌名';
+
+	/// zh-CN: '已复制歌名'
+	String get copiedSongName => '已复制歌名';
+
+	/// zh-CN: '歌名'
+	String get songDetailTitle => '歌名';
+
+	/// zh-CN: '歌手'
+	String get songDetailArtist => '歌手';
+
+	/// zh-CN: '专辑'
+	String get songDetailAlbum => '专辑';
+
+	/// zh-CN: '时长'
+	String get songDetailDuration => '时长';
+
+	/// zh-CN: '来源'
+	String get songDetailSource => '来源';
+
+	/// zh-CN: '文件'
+	String get songDetailPath => '文件';
+
+	/// zh-CN: '—'
+	String get songDetailEmpty => '—';
+
 	/// zh-CN: '下载全部'
 	String get downloadAll => '下载全部';
 
@@ -2829,6 +2865,24 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '{count} 个歌单'
 	String playlistsCount({required Object count}) => '${count} 个歌单';
+
+	/// zh-CN: '导入歌单'
+	String get playlistImport => '导入歌单';
+
+	/// zh-CN: '已导入「{name}」'
+	String playlistImportDone({required Object name}) => '已导入「${name}」';
+
+	/// zh-CN: '导入失败：{error}'
+	String playlistImportFailed({required Object error}) => '导入失败：${error}';
+
+	/// zh-CN: '导出歌单'
+	String get playlistExport => '导出歌单';
+
+	/// zh-CN: '已导出到 {path}'
+	String playlistExportDone({required Object path}) => '已导出到 ${path}';
+
+	/// zh-CN: '导出失败：{error}'
+	String playlistExportFailed({required Object error}) => '导出失败：${error}';
 
 	/// zh-CN: '正在下载 {count} 首'
 	String downloadsActive({required Object count}) => '正在下载 ${count} 首';
@@ -3096,6 +3150,27 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '桌面歌词的主文字颜色。'
 	String get desktopLyricTextColorDesc => '桌面歌词的主文字颜色。';
+
+	/// zh-CN: '描边颜色'
+	String get desktopLyricStrokeColor => '描边颜色';
+
+	/// zh-CN: '文字描边的颜色；描边宽度为 0 时不起作用。'
+	String get desktopLyricStrokeColorDesc => '文字描边的颜色；描边宽度为 0 时不起作用。';
+
+	/// zh-CN: '描边宽度'
+	String get desktopLyricStrokeWidth => '描边宽度';
+
+	/// zh-CN: '文字描边的粗细，0 表示不描边。'
+	String get desktopLyricStrokeWidthDesc => '文字描边的粗细，0 表示不描边。';
+
+	/// zh-CN: '无'
+	String get desktopLyricStrokeNone => '无';
+
+	/// zh-CN: '黑色'
+	String get desktopLyricColorBlack => '黑色';
+
+	/// zh-CN: '灰色'
+	String get desktopLyricColorGray => '灰色';
 
 	/// zh-CN: '对齐方式'
 	String get desktopLyricAlignment => '对齐方式';
@@ -9773,6 +9848,8 @@ extension on Translations {
 			'music.skipOnErrorDesc' => '某个音源取不到地址时换下一个，而不是停下。',
 			'music.autoplay' => '打开时继续播放',
 			'music.autoplayDesc' => '打开音乐模块时继续上次的播放队列。',
+			'music.rememberProgress' => '记住播放进度',
+			'music.rememberProgressDesc' => '再次打开同一首歌时，从上一次停止的位置继续。',
 			'music.addToTop' => '新歌加到列表顶部',
 			'music.addToTopDesc' => '关闭时新歌排在列表末尾。',
 			'music.showSource' => '列表显示音源',
@@ -9845,6 +9922,16 @@ extension on Translations {
 			'music.playNext' => '下一首播放',
 			'music.addToPlaylist' => '加入歌单',
 			'music.download' => '下载',
+			'music.songDetails' => '歌曲详情',
+			'music.copySongName' => '复制歌名',
+			'music.copiedSongName' => '已复制歌名',
+			'music.songDetailTitle' => '歌名',
+			'music.songDetailArtist' => '歌手',
+			'music.songDetailAlbum' => '专辑',
+			'music.songDetailDuration' => '时长',
+			'music.songDetailSource' => '来源',
+			'music.songDetailPath' => '文件',
+			'music.songDetailEmpty' => '—',
 			'music.downloadAll' => '下载全部',
 			'music.downloadAllQueued' => ({required Object count}) => '已加入 ${count} 首到下载队列',
 			'music.moveUp' => '上移',
@@ -9868,6 +9955,12 @@ extension on Translations {
 			'music.playlistAdded' => ({required Object name}) => '已加入「${name}」',
 			'music.playlistAlreadyIn' => ({required Object name}) => '「${name}」里已经有这首歌',
 			'music.playlistsCount' => ({required Object count}) => '${count} 个歌单',
+			'music.playlistImport' => '导入歌单',
+			'music.playlistImportDone' => ({required Object name}) => '已导入「${name}」',
+			'music.playlistImportFailed' => ({required Object error}) => '导入失败：${error}',
+			'music.playlistExport' => '导出歌单',
+			'music.playlistExportDone' => ({required Object path}) => '已导出到 ${path}',
+			'music.playlistExportFailed' => ({required Object error}) => '导出失败：${error}',
 			'music.downloadsActive' => ({required Object count}) => '正在下载 ${count} 首',
 			'music.downloadQueued' => ({required Object title}) => '已加入下载：${title}',
 			'music.downloadDuplicate' => '这首歌已经在下载队列里',
@@ -9957,6 +10050,13 @@ extension on Translations {
 			'music.desktopLyricOpacityDesc' => '桌面歌词窗口的整体不透明度。',
 			'music.desktopLyricTextColor' => '文字颜色',
 			'music.desktopLyricTextColorDesc' => '桌面歌词的主文字颜色。',
+			'music.desktopLyricStrokeColor' => '描边颜色',
+			'music.desktopLyricStrokeColorDesc' => '文字描边的颜色；描边宽度为 0 时不起作用。',
+			'music.desktopLyricStrokeWidth' => '描边宽度',
+			'music.desktopLyricStrokeWidthDesc' => '文字描边的粗细，0 表示不描边。',
+			'music.desktopLyricStrokeNone' => '无',
+			'music.desktopLyricColorBlack' => '黑色',
+			'music.desktopLyricColorGray' => '灰色',
 			'music.desktopLyricAlignment' => '对齐方式',
 			'music.desktopLyricAlignmentDesc' => '歌词在窗口内的水平对齐。',
 			'music.desktopLyricAlignLeft' => '左对齐',
@@ -9975,6 +10075,8 @@ extension on Translations {
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
+			_ => null,
+		} ?? switch (path) {
 			'navigation.channels' => '频道',
 			'navigation.discover' => '发现',
 			'navigation.history' => '观看记录',
@@ -10000,8 +10102,6 @@ extension on Translations {
 			'navigation.musicLocal' => '本地音乐',
 			'navigation.musicDownloads' => '下载管理',
 			'player.title' => '播放',
-			_ => null,
-		} ?? switch (path) {
 			'player.back' => '返回',
 			'player.quality' => '清晰度',
 			'player.line' => '线路',
@@ -10489,6 +10589,8 @@ extension on Translations {
 			'settings.liquidGlass' => '液体玻璃',
 			'settings.liquidGlassDescription' => '首页底栏悬浮成毛玻璃，页面从下面透出来；内存 4 GB 及以下的安卓手机不模糊，只半透明。',
 			'settings.themeColorTitle' => '主题色',
+			_ => null,
+		} ?? switch (path) {
 			'settings.themeColorPresets' => '预设颜色',
 			'settings.themeColorCustom' => '自定义颜色',
 			'settings.themeColorHex' => '十六进制颜色',
@@ -10514,8 +10616,6 @@ extension on Translations {
 			'settings.languageSimplifiedChinese' => '简体中文',
 			'settings.languageEnglish' => 'English',
 			'settings.refreshGroup' => '刷新',
-			_ => null,
-		} ?? switch (path) {
 			'settings.followsAutoRefresh' => '关注自动刷新',
 			'settings.followsAutoRefreshDesc' => '停留在关注页时按间隔刷新关注列表。',
 			'settings.liveAlert' => '开播提醒',
@@ -11003,6 +11103,8 @@ extension on Translations {
 			'settings.playerGuideEntrySymLatencyBody' => '选「低延迟」方案，并调低缓冲相关属性。',
 			'settings.playerGuideEntrySymNoVideoTitle' => '有声音没画面',
 			'settings.playerGuideEntrySymNoVideoBody' => '检查视频输出驱动是否被改过（null = 不渲染画面）；恢复「自动」即可。恢复播放内核默认设置也能解决。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.optionAuto' => '自动',
 			'settings.optionOff' => '关闭',
 			'settings.optionOn' => '开启',
@@ -11028,8 +11130,6 @@ extension on Translations {
 			'settings.qualityBluRay4M' => '蓝光 4M',
 			'settings.qualityBluRay' => '蓝光',
 			'settings.qualityUltra' => '超清',
-			_ => null,
-		} ?? switch (path) {
 			'settings.qualityHigh' => '高清',
 			'settings.qualityStandard' => '标清',
 			'settings.qualitySmooth' => '流畅',
@@ -11517,6 +11617,8 @@ extension on Translations {
 			'shield.similaritySeconds' => ({required Object seconds}) => '${seconds} 秒',
 			'shield.repeatTitle' => '重复弹幕过滤',
 			'shield.repeatEnabled' => '合并短时间内的相同弹幕',
+			_ => null,
+		} ?? switch (path) {
 			'shield.repeatEnabledDescription' => '不同用户发送相同内容时只保留第一条；本地弹幕和系统消息不受影响。',
 			'shield.repeatWindow' => '相同内容合并时间（秒）',
 			'shield.keywordsTitle' => '关键词',
@@ -11542,8 +11644,6 @@ extension on Translations {
 			'shield.blockLongDescription' => '超过设定字数的弹幕不显示（一个表情算一个字）。',
 			'shield.blockLongLength' => '最多字数',
 			'shield.blockLongLengthDescription' => '允许显示的最大字数，范围 10–100（一个表情算一个字）。',
-			_ => null,
-		} ?? switch (path) {
 			'shield.blockLongLengthValue' => ({required int count}) => '${count} 字',
 			'shield.douyuSuspected' => '过滤斗鱼疑似自动弹幕',
 			'shield.douyuSuspectedDescription' => '开启后按启发式标记隐藏疑似自动或活动弹幕，也可能隐藏普通聊天',
