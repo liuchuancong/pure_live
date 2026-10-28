@@ -129,7 +129,10 @@ final class SitesOrderController extends Notifier<SitesOrder> {
   /// platforms now ordered is accepted: the order editor hands back the same
   /// list it was shown, and anything else would drop a platform.
   Future<void> setOrder(List<String> ids) async {
-    if (ids.length != state.order.length || ids.toSet() != state.order.toSet()) return;
+    // Set equality is identity in Dart, so a `.toSet() ==` guard here would
+    // always fail and silently swallow every save; the length-plus-members
+    // check is the real rearrangement test.
+    if (ids.length != state.order.length || !ids.every(state.order.contains)) return;
     state = (order: ids, preferred: state.preferred);
     await _writeOrder(ids);
   }

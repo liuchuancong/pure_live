@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/background/library/background_presets.dart' show gradientAlignments;
 import 'package:pure_live/app/background/settings/background_settings.dart';
 import 'package:pure_live/app/background/wallpaper/background_video_source.dart';
-import 'package:pure_live/features/room/room.dart';
+import 'package:pure_live/modules/live/room/room.dart';
 import 'package:pure_live/shared/shared.dart';
 import 'package:pure_uikit_background/pure_uikit_background.dart'
     show
@@ -103,12 +103,16 @@ final class AppBackground extends ConsumerWidget {
       case BackgroundKind.video:
         final uri = _videoUri(settings);
         if (uri == null) return null;
+        // The frost goes on the decoded surface, not on the backdrop: a video
+        // is a `Texture`, which a backdrop filter has nothing to sample, so
+        // the scrim would stay a flat wash over a sharp clip.
         return VideoBackground(
           source: AppBackgroundVideoSource(uri),
           fit: settings.fit,
           underlay: underlay,
           fallback: underlay,
-          overlay: overlay,
+          blurSigma: settings.overlayBlurSigma,
+          overlay: appBackgroundOverlay(context, opacity: settings.maskOpacity, blurSigma: 0),
         );
     }
   }

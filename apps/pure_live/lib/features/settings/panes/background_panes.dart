@@ -3,11 +3,11 @@ import 'dart:io' show File;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:desktop_drop/desktop_drop.dart' show DropDoneDetails, DropTarget;
+import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
-import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:path/path.dart' as p;
 
 import 'package:pure_live/app/app.dart';
@@ -175,6 +175,29 @@ final class _BackgroundColorsPaneState extends ConsumerState<BackgroundColorsPan
     );
   }
 
+  /// Saves the swatch as a 1920×1080 PNG in the shared download folder.
+  Future<void> _savePaint(BuildContext context, WallpaperPreviewPaint paint) async {
+    final t = context.t;
+    final directory = ref.read(downloadDirectoryProvider).effectivePath;
+    try {
+      final target = File(
+        p.join(directory, wallpaperFileName(title: paint.name, fallback: 'background', address: 'paint.png')),
+      );
+      await target.parent.create(recursive: true);
+      await target.writeAsBytes(await encodeWallpaperPaint(paint));
+      if (!context.mounted) return;
+      showDsToast(context: context, title: t.settings.downloadSavedTo(path: directory));
+    } on Object catch (error) {
+      if (!context.mounted) return;
+      showDsToast(
+        context: context,
+        title: t.settings.backgroundDownloadFailed,
+        description: '$error',
+        status: DsStatus.danger,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -188,6 +211,16 @@ final class _BackgroundColorsPaneState extends ConsumerState<BackgroundColorsPan
         final pageSize = columns * _kPageRows;
         final solids = _slice(kBackgroundSolidPresets, _solidPage, pageSize);
         final gradients = _slice(kBackgroundGradientPresets, _gradientPage, pageSize);
+        // The preview walks the whole table from the tapped swatch, so a
+        // swatch on any page leads to the same run of candidates.
+        final solidPaints = [
+          for (final preset in kBackgroundSolidPresets) WallpaperPreviewPaint.solid(preset.name, preset.color),
+        ];
+        final gradientPaints = [
+          for (final preset in kBackgroundGradientPresets) WallpaperPreviewPaint.gradient(preset),
+        ];
+        final solidOffset = (_solidPage - 1) * pageSize;
+        final gradientOffset = (_gradientPage - 1) * pageSize;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s16,
@@ -214,7 +247,6 @@ final class _BackgroundColorsPaneState extends ConsumerState<BackgroundColorsPan
             ),
             if (_group == _SwatchGroup.solid)
               DsListSection(
-                header: Text(t.settings.backgroundSolid),
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(DsSpace.s12),
@@ -222,14 +254,16 @@ final class _BackgroundColorsPaneState extends ConsumerState<BackgroundColorsPan
                       spacing: DsSpace.s8,
                       runSpacing: DsSpace.s8,
                       children: [
-                        for (final preset in solids)
+                        for (var i = 0; i < solids.length; i++)
                           _Swatch(
-                            name: preset.name,
-                            decoration: BoxDecoration(color: preset.color),
-                            selected: settings.kind == BackgroundKind.solid && settings.solidColor == preset.color,
+                            name: solids[i].name,
+                            decoration: BoxDecoration(color: solids[i].color),
+                            selected: settings.kind == BackgroundKind.solid && settings.solidColor == solids[i].color,
                             copyLabel: t.settings.backgroundCopyColor,
-                            copyValue: preset.name,
-                            onPressed: () => controller.setSolid(preset.color),
+                            copyValue: solids[i].name,
+                            onPressed: () => controller.setSolid(solids[i].color),
+                            onPreview: () => unawaited(showPalettePreview(context, solidPaints, solidOffset + i)),
+                            onDownload: () => unawaited(_savePaint(context, solidPaints[solidOffset + i])),
                           ),
                       ],
                     ),
@@ -245,7 +279,6 @@ final class _BackgroundColorsPaneState extends ConsumerState<BackgroundColorsPan
               )
             else
               DsListSection(
-                header: Text(t.settings.backgroundGradient),
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(DsSpace.s12),
@@ -253,14 +286,16 @@ final class _BackgroundColorsPaneState extends ConsumerState<BackgroundColorsPan
                       spacing: DsSpace.s8,
                       runSpacing: DsSpace.s8,
                       children: [
-                        for (final preset in gradients)
+                        for (var i = 0; i < gradients.length; i++)
                           _Swatch(
-                            name: preset.name,
-                            decoration: _gradientOf(preset),
-                            selected: settings.kind == BackgroundKind.gradient && _sameGradient(settings, preset),
+                            name: gradients[i].name,
+                            decoration: _gradientOf(gradients[i]),
+                            selected: settings.kind == BackgroundKind.gradient && _sameGradient(settings, gradients[i]),
                             copyLabel: t.settings.backgroundCopyGradient,
-                            copyValue: _cssGradient(preset),
-                            onPressed: () => controller.setGradient(preset),
+                            copyValue: _cssGradient(gradients[i]),
+                            onPressed: () => controller.setGradient(gradients[i]),
+                            onPreview: () => unawaited(showPalettePreview(context, gradientPaints, gradientOffset + i)),
+                            onDownload: () => unawaited(_savePaint(context, gradientPaints[gradientOffset + i])),
                           ),
                       ],
                     ),
@@ -318,8 +353,9 @@ final class _BackgroundColorsPaneState extends ConsumerState<BackgroundColorsPan
 }
 
 /// One palette swatch: the paint, its name under it, and the ring that says
-/// this is what the app is wearing. A long press or right click offers the
-/// same apply plus copying the colour in a form another app understands.
+/// this is what the app is wearing. A tap opens it full-window; a long press
+/// or right click offers the same plus applying it, saving it as a picture,
+/// and copying the colour in a form another app understands.
 final class _Swatch extends StatelessWidget {
   const _Swatch({
     required this.name,
@@ -328,6 +364,8 @@ final class _Swatch extends StatelessWidget {
     required this.copyLabel,
     required this.copyValue,
     required this.onPressed,
+    required this.onPreview,
+    required this.onDownload,
   });
 
   /// The colour or gradient, in the form the background paints with.
@@ -344,6 +382,8 @@ final class _Swatch extends StatelessWidget {
 
   final bool selected;
   final VoidCallback onPressed;
+  final VoidCallback onPreview;
+  final VoidCallback onDownload;
 
   @override
   Widget build(BuildContext context) {
@@ -353,7 +393,9 @@ final class _Swatch extends StatelessWidget {
     return DsContextMenuRegion(
       semanticLabel: t.common.more,
       items: [
+        DsMenuItem(leading: const DsIcon(DsIcons.eye), label: Text(t.settings.backgroundPreviewMedia), onPressed: onPreview),
         DsMenuItem(leading: const DsIcon(DsIcons.check), label: Text(t.settings.backgroundApply), onPressed: onPressed),
+        DsMenuItem(leading: const DsIcon(DsIcons.download), label: Text(t.settings.downloadAction), onPressed: onDownload),
         DsMenuItem(
           leading: const DsIcon(DsIcons.copy),
           label: Text(copyLabel),
@@ -372,7 +414,7 @@ final class _Swatch extends StatelessWidget {
             DsPressable(
               semanticLabel: name,
               selected: selected,
-              onPressed: onPressed,
+              onPressed: onPreview,
               builder: (context, states, _) => Container(
                 width: _kSwatchTileWidth.toDouble(),
                 height: 64,
@@ -404,6 +446,9 @@ final class _Swatch extends StatelessWidget {
     );
   }
 }
+
+/// The tile's width over height.
+const double _kWallpaperAspectRatio = 16 / 10;
 
 /// Online image and video wallpapers, one source at a time, with a preview
 /// before the choice is applied.
@@ -517,6 +562,34 @@ final class _BackgroundLibraryPaneState extends ConsumerState<BackgroundLibraryP
     unawaited(_load());
   }
 
+  /// One more server page, for the preview that walked past the entries the
+  /// grid showed. The page joins the buffer, so the grid gains it too; the
+  /// preview gets only the entries the buffer did not already hold.
+  Future<List<WallpaperItem>> _loadMore() async {
+    final source = _selectedSource;
+    if (source.isLocal || !_hasMore || _loading) return const [];
+    setState(() => _loading = true);
+    try {
+      final items = await ref
+          .read(backgroundLibraryClientProvider)
+          .fetch(source: source, category: _category, page: _serverPages + 1);
+      if (!mounted) return const [];
+      final seen = {for (final item in _buffer) item.url};
+      final added = items.where((item) => seen.add(item.url)).toList();
+      setState(() {
+        _buffer = [..._buffer, ...added];
+        _serverPages += 1;
+        if (items.isEmpty || items.length < source.pageSize) _hasMore = false;
+        _loading = false;
+      });
+      return added;
+    } on Object {
+      if (!mounted) return const [];
+      setState(() => _loading = false);
+      return const [];
+    }
+  }
+
   void _selectSource(WallpaperSourceId id) {
     if (id == _source.id) return;
     setState(() {
@@ -585,9 +658,6 @@ final class _BackgroundLibraryPaneState extends ConsumerState<BackgroundLibraryP
       );
     }
   }
-
-  /// The tile's width over height.
-  static const double _kWallpaperAspectRatio = 16 / 10;
 
   /// The grid every page — and every skeleton row — is laid out with.
   static const SliverGridDelegateWithMaxCrossAxisExtent _gridDelegate = SliverGridDelegateWithMaxCrossAxisExtent(
@@ -691,8 +761,9 @@ final class _BackgroundLibraryPaneState extends ConsumerState<BackgroundLibraryP
                           selected: settings.kind == selectedKind && item.url == selectedUrl,
                           semanticLabel: '$title ${(_page - 1) * pageSize + index + 1}',
                           // The whole page travels with the tap: the preview
-                          // steps through what the grid just showed.
-                          onPressed: () => unawaited(showWallpaperPreview(context, items, index)),
+                          // steps through what the grid just showed, and
+                          // pulls later pages as the walk reaches them.
+                          onPressed: () => unawaited(showWallpaperPreview(context, items, index, more: _loadMore)),
                           onApply: () => _applyItem(item),
                           onDownload: () => unawaited(_download(item)),
                         );
@@ -789,6 +860,7 @@ final class _WallpaperTile extends StatelessWidget {
               children: [
                 DsImage(
                   image: cachedImage(item.thumb),
+                  aspectRatio: _kWallpaperAspectRatio,
                   semanticLabel: semanticLabel,
                   fallback: ColoredBox(color: colors.control),
                 ),
@@ -865,6 +937,10 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
   final TextEditingController _imageUrl = TextEditingController();
   final TextEditingController _videoUrl = TextEditingController();
 
+  /// Which of the two sources the page is showing: one card at a time, so the
+  /// page does not carry two drop zones and two address fields at once.
+  BackgroundMediaKind _kind = BackgroundMediaKind.image;
+
   /// Which zone a drag is over, so the kit draws the drop affordance there.
   bool _imageDragging = false;
   bool _videoDragging = false;
@@ -894,10 +970,33 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
     final settings = ref.watch(backgroundSettingsProvider);
     final controller = ref.read(backgroundSettingsProvider.notifier);
     final muted = DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted);
+    final video = _kind == BackgroundMediaKind.video;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
+        // Content-width, like the chips elsewhere: two words do not need the
+        // whole row's worth of rail.
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: DsSegmentedControl<BackgroundMediaKind>(
+            value: _kind,
+            semanticLabel: t.settings.backgroundDeviceTitle,
+            segments: [
+              DsSegment(
+                value: BackgroundMediaKind.image,
+                label: Text(t.settings.backgroundImage),
+                icon: const DsIcon(DsIcons.image, size: 16),
+              ),
+              DsSegment(
+                value: BackgroundMediaKind.video,
+                label: Text(t.settings.backgroundVideo),
+                icon: const DsIcon(DsIcons.video, size: 16),
+              ),
+            ],
+            onChanged: (value) => setState(() => _kind = value),
+          ),
+        ),
         if (settings.error.isNotEmpty)
           DsAlert(
             status: DsStatus.danger,
@@ -914,34 +1013,19 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
           ),
         _sourceSection(
           context,
-          title: t.settings.backgroundImage,
-          addressLabel: t.settings.backgroundImageAddress,
-          formats: _formatsOf(kBackgroundImageExtensions),
-          controller: _imageUrl,
-          path: settings.imagePath,
-          saved: settings.imageUrl,
+          title: video ? t.settings.backgroundVideo : t.settings.backgroundImage,
+          addressLabel: video ? t.settings.backgroundVideoAddress : t.settings.backgroundImageAddress,
+          formats: _formatsOf(video ? kBackgroundVideoExtensions : kBackgroundImageExtensions),
+          controller: video ? _videoUrl : _imageUrl,
+          path: video ? settings.videoPath : settings.imagePath,
+          saved: video ? settings.videoUrl : settings.imageUrl,
           busy: settings.busy,
-          dragging: _imageDragging,
-          onDraggingChanged: (value) => setState(() => _imageDragging = value),
+          dragging: video ? _videoDragging : _imageDragging,
+          onDraggingChanged: (value) => setState(() => video ? _videoDragging = value : _imageDragging = value),
           onBrowse: _upload,
-          onApply: () => _apply(image: true),
-          onRemove: () => controller.removeFile(image: true),
-          onDrop: _drop,
-        ),
-        _sourceSection(
-          context,
-          title: t.settings.backgroundVideo,
-          addressLabel: t.settings.backgroundVideoAddress,
-          formats: _formatsOf(kBackgroundVideoExtensions),
-          controller: _videoUrl,
-          path: settings.videoPath,
-          saved: settings.videoUrl,
-          busy: settings.busy,
-          dragging: _videoDragging,
-          onDraggingChanged: (value) => setState(() => _videoDragging = value),
-          onBrowse: _upload,
-          onApply: () => _apply(image: false),
-          onRemove: () => controller.removeFile(image: false),
+          onSubmit: () => _previewTyped(video: video),
+          onRemove: () => controller.removeFile(image: !video),
+          onPreview: (path) => _preview(_itemOf(path, video: video)),
           onDrop: _drop,
         ),
       ],
@@ -962,8 +1046,9 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
     required bool dragging,
     required ValueChanged<bool> onDraggingChanged,
     required VoidCallback onBrowse,
-    required VoidCallback onApply,
+    required VoidCallback onSubmit,
     required VoidCallback onRemove,
+    required ValueChanged<String> onPreview,
     required ValueChanged<DropDoneDetails> onDrop,
   }) {
     final t = context.t;
@@ -973,8 +1058,9 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
       onDragEntered: (_) => onDraggingChanged(true),
       onDragExited: (_) => onDraggingChanged(false),
       onDragDone: onDrop,
+      // No header: the switch above names the kind, and one more line saying
+      // it would only repeat the tab.
       child: DsListSection(
-        header: Text(title),
         children: [
           Padding(
             padding: const EdgeInsets.all(DsSpace.s16),
@@ -995,7 +1081,7 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
                           DsMenuItem(
                             leading: const DsIcon(DsIcons.eye),
                             label: Text(t.settings.backgroundPreviewMedia),
-                            onPressed: () => unawaited(_previewFile(path)),
+                            onPressed: () => onPreview(path),
                           ),
                           DsMenuItem(
                             leading: const DsIcon(DsIcons.download),
@@ -1025,10 +1111,10 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
                         controller: controller,
                         placeholder: t.settings.backgroundAddressHint,
                         semanticLabel: addressLabel,
-                        onSubmitted: (_) => onApply(),
+                        onSubmitted: (_) => onSubmit(),
                       ),
                     ),
-                    DsButton(onPressed: busy ? null : onApply, child: Text(t.settings.backgroundApply)),
+                    DsButton(onPressed: busy ? null : onSubmit, child: Text(t.settings.backgroundPreviewMedia)),
                   ],
                 ),
                 if (saved.isNotEmpty)
@@ -1046,16 +1132,14 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
     );
   }
 
-  /// Copies a file dropped on either zone into the slot its own type names;
-  /// a drop of a type neither zone takes says so instead of failing later in
-  /// the decoder.
+  /// A dropped file or link goes to the preview, not straight onto the app:
+  /// the picker and the address field follow the same rule.
   Future<void> _drop(DropDoneDetails details) async {
     final t = context.t;
     setState(() {
       _imageDragging = false;
       _videoDragging = false;
     });
-    if (ref.read(backgroundSettingsProvider).busy) return;
     final file = details.files.firstOrNull;
     if (file == null) {
       // A link dragged from a browser arrives as text, not as a file. Its
@@ -1063,9 +1147,7 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
       final text = (details.rawText ?? '').trim();
       final uri = Uri.tryParse(text);
       if (text.isNotEmpty && uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
-        final image = backgroundMediaKindOf(uri.path) != BackgroundMediaKind.video;
-        (image ? _imageUrl : _videoUrl).text = text;
-        _apply(image: image);
+        _previewAddress(text, video: backgroundMediaKindOf(uri.path) == BackgroundMediaKind.video);
         return;
       }
       showDsToast(context: context, title: t.settings.backgroundDropUnsupported, status: DsStatus.danger);
@@ -1073,31 +1155,40 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
     }
     final path = file.path;
     final kind = backgroundMediaKindOf(path.isEmpty ? file.name : path);
-    if (kind == null) {
+    if (path.isEmpty || kind == null) {
       showDsToast(context: context, title: t.settings.backgroundDropUnsupported, status: DsStatus.danger);
       return;
     }
-    await ref
-        .read(backgroundSettingsProvider.notifier)
-        .importDroppedFile(path, image: kind == BackgroundMediaKind.image);
-    if (!mounted) return;
-    _syncAddressFields();
-    final settings = ref.read(backgroundSettingsProvider);
-    if (settings.error.isNotEmpty) {
-      showDsToast(
-        context: context,
-        title: t.settings.backgroundImportFailed,
-        description: settings.error,
-        status: DsStatus.danger,
-      );
-    }
+    _preview(_itemOf(path, video: kind == BackgroundMediaKind.video));
   }
 
-  /// Shows the just-imported source in the matching address field.
-  void _syncAddressFields() {
+  /// Opens [address] in the preview; nothing reaches the app until the viewer
+  /// keeps it there.
+  void _previewAddress(String address, {required bool video}) {
+    final t = context.t;
+    final uri = Uri.tryParse(address.trim());
+    if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https') || uri.host.isEmpty) {
+      showDsToast(context: context, title: t.settings.backgroundInvalidUrl, status: DsStatus.danger);
+      return;
+    }
+    _preview(_itemOf(address, video: video));
+  }
+
+  /// The address field's button: the link just typed, or the file already in
+  /// the slot when the field is empty.
+  void _previewTyped({required bool video}) {
+    final typed = (video ? _videoUrl : _imageUrl).text;
+    if (typed.trim().isNotEmpty) {
+      _previewAddress(typed, video: video);
+      return;
+    }
     final settings = ref.read(backgroundSettingsProvider);
-    _imageUrl.text = settings.imageUrl;
-    _videoUrl.text = settings.videoUrl;
+    final path = video ? settings.videoPath : settings.imagePath;
+    if (path.isEmpty) {
+      showDsToast(context: context, title: context.t.settings.backgroundInvalidUrl, status: DsStatus.danger);
+      return;
+    }
+    _preview(_itemOf(path, video: video));
   }
 
   int? _sizeOf(String path) {
@@ -1108,13 +1199,40 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
     }
   }
 
-  /// Opens the imported file in whatever the system uses for its type.
-  Future<void> _previewFile(String path) async {
-    final t = context.t;
-    final result = await OpenFile.open(path);
-    if (result.type != ResultType.done && mounted) {
-      showDsToast(context: context, title: t.settings.downloadOpenFailed, status: DsStatus.danger);
-    }
+  /// A card's address as a preview entry: an http(s) address or a path on
+  /// disk. Anything else has no preview to show.
+  WallpaperItem? _itemOf(String address, {required bool video}) {
+    final text = address.trim();
+    if (text.isEmpty) return null;
+    final parsed = Uri.tryParse(text);
+    final scheme = parsed?.scheme ?? '';
+    final uri = switch (scheme) {
+      'http' || 'https' || 'file' => parsed,
+      // A path typed or handed over by the importer: no scheme to read.
+      _ when text.contains('/') || text.contains(r'\') => Uri.file(text),
+      _ => null,
+    };
+    if (uri == null) return null;
+    final name = uri.scheme == 'file'
+        ? p.basename(uri.toFilePath())
+        : (uri.pathSegments.isEmpty ? text : uri.pathSegments.last);
+    return WallpaperItem(
+      (builder) => builder
+        ..id = uri.toString()
+        ..name = name
+        ..url = uri.toString()
+        ..thumb = uri.toString()
+        ..video = video,
+    );
+  }
+
+  /// Opens [item] in the app's own preview page: the same stage, scrim and
+  /// apply button the online entries get, rather than handing the file to
+  /// whatever the system opens it with. Nothing is applied until the viewer
+  /// keeps it there.
+  void _preview(WallpaperItem? item) {
+    if (item == null) return;
+    unawaited(showWallpaperPreview(context, [item], 0));
   }
 
   /// Copies the imported file into the shared download folder, so the
@@ -1142,47 +1260,24 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
     }
   }
 
-  void _apply({required bool image}) {
-    final t = context.t;
-    final settings = ref.read(backgroundSettingsProvider);
-    final url = (image ? _imageUrl : _videoUrl).text.trim();
-    if (url.isEmpty) {
-      // Nothing typed. With a file already in place the field is simply left
-      // alone; with none, an empty address would switch the kind to a picture
-      // that has no source — nothing paints and the setting looks broken.
-      if ((image ? settings.imagePath : settings.videoPath).isEmpty) {
-        showDsToast(context: context, title: t.settings.backgroundInvalidUrl, status: DsStatus.danger);
-      }
-      return;
-    }
-    if (url.isNotEmpty) {
-      final uri = Uri.tryParse(url);
-      if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https') || uri.host.isEmpty) {
-        showDsToast(context: context, title: t.settings.backgroundInvalidUrl, status: DsStatus.danger);
-        return;
-      }
-    }
-    final controller = ref.read(backgroundSettingsProvider.notifier);
-    image ? controller.setImageUrl(url) : controller.setVideoUrl(url);
-  }
-
-  /// Opens one picker for both kinds: the file's own type decides which slot
-  /// it lands in, whichever card's browse button was pressed.
+  /// Picks a picture or a clip and opens it in the preview: the file's own
+  /// type decides how it is walked, and nothing is copied into the app's
+  /// folder until the viewer keeps it there.
   Future<void> _upload() async {
     final t = context.t;
-    final controller = ref.read(backgroundSettingsProvider.notifier);
-    final kind = await controller.uploadMedia(dialogTitle: t.settings.backgroundDeviceTitle);
-    if (!mounted || kind == null) return;
-    _syncAddressFields();
-    final settings = ref.read(backgroundSettingsProvider);
-    if (settings.error.isNotEmpty) {
-      showDsToast(
-        context: context,
-        title: t.settings.backgroundImportFailed,
-        description: settings.error,
-        status: DsStatus.danger,
-      );
+    final file = await FilePicker.pickFile(
+      dialogTitle: t.settings.backgroundDeviceTitle,
+      type: FileType.custom,
+      allowedExtensions: [...kBackgroundImageExtensions, ...kBackgroundVideoExtensions],
+    );
+    if (!mounted || file == null) return;
+    final path = file.path ?? '';
+    final kind = backgroundMediaKindOf(path) ?? backgroundMediaKindOf(file.name);
+    if (path.isEmpty || kind == null) {
+      showDsToast(context: context, title: t.settings.backgroundDropUnsupported, status: DsStatus.danger);
+      return;
     }
+    _preview(_itemOf(path, video: kind == BackgroundMediaKind.video));
   }
 }
 

@@ -6,11 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/shared/shared.dart';
 
-/// A setting row with its control in the row on a wide pane, and under the
-/// label on a narrow one — desen_ui's form rhythm without copying a
-/// desktop layout onto a phone. Shared by the app-wide sections and the
-/// module-specific panes (IPTV, the Bilibili station), so every settings
-/// surface answers a narrow window the same way.
+/// A setting row with its control at the row's end; on a narrow pane a wide
+/// control (a slider, a field, a picker) drops under the label, while a
+/// switch or checkbox — small enough to fit beside any label — stays in the
+/// row. Shared by the app-wide sections and the module-specific panes (IPTV,
+/// the Bilibili station), so every settings surface answers a narrow window
+/// the same way.
 final class SettingsConfigRow extends StatelessWidget {
   /// A row for [title] with [control] at its end.
   const SettingsConfigRow({
@@ -60,14 +61,22 @@ final class SettingsConfigRow extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 640;
+        // A switch or checkbox is small enough to keep at the row's end at
+        // any width; only a control that needs a slot of its own drops to
+        // the line below the label.
+        final inRow = wide || _controlIsIntrinsic;
         final row = DsListRow(
           leading: leading,
           title: Text(title),
           description: description == null ? null : Text(description!),
           detail: detail,
-          trailing: wide ? _slot(alignment: Alignment.centerRight) : null,
+          trailing: inRow
+              ? wide
+                    ? _slot(alignment: Alignment.centerRight)
+                    : Align(alignment: Alignment.centerRight, child: control)
+              : null,
         );
-        if (wide) return row;
+        if (inRow) return row;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart';
-import 'package:pure_live/features/areas/areas.dart';
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_settings.dart';
-import 'package:pure_live/features/favorites/favorites.dart';
-import 'package:pure_live/features/history/history.dart';
+import 'package:pure_live/modules/live/areas/areas.dart';
+import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/modules/live/history/history.dart';
 
 /// The backup feature's own view of the user data: it reads the three
 /// user-data namespaces into a [BackupDocument] and writes a document

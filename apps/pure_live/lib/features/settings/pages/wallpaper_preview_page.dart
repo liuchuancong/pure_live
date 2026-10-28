@@ -1,8 +1,9 @@
 import 'dart:async' show Timer, unawaited;
 import 'dart:io' show File;
 import 'dart:typed_data' show Uint8List;
-import 'dart:ui' as ui show ImageFilter;
+import 'dart:ui' as ui show ImageByteFormat, ImageFilter, PictureRecorder;
 
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
@@ -11,10 +12,19 @@ import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/panes/background_panes.dart' show backgroundFitLabel;
+import 'package:pure_live/features/settings/surface/settings_preview.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart';
 import 'package:pure_uikit_background/pure_uikit_background.dart'
-    show BackgroundConfig, ImageBackground, ProviderImageSource, PureBackground, SolidBackground, VideoBackground;
+    show
+        BackgroundConfig,
+        BackgroundOverlay,
+        GradientBackground,
+        ImageBackground,
+        ProviderImageSource,
+        PureBackground,
+        SolidBackground,
+        VideoBackground;
 
 /// Below this width the preview keeps its settings in a sheet instead of a
 /// sidebar.
@@ -23,17 +33,38 @@ const double _kPreviewWideBreakpoint = 900;
 /// The intervals the image slideshow offers.
 const List<Duration> _kSlideshowIntervals = [Duration(seconds: 3), Duration(seconds: 5), Duration(seconds: 10)];
 
-/// What a preview page walks: the entries of one grid page, or a random-image
-/// API that answers one picture at a time.
+/// What a preview page walks: the entries of one grid page, a random-image
+/// API that answers one picture at a time, or a flat paint (a solid colour or
+/// a gradient) from the palette page.
 final class WallpaperPreviewSubject {
-  /// A catalogue list, opening on [index].
-  const WallpaperPreviewSubject.items(this.items, this.index) : source = null;
+  const WallpaperPreviewSubject._({
+    this.items = const [],
+    this.swatches = const [],
+    this.index = 0,
+    this.source,
+    this.more,
+  });
+
+  /// A catalogue list, opening on [index]. [more] fetches the entries past
+  /// the page the grid showed, so the strip can keep walking.
+  const WallpaperPreviewSubject.items(
+    List<WallpaperItem> items,
+    int index, {
+    Future<List<WallpaperItem>> Function()? more,
+  }) : this._(items: items, index: index, more: more);
 
   /// A random source: the next picture is always another fetch.
-  const WallpaperPreviewSubject.random(this.source) : items = const [], index = 0;
+  const WallpaperPreviewSubject.random(RandomWallpaperSource source) : this._(source: source);
+
+  /// A palette page's swatches, opening on [index].
+  const WallpaperPreviewSubject.swatched(List<WallpaperPreviewPaint> swatches, int index)
+    : this._(swatches: swatches, index: index);
 
   /// The entries on screen, in grid order.
   final List<WallpaperItem> items;
+
+  /// The flat paints on screen, in palette order.
+  final List<WallpaperPreviewPaint> swatches;
 
   /// Which entry the page opens on.
   final int index;
@@ -41,17 +72,96 @@ final class WallpaperPreviewSubject {
   /// The random source, when the page walks an API instead of a list.
   final RandomWallpaperSource? source;
 
+  /// Fetches the entries past [items], or returns none when the source is
+  /// walked out.
+  final Future<List<WallpaperItem>> Function()? more;
+
   /// Whether this is a random-image preview rather than a catalogue list.
   bool get isRandom => source != null;
+
+  /// Whether this walks the palette's swatches.
+  bool get isPaint => swatches.isNotEmpty;
 
   /// The entry in view, or null for a random preview.
   WallpaperItem? itemAt(int index) => index >= 0 && index < items.length ? items[index] : null;
 }
 
+/// One flat candidate: the colour or gradient itself, and the preset name.
+final class WallpaperPreviewPaint {
+  /// A solid [color], named [name].
+  const WallpaperPreviewPaint.solid(String name, this.color) : solidName = name, preset = null;
+
+  /// A gradient preset, painted with its own stops and angle.
+  const WallpaperPreviewPaint.gradient(this.preset) : solidName = null, color = null;
+
+  /// What the palette calls a solid colour; a gradient reads the preset's own.
+  final String? solidName;
+
+  /// The solid colour, when this is one.
+  final Color? color;
+
+  /// The gradient preset, when this is one.
+  final BackgroundGradientPreset? preset;
+
+  /// What the palette calls it.
+  String get name => solidName ?? preset?.name ?? '';
+}
+
 /// Opens a wallpaper full-window and alone: the media in a rounded stage, its
 /// siblings in a strip under it, and the settings beside or under it.
-Future<void> showWallpaperPreview(BuildContext context, List<WallpaperItem> items, int index) {
-  return _openPreview(context, WallpaperPreviewSubject.items(items, index));
+///
+/// [more] feeds the strip past the entries the grid showed, so a catalogue
+/// page is a starting point rather than the whole walk.
+Future<void> showWallpaperPreview(
+  BuildContext context,
+  List<WallpaperItem> items,
+  int index, {
+  Future<List<WallpaperItem>> Function()? more,
+}) {
+  return _openPreview(context, WallpaperPreviewSubject.items(items, index, more: more));
+}
+
+/// Opens a palette swatch full-window, walking the page's swatches: the same
+/// stage and settings the media kinds get, with the paint in place of them.
+Future<void> showPalettePreview(BuildContext context, List<WallpaperPreviewPaint> swatches, int index) {
+  return _openPreview(context, WallpaperPreviewSubject.swatched(swatches, index));
+}
+
+/// The swatch as a tile paints it: its own stops and angle.
+BoxDecoration wallpaperPaintDecoration(WallpaperPreviewPaint paint) {
+  final color = paint.color;
+  if (color != null) return BoxDecoration(color: color);
+  final preset = paint.preset;
+  if (preset == null) return const BoxDecoration();
+  final (begin, end) = gradientAlignments(preset.deg);
+  return BoxDecoration(
+    gradient: LinearGradient(begin: begin, end: end, colors: preset.colors, stops: preset.stops),
+  );
+}
+
+/// The swatch as a picture: painted at a screen's size, so the file a viewer
+/// keeps is a wallpaper rather than a thumbnail of one.
+Future<Uint8List> encodeWallpaperPaint(WallpaperPreviewPaint paint) async {
+  const size = Size(1920, 1080);
+  final rect = Offset.zero & size;
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder);
+  final preset = paint.preset;
+  if (preset == null) {
+    canvas.drawRect(rect, Paint()..color = paint.color ?? const Color(0xFF000000));
+  } else {
+    final (begin, end) = gradientAlignments(preset.deg);
+    final gradient = LinearGradient(begin: begin, end: end, colors: preset.colors, stops: preset.stops);
+    canvas.drawRect(rect, Paint()..shader = gradient.createShader(rect));
+  }
+  final image = await recorder.endRecording().toImage(size.width.round(), size.height.round());
+  try {
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    if (data == null) throw const FormatException('The swatch could not be encoded.');
+    return data.buffer.asUint8List();
+  } finally {
+    image.dispose();
+  }
 }
 
 /// Opens the next picture from [source] in the same page; the picture is only
@@ -84,10 +194,24 @@ final class WallpaperPreviewPage extends ConsumerStatefulWidget {
 
 final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPage> {
   late final List<WallpaperItem> _items = List.of(widget.subject.items);
-  late int _index = _items.isEmpty ? 0 : widget.subject.index.clamp(0, _items.length - 1);
+
+  /// The addresses already in the strip, so a later page that repeats one
+  /// does not repeat the tile too.
+  late final Set<String> _seenUrls = {for (final item in widget.subject.items) item.url};
+
+  /// The palette's swatches, when this page walks flat paints. [_index] walks
+  /// whichever of the two lists this page was opened with.
+  late final List<WallpaperPreviewPaint> _swatches = List.of(widget.subject.swatches);
+  late int _index = _items.isEmpty && _swatches.isEmpty
+      ? 0
+      : widget.subject.index.clamp(0, (_items.isEmpty ? _swatches.length : _items.length) - 1);
 
   /// The random pictures fetched so far, newest last; the strip walks them.
   final List<({Uint8List bytes, String format})> _shots = [];
+
+  /// One hash per kept shot, so a random source that hands the same picture
+  /// out twice is retried instead of repeating a tile in the strip.
+  final List<String> _shotDigests = [];
   int _shotIndex = -1;
 
   /// The selected random picture, mirrored here so the rest of the page has
@@ -96,6 +220,7 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
   String _extension = 'jpg';
 
   bool _loading = false;
+  bool _loadingMore = false;
   bool _saving = false;
   bool _downloading = false;
   RandomWallpaperFailure? _failure;
@@ -120,15 +245,20 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
 
   WallpaperItem? get _currentItem => _index >= 0 && _index < _items.length ? _items[_index] : null;
 
+  /// The swatch in view, when this page walks the palette.
+  WallpaperPreviewPaint? get _currentPaint =>
+      widget.subject.isPaint && _index >= 0 && _index < _swatches.length ? _swatches[_index] : null;
+
   /// Whether what is in view is a clip. The page belongs to the source it
   /// was opened from, so this follows the walked entries only — there is no
   /// switch that would fetch the other library.
   bool get _videoMode => _currentItem?.video ?? false;
 
   /// Whether there is something to apply or save yet.
-  bool get _canCommit => _currentItem != null || (_bytes != null && widget.subject.isRandom);
+  bool get _canCommit => _currentItem != null || _currentPaint != null || (_bytes != null && widget.subject.isRandom);
 
-  int get _stripCount => widget.subject.isRandom ? _shots.length : _items.length;
+  int get _stripCount =>
+      widget.subject.isRandom ? _shots.length : (widget.subject.isPaint ? _swatches.length : _items.length);
 
   int get _stripIndex => widget.subject.isRandom ? _shotIndex : _index;
 
@@ -150,7 +280,13 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
       unawaited(_fetch());
     } else {
       _refreshMediaSize();
-      WidgetsBinding.instance.addPostFrameCallback((_) => _revealCurrentThumb());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _revealCurrentThumb();
+        // Opened near the end of the grid's own page: start pulling the next
+        // one right away, so the forward button has somewhere to go.
+        if (_index >= _items.length - 3) unawaited(_loadMore());
+      });
     }
   }
 
@@ -167,17 +303,28 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
 
   Future<void> _fetch() async {
     if (_loading) return;
-    final generation = ++_generation;
-    setState(() => _loading = true);
     final source = widget.subject.source;
     if (source == null) return;
+    final generation = ++_generation;
+    setState(() => _loading = true);
     try {
-      final picture = await ref.read(randomWallpaperClientProvider).fetch(source);
+      final client = ref.read(randomWallpaperClientProvider);
+      var picture = await client.fetch(source);
+      var digest = _digest(picture.bytes);
+      // The random endpoints repeat themselves; after a few redraws the
+      // duplicate is kept rather than spinning forever.
+      for (var redraws = 0; redraws < 3 && _shotDigests.contains(digest); redraws++) {
+        picture = await client.fetch(source);
+        digest = _digest(picture.bytes);
+        if (!mounted || generation != _generation) return;
+      }
       if (!mounted || generation != _generation) return;
       setState(() {
         _shots.add((bytes: picture.bytes, format: picture.format));
+        _shotDigests.add(digest);
         while (_shots.length > 20) {
           _shots.removeAt(0);
+          _shotDigests.removeAt(0);
         }
         _shotIndex = _shots.length - 1;
         _bytes = picture.bytes;
@@ -202,12 +349,73 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     }
   }
 
+  /// The strip's identity for a picture: its SHA-1, not its bytes.
+  static String _digest(Uint8List bytes) => crypto.sha1.convert(bytes).toString();
+
   void _selectItem(int index) {
     if (index < 0 || index >= _items.length || index == _index) return;
     setState(() => _index = index);
     _refreshMediaSize();
     _revealCurrentThumb();
     _restartSlideshow();
+    // Three from the end is soon enough that the next page is usually already
+    // in the strip when the viewer asks for one more.
+    if (index >= _items.length - 3) unawaited(_loadMore());
+  }
+
+  void _selectPaint(int index) {
+    if (index < 0 || index >= _swatches.length || index == _index) return;
+    setState(() => _index = index);
+    _revealCurrentThumb();
+    _restartSlideshow();
+  }
+
+  /// Fetches the entries past the page the grid showed and appends them to the
+  /// strip; a source that has given all it has simply stops the walk here.
+  Future<void> _loadMore() async {
+    final more = widget.subject.more;
+    if (more == null || _loadingMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final added = await more();
+      if (!mounted) return;
+      setState(() {
+        _items.addAll(added.where((item) => _seenUrls.add(item.url)));
+        _loadingMore = false;
+      });
+    } on Object {
+      if (!mounted) return;
+      setState(() => _loadingMore = false);
+    }
+  }
+
+  /// Whether the strip can pull the entries past what it already holds.
+  bool get _canLoadMore => widget.subject.more != null;
+
+  /// Walks one entry forward, loading the next page when the strip ends on it.
+  Future<void> _advance() async {
+    if (_index < _stripCount - 1) {
+      _selectStrip(_index + 1);
+      return;
+    }
+    if (!_canLoadMore || _loadingMore) return;
+    final before = _items.length;
+    await _loadMore();
+    if (!mounted || _items.length <= before) return;
+    _selectItem(before);
+  }
+
+  void _selectStrip(int index) {
+    final count = _stripCount;
+    if (count == 0) return;
+    final target = index.clamp(0, count - 1);
+    if (widget.subject.isRandom) {
+      _selectShot(target);
+    } else if (widget.subject.isPaint) {
+      _selectPaint(target);
+    } else {
+      _selectItem(target);
+    }
   }
 
   void _selectShot(int index) {
@@ -223,13 +431,6 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     _restartSlideshow();
   }
 
-  void _selectStrip(int index) {
-    final count = _stripCount;
-    if (count == 0) return;
-    final target = index.clamp(0, count - 1);
-    widget.subject.isRandom ? _selectShot(target) : _selectItem(target);
-  }
-
   /// The slideshow's own tick: no restart, so the timer keeps its rhythm.
   void _tickSlideshow() {
     if (!mounted || _videoMode) return;
@@ -237,12 +438,22 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
       unawaited(_fetch());
       return;
     }
+    if (widget.subject.isPaint) {
+      final paints = _swatches.length;
+      if (paints > 1) _selectPaint((_index + 1) % paints);
+      return;
+    }
     final count = _items.length;
     if (count <= 1) return;
+    if (_index >= count - 1 && _canLoadMore) {
+      unawaited(_advance());
+      return;
+    }
     final next = (_index + 1) % count;
     setState(() => _index = next);
     _refreshMediaSize();
     _revealCurrentThumb();
+    if (next >= count - 3) unawaited(_loadMore());
   }
 
   void _setAutoPlay(bool value) {
@@ -289,7 +500,7 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
 
   ImageProvider? _currentImageProvider() {
     final item = _currentItem;
-    if (item != null) return item.video ? null : cachedImage(item.url);
+    if (item != null) return item.video ? null : imageProviderOf(item.url);
     final bytes = _bytes;
     return bytes == null ? null : MemoryImage(bytes);
   }
@@ -300,7 +511,7 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     final item = _currentItem;
     if (item != null) {
       if (item.thumb.isEmpty || (item.video && item.thumb == item.url)) return null;
-      return cachedImage(item.thumb);
+      return imageProviderOf(item.thumb);
     }
     final bytes = _bytes;
     return bytes == null ? null : MemoryImage(bytes);
@@ -318,8 +529,42 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
   Future<void> _apply() async {
     final t = context.t;
     final controller = ref.read(backgroundSettingsProvider.notifier);
+    final paint = _currentPaint;
+    if (paint != null) {
+      final preset = paint.preset;
+      final color = paint.color;
+      if (preset != null) {
+        controller.setGradient(preset);
+      } else if (color != null) {
+        controller.setSolid(color);
+      }
+      if (!mounted) return;
+      showDsToast(context: context, title: t.settings.backgroundLibraryApplied);
+      _closePreview();
+      return;
+    }
     final item = _currentItem;
     if (item != null) {
+      final local = _localPathOf(item.url);
+      if (local != null) {
+        // A file the viewer picked is applied by copying it into the slot the
+        // app owns, so the wallpaper outlives the original being moved.
+        await controller.importDroppedFile(local, image: !item.video);
+        if (!mounted) return;
+        final error = ref.read(backgroundSettingsProvider).error;
+        if (error.isNotEmpty) {
+          showDsToast(
+            context: context,
+            title: t.settings.backgroundImportFailed,
+            description: error,
+            status: DsStatus.danger,
+          );
+          return;
+        }
+        showDsToast(context: context, title: t.settings.backgroundLibraryApplied);
+        _closePreview();
+        return;
+      }
       if (item.video) {
         controller.setVideoUrl(item.url);
       } else {
@@ -355,19 +600,34 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
   Future<void> _download() async {
     final t = context.t;
     final directory = ref.read(downloadDirectoryProvider).effectivePath;
+    final paint = _currentPaint;
     final item = _currentItem;
     final bytes = _bytes;
-    if (item == null && bytes == null) return;
+    if (paint == null && item == null && bytes == null) return;
     setState(() => _downloading = true);
     try {
-      if (item != null) {
-        final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
-        await downloadMediaFile(
-          http: http,
-          url: Uri.parse(item.url),
-          directory: directory,
-          fileName: wallpaperFileName(title: item.name, fallback: item.id, address: item.url),
+      if (paint != null) {
+        final target = File(
+          p.join(directory, wallpaperFileName(title: paint.name, fallback: 'background', address: 'paint.png')),
         );
+        await target.parent.create(recursive: true);
+        await target.writeAsBytes(await encodeWallpaperPaint(paint));
+      } else if (item != null) {
+        final local = _localPathOf(item.url);
+        if (local != null) {
+          // An imported file is copied, not fetched: it is already on disk.
+          final target = File(p.join(directory, p.basename(local)));
+          await target.parent.create(recursive: true);
+          await File(local).copy(target.path);
+        } else {
+          final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
+          await downloadMediaFile(
+            http: http,
+            url: Uri.parse(item.url),
+            directory: directory,
+            fileName: wallpaperFileName(title: item.name, fallback: item.id, address: item.url),
+          );
+        }
       } else {
         final target = File(p.join(directory, 'wallpaper-${DateTime.now().millisecondsSinceEpoch}.$_extension'));
         await target.parent.create(recursive: true);
@@ -410,20 +670,26 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     final colors = DsTheme.colorsOf(context);
     final overlay = appBackgroundOverlay(context, opacity: settings.maskOpacity, blurSigma: settings.overlayBlurSigma);
     final underlay = SolidBackground(color: colors.canvas);
+    final paint = _currentPaint;
+    if (paint != null) return _paintConfig(context, paint, overlay);
     final item = _currentItem;
     if (item != null) {
       if (item.video) {
+        // A clip's frost goes on the decoded surface, not on the backdrop: a
+        // `Texture` gives a backdrop filter nothing to sample, so the mask
+        // would stay a flat wash over a sharp video.
         return VideoBackground(
           source: AppBackgroundVideoSource(Uri.parse(item.url)),
           fit: settings.fit,
           underlay: underlay,
           fallback: underlay,
           muted: _muted,
-          overlay: overlay,
+          blurSigma: settings.overlayBlurSigma,
+          overlay: appBackgroundOverlay(context, opacity: settings.maskOpacity, blurSigma: 0),
         );
       }
       return ImageBackground(
-        source: ProviderImageSource(cachedImage(item.url)),
+        source: ProviderImageSource(imageProviderOf(item.url)),
         fit: settings.fit,
         placeholderColor: colors.canvas,
         underlay: underlay,
@@ -443,7 +709,42 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     );
   }
 
+  /// The swatch as the app would wear it: its own stops and angle, under the
+  /// same scrim the media kinds get.
+  static BackgroundConfig _paintConfig(BuildContext context, WallpaperPreviewPaint paint, BackgroundOverlay overlay) {
+    final color = paint.color;
+    if (color != null) return SolidBackground(color: color, overlay: overlay);
+    final preset = paint.preset;
+    if (preset == null) return SolidBackground(color: DsTheme.colorsOf(context).canvas, overlay: overlay);
+    final (begin, end) = gradientAlignments(preset.deg);
+    return GradientBackground(colors: preset.colors, stops: preset.stops, begin: begin, end: end, overlay: overlay);
+  }
+
+  /// The provider for an entry's address: a file the viewer imported reads
+  /// from disk, anything else through the shared image cache.
+  static ImageProvider imageProviderOf(String address) {
+    final local = _localPathOf(address);
+    return local == null ? cachedImage(address) : FileImage(File(local));
+  }
+
+  /// The disk path behind a `file:` address, or null for a network one.
+  static String? _localPathOf(String address) {
+    final uri = Uri.tryParse(address);
+    if (uri == null || uri.scheme != 'file') return null;
+    final path = uri.toFilePath();
+    return path.isEmpty ? null : path;
+  }
+
+  /// The swatch as a strip tile paints it: its own stops and angle.
+  static BoxDecoration _decorationOf(WallpaperPreviewPaint paint) => wallpaperPaintDecoration(paint);
+
   String _title(Translations t) {
+    final paint = _currentPaint;
+    if (paint != null) {
+      final name = paint.name.trim();
+      final count = '${_index + 1}/${_swatches.length}';
+      return name.isEmpty ? count : '$name · $count';
+    }
     final item = _currentItem;
     if (item != null) {
       final name = item.name.trim();
@@ -478,101 +779,90 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
   /// touch surfaces. The page stays behind it and keeps answering changes.
   Future<void> _openSettingsSheet() {
     final t = context.t;
-    final dark = DsTheme.of(context).copyWith(brightness: Brightness.dark);
     return showDsPanel<void>(
       context: context,
       presentation: DsPanelPresentation.bottom,
-      builder: (context) => DsTheme(
-        data: dark,
-        child: StatefulBuilder(
-          builder: (context, setSheetState) {
-            final theme = DsTheme.of(context);
-            return DsPanel(
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s4,
-                children: [
-                  Text(t.settings.backgroundPreviewSettingsTitle),
-                  Text(
-                    _videoMode ? t.settings.backgroundVideo : t.settings.backgroundImage,
-                    style: theme.typography.small.copyWith(color: theme.colors.textSubtle),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final theme = DsTheme.of(context);
+          return DsPanel(
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: DsSpace.s4,
+              children: [
+                Text(t.settings.backgroundPreviewSettingsTitle),
+                Text(
+                  _videoMode ? t.settings.backgroundVideo : t.settings.backgroundImage,
+                  style: theme.typography.small.copyWith(color: theme.colors.textSubtle),
+                ),
+              ],
+            ),
+            style: DsPanelStyle(background: theme.colors.surface),
+            footer: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: DsButton(
+                    variant: DsButtonVariant.secondary,
+                    leading: const DsIcon(DsIcons.download),
+                    onPressed: _canCommit && !_downloading
+                        ? () {
+                            unawaited(
+                              _download().whenComplete(() {
+                                if (context.mounted) setSheetState(() {});
+                              }),
+                            );
+                            setSheetState(() {});
+                          }
+                        : null,
+                    child: Text(t.settings.downloadAction),
                   ),
-                ],
-              ),
-              style: DsPanelStyle(background: theme.colors.surface),
-              footer: Row(
-                spacing: DsSpace.s8,
-                children: [
-                  Expanded(
-                    child: DsButton(
-                      variant: DsButtonVariant.secondary,
-                      leading: const DsIcon(DsIcons.download),
-                      onPressed: _canCommit && !_downloading
-                          ? () {
-                              unawaited(
-                                _download().whenComplete(() {
-                                  if (context.mounted) setSheetState(() {});
-                                }),
-                              );
-                              setSheetState(() {});
-                            }
-                          : null,
-                      child: Text(t.settings.downloadAction),
-                    ),
+                ),
+                Expanded(
+                  child: DsButton(
+                    loading: _saving,
+                    onPressed: _canCommit && !_saving
+                        ? () {
+                            unawaited(
+                              _apply().whenComplete(() {
+                                if (context.mounted) setSheetState(() {});
+                              }),
+                            );
+                            setSheetState(() {});
+                          }
+                        : null,
+                    child: Text(t.settings.backgroundApply),
                   ),
-                  Expanded(
-                    child: DsButton(
-                      loading: _saving,
-                      onPressed: _canCommit && !_saving
-                          ? () {
-                              unawaited(
-                                _apply().whenComplete(() {
-                                  if (context.mounted) setSheetState(() {});
-                                }),
-                              );
-                              setSheetState(() {});
-                            }
-                          : null,
-                      child: Text(t.settings.backgroundApply),
-                    ),
-                  ),
-                ],
-              ),
-              child: _PreviewSettings(
-                videoMode: _videoMode,
-                muted: _muted,
-                autoPlay: _autoPlay,
-                interval: _interval,
-                onMuted: (value) {
-                  setState(() => _muted = value);
-                  setSheetState(() {});
-                },
-                onAutoPlay: (value) {
-                  _setAutoPlay(value);
-                  setSheetState(() {});
-                },
-                onInterval: (value) {
-                  _setInterval(value);
-                  setSheetState(() {});
-                },
-              ),
-            );
-          },
-        ),
+                ),
+              ],
+            ),
+            child: _PreviewSettings(
+              videoMode: _videoMode,
+              paintMode: widget.subject.isPaint,
+              muted: _muted,
+              autoPlay: _autoPlay,
+              interval: _interval,
+              onMuted: (value) {
+                setState(() => _muted = value);
+                setSheetState(() {});
+              },
+              onAutoPlay: (value) {
+                _setAutoPlay(value);
+                setSheetState(() {});
+              },
+              onInterval: (value) {
+                _setInterval(value);
+                setSheetState(() {});
+              },
+            ),
+          );
+        },
       ),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
-    // The page paints dark whatever the app skin is: a preview needs the
-    // media, not the shell, to own the colours.
-    final dark = DsTheme.of(context).copyWith(brightness: Brightness.dark);
-    return DsTheme(
-      data: dark,
-      child: Builder(builder: _buildPage),
-    );
-  }
+  Widget build(BuildContext context) => _buildPage(context);
 
   Widget _buildPage(BuildContext context) {
     final t = context.t;
@@ -580,8 +870,11 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     final config = _configOf(context, settings);
     final isVideo = _currentItem?.video ?? false;
     final wide = MediaQuery.sizeOf(context).width >= _kPreviewWideBreakpoint;
+    // The frame follows the app's light or dark skin; the backdrop is the
+    // wallpaper itself, so the page looks the same in either one only where
+    // the media stands.
     return ColoredBox(
-      color: const Color(0xFF000000),
+      color: DsTheme.colorsOf(context).canvas,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -635,21 +928,27 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _SidebarHeader(
+                        SettingsPreviewHeading(
+                          icon: _videoMode ? DsIcons.video : DsIcons.image,
                           title: widget.subject.isRandom
                               ? t.settings.backgroundPreviewTitle
                               : _videoMode
                               ? t.settings.backgroundVideosTitle
                               : t.settings.backgroundImagesTitle,
                           subtitle: _title(t),
-                          isVideo: _videoMode,
-                          onClose: () => Navigator.of(context).pop(),
+                          trailing: DsButton.icon(
+                            variant: DsButtonVariant.ghost,
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const DsIcon(DsIcons.close),
+                            semanticLabel: t.common.close,
+                          ),
                         ),
                         Expanded(
                           child: SingleChildScrollView(
                             padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
                             child: _PreviewSettings(
                               videoMode: _videoMode,
+                              paintMode: widget.subject.isPaint,
                               muted: _muted,
                               autoPlay: _autoPlay,
                               interval: _interval,
@@ -705,7 +1004,7 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
               PositionedDirectional(
                 top: DsSpace.s8,
                 start: DsSpace.s8,
-                child: _CircleIconButton(
+                child: SettingsPreviewCircleButton(
                   icon: DsIcons.chevronLeft,
                   semanticLabel: t.common.back,
                   onPressed: () => Navigator.of(context).maybePop(),
@@ -714,7 +1013,7 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
               PositionedDirectional(
                 top: DsSpace.s8,
                 end: DsSpace.s8,
-                child: _CircleIconButton(
+                child: SettingsPreviewCircleButton(
                   icon: DsIcons.circleEllipsis,
                   semanticLabel: t.settings.backgroundPreviewSettingsTitle,
                   onPressed: () => unawaited(_openSettingsSheet()),
@@ -776,7 +1075,7 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     required double radius,
   }) {
     final item = _currentItem;
-    final resolution = config == null ? null : _resolutionLabel(t);
+    final resolution = config == null || widget.subject.isPaint ? null : _resolutionLabel(t);
     final media = ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: ColoredBox(
@@ -790,11 +1089,25 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
                 start: 0,
                 end: 0,
                 bottom: 0,
-                child: _TransportOverlay(
-                  paused: _paused,
-                  muted: _muted,
-                  onTogglePause: () => setState(() => _paused = !_paused),
-                  onToggleMute: () => setState(() => _muted = !_muted),
+                child: SettingsPreviewBar(
+                  children: [
+                    SettingsPreviewCircleButton(
+                      icon: _paused ? DsIcons.play : DsIcons.pause,
+                      semanticLabel: _paused ? t.room.play : t.room.pause,
+                      onPressed: () => setState(() => _paused = !_paused),
+                    ),
+                    SettingsPreviewCircleButton(
+                      icon: _muted ? DsIcons.volumeOff : DsIcons.volume,
+                      semanticLabel: _muted ? t.room.unmute : t.room.mute,
+                      onPressed: () => setState(() => _muted = !_muted),
+                    ),
+                    const SizedBox(width: DsSpace.s8),
+                    Text(
+                      t.settings.backgroundPreviewLooping,
+                      style: DsTheme.of(context).typography.small.copyWith(color: const Color(0xCCFFFFFF)),
+                    ),
+                    const Spacer(),
+                  ],
                 ),
               ),
             if (isVideo && _paused)
@@ -805,7 +1118,19 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
               PositionedDirectional(
                 start: DsSpace.s12,
                 bottom: isVideo ? 76 : DsSpace.s12,
-                child: _ResolutionChip(label: resolution),
+                child: SettingsPreviewChip(label: resolution),
+              ),
+            // Another random picture is on its way: the stage keeps the
+            // current one under a dim and a spinner rather than going blank.
+            if (_loading && widget.subject.isRandom)
+              ColoredBox(
+                color: const Color(0x66000000),
+                child: Center(
+                  child: DsSpinner(
+                    semanticLabel: t.settings.backgroundImage,
+                    style: const DsSpinnerStyle(size: 36, color: Color(0xFFFFFFFF)),
+                  ),
+                ),
               ),
           ],
         ),
@@ -882,20 +1207,20 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
               '${count == 0 ? 0 : index + 1} / $count',
               style: theme.typography.caption.copyWith(color: colors.textSubtle),
             ),
-            _CircleIconButton(
+            SettingsPreviewCircleButton(
               icon: DsIcons.chevronLeft,
               size: 28,
               semanticLabel: t.settings.backgroundPreviewPrevious,
               onPressed: count == 0 || index <= 0 ? null : () => _selectStrip(index - 1),
             ),
-            _CircleIconButton(
+            SettingsPreviewCircleButton(
               icon: DsIcons.chevronRight,
               size: 28,
               semanticLabel: t.settings.backgroundPreviewNext,
-              onPressed: count == 0 || index >= count - 1 ? null : () => _selectStrip(index + 1),
+              onPressed: count == 0 || (index >= count - 1 && !_canLoadMore) ? null : () => unawaited(_advance()),
             ),
             if (random)
-              _CircleIconButton(
+              SettingsPreviewCircleButton(
                 icon: DsIcons.refreshCw,
                 size: 28,
                 semanticLabel: t.settings.backgroundPreviewNext,
@@ -912,10 +1237,14 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
             separatorBuilder: (_, _) => const SizedBox(width: DsSpace.s8),
             itemBuilder: (context, position) {
               final selected = position == index;
-              final provider = random ? MemoryImage(_shots[position].bytes) : cachedImage(_items[position].thumb);
-              final video = !random && _items[position].video;
-              final item = random ? null : _items[position];
-              final label = item?.name ?? '${t.settings.backgroundMoreImages} ${position + 1}';
+              final walked = widget.subject.isPaint;
+              final item = random || walked ? null : _items[position];
+              final swatch = walked ? _swatches[position] : null;
+              final provider = random
+                  ? MemoryImage(_shots[position].bytes)
+                  : (swatch == null ? imageProviderOf(_items[position].thumb) : null);
+              final video = !random && !walked && _items[position].video;
+              final label = item?.name ?? swatch?.name ?? '${t.settings.backgroundMoreImages} ${position + 1}';
               return DsContextMenuRegion(
                 semanticLabel: label,
                 items: [
@@ -953,6 +1282,7 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
                 ],
                 child: _ThumbTile(
                   image: provider,
+                  swatch: swatch == null ? null : _decorationOf(swatch),
                   selected: selected,
                   video: video,
                   semanticLabel: label,
@@ -976,20 +1306,15 @@ final class _Backdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final colors = theme.colors;
     final picture = image;
     return Stack(
       fit: StackFit.expand,
       children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [colors.canvas, const Color(0xFF000000)],
-            ),
-          ),
-        ),
+        // The wash follows the skin: a dim stage at night, a pale one by day,
+        // so the preview reads as part of the app either way.
+        ColoredBox(color: colors.canvas),
         if (picture != null)
           // Scaled past the edges so the blurred border never shows as a
           // bright rim around the window.
@@ -1002,68 +1327,8 @@ final class _Backdrop extends StatelessWidget {
               ),
             ),
           ),
-        const ColoredBox(color: Color(0x99000000)),
+        ColoredBox(color: theme.brightness == Brightness.dark ? const Color(0x99000000) : const Color(0x66FFFFFF)),
       ],
-    );
-  }
-}
-
-/// The sidebar's heading: the media kind, what is in view, and the way out.
-final class _SidebarHeader extends StatelessWidget {
-  const _SidebarHeader({required this.title, required this.subtitle, required this.isVideo, required this.onClose});
-
-  final String title;
-  final String subtitle;
-  final bool isVideo;
-  final VoidCallback onClose;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = theme.colors;
-    return Padding(
-      padding: const EdgeInsets.all(DsSpace.s20),
-      child: Row(
-        spacing: DsSpace.s12,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: colors.accent.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(child: DsIcon(isVideo ? DsIcons.video : DsIcons.image, size: 20, color: colors.accent)),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s4,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.heading.copyWith(color: colors.text),
-                ),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.small.copyWith(color: colors.textSubtle),
-                ),
-              ],
-            ),
-          ),
-          DsButton.icon(
-            variant: DsButtonVariant.ghost,
-            onPressed: onClose,
-            icon: const DsIcon(DsIcons.close),
-            semanticLabel: t.common.close,
-          ),
-        ],
-      ),
     );
   }
 }
@@ -1072,6 +1337,7 @@ final class _SidebarHeader extends StatelessWidget {
 final class _PreviewSettings extends ConsumerWidget {
   const _PreviewSettings({
     required this.videoMode,
+    required this.paintMode,
     required this.muted,
     required this.autoPlay,
     required this.interval,
@@ -1081,6 +1347,9 @@ final class _PreviewSettings extends ConsumerWidget {
   });
 
   final bool videoMode;
+
+  /// A palette swatch: the fit and the slideshow have nothing to act on.
+  final bool paintMode;
   final bool muted;
   final bool autoPlay;
   final Duration interval;
@@ -1099,23 +1368,24 @@ final class _PreviewSettings extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s8,
-          children: [
-            _SectionTitle(icon: DsIcons.expand, label: t.settings.backgroundDisplayMode),
-            DsSelect<BoxFit>(
-              value: settings.fit,
-              semanticLabel: t.settings.backgroundDisplayMode,
-              options: [
-                for (final fit in kBackgroundFits) DsSelectOption(value: fit, label: backgroundFitLabel(t, fit)),
-              ],
-              onChanged: (fit) {
-                if (fit != null) controller.setFit(fit);
-              },
-            ),
-          ],
-        ),
+        if (!paintMode)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s8,
+            children: [
+              _SectionTitle(icon: DsIcons.expand, label: t.settings.backgroundDisplayMode),
+              DsSelect<BoxFit>(
+                value: settings.fit,
+                semanticLabel: t.settings.backgroundDisplayMode,
+                options: [
+                  for (final fit in kBackgroundFits) DsSelectOption(value: fit, label: backgroundFitLabel(t, fit)),
+                ],
+                onChanged: (fit) {
+                  if (fit != null) controller.setFit(fit);
+                },
+              ),
+            ],
+          ),
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,
@@ -1160,7 +1430,7 @@ final class _PreviewSettings extends ConsumerWidget {
               ),
             ],
           )
-        else
+        else if (!paintMode)
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
@@ -1258,14 +1528,18 @@ final class _SliderRow extends StatelessWidget {
 /// One sibling in the strip: a rounded still, marked when it is in view.
 final class _ThumbTile extends StatelessWidget {
   const _ThumbTile({
-    required this.image,
     required this.selected,
     required this.video,
     required this.semanticLabel,
     required this.onPressed,
+    this.image,
+    this.swatch,
   });
 
-  final ImageProvider image;
+  final ImageProvider? image;
+
+  /// The tile of a palette entry: the paint itself, with no picture behind it.
+  final BoxDecoration? swatch;
   final bool selected;
   final bool video;
   final String semanticLabel;
@@ -1302,7 +1576,10 @@ final class _ThumbTile extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              DsImage(image: image, semanticLabel: semanticLabel),
+              if (swatch case final paint?)
+                DecoratedBox(decoration: paint)
+              else if (image case final picture?)
+                DsImage(image: picture, width: 116, height: 72, semanticLabel: semanticLabel),
               if (video && !selected) const Center(child: DsIcon(DsIcons.play, size: 20, color: Color(0xCCFFFFFF))),
               if (selected)
                 PositionedDirectional(
@@ -1316,41 +1593,6 @@ final class _ThumbTile extends StatelessWidget {
                   ),
                 ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A round control floating over the media or the strip: back, more, steps.
-final class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({required this.icon, required this.semanticLabel, required this.onPressed, this.size = 36});
-
-  final DsIconData icon;
-  final String semanticLabel;
-  final VoidCallback? onPressed;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    return DsPressable(
-      semanticLabel: semanticLabel,
-      onPressed: onPressed,
-      builder: (context, states, _) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: const Color(0x66000000),
-          border: Border.all(color: const Color(0x26FFFFFF)),
-        ),
-        child: Center(
-          child: DsIcon(
-            icon,
-            size: size * 0.45,
-            color: onPressed == null ? colors.textSubtle : const Color(0xFFFFFFFF),
           ),
         ),
       ),
@@ -1379,85 +1621,6 @@ final class _PlayButton extends StatelessWidget {
           border: Border.all(color: const Color(0x33FFFFFF)),
         ),
         child: const Center(child: DsIcon(DsIcons.play, size: 30, color: Color(0xFFFFFFFF))),
-      ),
-    );
-  }
-}
-
-/// The clip's own transport along the bottom of the stage: play/pause and
-/// sound. There is no timeline because a wallpaper decoder exposes no
-/// position, and a bar that does not move would be a lie.
-final class _TransportOverlay extends StatelessWidget {
-  const _TransportOverlay({
-    required this.paused,
-    required this.muted,
-    required this.onTogglePause,
-    required this.onToggleMute,
-  });
-
-  final bool paused;
-  final bool muted;
-  final VoidCallback onTogglePause;
-  final VoidCallback onToggleMute;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0x00000000), Color(0xB3000000)],
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s24, DsSpace.s12, DsSpace.s8),
-        child: Row(
-          spacing: DsSpace.s4,
-          children: [
-            _CircleIconButton(
-              icon: paused ? DsIcons.play : DsIcons.pause,
-              semanticLabel: paused ? t.room.play : t.room.pause,
-              onPressed: onTogglePause,
-            ),
-            _CircleIconButton(
-              icon: muted ? DsIcons.volumeOff : DsIcons.volume,
-              semanticLabel: muted ? t.room.unmute : t.room.mute,
-              onPressed: onToggleMute,
-            ),
-            const SizedBox(width: DsSpace.s8),
-            Text(
-              t.settings.backgroundPreviewLooping,
-              style: theme.typography.small.copyWith(color: const Color(0xCCFFFFFF)),
-            ),
-            const Spacer(),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The pixel-size chip in the stage's corner.
-final class _ResolutionChip extends StatelessWidget {
-  const _ResolutionChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0x8A000000),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0x1FFFFFFF)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
-        child: Text(label, style: theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF))),
       ),
     );
   }

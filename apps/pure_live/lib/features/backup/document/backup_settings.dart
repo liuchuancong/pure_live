@@ -65,9 +65,9 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('window.height', BackupPrefKind.integer),
   ('exit.autoShutdown.enabled', BackupPrefKind.boolean),
   ('exit.autoShutdown.minutes', BackupPrefKind.integer),
-  ('nav.multiview', BackupPrefKind.boolean),
-  ('nav.menuIds', BackupPrefKind.stringList),
-  ('tools.order', BackupPrefKind.stringList),
+  ('nav.menuOrder', BackupPrefKind.stringList),
+  ('nav.hiddenMenuIds', BackupPrefKind.stringList),
+  ('tools.menuOrder', BackupPrefKind.stringList),
   ('shell.closeAction', BackupPrefKind.string),
   ('shell.dontAskExit', BackupPrefKind.boolean),
   ('shell.roomWindows', BackupPrefKind.boolean),
@@ -239,6 +239,8 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('iptv.browse.channelReversal', BackupPrefKind.boolean),
   ('iptv.browse.clock', BackupPrefKind.boolean),
   ('iptv.browse.programmeLine', BackupPrefKind.boolean),
+  ('iptv.recent', BackupPrefKind.string),
+  ('iptv.reminders', BackupPrefKind.string),
   // The recorder's 15 tunables (and the old gigabyte cap for upgrades).
   ('recorder.dir', BackupPrefKind.string),
   ('recorder.defaultQuality', BackupPrefKind.string),
@@ -273,6 +275,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('vod.playback.speed', BackupPrefKind.floating),
   ('vod.playback.finish', BackupPrefKind.string),
   ('vod.playback.showDetails', BackupPrefKind.boolean),
+  ('vod.favourites', BackupPrefKind.string),
   // The music module's source choice, rendition, list behaviour and the
   // imported scripts themselves.
   ('music.source.default', BackupPrefKind.string),
@@ -282,6 +285,9 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('music.list.addToTop', BackupPrefKind.boolean),
   ('music.list.showSource', BackupPrefKind.boolean),
   ('music.customSources', BackupPrefKind.string),
+  ('music.favourites', BackupPrefKind.string),
+  ('music.recent', BackupPrefKind.string),
+  ('music.queue', BackupPrefKind.string),
   // The log surface.
   ('log.level', BackupPrefKind.string),
   ('log.file', BackupPrefKind.boolean),

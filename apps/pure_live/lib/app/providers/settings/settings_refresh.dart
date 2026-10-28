@@ -10,8 +10,7 @@ import 'package:pure_live/app/providers/device/auto_shutdown_provider.dart' show
 import 'package:pure_live/app/providers/device/display_refresh_rate_provider.dart'
     show displayRefreshRateProvider, matchVideoFrameRateProvider;
 import 'package:pure_live/app/providers/device/keep_screen_on_provider.dart' show keepScreenOnProvider;
-import 'package:pure_live/app/providers/navigation/nav_visibility_providers.dart'
-    show navMenuProvider, showMultiviewProvider;
+import 'package:pure_live/app/providers/navigation/nav_visibility_providers.dart' show navMenuProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show proxySettingsProvider;
 import 'package:pure_live/app/providers/player/player_backend_providers.dart' show playerKernelBackendProvider;
 import 'package:pure_live/app/providers/settings/download_directory_provider.dart' show downloadDirectoryProvider;
@@ -28,16 +27,15 @@ import 'package:pure_live/app/providers/theme/liquid_glass_provider.dart' show l
 import 'package:pure_live/app/providers/theme/text_scale_provider.dart' show textScaleFactorProvider;
 import 'package:pure_live/features/account/douyu_cookie_saved_at.dart' show douyuCookieSavedAtProvider;
 import 'package:pure_live/features/backup/backup.dart';
-import 'package:pure_live/features/favorites/favorites.dart';
-import 'package:pure_live/features/iptv/iptv.dart';
-import 'package:pure_live/features/music/music.dart';
-
-import 'package:pure_live/features/recorder/recorder.dart';
-import 'package:pure_live/features/room/room.dart';
-import 'package:pure_live/features/search/search.dart';
 import 'package:pure_live/features/settings/settings.dart';
-import 'package:pure_live/features/shield/shield.dart';
-import 'package:pure_live/features/vod/vod.dart';
+import 'package:pure_live/modules/iptv/iptv.dart';
+import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/modules/live/recorder/recorder.dart';
+import 'package:pure_live/modules/live/room/room.dart';
+import 'package:pure_live/modules/live/search/search.dart';
+import 'package:pure_live/modules/live/shield/shield.dart';
+import 'package:pure_live/modules/music/music.dart';
+import 'package:pure_live/modules/vod/vod.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// Settings providers a window rebuilds after the values changed underneath
@@ -53,6 +51,9 @@ final List<ProviderOrFamily> kSettingsProviders = [
   portraitFullscreenProvider,
   danmakuStyleProvider,
   danmakuFrameRateProvider,
+  danmakuFixedTopProvider,
+  danmakuFixedBottomProvider,
+  danmakuFixedDurationProvider,
   danmakuTapInteractionProvider,
   danmakuLongPressInteractionProvider,
   danmakuHoldProvider,
@@ -98,17 +99,22 @@ final List<ProviderOrFamily> kSettingsProviders = [
   followTagsProvider,
   iptvUpdateIntervalProvider,
   iptvBrowseSettingsProvider,
+  iptvRecentProvider,
+  iptvRemindersProvider,
   iptvAutoSyncProvider,
   iptvUserAgentProvider,
   iptvEpgProvider,
   vodQualityProvider,
   vodPlaybackSettingsProvider,
+  vodFavouritesProvider,
+  vodHistoryProvider,
   musicSettingsProvider,
   musicSourcesProvider,
+  musicFavouritesProvider,
+  musicRecentProvider,
   searchHistoryProvider,
   webdavAccountsProvider,
   autoShutdownProvider,
-  showMultiviewProvider,
   navMenuProvider,
   sitesDisplayProvider,
   sitesOrderProvider,

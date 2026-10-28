@@ -460,38 +460,6 @@ class DanmakuStyleController extends Notifier<DanmakuStyle> {
     massMode: value,
   ));
 
-  /// Applies a saved template's look (the reference's `DanmakuTemplate.apply`):
-  /// area, margins, speed, size, weight, border, opacity, outline and the
-  /// pure-text switch. Spacing, typeface, same-screen cap and mass mode are
-  /// the viewer's own and stay put.
-  Future<void> applyTemplate({
-    required double area,
-    required double topMargin,
-    required double bottomMargin,
-    required double baseSpeed,
-    required double fontSize,
-    required int fontWeight,
-    required double strokeWidth,
-    required double opacity,
-    required bool showStroke,
-    required bool noEmoji,
-  }) => _write((
-    fontSize: fontSize.clamp(DanmakuStyleRange.fontSizeMin, DanmakuStyleRange.fontSizeMax),
-    fontWeight: normalizeDanmakuFontWeight(fontWeight),
-    letterSpacing: state.letterSpacing,
-    baseSpeed: baseSpeed.clamp(DanmakuStyleRange.speedMin, DanmakuStyleRange.speedMax),
-    area: area.clamp(DanmakuStyleRange.areaMin, DanmakuStyleRange.areaMax),
-    topMargin: topMargin.clamp(DanmakuStyleRange.topMarginMin, DanmakuStyleRange.topMarginMax),
-    bottomMargin: bottomMargin.clamp(DanmakuStyleRange.bottomMarginMin, DanmakuStyleRange.bottomMarginMax),
-    opacity: opacity.clamp(DanmakuStyleRange.opacityMin, DanmakuStyleRange.opacityMax),
-    showStroke: showStroke,
-    strokeWidth: strokeWidth.clamp(DanmakuStyleRange.strokeWidthMin, DanmakuStyleRange.strokeWidthMax),
-    noEmoji: noEmoji,
-    fontFamily: state.fontFamily,
-    maxVisibleCount: state.maxVisibleCount,
-    massMode: state.massMode,
-  ));
-
   /// Restores the designed defaults.
   Future<void> reset() => _write(_defaults);
 
@@ -585,11 +553,6 @@ final class DanmakuFrameRateController extends Notifier<DanmakuFrameRate> {
 
   /// Flips between the display policy and the manual rate.
   Future<void> setAutoFps({required bool value}) => _write((fps: state.fps, autoFps: value));
-
-  /// Applies a saved template's frame pacing: its manual rate and whether the
-  /// rate follows the display (the reference's template covers both).
-  Future<void> applyTemplate({required int fps, required bool autoFps}) =>
-      _write((fps: normalizeDanmakuFps(fps), autoFps: autoFps));
 
   /// Restores the reference's defaults: follow the display at 60 FPS.
   Future<void> reset() => _write(_frameRateDefaults);

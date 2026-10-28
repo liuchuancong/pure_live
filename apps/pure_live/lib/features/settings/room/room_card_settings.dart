@@ -89,9 +89,6 @@ final class RoomCardVisibility {
     return RoomCardVisibility.hiding(legacyHidden);
   }
 
-  /// Every piece.
-  static const RoomCardVisibility all = RoomCardVisibility({});
-
   /// The designed default: every piece except the chip over the cover.
   static const RoomCardVisibility standard = RoomCardVisibility({RoomCardElement.coverTitle});
 
@@ -136,20 +133,9 @@ final class RoomCardVisibility {
   }
 }
 
-/// The quick presets; [custom] is derived, never applied.
-enum RoomCardPreset {
-  /// Every piece except the cover chip.
-  standard,
-
-  /// Every piece, including the chip over the cover.
-  detailed,
-
-  /// Anything the viewer changed by hand.
-  custom,
-}
-
 /// One viewport's card appearance: the corner radius and which pieces show.
-/// The designs themselves are fixed.
+/// The designs themselves are fixed, and every piece is its own property —
+/// there are no bundled presets to overwrite them.
 @immutable
 final class RoomCardAppearance {
   /// Creates an appearance.
@@ -175,16 +161,10 @@ final class RoomCardAppearance {
   /// The largest corner radius.
   static const double maxCornerRadius = 32;
 
-  /// The standard preset.
+  /// The designed default: the standard visibility and corner radius.
   static const RoomCardAppearance standard = RoomCardAppearance(
     cornerRadius: defaultCornerRadius,
     visibility: RoomCardVisibility.standard,
-  );
-
-  /// The detailed preset: every piece, the cover chip included.
-  static const RoomCardAppearance detailed = RoomCardAppearance(
-    cornerRadius: defaultCornerRadius,
-    visibility: RoomCardVisibility.all,
   );
 
   /// The card's corner radius.
@@ -192,19 +172,6 @@ final class RoomCardAppearance {
 
   /// Which pieces the card draws.
   final RoomCardVisibility visibility;
-
-  /// The preset this appearance matches, [RoomCardPreset.custom] otherwise.
-  RoomCardPreset get preset {
-    if (visibility == RoomCardVisibility.standard) return RoomCardPreset.standard;
-    if (visibility == RoomCardVisibility.all) return RoomCardPreset.detailed;
-    return RoomCardPreset.custom;
-  }
-
-  /// The visibility a preset stands for.
-  static RoomCardVisibility visibilityOf(RoomCardPreset preset) => switch (preset) {
-    RoomCardPreset.standard || RoomCardPreset.custom => RoomCardVisibility.standard,
-    RoomCardPreset.detailed => RoomCardVisibility.all,
-  };
 
   /// Clamps a radius to the design's range.
   static double normalizeCornerRadius(num value) {
@@ -297,15 +264,10 @@ final class RoomCardSettingsController extends Notifier<RoomCardTargets> {
     }
   }
 
-  /// Applies a quick preset, keeping the corner radius.
-  Future<void> applyPreset(RoomCardViewport viewport, RoomCardPreset preset) async {
-    if (preset == RoomCardPreset.custom) return;
-    final current = forViewport(viewport);
-    await update(viewport, current.copyWith(visibility: RoomCardAppearance.visibilityOf(preset)));
-  }
-
-  /// Puts one viewport back to the standard preset, keeping its radius.
-  Future<void> reset(RoomCardViewport viewport) => applyPreset(viewport, RoomCardPreset.standard);
+  /// Puts one viewport's display back to the designed default, keeping its
+  /// corner radius.
+  Future<void> reset(RoomCardViewport viewport) =>
+      update(viewport, forViewport(viewport).copyWith(visibility: RoomCardVisibility.standard));
 }
 
 /// Both viewports' card appearances.

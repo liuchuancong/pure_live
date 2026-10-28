@@ -3,9 +3,9 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/features/favorites/favorites.dart';
 import 'package:pure_live/features/settings/browse/live_alert_settings.dart' show liveAlertSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/favorites/favorites.dart';
 
 /// Opens the live-alert tag filter: every follow, or only the follows that
 /// carry one of the ticked tags. No tick means every follow, which is also

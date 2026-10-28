@@ -269,22 +269,12 @@ final class _OrderButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    return DsPressable(
+    return DsButton.icon(
+      variant: DsButtonVariant.ghost,
+      size: DsSize.sm,
       semanticLabel: label,
       onPressed: enabled ? onPressed : null,
-      builder: (context, states, _) {
-        final hovered = states.contains(WidgetState.hovered);
-        return Container(
-          width: 26,
-          height: 26,
-          decoration: DsBoxDecoration(
-            color: hovered && enabled ? colors.hover : colors.control,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Center(child: DsIcon(icon, size: 14, color: enabled ? colors.textMuted : colors.textSubtle)),
-        );
-      },
+      icon: DsIcon(icon, size: 14),
     );
   }
 }

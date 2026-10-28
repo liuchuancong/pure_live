@@ -14,13 +14,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account.dart';
 import 'package:pure_live/features/backup/backup.dart';
-import 'package:pure_live/features/favorites/favorites.dart';
-
-import 'package:pure_live/features/history/history.dart';
-import 'package:pure_live/features/iptv/iptv.dart';
-import 'package:pure_live/features/music/music.dart';
-import 'package:pure_live/features/recorder/recorder.dart';
-import 'package:pure_live/features/room/page/room_orientation.dart' show roomOrientationChoicesProvider;
 import 'package:pure_live/features/settings/browse/audience_metric_provider.dart' show audienceMetricProvider;
 import 'package:pure_live/features/settings/browse/live_alert_settings.dart' show liveAlertSettingsProvider;
 import 'package:pure_live/features/settings/browse/platform_preferences_provider.dart'
@@ -52,11 +45,10 @@ import 'package:pure_live/features/settings/panes/background_panes.dart'
         BackgroundLibraryPane,
         BackgroundOverviewPane,
         BackgroundRandomPane;
-import 'package:pure_live/features/settings/panes/danmaku_panes.dart'
-    show DanmakuDisplayPane, DanmakuPane, DanmakuStylePane;
+import 'package:pure_live/features/settings/panes/danmaku_panes.dart' show DanmakuDisplayPane, DanmakuPane;
 import 'package:pure_live/features/settings/panes/player_kernel_pane.dart'
     show PlayerKernelAdvancedPane, PlayerKernelPane;
-import 'package:pure_live/features/settings/panes/room_card_pane.dart' show RoomCardPane;
+import 'package:pure_live/features/settings/panes/room_card_pane.dart' show showRoomCardPreview;
 import 'package:pure_live/features/settings/playback/floating_window_settings.dart' show floatingWindowSettingsProvider;
 import 'package:pure_live/features/settings/playback/playback_settings_providers.dart';
 import 'package:pure_live/features/settings/playback/portrait_fullscreen_settings.dart';
@@ -74,14 +66,19 @@ import 'package:pure_live/features/settings/surface/settings_search.dart' show S
 import 'package:pure_live/features/settings/surface/settings_sections.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart'
     show SettingsChoiceRow, SettingsConfigRow, SettingsHint, SettingsSegmentedRow;
-import 'package:pure_live/features/shield/shield.dart';
-import 'package:pure_live/features/toolbox/toolbox.dart';
 import 'package:pure_live/features/version/version.dart';
-import 'package:pure_live/features/vod/vod.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/layouts.dart';
+import 'package:pure_live/modules/iptv/iptv.dart';
+import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/modules/live/history/history.dart';
+import 'package:pure_live/modules/live/recorder/recorder.dart';
+import 'package:pure_live/modules/live/room/page/room_orientation.dart' show roomOrientationChoicesProvider;
+import 'package:pure_live/modules/live/shield/shield.dart';
+import 'package:pure_live/modules/live/toolbox/toolbox.dart';
+import 'package:pure_live/modules/music/music.dart';
+import 'package:pure_live/modules/vod/vod.dart';
 import 'package:pure_live/shared/shared.dart';
-
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// The widest a settings column grows on a wide window: rows keep a readable
@@ -498,14 +495,14 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.navHomeMenu => const _NavHomeMenuPane(),
       SettingsSection.navToolOrder => const _NavToolOrderPane(),
       SettingsSection.browsing || SettingsSection.general => const _BrowsingPane(),
-      SettingsSection.roomCard => const RoomCardPane(),
+      // The card's page is the sample itself: the browsing entry opens it.
+      SettingsSection.roomCard => const _BrowsingPane(),
       SettingsSection.sites || SettingsSection.live || SettingsSection.sources => const _SitesPane(),
       SettingsSection.sitesDisplay => const _SitesDisplayPane(),
       SettingsSection.accounts => const AccountPane(),
       SettingsSection.refresh => const _RefreshPane(),
       SettingsSection.followTags => const FollowTagsPane(),
-      SettingsSection.danmaku => const DanmakuPane(),
-      SettingsSection.danmakuStyle || SettingsSection.miniDanmaku => const DanmakuStylePane(),
+      SettingsSection.danmaku || SettingsSection.miniDanmaku => const DanmakuPane(),
       SettingsSection.fontDanmaku => const FontManagerPage(danmaku: true),
       SettingsSection.danmakuDisplay => const DanmakuDisplayPane(),
       SettingsSection.shield => const ShieldPane(),
@@ -534,6 +531,7 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.iptvGroups => const IptvGroupsPane(),
       SettingsSection.vod => const VodSettingsPane(),
       SettingsSection.vodPlayback => const VodPlaybackPane(),
+      SettingsSection.vodInterface => const VodInterfacePane(),
       SettingsSection.music => const MusicSettingsPane(),
       SettingsSection.musicList => const MusicListPane(),
       SettingsSection.musicSources => const MusicSourcesPane(),
@@ -806,9 +804,10 @@ final class _ThemeWindow extends StatelessWidget {
 }
 
 /// The browsing page: what the feed grids decide for themselves — the gaps
-/// between cards and the density of the follow page — plus the room card
-/// subpage. Card width and page size are not here: both follow the window
-/// and the site's own feed window now.
+/// between cards and the density of the follow page — plus the row that
+/// opens the room-card preview, where the card itself is tuned. Card width
+/// and page size are not here: both follow the window and the site's own
+/// feed window now.
 final class _BrowsingPane extends ConsumerWidget {
   const _BrowsingPane();
 
@@ -851,7 +850,19 @@ final class _BrowsingPane extends ConsumerWidget {
             ),
           ],
         ),
-        const DsListSection(children: [SettingsChildEntry(child: SettingsSection.roomCard)]),
+        DsListSection(
+          children: [
+            // The row opens the card's own page — the sample at a feed's
+            // size — rather than a settings list beside it.
+            DsListRow(
+              leading: const DsIcon(DsIcons.idCard),
+              title: Text(t.settings.roomCardSettingsTitle),
+              description: Text(t.settings.roomCardPreviewHint),
+              showChevron: true,
+              onPressed: () => unawaited(showRoomCardPreview(context)),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -1129,74 +1140,41 @@ final class _NavPane extends StatelessWidget {
   }
 }
 
-/// The home menu page: the multi-view entry, then the four live destinations
-/// shown in their saved order and reordered through a draft.
+/// The home menu page: the four live destinations in their saved order,
+/// each row carrying its own show/hide switch.
 ///
-/// The four entries persist as one visible order (`nav.menuIds`); the
-/// reference's `savedMenuIds` works the same way. At least one stays shown,
-/// and only the shown ones have an order to edit — a hidden entry joins the
-/// menu at its end when it is switched back on.
+/// No row ever moves for a switch — all four stay listed in place, on or
+/// off, and the switch writes only the hidden set. The order key is
+/// written only by the draft's save, so until the viewer reorders the menu
+/// the rows keep the default order; at least one entry stays shown.
 final class _NavHomeMenuPane extends ConsumerWidget {
   const _NavHomeMenuPane();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final showMultiview = ref.watch(showMultiviewProvider);
-    final homeMenus = ref.watch(navMenuProvider);
-    final hiddenMenus = [
-      for (final item in kHomeMenuItems)
-        if (!homeMenus.contains(item)) item,
-    ];
-
-    Widget visibilitySwitch(NavigationItem item, {required bool shown}) {
-      return DsSwitch(
-        value: shown,
-        onChanged: (value) async {
-          final changed = await ref.read(navMenuProvider.notifier).setVisible(item, value: value);
-          if (!changed && context.mounted) {
-            showDsToast(context: context, title: t.settings.navMenuKeepOne);
-          }
-        },
-      );
-    }
+    final homeOrder = ref.watch(navMenuOrderProvider);
+    final visible = ref.watch(navMenuProvider).toSet();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        DsListSection(
-          header: Text(t.settings.navHomeMenuGroup),
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.grid2x2),
-              title: Text(t.settings.multiviewVisible),
-              description: Text(t.settings.multiviewVisibleDesc),
-              trailing: DsSwitch(
-                value: showMultiview,
-                onChanged: (value) => unawaited(ref.read(showMultiviewProvider.notifier).set(value: value)),
-              ),
-            ),
-          ],
-        ),
         SettingsOrderList<NavigationItem>(
           header: t.settings.navHomeMenuTitle,
-          items: homeMenus,
+          items: homeOrder,
           identityOf: (item) => item.name,
           labelOf: (item) => item.label(t),
           leadingOf: (item) => DsIcon(item.icon),
-          trailingOf: (item) => visibilitySwitch(item, shown: homeMenus.contains(item)),
-          // The entries the menu does not show: switched back on from here,
-          // never reordered, because an order is what a shown entry has.
-          extraRows: [
-            for (final item in hiddenMenus)
-              DsListRow(
-                leading: DsIcon(item.icon),
-                title: Text(item.label(t)),
-                description: Text(t.settings.navMenuHidden),
-                trailing: visibilitySwitch(item, shown: false),
-              ),
-          ],
+          trailingOf: (item) => DsSwitch(
+            value: visible.contains(item),
+            onChanged: (value) async {
+              final changed = await ref.read(navMenuProvider.notifier).setVisible(item, value: value);
+              if (!changed && context.mounted) {
+                showDsToast(context: context, title: t.settings.navMenuKeepOne);
+              }
+            },
+          ),
           onSave: (draft) => unawaited(ref.read(navMenuProvider.notifier).setOrder(draft)),
         ),
       ],
@@ -2376,6 +2354,20 @@ final class _QualityAudioPane extends ConsumerWidget {
                   onPressed: () => unawaited(showAsmrSleepMinutesDialog(context, ref)),
                 ),
             ],
+            // The iOS system picture-in-picture window can also be closed by
+            // the viewer, so the same choice is offered there; the Android
+            // block above keeps the switch next to its background playback
+            // row.
+            if (ref.watch(platformRuntimeProvider).environment.runtime.kind == PlatformKind.ios)
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.pictureInPicture),
+                title: t.settings.pauseOnPipClose,
+                description: t.settings.pauseOnPipCloseDesc,
+                control: DsSwitch(
+                  value: settings.pauseOnPipClose,
+                  onChanged: (value) => unawaited(controller.setPauseOnPipClose(value: value)),
+                ),
+              ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.volume),
               title: t.settings.defaultVolume,

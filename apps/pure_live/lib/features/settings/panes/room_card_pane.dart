@@ -3,19 +3,23 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:live_sites/live_sites.dart'
+    show LiveAnchor, LiveRoom, LiveStatus, RoomAudience, RoomBroadcast, RoomContent;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/room/room_card_settings.dart';
-import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow, SettingsSegmentedRow;
+import 'package:pure_live/features/settings/surface/settings_preview.dart';
+import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/popular/room_card.dart';
+import 'package:pure_live/shared/shared.dart' show CardGrid;
 
-/// The room-card settings page. The card and the list row have fixed
-/// designs; the switches only decide which pieces of information they draw.
-/// The page edits the set for the device it runs on, and the appearance
-/// follows the device wherever it is used.
-final class RoomCardPane extends ConsumerWidget {
-  /// The pane.
-  const RoomCardPane({super.key});
+/// The card and the list row have fixed designs; the preview page draws both
+/// with this device's appearance and carries these controls beside them. The
+/// browsing settings' room-card row opens that page, so the sample is where
+/// the card is tuned.
+final class RoomCardSettings extends ConsumerWidget {
+  /// The controls.
+  const RoomCardSettings({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,7 +32,6 @@ final class RoomCardPane extends ConsumerWidget {
     final targets = ref.watch(roomCardSettingsProvider);
     final appearance = viewport == RoomCardViewport.mobile ? targets.mobile : targets.desktop;
     final controller = ref.read(roomCardSettingsProvider.notifier);
-    final preset = appearance.preset;
 
     void update(RoomCardAppearance next) => unawaited(controller.update(viewport, next));
 
@@ -36,6 +39,8 @@ final class RoomCardPane extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
+        // Every piece is its own switch: a card never jumps to another
+        // layout, only the chosen pieces come and go.
         DsListSection(
           header: Text(t.settings.roomCardVisibleContent),
           children: [
@@ -52,33 +57,11 @@ final class RoomCardPane extends ConsumerWidget {
           ],
         ),
         DsListSection(
-          children: [
-            SettingsSegmentedRow<RoomCardPreset?>(
-              leading: const DsIcon(DsIcons.layoutTemplate),
-              title: t.settings.roomCardPresets,
-              // A hand-tuned card matches no preset: the control selects
-              // nothing and the badge says why.
-              value: preset == RoomCardPreset.custom ? null : preset,
-              detail: preset == RoomCardPreset.custom
-                  ? DsBadge(label: Text(t.settings.roomCardPresetCustom), dot: false)
-                  : null,
-              options: [
-                (value: RoomCardPreset.standard, label: t.settings.roomCardPresetStandard),
-                (value: RoomCardPreset.detailed, label: t.settings.roomCardPresetDetailed),
-              ],
-              onChanged: (next) {
-                if (next != null) unawaited(controller.applyPreset(viewport, next));
-              },
-            ),
-          ],
-        ),
-        DsListSection(
           header: Text(t.settings.roomCardAppearance),
           children: [
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.radius),
               title: t.settings.roomCardCornerRadius,
-              description: t.settings.roomCardCornerRadiusDesc,
               detail: Text('${appearance.cornerRadius.round()} px'),
               controlWidth: 220,
               control: DsSlider(
@@ -109,6 +92,113 @@ final class RoomCardPane extends ConsumerWidget {
     );
   }
 }
+
+/// Opens the card sample full-window and alone: the browsing settings' entry
+/// to the card, and the only page that tunes it.
+Future<void> showRoomCardPreview(BuildContext context) {
+  return Navigator.of(
+    context,
+    rootNavigator: true,
+  ).push(DsPageRoute<void>(fullscreenDialog: true, builder: (context) => const RoomCardPreviewPage()));
+}
+
+/// The card and the list row at a feed's size, full-window: the real widgets,
+/// drawn with the appearance this device uses, under the controls that shape
+/// them. The design switch only changes what the preview shows — the feed
+/// keeps choosing its own layout.
+final class RoomCardPreviewPage extends ConsumerStatefulWidget {
+  /// The page.
+  const RoomCardPreviewPage({super.key});
+
+  @override
+  ConsumerState<RoomCardPreviewPage> createState() => _RoomCardPreviewPageState();
+}
+
+final class _RoomCardPreviewPageState extends ConsumerState<RoomCardPreviewPage> {
+  bool _list = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final room = _sampleRoom(t);
+    final design = _list ? t.common.layoutList : t.common.layoutGrid;
+    return SettingsPreviewPage(
+      icon: _list ? DsIcons.layoutList : DsIcons.layoutGrid,
+      title: t.settings.roomCardPreview,
+      stage: Stack(
+        fit: StackFit.expand,
+        children: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(DsSpace.s20),
+              // The card is laid out at a feed's comfortable size and scaled
+              // down whole, so a small stage shrinks it instead of squeezing
+              // its information line.
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: _list
+                    ? SizedBox(
+                        width: 480,
+                        height: kRoomCardListDesignHeight,
+                        child: RoomCard(room: room, listRow: true),
+                      )
+                    : SizedBox(
+                        width: 320,
+                        height: 320 / CardGrid.roomCardAspectRatio,
+                        child: RoomCard(room: room),
+                      ),
+              ),
+            ),
+          ),
+          PositionedDirectional(
+            start: 0,
+            end: 0,
+            bottom: 0,
+            child: SettingsPreviewBar(
+              children: [
+                SettingsPreviewCircleButton(
+                  icon: DsIcons.layoutGrid,
+                  semanticLabel: t.common.layoutGrid,
+                  selected: !_list,
+                  onPressed: () => setState(() => _list = false),
+                ),
+                SettingsPreviewCircleButton(
+                  icon: DsIcons.layoutList,
+                  semanticLabel: t.common.layoutList,
+                  selected: _list,
+                  onPressed: () => setState(() => _list = true),
+                ),
+                const SizedBox(width: DsSpace.s8),
+                Text(design, style: theme.typography.small.copyWith(color: const Color(0xCCFFFFFF))),
+                const Spacer(),
+              ],
+            ),
+          ),
+        ],
+      ),
+      settings: const RoomCardSettings(),
+    );
+  }
+}
+
+/// A stable public sample; offline the card's own fallbacks stand in.
+LiveRoom _sampleRoom(Translations t) => LiveRoom.normalized(
+  platform: 'bilibili',
+  roomId: 'preview',
+  content: RoomContent.of(
+    title: t.settings.roomCardPreviewTitle,
+    coverUrl: 'https://picsum.photos/seed/pure-live-room/640/360',
+  ),
+  audience: RoomAudience.of(popularity: 326000, onlineViewers: 12800),
+  broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live),
+  anchor: LiveAnchor.of(
+    platform: 'bilibili',
+    anchorId: 'preview',
+    name: t.settings.roomCardPreviewAnchor,
+    avatarUrl: 'https://picsum.photos/seed/pure-live-anchor/96/96',
+  ),
+);
 
 String _elementLabel(Translations t, RoomCardElement element) => switch (element) {
   RoomCardElement.title => t.settings.roomCardShowTitle,

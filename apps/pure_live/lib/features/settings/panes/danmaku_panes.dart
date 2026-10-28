@@ -5,10 +5,8 @@ import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_danmaku/media_core_danmaku.dart'
-    show BarrageItemMapper, DanmakuColor, DanmakuMessage, DanmakuMessageType;
-
+    show BarrageItemMapper, DanmakuColor, DanmakuMessage, DanmakuMessageType, DanmakuPlacement, DanmakuStyle;
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/room/player/room_barrage_config.dart' show roomBarrageConfig;
 import 'package:pure_live/features/settings/danmaku/chat_display_settings.dart'
     show
         chatGiftValueInYuanProvider,
@@ -21,27 +19,34 @@ import 'package:pure_live/features/settings/danmaku/chat_display_settings.dart'
         chatShowGiftsProvider,
         kChatPanelWidthMax,
         kChatPanelWidthMin;
+import 'package:pure_live/features/settings/danmaku/danmaku_fixed_providers.dart'
+    show
+        danmakuFixedBottomProvider,
+        danmakuFixedDurationProvider,
+        danmakuFixedTopProvider,
+        kDanmakuFixedDurationMax,
+        kDanmakuFixedDurationMin;
 import 'package:pure_live/features/settings/danmaku/danmaku_hold_provider.dart' show danmakuHoldProvider;
-import 'package:pure_live/features/settings/danmaku/danmaku_presets.dart' show DanmakuPreset, presetLabel;
 import 'package:pure_live/features/settings/danmaku/danmaku_show_gifts_provider.dart' show danmakuShowGiftsProvider;
-import 'package:pure_live/features/settings/danmaku/danmaku_style_providers.dart';
+// The app's DanmakuStyle record and media_core's per-message override share a
+// name; the engine's one is the one this page builds sample messages with.
+import 'package:pure_live/features/settings/danmaku/danmaku_style_providers.dart' hide DanmakuStyle;
 import 'package:pure_live/features/settings/danmaku/super_chat_settings.dart' show superChatIncludesMembershipProvider;
-import 'package:pure_live/features/settings/pages/font_manager_page.dart'
-    show fontFamilyLabel, showFontManagerPage;
 import 'package:pure_live/features/settings/playback/pip_danmaku_scale_provider.dart'
     show kPipDanmakuScaleMax, kPipDanmakuScaleMin, pipDanmakuScaleProvider;
-import 'package:pure_live/features/settings/playback/playback_settings_providers.dart'
-    show playbackSettingsProvider;
+import 'package:pure_live/features/settings/playback/playback_settings_providers.dart' show playbackSettingsProvider;
 import 'package:pure_live/features/settings/surface/settings_page.dart' show SettingsChildEntry;
+import 'package:pure_live/features/settings/surface/settings_preview.dart';
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart'
     show SettingsChoiceRow, SettingsConfigRow, SettingsHint, SettingsSegmentedRow;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/room/player/room_barrage_config.dart' show roomBarrageConfig;
 
-/// The danmaku settings, split across three pages: this one is the switch and
-/// the interaction of the flying layer, [DanmakuStylePane] tunes how a
-/// danmaku looks (with a live preview), and [DanmakuDisplayPane] is the chat
-/// list beside the picture. The shield keeps its own page under this one.
+/// The danmaku settings: this page is the switch and the interaction of the
+/// flying layer, the full-window preview holds every knob of how a danmaku
+/// looks, and [DanmakuDisplayPane] is the chat list beside the picture. The
+/// shield keeps its own page under this one.
 final class DanmakuPane extends ConsumerWidget {
   /// The pane.
   const DanmakuPane({super.key});
@@ -83,7 +88,7 @@ final class DanmakuPane extends ConsumerWidget {
         ),
         // The master switch above decides whether the layer draws; the
         // sample sits right under it so the answer to "on" is visible.
-        const DanmakuPreviewCard(),
+        const DanmakuPreviewEntry(),
         DsListSection(
           header: Text(t.settings.danmakuInteractionGroup),
           children: [
@@ -102,7 +107,8 @@ final class DanmakuPane extends ConsumerWidget {
               description: t.settings.styleLongPressInteractionDesc,
               control: DsSwitch(
                 value: ref.watch(danmakuLongPressInteractionProvider),
-                onChanged: (value) => unawaited(ref.read(danmakuLongPressInteractionProvider.notifier).set(value: value)),
+                onChanged: (value) =>
+                    unawaited(ref.read(danmakuLongPressInteractionProvider.notifier).set(value: value)),
               ),
             ),
             SettingsConfigRow(
@@ -118,7 +124,6 @@ final class DanmakuPane extends ConsumerWidget {
         ),
         const DsListSection(
           children: [
-            SettingsChildEntry(child: SettingsSection.danmakuStyle),
             SettingsChildEntry(child: SettingsSection.danmakuDisplay),
             SettingsChildEntry(child: SettingsSection.shield),
           ],
@@ -128,16 +133,34 @@ final class DanmakuPane extends ConsumerWidget {
   }
 }
 
-/// The flying layer's own look: a live preview over the controls, the built-in
-/// presets, and every knob of one danmaku. Split from the chat list because
-/// the two answer different questions — what flies over the picture, and what
-/// the list beside it keeps.
-final class DanmakuStylePane extends ConsumerWidget {
-  /// The pane.
-  const DanmakuStylePane({super.key});
+/// Every control of the flying layer, in the order the preview page groups
+/// them. The preview is the only page that tunes them, so the rows keep only
+/// their names: the sidebar is too narrow for the explanations.
+final class DanmakuStyleSettings extends ConsumerStatefulWidget {
+  /// The controls.
+  const DanmakuStyleSettings({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DanmakuStyleSettings> createState() => _DanmakuStyleSettingsState();
+}
+
+final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSettings> {
+  /// The cloud catalogue, once read: the font row lists the families this
+  /// device already holds by name, so it needs the manifest.
+  List<FontFamily>? _catalog;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(
+      ref.read(fontLibraryProvider).catalog().then((families) {
+        if (mounted) setState(() => _catalog = families);
+      }),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.t;
     final playback = ref.watch(playbackSettingsProvider);
     final style = ref.watch(danmakuStyleProvider);
@@ -145,42 +168,38 @@ final class DanmakuStylePane extends ConsumerWidget {
     final frameRate = ref.watch(danmakuFrameRateProvider);
     final frameRateController = ref.read(danmakuFrameRateProvider.notifier);
     final effectiveFps = ref.watch(danmakuEffectiveFpsProvider);
-    final activePreset = DanmakuPreset.matching(style, frameRate);
     final pipScale = ref.watch(pipDanmakuScaleProvider);
     final pipScaleController = ref.read(pipDanmakuScaleProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        const DanmakuPreviewCard(),
+        // Every value is set on its own knob below — there are no bundled
+        // presets to overwrite them.
         DsListSection(
           children: [
-            SettingsChoiceRow<DanmakuPreset>(
-              leading: const DsIcon(DsIcons.layoutTemplate),
-              title: t.settings.preset,
-              description: t.settings.danmakuPresetHint,
-              value: activePreset,
-              placeholder: t.settings.danmakuPresetCustom,
-              options: [
-                for (final preset in DanmakuPreset.values) DsSelectOption(value: preset, label: presetLabel(t, preset)),
-              ],
-              onChanged: (preset) => unawaited(_applyPreset(context, ref, preset)),
-            ),
-            DsListRow(
+            // The fonts this device already holds: the platform's own face,
+            // the bundled presets, and the cloud families it downloaded.
+            // Picking one applies it here; the manager page is where a new
+            // family is fetched, not the way to choose among them.
+            SettingsChoiceRow<String>(
               leading: const DsIcon(DsIcons.type),
-              title: Text(t.settings.danmakuFont),
-              description: Text(t.settings.danmakuFontDescription),
-              detail: Text(
-                style.fontFamily == null
-                    ? platformFontFamilyLabel()
-                    : fontFamilyLabel(
-                        t,
-                        style.fontFamily,
-                        cloudName: ref.read(fontLibraryProvider).nameOf(style.fontFamily!),
-                      ),
-              ),
-              showChevron: true,
-              onPressed: () => showFontManagerPage(context, ref, danmaku: true),
+              title: t.settings.danmakuFont,
+              value: style.fontFamily ?? '',
+              options: [
+                DsSelectOption(value: '', label: platformFontFamilyLabel()),
+                for (final (id, label) in kBundledFontPresets) DsSelectOption(value: id, label: label),
+                for (final family in _catalog ?? const <FontFamily>[])
+                  if (ref.read(fontLibraryProvider).installedIds.contains(family.id))
+                    DsSelectOption(value: family.id, label: family.name),
+              ],
+              onChanged: (next) {
+                final family = next.isEmpty ? null : next;
+                if (family == style.fontFamily) return;
+                unawaited(ref.read(danmakuFontFaceProvider.notifier).set(''));
+                unawaited(controller.setFontFamily(family));
+                if (family != null) unawaited(ref.read(fontLibraryProvider).ensureRegistered(family));
+              },
             ),
           ],
         ),
@@ -190,7 +209,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.caseSensitive),
               title: t.settings.styleFontSize,
-              description: t.settings.styleFontSizeDesc,
               detail: Text('${style.fontSize.toStringAsFixed(1)} px'),
               controlWidth: 220,
               control: DsSlider(
@@ -205,7 +223,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.bold),
               title: t.settings.styleFontWeight,
-              description: t.settings.styleFontWeightDesc,
               detail: Text(danmakuFontWeightLabel(t, style.fontWeight)),
               controlWidth: 220,
               control: DsSlider(
@@ -221,7 +238,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.letterSpacing),
               title: t.settings.styleLetterSpacing,
-              description: t.settings.styleLetterSpacingDesc,
               detail: Text('${style.letterSpacing.toStringAsFixed(1)} px'),
               controlWidth: 220,
               control: DsSlider(
@@ -236,7 +252,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.wind),
               title: t.settings.styleSpeed,
-              description: t.settings.styleSpeedDesc,
               detail: Text('${style.baseSpeed.round()} px/s'),
               controlWidth: 220,
               control: DsSlider(
@@ -251,7 +266,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.moveVertical),
               title: t.settings.styleArea,
-              description: t.settings.styleAreaDesc,
               detail: Text('${(style.area * 100).round()}%'),
               controlWidth: 220,
               control: DsSlider(
@@ -264,7 +278,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.arrowUpToLine),
               title: t.settings.styleTopMargin,
-              description: t.settings.styleTopMarginDesc,
               detail: Text('${style.topMargin.round()} px'),
               controlWidth: 220,
               control: DsNumberField(
@@ -280,7 +293,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.arrowDownToLine),
               title: t.settings.styleBottomMargin,
-              description: t.settings.styleBottomMarginDesc,
               detail: Text('${style.bottomMargin.round()} px'),
               controlWidth: 220,
               control: DsNumberField(
@@ -293,10 +305,45 @@ final class DanmakuStylePane extends ConsumerWidget {
                 },
               ),
             ),
+            // The engine's two pinned lanes, which the area and margins above
+            // do not cover: a platform's top- or bottom-pinned message, and
+            // how long one stays up.
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.arrowUpToLine),
+              title: t.settings.fixedTopTitle,
+              control: DsSwitch(
+                value: ref.watch(danmakuFixedTopProvider),
+                onChanged: (value) => unawaited(ref.read(danmakuFixedTopProvider.notifier).set(value: value)),
+                semanticLabel: t.settings.fixedTopTitle,
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.arrowDownToLine),
+              title: t.settings.fixedBottomTitle,
+              control: DsSwitch(
+                value: ref.watch(danmakuFixedBottomProvider),
+                onChanged: (value) => unawaited(ref.read(danmakuFixedBottomProvider.notifier).set(value: value)),
+                semanticLabel: t.settings.fixedBottomTitle,
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.gauge),
+              title: t.settings.fixedDurationTitle,
+              detail: Text('${ref.watch(danmakuFixedDurationProvider).round()} s'),
+              controlWidth: 220,
+              control: DsSlider(
+                value: ref.watch(danmakuFixedDurationProvider),
+                min: kDanmakuFixedDurationMin,
+                max: kDanmakuFixedDurationMax,
+                divisions: (kDanmakuFixedDurationMax - kDanmakuFixedDurationMin).round(),
+                onChanged: (value) => unawaited(ref.read(danmakuFixedDurationProvider.notifier).set(value)),
+                semanticLabel: t.settings.fixedDurationTitle,
+                semanticFormatter: (value) => '${value.round()} s',
+              ),
+            ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.blend),
               title: t.settings.styleOpacity,
-              description: t.settings.styleOpacityDesc,
               detail: Text('${(style.opacity * 100).round()}%'),
               controlWidth: 220,
               control: DsSlider(
@@ -308,7 +355,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.typeOutline),
               title: t.settings.styleStroke,
-              description: t.settings.styleStrokeDesc,
               control: DsSwitch(
                 value: style.showStroke,
                 onChanged: (value) => unawaited(controller.setShowStroke(value: value)),
@@ -317,7 +363,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.penTool),
               title: t.settings.styleStrokeWidth,
-              description: t.settings.styleStrokeWidthDesc,
               detail: Text('${style.strokeWidth.toStringAsFixed(1)} px'),
               controlWidth: 220,
               control: DsSlider(
@@ -333,7 +378,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.circleSlash),
               title: t.settings.styleNoEmoji,
-              description: t.settings.styleNoEmojiDesc,
               control: DsSwitch(
                 value: style.noEmoji,
                 onChanged: (value) => unawaited(controller.setNoEmoji(value: value)),
@@ -342,7 +386,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.sparkles),
               title: t.settings.styleFpsFollow,
-              description: t.settings.styleFpsFollowDesc,
               control: DsSwitch(
                 value: frameRate.autoFps,
                 onChanged: (value) => unawaited(frameRateController.setAutoFps(value: value)),
@@ -351,7 +394,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.gauge),
               title: t.settings.styleFps,
-              description: t.settings.styleFpsDesc,
               detail: Text(t.settings.styleFpsValue(count: '${frameRate.autoFps ? effectiveFps : frameRate.fps}')),
               controlWidth: 220,
               control: DsSlider(
@@ -367,7 +409,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.list),
               title: t.settings.styleMaxVisible,
-              description: t.settings.styleMaxVisibleDesc,
               detail: Text(t.settings.styleMaxVisibleValue(count: '${style.maxVisibleCount}')),
               controlWidth: 220,
               control: DsSlider(
@@ -383,7 +424,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.waves),
               title: t.settings.styleMassMode,
-              description: t.settings.styleMassModeDesc,
               control: DsSwitch(
                 value: style.massMode,
                 onChanged: (value) => unawaited(controller.setMassMode(value: value)),
@@ -392,7 +432,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.gift),
               title: t.settings.danmakuShowGifts,
-              description: t.settings.danmakuShowGiftsDesc,
               control: DsSwitch(
                 value: ref.watch(danmakuShowGiftsProvider),
                 onChanged: (value) => unawaited(ref.read(danmakuShowGiftsProvider.notifier).set(value: value)),
@@ -408,18 +447,15 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.pictureInPicture),
               title: t.settings.miniDanmakuVisible,
-              description: t.settings.miniDanmakuVisibleDesc,
               control: DsSwitch(
                 value: playback.miniDanmakuVisible,
-                onChanged: (value) => unawaited(
-                  ref.read(playbackSettingsProvider.notifier).setMiniDanmakuVisible(value: value),
-                ),
+                onChanged: (value) =>
+                    unawaited(ref.read(playbackSettingsProvider.notifier).setMiniDanmakuVisible(value: value)),
               ),
             ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.appWindow),
               title: t.settings.pipDanmakuScaleAuto,
-              description: t.settings.pipDanmakuScaleAutoDesc,
               control: DsSwitch(
                 value: pipScale.auto,
                 onChanged: (value) => unawaited(pipScaleController.setAuto(value: value)),
@@ -428,7 +464,6 @@ final class DanmakuStylePane extends ConsumerWidget {
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.scale),
               title: t.settings.pipDanmakuScale,
-              description: t.settings.pipDanmakuScaleDesc,
               detail: Text('x${pipScale.scale.toStringAsFixed(2)}'),
               controlWidth: 220,
               // The manual scale is greyed out while the auto scale owns it —
@@ -453,6 +488,9 @@ final class DanmakuStylePane extends ConsumerWidget {
               onPressed: () {
                 unawaited(controller.reset());
                 unawaited(frameRateController.reset());
+                unawaited(ref.read(danmakuFixedTopProvider.notifier).reset());
+                unawaited(ref.read(danmakuFixedBottomProvider.notifier).reset());
+                unawaited(ref.read(danmakuFixedDurationProvider.notifier).reset());
                 unawaited(ref.read(danmakuTapInteractionProvider.notifier).reset());
                 unawaited(ref.read(danmakuLongPressInteractionProvider.notifier).reset());
                 unawaited(pipScaleController.reset());
@@ -462,17 +500,6 @@ final class DanmakuStylePane extends ConsumerWidget {
         ),
       ],
     );
-  }
-
-  Future<void> _applyPreset(BuildContext context, WidgetRef ref, DanmakuPreset preset) async {
-    await preset.apply(
-      style: ref.read(danmakuStyleProvider.notifier),
-      frameRate: ref.read(danmakuFrameRateProvider.notifier),
-      noEmoji: ref.read(danmakuStyleProvider).noEmoji,
-      fps: ref.read(danmakuFrameRateProvider).fps,
-    );
-    if (!context.mounted) return;
-    showDsToast(context: context, title: context.t.settings.danmakuPresetApplied);
   }
 }
 
@@ -539,7 +566,8 @@ final class DanmakuDisplayPane extends ConsumerWidget {
               description: t.settings.superChatIncludesMembershipDesc,
               control: DsSwitch(
                 value: ref.watch(superChatIncludesMembershipProvider),
-                onChanged: (value) => unawaited(ref.read(superChatIncludesMembershipProvider.notifier).set(value: value)),
+                onChanged: (value) =>
+                    unawaited(ref.read(superChatIncludesMembershipProvider.notifier).set(value: value)),
               ),
             ),
           ],
@@ -607,22 +635,53 @@ final class DanmakuDisplayPane extends ConsumerWidget {
   }
 }
 
-/// A live sample of the flying layer: the real barrage engine, the real
-/// config the player builds, and a short loop of messages, so every knob on
-/// this page answers where it is moved.
-///
-/// The box is a 16:9 picture at a feed's width; the engine needs a bounded
-/// box, and the sample text is what a room actually sends — a long title, an
-/// emoji, a coloured gift and a top-pinned line.
-final class DanmakuPreviewCard extends ConsumerStatefulWidget {
-  /// The card.
-  const DanmakuPreviewCard({super.key});
+/// The way into the full-window sample. The sample used to sit inline on the
+/// settings page; it now opens as a page of its own, so the flying layer can
+/// be seen at a room's size while its controls sit beside it.
+final class DanmakuPreviewEntry extends StatelessWidget {
+  /// The entry.
+  const DanmakuPreviewEntry({super.key});
 
   @override
-  ConsumerState<DanmakuPreviewCard> createState() => _DanmakuPreviewCardState();
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return DsListSection(
+      children: [
+        DsListRow(
+          leading: const DsIcon(DsIcons.captions),
+          title: Text(t.settings.danmakuPreview),
+          description: Text(t.settings.danmakuPreviewHint),
+          showChevron: true,
+          onPressed: () => unawaited(showDanmakuPreview(context)),
+        ),
+      ],
+    );
+  }
 }
 
-final class _DanmakuPreviewCardState extends ConsumerState<DanmakuPreviewCard> {
+/// Opens the danmaku sample full-window and alone.
+Future<void> showDanmakuPreview(BuildContext context) {
+  return Navigator.of(
+    context,
+    rootNavigator: true,
+  ).push(DsPageRoute<void>(fullscreenDialog: true, builder: (context) => const DanmakuPreviewPage()));
+}
+
+/// A live sample of the flying layer, full-window: the real barrage engine,
+/// the real config the player builds, and a short loop of messages, with every
+/// style control in the sidebar so a knob answers where it is moved.
+///
+/// The sample text is what a room actually sends: a long title, an emoji, a
+/// coloured gift and a top-pinned line.
+final class DanmakuPreviewPage extends ConsumerStatefulWidget {
+  /// The page.
+  const DanmakuPreviewPage({super.key});
+
+  @override
+  ConsumerState<DanmakuPreviewPage> createState() => _DanmakuPreviewPageState();
+}
+
+final class _DanmakuPreviewPageState extends ConsumerState<DanmakuPreviewPage> {
   final BarrageController _controller = BarrageController();
   Timer? _timer;
   int _cursor = 0;
@@ -636,6 +695,12 @@ final class _DanmakuPreviewCardState extends ConsumerState<DanmakuPreviewCard> {
     _PreviewLine('233333 名场面来了'),
     _PreviewLine('礼物特效好炫！', color: 0xFFFFD700),
     _PreviewLine('顶上去给后来的人看看，这条比较长一点', color: 0xFF7FD4FF),
+  ];
+
+  /// The two pinned lanes' sample lines.
+  static const List<(DanmakuPlacement, String)> _pinned = [
+    (DanmakuPlacement.top, '这是一条置顶弹幕'),
+    (DanmakuPlacement.bottom, '这是一条置底弹幕'),
   ];
 
   @override
@@ -666,6 +731,28 @@ final class _DanmakuPreviewCardState extends ConsumerState<DanmakuPreviewCard> {
         ),
       ),
     );
+    // Every third beat also drops one line on each pinned lane, so the two
+    // lane switches and the stay beside them answer in the frame: a lane
+    // that is switched off sends nothing.
+    if (_cursor % 3 != 1) return;
+    final top = ref.read(danmakuFixedTopProvider);
+    final bottom = ref.read(danmakuFixedBottomProvider);
+    for (final (placement, text) in _pinned) {
+      if (placement == DanmakuPlacement.top && !top) continue;
+      if (placement == DanmakuPlacement.bottom && !bottom) continue;
+      _controller.send(
+        BarrageItemMapper.toItem(
+          DanmakuMessage(
+            type: DanmakuMessageType.chat,
+            userName: '',
+            text: text,
+            color: DanmakuColor.fromInt(0xFFFFD700),
+            messageId: 'preview-${placement.name}-${DateTime.now().microsecondsSinceEpoch}',
+            style: DanmakuStyle(fontSize: 16, baseSpeed: 120, fontWeight: 500, placement: placement),
+          ),
+        ),
+      );
+    }
   }
 
   /// Restarts the sample from the first line: a viewer tuning a slider
@@ -681,74 +768,45 @@ final class _DanmakuPreviewCardState extends ConsumerState<DanmakuPreviewCard> {
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final style = ref.watch(danmakuStyleProvider);
-    final rate = ref.watch(danmakuFrameRateProvider);
     final fps = ref.watch(danmakuEffectiveFpsProvider);
     final family = effectiveFontFamily(style.fontFamily, ref.watch(danmakuFontFaceProvider));
-    final preset = DanmakuPreset.matching(style, rate);
-    return DsCard(
-      style: const DsCardStyle(padding: EdgeInsets.zero),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    return SettingsPreviewPage(
+      icon: DsIcons.captions,
+      title: t.settings.danmakuPreview,
+      subtitle: '${style.fontSize.toStringAsFixed(0)} px · ${style.baseSpeed.round()} px/s',
+      stage: Stack(
+        fit: StackFit.expand,
         children: [
-          Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s8, DsSpace.s8, DsSpace.s8),
-            child: Row(
+          FlameBarrageWidget(
+            config: roomBarrageConfig(
+              style,
+              fps,
+              family: family,
+              fixedDuration: Duration(milliseconds: (ref.watch(danmakuFixedDurationProvider) * 1000).round()),
+            ),
+            emojiAtlas: EmojiAtlas.instance,
+            controller: _controller,
+          ),
+          PositionedDirectional(
+            start: 0,
+            end: 0,
+            bottom: 0,
+            child: SettingsPreviewBar(
               children: [
-                const DsIcon(DsIcons.captions, size: 16),
+                SettingsPreviewCircleButton(icon: DsIcons.rotateCcw, semanticLabel: t.common.retry, onPressed: _replay),
                 const SizedBox(width: DsSpace.s8),
-                Text(t.settings.navDanmaku, style: theme.typography.bodyStrong.copyWith(color: colors.text)),
-                const SizedBox(width: DsSpace.s8),
-                DsBadge(
-                  label: Text(preset == null ? t.settings.danmakuPresetCustom : presetLabel(t, preset)),
-                  dot: false,
+                Text(
+                  t.settings.backgroundPreviewMedia,
+                  style: theme.typography.small.copyWith(color: const Color(0xCCFFFFFF)),
                 ),
                 const Spacer(),
-                DsButton.icon(
-                  variant: DsButtonVariant.ghost,
-                  size: DsSize.sm,
-                  onPressed: _replay,
-                  icon: const DsIcon(DsIcons.rotateCcw),
-                  semanticLabel: t.common.retry,
-                ),
               ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16),
-            // The frame keeps a preview's size on a wide pane: a 16:9 box
-            // at the settings column's full 960px would be a half-screen
-            // picture, not a sample.
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 640),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(theme.radii.nested(theme.radii.card, DsSpace.s16)),
-                  child: ColoredBox(
-                    color: const Color(0xFF101418),
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: FlameBarrageWidget(
-                        config: roomBarrageConfig(style, fps, family: family),
-                        emojiAtlas: EmojiAtlas.instance,
-                        controller: _controller,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s12),
-            child: Text(
-              t.settings.danmakuPreviewHint,
-              style: theme.typography.small.copyWith(color: colors.textSubtle),
             ),
           ),
         ],
       ),
+      settings: const DanmakuStyleSettings(),
     );
   }
 }

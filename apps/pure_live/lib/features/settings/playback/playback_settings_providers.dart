@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart' show BoxFit;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
+import 'package:pure_live/app/providers/window/floating_overlay.dart' show FloatingOverlay;
 import 'package:pure_live/l10n/translations.dart' show Translations;
 
 /// How the picture fills its box (the reference's `videoFits`, six entries
@@ -431,10 +432,17 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
   /// The ASMR sleep-timer duration in minutes.
   int get asmrSleepMinutes => state.asmrSleepMinutes;
 
-  /// Stores the app-leave PiP choice.
+  /// Stores the app-leave small-window choice.
+  ///
+  /// Turning it on asks for "display over other apps" on Android: the window
+  /// cannot show without the grant, and this explicit act is the moment the
+  /// system page is expected — the leave itself never opens one.
   Future<void> setAutoPipOnLeave({required bool value}) async {
     state = _with(autoPipOnLeave: value);
     await _write(() => StoragePrefs.setBool('playback.autoPip', value));
+    if (!value || kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    if (await FloatingOverlay.refresh()) return;
+    await FloatingOverlay.openSettings();
   }
 
   /// Keeps a live room in the floating player after leaving its page.
