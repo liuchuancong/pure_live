@@ -49,4 +49,19 @@ final class XiaohongshuPlaybackProvider implements LivePlaybackProvider {
       return left(LiveSiteError.unexpected(siteId: xiaohongshuSiteId, message: '$error', cause: error));
     }
   }
+
+  /// Lines after a failure: the room page is read again even when an entry is
+  /// held, since a URL the CDN refused has no other way back.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+  }) async {
+    try {
+      return right(await site.linesOf(room.roomId, quality: quality, fresh: true));
+    } on XiaohongshuFailure catch (failure) {
+      return left(failure.toLiveSiteError(xiaohongshuSiteId));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: xiaohongshuSiteId, message: '$error', cause: error));
+    }
+  }
 }

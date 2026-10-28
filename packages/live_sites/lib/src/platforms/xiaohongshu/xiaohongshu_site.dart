@@ -6,10 +6,13 @@ import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -22,9 +25,12 @@ import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_endpoints.d
 import 'package:live_sites/src/platforms/xiaohongshu/api/xiaohongshu_http.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/capabilities/xiaohongshu_discovery_provider.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/capabilities/xiaohongshu_link_resolver.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/capabilities/xiaohongshu_play_recovery.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/capabilities/xiaohongshu_playback_provider.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/capabilities/xiaohongshu_room_provider.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/capabilities/xiaohongshu_room_refresh.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/capabilities/xiaohongshu_search_provider.dart';
+import 'package:live_sites/src/platforms/xiaohongshu/capabilities/xiaohongshu_status_check.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_failure.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_link.dart';
 import 'package:live_sites/src/platforms/xiaohongshu/parsers/xiaohongshu_room_parser.dart';
@@ -188,9 +194,9 @@ final class XiaohongshuSite implements LiveSite {
   /// The stream data of [roomId]: the one its room entry brought, or the
   /// page's now — the capabilities are asked by room id alone. An entered
   /// room that has ended says so without a request.
-  Future<XiaohongshuRoomData> _stream(String roomId) async {
+  Future<XiaohongshuRoomData> _stream(String roomId, {bool fresh = false}) async {
     final id = roomId.trim();
-    final entry = _entries[id];
+    final entry = fresh ? null : _entries[id];
     if (entry != null) return entry;
     return (await _read(id)).data;
   }
@@ -203,8 +209,8 @@ final class XiaohongshuSite implements LiveSite {
   /// The lines of [quality] (the first quality when it is null) in
   /// [roomId]'s stream, with the media headers; a 3.x quality id
   /// (`h264:HD`) plays its quality now.
-  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async =>
-      XiaohongshuRoomParser.lines(await _stream(roomId), quality);
+  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality, bool fresh = false}) async =>
+      XiaohongshuRoomParser.lines(await _stream(roomId, fresh: fresh), quality);
 
   // Capability wiring ---------------------------------------------------------
 
@@ -213,6 +219,9 @@ final class XiaohongshuSite implements LiveSite {
   XiaohongshuSearchProvider? _search;
   XiaohongshuPlaybackProvider? _playback;
   XiaohongshuLinkResolver? _link;
+  XiaohongshuRoomRefresh? _refresh;
+  XiaohongshuStatusCheck? _status;
+  XiaohongshuPlayRecovery? _recovery;
 
   /// The capability of type [T], or null when Xiaohongshu does not support
   /// it (ARCHITECTURE.md §4.1): no areas (the share page knows no
@@ -225,6 +234,9 @@ final class XiaohongshuSite implements LiveSite {
     final search = _search ??= XiaohongshuSearchProvider(site: this);
     final playback = _playback ??= XiaohongshuPlaybackProvider(site: this);
     final link = _link ??= XiaohongshuLinkResolver(site: this);
+    final refresh = _refresh ??= XiaohongshuRoomRefresh(site: this);
+    final status = _status ??= XiaohongshuStatusCheck(refresh: refresh);
+    final recovery = _recovery ??= XiaohongshuPlayRecovery(playback: playback);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => null,
@@ -233,6 +245,9 @@ final class XiaohongshuSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => null,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }
