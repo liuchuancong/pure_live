@@ -9,10 +9,13 @@ import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -23,9 +26,12 @@ import 'package:live_sites/src/platforms/douyu/capabilities/douyu_area_provider.
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_auth_provider.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_discovery_provider.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_link_resolver.dart';
+import 'package:live_sites/src/platforms/douyu/capabilities/douyu_play_recovery.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_playback_provider.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_room_provider.dart';
+import 'package:live_sites/src/platforms/douyu/capabilities/douyu_room_refresh.dart';
 import 'package:live_sites/src/platforms/douyu/capabilities/douyu_search_provider.dart';
+import 'package:live_sites/src/platforms/douyu/capabilities/douyu_status_check.dart';
 import 'package:live_sites/src/platforms/douyu/danmaku/douyu_danmaku_session.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_login_store.dart';
 import 'package:live_sites/src/platforms/douyu/douyu_manifest.dart';
@@ -379,6 +385,9 @@ final class DouyuSite implements LiveSite {
   DouyuDanmakuProvider? _danmaku;
   DouyuLinkResolver? _link;
   DouyuAuthProvider? _auth;
+  DouyuRoomRefresh? _refresh;
+  DouyuStatusCheck? _status;
+  DouyuPlayRecovery? _recovery;
 
   /// The capability of type [T], or null when douyu does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -392,6 +401,9 @@ final class DouyuSite implements LiveSite {
     final danmaku = _danmaku ??= DouyuDanmakuProvider(site: this, filterSuspectedAutomated: filterSuspectedAutomated);
     final link = _link ??= DouyuLinkResolver(site: this);
     final auth = _auth ??= DouyuAuthProvider(site: this);
+    final refresh = _refresh ??= DouyuRoomRefresh(rooms: room);
+    final status = _status ??= DouyuStatusCheck(rooms: room);
+    final recovery = _recovery ??= DouyuPlayRecovery(playback: playback);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -401,6 +413,9 @@ final class DouyuSite implements LiveSite {
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
       const (LiveAuthCapability) => auth as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }
