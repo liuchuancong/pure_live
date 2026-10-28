@@ -159,11 +159,48 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                   onSubmitted: _onSubmitted,
                 ),
               ),
-              DsButton(
+              // The result's own conditions sit behind one button, the kit's
+              // filter-button pattern, so the field row stays two controls.
+              if (_showFilters(search))
+                DsPopover(
+                  align: DsAlign.end,
+                  semanticLabel: context.t.search.filterTitle,
+                  style: const DsPopoverStyle(width: 264),
+                  contentBuilder: (context) => _SearchFilterPanel(
+                    sort: _sort,
+                    options: [
+                      for (final sort in _SearchSort.values)
+                        DsSelectOption(value: sort, label: _sortLabel(context, sort)),
+                    ],
+                    includeOffline: _includeOffline,
+                    onSortChanged: (sort) => setState(() => _sort = sort),
+                    onIncludeOfflineChanged: (value) => setState(() => _includeOffline = value),
+                    onReset: () => setState(() {
+                      _sort = _SearchSort.smart;
+                      _includeOffline = true;
+                    }),
+                  ),
+                  builder: (context, controller, _) {
+                    final active = (_sort == _SearchSort.smart ? 0 : 1) + (_includeOffline ? 0 : 1);
+                    return DsButton(
+                      variant: active == 0 ? DsButtonVariant.secondary : DsButtonVariant.tinted,
+                      size: DsSize.sm,
+                      leading: const DsIcon(DsIcons.slidersHorizontal, size: 16),
+                      trailing: active == 0 ? null : DsCount(active),
+                      semanticLabel: active == 0
+                          ? context.t.search.filterTitle
+                          : '${context.t.search.filterTitle}, $active',
+                      onPressed: controller.toggle,
+                      child: Text(context.t.search.filterTitle),
+                    );
+                  },
+                ),
+              DsButton.icon(
                 variant: DsButtonVariant.secondary,
-                leading: const DsIcon(DsIcons.globe, size: 16),
+                size: DsSize.sm,
+                semanticLabel: context.t.search.webSearch,
                 onPressed: canWebSearch ? () => unawaited(_openWebSearch()) : null,
-                child: Text(context.t.search.webSearch),
+                icon: const DsIcon(DsIcons.globe, size: 16),
               ),
             ],
           ),
@@ -201,35 +238,6 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                 onPressed: linkState.resolving ? null : () => unawaited(_openLink(link)),
                 child: Text(context.t.search.linkOpen),
               ),
-            ),
-          ),
-        if (search.query.isNotEmpty && search.target != LiveSearchTarget.areas)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
-            child: Wrap(
-              spacing: DsSpace.s8,
-              runSpacing: DsSpace.s8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                SizedBox(
-                  width: 160,
-                  child: AdaptiveChoiceField<_SearchSort>(
-                    value: _sort,
-                    title: context.t.search.sort,
-                    semanticLabel: context.t.search.sort,
-                    onChanged: (value) => setState(() => _sort = value),
-                    options: [
-                      for (final sort in _SearchSort.values)
-                        DsSelectOption(value: sort, label: _sortLabel(context, sort)),
-                    ],
-                  ),
-                ),
-                DsChip(
-                  label: Text(context.t.search.includeOffline),
-                  selected: _includeOffline,
-                  onChanged: (value) => setState(() => _includeOffline = value),
-                ),
-              ],
             ),
           ),
         if (_showSuggestions(search))
@@ -274,6 +282,10 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
       extra: WebSearchRequest(uri: uri, platform: scope, keyword: word),
     );
   }
+
+  /// Whether the result's conditions are offered: a committed search whose
+  /// results can be sorted or thinned (the areas list cannot).
+  bool _showFilters(SearchState search) => search.query.isNotEmpty && search.target != LiveSearchTarget.areas;
 
   /// Whether the completions panel shows: only while a draft that is not the
   /// committed query has completions to offer.
@@ -437,6 +449,98 @@ final class _SearchHistory extends ConsumerWidget {
   }
 }
 
+/// The result's conditions behind the filter button: the sort order and
+/// whether offline hits stay, applied at once, with the way back. The panel
+/// keeps its own copy, like the kit's filter popovers, so a change paints
+/// here even though the page behind it rebuilds apart from the overlay.
+final class _SearchFilterPanel extends StatefulWidget {
+  const _SearchFilterPanel({
+    required this.sort,
+    required this.options,
+    required this.includeOffline,
+    required this.onSortChanged,
+    required this.onIncludeOfflineChanged,
+    required this.onReset,
+  });
+
+  /// The order in force.
+  final _SearchSort sort;
+
+  /// The order's choices, labelled by the page.
+  final List<DsSelectOption<_SearchSort>> options;
+
+  /// Whether offline hits stay shown.
+  final bool includeOffline;
+
+  /// Receives a newly chosen order.
+  final ValueChanged<_SearchSort> onSortChanged;
+
+  /// Receives the offline switch.
+  final ValueChanged<bool> onIncludeOfflineChanged;
+
+  /// Puts both conditions back to their defaults.
+  final VoidCallback onReset;
+
+  @override
+  State<_SearchFilterPanel> createState() => _SearchFilterPanelState();
+}
+
+final class _SearchFilterPanelState extends State<_SearchFilterPanel> {
+  late _SearchSort _sort = widget.sort;
+  late bool _includeOffline = widget.includeOffline;
+
+  void _reset() {
+    setState(() {
+      _sort = _SearchSort.smart;
+      _includeOffline = true;
+    });
+    widget.onReset();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final active = _sort != _SearchSort.smart || !_includeOffline;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s12,
+      children: [
+        DsField(
+          label: Text(t.search.sort),
+          child: AdaptiveChoiceField<_SearchSort>(
+            value: _sort,
+            title: t.search.sort,
+            semanticLabel: t.search.sort,
+            onChanged: (sort) {
+              setState(() => _sort = sort);
+              widget.onSortChanged(sort);
+            },
+            options: widget.options,
+          ),
+        ),
+        DsSwitch(
+          value: _includeOffline,
+          label: Text(t.search.includeOffline),
+          onChanged: (value) {
+            setState(() => _includeOffline = value);
+            widget.onIncludeOfflineChanged(value);
+          },
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: DsButton(
+            variant: DsButtonVariant.ghost,
+            size: DsSize.sm,
+            onPressed: active ? _reset : null,
+            child: Text(t.search.filterReset),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// The search's target switch: one segment per target the site actually
 /// searches, each with its own icon; the selection rides the radio group.
 final class _TargetSegments extends StatelessWidget {
@@ -588,22 +692,25 @@ final class _RoomResults extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(searchProvider.notifier);
+    Widget cardFor(BuildContext context, LiveRoom room, {bool listRow = false}) {
+      void open() => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: search.rooms);
+      return RoomCardMenu(
+        room: room,
+        onOpen: open,
+        child: RoomCard(room: room, listRow: listRow, onOpen: open),
+      );
+    }
+
     return CardGrid<LiveRoom>(
       items: search.rooms,
       layout: ref.watch(browseLayoutProvider),
+      listMatchesGridWidth: true,
       listMainAxisExtent: kRoomCardListDesignHeight,
-      listItemBuilder: (context, room) => RoomCard(
-        room: room,
-        listRow: true,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: search.rooms),
-      ),
+      listItemBuilder: (context, room) => cardFor(context, room, listRow: true),
       isLoading: search.loading,
       hasMore: search.hasMore,
       onLoadMore: controller.loadMore,
-      itemBuilder: (context, room) => RoomCard(
-        room: room,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: search.rooms),
-      ),
+      itemBuilder: cardFor,
     );
   }
 }
@@ -733,6 +840,7 @@ final class _RoomSkeletonGrid extends ConsumerWidget {
     return CardGrid<LiveRoom>(
       items: const [],
       layout: ref.watch(browseLayoutProvider),
+      listMatchesGridWidth: true,
       listMainAxisExtent: kRoomCardListDesignHeight,
       isLoading: true,
       itemBuilder: (context, room) => const SizedBox.shrink(),

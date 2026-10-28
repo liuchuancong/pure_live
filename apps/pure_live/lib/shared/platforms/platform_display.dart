@@ -10,6 +10,19 @@ String localizedSiteName(LiveSite site) {
   return site.manifest.localizedName(locale, 'zh-CN');
 }
 
+/// The platform's brand without the "直播"/"Live" its full name carries, for
+/// badges that sit beside a room's own text: 哔哩哔哩直播 reads as 哔哩哔哩.
+/// A name that is nothing but the suffix keeps its full form.
+String localizedSiteShortName(LiveSite site) {
+  final name = localizedSiteName(site);
+  for (final suffix in const ['直播', ' Live', ' LIVE']) {
+    if (name.endsWith(suffix) && name.length > suffix.length) {
+      return name.substring(0, name.length - suffix.length).trim();
+    }
+  }
+  return name;
+}
+
 /// The platform's own icon, when its manifest ships one; null when it does
 /// not (the caller falls back to a glyph).
 Widget? localizedSiteIcon(LiveSite? site, {double size = 16}) {

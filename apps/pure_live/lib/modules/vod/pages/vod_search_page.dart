@@ -4,12 +4,13 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_sites/live_sites.dart';
 import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
-    show VodLiveRoomCard, VodSeasonCard, VodUserRow, VodVideoCard;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodSeasonCard, VodUserRow, VodVideoCard;
 import 'package:pure_live/shared/shared.dart';
 
 /// The kind's tab words, the reference's five search types.
@@ -263,7 +264,14 @@ final class _SearchResults extends StatelessWidget {
           emptyIcon: DsIcons.radio,
           emptyTitle: t.vod.noResultsTitle,
           emptyDescription: t.vod.noResultsDescription,
-          itemBuilder: (context, room) => VodLiveRoomCard(room: room, onOpen: () => onRoom(room)),
+          itemBuilder: (context, room) {
+            final live = _liveRoomOf(room);
+            return RoomCardMenu(
+              room: live,
+              onOpen: () => onRoom(room),
+              child: RoomCard(room: live, onOpen: () => onRoom(room)),
+            );
+          },
         );
     }
   }
@@ -304,6 +312,18 @@ final class _Failed extends StatelessWidget {
     );
   }
 }
+
+/// One live-room hit as the shared card's room: the station answers a search
+/// with the same room the live feeds show, minus the fields a search hit does
+/// not carry.
+LiveRoom _liveRoomOf(VodLiveRoom room) => LiveRoom.normalized(
+  platform: SiteIds.bilibili,
+  roomId: '${room.roomId}',
+  content: RoomContent.of(title: room.title, coverUrl: room.coverUrl ?? ''),
+  anchor: LiveAnchor.of(name: room.anchor ?? '', avatarUrl: room.avatar),
+  audience: RoomAudience.of(onlineViewers: room.online),
+  broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live),
+);
 
 /// The list's footer: the next page's button while one is left.
 final class _MoreFooter extends StatelessWidget {

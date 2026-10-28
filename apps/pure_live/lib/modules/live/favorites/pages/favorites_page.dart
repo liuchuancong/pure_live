@@ -12,16 +12,15 @@ import 'package:pure_live/modules/live/favorites/data/favorite_rules.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_tags.dart' show followTagsProvider;
 import 'package:pure_live/modules/live/favorites/widgets/favorites_widgets.dart';
-import 'package:pure_live/modules/live/favorites/widgets/follow_tag_picker.dart' show showFollowTagPicker;
+import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/shared/shared.dart';
 
 /// The follows page (the reference's `FavoritePage`): the group tabs (live,
 /// replay, offline, all — each with its count on the shown platform) above
 /// the platform tabs (each with its count in the shown group), a refresh
 /// button over the visible slice with its progress bar, and the followed
-/// rooms as cards carrying their audience over the cover and a
-/// streamer · status · audience line, with the reference's pager under
-/// them once they fill more than one page.
+/// rooms as the shared room card — its own tags on the list rows — with the
+/// reference's pager under them once they fill more than one page.
 final class FavoritesPage extends ConsumerStatefulWidget {
   /// The favorites page.
   const FavoritesPage({super.key});
@@ -270,7 +269,10 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
         builder: (context, constraints) => CardGrid<LiveRoom>(
           items: const [],
           layout: layout,
-          listMainAxisExtent: kRoomCardListDesignHeight,
+          listMatchesGridWidth: true,
+          // The follows rows carry their tags, so the list is a line taller
+          // than a plain room row.
+          listMainAxisExtent: kRoomCardListTagsHeight,
           isLoading: true,
           itemBuilder: (_, _) => const SizedBox.shrink(),
         ),
@@ -325,29 +327,13 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
 
     Widget cardFor(LiveRoom room, {bool listRow = false}) {
       final names = [for (final id in room.local.tagIds) ?tagNames[id]];
-      return DsContextMenuRegion(
-        semanticLabel: t.common.more,
-        items: [
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.tag),
-            label: Text(t.favorites.setTags),
-            onPressed: () => unawaited(showFollowTagPicker(context, room)),
-          ),
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.heartCrack),
-            label: Text(t.favorites.unfollow),
-            destructive: true,
-            onPressed: () => unawaited(ref.read(followsProvider.notifier).remove(room.ref.identityKey)),
-          ),
-        ],
-        child: FollowedRoomCard(
-          room: room,
-          listRow: listRow,
-          tags: names,
-          platformName: platform == kAllPlatforms ? _platformName(room.ref.platform) : null,
-          onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
-          onUnfollow: () => unawaited(ref.read(followsProvider.notifier).remove(room.ref.identityKey)),
-        ),
+      void open() => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms);
+      // The card's own menu already carries open, share, links, unfollow
+      // and the tags; the page adds nothing of its own.
+      return RoomCardMenu(
+        room: room,
+        onOpen: open,
+        child: RoomCard(room: room, listRow: listRow, tags: names, onOpen: open),
       );
     }
 
@@ -441,7 +427,8 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                   builder: (context, constraints) => CardGrid<LiveRoom>(
                     items: visibleRooms,
                     layout: layout,
-                    listMainAxisExtent: kRoomCardListDesignHeight,
+                    listMatchesGridWidth: true,
+                    listMainAxisExtent: kRoomCardListTagsHeight,
                     listItemBuilder: (context, room) => cardFor(room, listRow: true),
                     scrollController: _gridScroll,
                     itemBuilder: (context, room) => cardFor(room),

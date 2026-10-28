@@ -103,47 +103,52 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
       ],
     );
 
-    Widget grid(AreaRoomsState open, List<LiveRoom> rooms, {required bool endless}) => CardGrid<LiveRoom>(
-      scrollController: _scroll,
-      items: rooms,
-      layout: ref.watch(browseLayoutProvider),
-      listMainAxisExtent: kRoomCardListDesignHeight,
-      listItemBuilder: (context, room) => RoomCard(
-        room: room,
-        listRow: true,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
-      ),
-      crossSpacing: settings.crossSpacing,
-      mainSpacing: settings.mainSpacing,
-      isLoading: open.loading,
-      // The end of the list pages it in both shapes: the endless list appends
-      // the platform's next block, a desktop page asks the pager for its next
-      // page — the same ask its arrows and numbers make — and only a scroll
-      // that really reached the bottom moves it on.
-      hasMore: open.hasMore,
-      pagesOnScrollToEnd: !endless,
-      onLoadMore: () async {
-        if (endless) {
-          await controller.loadMore();
-          return;
-        }
-        final next = open.page + 1;
-        await controller.loadPage(next);
-        // A page that really moved starts at its head; a refused or clamped
-        // load leaves the viewer where they are.
-        if (ref.read(areaRoomsProvider)?.page == next && _scroll.hasClients) _scroll.jumpTo(0);
-      },
-      error: open.error?.message,
-      onRetry: controller.reload,
-      // A pull reloads the first page; a failure keeps the rooms and is
-      // explained in the bar over them.
-      onRefresh: controller.reload,
-      refreshError: open.error?.message,
-      itemBuilder: (context, room) => RoomCard(
-        room: room,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
-      ),
-    );
+    Widget grid(AreaRoomsState open, List<LiveRoom> rooms, {required bool endless}) {
+      Widget cardFor(BuildContext context, LiveRoom room, {bool listRow = false}) {
+        void open() => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms);
+        return RoomCardMenu(
+          room: room,
+          onOpen: open,
+          child: RoomCard(room: room, listRow: listRow, onOpen: open),
+        );
+      }
+
+      return CardGrid<LiveRoom>(
+        scrollController: _scroll,
+        items: rooms,
+        layout: ref.watch(browseLayoutProvider),
+        listMatchesGridWidth: true,
+        listMainAxisExtent: kRoomCardListDesignHeight,
+        listItemBuilder: (context, room) => cardFor(context, room, listRow: true),
+        crossSpacing: settings.crossSpacing,
+        mainSpacing: settings.mainSpacing,
+        isLoading: open.loading,
+        // The end of the list pages it in both shapes: the endless list
+        // appends the platform's next block, a desktop page asks the pager
+        // for its next page — the same ask its arrows and numbers make — and
+        // only a scroll that really reached the bottom moves it on.
+        hasMore: open.hasMore,
+        pagesOnScrollToEnd: !endless,
+        onLoadMore: () async {
+          if (endless) {
+            await controller.loadMore();
+            return;
+          }
+          final next = open.page + 1;
+          await controller.loadPage(next);
+          // A page that really moved starts at its head; a refused or clamped
+          // load leaves the viewer where they are.
+          if (ref.read(areaRoomsProvider)?.page == next && _scroll.hasClients) _scroll.jumpTo(0);
+        },
+        error: open.error?.message,
+        onRetry: controller.reload,
+        // A pull reloads the first page; a failure keeps the rooms and is
+        // explained in the bar over them.
+        onRefresh: controller.reload,
+        refreshError: open.error?.message,
+        itemBuilder: cardFor,
+      );
+    }
 
     final Widget body;
     if (state == null) {

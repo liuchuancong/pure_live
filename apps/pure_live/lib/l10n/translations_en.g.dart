@@ -197,11 +197,18 @@ class _Translations$areas$en extends Translations$areas$zh_CN {
 	@override String get viewPlatform => 'Platform areas';
 	@override String get viewFollowed => 'Followed areas';
 	@override String get followedEmpty => 'No followed areas yet';
-	@override String get followedEmptyHint => 'Tap the heart on an area or in a room to follow it';
+	@override String get followedEmptyHint => 'Right-click or long-press an area card and choose to follow it';
 	@override String get noPlatforms => 'No platform to browse';
 	@override String get unfollow => 'Unfollow';
 	@override String get categoryAll => 'All categories';
+	@override String get iconTop => 'Icon on top';
+	@override String get iconLeft => 'Icon at left';
+	@override String get open => 'Open the area';
 	@override String get follow => 'Follow area';
+	@override String get searchHint => 'Search areas';
+	@override String searchAt({required Object query, required Object platform}) => 'Searching areas for “${query}” on ${platform}';
+	@override String get searchEmpty => 'No matching areas';
+	@override String get backToBrowse => 'Back to browsing';
 	@override String hiddenUnplayable({required int count}) => '${count} streams that cannot play here are hidden (paid, password, app only…)';
 }
 
@@ -414,10 +421,13 @@ class _Translations$favorites$en extends Translations$favorites$zh_CN {
 	@override String get tagsFilter => 'Filter by tag';
 	@override String get allTags => 'All tags';
 	@override String get tagsEmpty => 'No tags yet';
+	@override String get newTag => 'New tag';
 	@override String get tagFieldHint => 'New tag name';
 	@override String get addTag => 'Add tag';
 	@override String deleteTagTitle({required String name}) => 'Delete “${name}”?';
 	@override String get deleteTagBody => 'Every room leaves this tag; the rooms stay followed.';
+	@override String get tagFollowTitle => 'Follow first to add tags';
+	@override String get tagFollowBody => 'Tags belong to followed rooms. Follow this room first, then give it any number of tags.';
 	@override String get tagExists => 'That tag already exists';
 	@override String get tagInvalid => 'Enter a tag name';
 	@override String get deleteTag => 'Delete';
@@ -440,8 +450,13 @@ class _Translations$history$en extends Translations$history$zh_CN {
 	@override String get openFailedTitle => 'The history could not open';
 	@override String recordCount({required int count, required int limit}) => 'Recorded ${count} / limit ${limit}';
 	@override String get filter => 'Filter';
-	@override String get filterClose => 'Close filter';
+	@override String get filterPanelTitle => 'Filter watch history';
+	@override String get filterKeyword => 'Keyword';
 	@override String get filterHint => 'Filter by title, streamer, room ID or platform';
+	@override String get filterStart => 'Start date';
+	@override String get filterEnd => 'End date';
+	@override String get filterAnyDay => 'Any';
+	@override String get filterDone => 'Done';
 	@override String filterMatches({required int count}) => '${count} found';
 	@override String get filterReset => 'Clear filter';
 	@override String get filterEmptyTitle => 'No history entries match';
@@ -464,7 +479,6 @@ class _Translations$history$en extends Translations$history$zh_CN {
 	@override String limitSaved({required int limit}) => 'History limit set to ${limit}';
 	@override String get refresh => 'Refresh';
 	@override String refreshFailed({required int count}) => '${count} records could not be refreshed';
-	@override String get openRoom => 'Open the room';
 }
 
 // Path: hongguo
@@ -553,6 +567,98 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get favoriteToggleOff => 'Removed from favorites';
 	@override String get cloudFavoriteOn => 'Added to account favorites';
 	@override String get cloudFavoriteOff => 'Removed from account favorites';
+	@override String get related => 'Related';
+	@override String get relatedNone => 'No related works';
+	@override String get relatedLive => 'Live · open';
+	@override String get relatedReserve => 'Reserve';
+	@override String get reserved => 'Reserved';
+	@override String get comments => 'Comments';
+	@override String get commentsEmpty => 'No comments yet';
+	@override String get commentsLoadMore => 'More';
+	@override String get danmaku => 'Danmaku';
+	@override String get danmakuOn => 'Danmaku on';
+	@override String get danmakuOff => 'Danmaku off';
+	@override String get phoneLogin => 'Sign in by phone';
+	@override String get phonePlaceholder => 'Mobile, e.g. 138… (intl +cc number)';
+	@override String get phoneSend => 'Send code';
+	@override String get phoneCodePlaceholder => 'Code';
+	@override String get phoneVerify => 'Sign in';
+	@override String get phoneSent => 'Code sent to';
+	@override String get accountPhoneToggle => 'Use a phone number';
+	@override String get commentsFailed => 'Comments did not load';
+	@override String get shelfForYou => 'Picked for you';
+	@override String get shelfChangeBatch => 'Another batch';
+	@override String get shelfHot => 'Now playing';
+	@override String get shelfNew => 'New';
+	@override String get shelfCategory => 'Category';
+	@override String get newArrivals => 'new';
+	@override String get openFullBoard => 'Full board';
+	@override String get seeMore => 'More';
+	@override String get refreshShelf => 'Refresh';
+	@override String allEpisodesCount({required Object count}) => 'All ${count} ep.';
+	@override String get filterReset => 'Reset';
+	@override String get filterNone => 'All';
+	@override String get rankSource => 'Hongguo public board';
+	@override String get rankTopicAll => 'All topics';
+	@override String get rankKeepsPlaces => 'board places kept';
+	@override String get rankRenewing => 'updating in the background…';
+	@override String get rankReading => 'Reading…';
+	@override String get rankEmptyTopic => 'Nothing on this board under that topic';
+	@override String rankSeriesCount({required Object count}) => '${count} titles';
+	@override String get refresh => 'Refresh';
+	@override String get suggestOff => 'Suggestions are unavailable — search directly';
+	@override String get searchHistory => 'Recent';
+	@override String get searchHistoryClear => 'Clear';
+	@override String get searchHistoryHint => 'Searches stay on this machine, up to 20';
+	@override String get filter => 'Filter';
+	@override String get filterPanelTitle => 'Filter';
+	@override String get filterDone => 'Done';
+	@override String get accountId => 'Hongguo ID';
+	@override String get copyAccountId => 'Copy';
+	@override String get copied => 'Copied';
+	@override String get accountReading => 'Reading…';
+	@override String get accountNotRead => 'Not read yet';
+	@override String accountReadCount({required Object count}) => '${count} titles read';
+	@override String get historyFilterWatched => 'Finished';
+	@override String get historyFilterUnwatched => 'In progress';
+	@override String get frameMode => 'Picture mode';
+	@override String get frameFit => 'Whole picture';
+	@override String get frameZoom => 'Fill and crop';
+	@override String get frameFill => 'Stretch';
+	@override String get frameFitDesc => 'Keeps the aspect and every pixel, with bars where the frame is a different shape';
+	@override String get frameZoomDesc => 'Fills the frame, cropping part of the picture and subtitles';
+	@override String get frameFillDesc => 'Fills the frame, changing the aspect';
+	@override String get sleep => 'Sleep timer';
+	@override String get sleepOff => 'Turn off';
+	@override String sleepAfter({required Object minutes}) => 'In ${minutes} min';
+	@override String sleepMinutes({required Object count}) => '${count} min left';
+	@override String get sleepThisEpisode => 'After this episode';
+	@override String sleepAfterEpisodes({required Object count}) => 'After ${count} more';
+	@override String sleepEpisodes({required Object count}) => '${count} episodes left';
+	@override String get sleepStopped => 'Sleep timer stopped playback · position saved · press play to continue';
+	@override String get retryNow => 'Retry now';
+	@override String retryLower({required Object height}) => 'Try ${height}P';
+	@override String get backToEpisodes => 'Back to episodes';
+	@override String get stopAutoRetry => 'Stop auto-retry';
+	@override String autoRetry({required Object attempt, required Object seconds}) => 'Retrying ${attempt}/3 in ${seconds}s';
+	@override String get retryExhausted => 'Three automatic retries did not help. Retry by hand or pick a lower quality.';
+	@override String get decoderLessons => 'Decoder notes';
+	@override String decoderLessonsCount({required Object count}) => '${count} decode failures remembered; those renditions are skipped';
+	@override String get decoderLessonsEmpty => 'No decode failures yet; the ladder follows the platform\'s claims';
+	@override String decoderResetDone({required Object count}) => 'Cleared ${count} decoder notes';
+	@override String get favoriteCheck => 'Check for updates';
+	@override String favoriteChecking({required Object done, required Object total}) => 'Checking ${done}/${total}…';
+	@override String favoriteChecked({required Object done, required Object total}) => 'Checked ${done}/${total} · done';
+	@override String favoriteCheckedSome({required Object done, required Object total, required Object failures}) => 'Checked ${done}/${total} · ${failures} failed, retry later';
+	@override String get favoriteRecentCheck => 'Checked within the hour — refresh to check again';
+	@override String get favoriteNoFavorites => 'Favorite a series to check for new episodes';
+	@override String favoriteAdded({required Object count}) => '${count} new';
+	@override String favoriteUpTo({required Object count}) => 'up to ${count}';
+	@override String favoriteBadge({required Object count}) => '${count} with new episodes';
+	@override String get reviews => 'Series reviews';
+	@override String get reviewsEmpty => 'No reviews yet';
+	@override String rating({required Object score}) => 'Rated ${score}';
+	@override String ratingCount({required Object count}) => '${count} ratings';
 }
 
 // Path: iptv
@@ -836,7 +942,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String sourcesReady({required Object count}) => '${count} custom sources ready';
 	@override String get settingsPlayback => 'Source and playback';
 	@override String get defaultSource => 'Default source';
-	@override String get defaultSourceDesc => 'The custom source a song is asked from; one source is active at a time.';
+	@override String get defaultSourceDesc => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.';
 	@override String get defaultSourceEmpty => 'No source yet — import a script under Custom sources below.';
 	@override String get quality => 'Playback quality';
 	@override String get qualityDesc => 'The rendition asked of a source; a source that lacks it answers with the best it has.';
@@ -855,7 +961,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get playbackReset => 'Restore defaults';
 	@override String get playbackResetDesc => 'Automatic source, 320K, skip failures, new songs at the end.';
 	@override String get sourcesSection => 'Custom sources';
-	@override String get sourcesHint => 'lx-music custom sources are JavaScript scripts. Importing reads the header comment and keeps the script verbatim; this build does not execute scripts yet — that needs an embedded JS engine.';
+	@override String get sourcesHint => 'lx-music custom sources are JavaScript scripts run by the fjs (QuickJS) runtime; importing initializes them and hands play-URL resolution to them.';
 	@override String get sourcesImportText => 'Paste a script';
 	@override String get sourcesImportTextDesc => 'Paste the full text of an lx-music custom-source script.';
 	@override String get sourcesImportUrl => 'Import from a link';
@@ -879,9 +985,13 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get sourceDeleteDesc => 'Its script is deleted too; importing it again restores it.';
 	@override String sourceDeleted({required Object name}) => 'Removed "${name}"';
 	@override String sourcesCount({required Object count}) => '${count} imported';
-	@override String get searchHint => 'Search songs, artists or BV ids…';
+	@override String get sourcesReload => 'Reload the scripts';
+	@override String get sourcesReloadDesc => 'Initialize every imported lx script again.';
+	@override String sourcesReloaded({required Object count}) => '${count} scripts loaded';
+	@override String sourcesReloadedErrors({required Object count}) => '${count} scripts failed to load';
+	@override String get searchHint => 'Search songs, artists or albums…';
 	@override String get searchIdleTitle => 'Search for a song';
-	@override String get searchIdleDescription => 'Type a title, an artist or a BV id and press enter.';
+	@override String get searchIdleDescription => 'Type a title, an artist or an album and press enter.';
 	@override String get noResultsTitle => 'No songs found';
 	@override String get noResultsDescription => 'Try another keyword.';
 	@override String get searchFailed => 'The search failed';
@@ -912,6 +1022,137 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String playingSource({required Object source}) => 'From ${source}';
 	@override String get loadMore => 'Load more';
 	@override String get clearRecent => 'Clear recently played';
+	@override String get moreActions => 'More actions';
+	@override String get playNext => 'Play next';
+	@override String get addToPlaylist => 'Add to a playlist';
+	@override String get download => 'Download';
+	@override String get downloadAll => 'Download all';
+	@override String downloadAllQueued({required Object count}) => 'Queued ${count} songs';
+	@override String get moveUp => 'Move up';
+	@override String get moveDown => 'Move down';
+	@override String get playAll => 'Play all';
+	@override String get searchHistory => 'Recent searches';
+	@override String get searchHistoryClear => 'Clear';
+	@override String get searchHistoryRemove => 'Remove this search';
+	@override String get playlistCreate => 'New playlist';
+	@override String get playlistCreateTitle => 'New playlist';
+	@override String get playlistName => 'Playlist name';
+	@override String get playlistNameHint => 'Name this playlist';
+	@override String get playlistRename => 'Rename';
+	@override String get playlistRenameTitle => 'Rename playlist';
+	@override String get playlistDelete => 'Delete playlist';
+	@override String playlistDeleteTitle({required Object name}) => 'Delete “${name}”?';
+	@override String get playlistDeleteDesc => 'The playlist is removed; its songs are not deleted.';
+	@override String get playlistClear => 'Clear playlist';
+	@override String get playlistEmptyTitle => 'This playlist is empty';
+	@override String get playlistEmptyDescription => 'Add songs from a row’s “More actions” menu.';
+	@override String playlistAdded({required Object name}) => 'Added to “${name}”';
+	@override String playlistAlreadyIn({required Object name}) => '“${name}” already has this song';
+	@override String playlistsCount({required Object count}) => '${count} playlists';
+	@override String downloadsActive({required Object count}) => 'Downloading ${count}';
+	@override String downloadQueued({required Object title}) => 'Queued for download: ${title}';
+	@override String get downloadDuplicate => 'This song is already in the download queue';
+	@override String get downloadUnsupported => 'This song has no downloadable source (a local file, or not covered by the current source)';
+	@override String downloadFailed({required Object error}) => 'Download failed: ${error}';
+	@override String get downloadHint => 'Files land in the shared download folder; the queue supports pause, resume and retry.';
+	@override String get downloadDirectory => 'Download folder';
+	@override String get downloadDirectoryDefault => 'Use the default folder';
+	@override String get downloadDirectoryDefaultDesc => 'Return to the app’s default downloads folder.';
+	@override String get downloadDirectoryUpdated => 'Download folder updated';
+	@override String get downloadDirectoryFailed => 'This folder is not writable';
+	@override String get downloadType => 'Download format';
+	@override String get downloadTypeDesc => 'Original keeps the source container; transcoding needs ffmpeg.';
+	@override String get downloadTypeOriginal => 'Original';
+	@override String get downloadTypeMp3 => 'MP3';
+	@override String get downloadTypeM4a => 'M4A';
+	@override String get downloadTypeFlac => 'FLAC';
+	@override String get downloadTypeOgg => 'OGG';
+	@override String get downloadTypeWav => 'WAV';
+	@override String get downloadPattern => 'File name pattern';
+	@override String get downloadPatternHint => 'Placeholders (written inside braces): title, artist, album, quality, source, list, index.';
+	@override String get downloadPatternEdit => 'Edit';
+	@override String get downloadEmbedCover => 'Embed the cover';
+	@override String get downloadEmbedCoverDesc => 'Write the cover into the audio tags.';
+	@override String get downloadEmbedLyric => 'Embed the lyric';
+	@override String get downloadEmbedLyricDesc => 'Write the lyric into the audio tags so it travels with the file.';
+	@override String get downloadWriteLyric => 'Save a lyric file';
+	@override String get downloadWriteLyricDesc => 'Write a sibling .lrc next to the audio file.';
+	@override String get downloadSkipExisting => 'Skip existing files';
+	@override String get downloadSkipExistingDesc => 'Do not download when the output file is already there.';
+	@override String get downloadGroupByList => 'Group by playlist';
+	@override String get downloadGroupByListDesc => 'When downloading from a playlist, save into a folder named after it.';
+	@override String get downloadStatusQueued => 'Queued';
+	@override String get downloadStatusRunning => 'Downloading';
+	@override String get downloadStatusPaused => 'Paused';
+	@override String get downloadStatusProcessing => 'Writing tags';
+	@override String get downloadStatusCompleted => 'Completed';
+	@override String get downloadStatusSkipped => 'Skipped';
+	@override String get downloadStatusFailed => 'Failed';
+	@override String get downloadStatusCancelled => 'Cancelled';
+	@override String get downloadPauseAll => 'Pause all';
+	@override String get downloadResumeAll => 'Resume all';
+	@override String get downloadClearFinished => 'Clear finished';
+	@override String get downloadProgress => 'Download progress';
+	@override String get downloadRetry => 'Retry';
+	@override String get downloadRemove => 'Remove the row';
+	@override String get downloadResume => 'Resume';
+	@override String get downloadPause => 'Pause';
+	@override String get downloadCancel => 'Cancel';
+	@override String get downloadsEmptyTitle => 'No downloads yet';
+	@override String downloadsEmptyDescription({required Object directory}) => 'Download from a row’s “More actions” menu; files go to ${directory}.';
+	@override String get localAddFolder => 'Add a folder';
+	@override String get localHint => 'Add a folder of audio files; the scan makes them play like online songs.';
+	@override String localFiles({required Object count}) => '${count} files';
+	@override String get localRescan => 'Scan again';
+	@override String get localFolders => 'Music folders';
+	@override String get localRemoveFolder => 'Remove the folder';
+	@override String get localFailed => 'The scan failed';
+	@override String get localEmptyTitle => 'No local music yet';
+	@override String get localEmptyDescription => 'Add a folder of audio files to start scanning.';
+	@override String localFolderFailed({required Object error}) => 'Cannot add the folder: ${error}';
+	@override String get playbackRate => 'Playback speed';
+	@override String get sleepTimer => 'Sleep timer';
+	@override String get sleepOff => 'Off';
+	@override String sleepMinutes({required Object count}) => '${count} minutes';
+	@override String sleepRemaining({required Object value}) => 'Pauses in ${value}';
+	@override String get lyricOffset => 'Lyric delay';
+	@override String get lyricOffsetDesc => 'Positive values show the lyric later.';
+	@override String get lyricOffsetReset => 'No delay';
+	@override String get lyricTranslation => 'Show translation';
+	@override String get lyricTranslationDesc => 'Show the translation when the lyric has one.';
+	@override String get lyricRomanization => 'Show romanization';
+	@override String get lyricRomanizationDesc => 'Show the romanization when the lyric has one.';
+	@override String get lyricHint => 'The display and delay apply to every song; desktop lyrics open from Settings or the player’s More actions menu.';
+	@override String get desktopLyrics => 'Desktop lyrics';
+	@override String get desktopLyricsOn => 'Desktop lyrics shown';
+	@override String get desktopLyricsOff => 'Desktop lyrics hidden';
+	@override String get desktopLyricsUnavailable => 'This platform has no desktop lyric window, or the permission was refused';
+	@override String get desktopLyricHint => 'Desktop lyrics are a floating window you can drag, lock and control; Android needs the overlay permission.';
+	@override String get desktopLyricEnableDesc => 'Float the current lyric over the desktop; turning it off keeps the style below.';
+	@override String get desktopLyricLock => 'Lock the lyrics';
+	@override String get desktopLyricLockDesc => 'A locked window lets clicks pass through to the app underneath.';
+	@override String get desktopLyricStyleSection => 'Style';
+	@override String get desktopLyricFontSize => 'Font size';
+	@override String get desktopLyricFontSizeDesc => 'The overlay’s text size.';
+	@override String get desktopLyricOpacity => 'Opacity';
+	@override String get desktopLyricOpacityDesc => 'The opacity of the whole overlay window.';
+	@override String get desktopLyricTextColor => 'Text colour';
+	@override String get desktopLyricTextColorDesc => 'The overlay’s main text colour.';
+	@override String get desktopLyricAlignment => 'Alignment';
+	@override String get desktopLyricAlignmentDesc => 'How the line is anchored in the window.';
+	@override String get desktopLyricAlignLeft => 'Left';
+	@override String get desktopLyricAlignCenter => 'Center';
+	@override String get desktopLyricAlignRight => 'Right';
+	@override String get desktopLyricColorWhite => 'White';
+	@override String get desktopLyricColorYellow => 'Yellow';
+	@override String get desktopLyricColorCyan => 'Cyan';
+	@override String get desktopLyricColorPink => 'Pink';
+	@override String get desktopLyricColorGreen => 'Green';
+	@override String get desktopLyricColorOrange => 'Orange';
+	@override String get clearQueue => 'Clear the queue';
+	@override String get exportLyric => 'Export the lyric';
+	@override String exportLyricDone({required Object path}) => 'Lyric saved to ${path}';
+	@override String exportLyricFailed({required Object error}) => 'Could not export the lyric: ${error}';
 }
 
 // Path: navigation
@@ -946,6 +1187,8 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get musicSonglist => 'Songlists';
 	@override String get musicToplist => 'Charts';
 	@override String get musicLibrary => 'My lists';
+	@override String get musicLocal => 'Local music';
+	@override String get musicDownloads => 'Downloads';
 }
 
 // Path: player
@@ -1159,6 +1402,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get offlineReplayReason => 'A replay is available; open it from the card in the list';
 	@override String get offlineReason => 'The live picture appears here when the room goes live';
 	@override String get detailFailed => 'The room details did not load';
+	@override String get openRoom => 'Open the room';
 	@override String get copyLink => 'Copy room link';
 	@override String get linkCopied => 'Link copied';
 	@override String get record => 'Record';
@@ -1310,6 +1554,8 @@ class _Translations$search$en extends Translations$search$zh_CN {
 	@override String get sortAudience => 'By audience';
 	@override String get sortFollowers => 'By followers';
 	@override String get includeOffline => 'Include offline';
+	@override String get filterTitle => 'Filters';
+	@override String get filterReset => 'Reset';
 	@override String get linkDetected => 'Live room link detected';
 	@override String get linkOpen => 'Open room';
 	@override String get linkResolving => 'Resolving the link…';
@@ -1457,6 +1703,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get sitesDisplay => 'Platforms shown';
 	@override String get sitesDisplayDesc => 'Switched-off platforms leave the popular, areas, follows and search platform lists.';
 	@override String get sitesAllShown => 'Every platform is shown.';
+	@override String get sitesShowAll => 'Show all';
+	@override String get sitesShowAllDesc => 'Switch every platform back on.';
 	@override String get dataClearHistory => 'Clear watch history';
 	@override String get dataClearHistoryDesc => 'Deletes every watch record, for good.';
 	@override String get dataExportFollows => 'Export follows';
@@ -1755,11 +2003,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get searchResults => 'Search results';
 	@override String get browseLayoutGroup => 'Card layout';
 	@override String get browseColumns => 'Cards per row';
-	@override String get browseListColumns => 'Rows per line';
 	@override String get browseAuto => 'Auto';
 	@override String get browseCoverAspect => 'Cover shape';
-	@override String get browseTitleLines => 'Title lines';
-	@override String browseTitleLinesValue({required Object count}) => '${count} lines';
 	@override String get crossSpacing => 'Column spacing';
 	@override String get crossSpacingDescription => 'The gap between two cards side by side in a grid.';
 	@override String get mainSpacing => 'Row spacing';
@@ -1777,6 +2022,12 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get musicListDescription => 'Where new songs land, what a click does, and whether sources show.';
 	@override String get navMusicSources => 'Custom sources';
 	@override String get musicSourcesDescription => 'Import and manage lx-style custom music-source scripts.';
+	@override String get navMusicDownload => 'Downloads';
+	@override String get musicDownloadDescription => 'Download folder, format, naming and tags.';
+	@override String get navMusicLyric => 'Lyrics';
+	@override String get musicLyricDescription => 'Translation, romanization and lyric delay.';
+	@override String get navMusicDesktopLyric => 'Desktop lyrics';
+	@override String get musicDesktopLyricDescription => 'The floating lyric\'s switch, lock, font, colour and alignment.';
 	@override String get vodQuality => 'Default quality';
 	@override String get vodQualityDesc => 'The quality the page asks for first; without a Bilibili sign-in the source may serve 720P or lower.';
 	@override String get vodQuality720 => '720P';
@@ -2345,17 +2596,11 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get roomCardShowTitle => 'Title';
 	@override String get roomCardShowCoverTitle => 'Type on cover';
 	@override String get roomCardShowStatus => 'Broadcast state';
-	@override String get roomCardShowDuration => 'Airtime';
-	@override String get roomCardShowVerified => 'Verified mark';
 	@override String get roomCardShowAvatar => 'Anchor avatar';
 	@override String get roomCardShowAnchor => 'Anchor name';
 	@override String get roomCardShowPlatform => 'Platform badge';
 	@override String get roomCardShowAudience => 'Audience figure';
-	@override String get roomCardShowListCover => 'List thumbnail';
 	@override String get roomCardReplay => 'Replay';
-	@override String get roomCardAppearance => 'Appearance';
-	@override String get roomCardCornerRadius => 'Corner radius';
-	@override String get roomCardCornerRadiusDesc => 'Adjust the card and cover corner radius together.';
 	@override String get roomCardResetCurrent => 'Restore the default details';
 	@override String get roomCardScopeHint => 'Mobile and desktop keep their own sets, applied automatically to the card and list row on the current device.';
 	@override String get backgroundPreviewMedia => 'Preview';
@@ -2573,8 +2818,6 @@ class _Translations$toolbox$en extends Translations$toolbox$zh_CN {
 	@override String get groupLinks => 'Links';
 	@override String get groupNetwork => 'Network';
 	@override String get groupData => 'Data';
-	@override String get toolLinkTitle => 'Link Parser';
-	@override String get toolLinkDescription => 'Paste a platform link to open the room or copy its address.';
 	@override String get toolNetworkTitle => 'Platform nodes';
 	@override String get toolNetworkDescription => 'Test each platform\'s endpoint for reachability and latency.';
 	@override String get toolCacheTitle => 'Cache cleanup';
@@ -3051,11 +3294,18 @@ extension on TranslationsEn {
 			'areas.viewPlatform' => 'Platform areas',
 			'areas.viewFollowed' => 'Followed areas',
 			'areas.followedEmpty' => 'No followed areas yet',
-			'areas.followedEmptyHint' => 'Tap the heart on an area or in a room to follow it',
+			'areas.followedEmptyHint' => 'Right-click or long-press an area card and choose to follow it',
 			'areas.noPlatforms' => 'No platform to browse',
 			'areas.unfollow' => 'Unfollow',
 			'areas.categoryAll' => 'All categories',
+			'areas.iconTop' => 'Icon on top',
+			'areas.iconLeft' => 'Icon at left',
+			'areas.open' => 'Open the area',
 			'areas.follow' => 'Follow area',
+			'areas.searchHint' => 'Search areas',
+			'areas.searchAt' => ({required Object query, required Object platform}) => 'Searching areas for “${query}” on ${platform}',
+			'areas.searchEmpty' => 'No matching areas',
+			'areas.backToBrowse' => 'Back to browsing',
 			'areas.hiddenUnplayable' => ({required int count}) => '${count} streams that cannot play here are hidden (paid, password, app only…)',
 			'backup.title' => 'Backup & restore',
 			'backup.localSection' => 'Local backup',
@@ -3241,10 +3491,13 @@ extension on TranslationsEn {
 			'favorites.tagsFilter' => 'Filter by tag',
 			'favorites.allTags' => 'All tags',
 			'favorites.tagsEmpty' => 'No tags yet',
+			'favorites.newTag' => 'New tag',
 			'favorites.tagFieldHint' => 'New tag name',
 			'favorites.addTag' => 'Add tag',
 			'favorites.deleteTagTitle' => ({required String name}) => 'Delete “${name}”?',
 			'favorites.deleteTagBody' => 'Every room leaves this tag; the rooms stay followed.',
+			'favorites.tagFollowTitle' => 'Follow first to add tags',
+			'favorites.tagFollowBody' => 'Tags belong to followed rooms. Follow this room first, then give it any number of tags.',
 			'favorites.tagExists' => 'That tag already exists',
 			'favorites.tagInvalid' => 'Enter a tag name',
 			'favorites.deleteTag' => 'Delete',
@@ -3258,8 +3511,13 @@ extension on TranslationsEn {
 			'history.openFailedTitle' => 'The history could not open',
 			'history.recordCount' => ({required int count, required int limit}) => 'Recorded ${count} / limit ${limit}',
 			'history.filter' => 'Filter',
-			'history.filterClose' => 'Close filter',
+			'history.filterPanelTitle' => 'Filter watch history',
+			'history.filterKeyword' => 'Keyword',
 			'history.filterHint' => 'Filter by title, streamer, room ID or platform',
+			'history.filterStart' => 'Start date',
+			'history.filterEnd' => 'End date',
+			'history.filterAnyDay' => 'Any',
+			'history.filterDone' => 'Done',
 			'history.filterMatches' => ({required int count}) => '${count} found',
 			'history.filterReset' => 'Clear filter',
 			'history.filterEmptyTitle' => 'No history entries match',
@@ -3282,7 +3540,6 @@ extension on TranslationsEn {
 			'history.limitSaved' => ({required int limit}) => 'History limit set to ${limit}',
 			'history.refresh' => 'Refresh',
 			'history.refreshFailed' => ({required int count}) => '${count} records could not be refreshed',
-			'history.openRoom' => 'Open the room',
 			'hongguo.title' => 'Hongguo Drama',
 			'hongguo.tagline' => 'Short drama, comic drama and AI drama, served by the hongguo companion service',
 			'hongguo.navRank' => 'Boards',
@@ -3362,6 +3619,100 @@ extension on TranslationsEn {
 			'hongguo.favoriteToggleOff' => 'Removed from favorites',
 			'hongguo.cloudFavoriteOn' => 'Added to account favorites',
 			'hongguo.cloudFavoriteOff' => 'Removed from account favorites',
+			'hongguo.related' => 'Related',
+			'hongguo.relatedNone' => 'No related works',
+			'hongguo.relatedLive' => 'Live · open',
+			'hongguo.relatedReserve' => 'Reserve',
+			'hongguo.reserved' => 'Reserved',
+			'hongguo.comments' => 'Comments',
+			'hongguo.commentsEmpty' => 'No comments yet',
+			'hongguo.commentsLoadMore' => 'More',
+			'hongguo.danmaku' => 'Danmaku',
+			'hongguo.danmakuOn' => 'Danmaku on',
+			'hongguo.danmakuOff' => 'Danmaku off',
+			'hongguo.phoneLogin' => 'Sign in by phone',
+			'hongguo.phonePlaceholder' => 'Mobile, e.g. 138… (intl +cc number)',
+			'hongguo.phoneSend' => 'Send code',
+			'hongguo.phoneCodePlaceholder' => 'Code',
+			'hongguo.phoneVerify' => 'Sign in',
+			'hongguo.phoneSent' => 'Code sent to',
+			'hongguo.accountPhoneToggle' => 'Use a phone number',
+			'hongguo.commentsFailed' => 'Comments did not load',
+			'hongguo.shelfForYou' => 'Picked for you',
+			'hongguo.shelfChangeBatch' => 'Another batch',
+			'hongguo.shelfHot' => 'Now playing',
+			'hongguo.shelfNew' => 'New',
+			'hongguo.shelfCategory' => 'Category',
+			'hongguo.newArrivals' => 'new',
+			'hongguo.openFullBoard' => 'Full board',
+			'hongguo.seeMore' => 'More',
+			'hongguo.refreshShelf' => 'Refresh',
+			'hongguo.allEpisodesCount' => ({required Object count}) => 'All ${count} ep.',
+			'hongguo.filterReset' => 'Reset',
+			'hongguo.filterNone' => 'All',
+			'hongguo.rankSource' => 'Hongguo public board',
+			'hongguo.rankTopicAll' => 'All topics',
+			'hongguo.rankKeepsPlaces' => 'board places kept',
+			'hongguo.rankRenewing' => 'updating in the background…',
+			'hongguo.rankReading' => 'Reading…',
+			'hongguo.rankEmptyTopic' => 'Nothing on this board under that topic',
+			'hongguo.rankSeriesCount' => ({required Object count}) => '${count} titles',
+			'hongguo.refresh' => 'Refresh',
+			'hongguo.suggestOff' => 'Suggestions are unavailable — search directly',
+			'hongguo.searchHistory' => 'Recent',
+			'hongguo.searchHistoryClear' => 'Clear',
+			'hongguo.searchHistoryHint' => 'Searches stay on this machine, up to 20',
+			'hongguo.filter' => 'Filter',
+			'hongguo.filterPanelTitle' => 'Filter',
+			'hongguo.filterDone' => 'Done',
+			'hongguo.accountId' => 'Hongguo ID',
+			'hongguo.copyAccountId' => 'Copy',
+			'hongguo.copied' => 'Copied',
+			'hongguo.accountReading' => 'Reading…',
+			'hongguo.accountNotRead' => 'Not read yet',
+			'hongguo.accountReadCount' => ({required Object count}) => '${count} titles read',
+			'hongguo.historyFilterWatched' => 'Finished',
+			'hongguo.historyFilterUnwatched' => 'In progress',
+			'hongguo.frameMode' => 'Picture mode',
+			'hongguo.frameFit' => 'Whole picture',
+			'hongguo.frameZoom' => 'Fill and crop',
+			'hongguo.frameFill' => 'Stretch',
+			'hongguo.frameFitDesc' => 'Keeps the aspect and every pixel, with bars where the frame is a different shape',
+			'hongguo.frameZoomDesc' => 'Fills the frame, cropping part of the picture and subtitles',
+			'hongguo.frameFillDesc' => 'Fills the frame, changing the aspect',
+			'hongguo.sleep' => 'Sleep timer',
+			'hongguo.sleepOff' => 'Turn off',
+			'hongguo.sleepAfter' => ({required Object minutes}) => 'In ${minutes} min',
+			'hongguo.sleepMinutes' => ({required Object count}) => '${count} min left',
+			'hongguo.sleepThisEpisode' => 'After this episode',
+			'hongguo.sleepAfterEpisodes' => ({required Object count}) => 'After ${count} more',
+			'hongguo.sleepEpisodes' => ({required Object count}) => '${count} episodes left',
+			'hongguo.sleepStopped' => 'Sleep timer stopped playback · position saved · press play to continue',
+			_ => null,
+		} ?? switch (path) {
+			'hongguo.retryNow' => 'Retry now',
+			'hongguo.retryLower' => ({required Object height}) => 'Try ${height}P',
+			'hongguo.backToEpisodes' => 'Back to episodes',
+			'hongguo.stopAutoRetry' => 'Stop auto-retry',
+			'hongguo.autoRetry' => ({required Object attempt, required Object seconds}) => 'Retrying ${attempt}/3 in ${seconds}s',
+			'hongguo.retryExhausted' => 'Three automatic retries did not help. Retry by hand or pick a lower quality.',
+			'hongguo.decoderLessons' => 'Decoder notes',
+			'hongguo.decoderLessonsCount' => ({required Object count}) => '${count} decode failures remembered; those renditions are skipped',
+			'hongguo.decoderLessonsEmpty' => 'No decode failures yet; the ladder follows the platform\'s claims',
+			'hongguo.decoderResetDone' => ({required Object count}) => 'Cleared ${count} decoder notes',
+			'hongguo.favoriteCheck' => 'Check for updates',
+			'hongguo.favoriteChecking' => ({required Object done, required Object total}) => 'Checking ${done}/${total}…',
+			'hongguo.favoriteChecked' => ({required Object done, required Object total}) => 'Checked ${done}/${total} · done',
+			'hongguo.favoriteCheckedSome' => ({required Object done, required Object total, required Object failures}) => 'Checked ${done}/${total} · ${failures} failed, retry later',
+			'hongguo.favoriteRecentCheck' => 'Checked within the hour — refresh to check again',
+			'hongguo.favoriteNoFavorites' => 'Favorite a series to check for new episodes',
+			'hongguo.favoriteAdded' => ({required Object count}) => '${count} new',
+			'hongguo.favoriteUpTo' => ({required Object count}) => 'up to ${count}',
+			'hongguo.favoriteBadge' => ({required Object count}) => '${count} with new episodes',
+			'hongguo.reviews' => 'Series reviews',
+			'hongguo.reviewsEmpty' => 'No reviews yet',
+			'hongguo.rating' => ({required Object score}) => 'Rated ${score}',
+			'hongguo.ratingCount' => ({required Object count}) => '${count} ratings',
 			'iptv.tabAll' => 'All',
 			'iptv.live' => 'Live',
 			'iptv.scopeLabel' => 'Channel scope',
@@ -3445,8 +3796,6 @@ extension on TranslationsEn {
 			'iptv.noPlaylistsTitle' => 'No playlists yet',
 			'iptv.pickPlaylistFile' => 'Choose a playlist file',
 			'iptv.playlistName' => 'Playlist name',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.playlistNameHint' => 'Leave blank to name it from the source',
 			'iptv.playlistText' => 'Playlist content',
 			'iptv.playlistTextHint' => 'Paste M3U/M3U8/TXT content',
@@ -3620,7 +3969,7 @@ extension on TranslationsEn {
 			'music.sourcesReady' => ({required Object count}) => '${count} custom sources ready',
 			'music.settingsPlayback' => 'Source and playback',
 			'music.defaultSource' => 'Default source',
-			'music.defaultSourceDesc' => 'The custom source a song is asked from; one source is active at a time.',
+			'music.defaultSourceDesc' => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.',
 			'music.defaultSourceEmpty' => 'No source yet — import a script under Custom sources below.',
 			'music.quality' => 'Playback quality',
 			'music.qualityDesc' => 'The rendition asked of a source; a source that lacks it answers with the best it has.',
@@ -3639,7 +3988,7 @@ extension on TranslationsEn {
 			'music.playbackReset' => 'Restore defaults',
 			'music.playbackResetDesc' => 'Automatic source, 320K, skip failures, new songs at the end.',
 			'music.sourcesSection' => 'Custom sources',
-			'music.sourcesHint' => 'lx-music custom sources are JavaScript scripts. Importing reads the header comment and keeps the script verbatim; this build does not execute scripts yet — that needs an embedded JS engine.',
+			'music.sourcesHint' => 'lx-music custom sources are JavaScript scripts run by the fjs (QuickJS) runtime; importing initializes them and hands play-URL resolution to them.',
 			'music.sourcesImportText' => 'Paste a script',
 			'music.sourcesImportTextDesc' => 'Paste the full text of an lx-music custom-source script.',
 			'music.sourcesImportUrl' => 'Import from a link',
@@ -3663,9 +4012,13 @@ extension on TranslationsEn {
 			'music.sourceDeleteDesc' => 'Its script is deleted too; importing it again restores it.',
 			'music.sourceDeleted' => ({required Object name}) => 'Removed "${name}"',
 			'music.sourcesCount' => ({required Object count}) => '${count} imported',
-			'music.searchHint' => 'Search songs, artists or BV ids…',
+			'music.sourcesReload' => 'Reload the scripts',
+			'music.sourcesReloadDesc' => 'Initialize every imported lx script again.',
+			'music.sourcesReloaded' => ({required Object count}) => '${count} scripts loaded',
+			'music.sourcesReloadedErrors' => ({required Object count}) => '${count} scripts failed to load',
+			'music.searchHint' => 'Search songs, artists or albums…',
 			'music.searchIdleTitle' => 'Search for a song',
-			'music.searchIdleDescription' => 'Type a title, an artist or a BV id and press enter.',
+			'music.searchIdleDescription' => 'Type a title, an artist or an album and press enter.',
 			'music.noResultsTitle' => 'No songs found',
 			'music.noResultsDescription' => 'Try another keyword.',
 			'music.searchFailed' => 'The search failed',
@@ -3696,6 +4049,137 @@ extension on TranslationsEn {
 			'music.playingSource' => ({required Object source}) => 'From ${source}',
 			'music.loadMore' => 'Load more',
 			'music.clearRecent' => 'Clear recently played',
+			'music.moreActions' => 'More actions',
+			'music.playNext' => 'Play next',
+			'music.addToPlaylist' => 'Add to a playlist',
+			'music.download' => 'Download',
+			'music.downloadAll' => 'Download all',
+			'music.downloadAllQueued' => ({required Object count}) => 'Queued ${count} songs',
+			'music.moveUp' => 'Move up',
+			'music.moveDown' => 'Move down',
+			'music.playAll' => 'Play all',
+			'music.searchHistory' => 'Recent searches',
+			'music.searchHistoryClear' => 'Clear',
+			'music.searchHistoryRemove' => 'Remove this search',
+			'music.playlistCreate' => 'New playlist',
+			'music.playlistCreateTitle' => 'New playlist',
+			'music.playlistName' => 'Playlist name',
+			'music.playlistNameHint' => 'Name this playlist',
+			'music.playlistRename' => 'Rename',
+			'music.playlistRenameTitle' => 'Rename playlist',
+			'music.playlistDelete' => 'Delete playlist',
+			'music.playlistDeleteTitle' => ({required Object name}) => 'Delete “${name}”?',
+			'music.playlistDeleteDesc' => 'The playlist is removed; its songs are not deleted.',
+			'music.playlistClear' => 'Clear playlist',
+			'music.playlistEmptyTitle' => 'This playlist is empty',
+			'music.playlistEmptyDescription' => 'Add songs from a row’s “More actions” menu.',
+			'music.playlistAdded' => ({required Object name}) => 'Added to “${name}”',
+			'music.playlistAlreadyIn' => ({required Object name}) => '“${name}” already has this song',
+			'music.playlistsCount' => ({required Object count}) => '${count} playlists',
+			'music.downloadsActive' => ({required Object count}) => 'Downloading ${count}',
+			'music.downloadQueued' => ({required Object title}) => 'Queued for download: ${title}',
+			'music.downloadDuplicate' => 'This song is already in the download queue',
+			'music.downloadUnsupported' => 'This song has no downloadable source (a local file, or not covered by the current source)',
+			'music.downloadFailed' => ({required Object error}) => 'Download failed: ${error}',
+			'music.downloadHint' => 'Files land in the shared download folder; the queue supports pause, resume and retry.',
+			'music.downloadDirectory' => 'Download folder',
+			'music.downloadDirectoryDefault' => 'Use the default folder',
+			'music.downloadDirectoryDefaultDesc' => 'Return to the app’s default downloads folder.',
+			'music.downloadDirectoryUpdated' => 'Download folder updated',
+			'music.downloadDirectoryFailed' => 'This folder is not writable',
+			'music.downloadType' => 'Download format',
+			'music.downloadTypeDesc' => 'Original keeps the source container; transcoding needs ffmpeg.',
+			'music.downloadTypeOriginal' => 'Original',
+			'music.downloadTypeMp3' => 'MP3',
+			'music.downloadTypeM4a' => 'M4A',
+			'music.downloadTypeFlac' => 'FLAC',
+			'music.downloadTypeOgg' => 'OGG',
+			'music.downloadTypeWav' => 'WAV',
+			'music.downloadPattern' => 'File name pattern',
+			'music.downloadPatternHint' => 'Placeholders (written inside braces): title, artist, album, quality, source, list, index.',
+			'music.downloadPatternEdit' => 'Edit',
+			'music.downloadEmbedCover' => 'Embed the cover',
+			'music.downloadEmbedCoverDesc' => 'Write the cover into the audio tags.',
+			'music.downloadEmbedLyric' => 'Embed the lyric',
+			'music.downloadEmbedLyricDesc' => 'Write the lyric into the audio tags so it travels with the file.',
+			'music.downloadWriteLyric' => 'Save a lyric file',
+			'music.downloadWriteLyricDesc' => 'Write a sibling .lrc next to the audio file.',
+			'music.downloadSkipExisting' => 'Skip existing files',
+			'music.downloadSkipExistingDesc' => 'Do not download when the output file is already there.',
+			'music.downloadGroupByList' => 'Group by playlist',
+			'music.downloadGroupByListDesc' => 'When downloading from a playlist, save into a folder named after it.',
+			'music.downloadStatusQueued' => 'Queued',
+			'music.downloadStatusRunning' => 'Downloading',
+			'music.downloadStatusPaused' => 'Paused',
+			'music.downloadStatusProcessing' => 'Writing tags',
+			'music.downloadStatusCompleted' => 'Completed',
+			'music.downloadStatusSkipped' => 'Skipped',
+			'music.downloadStatusFailed' => 'Failed',
+			'music.downloadStatusCancelled' => 'Cancelled',
+			'music.downloadPauseAll' => 'Pause all',
+			'music.downloadResumeAll' => 'Resume all',
+			'music.downloadClearFinished' => 'Clear finished',
+			'music.downloadProgress' => 'Download progress',
+			'music.downloadRetry' => 'Retry',
+			'music.downloadRemove' => 'Remove the row',
+			'music.downloadResume' => 'Resume',
+			'music.downloadPause' => 'Pause',
+			'music.downloadCancel' => 'Cancel',
+			'music.downloadsEmptyTitle' => 'No downloads yet',
+			'music.downloadsEmptyDescription' => ({required Object directory}) => 'Download from a row’s “More actions” menu; files go to ${directory}.',
+			'music.localAddFolder' => 'Add a folder',
+			'music.localHint' => 'Add a folder of audio files; the scan makes them play like online songs.',
+			'music.localFiles' => ({required Object count}) => '${count} files',
+			'music.localRescan' => 'Scan again',
+			'music.localFolders' => 'Music folders',
+			'music.localRemoveFolder' => 'Remove the folder',
+			'music.localFailed' => 'The scan failed',
+			'music.localEmptyTitle' => 'No local music yet',
+			'music.localEmptyDescription' => 'Add a folder of audio files to start scanning.',
+			'music.localFolderFailed' => ({required Object error}) => 'Cannot add the folder: ${error}',
+			'music.playbackRate' => 'Playback speed',
+			'music.sleepTimer' => 'Sleep timer',
+			'music.sleepOff' => 'Off',
+			'music.sleepMinutes' => ({required Object count}) => '${count} minutes',
+			'music.sleepRemaining' => ({required Object value}) => 'Pauses in ${value}',
+			'music.lyricOffset' => 'Lyric delay',
+			'music.lyricOffsetDesc' => 'Positive values show the lyric later.',
+			'music.lyricOffsetReset' => 'No delay',
+			'music.lyricTranslation' => 'Show translation',
+			'music.lyricTranslationDesc' => 'Show the translation when the lyric has one.',
+			'music.lyricRomanization' => 'Show romanization',
+			'music.lyricRomanizationDesc' => 'Show the romanization when the lyric has one.',
+			'music.lyricHint' => 'The display and delay apply to every song; desktop lyrics open from Settings or the player’s More actions menu.',
+			'music.desktopLyrics' => 'Desktop lyrics',
+			'music.desktopLyricsOn' => 'Desktop lyrics shown',
+			'music.desktopLyricsOff' => 'Desktop lyrics hidden',
+			'music.desktopLyricsUnavailable' => 'This platform has no desktop lyric window, or the permission was refused',
+			'music.desktopLyricHint' => 'Desktop lyrics are a floating window you can drag, lock and control; Android needs the overlay permission.',
+			'music.desktopLyricEnableDesc' => 'Float the current lyric over the desktop; turning it off keeps the style below.',
+			'music.desktopLyricLock' => 'Lock the lyrics',
+			'music.desktopLyricLockDesc' => 'A locked window lets clicks pass through to the app underneath.',
+			'music.desktopLyricStyleSection' => 'Style',
+			'music.desktopLyricFontSize' => 'Font size',
+			'music.desktopLyricFontSizeDesc' => 'The overlay’s text size.',
+			'music.desktopLyricOpacity' => 'Opacity',
+			'music.desktopLyricOpacityDesc' => 'The opacity of the whole overlay window.',
+			'music.desktopLyricTextColor' => 'Text colour',
+			'music.desktopLyricTextColorDesc' => 'The overlay’s main text colour.',
+			'music.desktopLyricAlignment' => 'Alignment',
+			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
+			'music.desktopLyricAlignLeft' => 'Left',
+			'music.desktopLyricAlignCenter' => 'Center',
+			'music.desktopLyricAlignRight' => 'Right',
+			'music.desktopLyricColorWhite' => 'White',
+			'music.desktopLyricColorYellow' => 'Yellow',
+			'music.desktopLyricColorCyan' => 'Cyan',
+			'music.desktopLyricColorPink' => 'Pink',
+			'music.desktopLyricColorGreen' => 'Green',
+			'music.desktopLyricColorOrange' => 'Orange',
+			'music.clearQueue' => 'Clear the queue',
+			'music.exportLyric' => 'Export the lyric',
+			'music.exportLyricDone' => ({required Object path}) => 'Lyric saved to ${path}',
+			'music.exportLyricFailed' => ({required Object error}) => 'Could not export the lyric: ${error}',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -3718,9 +4202,13 @@ extension on TranslationsEn {
 			'navigation.vodRegions' => 'Regions',
 			'navigation.iptvSources' => 'Subscriptions',
 			'navigation.iptvGuide' => 'Guide',
+			_ => null,
+		} ?? switch (path) {
 			'navigation.musicSonglist' => 'Songlists',
 			'navigation.musicToplist' => 'Charts',
 			'navigation.musicLibrary' => 'My lists',
+			'navigation.musicLocal' => 'Local music',
+			'navigation.musicDownloads' => 'Downloads',
 			'player.title' => 'Player',
 			'player.back' => 'Back',
 			'player.quality' => 'Quality',
@@ -3898,6 +4386,7 @@ extension on TranslationsEn {
 			'room.offlineReplayReason' => 'A replay is available; open it from the card in the list',
 			'room.offlineReason' => 'The live picture appears here when the room goes live',
 			'room.detailFailed' => 'The room details did not load',
+			'room.openRoom' => 'Open the room',
 			'room.copyLink' => 'Copy room link',
 			'room.linkCopied' => 'Link copied',
 			'room.record' => 'Record',
@@ -3959,8 +4448,6 @@ extension on TranslationsEn {
 			'room.orientationHint' => 'Follow the picture’s own shape, or fix this room to portrait or landscape.',
 			'room.orientationAutomatic' => 'Automatic',
 			'room.orientationPortrait' => 'Portrait',
-			_ => null,
-		} ?? switch (path) {
 			'room.orientationLandscape' => 'Landscape',
 			'room.orientationUpdated' => 'Picture orientation updated',
 			'room.portraitFullscreen' => 'Portrait full screen',
@@ -4042,6 +4529,8 @@ extension on TranslationsEn {
 			'search.sortAudience' => 'By audience',
 			'search.sortFollowers' => 'By followers',
 			'search.includeOffline' => 'Include offline',
+			'search.filterTitle' => 'Filters',
+			'search.filterReset' => 'Reset',
 			'search.linkDetected' => 'Live room link detected',
 			'search.linkOpen' => 'Open room',
 			'search.linkResolving' => 'Resolving the link…',
@@ -4180,6 +4669,8 @@ extension on TranslationsEn {
 			'settings.sitesDisplay' => 'Platforms shown',
 			'settings.sitesDisplayDesc' => 'Switched-off platforms leave the popular, areas, follows and search platform lists.',
 			'settings.sitesAllShown' => 'Every platform is shown.',
+			'settings.sitesShowAll' => 'Show all',
+			'settings.sitesShowAllDesc' => 'Switch every platform back on.',
 			'settings.dataClearHistory' => 'Clear watch history',
 			'settings.dataClearHistoryDesc' => 'Deletes every watch record, for good.',
 			'settings.dataExportFollows' => 'Export follows',
@@ -4225,6 +4716,8 @@ extension on TranslationsEn {
 			'settings.cornersPill' => 'Pill',
 			'settings.density' => 'Control density',
 			'settings.densitySystem' => 'Follow the platform',
+			_ => null,
+		} ?? switch (path) {
 			'settings.densityCompact' => 'Compact',
 			'settings.densityTouch' => 'Touch',
 			'settings.languageSystem' => 'Follow the system',
@@ -4473,18 +4966,13 @@ extension on TranslationsEn {
 			'settings.refreshDescription' => 'Automatic refresh for the follow list and live covers.',
 			'settings.proxyDescription' => 'The app-wide proxy every site request goes through.',
 			'settings.platformsDescription' => 'Platform visibility, order and account sign-in.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.searchSettings' => 'Search settings',
 			'settings.searchNoResults' => 'No matching settings',
 			'settings.searchResults' => 'Search results',
 			'settings.browseLayoutGroup' => 'Card layout',
 			'settings.browseColumns' => 'Cards per row',
-			'settings.browseListColumns' => 'Rows per line',
 			'settings.browseAuto' => 'Auto',
 			'settings.browseCoverAspect' => 'Cover shape',
-			'settings.browseTitleLines' => 'Title lines',
-			'settings.browseTitleLinesValue' => ({required Object count}) => '${count} lines',
 			'settings.crossSpacing' => 'Column spacing',
 			'settings.crossSpacingDescription' => 'The gap between two cards side by side in a grid.',
 			'settings.mainSpacing' => 'Row spacing',
@@ -4502,6 +4990,12 @@ extension on TranslationsEn {
 			'settings.musicListDescription' => 'Where new songs land, what a click does, and whether sources show.',
 			'settings.navMusicSources' => 'Custom sources',
 			'settings.musicSourcesDescription' => 'Import and manage lx-style custom music-source scripts.',
+			'settings.navMusicDownload' => 'Downloads',
+			'settings.musicDownloadDescription' => 'Download folder, format, naming and tags.',
+			'settings.navMusicLyric' => 'Lyrics',
+			'settings.musicLyricDescription' => 'Translation, romanization and lyric delay.',
+			'settings.navMusicDesktopLyric' => 'Desktop lyrics',
+			'settings.musicDesktopLyricDescription' => 'The floating lyric\'s switch, lock, font, colour and alignment.',
 			'settings.vodQuality' => 'Default quality',
 			'settings.vodQualityDesc' => 'The quality the page asks for first; without a Bilibili sign-in the source may serve 720P or lower.',
 			'settings.vodQuality720' => '720P',
@@ -4736,6 +5230,8 @@ extension on TranslationsEn {
 			'settings.preferredQualityDesc' => 'The resolution tier a room opens on; when the site has no exact label, the nearest tier is chosen. Original by default.',
 			'settings.preferredQualityCellular' => 'Preferred quality on cellular',
 			'settings.preferredQualityCellularDesc' => 'The resolution tier used on cellular data; Wi-Fi and wired keep the preferred quality above.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.qualityAuto' => 'Automatic (site default)',
 			'settings.qualityOriginal' => 'Original',
 			'settings.qualityBluRay8M' => 'Blu-ray 8M',
@@ -4987,8 +5483,6 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryTexture' => 'Texture',
 			'settings.wallpaperCategoryOther' => 'Other',
 			'settings.wallpaperCategoryPopular' => 'Popular',
-			_ => null,
-		} ?? switch (path) {
 			'settings.wallpaperCategoryMinimalism' => 'Minimalism',
 			'settings.wallpaperCategoryPatterns' => 'Patterns',
 			'settings.wallpaperCategoryLandscape' => 'Landscape',
@@ -5072,17 +5566,11 @@ extension on TranslationsEn {
 			'settings.roomCardShowTitle' => 'Title',
 			'settings.roomCardShowCoverTitle' => 'Type on cover',
 			'settings.roomCardShowStatus' => 'Broadcast state',
-			'settings.roomCardShowDuration' => 'Airtime',
-			'settings.roomCardShowVerified' => 'Verified mark',
 			'settings.roomCardShowAvatar' => 'Anchor avatar',
 			'settings.roomCardShowAnchor' => 'Anchor name',
 			'settings.roomCardShowPlatform' => 'Platform badge',
 			'settings.roomCardShowAudience' => 'Audience figure',
-			'settings.roomCardShowListCover' => 'List thumbnail',
 			'settings.roomCardReplay' => 'Replay',
-			'settings.roomCardAppearance' => 'Appearance',
-			'settings.roomCardCornerRadius' => 'Corner radius',
-			'settings.roomCardCornerRadiusDesc' => 'Adjust the card and cover corner radius together.',
 			'settings.roomCardResetCurrent' => 'Restore the default details',
 			'settings.roomCardScopeHint' => 'Mobile and desktop keep their own sets, applied automatically to the card and list row on the current device.',
 			'settings.backgroundPreviewMedia' => 'Preview',
@@ -5256,6 +5744,8 @@ extension on TranslationsEn {
 			'shield.removeEntry' => 'Remove this rule',
 			'shield.effectNote' => 'The rules apply to the room chat immediately.',
 			'shield.contentTitle' => 'Content blocks',
+			_ => null,
+		} ?? switch (path) {
 			'shield.blockEmoteOnly' => 'Block emoticon-only danmaku',
 			'shield.blockEmoteOnlyDescription' => 'Danmaku with emoticons and no text are not shown; your own lines are never blocked.',
 			'shield.blockLong' => 'Block over-long danmaku',
@@ -5273,8 +5763,6 @@ extension on TranslationsEn {
 			'toolbox.groupLinks' => 'Links',
 			'toolbox.groupNetwork' => 'Network',
 			'toolbox.groupData' => 'Data',
-			'toolbox.toolLinkTitle' => 'Link Parser',
-			'toolbox.toolLinkDescription' => 'Paste a platform link to open the room or copy its address.',
 			'toolbox.toolNetworkTitle' => 'Platform nodes',
 			'toolbox.toolNetworkDescription' => 'Test each platform\'s endpoint for reachability and latency.',
 			'toolbox.toolCacheTitle' => 'Cache cleanup',
@@ -5501,8 +5989,6 @@ extension on TranslationsEn {
 			'vod.favouriteRemove' => 'Remove from favourites',
 			'vod.saveVideo' => 'Favourite',
 			'vod.savedVideo' => 'Favourited',
-			_ => null,
-		} ?? switch (path) {
 			'vod.saveAdded' => 'Added to favourites',
 			'vod.saveRemoved' => 'Removed from favourites',
 			'wallpaper.title' => 'Random pictures',

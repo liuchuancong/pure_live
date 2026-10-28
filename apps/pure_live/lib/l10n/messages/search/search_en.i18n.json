@@ -29,6 +29,8 @@
   "sortAudience": "By audience",
   "sortFollowers": "By followers",
   "includeOffline": "Include offline",
+  "filterTitle": "Filters",
+  "filterReset": "Reset",
   "linkDetected": "Live room link detected",
   "linkOpen": "Open room",
   "linkResolving": "Resolving the link…",

@@ -29,6 +29,8 @@
   "sortAudience": "按人气",
   "sortFollowers": "按关注",
   "includeOffline": "显示离线",
+  "filterTitle": "筛选",
+  "filterReset": "重置",
   "linkDetected": "检测到直播间链接",
   "linkOpen": "打开直播间",
   "linkResolving": "正在解析链接…",

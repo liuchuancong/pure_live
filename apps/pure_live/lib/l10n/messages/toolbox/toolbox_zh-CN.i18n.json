@@ -3,8 +3,6 @@
   "groupLinks": "链接工具",
   "groupNetwork": "网络",
   "groupData": "数据",
-  "toolLinkTitle": "链接解析",
-  "toolLinkDescription": "粘贴平台链接，打开直播间或复制房间地址。",
   "toolNetworkTitle": "平台节点",
   "toolNetworkDescription": "测试各平台接口的连通性与延迟。",
   "toolCacheTitle": "缓存清理",

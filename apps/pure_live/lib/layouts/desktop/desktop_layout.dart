@@ -11,6 +11,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart';
+import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/popular/popular.dart';
 import 'package:pure_live/modules/live/search/search.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -459,27 +460,42 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                                     // search page there — not a cold, scopeless
                                     // search.
                                     child: _ToolbarSearch(
-                                      hint: t.common.searchHint,
+                                      // The areas page searches its own
+                                      // catalogue, so its field says areas.
+                                      hint: widget.menuValue == NavigationItem.zones
+                                          ? t.areas.searchHint
+                                          : t.common.searchHint,
                                       focusNode: _searchFocus,
                                       shortcut: DsTheme.of(context).platform == TargetPlatform.macOS ? '⌘K' : 'Ctrl K',
                                       onSubmitted: (word) {
-                                        // Inline: the word lands in the
-                                        // popular page itself — its results
-                                        // grid over the browsed platform, no
-                                        // navigation away. (Other modules
-                                        // fall through to the search page,
-                                        // where the same word waits.)
+                                        // Inline: the word lands in the page
+                                        // being browsed — no navigation away.
+                                        // (Other modules fall through to the
+                                        // search page, where the same word
+                                        // waits.)
                                         if (widget.module == AppModule.live) {
-                                          // The platform stays as browsed — the
-                                          // inline feed reads it; switching it
-                                          // here would strand the browse feed
-                                          // on an unopened platform.
-                                          ref.read(popularInlineSearchProvider.notifier).search(word);
-                                          widget.onMenu(NavigationItem.hot);
+                                          if (widget.menuValue == NavigationItem.zones) {
+                                            // The areas page browses areas, so
+                                            // its search stays on them instead
+                                            // of turning into a room search on
+                                            // the popular page.
+                                            ref.read(popularInlineSearchProvider.notifier).clear();
+                                            ref.read(areasInlineSearchProvider.notifier).search(word);
+                                          } else {
+                                            // The platform stays as browsed —
+                                            // the inline feed reads it;
+                                            // switching it here would strand
+                                            // the browse feed on an unopened
+                                            // platform.
+                                            ref.read(areasInlineSearchProvider.notifier).clear();
+                                            ref.read(popularInlineSearchProvider.notifier).search(word);
+                                            widget.onMenu(NavigationItem.hot);
+                                          }
                                         } else {
-                                          ref.read(searchSiteIdProvider.notifier).selected = ref.read(
-                                            preferredSiteProvider,
-                                          ).manifest.id;
+                                          ref.read(searchSiteIdProvider.notifier).selected = ref
+                                              .read(preferredSiteProvider)
+                                              .manifest
+                                              .id;
                                           ref.read(pendingSearchProvider.notifier).hand(word);
                                           widget.onMenu(NavigationItem.search);
                                         }
@@ -571,8 +587,7 @@ final class _LocationBreadcrumb extends ConsumerWidget {
     return DsBreadcrumb(
       items: [
         DsBreadcrumbItem(label: module.label(t), icon: DsIcon(module.icon)),
-        if (selected case final NavigationItem item)
-          DsBreadcrumbItem(label: item.label(t), icon: DsIcon(item.icon)),
+        if (selected case final NavigationItem item) DsBreadcrumbItem(label: item.label(t), icon: DsIcon(item.icon)),
       ],
     );
   }

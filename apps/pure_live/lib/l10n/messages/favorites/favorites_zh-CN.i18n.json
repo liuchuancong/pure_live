@@ -28,10 +28,13 @@
   "tagsFilter": "标签筛选",
   "allTags": "全部标签",
   "tagsEmpty": "还没有标签",
+  "newTag": "新建标签",
   "tagFieldHint": "新标签名称",
   "addTag": "添加标签",
   "deleteTagTitle": "删除标签“{name: String}”？",
   "deleteTagBody": "所有直播间都会移出这个标签，直播间本身不会被取消关注。",
+  "tagFollowTitle": "先关注再设置标签",
+  "tagFollowBody": "标签只属于关注的房间。先关注这个直播间，之后可以为它设置任意多个标签。",
   "tagExists": "这个标签已经存在",
   "tagInvalid": "标签名称不能为空",
   "deleteTag": "删除"

@@ -5,6 +5,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/shared/areas/areas.dart' show AreaCardLayout;
 
 /// What one platform's areas catalogue holds: the areas and their load.
 typedef PlatformAreasState = ({List<LiveArea> areas, bool loading, LiveSiteError? error});
@@ -78,6 +79,34 @@ final areasCatalogProvider = NotifierProvider<AreasCatalogController, Map<String
   AreasCatalogController.new,
 );
 
+/// The areas page's tile form, stored under `areas.layout`: the icon above
+/// the name (the catalogue's posters) unless the viewer chose the row.
+final class AreaLayoutController extends Notifier<AreaCardLayout> {
+  @override
+  AreaCardLayout build() {
+    try {
+      return StoragePrefs.getString(_key) == AreaCardLayout.row.name ? AreaCardLayout.row : AreaCardLayout.tile;
+    } on Object {
+      return AreaCardLayout.tile;
+    }
+  }
+
+  static const String _key = 'areas.layout';
+
+  /// Switches the tiles and writes the choice through.
+  Future<void> set(AreaCardLayout layout) async {
+    state = layout;
+    try {
+      await StoragePrefs.setString(_key, layout.name);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The areas page's tile form.
+final areaLayoutProvider = NotifierProvider<AreaLayoutController, AreaCardLayout>(AreaLayoutController.new);
+
 /// The areas page's shown platform, remembered under `browse.areas.site`.
 final class AreasSiteController extends Notifier<String> {
   @override
@@ -111,3 +140,23 @@ final class AreasSiteController extends Notifier<String> {
 
 /// The areas page's shown platform.
 final areasSiteProvider = NotifierProvider<AreasSiteController, String>(AreasSiteController.new);
+
+/// The areas page's inline search word. The toolbar's word filters the area
+/// catalogue the page is showing — this page browses areas, so its search
+/// stays on areas instead of being handed to the room search.
+final class AreasInlineSearchController extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  /// Searches [word] in the shown platform's areas (null or empty returns
+  /// to browsing).
+  void search(String? word) => state = (word == null || word.trim().isEmpty) ? null : word.trim();
+
+  /// Returns to browsing every area.
+  void clear() => state = null;
+}
+
+/// The areas page's inline search word.
+final areasInlineSearchProvider = NotifierProvider<AreasInlineSearchController, String?>(
+  AreasInlineSearchController.new,
+);

@@ -11,6 +11,7 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/popular/popular_controller.dart';
 import 'package:pure_live/modules/live/popular/room_card.dart' show RoomCard;
+import 'package:pure_live/modules/live/popular/room_card_menu.dart';
 import 'package:pure_live/modules/live/search/search.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -306,16 +307,22 @@ final class _PlatformFeed extends ConsumerWidget {
     // platforms (Douyu 40, Huya ~120) and asked-size ones page the same
     // way, and the viewer's page size never moves a server boundary.
     final rooms = wide ? roomPageOf(ordered, state.page, state.pageSize) : ordered;
+    Widget cardFor(BuildContext context, LiveRoom room, {bool listRow = false}) {
+      void open() => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms);
+      return RoomCardMenu(
+        room: room,
+        onOpen: open,
+        child: RoomCard(room: room, listRow: listRow, onOpen: open),
+      );
+    }
+
     final grid = CardGrid<LiveRoom>(
       scrollController: scrollController,
       items: rooms,
       layout: ref.watch(browseLayoutProvider),
+      listMatchesGridWidth: true,
       listMainAxisExtent: kRoomCardListDesignHeight,
-      listItemBuilder: (context, room) => RoomCard(
-        room: room,
-        listRow: true,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
-      ),
+      listItemBuilder: (context, room) => cardFor(context, room, listRow: true),
       crossSpacing: settings.crossSpacing,
       mainSpacing: settings.mainSpacing,
       isLoading: state.loading,
@@ -346,10 +353,7 @@ final class _PlatformFeed extends ConsumerWidget {
       // explained in the bar over them.
       onRefresh: () => controller.refresh(platform),
       refreshError: state.error?.message,
-      itemBuilder: (context, room) => RoomCard(
-        room: room,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
-      ),
+      itemBuilder: cardFor,
     );
     // The reference's hidden-count line: rooms the discovery filter keeps
     // out of the page are counted, not dropped silently, and one action
@@ -501,8 +505,6 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
     final search = ref.watch(searchProvider);
     final settings = ref.watch(browseSettingsProvider);
     return Column(
@@ -510,26 +512,24 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
-          child: Row(
-            spacing: DsSpace.s8,
-            children: [
-              DsIcon(DsIcons.search, size: 16, color: colors.textMuted),
-              Expanded(
-                child: Text(
-                  t.popular.inlineAt(platform: _platformName(), query: widget.query),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.body.copyWith(color: colors.text),
+          // The toolbar's word as the kit's callout, the areas page's own
+          // line: what is being searched and the way back to the feed.
+          child: DsAlert(
+            title: Text(t.popular.inlineAt(platform: _platformName(), query: widget.query)),
+            action: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: DsSpace.s8,
+              children: [
+                if (search.loading) const SizedBox(width: 14, height: 14, child: DsSpinner()),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: () => ref.read(popularInlineSearchProvider.notifier).clear(),
+                  leading: const DsIcon(DsIcons.x, size: 14),
+                  child: Text(t.popular.backToBrowse),
                 ),
-              ),
-              if (search.loading) const SizedBox(width: 14, height: 14, child: DsSpinner()),
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                onPressed: () => ref.read(popularInlineSearchProvider.notifier).clear(),
-                leading: const DsIcon(DsIcons.x, size: 14),
-                child: Text(t.popular.backToBrowse),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         Expanded(child: _pagedResults(context, search, settings)),
@@ -547,16 +547,22 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
     final page = wide ? _page : 1;
     final pageSize = _pageSize;
     final rooms = wide ? roomPageOf(search.rooms, page, pageSize) : search.rooms;
+    Widget cardFor(BuildContext context, LiveRoom room, {bool listRow = false}) {
+      void open() => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms);
+      return RoomCardMenu(
+        room: room,
+        onOpen: open,
+        child: RoomCard(room: room, listRow: listRow, onOpen: open),
+      );
+    }
+
     final grid = CardGrid<LiveRoom>(
       scrollController: _scroll,
       items: rooms,
       layout: ref.watch(browseLayoutProvider),
+      listMatchesGridWidth: true,
       listMainAxisExtent: kRoomCardListDesignHeight,
-      listItemBuilder: (context, room) => RoomCard(
-        room: room,
-        listRow: true,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
-      ),
+      listItemBuilder: (context, room) => cardFor(context, room, listRow: true),
       crossSpacing: settings.crossSpacing,
       mainSpacing: settings.mainSpacing,
       isLoading: search.loading,
@@ -578,10 +584,7 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
       onRetry: () => ref.read(searchProvider.notifier).retry(),
       emptyIcon: DsIcons.searchX,
       emptyTitle: t.search.noResultsTitle,
-      itemBuilder: (context, room) => RoomCard(
-        room: room,
-        onOpen: () => openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId, playlist: rooms),
-      ),
+      itemBuilder: cardFor,
     );
     if (!wide) return grid;
     final last = roomLastPage(search.rooms.length, pageSize);

@@ -2,25 +2,27 @@ import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/room/room_card_settings.dart'
+    show kRoomCardListDesignHeight, roomCardTileHeight;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/history/history_limit_dialog.dart';
 import 'package:pure_live/modules/live/history/history_repository.dart';
-import 'package:pure_live/modules/live/room/room.dart';
+import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/shared/shared.dart';
 
 /// The live module's history (the reference's `HistoryPage`): the watched
 /// rooms grouped by day — Today / Yesterday / Earlier, like the reference's history
-/// sections — each as a full-width list card; one row's x drops its
-/// record, the header's button drops them all.
+/// sections — each as the shared room card carrying its watch time; one
+/// card's ✕ drops its record, the header's button drops them all.
 ///
-/// The header also counts the records against the cap, shows the cap's
-/// dialog, and toggles a filter over the records (title, streamer, room id
-/// and platform); Escape closes the filter first. Every destructive action
+/// The header counts the records against the cap and opens the filter and
+/// the cap's dialog; the filter itself lives in a panel — a keyword over the
+/// room's wording and a watched-between range of days — so the records keep
+/// the page and the conditions stay in one place. Every destructive action
 /// asks first and reports its outcome.
 final class HistoryPage extends ConsumerStatefulWidget {
   /// The history page.
@@ -30,10 +32,14 @@ final class HistoryPage extends ConsumerStatefulWidget {
   ConsumerState<HistoryPage> createState() => _HistoryPageState();
 }
 
+/// The history page's filter: a word over the room's wording and the days
+/// (midnight boundaries) the record must fall in; a null day leaves that
+/// side unbounded.
+typedef _HistoryFilter = ({String query, DateTime? from, DateTime? to});
+
 final class _HistoryPageState extends ConsumerState<HistoryPage> {
-  final _query = TextEditingController();
-  final _queryFocus = FocusNode();
-  bool _filtering = false;
+  /// The filter in force; all-empty keeps every record.
+  _HistoryFilter _filter = (query: '', from: null, to: null);
 
   /// A destructive change is running; its buttons wait.
   bool _busy = false;
@@ -41,12 +47,12 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   /// The refresh's progress (0..1); null when none runs.
   double? _progress;
 
-  @override
-  void dispose() {
-    _query.dispose();
-    _queryFocus.dispose();
-    super.dispose();
-  }
+  /// Whether the filter keeps anything out.
+  bool get _filterActive => _filterCount > 0;
+
+  /// How many conditions the filter holds: the word and each open end.
+  int get _filterCount =>
+      (_filter.query.trim().isNotEmpty ? 1 : 0) + (_filter.from != null ? 1 : 0) + (_filter.to != null ? 1 : 0);
 
   @override
   Widget build(BuildContext context) {
@@ -76,42 +82,29 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     }
     final limit = ref.watch(historyLimitProvider);
     final shown = _filtered(history.records);
-    return CallbackShortcuts(
-      // Escape answers the filter first: it clears the query, then closes.
-      // Closed, Escape stays available to the layers above.
-      bindings: {if (_filtering) const SingleActivator(LogicalKeyboardKey.escape): _handleEscape},
-      child: PopScope(
-        canPop: !_filtering,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop && _filtering) _closeFilter();
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _Header(
-              total: history.records.length,
-              limit: limit,
-              matches: shown.length,
-              filtering: _filtering,
-              busy: _busy,
-              canClear: shown.isNotEmpty,
-              query: _query,
-              queryFocus: _queryFocus,
-              onQueryChanged: (_) => setState(() {}),
-              onToggleFilter: _toggleFilter,
-              onEditLimit: () => unawaited(_editLimit()),
-              onRefresh: () => unawaited(_refreshAll(history.records)),
-              onClear: () => unawaited(_clear()),
-            ),
-            if (_progress case final progress?)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s6),
-                child: DsProgressBar(value: progress, semanticLabel: t.history.refresh),
-              ),
-            Expanded(child: _body(t, history.records, shown)),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _Header(
+          total: history.records.length,
+          limit: limit,
+          matches: shown.length,
+          filterCount: _filterCount,
+          filtering: _filterActive,
+          busy: _busy,
+          canClear: shown.isNotEmpty,
+          onOpenFilter: () => unawaited(_openFilter(history.records)),
+          onEditLimit: () => unawaited(_editLimit()),
+          onRefresh: () => unawaited(_refreshAll(history.records)),
+          onClear: () => unawaited(_clear()),
         ),
-      ),
+        if (_progress case final progress?)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s6),
+            child: DsProgressBar(value: progress, semanticLabel: t.history.refresh),
+          ),
+        Expanded(child: _body(t, history.records, shown)),
+      ],
     );
   }
 
@@ -162,67 +155,99 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                 ),
               ),
             ),
-            if (layout == CardLayout.list)
-              for (final (room, _) in records)
-                _HistoryCard(
-                  room: room,
-                  onOpen: () => unawaited(openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId)),
-                  onRemove: _busy ? null : () => unawaited(_remove(room)),
-                )
-            else
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final crossSpacing = settings.crossSpacing;
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: EdgeInsets.zero,
-                    // The same width-derived measure the feeds hold: the
-                    // history grid's cards are as wide as its own columns
-                    // make them, not as a setting says.
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: browseCardExtentForWidth(
-                        math.max(0, constraints.maxWidth - 2 * DsSpace.s20),
-                        crossSpacing: crossSpacing,
-                      ),
-                      crossAxisSpacing: crossSpacing,
-                      mainAxisSpacing: settings.mainSpacing,
-                      childAspectRatio: 1.35,
-                    ),
-                    itemCount: records.length,
-                    itemBuilder: (context, index) {
-                      final (room, watchedAt) = records[index];
-                      return _HistoryGridCard(
-                        room: room,
-                        watchedAt: watchedAt,
-                        onOpen: () =>
-                            unawaited(openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId)),
-                        onRemove: _busy ? null : () => unawaited(_remove(room)),
-                      );
-                    },
-                  );
-                },
-              ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final crossSpacing = settings.crossSpacing;
+                // The same width-derived measure the feeds hold — the
+                // viewer's column cap included — so a history grid's tiles
+                // are the feed's tiles, and a list row is a card's width,
+                // never a band across the window.
+                final content = math.max(0, constraints.maxWidth - 2 * DsSpace.s20).toDouble();
+                final capped = cappedColumnsForWidth(
+                  content,
+                  spacing: crossSpacing,
+                  ceiling: settings.gridColumns,
+                  minWidth: kBrowseCardMinWidth,
+                );
+                final listRow = layout == CardLayout.list;
+                final extent = capped > 0 && content > 0
+                    ? columnExtentForWidth(content, capped, crossSpacing)
+                    : browseCardExtentForWidth(content, crossSpacing: crossSpacing);
+                // The tile's height follows the column width the delegate
+                // settles on: the cover keeps its shape and the information
+                // area under it stays one block tall.
+                final columns = math.max(1, (content / (extent + crossSpacing)).ceil());
+                final tileWidth = content > 0 ? (content - crossSpacing * (columns - 1)) / columns : 0.0;
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: extent,
+                    crossAxisSpacing: crossSpacing,
+                    mainAxisSpacing: settings.mainSpacing,
+                    mainAxisExtent: listRow
+                        ? kRoomCardListDesignHeight
+                        : roomCardTileHeight(tileWidth, cover: settings.coverAspect),
+                  ),
+                  itemCount: records.length,
+                  itemBuilder: (context, index) {
+                    final (room, watchedAt) = records[index];
+                    return _historyCard(context, room, watchedAt: watchedAt, listRow: listRow);
+                  },
+                );
+              },
+            ),
           ],
         ],
       ),
     );
   }
 
-  /// The records the filter keeps; all of them while it is closed or its
-  /// query is blank.
+  /// One watched room as the shared card: the watch time in the cover's
+  /// corner, the record's removal in the heart's, and the card's menu around
+  /// it — open, copy the link, then this page's own remove.
+  Widget _historyCard(BuildContext context, LiveRoom room, {required DateTime watchedAt, bool listRow = false}) {
+    final t = context.t;
+    void open() => unawaited(openRoom(context, platform: room.ref.platform, roomId: room.ref.roomId));
+    final remove = _busy ? null : () => unawaited(_remove(room));
+    return RoomCardMenu(
+      room: room,
+      onOpen: open,
+      items: [
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.trash2),
+          label: Text(t.history.remove),
+          destructive: true,
+          onPressed: remove,
+        ),
+      ],
+      child: RoomCard(
+        room: room,
+        listRow: listRow,
+        cornerNote: _watchClock(watchedAt),
+        onOpen: open,
+        onRemove: remove,
+        removeLabel: t.history.remove,
+      ),
+    );
+  }
+
+  /// The records the filter keeps: the word over the room and the day range
+  /// over when it was watched; every empty piece keeps its side open.
   List<(LiveRoom, DateTime)> _filtered(List<(LiveRoom, DateTime)> records) {
-    final needle = _filtering ? _query.text.trim().toLowerCase() : '';
-    if (needle.isEmpty) return records;
+    if (!_filterActive) return records;
+    final needle = _filter.query.trim().toLowerCase();
     return [
       for (final record in records)
-        if (_matches(record.$1, needle)) record,
+        if (_matches(record.$1, needle) && _watchedWithin(record.$2)) record,
     ];
   }
 
   /// Whether [room]'s title, streamer, room id, platform id or platform
-  /// name contains [needle] (any case).
+  /// name contains [needle] (any case); a blank word matches every room.
   bool _matches(LiveRoom room, String needle) {
+    if (needle.isEmpty) return true;
     final site = ref.read(sitesProvider).getById(room.ref.platform);
     final platformName = site == null ? '' : localizedSiteName(site);
     return [
@@ -234,37 +259,41 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     ].any((text) => text.toLowerCase().contains(needle));
   }
 
-  void _toggleFilter() {
-    if (_filtering) {
-      _closeFilter();
-    } else {
-      setState(() => _filtering = true);
+  /// Whether [watchedAt]'s day falls in the filter's range; either end may
+  /// be open, and both ends are inclusive days.
+  bool _watchedWithin(DateTime watchedAt) {
+    final day = DateTime(watchedAt.year, watchedAt.month, watchedAt.day);
+    final from = _filter.from;
+    final to = _filter.to;
+    if (from != null && day.isBefore(from)) return false;
+    if (to != null && day.isAfter(to)) return false;
+    return true;
+  }
+
+  /// Opens the filter's panel over the records: the panel edits the word and
+  /// the two days and reports each change, so the page thins out behind it
+  /// as conditions arrive.
+  Future<void> _openFilter(List<(LiveRoom, DateTime)> records) {
+    DateTime dayOf(DateTime time) => DateTime(time.year, time.month, time.day);
+    DateTime? earliest;
+    for (final (_, watchedAt) in records) {
+      final day = dayOf(watchedAt);
+      if (earliest == null || day.isBefore(earliest)) earliest = day;
     }
+    return showDsPanel<void>(
+      context: context,
+      builder: (context) => _FilterPanel(
+        filter: _filter,
+        firstDay: earliest ?? dayOf(DateTime.now()),
+        onChanged: (filter) {
+          if (mounted) setState(() => _filter = filter);
+        },
+      ),
+    );
   }
 
-  void _closeFilter() {
-    if (!_filtering) return;
-    setState(() {
-      _filtering = false;
-      _query.clear();
-    });
-  }
-
-  /// Clears the query but leaves the field open.
-  void _resetFilter() {
-    _query.clear();
-    setState(() {});
-  }
-
-  /// Escape clears the query, and closes the filter once it is empty.
-  void _handleEscape() {
-    if (!_filtering) return;
-    if (_query.text.isNotEmpty) {
-      _resetFilter();
-    } else {
-      _closeFilter();
-    }
-  }
+  /// Clears every condition; every record shows again.
+  void _resetFilter() => setState(() => _filter = (query: '', from: null, to: null));
 
   /// Re-reads every record's room state, keeping each watch moment; the
   /// failures are counted rather than hidden.
@@ -415,21 +444,21 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   }
 }
 
-/// The page's header: the count against the cap, the filter toggle, the cap
-/// button and clear. Open, the filter's field and its live match count sit
-/// under them in the same block.
+/// The page's header, a toolbar: the count against the cap (and how many
+/// the filter leaves) on the left, the record's verbs on the right — refresh,
+/// the filter with its condition count, the cap, and clear. The filter's
+/// conditions live in their own panel, so this line stays one line; a narrow
+/// window keeps the verbs as icons.
 final class _Header extends StatelessWidget {
   const _Header({
     required this.total,
     required this.limit,
     required this.matches,
+    required this.filterCount,
     required this.filtering,
     required this.busy,
     required this.canClear,
-    required this.query,
-    required this.queryFocus,
-    required this.onQueryChanged,
-    required this.onToggleFilter,
+    required this.onOpenFilter,
     required this.onEditLimit,
     required this.onRefresh,
     required this.onClear,
@@ -438,13 +467,14 @@ final class _Header extends StatelessWidget {
   final int total;
   final int limit;
   final int matches;
+
+  /// How many filter conditions are set.
+  final int filterCount;
+
   final bool filtering;
   final bool busy;
   final bool canClear;
-  final TextEditingController query;
-  final FocusNode queryFocus;
-  final ValueChanged<String> onQueryChanged;
-  final VoidCallback onToggleFilter;
+  final VoidCallback onOpenFilter;
   final VoidCallback onEditLimit;
   final VoidCallback onRefresh;
   final VoidCallback onClear;
@@ -456,273 +486,223 @@ final class _Header extends StatelessWidget {
     final colors = DsTheme.colorsOf(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s8,
-        children: [
-          Wrap(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 560;
+          return Row(
             spacing: DsSpace.s8,
-            runSpacing: DsSpace.s8,
-            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Text(
-                t.history.recordCount(count: total, limit: limit),
-                style: theme.typography.small.copyWith(color: colors.textMuted),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: t.history.recordCount(count: total, limit: limit),
+                        style: theme.typography.small.copyWith(color: colors.textMuted),
+                      ),
+                      if (filtering) ...[
+                        TextSpan(
+                          text: ' · ',
+                          style: theme.typography.small.copyWith(color: colors.textSubtle),
+                        ),
+                        TextSpan(
+                          text: t.history.filterMatches(count: matches),
+                          style: theme.typography.small.copyWith(color: colors.accentText, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              DsButton(
+              DsButton.icon(
                 variant: DsButtonVariant.ghost,
                 size: DsSize.sm,
-                leading: const DsIcon(DsIcons.refreshCw),
+                semanticLabel: t.history.refresh,
                 onPressed: busy || total == 0 ? null : onRefresh,
-                child: Text(t.history.refresh),
+                icon: const DsIcon(DsIcons.refreshCw, size: 16),
               ),
               DsButton(
                 variant: filtering ? DsButtonVariant.tinted : DsButtonVariant.secondary,
                 size: DsSize.sm,
-                leading: DsIcon(filtering ? DsIcons.filterX : DsIcons.filter),
-                onPressed: total == 0 && !filtering ? null : onToggleFilter,
-                child: Text(filtering ? t.history.filterClose : t.history.filter),
+                leading: const DsIcon(DsIcons.filter, size: 16),
+                trailing: filterCount == 0 ? null : DsCount(filterCount),
+                semanticLabel: filterCount == 0 ? t.history.filter : '${t.history.filter}, $filterCount',
+                onPressed: total == 0 && !filtering ? null : onOpenFilter,
+                child: Text(t.history.filter),
               ),
-              DsButton(
+              DsButton.icon(
                 variant: DsButtonVariant.ghost,
                 size: DsSize.sm,
-                leading: const DsIcon(DsIcons.gauge),
+                semanticLabel: t.history.limitAction,
                 onPressed: busy ? null : onEditLimit,
-                child: Text(t.history.limitAction),
+                icon: const DsIcon(DsIcons.gauge, size: 16),
               ),
-              DsButton(
-                variant: DsButtonVariant.dangerSoft,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.trash2),
-                onPressed: busy || !canClear ? null : onClear,
-                child: Text(t.history.clear),
-              ),
+              if (compact)
+                DsButton.icon(
+                  variant: DsButtonVariant.dangerSoft,
+                  size: DsSize.sm,
+                  semanticLabel: t.history.clear,
+                  onPressed: busy || !canClear ? null : onClear,
+                  icon: const DsIcon(DsIcons.trash2, size: 16),
+                )
+              else
+                DsButton(
+                  variant: DsButtonVariant.dangerSoft,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.trash2, size: 16),
+                  onPressed: busy || !canClear ? null : onClear,
+                  child: Text(t.history.clear),
+                ),
             ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// The filter's panel: the word over the room and the watched-between days,
+/// each field labelled the kit's way. Every edit reports at once — the page
+/// behind a desktop panel thins out as the conditions arrive — and the
+/// footer keeps the way back to every record.
+final class _FilterPanel extends StatefulWidget {
+  const _FilterPanel({required this.filter, required this.firstDay, required this.onChanged});
+
+  /// The conditions when the panel opened.
+  final _HistoryFilter filter;
+
+  /// The earliest record's day: the first day either picker offers.
+  final DateTime firstDay;
+
+  /// Reports every edit, whole.
+  final ValueChanged<_HistoryFilter> onChanged;
+
+  @override
+  State<_FilterPanel> createState() => _FilterPanelState();
+}
+
+final class _FilterPanelState extends State<_FilterPanel> {
+  late final TextEditingController _query = TextEditingController(text: widget.filter.query);
+  late DateTime? _from = widget.filter.from;
+  late DateTime? _to = widget.filter.to;
+
+  /// A new key per reset: a date field empties from outside only when its
+  /// own state is rebuilt.
+  int _clears = 0;
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  void _emit() => widget.onChanged((query: _query.text, from: _from, to: _to));
+
+  bool get _empty => _query.text.trim().isEmpty && _from == null && _to == null;
+
+  void _reset() {
+    _query.clear();
+    setState(() {
+      _from = null;
+      _to = null;
+      _clears++;
+    });
+    _emit();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final now = DateTime.now();
+    final lastDay = DateTime(now.year, now.month, now.day);
+    final firstDay = widget.firstDay.isAfter(lastDay) ? lastDay : widget.firstDay;
+    // Each picker keeps the other side's choice as its far bound, so the
+    // range can never be picked backwards.
+    final dates = [
+      DsField(
+        label: Text(t.history.filterStart),
+        child: DsDatePicker(
+          key: ValueKey('history-filter-from-$_clears'),
+          value: _from,
+          firstDate: firstDay,
+          lastDate: _to ?? lastDay,
+          placeholder: t.history.filterAnyDay,
+          semanticLabel: t.history.filterStart,
+          onChanged: (day) {
+            setState(() => _from = day);
+            _emit();
+          },
+        ),
+      ),
+      DsField(
+        label: Text(t.history.filterEnd),
+        child: DsDatePicker(
+          key: ValueKey('history-filter-to-$_clears'),
+          value: _to,
+          firstDate: _from ?? firstDay,
+          lastDate: lastDay,
+          placeholder: t.history.filterAnyDay,
+          semanticLabel: t.history.filterEnd,
+          onChanged: (day) {
+            setState(() => _to = day);
+            _emit();
+          },
+        ),
+      ),
+    ];
+    return DsPanel(
+      title: Text(t.history.filterPanelTitle),
+      footer: Row(
+        spacing: DsSpace.s8,
+        children: [
+          Expanded(
+            child: DsButton(
+              variant: DsButtonVariant.secondary,
+              onPressed: _empty ? null : _reset,
+              child: Text(t.history.filterReset),
+            ),
           ),
-          if (filtering) ...[
-            DsSearchField(
-              key: const ValueKey('history-filter-field'),
-              controller: query,
-              focusNode: queryFocus,
+          Expanded(
+            child: DsButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.history.filterDone)),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s16,
+        children: [
+          DsField(
+            label: Text(t.history.filterKeyword),
+            child: DsSearchField(
+              controller: _query,
               autofocus: true,
               placeholder: t.history.filterHint,
-              semanticLabel: t.history.filter,
-              onChanged: onQueryChanged,
+              semanticLabel: t.history.filterKeyword,
+              onChanged: (_) {
+                setState(() {});
+                _emit();
+              },
             ),
-            if (query.text.trim().isNotEmpty)
-              Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: Text(
-                  t.history.filterMatches(count: matches),
-                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                ),
-              ),
-          ],
+          ),
+          ...dates,
         ],
       ),
     );
   }
 }
 
-/// One watched room as a list card: the cover as a thumb, the title, the
-/// streamer, and the record's remove button.
-final class _HistoryCard extends StatelessWidget {
-  const _HistoryCard({required this.room, required this.onOpen, required this.onRemove});
-
-  final LiveRoom room;
-
-  /// Opens the room again.
-  final VoidCallback onOpen;
-
-  /// Null while another change runs.
-  final VoidCallback? onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final t = context.t;
-    return DsContextMenuRegion(
-      semanticLabel: t.common.more,
-      items: _historyMenuItems(context, room, onOpen: onOpen, onRemove: onRemove),
-      child: DsCard(
-        onPressed: onOpen,
-        semanticLabel: room.content.title,
-        style: DsCardStyle(
-          padding: const EdgeInsets.all(DsSpace.s8),
-          background: const Color(0x00000000),
-          shadows: const [],
-          hovered: DsCardStyle(
-            background: colors.hover,
-            shadows: [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))],
-          ),
-        ),
-        child: Row(
-          spacing: DsSpace.s12,
-          children: [
-            SizedBox(
-              width: theme.sizes.lg * 2,
-              child: DsImage(
-                image: cachedImage(room.content.coverUrl),
-                aspectRatio: 16 / 9,
-                semanticLabel: room.content.title,
-                style: DsImageStyle(
-                  borderRadius: BorderRadius.circular(theme.radii.nested(theme.radii.card, DsSpace.s8)),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s3,
-                children: [
-                  Text(
-                    room.content.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                  ),
-                  Text(
-                    room.anchor?.name ?? room.ref.roomId,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
-                  ),
-                ],
-              ),
-            ),
-            DsPressable(
-              semanticLabel: context.t.history.remove,
-              onPressed: onRemove,
-              builder: (context, states, _) {
-                final hovered = states.contains(WidgetState.hovered);
-                return DsIcon(
-                  DsIcons.x,
-                  size: theme.sizes.iconSm,
-                  color: hovered ? colors.danger.fill : colors.textSubtle,
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// The history card's context menu: open, copy the room's link, remove.
-List<Widget> _historyMenuItems(
-  BuildContext context,
-  LiveRoom room, {
-  required VoidCallback onOpen,
-  required VoidCallback? onRemove,
-}) {
-  final t = context.t;
-  final link = roomLinkOf(room);
-  return [
-    DsMenuItem(leading: const DsIcon(DsIcons.play), label: Text(t.history.openRoom), onPressed: onOpen),
-    if (link.isNotEmpty)
-      DsMenuItem(
-        leading: const DsIcon(DsIcons.link),
-        label: Text(t.room.copyLink),
-        onPressed: () => unawaited(copyRoomLink(context, room)),
-      ),
-    const DsMenuDivider(),
-    DsMenuItem(
-      leading: const DsIcon(DsIcons.trash2),
-      label: Text(t.history.remove),
-      destructive: true,
-      onPressed: onRemove,
-    ),
-  ];
-}
-
-/// One watched room as a grid card: its cover, the title and streamer
-/// beneath, and the watch clock over the picture; the same context menu as
-/// the list card.
-final class _HistoryGridCard extends StatelessWidget {
-  const _HistoryGridCard({required this.room, required this.watchedAt, required this.onOpen, required this.onRemove});
-
-  final LiveRoom room;
-  final DateTime watchedAt;
-  final VoidCallback onOpen;
-  final VoidCallback? onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return DsContextMenuRegion(
-      semanticLabel: context.t.common.more,
-      items: _historyMenuItems(context, room, onOpen: onOpen, onRemove: onRemove),
-      child: DsCard(
-        onPressed: onOpen,
-        style: DsCardStyle(padding: EdgeInsets.zero, borderRadius: BorderRadius.circular(theme.radii.card)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Stack(
-              children: [
-                DsImage(
-                  image: cachedImage(room.content.coverUrl),
-                  aspectRatio: 16 / 9,
-                  semanticLabel: room.content.title,
-                  style: DsImageStyle(borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card))),
-                ),
-                PositionedDirectional(
-                  bottom: DsSpace.s6,
-                  end: DsSpace.s6,
-                  child: RoomCoverChip(text: _watchClock(watchedAt)),
-                ),
-              ],
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: 3,
-                  children: [
-                    // Flexible: a narrow column leaves less height than the
-                    // two lines need at the viewer's text scale; the lines
-                    // then shrink their box instead of overflowing it.
-                    Flexible(
-                      child: Text(
-                        room.content.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                      ),
-                    ),
-                    Flexible(
-                      child: Text(
-                        room.anchor?.name ?? room.ref.roomId,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// The moment watched, as a clock on today's records and a short date
-  /// otherwise.
-  static String _watchClock(DateTime time) {
-    final local = time.toLocal();
-    final now = DateTime.now();
-    String two(int value) => value.toString().padLeft(2, '0');
-    final clock = '${two(local.hour)}:${two(local.minute)}';
-    final sameDay = local.year == now.year && local.month == now.month && local.day == now.day;
-    return sameDay ? clock : '${two(local.month)}-${two(local.day)}';
-  }
+/// The moment a record was watched, as a clock on today's records and a
+/// short date otherwise.
+String _watchClock(DateTime time) {
+  final local = time.toLocal();
+  final now = DateTime.now();
+  String two(int value) => value.toString().padLeft(2, '0');
+  final clock = '${two(local.hour)}:${two(local.minute)}';
+  final sameDay = local.year == now.year && local.month == now.month && local.day == now.day;
+  return sameDay ? clock : '${two(local.month)}-${two(local.day)}';
 }
 
 /// The list's opening placeholder.
@@ -750,19 +730,22 @@ final class _HistoryCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(DsSpace.s8),
+    // The row card's own pieces — the avatar and its three lines — so nothing
+    // shifts when the first record arrives.
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s8),
       child: Row(
         spacing: DsSpace.s12,
         children: [
-          DsSkeleton.block(width: theme.sizes.lg * 2, height: theme.sizes.lg * 2 * 9 / 16),
-          const Expanded(
+          DsSkeleton.block(width: 48, height: 48),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s3,
+              mainAxisSize: MainAxisSize.min,
+              spacing: DsSpace.s6,
               children: [
                 DsSkeleton(width: DsSpace.s32),
+                DsSkeleton(width: DsSpace.s24),
                 DsSkeleton(width: DsSpace.s20),
               ],
             ),

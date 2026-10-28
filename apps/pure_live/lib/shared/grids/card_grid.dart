@@ -6,24 +6,42 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyUpEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live/app/app.dart' show BrowseSettings, browseSettingsProvider;
+import 'package:pure_live/features/settings/room/room_card_settings.dart' show RoomCardCoverAspect, roomCardTileHeight;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/focus/tv_focus_scale.dart';
 
 /// The widest a feed card gets before the grid takes another column, and the
-/// narrowest it shrinks to before giving one back: the measure every card
-/// grid holds itself, since no setting sets a card width any more.
+/// narrowest one may get: the measure every card grid holds itself. A pinned
+/// column count is a ceiling — a window that cannot hold that many cards at
+/// this width shows fewer instead of squeezing them.
 const double kBrowseCardMaxWidth = 340;
 const double kBrowseCardMinWidth = 220;
 
 /// The most columns a feed takes, however wide its window.
 const int kBrowseCardMaxColumns = 12;
 
-/// The narrowest a list-layout card keeps before its row gives a column
-/// back. The column count follows the window; no surface fixes it at two
-/// or three.
+/// The narrowest a list row keeps when its design is wider than a card — the
+/// video and series rows with a fixed thumbnail. The room card's own row
+/// takes the grid's card width instead.
 const double kListCardMinWidth = 360;
 
-/// The card width the list layout gives itself in [content] pixels: the
+/// The columns a viewer's [ceiling] allows in [content] pixels: their number
+/// when the window holds that many cards at [minWidth], fewer when it does
+/// not. 0 — no ceiling — leaves the count to the width alone.
+int cappedColumnsForWidth(double content, {required double spacing, required int ceiling, required double minWidth}) {
+  if (ceiling <= 0) return 0;
+  if (content <= 0) return ceiling;
+  final fits = math.max(1, ((content + spacing) / (minWidth + spacing)).floor());
+  return math.min(ceiling, fits);
+}
+
+/// One column's width when [columns] share [content] pixels; the hair keeps
+/// [SliverGridDelegateWithMaxCrossAxisExtent] from tipping into one more.
+double columnExtentForWidth(double content, int columns, double spacing) =>
+    (content - spacing * (columns - 1)) / columns + 0.01;
+
+/// The row width the list layout gives itself in [content] pixels: the
 /// widest that still leaves whole columns at least [kListCardMinWidth] wide.
 double listCardExtentForWidth(double content, {double spacing = DsSpace.s12}) {
   if (content <= 0) return kListCardMinWidth;
@@ -81,7 +99,7 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
     this.cardExtent,
     this.crossSpacing = DsSpace.s16,
     this.mainSpacing = DsSpace.s16,
-    this.aspectRatio = roomCardAspectRatio,
+    this.aspectRatio,
     this.listMainAxisExtent,
     this.isLoading = false,
     this.hasMore = false,
@@ -98,13 +116,10 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
     this.skeletonCount = 12,
     this.scrollController,
     this.layout = CardLayout.grid,
+    this.listMatchesGridWidth = false,
     this.listItemBuilder,
     super.key,
   });
-
-  /// The room card's tile ratio: a 16:9 cover on top and a title row
-  /// beneath it. Wide row cards (areas, history) pass their own.
-  static const double roomCardAspectRatio = 1.25;
 
   /// The items shown.
   final List<T> items;
@@ -119,6 +134,12 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   /// Whether the items are a card grid or a one-column list.
   final CardLayout layout;
 
+  /// Whether a list row takes a grid card's width and columns. The room
+  /// feeds set it so switching the layout never resizes their cards; a row
+  /// whose design is wider than a card (a video row's fixed thumbnail)
+  /// leaves it false and keeps [kListCardMinWidth].
+  final bool listMatchesGridWidth;
+
   /// The widest a card gets; the columns follow the width. Null — what every
   /// feed passes now that the card width is no longer a setting — lets the
   /// grid take the width its own columns imply for the space it is given
@@ -132,8 +153,11 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   /// The gap between rows of cards (the viewer's row spacing).
   final double mainSpacing;
 
-  /// The tile's width over height; the card fills its tile.
-  final double aspectRatio;
+  /// The tile's width over height; the card fills its tile. Null — what a
+  /// room feed passes — takes the room card's own ratio, from the browse
+  /// layout's cover shape and title lines; wide row cards (areas, history)
+  /// pass their own.
+  final double? aspectRatio;
 
   /// The fixed height of a card in the list layout's multi-column rows, so
   /// a row design keeps its proportions however wide its column gets. Null
@@ -220,6 +244,14 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
   double _gridWidth = 0;
   int _columns = 1;
 
+  /// The tile ratio the last build drew: the focus walk needs the same rows
+  /// the delegate made.
+  double _tileAspect = 1.25;
+
+  /// The room card's fixed tile height for the last build's column width;
+  /// null for a caller that brought its own ratio.
+  double? _gridItemExtent;
+
   /// One more than the last programmatic focus move: a retry waiting for a
   /// row to build is dropped when another arrow has moved on.
   int _focusToken = 0;
@@ -232,28 +264,57 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
 
   /// The card width the collection uses in a box [width] wide: the caller's
   /// measure when it brought one, the columns the window implies otherwise.
-  double _extentFor(double width) {
+  /// A viewer's column cap lowers the count when the window is too narrow
+  /// to hold that many cards at [kBrowseCardMinWidth].
+  double _extentFor(double width, BrowseSettings browse) {
     final padding = widget.padding.resolve(Directionality.of(context));
     final content = math.max(0, width - padding.horizontal).toDouble();
+    final capped = cappedColumnsForWidth(
+      content,
+      spacing: widget.crossSpacing,
+      ceiling: browse.gridColumns,
+      minWidth: kBrowseCardMinWidth,
+    );
+    if (widget.cardExtent == null && capped > 0 && content > 0) {
+      return columnExtentForWidth(content, capped, widget.crossSpacing);
+    }
     return widget.cardExtent ?? browseCardExtentForWidth(content, crossSpacing: widget.crossSpacing);
   }
 
   /// The columns a width gets from [SliverGridDelegateWithMaxCrossAxisExtent].
-  int _columnsFor(double width) {
+  int _columnsFor(double width, BrowseSettings browse) {
     final padding = widget.padding.resolve(Directionality.of(context));
     final extent = math.max(0, width - padding.horizontal);
-    return math.max(1, (extent / (_extentFor(width) + widget.crossSpacing)).ceil());
+    return math.max(1, (extent / (_extentFor(width, browse) + widget.crossSpacing)).ceil());
   }
 
-  /// The list layout's delegate: the same responsive columns as the grid,
-  /// but the row's own height so a wide column never stretches a row card.
-  SliverGridDelegateWithMaxCrossAxisExtent _listDelegate(double content) => SliverGridDelegateWithMaxCrossAxisExtent(
-    maxCrossAxisExtent: listCardExtentForWidth(content, spacing: widget.crossSpacing),
-    mainAxisSpacing: widget.mainSpacing,
-    crossAxisSpacing: widget.crossSpacing,
-    mainAxisExtent: widget.listMainAxisExtent,
-    childAspectRatio: widget.listMainAxisExtent == null ? widget.aspectRatio : 1,
-  );
+  /// The list layout's delegate. A row that takes the card's width
+  /// ([CardGrid.listMatchesGridWidth]) uses exactly the grid's measure, so
+  /// switching layouts never resizes the cards; a row with its own wider
+  /// design keeps [kListCardMinWidth]. Either way the row keeps its fixed
+  /// height, so its design does not stretch with the column.
+  SliverGridDelegateWithMaxCrossAxisExtent _listDelegate(double width, BrowseSettings browse, double tileAspect) {
+    final padding = widget.padding.resolve(Directionality.of(context));
+    final content = math.max(0, width - padding.horizontal).toDouble();
+    final capped = cappedColumnsForWidth(
+      content,
+      spacing: widget.crossSpacing,
+      ceiling: browse.gridColumns,
+      minWidth: kListCardMinWidth,
+    );
+    final extent = widget.listMatchesGridWidth
+        ? _extentFor(width, browse)
+        : capped > 0 && content > 0
+        ? columnExtentForWidth(content, capped, widget.crossSpacing)
+        : listCardExtentForWidth(content, spacing: widget.crossSpacing);
+    return SliverGridDelegateWithMaxCrossAxisExtent(
+      maxCrossAxisExtent: extent,
+      mainAxisSpacing: widget.mainSpacing,
+      crossAxisSpacing: widget.crossSpacing,
+      mainAxisExtent: widget.listMainAxisExtent,
+      childAspectRatio: widget.listMainAxisExtent == null ? tileAspect : 1,
+    );
+  }
 
   @override
   void dispose() {
@@ -397,8 +458,8 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     if (width <= 0) return;
     final itemWidth = (width - widget.crossSpacing * (columns - 1)) / columns;
     final itemHeight = widget.layout == CardLayout.list
-        ? widget.listMainAxisExtent ?? itemWidth / widget.aspectRatio
-        : itemWidth / widget.aspectRatio;
+        ? widget.listMainAxisExtent ?? itemWidth / _tileAspect
+        : _gridItemExtent ?? itemWidth / _tileAspect;
     start = padding.top + (index ~/ columns) * (itemHeight + widget.mainSpacing);
     extent = itemHeight;
     var target = position.pixels;
@@ -437,24 +498,23 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final browse = ref.watch(browseSettingsProvider);
+    final tileAspect = widget.aspectRatio ?? 1.25;
+    _tileAspect = tileAspect;
     if (widget.items.isEmpty && widget.isLoading) {
-      return widget.layout == CardLayout.list
-          ? _SkeletonListGrid(
-              crossSpacing: widget.crossSpacing,
-              mainSpacing: widget.mainSpacing,
-              aspectRatio: widget.aspectRatio,
-              mainAxisExtent: widget.listMainAxisExtent,
-              count: widget.skeletonCount,
-              padding: widget.padding,
-            )
-          : _SkeletonGrid(
-              cardExtent: widget.cardExtent,
-              crossSpacing: widget.crossSpacing,
-              mainSpacing: widget.mainSpacing,
-              aspectRatio: widget.aspectRatio,
-              count: widget.skeletonCount,
-              padding: widget.padding,
-            );
+      final listRow = widget.layout == CardLayout.list;
+      return _SkeletonGrid(
+        cardExtent: widget.cardExtent,
+        crossSpacing: widget.crossSpacing,
+        mainSpacing: widget.mainSpacing,
+        aspectRatio: tileAspect,
+        cover: widget.aspectRatio == null ? browse.coverAspect : null,
+        mainAxisExtent: listRow ? widget.listMainAxisExtent : null,
+        listMatchesGridWidth: widget.listMatchesGridWidth,
+        columns: browse.gridColumns,
+        count: widget.skeletonCount,
+        padding: widget.padding,
+      );
     }
     if (widget.items.isEmpty && widget.error != null) {
       return _MessagePane(
@@ -486,12 +546,12 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
         },
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // The rows flow into as many columns as the window can hold at
-            // a row card's own width, so a wide window shows three or four
-            // side by side instead of one full-width band each.
+            // The rows keep a grid card's width and columns, so switching
+            // the layout never resizes the cards; a wide window shows the
+            // same number of rows side by side as it would cards.
             final padding = widget.padding.resolve(Directionality.of(context));
             final content = math.max(0, constraints.maxWidth - padding.horizontal).toDouble();
-            final delegate = _listDelegate(content);
+            final delegate = _listDelegate(constraints.maxWidth, browse, tileAspect);
             _gridWidth = constraints.maxWidth;
             _columns = math.max(1, (content / (delegate.maxCrossAxisExtent + widget.crossSpacing)).ceil());
             return GridView.builder(
@@ -521,7 +581,18 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
             // The same width and columns the delegate below computes, for
             // the D-pad's row math.
             _gridWidth = constraints.maxWidth;
-            _columns = _columnsFor(constraints.maxWidth);
+            _columns = _columnsFor(constraints.maxWidth, browse);
+            // A room card keeps a fixed information area under its cover, so
+            // its tile's height comes from the column width: a ratio would
+            // grow that block along with wide tiles. A caller's own ratio
+            // still speaks for its design.
+            final padding = widget.padding.resolve(Directionality.of(context));
+            final content = math.max(0, constraints.maxWidth - padding.horizontal).toDouble();
+            final tileWidth = (content - widget.crossSpacing * (_columns - 1)) / _columns;
+            final roomExtent = widget.aspectRatio == null && content > 0
+                ? roomCardTileHeight(tileWidth, cover: browse.coverAspect)
+                : null;
+            _gridItemExtent = roomExtent;
             return GridView.builder(
               controller: _scroll,
               padding: widget.padding,
@@ -529,10 +600,11 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
               // to pull (the reference's always-scrollable feeds).
               physics: refresh == null ? null : const AlwaysScrollableScrollPhysics(),
               gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: _extentFor(constraints.maxWidth),
+                maxCrossAxisExtent: _extentFor(constraints.maxWidth, browse),
                 mainAxisSpacing: widget.mainSpacing,
                 crossAxisSpacing: widget.crossSpacing,
-                childAspectRatio: widget.aspectRatio,
+                mainAxisExtent: roomExtent,
+                childAspectRatio: roomExtent == null ? tileAspect : 1,
               ),
               // The footer row rides the grid: one more tile while a page
               // loads.
@@ -747,7 +819,8 @@ final class _RefreshErrorBanner extends StatelessWidget {
   }
 }
 
-/// The first page's placeholder: the same grid shape, no content.
+/// The first page's placeholder: the same grid shape — or the same row
+/// shape, when the list layout fixed a row height — with no content.
 final class _SkeletonGrid extends StatelessWidget {
   const _SkeletonGrid({
     required this.crossSpacing,
@@ -755,13 +828,30 @@ final class _SkeletonGrid extends StatelessWidget {
     required this.aspectRatio,
     required this.count,
     required this.padding,
+    required this.columns,
     this.cardExtent,
+    this.cover,
+    this.mainAxisExtent,
+    this.listMatchesGridWidth = false,
   });
 
   final double? cardExtent;
   final double crossSpacing;
   final double mainSpacing;
   final double aspectRatio;
+
+  /// The cover shape of a room card tile: its height comes from the column
+  /// width plus the fixed information block, as the real grid's does. Null
+  /// for a caller with its own ratio.
+  final RoomCardCoverAspect? cover;
+
+  /// The fixed height of a list row; null draws the card's own ratio.
+  final double? mainAxisExtent;
+
+  /// Whether the rows keep the grid's card width; when false a row is held
+  /// to [kListCardMinWidth], as the live list delegate does.
+  final bool listMatchesGridWidth;
+  final int columns;
   final int count;
   final EdgeInsetsGeometry padding;
 
@@ -773,13 +863,34 @@ final class _SkeletonGrid extends StatelessWidget {
         // reflow the page when the first rooms arrive.
         final resolved = padding.resolve(Directionality.of(context));
         final content = math.max(0, constraints.maxWidth - resolved.horizontal).toDouble();
+        final wideRows = mainAxisExtent != null && !listMatchesGridWidth;
+        final capped = cappedColumnsForWidth(
+          content,
+          spacing: crossSpacing,
+          ceiling: columns,
+          minWidth: wideRows ? kListCardMinWidth : kBrowseCardMinWidth,
+        );
+        final extent =
+            cardExtent ??
+            (capped > 0 && content > 0
+                ? columnExtentForWidth(content, capped, crossSpacing)
+                : wideRows
+                ? listCardExtentForWidth(content, spacing: crossSpacing)
+                : browseCardExtentForWidth(content, crossSpacing: crossSpacing));
+        final columnCount = math.max(1, (content / (extent + crossSpacing)).ceil());
+        final tileWidth = (content - crossSpacing * (columnCount - 1)) / columnCount;
+        final roomExtent = mainAxisExtent == null && cover != null && content > 0
+            ? roomCardTileHeight(tileWidth, cover: cover!)
+            : null;
+        final fixedExtent = mainAxisExtent ?? roomExtent;
         return GridView.builder(
           padding: padding,
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: cardExtent ?? browseCardExtentForWidth(content, crossSpacing: crossSpacing),
+            maxCrossAxisExtent: extent,
             mainAxisSpacing: mainSpacing,
             crossAxisSpacing: crossSpacing,
-            childAspectRatio: aspectRatio,
+            mainAxisExtent: fixedExtent,
+            childAspectRatio: fixedExtent == null ? aspectRatio : 1,
           ),
           itemCount: count,
           // The shimmer's sweep over the plain block: one shared animation
@@ -904,49 +1015,5 @@ final class CardList<T> extends StatelessWidget {
     if (notification.metrics.pixels < notification.metrics.maxScrollExtent - 600) return false;
     unawaited(onLoadMore());
     return false;
-  }
-}
-
-/// The list layout's first-page placeholder: the same responsive columns,
-/// no content.
-final class _SkeletonListGrid extends StatelessWidget {
-  const _SkeletonListGrid({
-    required this.crossSpacing,
-    required this.mainSpacing,
-    required this.aspectRatio,
-    required this.mainAxisExtent,
-    required this.count,
-    required this.padding,
-  });
-
-  final double crossSpacing;
-  final double mainSpacing;
-  final double aspectRatio;
-  final double? mainAxisExtent;
-  final int count;
-  final EdgeInsetsGeometry padding;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final resolved = padding.resolve(Directionality.of(context));
-        final content = math.max(0, constraints.maxWidth - resolved.horizontal).toDouble();
-        return GridView.builder(
-          padding: padding,
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: listCardExtentForWidth(content, spacing: crossSpacing),
-            mainAxisSpacing: mainSpacing,
-            crossAxisSpacing: crossSpacing,
-            mainAxisExtent: mainAxisExtent,
-            childAspectRatio: mainAxisExtent == null ? aspectRatio : 1,
-          ),
-          itemCount: count,
-          itemBuilder: (context, index) => const DsShimmer(
-            child: DsSkeleton.block(width: double.infinity, height: double.infinity),
-          ),
-        );
-      },
-    );
   }
 }

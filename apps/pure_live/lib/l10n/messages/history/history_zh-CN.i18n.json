@@ -9,8 +9,13 @@
   "openFailedTitle": "历史记录打不开",
   "recordCount": "已记录 {count: int} / 上限 {limit: int} 条",
   "filter": "筛选",
-  "filterClose": "关闭筛选",
+  "filterPanelTitle": "筛选观看记录",
+  "filterKeyword": "关键词",
   "filterHint": "按标题、主播、房间号或平台筛选",
+  "filterStart": "开始时间",
+  "filterEnd": "结束时间",
+  "filterAnyDay": "不限",
+  "filterDone": "完成",
   "filterMatches": "{count: int} 条匹配",
   "filterReset": "清除筛选",
   "filterEmptyTitle": "没有符合条件的观看记录",
@@ -32,6 +37,5 @@
   "limitInvalid": "请输入 {min: int} 到 {max: int} 之间的整数。",
   "limitSaved": "上限已设为 {limit: int} 条",
   "refresh": "刷新",
-  "refreshFailed": "{count: int} 条记录刷新失败",
-  "openRoom": "进入直播间"
+  "refreshFailed": "{count: int} 条记录刷新失败"
 }

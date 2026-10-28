@@ -9,8 +9,13 @@
   "openFailedTitle": "The history could not open",
   "recordCount": "Recorded {count: int} / limit {limit: int}",
   "filter": "Filter",
-  "filterClose": "Close filter",
+  "filterPanelTitle": "Filter watch history",
+  "filterKeyword": "Keyword",
   "filterHint": "Filter by title, streamer, room ID or platform",
+  "filterStart": "Start date",
+  "filterEnd": "End date",
+  "filterAnyDay": "Any",
+  "filterDone": "Done",
   "filterMatches": "{count: int} found",
   "filterReset": "Clear filter",
   "filterEmptyTitle": "No history entries match",
@@ -32,6 +37,5 @@
   "limitInvalid": "Enter a whole number from {min: int} to {max: int}.",
   "limitSaved": "History limit set to {limit: int}",
   "refresh": "Refresh",
-  "refreshFailed": "{count: int} records could not be refreshed",
-  "openRoom": "Open the room"
+  "refreshFailed": "{count: int} records could not be refreshed"
 }

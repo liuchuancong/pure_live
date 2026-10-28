@@ -9,7 +9,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart' show kRoomCardListDesignHeight;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart' show followsProvider;
-import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard;
+import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/modules/vod/controller/vod_live.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -65,7 +65,11 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
                   final room = followedRooms[index];
                   return SizedBox(
                     width: 320,
-                    child: RoomCard(room: room, listRow: true, onOpen: () => _openRoom(room, followedRooms)),
+                    child: RoomCardMenu(
+                      room: room,
+                      onOpen: () => _openRoom(room, followedRooms),
+                      child: RoomCard(room: room, listRow: true, onOpen: () => _openRoom(room, followedRooms)),
+                    ),
                   );
                 },
               ),
@@ -123,9 +127,13 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
           child: CardGrid<LiveRoom>(
             items: feed.rooms,
             layout: ref.watch(browseLayoutProvider),
+            listMatchesGridWidth: true,
             listMainAxisExtent: kRoomCardListDesignHeight,
-            listItemBuilder: (context, room) =>
-                RoomCard(room: room, listRow: true, onOpen: () => _openRoom(room, feed.rooms)),
+            listItemBuilder: (context, room) => RoomCardMenu(
+              room: room,
+              onOpen: () => _openRoom(room, feed.rooms),
+              child: RoomCard(room: room, listRow: true, onOpen: () => _openRoom(room, feed.rooms)),
+            ),
             crossSpacing: settings.crossSpacing,
             mainSpacing: settings.mainSpacing,
             isLoading: feed.loading,
@@ -138,7 +146,11 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
             emptyIcon: DsIcons.tvMinimal,
             emptyTitle: t.vod.liveEmptyTitle,
             emptyDescription: t.vod.liveEmptyDescription,
-            itemBuilder: (context, room) => RoomCard(room: room, onOpen: () => _openRoom(room, feed.rooms)),
+            itemBuilder: (context, room) => RoomCardMenu(
+              room: room,
+              onOpen: () => _openRoom(room, feed.rooms),
+              child: RoomCard(room: room, onOpen: () => _openRoom(room, feed.rooms)),
+            ),
           ),
         ),
       ],

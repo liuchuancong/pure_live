@@ -28,10 +28,13 @@
   "tagsFilter": "Filter by tag",
   "allTags": "All tags",
   "tagsEmpty": "No tags yet",
+  "newTag": "New tag",
   "tagFieldHint": "New tag name",
   "addTag": "Add tag",
   "deleteTagTitle": "Delete “{name: String}”?",
   "deleteTagBody": "Every room leaves this tag; the rooms stay followed.",
+  "tagFollowTitle": "Follow first to add tags",
+  "tagFollowBody": "Tags belong to followed rooms. Follow this room first, then give it any number of tags.",
   "tagExists": "That tag already exists",
   "tagInvalid": "Enter a tag name",
   "deleteTag": "Delete"

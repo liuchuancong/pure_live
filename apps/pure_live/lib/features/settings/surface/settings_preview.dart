@@ -67,9 +67,50 @@ final class _SettingsPreviewPageState extends State<SettingsPreviewPage> {
     // stays black, because the sample — not the shell — owns those colours.
     final colors = DsTheme.colorsOf(context);
     final wide = MediaQuery.sizeOf(context).width >= kSettingsPreviewWideBreakpoint;
-    return ColoredBox(
-      color: colors.canvas,
-      child: SafeArea(child: wide ? _wide(context) : _narrow(context)),
+    return PopScope(
+      // A folded-away panel answers the system back before the page does.
+      canPop: wide || !_settingsOpen,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _settingsOpen) setState(() => _settingsOpen = false);
+      },
+      child: ColoredBox(
+        color: colors.canvas,
+        child: SafeArea(child: wide ? _wide(context) : _narrow(context)),
+      ),
+    );
+  }
+
+  /// The sample on the frame's black stage: the same backdrop at any width,
+  /// so a preview never inherits the shell's surface from the layout.
+  Widget _stage() => ColoredBox(color: const Color(0xFF000000), child: widget.stage);
+
+  /// The bar's back, answering exactly as the system gesture does: fold the
+  /// narrow window's controls away first, then leave the preview.
+  void _back(BuildContext context) {
+    if (_settingsOpen) {
+      setState(() => _settingsOpen = false);
+      return;
+    }
+    Navigator.of(context).maybePop();
+  }
+
+  /// The title bar: the way back, the preview's icon and subject, and on a
+  /// narrow window the control that folds the panel in and out.
+  Widget _bar(BuildContext context, {required bool wide}) {
+    final t = context.t;
+    return SettingsPreviewTitleBar(
+      icon: widget.icon,
+      title: widget.title,
+      subtitle: widget.subtitle,
+      onBack: () => _back(context),
+      trailing: wide
+          ? null
+          : DsButton.icon(
+              variant: _settingsOpen ? DsButtonVariant.primary : DsButtonVariant.secondary,
+              onPressed: () => setState(() => _settingsOpen = !_settingsOpen),
+              icon: const DsIcon(DsIcons.slidersHorizontal),
+              semanticLabel: t.settings.backgroundPreviewSettingsTitle,
+            ),
     );
   }
 
@@ -89,24 +130,28 @@ final class _SettingsPreviewPageState extends State<SettingsPreviewPage> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: Column(
                 children: [
+                  _bar(context, wide: true),
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(DsSpace.s16),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: ColoredBox(color: const Color(0xFF000000), child: widget.stage),
-                      ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(DsSpace.s16),
+                            child: ClipRRect(borderRadius: BorderRadius.circular(14), child: _stage()),
+                          ),
+                        ),
+                        Container(
+                          width: 380,
+                          decoration: BoxDecoration(
+                            border: BorderDirectional(start: BorderSide(color: colors.border)),
+                          ),
+                          child: _controls(),
+                        ),
+                      ],
                     ),
-                  ),
-                  Container(
-                    width: 380,
-                    decoration: BoxDecoration(
-                      border: BorderDirectional(start: BorderSide(color: colors.border)),
-                    ),
-                    child: _controls(context, collapsible: false),
                   ),
                 ],
               ),
@@ -117,43 +162,17 @@ final class _SettingsPreviewPageState extends State<SettingsPreviewPage> {
     );
   }
 
-  /// The narrow layout: the sample full-height with the controls folded away,
-  /// and the controls over the lower half once opened. The sample keeps the
-  /// upper half, so it moves up as the controls arrive.
+  /// The narrow layout: the title bar, the sample full-height with the
+  /// controls folded away, and the controls over the lower half once opened.
+  /// The sample keeps the upper half, so it moves up as the controls arrive.
   Widget _narrow(BuildContext context) {
-    final t = context.t;
     final colors = DsTheme.colorsOf(context);
     return LayoutBuilder(
       builder: (context, constraints) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                widget.stage,
-                PositionedDirectional(
-                  top: DsSpace.s8,
-                  start: DsSpace.s8,
-                  child: SettingsPreviewCircleButton(
-                    icon: DsIcons.chevronLeft,
-                    semanticLabel: t.common.back,
-                    onPressed: () => Navigator.of(context).maybePop(),
-                  ),
-                ),
-                PositionedDirectional(
-                  top: DsSpace.s8,
-                  end: DsSpace.s8,
-                  child: SettingsPreviewCircleButton(
-                    icon: DsIcons.slidersHorizontal,
-                    semanticLabel: t.settings.backgroundPreviewSettingsTitle,
-                    selected: _settingsOpen,
-                    onPressed: () => setState(() => _settingsOpen = !_settingsOpen),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _bar(context, wide: false),
+          Expanded(child: _stage()),
           if (_settingsOpen)
             SizedBox(
               height: constraints.maxHeight * 0.5,
@@ -162,7 +181,7 @@ final class _SettingsPreviewPageState extends State<SettingsPreviewPage> {
                   color: colors.surface,
                   border: BorderDirectional(top: BorderSide(color: colors.border)),
                 ),
-                child: _controls(context, collapsible: true),
+                child: _controls(),
               ),
             ),
         ],
@@ -170,30 +189,20 @@ final class _SettingsPreviewPageState extends State<SettingsPreviewPage> {
     );
   }
 
-  /// The heading, the scrollable controls and the optional footer: the wide
-  /// window's sidebar, and the narrow window's lower half. Only the narrow
-  /// layout can fold the controls away, so [collapsible] decides whether the
-  /// heading's button folds them or closes the page.
-  Widget _controls(BuildContext context, {required bool collapsible}) {
+  /// The scrollable controls and the optional footer: the wide window's
+  /// sidebar and the narrow window's lower half. The title bar carries the
+  /// subject and the way back, so the panel starts with the rows themselves.
+  Widget _controls() {
     final footer = widget.footer;
-    final folded = collapsible && _settingsOpen;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SettingsPreviewHeading(
-          icon: widget.icon,
-          title: widget.title,
-          subtitle: widget.subtitle,
-          trailing: DsButton.icon(
-            variant: DsButtonVariant.ghost,
-            onPressed: () => folded ? setState(() => _settingsOpen = false) : Navigator.of(context).pop(),
-            icon: DsIcon(folded ? DsIcons.chevronDown : DsIcons.close),
-            semanticLabel: context.t.common.close,
-          ),
-        ),
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            // The first section keeps its own outline clear of the bar:
+            // with no top inset it reads as cut off the moment the viewer
+            // scrolls even a few pixels.
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
             child: widget.settings,
           ),
         ),
@@ -203,66 +212,88 @@ final class _SettingsPreviewPageState extends State<SettingsPreviewPage> {
   }
 }
 
-/// A preview's heading: the tinted icon tile the wallpaper page's sidebar
-/// leads with, the subject over a muted line, and an optional control.
-final class SettingsPreviewHeading extends StatelessWidget {
-  /// The heading for [title].
-  const SettingsPreviewHeading({required this.icon, required this.title, this.subtitle, this.trailing, super.key});
+/// The preview pages' title bar: the way back, the preview's icon and its
+/// subject over a muted line, and an optional control at the row's end.
+final class SettingsPreviewTitleBar extends StatelessWidget {
+  /// The bar for [title].
+  const SettingsPreviewTitleBar({
+    required this.icon,
+    required this.title,
+    required this.onBack,
+    this.subtitle,
+    this.trailing,
+    super.key,
+  });
 
-  /// The tile's icon.
+  /// The icon tile's glyph.
   final DsIconData icon;
 
   /// What the preview shows.
   final String title;
 
-  /// The state beside the subject, e.g. the active preset.
+  /// The state beside the subject, e.g. the current size and speed.
   final String? subtitle;
 
-  /// A control at the row's end, e.g. the wallpaper page's close button.
+  /// Leaves the preview; a preview that folds a panel away answers here too.
+  final VoidCallback onBack;
+
+  /// A control at the row's end, e.g. the narrow window's settings toggle.
   final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
+    final t = context.t;
     final theme = DsTheme.of(context);
     final colors = theme.colors;
     final subtitle = this.subtitle;
-    return Padding(
-      padding: const EdgeInsets.all(DsSpace.s20),
-      child: Row(
-        spacing: DsSpace.s12,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: colors.accent.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(12),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: BorderDirectional(bottom: BorderSide(color: colors.border)),
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
+        child: Row(
+          spacing: DsSpace.s8,
+          children: [
+            DsButton.icon(
+              variant: DsButtonVariant.ghost,
+              onPressed: onBack,
+              icon: const DsIcon(DsIcons.chevronLeft),
+              semanticLabel: t.common.back,
             ),
-            child: Center(child: DsIcon(icon, size: 20, color: colors.accent)),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s4,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.heading.copyWith(color: colors.text),
-                ),
-                if (subtitle != null)
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: colors.accent.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(child: DsIcon(icon, size: 18, color: colors.accent)),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                   Text(
-                    subtitle,
+                    title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.typography.small.copyWith(color: colors.textSubtle),
+                    style: theme.typography.bodyStrong.copyWith(color: colors.text),
                   ),
-              ],
+                  if (subtitle != null)
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.small.copyWith(color: colors.textSubtle),
+                    ),
+                ],
+              ),
             ),
-          ),
-          ?trailing,
-        ],
+            ?trailing,
+          ],
+        ),
       ),
     );
   }

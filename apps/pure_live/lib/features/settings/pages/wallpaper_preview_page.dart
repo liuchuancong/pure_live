@@ -904,76 +904,68 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: Column(
                 children: [
+                  _titleBar(context, t),
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(DsSpace.s16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        spacing: DsSpace.s12,
-                        children: [
-                          Expanded(child: _buildStage(context, t, config, isVideo, radius: 14)),
-                          if (_stripCount > 0) _buildStrip(context, t),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 380,
-                    decoration: BoxDecoration(
-                      border: BorderDirectional(start: BorderSide(color: colors.border)),
-                    ),
-                    child: Column(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SettingsPreviewHeading(
-                          icon: _videoMode ? DsIcons.video : DsIcons.image,
-                          title: widget.subject.isRandom
-                              ? t.settings.backgroundPreviewTitle
-                              : _videoMode
-                              ? t.settings.backgroundVideosTitle
-                              : t.settings.backgroundImagesTitle,
-                          subtitle: _title(t),
-                          trailing: DsButton.icon(
-                            variant: DsButtonVariant.ghost,
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: const DsIcon(DsIcons.close),
-                            semanticLabel: t.common.close,
-                          ),
-                        ),
                         Expanded(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
-                            child: _PreviewSettings(
-                              videoMode: _videoMode,
-                              paintMode: widget.subject.isPaint,
-                              muted: _muted,
-                              autoPlay: _autoPlay,
-                              interval: _interval,
-                              onMuted: (value) => setState(() => _muted = value),
-                              onAutoPlay: _setAutoPlay,
-                              onInterval: _setInterval,
+                          child: Padding(
+                            padding: const EdgeInsets.all(DsSpace.s16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              spacing: DsSpace.s12,
+                              children: [
+                                Expanded(child: _buildStage(context, t, config, isVideo, radius: 14)),
+                                if (_stripCount > 0) _buildStrip(context, t),
+                              ],
                             ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(DsSpace.s20),
-                          child: Row(
-                            spacing: DsSpace.s8,
+                        Container(
+                          width: 380,
+                          decoration: BoxDecoration(
+                            border: BorderDirectional(start: BorderSide(color: colors.border)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              DsButton.icon(
-                                variant: DsButtonVariant.secondary,
-                                onPressed: _canCommit && !_downloading ? () => unawaited(_download()) : null,
-                                icon: const DsIcon(DsIcons.download),
-                                semanticLabel: t.settings.downloadAction,
-                              ),
                               Expanded(
-                                child: DsButton(
-                                  loading: _saving,
-                                  onPressed: _canCommit && !_saving ? () => unawaited(_apply()) : null,
-                                  child: Text(t.settings.backgroundApply),
+                                child: SingleChildScrollView(
+                                  padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+                                  child: _PreviewSettings(
+                                    videoMode: _videoMode,
+                                    paintMode: widget.subject.isPaint,
+                                    muted: _muted,
+                                    autoPlay: _autoPlay,
+                                    interval: _interval,
+                                    onMuted: (value) => setState(() => _muted = value),
+                                    onAutoPlay: _setAutoPlay,
+                                    onInterval: _setInterval,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(DsSpace.s20),
+                                child: Row(
+                                  spacing: DsSpace.s8,
+                                  children: [
+                                    DsButton.icon(
+                                      variant: DsButtonVariant.secondary,
+                                      onPressed: _canCommit && !_downloading ? () => unawaited(_download()) : null,
+                                      icon: const DsIcon(DsIcons.download),
+                                      semanticLabel: t.settings.downloadAction,
+                                    ),
+                                    Expanded(
+                                      child: DsButton(
+                                        loading: _saving,
+                                        onPressed: _canCommit && !_saving ? () => unawaited(_apply()) : null,
+                                        child: Text(t.settings.backgroundApply),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -991,37 +983,36 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     );
   }
 
+  /// The preview's title bar — the same bar the danmaku and card previews
+  /// carry: the wallpapers' subject and the current pick over the way back.
+  Widget _titleBar(BuildContext context, Translations t, {Widget? trailing}) => SettingsPreviewTitleBar(
+    icon: _videoMode ? DsIcons.video : DsIcons.image,
+    title: widget.subject.isRandom
+        ? t.settings.backgroundPreviewTitle
+        : _videoMode
+        ? t.settings.backgroundVideosTitle
+        : t.settings.backgroundImagesTitle,
+    subtitle: _title(t),
+    onBack: () => Navigator.of(context).maybePop(),
+    trailing: trailing,
+  );
+
   Widget _buildMobile(BuildContext context, Translations t, BackgroundConfig? config, bool isVideo) {
     final colors = DsTheme.colorsOf(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              _buildStage(context, t, config, isVideo, radius: 0),
-              PositionedDirectional(
-                top: DsSpace.s8,
-                start: DsSpace.s8,
-                child: SettingsPreviewCircleButton(
-                  icon: DsIcons.chevronLeft,
-                  semanticLabel: t.common.back,
-                  onPressed: () => Navigator.of(context).maybePop(),
-                ),
-              ),
-              PositionedDirectional(
-                top: DsSpace.s8,
-                end: DsSpace.s8,
-                child: SettingsPreviewCircleButton(
-                  icon: DsIcons.circleEllipsis,
-                  semanticLabel: t.settings.backgroundPreviewSettingsTitle,
-                  onPressed: () => unawaited(_openSettingsSheet()),
-                ),
-              ),
-            ],
+        _titleBar(
+          context,
+          t,
+          trailing: DsButton.icon(
+            variant: DsButtonVariant.secondary,
+            onPressed: () => unawaited(_openSettingsSheet()),
+            icon: const DsIcon(DsIcons.slidersHorizontal),
+            semanticLabel: t.settings.backgroundPreviewSettingsTitle,
           ),
         ),
+        Expanded(child: _buildStage(context, t, config, isVideo, radius: 0)),
         ColoredBox(
           color: colors.surface,
           child: Padding(
@@ -1048,13 +1039,6 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
                         label: t.settings.backgroundApply,
                         emphasized: true,
                         onPressed: _canCommit && !_saving ? () => unawaited(_apply()) : null,
-                      ),
-                    ),
-                    Expanded(
-                      child: _ActionTile(
-                        icon: DsIcons.slidersHorizontal,
-                        label: t.settings.backgroundPreviewSettingsTitle,
-                        onPressed: () => unawaited(_openSettingsSheet()),
                       ),
                     ),
                   ],

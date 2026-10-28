@@ -6,14 +6,29 @@ import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/app.dart';
 
 /// The platforms the viewer keeps out of the browsing pages (the
-/// reference's platform display): an empty set shows everything; the
-/// choices persist under `sites.display`.
+/// reference's platform display): the set holds the hidden ids, so an empty
+/// set — nothing hidden — shows everything; the choices persist under
+/// [hiddenKey].
 final class SitesDisplayController extends Notifier<Set<String>> {
+  /// Where the hidden ids live now.
+  static const String hiddenKey = 'sites.display.hidden';
+
+  /// The key the hidden ids used before the set was stored as hidden ids: a
+  /// non-empty list there held the *shown* ids, read once and translated.
+  static const String legacyKey = 'sites.display';
+
   @override
   Set<String> build() {
     try {
-      final stored = StoragePrefs.getStringList('sites.display');
-      return stored == null ? <String>{} : stored.toSet();
+      final stored = StoragePrefs.getStringList(hiddenKey);
+      if (stored != null) return stored.toSet();
+      final legacy = StoragePrefs.getStringList(legacyKey);
+      if (legacy == null || legacy.isEmpty) return <String>{};
+      final ids = [for (final site in ref.read(sitesProvider).all) site.manifest.id];
+      return {
+        for (final id in ids)
+          if (!legacy.contains(id)) id,
+      };
     } on Object {
       return <String>{};
     }
@@ -21,7 +36,7 @@ final class SitesDisplayController extends Notifier<Set<String>> {
 
   /// Whether the browsing pages show [id]; everything shows when the set
   /// is empty.
-  bool shown(String id) => state.isEmpty || state.contains(id);
+  bool shown(String id) => state.isEmpty || !state.contains(id);
 
   /// The browsing pages' platform order — the viewer's own, the registry's
   /// for a platform the order has not met yet — with the hidden ones left
@@ -31,23 +46,29 @@ final class SitesDisplayController extends Notifier<Set<String>> {
     return state.isEmpty ? List.of(all) : all.where(shown).toList();
   }
 
+  /// Shows every platform again — the way back from a page of switches
+  /// that were turned off one by one.
+  Future<void> showAll() async {
+    if (state.isEmpty) return;
+    state = <String>{};
+    try {
+      await StoragePrefs.setStringList(hiddenKey, const []);
+    } on Object {
+      // The choice is a preference; a closed store loses it.
+    }
+  }
+
   /// Flips [id]'s visibility, writing the choice through; answers whether
   /// it changed. Turning the last visible platform off changes nothing: a
   /// browsing page with no platform at all is not a choice the switch
   /// offers, and the caller says so.
   ///
-  /// The set stores hidden ids once anything is hidden at all; while nothing
-  /// is hidden, the first switch-off starts the set with every id but the
-  /// one being hidden.
+  /// The set holds the hidden ids; an empty set — nothing hidden — shows
+  /// everything, so the first switch-off adds just that platform.
   Future<bool> toggle(String id) async {
-    final currentlyShown = state.isEmpty || !state.contains(id);
+    final currentlyShown = !state.contains(id);
     if (currentlyShown && visibleIds().length <= 1) return false;
-    final next = state.isEmpty
-        ? {
-            for (final site in ref.read(sitesProvider).all)
-              if (site.manifest.id != id) site.manifest.id,
-          }
-        : (state.contains(id) ? state.difference({id}) : state.union({id}));
+    final next = state.contains(id) ? state.difference({id}) : state.union({id});
     state = next;
     // Hiding the preferred platform leaves the preference on the first
     // platform still shown, so the browse pages never lead with a hidden
@@ -60,7 +81,7 @@ final class SitesDisplayController extends Notifier<Set<String>> {
       }
     }
     try {
-      await StoragePrefs.setStringList('sites.display', next.toList());
+      await StoragePrefs.setStringList(hiddenKey, next.toList());
     } on Object {
       // The choice is a preference; a closed store loses it, nothing else.
     }

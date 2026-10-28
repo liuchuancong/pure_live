@@ -436,8 +436,8 @@ class Translations$areas$zh_CN {
 	/// zh-CN: '还没有关注的分区'
 	String get followedEmpty => '还没有关注的分区';
 
-	/// zh-CN: '在平台分区或直播间里点爱心即可关注'
-	String get followedEmptyHint => '在平台分区或直播间里点爱心即可关注';
+	/// zh-CN: '在分区卡片上右键或长按，选择关注即可'
+	String get followedEmptyHint => '在分区卡片上右键或长按，选择关注即可';
 
 	/// zh-CN: '没有可浏览的平台'
 	String get noPlatforms => '没有可浏览的平台';
@@ -448,8 +448,29 @@ class Translations$areas$zh_CN {
 	/// zh-CN: '全部分类'
 	String get categoryAll => '全部分类';
 
+	/// zh-CN: '图标在上'
+	String get iconTop => '图标在上';
+
+	/// zh-CN: '图标在左'
+	String get iconLeft => '图标在左';
+
+	/// zh-CN: '进入分区'
+	String get open => '进入分区';
+
 	/// zh-CN: '关注分区'
 	String get follow => '关注分区';
+
+	/// zh-CN: '搜索分区'
+	String get searchHint => '搜索分区';
+
+	/// zh-CN: '在 {platform} 中搜索分区“{query}”'
+	String searchAt({required Object platform, required Object query}) => '在 ${platform} 中搜索分区“${query}”';
+
+	/// zh-CN: '没有匹配的分区'
+	String get searchEmpty => '没有匹配的分区';
+
+	/// zh-CN: '返回浏览'
+	String get backToBrowse => '返回浏览';
 
 	/// zh-CN: '已隐藏 {count: int} 个不能播放的直播（付费、加密、仅限 App 等）'
 	String hiddenUnplayable({required int count}) => '已隐藏 ${count} 个不能播放的直播（付费、加密、仅限 App 等）';
@@ -1033,6 +1054,9 @@ class Translations$favorites$zh_CN {
 	/// zh-CN: '还没有标签'
 	String get tagsEmpty => '还没有标签';
 
+	/// zh-CN: '新建标签'
+	String get newTag => '新建标签';
+
 	/// zh-CN: '新标签名称'
 	String get tagFieldHint => '新标签名称';
 
@@ -1044,6 +1068,12 @@ class Translations$favorites$zh_CN {
 
 	/// zh-CN: '所有直播间都会移出这个标签，直播间本身不会被取消关注。'
 	String get deleteTagBody => '所有直播间都会移出这个标签，直播间本身不会被取消关注。';
+
+	/// zh-CN: '先关注再设置标签'
+	String get tagFollowTitle => '先关注再设置标签';
+
+	/// zh-CN: '标签只属于关注的房间。先关注这个直播间，之后可以为它设置任意多个标签。'
+	String get tagFollowBody => '标签只属于关注的房间。先关注这个直播间，之后可以为它设置任意多个标签。';
 
 	/// zh-CN: '这个标签已经存在'
 	String get tagExists => '这个标签已经存在';
@@ -1093,11 +1123,26 @@ class Translations$history$zh_CN {
 	/// zh-CN: '筛选'
 	String get filter => '筛选';
 
-	/// zh-CN: '关闭筛选'
-	String get filterClose => '关闭筛选';
+	/// zh-CN: '筛选观看记录'
+	String get filterPanelTitle => '筛选观看记录';
+
+	/// zh-CN: '关键词'
+	String get filterKeyword => '关键词';
 
 	/// zh-CN: '按标题、主播、房间号或平台筛选'
 	String get filterHint => '按标题、主播、房间号或平台筛选';
+
+	/// zh-CN: '开始时间'
+	String get filterStart => '开始时间';
+
+	/// zh-CN: '结束时间'
+	String get filterEnd => '结束时间';
+
+	/// zh-CN: '不限'
+	String get filterAnyDay => '不限';
+
+	/// zh-CN: '完成'
+	String get filterDone => '完成';
 
 	/// zh-CN: '{count: int} 条匹配'
 	String filterMatches({required int count}) => '${count} 条匹配';
@@ -1164,9 +1209,6 @@ class Translations$history$zh_CN {
 
 	/// zh-CN: '{count: int} 条记录刷新失败'
 	String refreshFailed({required int count}) => '${count} 条记录刷新失败';
-
-	/// zh-CN: '进入直播间'
-	String get openRoom => '进入直播间';
 }
 
 // Path: hongguo
@@ -1413,6 +1455,282 @@ class Translations$hongguo$zh_CN {
 
 	/// zh-CN: '已取消账户收藏'
 	String get cloudFavoriteOff => '已取消账户收藏';
+
+	/// zh-CN: '相关作品'
+	String get related => '相关作品';
+
+	/// zh-CN: '暂无相关剧集'
+	String get relatedNone => '暂无相关剧集';
+
+	/// zh-CN: '已上线 · 看剧集'
+	String get relatedLive => '已上线 · 看剧集';
+
+	/// zh-CN: '预约'
+	String get relatedReserve => '预约';
+
+	/// zh-CN: '已预约'
+	String get reserved => '已预约';
+
+	/// zh-CN: '评论'
+	String get comments => '评论';
+
+	/// zh-CN: '还没有评论'
+	String get commentsEmpty => '还没有评论';
+
+	/// zh-CN: '加载更多'
+	String get commentsLoadMore => '加载更多';
+
+	/// zh-CN: '弹幕'
+	String get danmaku => '弹幕';
+
+	/// zh-CN: '弹幕开'
+	String get danmakuOn => '弹幕开';
+
+	/// zh-CN: '弹幕关'
+	String get danmakuOff => '弹幕关';
+
+	/// zh-CN: '手机号登录'
+	String get phoneLogin => '手机号登录';
+
+	/// zh-CN: '手机号，如 138…（境外 +区号 号码）'
+	String get phonePlaceholder => '手机号，如 138…（境外 +区号 号码）';
+
+	/// zh-CN: '发送验证码'
+	String get phoneSend => '发送验证码';
+
+	/// zh-CN: '验证码'
+	String get phoneCodePlaceholder => '验证码';
+
+	/// zh-CN: '登录'
+	String get phoneVerify => '登录';
+
+	/// zh-CN: '验证码已发送到'
+	String get phoneSent => '验证码已发送到';
+
+	/// zh-CN: '用手机号登录'
+	String get accountPhoneToggle => '用手机号登录';
+
+	/// zh-CN: '评论没有加载出来'
+	String get commentsFailed => '评论没有加载出来';
+
+	/// zh-CN: '为你推荐'
+	String get shelfForYou => '为你推荐';
+
+	/// zh-CN: '换一批'
+	String get shelfChangeBatch => '换一批';
+
+	/// zh-CN: '正在热播'
+	String get shelfHot => '正在热播';
+
+	/// zh-CN: '新剧'
+	String get shelfNew => '新剧';
+
+	/// zh-CN: '分类'
+	String get shelfCategory => '分类';
+
+	/// zh-CN: '上新'
+	String get newArrivals => '上新';
+
+	/// zh-CN: '查看完整榜单'
+	String get openFullBoard => '查看完整榜单';
+
+	/// zh-CN: '更多'
+	String get seeMore => '更多';
+
+	/// zh-CN: '刷新片单'
+	String get refreshShelf => '刷新片单';
+
+	/// zh-CN: '全{count}集'
+	String allEpisodesCount({required Object count}) => '全${count}集';
+
+	/// zh-CN: '重置'
+	String get filterReset => '重置';
+
+	/// zh-CN: '全部条件'
+	String get filterNone => '全部条件';
+
+	/// zh-CN: '红果官网热播榜'
+	String get rankSource => '红果官网热播榜';
+
+	/// zh-CN: '全部题材'
+	String get rankTopicAll => '全部题材';
+
+	/// zh-CN: '保留原榜名次'
+	String get rankKeepsPlaces => '保留原榜名次';
+
+	/// zh-CN: '正在后台更新…'
+	String get rankRenewing => '正在后台更新…';
+
+	/// zh-CN: '读取中…'
+	String get rankReading => '读取中…';
+
+	/// zh-CN: '本榜暂无符合条件的作品，可切换题材'
+	String get rankEmptyTopic => '本榜暂无符合条件的作品，可切换题材';
+
+	/// zh-CN: '{count} 部'
+	String rankSeriesCount({required Object count}) => '${count} 部';
+
+	/// zh-CN: '刷新'
+	String get refresh => '刷新';
+
+	/// zh-CN: '联想暂不可用，可直接按搜索'
+	String get suggestOff => '联想暂不可用，可直接按搜索';
+
+	/// zh-CN: '最近搜索'
+	String get searchHistory => '最近搜索';
+
+	/// zh-CN: '清空历史'
+	String get searchHistoryClear => '清空历史';
+
+	/// zh-CN: '搜过的剧名会留在本机，最多 20 条'
+	String get searchHistoryHint => '搜过的剧名会留在本机，最多 20 条';
+
+	/// zh-CN: '筛选'
+	String get filter => '筛选';
+
+	/// zh-CN: '筛选条件'
+	String get filterPanelTitle => '筛选条件';
+
+	/// zh-CN: '完成'
+	String get filterDone => '完成';
+
+	/// zh-CN: '红果号'
+	String get accountId => '红果号';
+
+	/// zh-CN: '复制'
+	String get copyAccountId => '复制';
+
+	/// zh-CN: '已复制'
+	String get copied => '已复制';
+
+	/// zh-CN: '正在读取…'
+	String get accountReading => '正在读取…';
+
+	/// zh-CN: '尚未读取'
+	String get accountNotRead => '尚未读取';
+
+	/// zh-CN: '已读取 {count} 部'
+	String accountReadCount({required Object count}) => '已读取 ${count} 部';
+
+	/// zh-CN: '已看完'
+	String get historyFilterWatched => '已看完';
+
+	/// zh-CN: '未看完'
+	String get historyFilterUnwatched => '未看完';
+
+	/// zh-CN: '画面模式'
+	String get frameMode => '画面模式';
+
+	/// zh-CN: '完整画面'
+	String get frameFit => '完整画面';
+
+	/// zh-CN: '等比铺满'
+	String get frameZoom => '等比铺满';
+
+	/// zh-CN: '拉伸铺满'
+	String get frameFill => '拉伸铺满';
+
+	/// zh-CN: '保留比例与全部内容，画面外留黑边'
+	String get frameFitDesc => '保留比例与全部内容，画面外留黑边';
+
+	/// zh-CN: '铺满画面，会裁掉部分画面与字幕'
+	String get frameZoomDesc => '铺满画面，会裁掉部分画面与字幕';
+
+	/// zh-CN: '铺满画面，但画面比例会改变'
+	String get frameFillDesc => '铺满画面，但画面比例会改变';
+
+	/// zh-CN: '定时停止'
+	String get sleep => '定时停止';
+
+	/// zh-CN: '关闭定时停止'
+	String get sleepOff => '关闭定时停止';
+
+	/// zh-CN: '{minutes} 分钟后'
+	String sleepAfter({required Object minutes}) => '${minutes} 分钟后';
+
+	/// zh-CN: '{count} 分钟后'
+	String sleepMinutes({required Object count}) => '${count} 分钟后';
+
+	/// zh-CN: '本集播完'
+	String get sleepThisEpisode => '本集播完';
+
+	/// zh-CN: '再播完 {count} 集'
+	String sleepAfterEpisodes({required Object count}) => '再播完 ${count} 集';
+
+	/// zh-CN: '再播完 {count} 集'
+	String sleepEpisodes({required Object count}) => '再播完 ${count} 集';
+
+	/// zh-CN: '定时停止已生效 · 观看位置已保存 · 按播放可继续'
+	String get sleepStopped => '定时停止已生效 · 观看位置已保存 · 按播放可继续';
+
+	/// zh-CN: '立即重试'
+	String get retryNow => '立即重试';
+
+	/// zh-CN: '尝试 {height}P'
+	String retryLower({required Object height}) => '尝试 ${height}P';
+
+	/// zh-CN: '返回选集'
+	String get backToEpisodes => '返回选集';
+
+	/// zh-CN: '停止自动重试'
+	String get stopAutoRetry => '停止自动重试';
+
+	/// zh-CN: '即将重试 {attempt}/3 · {seconds} 秒后'
+	String autoRetry({required Object attempt, required Object seconds}) => '即将重试 ${attempt}/3 · ${seconds} 秒后';
+
+	/// zh-CN: '已自动重试 3 次，仍无法播放。可手动重试或切换清晰度。'
+	String get retryExhausted => '已自动重试 3 次，仍无法播放。可手动重试或切换清晰度。';
+
+	/// zh-CN: '设备解码记录'
+	String get decoderLessons => '设备解码记录';
+
+	/// zh-CN: '已记住 {count} 条解码失败，选流时会跳过它们'
+	String decoderLessonsCount({required Object count}) => '已记住 ${count} 条解码失败，选流时会跳过它们';
+
+	/// zh-CN: '还没有解码失败记录，选流按平台声明'
+	String get decoderLessonsEmpty => '还没有解码失败记录，选流按平台声明';
+
+	/// zh-CN: '已清除 {count} 条设备解码记录'
+	String decoderResetDone({required Object count}) => '已清除 ${count} 条设备解码记录';
+
+	/// zh-CN: '检查更新'
+	String get favoriteCheck => '检查更新';
+
+	/// zh-CN: '检查更新 {done}/{total}…'
+	String favoriteChecking({required Object done, required Object total}) => '检查更新 ${done}/${total}…';
+
+	/// zh-CN: '已检查 {done}/{total} 部 · 检查完成'
+	String favoriteChecked({required Object done, required Object total}) => '已检查 ${done}/${total} 部 · 检查完成';
+
+	/// zh-CN: '已检查 {done}/{total} 部 · {failures} 部失败，稍后可重试'
+	String favoriteCheckedSome({required Object done, required Object total, required Object failures}) => '已检查 ${done}/${total} 部 · ${failures} 部失败，稍后可重试';
+
+	/// zh-CN: '最近一小时已检查，可手动刷新'
+	String get favoriteRecentCheck => '最近一小时已检查，可手动刷新';
+
+	/// zh-CN: '收藏后可检查新集'
+	String get favoriteNoFavorites => '收藏后可检查新集';
+
+	/// zh-CN: '新增 {count} 集'
+	String favoriteAdded({required Object count}) => '新增 ${count} 集';
+
+	/// zh-CN: '更新至 {count} 集'
+	String favoriteUpTo({required Object count}) => '更新至 ${count} 集';
+
+	/// zh-CN: '{count} 部有新集'
+	String favoriteBadge({required Object count}) => '${count} 部有新集';
+
+	/// zh-CN: '剧评'
+	String get reviews => '剧评';
+
+	/// zh-CN: '还没有剧评'
+	String get reviewsEmpty => '还没有剧评';
+
+	/// zh-CN: '评分 {score}'
+	String rating({required Object score}) => '评分 ${score}';
+
+	/// zh-CN: '{count} 人评分'
+	String ratingCount({required Object count}) => '${count} 人评分';
 }
 
 // Path: iptv
@@ -2209,8 +2527,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '默认音源'
 	String get defaultSource => '默认音源';
 
-	/// zh-CN: '歌曲从哪个自定义源获取；同一时间只有一个音源生效。'
-	String get defaultSourceDesc => '歌曲从哪个自定义源获取；同一时间只有一个音源生效。';
+	/// zh-CN: '歌曲从哪个音源获取；lx-music 通过导入的自定义源脚本解析播放地址。'
+	String get defaultSourceDesc => '歌曲从哪个音源获取；lx-music 通过导入的自定义源脚本解析播放地址。';
 
 	/// zh-CN: '还没有可用的音源；先在下方「自定义源」里导入脚本。'
 	String get defaultSourceEmpty => '还没有可用的音源；先在下方「自定义源」里导入脚本。';
@@ -2266,8 +2584,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '自定义源'
 	String get sourcesSection => '自定义源';
 
-	/// zh-CN: 'lx-music 的自定义源是 JavaScript 脚本。导入时读取脚本头部注释并原样保存脚本；当前版本还不会执行脚本——执行需要内置 JS 引擎。'
-	String get sourcesHint => 'lx-music 的自定义源是 JavaScript 脚本。导入时读取脚本头部注释并原样保存脚本；当前版本还不会执行脚本——执行需要内置 JS 引擎。';
+	/// zh-CN: 'lx-music 的自定义源是 JavaScript 脚本，在 fjs（QuickJS）运行时中执行；导入后会初始化并接管播放地址解析。'
+	String get sourcesHint => 'lx-music 的自定义源是 JavaScript 脚本，在 fjs（QuickJS）运行时中执行；导入后会初始化并接管播放地址解析。';
 
 	/// zh-CN: '粘贴脚本导入'
 	String get sourcesImportText => '粘贴脚本导入';
@@ -2338,14 +2656,26 @@ class Translations$music$zh_CN {
 	/// zh-CN: '共导入 {count} 个'
 	String sourcesCount({required Object count}) => '共导入 ${count} 个';
 
-	/// zh-CN: '搜索歌曲、歌手或 BV 号…'
-	String get searchHint => '搜索歌曲、歌手或 BV 号…';
+	/// zh-CN: '重新加载脚本'
+	String get sourcesReload => '重新加载脚本';
+
+	/// zh-CN: '重新初始化所有已导入的 lx 脚本。'
+	String get sourcesReloadDesc => '重新初始化所有已导入的 lx 脚本。';
+
+	/// zh-CN: '已加载 {count} 个脚本'
+	String sourcesReloaded({required Object count}) => '已加载 ${count} 个脚本';
+
+	/// zh-CN: '有 {count} 个脚本加载失败'
+	String sourcesReloadedErrors({required Object count}) => '有 ${count} 个脚本加载失败';
+
+	/// zh-CN: '搜索歌曲、歌手或专辑…'
+	String get searchHint => '搜索歌曲、歌手或专辑…';
 
 	/// zh-CN: '搜一首歌'
 	String get searchIdleTitle => '搜一首歌';
 
-	/// zh-CN: '输入歌名、歌手或 BV 号，按回车开始搜索。'
-	String get searchIdleDescription => '输入歌名、歌手或 BV 号，按回车开始搜索。';
+	/// zh-CN: '输入歌名、歌手或专辑，按回车开始搜索。'
+	String get searchIdleDescription => '输入歌名、歌手或专辑，按回车开始搜索。';
 
 	/// zh-CN: '没有找到歌曲'
 	String get noResultsTitle => '没有找到歌曲';
@@ -2436,6 +2766,399 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '清空最近播放'
 	String get clearRecent => '清空最近播放';
+
+	/// zh-CN: '更多操作'
+	String get moreActions => '更多操作';
+
+	/// zh-CN: '下一首播放'
+	String get playNext => '下一首播放';
+
+	/// zh-CN: '加入歌单'
+	String get addToPlaylist => '加入歌单';
+
+	/// zh-CN: '下载'
+	String get download => '下载';
+
+	/// zh-CN: '下载全部'
+	String get downloadAll => '下载全部';
+
+	/// zh-CN: '已加入 {count} 首到下载队列'
+	String downloadAllQueued({required Object count}) => '已加入 ${count} 首到下载队列';
+
+	/// zh-CN: '上移'
+	String get moveUp => '上移';
+
+	/// zh-CN: '下移'
+	String get moveDown => '下移';
+
+	/// zh-CN: '全部播放'
+	String get playAll => '全部播放';
+
+	/// zh-CN: '最近搜索'
+	String get searchHistory => '最近搜索';
+
+	/// zh-CN: '清空'
+	String get searchHistoryClear => '清空';
+
+	/// zh-CN: '删除这条搜索'
+	String get searchHistoryRemove => '删除这条搜索';
+
+	/// zh-CN: '新建歌单'
+	String get playlistCreate => '新建歌单';
+
+	/// zh-CN: '新建歌单'
+	String get playlistCreateTitle => '新建歌单';
+
+	/// zh-CN: '歌单名称'
+	String get playlistName => '歌单名称';
+
+	/// zh-CN: '给歌单起个名字'
+	String get playlistNameHint => '给歌单起个名字';
+
+	/// zh-CN: '重命名'
+	String get playlistRename => '重命名';
+
+	/// zh-CN: '重命名歌单'
+	String get playlistRenameTitle => '重命名歌单';
+
+	/// zh-CN: '删除歌单'
+	String get playlistDelete => '删除歌单';
+
+	/// zh-CN: '删除「{name}」？'
+	String playlistDeleteTitle({required Object name}) => '删除「${name}」？';
+
+	/// zh-CN: '歌单会从列表里移除，歌曲本身不会删除。'
+	String get playlistDeleteDesc => '歌单会从列表里移除，歌曲本身不会删除。';
+
+	/// zh-CN: '清空歌单'
+	String get playlistClear => '清空歌单';
+
+	/// zh-CN: '歌单还是空的'
+	String get playlistEmptyTitle => '歌单还是空的';
+
+	/// zh-CN: '在歌曲行的「更多」里把歌加进来。'
+	String get playlistEmptyDescription => '在歌曲行的「更多」里把歌加进来。';
+
+	/// zh-CN: '已加入「{name}」'
+	String playlistAdded({required Object name}) => '已加入「${name}」';
+
+	/// zh-CN: '「{name}」里已经有这首歌'
+	String playlistAlreadyIn({required Object name}) => '「${name}」里已经有这首歌';
+
+	/// zh-CN: '{count} 个歌单'
+	String playlistsCount({required Object count}) => '${count} 个歌单';
+
+	/// zh-CN: '正在下载 {count} 首'
+	String downloadsActive({required Object count}) => '正在下载 ${count} 首';
+
+	/// zh-CN: '已加入下载：{title}'
+	String downloadQueued({required Object title}) => '已加入下载：${title}';
+
+	/// zh-CN: '这首歌已经在下载队列里'
+	String get downloadDuplicate => '这首歌已经在下载队列里';
+
+	/// zh-CN: '这首歌没有可下载的音源（本地文件或当前音源未覆盖）'
+	String get downloadUnsupported => '这首歌没有可下载的音源（本地文件或当前音源未覆盖）';
+
+	/// zh-CN: '下载失败：{error}'
+	String downloadFailed({required Object error}) => '下载失败：${error}';
+
+	/// zh-CN: '下载文件保存在共享下载目录；队列支持暂停、续传和失败重试。'
+	String get downloadHint => '下载文件保存在共享下载目录；队列支持暂停、续传和失败重试。';
+
+	/// zh-CN: '下载目录'
+	String get downloadDirectory => '下载目录';
+
+	/// zh-CN: '使用默认目录'
+	String get downloadDirectoryDefault => '使用默认目录';
+
+	/// zh-CN: '回到应用默认的下载文件夹。'
+	String get downloadDirectoryDefaultDesc => '回到应用默认的下载文件夹。';
+
+	/// zh-CN: '下载目录已更新'
+	String get downloadDirectoryUpdated => '下载目录已更新';
+
+	/// zh-CN: '无法写入这个目录'
+	String get downloadDirectoryFailed => '无法写入这个目录';
+
+	/// zh-CN: '下载格式'
+	String get downloadType => '下载格式';
+
+	/// zh-CN: '原格式会尽量保留音源容器；转码需要 ffmpeg。'
+	String get downloadTypeDesc => '原格式会尽量保留音源容器；转码需要 ffmpeg。';
+
+	/// zh-CN: '原格式'
+	String get downloadTypeOriginal => '原格式';
+
+	/// zh-CN: 'MP3'
+	String get downloadTypeMp3 => 'MP3';
+
+	/// zh-CN: 'M4A'
+	String get downloadTypeM4a => 'M4A';
+
+	/// zh-CN: 'FLAC'
+	String get downloadTypeFlac => 'FLAC';
+
+	/// zh-CN: 'OGG'
+	String get downloadTypeOgg => 'OGG';
+
+	/// zh-CN: 'WAV'
+	String get downloadTypeWav => 'WAV';
+
+	/// zh-CN: '文件名格式'
+	String get downloadPattern => '文件名格式';
+
+	/// zh-CN: '可用占位符（写在花括号里）：title、artist、album、quality、source、list、index。'
+	String get downloadPatternHint => '可用占位符（写在花括号里）：title、artist、album、quality、source、list、index。';
+
+	/// zh-CN: '编辑'
+	String get downloadPatternEdit => '编辑';
+
+	/// zh-CN: '嵌入封面'
+	String get downloadEmbedCover => '嵌入封面';
+
+	/// zh-CN: '把歌曲封面写入音频标签。'
+	String get downloadEmbedCoverDesc => '把歌曲封面写入音频标签。';
+
+	/// zh-CN: '嵌入歌词'
+	String get downloadEmbedLyric => '嵌入歌词';
+
+	/// zh-CN: '把歌词写入音频标签，随文件一起播放。'
+	String get downloadEmbedLyricDesc => '把歌词写入音频标签，随文件一起播放。';
+
+	/// zh-CN: '保存歌词文件'
+	String get downloadWriteLyric => '保存歌词文件';
+
+	/// zh-CN: '在音频文件旁写一个同名 .lrc。'
+	String get downloadWriteLyricDesc => '在音频文件旁写一个同名 .lrc。';
+
+	/// zh-CN: '跳过已存在文件'
+	String get downloadSkipExisting => '跳过已存在文件';
+
+	/// zh-CN: '目标文件已存在时不再下载。'
+	String get downloadSkipExistingDesc => '目标文件已存在时不再下载。';
+
+	/// zh-CN: '按歌单分文件夹'
+	String get downloadGroupByList => '按歌单分文件夹';
+
+	/// zh-CN: '从歌单下载时，文件保存到以歌单命名的子文件夹。'
+	String get downloadGroupByListDesc => '从歌单下载时，文件保存到以歌单命名的子文件夹。';
+
+	/// zh-CN: '排队中'
+	String get downloadStatusQueued => '排队中';
+
+	/// zh-CN: '下载中'
+	String get downloadStatusRunning => '下载中';
+
+	/// zh-CN: '已暂停'
+	String get downloadStatusPaused => '已暂停';
+
+	/// zh-CN: '写入标签'
+	String get downloadStatusProcessing => '写入标签';
+
+	/// zh-CN: '已完成'
+	String get downloadStatusCompleted => '已完成';
+
+	/// zh-CN: '已跳过'
+	String get downloadStatusSkipped => '已跳过';
+
+	/// zh-CN: '下载失败'
+	String get downloadStatusFailed => '下载失败';
+
+	/// zh-CN: '已取消'
+	String get downloadStatusCancelled => '已取消';
+
+	/// zh-CN: '全部暂停'
+	String get downloadPauseAll => '全部暂停';
+
+	/// zh-CN: '全部继续'
+	String get downloadResumeAll => '全部继续';
+
+	/// zh-CN: '清除已完成'
+	String get downloadClearFinished => '清除已完成';
+
+	/// zh-CN: '下载进度'
+	String get downloadProgress => '下载进度';
+
+	/// zh-CN: '重试'
+	String get downloadRetry => '重试';
+
+	/// zh-CN: '移除记录'
+	String get downloadRemove => '移除记录';
+
+	/// zh-CN: '继续'
+	String get downloadResume => '继续';
+
+	/// zh-CN: '暂停'
+	String get downloadPause => '暂停';
+
+	/// zh-CN: '取消'
+	String get downloadCancel => '取消';
+
+	/// zh-CN: '还没有下载任务'
+	String get downloadsEmptyTitle => '还没有下载任务';
+
+	/// zh-CN: '在歌曲行的「更多」里下载，文件会保存到 {directory}。'
+	String downloadsEmptyDescription({required Object directory}) => '在歌曲行的「更多」里下载，文件会保存到 ${directory}。';
+
+	/// zh-CN: '添加文件夹'
+	String get localAddFolder => '添加文件夹';
+
+	/// zh-CN: '添加本机音乐文件夹，扫描后会像在线歌曲一样播放。'
+	String get localHint => '添加本机音乐文件夹，扫描后会像在线歌曲一样播放。';
+
+	/// zh-CN: '{count} 个文件'
+	String localFiles({required Object count}) => '${count} 个文件';
+
+	/// zh-CN: '重新扫描'
+	String get localRescan => '重新扫描';
+
+	/// zh-CN: '音乐文件夹'
+	String get localFolders => '音乐文件夹';
+
+	/// zh-CN: '移除文件夹'
+	String get localRemoveFolder => '移除文件夹';
+
+	/// zh-CN: '扫描失败'
+	String get localFailed => '扫描失败';
+
+	/// zh-CN: '还没有本地音乐'
+	String get localEmptyTitle => '还没有本地音乐';
+
+	/// zh-CN: '添加一个存放音频文件的文件夹开始扫描。'
+	String get localEmptyDescription => '添加一个存放音频文件的文件夹开始扫描。';
+
+	/// zh-CN: '无法添加文件夹：{error}'
+	String localFolderFailed({required Object error}) => '无法添加文件夹：${error}';
+
+	/// zh-CN: '播放速度'
+	String get playbackRate => '播放速度';
+
+	/// zh-CN: '睡眠定时'
+	String get sleepTimer => '睡眠定时';
+
+	/// zh-CN: '关闭'
+	String get sleepOff => '关闭';
+
+	/// zh-CN: '{count} 分钟'
+	String sleepMinutes({required Object count}) => '${count} 分钟';
+
+	/// zh-CN: '{value} 后暂停'
+	String sleepRemaining({required Object value}) => '${value} 后暂停';
+
+	/// zh-CN: '歌词延迟'
+	String get lyricOffset => '歌词延迟';
+
+	/// zh-CN: '正值让歌词更晚出现。'
+	String get lyricOffsetDesc => '正值让歌词更晚出现。';
+
+	/// zh-CN: '不偏移'
+	String get lyricOffsetReset => '不偏移';
+
+	/// zh-CN: '显示翻译'
+	String get lyricTranslation => '显示翻译';
+
+	/// zh-CN: '歌词带翻译时一并显示。'
+	String get lyricTranslationDesc => '歌词带翻译时一并显示。';
+
+	/// zh-CN: '显示音译'
+	String get lyricRomanization => '显示音译';
+
+	/// zh-CN: '歌词带音译或罗马音时一并显示。'
+	String get lyricRomanizationDesc => '歌词带音译或罗马音时一并显示。';
+
+	/// zh-CN: '歌词显示与延迟对所有歌曲生效；桌面歌词可在设置或播放页的更多菜单里打开。'
+	String get lyricHint => '歌词显示与延迟对所有歌曲生效；桌面歌词可在设置或播放页的更多菜单里打开。';
+
+	/// zh-CN: '桌面歌词'
+	String get desktopLyrics => '桌面歌词';
+
+	/// zh-CN: '桌面歌词已开启'
+	String get desktopLyricsOn => '桌面歌词已开启';
+
+	/// zh-CN: '桌面歌词已关闭'
+	String get desktopLyricsOff => '桌面歌词已关闭';
+
+	/// zh-CN: '当前平台没有桌面歌词窗口或未授权'
+	String get desktopLyricsUnavailable => '当前平台没有桌面歌词窗口或未授权';
+
+	/// zh-CN: '桌面歌词是独立悬浮窗，可拖动、锁定并控制播放；Android 需要悬浮窗权限。'
+	String get desktopLyricHint => '桌面歌词是独立悬浮窗，可拖动、锁定并控制播放；Android 需要悬浮窗权限。';
+
+	/// zh-CN: '在桌面上悬浮显示当前歌词；关闭后保留下面的样式。'
+	String get desktopLyricEnableDesc => '在桌面上悬浮显示当前歌词；关闭后保留下面的样式。';
+
+	/// zh-CN: '锁定歌词'
+	String get desktopLyricLock => '锁定歌词';
+
+	/// zh-CN: '锁定后鼠标点击穿过歌词窗口，不会挡住下面的程序。'
+	String get desktopLyricLockDesc => '锁定后鼠标点击穿过歌词窗口，不会挡住下面的程序。';
+
+	/// zh-CN: '样式'
+	String get desktopLyricStyleSection => '样式';
+
+	/// zh-CN: '字号'
+	String get desktopLyricFontSize => '字号';
+
+	/// zh-CN: '桌面歌词的字体大小。'
+	String get desktopLyricFontSizeDesc => '桌面歌词的字体大小。';
+
+	/// zh-CN: '不透明度'
+	String get desktopLyricOpacity => '不透明度';
+
+	/// zh-CN: '桌面歌词窗口的整体不透明度。'
+	String get desktopLyricOpacityDesc => '桌面歌词窗口的整体不透明度。';
+
+	/// zh-CN: '文字颜色'
+	String get desktopLyricTextColor => '文字颜色';
+
+	/// zh-CN: '桌面歌词的主文字颜色。'
+	String get desktopLyricTextColorDesc => '桌面歌词的主文字颜色。';
+
+	/// zh-CN: '对齐方式'
+	String get desktopLyricAlignment => '对齐方式';
+
+	/// zh-CN: '歌词在窗口内的水平对齐。'
+	String get desktopLyricAlignmentDesc => '歌词在窗口内的水平对齐。';
+
+	/// zh-CN: '左对齐'
+	String get desktopLyricAlignLeft => '左对齐';
+
+	/// zh-CN: '居中'
+	String get desktopLyricAlignCenter => '居中';
+
+	/// zh-CN: '右对齐'
+	String get desktopLyricAlignRight => '右对齐';
+
+	/// zh-CN: '白色'
+	String get desktopLyricColorWhite => '白色';
+
+	/// zh-CN: '黄色'
+	String get desktopLyricColorYellow => '黄色';
+
+	/// zh-CN: '青色'
+	String get desktopLyricColorCyan => '青色';
+
+	/// zh-CN: '粉色'
+	String get desktopLyricColorPink => '粉色';
+
+	/// zh-CN: '绿色'
+	String get desktopLyricColorGreen => '绿色';
+
+	/// zh-CN: '橙色'
+	String get desktopLyricColorOrange => '橙色';
+
+	/// zh-CN: '清空播放队列'
+	String get clearQueue => '清空播放队列';
+
+	/// zh-CN: '导出歌词'
+	String get exportLyric => '导出歌词';
+
+	/// zh-CN: '歌词已保存到 {path}'
+	String exportLyricDone({required Object path}) => '歌词已保存到 ${path}';
+
+	/// zh-CN: '歌词导出失败：{error}'
+	String exportLyricFailed({required Object error}) => '歌词导出失败：${error}';
 }
 
 // Path: navigation
@@ -2520,6 +3243,12 @@ class Translations$navigation$zh_CN {
 
 	/// zh-CN: '我的列表'
 	String get musicLibrary => '我的列表';
+
+	/// zh-CN: '本地音乐'
+	String get musicLocal => '本地音乐';
+
+	/// zh-CN: '下载管理'
+	String get musicDownloads => '下载管理';
 }
 
 // Path: player
@@ -3088,6 +3817,9 @@ class Translations$room$zh_CN {
 	/// zh-CN: '房间信息加载失败'
 	String get detailFailed => '房间信息加载失败';
 
+	/// zh-CN: '进入直播间'
+	String get openRoom => '进入直播间';
+
 	/// zh-CN: '复制房间链接'
 	String get copyLink => '复制房间链接';
 
@@ -3523,6 +4255,12 @@ class Translations$search$zh_CN {
 	/// zh-CN: '显示离线'
 	String get includeOffline => '显示离线';
 
+	/// zh-CN: '筛选'
+	String get filterTitle => '筛选';
+
+	/// zh-CN: '重置'
+	String get filterReset => '重置';
+
 	/// zh-CN: '检测到直播间链接'
 	String get linkDetected => '检测到直播间链接';
 
@@ -3945,6 +4683,12 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '全部平台都在显示中。'
 	String get sitesAllShown => '全部平台都在显示中。';
+
+	/// zh-CN: '全部显示'
+	String get sitesShowAll => '全部显示';
+
+	/// zh-CN: '把关闭的平台全部打开。'
+	String get sitesShowAllDesc => '把关闭的平台全部打开。';
 
 	/// zh-CN: '清空观看历史'
 	String get dataClearHistory => '清空观看历史';
@@ -4840,20 +5584,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '每行卡片数'
 	String get browseColumns => '每行卡片数';
 
-	/// zh-CN: '列表每行行数'
-	String get browseListColumns => '列表每行行数';
-
 	/// zh-CN: '自动'
 	String get browseAuto => '自动';
 
 	/// zh-CN: '封面比例'
 	String get browseCoverAspect => '封面比例';
-
-	/// zh-CN: '标题行数'
-	String get browseTitleLines => '标题行数';
-
-	/// zh-CN: '{count} 行'
-	String browseTitleLinesValue({required Object count}) => '${count} 行';
 
 	/// zh-CN: '列间距'
 	String get crossSpacing => '列间距';
@@ -4905,6 +5640,24 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '导入并管理 lx 风格的自定义音源脚本。'
 	String get musicSourcesDescription => '导入并管理 lx 风格的自定义音源脚本。';
+
+	/// zh-CN: '下载'
+	String get navMusicDownload => '下载';
+
+	/// zh-CN: '下载目录、文件格式、命名与标签处理。'
+	String get musicDownloadDescription => '下载目录、文件格式、命名与标签处理。';
+
+	/// zh-CN: '歌词'
+	String get navMusicLyric => '歌词';
+
+	/// zh-CN: '歌词的翻译、音译与延迟。'
+	String get musicLyricDescription => '歌词的翻译、音译与延迟。';
+
+	/// zh-CN: '桌面歌词'
+	String get navMusicDesktopLyric => '桌面歌词';
+
+	/// zh-CN: '悬浮歌词的开关、锁定、字号、颜色与对齐。'
+	String get musicDesktopLyricDescription => '悬浮歌词的开关、锁定、字号、颜色与对齐。';
 
 	/// zh-CN: '默认清晰度'
 	String get vodQuality => '默认清晰度';
@@ -6610,12 +7363,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '开播状态'
 	String get roomCardShowStatus => '开播状态';
 
-	/// zh-CN: '开播时长'
-	String get roomCardShowDuration => '开播时长';
-
-	/// zh-CN: '主播认证'
-	String get roomCardShowVerified => '主播认证';
-
 	/// zh-CN: '主播头像'
 	String get roomCardShowAvatar => '主播头像';
 
@@ -6628,20 +7375,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '观众指标'
 	String get roomCardShowAudience => '观众指标';
 
-	/// zh-CN: '列表封面'
-	String get roomCardShowListCover => '列表封面';
-
 	/// zh-CN: '回放'
 	String get roomCardReplay => '回放';
-
-	/// zh-CN: '外观'
-	String get roomCardAppearance => '外观';
-
-	/// zh-CN: '圆角大小'
-	String get roomCardCornerRadius => '圆角大小';
-
-	/// zh-CN: '同步调整卡片和封面圆角。'
-	String get roomCardCornerRadiusDesc => '同步调整卡片和封面圆角。';
 
 	/// zh-CN: '恢复默认显示'
 	String get roomCardResetCurrent => '恢复默认显示';
@@ -7239,12 +7974,6 @@ class Translations$toolbox$zh_CN {
 
 	/// zh-CN: '数据'
 	String get groupData => '数据';
-
-	/// zh-CN: '链接解析'
-	String get toolLinkTitle => '链接解析';
-
-	/// zh-CN: '粘贴平台链接，打开直播间或复制房间地址。'
-	String get toolLinkDescription => '粘贴平台链接，打开直播间或复制房间地址。';
 
 	/// zh-CN: '平台节点'
 	String get toolNetworkTitle => '平台节点';
@@ -8381,11 +9110,18 @@ extension on Translations {
 			'areas.viewPlatform' => '平台分区',
 			'areas.viewFollowed' => '关注分区',
 			'areas.followedEmpty' => '还没有关注的分区',
-			'areas.followedEmptyHint' => '在平台分区或直播间里点爱心即可关注',
+			'areas.followedEmptyHint' => '在分区卡片上右键或长按，选择关注即可',
 			'areas.noPlatforms' => '没有可浏览的平台',
 			'areas.unfollow' => '取消关注',
 			'areas.categoryAll' => '全部分类',
+			'areas.iconTop' => '图标在上',
+			'areas.iconLeft' => '图标在左',
+			'areas.open' => '进入分区',
 			'areas.follow' => '关注分区',
+			'areas.searchHint' => '搜索分区',
+			'areas.searchAt' => ({required Object platform, required Object query}) => '在 ${platform} 中搜索分区“${query}”',
+			'areas.searchEmpty' => '没有匹配的分区',
+			'areas.backToBrowse' => '返回浏览',
 			'areas.hiddenUnplayable' => ({required int count}) => '已隐藏 ${count} 个不能播放的直播（付费、加密、仅限 App 等）',
 			'backup.title' => '备份与恢复',
 			'backup.localSection' => '本地备份',
@@ -8571,10 +9307,13 @@ extension on Translations {
 			'favorites.tagsFilter' => '标签筛选',
 			'favorites.allTags' => '全部标签',
 			'favorites.tagsEmpty' => '还没有标签',
+			'favorites.newTag' => '新建标签',
 			'favorites.tagFieldHint' => '新标签名称',
 			'favorites.addTag' => '添加标签',
 			'favorites.deleteTagTitle' => ({required String name}) => '删除标签“${name}”？',
 			'favorites.deleteTagBody' => '所有直播间都会移出这个标签，直播间本身不会被取消关注。',
+			'favorites.tagFollowTitle' => '先关注再设置标签',
+			'favorites.tagFollowBody' => '标签只属于关注的房间。先关注这个直播间，之后可以为它设置任意多个标签。',
 			'favorites.tagExists' => '这个标签已经存在',
 			'favorites.tagInvalid' => '标签名称不能为空',
 			'favorites.deleteTag' => '删除',
@@ -8588,8 +9327,13 @@ extension on Translations {
 			'history.openFailedTitle' => '历史记录打不开',
 			'history.recordCount' => ({required int count, required int limit}) => '已记录 ${count} / 上限 ${limit} 条',
 			'history.filter' => '筛选',
-			'history.filterClose' => '关闭筛选',
+			'history.filterPanelTitle' => '筛选观看记录',
+			'history.filterKeyword' => '关键词',
 			'history.filterHint' => '按标题、主播、房间号或平台筛选',
+			'history.filterStart' => '开始时间',
+			'history.filterEnd' => '结束时间',
+			'history.filterAnyDay' => '不限',
+			'history.filterDone' => '完成',
 			'history.filterMatches' => ({required int count}) => '${count} 条匹配',
 			'history.filterReset' => '清除筛选',
 			'history.filterEmptyTitle' => '没有符合条件的观看记录',
@@ -8612,7 +9356,6 @@ extension on Translations {
 			'history.limitSaved' => ({required int limit}) => '上限已设为 ${limit} 条',
 			'history.refresh' => '刷新',
 			'history.refreshFailed' => ({required int count}) => '${count} 条记录刷新失败',
-			'history.openRoom' => '进入直播间',
 			'hongguo.title' => '红果短剧',
 			'hongguo.tagline' => '短剧 · 漫剧 · AI 短剧，由红果伴侣服务提供',
 			'hongguo.navRank' => '榜单',
@@ -8692,6 +9435,100 @@ extension on Translations {
 			'hongguo.favoriteToggleOff' => '已取消本机收藏',
 			'hongguo.cloudFavoriteOn' => '已加入账户收藏',
 			'hongguo.cloudFavoriteOff' => '已取消账户收藏',
+			'hongguo.related' => '相关作品',
+			'hongguo.relatedNone' => '暂无相关剧集',
+			'hongguo.relatedLive' => '已上线 · 看剧集',
+			'hongguo.relatedReserve' => '预约',
+			'hongguo.reserved' => '已预约',
+			'hongguo.comments' => '评论',
+			'hongguo.commentsEmpty' => '还没有评论',
+			'hongguo.commentsLoadMore' => '加载更多',
+			'hongguo.danmaku' => '弹幕',
+			'hongguo.danmakuOn' => '弹幕开',
+			'hongguo.danmakuOff' => '弹幕关',
+			'hongguo.phoneLogin' => '手机号登录',
+			'hongguo.phonePlaceholder' => '手机号，如 138…（境外 +区号 号码）',
+			'hongguo.phoneSend' => '发送验证码',
+			'hongguo.phoneCodePlaceholder' => '验证码',
+			'hongguo.phoneVerify' => '登录',
+			'hongguo.phoneSent' => '验证码已发送到',
+			'hongguo.accountPhoneToggle' => '用手机号登录',
+			'hongguo.commentsFailed' => '评论没有加载出来',
+			'hongguo.shelfForYou' => '为你推荐',
+			'hongguo.shelfChangeBatch' => '换一批',
+			'hongguo.shelfHot' => '正在热播',
+			'hongguo.shelfNew' => '新剧',
+			'hongguo.shelfCategory' => '分类',
+			'hongguo.newArrivals' => '上新',
+			'hongguo.openFullBoard' => '查看完整榜单',
+			'hongguo.seeMore' => '更多',
+			'hongguo.refreshShelf' => '刷新片单',
+			'hongguo.allEpisodesCount' => ({required Object count}) => '全${count}集',
+			'hongguo.filterReset' => '重置',
+			'hongguo.filterNone' => '全部条件',
+			'hongguo.rankSource' => '红果官网热播榜',
+			'hongguo.rankTopicAll' => '全部题材',
+			'hongguo.rankKeepsPlaces' => '保留原榜名次',
+			'hongguo.rankRenewing' => '正在后台更新…',
+			'hongguo.rankReading' => '读取中…',
+			'hongguo.rankEmptyTopic' => '本榜暂无符合条件的作品，可切换题材',
+			'hongguo.rankSeriesCount' => ({required Object count}) => '${count} 部',
+			'hongguo.refresh' => '刷新',
+			'hongguo.suggestOff' => '联想暂不可用，可直接按搜索',
+			'hongguo.searchHistory' => '最近搜索',
+			'hongguo.searchHistoryClear' => '清空历史',
+			'hongguo.searchHistoryHint' => '搜过的剧名会留在本机，最多 20 条',
+			'hongguo.filter' => '筛选',
+			'hongguo.filterPanelTitle' => '筛选条件',
+			'hongguo.filterDone' => '完成',
+			'hongguo.accountId' => '红果号',
+			'hongguo.copyAccountId' => '复制',
+			'hongguo.copied' => '已复制',
+			'hongguo.accountReading' => '正在读取…',
+			'hongguo.accountNotRead' => '尚未读取',
+			'hongguo.accountReadCount' => ({required Object count}) => '已读取 ${count} 部',
+			'hongguo.historyFilterWatched' => '已看完',
+			'hongguo.historyFilterUnwatched' => '未看完',
+			'hongguo.frameMode' => '画面模式',
+			'hongguo.frameFit' => '完整画面',
+			'hongguo.frameZoom' => '等比铺满',
+			'hongguo.frameFill' => '拉伸铺满',
+			'hongguo.frameFitDesc' => '保留比例与全部内容，画面外留黑边',
+			'hongguo.frameZoomDesc' => '铺满画面，会裁掉部分画面与字幕',
+			'hongguo.frameFillDesc' => '铺满画面，但画面比例会改变',
+			'hongguo.sleep' => '定时停止',
+			'hongguo.sleepOff' => '关闭定时停止',
+			'hongguo.sleepAfter' => ({required Object minutes}) => '${minutes} 分钟后',
+			'hongguo.sleepMinutes' => ({required Object count}) => '${count} 分钟后',
+			'hongguo.sleepThisEpisode' => '本集播完',
+			'hongguo.sleepAfterEpisodes' => ({required Object count}) => '再播完 ${count} 集',
+			'hongguo.sleepEpisodes' => ({required Object count}) => '再播完 ${count} 集',
+			'hongguo.sleepStopped' => '定时停止已生效 · 观看位置已保存 · 按播放可继续',
+			_ => null,
+		} ?? switch (path) {
+			'hongguo.retryNow' => '立即重试',
+			'hongguo.retryLower' => ({required Object height}) => '尝试 ${height}P',
+			'hongguo.backToEpisodes' => '返回选集',
+			'hongguo.stopAutoRetry' => '停止自动重试',
+			'hongguo.autoRetry' => ({required Object attempt, required Object seconds}) => '即将重试 ${attempt}/3 · ${seconds} 秒后',
+			'hongguo.retryExhausted' => '已自动重试 3 次，仍无法播放。可手动重试或切换清晰度。',
+			'hongguo.decoderLessons' => '设备解码记录',
+			'hongguo.decoderLessonsCount' => ({required Object count}) => '已记住 ${count} 条解码失败，选流时会跳过它们',
+			'hongguo.decoderLessonsEmpty' => '还没有解码失败记录，选流按平台声明',
+			'hongguo.decoderResetDone' => ({required Object count}) => '已清除 ${count} 条设备解码记录',
+			'hongguo.favoriteCheck' => '检查更新',
+			'hongguo.favoriteChecking' => ({required Object done, required Object total}) => '检查更新 ${done}/${total}…',
+			'hongguo.favoriteChecked' => ({required Object done, required Object total}) => '已检查 ${done}/${total} 部 · 检查完成',
+			'hongguo.favoriteCheckedSome' => ({required Object done, required Object total, required Object failures}) => '已检查 ${done}/${total} 部 · ${failures} 部失败，稍后可重试',
+			'hongguo.favoriteRecentCheck' => '最近一小时已检查，可手动刷新',
+			'hongguo.favoriteNoFavorites' => '收藏后可检查新集',
+			'hongguo.favoriteAdded' => ({required Object count}) => '新增 ${count} 集',
+			'hongguo.favoriteUpTo' => ({required Object count}) => '更新至 ${count} 集',
+			'hongguo.favoriteBadge' => ({required Object count}) => '${count} 部有新集',
+			'hongguo.reviews' => '剧评',
+			'hongguo.reviewsEmpty' => '还没有剧评',
+			'hongguo.rating' => ({required Object score}) => '评分 ${score}',
+			'hongguo.ratingCount' => ({required Object count}) => '${count} 人评分',
 			'iptv.tabAll' => '全部',
 			'iptv.live' => '直播',
 			'iptv.scopeLabel' => '频道范围',
@@ -8775,8 +9612,6 @@ extension on Translations {
 			'iptv.noPlaylistsTitle' => '还没有播放列表',
 			'iptv.pickPlaylistFile' => '选择播放列表文件',
 			'iptv.playlistName' => '播放列表名称',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.playlistNameHint' => '留空则按来源自动命名',
 			'iptv.playlistText' => '播放列表内容',
 			'iptv.playlistTextHint' => '粘贴 M3U/M3U8/TXT 内容',
@@ -8950,7 +9785,7 @@ extension on Translations {
 			'music.sourcesReady' => ({required Object count}) => '已就绪 ${count} 个自定义源',
 			'music.settingsPlayback' => '音源与播放',
 			'music.defaultSource' => '默认音源',
-			'music.defaultSourceDesc' => '歌曲从哪个自定义源获取；同一时间只有一个音源生效。',
+			'music.defaultSourceDesc' => '歌曲从哪个音源获取；lx-music 通过导入的自定义源脚本解析播放地址。',
 			'music.defaultSourceEmpty' => '还没有可用的音源；先在下方「自定义源」里导入脚本。',
 			'music.quality' => '播放品质',
 			'music.qualityDesc' => '向音源请求的音质；音源没有这一档时会给出它能提供的最高档。',
@@ -8969,7 +9804,7 @@ extension on Translations {
 			'music.playbackReset' => '恢复默认',
 			'music.playbackResetDesc' => '自动选源、320K、出错跳过、新歌排在末尾。',
 			'music.sourcesSection' => '自定义源',
-			'music.sourcesHint' => 'lx-music 的自定义源是 JavaScript 脚本。导入时读取脚本头部注释并原样保存脚本；当前版本还不会执行脚本——执行需要内置 JS 引擎。',
+			'music.sourcesHint' => 'lx-music 的自定义源是 JavaScript 脚本，在 fjs（QuickJS）运行时中执行；导入后会初始化并接管播放地址解析。',
 			'music.sourcesImportText' => '粘贴脚本导入',
 			'music.sourcesImportTextDesc' => '把 lx-music 自定义源脚本的全文粘贴进来。',
 			'music.sourcesImportUrl' => '从链接导入',
@@ -8993,9 +9828,13 @@ extension on Translations {
 			'music.sourceDeleteDesc' => '脚本会一并删除；重新导入即可恢复。',
 			'music.sourceDeleted' => ({required Object name}) => '已移除「${name}」',
 			'music.sourcesCount' => ({required Object count}) => '共导入 ${count} 个',
-			'music.searchHint' => '搜索歌曲、歌手或 BV 号…',
+			'music.sourcesReload' => '重新加载脚本',
+			'music.sourcesReloadDesc' => '重新初始化所有已导入的 lx 脚本。',
+			'music.sourcesReloaded' => ({required Object count}) => '已加载 ${count} 个脚本',
+			'music.sourcesReloadedErrors' => ({required Object count}) => '有 ${count} 个脚本加载失败',
+			'music.searchHint' => '搜索歌曲、歌手或专辑…',
 			'music.searchIdleTitle' => '搜一首歌',
-			'music.searchIdleDescription' => '输入歌名、歌手或 BV 号，按回车开始搜索。',
+			'music.searchIdleDescription' => '输入歌名、歌手或专辑，按回车开始搜索。',
 			'music.noResultsTitle' => '没有找到歌曲',
 			'music.noResultsDescription' => '换个关键词试试。',
 			'music.searchFailed' => '搜索失败',
@@ -9026,6 +9865,137 @@ extension on Translations {
 			'music.playingSource' => ({required Object source}) => '来自 ${source}',
 			'music.loadMore' => '加载更多',
 			'music.clearRecent' => '清空最近播放',
+			'music.moreActions' => '更多操作',
+			'music.playNext' => '下一首播放',
+			'music.addToPlaylist' => '加入歌单',
+			'music.download' => '下载',
+			'music.downloadAll' => '下载全部',
+			'music.downloadAllQueued' => ({required Object count}) => '已加入 ${count} 首到下载队列',
+			'music.moveUp' => '上移',
+			'music.moveDown' => '下移',
+			'music.playAll' => '全部播放',
+			'music.searchHistory' => '最近搜索',
+			'music.searchHistoryClear' => '清空',
+			'music.searchHistoryRemove' => '删除这条搜索',
+			'music.playlistCreate' => '新建歌单',
+			'music.playlistCreateTitle' => '新建歌单',
+			'music.playlistName' => '歌单名称',
+			'music.playlistNameHint' => '给歌单起个名字',
+			'music.playlistRename' => '重命名',
+			'music.playlistRenameTitle' => '重命名歌单',
+			'music.playlistDelete' => '删除歌单',
+			'music.playlistDeleteTitle' => ({required Object name}) => '删除「${name}」？',
+			'music.playlistDeleteDesc' => '歌单会从列表里移除，歌曲本身不会删除。',
+			'music.playlistClear' => '清空歌单',
+			'music.playlistEmptyTitle' => '歌单还是空的',
+			'music.playlistEmptyDescription' => '在歌曲行的「更多」里把歌加进来。',
+			'music.playlistAdded' => ({required Object name}) => '已加入「${name}」',
+			'music.playlistAlreadyIn' => ({required Object name}) => '「${name}」里已经有这首歌',
+			'music.playlistsCount' => ({required Object count}) => '${count} 个歌单',
+			'music.downloadsActive' => ({required Object count}) => '正在下载 ${count} 首',
+			'music.downloadQueued' => ({required Object title}) => '已加入下载：${title}',
+			'music.downloadDuplicate' => '这首歌已经在下载队列里',
+			'music.downloadUnsupported' => '这首歌没有可下载的音源（本地文件或当前音源未覆盖）',
+			'music.downloadFailed' => ({required Object error}) => '下载失败：${error}',
+			'music.downloadHint' => '下载文件保存在共享下载目录；队列支持暂停、续传和失败重试。',
+			'music.downloadDirectory' => '下载目录',
+			'music.downloadDirectoryDefault' => '使用默认目录',
+			'music.downloadDirectoryDefaultDesc' => '回到应用默认的下载文件夹。',
+			'music.downloadDirectoryUpdated' => '下载目录已更新',
+			'music.downloadDirectoryFailed' => '无法写入这个目录',
+			'music.downloadType' => '下载格式',
+			'music.downloadTypeDesc' => '原格式会尽量保留音源容器；转码需要 ffmpeg。',
+			'music.downloadTypeOriginal' => '原格式',
+			'music.downloadTypeMp3' => 'MP3',
+			'music.downloadTypeM4a' => 'M4A',
+			'music.downloadTypeFlac' => 'FLAC',
+			'music.downloadTypeOgg' => 'OGG',
+			'music.downloadTypeWav' => 'WAV',
+			'music.downloadPattern' => '文件名格式',
+			'music.downloadPatternHint' => '可用占位符（写在花括号里）：title、artist、album、quality、source、list、index。',
+			'music.downloadPatternEdit' => '编辑',
+			'music.downloadEmbedCover' => '嵌入封面',
+			'music.downloadEmbedCoverDesc' => '把歌曲封面写入音频标签。',
+			'music.downloadEmbedLyric' => '嵌入歌词',
+			'music.downloadEmbedLyricDesc' => '把歌词写入音频标签，随文件一起播放。',
+			'music.downloadWriteLyric' => '保存歌词文件',
+			'music.downloadWriteLyricDesc' => '在音频文件旁写一个同名 .lrc。',
+			'music.downloadSkipExisting' => '跳过已存在文件',
+			'music.downloadSkipExistingDesc' => '目标文件已存在时不再下载。',
+			'music.downloadGroupByList' => '按歌单分文件夹',
+			'music.downloadGroupByListDesc' => '从歌单下载时，文件保存到以歌单命名的子文件夹。',
+			'music.downloadStatusQueued' => '排队中',
+			'music.downloadStatusRunning' => '下载中',
+			'music.downloadStatusPaused' => '已暂停',
+			'music.downloadStatusProcessing' => '写入标签',
+			'music.downloadStatusCompleted' => '已完成',
+			'music.downloadStatusSkipped' => '已跳过',
+			'music.downloadStatusFailed' => '下载失败',
+			'music.downloadStatusCancelled' => '已取消',
+			'music.downloadPauseAll' => '全部暂停',
+			'music.downloadResumeAll' => '全部继续',
+			'music.downloadClearFinished' => '清除已完成',
+			'music.downloadProgress' => '下载进度',
+			'music.downloadRetry' => '重试',
+			'music.downloadRemove' => '移除记录',
+			'music.downloadResume' => '继续',
+			'music.downloadPause' => '暂停',
+			'music.downloadCancel' => '取消',
+			'music.downloadsEmptyTitle' => '还没有下载任务',
+			'music.downloadsEmptyDescription' => ({required Object directory}) => '在歌曲行的「更多」里下载，文件会保存到 ${directory}。',
+			'music.localAddFolder' => '添加文件夹',
+			'music.localHint' => '添加本机音乐文件夹，扫描后会像在线歌曲一样播放。',
+			'music.localFiles' => ({required Object count}) => '${count} 个文件',
+			'music.localRescan' => '重新扫描',
+			'music.localFolders' => '音乐文件夹',
+			'music.localRemoveFolder' => '移除文件夹',
+			'music.localFailed' => '扫描失败',
+			'music.localEmptyTitle' => '还没有本地音乐',
+			'music.localEmptyDescription' => '添加一个存放音频文件的文件夹开始扫描。',
+			'music.localFolderFailed' => ({required Object error}) => '无法添加文件夹：${error}',
+			'music.playbackRate' => '播放速度',
+			'music.sleepTimer' => '睡眠定时',
+			'music.sleepOff' => '关闭',
+			'music.sleepMinutes' => ({required Object count}) => '${count} 分钟',
+			'music.sleepRemaining' => ({required Object value}) => '${value} 后暂停',
+			'music.lyricOffset' => '歌词延迟',
+			'music.lyricOffsetDesc' => '正值让歌词更晚出现。',
+			'music.lyricOffsetReset' => '不偏移',
+			'music.lyricTranslation' => '显示翻译',
+			'music.lyricTranslationDesc' => '歌词带翻译时一并显示。',
+			'music.lyricRomanization' => '显示音译',
+			'music.lyricRomanizationDesc' => '歌词带音译或罗马音时一并显示。',
+			'music.lyricHint' => '歌词显示与延迟对所有歌曲生效；桌面歌词可在设置或播放页的更多菜单里打开。',
+			'music.desktopLyrics' => '桌面歌词',
+			'music.desktopLyricsOn' => '桌面歌词已开启',
+			'music.desktopLyricsOff' => '桌面歌词已关闭',
+			'music.desktopLyricsUnavailable' => '当前平台没有桌面歌词窗口或未授权',
+			'music.desktopLyricHint' => '桌面歌词是独立悬浮窗，可拖动、锁定并控制播放；Android 需要悬浮窗权限。',
+			'music.desktopLyricEnableDesc' => '在桌面上悬浮显示当前歌词；关闭后保留下面的样式。',
+			'music.desktopLyricLock' => '锁定歌词',
+			'music.desktopLyricLockDesc' => '锁定后鼠标点击穿过歌词窗口，不会挡住下面的程序。',
+			'music.desktopLyricStyleSection' => '样式',
+			'music.desktopLyricFontSize' => '字号',
+			'music.desktopLyricFontSizeDesc' => '桌面歌词的字体大小。',
+			'music.desktopLyricOpacity' => '不透明度',
+			'music.desktopLyricOpacityDesc' => '桌面歌词窗口的整体不透明度。',
+			'music.desktopLyricTextColor' => '文字颜色',
+			'music.desktopLyricTextColorDesc' => '桌面歌词的主文字颜色。',
+			'music.desktopLyricAlignment' => '对齐方式',
+			'music.desktopLyricAlignmentDesc' => '歌词在窗口内的水平对齐。',
+			'music.desktopLyricAlignLeft' => '左对齐',
+			'music.desktopLyricAlignCenter' => '居中',
+			'music.desktopLyricAlignRight' => '右对齐',
+			'music.desktopLyricColorWhite' => '白色',
+			'music.desktopLyricColorYellow' => '黄色',
+			'music.desktopLyricColorCyan' => '青色',
+			'music.desktopLyricColorPink' => '粉色',
+			'music.desktopLyricColorGreen' => '绿色',
+			'music.desktopLyricColorOrange' => '橙色',
+			'music.clearQueue' => '清空播放队列',
+			'music.exportLyric' => '导出歌词',
+			'music.exportLyricDone' => ({required Object path}) => '歌词已保存到 ${path}',
+			'music.exportLyricFailed' => ({required Object error}) => '歌词导出失败：${error}',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -9048,9 +10018,13 @@ extension on Translations {
 			'navigation.vodRegions' => '分区',
 			'navigation.iptvSources' => '订阅源',
 			'navigation.iptvGuide' => '节目单',
+			_ => null,
+		} ?? switch (path) {
 			'navigation.musicSonglist' => '歌单',
 			'navigation.musicToplist' => '排行榜',
 			'navigation.musicLibrary' => '我的列表',
+			'navigation.musicLocal' => '本地音乐',
+			'navigation.musicDownloads' => '下载管理',
 			'player.title' => '播放',
 			'player.back' => '返回',
 			'player.quality' => '清晰度',
@@ -9228,6 +10202,7 @@ extension on Translations {
 			'room.offlineReplayReason' => '有回放可看，回到列表后可从卡片进入',
 			'room.offlineReason' => '开播后这里会看到直播画面',
 			'room.detailFailed' => '房间信息加载失败',
+			'room.openRoom' => '进入直播间',
 			'room.copyLink' => '复制房间链接',
 			'room.linkCopied' => '链接已复制',
 			'room.record' => '录制',
@@ -9289,8 +10264,6 @@ extension on Translations {
 			'room.orientationHint' => '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。',
 			'room.orientationAutomatic' => '自动',
 			'room.orientationPortrait' => '竖屏',
-			_ => null,
-		} ?? switch (path) {
 			'room.orientationLandscape' => '横屏',
 			'room.orientationUpdated' => '画面方向已更新',
 			'room.portraitFullscreen' => '竖屏全屏',
@@ -9372,6 +10345,8 @@ extension on Translations {
 			'search.sortAudience' => '按人气',
 			'search.sortFollowers' => '按关注',
 			'search.includeOffline' => '显示离线',
+			'search.filterTitle' => '筛选',
+			'search.filterReset' => '重置',
 			'search.linkDetected' => '检测到直播间链接',
 			'search.linkOpen' => '打开直播间',
 			'search.linkResolving' => '正在解析链接…',
@@ -9510,6 +10485,8 @@ extension on Translations {
 			'settings.sitesDisplay' => '平台显示',
 			'settings.sitesDisplayDesc' => '关闭的平台不再出现在热门、分区、关注与搜索的平台列表里。',
 			'settings.sitesAllShown' => '全部平台都在显示中。',
+			'settings.sitesShowAll' => '全部显示',
+			'settings.sitesShowAllDesc' => '把关闭的平台全部打开。',
 			'settings.dataClearHistory' => '清空观看历史',
 			'settings.dataClearHistoryDesc' => '删除全部观看记录，不可恢复。',
 			'settings.dataExportFollows' => '导出关注',
@@ -9555,6 +10532,8 @@ extension on Translations {
 			'settings.cornersPill' => '胶囊',
 			'settings.density' => '控件密度',
 			'settings.densitySystem' => '跟随平台',
+			_ => null,
+		} ?? switch (path) {
 			'settings.densityCompact' => '紧凑',
 			'settings.densityTouch' => '触控',
 			'settings.languageSystem' => '跟随系统',
@@ -9803,18 +10782,13 @@ extension on Translations {
 			'settings.refreshDescription' => '关注列表与直播缩略图的自动刷新。',
 			'settings.proxyDescription' => '应用级网络代理，所有站点请求都走它。',
 			'settings.platformsDescription' => '平台显示、排列顺序与账号登录。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.searchSettings' => '搜索设置',
 			'settings.searchNoResults' => '没有匹配的设置',
 			'settings.searchResults' => '搜索结果',
 			'settings.browseLayoutGroup' => '卡片布局',
 			'settings.browseColumns' => '每行卡片数',
-			'settings.browseListColumns' => '列表每行行数',
 			'settings.browseAuto' => '自动',
 			'settings.browseCoverAspect' => '封面比例',
-			'settings.browseTitleLines' => '标题行数',
-			'settings.browseTitleLinesValue' => ({required Object count}) => '${count} 行',
 			'settings.crossSpacing' => '列间距',
 			'settings.crossSpacingDescription' => '卡片网格里左右两张卡片之间的距离。',
 			'settings.mainSpacing' => '行间距',
@@ -9832,6 +10806,12 @@ extension on Translations {
 			'settings.musicListDescription' => '新歌的位置、单击行为与是否显示来源。',
 			'settings.navMusicSources' => '自定义源',
 			'settings.musicSourcesDescription' => '导入并管理 lx 风格的自定义音源脚本。',
+			'settings.navMusicDownload' => '下载',
+			'settings.musicDownloadDescription' => '下载目录、文件格式、命名与标签处理。',
+			'settings.navMusicLyric' => '歌词',
+			'settings.musicLyricDescription' => '歌词的翻译、音译与延迟。',
+			'settings.navMusicDesktopLyric' => '桌面歌词',
+			'settings.musicDesktopLyricDescription' => '悬浮歌词的开关、锁定、字号、颜色与对齐。',
 			'settings.vodQuality' => '默认清晰度',
 			'settings.vodQualityDesc' => '打开视频时优先请求的清晰度；未登录时 Bilibili 可能只提供 720P 及以下。',
 			'settings.vodQuality720' => '720P',
@@ -10066,6 +11046,8 @@ extension on Translations {
 			'settings.preferredQualityDesc' => '进入房间时优先选用的清晰度档位；站点没有同名画质时，按档位比例选最接近的。默认原画。',
 			'settings.preferredQualityCellular' => '蜂窝网络首选画质',
 			'settings.preferredQualityCellularDesc' => '使用移动数据时优先选用的清晰度档位；Wi-Fi 与有线仍使用上面的首选画质。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.qualityAuto' => '自动（站点默认）',
 			'settings.qualityOriginal' => '原画',
 			'settings.qualityBluRay8M' => '蓝光 8M',
@@ -10317,8 +11299,6 @@ extension on Translations {
 			'settings.wallpaperCategoryTexture' => '纹理',
 			'settings.wallpaperCategoryOther' => '其他',
 			'settings.wallpaperCategoryPopular' => '热门',
-			_ => null,
-		} ?? switch (path) {
 			'settings.wallpaperCategoryMinimalism' => '极简主义',
 			'settings.wallpaperCategoryPatterns' => '图案',
 			'settings.wallpaperCategoryLandscape' => '风景',
@@ -10402,17 +11382,11 @@ extension on Translations {
 			'settings.roomCardShowTitle' => '标题',
 			'settings.roomCardShowCoverTitle' => '封面类型',
 			'settings.roomCardShowStatus' => '开播状态',
-			'settings.roomCardShowDuration' => '开播时长',
-			'settings.roomCardShowVerified' => '主播认证',
 			'settings.roomCardShowAvatar' => '主播头像',
 			'settings.roomCardShowAnchor' => '主播名称',
 			'settings.roomCardShowPlatform' => '平台徽章',
 			'settings.roomCardShowAudience' => '观众指标',
-			'settings.roomCardShowListCover' => '列表封面',
 			'settings.roomCardReplay' => '回放',
-			'settings.roomCardAppearance' => '外观',
-			'settings.roomCardCornerRadius' => '圆角大小',
-			'settings.roomCardCornerRadiusDesc' => '同步调整卡片和封面圆角。',
 			'settings.roomCardResetCurrent' => '恢复默认显示',
 			'settings.roomCardScopeHint' => '移动端与桌面端各自保存，并自动应用到当前设备类型的卡片与列表。',
 			'settings.backgroundPreviewMedia' => '预览',
@@ -10586,6 +11560,8 @@ extension on Translations {
 			'shield.removeEntry' => '移除这条屏蔽规则',
 			'shield.effectNote' => '屏蔽在直播间弹幕中立即生效。',
 			'shield.contentTitle' => '内容屏蔽',
+			_ => null,
+		} ?? switch (path) {
 			'shield.blockEmoteOnly' => '屏蔽只有表情的弹幕',
 			'shield.blockEmoteOnlyDescription' => '只有表情、没有文字的弹幕不显示；自己发送的弹幕不会被屏蔽。',
 			'shield.blockLong' => '屏蔽超长弹幕',
@@ -10603,8 +11579,6 @@ extension on Translations {
 			'toolbox.groupLinks' => '链接工具',
 			'toolbox.groupNetwork' => '网络',
 			'toolbox.groupData' => '数据',
-			'toolbox.toolLinkTitle' => '链接解析',
-			'toolbox.toolLinkDescription' => '粘贴平台链接，打开直播间或复制房间地址。',
 			'toolbox.toolNetworkTitle' => '平台节点',
 			'toolbox.toolNetworkDescription' => '测试各平台接口的连通性与延迟。',
 			'toolbox.toolCacheTitle' => '缓存清理',
@@ -10831,8 +11805,6 @@ extension on Translations {
 			'vod.favouriteRemove' => '取消收藏',
 			'vod.saveVideo' => '收藏',
 			'vod.savedVideo' => '已收藏',
-			_ => null,
-		} ?? switch (path) {
 			'vod.saveAdded' => '已加入收藏',
 			'vod.saveRemoved' => '已取消收藏',
 			'wallpaper.title' => '随机图源',

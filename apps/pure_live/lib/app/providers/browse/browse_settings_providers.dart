@@ -3,17 +3,21 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart' show DsSpace;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
+import 'package:pure_live/features/settings/room/room_card_settings.dart' show RoomCardCoverAspect;
 import 'package:pure_live/shared/shared.dart';
 
-/// The browsing surfaces' tunables: what a settings page will own.
+/// The browsing surfaces' tunables: the grid gaps, the columns a feed draws
+/// and the cover's shape.
 ///
-/// Only the grid gaps are a viewer's choice. How wide a card is follows the
-/// window it is drawn in ([browseCardExtentForWidth]) and how many rooms a
-/// page holds follows the platform's own feed window
-/// ([roomFeedRequestSize], [areaRequestSize], [searchRequestSize]), so
-/// neither is a number the viewer has to set for a layout that already
-/// knows it.
-typedef BrowseSettings = ({double crossSpacing, double mainSpacing});
+/// The columns default to 0 — the grid derives them from the window it is
+/// drawn in ([browseCardExtentForWidth]) — and a viewer's number caps them:
+/// the window lowers the count when it cannot hold that many cards at one
+/// card's minimum width, so a choice never squeezes cards into a sliver.
+/// The cap shapes both layouts: a list row is as wide as a grid card.
+typedef BrowseSettings = ({double crossSpacing, double mainSpacing, int gridColumns, RoomCardCoverAspect coverAspect});
+
+/// The column counts a viewer may cap a feed at; 0 is "the window decides".
+const List<int> kBrowseGridColumnChoices = [3, 4, 5, 6];
 
 /// The grid gaps a viewer may pick: desen_ui's spacing tokens up to
 /// `DsSpace.s12` and nothing else — the scale, not a free pixel range, is
@@ -52,6 +56,8 @@ final class BrowseSettingsController extends Notifier<BrowseSettings> {
     return (
       crossSpacing: _readStoredSpacing('browse.crossSpacing'),
       mainSpacing: _readStoredSpacing('browse.mainSpacing'),
+      gridColumns: _readStoredInt('browse.gridColumns', kBrowseGridColumnChoices),
+      coverAspect: RoomCardCoverAspect.fromName(_readStoredString('browse.coverAspect')),
     );
   }
 
@@ -67,25 +73,77 @@ final class BrowseSettingsController extends Notifier<BrowseSettings> {
     }
   }
 
+  static String? _readStoredString(String key) {
+    try {
+      return StoragePrefs.getString(key);
+    } on Object {
+      return null;
+    }
+  }
+
+  /// A stored choice from [choices]; 0 (the window decides) when absent or
+  /// unknown.
+  static int _readStoredInt(String key, List<int> choices) {
+    try {
+      final parsed = int.tryParse(StoragePrefs.getString(key) ?? '');
+      if (parsed == null || parsed == 0) return 0;
+      return choices.contains(parsed) ? parsed : 0;
+    } on Object {
+      return 0;
+    }
+  }
+
   /// The gap between cards across a row.
   double get crossSpacing => state.crossSpacing;
 
   /// The gap between rows of cards.
   double get mainSpacing => state.mainSpacing;
 
+  /// How many grid columns a feed may draw; 0 lets the window decide. The
+  /// list layout draws rows at the same width.
+  int get gridColumns => state.gridColumns;
+
+  /// The grid card's cover shape.
+  RoomCardCoverAspect get coverAspect => state.coverAspect;
+
   /// Moves the gap between cards across a row to the nearest token.
   set crossSpacing(double spacing) {
     final clamped = nearestBrowseSpacing(spacing);
-    state = (crossSpacing: clamped, mainSpacing: state.mainSpacing);
+    state = _copy(crossSpacing: clamped);
     unawaited(StoragePrefs.setDouble('browse.crossSpacing', clamped));
   }
 
   /// Moves the gap between rows of cards to the nearest token.
   set mainSpacing(double spacing) {
     final clamped = nearestBrowseSpacing(spacing);
-    state = (crossSpacing: state.crossSpacing, mainSpacing: clamped);
+    state = _copy(mainSpacing: clamped);
     unawaited(StoragePrefs.setDouble('browse.mainSpacing', clamped));
   }
+
+  /// Caps the grid's column count; 0 goes back to the window's own count.
+  set gridColumns(int columns) {
+    final value = columns == 0 || kBrowseGridColumnChoices.contains(columns) ? columns : state.gridColumns;
+    state = _copy(gridColumns: value);
+    unawaited(StoragePrefs.setString('browse.gridColumns', '$value'));
+  }
+
+  /// The grid card's cover shape.
+  set coverAspect(RoomCardCoverAspect aspect) {
+    state = _copy(coverAspect: aspect);
+    unawaited(StoragePrefs.setString('browse.coverAspect', aspect.name));
+  }
+
+  BrowseSettings _copy({
+    double? crossSpacing,
+    double? mainSpacing,
+    int? gridColumns,
+    RoomCardCoverAspect? coverAspect,
+  }) => (
+    crossSpacing: crossSpacing ?? state.crossSpacing,
+    mainSpacing: mainSpacing ?? state.mainSpacing,
+    gridColumns: gridColumns ?? state.gridColumns,
+    coverAspect: coverAspect ?? state.coverAspect,
+  );
 }
 
 /// Owns the collection layout (cards or rows), one choice for every feed

@@ -174,6 +174,26 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
+        // The way back out of any wrong turn sits first: the viewer who
+        // came here to undo a change finds it without scrolling.
+        DsListSection(
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.rotateCw),
+              title: Text(t.settings.styleReset),
+              onPressed: () {
+                unawaited(controller.reset());
+                unawaited(frameRateController.reset());
+                unawaited(ref.read(danmakuFixedTopProvider.notifier).reset());
+                unawaited(ref.read(danmakuFixedBottomProvider.notifier).reset());
+                unawaited(ref.read(danmakuFixedDurationProvider.notifier).reset());
+                unawaited(ref.read(danmakuTapInteractionProvider.notifier).reset());
+                unawaited(ref.read(danmakuLongPressInteractionProvider.notifier).reset());
+                unawaited(pipScaleController.reset());
+              },
+            ),
+          ],
+        ),
         // Every value is set on its own knob below — there are no bundled
         // presets to overwrite them.
         DsListSection(
@@ -234,6 +254,21 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
                 semanticLabel: t.settings.styleFontWeight,
                 semanticFormatter: (value) => danmakuFontWeightLabel(t, value.round()),
               ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.italic),
+              title: t.settings.styleItalic,
+              control: DsSwitch(
+                value: style.italic,
+                onChanged: (value) => unawaited(controller.setItalic(value: value)),
+              ),
+            ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.palette),
+              title: t.settings.styleTextColor,
+              value: style.textColor,
+              options: _colorOptions(t),
+              onChanged: (value) => unawaited(controller.setTextColor(value)),
             ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.letterSpacing),
@@ -375,6 +410,71 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
                 semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
               ),
             ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.paintbrush),
+              title: t.settings.styleStrokeColor,
+              value: style.strokeColor,
+              options: _colorOptions(t),
+              onChanged: (value) => unawaited(controller.setStrokeColor(value)),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.sunDim),
+              title: t.settings.styleShadow,
+              control: DsSwitch(
+                value: style.showShadow,
+                onChanged: (value) => unawaited(controller.setShowShadow(value: value)),
+              ),
+            ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.palette),
+              title: t.settings.styleShadowColor,
+              value: style.shadowColor,
+              options: _colorOptions(t),
+              onChanged: (value) => unawaited(controller.setShadowColor(value)),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.waves),
+              title: t.settings.styleShadowBlur,
+              detail: Text('${style.shadowBlur.toStringAsFixed(1)} px'),
+              controlWidth: 220,
+              control: DsSlider(
+                value: style.shadowBlur,
+                max: DanmakuStyleRange.shadowBlurMax,
+                onChanged: style.showShadow ? (value) => unawaited(controller.setShadowBlur(value)) : null,
+                semanticLabel: t.settings.styleShadowBlur,
+                semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.moveHorizontal),
+              title: t.settings.styleShadowOffsetX,
+              detail: Text('${style.shadowOffsetX.round()} px'),
+              controlWidth: 220,
+              control: DsSlider(
+                value: style.shadowOffsetX,
+                min: DanmakuStyleRange.shadowOffsetMin,
+                max: DanmakuStyleRange.shadowOffsetMax,
+                divisions: DanmakuStyleRange.shadowOffsetDivisions,
+                onChanged: style.showShadow ? (value) => unawaited(controller.setShadowOffsetX(value)) : null,
+                semanticLabel: t.settings.styleShadowOffsetX,
+                semanticFormatter: (value) => '${value.round()} px',
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.moveVertical),
+              title: t.settings.styleShadowOffsetY,
+              detail: Text('${style.shadowOffsetY.round()} px'),
+              controlWidth: 220,
+              control: DsSlider(
+                value: style.shadowOffsetY,
+                min: DanmakuStyleRange.shadowOffsetMin,
+                max: DanmakuStyleRange.shadowOffsetMax,
+                divisions: DanmakuStyleRange.shadowOffsetDivisions,
+                onChanged: style.showShadow ? (value) => unawaited(controller.setShadowOffsetY(value)) : null,
+                semanticLabel: t.settings.styleShadowOffsetY,
+                semanticFormatter: (value) => '${value.round()} px',
+              ),
+            ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.circleSlash),
               title: t.settings.styleNoEmoji,
@@ -439,6 +539,182 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
             ),
           ],
         ),
+        // The lanes the engine allocates and the edges it must not cross.
+        DsListSection(
+          header: Text(t.settings.danmakuLaneGroup),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.rows3),
+              title: t.settings.styleTrackHeight,
+              detail: Text('${style.trackHeight.round()} px'),
+              controlWidth: 220,
+              control: DsSlider(
+                value: style.trackHeight,
+                min: DanmakuStyleRange.trackHeightMin,
+                max: DanmakuStyleRange.trackHeightMax,
+                divisions: (DanmakuStyleRange.trackHeightMax - DanmakuStyleRange.trackHeightMin).round(),
+                onChanged: (value) => unawaited(controller.setTrackHeight(value)),
+                semanticLabel: t.settings.styleTrackHeight,
+                semanticFormatter: (value) => '${value.round()} px',
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.faceSmile),
+              title: t.settings.styleEmojiSize,
+              detail: Text('${style.emojiSize.round()} px'),
+              controlWidth: 220,
+              control: DsSlider(
+                value: style.emojiSize,
+                min: DanmakuStyleRange.emojiSizeMin,
+                max: DanmakuStyleRange.emojiSizeMax,
+                divisions: (DanmakuStyleRange.emojiSizeMax - DanmakuStyleRange.emojiSizeMin).round(),
+                onChanged: (value) => unawaited(controller.setEmojiSize(value)),
+                semanticLabel: t.settings.styleEmojiSize,
+                semanticFormatter: (value) => '${value.round()} px',
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.arrowsLeftRightLine),
+              title: t.settings.styleOverlapGap,
+              detail: Text('${style.overlapSafeGap.round()} px'),
+              controlWidth: 220,
+              control: DsSlider(
+                value: style.overlapSafeGap,
+                max: DanmakuStyleRange.overlapSafeGapMax,
+                divisions: DanmakuStyleRange.overlapSafeGapMax.round(),
+                onChanged: (value) => unawaited(controller.setOverlapSafeGap(value)),
+                semanticLabel: t.settings.styleOverlapGap,
+                semanticFormatter: (value) => '${value.round()} px',
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.shield),
+              title: t.settings.styleSafeArea,
+              control: DsSwitch(
+                value: style.safeArea,
+                onChanged: (value) => unawaited(controller.setSafeArea(value: value)),
+              ),
+            ),
+          ],
+        ),
+        // The queue the layer drains and the caches it draws from: what a
+        // burst does to these decides whether a message arrives fresh or
+        // late.
+        DsListSection(
+          header: Text(t.settings.danmakuQueueGroup),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.list),
+              title: t.settings.styleMaxPending,
+              detail: Text('${style.maxPendingCount}'),
+              controlWidth: 220,
+              control: DsNumberField(
+                value: style.maxPendingCount,
+                min: DanmakuStyleRange.maxPendingMin,
+                max: DanmakuStyleRange.maxPendingMax,
+                semanticLabel: t.settings.styleMaxPending,
+                onChanged: (value) {
+                  if (value != null) unawaited(controller.setMaxPendingCount(value.toInt()));
+                },
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.timer),
+              title: t.settings.styleMaxPendingAge,
+              detail: Text('${style.maxPendingAge.toStringAsFixed(0)} s'),
+              controlWidth: 220,
+              control: DsSlider(
+                value: style.maxPendingAge,
+                min: DanmakuStyleRange.maxPendingAgeMin,
+                max: DanmakuStyleRange.maxPendingAgeMax,
+                divisions: (DanmakuStyleRange.maxPendingAgeMax - DanmakuStyleRange.maxPendingAgeMin).round(),
+                onChanged: (value) => unawaited(controller.setMaxPendingAge(value)),
+                semanticLabel: t.settings.styleMaxPendingAge,
+                semanticFormatter: (value) => '${value.round()} s',
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.send),
+              title: t.settings.styleEmitInterval,
+              detail: Text('${(style.emitInterval * 1000).round()} ms'),
+              controlWidth: 220,
+              control: DsSlider(
+                value: style.emitInterval,
+                onChanged: style.massMode ? null : (value) => unawaited(controller.setEmitInterval(value)),
+                semanticLabel: t.settings.styleEmitInterval,
+                semanticFormatter: (value) => '${(value * 1000).round()} ms',
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.image),
+              title: t.settings.styleRasterize,
+              control: DsSwitch(
+                value: style.rasterize,
+                onChanged: (value) => unawaited(controller.setRasterize(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.layers),
+              title: t.settings.styleBarragePool,
+              detail: Text('${style.barragePoolMaxSize}'),
+              controlWidth: 220,
+              control: DsNumberField(
+                value: style.barragePoolMaxSize,
+                min: DanmakuStyleRange.barragePoolMin,
+                max: DanmakuStyleRange.barragePoolMax,
+                semanticLabel: t.settings.styleBarragePool,
+                onChanged: (value) {
+                  if (value != null) unawaited(controller.setBarragePoolMaxSize(value.toInt()));
+                },
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.images),
+              title: t.settings.stylePictureCache,
+              detail: Text('${style.pictureCacheMaxSize}'),
+              controlWidth: 220,
+              control: DsNumberField(
+                value: style.pictureCacheMaxSize,
+                min: DanmakuStyleRange.pictureCacheMin,
+                max: DanmakuStyleRange.pictureCacheMax,
+                semanticLabel: t.settings.stylePictureCache,
+                onChanged: (value) {
+                  if (value != null) unawaited(controller.setPictureCacheMaxSize(value.toInt()));
+                },
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.type),
+              title: t.settings.styleTextCache,
+              detail: Text('${style.textCacheMaxSize}'),
+              controlWidth: 220,
+              control: DsNumberField(
+                value: style.textCacheMaxSize,
+                min: DanmakuStyleRange.textCacheMin,
+                max: DanmakuStyleRange.textCacheMax,
+                semanticLabel: t.settings.styleTextCache,
+                onChanged: (value) {
+                  if (value != null) unawaited(controller.setTextCacheMaxSize(value.toInt()));
+                },
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.database),
+              title: t.settings.styleRasterCache,
+              detail: Text('${style.rasterCacheMb} MB'),
+              controlWidth: 220,
+              control: DsNumberField(
+                value: style.rasterCacheMb,
+                min: DanmakuStyleRange.rasterCacheMbMin,
+                max: DanmakuStyleRange.rasterCacheMbMax,
+                semanticLabel: t.settings.styleRasterCache,
+                onChanged: (value) {
+                  if (value != null) unawaited(controller.setRasterCacheMb(value.toInt()));
+                },
+              ),
+            ),
+          ],
+        ),
         // The compact window's own layer: whether it draws danmaku at all,
         // and how large they are against the shrunken picture.
         DsListSection(
@@ -478,24 +754,6 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
               ),
             ),
             SettingsHint(t.settings.miniDanmakuHint),
-          ],
-        ),
-        DsListSection(
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.rotateCw),
-              title: Text(t.settings.styleReset),
-              onPressed: () {
-                unawaited(controller.reset());
-                unawaited(frameRateController.reset());
-                unawaited(ref.read(danmakuFixedTopProvider.notifier).reset());
-                unawaited(ref.read(danmakuFixedBottomProvider.notifier).reset());
-                unawaited(ref.read(danmakuFixedDurationProvider.notifier).reset());
-                unawaited(ref.read(danmakuTapInteractionProvider.notifier).reset());
-                unawaited(ref.read(danmakuLongPressInteractionProvider.notifier).reset());
-                unawaited(pipScaleController.reset());
-              },
-            ),
           ],
         ),
       ],
@@ -817,4 +1075,36 @@ final class _PreviewLine {
 
   final String text;
   final int color;
+}
+
+/// The text, outline and shadow rows' choices: each palette colour with its
+/// name and a swatch, so the answer reads without opening the list.
+List<DsSelectOption<int>> _colorOptions(Translations t) => [
+  for (final color in kDanmakuColorChoices)
+    DsSelectOption(
+      value: color,
+      label: danmakuColorLabel(t, color),
+      leading: _DanmakuColorDot(color: color),
+    ),
+];
+
+/// One palette colour as a dot; a rim keeps white readable on white.
+final class _DanmakuColorDot extends StatelessWidget {
+  const _DanmakuColorDot({required this.color});
+
+  final int color;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    return Container(
+      width: 14,
+      height: 14,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Color(color),
+        border: Border.all(color: colors.border),
+      ),
+    );
+  }
 }

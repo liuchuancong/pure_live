@@ -88,6 +88,7 @@ final class PlatformTabRow extends ConsumerWidget {
     this.semanticLabel,
     this.onManagePlatforms,
     this.countOf,
+    this.showLayoutToggle = true,
     super.key,
   });
 
@@ -114,6 +115,11 @@ final class PlatformTabRow extends ConsumerWidget {
   /// A platform's own count, shown after its name on the tab and under it in
   /// the panel — what the follows page lists there. Null leaves both plain.
   final int? Function(String id)? countOf;
+
+  /// Whether the row ends with the card/list layout switch. A page whose
+  /// own grid has a different pair of shapes (the areas page's tiles and
+  /// rows) passes false and draws its own switch instead of two.
+  final bool showLayoutToggle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -149,8 +155,7 @@ final class PlatformTabRow extends ConsumerWidget {
         onManagePlatforms: onManagePlatforms,
         countOf: countOf,
       ),
-      const SizedBox(width: DsSpace.s8),
-      const LayoutToggle(),
+      if (showLayoutToggle) ...[const SizedBox(width: DsSpace.s8), const LayoutToggle()],
     ];
     return SizedBox(height: 44, child: Row(children: children));
   }

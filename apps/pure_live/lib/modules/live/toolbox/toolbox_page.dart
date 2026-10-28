@@ -11,32 +11,33 @@ import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/room/clipboard_rooms.dart' show detectClipboardRoomsProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/toolbox/direct_link_dialog.dart';
 import 'package:pure_live/modules/live/toolbox/toolbox_controllers.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// The home navigation's link parser: the reference's link tool as one
-/// page. The network probe, image-cache clear and log viewer that used to
-/// sit behind the same entry are settings utilities now, under System.
+/// page — a narrow form, the sign-in page's measure, rather than a field
+/// stretched across the window. The network probe, image-cache clear and log
+/// viewer that used to sit behind the same entry are settings utilities now,
+/// under System.
 final class ToolboxPage extends StatelessWidget {
   /// The link parser page.
   const ToolboxPage({super.key});
 
+  /// The form's measure: the sign-in card's, a little wider for a pasted
+  /// share text — narrow enough to read as a form, never a band across the
+  /// window.
+  static const double formWidth = 480;
+
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s20, DsSpace.s24, DsSpace.s24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s4,
-        children: [
-          Text(t.toolbox.toolLinkTitle, style: theme.typography.display.copyWith(color: colors.text)),
-          Text(t.toolbox.toolLinkDescription, style: theme.typography.body.copyWith(color: colors.textMuted)),
-          const SizedBox(height: DsSpace.s12),
-          const _LinkPane(),
-        ],
+      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s24, DsSpace.s20, DsSpace.s32),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: formWidth),
+          child: const _LinkPane(),
+        ),
       ),
     );
   }
@@ -44,8 +45,8 @@ final class ToolboxPage extends StatelessWidget {
 
 /// The link tool (the reference's page, cut to what this codebase can do):
 /// a multi-line field for the pasted link — share texts included — the two
-/// actions beside it, the room the last resolve found, and the platforms
-/// whose links resolve at all.
+/// full-width actions under it, the room the last resolve found, and the
+/// platforms whose links resolve at all.
 final class _LinkPane extends ConsumerStatefulWidget {
   const _LinkPane();
 
@@ -165,7 +166,7 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
     }
     await showDsDialog<void>(
       context: context,
-      builder: (context) => _DirectLinkDialog(room: room, playback: playback, qualities: qualities),
+      builder: (context) => DirectLinkDialog(room: room, playback: playback, qualities: qualities),
     );
   }
 
@@ -174,6 +175,13 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
     final text = await Clipboard.getData(Clipboard.kTextPlain).then((data) => data?.text);
     if (!mounted || text == null || text.trim().isEmpty) return;
     _field.text = text.trim();
+    _edited();
+  }
+
+  /// Empties the field and its last result.
+  void _clearField() {
+    _field.clear();
+    _edited();
   }
 
   /// Why the last resolve failed, as a toast.
@@ -200,91 +208,84 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
   Widget build(BuildContext context) {
     final t = context.t;
     final link = ref.watch(linkToolProvider);
+    final resolving = link.resolving;
     final resolvable = [
       for (final site in ref.watch(sitesProvider).all)
         if (site.capability<LiveLinkResolver>() != null) site,
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s16,
+      spacing: DsSpace.s20,
       children: [
-        DsListSection(
-          header: Text(t.toolbox.linkFieldLabel),
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
-              child: DsTextField.multiline(
-                controller: _field,
-                onChanged: (_) => _edited(),
-                placeholder: t.toolbox.linkFieldHint,
-                minLines: 2,
-                maxLines: 4,
-                semanticLabel: t.toolbox.linkFieldLabel,
+        // The form itself, shaped like the sign-in page: a labelled field,
+        // the quiet ways to fill and empty it, one full-width action over
+        // the other, and the direct-link way as the last quiet line.
+        DsCard(
+          style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s20)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s20,
+            children: [
+              DsField(
+                label: Text(t.toolbox.linkFieldLabel),
+                child: DsTextField.multiline(
+                  controller: _field,
+                  onChanged: (_) => _edited(),
+                  placeholder: t.toolbox.linkFieldHint,
+                  minLines: 2,
+                  maxLines: 4,
+                  semanticLabel: t.toolbox.linkFieldLabel,
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
-              child: Row(
+              Row(
                 children: [
                   DsButton(
                     variant: DsButtonVariant.ghost,
-                    onPressed: link.resolving ? null : () => unawaited(_paste()),
-                    leading: const DsIcon(DsIcons.clipboardPaste),
+                    size: DsSize.sm,
+                    onPressed: resolving ? null : () => unawaited(_paste()),
+                    leading: const DsIcon(DsIcons.clipboardPaste, size: 16),
                     child: Text(t.toolbox.linkPaste),
                   ),
-                  const SizedBox(width: DsSpace.s8),
-                  DsButton(
-                    variant: DsButtonVariant.ghost,
-                    onPressed: _hasText ? _field.clear : null,
-                    leading: const DsIcon(DsIcons.close),
-                    child: Text(t.toolbox.linkClear),
-                  ),
-                  if (link.resolving) ...[
-                    const Spacer(),
+                  const Spacer(),
+                  if (resolving)
                     DsButton(
                       variant: DsButtonVariant.ghost,
+                      size: DsSize.sm,
                       onPressed: () => ref.read(linkToolProvider.notifier).reset(),
-                      leading: const DsIcon(DsIcons.x),
+                      leading: const DsIcon(DsIcons.x, size: 16),
                       child: Text(t.toolbox.cancel),
+                    )
+                  else
+                    DsButton(
+                      variant: DsButtonVariant.ghost,
+                      size: DsSize.sm,
+                      onPressed: _hasText ? _clearField : null,
+                      leading: const DsIcon(DsIcons.close, size: 16),
+                      child: Text(t.toolbox.linkClear),
                     ),
-                  ],
                 ],
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: DsButton(
-                      variant: DsButtonVariant.primary,
-                      loading: link.resolving,
-                      onPressed: link.resolving ? null : () => unawaited(_open()),
-                      child: Text(t.toolbox.linkOpen),
-                    ),
-                  ),
-                  const SizedBox(width: DsSpace.s8),
-                  Expanded(
-                    child: DsButton(
-                      variant: DsButtonVariant.secondary,
-                      loading: link.resolving,
-                      onPressed: link.resolving ? null : () => unawaited(_copy()),
-                      child: Text(t.toolbox.linkCopy),
-                    ),
-                  ),
-                ],
+              DsButton(
+                variant: DsButtonVariant.primary,
+                loading: resolving,
+                onPressed: resolving ? null : () => unawaited(_open()),
+                child: Text(t.toolbox.linkOpen),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
-              child: DsButton(
-                variant: DsButtonVariant.ghost,
-                onPressed: link.resolving ? null : () => unawaited(_direct()),
-                leading: const DsIcon(DsIcons.link2),
-                child: Text(t.toolbox.linkDirect),
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                loading: resolving,
+                onPressed: resolving ? null : () => unawaited(_copy()),
+                child: Text(t.toolbox.linkCopy),
               ),
-            ),
-          ],
+              Center(
+                child: DsLink(
+                  label: t.toolbox.linkDirect,
+                  onPressed: resolving ? null : () => unawaited(_direct()),
+                  style: DsLinkStyle(textStyle: DsTheme.of(context).typography.small),
+                ),
+              ),
+            ],
+          ),
         ),
         if (link.resolved case final room?)
           DsListSection(
@@ -298,32 +299,7 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
               DsListRow(leading: const DsIcon(DsIcons.tv), title: Text(t.toolbox.linkRoom), detail: Text(room.roomId)),
             ],
           ),
-        DsListSection(
-          header: Row(
-            children: [
-              Expanded(child: Text(t.toolbox.linkSupportTitle)),
-              Text(
-                '${resolvable.length}',
-                style: DsTheme.of(context).typography.overline.copyWith(color: DsTheme.colorsOf(context).textSubtle),
-              ),
-            ],
-          ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s4),
-              child: Text(
-                t.toolbox.linkSupportHint,
-                style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textSubtle),
-              ),
-            ),
-            for (final site in resolvable)
-              DsListRow(
-                leading: localizedSiteIcon(site, size: 20) ?? const DsIcon(DsIcons.antenna),
-                title: Text(_siteName(site)),
-                description: Text(site.manifest.id),
-              ),
-          ],
-        ),
+        _SupportPlatforms(sites: resolvable),
         // The same errand, run by itself: this is where a copied link is
         // read, so the switch that lets the app read the clipboard on its
         // own belongs here rather than on a browsing page.
@@ -346,135 +322,58 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
   }
 }
 
-/// The room's direct stream links: the quality picker over the lines the
-/// site answered for it, each URL with its own copy action. The reference's
-/// The direct-stream-link action, over the same capability the player uses.
-final class _DirectLinkDialog extends ConsumerStatefulWidget {
-  const _DirectLinkDialog({required this.room, required this.playback, required this.qualities});
+/// The platforms whose links resolve: a labelled wrap of the kit's badges,
+/// one per platform with its own mark, so the catalogue reads at a glance
+/// instead of one full-width row each.
+final class _SupportPlatforms extends StatelessWidget {
+  const _SupportPlatforms({required this.sites});
 
-  final LiveRoom room;
-  final LivePlaybackProvider playback;
-  final List<LivePlayQuality> qualities;
-
-  @override
-  ConsumerState<_DirectLinkDialog> createState() => _DirectLinkDialogState();
-}
-
-final class _DirectLinkDialogState extends ConsumerState<_DirectLinkDialog> {
-  int _quality = 0;
-  List<LivePlayLine> _lines = const [];
-  bool _loading = true;
-  String? _error;
-
-  /// Drops a superseded answer when the viewer flips quality quickly.
-  int _generation = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_load());
-  }
-
-  Future<void> _load() async {
-    final generation = ++_generation;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    final answer = await widget.playback.getLines(
-      room: widget.room,
-      quality: widget.qualities[_quality.clamp(0, widget.qualities.length - 1)],
-    );
-    if (!mounted || generation != _generation) return;
-    answer.match(
-      (error) => setState(() {
-        _loading = false;
-        _error = error.message;
-      }),
-      (lines) => setState(() {
-        _loading = false;
-        _lines = lines;
-      }),
-    );
-  }
+  final List<LiveSite> sites;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return DsDialog(
-      title: Text(t.toolbox.linkDirectTitle),
-      description: SizedBox(
-        width: 460,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          spacing: DsSpace.s12,
-          children: [
-            if (widget.qualities.length > 1)
-              AdaptiveChoiceField<int>(
-                value: _quality,
-                title: t.toolbox.linkDirectQuality,
-                onChanged: (value) {
-                  if (value == _quality) return;
-                  setState(() => _quality = value);
-                  unawaited(_load());
-                },
-                options: [
-                  for (final (index, quality) in widget.qualities.indexed)
-                    DsSelectOption(value: index, label: quality.label),
-                ],
-                semanticLabel: t.toolbox.linkDirectQuality,
-              ),
-            if (_loading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: DsSpace.s24),
-                child: Center(child: DsSpinner(style: DsSpinnerStyle(size: 24))),
-              )
-            else if (_error != null)
-              DsAlert(status: DsStatus.danger, title: Text(t.toolbox.linkDirectFailed), description: Text(_error!))
-            else if (_lines.isEmpty)
-              DsEmptyState(icon: const DsIcon(DsIcons.link2), title: Text(t.toolbox.linkDirectEmpty))
-            else
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 320),
-                child: SingleChildScrollView(
-                  child: DsListSection(
-                    header: Text(t.toolbox.linkDirectLines),
-                    children: [
-                      for (final (index, line) in _lines.indexed)
-                        DsListRow(
-                          leading: const DsIcon(DsIcons.link2),
-                          title: Text(line.lineLabel ?? t.room.line(n: index + 1)),
-                          description: Text(line.url, maxLines: 1, overflow: TextOverflow.ellipsis),
-                          trailing: DsButton(
-                            variant: DsButtonVariant.ghost,
-                            size: DsSize.sm,
-                            onPressed: () => unawaited(_copy(line)),
-                            child: Text(t.toolbox.linkDirectCopy),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final badge = DsBadgeStyle(
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8),
+      background: colors.control,
+      foreground: colors.text,
+      borderColor: colors.border,
+      borderRadius: BorderRadius.circular(DsRadii.pill),
+      textStyle: theme.typography.small.copyWith(fontWeight: FontWeight.w500),
+      iconSize: 16,
+      gap: DsSpace.s6,
+    );
+    return DsListSection(
+      header: Row(
+        children: [
+          Expanded(child: Text(t.toolbox.linkSupportTitle)),
+          Text('${sites.length}', style: theme.typography.overline.copyWith(color: colors.textSubtle)),
+        ],
       ),
-      actions: [
-        DsButton(
-          variant: DsButtonVariant.secondary,
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(t.common.close),
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: DsSpace.s12,
+            children: [
+              Text(t.toolbox.linkSupportHint, style: theme.typography.small.copyWith(color: colors.textSubtle)),
+              Wrap(
+                spacing: DsSpace.s8,
+                runSpacing: DsSpace.s8,
+                children: [
+                  for (final site in sites)
+                    DsBadge(dot: false, icon: localizedSiteIcon(site), label: Text(_siteName(site)), style: badge),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );
-  }
-
-  Future<void> _copy(LivePlayLine line) async {
-    await Clipboard.setData(ClipboardData(text: line.url));
-    if (mounted) {
-      showDsToast(context: context, title: context.t.toolbox.linkDirectCopyDone);
-    }
   }
 }
 

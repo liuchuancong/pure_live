@@ -13,10 +13,15 @@ import 'package:pure_live/modules/live/favorites/data/follow_tags.dart';
 /// tag that also strips it from every follow. Everything writes through the
 /// follows store at once, so the page behind the panel is already right
 /// when it closes.
+///
+/// The panel follows the kit's own sheet: a title and close in the header,
+/// labelled sections for the tags and the new one, and the closing action in
+/// the footer.
 Future<void> showFollowTagPicker(BuildContext context, LiveRoom room) => showDsPanel<void>(
   context: context,
   builder: (context) => DsPanel(
     title: Text(context.t.favorites.setTags),
+    footer: DsButton(onPressed: () => Navigator.of(context).pop(), child: Text(context.t.common.save)),
     child: _FollowTagPicker(room: room),
   ),
 );
@@ -88,47 +93,75 @@ final class _FollowTagPickerState extends ConsumerState<_FollowTagPicker> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     final tags = ref.watch(followTagsProvider);
     final selected = _selected;
+    final sectionLabel = theme.typography.fieldLabel.copyWith(color: colors.textMuted);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s16,
+      spacing: DsSpace.s20,
       children: [
-        if (tags.isEmpty)
-          DsEmptyState(icon: const DsIcon(DsIcons.tag), title: Text(t.favorites.tagsEmpty))
-        else
-          DsListSection(
-            header: Text(t.favorites.tagsTitle),
-            children: [
-              for (final tag in tags)
-                DsListRow(
-                  leading: DsIcon(selected.contains(tag.id) ? DsIcons.circleCheck : DsIcons.circle),
-                  title: Text(tag.name),
-                  selected: selected.contains(tag.id),
-                  onPressed: () => unawaited(_toggle(tag.id)),
-                  trailing: DsButton.icon(
-                    variant: DsButtonVariant.ghost,
-                    size: DsSize.sm,
-                    semanticLabel: t.favorites.deleteTagTitle(name: tag.name),
-                    onPressed: () => unawaited(_removeTag(tag)),
-                    icon: const DsIcon(DsIcons.trash2, size: 16),
-                  ),
-                ),
-            ],
-          ),
-        Row(
+        // The tags the room may carry: each one its own check, so several
+        // can be on at once.
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s8,
           children: [
-            Expanded(
-              child: DsTextField(
-                controller: _field,
-                clearable: true,
-                maxLength: kFollowTagNameMaxLength,
-                placeholder: t.favorites.tagFieldHint,
-                onSubmitted: (_) => unawaited(_add()),
-              ),
+            Text(t.favorites.tagsTitle, style: sectionLabel),
+            if (tags.isEmpty)
+              Text(t.favorites.tagsEmpty, style: theme.typography.body.copyWith(color: colors.textMuted))
+            else
+              for (final tag in tags)
+                Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(
+                      child: DsCheckbox(
+                        value: selected.contains(tag.id),
+                        onChanged: (_) => unawaited(_toggle(tag.id)),
+                        label: Text(tag.name),
+                      ),
+                    ),
+                    DsButton.icon(
+                      variant: DsButtonVariant.ghost,
+                      size: DsSize.sm,
+                      semanticLabel: t.favorites.deleteTagTitle(name: tag.name),
+                      onPressed: () => unawaited(_removeTag(tag)),
+                      icon: const DsIcon(DsIcons.trash2, size: 16),
+                    ),
+                  ],
+                ),
+          ],
+        ),
+        // A new tag, beside the list: naming it adds it and joins the room
+        // to it in one step.
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s8,
+          children: [
+            Text(t.favorites.newTag, style: sectionLabel),
+            Row(
+              spacing: DsSpace.s8,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: DsTextField(
+                    controller: _field,
+                    clearable: true,
+                    maxLength: kFollowTagNameMaxLength,
+                    placeholder: t.favorites.tagFieldHint,
+                    onSubmitted: (_) => unawaited(_add()),
+                  ),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.tinted,
+                  leading: const DsIcon(DsIcons.plus, size: 16),
+                  onPressed: () => unawaited(_add()),
+                  child: Text(t.favorites.addTag),
+                ),
+              ],
             ),
-            DsButton(onPressed: () => unawaited(_add()), child: Text(t.favorites.addTag)),
           ],
         ),
       ],

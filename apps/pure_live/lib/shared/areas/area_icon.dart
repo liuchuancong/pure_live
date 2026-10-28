@@ -8,21 +8,24 @@ import 'package:pure_live/shared/images/images.dart' show cachedImage;
 /// none — either way the square keeps its place beside the name.
 final class AreaIcon extends StatelessWidget {
   /// The tile for [area].
-  const AreaIcon({required this.area, super.key});
+  const AreaIcon({required this.area, this.side, super.key});
 
   /// The area whose icon shows.
   final LiveArea area;
+
+  /// The square's side; the theme's medium control size when null.
+  final double? side;
 
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
     final colors = theme.colors;
-    final side = theme.sizes.md;
+    final side = this.side ?? theme.sizes.md;
     final url = (area.iconUrl ?? '').trim();
     final fallback = ColoredBox(
       color: colors.channel,
       child: Center(
-        child: DsIcon(DsIcons.tag, size: theme.sizes.iconSm, color: colors.textMuted),
+        child: DsIcon(DsIcons.tag, size: side * 0.4, color: colors.textMuted),
       ),
     );
     return SizedBox(

@@ -22,8 +22,8 @@ enum RoomCardElement {
   /// The room's title.
   title,
 
-  /// The title chip over the grid card's cover.
-  coverTitle,
+  /// The room's category over the grid card's cover (虚拟主播, 游戏区…).
+  coverType,
 
   /// The anchor's avatar.
   avatar,
@@ -31,22 +31,24 @@ enum RoomCardElement {
   /// The anchor's name.
   anchorName,
 
-  /// The platform mark.
+  /// The platform mark in the grid cover's top-left corner.
   platformBadge,
 
   /// The audience figure.
   audience,
 
-  /// The replay/recording mark.
-  replayBadge,
-
-  /// The broadcast state, e.g. "live".
+  /// The pill naming a recording (the one state a feed cannot assume).
   status,
 }
 
-/// The list row's design height, padding included; a feed's list layout
-/// keeps its tiles this tall so the row design is never stretched.
-const double kRoomCardListDesignHeight = 100;
+/// The list row's design height, padding included: the avatar beside the
+/// title, the streamer and the audience; a feed's list layout keeps its
+/// tiles this tall so the row design is never stretched.
+const double kRoomCardListDesignHeight = 88;
+
+/// The list row's height when the card carries its tags under the meta
+/// line — the follows page's rows — one line taller than the plain row.
+const double kRoomCardListTagsHeight = kRoomCardListDesignHeight + 20;
 
 /// Which pieces a card draws. Both shapes read the same set: the grid card
 /// places them on its cover and information line, the list row folds them
@@ -83,14 +85,13 @@ final class RoomCardVisibility {
       if (value['showAvatar'] == false) RoomCardElement.avatar,
       if (value['showAnchorName'] == false) RoomCardElement.anchorName,
       if (value['showAudience'] == false) RoomCardElement.audience,
-      if (value['showReplayBadge'] == false) RoomCardElement.replayBadge,
       if (platform == 'hidden') RoomCardElement.platformBadge,
     };
     return RoomCardVisibility.hiding(legacyHidden);
   }
 
-  /// The designed default: every piece except the chip over the cover.
-  static const RoomCardVisibility standard = RoomCardVisibility({RoomCardElement.coverTitle});
+  /// The designed default: every piece drawn.
+  static const RoomCardVisibility standard = RoomCardVisibility({});
 
   /// The pieces not drawn.
   final Set<RoomCardElement> hidden;
@@ -133,72 +134,69 @@ final class RoomCardVisibility {
   }
 }
 
-/// One viewport's card appearance: the corner radius and which pieces show.
-/// The designs themselves are fixed, and every piece is its own property —
-/// there are no bundled presets to overwrite them.
+/// The cover's shape on a grid card.
+enum RoomCardCoverAspect {
+  /// 16:9, the shape most platforms stream in.
+  wide(16 / 9),
+
+  /// 4:3, taller tiles for feeds with squarer pictures.
+  boxed(4 / 3);
+
+  RoomCardCoverAspect(this.coverRatio);
+
+  /// The cover's width over height.
+  final double coverRatio;
+
+  /// The stored name's value, falling back to the default shape.
+  static RoomCardCoverAspect fromName(String? name) => name == boxed.name ? boxed : wide;
+}
+
+/// The information area under a grid card's cover: room for the avatar with
+/// the title and the anchor aligned beside it, and nothing more.
+const double kRoomCardInfoExtent = 56;
+
+/// The grid tile's height for a card [width] wide: the cover keeps its shape
+/// and the information area keeps [kRoomCardInfoExtent] — a wider tile gets
+/// a wider cover, never a taller title block.
+double roomCardTileHeight(double width, {required RoomCardCoverAspect cover}) =>
+    width / cover.coverRatio + kRoomCardInfoExtent;
+
+/// One viewport's card appearance: which pieces show. The designs
+/// themselves are fixed, and every piece is its own property — there are no
+/// bundled presets to overwrite them. Corners follow the theme's card radius.
 @immutable
 final class RoomCardAppearance {
   /// Creates an appearance.
-  const RoomCardAppearance({required this.cornerRadius, required this.visibility});
+  const RoomCardAppearance({required this.visibility});
 
   /// Reads a stored object, including the older arrangement and flag forms.
   factory RoomCardAppearance.fromJson(Object? value, {RoomCardAppearance fallback = standard}) {
     if (value is! Map) return fallback;
-    final json = Map<String, Object?>.from(value);
-    final radius = json['cornerRadius'];
-    return RoomCardAppearance(
-      cornerRadius: radius is num ? normalizeCornerRadius(radius) : fallback.cornerRadius,
-      visibility: RoomCardVisibility.fromJson(json),
-    );
+    return RoomCardAppearance(visibility: RoomCardVisibility.fromJson(value));
   }
 
-  /// The designed default corner radius.
-  static const double defaultCornerRadius = 20;
-
-  /// The smallest corner radius.
-  static const double minCornerRadius = 0;
-
-  /// The largest corner radius.
-  static const double maxCornerRadius = 32;
-
-  /// The designed default: the standard visibility and corner radius.
-  static const RoomCardAppearance standard = RoomCardAppearance(
-    cornerRadius: defaultCornerRadius,
-    visibility: RoomCardVisibility.standard,
-  );
-
-  /// The card's corner radius.
-  final double cornerRadius;
+  /// The designed default: the standard visibility.
+  static const RoomCardAppearance standard = RoomCardAppearance(visibility: RoomCardVisibility.standard);
 
   /// Which pieces the card draws.
   final RoomCardVisibility visibility;
 
-  /// Clamps a radius to the design's range.
-  static double normalizeCornerRadius(num value) {
-    final converted = value.toDouble();
-    if (!converted.isFinite) return defaultCornerRadius;
-    return converted.clamp(minCornerRadius, maxCornerRadius);
-  }
-
   /// A copy with selected fields replaced.
-  RoomCardAppearance copyWith({double? cornerRadius, RoomCardVisibility? visibility}) => RoomCardAppearance(
-    cornerRadius: normalizeCornerRadius(cornerRadius ?? this.cornerRadius),
-    visibility: visibility ?? this.visibility,
-  );
+  RoomCardAppearance copyWith({RoomCardVisibility? visibility}) =>
+      RoomCardAppearance(visibility: visibility ?? this.visibility);
 
   /// Shows or hides one piece.
   RoomCardAppearance withElement(RoomCardElement element, {required bool visible}) =>
       copyWith(visibility: visibility.withElement(element, visible: visible));
 
   /// The stored form.
-  Map<String, Object?> toJson() => {'cornerRadius': normalizeCornerRadius(cornerRadius), ...visibility.toJson()};
+  Map<String, Object?> toJson() => visibility.toJson();
 
   @override
-  bool operator ==(Object other) =>
-      other is RoomCardAppearance && other.cornerRadius == cornerRadius && other.visibility == visibility;
+  bool operator ==(Object other) => other is RoomCardAppearance && other.visibility == visibility;
 
   @override
-  int get hashCode => Object.hash(cornerRadius, visibility);
+  int get hashCode => visibility.hashCode;
 }
 
 /// Both viewports' appearances (the reference keeps two independent sets).
@@ -264,10 +262,8 @@ final class RoomCardSettingsController extends Notifier<RoomCardTargets> {
     }
   }
 
-  /// Puts one viewport's display back to the designed default, keeping its
-  /// corner radius.
-  Future<void> reset(RoomCardViewport viewport) =>
-      update(viewport, forViewport(viewport).copyWith(visibility: RoomCardVisibility.standard));
+  /// Puts one viewport's display back to the designed default.
+  Future<void> reset(RoomCardViewport viewport) => update(viewport, RoomCardAppearance.standard);
 }
 
 /// Both viewports' card appearances.

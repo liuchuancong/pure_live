@@ -4,10 +4,17 @@
   "viewPlatform": "平台分区",
   "viewFollowed": "关注分区",
   "followedEmpty": "还没有关注的分区",
-  "followedEmptyHint": "在平台分区或直播间里点爱心即可关注",
+  "followedEmptyHint": "在分区卡片上右键或长按，选择关注即可",
   "noPlatforms": "没有可浏览的平台",
   "unfollow": "取消关注",
   "categoryAll": "全部分类",
+  "iconTop": "图标在上",
+  "iconLeft": "图标在左",
+  "open": "进入分区",
   "follow": "关注分区",
+  "searchHint": "搜索分区",
+  "searchAt": "在 {platform} 中搜索分区“{query}”",
+  "searchEmpty": "没有匹配的分区",
+  "backToBrowse": "返回浏览",
   "hiddenUnplayable": "已隐藏 {count: int} 个不能播放的直播（付费、加密、仅限 App 等）"
 }

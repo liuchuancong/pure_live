@@ -4,14 +4,13 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart'
-    show LiveAnchor, LiveRoom, LiveStatus, RoomAudience, RoomBroadcast, RoomContent;
+    show LiveAnchor, LiveArea, LiveRoom, LiveStatus, RoomAudience, RoomBroadcast, RoomContent;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/room/room_card_settings.dart';
 import 'package:pure_live/features/settings/surface/settings_preview.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/popular/room_card.dart';
-import 'package:pure_live/shared/shared.dart' show CardGrid;
 
 /// The card and the list row have fixed designs; the preview page draws both
 /// with this device's appearance and carries these controls beside them. The
@@ -57,25 +56,6 @@ final class RoomCardSettings extends ConsumerWidget {
           ],
         ),
         DsListSection(
-          header: Text(t.settings.roomCardAppearance),
-          children: [
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.radius),
-              title: t.settings.roomCardCornerRadius,
-              detail: Text('${appearance.cornerRadius.round()} px'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: appearance.cornerRadius,
-                max: RoomCardAppearance.maxCornerRadius,
-                divisions: (RoomCardAppearance.maxCornerRadius - RoomCardAppearance.minCornerRadius).round(),
-                onChanged: (value) => update(appearance.copyWith(cornerRadius: value)),
-                semanticLabel: t.settings.roomCardCornerRadius,
-                semanticFormatter: (value) => '${value.round()} px',
-              ),
-            ),
-          ],
-        ),
-        DsListSection(
           children: [
             DsListRow(
               leading: const DsIcon(DsIcons.rotateCcw),
@@ -115,6 +95,11 @@ final class RoomCardPreviewPage extends ConsumerStatefulWidget {
 }
 
 final class _RoomCardPreviewPageState extends ConsumerState<RoomCardPreviewPage> {
+  /// The sample's own artwork: the card shows a picture even when the
+  /// network one never arrives, and the picture is the card's — not the
+  /// stage's — so the sample reads like a room tile.
+  static const AssetImage _cover = AssetImage('assets/preview/banner.png');
+
   bool _list = false;
 
   @override
@@ -123,6 +108,8 @@ final class _RoomCardPreviewPageState extends ConsumerState<RoomCardPreviewPage>
     final theme = DsTheme.of(context);
     final room = _sampleRoom(t);
     final design = _list ? t.common.layoutList : t.common.layoutGrid;
+    final layout = ref.watch(browseSettingsProvider);
+    final tileHeight = roomCardTileHeight(320, cover: layout.coverAspect);
     return SettingsPreviewPage(
       icon: _list ? DsIcons.layoutList : DsIcons.layoutGrid,
       title: t.settings.roomCardPreview,
@@ -132,21 +119,21 @@ final class _RoomCardPreviewPageState extends ConsumerState<RoomCardPreviewPage>
           Center(
             child: Padding(
               padding: const EdgeInsets.all(DsSpace.s20),
-              // The card is laid out at a feed's comfortable size and scaled
-              // down whole, so a small stage shrinks it instead of squeezing
-              // its information line.
+              // Both designs are laid out at the card's own width and scaled
+              // down whole, so a small stage shrinks them instead of
+              // squeezing their information line.
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: _list
                     ? SizedBox(
-                        width: 480,
+                        width: 320,
                         height: kRoomCardListDesignHeight,
-                        child: RoomCard(room: room, listRow: true),
+                        child: RoomCard(room: room, listRow: true, followable: false),
                       )
                     : SizedBox(
                         width: 320,
-                        height: 320 / CardGrid.roomCardAspectRatio,
-                        child: RoomCard(room: room),
+                        height: tileHeight,
+                        child: RoomCard(room: room, followable: false, cover: _cover),
                       ),
               ),
             ),
@@ -182,7 +169,8 @@ final class _RoomCardPreviewPageState extends ConsumerState<RoomCardPreviewPage>
   }
 }
 
-/// A stable public sample; offline the card's own fallbacks stand in.
+/// A stable public sample; every switch has something to show, so turning a
+/// piece on and off is visible at a glance.
 LiveRoom _sampleRoom(Translations t) => LiveRoom.normalized(
   platform: 'bilibili',
   roomId: 'preview',
@@ -191,33 +179,34 @@ LiveRoom _sampleRoom(Translations t) => LiveRoom.normalized(
     coverUrl: 'https://picsum.photos/seed/pure-live-room/640/360',
   ),
   audience: RoomAudience.of(popularity: 326000, onlineViewers: 12800),
-  broadcast: RoomBroadcast.of(liveStatus: LiveStatus.live),
+  // A recording rather than an on-air room: the state pill only marks
+  // recordings, so this is the sample that shows it.
+  broadcast: RoomBroadcast.of(liveStatus: LiveStatus.replay),
   anchor: LiveAnchor.of(
     platform: 'bilibili',
     anchorId: 'preview',
     name: t.settings.roomCardPreviewAnchor,
     avatarUrl: 'https://picsum.photos/seed/pure-live-anchor/96/96',
   ),
+  area: LiveArea.of(platform: 'bilibili', areaId: 'game', areaName: t.settings.roomCardPreviewArea),
 );
 
 String _elementLabel(Translations t, RoomCardElement element) => switch (element) {
   RoomCardElement.title => t.settings.roomCardShowTitle,
-  RoomCardElement.coverTitle => t.settings.roomCardShowCoverTitle,
+  RoomCardElement.coverType => t.settings.roomCardShowCoverTitle,
   RoomCardElement.avatar => t.settings.roomCardShowAvatar,
   RoomCardElement.anchorName => t.settings.roomCardShowAnchor,
   RoomCardElement.platformBadge => t.settings.roomCardShowPlatform,
   RoomCardElement.audience => t.settings.roomCardShowAudience,
-  RoomCardElement.replayBadge => t.settings.roomCardShowReplay,
   RoomCardElement.status => t.settings.roomCardShowStatus,
 };
 
 DsIconData _elementIcon(RoomCardElement element) => switch (element) {
   RoomCardElement.title => DsIcons.heading,
-  RoomCardElement.coverTitle => DsIcons.image,
+  RoomCardElement.coverType => DsIcons.tag,
   RoomCardElement.avatar => DsIcons.userRound,
   RoomCardElement.anchorName => DsIcons.atSign,
   RoomCardElement.platformBadge => DsIcons.badge,
   RoomCardElement.audience => DsIcons.flame,
-  RoomCardElement.replayBadge => DsIcons.history,
   RoomCardElement.status => DsIcons.signal,
 };

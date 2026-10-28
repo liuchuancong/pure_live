@@ -4,10 +4,17 @@
   "viewPlatform": "Platform areas",
   "viewFollowed": "Followed areas",
   "followedEmpty": "No followed areas yet",
-  "followedEmptyHint": "Tap the heart on an area or in a room to follow it",
+  "followedEmptyHint": "Right-click or long-press an area card and choose to follow it",
   "noPlatforms": "No platform to browse",
   "unfollow": "Unfollow",
   "categoryAll": "All categories",
+  "iconTop": "Icon on top",
+  "iconLeft": "Icon at left",
+  "open": "Open the area",
   "follow": "Follow area",
+  "searchHint": "Search areas",
+  "searchAt": "Searching areas for “{query}” on {platform}",
+  "searchEmpty": "No matching areas",
+  "backToBrowse": "Back to browsing",
   "hiddenUnplayable": "{count: int} streams that cannot play here are hidden (paid, password, app only…)"
 }

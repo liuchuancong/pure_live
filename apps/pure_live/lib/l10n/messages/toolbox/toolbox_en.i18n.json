@@ -3,8 +3,6 @@
   "groupLinks": "Links",
   "groupNetwork": "Network",
   "groupData": "Data",
-  "toolLinkTitle": "Link Parser",
-  "toolLinkDescription": "Paste a platform link to open the room or copy its address.",
   "toolNetworkTitle": "Platform nodes",
   "toolNetworkDescription": "Test each platform's endpoint for reachability and latency.",
   "toolCacheTitle": "Cache cleanup",

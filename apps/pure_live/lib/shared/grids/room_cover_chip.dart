@@ -6,7 +6,14 @@ import 'package:flutter/widgets.dart';
 /// covers alike; the words ellipsize inside [maxWidth].
 final class RoomCoverChip extends StatelessWidget {
   /// A chip over [text], optionally led by [icon].
-  const RoomCoverChip({required this.text, this.icon, this.maxWidth = 200, this.style, super.key});
+  const RoomCoverChip({
+    required this.text,
+    this.icon,
+    this.maxWidth = 200,
+    this.style,
+    this.compact = false,
+    super.key,
+  });
 
   /// The words shown.
   final String text;
@@ -20,28 +27,27 @@ final class RoomCoverChip extends StatelessWidget {
   /// Overrides the default small white-on-black type.
   final TextStyle? style;
 
+  /// The tighter shape a small thumbnail carries: less padding, a smaller
+  /// glyph and caption-size words.
+  final bool compact;
+
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: const Color(0x8C000000), borderRadius: BorderRadius.circular(6)),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: 4,
-          children: [
-            if (icon != null) DsIcon(icon!, size: 12, color: const Color(0xFFFFFFFF)),
-            Flexible(
-              child: Text(
-                text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: style ?? theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
-              ),
-            ),
-          ],
+      child: DsBadge(
+        label: Text(text),
+        dot: false,
+        icon: icon == null ? null : DsIcon(icon!),
+        style: DsBadgeStyle(
+          padding: EdgeInsets.symmetric(horizontal: compact ? 5 : 8, vertical: compact ? 2 : 4),
+          background: const Color(0x8C000000),
+          foreground: const Color(0xFFFFFFFF),
+          borderRadius: BorderRadius.circular(compact ? 5 : 6),
+          textStyle: style ?? theme.typography.caption.copyWith(fontSize: compact ? 10 : null),
+          iconSize: compact ? 10 : 12,
+          gap: compact ? 3 : 4,
         ),
       ),
     );

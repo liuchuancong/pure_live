@@ -83,7 +83,10 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
       final platform = entry.key;
       final feed = entry.value;
       final full = _fullRooms[platform] ?? feed.rooms;
-      final visible = [for (final room in full) if (_playable(room)) room];
+      final visible = [
+        for (final room in full)
+          if (_playable(room)) room,
+      ];
       if (visible.length == feed.rooms.length && visible.length == full.length) continue;
       state = {...state, platform: _with(feed, rooms: visible, hidden: full.length - visible.length)};
       _walks.remove(platform);
@@ -215,7 +218,10 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
       _walks[platform] = walk;
       _seen[platform] = seen;
       _fullRooms[platform] = List<LiveRoom>.unmodifiable(rooms);
-      final visible = [for (final room in rooms) if (_playable(room)) room];
+      final visible = [
+        for (final room in rooms)
+          if (_playable(room)) room,
+      ];
       state = {
         ...state,
         platform: (
@@ -277,7 +283,10 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
     void publishProgress() {
       _seen[platform] = seen;
       _fullRooms[platform] = List<LiveRoom>.unmodifiable(rooms);
-      final visible = [for (final room in rooms) if (_playable(room)) room];
+      final visible = [
+        for (final room in rooms)
+          if (_playable(room)) room,
+      ];
       state = {
         ...state,
         platform: (
@@ -308,7 +317,10 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
     }
     _seen[platform] = seen;
     _fullRooms[platform] = List<LiveRoom>.unmodifiable(rooms);
-    final visible = [for (final room in rooms) if (_playable(room)) room];
+    final visible = [
+      for (final room in rooms)
+        if (_playable(room)) room,
+    ];
     final last = roomLastPage(visible.length, pageSize);
     final shown = walk.hasMore ? page : math.min(page, last);
     state = {
