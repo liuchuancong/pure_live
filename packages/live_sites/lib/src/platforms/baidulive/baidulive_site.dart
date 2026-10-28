@@ -10,8 +10,10 @@ import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -28,7 +30,9 @@ import 'package:live_sites/src/platforms/baidulive/capabilities/baidulive_discov
 import 'package:live_sites/src/platforms/baidulive/capabilities/baidulive_link_resolver.dart';
 import 'package:live_sites/src/platforms/baidulive/capabilities/baidulive_playback_provider.dart';
 import 'package:live_sites/src/platforms/baidulive/capabilities/baidulive_room_provider.dart';
+import 'package:live_sites/src/platforms/baidulive/capabilities/baidulive_room_refresh.dart';
 import 'package:live_sites/src/platforms/baidulive/capabilities/baidulive_search_provider.dart';
+import 'package:live_sites/src/platforms/baidulive/capabilities/baidulive_status_check.dart';
 import 'package:live_sites/src/platforms/baidulive/danmaku/baidulive_danmaku_session.dart';
 import 'package:live_sites/src/platforms/baidulive/parsers/baidulive_failure.dart';
 import 'package:live_sites/src/platforms/baidulive/parsers/baidulive_play_parser.dart';
@@ -371,6 +375,8 @@ final class BaiduliveSite implements LiveSite {
   BaidulivePlaybackProvider? _playback;
   BaiduliveDanmakuProvider? _danmaku;
   BaiduliveLinkResolver? _link;
+  BaiduliveRoomRefresh? _refresh;
+  BaiduliveStatusCheck? _status;
 
   /// The capability of type [T], or null when Baidu Live does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -383,6 +389,8 @@ final class BaiduliveSite implements LiveSite {
     final playback = _playback ??= BaidulivePlaybackProvider(site: this);
     final danmaku = _danmaku ??= BaiduliveDanmakuProvider(site: this);
     final link = _link ??= BaiduliveLinkResolver(site: this);
+    final refresh = _refresh ??= BaiduliveRoomRefresh(site: this);
+    final status = _status ??= BaiduliveStatusCheck(refresh: refresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -391,6 +399,8 @@ final class BaiduliveSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }

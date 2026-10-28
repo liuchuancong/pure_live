@@ -75,6 +75,7 @@ final class BaiduliveVariant {
     required this.sort,
     required this.codec,
     required Iterable<BaiduliveSource> sources,
+    this.height = 0,
   }) : sources = List.unmodifiable(sources);
 
   /// The quality id: [BaidulivePlayParser.sourceQualityId] or `<height>p`, with
@@ -92,6 +93,10 @@ final class BaiduliveVariant {
   /// The codec, or null when the platform does not tell (the source of a room
   /// with a clarity list, see [BaidulivePlayParser.liveVariants]).
   final LiveStreamCodec? codec;
+
+  /// The declared height in pixels; 0 for the source (no height given) or a
+  /// replay.
+  final int height;
 
   /// The URLs, one per line, in line order.
   final List<BaiduliveSource> sources;

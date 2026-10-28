@@ -5,6 +5,7 @@ import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/play/play_geometry/play_geometry.dart';
 import 'package:live_sites/src/platforms/baidulive/api/baidulive_endpoints.dart';
 import 'package:live_sites/src/platforms/baidulive/parsers/baidulive_failure.dart';
 import 'package:live_sites/src/platforms/baidulive/parsers/baidulive_json.dart';
@@ -270,6 +271,7 @@ abstract final class BaidulivePlayParser {
           sort: (tier.height == 0 ? 100000 : tier.height) * 10 + _codecRank(tier.codec),
           codec: tier.codec,
           sources: _lineOrder(tier.urls),
+          height: tier.height,
         ),
     ]..sort((left, right) => right.sort.compareTo(left.sort));
     return List.unmodifiable(variants);
@@ -440,6 +442,7 @@ abstract final class BaidulivePlayParser {
           headers: headers,
           codec: variant.codec,
           lineLabel: count == 1 ? host : '$host#$count',
+          geometry: variant.height > 0 ? PlayGeometry.of(height: variant.height) : null,
         ),
       );
     }
