@@ -166,8 +166,11 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     ],
   ),
   AppModule.music: ModuleNavigation(
+    // The reference's rail, entry for entry: 搜索 / 歌单 / 排行榜, then the
+    // viewer's own surfaces — 我的列表 / 本地音乐 / 下载管理.
     menu: [
-      [NavigationItem.music, NavigationItem.musicSonglist, NavigationItem.musicToplist, NavigationItem.musicLibrary],
+      [NavigationItem.music, NavigationItem.musicSonglist, NavigationItem.musicToplist],
+      [NavigationItem.musicLibrary, NavigationItem.musicLocal, NavigationItem.musicDownloads],
     ],
     landing: NavigationItem.music,
     // The music module's own page: the source a song is asked from, the
@@ -225,6 +228,8 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.musicSonglist: () => const MusicPage(view: MusicView.songlists),
   NavigationItem.musicToplist: () => const MusicPage(view: MusicView.toplists),
   NavigationItem.musicLibrary: () => const MusicPage(view: MusicView.mine),
+  NavigationItem.musicLocal: () => const MusicPage(view: MusicView.local),
+  NavigationItem.musicDownloads: () => const MusicPage(view: MusicView.downloads),
   NavigationItem.hongguoHome: HongguoPage.new,
   NavigationItem.hongguoFind: () => const HongguoPage(view: HongguoView.find),
   NavigationItem.hongguoRank: () => const HongguoPage(view: HongguoView.rank),

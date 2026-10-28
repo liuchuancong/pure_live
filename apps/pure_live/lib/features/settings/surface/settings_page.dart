@@ -538,6 +538,9 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.hongguo => const HongguoSettingsPane(),
       SettingsSection.musicList => const MusicListPane(),
       SettingsSection.musicSources => const MusicSourcesPane(),
+      SettingsSection.musicDownload => const MusicDownloadPane(),
+      SettingsSection.musicLyric => const MusicLyricPane(),
+      SettingsSection.musicDesktopLyric => const MusicDesktopLyricPane(),
     };
     const padding = EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s20, DsSpace.s24, DsSpace.s24);
     // Some pages own their height instead of scrolling the whole pane with

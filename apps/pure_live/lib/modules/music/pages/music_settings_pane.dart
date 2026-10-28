@@ -1,13 +1,20 @@
 import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile, LiveHttpCalls;
+import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
+import 'package:pure_live/app/providers/settings/download_directory_provider.dart'
+    show DownloadDirectoryPaths, downloadDirectoryProvider;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/music/controller/lx_script_runtime.dart' show lxScriptRuntimeProvider;
+import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_settings.dart';
+import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId;
 import 'package:pure_live/modules/music/controller/music_sources.dart';
 
 /// The music module's own settings: the source a song is asked from, the
@@ -22,9 +29,7 @@ final class MusicSettingsPane extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final settings = ref.watch(musicSettingsProvider);
-    final sources = ref.watch(musicSourcesProvider);
     final controller = ref.read(musicSettingsProvider.notifier);
-    final selected = sources.any((source) => source.id == settings.defaultSourceId) ? settings.defaultSourceId : '';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -32,21 +37,14 @@ final class MusicSettingsPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.music.settingsPlayback),
           children: [
-            if (sources.isEmpty)
-              DsListRow(
-                leading: const DsIcon(DsIcons.plugZap),
-                title: Text(t.music.defaultSource),
-                description: Text(t.music.defaultSourceEmpty),
-              )
-            else
-              SettingsChoiceRow<String>(
-                leading: const DsIcon(DsIcons.plugZap),
-                title: t.music.defaultSource,
-                description: t.music.defaultSourceDesc,
-                value: selected,
-                options: [for (final source in sources) DsSelectOption(value: source.id, label: source.name)],
-                onChanged: (id) => unawaited(controller.setDefaultSource(id)),
-              ),
+            SettingsChoiceRow<String>(
+              leading: const DsIcon(DsIcons.plugZap),
+              title: t.music.defaultSource,
+              description: t.music.defaultSourceDesc,
+              value: kLxMusicSourceId,
+              options: const [DsSelectOption(value: kLxMusicSourceId, label: 'lx-music')],
+              onChanged: (id) => unawaited(controller.setDefaultSource(id)),
+            ),
             SettingsChoiceRow<MusicQuality>(
               leading: const DsIcon(DsIcons.gauge),
               title: t.music.quality,
@@ -81,6 +79,9 @@ final class MusicSettingsPane extends ConsumerWidget {
           children: [
             SettingsChildEntry(child: SettingsSection.musicList),
             SettingsChildEntry(child: SettingsSection.musicSources),
+            SettingsChildEntry(child: SettingsSection.musicDownload),
+            SettingsChildEntry(child: SettingsSection.musicLyric),
+            SettingsChildEntry(child: SettingsSection.musicDesktopLyric),
           ],
         ),
       ],
@@ -305,13 +306,27 @@ final class MusicSourcesPane extends ConsumerWidget {
     }
   }
 
+  Future<void> _reload(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final runtime = ref.read(lxScriptRuntimeProvider);
+    await runtime.load(ref.read(musicSourcesProvider));
+    if (!context.mounted) return;
+    final errors = runtime.errors;
+    showDsToast(
+      context: context,
+      title: errors.isEmpty
+          ? t.music.sourcesReloaded(count: runtime.instances.length)
+          : t.music.sourcesReloadedErrors(count: errors.length),
+      status: errors.isEmpty ? DsStatus.success : DsStatus.warning,
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final sources = ref.watch(musicSourcesProvider);
-    final active = ref.watch(musicSettingsProvider).defaultSourceId;
     String describe(MusicCustomSource source) {
       if (source.description.isNotEmpty) return source.description;
       final meta = [source.author, source.version].where((part) => part.isNotEmpty).join(' · ');
@@ -340,6 +355,12 @@ final class MusicSourcesPane extends ConsumerWidget {
               showChevron: true,
               onPressed: () => unawaited(_importUrl(context, ref)),
             ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.refreshCw),
+              title: Text(t.music.sourcesReload),
+              description: Text(t.music.sourcesReloadDesc),
+              onPressed: () => unawaited(_reload(context, ref)),
+            ),
           ],
         ),
         if (sources.isEmpty)
@@ -357,30 +378,15 @@ final class MusicSourcesPane extends ConsumerWidget {
             children: [
               for (final source in sources)
                 DsListRow(
-                  leading: DsIcon(source.id == active ? DsIcons.circleCheck : DsIcons.fileCode),
+                  leading: const DsIcon(DsIcons.fileCode),
                   title: Text(source.name),
                   description: Text(describe(source), maxLines: 2, overflow: TextOverflow.ellipsis),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: DsSpace.s4,
-                    children: [
-                      if (source.id != active)
-                        DsButton.icon(
-                          variant: DsButtonVariant.ghost,
-                          size: DsSize.sm,
-                          semanticLabel: t.music.sourceUse,
-                          onPressed: () =>
-                              unawaited(ref.read(musicSettingsProvider.notifier).setDefaultSource(source.id)),
-                          icon: const DsIcon(DsIcons.circleCheck, size: 16),
-                        ),
-                      DsButton.icon(
-                        variant: DsButtonVariant.ghost,
-                        size: DsSize.sm,
-                        semanticLabel: t.music.sourceDelete,
-                        onPressed: () => unawaited(_remove(context, ref, source)),
-                        icon: const DsIcon(DsIcons.trash2, size: 16),
-                      ),
-                    ],
+                  trailing: DsButton.icon(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    semanticLabel: t.music.sourceDelete,
+                    onPressed: () => unawaited(_remove(context, ref, source)),
+                    icon: const DsIcon(DsIcons.trash2, size: 16),
                   ),
                 ),
               Padding(
@@ -392,6 +398,355 @@ final class MusicSourcesPane extends ConsumerWidget {
               ),
             ],
           ),
+      ],
+    );
+  }
+}
+
+/// The download page: where files land, the container, the file name, and the
+/// post-processing lx-music offers — cover art, tags, a sidecar lyric and the
+/// skip-if-present rule.
+final class MusicDownloadPane extends ConsumerWidget {
+  /// The pane shown under Settings → Music → 下载.
+  const MusicDownloadPane({super.key});
+
+  Future<void> _pickDirectory(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    try {
+      final selected = await FilePicker.getDirectoryPath(dialogTitle: t.music.downloadDirectory);
+      if (selected == null || selected.trim().isEmpty) return;
+      final saved = await ref.read(downloadDirectoryProvider.notifier).setDirectory(selected);
+      if (!context.mounted) return;
+      showDsToast(
+        context: context,
+        title: saved ? t.music.downloadDirectoryUpdated : t.music.downloadDirectoryFailed,
+        status: saved ? DsStatus.success : DsStatus.danger,
+      );
+    } on Object {
+      if (context.mounted) {
+        showDsToast(context: context, title: t.music.downloadDirectoryFailed, status: DsStatus.danger);
+      }
+    }
+  }
+
+  Future<void> _editPattern(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final settings = ref.read(musicSettingsProvider);
+    final field = TextEditingController(text: settings.downloadPattern);
+    final pattern = await showDsDialog<String>(
+      context: context,
+      builder: (context) => DsDialog(
+        title: Text(t.music.downloadPattern),
+        icon: const DsIcon(DsIcons.fileCode),
+        description: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s8,
+          children: [
+            Text(t.music.downloadPatternHint),
+            DsTextField(controller: field, autofocus: true, clearable: true, semanticLabel: t.music.downloadPattern),
+          ],
+        ),
+        actions: [
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(t.common.cancel),
+          ),
+          DsButton(onPressed: () => Navigator.of(context).pop(field.text), child: Text(t.common.confirm)),
+        ],
+      ),
+    );
+    field.dispose();
+    if (pattern == null) return;
+    await ref.read(musicSettingsProvider.notifier).setDownloadPattern(pattern);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final settings = ref.watch(musicSettingsProvider);
+    final controller = ref.read(musicSettingsProvider.notifier);
+    final directory = ref.watch(downloadDirectoryProvider).effectivePath;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        SettingsHint(t.music.downloadHint),
+        DsListSection(
+          header: Text(t.music.downloadDirectory),
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.folderOpen),
+              title: Text(t.music.downloadDirectory),
+              description: Text(directory, maxLines: 2, overflow: TextOverflow.ellipsis),
+              showChevron: true,
+              onPressed: () => unawaited(_pickDirectory(context, ref)),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.rotateCcw),
+              title: Text(t.music.downloadDirectoryDefault),
+              description: Text(t.music.downloadDirectoryDefaultDesc),
+              onPressed: () => unawaited(ref.read(downloadDirectoryProvider.notifier).reset()),
+            ),
+          ],
+        ),
+        DsListSection(
+          children: [
+            SettingsChoiceRow<MusicDownloadType>(
+              leading: const DsIcon(DsIcons.disc3),
+              title: t.music.downloadType,
+              description: t.music.downloadTypeDesc,
+              value: settings.downloadType,
+              options: [for (final type in MusicDownloadType.values) DsSelectOption(value: type, label: type.label(t))],
+              onChanged: (type) => unawaited(controller.setDownloadType(type)),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.fileCode),
+              title: t.music.downloadPattern,
+              description: settings.downloadPattern,
+              control: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => unawaited(_editPattern(context, ref)),
+                child: Text(t.music.downloadPatternEdit),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.image),
+              title: t.music.downloadEmbedCover,
+              description: t.music.downloadEmbedCoverDesc,
+              control: DsSwitch(
+                value: settings.downloadEmbedCover,
+                onChanged: (value) => unawaited(controller.setDownloadEmbedCover(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.tag),
+              title: t.music.downloadEmbedLyric,
+              description: t.music.downloadEmbedLyricDesc,
+              control: DsSwitch(
+                value: settings.downloadEmbedLyric,
+                onChanged: (value) => unawaited(controller.setDownloadEmbedLyric(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.fileText),
+              title: t.music.downloadWriteLyric,
+              description: t.music.downloadWriteLyricDesc,
+              control: DsSwitch(
+                value: settings.downloadWriteLyric,
+                onChanged: (value) => unawaited(controller.setDownloadWriteLyric(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.fileCheck),
+              title: t.music.downloadSkipExisting,
+              description: t.music.downloadSkipExistingDesc,
+              control: DsSwitch(
+                value: settings.downloadSkipExisting,
+                onChanged: (value) => unawaited(controller.setDownloadSkipExisting(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.folderTree),
+              title: t.music.downloadGroupByList,
+              description: t.music.downloadGroupByListDesc,
+              control: DsSwitch(
+                value: settings.downloadGroupByList,
+                onChanged: (value) => unawaited(controller.setDownloadGroupByList(value: value)),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// The lyric page: which secondary tracks a line shows, and the viewer's
+/// delay — lx-music's 歌词设置.
+final class MusicLyricPane extends ConsumerWidget {
+  /// The pane shown under Settings → Music → 歌词.
+  const MusicLyricPane({super.key});
+
+  static const List<int> _offsets = [-2000, -1500, -1000, -500, 0, 500, 1000, 1500, 2000];
+
+  String _offsetLabel(Translations t, int ms) {
+    if (ms == 0) return t.music.lyricOffsetReset;
+    final seconds = (ms / 1000).toStringAsFixed(1);
+    return ms > 0 ? '+${seconds}s' : '${seconds}s';
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final settings = ref.watch(musicSettingsProvider);
+    final controller = ref.read(musicSettingsProvider.notifier);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        SettingsHint(t.music.lyricHint),
+        DsListSection(
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.languages),
+              title: t.music.lyricTranslation,
+              description: t.music.lyricTranslationDesc,
+              control: DsSwitch(
+                value: settings.showTranslation,
+                onChanged: (value) => unawaited(controller.setShowTranslation(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.audioLines),
+              title: t.music.lyricRomanization,
+              description: t.music.lyricRomanizationDesc,
+              control: DsSwitch(
+                value: settings.showRomanization,
+                onChanged: (value) => unawaited(controller.setShowRomanization(value: value)),
+              ),
+            ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.clock),
+              title: t.music.lyricOffset,
+              description: t.music.lyricOffsetDesc,
+              value: settings.lyricOffsetMs,
+              options: [for (final offset in _offsets) DsSelectOption(value: offset, label: _offsetLabel(t, offset))],
+              onChanged: (offset) => unawaited(controller.setLyricOffsetMs(offset)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// The desktop lyric page: show/lock the native overlay and its type — the
+/// reference's 桌面歌词 settings.
+final class MusicDesktopLyricPane extends ConsumerWidget {
+  /// The pane shown under Settings → Music → 桌面歌词.
+  const MusicDesktopLyricPane({super.key});
+
+  static const List<double> _sizes = [24, 32, 40, 48, 56, 64];
+  static const List<double> _opacities = [1, 0.9, 0.8, 0.7, 0.6, 0.5];
+  static const List<int> _colors = [0xFFFFFFFF, 0xFFFFE066, 0xFF67E8F9, 0xFFF9A8D4, 0xFF86EFAC, 0xFFFDBA74];
+
+  String _alignmentLabel(Translations t, audio.DesktopLyricAlignment alignment) => switch (alignment) {
+    audio.DesktopLyricAlignment.left => t.music.desktopLyricAlignLeft,
+    audio.DesktopLyricAlignment.center => t.music.desktopLyricAlignCenter,
+    audio.DesktopLyricAlignment.right => t.music.desktopLyricAlignRight,
+  };
+
+  String _colorLabel(Translations t, int color) => switch (color) {
+    0xFFFFFFFF => t.music.desktopLyricColorWhite,
+    0xFFFFE066 => t.music.desktopLyricColorYellow,
+    0xFF67E8F9 => t.music.desktopLyricColorCyan,
+    0xFFF9A8D4 => t.music.desktopLyricColorPink,
+    0xFF86EFAC => t.music.desktopLyricColorGreen,
+    _ => t.music.desktopLyricColorOrange,
+  };
+
+  Future<void> _setEnabled(BuildContext context, WidgetRef ref, bool value) async {
+    final t = context.t;
+    final ok = await ref.read(musicPlayerProvider.notifier).setDesktopLyricVisible(visible: value);
+    if (!context.mounted) return;
+    if (value && !ok) {
+      showDsToast(context: context, title: t.music.desktopLyricsUnavailable, status: DsStatus.warning);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final settings = ref.watch(musicSettingsProvider);
+    final controller = ref.read(musicSettingsProvider.notifier);
+    final player = ref.read(musicPlayerProvider.notifier);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        SettingsHint(t.music.desktopLyricHint),
+        DsListSection(
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.monitor),
+              title: t.music.desktopLyrics,
+              description: t.music.desktopLyricEnableDesc,
+              control: DsSwitch(
+                value: settings.desktopLyrics,
+                onChanged: (value) => unawaited(_setEnabled(context, ref, value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.lock),
+              title: t.music.desktopLyricLock,
+              description: t.music.desktopLyricLockDesc,
+              control: DsSwitch(
+                value: settings.desktopLyricLocked,
+                onChanged: (value) => unawaited(player.setDesktopLyricLocked(locked: value)),
+              ),
+            ),
+          ],
+        ),
+        DsListSection(
+          header: Text(t.music.desktopLyricStyleSection),
+          children: [
+            SettingsChoiceRow<double>(
+              leading: const DsIcon(DsIcons.type),
+              title: t.music.desktopLyricFontSize,
+              description: t.music.desktopLyricFontSizeDesc,
+              value: settings.desktopLyricFontSize,
+              options: [for (final size in _sizes) DsSelectOption(value: size, label: '${size.round()}')],
+              onChanged: (value) => unawaited(controller.setDesktopLyricFontSize(value)),
+            ),
+            SettingsChoiceRow<double>(
+              leading: const DsIcon(DsIcons.droplet),
+              title: t.music.desktopLyricOpacity,
+              description: t.music.desktopLyricOpacityDesc,
+              value: settings.desktopLyricOpacity,
+              options: [
+                for (final value in _opacities) DsSelectOption(value: value, label: '${(value * 100).round()}%'),
+              ],
+              onChanged: (value) => unawaited(controller.setDesktopLyricOpacity(value)),
+            ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.palette),
+              title: t.music.desktopLyricTextColor,
+              description: t.music.desktopLyricTextColorDesc,
+              value: settings.desktopLyricTextColor,
+              options: [
+                for (final color in _colors)
+                  DsSelectOption(
+                    value: color,
+                    label: _colorLabel(t, color),
+                    leading: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: Color(color),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: colors.border),
+                      ),
+                    ),
+                  ),
+              ],
+              onChanged: (value) => unawaited(controller.setDesktopLyricTextColor(value)),
+            ),
+            SettingsChoiceRow<audio.DesktopLyricAlignment>(
+              leading: const DsIcon(DsIcons.alignLeft),
+              title: t.music.desktopLyricAlignment,
+              description: t.music.desktopLyricAlignmentDesc,
+              value: settings.desktopLyricAlignment,
+              options: [
+                for (final alignment in audio.DesktopLyricAlignment.values)
+                  DsSelectOption(value: alignment, label: _alignmentLabel(t, alignment)),
+              ],
+              onChanged: (value) => unawaited(controller.setDesktopLyricAlignment(value)),
+            ),
+          ],
+        ),
       ],
     );
   }

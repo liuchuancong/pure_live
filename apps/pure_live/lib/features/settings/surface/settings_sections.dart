@@ -73,6 +73,9 @@ enum SettingsSection {
   music(DsIcons.music),
   musicList(DsIcons.listOrdered),
   musicSources(DsIcons.fileCode),
+  musicDownload(DsIcons.download),
+  musicLyric(DsIcons.captions),
+  musicDesktopLyric(DsIcons.monitor),
   hongguo(DsIcons.drama),
   // Deep-link aliases: their content lives on another page now (see
   // [aliasTarget]); kept readable so stored links never 404.
@@ -147,6 +150,9 @@ enum SettingsSection {
     SettingsSection.music => t.settings.navMusic,
     SettingsSection.musicList => t.settings.navMusicList,
     SettingsSection.musicSources => t.settings.navMusicSources,
+    SettingsSection.musicDownload => t.settings.navMusicDownload,
+    SettingsSection.musicLyric => t.settings.navMusicLyric,
+    SettingsSection.musicDesktopLyric => t.settings.navMusicDesktopLyric,
     SettingsSection.hongguo => t.settings.navHongguo,
     // Aliases: their pre-merge words, kept for anything still naming them.
     SettingsSection.personalization => t.settings.navPersonalization,
@@ -213,6 +219,9 @@ enum SettingsSection {
     SettingsSection.music => t.settings.musicSettingsDescription,
     SettingsSection.musicList => t.settings.musicListDescription,
     SettingsSection.musicSources => t.settings.musicSourcesDescription,
+    SettingsSection.musicDownload => t.settings.musicDownloadDescription,
+    SettingsSection.musicLyric => t.settings.musicLyricDescription,
+    SettingsSection.musicDesktopLyric => t.settings.musicDesktopLyricDescription,
     SettingsSection.hongguo => t.settings.hongguoDescription,
     SettingsSection.personalization => t.settings.personalizationDescription,
     SettingsSection.live => t.settings.liveSettingsDescription,
@@ -251,7 +260,11 @@ enum SettingsSection {
     SettingsSection.kernelAdvanced => SettingsSection.kernel,
     SettingsSection.iptvBrowse || SettingsSection.iptvGroups => SettingsSection.iptv,
     SettingsSection.vodPlayback || SettingsSection.vodInterface => SettingsSection.vod,
-    SettingsSection.musicList || SettingsSection.musicSources => SettingsSection.music,
+    SettingsSection.musicList ||
+    SettingsSection.musicSources ||
+    SettingsSection.musicDownload ||
+    SettingsSection.musicLyric ||
+    SettingsSection.musicDesktopLyric => SettingsSection.music,
     SettingsSection.nodes => SettingsSection.network,
     SettingsSection.webdavSync => SettingsSection.backup,
     _ => null,
@@ -320,7 +333,13 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
   SettingsSection.kernel => const [SettingsSection.kernelAdvanced],
   SettingsSection.iptv => const [SettingsSection.iptvBrowse, SettingsSection.iptvGroups],
   SettingsSection.vod => const [SettingsSection.vodPlayback, SettingsSection.vodInterface],
-  SettingsSection.music => const [SettingsSection.musicList, SettingsSection.musicSources],
+  SettingsSection.music => const [
+    SettingsSection.musicList,
+    SettingsSection.musicSources,
+    SettingsSection.musicDownload,
+    SettingsSection.musicLyric,
+    SettingsSection.musicDesktopLyric,
+  ],
   SettingsSection.network => const [SettingsSection.nodes],
   SettingsSection.backup => const [SettingsSection.webdavSync],
   _ => const [],

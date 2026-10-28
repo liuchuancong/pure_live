@@ -11,7 +11,7 @@
   "hot": "热门",
   "zones": "分区",
   "search": "搜索直播",
-  "toolbox": "链接解析",
+  "toolbox": "工具箱",
   "groupPersonal": "个人与系统",
   "record": "录制中心",
   "settings": "设置",
@@ -23,5 +23,7 @@
   "iptvGuide": "节目单",
   "musicSonglist": "歌单",
   "musicToplist": "排行榜",
-  "musicLibrary": "我的列表"
+  "musicLibrary": "我的列表",
+  "musicLocal": "本地音乐",
+  "musicDownloads": "下载管理"
 }

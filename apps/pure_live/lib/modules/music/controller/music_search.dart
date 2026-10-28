@@ -1,6 +1,9 @@
+import 'dart:async' show unawaited;
+import 'dart:convert' show jsonDecode, jsonEncode;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
-import 'package:live_vod/live_vod.dart' show VodFailure;
+import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
@@ -37,6 +40,7 @@ final class MusicSearchController extends Notifier<MusicSearchState> {
       state = _initial();
       return Future.value();
     }
+    unawaited(ref.read(musicSearchHistoryProvider.notifier).record(word));
     return _load(word, 1);
   }
 
@@ -71,14 +75,7 @@ final class MusicSearchController extends Notifier<MusicSearchState> {
       state = (query: query, songs: songs, nextPage: page + 1, hasMore: answer.hasMore, loading: false, error: null);
     } on Object catch (failure) {
       if (!ref.mounted || generation != _generation) return;
-      state = (
-        query: query,
-        songs: state.songs,
-        nextPage: page,
-        hasMore: false,
-        loading: false,
-        error: failure is VodFailure ? failure.message : '$failure',
-      );
+      state = (query: query, songs: state.songs, nextPage: page, hasMore: false, loading: false, error: '$failure');
     }
   }
 }
@@ -97,3 +94,65 @@ final FutureProviderFamily<List<audio.MusicTrack>, audio.MusicCatalog> musicCata
       final answer = await ref.watch(musicSourceProvider).catalogItems(catalog);
       return answer.items;
     });
+
+/// The preference the recent searches are kept under.
+const String kMusicSearchHistoryKey = 'music.search.history';
+
+/// How many searches the module remembers.
+const int kMusicSearchHistoryLimit = 20;
+
+/// The queries the viewer searched, newest first — the reference's 搜索历史.
+final class MusicSearchHistoryController extends Notifier<List<String>> {
+  @override
+  List<String> build() {
+    try {
+      final raw = StoragePrefs.getString(kMusicSearchHistoryKey);
+      if (raw == null || raw.isEmpty) return const [];
+      final json = jsonDecode(raw);
+      if (json is! List) return const [];
+      return [
+        for (final entry in json)
+          if (entry is String && entry.trim().isNotEmpty) entry,
+      ];
+    } on Object {
+      return const [];
+    }
+  }
+
+  /// Puts [query] at the front, dropping an older copy.
+  Future<void> record(String query) async {
+    final word = query.trim();
+    if (word.isEmpty) return;
+    if (state.isNotEmpty && state.first == word) return;
+    state = [word, ...state.where((entry) => entry != word)].take(kMusicSearchHistoryLimit).toList();
+    await _save();
+  }
+
+  /// Forgets one query.
+  Future<void> remove(String query) async {
+    state = [
+      for (final entry in state)
+        if (entry != query) entry,
+    ];
+    await _save();
+  }
+
+  /// Forgets every query.
+  Future<void> clear() async {
+    state = const [];
+    await _save();
+  }
+
+  Future<void> _save() async {
+    try {
+      await StoragePrefs.setString(kMusicSearchHistoryKey, jsonEncode(state));
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The viewer's recent searches.
+final musicSearchHistoryProvider = NotifierProvider<MusicSearchHistoryController, List<String>>(
+  MusicSearchHistoryController.new,
+);

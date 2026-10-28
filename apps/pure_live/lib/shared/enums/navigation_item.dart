@@ -97,6 +97,12 @@ enum NavigationItem {
   /// The music module's own lists, the reference's 我的列表.
   musicLibrary(DsIcons.heart),
 
+  /// The device's own music files, the reference's 本地音乐.
+  musicLocal(DsIcons.folderOpen),
+
+  /// The music module's download queue, the reference's 下载管理.
+  musicDownloads(DsIcons.download),
+
   /// The hongguo station's home feed (首页).
   hongguoHome(DsIcons.home),
 
@@ -157,6 +163,8 @@ enum NavigationItem {
     NavigationItem.musicSonglist => t.navigation.musicSonglist,
     NavigationItem.musicToplist => t.navigation.musicToplist,
     NavigationItem.musicLibrary => t.navigation.musicLibrary,
+    NavigationItem.musicLocal => t.navigation.musicLocal,
+    NavigationItem.musicDownloads => t.navigation.musicDownloads,
     NavigationItem.hongguoHome => t.hongguo.navHome,
     NavigationItem.hongguoFind => t.hongguo.navFind,
     NavigationItem.hongguoRank => t.hongguo.navRank,

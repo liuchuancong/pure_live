@@ -90,12 +90,13 @@ final class MusicCustomSource {
 
   /// Reads the header comment a lx-music script opens with — the block
   /// comment's `@key value` lines. Missing fields stay empty; a script
-  /// without an `@name` or without the `lx.on('request', …)` contract is not
-  /// a source.
+  /// without an `@name` or without the request handler contract is not a
+  /// source. Scripts wire the handler either as `lx.on('request', …)` or by
+  /// destructuring: `on(EVENT_NAMES.request, …)`.
   static MusicCustomSource? parse(String script, {required String id, DateTime? importedAt}) {
     final meta = _header(script);
     final name = meta['name']?.trim() ?? '';
-    if (name.isEmpty || !script.contains('lx.on(')) return null;
+    if (name.isEmpty || !_contract.hasMatch(script)) return null;
     return MusicCustomSource(
       id: id,
       name: name,
@@ -107,6 +108,10 @@ final class MusicCustomSource {
       importedAt: importedAt ?? DateTime.now(),
     );
   }
+
+  static final RegExp _contract = RegExp(
+    r'''(?:lx\.on\s*\(\s*['"]request|on\s*\(\s*(?:EVENT_NAMES\.request|['"]request))''',
+  );
 
   static final RegExp _comment = RegExp(r'^\s*/\*\*?([\s\S]*?)\*/');
   static final RegExp _field = RegExp(r'^\s*\*?\s*@(\w+)\s+(.+?)\s*$', multiLine: true);
@@ -130,7 +135,7 @@ enum MusicSourceFailureReason {
   /// Nothing was pasted, or the address answered an empty body.
   empty,
 
-  /// No header comment with a name, or no `lx.on('request', …)`.
+  /// No header comment with a name, or no request handler contract.
   notASource,
 
   /// An identical script is already imported.

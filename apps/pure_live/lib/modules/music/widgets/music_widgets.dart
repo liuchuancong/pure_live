@@ -38,6 +38,11 @@ final class MusicSongRow extends StatelessWidget {
     required this.onPlay,
     required this.onFavourite,
     this.onRemove,
+    this.onPlayNext,
+    this.onAddToPlaylist,
+    this.onDownload,
+    this.onMoveUp,
+    this.onMoveDown,
     this.subtitle,
     super.key,
   });
@@ -55,6 +60,21 @@ final class MusicSongRow extends StatelessWidget {
 
   /// Removes the song from the list it is drawn in, when the list owns one.
   final VoidCallback? onRemove;
+
+  /// Puts the song right after the one on air.
+  final VoidCallback? onPlayNext;
+
+  /// Adds the song to one of the viewer's playlists.
+  final VoidCallback? onAddToPlaylist;
+
+  /// Downloads the song.
+  final VoidCallback? onDownload;
+
+  /// Moves the song one place up in its list.
+  final VoidCallback? onMoveUp;
+
+  /// Moves the song one place down in its list.
+  final VoidCallback? onMoveDown;
 
   /// A line under the title; the artist by default.
   final String? subtitle;
@@ -102,6 +122,49 @@ final class MusicSongRow extends StatelessWidget {
               semanticLabel: t.music.removeSong,
               onPressed: remove,
               icon: const DsIcon(DsIcons.x, size: 16),
+            ),
+          if (onPlayNext != null ||
+              onAddToPlaylist != null ||
+              onDownload != null ||
+              onMoveUp != null ||
+              onMoveDown != null)
+            DsMenuAnchor(
+              semanticLabel: t.music.moreActions,
+              items: [
+                if (onMoveUp case final moveUp?)
+                  DsMenuItem(leading: const DsIcon(DsIcons.arrowUp), label: Text(t.music.moveUp), onPressed: moveUp),
+                if (onMoveDown case final moveDown?)
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.arrowDown),
+                    label: Text(t.music.moveDown),
+                    onPressed: moveDown,
+                  ),
+                if (onPlayNext case final playNext?)
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.listPlus),
+                    label: Text(t.music.playNext),
+                    onPressed: playNext,
+                  ),
+                if (onAddToPlaylist case final addToPlaylist?)
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.listMusic),
+                    label: Text(t.music.addToPlaylist),
+                    onPressed: addToPlaylist,
+                  ),
+                if (onDownload case final download?)
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.download),
+                    label: Text(t.music.download),
+                    onPressed: download,
+                  ),
+              ],
+              builder: (context, controller, _) => DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                semanticLabel: t.music.moreActions,
+                onPressed: controller.toggle,
+                icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
+              ),
             ),
         ],
       ),
