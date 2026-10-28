@@ -10,8 +10,10 @@ import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -28,7 +30,9 @@ import 'package:live_sites/src/platforms/pandalive/capabilities/pandalive_discov
 import 'package:live_sites/src/platforms/pandalive/capabilities/pandalive_link_resolver.dart';
 import 'package:live_sites/src/platforms/pandalive/capabilities/pandalive_playback_provider.dart';
 import 'package:live_sites/src/platforms/pandalive/capabilities/pandalive_room_provider.dart';
+import 'package:live_sites/src/platforms/pandalive/capabilities/pandalive_room_refresh.dart';
 import 'package:live_sites/src/platforms/pandalive/capabilities/pandalive_search_provider.dart';
+import 'package:live_sites/src/platforms/pandalive/capabilities/pandalive_status_check.dart';
 import 'package:live_sites/src/platforms/pandalive/danmaku/pandalive_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/pandalive/danmaku/pandalive_danmaku_session.dart';
 import 'package:live_sites/src/platforms/pandalive/pandalive_manifest.dart';
@@ -324,6 +328,11 @@ final class PandaliveSite implements LiveSite {
     }
   }
 
+  /// A refresh: the member answer alone, without the play request a first
+  /// visit makes.
+  Future<LiveRoom> refreshRoom(String roomId) async =>
+      PandaliveRoomParser.profileRoom(await _member(_checkedId(roomId)));
+
   // Streams --------------------------------------------------------------------
 
   /// The stream data of [roomId]: the one its room entry brought, until its
@@ -386,6 +395,8 @@ final class PandaliveSite implements LiveSite {
   PandalivePlaybackProvider? _playback;
   PandaliveDanmakuProvider? _danmaku;
   PandaliveLinkResolver? _link;
+  PandaliveRoomRefresh? _refresh;
+  PandaliveStatusCheck? _status;
 
   /// The capability of type [T], or null when PandaTV does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -398,6 +409,8 @@ final class PandaliveSite implements LiveSite {
     final playback = _playback ??= PandalivePlaybackProvider(site: this);
     final danmaku = _danmaku ??= PandaliveDanmakuProvider(site: this);
     final link = _link ??= PandaliveLinkResolver(site: this);
+    final refresh = _refresh ??= PandaliveRoomRefresh(site: this);
+    final status = _status ??= PandaliveStatusCheck(refresh: refresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -406,6 +419,8 @@ final class PandaliveSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }

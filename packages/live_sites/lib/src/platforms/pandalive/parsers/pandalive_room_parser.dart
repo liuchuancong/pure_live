@@ -10,6 +10,7 @@ import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_lease/live_play_lease.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/play/play_geometry/play_geometry.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/room/room_audience/room_audience.dart';
 import 'package:live_sites/src/models/room/room_broadcast/room_broadcast.dart';
@@ -831,6 +832,11 @@ abstract final class PandaliveRoomParser {
             codec: variant.codec,
             lineLabel: PandaliveEndpoints.lineLabel,
             lease: lease(issuedAt),
+            geometry: PlayGeometry.of(
+              height: variant.height,
+              frameRate: variant.frameRate > 0 ? variant.frameRate.round() : null,
+              bitrateKbps: variant.bandwidth > 0 ? variant.bandwidth ~/ 1000 : null,
+            ),
           ),
         ),
     ];
