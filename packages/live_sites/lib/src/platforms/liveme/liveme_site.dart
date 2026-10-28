@@ -9,8 +9,10 @@ import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -25,7 +27,9 @@ import 'package:live_sites/src/platforms/liveme/capabilities/liveme_discovery_pr
 import 'package:live_sites/src/platforms/liveme/capabilities/liveme_link_resolver.dart';
 import 'package:live_sites/src/platforms/liveme/capabilities/liveme_playback_provider.dart';
 import 'package:live_sites/src/platforms/liveme/capabilities/liveme_room_provider.dart';
+import 'package:live_sites/src/platforms/liveme/capabilities/liveme_room_refresh.dart';
 import 'package:live_sites/src/platforms/liveme/capabilities/liveme_search_provider.dart';
+import 'package:live_sites/src/platforms/liveme/capabilities/liveme_status_check.dart';
 import 'package:live_sites/src/platforms/liveme/liveme_manifest.dart';
 import 'package:live_sites/src/platforms/liveme/parsers/liveme_failure.dart';
 import 'package:live_sites/src/platforms/liveme/parsers/liveme_link.dart';
@@ -302,6 +306,8 @@ final class LivemeSite implements LiveSite {
   LivemeSearchProvider? _search;
   LivemePlaybackProvider? _playback;
   LivemeLinkResolver? _link;
+  LivemeRoomRefresh? _refresh;
+  LivemeStatusCheck? _status;
 
   /// The capability of type [T], or null when LiveMe does not support it
   /// (ARCHITECTURE.md §4.1). There is no category catalog (the featured list
@@ -314,12 +320,16 @@ final class LivemeSite implements LiveSite {
     final search = _search ??= LivemeSearchProvider(site: this);
     final playback = _playback ??= LivemePlaybackProvider(site: this);
     final link = _link ??= LivemeLinkResolver(site: this);
+    final refresh = _refresh ??= LivemeRoomRefresh(site: this);
+    final status = _status ??= LivemeStatusCheck(refresh: refresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveDiscoveryProvider) => discovery as T,
       const (LiveSearchProvider) => search as T,
       const (LivePlaybackProvider) => playback as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }
