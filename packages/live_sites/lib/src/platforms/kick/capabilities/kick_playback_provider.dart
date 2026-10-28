@@ -57,14 +57,29 @@ final class KickPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) =>
+      _lines(room, quality);
+
+  /// Lines after a failure: the channel and its master are read again even
+  /// when the cached copy's lease has not run out (a token revoked early has
+  /// no way back otherwise).
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+  }) => _lines(room, quality, force: true);
+
+  Future<Either<LiveSiteError, List<LivePlayLine>>> _lines(
+    LiveRoom room,
+    LivePlayQuality? quality, {
+    bool force = false,
+  }) async {
     try {
-      var data = await _read(room.roomId);
+      var data = await _read(room.roomId, force: force);
       // A recovery read: the reference re-reads the channel and its master on
       // recovery, because a token revoked early server-side otherwise has no
       // way back. Same trigger kept here — the cached lease is spent, so the
       // lines it would build are certain to die mid-play.
-      if (_leaseRunningOut(data)) data = await _read(room.roomId, force: true);
+      if (!force && _leaseRunningOut(data)) data = await _read(room.roomId, force: true);
       final variant = KickPlayParser.pick(data.variants, quality?.qualityId ?? quality?.label);
       if (variant == null) {
         throw const KickFailure(KickFailureKind.streamUnavailable, 'master playlist: no variant');

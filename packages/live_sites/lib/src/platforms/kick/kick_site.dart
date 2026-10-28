@@ -6,10 +6,13 @@ import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -19,9 +22,12 @@ import 'package:live_sites/src/platforms/kick/api/kick_http.dart';
 import 'package:live_sites/src/platforms/kick/capabilities/kick_area_provider.dart';
 import 'package:live_sites/src/platforms/kick/capabilities/kick_discovery_provider.dart';
 import 'package:live_sites/src/platforms/kick/capabilities/kick_link_resolver.dart';
+import 'package:live_sites/src/platforms/kick/capabilities/kick_play_recovery.dart';
 import 'package:live_sites/src/platforms/kick/capabilities/kick_playback_provider.dart';
 import 'package:live_sites/src/platforms/kick/capabilities/kick_room_provider.dart';
+import 'package:live_sites/src/platforms/kick/capabilities/kick_room_refresh.dart';
 import 'package:live_sites/src/platforms/kick/capabilities/kick_search_provider.dart';
+import 'package:live_sites/src/platforms/kick/capabilities/kick_status_check.dart';
 import 'package:live_sites/src/platforms/kick/danmaku/kick_danmaku_session.dart';
 import 'package:live_sites/src/platforms/kick/kick_manifest.dart';
 import 'package:live_sites/src/platforms/kick/parsers/kick_failure.dart';
@@ -136,6 +142,9 @@ final class KickSite implements LiveSite {
   KickPlaybackProvider? _playback;
   KickDanmakuProvider? _danmaku;
   KickLinkResolver? _link;
+  KickRoomRefresh? _refresh;
+  KickStatusCheck? _status;
+  KickPlayRecovery? _recovery;
 
   /// The capability of type [T], or null when kick does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -148,6 +157,9 @@ final class KickSite implements LiveSite {
     final playback = _playback ??= KickPlaybackProvider(site: this);
     final danmaku = _danmaku ??= KickDanmakuProvider(site: this);
     final link = _link ??= KickLinkResolver(site: this);
+    final refresh = _refresh ??= KickRoomRefresh(site: this);
+    final status = _status ??= KickStatusCheck(refresh: refresh);
+    final recovery = _recovery ??= KickPlayRecovery(playback: playback);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -156,6 +168,9 @@ final class KickSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }
