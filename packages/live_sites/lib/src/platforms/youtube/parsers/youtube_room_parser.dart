@@ -39,6 +39,12 @@ typedef YoutubeResolved = ({String? videoId, String? browseId});
 /// takes response text (or a decoded node) and returns shared models, or
 /// throws a [YouTubeFailure]; stream assembly is in `youtube_play_parser.dart`.
 abstract final class YoutubeRoomParser {
+  /// The room notice (3.x's `youtube_chat_notice`; its "chat not connected
+  /// yet" opening is gone because live chat is shown): the online figure is
+  /// only shown when the live page gives a concurrent-viewer field, never
+  /// the cumulative view count.
+  static const String chatNotice = '仅在直播页给出同时观看人数时显示在线人数，不把累计播放量当作在线人数。';
+
   /// The room from a `player` body ([playerBody]) and a `next` body
   /// ([nextBody]) of the broadcast the caller asked for by [requestedId] (a
   /// video id or a channel id).
@@ -70,7 +76,12 @@ abstract final class YoutubeRoomParser {
     final room = LiveRoom.normalized(
       platform: youtubeSiteId,
       roomId: channelId.isNotEmpty ? channelId : videoId,
-      content: RoomContent.of(title: title, coverUrl: lastThumbnail(details['thumbnail'])),
+      content: RoomContent.of(
+        title: title,
+        coverUrl: lastThumbnail(details['thumbnail']),
+        introduction: jsonString(details['shortDescription']),
+        notice: chatNotice,
+      ),
       anchor: LiveAnchor.normalized(
         platform: youtubeSiteId,
         anchorId: channelId,

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:live_sites/src/models/audience/live_audience_update/live_audience_update.dart';
 import 'package:live_sites/src/models/enums/live_audience_signal_kind.dart';
 import 'package:live_sites/src/models/enums/live_message_type.dart';
+import 'package:live_sites/src/models/enums/live_notice_kind.dart';
 import 'package:live_sites/src/models/gift/live_gift/live_gift.dart';
 import 'package:live_sites/src/models/message/live_emote/live_emote.dart';
 import 'package:live_sites/src/models/message/live_message/live_message.dart';
@@ -180,6 +181,10 @@ abstract final class YoutubeDanmakuCodec {
     if (sticker != null) return _sticker(sticker, pinned, received);
     final membership = jsonObject(findFirst(item, 'liveChatMembershipItemRenderer'));
     if (membership != null) return _membership(membership);
+    final purchase = jsonObject(findFirst(item, 'liveChatSponsorshipsGiftPurchaseAnnouncementRenderer'));
+    if (purchase != null) return _sponsorshipGift(purchase, received: false);
+    final redemption = jsonObject(findFirst(item, 'liveChatSponsorshipsGiftRedemptionAnnouncementRenderer'));
+    if (redemption != null) return _sponsorshipGift(redemption, received: true);
     final gift = jsonObject(findFirst(item, 'giftMessageViewModel'));
     if (gift != null) return _gift(gift);
     return null;
@@ -279,6 +284,33 @@ abstract final class YoutubeDanmakuCodec {
       color: LiveMessageColor.white,
       messageId: _id(renderer),
       sentAt: _time(renderer['timestampUsec']),
+    );
+  }
+
+  /// A gifted membership: someone bought memberships for the chat
+  /// (`liveChatSponsorshipsGiftPurchaseAnnouncementRenderer`, the header's
+  /// author and text) or a viewer received one
+  /// (`…GiftRedemptionAnnouncementRenderer`, marked
+  /// [LiveNoticeKind.giftedSubscription]). Null without text.
+  static LiveMessage? _sponsorshipGift(Map<String, dynamic> renderer, {required bool received}) {
+    final header = received
+        ? const <String, dynamic>{}
+        : jsonObject(jsonObject(renderer['header'])?['liveChatSponsorshipsHeaderRenderer']) ??
+              const <String, dynamic>{};
+    final author = label(header['authorName']);
+    final text = label(received ? renderer['message'] : header['primaryText']).trim();
+    if (text.isEmpty) return null;
+    return LiveMessage.normalized(
+      type: LiveMessageType.notice,
+      text: author.isEmpty ? text : '$author $text',
+      sender: MessageSender.normalized(
+        userId: jsonString(renderer['authorExternalChannelId']) ?? '',
+        userName: author.isEmpty ? anonymousUserName : author,
+      ),
+      color: LiveMessageColor.white,
+      messageId: jsonString(renderer['id']) ?? '',
+      sentAt: _time(renderer['timestampUsec']),
+      payload: received ? LiveNoticeKind.giftedSubscription : LiveNoticeKind.subscription,
     );
   }
 

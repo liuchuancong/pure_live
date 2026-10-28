@@ -7,6 +7,7 @@ import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_lease/live_play_lease.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/play/play_geometry/play_geometry.dart';
 import 'package:live_sites/src/platforms/youtube/api/youtube_endpoints.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_failure.dart';
 import 'package:live_sites/src/platforms/youtube/parsers/youtube_json.dart';
@@ -147,6 +148,14 @@ abstract final class YoutubePlayParser {
             issuedAt: issuedAt,
             codec: _codecOf(format),
             lineLabel: height == null ? 'MP4 $itag' : '${height}p',
+            geometry: PlayGeometry.of(
+              width: jsonInt(format['width']),
+              height: height,
+              bitrateKbps: switch (jsonInt(format['bitrate'])) {
+                final rate? when rate > 0 => rate ~/ 1000,
+                _ => null,
+              },
+            ),
           ),
         ];
       }
@@ -169,6 +178,15 @@ abstract final class YoutubePlayParser {
           issuedAt: issuedAt,
           codec: variant.codec,
           lineLabel: '${variant.height}p',
+          geometry: PlayGeometry.of(
+            width: variant.width,
+            height: variant.height,
+            frameRate: variant.fps > 0 ? variant.fps.round() : null,
+            bitrateKbps: switch (variant.bandwidth) {
+              final rate? when rate > 0 => rate ~/ 1000,
+              _ => null,
+            },
+          ),
         ),
       ];
     }
@@ -181,13 +199,15 @@ abstract final class YoutubePlayParser {
   /// The lease of a media URL received at [issuedAt]: the `?expire=<epoch s>`
   /// or `/expire/<s>/` deadline, renewed [leaseLead] (at most a quarter of the
   /// remaining lifetime) before. No expiry, or one already past, is no lease.
-  static LivePlayLease? lease(Uri url, DateTime issuedAt) {
+  static LivePlayLease? lease(Uri url, DateTime issuedAt, {bool allowExpired = false}) {
     final raw = url.queryParameters['expire'] ?? RegExp(r'/expire/(\d+)').firstMatch(url.path)?.group(1);
     final seconds = int.tryParse(raw ?? '');
     if (seconds == null) return null;
     final expiresAt = DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
     final lifetime = expiresAt.difference(issuedAt);
-    if (lifetime <= Duration.zero) return null;
+    if (lifetime <= Duration.zero) {
+      return allowExpired ? LivePlayLease.of(refreshAt: expiresAt.subtract(leaseLead), expiresAt: expiresAt) : null;
+    }
     final lead = Duration(microseconds: math.min(leaseLead.inMicroseconds, lifetime.inMicroseconds ~/ 4));
     return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
   }
@@ -233,6 +253,7 @@ abstract final class YoutubePlayParser {
     required DateTime issuedAt,
     LiveStreamCodec? codec,
     String? lineLabel,
+    PlayGeometry? geometry,
   }) {
     final uri = allowlisted(url);
     return LivePlayLine.of(
@@ -243,6 +264,7 @@ abstract final class YoutubePlayParser {
       codec: codec,
       lineLabel: lineLabel ?? uri.host,
       lease: lease(uri, issuedAt),
+      geometry: geometry,
     );
   }
 
