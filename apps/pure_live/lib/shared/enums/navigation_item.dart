@@ -97,20 +97,26 @@ enum NavigationItem {
   /// The music module's own lists, the reference's 我的列表.
   musicLibrary(DsIcons.heart),
 
-  /// The hongguo station's live-action shelf (短剧).
-  hongguoDrama(DsIcons.clapperboard),
+  /// The hongguo station's home feed (首页).
+  hongguoHome(DsIcons.home),
 
-  /// The hongguo station's comic shelf (漫剧).
-  hongguoComic(DsIcons.bookOpenText),
+  /// The hongguo station's find-drama shelves (找剧).
+  hongguoFind(DsIcons.clapperboard),
 
-  /// The hongguo station's AI shelf (AI短剧).
-  hongguoAi(DsIcons.sparkles),
-
-  /// The hongguo station's comic boards.
+  /// The hongguo station's rank boards (排行榜).
   hongguoRank(DsIcons.trophy),
 
-  /// The hongguo station's newest arrivals.
-  hongguoLatest(DsIcons.rocket),
+  /// The hongguo station's favorites (收藏).
+  hongguoFavorites(DsIcons.heart),
+
+  /// The hongguo station's watch history (观看历史).
+  hongguoHistory(DsIcons.history),
+
+  /// The hongguo station's account reservations (账户预约).
+  hongguoReservations(DsIcons.calendarClock),
+
+  /// The hongguo station's account (登录/账户管理).
+  hongguoAccount(DsIcons.circleUser),
 
   /// The hongguo station's search.
   hongguoSearch(DsIcons.search);
@@ -131,9 +137,7 @@ enum NavigationItem {
     NavigationItem.hot => t.navigation.hot,
     NavigationItem.zones => t.navigation.zones,
     NavigationItem.search => t.navigation.search,
-    // The reference's link parser: the toolbox surface's own link-parser title,
-    // which already reads as the link parser in every locale.
-    NavigationItem.toolbox => t.toolbox.toolLinkTitle,
+    NavigationItem.toolbox => t.navigation.toolbox,
     NavigationItem.record => t.navigation.record,
     NavigationItem.settings => t.navigation.settings,
     NavigationItem.appearance => t.navigation.appearance,
@@ -153,11 +157,13 @@ enum NavigationItem {
     NavigationItem.musicSonglist => t.navigation.musicSonglist,
     NavigationItem.musicToplist => t.navigation.musicToplist,
     NavigationItem.musicLibrary => t.navigation.musicLibrary,
-    NavigationItem.hongguoDrama => t.hongguo.navDrama,
-    NavigationItem.hongguoComic => t.hongguo.navComic,
-    NavigationItem.hongguoAi => t.hongguo.navAi,
+    NavigationItem.hongguoHome => t.hongguo.navHome,
+    NavigationItem.hongguoFind => t.hongguo.navFind,
     NavigationItem.hongguoRank => t.hongguo.navRank,
-    NavigationItem.hongguoLatest => t.hongguo.navLatest,
+    NavigationItem.hongguoFavorites => t.hongguo.navFavorites,
+    NavigationItem.hongguoHistory => t.hongguo.navHistory,
+    NavigationItem.hongguoReservations => t.hongguo.navReservations,
+    NavigationItem.hongguoAccount => t.hongguo.navAccount,
     NavigationItem.hongguoSearch => t.hongguo.navSearch,
   };
 }

@@ -1183,20 +1183,8 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '短剧 · 漫剧 · AI 短剧，由红果伴侣服务提供'
 	String get tagline => '短剧 · 漫剧 · AI 短剧，由红果伴侣服务提供';
 
-	/// zh-CN: '短剧'
-	String get navDrama => '短剧';
-
-	/// zh-CN: '漫剧'
-	String get navComic => '漫剧';
-
-	/// zh-CN: 'AI短剧'
-	String get navAi => 'AI短剧';
-
 	/// zh-CN: '榜单'
 	String get navRank => '榜单';
-
-	/// zh-CN: '上新'
-	String get navLatest => '上新';
 
 	/// zh-CN: '搜索'
 	String get navSearch => '搜索';
@@ -1209,21 +1197,6 @@ class Translations$hongguo$zh_CN {
 
 	/// zh-CN: 'AI短剧'
 	String get genreAiSeries => 'AI短剧';
-
-	/// zh-CN: '漫剧推荐榜'
-	String get boardRecommend => '漫剧推荐榜';
-
-	/// zh-CN: '漫剧热播榜'
-	String get boardHot => '漫剧热播榜';
-
-	/// zh-CN: '漫剧新剧榜'
-	String get boardNew => '漫剧新剧榜';
-
-	/// zh-CN: '今日上新'
-	String get latestToday => '今日上新';
-
-	/// zh-CN: '最新上架'
-	String get latestAll => '最新上架';
 
 	/// zh-CN: '全部'
 	String get filterAll => '全部';
@@ -1243,8 +1216,8 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '换个条件再试试。'
 	String get noResultsDescription => '换个条件再试试。';
 
-	/// zh-CN: '红果伴侣服务没有应答；请确认服务已启动，并检查服务地址与密钥。'
-	String get serverHint => '红果伴侣服务没有应答；请确认服务已启动，并检查服务地址与密钥。';
+	/// zh-CN: '红果接口没有应答；请检查网络后重试。'
+	String get serverHint => '红果接口没有应答；请检查网络后重试。';
 
 	/// zh-CN: '红果设置'
 	String get openSettings => '红果设置';
@@ -1308,6 +1281,138 @@ class Translations$hongguo$zh_CN {
 
 	/// zh-CN: '收起'
 	String get collapse => '收起';
+
+	/// zh-CN: '综合榜'
+	String get boardAll => '综合榜';
+
+	/// zh-CN: '真人剧榜'
+	String get boardReal => '真人剧榜';
+
+	/// zh-CN: '漫剧榜'
+	String get boardComic => '漫剧榜';
+
+	/// zh-CN: 'AI剧榜'
+	String get boardAi => 'AI剧榜';
+
+	/// zh-CN: '首页'
+	String get navHome => '首页';
+
+	/// zh-CN: '找剧'
+	String get navFind => '找剧';
+
+	/// zh-CN: '收藏'
+	String get navFavorites => '收藏';
+
+	/// zh-CN: '观看历史'
+	String get navHistory => '观看历史';
+
+	/// zh-CN: '账户预约'
+	String get navReservations => '账户预约';
+
+	/// zh-CN: '账户'
+	String get navAccount => '账户';
+
+	/// zh-CN: '推荐'
+	String get homeTabAll => '推荐';
+
+	/// zh-CN: '本机'
+	String get localTab => '本机';
+
+	/// zh-CN: '账户'
+	String get accountTab => '账户';
+
+	/// zh-CN: '在剧集详情中加入本机收藏，喜欢的剧就会出现在这里'
+	String get favoritesLocalEmpty => '在剧集详情中加入本机收藏，喜欢的剧就会出现在这里';
+
+	/// zh-CN: '尚未读取账户收藏'
+	String get favoritesAccountEmpty => '尚未读取账户收藏';
+
+	/// zh-CN: '登录红果账号后，在这里同步手机收藏'
+	String get favoritesAccountOff => '登录红果账号后，在这里同步手机收藏';
+
+	/// zh-CN: '看过的剧和进度会出现在这里'
+	String get historyLocalEmpty => '看过的剧和进度会出现在这里';
+
+	/// zh-CN: '尚未读取账户观看历史'
+	String get historyAccountEmpty => '尚未读取账户观看历史';
+
+	/// zh-CN: '登录红果账号后，在这里同步手机观看历史'
+	String get historyAccountOff => '登录红果账号后，在这里同步手机观看历史';
+
+	/// zh-CN: '清空历史'
+	String get historyClear => '清空历史';
+
+	/// zh-CN: '只清空这台设备的观看进度，账户历史和收藏保留'
+	String get historyClearDesc => '只清空这台设备的观看进度，账户历史和收藏保留';
+
+	/// zh-CN: '删除记录'
+	String get historyRemove => '删除记录';
+
+	/// zh-CN: '只删除这部剧的观看进度'
+	String get historyRemoveDesc => '只删除这部剧的观看进度';
+
+	/// zh-CN: '续播'
+	String get resumeAt => '续播';
+
+	/// zh-CN: '已看完'
+	String get watchedBadge => '已看完';
+
+	/// zh-CN: '已上线'
+	String get reservationsOnline => '已上线';
+
+	/// zh-CN: '待上线'
+	String get reservationsUpcoming => '待上线';
+
+	/// zh-CN: '当前没有已上线的预约'
+	String get reservationsOnlineEmpty => '当前没有已上线的预约';
+
+	/// zh-CN: '当前没有待上线的预约'
+	String get reservationsUpcomingEmpty => '当前没有待上线的预约';
+
+	/// zh-CN: '刷新预约'
+	String get reservationsRefresh => '刷新预约';
+
+	/// zh-CN: '登录红果账号后，在这里同步手机预约'
+	String get reservationsOff => '登录红果账号后，在这里同步手机预约';
+
+	/// zh-CN: '扫码登录红果'
+	String get accountSignInTitle => '扫码登录红果';
+
+	/// zh-CN: '用手机红果 App 扫二维码确认登录；账户收藏、历史与预约随账号同步'
+	String get accountSignInDesc => '用手机红果 App 扫二维码确认登录；账户收藏、历史与预约随账号同步';
+
+	/// zh-CN: '刷新二维码'
+	String get accountQrRefresh => '刷新二维码';
+
+	/// zh-CN: '已登录'
+	String get accountSignedInAs => '已登录';
+
+	/// zh-CN: '退出登录'
+	String get accountSignOut => '退出登录';
+
+	/// zh-CN: '只退出红果账号，本机收藏与历史保留'
+	String get accountSignOutDesc => '只退出红果账号，本机收藏与历史保留';
+
+	/// zh-CN: '刷新账户数据'
+	String get accountRefresh => '刷新账户数据';
+
+	/// zh-CN: '刷新收藏'
+	String get accountFavoritesRefresh => '刷新收藏';
+
+	/// zh-CN: '刷新历史'
+	String get accountHistoryRefresh => '刷新历史';
+
+	/// zh-CN: '已加入本机收藏'
+	String get favoriteToggleOn => '已加入本机收藏';
+
+	/// zh-CN: '已取消本机收藏'
+	String get favoriteToggleOff => '已取消本机收藏';
+
+	/// zh-CN: '已加入账户收藏'
+	String get cloudFavoriteOn => '已加入账户收藏';
+
+	/// zh-CN: '已取消账户收藏'
+	String get cloudFavoriteOff => '已取消账户收藏';
 }
 
 // Path: iptv
@@ -2377,8 +2482,8 @@ class Translations$navigation$zh_CN {
 	/// zh-CN: '搜索直播'
 	String get search => '搜索直播';
 
-	/// zh-CN: '链接解析'
-	String get toolbox => '链接解析';
+	/// zh-CN: '工具箱'
+	String get toolbox => '工具箱';
 
 	/// zh-CN: '个人与系统'
 	String get groupPersonal => '个人与系统';
@@ -4306,6 +4411,102 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '提高同屏上限到 1000 条并使用实时渲染，适合弹幕非常密集的直播间。'
 	String get styleMassModeDesc => '提高同屏上限到 1000 条并使用实时渲染，适合弹幕非常密集的直播间。';
 
+	/// zh-CN: '斜体'
+	String get styleItalic => '斜体';
+
+	/// zh-CN: '文字颜色'
+	String get styleTextColor => '文字颜色';
+
+	/// zh-CN: '描边颜色'
+	String get styleStrokeColor => '描边颜色';
+
+	/// zh-CN: '文字阴影'
+	String get styleShadow => '文字阴影';
+
+	/// zh-CN: '阴影颜色'
+	String get styleShadowColor => '阴影颜色';
+
+	/// zh-CN: '阴影模糊'
+	String get styleShadowBlur => '阴影模糊';
+
+	/// zh-CN: '阴影水平偏移'
+	String get styleShadowOffsetX => '阴影水平偏移';
+
+	/// zh-CN: '阴影垂直偏移'
+	String get styleShadowOffsetY => '阴影垂直偏移';
+
+	/// zh-CN: '轨道与安全区'
+	String get danmakuLaneGroup => '轨道与安全区';
+
+	/// zh-CN: '轨道高度'
+	String get styleTrackHeight => '轨道高度';
+
+	/// zh-CN: '表情大小'
+	String get styleEmojiSize => '表情大小';
+
+	/// zh-CN: '弹幕安全间距'
+	String get styleOverlapGap => '弹幕安全间距';
+
+	/// zh-CN: '避开屏幕安全区'
+	String get styleSafeArea => '避开屏幕安全区';
+
+	/// zh-CN: '队列与性能'
+	String get danmakuQueueGroup => '队列与性能';
+
+	/// zh-CN: '等待队列上限'
+	String get styleMaxPending => '等待队列上限';
+
+	/// zh-CN: '队列最长等待'
+	String get styleMaxPendingAge => '队列最长等待';
+
+	/// zh-CN: '发送间隔'
+	String get styleEmitInterval => '发送间隔';
+
+	/// zh-CN: '文字光栅化'
+	String get styleRasterize => '文字光栅化';
+
+	/// zh-CN: '弹幕对象池'
+	String get styleBarragePool => '弹幕对象池';
+
+	/// zh-CN: '图片缓存数量'
+	String get stylePictureCache => '图片缓存数量';
+
+	/// zh-CN: '文字缓存数量'
+	String get styleTextCache => '文字缓存数量';
+
+	/// zh-CN: '光栅缓存上限'
+	String get styleRasterCache => '光栅缓存上限';
+
+	/// zh-CN: '白色'
+	String get danmakuColorWhite => '白色';
+
+	/// zh-CN: '黑色'
+	String get danmakuColorBlack => '黑色';
+
+	/// zh-CN: '红色'
+	String get danmakuColorRed => '红色';
+
+	/// zh-CN: '橙色'
+	String get danmakuColorOrange => '橙色';
+
+	/// zh-CN: '黄色'
+	String get danmakuColorYellow => '黄色';
+
+	/// zh-CN: '绿色'
+	String get danmakuColorGreen => '绿色';
+
+	/// zh-CN: '青色'
+	String get danmakuColorCyan => '青色';
+
+	/// zh-CN: '蓝色'
+	String get danmakuColorBlue => '蓝色';
+
+	/// zh-CN: '紫色'
+	String get danmakuColorPurple => '紫色';
+
+	/// zh-CN: '粉色'
+	String get danmakuColorPink => '粉色';
+
 	/// zh-CN: '小窗弹幕比例自动'
 	String get pipDanmakuScaleAuto => '小窗弹幕比例自动';
 
@@ -4632,6 +4833,27 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '搜索结果'
 	String get searchResults => '搜索结果';
+
+	/// zh-CN: '卡片布局'
+	String get browseLayoutGroup => '卡片布局';
+
+	/// zh-CN: '每行卡片数'
+	String get browseColumns => '每行卡片数';
+
+	/// zh-CN: '列表每行行数'
+	String get browseListColumns => '列表每行行数';
+
+	/// zh-CN: '自动'
+	String get browseAuto => '自动';
+
+	/// zh-CN: '封面比例'
+	String get browseCoverAspect => '封面比例';
+
+	/// zh-CN: '标题行数'
+	String get browseTitleLines => '标题行数';
+
+	/// zh-CN: '{count} 行'
+	String browseTitleLinesValue({required Object count}) => '${count} 行';
 
 	/// zh-CN: '列间距'
 	String get crossSpacing => '列间距';
@@ -6358,6 +6580,9 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '夜色电台'
 	String get roomCardPreviewAnchor => '夜色电台';
 
+	/// zh-CN: '游戏分区'
+	String get roomCardPreviewArea => '游戏分区';
+
 	/// zh-CN: '这是当前设备实际使用的卡片与列表，改动会立刻反映在这里。'
 	String get roomCardPreviewHint => '这是当前设备实际使用的卡片与列表，改动会立刻反映在这里。';
 
@@ -6379,11 +6604,17 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '标题'
 	String get roomCardShowTitle => '标题';
 
-	/// zh-CN: '封面标题'
-	String get roomCardShowCoverTitle => '封面标题';
+	/// zh-CN: '封面类型'
+	String get roomCardShowCoverTitle => '封面类型';
 
 	/// zh-CN: '开播状态'
 	String get roomCardShowStatus => '开播状态';
+
+	/// zh-CN: '开播时长'
+	String get roomCardShowDuration => '开播时长';
+
+	/// zh-CN: '主播认证'
+	String get roomCardShowVerified => '主播认证';
 
 	/// zh-CN: '主播头像'
 	String get roomCardShowAvatar => '主播头像';
@@ -6397,8 +6628,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '观众指标'
 	String get roomCardShowAudience => '观众指标';
 
-	/// zh-CN: '回放徽章'
-	String get roomCardShowReplay => '回放徽章';
+	/// zh-CN: '列表封面'
+	String get roomCardShowListCover => '列表封面';
 
 	/// zh-CN: '回放'
 	String get roomCardReplay => '回放';
@@ -6793,30 +7024,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '红果伴侣服务与播放偏好。'
 	String get hongguoDescription => '红果伴侣服务与播放偏好。';
 
-	/// zh-CN: '伴侣服务'
-	String get hongguoService => '伴侣服务';
-
-	/// zh-CN: '服务地址'
-	String get hongguoServer => '服务地址';
-
-	/// zh-CN: '红果伴侣服务的地址，默认为本机 8000 端口。'
-	String get hongguoServerDesc => '红果伴侣服务的地址，默认为本机 8000 端口。';
-
-	/// zh-CN: '链路密钥'
-	String get hongguoApiKey => '链路密钥';
-
-	/// zh-CN: '服务启用鉴权时下发的密钥；未启用时留空。'
-	String get hongguoApiKeyDesc => '服务启用鉴权时下发的密钥；未启用时留空。';
-
-	/// zh-CN: '测试连接'
-	String get hongguoTest => '测试连接';
-
-	/// zh-CN: '向伴侣服务发一次探活请求，确认地址与密钥可用。'
-	String get hongguoTestDesc => '向伴侣服务发一次探活请求，确认地址与密钥可用。';
-
-	/// zh-CN: '连接正常。'
-	String get hongguoTestOk => '连接正常。';
-
 	/// zh-CN: '默认清晰度'
 	String get hongguoQuality => '默认清晰度';
 
@@ -6840,6 +7047,12 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '360P'
 	String get hongguoQuality360 => '360P';
+
+	/// zh-CN: '重置设备身份'
+	String get hongguoDeviceReset => '重置设备身份';
+
+	/// zh-CN: '忘记当前匿名设备身份，下次播放时重新向平台注册。'
+	String get hongguoDeviceResetDesc => '忘记当前匿名设备身份，下次播放时重新向平台注册。';
 }
 
 // Path: shield
@@ -8402,27 +8615,18 @@ extension on Translations {
 			'history.openRoom' => '进入直播间',
 			'hongguo.title' => '红果短剧',
 			'hongguo.tagline' => '短剧 · 漫剧 · AI 短剧，由红果伴侣服务提供',
-			'hongguo.navDrama' => '短剧',
-			'hongguo.navComic' => '漫剧',
-			'hongguo.navAi' => 'AI短剧',
 			'hongguo.navRank' => '榜单',
-			'hongguo.navLatest' => '上新',
 			'hongguo.navSearch' => '搜索',
 			'hongguo.genreShortPlay' => '短剧',
 			'hongguo.genreComicSeries' => '漫剧',
 			'hongguo.genreAiSeries' => 'AI短剧',
-			'hongguo.boardRecommend' => '漫剧推荐榜',
-			'hongguo.boardHot' => '漫剧热播榜',
-			'hongguo.boardNew' => '漫剧新剧榜',
-			'hongguo.latestToday' => '今日上新',
-			'hongguo.latestAll' => '最新上架',
 			'hongguo.filterAll' => '全部',
 			'hongguo.search' => '搜索',
 			'hongguo.searchHint' => '搜索短剧',
 			'hongguo.searchIdleTitle' => '搜索短剧',
 			'hongguo.searchIdleDescription' => '输入剧名搜索红果的短剧、漫剧和 AI 短剧。',
 			'hongguo.noResultsDescription' => '换个条件再试试。',
-			'hongguo.serverHint' => '红果伴侣服务没有应答；请确认服务已启动，并检查服务地址与密钥。',
+			'hongguo.serverHint' => '红果接口没有应答；请检查网络后重试。',
 			'hongguo.openSettings' => '红果设置',
 			'hongguo.episodes' => '剧集',
 			'hongguo.episodeLabel' => ({required Object index}) => '第${index}集',
@@ -8444,6 +8648,50 @@ extension on Translations {
 			'hongguo.exitFullscreen' => '退出全屏',
 			'hongguo.expand' => '展开',
 			'hongguo.collapse' => '收起',
+			'hongguo.boardAll' => '综合榜',
+			'hongguo.boardReal' => '真人剧榜',
+			'hongguo.boardComic' => '漫剧榜',
+			'hongguo.boardAi' => 'AI剧榜',
+			'hongguo.navHome' => '首页',
+			'hongguo.navFind' => '找剧',
+			'hongguo.navFavorites' => '收藏',
+			'hongguo.navHistory' => '观看历史',
+			'hongguo.navReservations' => '账户预约',
+			'hongguo.navAccount' => '账户',
+			'hongguo.homeTabAll' => '推荐',
+			'hongguo.localTab' => '本机',
+			'hongguo.accountTab' => '账户',
+			'hongguo.favoritesLocalEmpty' => '在剧集详情中加入本机收藏，喜欢的剧就会出现在这里',
+			'hongguo.favoritesAccountEmpty' => '尚未读取账户收藏',
+			'hongguo.favoritesAccountOff' => '登录红果账号后，在这里同步手机收藏',
+			'hongguo.historyLocalEmpty' => '看过的剧和进度会出现在这里',
+			'hongguo.historyAccountEmpty' => '尚未读取账户观看历史',
+			'hongguo.historyAccountOff' => '登录红果账号后，在这里同步手机观看历史',
+			'hongguo.historyClear' => '清空历史',
+			'hongguo.historyClearDesc' => '只清空这台设备的观看进度，账户历史和收藏保留',
+			'hongguo.historyRemove' => '删除记录',
+			'hongguo.historyRemoveDesc' => '只删除这部剧的观看进度',
+			'hongguo.resumeAt' => '续播',
+			'hongguo.watchedBadge' => '已看完',
+			'hongguo.reservationsOnline' => '已上线',
+			'hongguo.reservationsUpcoming' => '待上线',
+			'hongguo.reservationsOnlineEmpty' => '当前没有已上线的预约',
+			'hongguo.reservationsUpcomingEmpty' => '当前没有待上线的预约',
+			'hongguo.reservationsRefresh' => '刷新预约',
+			'hongguo.reservationsOff' => '登录红果账号后，在这里同步手机预约',
+			'hongguo.accountSignInTitle' => '扫码登录红果',
+			'hongguo.accountSignInDesc' => '用手机红果 App 扫二维码确认登录；账户收藏、历史与预约随账号同步',
+			'hongguo.accountQrRefresh' => '刷新二维码',
+			'hongguo.accountSignedInAs' => '已登录',
+			'hongguo.accountSignOut' => '退出登录',
+			'hongguo.accountSignOutDesc' => '只退出红果账号，本机收藏与历史保留',
+			'hongguo.accountRefresh' => '刷新账户数据',
+			'hongguo.accountFavoritesRefresh' => '刷新收藏',
+			'hongguo.accountHistoryRefresh' => '刷新历史',
+			'hongguo.favoriteToggleOn' => '已加入本机收藏',
+			'hongguo.favoriteToggleOff' => '已取消本机收藏',
+			'hongguo.cloudFavoriteOn' => '已加入账户收藏',
+			'hongguo.cloudFavoriteOff' => '已取消账户收藏',
 			'iptv.tabAll' => '全部',
 			'iptv.live' => '直播',
 			'iptv.scopeLabel' => '频道范围',
@@ -8527,6 +8775,8 @@ extension on Translations {
 			'iptv.noPlaylistsTitle' => '还没有播放列表',
 			'iptv.pickPlaylistFile' => '选择播放列表文件',
 			'iptv.playlistName' => '播放列表名称',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.playlistNameHint' => '留空则按来源自动命名',
 			'iptv.playlistText' => '播放列表内容',
 			'iptv.playlistTextHint' => '粘贴 M3U/M3U8/TXT 内容',
@@ -8562,8 +8812,6 @@ extension on Translations {
 			'iptv.orderDraft' => '未保存的排序草稿',
 			'iptv.saveOrder' => '保存顺序',
 			'iptv.orderSaved' => '顺序已保存',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.moveUp' => '上移',
 			'iptv.moveToTop' => '移到顶部',
 			'iptv.moveDown' => '下移',
@@ -8790,7 +9038,7 @@ extension on Translations {
 			'navigation.hot' => '热门',
 			'navigation.zones' => '分区',
 			'navigation.search' => '搜索直播',
-			'navigation.toolbox' => '链接解析',
+			'navigation.toolbox' => '工具箱',
 			'navigation.groupPersonal' => '个人与系统',
 			'navigation.record' => '录制中心',
 			'navigation.settings' => '设置',
@@ -9041,6 +9289,8 @@ extension on Translations {
 			'room.orientationHint' => '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。',
 			'room.orientationAutomatic' => '自动',
 			'room.orientationPortrait' => '竖屏',
+			_ => null,
+		} ?? switch (path) {
 			'room.orientationLandscape' => '横屏',
 			'room.orientationUpdated' => '画面方向已更新',
 			'room.portraitFullscreen' => '竖屏全屏',
@@ -9076,8 +9326,6 @@ extension on Translations {
 			'room.giftValueDouyinCoin' => ({required Object value}) => '${value} 抖币',
 			'room.giftValueSixCoin' => ({required Object value}) => '${value} 六币',
 			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC币',
-			_ => null,
-		} ?? switch (path) {
 			'room.giftValueStarCoin' => ({required Object value}) => '${value} 星币',
 			'room.giftValueHeart' => ({required Object value}) => '${value} 爱心',
 			'room.giftValueNote' => ({required Object value}) => '${value} 音符',
@@ -9417,6 +9665,38 @@ extension on Translations {
 			'settings.styleMaxVisibleValue' => ({required Object count}) => '${count} 条',
 			'settings.styleMassMode' => '海量模式',
 			'settings.styleMassModeDesc' => '提高同屏上限到 1000 条并使用实时渲染，适合弹幕非常密集的直播间。',
+			'settings.styleItalic' => '斜体',
+			'settings.styleTextColor' => '文字颜色',
+			'settings.styleStrokeColor' => '描边颜色',
+			'settings.styleShadow' => '文字阴影',
+			'settings.styleShadowColor' => '阴影颜色',
+			'settings.styleShadowBlur' => '阴影模糊',
+			'settings.styleShadowOffsetX' => '阴影水平偏移',
+			'settings.styleShadowOffsetY' => '阴影垂直偏移',
+			'settings.danmakuLaneGroup' => '轨道与安全区',
+			'settings.styleTrackHeight' => '轨道高度',
+			'settings.styleEmojiSize' => '表情大小',
+			'settings.styleOverlapGap' => '弹幕安全间距',
+			'settings.styleSafeArea' => '避开屏幕安全区',
+			'settings.danmakuQueueGroup' => '队列与性能',
+			'settings.styleMaxPending' => '等待队列上限',
+			'settings.styleMaxPendingAge' => '队列最长等待',
+			'settings.styleEmitInterval' => '发送间隔',
+			'settings.styleRasterize' => '文字光栅化',
+			'settings.styleBarragePool' => '弹幕对象池',
+			'settings.stylePictureCache' => '图片缓存数量',
+			'settings.styleTextCache' => '文字缓存数量',
+			'settings.styleRasterCache' => '光栅缓存上限',
+			'settings.danmakuColorWhite' => '白色',
+			'settings.danmakuColorBlack' => '黑色',
+			'settings.danmakuColorRed' => '红色',
+			'settings.danmakuColorOrange' => '橙色',
+			'settings.danmakuColorYellow' => '黄色',
+			'settings.danmakuColorGreen' => '绿色',
+			'settings.danmakuColorCyan' => '青色',
+			'settings.danmakuColorBlue' => '蓝色',
+			'settings.danmakuColorPurple' => '紫色',
+			'settings.danmakuColorPink' => '粉色',
 			'settings.pipDanmakuScaleAuto' => '小窗弹幕比例自动',
 			'settings.pipDanmakuScaleAutoDesc' => '开启后按画中画窗口宽度自动缩小弹幕，最大不超过主弹幕大小；关闭后使用下方固定比例。',
 			'settings.pipDanmakuScale' => '小窗弹幕比例',
@@ -9523,9 +9803,18 @@ extension on Translations {
 			'settings.refreshDescription' => '关注列表与直播缩略图的自动刷新。',
 			'settings.proxyDescription' => '应用级网络代理，所有站点请求都走它。',
 			'settings.platformsDescription' => '平台显示、排列顺序与账号登录。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.searchSettings' => '搜索设置',
 			'settings.searchNoResults' => '没有匹配的设置',
 			'settings.searchResults' => '搜索结果',
+			'settings.browseLayoutGroup' => '卡片布局',
+			'settings.browseColumns' => '每行卡片数',
+			'settings.browseListColumns' => '列表每行行数',
+			'settings.browseAuto' => '自动',
+			'settings.browseCoverAspect' => '封面比例',
+			'settings.browseTitleLines' => '标题行数',
+			'settings.browseTitleLinesValue' => ({required Object count}) => '${count} 行',
 			'settings.crossSpacing' => '列间距',
 			'settings.crossSpacingDescription' => '卡片网格里左右两张卡片之间的距离。',
 			'settings.mainSpacing' => '行间距',
@@ -9590,8 +9879,6 @@ extension on Translations {
 			'settings.presetLowLatencyDesc' => '最小缓冲 + 解码/渲染双端丢帧，牺牲抗抖动换低延迟。适合赛事直播、连麦互动等时效优先的场景。',
 			'settings.playerPresetApplied' => '已应用预设',
 			'settings.playerOutputLockedByPreset' => '已由当前预设固定',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerProxy' => '播放器代理',
 			'settings.playerProxyDesc' => '只影响播放器请求；可以跟随上面的应用代理。',
 			'settings.playerProxyInvalid' => '请填写有效的主机和端口（1–65535）。',
@@ -10030,6 +10317,8 @@ extension on Translations {
 			'settings.wallpaperCategoryTexture' => '纹理',
 			'settings.wallpaperCategoryOther' => '其他',
 			'settings.wallpaperCategoryPopular' => '热门',
+			_ => null,
+		} ?? switch (path) {
 			'settings.wallpaperCategoryMinimalism' => '极简主义',
 			'settings.wallpaperCategoryPatterns' => '图案',
 			'settings.wallpaperCategoryLandscape' => '风景',
@@ -10103,22 +10392,23 @@ extension on Translations {
 			'settings.roomCardPreview' => '卡片预览',
 			'settings.roomCardPreviewTitle' => '今晚八点，一起聊聊新番和游戏',
 			'settings.roomCardPreviewAnchor' => '夜色电台',
+			'settings.roomCardPreviewArea' => '游戏分区',
 			'settings.roomCardPreviewHint' => '这是当前设备实际使用的卡片与列表，改动会立刻反映在这里。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.roomCardPresets' => '快捷预设',
 			'settings.roomCardPresetStandard' => '标准',
 			'settings.roomCardPresetDetailed' => '详细',
 			'settings.roomCardPresetCustom' => '自定义',
 			'settings.roomCardVisibleContent' => '显示内容',
 			'settings.roomCardShowTitle' => '标题',
-			'settings.roomCardShowCoverTitle' => '封面标题',
+			'settings.roomCardShowCoverTitle' => '封面类型',
 			'settings.roomCardShowStatus' => '开播状态',
+			'settings.roomCardShowDuration' => '开播时长',
+			'settings.roomCardShowVerified' => '主播认证',
 			'settings.roomCardShowAvatar' => '主播头像',
 			'settings.roomCardShowAnchor' => '主播名称',
 			'settings.roomCardShowPlatform' => '平台徽章',
 			'settings.roomCardShowAudience' => '观众指标',
-			'settings.roomCardShowReplay' => '回放徽章',
+			'settings.roomCardShowListCover' => '列表封面',
 			'settings.roomCardReplay' => '回放',
 			'settings.roomCardAppearance' => '外观',
 			'settings.roomCardCornerRadius' => '圆角大小',
@@ -10250,14 +10540,6 @@ extension on Translations {
 			'settings.backgroundPreviewLooping' => '循环播放',
 			'settings.navHongguo' => '红果短剧',
 			'settings.hongguoDescription' => '红果伴侣服务与播放偏好。',
-			'settings.hongguoService' => '伴侣服务',
-			'settings.hongguoServer' => '服务地址',
-			'settings.hongguoServerDesc' => '红果伴侣服务的地址，默认为本机 8000 端口。',
-			'settings.hongguoApiKey' => '链路密钥',
-			'settings.hongguoApiKeyDesc' => '服务启用鉴权时下发的密钥；未启用时留空。',
-			'settings.hongguoTest' => '测试连接',
-			'settings.hongguoTestDesc' => '向伴侣服务发一次探活请求，确认地址与密钥可用。',
-			'settings.hongguoTestOk' => '连接正常。',
 			'settings.hongguoQuality' => '默认清晰度',
 			'settings.hongguoQualityDesc' => '打开剧集时优先请求的清晰度；不存在时自动取更低一档。',
 			'settings.hongguoQualityBest' => '最高',
@@ -10266,6 +10548,8 @@ extension on Translations {
 			'settings.hongguoQuality540' => '540P',
 			'settings.hongguoQuality480' => '480P',
 			'settings.hongguoQuality360' => '360P',
+			'settings.hongguoDeviceReset' => '重置设备身份',
+			'settings.hongguoDeviceResetDesc' => '忘记当前匿名设备身份，下次播放时重新向平台注册。',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
@@ -10547,6 +10831,8 @@ extension on Translations {
 			'vod.favouriteRemove' => '取消收藏',
 			'vod.saveVideo' => '收藏',
 			'vod.savedVideo' => '已收藏',
+			_ => null,
+		} ?? switch (path) {
 			'vod.saveAdded' => '已加入收藏',
 			'vod.saveRemoved' => '已取消收藏',
 			'wallpaper.title' => '随机图源',
@@ -10618,8 +10904,6 @@ extension on Translations {
 			'wallpaper.source360Fresh' => '360壁纸清新',
 			'wallpaper.source360Sport' => '360壁纸体育',
 			'wallpaper.source360Child' => '360壁纸萌娃',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.source360Military' => '360壁纸军事',
 			'wallpaper.source360Anime' => '360壁纸动漫',
 			'wallpaper.source360Calendar' => '360壁纸日历',

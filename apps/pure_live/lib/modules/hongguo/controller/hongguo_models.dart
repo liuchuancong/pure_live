@@ -132,6 +132,45 @@ final class HongguoSeries {
 
   /// The premiere tag line (首播/独家), when the listing carries one.
   final String premiere;
+
+  /// A copy with selected fields replaced.
+  HongguoSeries copyWith({
+    String? seriesId,
+    String? title,
+    int? episodeCount,
+    String? score,
+    int? playCount,
+    String? cover,
+    String? horizontalCover,
+    String? intro,
+    String? category,
+    String? copyright,
+    String? hot,
+    int? durationSeconds,
+    String? vid,
+    List<String>? coverTags,
+    int? rank,
+    bool? today,
+    String? premiere,
+  }) => HongguoSeries(
+    seriesId: seriesId ?? this.seriesId,
+    title: title ?? this.title,
+    episodeCount: episodeCount ?? this.episodeCount,
+    score: score ?? this.score,
+    playCount: playCount ?? this.playCount,
+    cover: cover ?? this.cover,
+    horizontalCover: horizontalCover ?? this.horizontalCover,
+    intro: intro ?? this.intro,
+    category: category ?? this.category,
+    copyright: copyright ?? this.copyright,
+    hot: hot ?? this.hot,
+    durationSeconds: durationSeconds ?? this.durationSeconds,
+    vid: vid ?? this.vid,
+    coverTags: coverTags ?? this.coverTags,
+    rank: rank ?? this.rank,
+    today: today ?? this.today,
+    premiere: premiere ?? this.premiere,
+  );
 }
 
 /// One episode of a series, as the episode listing names it.

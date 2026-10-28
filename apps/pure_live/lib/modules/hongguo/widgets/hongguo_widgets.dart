@@ -135,13 +135,16 @@ final class HongguoSeriesCard extends StatelessWidget {
 /// listing line — the list layout of the same feed.
 final class HongguoSeriesRow extends StatelessWidget {
   /// The row for [series]; [onOpen] opens its page.
-  const HongguoSeriesRow({required this.series, this.onOpen, super.key});
+  const HongguoSeriesRow({required this.series, this.onOpen, this.trailing, super.key});
 
   /// The series shown.
   final HongguoSeries series;
 
   /// Opens the series; null leaves the row inert.
   final VoidCallback? onOpen;
+
+  /// A trailing action, beside the listing line.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -260,6 +263,31 @@ final class HongguoFilterRowView extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A thin watched-fraction bar, the reference's history marker.
+final class HongguoProgressStripe extends StatelessWidget {
+  /// The stripe for [fraction] (0..1).
+  const HongguoProgressStripe({required this.fraction, super.key});
+
+  final double fraction;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(2),
+      child: Container(
+        height: 3,
+        color: colors.border,
+        child: FractionallySizedBox(
+          alignment: AlignmentDirectional.centerStart,
+          widthFactor: fraction.clamp(0.0, 1.0),
+          child: ColoredBox(color: colors.accent),
+        ),
       ),
     );
   }

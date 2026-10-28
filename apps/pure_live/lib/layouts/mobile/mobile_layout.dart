@@ -83,10 +83,10 @@ final class MobileLayout extends ConsumerWidget {
       NavigationItem.settings,
     ],
     AppModule.hongguo => const [
-      NavigationItem.hongguoDrama,
-      NavigationItem.hongguoComic,
+      NavigationItem.hongguoHome,
+      NavigationItem.hongguoFind,
       NavigationItem.hongguoRank,
-      NavigationItem.hongguoSearch,
+      NavigationItem.hongguoFavorites,
       NavigationItem.settings,
     ],
   };
@@ -96,6 +96,23 @@ final class MobileLayout extends ConsumerWidget {
   /// settings surface; its categories and sections are pushed routes with
   /// their own headers.
   String _title(Translations t) => selected == NavigationItem.settings ? t.navigation.settings : selected.label(t);
+
+  /// One menu block as the drawer shows it: the live home block is the
+  /// navigation setting's list (membership and order), a block made
+  /// entirely of tools follows the tool-order setting, and every other
+  /// block keeps the registry's order.
+  List<NavigationItem> _menuItems(List<NavigationItem> block, List<NavigationItem> toolOrder) {
+    if (module == AppModule.live && block.every(kHomeMenuItems.contains)) {
+      return homeMenuItems.isEmpty ? kHomeMenuItems : homeMenuItems;
+    }
+    if (block.isNotEmpty && block.every(toolOrder.contains)) {
+      return [
+        for (final item in toolOrder)
+          if (block.contains(item)) item,
+      ];
+    }
+    return block;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -232,12 +249,7 @@ final class MobileLayout extends ConsumerWidget {
                   // block for block). Settings follows under its own divider.
                   for (final (index, group) in navigationOf(module).menu.indexed) ...[
                     if (index > 0) const SidebarDivider(),
-                    // Live's home block is the navigation setting's list:
-                    // membership and order, not the registry's fixed order.
-                    for (final item
-                        in module == AppModule.live && group.every(kHomeMenuItems.contains)
-                            ? (homeMenuItems.isEmpty ? kHomeMenuItems : homeMenuItems)
-                            : group)
+                    for (final item in _menuItems(group, ref.watch(toolOrderProvider)))
                       DsSidebarItem(value: item, leading: DsIcon(item.icon), label: Text(item.label(t))),
                   ],
                   const SidebarDivider(),

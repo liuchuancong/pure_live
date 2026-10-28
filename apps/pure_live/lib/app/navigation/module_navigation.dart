@@ -54,11 +54,17 @@ final class ModuleNavigation {
   ];
 }
 
-/// The live module's tools in their default order: multi-view, search and
-/// the link parser. The settings tool-order editor persists this order; the
-/// recording centre is a home-menu destination, not a tool, so it is not
-/// listed here. The other modules keep their own menus.
-const List<NavigationItem> kToolItems = [NavigationItem.multiview, NavigationItem.search, NavigationItem.toolbox];
+/// The live module's tools in their default order: multi-view, the toolbox,
+/// the search and the watch history. The settings tool-order editor
+/// persists this order; the recording centre is a home-menu destination,
+/// not a tool, so it is not listed here. The other modules keep their own
+/// menus.
+const List<NavigationItem> kToolItems = [
+  NavigationItem.multiview,
+  NavigationItem.toolbox,
+  NavigationItem.search,
+  NavigationItem.history,
+];
 
 /// The settings every module shares, grouped into first-level categories.
 /// Each module registers its own category first (its business pages), then
@@ -109,15 +115,14 @@ const List<SettingsGroup> _sharedGroups = [_sharedAppearanceGroup, _sharedPlayba
 
 /// The module registry: one row per content type.
 const Map<AppModule, ModuleNavigation> kModuleNavigation = {
-  // The reference's menu: the ways to find a room, the tools, then the four
-  // home destinations as one block — the navigation setting's saved order
-  // (recording centre, favorites, areas, hot feed) has to read across all
-  // four.
+  // The live home's rail: the four home destinations as one block — the
+  // navigation setting orders and hides these, its default being favorites,
+  // hot feed, areas and the recording centre — then the tools block the
+  // tool-order setting sorts: multi-view, toolbox, search and history.
   AppModule.live: ModuleNavigation(
     menu: [
-      [NavigationItem.search, NavigationItem.history],
-      [NavigationItem.toolbox, NavigationItem.multiview],
-      [NavigationItem.record, NavigationItem.favorites, NavigationItem.zones, NavigationItem.hot],
+      [NavigationItem.favorites, NavigationItem.hot, NavigationItem.zones, NavigationItem.record],
+      [NavigationItem.multiview, NavigationItem.toolbox, NavigationItem.search, NavigationItem.history],
     ],
     landing: NavigationItem.hot,
     settingsGroups: [_personalizationGroup, _liveGroup, _playbackGroup, _systemGroup, _aboutGroup],
@@ -174,14 +179,15 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     ],
   ),
   AppModule.hongguo: ModuleNavigation(
-    // The station's own menu: its three shelves, then the boards, the
-    // newest arrivals and the search — the companion service's surfaces,
-    // entry for entry.
+    // The reference's top row, entry for entry: the home feed, find-drama
+    // and the boards; then the viewer's shelves — favorites, history and
+    // the account reservations; then the account itself and the search.
     menu: [
-      [NavigationItem.hongguoDrama, NavigationItem.hongguoComic, NavigationItem.hongguoAi],
-      [NavigationItem.hongguoRank, NavigationItem.hongguoLatest, NavigationItem.hongguoSearch],
+      [NavigationItem.hongguoHome, NavigationItem.hongguoFind, NavigationItem.hongguoRank],
+      [NavigationItem.hongguoFavorites, NavigationItem.hongguoHistory, NavigationItem.hongguoReservations],
+      [NavigationItem.hongguoAccount, NavigationItem.hongguoSearch],
     ],
-    landing: NavigationItem.hongguoDrama,
+    landing: NavigationItem.hongguoHome,
     // The station's own page: the companion service it asks and the
     // rendition an episode opens with. Nothing from the live room or the
     // Bilibili station belongs here.
@@ -219,11 +225,13 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.musicSonglist: () => const MusicPage(view: MusicView.songlists),
   NavigationItem.musicToplist: () => const MusicPage(view: MusicView.toplists),
   NavigationItem.musicLibrary: () => const MusicPage(view: MusicView.mine),
-  NavigationItem.hongguoDrama: HongguoPage.new,
-  NavigationItem.hongguoComic: () => const HongguoPage(view: HongguoView.comic),
-  NavigationItem.hongguoAi: () => const HongguoPage(view: HongguoView.ai),
+  NavigationItem.hongguoHome: HongguoPage.new,
+  NavigationItem.hongguoFind: () => const HongguoPage(view: HongguoView.find),
   NavigationItem.hongguoRank: () => const HongguoPage(view: HongguoView.rank),
-  NavigationItem.hongguoLatest: () => const HongguoPage(view: HongguoView.latest),
+  NavigationItem.hongguoFavorites: () => const HongguoPage(view: HongguoView.favorites),
+  NavigationItem.hongguoHistory: () => const HongguoPage(view: HongguoView.history),
+  NavigationItem.hongguoReservations: () => const HongguoPage(view: HongguoView.reservations),
+  NavigationItem.hongguoAccount: () => const HongguoPage(view: HongguoView.account),
   NavigationItem.hongguoSearch: () => const HongguoPage(view: HongguoView.search),
   NavigationItem.favorites: FavoritesPage.new,
   NavigationItem.history: HistoryPage.new,

@@ -476,27 +476,18 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	// Translations
 	@override String get title => 'Hongguo Drama';
 	@override String get tagline => 'Short drama, comic drama and AI drama, served by the hongguo companion service';
-	@override String get navDrama => 'Drama';
-	@override String get navComic => 'Comics';
-	@override String get navAi => 'AI drama';
 	@override String get navRank => 'Boards';
-	@override String get navLatest => 'New';
 	@override String get navSearch => 'Search';
 	@override String get genreShortPlay => 'Short drama';
 	@override String get genreComicSeries => 'Comic drama';
 	@override String get genreAiSeries => 'AI drama';
-	@override String get boardRecommend => 'Recommended comics';
-	@override String get boardHot => 'Hot comics';
-	@override String get boardNew => 'New comics';
-	@override String get latestToday => 'Today\'s arrivals';
-	@override String get latestAll => 'Latest arrivals';
 	@override String get filterAll => 'All';
 	@override String get search => 'Search';
 	@override String get searchHint => 'Search drama';
 	@override String get searchIdleTitle => 'Search drama';
 	@override String get searchIdleDescription => 'Type a name to search Hongguo\'s short, comic and AI drama.';
 	@override String get noResultsDescription => 'Try another condition.';
-	@override String get serverHint => 'The hongguo companion service did not answer; make sure it is running and check its address and key.';
+	@override String get serverHint => 'The Hongguo endpoints did not answer; check the network and try again.';
 	@override String get openSettings => 'Hongguo settings';
 	@override String get episodes => 'Episodes';
 	@override String episodeLabel({required Object index}) => 'Episode ${index}';
@@ -518,6 +509,50 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get exitFullscreen => 'Exit fullscreen';
 	@override String get expand => 'More';
 	@override String get collapse => 'Less';
+	@override String get boardAll => 'All';
+	@override String get boardReal => 'Live action';
+	@override String get boardComic => 'Comics';
+	@override String get boardAi => 'AI drama';
+	@override String get navHome => 'Home';
+	@override String get navFind => 'Find';
+	@override String get navFavorites => 'Favorites';
+	@override String get navHistory => 'History';
+	@override String get navReservations => 'Reservations';
+	@override String get navAccount => 'Account';
+	@override String get homeTabAll => 'For you';
+	@override String get localTab => 'This device';
+	@override String get accountTab => 'Account';
+	@override String get favoritesLocalEmpty => 'Favorite a series on its page and it lands here';
+	@override String get favoritesAccountEmpty => 'Account favorites not read yet';
+	@override String get favoritesAccountOff => 'Sign in to sync your phone favorites here';
+	@override String get historyLocalEmpty => 'What you watched, and where you stopped, lands here';
+	@override String get historyAccountEmpty => 'Account history not read yet';
+	@override String get historyAccountOff => 'Sign in to sync your phone history here';
+	@override String get historyClear => 'Clear history';
+	@override String get historyClearDesc => 'Clears this device only; account history and favorites stay';
+	@override String get historyRemove => 'Remove entry';
+	@override String get historyRemoveDesc => 'Drops this series’ progress only';
+	@override String get resumeAt => 'Resume';
+	@override String get watchedBadge => 'Finished';
+	@override String get reservationsOnline => 'Premiered';
+	@override String get reservationsUpcoming => 'Upcoming';
+	@override String get reservationsOnlineEmpty => 'No premiered reservations right now';
+	@override String get reservationsUpcomingEmpty => 'No upcoming reservations right now';
+	@override String get reservationsRefresh => 'Refresh';
+	@override String get reservationsOff => 'Sign in to sync your phone reservations here';
+	@override String get accountSignInTitle => 'Scan to sign in';
+	@override String get accountSignInDesc => 'Scan with the Hongguo phone app; favorites, history and reservations follow the account';
+	@override String get accountQrRefresh => 'New code';
+	@override String get accountSignedInAs => 'Signed in';
+	@override String get accountSignOut => 'Sign out';
+	@override String get accountSignOutDesc => 'Signs out of Hongguo only; local favorites and history stay';
+	@override String get accountRefresh => 'Refresh account data';
+	@override String get accountFavoritesRefresh => 'Refresh favorites';
+	@override String get accountHistoryRefresh => 'Refresh history';
+	@override String get favoriteToggleOn => 'Added to favorites';
+	@override String get favoriteToggleOff => 'Removed from favorites';
+	@override String get cloudFavoriteOn => 'Added to account favorites';
+	@override String get cloudFavoriteOff => 'Removed from account favorites';
 }
 
 // Path: iptv
@@ -898,7 +933,7 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get hot => 'Hot';
 	@override String get zones => 'Zones';
 	@override String get search => 'Search Live';
-	@override String get toolbox => 'Link Parser';
+	@override String get toolbox => 'Toolbox';
 	@override String get groupPersonal => 'Personal & system';
 	@override String get record => 'Recording';
 	@override String get settings => 'Settings';
@@ -1577,6 +1612,38 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String styleMaxVisibleValue({required Object count}) => '${count}';
 	@override String get styleMassMode => 'Mass mode';
 	@override String get styleMassModeDesc => 'Raises the same-screen limit to 1000 and uses realtime rendering for very busy rooms.';
+	@override String get styleItalic => 'Italic';
+	@override String get styleTextColor => 'Text color';
+	@override String get styleStrokeColor => 'Outline color';
+	@override String get styleShadow => 'Text shadow';
+	@override String get styleShadowColor => 'Shadow color';
+	@override String get styleShadowBlur => 'Shadow blur';
+	@override String get styleShadowOffsetX => 'Shadow X offset';
+	@override String get styleShadowOffsetY => 'Shadow Y offset';
+	@override String get danmakuLaneGroup => 'Lanes and safe area';
+	@override String get styleTrackHeight => 'Lane height';
+	@override String get styleEmojiSize => 'Emoji size';
+	@override String get styleOverlapGap => 'Danmaku gap';
+	@override String get styleSafeArea => 'Keep clear of safe areas';
+	@override String get danmakuQueueGroup => 'Queue and performance';
+	@override String get styleMaxPending => 'Pending queue limit';
+	@override String get styleMaxPendingAge => 'Longest wait';
+	@override String get styleEmitInterval => 'Dispatch interval';
+	@override String get styleRasterize => 'Rasterize text';
+	@override String get styleBarragePool => 'Message pool';
+	@override String get stylePictureCache => 'Picture cache';
+	@override String get styleTextCache => 'Text cache';
+	@override String get styleRasterCache => 'Raster cache limit';
+	@override String get danmakuColorWhite => 'White';
+	@override String get danmakuColorBlack => 'Black';
+	@override String get danmakuColorRed => 'Red';
+	@override String get danmakuColorOrange => 'Orange';
+	@override String get danmakuColorYellow => 'Yellow';
+	@override String get danmakuColorGreen => 'Green';
+	@override String get danmakuColorCyan => 'Cyan';
+	@override String get danmakuColorBlue => 'Blue';
+	@override String get danmakuColorPurple => 'Purple';
+	@override String get danmakuColorPink => 'Pink';
 	@override String get pipDanmakuScaleAuto => 'Compact danmaku auto scale';
 	@override String get pipDanmakuScaleAutoDesc => 'Shrink danmaku with the picture-in-picture window width, never larger than the main danmaku; turn off to use the fixed factor below.';
 	@override String get pipDanmakuScale => 'Compact danmaku scale';
@@ -1686,6 +1753,13 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get searchSettings => 'Search settings';
 	@override String get searchNoResults => 'No matching settings';
 	@override String get searchResults => 'Search results';
+	@override String get browseLayoutGroup => 'Card layout';
+	@override String get browseColumns => 'Cards per row';
+	@override String get browseListColumns => 'Rows per line';
+	@override String get browseAuto => 'Auto';
+	@override String get browseCoverAspect => 'Cover shape';
+	@override String get browseTitleLines => 'Title lines';
+	@override String browseTitleLinesValue({required Object count}) => '${count} lines';
 	@override String get crossSpacing => 'Column spacing';
 	@override String get crossSpacingDescription => 'The gap between two cards side by side in a grid.';
 	@override String get mainSpacing => 'Row spacing';
@@ -2261,6 +2335,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get roomCardPreview => 'Card preview';
 	@override String get roomCardPreviewTitle => 'Late-night anime and games';
 	@override String get roomCardPreviewAnchor => 'Night Radio';
+	@override String get roomCardPreviewArea => 'Gaming';
 	@override String get roomCardPreviewHint => 'The card and list row this device actually uses; every change shows up here immediately.';
 	@override String get roomCardPresets => 'Quick presets';
 	@override String get roomCardPresetStandard => 'Standard';
@@ -2268,13 +2343,15 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get roomCardPresetCustom => 'Custom';
 	@override String get roomCardVisibleContent => 'Shown information';
 	@override String get roomCardShowTitle => 'Title';
-	@override String get roomCardShowCoverTitle => 'Title on cover';
+	@override String get roomCardShowCoverTitle => 'Type on cover';
 	@override String get roomCardShowStatus => 'Broadcast state';
+	@override String get roomCardShowDuration => 'Airtime';
+	@override String get roomCardShowVerified => 'Verified mark';
 	@override String get roomCardShowAvatar => 'Anchor avatar';
 	@override String get roomCardShowAnchor => 'Anchor name';
 	@override String get roomCardShowPlatform => 'Platform badge';
 	@override String get roomCardShowAudience => 'Audience figure';
-	@override String get roomCardShowReplay => 'Replay badge';
+	@override String get roomCardShowListCover => 'List thumbnail';
 	@override String get roomCardReplay => 'Replay';
 	@override String get roomCardAppearance => 'Appearance';
 	@override String get roomCardCornerRadius => 'Corner radius';
@@ -2406,14 +2483,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundPreviewLooping => 'Loops';
 	@override String get navHongguo => 'Hongguo drama';
 	@override String get hongguoDescription => 'The hongguo companion service and playback preferences.';
-	@override String get hongguoService => 'Companion service';
-	@override String get hongguoServer => 'Service address';
-	@override String get hongguoServerDesc => 'Where the hongguo companion service listens; the default is the loopback port 8000.';
-	@override String get hongguoApiKey => 'Link key';
-	@override String get hongguoApiKeyDesc => 'The key the service issued when authentication is on; leave empty when it is not.';
-	@override String get hongguoTest => 'Test connection';
-	@override String get hongguoTestDesc => 'Sends one probe request to the companion service to confirm the address and key.';
-	@override String get hongguoTestOk => 'Connected.';
 	@override String get hongguoQuality => 'Default quality';
 	@override String get hongguoQualityDesc => 'The rendition an episode opens with; a missing one falls back to the nearest lower.';
 	@override String get hongguoQualityBest => 'Best';
@@ -2422,6 +2491,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get hongguoQuality540 => '540P';
 	@override String get hongguoQuality480 => '480P';
 	@override String get hongguoQuality360 => '360P';
+	@override String get hongguoDeviceReset => 'Reset device identity';
+	@override String get hongguoDeviceResetDesc => 'Forgets the anonymous device identity; the next playback registers a fresh one.';
 }
 
 // Path: shield
@@ -3214,27 +3285,18 @@ extension on TranslationsEn {
 			'history.openRoom' => 'Open the room',
 			'hongguo.title' => 'Hongguo Drama',
 			'hongguo.tagline' => 'Short drama, comic drama and AI drama, served by the hongguo companion service',
-			'hongguo.navDrama' => 'Drama',
-			'hongguo.navComic' => 'Comics',
-			'hongguo.navAi' => 'AI drama',
 			'hongguo.navRank' => 'Boards',
-			'hongguo.navLatest' => 'New',
 			'hongguo.navSearch' => 'Search',
 			'hongguo.genreShortPlay' => 'Short drama',
 			'hongguo.genreComicSeries' => 'Comic drama',
 			'hongguo.genreAiSeries' => 'AI drama',
-			'hongguo.boardRecommend' => 'Recommended comics',
-			'hongguo.boardHot' => 'Hot comics',
-			'hongguo.boardNew' => 'New comics',
-			'hongguo.latestToday' => 'Today\'s arrivals',
-			'hongguo.latestAll' => 'Latest arrivals',
 			'hongguo.filterAll' => 'All',
 			'hongguo.search' => 'Search',
 			'hongguo.searchHint' => 'Search drama',
 			'hongguo.searchIdleTitle' => 'Search drama',
 			'hongguo.searchIdleDescription' => 'Type a name to search Hongguo\'s short, comic and AI drama.',
 			'hongguo.noResultsDescription' => 'Try another condition.',
-			'hongguo.serverHint' => 'The hongguo companion service did not answer; make sure it is running and check its address and key.',
+			'hongguo.serverHint' => 'The Hongguo endpoints did not answer; check the network and try again.',
 			'hongguo.openSettings' => 'Hongguo settings',
 			'hongguo.episodes' => 'Episodes',
 			'hongguo.episodeLabel' => ({required Object index}) => 'Episode ${index}',
@@ -3256,6 +3318,50 @@ extension on TranslationsEn {
 			'hongguo.exitFullscreen' => 'Exit fullscreen',
 			'hongguo.expand' => 'More',
 			'hongguo.collapse' => 'Less',
+			'hongguo.boardAll' => 'All',
+			'hongguo.boardReal' => 'Live action',
+			'hongguo.boardComic' => 'Comics',
+			'hongguo.boardAi' => 'AI drama',
+			'hongguo.navHome' => 'Home',
+			'hongguo.navFind' => 'Find',
+			'hongguo.navFavorites' => 'Favorites',
+			'hongguo.navHistory' => 'History',
+			'hongguo.navReservations' => 'Reservations',
+			'hongguo.navAccount' => 'Account',
+			'hongguo.homeTabAll' => 'For you',
+			'hongguo.localTab' => 'This device',
+			'hongguo.accountTab' => 'Account',
+			'hongguo.favoritesLocalEmpty' => 'Favorite a series on its page and it lands here',
+			'hongguo.favoritesAccountEmpty' => 'Account favorites not read yet',
+			'hongguo.favoritesAccountOff' => 'Sign in to sync your phone favorites here',
+			'hongguo.historyLocalEmpty' => 'What you watched, and where you stopped, lands here',
+			'hongguo.historyAccountEmpty' => 'Account history not read yet',
+			'hongguo.historyAccountOff' => 'Sign in to sync your phone history here',
+			'hongguo.historyClear' => 'Clear history',
+			'hongguo.historyClearDesc' => 'Clears this device only; account history and favorites stay',
+			'hongguo.historyRemove' => 'Remove entry',
+			'hongguo.historyRemoveDesc' => 'Drops this series’ progress only',
+			'hongguo.resumeAt' => 'Resume',
+			'hongguo.watchedBadge' => 'Finished',
+			'hongguo.reservationsOnline' => 'Premiered',
+			'hongguo.reservationsUpcoming' => 'Upcoming',
+			'hongguo.reservationsOnlineEmpty' => 'No premiered reservations right now',
+			'hongguo.reservationsUpcomingEmpty' => 'No upcoming reservations right now',
+			'hongguo.reservationsRefresh' => 'Refresh',
+			'hongguo.reservationsOff' => 'Sign in to sync your phone reservations here',
+			'hongguo.accountSignInTitle' => 'Scan to sign in',
+			'hongguo.accountSignInDesc' => 'Scan with the Hongguo phone app; favorites, history and reservations follow the account',
+			'hongguo.accountQrRefresh' => 'New code',
+			'hongguo.accountSignedInAs' => 'Signed in',
+			'hongguo.accountSignOut' => 'Sign out',
+			'hongguo.accountSignOutDesc' => 'Signs out of Hongguo only; local favorites and history stay',
+			'hongguo.accountRefresh' => 'Refresh account data',
+			'hongguo.accountFavoritesRefresh' => 'Refresh favorites',
+			'hongguo.accountHistoryRefresh' => 'Refresh history',
+			'hongguo.favoriteToggleOn' => 'Added to favorites',
+			'hongguo.favoriteToggleOff' => 'Removed from favorites',
+			'hongguo.cloudFavoriteOn' => 'Added to account favorites',
+			'hongguo.cloudFavoriteOff' => 'Removed from account favorites',
 			'iptv.tabAll' => 'All',
 			'iptv.live' => 'Live',
 			'iptv.scopeLabel' => 'Channel scope',
@@ -3339,6 +3445,8 @@ extension on TranslationsEn {
 			'iptv.noPlaylistsTitle' => 'No playlists yet',
 			'iptv.pickPlaylistFile' => 'Choose a playlist file',
 			'iptv.playlistName' => 'Playlist name',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.playlistNameHint' => 'Leave blank to name it from the source',
 			'iptv.playlistText' => 'Playlist content',
 			'iptv.playlistTextHint' => 'Paste M3U/M3U8/TXT content',
@@ -3374,8 +3482,6 @@ extension on TranslationsEn {
 			'iptv.orderDraft' => 'Unsaved order draft',
 			'iptv.saveOrder' => 'Save order',
 			'iptv.orderSaved' => 'Order saved',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.moveUp' => 'Move up',
 			'iptv.moveToTop' => 'Move to top',
 			'iptv.moveDown' => 'Move down',
@@ -3602,7 +3708,7 @@ extension on TranslationsEn {
 			'navigation.hot' => 'Hot',
 			'navigation.zones' => 'Zones',
 			'navigation.search' => 'Search Live',
-			'navigation.toolbox' => 'Link Parser',
+			'navigation.toolbox' => 'Toolbox',
 			'navigation.groupPersonal' => 'Personal & system',
 			'navigation.record' => 'Recording',
 			'navigation.settings' => 'Settings',
@@ -3853,6 +3959,8 @@ extension on TranslationsEn {
 			'room.orientationHint' => 'Follow the picture’s own shape, or fix this room to portrait or landscape.',
 			'room.orientationAutomatic' => 'Automatic',
 			'room.orientationPortrait' => 'Portrait',
+			_ => null,
+		} ?? switch (path) {
 			'room.orientationLandscape' => 'Landscape',
 			'room.orientationUpdated' => 'Picture orientation updated',
 			'room.portraitFullscreen' => 'Portrait full screen',
@@ -3888,8 +3996,6 @@ extension on TranslationsEn {
 			'room.giftValueDouyinCoin' => ({required Object value}) => '${value} Douyin coins',
 			'room.giftValueSixCoin' => ({required Object value}) => '${value} six coins',
 			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC coins',
-			_ => null,
-		} ?? switch (path) {
 			'room.giftValueStarCoin' => ({required Object value}) => '${value} star coins',
 			'room.giftValueHeart' => ({required Object value}) => '${value} hearts',
 			'room.giftValueNote' => ({required Object value}) => '${value} notes',
@@ -4229,6 +4335,38 @@ extension on TranslationsEn {
 			'settings.styleMaxVisibleValue' => ({required Object count}) => '${count}',
 			'settings.styleMassMode' => 'Mass mode',
 			'settings.styleMassModeDesc' => 'Raises the same-screen limit to 1000 and uses realtime rendering for very busy rooms.',
+			'settings.styleItalic' => 'Italic',
+			'settings.styleTextColor' => 'Text color',
+			'settings.styleStrokeColor' => 'Outline color',
+			'settings.styleShadow' => 'Text shadow',
+			'settings.styleShadowColor' => 'Shadow color',
+			'settings.styleShadowBlur' => 'Shadow blur',
+			'settings.styleShadowOffsetX' => 'Shadow X offset',
+			'settings.styleShadowOffsetY' => 'Shadow Y offset',
+			'settings.danmakuLaneGroup' => 'Lanes and safe area',
+			'settings.styleTrackHeight' => 'Lane height',
+			'settings.styleEmojiSize' => 'Emoji size',
+			'settings.styleOverlapGap' => 'Danmaku gap',
+			'settings.styleSafeArea' => 'Keep clear of safe areas',
+			'settings.danmakuQueueGroup' => 'Queue and performance',
+			'settings.styleMaxPending' => 'Pending queue limit',
+			'settings.styleMaxPendingAge' => 'Longest wait',
+			'settings.styleEmitInterval' => 'Dispatch interval',
+			'settings.styleRasterize' => 'Rasterize text',
+			'settings.styleBarragePool' => 'Message pool',
+			'settings.stylePictureCache' => 'Picture cache',
+			'settings.styleTextCache' => 'Text cache',
+			'settings.styleRasterCache' => 'Raster cache limit',
+			'settings.danmakuColorWhite' => 'White',
+			'settings.danmakuColorBlack' => 'Black',
+			'settings.danmakuColorRed' => 'Red',
+			'settings.danmakuColorOrange' => 'Orange',
+			'settings.danmakuColorYellow' => 'Yellow',
+			'settings.danmakuColorGreen' => 'Green',
+			'settings.danmakuColorCyan' => 'Cyan',
+			'settings.danmakuColorBlue' => 'Blue',
+			'settings.danmakuColorPurple' => 'Purple',
+			'settings.danmakuColorPink' => 'Pink',
 			'settings.pipDanmakuScaleAuto' => 'Compact danmaku auto scale',
 			'settings.pipDanmakuScaleAutoDesc' => 'Shrink danmaku with the picture-in-picture window width, never larger than the main danmaku; turn off to use the fixed factor below.',
 			'settings.pipDanmakuScale' => 'Compact danmaku scale',
@@ -4335,9 +4473,18 @@ extension on TranslationsEn {
 			'settings.refreshDescription' => 'Automatic refresh for the follow list and live covers.',
 			'settings.proxyDescription' => 'The app-wide proxy every site request goes through.',
 			'settings.platformsDescription' => 'Platform visibility, order and account sign-in.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.searchSettings' => 'Search settings',
 			'settings.searchNoResults' => 'No matching settings',
 			'settings.searchResults' => 'Search results',
+			'settings.browseLayoutGroup' => 'Card layout',
+			'settings.browseColumns' => 'Cards per row',
+			'settings.browseListColumns' => 'Rows per line',
+			'settings.browseAuto' => 'Auto',
+			'settings.browseCoverAspect' => 'Cover shape',
+			'settings.browseTitleLines' => 'Title lines',
+			'settings.browseTitleLinesValue' => ({required Object count}) => '${count} lines',
 			'settings.crossSpacing' => 'Column spacing',
 			'settings.crossSpacingDescription' => 'The gap between two cards side by side in a grid.',
 			'settings.mainSpacing' => 'Row spacing',
@@ -4402,8 +4549,6 @@ extension on TranslationsEn {
 			'settings.presetLowLatencyDesc' => 'Minimum buffering with frame dropping on both decoder and render side, trading jitter tolerance for delay. For sports, duets and anything time-critical.',
 			'settings.playerPresetApplied' => 'Preset applied',
 			'settings.playerOutputLockedByPreset' => 'Locked by the current preset',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerProxy' => 'Player proxy',
 			'settings.playerProxyDesc' => 'Only the player\'s requests; it can follow the app proxy above.',
 			'settings.playerProxyInvalid' => 'Enter a valid host and port (1–65535).',
@@ -4842,6 +4987,8 @@ extension on TranslationsEn {
 			'settings.wallpaperCategoryTexture' => 'Texture',
 			'settings.wallpaperCategoryOther' => 'Other',
 			'settings.wallpaperCategoryPopular' => 'Popular',
+			_ => null,
+		} ?? switch (path) {
 			'settings.wallpaperCategoryMinimalism' => 'Minimalism',
 			'settings.wallpaperCategoryPatterns' => 'Patterns',
 			'settings.wallpaperCategoryLandscape' => 'Landscape',
@@ -4915,22 +5062,23 @@ extension on TranslationsEn {
 			'settings.roomCardPreview' => 'Card preview',
 			'settings.roomCardPreviewTitle' => 'Late-night anime and games',
 			'settings.roomCardPreviewAnchor' => 'Night Radio',
+			'settings.roomCardPreviewArea' => 'Gaming',
 			'settings.roomCardPreviewHint' => 'The card and list row this device actually uses; every change shows up here immediately.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.roomCardPresets' => 'Quick presets',
 			'settings.roomCardPresetStandard' => 'Standard',
 			'settings.roomCardPresetDetailed' => 'Detailed',
 			'settings.roomCardPresetCustom' => 'Custom',
 			'settings.roomCardVisibleContent' => 'Shown information',
 			'settings.roomCardShowTitle' => 'Title',
-			'settings.roomCardShowCoverTitle' => 'Title on cover',
+			'settings.roomCardShowCoverTitle' => 'Type on cover',
 			'settings.roomCardShowStatus' => 'Broadcast state',
+			'settings.roomCardShowDuration' => 'Airtime',
+			'settings.roomCardShowVerified' => 'Verified mark',
 			'settings.roomCardShowAvatar' => 'Anchor avatar',
 			'settings.roomCardShowAnchor' => 'Anchor name',
 			'settings.roomCardShowPlatform' => 'Platform badge',
 			'settings.roomCardShowAudience' => 'Audience figure',
-			'settings.roomCardShowReplay' => 'Replay badge',
+			'settings.roomCardShowListCover' => 'List thumbnail',
 			'settings.roomCardReplay' => 'Replay',
 			'settings.roomCardAppearance' => 'Appearance',
 			'settings.roomCardCornerRadius' => 'Corner radius',
@@ -5062,14 +5210,6 @@ extension on TranslationsEn {
 			'settings.backgroundPreviewLooping' => 'Loops',
 			'settings.navHongguo' => 'Hongguo drama',
 			'settings.hongguoDescription' => 'The hongguo companion service and playback preferences.',
-			'settings.hongguoService' => 'Companion service',
-			'settings.hongguoServer' => 'Service address',
-			'settings.hongguoServerDesc' => 'Where the hongguo companion service listens; the default is the loopback port 8000.',
-			'settings.hongguoApiKey' => 'Link key',
-			'settings.hongguoApiKeyDesc' => 'The key the service issued when authentication is on; leave empty when it is not.',
-			'settings.hongguoTest' => 'Test connection',
-			'settings.hongguoTestDesc' => 'Sends one probe request to the companion service to confirm the address and key.',
-			'settings.hongguoTestOk' => 'Connected.',
 			'settings.hongguoQuality' => 'Default quality',
 			'settings.hongguoQualityDesc' => 'The rendition an episode opens with; a missing one falls back to the nearest lower.',
 			'settings.hongguoQualityBest' => 'Best',
@@ -5078,6 +5218,8 @@ extension on TranslationsEn {
 			'settings.hongguoQuality540' => '540P',
 			'settings.hongguoQuality480' => '480P',
 			'settings.hongguoQuality360' => '360P',
+			'settings.hongguoDeviceReset' => 'Reset device identity',
+			'settings.hongguoDeviceResetDesc' => 'Forgets the anonymous device identity; the next playback registers a fresh one.',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -5359,6 +5501,8 @@ extension on TranslationsEn {
 			'vod.favouriteRemove' => 'Remove from favourites',
 			'vod.saveVideo' => 'Favourite',
 			'vod.savedVideo' => 'Favourited',
+			_ => null,
+		} ?? switch (path) {
 			'vod.saveAdded' => 'Added to favourites',
 			'vod.saveRemoved' => 'Removed from favourites',
 			'wallpaper.title' => 'Random pictures',
@@ -5430,8 +5574,6 @@ extension on TranslationsEn {
 			'wallpaper.source360Fresh' => '360 Wallpaper · Fresh',
 			'wallpaper.source360Sport' => '360 Wallpaper · Sports',
 			'wallpaper.source360Child' => '360 Wallpaper · Kids',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.source360Military' => '360 Wallpaper · Military',
 			'wallpaper.source360Anime' => '360 Wallpaper · Anime',
 			'wallpaper.source360Calendar' => '360 Wallpaper · Calendar',

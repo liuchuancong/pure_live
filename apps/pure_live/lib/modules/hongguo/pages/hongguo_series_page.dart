@@ -1,5 +1,4 @@
 import 'dart:async' show StreamSubscription, unawaited;
-import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart' show AppBar, Scaffold;
@@ -8,16 +7,18 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_device/live_device.dart' show PlatformScreenOrientationService, ScreenOrientationService;
-import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core/media_core.dart';
-
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/hongguo/controller/hongguo_account_state.dart'
+    show hongguoAccountClientProvider, hongguoAccountFavoritesProvider, hongguoAccountProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart'
     show hongguoClientProvider, hongguoFailureText, hongguoPickRendition, hongguoStreamProxyProvider;
+import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart' show hongguoSettingsProvider;
+import 'package:pure_live/modules/hongguo/official/hongguo_account.dart' show HongguoAccountClient, HongguoCredentials;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
 import 'package:pure_live/shared/shared.dart';
 
@@ -40,8 +41,7 @@ final class HongguoSeriesPage extends ConsumerStatefulWidget {
   ConsumerState<HongguoSeriesPage> createState() => _HongguoSeriesPageState();
 }
 
-final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage>
-    with RouteAware, WidgetsBindingObserver {
+final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> with RouteAware, WidgetsBindingObserver {
   HongguoSeriesDetail? _detail;
   HongguoEpisode? _episode;
   PlayerHandle? _handle;
@@ -81,6 +81,12 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage>
   // release its handle.
   late final RoomPresentationController _presentationNotifier;
   late final PlayerKernel _kernel;
+  late final HongguoAccountClient _accountClient;
+  late final HongguoLibraryController _library;
+
+  /// The sign-in the last build saw; the leaving page uploads with it
+  /// rather than asking a disposed scope.
+  HongguoCredentials? _accountCredentials;
 
   /// The presentation mode, followed through a manual listener for the same
   /// reason: the leaving page reads its own field, not `ref`.
@@ -93,6 +99,8 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage>
     super.initState();
     _presentationNotifier = ref.read(roomPresentationProvider.notifier);
     _kernel = ref.read(playerKernelProvider);
+    _accountClient = ref.read(hongguoAccountClientProvider);
+    _library = ref.read(hongguoLibraryProvider.notifier);
     ref.listenManual(roomPresentationProvider, (_, next) => _presentationMode = next, fireImmediately: true);
     WidgetsBinding.instance.addObserver(this);
     _globalMute = ref.read(playbackSettingsProvider).globalMute;
@@ -163,12 +171,8 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage>
       final episodes = detail.episodes;
       if (episodes.isEmpty) return;
       final resume = _readProgress();
-      final start =
-          episodes.firstWhere(
-            (episode) => episode.index == resume?.$1,
-            orElse: () => episodes.first,
-          );
-      await _openEpisode(start, resume: resume?.$2);
+      final start = episodes.firstWhere((episode) => episode.index == resume?.index, orElse: () => episodes.first);
+      await _openEpisode(start, resume: resume?.seconds);
     } on Object catch (error) {
       if (!mounted || _disposed) return;
       setState(() {
@@ -419,27 +423,17 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage>
     context.pop();
   }
 
-  String get _progressKey => 'hongguo.progress.${widget.seriesId}';
-
-  (int, double)? _readProgress() {
-    try {
-      final raw = StoragePrefs.getString(_progressKey);
-      if (raw == null || raw.isEmpty) return null;
-      final json = jsonDecode(raw);
-      if (json is! Map) return null;
-      // A finished series keeps its history entry but is not resumed.
-      if (json['completed'] == true) return null;
-      final index = (json['index'] as num?)?.toInt();
-      final seconds = (json['seconds'] as num?)?.toDouble();
-      if (index == null || seconds == null || seconds <= 0) return null;
-      return (index, seconds);
-    } on Object {
-      return null;
-    }
+  /// The stored checkpoint, when one exists and is worth resuming. A
+  /// finished series keeps its history row but is not resumed.
+  ({int index, double seconds})? _readProgress() {
+    final row = ref.read(hongguoLibraryProvider).progressOf(widget.seriesId);
+    if (row == null || row.completed || row.positionMs <= 0) return null;
+    return (index: row.episodeIndex, seconds: row.positionMs / 1000);
   }
 
-  /// Saves the episode and position at most once every few seconds, the
-  /// same record a return resumes from.
+  /// Saves the episode and position at most once every few seconds — the
+  /// local history row a return resumes from, and, signed in, the cloud's
+  /// own copy (best effort; a refused upload never fails the page).
   void _saveProgress({bool force = false, bool completed = false}) {
     final episode = _episode;
     final transport = _transport;
@@ -452,29 +446,40 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage>
     _lastSave = now;
     final done = completed || position >= total - 5000;
     final detail = _detail;
-    try {
-      unawaited(
-        StoragePrefs.setString(
-          _progressKey,
-          jsonEncode({
-            'index': episode.index,
-            'vid': episode.vid,
-            'seconds': done ? total / 1000 : position / 1000,
-            'title': detail?.meta.title ?? episode.title,
-            'cover': detail?.meta.cover,
-            'durationSeconds': total / 1000,
-            'updatedAt': now.millisecondsSinceEpoch,
-            if (done) 'completed': true,
-          }),
-        ),
-      );
-    } on Object {
-      // A preference; a closed store loses it.
-    }
+    _library.saveProgress(
+      HongguoWatchProgress(
+        seriesId: widget.seriesId,
+        title: detail?.meta.title ?? episode.title,
+        cover: detail?.meta.cover ?? '',
+        episodeIndex: episode.index,
+        episodeVid: episode.vid,
+        positionMs: done ? total : position,
+        durationMs: total,
+        completed: done,
+        updatedAt: now.millisecondsSinceEpoch,
+        episodeCount: detail?.meta.episodeCount ?? detail?.episodes.length ?? 0,
+      ),
+    );
+    final credentials = _accountCredentials;
+    if (credentials == null || credentials.cookie.isEmpty) return;
+    unawaited(
+      _accountClient
+          .upload(
+            credentials,
+            seriesId: widget.seriesId,
+            episodeVid: episode.vid,
+            episodeIndex0: episode.index - 1,
+            positionMs: position,
+            durationMs: total,
+            episodeCount: detail?.meta.episodeCount ?? detail?.episodes.length ?? 0,
+          )
+          .catchError((Object _) {}),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    _accountCredentials = ref.read(hongguoAccountProvider).credentials;
     ref.listen(playbackSettingsProvider.select((settings) => settings.globalMute), (previous, next) {
       if (previous == next) return;
       if (mounted) setState(() => _globalMute = next);
@@ -888,16 +893,54 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage>
       children: [
         Text(meta.title, style: theme.typography.title.copyWith(color: colors.text)),
         if (figures.isNotEmpty)
-          Text(
-            figures.join(' · '),
-            style: theme.typography.caption.copyWith(color: colors.textMuted),
-          ),
+          Text(figures.join(' · '), style: theme.typography.caption.copyWith(color: colors.textMuted)),
         if (meta.categories.isNotEmpty)
           Wrap(
             spacing: DsSpace.s8,
             runSpacing: DsSpace.s8,
             children: [for (final category in meta.categories) DsBadge(label: Text(category), dot: false)],
           ),
+        Consumer(
+          builder: (context, ref, _) {
+            final t = context.t;
+            final library = ref.watch(hongguoLibraryProvider);
+            final account = ref.watch(hongguoAccountProvider);
+            final snapshot = HongguoSeries(
+              seriesId: meta.seriesId,
+              title: meta.title,
+              cover: meta.cover,
+              intro: meta.intro,
+              episodeCount: meta.episodeCount,
+            );
+            final favored = library.isFavorite(meta.seriesId);
+            return Wrap(
+              spacing: DsSpace.s8,
+              runSpacing: DsSpace.s8,
+              children: [
+                DsButton(
+                  variant: favored ? DsButtonVariant.primary : DsButtonVariant.secondary,
+                  leading: DsIcon(favored ? DsIcons.heart : DsIcons.heartOff, size: 16),
+                  onPressed: () {
+                    final added = ref.read(hongguoLibraryProvider.notifier).toggleFavorite(snapshot);
+                    showDsToast(
+                      context: context,
+                      title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff,
+                    );
+                  },
+                  child: Text(favored ? t.hongguo.favoriteToggleOff : t.hongguo.favoriteToggleOn),
+                ),
+                if (account.signedIn)
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    leading: const DsIcon(DsIcons.cloudUpload, size: 16),
+                    onPressed: () =>
+                        unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).setFavorite(snapshot, add: true)),
+                    child: Text(t.hongguo.cloudFavoriteOn),
+                  ),
+              ],
+            );
+          },
+        ),
         if (meta.intro.isNotEmpty)
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
