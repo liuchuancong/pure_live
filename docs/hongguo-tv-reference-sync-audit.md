@@ -302,6 +302,24 @@ l10n 累计新增 27 个 key（中英各一份，`dart run slang` 已重生成�
 
 P1 只剩：首页/侧栏的**新集徽标**（收藏检测已有计数，尚未挂到导航项上）、参考的**断网等待**。P2：弹幕渲染层（#7，`hongguo_social.dart` 已定，可以做了）、评论侧边面板 + 本集/整剧双 tab、选集分组与跳转、HUD 状态行。
 
+### 8.8 第六轮（2026-10-29）：签名器与 ttEncrypt 的四处错位
+
+用户报「打开页面报错、接口参数错误」。用一个临时探测测试直接打真实接口后定位到**签名与注册两层都是坏的**，与页面无关：
+
+| 位置 | 错法 | 后果 |
+|---|---|---|
+| `hongguo_signer.dart` `_rol32/_ror32` | 位数未按 32 取模，`count+1` 可到 255，`32-n` 变负 | Dart `<<` 抛 `Invalid argument(s): -N`，所有签名请求在本地就崩 |
+| 同上 `_proto` | 字符串字段只有两个元素，却直接取 `field[2]` | 同上，`RangeError 0..1: 2` |
+| 同上 `_hashF13` | `di` 按小端**有符号**读、`r1/r2` 把异或写成加法、压缩轮 `n2/n5` 把异或写成加法；`_getIv/_sumMd5` 把普通左移写成循环左移 | 签名值错，服务端回 HTTP 200 + 空体 |
+| 同上 `hongguoAesCbc` | 把 `decrypt` 直接传给 PointyCastle 的 `init(forEncryption)`，语义取反 | ttEncrypt 产出垃圾字节 → `device_register` 回 `device_id:0` → 播放「设备注册失败」；spade_a / URL 解密同样取反 |
+| 同上 `HongguoAesV3` 密钥扩展 | 轮常量触发条件 `i%3==0`，参考是 `(i&3)==0` | x-medusa 错 |
+
+修法：逐段对照 `server/vendor/hongguo.cjs`（同一套算法的纯 JS 版）。用固定设备表、body、时钟与随机流，把参考实现的 `x-gorgon / x-helios / x-medusa` 跑出向量，Dart 侧逐字节相等后才收工；`hongguoAesCbc` 用 NIST AES-128-CBC 向量与 `openssl` 双向对齐。为此给 `HongguoSigner` 加了可注入的 `clock`（与既有 `random` 对称）。
+
+真实网络复核（临时探测，跑完即删）：推荐 feed `3` 条、分类 landpage `24` 条、设备注册拿到 `device_id/install_id`、播放模型拿到档位——全通。**应用内搜索仍回空体**，但用参考 JS 实现原样请求也是空体，属服务端/风控变化，不是移植问题；搜索页已按原设计回落官网搜索（`hongguo_feeds.dart` 首屏 catch 后走 `websiteSearch`）。
+
+新增回归测试（`apps/pure_live/test/hongguo/`、`test/music/`，共 17 项）：签名向量（含 GET 无 body 形态）、睡眠定时器与恢复预算、选档/降档与已学失败档位、歌单去重/排序/移除/导出导入往返/坏文件拒绝。`dart analyze lib/modules/hongguo test` 0 issues。
+
 **旁注**：`fjs: ^3.3.2`（音乐模块新加的 QuickJS 运行时，未入库）在 Windows 上编不过——它 cargokit 的签名 recipe 只列 Apple 的 Rust target，本机又无 cargo 可退源码编译；这是 `flutter run` 失败的原因，与红果模块无关。
 
 ---

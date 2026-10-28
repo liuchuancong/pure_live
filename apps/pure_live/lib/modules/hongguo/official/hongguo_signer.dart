@@ -16,14 +16,19 @@ const int _mask32 = 0xFFFFFFFF;
 
 int _add32(int a, int b) => (a + b) & _mask32;
 
+// Kotlin's rotateLeft/rotateRight take the count modulo 32; a rotate amount
+// above 31 must mask on its own, or `32 - n` goes negative and Dart's shift
+// throws instead of rotating.
 int _rol32(int v, int n) {
+  final shift = n & 31;
   final value = v & _mask32;
-  return ((value << n) | (value >>> (32 - n))) & _mask32;
+  return shift == 0 ? value : ((value << shift) | (value >>> (32 - shift))) & _mask32;
 }
 
 int _ror32(int v, int n) {
+  final shift = n & 31;
   final value = v & _mask32;
-  return ((value >>> n) | (value << (32 - n))) & _mask32;
+  return shift == 0 ? value : ((value >>> shift) | (value << (32 - shift))) & _mask32;
 }
 
 Uint8List _md5(List<int> data) => Uint8List.fromList(crypto.md5.convert(data).bytes);
@@ -105,7 +110,7 @@ final class HongguoAesV3 {
       var b = expanded[at + 1];
       var c = expanded[at + 2];
       var d = expanded[at + 3];
-      if (i % 3 == 0) {
+      if (i % 4 == 0) {
         final t = ((initial >>> (rounds & 24)) ^ _box[b]) & 0xFF;
         b = _box[c];
         c = _box[d];
@@ -226,15 +231,20 @@ final class HongguoAesV3 {
 /// The platform's request signer: one call answers the URL, the headers and
 /// the body a signed endpoint expects.
 final class HongguoSigner {
-  /// Creates a signer; [random] seeds the signature's noise fields.
-  HongguoSigner({int Function()? random, Map<String, String>? device})
+  /// Creates a signer; [random] seeds the signature's noise fields and
+  /// [clock] the wall time, both so a test can pin the signature it expects.
+  HongguoSigner({int Function()? random, Map<String, String>? device, int Function()? clock})
     : _random = random ?? (() => math.Random().nextInt(0x100000000)),
-      _device = device ?? HongguoVendor.device;
+      _device = device ?? HongguoVendor.device,
+      _now = clock ?? (() => DateTime.now().millisecondsSinceEpoch);
 
   final int Function() _random;
   final Map<String, String> _device;
+  final int Function() _now;
 
   int _rand() => _random() & _mask32;
+
+  int _nowMs() => _now();
 
   static Uint8List _varint(int value) {
     var n = value;
@@ -253,7 +263,9 @@ final class HongguoSigner {
     for (final field in fields) {
       final tag = field[0]! as int;
       final value = field[1];
-      final type = (field[2] as String?) ?? 'string';
+      // Most fields are strings and carry no third slot; indexing [2] blindly
+      // throws on those.
+      final type = field.length > 2 ? (field[2] as String?) : null;
       if (type == 'sint') {
         final n = (value! as num).toInt();
         out
@@ -280,9 +292,11 @@ final class HongguoSigner {
     var value = initial & _mask32;
     for (var i = 0; i < data.length; i++) {
       final b = data[i] & 0xFF;
+      // Plain left shifts here, not rotates: the reference masks them back
+      // into 32 bits afterwards.
       value = i.isEven
-          ? ((value >>> 4) ^ value ^ _rol32(value, 6) ^ b) & _mask32
-          : (~((value >>> 7) ^ value ^ ((b | _rol32(value, 12)) & _mask32))) & _mask32;
+          ? ((value >>> 4) ^ value ^ ((value << 6) & _mask32) ^ b) & _mask32
+          : (~((value >>> 7) ^ value ^ (b | ((value << 12) & _mask32)))) & _mask32;
     }
     return value;
   }
@@ -299,8 +313,8 @@ final class HongguoSigner {
     for (var i = 0; i < 12; i++) {
       final temp = (check >>> (i.isEven ? 3 : 5)) ^ check;
       check = i.isEven
-          ? ((data[i] & 0xFF) ^ _rol32(check, 7)) & _mask32
-          : (~(((data[i] & 0xFF) | _rol32(check, 11)) & _mask32)) & _mask32;
+          ? ((data[i] & 0xFF) ^ ((check << 7) & _mask32)) & _mask32
+          : (~(((data[i] & 0xFF) | ((check << 11) & _mask32)) & _mask32)) & _mask32;
       check = check ^ temp;
     }
     return ((check | 4) ^ 0x1000000) & _mask32;
@@ -320,7 +334,9 @@ final class HongguoSigner {
       for (final it in [0xfa, 0x45, 0x61, 0xd7]) (((it | (it << 8)) & 0xFFFF) >>> shift) & 0xFF,
     ]);
     final data = _concat([query, body, _le32(ts), pad, _hex('00000000000001a0')]);
-    int i32At(int at) => ByteData.sublistView(data).getInt32(at, Endian.little);
+    // Unsigned, big-endian — the reference reads the schedule words that way;
+    // little-endian signed signs extend every value.
+    int i32At(int at) => ByteData.sublistView(data).getUint32(at);
     final di = <int>[for (var at = 0; at + 4 <= data.length; at += 4) i32At(at)];
     int rolSigned(int v, int n) => _rol32(v, n);
     for (var i = 0; i < 112; i++) {
@@ -328,14 +344,11 @@ final class HongguoSigner {
       final y = di[i + 14];
       di.add(
         _add32(
+          _add32(di[i], di[i + 9]),
           _add32(
-            _add32(di[i], di[i + 9]),
-            _add32(
-              _add32(rolSigned(x, 14) ^ rolSigned(x, 25), (x >>> 3) & _mask32),
-              _add32(rolSigned(y, 13) ^ rolSigned(y, 15), (y >>> 10) & _mask32),
-            ),
+            rolSigned(x, 14) ^ rolSigned(x, 25) ^ ((x >>> 3) & _mask32),
+            rolSigned(y, 13) ^ rolSigned(y, 15) ^ ((y >>> 10) & _mask32),
           ),
-          0,
         ),
       );
     }
@@ -364,9 +377,9 @@ final class HongguoSigner {
     for (var i = 0; i < chosen[0]; i++) {
       final base = _add32(ivV1, i);
       final n1 = (((d[chosen[3]] ^ d[chosen[4]]) & d[chosen[1]]) ^ d[chosen[3]]) & _mask32;
-      final n2 = _add32(_add32(_rol32(d[chosen[1]], 26), _rol32(d[chosen[1]], 21)), _rol32(d[chosen[1]], 7));
+      final n2 = _rol32(d[chosen[1]], 26) ^ _rol32(d[chosen[1]], 21) ^ _rol32(d[chosen[1]], 7);
       final n4 = _add32(_add32(_add32(di[base & 127], n1), _add32(n2, _add32(tt[base & 63], d[chosen[5]]))), 0);
-      final n5 = _add32(_add32(_rol32(d[chosen[2]], 30), _rol32(d[chosen[2]], 19)), _rol32(d[chosen[2]], 10));
+      final n5 = _rol32(d[chosen[2]], 30) ^ _rol32(d[chosen[2]], 19) ^ _rol32(d[chosen[2]], 10);
       final n6 = ((d[chosen[2]] & d[chosen[6]]) | ((d[chosen[2]] | d[chosen[6]]) & d[chosen[7]])) & _mask32;
       final old = d[chosen[9]];
       d.insert(0, d.removeAt(7));
@@ -514,7 +527,7 @@ final class HongguoSigner {
     final envLaunch = (_randomDouble() * 21).toInt() + 100;
     final envPid = (_randomDouble() * 2000).toInt() + 10001;
     final version = _device['version_name'] ?? '';
-    final clockSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final clockSeconds = _nowMs() ~/ 1000;
     final env = _proto([
       [1, envLaunch, 'sint'],
       [2, 146331399, 'sint'],
@@ -603,7 +616,7 @@ final class HongguoSigner {
   String _helios(int ts) {
     final random = _rand();
     final ascii = utf8.encode(_hexOf(_md5(_concat([_le32(random), utf8.encode('8662')]))));
-    int i64At(List<int> data, int at) => ByteData.sublistView(Uint8List.fromList(data)).getInt64(at);
+    int i64At(List<int> data, int at) => ByteData.sublistView(Uint8List.fromList(data)).getInt64(at, Endian.little);
     final words = <int>[for (var i = 0; i < 4; i++) i64At(ascii, i * 8)];
     final queue = List<int>.of(words);
     final table = <int>[queue[0]];
@@ -645,7 +658,7 @@ final class HongguoSigner {
   /// [body], retrying the ticket until the hash branch the implementation
   /// covers appears.
   HongguoSignedRequest sign(String base, Map<String, String> values, {Uint8List? body}) {
-    final now = DateTime.now().millisecondsSinceEpoch;
+    final now = _nowMs();
     final ts = (now ~/ 1000) & _mask32;
     for (var offset = 0; offset <= 127; offset++) {
       final ticket = now + offset;
@@ -690,7 +703,8 @@ final class HongguoSigner {
 
 /// AES-128-CBC with no padding, over 16-byte aligned input.
 Uint8List hongguoAesCbc(Uint8List key, Uint8List iv, Uint8List data, {required bool decrypt}) {
-  final cipher = CBCBlockCipher(AESEngine())..init(decrypt, ParametersWithIV(KeyParameter(key), iv));
+  // PointyCastle's flag is `forEncryption`, the opposite of [decrypt].
+  final cipher = CBCBlockCipher(AESEngine())..init(!decrypt, ParametersWithIV(KeyParameter(key), iv));
   final out = Uint8List(data.length);
   for (var at = 0; at < data.length; at += 16) {
     cipher.processBlock(data, at, out, at);
