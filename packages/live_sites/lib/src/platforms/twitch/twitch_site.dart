@@ -7,13 +7,18 @@ import 'dart:math';
 
 import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_auth_capability.dart';
+import 'package:live_sites/src/capabilities/live_cookie_refusal_feed.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
+import 'package:live_sites/src/capabilities/live_playback_plan_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -25,11 +30,15 @@ import 'package:live_sites/src/platforms/twitch/api/twitch_endpoints.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_http.dart';
 import 'package:live_sites/src/platforms/twitch/capabilities/twitch_area_provider.dart';
 import 'package:live_sites/src/platforms/twitch/capabilities/twitch_auth_provider.dart';
+import 'package:live_sites/src/platforms/twitch/capabilities/twitch_cookie_refusal_feed.dart';
 import 'package:live_sites/src/platforms/twitch/capabilities/twitch_discovery_provider.dart';
 import 'package:live_sites/src/platforms/twitch/capabilities/twitch_link_resolver.dart';
+import 'package:live_sites/src/platforms/twitch/capabilities/twitch_play_recovery.dart';
 import 'package:live_sites/src/platforms/twitch/capabilities/twitch_playback_provider.dart';
 import 'package:live_sites/src/platforms/twitch/capabilities/twitch_room_provider.dart';
+import 'package:live_sites/src/platforms/twitch/capabilities/twitch_room_refresh.dart';
 import 'package:live_sites/src/platforms/twitch/capabilities/twitch_search_provider.dart';
+import 'package:live_sites/src/platforms/twitch/capabilities/twitch_status_check.dart';
 import 'package:live_sites/src/platforms/twitch/danmaku/twitch_danmaku_session.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_failure.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_json.dart';
@@ -188,6 +197,14 @@ final class TwitchSite implements LiveSite {
   /// are used until it changes.
   String? _rejectedSession;
 
+  final StreamController<void> _refusals = StreamController<void>.broadcast();
+
+  /// An event when Twitch refuses the stored cookie for the access token
+  /// (B-7): playback carries on anonymously and that cookie is not sent again
+  /// until it changes, so each cookie is reported once. The chat says the same
+  /// in its own notice (`TwitchDanmakuProtocol.cookieExpiredNotice`).
+  Stream<void> get cookieRefusals => _refusals.stream;
+
   /// The game slug of each area, by its game id, as the last [categories] walk
   /// named them.
   final Map<String, String> _slugs = {};
@@ -204,9 +221,13 @@ final class TwitchSite implements LiveSite {
   @override
   Future<void> initialize(LiveSiteContext context) async {}
 
-  /// Releases the pooled transports of the wrapped transport.
+  /// Releases the pooled transports of the wrapped transport and closes the
+  /// refusal feed.
   @override
-  Future<void> dispose() async => http.close();
+  Future<void> dispose() async {
+    await _refusals.close();
+    http.close();
+  }
 
   // Headers -------------------------------------------------------------------
 
@@ -334,11 +355,18 @@ final class TwitchSite implements LiveSite {
         answer = await gql(operation, what: 'PlaybackAccessToken', cookie: session);
       } on TwitchFailure catch (failure) {
         if (failure.kind != TwitchFailureKind.needsLogin && failure.kind != TwitchFailureKind.riskControl) rethrow;
-        _rejectedSession = session;
+        _refused(session);
       }
       if (answer != null) return TwitchRoomParser.accessToken(answer, login: channel);
     }
     return TwitchRoomParser.accessToken(await gql(operation, what: 'PlaybackAccessToken'), login: channel);
+  }
+
+  /// Remembers [session] as refused and reports it once: the same cookie is
+  /// not sent again (`accessToken` skips it), so it cannot be refused twice.
+  void _refused(String session) {
+    _rejectedSession = session;
+    _refusals.add(null);
   }
 
   // Rooms ---------------------------------------------------------------------
@@ -591,7 +619,11 @@ final class TwitchSite implements LiveSite {
   TwitchPlaybackProvider? _playback;
   TwitchDanmakuProvider? _danmaku;
   TwitchLinkResolver? _link;
+  TwitchRoomRefresh? _refresh;
+  TwitchStatusCheck? _status;
+  TwitchPlayRecovery? _recovery;
   TwitchAuthProvider? _auth;
+  TwitchCookieRefusalFeed? _refusal;
 
   /// The capability of type [T], or null when twitch does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -604,16 +636,25 @@ final class TwitchSite implements LiveSite {
     final playback = _playback ??= TwitchPlaybackProvider(site: this);
     final danmaku = _danmaku ??= TwitchDanmakuProvider(site: this);
     final link = _link ??= TwitchLinkResolver(site: this);
+    final refresh = _refresh ??= TwitchRoomRefresh(site: this);
+    final status = _status ??= TwitchStatusCheck(refresh: refresh);
+    final recovery = _recovery ??= TwitchPlayRecovery(playback: playback);
     final auth = _auth ??= TwitchAuthProvider(site: this);
+    final refusal = _refusal ??= TwitchCookieRefusalFeed(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
       const (LiveDiscoveryProvider) => discovery as T,
       const (LiveSearchProvider) => search as T,
       const (LivePlaybackProvider) => playback as T,
+      const (LivePlaybackPlanResolver) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
       const (LiveAuthCapability) => auth as T,
+      const (LiveCookieRefusalFeed) => refusal as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }

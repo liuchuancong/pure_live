@@ -4,6 +4,7 @@ import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/play/play_geometry/play_geometry.dart';
 import 'package:live_sites/src/platforms/twitch/api/twitch_endpoints.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_failure.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_json.dart';
@@ -19,6 +20,9 @@ typedef TwitchVariantGroup = ({
   String group,
   List<String> urls,
   LiveStreamCodec? codec,
+  int height,
+  double frameRate,
+  int? bitrateKbps,
 });
 
 /// Pure parsing of Twitch's playback side: usher's error answers and its HLS
@@ -95,6 +99,9 @@ abstract final class TwitchPlayParser {
         group: group,
         urls: [url],
         codec: hlsVideoCodecOf(variant.codecs),
+        height: height,
+        frameRate: frameRate,
+        bitrateKbps: bandwidth > 0 ? bandwidth ~/ 1000 : null,
       );
     }
     if (grouped.isEmpty) throw const TwitchFailure(TwitchFailureKind.streamUnavailable, 'usher: no variant');
@@ -119,6 +126,13 @@ abstract final class TwitchPlayParser {
   /// variant host, with the media headers).
   static List<LivePlayLine> lines(TwitchVariantGroup group, {required String roomId}) {
     final headers = mediaHeaders(roomId);
+    final geometry = group.height > 0 || group.bitrateKbps != null
+        ? PlayGeometry.of(
+            height: group.height > 0 ? group.height : null,
+            frameRate: group.frameRate >= 1 ? group.frameRate.round() : null,
+            bitrateKbps: group.bitrateKbps,
+          )
+        : null;
     return [
       for (final url in group.urls.where((url) => url.trim().isNotEmpty))
         LivePlayLine.of(
@@ -128,6 +142,7 @@ abstract final class TwitchPlayParser {
           headers: headers,
           codec: group.codec,
           lineLabel: Uri.tryParse(url.trim())?.host,
+          geometry: geometry,
         ),
     ];
   }

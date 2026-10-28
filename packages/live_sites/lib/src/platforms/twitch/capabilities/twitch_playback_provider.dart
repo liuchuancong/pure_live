@@ -1,8 +1,10 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:live_sites/src/capabilities/live_playback_plan_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/play/live_playback_plan/live_playback_plan.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_failure.dart';
 import 'package:live_sites/src/platforms/twitch/parsers/twitch_play_parser.dart';
@@ -32,7 +34,7 @@ const Duration _playlistLifetime = Duration(minutes: 20);
 /// does it fall back to the best one. A stream the detail marked restricted
 /// whose token or usher refuses this viewer is content-unavailable naming the
 /// restriction, not a login error.
-final class TwitchPlaybackProvider implements LivePlaybackProvider {
+final class TwitchPlaybackProvider implements LivePlaybackProvider, LivePlaybackPlanResolver {
   /// Serves [site]; [now] reads the clock for the playlist cache.
   TwitchPlaybackProvider({required this.site, DateTime Function()? now}) : _now = now ?? DateTime.now;
 
@@ -56,13 +58,21 @@ final class TwitchPlaybackProvider implements LivePlaybackProvider {
   }
 
   @override
-  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
+  Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) =>
+      _lines(room, quality);
+
+  /// Lines after a failure: a fresh access token and playlist are asked for
+  /// even when the cached playlist is inside its lifetime.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({required LiveRoom room, LivePlayQuality? quality}) =>
+      _lines(room, quality, force: true);
+
+  Future<Either<LiveSiteError, List<LivePlayLine>>> _lines(
+    LiveRoom room,
+    LivePlayQuality? quality, {
+    bool force = false,
+  }) async {
     try {
-      final detail = await site.detail(room.roomId);
-      final groups = await _resolve(detail);
-      final chosen =
-          TwitchPlayParser.sameGroup(groups, quality?.qualityId, label: quality?.label ?? '') ?? groups.first;
-      return right(TwitchPlayParser.lines(chosen, roomId: room.roomId));
+      return right((await _plan(room, quality, force: force)).lines);
     } on TwitchFailure catch (failure) {
       return left(failure.toLiveSiteError(twitchSiteId));
     } on Object catch (error) {
@@ -70,16 +80,49 @@ final class TwitchPlaybackProvider implements LivePlaybackProvider {
     }
   }
 
+  /// The plan for [room]: a quality the playlist still names carries itself
+  /// as the applied quality; one whose variant moved (matched by `VIDEO`
+  /// group or label) reports the playlist's own quality, and a quality with
+  /// no variant at all falls back to the source, which is then applied.
+  @override
+  Future<Either<LiveSiteError, LivePlaybackPlan>> resolvePlan({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+  }) async {
+    try {
+      final plan = await _plan(room, quality);
+      return right(LivePlaybackPlan.of(lines: plan.lines, appliedQuality: plan.appliedQuality));
+    } on TwitchFailure catch (failure) {
+      return left(failure.toLiveSiteError(twitchSiteId));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: twitchSiteId, message: '$error', cause: error));
+    }
+  }
+
+  Future<({List<LivePlayLine> lines, LivePlayQuality appliedQuality})> _plan(
+    LiveRoom room,
+    LivePlayQuality? quality, {
+    bool force = false,
+  }) async {
+    final detail = await site.detail(room.roomId);
+    final groups = await _resolve(detail, force: force);
+    final matched = TwitchPlayParser.sameGroup(groups, quality?.qualityId, label: quality?.label ?? '');
+    final chosen = matched ?? groups.first;
+    final applied = matched != null && quality != null ? quality : TwitchPlayParser.qualities([chosen]).single;
+    return (lines: TwitchPlayParser.lines(chosen, roomId: room.roomId), appliedQuality: applied);
+  }
+
   /// usher's variant groups for [room]: the playlist just read for this channel
   /// while it is under the token's lifetime old, else a new token and
-  /// playlist. A channel with nothing to play is stream-unavailable.
-  Future<List<TwitchVariantGroup>> _resolve(LiveRoom room) async {
+  /// playlist. [force] skips the cached playlist. A channel with nothing to
+  /// play is stream-unavailable.
+  Future<List<TwitchVariantGroup>> _resolve(LiveRoom room, {bool force = false}) async {
     if (!room.broadcast.isPlayableNow) {
       throw TwitchFailure(TwitchFailureKind.streamUnavailable, '${room.roomId}: nothing on air');
     }
     final login = room.roomId.trim().toLowerCase();
     final cached = _cached;
-    if (cached != null && cached.login == login && _now().difference(cached.at) < _playlistLifetime) {
+    if (!force && cached != null && cached.login == login && _now().difference(cached.at) < _playlistLifetime) {
       return cached.groups;
     }
     final groups = await site.playlist(
