@@ -7,8 +7,10 @@ import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -24,7 +26,9 @@ import 'package:live_sites/src/platforms/weibo/capabilities/weibo_discovery_prov
 import 'package:live_sites/src/platforms/weibo/capabilities/weibo_link_resolver.dart';
 import 'package:live_sites/src/platforms/weibo/capabilities/weibo_playback_provider.dart';
 import 'package:live_sites/src/platforms/weibo/capabilities/weibo_room_provider.dart';
+import 'package:live_sites/src/platforms/weibo/capabilities/weibo_room_refresh.dart';
 import 'package:live_sites/src/platforms/weibo/capabilities/weibo_search_provider.dart';
+import 'package:live_sites/src/platforms/weibo/capabilities/weibo_status_check.dart';
 import 'package:live_sites/src/platforms/weibo/parsers/weibo_failure.dart';
 import 'package:live_sites/src/platforms/weibo/parsers/weibo_json.dart';
 import 'package:live_sites/src/platforms/weibo/parsers/weibo_room_parser.dart';
@@ -323,6 +327,8 @@ final class WeiboSite implements LiveSite {
   WeiboSearchProvider? _search;
   WeiboPlaybackProvider? _playback;
   WeiboLinkResolver? _link;
+  WeiboRoomRefresh? _refresh;
+  WeiboStatusCheck? _status;
 
   /// The capability of type [T], or null when Weibo does not support it
   /// (ARCHITECTURE.md §4.1) — the platform has no chat, so no
@@ -335,6 +341,8 @@ final class WeiboSite implements LiveSite {
     final search = _search ??= WeiboSearchProvider(site: this);
     final playback = _playback ??= WeiboPlaybackProvider(site: this);
     final link = _link ??= WeiboLinkResolver(site: this);
+    final refresh = _refresh ??= WeiboRoomRefresh(site: this);
+    final status = _status ??= WeiboStatusCheck(refresh: refresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -342,6 +350,8 @@ final class WeiboSite implements LiveSite {
       const (LiveSearchProvider) => search as T,
       const (LivePlaybackProvider) => playback as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }
