@@ -23,9 +23,11 @@ list(APPEND FLUTTER_PLUGIN_LIST
   system_theme
   url_launcher_windows
   volume_controller
+  webview_all_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  fjs
   flutter_local_notifications_windows
   jni
 )

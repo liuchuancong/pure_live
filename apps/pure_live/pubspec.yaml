@@ -29,6 +29,7 @@ dependencies:
   vibrancy: ^0.1.1 # 窗口透明与材质效果
 
   # 文件与外部操作
+  fjs: ^3.3.2 # lx-music 自定义源脚本运行时（QuickJS）
   archive: ^4.5.2 # 压缩包读写
   crypto: ^3.0.0 # 字体文件的 SHA-256 校验
   pointycastle: ^3.9.1 # 红果直连签名与媒体解密（SM3/AES）
@@ -116,7 +117,7 @@ dependencies:
   pub_semver: ^2.2.1 # 语义化版本比较
   riverpod_annotation: ^4.0.7 # Riverpod 生成器注解
   webdav_client_plus: ^3.0.0 # WebDAV 目录浏览与文件读写
-  webview_flutter: ^4.14.1 # 内嵌网页视图
+  webview_all: ^1.4.7 # 内嵌网页视图（桌面/移动统一）
   catcher_2: ^3.0.0-alpha.0
   desktop_drop: ^0.8.4
 dev_dependencies:

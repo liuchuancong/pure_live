@@ -547,8 +547,8 @@ final class _QrLoginDialogState extends ConsumerState<_QrLoginDialog> {
   }
 
   /// Whether this dialog offers the web sign-in: bilibili's, and only on a
-  /// device that really has a built-in browser (`webview_flutter` ships no
-  /// Windows or Linux implementation, where the entry is simply absent).
+  /// device that really has a built-in browser (where the package registers
+  /// no WebView platform the entry is simply absent).
   bool get _offersWebLogin => widget.site.manifest.id == SiteIds.bilibili && bilibiliWebLoginAvailable;
 
   /// Closes the dialog asking the caller for one of the other ways in.

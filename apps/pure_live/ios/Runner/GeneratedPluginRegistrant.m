@@ -192,10 +192,10 @@
 @import wakelock_plus;
 #endif
 
-#if __has_include(<webview_flutter_wkwebview/WebViewFlutterPlugin.h>)
-#import <webview_flutter_wkwebview/WebViewFlutterPlugin.h>
+#if __has_include(<webview_all_wkwebview/WebviewAllWKWebViewPlugin.h>)
+#import <webview_all_wkwebview/WebviewAllWKWebViewPlugin.h>
 #else
-@import webview_flutter_wkwebview;
+@import webview_all_wkwebview;
 #endif
 
 @implementation GeneratedPluginRegistrant
@@ -232,7 +232,7 @@
   [URLLauncherPlugin registerWithRegistrar:[registry registrarForPlugin:@"URLLauncherPlugin"]];
   [VolumeControllerPlugin registerWithRegistrar:[registry registrarForPlugin:@"VolumeControllerPlugin"]];
   [WakelockPlusPlugin registerWithRegistrar:[registry registrarForPlugin:@"WakelockPlusPlugin"]];
-  [WebViewFlutterPlugin registerWithRegistrar:[registry registrarForPlugin:@"WebViewFlutterPlugin"]];
+  [WebviewAllWKWebViewPlugin registerWithRegistrar:[registry registrarForPlugin:@"WebviewAllWKWebViewPlugin"]];
 }
 
 @end

@@ -9,7 +9,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/toolbox/toolbox.dart';
 import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_all/webview_all.dart';
 
 /// What to open in the in-app web view: the platform's search page, the
 /// platform id and the words searched.
@@ -28,11 +28,11 @@ final class WebSearchRequest {
 }
 
 /// The platform's own search page inside the app, rendered by
-/// `webview_flutter`.
+/// `webview_all`.
 ///
-/// The package has no Windows or Linux implementation; on a host without a
-/// WebView platform the page says so and offers the system browser instead
-/// of presenting an empty frame.
+/// A target the package has no implementation for registers no platform, and
+/// on such a host the page says so and offers the system browser instead of
+/// presenting an empty frame.
 final class WebSearchPage extends ConsumerStatefulWidget {
   /// Opens [request]; a null request (a deep link without its extra) is an
   /// honest empty page.

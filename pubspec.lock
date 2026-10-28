@@ -218,6 +218,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.11"
+  build_cli_annotations:
+    dependency: transitive
+    description:
+      name: build_cli_annotations
+      sha256: e563c2e01de8974566a1998410d3f6f03521788160a02503b0b1f1a46c7b3d95
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.1"
   build_config:
     dependency: transitive
     description:
@@ -818,6 +826,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.1"
+  fjs:
+    dependency: transitive
+    description:
+      name: fjs
+      sha256: baebbebbc1695627b55f437bc6a48e5eb31c75b293f0c1d14874e17c37b0fd5f
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.3.2"
   flame:
     dependency: transitive
     description:
@@ -981,6 +997,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.4.3"
+  flutter_rust_bridge:
+    dependency: transitive
+    description:
+      name: flutter_rust_bridge
+      sha256: ec69331e2335ab4d456c0a9fc700892c2c85b72b9c0cb39df3ecfe8833d5d5c8
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.13.0"
   flutter_screenutil_plus:
     dependency: transitive
     description:
@@ -1441,6 +1465,13 @@ packages:
     description:
       path: "C:\\Users\\XA-158\\projects\\flutter\\media_core/packages/media_core_danmaku"
       relative: false
+    source: path
+    version: "0.1.0"
+  media_core_download:
+    dependency: transitive
+    description:
+      path: "C:\\/Users/XA-158/projects/flutter/media_core/packages/media_core_download"
+      relative: true
     source: path
     version: "0.1.0"
   media_core_fullscreen:
@@ -2637,38 +2668,70 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.1"
-  webview_flutter:
+  webview_all:
     dependency: transitive
     description:
-      name: webview_flutter
-      sha256: d53e1ccf5516f25017e3c9d44c39034db352d20fa34fe200674270242c2c5111
+      name: webview_all
+      sha256: d6190ae475c7fdb4d1b1c0afda64d788172b2fbc367dfb72b9be2c704629984d
       url: "https://pub.dev"
     source: hosted
-    version: "4.14.1"
-  webview_flutter_android:
+    version: "1.4.7"
+  webview_all_android:
     dependency: transitive
     description:
-      name: webview_flutter_android
-      sha256: "4de8b3d1ff4ebe1bdb42e68a5e4f809194a3cb0117a8f495f590004f00da3964"
+      name: webview_all_android
+      sha256: "34243b07dfed6c6e28ebdba9cd9353f4653ae393e23745aff6001115600a2e30"
       url: "https://pub.dev"
     source: hosted
-    version: "4.14.1"
-  webview_flutter_platform_interface:
+    version: "1.4.7"
+  webview_all_linux:
     dependency: transitive
     description:
-      name: webview_flutter_platform_interface
-      sha256: "1221c1b12f5278791042f2ec2841743784cf25c5a644e23d6680e5d718824f04"
+      name: webview_all_linux
+      sha256: e85f0b52d34ff0439acdf1f07602b44f58987046d4241aeb217059a68176d95a
       url: "https://pub.dev"
     source: hosted
-    version: "2.15.1"
-  webview_flutter_wkwebview:
+    version: "1.4.7"
+  webview_all_ohos:
     dependency: transitive
     description:
-      name: webview_flutter_wkwebview
-      sha256: acac45e0a8d7beb1d0805521f44842f406c46eb5a69410f53d935e3c62138afc
+      name: webview_all_ohos
+      sha256: e86b77b6725264fc17cad1a13d34167bc0d3e19ce36280262b69e2f6db21ac40
       url: "https://pub.dev"
     source: hosted
-    version: "3.27.2"
+    version: "1.4.7"
+  webview_all_web:
+    dependency: transitive
+    description:
+      name: webview_all_web
+      sha256: cd274c08500246d02704c2658c832543aebe80b51dfbf801f5d085378f96097c
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.7"
+  webview_all_windows:
+    dependency: transitive
+    description:
+      name: webview_all_windows
+      sha256: cd1d7723d6028515427a072bed119513e7fe1b3f69b70339cf04c11b4add15b9
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.7"
+  webview_all_wkwebview:
+    dependency: transitive
+    description:
+      name: webview_all_wkwebview
+      sha256: "56c7f30cee7f782f392fd05d1d1c856e0a70577075da257a454f695489c428a3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.7"
+  webview_platform_interface:
+    dependency: transitive
+    description:
+      name: webview_platform_interface
+      sha256: aa452be6b70044d95597b7e92830fbac7c18c301e3c5eae391496415d0256fd9
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.7"
   win32:
     dependency: "direct overridden"
     description:

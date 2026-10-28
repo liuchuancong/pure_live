@@ -249,7 +249,15 @@ final class SearchController extends Notifier<SearchState> {
       error: null,
       suggestions: replace ? const [] : state.suggestions,
     );
-    final capability = site?.capability<LiveSearchProvider>();
+    // "All" has no site of its own: every search-capable platform answers
+    // its own page (see [_loadEverywhere]). Asking a null site for a
+    // capability would have made the all-platform scope answer "no search
+    // capability" before it ever fanned out.
+    if (site == null) {
+      await _loadEverywhere(query: query, target: target, page: page, generation: generation, replace: replace);
+      return;
+    }
+    final capability = site.capability<LiveSearchProvider>();
     if (capability == null || !capability.supportedTargets.contains(target)) {
       state = (
         query: query,
@@ -266,10 +274,6 @@ final class SearchController extends Notifier<SearchState> {
         ),
         suggestions: state.suggestions,
       );
-      return;
-    }
-    if (site == null) {
-      await _loadEverywhere(query: query, target: target, page: page, generation: generation, replace: replace);
       return;
     }
     // A fixed request window: a viewer's display page size never moves a

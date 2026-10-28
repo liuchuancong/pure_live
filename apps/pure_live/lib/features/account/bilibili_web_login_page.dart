@@ -10,7 +10,7 @@ import 'package:pure_live/features/account/account_state.dart' show cleanPastedC
 import 'package:pure_live/features/account/bilibili_web_cookies.dart';
 import 'package:pure_live/features/account/platform_cookie_page.dart' show showPlatformCookiePage;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_all/webview_all.dart';
 
 /// Opens bilibili's web sign-in in the app's built-in browser.
 ///

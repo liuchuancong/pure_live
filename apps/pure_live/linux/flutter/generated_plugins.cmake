@@ -20,9 +20,11 @@ list(APPEND FLUTTER_PLUGIN_LIST
   system_theme
   url_launcher_linux
   volume_controller
+  webview_all_linux
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  fjs
   jni
 )
 

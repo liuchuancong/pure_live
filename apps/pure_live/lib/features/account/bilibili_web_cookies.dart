@@ -1,6 +1,6 @@
 import 'dart:developer' as developer show log;
 
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_all/webview_all.dart';
 
 /// The built-in browser's side of bilibili's web login: which hosts carry the
 /// login, whether this device has a browser at all, and how its cookies become
@@ -9,11 +9,12 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 /// Whether this device has a built-in browser the web login can use.
 ///
-/// `webview_flutter` ships no Windows or Linux implementation, so there the
-/// platform instance is never registered and stays null — the same answer the
-/// in-app search page gives when it offers the system browser instead of an
-/// empty frame. A sign-in entry that could do nothing is not shown at all, so
-/// this is what the QR page's web login option is gated on.
+/// `webview_all` registers a platform implementation on every target it
+/// supports; a host it does not (or a build that skipped it) leaves the
+/// instance null — the same answer the in-app search page gives when it
+/// offers the system browser instead of an empty frame. A sign-in entry that
+/// could do nothing is not shown at all, so this is what the QR page's web
+/// login option is gated on.
 bool get bilibiliWebLoginAvailable => WebViewPlatform.instance != null;
 
 /// The bilibili addresses whose built-in browser cookies make up a login.

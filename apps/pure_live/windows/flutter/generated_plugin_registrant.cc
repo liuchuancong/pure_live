@@ -26,6 +26,7 @@
 #include <system_theme/system_theme_plugin.h>
 #include <url_launcher_windows/url_launcher_windows.h>
 #include <volume_controller/volume_controller_plugin_c_api.h>
+#include <webview_all_windows/webview_all_windows_plugin.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   AudioServiceWinPluginCApiRegisterWithRegistrar(
@@ -68,4 +69,6 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("UrlLauncherWindows"));
   VolumeControllerPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("VolumeControllerPluginCApi"));
+  WebviewAllWindowsPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("WebviewAllWindowsPlugin"));
 }
