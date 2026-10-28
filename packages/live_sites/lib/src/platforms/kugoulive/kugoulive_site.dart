@@ -8,10 +8,13 @@ import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_lease_lookup.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -27,9 +30,12 @@ import 'package:live_sites/src/platforms/kugoulive/api/kugoulive_http.dart';
 import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_area_provider.dart';
 import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_discovery_provider.dart';
 import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_link_resolver.dart';
+import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_play_lease_lookup.dart';
 import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_playback_provider.dart';
 import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_room_provider.dart';
+import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_room_refresh.dart';
 import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_search_provider.dart';
+import 'package:live_sites/src/platforms/kugoulive/capabilities/kugoulive_status_check.dart';
 import 'package:live_sites/src/platforms/kugoulive/danmaku/kugoulive_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/kugoulive/danmaku/kugoulive_danmaku_session.dart';
 import 'package:live_sites/src/platforms/kugoulive/kugoulive_manifest.dart';
@@ -257,6 +263,10 @@ final class KugouliveSite implements LiveSite {
     );
   }
 
+  /// A refresh: the room info alone, without the stream request a first visit
+  /// makes.
+  Future<LiveRoom> refreshRoom(String roomId) async => (await info(_checkedId(roomId))).room;
+
   (LiveRestriction, KugouliveRoomData) _resolvePlayback(String roomId, KugouliveResponse response) {
     try {
       final variants = KugouliveRoomParser.variants(response.text, roomId: roomId, status: response.status);
@@ -321,8 +331,11 @@ final class KugouliveSite implements LiveSite {
   KugouliveDiscoveryProvider? _discovery;
   KugouliveSearchProvider? _search;
   KugoulivePlaybackProvider? _playback;
+  KugoulivePlayLeaseLookup? _lease;
   KugouliveDanmakuProvider? _danmaku;
   KugouliveLinkResolver? _link;
+  KugouliveRoomRefresh? _refresh;
+  KugouliveStatusCheck? _status;
 
   /// The capability of type [T], or null when Kugou Live does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -333,16 +346,22 @@ final class KugouliveSite implements LiveSite {
     final discovery = _discovery ??= KugouliveDiscoveryProvider(site: this);
     final search = _search ??= KugouliveSearchProvider(site: this);
     final playback = _playback ??= KugoulivePlaybackProvider(site: this);
+    final lease = _lease ??= const KugoulivePlayLeaseLookup();
     final danmaku = _danmaku ??= KugouliveDanmakuProvider(site: this);
     final link = _link ??= KugouliveLinkResolver(site: this);
+    final refresh = _refresh ??= KugouliveRoomRefresh(site: this);
+    final status = _status ??= KugouliveStatusCheck(refresh: refresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
       const (LiveDiscoveryProvider) => discovery as T,
       const (LiveSearchProvider) => search as T,
       const (LivePlaybackProvider) => playback as T,
+      const (LivePlayLeaseLookup) => lease as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }

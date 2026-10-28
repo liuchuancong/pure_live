@@ -402,7 +402,7 @@ abstract final class KugouliveRoomParser {
                 formatSource: LivePlayFormatSource.declared,
                 codec: codecName(codec),
                 lineLabel: sid == null ? null : 'sid$sid',
-                lease: _lease(url),
+                lease: lease(url),
               ),
             );
           }
@@ -494,8 +494,9 @@ abstract final class KugouliveRoomParser {
 
   /// The lease of a media [url]: renewed before its `txTime`. Expiry is
   /// checked when a connection opens (Tencent Cloud's signature), so it only
-  /// prefetches.
-  static LivePlayLease? _lease(Uri url) {
+  /// prefetches. An address past its `txTime` still answers the (past) lease,
+  /// so a held URL reads as dead rather than as having no lifetime.
+  static LivePlayLease? lease(Uri url) {
     final expires = invalidAt('$url');
     return expires == null
         ? null
