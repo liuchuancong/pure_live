@@ -1,8 +1,10 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:live_sites/src/capabilities/live_playback_plan_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/play/live_playback_plan/live_playback_plan.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/bilibili/api/bilibili_endpoints.dart';
 import 'package:live_sites/src/platforms/bilibili/bilibili_manifest.dart';
@@ -21,7 +23,7 @@ import 'package:live_sites/src/platforms/bilibili/parsers/bilibili_play_parser.d
 /// headers and the lease its `expires=` parameter implies. A carousel
 /// (`live_status` 2) that gives this client no stream plays the video in
 /// rotation instead, as one [BilibiliPlayParser.carouselQuality].
-final class BilibiliPlaybackProvider implements LivePlaybackProvider {
+final class BilibiliPlaybackProvider implements LivePlaybackProvider, LivePlaybackPlanResolver {
   /// Serves [site].
   BilibiliPlaybackProvider({required this.site});
 
@@ -69,6 +71,45 @@ final class BilibiliPlaybackProvider implements LivePlaybackProvider {
     }
   }
 
+  /// The plan for [room] at [quality]: the lines plus the quality the platform
+  /// says it served (a guest asking 10000 gets 250), and, for a carousel, the
+  /// offset of the programme already playing.
+  @override
+  Future<Either<LiveSiteError, LivePlaybackPlan>> resolvePlan({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+  }) async {
+    try {
+      final longId = site.longId(room.roomId);
+      if (quality?.qualityId == BilibiliPlayParser.carouselQualityId) {
+        return right(await _carouselPlan(longId));
+      }
+      final requested = int.tryParse(quality?.qualityId ?? '') ?? 0;
+      final play = await _play(longId, requested);
+      final data = play.data;
+      // A carousel a guest gets no stream for plays its video (1-1).
+      if (data == null) return right(await _carouselPlan(longId));
+      final resolution = BilibiliPlayParser.resolvedLines(
+        data,
+        requestedQn: requested,
+        roomId: longId,
+        issuedAt: play.issuedAt,
+        cookie: play.cookie,
+      );
+      final appliedQn = resolution.appliedQn;
+      if (appliedQn == null) {
+        throw BilibiliFailure(BilibiliFailureKind.streamUnavailable, 'getRoomPlayInfo: no line for $longId');
+      }
+      return right(
+        LivePlaybackPlan.of(lines: resolution.lines, appliedQuality: BilibiliPlayParser.qualityOf(data, appliedQn)),
+      );
+    } on BilibiliFailure catch (failure) {
+      return left(failure.toLiveSiteError(bilibiliSiteId));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: bilibiliSiteId, message: '$error', cause: error));
+    }
+  }
+
   /// `getRoomPlayInfo` at [qn]; `data` is null for a carousel without a stream
   /// for this client (see [BilibiliPlayParser.carouselWithoutStream]).
   Future<({Map<String, dynamic>? data, DateTime issuedAt, String cookie})> _play(String longId, Object qn) async {
@@ -91,12 +132,19 @@ final class BilibiliPlaybackProvider implements LivePlaybackProvider {
   /// The video [longId]'s carousel is playing: `getRoundPlayVideo`, then its
   /// MP4 (`x/player/playurl`). Two requests; when the video ends, asking again
   /// gets the next one in rotation.
-  Future<List<LivePlayLine>> _carousel(String longId) async {
+  Future<List<LivePlayLine>> _carousel(String longId) async => (await _carouselPlan(longId)).lines.toList();
+
+  /// The carousel's plan: its whole-file lines and the seconds already played.
+  Future<LivePlaybackPlan> _carouselPlan(String longId) async {
     final cookie = await site.cookie();
     final headers = site.apiHeaders(cookie);
     final round = await site.httpGet(BilibiliPlayParser.roundPlayVideo(longId), headers: headers);
     final video = BilibiliPlayParser.roundPlayVideoData(round.text, status: round.status);
     final file = await site.httpGet(BilibiliEndpoints.videoPlayUrl(video.bvid, video.cid), headers: headers);
-    return BilibiliPlayParser.videoLines(file.text, bvid: video.bvid, status: file.status, cookie: cookie);
+    return LivePlaybackPlan.of(
+      lines: BilibiliPlayParser.videoLines(file.text, bvid: video.bvid, status: file.status, cookie: cookie),
+      appliedQuality: BilibiliPlayParser.carouselQuality,
+      start: video.start,
+    );
   }
 }

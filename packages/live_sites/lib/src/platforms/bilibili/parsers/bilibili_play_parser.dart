@@ -172,6 +172,16 @@ abstract final class BilibiliPlayParser {
     required String roomId,
     required DateTime issuedAt,
     String cookie = '',
+  }) => resolvedLines(data, requestedQn: requestedQn, roomId: roomId, issuedAt: issuedAt, cookie: cookie).lines;
+
+  /// [lines] with the qn the platform actually served (the first candidate's
+  /// `current_qn`), or null when no candidate survived.
+  static ({List<LivePlayLine> lines, int? appliedQn}) resolvedLines(
+    Map<String, dynamic> data, {
+    required Object? requestedQn,
+    required String roomId,
+    required DateTime issuedAt,
+    String cookie = '',
   }) {
     final playurl = _playurl(data);
     final requested = jsonInt(requestedQn);
@@ -197,37 +207,49 @@ abstract final class BilibiliPlayParser {
         ));
       }
     }
-    if (candidates.isEmpty) return const [];
+    if (candidates.isEmpty) return (lines: const <LivePlayLine>[], appliedQn: null);
     candidates.sort((a, b) => _compareCandidates(a, b, requested));
     final first = candidates.first;
     final headers = BilibiliEndpoints.mediaHeaders(roomId, cookie: cookie);
     final seen = <String>{};
-    return [
-      for (final candidate in candidates)
-        if (candidate.qn == first.qn && candidate.codec == first.codec && seen.add(candidate.url.toString()))
-          LivePlayLine.of(
-            url: candidate.url.toString(),
-            format: candidate.type,
-            formatSource: LivePlayFormatSource.declared,
-            headers: headers,
-            codec: _codecOf(candidate.codec),
-            lineLabel: '${candidate.url.host}|${candidate.protocol}|${candidate.format}|${candidate.codec ?? ''}',
-            lease: lease(candidate.url, issuedAt),
-          ),
-    ];
+    return (
+      lines: [
+        for (final candidate in candidates)
+          if (candidate.qn == first.qn && candidate.codec == first.codec && seen.add(candidate.url.toString()))
+            LivePlayLine.of(
+              url: candidate.url.toString(),
+              format: candidate.type,
+              formatSource: LivePlayFormatSource.declared,
+              headers: headers,
+              codec: _codecOf(candidate.codec),
+              lineLabel: '${candidate.url.host}|${candidate.protocol}|${candidate.format}|${candidate.codec ?? ''}',
+              lease: lease(candidate.url, issuedAt),
+            ),
+      ],
+      appliedQn: first.qn,
+    );
+  }
+
+  /// The quality [qn] under the answer's own names (`10000` is `源`), for
+  /// reporting the delivered quality.
+  static LivePlayQuality qualityOf(Map<String, dynamic> data, int qn) {
+    final names = _qnNames(_playurl(data));
+    return LivePlayQuality.of(label: names[qn] ?? (qn == 10000 ? '源' : '$qn'), qualityId: '$qn', platformOrder: qn);
   }
 
   /// The lease of a media URL received at [issuedAt], from its `expires`
   /// (Unix seconds, about an hour after issue): renew [leaseLead] — at most a
   /// quarter of the lifetime — before. Expiry does not cut an established
   /// connection. No `expires`, or one already past, is no lease.
-  static LivePlayLease? lease(Uri url, DateTime issuedAt) {
+  static LivePlayLease? lease(Uri url, DateTime issuedAt, {bool allowExpired = false}) {
     final match = RegExp(r'(?:^|&)expires=(\d+)(?:&|$)').firstMatch(url.query);
     final expires = match == null ? null : int.tryParse(match.group(1)!);
     if (expires == null || expires <= 0) return null;
     final expiresAt = DateTime.fromMillisecondsSinceEpoch(expires * 1000, isUtc: true);
     final lifetime = expiresAt.difference(issuedAt.toUtc());
-    if (lifetime <= Duration.zero) return null;
+    if (lifetime <= Duration.zero) {
+      return allowExpired ? LivePlayLease.of(refreshAt: expiresAt.subtract(leaseLead), expiresAt: expiresAt) : null;
+    }
     final quarter = lifetime ~/ 4;
     return LivePlayLease.of(
       refreshAt: expiresAt.subtract(quarter < leaseLead ? quarter : leaseLead),

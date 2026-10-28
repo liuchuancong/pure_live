@@ -58,6 +58,21 @@ final class BilibiliRoomProvider implements LiveRoomProvider {
   /// The room at [roomId] (its identity stays the id as asked for), with its
   /// long id and its danmaku credentials.
   Future<LiveRoom> detail(String roomId) async {
+    final read = await _read(roomId);
+    final danmaku = await _danmaku(read.longId);
+    return read.room.rebuild(
+      (b) =>
+          b..runtime = RoomRuntime.of(streamHandle: BilibiliRoomData(read.longId), danmakuHandle: danmaku).toBuilder(),
+    );
+  }
+
+  /// The room at [roomId] as a refresh read: display state and figures from
+  /// the WBI-signed metadata request, with no danmaku handshake.
+  Future<LiveRoom> refresh(String roomId) async => (await _read(roomId)).room;
+
+  /// The signed metadata read every entry point shares; the long id is
+  /// remembered for the play and danmaku requests that need it.
+  Future<({LiveRoom room, String longId})> _read(String roomId) async {
     final id = roomId.trim();
     if (BilibiliSite.roomNumber(id) == null) {
       throw BilibiliFailure(BilibiliFailureKind.notFound, 'room id $id is not a number');
@@ -67,10 +82,7 @@ final class BilibiliRoomProvider implements LiveRoomProvider {
     }, (response) => BilibiliRoomParser.roomDetail(response.text, requestedId: id, status: response.status));
     final longId = result.value.longId;
     site.rememberLongId(id, longId);
-    final danmaku = await _danmaku(longId);
-    return result.value.room.rebuild(
-      (b) => b..runtime = RoomRuntime.of(streamHandle: BilibiliRoomData(longId), danmakuHandle: danmaku).toBuilder(),
-    );
+    return (room: result.value.room, longId: longId);
   }
 
   /// The room's danmaku credentials: the detail comes first, so one quick
@@ -85,8 +97,8 @@ final class BilibiliRoomProvider implements LiveRoomProvider {
   }
 
   /// The super chats of [roomId] (`av/v1/SuperChat/getMessageList`, asked with
-  /// the room's canonical long id). The shared contract has no super-chat
-  /// capability, so this is the platform's own read path for the room page.
+  /// the room's canonical long id); the read path behind the site's super chat
+  /// feed capability.
   Future<List<LiveSuperChatMessage>> superChats(String roomId) async {
     final response = await site.unsignedGet(BilibiliEndpoints.superChats(site.longId(roomId)));
     return BilibiliRoomParser.superChats(response.text, status: response.status);
