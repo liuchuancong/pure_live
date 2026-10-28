@@ -10,6 +10,7 @@ import 'package:live_sites/src/models/enums/live_stream_codec.dart';
 import 'package:live_sites/src/models/enums/live_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/play/play_geometry/play_geometry.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/models/room/room_audience/room_audience.dart';
 import 'package:live_sites/src/models/room/room_broadcast/room_broadcast.dart';
@@ -782,7 +783,19 @@ abstract final class SixroomRoomParser {
     formatSource: LivePlayFormatSource.declared,
     codec: stream.codec,
     lineLabel: SixroomEndpoints.lineLabel,
+    geometry: _geometryOf(stream),
   );
+
+  /// The declared geometry of [stream]: `1024x768` from `resolution`, the
+  /// kbps `bitrate`. Null when the answer says neither.
+  static PlayGeometry? _geometryOf(SixroomStream stream) {
+    final size = RegExp(r'^([1-9][0-9]{1,4})x([1-9][0-9]{1,4})$').firstMatch(stream.resolution);
+    final width = size == null ? null : int.tryParse(size.group(1)!);
+    final height = size == null ? null : int.tryParse(size.group(2)!);
+    final bitrate = stream.bitrate;
+    if (width == null && height == null && bitrate == null) return null;
+    return PlayGeometry.of(width: width, height: height, bitrateKbps: bitrate != null && bitrate > 0 ? bitrate : null);
+  }
 
   /// [raw] as a room number (a number or room link); anything else is a
   /// caller error.
