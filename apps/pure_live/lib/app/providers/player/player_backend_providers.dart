@@ -27,8 +27,16 @@ enum PlayerKernelBackend {
 List<PlayerKernelBackend> availablePlayerKernelBackends() {
   if (kIsWeb) return const [PlayerKernelBackend.mpv];
   return switch (defaultTargetPlatform) {
-    TargetPlatform.android ||
-    TargetPlatform.iOS => const [PlayerKernelBackend.mpv, PlayerKernelBackend.ijk, PlayerKernelBackend.betterPlayer],
+    TargetPlatform.android => const [
+      PlayerKernelBackend.mpv,
+      PlayerKernelBackend.ijk,
+      PlayerKernelBackend.betterPlayer,
+    ],
+    // iOS starts on BetterPlayer: it plays through AVFoundation, and its
+    // platform view is the on-screen AVPlayerLayer the system
+    // picture-in-picture window lifts. The other two render into a Flutter
+    // texture, which the system cannot float.
+    TargetPlatform.iOS => const [PlayerKernelBackend.betterPlayer, PlayerKernelBackend.mpv, PlayerKernelBackend.ijk],
     _ => const [PlayerKernelBackend.mpv],
   };
 }

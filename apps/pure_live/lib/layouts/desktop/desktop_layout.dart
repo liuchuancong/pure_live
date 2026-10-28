@@ -6,13 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/popular/popular.dart';
-import 'package:pure_live/features/search/search.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart';
+import 'package:pure_live/modules/live/popular/popular.dart';
+import 'package:pure_live/modules/live/search/search.dart';
 import 'package:pure_live/shared/shared.dart';
 
 // Every import stays on one line with no `show` clause: the save-time

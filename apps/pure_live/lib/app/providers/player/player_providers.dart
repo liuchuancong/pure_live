@@ -25,7 +25,13 @@ final Provider<PlayerKernel> playerKernelProvider = Provider<PlayerKernel>(creat
 /// two room windows never share a controller. The native engine itself is
 /// primed once at boot and is safe to attach several kernels to.
 PlayerKernel createPlayerKernel(Ref ref) {
-  final kernel = PlayerKernel()..registerBackend(const MediaKitAdapterFactory().registration());
+  // The kernel's own background pause stops every playing handle when the app
+  // leaves the foreground — including the player a system picture-in-picture
+  // window (iOS) is showing. That platform keeps its own rule instead
+  // (`systemPipBackgroundPauseProvider`), with the window exempt.
+  final systemPip = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  final kernel = PlayerKernel(options: KernelOptions(pauseWhenBackgrounded: !systemPip))
+    ..registerBackend(const MediaKitAdapterFactory().registration());
   // Desktop keeps the mpv engine; the two mobile engines are real, shipped
   // adapters on Android and iOS and stay out of a desktop build.
   if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)) {

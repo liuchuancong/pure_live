@@ -28,11 +28,11 @@ final class MultiViewFullscreenWindow implements FullscreenWindow {
 
   @override
   Future<void> setFullscreen({required bool value, Rect? restoreBounds}) async {
+    // The plugin remembers the frame the window left and puts it back itself.
+    // Applying [restoreBounds] on top of that would resize the window a second
+    // time inside one transition — two client-size changes, and the frame
+    // between them has no picture to paint.
     _window.setFullScreen(value);
-    if (!value && restoreBounds != null && !restoreBounds.isEmpty) {
-      await _window.setSize(restoreBounds.size);
-      await _window.setPosition(restoreBounds.topLeft);
-    }
   }
 }
 
@@ -43,15 +43,25 @@ final class MultiViewFullscreenWindow implements FullscreenWindow {
 /// drag. No native handle is exposed or needed.
 final class MultiViewPipWindow implements PipWindow {
   /// Drives the window with [viewId].
-  const MultiViewPipWindow(this.viewId);
+  MultiViewPipWindow(this.viewId);
 
   /// The plugin's public view id.
   final int viewId;
 
   MultiViewDesktop get _window => MultiViewDesktop.fromId(viewId);
 
+  /// The window's own resize floor, read before the compact policy releases
+  /// it.
+  ///
+  /// The policy only knows the floor its caller passed (a guess); the window
+  /// itself knows the one it was created with, and leaving the compact window
+  /// must put that back or the normal window can later be dragged smaller
+  /// than the app ever allowed.
+  Size? _normalMinimum;
+
   @override
   Future<PipWindowSnapshot> capture() async {
+    _normalMinimum ??= _window.getMinimumSize();
     final bounds = _window.getBounds();
     return PipWindowSnapshot(
       bounds: Rect.fromLTWH(bounds.left, bounds.top, bounds.width, bounds.height),
@@ -100,6 +110,12 @@ final class MultiViewPipWindow implements PipWindow {
     await _window.setAspectRatio(0);
     await _window.setSize(snapshot.bounds.size);
     await _window.setPosition(snapshot.bounds.topLeft);
+    // The floor the window was born with, not the policy's guess: the policy
+    // released the minimum to shrink, and this is the only place that knows
+    // what it was before.
+    final floor = _normalMinimum;
+    _normalMinimum = null;
+    if (floor != null && !floor.isEmpty) _window.setMinimumSize(floor);
   }
 
   @override

@@ -90,6 +90,7 @@ dependencies:
   pure_uikit_background: # 背景样式与图层
 
   # 播放内核（本地 C:/Users/XA-158/projects/flutter/media_core，绝对路径；沙盒 player-lab 已验证解析）
+  pip_kit: ^1.0.2 # iOS 系统画中画（media_core_pip 的 iOS 通路，抬起屏上的 AVPlayerLayer）
   media_core: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core } # 播放器内核
   media_core_live: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_live } # 直播恢复编排（线路×引擎扫描）
   media_core_media_kit: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_media_kit } # mpv 后端

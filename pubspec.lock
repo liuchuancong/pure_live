@@ -117,10 +117,10 @@ packages:
     dependency: transitive
     description:
       name: audio_service_mpris
-      sha256: "8cb2ff2237f4cd2fd27f16451ed35b3aedc12df8a384435327c67a9f4d557ef4"
+      sha256: c0f7a6b6a16dd8a1e1d48627f504e46b347d1266c3e4bc7f822d998f17510826
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.1"
+    version: "1.0.0-beta.3"
   audio_service_platform_interface:
     dependency: transitive
     description:

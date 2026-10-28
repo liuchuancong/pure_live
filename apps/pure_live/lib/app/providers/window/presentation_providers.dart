@@ -3,6 +3,7 @@ import 'dart:async' show StreamSubscription, unawaited;
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/widgets.dart' show Size;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_shell_desktop/live_shell_desktop.dart' show ScreenRetrieverDisplays, frameToRect;
 import 'package:media_core/media_core.dart';
 import 'package:media_core_fullscreen/media_core_fullscreen.dart';
 import 'package:media_core_pip/media_core_pip.dart';
@@ -10,6 +11,7 @@ import 'package:pure_live/app/providers/player/player_providers.dart' show playe
 import 'package:pure_live/app/providers/window/multi_view_window_adapters.dart'
     show MultiViewFullscreenWindow, MultiViewPipWindow;
 import 'package:pure_live/app/providers/window/pip_geometry.dart' show readPipSavedBounds, writePipSavedBounds;
+import 'package:pure_live/app/providers/window/system_pip.dart' show exitSystemPip, isSystemPipHost;
 import 'package:pure_live/app/windows/context/app_window_context.dart' show appWindowContextProvider;
 import 'package:pure_live/features/settings/settings.dart';
 
@@ -48,6 +50,21 @@ DisplayAwarePipWindow? createWindowsPipWindow(Ref ref) {
   final viewId = ref.watch(appWindowContextProvider).viewId;
   return DisplayAwarePipWindow(
     windowBuilder: () => MultiViewPipWindow(viewId),
+    // The placement policy works against real monitor work areas. Without
+    // them it treats the app window's own bounds as the whole desktop, so the
+    // compact window is confined to that rectangle — and every placement is
+    // recorded against an empty display id, which the store refuses, so the
+    // remembered position is never written at all.
+    workAreasReader: () async {
+      try {
+        final displays = await const ScreenRetrieverDisplays().read();
+        return [for (final display in displays) PipWorkArea(id: display.id, area: frameToRect(display.workArea))];
+      } on Object {
+        // No display server answer: the policy falls back to the window's own
+        // bounds, which is still better than refusing to open the window.
+        return const <PipWorkArea>[];
+      }
+    },
     alwaysOnTop: () => ref.read(playbackSettingsProvider).windowsPipAlwaysOnTop,
     smallWindowSize: (aspectRatio) => windowsPipWindowSizeFor(ref.read(playbackSettingsProvider), aspectRatio),
     minWidth: () => ref.read(playbackSettingsProvider).windowsPipMinWidth,
@@ -56,8 +73,12 @@ DisplayAwarePipWindow? createWindowsPipWindow(Ref ref) {
       if (!ref.read(playbackSettingsProvider).rememberPipPosition) return null;
       return readPipSavedBounds(portrait: _pipShowsPortrait(ref));
     },
-    writeSavedBounds: (size, position, displayId) =>
-        writePipSavedBounds(portrait: _pipShowsPortrait(ref), size: size, position: position, displayId: displayId),
+    writeSavedBounds: (size, position, displayId) {
+      // The policy writes on entry as well; with remembering off it must not
+      // keep a placement the viewer never asked to keep.
+      if (!ref.read(playbackSettingsProvider).rememberPipPosition) return;
+      writePipSavedBounds(portrait: _pipShowsPortrait(ref), size: size, position: position, displayId: displayId);
+    },
     // Re-apply the app's normal window floor when leaving the compact window.
     normalMinSize: const Size(400, 300),
   );
@@ -107,9 +128,19 @@ Size windowsPipWindowSizeFor(PlaybackSettings settings, double aspectRatio) {
   return Size(width, height);
 }
 
-/// The app's picture-in-picture driver: media_core's own. On a desktop the
-/// watched window becomes a compact always-shaped window; on a phone the
-/// system's PiP window takes over through media_core_pip's mobile path.
+/// The app's picture-in-picture driver: media_core's own, on a desktop and on
+/// iOS.
+///
+/// The watched window becomes a compact, always-shaped window on a desktop.
+/// On iOS the system's window lifts the AVPlayerLayer already on screen
+/// (`pip_kit`), so the app's engine and player keep running untouched.
+///
+/// Android's 小窗 is not one of media_core's presentation modes: in the app it
+/// is the room's floating player, and over the other apps it is
+/// `FloatingOverlay` — both keep this engine and its player. media_core_pip's
+/// Android backend (`flutter_overlay_window`) boots a second engine that
+/// registers no plugins, so none of the video backends this app ships could
+/// render there; it is not offered rather than entered and failed.
 final Provider<PipDriver> pipDriverProvider = Provider<PipDriver>(createPipDriver);
 
 /// Builds one window's picture-in-picture driver.
@@ -117,6 +148,16 @@ PipDriver createPipDriver(Ref ref) {
   final driver = PipDriver(
     config: windowsPipConfigFor(ref.read(playbackSettingsProvider)),
     desktopWindow: ref.watch(windowsPipWindowProvider),
+    // The compact window is about to be restored: store where the viewer
+    // actually left it. The placement policy records where it put the window
+    // on entry, but a drag or resize after that is only known right here —
+    // without this, "记住小窗位置" reopens at the auto-placed spot.
+    lifecycleHooks: PresentationLifecycleHooks(
+      beforeExit: (event) async {
+        if (event.mode != PresentationMode.pip) return;
+        await ref.read(windowsPipWindowProvider)?.captureGeometry();
+      },
+    ),
     // Android hands the stream to a second engine; only a plain HTTP(S)
     // address can be opened by it. A signed, loopback-proxied source
     // resolves to null and the driver refuses the entry instead of showing
@@ -216,17 +257,37 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
     if (state != next) state = next;
   }
 
-  /// Whether a small window can be opened on this host.
-  bool get pipAvailable => ref.read(pipDriverProvider).platform != PipPlatform.unsupported;
+  /// Whether this window offers the picture-in-picture button.
+  ///
+  /// Desktop lays out its own compact window; a phone enters the system's
+  /// window over the app (iOS). Android's 小窗 is not a presentation mode: in
+  /// the app it is the room's floating player (`floatPlay`), and over the
+  /// other apps it is `FloatingOverlay` with the setting "离开应用时自动小窗" —
+  /// both keep this engine, so neither goes through the drivers this
+  /// controller toggles.
+  bool get pipAvailable {
+    final platform = ref.read(pipDriverProvider).platform;
+    return platform == PipPlatform.desktop || (platform == PipPlatform.mobile && isSystemPipHost);
+  }
+
+  /// Whether the picture-in-picture picture lives in a window this app lays
+  /// out — the desktop compact window. A phone's window is the system's, so
+  /// the page behind it keeps the layout it had.
+  bool get pipOwnsWindow => ref.read(pipDriverProvider).platform == PipPlatform.desktop;
+
+  /// Whether [mode] takes the app's window instead of leaving the page its
+  /// own layout. Every mode does, except the phone's system window.
+  bool modeOwnsWindow(PresentationMode mode) =>
+      mode != PresentationMode.normal && (mode != PresentationMode.pip || pipOwnsWindow);
 
   /// Leaves whatever mode is active, back to the page's own layout.
-  Future<void> exit(PlayerId player) => _apply(player, PresentationMode.normal);
+  Future<void> exit(PlayerId player) => _exitMode(player);
 
   /// The F key and the fullscreen button: enter the system fullscreen, or
   /// leave whichever variant is active.
   Future<void> toggleFullscreen(PlayerId player) async {
     if (state != PresentationMode.normal) {
-      await exit(player);
+      await _exitMode(player);
     } else {
       await _apply(player, PresentationMode.fullscreen);
     }
@@ -236,23 +297,38 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
   /// stays a window.
   Future<void> toggleWindowFullscreen(PlayerId player) async {
     if (state != PresentationMode.normal) {
-      await exit(player);
+      await _exitMode(player);
     } else {
       await _apply(player, PresentationMode.windowFullscreen);
     }
   }
 
   /// Enters or leaves picture-in-picture.
-  Future<void> togglePip(PlayerId player) async {
-    if (!pipAvailable) return;
-    if (state == PresentationMode.pip) {
-      await exit(player);
-    } else {
-      await _apply(player, PresentationMode.pip);
-    }
+  ///
+  /// Answers whether the mode is now what the caller asked for: iOS can
+  /// refuse the system window (no on-screen player layer to lift, a device
+  /// that cannot present it), and a page that offered the button has to say
+  /// so instead of leaving a control that does nothing.
+  Future<bool> togglePip(PlayerId player) {
+    if (!pipAvailable) return Future<bool>.value(false);
+    if (state == PresentationMode.pip) return _exitMode(player);
+    return _apply(player, PresentationMode.pip);
   }
 
-  Future<void> _apply(PlayerId player, PresentationMode mode) async {
+  /// Leaves the active mode. A phone's picture-in-picture window is the
+  /// system's own: the app closes it through the system and the driver's
+  /// state catches up from the status the system reports a moment later, so
+  /// the answer here is "the request was accepted", not "the state already
+  /// changed".
+  Future<bool> _exitMode(PlayerId player) async {
+    if (isSystemPipHost && state == PresentationMode.pip) {
+      await exitSystemPip();
+      return true;
+    }
+    return await _apply(player, PresentationMode.normal);
+  }
+
+  Future<bool> _apply(PlayerId player, PresentationMode mode) async {
     // Optimistic first: the page lays its immersive bare-player surface out
     // before the native window changes size, so the transition never paints
     // the inline layout squeezed into the new bounds. `_sync` corrects the
@@ -262,9 +338,11 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
       await ref.read(presentationDriverProvider).apply(player, PresentationRequest(mode: mode));
     } on Object {
       // A host without the capability (web, a desktop without a window
-      // backend) refuses; the layout then simply stays inline.
+      // backend, a phone whose system window refused) refuses; the layout
+      // then simply stays inline.
     }
     _sync();
+    return state == mode;
   }
 }
 
@@ -272,3 +350,22 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
 final roomPresentationProvider = NotifierProvider<RoomPresentationController, PresentationMode>(
   RoomPresentationController.new,
 );
+
+/// Whether the room page is filling its window without a presentation mode.
+///
+/// The portrait full-screen surface is the page's own layout, not one of
+/// media_core's drivers: nothing outside the page can see it, yet the window
+/// strip has to give way to it exactly as it does for fullscreen. The page
+/// publishes that fact here so the route's chrome can follow.
+final class RoomImmersiveController extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  /// Publishes whether the page fills the window.
+  void set({required bool value}) {
+    if (state != value) state = value;
+  }
+}
+
+/// Whether the room page owns the whole window right now.
+final roomImmersiveProvider = NotifierProvider<RoomImmersiveController, bool>(RoomImmersiveController.new);

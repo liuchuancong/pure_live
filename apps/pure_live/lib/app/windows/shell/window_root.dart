@@ -20,7 +20,7 @@ import 'package:pure_live/app/routing/navigation/route_observer.dart' show route
 import 'package:pure_live/app/routing/router/app_router.dart' show PopularRoute, appRouterProvider, buildAppRouter;
 import 'package:pure_live/app/windows/context/app_window_context.dart' show AppWindowContext, appWindowContextProvider;
 import 'package:pure_live/app/windows/shell/desktop_shell_wiring.dart' show startDesktopShell;
-import 'package:pure_live/features/room/room.dart';
+import 'package:pure_live/modules/live/room/room.dart';
 
 /// One OS window's root.
 ///
@@ -119,6 +119,7 @@ final class _AppWindowRootState extends State<AppWindowRoot> {
         roomSuperChatsProvider.overrideWith(RoomSuperChatController.new),
         sleepTimerProvider.overrideWith(SleepTimerController.new),
         roomPresentationProvider.overrideWith(RoomPresentationController.new),
+        roomImmersiveProvider.overrideWith(RoomImmersiveController.new),
         castControllerProvider.overrideWith(createCastController),
         // A room window's leave verb is closing its own window (the provider's
         // documented host override): the back button and the menu's close stop

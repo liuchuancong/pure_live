@@ -3,8 +3,8 @@ import 'dart:io' show Directory, File, Platform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core/media_core.dart' show PlayerHandleLifecycle;
 import 'package:media_core_notify/media_core_notify.dart' show MediaCoreNotify, NotifyEvent;
-import 'package:pure_live/features/room/room.dart' show roomProvider;
 import 'package:pure_live/l10n/translations.dart' show t;
+import 'package:pure_live/modules/live/room/room.dart' show roomProvider;
 
 /// The tray's 截图: the primary window's current room frame, saved under the
 /// user's Pictures folder. Feedback lands in the system notification area —

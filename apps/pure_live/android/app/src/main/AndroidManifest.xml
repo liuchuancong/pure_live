@@ -15,6 +15,10 @@
          gates sockets to the local network. -->
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK"/>
+    <!-- The small window that keeps a playing room over the other apps when
+         the app is left ("离开应用时自动小窗"); the viewer grants it from the
+         system's "display over other apps" page. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
     <application
         android:label="pure_live"
         android:name="${applicationName}"

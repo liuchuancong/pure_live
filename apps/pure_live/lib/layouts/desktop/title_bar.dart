@@ -78,7 +78,7 @@ final class WindowTitleBar extends ConsumerWidget {
                   DsTooltip(
                     message: t.common.back,
                     side: DsSide.bottom,
-                    child: _CaptionButton(
+                    child: WindowCaptionButton(
                       semanticLabel: t.common.back,
                       icon: DsIcons.arrowLeft,
                       enabled: canBack,
@@ -88,7 +88,7 @@ final class WindowTitleBar extends ConsumerWidget {
                   DsTooltip(
                     message: t.common.forward,
                     side: DsSide.bottom,
-                    child: _CaptionButton(
+                    child: WindowCaptionButton(
                       semanticLabel: t.common.forward,
                       icon: DsIcons.arrowRight,
                       enabled: canForward,
@@ -138,7 +138,7 @@ final class WindowTitleBar extends ConsumerWidget {
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     color: colors.border,
                   ),
-                  const _CaptionControls(),
+                  const WindowCaptionControls(),
                 ],
               ],
             );
@@ -226,7 +226,7 @@ final class WindowCaptionBar extends ConsumerWidget {
             const ThemeModeToggle(),
             if (WindowChromeState.drawsCaptionControls) ...[
               Container(width: 1, height: 20, margin: const EdgeInsets.symmetric(horizontal: 4), color: colors.border),
-              const _CaptionControls(),
+              const WindowCaptionControls(),
             ],
           ],
         ),
@@ -277,78 +277,6 @@ final class _SidebarToggleButton extends ConsumerWidget {
             );
           },
         ),
-      ),
-    );
-  }
-}
-
-final class _CaptionControls extends ConsumerWidget {
-  const _CaptionControls();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final host = ref.watch(desktopWindowHostProvider);
-    final maximized = ref.watch(maximizedProvider);
-    return Row(
-      children: [
-        _CaptionButton(semanticLabel: t.common.minimize, icon: DsIcons.minus, onPressed: host.minimize),
-        _CaptionButton(
-          semanticLabel: maximized ? t.common.restore : t.common.maximize,
-          icon: maximized ? DsIcons.copy : DsIcons.square,
-          onPressed: host.toggleMaximize,
-        ),
-        _CaptionButton(semanticLabel: t.common.close, icon: DsIcons.x, danger: true, onPressed: host.close),
-      ],
-    );
-  }
-}
-
-final class _CaptionButton extends ConsumerWidget {
-  const _CaptionButton({
-    required this.semanticLabel,
-    required this.icon,
-    required this.onPressed,
-    this.enabled = true,
-    this.danger = false,
-  });
-
-  final String semanticLabel;
-  final DsIconData icon;
-
-  /// The host's calls return futures; a void return swallows them.
-  final VoidCallback onPressed;
-
-  /// False dims the icon and deadens the press: an arrow over an empty
-  /// trail, say.
-  final bool enabled;
-  final bool danger;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DsTheme.colorsOf(context);
-    return SizedBox(
-      width: kTitleBarHeight,
-      height: kTitleBarHeight,
-      child: DsPressable(
-        semanticLabel: semanticLabel,
-        onPressed: enabled ? onPressed : null,
-        builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
-          final pressed = states.contains(WidgetState.pressed);
-          Color? background;
-          if (enabled) {
-            if (danger && hovered) {
-              background = colors.danger.fill;
-            } else if (hovered || pressed) {
-              background = pressed ? colors.press : colors.hover;
-            }
-          }
-          return ColoredBox(
-            color: background ?? const Color(0x00000000),
-            child: Center(child: DsIcon(icon, size: 14, color: enabled ? colors.text : colors.textSubtle)),
-          );
-        },
       ),
     );
   }

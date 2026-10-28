@@ -18,13 +18,13 @@ import 'package:pure_live/app/theme/settings/stored_theme.dart' show readStoredA
 import 'package:pure_live/app/theme/settings/theme_persistence.dart';
 import 'package:pure_live/app/theme/settings/theme_settings.dart' show AppThemeScope, AppThemeSettings;
 import 'package:pure_live/app/windows/context/refresh_rate_interaction_scope.dart' show RefreshRateInteractionScope;
-import 'package:pure_live/features/favorites/favorites.dart';
-import 'package:pure_live/features/iptv/iptv.dart';
-import 'package:pure_live/features/recorder/recorder.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/features/version/version.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/layouts.dart';
+import 'package:pure_live/modules/iptv/iptv.dart';
+import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/shared/shared.dart';
 import 'package:pure_uikit_background/pure_uikit_background.dart' show AppVisibilityObserver;
 
@@ -113,6 +113,10 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     // Only the primary polls: a clone shares the task store, and two
     // windows starting the same task would capture it twice.
     if (ref.read(isPrimaryWindowProvider)) ref.read(recordingLiveMonitorProvider);
+    // iOS's system picture-in-picture window keeps the picture alive while
+    // the app is away and hands it back on return; the kernel's own
+    // background pause is off there, so this guard owns the rule.
+    if (isSystemPipHost) ref.read(systemPipLifecycleProvider);
     // The primary's stored frame belongs to its main window; every other
     // window was born at a size its opener chose and leaves its size row
     // hidden. There is nothing to read or remember there.
