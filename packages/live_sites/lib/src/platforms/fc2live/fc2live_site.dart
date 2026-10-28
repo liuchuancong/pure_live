@@ -11,8 +11,10 @@ import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -29,7 +31,9 @@ import 'package:live_sites/src/platforms/fc2live/capabilities/fc2live_discovery_
 import 'package:live_sites/src/platforms/fc2live/capabilities/fc2live_link_resolver.dart';
 import 'package:live_sites/src/platforms/fc2live/capabilities/fc2live_playback_provider.dart';
 import 'package:live_sites/src/platforms/fc2live/capabilities/fc2live_room_provider.dart';
+import 'package:live_sites/src/platforms/fc2live/capabilities/fc2live_room_refresh.dart';
 import 'package:live_sites/src/platforms/fc2live/capabilities/fc2live_search_provider.dart';
+import 'package:live_sites/src/platforms/fc2live/capabilities/fc2live_status_check.dart';
 import 'package:live_sites/src/platforms/fc2live/danmaku/fc2live_control.dart';
 import 'package:live_sites/src/platforms/fc2live/danmaku/fc2live_danmaku_session.dart';
 import 'package:live_sites/src/platforms/fc2live/fc2live_manifest.dart';
@@ -114,6 +118,8 @@ final class Fc2LiveSite implements LiveSite {
   LiveSiteCapability? _playback;
   LiveSiteCapability? _danmaku;
   LiveSiteCapability? _link;
+  LiveSiteCapability? _refresh;
+  LiveSiteCapability? _status;
 
   /// Stable platform identity.
   @override
@@ -376,6 +382,8 @@ final class Fc2LiveSite implements LiveSite {
     final playback = _playback ??= Fc2LivePlaybackProvider(site: this);
     final danmaku = _danmaku ??= Fc2LiveDanmakuProvider(site: this);
     final link = _link ??= Fc2LiveLinkResolver(site: this);
+    final refresh = _refresh ??= Fc2LiveRoomRefresh(site: this);
+    final status = _status ??= Fc2LiveStatusCheck(refresh: refresh as LiveRoomRefresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -384,6 +392,8 @@ final class Fc2LiveSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }
