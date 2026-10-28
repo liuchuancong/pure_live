@@ -9,10 +9,13 @@ import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -29,9 +32,12 @@ import 'package:live_sites/src/platforms/soop/capabilities/soop_area_provider.da
 import 'package:live_sites/src/platforms/soop/capabilities/soop_auth_provider.dart';
 import 'package:live_sites/src/platforms/soop/capabilities/soop_discovery_provider.dart';
 import 'package:live_sites/src/platforms/soop/capabilities/soop_link_resolver.dart';
+import 'package:live_sites/src/platforms/soop/capabilities/soop_play_recovery.dart';
 import 'package:live_sites/src/platforms/soop/capabilities/soop_playback_provider.dart';
 import 'package:live_sites/src/platforms/soop/capabilities/soop_room_provider.dart';
+import 'package:live_sites/src/platforms/soop/capabilities/soop_room_refresh.dart';
 import 'package:live_sites/src/platforms/soop/capabilities/soop_search_provider.dart';
+import 'package:live_sites/src/platforms/soop/capabilities/soop_status_check.dart';
 import 'package:live_sites/src/platforms/soop/danmaku/soop_danmaku_session.dart';
 import 'package:live_sites/src/platforms/soop/parsers/soop_failure.dart';
 import 'package:live_sites/src/platforms/soop/parsers/soop_link.dart';
@@ -322,9 +328,9 @@ final class SoopSite implements LiveSite {
   /// brought, else the player API's. A room without one fails with the
   /// reason ([SoopRoomParser.noStream]): an age-restricted broadcast needs a
   /// login; a password, subscribers-only or ended one is stream-unavailable.
-  Future<SoopRoomData> _broadcast(String roomId) async {
+  Future<SoopRoomData> _broadcast(String roomId, {bool fresh = false}) async {
     final id = _checked(roomId);
-    final held = _streams[id];
+    final held = fresh ? null : _streams[id];
     if (held != null) return held;
     final answer = await _detail(id);
     if (answer.data != null && answer.room.broadcast.isLiveNow) {
@@ -349,8 +355,8 @@ final class SoopSite implements LiveSite {
   /// assigned for the preset, then its key — 3.x's order. A broadcast that
   /// ended since its entry keeps its number: the key request refuses it, and
   /// recovery re-enters the room.
-  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async {
-    final data = await _broadcast(roomId);
+  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality, bool fresh = false}) async {
+    final data = await _broadcast(roomId, fresh: fresh);
     if (data.bno.isEmpty || data.rmd.isEmpty) {
       throw const SoopFailure(SoopFailureKind.apiChanged, 'player_live_api: no BNO or RMD');
     }
@@ -401,6 +407,9 @@ final class SoopSite implements LiveSite {
   SoopPlaybackProvider? _playback;
   SoopDanmakuProvider? _danmaku;
   SoopLinkResolver? _link;
+  SoopRoomRefresh? _refresh;
+  SoopStatusCheck? _status;
+  SoopPlayRecovery? _recovery;
   SoopAuthProvider? _auth;
 
   /// The capability of type [T], or null when SOOP does not support it
@@ -414,6 +423,9 @@ final class SoopSite implements LiveSite {
     final playback = _playback ??= SoopPlaybackProvider(site: this);
     final danmaku = _danmaku ??= SoopDanmakuProvider(site: this);
     final link = _link ??= SoopLinkResolver(site: this);
+    final refresh = _refresh ??= SoopRoomRefresh(site: this);
+    final status = _status ??= SoopStatusCheck(refresh: refresh);
+    final recovery = _recovery ??= SoopPlayRecovery(playback: playback);
     final auth = _auth ??= SoopAuthProvider(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
@@ -424,6 +436,9 @@ final class SoopSite implements LiveSite {
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
       const (LiveAuthCapability) => auth as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }

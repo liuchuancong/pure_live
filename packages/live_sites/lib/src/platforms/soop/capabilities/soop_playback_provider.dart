@@ -50,4 +50,20 @@ final class SoopPlaybackProvider implements LivePlaybackProvider {
       return left(LiveSiteError.unexpected(siteId: soopSiteId, message: '$error', cause: error));
     }
   }
+
+  /// Lines after a failure: the room is re-entered even when its stream data
+  /// is held, since a key issued for a broadcast that ended has no other way
+  /// back.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+  }) async {
+    try {
+      return right(await site.linesOf(room.roomId, quality: quality, fresh: true));
+    } on SoopFailure catch (failure) {
+      return left(failure.toLiveSiteError(soopSiteId));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: soopSiteId, message: '$error', cause: error));
+    }
+  }
 }
