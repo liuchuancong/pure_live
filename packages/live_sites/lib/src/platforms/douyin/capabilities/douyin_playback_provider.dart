@@ -1,9 +1,11 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:live_sites/src/capabilities/live_playback_plan_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/core/live_site_error.dart';
 import 'package:live_sites/src/models/enums/live_restriction.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/play/live_playback_plan/live_playback_plan.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_manifest.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_site.dart';
@@ -21,7 +23,7 @@ import 'package:live_sites/src/platforms/douyin/parsers/douyin_play_parser.dart'
 /// A room that is off air, or on air without a video for this client (audio
 /// only, or no stream at all), is content-unavailable rather than an empty
 /// list; each line's lease says when the detail must be fetched again.
-final class DouyinPlaybackProvider implements LivePlaybackProvider {
+final class DouyinPlaybackProvider implements LivePlaybackProvider, LivePlaybackPlanResolver {
   /// Serves [site].
   DouyinPlaybackProvider({required this.site});
 
@@ -55,6 +57,33 @@ final class DouyinPlaybackProvider implements LivePlaybackProvider {
         throw const DouyinFailure(DouyinFailureKind.streamUnavailable, 'stream_url: no playable URL');
       }
       return right(lines);
+    } on DouyinFailure catch (failure) {
+      return left(failure.toLiveSiteError(douyinSiteId));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: douyinSiteId, message: '$error', cause: error));
+    }
+  }
+
+  /// The plan for [room]: its lines plus the quality actually served (a
+  /// stale id plays the best variant the room offers).
+  @override
+  Future<Either<LiveSiteError, LivePlaybackPlan>> resolvePlan({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+  }) async {
+    try {
+      final fetched = await _streamed(room.roomId);
+      final resolution = DouyinPlayParser.resolvedLines(
+        fetched.room.streamUrl,
+        webRid: fetched.room.room.roomId,
+        issuedAt: fetched.issuedAt,
+        qualityId: quality?.qualityId,
+        cookie: fetched.cookie,
+      );
+      if (resolution.lines.isEmpty) {
+        throw const DouyinFailure(DouyinFailureKind.streamUnavailable, 'stream_url: no playable URL');
+      }
+      return right(LivePlaybackPlan.of(lines: resolution.lines, appliedQuality: resolution.appliedQuality));
     } on DouyinFailure catch (failure) {
       return left(failure.toLiveSiteError(douyinSiteId));
     } on Object catch (error) {

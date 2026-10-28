@@ -62,10 +62,20 @@ abstract final class DouyinPlayParser {
     required DateTime issuedAt,
     String? qualityId,
     String? cookie,
+  }) => resolvedLines(streamUrl, webRid: webRid, issuedAt: issuedAt, qualityId: qualityId, cookie: cookie).lines;
+
+  /// [lines] with the quality that was actually served (the selected
+  /// variant), null when `stream_url` has none.
+  static ({List<LivePlayLine> lines, LivePlayQuality? appliedQuality}) resolvedLines(
+    Map<String, dynamic>? streamUrl, {
+    required String webRid,
+    required DateTime issuedAt,
+    String? qualityId,
+    String? cookie,
   }) {
     final variants = _variants(streamUrl);
     final variant = _variantFor(variants, qualityId) ?? variants.list.firstOrNull;
-    if (variant == null) return const [];
+    if (variant == null) return (lines: const <LivePlayLine>[], appliedQuality: null);
     final headers = mediaHeaders(webRid, cookie: cookie);
     final used = <LiveStreamFormat, int>{};
     final lines = <LivePlayLine>[];
@@ -84,7 +94,7 @@ abstract final class DouyinPlayParser {
         ),
       );
     }
-    return lines;
+    return (lines: lines, appliedQuality: variant.quality);
   }
 
   /// The quality of `stream_url` whose id is [qualityId] or has it as an
@@ -128,12 +138,24 @@ abstract final class DouyinPlayParser {
     return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
   }
 
-  static DateTime? _expiry(Map<String, String> query, DateTime issuedAt) {
+  /// The lease of [url] from its absolute expiry alone, without an issue
+  /// time (a URL held by a recorder): an address past its expiry answers a
+  /// past lease rather than null, so a stale address reads as dead instead
+  /// of immortal; one that names no expiry answers null.
+  static LivePlayLease? leaseOf(Uri url) {
+    final expiresAt = _expiry(url.queryParameters, null);
+    if (expiresAt == null) return null;
+    return LivePlayLease.of(refreshAt: expiresAt.subtract(leaseLead), expiresAt: expiresAt);
+  }
+
+  static DateTime? _expiry(Map<String, String> query, DateTime? issuedAt) {
     DateTime? plausible(int? seconds) {
       if (seconds == null) return null;
       final at = DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
-      final withinRange =
-          at.isAfter(issuedAt.subtract(const Duration(days: 1))) && at.isBefore(issuedAt.add(const Duration(days: 31)));
+      final withinRange = issuedAt == null
+          ? at.year >= 2000 && at.year <= 2100
+          : at.isAfter(issuedAt.subtract(const Duration(days: 1))) &&
+                at.isBefore(issuedAt.add(const Duration(days: 31)));
       return withinRange ? at : null;
     }
 

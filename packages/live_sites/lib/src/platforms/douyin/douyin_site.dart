@@ -10,10 +10,15 @@ import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_lease_lookup.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
+import 'package:live_sites/src/capabilities/live_playback_plan_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -26,9 +31,13 @@ import 'package:live_sites/src/platforms/douyin/capabilities/douyin_area_provide
 import 'package:live_sites/src/platforms/douyin/capabilities/douyin_auth_provider.dart';
 import 'package:live_sites/src/platforms/douyin/capabilities/douyin_discovery_provider.dart';
 import 'package:live_sites/src/platforms/douyin/capabilities/douyin_link_resolver.dart';
+import 'package:live_sites/src/platforms/douyin/capabilities/douyin_play_lease_lookup.dart';
+import 'package:live_sites/src/platforms/douyin/capabilities/douyin_play_recovery.dart';
 import 'package:live_sites/src/platforms/douyin/capabilities/douyin_playback_provider.dart';
 import 'package:live_sites/src/platforms/douyin/capabilities/douyin_room_provider.dart';
+import 'package:live_sites/src/platforms/douyin/capabilities/douyin_room_refresh.dart';
 import 'package:live_sites/src/platforms/douyin/capabilities/douyin_search_provider.dart';
+import 'package:live_sites/src/platforms/douyin/capabilities/douyin_status_check.dart';
 import 'package:live_sites/src/platforms/douyin/danmaku/douyin_danmaku_session.dart';
 import 'package:live_sites/src/platforms/douyin/douyin_manifest.dart';
 import 'package:live_sites/src/platforms/douyin/parsers/douyin_failure.dart';
@@ -451,6 +460,10 @@ final class DouyinSite implements LiveSite {
   DouyinDanmakuProvider? _danmaku;
   DouyinLinkResolver? _link;
   DouyinAuthProvider? _auth;
+  DouyinRoomRefresh? _refresh;
+  DouyinStatusCheck? _status;
+  DouyinPlayRecovery? _recovery;
+  DouyinPlayLeaseLookup? _lease;
 
   /// The capability of type [T], or null when douyin does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -464,15 +477,24 @@ final class DouyinSite implements LiveSite {
     final danmaku = _danmaku ??= DouyinDanmakuProvider(site: this);
     final link = _link ??= DouyinLinkResolver(site: this);
     final auth = _auth ??= DouyinAuthProvider(site: this);
+    final refresh = _refresh ??= DouyinRoomRefresh(site: this);
+    final status = _status ??= DouyinStatusCheck(refresh: refresh);
+    final recovery = _recovery ??= DouyinPlayRecovery(playback: playback);
+    final lease = _lease ??= const DouyinPlayLeaseLookup();
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
       const (LiveDiscoveryProvider) => discovery as T,
       const (LiveSearchProvider) => search as T,
       const (LivePlaybackProvider) => playback as T,
+      const (LivePlaybackPlanResolver) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
       const (LiveAuthCapability) => auth as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
+      const (LivePlayLeaseLookup) => lease as T,
       _ => null,
     };
   }
