@@ -8,26 +8,34 @@ import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_recovery.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
 import 'package:live_sites/src/core/live_site_runtime_info.dart';
 import 'package:live_sites/src/models/area/live_area/live_area.dart';
+import 'package:live_sites/src/models/enums/live_status.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
 import 'package:live_sites/src/models/room/live_room/live_room.dart';
+import 'package:live_sites/src/models/room/room_broadcast/room_broadcast.dart';
 import 'package:live_sites/src/platforms/twitcasting/api/twitcasting_endpoints.dart';
 import 'package:live_sites/src/platforms/twitcasting/api/twitcasting_http.dart';
 import 'package:live_sites/src/platforms/twitcasting/capabilities/twitcasting_area_provider.dart';
 import 'package:live_sites/src/platforms/twitcasting/capabilities/twitcasting_discovery_provider.dart';
 import 'package:live_sites/src/platforms/twitcasting/capabilities/twitcasting_link_resolver.dart';
+import 'package:live_sites/src/platforms/twitcasting/capabilities/twitcasting_play_recovery.dart';
 import 'package:live_sites/src/platforms/twitcasting/capabilities/twitcasting_playback_provider.dart';
 import 'package:live_sites/src/platforms/twitcasting/capabilities/twitcasting_room_provider.dart';
+import 'package:live_sites/src/platforms/twitcasting/capabilities/twitcasting_room_refresh.dart';
 import 'package:live_sites/src/platforms/twitcasting/capabilities/twitcasting_search_provider.dart';
+import 'package:live_sites/src/platforms/twitcasting/capabilities/twitcasting_status_check.dart';
 import 'package:live_sites/src/platforms/twitcasting/danmaku/twitcasting_danmaku_session.dart';
 import 'package:live_sites/src/platforms/twitcasting/parsers/twitcasting_failure.dart';
 import 'package:live_sites/src/platforms/twitcasting/parsers/twitcasting_room_parser.dart';
@@ -236,6 +244,18 @@ final class TwitcastingSite implements LiveSite {
     return TwitcastingRoomParser.roomDetail(parsed, stream);
   }
 
+  /// A refresh from `streamserver.php` alone: the state and the broadcast,
+  /// with names, title and start time left to what the stored room knows.
+  Future<LiveRoom> refreshRoom(String roomId) async {
+    final (:requested, :channel) = _channel(roomId);
+    final stream = await _stream(channel);
+    return LiveRoom.normalized(
+      platform: twitcastingSiteId,
+      roomId: requested,
+      broadcast: RoomBroadcast.of(liveStatus: stream.live ? LiveStatus.live : LiveStatus.offline),
+    );
+  }
+
   /// [roomId] trimmed, and its lower-case channel; not-found when it is not
   /// one.
   static ({String requested, String channel}) _channel(String roomId) {
@@ -259,7 +279,7 @@ final class TwitcastingSite implements LiveSite {
   /// `streamserver.php` answer — the capabilities are asked by room id
   /// alone. A kept answer decides (a channel the platform called offline is
   /// not asked again, REG-TWITCASTING-001).
-  Future<TwitcastingRoomData> _broadcast(String roomId) async {
+  Future<TwitcastingRoomData> _broadcast(String roomId, {bool fresh = false}) async {
     final requested = roomId.trim();
     final channel = TwitcastingEndpoints.channelName(requested);
     if (channel == null) {
@@ -268,7 +288,7 @@ final class TwitcastingSite implements LiveSite {
         'room id "$requested" is not a TwitCasting channel',
       );
     }
-    final kept = _streams[channel];
+    final kept = fresh ? null : _streams[channel];
     if (kept != null) return kept;
     final data = await _stream(channel);
     _streams[channel] = data;
@@ -284,10 +304,11 @@ final class TwitcastingSite implements LiveSite {
 
   /// The playlist of [quality] (the best tier when it is null) with the
   /// media headers; no lease, for the URL carries no signature or expiry.
-  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async => TwitcastingRoomParser.lines(
-    await _broadcast(roomId),
-    quality?.qualityId ?? TwitcastingEndpoints.qualityKeys.first,
-  );
+  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality, bool fresh = false}) async =>
+      TwitcastingRoomParser.lines(
+        await _broadcast(roomId, fresh: fresh),
+        quality?.qualityId ?? TwitcastingEndpoints.qualityKeys.first,
+      );
 
   // Capability wiring ---------------------------------------------------------
 
@@ -298,6 +319,9 @@ final class TwitcastingSite implements LiveSite {
   TwitcastingPlaybackProvider? _playback;
   TwitcastingDanmakuProvider? _danmaku;
   TwitcastingLinkResolver? _link;
+  TwitcastingRoomRefresh? _refresh;
+  TwitcastingStatusCheck? _status;
+  TwitcastingPlayRecovery? _recovery;
 
   /// The capability of type [T], or null when TwitCasting does not support
   /// it (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -310,6 +334,9 @@ final class TwitcastingSite implements LiveSite {
     final playback = _playback ??= TwitcastingPlaybackProvider(site: this);
     final danmaku = _danmaku ??= TwitcastingDanmakuProvider(site: this);
     final link = _link ??= TwitcastingLinkResolver(site: this);
+    final refresh = _refresh ??= TwitcastingRoomRefresh(site: this);
+    final status = _status ??= TwitcastingStatusCheck(refresh: refresh);
+    final recovery = _recovery ??= TwitcastingPlayRecovery(playback: playback);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
@@ -318,6 +345,9 @@ final class TwitcastingSite implements LiveSite {
       const (LivePlaybackProvider) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
+      const (LivePlayRecovery) => recovery as T,
       _ => null,
     };
   }

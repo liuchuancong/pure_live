@@ -47,4 +47,20 @@ final class TwitcastingPlaybackProvider implements LivePlaybackProvider {
       return left(LiveSiteError.unexpected(siteId: twitcastingSiteId, message: '$error', cause: error));
     }
   }
+
+  /// Lines after a failure: `streamserver.php` is asked again even when its
+  /// previous answer is held, since the client may have been refused a
+  /// connection the kept answer no longer reflects.
+  Future<Either<LiveSiteError, List<LivePlayLine>>> refetchLines({
+    required LiveRoom room,
+    LivePlayQuality? quality,
+  }) async {
+    try {
+      return right(await site.linesOf(room.roomId, quality: quality, fresh: true));
+    } on TwitcastingFailure catch (failure) {
+      return left(failure.toLiveSiteError(twitcastingSiteId));
+    } on Object catch (error) {
+      return left(LiveSiteError.unexpected(siteId: twitcastingSiteId, message: '$error', cause: error));
+    }
+  }
 }
