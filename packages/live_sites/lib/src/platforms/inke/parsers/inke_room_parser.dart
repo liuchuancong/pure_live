@@ -604,7 +604,7 @@ abstract final class InkeRoomParser {
   /// (at most a quarter of the lifetime) before. The CDN checks it when a
   /// connection opens, so an established FLV connection keeps flowing. No
   /// single `wsABStime`, or one already past, is no lease.
-  static LivePlayLease? lease(String url, {required DateTime issuedAt}) {
+  static LivePlayLease? lease(String url, {required DateTime issuedAt, bool allowExpired = false}) {
     final List<String>? values;
     try {
       values = Uri.tryParse(url)?.queryParametersAll['wsABStime'];
@@ -615,7 +615,12 @@ abstract final class InkeRoomParser {
     final expires = int.parse(values.single, radix: 16);
     final expiresAt = DateTime.fromMillisecondsSinceEpoch(expires * 1000, isUtc: true);
     final lifetime = expiresAt.difference(issuedAt);
-    if (expires <= 0 || lifetime <= Duration.zero) return null;
+    if (expires <= 0) return null;
+    if (lifetime <= Duration.zero) {
+      return allowExpired
+          ? LivePlayLease.of(refreshAt: expiresAt.subtract(InkeEndpoints.leaseLead), expiresAt: expiresAt)
+          : null;
+    }
     final quarter = lifetime ~/ 4;
     final lead = quarter < InkeEndpoints.leaseLead ? quarter : InkeEndpoints.leaseLead;
     return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
