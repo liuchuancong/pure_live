@@ -392,7 +392,8 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
   }
 
   /// One module menu block with its tools in the viewer's saved order.
-  /// Blocks without tools keep their registry order.
+  /// Only a block made entirely of tools is reordered; every other block
+  /// keeps its registry order.
   static List<NavigationItem> _orderedMenuBlock(
     List<NavigationItem> block, {
     required Set<NavigationItem> toolSet,
@@ -408,7 +409,10 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
           if (block.contains(item)) item,
       ];
     }
-    if (!block.any(toolSet.contains)) {
+    // The tools block owns its order through the editor; a block that
+    // mixes tools with pages keeps the rail's reading order, so only a
+    // block made entirely of tools is reordered here.
+    if (!block.every(toolSet.contains)) {
       return block;
     }
     final rest = [

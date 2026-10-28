@@ -580,66 +580,71 @@ final class _PaneTile extends StatelessWidget {
             : selected && assigned
             ? colors.accent
             : colors.border;
-        return Container(
-          clipBehavior: Clip.antiAlias,
-          decoration: DsBoxDecoration(
-            color: colors.control,
-            borderRadius: BorderRadius.circular(theme.radii.card),
-            shadows: [DsShadow.innerRing(ring, width: isSource || selected ? 2 : 1)],
+        // DsBoxDecoration paints corners but cannot clip: the Container
+        // asks a decoration for its clip path when clipBehavior is set, and
+        // DsBoxDecoration refuses that. The clip therefore lives above it.
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(theme.radii.card),
+          child: Container(
+            decoration: DsBoxDecoration(
+              color: colors.control,
+              borderRadius: BorderRadius.circular(theme.radii.card),
+              shadows: [DsShadow.innerRing(ring, width: isSource || selected ? 2 : 1)],
+            ),
+            child: assigned
+                ? compact
+                      ? Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            _picture(context, colors, theme, hovered),
+                            PositionedDirectional(start: 0, end: 0, bottom: 0, child: _compactCaption(theme)),
+                          ],
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(child: _picture(context, colors, theme, hovered)),
+                            _bar(context, colors, theme),
+                          ],
+                        )
+                : Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: DsSpace.s8,
+                          children: [
+                            DsIcon(
+                              swapping ? DsIcons.arrowLeftRight : DsIcons.plus,
+                              size: theme.sizes.iconLg,
+                              color: colors.textSubtle,
+                            ),
+                            Text(
+                              swapping
+                                  ? t.multiview.swapHere
+                                  : picking
+                                  ? t.multiview.panePicking
+                                  : t.multiview.paneEmpty,
+                              style: theme.typography.caption.copyWith(color: colors.textMuted),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                      // The cell's number, so the picker's "第 N 格"
+                      // names a cell the viewer can see.
+                      PositionedDirectional(
+                        top: DsSpace.s8,
+                        start: DsSpace.s12,
+                        child: Text(
+                          '${slot.index + 1}',
+                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                        ),
+                      ),
+                    ],
+                  ),
           ),
-          child: assigned
-              ? compact
-                    ? Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          _picture(context, colors, theme, hovered),
-                          PositionedDirectional(start: 0, end: 0, bottom: 0, child: _compactCaption(theme)),
-                        ],
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(child: _picture(context, colors, theme, hovered)),
-                          _bar(context, colors, theme),
-                        ],
-                      )
-              : Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        spacing: DsSpace.s8,
-                        children: [
-                          DsIcon(
-                            swapping ? DsIcons.arrowLeftRight : DsIcons.plus,
-                            size: theme.sizes.iconLg,
-                            color: colors.textSubtle,
-                          ),
-                          Text(
-                            swapping
-                                ? t.multiview.swapHere
-                                : picking
-                                ? t.multiview.panePicking
-                                : t.multiview.paneEmpty,
-                            style: theme.typography.caption.copyWith(color: colors.textMuted),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                    // The cell's number, so the picker's "第 N 格"
-                    // names a cell the viewer can see.
-                    PositionedDirectional(
-                      top: DsSpace.s8,
-                      start: DsSpace.s12,
-                      child: Text(
-                        '${slot.index + 1}',
-                        style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                      ),
-                    ),
-                  ],
-                ),
         );
       },
     );

@@ -22,6 +22,11 @@ final class ToolOrderController extends Notifier<List<NavigationItem>> {
       if (stored == null || stored.isEmpty) return kToolItems;
       final known = {for (final item in kToolItems) item.name: item};
       final ordered = [for (final name in stored) ?known.remove(name)];
+      // A stored order that names a tool this build no longer has was
+      // written for an older tool set (the recording centre used to be one):
+      // its places no longer mean anything, so the block starts from the
+      // default instead.
+      if (ordered.length != stored.length) return kToolItems;
       return [...ordered, ...known.values];
     } on Object {
       return kToolItems;

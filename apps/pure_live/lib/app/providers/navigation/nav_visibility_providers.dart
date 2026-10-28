@@ -4,7 +4,8 @@ import 'package:pure_live/shared/shared.dart';
 
 /// The live home menu's destinations: the four content entries the
 /// navigation setting shows, hides and orders (the reference's
-/// `savedMenuIds`).
+/// `savedMenuIds`), in the sidebar's default order — favorites, the hot
+/// feed, areas and the recording centre.
 const List<NavigationItem> kHomeMenuItems = [
   NavigationItem.favorites,
   NavigationItem.hot,
@@ -146,7 +147,7 @@ final navMenuOrderProvider = Provider<List<NavigationItem>>((ref) {
 
 /// [stored] filtered to the known home menu ids, duplicates dropped and the
 /// order kept. Absent storage shows every entry; storage that has been
-/// emptied keeps the reference's first entry, so the menu never vanishes.
+/// emptied falls back to favorites, so the menu never vanishes.
 List<NavigationItem> normalizeNavMenuIds(List<String>? stored) {
   if (stored == null) return List.of(kHomeMenuItems);
   final known = <String, NavigationItem>{for (final item in kHomeMenuItems) item.name: item};
