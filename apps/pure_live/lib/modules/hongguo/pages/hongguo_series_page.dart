@@ -1157,6 +1157,23 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     spacing: DsSpace.s4,
                     children: [
+                      // The reference's HUD line: the rendition in play, the
+                      // speed, and the sleep timer when one runs.
+                      Row(
+                        children: [
+                          const Spacer(),
+                          Text(
+                            [
+                              if ((_attempted?.quality ?? 0) > 0) '${_attempted!.quality}P',
+                              '${_speed == _speed.roundToDouble() ? _speed.toInt() : _speed}x',
+                              if (_sleep.active) _sleep.label(t),
+                            ].join(' · '),
+                            style: theme.typography.numeric(
+                              theme.typography.caption.copyWith(color: const Color(0xB3FFFFFF)),
+                            ),
+                          ),
+                        ],
+                      ),
                       Row(
                         spacing: DsSpace.s8,
                         children: [
