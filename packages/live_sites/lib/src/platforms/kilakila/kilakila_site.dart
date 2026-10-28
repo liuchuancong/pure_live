@@ -8,10 +8,13 @@ import 'package:live_sites/src/capabilities/live_area_provider.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_lease_lookup.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -25,9 +28,12 @@ import 'package:live_sites/src/platforms/kilakila/api/kilakila_http.dart';
 import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_area_provider.dart';
 import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_discovery_provider.dart';
 import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_link_resolver.dart';
+import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_play_lease_lookup.dart';
 import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_playback_provider.dart';
 import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_room_provider.dart';
+import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_room_refresh.dart';
 import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_search_provider.dart';
+import 'package:live_sites/src/platforms/kilakila/capabilities/kilakila_status_check.dart';
 import 'package:live_sites/src/platforms/kilakila/danmaku/kilakila_danmaku_codec.dart';
 import 'package:live_sites/src/platforms/kilakila/danmaku/kilakila_danmaku_session.dart';
 import 'package:live_sites/src/platforms/kilakila/kilakila_manifest.dart';
@@ -327,8 +333,11 @@ final class KilakilaSite implements LiveSite {
   KilakilaDiscoveryProvider? _discovery;
   KilakilaSearchProvider? _search;
   KilakilaPlaybackProvider? _playback;
+  KilakilaPlayLeaseLookup? _lease;
   KilakilaDanmakuProvider? _danmaku;
   KilakilaLinkResolver? _link;
+  KilakilaRoomRefresh? _refresh;
+  KilakilaStatusCheck? _status;
 
   /// The capability of type [T], or null when KilaKila does not support it
   /// (ARCHITECTURE.md §4.1). Capabilities are singletons per site.
@@ -339,16 +348,22 @@ final class KilakilaSite implements LiveSite {
     final discovery = _discovery ??= KilakilaDiscoveryProvider(site: this);
     final search = _search ??= KilakilaSearchProvider(site: this);
     final playback = _playback ??= KilakilaPlaybackProvider(site: this);
+    final lease = _lease ??= KilakilaPlayLeaseLookup(now: _now);
     final danmaku = _danmaku ??= KilakilaDanmakuProvider(site: this);
     final link = _link ??= KilakilaLinkResolver(site: this);
+    final refresh = _refresh ??= KilakilaRoomRefresh(site: this);
+    final status = _status ??= KilakilaStatusCheck(refresh: refresh);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
       const (LiveAreaProvider) => area as T,
       const (LiveDiscoveryProvider) => discovery as T,
       const (LiveSearchProvider) => search as T,
       const (LivePlaybackProvider) => playback as T,
+      const (LivePlayLeaseLookup) => lease as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }

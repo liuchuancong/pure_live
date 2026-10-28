@@ -557,7 +557,7 @@ abstract final class KilakilaRoomParser {
             formatSource: LivePlayFormatSource.inferred,
             lineLabel: isHls ? 'hls' : 'flv',
             headers: KilakilaEndpoints.headers,
-            lease: _lease(url, issuedAt: data.issuedAt, isHls: isHls),
+            lease: lease(url, issuedAt: data.issuedAt, isHls: isHls),
           );
         }(),
     ];
@@ -596,13 +596,26 @@ abstract final class KilakilaRoomParser {
   /// lifetime) before. An HLS playlist is fetched again and again, so its
   /// expiry ends playback; an established FLV connection keeps flowing. Null
   /// without a future expiry.
-  static LivePlayLease? _lease(String url, {required DateTime issuedAt, required bool isHls}) {
+  static LivePlayLease? lease(
+    String url, {
+    required DateTime issuedAt,
+    required bool isHls,
+    bool allowExpired = false,
+  }) {
     final uri = Uri.tryParse(url);
     final expires = int.tryParse(uri?.queryParameters['auth_key']?.split('-').first ?? '');
     if (uri == null || expires == null || expires <= 0) return null;
     final expiresAt = DateTime.fromMillisecondsSinceEpoch(expires * 1000, isUtc: true);
     final lifetime = expiresAt.difference(issuedAt);
-    if (lifetime <= Duration.zero) return null;
+    if (lifetime <= Duration.zero) {
+      return allowExpired
+          ? LivePlayLease.of(
+              refreshAt: expiresAt.subtract(KilakilaEndpoints.leaseLead),
+              expiresAt: expiresAt,
+              requiresReconnect: isHls,
+            )
+          : null;
+    }
     final lead = Duration(
       microseconds: math.min(KilakilaEndpoints.leaseLead.inMicroseconds, lifetime.inMicroseconds ~/ 4),
     );
