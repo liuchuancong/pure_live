@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/play/infer_stream_format.dart';
 import 'package:live_sites/src/models/play/live_play_lease/live_play_lease.dart';
 import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/models/play/live_play_quality/live_play_quality.dart';
+import 'package:live_sites/src/models/play/play_geometry/play_geometry.dart';
 import 'package:live_sites/src/platforms/yy/api/yy_endpoints.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_failure.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_json.dart';
@@ -153,13 +154,17 @@ abstract final class YyPlayParser {
   /// open connection keeps flowing past it. No `t`, or one already past, is
   /// no lease. Mobile HLS URLs carry the issue time in `t`, not an expiry:
   /// they get none.
-  static LivePlayLease? lease(Uri url, DateTime issuedAt) {
+  static LivePlayLease? lease(Uri url, DateTime issuedAt, {bool allowExpired = false}) {
     if (url.path.toLowerCase().endsWith('.m3u8')) return null;
     final expiry = int.tryParse(url.queryParameters['t'] ?? '');
     if (expiry == null || expiry < 1000000000) return null;
     final expiresAt = DateTime.fromMillisecondsSinceEpoch(expiry * 1000, isUtc: true);
     final lifetime = expiresAt.difference(issuedAt);
-    if (lifetime <= Duration.zero) return null;
+    if (lifetime <= Duration.zero) {
+      return allowExpired
+          ? LivePlayLease.of(refreshAt: expiresAt.subtract(YyEndpoints.leaseLead), expiresAt: expiresAt)
+          : null;
+    }
     final quarter = lifetime ~/ 4;
     final lead = quarter < YyEndpoints.leaseLead ? quarter : YyEndpoints.leaseLead;
     return LivePlayLease.of(refreshAt: expiresAt.subtract(lead), expiresAt: expiresAt);
@@ -228,6 +233,7 @@ abstract final class YyPlayParser {
     formatSource: LivePlayFormatSource.declared,
     headers: YyEndpoints.mediaHeaders(cookie: cookie),
     lineLabel: hls.url.host,
+    geometry: hls.width > 0 && hls.height > 0 ? PlayGeometry.of(width: hls.width, height: hls.height) : null,
   );
 
   // Helpers -------------------------------------------------------------------

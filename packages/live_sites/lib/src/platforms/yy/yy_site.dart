@@ -9,10 +9,14 @@ import 'package:live_sites/src/capabilities/live_auth_capability.dart';
 import 'package:live_sites/src/capabilities/live_danmaku_provider.dart';
 import 'package:live_sites/src/capabilities/live_discovery_provider.dart';
 import 'package:live_sites/src/capabilities/live_link_resolver.dart';
+import 'package:live_sites/src/capabilities/live_play_lease_lookup.dart';
+import 'package:live_sites/src/capabilities/live_playback_plan_resolver.dart';
 import 'package:live_sites/src/capabilities/live_playback_provider.dart';
 import 'package:live_sites/src/capabilities/live_room_provider.dart';
+import 'package:live_sites/src/capabilities/live_room_refresh.dart';
 import 'package:live_sites/src/capabilities/live_search_provider.dart';
 import 'package:live_sites/src/capabilities/live_site_capability.dart';
+import 'package:live_sites/src/capabilities/live_status_check.dart';
 import 'package:live_sites/src/core/live_site.dart';
 import 'package:live_sites/src/core/live_site_context.dart';
 import 'package:live_sites/src/core/live_site_manifest.dart';
@@ -29,9 +33,12 @@ import 'package:live_sites/src/platforms/yy/capabilities/yy_area_provider.dart';
 import 'package:live_sites/src/platforms/yy/capabilities/yy_auth_provider.dart';
 import 'package:live_sites/src/platforms/yy/capabilities/yy_discovery_provider.dart';
 import 'package:live_sites/src/platforms/yy/capabilities/yy_link_resolver.dart';
+import 'package:live_sites/src/platforms/yy/capabilities/yy_play_lease_lookup.dart';
 import 'package:live_sites/src/platforms/yy/capabilities/yy_playback_provider.dart';
 import 'package:live_sites/src/platforms/yy/capabilities/yy_room_provider.dart';
+import 'package:live_sites/src/platforms/yy/capabilities/yy_room_refresh.dart';
 import 'package:live_sites/src/platforms/yy/capabilities/yy_search_provider.dart';
+import 'package:live_sites/src/platforms/yy/capabilities/yy_status_check.dart';
 import 'package:live_sites/src/platforms/yy/danmaku/yy_danmaku_session.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_failure.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_json.dart';
@@ -500,12 +507,21 @@ final class YySite implements LiveSite {
   /// the other CDN lines of the served stream; when that fails or has no
   /// URL, the mobile route at 4000 (a quality of rate 2000 or more) or 1200
   /// plays instead, as in 3.x.
-  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async {
+  Future<List<LivePlayLine>> linesOf(String roomId, {LivePlayQuality? quality}) async =>
+      (await planOf(roomId, quality: quality)).lines;
+
+  /// [linesOf] with what the server confirms: stream-manager may answer
+  /// another gear than asked (a mobile rate is served as asked); when a
+  /// route stands in for another, its quality is not confirmed.
+  Future<({List<LivePlayLine> lines, LivePlayQuality? appliedQuality, bool unconfirmed})> planOf(
+    String roomId, {
+    LivePlayQuality? quality,
+  }) async {
     final channel = await _channelOf(roomId);
     final id = quality?.qualityId?.trim() ?? '';
     if (id.isEmpty) {
       final qualities = await qualitiesOf(roomId);
-      return await linesOf(roomId, quality: qualities.first);
+      return await planOf(roomId, quality: qualities.first);
     }
     if (id.startsWith(YyEndpoints.mobileHlsPrefix)) {
       final rate = id.substring(YyEndpoints.mobileHlsPrefix.length);
@@ -513,14 +529,16 @@ final class YySite implements LiveSite {
       var noStream = false;
       try {
         final hls = await _mobile(channel, rate);
-        if (hls != null) return [YyPlayParser.mobileLine(hls, cookie: _login())];
+        if (hls != null) {
+          return (lines: [YyPlayParser.mobileLine(hls, cookie: _login())], appliedQuality: quality, unconfirmed: false);
+        }
         noStream = true;
       } on YyFailure catch (error) {
         failure = error;
       }
       try {
-        final lines = await _flv(channel, (int.tryParse(rate) ?? 0) >= 2000 ? 2 : 1);
-        if (lines.isNotEmpty) return lines;
+        final plan = await _flvPlan(channel, (int.tryParse(rate) ?? 0) >= 2000 ? 2 : 1);
+        if (plan.lines.isNotEmpty) return plan;
         noStream = true;
       } on YyFailure catch (error) {
         failure ??= error;
@@ -533,8 +551,8 @@ final class YySite implements LiveSite {
     final gear = int.tryParse(id);
     if (gear != null) {
       try {
-        final lines = await _flv(channel, gear);
-        if (lines.isNotEmpty) return lines;
+        final plan = await _flvPlan(channel, gear);
+        if (plan.lines.isNotEmpty) return plan;
       } on YyFailure {
         // Mobile HLS below, as in 3.x.
       }
@@ -546,21 +564,37 @@ final class YySite implements LiveSite {
     if (hls == null) {
       throw const YyFailure(YyFailureKind.streamUnavailable, 'no stream on stream-manager or mobile HLS');
     }
-    return [YyPlayParser.mobileLine(hls, cookie: _login())];
+    return (lines: [YyPlayParser.mobileLine(hls, cookie: _login())], appliedQuality: null, unconfirmed: true);
   }
 
-  /// The FLV lines of [gear]: stream-manager's answer (the server picks the
-  /// line), then the served gear asked again on each other CDN line of its
-  /// stream ([YyPlayParser.otherLines], one request each, concurrently). An
-  /// extra line that fails or serves another gear is left out.
-  Future<List<LivePlayLine>> _flv(YyChannel channel, int gear) async {
+  /// The FLV lines of [gear] with the gear the server actually served, as the
+  /// quality its own answer names (the server may answer another gear than
+  /// asked): stream-manager's answer (the server picks the line), then the
+  /// served gear asked again on each other CDN line of its stream
+  /// ([YyPlayParser.otherLines], one request each, concurrently). An extra
+  /// line that fails or serves another gear is left out.
+  Future<({List<LivePlayLine> lines, LivePlayQuality? appliedQuality, bool unconfirmed})> _flvPlan(
+    YyChannel channel,
+    int gear,
+  ) async {
     final answer = await _streamManager(channel, gear);
     final first = YyPlayParser.resolution(answer.streams, issuedAt: answer.issuedAt, cookie: _login());
     final served = int.tryParse(first.appliedGear ?? '');
+    final applied = served == null
+        ? null
+        : YyPlayParser.qualities(answer.streams)
+              .where((quality) => quality.qualityId == '${first.appliedGear}')
+              .firstOrNull;
     final others = YyPlayParser.otherLines(answer.streams);
-    if (first.lines.isEmpty || served == null || others.isEmpty) return first.lines;
+    if (first.lines.isEmpty || served == null || others.isEmpty) {
+      return (lines: first.lines, appliedQuality: applied, unconfirmed: applied == null);
+    }
     final extra = await Future.wait([for (final line in others) _otherLine(channel, served, line)]);
-    return YyPlayParser.withLines(first, extra.nonNulls);
+    return (
+      lines: YyPlayParser.withLines(first, extra.nonNulls),
+      appliedQuality: applied,
+      unconfirmed: applied == null,
+    );
   }
 
   Future<({List<LivePlayLine> lines, String? appliedGear})?> _otherLine(YyChannel channel, int gear, int line) async {
@@ -612,8 +646,11 @@ final class YySite implements LiveSite {
   YyDiscoveryProvider? _discovery;
   YySearchProvider? _search;
   YyPlaybackProvider? _playback;
+  YyPlayLeaseLookup? _lease;
   YyDanmakuProvider? _danmaku;
   YyLinkResolver? _link;
+  YyRoomRefresh? _refresh;
+  YyStatusCheck? _status;
   YyAuthProvider? _auth;
 
   /// The capability of type [T], or null when YY does not support it
@@ -625,8 +662,11 @@ final class YySite implements LiveSite {
     final discovery = _discovery ??= YyDiscoveryProvider(site: this);
     final search = _search ??= YySearchProvider(site: this);
     final playback = _playback ??= YyPlaybackProvider(site: this);
+    final lease = _lease ??= YyPlayLeaseLookup(now: _now);
     final danmaku = _danmaku ??= YyDanmakuProvider(site: this);
     final link = _link ??= const YyLinkResolver();
+    final refresh = _refresh ??= YyRoomRefresh(site: this);
+    final status = _status ??= YyStatusCheck(refresh: refresh);
     final auth = _auth ??= YyAuthProvider(site: this);
     return switch (T) {
       const (LiveRoomProvider) => room as T,
@@ -634,9 +674,13 @@ final class YySite implements LiveSite {
       const (LiveDiscoveryProvider) => discovery as T,
       const (LiveSearchProvider) => search as T,
       const (LivePlaybackProvider) => playback as T,
+      const (LivePlayLeaseLookup) => lease as T,
+      const (LivePlaybackPlanResolver) => playback as T,
       const (LiveDanmakuProvider) => danmaku as T,
       const (LiveLinkResolver) => link as T,
       const (LiveAuthCapability) => auth as T,
+      const (LiveRoomRefresh) => refresh as T,
+      const (LiveStatusCheck) => status as T,
       _ => null,
     };
   }
