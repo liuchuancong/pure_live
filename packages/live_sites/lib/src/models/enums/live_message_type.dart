@@ -14,8 +14,9 @@ enum LiveMessageType {
   /// may send a bare number).
   audienceUpdate,
 
-  /// A super chat; payload stays null — super chats arrive through a
-  /// dedicated list API, not the danmaku stream.
+  /// A super chat; payload holds a LiveSuperChatMessage. The platforms with
+  /// paid messages report them on the danmaku stream, and the two with a
+  /// board (bilibili, huya) also list them through their super chat feed.
   superChat,
 
   /// Takes back messages shown earlier; payload holds a LiveRetraction.

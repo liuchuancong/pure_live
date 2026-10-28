@@ -126,6 +126,8 @@ abstract final class SiteFacts {
   /// - Picarto: the channel name; any case finds it, the platform answers
   ///   its own spelling.
   /// - TwitCasting: the screen id, requested in its lower-case form.
+  /// - TikTok: the user name (`uniqueId`); the answer is matched in any case.
+  /// - PandaTV: the login id; the room data is matched in any case.
   /// - Douyu: a rid or 靓号 (digits) or an alias; the room page redirects an
   ///   alias in any case to the same rid.
   /// - Kuaishou: the user id; the room page finds a streamer in any case.
@@ -136,6 +138,8 @@ abstract final class SiteFacts {
     SiteIds.soop,
     SiteIds.picarto,
     SiteIds.twitcasting,
+    SiteIds.tiktok,
+    SiteIds.pandaLive,
     SiteIds.douyu,
     SiteIds.kuaishou,
     SiteIds.bigo,

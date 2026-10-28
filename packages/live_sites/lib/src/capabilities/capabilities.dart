@@ -5,6 +5,7 @@ library;
 export 'live_anchor_provider.dart';
 export 'live_area_provider.dart';
 export 'live_auth_capability.dart';
+export 'live_cookie_refusal_feed.dart';
 export 'live_danmaku_provider.dart';
 export 'live_danmaku_sending.dart';
 export 'live_discovery_provider.dart';

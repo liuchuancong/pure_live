@@ -7,9 +7,9 @@ import 'package:live_sites/src/models/super_chat/live_super_chat_message/live_su
 /// The room's super chat board, for platforms that poll it.
 ///
 /// Most platforms deliver super chats through the danmaku stream alone and
-/// never implement this; the board is the platforms whose paid messages
-/// also sit in a list a page shows (bilibili, douyu, huya). Whether a
-/// platform has super chats at all is a fact the runtime info carries
+/// never implement this; the board is the platforms whose paid messages also
+/// sit in a list a page shows (bilibili, huya). Whether a platform has super
+/// chats at all is a fact the runtime info carries
 /// (`LiveSiteRuntimeInfo.hasSuperChats`), so an empty list from such a
 /// platform says the room has none, not "they will show up here".
 abstract interface class LiveSuperChatFeed implements LiveSiteCapability {
