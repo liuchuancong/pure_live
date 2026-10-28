@@ -1510,6 +1510,9 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '用手机号登录'
 	String get accountPhoneToggle => '用手机号登录';
 
+	/// zh-CN: '扫码登录'
+	String get accountQrToggle => '扫码登录';
+
 	/// zh-CN: '评论没有加载出来'
 	String get commentsFailed => '评论没有加载出来';
 
@@ -1617,27 +1620,6 @@ class Translations$hongguo$zh_CN {
 
 	/// zh-CN: '未看完'
 	String get historyFilterUnwatched => '未看完';
-
-	/// zh-CN: '画面模式'
-	String get frameMode => '画面模式';
-
-	/// zh-CN: '完整画面'
-	String get frameFit => '完整画面';
-
-	/// zh-CN: '等比铺满'
-	String get frameZoom => '等比铺满';
-
-	/// zh-CN: '拉伸铺满'
-	String get frameFill => '拉伸铺满';
-
-	/// zh-CN: '保留比例与全部内容，画面外留黑边'
-	String get frameFitDesc => '保留比例与全部内容，画面外留黑边';
-
-	/// zh-CN: '铺满画面，会裁掉部分画面与字幕'
-	String get frameZoomDesc => '铺满画面，会裁掉部分画面与字幕';
-
-	/// zh-CN: '铺满画面，但画面比例会改变'
-	String get frameFillDesc => '铺满画面，但画面比例会改变';
 
 	/// zh-CN: '定时停止'
 	String get sleep => '定时停止';
@@ -9453,6 +9435,7 @@ extension on Translations {
 			'hongguo.phoneVerify' => '登录',
 			'hongguo.phoneSent' => '验证码已发送到',
 			'hongguo.accountPhoneToggle' => '用手机号登录',
+			'hongguo.accountQrToggle' => '扫码登录',
 			'hongguo.commentsFailed' => '评论没有加载出来',
 			'hongguo.shelfForYou' => '为你推荐',
 			'hongguo.shelfChangeBatch' => '换一批',
@@ -9489,13 +9472,6 @@ extension on Translations {
 			'hongguo.accountReadCount' => ({required Object count}) => '已读取 ${count} 部',
 			'hongguo.historyFilterWatched' => '已看完',
 			'hongguo.historyFilterUnwatched' => '未看完',
-			'hongguo.frameMode' => '画面模式',
-			'hongguo.frameFit' => '完整画面',
-			'hongguo.frameZoom' => '等比铺满',
-			'hongguo.frameFill' => '拉伸铺满',
-			'hongguo.frameFitDesc' => '保留比例与全部内容，画面外留黑边',
-			'hongguo.frameZoomDesc' => '铺满画面，会裁掉部分画面与字幕',
-			'hongguo.frameFillDesc' => '铺满画面，但画面比例会改变',
 			'hongguo.sleep' => '定时停止',
 			'hongguo.sleepOff' => '关闭定时停止',
 			'hongguo.sleepAfter' => ({required Object minutes}) => '${minutes} 分钟后',
@@ -9504,14 +9480,14 @@ extension on Translations {
 			'hongguo.sleepAfterEpisodes' => ({required Object count}) => '再播完 ${count} 集',
 			'hongguo.sleepEpisodes' => ({required Object count}) => '再播完 ${count} 集',
 			'hongguo.sleepStopped' => '定时停止已生效 · 观看位置已保存 · 按播放可继续',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.retryNow' => '立即重试',
 			'hongguo.retryLower' => ({required Object height}) => '尝试 ${height}P',
 			'hongguo.backToEpisodes' => '返回选集',
 			'hongguo.stopAutoRetry' => '停止自动重试',
 			'hongguo.autoRetry' => ({required Object attempt, required Object seconds}) => '即将重试 ${attempt}/3 · ${seconds} 秒后',
 			'hongguo.retryExhausted' => '已自动重试 3 次，仍无法播放。可手动重试或切换清晰度。',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.decoderLessons' => '设备解码记录',
 			'hongguo.decoderLessonsCount' => ({required Object count}) => '已记住 ${count} 条解码失败，选流时会跳过它们',
 			'hongguo.decoderLessonsEmpty' => '还没有解码失败记录，选流按平台声明',
@@ -10018,14 +9994,14 @@ extension on Translations {
 			'navigation.vodRegions' => '分区',
 			'navigation.iptvSources' => '订阅源',
 			'navigation.iptvGuide' => '节目单',
-			_ => null,
-		} ?? switch (path) {
 			'navigation.musicSonglist' => '歌单',
 			'navigation.musicToplist' => '排行榜',
 			'navigation.musicLibrary' => '我的列表',
 			'navigation.musicLocal' => '本地音乐',
 			'navigation.musicDownloads' => '下载管理',
 			'player.title' => '播放',
+			_ => null,
+		} ?? switch (path) {
 			'player.back' => '返回',
 			'player.quality' => '清晰度',
 			'player.line' => '线路',
@@ -10532,14 +10508,14 @@ extension on Translations {
 			'settings.cornersPill' => '胶囊',
 			'settings.density' => '控件密度',
 			'settings.densitySystem' => '跟随平台',
-			_ => null,
-		} ?? switch (path) {
 			'settings.densityCompact' => '紧凑',
 			'settings.densityTouch' => '触控',
 			'settings.languageSystem' => '跟随系统',
 			'settings.languageSimplifiedChinese' => '简体中文',
 			'settings.languageEnglish' => 'English',
 			'settings.refreshGroup' => '刷新',
+			_ => null,
+		} ?? switch (path) {
 			'settings.followsAutoRefresh' => '关注自动刷新',
 			'settings.followsAutoRefreshDesc' => '停留在关注页时按间隔刷新关注列表。',
 			'settings.liveAlert' => '开播提醒',
@@ -11046,14 +11022,14 @@ extension on Translations {
 			'settings.preferredQualityDesc' => '进入房间时优先选用的清晰度档位；站点没有同名画质时，按档位比例选最接近的。默认原画。',
 			'settings.preferredQualityCellular' => '蜂窝网络首选画质',
 			'settings.preferredQualityCellularDesc' => '使用移动数据时优先选用的清晰度档位；Wi-Fi 与有线仍使用上面的首选画质。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.qualityAuto' => '自动（站点默认）',
 			'settings.qualityOriginal' => '原画',
 			'settings.qualityBluRay8M' => '蓝光 8M',
 			'settings.qualityBluRay4M' => '蓝光 4M',
 			'settings.qualityBluRay' => '蓝光',
 			'settings.qualityUltra' => '超清',
+			_ => null,
+		} ?? switch (path) {
 			'settings.qualityHigh' => '高清',
 			'settings.qualityStandard' => '标清',
 			'settings.qualitySmooth' => '流畅',
@@ -11560,14 +11536,14 @@ extension on Translations {
 			'shield.removeEntry' => '移除这条屏蔽规则',
 			'shield.effectNote' => '屏蔽在直播间弹幕中立即生效。',
 			'shield.contentTitle' => '内容屏蔽',
-			_ => null,
-		} ?? switch (path) {
 			'shield.blockEmoteOnly' => '屏蔽只有表情的弹幕',
 			'shield.blockEmoteOnlyDescription' => '只有表情、没有文字的弹幕不显示；自己发送的弹幕不会被屏蔽。',
 			'shield.blockLong' => '屏蔽超长弹幕',
 			'shield.blockLongDescription' => '超过设定字数的弹幕不显示（一个表情算一个字）。',
 			'shield.blockLongLength' => '最多字数',
 			'shield.blockLongLengthDescription' => '允许显示的最大字数，范围 10–100（一个表情算一个字）。',
+			_ => null,
+		} ?? switch (path) {
 			'shield.blockLongLengthValue' => ({required int count}) => '${count} 字',
 			'shield.douyuSuspected' => '过滤斗鱼疑似自动弹幕',
 			'shield.douyuSuspectedDescription' => '开启后按启发式标记隐藏疑似自动或活动弹幕，也可能隐藏普通聊天',

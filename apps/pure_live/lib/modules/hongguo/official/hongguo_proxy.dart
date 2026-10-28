@@ -13,7 +13,10 @@ import 'package:pure_live/modules/hongguo/official/hongguo_media_crypto.dart';
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoRendition;
 import 'package:pure_live/modules/hongguo/official/hongguo_vendor.dart' show HongguoVendor;
 
-const int _kChunk = 2 * 1024 * 1024;
+/// The most the proxy puts behind one response — the reference's own
+/// per-request cap. A wider ask is answered honestly: the `Content-Range`
+/// names the bytes actually delivered, and the player keeps from there.
+const int _kChunk = 8 * 1024 * 1024;
 const int _kProbe = 256 * 1024;
 
 final class _Entry {
@@ -198,8 +201,16 @@ final class HongguoStreamProxy {
     if (match == null) {
       throw const HongguoProxyFailure('视频分段响应异常');
     }
+    final begin = int.parse(match.group(1)!);
+    final finish = int.parse(match.group(2)!);
     final total = int.parse(match.group(3)!);
-    return _Fetched(response.bodyBytes, total);
+    // Decryption is by absolute offset, so a segment that does not start
+    // where the request said it would is worse than no segment at all.
+    final bytes = response.bodyBytes;
+    if (begin != start || finish > end || bytes.length != finish - begin + 1) {
+      throw const HongguoProxyFailure('视频分段响应与请求不符');
+    }
+    return _Fetched(bytes, total);
   }
 }
 

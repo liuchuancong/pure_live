@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
 
 import 'package:pure_live/app/app.dart' show networkFactoryProvider;
+import 'package:pure_live/modules/hongguo/controller/hongguo_decoder.dart' show hongguoDecoderKey;
 import 'package:pure_live/modules/hongguo/official/hongguo_device.dart' show HongguoDeviceException;
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart'
     show HongguoOfficialClient, HongguoOfficialFailure, HongguoRendition;
@@ -33,19 +34,62 @@ String hongguoFailureText(Object error) => switch (error) {
 
 /// The best rendition at or below [maxHeight] — h264 preferred, the
 /// reference's TV-tested rule; the closest tier below when none fits, the
-/// lowest tier otherwise.
-HongguoRendition hongguoPickRendition(List<HongguoRendition> ladder, int maxHeight) {
+/// lowest tier otherwise. A rendition this machine already failed to decode
+/// is passed over even when the platform claims it (the reference's learned
+/// lessons outrank the platform's probe).
+HongguoRendition hongguoPickRendition(
+  List<HongguoRendition> ladder,
+  int maxHeight, {
+  Set<String> learnedFailures = const {},
+}) {
   const avc = {'h264', 'avc', 'avc1', 'avc3'};
   int score(HongguoRendition rendition) => rendition.quality * 2 + (avc.contains(rendition.codec) ? 1 : 0);
-  final fitting = [for (final r in ladder) if (r.quality >= 1 && r.quality <= maxHeight) r];
+  bool failed(HongguoRendition rendition) =>
+      learnedFailures.contains(hongguoDecoderKey(rendition.codec, rendition.width, rendition.height));
+  List<HongguoRendition> usable(List<HongguoRendition> tiers) {
+    final trusted = [
+      for (final r in tiers)
+        if (!failed(r)) r,
+    ];
+    return trusted.isEmpty ? tiers : trusted;
+  }
+
+  final fitting = usable([
+    for (final r in ladder)
+      if (r.quality >= 1 && r.quality <= maxHeight) r,
+  ]);
   if (fitting.isNotEmpty) {
     fitting.sort((a, b) => score(b).compareTo(score(a)));
     return fitting.first;
   }
-  final unbounded = [for (final r in ladder) if (r.quality <= 0) r];
+  final unbounded = usable([
+    for (final r in ladder)
+      if (r.quality <= 0) r,
+  ]);
   if (unbounded.isNotEmpty) {
     unbounded.sort((a, b) => score(b).compareTo(score(a)));
     return unbounded.first;
   }
-  return ladder.reduce((a, b) => score(a) <= score(b) ? a : b);
+  final rest = usable(ladder);
+  return rest.reduce((a, b) => score(a) <= score(b) ? a : b);
+}
+
+/// The next tier below [current] within [maxHeight], or null when there is
+/// none — what a decode failure downgrades to.
+HongguoRendition? hongguoLowerRendition(
+  List<HongguoRendition> ladder,
+  HongguoRendition current,
+  int maxHeight, {
+  Set<String> learnedFailures = const {},
+}) {
+  final fitting = [
+    for (final r in ladder)
+      if (r.quality >= 1 && r.quality <= maxHeight && r.quality < current.quality) r,
+  ]..sort((a, b) => b.quality.compareTo(a.quality));
+  for (final rendition in fitting) {
+    if (!learnedFailures.contains(hongguoDecoderKey(rendition.codec, rendition.width, rendition.height))) {
+      return rendition;
+    }
+  }
+  return null;
 }

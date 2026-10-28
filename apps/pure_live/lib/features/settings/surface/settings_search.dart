@@ -455,10 +455,9 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.musicList, t.music.addToTop, 'music list top bottom order 列表 顶部 末尾 顺序'),
     _hit(SettingsSection.musicList, t.music.showSource, 'music list source tag 列表 音源 标签'),
     _hit(SettingsSection.musicSources, t.music.sourcesImportText, 'music custom source import script js lx 自定义源 导入 脚本'),
-    // Hongguo: the station's rendition, its picture mode and the decoder
-    // notes learned on this machine.
+    // Hongguo: the station's rendition and the decoder notes learned on this
+    // machine.
     _hit(SettingsSection.hongguo, s.hongguoQuality, 'hongguo quality rendition 红果 清晰度 画质'),
-    _hit(SettingsSection.hongguo, t.hongguo.frameMode, 'hongguo frame aspect zoom fill 红果 画面 比例 铺满 拉伸'),
     _hit(SettingsSection.hongguo, t.hongguo.decoderLessons, 'hongguo decoder codec failure 红果 解码 能力 记录'),
     _hit(SettingsSection.accounts, t.account.cookieLogin, 'bilibili account login 账号 登录'),
     // About.

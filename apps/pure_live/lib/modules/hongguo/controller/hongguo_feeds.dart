@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:convert' show jsonDecode, jsonEncode;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart'
     show hongguoClientProvider, hongguoFailureText;
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
@@ -204,116 +208,274 @@ final hongguoLatestProvider = NotifierProvider<HongguoLatestController, Map<Stri
   HongguoLatestController.new,
 );
 
-/// One board's feed: the website's pages, walked page by page.
-typedef HongguoRankState = ({
-  HongguoWebsiteBoard board,
-  List<HongguoSeries> items,
-  int page,
-  bool loading,
-  bool hasMore,
-  String? error,
-});
+/// One board's snapshot: its whole list, when it was read, and the ask's
+/// shape — a renewal keeps the rows on screen while the new read runs.
+typedef HongguoRankFeed = ({List<HongguoSeries> items, int readAt, bool loading, bool renewing, String? error});
 
-/// The website's four boards, one at a time.
-final class HongguoRankController extends Notifier<HongguoRankState> {
+const HongguoRankFeed _idleRank = (items: [], readAt: 0, loading: false, renewing: false, error: null);
+
+/// One topic of a board, and how many of its rows carry it.
+typedef HongguoRankTopic = ({String topic, int count});
+
+/// The website's four boards, each held as a whole-list session snapshot.
+/// A board read is one call at a time; a stale board shows its rows and
+/// renews behind them, and only an explicit refresh forces a new read.
+final class HongguoRankController extends Notifier<Map<String, HongguoRankFeed>> {
+  /// How long a board's snapshot answers without another read.
+  static const Duration ttl = Duration(minutes: 10);
+
+  final Set<String> _inFlight = {};
+
   @override
-  HongguoRankState build() =>
-      (board: HongguoWebsiteBoard.all, items: const [], page: 1, loading: false, hasMore: true, error: null);
+  Map<String, HongguoRankFeed> build() => const {};
 
-  /// Loads [board]'s first page when it is not the one already held.
-  Future<void> open(HongguoWebsiteBoard board) {
-    if (state.board == board && (state.items.isNotEmpty || state.loading || state.error == null)) {
-      return Future.value();
+  /// The board's snapshot.
+  HongguoRankFeed feedOf(HongguoWebsiteBoard board) => state[board.name] ?? _idleRank;
+
+  /// The board's rows under [topic] (empty for all of them); the rows keep
+  /// the place the board gave them.
+  List<HongguoSeries> rowsOf(HongguoWebsiteBoard board, String topic) {
+    final items = feedOf(board).items;
+    if (topic.isEmpty) return items;
+    return [
+      for (final series in items)
+        if (_topicsOf(series).contains(topic)) series,
+    ];
+  }
+
+  /// The topics the whole board carries, most frequent first.
+  List<HongguoRankTopic> topicsOf(HongguoWebsiteBoard board) {
+    final counts = <String, int>{};
+    for (final series in feedOf(board).items) {
+      for (final topic in _topicsOf(series)) {
+        counts[topic] = (counts[topic] ?? 0) + 1;
+      }
     }
-    return _load(board, 1, const []);
+    final topics = [for (final entry in counts.entries) (topic: entry.key, count: entry.value)]
+      ..sort((a, b) => b.count.compareTo(a.count));
+    return topics;
   }
 
-  /// The board's next page.
-  Future<void> loadMore() {
-    if (state.loading || !state.hasMore) return Future.value();
-    return _load(state.board, state.page, state.items);
+  /// Reads the board when nothing answers yet, and renews it quietly when
+  /// the held snapshot has gone stale.
+  Future<void> open(HongguoWebsiteBoard board) async {
+    final feed = feedOf(board);
+    if (feed.loading || _inFlight.contains(board.name)) return;
+    if (feed.items.isEmpty) {
+      await _load(board, renew: false);
+      return;
+    }
+    if (DateTime.now().millisecondsSinceEpoch - feed.readAt > ttl.inMilliseconds) {
+      unawaited(_load(board, renew: true));
+    }
   }
 
-  /// Runs the held board's ask again.
-  Future<void> retry() => _load(state.board, 1, const []);
+  /// Reads the board again, in front of the viewer.
+  Future<void> refresh(HongguoWebsiteBoard board) {
+    if (_inFlight.contains(board.name)) return Future.value();
+    return _load(board, renew: feedOf(board).items.isNotEmpty);
+  }
 
-  Future<void> _load(HongguoWebsiteBoard board, int page, List<HongguoSeries> held) async {
-    state = (board: board, items: held, page: page, loading: true, hasMore: true, error: null);
+  Future<void> _load(HongguoWebsiteBoard board, {required bool renew}) async {
+    final held = feedOf(board);
+    final key = board.name;
+    _inFlight.add(key);
+    _write(board, (
+      items: held.items,
+      readAt: held.readAt,
+      loading: !renew,
+      renewing: renew,
+      error: renew ? held.error : null,
+    ));
     try {
-      final result = await ref.read(hongguoClientProvider).websiteRank(board, page: page);
-      state = (
-        board: board,
-        items: [...held, ...result.items],
-        page: page + 1,
+      final items = await ref.read(hongguoClientProvider).websiteRankSnapshot(board);
+      _write(board, (
+        items: items,
+        readAt: DateTime.now().millisecondsSinceEpoch,
         loading: false,
-        hasMore: result.hasMore,
+        renewing: false,
         error: null,
-      );
+      ));
     } on Object catch (error) {
-      state = (board: board, items: held, page: page, loading: false, hasMore: false, error: hongguoFailureText(error));
+      // A read that failed leaves the board the viewer was looking at.
+      _write(board, (
+        items: held.items,
+        readAt: held.readAt,
+        loading: false,
+        renewing: false,
+        error: hongguoFailureText(error),
+      ));
+    } finally {
+      _inFlight.remove(key);
     }
+  }
+
+  static List<String> _topicsOf(HongguoSeries series) => [
+    for (final tag in series.category.split(RegExp(r'\s*/\s*')))
+      if (tag.trim().isNotEmpty && !RegExp(r'^[0-9.]+$').hasMatch(tag.trim())) tag.trim(),
+  ];
+
+  void _write(HongguoWebsiteBoard board, HongguoRankFeed feed) {
+    state = {...state, board.name: feed};
   }
 }
 
-/// The website's boards.
-final hongguoRankProvider = NotifierProvider<HongguoRankController, HongguoRankState>(HongguoRankController.new);
+/// The website's boards, one snapshot each.
+final hongguoRankProvider =
+    NotifierProvider<HongguoRankController, Map<String, HongguoRankFeed>>(HongguoRankController.new);
 
-/// What the search view holds: the committed query, its hits, the cursor the
-/// next page asks, and the ask's state.
+/// What the search view holds: the committed query, the shelf it was asked
+/// of, its hits, the cursor the next page asks, the words the platform
+/// suggests for the half-typed query, and the machine's own search history.
 typedef HongguoSearchState = ({
   String query,
+  HongguoGenre genre,
   List<HongguoSeries> items,
   HongguoSearchCursor? cursor,
   bool hasMore,
   bool loading,
   String? error,
+  List<String> suggestions,
+  bool suggesting,
+  String? suggestionError,
+  List<String> history,
 });
+
+/// The most words the suggestion call answers, and the most searches kept on
+/// this machine — the reference's own numbers.
+const int kHongguoSuggestionCount = 8;
+const int kHongguoHistoryCount = 20;
+
+const String _kHistoryKey = 'hongguo.search.history';
+
+/// One search state, with everything the caller did not name cleared.
+HongguoSearchState _searchState({
+  String query = '',
+  HongguoGenre genre = HongguoGenre.shortPlay,
+  List<HongguoSeries> items = const [],
+  HongguoSearchCursor? cursor,
+  bool hasMore = false,
+  bool loading = false,
+  String? error,
+  List<String> suggestions = const [],
+  bool suggesting = false,
+  String? suggestionError,
+  List<String> history = const [],
+}) => (
+  query: query,
+  genre: genre,
+  items: items,
+  cursor: cursor,
+  hasMore: hasMore,
+  loading: loading,
+  error: error,
+  suggestions: suggestions,
+  suggesting: suggesting,
+  suggestionError: suggestionError,
+  history: history,
+);
 
 /// The station's search: the app's own endpoint (the richer one), paged by
 /// the tab's cursor; the website's page answers the first page whenever the
-/// app endpoint cannot. A newer query always wins.
+/// app endpoint cannot. Suggestions ride the platform's word list once the
+/// typing pauses, and a newer query always wins.
 final class HongguoSearchController extends Notifier<HongguoSearchState> {
   int _generation = 0;
+  int _suggestGeneration = 0;
+  Timer? _suggestTimer;
 
   @override
-  HongguoSearchState build() => (query: '', items: const [], cursor: null, hasMore: false, loading: false, error: null);
-
-  /// Commits [query] from its first page; a blank query clears the results.
-  Future<void> search(String query) {
-    final word = query.trim();
-    if (word.isEmpty) {
-      _generation++;
-      state = (query: '', items: const [], cursor: null, hasMore: false, loading: false, error: null);
-      return Future.value();
-    }
-    return _load(word, null, const []);
+  HongguoSearchState build() {
+    // The pending suggestion ask belongs to this scope: a page that goes
+    // away stops asking.
+    ref.onDispose(() => _suggestTimer?.cancel());
+    return _searchState(history: _readHistory());
   }
 
-  /// Loads the next page of the committed query when one is left.
+  /// Commits [query] from its first page, over [genre]'s shelf; a blank
+  /// query clears the results.
+  Future<void> search(String query, {HongguoGenre genre = HongguoGenre.shortPlay}) {
+    final word = query.trim();
+    _suggestTimer?.cancel();
+    if (word.isEmpty) {
+      _generation++;
+      state = _searchState(history: state.history);
+      return Future.value();
+    }
+    return _load(word, genre, null, const []);
+  }
+
+  /// The next page of the committed query when one is left.
   Future<void> loadMore() {
     if (state.loading || !state.hasMore || state.query.isEmpty || state.cursor == null) return Future.value();
-    return _load(state.query, state.cursor, state.items);
+    return _load(state.query, state.genre, state.cursor, state.items);
   }
 
   /// Runs the committed query again from its first page.
   Future<void> retry() {
     if (state.query.isEmpty) return Future.value();
-    return _load(state.query, null, const []);
+    return _load(state.query, state.genre, null, const []);
   }
 
-  Future<void> _load(String query, HongguoSearchCursor? cursor, List<HongguoSeries> held) async {
-    final generation = ++_generation;
-    state = (query: query, items: held, cursor: cursor, hasMore: true, loading: true, error: null);
+  /// Asks for words matching [word] once the typing pauses. A blank field
+  /// drops the pending ask and the held words; a failed read only says so —
+  /// the viewer can still search what they typed.
+  void suggest(String word) {
+    _suggestTimer?.cancel();
+    final clean = word.trim();
+    if (clean.isEmpty) {
+      _suggestGeneration++;
+      state = _copy(suggestions: const [], suggesting: false);
+      return;
+    }
+    _suggestTimer = Timer(const Duration(milliseconds: 350), () => _suggest(clean));
+  }
+
+  /// Forgets the machine's own search words; the platform keeps nothing.
+  void clearHistory() {
+    state = _copy(history: const []);
     try {
-      final result = await ref.read(hongguoClientProvider).appSearch(query, cursor: cursor);
+      unawaited(StoragePrefs.remove(_kHistoryKey));
+    } on Object {
+      // A closed store loses the history; nothing else is affected.
+    }
+  }
+
+  Future<void> _suggest(String word) async {
+    final generation = ++_suggestGeneration;
+    state = _copy(suggesting: true);
+    try {
+      final words = await ref.read(hongguoClientProvider).searchSuggestions(word);
+      if (generation != _suggestGeneration) return;
+      state = _copy(suggestions: words, suggesting: false);
+    } on Object catch (error) {
+      if (generation != _suggestGeneration) return;
+      state = _copy(suggestions: const [], suggesting: false, suggestionError: hongguoFailureText(error));
+    }
+  }
+
+  Future<void> _load(String query, HongguoGenre genre, HongguoSearchCursor? cursor, List<HongguoSeries> held) async {
+    final generation = ++_generation;
+    final history = cursor == null ? _remember(query) : state.history;
+    state = _searchState(
+      query: query,
+      genre: genre,
+      items: held,
+      cursor: cursor,
+      hasMore: true,
+      loading: true,
+      history: history,
+    );
+    try {
+      final result = await ref.read(hongguoClientProvider).appSearch(query, cursor: cursor, genre: genre);
       if (generation != _generation) return;
-      state = (
+      state = _searchState(
         query: query,
+        genre: genre,
         items: [...held, ...result.items],
         cursor: result.next,
         hasMore: result.hasMore,
-        loading: false,
-        error: null,
+        history: history,
       );
     } on Object catch (error) {
       // The website's page covers a first page the app endpoint could not
@@ -322,13 +484,13 @@ final class HongguoSearchController extends Notifier<HongguoSearchState> {
         try {
           final fallback = await ref.read(hongguoClientProvider).websiteSearch(query);
           if (generation != _generation) return;
-          state = (
+          state = _searchState(
             query: query,
+            genre: genre,
             items: fallback.items,
             cursor: const HongguoSearchCursor(page: 2),
             hasMore: fallback.hasMore,
-            loading: false,
-            error: null,
+            history: history,
           );
           return;
         } on Object {
@@ -336,14 +498,57 @@ final class HongguoSearchController extends Notifier<HongguoSearchState> {
         }
       }
       if (generation != _generation) return;
-      state = (
+      state = _searchState(
         query: query,
+        genre: genre,
         items: held,
         cursor: cursor,
-        hasMore: false,
-        loading: false,
+        history: history,
         error: hongguoFailureText(error),
       );
+    }
+  }
+
+  /// The held state with only the named parts changed.
+  HongguoSearchState _copy({
+    List<String>? suggestions,
+    bool? suggesting,
+    String? suggestionError,
+    List<String>? history,
+  }) => _searchState(
+    query: state.query,
+    genre: state.genre,
+    items: state.items,
+    cursor: state.cursor,
+    hasMore: state.hasMore,
+    loading: state.loading,
+    error: state.error,
+    suggestions: suggestions ?? state.suggestions,
+    suggesting: suggesting ?? state.suggesting,
+    suggestionError: suggestionError == null && suggestions != null ? null : suggestionError ?? state.suggestionError,
+    history: history ?? state.history,
+  );
+
+  /// The committed word moves to the head of the history, once each.
+  List<String> _remember(String query) {
+    final history = [query, ...state.history.where((word) => word != query)].take(kHongguoHistoryCount).toList();
+    try {
+      unawaited(StoragePrefs.setString(_kHistoryKey, jsonEncode(history)));
+    } on Object {
+      // A closed store keeps the history for this run only.
+    }
+    return history;
+  }
+
+  static List<String> _readHistory() {
+    try {
+      final raw = StoragePrefs.getString(_kHistoryKey);
+      if (raw == null || raw.isEmpty) return const [];
+      final decoded = jsonDecode(raw);
+      if (decoded is! List<Object?>) return const [];
+      return [for (final word in decoded.take(kHongguoHistoryCount)) if (word is String && word.isNotEmpty) word];
+    } on Object {
+      return const [];
     }
   }
 }

@@ -10,9 +10,17 @@ import 'package:pure_live/app/app.dart'
 import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart' show hongguoFailureText;
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
 import 'package:pure_live/modules/hongguo/official/hongguo_account.dart'
-    show HongguoAccountClient, HongguoAccountFailure, HongguoCloudFavorite, HongguoCloudProgress, HongguoCloudReservation, HongguoCredentials, HongguoProfile;
+    show
+        HongguoAccountClient,
+        HongguoAccountFailure,
+        HongguoCloudFavorite,
+        HongguoCloudProgress,
+        HongguoCloudReservation,
+        HongguoCredentials,
+        HongguoProfile;
 import 'package:pure_live/modules/hongguo/official/hongguo_home_feed.dart' show HongguoHomeFeed, HongguoHomeFeedFailure;
-import 'package:pure_live/modules/hongguo/official/hongguo_web_login.dart' show HongguoLoginFailure, HongguoQrCode, HongguoWebLogin;
+import 'package:pure_live/modules/hongguo/official/hongguo_web_login.dart'
+    show HongguoLoginFailure, HongguoQrCode, HongguoWebLogin;
 
 const String _kCredentialsKey = 'hongguo.account.credentials';
 
@@ -109,8 +117,9 @@ final class HongguoAccountController extends Notifier<HongguoAccountState> {
 }
 
 /// The account session.
-final hongguoAccountProvider =
-    NotifierProvider<HongguoAccountController, HongguoAccountState>(HongguoAccountController.new);
+final hongguoAccountProvider = NotifierProvider<HongguoAccountController, HongguoAccountState>(
+  HongguoAccountController.new,
+);
 
 /// The account client, over the shared transport.
 final hongguoAccountClientProvider = Provider<HongguoAccountClient>((ref) {
@@ -125,17 +134,56 @@ final class HongguoLoginSessionController extends Notifier<({HongguoQrCode? qr, 
   @override
   ({HongguoQrCode? qr, bool polling, String? error}) build() => (qr: null, polling: false, error: null);
 
+  /// A fresh login session over the app's proxy, when one is in force.
+  HongguoWebLogin _newLogin() {
+    final endpoint = appProxyEndpoint(ref.read(proxySettingsProvider), ref.read(systemProxyProvider));
+    return HongguoWebLogin(proxy: endpoint == null ? null : '${endpoint.host}:${endpoint.port}');
+  }
+
+  HongguoWebLogin _ensureLogin() => _login ??= _newLogin();
+
   /// Fetches a fresh QR code.
   Future<void> load() async {
     _login?.dispose();
-    final endpoint = appProxyEndpoint(ref.read(proxySettingsProvider), ref.read(systemProxyProvider));
-    _login = HongguoWebLogin(proxy: endpoint == null ? null : '${endpoint.host}:${endpoint.port}');
+    _login = _newLogin();
     state = (qr: null, polling: false, error: null);
     try {
       final qr = await _login!.qr();
       state = (qr: qr, polling: false, error: null);
     } on Object catch (error) {
       state = (qr: null, polling: false, error: error is HongguoLoginFailure ? error.message : '$error');
+    }
+  }
+
+  /// Sends the login code to [number] over the same website passport the QR
+  /// flow uses — the account's second way in, without a second sign-in path.
+  Future<({String maskedMobile, int retrySeconds})> sendCode(String number) async {
+    try {
+      final sent = await _ensureLogin().sendCode(number);
+      state = (qr: null, polling: false, error: null);
+      return sent;
+    } on Object catch (error) {
+      final message = error is HongguoLoginFailure ? error.message : '$error';
+      state = (qr: null, polling: false, error: message);
+      throw HongguoLoginFailure(message);
+    }
+  }
+
+  /// Verifies [code]; a settled session signs the account in.
+  Future<void> verifyCode(String code) async {
+    final login = _ensureLogin();
+    state = (qr: null, polling: true, error: null);
+    try {
+      final settled = await login.verifyCode(code);
+      if (!settled) throw const HongguoLoginFailure('登录态没有下发，请重试');
+      await ref.read(hongguoAccountProvider.notifier).signIn(login);
+      login.dispose();
+      if (identical(_login, login)) _login = null;
+      state = (qr: null, polling: false, error: null);
+    } on Object catch (error) {
+      final message = error is HongguoLoginFailure ? error.message : '$error';
+      state = (qr: null, polling: false, error: message);
+      throw HongguoLoginFailure(message);
     }
   }
 
@@ -177,8 +225,7 @@ const HongguoAccountListState<Object?> _idleList = (items: [], loading: false, e
 /// The account favorites shelf.
 final class HongguoAccountFavoritesController extends Notifier<HongguoAccountListState<HongguoCloudFavorite>> {
   @override
-  HongguoAccountListState<HongguoCloudFavorite> build() =>
-      _idleList as HongguoAccountListState<HongguoCloudFavorite>;
+  HongguoAccountListState<HongguoCloudFavorite> build() => _idleList as HongguoAccountListState<HongguoCloudFavorite>;
 
   /// Reads the shelf again.
   Future<void> refresh() async {
@@ -277,17 +324,13 @@ final class HongguoReservationsController extends Notifier<HongguoReservationsSt
 }
 
 /// The account's reservations.
-final hongguoReservationsProvider =
-    NotifierProvider<HongguoReservationsController, HongguoReservationsState>(HongguoReservationsController.new);
+final hongguoReservationsProvider = NotifierProvider<HongguoReservationsController, HongguoReservationsState>(
+  HongguoReservationsController.new,
+);
 
 /// The home feed: the genre held, its rows and the ask's shape. Switching
 /// the genre starts a fresh feed session, as the reference does.
-typedef HongguoHomeState = ({
-  HongguoGenre? genre,
-  List<HongguoSeries> items,
-  bool loading,
-  String? error,
-});
+typedef HongguoHomeState = ({HongguoGenre? genre, List<HongguoSeries> items, bool loading, String? error});
 
 /// The 首页 feed: cross-genre by default, one shelf's own feed when a genre
 /// is chosen; 换一批 walks the session cursor.
@@ -328,10 +371,14 @@ final class HongguoHomeController extends Notifier<HongguoHomeState> {
       final items = await feed.page(genre);
       state = (genre: genre, items: keep ? [...state.items, ...items] : items, loading: false, error: null);
     } on Object catch (error) {
-      state = (genre: genre, items: state.items, loading: false, error: error is HongguoHomeFeedFailure ? error.message : '$error');
+      state = (
+        genre: genre,
+        items: state.items,
+        loading: false,
+        error: error is HongguoHomeFeedFailure ? error.message : '$error',
+      );
     }
   }
-
 }
 
 /// The home feed.

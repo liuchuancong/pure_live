@@ -289,10 +289,9 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('music.favourites', BackupPrefKind.string),
   ('music.recent', BackupPrefKind.string),
   ('music.queue', BackupPrefKind.string),
-  // The hongguo station's rendition, picture mode, learned decoder notes and
-  // the viewer's own shelves.
+  // The hongguo station's rendition, learned decoder notes and the viewer's
+  // own shelves.
   ('hongguo.quality', BackupPrefKind.string),
-  ('hongguo.frameMode', BackupPrefKind.string),
   ('hongguo.decoderFailures', BackupPrefKind.stringList),
   ('hongguo.library.favorites', BackupPrefKind.string),
   ('hongguo.library.history', BackupPrefKind.string),

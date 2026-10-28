@@ -139,14 +139,14 @@ final class HongguoCloudReservation {
   final String publishText;
 }
 
-/// The account client: one shared signer, every call carrying the login's
-/// cookie and signing with the session's own device.
+/// The account client: every call carrying the login's cookie and signing
+/// with the session's own device — the platform reads that identity out of
+/// `x-medusa`, so the header and the query must agree on it.
 final class HongguoAccountClient {
   /// Creates the client.
-  HongguoAccountClient({required this._http}) : _signer = HongguoSigner();
+  HongguoAccountClient({required this._http});
 
   final LiveHttp _http;
-  final HongguoSigner _signer;
 
   Future<Map<String, Object?>> _json(
     HongguoCredentials credentials,
@@ -165,7 +165,7 @@ final class HongguoAccountClient {
       'version_name': body == null ? '7.2.2.32' : '7.3.9.32',
     };
     final wireBody = gzipBody && body != null ? Uint8List.fromList(gzip.encode(body)) : body;
-    final signed = _signer.sign('$_kAccountHost$path', {...device, ...params}, body: wireBody);
+    final signed = HongguoSigner(device: device).sign('$_kAccountHost$path', {...device, ...params}, body: wireBody);
     final response = await _http.send(
       LiveRequest.custom(
         method: body == null ? 'GET' : 'POST',

@@ -45,6 +45,8 @@ final class HongguoWebLogin {
   final List<_LoginCookie> _cookies = [];
   String _token = '';
   HttpClient? _io;
+  String _mobile = '';
+  bool _codeSent = false;
 
   /// Releases the session's transport.
   void dispose() {
@@ -223,6 +225,54 @@ final class HongguoWebLogin {
       return;
     }
     throw const HongguoLoginFailure('登录确认跳转次数过多');
+  }
+
+  /// Mixes a field the way the web passport expects: each UTF-8 byte
+  /// xored with 5, written as two hex digits.
+  static String _mix(String value) => utf8
+      .encode(value)
+      .map((byte) => ((byte & 0xFF) ^ 0x05).toRadixString(16))
+      .join();
+
+  /// Sends the login code to [number] (`138…` mainland, `+区号 号码`
+  /// elsewhere). The QR fetch warms the CSRF cookie when the session has
+  /// none yet.
+  Future<({String maskedMobile, int retrySeconds})> sendCode(String number) async {
+    if (_cookie('passport_csrf_token') == null) {
+      await qr();
+    }
+    _mobile = number.startsWith('+') ? number : '+86 $number';
+    final data = _checked(
+      await _call('/passport/web/send_code/', data: {
+        'mobile': _mix(_mobile),
+        'type': _mix('24'),
+        'mix_mode': '1',
+        'fixed_mix_mode': '1',
+      }),
+    );
+    _codeSent = true;
+    final masked = data['mobile'] is String && (data['mobile']! as String).isNotEmpty
+        ? data['mobile']! as String
+        : '你的手机';
+    final retry = data['retry_time'] is num ? (data['retry_time']! as num).toInt() : 60;
+    return (maskedMobile: masked, retrySeconds: retry);
+  }
+
+  /// Verifies [code]; answers whether the session cookie landed.
+  Future<bool> verifyCode(String code) async {
+    if (!_codeSent) {
+      throw const HongguoLoginFailure('请先发送验证码');
+    }
+    _checked(
+      await _call('/passport/web/sms_login/', data: {
+        'mobile': _mix(_mobile),
+        'code': _mix(code),
+        'login_only': 'true',
+        'mix_mode': '1',
+        'fixed_mix_mode': '1',
+      }),
+    );
+    return hasSession;
   }
 
   bool get hasSession => _cookie('sessionid') != null || _cookie('sessionid_ss') != null;

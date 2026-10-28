@@ -1,4 +1,4 @@
-import 'dart:async' show StreamSubscription, unawaited;
+import 'dart:async' show StreamSubscription, Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart' show AppBar, Scaffold;
@@ -12,14 +12,37 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_account_state.dart'
-    show hongguoAccountClientProvider, hongguoAccountFavoritesProvider, hongguoAccountProvider;
+    show
+        hongguoAccountClientProvider,
+        hongguoAccountFavoritesProvider,
+        hongguoAccountProvider,
+        hongguoReservationsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart'
-    show hongguoClientProvider, hongguoFailureText, hongguoPickRendition, hongguoStreamProxyProvider;
+    show
+        hongguoClientProvider,
+        hongguoFailureText,
+        hongguoLowerRendition,
+        hongguoPickRendition,
+        hongguoStreamProxyProvider;
+import 'package:pure_live/modules/hongguo/controller/hongguo_comfort.dart'
+    show HongguoRecoveryBudget, HongguoSleepTimer;
+import 'package:pure_live/modules/hongguo/controller/hongguo_decoder.dart' show hongguoDecoderLessonsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
-import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart' show hongguoSettingsProvider;
+import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart'
+    show HongguoQualityChoice, hongguoSettingsProvider;
+import 'package:pure_live/modules/hongguo/controller/hongguo_social.dart'
+    show
+        hongguoCommentsProvider,
+        hongguoDanmakuProvider,
+        hongguoPublicReviewsProvider,
+        hongguoRelatedClientProvider,
+        hongguoRelatedProvider;
 import 'package:pure_live/modules/hongguo/official/hongguo_account.dart' show HongguoAccountClient, HongguoCredentials;
-import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
+import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoRendition;
+import 'package:pure_live/modules/hongguo/official/hongguo_public_reviews.dart' show HongguoPublicReview;
+import 'package:pure_live/modules/hongguo/official/hongguo_related.dart' show HongguoRelatedWork;
+import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show HongguoSeriesRow, hongguoDurationText;
 import 'package:pure_live/shared/shared.dart';
 
 /// One series' page: the player over media_core, the episodes as numbered
@@ -64,6 +87,38 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
   bool _globalMute = false;
   double _volume = 1;
   double _speed = 1;
+
+  /// The session's sleep timer and the ticker that watches its deadline.
+  final HongguoSleepTimer _sleep = HongguoSleepTimer();
+  Timer? _sleepTicker;
+  int _sleepShownMinutes = 0;
+
+  /// Whether the sleep timer stopped this session; pressing play resumes.
+  bool _sleepStopped = false;
+
+  /// This episode's automatic-recovery budget and the pending retry.
+  final HongguoRecoveryBudget _recovery = HongguoRecoveryBudget();
+  Timer? _recoveryTimer;
+  bool _autoRecovery = false;
+
+  /// Where a failed play was, so a retry resumes there rather than at the
+  /// episode's head.
+  Duration _retryPosition = Duration.zero;
+  bool _retryAutoplay = true;
+
+  /// What the last failure was, for the panel's line.
+  String? _lastFailure;
+
+  /// The rendition this episode opened with — the lesson's subject when the
+  /// engine refuses to decode it.
+  HongguoRendition? _attempted;
+
+  /// The ladder the current episode opened from, so a downgrade need not ask
+  /// again.
+  List<HongguoRendition>? _lastLadder;
+
+  /// How many automatic downgrades this episode already took.
+  int _autoDowngrades = 0;
 
   /// The picture's aspect as the engine last reported it: the fullscreen
   /// orientation policy reads it to decide which way a phone turns.
@@ -139,10 +194,15 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
     _routeObserver?.unsubscribe(this);
     _saveProgress(force: true);
     _disposed = true;
+    _sleepTicker?.cancel();
+    _sleepTicker = null;
+    _recoveryTimer?.cancel();
+    _recoveryTimer = null;
     unawaited(_transportSub?.cancel() ?? Future<void>.value());
     unawaited(_eventSub?.cancel() ?? Future<void>.value());
     unawaited(_geometrySub?.cancel() ?? Future<void>.value());
     _geometrySub = null;
+    ref.read(hongguoDanmakuProvider.notifier).stop();
     final handle = _handle;
     if (handle != null) {
       if (_presentationMode != PresentationMode.normal) {
@@ -164,6 +224,9 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
     try {
       final detail = await ref.read(hongguoClientProvider).detail(widget.seriesId);
       if (!mounted || _disposed) return;
+      // Opening the series is the shelf's acknowledgement: the `新增 N 集`
+      // line on the card stops at what was read.
+      _library.acknowledgeUpdates(widget.seriesId);
       setState(() {
         _detail = detail;
         _loading = false;
@@ -183,10 +246,25 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
   }
 
   /// Opens [episode] on the shared kernel, reusing the page's handle; a
-  /// finished episode's last seconds are not replayed.
-  Future<void> _openEpisode(HongguoEpisode episode, {double? resume}) async {
+  /// finished episode's last seconds are not replayed. [recovering] is an
+  /// automatic retry — the sleep stop stands, and the episode's recovery
+  /// budget carries over; [downgrade] asks the ladder for the next tier down.
+  Future<void> _openEpisode(
+    HongguoEpisode episode, {
+    double? resume,
+    bool recovering = false,
+    bool downgrade = false,
+    bool autoplay = true,
+  }) async {
     if (_opening) return;
-    _saveProgress(force: true);
+    final sameEpisode = _episode?.vid == episode.vid;
+    if (!recovering) _saveProgress(force: true);
+    if (!sameEpisode) {
+      _recovery.reset();
+      _autoDowngrades = 0;
+      _attempted = null;
+      _lastFailure = null;
+    }
     setState(() {
       _opening = true;
       _error = null;
@@ -194,6 +272,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
       _transport = null;
       _dragSeconds = null;
       _finished = false;
+      if (!recovering) _sleepStopped = false;
     });
     final client = ref.read(hongguoClientProvider);
     // The episode being left stops before the next address is fetched, so a
@@ -207,12 +286,21 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
       }
     }
     try {
-      // The ladder answers the renditions the platform serves this episode;
-      // the pick rides through the local decrypting proxy so the player
-      // reads plain mp4 off the loopback.
-      final ladder = await client.playbackLadder(episode.vid);
+      // The ladder answers the renditions the platform serves this episode,
+      // and — in the same round trip — the next two episodes' models, so a
+      // handoff needs no second ask. The pick rides through the local
+      // decrypting proxy so the player reads plain mp4 off the loopback.
+      final ladder = await client.playbackLadder(episode.vid, ahead: _aheadVids(episode));
       if (!mounted || _disposed) return;
-      final rendition = hongguoPickRendition(ladder, ref.read(hongguoSettingsProvider).quality.maxHeight);
+      _lastLadder = ladder;
+      final lessons = ref.read(hongguoDecoderLessonsProvider);
+      final maxHeight = ref.read(hongguoSettingsProvider).quality.maxHeight;
+      final attempted = _attempted;
+      final rendition = downgrade && attempted != null
+          ? hongguoLowerRendition(ladder, attempted, maxHeight, learnedFailures: lessons) ??
+                hongguoPickRendition(ladder, maxHeight, learnedFailures: lessons)
+          : hongguoPickRendition(ladder, maxHeight, learnedFailures: lessons);
+      _attempted = rendition;
       final url = await ref.read(hongguoStreamProxyProvider).register(rendition);
       if (!mounted || _disposed) return;
       final existing = _handle;
@@ -239,7 +327,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
           format: SourceFormat.fromUri(uri),
           title: _detail?.meta.title ?? episode.title,
         ),
-        autoPlay: true,
+        autoPlay: autoplay && !_sleepStopped,
       );
       await handle.setVolume(_volume);
       await handle.setMute(muted: _effectivelyMuted);
@@ -250,7 +338,10 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
         await handle.seek(Duration(milliseconds: (seekTo * 1000).round()));
       }
       if (!mounted || _disposed) return;
-      setState(() => _opening = false);
+      setState(() {
+        _opening = false;
+        _error = null;
+      });
     } on Object catch (error) {
       if (!mounted || _disposed) return;
       // The handle may still hold the previous episode; it is not the
@@ -261,12 +352,183 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
         _handle = null;
         unawaited(_kernel.release(stale.id));
       }
-      setState(() {
-        _opening = false;
-        _transport = null;
-        _error = hongguoFailureText(error);
-      });
+      setState(() => _opening = false);
+      _onPlaybackFailure(error);
     }
+  }
+
+  /// The vids after [episode], at most two — the models fetched ahead.
+  List<String> _aheadVids(HongguoEpisode episode) {
+    final episodes = _detail?.episodes ?? const <HongguoEpisode>[];
+    final index = episodes.indexWhere((row) => row.vid == episode.vid);
+    if (index < 0) return const [];
+    return [for (final row in episodes.skip(index + 1).take(2)) row.vid];
+  }
+
+  /// A playback failure, from whichever layer: the progress is kept, the
+  /// engine's refusal of a rendition is learned and downgraded, and what is
+  /// left is handed to the recovery budget — the reference's order.
+  void _onPlaybackFailure(Object error) {
+    if (!mounted || _disposed) return;
+    final failure = hongguoFailureText(error);
+    final position = _transport?.position ?? Duration.zero;
+    if (position > Duration.zero) _retryPosition = position;
+    _retryAutoplay = !_sleepStopped;
+    _saveProgress(force: true);
+    _cancelRecovery();
+    final attempted = _attempted;
+    final episode = _episode;
+    if (attempted != null && episode != null && _transport != null) {
+      // The stream had opened, so the engine refused what it was given: the
+      // device can do less than the probe claimed. Learn it and retry one
+      // tier lower before the panel — at most twice, as the reference does.
+      final learned = ref.read(hongguoDecoderLessonsProvider.notifier).learn(attempted);
+      final ladder = _lastLadder;
+      if (learned && _autoDowngrades < 2 && ladder != null) {
+        final lessons = ref.read(hongguoDecoderLessonsProvider);
+        final lower = hongguoLowerRendition(
+          ladder,
+          attempted,
+          ref.read(hongguoSettingsProvider).quality.maxHeight,
+          learnedFailures: lessons,
+        );
+        if (lower != null) {
+          _autoDowngrades++;
+          setState(() {
+            _lastFailure = failure;
+            _error = null;
+          });
+          unawaited(
+            _openEpisode(
+              episode,
+              resume: _retryPosition.inMilliseconds / 1000,
+              recovering: true,
+              downgrade: true,
+              autoplay: _retryAutoplay,
+            ),
+          );
+          return;
+        }
+      }
+    }
+    final handle = _handle;
+    if (handle != null) unawaited(handle.pause().catchError((Object _) {}));
+    setState(() {
+      _lastFailure = failure;
+      _error = failure;
+      _autoRecovery = _recovery.remaining && !_sleepStopped;
+    });
+    _scheduleRecovery();
+  }
+
+  /// Arms the next automatic retry, if the budget has one left.
+  void _scheduleRecovery() {
+    if (!mounted || _disposed || _error == null || !_autoRecovery || _sleepStopped) return;
+    final delay = _recovery.delay;
+    if (delay == null) {
+      setState(() => _autoRecovery = false);
+      return;
+    }
+    _recoveryTimer?.cancel();
+    _recoveryTimer = Timer(delay, () {
+      if (!mounted || _disposed || _error == null) return;
+      final episode = _episode;
+      if (episode == null || !_recovery.consume()) return;
+      unawaited(
+        _openEpisode(episode, resume: _retryPosition.inMilliseconds / 1000, recovering: true, autoplay: _retryAutoplay),
+      );
+    });
+  }
+
+  void _cancelRecovery() {
+    _recoveryTimer?.cancel();
+    _recoveryTimer = null;
+  }
+
+  /// The viewer's explicit retry: the budget starts over.
+  Future<void> _retryNow() async {
+    final episode = _episode;
+    if (episode == null) return;
+    _cancelRecovery();
+    _recovery.reset();
+    setState(() => _error = null);
+    await _openEpisode(episode, resume: _retryPosition.inMilliseconds / 1000, autoplay: _retryAutoplay);
+  }
+
+  /// A retry at [height], the panel's own downgrade: the preference moves
+  /// down with it, so the next episode opens there too.
+  Future<void> _retryLower(int height) async {
+    final episode = _episode;
+    if (episode == null) return;
+    _cancelRecovery();
+    _recovery.reset();
+    _autoDowngrades = 0;
+    for (final choice in HongguoQualityChoice.values) {
+      if (choice.maxHeight == height) {
+        unawaited(ref.read(hongguoSettingsProvider.notifier).setQuality(choice));
+        break;
+      }
+    }
+    setState(() => _error = null);
+    await _openEpisode(episode, resume: _retryPosition.inMilliseconds / 1000, autoplay: _retryAutoplay);
+  }
+
+  /// Arms, replaces or clears the sleep timer; a running timer ticks its
+  /// label once a minute and stops playback when its turn comes.
+  void _setSleep({int? minutes, int? episodes}) {
+    _cancelRecovery();
+    if (minutes == null && episodes == null) {
+      _sleep.cancel();
+    } else if (minutes != null) {
+      _sleep.afterMinutes(minutes);
+    } else {
+      _sleep.afterEpisodes(episodes!);
+    }
+    if (_sleep.active) {
+      _sleepShownMinutes = _sleep.remaining?.inMinutes ?? 0;
+      _sleepTicker ??= Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted || _disposed) return;
+        if (_sleep.poll()) {
+          unawaited(_stopForSleep());
+          return;
+        }
+        // The button speaks in whole minutes; a tick that changed none of
+        // them needs no rebuild of the picture.
+        final minutes = _sleep.remaining?.inMinutes ?? 0;
+        if (minutes == _sleepShownMinutes) return;
+        _sleepShownMinutes = minutes;
+        setState(() {});
+      });
+    } else {
+      _sleepTicker?.cancel();
+      _sleepTicker = null;
+    }
+    setState(() {});
+  }
+
+  /// The timer's turn: playback pauses, the position is kept, and the page
+  /// says how to resume — the reference's `stopForSleep`.
+  Future<void> _stopForSleep() async {
+    _sleepStopped = true;
+    _sleep.cancel();
+    _sleepTicker?.cancel();
+    _sleepTicker = null;
+    _cancelRecovery();
+    final handle = _handle;
+    if (handle != null) {
+      try {
+        await handle.pause();
+      } on Object {
+        // The stop itself is what matters; a refused pause is reported by the
+        // engine's own event.
+      }
+    }
+    _saveProgress(force: true);
+    if (!mounted || _disposed) return;
+    setState(() {
+      _autoRecovery = false;
+    });
+    showDsToast(context: context, title: context.t.hongguo.sleepStopped);
   }
 
   void _bind(PlayerHandle handle) {
@@ -292,15 +554,29 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
         if (state.isPlaying) _error = null;
       });
       _saveProgress();
+      final detail = _detail;
+      final episode = _episode;
+      if (state.initialized &&
+          detail != null &&
+          episode != null &&
+          episode.vid.isNotEmpty &&
+          RegExp(r'^[0-9]{6,30}$').hasMatch(episode.vid)) {
+        ref
+            .read(hongguoDanmakuProvider.notifier)
+            .start(
+              widget.seriesId,
+              episode.vid,
+              state.duration.inMilliseconds,
+              () => _transport?.position.inMilliseconds ?? 0,
+            );
+      }
     });
     _eventSub = handle.adapterEvents.listen((event) {
       if (!mounted) return;
       switch (event) {
         case final PlayerAdapterErrorEvent error:
-          setState(() {
-            _opening = false;
-            _error = error.message;
-          });
+          setState(() => _opening = false);
+          _onPlaybackFailure(error.message);
         case PlayerAdapterCompleted():
           unawaited(_handleFinished());
         default:
@@ -315,6 +591,12 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
     if (_finished) return;
     _finished = true;
     _saveProgress(force: true, completed: true);
+    // An episode's end is the sleep timer's turn to count: one that asks to
+    // stop here leaves the next episode unopened.
+    if (_sleep.episodeEnded()) {
+      await _stopForSleep();
+      return;
+    }
     final episodes = _detail?.episodes ?? const <HongguoEpisode>[];
     final current = _episode;
     if (current == null) return;
@@ -328,6 +610,11 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
     final handle = _handle;
     if (handle == null) return;
     final playing = _transport?.isPlaying ?? false;
+    if (!playing && _sleepStopped) {
+      // Pressing play after a sleep stop resumes the session.
+      _sleepStopped = false;
+      if (mounted) setState(() {});
+    }
     try {
       playing ? await handle.pause() : await handle.play();
     } on Object catch (error) {
@@ -591,7 +878,10 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
     if (detail == null) return const SizedBox.shrink();
     final player = _playerSurface(context, immersive: false);
     final info = _info(context, detail, t);
+    final reviews = _SeriesReviewsSection(seriesId: widget.seriesId, episodeVid: _episode?.vid ?? '');
     final episodes = _episodes(context, detail, t);
+    final related = _RelatedSection(seriesId: widget.seriesId);
+    final comments = _CommentsSection(seriesId: widget.seriesId, episodeVid: _episode?.vid ?? '');
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 1000;
@@ -601,7 +891,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: DsSpace.s16,
-              children: [player, episodes, info],
+              children: [player, episodes, info, reviews, related, comments],
             ),
           );
         }
@@ -614,7 +904,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: DsSpace.s16,
-                  children: [player, info],
+                  children: [player, info, reviews, related, comments],
                 ),
               ),
             ),
@@ -640,12 +930,22 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
     final handle = _handle;
     final transport = _transport;
     final detail = _detail;
+    final settings = ref.watch(hongguoSettingsProvider);
+    // The picture mode is the app's own player setting — one entry for every
+    // player — and the bar's menu writes it rather than a module copy.
+    final fit = ref.watch(playbackSettingsProvider).fit;
+    final lessons = ref.watch(hongguoDecoderLessonsProvider);
     final duration = transport?.duration ?? Duration.zero;
     final position = _dragSeconds != null
         ? Duration(milliseconds: (_dragSeconds! * 1000).round())
         : transport?.position ?? Duration.zero;
     final playing = transport?.isPlaying ?? false;
     final next = _nextEpisode();
+    final ladder = _lastLadder;
+    final attempted = _attempted;
+    final lower = ladder != null && attempted != null
+        ? hongguoLowerRendition(ladder, attempted, settings.quality.maxHeight, learnedFailures: lessons)
+        : null;
     return ClipRRect(
       borderRadius: BorderRadius.circular(immersive ? 0 : theme.radii.overlay),
       child: ColoredBox(
@@ -656,11 +956,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
             fit: StackFit.expand,
             children: [
               if (handle != null)
-                MediaPlayerView(
-                  handle: handle,
-                  fit: ref.watch(playbackSettingsProvider).fit.boxFit,
-                  backgroundColor: colors.overlay,
-                )
+                MediaPlayerView(handle: handle, fit: fit.boxFit, backgroundColor: colors.overlay)
               else
                 const ColoredBox(color: Color(0xFF000000)),
               if (immersive)
@@ -701,6 +997,78 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
                 ),
               if (_opening || (transport?.isBuffering ?? false))
                 const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
+              // A failure that outlived the automatic recovery: what went
+              // wrong, what the budget is doing, and the four ways out the
+              // reference offers.
+              if (_error != null)
+                Positioned.fill(
+                  child: ColoredBox(
+                    color: const Color(0x99000000),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 440),
+                        child: Container(
+                          padding: const EdgeInsets.all(DsSpace.s16),
+                          decoration: DsBoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(theme.radii.overlay),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            spacing: DsSpace.s8,
+                            children: [
+                              DsIcon(DsIcons.circleAlert, size: 24, color: colors.text),
+                              Text(
+                                _lastFailure ?? _error!,
+                                textAlign: TextAlign.center,
+                                style: theme.typography.body.copyWith(color: colors.text),
+                              ),
+                              Text(
+                                _autoRecovery
+                                    ? t.hongguo.autoRetry(
+                                        attempt: _recovery.attempts + 1,
+                                        seconds: (_recovery.delay?.inMilliseconds ?? 0) ~/ 1000,
+                                      )
+                                    : t.hongguo.retryExhausted,
+                                textAlign: TextAlign.center,
+                                style: theme.typography.caption.copyWith(color: colors.textMuted),
+                              ),
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                spacing: DsSpace.s8,
+                                runSpacing: DsSpace.s8,
+                                children: [
+                                  DsButton(onPressed: () => unawaited(_retryNow()), child: Text(t.hongguo.retryNow)),
+                                  if (lower != null)
+                                    DsButton(
+                                      variant: DsButtonVariant.secondary,
+                                      onPressed: () => unawaited(_retryLower(lower.quality)),
+                                      child: Text(t.hongguo.retryLower(height: lower.quality)),
+                                    ),
+                                  if (immersive)
+                                    DsButton(
+                                      variant: DsButtonVariant.ghost,
+                                      onPressed: () => unawaited(_toggleFullscreen()),
+                                      child: Text(t.hongguo.backToEpisodes),
+                                    ),
+                                  if (_autoRecovery)
+                                    DsButton(
+                                      variant: DsButtonVariant.ghost,
+                                      onPressed: () {
+                                        _cancelRecovery();
+                                        setState(() => _autoRecovery = false);
+                                      },
+                                      child: Text(t.hongguo.stopAutoRetry),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               PositionedDirectional(
                 bottom: 0,
                 start: 0,
@@ -801,8 +1169,55 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> wit
                                   onDark: true,
                                 ),
                               _PlayerMenu(
+                                label: fitLabels(t)[fit.index],
+                                icon: DsIcons.aspectRatio,
+                                semanticLabel: t.settings.fit,
+                                compact: compact,
+                                items: [
+                                  for (final mode in const [PlaybackFit.contain, PlaybackFit.cover, PlaybackFit.fill])
+                                    DsMenuItem(
+                                      label: Text(fitLabels(t)[mode.index]),
+                                      checked: mode == fit,
+                                      onPressed: () =>
+                                          unawaited(ref.read(playbackSettingsProvider.notifier).setFit(mode)),
+                                    ),
+                                ],
+                              ),
+                              _PlayerMenu(
+                                label: _sleep.label(t),
+                                icon: DsIcons.moon,
+                                semanticLabel: t.hongguo.sleep,
+                                compact: compact,
+                                items: [
+                                  DsMenuItem(
+                                    label: Text(t.hongguo.sleepOff),
+                                    checked: !_sleep.active,
+                                    onPressed: _setSleep,
+                                  ),
+                                  for (final minutes in const [15, 30, 60, 90])
+                                    DsMenuItem(
+                                      label: Text(t.hongguo.sleepAfter(minutes: minutes)),
+                                      checked:
+                                          _sleep.remaining != null &&
+                                          (_sleep.remaining!.inMinutes - minutes).abs() <= 1,
+                                      onPressed: () => _setSleep(minutes: minutes),
+                                    ),
+                                  DsMenuItem(
+                                    label: Text(t.hongguo.sleepThisEpisode),
+                                    checked: _sleep.episodesLeft == 1,
+                                    onPressed: () => _setSleep(episodes: 1),
+                                  ),
+                                  for (final count in const [3, 5])
+                                    DsMenuItem(
+                                      label: Text(t.hongguo.sleepAfterEpisodes(count: count)),
+                                      checked: _sleep.episodesLeft == count,
+                                      onPressed: () => _setSleep(episodes: count),
+                                    ),
+                                ],
+                              ),
+                              _PlayerMenu(
                                 label: '${_speed == _speed.roundToDouble() ? _speed.toInt() : _speed}x',
-                                icon: DsIcons.timer,
+                                icon: DsIcons.gauge,
                                 semanticLabel: t.hongguo.speed,
                                 compact: compact,
                                 items: [
@@ -1098,5 +1513,301 @@ final class _PlayerMenu extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// The series' related works: a row per season, live ones open, waiting
+/// ones reservable on the signed-in account.
+final class _RelatedSection extends ConsumerStatefulWidget {
+  const _RelatedSection({required this.seriesId});
+
+  final String seriesId;
+
+  @override
+  ConsumerState<_RelatedSection> createState() => _RelatedSectionState();
+}
+
+final class _RelatedSectionState extends ConsumerState<_RelatedSection> {
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final state = ref.watch(hongguoRelatedProvider);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(ref.read(hongguoRelatedProvider.notifier).open(widget.seriesId));
+    });
+    final account = ref.watch(hongguoAccountProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        Text(t.hongguo.related, style: theme.typography.title.copyWith(color: colors.text)),
+        if (state.loading && state.items.isEmpty) const Center(child: DsSpinner()),
+        if (state.error != null && state.items.isEmpty)
+          Text(state.error!, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+        if (!state.loading && state.items.isEmpty && state.error == null)
+          Text(t.hongguo.relatedNone, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+        for (final work in state.items)
+          HongguoSeriesRow(
+            series: work.series.copyWith(
+              hot: [
+                work.season,
+                if (work.upcoming) t.hongguo.relatedReserve else t.hongguo.relatedLive,
+              ].where((line) => line.isNotEmpty).join(' · '),
+            ),
+            onOpen: work.upcoming ? null : () => _openRelated(context, work.series),
+            trailing: work.upcoming && account.signedIn
+                ? DsButton(
+                    size: DsSize.sm,
+                    variant: DsButtonVariant.secondary,
+                    onPressed: () {
+                      final credentials = ref.read(hongguoAccountProvider).credentials;
+                      if (credentials == null) return;
+                      unawaited(_reserve(context, credentials, work));
+                    },
+                    child: Text(t.hongguo.relatedReserve),
+                  )
+                : null,
+          ),
+      ],
+    );
+  }
+}
+
+/// One episode's comments: paged by the server cursor, read-only.
+final class _CommentsSection extends ConsumerStatefulWidget {
+  const _CommentsSection({required this.seriesId, required this.episodeVid});
+
+  final String seriesId;
+
+  /// The episode whose comments the section reads; empty until one opens.
+  final String episodeVid;
+
+  @override
+  ConsumerState<_CommentsSection> createState() => _CommentsSectionState();
+}
+
+final class _CommentsSectionState extends ConsumerState<_CommentsSection> {
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final state = ref.watch(hongguoCommentsProvider);
+    final episode = widget.episodeVid;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || episode.isEmpty || !RegExp(r'^[0-9]{6,30}$').hasMatch(episode)) return;
+      unawaited(ref.read(hongguoCommentsProvider.notifier).open(widget.seriesId, episode));
+    });
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        Text(
+          state.total > 0 ? '${t.hongguo.comments} (${state.total})' : t.hongguo.comments,
+          style: theme.typography.title.copyWith(color: colors.text),
+        ),
+        if (state.loading && state.items.isEmpty) const Center(child: DsSpinner()),
+        if (state.error != null && state.items.isEmpty)
+          Text(state.error!, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+        if (!state.loading && state.items.isEmpty && state.error == null && episode.isNotEmpty)
+          Text(t.hongguo.commentsEmpty, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+        for (final comment in state.items)
+          DsCard(
+            style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: DsSpace.s12,
+              children: [
+                DsAvatar(
+                  initials: comment.author.isEmpty ? 'HG' : comment.author,
+                  size: DsSize.sm,
+                  toneIndex: DsAvatar.toneFor(comment.id),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: DsSpace.s4,
+                    children: [
+                      Row(
+                        spacing: DsSpace.s8,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              comment.author.isEmpty ? '红果用户' : comment.author,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                            ),
+                          ),
+                          DsIcon(DsIcons.heart, size: theme.sizes.iconXs, color: colors.textSubtle),
+                          Text(
+                            '${comment.likes}',
+                            style: theme.typography.numeric(
+                              theme.typography.caption.copyWith(color: colors.textSubtle),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(comment.content, style: theme.typography.body.copyWith(color: colors.text)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (state.hasMore)
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: state.loading ? null : () => unawaited(ref.read(hongguoCommentsProvider.notifier).loadMore()),
+            child: Text(t.hongguo.commentsLoadMore),
+          ),
+      ],
+    );
+  }
+}
+
+/// The series' public reviews and its rating, read off the website's own
+/// pages — no account credential goes with the ask.
+final class _SeriesReviewsSection extends ConsumerStatefulWidget {
+  const _SeriesReviewsSection({required this.seriesId, required this.episodeVid});
+
+  final String seriesId;
+
+  /// The episode the player holds; its comments come from the same pages.
+  final String episodeVid;
+
+  @override
+  ConsumerState<_SeriesReviewsSection> createState() => _SeriesReviewsSectionState();
+}
+
+final class _SeriesReviewsSectionState extends ConsumerState<_SeriesReviewsSection> {
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final state = ref.watch(hongguoPublicReviewsProvider);
+    final episode = widget.episodeVid;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || episode.isEmpty || !RegExp(r'^[0-9]{6,30}$').hasMatch(episode)) return;
+      unawaited(ref.read(hongguoPublicReviewsProvider.notifier).open(widget.seriesId, episode));
+    });
+    final data = state.data;
+    final reviews = data?.series.items ?? const <HongguoPublicReview>[];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        Row(
+          spacing: DsSpace.s8,
+          children: [
+            Expanded(
+              child: Text(t.hongguo.reviews, style: theme.typography.title.copyWith(color: colors.text)),
+            ),
+            if (data != null && data.rating > 0)
+              DsBadge(
+                label: Text(
+                  data.ratingCount > 0
+                      ? '${t.hongguo.rating(score: data.rating.toStringAsFixed(1))} · ${t.hongguo.ratingCount(count: data.ratingCount)}'
+                      : t.hongguo.rating(score: data.rating.toStringAsFixed(1)),
+                ),
+                dot: false,
+              ),
+          ],
+        ),
+        if (state.loading && data == null) const Center(child: DsSpinner()),
+        if (state.error != null && data == null)
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(
+                child: Text(state.error!, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+              ),
+              DsButton(
+                size: DsSize.sm,
+                variant: DsButtonVariant.ghost,
+                onPressed: () => unawaited(ref.read(hongguoPublicReviewsProvider.notifier).retry()),
+                child: Text(t.common.retry),
+              ),
+            ],
+          ),
+        if (data != null && reviews.isEmpty)
+          Text(t.hongguo.reviewsEmpty, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+        for (final review in reviews)
+          DsCard(
+            style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: DsSpace.s12,
+              children: [
+                DsAvatar(
+                  initials: review.author.isEmpty ? 'HG' : review.author,
+                  size: DsSize.sm,
+                  toneIndex: DsAvatar.toneFor(review.id),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: DsSpace.s4,
+                    children: [
+                      Row(
+                        spacing: DsSpace.s8,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              review.author.isEmpty ? '红果用户' : review.author,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                            ),
+                          ),
+                          if (review.rating > 0)
+                            Text(
+                              review.rating.toStringAsFixed(1),
+                              style: theme.typography.numeric(
+                                theme.typography.caption.copyWith(color: colors.textSubtle),
+                              ),
+                            ),
+                          DsIcon(DsIcons.heart, size: theme.sizes.iconXs, color: colors.textSubtle),
+                          Text(
+                            '${review.likes}',
+                            style: theme.typography.numeric(
+                              theme.typography.caption.copyWith(color: colors.textSubtle),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(review.content, style: theme.typography.body.copyWith(color: colors.text)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Pushes another series' page.
+void _openRelated(BuildContext context, HongguoSeries series) {
+  unawaited(context.push(RouteNames.hongguoSeries.replaceFirst(':seriesId', series.seriesId)));
+}
+
+/// The related section's reserve action, on the state above it.
+extension _ReserveAction on _RelatedSectionState {
+  Future<void> _reserve(BuildContext context, HongguoCredentials credentials, HongguoRelatedWork work) async {
+    final t = context.t;
+    try {
+      await ref.read(hongguoRelatedClientProvider).reserve(credentials, work);
+      unawaited(ref.read(hongguoReservationsProvider.notifier).refresh());
+      if (!mounted) return;
+      showDsToast(context: this.context, title: t.hongguo.reserved);
+    } on Object catch (error) {
+      if (!mounted) return;
+      showDsToast(context: this.context, title: '$error');
+    }
   }
 }

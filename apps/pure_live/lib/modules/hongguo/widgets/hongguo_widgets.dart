@@ -1,7 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:pure_live/app/app.dart' show browseSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -28,10 +33,11 @@ String hongguoSeriesSubtitle(Translations t, HongguoSeries series) {
 }
 
 /// One series as a poster card: the cover with its badges — the board
-/// position, the 今日 marker, the score — the title, and the listing line.
+/// position, the episode count, the heat, the 今日 marker — the title, the
+/// listing line and, on a shelf that asks for it, the local bookmark.
 final class HongguoSeriesCard extends StatelessWidget {
   /// The card for [series]; [onOpen] opens its page.
-  const HongguoSeriesCard({required this.series, this.onOpen, super.key});
+  const HongguoSeriesCard({required this.series, this.onOpen, this.favoritable = false, super.key});
 
   /// The series shown.
   final HongguoSeries series;
@@ -39,11 +45,16 @@ final class HongguoSeriesCard extends StatelessWidget {
   /// Opens the series; null leaves the card inert.
   final VoidCallback? onOpen;
 
+  /// Whether the card carries the local-shelf bookmark under its title.
+  final bool favoritable;
+
   @override
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    final t = context.t;
     final fallback = CoverFallback(title: series.title, padding: const EdgeInsets.all(DsSpace.s8));
+    final rank = series.rank;
     return DsCard(
       onPressed: onOpen,
       semanticLabel: series.title,
@@ -56,7 +67,6 @@ final class HongguoSeriesCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s6,
         children: [
           AspectRatio(
             aspectRatio: 3 / 4,
@@ -68,52 +78,85 @@ final class HongguoSeriesCard extends StatelessWidget {
                   if (series.cover.isEmpty)
                     fallback
                   else
-                    DsImage(image: cachedImage(series.cover), aspectRatio: 3 / 4, semanticLabel: series.title, fallback: fallback),
-                  if (series.rank != null)
+                    DsImage(
+                      image: cachedImage(series.cover),
+                      aspectRatio: 3 / 4,
+                      semanticLabel: series.title,
+                      fallback: fallback,
+                    ),
+                  // The heat sits on the picture's own foot, where the
+                  // listing puts it; a bare chip there would hide the art.
+                  if (series.hot.isNotEmpty)
                     PositionedDirectional(
-                      top: DsSpace.s6,
-                      start: DsSpace.s6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s3),
-                        decoration: DsBoxDecoration(
-                          color: colors.accent,
-                          borderRadius: BorderRadius.circular(theme.radii.control(22)),
+                      bottom: 0,
+                      start: 0,
+                      end: 0,
+                      height: 34,
+                      child: DecoratedBox(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: AlignmentDirectional.bottomCenter,
+                            end: AlignmentDirectional.topCenter,
+                            colors: [Color(0xB3000000), Color(0x00000000)],
+                          ),
                         ),
-                        child: Text(
-                          '${series.rank}',
-                          style: theme.typography.numeric(
-                            theme.typography.caption.copyWith(color: colors.onAccent, fontWeight: FontWeight.w700),
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, 0, DsSpace.s8, DsSpace.s5),
+                          child: Text(
+                            series.hot,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.numeric(
+                              theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  if (series.today)
+                  if (rank != null)
                     PositionedDirectional(
                       top: DsSpace.s6,
-                      end: DsSpace.s6,
-                      child: DsBadge(label: Text(context.t.hongguo.todayTag), status: DsStatus.success),
+                      start: DsSpace.s6,
+                      child: _RankFlag(rank: rank),
                     ),
-                  if (series.score.isNotEmpty)
-                    PositionedDirectional(
-                      bottom: DsSpace.s6,
-                      end: DsSpace.s6,
-                      child: DsBadge(label: Text(series.score), dot: false),
+                  PositionedDirectional(
+                    top: DsSpace.s6,
+                    end: DsSpace.s6,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      spacing: DsSpace.s4,
+                      children: [
+                        if (series.episodeCount > 0)
+                          _CoverTag(label: t.hongguo.allEpisodesCount(count: series.episodeCount)),
+                        if (series.today) DsBadge(label: Text(t.hongguo.todayTag), status: DsStatus.success),
+                        if (series.score.isNotEmpty) DsBadge(label: Text(series.score), dot: false),
+                      ],
                     ),
+                  ),
                 ],
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12),
+            padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s6, DsSpace.s12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: DsSpace.s4,
               children: [
-                Text(
-                  series.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s4,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        series.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                      ),
+                    ),
+                    if (favoritable) _FavoriteBookmark(series: series),
+                  ],
                 ),
                 Text(
                   hongguoSeriesSubtitle(context.t, series),
@@ -124,8 +167,104 @@ final class HongguoSeriesCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: DsSpace.s6),
         ],
+      ),
+    );
+  }
+}
+
+/// The board position on a cover: the top three carry the station's accent.
+final class _RankFlag extends StatelessWidget {
+  const _RankFlag({required this.rank});
+
+  final int rank;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final leading = rank <= 3;
+    return Container(
+      constraints: const BoxConstraints(minWidth: 24),
+      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: DsSpace.s3),
+      alignment: Alignment.center,
+      decoration: DsBoxDecoration(
+        color: leading ? colors.accent : const Color(0xB3000000),
+        borderRadius: BorderRadius.circular(theme.radii.control(24)),
+      ),
+      child: Text(
+        '$rank',
+        style: theme.typography.numeric(
+          theme.typography.caption.copyWith(
+            color: leading ? colors.onAccent : const Color(0xFFFFFFFF),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A short label laid over the cover's corner.
+final class _CoverTag extends StatelessWidget {
+  const _CoverTag({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: DsSpace.s3),
+      decoration: DsBoxDecoration(
+        color: const Color(0xB3000000),
+        borderRadius: BorderRadius.circular(theme.radii.control(22)),
+      ),
+      child: Text(
+        label,
+        style: theme.typography.numeric(
+          theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF), fontSize: 11),
+        ),
+      ),
+    );
+  }
+}
+
+/// The card's way onto the local shelf — the bookmark beside its title.
+final class _FavoriteBookmark extends ConsumerWidget {
+  const _FavoriteBookmark({required this.series});
+
+  final HongguoSeries series;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final favored = ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId);
+    final label = favored ? t.hongguo.favoriteToggleOff : t.hongguo.favoriteToggleOn;
+    return DsTooltip(
+      message: label,
+      child: DsPressable(
+        semanticLabel: label,
+        onPressed: () {
+          final added = ref.read(hongguoLibraryProvider.notifier).toggleFavorite(series);
+          showDsToast(context: context, title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff);
+        },
+        builder: (context, states, _) => Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: DsBoxDecoration(
+            color: states.contains(WidgetState.hovered) ? colors.hover : null,
+            borderRadius: BorderRadius.circular(theme.radii.control(30)),
+          ),
+          child: DsIcon(
+            favored ? DsIcons.bookmarkCheck : DsIcons.bookmark,
+            size: 16,
+            color: favored ? colors.accentText : colors.textMuted,
+          ),
+        ),
       ),
     );
   }
@@ -289,6 +428,133 @@ final class HongguoProgressStripe extends StatelessWidget {
           child: ColoredBox(color: colors.accent),
         ),
       ),
+    );
+  }
+}
+
+/// One shelf of the station's home: its name with the way to the whole list
+/// beside it, and as many posters as a single row holds. The station's own
+/// page is built this way — a row per subject, the rest one click away.
+final class HongguoShelf extends ConsumerWidget {
+  /// The shelf for [items].
+  const HongguoShelf({
+    required this.title,
+    required this.items,
+    required this.cardBuilder,
+    this.actions = const <Widget>[],
+    this.loading = false,
+    this.error,
+    this.onRetry,
+    super.key,
+  });
+
+  /// The shelf's name.
+  final String title;
+
+  /// The series the row draws, from its head.
+  final List<HongguoSeries> items;
+
+  /// Draws one poster.
+  final Widget Function(BuildContext context, HongguoSeries series) cardBuilder;
+
+  /// The controls beside the title.
+  final List<Widget> actions;
+
+  /// Whether the shelf's own list is being read.
+  final bool loading;
+
+  /// The failure to show when nothing loaded.
+  final String? error;
+
+  /// Reads the shelf again.
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final browse = ref.watch(browseSettingsProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s12,
+      children: [
+        Semantics(
+          header: true,
+          child: Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.title.copyWith(color: colors.text),
+                ),
+              ),
+              ...actions,
+            ],
+          ),
+        ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final content = constraints.hasBoundedWidth ? constraints.maxWidth : 0.0;
+            if (content <= 0) return const SizedBox.shrink();
+            final spacing = browse.crossSpacing;
+            final extent = browseCardExtentForWidth(content, crossSpacing: spacing);
+            var columns = math.max(1, (content / (extent + spacing)).ceil());
+            final ceiling = cappedColumnsForWidth(
+              content,
+              spacing: spacing,
+              ceiling: browse.gridColumns,
+              minWidth: kBrowseCardMinWidth,
+            );
+            if (ceiling > 0 && columns > ceiling) columns = ceiling;
+            final cardWidth = columnExtentForWidth(content, columns, spacing) - .01;
+            if (error != null && items.isEmpty) {
+              return Row(
+                spacing: DsSpace.s12,
+                children: [
+                  Expanded(
+                    child: Text(
+                      error!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                  ),
+                  if (onRetry != null)
+                    DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.secondary,
+                      onPressed: onRetry,
+                      child: Text(t.common.retry),
+                    ),
+                ],
+              );
+            }
+            final shown = items.take(columns).toList();
+            if (shown.isEmpty) {
+              if (!loading) return const SizedBox.shrink();
+              return Wrap(
+                spacing: spacing,
+                children: [
+                  for (var row = 0; row < columns; row++)
+                    SizedBox(
+                      width: cardWidth,
+                      child: DsSkeleton.block(width: cardWidth, height: cardWidth * 4 / 3),
+                    ),
+                ],
+              );
+            }
+            return Wrap(
+              spacing: spacing,
+              runSpacing: spacing,
+              children: [for (final series in shown) SizedBox(width: cardWidth, child: cardBuilder(context, series))],
+            );
+          },
+        ),
+      ],
     );
   }
 }

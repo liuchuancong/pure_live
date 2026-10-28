@@ -1,5 +1,7 @@
 import 'dart:async' show Timer, unawaited;
+
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -11,6 +13,7 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_feeds.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoWebsiteBoard;
+import 'package:pure_live/modules/hongguo/widgets/hongguo_phone_sign_in.dart' show HongguoPhoneSignIn;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show CardGrid;
 
@@ -93,7 +96,7 @@ final class _HongguoPageState extends ConsumerState<HongguoPage> {
         ),
         Expanded(
           child: switch (_view) {
-            HongguoView.home => const _HomeView(),
+            HongguoView.home => _HomeView(onGo: (view) => setState(() => _view = view)),
             HongguoView.find => const _FindView(),
             HongguoView.rank => const _RankView(),
             HongguoView.favorites => const _FavoritesView(),
@@ -187,69 +190,233 @@ final class _ServiceHint extends StatelessWidget {
   }
 }
 
-/// The 首页 feed: the cross-genre recommendations by default, one shelf's
-/// own feed by chip; the grid's end walks the feed's session.
-final class _HomeView extends ConsumerWidget {
-  const _HomeView();
+/// The 首页: the station's own page shape — a row of recommendations you can
+/// trade for another, the hot board, and the shelf's newest arrivals.
+final class _HomeView extends ConsumerStatefulWidget {
+  const _HomeView({required this.onGo});
+
+  /// Moves the module's page to another view — the shelf's way to the whole
+  /// board.
+  final void Function(HongguoView view) onGo;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_HomeView> createState() => _HomeViewState();
+}
+
+final class _HomeViewState extends ConsumerState<_HomeView> {
+  /// How many batches of the recommendation row the viewer has traded
+  /// through; the row shows the batch it landed on.
+  static const int _batchSize = 12;
+
+  HongguoGenre? _genre;
+  String _theme = '';
+  HongguoGenre _latest = HongguoGenre.shortPlay;
+  int _batch = 0;
+
+  /// The board the genre's own shelf answers; 全部 takes the cross-type one.
+  HongguoWebsiteBoard _boardFor(HongguoGenre? genre) => switch (genre) {
+    null => HongguoWebsiteBoard.all,
+    HongguoGenre.shortPlay => HongguoWebsiteBoard.real,
+    HongguoGenre.comicSeries => HongguoWebsiteBoard.comic,
+    HongguoGenre.aiSeries => HongguoWebsiteBoard.ai,
+  };
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.t;
-    final state = ref.watch(hongguoHomeProvider);
-    final controller = ref.read(hongguoHomeProvider.notifier);
+    final genre = _genre;
+    final home = ref.watch(hongguoHomeProvider);
+    final homeController = ref.read(hongguoHomeProvider.notifier);
+    final board = _boardFor(genre);
+    final rank = ref.watch(hongguoRankProvider.select((boards) => boards[board.name]));
+    final rankController = ref.read(hongguoRankProvider.notifier);
+    final heldRank = rank ?? (items: const <HongguoSeries>[], readAt: 0, loading: false, renewing: false, error: null);
+    final latest = ref.watch(hongguoLatestProvider.select((feeds) => feeds[_latest.name]));
+    final latestController = ref.read(hongguoLatestProvider.notifier);
+    final browse = ref.watch(hongguoBrowseProvider.select((feeds) => genre == null ? null : feeds[genre.name]));
+    final browseController = ref.read(hongguoBrowseProvider.notifier);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted) unawaited(controller.open(null));
+      if (!mounted) return;
+      unawaited(homeController.open(genre));
+      // `open` itself decides: read a board never held, renew quietly one
+      // whose snapshot has gone stale, and leave a fresh one alone.
+      unawaited(rankController.open(board));
+      if (latest == null || (latest.items.isEmpty && !latest.loading && latest.error == null)) {
+        unawaited(latestController.open(_latest));
+      }
+      if (genre != null) unawaited(browseController.open(genre));
     });
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (state.error != null) const _ServiceHint(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
-          child: Wrap(
+    final themes = [
+      for (final row in browse?.groups ?? const <HongguoFilterRow>[])
+        if (row.type == 'category_dim_theme') row,
+    ];
+    final themeRow = themes.isEmpty ? null : themes.first;
+    final hot = _theme.isEmpty ? null : browse;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s20,
+        children: [
+          Wrap(
             spacing: DsSpace.s8,
             runSpacing: DsSpace.s8,
             children: [
               DsChip(
                 label: Text(t.hongguo.homeTabAll),
-                selected: state.genre == null,
-                onChanged: (_) => unawaited(controller.open(null)),
+                selected: genre == null,
+                onChanged: (_) => setState(() {
+                  _genre = null;
+                  _theme = '';
+                }),
               ),
-              DsChip(
-                label: Text(t.hongguo.genreShortPlay),
-                selected: state.genre == HongguoGenre.shortPlay,
-                onChanged: (_) => unawaited(controller.open(HongguoGenre.shortPlay)),
-              ),
-              DsChip(
-                label: Text(t.hongguo.genreComicSeries),
-                selected: state.genre == HongguoGenre.comicSeries,
-                onChanged: (_) => unawaited(controller.open(HongguoGenre.comicSeries)),
-              ),
+              for (final value in HongguoGenre.values)
+                DsChip(
+                  label: Text(value.label(t)),
+                  selected: genre == value,
+                  onChanged: (_) => setState(() {
+                    _genre = value;
+                    _theme = '';
+                  }),
+                ),
             ],
           ),
-        ),
-        Expanded(
-          child: CardGrid<HongguoSeries>(
-            items: state.items,
-            layout: ref.watch(browseLayoutProvider),
-            aspectRatio: 0.62,
-            listMainAxisExtent: 124,
-            itemBuilder: (context, series) => HongguoSeriesCard(series: series, onOpen: () => _open(context, series)),
-            listItemBuilder: (context, series) => HongguoSeriesRow(series: series, onOpen: () => _open(context, series)),
-            isLoading: state.loading,
-            hasMore: true,
-            onLoadMore: controller.loadMore,
-            error: state.error,
-            onRetry: controller.retry,
-            onRefresh: controller.retry,
-            refreshError: state.error,
-            emptyIcon: HongguoView.home.icon,
-            emptyTitle: t.common.empty,
-            emptyDescription: t.hongguo.noResultsDescription,
+          if (themeRow != null)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: DsSpace.s12,
+              children: [
+                SizedBox(
+                  width: 64,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: DsSpace.s6),
+                    child: Text(
+                      t.hongguo.shelfCategory,
+                      style: DsTheme.of(context).typography.caption
+                          .copyWith(color: DsTheme.colorsOf(context).textMuted),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Wrap(
+                    spacing: DsSpace.s8,
+                    runSpacing: DsSpace.s8,
+                    children: [
+                      DsChip(
+                        label: Text(t.hongguo.filterAll),
+                        selected: _theme.isEmpty,
+                        onChanged: (_) {
+                          setState(() => _theme = '');
+                          unawaited(browseController.select(genre!, 'category_dim_theme', null));
+                        },
+                      ),
+                      for (final option in themeRow.items)
+                        DsChip(
+                          label: Text(option.name),
+                          selected: _theme == option.id,
+                          onChanged: (selected) {
+                            final chosen = selected ? option.id : '';
+                            setState(() => _theme = chosen);
+                            unawaited(browseController.select(genre!, 'category_dim_theme', chosen));
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          HongguoShelf(
+            title: t.hongguo.shelfForYou,
+            items: home.items.skip(_batch * _batchSize).take(_batchSize).toList(),
+            loading: home.loading && home.items.length <= _batch * _batchSize,
+            error: home.error,
+            onRetry: () => unawaited(homeController.retry()),
+            actions: [
+              DsButton(
+                size: DsSize.sm,
+                variant: DsButtonVariant.secondary,
+                leading: const DsIcon(DsIcons.refreshCw, size: 14),
+                onPressed: () {
+                  setState(() => _batch++);
+                  unawaited(homeController.loadMore());
+                },
+                child: Text(t.hongguo.shelfChangeBatch),
+              ),
+            ],
+            cardBuilder: (context, series) =>
+                HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
           ),
-        ),
-      ],
+          HongguoShelf(
+            title: _theme.isEmpty ? t.hongguo.shelfHot : _themeLabel(themeRow, _theme),
+            items: (_theme.isEmpty ? heldRank.items : hot?.items ?? const <HongguoSeries>[]).take(_batchSize).toList(),
+            loading: _theme.isEmpty ? heldRank.loading : hot?.loading ?? true,
+            error: _theme.isEmpty ? heldRank.error : hot?.error,
+            onRetry: _theme.isEmpty
+                ? () => unawaited(rankController.refresh(board))
+                : () => unawaited(browseController.retry(genre!)),
+            actions: [
+              if (_theme.isEmpty)
+                DsButton(
+                  size: DsSize.sm,
+                  variant: DsButtonVariant.secondary,
+                  trailing: const DsIcon(DsIcons.chevronRight, size: 14),
+                  onPressed: () => widget.onGo(HongguoView.rank),
+                  child: Text(t.hongguo.openFullBoard),
+                )
+              else
+                DsButton(
+                  size: DsSize.sm,
+                  variant: DsButtonVariant.secondary,
+                  trailing: const DsIcon(DsIcons.chevronRight, size: 14),
+                  onPressed: () => widget.onGo(HongguoView.find),
+                  child: Text(t.hongguo.seeMore),
+                ),
+              DsButton(
+                size: DsSize.sm,
+                variant: DsButtonVariant.secondary,
+                leading: const DsIcon(DsIcons.refreshCw, size: 14),
+                onPressed: _theme.isEmpty
+                    ? () => unawaited(rankController.refresh(board))
+                    : () => unawaited(browseController.retry(genre!)),
+                child: Text(t.hongguo.refreshShelf),
+              ),
+            ],
+            cardBuilder: (context, series) =>
+                HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
+          ),
+          HongguoShelf(
+            title: t.hongguo.shelfNew,
+            items: latest?.items ?? const <HongguoSeries>[],
+            loading: latest?.loading ?? true,
+            actions: [
+              for (final value in HongguoGenre.values)
+                DsChip(
+                  label: Text('${value.label(t)}${t.hongguo.newArrivals}'),
+                  selected: _latest == value,
+                  onChanged: (_) => setState(() => _latest = value),
+                ),
+              DsButton(
+                size: DsSize.sm,
+                variant: DsButtonVariant.secondary,
+                leading: const DsIcon(DsIcons.refreshCw, size: 14),
+                onPressed: () => unawaited(latestController.retry(_latest)),
+                child: Text(t.hongguo.refreshShelf),
+              ),
+            ],
+            cardBuilder: (context, series) =>
+                HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
+          ),
+        ],
+      ),
     );
+  }
+
+  static String _themeLabel(HongguoFilterRow? row, String id) {
+    if (row == null) return id;
+    for (final option in row.items) {
+      if (option.id == id) return option.name;
+    }
+    return id;
   }
 }
 
@@ -264,6 +431,14 @@ final class _FindView extends ConsumerStatefulWidget {
 
 final class _FindViewState extends ConsumerState<_FindView> {
   HongguoGenre _genre = HongguoGenre.shortPlay;
+
+  /// The shelf's conditions live in a panel over the posters, as the app's
+  /// other filtered lists do: the page keeps its room for the grid, and the
+  /// grid thins as each condition arrives.
+  Future<void> _openFilters() => showDsPanel<void>(
+    context: context,
+    builder: (context) => _FindFilterPanel(genre: _genre),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -284,6 +459,12 @@ final class _FindViewState extends ConsumerState<_FindView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(controller.open(_genre));
     });
+    final chosen = <String>[
+      for (final row in state.groups)
+        if (state.selection[row.type] case final id?)
+          for (final option in row.items)
+            if (option.id == id) option.name,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -305,12 +486,27 @@ final class _FindViewState extends ConsumerState<_FindView> {
                     ),
                 ],
               ),
-              for (final row in state.groups)
-                HongguoFilterRowView(
-                  row: row,
-                  selection: state.selection,
-                  onSelect: (id) => unawaited(controller.select(_genre, row.type, id)),
-                ),
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: Text(
+                      chosen.isEmpty ? t.hongguo.filterNone : chosen.join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: DsTheme.of(context).typography.caption
+                          .copyWith(color: DsTheme.colorsOf(context).textMuted),
+                    ),
+                  ),
+                  DsButton(
+                    size: DsSize.sm,
+                    variant: DsButtonVariant.secondary,
+                    leading: const DsIcon(DsIcons.listFilter, size: 14),
+                    onPressed: state.groups.isEmpty ? null : () => unawaited(_openFilters()),
+                    child: Text(t.hongguo.filter),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -320,8 +516,10 @@ final class _FindViewState extends ConsumerState<_FindView> {
             layout: ref.watch(browseLayoutProvider),
             aspectRatio: 0.62,
             listMainAxisExtent: 124,
-            itemBuilder: (context, series) => HongguoSeriesCard(series: series, onOpen: () => _open(context, series)),
-            listItemBuilder: (context, series) => HongguoSeriesRow(series: series, onOpen: () => _open(context, series)),
+            itemBuilder: (context, series) =>
+                HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
+            listItemBuilder: (context, series) =>
+                HongguoSeriesRow(series: series, onOpen: () => _open(context, series)),
             isLoading: state.loading,
             hasMore: state.hasMore,
             onLoadMore: () => controller.loadMore(_genre),
@@ -339,55 +537,167 @@ final class _FindViewState extends ConsumerState<_FindView> {
   }
 }
 
-/// The boards: the board chips above the ranked grid.
-final class _RankView extends ConsumerWidget {
-  const _RankView();
+/// The find page's conditions, in a panel over the posters: each choice goes
+/// straight to the shelf's feed, so the grid behind thins as the viewer picks.
+final class _FindFilterPanel extends ConsumerWidget {
+  const _FindFilterPanel({required this.genre});
+
+  /// The shelf whose selector panel the rows come from.
+  final HongguoGenre genre;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final state = ref.watch(hongguoRankProvider);
+    final feed = ref.watch(hongguoBrowseProvider.select((feeds) => feeds[genre.name]));
+    final controller = ref.read(hongguoBrowseProvider.notifier);
+    final selection = feed?.selection ?? const <String, String>{};
+    return DsPanel(
+      title: Text(t.hongguo.filterPanelTitle),
+      footer: Row(
+        spacing: DsSpace.s8,
+        children: [
+          Expanded(
+            child: DsButton(
+              variant: DsButtonVariant.secondary,
+              onPressed: selection.isEmpty ? null : () => unawaited(controller.clear(genre)),
+              child: Text(t.hongguo.filterReset),
+            ),
+          ),
+          Expanded(
+            child: DsButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.hongguo.filterDone)),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s8,
+        children: [
+          for (final row in feed?.groups ?? const <HongguoFilterRow>[])
+            HongguoFilterRowView(
+              row: row,
+              selection: selection,
+              onSelect: (id) => unawaited(controller.select(genre, row.type, id)),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The boards: one whole board at a time, filtered by the topics its own
+/// rows carry — the rows keep the place the board gave them.
+final class _RankView extends ConsumerStatefulWidget {
+  const _RankView();
+
+  @override
+  ConsumerState<_RankView> createState() => _RankViewState();
+}
+
+final class _RankViewState extends ConsumerState<_RankView> {
+  HongguoWebsiteBoard _board = HongguoWebsiteBoard.all;
+  String _topic = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     final controller = ref.read(hongguoRankProvider.notifier);
+    final feed = ref.watch(hongguoRankProvider.select((boards) => boards[_board.name]));
+    final held = feed ?? (items: const <HongguoSeries>[], readAt: 0, loading: false, renewing: false, error: null);
+    final topics = controller.topicsOf(_board);
+    final rows = controller.rowsOf(_board, _topic);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted) unawaited(controller.open(state.board));
+      if (mounted) unawaited(controller.open(_board));
     });
+    final figures = <String>[
+      t.hongguo.rankSource,
+      t.hongguo.rankSeriesCount(count: held.items.length),
+      if (_topic.isNotEmpty) '$_topic ${t.hongguo.rankSeriesCount(count: rows.length)}（${t.hongguo.rankKeepsPlaces}）',
+      if (held.renewing) t.hongguo.rankRenewing,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (state.error != null) const _ServiceHint(),
+        if (held.error != null && held.items.isEmpty) const _ServiceHint(),
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
-          child: Wrap(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
-            runSpacing: DsSpace.s8,
             children: [
-              for (final board in HongguoWebsiteBoard.values)
-                DsChip(
-                  label: Text(_boardLabel(t, board)),
-                  selected: state.board == board,
-                  onChanged: (_) => unawaited(controller.open(board)),
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: Wrap(
+                      spacing: DsSpace.s8,
+                      runSpacing: DsSpace.s8,
+                      children: [
+                        for (final board in HongguoWebsiteBoard.values)
+                          DsChip(
+                            label: Text(_boardLabel(t, board)),
+                            selected: _board == board,
+                            onChanged: (_) => setState(() {
+                              _board = board;
+                              _topic = '';
+                            }),
+                          ),
+                      ],
+                    ),
+                  ),
+                  DsButton(
+                    size: DsSize.sm,
+                    variant: DsButtonVariant.secondary,
+                    leading: const DsIcon(DsIcons.refreshCw, size: 14),
+                    onPressed: held.loading || held.renewing ? null : () => unawaited(controller.refresh(_board)),
+                    child: Text(held.loading || held.renewing ? t.hongguo.rankReading : t.hongguo.refresh),
+                  ),
+                ],
+              ),
+              if (topics.isNotEmpty)
+                Wrap(
+                  spacing: DsSpace.s8,
+                  runSpacing: DsSpace.s8,
+                  children: [
+                    DsChip(
+                      label: Text('${t.hongguo.rankTopicAll} · ${held.items.length}'),
+                      selected: _topic.isEmpty,
+                      onChanged: (_) => setState(() => _topic = ''),
+                    ),
+                    for (final topic in topics)
+                      DsChip(
+                        label: Text('${topic.topic} · ${topic.count}'),
+                        selected: _topic == topic.topic,
+                        onChanged: (selected) => setState(() => _topic = selected ? topic.topic : ''),
+                      ),
+                  ],
                 ),
+              Text(
+                figures.join(' · '),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.caption.copyWith(color: colors.textMuted),
+              ),
             ],
           ),
         ),
         Expanded(
           child: CardGrid<HongguoSeries>(
-            items: state.items,
+            items: rows,
             layout: ref.watch(browseLayoutProvider),
             aspectRatio: 0.62,
             listMainAxisExtent: 124,
-            itemBuilder: (context, series) => HongguoSeriesCard(series: series, onOpen: () => _open(context, series)),
-            listItemBuilder: (context, series) => HongguoSeriesRow(series: series, onOpen: () => _open(context, series)),
-            isLoading: state.loading,
-            hasMore: state.hasMore,
-            onLoadMore: controller.loadMore,
-            error: state.error,
-            onRetry: controller.retry,
-            onRefresh: controller.retry,
-            refreshError: state.error,
+            itemBuilder: (context, series) =>
+                HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
+            listItemBuilder: (context, series) =>
+                HongguoSeriesRow(series: series, onOpen: () => _open(context, series)),
+            isLoading: held.loading && rows.isEmpty,
+            error: held.error,
+            onRetry: () => unawaited(controller.refresh(_board)),
             emptyIcon: HongguoView.rank.icon,
             emptyTitle: t.common.empty,
-            emptyDescription: t.hongguo.noResultsDescription,
+            emptyDescription: _topic.isEmpty ? t.hongguo.noResultsDescription : t.hongguo.rankEmptyTopic,
           ),
         ),
       ],
@@ -417,24 +727,54 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
-          child: Wrap(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              DsChip(
-                label: Text(t.hongguo.localTab),
-                selected: !_account,
-                onChanged: (_) => setState(() => _account = false),
+              Wrap(
+                spacing: DsSpace.s8,
+                children: [
+                  DsChip(
+                    label: Text(t.hongguo.localTab),
+                    selected: !_account,
+                    onChanged: (_) => setState(() => _account = false),
+                  ),
+                  DsChip(
+                    label: Text(t.hongguo.accountTab),
+                    selected: _account,
+                    onChanged: (_) {
+                      setState(() => _account = true);
+                      if (ref.read(hongguoAccountProvider).signedIn && shelf.items.isEmpty && !shelf.loading) {
+                        unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).refresh());
+                      }
+                    },
+                  ),
+                ],
               ),
-              DsChip(
-                label: Text(t.hongguo.accountTab),
-                selected: _account,
-                onChanged: (_) {
-                  setState(() => _account = true);
-                  if (ref.read(hongguoAccountProvider).signedIn && shelf.items.isEmpty && !shelf.loading) {
-                    unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).refresh());
-                  }
-                },
-              ),
+              if (!_account)
+                Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _favoritesStatus(t, library),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: DsTheme.of(context).typography.caption
+                            .copyWith(color: DsTheme.colorsOf(context).textMuted),
+                      ),
+                    ),
+                    DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.secondary,
+                      leading: const DsIcon(DsIcons.refreshCw, size: 14),
+                      onPressed: library.favorites.isEmpty || library.checking
+                          ? null
+                          : () => unawaited(ref.read(hongguoLibraryProvider.notifier).checkUpdates(force: true)),
+                      child: Text(t.hongguo.favoriteCheck),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -455,7 +795,7 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
               ),
             ),
             _ => _SeriesList(
-              rows: library.favorites,
+              rows: [for (final series in library.favorites) series.copyWith(hot: _favoriteLine(t, library, series))],
               loading: false,
               error: null,
               emptyText: t.hongguo.favoritesLocalEmpty,
@@ -487,35 +827,72 @@ final class _HistoryView extends ConsumerStatefulWidget {
 final class _HistoryViewState extends ConsumerState<_HistoryView> {
   bool _account = false;
 
+  /// The local shelf's own filter: everything, what the viewer finished, and
+  /// what is still running — the station's 全部 / 已看完 / 未看完 row.
+  int _watched = 0;
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final library = ref.watch(hongguoLibraryProvider);
     final account = ref.watch(hongguoAccountProvider);
     final cloud = ref.watch(hongguoAccountHistoryProvider);
+    final rows = [
+      for (final row in library.history)
+        if (_watched == 0 || (_watched == 1) == row.completed) row,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
-          child: Wrap(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              DsChip(
-                label: Text(t.hongguo.localTab),
-                selected: !_account,
-                onChanged: (_) => setState(() => _account = false),
+              Wrap(
+                spacing: DsSpace.s8,
+                runSpacing: DsSpace.s8,
+                children: [
+                  DsChip(
+                    label: Text(t.hongguo.localTab),
+                    selected: !_account,
+                    onChanged: (_) => setState(() => _account = false),
+                  ),
+                  DsChip(
+                    label: Text(t.hongguo.accountTab),
+                    selected: _account,
+                    onChanged: (_) {
+                      setState(() => _account = true);
+                      if (ref.read(hongguoAccountProvider).signedIn && cloud.items.isEmpty && !cloud.loading) {
+                        unawaited(ref.read(hongguoAccountHistoryProvider.notifier).refresh());
+                      }
+                    },
+                  ),
+                ],
               ),
-              DsChip(
-                label: Text(t.hongguo.accountTab),
-                selected: _account,
-                onChanged: (_) {
-                  setState(() => _account = true);
-                  if (ref.read(hongguoAccountProvider).signedIn && cloud.items.isEmpty && !cloud.loading) {
-                    unawaited(ref.read(hongguoAccountHistoryProvider.notifier).refresh());
-                  }
-                },
-              ),
+              if (!_account)
+                Wrap(
+                  spacing: DsSpace.s8,
+                  runSpacing: DsSpace.s8,
+                  children: [
+                    DsChip(
+                      label: Text(t.hongguo.filterAll),
+                      selected: _watched == 0,
+                      onChanged: (_) => setState(() => _watched = 0),
+                    ),
+                    DsChip(
+                      label: Text(t.hongguo.historyFilterWatched),
+                      selected: _watched == 1,
+                      onChanged: (_) => setState(() => _watched = 1),
+                    ),
+                    DsChip(
+                      label: Text(t.hongguo.historyFilterUnwatched),
+                      selected: _watched == 2,
+                      onChanged: (_) => setState(() => _watched = 2),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -533,7 +910,7 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
               error: cloud.error,
               emptyText: t.hongguo.historyAccountEmpty,
             ),
-            _ => _ProgressList(rows: library.history),
+            _ => _ProgressList(rows: rows),
           },
         ),
       ],
@@ -582,9 +959,7 @@ final class _ReservationsViewState extends ConsumerState<_ReservationsView> {
           child: !account.signedIn
               ? _SignInGate(message: t.hongguo.reservationsOff)
               : _SeriesList(
-                  rows: [
-                    for (final row in _online ? state.online : state.upcoming) row.series,
-                  ],
+                  rows: [for (final row in _online ? state.online : state.upcoming) row.series],
                   loading: state.loading,
                   error: state.error,
                   emptyText: _online ? t.hongguo.reservationsOnlineEmpty : t.hongguo.reservationsUpcomingEmpty,
@@ -608,6 +983,9 @@ final class _AccountView extends ConsumerStatefulWidget {
 final class _AccountViewState extends ConsumerState<_AccountView> {
   Timer? _poll;
 
+  /// Whether the sign-in sheet shows the phone form rather than the QR code.
+  bool _phone = false;
+
   @override
   void dispose() {
     _poll?.cancel();
@@ -623,7 +1001,10 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
     final session = ref.watch(hongguoLoginSessionProvider);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (!ref.read(hongguoAccountProvider).signedIn && ref.read(hongguoLoginSessionProvider).qr == null && !ref.read(hongguoLoginSessionProvider).polling) {
+      if (!ref.read(hongguoAccountProvider).signedIn &&
+          !_phone &&
+          ref.read(hongguoLoginSessionProvider).qr == null &&
+          !ref.read(hongguoLoginSessionProvider).polling) {
         unawaited(ref.read(hongguoLoginSessionProvider.notifier).load());
         _poll ??= Timer.periodic(const Duration(seconds: 2), (timer) async {
           final done = await ref.read(hongguoLoginSessionProvider.notifier).poll();
@@ -639,6 +1020,10 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
       }
     });
     if (account.signedIn) {
+      final favorites = ref.watch(hongguoAccountFavoritesProvider);
+      final cloud = ref.watch(hongguoAccountHistoryProvider);
+      final reservations = ref.watch(hongguoReservationsProvider);
+      final profile = account.profile;
       return SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
         child: Column(
@@ -648,36 +1033,63 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
             Row(
               spacing: DsSpace.s12,
               children: [
-                DsAvatar(initials: account.profile?.nickname ?? 'HG', toneIndex: 0),
+                DsAvatar(
+                  initials: profile?.nickname ?? 'HG',
+                  size: DsSize.lg,
+                  toneIndex: DsAvatar.toneFor(profile?.id ?? ''),
+                ),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: DsSpace.s3,
                     children: [
                       Text(
-                        account.profile?.nickname ?? t.hongguo.title,
+                        profile?.nickname ?? t.hongguo.accountSignedInAs,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: theme.typography.title.copyWith(color: colors.text),
                       ),
                       Text(
-                        account.profile == null ? '' : '${t.hongguo.accountSignedInAs} · ${account.profile!.id}',
+                        profile == null ? t.hongguo.accountReading : '${t.hongguo.accountId}：${profile.id}',
                         style: theme.typography.caption.copyWith(color: colors.textMuted),
                       ),
                     ],
                   ),
                 ),
+                if (profile != null)
+                  DsButton(
+                    size: DsSize.sm,
+                    variant: DsButtonVariant.ghost,
+                    leading: const DsIcon(DsIcons.copy, size: 14),
+                    onPressed: () async {
+                      await Clipboard.setData(ClipboardData(text: profile.id));
+                      if (context.mounted) showDsToast(context: context, title: t.hongguo.copied);
+                    },
+                    child: Text(t.hongguo.copyAccountId),
+                  ),
               ],
             ),
             DsListSection(
               children: [
                 DsListRow(
-                  leading: const DsIcon(DsIcons.refreshCw),
-                  title: Text(t.hongguo.accountRefresh),
-                  onPressed: () {
-                    unawaited(ref.read(hongguoAccountProvider.notifier).refreshProfile());
-                    unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).refresh());
-                    unawaited(ref.read(hongguoAccountHistoryProvider.notifier).refresh());
-                    unawaited(ref.read(hongguoReservationsProvider.notifier).refresh());
-                  },
+                  leading: const DsIcon(DsIcons.heart),
+                  title: Text(t.hongguo.accountFavoritesRefresh),
+                  description: Text(_readCount(t, favorites.items.length, favorites.loading, favorites.error)),
+                  onPressed: () => unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).refresh()),
+                ),
+                DsListRow(
+                  leading: const DsIcon(DsIcons.history),
+                  title: Text(t.hongguo.accountHistoryRefresh),
+                  description: Text(_readCount(t, cloud.items.length, cloud.loading, cloud.error)),
+                  onPressed: () => unawaited(ref.read(hongguoAccountHistoryProvider.notifier).refresh()),
+                ),
+                DsListRow(
+                  leading: const DsIcon(DsIcons.calendarClock),
+                  title: Text(t.hongguo.reservationsRefresh),
+                  description: Text(
+                    _readCount(t, reservations.online.length + reservations.upcoming.length, reservations.loading, reservations.error),
+                  ),
+                  onPressed: () => unawaited(ref.read(hongguoReservationsProvider.notifier).refresh()),
                 ),
                 DsListRow(
                   leading: const DsIcon(DsIcons.logOut),
@@ -707,25 +1119,45 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
               textAlign: TextAlign.center,
               style: theme.typography.body.copyWith(color: colors.textMuted),
             ),
-            if (session.qr != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(theme.radii.card),
-                child: Image(image: MemoryImage(session.qr!.image), width: 240, height: 240, fit: BoxFit.contain),
-              )
-            else if (session.error != null)
-              Padding(
-                padding: const EdgeInsets.all(DsSpace.s12),
-                child: Text(session.error!, style: theme.typography.caption.copyWith(color: colors.danger.text)),
-              )
-            else
-              const SizedBox(height: 240, child: Center(child: DsSpinner())),
-            DsButton(
-              variant: DsButtonVariant.secondary,
-              onPressed: () {
-                unawaited(ref.read(hongguoLoginSessionProvider.notifier).load());
-              },
-              child: Text(t.hongguo.accountQrRefresh),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: DsSpace.s8,
+              children: [
+                DsChip(
+                  label: Text(t.hongguo.accountQrToggle),
+                  selected: !_phone,
+                  onChanged: (_) => setState(() => _phone = false),
+                ),
+                DsChip(
+                  label: Text(t.hongguo.accountPhoneToggle),
+                  selected: _phone,
+                  onChanged: (_) => setState(() => _phone = true),
+                ),
+              ],
             ),
+            if (_phone)
+              const HongguoPhoneSignIn()
+            else ...[
+              if (session.qr != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(theme.radii.card),
+                  child: Image(image: MemoryImage(session.qr!.image), width: 240, height: 240, fit: BoxFit.contain),
+                )
+              else if (session.error != null)
+                Padding(
+                  padding: const EdgeInsets.all(DsSpace.s12),
+                  child: Text(session.error!, style: theme.typography.caption.copyWith(color: colors.danger.text)),
+                )
+              else
+                const SizedBox(height: 240, child: Center(child: DsSpinner())),
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                onPressed: () {
+                  unawaited(ref.read(hongguoLoginSessionProvider.notifier).load());
+                },
+                child: Text(t.hongguo.accountQrRefresh),
+              ),
+            ],
           ],
         ),
       ),
@@ -745,6 +1177,10 @@ final class _SearchView extends ConsumerStatefulWidget {
 final class _SearchViewState extends ConsumerState<_SearchView> {
   final TextEditingController _query = TextEditingController();
 
+  /// The shelf the query is asked of: the app's own search answers one
+  /// shelf at a time, so comics need asking as comics.
+  HongguoGenre _genre = HongguoGenre.shortPlay;
+
   @override
   void dispose() {
     _query.dispose();
@@ -762,21 +1198,94 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
         if (state.error != null) const _ServiceHint(),
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              Expanded(
-                child: DsTextField(
-                  controller: _query,
-                  semanticLabel: t.hongguo.searchHint,
-                  onSubmitted: (value) => unawaited(controller.search(value)),
+              Wrap(
+                spacing: DsSpace.s8,
+                runSpacing: DsSpace.s8,
+                children: [
+                  for (final genre in HongguoGenre.values)
+                    DsChip(
+                      label: Text(genre.label(t)),
+                      selected: _genre == genre,
+                      onChanged: (selected) {
+                        if (!selected) return;
+                        setState(() => _genre = genre);
+                        if (state.query.isNotEmpty) unawaited(controller.search(state.query, genre: genre));
+                      },
+                    ),
+                ],
+              ),
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: DsTextField(
+                      controller: _query,
+                      semanticLabel: t.hongguo.searchHint,
+                      onChanged: controller.suggest,
+                      onSubmitted: (value) => unawaited(controller.search(value, genre: _genre)),
+                    ),
+                  ),
+                  DsButton(
+                    variant: DsButtonVariant.primary,
+                    onPressed: () => unawaited(controller.search(_query.text, genre: _genre)),
+                    child: Text(t.hongguo.search),
+                  ),
+                ],
+              ),
+              if (state.suggestions.isNotEmpty)
+                Wrap(
+                  spacing: DsSpace.s8,
+                  runSpacing: DsSpace.s8,
+                  children: [
+                    for (final word in state.suggestions)
+                      DsChip(
+                        label: Text(word),
+                        selected: false,
+                        onChanged: (_) {
+                          _query.text = word;
+                          unawaited(controller.search(word, genre: state.genre));
+                        },
+                      ),
+                  ],
+                )
+              else if (state.suggestionError != null)
+                Text(
+                  '${t.hongguo.suggestOff} · ${state.suggestionError}',
+                  style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
                 ),
-              ),
-              DsButton(
-                variant: DsButtonVariant.primary,
-                onPressed: () => unawaited(controller.search(_query.text)),
-                child: Text(t.hongguo.search),
-              ),
+              if (state.query.isEmpty && state.history.isNotEmpty)
+                Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(
+                      child: Wrap(
+                        spacing: DsSpace.s8,
+                        runSpacing: DsSpace.s8,
+                        children: [
+                          for (final word in state.history)
+                            DsChip(
+                              label: Text(word),
+                              selected: false,
+                              onChanged: (_) {
+                                _query.text = word;
+                                unawaited(controller.search(word, genre: state.genre));
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                    DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.ghost,
+                      onPressed: controller.clearHistory,
+                      child: Text(t.hongguo.searchHistoryClear),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -786,8 +1295,10 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
             layout: ref.watch(browseLayoutProvider),
             aspectRatio: 0.62,
             listMainAxisExtent: 124,
-            itemBuilder: (context, series) => HongguoSeriesCard(series: series, onOpen: () => _open(context, series)),
-            listItemBuilder: (context, series) => HongguoSeriesRow(series: series, onOpen: () => _open(context, series)),
+            itemBuilder: (context, series) =>
+                HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
+            listItemBuilder: (context, series) =>
+                HongguoSeriesRow(series: series, onOpen: () => _open(context, series)),
             isLoading: state.loading,
             hasMore: state.hasMore,
             onLoadMore: controller.loadMore,
@@ -1064,6 +1575,44 @@ String _clock(int milliseconds) {
     return '$hours:${(minutes % 60).toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
   return '$minutes:${seconds.toString().padLeft(2, '0')}';
+}
+
+/// What one account shelf says about itself: the read in flight, the count
+/// it holds, or the reason it holds nothing.
+String _readCount(Translations t, int count, bool loading, String? error) {
+  if (loading) return t.hongguo.accountReading;
+  if (count == 0) return error ?? t.hongguo.accountNotRead;
+  return t.hongguo.accountReadCount(count: count);
+}
+
+/// What the local shelf says about its last walk over the favorites.
+String _favoritesStatus(Translations t, HongguoLibraryState library) {
+  if (library.checking) {
+    return t.hongguo.favoriteChecking(done: library.checksDone, total: library.checksTotal);
+  }
+  if (library.favorites.isEmpty) return t.hongguo.favoriteNoFavorites;
+  if (library.checksTotal > 0) {
+    final walked = t.hongguo.favoriteChecked(done: library.checksDone, total: library.checksTotal);
+    if (library.checkFailures == 0) return walked;
+    final some = t.hongguo.favoriteCheckedSome(
+      done: library.checksDone,
+      total: library.checksTotal,
+      failures: library.checkFailures,
+    );
+    return library.checkError == null ? some : '$some · ${library.checkError}';
+  }
+  final grown = library.updates.values.where((update) => update.added > 0).length;
+  return grown == 0 ? t.hongguo.favoriteRecentCheck : t.hongguo.favoriteBadge(count: grown);
+}
+
+/// One favorite's own line: what the series grew by since it was shelfed, and
+/// where it now ends — the reference's `共 N 集（+M）` line.
+String _favoriteLine(Translations t, HongguoLibraryState library, HongguoSeries series) {
+  final update = library.updates[series.seriesId];
+  if (update == null) return '';
+  return update.added > 0
+      ? '${t.hongguo.favoriteAdded(count: update.added)} · ${t.hongguo.favoriteUpTo(count: update.total)}'
+      : t.hongguo.favoriteUpTo(count: update.total);
 }
 
 void _open(BuildContext context, HongguoSeries series) {

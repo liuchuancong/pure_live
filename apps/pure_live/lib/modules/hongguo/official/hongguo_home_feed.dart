@@ -17,12 +17,10 @@ const String _kFeedHost = 'https://api5-normal-sinfonlinea.fqnovel.com';
 /// memory only. One instance per genre; a fresh one starts a fresh session.
 final class HongguoHomeFeed {
   /// Creates the feed; [_account] personalizes it when signed in.
-  HongguoHomeFeed({required this._http, this._account})
-    : _signer = HongguoSigner();
+  HongguoHomeFeed({required this._http, this._account});
 
   final LiveHttp _http;
   final HongguoCredentials? _account;
-  final HongguoSigner _signer;
   final Set<String> _seen = {};
   String _session = '';
   int _offset = 0;
@@ -128,7 +126,10 @@ final class HongguoHomeFeed {
             ].contains(entry.key))
               entry.key: entry.value,
         };
-        final signed = _signer.sign(
+        // The signer carries the same device the query does: the platform
+        // reads the identity out of `x-medusa` and rejects the two halves
+        // disagreeing.
+        final signed = HongguoSigner(device: query).sign(
           '$_kFeedHost/reading/distribution/category/landpage/v/',
           query,
           body: Uint8List.fromList(body),

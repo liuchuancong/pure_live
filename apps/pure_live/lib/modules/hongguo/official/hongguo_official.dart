@@ -4,6 +4,7 @@
 // the app's endpoints (the discovery landpage and search signed in-process;
 // the playback model carried by the registered device identity alone).
 import 'dart:convert' show jsonDecode, jsonEncode, utf8;
+import 'dart:math' as math;
 import 'dart:typed_data' show Uint8List;
 
 import 'package:live_net/live_net.dart' show LiveHttp, LiveRequest;
@@ -149,24 +150,59 @@ final class HongguoOfficialClient {
   final LiveHttp _http;
   final HongguoSigner _signer;
   final HongguoDeviceSession _session;
-  final Map<String, Map<String, String>> _cookies = {};
+
+  /// host → name → (value, expiry); a null expiry lives as long as the
+  /// process, as the platform's own session cookies do.
+  final Map<String, Map<String, (String value, int? expiresAtMs)>> _cookies = {};
+
+  /// The website's suggestion call names the browsing session; the platform
+  /// issues one per page load, so a random id per client is what it sees.
+  final String _webId = _sessionId();
+
+  static String _sessionId() {
+    final random = math.Random.secure();
+    final hex = List<String>.generate(32, (_) => random.nextInt(16).toRadixString(16));
+    return '${hex.sublist(0, 8).join()}-${hex.sublist(8, 12).join()}-${hex.sublist(12, 16).join()}'
+        '-${hex.sublist(16, 20).join()}-${hex.sublist(20, 32).join()}';
+  }
 
   // ---- transport ---------------------------------------------------------
 
   Map<String, String> _cookieHeaderFor(Uri uri) {
     final jar = _cookies[uri.host];
     if (jar == null || jar.isEmpty) return const {};
-    return {'Cookie': jar.entries.map((entry) => '${entry.key}=${entry.value}').join('; ')};
+    final now = DateTime.now().millisecondsSinceEpoch;
+    // A cookie the platform let go must not ride on the next request: the
+    // rank boards answer a fresh session each visit, and a stale one reads
+    // as an empty board.
+    jar.removeWhere((_, cookie) => cookie.$2 != null && cookie.$2! <= now);
+    if (jar.isEmpty) return const {};
+    return {
+      'Cookie': [for (final entry in jar.entries) '${entry.key}=${entry.value.$1}'].join('; '),
+    };
   }
 
   void _storeCookies(Uri uri, List<String> setCookies) {
     if (setCookies.isEmpty) return;
     final jar = _cookies.putIfAbsent(uri.host, () => {});
     for (final header in setCookies) {
-      final pair = header.split(';').first.trim();
+      final attributes = header.split(';');
+      final pair = attributes.first.trim();
       final at = pair.indexOf('=');
       if (at <= 0) continue;
-      jar[pair.substring(0, at).trim()] = pair.substring(at + 1).trim();
+      final name = pair.substring(0, at).trim();
+      final value = pair.substring(at + 1).trim();
+      int? expiresAtMs;
+      for (final attribute in attributes.skip(1)) {
+        final parts = attribute.split('=');
+        final key = parts.first.trim().toLowerCase();
+        if (key == 'max-age' && parts.length > 1) {
+          expiresAtMs = DateTime.now().millisecondsSinceEpoch + (int.tryParse(parts[1].trim()) ?? 0);
+        } else if (key == 'expires' && parts.length > 1) {
+          expiresAtMs = DateTime.tryParse(parts.skip(1).join('=').trim())?.millisecondsSinceEpoch;
+        }
+      }
+      jar[name] = (value, expiresAtMs);
     }
   }
 
@@ -257,7 +293,10 @@ final class HongguoOfficialClient {
   }
 
   /// One board page from the public website.
-  Future<({List<HongguoSeries> items, bool hasMore})> websiteRank(HongguoWebsiteBoard board, {int page = 1}) async {
+  Future<({List<HongguoSeries> items, bool hasMore, int totalPages})> websiteRank(
+    HongguoWebsiteBoard board, {
+    int page = 1,
+  }) async {
     final html = await _text(Uri.parse('$_kSite/rank/${board.route}?page=$page'), retry: true);
     final payload = _rankPayload(html, board);
     if (payload['isSuccess'] != true) {
@@ -278,7 +317,29 @@ final class HongguoOfficialClient {
       final series = _seriesFromRank(row);
       if (series != null) items.add(series);
     }
-    return (items: items, hasMore: items.isNotEmpty && page < totalPages && page < 100);
+    return (items: items, hasMore: items.isNotEmpty && page < totalPages && page < 100, totalPages: totalPages);
+  }
+
+  /// A board read whole: every page it claims, so the题材 filter and the
+  /// board positions cover the full list rather than the page on screen. The
+  /// website's boards are five pages of twenty; more than that means the
+  /// source changed shape, and reading it unbounded is not worth the risk.
+  Future<List<HongguoSeries>> websiteRankSnapshot(HongguoWebsiteBoard board) async {
+    final first = await websiteRank(board);
+    if (first.totalPages > 5) {
+      throw const HongguoOfficialFailure('榜单页数超出预期');
+    }
+    final items = [...first.items];
+    for (var page = 2; page <= first.totalPages; page++) {
+      final next = await websiteRank(board, page: page);
+      // A page that answers nothing is a source change, not an empty board:
+      // stop rather than serve half a list as the whole of it.
+      if (next.items.isEmpty) {
+        throw const HongguoOfficialFailure('榜单未读完整');
+      }
+      items.addAll(next.items);
+    }
+    return items;
   }
 
   /// The rank payload behind the page's `data-fn-*` script attributes —
@@ -355,11 +416,43 @@ final class HongguoOfficialClient {
     );
   }
 
+  /// Anonymous server suggestions for a half-typed word — the platform does
+  /// the pinyin matching here, so a failed read never blocks the search
+  /// itself. Eight at most, as the website asks for.
+  Future<List<String>> searchSuggestions(String keyword) async {
+    final clean = keyword.trim();
+    if (clean.isEmpty || clean.length > 80) return const [];
+    final raw = await _text(
+      Uri.parse(
+        '$_kSite/incent_resource/suggestion?app_id=8662&web_id=$_webId'
+        '&query=${Uri.encodeQueryComponent(clean)}&count=8',
+      ),
+      retry: true,
+    );
+    final decoded = jsonDecode(raw);
+    final rows = decoded is Map<String, Object?> ? decoded['suggest_list'] : null;
+    if (rows is! List<Object?>) {
+      throw const HongguoOfficialFailure('搜索联想暂不可用');
+    }
+    final words = <String>[];
+    for (final row in rows) {
+      if (row is! Map<String, Object?>) continue;
+      var word = _str(row, 'name');
+      if (word.isEmpty) {
+        final display = row['display_words'];
+        if (display is List<Object?> && display.isNotEmpty) word = '${display.first}'.trim();
+      }
+      if (word.isEmpty || word.length > 80 || words.contains(word)) continue;
+      words.add(word);
+      if (words.length >= 8) break;
+    }
+    return words;
+  }
+
   /// The website's cross-category search page.
   Future<({List<HongguoSeries> items, bool hasMore})> websiteSearch(String keyword, {int page = 1}) async {
     final raw = await _text(
       Uri.parse('$_kSite/api/search/result?query=${Uri.encodeQueryComponent(keyword)}&page=$page'),
-      userAgent: HongguoVendor.appUa,
       retry: true,
     );
     final section = jsonDecode(raw);
@@ -506,7 +599,12 @@ final class HongguoOfficialClient {
   Future<({List<HongguoSeries> items, bool hasMore, HongguoSearchCursor? next})> appSearch(
     String keyword, {
     HongguoSearchCursor? cursor,
+    HongguoGenre genre = HongguoGenre.shortPlay,
   }) async {
+    // The app's own search is scoped to one shelf: 11 is the live-action
+    // short drama tab, 19 everything animated — asking 11 alone can never
+    // answer a comic.
+    final tabType = genre == HongguoGenre.shortPlay ? 11 : 19;
     final page = cursor?.page ?? 1;
     final values = {
       ...HongguoVendor.device,
@@ -518,7 +616,7 @@ final class HongguoOfficialClient {
       'query': keyword,
       'count': '20',
       'offset': '${(page - 1) * 20}',
-      'tab_type': '11',
+      'tab_type': '$tabType',
       'bookshelf_search_plan': '4',
       'use_correct': 'true',
       'user_is_login': '0',
@@ -544,10 +642,10 @@ final class HongguoOfficialClient {
     }
     Map<String, Object?>? tab;
     for (final row in tabs) {
-      if (row is Map<String, Object?> && (row['tab_type'] as num?)?.toInt() == 11) tab = row;
+      if (row is Map<String, Object?> && (row['tab_type'] as num?)?.toInt() == tabType) tab = row;
     }
     if (tab == null) {
-      throw const HongguoOfficialFailure('短剧搜索暂不可用');
+      throw const HongguoOfficialFailure('剧集搜索暂不可用');
     }
     final items = <HongguoSeries>[];
     final cells = tab['data'];
@@ -602,18 +700,79 @@ final class HongguoOfficialClient {
   /// fresh anonymous device.
   Future<void> resetDevice() => _session.reset();
 
-  /// Every playable rendition of one episode, best tier last. The model
-  /// endpoint needs no signature — the registered device identity is the
-  /// ticket.
-  Future<List<HongguoRendition>> playbackLadder(String vid) async {
-    if (!RegExp(r'^[0-9]{1,30}$').hasMatch(vid)) {
+  /// The models fetched ahead of playback, with the moment they were read. An
+  /// ahead entry lives a minute and is taken once, so a failed retry never
+  /// reuses the same stale address — the reference's rule.
+  final Map<String, (List<HongguoRendition> ladder, DateTime savedAt)> _aheadLadders = {};
+
+  static const Duration _aheadTtl = Duration(seconds: 60);
+  static const int _aheadLimit = 6;
+
+  /// Every playable rendition of one episode, best tier last. [ahead] names
+  /// the next episodes' vids (at most two): their models come back in the
+  /// same round trip and wait for the handoff, as the reference's
+  /// `metadataAhead` does. The model endpoint needs no signature — the
+  /// registered device identity is the ticket.
+  Future<List<HongguoRendition>> playbackLadder(String vid, {List<String> ahead = const []}) async {
+    final pattern = RegExp(r'^[0-9]{1,30}$');
+    if (!pattern.hasMatch(vid)) {
       throw const HongguoOfficialFailure('分集编号异常');
     }
+    final wanted = [
+      for (final id in ahead)
+        if (id != vid) id,
+    ].take(2).toList();
+    if (wanted.any((id) => !pattern.hasMatch(id))) {
+      throw const HongguoOfficialFailure('分集编号异常');
+    }
+    final cached = _takeAhead(vid);
+    if (cached != null) return cached;
+    final ids = [vid, ...wanted];
+    final models = await _playbackModels(ids);
+    Map<String, Object?>? entry;
+    final named = models[vid];
+    if (named is Map<String, Object?>) {
+      entry = named;
+    } else {
+      for (final value in models.values) {
+        if (value is Map<String, Object?>) {
+          entry = value;
+          break;
+        }
+      }
+    }
+    if (entry == null) {
+      throw const HongguoOfficialFailure('播放信息为空');
+    }
+    final model = _modelOf(entry);
+    if (model == null) {
+      throw const HongguoOfficialFailure('播放模型为空');
+    }
+    for (final next in ids.skip(1)) {
+      final row = models[next];
+      if (row is! Map<String, Object?>) continue;
+      final aheadModel = _modelOf(row);
+      if (aheadModel == null) continue;
+      final renditions = _inlineRenditions(aheadModel);
+      // Only an inline ladder is worth keeping: a fallback envelope would
+      // need its own round trip, which the handoff would pay anyway.
+      if (renditions.isEmpty) continue;
+      _rememberAhead(next, renditions);
+    }
+    final inline = _inlineRenditions(model);
+    if (inline.isNotEmpty) return inline;
+    return await _fallbackLadder(model);
+  }
+
+  /// The `data` map of the player-model call for [ids] — the current vid plus
+  /// at most two ahead, in one request.
+  Future<Map<String, Object?>> _playbackModels(List<String> ids) async {
     final identity = await _session.profile();
     final body = utf8.encode(
       '{"biz_param":{"detail_page_version":0,"device_level":3,"disable_digg_stat":false,'
       '"need_all_video_definition":true,"need_mp4_align":false,"use_os_player":false,'
-      '"use_server_dns":false,"video_platform":1024},"mixed_video_id_map":{"1004":["$vid"]}}',
+      '"use_server_dns":false,"video_platform":1024},"mixed_video_id_map":{"1004":'
+      '${jsonEncode(ids)}}}',
     );
     final query = HongguoSigner.encodeValues({
       ...identity.values,
@@ -626,15 +785,17 @@ final class HongguoOfficialClient {
       if (identity.cookie.isNotEmpty) 'Cookie': identity.cookie,
     };
     var raw = await _text(Uri.parse(url), body: Uint8List.fromList(body), headers: headers, retry: true);
-    if (raw.trim().isEmpty) {
-      // An empty answer is transient; a fresh ticket only, no new identity.
-      await Future<void>.delayed(const Duration(milliseconds: 700));
-      final retryQuery = HongguoSigner.encodeValues({
+    // An empty answer is transient: read again, up to three reads in all,
+    // each with a fresh ticket and never a new device identity.
+    for (final delay in const [700, 1500]) {
+      if (raw.trim().isNotEmpty) break;
+      await Future<void>.delayed(Duration(milliseconds: delay));
+      final again = HongguoSigner.encodeValues({
         ...identity.values,
         '_rticket': '${DateTime.now().millisecondsSinceEpoch}',
       });
       raw = await _text(
-        Uri.parse('$_kLandpageHost/novel/player/multi_video_model/v1/?$retryQuery'),
+        Uri.parse('$_kLandpageHost/novel/player/multi_video_model/v1/?$again'),
         body: Uint8List.fromList(body),
         headers: headers,
       );
@@ -651,30 +812,38 @@ final class HongguoOfficialClient {
     if (map is! Map<String, Object?>) {
       throw const HongguoOfficialFailure('播放信息为空');
     }
-    Map<String, Object?>? entry;
-    final named = map[vid];
-    if (named is Map<String, Object?>) {
-      entry = named;
-    } else {
-      for (final value in map.values) {
-        if (value is Map<String, Object?>) {
-          entry = value;
-          break;
-        }
-      }
-    }
-    if (entry == null) {
-      throw const HongguoOfficialFailure('播放信息为空');
-    }
+    return map;
+  }
+
+  /// The `video_model` of one model row, decoded when it came as a string.
+  static Map<String, Object?>? _modelOf(Map<String, Object?> entry) {
     final rawModel = entry['video_model'];
     final model = rawModel is Map<String, Object?>
         ? rawModel
         : rawModel is String && rawModel.isNotEmpty
         ? jsonDecode(rawModel)
         : null;
-    if (model is! Map<String, Object?>) {
-      throw const HongguoOfficialFailure('播放模型为空');
+    return model is Map<String, Object?> ? model : null;
+  }
+
+  void _rememberAhead(String vid, List<HongguoRendition> ladder) {
+    final now = DateTime.now();
+    _aheadLadders.removeWhere((_, entry) => now.difference(entry.$2) > _aheadTtl);
+    _aheadLadders[vid] = (ladder, now);
+    while (_aheadLadders.length > _aheadLimit) {
+      _aheadLadders.remove(_aheadLadders.keys.first);
     }
+  }
+
+  List<HongguoRendition>? _takeAhead(String vid) {
+    final entry = _aheadLadders.remove(vid);
+    if (entry == null) return null;
+    if (DateTime.now().difference(entry.$2) > _aheadTtl) return null;
+    return entry.$1;
+  }
+
+  /// The model's own `video_list`, decrypted; empty when it carries none.
+  static List<HongguoRendition> _inlineRenditions(Map<String, Object?> model) {
     final inline = <HongguoRendition>[];
     final videoList = model['video_list'];
     if (videoList is List<Object?>) {
@@ -713,8 +882,11 @@ final class HongguoOfficialClient {
         );
       }
     }
-    if (inline.isNotEmpty) return inline..sort((a, b) => a.quality.compareTo(b.quality));
-    // The legacy fallback: an envelope URL decrypted with the key seed.
+    return inline..sort((a, b) => a.quality.compareTo(b.quality));
+  }
+
+  /// The legacy fallback: an envelope URL decrypted with the key seed.
+  Future<List<HongguoRendition>> _fallbackLadder(Map<String, Object?> model) async {
     final rawFallback = model['fallback_api'];
     final fallback = rawFallback is Map<String, Object?>
         ? _str(rawFallback, 'fallback_api')
@@ -748,7 +920,7 @@ final class HongguoOfficialClient {
       var url = _cleanUrl(_str(row, 'main_url'));
       try {
         if (seedRaw.isNotEmpty) {
-          url = HongguoMediaCrypto.decryptUrl(url, Uint8List.fromList(_hexBytes(seedRaw)));
+          url = HongguoMediaCrypto.decryptUrl(url, HongguoVendor.decode64(seedRaw));
         }
       } on Object {
         continue;
@@ -876,7 +1048,3 @@ int _qualityNumber(String value) {
   if (match != null) return int.parse(match.group(0)!);
   return const {'1920': 1080, '1280': 720, '1024': 576, '854': 480, '640': 360}[value] ?? int.tryParse(value) ?? 0;
 }
-
-List<int> _hexBytes(String value) => [
-  for (var i = 0; i + 1 < value.length; i += 2) int.parse(value.substring(i, i + 2), radix: 16),
-];

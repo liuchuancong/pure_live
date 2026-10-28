@@ -28,6 +28,7 @@ import 'package:pure_live/app/providers/theme/text_scale_provider.dart' show tex
 import 'package:pure_live/features/account/douyu_cookie_saved_at.dart' show douyuCookieSavedAtProvider;
 import 'package:pure_live/features/backup/backup.dart';
 import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/modules/hongguo/hongguo.dart';
 import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
@@ -108,6 +109,11 @@ final List<ProviderOrFamily> kSettingsProviders = [
   vodPlaybackSettingsProvider,
   vodFavouritesProvider,
   vodHistoryProvider,
+  hongguoAccountProvider,
+  hongguoLibraryProvider,
+  hongguoSearchProvider,
+  hongguoSettingsProvider,
+  hongguoDecoderLessonsProvider,
   musicSettingsProvider,
   musicSourcesProvider,
   musicFavouritesProvider,

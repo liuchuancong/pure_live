@@ -585,6 +585,7 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get phoneVerify => 'Sign in';
 	@override String get phoneSent => 'Code sent to';
 	@override String get accountPhoneToggle => 'Use a phone number';
+	@override String get accountQrToggle => 'Scan a code';
 	@override String get commentsFailed => 'Comments did not load';
 	@override String get shelfForYou => 'Picked for you';
 	@override String get shelfChangeBatch => 'Another batch';
@@ -621,13 +622,6 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String accountReadCount({required Object count}) => '${count} titles read';
 	@override String get historyFilterWatched => 'Finished';
 	@override String get historyFilterUnwatched => 'In progress';
-	@override String get frameMode => 'Picture mode';
-	@override String get frameFit => 'Whole picture';
-	@override String get frameZoom => 'Fill and crop';
-	@override String get frameFill => 'Stretch';
-	@override String get frameFitDesc => 'Keeps the aspect and every pixel, with bars where the frame is a different shape';
-	@override String get frameZoomDesc => 'Fills the frame, cropping part of the picture and subtitles';
-	@override String get frameFillDesc => 'Fills the frame, changing the aspect';
 	@override String get sleep => 'Sleep timer';
 	@override String get sleepOff => 'Turn off';
 	@override String sleepAfter({required Object minutes}) => 'In ${minutes} min';
@@ -3637,6 +3631,7 @@ extension on TranslationsEn {
 			'hongguo.phoneVerify' => 'Sign in',
 			'hongguo.phoneSent' => 'Code sent to',
 			'hongguo.accountPhoneToggle' => 'Use a phone number',
+			'hongguo.accountQrToggle' => 'Scan a code',
 			'hongguo.commentsFailed' => 'Comments did not load',
 			'hongguo.shelfForYou' => 'Picked for you',
 			'hongguo.shelfChangeBatch' => 'Another batch',
@@ -3673,13 +3668,6 @@ extension on TranslationsEn {
 			'hongguo.accountReadCount' => ({required Object count}) => '${count} titles read',
 			'hongguo.historyFilterWatched' => 'Finished',
 			'hongguo.historyFilterUnwatched' => 'In progress',
-			'hongguo.frameMode' => 'Picture mode',
-			'hongguo.frameFit' => 'Whole picture',
-			'hongguo.frameZoom' => 'Fill and crop',
-			'hongguo.frameFill' => 'Stretch',
-			'hongguo.frameFitDesc' => 'Keeps the aspect and every pixel, with bars where the frame is a different shape',
-			'hongguo.frameZoomDesc' => 'Fills the frame, cropping part of the picture and subtitles',
-			'hongguo.frameFillDesc' => 'Fills the frame, changing the aspect',
 			'hongguo.sleep' => 'Sleep timer',
 			'hongguo.sleepOff' => 'Turn off',
 			'hongguo.sleepAfter' => ({required Object minutes}) => 'In ${minutes} min',
@@ -3688,14 +3676,14 @@ extension on TranslationsEn {
 			'hongguo.sleepAfterEpisodes' => ({required Object count}) => 'After ${count} more',
 			'hongguo.sleepEpisodes' => ({required Object count}) => '${count} episodes left',
 			'hongguo.sleepStopped' => 'Sleep timer stopped playback · position saved · press play to continue',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.retryNow' => 'Retry now',
 			'hongguo.retryLower' => ({required Object height}) => 'Try ${height}P',
 			'hongguo.backToEpisodes' => 'Back to episodes',
 			'hongguo.stopAutoRetry' => 'Stop auto-retry',
 			'hongguo.autoRetry' => ({required Object attempt, required Object seconds}) => 'Retrying ${attempt}/3 in ${seconds}s',
 			'hongguo.retryExhausted' => 'Three automatic retries did not help. Retry by hand or pick a lower quality.',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.decoderLessons' => 'Decoder notes',
 			'hongguo.decoderLessonsCount' => ({required Object count}) => '${count} decode failures remembered; those renditions are skipped',
 			'hongguo.decoderLessonsEmpty' => 'No decode failures yet; the ladder follows the platform\'s claims',
@@ -4202,14 +4190,14 @@ extension on TranslationsEn {
 			'navigation.vodRegions' => 'Regions',
 			'navigation.iptvSources' => 'Subscriptions',
 			'navigation.iptvGuide' => 'Guide',
-			_ => null,
-		} ?? switch (path) {
 			'navigation.musicSonglist' => 'Songlists',
 			'navigation.musicToplist' => 'Charts',
 			'navigation.musicLibrary' => 'My lists',
 			'navigation.musicLocal' => 'Local music',
 			'navigation.musicDownloads' => 'Downloads',
 			'player.title' => 'Player',
+			_ => null,
+		} ?? switch (path) {
 			'player.back' => 'Back',
 			'player.quality' => 'Quality',
 			'player.line' => 'Line',
@@ -4716,14 +4704,14 @@ extension on TranslationsEn {
 			'settings.cornersPill' => 'Pill',
 			'settings.density' => 'Control density',
 			'settings.densitySystem' => 'Follow the platform',
-			_ => null,
-		} ?? switch (path) {
 			'settings.densityCompact' => 'Compact',
 			'settings.densityTouch' => 'Touch',
 			'settings.languageSystem' => 'Follow the system',
 			'settings.languageSimplifiedChinese' => 'Simplified Chinese',
 			'settings.languageEnglish' => 'English',
 			'settings.refreshGroup' => 'Refresh',
+			_ => null,
+		} ?? switch (path) {
 			'settings.followsAutoRefresh' => 'Refresh follows automatically',
 			'settings.followsAutoRefreshDesc' => 'Refreshes the follow list on an interval while the page is open.',
 			'settings.liveAlert' => 'Live alerts',
@@ -5230,14 +5218,14 @@ extension on TranslationsEn {
 			'settings.preferredQualityDesc' => 'The resolution tier a room opens on; when the site has no exact label, the nearest tier is chosen. Original by default.',
 			'settings.preferredQualityCellular' => 'Preferred quality on cellular',
 			'settings.preferredQualityCellularDesc' => 'The resolution tier used on cellular data; Wi-Fi and wired keep the preferred quality above.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.qualityAuto' => 'Automatic (site default)',
 			'settings.qualityOriginal' => 'Original',
 			'settings.qualityBluRay8M' => 'Blu-ray 8M',
 			'settings.qualityBluRay4M' => 'Blu-ray 4M',
 			'settings.qualityBluRay' => 'Blu-ray',
 			'settings.qualityUltra' => 'Ultra HD',
+			_ => null,
+		} ?? switch (path) {
 			'settings.qualityHigh' => 'HD',
 			'settings.qualityStandard' => 'SD',
 			'settings.qualitySmooth' => 'Smooth',
@@ -5744,14 +5732,14 @@ extension on TranslationsEn {
 			'shield.removeEntry' => 'Remove this rule',
 			'shield.effectNote' => 'The rules apply to the room chat immediately.',
 			'shield.contentTitle' => 'Content blocks',
-			_ => null,
-		} ?? switch (path) {
 			'shield.blockEmoteOnly' => 'Block emoticon-only danmaku',
 			'shield.blockEmoteOnlyDescription' => 'Danmaku with emoticons and no text are not shown; your own lines are never blocked.',
 			'shield.blockLong' => 'Block over-long danmaku',
 			'shield.blockLongDescription' => 'Danmaku longer than the set length are not shown (an emoticon counts as one).',
 			'shield.blockLongLength' => 'Most characters',
 			'shield.blockLongLengthDescription' => 'The longest line still shown, 10–100 (an emoticon counts as one).',
+			_ => null,
+		} ?? switch (path) {
 			'shield.blockLongLengthValue' => ({required int count}) => '${count} characters',
 			'shield.douyuSuspected' => 'Filter Suspected Automated Douyu Chat',
 			'shield.douyuSuspectedDescription' => 'Turn on to hide suspected automated or event chat heuristically; ordinary chat may also be hidden',

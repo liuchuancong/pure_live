@@ -45,6 +45,8 @@ enum HongguoQualityChoice {
 
 /// The station's own preference: the tier an episode opens with. Everything
 /// else — the device identity, the signatures — the station manages itself.
+/// The picture mode is not here: `playbackSettingsProvider` owns that for
+/// every player in the app, and a module copy would be a second entry.
 @immutable
 final class HongguoSettings {
   /// Creates the settings.
@@ -65,14 +67,18 @@ final class HongguoSettingsController extends Notifier<HongguoSettings> {
   @override
   HongguoSettings build() => HongguoSettings(quality: _readQuality());
 
-  static HongguoQualityChoice _readQuality() {
+  static String? _readString(String key) {
     try {
-      final stored = StoragePrefs.getString(kHongguoQualityPrefsKey);
-      for (final choice in HongguoQualityChoice.values) {
-        if (choice.name == stored) return choice;
-      }
+      return StoragePrefs.getString(key);
     } on Object {
-      // A closed store keeps the default.
+      return null;
+    }
+  }
+
+  static HongguoQualityChoice _readQuality() {
+    final stored = _readString(kHongguoQualityPrefsKey);
+    for (final choice in HongguoQualityChoice.values) {
+      if (choice.name == stored) return choice;
     }
     return HongguoQualityChoice.best;
   }
@@ -89,5 +95,6 @@ final class HongguoSettingsController extends Notifier<HongguoSettings> {
 }
 
 /// The station's opening rendition.
-final hongguoSettingsProvider =
-    NotifierProvider<HongguoSettingsController, HongguoSettings>(HongguoSettingsController.new);
+final hongguoSettingsProvider = NotifierProvider<HongguoSettingsController, HongguoSettings>(
+  HongguoSettingsController.new,
+);
