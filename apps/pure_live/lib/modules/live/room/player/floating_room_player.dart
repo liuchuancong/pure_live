@@ -189,7 +189,7 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
     final style = ref.watch(danmakuStyleProvider);
     final danmakuFps = ref.watch(danmakuEffectiveFpsProvider);
     final pipScale = ref.watch(pipDanmakuScaleProvider);
-    final danmakuFamily = effectiveFontFamily(style.fontFamily, ref.watch(danmakuFontFaceProvider));
+    final danmakuFamily = resolvedFontFamily(style.fontFamily);
     final barrage = ref.watch(barrageProvider);
     final showDanmaku = playback.danmakuVisible && playback.miniDanmakuVisible && !room.audioOnly && barrage != null;
     ref.listen(floatingWindowSettingsProvider.select((value) => value.size), (previous, next) {

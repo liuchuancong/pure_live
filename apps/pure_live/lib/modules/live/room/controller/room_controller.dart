@@ -616,9 +616,9 @@ final class RoomController extends Notifier<RoomState> {
   }
 
   /// Opens the room behind [platform] and [roomId]: detail first, then the
-  /// qualities it offers; the first playable line begins playback and the
-  /// danmaku session connects. A room that cannot open says why in the
-  /// state error field — the page shows it, never a blank.
+  /// qualities it offers; the first playable line begins playback. The
+  /// danmaku session opens beside that, never before it. A room that cannot
+  /// open says why in the state error field — the page shows it, never a blank.
   Future<void> open({required String platform, required String roomId}) async {
     // A room that is already playing for this very page is adopted, not
     // reopened: the floating player hands the live handle back when its
@@ -666,9 +666,13 @@ final class RoomController extends Notifier<RoomState> {
           state = _with(room: room);
           unawaited(_recordHistory(room));
           unawaited(_loadSuperChats(room));
-          if (room.broadcast.isLiveNow) {
-            final danmakuProvider = site.capability<LiveDanmakuProvider>();
-            if (danmakuProvider != null) await _openDanmaku(danmakuProvider, room);
+          // Chat runs beside the stream, never ahead of it: one danmaku
+          // handshake gets its whole budget (10 s on a Douyin edge this network
+          // cannot reach), and awaiting it here made the viewer wait that out
+          // for the first frame.
+          final danmakuProvider = site.capability<LiveDanmakuProvider>();
+          if (room.broadcast.isLiveNow && danmakuProvider != null) {
+            unawaited(_openDanmaku(danmakuProvider, room));
           }
           final qualitiesAnswer = await playbackProvider.getQualities(room: room);
           unawaited(
@@ -1151,9 +1155,16 @@ final class RoomController extends Notifier<RoomState> {
     _danmakuOpeningEpoch = epoch;
     try {
       final sessionAnswer = await provider.createSession(room: room);
-      sessionAnswer.match((error) => state = _with(error: error.message), (session) async {
-        await _installDanmaku(session, room, epoch: epoch);
-      });
+      await sessionAnswer.match(
+        (error) async {
+          // A chat connection that will not open is not a room that will not
+          // open: the picture stays on screen and only a hint says what is
+          // missing (an error field would replace it).
+          if (!_danmakuCurrent(epoch, room)) return;
+          ref.read(roomHintProvider.notifier).show(l10n.t.room.danmakuConnectFailed(reason: error.message));
+        },
+        (session) => _installDanmaku(session, room, epoch: epoch),
+      );
     } finally {
       // Only this open's own marker: a room switch already put its open there.
       if (_danmakuOpeningEpoch == epoch) _danmakuOpeningEpoch = null;
@@ -1192,14 +1203,17 @@ final class RoomController extends Notifier<RoomState> {
     await _installDanmaku(session, room, epoch: epoch);
   }
 
-  /// Brings [session] up as the room's danmaku: connect it, retire whatever
-  /// session and pipeline the room held, and start the pipeline beside the new
-  /// one. The player is not touched — only the pipeline's own binding to the
-  /// handle is remade, so pause and seek keep carrying into the flying layer.
+  /// Installs [session] as the room's danmaku: retire whatever session and
+  /// pipeline the room held, and start the pipeline beside the new one. The
+  /// platforms' `createSession` already connected it — connecting again would
+  /// tear the socket down and re-handshake, and a session that rotates its
+  /// edges (douyin, bilibili) would land on another host and drop what the
+  /// first connection already received. The player is not touched — only the
+  /// pipeline's own binding to the handle is remade, so pause and seek keep
+  /// carrying into the flying layer.
   /// Every await checks [_danmakuCurrent], so a room that closed or moved on
   /// mid-flight installs nothing.
   Future<void> _installDanmaku(LiveDanmakuSession session, LiveRoom room, {required int epoch}) async {
-    await session.connect();
     if (!_danmakuCurrent(epoch, room)) {
       unawaited(session.dispose());
       return;

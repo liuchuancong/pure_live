@@ -1,3 +1,4 @@
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 
@@ -62,8 +63,17 @@ final class RoomPlaylistController extends Notifier<RoomPlaylist?> {
 
   /// Forgets the source list only when it still shows the room [key]: the
   /// leaving page reads no `ref`, so the comparison runs here.
+  ///
+  /// The leaving page is unmounted while the tree is being torn down, and
+  /// Riverpod rejects a notification in that phase (it left the page half
+  /// unmounted and the route transition's Hero lookup reading a dead element).
+  /// The write therefore waits for the frame, and re-checks: a room opened
+  /// meanwhile owns the list now.
   void clearIfCurrent(String key) {
-    if (state?.current.ref.identityKey == key) clear();
+    if (state?.current.ref.identityKey != key) return;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (ref.mounted && state?.current.ref.identityKey == key) clear();
+    });
   }
 }
 

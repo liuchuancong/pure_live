@@ -441,7 +441,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     final style = ref.watch(danmakuStyleProvider);
     final danmakuFps = ref.watch(danmakuEffectiveFpsProvider);
     final pipScale = ref.watch(pipDanmakuScaleProvider);
-    final danmakuFamily = effectiveFontFamily(style.fontFamily, ref.watch(danmakuFontFaceProvider));
+    final danmakuFamily = resolvedFontFamily(style.fontFamily);
     final playback = ref.watch(playbackSettingsProvider);
     final presentation = ref.watch(roomPresentationProvider);
     // The compact, bare surface belongs to a picture-in-picture window this

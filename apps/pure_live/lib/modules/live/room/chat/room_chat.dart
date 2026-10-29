@@ -4,7 +4,6 @@ import 'dart:ui' as ui;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show EmojiAtlas;
-import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
@@ -63,33 +62,19 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
             ],
           ),
           DsLine(color: colors.border),
-          // A chat column is dragged by the mouse as much as by a finger,
-          // as every desktop chat app reads; the app-wide behavior keeps
-          // the mouse out of dragging.
           Expanded(
-            child: ScrollConfiguration(
-              behavior: ScrollConfiguration.of(context).copyWith(
-                dragDevices: const {
-                  PointerDeviceKind.touch,
-                  PointerDeviceKind.stylus,
-                  PointerDeviceKind.invertedStylus,
-                  PointerDeviceKind.trackpad,
-                  PointerDeviceKind.mouse,
-                },
+            child: switch (tab) {
+              _ChatTab.danmaku => const Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: _ChatFeed()),
+                  _ChatComposer(),
+                ],
               ),
-              child: switch (tab) {
-                _ChatTab.danmaku => const Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(child: _ChatFeed()),
-                    _ChatComposer(),
-                  ],
-                ),
-                _ChatTab.superChats => const _SuperChatTab(),
-                _ChatTab.settings => const _RoomDanmakuSettings(),
-                _ChatTab.shield => const _ShieldTab(),
-              },
-            ),
+              _ChatTab.superChats => const _SuperChatTab(),
+              _ChatTab.settings => const _RoomDanmakuSettings(),
+              _ChatTab.shield => const _ShieldTab(),
+            },
           ),
         ],
       ),
