@@ -110,5 +110,31 @@ void main() {
       expect(state.history, isEmpty);
       expect(state.favorites.map((row) => row.seriesId), ['a']);
     });
+
+    test('a batch removal drops exactly the ticked rows in one write', () async {
+      await StoragePrefs.initSeeded({});
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final controller = container.read(hongguoLibraryProvider.notifier);
+      for (final id in ['a', 'b', 'c']) {
+        controller.saveProgress(
+          HongguoWatchProgress(
+            seriesId: id,
+            title: id,
+            cover: '',
+            episodeIndex: 1,
+            episodeVid: 'v$id',
+            positionMs: 1,
+            durationMs: 2,
+            completed: false,
+            updatedAt: id.codeUnitAt(0),
+          ),
+        );
+      }
+
+      controller.removeHistoryRows(['a', 'c']);
+
+      expect(container.read(hongguoLibraryProvider).history.map((row) => row.seriesId), ['b']);
+    });
   });
 }

@@ -344,11 +344,16 @@ final class HongguoLibraryController extends Notifier<HongguoLibraryState> {
   }
 
   /// Forgets one series' progress; its favorite, if any, stays.
-  void removeHistory(String seriesId) {
+  void removeHistory(String seriesId) => removeHistoryRows([seriesId]);
+
+  /// Forgets [ids]' progress in one write; their favorites stay.
+  void removeHistoryRows(Iterable<String> ids) {
+    final drop = ids.toSet();
+    if (drop.isEmpty) return;
     state = state.copyWith(
       history: [
         for (final row in state.history)
-          if (row.seriesId != seriesId) row,
+          if (!drop.contains(row.seriesId)) row,
       ],
     );
     _persist();

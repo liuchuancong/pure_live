@@ -550,6 +550,10 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get historyCleared => 'This device\'s watch history is cleared';
 	@override String get historyRemove => 'Remove entry';
 	@override String get historyRemoveDesc => 'Drops this series’ progress only';
+	@override String get historyManage => 'Manage';
+	@override String get historyManageDone => 'Done';
+	@override String get historyManageDelete => 'Remove the selected entries';
+	@override String historyManageDeleteCount({required Object count}) => 'Remove selected (${count})';
 	@override String get resumeAt => 'Resume';
 	@override String get watchedBadge => 'Finished';
 	@override String get reservationsOnline => 'Premiered';
@@ -3643,6 +3647,10 @@ extension on TranslationsEn {
 			'hongguo.historyCleared' => 'This device\'s watch history is cleared',
 			'hongguo.historyRemove' => 'Remove entry',
 			'hongguo.historyRemoveDesc' => 'Drops this series’ progress only',
+			'hongguo.historyManage' => 'Manage',
+			'hongguo.historyManageDone' => 'Done',
+			'hongguo.historyManageDelete' => 'Remove the selected entries',
+			'hongguo.historyManageDeleteCount' => ({required Object count}) => 'Remove selected (${count})',
 			'hongguo.resumeAt' => 'Resume',
 			'hongguo.watchedBadge' => 'Finished',
 			'hongguo.reservationsOnline' => 'Premiered',
@@ -3725,13 +3733,13 @@ extension on TranslationsEn {
 			'hongguo.filterDone' => 'Done',
 			'hongguo.accountId' => 'Hongguo ID',
 			'hongguo.copyAccountId' => 'Copy',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.copied' => 'Copied',
 			'hongguo.accountReading' => 'Reading…',
 			'hongguo.accountNotRead' => 'Not read yet',
 			'hongguo.accountReadCount' => ({required Object count}) => '${count} titles read',
 			'hongguo.historyFilterWatched' => 'Finished',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.historyFilterUnwatched' => 'In progress',
 			'hongguo.sleep' => 'Sleep timer',
 			'hongguo.sleepOff' => 'Turn off',
@@ -4206,13 +4214,13 @@ extension on TranslationsEn {
 			'music.localHint' => 'Add a folder of audio files; the scan makes them play like online songs.',
 			'music.localFiles' => ({required Object count}) => '${count} files',
 			'music.localRescan' => 'Scan again',
+			_ => null,
+		} ?? switch (path) {
 			'music.localFolders' => 'Music folders',
 			'music.localRemoveFolder' => 'Remove the folder',
 			'music.localFailed' => 'The scan failed',
 			'music.localEmptyTitle' => 'No local music yet',
 			'music.localEmptyDescription' => 'Add a folder of audio files to start scanning.',
-			_ => null,
-		} ?? switch (path) {
 			'music.localFolderFailed' => ({required Object error}) => 'Cannot add the folder: ${error}',
 			'music.playbackRate' => 'Playback speed',
 			'music.sleepTimer' => 'Sleep timer',
@@ -4687,13 +4695,13 @@ extension on TranslationsEn {
 			'settings.floatWindowGroup' => 'In-app floating window',
 			'settings.pipGroup' => 'System picture-in-picture',
 			'settings.playbackComingSoon' => 'Playback settings arrive with the player.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.sitesComingSoon' => 'Site management and accounts are on the way.',
 			'settings.dataComingSoon' => 'Data management is on the way.',
 			'settings.appearance' => 'Appearance',
 			'settings.themeMode' => 'Theme',
 			'settings.themeModeSystem' => 'Follow system',
-			_ => null,
-		} ?? switch (path) {
 			'settings.themeModeLight' => 'Light',
 			'settings.themeModeDark' => 'Dark',
 			'settings.language' => 'Language',
@@ -5201,13 +5209,13 @@ extension on TranslationsEn {
 			'settings.scaleMitchell' => 'Mitchell',
 			'settings.scaleHermite' => 'Hermite (soft)',
 			'settings.scaleBicubicFast' => 'Bicubic Fast (fast)',
+			_ => null,
+		} ?? switch (path) {
 			'settings.scaleBilinear' => 'Bilinear (fastest, soft)',
 			'settings.scaleNearest' => 'Nearest (blocky)',
 			'settings.deinterlace' => 'Deinterlace (--deinterlace)',
 			'settings.deinterlaceDesc' => 'Live sources are progressive; keep Auto. Enable only for legacy TV or capture-card sources.',
 			'settings.deinterlaceAuto' => 'Auto',
-			_ => null,
-		} ?? switch (path) {
 			'settings.deinterlaceOff' => 'Off',
 			'settings.deinterlaceOn' => 'On (interlaced sources only)',
 			'settings.hwdecCodecs' => 'HW-decode codecs (--hwdec-codecs)',
@@ -5715,13 +5723,13 @@ extension on TranslationsEn {
 			'settings.danmakuPausedPause' => 'Pause with video',
 			'settings.danmakuPausedFly' => 'Keep flying',
 			'settings.twitchLanguages' => 'Twitch directory languages',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguagesDesc' => 'Show only streams in the chosen languages; none selected shows every language.',
 			'settings.twitchAllLanguages' => 'All languages',
 			'settings.twitchLegacyLanguages' => 'Chinese + Korean',
 			'settings.twitchLanguagesHint' => 'Filter the Twitch popular and category directories by broadcaster language.',
 			'settings.twitchLanguage_zh' => 'Chinese',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguage_en' => 'English',
 			'settings.twitchLanguage_ko' => 'Korean',
 			'settings.twitchLanguage_ja' => 'Japanese',

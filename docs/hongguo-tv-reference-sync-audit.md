@@ -300,7 +300,7 @@ l10n 累计新增 27 个 key（中英各一份，`dart run slang` 已重生成�
 
 ### 8.7 下一轮继续
 
-P1 已清零：首页/侧栏的新集徽标见 8.10，断网等待见 8.11，本机记录清空确认见 8.16。P2：弹幕渲染层（#7）见 8.9，选集分组/跳转/已看标记（#6）见 8.12，评论双 tab 见 8.13，HUD 状态行见 8.14，收藏卡片文案见 8.15。搜索联想/历史与榜单快照 TTL 复查后已在库（`hongguo_feeds.dart` 的 suggestion/history 与 10 分钟 TTL），§5 的对应条目已过期。剩评论面板的侧边停靠版式与表情图、筛选面板在首页的收放形态（找剧页已有 `DsPanel` 版）。
+P1 已清零：首页/侧栏的新集徽标见 8.10，断网等待见 8.11，本机记录清空确认见 8.16、管理模式见 8.18，预约补集数见 8.17。P2：弹幕渲染层（#7）见 8.9，选集分组/跳转/已看标记（#6）见 8.12，评论双 tab 见 8.13，HUD 状态行见 8.14，收藏卡片文案见 8.15。搜索联想/历史与榜单快照 TTL 复查后已在库（`hongguo_feeds.dart` 的 suggestion/history 与 10 分钟 TTL），§5 的对应条目已过期；播放信息的空答复重试也已是 3 次（700/1500ms）。剩评论面板的侧边停靠版式与表情图、首页试播流（产品决策）、筛选面板在首页的收放形态（找剧页已有 `DsPanel` 版）。
 
 ### 8.8 第六轮（2026-10-29）：签名器与 ttEncrypt 的四处错位
 
@@ -407,6 +407,16 @@ P1 已清零：首页/侧栏的新集徽标见 8.10，断网等待见 8.11，本
 - 分类（待上线/已上线）与排序不变。
 
 `dart analyze lib/modules/hongguo` 0 issues。**未验证**：真实账号的预约列表（这条链路要登录态，临时探测没有可用凭证）。
+
+### 8.18 第十六轮（2026-10-29）：本机记录的管理模式（P1 #13 完成）
+
+8.16 补了「全部清空」，但参考的「管理本机记录」是逐条勾选再批量删。本轮补上：
+
+- 历史页筛选行加 `管理`：进入后每行尾部的删除按钮换成 `DsCheckbox`，行本身不再跳转；顶部换成 `删除选中（N）`（空选禁用）与 `完成`，删除走 `showDsConfirm`（destructive），成功后退出管理模式并清空勾选。
+- `HongguoLibraryController.removeHistoryRows(ids)`：一次写盘删多行，`removeHistory(id)` 收窄成它的单行调用。
+- l10n 中英各 +4（`historyManage/historyManageDone/historyManageDelete/historyManageDeleteCount`）。
+
+新增 1 项测试（批量删除只删勾选的行）。`dart analyze lib/modules/hongguo test/hongguo` 0 issues；`flutter test test/hongguo test/app` 29 项全绿。**未验证**：遥控器上的管理模式（勾选框聚焦顺序、删除按钮的禁用态）。
 
 ---
 

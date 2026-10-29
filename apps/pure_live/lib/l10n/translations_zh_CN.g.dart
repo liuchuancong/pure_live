@@ -1405,6 +1405,18 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '只删除这部剧的观看进度'
 	String get historyRemoveDesc => '只删除这部剧的观看进度';
 
+	/// zh-CN: '管理'
+	String get historyManage => '管理';
+
+	/// zh-CN: '完成'
+	String get historyManageDone => '完成';
+
+	/// zh-CN: '删除选中的记录'
+	String get historyManageDelete => '删除选中的记录';
+
+	/// zh-CN: '删除选中（{count}）'
+	String historyManageDeleteCount({required Object count}) => '删除选中（${count}）';
+
 	/// zh-CN: '续播'
 	String get resumeAt => '续播';
 
@@ -9541,6 +9553,10 @@ extension on Translations {
 			'hongguo.historyCleared' => '已清空这台设备的观看记录',
 			'hongguo.historyRemove' => '删除记录',
 			'hongguo.historyRemoveDesc' => '只删除这部剧的观看进度',
+			'hongguo.historyManage' => '管理',
+			'hongguo.historyManageDone' => '完成',
+			'hongguo.historyManageDelete' => '删除选中的记录',
+			'hongguo.historyManageDeleteCount' => ({required Object count}) => '删除选中（${count}）',
 			'hongguo.resumeAt' => '续播',
 			'hongguo.watchedBadge' => '已看完',
 			'hongguo.reservationsOnline' => '已上线',
@@ -9623,13 +9639,13 @@ extension on Translations {
 			'hongguo.filterDone' => '完成',
 			'hongguo.accountId' => '红果号',
 			'hongguo.copyAccountId' => '复制',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.copied' => '已复制',
 			'hongguo.accountReading' => '正在读取…',
 			'hongguo.accountNotRead' => '尚未读取',
 			'hongguo.accountReadCount' => ({required Object count}) => '已读取 ${count} 部',
 			'hongguo.historyFilterWatched' => '已看完',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.historyFilterUnwatched' => '未看完',
 			'hongguo.sleep' => '定时停止',
 			'hongguo.sleepOff' => '关闭定时停止',
@@ -10104,13 +10120,13 @@ extension on Translations {
 			'music.localHint' => '添加本机音乐文件夹，扫描后会像在线歌曲一样播放。',
 			'music.localFiles' => ({required Object count}) => '${count} 个文件',
 			'music.localRescan' => '重新扫描',
+			_ => null,
+		} ?? switch (path) {
 			'music.localFolders' => '音乐文件夹',
 			'music.localRemoveFolder' => '移除文件夹',
 			'music.localFailed' => '扫描失败',
 			'music.localEmptyTitle' => '还没有本地音乐',
 			'music.localEmptyDescription' => '添加一个存放音频文件的文件夹开始扫描。',
-			_ => null,
-		} ?? switch (path) {
 			'music.localFolderFailed' => ({required Object error}) => '无法添加文件夹：${error}',
 			'music.playbackRate' => '播放速度',
 			'music.sleepTimer' => '睡眠定时',
@@ -10585,13 +10601,13 @@ extension on Translations {
 			'settings.floatWindowGroup' => '应用内悬浮窗',
 			'settings.pipGroup' => '系统画中画',
 			'settings.playbackComingSoon' => '播放设置将在播放器接入后开放。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.sitesComingSoon' => '站点管理与账号登录即将接入。',
 			'settings.dataComingSoon' => '数据管理即将接入。',
 			'settings.appearance' => '外观',
 			'settings.themeMode' => '主题',
 			'settings.themeModeSystem' => '跟随系统',
-			_ => null,
-		} ?? switch (path) {
 			'settings.themeModeLight' => '浅色',
 			'settings.themeModeDark' => '深色',
 			'settings.language' => '语言',
@@ -11099,13 +11115,13 @@ extension on Translations {
 			'settings.scaleMitchell' => 'Mitchell',
 			'settings.scaleHermite' => 'Hermite（柔和）',
 			'settings.scaleBicubicFast' => 'Bicubic Fast（快）',
+			_ => null,
+		} ?? switch (path) {
 			'settings.scaleBilinear' => '双线性（最快，最糊）',
 			'settings.scaleNearest' => '最近邻（块状）',
 			'settings.deinterlace' => '反交错 (--deinterlace)',
 			'settings.deinterlaceDesc' => '直播源基本都是逐行的，保持自动即可；只有老电视信号或采集卡源才需要开启。',
 			'settings.deinterlaceAuto' => '自动',
-			_ => null,
-		} ?? switch (path) {
 			'settings.deinterlaceOff' => '关闭',
 			'settings.deinterlaceOn' => '开启（隔行源才需要）',
 			'settings.hwdecCodecs' => '硬解编码范围 (--hwdec-codecs)',
@@ -11613,13 +11629,13 @@ extension on Translations {
 			'settings.danmakuPausedPause' => '随视频暂停',
 			'settings.danmakuPausedFly' => '继续飘过',
 			'settings.twitchLanguages' => 'Twitch 目录语言',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguagesDesc' => '只显示所选语言的直播；不选则显示全部。',
 			'settings.twitchAllLanguages' => '全部语言',
 			'settings.twitchLegacyLanguages' => '中文 + 韩语',
 			'settings.twitchLanguagesHint' => '按主播语言过滤 Twitch 热门与分区目录。',
 			'settings.twitchLanguage_zh' => '中文',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguage_en' => '英语',
 			'settings.twitchLanguage_ko' => '韩语',
 			'settings.twitchLanguage_ja' => '日语',

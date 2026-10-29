@@ -834,6 +834,11 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
   /// what is still running — the station's 全部 / 已看完 / 未看完 row.
   int _watched = 0;
 
+  /// Whether the rows show checkboxes for a batch removal, and which rows
+  /// are ticked — the reference's 管理本机记录.
+  bool _managing = false;
+  final Set<String> _selected = {};
+
   /// Empties this device's watch history after a confirmation; the reference
   ///'s 清空历史 asks before it forgets.
   Future<void> _clearHistory(Translations t) async {
@@ -848,8 +853,37 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
     );
     if (!confirmed || !mounted) return;
     ref.read(hongguoLibraryProvider.notifier).clearHistory();
+    setState(() {
+      _managing = false;
+      _selected.clear();
+    });
     showDsToast(context: context, title: t.hongguo.historyCleared);
   }
+
+  /// Forgets every ticked row after a confirmation, then leaves the mode.
+  Future<void> _removeSelected(Translations t) async {
+    if (_selected.isEmpty) return;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.hongguo.historyManageDelete,
+      description: t.hongguo.historyRemoveDesc,
+      confirmLabel: t.common.confirm,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.trash2),
+    );
+    if (!confirmed || !mounted) return;
+    ref.read(hongguoLibraryProvider.notifier).removeHistoryRows(_selected);
+    setState(() {
+      _managing = false;
+      _selected.clear();
+    });
+  }
+
+  void _leaveManaging() => setState(() {
+    _managing = false;
+    _selected.clear();
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -911,14 +945,38 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
                       selected: _watched == 2,
                       onChanged: (_) => setState(() => _watched = 2),
                     ),
-                    if (library.history.isNotEmpty)
-                      DsButton(
-                        size: DsSize.sm,
-                        variant: DsButtonVariant.ghost,
-                        leading: const DsIcon(DsIcons.trash2, size: 14),
-                        onPressed: () => unawaited(_clearHistory(t)),
-                        child: Text(t.hongguo.historyClear),
-                      ),
+                    if (library.history.isNotEmpty) ...[
+                      if (_managing) ...[
+                        DsButton(
+                          size: DsSize.sm,
+                          variant: DsButtonVariant.secondary,
+                          leading: const DsIcon(DsIcons.trash2, size: 14),
+                          onPressed: _selected.isEmpty ? null : () => unawaited(_removeSelected(t)),
+                          child: Text(t.hongguo.historyManageDeleteCount(count: _selected.length)),
+                        ),
+                        DsButton(
+                          size: DsSize.sm,
+                          variant: DsButtonVariant.ghost,
+                          onPressed: _leaveManaging,
+                          child: Text(t.hongguo.historyManageDone),
+                        ),
+                      ] else ...[
+                        DsButton(
+                          size: DsSize.sm,
+                          variant: DsButtonVariant.ghost,
+                          leading: const DsIcon(DsIcons.listChecks, size: 14),
+                          onPressed: () => setState(() => _managing = true),
+                          child: Text(t.hongguo.historyManage),
+                        ),
+                        DsButton(
+                          size: DsSize.sm,
+                          variant: DsButtonVariant.ghost,
+                          leading: const DsIcon(DsIcons.trash2, size: 14),
+                          onPressed: () => unawaited(_clearHistory(t)),
+                          child: Text(t.hongguo.historyClear),
+                        ),
+                      ],
+                    ],
                   ],
                 ),
             ],
@@ -936,7 +994,14 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
               error: cloud.error,
               emptyText: t.hongguo.historyAccountEmpty,
             ),
-            _ => _ProgressList(rows: rows),
+            _ => _ProgressList(
+              rows: rows,
+              managing: _managing,
+              selected: _selected,
+              onToggle: (id) => setState(() {
+                if (!_selected.remove(id)) _selected.add(id);
+              }),
+            ),
           },
         ),
       ],
@@ -1402,11 +1467,21 @@ final class _SeriesList extends StatelessWidget {
   }
 }
 
-/// The local history's own rows: the stripe where playback stood.
+/// The local history's own rows: the stripe where playback stood, and a
+/// checkbox instead of the delete button while the shelf is being managed.
 final class _ProgressList extends ConsumerWidget {
-  const _ProgressList({required this.rows});
+  const _ProgressList({required this.rows, this.managing = false, this.selected = const {}, this.onToggle});
 
   final List<HongguoWatchProgress> rows;
+
+  /// Whether the rows carry checkboxes for a batch removal.
+  final bool managing;
+
+  /// The rows ticked in that mode.
+  final Set<String> selected;
+
+  /// Flips one row's tick.
+  final ValueChanged<String>? onToggle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1436,15 +1511,21 @@ final class _ProgressList extends ConsumerWidget {
           children: [
             HongguoSeriesRow(
               series: series,
-              onOpen: () => _open(context, series),
-              trailing: _IconAction(
-                icon: DsIcons.trash2,
-                semanticLabel: t.hongguo.historyRemove,
-                onPressed: () {
-                  ref.read(hongguoLibraryProvider.notifier).removeHistory(row.seriesId);
-                  showDsToast(context: context, title: t.hongguo.historyRemove);
-                },
-              ),
+              onOpen: managing ? null : () => _open(context, series),
+              trailing: managing
+                  ? DsCheckbox(
+                      value: selected.contains(row.seriesId),
+                      semanticLabel: t.hongguo.episodeLabel(index: row.episodeIndex),
+                      onChanged: (_) => onToggle?.call(row.seriesId),
+                    )
+                  : _IconAction(
+                      icon: DsIcons.trash2,
+                      semanticLabel: t.hongguo.historyRemove,
+                      onPressed: () {
+                        ref.read(hongguoLibraryProvider.notifier).removeHistory(row.seriesId);
+                        showDsToast(context: context, title: t.hongguo.historyRemove);
+                      },
+                    ),
             ),
             if (!row.completed) HongguoProgressStripe(fraction: row.fraction),
           ],
