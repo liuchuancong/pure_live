@@ -1,12 +1,14 @@
 import 'dart:async' show unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
+import 'dart:math' show max, min;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
+import 'package:pure_live/modules/music/controller/music_source.dart'
+    show musicSourceListProvider, musicSourceProvider;
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart' show MusicHotWords;
 
 /// What the library view holds: the committed query, its songs, where the
@@ -22,6 +24,29 @@ typedef MusicSearchState = ({
 
 MusicSearchState _initial() =>
     (query: '', songs: const <audio.MusicTrack>[], nextPage: 1, hasMore: true, loading: false, error: null);
+
+/// The page-source choice that searches every platform at once — the
+/// reference's 'all' source.
+const String kMusicSearchAllSourceId = 'all';
+
+/// The search page's own source: [kMusicSearchAllSourceId] aggregates every
+/// platform, a platform id searches only it. Page-local on purpose — it
+/// starts on the viewer's default source and never follows it afterwards.
+final class MusicSearchSourceController extends Notifier<String> {
+  @override
+  String build() => ref.read(musicSourceProvider).id;
+
+  /// The page's source choice.
+  String get source => state;
+
+  /// Picks [id] for this page's searches.
+  set source(String id) => state = id;
+}
+
+/// The library search page's source.
+final musicSearchSourceIdProvider = NotifierProvider<MusicSearchSourceController, String>(
+  MusicSearchSourceController.new,
+);
 
 /// The library view's search, paged the way the station's own search pages.
 ///
@@ -68,16 +93,75 @@ final class MusicSearchController extends Notifier<MusicSearchState> {
       error: null,
     );
     try {
-      final answer = await ref.read(musicSourceProvider).search(query, page: page);
+      final sourceId = ref.read(musicSearchSourceIdProvider);
+      final answer = sourceId == kMusicSearchAllSourceId
+          ? await _searchAll(query, page)
+          : await _sourceOf(sourceId).search(query, page: page);
       if (!ref.mounted || generation != _generation) return;
       final songs = page == 1 ? <audio.MusicTrack>[] : [...state.songs];
-      final seen = {for (final song in songs) song.id};
-      songs.addAll(answer.items.where((song) => seen.add(song.id)));
+      final seen = {for (final song in songs) '${song.sourceId}:${song.id}'};
+      songs.addAll(answer.items.where((song) => seen.add('${song.sourceId}:${song.id}')));
       state = (query: query, songs: songs, nextPage: page + 1, hasMore: answer.hasMore, loading: false, error: null);
     } on Object catch (failure) {
       if (!ref.mounted || generation != _generation) return;
       state = (query: query, songs: state.songs, nextPage: page, hasMore: false, loading: false, error: '$failure');
     }
+  }
+
+  audio.MusicSource _sourceOf(String id) {
+    for (final source in ref.read(musicSourceListProvider)) {
+      if (source.id == id) return source;
+    }
+    throw StateError('no music source $id');
+  }
+
+  /// The reference's 'all' search: every platform answers the same page
+  /// concurrently, a refusal counts as an empty answer, and the merged batch
+  /// ranks by how closely `title artist` matches the keyword.
+  Future<audio.MusicSourcePage<audio.MusicTrack>> _searchAll(String query, int page) async {
+    final answers = await Future.wait([
+      for (final source in ref.read(musicSourceListProvider))
+        source
+            .search(query, page: page)
+            .catchError((Object _) => const audio.MusicSourcePage<audio.MusicTrack>.empty()),
+    ]);
+    final merged = <audio.MusicTrack>[];
+    final seen = <String>{};
+    var total = 0;
+    var hasMore = false;
+    for (final answer in answers) {
+      total = max(total, answer.total ?? 0);
+      hasMore = hasMore || answer.hasMore;
+      for (final song in answer.items) {
+        if (seen.add('${song.sourceId}:${song.id}')) merged.add(song);
+      }
+    }
+    merged.sort(
+      (a, b) => _similarity(query, '${b.title} ${b.artist}').compareTo(_similarity(query, '${a.title} ${a.artist}')),
+    );
+    return audio.MusicSourcePage(items: merged, page: page, total: total, hasMore: hasMore);
+  }
+
+  /// lx-music's `similar`: one minus the normalized edit distance, the rank
+  /// the merged 'all' answers sort by.
+  static double _similarity(String left, String right) {
+    var a = left;
+    var b = right;
+    if (a.isEmpty || b.isEmpty) return 0;
+    if (a.length > b.length) (a, b) = (b, a);
+    final bl = b.length;
+    final row = List<int>.generate(bl + 1, (index) => index);
+    for (var i = 1; i <= a.length; i++) {
+      var top = row[0];
+      row[0] += 1;
+      final ai = a.codeUnitAt(i - 1);
+      for (var j = 1; j <= bl; j++) {
+        final tmp = min(min(row[j] + 1, row[j - 1] + 1), top + (ai == b.codeUnitAt(j - 1) ? 0 : 1));
+        top = row[j];
+        row[j] = tmp;
+      }
+    }
+    return 1 - row[bl] / bl;
   }
 }
 

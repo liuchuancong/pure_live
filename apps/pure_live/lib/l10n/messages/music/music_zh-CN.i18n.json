@@ -20,6 +20,7 @@
   "settingsList": "列表",
   "searchTypeSongs": "歌曲",
   "searchTypeSonglists": "歌单",
+  "searchSourceAll": "全部音源",
   "songlistSearchUnsupported": "当前音源暂不支持歌单搜索。",
   "defaultSource": "默认音源",
   "defaultSourceDesc": "歌曲从哪个音源获取；自定义源脚本负责解析播放地址。",

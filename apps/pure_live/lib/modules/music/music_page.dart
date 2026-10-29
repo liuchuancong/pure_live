@@ -23,7 +23,8 @@ import 'package:pure_live/modules/music/controller/music_playback.dart' show mus
 import 'package:pure_live/modules/music/controller/music_playlists.dart';
 import 'package:pure_live/modules/music/controller/music_search.dart';
 import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
+import 'package:pure_live/modules/music/controller/music_source.dart'
+    show musicSourceListProvider, musicSourceProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show musicSourcesProvider;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists, SonglistSearch;
@@ -325,7 +326,10 @@ final class _LibraryViewState extends ConsumerState<_LibraryView> {
     final hot = settings.showHotSearches
         ? ref.watch(musicHotSearchesProvider).value ?? const <String>[]
         : const <String>[];
-    final sourceName = ref.watch(musicSourceProvider).name;
+    final sourceId = ref.watch(musicSearchSourceIdProvider);
+    final sourceNames = {
+      for (final source in ref.watch(musicSourceListProvider)) source.id: source.name,
+    };
     void play(int index) => unawaited(playerController.playAll(state.songs, index: index));
     void runHistory(String query) => _runSearch(query, controller);
     // The tip list lives while the field holds the focus and a word that is
@@ -335,7 +339,9 @@ final class _LibraryViewState extends ConsumerState<_LibraryView> {
 
     Widget songAt(int index) {
       final song = state.songs[index];
-      final subtitle = [song.artist, if (showSource) sourceName].where((part) => part.isNotEmpty).join(' · ');
+      final subtitle = [song.artist, if (showSource) sourceNames[song.sourceId] ?? '']
+          .where((part) => part.isNotEmpty)
+          .join(' · ');
       return MusicSongRow(
         track: song,
         playing: playingId == song.id,
@@ -573,6 +579,24 @@ final class _LibraryViewState extends ConsumerState<_LibraryView> {
             ],
           ),
         ),
+        // The reference's source rail: every platform plus the 'all' choice
+        // that searches them at once. It steers the songs, not the songlists.
+        if (!_songlist)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            child: DsTopNav<String>(
+              items: [
+                DsTopNavItem(value: kMusicSearchAllSourceId, label: Text(t.music.searchSourceAll)),
+                for (final entry in sourceNames.entries)
+                  DsTopNavItem(value: entry.key, label: Text(entry.value)),
+              ],
+              value: sourceId,
+              onChanged: (id) {
+                ref.read(musicSearchSourceIdProvider.notifier).source = id;
+                if (state.query.isNotEmpty) unawaited(controller.search(state.query));
+              },
+            ),
+          ),
         Expanded(
           child: showTips
               ? _tips(word)
