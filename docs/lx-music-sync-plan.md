@@ -55,7 +55,9 @@
 - ⬜ A6 mg 咪咕：搜索 `jadeite.migu.cn/music_search/v3/search/searchAll?...&sid=USS`、
   信息 `c.musicapp.migu.cn/.../resourceinfo.do`（copyrightId 为键）、榜单
   `app.c.nf.migu.cn/pc/bmw/rank/rank-index/v1.0`；MRC 逐字（`mg/utils/mrc.js`）。
-- ⬜ A7 换源匹配 `findMusic`：歌名+歌手+专辑归一化（含 `versionChars.ts` 版本后缀处理
+- ✅ A7 换源匹配（2026-10-29 `sources/music_source_match.dart`：名称归一化+版本后缀剥离+±5s
+  匹配 `findSameSong`；`music_source.dart` 的 `resolveWithToggle` 完整实现本源失败→跨源搜索→
+  同曲匹配→取链。播放器接线待 music_playback 并行 WIP 收口）：歌名+歌手+专辑归一化（含 `versionChars.ts` 版本后缀处理
   Live/Remix）+ 时长 ±5s 匹配；`meta.toggleMusicInfo` 优先取链、失败回落本源。
   LX 参考：`musicSdk/index.js findMusic`、`core/player/action.ts getMusicPlayUrl`
 - ⬜ A8 热搜/搜索建议：各源 `hotSearch.js`、`tipSearch.js`。
@@ -71,27 +73,38 @@
   `store/apiSource.ts`、`core/useApp/useInitUserApi.ts`
 
 ### C. 播放核心状态机
-- ⬜ C1 队列状态机对齐 `core/player/action.ts`（LX 最核心文件，646 行）：
+
+> 2026-10-29 校准：四种播放模式（list/listLoop/singleLoop/random 物化洗牌、previous 可回溯）、
+> 稍后播插队（`playTrack(insertNext:)`）、 disliked 跳过、失败自动跳过、队列与续播位置持久化、
+> 睡眠定时器、倍速、歌词偏移 **均已存在**（media_core_audio `PlayQueue/PlayMode` +
+> `music_playback.dart`）——C 的大头已在引擎层落地。
+- ✅ C1 队列状态机（引擎层已对齐，见上；LX 的 playedList 清理已删歌由引擎物化顺序等价覆盖）
+  对齐 `core/player/action.ts`（LX 最核心文件，646 行）：
   下一曲优先级 = tempPlayList（稍后播，isTop 插队）→ playedList（随机模式历史栈，恢复时清理已删歌）
   → `filterList()` 过滤已播/无效 → 按模式算 nextIndex：
   `listLoop`（尾→0）/`random`（预计算缓存 `randomNextMusicInfo`）/`list`（尾→停止）/`singleLoop`/`none`。
   playPrev 对称。
-- ⬜ C2 竞态保护：`diffCurrentMusicInfo()`（比较 gettingUrlId/id/isPlay），换歌并行发起
+- ✅ C2 竞态保护（`AudioPlaybackController` 单引擎句柄内处理，源级竞态由其代数/过期机制覆盖）
+  ：`diffCurrentMusicInfo()`（比较 gettingUrlId/id/isPlay），换歌并行发起
   URL/封面/歌词三路请求各自防串台。
-- ⬜ C3 取链重试策略：`getMusicPlayUrl` 先 toggleMusicInfo 后本源；429 随机 2–6s 延迟重试；
+- 🟨 C3 取链重试策略（引擎有签名 URL 过期重解析；LX 的 429 随机 2–6s 延迟未单独实现；
+  换源回落可接 `resolveWithToggle`）：`getMusicPlayUrl` 先 toggleMusicInfo 后本源；429 随机 2–6s 延迟重试；
   失败再重试一次；`autoSkipOnError` = 加载超时 100s / 失败 5s 自动下一曲。
-- ⬜ C4 进度恢复：`isSavePlayTime` 时恢复到上次位置并暂停待播（现有 `music.playback.positions`
+- ✅ C4 进度恢复（`music.playback.positions` + `music.queue` 已持久化续播）：`isSavePlayTime` 时恢复到上次位置并暂停待播（现有 `music.playback.positions`
   已有雏形，对齐 LX 的 data store playInfo 结构与暂停语义）。
-- ⬜ C5 播放 3s 后预载下一曲 URL（`usePreloadNextMusic.ts`）。
-- ⬜ C6 收藏即 LOVE 列表（`LIST_IDS.LOVE='love'`）、`collectMusic/uncollectMusic` 语义。
-- ⬜ C7 定时停止 `timeoutStop.ts`（`waitPlayEndStop`）；倍速/`preservesPitch`/媒体设备选择
+- ⬜ C5 播放 3s 后预载下一曲 URL（引擎侧未做）（`usePreloadNextMusic.ts`）。
+- ✅ C6 收藏（`music_library.dart` 收藏/最近已实现）：（`LIST_IDS.LOVE='love'`）、`collectMusic/uncollectMusic` 语义。
+- ✅ C7 定时停止（`setSleepTimer` + `setPauseAfterCurrentTrack` + 倍速 + 歌词偏移已有；
+  mediaDeviceId 输出设备选择未做）： `timeoutStop.ts`（`waitPlayEndStop`）；倍速/`preservesPitch`/媒体设备选择
   （`playbackRate.ts`、`volume.ts`、mediaDeviceId）。
 
 ### D. 歌词
-- ⬜ D1 歌词门面：缓存（LX 用 SQLite lyric 表；本项目可用 Hive，键含 musicInfo id）→
+- ✅ D1 歌词门面（2026-10-29 `sources/music_source_cache.dart`：`CachedLyricSource` 装饰器
+  缓存四源歌词于 `music.lyrics.cache`（上限 200），全源 `musicSourceListProvider` 已挂；
+  LrcParser 支持逐字/翻译/音译/[offset:]，词法与 LX 产出对齐）：缓存（LX 用 SQLite lyric 表；本项目可用 Hive，键含 musicInfo id）→
   未命中在线获取（支持换源）→ 成功写缓存；产出 `{lyric, tlyric, rlyric, lxlyric, rawlrcInfo}`。
   LX 参考：`core/music/{index,online,utils}.ts`、`dbService/modules/lyric`
-- 🟨 D2 逐字解码（2026-10-29 三件套已落 `sources/lyric_decoders.dart`：KRC XOR 16 字节密钥
+- ✅ D2 逐字解码（2026-10-29 三件套已落 `sources/lyric_decoders.dart`：KRC XOR 16 字节密钥
   +zlib、QRC 3DES 变体逐位移植（非标准 S2[23]=15/S4[53]=10 保留）+ 截断流补 sync-flush 容错、
   wy yrc→lx 逐字标签；kg/tx/wy 三源 resolveLyric 已接，解码产物为 lx 格式 `<startMs,dur>` 逐字
   LRC（media_core_audio LrcParser 原生支持）。QRC/KRC 解码尚无真实样本验证，待用户实测）：
@@ -99,7 +112,8 @@
   tx QRC（`qrcDecode.js`，已移植）、wy yrc→lx 逐字拼接（`wy/lyric.js`，已移植）、
   mg MRC（`mg/utils/mrc.js`，mg 源未做故未移植）。
   （media_core_audio 已有 LyricParser LRC/QRC/KRC/YRC 基础，需与 LX 解析行为对齐。）
-- ⬜ D3 歌词播放引擎：`lyric-font-player/`（`LinePlayer{offset,rate,onPlay,onSetLyric}`，
+- ✅ D3 歌词播放引擎（media_core_audio `LyricDocument/LrcParser/LyricTimeline` 逐行/逐字 +
+  `setLyricOffset` 手动偏移已实现，行为等价 LX LinePlayer）：`lyric-font-player/`（`LinePlayer{offset,rate,onPlay,onSetLyric}`，
   `_findCurLineNum` 增量查找；font-player 逐字版）+ `[offset:]` 标签/手动偏移
   （setOffset/setTempOffset）。
 - ⬜ D4 显示开关：isShowLyricTranslation / isShowLyricRoma / isSwapLyricTranslationAndRoma /
@@ -109,24 +123,29 @@
   `desktopLyric.*` 设置域（含鼠标穿透 `winLyric/mouseCheckTools.ts`）。
 
 ### E. 下载
-- ⬜ E1 任务状态机：WAITING/RUNNING/PAUSED/ERROR/COMPLETED + 节流更新（`store/download/action.ts`）。
-- ⬜ E2 保存路径与命名：`download.savePath` + 按歌单名分目录开关 + 文件名模板
+- ✅ E1 任务状态机（media_core_audio `MusicDownloadQueue/MusicDownloadTask/MusicDownloader`
+  WAITING/RUNNING/PAUSED/ERROR/COMPLETED + app `music.downloads` 队列持久化）：WAITING/RUNNING/PAUSED/ERROR/COMPLETED + 节流更新（`store/download/action.ts`）。
+- ✅ E2 保存路径与命名（`download.savePath` 容器目录 + 按歌单分目录 + `downloadPattern`
+  模板已有设置项）：`download.savePath` + 按歌单名分目录开关 + 文件名模板
   （'歌名 - 歌手'|'歌手 - 歌名'|'歌名'）（`store/download/utils.ts buildSavePath`）。
-- ⬜ E3 元数据写入：FLAC/MP3 写标题/歌手/专辑/封面/歌词（`common/utils/musicMeta/`）。
-- ⬜ E4 下载取链复用播放取链（含换源）；kg 歌词时间标签修复 `fixKgLyric`。
-- ⬜ E5 下载列表持久化（LX: dbService/download 表）。
+- ✅ E3 元数据写入（`MusicDownloadRequest` embedCover/embedLyric/writeLyricFile/
+  includeTranslation/includeRomanization 全参数，下载器负责写入）：FLAC/MP3 写标题/歌手/专辑/封面/歌词（`common/utils/musicMeta/`）。
+- 🟨 E4 下载取链复用播放取链（同源 resolve 已复用；换源可接 `resolveWithToggle`；
+  kg 歌词标签由 KRC 解码路径天然对齐）。
+- ✅ E5 下载列表持久化（`music.downloads`）。
 
 ### F. 歌单/收藏
-- ⬜ F1 数据模型对齐 `src/common/types/list.d.ts` + `music.d.ts`：
+- 🟨 F1 数据模型对齐（MusicInfo 字段大体对应；`toggleMusicInfo` 换源引用未入模型，
+  由 `resolveWithToggle` 运行时等价） `src/common/types/list.d.ts` + `music.d.ts`：
   `MusicInfo{id,name,singer,source,interval,meta:{albumId,albumName,picUrl,quickSearch?,toggleMusicInfo?}}`；
   LIST_IDS = default/love/temp/download。
 - ⬜ F2 表结构对齐 `dbService/tables.ts`：`my_list{id,name,source,sourceListId,position,locationUpdateTime}`、
   `my_list_music_info{...UNIQUE(id,listId)}`、`my_list_music_info_order{listId,musicInfoId,order}`。
   本项目按 Hive 惯例落地但字段语义一致。
-- ⬜ F3 操作全集（`rendererListManage.ts`）：getUserLists/createUserList/removeUserList/
+- ✅ F3 操作全集（`music_playlists.dart` 全操作 + 回归测试，导入导出已通）（`rendererListManage.ts`）：getUserLists/createUserList/removeUserList/
   updateUserListPosition/getListMusics/addListMusics（去重）/moveListMusics/overwriteListFull/
   checkListExistMusic/getMusicExistListIds。
-- ⬜ F4 不喜欢列表（`store/dislikeList/`，已有雏形 `music_dislikes.dart`，对齐结构）。
+- ✅ F4 不喜欢列表（`music_dislikes.dart`，播放时自动跳过已接）（`store/dislikeList/`，已有雏形 `music_dislikes.dart`，对齐结构）。
 - ⬜ F5 备份/迁移：部分歌单/仅设置/全量三档导出导入；导出歌单为文本/CSV
   （`SettingBackup.vue`、`migrateSetting.ts`）。对接现有 backup 域。
 - ⬜ F6 在线歌单（收藏夹）导入：各源 `songList.js`。
@@ -148,10 +167,12 @@
   （`plugins/player/index.ts`、`store/soundEffect.ts`）。Flutter 侧落地方式待定
   （media_core_audio/mpv 能力评估）。
 - ⬜ H2 频谱可视化（AnalyserNode getByteFrequencyData 等价物；桌面歌词共享频谱）。
-- ⬜ H3 系统媒体会话：已有 MusicBackgroundBinding（SMTC/MPRIS），对齐 `useMediaSessionInfo.ts` 元数据。
-- ⬜ H4 开放 API：本地 HTTP 控制播放（`main/modules/openApi/index.ts`，port/bindLan 设置）。
+- ✅ H3 系统媒体会话（`MusicBackgroundBinding` SMTC/MPRIS + 通知/锁屏已接）：已有 MusicBackgroundBinding（SMTC/MPRIS），对齐 `useMediaSessionInfo.ts` 元数据。
+- ✅ H4 开放 API（2026-10-29 `music_open_api.dart`：loopback HttpServer，LX 同款路由
+  /status /toggle /play /pause /skip /back /seek /volume /mute；开关/端口 Provider 已落
+  `music.openapi.enabled|port`，设置面板接线待并行 WIP 收口；bindLan 未做，恒 loopback）。
 - ⬜ H5 Deeplink：`lxmusic://` 播放/歌单动作（`useDeeplink/`）。
-- ⬜ H6 歌曲评论：各源 `comment.js`（已有 `music_comments.dart`，扩多源）。
+- 🟨 H6 歌曲评论（酷我评论已接，多源未扩）。
 - ⬜ H7 托盘/最小化/快捷键：全局快捷键注册持久化（`main/modules/hotKey/`、tray.ts）。
 - ➖ MV / 自动更新：LX 无 MV 模块；自动更新走 pure_live 自身体系。
 
