@@ -72,7 +72,7 @@
   "containerTs": "MPEG-TS",
   "containerMp4": "Fragmented MP4",
   "recordChatTitle": "Record chat",
-  "recordChatDescription": "Save live chat beside each video as a same-name .xml file (Bilibili format for DanmakuFactory, PotPlayer, etc.); needs a platform with remote chat",
+  "recordChatDescription": "Save live chat beside each video in the formats chosen under Danmaku → Danmaku files; needs a platform with remote chat",
   "defaultQualityTitle": "Default recording quality",
   "defaultQualityDesc": "Ask the platform for this quality when a recording starts; when it is unavailable, the current playback line is used.",
   "cacheTitle": "Recording cache",

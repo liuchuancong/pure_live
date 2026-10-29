@@ -42,6 +42,7 @@ import 'package:pure_live/features/settings/surface/settings_widgets.dart'
     show SettingsChoiceRow, SettingsConfigRow, SettingsHint, SettingsSegmentedRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/room/player/room_barrage_config.dart' show roomBarrageConfig;
+import 'package:pure_live/shared/danmaku/danmaku.dart' show DanmakuFormat, danmakuSaveFormatsProvider;
 
 /// The danmaku settings: this page is the switch and the interaction of the
 /// flying layer, the full-window preview holds every knob of how a danmaku
@@ -122,6 +123,21 @@ final class DanmakuPane extends ConsumerWidget {
             ),
           ],
         ),
+        DsListSection(
+          header: Text(t.settings.danmakuSaveGroup),
+          children: [
+            for (final format in DanmakuFormat.values)
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.fileDown),
+                title: format.label(t),
+                control: DsSwitch(
+                  value: ref.watch(danmakuSaveFormatsProvider).contains(format),
+                  onChanged: (_) => unawaited(ref.read(danmakuSaveFormatsProvider.notifier).toggle(format)),
+                ),
+              ),
+          ],
+        ),
+        SettingsHint(t.settings.danmakuSaveDescription),
         const DsListSection(
           children: [
             SettingsChildEntry(child: SettingsSection.danmakuDisplay),

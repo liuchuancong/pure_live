@@ -23,11 +23,12 @@ import 'package:pure_live/modules/live/recorder/data/recording_settings.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart';
 import 'package:pure_live/modules/live/recorder/engine/recording_chat_writer.dart';
 import 'package:pure_live/modules/live/shield/shield.dart';
+import 'package:pure_live/shared/danmaku/danmaku.dart' show danmakuSaveFormatsProvider;
 
 /// How often a running session's byte count is written to its task.
 const Duration _kProgressWrite = Duration(seconds: 10);
 
-/// How often recorded chat reaches the XML file.
+/// How often recorded chat reaches its files.
 const Duration _kChatFlush = Duration(seconds: 2);
 
 /// How long a lost chat connection waits before it is opened again.
@@ -269,15 +270,17 @@ final class RecorderEngine {
     await _connectChat(session);
   }
 
-  /// Creates the take's XML file once; the switch read per message lets a
-  /// recording already running pick the file up when it is turned on.
+  /// Creates the take's chat files once, one per saved format; the switch read
+  /// per message lets a recording already running pick them up when it is
+  /// turned on.
   Future<void> _ensureChatFile(_LiveRecording session) async {
     if (session.chat != null || session.chatOpening || session._quieted) return;
     session.chatOpening = true;
     try {
       final writer = await RecordChatWriter.open(
-        File(p.join(session.root, '${session.take}.xml')),
+        p.join(session.root, session.take),
         startedAt: session.videoStartedAt,
+        formats: _ref.read(danmakuSaveFormatsProvider),
       );
       if (session._quieted || !_sessions.containsKey(session.task.id)) {
         await writer.close();

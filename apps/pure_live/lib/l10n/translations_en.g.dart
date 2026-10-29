@@ -995,6 +995,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get chartsEmptyDescription => 'Popular-song charts from the music sources will live here.';
 	@override String sourcesReady({required Object count}) => '${count} custom sources ready';
 	@override String get settingsPlayback => 'Source and playback';
+	@override String get settingsList => 'Lists';
 	@override String get defaultSource => 'Default source';
 	@override String get defaultSourceDesc => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.';
 	@override String get defaultSourceEmpty => 'No source yet — import a script under Custom sources below.';
@@ -1560,7 +1561,7 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get containerTs => 'MPEG-TS';
 	@override String get containerMp4 => 'Fragmented MP4';
 	@override String get recordChatTitle => 'Record chat';
-	@override String get recordChatDescription => 'Save live chat beside each video as a same-name .xml file (Bilibili format for DanmakuFactory, PotPlayer, etc.); needs a platform with remote chat';
+	@override String get recordChatDescription => 'Save live chat beside each video in the formats chosen under Danmaku → Danmaku files; needs a platform with remote chat';
 	@override String get defaultQualityTitle => 'Default recording quality';
 	@override String get defaultQualityDesc => 'Ask the platform for this quality when a recording starts; when it is unavailable, the current playback line is used.';
 	@override String get cacheTitle => 'Recording cache';
@@ -2175,6 +2176,14 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get danmakuColorBlue => 'Blue';
 	@override String get danmakuColorPurple => 'Purple';
 	@override String get danmakuColorPink => 'Pink';
+	@override String get danmakuSaveGroup => 'Danmaku files';
+	@override String get danmakuSaveDescription => 'Recordings and downloaded videos save the danmaku in each chosen format beside the video; XML stays on when everything else is off.';
+	@override String get danmakuSaveFormats => 'Saved formats';
+	@override String get danmakuFormatXml => 'Bilibili XML';
+	@override String get danmakuFormatJson => 'Bilibili JSON';
+	@override String get danmakuFormatAss => 'ASS subtitles';
+	@override String get danmakuFormatSrt => 'SRT subtitles';
+	@override String get danmakuFormatTxt => 'Plain text';
 	@override String get pipDanmakuScaleAuto => 'Compact danmaku auto scale';
 	@override String get pipDanmakuScaleAutoDesc => 'Shrink danmaku with the picture-in-picture window width, never larger than the main danmaku; turn off to use the fixed factor below.';
 	@override String get pipDanmakuScale => 'Compact danmaku scale';
@@ -2328,9 +2337,9 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get vodPlaybackDescription => 'The opening rate, what a finished part leads to, and the details under the picture.';
 	@override String get groupMusic => 'Music';
 	@override String get navMusic => 'Music';
-	@override String get musicSettingsDescription => 'Sources, playback quality and how lists behave.';
-	@override String get navMusicList => 'List settings';
-	@override String get musicListDescription => 'Where new songs land, what a click does, and whether sources show.';
+	@override String get musicSettingsDescription => 'Playback, lyrics, desktop lyrics, download, sources, hotkeys and sync.';
+	@override String get navMusicPlay => 'Playback';
+	@override String get musicPlaybackDescription => 'Sources, quality and how playback and lists behave.';
 	@override String get navMusicSources => 'Custom sources';
 	@override String get musicSourcesDescription => 'Import and manage lx-style custom music-source scripts.';
 	@override String get navMusicDownload => 'Downloads';
@@ -4398,6 +4407,7 @@ extension on TranslationsEn {
 			'music.chartsEmptyDescription' => 'Popular-song charts from the music sources will live here.',
 			'music.sourcesReady' => ({required Object count}) => '${count} custom sources ready',
 			'music.settingsPlayback' => 'Source and playback',
+			'music.settingsList' => 'Lists',
 			'music.defaultSource' => 'Default source',
 			'music.defaultSourceDesc' => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.',
 			'music.defaultSourceEmpty' => 'No source yet — import a script under Custom sources below.',
@@ -4577,9 +4587,9 @@ extension on TranslationsEn {
 			'music.downloadEmbedCover' => 'Embed the cover',
 			'music.downloadEmbedCoverDesc' => 'Write the cover into the audio tags.',
 			'music.downloadEmbedLyric' => 'Embed the lyric',
-			'music.downloadEmbedLyricDesc' => 'Write the lyric into the audio tags so it travels with the file.',
 			_ => null,
 		} ?? switch (path) {
+			'music.downloadEmbedLyricDesc' => 'Write the lyric into the audio tags so it travels with the file.',
 			'music.downloadIncludeTranslation' => 'Include the translation',
 			'music.downloadIncludeTranslationDesc' => 'Write the translation into the downloaded lyric file and embedded tag.',
 			'music.downloadIncludeRomanization' => 'Include the romanization',
@@ -4929,7 +4939,7 @@ extension on TranslationsEn {
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => 'Fragmented MP4',
 			'recorder.recordChatTitle' => 'Record chat',
-			'recorder.recordChatDescription' => 'Save live chat beside each video as a same-name .xml file (Bilibili format for DanmakuFactory, PotPlayer, etc.); needs a platform with remote chat',
+			'recorder.recordChatDescription' => 'Save live chat beside each video in the formats chosen under Danmaku → Danmaku files; needs a platform with remote chat',
 			'recorder.defaultQualityTitle' => 'Default recording quality',
 			'recorder.defaultQualityDesc' => 'Ask the platform for this quality when a recording starts; when it is unavailable, the current playback line is used.',
 			'recorder.cacheTitle' => 'Recording cache',
@@ -5091,9 +5101,9 @@ extension on TranslationsEn {
 			'room.portraitDanmakuFollow' => 'Follow global',
 			'room.portraitDanmakuUpper' => 'Upper quarter',
 			'room.portraitDanmakuReduced' => 'Reduced',
-			'room.portraitDanmakuHidden' => 'Hidden',
 			_ => null,
 		} ?? switch (path) {
+			'room.portraitDanmakuHidden' => 'Hidden',
 			'room.portraitDiagnostics' => 'Portrait diagnostics',
 			'room.giftLineSent' => 'sent',
 			'room.giftLineSentTo' => ({required Object name}) => 'sent ${name}',
@@ -5519,6 +5529,14 @@ extension on TranslationsEn {
 			'settings.danmakuColorBlue' => 'Blue',
 			'settings.danmakuColorPurple' => 'Purple',
 			'settings.danmakuColorPink' => 'Pink',
+			'settings.danmakuSaveGroup' => 'Danmaku files',
+			'settings.danmakuSaveDescription' => 'Recordings and downloaded videos save the danmaku in each chosen format beside the video; XML stays on when everything else is off.',
+			'settings.danmakuSaveFormats' => 'Saved formats',
+			'settings.danmakuFormatXml' => 'Bilibili XML',
+			'settings.danmakuFormatJson' => 'Bilibili JSON',
+			'settings.danmakuFormatAss' => 'ASS subtitles',
+			'settings.danmakuFormatSrt' => 'SRT subtitles',
+			'settings.danmakuFormatTxt' => 'Plain text',
 			'settings.pipDanmakuScaleAuto' => 'Compact danmaku auto scale',
 			'settings.pipDanmakuScaleAutoDesc' => 'Shrink danmaku with the picture-in-picture window width, never larger than the main danmaku; turn off to use the fixed factor below.',
 			'settings.pipDanmakuScale' => 'Compact danmaku scale',
@@ -5597,6 +5615,8 @@ extension on TranslationsEn {
 			'settings.fontManagerSearchPlaceholder' => 'Search font names',
 			'settings.fontManagerPageLabel' => 'Font list pages',
 			'settings.fontManagerColumnSource' => 'Source',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerColumnSize' => 'Size',
 			'settings.fontManagerColumnFont' => 'Font',
 			'settings.fontManagerColumnState' => 'Status',
@@ -5606,8 +5626,6 @@ extension on TranslationsEn {
 			'settings.fontManagerDownload' => 'Download',
 			'settings.fontManagerDownloadingShort' => 'Downloading',
 			'settings.fontManagerDetails' => 'Display and settings',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerLoadedCount' => ({required Object shown, required Object total}) => 'Loaded ${shown} of ${total}',
 			'settings.fontManagerLoadingMore' => 'Loading more…',
 			'settings.fontCategoryHeiti' => 'Heiti',
@@ -5674,9 +5692,9 @@ extension on TranslationsEn {
 			'settings.vodPlaybackDescription' => 'The opening rate, what a finished part leads to, and the details under the picture.',
 			'settings.groupMusic' => 'Music',
 			'settings.navMusic' => 'Music',
-			'settings.musicSettingsDescription' => 'Sources, playback quality and how lists behave.',
-			'settings.navMusicList' => 'List settings',
-			'settings.musicListDescription' => 'Where new songs land, what a click does, and whether sources show.',
+			'settings.musicSettingsDescription' => 'Playback, lyrics, desktop lyrics, download, sources, hotkeys and sync.',
+			'settings.navMusicPlay' => 'Playback',
+			'settings.musicPlaybackDescription' => 'Sources, quality and how playback and lists behave.',
 			'settings.navMusicSources' => 'Custom sources',
 			'settings.musicSourcesDescription' => 'Import and manage lx-style custom music-source scripts.',
 			'settings.navMusicDownload' => 'Downloads',
@@ -6111,6 +6129,8 @@ extension on TranslationsEn {
 			'settings.downloadColumnTime' => 'Time',
 			'settings.downloadColumnActions' => 'Actions',
 			'settings.downloadSearchPlaceholder' => 'Search downloads',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadPercent' => ({required Object percent}) => 'Downloading ${percent}%',
 			'settings.downloadStatusPaused' => 'Paused',
 			'settings.downloadLoadedCount' => ({required Object shown, required Object total}) => 'Loaded ${shown} of ${total}',
@@ -6120,8 +6140,6 @@ extension on TranslationsEn {
 			'settings.downloadDetailTitle' => 'Download detail',
 			'settings.downloadInfoPath' => 'Save path',
 			'settings.downloadInfoSize' => 'File size',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadInfoTime' => 'Download time',
 			'settings.downloadSelectAll' => 'Select all',
 			'settings.downloadSelectedCount' => ({required Object count}) => '${count} selected',
@@ -6625,6 +6643,8 @@ extension on TranslationsEn {
 			'vod.live' => 'Live',
 			'vod.searchKindVideo' => 'Videos',
 			'vod.searchKindBangumi' => 'Anime',
+			_ => null,
+		} ?? switch (path) {
 			'vod.searchKindCinema' => 'Films',
 			'vod.searchKindUser' => 'Users',
 			'vod.searchKindLiveRoom' => 'Live rooms',
@@ -6634,8 +6654,6 @@ extension on TranslationsEn {
 			'vod.liveFollowTitle' => 'Following',
 			'vod.liveAreasTitle' => 'Areas',
 			'vod.liveRecommendTitle' => 'Recommended live',
-			_ => null,
-		} ?? switch (path) {
 			'vod.liveEmptyTitle' => 'No live rooms recommended',
 			'vod.liveEmptyDescription' => 'Refresh in a moment to try again.',
 			'vod.refresh' => 'Refresh',

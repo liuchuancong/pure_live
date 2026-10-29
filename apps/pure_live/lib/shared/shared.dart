@@ -6,6 +6,7 @@
 library;
 
 export 'areas/areas.dart';
+export 'danmaku/danmaku.dart';
 export 'enums/enums.dart';
 export 'focus/focus.dart';
 export 'grids/grids.dart';

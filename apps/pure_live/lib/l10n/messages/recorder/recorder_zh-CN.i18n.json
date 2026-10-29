@@ -72,7 +72,7 @@
   "containerTs": "MPEG-TS",
   "containerMp4": "分段 MP4",
   "recordChatTitle": "同时录制弹幕",
-  "recordChatDescription": "在录像旁存同名 .xml 弹幕文件（B 站格式）；平台需已接入弹幕",
+  "recordChatDescription": "在录像旁存同名弹幕文件，格式见「弹幕 → 弹幕文件」；平台需已接入弹幕",
   "defaultQualityTitle": "默认录制画质",
   "defaultQualityDesc": "开始录制时优先请求这个清晰度；平台不提供时使用当前播放线路。",
   "cacheTitle": "录制缓存",

@@ -2686,6 +2686,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '音源与播放'
 	String get settingsPlayback => '音源与播放';
 
+	/// zh-CN: '列表'
+	String get settingsList => '列表';
+
 	/// zh-CN: '默认音源'
 	String get defaultSource => '默认音源';
 
@@ -4309,8 +4312,8 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '同时录制弹幕'
 	String get recordChatTitle => '同时录制弹幕';
 
-	/// zh-CN: '在录像旁存同名 .xml 弹幕文件（B 站格式）；平台需已接入弹幕'
-	String get recordChatDescription => '在录像旁存同名 .xml 弹幕文件（B 站格式）；平台需已接入弹幕';
+	/// zh-CN: '在录像旁存同名弹幕文件，格式见「弹幕 → 弹幕文件」；平台需已接入弹幕'
+	String get recordChatDescription => '在录像旁存同名弹幕文件，格式见「弹幕 → 弹幕文件」；平台需已接入弹幕';
 
 	/// zh-CN: '默认录制画质'
 	String get defaultQualityTitle => '默认录制画质';
@@ -6100,6 +6103,30 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '粉色'
 	String get danmakuColorPink => '粉色';
 
+	/// zh-CN: '弹幕文件'
+	String get danmakuSaveGroup => '弹幕文件';
+
+	/// zh-CN: '录制与下载视频时，弹幕按所选格式各存一份同名文件；关闭全部选项时保留 XML。'
+	String get danmakuSaveDescription => '录制与下载视频时，弹幕按所选格式各存一份同名文件；关闭全部选项时保留 XML。';
+
+	/// zh-CN: '保存格式'
+	String get danmakuSaveFormats => '保存格式';
+
+	/// zh-CN: 'B站 XML'
+	String get danmakuFormatXml => 'B站 XML';
+
+	/// zh-CN: 'B站 JSON'
+	String get danmakuFormatJson => 'B站 JSON';
+
+	/// zh-CN: 'ASS 字幕'
+	String get danmakuFormatAss => 'ASS 字幕';
+
+	/// zh-CN: 'SRT 字幕'
+	String get danmakuFormatSrt => 'SRT 字幕';
+
+	/// zh-CN: '纯文本'
+	String get danmakuFormatTxt => '纯文本';
+
 	/// zh-CN: '小窗弹幕比例自动'
 	String get pipDanmakuScaleAuto => '小窗弹幕比例自动';
 
@@ -6559,14 +6586,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '音乐'
 	String get navMusic => '音乐';
 
-	/// zh-CN: '音源、播放品质与列表行为。'
-	String get musicSettingsDescription => '音源、播放品质与列表行为。';
+	/// zh-CN: '播放、歌词、桌面歌词、下载、音源、快捷键与同步。'
+	String get musicSettingsDescription => '播放、歌词、桌面歌词、下载、音源、快捷键与同步。';
 
-	/// zh-CN: '列表设置'
-	String get navMusicList => '列表设置';
+	/// zh-CN: '播放'
+	String get navMusicPlay => '播放';
 
-	/// zh-CN: '新歌的位置、单击行为与是否显示来源。'
-	String get musicListDescription => '新歌的位置、单击行为与是否显示来源。';
+	/// zh-CN: '音源、音质与播放、列表行为。'
+	String get musicPlaybackDescription => '音源、音质与播放、列表行为。';
 
 	/// zh-CN: '自定义源'
 	String get navMusicSources => '自定义源';
@@ -10966,6 +10993,7 @@ extension on Translations {
 			'music.chartsEmptyDescription' => '来自各音乐源的热门榜单会出现在这里。',
 			'music.sourcesReady' => ({required Object count}) => '已就绪 ${count} 个自定义源',
 			'music.settingsPlayback' => '音源与播放',
+			'music.settingsList' => '列表',
 			'music.defaultSource' => '默认音源',
 			'music.defaultSourceDesc' => '歌曲从哪个音源获取；自定义源脚本负责解析播放地址。',
 			'music.defaultSourceEmpty' => '还没有可用的音源；先在下方「自定义源」里导入脚本。',
@@ -11145,9 +11173,9 @@ extension on Translations {
 			'music.downloadEmbedCover' => '嵌入封面',
 			'music.downloadEmbedCoverDesc' => '把歌曲封面写入音频标签。',
 			'music.downloadEmbedLyric' => '嵌入歌词',
-			'music.downloadEmbedLyricDesc' => '把歌词写入音频标签，随文件一起播放。',
 			_ => null,
 		} ?? switch (path) {
+			'music.downloadEmbedLyricDesc' => '把歌词写入音频标签，随文件一起播放。',
 			'music.downloadIncludeTranslation' => '歌词包含翻译',
 			'music.downloadIncludeTranslationDesc' => '下载的歌词文件与内嵌歌词一并写入翻译。',
 			'music.downloadIncludeRomanization' => '歌词包含音译',
@@ -11497,7 +11525,7 @@ extension on Translations {
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => '分段 MP4',
 			'recorder.recordChatTitle' => '同时录制弹幕',
-			'recorder.recordChatDescription' => '在录像旁存同名 .xml 弹幕文件（B 站格式）；平台需已接入弹幕',
+			'recorder.recordChatDescription' => '在录像旁存同名弹幕文件，格式见「弹幕 → 弹幕文件」；平台需已接入弹幕',
 			'recorder.defaultQualityTitle' => '默认录制画质',
 			'recorder.defaultQualityDesc' => '开始录制时优先请求这个清晰度；平台不提供时使用当前播放线路。',
 			'recorder.cacheTitle' => '录制缓存',
@@ -11659,9 +11687,9 @@ extension on Translations {
 			'room.portraitDanmakuFollow' => '跟随全局',
 			'room.portraitDanmakuUpper' => '上部 1/4',
 			'room.portraitDanmakuReduced' => '减半',
-			'room.portraitDanmakuHidden' => '隐藏',
 			_ => null,
 		} ?? switch (path) {
+			'room.portraitDanmakuHidden' => '隐藏',
 			'room.portraitDiagnostics' => '竖屏诊断',
 			'room.giftLineSent' => '送出',
 			'room.giftLineSentTo' => ({required Object name}) => '送给 ${name}',
@@ -12087,6 +12115,14 @@ extension on Translations {
 			'settings.danmakuColorBlue' => '蓝色',
 			'settings.danmakuColorPurple' => '紫色',
 			'settings.danmakuColorPink' => '粉色',
+			'settings.danmakuSaveGroup' => '弹幕文件',
+			'settings.danmakuSaveDescription' => '录制与下载视频时，弹幕按所选格式各存一份同名文件；关闭全部选项时保留 XML。',
+			'settings.danmakuSaveFormats' => '保存格式',
+			'settings.danmakuFormatXml' => 'B站 XML',
+			'settings.danmakuFormatJson' => 'B站 JSON',
+			'settings.danmakuFormatAss' => 'ASS 字幕',
+			'settings.danmakuFormatSrt' => 'SRT 字幕',
+			'settings.danmakuFormatTxt' => '纯文本',
 			'settings.pipDanmakuScaleAuto' => '小窗弹幕比例自动',
 			'settings.pipDanmakuScaleAutoDesc' => '按小窗宽度自动缩小弹幕，不超过主弹幕大小；关闭用下方固定比例。',
 			'settings.pipDanmakuScale' => '小窗弹幕比例',
@@ -12165,6 +12201,8 @@ extension on Translations {
 			'settings.fontManagerSearchPlaceholder' => '搜索字体名称',
 			'settings.fontManagerPageLabel' => '字体列表翻页',
 			'settings.fontManagerColumnSource' => '来源',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerColumnSize' => '大小',
 			'settings.fontManagerColumnFont' => '字体',
 			'settings.fontManagerColumnState' => '状态',
@@ -12174,8 +12212,6 @@ extension on Translations {
 			'settings.fontManagerDownload' => '下载',
 			'settings.fontManagerDownloadingShort' => '下载中',
 			'settings.fontManagerDetails' => '显示与设置',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerLoadedCount' => ({required Object shown, required Object total}) => '已加载 ${shown} / ${total}',
 			'settings.fontManagerLoadingMore' => '正在加载更多…',
 			'settings.fontCategoryHeiti' => '黑体',
@@ -12242,9 +12278,9 @@ extension on Translations {
 			'settings.vodPlaybackDescription' => '默认倍速、一集播完后的动作，以及播放器下方显示的详情。',
 			'settings.groupMusic' => '音乐',
 			'settings.navMusic' => '音乐',
-			'settings.musicSettingsDescription' => '音源、播放品质与列表行为。',
-			'settings.navMusicList' => '列表设置',
-			'settings.musicListDescription' => '新歌的位置、单击行为与是否显示来源。',
+			'settings.musicSettingsDescription' => '播放、歌词、桌面歌词、下载、音源、快捷键与同步。',
+			'settings.navMusicPlay' => '播放',
+			'settings.musicPlaybackDescription' => '音源、音质与播放、列表行为。',
 			'settings.navMusicSources' => '自定义源',
 			'settings.musicSourcesDescription' => '导入并管理 lx 风格的自定义音源脚本。',
 			'settings.navMusicDownload' => '下载',
@@ -12679,6 +12715,8 @@ extension on Translations {
 			'settings.downloadColumnTime' => '时间',
 			'settings.downloadColumnActions' => '操作',
 			'settings.downloadSearchPlaceholder' => '搜索下载记录',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadPercent' => ({required Object percent}) => '下载中 ${percent}%',
 			'settings.downloadStatusPaused' => '已暂停',
 			'settings.downloadLoadedCount' => ({required Object shown, required Object total}) => '已加载 ${shown} / ${total}',
@@ -12688,8 +12726,6 @@ extension on Translations {
 			'settings.downloadDetailTitle' => '下载详情',
 			'settings.downloadInfoPath' => '保存路径',
 			'settings.downloadInfoSize' => '文件大小',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadInfoTime' => '下载时间',
 			'settings.downloadSelectAll' => '全选',
 			'settings.downloadSelectedCount' => ({required Object count}) => '已选 ${count} 项',
@@ -13193,6 +13229,8 @@ extension on Translations {
 			'vod.live' => '直播',
 			'vod.searchKindVideo' => '视频',
 			'vod.searchKindBangumi' => '番剧',
+			_ => null,
+		} ?? switch (path) {
 			'vod.searchKindCinema' => '影视',
 			'vod.searchKindUser' => '用户',
 			'vod.searchKindLiveRoom' => '直播间',
@@ -13202,8 +13240,6 @@ extension on Translations {
 			'vod.liveFollowTitle' => '我的关注',
 			'vod.liveAreasTitle' => '推荐分区',
 			'vod.liveRecommendTitle' => '推荐直播',
-			_ => null,
-		} ?? switch (path) {
 			'vod.liveEmptyTitle' => '没有推荐的直播',
 			'vod.liveEmptyDescription' => '稍后刷新再看看。',
 			'vod.refresh' => '刷新',
