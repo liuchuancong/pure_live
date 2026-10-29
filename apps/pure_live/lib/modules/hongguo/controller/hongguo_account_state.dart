@@ -342,8 +342,12 @@ final class HongguoHomeController extends Notifier<HongguoHomeState> {
   HongguoHomeState build() => (genre: null, items: const [], loading: false, error: null);
 
   /// Loads the first batch of the genre (null for the cross-genre feed).
+  ///
+  /// A batch already held, or one still in flight, answers at once; a feed
+  /// that failed waits for the viewer's retry rather than asking again on
+  /// every rebuild of the page that holds it.
   Future<void> open(HongguoGenre? genre) {
-    if (state.genre == genre && (state.items.isNotEmpty || state.loading)) return Future.value();
+    if (state.genre == genre && (state.items.isNotEmpty || state.loading || state.error != null)) return Future.value();
     return _load(genre);
   }
 

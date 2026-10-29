@@ -37,6 +37,9 @@ import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart' sh
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
 import 'package:pure_live/shared/shared.dart';
 
+/// The catalogues the picture bar hangs over.
+enum _HongguoPanel { fit, sleep, speed }
+
 /// One episode's player page: the picture and its control bar above the
 /// episode shelf, pushed from the series page's play card.
 ///
@@ -75,6 +78,22 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   StreamSubscription<GeometryState>? _geometrySub;
   PlayerTransportState? _transport;
   DateTime _lastSave = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// When the position was last handed to the cloud. The local row saves
+  /// every few seconds; the platform needs to hear from it less often, and
+  /// each upload is a request.
+  DateTime _lastCloudSave = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// Whether the overlay bar is up; a playing picture lets it settle away.
+  bool _controlsVisible = true;
+
+  /// The overlay's timers: the bar's hide, and a picker's open and close.
+  Timer? _hideTimer;
+  Timer? _hoverTimer;
+  Timer? _leaveTimer;
+
+  /// The catalogue hanging over the bar, when one is open.
+  _HongguoPanel? _openPanel;
   bool _loading = true;
   bool _opening = false;
   bool _disposed = false;
@@ -200,6 +219,12 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     _routeObserver?.unsubscribe(this);
     _saveProgress(force: true);
     _disposed = true;
+    _hideTimer?.cancel();
+    _hideTimer = null;
+    _hoverTimer?.cancel();
+    _hoverTimer = null;
+    _leaveTimer?.cancel();
+    _leaveTimer = null;
     _sleepTicker?.cancel();
     _sleepTicker = null;
     _recoveryTimer?.cancel();
@@ -600,6 +625,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         if (state.isPlaying) _error = null;
       });
       _saveProgress();
+      if (state.isPlaying) _scheduleHide();
       final detail = _detail;
       final episode = _episode;
       if (state.initialized &&
@@ -795,6 +821,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     );
     final credentials = _accountCredentials;
     if (credentials == null || credentials.cookie.isEmpty) return;
+    // The platform's copy lags the local one on purpose: a position upload
+    // every five seconds would be a request every five seconds.
+    if (!force && now.difference(_lastCloudSave) < const Duration(seconds: 30)) return;
+    _lastCloudSave = now;
     unawaited(
       _accountClient
           .upload(
@@ -981,6 +1011,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
 
   /// The picture and its controls; [immersive] adds the way out and the
   /// title over the picture, since the page's app bar is gone there.
+  /// The picture and its controls. The bar wakes under the pointer and
+  /// settles away while the stream plays — the live room's own overlay — and
+  /// [immersive] adds the way out and the title over the picture, since the
+  /// page's app bar is gone there.
   Widget _playerSurface(BuildContext context, {required bool immersive}) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
@@ -990,17 +1024,13 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final detail = _detail;
     final settings = ref.watch(hongguoSettingsProvider);
     // The picture mode is the app's own player setting — one entry for every
-    // player — and the bar's menu writes it rather than a module copy.
+    // player — and the bar's panel writes it rather than a module copy.
     final fit = ref.watch(playbackSettingsProvider).fit;
     final lessons = ref.watch(hongguoDecoderLessonsProvider);
     final danmaku = ref.watch(hongguoDanmakuSettingsProvider);
     final danmakuItems = ref.watch(hongguoDanmakuProvider).items;
-    final duration = transport?.duration ?? Duration.zero;
-    final position = _dragSeconds != null
-        ? Duration(milliseconds: (_dragSeconds! * 1000).round())
-        : transport?.position ?? Duration.zero;
     final playing = transport?.isPlaying ?? false;
-    final next = _nextEpisode();
+    final showBar = _controlsVisible || !playing || _error != null;
     final ladder = _lastLadder;
     final attempted = _attempted;
     final lower = ladder != null && attempted != null
@@ -1012,466 +1042,408 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         color: colors.overlay,
         child: AspectRatio(
           aspectRatio: _aspectRatio > 0 ? _aspectRatio : 16 / 9,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (handle != null)
-                MediaPlayerView(handle: handle, fit: fit.boxFit, backgroundColor: colors.overlay)
-              else
-                const ColoredBox(color: Color(0xFF000000)),
-              if (handle != null && danmaku.enabled && danmakuItems.isNotEmpty)
-                Positioned.fill(
-                  child: HongguoDanmakuLayer(
-                    items: danmakuItems,
-                    positionMs: () => _transport?.position.inMilliseconds ?? 0,
-                    playing: () => _transport?.isPlaying ?? false,
-                    settings: danmaku,
-                  ),
-                ),
-              if (immersive)
-                PositionedDirectional(
-                  top: 0,
-                  start: 0,
-                  end: 0,
-                  child: Container(
-                    padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: AlignmentDirectional.topCenter,
-                        end: AlignmentDirectional.bottomCenter,
-                        colors: [Color(0xB3000000), Color(0x00000000)],
-                      ),
+          child: MouseRegion(
+            onHover: (_) => _wake(),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (handle != null)
+                  MediaPlayerView(handle: handle, fit: fit.boxFit, backgroundColor: colors.overlay)
+                else
+                  const ColoredBox(color: Color(0xFF000000)),
+                if (handle != null && danmaku.enabled && danmakuItems.isNotEmpty)
+                  Positioned.fill(
+                    child: HongguoDanmakuLayer(
+                      items: danmakuItems,
+                      positionMs: () => _transport?.position.inMilliseconds ?? 0,
+                      playing: () => _transport?.isPlaying ?? false,
+                      settings: danmaku,
                     ),
-                    child: Row(
-                      spacing: DsSpace.s8,
-                      children: [
-                        _PlayerIconButton(
-                          icon: DsIcons.minimize2,
-                          label: t.hongguo.exitFullscreen,
-                          onPressed: () => unawaited(_toggleFullscreen()),
-                          onDark: true,
-                          autofocus: true,
-                        ),
-                        Expanded(
-                          child: Text(
-                            detail?.meta.title ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.title.copyWith(color: const Color(0xFFFFFFFF)),
+                  ),
+                // The picture itself is the bar's switch: a press toggles it,
+                // a double press plays or pauses.
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _toggleControls,
+                  onDoubleTap: handle == null
+                      ? null
+                      : () {
+                          _wake();
+                          unawaited(_togglePlay());
+                        },
+                ),
+                if (immersive && showBar) PositionedDirectional(top: 0, start: 0, end: 0, child: _topStrip(t, detail)),
+                if (_opening || (transport?.isBuffering ?? false))
+                  const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
+                // A failure that outlived the automatic recovery: what went
+                // wrong, what the budget is doing, and the four ways out the
+                // reference offers.
+                if (_error != null)
+                  Positioned.fill(
+                    child: ColoredBox(
+                      color: const Color(0x99000000),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 440),
+                          child: Container(
+                            padding: const EdgeInsets.all(DsSpace.s16),
+                            decoration: DsBoxDecoration(
+                              color: colors.surface,
+                              borderRadius: BorderRadius.circular(theme.radii.overlay),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              spacing: DsSpace.s8,
+                              children: [
+                                DsIcon(DsIcons.circleAlert, size: 24, color: colors.text),
+                                Text(
+                                  _lastFailure ?? _error!,
+                                  textAlign: TextAlign.center,
+                                  style: theme.typography.body.copyWith(color: colors.text),
+                                ),
+                                Text(
+                                  _waitingForNetwork
+                                      ? t.hongguo.waitingForNetwork
+                                      : _autoRecovery
+                                      ? t.hongguo.autoRetry(
+                                          attempt: _recovery.attempts + 1,
+                                          seconds: (_recovery.delay?.inMilliseconds ?? 0) ~/ 1000,
+                                        )
+                                      : t.hongguo.retryExhausted,
+                                  textAlign: TextAlign.center,
+                                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                ),
+                                Wrap(
+                                  alignment: WrapAlignment.center,
+                                  spacing: DsSpace.s8,
+                                  runSpacing: DsSpace.s8,
+                                  children: [
+                                    DsButton(onPressed: () => unawaited(_retryNow()), child: Text(t.hongguo.retryNow)),
+                                    if (lower != null)
+                                      DsButton(
+                                        variant: DsButtonVariant.secondary,
+                                        onPressed: () => unawaited(_retryLower(lower.quality)),
+                                        child: Text(t.hongguo.retryLower(height: lower.quality)),
+                                      ),
+                                    if (immersive)
+                                      DsButton(
+                                        variant: DsButtonVariant.ghost,
+                                        onPressed: () => unawaited(_toggleFullscreen()),
+                                        child: Text(t.hongguo.backToEpisodes),
+                                      ),
+                                    if (_autoRecovery)
+                                      DsButton(
+                                        variant: DsButtonVariant.ghost,
+                                        onPressed: () {
+                                          _cancelRecovery();
+                                          setState(() => _autoRecovery = false);
+                                        },
+                                        child: Text(t.hongguo.stopAutoRetry),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
+                      ),
+                    ),
+                  ),
+                if (showBar)
+                  PositionedDirectional(
+                    bottom: 0,
+                    start: 0,
+                    end: 0,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_openPanel case final panel?)
+                          Padding(
+                            padding: const EdgeInsetsDirectional.only(end: DsSpace.s12, bottom: DsSpace.s4),
+                            child: Align(
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: MouseRegion(
+                                onEnter: (_) => _leaveTimer?.cancel(),
+                                onExit: (_) => _leavePanelSoon(),
+                                child: _panel(t, panel),
+                              ),
+                            ),
+                          ),
+                        _controlBar(context),
                       ],
                     ),
                   ),
-                ),
-              if (_opening || (transport?.isBuffering ?? false))
-                const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
-              // A failure that outlived the automatic recovery: what went
-              // wrong, what the budget is doing, and the four ways out the
-              // reference offers.
-              if (_error != null)
-                Positioned.fill(
-                  child: ColoredBox(
-                    color: const Color(0x99000000),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 440),
-                        child: Container(
-                          padding: const EdgeInsets.all(DsSpace.s16),
-                          decoration: DsBoxDecoration(
-                            color: colors.surface,
-                            borderRadius: BorderRadius.circular(theme.radii.overlay),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            spacing: DsSpace.s8,
-                            children: [
-                              DsIcon(DsIcons.circleAlert, size: 24, color: colors.text),
-                              Text(
-                                _lastFailure ?? _error!,
-                                textAlign: TextAlign.center,
-                                style: theme.typography.body.copyWith(color: colors.text),
-                              ),
-                              Text(
-                                _waitingForNetwork
-                                    ? t.hongguo.waitingForNetwork
-                                    : _autoRecovery
-                                    ? t.hongguo.autoRetry(
-                                        attempt: _recovery.attempts + 1,
-                                        seconds: (_recovery.delay?.inMilliseconds ?? 0) ~/ 1000,
-                                      )
-                                    : t.hongguo.retryExhausted,
-                                textAlign: TextAlign.center,
-                                style: theme.typography.caption.copyWith(color: colors.textMuted),
-                              ),
-                              Wrap(
-                                alignment: WrapAlignment.center,
-                                spacing: DsSpace.s8,
-                                runSpacing: DsSpace.s8,
-                                children: [
-                                  DsButton(onPressed: () => unawaited(_retryNow()), child: Text(t.hongguo.retryNow)),
-                                  if (lower != null)
-                                    DsButton(
-                                      variant: DsButtonVariant.secondary,
-                                      onPressed: () => unawaited(_retryLower(lower.quality)),
-                                      child: Text(t.hongguo.retryLower(height: lower.quality)),
-                                    ),
-                                  if (immersive)
-                                    DsButton(
-                                      variant: DsButtonVariant.ghost,
-                                      onPressed: () => unawaited(_toggleFullscreen()),
-                                      child: Text(t.hongguo.backToEpisodes),
-                                    ),
-                                  if (_autoRecovery)
-                                    DsButton(
-                                      variant: DsButtonVariant.ghost,
-                                      onPressed: () {
-                                        _cancelRecovery();
-                                        setState(() => _autoRecovery = false);
-                                      },
-                                      child: Text(t.hongguo.stopAutoRetry),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              PositionedDirectional(
-                bottom: 0,
-                start: 0,
-                end: 0,
-                child: Container(
-                  padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s24, DsSpace.s8, DsSpace.s4),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: AlignmentDirectional.bottomCenter,
-                      end: AlignmentDirectional.topCenter,
-                      colors: [Color(0xD9000000), Color(0x00000000)],
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: DsSpace.s4,
-                    children: [
-                      // The reference's HUD line: the rendition in play, the
-                      // speed, and the sleep timer when one runs.
-                      Row(
-                        children: [
-                          const Spacer(),
-                          Text(
-                            [
-                              if ((_attempted?.quality ?? 0) > 0) '${_attempted!.quality}P',
-                              '${_speed == _speed.roundToDouble() ? _speed.toInt() : _speed}x',
-                              if (_sleep.active) _sleep.label(t),
-                            ].join(' · '),
-                            style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(color: const Color(0xB3FFFFFF)),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        spacing: DsSpace.s8,
-                        children: [
-                          SizedBox(
-                            width: 54,
-                            child: Text(
-                              hongguoDurationText(position),
-                              textAlign: TextAlign.center,
-                              style: theme.typography.numeric(
-                                theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: DsSlider(
-                              value: duration.inMilliseconds <= 0
-                                  ? 0
-                                  : position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble(),
-                              max: duration.inMilliseconds <= 0 ? 1 : duration.inMilliseconds.toDouble(),
-                              onChanged: duration.inMilliseconds <= 0
-                                  ? null
-                                  : (value) => setState(() => _dragSeconds = value / 1000),
-                              onChangeEnd: duration.inMilliseconds <= 0
-                                  ? null
-                                  : (value) {
-                                      final seconds = value / 1000;
-                                      setState(() => _dragSeconds = null);
-                                      unawaited(_seekTo(seconds));
-                                    },
-                              semanticLabel: t.hongguo.progress,
-                            ),
-                          ),
-                          SizedBox(
-                            width: 54,
-                            child: Text(
-                              hongguoDurationText(duration),
-                              textAlign: TextAlign.center,
-                              style: theme.typography.numeric(
-                                theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final compact = constraints.maxWidth < 560;
-                          return Row(
-                            spacing: DsSpace.s4,
-                            children: [
-                              _PlayerIconButton(
-                                icon: playing ? DsIcons.pause : DsIcons.play,
-                                label: playing ? t.hongguo.pause : t.hongguo.play,
-                                onPressed: handle == null ? null : () => unawaited(_togglePlay()),
-                                focusNode: _playFocus,
-                                onDark: true,
-                              ),
-                              _PlayerIconButton(
-                                icon: _effectivelyMuted ? DsIcons.volumeOff : DsIcons.volume,
-                                label: _effectivelyMuted ? t.hongguo.unmute : t.hongguo.mute,
-                                onPressed: handle == null
-                                    ? null
-                                    : () => unawaited(_setMuted(muted: !_effectivelyMuted)),
-                                onDark: true,
-                              ),
-                              if (!compact)
-                                SizedBox(
-                                  width: 100,
-                                  child: DsSlider(
-                                    value: _effectivelyMuted ? 0 : _volume,
-                                    onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
-                                    semanticLabel: t.hongguo.volume,
-                                  ),
-                                ),
-                              _PlayerIconButton(
-                                icon: danmaku.enabled ? DsIcons.captions : DsIcons.captionsOff,
-                                label: danmaku.enabled ? t.hongguo.danmakuOn : t.hongguo.danmakuOff,
-                                onPressed: () => unawaited(
-                                  ref.read(hongguoDanmakuSettingsProvider.notifier).setEnabled(value: !danmaku.enabled),
-                                ),
-                                onDark: true,
-                              ),
-                              const Spacer(),
-                              if (next != null)
-                                _PlayerIconButton(
-                                  icon: DsIcons.skipForward,
-                                  label: t.hongguo.nextEpisode,
-                                  onPressed: () => unawaited(_openEpisode(next)),
-                                  onDark: true,
-                                ),
-                              _PlayerMenu(
-                                label: fitLabels(t)[fit.index],
-                                icon: DsIcons.aspectRatio,
-                                semanticLabel: t.settings.fit,
-                                compact: compact,
-                                items: [
-                                  for (final mode in const [PlaybackFit.contain, PlaybackFit.cover, PlaybackFit.fill])
-                                    DsMenuItem(
-                                      label: Text(fitLabels(t)[mode.index]),
-                                      checked: mode == fit,
-                                      onPressed: () =>
-                                          unawaited(ref.read(playbackSettingsProvider.notifier).setFit(mode)),
-                                    ),
-                                ],
-                              ),
-                              _PlayerMenu(
-                                label: _sleep.label(t),
-                                icon: DsIcons.moon,
-                                semanticLabel: t.hongguo.sleep,
-                                compact: compact,
-                                items: [
-                                  DsMenuItem(
-                                    label: Text(t.hongguo.sleepOff),
-                                    checked: !_sleep.active,
-                                    onPressed: _setSleep,
-                                  ),
-                                  for (final minutes in const [15, 30, 60, 90])
-                                    DsMenuItem(
-                                      label: Text(t.hongguo.sleepAfter(minutes: minutes)),
-                                      checked:
-                                          _sleep.remaining != null &&
-                                          (_sleep.remaining!.inMinutes - minutes).abs() <= 1,
-                                      onPressed: () => _setSleep(minutes: minutes),
-                                    ),
-                                  DsMenuItem(
-                                    label: Text(t.hongguo.sleepThisEpisode),
-                                    checked: _sleep.episodesLeft == 1,
-                                    onPressed: () => _setSleep(episodes: 1),
-                                  ),
-                                  for (final count in const [3, 5])
-                                    DsMenuItem(
-                                      label: Text(t.hongguo.sleepAfterEpisodes(count: count)),
-                                      checked: _sleep.episodesLeft == count,
-                                      onPressed: () => _setSleep(episodes: count),
-                                    ),
-                                ],
-                              ),
-                              _PlayerMenu(
-                                label: '${_speed == _speed.roundToDouble() ? _speed.toInt() : _speed}x',
-                                icon: DsIcons.gauge,
-                                semanticLabel: t.hongguo.speed,
-                                compact: compact,
-                                items: [
-                                  for (final speed in const <double>[0.5, 0.75, 1, 1.25, 1.5, 2])
-                                    DsMenuItem(
-                                      label: Text('${speed == speed.roundToDouble() ? speed.toInt() : speed}x'),
-                                      checked: speed == _speed,
-                                      onPressed: () => unawaited(_setSpeed(speed)),
-                                    ),
-                                ],
-                              ),
-                              _PlayerIconButton(
-                                icon: DsIcons.maximize2,
-                                label: t.hongguo.fullscreen,
-                                onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
-                                onDark: true,
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-}
 
-/// An icon button on the dark control bar.
-final class _PlayerIconButton extends StatelessWidget {
-  /// The button for [icon].
-  const _PlayerIconButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-    this.autofocus = false,
-    this.onDark = false,
-    this.focusNode,
-  });
-
-  /// The glyph.
-  final DsIconData icon;
-
-  /// The control's name, shown on hover and to semantics.
-  final String label;
-
-  /// Null disables the control.
-  final VoidCallback? onPressed;
-
-  /// Whether the keyboard lands here first.
-  final bool autofocus;
-
-  /// Whether the button sits on the picture's dark gradient.
-  final bool onDark;
-
-  /// The node the keyboard returns to after a presentation change.
-  final FocusNode? focusNode;
-
-  @override
-  Widget build(BuildContext context) {
+  /// The strip over an immersive picture: the way out and what is playing.
+  Widget _topStrip(Translations t, HongguoSeriesDetail? detail) {
     final theme = DsTheme.of(context);
-    final ink = onDark ? const Color(0xFFFFFFFF) : DsTheme.colorsOf(context).text;
-    return DsTooltip(
-      message: label,
-      child: DsPressable(
-        semanticLabel: label,
-        onPressed: onPressed,
-        autofocus: autofocus,
-        focusNode: focusNode,
-        builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
-          return Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: DsBoxDecoration(
-              color: hovered ? const Color(0x33FFFFFF) : null,
-              borderRadius: BorderRadius.circular(theme.radii.control(36)),
+    final episode = _episode;
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: AlignmentDirectional.topCenter,
+          end: AlignmentDirectional.bottomCenter,
+          colors: [Color(0xB3000000), Color(0x00000000)],
+        ),
+      ),
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          PlayerGlassPill(
+            child: MediaBarButton(
+              icon: DsIcons.minimize2,
+              label: t.hongguo.exitFullscreen,
+              autofocus: true,
+              onPressed: () => unawaited(_toggleFullscreen()),
             ),
-            child: DsIcon(icon, size: 18, color: onPressed == null ? const Color(0x66FFFFFF) : ink),
-          );
-        },
+          ),
+          Expanded(
+            child: Text(
+              detail == null
+                  ? ''
+                  : episode == null
+                  ? detail.meta.title
+                  : '${detail.meta.title} · ${t.hongguo.episodeLabel(index: episode.index)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.title.copyWith(color: playerInk),
+            ),
+          ),
+        ],
       ),
     );
   }
-}
 
-/// A labelled menu over the picture: the current choice and a chevron, or
-/// just the icon where the bar is too narrow for labels.
-final class _PlayerMenu extends StatelessWidget {
-  /// The menu for [items].
-  const _PlayerMenu({
-    required this.label,
-    required this.icon,
-    required this.semanticLabel,
-    required this.items,
-    this.compact = false,
-  });
-
-  /// The menu's own label.
-  final String label;
-
-  /// The glyph beside it.
-  final DsIconData icon;
-
-  /// The menu's name, for semantics.
-  final String semanticLabel;
-
-  /// The menu's entries.
-  final List<Widget> items;
-
-  /// Whether the bar is too narrow for the label.
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
+  /// The bar under the picture: the reading line, the seek line, then the
+  /// transport, the comments toggle and the catalogues the panels open.
+  Widget _controlBar(BuildContext context) {
+    final t = context.t;
     final theme = DsTheme.of(context);
-    return DsMenuAnchor(
-      semanticLabel: semanticLabel,
-      items: items,
-      builder: (context, controller, _) => DsTooltip(
-        message: semanticLabel,
+    final handle = _handle;
+    final transport = _transport;
+    final playing = transport?.isPlaying ?? false;
+    final duration = transport?.duration ?? Duration.zero;
+    final position = _dragSeconds != null
+        ? Duration(milliseconds: (_dragSeconds! * 1000).round())
+        : transport?.position ?? Duration.zero;
+    final fit = ref.watch(playbackSettingsProvider).fit;
+    final danmaku = ref.watch(hongguoDanmakuSettingsProvider);
+    final next = _nextEpisode();
+    final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk));
+    final speedLabel = _speed == _speed.roundToDouble() ? '${_speed.toInt()}x' : '${_speed}x';
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: AlignmentDirectional.bottomCenter,
+          end: AlignmentDirectional.topCenter,
+          colors: [Color(0xD9000000), Color(0x00000000)],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s4,
+        children: [
+          // The reference's reading line: the rendition in play, the speed,
+          // and the sleep timer when one runs.
+          Row(
+            children: [
+              const Spacer(),
+              Text(
+                [
+                  if ((_attempted?.quality ?? 0) > 0) '${_attempted!.quality}P',
+                  speedLabel,
+                  if (_sleep.active) _sleep.label(t),
+                ].join(' · '),
+                style: theme.typography.numeric(theme.typography.caption.copyWith(color: playerInkMuted)),
+              ),
+            ],
+          ),
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              SizedBox(
+                width: 54,
+                child: Text(hongguoDurationText(position), textAlign: TextAlign.center, style: timeStyle),
+              ),
+              Expanded(
+                child: DsSlider(
+                  value: duration.inMilliseconds <= 0
+                      ? 0
+                      : position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble(),
+                  max: duration.inMilliseconds <= 0 ? 1 : duration.inMilliseconds.toDouble(),
+                  onChanged: duration.inMilliseconds <= 0
+                      ? null
+                      : (value) => setState(() => _dragSeconds = value / 1000),
+                  onChangeEnd: duration.inMilliseconds <= 0
+                      ? null
+                      : (value) {
+                          final seconds = value / 1000;
+                          setState(() => _dragSeconds = null);
+                          unawaited(_seekTo(seconds));
+                        },
+                  semanticLabel: t.hongguo.progress,
+                ),
+              ),
+              SizedBox(
+                width: 54,
+                child: Text(hongguoDurationText(duration), textAlign: TextAlign.center, style: timeStyle),
+              ),
+            ],
+          ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // The bar gives way from the outside in: the volume slider,
+              // then the pickers' words, so a narrow picture never overflows.
+              final compact = constraints.maxWidth < 560;
+              return Row(
+                spacing: DsSpace.s4,
+                children: [
+                  MediaBarButton(
+                    icon: playing ? DsIcons.pause : DsIcons.play,
+                    label: playing ? t.hongguo.pause : t.hongguo.play,
+                    focusNode: _playFocus,
+                    onPressed: handle == null
+                        ? null
+                        : () {
+                            _wake();
+                            unawaited(_togglePlay());
+                          },
+                  ),
+                  MediaBarButton(
+                    icon: _effectivelyMuted ? DsIcons.volumeOff : DsIcons.volume,
+                    label: _effectivelyMuted ? t.hongguo.unmute : t.hongguo.mute,
+                    onPressed: handle == null
+                        ? null
+                        : () {
+                            _wake();
+                            unawaited(_setMuted(muted: !_effectivelyMuted));
+                          },
+                  ),
+                  if (!compact)
+                    SizedBox(
+                      width: 96,
+                      child: DsSlider(
+                        value: _effectivelyMuted ? 0 : _volume,
+                        onChanged: handle == null
+                            ? null
+                            : (value) {
+                                _wake();
+                                unawaited(_setVolume(value));
+                              },
+                        semanticLabel: t.hongguo.volume,
+                      ),
+                    ),
+                  MediaBarButton(
+                    icon: danmaku.enabled ? DsIcons.captions : DsIcons.captionsOff,
+                    label: danmaku.enabled ? t.hongguo.danmakuOn : t.hongguo.danmakuOff,
+                    selected: danmaku.enabled,
+                    onPressed: () {
+                      _wake();
+                      unawaited(ref.read(hongguoDanmakuSettingsProvider.notifier).setEnabled(value: !danmaku.enabled));
+                    },
+                  ),
+                  const Spacer(),
+                  if (next != null)
+                    MediaBarButton(
+                      icon: DsIcons.skipForward,
+                      label: t.hongguo.nextEpisode,
+                      onPressed: () => unawaited(_openEpisode(next)),
+                    ),
+                  _pickerButton(
+                    panel: _HongguoPanel.fit,
+                    icon: DsIcons.aspectRatio,
+                    label: fitLabels(t)[fit.index],
+                    semanticLabel: t.settings.fit,
+                    compact: compact,
+                  ),
+                  _pickerButton(
+                    panel: _HongguoPanel.sleep,
+                    icon: DsIcons.moon,
+                    label: _sleep.label(t),
+                    semanticLabel: t.hongguo.sleep,
+                    compact: compact,
+                  ),
+                  _pickerButton(
+                    panel: _HongguoPanel.speed,
+                    icon: DsIcons.gauge,
+                    label: speedLabel,
+                    semanticLabel: t.hongguo.speed,
+                    compact: compact,
+                  ),
+                  MediaBarButton(
+                    icon: DsIcons.maximize2,
+                    label: t.hongguo.fullscreen,
+                    onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// One picker on the bar: the glyph, the current choice's words when the
+  /// bar has room, and the chevron that says a panel hangs above it.
+  Widget _pickerButton({
+    required _HongguoPanel panel,
+    required DsIconData icon,
+    required String label,
+    required String semanticLabel,
+    required bool compact,
+  }) {
+    final theme = DsTheme.of(context);
+    final open = _openPanel == panel;
+    return MouseRegion(
+      onEnter: (_) => _hoverPanel(panel),
+      onExit: (_) => _leavePanelSoon(),
+      child: TvFocusScale(
         child: DsPressable(
           semanticLabel: semanticLabel,
-          onPressed: controller.toggle,
+          onPressed: () {
+            _wake();
+            if (_openPanel == panel) {
+              _closePanel();
+            } else {
+              _showPanel(panel);
+            }
+          },
           builder: (context, states, _) {
-            final hovered = states.contains(WidgetState.hovered);
+            final lit = open || states.contains(WidgetState.hovered);
             return Container(
-              height: 36,
-              width: compact ? 36 : null,
-              padding: EdgeInsetsDirectional.symmetric(horizontal: compact ? 0 : DsSpace.s8),
-              alignment: Alignment.center,
+              height: theme.sizes.sm,
+              padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
               decoration: DsBoxDecoration(
-                color: hovered ? const Color(0x33FFFFFF) : null,
-                borderRadius: BorderRadius.circular(theme.radii.control(36)),
+                color: lit ? playerInkHover : null,
+                borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 spacing: DsSpace.s4,
                 children: [
-                  DsIcon(icon, size: 16, color: const Color(0xFFFFFFFF)),
-                  if (!compact) ...[
+                  DsIcon(icon, size: theme.sizes.iconSm, color: playerInkMuted),
+                  if (!compact)
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 110),
                       child: Text(
                         label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
+                        style: theme.typography.caption.copyWith(color: playerInk),
                       ),
                     ),
-                    const DsIcon(DsIcons.chevronDown, size: 12, color: Color(0xCCFFFFFF)),
-                  ],
+                  DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: playerInkMuted),
                 ],
               ),
             );
@@ -1479,5 +1451,147 @@ final class _PlayerMenu extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// The open picker's catalogue.
+  Widget _panel(Translations t, _HongguoPanel panel) {
+    switch (panel) {
+      case _HongguoPanel.fit:
+        final fit = ref.watch(playbackSettingsProvider).fit;
+        return PlayerOverlayPanel(
+          title: t.settings.fit,
+          width: 180,
+          children: [
+            for (final mode in const [PlaybackFit.contain, PlaybackFit.cover, PlaybackFit.fill])
+              PlayerPanelOption(
+                label: fitLabels(t)[mode.index],
+                selected: mode == fit,
+                onPressed: () {
+                  _closePanel();
+                  unawaited(ref.read(playbackSettingsProvider.notifier).setFit(mode));
+                },
+              ),
+          ],
+        );
+      case _HongguoPanel.sleep:
+        return PlayerOverlayPanel(
+          title: t.hongguo.sleep,
+          children: [
+            PlayerPanelOption(
+              label: t.hongguo.sleepOff,
+              selected: !_sleep.active,
+              onPressed: () {
+                _closePanel();
+                _setSleep();
+              },
+            ),
+            for (final minutes in const [15, 30, 60, 90])
+              PlayerPanelOption(
+                label: t.hongguo.sleepAfter(minutes: minutes),
+                selected: _sleep.remaining != null && (_sleep.remaining!.inMinutes - minutes).abs() <= 1,
+                onPressed: () {
+                  _closePanel();
+                  _setSleep(minutes: minutes);
+                },
+              ),
+            PlayerPanelOption(
+              label: t.hongguo.sleepThisEpisode,
+              selected: _sleep.episodesLeft == 1,
+              onPressed: () {
+                _closePanel();
+                _setSleep(episodes: 1);
+              },
+            ),
+            for (final count in const [3, 5])
+              PlayerPanelOption(
+                label: t.hongguo.sleepAfterEpisodes(count: count),
+                selected: _sleep.episodesLeft == count,
+                onPressed: () {
+                  _closePanel();
+                  _setSleep(episodes: count);
+                },
+              ),
+          ],
+        );
+      case _HongguoPanel.speed:
+        return PlayerOverlayPanel(
+          title: t.hongguo.speed,
+          width: 180,
+          children: [
+            for (final speed in const <double>[0.5, 0.75, 1, 1.25, 1.5, 2])
+              PlayerPanelOption(
+                label: '${speed == speed.roundToDouble() ? speed.toInt() : speed}x',
+                selected: speed == _speed,
+                onPressed: () {
+                  _closePanel();
+                  unawaited(_setSpeed(speed));
+                },
+              ),
+          ],
+        );
+    }
+  }
+
+  /// Shows the bars and, while the stream plays, lets them settle away again.
+  void _wake() {
+    if (mounted && !_controlsVisible) setState(() => _controlsVisible = true);
+    _scheduleHide();
+  }
+
+  /// A press on the picture: up when they are down, down when they are up.
+  void _toggleControls() {
+    if (_controlsVisible) {
+      _hideTimer?.cancel();
+      setState(() => _controlsVisible = false);
+    } else {
+      _wake();
+    }
+  }
+
+  void _scheduleHide() {
+    _hideTimer?.cancel();
+    // An open catalogue holds the bar up; a paused stream keeps it too.
+    if (_openPanel != null || !(_transport?.isPlaying ?? false)) return;
+    final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;
+    _hideTimer = Timer(Duration(seconds: seconds), () {
+      if (mounted && (_transport?.isPlaying ?? false) && _openPanel == null) {
+        setState(() => _controlsVisible = false);
+      }
+    });
+  }
+
+  void _showPanel(_HongguoPanel panel) {
+    _hoverTimer?.cancel();
+    _leaveTimer?.cancel();
+    if (_openPanel == panel) return;
+    setState(() => _openPanel = panel);
+    _hideTimer?.cancel();
+  }
+
+  void _closePanel() {
+    _hoverTimer?.cancel();
+    _leaveTimer?.cancel();
+    if (_openPanel == null) return;
+    setState(() => _openPanel = null);
+    _scheduleHide();
+  }
+
+  /// Resting the pointer on a picker opens it after a breath, so crossing the
+  /// bar on the way somewhere else does not flash every catalogue.
+  void _hoverPanel(_HongguoPanel panel) {
+    _leaveTimer?.cancel();
+    _hoverTimer?.cancel();
+    _hoverTimer = Timer(const Duration(milliseconds: 160), () {
+      if (mounted) _showPanel(panel);
+    });
+  }
+
+  /// The pointer leaving a picker gets a moment to reach the panel above it.
+  void _leavePanelSoon() {
+    _hoverTimer?.cancel();
+    _leaveTimer?.cancel();
+    _leaveTimer = Timer(const Duration(milliseconds: 260), () {
+      if (mounted) _closePanel();
+    });
   }
 }

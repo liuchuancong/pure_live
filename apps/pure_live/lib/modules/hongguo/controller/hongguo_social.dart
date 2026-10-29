@@ -54,13 +54,21 @@ final class HongguoCommentsController extends Notifier<HongguoCommentsState> {
   HongguoCommentsState build() => _idleComments;
 
   /// Opens the series/episode pair; a repeat of the same pair keeps its
-  /// list.
+  /// list, including the answer that failed — the panel's own retry is the
+  /// way out, so a rebuild never re-asks by itself.
   Future<void> open(String seriesId, String episodeVid) async {
     final key = '$seriesId/$episodeVid';
-    if (_key == key && (state.items.isNotEmpty || state.loading)) return;
+    if (_key == key) return;
     _key = key;
     state = _idleComments;
     await _load(seriesId, episodeVid);
+  }
+
+  /// Runs the held pair's read again (the panel's retry).
+  Future<void> retry() async {
+    final parts = _key.split('/');
+    if (parts.length != 2) return;
+    await _load(parts[0], parts[1]);
   }
 
   /// The next page of the held list.
@@ -198,10 +206,11 @@ final class HongguoPublicReviewsController extends Notifier<HongguoPublicReviews
   @override
   HongguoPublicReviewsState build() => (data: null, loading: false, error: null);
 
-  /// Reads the pair's reviews; a repeat of the pair held keeps them.
+  /// Reads the pair's reviews; the pair already asked — answered or failed —
+  /// keeps its answer until the viewer retries.
   Future<void> open(String seriesId, String episodeVid) async {
     final key = '$seriesId/$episodeVid';
-    if (_key == key && (state.data != null || state.loading)) return;
+    if (_key == key) return;
     await _load(seriesId, episodeVid);
   }
 

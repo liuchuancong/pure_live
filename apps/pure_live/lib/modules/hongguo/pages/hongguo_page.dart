@@ -224,6 +224,40 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
   };
 
   @override
+  void initState() {
+    super.initState();
+    // The shelves are asked once per mount, and on an explicit genre change —
+    // never from `build`, where every state write would ask again.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _openFeeds();
+    });
+  }
+
+  /// Starts (or continues) every shelf the page shows under the current
+  /// genre; each controller keeps what it already holds.
+  void _openFeeds() {
+    final genre = _genre;
+    unawaited(ref.read(hongguoHomeProvider.notifier).open(genre));
+    // `open` itself decides: read a board never held, renew quietly one
+    // whose snapshot has gone stale, and leave a fresh one alone.
+    unawaited(ref.read(hongguoRankProvider.notifier).open(_boardFor(genre)));
+    unawaited(ref.read(hongguoLatestProvider.notifier).open(_latest));
+    if (genre != null) unawaited(ref.read(hongguoBrowseProvider.notifier).open(genre));
+  }
+
+  /// Switches the shelf: the theme filter and the batch walk start over, and
+  /// the new shelf's own feeds go out.
+  void _selectGenre(HongguoGenre? genre) {
+    if (genre == _genre) return;
+    setState(() {
+      _genre = genre;
+      _theme = '';
+      _batch = 0;
+    });
+    _openFeeds();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = context.t;
     final genre = _genre;
@@ -237,17 +271,6 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
     final latestController = ref.read(hongguoLatestProvider.notifier);
     final browse = ref.watch(hongguoBrowseProvider.select((feeds) => genre == null ? null : feeds[genre.name]));
     final browseController = ref.read(hongguoBrowseProvider.notifier);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      unawaited(homeController.open(genre));
-      // `open` itself decides: read a board never held, renew quietly one
-      // whose snapshot has gone stale, and leave a fresh one alone.
-      unawaited(rankController.open(board));
-      if (latest == null || (latest.items.isEmpty && !latest.loading && latest.error == null)) {
-        unawaited(latestController.open(_latest));
-      }
-      if (genre != null) unawaited(browseController.open(genre));
-    });
     final themes = [
       for (final row in browse?.groups ?? const <HongguoFilterRow>[])
         if (row.type == 'category_dim_theme') row,
@@ -264,23 +287,9 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
             spacing: DsSpace.s8,
             runSpacing: DsSpace.s8,
             children: [
-              DsChip(
-                label: Text(t.hongguo.homeTabAll),
-                selected: genre == null,
-                onChanged: (_) => setState(() {
-                  _genre = null;
-                  _theme = '';
-                }),
-              ),
+              DsChip(label: Text(t.hongguo.homeTabAll), selected: genre == null, onChanged: (_) => _selectGenre(null)),
               for (final value in HongguoGenre.values)
-                DsChip(
-                  label: Text(value.label(t)),
-                  selected: genre == value,
-                  onChanged: (_) => setState(() {
-                    _genre = value;
-                    _theme = '';
-                  }),
-                ),
+                DsChip(label: Text(value.label(t)), selected: genre == value, onChanged: (_) => _selectGenre(value)),
             ],
           ),
           if (themeRow != null)
@@ -395,7 +404,10 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                 DsChip(
                   label: Text('${value.label(t)}${t.hongguo.newArrivals}'),
                   selected: _latest == value,
-                  onChanged: (_) => setState(() => _latest = value),
+                  onChanged: (_) {
+                    setState(() => _latest = value);
+                    unawaited(latestController.open(value));
+                  },
                 ),
               DsButton(
                 size: DsSize.sm,
@@ -434,6 +446,15 @@ final class _FindView extends ConsumerStatefulWidget {
 final class _FindViewState extends ConsumerState<_FindView> {
   HongguoGenre _genre = HongguoGenre.shortPlay;
 
+  @override
+  void initState() {
+    super.initState();
+    // One ask per mount: `open` keeps what a rebuilt page would re-ask.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(ref.read(hongguoBrowseProvider.notifier).open(_genre));
+    });
+  }
+
   /// The shelf's conditions live in a panel over the posters, as the app's
   /// other filtered lists do: the page keeps its room for the grid, and the
   /// grid thins as each condition arrives.
@@ -458,9 +479,6 @@ final class _FindViewState extends ConsumerState<_FindView> {
           groups: const <HongguoFilterRow>[],
         );
     final controller = ref.read(hongguoBrowseProvider.notifier);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(controller.open(_genre));
-    });
     final chosen = <String>[
       for (final row in state.groups)
         if (state.selection[row.type] case final id?)
@@ -600,6 +618,16 @@ final class _RankViewState extends ConsumerState<_RankView> {
   String _topic = '';
 
   @override
+  void initState() {
+    super.initState();
+    // A board is read once per mount; a stale snapshot renews itself inside
+    // `open`, and a refusal waits for the refresh button.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(ref.read(hongguoRankProvider.notifier).open(_board));
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
@@ -609,9 +637,6 @@ final class _RankViewState extends ConsumerState<_RankView> {
     final held = feed ?? (items: const <HongguoSeries>[], readAt: 0, loading: false, renewing: false, error: null);
     final topics = controller.topicsOf(_board);
     final rows = controller.rowsOf(_board, _topic);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(controller.open(_board));
-    });
     final figures = <String>[
       t.hongguo.rankSource,
       t.hongguo.rankSeriesCount(count: held.items.length),
@@ -1074,6 +1099,34 @@ final class _AccountView extends ConsumerStatefulWidget {
 final class _AccountViewState extends ConsumerState<_AccountView> {
   Timer? _poll;
 
+  @override
+  void initState() {
+    super.initState();
+    // The sign-in card and the profile are asked once per visit: a refused
+    // read keeps its words on screen until the viewer asks again.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!ref.read(hongguoAccountProvider).signedIn && !ref.read(hongguoLoginSessionProvider).polling) {
+        unawaited(ref.read(hongguoLoginSessionProvider.notifier).load());
+        _startPolling();
+      }
+      final held = ref.read(hongguoAccountProvider);
+      if (held.credentials != null && held.profile == null && !held.loading && held.error == null) {
+        unawaited(ref.read(hongguoAccountProvider.notifier).refreshProfile());
+      }
+    });
+  }
+
+  void _startPolling() {
+    _poll ??= Timer.periodic(const Duration(seconds: 2), (timer) async {
+      final done = await ref.read(hongguoLoginSessionProvider.notifier).poll();
+      if (done && mounted) {
+        timer.cancel();
+        _poll = null;
+      }
+    });
+  }
+
   /// Whether the sign-in sheet shows the phone form rather than the QR code.
   bool _phone = false;
 
@@ -1090,26 +1143,6 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
     final theme = DsTheme.of(context);
     final account = ref.watch(hongguoAccountProvider);
     final session = ref.watch(hongguoLoginSessionProvider);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (!ref.read(hongguoAccountProvider).signedIn &&
-          !_phone &&
-          ref.read(hongguoLoginSessionProvider).qr == null &&
-          !ref.read(hongguoLoginSessionProvider).polling) {
-        unawaited(ref.read(hongguoLoginSessionProvider.notifier).load());
-        _poll ??= Timer.periodic(const Duration(seconds: 2), (timer) async {
-          final done = await ref.read(hongguoLoginSessionProvider.notifier).poll();
-          if (done && mounted) {
-            timer.cancel();
-            _poll = null;
-          }
-        });
-      }
-      final held = ref.read(hongguoAccountProvider);
-      if (held.credentials != null && held.profile == null && !held.loading) {
-        unawaited(ref.read(hongguoAccountProvider.notifier).refreshProfile());
-      }
-    });
     if (account.signedIn) {
       final favorites = ref.watch(hongguoAccountFavoritesProvider);
       final cloud = ref.watch(hongguoAccountHistoryProvider);
@@ -1222,7 +1255,15 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
                 DsChip(
                   label: Text(t.hongguo.accountQrToggle),
                   selected: !_phone,
-                  onChanged: (_) => setState(() => _phone = false),
+                  onChanged: (_) {
+                    setState(() => _phone = false);
+                    // Coming back to the code: a session that never got one
+                    // (or lost it) asks again here, not on every rebuild.
+                    if (ref.read(hongguoLoginSessionProvider).qr == null) {
+                      unawaited(ref.read(hongguoLoginSessionProvider.notifier).load());
+                      _startPolling();
+                    }
+                  },
                 ),
                 DsChip(
                   label: Text(t.hongguo.accountPhoneToggle),

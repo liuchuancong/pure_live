@@ -11,6 +11,7 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_account_state.dart'
     show hongguoAccountFavoritesProvider, hongguoAccountProvider, hongguoReservationsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart'
     show hongguoClientProvider, hongguoFailureText;
+import 'package:pure_live/modules/hongguo/controller/hongguo_covers.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_social.dart'
@@ -212,7 +213,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
                   child: meta.cover.isEmpty
                       ? fallback
                       : DsImage(
-                          image: cachedImage(meta.cover),
+                          image: hongguoCoverImage(meta.cover),
                           aspectRatio: 56 / 76,
                           semanticLabel: meta.title,
                           fallback: fallback,

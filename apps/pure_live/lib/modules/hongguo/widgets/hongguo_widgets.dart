@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/app/app.dart' show browseSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/hongguo/controller/hongguo_covers.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -98,7 +99,7 @@ final class HongguoSeriesCard extends StatelessWidget {
                     fallback
                   else
                     DsImage(
-                      image: cachedImage(series.cover),
+                      image: hongguoCoverImage(series.cover),
                       aspectRatio: 3 / 4,
                       semanticLabel: series.title,
                       fallback: fallback,
@@ -326,7 +327,7 @@ final class HongguoSeriesRow extends StatelessWidget {
                 child: series.cover.isEmpty
                     ? fallback
                     : DsImage(
-                        image: cachedImage(series.cover),
+                        image: hongguoCoverImage(series.cover),
                         aspectRatio: 3 / 4,
                         semanticLabel: series.title,
                         fallback: fallback,

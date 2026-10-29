@@ -114,52 +114,84 @@ final class _CommentsList extends ConsumerStatefulWidget {
 
 final class _CommentsListState extends ConsumerState<_CommentsList> {
   @override
+  void initState() {
+    super.initState();
+    _open();
+  }
+
+  @override
+  void didUpdateWidget(_CommentsList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.seriesId != widget.seriesId || oldWidget.episodeVid != widget.episodeVid) _open();
+  }
+
+  /// Reads the pair once per mount or episode change — never from `build`,
+  /// where every rebuild would ask again.
+  void _open() {
+    final episode = widget.episodeVid;
+    if (!RegExp(r'^[0-9]{6,30}$').hasMatch(episode)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(ref.read(hongguoCommentsProvider.notifier).open(widget.seriesId, episode));
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final state = ref.watch(hongguoCommentsProvider);
     final episode = widget.episodeVid;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || episode.isEmpty || !RegExp(r'^[0-9]{6,30}$').hasMatch(episode)) return;
-      unawaited(ref.read(hongguoCommentsProvider.notifier).open(widget.seriesId, episode));
-    });
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
         if (state.loading && state.items.isEmpty) const Center(child: DsSpinner()),
         if (state.error != null && state.items.isEmpty)
-          Text(state.error!, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(
+                child: Text(state.error!, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+              ),
+              DsButton(
+                size: DsSize.sm,
+                variant: DsButtonVariant.ghost,
+                onPressed: () => unawaited(ref.read(hongguoCommentsProvider.notifier).retry()),
+                child: Text(t.common.retry),
+              ),
+            ],
+          ),
         if (!state.loading && state.items.isEmpty && state.error == null && episode.isNotEmpty)
           Text(t.hongguo.commentsEmpty, style: theme.typography.caption.copyWith(color: colors.textMuted)),
         for (final comment in state.items)
-          DsCard(
-            style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s12,
+              spacing: DsSpace.s8,
               children: [
                 DsAvatar(
                   initials: comment.author.isEmpty ? 'HG' : comment.author,
-                  size: DsSize.sm,
+                  size: DsSize.xs,
                   toneIndex: DsAvatar.toneFor(comment.id),
                 ),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: DsSpace.s4,
+                    spacing: DsSpace.s3,
                     children: [
-                      Text(
-                        comment.author.isEmpty ? '红果用户' : comment.author,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                      ),
-                      Text(comment.content, style: theme.typography.body.copyWith(color: colors.text)),
                       Row(
-                        spacing: DsSpace.s4,
+                        spacing: DsSpace.s8,
                         children: [
+                          Expanded(
+                            child: Text(
+                              comment.author.isEmpty ? '红果用户' : comment.author,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.caption.copyWith(color: colors.textMuted),
+                            ),
+                          ),
                           DsIcon(DsIcons.heart, size: theme.sizes.iconXs, color: colors.textSubtle),
                           Text(
                             '${comment.likes}',
@@ -169,6 +201,7 @@ final class _CommentsListState extends ConsumerState<_CommentsList> {
                           ),
                         ],
                       ),
+                      Text(comment.content, style: theme.typography.body.copyWith(color: colors.text)),
                     ],
                   ),
                 ),
@@ -195,16 +228,32 @@ final class _ReviewsList extends ConsumerStatefulWidget {
 
 final class _ReviewsListState extends ConsumerState<_ReviewsList> {
   @override
+  void initState() {
+    super.initState();
+    _open();
+  }
+
+  @override
+  void didUpdateWidget(_ReviewsList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.seriesId != widget.seriesId || oldWidget.episodeVid != widget.episodeVid) _open();
+  }
+
+  /// Reads the pair once per mount or episode change; `build` never asks.
+  void _open() {
+    final episode = widget.episodeVid;
+    if (!RegExp(r'^[0-9]{6,30}$').hasMatch(episode)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(ref.read(hongguoPublicReviewsProvider.notifier).open(widget.seriesId, episode));
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final state = ref.watch(hongguoPublicReviewsProvider);
-    final episode = widget.episodeVid;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || episode.isEmpty || !RegExp(r'^[0-9]{6,30}$').hasMatch(episode)) return;
-      unawaited(ref.read(hongguoPublicReviewsProvider.notifier).open(widget.seriesId, episode));
-    });
     final data = state.data;
     final reviews = data?.series.items ?? const <HongguoPublicReview>[];
     return Column(

@@ -257,11 +257,14 @@ final class HongguoRankController extends Notifier<Map<String, HongguoRankFeed>>
   }
 
   /// Reads the board when nothing answers yet, and renews it quietly when
-  /// the held snapshot has gone stale.
+  /// the held snapshot has gone stale. A failed read keeps its words on the
+  /// board until the viewer asks again — the page may call this on every
+  /// rebuild, and a platform refusal must not turn into a read storm.
   Future<void> open(HongguoWebsiteBoard board) async {
     final feed = feedOf(board);
     if (feed.loading || _inFlight.contains(board.name)) return;
     if (feed.items.isEmpty) {
+      if (feed.error != null) return;
       await _load(board, renew: false);
       return;
     }
@@ -546,7 +549,10 @@ final class HongguoSearchController extends Notifier<HongguoSearchState> {
       if (raw == null || raw.isEmpty) return const [];
       final decoded = jsonDecode(raw);
       if (decoded is! List<Object?>) return const [];
-      return [for (final word in decoded.take(kHongguoHistoryCount)) if (word is String && word.isNotEmpty) word];
+      return [
+        for (final word in decoded.take(kHongguoHistoryCount))
+          if (word is String && word.isNotEmpty) word,
+      ];
     } on Object {
       return const [];
     }
