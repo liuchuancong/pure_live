@@ -188,6 +188,10 @@
 
 ## 2. 移植落地约定
 
+> 2026-10-29 补：音乐模块网络层已全部迁到 `live_net`（`LiveHttp` + `LiveHttpCalls`，
+> `networkFactoryProvider.create(profile: ClientProfile.api)`），`package:http` 清零——
+> 脚本运行时的 `lx.request` 桥也走 `LiveRequest.custom`，请求从此吃 app 的代理策略。
+
 - 内置音源实现放 `apps/pure_live/lib/modules/music/`（沿用现有 controller 布局）或
   新建 `packages/live_music` 包；media_core_audio 只放契约与编排，不放平台 API。
   每源一个 `MusicSource` 子类注册 `MusicSourceRegistry`，`track.sourceId` 路由。
