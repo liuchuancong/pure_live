@@ -34,8 +34,9 @@ final iptvLibraryProvider = FutureProvider<IptvLibrary>((ref) async {
 final iptvImporterProvider = Provider<IptvImporter?>((ref) {
   final library = ref.watch(iptvLibraryProvider).value;
   if (library == null) return null;
+  // The factory hands every `api` caller the same transport; closing it here
+  // would close it for the whole app when this provider rebuilds.
   final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
-  ref.onDispose(http.close);
   // The viewer's override applies to playlist and guide downloads; a change
   // rebuilds the importer, so the next import uses the new value.
   final userAgent = normalizedIptvUserAgent(ref.watch(iptvUserAgentProvider));

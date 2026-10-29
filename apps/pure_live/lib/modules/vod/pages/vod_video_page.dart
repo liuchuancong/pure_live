@@ -1,4 +1,4 @@
-import 'dart:async' show StreamSubscription, unawaited;
+import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -70,6 +70,15 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   bool _globalMute = false;
   double _volume = 1;
   double _speed = 1;
+
+  /// Whether the overlay bars are up; a playing stream lets them settle away.
+  bool _controlsVisible = true;
+  Timer? _hideTimer;
+
+  /// The picker whose catalogue hangs over the picture, if any.
+  _VodPanel? _openPanel;
+  Timer? _hoverTimer;
+  Timer? _leaveTimer;
 
   /// Whether the end of the current part has already been acted on, so the
   /// station's finish action runs once per part.
@@ -175,6 +184,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
 
   @override
   void dispose() {
+    _hideTimer?.cancel();
+    _hoverTimer?.cancel();
+    _leaveTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _backgroundGate?.dispose();
     _backgroundGate = null;
@@ -363,6 +375,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         // failure that stopped it, not to a session that healed.
         if (state.isPlaying) _error = null;
       });
+      if (state.isPlaying) _scheduleHide();
       _saveProgress();
     });
     _eventSub = handle.adapterEvents.listen((event) {
@@ -762,256 +775,468 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     );
   }
 
-  /// The picture and its controls; [immersive] adds the way out and the
-  /// title over the picture, since the page's app bar is gone there.
+  /// The picture and its controls.
+  ///
+  /// The bars follow the pointer — moving it over the picture brings them
+  /// back, and a tap on a touch screen toggles them — while a playing stream
+  /// lets them settle away again. A double tap plays or pauses, and the
+  /// rendition, the part list and the speed hang their catalogues from the
+  /// bar as glass panels, the way the live room's strip does. [immersive]
+  /// adds the way out and the title over the picture, since the page's own
+  /// headline is gone there.
   Widget _playerSurface(BuildContext context, {required bool immersive}) {
     final t = context.t;
+    final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final handle = _handle;
     final transport = _transport;
-    final part = _part;
-    final detail = _detail;
-    final duration = transport?.duration ?? detail?.duration ?? part?.duration ?? Duration.zero;
-    final position = _dragSeconds != null
-        ? Duration(milliseconds: (_dragSeconds! * 1000).round())
-        : transport?.position ?? Duration.zero;
     final playing = transport?.isPlaying ?? false;
-    final qualities = _play?.qualities ?? const <VodQuality>[];
-    final presentation = ref.watch(roomPresentationProvider);
+    final detail = _detail;
+    final showBar = _controlsVisible || !playing;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(immersive ? 0 : DsTheme.of(context).radii.overlay),
+      borderRadius: BorderRadius.circular(immersive ? 0 : theme.radii.overlay),
       child: ColoredBox(
         color: colors.overlay,
         child: _PictureBox(
           immersive: immersive,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (handle != null)
-                MediaPlayerView(
-                  handle: handle,
-                  fit: ref.watch(playbackSettingsProvider).fit.boxFit,
-                  backgroundColor: colors.overlay,
-                )
-              else
-                const ColoredBox(color: Color(0xFF000000)),
-              if (immersive)
-                PositionedDirectional(
-                  top: 0,
-                  start: 0,
-                  end: 0,
-                  child: Container(
-                    padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: AlignmentDirectional.topCenter,
-                        end: AlignmentDirectional.bottomCenter,
-                        colors: [Color(0xB3000000), Color(0x00000000)],
-                      ),
-                    ),
-                    child: Row(
-                      spacing: DsSpace.s8,
+          child: MouseRegion(
+            onHover: (_) => _wake(),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (handle != null)
+                  MediaPlayerView(
+                    handle: handle,
+                    fit: ref.watch(playbackSettingsProvider).fit.boxFit,
+                    backgroundColor: colors.overlay,
+                  )
+                else
+                  const ColoredBox(color: Color(0xFF000000)),
+                // The picture itself is the bar's switch: a press toggles it,
+                // a double press plays or pauses.
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _toggleControls,
+                  onDoubleTap: handle == null
+                      ? null
+                      : () {
+                          _wake();
+                          unawaited(_togglePlay());
+                        },
+                ),
+                if (_opening || (transport?.isBuffering ?? false))
+                  const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
+                if (immersive && showBar)
+                  PositionedDirectional(top: 0, start: 0, end: 0, child: _vodTopStrip(t, detail)),
+                if (showBar)
+                  PositionedDirectional(
+                    bottom: 0,
+                    start: 0,
+                    end: 0,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _PlayerIconButton(
-                          icon: DsIcons.minimize2,
-                          label: t.vod.exitFullscreen,
-                          onPressed: () => unawaited(_toggleFullscreen()),
-                          onDark: true,
-                          autofocus: true,
-                        ),
-                        Expanded(
-                          child: Text(
-                            detail?.title ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: DsTheme.of(context).typography.title.copyWith(color: const Color(0xFFFFFFFF)),
+                        if (_openPanel case final panel?)
+                          Padding(
+                            padding: const EdgeInsetsDirectional.only(end: DsSpace.s12, bottom: DsSpace.s4),
+                            child: Align(
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: MouseRegion(
+                                onEnter: (_) => _leaveTimer?.cancel(),
+                                onExit: (_) => _leavePanelSoon(),
+                                child: _vodPanel(t, panel),
+                              ),
+                            ),
                           ),
-                        ),
+                        _vodControlBar(context),
                       ],
                     ),
                   ),
-                ),
-              if (_opening || (transport?.isBuffering ?? false))
-                const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
-              PositionedDirectional(
-                bottom: 0,
-                start: 0,
-                end: 0,
-                child: Container(
-                  padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s24, DsSpace.s8, DsSpace.s4),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: AlignmentDirectional.bottomCenter,
-                      end: AlignmentDirectional.topCenter,
-                      colors: [Color(0xD9000000), Color(0x00000000)],
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: DsSpace.s4,
-                    children: [
-                      Row(
-                        spacing: DsSpace.s8,
-                        children: [
-                          SizedBox(
-                            width: 54,
-                            child: Text(
-                              vodDurationText(position),
-                              textAlign: TextAlign.center,
-                              style: DsTheme.of(context).typography.numeric(
-                                DsTheme.of(context).typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: DsSlider(
-                              value: duration.inMilliseconds <= 0
-                                  ? 0
-                                  : position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble(),
-                              max: duration.inMilliseconds <= 0 ? 1 : duration.inMilliseconds.toDouble(),
-                              onChanged: duration.inMilliseconds <= 0
-                                  ? null
-                                  : (value) => setState(() => _dragSeconds = value / 1000),
-                              onChangeEnd: duration.inMilliseconds <= 0
-                                  ? null
-                                  : (value) {
-                                      final seconds = value / 1000;
-                                      setState(() => _dragSeconds = null);
-                                      unawaited(_seekTo(seconds));
-                                    },
-                              semanticLabel: t.vod.progress,
-                            ),
-                          ),
-                          SizedBox(
-                            width: 54,
-                            child: Text(
-                              vodDurationText(duration),
-                              textAlign: TextAlign.center,
-                              style: DsTheme.of(context).typography.numeric(
-                                DsTheme.of(context).typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          // The bar gives way from the outside in: the volume
-                          // slider, then the menus' labels, so a phone — or a
-                          // desktop's paned picture — never overflows.
-                          final compact = LiveWindow.isCompact(constraints.maxWidth);
-                          final parts = detail?.parts ?? const <VodPart>[];
-                          return Row(
-                            spacing: DsSpace.s4,
-                            children: [
-                              _PlayerIconButton(
-                                icon: playing ? DsIcons.pause : DsIcons.play,
-                                label: playing ? t.vod.pause : t.vod.play,
-                                onPressed: handle == null ? null : () => unawaited(_togglePlay()),
-                                focusNode: _playFocus,
-                                onDark: true,
-                              ),
-                              _PlayerIconButton(
-                                icon: _effectivelyMuted ? DsIcons.volumeOff : DsIcons.volume,
-                                label: _effectivelyMuted ? t.vod.unmute : t.vod.mute,
-                                onPressed: handle == null
-                                    ? null
-                                    : () => unawaited(_setMuted(muted: !_effectivelyMuted)),
-                                onDark: true,
-                              ),
-                              if (!compact)
-                                SizedBox(
-                                  width: 100,
-                                  child: DsSlider(
-                                    value: _effectivelyMuted ? 0 : _volume,
-                                    onChanged: handle == null ? null : (value) => unawaited(_setVolume(value)),
-                                    semanticLabel: t.vod.volume,
-                                  ),
-                                ),
-                              const Spacer(),
-                              if (qualities.isNotEmpty)
-                                _PlayerMenu(
-                                  label: _play?.quality ?? t.vod.quality,
-                                  icon: DsIcons.gauge,
-                                  semanticLabel: t.vod.quality,
-                                  compact: compact,
-                                  items: [
-                                    for (final quality in qualities)
-                                      DsMenuItem(
-                                        label: Text(quality.label),
-                                        checked: quality.qn == _qn,
-                                        onPressed: () {
-                                          final current = part;
-                                          if (current == null) return;
-                                          final resume = _transport?.position.inMilliseconds;
-                                          unawaited(
-                                            _openPart(
-                                              current,
-                                              qn: quality.qn,
-                                              resume: resume == null ? null : resume / 1000,
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                  ],
-                                ),
-                              if (parts.length > 1)
-                                _PlayerMenu(
-                                  label: 'P${part?.page ?? 1}',
-                                  icon: DsIcons.listVideo,
-                                  semanticLabel: t.vod.parts,
-                                  compact: compact,
-                                  items: [
-                                    for (final candidate in parts)
-                                      DsMenuItem(
-                                        label: Text('P${candidate.page} ${candidate.title}'),
-                                        checked: candidate.cid == part?.cid,
-                                        onPressed: () => unawaited(_openPart(candidate, resume: _resumeFor(candidate))),
-                                      ),
-                                  ],
-                                ),
-                              _PlayerMenu(
-                                label: VodSpeedChoice.nearest(_speed).label(t),
-                                icon: DsIcons.timer,
-                                semanticLabel: t.vod.speed,
-                                compact: compact,
-                                items: [
-                                  for (final choice in VodSpeedChoice.values)
-                                    DsMenuItem(
-                                      label: Text(choice.label(t)),
-                                      checked: choice.value == _speed,
-                                      onPressed: () => unawaited(_setSpeed(choice.value)),
-                                    ),
-                                ],
-                              ),
-                              if (handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable)
-                                _PlayerIconButton(
-                                  icon: presentation == PresentationMode.pip
-                                      ? DsIcons.pictureInPictureExit
-                                      : DsIcons.pictureInPicture,
-                                  label: presentation == PresentationMode.pip ? t.room.pipOff : t.vod.pip,
-                                  onPressed: () => unawaited(_togglePip()),
-                                  onDark: true,
-                                ),
-                              _PlayerIconButton(
-                                icon: immersive ? DsIcons.minimize2 : DsIcons.fullscreen,
-                                label: immersive ? t.vod.exitFullscreen : t.vod.fullscreen,
-                                onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
-                                onDark: true,
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  /// The strip over an immersive picture: the way out and the archive's name.
+  Widget _vodTopStrip(Translations t, VodDetail? detail) {
+    final theme = DsTheme.of(context);
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: AlignmentDirectional.topCenter,
+          end: AlignmentDirectional.bottomCenter,
+          colors: [Color(0xB3000000), Color(0x00000000)],
+        ),
+      ),
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          PlayerGlassPill(
+            child: MediaBarButton(
+              icon: DsIcons.minimize2,
+              label: t.vod.exitFullscreen,
+              autofocus: true,
+              onPressed: () => unawaited(_toggleFullscreen()),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              detail?.title ?? '',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.title.copyWith(color: playerInk),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The bar under the picture: the seek line over the transport, then the
+  /// rendition, the parts, the speed and the presentation verbs.
+  Widget _vodControlBar(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final handle = _handle;
+    final transport = _transport;
+    final playing = transport?.isPlaying ?? false;
+    final duration = transport?.duration ?? _detail?.duration ?? _part?.duration ?? Duration.zero;
+    final position = _dragSeconds != null
+        ? Duration(milliseconds: (_dragSeconds! * 1000).round())
+        : transport?.position ?? Duration.zero;
+    final qualities = _play?.qualities ?? const <VodQuality>[];
+    final parts = _detail?.parts ?? const <VodPart>[];
+    final presentation = ref.watch(roomPresentationProvider);
+    final presentationController = ref.read(roomPresentationProvider.notifier);
+    final immersive = presentationController.modeOwnsWindow(presentation);
+    final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk));
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: AlignmentDirectional.bottomCenter,
+          end: AlignmentDirectional.topCenter,
+          colors: [Color(0xD9000000), Color(0x00000000)],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s4,
+        children: [
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              SizedBox(
+                width: 54,
+                child: Text(vodDurationText(position), textAlign: TextAlign.center, style: timeStyle),
+              ),
+              Expanded(
+                child: DsSlider(
+                  value: duration.inMilliseconds <= 0
+                      ? 0
+                      : position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble(),
+                  max: duration.inMilliseconds <= 0 ? 1 : duration.inMilliseconds.toDouble(),
+                  onChanged: duration.inMilliseconds <= 0
+                      ? null
+                      : (value) => setState(() => _dragSeconds = value / 1000),
+                  onChangeEnd: duration.inMilliseconds <= 0
+                      ? null
+                      : (value) {
+                          final seconds = value / 1000;
+                          setState(() => _dragSeconds = null);
+                          unawaited(_seekTo(seconds));
+                        },
+                  semanticLabel: t.vod.progress,
+                ),
+              ),
+              SizedBox(
+                width: 54,
+                child: Text(vodDurationText(duration), textAlign: TextAlign.center, style: timeStyle),
+              ),
+            ],
+          ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // The bar gives way from the outside in: the volume slider,
+              // then the pickers' words, so a phone — or a desktop's paned
+              // picture — never overflows.
+              final compact = LiveWindow.isCompact(constraints.maxWidth);
+              return Row(
+                spacing: DsSpace.s4,
+                children: [
+                  MediaBarButton(
+                    icon: playing ? DsIcons.pause : DsIcons.play,
+                    label: playing ? t.vod.pause : t.vod.play,
+                    focusNode: _playFocus,
+                    onPressed: handle == null
+                        ? null
+                        : () {
+                            _wake();
+                            unawaited(_togglePlay());
+                          },
+                  ),
+                  MediaBarButton(
+                    icon: _effectivelyMuted ? DsIcons.volumeOff : DsIcons.volume,
+                    label: _effectivelyMuted ? t.vod.unmute : t.vod.mute,
+                    onPressed: handle == null
+                        ? null
+                        : () {
+                            _wake();
+                            unawaited(_setMuted(muted: !_effectivelyMuted));
+                          },
+                  ),
+                  if (!compact)
+                    SizedBox(
+                      width: 96,
+                      child: DsSlider(
+                        value: _effectivelyMuted ? 0 : _volume,
+                        onChanged: handle == null
+                            ? null
+                            : (value) {
+                                _wake();
+                                unawaited(_setVolume(value));
+                              },
+                        semanticLabel: t.vod.volume,
+                      ),
+                    ),
+                  const Spacer(),
+                  if (qualities.isNotEmpty)
+                    _vodPickerButton(
+                      panel: _VodPanel.quality,
+                      icon: DsIcons.gauge,
+                      label: _play?.quality ?? t.vod.quality,
+                      semanticLabel: t.vod.quality,
+                      compact: compact,
+                    ),
+                  if (parts.length > 1)
+                    _vodPickerButton(
+                      panel: _VodPanel.parts,
+                      icon: DsIcons.listVideo,
+                      label: 'P${_part?.page ?? 1}',
+                      semanticLabel: t.vod.parts,
+                      compact: compact,
+                    ),
+                  _vodPickerButton(
+                    panel: _VodPanel.speed,
+                    icon: DsIcons.timer,
+                    label: VodSpeedChoice.nearest(_speed).label(t),
+                    semanticLabel: t.vod.speed,
+                    compact: compact,
+                  ),
+                  if (handle != null && presentationController.pipAvailable)
+                    MediaBarButton(
+                      icon: presentation == PresentationMode.pip
+                          ? DsIcons.pictureInPictureExit
+                          : DsIcons.pictureInPicture,
+                      label: presentation == PresentationMode.pip ? t.room.pipOff : t.vod.pip,
+                      onPressed: () {
+                        _wake();
+                        unawaited(_togglePip());
+                      },
+                    ),
+                  MediaBarButton(
+                    icon: immersive ? DsIcons.minimize2 : DsIcons.fullscreen,
+                    label: immersive ? t.vod.exitFullscreen : t.vod.fullscreen,
+                    onPressed: handle == null
+                        ? null
+                        : () {
+                            _wake();
+                            unawaited(_toggleFullscreen());
+                          },
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// One picker on the bar: the glyph, the current choice's words when the
+  /// bar has room, and the chevron that says a panel hangs above it.
+  Widget _vodPickerButton({
+    required _VodPanel panel,
+    required DsIconData icon,
+    required String label,
+    required String semanticLabel,
+    required bool compact,
+  }) {
+    final theme = DsTheme.of(context);
+    final open = _openPanel == panel;
+    return MouseRegion(
+      onEnter: (_) => _hoverPanel(panel),
+      onExit: (_) => _leavePanelSoon(),
+      child: TvFocusScale(
+        child: DsPressable(
+          semanticLabel: semanticLabel,
+          onPressed: () {
+            _wake();
+            if (_openPanel == panel) {
+              _closePanel();
+            } else {
+              _showPanel(panel);
+            }
+          },
+          builder: (context, states, _) {
+            final lit = open || states.contains(WidgetState.hovered);
+            return Container(
+              height: theme.sizes.sm,
+              padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
+              decoration: DsBoxDecoration(
+                color: lit ? playerInkHover : null,
+                borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s4,
+                children: [
+                  DsIcon(icon, size: theme.sizes.iconSm, color: playerInkMuted),
+                  if (!compact)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 110),
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: playerInk),
+                      ),
+                    ),
+                  DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: playerInkMuted),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// The open picker's catalogue.
+  Widget _vodPanel(Translations t, _VodPanel panel) {
+    switch (panel) {
+      case _VodPanel.quality:
+        final qualities = _play?.qualities ?? const <VodQuality>[];
+        return PlayerOverlayPanel(
+          title: t.vod.quality,
+          width: 200,
+          children: [
+            for (final quality in qualities)
+              PlayerPanelOption(
+                label: quality.label,
+                selected: quality.qn == _qn,
+                onPressed: () {
+                  _closePanel();
+                  final current = _part;
+                  if (current == null) return;
+                  final resume = _transport?.position.inMilliseconds;
+                  unawaited(_openPart(current, qn: quality.qn, resume: resume == null ? null : resume / 1000));
+                },
+              ),
+          ],
+        );
+      case _VodPanel.parts:
+        final parts = _detail?.parts ?? const <VodPart>[];
+        return PlayerOverlayPanel(
+          title: t.vod.parts,
+          width: 260,
+          children: [
+            for (final candidate in parts)
+              PlayerPanelOption(
+                label: 'P${candidate.page} ${candidate.title}',
+                selected: candidate.cid == _part?.cid,
+                onPressed: () {
+                  _closePanel();
+                  unawaited(_openPart(candidate, resume: _resumeFor(candidate)));
+                },
+              ),
+          ],
+        );
+      case _VodPanel.speed:
+        return PlayerOverlayPanel(
+          title: t.vod.speed,
+          width: 180,
+          children: [
+            for (final choice in VodSpeedChoice.values)
+              PlayerPanelOption(
+                label: choice.label(t),
+                selected: choice.value == _speed,
+                onPressed: () {
+                  _closePanel();
+                  unawaited(_setSpeed(choice.value));
+                },
+              ),
+          ],
+        );
+    }
+  }
+
+  /// Shows the bars and, while the stream plays, lets them settle away again.
+  void _wake() {
+    if (mounted && !_controlsVisible) setState(() => _controlsVisible = true);
+    _scheduleHide();
+  }
+
+  /// A tap on the picture: up when they are down, down when they are up.
+  void _toggleControls() {
+    if (_controlsVisible) {
+      _hideTimer?.cancel();
+      setState(() => _controlsVisible = false);
+    } else {
+      _wake();
+    }
+  }
+
+  void _scheduleHide() {
+    _hideTimer?.cancel();
+    // An open catalogue holds the bar up; a paused stream keeps it too.
+    if (_openPanel != null || !(_transport?.isPlaying ?? false)) return;
+    final seconds = ref.read(playbackSettingsProvider).controlsAutoHideSeconds;
+    _hideTimer = Timer(Duration(seconds: seconds), () {
+      if (mounted && (_transport?.isPlaying ?? false) && _openPanel == null) {
+        setState(() => _controlsVisible = false);
+      }
+    });
+  }
+
+  void _showPanel(_VodPanel panel) {
+    _hoverTimer?.cancel();
+    _leaveTimer?.cancel();
+    if (_openPanel == panel) return;
+    setState(() => _openPanel = panel);
+    _hideTimer?.cancel();
+  }
+
+  void _closePanel() {
+    _hoverTimer?.cancel();
+    _leaveTimer?.cancel();
+    if (_openPanel == null) return;
+    setState(() => _openPanel = null);
+    _scheduleHide();
+  }
+
+  /// Resting the pointer on a picker opens it after a breath, so crossing the
+  /// bar on the way somewhere else does not flash every catalogue.
+  void _hoverPanel(_VodPanel panel) {
+    _leaveTimer?.cancel();
+    _hoverTimer?.cancel();
+    _hoverTimer = Timer(const Duration(milliseconds: 160), () {
+      if (mounted) _showPanel(panel);
+    });
+  }
+
+  /// The pointer leaving a picker gets a moment to reach the panel above it.
+  void _leavePanelSoon() {
+    _hoverTimer?.cancel();
+    _leaveTimer?.cancel();
+    _leaveTimer = Timer(const Duration(milliseconds: 260), () {
+      if (mounted) _closePanel();
+    });
   }
 
   /// Hands the first focus to the play button once there is a source: a
@@ -1037,21 +1262,24 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   Widget _info(BuildContext context, VodDetail detail, Translations t) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final stats = <(DsIconData, String?, String)>[
-      (DsIcons.eye, AudienceFormat.format(detail.playCount), t.vod.views),
-      (DsIcons.messageCircle, AudienceFormat.format(detail.danmakuCount), t.vod.danmaku),
-      (DsIcons.thumbsUp, AudienceFormat.format(detail.likeCount), t.vod.likes),
-      (DsIcons.coins, AudienceFormat.format(detail.coinCount), t.vod.coins),
-      (DsIcons.star, AudienceFormat.format(detail.favoriteCount), t.vod.favorites),
-    ];
     final silent = _play?.silent ?? _silent;
     // The station's own switch: the archive's details under the picture are
     // what a viewer hides to keep the page on the parts and the rail.
     final showDetails = ref.watch(vodPlaybackSettingsProvider).showDetails;
     final saved = ref.watch(vodFavouritesProvider).any((video) => video.bvid == detail.bvid);
+    final uploaded = detail.publishedAt;
+    final plays = detail.playCount;
+    final danmaku = detail.danmakuCount;
+    final meta = [
+      if (plays != null) '${AudienceFormat.format(plays)} ${t.vod.views}',
+      if (danmaku != null) '${AudienceFormat.format(danmaku)} ${t.vod.danmaku}',
+      if (uploaded != null) vodDateText(uploaded),
+    ];
+    final uploader = detail.uploader ?? '';
+    final avatar = detail.uploaderAvatar;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s12,
+      spacing: DsSpace.s16,
       children: [
         if (_error != null)
           DsAlert(
@@ -1068,79 +1296,73 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   ),
           ),
         if (silent) DsAlert(status: DsStatus.warning, title: Text(t.vod.silentNotice)),
-        Row(
-          spacing: DsSpace.s8,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s6,
           children: [
-            Expanded(
-              child: Text(detail.title, style: theme.typography.title.copyWith(color: colors.text)),
-            ),
-            DsButton.icon(
-              variant: DsButtonVariant.ghost,
-              size: DsSize.sm,
-              semanticLabel: saved ? t.vod.savedVideo : t.vod.saveVideo,
-              onPressed: () => unawaited(_toggleFavourite()),
-              icon: DsIcon(DsIcons.heart, size: 18, color: saved ? colors.accent : colors.textMuted),
-            ),
+            Text(detail.title, style: theme.typography.title.copyWith(color: colors.text)),
+            if (meta.isNotEmpty)
+              Text(meta.join(' · '), style: theme.typography.caption.copyWith(color: colors.textSubtle)),
           ],
         ),
-        if (showDetails) ...[
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              ClipOval(
-                child: detail.uploaderAvatar == null
-                    ? SizedBox(
-                        width: 36,
-                        height: 36,
-                        child: ColoredBox(color: colors.control, child: const DsIcon(DsIcons.user)),
-                      )
-                    : DsImage(
-                        image: cachedImage(detail.uploaderAvatar!),
-                        width: 36,
-                        height: 36,
-                        semanticLabel: detail.uploader,
-                      ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: DsSpace.s3,
-                  children: [
-                    if ((detail.uploader ?? '').isNotEmpty)
-                      Text(detail.uploader!, style: theme.typography.body.copyWith(color: colors.text)),
-                    Text(t.vod.up, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-                  ],
+        Wrap(
+          spacing: DsSpace.s8,
+          runSpacing: DsSpace.s8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: () => unawaited(_toggleFavourite()),
+              leading: DsIcon(DsIcons.heart, size: 14, color: saved ? colors.accent : colors.textMuted),
+              child: Text(saved ? t.vod.savedVideo : t.vod.saveVideo),
+            ),
+            if (detail.likeCount case final count?) _VodStat(icon: DsIcons.thumbsUp, value: count, label: t.vod.likes),
+            if (detail.coinCount case final count?) _VodStat(icon: DsIcons.coins, value: count, label: t.vod.coins),
+            if (detail.favoriteCount case final count?)
+              _VodStat(icon: DsIcons.star, value: count, label: t.vod.favorites),
+          ],
+        ),
+        if (showDetails && uploader.isNotEmpty)
+          DsCard(
+            style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
+            child: Row(
+              spacing: DsSpace.s12,
+              children: [
+                DsAvatar(
+                  initials: uploader,
+                  image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar),
+                  size: DsSize.sm,
+                  toneIndex: DsAvatar.toneFor(uploader),
+                  semanticLabel: uploader,
                 ),
-              ),
-            ],
-          ),
-          Wrap(
-            spacing: DsSpace.s16,
-            runSpacing: DsSpace.s8,
-            children: [
-              for (final (icon, value, label) in stats)
-                if (value != null && value.isNotEmpty)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: DsSpace.s4,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: DsSpace.s3,
                     children: [
-                      DsIcon(icon, size: theme.sizes.iconSm, color: colors.textSubtle),
                       Text(
-                        value,
-                        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.text)),
+                        uploader,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.body.copyWith(color: colors.text, fontWeight: FontWeight.w600),
                       ),
-                      Text(label, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
+                      Text(t.vod.up, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
                     ],
                   ),
-            ],
+                ),
+              ],
+            ),
           ),
-        ],
         if (detail.parts.length > 1)
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              Text(t.vod.parts, style: theme.typography.title.copyWith(color: colors.text)),
+              Text(
+                '${t.vod.parts} · ${detail.parts.length}',
+                style: theme.typography.title.copyWith(color: colors.text),
+              ),
               Wrap(
                 spacing: DsSpace.s8,
                 runSpacing: DsSpace.s8,
@@ -1158,133 +1380,31 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             ],
           ),
         if (showDetails) ...[
-          Text(t.vod.description, style: theme.typography.title.copyWith(color: colors.text)),
-          Text(
-            detail.description.isEmpty ? t.vod.noDescription : detail.description,
-            maxLines: 6,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.body.copyWith(color: colors.textMuted),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s8,
+            children: [
+              Text(t.vod.description, style: theme.typography.title.copyWith(color: colors.text)),
+              DsCard(
+                style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
+                child: Text(
+                  detail.description.isEmpty ? t.vod.noDescription : detail.description,
+                  maxLines: 6,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.body.copyWith(color: colors.textMuted),
+                ),
+              ),
+            ],
           ),
-          if (detail.aid > 0) _CommentsSection(aid: detail.aid, total: detail.danmakuCount),
+          if (detail.aid > 0) _CommentsSection(aid: detail.aid),
         ],
       ],
     );
   }
 }
 
-/// A square icon action over the picture: white ink, hover lightening on the
-/// dark surface.
-final class _PlayerIconButton extends StatelessWidget {
-  const _PlayerIconButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-    this.autofocus = false,
-    this.onDark = false,
-    this.focusNode,
-  });
-
-  final DsIconData icon;
-  final String label;
-  final VoidCallback? onPressed;
-  final bool autofocus;
-  final bool onDark;
-  final FocusNode? focusNode;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final ink = onDark ? const Color(0xFFFFFFFF) : DsTheme.colorsOf(context).text;
-    return DsTooltip(
-      message: label,
-      child: DsPressable(
-        semanticLabel: label,
-        onPressed: onPressed,
-        autofocus: autofocus,
-        focusNode: focusNode,
-        builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
-          return Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: DsBoxDecoration(
-              color: hovered ? const Color(0x33FFFFFF) : null,
-              borderRadius: BorderRadius.circular(theme.radii.control(36)),
-            ),
-            child: DsIcon(icon, size: 18, color: onPressed == null ? const Color(0x66FFFFFF) : ink),
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// A labelled menu over the picture: the current choice and a chevron, or
-/// just the icon where the bar is too narrow for labels.
-final class _PlayerMenu extends StatelessWidget {
-  const _PlayerMenu({
-    required this.label,
-    required this.icon,
-    required this.semanticLabel,
-    required this.items,
-    this.compact = false,
-  });
-
-  final String label;
-  final DsIconData icon;
-  final String semanticLabel;
-  final List<Widget> items;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    return DsMenuAnchor(
-      semanticLabel: semanticLabel,
-      items: items,
-      builder: (context, controller, _) => DsTooltip(
-        message: semanticLabel,
-        child: DsPressable(
-          semanticLabel: semanticLabel,
-          onPressed: controller.toggle,
-          builder: (context, states, _) {
-            final hovered = states.contains(WidgetState.hovered);
-            return Container(
-              height: 36,
-              width: compact ? 36 : null,
-              padding: EdgeInsetsDirectional.symmetric(horizontal: compact ? 0 : DsSpace.s8),
-              alignment: Alignment.center,
-              decoration: DsBoxDecoration(
-                color: hovered ? const Color(0x33FFFFFF) : null,
-                borderRadius: BorderRadius.circular(theme.radii.control(36)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s4,
-                children: [
-                  DsIcon(icon, size: 16, color: const Color(0xFFFFFFFF)),
-                  if (!compact) ...[
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 110),
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
-                      ),
-                    ),
-                    const DsIcon(DsIcons.chevronDown, size: 12, color: Color(0xCCFFFFFF)),
-                  ],
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
+/// The catalogues the video bar hangs over the picture.
+enum _VodPanel { quality, parts, speed }
 
 /// The picture's box: a fixed 16:9 card inline, the container's own shape in
 /// the immersive modes.
@@ -1305,12 +1425,46 @@ final class _PictureBox extends StatelessWidget {
   Widget build(BuildContext context) => immersive ? child : AspectRatio(aspectRatio: 16 / 9, child: child);
 }
 
+/// One count beside the save button: what the archive collected, read off
+/// the picture's own ink rather than a heading.
+final class _VodStat extends StatelessWidget {
+  const _VodStat({required this.icon, required this.value, required this.label});
+
+  final DsIconData icon;
+  final int value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
+      decoration: BoxDecoration(
+        color: colors.control.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(DsRadii.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: DsSpace.s4,
+        children: [
+          DsIcon(icon, size: theme.sizes.iconXs, color: colors.textMuted),
+          Text(
+            AudienceFormat.format(value),
+            style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.text)),
+          ),
+          Text(label, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
+        ],
+      ),
+    );
+  }
+}
+
 /// The archive's comments: the hot list, twenty at a time, read on demand.
 final class _CommentsSection extends ConsumerStatefulWidget {
-  const _CommentsSection({required this.aid, this.total});
+  const _CommentsSection({required this.aid});
 
   final int aid;
-  final int? total;
 
   @override
   ConsumerState<_CommentsSection> createState() => _CommentsSectionState();
@@ -1333,13 +1487,15 @@ final class _CommentsSectionState extends ConsumerState<_CommentsSection> {
     final state = ref.watch(vodCommentsProvider.select((comments) => comments[widget.aid]));
     final comments = state?.comments ?? const <VodComment>[];
     final controller = ref.read(vodCommentsProvider.notifier);
-    final count = state?.total ?? widget.total ?? 0;
+    // The header counts what the comments endpoint reported, not the danmaku
+    // figure the detail carries — until the first page lands it says nothing.
+    final count = state?.total;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
         Text(
-          '${t.vod.comments} · ${AudienceFormat.format(count)}',
+          count == null ? t.vod.comments : '${t.vod.comments} · ${AudienceFormat.format(count)}',
           style: theme.typography.title.copyWith(color: colors.text),
         ),
         if (state?.error case final failure?)

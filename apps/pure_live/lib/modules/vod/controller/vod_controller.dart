@@ -239,8 +239,11 @@ final class VodController extends Notifier<VodState> {
 /// and the transport stays behind [LiveHttp], so proxies and cookies remain
 /// the app shell's business.
 final vodClientProvider = Provider<BilibiliVodClient>((ref) {
+  // The transport is the process's own: [DioFactory.create] hands the same
+  // instance to every `api` caller, so closing it here — which this provider
+  // recomputes on every sign-in — would kill the next request of the whole
+  // app and leave the freshly signed-in account reading as signed out.
   final http = ref.watch(networkFactoryProvider).create(profile: ClientProfile.api);
-  ref.onDispose(http.close);
   // The same Bilibili sign-in the live site uses: one cookie serves the
   // video site too (higher renditions, login-only archives).
   final credential = ref.watch(accountsProvider).credentials[SiteIds.bilibili];

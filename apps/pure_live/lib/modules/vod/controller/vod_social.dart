@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
+import 'package:live_sites/live_sites.dart' show SiteIds;
 import 'package:live_vod/live_vod.dart';
 
+import 'package:pure_live/features/account/account_providers.dart' show accountsProvider;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 
 /// The viewer Bilibili's nav endpoint sees. A guest is a normal answer rather
@@ -47,7 +49,13 @@ final class VodDynamicsController extends Notifier<VodDynamicsState> {
   int _generation = 0;
 
   @override
-  VodDynamicsState build() => _dynamicsInitial();
+  VodDynamicsState build() {
+    // The feed is read as one viewer: signing in, signing out or switching
+    // accounts makes what was loaded someone else's answer, so the controller
+    // starts over and the page's next ask reads it again with the new cookie.
+    ref.watch(accountsProvider.select((accounts) => accounts.credentials[SiteIds.bilibili]?.userId));
+    return _dynamicsInitial();
+  }
 
   /// Loads the first page when the feed is empty and idle; the page asks.
   Future<void> open() async {
