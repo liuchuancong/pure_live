@@ -8,8 +8,8 @@ import 'package:live_storage/live_storage.dart' show StorageBootstrap, StoragePa
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/bootstrap/proxy_http_overrides.dart' show AppProxyHttpOverrides;
 import 'package:pure_live/app/logging/app_log.dart' show appLog, initAppLog;
+import 'package:pure_live/app/logging/media_core_log_bridge.dart' show installMediaCoreLogBridge;
 import 'package:pure_live/app/providers/providers.dart';
-import 'package:pure_live/app/theme/fonts/font_library.dart' show CloudFontIds, FontLibrary;
 import 'package:pure_live/app/theme/settings/system_accent_color.dart' show preloadSystemAccent;
 import 'package:pure_live/infrastructure/infrastructure.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -68,7 +68,17 @@ Future<Boot> bootstrap() async {
 
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
-    ErrorReporter.report(log.forCategory('errors'), details.exception, details.stack, message: 'framework error');
+    // A layout failure names itself ("A RenderFlex overflowed by 7.0 pixels on
+    // the bottom") and nothing else: which widget, with which constraints, is
+    // only in the framework's own diagnostics. Logged without them the report
+    // is a line nobody can act on.
+    ErrorReporter.report(
+      log.forCategory('errors'),
+      details.exception,
+      details.stack,
+      message: 'framework error',
+      fields: {'diagnostics': _frameworkDiagnostics(details)},
+    );
   };
   // Async errors outside a widget's zone would otherwise only reach the
   // console; they belong in the same diagnostic stream.
@@ -78,6 +88,9 @@ Future<Boot> bootstrap() async {
   };
 
   try {
+    // The kernel's log hub feeds the app's tree from before its first
+    // engine load, so boot-time playback decisions are on the record too.
+    installMediaCoreLogBridge();
     // The accent read is asynchronous and the theme pair is built from it,
     // so it lands before the first frame instead of recolouring afterwards.
     unawaited(preloadSystemAccent());
@@ -90,17 +103,6 @@ Future<Boot> bootstrap() async {
     // the permission is asked when a job starts, not here.
     unawaited(enableUserNotifications());
     final storagePaths = await StoragePaths.resolve(environment: runtime.environment, log: bootLog);
-    // The cloud font snapshot is a plain folder scan and stays synchronous:
-    // the theme validates its stored family before the first frame, and a
-    // downloaded family must answer that check on the very first read. The
-    // data folder is the pre-shared-download location; both are scanned so
-    // an upgrade keeps every installed family.
-    CloudFontIds.replace(
-      FontLibrary.scanInstalledRoots([
-        Directory(p.join(storagePaths.data.path, 'fonts')),
-        fontsRootOf(defaultDownloadRoot(storagePaths)),
-      ]),
-    );
     // The storage layer is best-effort: a failure logs and the boot carries
     // on — browsing works without storage, and the providers fall back to
     // their defaults when the SQLite database never opened.
@@ -110,9 +112,6 @@ Future<Boot> bootstrap() async {
       );
       await storageBootstrap.initialize();
       await StoragePrefs.init();
-      // A custom download folder moves the fonts with it; the pre-prefs scan
-      // above could not know the choice, so fold its families in now.
-      refreshCloudFontSnapshot();
       initAppLog(directory: Directory(p.join(storagePaths.data.path, 'logs')));
       bootLog.info('storage ready', fields: {'data': storagePaths.data.path});
     } on Object catch (error, stackTrace) {
@@ -126,4 +125,18 @@ Future<Boot> bootstrap() async {
     bootLog.fatal('boot failed', error: error, stackTrace: stackTrace);
     return Boot.failure(runtime: runtime, error: error);
   }
+}
+
+/// The first [limit] lines of a framework error's own diagnostics, joined for
+/// one log line: for a layout failure these name the widget that built the
+/// failing render object, which the exception text alone never does.
+String _frameworkDiagnostics(FlutterErrorDetails details, {int limit = 8}) {
+  final reported =
+      (details.informationCollector?.call() ?? const Iterable<Object?>.empty())
+          .map((line) => line.toString().trim())
+          .where((line) => line.isNotEmpty)
+          .take(limit)
+          .join(' | ');
+  if (reported.isNotEmpty) return reported;
+  return details.context?.toString() ?? details.library ?? 'no diagnostics';
 }
