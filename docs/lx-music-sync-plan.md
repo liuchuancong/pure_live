@@ -244,8 +244,11 @@
   不会漏进对比）且挂起的防抖被取消；EQ 面板「A/B 对比」区=按住式大按钮
   （onTapDown/onTapUp/onTapCancel 全兜底），中英文案齐。
   **待做**、阶段 C 余项（FIR/设备校正）、阶段 D（HRTF/卷积）、设计图逐像素音效中心主页面
-  （当前先落设置子页）、频响图验证测试）（`plugins/player/index.ts`、
-  `store/soundEffect.ts`）。
+  （当前先落设置子页））（`plugins/player/index.ts`、
+  `store/soundEffect.ts`）。**频响图验证测试已落**：`test/music/music_eq_dsp_test.dart`
+  18 测全绿——RBJ peaking（中心=增益/远端静默/Q 越窄越陡）、low shelf（角频下抬升+过冲容差）、
+  平直曲线近零/预放平移/250Hz 凸峰定位、vocal 3kHz 隆起位置、af 链生成（关闭清链/节点频率与 Q/
+  探针独立于 EQ/处理滤镜先于 asplit）、JSON 往返（节点+analysis）/坏节点容损。
 - ✅ H2 电平监控（2026-10-29，如实标记为响度表非频谱）：mpv 无原始 FFT，走 ebur128 元数据探针——
   media_core `PlayerAdapterEvent.loudnessChanged(momentary, shortTerm)`（LUFS）+ `emitLoudnessChanged`
   （探针过滤器的存在即能力，不做 capability 门控）+ media_kit 适配器 observe `af-metadata`
