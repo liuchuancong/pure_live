@@ -157,6 +157,11 @@
   由 `resolveWithToggle` 运行时等价） `src/common/types/list.d.ts` + `music.d.ts`：
   `MusicInfo{id,name,singer,source,interval,meta:{albumId,albumName,picUrl,quickSearch?,toggleMusicInfo?}}`；
   LIST_IDS = default/love/temp/download。
+- ✅ F2 表结构对齐（2026-10-29 收口：本项目 Hive 单键存储天然合并 LX 三表——tracks 内联即
+  `my_list_music_info`+`order`（列表顺序即 order，添加去重即 UNIQUE(id,listId)）；本批补齐 `my_list`
+  缺失字段语义：`source`/`sourceListId`（在线歌单关联，linkSource/unlinkSource）、`position`
+  （歌单排序，`move(id,to)`=updateUserListPosition，其余列表 position 平移重写）、
+  `locationUpdateTime`（移动时间戳）；旧条目 JSON 无新字段按默认读入，向后兼容）
 - ⬜ F2 表结构对齐 `dbService/tables.ts`：`my_list{id,name,source,sourceListId,position,locationUpdateTime}`、
   `my_list_music_info{...UNIQUE(id,listId)}`、`my_list_music_info_order{listId,musicInfoId,order}`。
   本项目按 Hive 惯例落地但字段语义一致。
@@ -177,6 +182,13 @@
   MIGUM3.0 `playlist/song/v2.0` + `playlist/v2.0` 详情）。UI 视图接入 music_page 待后续）：各源 `songList.js`。
 
 ### G. 设置与同步
+- ✅ G1 设置域对齐（2026-10-29 收口：36 个键已按 `music.<域>.<名>` 覆盖 LX 的
+  player./list./search./desktopLyric./download./openAPI. 语义（source.default、play.rememberProgress=
+  isSavePlayTime、play.skipOnError=autoSkipOnError、play.autoplay=startupAutoPlay、quality=playQuality、
+  addToTop=togglePlayMethod、歌词五开关、desktop 全套、download 全套）；本批补 volume/rate 跨次启动
+  持久化（play.volume/play.rate=player.volume/playbackRate，启动 `_restorePlaybackPrefs` 先于队列恢复，
+  且不受 autoplay 早退影响）。引擎侧缺口单列：mediaDeviceId/preservesPitch（引擎无 API）、
+  audioVisualization=H2、soundEffect=H1 待拍板）
 - ⬜ G1 设置域对齐 `app_setting.d.ts` 的 key 前缀语义：common./player./desktopLyric./download./
   list./network./odc./openAPI./playDetail./search./sync./theme./tray.；重点 player 键：
   startupAutoPlay/togglePlayMethod/playQuality/volume/playbackRate/preservesPitch/mediaDeviceId/
