@@ -1381,6 +1381,27 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '倍速'
 	String get speed => '倍速';
 
+	/// zh-CN: '清晰度'
+	String get quality => '清晰度';
+
+	/// zh-CN: '2.0x 快进中 · 上滑锁定'
+	String get speedHolding => '2.0x 快进中 · 上滑锁定';
+
+	/// zh-CN: '已锁定 2.0x · 长按下滑解除'
+	String get speedLocked => '已锁定 2.0x · 长按下滑解除';
+
+	/// zh-CN: '已锁定 2.0 倍速'
+	String get speedLockedToast => '已锁定 2.0 倍速';
+
+	/// zh-CN: '已解除倍速'
+	String get speedUnlockedToast => '已解除倍速';
+
+	/// zh-CN: '已经是第一集'
+	String get firstEpisode => '已经是第一集';
+
+	/// zh-CN: '已经是最后一集'
+	String get lastEpisode => '已经是最后一集';
+
 	/// zh-CN: '下一集'
 	String get nextEpisode => '下一集';
 
@@ -10511,6 +10532,13 @@ extension on Translations {
 			'hongguo.volume' => '音量',
 			'hongguo.progress' => '播放进度',
 			'hongguo.speed' => '倍速',
+			'hongguo.quality' => '清晰度',
+			'hongguo.speedHolding' => '2.0x 快进中 · 上滑锁定',
+			'hongguo.speedLocked' => '已锁定 2.0x · 长按下滑解除',
+			'hongguo.speedLockedToast' => '已锁定 2.0 倍速',
+			'hongguo.speedUnlockedToast' => '已解除倍速',
+			'hongguo.firstEpisode' => '已经是第一集',
+			'hongguo.lastEpisode' => '已经是最后一集',
 			'hongguo.nextEpisode' => '下一集',
 			'hongguo.fullscreen' => '全屏',
 			'hongguo.exitFullscreen' => '退出全屏',
@@ -10598,6 +10626,8 @@ extension on Translations {
 			'hongguo.phoneCodePlaceholder' => '验证码',
 			'hongguo.phoneVerify' => '登录',
 			'hongguo.phoneSent' => '验证码已发送到',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.accountPhoneToggle' => '用手机号登录',
 			'hongguo.accountQrToggle' => '扫码登录',
 			'hongguo.commentsFailed' => '评论没有加载出来',
@@ -10605,8 +10635,6 @@ extension on Translations {
 			'hongguo.shelfChangeBatch' => '换一批',
 			'hongguo.shelfHot' => '正在热播',
 			'hongguo.shelfNew' => '新剧',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.shelfCategory' => '分类',
 			'hongguo.newArrivals' => '上新',
 			'hongguo.openFullBoard' => '查看完整榜单',
@@ -11112,6 +11140,8 @@ extension on Translations {
 			'music.downloadEmbedLyricDesc' => '把歌词写入音频标签，随文件一起播放。',
 			'music.downloadIncludeTranslation' => '歌词包含翻译',
 			'music.downloadIncludeTranslationDesc' => '下载的歌词文件与内嵌歌词一并写入翻译。',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadIncludeRomanization' => '歌词包含音译',
 			'music.downloadIncludeRomanizationDesc' => '下载的歌词文件与内嵌歌词一并写入音译。',
 			'music.downloadWriteLyric' => '保存歌词文件',
@@ -11119,8 +11149,6 @@ extension on Translations {
 			'music.downloadSkipExisting' => '跳过已存在文件',
 			'music.downloadSkipExistingDesc' => '目标文件已存在时不再下载。',
 			'music.downloadGroupByList' => '按歌单分文件夹',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadGroupByListDesc' => '从歌单下载时，文件保存到以歌单命名的子文件夹。',
 			'music.downloadMaxConcurrent' => '同时下载数',
 			'music.downloadMaxConcurrentDesc' => '同时进行的下载任务数量（1–5），修改后立即生效。',
@@ -11626,6 +11654,8 @@ extension on Translations {
 			'room.portraitDanmakuHidden' => '隐藏',
 			'room.portraitDiagnostics' => '竖屏诊断',
 			'room.giftLineSent' => '送出',
+			_ => null,
+		} ?? switch (path) {
 			'room.giftLineSentTo' => ({required Object name}) => '送给 ${name}',
 			'room.giftLineGifted' => '赠送',
 			'room.giftLineTipped' => '打赏',
@@ -11633,8 +11663,6 @@ extension on Translations {
 			'room.giftLineMonths' => ({required Object count}) => '×${count} 个月',
 			'room.giftLineUnnamed' => '礼物',
 			'room.giftLineNumbered' => ({required Object id}) => '礼物 ${id}',
-			_ => null,
-		} ?? switch (path) {
 			'room.giftValueYuan' => ({required Object value}) => '${value} 元',
 			'room.giftValueGoldSeed' => ({required Object value}) => '${value} 金瓜子',
 			'room.giftValueDiamond' => ({required Object value}) => '${value} 钻石',
@@ -12140,6 +12168,8 @@ extension on Translations {
 			'settings.fontManagerDetails' => '显示与设置',
 			'settings.fontManagerLoadedCount' => ({required Object shown, required Object total}) => '已加载 ${shown} / ${total}',
 			'settings.fontManagerLoadingMore' => '正在加载更多…',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontCategoryHeiti' => '黑体',
 			'settings.fontCategorySongti' => '宋体',
 			'settings.fontCategoryKaiti' => '楷体',
@@ -12147,8 +12177,6 @@ extension on Translations {
 			'settings.fontCategoryHandwriting' => '手绘体',
 			'settings.fontCategoryEnglish' => '英文',
 			'settings.fontCategorySerif' => '衬线',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontCategorySansSerif' => '无衬线',
 			'settings.fontCategoryDisplay' => '展示',
 			'settings.fontCategoryMonospace' => '等宽',
@@ -12654,6 +12682,8 @@ extension on Translations {
 			'settings.downloadInfoSize' => '文件大小',
 			'settings.downloadInfoTime' => '下载时间',
 			'settings.downloadSelectAll' => '全选',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadSelectedCount' => ({required Object count}) => '已选 ${count} 项',
 			'settings.downloadDeleteSelected' => ({required Object count}) => '删除所选（${count}）',
 			'settings.downloadDeleteAll' => '全部删除',
@@ -12661,8 +12691,6 @@ extension on Translations {
 			'settings.downloadPause' => '暂停',
 			'settings.downloadResume' => '继续下载',
 			'settings.downloadPausedHint' => '已暂停 · 点击继续',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadEtaSeconds' => ({required Object seconds}) => '预计还需 ${seconds} 秒',
 			'settings.downloadEtaMinutes' => ({required Object minutes}) => '预计还需 ${minutes} 分钟',
 			'settings.downloadEtaHours' => ({required Object hours}) => '预计还需 ${hours} 小时',
@@ -13168,6 +13196,8 @@ extension on Translations {
 			'vod.liveRecommendTitle' => '推荐直播',
 			'vod.liveEmptyTitle' => '没有推荐的直播',
 			'vod.liveEmptyDescription' => '稍后刷新再看看。',
+			_ => null,
+		} ?? switch (path) {
 			'vod.refresh' => '刷新',
 			'vod.regionEmptyDescription' => '这个分区暂时没有推荐视频。',
 			'vod.pgcTitle' => '影视',
@@ -13175,8 +13205,6 @@ extension on Translations {
 			'vod.pgcMovie' => '电影',
 			'vod.pgcDocumentary' => '纪录片',
 			'vod.pgcGuochuang' => '国创',
-			_ => null,
-		} ?? switch (path) {
 			'vod.pgcTv' => '电视剧',
 			'vod.pgcVariety' => '综艺',
 			'vod.pgcEmptyDescription' => '这个分类暂时没有内容。',

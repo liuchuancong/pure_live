@@ -542,6 +542,13 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get volume => 'Volume';
 	@override String get progress => 'Playback progress';
 	@override String get speed => 'Speed';
+	@override String get quality => 'Quality';
+	@override String get speedHolding => '2.0x · swipe up to lock';
+	@override String get speedLocked => '2.0x locked · hold and swipe down to unlock';
+	@override String get speedLockedToast => '2.0x locked';
+	@override String get speedUnlockedToast => 'Speed unlocked';
+	@override String get firstEpisode => 'This is the first episode';
+	@override String get lastEpisode => 'This is the last episode';
 	@override String get nextEpisode => 'Next episode';
 	@override String get fullscreen => 'Fullscreen';
 	@override String get exitFullscreen => 'Exit fullscreen';
@@ -3961,6 +3968,13 @@ extension on TranslationsEn {
 			'hongguo.volume' => 'Volume',
 			'hongguo.progress' => 'Playback progress',
 			'hongguo.speed' => 'Speed',
+			'hongguo.quality' => 'Quality',
+			'hongguo.speedHolding' => '2.0x · swipe up to lock',
+			'hongguo.speedLocked' => '2.0x locked · hold and swipe down to unlock',
+			'hongguo.speedLockedToast' => '2.0x locked',
+			'hongguo.speedUnlockedToast' => 'Speed unlocked',
+			'hongguo.firstEpisode' => 'This is the first episode',
+			'hongguo.lastEpisode' => 'This is the last episode',
 			'hongguo.nextEpisode' => 'Next episode',
 			'hongguo.fullscreen' => 'Fullscreen',
 			'hongguo.exitFullscreen' => 'Exit fullscreen',
@@ -4048,6 +4062,8 @@ extension on TranslationsEn {
 			'hongguo.phoneCodePlaceholder' => 'Code',
 			'hongguo.phoneVerify' => 'Sign in',
 			'hongguo.phoneSent' => 'Code sent to',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.accountPhoneToggle' => 'Use a phone number',
 			'hongguo.accountQrToggle' => 'Scan a code',
 			'hongguo.commentsFailed' => 'Comments did not load',
@@ -4055,8 +4071,6 @@ extension on TranslationsEn {
 			'hongguo.shelfChangeBatch' => 'Another batch',
 			'hongguo.shelfHot' => 'Now playing',
 			'hongguo.shelfNew' => 'New',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.shelfCategory' => 'Category',
 			'hongguo.newArrivals' => 'new',
 			'hongguo.openFullBoard' => 'Full board',
@@ -4562,6 +4576,8 @@ extension on TranslationsEn {
 			'music.downloadEmbedLyricDesc' => 'Write the lyric into the audio tags so it travels with the file.',
 			'music.downloadIncludeTranslation' => 'Include the translation',
 			'music.downloadIncludeTranslationDesc' => 'Write the translation into the downloaded lyric file and embedded tag.',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadIncludeRomanization' => 'Include the romanization',
 			'music.downloadIncludeRomanizationDesc' => 'Write the romanization into the downloaded lyric file and embedded tag.',
 			'music.downloadWriteLyric' => 'Save a lyric file',
@@ -4569,8 +4585,6 @@ extension on TranslationsEn {
 			'music.downloadSkipExisting' => 'Skip existing files',
 			'music.downloadSkipExistingDesc' => 'Do not download when the output file is already there.',
 			'music.downloadGroupByList' => 'Group by playlist',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadGroupByListDesc' => 'When downloading from a playlist, save into a folder named after it.',
 			'music.downloadMaxConcurrent' => 'Concurrent downloads',
 			'music.downloadMaxConcurrentDesc' => 'How many downloads run at once (1–5); changes apply immediately.',
@@ -5076,6 +5090,8 @@ extension on TranslationsEn {
 			'room.portraitDanmakuHidden' => 'Hidden',
 			'room.portraitDiagnostics' => 'Portrait diagnostics',
 			'room.giftLineSent' => 'sent',
+			_ => null,
+		} ?? switch (path) {
 			'room.giftLineSentTo' => ({required Object name}) => 'sent ${name}',
 			'room.giftLineGifted' => 'gifted',
 			'room.giftLineTipped' => 'tipped',
@@ -5083,8 +5099,6 @@ extension on TranslationsEn {
 			'room.giftLineMonths' => ({required Object count}) => '×${count} mo',
 			'room.giftLineUnnamed' => 'a gift',
 			'room.giftLineNumbered' => ({required Object id}) => 'gift ${id}',
-			_ => null,
-		} ?? switch (path) {
 			'room.giftValueYuan' => ({required Object value}) => '¥${value}',
 			'room.giftValueGoldSeed' => ({required Object value}) => '${value} gold seeds',
 			'room.giftValueDiamond' => ({required Object value}) => '${value} diamonds',
@@ -5590,6 +5604,8 @@ extension on TranslationsEn {
 			'settings.fontManagerDetails' => 'Display and settings',
 			'settings.fontManagerLoadedCount' => ({required Object shown, required Object total}) => 'Loaded ${shown} of ${total}',
 			'settings.fontManagerLoadingMore' => 'Loading more…',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontCategoryHeiti' => 'Heiti',
 			'settings.fontCategorySongti' => 'Songti',
 			'settings.fontCategoryKaiti' => 'Kaiti',
@@ -5597,8 +5613,6 @@ extension on TranslationsEn {
 			'settings.fontCategoryHandwriting' => 'Handwriting',
 			'settings.fontCategoryEnglish' => 'Latin',
 			'settings.fontCategorySerif' => 'Serif',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontCategorySansSerif' => 'Sans-serif',
 			'settings.fontCategoryDisplay' => 'Display',
 			'settings.fontCategoryMonospace' => 'Monospace',
@@ -6104,6 +6118,8 @@ extension on TranslationsEn {
 			'settings.downloadInfoSize' => 'File size',
 			'settings.downloadInfoTime' => 'Download time',
 			'settings.downloadSelectAll' => 'Select all',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadSelectedCount' => ({required Object count}) => '${count} selected',
 			'settings.downloadDeleteSelected' => ({required Object count}) => 'Delete selected (${count})',
 			'settings.downloadDeleteAll' => 'Delete all',
@@ -6111,8 +6127,6 @@ extension on TranslationsEn {
 			'settings.downloadPause' => 'Pause',
 			'settings.downloadResume' => 'Resume',
 			'settings.downloadPausedHint' => 'Paused · tap to resume',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadEtaSeconds' => ({required Object seconds}) => '${seconds} seconds left',
 			'settings.downloadEtaMinutes' => ({required Object minutes}) => '${minutes} minutes left',
 			'settings.downloadEtaHours' => ({required Object hours}) => '${hours} hours left',
@@ -6618,6 +6632,8 @@ extension on TranslationsEn {
 			'vod.liveRecommendTitle' => 'Recommended live',
 			'vod.liveEmptyTitle' => 'No live rooms recommended',
 			'vod.liveEmptyDescription' => 'Refresh in a moment to try again.',
+			_ => null,
+		} ?? switch (path) {
 			'vod.refresh' => 'Refresh',
 			'vod.regionEmptyDescription' => 'This region has no recommendations right now.',
 			'vod.pgcTitle' => 'Cinema',
@@ -6625,8 +6641,6 @@ extension on TranslationsEn {
 			'vod.pgcMovie' => 'Movies',
 			'vod.pgcDocumentary' => 'Documentaries',
 			'vod.pgcGuochuang' => 'Guochuang',
-			_ => null,
-		} ?? switch (path) {
 			'vod.pgcTv' => 'TV series',
 			'vod.pgcVariety' => 'Variety',
 			'vod.pgcEmptyDescription' => 'Nothing in this catalogue right now.',

@@ -38,7 +38,7 @@ import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hon
 import 'package:pure_live/shared/shared.dart';
 
 /// The catalogues the picture bar hangs over.
-enum _HongguoPanel { fit, sleep, speed }
+enum _HongguoPanel { fit, sleep, speed, quality, episodes }
 
 /// One episode's player page: the picture and its control bar above the
 /// episode shelf, pushed from the series page's play card.
@@ -105,6 +105,17 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   bool _globalMute = false;
   double _volume = 1;
   double _speed = 1;
+
+  /// The speed a press-and-hold fast-forward runs at, and the speed it
+  /// restores on release — or the speed a locked hold unlocks to.
+  static const double _holdSpeed = 2;
+  double _speedBeforeHold = 1;
+  double _lockedFromSpeed = 1;
+  bool _holding = false;
+  bool _speedLocked = false;
+
+  /// How far the current vertical swipe has travelled, in logical pixels.
+  double _swipeDy = 0;
 
   /// The session's sleep timer and the ticker that watches its deadline.
   final HongguoSleepTimer _sleep = HongguoSleepTimer();
@@ -735,12 +746,83 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   Future<void> _setSpeed(double speed) async {
     final handle = _handle;
     if (handle == null) return;
+    // Picking another speed by hand lets a locked fast-forward go.
+    if (_speedLocked && speed != _holdSpeed) _speedLocked = false;
     setState(() => _speed = speed);
     try {
       await handle.setRate(speed);
     } on Object catch (_) {
       // Same as mute.
     }
+  }
+
+  /// A press held on the picture runs at [_holdSpeed]; releasing restores the
+  /// speed the viewer had, unless the hold slid up far enough to lock it.
+  void _beginHold() {
+    final handle = _handle;
+    if (handle == null || _opening || _error != null) return;
+    _hideTimer?.cancel();
+    _speedBeforeHold = _speed;
+    setState(() => _holding = true);
+    if (!_speedLocked) unawaited(handle.setRate(_holdSpeed).catchError((Object _) {}));
+  }
+
+  /// While the press is held, sliding up locks the fast speed past the
+  /// release; a locked hold slid back down unlocks it.
+  void _holdMoved(double dy) {
+    if (!_holding) return;
+    if (!_speedLocked && dy <= -40) {
+      setState(() {
+        _speedLocked = true;
+        _lockedFromSpeed = _speedBeforeHold == _holdSpeed ? 1 : _speedBeforeHold;
+        _speed = _holdSpeed;
+      });
+      showDsToast(context: context, title: context.t.hongguo.speedLockedToast);
+    } else if (_speedLocked && dy >= 40) {
+      setState(() {
+        _speedLocked = false;
+        // Releasing after this unlock must not put the hold speed back.
+        _speedBeforeHold = _lockedFromSpeed;
+      });
+      unawaited(_setSpeed(_lockedFromSpeed));
+      showDsToast(context: context, title: context.t.hongguo.speedUnlockedToast);
+    }
+  }
+
+  void _endHold() {
+    if (!_holding) return;
+    setState(() => _holding = false);
+    _scheduleHide();
+    if (_speedLocked) return;
+    unawaited(_setSpeed(_speedBeforeHold));
+  }
+
+  /// A vertical swipe on the picture walks the episodes: up for the next,
+  /// down for the previous.
+  void _endSwipe(double velocity) {
+    final travelled = _swipeDy;
+    _swipeDy = 0;
+    if (travelled.abs() < 48 && velocity.abs() < 320) return;
+    final next = travelled != 0 ? travelled < 0 : velocity < 0;
+    _switchEpisode(next: next);
+  }
+
+  void _switchEpisode({required bool next}) {
+    final episodes = _detail?.episodes ?? const <HongguoEpisode>[];
+    final current = _episode;
+    if (current == null || episodes.isEmpty) return;
+    final index = episodes.indexWhere((episode) => episode.vid == current.vid);
+    if (index < 0) return;
+    final target = next
+        ? (index + 1 < episodes.length ? episodes[index + 1] : null)
+        : (index > 0 ? episodes[index - 1] : null);
+    if (target == null) {
+      final t = context.t;
+      showDsToast(context: context, title: next ? t.hongguo.lastEpisode : t.hongguo.firstEpisode);
+      return;
+    }
+    _wake();
+    unawaited(_openEpisode(target));
   }
 
   /// The engine options this page keeps for every episode and handle:
@@ -1150,7 +1232,8 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                     ),
                   ),
                 // The picture itself is the bar's switch: a press toggles it,
-                // a double press plays or pauses.
+                // a double press plays or pauses, a held press fast-forwards,
+                // and a vertical swipe walks the episodes.
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: _toggleControls,
@@ -1160,8 +1243,42 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                           _wake();
                           unawaited(_togglePlay());
                         },
+                  onLongPressStart: handle == null ? null : (_) => _beginHold(),
+                  onLongPressMoveUpdate: handle == null ? null : (details) => _holdMoved(details.offsetFromOrigin.dy),
+                  onLongPressEnd: handle == null ? null : (_) => _endHold(),
+                  onLongPressCancel: handle == null ? null : _endHold,
+                  onVerticalDragStart: handle == null ? null : (_) => _swipeDy = 0,
+                  onVerticalDragUpdate: handle == null ? null : (details) => _swipeDy += details.delta.dy,
+                  onVerticalDragEnd: handle == null ? null : (details) => _endSwipe(details.primaryVelocity ?? 0),
                 ),
                 if (immersive && showBar) PositionedDirectional(top: 0, start: 0, end: 0, child: _topStrip(t, detail)),
+                // A held press says what it is doing; the lock itself is
+                // confirmed by a toast and the bar's speed reading.
+                if (_holding)
+                  PositionedDirectional(
+                    top: immersive && showBar ? DsSpace.s64 : DsSpace.s16,
+                    end: DsSpace.s12,
+                    child: PlayerGlassPill(
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: DsSpace.s6,
+                          children: [
+                            DsIcon(
+                              _speedLocked ? DsIcons.lock : DsIcons.fastForward,
+                              size: theme.sizes.iconXs,
+                              color: playerInk,
+                            ),
+                            Text(
+                              _speedLocked ? t.hongguo.speedLocked : t.hongguo.speedHolding,
+                              style: theme.typography.caption.copyWith(color: playerInk),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 if (_opening || (transport?.isBuffering ?? false))
                   const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
                 // A failure that outlived the automatic recovery: what went
@@ -1409,90 +1526,112 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           LayoutBuilder(
             builder: (context, constraints) {
               // The bar gives way from the outside in: the volume slider,
-              // then the pickers' words, so a narrow picture never overflows.
+              // then the pickers' words. On a phone the controls wrap onto a
+              // second line instead of overflowing — the app's own bar.
               final compact = constraints.maxWidth < 560;
-              return Row(
-                spacing: DsSpace.s4,
-                children: [
-                  MediaBarButton(
-                    icon: playing ? DsIcons.pause : DsIcons.play,
-                    label: playing ? t.hongguo.pause : t.hongguo.play,
-                    focusNode: _playFocus,
-                    onPressed: handle == null
-                        ? null
-                        : () {
-                            _wake();
-                            unawaited(_togglePlay());
-                          },
-                  ),
-                  MediaBarButton(
-                    icon: _effectivelyMuted ? DsIcons.volumeOff : DsIcons.volume,
-                    label: _effectivelyMuted ? t.hongguo.unmute : t.hongguo.mute,
-                    onPressed: handle == null
-                        ? null
-                        : () {
-                            _wake();
-                            unawaited(_setMuted(muted: !_effectivelyMuted));
-                          },
-                  ),
-                  if (!compact)
-                    SizedBox(
-                      width: 96,
-                      child: DsSlider(
-                        value: _effectivelyMuted ? 0 : _volume,
-                        onChanged: handle == null
-                            ? null
-                            : (value) {
-                                _wake();
-                                unawaited(_setVolume(value));
-                              },
-                        semanticLabel: t.hongguo.volume,
-                      ),
+              final leading = <Widget>[
+                MediaBarButton(
+                  icon: playing ? DsIcons.pause : DsIcons.play,
+                  label: playing ? t.hongguo.pause : t.hongguo.play,
+                  focusNode: _playFocus,
+                  onPressed: handle == null
+                      ? null
+                      : () {
+                          _wake();
+                          unawaited(_togglePlay());
+                        },
+                ),
+                MediaBarButton(
+                  icon: _effectivelyMuted ? DsIcons.volumeOff : DsIcons.volume,
+                  label: _effectivelyMuted ? t.hongguo.unmute : t.hongguo.mute,
+                  onPressed: handle == null
+                      ? null
+                      : () {
+                          _wake();
+                          unawaited(_setMuted(muted: !_effectivelyMuted));
+                        },
+                ),
+                if (!compact)
+                  SizedBox(
+                    width: 96,
+                    child: DsSlider(
+                      value: _effectivelyMuted ? 0 : _volume,
+                      onChanged: handle == null
+                          ? null
+                          : (value) {
+                              _wake();
+                              unawaited(_setVolume(value));
+                            },
+                      semanticLabel: t.hongguo.volume,
                     ),
+                  ),
+                MediaBarButton(
+                  icon: danmaku.enabled ? DsIcons.captions : DsIcons.captionsOff,
+                  label: danmaku.enabled ? t.hongguo.danmakuOn : t.hongguo.danmakuOff,
+                  selected: danmaku.enabled,
+                  onPressed: () {
+                    _wake();
+                    unawaited(ref.read(hongguoDanmakuSettingsProvider.notifier).setEnabled(value: !danmaku.enabled));
+                  },
+                ),
+              ];
+              final trailing = <Widget>[
+                if (next != null)
                   MediaBarButton(
-                    icon: danmaku.enabled ? DsIcons.captions : DsIcons.captionsOff,
-                    label: danmaku.enabled ? t.hongguo.danmakuOn : t.hongguo.danmakuOff,
-                    selected: danmaku.enabled,
-                    onPressed: () {
-                      _wake();
-                      unawaited(ref.read(hongguoDanmakuSettingsProvider.notifier).setEnabled(value: !danmaku.enabled));
-                    },
+                    icon: DsIcons.skipForward,
+                    label: t.hongguo.nextEpisode,
+                    onPressed: () => unawaited(_openEpisode(next)),
                   ),
-                  const Spacer(),
-                  if (next != null)
-                    MediaBarButton(
-                      icon: DsIcons.skipForward,
-                      label: t.hongguo.nextEpisode,
-                      onPressed: () => unawaited(_openEpisode(next)),
-                    ),
-                  _pickerButton(
-                    panel: _HongguoPanel.fit,
-                    icon: DsIcons.aspectRatio,
-                    label: fitLabels(t)[fit.index],
-                    semanticLabel: t.settings.fit,
-                    compact: compact,
-                  ),
-                  _pickerButton(
-                    panel: _HongguoPanel.sleep,
-                    icon: DsIcons.moon,
-                    label: _sleep.label(t),
-                    semanticLabel: t.hongguo.sleep,
-                    compact: compact,
-                  ),
-                  _pickerButton(
-                    panel: _HongguoPanel.speed,
-                    icon: DsIcons.gauge,
-                    label: speedLabel,
-                    semanticLabel: t.hongguo.speed,
-                    compact: compact,
-                  ),
-                  MediaBarButton(
-                    icon: DsIcons.maximize2,
-                    label: t.hongguo.fullscreen,
-                    onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
-                  ),
-                ],
-              );
+                _pickerButton(
+                  panel: _HongguoPanel.episodes,
+                  icon: DsIcons.listVideo,
+                  label: t.hongguo.episodes,
+                  semanticLabel: t.hongguo.episodes,
+                  compact: compact,
+                ),
+                _pickerButton(
+                  panel: _HongguoPanel.quality,
+                  icon: DsIcons.hd,
+                  label: (_attempted?.quality ?? 0) > 0 ? '${_attempted!.quality}P' : t.hongguo.quality,
+                  semanticLabel: t.hongguo.quality,
+                  compact: compact,
+                ),
+                _pickerButton(
+                  panel: _HongguoPanel.fit,
+                  icon: DsIcons.aspectRatio,
+                  label: fitLabels(t)[fit.index],
+                  semanticLabel: t.settings.fit,
+                  compact: compact,
+                ),
+                _pickerButton(
+                  panel: _HongguoPanel.sleep,
+                  icon: DsIcons.moon,
+                  label: _sleep.label(t),
+                  semanticLabel: t.hongguo.sleep,
+                  compact: compact,
+                ),
+                _pickerButton(
+                  panel: _HongguoPanel.speed,
+                  icon: DsIcons.gauge,
+                  label: speedLabel,
+                  semanticLabel: t.hongguo.speed,
+                  compact: compact,
+                ),
+                MediaBarButton(
+                  icon: DsIcons.maximize2,
+                  label: t.hongguo.fullscreen,
+                  onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
+                ),
+              ];
+              if (compact) {
+                return Wrap(
+                  spacing: DsSpace.s4,
+                  runSpacing: DsSpace.s4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [...leading, ...trailing],
+                );
+              }
+              return Row(spacing: DsSpace.s4, children: [...leading, const Spacer(), ...trailing]);
             },
           ),
         ],
@@ -1633,6 +1772,56 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   unawaited(_setSpeed(speed));
                 },
               ),
+          ],
+        );
+      case _HongguoPanel.quality:
+        final choice = ref.watch(hongguoSettingsProvider).quality;
+        return PlayerOverlayPanel(
+          title: t.hongguo.quality,
+          children: [
+            for (final value in HongguoQualityChoice.values)
+              PlayerPanelOption(
+                label: value.label(t),
+                selected: value == choice,
+                onPressed: () {
+                  _closePanel();
+                  final episode = _episode;
+                  final position = _transport?.position.inMilliseconds;
+                  unawaited(ref.read(hongguoSettingsProvider.notifier).setQuality(value));
+                  if (episode != null) {
+                    unawaited(_openEpisode(episode, resume: position == null ? null : position / 1000));
+                  }
+                },
+              ),
+          ],
+        );
+      case _HongguoPanel.episodes:
+        final episodes = _detail?.episodes ?? const <HongguoEpisode>[];
+        return PlayerOverlayPanel(
+          title: t.hongguo.episodes,
+          width: 260,
+          children: [
+            // A series may run to hundreds of episodes; the catalogue keeps
+            // its own height and scrolls inside the panel.
+            SizedBox(
+              height: 300,
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  for (final episode in episodes)
+                    PlayerPanelOption(
+                      label: episode.title.isEmpty
+                          ? t.hongguo.episodeLabel(index: episode.index)
+                          : '${t.hongguo.episodeLabel(index: episode.index)} ${episode.title}',
+                      selected: episode.vid == _episode?.vid,
+                      onPressed: () {
+                        _closePanel();
+                        unawaited(_openEpisode(episode));
+                      },
+                    ),
+                ],
+              ),
+            ),
           ],
         );
     }
