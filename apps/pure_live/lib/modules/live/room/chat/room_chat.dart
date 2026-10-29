@@ -118,7 +118,7 @@ final class _ChatFeed extends ConsumerWidget {
     // viewer put it.
     return ListView.builder(
       reverse: true,
-      padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s12),
+      padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s12),
       itemCount: chat.length,
       itemBuilder: (context, index) => _ChatLine(message: chat[chat.length - 1 - index], anchorName: anchorName),
     );
@@ -235,10 +235,14 @@ final class _ChatLine extends ConsumerWidget {
     final replayed = message.messageId.startsWith('local-replay-');
     final valueInYuan = ref.watch(chatGiftValueInYuanProvider);
     final words = gift == null ? message.text : _giftSentence(t, gift, anchorName, inYuan: valueInYuan);
-    // The room's own notices (the platform's system lines) sit apart from
-    // the conversation: centred, quiet, no "系统:" voice. A super chat
-    // always has a sender, so it is never one.
-    final isSystem = gift == null && superChat == null && senderName.isEmpty;
+    // The room's own notices (the platform's notice and system lines) sit
+    // apart from the conversation: centred, quiet, no "系统:" voice. A chat
+    // message whose platform lost the sender's name is NOT a notice — it
+    // stays in the flow, left-aligned, as written.
+    final isSystem =
+        gift == null &&
+        superChat == null &&
+        (message.type == LiveMessageType.notice || message.type == LiveMessageType.system);
     // The platform's own labels for who is talking: the fan badge (its name
     // and level) and the viewer's level. They ride on the sender, so a line
     // that has neither shows none.
@@ -337,7 +341,7 @@ final class _ChatLine extends ConsumerWidget {
                   if (showNames && senderName.isNotEmpty) TextSpan(text: '$senderName: ', style: nameStyle),
                   // The words with the platform's own emoticons in them, cut
                   // out of the flying layer's catalogue and drawn as itself.
-                  ..._wordSpans(words, lineStyle, fontPx * 1.4),
+                  ..._wordSpans(words, lineStyle, fontPx * 1.2),
                 ],
               ),
             ),
@@ -548,7 +552,12 @@ final class _AtlasEmoji extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) => CustomPaint(size: Size.square(size), painter: _AtlasEmojiPainter(this));
+  Widget build(BuildContext context) => Padding(
+    // A hair of air on each side, so a run of emoticons reads as a run and
+    // not one pasted strip.
+    padding: const EdgeInsets.symmetric(horizontal: 1),
+    child: CustomPaint(size: Size.square(size), painter: _AtlasEmojiPainter(this)),
+  );
 }
 
 final class _AtlasEmojiPainter extends CustomPainter {
