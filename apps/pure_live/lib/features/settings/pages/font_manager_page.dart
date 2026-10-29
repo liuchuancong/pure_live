@@ -760,7 +760,6 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
           final isDefault = family == null || family == kDefaultFontFamily;
           return DsPanel(
             title: Text(entry.name),
-            style: DsPanelStyle(background: colors.surface),
             footer: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: DsSpace.s8,

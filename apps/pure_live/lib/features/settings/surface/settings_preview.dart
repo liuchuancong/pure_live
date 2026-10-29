@@ -330,6 +330,7 @@ final class SettingsPreviewCircleButton extends StatelessWidget {
     required this.onPressed,
     this.size = 36,
     this.selected = false,
+    this.onSurface = false,
     super.key,
   });
 
@@ -349,9 +350,35 @@ final class SettingsPreviewCircleButton extends StatelessWidget {
   /// white and the glyph turns dark, so a toggle reads at a glance.
   final bool selected;
 
+  /// Whether the circle sits on the page's own surface — a strip under the
+  /// stage — instead of floating over media. It then takes the theme's
+  /// control fill, border and text, so a strip in either skin reads as part
+  /// of it rather than a grey disc.
+  final bool onSurface;
+
   @override
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
+    final Color background;
+    final Color border;
+    final Color glyph;
+    if (onSurface) {
+      background = selected ? colors.accent : colors.control;
+      border = selected ? colors.accent : colors.border;
+      glyph = selected
+          ? colors.onAccent
+          : onPressed == null
+          ? colors.textSubtle
+          : colors.text;
+    } else {
+      background = selected ? const Color(0xE6FFFFFF) : const Color(0x66000000);
+      border = selected ? const Color(0xFFFFFFFF) : const Color(0x26FFFFFF);
+      glyph = selected
+          ? const Color(0xFF000000)
+          : onPressed == null
+          ? colors.textSubtle
+          : const Color(0xFFFFFFFF);
+    }
     return DsPressable(
       semanticLabel: semanticLabel,
       onPressed: onPressed,
@@ -360,19 +387,11 @@ final class SettingsPreviewCircleButton extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: selected ? const Color(0xE6FFFFFF) : const Color(0x66000000),
-          border: Border.all(color: selected ? const Color(0xFFFFFFFF) : const Color(0x26FFFFFF)),
+          color: background,
+          border: Border.all(color: border),
         ),
         child: Center(
-          child: DsIcon(
-            icon,
-            size: size * 0.45,
-            color: selected
-                ? const Color(0xFF000000)
-                : onPressed == null
-                ? colors.textSubtle
-                : const Color(0xFFFFFFFF),
-          ),
+          child: DsIcon(icon, size: size * 0.45, color: glyph),
         ),
       ),
     );

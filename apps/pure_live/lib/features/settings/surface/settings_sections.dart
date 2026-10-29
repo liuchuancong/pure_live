@@ -77,6 +77,7 @@ enum SettingsSection {
   musicDownload(DsIcons.download),
   musicLyric(DsIcons.captions),
   musicDesktopLyric(DsIcons.monitor),
+  musicEq(DsIcons.audioLines),
   hongguo(DsIcons.drama),
   // Deep-link aliases: their content lives on another page now (see
   // [aliasTarget]); kept readable so stored links never 404.
@@ -155,6 +156,7 @@ enum SettingsSection {
     SettingsSection.musicDownload => t.settings.navMusicDownload,
     SettingsSection.musicLyric => t.settings.navMusicLyric,
     SettingsSection.musicDesktopLyric => t.settings.navMusicDesktopLyric,
+    SettingsSection.musicEq => t.settings.navMusicEq,
     SettingsSection.hongguo => t.settings.navHongguo,
     // Aliases: their pre-merge words, kept for anything still naming them.
     SettingsSection.personalization => t.settings.navPersonalization,
@@ -225,6 +227,7 @@ enum SettingsSection {
     SettingsSection.musicDownload => t.settings.musicDownloadDescription,
     SettingsSection.musicLyric => t.settings.musicLyricDescription,
     SettingsSection.musicDesktopLyric => t.settings.musicDesktopLyricDescription,
+    SettingsSection.musicEq => t.settings.musicEqDescription,
     SettingsSection.hongguo => t.settings.hongguoDescription,
     SettingsSection.personalization => t.settings.personalizationDescription,
     SettingsSection.live => t.settings.liveSettingsDescription,
@@ -268,7 +271,8 @@ enum SettingsSection {
     SettingsSection.musicSources ||
     SettingsSection.musicDownload ||
     SettingsSection.musicLyric ||
-    SettingsSection.musicDesktopLyric => SettingsSection.music,
+    SettingsSection.musicDesktopLyric ||
+    SettingsSection.musicEq => SettingsSection.music,
     SettingsSection.nodes => SettingsSection.network,
     SettingsSection.webdavSync => SettingsSection.backup,
     _ => null,
@@ -344,6 +348,7 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
     SettingsSection.musicDownload,
     SettingsSection.musicLyric,
     SettingsSection.musicDesktopLyric,
+    SettingsSection.musicEq,
   ],
   SettingsSection.network => const [SettingsSection.nodes],
   SettingsSection.backup => const [SettingsSection.webdavSync],

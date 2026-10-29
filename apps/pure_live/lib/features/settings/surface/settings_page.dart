@@ -64,7 +64,7 @@ import 'package:pure_live/features/settings/playback/portrait_settings_providers
 import 'package:pure_live/features/settings/room/room_card_settings.dart' show RoomCardCoverAspect;
 import 'package:pure_live/features/settings/room/room_switcher_settings.dart' show portraitSwipeSwitchProvider;
 import 'package:pure_live/features/settings/surface/settings_navigation.dart'
-    show openSettingsCategory, openSettingsChild, openSettingsSection;
+    show openSettingsCategory, openSettingsChild, openSettingsSection, settingsStacksRoutes;
 import 'package:pure_live/features/settings/surface/settings_search.dart' show SettingsSearchHit, settingsSearchHits;
 import 'package:pure_live/features/settings/surface/settings_sections.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart'
@@ -94,16 +94,22 @@ const double kSettingsContentMaxWidth = 960;
 /// line, chevron), never every setting in one column.
 ///
 /// A desktop window puts the categories in the shell's own sidebar and this
-/// page in the centre. A touch shell, which has no sidebar, shows the
-/// categories here and pushes each one's page as its own route, then the
-/// section's page above that.
+/// page in the centre. A shell without that sidebar — a phone, or a desktop
+/// window shrunk under the bottom bar — shows the categories here and pushes
+/// each one's page as its own route, then the section's page above that.
 final class SettingsPage extends ConsumerWidget {
   /// The settings page.
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(deviceProfileProvider).isDesktop) return const _SettingsMenuList();
+    final runtime = ref.watch(platformRuntimeProvider).environment.runtime;
+    final stacked = settingsStacksRoutes(
+      context,
+      formFactor: runtime.formFactor,
+      desktopProfile: ref.watch(deviceProfileProvider).isDesktop,
+    );
+    if (stacked) return const _SettingsMenuList();
     final section = ref.watch(settingsSectionProvider);
     final open = ref.watch(settingsSectionOpenProvider);
     return _SettingsBodyWithSearch(
@@ -547,6 +553,7 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.musicDownload => const MusicDownloadPane(),
       SettingsSection.musicLyric => const MusicLyricPane(),
       SettingsSection.musicDesktopLyric => const MusicDesktopLyricPane(),
+      SettingsSection.musicEq => const MusicEqPane(),
     };
     final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;
     final padding = EdgeInsets.fromLTRB(inset, DsSpace.s20, inset, DsSpace.s24);

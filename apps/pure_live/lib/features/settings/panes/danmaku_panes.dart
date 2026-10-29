@@ -160,25 +160,27 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        // The way back out of any wrong turn sits first: the viewer who
-        // came here to undo a change finds it without scrolling.
-        DsListSection(
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.rotateCw),
-              title: Text(t.settings.styleReset),
-              onPressed: () {
-                unawaited(controller.reset());
-                unawaited(frameRateController.reset());
-                unawaited(ref.read(danmakuFixedTopProvider.notifier).reset());
-                unawaited(ref.read(danmakuFixedBottomProvider.notifier).reset());
-                unawaited(ref.read(danmakuFixedDurationProvider.notifier).reset());
-                unawaited(ref.read(danmakuTapInteractionProvider.notifier).reset());
-                unawaited(ref.read(danmakuLongPressInteractionProvider.notifier).reset());
-                unawaited(pipScaleController.reset());
-              },
-            ),
-          ],
+        // The way back out of any wrong turn sits at the very top as a
+        // button, not as one more row to scroll past: the viewer who came
+        // here to undo a change finds it without looking.
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.rotateCw, size: 16),
+            onPressed: () {
+              unawaited(controller.reset());
+              unawaited(frameRateController.reset());
+              unawaited(ref.read(danmakuFixedTopProvider.notifier).reset());
+              unawaited(ref.read(danmakuFixedBottomProvider.notifier).reset());
+              unawaited(ref.read(danmakuFixedDurationProvider.notifier).reset());
+              unawaited(ref.read(danmakuTapInteractionProvider.notifier).reset());
+              unawaited(ref.read(danmakuLongPressInteractionProvider.notifier).reset());
+              unawaited(pipScaleController.reset());
+            },
+            child: Text(t.settings.styleReset),
+          ),
         ),
         // The face is chosen in the font manager: the catalogue holds a few
         // thousand families, far more than a dropdown can carry.

@@ -249,18 +249,24 @@ final class SettingsSectionRoute extends GoRouteData with $SettingsSectionRoute 
 }
 
 /// The pushed section's screen: the pane alone under a page header whose
-/// back leads to its category.
-final class _SettingsSectionScreen extends StatelessWidget {
+/// back leads to its category. Popping it clears the pane state, so the
+/// shell's breadcrumb and back arrow sit at the surface again.
+final class _SettingsSectionScreen extends ConsumerWidget {
   const _SettingsSectionScreen({required this.section});
 
   final SettingsSection section;
 
   @override
-  Widget build(BuildContext context) {
-    return _SettingsSubpage(
-      title: section.label(context.t),
-      pageIdentity: 'settings/${section.name}',
-      child: SettingsSectionPane(section: section),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) ref.read(settingsSectionOpenProvider.notifier).open = false;
+      },
+      child: _SettingsSubpage(
+        title: section.label(context.t),
+        pageIdentity: 'settings/${section.name}',
+        child: SettingsSectionPane(section: section),
+      ),
     );
   }
 }

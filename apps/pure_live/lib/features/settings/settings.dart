@@ -32,6 +32,7 @@ export 'pages/font_manager_page.dart';
 export 'pages/wallpaper_preview_page.dart';
 export 'panes/audience_settings_pane.dart';
 export 'panes/background_panes.dart';
+export 'panes/danmaku_panes.dart';
 export 'panes/player_kernel_pane.dart';
 export 'panes/room_card_pane.dart';
 export 'playback/floating_window_settings.dart';

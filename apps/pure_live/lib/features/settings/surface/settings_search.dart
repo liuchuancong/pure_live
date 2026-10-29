@@ -107,8 +107,13 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.backgroundDevice, s.backgroundImageAddress, 'image url upload local file 图片 地址 上传 本机'),
     _hit(SettingsSection.backgroundDevice, s.backgroundVideoAddress, 'video url upload local file 视频 地址 上传 本机'),
     _hit(SettingsSection.background, s.backgroundFit, 'fit fill cover 填充 裁切'),
-    _hit(SettingsSection.background, s.backgroundMask, 'mask dim 遮罩 压暗'),
-    _hit(SettingsSection.background, s.backgroundOverlayBlur, 'blur frost scrim glass 遮罩 模糊 磨砂'),
+    _hit(SettingsSection.background, s.backgroundMask, 'mask scrim dim wash 蒙层 遮罩 压暗'),
+    _hit(SettingsSection.background, s.backgroundOverlayBlur, 'blur frost background 背景 模糊 磨砂'),
+    _hit(
+      SettingsSection.background,
+      s.backgroundGlass,
+      'glass frosted blur menu popover panel dialog toast toolbar tooltip bottom nav selection card list room fill 界面 浮层 玻璃 毛玻璃 面板 填充 模糊 卡片 列表 房间 菜单 弹出层 对话框 提示 工具栏 气泡 底栏 文本选择',
+    ),
     _hit(SettingsSection.background, s.backgroundClear, 'remove background 清除 背景'),
     // Navigation.
     _hit(SettingsSection.nav, s.navNavigation, 'navigation sidebar drawer bottom bar 导航 侧栏 抽屉 底栏'),

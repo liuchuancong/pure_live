@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
@@ -49,6 +50,10 @@ final class SettingsConfigRow extends StatelessWidget {
   /// A stretched switch reads as a progress bar, not a toggle.
   bool get _controlIsIntrinsic => control is DsSwitch || control is DsCheckbox;
 
+  /// The narrowest row a slider still shares with its label. Below it the
+  /// slider drops under the label instead of squeezing both to a sliver.
+  static const double _sliderInlineMinWidth = 300;
+
   /// The control in a slot of [controlWidth] that it is allowed to shrink
   /// inside of.
   Widget _slot({required AlignmentGeometry alignment}) {
@@ -61,10 +66,16 @@ final class SettingsConfigRow extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= LiveWindow.sheet;
+        // A slider is narrow enough to sit at the row's end on any pane that
+        // can still spare its share of the line — the danmaku page stacks
+        // some twenty of them, and a slider under every label made that
+        // column read twice as tall as it is wide. Under this width there is
+        // no honest room for both, so it drops below the label.
+        final narrowSlider = !wide && control is DsSlider && constraints.maxWidth >= _sliderInlineMinWidth;
         // A switch or checkbox is small enough to keep at the row's end at
         // any width; only a control that needs a slot of its own drops to
         // the line below the label.
-        final inRow = wide || _controlIsIntrinsic;
+        final inRow = wide || _controlIsIntrinsic || narrowSlider;
         final row = DsListRow(
           leading: leading,
           title: Text(title),
@@ -73,6 +84,8 @@ final class SettingsConfigRow extends StatelessWidget {
           trailing: inRow
               ? wide
                     ? _slot(alignment: Alignment.centerRight)
+                    : narrowSlider
+                    ? SizedBox(width: math.min(controlWidth, constraints.maxWidth * 0.42), child: control)
                     : Align(alignment: Alignment.centerRight, child: control)
               : null,
         );
