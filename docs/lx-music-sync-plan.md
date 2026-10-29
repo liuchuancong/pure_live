@@ -31,23 +31,27 @@
   播放 registry 注册全源（混源队列可播）、下载按 `track.sourceId` 找源、设置页音源下拉动态生成；
   `lxMusicInfo` 透传 `hash/hashes`（kg 脚本按 hash 取链）。
   LX 参考：`src/renderer/utils/musicSdk/index.js`（sources 列表、`searchMusic` 聚合）。
-- 🟨 A2 kw 酷我补齐（搜索/歌词/榜单/封面地址已齐，`getMusicInfo` 详情接口未接）：搜索 `http://search.kuwo.cn/r.s?client=kt&all=...`（解析 `N_MINFO`，
+- ✅ A2 kw 酷我补齐（搜索/歌词/榜单/封面/详情已齐；2026-10-29 `trackDetail` 接
+  `api/www/music/musicInfo?mid=`（`kw/index.js getMusicInfo`，code==200 校验，
+  artist 数组 `、` 连接、album/albumid/pic/duration 回填 MusicTrack））：搜索 `http://search.kuwo.cn/r.s?client=kt&all=...`（解析 `N_MINFO`，
   bitrate 4000→flac24bit/2000→flac/320/128）、歌曲信息 `api/www/music/musicInfo?mid=`、
   封面 `artistpicserver.kuwo.cn/pic.web`、榜单 bangid 硬编码表（93 飙升/16 热歌…）。
   LX 参考：`musicSdk/kw/{musicSearch,index,lyric,pic,leaderboard}.js`
-- 🟨 A3 kg 酷狗（2026-10-29 搜索/榜单/歌词已接 `music_source_kg.dart`；KRC 逐字解码归 D2，
-  现优先选 LRC 候选、取链仅脚本）：搜索 `songsearch.kugou.com/song_search_v2?platform=AndroidFilter`；
+- ✅ A3 kg 酷狗（2026-10-29 搜索/榜单/歌词/逐字全接 `music_source_kg.dart`；歌词两步
+  search→download，krctype==1 优先 KRC 候选走 `decodeKrc`、否则 base64 LRC 兜底）：
+  搜索 `songsearch.kugou.com/song_search_v2?platform=AndroidFilter`；
   签名 `signatureParams` = MD5(key+排序参数+body+key)，key=`OIlwieks28dk2k092lksi2UIkp`(android)/
-  `NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt`(web)；歌词两步（search→download，fmt=krc|lrc）。
+  `NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt`(web)。
   LX 参考：`musicSdk/kg/*`、`kg/util.js`
-- 🟨 A4 tx QQ（2026-10-29 搜索/榜单/封面已接 `music_source_tx.dart`，zzcSign SHA1 签名移植；
-  QRC 歌词解码归 D2，暂不返回歌词）：POST `u.y.qq.com/cgi-bin/musicu.fcg`（module `music.pf_song_detail_svr`），
+- ✅ A4 tx QQ（2026-10-29 搜索/榜单/封面/歌词全接 `music_source_tx.dart`，zzcSign SHA1 签名移植；
+  歌词 `GetPlayLyricInfo` qrc:1/trans:1/roma:1 走 `decodeQrc`+`parseQrc`（QRC 三重 DES 解码在
+  `lyric_decoders.dart`）：POST `u.y.qq.com/cgi-bin/musicu.fcg`（module `music.pf_song_detail_svr`），
   音质从 `file.size_128mp3/320mp3/flac/hires` 推导；封面拼
   `y.gtimg.cn/music/photo_new/T002R500x500M000{albumMid}.jpg`；歌词 qrc:1,trans:1 + QRC 解码。
   LX 参考：`musicSdk/tx/*`、`tx/qrcDecode.js`
-- 🟨 A5 wy 网易（2026-10-29 搜索/榜单/歌词已接 `music_source_wy.dart`，`wy_crypto.dart` 移植
+- ✅ A5 wy 网易（2026-10-29 搜索/榜单/歌词/逐字全接 `music_source_wy.dart`，`wy_crypto.dart` 移植
   eapi/weapi：AES-128-CBC/ECB(pointycastle PKCS7) + RSA NoPadding（公钥 n/e 已硬编码）；
-  yrc 逐字合成归 D2）：eapi/weapi 加密（AES-128-CBC 双层 + RSA / eapi=
+  yrc/ytlrc/yromalrc 走 `parseYrc` 合成、lrc/tlyric 兜底（yrc 逐字解码归 D2 已落））：eapi/weapi 加密（AES-128-CBC 双层 + RSA / eapi=
   MD5("nobody{url}use{text}md5forencrypt")+AES-128-ECB，key=`e82ckenh8dichen8`，iv=`0102030405060708`）；
   搜索 `/api/search/song/list/page`、详情 `weapi/v3/song/detail`、歌词 `/api/song/lyric/v1`
   （返回 lyric/tlyric/romalrc + yrc 逐字合成 lx 逐字格式）。
@@ -148,13 +152,15 @@
   （'歌名 - 歌手'|'歌手 - 歌名'|'歌名'）（`store/download/utils.ts buildSavePath`）。
 - ✅ E3 元数据写入（`MusicDownloadRequest` embedCover/embedLyric/writeLyricFile/
   includeTranslation/includeRomanization 全参数，下载器负责写入）：FLAC/MP3 写标题/歌手/专辑/封面/歌词（`common/utils/musicMeta/`）。
-- 🟨 E4 下载取链复用播放取链（同源 resolve 已复用；换源可接 `resolveWithToggle`；
-  kg 歌词标签由 KRC 解码路径天然对齐）。
+- ✅ E4 下载取链复用播放取链（2026-10-29 `music_downloads.dart` 首取与重试 resolve 均改走
+  `resolveWithToggle`——本源失败搜同名歌换源，与播放同链；kg 歌词标签由 KRC 解码路径天然对齐）。
 - ✅ E5 下载列表持久化（`music.downloads`）。
 
 ### F. 歌单/收藏
-- 🟨 F1 数据模型对齐（MusicInfo 字段大体对应；`toggleMusicInfo` 换源引用未入模型，
-  由 `resolveWithToggle` 运行时等价） `src/common/types/list.d.ts` + `music.d.ts`：
+- ✅ F1 数据模型对齐（收口：MusicTrack 的 id/title/artist/album/albumId/duration/coverUri
+  全覆盖 MusicInfo 字段；`toggleMusicInfo` 不入模型——换源是运行时行为，
+  `resolveWithToggle` 已等价（播放 E4 下载同链）；interval=duration、picUrl=coverUri、
+  quickSearch 无场景不移植） `src/common/types/list.d.ts` + `music.d.ts`：
   `MusicInfo{id,name,singer,source,interval,meta:{albumId,albumName,picUrl,quickSearch?,toggleMusicInfo?}}`；
   LIST_IDS = default/love/temp/download。
 - ✅ F2 表结构对齐（2026-10-29 收口：本项目 Hive 单键存储天然合并 LX 三表——tracks 内联即
