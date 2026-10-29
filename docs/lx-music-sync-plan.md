@@ -140,9 +140,11 @@
   simplify-chinese-main/chinese.js 抽取）；顺修 decodeKrc 误剥逐字标签（与 qrc/yrc/mrc 及文件头
   契约不一致）。LX 参考：`core/music/utils.ts buildLyricInfo`、`simplify-chinese-main`、
   `defaultSetting.ts`
-- ⬜ D5 桌面歌词：LX 用 MessagePort 通道（get_info/set_info/get_status/set_status/
-  频谱 analyser 数据）；media_core_audio 已有桌面歌词窗口，对齐数据通道与
-  `desktopLyric.*` 设置域（含鼠标穿透 `winLyric/mouseCheckTools.ts`）。
+- 🟨 D5 桌面歌词（2026-10-29 实查大半已接：`DesktopLyricController` 已覆盖
+  show/hide/toggle/lock/style/displayOptions/bounds/setDocument，模块 `music_playback.dart`
+  已喂 `desktopLyric.*` 设置——LX 的 get/set_info、get/set_status 通道等价落地；剩
+  频谱 analyser 数据通道，media_core 无频谱能力，属引擎缺口待扩）：LX 用 MessagePort 通道（get_info/set_info/get_status/set_status/
+  频谱 analyser 数据）；media_core_audio 已有桌面歌词窗口（含鼠标穿透 `winLyric/mouseCheckTools.ts` 语义）。
 
 ### E. 下载
 - ✅ E1 任务状态机（media_core_audio `MusicDownloadQueue/MusicDownloadTask/MusicDownloader`
