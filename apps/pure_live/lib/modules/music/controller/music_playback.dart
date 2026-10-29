@@ -1,5 +1,6 @@
 import 'dart:async' show StreamSubscription, unawaited;
-import 'dart:convert' show jsonDecode, jsonEncode;
+import 'dart:convert' show Utf8Decoder, jsonDecode, jsonEncode, latin1;
+import 'dart:io' show File;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
@@ -7,11 +8,13 @@ import 'package:media_core/media_core.dart' show PlayerConfig;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/app/app.dart' show playerKernelProvider;
+import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
 import 'package:pure_live/modules/music/controller/music_library.dart'
-    show musicRecentProvider, musicTrackFromJson, musicTrackToJson;
+    show musicRecentProvider, musicTrackFromJson, musicTrackKey, musicTrackToJson;
+import 'package:pure_live/modules/music/controller/music_lyric_overrides.dart' show musicLyricOverridesProvider;
 import 'package:pure_live/modules/music/controller/music_settings.dart'
     show MusicQuality, MusicSettings, musicSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
+import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, musicSourceProvider;
 
 /// The preference the last queue is kept under, so 打开时继续播放 has
 /// something to resume.
@@ -117,9 +120,11 @@ audio.MusicQuality musicQualityOf(MusicQuality quality) => switch (quality) {
 /// preferences.
 ///
 /// The engine work belongs to `media_core_audio`'s controller; this is the
-/// module's seam — one queue for every view, the recently played list fed
-/// from it, and the last queue kept for the next run. The controller outlives
-/// the pages that watch it, so closing the player keeps the song playing.
+/// module's seam — one queue for the window that owns it, the recently played
+/// list fed from it, and the last queue kept for the next run. `AppWindowRoot`
+/// scopes it to the window because it holds a kernel: the controller outlives
+/// the pages that watch it, so closing the player page keeps the song playing,
+/// and closing the window ends it — as it does for a room.
 final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   late final audio.AudioPlaybackController _audio;
   late final MusicProgressStore _progressStore;
@@ -137,6 +142,11 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   String? _restoredProgressKey;
   int _progressPositionMs = 0;
   DateTime _lastProgressWrite = DateTime.fromMillisecondsSinceEpoch(0);
+  String? _dislikedSkipKey;
+  int _dislikedSkips = 0;
+  String? _erroredSkipKey;
+  int _erroredSkips = 0;
+  String? _lyricOverrideKey;
 
   @override
   audio.AudioPlaybackState build() {
@@ -149,7 +159,10 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       ref.read(playerKernelProvider),
       // The local source is registered for its sidecar lyric reader: a local
       // track resolves through its file path, but its `.lrc` is asked here.
-      registry: audio.MusicSourceRegistry([ref.read(musicSourceProvider), audio.LocalMusicSource(roots: const [])]),
+      registry: audio.MusicSourceRegistry([
+        ...ref.read(musicSourceListProvider),
+        audio.LocalMusicSource(roots: const []),
+      ]),
       config: audio.AudioPlaybackConfig(initialQuality: musicQualityOf(settings.quality)),
       // Music is the one player that keeps going after the app is backgrounded:
       // the kernel's own policy would pause it with every other player.
@@ -182,17 +195,23 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     ref.listen(musicSettingsProvider.select((settings) => settings.lyricOffsetMs), (_, offsetMs) {
       _audio.setLyricOffset(Duration(milliseconds: offsetMs));
     });
-    ref.listen(musicSettingsProvider.select((settings) => (settings.showTranslation, settings.showRomanization)), (
-      _,
-      display,
-    ) {
-      unawaited(
-        _desktopLyric?.setDisplayOptions(
-              audio.LyricDisplayOptions(showTranslation: display.$1, showRomanization: display.$2),
-            ) ??
-            Future<void>.value(),
-      );
-    });
+    ref.listen(
+      musicSettingsProvider.select(
+        (settings) => (settings.showTranslation, settings.showRomanization, settings.swapLyricSecondary),
+      ),
+      (_, display) {
+        unawaited(
+          _desktopLyric?.setDisplayOptions(
+                audio.LyricDisplayOptions(
+                  showTranslation: display.$1,
+                  showRomanization: display.$2,
+                  swapTranslationAndRomanization: display.$3,
+                ),
+              ) ??
+              Future<void>.value(),
+        );
+      },
+    );
     ref.listen(
       musicSettingsProvider.select(
         (settings) => (
@@ -230,6 +249,8 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       state = next;
       _follow(next);
       _trackProgress(next);
+      _skipDislikedIfNeeded(next);
+      _skipErroredIfNeeded(next);
       // Android 13+ hides the media notification without this permission; ask
       // when the viewer actually starts a song, not on some unrelated page.
       if (next.playing && !_askedNotifications) {
@@ -291,6 +312,17 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     if (settings.desktopLyricLocked) {
       unawaited(desktop.setLocked(locked: true));
     }
+    if (settings.swapLyricSecondary) {
+      unawaited(
+        desktop.setDisplayOptions(
+          audio.LyricDisplayOptions(
+            showTranslation: settings.showTranslation,
+            showRomanization: settings.showRomanization,
+            swapTranslationAndRomanization: true,
+          ),
+        ),
+      );
+    }
     return desktop;
   }
 
@@ -343,6 +375,10 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// Starts, replaces or clears the sleep timer.
   void setSleepTimer(Duration? duration) => _audio.setSleepTimer(duration);
 
+  /// Pauses when the current song ends — the reference's
+  /// 定时停止「播完当前歌曲」; one-shot, and replaces a timed sleep timer.
+  void setPauseAfterCurrentTrack({required bool enabled}) => _audio.setPauseAfterCurrentTrack(enabled: enabled);
+
   /// Moves the lyric delay; the preference keeps it for the next run.
   Future<void> setLyricOffset(Duration offset) async {
     _audio.setLyricOffset(offset);
@@ -360,6 +396,72 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// The current track's lyric, fetched through its source and parsed; empty
   /// when the song has none.
   Future<audio.LyricDocument> loadLyric({bool force = false}) => _audio.loadCurrentLyric(force: force);
+
+  /// Points [track] at the lyric file at [path], remembering the text so the
+  /// association survives a restart; false when the file is unreadable or has
+  /// no lyric in it.
+  Future<bool> associateLyricFile(audio.MusicTrack track, String path) async {
+    try {
+      return await _applyLyricText(track, _decodeLyricText(await File(path).readAsBytes()));
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Searches the module's source for songs matching [keyword], so a viewer
+  /// can pick the lyric of the right recording.
+  Future<List<audio.MusicTrack>> searchLyricCandidates(String keyword) async {
+    final query = keyword.trim();
+    if (query.isEmpty) return const [];
+    final page = await ref.read(musicSourceProvider).search(query, pageSize: 20);
+    return page.items;
+  }
+
+  /// Uses [candidate]'s lyric for [track] — the song on screen — remembering
+  /// it the way a manually linked file is; false when it has no lyric.
+  Future<bool> useLyricFrom(audio.MusicTrack track, audio.MusicTrack candidate) async {
+    try {
+      final payload = await ref.read(musicSourceProvider).resolveLyric(candidate);
+      if (payload == null) return false;
+      final translation = payload.translation?.trim() ?? '';
+      final text = [payload.lyric, if (translation.isNotEmpty) translation].join('\n');
+      return await _applyLyricText(track, text);
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Stores [text] as [track]'s lyric and hands the parsed document to the
+  /// engine; false when the text has no lyric in it.
+  Future<bool> _applyLyricText(audio.MusicTrack track, String text) async {
+    if (text.trim().isEmpty) return false;
+    await ref.read(musicLyricOverridesProvider.notifier).set(track, text);
+    _lyricOverrideKey = musicTrackKey(track);
+    _audio.setLyricOverride(track, const audio.LrcParser().parse(text));
+    return true;
+  }
+
+  /// Returns [track] to its source's lyric, dropping the association.
+  Future<void> clearLyricOverride(audio.MusicTrack track) async {
+    await ref.read(musicLyricOverridesProvider.notifier).remove(track);
+    _audio.setLyricOverride(track, null);
+  }
+
+  static String _decodeLyricText(List<int> bytes) {
+    var start = 0;
+
+    if (bytes.length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) {
+      start = 3;
+    }
+
+    final body = start == 0 ? bytes : bytes.sublist(start);
+
+    try {
+      return const Utf8Decoder().convert(body);
+    } on FormatException {
+      return latin1.decode(body);
+    }
+  }
 
   /// Whether the desktop lyric overlay is on screen.
   bool get desktopLyricVisible => _desktopLyric?.visible ?? false;
@@ -440,6 +542,18 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       _savedLength = next.queueLength;
       unawaited(_saveQueue());
     }
+    if (track != null) _applyLyricOverride(track);
+  }
+
+  /// Hands the engine the lyric the viewer associated with [track], once per
+  /// track change; the parse is cheap and the engine keeps it by identity.
+  void _applyLyricOverride(audio.MusicTrack track) {
+    final key = musicTrackKey(track);
+    if (key == _lyricOverrideKey) return;
+    _lyricOverrideKey = key;
+    final text = ref.read(musicLyricOverridesProvider)[key];
+    if (text == null) return;
+    _audio.setLyricOverride(track, const audio.LrcParser().parse(text));
   }
 
   Future<void> _saveQueue() async {
@@ -456,8 +570,6 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// How often a running position is written; a seek or pause writes at once.
   static const Duration _progressWriteInterval = Duration(seconds: 10);
 
-  static String _progressKeyOf(audio.MusicTrack track) => '${track.sourceId}:${track.id}';
-
   /// Restores a song's last position on first play, and remembers where the
   /// current one stopped. Mirrors the reference's 记住播放进度.
   void _trackProgress(audio.AudioPlaybackState next) {
@@ -467,7 +579,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       _progressTrackKey = null;
       return;
     }
-    final key = _progressKeyOf(track);
+    final key = musicTrackKey(track);
     if (key != _progressTrackKey) {
       _flushProgress();
       _progressTrackKey = key;
@@ -524,6 +636,104 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   void _persistPositions(Map<String, int> positions) {
     _positions = positions;
     unawaited(_progressStore.write(positions));
+  }
+
+  /// Adds or removes a 不喜欢 rule; a song that just became disliked while it
+  /// is on air is skipped at once.
+  Future<bool> toggleDislike(audio.MusicTrack track) async {
+    final disliked = await ref.read(musicDislikesProvider.notifier).toggle(track);
+
+    if (disliked && state.track == track) {
+      await _audio.next();
+    }
+
+    return disliked;
+  }
+
+  /// Skips a disliked song the queue reached.
+  ///
+  /// Bounded by the queue length: a queue holding nothing but rules stops
+  /// instead of spinning forever, which is what a "skip everything" loop
+  /// would look like from the outside.
+  void _skipDislikedIfNeeded(audio.AudioPlaybackState next) {
+    final track = next.track;
+
+    if (!next.playing || track == null) {
+      _dislikedSkipKey = null;
+      _dislikedSkips = 0;
+
+      return;
+    }
+
+    if (!ref.read(musicDislikesProvider).contains(musicTrackKey(track))) {
+      _dislikedSkipKey = null;
+      _dislikedSkips = 0;
+
+      return;
+    }
+
+    final key = musicTrackKey(track);
+
+    if (_dislikedSkipKey == key) {
+      return;
+    }
+
+    _dislikedSkipKey = key;
+    _dislikedSkips++;
+
+    if (next.queueLength > 0 && _dislikedSkips > next.queueLength) {
+      _dislikedSkips = 0;
+      unawaited(_audio.stop());
+
+      return;
+    }
+
+    unawaited(_audio.next());
+  }
+
+  /// Moves past a song the engine could not play, when the viewer asked for
+  /// it — lx-music's 自动跳过播放失败的歌曲.
+  ///
+  /// The engine already refreshed the URL once before reporting; a second
+  /// failure means the song is unusable this session. Bounded by the queue
+  /// length, so a queue where nothing plays stops instead of looping.
+  void _skipErroredIfNeeded(audio.AudioPlaybackState next) {
+    final track = next.track;
+
+    if (next.error == null || track == null) {
+      _erroredSkipKey = null;
+      _erroredSkips = 0;
+
+      return;
+    }
+
+    if (!ref.read(musicSettingsProvider).skipOnError) {
+      return;
+    }
+
+    final key = musicTrackKey(track);
+
+    // A disliked song is already being skipped by its own rule; advancing
+    // twice would lose the song after it.
+    if (ref.read(musicDislikesProvider).contains(key)) {
+      return;
+    }
+
+    if (_erroredSkipKey == key) {
+      return;
+    }
+
+    _erroredSkipKey = key;
+    _erroredSkips++;
+
+    if (next.queueLength > 0 && _erroredSkips > next.queueLength) {
+      _erroredSkips = 0;
+      unawaited(_audio.stop());
+
+      return;
+    }
+
+    unawaited(_audio.next());
   }
 
   /// Reopens the last queue when the viewer asked the module to continue;

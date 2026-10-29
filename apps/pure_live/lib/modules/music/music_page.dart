@@ -137,7 +137,7 @@ final class _ModuleHeader extends ConsumerWidget {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final t = context.t;
-    final sources = ref.watch(musicSourcesProvider).length;
+    final sources = ref.watch(musicSourcesProvider).where((source) => source.enabled).length;
     final active = musicDownloadsActive(ref.watch(musicDownloadsProvider));
     return Row(
       spacing: DsSpace.s12,
@@ -201,7 +201,11 @@ final class _LibraryView extends ConsumerWidget {
     final playerController = ref.read(musicPlayerProvider.notifier);
     final favourites = ref.watch(musicFavouritesProvider);
     final favouriteController = ref.read(musicFavouritesProvider.notifier);
-    final showSource = ref.watch(musicSettingsProvider).showSource;
+    final settings = ref.watch(musicSettingsProvider);
+    final showSource = settings.showSource;
+    final hot = settings.showHotSearches
+        ? ref.watch(musicHotSearchesProvider).value ?? const <String>[]
+        : const <String>[];
     final sourceName = ref.watch(musicSourceProvider).name;
     void play(int index) => unawaited(playerController.playAll(state.songs, index: index));
     void runHistory(String query) {
@@ -228,7 +232,7 @@ final class _LibraryView extends ConsumerWidget {
 
     final Widget body;
     if (state.query.isEmpty) {
-      body = history.isEmpty
+      body = history.isEmpty && hot.isEmpty
           ? Center(
               child: DsEmptyState(
                 icon: const DsIcon(DsIcons.music),
@@ -239,43 +243,71 @@ final class _LibraryView extends ConsumerWidget {
           : ListView(
               padding: const EdgeInsets.only(bottom: DsSpace.s16),
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s12, DsSpace.s4),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          t.music.searchHistory,
-                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                        ),
-                      ),
-                      DsButton(
-                        variant: DsButtonVariant.ghost,
-                        size: DsSize.sm,
-                        onPressed: () => unawaited(ref.read(musicSearchHistoryProvider.notifier).clear()),
-                        child: Text(t.music.searchHistoryClear),
-                      ),
-                    ],
+                if (hot.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+                    child: Text(
+                      t.music.searchHot,
+                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                    ),
                   ),
-                ),
-                DsListSection(
-                  children: [
-                    for (final query in history)
-                      DsListRow(
-                        leading: const DsIcon(DsIcons.history),
-                        title: Text(query),
-                        showChevron: true,
-                        onPressed: () => runHistory(query),
-                        trailing: DsButton.icon(
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+                    child: Wrap(
+                      spacing: DsSpace.s8,
+                      runSpacing: DsSpace.s8,
+                      children: [
+                        for (final word in hot)
+                          DsChip(
+                            label: Text(word),
+                            selected: false,
+                            onChanged: (on) {
+                              if (on) runHistory(word);
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+                if (history.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s12, DsSpace.s4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            t.music.searchHistory,
+                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                          ),
+                        ),
+                        DsButton(
                           variant: DsButtonVariant.ghost,
                           size: DsSize.sm,
-                          semanticLabel: t.music.searchHistoryRemove,
-                          onPressed: () => unawaited(ref.read(musicSearchHistoryProvider.notifier).remove(query)),
-                          icon: const DsIcon(DsIcons.x, size: 16),
+                          onPressed: () => unawaited(ref.read(musicSearchHistoryProvider.notifier).clear()),
+                          child: Text(t.music.searchHistoryClear),
                         ),
-                      ),
-                  ],
-                ),
+                      ],
+                    ),
+                  ),
+                  DsListSection(
+                    children: [
+                      for (final query in history)
+                        DsListRow(
+                          leading: const DsIcon(DsIcons.history),
+                          title: Text(query),
+                          showChevron: true,
+                          onPressed: () => runHistory(query),
+                          trailing: DsButton.icon(
+                            variant: DsButtonVariant.ghost,
+                            size: DsSize.sm,
+                            semanticLabel: t.music.searchHistoryRemove,
+                            onPressed: () => unawaited(ref.read(musicSearchHistoryProvider.notifier).remove(query)),
+                            icon: const DsIcon(DsIcons.x, size: 16),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ],
             );
     } else if (state.songs.isEmpty && state.loading) {
@@ -355,10 +387,18 @@ final class _PlaylistsView extends ConsumerStatefulWidget {
 
 final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
   String? _openId;
+  bool _selecting = false;
+  final Set<audio.MusicTrack> _selected = <audio.MusicTrack>{};
 
   Future<void> _create() async {
     final playlist = await showCreatePlaylistDialog(context, ref);
-    if (playlist != null && mounted) setState(() => _openId = playlist.id);
+    if (playlist != null && mounted) {
+      setState(() {
+        _openId = playlist.id;
+        _selecting = false;
+        _selected.clear();
+      });
+    }
   }
 
   Future<void> _rename(MusicPlaylist playlist) async {
@@ -415,7 +455,13 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
     );
     if (!confirmed || !mounted) return;
     await ref.read(musicPlaylistsProvider.notifier).delete(playlist.id);
-    if (mounted) setState(() => _openId = null);
+    if (mounted) {
+      setState(() {
+        _openId = null;
+        _selecting = false;
+        _selected.clear();
+      });
+    }
   }
 
   /// Reads a playlist file the viewer picked; the list lands as a new playlist.
@@ -434,11 +480,17 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
       showDsToast(
         context: context,
         title: playlist == null
-            ? t.music.playlistImportFailed(error: t.music.playlistEmptyTitle)
+            ? t.music.playlistImportFailed(error: t.music.playlistImportInvalid)
             : t.music.playlistImportDone(name: playlist.name),
         status: playlist == null ? DsStatus.danger : DsStatus.success,
       );
-      if (playlist != null) setState(() => _openId = playlist.id);
+      if (playlist != null) {
+        setState(() {
+          _openId = playlist.id;
+          _selecting = false;
+          _selected.clear();
+        });
+      }
     } on Object catch (failure) {
       if (mounted) {
         showDsToast(
@@ -472,6 +524,55 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
         );
       }
     }
+  }
+
+  /// Enters or leaves the reference's multi-selection.
+  void _setSelecting({required bool selecting}) {
+    setState(() {
+      _selecting = selecting;
+      if (!selecting) _selected.clear();
+    });
+  }
+
+  void _toggleSelected(audio.MusicTrack track) {
+    setState(() {
+      if (!_selected.remove(track)) _selected.add(track);
+    });
+  }
+
+  void _selectAll(MusicPlaylist playlist) {
+    setState(() {
+      _selected
+        ..clear()
+        ..addAll(playlist.tracks);
+    });
+  }
+
+  Future<void> _removeSelected(MusicPlaylist playlist) async {
+    final tracks = List<audio.MusicTrack>.of(_selected);
+    if (tracks.isEmpty) return;
+    final t = context.t;
+    await ref.read(musicPlaylistsProvider.notifier).removeTracks(playlist.id, tracks);
+    if (!mounted) return;
+    showDsToast(
+      context: context,
+      title: t.music.selectionRemoveDone(count: tracks.length),
+      status: DsStatus.success,
+    );
+    _setSelecting(selecting: false);
+  }
+
+  Future<void> _downloadSelected(MusicPlaylist playlist) async {
+    final tracks = List<audio.MusicTrack>.of(_selected);
+    if (tracks.isEmpty) return;
+    final t = context.t;
+    final queued = await ref.read(musicDownloadsProvider.notifier).downloadAll(tracks, listName: playlist.name);
+    if (!mounted) return;
+    showDsToast(
+      context: context,
+      title: t.music.downloadAllQueued(count: queued),
+      status: queued > 0 ? DsStatus.success : DsStatus.warning,
+    );
   }
 
   @override
@@ -568,7 +669,11 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                       title: Text(playlist.name),
                       description: Text(t.music.songsCount(count: playlist.tracks.length)),
                       showChevron: true,
-                      onPressed: () => setState(() => _openId = playlist.id),
+                      onPressed: () => setState(() {
+                        _openId = playlist.id;
+                        _selecting = false;
+                        _selected.clear();
+                      }),
                       trailing: DsMenuAnchor(
                         semanticLabel: t.music.moreActions,
                         items: [
@@ -635,7 +740,11 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                 variant: DsButtonVariant.ghost,
                 size: DsSize.sm,
                 semanticLabel: t.common.back,
-                onPressed: () => setState(() => _openId = null),
+                onPressed: () => setState(() {
+                  _openId = null;
+                  _selecting = false;
+                  _selected.clear();
+                }),
                 icon: const DsIcon(DsIcons.chevronLeft),
               ),
               Expanded(
@@ -655,6 +764,13 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                     ),
                   ],
                 ),
+              ),
+              DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                semanticLabel: _selecting ? t.music.selectionCancel : t.music.selectionStart,
+                onPressed: playlist.tracks.isEmpty ? null : () => _setSelecting(selecting: !_selecting),
+                icon: DsIcon(_selecting ? DsIcons.x : DsIcons.listChecks, size: 16),
               ),
               DsButton(
                 variant: DsButtonVariant.secondary,
@@ -676,10 +792,31 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                     label: Text(t.music.playlistExport),
                     onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_export(playlist)),
                   ),
-                  DsMenuItem(
-                    leading: const DsIcon(DsIcons.arrowUpFromLine),
-                    label: Text(t.music.playlistExport),
-                    onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_export(playlist)),
+                  DsMenuItem.submenu(
+                    leading: const DsIcon(DsIcons.arrowUpDown),
+                    label: Text(t.music.playlistSort),
+                    submenu: [
+                      DsMenuItem(
+                        label: Text(t.music.sortByTitle),
+                        onPressed: () => unawaited(controller.sortTracks(playlist.id, MusicPlaylistSort.title)),
+                      ),
+                      DsMenuItem(
+                        label: Text(t.music.sortByArtist),
+                        onPressed: () => unawaited(controller.sortTracks(playlist.id, MusicPlaylistSort.artist)),
+                      ),
+                      DsMenuItem(
+                        label: Text(t.music.sortByAlbum),
+                        onPressed: () => unawaited(controller.sortTracks(playlist.id, MusicPlaylistSort.album)),
+                      ),
+                      DsMenuItem(
+                        label: Text(t.music.sortByDuration),
+                        onPressed: () => unawaited(controller.sortTracks(playlist.id, MusicPlaylistSort.duration)),
+                      ),
+                      DsMenuItem(
+                        label: Text(t.music.sortByShuffle),
+                        onPressed: () => unawaited(controller.sortTracks(playlist.id, MusicPlaylistSort.shuffle)),
+                      ),
+                    ],
                   ),
                   DsMenuItem(
                     leading: const DsIcon(DsIcons.pencil),
@@ -709,6 +846,49 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
             ],
           ),
         ),
+        if (_selecting)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: Text(
+                    t.music.selectionCount(count: _selected.length),
+                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  ),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: () => _selectAll(playlist),
+                  child: Text(t.music.selectionAll),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.listMusic, size: 16),
+                  onPressed: _selected.isEmpty
+                      ? null
+                      : () => unawaited(showAddTracksToPlaylistDialog(context, ref, _selected.toList())),
+                  child: Text(t.music.addToPlaylist),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.download, size: 16),
+                  onPressed: _selected.isEmpty ? null : () => unawaited(_downloadSelected(playlist)),
+                  child: Text(t.music.selectionDownload),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: _selected.isEmpty ? null : () => unawaited(_removeSelected(playlist)),
+                  child: Text(t.music.selectionRemove),
+                ),
+              ],
+            ),
+          ),
         Expanded(
           child: playlist.tracks.isEmpty
               ? Center(
@@ -727,6 +907,9 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                       track: song,
                       playing: playingId == song.id,
                       favourite: favourites.contains(song),
+                      selecting: _selecting,
+                      selected: _selected.contains(song),
+                      onSelected: () => _toggleSelected(song),
                       onPlay: () => unawaited(player.playAll(playlist.tracks, index: index)),
                       onFavourite: () => unawaited(favouritesController.toggle(song)),
                       onRemove: () => unawaited(controller.removeTrack(playlist.id, song)),
@@ -942,10 +1125,52 @@ final class _MineView extends ConsumerWidget {
 
 /// 本地音乐: the folders the viewer added, the files they hold, and the way
 /// to add or drop a folder.
-final class _LocalView extends ConsumerWidget {
+final class _LocalView extends ConsumerStatefulWidget {
   const _LocalView();
 
-  Future<void> _addFolder(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<_LocalView> createState() => _LocalViewState();
+}
+
+final class _LocalViewState extends ConsumerState<_LocalView> {
+  bool _selecting = false;
+  final Set<audio.MusicTrack> _selected = <audio.MusicTrack>{};
+
+  void _setSelecting({required bool selecting}) {
+    setState(() {
+      _selecting = selecting;
+      if (!selecting) _selected.clear();
+    });
+  }
+
+  void _toggleSelected(audio.MusicTrack track) {
+    setState(() {
+      if (!_selected.remove(track)) _selected.add(track);
+    });
+  }
+
+  void _selectAll(List<audio.MusicTrack> tracks) {
+    setState(() {
+      _selected
+        ..clear()
+        ..addAll(tracks);
+    });
+  }
+
+  /// The selected rows, in the list's own order.
+  List<audio.MusicTrack> _picked(List<audio.MusicTrack> tracks) => [
+    for (final track in tracks)
+      if (_selected.contains(track)) track,
+  ];
+
+  Future<void> _playSelected(List<audio.MusicTrack> tracks) async {
+    final picked = _picked(tracks);
+    if (picked.isEmpty) return;
+    await ref.read(musicPlayerProvider.notifier).playAll(picked);
+    if (mounted) _setSelecting(selecting: false);
+  }
+
+  Future<void> _addFolder(BuildContext context) async {
     final t = context.t;
     try {
       final selected = await FilePicker.getDirectoryPath(dialogTitle: t.music.localAddFolder);
@@ -963,7 +1188,7 @@ final class _LocalView extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
@@ -991,6 +1216,13 @@ final class _LocalView extends ConsumerWidget {
               DsButton.icon(
                 variant: DsButtonVariant.secondary,
                 size: DsSize.sm,
+                semanticLabel: _selecting ? t.music.selectionCancel : t.music.selectionStart,
+                onPressed: state.tracks.isEmpty ? null : () => _setSelecting(selecting: !_selecting),
+                icon: DsIcon(_selecting ? DsIcons.x : DsIcons.listChecks, size: 16),
+              ),
+              DsButton.icon(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
                 semanticLabel: t.music.localRescan,
                 onPressed: state.roots.isEmpty || state.loading ? null : () => unawaited(controller.rescan()),
                 icon: const DsIcon(DsIcons.refreshCw, size: 16),
@@ -999,12 +1231,51 @@ final class _LocalView extends ConsumerWidget {
                 variant: DsButtonVariant.secondary,
                 size: DsSize.sm,
                 leading: const DsIcon(DsIcons.folderPlus, size: 16),
-                onPressed: () => unawaited(_addFolder(context, ref)),
+                onPressed: () => unawaited(_addFolder(context)),
                 child: Text(t.music.localAddFolder),
               ),
             ],
           ),
         ),
+        if (_selecting)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(
+                  child: Text(
+                    t.music.selectionCount(count: _selected.length),
+                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  ),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: () => _selectAll(state.tracks),
+                  child: Text(t.music.selectionAll),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.play, size: 16),
+                  onPressed: _selected.isEmpty ? null : () => unawaited(_playSelected(state.tracks)),
+                  child: Text(t.music.playAll),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.listMusic, size: 16),
+                  onPressed: _selected.isEmpty
+                      ? null
+                      : () => unawaited(
+                          showAddTracksToPlaylistDialog(context, ref, _picked(state.tracks)),
+                        ),
+                  child: Text(t.music.addToPlaylist),
+                ),
+              ],
+            ),
+          ),
         if (state.roots.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
@@ -1047,7 +1318,7 @@ final class _LocalView extends ConsumerWidget {
                     actions: [
                       DsButton(
                         leading: const DsIcon(DsIcons.folderPlus, size: 16),
-                        onPressed: () => unawaited(_addFolder(context, ref)),
+                        onPressed: () => unawaited(_addFolder(context)),
                         child: Text(t.music.localAddFolder),
                       ),
                     ],
@@ -1076,6 +1347,9 @@ final class _LocalView extends ConsumerWidget {
                             track: song,
                             playing: playingId == song.id,
                             favourite: favourites.contains(song),
+                            selecting: _selecting,
+                            selected: _selected.contains(song),
+                            onSelected: () => _toggleSelected(song),
                             // Tags name the song; the file name is the fallback
                             // for the files that carry none.
                             subtitle: song.artist.isNotEmpty

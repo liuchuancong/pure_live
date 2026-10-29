@@ -1,6 +1,7 @@
 import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,9 +11,13 @@ import 'package:path/path.dart' as p;
 import 'package:pure_live/app/providers/settings/download_directory_provider.dart'
     show DownloadDirectoryPaths, downloadDirectoryProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/music/controller/music_comments.dart'
+    show MusicComment, musicCommentsProvider;
 import 'package:pure_live/modules/music/controller/music_library.dart';
+import 'package:pure_live/modules/music/controller/music_lyric_overrides.dart' show musicLyricOverridesProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
+import 'package:pure_live/modules/music/controller/music_settings.dart'
+    show MusicLyricAlignment, MusicSettings, musicSettingsProvider;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show cachedImage;
@@ -322,13 +327,14 @@ final class _Lyrics extends ConsumerStatefulWidget {
 }
 
 final class _LyricsState extends ConsumerState<_Lyrics> {
-  static const double _lineHeight = 46;
+  static const double _baseLineHeight = 46;
   static const double _height = 230;
 
   final ScrollController _scroll = ScrollController();
   audio.LyricDocument? _document;
   String? _loadedTrack;
   int _loadedOffset = 0;
+  int _loadedRevision = 0;
   int _active = -1;
 
   @override
@@ -345,10 +351,10 @@ final class _LyricsState extends ConsumerState<_Lyrics> {
 
   /// Keeps the active line in view: the panel's own height, not the whole
   /// page, so the page does not jump every verse.
-  void _reveal(int index) {
+  void _reveal(int index, double lineHeight) {
     if (!_scroll.hasClients || index < 0) return;
-    final target = ((index - 2) * _lineHeight).clamp(0.0, _scroll.position.maxScrollExtent);
-    if ((_scroll.offset - target).abs() < _lineHeight) return;
+    final target = ((index - 2) * lineHeight).clamp(0.0, _scroll.position.maxScrollExtent);
+    if ((_scroll.offset - target).abs() < lineHeight) return;
     _scroll.animateTo(target, duration: const Duration(milliseconds: 240), curve: Curves.easeOutCubic);
   }
 
@@ -361,9 +367,18 @@ final class _LyricsState extends ConsumerState<_Lyrics> {
     final settings = ref.watch(musicSettingsProvider);
     final trackId = state.track?.id;
     final offset = state.lyricOffset.inMilliseconds;
-    if (trackId != _loadedTrack || offset != _loadedOffset) {
+    final revision = state.lyricRevision;
+    final scale = settings.lyricFontScale / 100;
+    final lineHeight = _baseLineHeight * scale;
+    final (alignment, crossAlignment, textAlign) = switch (settings.lyricAlignment) {
+      MusicLyricAlignment.left => (Alignment.centerLeft, CrossAxisAlignment.start, TextAlign.left),
+      MusicLyricAlignment.center => (Alignment.center, CrossAxisAlignment.center, TextAlign.center),
+      MusicLyricAlignment.right => (Alignment.centerRight, CrossAxisAlignment.end, TextAlign.right),
+    };
+    if (trackId != _loadedTrack || offset != _loadedOffset || revision != _loadedRevision) {
       _loadedTrack = trackId;
       _loadedOffset = offset;
+      _loadedRevision = revision;
       _document = null;
       _active = -1;
       if (trackId != null) unawaited(_load(trackId));
@@ -374,7 +389,7 @@ final class _LyricsState extends ConsumerState<_Lyrics> {
       final active = document.indexAt(state.position);
       if (active != _active) {
         _active = active;
-        WidgetsBinding.instance.addPostFrameCallback((_) => _reveal(active));
+        WidgetsBinding.instance.addPostFrameCallback((_) => _reveal(active, lineHeight));
       }
     }
     return DsSurface(
@@ -385,6 +400,11 @@ final class _LyricsState extends ConsumerState<_Lyrics> {
         spacing: DsSpace.s8,
         children: [
           Text(t.music.lyrics, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
+          if (settings.lyricProgress && state.duration > Duration.zero)
+            DsProgressBar(
+              value: (state.position.inMilliseconds / state.duration.inMilliseconds).clamp(0.0, 1.0),
+              semanticLabel: t.music.lyricProgress,
+            ),
           SizedBox(
             height: _height,
             child: document == null
@@ -399,7 +419,7 @@ final class _LyricsState extends ConsumerState<_Lyrics> {
                   )
                 : ListView.builder(
                     controller: _scroll,
-                    itemExtent: _lineHeight,
+                    itemExtent: lineHeight,
                     itemCount: lines.length,
                     itemBuilder: (context, index) {
                       final line = lines[index];
@@ -408,18 +428,22 @@ final class _LyricsState extends ConsumerState<_Lyrics> {
                       final secondary = line.secondaryTexts(
                         showTranslation: settings.showTranslation,
                         showRomanization: settings.showRomanization,
+                        swap: settings.swapLyricSecondary,
                       );
+                      final zoom = settings.lyricZoomActive && current ? 1.1 : 1.0;
                       return Align(
-                        alignment: Alignment.centerLeft,
+                        alignment: alignment,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: crossAlignment,
                           children: [
                             Text(
                               text.isEmpty ? '♪' : text,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
+                              textAlign: textAlign,
                               style: theme.typography.body.copyWith(
+                                fontSize: (theme.typography.body.fontSize ?? 14) * scale * zoom,
                                 color: current ? colors.text : colors.textMuted,
                                 fontWeight: current ? FontWeight.w600 : null,
                               ),
@@ -429,7 +453,11 @@ final class _LyricsState extends ConsumerState<_Lyrics> {
                                 secondary.join(' · '),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                                textAlign: textAlign,
+                                style: theme.typography.caption.copyWith(
+                                  fontSize: (theme.typography.caption.fontSize ?? 12) * scale,
+                                  color: colors.textSubtle,
+                                ),
                               ),
                           ],
                         ),
@@ -462,6 +490,18 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
     if (ms == 0) return t.music.lyricOffsetReset;
     final seconds = (ms / 1000).toStringAsFixed(1);
     return ms > 0 ? '+${seconds}s' : '${seconds}s';
+  }
+
+  /// Moves the lyric delay by [delta] milliseconds, the reference's ±10/±100.
+  Future<void> _nudgeOffset(int delta) => ref
+      .read(musicPlayerProvider.notifier)
+      .setLyricOffset(Duration(milliseconds: ref.read(musicSettingsProvider).lyricOffsetMs + delta));
+
+  /// Steps the lyric size by [delta] points, or back to the default for null.
+  Future<void> _setFontScale(int? delta) {
+    final controller = ref.read(musicSettingsProvider.notifier);
+    final current = ref.read(musicSettingsProvider).lyricFontScale;
+    return controller.setLyricFontScale(delta == null ? MusicSettings.standard.lyricFontScale : current + delta);
   }
 
   Future<void> _exportLyric(audio.MusicTrack track) async {
@@ -508,6 +548,54 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
     }
   }
 
+  /// Points the current song at a lyric file the viewer picked.
+  Future<void> _associateLyric(audio.MusicTrack track) async {
+    final t = context.t;
+    try {
+      final file = await FilePicker.pickFile(
+        dialogTitle: t.music.associateLyric,
+        type: FileType.custom,
+        allowedExtensions: const ['lrc', 'txt'],
+      );
+      final path = file?.path;
+      if (!mounted || path == null) return;
+      final ok = await ref.read(musicPlayerProvider.notifier).associateLyricFile(track, path);
+      if (!mounted) return;
+      showDsToast(
+        context: context,
+        title: ok ? t.music.associateLyricDone : t.music.associateLyricFailed,
+        status: ok ? DsStatus.success : DsStatus.danger,
+      );
+    } on Object {
+      if (mounted) {
+        showDsToast(context: context, title: t.music.associateLyricFailed, status: DsStatus.danger);
+      }
+    }
+  }
+
+  /// Searches the source for another recording and takes its lyric.
+  Future<void> _searchLyric(audio.MusicTrack track) async {
+    final t = context.t;
+    final candidate = await showDsDialog<audio.MusicTrack>(
+      context: context,
+      builder: (context) => _LyricSearchDialog(track: track),
+    );
+    if (candidate == null || !mounted) return;
+    final ok = await ref.read(musicPlayerProvider.notifier).useLyricFrom(track, candidate);
+    if (!mounted) return;
+    showDsToast(
+      context: context,
+      title: ok ? t.music.lyricSearchApplied(title: candidate.title) : t.music.lyricSearchNoLyric,
+      status: ok ? DsStatus.success : DsStatus.warning,
+    );
+  }
+
+  /// Opens the song's comments — the reference's 评论.
+  Future<void> _showComments(audio.MusicTrack track) => showDsDialog<void>(
+    context: context,
+    builder: (context) => _CommentsDialog(track: track),
+  );
+
   Future<void> _toggleDesktopLyrics() async {
     final t = context.t;
     final wasVisible = ref.read(musicSettingsProvider).desktopLyrics;
@@ -532,6 +620,7 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
     final controller = ref.read(musicPlayerProvider.notifier);
     final track = state.track;
     final sleepRemaining = state.sleepTimerRemaining;
+    final hasLyricOverride = track != null && ref.watch(musicLyricOverridesProvider).containsKey(musicTrackKey(track));
     return DsMenuAnchor(
       semanticLabel: t.music.moreActions,
       items: [
@@ -546,11 +635,33 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
             label: Text(t.music.addToPlaylist),
             onPressed: () => unawaited(showAddToPlaylistDialog(context, ref, track)),
           ),
+          if (!track.isLocal)
+            DsMenuItem(
+              leading: const DsIcon(DsIcons.messageCircle),
+              label: Text(t.music.comments),
+              onPressed: () => unawaited(_showComments(track)),
+            ),
           DsMenuItem(
             leading: const DsIcon(DsIcons.fileText),
             label: Text(t.music.exportLyric),
             onPressed: () => unawaited(_exportLyric(track)),
           ),
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.fileMusic),
+            label: Text(t.music.associateLyric),
+            onPressed: () => unawaited(_associateLyric(track)),
+          ),
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.search),
+            label: Text(t.music.lyricSearch),
+            onPressed: () => unawaited(_searchLyric(track)),
+          ),
+          if (hasLyricOverride)
+            DsMenuItem(
+              leading: const DsIcon(DsIcons.x),
+              label: Text(t.music.lyricOverrideRemove),
+              onPressed: () => unawaited(controller.clearLyricOverride(track)),
+            ),
           const DsMenuDivider(),
         ],
         DsMenuItem.submenu(
@@ -568,14 +679,16 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
         DsMenuItem.submenu(
           leading: const DsIcon(DsIcons.clock),
           label: Text(
-            sleepRemaining == null
+            state.pauseAfterCurrentTrack
+                ? '${t.music.sleepTimer} · ${t.music.sleepAfterCurrent}'
+                : sleepRemaining == null
                 ? t.music.sleepTimer
                 : '${t.music.sleepTimer} · ${musicDurationText(sleepRemaining)}',
           ),
           submenu: [
             DsMenuItem(
               label: Text(t.music.sleepOff),
-              checked: sleepRemaining == null,
+              checked: sleepRemaining == null && !state.pauseAfterCurrentTrack,
               onPressed: () => controller.setSleepTimer(null),
             ),
             for (final minutes in _sleepMinutes)
@@ -583,6 +696,11 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
                 label: Text(t.music.sleepMinutes(count: minutes)),
                 onPressed: () => controller.setSleepTimer(Duration(minutes: minutes)),
               ),
+            DsMenuItem(
+              label: Text(t.music.sleepAfterCurrent),
+              checked: state.pauseAfterCurrentTrack,
+              onPressed: () => controller.setPauseAfterCurrentTrack(enabled: !state.pauseAfterCurrentTrack),
+            ),
           ],
         ),
         DsMenuItem.submenu(
@@ -594,6 +712,51 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
                 label: Text(_offsetLabel(t, offset)),
                 checked: offset == settings.lyricOffsetMs,
                 onPressed: () => unawaited(controller.setLyricOffset(Duration(milliseconds: offset))),
+              ),
+            const DsMenuDivider(),
+            DsMenuItem(
+              label: const Text('- 100ms'),
+              onPressed: () => unawaited(_nudgeOffset(-100)),
+            ),
+            DsMenuItem(
+              label: const Text('+ 100ms'),
+              onPressed: () => unawaited(_nudgeOffset(100)),
+            ),
+            DsMenuItem(
+              label: const Text('- 10ms'),
+              onPressed: () => unawaited(_nudgeOffset(-10)),
+            ),
+            DsMenuItem(
+              label: const Text('+ 10ms'),
+              onPressed: () => unawaited(_nudgeOffset(10)),
+            ),
+          ],
+        ),
+        DsMenuItem.submenu(
+          leading: const DsIcon(DsIcons.fontSize),
+          label: Text('${t.music.lyricFontScale} · ${settings.lyricFontScale}%'),
+          submenu: [
+            DsMenuItem(
+              label: Text(t.music.lyricFontSmaller),
+              onPressed: settings.lyricFontScale <= 100 ? null : () => unawaited(_setFontScale(-10)),
+            ),
+            DsMenuItem(
+              label: Text(t.music.lyricFontLarger),
+              onPressed: settings.lyricFontScale >= 200 ? null : () => unawaited(_setFontScale(10)),
+            ),
+            DsMenuItem(label: Text(t.music.lyricFontReset), onPressed: () => unawaited(_setFontScale(null))),
+          ],
+        ),
+        DsMenuItem.submenu(
+          leading: const DsIcon(DsIcons.alignLeft),
+          label: Text('${t.music.lyricAlignment} · ${settings.lyricAlignment.label(t)}'),
+          submenu: [
+            for (final alignment in MusicLyricAlignment.values)
+              DsMenuItem(
+                label: Text(alignment.label(t)),
+                checked: settings.lyricAlignment == alignment,
+                onPressed: () =>
+                    unawaited(ref.read(musicSettingsProvider.notifier).setLyricAlignment(alignment)),
               ),
           ],
         ),
@@ -613,6 +776,15 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
           checkRole: DsMenuCheckRole.checkbox,
           onPressed: () => unawaited(
             ref.read(musicSettingsProvider.notifier).setShowRomanization(value: !settings.showRomanization),
+          ),
+        ),
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.arrowUpDown),
+          label: Text(t.music.lyricSwapSecondary),
+          checked: settings.swapLyricSecondary,
+          checkRole: DsMenuCheckRole.checkbox,
+          onPressed: () => unawaited(
+            ref.read(musicSettingsProvider.notifier).setSwapLyricSecondary(value: !settings.swapLyricSecondary),
           ),
         ),
         DsMenuItem(
@@ -646,6 +818,373 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
         semanticLabel: t.music.moreActions,
         onPressed: controller.toggle,
         icon: const DsIcon(DsIcons.ellipsisVertical),
+      ),
+    );
+  }
+}
+
+/// The lyric search dialog: a keyword, the source's matches, and the one the
+/// viewer picks — lx-music's way of fixing a song whose lyric came from the
+/// wrong recording.
+final class _LyricSearchDialog extends ConsumerStatefulWidget {
+  const _LyricSearchDialog({required this.track});
+
+  final audio.MusicTrack track;
+
+  @override
+  ConsumerState<_LyricSearchDialog> createState() => _LyricSearchDialogState();
+}
+
+final class _LyricSearchDialogState extends ConsumerState<_LyricSearchDialog> {
+  late final TextEditingController _field = TextEditingController(
+    text: [widget.track.artist, widget.track.title].where((part) => part.isNotEmpty).join(' '),
+  );
+  List<audio.MusicTrack>? _results;
+  String? _failure;
+  bool _searching = false;
+
+  @override
+  void dispose() {
+    _field.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search() async {
+    final query = _field.text.trim();
+    if (query.isEmpty || _searching) return;
+    setState(() {
+      _searching = true;
+      _failure = null;
+    });
+    try {
+      final results = await ref.read(musicPlayerProvider.notifier).searchLyricCandidates(query);
+      if (!mounted) return;
+      setState(() {
+        _results = results;
+        _searching = false;
+      });
+    } on Object catch (failure) {
+      if (!mounted) return;
+      setState(() {
+        _failure = '$failure';
+        _searching = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final results = _results;
+    return DsDialog(
+      title: Text(t.music.lyricSearch),
+      icon: const DsIcon(DsIcons.search),
+      description: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s12,
+        children: [
+          Text(t.music.lyricSearchFor(title: widget.track.title)),
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(
+                child: DsTextField(
+                  controller: _field,
+                  autofocus: true,
+                  clearable: true,
+                  placeholder: t.music.lyricSearchHint,
+                  semanticLabel: t.music.lyricSearch,
+                  onSubmitted: (_) => unawaited(_search()),
+                ),
+              ),
+              DsButton(
+                onPressed: _searching ? null : () => unawaited(_search()),
+                child: Text(t.music.lyricSearchAction),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 280,
+            child: _searching
+                ? const Center(child: DsSpinner())
+                : _failure != null
+                ? Center(
+                    child: Text(
+                      t.music.lyricSearchFailed(error: _failure!),
+                      textAlign: TextAlign.center,
+                      style: theme.typography.caption.copyWith(color: colors.danger.text),
+                    ),
+                  )
+                : results == null
+                ? Center(
+                    child: Text(
+                      t.music.lyricSearchHint,
+                      textAlign: TextAlign.center,
+                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                    ),
+                  )
+                : results.isEmpty
+                ? Center(
+                    child: Text(
+                      t.music.lyricSearchEmpty,
+                      textAlign: TextAlign.center,
+                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                    ),
+                  )
+                : ListView(
+                    children: [
+                      DsListSection(
+                        children: [
+                          for (final song in results)
+                            DsListRow(
+                              leading: const DsIcon(DsIcons.fileMusic),
+                              title: Text(song.title),
+                              description: Text(
+                                [song.artist, song.album].where((part) => part.isNotEmpty).join(' · '),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              showChevron: true,
+                              onPressed: () => Navigator.of(context).pop(song),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+      actions: [
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(t.common.cancel),
+        ),
+      ],
+    );
+  }
+}
+
+/// One song's comments: the hot tab first, then the newest, with the same
+/// paging the reference offers.
+final class _CommentsDialog extends ConsumerStatefulWidget {
+  const _CommentsDialog({required this.track});
+
+  final audio.MusicTrack track;
+
+  @override
+  ConsumerState<_CommentsDialog> createState() => _CommentsDialogState();
+}
+
+final class _CommentsDialogState extends ConsumerState<_CommentsDialog> {
+  bool _hot = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(ref.read(musicCommentsProvider.notifier).load(widget.track, hot: _hot));
+    });
+  }
+
+  void _selectTab(bool hot) {
+    if (_hot == hot) return;
+    setState(() => _hot = hot);
+    unawaited(ref.read(musicCommentsProvider.notifier).load(widget.track, hot: hot));
+  }
+
+  static String _time(DateTime? time) {
+    if (time == null) return '';
+    final local = time.toLocal();
+    String two(int value) => value.toString().padLeft(2, '0');
+    return '${local.year}-${two(local.month)}-${two(local.day)} ${two(local.hour)}:${two(local.minute)}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final state = ref.watch(musicCommentsProvider);
+    final comments = state.comments;
+    final controller = ref.read(musicCommentsProvider.notifier);
+    final hasTail = state.hasMore || state.error != null;
+    return DsDialog(
+      title: Text(t.music.comments),
+      icon: const DsIcon(DsIcons.messageCircle),
+      description: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s8,
+        children: [
+          Row(
+            children: [
+              DsSegmentedControl<bool>(
+                value: _hot,
+                onChanged: _selectTab,
+                segments: [
+                  DsSegment(value: true, label: Text(t.music.commentsHot)),
+                  DsSegment(value: false, label: Text(t.music.commentsNew)),
+                ],
+              ),
+              const Spacer(),
+              if (comments.isNotEmpty)
+                Text(
+                  t.music.commentsCount(count: comments.length),
+                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                ),
+            ],
+          ),
+          SizedBox(
+            height: 360,
+            child: state.loading && comments.isEmpty
+                ? const Center(child: DsSpinner())
+                : state.error != null && comments.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: DsSpace.s8,
+                      children: [
+                        Text(
+                          t.music.commentsFailed(error: state.error!),
+                          textAlign: TextAlign.center,
+                          style: theme.typography.caption.copyWith(color: colors.danger.text),
+                        ),
+                        DsButton(
+                          variant: DsButtonVariant.secondary,
+                          size: DsSize.sm,
+                          onPressed: () => unawaited(controller.retry()),
+                          child: Text(t.common.retry),
+                        ),
+                      ],
+                    ),
+                  )
+                : comments.isEmpty
+                ? Center(
+                    child: Text(
+                      t.music.commentsEmpty,
+                      style: theme.typography.body.copyWith(color: colors.textMuted),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: comments.length + (hasTail ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index < comments.length) return _CommentTile(comment: comments[index]);
+                      if (state.loading) {
+                        return const Padding(
+                          padding: EdgeInsets.all(DsSpace.s12),
+                          child: Center(child: DsSpinner()),
+                        );
+                      }
+                      if (state.error != null) {
+                        return Padding(
+                          padding: const EdgeInsets.all(DsSpace.s12),
+                          child: Center(
+                            child: DsButton(
+                              variant: DsButtonVariant.secondary,
+                              size: DsSize.sm,
+                              onPressed: () => unawaited(controller.retry()),
+                              child: Text(t.common.retry),
+                            ),
+                          ),
+                        );
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.all(DsSpace.s12),
+                        child: Center(
+                          child: DsButton(
+                            variant: DsButtonVariant.secondary,
+                            size: DsSize.sm,
+                            onPressed: () => unawaited(controller.loadMore()),
+                            child: Text(t.music.loadMore),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+      actions: [
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(t.common.close),
+        ),
+      ],
+    );
+  }
+}
+
+/// One comment row inside [_CommentsDialog].
+final class _CommentTile extends StatelessWidget {
+  const _CommentTile({required this.comment});
+
+  final MusicComment comment;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final avatar = comment.avatar;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: DsSpace.s8, horizontal: DsSpace.s4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: DsSpace.s8,
+        children: [
+          DsAvatar(
+            initials: comment.userName,
+            image: avatar == null ? null : cachedImage(avatar),
+            size: DsSize.md,
+            semanticLabel: comment.userName,
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: DsSpace.s3,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        comment.userName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                      ),
+                    ),
+                    if (comment.likedCount > 0) ...[
+                      DsIcon(DsIcons.heart, size: 12, color: colors.textSubtle),
+                      Text(
+                        '${comment.likedCount}',
+                        style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                      ),
+                    ],
+                  ],
+                ),
+                Text(
+                  comment.text,
+                  maxLines: 5,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.body.copyWith(color: colors.text),
+                ),
+                if (comment.replies.isNotEmpty)
+                  Text(
+                    t.music.commentsReplies(count: comment.replies.length),
+                    style: theme.typography.caption.copyWith(color: colors.accent),
+                  ),
+                if (comment.time != null)
+                  Text(
+                    _CommentsDialogState._time(comment.time),
+                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

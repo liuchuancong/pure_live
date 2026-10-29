@@ -18,6 +18,7 @@ final class MusicCustomSource {
     this.author = '',
     this.version = '',
     this.homepage = '',
+    this.enabled = true,
   });
 
   /// Reads a stored entry; null when the entry is damaged.
@@ -36,6 +37,7 @@ final class MusicCustomSource {
       author: json['author'] is String ? json['author'] as String : '',
       version: json['version'] is String ? json['version'] as String : '',
       homepage: json['homepage'] is String ? json['homepage'] as String : '',
+      enabled: json['enabled'] != false,
       importedAt: DateTime.fromMillisecondsSinceEpoch(importedAt),
     );
   }
@@ -61,11 +63,14 @@ final class MusicCustomSource {
   /// The script's `@homepage`.
   final String homepage;
 
+  /// Whether the script takes part in resolving songs.
+  final bool enabled;
+
   /// When it was imported.
   final DateTime importedAt;
 
-  /// A copy with the identity replaced.
-  MusicCustomSource copyWith({String? id, DateTime? importedAt}) => MusicCustomSource(
+  /// A copy with the identity or the switch replaced.
+  MusicCustomSource copyWith({String? id, DateTime? importedAt, bool? enabled}) => MusicCustomSource(
     id: id ?? this.id,
     name: name,
     script: script,
@@ -73,6 +78,7 @@ final class MusicCustomSource {
     author: author,
     version: version,
     homepage: homepage,
+    enabled: enabled ?? this.enabled,
     importedAt: importedAt ?? this.importedAt,
   );
 
@@ -85,6 +91,7 @@ final class MusicCustomSource {
     'author': author,
     'version': version,
     'homepage': homepage,
+    'enabled': enabled,
     'importedAt': importedAt.millisecondsSinceEpoch,
   };
 
@@ -208,6 +215,7 @@ final class MusicSourcesController extends Notifier<List<MusicCustomSource>> {
     final source = parsed.copyWith(
       id: existing?.id ?? '${DateTime.now().microsecondsSinceEpoch}',
       importedAt: existing?.importedAt,
+      enabled: existing?.enabled,
     );
     state = existing == null
         ? [...state, source]
@@ -227,6 +235,15 @@ final class MusicSourcesController extends Notifier<List<MusicCustomSource>> {
     state = [
       for (final source in state)
         if (source.id != id) source,
+    ];
+    await _save();
+  }
+
+  /// Turns a script on or off without losing it.
+  Future<void> setEnabled(String id, {required bool enabled}) async {
+    state = [
+      for (final source in state)
+        if (source.id == id) source.copyWith(enabled: enabled) else source,
     ];
     await _save();
   }

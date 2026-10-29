@@ -149,7 +149,11 @@ final class LxScriptRuntime {
   }
 
   Future<void> _load(List<MusicCustomSource> sources, int generation) async {
-    if (sources.isEmpty) {
+    final active = [
+      for (final source in sources)
+        if (source.enabled) source,
+    ];
+    if (active.isEmpty) {
       final old = _instances;
       _instances = const [];
       for (final instance in old) {
@@ -175,7 +179,7 @@ final class LxScriptRuntime {
     }
     final loaded = <LxScriptInstance>[];
     final errors = <String>[];
-    for (final source in sources) {
+    for (final source in active) {
       if (generation != _generation) {
         for (final instance in loaded) {
           unawaited(instance.dispose());
@@ -372,19 +376,26 @@ final class LxScriptRuntime {
 List<Object?> _list(Object? value) => value is List ? value : const [];
 
 /// The metadata a script's `musicInfo` carries.
-Map<String, Object?> lxMusicInfo(audio.MusicTrack track, {Iterable<String> qualitys = const []}) => {
-  'songmid': track.id,
-  'songId': track.id,
-  'name': track.title,
-  'singer': track.artist,
-  'albumName': track.album,
-  'source': track.sourceId,
-  if (track.albumId != null && track.albumId!.isNotEmpty) 'albumId': track.albumId,
-  if (track.duration != null) 'interval': track.duration!.inSeconds,
-  'types': [
-    for (final quality in qualitys) {'type': quality},
-  ],
-};
+Map<String, Object?> lxMusicInfo(audio.MusicTrack track, {Iterable<String> qualitys = const []}) {
+  final hash = '${track.metadata['hash'] ?? ''}';
+  final hashes = track.metadata['hashes'];
+  return {
+    'songmid': track.id,
+    'songId': track.id,
+    'name': track.title,
+    'singer': track.artist,
+    'albumName': track.album,
+    'source': track.sourceId,
+    if (track.albumId != null && track.albumId!.isNotEmpty) 'albumId': track.albumId,
+    if (hash.isNotEmpty) 'hash': hash,
+    if (hashes is Map) 'hashes': hashes,
+    if (track.duration != null) 'interval': track.duration!.inSeconds,
+    'types': [
+      for (final quality in qualitys)
+        {'type': quality, if (hashes is Map && hashes[quality] != null) 'hash': '${hashes[quality]}'},
+    ],
+  };
+}
 
 /// The lx runtime over the imported scripts.
 final lxScriptRuntimeProvider = Provider<LxScriptRuntime>((ref) {

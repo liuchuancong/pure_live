@@ -14,6 +14,10 @@ const String kMusicRecentKey = 'music.recent';
 /// what was just on, not an archive.
 const int kMusicRecentLimit = 100;
 
+/// The identity saved rules, positions and lyric overrides use:
+/// `sourceId:id`.
+String musicTrackKey(audio.MusicTrack track) => '${track.sourceId}:${track.id}';
+
 /// One song as the module stores it: enough to draw its row, resolve it again
 /// and reopen its player without the search that found it.
 Map<String, Object?> musicTrackToJson(audio.MusicTrack track) => {

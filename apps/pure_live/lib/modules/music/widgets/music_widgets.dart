@@ -7,7 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
+import 'package:pure_live/modules/music/controller/music_library.dart' show musicTrackKey;
 import 'package:pure_live/modules/music/controller/music_local.dart' show musicLocalCoverProvider;
+import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/shared/shared.dart' show cachedImage;
 
 /// A song's album art: its cover, or the title's initials on a tone when the
@@ -45,7 +48,7 @@ final class MusicArtwork extends ConsumerWidget {
 ///
 /// A row is the play control: the reference plays a song by choosing its row,
 /// so a separate play button would be a second way to say the same thing.
-final class MusicSongRow extends StatelessWidget {
+final class MusicSongRow extends ConsumerWidget {
   /// A song row for [track].
   const MusicSongRow({
     required this.track,
@@ -60,6 +63,9 @@ final class MusicSongRow extends StatelessWidget {
     this.onMoveUp,
     this.onMoveDown,
     this.subtitle,
+    this.selecting = false,
+    this.selected = false,
+    this.onSelected,
     super.key,
   });
 
@@ -94,6 +100,15 @@ final class MusicSongRow extends StatelessWidget {
 
   /// A line under the title; the artist by default.
   final String? subtitle;
+
+  /// Whether the row shows a selection box instead of its actions.
+  final bool selecting;
+
+  /// Whether this row is picked, while [selecting].
+  final bool selected;
+
+  /// Picks or unpicks the row; tapping the row does the same while selecting.
+  final VoidCallback? onSelected;
 
   /// Puts the song's display name on the clipboard.
   Future<void> _copyName(BuildContext context) async {
@@ -159,12 +174,24 @@ final class MusicSongRow extends StatelessWidget {
     return hours > 0 ? '$hours:${minutes.toString().padLeft(2, '0')}:$seconds' : '$minutes:$seconds';
   }
 
+  /// Adds or removes the dislike rule and words the answer.
+  Future<void> _toggleDislike(BuildContext context, WidgetRef ref) async {
+    final disliked = await ref.read(musicPlayerProvider.notifier).toggleDislike(track);
+    if (!context.mounted) return;
+    showDsToast(
+      context: context,
+      title: disliked ? context.t.music.disliked : context.t.music.undisliked,
+      status: DsStatus.success,
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final artist = subtitle ?? track.artist;
+    final disliked = ref.watch(musicDislikesProvider).contains(musicTrackKey(track));
     return DsListRow(
       leading: MusicArtwork(track: track),
       title: Text(
@@ -184,68 +211,87 @@ final class MusicSongRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: theme.typography.caption.copyWith(color: colors.textSubtle),
             ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s4,
-        children: [
-          DsButton.icon(
-            variant: DsButtonVariant.ghost,
-            size: DsSize.sm,
-            semanticLabel: favourite ? t.music.unfavourite : t.music.favourite,
-            onPressed: onFavourite,
-            icon: DsIcon(DsIcons.heart, size: 16, color: favourite ? colors.accent : colors.textMuted),
-          ),
-          if (onRemove case final remove?)
-            DsButton.icon(
-              variant: DsButtonVariant.ghost,
-              size: DsSize.sm,
-              semanticLabel: t.music.removeSong,
-              onPressed: remove,
-              icon: const DsIcon(DsIcons.x, size: 16),
-            ),
-          DsMenuAnchor(
-            semanticLabel: t.music.moreActions,
-            items: [
-              if (onMoveUp case final moveUp?)
-                DsMenuItem(leading: const DsIcon(DsIcons.arrowUp), label: Text(t.music.moveUp), onPressed: moveUp),
-              if (onMoveDown case final moveDown?)
-                DsMenuItem(
-                  leading: const DsIcon(DsIcons.arrowDown),
-                  label: Text(t.music.moveDown),
-                  onPressed: moveDown,
+      trailing: selecting
+          ? DsCheckbox(value: selected, onChanged: (_) => onSelected?.call())
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: DsSpace.s4,
+              children: [
+                DsButton.icon(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  semanticLabel: favourite ? t.music.unfavourite : t.music.favourite,
+                  onPressed: onFavourite,
+                  icon: DsIcon(DsIcons.heart, size: 16, color: favourite ? colors.accent : colors.textMuted),
                 ),
-              if (onPlayNext case final playNext?)
-                DsMenuItem(leading: const DsIcon(DsIcons.listPlus), label: Text(t.music.playNext), onPressed: playNext),
-              if (onAddToPlaylist case final addToPlaylist?)
-                DsMenuItem(
-                  leading: const DsIcon(DsIcons.listMusic),
-                  label: Text(t.music.addToPlaylist),
-                  onPressed: addToPlaylist,
+                if (onRemove case final remove?)
+                  DsButton.icon(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    semanticLabel: t.music.removeSong,
+                    onPressed: remove,
+                    icon: const DsIcon(DsIcons.x, size: 16),
+                  ),
+                DsMenuAnchor(
+                  semanticLabel: t.music.moreActions,
+                  items: [
+                    if (onMoveUp case final moveUp?)
+                      DsMenuItem(
+                        leading: const DsIcon(DsIcons.arrowUp),
+                        label: Text(t.music.moveUp),
+                        onPressed: moveUp,
+                      ),
+                    if (onMoveDown case final moveDown?)
+                      DsMenuItem(
+                        leading: const DsIcon(DsIcons.arrowDown),
+                        label: Text(t.music.moveDown),
+                        onPressed: moveDown,
+                      ),
+                    if (onPlayNext case final playNext?)
+                      DsMenuItem(
+                        leading: const DsIcon(DsIcons.listPlus),
+                        label: Text(t.music.playNext),
+                        onPressed: playNext,
+                      ),
+                    if (onAddToPlaylist case final addToPlaylist?)
+                      DsMenuItem(
+                        leading: const DsIcon(DsIcons.listMusic),
+                        label: Text(t.music.addToPlaylist),
+                        onPressed: addToPlaylist,
+                      ),
+                    if (onDownload case final download?)
+                      DsMenuItem(
+                        leading: const DsIcon(DsIcons.download),
+                        label: Text(t.music.download),
+                        onPressed: download,
+                      ),
+                    DsMenuItem(
+                      leading: const DsIcon(DsIcons.ban),
+                      label: Text(disliked ? t.music.undislike : t.music.dislike),
+                      onPressed: () => unawaited(_toggleDislike(context, ref)),
+                    ),
+                    DsMenuItem(
+                      leading: const DsIcon(DsIcons.info),
+                      label: Text(t.music.songDetails),
+                      onPressed: () => _showDetails(context),
+                    ),
+                    DsMenuItem(
+                      leading: const DsIcon(DsIcons.copy),
+                      label: Text(t.music.copySongName),
+                      onPressed: () => unawaited(_copyName(context)),
+                    ),
+                  ],
+                  builder: (context, controller, _) => DsButton.icon(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    semanticLabel: t.music.moreActions,
+                    onPressed: controller.toggle,
+                    icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
+                  ),
                 ),
-              if (onDownload case final download?)
-                DsMenuItem(leading: const DsIcon(DsIcons.download), label: Text(t.music.download), onPressed: download),
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.info),
-                label: Text(t.music.songDetails),
-                onPressed: () => _showDetails(context),
-              ),
-              DsMenuItem(
-                leading: const DsIcon(DsIcons.copy),
-                label: Text(t.music.copySongName),
-                onPressed: () => unawaited(_copyName(context)),
-              ),
-            ],
-            builder: (context, controller, _) => DsButton.icon(
-              variant: DsButtonVariant.ghost,
-              size: DsSize.sm,
-              semanticLabel: t.music.moreActions,
-              onPressed: controller.toggle,
-              icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
+              ],
             ),
-          ),
-        ],
-      ),
-      onPressed: onPlay,
+      onPressed: selecting ? onSelected : onPlay,
     );
   }
 }

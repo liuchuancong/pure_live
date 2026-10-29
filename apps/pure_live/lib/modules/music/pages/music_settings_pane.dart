@@ -12,9 +12,10 @@ import 'package:pure_live/app/providers/settings/download_directory_provider.dar
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/lx_script_runtime.dart' show lxScriptRuntimeProvider;
+import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_settings.dart';
-import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId;
+import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId, musicSourceListProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart';
 
 /// The music module's own settings: the source a song is asked from, the
@@ -41,8 +42,11 @@ final class MusicSettingsPane extends ConsumerWidget {
               leading: const DsIcon(DsIcons.plugZap),
               title: t.music.defaultSource,
               description: t.music.defaultSourceDesc,
-              value: kLxMusicSourceId,
-              options: const [DsSelectOption(value: kLxMusicSourceId, label: 'lx-music')],
+              value: settings.defaultSourceId.isEmpty ? kLxMusicSourceId : settings.defaultSourceId,
+              options: [
+                for (final source in ref.watch(musicSourceListProvider))
+                  DsSelectOption(value: source.id, label: source.name),
+              ],
               onChanged: (id) => unawaited(controller.setDefaultSource(id)),
             ),
             SettingsChoiceRow<MusicQuality>(
@@ -109,6 +113,7 @@ final class MusicListPane extends ConsumerWidget {
     final t = context.t;
     final settings = ref.watch(musicSettingsProvider);
     final controller = ref.read(musicSettingsProvider.notifier);
+    final dislikes = ref.watch(musicDislikesProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -133,6 +138,30 @@ final class MusicListPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setShowSource(value: value)),
               ),
             ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.search),
+              title: t.music.searchHot,
+              description: t.music.searchHotDesc,
+              control: DsSwitch(
+                value: settings.showHotSearches,
+                onChanged: (value) => unawaited(controller.setShowHotSearches(value: value)),
+              ),
+            ),
+          ],
+        ),
+        DsListSection(
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.ban),
+              title: Text(t.music.dislikeRules(count: dislikes.length)),
+              description: Text(t.music.dislikeRulesDesc),
+              trailing: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: dislikes.isEmpty ? null : () => unawaited(_clearDislikes(context, ref)),
+                child: Text(t.music.dislikeRulesClear),
+              ),
+            ),
           ],
         ),
         DsListSection(
@@ -147,6 +176,12 @@ final class MusicListPane extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _clearDislikes(BuildContext context, WidgetRef ref) async {
+    await ref.read(musicDislikesProvider.notifier).clear();
+    if (!context.mounted) return;
+    showDsToast(context: context, title: context.t.music.dislikeRulesCleared, status: DsStatus.success);
   }
 }
 
@@ -389,13 +424,28 @@ final class MusicSourcesPane extends ConsumerWidget {
                 DsListRow(
                   leading: const DsIcon(DsIcons.fileCode),
                   title: Text(source.name),
-                  description: Text(describe(source), maxLines: 2, overflow: TextOverflow.ellipsis),
-                  trailing: DsButton.icon(
-                    variant: DsButtonVariant.ghost,
-                    size: DsSize.sm,
-                    semanticLabel: t.music.sourceDelete,
-                    onPressed: () => unawaited(_remove(context, ref, source)),
-                    icon: const DsIcon(DsIcons.trash2, size: 16),
+                  description: Text(
+                    source.enabled ? describe(source) : '${t.music.sourceDisabled} · ${describe(source)}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: DsSpace.s4,
+                    children: [
+                      DsSwitch(
+                        value: source.enabled,
+                        onChanged: (value) =>
+                            unawaited(ref.read(musicSourcesProvider.notifier).setEnabled(source.id, enabled: value)),
+                      ),
+                      DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        semanticLabel: t.music.sourceDelete,
+                        onPressed: () => unawaited(_remove(context, ref, source)),
+                        icon: const DsIcon(DsIcons.trash2, size: 16),
+                      ),
+                    ],
                   ),
                 ),
               Padding(
@@ -539,6 +589,24 @@ final class MusicDownloadPane extends ConsumerWidget {
               ),
             ),
             SettingsConfigRow(
+              leading: const DsIcon(DsIcons.languages),
+              title: t.music.downloadIncludeTranslation,
+              description: t.music.downloadIncludeTranslationDesc,
+              control: DsSwitch(
+                value: settings.downloadIncludeTranslation,
+                onChanged: (value) => unawaited(controller.setDownloadIncludeTranslation(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.audioLines),
+              title: t.music.downloadIncludeRomanization,
+              description: t.music.downloadIncludeRomanizationDesc,
+              control: DsSwitch(
+                value: settings.downloadIncludeRomanization,
+                onChanged: (value) => unawaited(controller.setDownloadIncludeRomanization(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
               leading: const DsIcon(DsIcons.fileText),
               title: t.music.downloadWriteLyric,
               description: t.music.downloadWriteLyricDesc,
@@ -565,6 +633,14 @@ final class MusicDownloadPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setDownloadGroupByList(value: value)),
               ),
             ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.download),
+              title: t.music.downloadMaxConcurrent,
+              description: t.music.downloadMaxConcurrentDesc,
+              value: settings.downloadMaxConcurrent,
+              options: [for (var count = 1; count <= 5; count++) DsSelectOption(value: count, label: '$count')],
+              onChanged: (value) => unawaited(controller.setDownloadMaxConcurrent(value)),
+            ),
           ],
         ),
       ],
@@ -579,6 +655,7 @@ final class MusicLyricPane extends ConsumerWidget {
   const MusicLyricPane({super.key});
 
   static const List<int> _offsets = [-2000, -1500, -1000, -500, 0, 500, 1000, 1500, 2000];
+  static const List<int> _fontScales = [100, 120, 140, 160, 180, 200];
 
   String _offsetLabel(Translations t, int ms) {
     if (ms == 0) return t.music.lyricOffsetReset;
@@ -614,6 +691,52 @@ final class MusicLyricPane extends ConsumerWidget {
               control: DsSwitch(
                 value: settings.showRomanization,
                 onChanged: (value) => unawaited(controller.setShowRomanization(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.arrowUpDown),
+              title: t.music.lyricSwapSecondary,
+              description: t.music.lyricSwapSecondaryDesc,
+              control: DsSwitch(
+                value: settings.swapLyricSecondary,
+                onChanged: (value) => unawaited(controller.setSwapLyricSecondary(value: value)),
+              ),
+            ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.fontSize),
+              title: t.music.lyricFontScale,
+              description: t.music.lyricFontScaleDesc,
+              value: settings.lyricFontScale,
+              options: [for (final scale in _fontScales) DsSelectOption(value: scale, label: '$scale%')],
+              onChanged: (value) => unawaited(controller.setLyricFontScale(value)),
+            ),
+            SettingsChoiceRow<MusicLyricAlignment>(
+              leading: const DsIcon(DsIcons.alignLeft),
+              title: t.music.lyricAlignment,
+              description: t.music.lyricAlignmentDesc,
+              value: settings.lyricAlignment,
+              options: [
+                for (final alignment in MusicLyricAlignment.values)
+                  DsSelectOption(value: alignment, label: alignment.label(t)),
+              ],
+              onChanged: (value) => unawaited(controller.setLyricAlignment(value)),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.maximize2),
+              title: t.music.lyricZoomActive,
+              description: t.music.lyricZoomActiveDesc,
+              control: DsSwitch(
+                value: settings.lyricZoomActive,
+                onChanged: (value) => unawaited(controller.setLyricZoomActive(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.gauge),
+              title: t.music.lyricProgress,
+              description: t.music.lyricProgressDesc,
+              control: DsSwitch(
+                value: settings.lyricProgress,
+                onChanged: (value) => unawaited(controller.setLyricProgress(value: value)),
               ),
             ),
             SettingsChoiceRow<int>(

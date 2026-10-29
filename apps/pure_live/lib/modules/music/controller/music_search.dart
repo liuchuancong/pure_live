@@ -7,6 +7,7 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
+import 'package:pure_live/modules/music/controller/sources/music_source_kw.dart' show KwMusicSource;
 
 /// What the library view holds: the committed query, its songs, where the
 /// next page asks, the in-flight flag and the last failure.
@@ -94,6 +95,20 @@ final FutureProviderFamily<List<audio.MusicTrack>, audio.MusicCatalog> musicCata
       final answer = await ref.watch(musicSourceProvider).catalogItems(catalog);
       return answer.items;
     });
+
+/// The source's top searches, shown while the query box is empty.
+///
+/// A source that cannot answer simply has none; the idle page then shows only
+/// the history, so a failed hot-word request never blocks searching.
+final musicHotSearchesProvider = FutureProvider<List<String>>((ref) async {
+  try {
+    final source = ref.watch(musicSourceProvider);
+    if (source is KwMusicSource) return await source.hotSearches();
+    return const <String>[];
+  } on Object {
+    return const [];
+  }
+});
 
 /// The preference the recent searches are kept under.
 const String kMusicSearchHistoryKey = 'music.search.history';

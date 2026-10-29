@@ -62,6 +62,24 @@ final class MusicPlaylist {
       MusicPlaylist(id: id, name: name ?? this.name, tracks: tracks ?? this.tracks, createdAt: createdAt);
 }
 
+/// How a playlist can be re-ordered — the reference's 排序.
+enum MusicPlaylistSort {
+  /// By song title.
+  title,
+
+  /// By artist, then title.
+  artist,
+
+  /// By album, then title.
+  album,
+
+  /// By duration, shortest first; songs with no duration go last.
+  duration,
+
+  /// Random order.
+  shuffle,
+}
+
 /// The viewer's playlists — lx-music's 我的歌单.
 ///
 /// A playlist is local: it stores enough of each song to draw its row and
@@ -138,6 +156,31 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
     return true;
   }
 
+  /// Adds [tracks] to the playlist in one save; returns how many were new.
+  ///
+  /// Order follows the input even when new songs go to the top, and songs
+  /// already in the list are counted as duplicates rather than added twice.
+  Future<int> addTracks(String id, Iterable<audio.MusicTrack> tracks) async {
+    final playlist = find(id);
+    if (playlist == null) return 0;
+    final existing = playlist.tracks.toSet();
+    final seen = <audio.MusicTrack>{};
+    final fresh = <audio.MusicTrack>[
+      for (final track in tracks)
+        if (seen.add(track) && !existing.contains(track)) track,
+    ];
+    if (fresh.isEmpty) return 0;
+    final merged = ref.read(musicSettingsProvider).addToTop
+        ? [...fresh, ...playlist.tracks]
+        : [...playlist.tracks, ...fresh];
+    state = [
+      for (final item in state)
+        if (item.id == id) item.copyWith(tracks: merged) else item,
+    ];
+    await _save();
+    return fresh.length;
+  }
+
   /// Drops [track] from the playlist.
   Future<void> removeTrack(String id, audio.MusicTrack track) async {
     state = [
@@ -147,6 +190,26 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
             tracks: [
               for (final entry in playlist.tracks)
                 if (entry != track) entry,
+            ],
+          )
+        else
+          playlist,
+    ];
+    await _save();
+  }
+
+  /// Drops every track in [tracks] with one save — the batch form behind a
+  /// multi-selection's 移除.
+  Future<void> removeTracks(String id, Iterable<audio.MusicTrack> tracks) async {
+    final removed = tracks.toSet();
+    if (removed.isEmpty) return;
+    state = [
+      for (final playlist in state)
+        if (playlist.id == id)
+          playlist.copyWith(
+            tracks: [
+              for (final entry in playlist.tracks)
+                if (!removed.contains(entry)) entry,
             ],
           )
         else
@@ -168,6 +231,51 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
     ];
     await _save();
   }
+
+  /// Sorts a playlist in place.
+  Future<void> sortTracks(String id, MusicPlaylistSort by) async {
+    final playlist = find(id);
+    if (playlist == null || playlist.tracks.length < 2) return;
+    final tracks = [...playlist.tracks];
+
+    switch (by) {
+      case MusicPlaylistSort.title:
+        tracks.sort(_titleOf);
+      case MusicPlaylistSort.artist:
+        tracks.sort((a, b) {
+          final byArtist = a.artist.toLowerCase().compareTo(b.artist.toLowerCase());
+
+          return byArtist != 0 ? byArtist : _titleOf(a, b);
+        });
+      case MusicPlaylistSort.album:
+        tracks.sort((a, b) {
+          final byAlbum = a.album.toLowerCase().compareTo(b.album.toLowerCase());
+
+          return byAlbum != 0 ? byAlbum : _titleOf(a, b);
+        });
+      case MusicPlaylistSort.duration:
+        tracks.sort((a, b) {
+          final left = a.duration;
+          final right = b.duration;
+
+          if (left == null && right == null) return _titleOf(a, b);
+          if (left == null) return 1;
+          if (right == null) return -1;
+
+          return left.compareTo(right);
+        });
+      case MusicPlaylistSort.shuffle:
+        tracks.shuffle();
+    }
+
+    state = [
+      for (final item in state)
+        if (item.id == id) item.copyWith(tracks: tracks) else item,
+    ];
+    await _save();
+  }
+
+  static int _titleOf(audio.MusicTrack a, audio.MusicTrack b) => a.title.toLowerCase().compareTo(b.title.toLowerCase());
 
   /// Empties a playlist without deleting it.
   Future<void> clear(String id) async {

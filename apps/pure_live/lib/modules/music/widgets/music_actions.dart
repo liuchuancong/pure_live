@@ -38,6 +38,32 @@ Future<MusicPlaylist?> showCreatePlaylistDialog(BuildContext context, WidgetRef 
   return await ref.read(musicPlaylistsProvider.notifier).create(name);
 }
 
+/// Asks which playlist should take [tracks], offering a new one when there is
+/// none; [listName] names the list when the caller already picked it.
+///
+/// The batch form of [showAddToPlaylistDialog]: one dialog, one save, and a
+/// count of what was actually new.
+Future<void> showAddTracksToPlaylistDialog(
+  BuildContext context,
+  WidgetRef ref,
+  List<audio.MusicTrack> tracks, {
+  String? listName,
+}) async {
+  if (tracks.isEmpty) return;
+  final t = context.t;
+  final playlist = await _choosePlaylist(context, ref, listName: listName);
+  if (playlist == null || !context.mounted) return;
+  final added = await ref.read(musicPlaylistsProvider.notifier).addTracks(playlist.id, tracks);
+  if (!context.mounted) return;
+  showDsToast(
+    context: context,
+    title: added == 0
+        ? t.music.playlistAlreadyIn(name: playlist.name)
+        : t.music.playlistAddedCount(count: added, name: playlist.name),
+    status: added == 0 ? DsStatus.warning : DsStatus.success,
+  );
+}
+
 /// Asks which playlist should take [track], offering a new one when there is
 /// none; [listName] names the list when the caller already picked it.
 Future<void> showAddToPlaylistDialog(
@@ -46,6 +72,21 @@ Future<void> showAddToPlaylistDialog(
   audio.MusicTrack track, {
   String? listName,
 }) async {
+  if (!context.mounted) return;
+  final t = context.t;
+  final playlist = await _choosePlaylist(context, ref, listName: listName);
+  if (playlist == null || !context.mounted) return;
+  final added = await ref.read(musicPlaylistsProvider.notifier).addTrack(playlist.id, track);
+  if (!context.mounted) return;
+  showDsToast(
+    context: context,
+    title: added ? t.music.playlistAdded(name: playlist.name) : t.music.playlistAlreadyIn(name: playlist.name),
+    status: added ? DsStatus.success : DsStatus.warning,
+  );
+}
+
+/// The picker both add-to-playlist paths share.
+Future<MusicPlaylist?> _choosePlaylist(BuildContext context, WidgetRef ref, {String? listName}) async {
   final t = context.t;
   final playlists = ref.read(musicPlaylistsProvider);
   final choice =
@@ -90,22 +131,12 @@ Future<void> showAddToPlaylistDialog(
           ],
         ),
       );
-  if (choice == null || !context.mounted) return;
-  MusicPlaylist? playlist;
+  if (choice == null || !context.mounted) return null;
   if (choice == t.music.playlistCreateTitle) {
-    playlist = await showCreatePlaylistDialog(context, ref);
-    if (playlist == null) return;
-  } else {
-    playlist = ref.read(musicPlaylistsProvider.notifier).find(choice);
+    return await showCreatePlaylistDialog(context, ref);
   }
-  if (playlist == null) return;
-  final added = await ref.read(musicPlaylistsProvider.notifier).addTrack(playlist.id, track);
-  if (!context.mounted) return;
-  showDsToast(
-    context: context,
-    title: added ? t.music.playlistAdded(name: playlist.name) : t.music.playlistAlreadyIn(name: playlist.name),
-    status: added ? DsStatus.success : DsStatus.warning,
-  );
+
+  return ref.read(musicPlaylistsProvider.notifier).find(choice);
 }
 
 /// Downloads [track] and words what happened.

@@ -4,9 +4,12 @@
 library;
 
 export 'controller/lx_script_runtime.dart';
+export 'controller/music_comments.dart';
+export 'controller/music_dislikes.dart';
 export 'controller/music_downloads.dart';
 export 'controller/music_library.dart';
 export 'controller/music_local.dart';
+export 'controller/music_lyric_overrides.dart';
 export 'controller/music_playback.dart';
 export 'controller/music_playlists.dart';
 export 'controller/music_search.dart';

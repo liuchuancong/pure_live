@@ -80,6 +80,26 @@ enum MusicDownloadType {
   };
 }
 
+/// Where a lyric line sits inside the player's lyric panel — lx-music's
+/// 播放详情 alignment.
+enum MusicLyricAlignment {
+  /// Flush left.
+  left,
+
+  /// Centred.
+  center,
+
+  /// Flush right.
+  right;
+
+  /// The choice's words.
+  String label(Translations t) => switch (this) {
+    MusicLyricAlignment.left => t.music.desktopLyricAlignLeft,
+    MusicLyricAlignment.center => t.music.desktopLyricAlignCenter,
+    MusicLyricAlignment.right => t.music.desktopLyricAlignRight,
+  };
+}
+
 /// The music module's preferences, read where the module plays, lists and
 /// downloads.
 ///
@@ -99,8 +119,14 @@ final class MusicSettings {
     required this.rememberProgress,
     required this.addToTop,
     required this.showSource,
+    required this.showHotSearches,
     required this.showTranslation,
     required this.showRomanization,
+    required this.swapLyricSecondary,
+    required this.lyricFontScale,
+    required this.lyricAlignment,
+    required this.lyricZoomActive,
+    required this.lyricProgress,
     required this.lyricOffsetMs,
     required this.desktopLyrics,
     required this.desktopLyricLocked,
@@ -114,9 +140,12 @@ final class MusicSettings {
     required this.downloadPattern,
     required this.downloadEmbedCover,
     required this.downloadEmbedLyric,
+    required this.downloadIncludeTranslation,
+    required this.downloadIncludeRomanization,
     required this.downloadWriteLyric,
     required this.downloadSkipExisting,
     required this.downloadGroupByList,
+    required this.downloadMaxConcurrent,
   });
 
   /// The reference's defaults: no source until one is imported, 128k, skip a
@@ -131,8 +160,14 @@ final class MusicSettings {
     rememberProgress: true,
     addToTop: true,
     showSource: true,
+    showHotSearches: true,
     showTranslation: true,
     showRomanization: true,
+    swapLyricSecondary: false,
+    lyricFontScale: 140,
+    lyricAlignment: MusicLyricAlignment.center,
+    lyricZoomActive: false,
+    lyricProgress: false,
     lyricOffsetMs: 0,
     desktopLyrics: false,
     desktopLyricLocked: false,
@@ -146,9 +181,12 @@ final class MusicSettings {
     downloadPattern: '{artist} - {title}',
     downloadEmbedCover: false,
     downloadEmbedLyric: false,
+    downloadIncludeTranslation: false,
+    downloadIncludeRomanization: false,
     downloadWriteLyric: true,
     downloadSkipExisting: true,
     downloadGroupByList: false,
+    downloadMaxConcurrent: 1,
   );
 
   /// The custom source songs are asked from; empty until one is imported.
@@ -175,11 +213,29 @@ final class MusicSettings {
   /// Whether a list row names the source the song came from.
   final bool showSource;
 
+  /// Whether the empty search page offers the source's top searches.
+  final bool showHotSearches;
+
   /// Whether a lyric's translation is shown beside the line.
   final bool showTranslation;
 
   /// Whether a lyric's romanization is shown beside the line.
   final bool showRomanization;
+
+  /// Whether the translation and the romanization swap places under a line.
+  final bool swapLyricSecondary;
+
+  /// The lyric panel's text scale in percent, 100–200.
+  final int lyricFontScale;
+
+  /// Where a lyric line sits in the panel.
+  final MusicLyricAlignment lyricAlignment;
+
+  /// Whether the line being sung is drawn larger than the rest.
+  final bool lyricZoomActive;
+
+  /// Whether the panel shows the song's playback progress.
+  final bool lyricProgress;
 
   /// The viewer's lyric delay in milliseconds; positive delays the highlight.
   final int lyricOffsetMs;
@@ -220,6 +276,12 @@ final class MusicSettings {
   /// Whether a download embeds the lyric into the tags.
   final bool downloadEmbedLyric;
 
+  /// Whether a download's lyric also carries the translation.
+  final bool downloadIncludeTranslation;
+
+  /// Whether a download's lyric also carries the romanization.
+  final bool downloadIncludeRomanization;
+
   /// Whether a download writes a sidecar `.lrc`.
   final bool downloadWriteLyric;
 
@@ -228,6 +290,9 @@ final class MusicSettings {
 
   /// Whether a download groups files by the list they came from.
   final bool downloadGroupByList;
+
+  /// How many downloads may run at once, 1–5.
+  final int downloadMaxConcurrent;
 
   /// A copy with selected fields replaced.
   MusicSettings copyWith({
@@ -238,8 +303,14 @@ final class MusicSettings {
     bool? rememberProgress,
     bool? addToTop,
     bool? showSource,
+    bool? showHotSearches,
     bool? showTranslation,
     bool? showRomanization,
+    bool? swapLyricSecondary,
+    int? lyricFontScale,
+    MusicLyricAlignment? lyricAlignment,
+    bool? lyricZoomActive,
+    bool? lyricProgress,
     int? lyricOffsetMs,
     bool? desktopLyrics,
     bool? desktopLyricLocked,
@@ -253,9 +324,12 @@ final class MusicSettings {
     String? downloadPattern,
     bool? downloadEmbedCover,
     bool? downloadEmbedLyric,
+    bool? downloadIncludeTranslation,
+    bool? downloadIncludeRomanization,
     bool? downloadWriteLyric,
     bool? downloadSkipExisting,
     bool? downloadGroupByList,
+    int? downloadMaxConcurrent,
   }) => MusicSettings(
     defaultSourceId: defaultSourceId ?? this.defaultSourceId,
     quality: quality ?? this.quality,
@@ -264,8 +338,14 @@ final class MusicSettings {
     rememberProgress: rememberProgress ?? this.rememberProgress,
     addToTop: addToTop ?? this.addToTop,
     showSource: showSource ?? this.showSource,
+    showHotSearches: showHotSearches ?? this.showHotSearches,
     showTranslation: showTranslation ?? this.showTranslation,
     showRomanization: showRomanization ?? this.showRomanization,
+    swapLyricSecondary: swapLyricSecondary ?? this.swapLyricSecondary,
+    lyricFontScale: lyricFontScale ?? this.lyricFontScale,
+    lyricAlignment: lyricAlignment ?? this.lyricAlignment,
+    lyricZoomActive: lyricZoomActive ?? this.lyricZoomActive,
+    lyricProgress: lyricProgress ?? this.lyricProgress,
     lyricOffsetMs: lyricOffsetMs ?? this.lyricOffsetMs,
     desktopLyrics: desktopLyrics ?? this.desktopLyrics,
     desktopLyricLocked: desktopLyricLocked ?? this.desktopLyricLocked,
@@ -279,9 +359,12 @@ final class MusicSettings {
     downloadPattern: downloadPattern ?? this.downloadPattern,
     downloadEmbedCover: downloadEmbedCover ?? this.downloadEmbedCover,
     downloadEmbedLyric: downloadEmbedLyric ?? this.downloadEmbedLyric,
+    downloadIncludeTranslation: downloadIncludeTranslation ?? this.downloadIncludeTranslation,
+    downloadIncludeRomanization: downloadIncludeRomanization ?? this.downloadIncludeRomanization,
     downloadWriteLyric: downloadWriteLyric ?? this.downloadWriteLyric,
     downloadSkipExisting: downloadSkipExisting ?? this.downloadSkipExisting,
     downloadGroupByList: downloadGroupByList ?? this.downloadGroupByList,
+    downloadMaxConcurrent: downloadMaxConcurrent ?? this.downloadMaxConcurrent,
   );
 }
 
@@ -292,8 +375,14 @@ const String _autoplayKey = 'music.play.autoplay';
 const String _rememberProgressKey = 'music.play.rememberProgress';
 const String _addToTopKey = 'music.list.addToTop';
 const String _showSourceKey = 'music.list.showSource';
+const String _showHotSearchesKey = 'music.search.hot';
 const String _showTranslationKey = 'music.lyric.showTranslation';
 const String _showRomanizationKey = 'music.lyric.showRomanization';
+const String _swapLyricSecondaryKey = 'music.lyric.swapSecondary';
+const String _lyricFontScaleKey = 'music.lyric.fontScale';
+const String _lyricAlignmentKey = 'music.lyric.alignment';
+const String _lyricZoomActiveKey = 'music.lyric.zoomActive';
+const String _lyricProgressKey = 'music.lyric.progress';
 const String _lyricOffsetKey = 'music.lyric.offsetMs';
 const String _desktopLyricsKey = 'music.lyric.desktop.enabled';
 const String _desktopLyricLockedKey = 'music.lyric.desktop.locked';
@@ -307,9 +396,12 @@ const String _downloadTypeKey = 'music.download.type';
 const String _downloadPatternKey = 'music.download.pattern';
 const String _downloadEmbedCoverKey = 'music.download.embedCover';
 const String _downloadEmbedLyricKey = 'music.download.embedLyric';
+const String _downloadIncludeTranslationKey = 'music.download.includeTranslation';
+const String _downloadIncludeRomanizationKey = 'music.download.includeRomanization';
 const String _downloadWriteLyricKey = 'music.download.writeLyric';
 const String _downloadSkipExistingKey = 'music.download.skipExisting';
 const String _downloadGroupByListKey = 'music.download.groupByList';
+const String _downloadMaxConcurrentKey = 'music.download.maxConcurrent';
 
 /// Owns the music module's preferences.
 final class MusicSettingsController extends Notifier<MusicSettings> {
@@ -322,8 +414,14 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     rememberProgress: _readBool(_rememberProgressKey) ?? true,
     addToTop: _readBool(_addToTopKey) ?? true,
     showSource: _readBool(_showSourceKey) ?? true,
+    showHotSearches: _readBool(_showHotSearchesKey) ?? true,
     showTranslation: _readBool(_showTranslationKey) ?? true,
     showRomanization: _readBool(_showRomanizationKey) ?? true,
+    swapLyricSecondary: _readBool(_swapLyricSecondaryKey) ?? false,
+    lyricFontScale: (_readInt(_lyricFontScaleKey) ?? 140).clamp(100, 200),
+    lyricAlignment: _readLyricAlignment(),
+    lyricZoomActive: _readBool(_lyricZoomActiveKey) ?? false,
+    lyricProgress: _readBool(_lyricProgressKey) ?? false,
     lyricOffsetMs: _readInt(_lyricOffsetKey) ?? 0,
     desktopLyrics: _readBool(_desktopLyricsKey) ?? false,
     desktopLyricLocked: _readBool(_desktopLyricLockedKey) ?? false,
@@ -337,9 +435,12 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     downloadPattern: _readString(_downloadPatternKey) ?? MusicSettings.standard.downloadPattern,
     downloadEmbedCover: _readBool(_downloadEmbedCoverKey) ?? false,
     downloadEmbedLyric: _readBool(_downloadEmbedLyricKey) ?? false,
+    downloadIncludeTranslation: _readBool(_downloadIncludeTranslationKey) ?? false,
+    downloadIncludeRomanization: _readBool(_downloadIncludeRomanizationKey) ?? false,
     downloadWriteLyric: _readBool(_downloadWriteLyricKey) ?? true,
     downloadSkipExisting: _readBool(_downloadSkipExistingKey) ?? true,
     downloadGroupByList: _readBool(_downloadGroupByListKey) ?? false,
+    downloadMaxConcurrent: (_readInt(_downloadMaxConcurrentKey) ?? 1).clamp(1, 5),
   );
 
   static MusicQuality _readQuality() {
@@ -364,6 +465,14 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
       if (alignment.name == name) return alignment;
     }
     return audio.DesktopLyricAlignment.center;
+  }
+
+  static MusicLyricAlignment _readLyricAlignment() {
+    final name = _readString(_lyricAlignmentKey);
+    for (final alignment in MusicLyricAlignment.values) {
+      if (alignment.name == name) return alignment;
+    }
+    return MusicLyricAlignment.center;
   }
 
   static String? _readString(String key) {
@@ -441,6 +550,12 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     await _writeBool(_showSourceKey, value);
   }
 
+  /// Offers the source's top searches on the empty search page.
+  Future<void> setShowHotSearches({required bool value}) async {
+    state = state.copyWith(showHotSearches: value);
+    await _writeBool(_showHotSearchesKey, value);
+  }
+
   /// Shows a lyric's translation.
   Future<void> setShowTranslation({required bool value}) async {
     state = state.copyWith(showTranslation: value);
@@ -451,6 +566,37 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
   Future<void> setShowRomanization({required bool value}) async {
     state = state.copyWith(showRomanization: value);
     await _writeBool(_showRomanizationKey, value);
+  }
+
+  /// Swaps the translation and the romanization under a lyric line.
+  Future<void> setSwapLyricSecondary({required bool value}) async {
+    state = state.copyWith(swapLyricSecondary: value);
+    await _writeBool(_swapLyricSecondaryKey, value);
+  }
+
+  /// Sets the lyric panel's text scale, 100–200 percent.
+  Future<void> setLyricFontScale(int value) async {
+    final clamped = value.clamp(100, 200);
+    state = state.copyWith(lyricFontScale: clamped);
+    await _writeInt(_lyricFontScaleKey, clamped);
+  }
+
+  /// Sets where a lyric line sits in the panel.
+  Future<void> setLyricAlignment(MusicLyricAlignment value) async {
+    state = state.copyWith(lyricAlignment: value);
+    await _writeString(_lyricAlignmentKey, value.name);
+  }
+
+  /// Draws the line being sung larger than the rest.
+  Future<void> setLyricZoomActive({required bool value}) async {
+    state = state.copyWith(lyricZoomActive: value);
+    await _writeBool(_lyricZoomActiveKey, value);
+  }
+
+  /// Shows the song's playback progress above the lyric panel.
+  Future<void> setLyricProgress({required bool value}) async {
+    state = state.copyWith(lyricProgress: value);
+    await _writeBool(_lyricProgressKey, value);
   }
 
   /// Sets the viewer's lyric delay.
@@ -537,6 +683,18 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     await _writeBool(_downloadEmbedLyricKey, value);
   }
 
+  /// Includes the translation in a download's lyric.
+  Future<void> setDownloadIncludeTranslation({required bool value}) async {
+    state = state.copyWith(downloadIncludeTranslation: value);
+    await _writeBool(_downloadIncludeTranslationKey, value);
+  }
+
+  /// Includes the romanization in a download's lyric.
+  Future<void> setDownloadIncludeRomanization({required bool value}) async {
+    state = state.copyWith(downloadIncludeRomanization: value);
+    await _writeBool(_downloadIncludeRomanizationKey, value);
+  }
+
   /// Writes a sidecar `.lrc` beside a download.
   Future<void> setDownloadWriteLyric({required bool value}) async {
     state = state.copyWith(downloadWriteLyric: value);
@@ -553,6 +711,13 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
   Future<void> setDownloadGroupByList({required bool value}) async {
     state = state.copyWith(downloadGroupByList: value);
     await _writeBool(_downloadGroupByListKey, value);
+  }
+
+  /// How many downloads may run at once, 1–5.
+  Future<void> setDownloadMaxConcurrent(int value) async {
+    final clamped = value.clamp(1, 5);
+    state = state.copyWith(downloadMaxConcurrent: clamped);
+    await _writeInt(_downloadMaxConcurrentKey, clamped);
   }
 
   /// Back to the source, playback and list defaults this page owns.

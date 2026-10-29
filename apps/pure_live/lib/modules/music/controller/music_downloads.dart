@@ -9,7 +9,7 @@ import 'package:pure_live/app/providers/settings/download_directory_provider.dar
     show DownloadDirectoryPaths, downloadDirectoryProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicQualityOf;
 import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId, musicSourceProvider;
+import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
 
 /// The preference the download queue is kept under.
 const String kMusicDownloadsKey = 'music.downloads';
@@ -47,13 +47,16 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
 
   @override
   List<audio.MusicDownloadTask> build() {
-    _queue = audio.MusicDownloadQueue();
+    _queue = audio.MusicDownloadQueue(maxConcurrent: ref.read(musicSettingsProvider).downloadMaxConcurrent);
     final stored = _readTasks();
     if (stored.isNotEmpty) _queue.restore(stored);
     _updates = _queue.updates.listen((_) {
       if (!ref.mounted) return;
       state = _queue.tasks;
       _persistSoon();
+    });
+    ref.listen(musicSettingsProvider.select((settings) => settings.downloadMaxConcurrent), (_, concurrent) {
+      unawaited(_queue.setMaxConcurrent(concurrent));
     });
     ref.onDispose(() {
       _persistTimer?.cancel();
@@ -69,19 +72,23 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
     if (track.isLocal) {
       return (outcome: MusicDownloadStart.unsupported, error: null);
     }
-    if (track.sourceId.isNotEmpty && track.sourceId != kLxMusicSourceId) {
+    final settings = ref.read(musicSettingsProvider);
+    audio.MusicSource? source;
+    for (final candidate in ref.read(musicSourceListProvider)) {
+      if (candidate.id == track.sourceId) source = candidate;
+    }
+    if (source == null) {
       return (outcome: MusicDownloadStart.unsupported, error: null);
     }
-    final settings = ref.read(musicSettingsProvider);
-    final source = ref.read(musicSourceProvider);
+    final activeSource = source;
     final quality = musicQualityOf(settings.quality);
     final directory = ref.read(downloadDirectoryProvider).effectivePath;
     try {
-      final resolved = await source.resolveTrackSource(track, quality: quality);
+      final resolved = await activeSource.resolveTrackSource(track, quality: quality);
       audio.MusicLyricPayload? lyric;
       if (settings.downloadEmbedLyric || settings.downloadWriteLyric) {
         try {
-          lyric = await source.resolveLyric(track);
+          lyric = await activeSource.resolveLyric(track);
         } on Object {
           // A song without a lyric still downloads.
         }
@@ -101,8 +108,8 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
         embedLyric: settings.downloadEmbedLyric,
         writeLyricFile: settings.downloadWriteLyric,
         skipExisting: settings.downloadSkipExisting,
-        includeTranslation: settings.showTranslation,
-        includeRomanization: settings.showRomanization,
+        includeTranslation: settings.downloadIncludeTranslation,
+        includeRomanization: settings.downloadIncludeRomanization,
       );
       final existing = _queue.pending.where((task) => task.request.dedupeKey == request.dedupeKey).firstOrNull;
       if (existing != null) {
@@ -111,7 +118,7 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
       _queue.enqueue(
         request,
         resolve: () async {
-          final fresh = await source.resolveTrackSource(track, quality: quality);
+          final fresh = await activeSource.resolveTrackSource(track, quality: quality);
           return audio.MusicDownloadRequest.forTrack(
             track: track,
             source: fresh,
@@ -127,8 +134,8 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
             embedLyric: settings.downloadEmbedLyric,
             writeLyricFile: settings.downloadWriteLyric,
             skipExisting: settings.downloadSkipExisting,
-            includeTranslation: settings.showTranslation,
-            includeRomanization: settings.showRomanization,
+            includeTranslation: settings.downloadIncludeTranslation,
+            includeRomanization: settings.downloadIncludeRomanization,
           );
         },
       );
