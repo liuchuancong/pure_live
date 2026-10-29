@@ -156,7 +156,9 @@
   `uniform_get_Dissinfo` 详情，kg 走最稳 JSON 链：yueku v9 getSpecial 列表/标签 + `special/info_v2`
   + `special/song_v2` 分页（web 版 MD5 排序签名）+ `gateway.kugou.com/v3/album_audio/audio`
   网关富化（LX `createGetMusicInfosTask` 的固定头/密钥）；**未移植 LX 的 HTML 抓取与 chain/gcid
-  多级回退链**（分享链歌单暂不支持）。mg 通道与 UI 视图接入 music_page 待后续）：各源 `songList.js`。
+  多级回退链**（分享链歌单暂不支持）；**mg 通道已实现**（第十批：taglist 标签 +
+  `musiclistplaza-listbytag`（contents 递归收 resType=2021）/ `playlist-square-recommend` 兜底 +
+  MIGUM3.0 `playlist/song/v2.0` + `playlist/v2.0` 详情）。UI 视图接入 music_page 待后续）：各源 `songList.js`。
 
 ### G. 设置与同步
 - ⬜ G1 设置域对齐 `app_setting.d.ts` 的 key 前缀语义：common./player./desktopLyric./download./
