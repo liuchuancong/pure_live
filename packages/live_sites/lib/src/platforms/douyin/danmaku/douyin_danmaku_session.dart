@@ -22,8 +22,9 @@ import 'package:live_websocket/live_websocket.dart';
 /// Creates danmaku sessions for Douyin's web IM protocol.
 ///
 /// The session joins the room's current broadcast: the broadcast's room_id
-/// (not the lasting web_rid) and the visitor id come from a fresh detail, and
-/// a room that is off air has no danmaku to join.
+/// (not the lasting web_rid) and the visitor id come from the detail that
+/// produced the room — the room's own handle, or a fresh detail when the room
+/// carries none — and a room that is off air has no danmaku to join.
 final class DouyinDanmakuProvider implements LiveDanmakuProvider {
   /// The provider over [site] (which resolves the room's broadcast).
   DouyinDanmakuProvider({required this.site});
@@ -35,7 +36,7 @@ final class DouyinDanmakuProvider implements LiveDanmakuProvider {
   Future<Either<LiveSiteError, LiveDanmakuSession>> createSession({required LiveRoom room}) async {
     final DouyinDanmakuArgs args;
     try {
-      final resolved = await site.danmakuArgs(room.roomId);
+      final resolved = await joinArgs(room);
       if (resolved == null || resolved.roomId.isEmpty) {
         return left(
           LiveSiteError.contentUnavailable(
@@ -61,6 +62,19 @@ final class DouyinDanmakuProvider implements LiveDanmakuProvider {
       return left(failure);
     }
     return right(session);
+  }
+
+  /// The broadcast this room's chat lives in: the detail that produced [room]
+  /// already named it, so its own handle is what the session joins with and
+  /// nothing is asked again (an open used to sign a second enter just to learn
+  /// what it had just read). A room that carries no handle for this room — a
+  /// refresh read, or one whose broadcast was unknown — asks the room.
+  Future<DouyinDanmakuArgs?> joinArgs(LiveRoom room) {
+    final handle = room.runtime.danmakuHandle;
+    if (handle is DouyinDanmakuArgs && handle.roomId.isNotEmpty && handle.webRid == room.roomId) {
+      return Future<DouyinDanmakuArgs?>.value(handle);
+    }
+    return site.danmakuArgs(room.roomId);
   }
 }
 

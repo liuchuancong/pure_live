@@ -17,7 +17,8 @@ import 'package:live_sites/src/platforms/douyin/parsers/douyin_play_parser.dart'
 // ignore_for_file: unnecessary_type_name_in_constructor
 
 /// Douyin's playback: the web room answer carries the URLs, so qualities and
-/// lines are read off `room.stream_url` of a fresh detail — there is no play
+/// lines are read off `room.stream_url` — from the room's own detail while
+/// that answer still stands, from a fresh one after it. There is no play
 /// request and nothing to sign for the stream itself.
 ///
 /// A room that is off air, or on air without a video for this client (audio
@@ -30,11 +31,14 @@ final class DouyinPlaybackProvider implements LivePlaybackProvider, LivePlayback
   /// The site this capability serves.
   final DouyinSite site;
 
+  /// How long the room's own detail may serve playback (see [_streamed]).
+  static const Duration playbackHandleWindow = Duration(seconds: 5);
+
   @override
   Future<Either<LiveSiteError, List<LivePlayQuality>>> getQualities({required LiveRoom room}) async {
     try {
-      final fetched = await _streamed(room.roomId);
-      return right(DouyinPlayParser.qualities(fetched.room.streamUrl));
+      final stream = await _streamed(room);
+      return right(DouyinPlayParser.qualities(stream.streamUrl));
     } on DouyinFailure catch (failure) {
       return left(failure.toLiveSiteError(douyinSiteId));
     } on Object catch (error) {
@@ -45,13 +49,13 @@ final class DouyinPlaybackProvider implements LivePlaybackProvider, LivePlayback
   @override
   Future<Either<LiveSiteError, List<LivePlayLine>>> getLines({required LiveRoom room, LivePlayQuality? quality}) async {
     try {
-      final fetched = await _streamed(room.roomId);
+      final stream = await _streamed(room);
       final lines = DouyinPlayParser.lines(
-        fetched.room.streamUrl,
-        webRid: fetched.room.room.roomId,
-        issuedAt: fetched.issuedAt,
+        stream.streamUrl,
+        webRid: stream.webRid,
+        issuedAt: stream.issuedAt,
         qualityId: quality?.qualityId,
-        cookie: fetched.cookie,
+        cookie: stream.cookie,
       );
       if (lines.isEmpty) {
         throw const DouyinFailure(DouyinFailureKind.streamUnavailable, 'stream_url: no playable URL');
@@ -72,13 +76,13 @@ final class DouyinPlaybackProvider implements LivePlaybackProvider, LivePlayback
     LivePlayQuality? quality,
   }) async {
     try {
-      final fetched = await _streamed(room.roomId);
+      final stream = await _streamed(room);
       final resolution = DouyinPlayParser.resolvedLines(
-        fetched.room.streamUrl,
-        webRid: fetched.room.room.roomId,
-        issuedAt: fetched.issuedAt,
+        stream.streamUrl,
+        webRid: stream.webRid,
+        issuedAt: stream.issuedAt,
         qualityId: quality?.qualityId,
-        cookie: fetched.cookie,
+        cookie: stream.cookie,
       );
       if (resolution.lines.isEmpty) {
         throw const DouyinFailure(DouyinFailureKind.streamUnavailable, 'stream_url: no playable URL');
@@ -91,24 +95,58 @@ final class DouyinPlaybackProvider implements LivePlaybackProvider, LivePlayback
     }
   }
 
-  /// A detail whose room actually offers a stream: live, unrestricted, and
-  /// with at least one video quality in `stream_url`.
-  Future<DouyinFetched> _streamed(String roomId) async {
-    final fetched = await site.fetch(roomId);
-    final room = fetched.room;
-    final broadcast = room.room.broadcast;
+  /// The stream answer playback reads: [room]'s own detail while it is still
+  /// the room being played, live, unrestricted, with a video and younger than
+  /// [playbackHandleWindow], else a fresh detail.
+  ///
+  /// The window is the whole of it: one open (detail, chat, qualities, lines)
+  /// shares a single signed enter, while a recovery or a lease renewal — which
+  /// arrives seconds to minutes after the room opened — always re-reads and so
+  /// never plays back the address it is recovering from.
+  Future<_DouyinStream> _streamed(LiveRoom room) async {
+    final handle = room.runtime.streamHandle;
+    if (handle is DouyinRoomData && _stillServes(handle, room)) {
+      return (
+        streamUrl: handle.streamUrl,
+        webRid: handle.webRid,
+        issuedAt: handle.issuedAt,
+        cookie: site.knownCookie(),
+      );
+    }
+    final fetched = await site.fetch(room.roomId);
+    final parse = fetched.room;
+    final broadcast = parse.room.broadcast;
     if (broadcast.effectiveRestriction != LiveRestriction.none) {
       throw DouyinFailure(
         DouyinFailureKind.streamUnavailable,
-        'room ${room.room.roomId} is restricted (${broadcast.effectiveRestriction.name})',
+        'room ${parse.room.roomId} is restricted (${broadcast.effectiveRestriction.name})',
       );
     }
-    if (!broadcast.isLiveNow || DouyinPlayParser.qualities(room.streamUrl).isEmpty) {
+    if (!broadcast.isLiveNow || DouyinPlayParser.qualities(parse.streamUrl).isEmpty) {
       throw DouyinFailure(
         DouyinFailureKind.streamUnavailable,
-        'room ${room.room.roomId}: no video stream (${broadcast.effectiveLiveStatus.name})',
+        'room ${parse.room.roomId}: no video stream (${broadcast.effectiveLiveStatus.name})',
       );
     }
-    return fetched;
+    return (
+      streamUrl: parse.streamUrl,
+      webRid: parse.room.roomId,
+      issuedAt: fetched.issuedAt,
+      cookie: fetched.cookie,
+    );
   }
+
+  /// Whether [handle] is still the answer for [room] (see [_streamed]).
+  bool _stillServes(DouyinRoomData handle, LiveRoom room) =>
+      handle.streamUrl != null &&
+      handle.webRid == room.roomId &&
+      room.broadcast.isLiveNow &&
+      room.broadcast.effectiveRestriction == LiveRestriction.none &&
+      DouyinPlayParser.qualities(handle.streamUrl).isNotEmpty &&
+      site.now().difference(handle.issuedAt) <= playbackHandleWindow;
 }
+
+/// The four things a stream answer carries: the platform's `stream_url`, the
+/// room it was read for, when it arrived and the cookie its media headers
+/// carry.
+typedef _DouyinStream = ({Map<String, dynamic>? streamUrl, String webRid, DateTime issuedAt, String cookie});

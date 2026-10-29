@@ -159,6 +159,9 @@ final class DouyinSite implements LiveSite {
   /// Broadcasts whose start time a reflow answer already gave.
   final Map<String, DateTime> _startTimes = {};
 
+  /// Broadcasts whose last start-time lookup answered nothing, and when.
+  final Map<String, DateTime> _startLookupsMissed = {};
+
   /// Stable platform identity.
   @override
   LiveSiteManifest get manifest => douyinManifest;
@@ -407,6 +410,8 @@ final class DouyinSite implements LiveSite {
     if (broadcast.isEmpty) return null;
     final remembered = _startTimes[broadcast];
     if (remembered != null) return remembered;
+    final missedAt = _startLookupsMissed[broadcast];
+    if (missedAt != null && now().difference(missedAt) < startLookupCooldown) return null;
     final lookup = _startLookups.putIfAbsent(broadcast, () => _lookUpStart(broadcast, webRid));
     try {
       return await lookup;
@@ -417,21 +422,39 @@ final class DouyinSite implements LiveSite {
     }
   }
 
-  /// How long a detail waits for one start-time lookup.
-  static const Duration startLookupWait = Duration(seconds: 3);
+  /// How long a detail waits for one start-time lookup. Only a label
+  /// ("{time} 开播") reads it, so the wait is the shorter of "fast" and
+  /// "nothing": a first frame is worth more than the label.
+  static const Duration startLookupWait = Duration(milliseconds: 700);
+
+  /// How long a broadcast that answered nothing keeps that answer. The reflow
+  /// host is unreachable outright for some networks, and paying the full wait
+  /// on every open of the same broadcast would make it a recurring cost.
+  static const Duration startLookupCooldown = Duration(minutes: 5);
 
   Future<DateTime?> _lookUpStart(String broadcast, String webRid) async {
     try {
       final fetched = await reflowFetched(broadcast);
       final startedAt = fetched.room.room.broadcast.startedAt;
-      if (startedAt == null || fetched.room.roomId != broadcast || fetched.room.room.roomId != webRid) return null;
+      if (startedAt == null || fetched.room.roomId != broadcast || fetched.room.room.roomId != webRid) {
+        return _startLookupMissed(broadcast);
+      }
       _startTimes.remove(broadcast);
       _startTimes[broadcast] = startedAt;
       if (_startTimes.length > 64) _startTimes.remove(_startTimes.keys.first);
+      _startLookupsMissed.remove(broadcast);
       return startedAt;
     } on DouyinFailure {
-      return null;
+      return _startLookupMissed(broadcast);
     }
+  }
+
+  /// Records that this broadcast's start time is not coming; returns null for
+  /// the lookup that found nothing.
+  DateTime? _startLookupMissed(String broadcast) {
+    _startLookupsMissed[broadcast] = now();
+    if (_startLookupsMissed.length > 64) _startLookupsMissed.remove(_startLookupsMissed.keys.first);
+    return null;
   }
 
   /// The danmaku arguments of room [roomId]'s broadcast now (a new detail
