@@ -8,7 +8,8 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists, SonglistSearch;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, OnlinePlaylists, PlaylistTagTree,
+        SonglistSearch;
 
 /// The lx-music leaderboard view's KuGou boards, in its own order.
 const List<(String, String)> _kKgBoards = [
@@ -35,7 +36,7 @@ const Map<String, String> _krcHeaders = {
 /// The KuGou platform: search, boards and lyrics ride KuGou's own channel;
 /// play URLs come from the lx scripts (KuGou has no open URL endpoint), keyed
 /// by the per-quality file hashes the search response carries.
-final class KgMusicSource extends LxPlatformSource with OnlinePlaylists, SonglistSearch
+final class KgMusicSource extends LxPlatformSource with OnlinePlaylists, PlaylistTagTree, SonglistSearch
 implements MusicHotWords, MusicCommentsSource {
   /// A KuGou source over the lx runtime.
   KgMusicSource(super.runtime, super.http);
@@ -203,6 +204,33 @@ implements MusicHotWords, MusicCommentsSource {
     } on Object {
       return const <String>[];
     }
+  }
+
+  /// The plaza's category tree — the reference's kg `getTags` on the
+  /// smarty getSpecial: categories keyed by name, the tag rows inside.
+  @override
+  Future<List<MusicPlaylistTagGroup>> tagGroups() async {
+    final json = jsonDecode(
+      await getText(Uri.http('www2.kugou.kugou.com', '/yueku/v9/special/getSpecial', {'is_smarty': '1'})),
+    ) as Map<String, Object?>;
+    final data = json['data'];
+    if (json['status'] != 1 || data is! Map) return const <MusicPlaylistTagGroup>[];
+    final tagids = data['tagids'];
+    if (tagids is! Map) return const <MusicPlaylistTagGroup>[];
+    final groups = <MusicPlaylistTagGroup>[];
+    for (final key in tagids.keys) {
+      final bucket = tagids[key];
+      if (bucket is! Map) continue;
+      final raw = bucket['data'];
+      final tags = [
+        if (raw is List)
+          for (final tag in raw)
+            if (tag is Map && '${tag['id'] ?? ''}'.isNotEmpty && '${tag['name'] ?? ''}'.isNotEmpty)
+              MusicPlaylistTag(id: '${tag['id']}', name: '${tag['name']}'),
+      ];
+      if (tags.isNotEmpty) groups.add(MusicPlaylistTagGroup(name: '$key', tags: tags));
+    }
+    return groups;
   }
 
   /// One page of the keyword's playlists — the reference's kg `songList`

@@ -2731,6 +2731,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '小蜜音乐'
 	String get sourceAliasMg => '小蜜音乐';
 
+	/// zh-CN: '热门'
+	String get playlistHotTags => '热门';
+
 	/// zh-CN: '当前音源暂不支持歌单搜索。'
 	String get songlistSearchUnsupported => '当前音源暂不支持歌单搜索。';
 
@@ -11059,6 +11062,7 @@ extension on Translations {
 			'music.sourceAliasTx' => '小秋音乐',
 			'music.sourceAliasWy' => '小芸音乐',
 			'music.sourceAliasMg' => '小蜜音乐',
+			'music.playlistHotTags' => '热门',
 			'music.songlistSearchUnsupported' => '当前音源暂不支持歌单搜索。',
 			'music.defaultSource' => '默认音源',
 			'music.defaultSourceDesc' => '歌曲从哪个音源获取；自定义源脚本负责解析播放地址。',
@@ -11223,9 +11227,9 @@ extension on Translations {
 			'music.downloadDirectory' => '下载目录',
 			'music.downloadDirectoryDefault' => '使用默认目录',
 			'music.downloadDirectoryDefaultDesc' => '回到应用默认的下载文件夹。',
-			'music.downloadDirectoryUpdated' => '下载目录已更新',
 			_ => null,
 		} ?? switch (path) {
+			'music.downloadDirectoryUpdated' => '下载目录已更新',
 			'music.downloadDirectoryFailed' => '无法写入这个目录',
 			'music.downloadType' => '下载格式',
 			'music.downloadTypeDesc' => '原格式会尽量保留音源容器；转码需要 ffmpeg。',
@@ -11737,9 +11741,9 @@ extension on Translations {
 			'room.restrictionAdult' => '年龄限制',
 			'room.restrictionUnplayable' => '暂时无法播放',
 			'room.orientation' => '画面方向',
-			'room.orientationHint' => '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。',
 			_ => null,
 		} ?? switch (path) {
+			'room.orientationHint' => '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。',
 			'room.orientationAutomatic' => '自动',
 			'room.orientationPortrait' => '竖屏',
 			'room.orientationLandscape' => '横屏',
@@ -12251,9 +12255,9 @@ extension on Translations {
 			'settings.fontManagerReset' => '恢复默认',
 			'settings.fontManagerFilterAll' => '全部',
 			'settings.fontManagerCategory' => '分类',
-			'settings.fontManagerCount' => ({required Object count}) => '共 ${count} 款字体',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerCount' => ({required Object count}) => '共 ${count} 款字体',
 			'settings.fontManagerTagBundled' => '随应用打包',
 			'settings.fontManagerSourceFreeFont' => '免费字体库',
 			'settings.fontManagerUse' => '使用',
@@ -12765,9 +12769,9 @@ extension on Translations {
 			'settings.downloadStatusRunning' => '下载中',
 			'settings.downloadStatusDone' => '已完成',
 			'settings.downloadStatusFailed' => '下载失败',
-			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => '完成于 ${time}',
 			'settings.downloadRemove' => '移除记录',
 			'settings.downloadRemoveBody' => '只移除这条记录，不会删除已保存的文件。',
@@ -13279,9 +13283,9 @@ extension on Translations {
 			'vod.errorTitle' => '视频没有加载出来',
 			'vod.retry' => '重试',
 			'vod.tabRecommend' => '推荐',
-			'vod.tabPopular' => '热门',
 			_ => null,
 		} ?? switch (path) {
+			'vod.tabPopular' => '热门',
 			'vod.tabDynamics' => '动态',
 			'vod.dynamicsLoginTitle' => '登录后查看动态',
 			'vod.dynamicsLoginDescription' => '动态来自你关注的 UP 主，需要一个 Bilibili 登录。',

@@ -1010,6 +1010,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get sourceAliasTx => 'TX Music';
 	@override String get sourceAliasWy => 'WY Music';
 	@override String get sourceAliasMg => 'MG Music';
+	@override String get playlistHotTags => 'Hot';
 	@override String get songlistSearchUnsupported => 'This source cannot search songlists yet.';
 	@override String get defaultSource => 'Default source';
 	@override String get defaultSourceDesc => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.';
@@ -4439,6 +4440,7 @@ extension on TranslationsEn {
 			'music.sourceAliasTx' => 'TX Music',
 			'music.sourceAliasWy' => 'WY Music',
 			'music.sourceAliasMg' => 'MG Music',
+			'music.playlistHotTags' => 'Hot',
 			'music.songlistSearchUnsupported' => 'This source cannot search songlists yet.',
 			'music.defaultSource' => 'Default source',
 			'music.defaultSourceDesc' => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.',
@@ -4603,9 +4605,9 @@ extension on TranslationsEn {
 			'music.downloadDirectory' => 'Download folder',
 			'music.downloadDirectoryDefault' => 'Use the default folder',
 			'music.downloadDirectoryDefaultDesc' => 'Return to the app’s default downloads folder.',
-			'music.downloadDirectoryUpdated' => 'Download folder updated',
 			_ => null,
 		} ?? switch (path) {
+			'music.downloadDirectoryUpdated' => 'Download folder updated',
 			'music.downloadDirectoryFailed' => 'This folder is not writable',
 			'music.downloadType' => 'Download format',
 			'music.downloadTypeDesc' => 'Original keeps the source container; transcoding needs ffmpeg.',
@@ -5117,9 +5119,9 @@ extension on TranslationsEn {
 			'room.restrictionAdult' => 'Age restricted',
 			'room.restrictionUnplayable' => 'Not playable now',
 			'room.orientation' => 'Picture orientation',
-			'room.orientationHint' => 'Follow the picture’s own shape, or fix this room to portrait or landscape.',
 			_ => null,
 		} ?? switch (path) {
+			'room.orientationHint' => 'Follow the picture’s own shape, or fix this room to portrait or landscape.',
 			'room.orientationAutomatic' => 'Automatic',
 			'room.orientationPortrait' => 'Portrait',
 			'room.orientationLandscape' => 'Landscape',
@@ -5631,9 +5633,9 @@ extension on TranslationsEn {
 			'settings.fontManagerReset' => 'Restore the default',
 			'settings.fontManagerFilterAll' => 'All',
 			'settings.fontManagerCategory' => 'Category',
-			'settings.fontManagerCount' => ({required Object count}) => '${count} fonts',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerCount' => ({required Object count}) => '${count} fonts',
 			'settings.fontManagerTagBundled' => 'Bundled',
 			'settings.fontManagerSourceFreeFont' => 'Free font collection',
 			'settings.fontManagerUse' => 'Use',
@@ -6145,9 +6147,9 @@ extension on TranslationsEn {
 			'settings.downloadStatusRunning' => 'Downloading',
 			'settings.downloadStatusDone' => 'Completed',
 			'settings.downloadStatusFailed' => 'Failed',
-			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => 'Finished ${time}',
 			'settings.downloadRemove' => 'Remove record',
 			'settings.downloadRemoveBody' => 'Removes the record only; the saved file stays.',
@@ -6659,9 +6661,9 @@ extension on TranslationsEn {
 			'vod.errorTitle' => 'The videos did not load',
 			'vod.retry' => 'Retry',
 			'vod.tabRecommend' => 'Recommended',
-			'vod.tabPopular' => 'Popular',
 			_ => null,
 		} ?? switch (path) {
+			'vod.tabPopular' => 'Popular',
 			'vod.tabDynamics' => 'Dynamics',
 			'vod.dynamicsLoginTitle' => 'Sign in to see your dynamics',
 			'vod.dynamicsLoginDescription' => 'The feed comes from the uploaders you follow and needs a Bilibili sign-in.',

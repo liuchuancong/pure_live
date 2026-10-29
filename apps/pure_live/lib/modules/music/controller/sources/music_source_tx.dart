@@ -10,7 +10,8 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists, SonglistSearch;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, OnlinePlaylists, PlaylistTagTree,
+        SonglistSearch;
 
 /// The QQ-music leaderboard view's boards, in its own order.
 const List<(String, String)> _kTxBoards = [
@@ -69,7 +70,7 @@ String zzcSign(String text) {
 
 /// The QQ music platform: search and boards ride the signed android gateway;
 /// play URLs come from the lx scripts (the open gateway serves no URLs).
-final class TxMusicSource extends LxPlatformSource with OnlinePlaylists, SonglistSearch
+final class TxMusicSource extends LxPlatformSource with OnlinePlaylists, PlaylistTagTree, SonglistSearch
 implements MusicHotWords, MusicCommentsSource {
   /// A QQ music source over the lx runtime.
   TxMusicSource(super.runtime, super.http);
@@ -337,6 +338,46 @@ implements MusicHotWords, MusicCommentsSource {
       ],
       total: (feed['FromLimit'] as num?)?.toInt() ?? 0,
     );
+  }
+
+  /// The plaza's category tree — the reference's tx `getTag` on the
+  /// all-categories gateway: groups with their numeric tag ids inside.
+  @override
+  Future<List<MusicPlaylistTagGroup>> tagGroups() async {
+    final uri = Uri.https('u.y.qq.com', '/cgi-bin/musicu.fcg', {
+      'loginUin': '0',
+      'hostUin': '0',
+      'format': 'json',
+      'inCharset': 'utf-8',
+      'outCharset': 'utf-8',
+      'notice': '0',
+      'platform': 'wk_v15.json',
+      'needNewCode': '0',
+      'data': jsonEncode({
+        'tags': {'method': 'get_all_categories', 'param': {'qq': ''}, 'module': 'playlist.PlaylistAllCategoriesServer'},
+      }),
+    });
+    final json = jsonDecode(await getText(uri)) as Map<String, Object?>;
+    final tags = json['tags'];
+    final data = tags is Map ? tags['data'] : null;
+    if (json['code'] != 0 || data is! Map) return const <MusicPlaylistTagGroup>[];
+    final raw = data['v_group'];
+    final groups = <MusicPlaylistTagGroup>[];
+    if (raw is List) {
+      for (final group in raw) {
+        if (group is! Map) continue;
+        final items = group['v_item'];
+        final groupTags = [
+          if (items is List)
+            for (final item in items)
+              if (item is Map && '${item['id'] ?? ''}'.isNotEmpty)
+                MusicPlaylistTag(id: '${item['id']}', name: '${item['name'] ?? ''}'),
+        ];
+        final name = '${group['group_name'] ?? ''}';
+        if (groupTags.isNotEmpty && name.isNotEmpty) groups.add(MusicPlaylistTagGroup(name: name, tags: groupTags));
+      }
+    }
+    return groups;
   }
 
   /// One page of the keyword's playlists — the reference's tx `songList`

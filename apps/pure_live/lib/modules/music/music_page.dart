@@ -18,7 +18,7 @@ import 'package:pure_live/modules/music/controller/music_library.dart';
 import 'package:pure_live/modules/music/controller/music_local.dart';
 import 'package:pure_live/modules/music/controller/music_online_playlists.dart'
     show musicOnlineHotTagsProvider, musicOnlinePlaylistDetailProvider, musicOnlinePlaylistsProvider,
-        musicSonglistSearchProvider;
+        musicPlaylistTagGroupsProvider, musicSonglistSearchProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_playlists.dart';
 import 'package:pure_live/modules/music/controller/music_search.dart';
@@ -28,7 +28,7 @@ import 'package:pure_live/modules/music/controller/music_source.dart'
     show musicSourceListProvider, musicSourceProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show musicSourcesProvider;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists, SonglistSearch;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, OnlinePlaylists, SonglistSearch;
 import 'package:pure_live/modules/music/pages/music_player_page.dart' show musicDurationText;
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
     show MusicCardMenuButton, MusicPlaylistCard, MusicPlaylistGrid;
@@ -2094,7 +2094,10 @@ final class _OnlinePlaylistBrowse extends ConsumerStatefulWidget {
 }
 
 final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrowse> {
-  /// The tag in browse; null waits for the hot tags to name the first.
+  /// The category group in browse; empty is the hot tags.
+  String _group = '';
+
+  /// The tag in browse; null waits for the chips to name the first.
   String? _tag;
 
   /// How many pages are wanted; the family provider caches each one, so
@@ -2104,10 +2107,19 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final tags = ref.watch(musicOnlineHotTagsProvider);
+    final hotTags = ref.watch(musicOnlineHotTagsProvider);
+    final tree = ref.watch(musicPlaylistTagGroupsProvider);
     final supported = ref.watch(musicSourceProvider) is OnlinePlaylists;
 
-    final effectiveTag = _tag ?? tags.value?.firstOrNull;
+    final tagGroups = tree.value ?? const <MusicPlaylistTagGroup>[];
+    final hotValues = [
+      for (final name in hotTags.value ?? const <String>[])
+        if (name.trim().isNotEmpty) MusicPlaylistTag(id: name.trim(), name: name.trim()),
+    ];
+    final chips = _group.isEmpty
+        ? hotValues
+        : tagGroups.where((group) => group.name == _group).firstOrNull?.tags ?? const <MusicPlaylistTag>[];
+    final effectiveTag = _tag ?? chips.firstOrNull?.id;
 
     final pages = <AsyncValue<MusicPlaylistPage>>[
       if (effectiveTag != null)
@@ -2138,21 +2150,40 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
             ),
           )
         else ...[
-          if (tags.value case final List<String> tagsValue when tagsValue.isNotEmpty)
+          // The reference's tag tree: the categories as the nav row, the
+          // chosen group's tags as the chips under it, the hot tags their
+          // own first group.
+          if (tagGroups.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+              child: DsTopNav<String>(
+                items: [
+                  DsTopNavItem(value: '', label: Text(t.music.playlistHotTags)),
+                  for (final group in tagGroups) DsTopNavItem(value: group.name, label: Text(group.name)),
+                ],
+                value: _group,
+                onChanged: (name) => setState(() {
+                  _group = name;
+                  _tag = null;
+                  _page = 1;
+                }),
+              ),
+            ),
+          if (chips.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
               child: Wrap(
                 spacing: DsSpace.s8,
                 runSpacing: DsSpace.s8,
                 children: [
-                  for (final tag in tagsValue)
+                  for (final tag in chips)
                     DsChip(
-                      label: Text(tag),
-                      selected: tag == effectiveTag,
+                      label: Text(tag.name),
+                      selected: tag.id == effectiveTag,
                       onChanged: (on) {
                         if (!on) return;
                         setState(() {
-                          _tag = tag;
+                          _tag = tag.id;
                           _page = 1;
                         });
                       },
@@ -2161,7 +2192,7 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
               ),
             ),
           Expanded(
-            child: switch ((effectiveTag, tags, error, loading, items.isEmpty)) {
+            child: switch ((effectiveTag, hotTags, error, loading, items.isEmpty)) {
               // The tags have not named a board yet: the first page waits
               // for them, loading or honestly failed.
               (null, AsyncValue(:final isLoading), _, _, _) when isLoading => const Center(
@@ -2191,7 +2222,9 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
                 onRefresh: () async {
                   final tag = effectiveTag;
                   if (tag == null) {
-                    ref.invalidate(musicOnlineHotTagsProvider);
+                    ref
+                      ..invalidate(musicOnlineHotTagsProvider)
+                      ..invalidate(musicPlaylistTagGroupsProvider);
                     return;
                   }
                   for (var page = 1; page <= _page; page++) {

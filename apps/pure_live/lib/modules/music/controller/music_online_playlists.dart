@@ -4,7 +4,7 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/modules/music/controller/music_source.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists, SonglistSearch;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTagGroup, OnlinePlaylists, PlaylistTagTree, SonglistSearch;
 
 /// One online playlist opened to its tracks.
 typedef MusicOnlinePlaylistDetail = (MusicPlaylistInfo, List<audio.MusicTrack>);
@@ -19,6 +19,15 @@ final musicOnlineHotTagsProvider = FutureProvider<List<String>>((ref) {
 });
 
 typedef MusicOnlinePlaylistKey = ({String tag, int page});
+
+/// The plaza's category tree (歌单分类): one group per category, its tags
+/// inside. A source without the tree has none and the browser keeps to the
+/// hot tags.
+final musicPlaylistTagGroupsProvider = FutureProvider<List<MusicPlaylistTagGroup>>((ref) {
+  final source = ref.watch(musicSourceProvider);
+  if (source case final PlaylistTagTree tree) return tree.tagGroups();
+  return Future.value(const <MusicPlaylistTagGroup>[]);
+});
 
 final FutureProviderFamily<MusicPlaylistPage, MusicOnlinePlaylistKey> musicOnlinePlaylistsProvider =
     FutureProvider.family<MusicPlaylistPage, MusicOnlinePlaylistKey>((ref, key) {

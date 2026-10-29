@@ -8,7 +8,8 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists, SonglistSearch;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, OnlinePlaylists, PlaylistTagTree,
+        SonglistSearch;
 
 /// The mg-music leaderboard view's boards, in its own order.
 const List<(String, String)> _kMgBoards = [
@@ -38,7 +39,7 @@ const String _mgUserAgent =
 
 /// The Migu platform: search rides the signed v3 gateway, boards and lyrics
 /// the open app endpoints; play URLs come from the lx scripts.
-final class MgMusicSource extends LxPlatformSource with OnlinePlaylists, SonglistSearch
+final class MgMusicSource extends LxPlatformSource with OnlinePlaylists, PlaylistTagTree, SonglistSearch
 implements MusicHotWords, MusicCommentsSource {
   /// A Migu source over the lx runtime.
   MgMusicSource(super.runtime, super.http);
@@ -292,6 +293,36 @@ implements MusicHotWords, MusicCommentsSource {
         out.add(entry.cast<String, Object?>());
       }
     }
+  }
+
+  /// The plaza's category tree — the reference's mg `getTag`: the template's
+  /// first block is the hot tags, the rest are groups of `texts` name/id
+  /// pairs.
+  @override
+  Future<List<MusicPlaylistTagGroup>> tagGroups() async {
+    final json = jsonDecode(
+      await getText(
+        Uri.https('app.c.nf.migu.cn', '/pc/v1.0/template/musiclistplaza-taglist/release'),
+        headers: _plazaHeaders,
+      ),
+    ) as Map<String, Object?>;
+    final data = json['data'];
+    if (json['code'] != '000000' || data is! List) return const <MusicPlaylistTagGroup>[];
+    final groups = <MusicPlaylistTagGroup>[];
+    for (final entry in data.skip(1)) {
+      if (entry is! Map) continue;
+      final header = entry['header'];
+      final content = entry['content'];
+      final name = header is Map ? '${header['title'] ?? ''}' : '';
+      final tags = [
+        if (content is List)
+          for (final item in content)
+            if (item is Map && item['texts'] is List && ((item['texts'] as List).length >= 2))
+              MusicPlaylistTag(id: '${(item['texts'] as List)[1]}', name: '${(item['texts'] as List)[0]}'),
+      ];
+      if (tags.isNotEmpty && name.isNotEmpty) groups.add(MusicPlaylistTagGroup(name: name, tags: tags));
+    }
+    return groups;
   }
 
   /// One page of the keyword's playlists — the reference's mg `songList`

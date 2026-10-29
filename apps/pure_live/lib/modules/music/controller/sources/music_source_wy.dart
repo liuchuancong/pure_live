@@ -7,7 +7,8 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists, SonglistSearch;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, OnlinePlaylists, PlaylistTagTree,
+        SonglistSearch;
 import 'package:pure_live/modules/music/controller/sources/wy_crypto.dart';
 
 /// The wy-music leaderboard view's Netease boards, in its own order.
@@ -29,7 +30,7 @@ const String _neteaseUserAgent =
 
 /// The Netease platform: search, boards and lyrics ride the eapi/weapi
 /// encrypted channels; play URLs come from the lx scripts.
-final class WyMusicSource extends LxPlatformSource with OnlinePlaylists, SonglistSearch
+final class WyMusicSource extends LxPlatformSource with OnlinePlaylists, PlaylistTagTree, SonglistSearch
 implements MusicHotWords, MusicCommentsSource {
   /// A Netease source over the lx runtime.
   WyMusicSource(super.runtime, super.http);
@@ -115,6 +116,33 @@ implements MusicHotWords, MusicCommentsSource {
         for (final tag in tags)
           if (tag is Map && tag['playlistTag'] is Map) '${(tag['playlistTag'] as Map)['name'] ?? ''}',
     ].where((name) => name.isNotEmpty).toList();
+  }
+
+  /// The plaza's category tree — the reference's wy `getTag` on the
+  /// catalogue endpoint: categories named by id, the subs filed under them,
+  /// a tag's id being its own words.
+  @override
+  Future<List<MusicPlaylistTagGroup>> tagGroups() async {
+    final json = await _weapi('/weapi/playlist/catalogue', {});
+    if (json['code'] != 200) return const <MusicPlaylistTagGroup>[];
+    final categories = json['categories'];
+    final sub = json['sub'];
+    if (categories is! Map || sub is! List) return const <MusicPlaylistTagGroup>[];
+    final byCategory = <String, List<MusicPlaylistTag>>{};
+    for (final entry in sub) {
+      if (entry is! Map) continue;
+      final name = '${entry['name'] ?? ''}'.trim();
+      final category = '${entry['category'] ?? ''}';
+      if (name.isEmpty || category.isEmpty) continue;
+      (byCategory[category] ??= []).add(MusicPlaylistTag(id: name, name: name));
+    }
+    final groups = <MusicPlaylistTagGroup>[];
+    for (final key in categories.keys) {
+      final tags = byCategory['$key'];
+      if (tags == null || tags.isEmpty) continue;
+      groups.add(MusicPlaylistTagGroup(name: '${categories[key]}', tags: tags));
+    }
+    return groups;
   }
 
   @override

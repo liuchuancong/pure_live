@@ -31,6 +31,7 @@
   "sourceAliasTx": "小秋音乐",
   "sourceAliasWy": "小芸音乐",
   "sourceAliasMg": "小蜜音乐",
+  "playlistHotTags": "热门",
   "songlistSearchUnsupported": "当前音源暂不支持歌单搜索。",
   "defaultSource": "默认音源",
   "defaultSourceDesc": "歌曲从哪个音源获取；自定义源脚本负责解析播放地址。",
