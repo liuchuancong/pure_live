@@ -238,8 +238,13 @@
   mpv 无原始频谱数据）；media_core 侧 PlayerAdapterEvent.loudnessChanged + af-metadata 200ms 节流
   + AudioPlaybackController.loudnessStream；**顺修 Phase B 遗留**：musicFxAfFilters 六滤镜从未
   并入 musicEqAfEntries（开关存状态但无声），已并入链头。
+  **A/B 对比已落（2026-10-29）**：`MusicPlayerController.setCompareBypass`——按住即以
+  `copyWith(enabled:false, analysis:false)` 立即清链（无防抖，耳朵对比要瞬时切回），
+  松开立即恢复当前配置；`_compareBypass` 期间 `_applyEq` 拒绝其他写入（按住时拖滑杆
+  不会漏进对比）且挂起的防抖被取消；EQ 面板「A/B 对比」区=按住式大按钮
+  （onTapDown/onTapUp/onTapCancel 全兜底），中英文案齐。
   **待做**、阶段 C 余项（FIR/设备校正）、阶段 D（HRTF/卷积）、设计图逐像素音效中心主页面
-  （当前先落设置子页）、A/B 对比、频响图验证测试）（`plugins/player/index.ts`、
+  （当前先落设置子页）、频响图验证测试）（`plugins/player/index.ts`、
   `store/soundEffect.ts`）。
 - ✅ H2 电平监控（2026-10-29，如实标记为响度表非频谱）：mpv 无原始 FFT，走 ebur128 元数据探针——
   media_core `PlayerAdapterEvent.loudnessChanged(momentary, shortTerm)`（LUFS）+ `emitLoudnessChanged`
