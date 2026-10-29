@@ -4,16 +4,16 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart' show SynchronousFuture, immutable;
 import 'package:flutter/widgets.dart';
-import 'package:media_core_recording_ffmpeg/media_core_recording_ffmpeg.dart' show FfmpegKitExecutor;
+import 'package:heic_native/heic_native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'package:pure_live/shared/shared.dart' show appImageCache, cachedImage;
 
 /// The platform serves its posters as HEIC (HEVC stills), which the engine's
-/// codecs cannot read — a cover therefore goes through
-/// [HongguoCoverCache] once, lands as a JPEG beside the app's cache, and is
-/// plain decoding from then on.
+/// codecs cannot read — a cover therefore goes through [HongguoCoverCache]
+/// once, lands as a PNG beside the app's cache, and is plain decoding from
+/// then on.
 final class HongguoCoverCache {
   HongguoCoverCache._();
 
@@ -25,8 +25,6 @@ final class HongguoCoverCache {
   /// Whether [url] names a HEIC still.
   static bool isHeic(String url) => _heic.hasMatch(url);
 
-  final FfmpegKitExecutor _ffmpeg = FfmpegKitExecutor();
-  Future<void>? _warming;
   final Map<String, Future<File?>> _inFlight = {};
 
   /// Covers that already failed this run. Their cards keep the fallback
@@ -34,10 +32,10 @@ final class HongguoCoverCache {
   /// URL carries a fresh signature, so a later read tries anew.
   final Set<String> _failed = {};
 
-  /// The JPEG rendition of [url], converting and caching it on first sight.
+  /// The PNG rendition of [url], converting and caching it on first sight.
   /// Answers null when the cover cannot be read or converted; callers draw
   /// their fallback then.
-  Future<File?> jpegFor(String url) {
+  Future<File?> pngFor(String url) {
     if (_failed.contains(url)) return Future<File?>.value();
     return _inFlight.putIfAbsent(url, () async {
       try {
@@ -55,18 +53,17 @@ final class HongguoCoverCache {
 
   Future<File?> _convert(String url) async {
     final directory = Directory(p.join((await getTemporaryDirectory()).path, 'pure_live_hongguo_covers'));
-    final target = File(p.join(directory.path, '${_keyOf(url)}.jpg'));
+    final key = _keyOf(url);
+    final target = File(p.join(directory.path, '$key.png'));
     if (target.existsSync()) return target;
     final source = await appImageCache.getSingleFile(url);
     await directory.create(recursive: true);
-    final scratch = File(p.join(directory.path, '${_keyOf(url)}.$pid.jpg'));
+    // The scratch name carries the isolate so two runs never share a
+    // half-written file; the rename into place is the commit.
+    final scratch = File(p.join(directory.path, '$key.$pid.png'));
     if (scratch.existsSync()) await scratch.delete();
-    await (_warming ??= _ffmpeg.initialize());
-    final execution = await _ffmpeg.start(
-      arguments: ['-y', '-i', source.path, '-frames:v', '1', '-q:v', '3', scratch.path],
-    );
-    final code = await execution.exitCode;
-    if (code != 0 || !scratch.existsSync()) {
+    final converted = await HeicNative.convert(source.path, scratch.path);
+    if (!converted || !scratch.existsSync()) {
       if (scratch.existsSync()) await scratch.delete();
       return null;
     }
@@ -93,7 +90,7 @@ final class HongguoCoverCache {
 ImageProvider hongguoCoverImage(String url) =>
     HongguoCoverCache.isHeic(url) ? HongguoCoverImage(url) : cachedImage(url);
 
-/// A HEIC cover drawn from its converted JPEG.
+/// A HEIC cover drawn from its converted PNG.
 @immutable
 final class HongguoCoverImage extends ImageProvider<HongguoCoverImage> {
   /// The provider for the cover at [url].
@@ -110,7 +107,7 @@ final class HongguoCoverImage extends ImageProvider<HongguoCoverImage> {
       OneFrameImageStreamCompleter(_frameOf(key.url));
 
   static Future<ImageInfo> _frameOf(String url) async {
-    final file = await HongguoCoverCache.instance.jpegFor(url);
+    final file = await HongguoCoverCache.instance.pngFor(url);
     if (file == null) throw StateError('cover conversion failed: $url');
     final codec = await ui.instantiateImageCodec(await file.readAsBytes());
     try {

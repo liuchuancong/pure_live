@@ -16,6 +16,7 @@
 #include <file_selector_windows/file_selector_windows.h>
 #include <flutter_acrylic/flutter_acrylic_plugin.h>
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
+#include <heic_native/heic_native_plugin_c_api.h>
 #include <media_core_audio/media_core_audio_plugin_c_api.h>
 #include <media_core_native/media_core_native_plugin_c_api.h>
 #include <media_kit_video/media_kit_video_plugin_c_api.h>
@@ -49,6 +50,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("FlutterAcrylicPlugin"));
   FlutterSecureStorageWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
+  HeicNativePluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("HeicNativePluginCApi"));
   MediaCoreAudioPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("MediaCoreAudioPluginCApi"));
   MediaCoreNativePluginCApiRegisterWithRegistrar(

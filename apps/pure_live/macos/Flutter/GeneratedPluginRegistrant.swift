@@ -18,6 +18,7 @@ import file_picker_darwin
 import file_selector_macos
 import flutter_local_notifications
 import flutter_secure_storage_darwin
+import heic_native
 import macos_window_utils
 import media_core_audio
 import media_core_native
@@ -50,6 +51,7 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FileSelectorPlugin.register(with: registry.registrar(forPlugin: "FileSelectorPlugin"))
   FlutterLocalNotificationsPlugin.register(with: registry.registrar(forPlugin: "FlutterLocalNotificationsPlugin"))
   FlutterSecureStorageDarwinPlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStorageDarwinPlugin"))
+  HeicNativePlugin.register(with: registry.registrar(forPlugin: "HeicNativePlugin"))
   MacOSWindowUtilsPlugin.register(with: registry.registrar(forPlugin: "MacOSWindowUtilsPlugin"))
   MediaCoreAudioPlugin.register(with: registry.registrar(forPlugin: "MediaCoreAudioPlugin"))
   MediaCoreNativePlugin.register(with: registry.registrar(forPlugin: "MediaCoreNativePlugin"))

@@ -1176,6 +1176,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  heic_native:
+    dependency: transitive
+    description:
+      name: heic_native
+      sha256: "1f5e486ad4a5f144fd4ff1cff45e980c1fcf71f0b04e1ebe95642dba42e034ce"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   hls:
     dependency: transitive
     description:

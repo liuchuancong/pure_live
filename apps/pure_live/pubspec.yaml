@@ -47,6 +47,7 @@ dependencies:
   any_image_view: ^2.5.0 # 多来源图片展示
   cached_network_image: ^4.0.4 # 网络图片缓存
   flutter_cache_manager: ^3.4.5 # 图片缓存的体积与清理
+  heic_native: ^1.1.0 # 红果 HEIC 封面转 PNG（libheif）
   custom_refresh_indicator: ^4.0.2 # 自定义下拉刷新
   desen_ui: ^0.3.2 # 设计令牌、主题与组件
   dynamic_color: ^1.7.0 # Android 12+ 动态取色

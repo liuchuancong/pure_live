@@ -108,6 +108,12 @@
 @import flv_lzc;
 #endif
 
+#if __has_include(<heic_native/HeicNativePlugin.h>)
+#import <heic_native/HeicNativePlugin.h>
+#else
+@import heic_native;
+#endif
+
 #if __has_include(<media_core_native/MediaCoreNativePlugin.h>)
 #import <media_core_native/MediaCoreNativePlugin.h>
 #else
@@ -218,6 +224,7 @@
   [FlutterSecureStorageDarwinPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterSecureStorageDarwinPlugin"]];
   [FluttertoastPlugin registerWithRegistrar:[registry registrarForPlugin:@"FluttertoastPlugin"]];
   [FijkPlugin registerWithRegistrar:[registry registrarForPlugin:@"FijkPlugin"]];
+  [HeicNativePlugin registerWithRegistrar:[registry registrarForPlugin:@"HeicNativePlugin"]];
   [MediaCoreNativePlugin registerWithRegistrar:[registry registrarForPlugin:@"MediaCoreNativePlugin"]];
   [MediaKitVideoPlugin registerWithRegistrar:[registry registrarForPlugin:@"MediaKitVideoPlugin"]];
   [FPPNetworkInfoPlusPlugin registerWithRegistrar:[registry registrarForPlugin:@"FPPNetworkInfoPlusPlugin"]];

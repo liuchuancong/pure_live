@@ -13,6 +13,7 @@
 #include <file_selector_linux/file_selector_plugin.h>
 #include <flutter_acrylic/flutter_acrylic_plugin.h>
 #include <flutter_secure_storage_linux/flutter_secure_storage_linux_plugin.h>
+#include <heic_native/heic_native_plugin.h>
 #include <media_core_audio/media_core_audio_plugin.h>
 #include <media_core_native/media_core_native_plugin.h>
 #include <media_kit_video/media_kit_video_plugin.h>
@@ -47,6 +48,9 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) flutter_secure_storage_linux_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "FlutterSecureStorageLinuxPlugin");
   flutter_secure_storage_linux_plugin_register_with_registrar(flutter_secure_storage_linux_registrar);
+  g_autoptr(FlPluginRegistrar) heic_native_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "HeicNativePlugin");
+  heic_native_plugin_register_with_registrar(heic_native_registrar);
   g_autoptr(FlPluginRegistrar) media_core_audio_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "MediaCoreAudioPlugin");
   media_core_audio_plugin_register_with_registrar(media_core_audio_registrar);
