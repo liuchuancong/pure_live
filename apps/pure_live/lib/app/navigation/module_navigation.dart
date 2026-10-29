@@ -144,17 +144,12 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     ],
   ),
   AppModule.vod: ModuleNavigation(
-    // The reference's rail, entry for entry: 搜索 / 个人 / 主页 / 分区 /
-    // 影视 / 直播, in that order and one block, as its LeftNaviItem list is.
+    // The station's rail in the house measure — content first, tools under:
+    // 主页 / 分区 / 影视 / 直播, then 搜索 / 个人. (The reference lists
+    // 搜索 first; every module here puts its surfaces ahead of its tools.)
     menu: [
-      [
-        NavigationItem.vodSearch,
-        NavigationItem.vodPersonal,
-        NavigationItem.vod,
-        NavigationItem.vodRegions,
-        NavigationItem.vodPgc,
-        NavigationItem.vodLive,
-      ],
+      [NavigationItem.vod, NavigationItem.vodRegions, NavigationItem.vodPgc, NavigationItem.vodLive],
+      [NavigationItem.vodSearch, NavigationItem.vodPersonal],
     ],
     landing: NavigationItem.vod,
     // The video station's own page: its Bilibili account, the quality a
@@ -166,11 +161,12 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     ],
   ),
   AppModule.music: ModuleNavigation(
-    // The reference's rail, entry for entry: 搜索 / 歌单 / 排行榜, then the
-    // viewer's own surfaces — 我的列表 / 本地音乐 / 下载管理.
+    // The reference's rail, entry for entry: 搜索 / 歌单 / 排行榜 / 我的列表
+    // are its four main entries; the viewer's own surfaces — 本地音乐 /
+    // 下载管理 — sit under them as the module's tools.
     menu: [
-      [NavigationItem.music, NavigationItem.musicSonglist, NavigationItem.musicToplist],
-      [NavigationItem.musicLibrary, NavigationItem.musicLocal, NavigationItem.musicDownloads],
+      [NavigationItem.music, NavigationItem.musicSonglist, NavigationItem.musicToplist, NavigationItem.musicLibrary],
+      [NavigationItem.musicLocal, NavigationItem.musicDownloads],
     ],
     landing: NavigationItem.music,
     // The music module's settings rail, entry for entry the way lx-music
