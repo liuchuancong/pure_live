@@ -344,14 +344,17 @@ final class HongguoOfficialClient {
   }
 
   /// The rank payload behind the page's `data-fn-*` script attributes —
-  /// read as data only, never executed.
+  /// read as data only, never executed. The renderer wraps a payload either
+  /// in a double-quoted `mergeLoaderData` attribute or in a single-quoted
+  /// `r` one, page by page, so both are read and the tag itself tolerates
+  /// quoted `>`.
   static Map<String, Object?> _rankPayload(String html, HongguoWebsiteBoard board) {
-    final tagPattern = RegExp(r'<script\b[^>]*>');
+    final tagPattern = RegExp(r"""<script\b(?:[^>"']|"[^"]*"|'[^']*')*>""");
     for (final match in tagPattern.allMatches(html)) {
       final tag = match.group(0)!;
-      final name = RegExp('data-fn-name="([^"]*)"').firstMatch(tag)?.group(1);
+      final name = _scriptAttribute(tag, 'data-fn-name');
       if (name != 'r' && name != 'mergeLoaderData') continue;
-      final argsRaw = RegExp('data-fn-args="([^"]*)"').firstMatch(tag)?.group(1);
+      final argsRaw = _scriptAttribute(tag, 'data-fn-args');
       if (argsRaw == null) continue;
       final args = jsonDecode(_unescapeAttribute(argsRaw));
       if (args is! List<Object?> || args.isEmpty || args[0] != board.loader) continue;
@@ -376,6 +379,13 @@ final class HongguoOfficialClient {
       }
     }
     throw const HongguoOfficialFailure('剧集榜单暂不可用');
+  }
+
+  /// One `data-fn-*` attribute of a script tag, whichever quote style the
+  /// renderer used for it.
+  static String? _scriptAttribute(String tag, String name) {
+    final match = RegExp('$name=(?:"([^"]*)"|\'([^\']*)\')').firstMatch(tag);
+    return match?.group(1) ?? match?.group(2);
   }
 
   static String _unescapeAttribute(String value) => value
