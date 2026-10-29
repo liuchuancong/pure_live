@@ -151,10 +151,12 @@
 - ⬜ F5 备份/迁移：部分歌单/仅设置/全量三档导出导入；导出歌单为文本/CSV
   （`SettingBackup.vue`、`migrateSetting.ts`）。对接现有 backup 域。
 - 🟨 F6 在线歌单（数据层已落：能力接口 `OnlinePlaylists`（`online_playlist_models.dart` 共享
-  `MusicPlaylistInfo/Page`）；**wy+tx 双通道已实现**——wy weapi hottags/list/v3 detail（含
-  privileges 音质合并），tx 热门标签刮取 + `get_category_content` 分类页 + `GetRecommendWhole`
-  兜底 + `uniform_get_Dissinfo` 详情；`music_online_playlists.dart` 按 `is OnlinePlaylists`
-  分发。kg/mg 通道与 UI 视图接入 music_page 待后续）：各源 `songList.js`。
+  `MusicPlaylistInfo/Page`）；**wy+tx+kg 三通道已实现**——wy weapi hottags/list/v3 detail（含
+  privileges 音质合并），tx 热门标签刮取 + `get_category_content` + `GetRecommendWhole` 兜底 +
+  `uniform_get_Dissinfo` 详情，kg 走最稳 JSON 链：yueku v9 getSpecial 列表/标签 + `special/info_v2`
+  + `special/song_v2` 分页（web 版 MD5 排序签名）+ `gateway.kugou.com/v3/album_audio/audio`
+  网关富化（LX `createGetMusicInfosTask` 的固定头/密钥）；**未移植 LX 的 HTML 抓取与 chain/gcid
+  多级回退链**（分享链歌单暂不支持）。mg 通道与 UI 视图接入 music_page 待后续）：各源 `songList.js`。
 
 ### G. 设置与同步
 - ⬜ G1 设置域对齐 `app_setting.d.ts` 的 key 前缀语义：common./player./desktopLyric./download./
