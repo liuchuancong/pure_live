@@ -95,6 +95,7 @@
   "accountHistoryRefresh": "Refresh history",
   "favorite": "Favorite",
   "favorited": "Favorited",
+  "unfavorite": "Remove from favorites",
   "likes": "likes",
   "favoriteToggleOn": "Added to favorites",
   "favoriteToggleOff": "Removed from favorites",

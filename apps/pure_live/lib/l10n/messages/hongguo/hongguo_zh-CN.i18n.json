@@ -95,6 +95,7 @@
   "accountHistoryRefresh": "刷新历史",
   "favorite": "收藏",
   "favorited": "已收藏",
+  "unfavorite": "取消收藏",
   "likes": "点赞",
   "favoriteToggleOn": "已加入本机收藏",
   "favoriteToggleOff": "已取消本机收藏",

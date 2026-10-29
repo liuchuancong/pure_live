@@ -286,7 +286,7 @@ final class _FavoriteBookmark extends ConsumerWidget {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final favored = ref.watch(hongguoLibraryProvider).isFavorite(series.seriesId);
-    final label = favored ? t.hongguo.favoriteToggleOff : t.hongguo.favoriteToggleOn;
+    final label = favored ? t.hongguo.unfavorite : t.hongguo.favorite;
     return DsTooltip(
       message: label,
       child: DsPressable(

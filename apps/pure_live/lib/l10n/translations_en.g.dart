@@ -602,6 +602,7 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get accountHistoryRefresh => 'Refresh history';
 	@override String get favorite => 'Favorite';
 	@override String get favorited => 'Favorited';
+	@override String get unfavorite => 'Remove from favorites';
 	@override String get likes => 'likes';
 	@override String get favoriteToggleOn => 'Added to favorites';
 	@override String get favoriteToggleOff => 'Removed from favorites';
@@ -998,6 +999,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get settingsList => 'Lists';
 	@override String get searchTypeSongs => 'Songs';
 	@override String get searchTypeSonglists => 'Songlists';
+	@override String get searchSourceAll => 'All sources';
 	@override String get songlistSearchUnsupported => 'This source cannot search songlists yet.';
 	@override String get defaultSource => 'Default source';
 	@override String get defaultSourceDesc => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.';
@@ -4044,6 +4046,7 @@ extension on TranslationsEn {
 			'hongguo.accountHistoryRefresh' => 'Refresh history',
 			'hongguo.favorite' => 'Favorite',
 			'hongguo.favorited' => 'Favorited',
+			'hongguo.unfavorite' => 'Remove from favorites',
 			'hongguo.likes' => 'likes',
 			'hongguo.favoriteToggleOn' => 'Added to favorites',
 			'hongguo.favoriteToggleOff' => 'Removed from favorites',
@@ -4077,9 +4080,9 @@ extension on TranslationsEn {
 			'hongguo.phoneSend' => 'Send code',
 			'hongguo.phoneCodePlaceholder' => 'Code',
 			'hongguo.phoneVerify' => 'Sign in',
-			'hongguo.phoneSent' => 'Code sent to',
 			_ => null,
 		} ?? switch (path) {
+			'hongguo.phoneSent' => 'Code sent to',
 			'hongguo.accountPhoneToggle' => 'Use a phone number',
 			'hongguo.accountQrToggle' => 'Scan a code',
 			'hongguo.commentsFailed' => 'Comments did not load',
@@ -4415,6 +4418,7 @@ extension on TranslationsEn {
 			'music.settingsList' => 'Lists',
 			'music.searchTypeSongs' => 'Songs',
 			'music.searchTypeSonglists' => 'Songlists',
+			'music.searchSourceAll' => 'All sources',
 			'music.songlistSearchUnsupported' => 'This source cannot search songlists yet.',
 			'music.defaultSource' => 'Default source',
 			'music.defaultSourceDesc' => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.',
@@ -4590,10 +4594,10 @@ extension on TranslationsEn {
 			'music.downloadTypeOgg' => 'OGG',
 			'music.downloadTypeWav' => 'WAV',
 			'music.downloadPattern' => 'File name pattern',
-			'music.downloadPatternHint' => 'Placeholders (written inside braces): title, artist, album, quality, source, list, index.',
-			'music.downloadPatternEdit' => 'Edit',
 			_ => null,
 		} ?? switch (path) {
+			'music.downloadPatternHint' => 'Placeholders (written inside braces): title, artist, album, quality, source, list, index.',
+			'music.downloadPatternEdit' => 'Edit',
 			'music.downloadEmbedCover' => 'Embed the cover',
 			'music.downloadEmbedCoverDesc' => 'Write the cover into the audio tags.',
 			'music.downloadEmbedLyric' => 'Embed the lyric',
@@ -5104,10 +5108,10 @@ extension on TranslationsEn {
 			'room.portraitDisplayComplete' => 'Complete',
 			'room.portraitDisplayAmbient' => 'Ambient',
 			'room.portraitDisplayBalanced' => 'Balanced',
-			'room.portraitDisplayCover' => 'Cover',
-			'room.portraitDanmakuTitle' => 'Danmaku area',
 			_ => null,
 		} ?? switch (path) {
+			'room.portraitDisplayCover' => 'Cover',
+			'room.portraitDanmakuTitle' => 'Danmaku area',
 			'room.portraitDanmakuFollow' => 'Follow global',
 			'room.portraitDanmakuUpper' => 'Upper quarter',
 			'room.portraitDanmakuReduced' => 'Reduced',
@@ -5618,10 +5622,10 @@ extension on TranslationsEn {
 			'settings.fontManagerNotDownloaded' => 'Not downloaded',
 			'settings.fontManagerDeleteFont' => 'Delete the downloaded font',
 			'settings.fontManagerDeleteQuestion' => ({required Object name}) => 'Delete this device\'s copy of “${name}”? It can be downloaded again.',
-			'settings.fontManagerNoResults' => 'No fonts match.',
-			'settings.fontManagerFilterLabel' => 'Filter fonts',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerNoResults' => 'No fonts match.',
+			'settings.fontManagerFilterLabel' => 'Filter fonts',
 			'settings.fontManagerSearchPlaceholder' => 'Search font names',
 			'settings.fontManagerPageLabel' => 'Font list pages',
 			'settings.fontManagerColumnSource' => 'Source',
@@ -6132,10 +6136,10 @@ extension on TranslationsEn {
 			'settings.downloadFilterAll' => 'All',
 			'settings.downloadFilterEmpty' => 'Nothing under this status',
 			'settings.downloadKindFilter' => 'Filter by kind',
-			'settings.downloadColumnFile' => 'File',
-			'settings.downloadColumnSize' => 'Size',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadColumnFile' => 'File',
+			'settings.downloadColumnSize' => 'Size',
 			'settings.downloadColumnTime' => 'Time',
 			'settings.downloadColumnActions' => 'Actions',
 			'settings.downloadSearchPlaceholder' => 'Search downloads',
@@ -6646,10 +6650,10 @@ extension on TranslationsEn {
 			'vod.loadMore' => 'Load more',
 			'vod.regions' => 'Regions',
 			'vod.search' => 'Search',
-			'vod.home' => 'Home',
-			'vod.personal' => 'Personal',
 			_ => null,
 		} ?? switch (path) {
+			'vod.home' => 'Home',
+			'vod.personal' => 'Personal',
 			'vod.live' => 'Live',
 			'vod.searchKindVideo' => 'Videos',
 			'vod.searchKindBangumi' => 'Anime',

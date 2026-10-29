@@ -860,7 +860,7 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
               emptyText: t.hongguo.favoritesLocalEmpty,
               trailingOf: (series) => _IconAction(
                 icon: DsIcons.heartOff,
-                semanticLabel: t.hongguo.favoriteToggleOff,
+                semanticLabel: t.hongguo.unfavorite,
                 onPressed: () {
                   ref.read(hongguoLibraryProvider.notifier).toggleFavorite(series);
                   showDsToast(context: context, title: t.hongguo.favoriteToggleOff);

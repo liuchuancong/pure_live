@@ -317,7 +317,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
                       title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff,
                     );
                   },
-                  child: Text(favored ? t.hongguo.favoriteToggleOff : t.hongguo.favoriteToggleOn),
+                  child: Text(favored ? t.hongguo.favorited : t.hongguo.favorite),
                 ),
                 if (account.signedIn)
                   DsButton(
