@@ -150,10 +150,11 @@
 - ✅ F4 不喜欢列表（`music_dislikes.dart`，播放时自动跳过已接）（`store/dislikeList/`，已有雏形 `music_dislikes.dart`，对齐结构）。
 - ⬜ F5 备份/迁移：部分歌单/仅设置/全量三档导出导入；导出歌单为文本/CSV
   （`SettingBackup.vue`、`migrateSetting.ts`）。对接现有 backup 域。
-- 🟨 F6 在线歌单（2026-10-29 数据层已落：`music_source_wy.dart` 新增 `hotTags/playlists/
-  playlistDetail`（weapi playlist/hottags|list + v3 detail，含 privileges 音质合并），
-  `music_online_playlists.dart` 三个 provider（热门标签/tag 分页/详情）；目前仅 wy 通道，
-  UI 视图接入 music_page 待并行 WIP 收口，kg/tx/mg 的 songList 通道未做）：各源 `songList.js`。
+- 🟨 F6 在线歌单（数据层已落：能力接口 `OnlinePlaylists`（`online_playlist_models.dart` 共享
+  `MusicPlaylistInfo/Page`）；**wy+tx 双通道已实现**——wy weapi hottags/list/v3 detail（含
+  privileges 音质合并），tx 热门标签刮取 + `get_category_content` 分类页 + `GetRecommendWhole`
+  兜底 + `uniform_get_Dissinfo` 详情；`music_online_playlists.dart` 按 `is OnlinePlaylists`
+  分发。kg/mg 通道与 UI 视图接入 music_page 待后续）：各源 `songList.js`。
 
 ### G. 设置与同步
 - ⬜ G1 设置域对齐 `app_setting.d.ts` 的 key 前缀语义：common./player./desktopLyric./download./
