@@ -132,7 +132,9 @@ final class _ModuleHeader extends ConsumerWidget {
             color: colors.accentTint,
             borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
           ),
-          child: Center(child: DsIcon(DsIcons.drama, size: theme.sizes.iconMd, color: colors.accentText)),
+          child: Center(
+            child: DsIcon(DsIcons.drama, size: theme.sizes.iconMd, color: colors.accentText),
+          ),
         ),
         Expanded(
           child: Column(
@@ -789,13 +791,14 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
               trailingOf: (series) => _IconAction(
                 icon: DsIcons.heartOff,
                 semanticLabel: t.hongguo.cloudFavoriteOff,
-                onPressed: () => unawaited(
-                  ref.read(hongguoAccountFavoritesProvider.notifier).setFavorite(series, add: false),
-                ),
+                onPressed: () =>
+                    unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).setFavorite(series, add: false)),
               ),
             ),
             _ => _SeriesList(
-              rows: [for (final series in library.favorites) series.copyWith(hot: _favoriteLine(t, library, series))],
+              rows: [
+                for (final series in library.favorites) series.copyWith(hot: hongguoFavoriteLine(t, library, series)),
+              ],
               loading: false,
               error: null,
               emptyText: t.hongguo.favoritesLocalEmpty,
@@ -902,9 +905,7 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
             _ when _account => _SeriesList(
               rows: [
                 for (final row in cloud.items)
-                  row.series.copyWith(
-                    hot: row.durationMs > 0 ? '${t.hongguo.resumeAt} ${_clock(row.positionMs)}' : '',
-                  ),
+                  row.series.copyWith(hot: row.durationMs > 0 ? '${t.hongguo.resumeAt} ${_clock(row.positionMs)}' : ''),
               ],
               loading: cloud.loading,
               error: cloud.error,
@@ -1087,7 +1088,12 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
                   leading: const DsIcon(DsIcons.calendarClock),
                   title: Text(t.hongguo.reservationsRefresh),
                   description: Text(
-                    _readCount(t, reservations.online.length + reservations.upcoming.length, reservations.loading, reservations.error),
+                    _readCount(
+                      t,
+                      reservations.online.length + reservations.upcoming.length,
+                      reservations.loading,
+                      reservations.error,
+                    ),
                   ),
                   onPressed: () => unawaited(ref.read(hongguoReservationsProvider.notifier).refresh()),
                 ),
@@ -1350,7 +1356,9 @@ final class _SeriesList extends StatelessWidget {
       return const Center(child: DsSpinner());
     }
     if (rows.isEmpty) {
-      return Center(child: DsEmptyState(icon: const DsIcon(DsIcons.heart), title: Text(emptyText ?? t.common.empty)));
+      return Center(
+        child: DsEmptyState(icon: const DsIcon(DsIcons.heart), title: Text(emptyText ?? t.common.empty)),
+      );
     }
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
@@ -1439,7 +1447,9 @@ final class _SignInGateState extends ConsumerState<_SignInGate> {
   Widget build(BuildContext context) {
     final t = context.t;
     if (_showQr) {
-      return const Center(child: SingleChildScrollView(padding: EdgeInsets.all(DsSpace.s24), child: _QrLoginCard()));
+      return const Center(
+        child: SingleChildScrollView(padding: EdgeInsets.all(DsSpace.s24), child: _QrLoginCard()),
+      );
     }
     return Center(
       child: DsEmptyState(
@@ -1603,16 +1613,6 @@ String _favoritesStatus(Translations t, HongguoLibraryState library) {
   }
   final grown = library.updates.values.where((update) => update.added > 0).length;
   return grown == 0 ? t.hongguo.favoriteRecentCheck : t.hongguo.favoriteBadge(count: grown);
-}
-
-/// One favorite's own line: what the series grew by since it was shelfed, and
-/// where it now ends — the reference's `共 N 集（+M）` line.
-String _favoriteLine(Translations t, HongguoLibraryState library, HongguoSeries series) {
-  final update = library.updates[series.seriesId];
-  if (update == null) return '';
-  return update.added > 0
-      ? '${t.hongguo.favoriteAdded(count: update.added)} · ${t.hongguo.favoriteUpTo(count: update.total)}'
-      : t.hongguo.favoriteUpTo(count: update.total);
 }
 
 void _open(BuildContext context, HongguoSeries series) {

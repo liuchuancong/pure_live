@@ -1744,8 +1744,17 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '新增 {count} 集'
 	String favoriteAdded({required Object count}) => '新增 ${count} 集';
 
-	/// zh-CN: '更新至 {count} 集'
-	String favoriteUpTo({required Object count}) => '更新至 ${count} 集';
+	/// zh-CN: '共 {total} 集'
+	String favoriteTotal({required Object total}) => '共 ${total} 集';
+
+	/// zh-CN: '共 {total} 集（+{added}）'
+	String favoriteTotalAdded({required Object total, required Object added}) => '共 ${total} 集（+${added}）';
+
+	/// zh-CN: '总集数待更新'
+	String get favoriteTotalPending => '总集数待更新';
+
+	/// zh-CN: '看到第 {index} 集'
+	String favoriteWatchedTo({required Object index}) => '看到第 ${index} 集';
 
 	/// zh-CN: '{count} 部有新集'
 	String favoriteBadge({required Object count}) => '${count} 部有新集';
@@ -9644,7 +9653,10 @@ extension on Translations {
 			'hongguo.favoriteRecentCheck' => '最近一小时已检查，可手动刷新',
 			'hongguo.favoriteNoFavorites' => '收藏后可检查新集',
 			'hongguo.favoriteAdded' => ({required Object count}) => '新增 ${count} 集',
-			'hongguo.favoriteUpTo' => ({required Object count}) => '更新至 ${count} 集',
+			'hongguo.favoriteTotal' => ({required Object total}) => '共 ${total} 集',
+			'hongguo.favoriteTotalAdded' => ({required Object total, required Object added}) => '共 ${total} 集（+${added}）',
+			'hongguo.favoriteTotalPending' => '总集数待更新',
+			'hongguo.favoriteWatchedTo' => ({required Object index}) => '看到第 ${index} 集',
 			'hongguo.favoriteBadge' => ({required Object count}) => '${count} 部有新集',
 			'hongguo.reviews' => '剧评',
 			'hongguo.reviewsEpisode' => '本集评论',
@@ -10093,6 +10105,8 @@ extension on Translations {
 			'music.localFailed' => '扫描失败',
 			'music.localEmptyTitle' => '还没有本地音乐',
 			'music.localEmptyDescription' => '添加一个存放音频文件的文件夹开始扫描。',
+			_ => null,
+		} ?? switch (path) {
 			'music.localFolderFailed' => ({required Object error}) => '无法添加文件夹：${error}',
 			'music.playbackRate' => '播放速度',
 			'music.sleepTimer' => '睡眠定时',
@@ -10103,8 +10117,6 @@ extension on Translations {
 			'music.lyricOffsetDesc' => '正值让歌词更晚出现。',
 			'music.lyricOffsetReset' => '不偏移',
 			'music.lyricTranslation' => '显示翻译',
-			_ => null,
-		} ?? switch (path) {
 			'music.lyricTranslationDesc' => '歌词带翻译时一并显示。',
 			'music.lyricRomanization' => '显示音译',
 			'music.lyricRomanizationDesc' => '歌词带音译或罗马音时一并显示。',
@@ -10574,6 +10586,8 @@ extension on Translations {
 			'settings.appearance' => '外观',
 			'settings.themeMode' => '主题',
 			'settings.themeModeSystem' => '跟随系统',
+			_ => null,
+		} ?? switch (path) {
 			'settings.themeModeLight' => '浅色',
 			'settings.themeModeDark' => '深色',
 			'settings.language' => '语言',
@@ -10605,8 +10619,6 @@ extension on Translations {
 			'settings.windowSizeRangeHint' => '宽度 400–16384，高度 300–16384（逻辑像素）。',
 			'settings.windowSizeOutOfRange' => '尺寸超出范围：宽 400–16384，高 300–16384。',
 			'settings.windowSizeApplyFailed' => '窗口尺寸应用失败。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.windowSizeApplied' => '窗口尺寸已应用。',
 			'settings.startup' => '开机启动',
 			'settings.startupDesc' => '登录系统后自动打开 Pure Live；开关读取的是系统里的真实启动项。',
@@ -11088,6 +11100,8 @@ extension on Translations {
 			'settings.deinterlace' => '反交错 (--deinterlace)',
 			'settings.deinterlaceDesc' => '直播源基本都是逐行的，保持自动即可；只有老电视信号或采集卡源才需要开启。',
 			'settings.deinterlaceAuto' => '自动',
+			_ => null,
+		} ?? switch (path) {
 			'settings.deinterlaceOff' => '关闭',
 			'settings.deinterlaceOn' => '开启（隔行源才需要）',
 			'settings.hwdecCodecs' => '硬解编码范围 (--hwdec-codecs)',
@@ -11119,8 +11133,6 @@ extension on Translations {
 			'settings.playerGuideChapterPictureSync' => '画面与同步',
 			'settings.playerGuideChapterQuality' => '画质增强',
 			'settings.playerGuideChapterAudio' => '声音',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideChapterSymptoms' => '症状对照',
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
@@ -11602,6 +11614,8 @@ extension on Translations {
 			'settings.twitchLegacyLanguages' => '中文 + 韩语',
 			'settings.twitchLanguagesHint' => '按主播语言过滤 Twitch 热门与分区目录。',
 			'settings.twitchLanguage_zh' => '中文',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguage_en' => '英语',
 			'settings.twitchLanguage_ko' => '韩语',
 			'settings.twitchLanguage_ja' => '日语',
@@ -11633,8 +11647,6 @@ extension on Translations {
 			'settings.chatShowGiftsDesc' => '平台上报的礼物显示为聊天里的礼物行；关闭后已有礼物行立即移除。',
 			'settings.chatGiftsAboveTier' => '只显示值钱的礼物',
 			'settings.chatGiftsAboveTierDesc' => '免费和便宜的礼物不进聊天列表；连击加起来够了再显示。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.chatGiftValueInYuan' => '礼物价值换算成元',
 			'settings.chatGiftValueInYuanDesc' => '金瓜子、钻石、抖币按平台的固定比例写成元；海外的币种不换算。',
 			'settings.superChatIncludesMembership' => '上舰和开会员进醒目留言',

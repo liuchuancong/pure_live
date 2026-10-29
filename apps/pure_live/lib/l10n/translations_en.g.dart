@@ -663,7 +663,10 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get favoriteRecentCheck => 'Checked within the hour — refresh to check again';
 	@override String get favoriteNoFavorites => 'Favorite a series to check for new episodes';
 	@override String favoriteAdded({required Object count}) => '${count} new';
-	@override String favoriteUpTo({required Object count}) => 'up to ${count}';
+	@override String favoriteTotal({required Object total}) => '${total} episodes';
+	@override String favoriteTotalAdded({required Object total, required Object added}) => '${total} episodes (+${added})';
+	@override String get favoriteTotalPending => 'Episode count pending';
+	@override String favoriteWatchedTo({required Object index}) => 'Watched to episode ${index}';
 	@override String favoriteBadge({required Object count}) => '${count} with new episodes';
 	@override String get reviews => 'Series reviews';
 	@override String get reviewsEpisode => 'This episode';
@@ -3754,7 +3757,10 @@ extension on TranslationsEn {
 			'hongguo.favoriteRecentCheck' => 'Checked within the hour — refresh to check again',
 			'hongguo.favoriteNoFavorites' => 'Favorite a series to check for new episodes',
 			'hongguo.favoriteAdded' => ({required Object count}) => '${count} new',
-			'hongguo.favoriteUpTo' => ({required Object count}) => 'up to ${count}',
+			'hongguo.favoriteTotal' => ({required Object total}) => '${total} episodes',
+			'hongguo.favoriteTotalAdded' => ({required Object total, required Object added}) => '${total} episodes (+${added})',
+			'hongguo.favoriteTotalPending' => 'Episode count pending',
+			'hongguo.favoriteWatchedTo' => ({required Object index}) => 'Watched to episode ${index}',
 			'hongguo.favoriteBadge' => ({required Object count}) => '${count} with new episodes',
 			'hongguo.reviews' => 'Series reviews',
 			'hongguo.reviewsEpisode' => 'This episode',
@@ -4203,6 +4209,8 @@ extension on TranslationsEn {
 			'music.localFailed' => 'The scan failed',
 			'music.localEmptyTitle' => 'No local music yet',
 			'music.localEmptyDescription' => 'Add a folder of audio files to start scanning.',
+			_ => null,
+		} ?? switch (path) {
 			'music.localFolderFailed' => ({required Object error}) => 'Cannot add the folder: ${error}',
 			'music.playbackRate' => 'Playback speed',
 			'music.sleepTimer' => 'Sleep timer',
@@ -4213,8 +4221,6 @@ extension on TranslationsEn {
 			'music.lyricOffsetDesc' => 'Positive values show the lyric later.',
 			'music.lyricOffsetReset' => 'No delay',
 			'music.lyricTranslation' => 'Show translation',
-			_ => null,
-		} ?? switch (path) {
 			'music.lyricTranslationDesc' => 'Show the translation when the lyric has one.',
 			'music.lyricRomanization' => 'Show romanization',
 			'music.lyricRomanizationDesc' => 'Show the romanization when the lyric has one.',
@@ -4684,6 +4690,8 @@ extension on TranslationsEn {
 			'settings.appearance' => 'Appearance',
 			'settings.themeMode' => 'Theme',
 			'settings.themeModeSystem' => 'Follow system',
+			_ => null,
+		} ?? switch (path) {
 			'settings.themeModeLight' => 'Light',
 			'settings.themeModeDark' => 'Dark',
 			'settings.language' => 'Language',
@@ -4715,8 +4723,6 @@ extension on TranslationsEn {
 			'settings.windowSizeRangeHint' => 'Width 400–16384, height 300–16384 (logical pixels).',
 			'settings.windowSizeOutOfRange' => 'Out of range: width 400–16384, height 300–16384.',
 			'settings.windowSizeApplyFailed' => 'The window size could not be applied.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.windowSizeApplied' => 'Window size applied.',
 			'settings.startup' => 'Start at login',
 			'settings.startupDesc' => 'Open Pure Live after you sign in; the switch reads the real system entry.',
@@ -5198,6 +5204,8 @@ extension on TranslationsEn {
 			'settings.deinterlace' => 'Deinterlace (--deinterlace)',
 			'settings.deinterlaceDesc' => 'Live sources are progressive; keep Auto. Enable only for legacy TV or capture-card sources.',
 			'settings.deinterlaceAuto' => 'Auto',
+			_ => null,
+		} ?? switch (path) {
 			'settings.deinterlaceOff' => 'Off',
 			'settings.deinterlaceOn' => 'On (interlaced sources only)',
 			'settings.hwdecCodecs' => 'HW-decode codecs (--hwdec-codecs)',
@@ -5229,8 +5237,6 @@ extension on TranslationsEn {
 			'settings.playerGuideChapterPictureSync' => 'Picture & sync',
 			'settings.playerGuideChapterQuality' => 'Quality enhancement',
 			'settings.playerGuideChapterAudio' => 'Audio',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideChapterSymptoms' => 'Symptom table',
 			'settings.playerGuideBadgeHwdec' => 'hwdec',
 			'settings.playerGuideBadgeVo' => 'vo',
@@ -5712,6 +5718,8 @@ extension on TranslationsEn {
 			'settings.twitchLegacyLanguages' => 'Chinese + Korean',
 			'settings.twitchLanguagesHint' => 'Filter the Twitch popular and category directories by broadcaster language.',
 			'settings.twitchLanguage_zh' => 'Chinese',
+			_ => null,
+		} ?? switch (path) {
 			'settings.twitchLanguage_en' => 'English',
 			'settings.twitchLanguage_ko' => 'Korean',
 			'settings.twitchLanguage_ja' => 'Japanese',
@@ -5743,8 +5751,6 @@ extension on TranslationsEn {
 			'settings.chatShowGiftsDesc' => 'Gifts the platform reports appear as gift lines in the chat; turning it off removes the existing lines at once.',
 			'settings.chatGiftsAboveTier' => 'Only valuable gifts',
 			'settings.chatGiftsAboveTierDesc' => 'Free and cheap gifts stay out of the chat list; a combo shows once it adds up.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.chatGiftValueInYuan' => 'Gift values in yuan',
 			'settings.chatGiftValueInYuanDesc' => 'Gold seeds, diamonds and Douyin coins are written in yuan at the platform\'s fixed rate; overseas currencies stay as they are.',
 			'settings.superChatIncludesMembership' => 'Memberships in Super Chats',

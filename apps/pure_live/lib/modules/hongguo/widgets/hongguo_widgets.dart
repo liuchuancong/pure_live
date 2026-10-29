@@ -32,6 +32,25 @@ String hongguoSeriesSubtitle(Translations t, HongguoSeries series) {
   return parts.join(' · ');
 }
 
+/// One favorite's own line: the reference's two readings — the episode
+/// total with what the check found it gained, or the pending note when the
+/// platform has not said — and where the viewer stopped.
+String hongguoFavoriteLine(Translations t, HongguoLibraryState library, HongguoSeries series) {
+  final update = library.updates[series.seriesId];
+  final total = update?.total ?? series.episodeCount;
+  final progress = library.progressOf(series.seriesId);
+  final parts = <String>[
+    if (update != null && update.added > 0)
+      t.hongguo.favoriteTotalAdded(total: update.total, added: update.added)
+    else if (total > 0)
+      t.hongguo.favoriteTotal(total: total)
+    else
+      t.hongguo.favoriteTotalPending,
+    if (progress != null) t.hongguo.favoriteWatchedTo(index: progress.episodeIndex),
+  ];
+  return parts.join(' · ');
+}
+
 /// One series as a poster card: the cover with its badges — the board
 /// position, the episode count, the heat, the 今日 marker — the title, the
 /// listing line and, on a shelf that asks for it, the local bookmark.
@@ -293,7 +312,7 @@ final class HongguoSeriesRow extends StatelessWidget {
     return DsCard(
       onPressed: onOpen,
       semanticLabel: series.title,
-      style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s8),),
+      style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s8)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s12,
@@ -306,7 +325,12 @@ final class HongguoSeriesRow extends StatelessWidget {
                 aspectRatio: 3 / 4,
                 child: series.cover.isEmpty
                     ? fallback
-                    : DsImage(image: cachedImage(series.cover), aspectRatio: 3 / 4, semanticLabel: series.title, fallback: fallback),
+                    : DsImage(
+                        image: cachedImage(series.cover),
+                        aspectRatio: 3 / 4,
+                        semanticLabel: series.title,
+                        fallback: fallback,
+                      ),
               ),
             ),
           ),
