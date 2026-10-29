@@ -107,7 +107,10 @@
   失败再重试一次；`autoSkipOnError` = 加载超时 100s / 失败 5s 自动下一曲。
 - ✅ C4 进度恢复（`music.playback.positions` + `music.queue` 已持久化续播）：`isSavePlayTime` 时恢复到上次位置并暂停待播（现有 `music.playback.positions`
   已有雏形，对齐 LX 的 data store playInfo 结构与暂停语义）。
-- ⬜ C5 播放 3s 后预载下一曲 URL（引擎侧未做）（`usePreloadNextMusic.ts`）。
+- ✅ C5 下一曲预载（2026-10-29 实查引擎已做：media_core_audio `AudioPlaybackController._prefetchNext`
+  在播放开始事件即预热下一曲 URL+歌词，`AudioPlaybackConfig.prefetchNext` 默认开、
+  按 sourceId+trackId+quality 缓存、过期重解、失败静默（真实尝试才报错）；比 LX 的
+  播放 3s 后预载更早，语义一致）（`usePreloadNextMusic.ts`）。
 - ✅ C6 收藏（`music_library.dart` 收藏/最近已实现）：（`LIST_IDS.LOVE='love'`）、`collectMusic/uncollectMusic` 语义。
 - ✅ C7 定时停止（`setSleepTimer` + `setPauseAfterCurrentTrack` + 倍速 + 歌词偏移已有；
   mediaDeviceId 输出设备选择未做）： `timeoutStop.ts`（`waitPlayEndStop`）；倍速/`preservesPitch`/媒体设备选择
