@@ -6,6 +6,8 @@ import 'package:pure_live/modules/music/controller/music_comments.dart' show Mus
 import 'package:pure_live/modules/music/controller/sources/lx_platform_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
+import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
+    show MusicPlaylistInfo, MusicPlaylistPage, SonglistSearch;
 
 /// The Kuwo boards lx-music exposes, in its own order.
 const List<(int, String)> kMusicRankCatalogs = [
@@ -28,7 +30,7 @@ const String _hotUserAgent = 'Dalvik/2.1.0 (Linux; U; Android 9;)';
 /// The Kuwo platform: search, boards and lyrics ride Kuwo's own channel;
 /// play URLs are asked from the lx scripts first, with Kuwo's anti-server as
 /// the fallback.
-final class KwMusicSource extends LxPlatformSource implements MusicHotWords, MusicCommentsSource {
+final class KwMusicSource extends LxPlatformSource with SonglistSearch implements MusicHotWords, MusicCommentsSource {
   /// A Kuwo source over the lx runtime.
   KwMusicSource(super.runtime, super.http);
 
@@ -73,6 +75,44 @@ final class KwMusicSource extends LxPlatformSource implements MusicHotWords, Mus
           ]
         : const <audio.MusicTrack>[];
     return audio.MusicSourcePage(items: items, page: page, total: total, hasMore: total > page * pageSize);
+  }
+
+  /// One page of the keyword's playlists — the reference's kw `songList`
+  /// search: the r.s gateway again, this time with `ft=playlist`.
+  @override
+  Future<MusicPlaylistPage> searchPlaylists(String keyword, {int page = 1, int pageSize = 20}) async {
+    final uri = Uri.https('search.kuwo.cn', '/r.s', {
+      'all': keyword,
+      'pn': '${page - 1}',
+      'rn': '$pageSize',
+      'rformat': 'json',
+      'encoding': 'utf8',
+      'ver': 'mbox',
+      'vipver': 'MUSIC_8.7.7.0_BCS37',
+      'plat': 'pc',
+      'devid': '28156413',
+      'ft': 'playlist',
+      'pay': '0',
+      'needliveshow': '0',
+    });
+    final json = jsonDecode(await getText(uri)) as Map<String, Object?>;
+    final raw = json['abslist'];
+    if (raw is! List) return const MusicPlaylistPage(items: [], total: 0);
+    final total = int.tryParse('${json['TOTAL'] ?? ''}') ?? 0;
+    return MusicPlaylistPage(
+      items: [
+        for (final entry in raw)
+          if (entry is Map)
+            MusicPlaylistInfo(
+              id: '${entry['playlistid'] ?? ''}',
+              name: LxPlatformSource.decodeName('${entry['name'] ?? ''}').trim(),
+              cover: '${entry['pic'] ?? ''}',
+              author: LxPlatformSource.decodeName('${entry['nickname'] ?? ''}').trim(),
+              trackCount: int.tryParse('${entry['songnum'] ?? ''}') ?? 0,
+            ),
+      ],
+      total: total,
+    );
   }
 
   /// The viewer-shown top searches — the reference's 热门搜索.

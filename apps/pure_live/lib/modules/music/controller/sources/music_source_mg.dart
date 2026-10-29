@@ -8,7 +8,7 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists;
+    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists, SonglistSearch;
 
 /// The mg-music leaderboard view's boards, in its own order.
 const List<(String, String)> _kMgBoards = [
@@ -38,7 +38,8 @@ const String _mgUserAgent =
 
 /// The Migu platform: search rides the signed v3 gateway, boards and lyrics
 /// the open app endpoints; play URLs come from the lx scripts.
-final class MgMusicSource extends LxPlatformSource with OnlinePlaylists implements MusicHotWords, MusicCommentsSource {
+final class MgMusicSource extends LxPlatformSource with OnlinePlaylists, SonglistSearch
+implements MusicHotWords, MusicCommentsSource {
   /// A Migu source over the lx runtime.
   MgMusicSource(super.runtime, super.http);
 
@@ -291,6 +292,56 @@ final class MgMusicSource extends LxPlatformSource with OnlinePlaylists implemen
         out.add(entry.cast<String, Object?>());
       }
     }
+  }
+
+  /// One page of the keyword's playlists — the reference's mg `songList`
+  /// search: the same v3 gateway as songs, switched to the songlist slice.
+  @override
+  Future<MusicPlaylistPage> searchPlaylists(String keyword, {int page = 1, int pageSize = 20}) async {
+    final time = DateTime.now().millisecondsSinceEpoch.toString();
+    final (sign, deviceId) = _createSignature(time, keyword);
+    final uri = Uri.https('jadeite.migu.cn', '/music_search/v3/search/searchAll', {
+      'isCorrect': '1',
+      'isCopyright': '1',
+      'searchSwitch': '{"song":0,"album":0,"singer":0,"tagSong":0,"mvSong":0,"bestShow":0,"songlist":1,"lyricSong":0}',
+      'pageSize': '$pageSize',
+      'text': keyword,
+      'pageNo': '$page',
+      'sort': '0',
+      'sid': 'USS',
+    });
+    final json = jsonDecode(
+      await getText(
+        uri,
+        headers: {
+          'uiVersion': 'A_music_3.6.1',
+          'deviceId': deviceId,
+          'timestamp': time,
+          'sign': sign,
+          'channel': '0146921',
+          'User-Agent': _mgUserAgent,
+        },
+      ),
+    ) as Map<String, Object?>;
+    final data = json['songListResultData'];
+    if (json['code'] != '000000' || data is! Map) return const MusicPlaylistPage(items: [], total: 0);
+    final raw = data['result'];
+    final total = int.tryParse('${data['totalCount'] ?? ''}') ?? 0;
+    return MusicPlaylistPage(
+      items: [
+        if (raw is List)
+          for (final entry in raw)
+            if (entry is Map && '${entry['id'] ?? ''}'.isNotEmpty)
+              MusicPlaylistInfo(
+                id: '${entry['id'] ?? ''}',
+                name: '${entry['name'] ?? ''}',
+                cover: '${entry['musicListPicUrl'] ?? ''}',
+                author: '${entry['userName'] ?? ''}',
+                trackCount: int.tryParse('${entry['musicNum'] ?? ''}') ?? 0,
+              ),
+      ],
+      total: total,
+    );
   }
 
   @override

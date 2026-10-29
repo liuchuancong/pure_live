@@ -10,7 +10,7 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists;
+    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists, SonglistSearch;
 
 /// The QQ-music leaderboard view's boards, in its own order.
 const List<(String, String)> _kTxBoards = [
@@ -69,7 +69,8 @@ String zzcSign(String text) {
 
 /// The QQ music platform: search and boards ride the signed android gateway;
 /// play URLs come from the lx scripts (the open gateway serves no URLs).
-final class TxMusicSource extends LxPlatformSource with OnlinePlaylists implements MusicHotWords, MusicCommentsSource {
+final class TxMusicSource extends LxPlatformSource with OnlinePlaylists, SonglistSearch
+implements MusicHotWords, MusicCommentsSource {
   /// A QQ music source over the lx runtime.
   TxMusicSource(super.runtime, super.http);
 
@@ -335,6 +336,51 @@ final class TxMusicSource extends LxPlatformSource with OnlinePlaylists implemen
               _playlistOf(((entry['Playlist'] as Map)['basic'] as Map).cast<String, Object?>()),
       ],
       total: (feed['FromLimit'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  /// One page of the keyword's playlists — the reference's tx `songList`
+  /// search on the y.qq.com soso gateway.
+  @override
+  Future<MusicPlaylistPage> searchPlaylists(String keyword, {int page = 1, int pageSize = 20}) async {
+    final json = jsonDecode(
+      await getText(
+        Uri.https('c.y.qq.com', '/soso/fcgi-bin/client_music_search_songlist', {
+          'page_no': '${page - 1}',
+          'num_per_page': '$pageSize',
+          'format': 'json',
+          'query': keyword,
+          'remoteplace': 'txt.yqq.playlist',
+          'inCharset': 'utf8',
+          'outCharset': 'utf-8',
+        }),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)',
+          'Referer': 'https://y.qq.com/portal/search.html',
+        },
+      ),
+    ) as Map<String, Object?>;
+    final data = json['data'];
+    if (json['code'] != 0 || data is! Map) return const MusicPlaylistPage(items: [], total: 0);
+    final raw = data['list'];
+    final total = (data['sum'] as num?)?.toInt() ?? 0;
+    return MusicPlaylistPage(
+      items: [
+        if (raw is List)
+          for (final entry in raw)
+            if (entry is Map)
+              MusicPlaylistInfo(
+                id: '${entry['dissid'] ?? ''}',
+                name: '${entry['dissname'] ?? ''}',
+                cover: '${entry['imgurl'] ?? ''}',
+                author: switch (entry['creator']) {
+                  final Map<dynamic, dynamic> creator => '${creator['name'] ?? ''}',
+                  _ => '',
+                },
+                trackCount: (entry['song_count'] as num?)?.toInt() ?? 0,
+              ),
+      ],
+      total: total,
     );
   }
 

@@ -8,7 +8,7 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists;
+    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists, SonglistSearch;
 
 /// The lx-music leaderboard view's KuGou boards, in its own order.
 const List<(String, String)> _kKgBoards = [
@@ -35,7 +35,8 @@ const Map<String, String> _krcHeaders = {
 /// The KuGou platform: search, boards and lyrics ride KuGou's own channel;
 /// play URLs come from the lx scripts (KuGou has no open URL endpoint), keyed
 /// by the per-quality file hashes the search response carries.
-final class KgMusicSource extends LxPlatformSource with OnlinePlaylists implements MusicHotWords, MusicCommentsSource {
+final class KgMusicSource extends LxPlatformSource with OnlinePlaylists, SonglistSearch
+implements MusicHotWords, MusicCommentsSource {
   /// A KuGou source over the lx runtime.
   KgMusicSource(super.runtime, super.http);
 
@@ -202,6 +203,44 @@ final class KgMusicSource extends LxPlatformSource with OnlinePlaylists implemen
     } on Object {
       return const <String>[];
     }
+  }
+
+  /// One page of the keyword's playlists — the reference's kg `songList`
+  /// search on msearchretry's special endpoint.
+  @override
+  Future<MusicPlaylistPage> searchPlaylists(String keyword, {int page = 1, int pageSize = 20}) async {
+    final json = jsonDecode(
+      await getText(
+        Uri.http('msearchretry.kugou.com', '/api/v3/search/special', {
+          'keyword': keyword,
+          'page': '$page',
+          'pagesize': '$pageSize',
+          'showtype': '10',
+          'filter': '0',
+          'version': '7910',
+          'sver': '2',
+        }),
+      ),
+    ) as Map<String, Object?>;
+    final data = json['data'];
+    if (json['errcode'] != 0 || data is! Map) return const MusicPlaylistPage(items: [], total: 0);
+    final raw = data['info'];
+    final total = (data['total'] as num?)?.toInt() ?? 0;
+    return MusicPlaylistPage(
+      items: [
+        if (raw is List)
+          for (final entry in raw)
+            if (entry is Map)
+              MusicPlaylistInfo(
+                id: '${entry['specialid'] ?? ''}',
+                name: '${entry['specialname'] ?? ''}',
+                cover: '${entry['imgurl'] ?? entry['img'] ?? ''}'.replaceFirst('{size}', '240'),
+                author: '${entry['nickname'] ?? ''}',
+                trackCount: (entry['songcount'] as num?)?.toInt() ?? 0,
+              ),
+      ],
+      total: total,
+    );
   }
 
   @override
