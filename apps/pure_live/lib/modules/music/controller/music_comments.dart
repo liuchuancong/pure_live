@@ -2,10 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/modules/music/controller/music_library.dart' show musicTrackKey;
-import 'package:pure_live/modules/music/controller/music_source.dart' show kwMusicSourceProvider;
-
-/// Kuwo's comment endpoints only answer the mobile client's user agent.
-const String _userAgent = 'Dalvik/2.1.0 (Linux; U; Android 9;)';
+import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
+import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart' show MusicCommentsSource;
 
 /// One comment under a song — the reference's 评论.
 final class MusicComment {
@@ -177,26 +175,11 @@ final class MusicCommentsController extends Notifier<MusicCommentsState> {
     required bool hot,
     required int page,
   }) async {
-    final pageSize = hot ? _hotPageSize : _pageSize;
-    final uri = Uri.http('ncomment.kuwo.cn', '/com.s', {
-      'f': 'web',
-      'type': hot ? 'get_rec_comment' : 'get_comment',
-      'aapiver': '1',
-      'prod': 'kwplayer_ar_10.5.2.0',
-      'digest': '15',
-      'sid': track.id,
-      'start': '${pageSize * (page - 1)}',
-      'msgflag': '1',
-      'count': '$pageSize',
-      'newver': '3',
-      'uid': '0',
-    });
-    final json = await ref.read(kwMusicSourceProvider).getJson(uri, userAgent: _userAgent);
-    final raw = json[hot ? 'hot_comments' : 'comments'];
-    final total = int.tryParse('${json[hot ? 'hot_comments_counts' : 'comments_counts'] ?? ''}') ?? 0;
-    final comments = [for (final entry in raw is List ? raw : const []) ?MusicComment.fromJson(entry)];
-    final maxPage = total <= 0 ? 1 : (total / pageSize).ceil();
-    return (comments: comments, hasMore: page < maxPage);
+    final source = ref.read(musicSourceProvider);
+    if (source case final MusicCommentsSource comments) {
+      return await comments.comments(track, hot: hot, page: page, pageSize: hot ? _hotPageSize : _pageSize);
+    }
+    throw StateError('${source.id} has no comment channel');
   }
 }
 

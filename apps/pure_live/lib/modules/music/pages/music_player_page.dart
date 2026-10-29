@@ -34,9 +34,6 @@ final class MusicPlayerPage extends ConsumerStatefulWidget {
 }
 
 final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
-  /// Where the seek slider is while the viewer drags it, in seconds.
-  double? _dragSeconds;
-
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -45,10 +42,6 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
     final state = ref.watch(musicPlayerProvider);
     final controller = ref.read(musicPlayerProvider.notifier);
     final track = state.track;
-    final favourites = ref.watch(musicFavouritesProvider);
-    final favouriteController = ref.read(musicFavouritesProvider.notifier);
-    final duration = state.duration;
-    final position = _dragSeconds != null ? Duration(milliseconds: (_dragSeconds! * 1000).round()) : state.position;
     return CallbackShortcuts(
       bindings: <SingleActivator, VoidCallback>{
         const SingleActivator(LogicalKeyboardKey.space): () => unawaited(controller.toggle()),
@@ -67,219 +60,68 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                       description: Text(t.music.searchIdleDescription),
                     ),
                   )
-                : Padding(
-                    padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s8, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      spacing: DsSpace.s12,
-                      children: [
-                        Row(
-                          spacing: DsSpace.s8,
-                          children: [
-                            DsButton.icon(
-                              variant: DsButtonVariant.ghost,
-                              size: DsSize.sm,
-                              semanticLabel: t.common.close,
-                              onPressed: () => context.pop(),
-                              icon: const DsIcon(DsIcons.chevronLeft),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                spacing: DsSpace.s3,
-                                children: [
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final wide = constraints.maxWidth >= 920;
+                      final header = Row(
+                        spacing: DsSpace.s8,
+                        children: [
+                          DsButton.icon(
+                            variant: DsButtonVariant.ghost,
+                            size: DsSize.sm,
+                            semanticLabel: t.common.close,
+                            onPressed: () => context.pop(),
+                            icon: const DsIcon(DsIcons.chevronLeft),
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              spacing: DsSpace.s3,
+                              children: [
+                                Text(
+                                  t.music.nowPlaying,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.typography.title.copyWith(color: colors.text),
+                                ),
+                                if (state.sleepTimerRemaining case final remaining?)
                                   Text(
-                                    t.music.nowPlaying,
+                                    t.music.sleepRemaining(value: musicDurationText(remaining)),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: theme.typography.title.copyWith(color: colors.text),
+                                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
                                   ),
-                                  if (state.sleepTimerRemaining case final remaining?)
-                                    Text(
-                                      t.music.sleepRemaining(value: musicDurationText(remaining)),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const _PlayerMenu(),
-                          ],
-                        ),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s24),
-                            child: Center(
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 640),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  spacing: DsSpace.s20,
-                                  children: [
-                                    Center(child: _Artwork(track: track)),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                                      spacing: DsSpace.s4,
-                                      children: [
-                                        Text(
-                                          track.title,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.center,
-                                          style: theme.typography.heading.copyWith(color: colors.text),
-                                        ),
-                                        if (track.artist.isNotEmpty)
-                                          Text(
-                                            track.artist,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            textAlign: TextAlign.center,
-                                            style: theme.typography.body.copyWith(color: colors.textMuted),
-                                          ),
-                                      ],
-                                    ),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                                      spacing: DsSpace.s4,
-                                      children: [
-                                        Row(
-                                          spacing: DsSpace.s8,
-                                          children: [
-                                            SizedBox(
-                                              width: 48,
-                                              child: Text(
-                                                musicDurationText(position),
-                                                style: theme.typography.numeric(
-                                                  theme.typography.caption.copyWith(color: colors.textMuted),
-                                                ),
-                                              ),
-                                            ),
-                                            Expanded(
-                                              child: DsSlider(
-                                                value: duration.inMilliseconds <= 0
-                                                    ? 0
-                                                    : position.inMilliseconds
-                                                          .clamp(0, duration.inMilliseconds)
-                                                          .toDouble(),
-                                                max: duration.inMilliseconds <= 0
-                                                    ? 1
-                                                    : duration.inMilliseconds.toDouble(),
-                                                semanticLabel: t.music.progress,
-                                                onChanged: duration.inMilliseconds <= 0
-                                                    ? null
-                                                    : (value) => setState(() => _dragSeconds = value / 1000),
-                                                onChangeEnd: duration.inMilliseconds <= 0
-                                                    ? null
-                                                    : (value) {
-                                                        setState(() => _dragSeconds = null);
-                                                        unawaited(
-                                                          controller.seek(Duration(milliseconds: value.round())),
-                                                        );
-                                                      },
-                                              ),
-                                            ),
-                                            SizedBox(
-                                              width: 48,
-                                              child: Text(
-                                                musicDurationText(duration),
-                                                textAlign: TextAlign.end,
-                                                style: theme.typography.numeric(
-                                                  theme.typography.caption.copyWith(color: colors.textMuted),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          spacing: DsSpace.s12,
-                                          children: [
-                                            DsButton.icon(
-                                              variant: DsButtonVariant.ghost,
-                                              size: DsSize.lg,
-                                              semanticLabel: musicPlayModeLabel(t, state.mode),
-                                              onPressed: controller.cycleMode,
-                                              icon: DsIcon(musicPlayModeIcon(state.mode)),
-                                            ),
-                                            DsButton.icon(
-                                              variant: DsButtonVariant.ghost,
-                                              size: DsSize.lg,
-                                              semanticLabel: t.music.previous,
-                                              onPressed: () => unawaited(controller.previous()),
-                                              icon: const DsIcon(DsIcons.skipBack),
-                                            ),
-                                            DsButton.icon(
-                                              variant: DsButtonVariant.primary,
-                                              size: DsSize.lg,
-                                              semanticLabel: state.playing ? t.music.pause : t.music.play,
-                                              onPressed: () => unawaited(controller.toggle()),
-                                              icon: DsIcon(state.playing ? DsIcons.pause : DsIcons.play),
-                                            ),
-                                            DsButton.icon(
-                                              variant: DsButtonVariant.ghost,
-                                              size: DsSize.lg,
-                                              semanticLabel: t.music.next,
-                                              onPressed: () => unawaited(controller.next()),
-                                              icon: const DsIcon(DsIcons.skipForward),
-                                            ),
-                                            DsButton.icon(
-                                              variant: DsButtonVariant.ghost,
-                                              size: DsSize.lg,
-                                              semanticLabel: favourites.contains(track)
-                                                  ? t.music.unfavourite
-                                                  : t.music.favourite,
-                                              onPressed: () => unawaited(favouriteController.toggle(track)),
-                                              icon: DsIcon(
-                                                DsIcons.heart,
-                                                color: favourites.contains(track) ? colors.accent : null,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                    _Volume(
-                                      volume: state.volume,
-                                      muted: state.muted,
-                                      onVolume: (value) => unawaited(controller.setVolume(value)),
-                                      onMute: () => unawaited(controller.setMuted(muted: !state.muted)),
-                                    ),
-                                    const _Lyrics(),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                                      spacing: DsSpace.s8,
-                                      children: [
-                                        Text(
-                                          '${t.music.queueTitle} · ${t.music.songsCount(count: state.queueLength)}',
-                                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                                        ),
-                                        DsListSection(
-                                          children: [
-                                            for (final (index, song) in controller.queue.indexed)
-                                              MusicSongRow(
-                                                track: song,
-                                                playing: song == track,
-                                                favourite: favourites.contains(song),
-                                                onPlay: () => unawaited(controller.playAt(index)),
-                                                onFavourite: () => unawaited(favouriteController.toggle(song)),
-                                                onRemove: () => unawaited(controller.removeAt(index)),
-                                                onAddToPlaylist: () =>
-                                                    unawaited(showAddToPlaylistDialog(context, ref, song)),
-                                                onDownload: () => unawaited(downloadTrackWithToast(context, ref, song)),
-                                              ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              ],
                             ),
                           ),
+                          const _PlayerMenu(),
+                        ],
+                      );
+                      final body = wide
+                          ? const Row(
+                              spacing: DsSpace.s24,
+                              children: [
+                                Expanded(flex: 5, child: _Stage()),
+                                Expanded(flex: 6, child: _SidePanel()),
+                              ],
+                            )
+                          : const Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              spacing: DsSpace.s12,
+                              children: [
+                                Expanded(child: _Stage()),
+                                Expanded(child: _SidePanel()),
+                              ],
+                            );
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s8, DsSpace.s12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          spacing: DsSpace.s12,
+                          children: [header, Expanded(child: body)],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
           ),
         ),
@@ -288,12 +130,277 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
   }
 }
 
+/// The stage: the song at listening size above its seek and transport.
+final class _Stage extends ConsumerStatefulWidget {
+  const _Stage();
+
+  @override
+  ConsumerState<_Stage> createState() => _StageState();
+}
+
+final class _StageState extends ConsumerState<_Stage> {
+  /// Where the seek slider is while the viewer drags it, in seconds.
+  double? _dragSeconds;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final state = ref.watch(musicPlayerProvider);
+    final controller = ref.read(musicPlayerProvider.notifier);
+    final favourites = ref.watch(musicFavouritesProvider);
+    final favouriteController = ref.read(musicFavouritesProvider.notifier);
+    final track = state.track!;
+    final duration = state.duration;
+    final position = _dragSeconds != null ? Duration(milliseconds: (_dragSeconds! * 1000).round()) : state.position;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = (constraints.maxHeight >= 560 ? 300 : 208).toDouble();
+        return SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s16,
+            children: [
+              Center(child: _Artwork(track: track, size: size)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: DsSpace.s4,
+                children: [
+                  Text(
+                    track.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: theme.typography.heading.copyWith(color: colors.text),
+                  ),
+                  if (track.artist.isNotEmpty)
+                    Text(
+                      track.artist,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: theme.typography.body.copyWith(color: colors.textMuted),
+                    ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: DsSpace.s4,
+                children: [
+                  Row(
+                    spacing: DsSpace.s8,
+                    children: [
+                      SizedBox(
+                        width: 48,
+                        child: Text(
+                          musicDurationText(position),
+                          style: theme.typography.numeric(
+                            theme.typography.caption.copyWith(color: colors.textMuted),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: DsSlider(
+                          value: duration.inMilliseconds <= 0
+                              ? 0
+                              : position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble(),
+                          max: duration.inMilliseconds <= 0 ? 1 : duration.inMilliseconds.toDouble(),
+                          semanticLabel: t.music.progress,
+                          onChanged: duration.inMilliseconds <= 0
+                              ? null
+                              : (value) => setState(() => _dragSeconds = value / 1000),
+                          onChangeEnd: duration.inMilliseconds <= 0
+                              ? null
+                              : (value) {
+                                  setState(() => _dragSeconds = null);
+                                  unawaited(controller.seek(Duration(milliseconds: value.round())));
+                                },
+                        ),
+                      ),
+                      SizedBox(
+                        width: 48,
+                        child: Text(
+                          musicDurationText(duration),
+                          textAlign: TextAlign.end,
+                          style: theme.typography.numeric(
+                            theme.typography.caption.copyWith(color: colors.textMuted),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: DsSpace.s12,
+                    children: [
+                      DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.lg,
+                        semanticLabel: musicPlayModeLabel(t, state.mode),
+                        onPressed: controller.cycleMode,
+                        icon: DsIcon(musicPlayModeIcon(state.mode)),
+                      ),
+                      DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.lg,
+                        semanticLabel: t.music.previous,
+                        onPressed: () => unawaited(controller.previous()),
+                        icon: const DsIcon(DsIcons.skipBack),
+                      ),
+                      DsButton.icon(
+                        variant: DsButtonVariant.primary,
+                        size: DsSize.lg,
+                        semanticLabel: state.playing ? t.music.pause : t.music.play,
+                        onPressed: () => unawaited(controller.toggle()),
+                        icon: DsIcon(state.playing ? DsIcons.pause : DsIcons.play),
+                      ),
+                      DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.lg,
+                        semanticLabel: t.music.next,
+                        onPressed: () => unawaited(controller.next()),
+                        icon: const DsIcon(DsIcons.skipForward),
+                      ),
+                      DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.lg,
+                        semanticLabel: favourites.contains(track) ? t.music.unfavourite : t.music.favourite,
+                        onPressed: () => unawaited(favouriteController.toggle(track)),
+                        icon: DsIcon(DsIcons.heart, color: favourites.contains(track) ? colors.accent : null),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: _Volume(
+                    volume: state.volume,
+                    muted: state.muted,
+                    onVolume: (value) => unawaited(controller.setVolume(value)),
+                    onMute: () => unawaited(controller.setMuted(muted: !state.muted)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// The panel beside the stage: lyrics and the queue behind one pair of
+/// tabs, so neither pushes the other off the page.
+final class _SidePanel extends ConsumerStatefulWidget {
+  const _SidePanel();
+
+  @override
+  ConsumerState<_SidePanel> createState() => _SidePanelState();
+}
+
+final class _SidePanelState extends ConsumerState<_SidePanel> {
+  int _tab = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        Center(
+          child: DsTabs<int>(
+            value: _tab,
+            onChanged: (value) => setState(() => _tab = value),
+            tabs: [
+              DsTab<int>(value: 0, label: Text(t.music.lyrics)),
+              DsTab<int>(value: 1, label: Text(t.music.queueTitle)),
+            ],
+            semanticLabel: t.music.lyrics,
+          ),
+        ),
+        Expanded(child: _tab == 0 ? const _Lyrics() : const _QueuePanel()),
+      ],
+    );
+  }
+}
+
+/// The play queue, alone in the panel.
+final class _QueuePanel extends ConsumerWidget {
+  const _QueuePanel();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final state = ref.watch(musicPlayerProvider);
+    final controller = ref.read(musicPlayerProvider.notifier);
+    final favourites = ref.watch(musicFavouritesProvider);
+    final favouriteController = ref.read(musicFavouritesProvider.notifier);
+    final track = state.track;
+    if (state.queueLength == 0 || track == null) {
+      return DsSurface(
+        decoration: DsBoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
+        child: Center(
+          child: DsEmptyState(icon: const DsIcon(DsIcons.listMusic), title: Text(t.music.queueEmpty)),
+        ),
+      );
+    }
+    return DsSurface(
+      decoration: DsBoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
+      padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s12, DsSpace.s4, DsSpace.s4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s8,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: DsSpace.s8),
+            child: Text(
+              '${t.music.queueTitle} · ${t.music.songsCount(count: state.queueLength)}',
+              style: theme.typography.caption.copyWith(color: colors.textSubtle),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              children: [
+                DsListSection(
+                  children: [
+                    for (final (index, song) in controller.queue.indexed)
+                      MusicSongRow(
+                        track: song,
+                        playing: song == track,
+                        favourite: favourites.contains(song),
+                        onPlay: () => unawaited(controller.playAt(index)),
+                        onFavourite: () => unawaited(favouriteController.toggle(song)),
+                        onRemove: () => unawaited(controller.removeAt(index)),
+                        onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
+                        onDownload: () => unawaited(downloadTrackWithToast(context, ref, song)),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// The song's cover at listening size, or the module's mark on a plain tile
 /// when the platform gave none.
 final class _Artwork extends StatelessWidget {
-  const _Artwork({required this.track});
+  const _Artwork({required this.track, required this.size});
 
   final audio.MusicTrack track;
+
+  /// The square's side; the wide layout affords a larger stage.
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -303,15 +410,15 @@ final class _Artwork extends StatelessWidget {
     final radius = BorderRadius.circular(theme.radii.overlay);
     if (cover == null) {
       return Container(
-        width: 260,
-        height: 260,
+        width: size,
+        height: size,
         decoration: DsBoxDecoration(color: colors.control, borderRadius: radius),
         child: Center(child: DsIcon(DsIcons.music, size: 64, color: colors.textSubtle)),
       );
     }
     return ClipRRect(
       borderRadius: radius,
-      child: DsImage(image: cachedImage(cover.toString()), width: 260, height: 260, semanticLabel: track.title),
+      child: DsImage(image: cachedImage(cover.toString()), width: size, height: size, semanticLabel: track.title),
     );
   }
 }
@@ -328,7 +435,6 @@ final class _Lyrics extends ConsumerStatefulWidget {
 
 final class _LyricsState extends ConsumerState<_Lyrics> {
   static const double _baseLineHeight = 46;
-  static const double _height = 230;
 
   final ScrollController _scroll = ScrollController();
   audio.LyricDocument? _document;
@@ -399,14 +505,12 @@ final class _LyricsState extends ConsumerState<_Lyrics> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s8,
         children: [
-          Text(t.music.lyrics, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
           if (settings.lyricProgress && state.duration > Duration.zero)
             DsProgressBar(
               value: (state.position.inMilliseconds / state.duration.inMilliseconds).clamp(0.0, 1.0),
               semanticLabel: t.music.lyricProgress,
             ),
-          SizedBox(
-            height: _height,
+          Expanded(
             child: document == null
                 ? const Center(child: DsSpinner())
                 : document.isEmpty

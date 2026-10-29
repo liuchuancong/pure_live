@@ -19,7 +19,16 @@ const int kMusicPlaylistLimit = 100;
 @immutable
 final class MusicPlaylist {
   /// Creates a playlist.
-  const MusicPlaylist({required this.id, required this.name, required this.tracks, required this.createdAt});
+  const MusicPlaylist({
+    required this.id,
+    required this.name,
+    required this.tracks,
+    required this.createdAt,
+    this.source,
+    this.sourceListId,
+    this.position = 0,
+    this.locationUpdateTime,
+  });
 
   /// Reads a stored playlist; null when the entry is damaged.
   static MusicPlaylist? fromJson(Object? json) {
@@ -29,11 +38,19 @@ final class MusicPlaylist {
     final createdAt = (json['createdAt'] as num?)?.toInt();
     if (id is! String || id.isEmpty || name is! String || createdAt == null) return null;
     final entries = json['tracks'];
+    final locatedAt = (json['locationUpdateTime'] as num?)?.toInt();
     return MusicPlaylist(
       id: id,
       name: name,
       createdAt: DateTime.fromMillisecondsSinceEpoch(createdAt),
       tracks: entries is List ? [for (final entry in entries) ?musicTrackFromJson(entry)] : const [],
+      source: json['source'] is String && (json['source'] as String).isNotEmpty ? json['source'] as String : null,
+      sourceListId:
+          json['sourceListId'] is String && (json['sourceListId'] as String).isNotEmpty
+              ? json['sourceListId'] as String
+              : null,
+      position: (json['position'] as num?)?.toInt() ?? 0,
+      locationUpdateTime: locatedAt == null ? null : DateTime.fromMillisecondsSinceEpoch(locatedAt),
     );
   }
 
@@ -49,17 +66,52 @@ final class MusicPlaylist {
   /// When it was made.
   final DateTime createdAt;
 
+  /// The platform a linked online playlist came from — the reference's
+  /// `my_list.source`; null for a purely local list.
+  final String? source;
+
+  /// The linked online playlist's id — the reference's `my_list.sourceListId`.
+  final String? sourceListId;
+
+  /// The playlist's place among the viewer's lists — the reference's
+  /// `my_list.position`.
+  final int position;
+
+  /// When the playlist last moved — the reference's
+  /// `my_list.locationUpdateTime`.
+  final DateTime? locationUpdateTime;
+
   /// The stored shape.
   Map<String, Object?> toJson() => {
     'id': id,
     'name': name,
     'createdAt': createdAt.millisecondsSinceEpoch,
     'tracks': [for (final track in tracks) musicTrackToJson(track)],
+    if (source != null) 'source': source,
+    if (sourceListId != null) 'sourceListId': sourceListId,
+    'position': position,
+    if (locationUpdateTime != null) 'locationUpdateTime': locationUpdateTime!.millisecondsSinceEpoch,
   };
 
   /// A copy with selected fields replaced.
-  MusicPlaylist copyWith({String? name, List<audio.MusicTrack>? tracks}) =>
-      MusicPlaylist(id: id, name: name ?? this.name, tracks: tracks ?? this.tracks, createdAt: createdAt);
+  MusicPlaylist copyWith({
+    String? name,
+    List<audio.MusicTrack>? tracks,
+    String? source,
+    String? sourceListId,
+    int? position,
+    DateTime? locationUpdateTime,
+    bool clearLink = false,
+  }) => MusicPlaylist(
+    id: id,
+    name: name ?? this.name,
+    tracks: tracks ?? this.tracks,
+    createdAt: createdAt,
+    source: clearLink ? null : (source ?? this.source),
+    sourceListId: clearLink ? null : (sourceListId ?? this.sourceListId),
+    position: position ?? this.position,
+    locationUpdateTime: locationUpdateTime ?? this.locationUpdateTime,
+  );
 }
 
 /// How a playlist can be re-ordered — the reference's 排序.
@@ -116,10 +168,48 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
       name: trimmed,
       tracks: const [],
       createdAt: DateTime.now(),
+      position: state.isEmpty ? 0 : [for (final existing in state) existing.position].reduce(_maxOf) + 1,
     );
     state = [...state, playlist];
     await _save();
     return playlist;
+  }
+
+  static int _maxOf(int a, int b) => a > b ? a : b;
+
+  /// Moves a playlist to another place among the viewer's lists — the
+  /// reference's `updateUserListPosition`; the moved list's
+  /// `locationUpdateTime` marks the rearrangement.
+  Future<void> move(String id, int to) async {
+    final from = state.indexWhere((playlist) => playlist.id == id);
+    if (from < 0 || to < 0 || to >= state.length || from == to) return;
+    final reordered = [...state]..removeAt(from);
+    final movedAt = DateTime.now();
+    reordered.insert(to, state[from].copyWith(position: to, locationUpdateTime: movedAt));
+    state = [
+      for (var i = 0; i < reordered.length; i++)
+        if (i == to) reordered[i] else reordered[i].copyWith(position: i),
+    ];
+    await _save();
+  }
+
+  /// Links a playlist to an online playlist — the reference stores the
+  /// platform and its list id on `my_list` so the link survives a restart.
+  Future<void> linkSource(String id, {required String source, required String sourceListId}) async {
+    state = [
+      for (final playlist in state)
+        if (playlist.id == id) playlist.copyWith(source: source, sourceListId: sourceListId) else playlist,
+    ];
+    await _save();
+  }
+
+  /// Unlinks a playlist from its online source.
+  Future<void> unlinkSource(String id) async {
+    state = [
+      for (final playlist in state)
+        if (playlist.id == id) playlist.copyWith(clearLink: true) else playlist,
+    ];
+    await _save();
   }
 
   /// Renames a playlist.
@@ -304,6 +394,68 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
     );
 
     return file.path;
+  }
+
+  /// Writes every playlist to [path] as the reference's 导出歌单为文本: one
+  /// `name  singer  album` line per song, lists separated by a blank line.
+  /// Returns the path written.
+  Future<String> exportToTextFile(String path) async {
+    final body = _exportBlocks((track) => '${track.title}  ${track.artist}  ${track.album}');
+    await File(path).writeAsString('\uFEFF$body', flush: true);
+    return path;
+  }
+
+  /// Writes every playlist to [path] as the reference's 导出歌单为CSV: a
+  /// localized header row, then `name,singer,album` rows with quotes escaped.
+  /// Returns the path written.
+  Future<String> exportToCsvFile(String path, {required String header}) async {
+    final body = _exportBlocks(
+      (track) => '${_csvEscape(track.title)},${_csvEscape(track.artist)},${_csvEscape(track.album)}',
+    );
+    await File(path).writeAsString('\uFEFF$header$body', flush: true);
+    return path;
+  }
+
+  /// Every playlist's rows, lists separated by a blank line — the reference
+  /// exports all lists into one file.
+  String _exportBlocks(String Function(audio.MusicTrack track) rowOf) =>
+      [for (final playlist in state) [for (final track in playlist.tracks) rowOf(track)].join('\n')].join('\n\n');
+
+  /// Writes one file per playlist into [directory] — the reference's un-merged
+  /// export, `lx_list_<name>.txt`-style names.
+  Future<void> exportToTextDirectory(String directory) =>
+      _exportPerList(directory, 'txt', (track) => '${track.title}  ${track.artist}  ${track.album}');
+
+  /// Writes one CSV file per playlist into [directory], each with [header].
+  Future<void> exportToCsvDirectory(String directory, {required String header}) => _exportPerList(
+    directory,
+    'csv',
+    (track) => '${_csvEscape(track.title)},${_csvEscape(track.artist)},${_csvEscape(track.album)}',
+    header: header,
+  );
+
+  Future<void> _exportPerList(
+    String directory,
+    String extension,
+    String Function(audio.MusicTrack track) rowOf, {
+    String? header,
+  }) async {
+    for (final playlist in state) {
+      final safe = audio.MusicDownloadRequest.sanitizeFileName(playlist.name);
+      final name = safe.isEmpty ? playlist.id : safe;
+      final rows = [for (final track in playlist.tracks) rowOf(track)].join('\n');
+      await File('$directory/lx_list_$name.$extension').writeAsString(
+        '\uFEFF${header ?? ''}$rows',
+        flush: true,
+      );
+    }
+  }
+
+  /// [value] with CSV quoting applied — a quote doubles, a comma wraps the
+  /// field in quotes.
+  static String _csvEscape(String value) {
+    final escaped = value.replaceAll('"', '""');
+    return escaped.contains(',') ? '"$escaped"' : escaped;
   }
 
   /// Imports a file written by [exportToDirectory]; null when it cannot be

@@ -1,11 +1,11 @@
 import 'dart:async' show Completer, Future, TimeoutException, unawaited;
-import 'dart:convert' show jsonEncode, utf8;
+import 'dart:convert' show jsonEncode;
 
 import 'package:fjs/fjs.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
+import 'package:live_net/live_net.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
-
+import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/modules/music/controller/lx_script_prelude.dart' show lxScriptPrelude;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show MusicCustomSource, musicSourcesProvider;
 
@@ -74,9 +74,9 @@ final class LxScriptInstance {
 /// buffer/crypto/zlib helpers in the prelude — and calls the script's
 /// `request` handler for a song URL.
 final class LxScriptRuntime {
-  LxScriptRuntime();
+  LxScriptRuntime({required LiveHttp transport}) : _http = transport;
 
-  final http.Client _client = http.Client();
+  final LiveHttp _http;
   final Set<String> _cancelled = <String>{};
   List<LxScriptInstance> _instances = const [];
   List<MusicCustomSource> _sources = const [];
@@ -319,52 +319,51 @@ final class LxScriptRuntime {
         headers['${entry.key}'] = '${entry.value}';
       }
     }
-    try {
-      final request = http.Request(method, Uri.parse(url));
-      request.headers.addAll(headers);
-      final form = settings['form'];
-      final formData = settings['formData'];
-      final body = settings['body'];
-      if (form is Map) {
-        request.body = form.entries
-            .map((entry) => '${Uri.encodeQueryComponent('${entry.key}')}=${Uri.encodeQueryComponent('${entry.value}')}')
-            .join('&');
-        request.headers.putIfAbsent('content-type', () => 'application/x-www-form-urlencoded');
-      } else if (formData is Map) {
-        request.body = formData.entries
-            .map((entry) => '${Uri.encodeQueryComponent('${entry.key}')}=${Uri.encodeQueryComponent('${entry.value}')}')
-            .join('&');
-        request.headers.putIfAbsent('content-type', () => 'application/x-www-form-urlencoded');
-      } else if (body is Map || body is List) {
-        request.body = jsonEncode(body);
-        request.headers.putIfAbsent('content-type', () => 'application/json');
-      } else if (body is String) {
-        request.body = body;
-      }
-      final requested = (settings['timeout'] as num?)?.toInt();
-      final timeoutMs = requested != null && requested > 0 ? requested.clamp(1000, 60000) : 60000;
-      final response = await _client.send(request).timeout(Duration(milliseconds: timeoutMs));
-      final bytes = await response.stream.toBytes();
-      final binary = settings['binary'] == true;
-      final responseBody = binary ? bytes : utf8.decode(bytes, allowMalformed: true);
-      final responseMap = <String, Object?>{
-        'statusCode': response.statusCode,
-        'statusMessage': response.reasonPhrase ?? '',
-        'headers': response.headers,
-        'body': responseBody,
-      };
-      return {'response': responseMap, 'body': responseBody};
-    } on Object catch (failure) {
-      return {'error': '$failure'};
+    final form = settings['form'];
+    final formData = settings['formData'];
+    final body = settings['body'];
+    String? encoded;
+    String? contentType;
+    if (form is Map || formData is Map) {
+      final fields = (form ?? formData)! as Map;
+      encoded = [
+        for (final MapEntry<dynamic, dynamic> entry in fields.entries)
+          '${Uri.encodeQueryComponent('${entry.key}')}=${Uri.encodeQueryComponent('${entry.value}')}',
+      ].join('&');
+      contentType = 'application/x-www-form-urlencoded';
+    } else if (body is Map || body is List) {
+      encoded = jsonEncode(body);
+      contentType = 'application/json';
+    } else if (body is String) {
+      encoded = body;
     }
+    final requested = (settings['timeout'] as num?)?.toInt();
+    final timeoutMs = requested != null && requested > 0 ? requested.clamp(1000, 60000) : 60000;
+    final request = LiveRequest.custom(
+      method: method,
+      url: Uri.parse(url),
+      headers: headers,
+      body: encoded,
+      contentType: contentType,
+      timeout: Duration(milliseconds: timeoutMs),
+    );
+    final response = await _http.send(request);
+    final binary = settings['binary'] == true;
+    final responseBody = binary ? response.bodyBytes : response.text;
+    final responseMap = <String, Object?>{
+      'statusCode': response.statusCode,
+      'statusMessage': '',
+      'headers': response.headers,
+      'body': responseBody,
+    };
+    return {'response': responseMap, 'body': responseBody};
   }
 
-  /// Stops the client and every engine.
+  /// Stops the engines; the transport is shared and outlives the runtime.
   Future<void> dispose() async {
     _generation++;
     final old = _instances;
     _instances = const [];
-    _client.close();
     for (final instance in old) {
       await instance.dispose();
     }
@@ -389,6 +388,8 @@ Map<String, Object?> lxMusicInfo(audio.MusicTrack track, {Iterable<String> quali
     if (track.albumId != null && track.albumId!.isNotEmpty) 'albumId': track.albumId,
     if (hash.isNotEmpty) 'hash': hash,
     if (hashes is Map) 'hashes': hashes,
+    for (final key in const ['albumId', 'albumMid', 'mediaMid', 'songId'])
+      if (track.metadata[key] != null && '${track.metadata[key]}'.isNotEmpty) key: track.metadata[key],
     if (track.duration != null) 'interval': track.duration!.inSeconds,
     'types': [
       for (final quality in qualitys)
@@ -399,7 +400,7 @@ Map<String, Object?> lxMusicInfo(audio.MusicTrack track, {Iterable<String> quali
 
 /// The lx runtime over the imported scripts.
 final lxScriptRuntimeProvider = Provider<LxScriptRuntime>((ref) {
-  final runtime = LxScriptRuntime();
+  final runtime = LxScriptRuntime(transport: ref.watch(networkFactoryProvider).create(profile: ClientProfile.api));
   ref.onDispose(runtime.dispose);
   unawaited(runtime.load(ref.read(musicSourcesProvider)));
   ref.listen(musicSourcesProvider, (_, next) => unawaited(runtime.load(next)));

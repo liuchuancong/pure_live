@@ -9,7 +9,7 @@ import 'package:pure_live/app/providers/settings/download_directory_provider.dar
     show DownloadDirectoryPaths, downloadDirectoryProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicQualityOf;
 import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
+import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, resolveWithToggle;
 
 /// The preference the download queue is kept under.
 const String kMusicDownloadsKey = 'music.downloads';
@@ -84,7 +84,7 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
     final quality = musicQualityOf(settings.quality);
     final directory = ref.read(downloadDirectoryProvider).effectivePath;
     try {
-      final resolved = await activeSource.resolveTrackSource(track, quality: quality);
+      final resolved = await resolveWithToggle(ref, track, quality: quality);
       audio.MusicLyricPayload? lyric;
       if (settings.downloadEmbedLyric || settings.downloadWriteLyric) {
         try {
@@ -118,7 +118,7 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
       _queue.enqueue(
         request,
         resolve: () async {
-          final fresh = await activeSource.resolveTrackSource(track, quality: quality);
+          final fresh = await resolveWithToggle(ref, track, quality: quality);
           return audio.MusicDownloadRequest.forTrack(
             track: track,
             source: fresh,

@@ -1,4 +1,5 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show StreamSubscription, unawaited;
+import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
@@ -11,12 +12,28 @@ import 'package:pure_live/app/providers/settings/download_directory_provider.dar
     show DownloadDirectoryPaths, downloadDirectoryProvider;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
+    show
+        MusicEqConfig,
+        MusicEqController,
+        MusicEqNode,
+        MusicEqPreset,
+        kMusicEqMaxGain,
+        kMusicEqMaxNodes,
+        kMusicEqMinGain,
+        kMusicEqNodeMinQ,
+        kMusicEqPresets,
+        kMusicFxOrder,
+        musicEqApplyFailedProvider,
+        musicEqProvider;
+import 'package:pure_live/modules/music/controller/eq/music_eq_dsp.dart' show kMusicFxCosts;
 import 'package:pure_live/modules/music/controller/lx_script_runtime.dart' show lxScriptRuntimeProvider;
 import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/music_playback.dart' show MusicPlayerController, musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_settings.dart';
 import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId, musicSourceListProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart';
+import 'package:pure_live/modules/music/pages/music_eq_editor.dart' show MusicEqEditor;
 
 /// The music module's own settings: the source a song is asked from, the
 /// rendition asked of it, and the two playback behaviours; the list page and
@@ -95,6 +112,7 @@ final class MusicSettingsPane extends ConsumerWidget {
             SettingsChildEntry(child: SettingsSection.musicDownload),
             SettingsChildEntry(child: SettingsSection.musicLyric),
             SettingsChildEntry(child: SettingsSection.musicDesktopLyric),
+            SettingsChildEntry(child: SettingsSection.musicEq),
           ],
         ),
       ],
@@ -702,6 +720,24 @@ final class MusicLyricPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setSwapLyricSecondary(value: value)),
               ),
             ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.circleLanguage),
+              title: t.music.lyricTraditionalize,
+              description: t.music.lyricTraditionalizeDesc,
+              control: DsSwitch(
+                value: settings.traditionalizeLyric,
+                onChanged: (value) => unawaited(controller.setTraditionalizeLyric(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.audioLines),
+              title: t.music.lyricWordTimed,
+              description: t.music.lyricWordTimedDesc,
+              control: DsSwitch(
+                value: settings.playWordLyrics,
+                onChanged: (value) => unawaited(controller.setPlayWordLyrics(value: value)),
+              ),
+            ),
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.fontSize),
               title: t.music.lyricFontScale,
@@ -918,6 +954,553 @@ final class MusicDesktopLyricPane extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// The sound-effect page: the master bypass, the built-in presets, the
+/// preamp and the ten-band graphic equalizer with its predicted response.
+///
+/// The page edits the stored configuration; the player controller watches it
+/// and speaks the derived `af` chain to this instance's engine, so nothing
+/// here knows what mpv spells the filters as.
+final class MusicEqPane extends ConsumerWidget {
+  /// The pane shown under Settings → Music → 音效.
+  const MusicEqPane({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final eq = ref.watch(musicEqProvider);
+    final applyFailed = ref.watch(musicEqApplyFailedProvider);
+    final controller = ref.read(musicEqProvider.notifier);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        DsListSection(
+          header: Text(t.music.eqSection),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.audioLines),
+              title: t.music.eqEnabled,
+              description: t.music.eqEnabledDesc,
+              control: DsSwitch(
+                value: eq.enabled,
+                onChanged: (value) => unawaited(controller.update(eq.copyWith(enabled: value))),
+              ),
+            ),
+            SettingsChoiceRow<String>(
+              leading: const DsIcon(DsIcons.waves),
+              title: t.music.eqPreset,
+              description: t.music.eqPresetDesc,
+              value: eq.presetId ?? (eq.isFlat ? 'flat' : 'custom'),
+              options: [
+                for (final preset in kMusicEqPresets) DsSelectOption(value: preset.id, label: presetLabel(t, preset)),
+                DsSelectOption(value: 'custom', label: t.music.eqPresetCustom),
+              ],
+              onChanged: (id) {
+                for (final preset in kMusicEqPresets) {
+                  if (preset.id == id) {
+                    unawaited(controller.applyPreset(preset));
+                    return;
+                  }
+                }
+                if (id == 'flat') unawaited(controller.reset());
+              },
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.gauge),
+              title: t.music.eqPreamp,
+              description: t.music.eqPreampDesc,
+              control: _PreampField(eq: eq, controller: controller),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.rotateCcw),
+              title: Text(t.music.eqReset),
+              description: Text(t.music.eqResetDesc),
+              onPressed: () => unawaited(controller.reset()),
+            ),
+          ],
+        ),
+        if (applyFailed)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, 0),
+            child: Text(
+              t.music.eqApplyFailed,
+              style: theme.typography.caption.copyWith(color: colors.danger.fill),
+            ),
+          ),
+        DsListSection(
+          header: Text(t.music.eqFxSection),
+          children: [
+            for (final id in kMusicFxOrder)
+              _MusicFxRow(id: id, eq: eq, controller: controller),
+          ],
+        ),
+        DsListSection(
+          header: Text(t.music.eqCompareTitle),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s12),
+              child: _CompareButton(player: ref.read(musicPlayerProvider.notifier)),
+            ),
+          ],
+        ),
+        DsListSection(
+          header: Text(t.music.eqNodesTitle),
+          children: [
+            for (final node in eq.nodes) _EqNodeRow(node: node, eq: eq, controller: controller),
+            DsListRow(
+              leading: const DsIcon(DsIcons.plus),
+              title: Text(t.music.eqNodesAdd),
+              description: Text('${eq.nodes.length} / $kMusicEqMaxNodes'),
+              onPressed: eq.nodes.length >= kMusicEqMaxNodes ? null : () => unawaited(controller.addNode()),
+            ),
+          ],
+        ),
+        DsListSection(
+          header: Text(t.music.eqMeterTitle),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.activity),
+              title: t.music.eqAnalysis,
+              description: t.music.eqAnalysisDesc,
+              control: DsSwitch(
+                value: eq.analysis,
+                onChanged: (value) => unawaited(controller.setAnalysis(value: value)),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+              child: _LoudnessMeter(active: eq.analysis),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+              child: Text(t.music.eqMeterNote, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+            ),
+          ],
+        ),
+        DsListSection(
+          header: Text(t.music.eqEditorTitle),
+          children: const [
+            Padding(
+              padding: EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
+              child: MusicEqEditor(),
+            ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
+          child: Text(t.music.eqChainNote, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+        ),
+      ],
+    );
+  }
+
+  /// The preset's display name; the ids are the model's, the words are the
+  /// listener's.
+  static String presetLabel(Translations t, MusicEqPreset preset) => switch (preset.id) {
+    'pop' => t.music.eqPresetPop,
+    'rock' => t.music.eqPresetRock,
+    'classical' => t.music.eqPresetClassical,
+    'jazz' => t.music.eqPresetJazz,
+    'electronic' => t.music.eqPresetElectronic,
+    'bass' => t.music.eqPresetBass,
+    'vocal' => t.music.eqPresetVocal,
+    'live' => t.music.eqPresetLive,
+    _ => t.music.eqPresetFlat,
+  };
+}
+
+/// The preamp control: a slider plus the exact dB figure beside it, dragging
+/// throttled by the controller's own persistence round-trip.
+final class _PreampField extends ConsumerWidget {
+  const _PreampField({required this.eq, required this.controller});
+
+  final MusicEqConfig eq;
+  final MusicEqController controller;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    return SizedBox(
+      width: 220,
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          Expanded(
+            child: DsSlider(
+              value: (eq.preampDb - -12) / 18,
+              semanticLabel: t.music.eqPreamp,
+              onChanged: eq.enabled ? (value) => unawaited(controller.setPreamp(-12 + value * 18)) : null,
+            ),
+          ),
+          Text('${eq.preampDb >= 0 ? '+' : ''}${eq.preampDb.toStringAsFixed(1)} dB'),
+        ],
+      ),
+    );
+  }
+}
+
+/// One enhancement effect's row: its switch, its strength slider (shown
+/// while on), and the declared cost — the spec's honesty rule, in words the
+/// listener reads before enabling, not after.
+final class _MusicFxRow extends ConsumerWidget {
+  const _MusicFxRow({required this.id, required this.eq, required this.controller});
+
+  final String id;
+  final MusicEqConfig eq;
+  final MusicEqController controller;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final node = eq.effectOf(id);
+    final on = eq.effectOn(id);
+
+    final title = switch (id) {
+      'loudness' => t.music.eqFxLoudness,
+      'bass' => t.music.eqFxBass,
+      'vocal' => t.music.eqFxVocal,
+      'width' => t.music.eqFxWidth,
+      'surround' => t.music.eqFxSurround,
+      _ => t.music.eqFxDynamics,
+    };
+    final description = switch (id) {
+      'loudness' => t.music.eqFxLoudnessDesc,
+      'bass' => t.music.eqFxBassDesc,
+      'vocal' => t.music.eqFxVocalDesc,
+      'width' => t.music.eqFxWidthDesc,
+      'surround' => t.music.eqFxSurroundDesc,
+      _ => t.music.eqFxDynamicsDesc,
+    };
+
+    return DsListRow(
+      leading: const DsIcon(DsIcons.audioLines),
+      title: Text(title),
+      description: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: DsSpace.s4,
+        children: [
+          Text(description),
+          if (on)
+            SizedBox(
+              width: 200,
+              child: DsSlider(
+                value: node.amount,
+                semanticLabel: title,
+                onChanged: (value) => unawaited(controller.setEffect(id, amount: value)),
+              ),
+            ),
+          if (on && kMusicFxCosts[id] != null)
+            Text(
+              '${t.music.eqFxCostPrefix}${costText(t, kMusicFxCosts[id]!)}',
+              style: theme.typography.caption.copyWith(color: colors.textMuted),
+            ),
+        ],
+      ),
+      trailing: DsSwitch(
+        value: node.enabled,
+        onChanged: (value) => unawaited(controller.setEffect(id, enabled: value)),
+      ),
+    );
+  }
+
+  /// The declared cost's words: which effects mention latency, and which
+  /// only make sense on stereo output.
+  static String costText(Translations t, String cost) {
+    final parts = <String>[];
+    if (cost.contains('latency')) parts.add(t.music.eqFxCostLatency);
+    if (cost.contains('stereoOnly')) parts.add(t.music.eqFxCostStereo);
+    return parts.join(' · ');
+  }
+}
+
+
+/// The loudness meter fed by the engine's analysis branch.
+///
+/// Two bars — momentary (400 ms) and short-term (3 s) — scaled over the
+/// meter's -60…0 LUFS window. When the probe is off, the bars rest and
+/// the caption says why: this is a loudness meter, not a spectrum.
+final class _LoudnessMeter extends ConsumerStatefulWidget {
+  /// Creates the meter.
+  const _LoudnessMeter({required this.active});
+
+  /// Whether the probe filter is in the chain right now.
+  final bool active;
+
+  @override
+  ConsumerState<_LoudnessMeter> createState() => _LoudnessMeterState();
+}
+
+final class _LoudnessMeterState extends ConsumerState<_LoudnessMeter> {
+  StreamSubscription<audio.AudioLoudness>? _sub;
+  audio.AudioLoudness? _levels;
+
+  @override
+  void initState() {
+    super.initState();
+    _listen();
+  }
+
+  @override
+  void didUpdateWidget(_LoudnessMeter old) {
+    super.didUpdateWidget(old);
+    if (old.active != widget.active) _listen();
+  }
+
+  void _listen() {
+    unawaited(_sub?.cancel());
+    _sub = null;
+    if (!widget.active) {
+      if (mounted) setState(() => _levels = null);
+      return;
+    }
+    _sub = ref.read(musicPlayerProvider.notifier).audioEngine.loudnessStream.listen((levels) {
+      if (mounted) setState(() => _levels = levels);
+    });
+  }
+
+  @override
+  void dispose() {
+    unawaited(_sub?.cancel());
+    super.dispose();
+  }
+
+  /// -60…0 LUFS on the bar; quieter than -60 paints as empty.
+  double _fraction(double lufs) => ((lufs + 60) / 60).clamp(0.0, 1.0);
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final momentary = _levels == null ? 0.0 : _fraction(_levels!.momentary);
+    final shortTerm = _levels == null ? 0.0 : _fraction(_levels!.shortTerm);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        _LoudnessBar(label: 'M', fraction: momentary, accent: colors.accent, track: colors.border),
+        _LoudnessBar(label: 'S', fraction: shortTerm, accent: colors.accent, track: colors.border),
+      ],
+    );
+  }
+}
+
+final class _LoudnessBar extends StatelessWidget {
+  const _LoudnessBar({
+    required this.label,
+    required this.fraction,
+    required this.accent,
+    required this.track,
+  });
+
+  final String label;
+  final double fraction;
+  final Color accent;
+  final Color track;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    return Row(
+      spacing: DsSpace.s8,
+      children: [
+        SizedBox(
+          width: 16,
+          child: Text(label, style: theme.typography.caption.copyWith(color: theme.colors.textMuted)),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: SizedBox(
+              height: 6,
+              child: Stack(
+                children: [
+                  ColoredBox(color: track),
+                  FractionallySizedBox(
+                    widthFactor: fraction,
+                    child: ColoredBox(color: accent),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 56,
+          child: Text(
+            '${(fraction * 60 - 60).round()} LUFS',
+            style: theme.typography.caption.copyWith(color: theme.colors.textMuted),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+
+/// One parametric node's editor: switch and delete on the header row,
+/// then frequency, Q and gain sliders — log-scaled where the ear is.
+final class _EqNodeRow extends ConsumerWidget {
+  const _EqNodeRow({required this.node, required this.eq, required this.controller});
+
+  final MusicEqNode node;
+  final MusicEqConfig eq;
+  final MusicEqController controller;
+
+  static String _frequencyLabel(double frequency) =>
+      frequency >= 1000 ? '${(frequency / 1000).toStringAsFixed(1)} kHz' : '${frequency.round()} Hz';
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s8,
+        children: [
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              DsSwitch(
+                value: node.enabled,
+                onChanged: (value) => unawaited(controller.updateNode(node.id, enabled: value)),
+              ),
+              Expanded(
+                child: Text(
+                  _frequencyLabel(node.frequency),
+                  style: theme.typography.body.copyWith(
+                    color: node.enabled ? colors.text : colors.textMuted,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => unawaited(controller.removeNode(node.id)),
+                child: DsIcon(DsIcons.trash2, size: 16, color: colors.textMuted),
+              ),
+            ],
+          ),
+          DsSlider(
+            value: ((math.log(node.frequency / 20) / math.ln10) / 3).clamp(0.0, 1.0),
+            semanticLabel: t.music.eqNodeFrequency,
+            onChanged: (value) {
+              final frequency = 20 * math.pow(10, value * 3).toDouble();
+              unawaited(controller.updateNode(node.id, frequency: frequency));
+            },
+          ),
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(
+                child: DsSlider(
+                  value: ((math.log(node.q / kMusicEqNodeMinQ) / math.ln10) / 2).clamp(0.0, 1.0),
+                  semanticLabel: t.music.eqNodeQ,
+                  onChanged: (value) {
+                    final q = kMusicEqNodeMinQ * math.pow(10, value * 2).toDouble();
+                    unawaited(controller.updateNode(node.id, q: q));
+                  },
+                ),
+              ),
+              SizedBox(
+                width: 64,
+                child: Text(
+                  'Q ${node.q.toStringAsFixed(1)}',
+                  textAlign: TextAlign.end,
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                ),
+              ),
+            ],
+          ),
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(
+                child: DsSlider(
+                  min: kMusicEqMinGain,
+                  max: kMusicEqMaxGain,
+                  value: node.gainDb,
+                  semanticLabel: t.music.eqNodeGain,
+                  onChanged: (value) => unawaited(controller.updateNode(node.id, gainDb: value)),
+                ),
+              ),
+              SizedBox(
+                width: 64,
+                child: Text(
+                  '${node.gainDb >= 0 ? '+' : ''}${node.gainDb.toStringAsFixed(1)} dB',
+                  textAlign: TextAlign.end,
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+/// The A/B compare button: hold it and the whole chain steps aside, so the
+/// ear hears the untouched mix; release restores the configuration at once.
+/// The instant switch-back is the whole point — a toggle with a delay
+/// cannot be compared reliably.
+final class _CompareButton extends ConsumerStatefulWidget {
+  /// Creates the button.
+  const _CompareButton({required this.player});
+
+  final MusicPlayerController player;
+
+  @override
+  ConsumerState<_CompareButton> createState() => _CompareButtonState();
+}
+
+final class _CompareButtonState extends ConsumerState<_CompareButton> {
+  bool _held = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return GestureDetector(
+      onTapDown: (_) {
+        setState(() => _held = true);
+        widget.player.setCompareBypass(bypass: true);
+      },
+      onTapUp: (_) {
+        if (!_held) return;
+        setState(() => _held = false);
+        widget.player.setCompareBypass(bypass: false);
+      },
+      onTapCancel: () {
+        if (!_held) return;
+        setState(() => _held = false);
+        widget.player.setCompareBypass(bypass: false);
+      },
+      child: Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: _held ? colors.accent : colors.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: colors.border),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          _held ? t.music.eqCompareHeld : t.music.eqCompare,
+          style: theme.typography.body.copyWith(
+            color: _held ? colors.onAccent : colors.text,
+          ),
+        ),
+      ),
     );
   }
 }

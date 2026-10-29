@@ -117,12 +117,16 @@ final class MusicSettings {
     required this.skipOnError,
     required this.autoplay,
     required this.rememberProgress,
+    required this.volume,
+    required this.playbackRate,
     required this.addToTop,
     required this.showSource,
     required this.showHotSearches,
     required this.showTranslation,
     required this.showRomanization,
     required this.swapLyricSecondary,
+    required this.traditionalizeLyric,
+    required this.playWordLyrics,
     required this.lyricFontScale,
     required this.lyricAlignment,
     required this.lyricZoomActive,
@@ -158,12 +162,16 @@ final class MusicSettings {
     skipOnError: true,
     autoplay: false,
     rememberProgress: true,
+    volume: 1,
+    playbackRate: 1,
     addToTop: true,
     showSource: true,
     showHotSearches: true,
     showTranslation: true,
     showRomanization: true,
     swapLyricSecondary: false,
+    traditionalizeLyric: false,
+    playWordLyrics: true,
     lyricFontScale: 140,
     lyricAlignment: MusicLyricAlignment.center,
     lyricZoomActive: false,
@@ -207,6 +215,13 @@ final class MusicSettings {
   /// Whether a song opened again resumes at its last position.
   final bool rememberProgress;
 
+  /// The playback volume, kept across runs — the reference's `player.volume`.
+  final double volume;
+
+  /// The playback speed, kept across runs — the reference's
+  /// `player.playbackRate`.
+  final double playbackRate;
+
   /// Whether a song added to a list goes to its top rather than its end.
   final bool addToTop;
 
@@ -224,6 +239,15 @@ final class MusicSettings {
 
   /// Whether the translation and the romanization swap places under a line.
   final bool swapLyricSecondary;
+
+  /// Whether lyric text is rewritten into traditional Chinese — the
+  /// reference's `player.isS2t`.
+  final bool traditionalizeLyric;
+
+  /// Whether word-timed lyrics play word by word; off falls back to plain
+  /// line-synced lyrics — the reference's `player.isPlayLxlrc` (lx-music
+  /// disables it on macOS for its CPU cost).
+  final bool playWordLyrics;
 
   /// The lyric panel's text scale in percent, 100–200.
   final int lyricFontScale;
@@ -301,12 +325,16 @@ final class MusicSettings {
     bool? skipOnError,
     bool? autoplay,
     bool? rememberProgress,
+    double? volume,
+    double? playbackRate,
     bool? addToTop,
     bool? showSource,
     bool? showHotSearches,
     bool? showTranslation,
     bool? showRomanization,
     bool? swapLyricSecondary,
+    bool? traditionalizeLyric,
+    bool? playWordLyrics,
     int? lyricFontScale,
     MusicLyricAlignment? lyricAlignment,
     bool? lyricZoomActive,
@@ -336,12 +364,16 @@ final class MusicSettings {
     skipOnError: skipOnError ?? this.skipOnError,
     autoplay: autoplay ?? this.autoplay,
     rememberProgress: rememberProgress ?? this.rememberProgress,
+    volume: volume ?? this.volume,
+    playbackRate: playbackRate ?? this.playbackRate,
     addToTop: addToTop ?? this.addToTop,
     showSource: showSource ?? this.showSource,
     showHotSearches: showHotSearches ?? this.showHotSearches,
     showTranslation: showTranslation ?? this.showTranslation,
     showRomanization: showRomanization ?? this.showRomanization,
     swapLyricSecondary: swapLyricSecondary ?? this.swapLyricSecondary,
+    traditionalizeLyric: traditionalizeLyric ?? this.traditionalizeLyric,
+    playWordLyrics: playWordLyrics ?? this.playWordLyrics,
     lyricFontScale: lyricFontScale ?? this.lyricFontScale,
     lyricAlignment: lyricAlignment ?? this.lyricAlignment,
     lyricZoomActive: lyricZoomActive ?? this.lyricZoomActive,
@@ -373,12 +405,16 @@ const String _qualityKey = 'music.play.quality';
 const String _skipOnErrorKey = 'music.play.skipOnError';
 const String _autoplayKey = 'music.play.autoplay';
 const String _rememberProgressKey = 'music.play.rememberProgress';
+const String _volumeKey = 'music.play.volume';
+const String _rateKey = 'music.play.rate';
 const String _addToTopKey = 'music.list.addToTop';
 const String _showSourceKey = 'music.list.showSource';
 const String _showHotSearchesKey = 'music.search.hot';
 const String _showTranslationKey = 'music.lyric.showTranslation';
 const String _showRomanizationKey = 'music.lyric.showRomanization';
 const String _swapLyricSecondaryKey = 'music.lyric.swapSecondary';
+const String _traditionalizeKey = 'music.lyric.traditionalize';
+const String _playWordLyricsKey = 'music.lyric.playWordTimed';
 const String _lyricFontScaleKey = 'music.lyric.fontScale';
 const String _lyricAlignmentKey = 'music.lyric.alignment';
 const String _lyricZoomActiveKey = 'music.lyric.zoomActive';
@@ -412,12 +448,16 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     skipOnError: _readBool(_skipOnErrorKey) ?? true,
     autoplay: _readBool(_autoplayKey) ?? false,
     rememberProgress: _readBool(_rememberProgressKey) ?? true,
+    volume: _readDouble(_volumeKey) ?? 1,
+    playbackRate: _readDouble(_rateKey) ?? 1,
     addToTop: _readBool(_addToTopKey) ?? true,
     showSource: _readBool(_showSourceKey) ?? true,
     showHotSearches: _readBool(_showHotSearchesKey) ?? true,
     showTranslation: _readBool(_showTranslationKey) ?? true,
     showRomanization: _readBool(_showRomanizationKey) ?? true,
     swapLyricSecondary: _readBool(_swapLyricSecondaryKey) ?? false,
+    traditionalizeLyric: _readBool(_traditionalizeKey) ?? false,
+    playWordLyrics: _readBool(_playWordLyricsKey) ?? true,
     lyricFontScale: (_readInt(_lyricFontScaleKey) ?? 140).clamp(100, 200),
     lyricAlignment: _readLyricAlignment(),
     lyricZoomActive: _readBool(_lyricZoomActiveKey) ?? false,
@@ -572,6 +612,30 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
   Future<void> setSwapLyricSecondary({required bool value}) async {
     state = state.copyWith(swapLyricSecondary: value);
     await _writeBool(_swapLyricSecondaryKey, value);
+  }
+
+  /// Keeps the playback volume across runs.
+  Future<void> setVolume(double value) async {
+    state = state.copyWith(volume: value.clamp(0.0, 1.0));
+    await _writeDouble(_volumeKey, value);
+  }
+
+  /// Keeps the playback speed across runs.
+  Future<void> setPlaybackRate(double value) async {
+    state = state.copyWith(playbackRate: value);
+    await _writeDouble(_rateKey, value);
+  }
+
+  /// Switches traditional-Chinese lyric rendering.
+  Future<void> setTraditionalizeLyric({required bool value}) async {
+    state = state.copyWith(traditionalizeLyric: value);
+    await _writeBool(_traditionalizeKey, value);
+  }
+
+  /// Switches word-by-word lyric playback.
+  Future<void> setPlayWordLyrics({required bool value}) async {
+    state = state.copyWith(playWordLyrics: value);
+    await _writeBool(_playWordLyricsKey, value);
   }
 
   /// Sets the lyric panel's text scale, 100–200 percent.

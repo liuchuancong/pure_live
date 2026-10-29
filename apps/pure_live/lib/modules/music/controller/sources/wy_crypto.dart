@@ -1,4 +1,4 @@
-import 'dart:convert' show base64, jsonEncode;
+import 'dart:convert' show base64, jsonEncode, utf8;
 import 'dart:math' show Random;
 import 'dart:typed_data' show Uint8List;
 
@@ -24,7 +24,10 @@ Uint8List _aesCbc(List<int> data, List<int> key) {
   final cipher = PaddedBlockCipher('PKCS7/AES/CBC')
     ..init(
       true,
-      PaddedBlockCipherParameters(ParametersWithIV(KeyParameter(Uint8List.fromList(key)), _iv.codeUnits), null),
+      PaddedBlockCipherParameters(
+        ParametersWithIV(KeyParameter(Uint8List.fromList(key)), Uint8List.fromList(_iv.codeUnits)),
+        null,
+      ),
     );
   return cipher.process(Uint8List.fromList(data));
 }
@@ -38,16 +41,14 @@ Uint8List _aesEcb(List<int> data, List<int> key) {
 Uint8List _rsaNoPadding(List<int> block) {
   final engine = RSAEngine()..init(true, PublicKeyParameter<RSAPublicKey>(RSAPublicKey(_rsaModulus, _rsaExponent)));
   final input = Uint8List(128)..setAll(128 - block.length, block);
-  return engine.process(input, 0, input.length);
+  return engine.process(input);
 }
 
 /// Netease's `weapi` form: the payload is AES-CBC'd twice (the second round
 /// with a random key that RSA carries alongside it).
 (Map<String, String>, String) weapi(Object object) {
   final text = jsonEncode(object);
-  final secret = Uint8List.fromList([
-    for (var i = 0; i < 16; i++) _base62.codeUnitAt(Random.secure().nextInt(62)),
-  ]);
+  final secret = Uint8List.fromList([for (var i = 0; i < 16; i++) _base62.codeUnitAt(Random.secure().nextInt(62))]);
   final first = _aesCbc(utf8.encode(text), _presetKey.codeUnits);
   final params = base64.encode(_aesCbc(base64.encode(first).codeUnits, secret));
   final encSecKey = _rsaNoPadding(secret.reversed.toList())
@@ -62,9 +63,9 @@ Map<String, String> eapi(String url, Object object) {
   final text = jsonEncode(object);
   final digest = md5.convert(utf8.encode('nobody${url}use${text}md5forencrypt')).toString();
   final data = '$url-36cd479b6b5-$text-36cd479b6b5-$digest';
-  final params = _aesEcb(utf8.encode(data), _eapiKey.codeUnits)
-      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
-      .join()
-      .toUpperCase();
+  final params = _aesEcb(
+    utf8.encode(data),
+    _eapiKey.codeUnits,
+  ).map((byte) => byte.toRadixString(16).padLeft(2, '0')).join().toUpperCase();
   return {'params': params};
 }

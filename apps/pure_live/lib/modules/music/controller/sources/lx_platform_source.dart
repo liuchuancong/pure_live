@@ -1,9 +1,8 @@
-import 'dart:convert' show jsonDecode, utf8;
+import 'dart:math' show Random;
 
-import 'package:http/http.dart' as http;
+import 'package:live_net/live_net.dart';
 import 'package:media_core/media_core.dart' show SourceFormat;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
-
 import 'package:pure_live/modules/music/controller/lx_script_runtime.dart';
 
 const String platformUserAgent =
@@ -15,11 +14,11 @@ const String platformUserAgent =
 /// imported lx source scripts are asked first, and the platform's own URL
 /// endpoint (when it still has one) serves as the fallback.
 abstract class LxPlatformSource extends audio.MusicSource {
-  /// A source over the lx runtime and an HTTP client.
-  LxPlatformSource(this.runtime) : _http = http.Client();
+  /// A source over the lx runtime and the app's shared transport.
+  LxPlatformSource(this.runtime, this.http);
 
   final LxScriptRuntime runtime;
-  final http.Client _http;
+  final LiveHttp http;
 
   /// The qualities the imported scripts declare for this platform, with the
   /// plain tier every platform serves as the floor.
@@ -51,29 +50,54 @@ abstract class LxPlatformSource extends audio.MusicSource {
     );
   }
 
-  /// Fetches a JSON object through the module's client, for the endpoints
+  static const Duration _timeout = Duration(seconds: 20);
+
+  final Random _random = Random();
+
+  /// lx-music's rate-limit answer: a 429 waits a random 2–6 s and asks once
+  /// more, giving a throttling gateway a beat to recover.
+  Future<T> _patient<T>(Future<T> Function() action) async {
+    try {
+      return await action();
+    } on HttpStatusFailure catch (failure) {
+      if (failure.statusCode != 429) rethrow;
+      await Future<void>.delayed(Duration(milliseconds: 2000 + _random.nextInt(4001)));
+      return await action();
+    }
+  }
+
+  /// Fetches a JSON object through the app's transport, for the endpoints
   /// this source exposes beside the source contract (comments, hot words).
   Future<Map<String, Object?>> getJson(
     Uri uri, {
     String userAgent = platformUserAgent,
     Map<String, String>? headers,
-    Duration timeout = const Duration(seconds: 20),
+    Duration timeout = _timeout,
   }) async {
-    final response = await _http.get(uri, headers: {'User-Agent': userAgent, ...?headers}).timeout(timeout);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw StateError('$id HTTP ${response.statusCode}');
-    }
-    return jsonDecode(utf8.decode(response.bodyBytes, allowMalformed: true)) as Map<String, Object?>;
+    return await _patient(() async {
+      final answer = await http.getJson(uri, headers: {'User-Agent': userAgent, ...?headers}, timeout: timeout);
+      if (answer is! Map<String, Object?>) {
+        throw StateError('$id answered a ${answer.runtimeType}, expected an object');
+      }
+      return answer;
+    });
   }
 
-  Future<String> getText(Uri uri, {String userAgent = platformUserAgent, Map<String, String>? headers}) async {
-    final response = await _http
-        .get(uri, headers: {'User-Agent': userAgent, ...?headers})
-        .timeout(const Duration(seconds: 20));
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw StateError('$id HTTP ${response.statusCode}');
-    }
-    return utf8.decode(response.bodyBytes, allowMalformed: true);
+  Future<String> getText(Uri uri, {String userAgent = platformUserAgent, Map<String, String>? headers}) {
+    return _patient(() => http.getText(uri, headers: {'User-Agent': userAgent, ...?headers}, timeout: _timeout));
+  }
+
+  /// Posts a JSON body and JSON-decodes the answer.
+  Future<Object?> postJson(Uri uri, Map<String, String> headers, Object? body) {
+    return _patient(() => http.postJson(uri, body: body, headers: headers, timeout: _timeout));
+  }
+
+  /// Posts urlencoded fields and JSON-decodes the answer.
+  Future<Object?> postForm(Uri uri, Map<String, String> fields, Map<String, String>? headers) async {
+    return await _patient(() async {
+      final response = await http.postForm(uri, fields: fields, headers: headers ?? const {}, timeout: _timeout);
+      return response.json;
+    });
   }
 
   static audio.MusicQuality qualityOf(String id) => switch (id) {

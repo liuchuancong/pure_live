@@ -1,13 +1,16 @@
-import 'dart:async' show StreamSubscription, unawaited;
+import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:convert' show Utf8Decoder, jsonDecode, jsonEncode, latin1;
 import 'dart:io' show File;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
-import 'package:media_core/media_core.dart' show PlayerConfig;
+import 'package:media_core/media_core.dart' show EngineOption, PlayerConfig, PlayerHandleEngineOptions;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/app/app.dart' show playerKernelProvider;
+import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
+    show MusicEqConfig, musicEqApplyFailedProvider, musicEqProvider;
+import 'package:pure_live/modules/music/controller/eq/music_eq_dsp.dart' show musicEqAfEntries;
 import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
 import 'package:pure_live/modules/music/controller/music_library.dart'
     show musicRecentProvider, musicTrackFromJson, musicTrackKey, musicTrackToJson;
@@ -244,6 +247,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
         }
       },
     );
+    ref.listen(musicEqProvider, (_, eq) {
+      _applyEq(eq);
+    });
     _states = _audio.stateStream.listen((next) {
       if (!ref.mounted) return;
       state = next;
@@ -251,6 +257,12 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       _trackProgress(next);
       _skipDislikedIfNeeded(next);
       _skipErroredIfNeeded(next);
+      // The engine handle appears with the first track; a sound effect chosen
+      // before that waited for exactly this moment.
+      if (_eqPending && next.track != null) {
+        _eqPending = false;
+        _applyEq(ref.read(musicEqProvider));
+      }
       // Android 13+ hides the media notification without this permission; ask
       // when the viewer actually starts a song, not on some unrelated page.
       if (next.playing && !_askedNotifications) {
@@ -259,6 +271,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       }
     });
     ref.onDispose(() {
+      _eqDebounce?.cancel();
       _flushProgress();
       unawaited(_states?.cancel() ?? Future<void>.value());
       unawaited(_desktopVisibleChanges?.cancel() ?? Future<void>.value());
@@ -267,10 +280,18 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       unawaited(_desktopLyric?.dispose() ?? Future<void>.value());
       unawaited(_audio.dispose());
     });
+    unawaited(_restorePlaybackPrefs());
+    // The chain waits for the first engine handle when boot landed before one;
+    // when a handle already exists this applies straight away.
+    _applyEq(ref.read(musicEqProvider));
     unawaited(_restore());
     unawaited(_restoreDesktopLyric());
     return _audio.state;
   }
+
+  /// The engine behind this controller, for consumers that need a raw
+  /// stream the state model does not carry (the loudness meter).
+  audio.AudioPlaybackController get audioEngine => _audio;
 
   /// Mirrors the player onto the OS surface once a driver exists.
   void _attachBackground(audio.MediaSessionDriver session) {
@@ -286,6 +307,71 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     strokeWidth: settings.desktopLyricStrokeWidth,
     alignment: settings.desktopLyricAlignment,
   );
+
+  /// Sends the sound-effect chain to this instance's engine.
+  ///
+  /// The chain rides the `af` list option as one `lavfi=[…]` entry — the
+  /// adapter replaces the list entry-by-entry, which is the only way a
+  /// comma-heavy graph survives. The handle remembers applied options and
+  /// replays them if the engine rebuilds, so the effect survives a backend
+  /// swap without this controller's help. A chain change never interrupts
+  /// the playing song: `af` applies on the live instance.
+  bool _eqPending = false;
+  Timer? _eqDebounce;
+
+  void _applyEq(MusicEqConfig eq, {bool immediate = false}) {
+    // While the A/B button is held, nothing but the bypass itself writes
+    // the chain — a slider drag during the hold must not leak into the
+    // comparison.
+    if (_compareBypass) return;
+    final handle = _audio.handle;
+    if (handle == null) {
+      // No engine yet; the next track's first state reapplies.
+      _eqPending = true;
+      return;
+    }
+    // A slider drag arrives as a burst of states; only the settled value
+    // reaches mpv, so the filter chain is not rebuilt per pixel.
+    if (!immediate) {
+      _eqDebounce?.cancel();
+      _eqDebounce = Timer(const Duration(milliseconds: 250), () => _applyEq(eq, immediate: true));
+      return;
+    }
+    final entries = musicEqAfEntries(eq);
+    unawaited(
+      handle.applyEngineOptions(<EngineOption>[EngineOption('af', entries)]).then((report) {
+        if (!ref.mounted) return;
+        // The honesty rule: the page shows whether the chain actually took.
+        ref.read(musicEqApplyFailedProvider.notifier).state = report.unsupported.isNotEmpty;
+      }).catchError((Object _) {
+        if (ref.mounted) ref.read(musicEqApplyFailedProvider.notifier).state = true;
+      }),
+    );
+  }
+
+  /// While the A/B compare button is held, the whole chain steps aside so
+  /// the listener hears the untouched mix; release restores the settled
+  /// configuration immediately (no debounce — the ear compares best when
+  /// the switch back is instant).
+  bool _compareBypass = false;
+
+  void setCompareBypass({required bool bypass}) {
+    if (_compareBypass == bypass) return;
+
+    // A held bypass cancels a queued apply, and a queued apply that lands
+    // while the button is held must not wipe the bypass. Order matters:
+    // the chain is pushed while the flag still lets it through, then the
+    // flag swallows everything else until release.
+    if (bypass) {
+      final eq = ref.read(musicEqProvider);
+      _applyEq(eq.copyWith(enabled: false, analysis: false), immediate: true);
+      _compareBypass = true;
+      _eqDebounce?.cancel();
+    } else {
+      _compareBypass = false;
+      _applyEq(ref.read(musicEqProvider), immediate: true);
+    }
+  }
 
   /// The overlay controller, created on first use with the current style.
   audio.DesktopLyricController _desktopController(MusicSettings settings) {
@@ -366,11 +452,17 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
 
   Future<void> seek(Duration position) => _audio.seek(position);
 
-  Future<void> setVolume(double volume) => _audio.setVolume(volume);
+  Future<void> setVolume(double volume) async {
+    await _audio.setVolume(volume);
+    await ref.read(musicSettingsProvider.notifier).setVolume(volume.clamp(0.0, 1.0));
+  }
 
   Future<void> setMuted({required bool muted}) => _audio.setMute(muted: muted);
 
-  Future<void> setRate(double rate) => _audio.setRate(rate);
+  Future<void> setRate(double rate) async {
+    await _audio.setRate(rate);
+    await ref.read(musicSettingsProvider.notifier).setPlaybackRate(rate);
+  }
 
   /// Starts, replaces or clears the sleep timer.
   void setSleepTimer(Duration? duration) => _audio.setSleepTimer(duration);
@@ -738,6 +830,14 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
 
   /// Reopens the last queue when the viewer asked the module to continue;
   /// restored paused, because opening a page is not pressing play.
+  /// Restores the viewer's volume and speed before any queue loads — the
+  /// reference persists both across runs (`volume.ts`, `playbackRate.ts`).
+  Future<void> _restorePlaybackPrefs() async {
+    final settings = ref.read(musicSettingsProvider);
+    if (settings.volume != 1) await _audio.setVolume(settings.volume);
+    if (settings.playbackRate != 1) await _audio.setRate(settings.playbackRate);
+  }
+
   Future<void> _restore() async {
     if (!ref.read(musicSettingsProvider).autoplay) return;
     final snapshot = ref.read(musicQueueStoreProvider).read();

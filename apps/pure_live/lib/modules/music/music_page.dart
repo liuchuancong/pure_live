@@ -13,12 +13,17 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_downloads.dart';
 import 'package:pure_live/modules/music/controller/music_library.dart';
 import 'package:pure_live/modules/music/controller/music_local.dart';
+import 'package:pure_live/modules/music/controller/music_online_playlists.dart'
+    show musicOnlineHotTagsProvider, musicOnlinePlaylistDetailProvider, musicOnlinePlaylistsProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_playlists.dart';
 import 'package:pure_live/modules/music/controller/music_search.dart';
 import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show musicSourcesProvider;
+import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
+    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists;
+import 'package:pure_live/modules/music/pages/music_player_page.dart' show musicDurationText;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 
@@ -390,6 +395,13 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
   bool _selecting = false;
   final Set<audio.MusicTrack> _selected = <audio.MusicTrack>{};
 
+  /// Whether the view browses the source's online playlists (在线歌单)
+  /// instead of the viewer's own lists; LX keeps both behind one rail.
+  bool _online = false;
+
+  /// The online playlist opened to its tracks; null shows the browse list.
+  MusicPlaylistInfo? _onlineOpen;
+
   Future<void> _create() async {
     final playlist = await showCreatePlaylistDialog(context, ref);
     if (playlist != null && mounted) {
@@ -583,13 +595,31 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
     final playlists = ref.watch(musicPlaylistsProvider);
     final open = _openId == null ? null : playlists.where((playlist) => playlist.id == _openId).firstOrNull;
     if (open != null) return _playlistDetail(open);
+    if (_onlineOpen != null) {
+      return _OnlinePlaylistDetail(info: _onlineOpen!, onBack: () => setState(() => _onlineOpen = null));
+    }
+    if (_online) {
+      return _OnlinePlaylistBrowse(
+        mineCount: playlists.length,
+        onOpen: (info) => setState(() => _onlineOpen = info),
+        onBackToMine: () => setState(() => _online = false),
+      );
+    }
 
-    if (playlists.isEmpty) {
+    final tabs = _SonglistTabs(online: _online, mineCount: playlists.length, onChanged: (online) {
+      setState(() {
+        _online = online;
+        _onlineOpen = null;
+      });
+    });
+
+    if (playlists.isEmpty && !_online) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          tabs,
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
             child: Align(
               alignment: AlignmentDirectional.centerEnd,
               child: DsButton(
@@ -630,8 +660,9 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        tabs,
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
           child: Row(
             children: [
               Expanded(
@@ -1527,8 +1558,9 @@ final class _DownloadRow extends ConsumerWidget {
   );
 }
 
-/// The strip over the module's views while something plays: the song, its
-/// transport and the way into the player page.
+/// The strip over the module's views while something plays: cover, title,
+/// the full transport, and a progress hairline along its top edge — the
+/// way a desktop player's dock reads.
 final class _MiniPlayer extends ConsumerWidget {
   const _MiniPlayer();
 
@@ -1537,49 +1569,122 @@ final class _MiniPlayer extends ConsumerWidget {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final state = ref.watch(musicPlayerProvider.select((state) => (track: state.track, playing: state.playing)));
+    final state = ref.watch(
+      musicPlayerProvider.select(
+        (state) => (track: state.track, playing: state.playing, position: state.position, duration: state.duration),
+      ),
+    );
     final controller = ref.read(musicPlayerProvider.notifier);
     final track = state.track;
     if (track == null) return const SizedBox.shrink();
+    final duration = state.duration.inMilliseconds;
+    final progress = duration <= 0 ? 0.0 : state.position.inMilliseconds.clamp(0, duration) / duration;
     return Padding(
       padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s8),
       child: DsSurface(
         decoration: DsBoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
-        child: DsListRow(
-          leading: MusicArtwork(track: track),
-          title: Text(
-            track.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.body.copyWith(color: colors.text, fontWeight: FontWeight.w600),
-          ),
-          description: Text(
-            track.artist.isEmpty ? t.music.nowPlaying : track.artist,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.caption.copyWith(color: colors.textSubtle),
-          ),
-          trailing: Row(
+        padding: EdgeInsets.zero,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(theme.radii.card),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
-            spacing: DsSpace.s4,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DsButton.icon(
-                variant: DsButtonVariant.ghost,
-                size: DsSize.sm,
-                semanticLabel: state.playing ? t.music.pause : t.music.play,
-                onPressed: () => unawaited(controller.toggle()),
-                icon: DsIcon(state.playing ? DsIcons.pause : DsIcons.play),
+              // The hairline: tap anywhere on it to seek without opening
+              // the player page.
+              LayoutBuilder(
+                builder: (context, constraints) => GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: duration <= 0
+                      ? null
+                      : (details) => unawaited(
+                          controller.seek(
+                            Duration(milliseconds: (details.localPosition.dx / constraints.maxWidth * duration).round()),
+                          ),
+                        ),
+                  child: SizedBox(
+                    height: 3,
+                    child: Stack(
+                      children: [
+                        Container(color: colors.surface),
+                        FractionallySizedBox(
+                          widthFactor: progress,
+                          alignment: Alignment.centerLeft,
+                          child: Container(color: colors.accent),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              DsButton.icon(
-                variant: DsButtonVariant.ghost,
-                size: DsSize.sm,
-                semanticLabel: t.music.next,
-                onPressed: () => unawaited(controller.next()),
-                icon: const DsIcon(DsIcons.skipForward),
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: DsSpace.s8),
+                    child: GestureDetector(
+                      onTap: () => unawaited(context.push(RouteNames.musicPlayer)),
+                      child: MusicArtwork(track: track),
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => unawaited(context.push(RouteNames.musicPlayer)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: DsSpace.s3,
+                        children: [
+                          Text(
+                            track.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.body.copyWith(color: colors.text, fontWeight: FontWeight.w600),
+                          ),
+                          Text(
+                            '${track.artist.isEmpty ? t.music.nowPlaying : track.artist} · ${musicDurationText(state.position)} / ${musicDurationText(state.duration)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: DsSpace.s4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: DsSpace.s3,
+                      children: [
+                        DsButton.icon(
+                          variant: DsButtonVariant.ghost,
+                          size: DsSize.sm,
+                          semanticLabel: t.music.previous,
+                          onPressed: () => unawaited(controller.previous()),
+                          icon: const DsIcon(DsIcons.skipBack),
+                        ),
+                        DsButton.icon(
+                          variant: DsButtonVariant.ghost,
+                          size: DsSize.sm,
+                          semanticLabel: state.playing ? t.music.pause : t.music.play,
+                          onPressed: () => unawaited(controller.toggle()),
+                          icon: DsIcon(state.playing ? DsIcons.pause : DsIcons.play),
+                        ),
+                        DsButton.icon(
+                          variant: DsButtonVariant.ghost,
+                          size: DsSize.sm,
+                          semanticLabel: t.music.next,
+                          onPressed: () => unawaited(controller.next()),
+                          icon: const DsIcon(DsIcons.skipForward),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          onPressed: () => unawaited(context.push(RouteNames.musicPlayer)),
         ),
       ),
     );
@@ -1610,3 +1715,306 @@ String _statusLabel(Translations t, audio.MusicDownloadTask task) => switch (tas
   audio.MusicDownloadStatus.failed => t.music.downloadStatusFailed,
   audio.MusicDownloadStatus.cancelled => t.music.downloadStatusCancelled,
 };
+
+
+/// The 歌单 rail's two tabs: the viewer's own lists and the source's online
+/// playlists (在线歌单), the way LX keeps both behind one view.
+final class _SonglistTabs extends ConsumerWidget {
+  const _SonglistTabs({required this.online, required this.mineCount, required this.onChanged});
+
+  final bool online;
+  final int mineCount;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    return DsTabs<bool>(
+      value: online,
+      onChanged: onChanged,
+      tabs: [
+        DsTab<bool>(value: false, label: Text(t.music.songlistTabMine), count: mineCount),
+        DsTab<bool>(value: true, label: Text(t.music.songlistTabOnline)),
+      ],
+      semanticLabel: t.music.songlistTabMine,
+    );
+  }
+}
+
+/// The 在线歌单 browser: hot tags as chips, one page row per fetched page,
+/// a load-more at the end. A source without the capability says so plainly
+/// instead of showing an empty list.
+final class _OnlinePlaylistBrowse extends ConsumerStatefulWidget {
+  const _OnlinePlaylistBrowse({required this.mineCount, required this.onOpen, required this.onBackToMine});
+
+  final int mineCount;
+  final ValueChanged<MusicPlaylistInfo> onOpen;
+  final VoidCallback onBackToMine;
+
+  @override
+  ConsumerState<_OnlinePlaylistBrowse> createState() => _OnlinePlaylistBrowseState();
+}
+
+final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrowse> {
+  /// The tag in browse; null waits for the hot tags to name the first.
+  String? _tag;
+
+  /// How many pages are wanted; the family provider caches each one, so
+  /// widening this range re-reads, it does not re-fetch.
+  int _page = 1;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final tags = ref.watch(musicOnlineHotTagsProvider);
+    final supported = ref.watch(musicSourceProvider) is OnlinePlaylists;
+
+    final effectiveTag = _tag ?? tags.value?.firstOrNull;
+
+    final pages = <AsyncValue<MusicPlaylistPage>>[
+      if (effectiveTag != null)
+        for (var page = 1; page <= _page; page++) ref.watch(musicOnlinePlaylistsProvider((tag: effectiveTag, page: page))),
+    ];
+    final items = <MusicPlaylistInfo>[
+      for (final page in pages)
+        if (page.value != null) ...page.value!.items,
+    ];
+    final loading = pages.any((page) => page.isLoading);
+    final error = pages.where((page) => page.hasError).firstOrNull;
+    final total = pages.lastOrNull?.value?.total ?? 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SonglistTabs(online: true, mineCount: widget.mineCount, onChanged: (online) {
+          if (!online) widget.onBackToMine();
+        }),
+        if (!supported)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s16, DsSpace.s20, DsSpace.s16),
+            child: Center(
+              child: DsEmptyState(
+                icon: const DsIcon(DsIcons.listMusic),
+                title: Text(t.music.onlineUnsupported),
+              ),
+            ),
+          )
+        else ...[
+          if (tags.value case final List<String> tagsValue when tagsValue.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
+              child: Wrap(
+                spacing: DsSpace.s8,
+                runSpacing: DsSpace.s8,
+                children: [
+                  for (final tag in tagsValue)
+                    GestureDetector(
+                      onTap: () => setState(() {
+                        _tag = tag;
+                        _page = 1;
+                      }),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s4),
+                        decoration: BoxDecoration(
+                          color: tag == effectiveTag ? colors.accent : colors.surface,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: colors.border),
+                        ),
+                        child: Text(
+                          tag,
+                          style: theme.typography.caption.copyWith(
+                            color: tag == effectiveTag ? colors.onAccent : colors.text,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: !loading && items.isEmpty
+                ? Center(
+                    child: DsEmptyState(
+                      icon: const DsIcon(DsIcons.listMusic),
+                      title: Text(error != null ? t.music.onlineLoadFailed : t.music.onlineEmpty),
+                      description: error != null ? Text(t.common.retry) : null,
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.only(bottom: DsSpace.s16),
+                    itemCount: items.length + (loading || items.length < total ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index >= items.length) {
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s16),
+                          child: Center(
+                            child: loading
+                                ? const DsSpinner(style: DsSpinnerStyle(size: 24))
+                                : DsButton(
+                                    variant: DsButtonVariant.secondary,
+                                    size: DsSize.sm,
+                                    onPressed: () => setState(() => _page += 1),
+                                    child: Text(t.music.onlineLoadMore),
+                                  ),
+                          ),
+                        );
+                      }
+                      final playlist = items[index];
+                      return DsListRow(
+                        leading: playlist.cover.isEmpty
+                            ? const DsIcon(DsIcons.listMusic)
+                            : ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: Image.network(
+                                  playlist.cover,
+                                  width: 44,
+                                  height: 44,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const SizedBox(
+                                    width: 44,
+                                    height: 44,
+                                    child: ColoredBox(color: Color(0x20808080), child: Center(child: DsIcon(DsIcons.listMusic, size: 18))),
+                                  ),
+                                ),
+                              ),
+                        title: Text(playlist.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        description: Text(
+                          playlist.author.isEmpty
+                              ? t.music.songsCount(count: playlist.trackCount)
+                              : '${playlist.author} · ${t.music.songsCount(count: playlist.trackCount)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        showChevron: true,
+                        onPressed: () => widget.onOpen(playlist),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// One online playlist opened to its tracks: import it into the viewer's
+/// own lists (LX's behaviour — the online list lands as a local one), or
+/// play straight from here.
+final class _OnlinePlaylistDetail extends ConsumerWidget {
+  const _OnlinePlaylistDetail({required this.info, required this.onBack});
+
+  final MusicPlaylistInfo info;
+  final VoidCallback onBack;
+
+  Future<void> _import(BuildContext context, WidgetRef ref, List<audio.MusicTrack> tracks) async {
+    final t = context.t;
+    final controller = ref.read(musicPlaylistsProvider.notifier);
+    final playlist = await controller.create(info.name);
+    if (playlist == null) return;
+    final added = await controller.addTracks(playlist.id, tracks);
+    if (!context.mounted) return;
+    showDsToast(
+      context: context,
+      title: t.music.onlineImported(name: playlist.name, count: added),
+      status: added > 0 ? DsStatus.success : DsStatus.warning,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final detail = ref.watch(musicOnlinePlaylistDetailProvider(info.id));
+    final player = ref.read(musicPlayerProvider.notifier);
+    final favourites = ref.watch(musicFavouritesProvider);
+    final favouritesController = ref.read(musicFavouritesProvider.notifier);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s8, 0, DsSpace.s20, DsSpace.s8),
+          child: Row(
+            spacing: DsSpace.s8,
+            children: [
+              DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                semanticLabel: t.common.back,
+                onPressed: onBack,
+                icon: const DsIcon(DsIcons.chevronLeft),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s3,
+                  children: [
+                    Text(
+                      info.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.title.copyWith(color: colors.text),
+                    ),
+                    Text(
+                      '${info.author} · ${t.music.songsCount(count: info.trackCount)}',
+                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                    ),
+                  ],
+                ),
+              ),
+              detail.when(
+                skipLoadingOnReload: true,
+                data: (entry) {
+                  final (_, tracks) = entry;
+                  return DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    leading: const DsIcon(DsIcons.plus, size: 16),
+                    onPressed: tracks.isEmpty ? null : () => unawaited(_import(context, ref, tracks)),
+                    child: Text(t.music.onlineImport),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (error, stackTrace) => const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: detail.when(
+            skipLoadingOnReload: true,
+            loading: () => const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28))),
+            error: (error, stackTrace) => Center(
+              child: DsEmptyState(icon: const DsIcon(DsIcons.listMusic), title: Text(t.music.onlineLoadFailed)),
+            ),
+            data: (entry) {
+              final (info, tracks) = entry;
+              return tracks.isEmpty
+                  ? Center(child: DsEmptyState(icon: const DsIcon(DsIcons.listMusic), title: Text(t.music.onlineEmpty)))
+                  : ListView.builder(
+                    padding: const EdgeInsets.only(bottom: DsSpace.s16),
+                    itemCount: tracks.length,
+                    itemBuilder: (context, index) {
+                      final song = tracks[index];
+                      return MusicSongRow(
+                        track: song,
+                        playing: false,
+                        favourite: favourites.contains(song),
+                        subtitle: song.artist,
+                        onPlay: () => unawaited(player.playAll(tracks, index: index)),
+                        onFavourite: () => unawaited(favouritesController.toggle(song)),
+                        onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
+                        onDownload: () => unawaited(downloadTrackWithToast(context, ref, song, listName: info.name)),
+                      );
+                    },
+                  );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}

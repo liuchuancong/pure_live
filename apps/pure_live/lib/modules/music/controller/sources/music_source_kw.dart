@@ -2,7 +2,10 @@ import 'dart:convert' show jsonDecode;
 
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
+import 'package:pure_live/modules/music/controller/music_comments.dart' show MusicComment;
 import 'package:pure_live/modules/music/controller/sources/lx_platform_source.dart';
+import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
+import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 
 /// The Kuwo boards lx-music exposes, in its own order.
 const List<(int, String)> kMusicRankCatalogs = [
@@ -25,9 +28,9 @@ const String _hotUserAgent = 'Dalvik/2.1.0 (Linux; U; Android 9;)';
 /// The Kuwo platform: search, boards and lyrics ride Kuwo's own channel;
 /// play URLs are asked from the lx scripts first, with Kuwo's anti-server as
 /// the fallback.
-final class KwMusicSource extends LxPlatformSource {
+final class KwMusicSource extends LxPlatformSource implements MusicHotWords, MusicCommentsSource {
   /// A Kuwo source over the lx runtime.
-  KwMusicSource(super.runtime);
+  KwMusicSource(super.runtime, super.http);
 
   @override
   String get id => 'kw';
@@ -73,6 +76,7 @@ final class KwMusicSource extends LxPlatformSource {
   }
 
   /// The viewer-shown top searches — the reference's 热门搜索.
+  @override
   Future<List<String>> hotSearches() async {
     final uri = Uri.https('hotword.kuwo.cn', '/hotword.s', {
       'prod': 'kwplayer_ar_9.3.0.1',
@@ -96,6 +100,59 @@ final class KwMusicSource extends LxPlatformSource {
         if (entry is Map && entry['key'] is String && (entry['key'] as String).trim().isNotEmpty)
           (entry['key'] as String).trim(),
     ];
+  }
+
+  /// The completions for a partially typed query — the reference's
+  /// `tipSearch.js`, which swapped the 403-prone www endpoint for tips.kuwo.cn.
+  @override
+  Future<List<String>> suggestions(String query) async {
+    final uri = Uri.https('tips.kuwo.cn', '/t.s', {
+      'corp': 'kuwo',
+      'newver': '3',
+      'p2p': '1',
+      'notrace': '0',
+      'c': 'mbox',
+      'w': query,
+      'encoding': 'utf8',
+      'rformat': 'json',
+    });
+    final json = jsonDecode(
+      await getText(uri, headers: {'Referer': 'http://www.kuwo.cn/'}),
+    ) as Map<String, Object?>;
+    final raw = json['WORDITEMS'];
+    if (raw is! List) return const [];
+    return [
+      for (final entry in raw)
+        if (entry is Map
+            && entry['RELWORD'] is String
+            && (entry['RELWORD'] as String).trim().isNotEmpty)
+          (entry['RELWORD'] as String).trim(),
+    ];
+  }
+
+  /// One page of a song's comments, hot or newest — the reference's kw
+  /// `comment.js` on ncomment.kuwo.cn.
+  @override
+  Future<MusicCommentsPage> comments(audio.MusicTrack track, {required bool hot, required int page, int pageSize = 20}) async {
+    final uri = Uri.http('ncomment.kuwo.cn', '/com.s', {
+      'f': 'web',
+      'type': hot ? 'get_rec_comment' : 'get_comment',
+      'aapiver': '1',
+      'prod': 'kwplayer_ar_10.5.2.0',
+      'digest': '15',
+      'sid': track.id,
+      'start': '${pageSize * (page - 1)}',
+      'msgflag': '1',
+      'count': '$pageSize',
+      'newver': '3',
+      'uid': '0',
+    });
+    final json = await getJson(uri, userAgent: _hotUserAgent);
+    final raw = json[hot ? 'hot_comments' : 'comments'];
+    final total = int.tryParse('${json[hot ? 'hot_comments_counts' : 'comments_counts'] ?? ''}') ?? 0;
+    final rows = commentsOf(raw is List ? raw : const [], MusicComment.fromJson);
+    final maxPage = total <= 0 ? 1 : (total / pageSize).ceil();
+    return (comments: rows, hasMore: page < maxPage);
   }
 
   @override
@@ -137,6 +194,39 @@ final class KwMusicSource extends LxPlatformSource {
     final declared = runtime.qualitysFor(id);
     final source = declared.isEmpty ? const ['128k'] : declared;
     return [for (final qualityId in source) LxPlatformSource.qualityOf(qualityId)];
+  }
+
+  /// Re-reads the song's metadata — the reference's `getMusicInfo`
+  /// (`kw/index.js`): `api/www/music/musicInfo?mid=` fills name, singer,
+  /// album and cover over the track it already has.
+  @override
+  Future<audio.MusicTrack> trackDetail(audio.MusicTrack track) async {
+    final json = await getJson(
+      Uri.https('www.kuwo.cn', '/api/www/music/musicInfo', {'mid': track.id}),
+      headers: {'Referer': 'https://www.kuwo.cn/'},
+    );
+    if (json['code'] != 200) throw StateError('kuwo musicInfo failed: ${json['code']}');
+    final data = json['data'];
+    if (data is! Map) return track;
+
+    final artist = data['artist'];
+    final names = artist is List
+        ? [for (final one in artist) if (one is Map && one['name'] is String) one['name'] as String]
+        : const <String>[];
+    final title = data['name'];
+    final album = data['album'];
+    final albumId = (data['albumid'] as num?)?.toInt();
+    final cover = data['pic'];
+    final seconds = (data['duration'] as num?)?.toInt();
+
+    return track.copyWith(
+      title: title is String && title.isNotEmpty ? title : null,
+      artist: names.isNotEmpty ? names.join('、') : null,
+      album: album is String && album.isNotEmpty ? album : null,
+      coverUri: cover is String && cover.isNotEmpty ? Uri.tryParse(cover) : null,
+      duration: seconds != null && seconds > 0 ? Duration(seconds: seconds) : null,
+      metadata: albumId == null ? track.metadata : {...track.metadata, 'albumId': '$albumId'},
+    );
   }
 
   @override
