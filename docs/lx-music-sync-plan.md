@@ -91,8 +91,13 @@
 - ⬜ D1 歌词门面：缓存（LX 用 SQLite lyric 表；本项目可用 Hive，键含 musicInfo id）→
   未命中在线获取（支持换源）→ 成功写缓存；产出 `{lyric, tlyric, rlyric, lxlyric, rawlrcInfo}`。
   LX 参考：`core/music/{index,online,utils}.ts`、`dbService/modules/lyric`
-- ⬜ D2 逐字解码四件套：kg KRC（XOR 密钥 `[0x40,0x47,0x61,0x77,0x5e,0x32,0x74,0x47,0x51,0x36,0x31,0x2d,0xce,0xd2,0x6e,0x69]` + zlib inflate + `[language:base64]` 翻译/音译，`lyricUtils/kg.js`）、
-  tx QRC（`qrcDecode.js`）、wy yrc→lx 逐字拼接（`wy/lyric.js`）、mg MRC（`mg/utils/mrc.js`）。
+- 🟨 D2 逐字解码（2026-10-29 三件套已落 `sources/lyric_decoders.dart`：KRC XOR 16 字节密钥
+  +zlib、QRC 3DES 变体逐位移植（非标准 S2[23]=15/S4[53]=10 保留）+ 截断流补 sync-flush 容错、
+  wy yrc→lx 逐字标签；kg/tx/wy 三源 resolveLyric 已接，解码产物为 lx 格式 `<startMs,dur>` 逐字
+  LRC（media_core_audio LrcParser 原生支持）。QRC/KRC 解码尚无真实样本验证，待用户实测）：
+  kg KRC（XOR 密钥 `[0x40,0x47,0x61,0x77,0x5e,0x32,0x74,0x47,0x51,0x36,0x31,0x2d,0xce,0xd2,0x6e,0x69]` + zlib inflate + `[language:base64]` 翻译/音译，`lyricUtils/kg.js`）、
+  tx QRC（`qrcDecode.js`，已移植）、wy yrc→lx 逐字拼接（`wy/lyric.js`，已移植）、
+  mg MRC（`mg/utils/mrc.js`，mg 源未做故未移植）。
   （media_core_audio 已有 LyricParser LRC/QRC/KRC/YRC 基础，需与 LX 解析行为对齐。）
 - ⬜ D3 歌词播放引擎：`lyric-font-player/`（`LinePlayer{offset,rate,onPlay,onSetLyric}`，
   `_findCurLineNum` 增量查找；font-player 逐字版）+ `[offset:]` 标签/手动偏移
