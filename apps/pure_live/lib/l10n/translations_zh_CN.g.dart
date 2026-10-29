@@ -9523,6 +9523,15 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '相关推荐'
 	String get related => '相关推荐';
 
+	/// zh-CN: '换一换'
+	String get changeRelated => '换一换';
+
+	/// zh-CN: '展开'
+	String get expand => '展开';
+
+	/// zh-CN: '收起'
+	String get collapse => '收起';
+
 	/// zh-CN: '分P'
 	String get parts => '分P';
 
@@ -13183,6 +13192,9 @@ extension on Translations {
 			'vod.duration30to60' => '30–60 分钟',
 			'vod.durationOver60' => '60 分钟以上',
 			'vod.related' => '相关推荐',
+			'vod.changeRelated' => '换一换',
+			'vod.expand' => '展开',
+			'vod.collapse' => '收起',
 			'vod.parts' => '分P',
 			'vod.views' => '播放',
 			'vod.danmaku' => '弹幕',

@@ -3340,6 +3340,9 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get duration30to60 => '30–60 min';
 	@override String get durationOver60 => 'Over 60 min';
 	@override String get related => 'Related';
+	@override String get changeRelated => 'Shuffle';
+	@override String get expand => 'More';
+	@override String get collapse => 'Less';
 	@override String get parts => 'Parts';
 	@override String get views => 'Views';
 	@override String get danmaku => 'Danmaku';
@@ -6641,6 +6644,9 @@ extension on TranslationsEn {
 			'vod.duration30to60' => '30–60 min',
 			'vod.durationOver60' => 'Over 60 min',
 			'vod.related' => 'Related',
+			'vod.changeRelated' => 'Shuffle',
+			'vod.expand' => 'More',
+			'vod.collapse' => 'Less',
 			'vod.parts' => 'Parts',
 			'vod.views' => 'Views',
 			'vod.danmaku' => 'Danmaku',

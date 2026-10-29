@@ -47,7 +47,12 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   static const int _defaultQn = 64;
 
   VodDetail? _detail;
-  List<VodVideo> _related = const [];
+
+  /// The related archives read so far and the window of twenty the rail
+  /// shows; 换一换 walks the rest and folds in what a fresh read adds.
+  List<VodVideo> _relatedPool = const [];
+  int _relatedStart = 0;
+  bool _relatedBusy = false;
   VodPlayInfo? _play;
   VodPart? _part;
 
@@ -77,6 +82,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
 
   /// Whether the overlay bars are up; a playing stream lets them settle away.
   bool _controlsVisible = true;
+
+  /// Whether the blurb shows in full rather than its first six lines.
+  bool _introExpanded = false;
   Timer? _hideTimer;
 
   /// The picker whose catalogue hangs over the picture, if any.
@@ -255,12 +263,46 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     try {
       final related = await client.related(widget.bvid);
       if (!mounted) return;
-      // Bilibili offers up to forty; the page's rail keeps the first
-      // twenty, which is what its own page shows.
-      setState(() => _related = related.take(20).toList());
+      // Bilibili offers up to forty; the rail shows twenty at a time and
+      // 换一换 walks the rest.
+      setState(() {
+        _relatedPool = related;
+        _relatedStart = 0;
+      });
     } on Object {
       // Related videos are a bonus; the page stands without them.
     }
+  }
+
+  /// The rail's current twenty, wrapping through the pool it holds.
+  List<VodVideo> get _relatedWindow {
+    final pool = _relatedPool;
+    if (pool.isEmpty) return const [];
+    final count = pool.length < 20 ? pool.length : 20;
+    final start = _relatedStart % pool.length;
+    return [for (var index = 0; index < count; index++) pool[(start + index) % pool.length]];
+  }
+
+  /// Swaps the rail's twenty for the next ones: a fresh read folds in what
+  /// the source newly offers, then the window moves on. A refused read still
+  /// turns the page it already has.
+  Future<void> _changeRelated() async {
+    if (_relatedBusy || _relatedPool.length <= 20) return;
+    setState(() => _relatedBusy = true);
+    var pool = _relatedPool;
+    try {
+      final fresh = await ref.read(vodClientProvider).related(widget.bvid);
+      final seen = {for (final video in pool) video.bvid ?? video.id};
+      pool = [...pool, ...fresh.where((video) => seen.add(video.bvid ?? video.id))];
+    } on Object {
+      // Keep the pool as it was.
+    }
+    if (!mounted) return;
+    setState(() {
+      _relatedPool = pool;
+      _relatedStart = (_relatedStart + 20) % pool.length;
+      _relatedBusy = false;
+    });
   }
 
   /// Opens [part] on the shared kernel, reusing the page's handle.
@@ -423,7 +465,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       case VodFinishAction.exit:
         if (mounted) context.pop();
       case VodFinishAction.playRelated:
-        final next = _related.isEmpty ? null : _related.first;
+        final next = _relatedPool.isEmpty ? null : _relatedPool.first;
         if (next == null) return;
         final bvid = next.bvid ?? next.id;
         if (bvid.isEmpty) return;
@@ -733,14 +775,34 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final colors = DsTheme.colorsOf(context);
     final player = _playerSurface(context, immersive: false);
     final info = _info(context, detail, t);
-    final related = _related.isEmpty
+    final window = _relatedWindow;
+    final related = window.isEmpty
         ? null
         : Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              Text(t.vod.related, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
-              for (final video in _related)
+              Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: Text(
+                      t.vod.related,
+                      style: DsTheme.of(context).typography.title.copyWith(color: colors.text),
+                    ),
+                  ),
+                  // The reference's rail turns the page of twenty.
+                  if (_relatedPool.length > 20)
+                    DsButton(
+                      variant: DsButtonVariant.secondary,
+                      size: DsSize.sm,
+                      leading: const DsIcon(DsIcons.refreshCw, size: 14),
+                      onPressed: _relatedBusy ? null : () => unawaited(_changeRelated()),
+                      child: Text(t.vod.changeRelated),
+                    ),
+                ],
+              ),
+              for (final video in window)
                 VodVideoRow(video: video, onOpen: () => unawaited(context.push('/vod/${video.bvid ?? video.id}'))),
             ],
           );
@@ -1392,6 +1454,47 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     return saved != null && saved.cid == part.cid ? saved.seconds : null;
   }
 
+  /// The archive's blurb: six lines until the viewer asks for the rest —
+  /// the reference's 展开. The switch only appears when the words actually
+  /// run past six lines.
+  Widget _description(BuildContext context, VodDetail detail, Translations t) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final text = detail.description.isEmpty ? t.vod.noDescription : detail.description;
+    final style = theme.typography.body.copyWith(color: colors.textMuted);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: text, style: style),
+          maxLines: 6,
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout(maxWidth: constraints.maxWidth);
+        final overflows = painter.didExceedMaxLines;
+        painter.dispose();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: DsSpace.s4,
+          children: [
+            Text(
+              text,
+              maxLines: _introExpanded ? null : 6,
+              overflow: _introExpanded ? null : TextOverflow.ellipsis,
+              style: style,
+            ),
+            if (overflows)
+              DsButton(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                onPressed: () => setState(() => _introExpanded = !_introExpanded),
+                child: Text(_introExpanded ? t.vod.collapse : t.vod.expand),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _info(BuildContext context, VodDetail detail, Translations t) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
@@ -1531,12 +1634,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               Text(t.vod.description, style: theme.typography.title.copyWith(color: colors.text)),
               DsCard(
                 style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
-                child: Text(
-                  detail.description.isEmpty ? t.vod.noDescription : detail.description,
-                  maxLines: 6,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.body.copyWith(color: colors.textMuted),
-                ),
+                child: _description(context, detail, t),
               ),
             ],
           ),
