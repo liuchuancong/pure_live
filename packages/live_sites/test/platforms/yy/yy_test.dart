@@ -6,6 +6,7 @@ import 'package:live_sites/src/models/play/live_play_line/live_play_line.dart';
 import 'package:live_sites/src/platforms/yy/api/yy_endpoints.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_failure.dart';
 import 'package:live_sites/src/platforms/yy/parsers/yy_play_parser.dart';
+import 'package:live_sites/src/platforms/yy/parsers/yy_room_parser.dart';
 import 'package:test/test.dart';
 
 final DateTime _issuedAt = DateTime.utc(2026, 9, 27, 12);
@@ -20,6 +21,88 @@ YyMobileHls _hls({String video = 'v1', int width = 640, int height = 360, String
     (url: Uri.parse('https://$host/live/$video.m3u8'), width: width, height: height, video: video);
 
 void main() {
+  // `page.action`, `liveInfoDetail`, the header and `getCategory` send their
+  // ids as JSON numbers while the search sends strings; a number must not
+  // cost the whole card.
+  group('numeric ids', () {
+    test('a listing card with numbered ids is a room', () {
+      final body = jsonEncode({
+        'resultCode': 0,
+        'data': {
+          'totalCount': 1,
+          'data': [
+            {
+              'uid': 3087474217,
+              'sid': 1414787838,
+              'ssid': 1414787838,
+              'name': '慕婉',
+              'desc': '慕婉 正在直播',
+              'thumb': 'https://mobilelivephoto.example/live/a.jpg',
+              'users': 42015,
+              'biz': 'other',
+              'startTime': 1792934557,
+            },
+          ],
+        },
+      });
+      final rooms = YyRoomParser.roomList(body);
+      expect(rooms, hasLength(1));
+      final (:room, :channel) = rooms.single;
+      expect(room.ref.roomId, '1414787838');
+      expect(channel.sid, '1414787838');
+      expect(channel.ssid, '1414787838');
+      expect(room.anchor?.anchorId, '3087474217');
+      expect(room.anchor?.name, '慕婉');
+      expect(room.audience.popularity, 42015);
+      expect(room.content.title, '慕婉');
+      expect(room.content.coverUrl, 'https://mobilelivephoto.example/live/a.jpg');
+    });
+
+    test('header tabs and catalog areas read numbered ids', () {
+      final tabs = YyRoomParser.categoryTabs(
+        jsonEncode({
+          'categoryTabs': [
+            {'id': 1, 'title': '娱乐', 'navs': <Object?>[]},
+          ],
+        }),
+      );
+      expect(tabs.single, (id: '1', name: '娱乐'));
+
+      final areas = YyRoomParser.areas(
+        jsonEncode({
+          'result': '0',
+          'data': [
+            {'id': 7, 'title': '音乐', 'url': 'http://www.yy.com/music/'},
+          ],
+        }),
+        categoryId: '1',
+        categoryName: '娱乐',
+      );
+      expect(areas.single.area.areaId, '7');
+      expect(areas.single.area.areaName, '音乐');
+    });
+
+    test('a live detail with numbered ids keeps its anchor and audience', () {
+      final body = jsonEncode({
+        'resultCode': 0,
+        'data': {
+          'uid': 3087474217,
+          'sid': 1414787838,
+          'ssid': 1414787838,
+          'desc': '慕婉',
+          'name': '慕婉',
+          'users': 42130,
+          'biz': 'other',
+          'startTime': 1792934557,
+        },
+      });
+      final detail = YyRoomParser.liveDetail(body, requestedId: '1414787838')!;
+      expect(detail.channel.sid, '1414787838');
+      expect(detail.room.anchor?.anchorId, '3087474217');
+      expect(detail.room.audience.popularity, 42130);
+    });
+  });
+
   group('FLV lease', () {
     test('a ten-minute URL is renewed a minute before t', () {
       final lease = YyPlayParser.lease(_flv(_epoch(_at(600))), _issuedAt)!;

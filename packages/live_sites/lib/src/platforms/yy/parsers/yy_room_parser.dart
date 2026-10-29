@@ -54,8 +54,8 @@ abstract final class YyRoomParser {
     }
     return [
       for (final raw in tabs)
-        if (YyJson.object(raw) case final tab? when YyJson.text(tab['id']).isNotEmpty)
-          (id: YyJson.text(tab['id']), name: YyJson.text(tab['title'])),
+        if (YyJson.object(raw) case final tab? when YyJson.scalar(tab['id']).isNotEmpty)
+          (id: YyJson.scalar(tab['id']), name: YyJson.text(tab['title'])),
     ];
   }
 
@@ -82,11 +82,11 @@ abstract final class YyRoomParser {
     }
     return [
       for (final raw in data)
-        if (YyJson.object(raw) case final item? when YyJson.text(item['id']).isNotEmpty)
+        if (YyJson.object(raw) case final item? when YyJson.scalar(item['id']).isNotEmpty)
           (
             area: LiveArea.normalized(
               platform: yySiteId,
-              areaId: YyJson.text(item['id']),
+              areaId: YyJson.scalar(item['id']),
               areaName: YyJson.text(item['title']),
               parentAreaId: categoryId,
               parentAreaName: categoryName,
@@ -186,7 +186,7 @@ abstract final class YyRoomParser {
     final sid = YyJson.channel(item['sid']);
     if (sid == null) return null;
     final ssid = YyJson.channel(item['ssid']) ?? sid;
-    final users = parseAudienceNumberOrNull(YyJson.text(item['users']));
+    final users = parseAudienceNumberOrNull(YyJson.scalar(item['users']));
     final state = live ? LiveStatus.live : LiveStatus.offline;
     return (
       room: LiveRoom.normalized(
@@ -198,7 +198,7 @@ abstract final class YyRoomParser {
         ),
         anchor: LiveAnchor.normalized(
           platform: yySiteId,
-          anchorId: YyJson.text(item['uid']),
+          anchorId: YyJson.scalar(item['uid']),
           name: YyJson.name(nick),
           avatarUrl: avatar,
           liveStatus: state,
@@ -294,7 +294,7 @@ abstract final class YyRoomParser {
     final id = requestedId.trim();
     final sid = YyJson.channel(item['sid']) ?? id;
     final ssid = YyJson.channel(item['ssid']) ?? sid;
-    final users = parseAudienceNumberOrNull(YyJson.text(item['users']));
+    final users = parseAudienceNumberOrNull(YyJson.scalar(item['users']));
     final room = LiveRoom.normalized(
       platform: yySiteId,
       roomId: id,
@@ -304,7 +304,7 @@ abstract final class YyRoomParser {
       ),
       anchor: LiveAnchor.normalized(
         platform: yySiteId,
-        anchorId: YyJson.text(item['uid']),
+        anchorId: YyJson.scalar(item['uid']),
         name: YyJson.name(item['name']),
         avatarUrl: _avatar(YyJson.image(item['avatar'])),
         liveStatus: LiveStatus.live,

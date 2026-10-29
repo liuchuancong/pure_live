@@ -81,6 +81,18 @@ abstract final class YyJson {
   /// A string trimmed, anything else empty.
   static String text(Object? value) => value is String ? value.trim() : '';
 
+  /// A string trimmed, or a number as its text.
+  ///
+  /// YY's ids arrive both ways: `page.action`, `liveInfoDetail`, the header
+  /// and `getCategory` send numbers, the search sends strings. This is the
+  /// reader for anything quoted-or-numbered; [text] stays for fields that
+  /// are words.
+  static String scalar(Object? value) => switch (value) {
+    final String text => text.trim(),
+    final num number => '$number',
+    _ => '',
+  };
+
   /// An int, or a string that parses as one.
   static int? integer(Object? value) => switch (value) {
     final int number => number,
@@ -90,7 +102,7 @@ abstract final class YyJson {
 
   /// A channel number: a positive decimal without leading zeros, else null.
   static String? channel(Object? value) {
-    final text = YyJson.text(value);
+    final text = YyJson.scalar(value);
     return text.isNotEmpty && YyEndpoints.isChannel(text) ? text : null;
   }
 
