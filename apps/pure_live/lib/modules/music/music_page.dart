@@ -2366,6 +2366,9 @@ final class _OnlinePlaylistDetail extends ConsumerWidget {
     final controller = ref.read(musicPlaylistsProvider.notifier);
     final playlist = await controller.create(info.name);
     if (playlist == null) return;
+    // The reference's collected list carries its origin (`source` +
+    // `sourceListId`) so a later pass can pull the online list afresh.
+    await controller.linkSource(playlist.id, source: ref.read(musicSourceProvider).id, sourceListId: info.id);
     final added = await controller.addTracks(playlist.id, tracks);
     if (!context.mounted) return;
     showDsToast(
