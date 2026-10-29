@@ -316,6 +316,27 @@ final class BilibiliVodClient {
     'try_look': '1',
   };
 
+  /// One part's danmaku track, as the platform serves it: the Bilibili XML
+  /// (`<d p="time,mode,size,color,unix,pool,user,row">text</d>`).
+  ///
+  /// The endpoint caps a part at the first thousand lines for a guest, which
+  /// is the same window the web player shows; it asks for no credential, but
+  /// wants the site as its referer.
+  Future<String> danmakuXml(int cid) async {
+    if (cid <= 0) throw const VodFailure('the part names no cid');
+    final response = await http.send(
+      LiveRequest.custom(
+        method: 'GET',
+        url: Uri.https('api.bilibili.com', '/x/v1/dm/list.so', {'oid': '$cid'}),
+        headers: _headers,
+      ),
+    );
+    if (!response.isOk) {
+      throw VodFailure('HTTP ${response.statusCode}', statusCode: response.statusCode);
+    }
+    return response.text;
+  }
+
   /// The headers a search asks with: Bilibili's search endpoint wants the
   /// search site as its referer, and risk-controls a bare request — a guest
   /// gets through once the fingerprint cookies are there.

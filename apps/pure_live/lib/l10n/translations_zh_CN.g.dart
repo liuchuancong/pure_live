@@ -9595,6 +9595,12 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '播放'
 	String get views => '播放';
 
+	/// zh-CN: '显示弹幕'
+	String get danmakuOn => '显示弹幕';
+
+	/// zh-CN: '隐藏弹幕'
+	String get danmakuOff => '隐藏弹幕';
+
 	/// zh-CN: '弹幕'
 	String get danmaku => '弹幕';
 
@@ -13273,6 +13279,8 @@ extension on Translations {
 			'vod.collapse' => '收起',
 			'vod.parts' => '分P',
 			'vod.views' => '播放',
+			'vod.danmakuOn' => '显示弹幕',
+			'vod.danmakuOff' => '隐藏弹幕',
 			'vod.danmaku' => '弹幕',
 			'vod.likes' => '点赞',
 			'vod.coins' => '投币',

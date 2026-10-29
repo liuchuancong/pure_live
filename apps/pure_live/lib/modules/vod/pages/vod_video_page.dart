@@ -1,7 +1,9 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
+import 'dart:io' show File;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flame_barrage/flame_barrage.dart' show BarrageController, EmojiAtlas, FlameBarrageWidget;
 import 'package:flutter/material.dart' show AppBar, Scaffold;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
@@ -11,9 +13,11 @@ import 'package:live_device/live_device.dart' show PlatformScreenOrientationServ
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:live_vod/live_vod.dart';
 import 'package:media_core/media_core.dart';
+import 'package:media_core_danmaku/media_core_danmaku.dart' show BarrageItemMapper, DanmakuPlayerBinding;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/room/player/room_barrage_config.dart' show roomBarrageConfig;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_download.dart';
 import 'package:pure_live/modules/vod/controller/vod_library.dart';
@@ -58,6 +62,12 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
 
   /// The download running off this page, if one is.
   VodDownloadTask? _download;
+
+  /// The flying danmaku engine this page owns, the bridge that keeps its
+  /// clock on the part's own, and the cid the loaded timeline belongs to.
+  final BarrageController _barrage = BarrageController();
+  DanmakuPlayerBinding? _danmakuBinding;
+  int _danmakuCid = 0;
   int _qn = _defaultQn;
   PlayerHandle? _handle;
   PlayerId? _boundPlayer;
@@ -211,6 +221,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     unawaited(_eventSub?.cancel() ?? Future<void>.value());
     unawaited(_geometrySub?.cancel() ?? Future<void>.value());
     _geometrySub = null;
+    unawaited(_danmakuBinding?.dispose() ?? Future<void>.value());
+    _danmakuBinding = null;
+    _barrage.dispose();
     final handle = _handle;
     if (handle != null) {
       if (_presentationMode != PresentationMode.normal) {
@@ -315,6 +328,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     // Keep the part being left before the page starts writing for the next
     // one; a stored position belongs to the part that reported it.
     _saveProgress(force: true);
+    // The part being left loses its timeline; the next one loads its own.
+    _barrage.clear();
+    _danmakuCid = 0;
     setState(() {
       _opening = true;
       _error = null;
@@ -375,6 +391,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       if (seekTo != null && seekTo > 5) {
         await handle.seek(Duration(milliseconds: (seekTo * 1000).round()));
       }
+      unawaited(_loadDanmaku(part.cid));
       if (!mounted || _disposed) return;
       setState(() {
         _play = info;
@@ -444,6 +461,44 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           break;
       }
     });
+    // The engine's clock follows the new handle: play, pause, seek and rate
+    // all reach the timeline through this one binding.
+    unawaited(_danmakuBinding?.detach() ?? Future<void>.value());
+    _danmakuBinding = DanmakuPlayerBinding.forHandle(controller: _barrage, handle: handle)..attach();
+  }
+
+  /// Reads [cid]'s danmaku track and puts it on the engine's timeline; a part
+  /// with no readable track plays without one.
+  Future<void> _loadDanmaku(int cid) async {
+    if (cid <= 0) return;
+    try {
+      final xml = await ref.read(vodClientProvider).danmakuXml(cid);
+      if (!mounted || _disposed || _part?.cid != cid) return;
+      final entries = BilibiliDanmakuXml.decode(xml);
+      final items = [for (final entry in entries) BarrageItemMapper.toItem(entry.toMessage(), at: entry.time)];
+      _barrage
+        ..clear()
+        ..loadTimeline(items)
+        ..seekTo(_transport?.position ?? Duration.zero);
+      _danmakuCid = cid;
+    } on Object {
+      // The picture never depends on a comment track.
+    }
+  }
+
+  /// Writes the finished video's danmaku beside it, in the formats chosen in
+  /// Settings → 弹幕 → 弹幕文件.
+  Future<void> _saveDanmaku(File video, int cid) async {
+    final client = ref.read(vodClientProvider);
+    final formats = ref.read(danmakuSaveFormatsProvider);
+    try {
+      final xml = await client.danmakuXml(cid);
+      final entries = BilibiliDanmakuXml.decode(xml);
+      if (entries.isEmpty) return;
+      await writeDanmakuFiles(video, entries, formats);
+    } on Object {
+      // The video is downloaded; a missing track does not undo it.
+    }
   }
 
   /// What a part's end leads to — the reference's 播放结束动作. The engine
@@ -864,6 +919,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final transport = _transport;
     final playing = transport?.isPlaying ?? false;
     final detail = _detail;
+    final playback = ref.watch(playbackSettingsProvider);
+    final danmakuStyle = ref.watch(danmakuStyleProvider);
+    final danmakuFps = ref.watch(danmakuEffectiveFpsProvider);
     final showBar = _controlsVisible || !playing;
     return ClipRRect(
       borderRadius: BorderRadius.circular(immersive ? 0 : theme.radii.overlay),
@@ -880,11 +938,28 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 if (handle != null)
                   MediaPlayerView(
                     handle: handle,
-                    fit: ref.watch(playbackSettingsProvider).fit.boxFit,
+                    fit: playback.fit.boxFit,
                     backgroundColor: colors.overlay,
                   )
                 else
                   const ColoredBox(color: Color(0xFF000000)),
+                // The part's danmaku, on a clock the player's binding keeps
+                // equal to the picture's; hidden while the layer is switched
+                // off or no track loaded yet.
+                if (handle != null && _danmakuCid > 0 && playback.danmakuVisible)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: FlameBarrageWidget(
+                        config: roomBarrageConfig(
+                          danmakuStyle,
+                          danmakuFps,
+                          family: resolvedFontFamily(danmakuStyle.fontFamily),
+                        ),
+                        emojiAtlas: EmojiAtlas.instance,
+                        controller: _barrage,
+                      ),
+                    ),
+                  ),
                 // The picture itself is the bar's switch: a press toggles it,
                 // a double press plays or pauses.
                 GestureDetector(
@@ -1062,6 +1137,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           setState(() {});
           switch (task.status) {
             case VodDownloadStatus.done:
+              final file = task.file;
+              if (file != null) unawaited(_saveDanmaku(file, part.cid));
               final name = task.file?.uri.pathSegments.last ?? task.fileName;
               showDsToast(
                 context: context,
@@ -1099,6 +1176,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final presentation = ref.watch(roomPresentationProvider);
     final presentationController = ref.read(roomPresentationProvider.notifier);
     final immersive = presentationController.modeOwnsWindow(presentation);
+    final danmakuVisible = ref.watch(playbackSettingsProvider).danmakuVisible;
     final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk));
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
@@ -1189,6 +1267,19 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                         semanticLabel: t.vod.volume,
                       ),
                     ),
+                  MediaBarButton(
+                    icon: danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
+                    label: danmakuVisible ? t.vod.danmakuOff : t.vod.danmakuOn,
+                    selected: danmakuVisible,
+                    onPressed: handle == null
+                        ? null
+                        : () {
+                            _wake();
+                            unawaited(
+                              ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !danmakuVisible),
+                            );
+                          },
+                  ),
                   const Spacer(),
                   if (qualities.isNotEmpty)
                     _vodPickerButton(

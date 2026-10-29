@@ -65,6 +65,8 @@
   "collapse": "Less",
   "parts": "Parts",
   "views": "Views",
+  "danmakuOn": "Show danmaku",
+  "danmakuOff": "Hide danmaku",
   "danmaku": "Danmaku",
   "likes": "Likes",
   "coins": "Coins",
