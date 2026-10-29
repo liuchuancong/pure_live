@@ -403,9 +403,27 @@ void main() {
     expect([for (final stream in streams) stream.id], [30251, 30280, 30232]);
     expect(streams.first.url, 'https://cdn/flac.m4s');
   });
+
+  test("a part's danmaku comes back as the platform's XML", () async {
+    final http = _FakeHttp({
+      '/x/v1/dm/list.so': '<?xml version="1.0" encoding="UTF-8"?><i><d p="1.500,1,25,16777215,0,0,0,0">first</d></i>',
+    });
+
+    final xml = await BilibiliVodClient(http).danmakuXml(618056187);
+
+    expect(xml, contains('<d p="1.500,1,25,16777215,0,0,0,0">first</d>'));
+    expect(http.asked.single.queryParameters['oid'], '618056187');
+  });
+
+  test('a danmaku ask that failed is a VodFailure', () async {
+    final http = _FakeHttp({});
+
+    await expectLater(BilibiliVodClient(http).danmakuXml(1), throwsA(isA<VodFailure>()));
+  });
 }
 
-/// A transport that answers canned JSON per path.
+/// A transport that answers canned JSON per path — a string answer is sent
+/// as its own body, for the endpoints that serve XML.
 final class _FakeHttp implements LiveHttp {
   new(this.answers);
 
@@ -422,7 +440,7 @@ final class _FakeHttp implements LiveHttp {
     return LiveResponse(
       statusCode: 200,
       headers: const {'content-type': 'application/json'},
-      bodyBytes: Uint8List.fromList(utf8.encode(jsonEncode(answer))),
+      bodyBytes: Uint8List.fromList(utf8.encode(answer is String ? answer : jsonEncode(answer))),
     );
   }
 
