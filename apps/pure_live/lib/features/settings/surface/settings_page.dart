@@ -47,6 +47,7 @@ import 'package:pure_live/features/settings/panes/background_panes.dart'
         BackgroundOverviewPane,
         BackgroundRandomPane;
 import 'package:pure_live/features/settings/panes/danmaku_panes.dart' show DanmakuDisplayPane, DanmakuPane;
+import 'package:pure_live/features/settings/panes/github_mirror_pane.dart' show GithubMirrorSection;
 import 'package:pure_live/features/settings/panes/player_kernel_pane.dart'
     show PlayerKernelAdvancedPane, PlayerKernelPane;
 import 'package:pure_live/features/settings/panes/room_card_pane.dart' show showRoomCardPreview;
@@ -171,12 +172,13 @@ final class _SettingsBodyWithSearchState extends ConsumerState<_SettingsBodyWith
     final hits = query.isEmpty
         ? const <SettingsSearchHit>[]
         : settingsSearchHits(t, query, settingsSearchSections(groups));
+    final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (!tv && !paneOwnsSearch)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s16, DsSpace.s24, 0),
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s16, inset, 0),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 560),
@@ -245,8 +247,9 @@ final class SettingsCategoryPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s20, DsSpace.s24, DsSpace.s24),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s20, inset, DsSpace.s24),
       child: _SettingsColumn(
         children: [
           DsListSection(
@@ -319,8 +322,9 @@ final class _SectionSearchResults extends StatelessWidget {
         child: DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.settings.searchNoResults)),
       );
     }
+    final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s16, DsSpace.s24, DsSpace.s24),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s16, inset, DsSpace.s24),
       child: _SettingsColumn(
         spacing: DsSpace.s16,
         children: [
@@ -544,15 +548,18 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.musicLyric => const MusicLyricPane(),
       SettingsSection.musicDesktopLyric => const MusicDesktopLyricPane(),
     };
-    const padding = EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s20, DsSpace.s24, DsSpace.s24);
+    final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;
+    final padding = EdgeInsets.fromLTRB(inset, DsSpace.s20, inset, DsSpace.s24);
     // Some pages own their height instead of scrolling the whole pane with
-    // it: the log console expands into what the settings above leave, and a
-    // wallpaper page fills the window with as many whole rows as fit, keeping
-    // its pager at the bottom.
+    // it: the log console expands into what the settings above leave, a
+    // wallpaper page fills the window with as many whole rows as fit, and the
+    // font manager pins its filters over a table that scrolls by itself.
     if (section == SettingsSection.logs ||
         section == SettingsSection.backgroundImages ||
         section == SettingsSection.backgroundVideos ||
-        section == SettingsSection.backgroundDownloads) {
+        section == SettingsSection.backgroundDownloads ||
+        section == SettingsSection.fontApp ||
+        section == SettingsSection.fontDanmaku) {
       return Padding(padding: padding, child: body);
     }
     return SingleChildScrollView(
@@ -1492,13 +1499,11 @@ final class _ThemePane extends ConsumerWidget {
               title: Text(t.settings.font),
               description: Text(t.settings.fontDescription),
               detail: Text(
-                settings.fontFamily == null
-                    ? platformFontFamilyLabel()
-                    : fontFamilyLabel(
-                        t,
-                        settings.fontFamily,
-                        cloudName: ref.read(fontLibraryProvider).nameOf(settings.fontFamily!),
-                      ),
+                fontFamilyLabel(
+                  t,
+                  settings.fontFamily,
+                  name: ref.watch(freeFontStoreProvider).nameOf(settings.fontFamily),
+                ),
               ),
               showChevron: true,
               onPressed: () => showFontManagerPage(context, ref),
@@ -1629,6 +1634,7 @@ final class _NetworkPane extends ConsumerWidget {
             ),
           ],
         ),
+        const GithubMirrorSection(),
         DsListSection(
           children: [
             const SettingsChildEntry(child: SettingsSection.nodes),

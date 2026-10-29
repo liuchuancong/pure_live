@@ -11,6 +11,7 @@ import 'package:pure_live/app/providers/device/display_refresh_rate_provider.dar
     show displayRefreshRateProvider, matchVideoFrameRateProvider;
 import 'package:pure_live/app/providers/device/keep_screen_on_provider.dart' show keepScreenOnProvider;
 import 'package:pure_live/app/providers/navigation/nav_visibility_providers.dart' show navMenuProvider;
+import 'package:pure_live/app/providers/network/github_mirror_provider.dart' show githubMirrorProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show proxySettingsProvider;
 import 'package:pure_live/app/providers/player/player_backend_providers.dart' show playerKernelBackendProvider;
 import 'package:pure_live/app/providers/settings/download_directory_provider.dart' show downloadDirectoryProvider;
@@ -21,8 +22,6 @@ import 'package:pure_live/app/providers/settings/splash_settings_provider.dart' 
 import 'package:pure_live/app/providers/settings/update_settings_provider.dart' show updateSettingsProvider;
 import 'package:pure_live/app/providers/theme/dynamic_color_provider.dart'
     show dynamicColorProvider, dynamicColorSeedProvider;
-import 'package:pure_live/app/providers/theme/font_face_provider.dart'
-    show appFontFaceProvider, danmakuFontFaceProvider;
 import 'package:pure_live/app/providers/theme/liquid_glass_provider.dart' show liquidGlassProvider;
 import 'package:pure_live/app/providers/theme/text_scale_provider.dart' show textScaleFactorProvider;
 import 'package:pure_live/features/account/douyu_cookie_saved_at.dart' show douyuCookieSavedAtProvider;
@@ -85,6 +84,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   toolOrderProvider,
   backgroundSettingsProvider,
   proxySettingsProvider,
+  githubMirrorProvider,
   followsAutoRefreshProvider,
   liveAlertSettingsProvider,
   maxConcurrentRefreshProvider,
@@ -146,8 +146,6 @@ final List<ProviderOrFamily> kSettingsProviders = [
   liquidGlassProvider,
   splashSettingsProvider,
   textScaleFactorProvider,
-  appFontFaceProvider,
-  danmakuFontFaceProvider,
   updateSettingsProvider,
 ];
 
