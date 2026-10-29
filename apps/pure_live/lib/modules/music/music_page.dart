@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -216,6 +216,57 @@ final class _LibraryViewState extends ConsumerState<_LibraryView> {
 
   static const int _pageSize = 30;
 
+  /// The word typed since the last debounce tick, the field's focus, and
+  /// the ask in flight — the search suggestion overlay lives on all three:
+  /// it shows while the field holds the focus and a word that is not the
+  /// committed query yet, the reference's tip list.
+  String _typed = '';
+
+  FocusNode? _focus;
+  Timer? _suggestDebounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _focus = FocusNode()..addListener(_onFocusChanged);
+  }
+
+  @override
+  void dispose() {
+    _suggestDebounce?.cancel();
+    _focus
+      ?..removeListener(_onFocusChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// The typed word follows the keystrokes on a short debounce, so the
+  /// suggestion ask trails the typing instead of riding every key.
+  void _onTyped(String value) {
+    _suggestDebounce?.cancel();
+    if (value.trim().isEmpty) {
+      if (_typed.isNotEmpty) setState(() => _typed = '');
+      return;
+    }
+    _suggestDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _typed = value);
+    });
+  }
+
+  /// Commits [word] as the search: the field reads it, the query moves, and
+  /// the overlay goes away because the word is the query now.
+  void _runSearch(String word, MusicSearchController controller) {
+    widget.search
+      ..text = word
+      ..selection = TextSelection.collapsed(offset: word.length);
+    setState(() => _typed = word);
+    unawaited(controller.search(word));
+  }
+
   /// The page actually shown: [_asked] pulled back into the list's range.
   int _pageOf(int count) {
     if (count <= (_asked - 1) * _pageSize) return 1;
@@ -258,12 +309,11 @@ final class _LibraryViewState extends ConsumerState<_LibraryView> {
         : const <String>[];
     final sourceName = ref.watch(musicSourceProvider).name;
     void play(int index) => unawaited(playerController.playAll(state.songs, index: index));
-    void runHistory(String query) {
-      search
-        ..text = query
-        ..selection = TextSelection.collapsed(offset: query.length);
-      unawaited(controller.search(query));
-    }
+    void runHistory(String query) => _runSearch(query, controller);
+    // The tip list lives while the field holds the focus and a word that is
+    // not the committed query yet — the reference's typing overlay.
+    final word = _typed.trim();
+    final showTips = (_focus?.hasFocus ?? false) && word.isNotEmpty && word != state.query;
 
     Widget songAt(int index) {
       final song = state.songs[index];
@@ -477,11 +527,41 @@ final class _LibraryViewState extends ConsumerState<_LibraryView> {
           child: DsSearchField(
             controller: search,
             autofocus: true,
+            focusNode: _focus,
             placeholder: t.music.searchHint,
-            onSubmitted: (value) => unawaited(controller.search(value)),
+            onChanged: _onTyped,
+            onSubmitted: (value) {
+              // The submit commits at once: the pending debounce ask drops
+              // and the overlay closes because the word is the query now.
+              _suggestDebounce?.cancel();
+              setState(() => _typed = value);
+              unawaited(controller.search(value));
+            },
           ),
         ),
-        Expanded(child: body),
+        Expanded(child: showTips ? _tips(word) : body),
+      ],
+    );
+  }
+
+  /// The reference's tip list: the source's completions for the typed word,
+  /// one row each, a tap committing the word as the search.
+  Widget _tips(String word) {
+    final tips = ref.watch(musicSearchSuggestionsProvider(word)).value ?? const <String>[];
+    if (tips.isEmpty) return const SizedBox.shrink();
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s16),
+      children: [
+        DsListSection(
+          children: [
+            for (final tipWord in tips)
+              DsListRow(
+                leading: const DsIcon(DsIcons.search, size: 16),
+                title: Text(tipWord),
+                onPressed: () => _runSearch(tipWord, ref.read(musicSearchProvider.notifier)),
+              ),
+          ],
+        ),
       ],
     );
   }
