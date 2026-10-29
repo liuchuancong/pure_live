@@ -197,7 +197,12 @@
   网关富化（LX `createGetMusicInfosTask` 的固定头/密钥）；**未移植 LX 的 HTML 抓取与 chain/gcid
   多级回退链**（分享链歌单暂不支持）；**mg 通道已实现**（第十批：taglist 标签 +
   `musiclistplaza-listbytag`（contents 递归收 resType=2021）/ `playlist-square-recommend` 兜底 +
-  MIGUM3.0 `playlist/song/v2.0` + `playlist/v2.0` 详情）。UI 视图接入 music_page 待后续）：各源 `songList.js`。
+  MIGUM3.0 `playlist/song/v2.0` + `playlist/v2.0` 详情）。**UI 已接入（2026-10-29 收口 F6）**：歌单视图双 tab（我的歌单带计数/在线歌单，DsTabs）；
+在线浏览=热点标签 chips（首标签默认）+ 分页列表（family provider 缓存逐页拼接，加载更多/总数
+判定/尾部 spinner）、封面 44px 网络图带兜底、无能力源诚实空态「当前源不支持」；详情页=返回头 +
+导入按钮（create+addTracks 落为本地歌单并 toast 报数）+ MusicSongRow 轨道列表（点播
+playAll(index)/收藏/加入歌单/下载，复用本地轨道行）；非 wy/tx/kg/mg 源 tab 仍可见但页面明示
+不支持。i18n 双语 8 键。）：各源 `songList.js`。
 
 ### G. 设置与同步
 - ✅ G1 设置域对齐（2026-10-29 收口：36 个键已按 `music.<域>.<名>` 覆盖 LX 的
