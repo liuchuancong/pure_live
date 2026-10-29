@@ -1,4 +1,5 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
+import 'dart:ui' show ImageFilter, TileMode;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart';
@@ -726,9 +727,10 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   }
 }
 
-/// The strip over the picture: the way out (back to the page, or out of a
-/// presentation mode), the room's name in the viewer's own type, and the
-/// live audience on the far end.
+/// The strip over the picture: the way out in a glass pill, the room's name
+/// in the viewer's own type, and the live state and the audience in their
+/// own pills on the far end — frosted chips over the frame, the way the
+/// modern rooms wear them.
 final class _PlayerTopBar extends StatelessWidget {
   const _PlayerTopBar({required this.room, required this.onLeave});
 
@@ -750,8 +752,10 @@ final class _PlayerTopBar extends StatelessWidget {
         ? title
         : '$anchor · $title';
     final audience = detail?.audience.onlineViewers ?? detail?.audience.popularity ?? detail?.audience.totalViewers;
+    final live = detail?.broadcast.isLiveNow ?? false;
+    final replay = detail?.broadcast.isRecord ?? false;
     return Container(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s8),
+      padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s12),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: AlignmentDirectional.topCenter,
@@ -762,7 +766,9 @@ final class _PlayerTopBar extends StatelessWidget {
       child: Row(
         spacing: DsSpace.s8,
         children: [
-          _BarIcon(icon: DsIcons.chevronLeft, label: t.common.close, onPressed: onLeave),
+          _GlassPill(
+            child: _BarIcon(icon: DsIcons.chevronLeft, label: t.common.close, onPressed: onLeave),
+          ),
           if (label != null)
             Expanded(
               child: Text(
@@ -774,10 +780,85 @@ final class _PlayerTopBar extends StatelessWidget {
             )
           else
             const Spacer(),
-          if (audience != null) ...[
-            DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: _onVideoSubtle),
-            Text(AudienceFormat.format(audience), style: theme.typography.caption.copyWith(color: _onVideoSubtle)),
-          ],
+          if (live)
+            const _GlassPill(child: _VideoLiveBadge())
+          else if (replay)
+            _GlassPill(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s3),
+                child: Text(
+                  t.favorites.statusReplay,
+                  style: theme.typography.caption.copyWith(color: _onVideo, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          if (audience != null)
+            _GlassPill(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s3),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: DsSpace.s3,
+                  children: [
+                    DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: _onVideoSubtle),
+                    Text(
+                      AudienceFormat.format(audience),
+                      style: theme.typography.numeric(theme.typography.caption.copyWith(color: _onVideo)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One frosted chip over the picture: a dark glass the frame's own motion
+/// bleeds through, rounded to a pill, quiet enough to sit under words.
+final class _GlassPill extends StatelessWidget {
+  const _GlassPill({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(DsRadii.pill),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14, tileMode: TileMode.decal),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0x59000000),
+            borderRadius: BorderRadius.circular(DsRadii.pill),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// The live pill over the picture: the red dot and the word in video ink.
+final class _VideoLiveBadge extends StatelessWidget {
+  const _VideoLiveBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final t = context.t;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s3),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: DsSpace.s3,
+        children: [
+          Container(width: 5, height: 5, decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFFF3B5C))),
+          Text(
+            t.favorites.statusLiveNow,
+            style: theme.typography.caption.copyWith(color: _onVideo, fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
@@ -1008,8 +1089,13 @@ final class _ControlBar extends ConsumerWidget {
                     ),
                   // A fitted bar keeps a gap before the stream menus; a
                   // compact one scrolls, so nine controls cannot push the
-                  // last button off the picture.
-                  if (compact) const SizedBox(width: DsSpace.s4) else const Spacer(),
+                  // last button off the picture. The fitted bar also splits
+                  // its clusters: a hair divider between the transport and
+                  // the stream's own menus.
+                  if (compact) const SizedBox(width: DsSpace.s4) else ...[
+                    const _BarDivider(),
+                    const Spacer(),
+                  ],
                   if (!pip && quality != null)
                     _StreamMenu(
                       label: quality.label,
@@ -1162,6 +1248,20 @@ bool get _desktop =>
         defaultTargetPlatform == TargetPlatform.macOS ||
         defaultTargetPlatform == TargetPlatform.linux);
 
+/// A hair divider between the fitted bar's clusters: the transport on one
+/// side, the stream's own menus on the other.
+final class _BarDivider extends StatelessWidget {
+  const _BarDivider();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 1,
+    height: 16,
+    margin: const EdgeInsets.symmetric(horizontal: DsSpace.s4),
+    color: const Color(0x40FFFFFF),
+  );
+}
+
 /// A labelled menu over a stream dimension: the current quality or line,
 /// its catalogue, the tick on the one playing.
 final class _StreamMenu extends StatelessWidget {
@@ -1280,9 +1380,9 @@ final class _BarIcon extends StatelessWidget {
   }
 }
 
-/// The live position bar: the buffered span behind, the position over it.
-/// A nominal or unknown duration keeps the bar at its start, which is the
-/// truth of a live stream.
+/// The live position bar: the buffered span behind, the position over it, a
+/// red head dot where the live edge sits. A nominal or unknown duration
+/// keeps the bar at its start, which is the truth of a live stream.
 final class _LiveBar extends StatelessWidget {
   const _LiveBar({required this.position, required this.buffered, required this.duration});
 
@@ -1294,7 +1394,7 @@ final class _LiveBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final total = duration.inMilliseconds;
     if (total <= 0) {
-      return const DsLine(color: _onVideoSubtle);
+      return const SizedBox(height: 4, child: DsLine(color: Color(0x2EFFFFFF)));
     }
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1302,25 +1402,39 @@ final class _LiveBar extends StatelessWidget {
         final bufferedFraction = (buffered.inMilliseconds / total).clamp(0.0, 1.0);
         final positionFraction = (position.inMilliseconds / total).clamp(0.0, 1.0);
         return SizedBox(
-          height: 3,
+          height: 4,
           child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              const ColoredBox(color: Color(0x33FFFFFF), child: SizedBox.expand()),
+              FractionallySizedBox(
+                widthFactor: 1,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: const Color(0x2EFFFFFF), borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
               FractionallySizedBox(
                 widthFactor: bufferedFraction,
-                child: const ColoredBox(color: _onVideoSubtle, child: SizedBox.expand()),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: const Color(0x4DFFFFFF), borderRadius: BorderRadius.circular(2)),
+                ),
               ),
               FractionallySizedBox(
                 widthFactor: positionFraction,
-                child: const ColoredBox(color: _onVideo, child: SizedBox.expand()),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: _onVideo, borderRadius: BorderRadius.circular(2)),
+                ),
               ),
               PositionedDirectional(
-                start: width * positionFraction - 4,
-                top: -2.5,
+                start: (width * positionFraction).clamp(5.0, width - 5.0) - 5,
+                top: -3,
                 child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: DsBoxDecoration(color: _onVideo, borderRadius: BorderRadius.circular(4)),
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFFF3B5C),
+                    border: Border.all(color: _onVideo, width: 2),
+                  ),
                 ),
               ),
             ],

@@ -1,5 +1,6 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter, TileMode;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
@@ -945,8 +946,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     picture,
-                    _RoomInfoBar(room: room),
-                    DsLine(color: colors.border),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s12, DsSpace.s12, 0),
+                      child: _RoomHero(room: room),
+                    ),
                     const Expanded(child: RoomChatPanel()),
                   ],
                 );
@@ -1004,8 +1007,14 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(child: _RoomInfoBar(room: room)),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s12, 0, DsSpace.s4),
+                                child: _RoomHero(room: room),
+                              ),
+                            ),
                             DsButton.icon(
                               variant: DsButtonVariant.ghost,
                               size: DsSize.sm,
@@ -1015,7 +1024,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                             ),
                           ],
                         ),
-                        DsLine(color: colors.border),
                         const Expanded(child: RoomChatPanel()),
                       ],
                     ),
@@ -1095,9 +1103,10 @@ final followsRoomProvider = Provider<List<LiveRoom>>((ref) {
   return ref.read(followsProvider).rooms;
 });
 
-/// The app bar's room header: the streamer's avatar and name, and the
-/// platform · area line under it — the reference's `RoomHeader`, in the
-/// app's own type and tokens.
+/// The app bar's own line: the room's title and where it plays. The
+/// anchor's identity — the avatar, the live ring, the counts — lives on the
+/// hero card under the picture; the bar keeps what it is the only surface
+/// for while the page scrolls the picture away: which room, which platform.
 final class _RoomHeader extends ConsumerWidget {
   const _RoomHeader({required this.room});
 
@@ -1109,54 +1118,32 @@ final class _RoomHeader extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final detail = room.room;
     if (detail == null) {
-      return const Row(
-        spacing: DsSpace.s8,
-        children: [
-          DsSkeleton(width: DsSpace.s24, height: DsSpace.s24),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            spacing: DsSpace.s3,
-            children: [DsSkeleton(width: 96, height: 12), DsSkeleton(width: 132, height: 9)],
-          ),
-        ],
+      return const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        spacing: DsSpace.s3,
+        children: [DsSkeleton(width: 132, height: 12), DsSkeleton(width: 96, height: 9)],
       );
     }
     final site = ref.watch(sitesProvider).all.where((site) => site.manifest.id == detail.ref.platform).firstOrNull;
     final platform = site == null ? detail.ref.platform : localizedSiteName(site);
     final area = (detail.area?.areaName ?? '').trim();
-    final anchor = (detail.anchor?.name ?? '').trim();
-    final name = anchor.isEmpty ? detail.content.title : anchor;
-    final avatar = (detail.anchor?.avatarUrl ?? detail.content.coverUrl).trim();
-    return Row(
-      spacing: DsSpace.s8,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 1,
       children: [
-        DsAvatar(
-          initials: name,
-          image: avatar.isEmpty ? null : cachedImage(avatar),
-          size: DsSize.sm,
-          semanticLabel: name,
+        Text(
+          detail.content.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
         ),
-        Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: 1,
-            children: [
-              Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-              ),
-              Text(
-                area.isEmpty ? platform : '$platform · $area',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(color: colors.textMuted),
-              ),
-            ],
-          ),
+        Text(
+          area.isEmpty ? platform : '$platform · $area',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.typography.caption.copyWith(color: colors.textMuted),
         ),
       ],
     );
@@ -1349,12 +1336,15 @@ final class _RoomMenu extends ConsumerWidget {
   }
 }
 
-/// The strip above the chat (the reference's `RoomInfoBar`): one compact
-/// row — live state, title, audience, start time, the sleep timer — that
-/// opens the details sheet. It sits in the chat column on a wide window and
-/// under the picture on a phone, never over the picture itself.
-final class _RoomInfoBar extends ConsumerWidget {
-  const _RoomInfoBar({required this.room});
+/// The room's own card, the reference's `RoomInfoBar` grown up: the
+/// anchor's identity over a wash of the room's own cover — the avatar in a
+/// live ring, the platform and the area, the live state, the audience and
+/// the start time, the title — one press away from the details sheet.
+///
+/// It sits under the picture on a phone and at the head of the chat column
+/// on a wide window, never over the picture itself.
+final class _RoomHero extends ConsumerWidget {
+  const _RoomHero({required this.room});
 
   final RoomState room;
 
@@ -1365,95 +1355,155 @@ final class _RoomInfoBar extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final detail = room.room;
     if (detail == null) {
-      return const Padding(
-        padding: EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s8, DsSpace.s6),
-        child: Row(
-          spacing: DsSpace.s8,
+      return Container(
+        padding: const EdgeInsets.all(DsSpace.s12),
+        decoration: DsBoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(theme.radii.card),
+        ),
+        child: const Row(
+          spacing: DsSpace.s12,
           children: [
-            Expanded(child: DsSkeleton(height: 14)),
-            DsSkeleton(width: 56, height: 20),
+            DsSkeleton(width: DsSpace.s32, height: DsSpace.s32),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s3,
+                children: [DsSkeleton(width: 96, height: 12), DsSkeleton(width: 160, height: 9)],
+              ),
+            ),
           ],
         ),
       );
     }
+    final site = ref.watch(sitesProvider).all.where((site) => site.manifest.id == detail.ref.platform).firstOrNull;
+    final platform = site == null ? detail.ref.platform : localizedSiteName(site);
+    final area = (detail.area?.areaName ?? '').trim();
+    final anchor = (detail.anchor?.name ?? '').trim();
+    final name = anchor.isEmpty ? detail.content.title : anchor;
+    final avatar = (detail.anchor?.avatarUrl ?? detail.content.coverUrl).trim();
+    final cover = detail.content.coverUrl.trim();
     final audience = detail.audience.onlineViewers ?? detail.audience.popularity ?? detail.audience.totalViewers;
     final started = detail.broadcast.startedAt;
+    final live = detail.broadcast.isLiveNow;
     return DsPressable(
       semanticLabel: t.room.detailsHint,
       onPressed: () => unawaited(showRoomDetails(context)),
-      builder: (context, states, child) =>
-          ColoredBox(color: states.contains(WidgetState.hovered) ? colors.hover : colors.surface, child: child),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s8, DsSpace.s6),
-        child: Row(
-          spacing: DsSpace.s8,
+      builder: (context, states, child) => ColoredBox(
+        color: states.contains(WidgetState.hovered) ? colors.overlay : const Color(0x00000000),
+        child: child,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(theme.radii.card),
+        child: Stack(
           children: [
-            if (detail.broadcast.isRecord)
-              DsBadge(dot: false, label: Text(t.favorites.statusReplay), status: DsStatus.info)
-            else if (detail.broadcast.isLiveNow)
-              Row(
+            Positioned.fill(child: _HeroWash(cover: cover)),
+            Padding(
+              padding: const EdgeInsets.all(DsSpace.s12),
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s4,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: DsSpace.s8,
                 children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: colors.accent),
+                  Row(
+                    spacing: DsSpace.s12,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: live ? colors.accent : colors.border),
+                        child: DsAvatar(
+                          initials: name,
+                          image: avatar.isEmpty ? null : cachedImage(avatar),
+                          size: DsSize.md,
+                          semanticLabel: name,
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: DsSpace.s3,
+                          children: [
+                            Row(
+                              spacing: DsSpace.s8,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                                  ),
+                                ),
+                                if (live) const _LiveBadge(),
+                              ],
+                            ),
+                            Row(
+                              spacing: DsSpace.s8,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    area.isEmpty ? platform : '$platform · $area',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (audience != null)
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    spacing: DsSpace.s3,
+                                    children: [
+                                      DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: colors.textSubtle),
+                                      Text(
+                                        AudienceFormat.format(audience),
+                                        style: theme.typography.numeric(
+                                          theme.typography.caption.copyWith(color: colors.textMuted),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                if (started != null)
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    spacing: DsSpace.s3,
+                                    children: [
+                                      DsIcon(DsIcons.clock, size: theme.sizes.iconXs, color: colors.textSubtle),
+                                      Text(
+                                        _clock(started),
+                                        style: theme.typography.numeric(
+                                          theme.typography.caption.copyWith(color: colors.textMuted),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    t.favorites.statusLiveNow,
-                    style: theme.typography.caption.copyWith(color: colors.accent, fontWeight: FontWeight.w600),
+                  Row(
+                    spacing: DsSpace.s4,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          detail.content.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.body.copyWith(color: colors.text),
+                        ),
+                      ),
+                      DsIcon(DsIcons.chevronDown, size: theme.sizes.iconXs, color: colors.textSubtle),
+                      const _SleepChip(),
+                    ],
                   ),
                 ],
-              )
-            else
-              DsBadge(dot: false, label: Text(t.favorites.statusOfflineNow)),
-            Flexible(
-              child: Text(
-                detail.content.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.bodyStrong.copyWith(color: colors.text),
               ),
             ),
-            if (audience != null)
-              Flexible(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: DsSpace.s3,
-                  children: [
-                    DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: colors.textSubtle),
-                    Flexible(
-                      child: Text(
-                        AudienceFormat.format(audience),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            if (started != null)
-              Flexible(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: DsSpace.s3,
-                  children: [
-                    DsIcon(DsIcons.clock, size: theme.sizes.iconXs, color: colors.textSubtle),
-                    Flexible(
-                      child: Text(
-                        _clock(started),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            DsIcon(DsIcons.chevronDown, size: theme.sizes.iconXs, color: colors.textSubtle),
-            const _SleepChip(),
           ],
         ),
       ),
@@ -1464,6 +1514,60 @@ final class _RoomInfoBar extends ConsumerWidget {
     final local = time.toLocal();
     String two(int value) => value.toString().padLeft(2, '0');
     return '${two(local.hour)}:${two(local.minute)}';
+  }
+}
+
+/// The card's backdrop: the room's own cover, blurred flat and quieted under
+/// the surface's ink, so the card carries the room's colour without fighting
+/// the words over it. A room without a cover gets the plain surface.
+final class _HeroWash extends StatelessWidget {
+  const _HeroWash({required this.cover});
+
+  final String cover;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    if (cover.isEmpty) return ColoredBox(color: colors.surface);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28, tileMode: TileMode.decal),
+          child: Image(image: cachedImage(cover), fit: BoxFit.cover),
+        ),
+        ColoredBox(color: colors.surface.withValues(alpha: 0.82)),
+      ],
+    );
+  }
+}
+
+/// The live pill: the red dot and the word, over the hero's wash.
+final class _LiveBadge extends StatelessWidget {
+  const _LiveBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final t = context.t;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: 1),
+      decoration: BoxDecoration(
+        color: const Color(0xE6FF3B5C),
+        borderRadius: BorderRadius.circular(DsRadii.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: DsSpace.s3,
+        children: [
+          Container(width: 4, height: 4, decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFFFFFFF))),
+          Text(
+            t.favorites.statusLiveNow,
+            style: theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF), fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
   }
 }
 
