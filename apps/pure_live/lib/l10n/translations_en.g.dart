@@ -1000,6 +1000,16 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get searchTypeSongs => 'Songs';
 	@override String get searchTypeSonglists => 'Songlists';
 	@override String get searchSourceAll => 'All sources';
+	@override String get sourceNameType => 'Source names';
+	@override String get sourceNameTypeDesc => 'How the platforms are worded in the lists: aliases are the reference\'s stage names, real names are the platforms\' own.';
+	@override String get sourceNameTypeAlias => 'Aliases';
+	@override String get sourceNameTypeReal => 'Real names';
+	@override String get sourceAliasAll => 'Aggregated';
+	@override String get sourceAliasKw => 'KW Music';
+	@override String get sourceAliasKg => 'KG Music';
+	@override String get sourceAliasTx => 'TX Music';
+	@override String get sourceAliasWy => 'WY Music';
+	@override String get sourceAliasMg => 'MG Music';
 	@override String get songlistSearchUnsupported => 'This source cannot search songlists yet.';
 	@override String get defaultSource => 'Default source';
 	@override String get defaultSourceDesc => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.';
@@ -4419,6 +4429,16 @@ extension on TranslationsEn {
 			'music.searchTypeSongs' => 'Songs',
 			'music.searchTypeSonglists' => 'Songlists',
 			'music.searchSourceAll' => 'All sources',
+			'music.sourceNameType' => 'Source names',
+			'music.sourceNameTypeDesc' => 'How the platforms are worded in the lists: aliases are the reference\'s stage names, real names are the platforms\' own.',
+			'music.sourceNameTypeAlias' => 'Aliases',
+			'music.sourceNameTypeReal' => 'Real names',
+			'music.sourceAliasAll' => 'Aggregated',
+			'music.sourceAliasKw' => 'KW Music',
+			'music.sourceAliasKg' => 'KG Music',
+			'music.sourceAliasTx' => 'TX Music',
+			'music.sourceAliasWy' => 'WY Music',
+			'music.sourceAliasMg' => 'MG Music',
 			'music.songlistSearchUnsupported' => 'This source cannot search songlists yet.',
 			'music.defaultSource' => 'Default source',
 			'music.defaultSourceDesc' => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.',
@@ -4584,6 +4604,8 @@ extension on TranslationsEn {
 			'music.downloadDirectoryDefault' => 'Use the default folder',
 			'music.downloadDirectoryDefaultDesc' => 'Return to the app’s default downloads folder.',
 			'music.downloadDirectoryUpdated' => 'Download folder updated',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadDirectoryFailed' => 'This folder is not writable',
 			'music.downloadType' => 'Download format',
 			'music.downloadTypeDesc' => 'Original keeps the source container; transcoding needs ffmpeg.',
@@ -4594,8 +4616,6 @@ extension on TranslationsEn {
 			'music.downloadTypeOgg' => 'OGG',
 			'music.downloadTypeWav' => 'WAV',
 			'music.downloadPattern' => 'File name pattern',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadPatternHint' => 'Placeholders (written inside braces): title, artist, album, quality, source, list, index.',
 			'music.downloadPatternEdit' => 'Edit',
 			'music.downloadEmbedCover' => 'Embed the cover',
@@ -5098,6 +5118,8 @@ extension on TranslationsEn {
 			'room.restrictionUnplayable' => 'Not playable now',
 			'room.orientation' => 'Picture orientation',
 			'room.orientationHint' => 'Follow the picture’s own shape, or fix this room to portrait or landscape.',
+			_ => null,
+		} ?? switch (path) {
 			'room.orientationAutomatic' => 'Automatic',
 			'room.orientationPortrait' => 'Portrait',
 			'room.orientationLandscape' => 'Landscape',
@@ -5108,8 +5130,6 @@ extension on TranslationsEn {
 			'room.portraitDisplayComplete' => 'Complete',
 			'room.portraitDisplayAmbient' => 'Ambient',
 			'room.portraitDisplayBalanced' => 'Balanced',
-			_ => null,
-		} ?? switch (path) {
 			'room.portraitDisplayCover' => 'Cover',
 			'room.portraitDanmakuTitle' => 'Danmaku area',
 			'room.portraitDanmakuFollow' => 'Follow global',
@@ -5612,6 +5632,8 @@ extension on TranslationsEn {
 			'settings.fontManagerFilterAll' => 'All',
 			'settings.fontManagerCategory' => 'Category',
 			'settings.fontManagerCount' => ({required Object count}) => '${count} fonts',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerTagBundled' => 'Bundled',
 			'settings.fontManagerSourceFreeFont' => 'Free font collection',
 			'settings.fontManagerUse' => 'Use',
@@ -5622,8 +5644,6 @@ extension on TranslationsEn {
 			'settings.fontManagerNotDownloaded' => 'Not downloaded',
 			'settings.fontManagerDeleteFont' => 'Delete the downloaded font',
 			'settings.fontManagerDeleteQuestion' => ({required Object name}) => 'Delete this device\'s copy of “${name}”? It can be downloaded again.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerNoResults' => 'No fonts match.',
 			'settings.fontManagerFilterLabel' => 'Filter fonts',
 			'settings.fontManagerSearchPlaceholder' => 'Search font names',
@@ -6126,6 +6146,8 @@ extension on TranslationsEn {
 			'settings.downloadStatusDone' => 'Completed',
 			'settings.downloadStatusFailed' => 'Failed',
 			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadFinishedAt' => ({required Object time}) => 'Finished ${time}',
 			'settings.downloadRemove' => 'Remove record',
 			'settings.downloadRemoveBody' => 'Removes the record only; the saved file stays.',
@@ -6136,8 +6158,6 @@ extension on TranslationsEn {
 			'settings.downloadFilterAll' => 'All',
 			'settings.downloadFilterEmpty' => 'Nothing under this status',
 			'settings.downloadKindFilter' => 'Filter by kind',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadColumnFile' => 'File',
 			'settings.downloadColumnSize' => 'Size',
 			'settings.downloadColumnTime' => 'Time',
@@ -6640,6 +6660,8 @@ extension on TranslationsEn {
 			'vod.retry' => 'Retry',
 			'vod.tabRecommend' => 'Recommended',
 			'vod.tabPopular' => 'Popular',
+			_ => null,
+		} ?? switch (path) {
 			'vod.tabDynamics' => 'Dynamics',
 			'vod.dynamicsLoginTitle' => 'Sign in to see your dynamics',
 			'vod.dynamicsLoginDescription' => 'The feed comes from the uploaders you follow and needs a Bilibili sign-in.',
@@ -6650,8 +6672,6 @@ extension on TranslationsEn {
 			'vod.loadMore' => 'Load more',
 			'vod.regions' => 'Regions',
 			'vod.search' => 'Search',
-			_ => null,
-		} ?? switch (path) {
 			'vod.home' => 'Home',
 			'vod.personal' => 'Personal',
 			'vod.live' => 'Live',

@@ -22,7 +22,8 @@ import 'package:pure_live/modules/music/controller/music_online_playlists.dart'
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_playlists.dart';
 import 'package:pure_live/modules/music/controller/music_search.dart';
-import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
+import 'package:pure_live/modules/music/controller/music_settings.dart'
+    show MusicSourceNameType, musicSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/music_source.dart'
     show musicSourceListProvider, musicSourceProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show musicSourcesProvider;
@@ -328,7 +329,8 @@ final class _LibraryViewState extends ConsumerState<_LibraryView> {
         : const <String>[];
     final sourceId = ref.watch(musicSearchSourceIdProvider);
     final sourceNames = {
-      for (final source in ref.watch(musicSourceListProvider)) source.id: source.name,
+      for (final source in ref.watch(musicSourceListProvider))
+        source.id: musicSourceDisplayName(t, settings.sourceNameType, source.id, source.name),
     };
     void play(int index) => unawaited(playerController.playAll(state.songs, index: index));
     void runHistory(String query) => _runSearch(query, controller);
@@ -586,7 +588,14 @@ final class _LibraryViewState extends ConsumerState<_LibraryView> {
             padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
             child: DsTopNav<String>(
               items: [
-                DsTopNavItem(value: kMusicSearchAllSourceId, label: Text(t.music.searchSourceAll)),
+                DsTopNavItem(
+                  value: kMusicSearchAllSourceId,
+                  label: Text(
+                    settings.sourceNameType == MusicSourceNameType.alias
+                        ? t.music.sourceAliasAll
+                        : t.music.searchSourceAll,
+                  ),
+                ),
                 for (final entry in sourceNames.entries)
                   DsTopNavItem(value: entry.key, label: Text(entry.value)),
               ],

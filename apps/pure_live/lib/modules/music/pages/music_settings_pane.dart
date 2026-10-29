@@ -71,9 +71,22 @@ final class MusicSettingsPane extends ConsumerWidget {
               value: settings.defaultSourceId.isEmpty ? kLxMusicSourceId : settings.defaultSourceId,
               options: [
                 for (final source in ref.watch(musicSourceListProvider))
-                  DsSelectOption(value: source.id, label: source.name),
+                  DsSelectOption(
+                    value: source.id,
+                    label: musicSourceDisplayName(t, settings.sourceNameType, source.id, source.name),
+                  ),
               ],
               onChanged: (id) => unawaited(controller.setDefaultSource(id)),
+            ),
+            SettingsChoiceRow<MusicSourceNameType>(
+              leading: const DsIcon(DsIcons.tag),
+              title: t.music.sourceNameType,
+              description: t.music.sourceNameTypeDesc,
+              value: settings.sourceNameType,
+              options: [
+                for (final type in MusicSourceNameType.values) DsSelectOption(value: type, label: type.label(t)),
+              ],
+              onChanged: (type) => unawaited(controller.setSourceNameType(type)),
             ),
             SettingsChoiceRow<MusicQuality>(
               leading: const DsIcon(DsIcons.slidersHorizontal),

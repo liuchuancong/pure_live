@@ -2701,6 +2701,36 @@ class Translations$music$zh_CN {
 	/// zh-CN: '全部音源'
 	String get searchSourceAll => '全部音源';
 
+	/// zh-CN: '音源名显示'
+	String get sourceNameType => '音源名显示';
+
+	/// zh-CN: '列表里的平台叫什么：别名是参考应用的化名，原名是平台自己的名字。'
+	String get sourceNameTypeDesc => '列表里的平台叫什么：别名是参考应用的化名，原名是平台自己的名字。';
+
+	/// zh-CN: '别名'
+	String get sourceNameTypeAlias => '别名';
+
+	/// zh-CN: '原名'
+	String get sourceNameTypeReal => '原名';
+
+	/// zh-CN: '聚合大会'
+	String get sourceAliasAll => '聚合大会';
+
+	/// zh-CN: '小蜗音乐'
+	String get sourceAliasKw => '小蜗音乐';
+
+	/// zh-CN: '小枸音乐'
+	String get sourceAliasKg => '小枸音乐';
+
+	/// zh-CN: '小秋音乐'
+	String get sourceAliasTx => '小秋音乐';
+
+	/// zh-CN: '小芸音乐'
+	String get sourceAliasWy => '小芸音乐';
+
+	/// zh-CN: '小蜜音乐'
+	String get sourceAliasMg => '小蜜音乐';
+
 	/// zh-CN: '当前音源暂不支持歌单搜索。'
 	String get songlistSearchUnsupported => '当前音源暂不支持歌单搜索。';
 
@@ -11019,6 +11049,16 @@ extension on Translations {
 			'music.searchTypeSongs' => '歌曲',
 			'music.searchTypeSonglists' => '歌单',
 			'music.searchSourceAll' => '全部音源',
+			'music.sourceNameType' => '音源名显示',
+			'music.sourceNameTypeDesc' => '列表里的平台叫什么：别名是参考应用的化名，原名是平台自己的名字。',
+			'music.sourceNameTypeAlias' => '别名',
+			'music.sourceNameTypeReal' => '原名',
+			'music.sourceAliasAll' => '聚合大会',
+			'music.sourceAliasKw' => '小蜗音乐',
+			'music.sourceAliasKg' => '小枸音乐',
+			'music.sourceAliasTx' => '小秋音乐',
+			'music.sourceAliasWy' => '小芸音乐',
+			'music.sourceAliasMg' => '小蜜音乐',
 			'music.songlistSearchUnsupported' => '当前音源暂不支持歌单搜索。',
 			'music.defaultSource' => '默认音源',
 			'music.defaultSourceDesc' => '歌曲从哪个音源获取；自定义源脚本负责解析播放地址。',
@@ -11184,6 +11224,8 @@ extension on Translations {
 			'music.downloadDirectoryDefault' => '使用默认目录',
 			'music.downloadDirectoryDefaultDesc' => '回到应用默认的下载文件夹。',
 			'music.downloadDirectoryUpdated' => '下载目录已更新',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadDirectoryFailed' => '无法写入这个目录',
 			'music.downloadType' => '下载格式',
 			'music.downloadTypeDesc' => '原格式会尽量保留音源容器；转码需要 ffmpeg。',
@@ -11194,8 +11236,6 @@ extension on Translations {
 			'music.downloadTypeOgg' => 'OGG',
 			'music.downloadTypeWav' => 'WAV',
 			'music.downloadPattern' => '文件名格式',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadPatternHint' => '占位符（花括号）：title、artist、album、quality、source、list、index。',
 			'music.downloadPatternEdit' => '编辑',
 			'music.downloadEmbedCover' => '嵌入封面',
@@ -11698,6 +11738,8 @@ extension on Translations {
 			'room.restrictionUnplayable' => '暂时无法播放',
 			'room.orientation' => '画面方向',
 			'room.orientationHint' => '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。',
+			_ => null,
+		} ?? switch (path) {
 			'room.orientationAutomatic' => '自动',
 			'room.orientationPortrait' => '竖屏',
 			'room.orientationLandscape' => '横屏',
@@ -11708,8 +11750,6 @@ extension on Translations {
 			'room.portraitDisplayComplete' => '完整',
 			'room.portraitDisplayAmbient' => '沉浸',
 			'room.portraitDisplayBalanced' => '均衡',
-			_ => null,
-		} ?? switch (path) {
 			'room.portraitDisplayCover' => '铺满',
 			'room.portraitDanmakuTitle' => '弹幕区域',
 			'room.portraitDanmakuFollow' => '跟随全局',
@@ -12212,6 +12252,8 @@ extension on Translations {
 			'settings.fontManagerFilterAll' => '全部',
 			'settings.fontManagerCategory' => '分类',
 			'settings.fontManagerCount' => ({required Object count}) => '共 ${count} 款字体',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerTagBundled' => '随应用打包',
 			'settings.fontManagerSourceFreeFont' => '免费字体库',
 			'settings.fontManagerUse' => '使用',
@@ -12222,8 +12264,6 @@ extension on Translations {
 			'settings.fontManagerNotDownloaded' => '未下载',
 			'settings.fontManagerDeleteFont' => '删除已下载的字体',
 			'settings.fontManagerDeleteQuestion' => ({required Object name}) => '删除「${name}」在本机的字体文件？之后可再次下载。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerNoResults' => '没有找到匹配的字体。',
 			'settings.fontManagerFilterLabel' => '筛选字体',
 			'settings.fontManagerSearchPlaceholder' => '搜索字体名称',
@@ -12726,6 +12766,8 @@ extension on Translations {
 			'settings.downloadStatusDone' => '已完成',
 			'settings.downloadStatusFailed' => '下载失败',
 			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadFinishedAt' => ({required Object time}) => '完成于 ${time}',
 			'settings.downloadRemove' => '移除记录',
 			'settings.downloadRemoveBody' => '只移除这条记录，不会删除已保存的文件。',
@@ -12736,8 +12778,6 @@ extension on Translations {
 			'settings.downloadFilterAll' => '全部',
 			'settings.downloadFilterEmpty' => '没有符合这个状态的记录',
 			'settings.downloadKindFilter' => '按类型筛选',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadColumnFile' => '文件',
 			'settings.downloadColumnSize' => '大小',
 			'settings.downloadColumnTime' => '时间',
@@ -13240,6 +13280,8 @@ extension on Translations {
 			'vod.retry' => '重试',
 			'vod.tabRecommend' => '推荐',
 			'vod.tabPopular' => '热门',
+			_ => null,
+		} ?? switch (path) {
 			'vod.tabDynamics' => '动态',
 			'vod.dynamicsLoginTitle' => '登录后查看动态',
 			'vod.dynamicsLoginDescription' => '动态来自你关注的 UP 主，需要一个 Bilibili 登录。',
@@ -13250,8 +13292,6 @@ extension on Translations {
 			'vod.loadMore' => '加载更多',
 			'vod.regions' => '分区',
 			'vod.search' => '搜索',
-			_ => null,
-		} ?? switch (path) {
 			'vod.home' => '主页',
 			'vod.personal' => '个人',
 			'vod.live' => '直播',

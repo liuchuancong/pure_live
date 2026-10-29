@@ -37,6 +37,39 @@ enum MusicQuality {
   };
 }
 
+/// How a platform's name is worded in the module's lists — lx-music's
+/// `common.sourceNameType`: the stage names by default, the real ones on
+/// demand.
+enum MusicSourceNameType {
+  /// The reference's playful aliases (小蜗音乐…).
+  alias,
+
+  /// The platforms' own names.
+  real;
+
+  /// The choice's words.
+  String label(Translations t) => switch (this) {
+    MusicSourceNameType.alias => t.music.sourceNameTypeAlias,
+    MusicSourceNameType.real => t.music.sourceNameTypeReal,
+  };
+}
+
+/// The stage name a built-in platform is shown under — the reference's
+/// `source_alias_*` words; null leaves the platform its real name.
+String? musicSourceAliasName(Translations t, String id) => switch (id) {
+  'kw' => t.music.sourceAliasKw,
+  'kg' => t.music.sourceAliasKg,
+  'tx' => t.music.sourceAliasTx,
+  'wy' => t.music.sourceAliasWy,
+  'mg' => t.music.sourceAliasMg,
+  _ => null,
+};
+
+/// The words a source is listed under: the alias when [type] asks for one
+/// and the platform has it, its real name otherwise.
+String musicSourceDisplayName(Translations t, MusicSourceNameType type, String id, String name) =>
+    type == MusicSourceNameType.alias ? musicSourceAliasName(t, id) ?? name : name;
+
 /// The container a download is written in; [original] keeps whatever the
 /// source already served (lx-music's 原格式).
 enum MusicDownloadType {
@@ -113,6 +146,7 @@ final class MusicSettings {
   /// Creates the music preferences.
   const MusicSettings({
     required this.defaultSourceId,
+    required this.sourceNameType,
     required this.quality,
     required this.skipOnError,
     required this.autoplay,
@@ -158,6 +192,7 @@ final class MusicSettings {
   /// and write a sidecar lyric.
   static const MusicSettings standard = MusicSettings(
     defaultSourceId: '',
+    sourceNameType: MusicSourceNameType.alias,
     quality: MusicQuality.standard,
     skipOnError: true,
     autoplay: false,
@@ -201,6 +236,9 @@ final class MusicSettings {
   /// One source is active at a time — the reference has no per-source
   /// switches.
   final String defaultSourceId;
+
+  /// How a platform's name is worded in the module's lists.
+  final MusicSourceNameType sourceNameType;
 
   /// The rendition asked of a source.
   final MusicQuality quality;
@@ -321,6 +359,7 @@ final class MusicSettings {
   /// A copy with selected fields replaced.
   MusicSettings copyWith({
     String? defaultSourceId,
+    MusicSourceNameType? sourceNameType,
     MusicQuality? quality,
     bool? skipOnError,
     bool? autoplay,
@@ -360,6 +399,7 @@ final class MusicSettings {
     int? downloadMaxConcurrent,
   }) => MusicSettings(
     defaultSourceId: defaultSourceId ?? this.defaultSourceId,
+    sourceNameType: sourceNameType ?? this.sourceNameType,
     quality: quality ?? this.quality,
     skipOnError: skipOnError ?? this.skipOnError,
     autoplay: autoplay ?? this.autoplay,
@@ -401,6 +441,7 @@ final class MusicSettings {
 }
 
 const String _sourceKey = 'music.source.default';
+const String _sourceNameTypeKey = 'music.source.nameType';
 const String _qualityKey = 'music.play.quality';
 const String _skipOnErrorKey = 'music.play.skipOnError';
 const String _autoplayKey = 'music.play.autoplay';
@@ -444,6 +485,7 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
   @override
   MusicSettings build() => MusicSettings(
     defaultSourceId: _readString(_sourceKey) ?? '',
+    sourceNameType: _readSourceNameType(),
     quality: _readQuality(),
     skipOnError: _readBool(_skipOnErrorKey) ?? true,
     autoplay: _readBool(_autoplayKey) ?? false,
@@ -482,6 +524,14 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     downloadGroupByList: _readBool(_downloadGroupByListKey) ?? false,
     downloadMaxConcurrent: (_readInt(_downloadMaxConcurrentKey) ?? 1).clamp(1, 5),
   );
+
+  static MusicSourceNameType _readSourceNameType() {
+    final name = _readString(_sourceNameTypeKey);
+    for (final type in MusicSourceNameType.values) {
+      if (type.name == name) return type;
+    }
+    return MusicSourceNameType.alias;
+  }
 
   static MusicQuality _readQuality() {
     final name = _readString(_qualityKey);
@@ -552,6 +602,12 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
   Future<void> setDefaultSource(String id) async {
     state = state.copyWith(defaultSourceId: id);
     await _writeString(_sourceKey, id);
+  }
+
+  /// Chooses how a platform's name is worded in the module's lists.
+  Future<void> setSourceNameType(MusicSourceNameType type) async {
+    state = state.copyWith(sourceNameType: type);
+    await _writeString(_sourceNameTypeKey, type.name);
   }
 
   /// Chooses the rendition asked of a source.
