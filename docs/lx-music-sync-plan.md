@@ -282,7 +282,15 @@ playAll(index)/收藏/加入歌单/下载，复用本地轨道行）；非 wy/tx
   `[大笑]` 表、mg comment/stack 游标（上一页末条 id）+热门 hotCommentStart+songId 换取（copyrightId
   相同时走 resourceinfo）+ISO 时间解析；表情表落 `sources/comment_emojis.dart`（tx 66 条/wy 60 条，
   python 从 JS 抽取）。LX 参考：各平台 `comment.js`、mg `songId.js`
-- ⬜ H7 托盘/最小化/快捷键：全局快捷键注册持久化（`main/modules/hotKey/`、tray.ts）。
+- 🟨 H7 托盘/最小化/快捷键（2026-10-29 快捷键纯 Dart 半已落：`controller/music_hotkeys.dart`——
+  MusicHotkeyAction 11 动作（LX HOTKEY_PLAYER 全表：togglePlay/next/prev/seek±5s/volume±0.05/
+  mute/love/unlove/dislike）、MusicHotkeyCombo 用 LX 原生记法 `mod+alt+arrowleft` 存取
+  （ tolerant parse、display 转箭头符号+平台键名）、配置持久化 `music.hotkeys` JSON（默认表=
+  LX global 默认 mod+alt+f5/箭头组，坏档回落默认）、assign 抢占式（组合被占则从旧动作挪走）、
+  dispatchMusicHotkey 驱动播放器、`musicHotkeyBindings` 供应用内 CallbackShortcuts；
+  设置新子页 SettingsSection.musicHotkeys（总开关/恢复默认/11 行按键捕获，Esc 取消、
+  纯修饰键等待）+19 条 l10n；+8 测试。**诚实缺口：①OS 级全局注册（RegisterHotkey/全局事件
+  回路）未做——应用内快捷键已生效，全局等平台层；②托盘/最小化属窗口外壳层，不在音乐模块**。
 - ➖ MV / 自动更新：LX 无 MV 模块；自动更新走 pure_live 自身体系。
 
 ## 2. 移植落地约定
