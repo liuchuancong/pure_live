@@ -2692,8 +2692,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '先粘贴脚本或填写链接。'
 	String get importMissing => '先粘贴脚本或填写链接。';
 
-	/// zh-CN: '这段内容不是 lx-music 自定义源：脚本头注释里缺少 @name，或缺少 lx.on('request', …) 契约。'
-	String get importNotASource => '这段内容不是 lx-music 自定义源：脚本头注释里缺少 @name，或缺少 lx.on(\'request\', …) 契约。';
+	/// zh-CN: '这段内容不是 lx-music 自定义源：脚本开头没有带 @name 的头注释。'
+	String get importNotASource => '这段内容不是 lx-music 自定义源：脚本开头没有带 @name 的头注释。';
 
 	/// zh-CN: '脚本内容与已导入的音源相同，无需重复导入。'
 	String get importDuplicate => '脚本内容与已导入的音源相同，无需重复导入。';
@@ -3819,6 +3819,21 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '仅保留远端'
 	String get syncModeOverwriteRemoteLocalFull => '仅保留远端';
+
+	/// zh-CN: '内置音源库'
+	String get catalogSection => '内置音源库';
+
+	/// zh-CN: '来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本（raw 源不可达时自动换镜像）。'
+	String get catalogHint => '来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本（raw 源不可达时自动换镜像）。';
+
+	/// zh-CN: '导入'
+	String get catalogImport => '导入';
+
+	/// zh-CN: '已导入'
+	String get catalogImported => '已导入';
+
+	/// zh-CN: '音源脚本下载失败：raw 源与镜像都不可达'
+	String get catalogFetchFailed => '音源脚本下载失败：raw 源与镜像都不可达';
 }
 
 // Path: navigation
@@ -9657,6 +9672,27 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '已取消收藏'
 	String get saveRemoved => '已取消收藏';
+
+	/// zh-CN: '下载视频'
+	String get download => '下载视频';
+
+	/// zh-CN: '下载中 {percent: int}%'
+	String downloading({required int percent}) => '下载中 ${percent}%';
+
+	/// zh-CN: '下载中…'
+	String get downloadingUnknown => '下载中…';
+
+	/// zh-CN: '已下载到 {name: String}'
+	String downloadDone({required String name}) => '已下载到 ${name}';
+
+	/// zh-CN: '下载失败'
+	String get downloadFailed => '下载失败';
+
+	/// zh-CN: '已取消下载'
+	String get downloadCancelled => '已取消下载';
+
+	/// zh-CN: '取消下载'
+	String get downloadCancel => '取消下载';
 }
 
 // Path: wallpaper
@@ -10830,7 +10866,7 @@ extension on Translations {
 			'music.importScriptHint' => '在此粘贴脚本全文…',
 			'music.importUrlHint' => 'https://…/source.js',
 			'music.importMissing' => '先粘贴脚本或填写链接。',
-			'music.importNotASource' => '这段内容不是 lx-music 自定义源：脚本头注释里缺少 @name，或缺少 lx.on(\'request\', …) 契约。',
+			'music.importNotASource' => '这段内容不是 lx-music 自定义源：脚本开头没有带 @name 的头注释。',
 			'music.importDuplicate' => '脚本内容与已导入的音源相同，无需重复导入。',
 			'music.importLimit' => ({required Object count}) => '最多导入 ${count} 个自定义源，先移除一个再试。',
 			'music.importDownloadFailed' => ({required Object error}) => '脚本下载失败：${error}',
@@ -11208,6 +11244,11 @@ extension on Translations {
 			'music.syncModeOverwriteRemoteLocal' => '以远端覆盖本地',
 			'music.syncModeOverwriteLocalRemoteFull' => '仅保留本地',
 			'music.syncModeOverwriteRemoteLocalFull' => '仅保留远端',
+			'music.catalogSection' => '内置音源库',
+			'music.catalogHint' => '来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本（raw 源不可达时自动换镜像）。',
+			'music.catalogImport' => '导入',
+			'music.catalogImported' => '已导入',
+			'music.catalogFetchFailed' => '音源脚本下载失败：raw 源与镜像都不可达',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -11517,13 +11558,13 @@ extension on Translations {
 			'room.switchRoom' => '切换直播间',
 			'room.switchOnAir' => '关注在播',
 			'room.switchHistory' => '观看记录',
+			_ => null,
+		} ?? switch (path) {
 			'room.switchReplays' => '关注回放',
 			'room.switchEmpty' => '没有可切换的直播间',
 			'room.switchLive' => '直播中',
 			'room.switchShowGrid' => '切换为网格',
 			'room.switchShowList' => '切换为列表',
-			_ => null,
-		} ?? switch (path) {
 			'room.twitchCookieExpired' => 'Twitch 的 Cookie 已失效，弹幕已改为匿名接收，请重新填写 Twitch Cookie',
 			'room.bilibiliGuestNames' => '当前以访客身份连接，B 站弹幕不会显示完整昵称',
 			'room.bilibiliLoginExpired' => 'B 站登录似乎已失效：昵称全部被打码，请重新登录',
@@ -12031,13 +12072,13 @@ extension on Translations {
 			'settings.cacheHint' => '封面与头像会在本机缓存 30 天，过期或超限时自动清理。',
 			'settings.preferPlatform' => '首选平台',
 			'settings.preferPlatformDesc' => '进入热门或分区时优先显示的平台，也是分区房间列表与搜索起始的平台。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.preferPlatformFilterHint' => '搜索平台',
 			'settings.preferPlatformFilterEmpty' => '没有匹配的平台',
 			'settings.sitesOrderReset' => '恢复默认顺序',
 			'settings.sitesOrderResetDesc' => '平台回到内置的排列顺序；显示开关不受影响。',
 			'settings.groupInterface' => '界面',
-			_ => null,
-		} ?? switch (path) {
 			'settings.groupSources' => '直播来源',
 			'settings.groupPlayback' => '播放',
 			'settings.groupGeneral' => '通用',
@@ -12545,13 +12586,13 @@ extension on Translations {
 			'settings.releaseKindInstaller' => '安装程序',
 			'settings.releaseKindDmg' => 'DMG 磁盘映像',
 			'settings.releaseKindMsix' => 'MSIX 应用包',
+			_ => null,
+		} ?? switch (path) {
 			'settings.releaseKindDeb' => 'DEB 软件包',
 			'settings.releaseKindTarGz' => 'tar.gz 归档',
 			'settings.releaseKindPortable' => '便携版压缩包',
 			'settings.releaseKindOther' => '文件',
 			'settings.sitesKeepOne' => '至少保留一个平台',
-			_ => null,
-		} ?? switch (path) {
 			'settings.autoPip' => '离开应用时自动小窗',
 			'settings.autoPipDesc' => '播放中离开应用时，把画面留在其他应用上的小窗里；需要「显示在其他应用的上层」权限。',
 			'settings.floatPlay' => '返回时悬浮播放',
@@ -13059,13 +13100,13 @@ extension on Translations {
 			'vod.durationOver60' => '60 分钟以上',
 			'vod.related' => '相关推荐',
 			'vod.parts' => '分P',
+			_ => null,
+		} ?? switch (path) {
 			'vod.views' => '播放',
 			'vod.danmaku' => '弹幕',
 			'vod.likes' => '点赞',
 			'vod.coins' => '投币',
 			'vod.favorites' => '收藏',
-			_ => null,
-		} ?? switch (path) {
 			'vod.description' => '简介',
 			'vod.noDescription' => '这个视频没有简介。',
 			'vod.play' => '播放',
@@ -13129,6 +13170,13 @@ extension on Translations {
 			'vod.savedVideo' => '已收藏',
 			'vod.saveAdded' => '已加入收藏',
 			'vod.saveRemoved' => '已取消收藏',
+			'vod.download' => '下载视频',
+			'vod.downloading' => ({required int percent}) => '下载中 ${percent}%',
+			'vod.downloadingUnknown' => '下载中…',
+			'vod.downloadDone' => ({required String name}) => '已下载到 ${name}',
+			'vod.downloadFailed' => '下载失败',
+			'vod.downloadCancelled' => '已取消下载',
+			'vod.downloadCancel' => '取消下载',
 			'wallpaper.title' => '随机图源',
 			'wallpaper.description' => '按分组从公开随机接口取图，预览后再应用。',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} 个来源',

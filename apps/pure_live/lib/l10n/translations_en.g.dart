@@ -997,7 +997,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get importScriptHint => 'Paste the script here…';
 	@override String get importUrlHint => 'https://…/source.js';
 	@override String get importMissing => 'Paste a script or fill in a link first.';
-	@override String get importNotASource => 'This is not an lx-music source: the header comment has no @name, or the lx.on(\'request\', …) contract is missing.';
+	@override String get importNotASource => 'This is not an lx-music source: the text has no @name header comment, or never touches the lx API.';
 	@override String get importDuplicate => 'This script is already imported.';
 	@override String importLimit({required Object count}) => 'At most ${count} custom sources; remove one first.';
 	@override String importDownloadFailed({required Object error}) => 'The script did not download: ${error}';
@@ -1373,6 +1373,11 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get syncModeOverwriteRemoteLocal => 'Overwrite local with remote';
 	@override String get syncModeOverwriteLocalRemoteFull => 'Local only';
 	@override String get syncModeOverwriteRemoteLocalFull => 'Remote only';
+	@override String get catalogSection => 'Built-in sources';
+	@override String get catalogHint => 'Sources from the pdone/lx-music-source community collection; importing downloads the latest script, falling back to mirrors.';
+	@override String get catalogImport => 'Import';
+	@override String get catalogImported => 'Imported';
+	@override String get catalogFetchFailed => 'Downloading the source script failed: every mirror was unreachable';
 }
 
 // Path: navigation
@@ -3385,6 +3390,13 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get savedVideo => 'Favourited';
 	@override String get saveAdded => 'Added to favourites';
 	@override String get saveRemoved => 'Removed from favourites';
+	@override String get download => 'Download video';
+	@override String downloading({required int percent}) => 'Downloading ${percent}%';
+	@override String get downloadingUnknown => 'Downloading…';
+	@override String downloadDone({required String name}) => 'Saved to ${name}';
+	@override String get downloadFailed => 'Download failed';
+	@override String get downloadCancelled => 'Download cancelled';
+	@override String get downloadCancel => 'Cancel download';
 }
 
 // Path: wallpaper
@@ -4354,7 +4366,7 @@ extension on TranslationsEn {
 			'music.importScriptHint' => 'Paste the script here…',
 			'music.importUrlHint' => 'https://…/source.js',
 			'music.importMissing' => 'Paste a script or fill in a link first.',
-			'music.importNotASource' => 'This is not an lx-music source: the header comment has no @name, or the lx.on(\'request\', …) contract is missing.',
+			'music.importNotASource' => 'This is not an lx-music source: the text has no @name header comment, or never touches the lx API.',
 			'music.importDuplicate' => 'This script is already imported.',
 			'music.importLimit' => ({required Object count}) => 'At most ${count} custom sources; remove one first.',
 			'music.importDownloadFailed' => ({required Object error}) => 'The script did not download: ${error}',
@@ -4732,6 +4744,11 @@ extension on TranslationsEn {
 			'music.syncModeOverwriteRemoteLocal' => 'Overwrite local with remote',
 			'music.syncModeOverwriteLocalRemoteFull' => 'Local only',
 			'music.syncModeOverwriteRemoteLocalFull' => 'Remote only',
+			'music.catalogSection' => 'Built-in sources',
+			'music.catalogHint' => 'Sources from the pdone/lx-music-source community collection; importing downloads the latest script, falling back to mirrors.',
+			'music.catalogImport' => 'Import',
+			'music.catalogImported' => 'Imported',
+			'music.catalogFetchFailed' => 'Downloading the source script failed: every mirror was unreachable',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -5041,13 +5058,13 @@ extension on TranslationsEn {
 			'room.switchRoom' => 'Switch room',
 			'room.switchOnAir' => 'Followed · live',
 			'room.switchHistory' => 'Watch history',
+			_ => null,
+		} ?? switch (path) {
 			'room.switchReplays' => 'Followed replays',
 			'room.switchEmpty' => 'No rooms to switch to',
 			'room.switchLive' => 'Live',
 			'room.switchShowGrid' => 'Show as grid',
 			'room.switchShowList' => 'Show as list',
-			_ => null,
-		} ?? switch (path) {
 			'room.twitchCookieExpired' => 'Twitch\'s cookie no longer works — danmaku is anonymous again; please paste a new Twitch cookie',
 			'room.bilibiliGuestNames' => 'Connected as a guest — Bilibili chat hides the full nicknames',
 			'room.bilibiliLoginExpired' => 'Your Bilibili login looks expired — every nickname is masked; please sign in again',
@@ -5555,13 +5572,13 @@ extension on TranslationsEn {
 			'settings.cacheHint' => 'Covers and avatars are kept on this device for 30 days and pruned when they expire or pass the cap.',
 			'settings.preferPlatform' => 'Preferred platform',
 			'settings.preferPlatformDesc' => 'The platform the popular and areas pages open on, and the one a zone\'s room list and a search start from.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.preferPlatformFilterHint' => 'Search platforms',
 			'settings.preferPlatformFilterEmpty' => 'No platforms match',
 			'settings.sitesOrderReset' => 'Restore default order',
 			'settings.sitesOrderResetDesc' => 'Platforms return to the built-in order; the show switches stay as they are.',
 			'settings.groupInterface' => 'Interface',
-			_ => null,
-		} ?? switch (path) {
 			'settings.groupSources' => 'Live sources',
 			'settings.groupPlayback' => 'Playback',
 			'settings.groupGeneral' => 'General',
@@ -6069,13 +6086,13 @@ extension on TranslationsEn {
 			'settings.releaseKindInstaller' => 'Installer',
 			'settings.releaseKindDmg' => 'DMG disk image',
 			'settings.releaseKindMsix' => 'MSIX package',
+			_ => null,
+		} ?? switch (path) {
 			'settings.releaseKindDeb' => 'DEB package',
 			'settings.releaseKindTarGz' => 'tar.gz archive',
 			'settings.releaseKindPortable' => 'Portable archive',
 			'settings.releaseKindOther' => 'File',
 			'settings.sitesKeepOne' => 'Keep at least one platform visible',
-			_ => null,
-		} ?? switch (path) {
 			'settings.autoPip' => 'Small window on app leave',
 			'settings.autoPipDesc' => 'Keep a playing room in a small window over the other apps when you leave; needs the "display over other apps" permission.',
 			'settings.floatPlay' => 'Floating player on exit',
@@ -6583,13 +6600,13 @@ extension on TranslationsEn {
 			'vod.durationOver60' => 'Over 60 min',
 			'vod.related' => 'Related',
 			'vod.parts' => 'Parts',
+			_ => null,
+		} ?? switch (path) {
 			'vod.views' => 'Views',
 			'vod.danmaku' => 'Danmaku',
 			'vod.likes' => 'Likes',
 			'vod.coins' => 'Coins',
 			'vod.favorites' => 'Favourites',
-			_ => null,
-		} ?? switch (path) {
 			'vod.description' => 'Description',
 			'vod.noDescription' => 'This video has no description.',
 			'vod.play' => 'Play',
@@ -6653,6 +6670,13 @@ extension on TranslationsEn {
 			'vod.savedVideo' => 'Favourited',
 			'vod.saveAdded' => 'Added to favourites',
 			'vod.saveRemoved' => 'Removed from favourites',
+			'vod.download' => 'Download video',
+			'vod.downloading' => ({required int percent}) => 'Downloading ${percent}%',
+			'vod.downloadingUnknown' => 'Downloading…',
+			'vod.downloadDone' => ({required String name}) => 'Saved to ${name}',
+			'vod.downloadFailed' => 'Download failed',
+			'vod.downloadCancelled' => 'Download cancelled',
+			'vod.downloadCancel' => 'Cancel download',
 			'wallpaper.title' => 'Random pictures',
 			'wallpaper.description' => 'Fetch a picture from a public random source by group; preview before applying.',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} sources',

@@ -48,7 +48,7 @@
   "importScriptHint": "Paste the script here…",
   "importUrlHint": "https://…/source.js",
   "importMissing": "Paste a script or fill in a link first.",
-  "importNotASource": "This is not an lx-music source: the header comment has no @name, or the lx.on('request', …) contract is missing.",
+  "importNotASource": "This is not an lx-music source: the text has no @name header comment, or never touches the lx API.",
   "importDuplicate": "This script is already imported.",
   "importLimit": "At most {count} custom sources; remove one first.",
   "importDownloadFailed": "The script did not download: {error}",
@@ -423,5 +423,10 @@
   "syncModeOverwriteLocalRemote": "Overwrite remote with local",
   "syncModeOverwriteRemoteLocal": "Overwrite local with remote",
   "syncModeOverwriteLocalRemoteFull": "Local only",
-  "syncModeOverwriteRemoteLocalFull": "Remote only"
+  "syncModeOverwriteRemoteLocalFull": "Remote only",
+  "catalogSection": "Built-in sources",
+  "catalogHint": "Sources from the pdone/lx-music-source community collection; importing downloads the latest script, falling back to mirrors.",
+  "catalogImport": "Import",
+  "catalogImported": "Imported",
+  "catalogFetchFailed": "Downloading the source script failed: every mirror was unreachable"
 }

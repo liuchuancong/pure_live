@@ -97,13 +97,20 @@ final class MusicCustomSource {
 
   /// Reads the header comment a lx-music script opens with — the block
   /// comment's `@key value` lines. Missing fields stay empty; a script
-  /// without an `@name` or without the request handler contract is not a
-  /// source. Scripts wire the handler either as `lx.on('request', …)` or by
-  /// destructuring: `on(EVENT_NAMES.request, …)`.
+  /// without an `@name` header is not a source.
+  ///
+  /// The request contract itself is not checked statically: real-world
+  /// scripts register handlers in many shapes — `lx.on('request', …)`,
+  /// `on(EVENT_NAMES.request, …)`, renamed destructures like
+  /// `const { EVENT_NAMES: n, on } = globalThis.lx; on(n.request, …)` — and
+  /// packed scripts keep none of those tokens at all. lx-music itself only
+  /// reads the header at import and rejects broken scripts when they run, so
+  /// a script that touches the `lx` API at all (any `globalThis` mention) is
+  /// accepted here and judged by the runtime.
   static MusicCustomSource? parse(String script, {required String id, DateTime? importedAt}) {
     final meta = _header(script);
     final name = meta['name']?.trim() ?? '';
-    if (name.isEmpty || !_contract.hasMatch(script)) return null;
+    if (name.isEmpty || !_touchesLxApi.hasMatch(script)) return null;
     return MusicCustomSource(
       id: id,
       name: name,
@@ -116,9 +123,9 @@ final class MusicCustomSource {
     );
   }
 
-  static final RegExp _contract = RegExp(
-    r'''(?:lx\.on\s*\(\s*['"]request|on\s*\(\s*(?:EVENT_NAMES\.request|['"]request))''',
-  );
+  /// A script that never mentions the lx API surface — `globalThis` in any
+  /// spelling — cannot be a source, obfuscated or not.
+  static final RegExp _touchesLxApi = RegExp(r'\bglobalThis\b|\blx\b');
 
   static final RegExp _comment = RegExp(r'^\s*/\*\*?([\s\S]*?)\*/');
   static final RegExp _field = RegExp(r'^\s*\*?\s*@(\w+)\s+(.+?)\s*$', multiLine: true);
@@ -142,7 +149,7 @@ enum MusicSourceFailureReason {
   /// Nothing was pasted, or the address answered an empty body.
   empty,
 
-  /// No header comment with a name, or no request handler contract.
+  /// No header comment with a name, or the text never touches the lx API.
   notASource,
 
   /// An identical script is already imported.
@@ -178,10 +185,10 @@ typedef MusicSourceImport = ({MusicCustomSource source, MusicSourceImportOutcome
 
 /// The imported scripts, kept as one JSON preference.
 ///
-/// Importing validates a script the way lx-music does — a header comment with
-/// a name plus the request contract — and keeps it verbatim. A script whose
-/// name already exists is replaced in place, so re-importing an updated
-/// version does not leave two.
+/// Importing validates a script the way lx-music does — a header comment
+/// with a name, the runtime judges the rest — and keeps it verbatim. A
+/// script whose name already exists is replaced in place, so re-importing an
+/// updated version does not leave two.
 final class MusicSourcesController extends Notifier<List<MusicCustomSource>> {
   @override
   List<MusicCustomSource> build() {

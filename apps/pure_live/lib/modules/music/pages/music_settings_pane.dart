@@ -35,6 +35,8 @@ import 'package:pure_live/modules/music/controller/music_hotkeys.dart'
 import 'package:pure_live/modules/music/controller/music_playback.dart' show MusicPlayerController, musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_settings.dart';
 import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId, musicSourceListProvider;
+import 'package:pure_live/modules/music/controller/music_source_catalog.dart'
+    show MusicCatalogEntry, fetchCatalogScript, kMusicSourceCatalog;
 import 'package:pure_live/modules/music/controller/music_sources.dart';
 import 'package:pure_live/modules/music/controller/music_sync.dart'
     show MusicSyncStatus, kMusicSyncModes, musicSyncProvider;
@@ -255,7 +257,16 @@ final class MusicSourcesPane extends ConsumerWidget {
       showDsToast(context: context, title: t.music.importMissing, status: DsStatus.danger);
       return;
     }
-    await _import(context, ref, () => ref.read(musicSourcesProvider.notifier).importScript(script));
+    // A pasted address is fetched, the way lx-music's one import box takes
+    // both a script and the page it lives at.
+    final pasted = Uri.tryParse(script.trim());
+    if (pasted != null && (pasted.isScheme('http') || pasted.isScheme('https')) && pasted.host.isNotEmpty) {
+      final body = await _downloadScript(context, ref, pasted);
+      if (body == null || !context.mounted) return;
+      await _runImport(context, ref, () => ref.read(musicSourcesProvider.notifier).importScript(body));
+      return;
+    }
+    await _runImport(context, ref, () => ref.read(musicSourcesProvider.notifier).importScript(script));
   }
 
   Future<void> _importUrl(BuildContext context, WidgetRef ref) async {
@@ -297,6 +308,15 @@ final class MusicSourcesPane extends ConsumerWidget {
       showDsToast(context: context, title: t.music.importMissing, status: DsStatus.danger);
       return;
     }
+    final script = await _downloadScript(context, ref, uri);
+    if (script == null || !context.mounted) return;
+    await _runImport(context, ref, () => ref.read(musicSourcesProvider.notifier).importScript(script));
+  }
+
+  /// Fetches a script body over the plugin network profile, wording a
+  /// failure; null means the toast already showed.
+  Future<String?> _downloadScript(BuildContext context, WidgetRef ref, Uri uri) async {
+    final t = context.t;
     String? script;
     String? failure;
     try {
@@ -307,46 +327,15 @@ final class MusicSourcesPane extends ConsumerWidget {
     } on Object catch (error) {
       failure = '$error';
     }
-    if (!context.mounted) return;
+    if (!context.mounted) return null;
     if (script == null) {
       showDsToast(
         context: context,
         title: t.music.importDownloadFailed(error: failure ?? ''),
         status: DsStatus.danger,
       );
-      return;
     }
-    await _import(context, ref, () => ref.read(musicSourcesProvider.notifier).importScript(script!));
-  }
-
-  /// Runs an import and words its outcome — the script's own name on
-  /// success, the reason on rejection.
-  Future<void> _import(BuildContext context, WidgetRef ref, Future<MusicSourceImport> Function() work) async {
-    final t = context.t;
-    try {
-      final result = await work();
-      if (!context.mounted) return;
-      showDsToast(
-        context: context,
-        title: switch (result.outcome) {
-          MusicSourceImportOutcome.added => t.music.importDone(name: result.source.name),
-          MusicSourceImportOutcome.updated => t.music.importUpdated(name: result.source.name),
-        },
-        status: DsStatus.success,
-      );
-    } on MusicSourceFailure catch (failure) {
-      if (!context.mounted) return;
-      showDsToast(
-        context: context,
-        title: switch (failure.reason) {
-          MusicSourceFailureReason.empty => t.music.importMissing,
-          MusicSourceFailureReason.notASource => t.music.importNotASource,
-          MusicSourceFailureReason.duplicate => t.music.importDuplicate,
-          MusicSourceFailureReason.limit => t.music.importLimit(count: kMusicSourceLimit),
-        },
-        status: DsStatus.danger,
-      );
-    }
+    return script;
   }
 
   Future<void> _remove(BuildContext context, WidgetRef ref, MusicCustomSource source) async {
@@ -480,7 +469,117 @@ final class MusicSourcesPane extends ConsumerWidget {
               ),
             ],
           ),
+        MusicSourceCatalogSection(sources: sources),
       ],
+    );
+  }
+}
+
+/// Runs an import and words its outcome — the script's own name on
+/// success, the reason on rejection.
+Future<void> _runImport(BuildContext context, WidgetRef ref, Future<MusicSourceImport> Function() work) async {
+  final t = context.t;
+  try {
+    final result = await work();
+    if (!context.mounted) return;
+    showDsToast(
+      context: context,
+      title: switch (result.outcome) {
+        MusicSourceImportOutcome.added => t.music.importDone(name: result.source.name),
+        MusicSourceImportOutcome.updated => t.music.importUpdated(name: result.source.name),
+      },
+      status: DsStatus.success,
+    );
+  } on MusicSourceFailure catch (failure) {
+    if (!context.mounted) return;
+    showDsToast(
+      context: context,
+      title: switch (failure.reason) {
+        MusicSourceFailureReason.empty => t.music.importMissing,
+        MusicSourceFailureReason.notASource => t.music.importNotASource,
+        MusicSourceFailureReason.duplicate => t.music.importDuplicate,
+        MusicSourceFailureReason.limit => t.music.importLimit(count: kMusicSourceLimit),
+      },
+      status: DsStatus.danger,
+    );
+  }
+}
+
+/// The built-in catalog: the community sources the app ships names for, one
+/// tap each to download the latest script and import it. An entry whose
+/// script (or display) name is already among [sources] shows imported.
+final class MusicSourceCatalogSection extends ConsumerStatefulWidget {
+  /// The section under the imported-source list.
+  const MusicSourceCatalogSection({required this.sources, super.key});
+
+  /// The scripts already imported, matched by name.
+  final List<MusicCustomSource> sources;
+
+  @override
+  ConsumerState<MusicSourceCatalogSection> createState() => _MusicSourceCatalogSectionState();
+}
+
+final class _MusicSourceCatalogSectionState extends ConsumerState<MusicSourceCatalogSection> {
+  final Set<String> _inFlight = <String>{};
+
+  Future<void> _import(MusicCatalogEntry entry) async {
+    if (_inFlight.contains(entry.id)) return;
+    setState(() => _inFlight.add(entry.id));
+    try {
+      final script = await fetchCatalogScript(entry, (uri) {
+        return ref
+            .read(networkFactoryProvider)
+            .create(profile: ClientProfile.plugin)
+            .getText(uri, timeout: const Duration(seconds: 20));
+      });
+      if (!mounted) return;
+      await _runImport(context, ref, () => ref.read(musicSourcesProvider.notifier).importScript(script));
+    } on Object {
+      if (!mounted) return;
+      showDsToast(context: context, title: context.t.music.catalogFetchFailed, status: DsStatus.danger);
+    } finally {
+      if (mounted) setState(() => _inFlight.remove(entry.id));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        SettingsHint(t.music.catalogHint),
+        DsListSection(
+          header: Text(t.music.catalogSection),
+          children: [
+            for (final entry in kMusicSourceCatalog)
+              DsListRow(
+                leading: const DsIcon(DsIcons.download),
+                title: Text(entry.name),
+                description: Text(entry.scriptName),
+                trailing: _trailing(context, entry),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _trailing(BuildContext context, MusicCatalogEntry entry) {
+    final t = context.t;
+    if (_inFlight.contains(entry.id)) {
+      return const Padding(
+        padding: EdgeInsets.all(DsSpace.s8),
+        child: SizedBox(width: 16, height: 16, child: DsSpinner()),
+      );
+    }
+    final imported = widget.sources.any((source) => entry.names.contains(source.name));
+    return DsButton(
+      variant: imported ? DsButtonVariant.ghost : DsButtonVariant.secondary,
+      size: DsSize.sm,
+      onPressed: imported ? null : () => unawaited(_import(entry)),
+      child: Text(imported ? t.music.catalogImported : t.music.catalogImport),
     );
   }
 }

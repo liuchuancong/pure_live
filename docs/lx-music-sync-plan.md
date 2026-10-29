@@ -77,9 +77,17 @@
 - ✅ B1 fjs 脚本运行时：`lx.on('request')/lx.send('inited')/lx.request/lx.utils` 契约已通
   （`controller/lx_script_runtime.dart` + `lx_script_prelude.dart`）。
 - ✅ B2 脚本头解析已实装（`music_sources.dart` `MusicCustomSource.parse`：首块注释
-  `@key value` 逐行提取，`@name` 缺失或无 request 契约即拒收；运行时把 name/description/
-  version/author/homepage/rawScript 注入 `lx.currentScriptInfo`）。余项（id 时间戳规则、gz_ 前缀
-  压缩存储）随 B3 导入导出一并核对。原条目：脚本头注释解析 `@name/@description/@author/@homepage/@version`
+  `@key value` 逐行提取；运行时把 name/description/version/author/homepage/rawScript 注入
+  `lx.currentScriptInfo`）。**2026-10-29 放宽导入校验并补内置音源库**：真实世界脚本注册
+  request 的写法五花八门（`lx.on('request'`、`on(EVENT_NAMES.request`、解构改名
+  `on(n.request`、混淆解构、乃至全打包脚本零静态 token——awaw.cc 16 源实抓验证），
+  静态契约检查误杀过半；现改为 **@name 头注释 + 脚本触及 lx API（globalThis/lx）** 两条件，
+  运行时才是裁判（与 LX 桌面端一致）。文本导入框粘贴 URL 自动拉取（与 LX 单导入框行为对齐）。
+  新增 `controller/music_source_catalog.dart`：awaw.cc/pdone/lx-music-source 16 源目录
+  （长青/Fish/野花/野草/HelloWorld/幻音/Huibq/HYW/ikun/杰翔/聚合API/独家/全豆要/六音/星海/玉宁熙），
+  raw.githubusercontent 直链 + 三个 ghproxy 镜像回退；自定义源页新增「内置音源库」分区
+  （MusicSourceCatalogSection）一键导入、已导入态比对 @name/展示名。+13 测试（含 16 真实
+  脚本样本形态）。余项（id 时间戳规则、gz_ 前缀压缩存储）随 B3 导入导出一并核对。原条目：脚本头注释解析 `@name/@description/@author/@homepage/@version`
   （正则 `/^\s?\*\s?@(\w+)\s(.+)$/`）、id 规则 `user_api_XXX_时间戳`、脚本 deflate+base64
   `gz_` 前缀存储（保持导入兼容）；`lx.request` 需支持 method/timeout/headers/body/form/formData
   与代理设置透传。LX 参考：`src/main/modules/userApi/{utils,main}.ts`、`preload.js`、

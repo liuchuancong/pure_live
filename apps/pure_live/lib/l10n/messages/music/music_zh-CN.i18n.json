@@ -48,7 +48,7 @@
   "importScriptHint": "在此粘贴脚本全文…",
   "importUrlHint": "https://…/source.js",
   "importMissing": "先粘贴脚本或填写链接。",
-  "importNotASource": "这段内容不是 lx-music 自定义源：脚本头注释里缺少 @name，或缺少 lx.on('request', …) 契约。",
+  "importNotASource": "这段内容不是 lx-music 自定义源：脚本开头没有带 @name 的头注释。",
   "importDuplicate": "脚本内容与已导入的音源相同，无需重复导入。",
   "importLimit": "最多导入 {count} 个自定义源，先移除一个再试。",
   "importDownloadFailed": "脚本下载失败：{error}",
@@ -423,5 +423,10 @@
   "syncModeOverwriteLocalRemote": "以本地覆盖远端",
   "syncModeOverwriteRemoteLocal": "以远端覆盖本地",
   "syncModeOverwriteLocalRemoteFull": "仅保留本地",
-  "syncModeOverwriteRemoteLocalFull": "仅保留远端"
+  "syncModeOverwriteRemoteLocalFull": "仅保留远端",
+  "catalogSection": "内置音源库",
+  "catalogHint": "来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本（raw 源不可达时自动换镜像）。",
+  "catalogImport": "导入",
+  "catalogImported": "已导入",
+  "catalogFetchFailed": "音源脚本下载失败：raw 源与镜像都不可达"
 }
