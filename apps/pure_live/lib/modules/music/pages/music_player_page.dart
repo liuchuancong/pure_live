@@ -808,7 +808,7 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
           ],
         ),
         DsMenuItem.submenu(
-          leading: const DsIcon(DsIcons.captions),
+          leading: const DsIcon(DsIcons.timer),
           label: Text('${t.music.lyricOffset} · ${_offsetLabel(t, settings.lyricOffsetMs)}'),
           submenu: [
             for (final offset in _offsets)

@@ -64,7 +64,7 @@ final class MusicSettingsPane extends ConsumerWidget {
           header: Text(t.music.settingsPlayback),
           children: [
             SettingsChoiceRow<String>(
-              leading: const DsIcon(DsIcons.plugZap),
+              leading: const DsIcon(DsIcons.disc3),
               title: t.music.defaultSource,
               description: t.music.defaultSourceDesc,
               value: settings.defaultSourceId.isEmpty ? kLxMusicSourceId : settings.defaultSourceId,
@@ -75,7 +75,7 @@ final class MusicSettingsPane extends ConsumerWidget {
               onChanged: (id) => unawaited(controller.setDefaultSource(id)),
             ),
             SettingsChoiceRow<MusicQuality>(
-              leading: const DsIcon(DsIcons.gauge),
+              leading: const DsIcon(DsIcons.slidersHorizontal),
               title: t.music.quality,
               description: t.music.qualityDesc,
               value: settings.quality,
@@ -681,7 +681,7 @@ final class MusicDownloadPane extends ConsumerWidget {
         DsListSection(
           children: [
             SettingsChoiceRow<MusicDownloadType>(
-              leading: const DsIcon(DsIcons.disc3),
+              leading: const DsIcon(DsIcons.fileCog),
               title: t.music.downloadType,
               description: t.music.downloadTypeDesc,
               value: settings.downloadType,
@@ -878,7 +878,7 @@ final class MusicLyricPane extends ConsumerWidget {
               ),
             ),
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.gauge),
+              leading: const DsIcon(DsIcons.percent),
               title: t.music.lyricProgress,
               description: t.music.lyricProgressDesc,
               control: DsSwitch(
@@ -1124,7 +1124,7 @@ final class MusicEqPane extends ConsumerWidget {
               },
             ),
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.gauge),
+              leading: const DsIcon(DsIcons.slidersVertical),
               title: t.music.eqPreamp,
               description: t.music.eqPreampDesc,
               control: _PreampField(eq: eq, controller: controller),
@@ -1825,7 +1825,7 @@ final class MusicSyncPane extends ConsumerWidget {
           ),
         ),
         SettingsConfigRow(
-          leading: const DsIcon(DsIcons.listMusic),
+          leading: const DsIcon(DsIcons.gitMerge),
           title: t.music.syncMode,
           description: musicSyncModeLabel(t, state.syncMode),
           control: DsSelect<String>(
@@ -1835,7 +1835,7 @@ final class MusicSyncPane extends ConsumerWidget {
           ),
         ),
         SettingsConfigRow(
-          leading: const DsIcon(DsIcons.refresh),
+          leading: const DsIcon(DsIcons.cable),
           title: switch (state.status) {
             MusicSyncStatus.connected => t.music.syncStatusConnected,
             MusicSyncStatus.connecting || MusicSyncStatus.authing => t.music.syncStatusConnecting,
@@ -1854,7 +1854,7 @@ final class MusicSyncPane extends ConsumerWidget {
         ),
         if (state.serverName != null)
           SettingsConfigRow(
-            leading: const DsIcon(DsIcons.keyboard),
+            leading: const DsIcon(DsIcons.keyRound),
             title: t.music.syncForgetKey,
             description: t.music.syncForgetKeyDesc,
             control: DsButton(

@@ -651,7 +651,7 @@ final class RecordingSettingsPane extends ConsumerWidget {
           header: Text(t.recorder.settingsFiles),
           children: [
             SettingsChoiceRow<String>(
-              leading: const DsIcon(DsIcons.gauge),
+              leading: const DsIcon(DsIcons.slidersHorizontal),
               title: t.recorder.defaultQualityTitle,
               description: t.recorder.defaultQualityDesc,
               value: settings.defaultQuality,
@@ -775,7 +775,7 @@ final class RecordingSettingsPane extends ConsumerWidget {
               semanticLabel: t.recorder.stallTitle,
             ),
             _RecordSwitch(
-              icon: DsIcons.trophy,
+              icon: DsIcons.filter,
               title: t.recorder.preferBestTitle,
               description: t.recorder.preferBestDescription,
               value: settings.preferBestStream,
@@ -811,7 +811,7 @@ final class RecordingSettingsPane extends ConsumerWidget {
               onChanged: (value) => controller.queueSize = value,
             ),
             _RecordSlider(
-              icon: DsIcons.copy,
+              icon: DsIcons.layers,
               title: t.recorder.maxTasksTitle,
               description: t.recorder.maxTasksDescription,
               detail: t.recorder.maxTasksCount(count: settings.maxTasks),
@@ -881,7 +881,7 @@ final class RecordingSettingsPane extends ConsumerWidget {
                 ),
             ],
             _RecordSwitch(
-              icon: DsIcons.rocket,
+              icon: DsIcons.power,
               title: t.recorder.autoStartOnBoot,
               description: t.recorder.autoStartOnBootDesc,
               value: settings.autoStartOnBoot,

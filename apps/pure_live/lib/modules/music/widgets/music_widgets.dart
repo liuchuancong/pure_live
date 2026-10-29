@@ -305,7 +305,7 @@ String musicPlayModeLabel(Translations t, audio.PlayMode mode) => switch (mode) 
 };
 
 DsIconData musicPlayModeIcon(audio.PlayMode mode) => switch (mode) {
-  audio.PlayMode.list => DsIcons.arrowRight,
+  audio.PlayMode.list => DsIcons.arrowRightToLine,
   audio.PlayMode.listLoop => DsIcons.repeat,
   audio.PlayMode.singleLoop => DsIcons.repeat1,
   audio.PlayMode.random => DsIcons.shuffle,

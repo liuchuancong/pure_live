@@ -36,7 +36,7 @@ final class HongguoSettingsPane extends ConsumerWidget {
         DsListSection(
           children: [
             SettingsChoiceRow<HongguoQualityChoice>(
-              leading: const DsIcon(DsIcons.gauge),
+              leading: const DsIcon(DsIcons.slidersHorizontal),
               title: t.settings.hongguoQuality,
               description: t.settings.hongguoQualityDesc,
               value: settings.quality,
