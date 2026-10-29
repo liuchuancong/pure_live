@@ -18,9 +18,13 @@ import 'package:pure_live/app/providers/providers.dart';
 import 'package:pure_live/app/routing/navigation/root_navigator.dart' show rootNavigatorKey;
 import 'package:pure_live/app/routing/navigation/route_observer.dart' show routeObserverProvider;
 import 'package:pure_live/app/routing/router/app_router.dart' show PopularRoute, appRouterProvider, buildAppRouter;
+import 'package:pure_live/app/windows/chrome/window_chrome.dart' show WindowTopResizeBand;
 import 'package:pure_live/app/windows/context/app_window_context.dart' show AppWindowContext, appWindowContextProvider;
 import 'package:pure_live/app/windows/shell/desktop_shell_wiring.dart' show startDesktopShell;
+import 'package:pure_live/modules/live/multiview/multiview.dart'
+    show MultiviewPlaybackController, multiviewPlaybackProvider;
 import 'package:pure_live/modules/live/room/room.dart';
+import 'package:pure_live/modules/music/music.dart' show MusicPlayerController, musicPlayerProvider;
 
 /// One OS window's root.
 ///
@@ -28,6 +32,10 @@ import 'package:pure_live/modules/live/room/room.dart';
 /// that overrides everything which must not be shared: the view identity, its
 /// host, its router, and the room/playback stack. App-level services stay in
 /// the parent container, so settings and follows still have one source.
+///
+/// Anything that holds a player has to be listed here: a provider only lives
+/// in this scope when the scope overrides it, and one mounted in the shared
+/// container reads the shared kernel — which has no window to act on.
 final class AppWindowRoot extends StatefulWidget {
   /// A root for [viewId].
   const AppWindowRoot({
@@ -112,6 +120,12 @@ final class _AppWindowRootState extends State<AppWindowRoot> {
         pipDriverProvider.overrideWith(createPipDriver),
         roomPlaybackStandbyProvider.overrideWith(createRoomPlaybackStandby),
         roomProvider.overrideWith(RoomController.new),
+        // The music player and the multi-view wall hold kernels too, so they
+        // belong to this scope like the room does: left in the shared
+        // container they would ask the shared kernel — and that one has no
+        // window context to build a fullscreen driver from.
+        musicPlayerProvider.overrideWith(MusicPlayerController.new),
+        multiviewPlaybackProvider.overrideWith(MultiviewPlaybackController.new),
         roomChatProvider.overrideWith(RoomChatController.new),
         roomPlaylistProvider.overrideWith(RoomPlaylistController.new),
         roomRefreshRateProvider.overrideWith(RoomRefreshRateController.new),
@@ -140,7 +154,15 @@ final class _AppWindowRootState extends State<AppWindowRoot> {
       child: _WindowMessages(
         child: _MainWindowShell(
           role: widget.role,
-          child: PureLiveApp(showStartupSplash: _context.isMain),
+          // Above PureLiveApp, so there is no Directionality to resolve a
+          // directional alignment; the children are all positioned anyway.
+          child: Stack(
+            alignment: Alignment.topLeft,
+            children: [
+              Positioned.fill(child: PureLiveApp(showStartupSplash: _context.isMain)),
+              Positioned(left: 0, right: 0, top: 0, child: WindowTopResizeBand(viewId: widget.viewId)),
+            ],
+          ),
         ),
       ),
     );

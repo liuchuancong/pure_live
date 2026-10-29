@@ -1,7 +1,9 @@
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_shell/live_shell.dart' show ChromeMode;
+import 'package:multiview_desktop/multiview_desktop.dart' show MultiViewDesktop, ResizeEdge;
 import 'package:pure_live/app/providers/providers.dart' show desktopWindowHostProvider, maximizedProvider;
 import 'package:pure_live/l10n/translations.dart';
 
@@ -157,6 +159,67 @@ final class WindowCaptionButton extends ConsumerWidget {
             child: Center(child: DsIcon(icon, size: 14, color: enabled ? colors.text : colors.textSubtle)),
           );
         },
+      ),
+    );
+  }
+}
+
+/// The window's top edge as a resize strip.
+///
+/// The hidden caption keeps the system's sizing frame on the left, the right
+/// and the bottom, so those three edges resize natively — but the top band is
+/// client area that nothing answers the resize hit test for, and the window
+/// cannot be sized from the top at all. This transparent strip hands a press
+/// there to the plugin's own resize verb, which enters the system's sizing
+/// loop; the corners stay with the system, whose side bands already resize
+/// them diagonally.
+final class WindowTopResizeBand extends StatefulWidget {
+  /// A strip over the window of [viewId].
+  const WindowTopResizeBand({required this.viewId, super.key});
+
+  /// The plugin's view id of the window the strip resizes.
+  final int viewId;
+
+  @override
+  State<WindowTopResizeBand> createState() => _WindowTopResizeBandState();
+}
+
+final class _WindowTopResizeBandState extends State<WindowTopResizeBand> {
+  // The verdict the cursor shows, re-read under the pointer: a strip that
+  // keeps promising a resize it cannot deliver is worse than no strip.
+  bool _sizable = false;
+
+  bool get _sizableNow {
+    if (defaultTargetPlatform != TargetPlatform.windows || !WindowChromeState.drawsStrip) {
+      return false;
+    }
+    final window = MultiViewDesktop.fromId(widget.viewId);
+    return window.isResizable() && !window.isMaximized() && !window.isFullScreen();
+  }
+
+  void _refresh() {
+    final sizable = _sizableNow;
+    if (sizable != _sizable) setState(() => _sizable = sizable);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (defaultTargetPlatform != TargetPlatform.windows || !WindowChromeState.drawsStrip) {
+      return const SizedBox.shrink();
+    }
+    // As tall as the strips the window still has on its other three sides:
+    // the system's eight physical pixels.
+    final band = 8 / View.of(context).devicePixelRatio;
+    return MouseRegion(
+      cursor: _sizable ? SystemMouseCursors.resizeUp : MouseCursor.defer,
+      onEnter: (_) => _refresh(),
+      onHover: (_) => _refresh(),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanDown: (_) {
+          if (_sizableNow) MultiViewDesktop.fromId(widget.viewId).startResizing(ResizeEdge.top);
+        },
+        child: SizedBox(height: band, width: double.infinity),
       ),
     );
   }
