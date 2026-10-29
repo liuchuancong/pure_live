@@ -958,9 +958,12 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
 
   /// The picture above the shelf it can switch along, with the comments
   /// docked beside both on a wide window — the reference's side panel, which
-  /// never covers the picture.
+  /// never covers the picture. Between the two, the watch head names what is
+  /// playing the way the video station's own page does.
   Widget _body(BuildContext context, HongguoSeriesDetail? detail) {
+    final t = context.t;
     final player = _playerSurface(context, immersive: false);
+    final head = detail == null ? const SizedBox.shrink() : _watchHead(context, detail, t);
     final shelf = detail == null
         ? const SizedBox.shrink()
         : HongguoEpisodeShelf(detail: detail, current: _episode, onOpen: (episode) => unawaited(_openEpisode(episode)));
@@ -971,7 +974,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s16,
-          children: [player, shelf, comments],
+          children: [player, head, shelf, comments],
         ),
       );
     }
@@ -984,7 +987,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: DsSpace.s16,
-              children: [player, shelf],
+              children: [player, head, shelf],
             ),
           ),
         ),
@@ -995,6 +998,91 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
             child: comments,
           ),
         ),
+      ],
+    );
+  }
+
+  /// What is playing, under the picture: the series' name, the episode and
+  /// the figures it carries, the local favorite and the next episode, and the
+  /// first lines of the blurb — the video station's watch head.
+  Widget _watchHead(BuildContext context, HongguoSeriesDetail detail, Translations t) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final meta = detail.meta;
+    final episode = _episode;
+    final total = meta.episodeCount > 0 ? meta.episodeCount : detail.episodes.length;
+    final duration =
+        _transport?.duration ??
+        (episode != null && episode.durationSeconds > 0 ? Duration(seconds: episode.durationSeconds) : null);
+    final comments = episode?.commentCount ?? 0;
+    final likes = episode?.diggedCount ?? 0;
+    final figures = [
+      if (episode != null) t.hongguo.episodeLabel(index: episode.index),
+      if (total > 0) t.hongguo.allEpisodesCount(count: total),
+      if (duration != null && duration > Duration.zero) hongguoDurationText(duration),
+      if (meta.playCount > 0) '${AudienceFormat.format(meta.playCount)} ${t.hongguo.plays}',
+      if (comments > 0) '${AudienceFormat.format(comments)} ${t.hongguo.comments}',
+      if (likes > 0) '${AudienceFormat.format(likes)} ${t.hongguo.likes}',
+    ];
+    final next = _nextEpisode();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        Text(meta.title, style: theme.typography.title.copyWith(color: colors.text)),
+        if (figures.isNotEmpty)
+          Text(figures.join(' · '), style: theme.typography.caption.copyWith(color: colors.textMuted)),
+        Wrap(
+          spacing: DsSpace.s8,
+          runSpacing: DsSpace.s8,
+          children: [
+            Consumer(
+              builder: (context, ref, _) {
+                final favored = ref.watch(
+                  hongguoLibraryProvider.select((library) => library.isFavorite(meta.seriesId)),
+                );
+                return DsButton(
+                  variant: favored ? DsButtonVariant.primary : DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  leading: DsIcon(favored ? DsIcons.heart : DsIcons.heartOff, size: 16),
+                  onPressed: () {
+                    final added = ref
+                        .read(hongguoLibraryProvider.notifier)
+                        .toggleFavorite(
+                          HongguoSeries(
+                            seriesId: meta.seriesId,
+                            title: meta.title,
+                            cover: meta.cover,
+                            intro: meta.intro,
+                            episodeCount: total,
+                          ),
+                        );
+                    showDsToast(
+                      context: context,
+                      title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff,
+                    );
+                  },
+                  child: Text(favored ? t.hongguo.favorited : t.hongguo.favorite),
+                );
+              },
+            ),
+            if (next != null)
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.skipForward, size: 16),
+                onPressed: () => unawaited(_openEpisode(next)),
+                child: Text(t.hongguo.nextEpisode),
+              ),
+          ],
+        ),
+        if (meta.intro.isNotEmpty)
+          Text(
+            meta.intro,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.body.copyWith(color: colors.textMuted),
+          ),
       ],
     );
   }
@@ -1044,6 +1132,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           aspectRatio: _aspectRatio > 0 ? _aspectRatio : 16 / 9,
           child: MouseRegion(
             onHover: (_) => _wake(),
+            onExit: (_) => _scheduleHide(),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -1154,24 +1243,41 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                     bottom: 0,
                     start: 0,
                     end: 0,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (_openPanel case final panel?)
-                          Padding(
-                            padding: const EdgeInsetsDirectional.only(end: DsSpace.s12, bottom: DsSpace.s4),
-                            child: Align(
-                              alignment: AlignmentDirectional.centerEnd,
-                              child: MouseRegion(
-                                onEnter: (_) => _leaveTimer?.cancel(),
-                                onExit: (_) => _leavePanelSoon(),
-                                child: _panel(t, panel),
+                    // Resting on the bar keeps it; leaving settles it away.
+                    child: MouseRegion(
+                      onEnter: (_) => _hideTimer?.cancel(),
+                      onExit: (_) => _scheduleHide(),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (_openPanel case final panel?)
+                            Padding(
+                              padding: const EdgeInsetsDirectional.only(end: DsSpace.s12, bottom: DsSpace.s4),
+                              child: Align(
+                                alignment: AlignmentDirectional.centerEnd,
+                                child: MouseRegion(
+                                  onEnter: (_) => _leaveTimer?.cancel(),
+                                  onExit: (_) => _leavePanelSoon(),
+                                  child: _panel(t, panel),
+                                ),
                               ),
                             ),
-                          ),
-                        _controlBar(context),
-                      ],
+                          _controlBar(context),
+                        ],
+                      ),
+                    ),
+                  )
+                // The bar away, the episode keeps one line on its bottom edge.
+                else if (playing && handle != null)
+                  PositionedDirectional(
+                    bottom: 0,
+                    start: 0,
+                    end: 0,
+                    child: PlayerIdleProgress(
+                      position: transport?.position,
+                      duration: transport?.duration,
+                      onWake: _wake,
                     ),
                   ),
               ],
