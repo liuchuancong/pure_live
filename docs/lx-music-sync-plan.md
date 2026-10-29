@@ -218,8 +218,14 @@
   设置页新子页 SettingsSection.musicEq（总开关/预设选择/预放滑杆/重置/编辑器）；
   播放器适配层=`MusicPlayerController._applyEq`：经 `AudioPlaybackController.handle
   .applyEngineOptions([EngineOption('af',[lavfi])])` 热应用（handle 记忆并随引擎重建回放），
-  250ms 防抖节流拖动、handle 未建时 pending 到首个曲目）。**待做**：阶段 B（低音/人声/
-  立体声/响度/动态处理节点）、阶段 C（参数 EQ/FIR/设备校正）、设计图逐像素音效中心主页面
+  250ms 防抖节流拖动、handle 未建时 pending 到首个曲目）。**阶段 B 已落**：六效果走真实 FFmpeg 滤镜（`musicFxAfFilters`）——loudnorm 音量均衡
+  （I=-16:TP=-1.5:LRA=11）/ bass 低架 105Hz ≤+8dB / vocal 3kHz 凸起+300Hz 收浑浊 /
+  stereotools slev 立体声拓宽 / haas 伪环绕 / acompressor+alimiter 动态限幅；链序=
+  loudness→音色→声场→动态，模型扩 MusicFxNode{enabled,amount}（config v2 向后兼容读 v1）；
+  频响曲线纳入 bass/vocal 音色形（low-shelf RBJ 公式）；UI 增强音效区=每效果开关+强度滑杆
+  +声明成本（latency/stereoOnly，kMusicFxCosts）；`musicEqApplyFailedProvider`=
+  applyEngineOptions 报告 unsupported 或异常时页面红字提示（诚实失败规则）。
+  **待做**、阶段 C（参数 EQ/FIR/设备校正）、设计图逐像素音效中心主页面
   （当前先落设置子页）、A/B 对比、频响图验证测试）（`plugins/player/index.ts`、
   `store/soundEffect.ts`）。
 - ⬜ H2 频谱可视化（AnalyserNode getByteFrequencyData 等价物；桌面歌词共享频谱）。
