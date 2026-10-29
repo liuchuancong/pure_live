@@ -515,6 +515,9 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get loadFailed => 'The series did not load';
 	@override String get opening => 'Opening…';
 	@override String get play => 'Play';
+	@override String get continueWatching => 'Continue';
+	@override String get playFromStart => 'From the start';
+	@override String get notWatchedYet => 'Not watched yet';
 	@override String get pause => 'Pause';
 	@override String get mute => 'Mute';
 	@override String get unmute => 'Unmute';
@@ -3612,6 +3615,9 @@ extension on TranslationsEn {
 			'hongguo.loadFailed' => 'The series did not load',
 			'hongguo.opening' => 'Opening…',
 			'hongguo.play' => 'Play',
+			'hongguo.continueWatching' => 'Continue',
+			'hongguo.playFromStart' => 'From the start',
+			'hongguo.notWatchedYet' => 'Not watched yet',
 			'hongguo.pause' => 'Pause',
 			'hongguo.mute' => 'Mute',
 			'hongguo.unmute' => 'Unmute',
@@ -3730,11 +3736,11 @@ extension on TranslationsEn {
 			'hongguo.searchHistoryHint' => 'Searches stay on this machine, up to 20',
 			'hongguo.filter' => 'Filter',
 			'hongguo.filterPanelTitle' => 'Filter',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.filterDone' => 'Done',
 			'hongguo.accountId' => 'Hongguo ID',
 			'hongguo.copyAccountId' => 'Copy',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.copied' => 'Copied',
 			'hongguo.accountReading' => 'Reading…',
 			'hongguo.accountNotRead' => 'Not read yet',
@@ -4211,11 +4217,11 @@ extension on TranslationsEn {
 			'music.downloadsEmptyTitle' => 'No downloads yet',
 			'music.downloadsEmptyDescription' => ({required Object directory}) => 'Download from a row’s “More actions” menu; files go to ${directory}.',
 			'music.localAddFolder' => 'Add a folder',
+			_ => null,
+		} ?? switch (path) {
 			'music.localHint' => 'Add a folder of audio files; the scan makes them play like online songs.',
 			'music.localFiles' => ({required Object count}) => '${count} files',
 			'music.localRescan' => 'Scan again',
-			_ => null,
-		} ?? switch (path) {
 			'music.localFolders' => 'Music folders',
 			'music.localRemoveFolder' => 'Remove the folder',
 			'music.localFailed' => 'The scan failed',
@@ -4692,11 +4698,11 @@ extension on TranslationsEn {
 			'settings.picturePageDescription' => 'Fit, floating window and picture-in-picture.',
 			'settings.floatingWindowPageDescription' => 'The in-app floating window and the system picture-in-picture: size, position and pinning.',
 			'settings.pictureDisplayGroup' => 'Picture',
+			_ => null,
+		} ?? switch (path) {
 			'settings.floatWindowGroup' => 'In-app floating window',
 			'settings.pipGroup' => 'System picture-in-picture',
 			'settings.playbackComingSoon' => 'Playback settings arrive with the player.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.sitesComingSoon' => 'Site management and accounts are on the way.',
 			'settings.dataComingSoon' => 'Data management is on the way.',
 			'settings.appearance' => 'Appearance',
@@ -5201,6 +5207,8 @@ extension on TranslationsEn {
 			'settings.scaleKernelDesc' => 'Resampler used when upscaling the picture.',
 			'settings.scaleLanczos' => 'Lanczos (balanced)',
 			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp (sharpest, heavy)',
+			_ => null,
+		} ?? switch (path) {
 			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest (with interpolation)',
 			'settings.scaleEwaLanczos' => 'EWA Lanczos',
 			'settings.scaleSpline36' => 'Spline36',
@@ -5209,8 +5217,6 @@ extension on TranslationsEn {
 			'settings.scaleMitchell' => 'Mitchell',
 			'settings.scaleHermite' => 'Hermite (soft)',
 			'settings.scaleBicubicFast' => 'Bicubic Fast (fast)',
-			_ => null,
-		} ?? switch (path) {
 			'settings.scaleBilinear' => 'Bilinear (fastest, soft)',
 			'settings.scaleNearest' => 'Nearest (blocky)',
 			'settings.deinterlace' => 'Deinterlace (--deinterlace)',
@@ -5719,12 +5725,12 @@ extension on TranslationsEn {
 			'settings.chatPanelWidth' => 'Chat panel width',
 			'settings.chatPanelWidthDesc' => 'The chat column\'s width in the desktop room layout.',
 			'settings.danmakuPausedBehavior' => 'Danmaku while paused',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuPausedBehaviorDesc' => 'Whether danmaku stop with a paused video or keep flying.',
 			'settings.danmakuPausedPause' => 'Pause with video',
 			'settings.danmakuPausedFly' => 'Keep flying',
 			'settings.twitchLanguages' => 'Twitch directory languages',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguagesDesc' => 'Show only streams in the chosen languages; none selected shows every language.',
 			'settings.twitchAllLanguages' => 'All languages',
 			'settings.twitchLegacyLanguages' => 'Chinese + Korean',

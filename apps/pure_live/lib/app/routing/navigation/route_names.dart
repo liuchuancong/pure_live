@@ -57,9 +57,26 @@ abstract final class RouteNames {
   /// (the reference's PlayDetail).
   static const String musicPlayer = '/music/player';
 
-  /// One hongguo series' page (its metadata, episodes and player), pushed
-  /// on the root navigator above the shell: the station's cards open it.
+  /// One hongguo series' page (its metadata, episodes and the way into the
+  /// player), pushed on the root navigator above the shell: the station's
+  /// cards open it.
   static const String hongguoSeries = '/hongguo/series/:seriesId';
+
+  /// One hongguo episode's player, pushed above the series page: the play
+  /// card and the episode shelf open it.
+  static const String hongguoPlayer = '/hongguo/series/:seriesId/play';
+
+  /// The location of the hongguo player for [seriesId], at [vid] and
+  /// [resumeSeconds] when the caller chose them.
+  static String hongguoPlayerFor(String seriesId, {String? vid, double? resumeSeconds}) {
+    final query = Uri(
+      queryParameters: {
+        if (vid != null && vid.isNotEmpty) 'vid': vid,
+        if (resumeSeconds != null && resumeSeconds > 5) 'resume': '${resumeSeconds.round()}',
+      },
+    ).query;
+    return '/hongguo/series/${Uri.encodeComponent(seriesId)}/play${query.isEmpty ? '' : '?$query'}';
+  }
 
   /// The settings branch.
   static const String settings = '/settings';

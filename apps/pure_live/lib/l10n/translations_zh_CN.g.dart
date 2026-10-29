@@ -1300,6 +1300,15 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '播放'
 	String get play => '播放';
 
+	/// zh-CN: '继续观看'
+	String get continueWatching => '继续观看';
+
+	/// zh-CN: '从头播放'
+	String get playFromStart => '从头播放';
+
+	/// zh-CN: '还没看过'
+	String get notWatchedYet => '还没看过';
+
 	/// zh-CN: '暂停'
 	String get pause => '暂停';
 
@@ -9518,6 +9527,9 @@ extension on Translations {
 			'hongguo.loadFailed' => '剧集没有加载出来',
 			'hongguo.opening' => '正在打开…',
 			'hongguo.play' => '播放',
+			'hongguo.continueWatching' => '继续观看',
+			'hongguo.playFromStart' => '从头播放',
+			'hongguo.notWatchedYet' => '还没看过',
 			'hongguo.pause' => '暂停',
 			'hongguo.mute' => '静音',
 			'hongguo.unmute' => '取消静音',
@@ -9636,11 +9648,11 @@ extension on Translations {
 			'hongguo.searchHistoryHint' => '搜过的剧名会留在本机，最多 20 条',
 			'hongguo.filter' => '筛选',
 			'hongguo.filterPanelTitle' => '筛选条件',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.filterDone' => '完成',
 			'hongguo.accountId' => '红果号',
 			'hongguo.copyAccountId' => '复制',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.copied' => '已复制',
 			'hongguo.accountReading' => '正在读取…',
 			'hongguo.accountNotRead' => '尚未读取',
@@ -10117,11 +10129,11 @@ extension on Translations {
 			'music.downloadsEmptyTitle' => '还没有下载任务',
 			'music.downloadsEmptyDescription' => ({required Object directory}) => '在歌曲行的「更多」里下载，文件会保存到 ${directory}。',
 			'music.localAddFolder' => '添加文件夹',
+			_ => null,
+		} ?? switch (path) {
 			'music.localHint' => '添加本机音乐文件夹，扫描后会像在线歌曲一样播放。',
 			'music.localFiles' => ({required Object count}) => '${count} 个文件',
 			'music.localRescan' => '重新扫描',
-			_ => null,
-		} ?? switch (path) {
 			'music.localFolders' => '音乐文件夹',
 			'music.localRemoveFolder' => '移除文件夹',
 			'music.localFailed' => '扫描失败',
@@ -10598,11 +10610,11 @@ extension on Translations {
 			'settings.picturePageDescription' => '画面比例、悬浮窗与画中画。',
 			'settings.floatingWindowPageDescription' => '应用内悬浮窗与系统画中画的大小、位置与置顶。',
 			'settings.pictureDisplayGroup' => '画面显示',
+			_ => null,
+		} ?? switch (path) {
 			'settings.floatWindowGroup' => '应用内悬浮窗',
 			'settings.pipGroup' => '系统画中画',
 			'settings.playbackComingSoon' => '播放设置将在播放器接入后开放。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.sitesComingSoon' => '站点管理与账号登录即将接入。',
 			'settings.dataComingSoon' => '数据管理即将接入。',
 			'settings.appearance' => '外观',
@@ -11107,6 +11119,8 @@ extension on Translations {
 			'settings.scaleKernelDesc' => '放大画面时的重采样算法。',
 			'settings.scaleLanczos' => 'Lanczos（均衡推荐）',
 			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp（锐利，吃 GPU）',
+			_ => null,
+		} ?? switch (path) {
 			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest（配合插帧）',
 			'settings.scaleEwaLanczos' => 'EWA Lanczos',
 			'settings.scaleSpline36' => 'Spline36',
@@ -11115,8 +11129,6 @@ extension on Translations {
 			'settings.scaleMitchell' => 'Mitchell',
 			'settings.scaleHermite' => 'Hermite（柔和）',
 			'settings.scaleBicubicFast' => 'Bicubic Fast（快）',
-			_ => null,
-		} ?? switch (path) {
 			'settings.scaleBilinear' => '双线性（最快，最糊）',
 			'settings.scaleNearest' => '最近邻（块状）',
 			'settings.deinterlace' => '反交错 (--deinterlace)',
@@ -11625,12 +11637,12 @@ extension on Translations {
 			'settings.chatPanelWidth' => '聊天栏宽度',
 			'settings.chatPanelWidthDesc' => '桌面宽布局下右侧聊天栏的宽度。',
 			'settings.danmakuPausedBehavior' => '暂停时的弹幕',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuPausedBehaviorDesc' => '视频暂停后，弹幕跟着停住还是照常飘过。',
 			'settings.danmakuPausedPause' => '随视频暂停',
 			'settings.danmakuPausedFly' => '继续飘过',
 			'settings.twitchLanguages' => 'Twitch 目录语言',
-			_ => null,
-		} ?? switch (path) {
 			'settings.twitchLanguagesDesc' => '只显示所选语言的直播；不选则显示全部。',
 			'settings.twitchAllLanguages' => '全部语言',
 			'settings.twitchLegacyLanguages' => '中文 + 韩语',

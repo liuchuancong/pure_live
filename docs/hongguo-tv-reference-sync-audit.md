@@ -418,6 +418,17 @@ P1 已清零：首页/侧栏的新集徽标见 8.10，断网等待见 8.11，本
 
 新增 1 项测试（批量删除只删勾选的行）。`dart analyze lib/modules/hongguo test/hongguo` 0 issues；`flutter test test/hongguo test/app` 29 项全绿。**未验证**：遥控器上的管理模式（勾选框聚焦顺序、删除按钮的禁用态）。
 
+### 8.19 第十七轮（2026-10-29）：单独的播放页
+
+用户点名把播放拆成独立页面。参考本来就是把播放器、选集、评论分在 `MainActivity` 的详情区与 `TvPlayer` 覆盖层里；目标之前把两者塞在同一页，于是详情页一打开就占用一个播放器句柄、并且必须自己管失败恢复。
+
+- **新增 `pages/hongguo_player_page.dart`（`HongguoPlayerPage`）**：整套播放状态搬过来（handle/transport/事件订阅、档位选择与降档、恢复预算与断网等待、定时停止、倍速/音量/静音、全屏与画中画退出、进度写盘与云端上报、弹幕层与控制条、HUD 状态行、`_PlayerIconButton`/`_PlayerMenu`）。路由 `/hongguo/series/:seriesId/play?vid=&resume=`，`RouteNames.hongguoPlayerFor()` 拼地址。
+- **`widgets/hongguo_episode_shelf.dart`（`HongguoEpisodeShelf` + `kHongguoEpisodeGroup`）**：选集区从系列页的私有方法抽成公共控件（分组、上下组、跳转、三色标记），`onOpen` 回调出去；两个页面共用，切集时按 `current` 自动跟组。
+- **系列页只剩详情**：不再持有 handle，改为读书架检查点 + 一张「播放卡」（封面、看到第几集·时间点、`继续观看`/`播放`、有检查点时再给一个 `从头播放`），选集/剧评/相关/评论留在原处；评论与剧评的 `episodeVid` 取检查点那一集。
+- l10n 中英各 +3（`continueWatching/playFromStart/notWatchedYet`）。
+
+`dart analyze lib test`（apps/pure_live 全量）0 issues；`flutter test test/hongguo test/app` 29 项全绿。**未验证**：真机上的整页跳转手感（详情页→播放页→返回的焦点与滚动位置、全屏后从播放页返回是否退干净、遥控器在播放页选集分组的焦点拓扑）。
+
 ---
 
 ## 附：本文的验证方式与未验证项
