@@ -1,4 +1,3 @@
-import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -11,6 +10,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart';
+import 'package:pure_live/layouts/location_breadcrumb.dart';
 import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/popular/popular.dart';
 import 'package:pure_live/modules/live/search/search.dart';
@@ -23,11 +23,6 @@ import 'package:pure_live/shared/shared.dart';
 /// The folded rail's item: a 40px tile with a 24px icon — the header's
 /// module mark and the rail's items read at one weight.
 const DsSidebarItemStyle _collapsedItem = DsSidebarItemStyle(height: 40, iconSize: 24);
-
-/// A footer row that performs an action instead of selecting a destination.
-final class _NewWindowAction {
-  const new();
-}
 
 /// The desktop layout, following the v4 navigation design: the self-drawn
 /// title bar above ([WindowTitleBar] — its left corner holds the app icon
@@ -277,10 +272,6 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
   }
 
   void _footerChanged(Object value) {
-    if (value is _NewWindowAction) {
-      unawaited(openAppWindow(context));
-      return;
-    }
     if (widget.settingsSection == null) {
       widget.onMenu(value);
     } else {
@@ -351,7 +342,11 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                   canForward: widget.canForward,
                   onBack: widget.onBack,
                   onForward: widget.onForward,
-                  onSearch: widget.tv ? null : _focusSearch,
+                  // The magnifier reaches the toolbar field; where the field
+                  // gives way to a narrow window (or the settings surface
+                  // hides it), the button goes with it instead of standing
+                  // over nothing.
+                  onSearch: widget.tv || !showToolbarSearch ? null : _focusSearch,
                 ),
               Expanded(
                 child: Row(
@@ -393,18 +388,11 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                           // the reference's arrangement.
                           DsSidebar<Object>(
                             collapsed: !widget.expanded,
-                            value: widget.settingsSection == null ? null : NavigationItem.settings,
+                            // The foot is a set of actions, not a location:
+                            // nothing in it stays lit.
                             onChanged: _footerChanged,
                             style: sidebarStyle,
                             children: [
-                              _zoomOnTv(
-                                DsSidebarItem<Object>(
-                                  value: const _NewWindowAction(),
-                                  leading: const DsIcon(DsIcons.appWindow),
-                                  label: Text(t.common.newWindow),
-                                  style: widget.expanded ? null : _collapsedItem,
-                                ),
-                              ),
                               if (widget.settingsSection == null)
                                 _zoomOnTv(
                                   DsSidebarItem<Object>(
@@ -449,7 +437,7 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                             child: Row(
                               children: [
                                 Expanded(
-                                  child: _LocationBreadcrumb(
+                                  child: LocationBreadcrumb(
                                     module: widget.module,
                                     selected: widget.menuValue,
                                     settings: widget.settingsSection,
@@ -535,71 +523,6 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// The where-am-I path at the content's head: the module, then the page.
-///
-/// The crumbs say where the viewer stands (the current page is the last
-/// crumb, not pressed); deeper context — an area inside the areas page,
-/// the query inside the search page — is that page's own breadcrumb, one
-/// level below this one.
-final class _LocationBreadcrumb extends ConsumerWidget {
-  const _LocationBreadcrumb({
-    required this.module,
-    required this.selected,
-    this.settings,
-    this.categoryKey,
-    this.sectionOpen = false,
-  });
-
-  final AppModule module;
-  final Object? selected;
-  final SettingsSection? settings;
-  final String? categoryKey;
-  final bool sectionOpen;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final section = settings;
-    if (section != null) {
-      // Walk the whole tree: Settings › Personalization › Background ›
-      // Online images. The category steps back to its page of sections.
-      final category = categoryKey;
-      final ancestors = <SettingsSection>[];
-      if (sectionOpen) {
-        for (var parent = section.parentSection; parent != null; parent = parent.parentSection) {
-          ancestors.add(parent);
-        }
-      }
-      return DsBreadcrumb(
-        items: [
-          DsBreadcrumbItem(label: t.navigation.settings, icon: const DsIcon(DsIcons.settings)),
-          if (category != null)
-            DsBreadcrumbItem(
-              label: settingsGroupLabel(t, category),
-              icon: DsIcon(settingsGroupIcon(category)),
-              onPressed: sectionOpen ? () => closeSettingsSection(ref) : null,
-            ),
-          if (sectionOpen) ...[
-            for (final ancestor in ancestors.reversed)
-              DsBreadcrumbItem(
-                label: ancestor.label(t),
-                icon: DsIcon(ancestor.icon),
-                onPressed: () => openSettingsSection(ref, ancestor),
-              ),
-            DsBreadcrumbItem(label: section.label(t), icon: DsIcon(section.icon)),
-          ],
-        ],
-      );
-    }
-    return DsBreadcrumb(
-      items: [
-        DsBreadcrumbItem(label: module.label(t), icon: DsIcon(module.icon)),
-        if (selected case final NavigationItem item) DsBreadcrumbItem(label: item.label(t), icon: DsIcon(item.icon)),
-      ],
     );
   }
 }

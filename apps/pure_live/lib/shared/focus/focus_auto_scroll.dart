@@ -50,14 +50,17 @@ final class _FocusAutoScrollState extends State<FocusAutoScroll> {
     if (identical(focus, _last)) return;
     _last = focus;
     final context = focus.context;
-    if (context == null) return;
+    // A focus node can outlive the element that held it: the focus manager
+    // notifies in a microtask, and a page torn down in between leaves the
+    // element deactivated — its ancestors are no longer there to look up.
+    if (context == null || !context.mounted) return;
     // Focus in an overlay route is still in the app; focus in a detached
     // tree is not. Only this subtree's stops are ours to reveal.
     if (context.findAncestorStateOfType<_FocusAutoScrollState>() != this) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || FocusManager.instance.primaryFocus != focus) return;
       final context = focus.context;
-      if (context != null) _reveal(context);
+      if (context != null && context.mounted) _reveal(context);
     });
   }
 

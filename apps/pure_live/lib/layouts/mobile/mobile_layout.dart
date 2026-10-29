@@ -18,6 +18,12 @@ const double kNavigationDrawerWidth = 320;
 /// shows (the app switcher, the module's menu in its blocks with a divider
 /// between them, settings last), not a compressed sidebar.
 ///
+/// The bottom bar carries the module's feeds only. A page entered below
+/// those feeds — multi-view, a tool, the settings surface — turns the top
+/// bar's leading into a back arrow, names the whole path as a breadcrumb
+/// and puts the bottom bar away, so the bar never sits under a page it does
+/// not lead to. The drawer lists what the bottom bar does not.
+///
 /// The drawer closes on a selection; a destination whose page has not
 /// arrived yet still closes it, so the drawer never hangs open on a dead
 /// tap.
@@ -29,7 +35,9 @@ final class MobileLayout extends ConsumerWidget {
     required this.selected,
     required this.onSelected,
     required this.onModuleSelected,
-    required this.onSearch,
+    required this.breadcrumb,
+    required this.canBack,
+    required this.onBack,
     this.homeMenuItems = kHomeMenuItems,
     this.badges = const {},
     super.key,
@@ -50,8 +58,14 @@ final class MobileLayout extends ConsumerWidget {
   /// Fired when the app switcher picks a module.
   final ValueChanged<AppModule> onModuleSelected;
 
-  /// Opens the search destination — the top bar's magnifier.
-  final VoidCallback onSearch;
+  /// The where-am-I path the top bar shows on a page below the bar's tabs.
+  final Widget breadcrumb;
+
+  /// Whether there is a destination behind the one on screen.
+  final bool canBack;
+
+  /// Fired by the top bar's back arrow.
+  final VoidCallback onBack;
 
   /// The live home menu's visible entries in the viewer's order (the
   /// navigation setting's list); other modules keep their own tabs.
@@ -62,46 +76,41 @@ final class MobileLayout extends ConsumerWidget {
   /// bar has no badge slot; a destination missing here shows none.
   final Map<NavigationItem, int> badges;
 
-  /// The bar's destinations: the module's feeds plus settings, the shape a
-  /// phone's tab bar takes in every common client. Live follows the
-  /// navigation setting's saved menu, the recording centre included.
+  /// The bar's destinations: the module's feeds, the shape a phone's tab
+  /// bar takes in every common client. Live follows the navigation
+  /// setting's saved menu, the recording centre included. Settings is not a
+  /// tab: it opens from the drawer and steps back from its own top bar.
   List<NavigationItem> bottomTabsOf(AppModule module) => switch (module) {
-    AppModule.live => [if (homeMenuItems.isEmpty) ...kHomeMenuItems else ...homeMenuItems, NavigationItem.settings],
+    AppModule.live => homeMenuItems.isEmpty ? kHomeMenuItems : homeMenuItems,
     AppModule.iptv => const [
       NavigationItem.channels,
       NavigationItem.iptvFavorites,
       NavigationItem.iptvRecent,
       NavigationItem.iptvGuide,
-      NavigationItem.settings,
     ],
     AppModule.vod => const [
       NavigationItem.vodSearch,
       NavigationItem.vod,
       NavigationItem.vodRegions,
       NavigationItem.vodPgc,
-      NavigationItem.settings,
     ],
     AppModule.music => const [
       NavigationItem.music,
       NavigationItem.musicSonglist,
       NavigationItem.musicToplist,
       NavigationItem.musicLibrary,
-      NavigationItem.settings,
     ],
     AppModule.hongguo => const [
       NavigationItem.hongguoHome,
       NavigationItem.hongguoFind,
       NavigationItem.hongguoRank,
       NavigationItem.hongguoFavorites,
-      NavigationItem.settings,
     ],
   };
 
-  /// The top bar's title: the page on screen, not the app's name (the
-  /// drawer's head already carries the name). The settings list is the
-  /// settings surface; its categories and sections are pushed routes with
-  /// their own headers.
-  String _title(Translations t) => selected == NavigationItem.settings ? t.navigation.settings : selected.label(t);
+  /// The top bar's title on a tab: the page on screen, not the app's name
+  /// (the drawer's head already carries the name).
+  String _title(Translations t) => selected.label(t);
 
   /// One menu block as the drawer shows it: the live home block is the
   /// navigation setting's list (membership and order), a block made
@@ -130,14 +139,12 @@ final class MobileLayout extends ConsumerWidget {
     final wallpaper = BackgroundActiveScope.isActiveOf(context);
     final chrome = wallpaper ? colors.surface.withValues(alpha: 0.82) : colors.surface;
     final rail = wallpaper ? colors.sidebar.withValues(alpha: 0.86) : colors.sidebar;
-    // The bar's highlight: a deep page (search, history, a tool) sits on
-    // its module's first tab, so the bar always says where the app is.
+    // The bar carries the module's feeds. A page below them — a tool,
+    // history, settings — is not a tab: the top bar leads back to the feeds
+    // and the bar itself steps aside.
     final tabs = bottomTabsOf(module);
-    final current = tabs.contains(selected)
-        ? selected
-        : selected == NavigationItem.settings
-        ? NavigationItem.settings
-        : tabs.first;
+    final atTab = tabs.contains(selected);
+    final current = atTab ? selected : tabs.first;
     // Liquid glass (A01.5, the reference's `liquidGlass`): on the phone
     // shell the bottom bar floats over the page as a frosted capsule and
     // the page scrolls visibly under it; off keeps the full-width bar.
@@ -176,39 +183,41 @@ final class MobileLayout extends ConsumerWidget {
         backgroundColor: chrome,
         surfaceTintColor: const Color(0x00000000),
         elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            tooltip: t.common.openNavigation,
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            icon: DsIcon(DsIcons.menu, size: 20, color: colors.text),
-          ),
-        ),
-        title: Text(
-          _title(t),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography.title.copyWith(color: colors.text),
-        ),
+        leading: atTab
+            ? Builder(
+                builder: (context) => IconButton(
+                  tooltip: t.common.openNavigation,
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  icon: DsIcon(DsIcons.menu, size: 20, color: colors.text),
+                ),
+              )
+            : IconButton(
+                tooltip: t.common.back,
+                // A deep link can land on a page with an empty trail; the
+                // back arrow then returns to the module's first tab rather
+                // than leaving the viewer nowhere to go.
+                onPressed: canBack ? onBack : () => onSelected(tabs.first),
+                icon: DsIcon(DsIcons.arrowLeft, size: 20, color: colors.text),
+              ),
+        title: atTab
+            ? Text(
+                _title(t),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.title.copyWith(color: colors.text),
+              )
+            : breadcrumb,
         centerTitle: false,
         actions: [
-          // The two every client pins to its top bar: search and the
-          // light/dark switch. They stay reachable on every page, so the
-          // drawer can stay shut.
-          ChromeIconButton(
-            size: 48,
-            iconSize: 20,
-            icon: DsIcons.search,
-            semanticLabel: t.navigation.search,
-            tooltip: t.navigation.search,
-            onPressed: onSearch,
-          ),
           // A window strip above this bar already carries the switch; two
           // moons stacked on a narrow desktop window would be one too many.
           if (!WindowChromeState.drawsStrip) const ThemeModeToggle(size: 48, iconSize: 20),
           const SizedBox(width: DsSpace.s4),
         ],
       ),
-      bottomNavigationBar: glass
+      bottomNavigationBar: !atTab
+          ? null
+          : glass
           ? Padding(
               key: const ValueKey('home-glass-bar'),
               padding: EdgeInsets.fromLTRB(
@@ -232,6 +241,16 @@ final class MobileLayout extends ConsumerWidget {
             onSelected(item);
           }
 
+          // The drawer holds what the bar does not: the module's other
+          // pages and settings. Repeating the bar's four feeds here was a
+          // second copy of the same destinations.
+          final groups = [
+            for (final group in navigationOf(module).menu)
+              [
+                for (final item in _menuItems(group, ref.watch(toolOrderProvider)))
+                  if (!tabs.contains(item)) item,
+              ],
+          ].where((group) => group.isNotEmpty).toList();
           return Drawer(
             width: kNavigationDrawerWidth,
             backgroundColor: rail,
@@ -250,12 +269,12 @@ final class MobileLayout extends ConsumerWidget {
                   background: wallpaper ? const Color(0x00000000) : null,
                 ),
                 children: [
-                  // The module's menu, block by block; a divider separates
-                  // the blocks (the live module reads the reference's rail
-                  // block for block). Settings follows under its own divider.
-                  for (final (index, group) in navigationOf(module).menu.indexed) ...[
+                  // The module's remaining menu, block by block; a divider
+                  // separates the blocks. Settings follows under its own
+                  // divider.
+                  for (final (index, group) in groups.indexed) ...[
                     if (index > 0) const SidebarDivider(),
-                    for (final item in _menuItems(group, ref.watch(toolOrderProvider)))
+                    for (final item in group)
                       DsSidebarItem(
                         value: item,
                         leading: DsIcon(item.icon),
@@ -267,7 +286,7 @@ final class MobileLayout extends ConsumerWidget {
                         },
                       ),
                   ],
-                  const SidebarDivider(),
+                  if (groups.isNotEmpty) const SidebarDivider(),
                   DsSidebarItem(
                     value: NavigationItem.settings,
                     leading: const DsIcon(DsIcons.settings),
@@ -279,7 +298,7 @@ final class MobileLayout extends ConsumerWidget {
           );
         },
       ),
-      body: glass
+      body: glass && atTab
           ? MediaQuery(
               // Scrolled content must be able to clear the floating capsule
               // (the reference's GlassBarInset): the bar's reach plus the

@@ -32,7 +32,7 @@ final class LayoutToggle extends ConsumerWidget {
           ),
           DsSegment(
             value: CardLayout.list,
-            icon: const DsIcon(DsIcons.rows3, size: 16),
+            icon: const DsIcon(DsIcons.layoutList, size: 16),
             semanticLabel: t.common.layoutList,
           ),
         ],

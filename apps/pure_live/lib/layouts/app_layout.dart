@@ -7,6 +7,7 @@ import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/layouts/desktop/desktop_layout.dart';
+import 'package:pure_live/layouts/location_breadcrumb.dart';
 import 'package:pure_live/layouts/mobile/mobile_layout.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart' show hongguoLibraryProvider;
 import 'package:pure_live/shared/shared.dart';
@@ -14,15 +15,6 @@ import 'package:responsive_breakpoints/responsive_breakpoints.dart' show Tailwin
 
 // No `show` clause: a wrapped import is what the save-time import
 // organizer kept breaking apart.
-
-/// The Tailwind breakpoint under which a shrinking window folds the
-/// sidebar once, on the crossing: xl (<1280px). The toggle always gets it
-/// back — the fold nudges, it does not outvote the viewer.
-const TailwindBreakpoint kExpandedSidebarBreakpoint = TailwindBreakpoint.xl;
-
-/// The Tailwind breakpoint below which a touch device takes the bottom
-/// bar: under md (<768px).
-const TailwindBreakpoint kBottomBarBreakpoint = TailwindBreakpoint.md;
 
 /// Resolves [width] to the package's breakpoint scale: the last
 /// breakpoint whose minimum width the window meets.
@@ -236,6 +228,17 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     final settingsSection = ref.watch(settingsSectionProvider);
     final settingsCategory = ref.watch(settingsCategoryProvider);
     final sectionOpen = ref.watch(settingsSectionOpenProvider);
+    // A shell without the settings sidebar (the phone shell, and a desktop
+    // window shrunk under the bottom bar) navigates settings as pushed
+    // pages, so the shell's breadcrumb names only the surface and the pane
+    // state stays behind the routes.
+    final settingsStacked =
+        inSettings &&
+        settingsStacksRoutes(
+          context,
+          formFactor: formFactor,
+          desktopProfile: ref.watch(deviceProfileProvider).isDesktop,
+        );
     // The shelf's new episodes ride on the hongguo menu's favorites row,
     // the reference's badge: the number each favorite gained since the
     // series was last opened. Only the station that owns the shelf is
@@ -281,6 +284,12 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       }
     }
 
+    void goBackToTrail() {
+      if (_cursor == 0) return;
+      setState(() => _cursor--);
+      showItem(_trail[_cursor]);
+    }
+
     void goBack() {
       // Settings is a stack of its own: a nested section steps up to its
       // parent, a section closes to its category page, and only the
@@ -294,9 +303,7 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
         }
         return;
       }
-      if (_cursor == 0) return;
-      setState(() => _cursor--);
-      showItem(_trail[_cursor]);
+      goBackToTrail();
     }
 
     void goForward() {
@@ -373,7 +380,22 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
         selected: selected,
         onSelected: handleSelected,
         onModuleSelected: selectModule,
-        onSearch: () => handleSelected(NavigationItem.search),
+        // The shell's surface can be a settings section too — a desktop window
+        // shrunk under the breakpoint keeps the pane in place rather than
+        // pushing it — so the same path the desktop head shows names the
+        // settings trail here.
+        breadcrumb: LocationBreadcrumb(
+          module: module,
+          selected: selected,
+          settings: inSettings ? settingsSection : null,
+          categoryKey: inSettings && !settingsStacked ? settingsCategory : null,
+          sectionOpen: inSettings && sectionOpen && !settingsStacked,
+        ),
+        // A section opened in place steps back through its own tree, the
+        // desktop rule; the trail behind it still moves the page. Stacked
+        // pages sit above the shell and carry their own back.
+        canBack: _cursor > 0 || (inSettings && sectionOpen && !settingsStacked),
+        onBack: goBack,
         homeMenuItems: homeMenu,
         badges: badges,
       );

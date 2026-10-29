@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/grids/card_grid.dart' show CardLayout;
 import 'package:pure_live/shared/grids/layout_toggle.dart' show LayoutToggle;
 import 'package:pure_live/shared/platforms/platform_display.dart' show localizedSiteIcon;
 
@@ -89,6 +90,7 @@ final class PlatformTabRow extends ConsumerWidget {
     this.onManagePlatforms,
     this.countOf,
     this.showLayoutToggle = true,
+    this.showPlatformWall = true,
     super.key,
   });
 
@@ -121,6 +123,11 @@ final class PlatformTabRow extends ConsumerWidget {
   /// rows) passes false and draws its own switch instead of two.
   final bool showLayoutToggle;
 
+  /// Whether the row ends with the chevron opening the platform wall. A
+  /// narrow toolbar that keeps only the tabs passes false and offers the
+  /// wall from its own menu.
+  final bool showPlatformWall;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sites = ref.watch(sitesProvider);
@@ -144,20 +151,112 @@ final class PlatformTabRow extends ConsumerWidget {
           ],
         ),
       ),
-      const SizedBox(width: DsSpace.s8),
-      // The dropdown: every platform in the wall.
-      PlatformWallButton(
-        platforms: platforms,
-        current: current,
-        nameOf: nameOf,
-        iconOf: (id) => iconOf(id, size: 32),
-        onChanged: onChanged,
-        onManagePlatforms: onManagePlatforms,
-        countOf: countOf,
-      ),
+      if (showPlatformWall) ...[
+        const SizedBox(width: DsSpace.s8),
+        // The dropdown: every platform in the wall.
+        PlatformWallButton(
+          platforms: platforms,
+          current: current,
+          nameOf: nameOf,
+          iconOf: (id) => iconOf(id, size: 32),
+          onChanged: onChanged,
+          onManagePlatforms: onManagePlatforms,
+          countOf: countOf,
+        ),
+      ],
       if (showLayoutToggle) ...[const SizedBox(width: DsSpace.s8), const LayoutToggle()],
     ];
     return SizedBox(height: 44, child: Row(children: children));
+  }
+}
+
+/// The one control a narrow toolbar keeps after its platform tabs: the
+/// page's own secondary actions ([items]) first, then the layout choice and
+/// the way to the platform wall — what the wide row draws as its chevron and
+/// its layout switch.
+final class PlatformToolbarMore extends ConsumerWidget {
+  /// The menu; [items] lead it, the layout and the wall follow.
+  const PlatformToolbarMore({
+    required this.platforms,
+    required this.current,
+    required this.nameOf,
+    required this.onChanged,
+    this.onManagePlatforms,
+    this.countOf,
+    this.items = const [],
+    super.key,
+  });
+
+  /// The platform ids the wall lists, in order.
+  final List<String> platforms;
+
+  /// The selected platform id.
+  final String current;
+
+  /// A platform id's display name.
+  final String Function(String id) nameOf;
+
+  /// Fired with the id of the platform picked in the wall.
+  final ValueChanged<String> onChanged;
+
+  /// Opens the platform-display setting from the wall's header.
+  final VoidCallback? onManagePlatforms;
+
+  /// A platform's own count, shown under its name in the wall.
+  final int? Function(String id)? countOf;
+
+  /// The page's own menu items, above the shared choices.
+  final List<Widget> items;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final layout = ref.watch(browseLayoutProvider);
+    final sites = ref.watch(sitesProvider);
+    return DsMenuAnchor(
+      semanticLabel: t.common.more,
+      align: DsAlign.end,
+      items: [
+        ...items,
+        if (items.isNotEmpty) const DsMenuDivider(),
+        DsMenuItem(
+          label: Text(t.common.layoutGrid),
+          checked: layout == CardLayout.grid,
+          onPressed: () => unawaited(ref.read(browseLayoutProvider.notifier).set(CardLayout.grid)),
+        ),
+        DsMenuItem(
+          label: Text(t.common.layoutList),
+          checked: layout == CardLayout.list,
+          onPressed: () => unawaited(ref.read(browseLayoutProvider.notifier).set(CardLayout.list)),
+        ),
+        if (platforms.isNotEmpty) ...[
+          const DsMenuDivider(),
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.antenna),
+            label: Text(t.common.switchPlatform),
+            onPressed: () => unawaited(
+              showPlatformPickerPanel(
+                context,
+                platforms: platforms,
+                current: current,
+                nameOf: nameOf,
+                iconOf: (id) => localizedSiteIcon(sites.getById(id), size: 32),
+                onChanged: onChanged,
+                onManagePlatforms: onManagePlatforms,
+                countOf: countOf,
+              ),
+            ),
+          ),
+        ],
+      ],
+      builder: (context, controller, _) => DsButton.icon(
+        variant: DsButtonVariant.ghost,
+        size: DsSize.sm,
+        semanticLabel: t.common.more,
+        onPressed: controller.open,
+        icon: const DsIcon(DsIcons.ellipsisVertical),
+      ),
+    );
   }
 }
 
@@ -259,7 +358,11 @@ final class _PlatformPanel extends StatelessWidget {
           Text(t.popular.allPlatformsHint, style: theme.typography.small.copyWith(color: colors.textMuted)),
           Expanded(
             child: GridView.builder(
-              padding: EdgeInsets.zero,
+              // A focused card's ring is painted 4px outside it, while a
+              // viewport clips at its own edge: this room keeps the first
+              // and last columns' rings whole instead of cutting them flat
+              // against the panel's border.
+              padding: const EdgeInsets.all(DsSpace.s6),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 mainAxisExtent: _tileExtent,

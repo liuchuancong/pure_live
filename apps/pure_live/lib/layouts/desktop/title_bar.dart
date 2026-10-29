@@ -49,9 +49,9 @@ final class WindowTitleBar extends ConsumerWidget {
   /// Fired when the forward arrow is pressed.
   final VoidCallback onForward;
 
-  /// Opens the global search — the toolbar field takes focus on desktop,
-  /// the search page opens on the phone. Null leaves the magnifier out,
-  /// for a host without a search.
+  /// Opens the global search: the toolbar field takes focus. Null leaves the
+  /// magnifier out — a host without a search, or a window too narrow for the
+  /// field the button would reach.
   final VoidCallback? onSearch;
 
   @override

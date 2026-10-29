@@ -1,4 +1,14 @@
 import 'package:desen_ui/desen_ui.dart' show DsSpace;
+import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
+
+/// The Tailwind breakpoint under which a shrinking window folds the
+/// sidebar once, on the crossing: xl (<1280px). The toggle always gets it
+/// back — the fold nudges, it does not outvote the viewer.
+const TailwindBreakpoint kExpandedSidebarBreakpoint = TailwindBreakpoint.xl;
+
+/// The Tailwind breakpoint below which a touch device takes the bottom
+/// bar: under md (<768px).
+const TailwindBreakpoint kBottomBarBreakpoint = TailwindBreakpoint.md;
 
 /// The widths the app's pages switch their presentation at.
 ///
