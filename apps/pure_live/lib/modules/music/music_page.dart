@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
@@ -199,13 +200,47 @@ final class _ModuleHeader extends ConsumerWidget {
 
 /// The library: a search, its history and the songs it answers, each row
 /// playing the answer from that song on.
-final class _LibraryView extends ConsumerWidget {
+final class _LibraryView extends ConsumerStatefulWidget {
   const _LibraryView({required this.search});
 
   final TextEditingController search;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_LibraryView> createState() => _LibraryViewState();
+}
+
+final class _LibraryViewState extends ConsumerState<_LibraryView> {
+  /// The display page the wide window's pager shows over the accumulated
+  /// answers; a shorter list (a new query) reads as its first page.
+  int _asked = 1;
+
+  static const int _pageSize = 30;
+
+  /// The page actually shown: [_asked] pulled back into the list's range.
+  int _pageOf(int count) {
+    if (count <= (_asked - 1) * _pageSize) return 1;
+    return _asked;
+  }
+
+  /// Moves the pager to [next]: a page in hand moves without a request, one
+  /// past the hand asks the source and only moves when the page arrived.
+  Future<void> _goToPage(int next, {required MusicSearchController controller}) async {
+    final songs = ref.read(musicSearchProvider).songs;
+    final inHand = songs.length ~/ _pageSize;
+    if (next <= _pageOf(songs.length) || next > inHand + 1) return;
+    if (next > inHand) {
+      final before = songs.length;
+      await controller.loadMore();
+      if (!mounted) return;
+      if (ref.read(musicSearchProvider).songs.length <= before) return;
+    }
+    if (!mounted) return;
+    setState(() => _asked = next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final search = widget.search;
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
@@ -224,8 +259,9 @@ final class _LibraryView extends ConsumerWidget {
     final sourceName = ref.watch(musicSourceProvider).name;
     void play(int index) => unawaited(playerController.playAll(state.songs, index: index));
     void runHistory(String query) {
-      search.text = query;
-      search.selection = TextSelection.collapsed(offset: query.length);
+      search
+        ..text = query
+        ..selection = TextSelection.collapsed(offset: query.length);
       unawaited(controller.search(query));
     }
 
@@ -345,38 +381,92 @@ final class _LibraryView extends ConsumerWidget {
         ),
       );
     } else {
-      body = NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          if (notification.depth != 0) return false;
-          if (notification.metrics.pixels < notification.metrics.maxScrollExtent - 600) return false;
-          unawaited(controller.loadMore());
-          return false;
-        },
-        child: Column(
+      // A wide window pages the answers by number — one display page is the
+      // local slice, the pager asks the source for one more page past the
+      // hand — and a narrow one appends as the viewer scrolls.
+      final wide = MediaQuery.sizeOf(context).width >= 768;
+      final page = _pageOf(state.songs.length);
+      if (!wide) {
+        body = NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification.depth != 0) return false;
+            if (notification.metrics.pixels < notification.metrics.maxScrollExtent - 600) return false;
+            unawaited(controller.loadMore());
+            return false;
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+                child: Text(
+                  t.music.songsCount(count: state.songs.length),
+                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(bottom: DsSpace.s16),
+                  itemCount: state.songs.length + (state.hasMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index >= state.songs.length) {
+                      return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
+                    }
+                    return songAt(index);
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      } else {
+        final start = (page - 1) * _pageSize;
+        final pageCount = state.songs.length ~/ _pageSize + (state.hasMore ? 1 : 0);
+        body = Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
-              child: Text(
-                t.music.songsCount(count: state.songs.length),
-                style: theme.typography.caption.copyWith(color: colors.textSubtle),
-              ),
-            ),
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.only(bottom: DsSpace.s16),
-                itemCount: state.songs.length + (state.hasMore ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index >= state.songs.length) {
-                    return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
-                  }
-                  return songAt(index);
-                },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+                    child: Text(
+                      t.music.songsCount(count: state.songs.length),
+                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.only(bottom: DsSpace.s16),
+                      itemCount: math.min(_pageSize, state.songs.length - start),
+                      itemBuilder: (context, index) => songAt(start + index),
+                    ),
+                  ),
+                ],
               ),
             ),
+            if (pageCount > 1)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: DsSpace.s8,
+                    children: [
+                      if (state.loading) const SizedBox(width: 14, height: 14, child: DsSpinner()),
+                      DsPagination(
+                        page: page,
+                        pageCount: pageCount,
+                        onChanged: (next) => unawaited(_goToPage(next, controller: controller)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
-        ),
-      );
+        );
+      }
     }
 
     return Column(
@@ -1842,6 +1932,17 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
                 hasMore: items.length < total,
                 onLoadMore: () async {
                   setState(() => _page += 1);
+                },
+                onRefresh: () async {
+                  final tag = effectiveTag;
+                  if (tag == null) {
+                    ref.invalidate(musicOnlineHotTagsProvider);
+                    return;
+                  }
+                  for (var page = 1; page <= _page; page++) {
+                    ref.invalidate(musicOnlinePlaylistsProvider((tag: tag, page: page)));
+                  }
+                  setState(() => _page = 1);
                 },
                 itemBuilder: (context, playlist) =>
                     MusicPlaylistCard.online(info: playlist, onOpen: () => widget.onOpen(playlist)),

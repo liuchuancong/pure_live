@@ -15,7 +15,7 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoWebsiteBoard;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_phone_sign_in.dart' show HongguoPhoneSignIn;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show CardGrid;
+import 'package:pure_live/shared/shared.dart' show PagedCardGrid;
 
 /// The station's views, the reference's top row plus the account surfaces:
 /// the home feed, find-drama, the boards, the two shelves, the reservations,
@@ -545,7 +545,7 @@ final class _FindViewState extends ConsumerState<_FindView> {
           ),
         ),
         Expanded(
-          child: CardGrid<HongguoSeries>(
+          child: PagedCardGrid<HongguoSeries>(
             items: state.items,
             layout: ref.watch(browseLayoutProvider),
             aspectRatio: 0.62,
@@ -1487,7 +1487,7 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
           ),
         ),
         Expanded(
-          child: CardGrid<HongguoSeries>(
+          child: PagedCardGrid<HongguoSeries>(
             items: state.items,
             layout: ref.watch(browseLayoutProvider),
             aspectRatio: 0.62,

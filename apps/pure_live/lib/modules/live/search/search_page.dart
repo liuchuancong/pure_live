@@ -748,7 +748,7 @@ final class _RoomResults extends ConsumerWidget {
       );
     }
 
-    return CardGrid<LiveRoom>(
+    return PagedCardGrid<LiveRoom>(
       items: search.rooms,
       layout: ref.watch(browseLayoutProvider),
       listMatchesGridWidth: true,
@@ -757,6 +757,7 @@ final class _RoomResults extends ConsumerWidget {
       isLoading: search.loading,
       hasMore: search.hasMore,
       onLoadMore: controller.loadMore,
+      onRefresh: controller.retry,
       itemBuilder: cardFor,
     );
   }
@@ -782,12 +783,18 @@ final class _ListResults extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(searchProvider.notifier);
-    return CardList<Object>(
+    // The rows page like the rooms grid: a wide window slices them into
+    // columns under the pager, a narrow one appends.
+    return PagedCardGrid<Object>(
       items: items,
-      itemBuilder: itemBuilder,
+      layout: CardLayout.list,
+      listMatchesGridWidth: true,
+      listItemBuilder: itemBuilder,
       hasMore: hasMore,
       isLoading: loading,
       onLoadMore: controller.loadMore,
+      onRefresh: controller.retry,
+      itemBuilder: itemBuilder,
     );
   }
 }

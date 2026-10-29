@@ -150,9 +150,9 @@ final class MusicPlaylistCard extends StatelessWidget {
   }
 }
 
-/// A playlist collection drawn as the room feed's grid: the columns follow
-/// the width, the next page loads as the viewer nears the end and a footer
-/// spinner rides the grid while it does.
+/// A playlist collection drawn as the room feed's grid: a wide window pages
+/// it by number — the wheel's end asks the pager for its next page — while a
+/// narrow one appends the source's next page as the viewer scrolls.
 final class MusicPlaylistGrid<T> extends StatefulWidget {
   /// A grid over [items].
   const MusicPlaylistGrid({
@@ -161,6 +161,8 @@ final class MusicPlaylistGrid<T> extends StatefulWidget {
     this.isLoading = false,
     this.hasMore = false,
     this.onLoadMore,
+    this.onRefresh,
+    this.pageSize = 30,
     this.padding = const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s16),
     super.key,
   });
@@ -180,6 +182,12 @@ final class MusicPlaylistGrid<T> extends StatefulWidget {
   /// Fetches the next page.
   final Future<void> Function()? onLoadMore;
 
+  /// Reloads the first page when the viewer pulls the grid down.
+  final Future<void> Function()? onRefresh;
+
+  /// How many cards one display page holds on a wide window.
+  final int pageSize;
+
   /// The grid's outer padding.
   final EdgeInsetsGeometry padding;
 
@@ -191,6 +199,18 @@ final class _MusicPlaylistGridState<T> extends State<MusicPlaylistGrid<T>> {
   /// One ask in flight at a time: the scroll fires per frame while the
   /// viewer moves.
   bool _asking = false;
+
+  /// The page the viewer asked for; a shorter list reads as its first.
+  int _asked = 1;
+
+  /// How many display pages the accumulated list fills whole.
+  int get _inHandPages => widget.items.length ~/ widget.pageSize;
+
+  /// The page actually shown: [_asked] pulled back into the list's range.
+  int get _page {
+    if (widget.items.length <= (_asked - 1) * widget.pageSize) return 1;
+    return _asked;
+  }
 
   /// Asks for the next page, once.
   void _onScroll(ScrollNotification notification) {
@@ -204,9 +224,24 @@ final class _MusicPlaylistGridState<T> extends State<MusicPlaylistGrid<T>> {
     }));
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final loadingRow = widget.isLoading && widget.hasMore;
+  /// Moves the pager to [next]: a page already in hand moves without a
+  /// request, one past the hand asks the source and only moves when the
+  /// page arrived.
+  Future<void> _goToPage(int next) async {
+    final onLoadMore = widget.onLoadMore;
+    if (next <= _page || widget.isLoading) return;
+    if (next > _inHandPages + 1) return;
+    if (next > _inHandPages) {
+      if (onLoadMore == null) return;
+      final before = widget.items.length;
+      await onLoadMore();
+      if (!mounted || widget.items.length <= before) return;
+    }
+    if (!mounted) return;
+    setState(() => _asked = next);
+  }
+
+  Widget _grid(List<T> items, {required bool pagesOnScrollToEnd, bool hasMore = false}) {
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         _onScroll(notification);
@@ -234,16 +269,50 @@ final class _MusicPlaylistGridState<T> extends State<MusicPlaylistGrid<T>> {
               crossAxisSpacing: DsSpace.s12,
               mainAxisExtent: width(columns) + kMusicPlaylistInfoHeight,
             ),
-            itemCount: widget.items.length + (loadingRow ? 1 : 0),
+            itemCount: items.length + (widget.isLoading && hasMore ? 1 : 0),
             itemBuilder: (context, index) {
-              if (index >= widget.items.length) {
+              if (index >= items.length) {
                 return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
               }
-              return widget.itemBuilder(context, widget.items[index]);
+              return widget.itemBuilder(context, items[index]);
             },
           );
         },
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final wide = MediaQuery.sizeOf(context).width >= 768;
+    if (!wide) return _grid(widget.items, pagesOnScrollToEnd: false, hasMore: widget.hasMore);
+    final end = _page * widget.pageSize;
+    final shown = widget.items.length <= end ? widget.items : widget.items.sublist(0, end);
+    final moreInHand = widget.items.length > end;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: _grid(shown, pagesOnScrollToEnd: true, hasMore: moreInHand || widget.hasMore)),
+        // A collection that fills one page never grows a pager.
+        if (_inHandPages + (widget.hasMore ? 1 : 0) > 1)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+            child: Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s8,
+                children: [
+                  if (widget.isLoading) const SizedBox(width: 14, height: 14, child: DsSpinner()),
+                  DsPagination(
+                    page: _page,
+                    pageCount: _inHandPages + (widget.hasMore ? 1 : 0),
+                    onChanged: (next) => unawaited(_goToPage(next)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

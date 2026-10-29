@@ -144,7 +144,7 @@ final class _RegionFeedView extends ConsumerWidget {
     final feed = ref.watch(vodFeedProvider.select((feeds) => feeds[feedKey]));
     final state = feed ?? (videos: const <VodVideo>[], nextPage: 1, hasMore: true, loading: false, error: null);
     final controller = ref.read(vodFeedProvider.notifier);
-    return CardGrid<VodVideo>(
+    return PagedCardGrid<VodVideo>(
       key: ValueKey(feedKey),
       scrollController: scrollController,
       items: state.videos,

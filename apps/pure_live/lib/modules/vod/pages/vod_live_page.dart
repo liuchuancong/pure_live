@@ -125,7 +125,7 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
           ),
         ),
         Expanded(
-          child: CardGrid<LiveRoom>(
+          child: PagedCardGrid<LiveRoom>(
             items: feed.rooms,
             layout: ref.watch(browseLayoutProvider),
             listMatchesGridWidth: true,

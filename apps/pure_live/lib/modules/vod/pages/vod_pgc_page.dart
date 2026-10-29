@@ -131,7 +131,7 @@ final class _PgcFeedView extends ConsumerWidget {
         ref.watch(vodPgcProvider.select((feeds) => feeds[type])) ??
         (seasons: const <VodSeason>[], cursor: 0, hasMore: true, loading: false, loaded: false, error: null);
     final controller = ref.read(vodPgcProvider.notifier);
-    return CardGrid<VodSeason>(
+    return PagedCardGrid<VodSeason>(
       key: ValueKey(type),
       scrollController: scrollController,
       items: feed.seasons,

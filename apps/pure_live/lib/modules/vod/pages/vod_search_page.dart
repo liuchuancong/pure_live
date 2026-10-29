@@ -207,7 +207,7 @@ final class _SearchResults extends StatelessWidget {
     void retry() => unawaited(controller.retry());
     switch (state.kind) {
       case VodSearchKind.video:
-        return CardGrid<VodVideo>(
+        return PagedCardGrid<VodVideo>(
           items: state.videos,
           crossSpacing: settings.crossSpacing,
           mainSpacing: settings.mainSpacing,
@@ -223,7 +223,7 @@ final class _SearchResults extends StatelessWidget {
         );
       case VodSearchKind.bangumi:
       case VodSearchKind.cinema:
-        return CardGrid<VodSeason>(
+        return PagedCardGrid<VodSeason>(
           items: state.seasons,
           aspectRatio: 0.62,
           crossSpacing: settings.crossSpacing,
@@ -254,7 +254,7 @@ final class _SearchResults extends StatelessWidget {
           },
         );
       case VodSearchKind.liveRoom:
-        return CardGrid<VodLiveRoom>(
+        return PagedCardGrid<VodLiveRoom>(
           items: state.rooms,
           crossSpacing: settings.crossSpacing,
           mainSpacing: settings.mainSpacing,
