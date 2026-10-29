@@ -265,7 +265,15 @@ playAll(index)/收藏/加入歌单/下载，复用本地轨道行）；非 wy/tx
 - ✅ H4 开放 API（2026-10-29 `music_open_api.dart`：loopback HttpServer，LX 同款路由
   /status /toggle /play /pause /skip /back /seek /volume /mute；开关/端口 Provider 已落
   `music.openapi.enabled|port`，设置面板接线待并行 WIP 收口；bindLan 未做，恒 loopback）。
-- ⬜ H5 Deeplink：`lxmusic://` 播放/歌单动作（`useDeeplink/`）。
+- ✅ H5 Deeplink（2026-10-29 `controller/music_deeplink.dart`：纯 Dart 解析器+分发器，LX 协议全量——
+  `lxmusic://music/search`（路径与 keywords 两式、128 字符截断）、`music/play`（data JSON，
+  按源验证必填 id 键 kw=-songmid/kg=hash/tx=songmid(+strMediaMid 入 metadata)/wy=songmid/mg=copyrightId，
+  types→MusicQuality 映射 128k/320k/flac/flac24bit/hires，interval→时长）、`music/searchPlay`
+  （"名 - 歌手" 拆分、playLater 走 playNext）、`songlist/open|play`（source+id|url+index，
+  播放走 OnlinePlaylists.playlistDetail→playAll）、`player` 八命令（toggle/next/prev/collect/
+  uncollect/dislike→favourites/dislikes 控制器）；`handleMusicDeeplink` 返回错误文案不抛；
+  +14 测试全绿。**平台缺口（诚实标注）：OS 级 `lxmusic://` 协议注册（Windows 注册表/URL scheme
+  声明）未做，v2 尚无 app_links 接入——解析器/分发器就绪，等平台层把链接送进来即可用**。
 - ✅ H6 歌曲评论（2026-10-29 五源齐：`sources/music_comment_source.dart` 能力接口
   `MusicCommentsSource`（comments(track,hot,page,pageSize)），`music_comments.dart` 控制器改按能力分发：
   kw ncomment（原控制器逻辑下沉）、kg m.comment.service topliked/newest（_signed 签名+atlist 展开+
