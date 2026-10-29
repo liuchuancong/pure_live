@@ -28,7 +28,7 @@
 | 热门搜索（开关 `showHotSearches`） | `musicHotSearchesProvider` + library 空态 | ✅ |
 | 历史搜索（清空/单条删） | `musicSearchHistoryProvider` | ✅ |
 | 搜索建议（输入下拉 tipSearch） | library 搜索框聚焦且输入词≠已提交词时显示源建议，点行即搜（提交 `ca47d0ab8`） | ✅ |
-| 搜索类型：歌曲/歌单 双 tab | 无歌单搜索 | ⬜ |
+| 搜索类型：歌曲/歌单 双 tab + 类型切换 | library 搜索框旁分段切换；歌单结果逐页累积、双模滚动、点击跳歌单详情；wy 频道已实现（eapi cloudsearch type 1000，提交 `0cac05b4f`） | 🟡 余 kg/tx/mg/kw 频道的 searchPlaylists |
 | 聚合搜索（all 源并发合并分页） | 仅单源（默认音源） | ⬜ |
 | 搜索页音源选择器（页内源 ≠ 全局默认） | 无页内源选择，跟随全局默认 | 🟡 页内源切换 |
 | 音源别名/原名显示（小蜗音乐…） | `showSource` 显示源名，无别名体系 | 🟡 |
