@@ -212,10 +212,24 @@ playAll(index)/收藏/加入歌单/下载，复用本地轨道行）；非 wy/tx
   持久化（play.volume/play.rate=player.volume/playbackRate，启动 `_restorePlaybackPrefs` 先于队列恢复，
   且不受 autoplay 早退影响）。引擎侧缺口单列：mediaDeviceId/preservesPitch（引擎无 API）、
   audioVisualization=H2、soundEffect=H1 待拍板）
-- ⬜ G2 同步服务 client：WebSocket `ws://host/socket?i={clientId}&t={aesEncrypt(msgConnect,key)}`、
-  close code 重连/认证失败处理、服务端 action 驱动本地变更、本地变更推快照
-  （`main/modules/sync/client/*`）。快照机制：md5 去重 + latest 指针 + 历史
-  （`server/sync/modules/list/manage.ts`）。
+- ✅ G2 同步服务 client（2026-10-29 按用户「继续全部做」拍板走 LX 官方协议互通；五件
+  `controller/music_sync_*.dart`——`codec`（md5 auth key/AES-128-ECB PKCS7/ RSA-2048 手写 DER
+  SPKI+PKCS#8/OAEP 回复解密）、`wire`（`cg_`+gzip 帧 1KiB 阈值 + message2call 数组协议
+  REQUEST[0,name,path,args,cbIdx]/RESPONSE/CALLBACK 两式，两侧均为平铺方法名）、
+  `client`（/hello→helloMsg、/id→idPrefix 剥离、codeAuth RSA+AES /ah、keyAuth AES 回 helloMsg、
+  `ws://…/socket?i=&t=` 经 live_websocket、30s 调用超时/60s 空闲判定）、`data`（v2
+  recent/favourites/playlists ↔ LX ListData{defaultList,loveList,userList} + MusicInfo
+  meta.songId/albumName/picUrl + interval、dislike 规则串、md5=toMD5(JSON)）、`music_sync.dart`
+  （控制器：`music.sync.{host,authCode,mode,keyInfo,dislikeRules}` 键、connect 全流程、
+  getEnabledFeatures/list_sync_*/dislike_sync_* 十二处理器、`list_data_overwrite` 应用、
+  pushListsChanged/pushDislikesChanged 本地改动推送）；设置新子页 SettingsSection.musicSync
+  （地址/连接码/六种同步模式 DsSelect/连接状态/清除授权）+20 条 l10n；+16 测试全绿。
+  同步模式答案默认 merge_remote_local（服务端据此合并，客户端不实现合并本身——与 LX
+  client 行为一致，合并逻辑在服务端）。**诚实缺口：①入站「歌手 - 歌曲」名规则无法映射回
+  v2 的 sourceId:id 键式不喜欢——远端规则存 `music.sync.dislikeRules` 只做往返，不参与
+  跳过判定；②快照机制（md5 去重+历史）是服务端侧能力，未搬；③首次全量同步依赖服务端
+  发起，本地编辑后的推送当前只在连接期生效（onListSyncAction 覆盖式），细粒度 action
+  （list_create/music_add 等）未逐一实现。**
 
 ### H. 其他功能
 - 🟨 H1 音效/EQ（2026-10-29 用户拍板为「音效中心」专项并给出设计规范 v1.0；
@@ -314,11 +328,19 @@ playAll(index)/收藏/加入歌单/下载，复用本地轨道行）；非 wy/tx
 ## 3. 待用户决策
 
 1. H1 音效/EQ 的 Flutter 落地方案（mpv af 链 vs 自研 DSP）。
-2. G2 同步服务是否连 LX 官方服务端协议（保持互通）还是仅自建。
+2. ~~G2 同步服务是否连 LX 官方服务端协议~~ 已拍板：连官方协议，保持互通（2026-10-29）。
 3. 歌单/歌词缓存存储：Hive（现状）已定，无需 SQLite 翻案 —— 除非字段对齐遇阻。
 
 ## 4. 实施记录
 
+- 2026-10-29 播放 UI 重排（用户反馈「底部播放UI和播放页面太难看」；口头反馈=取结构）：
+  迷你条 `_MiniPlayer`（封面/标题+进度发丝线可点跳转+上下曲/播放暂停 ghost 按钮）；
+  播放页 `music_player_page.dart` 分台前 `_Stage`（宽屏 ≥920 5:6 左右分栏，窄屏上下——
+  封面随高 300/208、居中标题歌手、拖拽秒数进度行、四键传输排+音量）与侧栏 `_SidePanel`
+  （歌词/队列 DsTabs；`_QueuePanel` 空态+计数表头+复用 MusicSongRow）；
+  CallbackShortcuts space/esc 在播放页内接住播放暂停/返回。
+- 2026-10-29 H7 收尾：`musicHotkeyBindings` 已挂 MusicPage 根（CallbackShortcuts+Focus），
+  应用内快捷键在音乐模块全域生效。
 - 2026-10-29 第一批（A1 + A3）：`dart analyze`（music 目录与 app 全量）零问题。
   音乐模块工作区存在另一会话的大规模未提交 WIP（player_page/playback/settings 等十余文件），
   按防撞规则本批代码改动留在工作区未提交，仅入库本台账文档；等 WIP 收口后再一并提交。
