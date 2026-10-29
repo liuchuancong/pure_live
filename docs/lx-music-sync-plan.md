@@ -96,7 +96,9 @@
 - ✅ C2 竞态保护（`AudioPlaybackController` 单引擎句柄内处理，源级竞态由其代数/过期机制覆盖）
   ：`diffCurrentMusicInfo()`（比较 gettingUrlId/id/isPlay），换歌并行发起
   URL/封面/歌词三路请求各自防串台。
-- 🟨 C3 取链重试策略（引擎有签名 URL 过期重解析；LX 的 429 随机 2–6s 延迟未单独实现；
+- ✅ C3 取链重试策略（2026-10-29 `LxPlatformSource._patient`：五源全部 HTTP 端点
+  （getText/getJson/postJson/postForm）遇 429 随机 2–6s 延迟后重试一次；签名 URL 过期重解析引擎已有；
+  换源回落已接 `resolveWithToggle`。autoSkipOnError 属播放引擎行为待验）：引擎有签名 URL 过期重解析；LX 的 429 随机 2–6s 延迟未单独实现；
   换源回落可接 `resolveWithToggle`）：`getMusicPlayUrl` 先 toggleMusicInfo 后本源；429 随机 2–6s 延迟重试；
   失败再重试一次；`autoSkipOnError` = 加载超时 100s / 失败 5s 自动下一曲。
 - ✅ C4 进度恢复（`music.playback.positions` + `music.queue` 已持久化续播）：`isSavePlayTime` 时恢复到上次位置并暂停待播（现有 `music.playback.positions`
@@ -189,7 +191,14 @@
   /status /toggle /play /pause /skip /back /seek /volume /mute；开关/端口 Provider 已落
   `music.openapi.enabled|port`，设置面板接线待并行 WIP 收口；bindLan 未做，恒 loopback）。
 - ⬜ H5 Deeplink：`lxmusic://` 播放/歌单动作（`useDeeplink/`）。
-- 🟨 H6 歌曲评论（酷我评论已接，多源未扩）。
+- ✅ H6 歌曲评论（2026-10-29 五源齐：`sources/music_comment_source.dart` 能力接口
+  `MusicCommentsSource`（comments(track,hot,page,pageSize)），`music_comments.dart` 控制器改按能力分发：
+  kw ncomment（原控制器逻辑下沉）、kg m.comment.service topliked/newest（_signed 签名+atlist 展开+
+  pcontent 回复壳）、tx fcg_global_comment_h5 表单（最新）+musicu GetHotCommentList（热门）+
+  `[em]e…[/em]` 表、wy weapi 评论游标分页（cursorTools 移植，per-song 缓存）+热门 beforeTime 分页+
+  `[大笑]` 表、mg comment/stack 游标（上一页末条 id）+热门 hotCommentStart+songId 换取（copyrightId
+  相同时走 resourceinfo）+ISO 时间解析；表情表落 `sources/comment_emojis.dart`（tx 66 条/wy 60 条，
+  python 从 JS 抽取）。LX 参考：各平台 `comment.js`、mg `songId.js`
 - ⬜ H7 托盘/最小化/快捷键：全局快捷键注册持久化（`main/modules/hotKey/`、tray.ts）。
 - ➖ MV / 自动更新：LX 无 MV 模块；自动更新走 pure_live 自身体系。
 
