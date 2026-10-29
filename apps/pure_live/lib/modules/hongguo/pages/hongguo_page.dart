@@ -102,7 +102,7 @@ final class _HongguoPageState extends ConsumerState<HongguoPage> {
             HongguoView.favorites => const _FavoritesView(),
             HongguoView.history => const _HistoryView(),
             HongguoView.reservations => const _ReservationsView(),
-            HongguoView.account => const _AccountView(),
+            HongguoView.account => _AccountView(onGo: (view) => setState(() => _view = view)),
             HongguoView.search => const _SearchView(),
           },
         ),
@@ -710,22 +710,37 @@ final class _RankViewState extends ConsumerState<_RankView> {
           ),
         ),
         Expanded(
-          child: CardGrid<HongguoSeries>(
-            items: rows,
-            layout: ref.watch(browseLayoutProvider),
-            aspectRatio: 0.62,
-            listMainAxisExtent: 124,
-            itemBuilder: (context, series) =>
-                HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
-            listItemBuilder: (context, series) =>
-                HongguoSeriesRow(series: series, onOpen: () => _open(context, series)),
-            isLoading: held.loading && rows.isEmpty,
-            error: held.error,
-            onRetry: () => unawaited(controller.refresh(_board)),
-            emptyIcon: HongguoView.rank.icon,
-            emptyTitle: t.common.empty,
-            emptyDescription: _topic.isEmpty ? t.hongguo.noResultsDescription : t.hongguo.rankEmptyTopic,
-          ),
+          // The board reads as the station app's own ranking: a row per
+          // title with its place, tags, blurb and heat, not a poster grid.
+          child: rows.isEmpty
+              ? (held.loading
+                    ? const Center(child: DsSpinner())
+                    : Center(
+                        child: DsEmptyState(
+                          icon: const DsIcon(DsIcons.trophy),
+                          title: Text(held.error != null ? t.hongguo.loadFailed : t.common.empty),
+                          description: Text(
+                            held.error ?? (_topic.isEmpty ? t.hongguo.noResultsDescription : t.hongguo.rankEmptyTopic),
+                          ),
+                          actions: held.error == null
+                              ? const []
+                              : [
+                                  DsButton(
+                                    onPressed: () => unawaited(controller.refresh(_board)),
+                                    child: Text(t.common.retry),
+                                  ),
+                                ],
+                        ),
+                      ))
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+                  itemCount: rows.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: DsSpace.s8),
+                  itemBuilder: (context, index) {
+                    final series = rows[index];
+                    return HongguoRankRow(series: series, position: index + 1, onOpen: () => _open(context, series));
+                  },
+                ),
         ),
       ],
     );
@@ -1075,7 +1090,12 @@ final class _ReservationsViewState extends ConsumerState<_ReservationsView> {
           child: !account.signedIn
               ? _SignInGate(message: t.hongguo.reservationsOff)
               : _SeriesList(
-                  rows: [for (final row in _online ? state.online : state.upcoming) row.series],
+                  rows: [
+                    for (final row in _online ? state.online : state.upcoming)
+                      // A waiting title speaks with its premiere date, as the
+                      // station app prints it under the name.
+                      row.series.copyWith(hot: row.series.hot.isNotEmpty ? row.series.hot : row.series.premiere),
+                  ],
                   loading: state.loading,
                   error: state.error,
                   emptyText: _online ? t.hongguo.reservationsOnlineEmpty : t.hongguo.reservationsUpcomingEmpty,
@@ -1090,7 +1110,10 @@ final class _ReservationsViewState extends ConsumerState<_ReservationsView> {
 /// The account itself: the QR sign-in when signed out, the profile and the
 /// levers when signed in.
 final class _AccountView extends ConsumerStatefulWidget {
-  const _AccountView();
+  const _AccountView({required this.onGo});
+
+  /// Moves the module's page to one of the viewer's shelves.
+  final void Function(HongguoView view) onGo;
 
   @override
   ConsumerState<_AccountView> createState() => _AccountViewState();
@@ -1147,6 +1170,7 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
       final favorites = ref.watch(hongguoAccountFavoritesProvider);
       final cloud = ref.watch(hongguoAccountHistoryProvider);
       final reservations = ref.watch(hongguoReservationsProvider);
+      final library = ref.watch(hongguoLibraryProvider);
       final profile = account.profile;
       return SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
@@ -1154,43 +1178,77 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s16,
           children: [
+            DsCard(
+              style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s16)),
+              child: Row(
+                spacing: DsSpace.s12,
+                children: [
+                  DsAvatar(
+                    initials: profile?.nickname ?? 'HG',
+                    size: DsSize.lg,
+                    toneIndex: DsAvatar.toneFor(profile?.id ?? ''),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: DsSpace.s3,
+                      children: [
+                        Text(
+                          profile?.nickname ?? t.hongguo.accountSignedInAs,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.title.copyWith(color: colors.text),
+                        ),
+                        Text(
+                          profile == null ? t.hongguo.accountReading : '${t.hongguo.accountId}：${profile.id}',
+                          style: theme.typography.caption.copyWith(color: colors.textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (profile != null)
+                    DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.ghost,
+                      leading: const DsIcon(DsIcons.copy, size: 14),
+                      onPressed: () async {
+                        await Clipboard.setData(ClipboardData(text: profile.id));
+                        if (context.mounted) showDsToast(context: context, title: t.hongguo.copied);
+                      },
+                      child: Text(t.hongguo.copyAccountId),
+                    ),
+                ],
+              ),
+            ),
+            // The app's own profile page leads with the viewer's shelves:
+            // one tile each, holding the count and the way in.
             Row(
-              spacing: DsSpace.s12,
+              spacing: DsSpace.s8,
               children: [
-                DsAvatar(
-                  initials: profile?.nickname ?? 'HG',
-                  size: DsSize.lg,
-                  toneIndex: DsAvatar.toneFor(profile?.id ?? ''),
+                Expanded(
+                  child: _LibraryTile(
+                    icon: DsIcons.heart,
+                    label: t.hongguo.navFavorites,
+                    count: favorites.items.isEmpty ? library.favorites.length : favorites.items.length,
+                    onPressed: () => widget.onGo(HongguoView.favorites),
+                  ),
                 ),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: DsSpace.s3,
-                    children: [
-                      Text(
-                        profile?.nickname ?? t.hongguo.accountSignedInAs,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.title.copyWith(color: colors.text),
-                      ),
-                      Text(
-                        profile == null ? t.hongguo.accountReading : '${t.hongguo.accountId}：${profile.id}',
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                    ],
+                  child: _LibraryTile(
+                    icon: DsIcons.history,
+                    label: t.hongguo.navHistory,
+                    count: cloud.items.isEmpty ? library.history.length : cloud.items.length,
+                    onPressed: () => widget.onGo(HongguoView.history),
                   ),
                 ),
-                if (profile != null)
-                  DsButton(
-                    size: DsSize.sm,
-                    variant: DsButtonVariant.ghost,
-                    leading: const DsIcon(DsIcons.copy, size: 14),
-                    onPressed: () async {
-                      await Clipboard.setData(ClipboardData(text: profile.id));
-                      if (context.mounted) showDsToast(context: context, title: t.hongguo.copied);
-                    },
-                    child: Text(t.hongguo.copyAccountId),
+                Expanded(
+                  child: _LibraryTile(
+                    icon: DsIcons.calendarClock,
+                    label: t.hongguo.navReservations,
+                    count: reservations.online.length + reservations.upcoming.length,
+                    onPressed: () => widget.onGo(HongguoView.reservations),
                   ),
+                ),
               ],
             ),
             DsListSection(
@@ -1545,7 +1603,7 @@ final class _ProgressList extends ConsumerWidget {
           episodeCount: row.episodeCount,
           hot: row.completed
               ? t.hongguo.watchedBadge
-              : '${t.hongguo.episodeLabel(index: row.episodeIndex)} · ${_clock(row.positionMs)}',
+              : '${row.episodeCount > 0 ? t.hongguo.historyEpisodeProgress(index: row.episodeIndex, total: row.episodeCount) : t.hongguo.episodeLabel(index: row.episodeIndex)} · ${_clock(row.positionMs)}',
         );
         return Column(
           spacing: DsSpace.s4,
@@ -1678,6 +1736,49 @@ final class _QrLoginCardState extends ConsumerState<_QrLoginCard> {
           child: Text(context.t.hongguo.accountQrRefresh),
         ),
       ],
+    );
+  }
+}
+
+/// One shelf's count on the account page: the glyph, how much it holds and
+/// its name, the way into the shelf — the station app's own profile tiles.
+final class _LibraryTile extends StatelessWidget {
+  const _LibraryTile({required this.icon, required this.label, required this.count, required this.onPressed});
+
+  final DsIconData icon;
+  final String label;
+  final int count;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    return DsCard(
+      onPressed: onPressed,
+      semanticLabel: label,
+      style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          DsIcon(icon, size: theme.sizes.iconMd, color: colors.accentText),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: DsSpace.s3,
+              children: [
+                Text('$count', style: theme.typography.numeric(theme.typography.title.copyWith(color: colors.text))),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

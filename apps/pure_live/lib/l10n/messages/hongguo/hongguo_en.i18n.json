@@ -70,6 +70,7 @@
   "historyManageDeleteCount": "Remove selected ({count})",
   "resumeAt": "Resume",
   "watchedBadge": "Finished",
+  "historyEpisodeProgress": "{index}/{total} eps",
   "reservationsOnline": "Premiered",
   "reservationsUpcoming": "Upcoming",
   "reservationsOnlineEmpty": "No premiered reservations right now",

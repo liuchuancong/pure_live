@@ -577,6 +577,7 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String historyManageDeleteCount({required Object count}) => 'Remove selected (${count})';
 	@override String get resumeAt => 'Resume';
 	@override String get watchedBadge => 'Finished';
+	@override String historyEpisodeProgress({required Object index, required Object total}) => '${index}/${total} eps';
 	@override String get reservationsOnline => 'Premiered';
 	@override String get reservationsUpcoming => 'Upcoming';
 	@override String get reservationsOnlineEmpty => 'No premiered reservations right now';
@@ -3995,6 +3996,7 @@ extension on TranslationsEn {
 			'hongguo.historyManageDeleteCount' => ({required Object count}) => 'Remove selected (${count})',
 			'hongguo.resumeAt' => 'Resume',
 			'hongguo.watchedBadge' => 'Finished',
+			'hongguo.historyEpisodeProgress' => ({required Object index, required Object total}) => '${index}/${total} eps',
 			'hongguo.reservationsOnline' => 'Premiered',
 			'hongguo.reservationsUpcoming' => 'Upcoming',
 			'hongguo.reservationsOnlineEmpty' => 'No premiered reservations right now',
@@ -4053,9 +4055,9 @@ extension on TranslationsEn {
 			'hongguo.shelfChangeBatch' => 'Another batch',
 			'hongguo.shelfHot' => 'Now playing',
 			'hongguo.shelfNew' => 'New',
-			'hongguo.shelfCategory' => 'Category',
 			_ => null,
 		} ?? switch (path) {
+			'hongguo.shelfCategory' => 'Category',
 			'hongguo.newArrivals' => 'new',
 			'hongguo.openFullBoard' => 'Full board',
 			'hongguo.seeMore' => 'More',
@@ -4567,9 +4569,9 @@ extension on TranslationsEn {
 			'music.downloadSkipExisting' => 'Skip existing files',
 			'music.downloadSkipExistingDesc' => 'Do not download when the output file is already there.',
 			'music.downloadGroupByList' => 'Group by playlist',
-			'music.downloadGroupByListDesc' => 'When downloading from a playlist, save into a folder named after it.',
 			_ => null,
 		} ?? switch (path) {
+			'music.downloadGroupByListDesc' => 'When downloading from a playlist, save into a folder named after it.',
 			'music.downloadMaxConcurrent' => 'Concurrent downloads',
 			'music.downloadMaxConcurrentDesc' => 'How many downloads run at once (1–5); changes apply immediately.',
 			'music.downloadStatusQueued' => 'Queued',
@@ -5081,9 +5083,9 @@ extension on TranslationsEn {
 			'room.giftLineMonths' => ({required Object count}) => '×${count} mo',
 			'room.giftLineUnnamed' => 'a gift',
 			'room.giftLineNumbered' => ({required Object id}) => 'gift ${id}',
-			'room.giftValueYuan' => ({required Object value}) => '¥${value}',
 			_ => null,
 		} ?? switch (path) {
+			'room.giftValueYuan' => ({required Object value}) => '¥${value}',
 			'room.giftValueGoldSeed' => ({required Object value}) => '${value} gold seeds',
 			'room.giftValueDiamond' => ({required Object value}) => '${value} diamonds',
 			'room.giftValueRedBean' => ({required Object value}) => '${value} red beans',
@@ -5595,9 +5597,9 @@ extension on TranslationsEn {
 			'settings.fontCategoryHandwriting' => 'Handwriting',
 			'settings.fontCategoryEnglish' => 'Latin',
 			'settings.fontCategorySerif' => 'Serif',
-			'settings.fontCategorySansSerif' => 'Sans-serif',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontCategorySansSerif' => 'Sans-serif',
 			'settings.fontCategoryDisplay' => 'Display',
 			'settings.fontCategoryMonospace' => 'Monospace',
 			'settings.fontCategoryOther' => 'Other',
@@ -6109,9 +6111,9 @@ extension on TranslationsEn {
 			'settings.downloadPause' => 'Pause',
 			'settings.downloadResume' => 'Resume',
 			'settings.downloadPausedHint' => 'Paused · tap to resume',
-			'settings.downloadEtaSeconds' => ({required Object seconds}) => '${seconds} seconds left',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadEtaSeconds' => ({required Object seconds}) => '${seconds} seconds left',
 			'settings.downloadEtaMinutes' => ({required Object minutes}) => '${minutes} minutes left',
 			'settings.downloadEtaHours' => ({required Object hours}) => '${hours} hours left',
 			'settings.downloadSummary' => ({required Object total}) => '${total} items',
@@ -6623,9 +6625,9 @@ extension on TranslationsEn {
 			'vod.pgcMovie' => 'Movies',
 			'vod.pgcDocumentary' => 'Documentaries',
 			'vod.pgcGuochuang' => 'Guochuang',
-			'vod.pgcTv' => 'TV series',
 			_ => null,
 		} ?? switch (path) {
+			'vod.pgcTv' => 'TV series',
 			'vod.pgcVariety' => 'Variety',
 			'vod.pgcEmptyDescription' => 'Nothing in this catalogue right now.',
 			'vod.episodes' => 'Episodes',

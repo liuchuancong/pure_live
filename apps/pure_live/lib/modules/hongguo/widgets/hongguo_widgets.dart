@@ -52,6 +52,17 @@ String hongguoFavoriteLine(Translations t, HongguoLibraryState library, HongguoS
   return parts.join(' · ');
 }
 
+/// What a poster card prints under its name: the heat or play figure, then
+/// the categories — the station's browse cards, without the episode count
+/// the cover's own corner already carries.
+String hongguoSeriesMetaLine(HongguoSeries series) {
+  final parts = <String>[
+    if (series.hot.isNotEmpty) series.hot else if (series.playCount > 0) AudienceFormat.format(series.playCount),
+    if (series.category.isNotEmpty) series.category,
+  ];
+  return parts.join(' · ');
+}
+
 /// One series as a poster card: the cover with its badges — the board
 /// position, the episode count, the heat, the 今日 marker — the title, the
 /// listing line and, on a shelf that asks for it, the local bookmark.
@@ -138,6 +149,19 @@ final class HongguoSeriesCard extends StatelessWidget {
                       top: DsSpace.s6,
                       start: DsSpace.s6,
                       child: _RankFlag(rank: rank),
+                    )
+                  else if (series.coverTags.isNotEmpty)
+                    // The source's own corner tags (爆剧 / 新剧 / 独播), where
+                    // the app stamps them; a ranked card keeps the place for
+                    // its flag instead.
+                    PositionedDirectional(
+                      top: DsSpace.s6,
+                      start: DsSpace.s6,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: DsSpace.s4,
+                        children: [for (final tag in series.coverTags.take(2)) _CoverTag(label: tag)],
+                      ),
                     ),
                   PositionedDirectional(
                     top: DsSpace.s6,
@@ -179,7 +203,7 @@ final class HongguoSeriesCard extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  hongguoSeriesSubtitle(context.t, series),
+                  hongguoSeriesMetaLine(series),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.typography.caption.copyWith(color: colors.textMuted),
@@ -371,9 +395,147 @@ final class HongguoSeriesRow extends StatelessWidget {
   }
 }
 
-/// One dimension of a shelf's selector panel: the dimension's name beside a
+/// One board as the station's app lists it: the place, the poster, the name
+/// with its heat, the tags, the blurb and the listing's badges — a
+/// full-width row rather than a poster, so the board's readings stay beside
+/// each title.
+final class HongguoRankRow extends StatelessWidget {
+  /// The row for [series] at [position], used when the listing carries no
+  /// place of its own.
+  const HongguoRankRow({required this.series, this.position = 1, this.onOpen, super.key});
+
+  /// The series shown.
+  final HongguoSeries series;
+
+  /// The fallback place.
+  final int position;
+
+  /// Opens the series; null leaves the row inert.
+  final VoidCallback? onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final t = context.t;
+    final rank = series.rank ?? position;
+    final leading = rank <= 3;
+    final fallback = CoverFallback(title: series.title, padding: const EdgeInsets.all(DsSpace.s6));
+    final badges = [
+      if (series.score.isNotEmpty) series.score,
+      if (series.today) t.hongguo.todayTag,
+      ...series.coverTags.take(2),
+    ];
+    return DsCard(
+      onPressed: onOpen,
+      semanticLabel: series.title,
+      style: DsCardStyle(
+        padding: const EdgeInsets.all(DsSpace.s12),
+        hovered: DsCardStyle(background: colors.hover),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: DsSpace.s12,
+        children: [
+          SizedBox(
+            width: 36,
+            child: Padding(
+              padding: const EdgeInsets.only(top: DsSpace.s4),
+              child: Text(
+                '$rank',
+                textAlign: TextAlign.center,
+                style: theme.typography.numeric(
+                  theme.typography.title.copyWith(
+                    color: leading ? colors.accentText : colors.textSubtle,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 88,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(theme.radii.control(72)),
+              child: AspectRatio(
+                aspectRatio: 3 / 4,
+                child: series.cover.isEmpty
+                    ? fallback
+                    : DsImage(
+                        image: hongguoCoverImage(series.cover),
+                        aspectRatio: 3 / 4,
+                        semanticLabel: series.title,
+                        fallback: fallback,
+                      ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: DsSpace.s4,
+              children: [
+                Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        series.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                      ),
+                    ),
+                    if (series.hot.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: DsSpace.s3,
+                        children: [
+                          DsIcon(DsIcons.flame, size: theme.sizes.iconXs, color: colors.accentText),
+                          Text(
+                            series.hot,
+                            style: theme.typography.numeric(
+                              theme.typography.caption.copyWith(color: colors.accentText),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+                if (series.category.isNotEmpty)
+                  Text(
+                    series.category,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                  ),
+                if (series.intro.isNotEmpty)
+                  Text(
+                    series.intro,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  ),
+                if (badges.isNotEmpty)
+                  Wrap(
+                    spacing: DsSpace.s4,
+                    runSpacing: DsSpace.s4,
+                    children: [for (final badge in badges) DsBadge(label: Text(badge))],
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One dimension of a shelf's selector panel: the dimension's name over a
 /// wrapping row of chips — "全部" first, then the panel's own options. The
-/// chips are single-choice; choosing the lit one clears the dimension.
+/// chips are single-choice; choosing the lit one clears the dimension. The
+/// name heads the group rather than sitting beside it, as the station app
+/// stacks its filter groups.
 final class HongguoFilterRowView extends StatelessWidget {
   /// The row for [row] under [selection]; [onSelect] carries the chosen
   /// option's id, or null for "全部".
@@ -391,40 +553,33 @@ final class HongguoFilterRowView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     final t = context.t;
     final chosen = selection[row.type];
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: DsSpace.s3),
-      child: Row(
+      padding: const EdgeInsets.symmetric(vertical: DsSpace.s6),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s12,
+        spacing: DsSpace.s6,
         children: [
-          SizedBox(
-            width: 64,
-            child: Padding(
-              padding: const EdgeInsets.only(top: DsSpace.s6),
-              child: Text(
-                row.rowName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
-              ),
-            ),
+          Text(
+            row.rowName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
           ),
-          Expanded(
-            child: Wrap(
-              spacing: DsSpace.s8,
-              runSpacing: DsSpace.s8,
-              children: [
-                DsChip(label: Text(t.hongguo.filterAll), selected: chosen == null, onChanged: (_) => onSelect(null)),
-                for (final option in row.items)
-                  DsChip(
-                    label: Text(option.name),
-                    selected: chosen == option.id,
-                    onChanged: (value) => onSelect(value ? option.id : null),
-                  ),
-              ],
-            ),
+          Wrap(
+            spacing: DsSpace.s8,
+            runSpacing: DsSpace.s8,
+            children: [
+              DsChip(label: Text(t.hongguo.filterAll), selected: chosen == null, onChanged: (_) => onSelect(null)),
+              for (final option in row.items)
+                DsChip(
+                  label: Text(option.name),
+                  selected: chosen == option.id,
+                  onChanged: (value) => onSelect(value ? option.id : null),
+                ),
+            ],
           ),
         ],
       ),

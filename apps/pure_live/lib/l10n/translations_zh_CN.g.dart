@@ -1486,6 +1486,9 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '已看完'
 	String get watchedBadge => '已看完';
 
+	/// zh-CN: '{index}集/{total}集'
+	String historyEpisodeProgress({required Object index, required Object total}) => '${index}集/${total}集';
+
 	/// zh-CN: '已上线'
 	String get reservationsOnline => '已上线';
 
@@ -10543,6 +10546,7 @@ extension on Translations {
 			'hongguo.historyManageDeleteCount' => ({required Object count}) => '删除选中（${count}）',
 			'hongguo.resumeAt' => '续播',
 			'hongguo.watchedBadge' => '已看完',
+			'hongguo.historyEpisodeProgress' => ({required Object index, required Object total}) => '${index}集/${total}集',
 			'hongguo.reservationsOnline' => '已上线',
 			'hongguo.reservationsUpcoming' => '待上线',
 			'hongguo.reservationsOnlineEmpty' => '当前没有已上线的预约',
@@ -10601,9 +10605,9 @@ extension on Translations {
 			'hongguo.shelfChangeBatch' => '换一批',
 			'hongguo.shelfHot' => '正在热播',
 			'hongguo.shelfNew' => '新剧',
-			'hongguo.shelfCategory' => '分类',
 			_ => null,
 		} ?? switch (path) {
+			'hongguo.shelfCategory' => '分类',
 			'hongguo.newArrivals' => '上新',
 			'hongguo.openFullBoard' => '查看完整榜单',
 			'hongguo.seeMore' => '更多',
@@ -11115,9 +11119,9 @@ extension on Translations {
 			'music.downloadSkipExisting' => '跳过已存在文件',
 			'music.downloadSkipExistingDesc' => '目标文件已存在时不再下载。',
 			'music.downloadGroupByList' => '按歌单分文件夹',
-			'music.downloadGroupByListDesc' => '从歌单下载时，文件保存到以歌单命名的子文件夹。',
 			_ => null,
 		} ?? switch (path) {
+			'music.downloadGroupByListDesc' => '从歌单下载时，文件保存到以歌单命名的子文件夹。',
 			'music.downloadMaxConcurrent' => '同时下载数',
 			'music.downloadMaxConcurrentDesc' => '同时进行的下载任务数量（1–5），修改后立即生效。',
 			'music.downloadStatusQueued' => '排队中',
@@ -11629,9 +11633,9 @@ extension on Translations {
 			'room.giftLineMonths' => ({required Object count}) => '×${count} 个月',
 			'room.giftLineUnnamed' => '礼物',
 			'room.giftLineNumbered' => ({required Object id}) => '礼物 ${id}',
-			'room.giftValueYuan' => ({required Object value}) => '${value} 元',
 			_ => null,
 		} ?? switch (path) {
+			'room.giftValueYuan' => ({required Object value}) => '${value} 元',
 			'room.giftValueGoldSeed' => ({required Object value}) => '${value} 金瓜子',
 			'room.giftValueDiamond' => ({required Object value}) => '${value} 钻石',
 			'room.giftValueRedBean' => ({required Object value}) => '${value} 红豆',
@@ -12143,9 +12147,9 @@ extension on Translations {
 			'settings.fontCategoryHandwriting' => '手绘体',
 			'settings.fontCategoryEnglish' => '英文',
 			'settings.fontCategorySerif' => '衬线',
-			'settings.fontCategorySansSerif' => '无衬线',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontCategorySansSerif' => '无衬线',
 			'settings.fontCategoryDisplay' => '展示',
 			'settings.fontCategoryMonospace' => '等宽',
 			'settings.fontCategoryOther' => '其他',
@@ -12657,9 +12661,9 @@ extension on Translations {
 			'settings.downloadPause' => '暂停',
 			'settings.downloadResume' => '继续下载',
 			'settings.downloadPausedHint' => '已暂停 · 点击继续',
-			'settings.downloadEtaSeconds' => ({required Object seconds}) => '预计还需 ${seconds} 秒',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadEtaSeconds' => ({required Object seconds}) => '预计还需 ${seconds} 秒',
 			'settings.downloadEtaMinutes' => ({required Object minutes}) => '预计还需 ${minutes} 分钟',
 			'settings.downloadEtaHours' => ({required Object hours}) => '预计还需 ${hours} 小时',
 			'settings.downloadSummary' => ({required Object total}) => '共 ${total} 项',
@@ -13171,9 +13175,9 @@ extension on Translations {
 			'vod.pgcMovie' => '电影',
 			'vod.pgcDocumentary' => '纪录片',
 			'vod.pgcGuochuang' => '国创',
-			'vod.pgcTv' => '电视剧',
 			_ => null,
 		} ?? switch (path) {
+			'vod.pgcTv' => '电视剧',
 			'vod.pgcVariety' => '综艺',
 			'vod.pgcEmptyDescription' => '这个分类暂时没有内容。',
 			'vod.episodes' => '选集',

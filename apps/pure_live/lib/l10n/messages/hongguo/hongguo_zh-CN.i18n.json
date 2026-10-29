@@ -70,6 +70,7 @@
   "historyManageDeleteCount": "删除选中（{count}）",
   "resumeAt": "续播",
   "watchedBadge": "已看完",
+  "historyEpisodeProgress": "{index}集/{total}集",
   "reservationsOnline": "已上线",
   "reservationsUpcoming": "待上线",
   "reservationsOnlineEmpty": "当前没有已上线的预约",
