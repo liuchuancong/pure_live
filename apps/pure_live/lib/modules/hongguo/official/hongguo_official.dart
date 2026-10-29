@@ -402,12 +402,17 @@ final class HongguoOfficialClient {
     if (vids.any((vid) => !RegExp(r'^[0-9]{1,30}$').hasMatch(vid))) {
       throw const HongguoOfficialFailure('分集数据异常');
     }
+    // The figures the phone prints under the series' own star sit beside the
+    // detail rather than in it, and the counts arrive as strings.
+    final social = detailPage is Map<String, Object?> ? detailPage['seriesSocialInfo'] : null;
+    final socialJson = social is Map<String, Object?> ? social : const <String, Object?>{};
     final meta = HongguoSeriesMeta(
       seriesId: seriesId,
       title: _str(raw, 'series_name'),
       intro: _str(raw, 'series_intro'),
       episodeCount: vids.length,
       statusText: _str(raw, 'episode_right_text'),
+      followedCount: _intOf(socialJson['series_favorite_count']) ?? 0,
       cover: _cleanUrl(_str(raw, 'series_cover')),
       categories: _tagNames(raw),
     );
@@ -971,6 +976,13 @@ String _str(Map<String, Object?> json, String key) {
   if (value is String) return value.trim();
   if (value is num) return value.toInt() == value ? value.toInt().toString() : value.toString();
   return value.toString();
+}
+
+/// One count as the service sends it: a number, or a string of digits.
+int? _intOf(Object? value) {
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value.trim());
+  return null;
 }
 
 String _cleanUrl(String value) => value
