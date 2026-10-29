@@ -133,7 +133,8 @@ const Map<String, String> kHongguoDimensionLabels = {
   'creation_status': '状态',
 };
 
-const String _kSite = 'https://hongguoduanju.com';
+/// The station's public web address, and the page a series opens on.
+const String kHongguoSite = 'https://hongguoduanju.com';
 const String _kLandpageHost = 'https://api5-normal-sinfonlineb.fqnovel.com';
 const String _kSearchHost = 'https://api5-normal-sinfonlinea.fqnovel.com';
 const String _kPlayerUa =
@@ -297,7 +298,7 @@ final class HongguoOfficialClient {
     HongguoWebsiteBoard board, {
     int page = 1,
   }) async {
-    final html = await _text(Uri.parse('$_kSite/rank/${board.route}?page=$page'), retry: true);
+    final html = await _text(Uri.parse('$kHongguoSite/rank/${board.route}?page=$page'), retry: true);
     final payload = _rankPayload(html, board);
     if (payload['isSuccess'] != true) {
       throw const HongguoOfficialFailure('剧集榜单暂不可用');
@@ -387,7 +388,7 @@ final class HongguoOfficialClient {
 
   /// One series' detail and its episode vid list, from the public page.
   Future<HongguoSeriesDetail> detail(String seriesId) async {
-    final html = await _text(Uri.parse('$_kSite/detail?series_id=$seriesId'));
+    final html = await _text(Uri.parse('$kHongguoSite/detail?series_id=$seriesId'));
     final detailPage = _routerOf(html)['detail_page'];
     final raw = detailPage is Map<String, Object?> ? detailPage['seriesDetail'] : null;
     if (raw is! Map<String, Object?>) {
@@ -424,7 +425,7 @@ final class HongguoOfficialClient {
     if (clean.isEmpty || clean.length > 80) return const [];
     final raw = await _text(
       Uri.parse(
-        '$_kSite/incent_resource/suggestion?app_id=8662&web_id=$_webId'
+        '$kHongguoSite/incent_resource/suggestion?app_id=8662&web_id=$_webId'
         '&query=${Uri.encodeQueryComponent(clean)}&count=8',
       ),
       retry: true,
@@ -452,7 +453,7 @@ final class HongguoOfficialClient {
   /// The website's cross-category search page.
   Future<({List<HongguoSeries> items, bool hasMore})> websiteSearch(String keyword, {int page = 1}) async {
     final raw = await _text(
-      Uri.parse('$_kSite/api/search/result?query=${Uri.encodeQueryComponent(keyword)}&page=$page'),
+      Uri.parse('$kHongguoSite/api/search/result?query=${Uri.encodeQueryComponent(keyword)}&page=$page'),
       retry: true,
     );
     final section = jsonDecode(raw);

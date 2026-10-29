@@ -162,6 +162,8 @@
   "accountId": "Hongguo ID",
   "copyAccountId": "Copy",
   "copied": "Copied",
+  "share": "Share",
+  "shareCopied": "Link copied",
   "accountReading": "Reading…",
   "accountNotRead": "Not read yet",
   "accountReadCount": "{count} titles read",

@@ -1762,6 +1762,12 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '已复制'
 	String get copied => '已复制';
 
+	/// zh-CN: '分享'
+	String get share => '分享';
+
+	/// zh-CN: '链接已复制'
+	String get shareCopied => '链接已复制';
+
 	/// zh-CN: '正在读取…'
 	String get accountReading => '正在读取…';
 
@@ -10661,6 +10667,8 @@ extension on Translations {
 			'hongguo.accountId' => '红果号',
 			'hongguo.copyAccountId' => '复制',
 			'hongguo.copied' => '已复制',
+			'hongguo.share' => '分享',
+			'hongguo.shareCopied' => '链接已复制',
 			'hongguo.accountReading' => '正在读取…',
 			'hongguo.accountNotRead' => '尚未读取',
 			'hongguo.accountReadCount' => ({required Object count}) => '已读取 ${count} 部',
@@ -11138,10 +11146,10 @@ extension on Translations {
 			'music.downloadEmbedCoverDesc' => '把歌曲封面写入音频标签。',
 			'music.downloadEmbedLyric' => '嵌入歌词',
 			'music.downloadEmbedLyricDesc' => '把歌词写入音频标签，随文件一起播放。',
-			'music.downloadIncludeTranslation' => '歌词包含翻译',
-			'music.downloadIncludeTranslationDesc' => '下载的歌词文件与内嵌歌词一并写入翻译。',
 			_ => null,
 		} ?? switch (path) {
+			'music.downloadIncludeTranslation' => '歌词包含翻译',
+			'music.downloadIncludeTranslationDesc' => '下载的歌词文件与内嵌歌词一并写入翻译。',
 			'music.downloadIncludeRomanization' => '歌词包含音译',
 			'music.downloadIncludeRomanizationDesc' => '下载的歌词文件与内嵌歌词一并写入音译。',
 			'music.downloadWriteLyric' => '保存歌词文件',
@@ -11652,10 +11660,10 @@ extension on Translations {
 			'room.portraitDanmakuUpper' => '上部 1/4',
 			'room.portraitDanmakuReduced' => '减半',
 			'room.portraitDanmakuHidden' => '隐藏',
-			'room.portraitDiagnostics' => '竖屏诊断',
-			'room.giftLineSent' => '送出',
 			_ => null,
 		} ?? switch (path) {
+			'room.portraitDiagnostics' => '竖屏诊断',
+			'room.giftLineSent' => '送出',
 			'room.giftLineSentTo' => ({required Object name}) => '送给 ${name}',
 			'room.giftLineGifted' => '赠送',
 			'room.giftLineTipped' => '打赏',
@@ -12166,10 +12174,10 @@ extension on Translations {
 			'settings.fontManagerDownload' => '下载',
 			'settings.fontManagerDownloadingShort' => '下载中',
 			'settings.fontManagerDetails' => '显示与设置',
-			'settings.fontManagerLoadedCount' => ({required Object shown, required Object total}) => '已加载 ${shown} / ${total}',
-			'settings.fontManagerLoadingMore' => '正在加载更多…',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerLoadedCount' => ({required Object shown, required Object total}) => '已加载 ${shown} / ${total}',
+			'settings.fontManagerLoadingMore' => '正在加载更多…',
 			'settings.fontCategoryHeiti' => '黑体',
 			'settings.fontCategorySongti' => '宋体',
 			'settings.fontCategoryKaiti' => '楷体',
@@ -12680,10 +12688,10 @@ extension on Translations {
 			'settings.downloadDetailTitle' => '下载详情',
 			'settings.downloadInfoPath' => '保存路径',
 			'settings.downloadInfoSize' => '文件大小',
-			'settings.downloadInfoTime' => '下载时间',
-			'settings.downloadSelectAll' => '全选',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadInfoTime' => '下载时间',
+			'settings.downloadSelectAll' => '全选',
 			'settings.downloadSelectedCount' => ({required Object count}) => '已选 ${count} 项',
 			'settings.downloadDeleteSelected' => ({required Object count}) => '删除所选（${count}）',
 			'settings.downloadDeleteAll' => '全部删除',
@@ -13194,10 +13202,10 @@ extension on Translations {
 			'vod.liveFollowTitle' => '我的关注',
 			'vod.liveAreasTitle' => '推荐分区',
 			'vod.liveRecommendTitle' => '推荐直播',
-			'vod.liveEmptyTitle' => '没有推荐的直播',
-			'vod.liveEmptyDescription' => '稍后刷新再看看。',
 			_ => null,
 		} ?? switch (path) {
+			'vod.liveEmptyTitle' => '没有推荐的直播',
+			'vod.liveEmptyDescription' => '稍后刷新再看看。',
 			'vod.refresh' => '刷新',
 			'vod.regionEmptyDescription' => '这个分区暂时没有推荐视频。',
 			'vod.pgcTitle' => '影视',

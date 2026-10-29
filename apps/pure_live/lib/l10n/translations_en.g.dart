@@ -669,6 +669,8 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get accountId => 'Hongguo ID';
 	@override String get copyAccountId => 'Copy';
 	@override String get copied => 'Copied';
+	@override String get share => 'Share';
+	@override String get shareCopied => 'Link copied';
 	@override String get accountReading => 'Reading…';
 	@override String get accountNotRead => 'Not read yet';
 	@override String accountReadCount({required Object count}) => '${count} titles read';
@@ -4097,6 +4099,8 @@ extension on TranslationsEn {
 			'hongguo.accountId' => 'Hongguo ID',
 			'hongguo.copyAccountId' => 'Copy',
 			'hongguo.copied' => 'Copied',
+			'hongguo.share' => 'Share',
+			'hongguo.shareCopied' => 'Link copied',
 			'hongguo.accountReading' => 'Reading…',
 			'hongguo.accountNotRead' => 'Not read yet',
 			'hongguo.accountReadCount' => ({required Object count}) => '${count} titles read',
@@ -4574,10 +4578,10 @@ extension on TranslationsEn {
 			'music.downloadEmbedCoverDesc' => 'Write the cover into the audio tags.',
 			'music.downloadEmbedLyric' => 'Embed the lyric',
 			'music.downloadEmbedLyricDesc' => 'Write the lyric into the audio tags so it travels with the file.',
-			'music.downloadIncludeTranslation' => 'Include the translation',
-			'music.downloadIncludeTranslationDesc' => 'Write the translation into the downloaded lyric file and embedded tag.',
 			_ => null,
 		} ?? switch (path) {
+			'music.downloadIncludeTranslation' => 'Include the translation',
+			'music.downloadIncludeTranslationDesc' => 'Write the translation into the downloaded lyric file and embedded tag.',
 			'music.downloadIncludeRomanization' => 'Include the romanization',
 			'music.downloadIncludeRomanizationDesc' => 'Write the romanization into the downloaded lyric file and embedded tag.',
 			'music.downloadWriteLyric' => 'Save a lyric file',
@@ -5088,10 +5092,10 @@ extension on TranslationsEn {
 			'room.portraitDanmakuUpper' => 'Upper quarter',
 			'room.portraitDanmakuReduced' => 'Reduced',
 			'room.portraitDanmakuHidden' => 'Hidden',
-			'room.portraitDiagnostics' => 'Portrait diagnostics',
-			'room.giftLineSent' => 'sent',
 			_ => null,
 		} ?? switch (path) {
+			'room.portraitDiagnostics' => 'Portrait diagnostics',
+			'room.giftLineSent' => 'sent',
 			'room.giftLineSentTo' => ({required Object name}) => 'sent ${name}',
 			'room.giftLineGifted' => 'gifted',
 			'room.giftLineTipped' => 'tipped',
@@ -5602,10 +5606,10 @@ extension on TranslationsEn {
 			'settings.fontManagerDownload' => 'Download',
 			'settings.fontManagerDownloadingShort' => 'Downloading',
 			'settings.fontManagerDetails' => 'Display and settings',
-			'settings.fontManagerLoadedCount' => ({required Object shown, required Object total}) => 'Loaded ${shown} of ${total}',
-			'settings.fontManagerLoadingMore' => 'Loading more…',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerLoadedCount' => ({required Object shown, required Object total}) => 'Loaded ${shown} of ${total}',
+			'settings.fontManagerLoadingMore' => 'Loading more…',
 			'settings.fontCategoryHeiti' => 'Heiti',
 			'settings.fontCategorySongti' => 'Songti',
 			'settings.fontCategoryKaiti' => 'Kaiti',
@@ -6116,10 +6120,10 @@ extension on TranslationsEn {
 			'settings.downloadDetailTitle' => 'Download detail',
 			'settings.downloadInfoPath' => 'Save path',
 			'settings.downloadInfoSize' => 'File size',
-			'settings.downloadInfoTime' => 'Download time',
-			'settings.downloadSelectAll' => 'Select all',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadInfoTime' => 'Download time',
+			'settings.downloadSelectAll' => 'Select all',
 			'settings.downloadSelectedCount' => ({required Object count}) => '${count} selected',
 			'settings.downloadDeleteSelected' => ({required Object count}) => 'Delete selected (${count})',
 			'settings.downloadDeleteAll' => 'Delete all',
@@ -6630,10 +6634,10 @@ extension on TranslationsEn {
 			'vod.liveFollowTitle' => 'Following',
 			'vod.liveAreasTitle' => 'Areas',
 			'vod.liveRecommendTitle' => 'Recommended live',
-			'vod.liveEmptyTitle' => 'No live rooms recommended',
-			'vod.liveEmptyDescription' => 'Refresh in a moment to try again.',
 			_ => null,
 		} ?? switch (path) {
+			'vod.liveEmptyTitle' => 'No live rooms recommended',
+			'vod.liveEmptyDescription' => 'Refresh in a moment to try again.',
 			'vod.refresh' => 'Refresh',
 			'vod.regionEmptyDescription' => 'This region has no recommendations right now.',
 			'vod.pgcTitle' => 'Cinema',

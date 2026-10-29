@@ -162,6 +162,8 @@
   "accountId": "红果号",
   "copyAccountId": "复制",
   "copied": "已复制",
+  "share": "分享",
+  "shareCopied": "链接已复制",
   "accountReading": "正在读取…",
   "accountNotRead": "尚未读取",
   "accountReadCount": "已读取 {count} 部",

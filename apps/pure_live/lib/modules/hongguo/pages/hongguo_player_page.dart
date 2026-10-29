@@ -2,7 +2,7 @@ import 'dart:async' show StreamSubscription, Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart' show AppBar, Scaffold;
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -30,7 +30,7 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart'
     show HongguoQualityChoice, hongguoSettingsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_social.dart' show hongguoDanmakuProvider;
 import 'package:pure_live/modules/hongguo/official/hongguo_account.dart' show HongguoAccountClient, HongguoCredentials;
-import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoRendition;
+import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoRendition, kHongguoSite;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_comment_panel.dart' show HongguoCommentPanel;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_danmaku_layer.dart' show HongguoDanmakuLayer;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart' show HongguoEpisodeShelf;
@@ -1179,6 +1179,88 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     return episodes[index + 1];
   }
 
+  /// The episode catalogue's name: the phone's own "选集 · 全50集".
+  String _episodesLabel(Translations t) {
+    final detail = _detail;
+    final declared = detail?.meta.episodeCount ?? 0;
+    final count = declared > 0 ? declared : (detail?.episodes.length ?? 0);
+    return count > 0 ? '${t.hongguo.episodes} · ${t.hongguo.allEpisodesCount(count: count)}' : t.hongguo.episodes;
+  }
+
+  /// The picture's action column, as the phone player puts it along the
+  /// picture's edge: the favorite (the local shelf's bookmark, with the
+  /// series' own follower figure), the episode's comments, and the way to
+  /// hand the series out.
+  Widget _actionRail(Translations t, HongguoSeriesDetail detail) {
+    final meta = detail.meta;
+    final episode = _episode;
+    final total = meta.episodeCount > 0 ? meta.episodeCount : detail.episodes.length;
+    return Consumer(
+      builder: (context, ref, _) {
+        final favored = ref.watch(hongguoLibraryProvider.select((library) => library.isFavorite(meta.seriesId)));
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          spacing: DsSpace.s12,
+          children: [
+            _RailAction(
+              icon: DsIcons.star,
+              label: favored ? t.hongguo.favorited : t.hongguo.favorite,
+              count: meta.followedCount > 0 ? AudienceFormat.format(meta.followedCount) : null,
+              selected: favored,
+              onPressed: () {
+                final added = ref
+                    .read(hongguoLibraryProvider.notifier)
+                    .toggleFavorite(
+                      HongguoSeries(
+                        seriesId: meta.seriesId,
+                        title: meta.title,
+                        cover: meta.cover,
+                        intro: meta.intro,
+                        episodeCount: total,
+                      ),
+                    );
+                showDsToast(context: context, title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff);
+              },
+            ),
+            if (episode != null)
+              _RailAction(
+                icon: DsIcons.messageCircle,
+                label: t.hongguo.comments,
+                count: episode.commentCount > 0 ? AudienceFormat.format(episode.commentCount) : null,
+                onPressed: _openComments,
+              ),
+            _RailAction(icon: DsIcons.share, label: t.hongguo.share, onPressed: () => unawaited(_shareSeries())),
+          ],
+        );
+      },
+    );
+  }
+
+  /// This episode's comments, opened as the phone's own sheet: the page's
+  /// docked panel stays where it is, and an immersive picture keeps its way
+  /// into the list.
+  void _openComments() {
+    final episode = _episode;
+    if (episode == null) return;
+    unawaited(
+      showDsPanel<void>(
+        context: context,
+        builder: (context) => DsPanel(
+          title: Text(context.t.hongguo.comments),
+          child: HongguoCommentPanel(seriesId: widget.seriesId, episodeVid: episode.vid, showTitle: false),
+        ),
+      ),
+    );
+  }
+
+  /// Hands out the series' public page; the phone shares through the system
+  /// sheet, and here the link goes to the clipboard with a word of thanks.
+  Future<void> _shareSeries() async {
+    await Clipboard.setData(ClipboardData(text: '$kHongguoSite/detail?series_id=${widget.seriesId}'));
+    if (!mounted) return;
+    showDsToast(context: context, title: context.t.hongguo.shareCopied);
+  }
+
   /// The picture and its controls; [immersive] adds the way out and the
   /// title over the picture, since the page's app bar is gone there.
   /// The picture and its controls. The bar wakes under the pointer and
@@ -1278,6 +1360,15 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                         ),
                       ),
                     ),
+                  ),
+                // The phone's action column along the picture's edge. An
+                // open catalogue and a held press own that corner, so the
+                // column steps aside for both.
+                if (showBar && handle != null && detail != null && _openPanel == null && !_holding)
+                  PositionedDirectional(
+                    top: immersive ? DsSpace.s64 : DsSpace.s12,
+                    end: DsSpace.s8,
+                    child: _actionRail(t, detail),
                   ),
                 if (_opening || (transport?.isBuffering ?? false))
                   const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
@@ -1585,7 +1676,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 _pickerButton(
                   panel: _HongguoPanel.episodes,
                   icon: DsIcons.listVideo,
-                  label: t.hongguo.episodes,
+                  label: _episodesLabel(t),
                   semanticLabel: t.hongguo.episodes,
                   compact: compact,
                 ),
@@ -1680,7 +1771,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   DsIcon(icon, size: theme.sizes.iconSm, color: playerInkMuted),
                   if (!compact)
                     ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 110),
+                      constraints: BoxConstraints(maxWidth: panel == _HongguoPanel.episodes ? 168 : 110),
                       child: Text(
                         label,
                         maxLines: 1,
@@ -1798,7 +1889,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       case _HongguoPanel.episodes:
         final episodes = _detail?.episodes ?? const <HongguoEpisode>[];
         return PlayerOverlayPanel(
-          title: t.hongguo.episodes,
+          title: _episodesLabel(t),
           width: 260,
           children: [
             // A series may run to hundreds of episodes; the catalogue keeps
@@ -1888,5 +1979,74 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     _leaveTimer = Timer(const Duration(milliseconds: 260), () {
       if (mounted) _closePanel();
     });
+  }
+}
+
+/// One action on the picture's own column: a glass disc over the video, and
+/// the count the phone prints under it.
+final class _RailAction extends StatelessWidget {
+  const _RailAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.count,
+    this.selected = false,
+  });
+
+  /// The glyph in the disc.
+  final DsIconData icon;
+
+  /// The action's name, for the tooltip and screen readers.
+  final String label;
+
+  /// What the action does.
+  final VoidCallback onPressed;
+
+  /// The figure under the disc, when the platform has one.
+  final String? count;
+
+  /// Whether the action's own state is on, as a favorite is.
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return DsTooltip(
+      message: label,
+      child: DsPressable(
+        semanticLabel: label,
+        onPressed: onPressed,
+        builder: (context, states, _) {
+          final hovered = states.contains(WidgetState.hovered);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s4,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: DsBoxDecoration(
+                  color: selected
+                      ? colors.accent
+                      : hovered
+                      ? playerInkHover
+                      : const Color(0x66000000),
+                  borderRadius: BorderRadius.circular(theme.radii.control(38)),
+                ),
+                child: DsIcon(icon, size: theme.sizes.iconLg, color: selected ? colors.onAccent : playerInk),
+              ),
+              if (count case final figure?)
+                Text(
+                  figure,
+                  style: theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk, fontSize: 11)),
+                ),
+            ],
+          );
+        },
+      ),
+    );
   }
 }
