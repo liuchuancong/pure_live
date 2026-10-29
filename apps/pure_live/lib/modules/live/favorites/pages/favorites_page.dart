@@ -383,16 +383,48 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
               // The platform tabs, the wall behind the chevron and the grid
               // switch: one row, exactly as 热门 and 分区 lay them out. Each
               // name carries how many follows it holds in the shown group,
-              // and the wall repeats that count under the logo.
-              PlatformTabRow(
-                platforms: [kAllPlatforms, ...platformTabs],
-                current: platform,
-                nameOf: _platformName,
-                semanticLabel: t.navigation.favorites,
-                countOf: (id) => followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
-                onManagePlatforms: () =>
-                    unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
-                onChanged: _selectPlatform,
+              // and the wall repeats that count under the logo. A small
+              // screen keeps the tabs alone and moves the wall and the layout
+              // behind one more icon.
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
+                  final tabs = PlatformTabRow(
+                    platforms: [kAllPlatforms, ...platformTabs],
+                    current: platform,
+                    nameOf: _platformName,
+                    semanticLabel: t.navigation.favorites,
+                    countOf: (id) =>
+                        followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
+                    showPlatformWall: !narrow,
+                    showLayoutToggle: !narrow,
+                    onManagePlatforms: () => unawaited(
+                      context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
+                    ),
+                    onChanged: _selectPlatform,
+                  );
+                  if (!narrow) return tabs;
+                  return SizedBox(
+                    height: 44,
+                    child: Row(
+                      spacing: DsSpace.s8,
+                      children: [
+                        Expanded(child: tabs),
+                        PlatformToolbarMore(
+                          platforms: [kAllPlatforms, ...platformTabs],
+                          current: platform,
+                          nameOf: _platformName,
+                          countOf: (id) =>
+                              followCount(follows.rooms, platform: id == kAllPlatforms ? null : id, group: _group),
+                          onChanged: _selectPlatform,
+                          onManagePlatforms: () => unawaited(
+                            context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
               if (tags.isNotEmpty)
                 DsChoiceChips<String?>(

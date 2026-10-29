@@ -23,6 +23,7 @@ final class MediaBarButton extends StatelessWidget {
     this.zoomsOnTv = true,
     this.size,
     this.iconSize,
+    this.focusNode,
     super.key,
   });
 
@@ -56,6 +57,10 @@ final class MediaBarButton extends StatelessWidget {
   /// The glyph's side; the theme's small icon when null.
   final double? iconSize;
 
+  /// The node the host owns, e.g. a page that puts the focus back on play
+  /// when it returns from fullscreen.
+  final FocusNode? focusNode;
+
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
@@ -66,6 +71,7 @@ final class MediaBarButton extends StatelessWidget {
       semanticLabel: label,
       onPressed: onPressed,
       autofocus: autofocus,
+      focusNode: focusNode,
       builder: (context, states, _) {
         final hovered = states.contains(WidgetState.hovered);
         return Container(

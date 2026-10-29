@@ -203,29 +203,26 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
       );
     }
 
-    final tabs = PlatformTabRow(
-      platforms: ids,
-      current: platform,
-      nameOf: _platformName,
-      semanticLabel: t.navigation.hot,
-      onManagePlatforms: () =>
-          unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
-      onChanged: (id) {
-        ref.read(popularSiteProvider.notifier).selected = id;
-        unawaited(ref.read(popularCatalogProvider.notifier).open(id));
-      },
-    );
+    void choosePlatform(String id) {
+      ref.read(popularSiteProvider.notifier).selected = id;
+      unawaited(ref.read(popularCatalogProvider.notifier).open(id));
+    }
+
+    void chooseSort(_PopularSort value) {
+      if (value == _sort) return;
+      setState(() => _sort = value);
+      final controller = _scrolls[platform];
+      if (controller?.hasClients ?? false) controller!.jumpTo(0);
+    }
+
+    void managePlatforms() =>
+        unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location));
     final sort = SizedBox(
       width: 148,
       child: AdaptiveChoiceField<_PopularSort>(
         value: _sort,
         title: t.popular.sortLabel,
-        onChanged: (value) {
-          if (value == _sort) return;
-          setState(() => _sort = value);
-          final controller = _scrolls[platform];
-          if (controller?.hasClients ?? false) controller!.jumpTo(0);
-        },
+        onChanged: chooseSort,
         options: [
           DsSelectOption(value: _PopularSort.platform, label: t.popular.sortPlatform),
           DsSelectOption(value: _PopularSort.audience, label: t.popular.sortAudience),
@@ -234,30 +231,64 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
         semanticLabel: t.popular.sortLabel,
       ),
     );
+    // The sort's own choices, for the menu a narrow toolbar keeps instead of
+    // the field beside the tabs.
+    final sortItems = [
+      for (final value in _PopularSort.values)
+        DsMenuItem(
+          label: Text(value == _PopularSort.platform ? t.popular.sortPlatform : t.popular.sortAudience),
+          checked: _sort == value,
+          onPressed: () => chooseSort(value),
+        ),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          // The tabs and the sort share a row when the toolbar has room;
-          // a compact window stacks the sort under the scrolling tabs.
+          // The tabs and the sort share a row when the toolbar has room; a
+          // small screen keeps the tab bar alone and puts the sort, the
+          // layout and the platform wall behind one more icon.
           child: LayoutBuilder(
-            builder: (context, constraints) => LiveWindow.stacksToolbar(constraints.maxWidth)
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: DsSpace.s8,
-                    children: [
-                      tabs,
-                      Align(alignment: AlignmentDirectional.centerEnd, child: sort),
-                    ],
-                  )
-                : Row(
-                    spacing: DsSpace.s12,
-                    children: [
-                      Expanded(child: tabs),
-                      sort,
-                    ],
-                  ),
+            builder: (context, constraints) {
+              final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
+              final tabs = PlatformTabRow(
+                platforms: ids,
+                current: platform,
+                nameOf: _platformName,
+                semanticLabel: t.navigation.hot,
+                showPlatformWall: !narrow,
+                showLayoutToggle: !narrow,
+                onManagePlatforms: managePlatforms,
+                onChanged: choosePlatform,
+              );
+              if (!narrow) {
+                return Row(
+                  spacing: DsSpace.s12,
+                  children: [
+                    Expanded(child: tabs),
+                    sort,
+                  ],
+                );
+              }
+              return SizedBox(
+                height: 44,
+                child: Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(child: tabs),
+                    PlatformToolbarMore(
+                      platforms: ids,
+                      current: platform,
+                      nameOf: _platformName,
+                      onChanged: choosePlatform,
+                      onManagePlatforms: managePlatforms,
+                      items: sortItems,
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
         Expanded(

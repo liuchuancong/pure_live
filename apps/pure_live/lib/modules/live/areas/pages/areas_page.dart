@@ -150,23 +150,27 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
     // The catalogue's tile form: the poster with the picture above its
     // name, or the row with the picture beside it. The areas page's own
     // pair of shapes, so the platform row adds no second layout switch.
+    final tileLayout = ref.watch(areaLayoutProvider);
     final layoutSwitch = DsSegmentedControl<AreaCardLayout>(
       segments: [
         DsSegment(value: AreaCardLayout.tile, icon: const DsIcon(DsIcons.layoutGrid), semanticLabel: t.areas.iconTop),
         DsSegment(value: AreaCardLayout.row, icon: const DsIcon(DsIcons.layoutList), semanticLabel: t.areas.iconLeft),
       ],
-      value: ref.watch(areaLayoutProvider),
+      value: tileLayout,
       onChanged: (layout) => unawaited(ref.read(areaLayoutProvider.notifier).set(layout)),
     );
-    final platformTabs = _view == _AreasView.platform && ids.isNotEmpty
+    // The platform tabs; the wide row keeps the platform wall chevron at
+    // their end, the narrow toolbar leaves it to the page's menu.
+    Widget? platformTabs({required bool withWall}) => _view == _AreasView.platform && ids.isNotEmpty
         ? PlatformTabRow(
             platforms: ids,
             current: platform,
             nameOf: _platformName,
             semanticLabel: t.areas.allAreas,
             // The catalogue's own layout switch is the page's, so the row
-            // keeps its two controls: the tabs and the platform wall.
+            // keeps its two controls here: the tabs and the platform wall.
             showLayoutToggle: false,
+            showPlatformWall: withWall,
             // The panel's way to the hide/reorder setting.
             onManagePlatforms: () =>
                 unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
@@ -177,6 +181,56 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
             },
           )
         : null;
+    // The narrow toolbar's second half: the view switch, the layout and the
+    // platform wall live in this menu there, not as controls in the bar.
+    final moreMenu = DsMenuAnchor(
+      semanticLabel: t.common.more,
+      align: DsAlign.end,
+      items: [
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.search),
+          label: Text(t.areas.searchHint),
+          onPressed: () => unawaited(_openAreaSearch()),
+        ),
+        const DsMenuDivider(),
+        DsMenuItem(
+          label: Text(t.areas.viewPlatform),
+          checked: _view == _AreasView.platform,
+          onPressed: () => setState(() => _view = _AreasView.platform),
+        ),
+        DsMenuItem(
+          label: Text(t.areas.viewFollowed),
+          checked: _view == _AreasView.followed,
+          onPressed: () => setState(() => _view = _AreasView.followed),
+        ),
+        const DsMenuDivider(),
+        DsMenuItem(
+          label: Text(t.areas.iconTop),
+          checked: tileLayout == AreaCardLayout.tile,
+          onPressed: () => unawaited(ref.read(areaLayoutProvider.notifier).set(AreaCardLayout.tile)),
+        ),
+        DsMenuItem(
+          label: Text(t.areas.iconLeft),
+          checked: tileLayout == AreaCardLayout.row,
+          onPressed: () => unawaited(ref.read(areaLayoutProvider.notifier).set(AreaCardLayout.row)),
+        ),
+        if (ids.isNotEmpty) ...[
+          const DsMenuDivider(),
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.antenna),
+            label: Text(t.common.switchPlatform),
+            onPressed: () => unawaited(_openPlatformWall()),
+          ),
+        ],
+      ],
+      builder: (context, controller, _) => DsButton.icon(
+        variant: DsButtonVariant.ghost,
+        size: DsSize.sm,
+        semanticLabel: t.common.more,
+        onPressed: controller.open,
+        icon: const DsIcon(DsIcons.ellipsisVertical),
+      ),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -185,28 +239,32 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
           child: LayoutBuilder(
             builder: (context, constraints) {
               // The platform tabs take the row's leftover width — the
-              // popular page's measure — so names read whole. Only a narrow
-              // window stacks them under the view switch.
+              // popular page's measure — so names read whole.
               if (!LiveWindow.stacksToolbar(constraints.maxWidth)) {
+                final tabs = platformTabs(withWall: true);
                 return SizedBox(
                   height: 44,
                   child: Row(
                     spacing: DsSpace.s12,
                     children: [
                       views,
-                      if (platformTabs != null) Expanded(child: platformTabs) else const Spacer(),
+                      if (tabs != null) Expanded(child: tabs) else const Spacer(),
                       layoutSwitch,
                     ],
                   ),
                 );
               }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: DsSpace.s8,
-                children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [views, layoutSwitch]),
-                  ?platformTabs,
-                ],
+              // A small screen keeps the platform tab bar alone and puts the
+              // rest behind one more icon at its end.
+              return SizedBox(
+                height: 44,
+                child: Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(child: platformTabs(withWall: false) ?? _viewLabel(context)),
+                    moreMenu,
+                  ],
+                ),
               );
             },
           ),
@@ -246,6 +304,109 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
   String _platformName(String id) {
     final site = ref.watch(sitesProvider).getById(id);
     return site == null ? id : localizedSiteName(site);
+  }
+
+  /// What the narrow toolbar names when it has no platform tabs to show —
+  /// the followed view, or a catalogue with no visible platform.
+  Widget _viewLabel(BuildContext context) {
+    final t = context.t;
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Text(
+        _view == _AreasView.followed ? t.areas.viewFollowed : t.areas.viewPlatform,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: DsTheme.of(context).typography.body.copyWith(color: DsTheme.colorsOf(context).text),
+      ),
+    );
+  }
+
+  /// The narrow toolbar's search: a wide window types into the title bar's
+  /// field, here the menu opens the same word's field over the catalogue.
+  Future<void> _openAreaSearch() => showDsPanel<void>(
+    context: context,
+    builder: (_) => _AreaSearchPanel(initial: ref.read(areasInlineSearchProvider) ?? ''),
+  );
+
+  /// The narrow toolbar's way to the platform wall — the panel the wide
+  /// row's chevron opens.
+  Future<void> _openPlatformWall() {
+    final sites = ref.read(sitesProvider);
+    return showPlatformPickerPanel(
+      context,
+      platforms: ref.read(areasCatalogProvider.notifier).platformIds(),
+      current: ref.read(areasSiteProvider),
+      nameOf: (id) {
+        final site = sites.getById(id);
+        return site == null ? id : localizedSiteName(site);
+      },
+      iconOf: (id) => localizedSiteIcon(sites.getById(id), size: 32),
+      onManagePlatforms: () =>
+          unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
+      onChanged: (id) {
+        ref.read(areasSiteProvider.notifier).selected = id;
+        unawaited(ref.read(areasCatalogProvider.notifier).open(id));
+        _armWarmUp();
+      },
+    );
+  }
+}
+
+/// The narrow toolbar's areas search: the word hands the page its own
+/// filtered catalogue, as the title bar's field does on a wide window.
+final class _AreaSearchPanel extends ConsumerStatefulWidget {
+  const _AreaSearchPanel({required this.initial});
+
+  /// The word already being searched, so the field starts where the page is.
+  final String initial;
+
+  @override
+  ConsumerState<_AreaSearchPanel> createState() => _AreaSearchPanelState();
+}
+
+final class _AreaSearchPanelState extends ConsumerState<_AreaSearchPanel> {
+  late final TextEditingController _field = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _field.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final word = _field.text.trim();
+    ref.read(areasInlineSearchProvider.notifier).search(word.isEmpty ? null : word);
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return DsPanel(
+      title: Text(t.areas.searchHint),
+      footer: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        spacing: DsSpace.s8,
+        children: [
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () {
+              ref.read(areasInlineSearchProvider.notifier).clear();
+              Navigator.of(context).pop();
+            },
+            child: Text(t.areas.backToBrowse),
+          ),
+          DsButton(onPressed: _submit, child: Text(t.areas.search)),
+        ],
+      ),
+      child: DsSearchField(
+        controller: _field,
+        autofocus: true,
+        placeholder: t.areas.searchHint,
+        semanticLabel: t.areas.searchHint,
+        onSubmitted: (_) => _submit(),
+      ),
+    );
   }
 }
 

@@ -535,6 +535,10 @@ final class RoomController extends Notifier<RoomState> {
   /// line switch, a recovery) gets it again, a repeated event does not.
   PlayerHandle? _preparedHandle;
 
+  /// The most recent engine this room attached, kept apart from the state so
+  /// a teardown can silence it even while the provider is being disposed.
+  PlayerHandle? _lastHandle;
+
   /// Read before the provider tree can go away: teardown may not touch ref.
   bool _forceDestroy = false;
 
@@ -1108,6 +1112,7 @@ final class RoomController extends Notifier<RoomState> {
             state = _with(error: failure.message ?? failure.code.name);
           });
           _handles ??= playback.onHandleChanged.listen((handle) {
+            _lastHandle = handle;
             state = _with(handle: handle, lineIndex: _playback?.sourceIndex ?? state.lineIndex);
             _watchVideoSize(handle);
             // The player's pause and seek carry into the flying layer; the
@@ -1435,6 +1440,11 @@ final class RoomController extends Notifier<RoomState> {
   );
 
   void _teardown() {
+    // The stream goes quiet before anything else: the release below is queued
+    // behind whatever the playback is doing (an open still dialling a dead
+    // line takes its whole budget), and the last room must not be heard over
+    // the next page while that queue drains.
+    _silence(_lastHandle);
     // Nothing a closing room has in flight may install itself afterwards.
     _openEpoch++;
     _danmakuEpoch++;
@@ -1460,7 +1470,27 @@ final class RoomController extends Notifier<RoomState> {
       }
     }
     _preparedHandle = null;
+    _lastHandle = null;
     unawaited(_closeDanmaku());
+  }
+
+  /// Silences a handle the moment the room lets it go: mute first — it takes
+  /// effect at once — then pause. Both are fire-and-forget; a handle already
+  /// being released is silent by definition, so a refusal needs no answer.
+  static void _silence(PlayerHandle? handle) {
+    if (handle == null) return;
+    unawaited(() async {
+      try {
+        await handle.setMute(muted: true);
+      } on Object {
+        // Already gone.
+      }
+      try {
+        await handle.pause();
+      } on Object {
+        // Already gone.
+      }
+    }());
   }
 }
 

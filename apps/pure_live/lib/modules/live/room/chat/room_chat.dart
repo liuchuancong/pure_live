@@ -134,22 +134,29 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
     final t = context.t;
     final canSend = ref.watch(roomProvider.notifier).canSendDanmaku;
     if (!canSend) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s12),
-      child: Row(
-        spacing: DsSpace.s8,
-        children: [
-          Expanded(
-            child: DsTextField(
-              controller: _field,
-              clearable: true,
-              placeholder: t.room.sendHint,
-              onSubmitted: (word) => unawaited(_send(word)),
-              style: DsTextFieldStyle(borderRadius: BorderRadius.circular(DsRadii.pill)),
+    // The field owns the column's bottom: a hairline above it says where the
+    // conversation ends and the viewer's own voice begins.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: DsTheme.colorsOf(context).border)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s12),
+        child: Row(
+          spacing: DsSpace.s8,
+          children: [
+            Expanded(
+              child: DsTextField(
+                controller: _field,
+                clearable: true,
+                placeholder: t.room.sendHint,
+                onSubmitted: (word) => unawaited(_send(word)),
+                style: DsTextFieldStyle(borderRadius: BorderRadius.circular(DsRadii.pill)),
+              ),
             ),
-          ),
-          DsButton(onPressed: () => unawaited(_send(_field.text)), child: Text(t.room.send)),
-        ],
+            DsButton(onPressed: () => unawaited(_send(_field.text)), child: Text(t.room.send)),
+          ],
+        ),
       ),
     );
   }
@@ -194,7 +201,9 @@ final class _ChatLine extends ConsumerWidget {
       _ => 1.5,
     };
     final vertical = switch (lineSpacing) {
-      'compact' => DsSpace.s3,
+      // The tightest step on the spacing scale: a compact list still needs
+      // lines that read apart.
+      'compact' => 1.0,
       'loose' => DsSpace.s6,
       _ => DsSpace.s3,
     };
@@ -203,9 +212,12 @@ final class _ChatLine extends ConsumerWidget {
       height: height,
       color: colors.text,
     );
+    // The sender leads the line: a touch heavier than the words, so the eye
+    // lands on who is talking before it reads what was said.
     nameStyle = theme.typography.caption.copyWith(
       fontSize: fontSize > 0 ? fontSize.toDouble() : null,
       height: height,
+      fontWeight: FontWeight.w600,
       color: message.color == null
           ? colors.textMuted
           : Color.fromARGB(255, message.color!.r, message.color!.g, message.color!.b),
@@ -240,15 +252,26 @@ final class _ChatLine extends ConsumerWidget {
       height: 1.2,
     );
     if (isSystem) {
+      // A notice is not conversation: it sits in a quiet chip of its own, so
+      // the flow of talk reads as talk and the room's own voice reads apart.
       final line = Padding(
         padding: EdgeInsets.symmetric(vertical: vertical),
-        child: Text(
-          words,
-          textAlign: TextAlign.center,
-          style: theme.typography.caption.copyWith(
-            fontSize: fontSize > 0 ? fontSize.toDouble() : null,
-            height: height,
-            color: colors.textSubtle,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: 1),
+            decoration: BoxDecoration(
+              color: colors.control.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(DsRadii.pill),
+            ),
+            child: Text(
+              words,
+              textAlign: TextAlign.center,
+              style: theme.typography.caption.copyWith(
+                fontSize: fontSize > 0 ? math.max(fontSize - 1, 10).toDouble() : null,
+                height: height,
+                color: colors.textSubtle,
+              ),
+            ),
           ),
         ),
       );
@@ -337,23 +360,27 @@ final class _ChatLine extends ConsumerWidget {
     if (superChat != null) {
       // A super chat is the loudest money in the room: the warm banner and
       // the price chip up front, the words beside them.
-      content = Container(
-        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s6),
-        decoration: BoxDecoration(
-          color: colors.warning.tint,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.fromBorderSide(BorderSide(color: colors.warning.fill.withValues(alpha: 0.35))),
+      content = Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s6),
+          decoration: BoxDecoration(
+            color: colors.warning.tint,
+            borderRadius: BorderRadius.circular(theme.radii.card),
+            border: Border.fromBorderSide(BorderSide(color: colors.warning.fill.withValues(alpha: 0.35))),
+          ),
+          child: content,
         ),
-        child: content,
       );
     } else if (gift != null) {
       // A gift is money on the page: the accent's own tint behind the line,
-      // a hairline edge, so it reads apart from ordinary talk.
+      // a hairline edge, so it reads apart from ordinary talk. Both banners
+      // wear the theme's card corner, not a radius of their own.
       content = Container(
-        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
+        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s5),
         decoration: BoxDecoration(
           color: colors.accent.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(theme.radii.card),
           border: Border.fromBorderSide(BorderSide(color: colors.accent.withValues(alpha: 0.22))),
         ),
         child: content,
@@ -584,9 +611,10 @@ final class _GiftIcon extends StatelessWidget {
   }
 }
 
-/// The flying danmaku's own settings, right beside the list: whether it
-/// draws, then size, speed, the share of the picture it may cross, opacity,
-/// the outline and the way back to the defaults.
+/// The flying danmaku's settings and the chat column's own appearance, right
+/// beside the list — the very panes the settings centre shows, so a room is
+/// never short of a knob the engine really has. The master switch stays on
+/// top, where turning the layer off is one press away.
 final class _RoomDanmakuSettings extends ConsumerWidget {
   const _RoomDanmakuSettings();
 
@@ -594,191 +622,28 @@ final class _RoomDanmakuSettings extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final settings = ref.watch(playbackSettingsProvider);
-    final style = ref.watch(danmakuStyleProvider);
-    final controller = ref.read(danmakuStyleProvider.notifier);
-    final frameRate = ref.watch(danmakuFrameRateProvider);
-    final frameRateController = ref.read(danmakuFrameRateProvider.notifier);
-    final effectiveFps = ref.watch(danmakuEffectiveFpsProvider);
-    // Clones share one settings store; there is no per-window scope here.
     return ListView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s20),
+      padding: const EdgeInsets.only(bottom: DsSpace.s20),
       children: [
-        DsSwitch(
-          value: settings.danmakuVisible,
-          onChanged: (value) => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: value)),
-          label: Text(t.room.danmakuOn),
-          description: Text(t.room.danmakuSettingsDesc),
-        ),
-        const SizedBox(height: DsSpace.s12),
-        _StyleSlider(
-          icon: DsIcons.type,
-          label: t.settings.styleFontSize,
-          shown: '${style.fontSize.toStringAsFixed(1)} px',
-          value: style.fontSize,
-          min: DanmakuStyleRange.fontSizeMin,
-          max: DanmakuStyleRange.fontSizeMax,
-          onChanged: (value) => unawaited(controller.setFontSize(value)),
-          semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
-        ),
-        _StyleSlider(
-          icon: DsIcons.bold,
-          label: t.settings.styleFontWeight,
-          shown: danmakuFontWeightLabel(t, style.fontWeight),
-          value: style.fontWeight.toDouble(),
-          min: DanmakuStyleRange.fontWeightMin.toDouble(),
-          max: DanmakuStyleRange.fontWeightMax.toDouble(),
-          divisions: DanmakuStyleRange.fontWeightDivisions,
-          onChanged: (value) => unawaited(controller.setFontWeight(value.round())),
-          semanticFormatter: (value) => danmakuFontWeightLabel(t, value.round()),
-        ),
-        _StyleSlider(
-          icon: DsIcons.letterSpacing,
-          label: t.settings.styleLetterSpacing,
-          shown: '${style.letterSpacing.toStringAsFixed(1)} px',
-          value: style.letterSpacing,
-          min: DanmakuStyleRange.letterSpacingMin,
-          max: DanmakuStyleRange.letterSpacingMax,
-          onChanged: (value) => unawaited(controller.setLetterSpacing(value)),
-          semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
-        ),
-        _StyleSlider(
-          icon: DsIcons.wind,
-          label: t.settings.styleSpeed,
-          shown: '${style.baseSpeed.round()} px/s',
-          value: style.baseSpeed,
-          min: DanmakuStyleRange.speedMin,
-          max: DanmakuStyleRange.speedMax,
-          onChanged: (value) => unawaited(controller.setBaseSpeed(value)),
-          semanticFormatter: (value) => '${value.round()} px/s',
-        ),
-        _StyleSlider(
-          icon: DsIcons.moveVertical,
-          label: t.settings.styleArea,
-          shown: '${(style.area * 100).round()}%',
-          value: style.area,
-          min: DanmakuStyleRange.areaMin,
-          max: DanmakuStyleRange.areaMax,
-          divisions: DanmakuStyleRange.areaDivisions,
-          onChanged: (value) => unawaited(controller.setArea(value)),
-        ),
-        _StyleSlider(
-          icon: DsIcons.circle,
-          label: t.settings.styleOpacity,
-          shown: '${(style.opacity * 100).round()}%',
-          value: style.opacity,
-          min: DanmakuStyleRange.opacityMin,
-          max: 1,
-          onChanged: (value) => unawaited(controller.setOpacity(value)),
-        ),
-        const SizedBox(height: DsSpace.s8),
-        DsSwitch(
-          value: style.showStroke,
-          onChanged: (value) => unawaited(controller.setShowStroke(value: value)),
-          label: Text(t.settings.styleStroke),
-        ),
-        _StyleSlider(
-          icon: DsIcons.square,
-          label: t.settings.styleStrokeWidth,
-          shown: '${style.strokeWidth.toStringAsFixed(1)} px',
-          value: style.strokeWidth,
-          min: DanmakuStyleRange.strokeWidthMin,
-          max: DanmakuStyleRange.strokeWidthMax,
-          // Greyed out while the outline is off, as in the reference.
-          onChanged: style.showStroke ? (value) => unawaited(controller.setStrokeWidth(value)) : null,
-          semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
-        ),
         Padding(
-          padding: const EdgeInsets.only(bottom: DsSpace.s8),
+          padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, 0),
           child: DsSwitch(
-            value: frameRate.autoFps,
-            onChanged: (value) => unawaited(frameRateController.setAutoFps(value: value)),
-            label: Text(t.settings.styleFpsFollow),
-            description: Text(t.settings.styleFpsFollowDesc),
+            value: settings.danmakuVisible,
+            onChanged: (value) =>
+                unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: value)),
+            label: Text(t.room.danmakuOn),
+            description: Text(t.room.danmakuSettingsDesc),
           ),
         ),
-        _StyleSlider(
-          icon: DsIcons.gauge,
-          label: t.settings.styleFps,
-          shown: t.settings.styleFpsValue(count: '${frameRate.autoFps ? effectiveFps : frameRate.fps}'),
-          value: (frameRate.autoFps ? effectiveFps : frameRate.fps).toDouble(),
-          min: DanmakuStyleRange.fpsMin.toDouble(),
-          max: DanmakuStyleRange.fpsMax.toDouble(),
-          divisions: DanmakuStyleRange.fpsDivisions,
-          onChanged: frameRate.autoFps ? null : (value) => unawaited(frameRateController.setFps(value.round())),
-          semanticFormatter: (value) => t.settings.styleFpsValue(count: '${value.round()}'),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, 0),
+          child: DanmakuStyleSettings(),
         ),
-        _StyleSlider(
-          icon: DsIcons.layers,
-          label: t.settings.styleMaxVisible,
-          shown: t.settings.styleMaxVisibleValue(count: '${style.maxVisibleCount}'),
-          value: style.maxVisibleCount.toDouble(),
-          min: DanmakuStyleRange.maxVisibleMin.toDouble(),
-          max: DanmakuStyleRange.maxVisibleMax.toDouble(),
-          divisions: DanmakuStyleRange.maxVisibleDivisions,
-          onChanged: style.massMode ? null : (value) => unawaited(controller.setMaxVisibleCount(value.round())),
-          semanticFormatter: (value) => t.settings.styleMaxVisibleValue(count: '${value.round()}'),
-        ),
-        DsSwitch(
-          value: style.massMode,
-          onChanged: (value) => unawaited(controller.setMassMode(value: value)),
-          label: Text(t.settings.styleMassMode),
-          description: Text(t.settings.styleMassModeDesc),
-        ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.rotateCw),
-          title: Text(t.settings.styleReset),
-          onPressed: () {
-            unawaited(controller.reset());
-            unawaited(frameRateController.reset());
-          },
+        const Padding(
+          padding: EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s16, DsSpace.s16, 0),
+          child: DanmakuDisplayPane(),
         ),
       ],
-    );
-  }
-}
-
-/// One labelled slider of the in-room danmaku settings: the same bar row the
-/// settings centre uses — the name and its current value on the line, the
-/// bar at its end (under the line while the column is narrow).
-final class _StyleSlider extends StatelessWidget {
-  const _StyleSlider({
-    required this.icon,
-    required this.label,
-    required this.shown,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-    this.divisions,
-    this.semanticFormatter,
-  });
-
-  final DsIconData icon;
-  final String label;
-  final String shown;
-  final double value;
-  final double min;
-  final double max;
-  final int? divisions;
-  final String Function(double value)? semanticFormatter;
-  final ValueChanged<double>? onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return SettingsConfigRow(
-      leading: DsIcon(icon),
-      title: label,
-      detail: Text(shown),
-      controlWidth: 220,
-      control: DsSlider(
-        value: value.clamp(min, max),
-        min: min,
-        max: max,
-        divisions: divisions,
-        onChanged: onChanged,
-        semanticLabel: label,
-        semanticFormatter: semanticFormatter,
-      ),
     );
   }
 }

@@ -1,6 +1,4 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
-import 'dart:ui' show ImageFilter, TileMode;
-
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
@@ -8,6 +6,7 @@ import 'package:flutter/gestures.dart' show PointerScrollEvent, kTouchSlop;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_sites/live_sites.dart' show LivePlayLine, LiveStreamCodec, LiveStreamFormat;
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
@@ -26,10 +25,10 @@ import 'package:pure_live/shared/shared.dart';
 /// The picture's own ink: the frame is dark whatever the app's theme, so
 /// the bars, the state overlay and the position line never borrow the
 /// surface's ink (which turns dark-on-dark in a light theme).
-const Color _onVideo = Color(0xFFFFFFFF);
-const Color _onVideoMuted = Color(0xCCFFFFFF);
-const Color _onVideoSubtle = Color(0x99FFFFFF);
-const Color _onVideoHover = Color(0x24FFFFFF);
+const Color _onVideo = playerInk;
+const Color _onVideoMuted = playerInkMuted;
+const Color _onVideoSubtle = playerInkSubtle;
+const Color _onVideoHover = playerInkHover;
 
 /// The stage around and behind the video: always black, in every theme —
 /// a missing frame reads as a dark screen, never as a flash of the theme's
@@ -60,6 +59,10 @@ final class PictureActionButton extends ConsumerWidget {
           if (presentation != PresentationMode.normal && player != null) {
             await ref.read(roomPresentationProvider.notifier).exit(player);
           } else if (ref.read(roomLeaveProvider) case final closeWindow?) {
+            // A room window's native close may take the view away before the
+            // page's dispose runs; stopping the room first is what keeps the
+            // sound from outliving it.
+            await controller.close();
             await closeWindow();
           } else if (context.mounted) {
             // A clone starts at the room route, so there is nothing to pop;
@@ -174,6 +177,11 @@ final class PlayerSurface extends ConsumerStatefulWidget {
 final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   bool _controlsVisible = true;
   Timer? _hideTimer;
+
+  /// A stream picker panel is open over the picture: the bars stay while it
+  /// is, or the panel would vanish under the pointer that is using it.
+  bool _panelOpen = false;
+
   StreamSubscription<PlayerTransportState>? _transportSub;
 
   /// The volume the viewer is dragging, and the bar that shows it; null
@@ -246,13 +254,29 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
   }
 
   /// Shows the bar and, while the stream plays, lets it settle away again.
+  ///
+  /// The pointer calls this on every move, so a bar that is already up only
+  /// restarts its timer instead of rebuilding the surface.
   void _wake() {
-    if (mounted) setState(() => _controlsVisible = true);
+    if (mounted && !_controlsVisible) setState(() => _controlsVisible = true);
     _scheduleHide();
+  }
+
+  /// A picker panel opened or closed: an open one holds the bars up until it
+  /// is done with.
+  void _setPanelOpen(bool open) {
+    if (_panelOpen == open) return;
+    _panelOpen = open;
+    if (open) {
+      _hideTimer?.cancel();
+    } else {
+      _scheduleHide();
+    }
   }
 
   void _scheduleHide() {
     _hideTimer?.cancel();
+    if (_panelOpen) return;
     if (!widget.roomState.playback.playing) return;
     // A TV room keeps its bars: with no pointer there is no way to wake a
     // hidden bar, and the focused control would go with it.
@@ -462,6 +486,11 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     final playing = room.playback.playing;
     // A paused or failed stream keeps the bar up; a playing one lets it go.
     final showBar = handle != null && picture.kind == RoomPictureKind.none && (_controlsVisible || !playing);
+    // A pointer drag over the picture moves the window: desktop only, and only
+    // while the room is an ordinary window — a fullscreen or compact surface
+    // has its own rules. The volume swipe is a phone gesture and gives the
+    // drag the whole picture here (the wheel still sets the volume).
+    final desktopDrag = _desktop && presentation == PresentationMode.normal;
     _watchTransport(handle);
     ref.listen(roomProvider.select((state) => state.playback.playing), (previous, next) {
       if (next) {
@@ -476,272 +505,364 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
       canRequestFocus: false,
       skipTraversal: true,
       includeSemantics: false,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (handle == null)
-            const ColoredBox(color: kPlayerStageColor, child: SizedBox.expand())
-          else if (room.audioOnly && room.room != null)
-            AudioOnlyCover(room: room.room!)
-          else if (widget.portraitFullscreen && widget.portraitDisplay == PortraitFullscreenMode.ambient)
-            DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF17191E), kPlayerStageColor],
+      // The reference's own rule: moving the pointer over the picture brings
+      // the overlay back, a click is not needed. A touch screen never hovers,
+      // so phones keep the tap.
+      child: MouseRegion(
+        onHover: mini ? null : (_) => _wake(),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (handle == null)
+              const ColoredBox(color: kPlayerStageColor, child: SizedBox.expand())
+            else if (room.audioOnly && room.room != null)
+              AudioOnlyCover(room: room.room!)
+            else if (widget.portraitFullscreen && widget.portraitDisplay == PortraitFullscreenMode.ambient)
+              DecoratedBox(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF17191E), kPlayerStageColor],
+                  ),
                 ),
+                child: MediaPlayerView(handle: handle, fit: _portraitFit(), alignment: _portraitAlignment()),
+              )
+            else
+              MediaPlayerView(
+                handle: handle,
+                fit: widget.portraitFullscreen ? _portraitFit() : playback.fit.boxFit,
+                alignment: widget.portraitFullscreen ? _portraitAlignment() : Alignment.center,
               ),
-              child: MediaPlayerView(handle: handle, fit: _portraitFit(), alignment: _portraitAlignment()),
-            )
-          else
-            MediaPlayerView(
-              handle: handle,
-              fit: widget.portraitFullscreen ? _portraitFit() : playback.fit.boxFit,
-              alignment: widget.portraitFullscreen ? _portraitAlignment() : Alignment.center,
-            ),
-          if (widget.barrage case final barrage? when showDanmaku)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: mini
-                    ? LayoutBuilder(
-                        builder: (context, constraints) => FlameBarrageWidget(
-                          // The compact (PiP) surface keeps the main look and
-                          // adds one width-derived or pinned factor; its own
-                          // lane geometry and smaller caches follow the
-                          // reference's CompactDanmakuMetrics.
-                          config: _barrageConfig(
-                            style,
-                            danmakuFps,
-                            family: danmakuFamily,
-                            area: danmakuArea,
-                            compact: CompactDanmakuMetrics.resolve(
-                              width: constraints.maxWidth,
-                              auto: pipScale.auto,
-                              pinnedScale: pipScale.scale,
-                              configuredFontSize: style.fontSize,
-                              configuredSpeed: style.baseSpeed,
+            if (widget.barrage case final barrage? when showDanmaku)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: mini
+                      ? LayoutBuilder(
+                          builder: (context, constraints) => FlameBarrageWidget(
+                            // The compact (PiP) surface keeps the main look and
+                            // adds one width-derived or pinned factor; its own
+                            // lane geometry and smaller caches follow the
+                            // reference's CompactDanmakuMetrics.
+                            config: _barrageConfig(
+                              style,
+                              danmakuFps,
+                              family: danmakuFamily,
+                              area: danmakuArea,
+                              compact: CompactDanmakuMetrics.resolve(
+                                width: constraints.maxWidth,
+                                auto: pipScale.auto,
+                                pinnedScale: pipScale.scale,
+                                configuredFontSize: style.fontSize,
+                                configuredSpeed: style.baseSpeed,
+                              ),
                             ),
+                            emojiAtlas: EmojiAtlas.instance,
+                            controller: barrage,
                           ),
+                        )
+                      : FlameBarrageWidget(
+                          config: _barrageConfig(style, danmakuFps, family: danmakuFamily, area: danmakuArea),
                           emojiAtlas: EmojiAtlas.instance,
                           controller: barrage,
                         ),
-                      )
-                    : FlameBarrageWidget(
-                        config: _barrageConfig(style, danmakuFps, family: danmakuFamily, area: danmakuArea),
-                        emojiAtlas: EmojiAtlas.instance,
-                        controller: barrage,
-                      ),
+                ),
               ),
-            ),
-          // The gesture layer: a tap shows or hides the bar, a double tap
-          // plays or pauses, a vertical drag and the wheel set the volume.
-          // The compact window keeps only the window verbs: dragging the
-          // picture moves the small window (its native caption is hidden) and
-          // a double press brings it back.
-          if (picture.kind == RoomPictureKind.none)
-            Listener(
-              onPointerSignal: (event) {
-                if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
-                  _wheelVolume(event.scrollDelta.dy);
-                }
-              },
-              onPointerDown: _holdDanmaku,
-              onPointerMove: _releaseDanmakuOnMove,
-              onPointerCancel: (_) => _releaseDanmaku(),
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapUp: mini ? null : (_) => unawaited(_onPictureTap()),
-                // With the switch off no long-press recognizer is registered,
-                // so it never holds back a drag.
-                onLongPressStart: longPressInteraction ? (_) => unawaited(_onPictureLongPress()) : null,
-                // A long press cancels the tap first; releasing here would
-                // drop the message before _onPictureLongPress can take it.
-                onLongPressCancel: _releaseDanmaku,
-                onDoubleTap: () {
-                  _releaseDanmaku();
-                  if (mini) {
-                    widget.onLeave();
-                    return;
+            // The gesture layer: a tap shows or hides the bar, a double tap
+            // plays or pauses, a vertical drag and the wheel set the volume.
+            // The compact window keeps only the window verbs: dragging the
+            // picture moves the small window (its native caption is hidden) and
+            // a double press brings it back.
+            if (picture.kind == RoomPictureKind.none)
+              Listener(
+                onPointerSignal: (event) {
+                  if (event is PointerScrollEvent && event.scrollDelta.dy != 0) {
+                    _wheelVolume(event.scrollDelta.dy);
                   }
-                  unawaited(ref.read(roomProvider.notifier).togglePlayPause());
                 },
-                onPanStart: mini
-                    ? (_) {
-                        final window = ref.read(windowsPipWindowProvider);
-                        if (window != null) unawaited(window.startDragging());
-                      }
-                    : null,
-                onVerticalDragStart: mini
-                    ? null
-                    : (details) {
-                        _releaseDanmaku();
-                        final width = MediaQuery.sizeOf(context).width;
-                        final swipe = widget.onPortraitSwipe;
-                        if (widget.portraitFullscreen &&
-                            swipe != null &&
-                            details.localPosition.dx >= width / 3 &&
-                            details.localPosition.dx <= width * 2 / 3) {
-                          _swipingPortrait = true;
+                onPointerDown: _holdDanmaku,
+                onPointerMove: _releaseDanmakuOnMove,
+                onPointerCancel: (_) => _releaseDanmaku(),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapUp: mini ? null : (_) => unawaited(_onPictureTap()),
+                  // With the switch off no long-press recognizer is registered,
+                  // so it never holds back a drag.
+                  onLongPressStart: longPressInteraction ? (_) => unawaited(_onPictureLongPress()) : null,
+                  // A long press cancels the tap first; releasing here would
+                  // drop the message before _onPictureLongPress can take it.
+                  onLongPressCancel: _releaseDanmaku,
+                  onDoubleTap: () {
+                    _releaseDanmaku();
+                    if (mini) {
+                      widget.onLeave();
+                      return;
+                    }
+                    unawaited(ref.read(roomProvider.notifier).togglePlayPause());
+                  },
+                  onPanStart: mini
+                      ? (_) {
+                          final window = ref.read(windowsPipWindowProvider);
+                          if (window != null) unawaited(window.startDragging());
+                        }
+                      : desktopDrag
+                      ? (_) => unawaited(
+                          ref.read(desktopWindowHostProvider).startDragging().catchError((Object _) {}),
+                        )
+                      : null,
+                  onVerticalDragStart: mini || desktopDrag
+                      ? null
+                      : (details) {
+                          _releaseDanmaku();
+                          final width = MediaQuery.sizeOf(context).width;
+                          final swipe = widget.onPortraitSwipe;
+                          if (widget.portraitFullscreen &&
+                              swipe != null &&
+                              details.localPosition.dx >= width / 3 &&
+                              details.localPosition.dx <= width * 2 / 3) {
+                            _swipingPortrait = true;
+                            _portraitSwipeDy = 0;
+                            return;
+                          }
+                          _beginVolumeDrag();
+                        },
+                  onVerticalDragUpdate: mini || desktopDrag
+                      ? null
+                      : (details) {
+                          if (_swipingPortrait) {
+                            _portraitSwipeDy += details.delta.dy;
+                            return;
+                          }
+                          _dragVolumeBy(details.delta.dy);
+                        },
+                  onVerticalDragEnd: mini || desktopDrag
+                      ? null
+                      : (details) {
+                          if (!_swipingPortrait) return;
+                          _swipingPortrait = false;
+                          final dy = _portraitSwipeDy + (details.primaryVelocity ?? 0) * 0.08;
                           _portraitSwipeDy = 0;
-                          return;
-                        }
-                        _beginVolumeDrag();
-                      },
-                onVerticalDragUpdate: mini
-                    ? null
-                    : (details) {
-                        if (_swipingPortrait) {
-                          _portraitSwipeDy += details.delta.dy;
-                          return;
-                        }
-                        _dragVolumeBy(details.delta.dy);
-                      },
-                onVerticalDragEnd: mini
-                    ? null
-                    : (details) {
-                        if (!_swipingPortrait) return;
-                        _swipingPortrait = false;
-                        final dy = _portraitSwipeDy + (details.primaryVelocity ?? 0) * 0.08;
-                        _portraitSwipeDy = 0;
-                        if (dy.abs() < 80) return;
-                        widget.onPortraitSwipe?.call(dy < 0 ? 1 : -1);
-                      },
-                onVerticalDragCancel: mini
-                    ? null
-                    : () {
-                        _swipingPortrait = false;
-                        _portraitSwipeDy = 0;
-                      },
-                child: const SizedBox.expand(),
+                          if (dy.abs() < 80) return;
+                          widget.onPortraitSwipe?.call(dy < 0 ? 1 : -1);
+                        },
+                  onVerticalDragCancel: mini || desktopDrag
+                      ? null
+                      : () {
+                          _swipingPortrait = false;
+                          _portraitSwipeDy = 0;
+                        },
+                  child: const SizedBox.expand(),
+                ),
               ),
-            ),
-          if (_volumeHud case final volume?)
-            PositionedDirectional(
-              end: DsSpace.s20,
-              top: 0,
-              bottom: 0,
-              child: IgnorePointer(
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s12),
-                    decoration: DsBoxDecoration(
-                      color: const Color(0xCC000000),
-                      borderRadius: BorderRadius.circular(DsTheme.of(context).radii.card),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      spacing: DsSpace.s4,
-                      children: [
-                        DsIcon(volume <= 0.001 ? DsIcons.volumeX : DsIcons.volume2, size: 24, color: _onVideo),
-                        Text(
-                          '${(volume * 100).round()}%',
-                          style: DsTheme.of(context).typography
-                              .numeric(DsTheme.of(context).typography.caption.copyWith(color: _onVideo)),
-                        ),
-                      ],
+            if (_volumeHud case final volume?)
+              PositionedDirectional(
+                end: DsSpace.s20,
+                top: 0,
+                bottom: 0,
+                child: IgnorePointer(
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s12),
+                      decoration: DsBoxDecoration(
+                        color: const Color(0xCC000000),
+                        borderRadius: BorderRadius.circular(DsTheme.of(context).radii.card),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: DsSpace.s4,
+                        children: [
+                          DsIcon(volume <= 0.001 ? DsIcons.volumeX : DsIcons.volume2, size: 24, color: _onVideo),
+                          Text(
+                            '${(volume * 100).round()}%',
+                            style: DsTheme.of(context).typography
+                                .numeric(DsTheme.of(context).typography.caption.copyWith(color: _onVideo)),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          if (picture.kind != RoomPictureKind.none)
-            ColoredBox(
-              color: switch (picture.dim) {
-                RoomPictureDim.none => const Color(0x00000000),
-                RoomPictureDim.light => const Color(0x66000000),
-                RoomPictureDim.heavy => const Color(0xB3000000),
-                RoomPictureDim.cover => const Color(0xE6000000),
-              },
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: DsSpace.s12,
-                  children: [
-                    if (picture.busy) const DsSpinner(style: DsSpinnerStyle(size: 20, color: _onVideoSubtle)),
-                    Text(
-                      picture.title,
-                      textAlign: TextAlign.center,
-                      style: DsTheme.of(context).typography.title.copyWith(color: _onVideo),
-                    ),
-                    if (picture.reason case final reason?)
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 520),
-                        child: Text(
-                          reason,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: DsTheme.of(context).typography.caption.copyWith(color: _onVideoMuted),
+            if (picture.kind != RoomPictureKind.none)
+              ColoredBox(
+                color: switch (picture.dim) {
+                  RoomPictureDim.none => const Color(0x00000000),
+                  RoomPictureDim.light => const Color(0x66000000),
+                  RoomPictureDim.heavy => const Color(0xB3000000),
+                  RoomPictureDim.cover => const Color(0xE6000000),
+                },
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: DsSpace.s12,
+                    children: [
+                      if (picture.busy) const DsSpinner(style: DsSpinnerStyle(size: 20, color: _onVideoSubtle)),
+                      Text(
+                        picture.title,
+                        textAlign: TextAlign.center,
+                        style: DsTheme.of(context).typography.title.copyWith(color: _onVideo),
+                      ),
+                      if (picture.reason case final reason?)
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 520),
+                          child: Text(
+                            reason,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: DsTheme.of(context).typography.caption.copyWith(color: _onVideoMuted),
+                          ),
                         ),
-                      ),
-                    if (picture.actions.isNotEmpty)
-                      Wrap(
-                        spacing: DsSpace.s8,
-                        runSpacing: DsSpace.s8,
-                        alignment: WrapAlignment.center,
-                        children: [
-                          for (final (index, action) in picture.actions.indexed)
-                            PictureActionButton(action: action, autofocus: widget.autofocusFirstControl && index == 0),
-                        ],
-                      ),
-                  ],
+                      if (picture.actions.isNotEmpty)
+                        Wrap(
+                          spacing: DsSpace.s8,
+                          runSpacing: DsSpace.s8,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            for (final (index, action) in picture.actions.indexed)
+                              PictureActionButton(
+                                action: action,
+                                autofocus: widget.autofocusFirstControl && index == 0,
+                              ),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          if (showBar && !mini)
-            PositionedDirectional(
-              top: 0,
-              start: 0,
-              end: 0,
-              child: _PlayerTopBar(room: room, onLeave: widget.onLeave),
-            ),
-          // The compact window's own strip: its caption is hidden, so this is
-          // the only place that carries the window verbs. It never hides —
-          // without it the small window would have no way back.
-          if (mini)
-            PositionedDirectional(
-              top: 0,
-              start: 0,
-              end: 0,
-              child: _PipBar(room: room, onRestore: widget.onLeave, onClose: widget.onCloseRoom ?? widget.onLeave),
-            ),
-          if (showBar && !mini)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: _ControlBar(
-                handle: handle,
-                transport: transport,
-                onWake: _wake,
-                autofocusPlay: widget.autofocusFirstControl,
-                canEnterPortraitFullscreen: widget.canEnterPortraitFullscreen,
-                portraitFullscreen: widget.portraitFullscreen,
-                onPortraitFullscreen: widget.onPortraitFullscreen,
+            if (showBar && !mini)
+              PositionedDirectional(
+                top: 0,
+                start: 0,
+                end: 0,
+                child: _PlayerTopBar(room: room, onLeave: widget.onLeave, onHold: _setPanelOpen, onWake: _wake),
               ),
-            ),
-        ],
+            // The compact window's own strip: its caption is hidden, so this is
+            // the only place that carries the window verbs. It never hides —
+            // without it the small window would have no way back.
+            if (mini)
+              PositionedDirectional(
+                top: 0,
+                start: 0,
+                end: 0,
+                child: _PipBar(room: room, onRestore: widget.onLeave, onClose: widget.onCloseRoom ?? widget.onLeave),
+              ),
+            if (showBar && !mini)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: _ControlBar(
+                  handle: handle,
+                  transport: transport,
+                  onWake: _wake,
+                  autofocusPlay: widget.autofocusFirstControl,
+                  canEnterPortraitFullscreen: widget.canEnterPortraitFullscreen,
+                  portraitFullscreen: widget.portraitFullscreen,
+                  onPortraitFullscreen: widget.onPortraitFullscreen,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
 
 /// The strip over the picture: the way out in a glass pill, the room's name
-/// in the viewer's own type, and the live state and the audience in their
-/// own pills on the far end — frosted chips over the frame, the way the
-/// modern rooms wear them.
-final class _PlayerTopBar extends StatelessWidget {
-  const _PlayerTopBar({required this.room, required this.onLeave});
+/// in the viewer's own type, the live state and the audience beside it, and —
+/// the reference's own arrangement — the stream's choices on the far end: the
+/// flying danmaku's switch, the quality, the line and the picture's shape.
+///
+/// A picker drops its catalogue *under* the strip as a panel: resting the
+/// pointer on a picker opens it, a press toggles it, a choice closes it. That
+/// keeps one overlay over the picture instead of a menu per control, and lets
+/// the button read "线路 2" while the panel says what that line is.
+final class _PlayerTopBar extends ConsumerStatefulWidget {
+  const _PlayerTopBar({required this.room, required this.onLeave, required this.onHold, required this.onWake});
 
   final RoomState room;
   final VoidCallback onLeave;
+
+  /// Whether a picker panel is open: the bars must not settle away under it.
+  final ValueChanged<bool> onHold;
+
+  /// Resets the bars' auto-hide timer after a press.
+  final VoidCallback onWake;
+
+  @override
+  ConsumerState<_PlayerTopBar> createState() => _PlayerTopBarState();
+}
+
+/// The catalogues the strip above the picture offers.
+enum _Picker { quality, line, fit }
+
+final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
+  _Picker? _open;
+  Timer? _hoverTimer;
+  Timer? _leaveTimer;
+
+  @override
+  void dispose() {
+    _hoverTimer?.cancel();
+    _leaveTimer?.cancel();
+    // The strip is leaving the tree (a tap dismissed the bars): an open
+    // panel's hold must not outlive it, or the bars would never settle away
+    // again.
+    if (_open != null) widget.onHold(false);
+    super.dispose();
+  }
+
+  void _show(_Picker picker) {
+    _hoverTimer?.cancel();
+    _leaveTimer?.cancel();
+    if (_open == picker) return;
+    final wasClosed = _open == null;
+    setState(() => _open = picker);
+    if (wasClosed) widget.onHold(true);
+  }
+
+  void _hide() {
+    _hoverTimer?.cancel();
+    _leaveTimer?.cancel();
+    if (_open == null) return;
+    setState(() => _open = null);
+    widget.onHold(false);
+  }
+
+  void _toggle(_Picker picker) {
+    widget.onWake();
+    if (_open == picker) {
+      _hide();
+    } else {
+      _show(picker);
+    }
+  }
+
+  /// Resting the pointer on a picker opens it after a breath, so crossing the
+  /// strip on the way somewhere else does not flash every catalogue.
+  void _hoverOpen(_Picker picker) {
+    _leaveTimer?.cancel();
+    _hoverTimer?.cancel();
+    _hoverTimer = Timer(const Duration(milliseconds: 160), () {
+      if (mounted) _show(picker);
+    });
+  }
+
+  /// The pointer leaving the strip gets a moment to reach the panel under it.
+  void _hoverClose() {
+    _hoverTimer?.cancel();
+    _leaveTimer?.cancel();
+    _leaveTimer = Timer(const Duration(milliseconds: 260), () {
+      if (mounted) _hide();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
-    final detail = room.room;
+    final detail = widget.room.room;
     final title = detail?.content.title;
     final anchor = (detail?.anchor?.name ?? '').trim();
     // The streamer's name leads: in fullscreen the room is a person, and the
@@ -754,90 +875,277 @@ final class _PlayerTopBar extends StatelessWidget {
     final audience = detail?.audience.onlineViewers ?? detail?.audience.popularity ?? detail?.audience.totalViewers;
     final live = detail?.broadcast.isLiveNow ?? false;
     final replay = detail?.broadcast.isRecord ?? false;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s12),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: AlignmentDirectional.topCenter,
-          end: AlignmentDirectional.bottomCenter,
-          colors: [Color(0xB3000000), Color(0x00000000)],
+    final lines = widget.room.lines;
+    final lineIndex = widget.room.lineIndex.clamp(0, lines.isEmpty ? 0 : lines.length - 1);
+    final line = lines.isEmpty ? null : lines[lineIndex];
+    final quality = widget.room.quality ?? (widget.room.qualities.isEmpty ? null : widget.room.qualities.first);
+    final settings = ref.watch(playbackSettingsProvider);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // A phone strip is too narrow for words: the pickers keep the glyph,
+        // the panel under them still says everything.
+        final labelled = constraints.maxWidth >= 720;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s12),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: AlignmentDirectional.topCenter,
+                  end: AlignmentDirectional.bottomCenter,
+                  colors: [Color(0xB3000000), Color(0x00000000)],
+                ),
+              ),
+              child: Row(
+                spacing: DsSpace.s8,
+                children: [
+                  PlayerGlassPill(
+                    child: _BarIcon(icon: DsIcons.chevronLeft, label: t.common.close, onPressed: widget.onLeave),
+                  ),
+                  if (label != null)
+                    Expanded(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.title.copyWith(color: _onVideo),
+                      ),
+                    )
+                  else
+                    const Spacer(),
+                  if (live)
+                    const PlayerGlassPill(child: _VideoLiveBadge())
+                  else if (replay)
+                    PlayerGlassPill(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s3),
+                        child: Text(
+                          t.favorites.statusReplay,
+                          style: theme.typography.caption.copyWith(color: _onVideo, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                  if (audience != null && constraints.maxWidth >= 480)
+                    PlayerGlassPill(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s3),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: DsSpace.s3,
+                          children: [
+                            DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: _onVideoSubtle),
+                            Text(
+                              AudienceFormat.format(audience),
+                              style: theme.typography.numeric(theme.typography.caption.copyWith(color: _onVideo)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  PlayerGlassPill(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: DsSpace.s4,
+                      children: [
+                        _BarIcon(
+                          icon: settings.danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
+                          label: settings.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
+                          selected: settings.danmakuVisible,
+                          onPressed: () {
+                            widget.onWake();
+                            unawaited(
+                              ref
+                                  .read(playbackSettingsProvider.notifier)
+                                  .setDanmakuVisible(value: !settings.danmakuVisible),
+                            );
+                          },
+                        ),
+                        if (quality != null)
+                          _pickerButton(
+                            picker: _Picker.quality,
+                            icon: DsIcons.gauge,
+                            label: quality.label,
+                            semanticLabel: t.room.quality,
+                            labelled: labelled,
+                          ),
+                        if (line != null && lines.length > 1)
+                          _pickerButton(
+                            picker: _Picker.line,
+                            icon: DsIcons.route,
+                            label: _lineShortLabel(t, line, lineIndex),
+                            semanticLabel: t.room.lineLabel,
+                            labelled: labelled,
+                          ),
+                        _pickerButton(
+                          picker: _Picker.fit,
+                          icon: DsIcons.aspectRatio,
+                          label: fitLabels(t)[settings.fit.index],
+                          semanticLabel: t.settings.fit,
+                          labelled: labelled,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_open case final picker?)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(top: DsSpace.s4, end: DsSpace.s12),
+                child: Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: MouseRegion(
+                    onEnter: (_) => _leaveTimer?.cancel(),
+                    onExit: (_) => _hoverClose(),
+                    child: _pickerPanel(t, picker),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// One picker on the strip: the glyph, the current choice's words when the
+  /// strip is wide enough, and the chevron that says a panel hangs under it.
+  Widget _pickerButton({
+    required _Picker picker,
+    required DsIconData icon,
+    required String label,
+    required String semanticLabel,
+    required bool labelled,
+  }) {
+    final theme = DsTheme.of(context);
+    final open = _open == picker;
+    return MouseRegion(
+      onEnter: (_) => _hoverOpen(picker),
+      onExit: (_) => _hoverClose(),
+      child: TvFocusScale(
+        child: DsPressable(
+          semanticLabel: semanticLabel,
+          onPressed: () => _toggle(picker),
+          builder: (context, states, _) {
+            final lit = open || states.contains(WidgetState.hovered);
+            return Container(
+              height: theme.sizes.sm,
+              padding: EdgeInsets.symmetric(horizontal: labelled ? DsSpace.s8 : DsSpace.s6),
+              decoration: DsBoxDecoration(
+                color: lit ? _onVideoHover : null,
+                borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s4,
+                children: [
+                  DsIcon(icon, size: theme.sizes.iconSm, color: _onVideoMuted),
+                  if (labelled)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 96),
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: _onVideo),
+                      ),
+                    ),
+                  DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: _onVideoMuted),
+                ],
+              ),
+            );
+          },
         ),
       ),
-      child: Row(
-        spacing: DsSpace.s8,
-        children: [
-          _GlassPill(
-            child: _BarIcon(icon: DsIcons.chevronLeft, label: t.common.close, onPressed: onLeave),
-          ),
-          if (label != null)
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.title.copyWith(color: _onVideo),
-              ),
-            )
-          else
-            const Spacer(),
-          if (live)
-            const _GlassPill(child: _VideoLiveBadge())
-          else if (replay)
-            _GlassPill(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s3),
-                child: Text(
-                  t.favorites.statusReplay,
-                  style: theme.typography.caption.copyWith(color: _onVideo, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-          if (audience != null)
-            _GlassPill(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s3),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: DsSpace.s3,
-                  children: [
-                    DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: _onVideoSubtle),
-                    Text(
-                      AudienceFormat.format(audience),
-                      style: theme.typography.numeric(theme.typography.caption.copyWith(color: _onVideo)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
-      ),
     );
+  }
+
+  /// The open picker's catalogue.
+  Widget _pickerPanel(Translations t, _Picker picker) {
+    final room = widget.room;
+    final controller = ref.read(roomProvider.notifier);
+    switch (picker) {
+      case _Picker.quality:
+        final current = room.quality ?? (room.qualities.isEmpty ? null : room.qualities.first);
+        return PlayerOverlayPanel(
+          title: t.room.quality,
+          width: 200,
+          children: [
+            for (final option in room.qualities)
+              PlayerPanelOption(
+                label: option.label,
+                selected: option == current,
+                onPressed: () {
+                  _hide();
+                  unawaited(controller.selectQuality(option));
+                },
+              ),
+          ],
+        );
+      case _Picker.line:
+        return PlayerOverlayPanel(
+          title: t.room.lineLabel,
+          width: 240,
+          children: [
+            for (final (index, option) in room.lines.indexed)
+              PlayerPanelOption(
+                label: _lineShortLabel(t, option, index),
+                detail: _lineDetail(option),
+                selected: index == room.lineIndex,
+                onPressed: () {
+                  _hide();
+                  unawaited(controller.selectLine(index));
+                },
+              ),
+          ],
+        );
+      case _Picker.fit:
+        final current = ref.read(playbackSettingsProvider).fit;
+        return PlayerOverlayPanel(
+          title: t.settings.fit,
+          width: 200,
+          children: [
+            for (final (index, option) in PlaybackFit.values.indexed)
+              PlayerPanelOption(
+                label: fitLabels(t)[index],
+                selected: option == current,
+                onPressed: () {
+                  _hide();
+                  unawaited(ref.read(playbackSettingsProvider.notifier).setFit(option));
+                },
+              ),
+          ],
+        );
+    }
   }
 }
 
-/// One frosted chip over the picture: a dark glass the frame's own motion
-/// bleeds through, rounded to a pill, quiet enough to sit under words.
-final class _GlassPill extends StatelessWidget {
-  const _GlassPill({required this.child});
+/// The line's words on the strip: the platform's own label when it reads as
+/// one, the position otherwise. Bilibili labels a line
+/// `host|protocol|format|codec`, which never belongs on a button.
+String _lineShortLabel(Translations t, LivePlayLine line, int index) {
+  final own = (line.lineLabel ?? '').trim();
+  if (own.isEmpty || own.contains('|') || own.length > 14) return t.room.line(n: index + 1);
+  return own;
+}
 
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(DsRadii.pill),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14, tileMode: TileMode.decal),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0x59000000),
-            borderRadius: BorderRadius.circular(DsRadii.pill),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
+/// What a line is, under its name in the panel: the container and the codec,
+/// the two facts a viewer compares lines by.
+String? _lineDetail(LivePlayLine line) {
+  final format = switch (line.format) {
+    LiveStreamFormat.mpegts => 'MPEG-TS',
+    LiveStreamFormat.webrtc => 'WebRTC',
+    _ => line.format.name.toUpperCase(),
+  };
+  final codec = switch (line.codec) {
+    LiveStreamCodec.avc => 'H.264',
+    LiveStreamCodec.hevc => 'H.265',
+    LiveStreamCodec.av1 => 'AV1',
+    LiveStreamCodec.vp9 => 'VP9',
+    LiveStreamCodec.unknown || null => '',
+  };
+  return codec.isEmpty ? format : '$format · $codec';
 }
 
 /// The live pill over the picture: the red dot and the word in video ink.
@@ -1010,7 +1318,6 @@ final class _ControlBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final room = ref.watch(roomProvider);
-    final settings = ref.watch(playbackSettingsProvider);
     final presentation = ref.watch(roomPresentationProvider);
     final controller = ref.read(roomProvider.notifier);
     final presentationController = ref.read(roomPresentationProvider.notifier);
@@ -1021,7 +1328,6 @@ final class _ControlBar extends ConsumerWidget {
     final position = transport?.position ?? Duration.zero;
     final buffered = transport?.buffer.bufferedDuration ?? Duration.zero;
     final duration = transport?.duration ?? Duration.zero;
-    final quality = room.quality ?? (room.qualities.isEmpty ? null : room.qualities.first);
     final line = room.lines.isEmpty ? null : room.lines[room.lineIndex.clamp(0, room.lines.length - 1)];
     final immersive = presentationController.modeOwnsWindow(presentation);
     return Container(
@@ -1087,87 +1393,15 @@ final class _ControlBar extends ConsumerWidget {
                         semanticLabel: t.room.volume,
                       ),
                     ),
-                  // A fitted bar keeps a gap before the stream menus; a
-                  // compact one scrolls, so nine controls cannot push the
-                  // last button off the picture. The fitted bar also splits
-                  // its clusters: a hair divider between the transport and
-                  // the stream's own menus.
-                  if (compact) const SizedBox(width: DsSpace.s4) else ...[
-                    const _BarDivider(),
-                    const Spacer(),
-                  ],
-                  if (!pip && quality != null)
-                    _StreamMenu(
-                      label: quality.label,
-                      showLabel: !compact,
-                      icon: DsIcons.gauge,
-                      semanticLabel: t.room.quality,
-                      items: [
-                        for (final option in room.qualities)
-                          DsMenuItem(
-                            label: Text(option.label),
-                            checked: option == quality,
-                            onPressed: () {
-                              onWake();
-                              unawaited(controller.selectQuality(option));
-                            },
-                          ),
-                      ],
-                    ),
-                  if (!pip && line != null && room.lines.length > 1)
-                    _StreamMenu(
-                      label: line.lineLabel ?? t.room.line(n: room.lineIndex + 1),
-                      showLabel: !compact,
-                      icon: DsIcons.route,
-                      semanticLabel: t.room.lineLabel,
-                      items: [
-                        for (final (index, option) in room.lines.indexed)
-                          DsMenuItem(
-                            label: Text(option.lineLabel ?? t.room.line(n: index + 1)),
-                            checked: index == room.lineIndex,
-                            onPressed: () {
-                              onWake();
-                              unawaited(controller.selectLine(index));
-                            },
-                          ),
-                      ],
-                    ),
-                  // The picture's shape: the reference's 画面比例 button on the
-                  // control bar, six entries, the tick on the one in force;
-                  // the choice writes the setting every surface reads.
-                  if (!pip)
-                    _StreamMenu(
-                      label: fitLabels(context.t)[settings.fit.index],
-                      showLabel: !compact,
-                      icon: DsIcons.aspectRatio,
-                      semanticLabel: context.t.settings.fit,
-                      items: [
-                        for (final (index, option) in PlaybackFit.values.indexed)
-                          DsMenuItem(
-                            label: Text(fitLabels(context.t)[index]),
-                            checked: option == settings.fit,
-                            onPressed: () {
-                              onWake();
-                              unawaited(ref.read(playbackSettingsProvider.notifier).setFit(option));
-                            },
-                          ),
-                      ],
-                    ),
+                  // A fitted bar keeps a gap before the room's own verbs; a
+                  // compact one scrolls, so the buttons cannot push the last
+                  // one off the picture. The fitted bar also splits its
+                  // clusters: a hair divider between the transport and the
+                  // rest. The stream pickers (quality, line, shape) live in
+                  // the strip above the picture, where the reference keeps
+                  // them.
+                  if (compact) const SizedBox(width: DsSpace.s4) else ...[const _BarDivider(), const Spacer()],
                   if (!pip && line != null) _RecordButton(room: room),
-                  if (!pip)
-                    _BarIcon(
-                      icon: settings.danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
-                      label: settings.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
-                      selected: settings.danmakuVisible,
-                      onPressed: () {
-                        onWake();
-                        unawaited(
-                          ref
-                              .read(playbackSettingsProvider.notifier)
-                              .setDanmakuVisible(value: !settings.danmakuVisible),
-                        );
-                      },
-                    ),
                   if (!pip && !narrow && line != null)
                     _BarIcon(
                       icon: DsIcons.cast,
@@ -1260,67 +1494,6 @@ final class _BarDivider extends StatelessWidget {
     margin: const EdgeInsets.symmetric(horizontal: DsSpace.s4),
     color: const Color(0x40FFFFFF),
   );
-}
-
-/// A labelled menu over a stream dimension: the current quality or line,
-/// its catalogue, the tick on the one playing.
-final class _StreamMenu extends StatelessWidget {
-  const _StreamMenu({
-    required this.label,
-    required this.icon,
-    required this.semanticLabel,
-    required this.items,
-    this.showLabel = true,
-  });
-
-  /// The current choice; shown when [showLabel], the tooltip otherwise.
-  final String label;
-  final DsIconData icon;
-  final String semanticLabel;
-  final List<Widget> items;
-
-  /// Whether the bar has room for the choice's words (a narrow strip and
-  /// the small window keep only the icon).
-  final bool showLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    return TvFocusScale(
-      child: DsMenuAnchor(
-        side: DsSide.top,
-        semanticLabel: semanticLabel,
-        items: items,
-        builder: (context, controller, child) => DsPressable(
-          semanticLabel: semanticLabel,
-          onPressed: controller.toggle,
-          builder: (context, states, _) {
-            final hovered = states.contains(WidgetState.hovered);
-            return DsTooltip(
-              message: '$label · $semanticLabel',
-              child: Container(
-                height: theme.sizes.sm,
-                padding: EdgeInsets.symmetric(horizontal: showLabel ? DsSpace.s8 : DsSpace.s6),
-                decoration: DsBoxDecoration(
-                  color: hovered ? _onVideoHover : null,
-                  borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: DsSpace.s4,
-                  children: [
-                    DsIcon(icon, size: theme.sizes.iconSm, color: _onVideoMuted),
-                    if (showLabel) Text(label, style: theme.typography.caption.copyWith(color: _onVideo)),
-                    const DsIcon(DsIcons.chevronUp, size: 12, color: _onVideoMuted),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
 }
 
 /// The record toggle: a disc while idle, a stop square while this room is

@@ -813,6 +813,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       if (ownsWindow && player != null) {
         unawaited(presentationController.exit(player));
       } else if (ref.read(roomLeaveProvider) case final closeWindow?) {
+        // A room window's native close may take the view away before this
+        // page's dispose runs; stop the room first so its sound cannot
+        // outlive the window.
+        unawaited(_roomNotifier.close());
         unawaited(closeWindow());
       } else if (context.canPop()) {
         if (_shouldFloatOnExit) _leaveToFloating = true;
@@ -831,6 +835,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       final player = room.handle?.id;
       if (player != null) unawaited(presentationController.exit(player));
       if (ref.read(roomLeaveProvider) case final closeWindow?) {
+        unawaited(_roomNotifier.close());
         unawaited(closeWindow());
       } else if (context.canPop()) {
         context.pop();

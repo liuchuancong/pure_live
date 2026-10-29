@@ -124,25 +124,55 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     final linkState = ref.watch(linkToolProvider);
     final view = _viewOf(search);
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
+    final platforms = [kSearchAllPlatforms, ...allPlatformIds];
+    void chooseScope(String id) {
+      if (id == scope) return;
+      ref.read(searchSiteIdProvider.notifier).selected = id;
+      _field.clear();
+      setState(() => _draft = '');
+      unawaited(ref.read(searchProvider.notifier).search(''));
+    }
+
+    void managePlatforms() =>
+        unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          child: PlatformTabRow(
-            platforms: [kSearchAllPlatforms, ...allPlatformIds],
-            current: scope,
-            nameOf: _platformName,
-            semanticLabel: context.t.search.targetsLabel,
-            // The panel's way to the hide/reorder setting.
-            onManagePlatforms: () =>
-                unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
-            onChanged: (id) {
-              if (id == scope) return;
-              ref.read(searchSiteIdProvider.notifier).selected = id;
-              _field.clear();
-              setState(() => _draft = '');
-              unawaited(ref.read(searchProvider.notifier).search(''));
+          // A small screen keeps the scope tabs alone; the layout and the
+          // platform wall move behind the page's more icon.
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
+              final tabs = PlatformTabRow(
+                platforms: platforms,
+                current: scope,
+                nameOf: _platformName,
+                semanticLabel: context.t.search.targetsLabel,
+                showPlatformWall: !narrow,
+                showLayoutToggle: !narrow,
+                // The panel's way to the hide/reorder setting.
+                onManagePlatforms: managePlatforms,
+                onChanged: chooseScope,
+              );
+              if (!narrow) return tabs;
+              return SizedBox(
+                height: 44,
+                child: Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(child: tabs),
+                    PlatformToolbarMore(
+                      platforms: platforms,
+                      current: scope,
+                      nameOf: _platformName,
+                      onChanged: chooseScope,
+                      onManagePlatforms: managePlatforms,
+                    ),
+                  ],
+                ),
+              );
             },
           ),
         ),

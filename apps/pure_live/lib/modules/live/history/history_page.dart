@@ -60,7 +60,20 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final history = ref.watch(historyProvider);
     if (!history.ready) {
-      return const _SkeletonList();
+      // The same grid the records will fill, so the page never reflows when
+      // the store opens.
+      final settings = ref.watch(browseSettingsProvider);
+      return CardGrid<(LiveRoom, DateTime)>(
+        items: const [],
+        layout: ref.watch(browseLayoutProvider),
+        listMatchesGridWidth: true,
+        listMainAxisExtent: kRoomCardListDesignHeight,
+        crossSpacing: settings.crossSpacing,
+        mainSpacing: settings.mainSpacing,
+        isLoading: true,
+        padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
+        itemBuilder: (_, _) => const SizedBox.shrink(),
+      );
     }
     if (history.error != null) {
       return Center(
@@ -104,6 +117,23 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
             padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s6),
             child: DsProgressBar(value: progress, semanticLabel: t.history.refresh),
           ),
+        // The filter's conditions in force, worded over the page like the
+        // areas and popular pages word their search: what is being narrowed,
+        // and the one control that widens it again.
+        if (_filterActive)
+          Padding(
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+            child: DsAlert(
+              title: Text(t.history.filterMatches(count: shown.length)),
+              action: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.x, size: 14),
+                onPressed: _resetFilter,
+                child: Text(t.history.filterReset),
+              ),
+            ),
+          ),
         Expanded(child: _body(t, history.records, shown)),
       ],
     );
@@ -140,69 +170,62 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     final layout = ref.watch(browseLayoutProvider);
     final settings = ref.watch(browseSettingsProvider);
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s8,
-        children: [
-          for (final (header, records) in sections) ...[
-            Padding(
-              padding: const EdgeInsets.only(top: DsSpace.s8, bottom: DsSpace.s4),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Text(
-                  header,
-                  style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textMuted),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossSpacing = settings.crossSpacing;
+        // The feed's own measure — the viewer's column cap included — so a
+        // history tile is the feed's tile and a list row is a card's width.
+        // The width is the one the grid really gets: the page's inset is the
+        // grid's padding, and counting it twice used to ask for one column
+        // more than the delegate drew, which squeezed the rows.
+        final content = math.max(0, constraints.maxWidth - 2 * inset).toDouble();
+        final capped = cappedColumnsForWidth(
+          content,
+          spacing: crossSpacing,
+          ceiling: settings.gridColumns,
+          minWidth: kBrowseCardMinWidth,
+        );
+        final listRow = layout == CardLayout.list;
+        final extent = capped > 0 && content > 0
+            ? columnExtentForWidth(content, capped, crossSpacing)
+            : browseCardExtentForWidth(content, crossSpacing: crossSpacing);
+        final columns = math.max(1, (content / (extent + crossSpacing)).ceil());
+        final tileWidth = content > 0 ? (content - crossSpacing * (columns - 1)) / columns : 0.0;
+        final tileExtent = listRow
+            ? kRoomCardListDesignHeight
+            : roomCardTileHeight(tileWidth, cover: settings.coverAspect);
+        // One scroll for every day: the sections are slivers, so a long
+        // record list builds its cards lazily instead of all at once.
+        return CustomScrollView(
+          slivers: [
+            for (final (header, records) in sections) ...[
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
+                sliver: SliverToBoxAdapter(
+                  child: _DayHeader(label: header, count: records.length),
                 ),
               ),
-            ),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final crossSpacing = settings.crossSpacing;
-                // The same width-derived measure the feeds hold — the
-                // viewer's column cap included — so a history grid's tiles
-                // are the feed's tiles, and a list row is a card's width,
-                // never a band across the window.
-                final content = math.max(0, constraints.maxWidth - 2 * DsSpace.s20).toDouble();
-                final capped = cappedColumnsForWidth(
-                  content,
-                  spacing: crossSpacing,
-                  ceiling: settings.gridColumns,
-                  minWidth: kBrowseCardMinWidth,
-                );
-                final listRow = layout == CardLayout.list;
-                final extent = capped > 0 && content > 0
-                    ? columnExtentForWidth(content, capped, crossSpacing)
-                    : browseCardExtentForWidth(content, crossSpacing: crossSpacing);
-                // The tile's height follows the column width the delegate
-                // settles on: the cover keeps its shape and the information
-                // area under it stays one block tall.
-                final columns = math.max(1, (content / (extent + crossSpacing)).ceil());
-                final tileWidth = content > 0 ? (content - crossSpacing * (columns - 1)) / columns : 0.0;
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
+              SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: inset),
+                sliver: SliverGrid.builder(
                   gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: extent,
                     crossAxisSpacing: crossSpacing,
                     mainAxisSpacing: settings.mainSpacing,
-                    mainAxisExtent: listRow
-                        ? kRoomCardListDesignHeight
-                        : roomCardTileHeight(tileWidth, cover: settings.coverAspect),
+                    mainAxisExtent: tileExtent,
                   ),
                   itemCount: records.length,
                   itemBuilder: (context, index) {
                     final (room, watchedAt) = records[index];
                     return _historyCard(context, room, watchedAt: watchedAt, listRow: listRow);
                   },
-                );
-              },
-            ),
+                ),
+              ),
+            ],
+            const SliverToBoxAdapter(child: SizedBox(height: DsSpace.s24)),
           ],
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -446,12 +469,13 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   }
 }
 
-/// The page's header, a toolbar: the count against the cap (and how many
-/// the filter leaves) on the left, the record's verbs on the right — refresh,
-/// the filter with its condition count, the cap, and clear. The filter's
-/// conditions live in their own panel, so this line stays one line; a narrow
-/// window keeps the verbs as icons.
-final class _Header extends StatelessWidget {
+/// The page's header, the popular and areas pages' toolbar: the count
+/// against the cap (and how many the filter leaves) on the left; the
+/// card/row switch, refresh, the filter with its condition count, the cap
+/// and clear on the right. A small screen keeps the count, the filter and
+/// one more icon — the rest of the verbs, the layout switch included, move
+/// into its menu.
+final class _Header extends ConsumerWidget {
   const _Header({
     required this.total,
     required this.limit,
@@ -482,86 +506,153 @@ final class _Header extends StatelessWidget {
   final VoidCallback onClear;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    final layout = ref.watch(browseLayoutProvider);
+    void chooseLayout(CardLayout value) => unawaited(ref.read(browseLayoutProvider.notifier).set(value));
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = LiveWindow.isCompact(constraints.maxWidth);
+        final narrow = LiveWindow.stacksToolbar(constraints.maxWidth);
         final inset = LiveWindow.pageInset(constraints.maxWidth);
+        final count = Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: t.history.recordCount(count: total, limit: limit),
+                style: theme.typography.small.copyWith(color: colors.textMuted),
+              ),
+              if (filtering) ...[
+                TextSpan(
+                  text: ' · ',
+                  style: theme.typography.small.copyWith(color: colors.textSubtle),
+                ),
+                TextSpan(
+                  text: t.history.filterMatches(count: matches),
+                  style: theme.typography.small.copyWith(color: colors.accentText, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ],
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
+        final filter = DsButton(
+          variant: filtering ? DsButtonVariant.tinted : DsButtonVariant.secondary,
+          size: DsSize.sm,
+          leading: const DsIcon(DsIcons.filter, size: 16),
+          trailing: filterCount == 0 ? null : DsCount(filterCount),
+          semanticLabel: filterCount == 0 ? t.history.filter : '${t.history.filter}, $filterCount',
+          onPressed: total == 0 && !filtering ? null : onOpenFilter,
+          child: Text(t.history.filter),
+        );
+        // The small screen's menu: everything the wide row shows beside the
+        // count, the card/row switch included.
+        final more = DsMenuAnchor(
+          semanticLabel: t.common.more,
+          align: DsAlign.end,
+          items: [
+            DsMenuItem(
+              leading: const DsIcon(DsIcons.refreshCw, size: 16),
+              label: Text(t.history.refresh),
+              onPressed: busy || total == 0 ? null : onRefresh,
+            ),
+            DsMenuItem(
+              leading: const DsIcon(DsIcons.gauge, size: 16),
+              label: Text(t.history.limitAction),
+              onPressed: busy ? null : onEditLimit,
+            ),
+            const DsMenuDivider(),
+            DsMenuItem(
+              label: Text(t.common.layoutGrid),
+              checked: layout == CardLayout.grid,
+              onPressed: () => chooseLayout(CardLayout.grid),
+            ),
+            DsMenuItem(
+              label: Text(t.common.layoutList),
+              checked: layout == CardLayout.list,
+              onPressed: () => chooseLayout(CardLayout.list),
+            ),
+            const DsMenuDivider(),
+            DsMenuItem(
+              leading: const DsIcon(DsIcons.trash2, size: 16),
+              label: Text(t.history.clear),
+              destructive: true,
+              onPressed: busy || !canClear ? null : onClear,
+            ),
+          ],
+          builder: (context, controller, _) => DsButton.icon(
+            variant: DsButtonVariant.ghost,
+            size: DsSize.sm,
+            semanticLabel: t.common.more,
+            onPressed: controller.open,
+            icon: const DsIcon(DsIcons.ellipsisVertical),
+          ),
+        );
         return Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
-          child: Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: t.history.recordCount(count: total, limit: limit),
-                        style: theme.typography.small.copyWith(color: colors.textMuted),
-                      ),
-                      if (filtering) ...[
-                        TextSpan(
-                          text: ' · ',
-                          style: theme.typography.small.copyWith(color: colors.textSubtle),
-                        ),
-                        TextSpan(
-                          text: t.history.filterMatches(count: matches),
-                          style: theme.typography.small.copyWith(color: colors.accentText, fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ],
+          child: SizedBox(
+            height: 44,
+            child: Row(
+              spacing: DsSpace.s8,
+              children: [
+                Expanded(child: count),
+                if (narrow) ...[
+                  filter,
+                  more,
+                ] else ...[
+                  const LayoutToggle(),
+                  DsButton.icon(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    semanticLabel: t.history.refresh,
+                    onPressed: busy || total == 0 ? null : onRefresh,
+                    icon: const DsIcon(DsIcons.refreshCw, size: 16),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              DsButton.icon(
-                variant: DsButtonVariant.ghost,
-                size: DsSize.sm,
-                semanticLabel: t.history.refresh,
-                onPressed: busy || total == 0 ? null : onRefresh,
-                icon: const DsIcon(DsIcons.refreshCw, size: 16),
-              ),
-              DsButton(
-                variant: filtering ? DsButtonVariant.tinted : DsButtonVariant.secondary,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.filter, size: 16),
-                trailing: filterCount == 0 ? null : DsCount(filterCount),
-                semanticLabel: filterCount == 0 ? t.history.filter : '${t.history.filter}, $filterCount',
-                onPressed: total == 0 && !filtering ? null : onOpenFilter,
-                child: Text(t.history.filter),
-              ),
-              DsButton.icon(
-                variant: DsButtonVariant.ghost,
-                size: DsSize.sm,
-                semanticLabel: t.history.limitAction,
-                onPressed: busy ? null : onEditLimit,
-                icon: const DsIcon(DsIcons.gauge, size: 16),
-              ),
-              if (compact)
-                DsButton.icon(
-                  variant: DsButtonVariant.dangerSoft,
-                  size: DsSize.sm,
-                  semanticLabel: t.history.clear,
-                  onPressed: busy || !canClear ? null : onClear,
-                  icon: const DsIcon(DsIcons.trash2, size: 16),
-                )
-              else
-                DsButton(
-                  variant: DsButtonVariant.dangerSoft,
-                  size: DsSize.sm,
-                  leading: const DsIcon(DsIcons.trash2, size: 16),
-                  onPressed: busy || !canClear ? null : onClear,
-                  child: Text(t.history.clear),
-                ),
-            ],
+                  filter,
+                  DsButton.icon(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    semanticLabel: t.history.limitAction,
+                    onPressed: busy ? null : onEditLimit,
+                    icon: const DsIcon(DsIcons.gauge, size: 16),
+                  ),
+                  DsButton(
+                    variant: DsButtonVariant.dangerSoft,
+                    size: DsSize.sm,
+                    leading: const DsIcon(DsIcons.trash2, size: 16),
+                    onPressed: busy || !canClear ? null : onClear,
+                    child: Text(t.history.clear),
+                  ),
+                ],
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+/// One day's heading over its cards: the day in the toolbar's label weight
+/// and how many records it holds, so a long history reads as sections.
+final class _DayHeader extends StatelessWidget {
+  const _DayHeader({required this.label, required this.count});
+
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Row(
+      spacing: DsSpace.s8,
+      children: [
+        Text(label, style: theme.typography.labelStrong.copyWith(color: colors.text)),
+        DsBadge(label: Text('$count'), dot: false),
+      ],
     );
   }
 }
@@ -696,7 +787,6 @@ final class _FilterPanelState extends State<_FilterPanel> {
   }
 }
 
-/// The history card's context menu: open, copy the room's link, remove.
 /// The moment a record was watched, as a clock on today's records and a
 /// short date otherwise.
 String _watchClock(DateTime time) {
@@ -706,56 +796,4 @@ String _watchClock(DateTime time) {
   final clock = '${two(local.hour)}:${two(local.minute)}';
   final sameDay = local.year == now.year && local.month == now.month && local.day == now.day;
   return sameDay ? clock : '${two(local.month)}-${two(local.day)}';
-}
-
-/// The list's opening placeholder.
-final class _SkeletonList extends StatelessWidget {
-  const _SkeletonList();
-
-  @override
-  Widget build(BuildContext context) {
-    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    return ListView(
-      padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
-      children: [
-        for (var i = 0; i < 8; i++)
-          const Padding(
-            padding: EdgeInsets.only(bottom: DsSpace.s8),
-            child: _HistoryCardSkeleton(),
-          ),
-      ],
-    );
-  }
-}
-
-/// One history card's placeholder.
-final class _HistoryCardSkeleton extends StatelessWidget {
-  const _HistoryCardSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    // The row card's own pieces — the avatar and its three lines — so nothing
-    // shifts when the first record arrives.
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s8),
-      child: Row(
-        spacing: DsSpace.s12,
-        children: [
-          DsSkeleton.block(width: 48, height: 48),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              spacing: DsSpace.s6,
-              children: [
-                DsSkeleton(width: DsSpace.s32),
-                DsSkeleton(width: DsSpace.s24),
-                DsSkeleton(width: DsSpace.s20),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
