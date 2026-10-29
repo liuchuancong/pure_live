@@ -338,6 +338,22 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get webdavUploadName => 'File name';
 	@override String get webdavUploadInvalid => 'Enter a file name';
 	@override String get webdavNoServer => 'Set the server address first';
+	@override String get webdavSwitchAccount => 'Switch account';
+	@override String get webdavManageAccounts => 'Manage accounts';
+	@override String get webdavUploadFile => 'Upload files';
+	@override String webdavUploadFilesDone({required int count}) => 'Uploaded ${count} file(s)';
+	@override String get webdavUploadFollows => 'Upload follows-only backup';
+	@override String get webdavDownloadToLocal => 'Save to this device';
+	@override String webdavSavedToDevice({required String file}) => 'Saved ${file}';
+	@override String get webdavRename => 'Rename';
+	@override String webdavRenameTitle({required String name}) => 'Rename “${name}”';
+	@override String get webdavRenamed => 'Renamed';
+	@override String get webdavMove => 'Move to…';
+	@override String webdavMoveTitle({required String name}) => 'Move “${name}”';
+	@override String get webdavMoveHere => 'Move here';
+	@override String get webdavMoved => 'Moved';
+	@override String get webdavMoveIntoItself => 'A folder cannot be moved into itself';
+	@override String webdavQuota({required String used, required String total}) => '${used} used · ${total} total';
 }
 
 // Path: common
@@ -576,6 +592,9 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get accountRefresh => 'Refresh account data';
 	@override String get accountFavoritesRefresh => 'Refresh favorites';
 	@override String get accountHistoryRefresh => 'Refresh history';
+	@override String get favorite => 'Favorite';
+	@override String get favorited => 'Favorited';
+	@override String get likes => 'likes';
 	@override String get favoriteToggleOn => 'Added to favorites';
 	@override String get favoriteToggleOff => 'Removed from favorites';
 	@override String get cloudFavoriteOn => 'Added to account favorites';
@@ -1821,8 +1840,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get qualityAudioDescription => 'Default resolution, volume and background playback.';
 	@override String get kernelAdvancedTitle => 'Kernel advanced settings';
 	@override String get kernelAdvancedDescription => 'Output drivers, sync, scaling and decoder tuning; mpv engine only.';
-	@override String get webdavSyncTitle => 'WebDAV sync';
-	@override String get webdavSyncDescription => 'Configure the WebDAV server, upload and restore backups.';
+	@override String get webdavSyncTitle => 'WebDAV drive';
+	@override String get webdavSyncDescription => 'File management across several WebDAV accounts: browse, upload, download, rename and move, plus sending and restoring backups.';
 	@override String get closeExitGroup => 'Close & exit';
 	@override String get navQuality => 'Quality';
 	@override String get navAudio => 'Audio & volume';
@@ -3373,6 +3392,8 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get followingEmptyTitle => 'Nothing followed yet';
 	@override String get followingEmptyDescription => 'The anime and cinema you follow on Bilibili appear here.';
 	@override String get comments => 'Comments';
+	@override String get commentsHot => 'Top';
+	@override String get commentsNew => 'Newest';
 	@override String get commentsEmpty => 'No comments yet.';
 	@override String get commentsFailed => 'The comments did not load';
 	@override String get historyEmptyTitle => 'Nothing watched yet';
@@ -3390,6 +3411,13 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get savedVideo => 'Favourited';
 	@override String get saveAdded => 'Added to favourites';
 	@override String get saveRemoved => 'Removed from favourites';
+	@override String get download => 'Download video';
+	@override String downloading({required int percent}) => 'Downloading ${percent}%';
+	@override String get downloadingUnknown => 'Downloading…';
+	@override String downloadDone({required String name}) => 'Saved to ${name}';
+	@override String get downloadFailed => 'Download failed';
+	@override String get downloadCancelled => 'Download cancelled';
+	@override String get downloadCancel => 'Cancel download';
 }
 
 // Path: wallpaper
@@ -3761,6 +3789,22 @@ extension on TranslationsEn {
 			'backup.webdavUploadName' => 'File name',
 			'backup.webdavUploadInvalid' => 'Enter a file name',
 			'backup.webdavNoServer' => 'Set the server address first',
+			'backup.webdavSwitchAccount' => 'Switch account',
+			'backup.webdavManageAccounts' => 'Manage accounts',
+			'backup.webdavUploadFile' => 'Upload files',
+			'backup.webdavUploadFilesDone' => ({required int count}) => 'Uploaded ${count} file(s)',
+			'backup.webdavUploadFollows' => 'Upload follows-only backup',
+			'backup.webdavDownloadToLocal' => 'Save to this device',
+			'backup.webdavSavedToDevice' => ({required String file}) => 'Saved ${file}',
+			'backup.webdavRename' => 'Rename',
+			'backup.webdavRenameTitle' => ({required String name}) => 'Rename “${name}”',
+			'backup.webdavRenamed' => 'Renamed',
+			'backup.webdavMove' => 'Move to…',
+			'backup.webdavMoveTitle' => ({required String name}) => 'Move “${name}”',
+			'backup.webdavMoveHere' => 'Move here',
+			'backup.webdavMoved' => 'Moved',
+			'backup.webdavMoveIntoItself' => 'A folder cannot be moved into itself',
+			'backup.webdavQuota' => ({required String used, required String total}) => '${used} used · ${total} total',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => 'Nothing here yet',
 			'common.comingSoon' => 'Coming soon',
@@ -3963,6 +4007,9 @@ extension on TranslationsEn {
 			'hongguo.accountRefresh' => 'Refresh account data',
 			'hongguo.accountFavoritesRefresh' => 'Refresh favorites',
 			'hongguo.accountHistoryRefresh' => 'Refresh history',
+			'hongguo.favorite' => 'Favorite',
+			'hongguo.favorited' => 'Favorited',
+			'hongguo.likes' => 'likes',
 			'hongguo.favoriteToggleOn' => 'Added to favorites',
 			'hongguo.favoriteToggleOff' => 'Removed from favorites',
 			'hongguo.cloudFavoriteOn' => 'Added to account favorites',
@@ -4004,6 +4051,8 @@ extension on TranslationsEn {
 			'hongguo.shelfHot' => 'Now playing',
 			'hongguo.shelfNew' => 'New',
 			'hongguo.shelfCategory' => 'Category',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.newArrivals' => 'new',
 			'hongguo.openFullBoard' => 'Full board',
 			'hongguo.seeMore' => 'More',
@@ -4023,8 +4072,6 @@ extension on TranslationsEn {
 			'hongguo.searchHistory' => 'Recent',
 			'hongguo.searchHistoryClear' => 'Clear',
 			'hongguo.searchHistoryHint' => 'Searches stay on this machine, up to 20',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.filter' => 'Filter',
 			'hongguo.filterPanelTitle' => 'Filter',
 			'hongguo.filterDone' => 'Done',
@@ -4518,6 +4565,8 @@ extension on TranslationsEn {
 			'music.downloadSkipExistingDesc' => 'Do not download when the output file is already there.',
 			'music.downloadGroupByList' => 'Group by playlist',
 			'music.downloadGroupByListDesc' => 'When downloading from a playlist, save into a folder named after it.',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadMaxConcurrent' => 'Concurrent downloads',
 			'music.downloadMaxConcurrentDesc' => 'How many downloads run at once (1–5); changes apply immediately.',
 			'music.downloadStatusQueued' => 'Queued',
@@ -4537,8 +4586,6 @@ extension on TranslationsEn {
 			'music.downloadResume' => 'Resume',
 			'music.downloadPause' => 'Pause',
 			'music.downloadCancel' => 'Cancel',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadsEmptyTitle' => 'No downloads yet',
 			'music.downloadsEmptyDescription' => ({required Object directory}) => 'Download from a row’s “More actions” menu; files go to ${directory}.',
 			'music.localAddFolder' => 'Add a folder',
@@ -5032,6 +5079,8 @@ extension on TranslationsEn {
 			'room.giftLineUnnamed' => 'a gift',
 			'room.giftLineNumbered' => ({required Object id}) => 'gift ${id}',
 			'room.giftValueYuan' => ({required Object value}) => '¥${value}',
+			_ => null,
+		} ?? switch (path) {
 			'room.giftValueGoldSeed' => ({required Object value}) => '${value} gold seeds',
 			'room.giftValueDiamond' => ({required Object value}) => '${value} diamonds',
 			'room.giftValueRedBean' => ({required Object value}) => '${value} red beans',
@@ -5051,8 +5100,6 @@ extension on TranslationsEn {
 			'room.switchRoom' => 'Switch room',
 			'room.switchOnAir' => 'Followed · live',
 			'room.switchHistory' => 'Watch history',
-			_ => null,
-		} ?? switch (path) {
 			'room.switchReplays' => 'Followed replays',
 			'room.switchEmpty' => 'No rooms to switch to',
 			'room.switchLive' => 'Live',
@@ -5124,8 +5171,8 @@ extension on TranslationsEn {
 			'settings.qualityAudioDescription' => 'Default resolution, volume and background playback.',
 			'settings.kernelAdvancedTitle' => 'Kernel advanced settings',
 			'settings.kernelAdvancedDescription' => 'Output drivers, sync, scaling and decoder tuning; mpv engine only.',
-			'settings.webdavSyncTitle' => 'WebDAV sync',
-			'settings.webdavSyncDescription' => 'Configure the WebDAV server, upload and restore backups.',
+			'settings.webdavSyncTitle' => 'WebDAV drive',
+			'settings.webdavSyncDescription' => 'File management across several WebDAV accounts: browse, upload, download, rename and move, plus sending and restoring backups.',
 			'settings.closeExitGroup' => 'Close & exit',
 			'settings.navQuality' => 'Quality',
 			'settings.navAudio' => 'Audio & volume',
@@ -5546,6 +5593,8 @@ extension on TranslationsEn {
 			'settings.fontCategoryEnglish' => 'Latin',
 			'settings.fontCategorySerif' => 'Serif',
 			'settings.fontCategorySansSerif' => 'Sans-serif',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontCategoryDisplay' => 'Display',
 			'settings.fontCategoryMonospace' => 'Monospace',
 			'settings.fontCategoryOther' => 'Other',
@@ -5565,8 +5614,6 @@ extension on TranslationsEn {
 			'settings.cacheHint' => 'Covers and avatars are kept on this device for 30 days and pruned when they expire or pass the cap.',
 			'settings.preferPlatform' => 'Preferred platform',
 			'settings.preferPlatformDesc' => 'The platform the popular and areas pages open on, and the one a zone\'s room list and a search start from.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.preferPlatformFilterHint' => 'Search platforms',
 			'settings.preferPlatformFilterEmpty' => 'No platforms match',
 			'settings.sitesOrderReset' => 'Restore default order',
@@ -6060,6 +6107,8 @@ extension on TranslationsEn {
 			'settings.downloadResume' => 'Resume',
 			'settings.downloadPausedHint' => 'Paused · tap to resume',
 			'settings.downloadEtaSeconds' => ({required Object seconds}) => '${seconds} seconds left',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadEtaMinutes' => ({required Object minutes}) => '${minutes} minutes left',
 			'settings.downloadEtaHours' => ({required Object hours}) => '${hours} hours left',
 			'settings.downloadSummary' => ({required Object total}) => '${total} items',
@@ -6079,8 +6128,6 @@ extension on TranslationsEn {
 			'settings.releaseKindInstaller' => 'Installer',
 			'settings.releaseKindDmg' => 'DMG disk image',
 			'settings.releaseKindMsix' => 'MSIX package',
-			_ => null,
-		} ?? switch (path) {
 			'settings.releaseKindDeb' => 'DEB package',
 			'settings.releaseKindTarGz' => 'tar.gz archive',
 			'settings.releaseKindPortable' => 'Portable archive',
@@ -6574,6 +6621,8 @@ extension on TranslationsEn {
 			'vod.pgcDocumentary' => 'Documentaries',
 			'vod.pgcGuochuang' => 'Guochuang',
 			'vod.pgcTv' => 'TV series',
+			_ => null,
+		} ?? switch (path) {
 			'vod.pgcVariety' => 'Variety',
 			'vod.pgcEmptyDescription' => 'Nothing in this catalogue right now.',
 			'vod.episodes' => 'Episodes',
@@ -6593,8 +6642,6 @@ extension on TranslationsEn {
 			'vod.durationOver60' => 'Over 60 min',
 			'vod.related' => 'Related',
 			'vod.parts' => 'Parts',
-			_ => null,
-		} ?? switch (path) {
 			'vod.views' => 'Views',
 			'vod.danmaku' => 'Danmaku',
 			'vod.likes' => 'Likes',
@@ -6646,6 +6693,8 @@ extension on TranslationsEn {
 			'vod.followingEmptyTitle' => 'Nothing followed yet',
 			'vod.followingEmptyDescription' => 'The anime and cinema you follow on Bilibili appear here.',
 			'vod.comments' => 'Comments',
+			'vod.commentsHot' => 'Top',
+			'vod.commentsNew' => 'Newest',
 			'vod.commentsEmpty' => 'No comments yet.',
 			'vod.commentsFailed' => 'The comments did not load',
 			'vod.historyEmptyTitle' => 'Nothing watched yet',
@@ -6663,6 +6712,13 @@ extension on TranslationsEn {
 			'vod.savedVideo' => 'Favourited',
 			'vod.saveAdded' => 'Added to favourites',
 			'vod.saveRemoved' => 'Removed from favourites',
+			'vod.download' => 'Download video',
+			'vod.downloading' => ({required int percent}) => 'Downloading ${percent}%',
+			'vod.downloadingUnknown' => 'Downloading…',
+			'vod.downloadDone' => ({required String name}) => 'Saved to ${name}',
+			'vod.downloadFailed' => 'Download failed',
+			'vod.downloadCancelled' => 'Download cancelled',
+			'vod.downloadCancel' => 'Cancel download',
 			'wallpaper.title' => 'Random pictures',
 			'wallpaper.description' => 'Fetch a picture from a public random source by group; preview before applying.',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} sources',

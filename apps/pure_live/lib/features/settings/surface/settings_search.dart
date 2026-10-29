@@ -429,6 +429,11 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.webdavSync, t.backup.webdavConfigTitle, 'webdav server 服务器 同步'),
     _hit(SettingsSection.webdavSync, t.backup.webdavAddAccount, 'webdav account add more server 账号 添加 多 服务器'),
     _hit(SettingsSection.webdavSync, t.backup.webdavBrowse, 'webdav folders browse breadcrumb directory 浏览 文件夹 目录 面包屑'),
+    _hit(
+      SettingsSection.webdavSync,
+      t.backup.webdavManageAccounts,
+      'webdav accounts rename move download delete 账号 重命名 移动 下载 删除',
+    ),
     _hit(SettingsSection.webdavSync, t.backup.webdavUpload, 'webdav upload 上传 备份'),
     _hit(SettingsSection.webdavSync, t.backup.webdavDownload, 'webdav download restore 下载 恢复'),
     // Cache.

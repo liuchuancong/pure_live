@@ -537,7 +537,7 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.nodes => const PlatformNodesPane(),
       SettingsSection.dataCache || SettingsSection.data || SettingsSection.cache => const _DataCachePane(),
       SettingsSection.backup => const BackupPane(),
-      SettingsSection.webdavSync => const WebDavSyncPane(),
+      SettingsSection.webdavSync => const WebDavFileManager(),
       SettingsSection.logs => const LogsPane(),
       SettingsSection.about => const _AboutPane(),
       SettingsSection.iptv => const IptvSettingsPane(),
@@ -564,6 +564,7 @@ final class SettingsSectionPane extends StatelessWidget {
     // wallpaper page fills the window with as many whole rows as fit, and the
     // font manager pins its filters over a table that scrolls by itself.
     if (section == SettingsSection.logs ||
+        section == SettingsSection.webdavSync ||
         section == SettingsSection.backgroundImages ||
         section == SettingsSection.backgroundVideos ||
         section == SettingsSection.backgroundDownloads ||

@@ -116,5 +116,21 @@
   "webdavUploadHere": "上传当前备份",
   "webdavUploadName": "文件名",
   "webdavUploadInvalid": "文件名不能为空",
-  "webdavNoServer": "请先配置服务器地址"
+  "webdavNoServer": "请先配置服务器地址",
+  "webdavSwitchAccount": "切换账号",
+  "webdavManageAccounts": "管理账号",
+  "webdavUploadFile": "上传文件",
+  "webdavUploadFilesDone": "已上传 {count: int} 个文件",
+  "webdavUploadFollows": "上传关注备份",
+  "webdavDownloadToLocal": "下载到本机",
+  "webdavSavedToDevice": "已保存 {file: String}",
+  "webdavRename": "重命名",
+  "webdavRenameTitle": "重命名“{name: String}”",
+  "webdavRenamed": "已重命名",
+  "webdavMove": "移动到…",
+  "webdavMoveTitle": "移动“{name: String}”",
+  "webdavMoveHere": "移到此处",
+  "webdavMoved": "已移动",
+  "webdavMoveIntoItself": "不能把文件夹移动到自己里面",
+  "webdavQuota": "已用 {used: String} · 共 {total: String}"
 }

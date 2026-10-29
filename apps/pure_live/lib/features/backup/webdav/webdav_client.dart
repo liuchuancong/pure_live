@@ -135,6 +135,28 @@ final class WebDavBackupClient {
   /// browser's own error message is for.
   Future<void> createFolder(String path) => _guard(() => _client.mkdir(path));
 
+  /// Moves [from] to [to] — a rename when only the last segment changes.
+  ///
+  /// A collection is addressed with the trailing slash that several servers
+  /// insist on at both ends; without it they answer 409 and nothing moves.
+  Future<void> move(String from, String to, {required bool isDirectory}) {
+    String collection(String path) => isDirectory ? '${path.replaceFirst(RegExp(r'/+$'), '')}/' : path;
+    return _guard(() => _client.move(collection(from), collection(to)));
+  }
+
+  /// The server's quota, when it reports one: bytes used and bytes free.
+  ///
+  /// Plenty of servers answer the quota PROPFIND with a 404 or leave the
+  /// properties out; that is "no quota to show", not a failure of the page,
+  /// so the read answers null instead of throwing.
+  Future<(int used, int available)?> quota() async {
+    try {
+      return await _client.quotaBytes();
+    } on Object {
+      return null;
+    }
+  }
+
   /// Deletes one entry. A collection's path keeps its trailing slash, which
   /// several servers insist on.
   Future<void> delete(WebDavEntry entry) =>

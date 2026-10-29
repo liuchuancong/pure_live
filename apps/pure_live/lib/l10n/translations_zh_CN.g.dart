@@ -840,6 +840,54 @@ class Translations$backup$zh_CN {
 
 	/// zh-CN: '请先配置服务器地址'
 	String get webdavNoServer => '请先配置服务器地址';
+
+	/// zh-CN: '切换账号'
+	String get webdavSwitchAccount => '切换账号';
+
+	/// zh-CN: '管理账号'
+	String get webdavManageAccounts => '管理账号';
+
+	/// zh-CN: '上传文件'
+	String get webdavUploadFile => '上传文件';
+
+	/// zh-CN: '已上传 {count: int} 个文件'
+	String webdavUploadFilesDone({required int count}) => '已上传 ${count} 个文件';
+
+	/// zh-CN: '上传关注备份'
+	String get webdavUploadFollows => '上传关注备份';
+
+	/// zh-CN: '下载到本机'
+	String get webdavDownloadToLocal => '下载到本机';
+
+	/// zh-CN: '已保存 {file: String}'
+	String webdavSavedToDevice({required String file}) => '已保存 ${file}';
+
+	/// zh-CN: '重命名'
+	String get webdavRename => '重命名';
+
+	/// zh-CN: '重命名“{name: String}”'
+	String webdavRenameTitle({required String name}) => '重命名“${name}”';
+
+	/// zh-CN: '已重命名'
+	String get webdavRenamed => '已重命名';
+
+	/// zh-CN: '移动到…'
+	String get webdavMove => '移动到…';
+
+	/// zh-CN: '移动“{name: String}”'
+	String webdavMoveTitle({required String name}) => '移动“${name}”';
+
+	/// zh-CN: '移到此处'
+	String get webdavMoveHere => '移到此处';
+
+	/// zh-CN: '已移动'
+	String get webdavMoved => '已移动';
+
+	/// zh-CN: '不能把文件夹移动到自己里面'
+	String get webdavMoveIntoItself => '不能把文件夹移动到自己里面';
+
+	/// zh-CN: '已用 {used: String} · 共 {total: String}'
+	String webdavQuota({required String used, required String total}) => '已用 ${used} · 共 ${total}';
 }
 
 // Path: common
@@ -1482,6 +1530,15 @@ class Translations$hongguo$zh_CN {
 
 	/// zh-CN: '刷新历史'
 	String get accountHistoryRefresh => '刷新历史';
+
+	/// zh-CN: '收藏'
+	String get favorite => '收藏';
+
+	/// zh-CN: '已收藏'
+	String get favorited => '已收藏';
+
+	/// zh-CN: '点赞'
+	String get likes => '点赞';
 
 	/// zh-CN: '已加入本机收藏'
 	String get favoriteToggleOn => '已加入本机收藏';
@@ -5038,11 +5095,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '输出驱动、同步、缩放与解码高级项，仅 mpv 内核生效。'
 	String get kernelAdvancedDescription => '输出驱动、同步、缩放与解码高级项，仅 mpv 内核生效。';
 
-	/// zh-CN: 'WebDAV 同步'
-	String get webdavSyncTitle => 'WebDAV 同步';
+	/// zh-CN: 'WebDAV 网盘'
+	String get webdavSyncTitle => 'WebDAV 网盘';
 
-	/// zh-CN: '配置 WebDAV 服务器，上传与恢复备份。'
-	String get webdavSyncDescription => '配置 WebDAV 服务器，上传与恢复备份。';
+	/// zh-CN: '多个 WebDAV 账号的文件管理：浏览目录、上传下载、重命名移动，以及备份的发送与恢复。'
+	String get webdavSyncDescription => '多个 WebDAV 账号的文件管理：浏览目录、上传下载、重命名移动，以及备份的发送与恢复。';
 
 	/// zh-CN: '关闭与退出'
 	String get closeExitGroup => '关闭与退出';
@@ -9622,6 +9679,12 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '评论'
 	String get comments => '评论';
 
+	/// zh-CN: '最热'
+	String get commentsHot => '最热';
+
+	/// zh-CN: '最新'
+	String get commentsNew => '最新';
+
 	/// zh-CN: '还没有评论。'
 	String get commentsEmpty => '还没有评论。';
 
@@ -9672,6 +9735,27 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '已取消收藏'
 	String get saveRemoved => '已取消收藏';
+
+	/// zh-CN: '下载视频'
+	String get download => '下载视频';
+
+	/// zh-CN: '下载中 {percent: int}%'
+	String downloading({required int percent}) => '下载中 ${percent}%';
+
+	/// zh-CN: '下载中…'
+	String get downloadingUnknown => '下载中…';
+
+	/// zh-CN: '已下载到 {name: String}'
+	String downloadDone({required String name}) => '已下载到 ${name}';
+
+	/// zh-CN: '下载失败'
+	String get downloadFailed => '下载失败';
+
+	/// zh-CN: '已取消下载'
+	String get downloadCancelled => '已取消下载';
+
+	/// zh-CN: '取消下载'
+	String get downloadCancel => '取消下载';
 }
 
 // Path: wallpaper
@@ -10247,6 +10331,22 @@ extension on Translations {
 			'backup.webdavUploadName' => '文件名',
 			'backup.webdavUploadInvalid' => '文件名不能为空',
 			'backup.webdavNoServer' => '请先配置服务器地址',
+			'backup.webdavSwitchAccount' => '切换账号',
+			'backup.webdavManageAccounts' => '管理账号',
+			'backup.webdavUploadFile' => '上传文件',
+			'backup.webdavUploadFilesDone' => ({required int count}) => '已上传 ${count} 个文件',
+			'backup.webdavUploadFollows' => '上传关注备份',
+			'backup.webdavDownloadToLocal' => '下载到本机',
+			'backup.webdavSavedToDevice' => ({required String file}) => '已保存 ${file}',
+			'backup.webdavRename' => '重命名',
+			'backup.webdavRenameTitle' => ({required String name}) => '重命名“${name}”',
+			'backup.webdavRenamed' => '已重命名',
+			'backup.webdavMove' => '移动到…',
+			'backup.webdavMoveTitle' => ({required String name}) => '移动“${name}”',
+			'backup.webdavMoveHere' => '移到此处',
+			'backup.webdavMoved' => '已移动',
+			'backup.webdavMoveIntoItself' => '不能把文件夹移动到自己里面',
+			'backup.webdavQuota' => ({required String used, required String total}) => '已用 ${used} · 共 ${total}',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => '这里还没有内容',
 			'common.comingSoon' => '即将推出',
@@ -10449,6 +10549,9 @@ extension on Translations {
 			'hongguo.accountRefresh' => '刷新账户数据',
 			'hongguo.accountFavoritesRefresh' => '刷新收藏',
 			'hongguo.accountHistoryRefresh' => '刷新历史',
+			'hongguo.favorite' => '收藏',
+			'hongguo.favorited' => '已收藏',
+			'hongguo.likes' => '点赞',
 			'hongguo.favoriteToggleOn' => '已加入本机收藏',
 			'hongguo.favoriteToggleOff' => '已取消本机收藏',
 			'hongguo.cloudFavoriteOn' => '已加入账户收藏',
@@ -10490,6 +10593,8 @@ extension on Translations {
 			'hongguo.shelfHot' => '正在热播',
 			'hongguo.shelfNew' => '新剧',
 			'hongguo.shelfCategory' => '分类',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.newArrivals' => '上新',
 			'hongguo.openFullBoard' => '查看完整榜单',
 			'hongguo.seeMore' => '更多',
@@ -10509,8 +10614,6 @@ extension on Translations {
 			'hongguo.searchHistory' => '最近搜索',
 			'hongguo.searchHistoryClear' => '清空历史',
 			'hongguo.searchHistoryHint' => '搜过的剧名会留在本机，最多 20 条',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.filter' => '筛选',
 			'hongguo.filterPanelTitle' => '筛选条件',
 			'hongguo.filterDone' => '完成',
@@ -11004,6 +11107,8 @@ extension on Translations {
 			'music.downloadSkipExistingDesc' => '目标文件已存在时不再下载。',
 			'music.downloadGroupByList' => '按歌单分文件夹',
 			'music.downloadGroupByListDesc' => '从歌单下载时，文件保存到以歌单命名的子文件夹。',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadMaxConcurrent' => '同时下载数',
 			'music.downloadMaxConcurrentDesc' => '同时进行的下载任务数量（1–5），修改后立即生效。',
 			'music.downloadStatusQueued' => '排队中',
@@ -11023,8 +11128,6 @@ extension on Translations {
 			'music.downloadResume' => '继续',
 			'music.downloadPause' => '暂停',
 			'music.downloadCancel' => '取消',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadsEmptyTitle' => '还没有下载任务',
 			'music.downloadsEmptyDescription' => ({required Object directory}) => '在歌曲行的「更多」里下载，文件会保存到 ${directory}。',
 			'music.localAddFolder' => '添加文件夹',
@@ -11518,6 +11621,8 @@ extension on Translations {
 			'room.giftLineUnnamed' => '礼物',
 			'room.giftLineNumbered' => ({required Object id}) => '礼物 ${id}',
 			'room.giftValueYuan' => ({required Object value}) => '${value} 元',
+			_ => null,
+		} ?? switch (path) {
 			'room.giftValueGoldSeed' => ({required Object value}) => '${value} 金瓜子',
 			'room.giftValueDiamond' => ({required Object value}) => '${value} 钻石',
 			'room.giftValueRedBean' => ({required Object value}) => '${value} 红豆',
@@ -11537,8 +11642,6 @@ extension on Translations {
 			'room.switchRoom' => '切换直播间',
 			'room.switchOnAir' => '关注在播',
 			'room.switchHistory' => '观看记录',
-			_ => null,
-		} ?? switch (path) {
 			'room.switchReplays' => '关注回放',
 			'room.switchEmpty' => '没有可切换的直播间',
 			'room.switchLive' => '直播中',
@@ -11610,8 +11713,8 @@ extension on Translations {
 			'settings.qualityAudioDescription' => '默认清晰度、音量与后台播放。',
 			'settings.kernelAdvancedTitle' => '内核高级参数',
 			'settings.kernelAdvancedDescription' => '输出驱动、同步、缩放与解码高级项，仅 mpv 内核生效。',
-			'settings.webdavSyncTitle' => 'WebDAV 同步',
-			'settings.webdavSyncDescription' => '配置 WebDAV 服务器，上传与恢复备份。',
+			'settings.webdavSyncTitle' => 'WebDAV 网盘',
+			'settings.webdavSyncDescription' => '多个 WebDAV 账号的文件管理：浏览目录、上传下载、重命名移动，以及备份的发送与恢复。',
 			'settings.closeExitGroup' => '关闭与退出',
 			'settings.navQuality' => '画质',
 			'settings.navAudio' => '音频与音量',
@@ -12032,6 +12135,8 @@ extension on Translations {
 			'settings.fontCategoryEnglish' => '英文',
 			'settings.fontCategorySerif' => '衬线',
 			'settings.fontCategorySansSerif' => '无衬线',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontCategoryDisplay' => '展示',
 			'settings.fontCategoryMonospace' => '等宽',
 			'settings.fontCategoryOther' => '其他',
@@ -12051,8 +12156,6 @@ extension on Translations {
 			'settings.cacheHint' => '封面与头像会在本机缓存 30 天，过期或超限时自动清理。',
 			'settings.preferPlatform' => '首选平台',
 			'settings.preferPlatformDesc' => '进入热门或分区时优先显示的平台，也是分区房间列表与搜索起始的平台。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.preferPlatformFilterHint' => '搜索平台',
 			'settings.preferPlatformFilterEmpty' => '没有匹配的平台',
 			'settings.sitesOrderReset' => '恢复默认顺序',
@@ -12546,6 +12649,8 @@ extension on Translations {
 			'settings.downloadResume' => '继续下载',
 			'settings.downloadPausedHint' => '已暂停 · 点击继续',
 			'settings.downloadEtaSeconds' => ({required Object seconds}) => '预计还需 ${seconds} 秒',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadEtaMinutes' => ({required Object minutes}) => '预计还需 ${minutes} 分钟',
 			'settings.downloadEtaHours' => ({required Object hours}) => '预计还需 ${hours} 小时',
 			'settings.downloadSummary' => ({required Object total}) => '共 ${total} 项',
@@ -12565,8 +12670,6 @@ extension on Translations {
 			'settings.releaseKindInstaller' => '安装程序',
 			'settings.releaseKindDmg' => 'DMG 磁盘映像',
 			'settings.releaseKindMsix' => 'MSIX 应用包',
-			_ => null,
-		} ?? switch (path) {
 			'settings.releaseKindDeb' => 'DEB 软件包',
 			'settings.releaseKindTarGz' => 'tar.gz 归档',
 			'settings.releaseKindPortable' => '便携版压缩包',
@@ -13060,6 +13163,8 @@ extension on Translations {
 			'vod.pgcDocumentary' => '纪录片',
 			'vod.pgcGuochuang' => '国创',
 			'vod.pgcTv' => '电视剧',
+			_ => null,
+		} ?? switch (path) {
 			'vod.pgcVariety' => '综艺',
 			'vod.pgcEmptyDescription' => '这个分类暂时没有内容。',
 			'vod.episodes' => '选集',
@@ -13079,8 +13184,6 @@ extension on Translations {
 			'vod.durationOver60' => '60 分钟以上',
 			'vod.related' => '相关推荐',
 			'vod.parts' => '分P',
-			_ => null,
-		} ?? switch (path) {
 			'vod.views' => '播放',
 			'vod.danmaku' => '弹幕',
 			'vod.likes' => '点赞',
@@ -13132,6 +13235,8 @@ extension on Translations {
 			'vod.followingEmptyTitle' => '还没有追番',
 			'vod.followingEmptyDescription' => '在 Bilibili 上追的番剧和影视会出现在这里。',
 			'vod.comments' => '评论',
+			'vod.commentsHot' => '最热',
+			'vod.commentsNew' => '最新',
 			'vod.commentsEmpty' => '还没有评论。',
 			'vod.commentsFailed' => '评论没有加载出来',
 			'vod.historyEmptyTitle' => '还没有观看记录',
@@ -13149,6 +13254,13 @@ extension on Translations {
 			'vod.savedVideo' => '已收藏',
 			'vod.saveAdded' => '已加入收藏',
 			'vod.saveRemoved' => '已取消收藏',
+			'vod.download' => '下载视频',
+			'vod.downloading' => ({required int percent}) => '下载中 ${percent}%',
+			'vod.downloadingUnknown' => '下载中…',
+			'vod.downloadDone' => ({required String name}) => '已下载到 ${name}',
+			'vod.downloadFailed' => '下载失败',
+			'vod.downloadCancelled' => '已取消下载',
+			'vod.downloadCancel' => '取消下载',
 			'wallpaper.title' => '随机图源',
 			'wallpaper.description' => '按分组从公开随机接口取图，预览后再应用。',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} 个来源',

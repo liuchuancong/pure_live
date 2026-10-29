@@ -177,11 +177,17 @@ String formatBackupTime(DateTime time) {
   return '${local.year}-${two(local.month)}-${two(local.day)} ${two(local.hour)}:${two(local.minute)}';
 }
 
-/// Human-readable size: B, KB, MB.
+/// Human-readable size: B, KB, MB, GB or TB.
 String formatBackupSize(int bytes) {
   if (bytes < 1024) return '$bytes B';
-  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-  return '${(bytes / 1024 / 1024).toStringAsFixed(1)} MB';
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  var value = bytes / 1024;
+  var unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  return '${value.toStringAsFixed(1)} ${units[unit]}';
 }
 
 Future<Directory?> _tryDirectory(Future<Directory?> Function() find) async {
@@ -204,42 +210,6 @@ Future<WebDavBackupClient> webDavClientFor(WidgetRef ref, WebDavAccount account)
     username: account.user,
     password: await readAccountPassword(await webDavVault(ref), account.id),
   );
-}
-
-/// The client for the account the pages have selected.
-///
-/// Throws a [StateError] when no account is saved, which is what the pages'
-/// one "先填写服务器地址" message already keys on.
-Future<WebDavBackupClient> webDavClient(WidgetRef ref) async {
-  final account = ref.read(webdavAccountsProvider.notifier).current;
-  if (account == null) throw StateError('no WebDAV server configured');
-  return await webDavClientFor(ref, account);
-}
-
-/// Asks the selected server whether it answers and the credentials hold.
-/// Throws [WebDavFailure] with the reason when it does not, and a
-/// [StateError] when no server is configured.
-Future<void> testWebDav(WidgetRef ref) async {
-  final client = await webDavClient(ref);
-  await client.test();
-}
-
-/// Captures the current data and uploads it as the server's backup file,
-/// replacing what is there. Throws a [StateError] when there is nothing
-/// to upload.
-Future<void> uploadBackupToWebDav(WidgetRef ref) async {
-  final document = await captureBackupDocument(ref);
-  if (document.isEmpty) throw StateError('nothing to back up');
-  final client = await webDavClient(ref);
-  await client.upload(utf8.encode(document.encode()));
-}
-
-/// Downloads the server's backup file and parses it. Answers the
-/// document, or null when the payload is not a backup.
-Future<BackupDocument?> downloadBackupFromWebDav(WidgetRef ref) async {
-  final client = await webDavClient(ref);
-  final bytes = await client.download();
-  return BackupDocument.tryDecode(utf8.decode(bytes, allowMalformed: true));
 }
 
 String _stored(String key) {

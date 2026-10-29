@@ -116,5 +116,21 @@
   "webdavUploadHere": "Upload the current backup",
   "webdavUploadName": "File name",
   "webdavUploadInvalid": "Enter a file name",
-  "webdavNoServer": "Set the server address first"
+  "webdavNoServer": "Set the server address first",
+  "webdavSwitchAccount": "Switch account",
+  "webdavManageAccounts": "Manage accounts",
+  "webdavUploadFile": "Upload files",
+  "webdavUploadFilesDone": "Uploaded {count: int} file(s)",
+  "webdavUploadFollows": "Upload follows-only backup",
+  "webdavDownloadToLocal": "Save to this device",
+  "webdavSavedToDevice": "Saved {file: String}",
+  "webdavRename": "Rename",
+  "webdavRenameTitle": "Rename “{name: String}”",
+  "webdavRenamed": "Renamed",
+  "webdavMove": "Move to…",
+  "webdavMoveTitle": "Move “{name: String}”",
+  "webdavMoveHere": "Move here",
+  "webdavMoved": "Moved",
+  "webdavMoveIntoItself": "A folder cannot be moved into itself",
+  "webdavQuota": "{used: String} used · {total: String} total"
 }

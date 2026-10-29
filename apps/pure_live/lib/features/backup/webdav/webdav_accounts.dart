@@ -15,7 +15,7 @@ import 'package:pure_live/features/backup/webdav/webdav_settings.dart'
 /// viewer typed nothing.
 typedef WebDavAccount = ({String id, String name, String url, String user});
 
-/// The saved accounts and which one the sync rows act on.
+/// The saved accounts and which one the file manager shows.
 typedef WebDavAccounts = ({List<WebDavAccount> accounts, String selected});
 
 /// The pref key of the account list (a JSON array).
@@ -124,7 +124,7 @@ final class WebDavAccountsController extends Notifier<WebDavAccounts> {
     return migrated;
   }
 
-  /// The account the sync rows act on, or null when none is saved.
+  /// The account the file manager shows, or null when none is saved.
   WebDavAccount? get current {
     final accounts = state.accounts;
     for (final account in accounts) {
@@ -133,7 +133,7 @@ final class WebDavAccountsController extends Notifier<WebDavAccounts> {
     return accounts.isEmpty ? null : accounts.first;
   }
 
-  /// Makes [id] the account the sync rows act on.
+  /// Makes [id] the account the file manager shows.
   Future<void> select(String id) async {
     if (!state.accounts.any((account) => account.id == id)) return;
     await _write((accounts: state.accounts, selected: id));
