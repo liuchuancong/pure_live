@@ -62,13 +62,20 @@
   同曲匹配→取链。播放器接线待 music_playback 并行 WIP 收口）：歌名+歌手+专辑归一化（含 `versionChars.ts` 版本后缀处理
   Live/Remix）+ 时长 ±5s 匹配；`meta.toggleMusicInfo` 优先取链、失败回落本源。
   LX 参考：`musicSdk/index.js findMusic`、`core/player/action.ts getMusicPlayUrl`
-- ⬜ A8 热搜/搜索建议：各源 `hotSearch.js`、`tipSearch.js`。
+- ✅ A8 热搜/搜索建议（2026-10-29 `sources/music_hot_words.dart` 能力接口 `MusicHotWords`
+  （hotSearches+suggestions），kw/kg/tx/wy/mg 五源各自按 LX 端点实现，`music_search.dart` 的
+  `musicHotSearchesProvider` 按能力分发并新增 `musicSearchSuggestionsProvider`（family by query）：
+  kw hotword.s+tips.kuwo.cn、kg gateway hot_tab(固定签名)+searchtip、tx musicu hotkey+smartbox、
+  wy eapi search/chart/detail+weapi suggest/web、mg hotword(无签)+v3 suggest）：LX 参考：各平台 `hotSearch.js`、`tipSearch.js`
 - ➖ bd 百度 / xm 虾米：LX 中已注释/排除，不移植。
 
 ### B. 自定义源（user api）
 - ✅ B1 fjs 脚本运行时：`lx.on('request')/lx.send('inited')/lx.request/lx.utils` 契约已通
   （`controller/lx_script_runtime.dart` + `lx_script_prelude.dart`）。
-- ⬜ B2 对齐 LX 细节：脚本头注释解析 `@name/@description/@author/@homepage/@version`
+- ✅ B2 脚本头解析已实装（`music_sources.dart` `MusicCustomSource.parse`：首块注释
+  `@key value` 逐行提取，`@name` 缺失或无 request 契约即拒收；运行时把 name/description/
+  version/author/homepage/rawScript 注入 `lx.currentScriptInfo`）。余项（id 时间戳规则、gz_ 前缀
+  压缩存储）随 B3 导入导出一并核对。原条目：脚本头注释解析 `@name/@description/@author/@homepage/@version`
   （正则 `/^\s?\*\s?@(\w+)\s(.+)$/`）、id 规则 `user_api_XXX_时间戳`、脚本 deflate+base64
   `gz_` 前缀存储（保持导入兼容）；`lx.request` 需支持 method/timeout/headers/body/form/formData
   与代理设置透传。LX 参考：`src/main/modules/userApi/{utils,main}.ts`、`preload.js`、
