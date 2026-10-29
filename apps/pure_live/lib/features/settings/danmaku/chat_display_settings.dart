@@ -31,35 +31,6 @@ final class ChatNamesController extends Notifier<bool> {
 /// The room chat's sender-name switch.
 final chatNamesProvider = NotifierProvider<ChatNamesController, bool>(ChatNamesController.new);
 
-/// The room chat list's look: compact lines or one card per message.
-const String kChatListStyleKey = 'danmaku.list.style';
-
-/// Owns the list style.
-final class ChatListStyleController extends Notifier<String> {
-  @override
-  String build() {
-    try {
-      final value = StoragePrefs.getString(kChatListStyleKey);
-      return value == 'card' ? 'card' : 'compact';
-    } on Object {
-      return 'compact';
-    }
-  }
-
-  Future<void> set(String value) async {
-    final next = value == 'card' ? 'card' : 'compact';
-    state = next;
-    try {
-      await StoragePrefs.setString(kChatListStyleKey, next);
-    } on Object {
-      // A preference; a closed store loses it.
-    }
-  }
-}
-
-/// The room chat's list style.
-final chatListStyleProvider = NotifierProvider<ChatListStyleController, String>(ChatListStyleController.new);
-
 /// The room chat's font size; 0 follows the theme.
 const String kChatListFontSizeKey = 'danmaku.list.fontSize';
 

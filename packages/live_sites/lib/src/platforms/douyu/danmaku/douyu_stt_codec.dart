@@ -329,9 +329,12 @@ abstract final class DouyuDanmakuProtocol {
     return id > 0 ? '$id' : '';
   }
 
+  /// The feed line carries who paid and what they said, as bilibili's does;
+  /// the payload rides along for the board's own view.
   static LiveMessage _superChatMessage(LiveSuperChatMessage data) => LiveMessage.normalized(
     type: LiveMessageType.superChat,
-    text: 'SUPER_CHAT_MESSAGE',
+    text: data.text,
+    sender: MessageSender.normalized(userName: data.userName, avatarUrl: data.faceUrl.isEmpty ? null : data.faceUrl),
     color: LiveMessageColor.white,
     payload: data,
   );

@@ -13,7 +13,6 @@ import 'package:pure_live/features/settings/danmaku/chat_display_settings.dart'
         chatGiftsAboveTierProvider,
         chatListFontSizeProvider,
         chatListLineSpacingProvider,
-        chatListStyleProvider,
         chatNamesProvider,
         chatPanelWidthProvider,
         chatShowGiftsProvider,
@@ -833,17 +832,6 @@ final class DanmakuDisplayPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.chatListLayoutGroup),
           children: [
-            SettingsSegmentedRow<String>(
-              leading: const DsIcon(DsIcons.list),
-              title: t.settings.chatListStyle,
-              description: t.settings.chatListStyleDesc,
-              value: ref.watch(chatListStyleProvider),
-              options: [
-                (value: 'compact', label: t.settings.chatListStyleCompact),
-                (value: 'card', label: t.settings.chatListStyleCard),
-              ],
-              onChanged: (value) => unawaited(ref.read(chatListStyleProvider.notifier).set(value)),
-            ),
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.caseSensitive),
               title: t.settings.chatListFontSize,

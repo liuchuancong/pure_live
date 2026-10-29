@@ -288,7 +288,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       s.superChatIncludesMembership,
       'super chat membership guard subscription bilibili youtube twitch 醒目留言 超级聊天 上舰 会员 订阅 舰长',
     ),
-    _hit(SettingsSection.danmakuDisplay, s.chatListStyle, 'chat list style compact card 聊天 列表 样式 紧凑 卡片'),
     _hit(SettingsSection.danmakuDisplay, s.chatListFontSize, 'chat list font size 聊天 列表 字号 大小'),
     _hit(SettingsSection.danmakuDisplay, s.chatListLineSpacing, 'chat list line spacing 聊天 列表 行距'),
     _hit(SettingsSection.danmakuDisplay, s.chatPanelWidth, 'chat panel width side list 聊天 面板 宽度 侧栏'),

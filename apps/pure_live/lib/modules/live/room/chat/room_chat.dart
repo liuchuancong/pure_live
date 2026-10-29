@@ -101,7 +101,7 @@ final class _ChatFeed extends ConsumerWidget {
     // viewer put it.
     return ListView.builder(
       reverse: true,
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s16),
+      padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s12),
       itemCount: chat.length,
       itemBuilder: (context, index) => _ChatLine(message: chat[chat.length - 1 - index], anchorName: anchorName),
     );
@@ -133,7 +133,7 @@ final class _ChatComposerState extends ConsumerState<_ChatComposer> {
     final canSend = ref.watch(roomProvider.notifier).canSendDanmaku;
     if (!canSend) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+      padding: const EdgeInsets.fromLTRB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s12),
       child: Row(
         spacing: DsSpace.s8,
         children: [
@@ -184,7 +184,6 @@ final class _ChatLine extends ConsumerWidget {
     var nameStyle = theme.typography.caption;
     final senderName = sender?.userName.trim() ?? '';
     final showNames = ref.watch(chatNamesProvider);
-    final listStyle = ref.watch(chatListStyleProvider);
     final fontSize = ref.watch(chatListFontSizeProvider);
     final lineSpacing = ref.watch(chatListLineSpacingProvider);
     final height = switch (lineSpacing) {
@@ -210,12 +209,16 @@ final class _ChatLine extends ConsumerWidget {
           : Color.fromARGB(255, message.color!.r, message.color!.g, message.color!.b),
     );
     final gift = _giftOf(message);
+    final superChat = message.type == LiveMessageType.superChat && message.payload is LiveSuperChatMessage
+        ? message.payload! as LiveSuperChatMessage
+        : null;
     final replayed = message.messageId.startsWith('local-replay-');
     final valueInYuan = ref.watch(chatGiftValueInYuanProvider);
     final words = gift == null ? message.text : _giftSentence(t, gift, anchorName, inYuan: valueInYuan);
     // The room's own notices (the platform's system lines) sit apart from
-    // the conversation: centred, quiet, no "系统:" voice.
-    final isSystem = gift == null && senderName.isEmpty;
+    // the conversation: centred, quiet, no "系统:" voice. A super chat
+    // always has a sender, so it is never one.
+    final isSystem = gift == null && superChat == null && senderName.isEmpty;
     // The platform's own labels for who is talking: the fan badge (its name
     // and level) and the viewer's level. They ride on the sender, so a line
     // that has neither shows none.
@@ -230,22 +233,13 @@ final class _ChatLine extends ConsumerWidget {
     if (isSystem) {
       final line = Padding(
         padding: EdgeInsets.symmetric(vertical: vertical),
-        child: Align(
-          alignment: AlignmentDirectional.center,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s3),
-            decoration: BoxDecoration(
-              color: colors.control.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(DsRadii.pill),
-            ),
-            child: Text(
-              words,
-              textAlign: TextAlign.center,
-              style: theme.typography.caption.copyWith(
-                fontSize: fontSize > 0 ? fontSize.toDouble() : null,
-                color: colors.textSubtle,
-              ),
-            ),
+        child: Text(
+          words,
+          textAlign: TextAlign.center,
+          style: theme.typography.caption.copyWith(
+            fontSize: fontSize > 0 ? fontSize.toDouble() : null,
+            height: height,
+            color: colors.textSubtle,
           ),
         ),
       );
@@ -261,8 +255,12 @@ final class _ChatLine extends ConsumerWidget {
         child: line,
       );
     }
+    // A paid line — a gift or a super chat — sits in a tinted banner; plain
+    // talk is a bare line, so the column keeps live chat's own density.
+    final paid = gift != null || superChat != null;
+    final priceText = superChat == null ? null : _superChatPrice(superChat);
     Widget content = Padding(
-      padding: EdgeInsets.symmetric(vertical: gift == null ? vertical : 2),
+      padding: EdgeInsets.symmetric(vertical: paid ? 2 : vertical),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -275,6 +273,18 @@ final class _ChatLine extends ConsumerWidget {
             child: Text.rich(
               TextSpan(
                 children: [
+                  if (priceText != null) ...[
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: _ChatBadge(
+                        text: priceText,
+                        background: colors.warning.fill,
+                        foreground: colors.warning.onFill,
+                        style: badgeStyle.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    const WidgetSpan(child: SizedBox(width: DsSpace.s4)),
+                  ],
                   if (replayed)
                     TextSpan(
                       text: '[${t.room.replayed}] ',
@@ -313,23 +323,28 @@ final class _ChatLine extends ConsumerWidget {
         ],
       ),
     );
-    if (gift != null) {
-      // A gift is money on the page: the accent's own tint behind the line,
-      // a hairline edge, so it reads apart from ordinary talk.
+    if (superChat != null) {
+      // A super chat is the loudest money in the room: the warm banner and
+      // the price chip up front, the words beside them.
       content = Container(
         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s6),
         decoration: BoxDecoration(
-          color: colors.accent.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(theme.radii.card),
-          border: Border.fromBorderSide(BorderSide(color: colors.accent.withValues(alpha: 0.18))),
+          color: colors.warning.tint,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.fromBorderSide(BorderSide(color: colors.warning.fill.withValues(alpha: 0.35))),
         ),
         child: content,
       );
-    } else if (listStyle == 'card') {
+    } else if (gift != null) {
+      // A gift is money on the page: the accent's own tint behind the line,
+      // a hairline edge, so it reads apart from ordinary talk.
       content = Container(
-        margin: const EdgeInsets.symmetric(vertical: 2),
-        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s6),
-        decoration: BoxDecoration(color: colors.control, borderRadius: BorderRadius.circular(theme.radii.card)),
+        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
+        decoration: BoxDecoration(
+          color: colors.accent.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.fromBorderSide(BorderSide(color: colors.accent.withValues(alpha: 0.22))),
+        ),
         child: content,
       );
     }
@@ -368,6 +383,16 @@ final class _ChatLine extends ConsumerWidget {
 /// local gift carries a map and keeps its plain text).
 LiveGift? _giftOf(LiveMessage message) =>
     message.type == LiveMessageType.gift && message.payload is LiveGift ? message.payload! as LiveGift : null;
+
+/// The price as the platform writes it for others to see ("￥12"); null when
+/// the card has none of its own.
+String? _superChatPrice(LiveSuperChatMessage message) {
+  final shown = message.price.displayText.trim();
+  if (shown.isNotEmpty) return shown;
+  final amount = message.price.amount;
+  if (amount == null || amount <= 0) return null;
+  return [?message.price.currency, '$amount'].join();
+}
 
 /// The value of the whole line in the gift's unit, when it has one: a free
 /// gift, an unknown unit and a platform without a price show nothing.
@@ -733,9 +758,7 @@ final class _SuperChatCard extends StatelessWidget {
     final name = message.userName.trim();
     final face = message.faceUrl.trim();
     final membership = isMembershipCard(message);
-    final price = message.price.displayText.trim().isNotEmpty
-        ? message.price.displayText.trim()
-        : [?message.price.currency, if (message.price.amount case final amount?) '$amount'].join();
+    final price = _superChatPrice(message) ?? '';
     // The price's warmth: the tint deepens with the money on the line, so
     // the board reads by value at a glance (reference's graded cards).
     final amount = message.price.amount ?? 0;
