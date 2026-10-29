@@ -440,10 +440,51 @@ final class HongguoAccountClient {
       );
     }
     final seen = <String>{};
-    return [
+    final unique = [
       for (final reservation in result)
         if (seen.add(reservation.series.seriesId)) reservation,
     ];
+    // The reservation rows carry no episode count; the reference fills the
+    // missing ones in one batch, since a shelf without its total has nothing
+    // to say about how much there is to watch.
+    final missing = [
+      for (final reservation in unique)
+        if (reservation.series.episodeCount <= 0 && RegExp(r'^[0-9]{1,30}$').hasMatch(reservation.series.seriesId))
+          reservation.series.seriesId,
+    ];
+    if (missing.isEmpty) return unique;
+    try {
+      final detailsRoot = await _json(
+        credentials,
+        '/reading/bookapi/multi-detail/v1/',
+        params: {'book_id': missing.take(50).toSet().join(','), 'book_type': '2'},
+      );
+      final detailRows = detailsRoot['data'];
+      if (detailRows is! List<Object?>) return unique;
+      final counts = <String, int>{};
+      for (final row in detailRows) {
+        if (row is! Map<String, Object?>) continue;
+        final id = _str(row, 'book_id');
+        final count = _episodeCount(row);
+        if (id.isNotEmpty && count > 0) counts[id] = count;
+      }
+      if (counts.isEmpty) return unique;
+      return [
+        for (final reservation in unique)
+          switch (counts[reservation.series.seriesId]) {
+            final count? => HongguoCloudReservation(
+              series: reservation.series.copyWith(episodeCount: count),
+              online: reservation.online,
+              publishAt: reservation.publishAt,
+              publishText: reservation.publishText,
+            ),
+            null => reservation,
+          },
+      ];
+    } on Object {
+      // The counts are a nicety; the reservations stand without them.
+      return unique;
+    }
   }
 
   /// Uploads one watch-progress entry; write-through, best effort.

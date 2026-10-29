@@ -399,6 +399,15 @@ P1 已清零：首页/侧栏的新集徽标见 8.10，断网等待见 8.11，本
 
 新增 1 项测试（清空历史保留收藏）。`dart analyze lib/modules/hongguo test/hongguo` 0 issues；`flutter test test/hongguo test/app` 28 项全绿。**没做**：参考的「管理本机记录」多选批量删除（现为逐条删除 + 全部清空两档）。
 
+### 8.17 第十五轮（2026-10-29）：预约列表批量补集数（P1 #14）
+
+预约接口的行不带集数，目标之前也不补，所以等待中的剧在卡片上没有「共 N 集」可看。照参考的 `multi-detail` 批量补号：
+
+- `reservations()` 去重后收集**缺集数且 id 是数字**的行（最多 50 个），一次 `multi-detail/v1`（`book_type=2`）取回，用 `_episodeCount(row)`（已支持 `drama_chapter_number`）填进 `series.episodeCount`；任何失败都原样返回，预约本身不受影响。
+- 分类（待上线/已上线）与排序不变。
+
+`dart analyze lib/modules/hongguo` 0 issues。**未验证**：真实账号的预约列表（这条链路要登录态，临时探测没有可用凭证）。
+
 ---
 
 ## 附：本文的验证方式与未验证项
