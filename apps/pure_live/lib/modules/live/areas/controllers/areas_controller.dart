@@ -48,13 +48,6 @@ final class AreasCatalogController extends Notifier<Map<String, PlatformAreasSta
   /// Loads [platform]'s areas again (a retry from its error state).
   Future<void> refresh(String platform) => _load(platform);
 
-  /// Loads [platform]'s catalogue in the background while the viewer is
-  /// still on another tab, so switching arrives to a ready grid.
-  Future<void> warm(String platform) async {
-    final catalog = catalogOf(platform);
-    if (catalog.areas.isEmpty && !catalog.loading) await _load(platform);
-  }
-
   Future<void> _load(String platform) async {
     final current = catalogOf(platform);
     if (current.loading) return;

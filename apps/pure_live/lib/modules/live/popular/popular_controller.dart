@@ -135,15 +135,6 @@ final class PopularCatalogController extends Notifier<Map<String, PopularFeedSta
   /// refresh, resume, retry). A failure keeps the old catalogue on screen.
   Future<void> refresh(String platform) => _refresh(platform);
 
-  /// Warms [platform]'s first rooms when its catalogue is still empty and
-  /// idle: the page's settle timer calls this for the tab after the shown
-  /// one, so the next platform's rooms are already in hand when the viewer
-  /// swipes (the reference's 700 ms warm-up).
-  Future<void> warm(String platform) async {
-    final feed = feedOf(platform);
-    if (_accumulated(platform).isEmpty && !feed.loading) await _refresh(platform);
-  }
-
   /// Loads at least one more room for the phone's endless list. A chunk is
   /// shown whole: the platform's own window decides its size.
   Future<void> loadMore(String platform) async {

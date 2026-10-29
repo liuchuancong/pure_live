@@ -1,4 +1,4 @@
-import 'dart:async' show Timer, unawaited;
+import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -70,14 +70,10 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
     for (final site in ref.watch(sitesProvider).all) site.manifest.id: localizedSiteName(site),
   };
 
-  /// How long the viewer looks at a platform before the next one warms.
-  static const Duration _warmDelay = Duration(milliseconds: 700);
-
   /// A return from the background after this long refreshes the shown
   /// platform (the reference's resume rule).
   static const Duration _resumeRefreshAfter = Duration(seconds: 15);
 
-  Timer? _warmTimer;
   DateTime? _backgroundedAt;
 
   /// Whether a platform-display fallback is already waiting for the frame:
@@ -91,20 +87,16 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // The feed never loads from inside its own build; the page asks.
+    // The feed never loads from inside its own build; the page asks, and
+    // only for the platform the viewer is looking at.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(ref.read(popularCatalogProvider.notifier).open(ref.read(popularSiteProvider)));
-      _armWarmUp();
     });
-    // A platform chosen elsewhere (the tabs) re-arms the warm-up; the
-    // listen lands outside build, where a timer belongs.
-    ref.listenManual(popularSiteProvider, (_, _) => _armWarmUp());
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _warmTimer?.cancel();
     for (final controller in _scrolls.values) {
       controller.dispose();
     }
@@ -125,21 +117,6 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
         unawaited(ref.read(popularCatalogProvider.notifier).refresh(ref.read(popularSiteProvider)));
       }
     }
-  }
-
-  /// The tab after the shown one (or the one before, at the end) warms its
-  /// first page once the viewer has settled on this one.
-  void _armWarmUp() {
-    _warmTimer?.cancel();
-    final ids = ref.read(popularCatalogProvider.notifier).platformIds();
-    if (ids.length < 2) return;
-    final index = ids.indexOf(ref.read(popularSiteProvider));
-    if (index < 0) return;
-    final next = index + 1 < ids.length ? index + 1 : index - 1;
-    _warmTimer = Timer(_warmDelay, () {
-      if (!mounted) return;
-      unawaited(ref.read(popularCatalogProvider.notifier).warm(ids[next]));
-    });
   }
 
   /// The shown platform was hidden in the settings while another one is

@@ -1,4 +1,4 @@
-import 'dart:async' show Timer, unawaited;
+import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
@@ -33,14 +33,10 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
   /// When the viewer last left the app, so a long absence refreshes on return.
   DateTime? _backgroundedAt;
 
-  /// Warms the next platform after the viewer settles on this one.
-  Timer? _warmTimer;
-
   /// Whether a platform-display fallback is already waiting for the frame:
   /// one move per hidden selection, not one per build.
   bool _platformFallbackScheduled = false;
 
-  static const Duration _warmDelay = Duration(milliseconds: 800);
   static const Duration _resumeRefreshAfter = Duration(seconds: 15);
 
   /// One scroll controller per platform (the catalogue grid keeps each
@@ -50,7 +46,6 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _warmTimer?.cancel();
     for (final controller in _scrolls.values) {
       controller.dispose();
     }
@@ -69,20 +64,6 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
         unawaited(ref.read(areasCatalogProvider.notifier).refresh(ref.read(areasSiteProvider)));
       }
     }
-  }
-
-  /// The platform after the shown one (or before, at the end) loads its
-  /// catalogue once the viewer has settled.
-  void _armWarmUp() {
-    _warmTimer?.cancel();
-    final ids = ref.read(areasCatalogProvider.notifier).platformIds();
-    if (ids.length < 2) return;
-    final index = ids.indexOf(ref.read(areasSiteProvider));
-    if (index < 0) return;
-    final next = index + 1 < ids.length ? index + 1 : index - 1;
-    _warmTimer = Timer(_warmDelay, () {
-      if (mounted) unawaited(ref.read(areasCatalogProvider.notifier).warm(ids[next]));
-    });
   }
 
   ScrollController _scrollOf(String platform) => _scrolls[platform] ??= ScrollController();
@@ -109,12 +90,11 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // The catalogue never loads from inside its own build; the page asks.
+    // The catalogue never loads from inside its own build; the page asks,
+    // and only for the platform the viewer is looking at.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(ref.read(areasCatalogProvider.notifier).open(ref.read(areasSiteProvider)));
-      _armWarmUp();
     });
-    ref.listenManual(areasSiteProvider, (_, _) => _armWarmUp());
     // A word from the toolbar searches this page's areas, which the
     // platform view carries.
     ref.listenManual(areasInlineSearchProvider, (_, word) {
@@ -177,7 +157,6 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
             onChanged: (id) {
               ref.read(areasSiteProvider.notifier).selected = id;
               unawaited(ref.read(areasCatalogProvider.notifier).open(id));
-              _armWarmUp();
             },
           )
         : null;
@@ -346,7 +325,6 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
       onChanged: (id) {
         ref.read(areasSiteProvider.notifier).selected = id;
         unawaited(ref.read(areasCatalogProvider.notifier).open(id));
-        _armWarmUp();
       },
     );
   }
