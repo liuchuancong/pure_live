@@ -124,8 +124,8 @@ class Translations$account$zh_CN {
 	/// zh-CN: '{site} 导入 Cookie'
 	String cookieDialogTitle({required Object site}) => '${site} 导入 Cookie';
 
-	/// zh-CN: '在已登录的浏览器中复制该网站的 Cookie，粘贴到下面（形如 name=value; name2=value2）。'
-	String get cookieDialogHint => '在已登录的浏览器中复制该网站的 Cookie，粘贴到下面（形如 name=value; name2=value2）。';
+	/// zh-CN: '在已登录的浏览器复制 Cookie 粘贴进来（形如 name=value; name2=value2）。'
+	String get cookieDialogHint => '在已登录的浏览器复制 Cookie 粘贴进来（形如 name=value; name2=value2）。';
 
 	/// zh-CN: '粘贴 Cookie 内容'
 	String get cookieFieldHint => '粘贴 Cookie 内容';
@@ -277,8 +277,8 @@ class Translations$account$zh_CN {
 	/// zh-CN: '已记住的账号'
 	String get savedAccounts => '已记住的账号';
 
-	/// zh-CN: '登录过的账号记在这里（最多 {count} 个），切换不用重新扫码。登录信息只加密保存在本机，退出登录或删除就会清掉。'
-	String savedAccountsNote({required Object count}) => '登录过的账号记在这里（最多 ${count} 个），切换不用重新扫码。登录信息只加密保存在本机，退出登录或删除就会清掉。';
+	/// zh-CN: '最多记住 {count} 个账号，切换不用重新扫码；只加密存在本机，退出或删除即清除。'
+	String savedAccountsNote({required Object count}) => '最多记住 ${count} 个账号，切换不用重新扫码；只加密存在本机，退出或删除即清除。';
 
 	/// zh-CN: 'UID {uid}'
 	String accountUid({required Object uid}) => 'UID ${uid}';
@@ -349,8 +349,8 @@ class Translations$account$zh_CN {
 	/// zh-CN: '这台设备没有可用的内置浏览器'
 	String get webLoginUnavailable => '这台设备没有可用的内置浏览器';
 
-	/// zh-CN: '网页登录需要内置浏览器。请改用扫码登录，或在其他浏览器登录后把 Cookie 粘贴进来。'
-	String get webLoginUnavailableDesc => '网页登录需要内置浏览器。请改用扫码登录，或在其他浏览器登录后把 Cookie 粘贴进来。';
+	/// zh-CN: '需要内置浏览器；请改用扫码登录，或在其他浏览器登录后粘贴 Cookie。'
+	String get webLoginUnavailableDesc => '需要内置浏览器；请改用扫码登录，或在其他浏览器登录后粘贴 Cookie。';
 
 	/// zh-CN: '{site} 暂未接入登录方式'
 	String noLoginMethod({required Object site}) => '${site} 暂未接入登录方式';
@@ -502,8 +502,8 @@ class Translations$backup$zh_CN {
 	/// zh-CN: '导出备份'
 	String get exportTitle => '导出备份';
 
-	/// zh-CN: '把关注、观看历史、关注分区与设置打包为一个 JSON 文件，通过系统分享面板保存。'
-	String get exportDescription => '把关注、观看历史、关注分区与设置打包为一个 JSON 文件，通过系统分享面板保存。';
+	/// zh-CN: '把关注、历史、分区与设置打包为 JSON，经系统分享保存。'
+	String get exportDescription => '把关注、历史、分区与设置打包为 JSON，经系统分享保存。';
 
 	/// zh-CN: '没有可备份的数据'
 	String get exportEmpty => '没有可备份的数据';
@@ -517,8 +517,8 @@ class Translations$backup$zh_CN {
 	/// zh-CN: '导入备份'
 	String get importTitle => '导入备份';
 
-	/// zh-CN: '粘贴备份 JSON 的内容，确认后覆盖当前数据；也可以从 WebDAV 下载并恢复。'
-	String get importDescription => '粘贴备份 JSON 的内容，确认后覆盖当前数据；也可以从 WebDAV 下载并恢复。';
+	/// zh-CN: '粘贴备份 JSON，确认后覆盖当前数据；也可从 WebDAV 恢复。'
+	String get importDescription => '粘贴备份 JSON，确认后覆盖当前数据；也可从 WebDAV 恢复。';
 
 	/// zh-CN: '粘贴备份 JSON'
 	String get importHint => '粘贴备份 JSON';
@@ -550,8 +550,8 @@ class Translations$backup$zh_CN {
 	/// zh-CN: 'WebDAV 账号'
 	String get webdavAccounts => 'WebDAV 账号';
 
-	/// zh-CN: '点选账号即设为当前并打开它的文件夹；铅笔图标用于修改或删除该账号。'
-	String get webdavAccountsHint => '点选账号即设为当前并打开它的文件夹；铅笔图标用于修改或删除该账号。';
+	/// zh-CN: '点选即切换并打开它的文件夹；铅笔可修改或删除。'
+	String get webdavAccountsHint => '点选即切换并打开它的文件夹；铅笔可修改或删除。';
 
 	/// zh-CN: '添加账号'
 	String get webdavAddAccount => '添加账号';
@@ -622,8 +622,8 @@ class Translations$backup$zh_CN {
 	/// zh-CN: '服务器配置'
 	String get webdavConfigTitle => '服务器配置';
 
-	/// zh-CN: '填写 WebDAV 服务器地址与账号；密码保存在系统安全存储中，不进入备份。'
-	String get webdavConfigDescription => '填写 WebDAV 服务器地址与账号；密码保存在系统安全存储中，不进入备份。';
+	/// zh-CN: '填服务器地址与账号；密码只存系统安全存储，不进备份。'
+	String get webdavConfigDescription => '填服务器地址与账号；密码只存系统安全存储，不进备份。';
 
 	/// zh-CN: '服务器地址'
 	String get webdavUrl => '服务器地址';
@@ -769,11 +769,11 @@ class Translations$backup$zh_CN {
 	/// zh-CN: '恢复这个备份？'
 	String get restoreConfirmTitle => '恢复这个备份？';
 
-	/// zh-CN: '将用 {name: String} 覆盖本机的关注、观看历史、关注分区与设置，当前数据无法找回。'
-	String restoreConfirmDesc({required String name}) => '将用 ${name} 覆盖本机的关注、观看历史、关注分区与设置，当前数据无法找回。';
+	/// zh-CN: '将用 {name: String} 覆盖本机的关注、历史、分区与设置，无法找回。'
+	String restoreConfirmDesc({required String name}) => '将用 ${name} 覆盖本机的关注、历史、分区与设置，无法找回。';
 
-	/// zh-CN: '将用 {name: String} 覆盖本机的关注与关注分区，其他数据保持不变。'
-	String restoreFollowsConfirmDesc({required String name}) => '将用 ${name} 覆盖本机的关注与关注分区，其他数据保持不变。';
+	/// zh-CN: '将用 {name: String} 覆盖关注与分区，其他数据不变。'
+	String restoreFollowsConfirmDesc({required String name}) => '将用 ${name} 覆盖关注与分区，其他数据不变。';
 
 	/// zh-CN: '恢复失败'
 	String get restoreFailed => '恢复失败';
@@ -1225,11 +1225,11 @@ class Translations$history$zh_CN {
 	/// zh-CN: '清空观看记录？'
 	String get clearConfirmTitle => '清空观看记录？';
 
-	/// zh-CN: '确定清空这 {count: int} 条观看记录吗？此操作不可撤销。'
-	String clearConfirmDesc({required int count}) => '确定清空这 ${count} 条观看记录吗？此操作不可撤销。';
+	/// zh-CN: '清空这 {count: int} 条观看记录？不可撤销。'
+	String clearConfirmDesc({required int count}) => '清空这 ${count} 条观看记录？不可撤销。';
 
-	/// zh-CN: '确定删除筛选出的 {count: int} 条观看记录吗？其他记录不受影响，此操作不可撤销。'
-	String clearFilteredConfirmDesc({required int count}) => '确定删除筛选出的 ${count} 条观看记录吗？其他记录不受影响，此操作不可撤销。';
+	/// zh-CN: '删除筛选出的 {count: int} 条观看记录？不可撤销。'
+	String clearFilteredConfirmDesc({required int count}) => '删除筛选出的 ${count} 条观看记录？不可撤销。';
 
 	/// zh-CN: '已清空 {count: int} 条观看记录'
 	String clearDone({required int count}) => '已清空 ${count} 条观看记录';
@@ -1996,8 +1996,8 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '自定义 User-Agent'
 	String get customUserAgent => '自定义 User-Agent';
 
-	/// zh-CN: '导入播放列表、节目单和播放请求使用的 User-Agent；留空使用应用默认值。播放列表自带的 User-Agent 优先。'
-	String get customUserAgentDesc => '导入播放列表、节目单和播放请求使用的 User-Agent；留空使用应用默认值。播放列表自带的 User-Agent 优先。';
+	/// zh-CN: '导入与播放请求使用的 User-Agent；留空用应用默认，播放列表自带优先。'
+	String get customUserAgentDesc => '导入与播放请求使用的 User-Agent；留空用应用默认，播放列表自带优先。';
 
 	/// zh-CN: '更新间隔'
 	String get updateInterval => '更新间隔';
@@ -2410,8 +2410,8 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '还没有分组：先导入一份播放列表。'
 	String get groupsEmpty => '还没有分组：先导入一份播放列表。';
 
-	/// zh-CN: '关掉一个分组，它会从频道列表和换台里一起消失；重新打开还是原来的台单。'
-	String get groupsHint => '关掉一个分组，它会从频道列表和换台里一起消失；重新打开还是原来的台单。';
+	/// zh-CN: '关掉的分组从频道列表和换台里消失；重开即恢复。'
+	String get groupsHint => '关掉的分组从频道列表和换台里消失；重开即恢复。';
 
 	/// zh-CN: '最近观看'
 	String get recentTitle => '最近观看';
@@ -2689,8 +2689,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '默认音源'
 	String get defaultSource => '默认音源';
 
-	/// zh-CN: '歌曲从哪个音源获取；lx-music 通过导入的自定义源脚本解析播放地址。'
-	String get defaultSourceDesc => '歌曲从哪个音源获取；lx-music 通过导入的自定义源脚本解析播放地址。';
+	/// zh-CN: '歌曲从哪个音源获取；自定义源脚本负责解析播放地址。'
+	String get defaultSourceDesc => '歌曲从哪个音源获取；自定义源脚本负责解析播放地址。';
 
 	/// zh-CN: '还没有可用的音源；先在下方「自定义源」里导入脚本。'
 	String get defaultSourceEmpty => '还没有可用的音源；先在下方「自定义源」里导入脚本。';
@@ -2752,8 +2752,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '自定义源'
 	String get sourcesSection => '自定义源';
 
-	/// zh-CN: 'lx-music 的自定义源是 JavaScript 脚本，在 fjs（QuickJS）运行时中执行；导入后会初始化并接管播放地址解析。'
-	String get sourcesHint => 'lx-music 的自定义源是 JavaScript 脚本，在 fjs（QuickJS）运行时中执行；导入后会初始化并接管播放地址解析。';
+	/// zh-CN: '自定义源是 JavaScript 脚本，在 fjs（QuickJS）中执行；导入后初始化并接管播放地址解析。'
+	String get sourcesHint => '自定义源是 JavaScript 脚本，在 fjs（QuickJS）中执行；导入后初始化并接管播放地址解析。';
 
 	/// zh-CN: '粘贴脚本导入'
 	String get sourcesImportText => '粘贴脚本导入';
@@ -3208,8 +3208,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '文件名格式'
 	String get downloadPattern => '文件名格式';
 
-	/// zh-CN: '可用占位符（写在花括号里）：title、artist、album、quality、source、list、index。'
-	String get downloadPatternHint => '可用占位符（写在花括号里）：title、artist、album、quality、source、list、index。';
+	/// zh-CN: '占位符（花括号）：title、artist、album、quality、source、list、index。'
+	String get downloadPatternHint => '占位符（花括号）：title、artist、album、quality、source、list、index。';
 
 	/// zh-CN: '编辑'
 	String get downloadPatternEdit => '编辑';
@@ -3439,8 +3439,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '在歌词面板上方显示歌曲的播放进度。'
 	String get lyricProgressDesc => '在歌词面板上方显示歌曲的播放进度。';
 
-	/// zh-CN: '歌词显示与延迟对所有歌曲生效；桌面歌词可在设置或播放页的更多菜单里打开。'
-	String get lyricHint => '歌词显示与延迟对所有歌曲生效；桌面歌词可在设置或播放页的更多菜单里打开。';
+	/// zh-CN: '歌词显示与延迟全局生效；桌面歌词在设置或播放页菜单打开。'
+	String get lyricHint => '歌词显示与延迟全局生效；桌面歌词在设置或播放页菜单打开。';
 
 	/// zh-CN: '桌面歌词'
 	String get desktopLyrics => '桌面歌词';
@@ -3454,8 +3454,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '当前平台没有桌面歌词窗口或未授权'
 	String get desktopLyricsUnavailable => '当前平台没有桌面歌词窗口或未授权';
 
-	/// zh-CN: '桌面歌词是独立悬浮窗，可拖动、锁定并控制播放；Android 需要悬浮窗权限。'
-	String get desktopLyricHint => '桌面歌词是独立悬浮窗，可拖动、锁定并控制播放；Android 需要悬浮窗权限。';
+	/// zh-CN: '桌面歌词是可拖动、可锁定的悬浮窗；Android 需悬浮窗权限。'
+	String get desktopLyricHint => '桌面歌词是可拖动、可锁定的悬浮窗；Android 需悬浮窗权限。';
 
 	/// zh-CN: '在桌面上悬浮显示当前歌词；关闭后保留下面的样式。'
 	String get desktopLyricEnableDesc => '在桌面上悬浮显示当前歌词；关闭后保留下面的样式。';
@@ -3790,8 +3790,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '在链路中运行 EBU R128 探针，不改变声音本身'
 	String get eqAnalysisDesc => '在链路中运行 EBU R128 探针，不改变声音本身';
 
-	/// zh-CN: '响度电平表（M=400ms 瞬时，S=3s 短期），并非 FFT 频谱——mpv 不提供原始频谱数据。'
-	String get eqMeterNote => '响度电平表（M=400ms 瞬时，S=3s 短期），并非 FFT 频谱——mpv 不提供原始频谱数据。';
+	/// zh-CN: '响度表（M=400ms 瞬时，S=3s 短期），不是 FFT 频谱——mpv 不提供原始频谱。'
+	String get eqMeterNote => '响度表（M=400ms 瞬时，S=3s 短期），不是 FFT 频谱——mpv 不提供原始频谱。';
 
 	/// zh-CN: '参数均衡器'
 	String get eqNodesTitle => '参数均衡器';
@@ -3886,8 +3886,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '删除已保存的密钥，下次连接用连接码重新授权。'
 	String get syncForgetKeyDesc => '删除已保存的密钥，下次连接用连接码重新授权。';
 
-	/// zh-CN: '与 lx-music 桌面端服务端同步：试听、收藏与自建歌单。服务端按所选模式合并。'
-	String get syncNote => '与 lx-music 桌面端服务端同步：试听、收藏与自建歌单。服务端按所选模式合并。';
+	/// zh-CN: '与 lx-music 桌面端同步：试听、收藏与自建歌单，服务端按所选模式合并。'
+	String get syncNote => '与 lx-music 桌面端同步：试听、收藏与自建歌单，服务端按所选模式合并。';
 
 	/// zh-CN: '合并（本地优先）'
 	String get syncModeMergeLocalRemote => '合并（本地优先）';
@@ -3910,8 +3910,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '内置音源库'
 	String get catalogSection => '内置音源库';
 
-	/// zh-CN: '来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本，下载路线跟随设置里的 GitHub 加速。'
-	String get catalogHint => '来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本，下载路线跟随设置里的 GitHub 加速。';
+	/// zh-CN: '来自社区合集 pdone/lx-music-source，一键拉取最新脚本，走设置的 GitHub 加速。'
+	String get catalogHint => '来自社区合集 pdone/lx-music-source，一键拉取最新脚本，走设置的 GitHub 加速。';
 
 	/// zh-CN: '导入'
 	String get catalogImport => '导入';
@@ -4327,8 +4327,8 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '启用开播检测'
 	String get enablePolling => '启用开播检测';
 
-	/// zh-CN: '主播未开播时自动轮询；在直播间的更多菜单里选择「开播自动录」加入检测。'
-	String get enablePollingDesc => '主播未开播时自动轮询；在直播间的更多菜单里选择「开播自动录」加入检测。';
+	/// zh-CN: '主播未开播时自动轮询；在直播间菜单里选「开播自动录」加入。'
+	String get enablePollingDesc => '主播未开播时自动轮询；在直播间菜单里选「开播自动录」加入。';
 
 	/// zh-CN: '「开播检测」关着，等待开播的任务不会自动开始。'
 	String get pollingOff => '「开播检测」关着，等待开播的任务不会自动开始。';
@@ -4348,8 +4348,8 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '缓存上限'
 	String get cacheLimit => '缓存上限';
 
-	/// zh-CN: '按 MB 计；超过后从最旧的录像开始删除，正在录制的文件不会删除。'
-	String get cacheLimitDesc => '按 MB 计；超过后从最旧的录像开始删除，正在录制的文件不会删除。';
+	/// zh-CN: '超过上限从最旧的已完成录像删起；正在录制的不动。'
+	String get cacheLimitDesc => '超过上限从最旧的已完成录像删起；正在录制的不动。';
 
 	/// zh-CN: '当前录制缓存'
 	String get cacheSize => '当前录制缓存';
@@ -4369,8 +4369,8 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '清理全部已完成录制？'
 	String get cacheClearConfirm => '清理全部已完成录制？';
 
-	/// zh-CN: '此操作会删除录制目录中的已完成视频、分段与弹幕文件，无法恢复；正在录制的任务会跳过。'
-	String get cacheClearConfirmDesc => '此操作会删除录制目录中的已完成视频、分段与弹幕文件，无法恢复；正在录制的任务会跳过。';
+	/// zh-CN: '删除目录中已完成的视频、分段与弹幕文件，无法恢复；正在录制的跳过。'
+	String get cacheClearConfirmDesc => '删除目录中已完成的视频、分段与弹幕文件，无法恢复；正在录制的跳过。';
 
 	/// zh-CN: '录制缓存已清理'
 	String get cacheCleared => '录制缓存已清理';
@@ -4378,8 +4378,8 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '缓存操作失败，请重试'
 	String get cacheFailed => '缓存操作失败，请重试';
 
-	/// zh-CN: '为保护其他文件，自定义目录下只会创建并管理 PureLiveRecords 子目录。'
-	String get cacheManagedHint => '为保护其他文件，自定义目录下只会创建并管理 PureLiveRecords 子目录。';
+	/// zh-CN: '自定义目录下只创建并管理 PureLiveRecords 子目录。'
+	String get cacheManagedHint => '自定义目录下只创建并管理 PureLiveRecords 子目录。';
 
 	/// zh-CN: '检测间隔（秒）'
 	String get liveCheckSecondsTitle => '检测间隔（秒）';
@@ -4402,8 +4402,8 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '应用启动时恢复待录任务'
 	String get autoStartOnBoot => '应用启动时恢复待录任务';
 
-	/// zh-CN: '把上次进程中断时仍在录制的任务恢复为等待开播，交给开播检测继续；已停止/完成的保持原状态。'
-	String get autoStartOnBootDesc => '把上次进程中断时仍在录制的任务恢复为等待开播，交给开播检测继续；已停止/完成的保持原状态。';
+	/// zh-CN: '把中断时仍在录制的任务恢复为等待开播；已停止的保持原状。'
+	String get autoStartOnBootDesc => '把中断时仍在录制的任务恢复为等待开播；已停止的保持原状。';
 
 	/// zh-CN: '有录制任务正在进行（可能在另一个窗口），缓存不会被清理或自动裁剪。'
 	String get cacheBusy => '有录制任务正在进行（可能在另一个窗口），缓存不会被清理或自动裁剪。';
@@ -4909,8 +4909,8 @@ class Translations$room$zh_CN {
 	/// zh-CN: '切换为列表'
 	String get switchShowList => '切换为列表';
 
-	/// zh-CN: 'Twitch 的 Cookie 已失效，弹幕已改为匿名接收，请重新填写 Twitch Cookie'
-	String get twitchCookieExpired => 'Twitch 的 Cookie 已失效，弹幕已改为匿名接收，请重新填写 Twitch Cookie';
+	/// zh-CN: 'Twitch Cookie 已失效，弹幕改为匿名接收；请重新填写。'
+	String get twitchCookieExpired => 'Twitch Cookie 已失效，弹幕改为匿名接收；请重新填写。';
 
 	/// zh-CN: '当前以访客身份连接，B 站弹幕不会显示完整昵称'
 	String get bilibiliGuestNames => '当前以访客身份连接，B 站弹幕不会显示完整昵称';
@@ -5305,8 +5305,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '刷新率模式'
 	String get refreshRateMode => '刷新率模式';
 
-	/// zh-CN: '节能把刷新率交给系统（支持内容匹配的平台固定 60 Hz）；均衡在 Android 上只在触摸或滚动时升频，停手 1.5 秒后释放；性能在前台保持最高刷新率。平台不支持的选项不会出现。'
-	String get refreshRateModeDesc => '节能把刷新率交给系统（支持内容匹配的平台固定 60 Hz）；均衡在 Android 上只在触摸或滚动时升频，停手 1.5 秒后释放；性能在前台保持最高刷新率。平台不支持的选项不会出现。';
+	/// zh-CN: '节能交给系统自动调；均衡只在触摸或滚动时升频，停手 1.5 秒后释放；性能恒定最高。平台不支持的选项不显示。'
+	String get refreshRateModeDesc => '节能交给系统自动调；均衡只在触摸或滚动时升频，停手 1.5 秒后释放；性能恒定最高。平台不支持的选项不显示。';
 
 	/// zh-CN: '节能'
 	String get refreshRatePowerSaving => '节能';
@@ -5320,14 +5320,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '此平台只支持读取刷新率'
 	String get refreshRateReadOnly => '此平台只支持读取刷新率';
 
-	/// zh-CN: '系统没有向应用开放刷新率请求接口；上面显示的是当前显示器的实际值。'
-	String get refreshRateReadOnlyDesc => '系统没有向应用开放刷新率请求接口；上面显示的是当前显示器的实际值。';
+	/// zh-CN: '系统未开放刷新率接口；显示的是显示器实际值。'
+	String get refreshRateReadOnlyDesc => '系统未开放刷新率接口；显示的是显示器实际值。';
 
 	/// zh-CN: '播放时匹配视频帧率'
 	String get refreshRateMatchVideo => '播放时匹配视频帧率';
 
-	/// zh-CN: '让屏幕刷新率是视频帧率的整数倍，画面更匀；只在不闪屏时切换。直播源未声明帧率时不做调整。'
-	String get refreshRateMatchVideoDesc => '让屏幕刷新率是视频帧率的整数倍，画面更匀；只在不闪屏时切换。直播源未声明帧率时不做调整。';
+	/// zh-CN: '刷新率取视频帧率的整数倍，画面更匀；只在不会闪屏时切换，源未声明帧率则不动。'
+	String get refreshRateMatchVideoDesc => '刷新率取视频帧率的整数倍，画面更匀；只在不会闪屏时切换，源未声明帧率则不动。';
 
 	/// zh-CN: '这台设备只有 {rate} Hz，用不上'
 	String refreshRateMatchVideoSingle({required Object rate}) => '这台设备只有 ${rate} Hz，用不上';
@@ -5371,8 +5371,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '开机启动'
 	String get startup => '开机启动';
 
-	/// zh-CN: '登录系统后自动打开 Pure Live；开关读取的是系统里的真实启动项。'
-	String get startupDesc => '登录系统后自动打开 Pure Live；开关读取的是系统里的真实启动项。';
+	/// zh-CN: '登录系统后自动打开 Pure Live；开关读取真实启动项。'
+	String get startupDesc => '登录系统后自动打开 Pure Live；开关读取真实启动项。';
 
 	/// zh-CN: '开机启动设置失败'
 	String get startupFailed => '开机启动设置失败';
@@ -5527,8 +5527,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '液体玻璃'
 	String get liquidGlass => '液体玻璃';
 
-	/// zh-CN: '首页底栏悬浮成毛玻璃，页面从下面透出来；内存 4 GB 及以下的安卓手机不模糊，只半透明。'
-	String get liquidGlassDescription => '首页底栏悬浮成毛玻璃，页面从下面透出来；内存 4 GB 及以下的安卓手机不模糊，只半透明。';
+	/// zh-CN: '首页底栏悬浮成毛玻璃；4 GB 以下机型只半透明不模糊。'
+	String get liquidGlassDescription => '首页底栏悬浮成毛玻璃；4 GB 以下机型只半透明不模糊。';
 
 	/// zh-CN: '主题色'
 	String get themeColorTitle => '主题色';
@@ -5617,8 +5617,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '开播提醒'
 	String get liveAlert => '开播提醒';
 
-	/// zh-CN: '关注的主播开播时发一条系统通知；应用运行时每 15 分钟检查一次。'
-	String get liveAlertDesc => '关注的主播开播时发一条系统通知；应用运行时每 15 分钟检查一次。';
+	/// zh-CN: '关注的主播开播时发系统通知；运行时每 15 分钟检查。'
+	String get liveAlertDesc => '关注的主播开播时发系统通知；运行时每 15 分钟检查。';
 
 	/// zh-CN: '提醒标签'
 	String get liveAlertTags => '提醒标签';
@@ -5767,8 +5767,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '添加镜像地址'
 	String get githubMirrorAddTitle => '添加镜像地址';
 
-	/// zh-CN: '填一个以 https:// 开头的镜像域名，下载时作为前缀拼在原始地址前。'
-	String get githubMirrorAddDesc => '填一个以 https:// 开头的镜像域名，下载时作为前缀拼在原始地址前。';
+	/// zh-CN: '填一个 https:// 开头的镜像域名，作为下载前缀。'
+	String get githubMirrorAddDesc => '填一个 https:// 开头的镜像域名，作为下载前缀。';
 
 	/// zh-CN: '地址无效：需要以 https:// 开头'
 	String get githubMirrorAddInvalid => '地址无效：需要以 https:// 开头';
@@ -5839,8 +5839,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '点击画面弹幕查看操作'
 	String get styleTapInteraction => '点击画面弹幕查看操作';
 
-	/// zh-CN: '点按画面上的弹幕打开操作面板，可复制内容、屏蔽用户或关键词。关闭后点按画面只显示或隐藏控制条。'
-	String get styleTapInteractionDesc => '点按画面上的弹幕打开操作面板，可复制内容、屏蔽用户或关键词。关闭后点按画面只显示或隐藏控制条。';
+	/// zh-CN: '点按弹幕打开面板，可复制或屏蔽；关闭后点按画面只切换控制条。'
+	String get styleTapInteractionDesc => '点按弹幕打开面板，可复制或屏蔽；关闭后点按画面只切换控制条。';
 
 	/// zh-CN: '长按画面弹幕查看操作'
 	String get styleLongPressInteraction => '长按画面弹幕查看操作';
@@ -5878,8 +5878,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '画面飞行弹幕使用的字体；聊天列表保持界面字体。'
 	String get danmakuFontDescription => '画面飞行弹幕使用的字体；聊天列表保持界面字体。';
 
-	/// zh-CN: '选择弹幕字体：MiSans 默认随应用提供，国内字体来自免费商用字体库，国外字体来自 Google Fonts；选中立即应用到所有直播间的飞行弹幕。'
-	String get danmakuFontManagerDescription => '选择弹幕字体：MiSans 默认随应用提供，国内字体来自免费商用字体库，国外字体来自 Google Fonts；选中立即应用到所有直播间的飞行弹幕。';
+	/// zh-CN: 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于飞行弹幕。'
+	String get danmakuFontManagerDescription => 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于飞行弹幕。';
 
 	/// zh-CN: '字体大小'
 	String get styleFontSize => '字体大小';
@@ -5992,8 +5992,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '同屏最大弹幕条数'
 	String get styleMaxVisible => '同屏最大弹幕条数';
 
-	/// zh-CN: '画面上同时飞的弹幕最多几条，默认 48；少一些更清楚、更省电。'
-	String get styleMaxVisibleDesc => '画面上同时飞的弹幕最多几条，默认 48；少一些更清楚、更省电。';
+	/// zh-CN: '同屏弹幕最多几条，默认 48；少些更清楚省电。'
+	String get styleMaxVisibleDesc => '同屏弹幕最多几条，默认 48；少些更清楚省电。';
 
 	/// zh-CN: '{count} 条'
 	String styleMaxVisibleValue({required Object count}) => '${count} 条';
@@ -6001,8 +6001,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '海量模式'
 	String get styleMassMode => '海量模式';
 
-	/// zh-CN: '提高同屏上限到 1000 条并使用实时渲染，适合弹幕非常密集的直播间。'
-	String get styleMassModeDesc => '提高同屏上限到 1000 条并使用实时渲染，适合弹幕非常密集的直播间。';
+	/// zh-CN: '同屏上限提到 1000 条并用实时渲染，适合超密弹幕。'
+	String get styleMassModeDesc => '同屏上限提到 1000 条并用实时渲染，适合超密弹幕。';
 
 	/// zh-CN: '斜体'
 	String get styleItalic => '斜体';
@@ -6103,8 +6103,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '小窗弹幕比例自动'
 	String get pipDanmakuScaleAuto => '小窗弹幕比例自动';
 
-	/// zh-CN: '开启后按画中画窗口宽度自动缩小弹幕，最大不超过主弹幕大小；关闭后使用下方固定比例。'
-	String get pipDanmakuScaleAutoDesc => '开启后按画中画窗口宽度自动缩小弹幕，最大不超过主弹幕大小；关闭后使用下方固定比例。';
+	/// zh-CN: '按小窗宽度自动缩小弹幕，不超过主弹幕大小；关闭用下方固定比例。'
+	String get pipDanmakuScaleAutoDesc => '按小窗宽度自动缩小弹幕，不超过主弹幕大小；关闭用下方固定比例。';
 
 	/// zh-CN: '小窗弹幕比例'
 	String get pipDanmakuScale => '小窗弹幕比例';
@@ -6139,8 +6139,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '设置生效范围'
 	String get prefScope => '设置生效范围';
 
-	/// zh-CN: '选择这些更改只在本窗口生效，还是应用到主窗口和所有直播间窗口。'
-	String get prefScopeDesc => '选择这些更改只在本窗口生效，还是应用到主窗口和所有直播间窗口。';
+	/// zh-CN: '选择只在本窗口生效，还是应用到主窗口与全部直播间窗口。'
+	String get prefScopeDesc => '选择只在本窗口生效，还是应用到主窗口与全部直播间窗口。';
 
 	/// zh-CN: '仅本窗口'
 	String get prefScopeLocal => '仅本窗口';
@@ -6154,14 +6154,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '直播间在独立窗口打开'
 	String get roomWindow => '直播间在独立窗口打开';
 
-	/// zh-CN: '每个直播间一个独立窗口，像聊天软件一样；关闭后在主窗口内浏览。仅桌面端。'
-	String get roomWindowDesc => '每个直播间一个独立窗口，像聊天软件一样；关闭后在主窗口内浏览。仅桌面端。';
+	/// zh-CN: '每个直播间一个独立窗口；关闭后在主窗口内浏览。仅桌面端。'
+	String get roomWindowDesc => '每个直播间一个独立窗口；关闭后在主窗口内浏览。仅桌面端。';
 
 	/// zh-CN: '关闭窗口时'
 	String get closeAction => '关闭窗口时';
 
-	/// zh-CN: '关闭按钮的行为；隐藏到托盘时应用保持运行，点击托盘图标即可恢复窗口。'
-	String get closeActionDesc => '关闭按钮的行为；隐藏到托盘时应用保持运行，点击托盘图标即可恢复窗口。';
+	/// zh-CN: '隐藏到托盘时应用保持运行，点托盘图标恢复窗口。'
+	String get closeActionDesc => '隐藏到托盘时应用保持运行，点托盘图标恢复窗口。';
 
 	/// zh-CN: '退出应用'
 	String get closeQuit => '退出应用';
@@ -6175,8 +6175,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '退出不再询问'
 	String get noExitConfirm => '退出不再询问';
 
-	/// zh-CN: '开启后，点关闭按钮直接执行上面的行为；关闭此项则每次关闭都先确认。'
-	String get noExitConfirmDescription => '开启后，点关闭按钮直接执行上面的行为；关闭此项则每次关闭都先确认。';
+	/// zh-CN: '开启后点关闭直接执行上面的行为；关闭则每次先确认。'
+	String get noExitConfirmDescription => '开启后点关闭直接执行上面的行为；关闭则每次先确认。';
 
 	/// zh-CN: '关闭窗口'
 	String get closeWindowTitle => '关闭窗口';
@@ -6211,8 +6211,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '字体'
 	String get font => '字体';
 
-	/// zh-CN: '界面字体：MiSans 随应用打包并在全平台默认使用，也可切换国内或国外字体。'
-	String get fontDescription => '界面字体：MiSans 随应用打包并在全平台默认使用，也可切换国内或国外字体。';
+	/// zh-CN: 'MiSans 随应用打包并默认使用，也可换国内或国外字体。'
+	String get fontDescription => 'MiSans 随应用打包并默认使用，也可换国内或国外字体。';
 
 	/// zh-CN: 'MiSans（默认）'
 	String get fontDefault => 'MiSans（默认）';
@@ -6253,8 +6253,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: 'Google 字体'
 	String get fontManagerGoogle => 'Google 字体';
 
-	/// zh-CN: '选择界面字体：MiSans 默认随应用提供，国内字体来自免费商用字体库，国外字体来自 Google Fonts；选中立即应用到全部界面。'
-	String get fontManagerDescription => '选择界面字体：MiSans 默认随应用提供，国内字体来自免费商用字体库，国外字体来自 Google Fonts；选中立即应用到全部界面。';
+	/// zh-CN: 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于全部界面。'
+	String get fontManagerDescription => 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于全部界面。';
 
 	/// zh-CN: '由系统提供，本机使用 {face}。'
 	String fontManagerSystemDescription({required Object face}) => '由系统提供，本机使用 ${face}。';
@@ -6445,8 +6445,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '首选平台'
 	String get preferPlatform => '首选平台';
 
-	/// zh-CN: '进入热门或分区时优先显示的平台，也是分区房间列表与搜索起始的平台。'
-	String get preferPlatformDesc => '进入热门或分区时优先显示的平台，也是分区房间列表与搜索起始的平台。';
+	/// zh-CN: '热门与分区的优先平台，也是分区列表与搜索的起始平台。'
+	String get preferPlatformDesc => '热门与分区的优先平台，也是分区列表与搜索的起始平台。';
 
 	/// zh-CN: '搜索平台'
 	String get preferPlatformFilterHint => '搜索平台';
@@ -6613,8 +6613,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '默认清晰度'
 	String get vodQuality => '默认清晰度';
 
-	/// zh-CN: '打开视频时优先请求的清晰度；未登录时 Bilibili 可能只提供 720P 及以下。'
-	String get vodQualityDesc => '打开视频时优先请求的清晰度；未登录时 Bilibili 可能只提供 720P 及以下。';
+	/// zh-CN: '打开视频优先请求的清晰度；未登录 B 站可能只有 720P。'
+	String get vodQualityDesc => '打开视频优先请求的清晰度；未登录 B 站可能只有 720P。';
 
 	/// zh-CN: '720P'
 	String get vodQuality720 => '720P';
@@ -6691,8 +6691,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '一键推荐配置'
 	String get playerOneClick => '一键推荐配置';
 
-	/// zh-CN: '把播放内核参数恢复到「标准」预设，撤销之前的手动调优；正在播放的直播立即重新应用，其他播放器下次打开生效。'
-	String get playerOneClickDesc => '把播放内核参数恢复到「标准」预设，撤销之前的手动调优；正在播放的直播立即重新应用，其他播放器下次打开生效。';
+	/// zh-CN: '恢复「标准」预设，撤销手动调优；正在播放的立即重应用，其余下次打开生效。'
+	String get playerOneClickDesc => '恢复「标准」预设，撤销手动调优；正在播放的立即重应用，其余下次打开生效。';
 
 	/// zh-CN: '应用推荐配置？'
 	String get playerOneClickConfirmTitle => '应用推荐配置？';
@@ -6706,38 +6706,38 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '花屏 / 绿屏修复'
 	String get playerCompatFix => '花屏 / 绿屏修复';
 
-	/// zh-CN: '改用 mediacodec_embed 直出表面并强制硬解，仅 Android 提供；音画不同步或画面撕裂时也先试这个。'
-	String get playerCompatFixDesc => '改用 mediacodec_embed 直出表面并强制硬解，仅 Android 提供；音画不同步或画面撕裂时也先试这个。';
+	/// zh-CN: 'mediacodec_embed 直出表面并强制硬解，仅 Android；音画不同步或画面撕裂时先试这个。'
+	String get playerCompatFixDesc => 'mediacodec_embed 直出表面并强制硬解，仅 Android；音画不同步或画面撕裂时先试这个。';
 
 	/// zh-CN: '标准（引擎默认）'
 	String get presetBalanced => '标准（引擎默认）';
 
-	/// zh-CN: '全部交给引擎自己决定，仅附加直播所需的解复用与缓存调优。大多数设备和网络下这是最稳的选择，也是其它预设的基线。'
-	String get presetBalancedDesc => '全部交给引擎自己决定，仅附加直播所需的解复用与缓存调优。大多数设备和网络下这是最稳的选择，也是其它预设的基线。';
+	/// zh-CN: '全部交给引擎决定，仅附加直播所需的缓冲调优；大多数设备最稳，也是其它预设的基线。'
+	String get presetBalancedDesc => '全部交给引擎决定，仅附加直播所需的缓冲调优；大多数设备最稳，也是其它预设的基线。';
 
 	/// zh-CN: 'Android 硬解兼容'
 	String get presetCompat => 'Android 硬解兼容';
 
-	/// zh-CN: 'Android 上改用 mediacodec_embed 直出表面并强制 mediacodec 硬解。适合默认 gl/ffmpeg 路径出现花屏、绿屏或音画不同步的机型。'
-	String get presetCompatDesc => 'Android 上改用 mediacodec_embed 直出表面并强制 mediacodec 硬解。适合默认 gl/ffmpeg 路径出现花屏、绿屏或音画不同步的机型。';
+	/// zh-CN: 'Android 专用：mediacodec_embed 直出表面并强制硬解。默认路径花屏、绿屏或音画不同步时使用。'
+	String get presetCompatDesc => 'Android 专用：mediacodec_embed 直出表面并强制硬解。默认路径花屏、绿屏或音画不同步时使用。';
 
 	/// zh-CN: 'RTX 视频超分辨率'
 	String get presetRtxVsr => 'RTX 视频超分辨率';
 
-	/// zh-CN: 'Windows + NVIDIA 显卡专用：d3d11va 硬解并启用 RTX Video Super Resolution 超分滤镜，把低清晰度源放大到高分辨率屏幕上观看。'
-	String get presetRtxVsrDesc => 'Windows + NVIDIA 显卡专用：d3d11va 硬解并启用 RTX Video Super Resolution 超分滤镜，把低清晰度源放大到高分辨率屏幕上观看。';
+	/// zh-CN: 'Windows + NVIDIA 专用：d3d11va 硬解叠加 RTX Video Super Resolution，把低清源放大到高分屏。'
+	String get presetRtxVsrDesc => 'Windows + NVIDIA 专用：d3d11va 硬解叠加 RTX Video Super Resolution，把低清源放大到高分屏。';
 
 	/// zh-CN: '低配流畅'
 	String get presetLowEnd => '低配流畅';
 
-	/// zh-CN: '软解线程数上限 2、lowres 降采样、跳过非参考帧环路滤波、缩小缓冲。把 CPU 交给画面本身，适合核显或老机器。'
-	String get presetLowEndDesc => '软解线程数上限 2、lowres 降采样、跳过非参考帧环路滤波、缩小缓冲。把 CPU 交给画面本身，适合核显或老机器。';
+	/// zh-CN: '软解线程上限 2、lowres 降采样、跳过环路滤波、小缓冲；核显或老机器用。'
+	String get presetLowEndDesc => '软解线程上限 2、lowres 降采样、跳过环路滤波、小缓冲；核显或老机器用。';
 
 	/// zh-CN: '弱网稳定'
 	String get presetStableNetwork => '弱网稳定';
 
-	/// zh-CN: '加大解复用缓冲与预读、开启强制可拖动与重连退避。用内存换卡顿，适合跨网、跨运营商或信号边缘的直播源。'
-	String get presetStableNetworkDesc => '加大解复用缓冲与预读、开启强制可拖动与重连退避。用内存换卡顿，适合跨网、跨运营商或信号边缘的直播源。';
+	/// zh-CN: '加大缓冲与预读、开启强制可拖动与重连退避；用内存换流畅，适合跨网或信号边缘的源。'
+	String get presetStableNetworkDesc => '加大缓冲与预读、开启强制可拖动与重连退避；用内存换流畅，适合跨网或信号边缘的源。';
 
 	/// zh-CN: '低延迟'
 	String get presetLowLatency => '低延迟';
@@ -6775,8 +6775,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '选择 mpv 的 hwdec 解码器（自定义输出开启时生效）。'
 	String get hardwareDecoderDesc => '选择 mpv 的 hwdec 解码器（自定义输出开启时生效）。';
 
-	/// zh-CN: '未开启自定义输出，解码器由 mpv 自动选择（auto-safe）；如需指定，请在「高级设置」开启「自定义驱动与硬件加速」。'
-	String get hardwareDecoderAutoHint => '未开启自定义输出，解码器由 mpv 自动选择（auto-safe）；如需指定，请在「高级设置」开启「自定义驱动与硬件加速」。';
+	/// zh-CN: '未开启自定义输出时由 mpv 自动选择（auto-safe）；要指定请在「高级设置」开启自定义驱动。'
+	String get hardwareDecoderAutoHint => '未开启自定义输出时由 mpv 自动选择（auto-safe）；要指定请在「高级设置」开启自定义驱动。';
 
 	/// zh-CN: 'no（软件解码，兼容性最好）'
 	String get hardwareDecoderSoftware => 'no（软件解码，兼容性最好）';
@@ -6835,8 +6835,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '自定义驱动与硬件加速'
 	String get customOutput => '自定义驱动与硬件加速';
 
-	/// zh-CN: '开启后用所选视频输出、音频输出与解码器，代替「硬件解码」开关。'
-	String get customOutputDesc => '开启后用所选视频输出、音频输出与解码器，代替「硬件解码」开关。';
+	/// zh-CN: '开启后用所选输出与解码器，代替「硬件解码」开关。'
+	String get customOutputDesc => '开启后用所选输出与解码器，代替「硬件解码」开关。';
 
 	/// zh-CN: '已由「自定义驱动与硬件加速」接管，解码器在下方选择。'
 	String get customOutputHardwareTakeover => '已由「自定义驱动与硬件加速」接管，解码器在下方选择。';
@@ -6844,8 +6844,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '视频输出'
 	String get videoOutput => '视频输出';
 
-	/// zh-CN: 'gpu / gpu-next / direct3d 可能让 mpv 另开窗口；嵌入画面通常保持 libmpv 或 auto。'
-	String get videoOutputHint => 'gpu / gpu-next / direct3d 可能让 mpv 另开窗口；嵌入画面通常保持 libmpv 或 auto。';
+	/// zh-CN: 'gpu / gpu-next / direct3d 可能另开 mpv 窗口；嵌入画面保持 libmpv 或 auto。'
+	String get videoOutputHint => 'gpu / gpu-next / direct3d 可能另开 mpv 窗口；嵌入画面保持 libmpv 或 auto。';
 
 	/// zh-CN: 'auto（跟随 mpv 默认，推荐）'
 	String get videoOutputAuto => 'auto（跟随 mpv 默认，推荐）';
@@ -6940,8 +6940,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '运动插帧 (--interpolation)'
 	String get interpolation => '运动插帧 (--interpolation)';
 
-	/// zh-CN: '需配合「显示重采样」同步模式；提升平移画面平滑度，消耗 GPU。'
-	String get interpolationDesc => '需配合「显示重采样」同步模式；提升平移画面平滑度，消耗 GPU。';
+	/// zh-CN: '需配合「显示重采样」；平移画面更顺滑，消耗 GPU。'
+	String get interpolationDesc => '需配合「显示重采样」；平移画面更顺滑，消耗 GPU。';
 
 	/// zh-CN: '缩放算法'
 	String get scaleKernel => '缩放算法';
@@ -6988,8 +6988,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '反交错 (--deinterlace)'
 	String get deinterlace => '反交错 (--deinterlace)';
 
-	/// zh-CN: '直播源基本都是逐行的，保持自动即可；只有老电视信号或采集卡源才需要开启。'
-	String get deinterlaceDesc => '直播源基本都是逐行的，保持自动即可；只有老电视信号或采集卡源才需要开启。';
+	/// zh-CN: '直播源基本都是逐行的，保持自动；老电视信号或采集卡才需要。'
+	String get deinterlaceDesc => '直播源基本都是逐行的，保持自动；老电视信号或采集卡才需要。';
 
 	/// zh-CN: '自动'
 	String get deinterlaceAuto => '自动';
@@ -7003,8 +7003,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '硬解编码范围 (--hwdec-codecs)'
 	String get hwdecCodecs => '硬解编码范围 (--hwdec-codecs)';
 
-	/// zh-CN: '限制哪些编码格式走硬解；某编码黑屏或花屏时，把它从列表移除即可回退软解。'
-	String get hwdecCodecsDesc => '限制哪些编码格式走硬解；某编码黑屏或花屏时，把它从列表移除即可回退软解。';
+	/// zh-CN: '某编码黑屏或花屏时把它移出列表，即可回退软解。'
+	String get hwdecCodecsDesc => '某编码黑屏或花屏时把它移出列表，即可回退软解。';
 
 	/// zh-CN: '全部编码格式'
 	String get hwdecCodecsAll => '全部编码格式';
@@ -7285,8 +7285,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '用 Anime4K 着色器实时放大画面；需要桌面 GPU。'
 	String get superResolutionDescription => '用 Anime4K 着色器实时放大画面；需要桌面 GPU。';
 
-	/// zh-CN: '基于 Anime4K 的实时超分，仅桌面 GPU 可实时运行；当前仅 Windows 生效。'
-	String get superResolutionHint => '基于 Anime4K 的实时超分，仅桌面 GPU 可实时运行；当前仅 Windows 生效。';
+	/// zh-CN: '基于 Anime4K 的实时超分，仅 Windows 桌面 GPU 可实时运行。'
+	String get superResolutionHint => '基于 Anime4K 的实时超分，仅 Windows 桌面 GPU 可实时运行。';
 
 	/// zh-CN: '关闭'
 	String get superResolutionOff => '关闭';
@@ -7303,8 +7303,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '首选画质'
 	String get preferredQuality => '首选画质';
 
-	/// zh-CN: '进入房间时优先选用的清晰度档位；站点没有同名画质时，按档位比例选最接近的。默认原画。'
-	String get preferredQualityDesc => '进入房间时优先选用的清晰度档位；站点没有同名画质时，按档位比例选最接近的。默认原画。';
+	/// zh-CN: '进入房间优先选用的清晰度；没有同名画质时按档位就近选择。'
+	String get preferredQualityDesc => '进入房间优先选用的清晰度；没有同名画质时按档位就近选择。';
 
 	/// zh-CN: '蜂窝网络首选画质'
 	String get preferredQualityCellular => '蜂窝网络首选画质';
@@ -7348,8 +7348,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '默认音量'
 	String get defaultVolume => '默认音量';
 
-	/// zh-CN: '手机/平板新播放器默认 50%，桌面默认 100%；滑杆调整当前平台。'
-	String get defaultVolumeDesc => '手机/平板新播放器默认 50%，桌面默认 100%；滑杆调整当前平台。';
+	/// zh-CN: '移动端新播放器默认 50%，桌面 100%；滑杆只调当前平台。'
+	String get defaultVolumeDesc => '移动端新播放器默认 50%，桌面 100%；滑杆只调当前平台。';
 
 	/// zh-CN: '滚轮音量步长'
 	String get volumeWheelStep => '滚轮音量步长';
@@ -7363,20 +7363,20 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '全局静音'
 	String get globalMute => '全局静音';
 
-	/// zh-CN: '立即静音所有正在播放和之后打开的房间、频道与视频；关闭后恢复各播放器自身的静音设置。'
-	String get globalMuteDesc => '立即静音所有正在播放和之后打开的房间、频道与视频；关闭后恢复各播放器自身的静音设置。';
+	/// zh-CN: '静音所有正在播放与之后打开的房间、频道和视频；关闭后各自恢复。'
+	String get globalMuteDesc => '静音所有正在播放与之后打开的房间、频道和视频；关闭后各自恢复。';
 
 	/// zh-CN: '后台播放'
 	String get backgroundPlay => '后台播放';
 
-	/// zh-CN: '离开应用后继续播放声音；关闭时切到后台会暂停，回到应用后继续。'
-	String get backgroundPlayDesc => '离开应用后继续播放声音；关闭时切到后台会暂停，回到应用后继续。';
+	/// zh-CN: '离开应用后继续出声；关闭则切后台即暂停。'
+	String get backgroundPlayDesc => '离开应用后继续出声；关闭则切后台即暂停。';
 
 	/// zh-CN: 'ASMR 睡眠模式'
 	String get asmrSleepMode => 'ASMR 睡眠模式';
 
-	/// zh-CN: '进入直播间时自动切换为音频模式，并在设定时间后暂停。仅 Android。'
-	String get asmrSleepModeDesc => '进入直播间时自动切换为音频模式，并在设定时间后暂停。仅 Android。';
+	/// zh-CN: '进直播间自动切音频模式，到时暂停。仅 Android。'
+	String get asmrSleepModeDesc => '进直播间自动切音频模式，到时暂停。仅 Android。';
 
 	/// zh-CN: 'ASMR 睡眠时长'
 	String get asmrSleepTimer => 'ASMR 睡眠时长';
@@ -7417,8 +7417,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '播放内核'
 	String get engineTitle => '播放内核';
 
-	/// zh-CN: '选择直播与视频使用的播放内核；mpv 为默认，移动端还可选 IJK 或 BetterPlayer。'
-	String get engineDesc => '选择直播与视频使用的播放内核；mpv 为默认，移动端还可选 IJK 或 BetterPlayer。';
+	/// zh-CN: '直播与视频的播放内核；mpv 为默认，移动端另可选 IJK 或 BetterPlayer。'
+	String get engineDesc => '直播与视频的播放内核；mpv 为默认，移动端另可选 IJK 或 BetterPlayer。';
 
 	/// zh-CN: 'mpv 播放器'
 	String get playerEngineMpv => 'mpv 播放器';
@@ -7456,8 +7456,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '自动刷新封面'
 	String get refreshThumbnails => '自动刷新封面';
 
-	/// zh-CN: '定期清空图片缓存，让封面、头像和台标重新下载；不会清空观看历史或关注。'
-	String get refreshThumbnailsDesc => '定期清空图片缓存，让封面、头像和台标重新下载；不会清空观看历史或关注。';
+	/// zh-CN: '定期清空图片缓存，封面、头像和台标重新下载；不影响历史与关注。'
+	String get refreshThumbnailsDesc => '定期清空图片缓存，封面、头像和台标重新下载；不影响历史与关注。';
 
 	/// zh-CN: '封面刷新间隔'
 	String get thumbnailRefreshInterval => '封面刷新间隔';
@@ -7534,8 +7534,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '在线图片'
 	String get backgroundImagesTitle => '在线图片';
 
-	/// zh-CN: '官方、Wallhaven、Bing 与 deepin 图片源，选中后预览再应用。'
-	String get backgroundImagesDescription => '官方、Wallhaven、Bing 与 deepin 图片源，选中后预览再应用。';
+	/// zh-CN: '官方、Wallhaven、Bing 与 deepin 图源，先预览再应用。'
+	String get backgroundImagesDescription => '官方、Wallhaven、Bing 与 deepin 图源，先预览再应用。';
 
 	/// zh-CN: '在线视频'
 	String get backgroundVideosTitle => '在线视频';
@@ -7663,8 +7663,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '背景模糊'
 	String get backgroundOverlayBlur => '背景模糊';
 
-	/// zh-CN: '把壁纸本身模糊掉，图片、视频、纯色和渐变都生效；0 保持清晰。'
-	String get backgroundOverlayBlurDescription => '把壁纸本身模糊掉，图片、视频、纯色和渐变都生效；0 保持清晰。';
+	/// zh-CN: '模糊壁纸本身，图片、视频、纯色、渐变都生效；0 保持清晰。'
+	String get backgroundOverlayBlurDescription => '模糊壁纸本身，图片、视频、纯色、渐变都生效；0 保持清晰。';
 
 	/// zh-CN: '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。'
 	String get backgroundClearDescription => '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。';
@@ -7678,8 +7678,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '启用'
 	String get backgroundGlassEnable => '启用';
 
-	/// zh-CN: '卡片、列表、房间和各浮动层的底色都变半透明；菜单、面板等浮层再模糊背后的内容，让壁纸透出来。'
-	String get backgroundGlassDescription => '卡片、列表、房间和各浮动层的底色都变半透明；菜单、面板等浮层再模糊背后的内容，让壁纸透出来。';
+	/// zh-CN: '卡片、列表与浮层底色变半透明，浮层再模糊背后内容，让壁纸透出来。'
+	String get backgroundGlassDescription => '卡片、列表与浮层底色变半透明，浮层再模糊背后内容，让壁纸透出来。';
 
 	/// zh-CN: '面板填充'
 	String get backgroundGlassFill => '面板填充';
@@ -7690,8 +7690,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '浮层模糊'
 	String get backgroundGlassBlur => '浮层模糊';
 
-	/// zh-CN: '菜单、面板等浮层背后内容的模糊半径；0 只做半透明，不模糊。卡片和列表只有填充。'
-	String get backgroundGlassBlurDescription => '菜单、面板等浮层背后内容的模糊半径；0 只做半透明，不模糊。卡片和列表只有填充。';
+	/// zh-CN: '浮层背后内容的模糊半径；0 只半透明不模糊。'
+	String get backgroundGlassBlurDescription => '浮层背后内容的模糊半径；0 只半透明不模糊。';
 
 	/// zh-CN: '检查更新'
 	String get checkUpdate => '检查更新';
@@ -7810,8 +7810,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '还没有下载记录'
 	String get downloadManagerEmpty => '还没有下载记录';
 
-	/// zh-CN: '在预览或图库里点「下载」，任务会出现在这里，文件保存到上面的目录。'
-	String get downloadManagerEmptyDesc => '在预览或图库里点「下载」，任务会出现在这里，文件保存到上面的目录。';
+	/// zh-CN: '在预览或图库点「下载」，任务会出现在这里。'
+	String get downloadManagerEmptyDesc => '在预览或图库点「下载」，任务会出现在这里。';
 
 	/// zh-CN: '下载中'
 	String get downloadStatusRunning => '下载中';
@@ -8002,20 +8002,20 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '离开应用时自动小窗'
 	String get autoPip => '离开应用时自动小窗';
 
-	/// zh-CN: '播放中离开应用时，把画面留在其他应用上的小窗里；需要「显示在其他应用的上层」权限。'
-	String get autoPipDesc => '播放中离开应用时，把画面留在其他应用上的小窗里；需要「显示在其他应用的上层」权限。';
+	/// zh-CN: '播放中离开应用时把画面留在系统小窗；需要悬浮窗权限。'
+	String get autoPipDesc => '播放中离开应用时把画面留在系统小窗；需要悬浮窗权限。';
 
 	/// zh-CN: '返回时悬浮播放'
 	String get floatPlay => '返回时悬浮播放';
 
-	/// zh-CN: '离开直播间返回其他页面时，把正在播放的画面留在一个可拖动的小窗里；关闭小窗会停止播放。'
-	String get floatPlayDesc => '离开直播间返回其他页面时，把正在播放的画面留在一个可拖动的小窗里；关闭小窗会停止播放。';
+	/// zh-CN: '离开直播间时把画面留在可拖动的小窗；关闭小窗即停止播放。'
+	String get floatPlayDesc => '离开直播间时把画面留在可拖动的小窗；关闭小窗即停止播放。';
 
 	/// zh-CN: '小窗始终置顶'
 	String get windowsPipAlwaysOnTop => '小窗始终置顶';
 
-	/// zh-CN: 'Windows 画中画小窗保持在其他窗口之上；正在播放的小窗会立即应用。'
-	String get windowsPipAlwaysOnTopDesc => 'Windows 画中画小窗保持在其他窗口之上；正在播放的小窗会立即应用。';
+	/// zh-CN: '小窗保持在其他窗口之上；正在播放的小窗立即应用。'
+	String get windowsPipAlwaysOnTopDesc => '小窗保持在其他窗口之上；正在播放的小窗立即应用。';
 
 	/// zh-CN: '记住小窗位置'
 	String get rememberPipPosition => '记住小窗位置';
@@ -8032,14 +8032,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '小窗最小宽度'
 	String get windowsPipMinWidth => '小窗最小宽度';
 
-	/// zh-CN: '小窗可拖动到的最小宽度，范围 100–320；只作用于小窗，离开后恢复应用窗口的常规下限。'
-	String get windowsPipMinWidthDesc => '小窗可拖动到的最小宽度，范围 100–320；只作用于小窗，离开后恢复应用窗口的常规下限。';
+	/// zh-CN: '小窗最小宽度，100–320；离开小窗后恢复常规下限。'
+	String get windowsPipMinWidthDesc => '小窗最小宽度，100–320；离开小窗后恢复常规下限。';
 
 	/// zh-CN: '小窗最小高度'
 	String get windowsPipMinHeight => '小窗最小高度';
 
-	/// zh-CN: '小窗可拖动到的最小高度，范围 60–240；只作用于小窗，离开后恢复应用窗口的常规下限。'
-	String get windowsPipMinHeightDesc => '小窗可拖动到的最小高度，范围 60–240；只作用于小窗，离开后恢复应用窗口的常规下限。';
+	/// zh-CN: '小窗最小高度，60–240；离开小窗后恢复常规下限。'
+	String get windowsPipMinHeightDesc => '小窗最小高度，60–240；离开小窗后恢复常规下限。';
 
 	/// zh-CN: '自动全屏'
 	String get fullscreenDefault => '自动全屏';
@@ -8083,8 +8083,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '智能识别竖屏直播源'
 	String get portraitSmartDetection => '智能识别竖屏直播源';
 
-	/// zh-CN: '根据解码后的真实画面尺寸识别竖屏直播；关闭后竖屏源按普通横屏页面显示。'
-	String get portraitSmartDetectionDesc => '根据解码后的真实画面尺寸识别竖屏直播；关闭后竖屏源按普通横屏页面显示。';
+	/// zh-CN: '按解码后的真实画面尺寸识别竖屏；关闭后竖屏源按横屏显示。'
+	String get portraitSmartDetectionDesc => '按解码后的真实画面尺寸识别竖屏；关闭后竖屏源按横屏显示。';
 
 	/// zh-CN: '普通页自适应视频高度'
 	String get portraitAdaptiveHeight => '普通页自适应视频高度';
@@ -8140,8 +8140,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '卡片显示与排行方式'
 	String get audienceDisplayGroup => '卡片显示与排行方式';
 
-	/// zh-CN: '按观众排序使用卡片当前显示的数值；「真实在线人数优先」只在「跟随平台」显示方式下、且只对已开启的平台生效。'
-	String get audienceRankingNote => '按观众排序使用卡片当前显示的数值；「真实在线人数优先」只在「跟随平台」显示方式下、且只对已开启的平台生效。';
+	/// zh-CN: '排序用卡片显示的数值；「真实在线」仅在跟随平台下、已开启的平台生效。'
+	String get audienceRankingNote => '排序用卡片显示的数值；「真实在线」仅在跟随平台下、已开启的平台生效。';
 
 	/// zh-CN: '真实在线人数'
 	String get audienceRealOnlineGroup => '真实在线人数';
@@ -8149,8 +8149,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '真实在线人数优先'
 	String get audienceRealOnline => '真实在线人数优先';
 
-	/// zh-CN: '跟随平台显示时，对已开启的平台优先使用同时在线人数；其余平台保留热度或累计观看。'
-	String get audienceRealOnlineDesc => '跟随平台显示时，对已开启的平台优先使用同时在线人数；其余平台保留热度或累计观看。';
+	/// zh-CN: '跟随平台显示时，已开启的平台优先用同时在线人数，其余保留热度或累计。'
+	String get audienceRealOnlineDesc => '跟随平台显示时，已开启的平台优先用同时在线人数，其余保留热度或累计。';
 
 	/// zh-CN: '先在「观众数显示」中选择「跟随平台」，真实在线优先才会生效。'
 	String get audienceNeedsAutomaticMode => '先在「观众数显示」中选择「跟随平台」，真实在线优先才会生效。';
@@ -8158,8 +8158,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '真实在线平台'
 	String get audiencePlatformsGroup => '真实在线平台';
 
-	/// zh-CN: '只有公开返回明确并发人数的平台会出现在这里；关闭后该平台仍按热度或累计观看显示。'
-	String get audiencePlatformsDesc => '只有公开返回明确并发人数的平台会出现在这里；关闭后该平台仍按热度或累计观看显示。';
+	/// zh-CN: '只有公开返回并发人数的平台会出现；关闭后该平台仍按热度显示。'
+	String get audiencePlatformsDesc => '只有公开返回并发人数的平台会出现；关闭后该平台仍按热度显示。';
 
 	/// zh-CN: '来源：房间列表/详情，可直接排行'
 	String get audienceSourceRoomList => '来源：房间列表/详情，可直接排行';
@@ -8173,8 +8173,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '仅热度或累计观看的平台'
 	String get audienceHeatOnlyGroup => '仅热度或累计观看的平台';
 
-	/// zh-CN: '这些平台的公开接口没有同时在线人数，卡片照常标明热度或累计观看。'
-	String get audienceHeatOnlyDesc => '这些平台的公开接口没有同时在线人数，卡片照常标明热度或累计观看。';
+	/// zh-CN: '这些平台的接口没有并发人数，卡片照常标明热度或累计观看。'
+	String get audienceHeatOnlyDesc => '这些平台的接口没有并发人数，卡片照常标明热度或累计观看。';
 
 	/// zh-CN: '纯色'
 	String get backgroundSolid => '纯色';
@@ -8341,8 +8341,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '确定要永久删除标签“{name: String}”吗？'
 	String tagDeleteTitle({required String name}) => '确定要永久删除标签“${name}”吗？';
 
-	/// zh-CN: '{count: int} 个关注直播间会移出这个标签，直播间本身不会被取消关注。'
-	String tagDeleteRoomsHint({required int count}) => '${count} 个关注直播间会移出这个标签，直播间本身不会被取消关注。';
+	/// zh-CN: '{count: int} 个直播间会移出该标签，不会被取消关注。'
+	String tagDeleteRoomsHint({required int count}) => '${count} 个直播间会移出该标签，不会被取消关注。';
 
 	/// zh-CN: '该标签还没有直播间在使用。'
 	String get tagDeleteBody => '该标签还没有直播间在使用。';
@@ -8350,8 +8350,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '暂无自定义标签'
 	String get tagEmptyTitle => '暂无自定义标签';
 
-	/// zh-CN: '标签用来给关注的直播间分组：在关注页的卡片菜单里给直播间加标签，关注页可以按标签筛选。'
-	String get tagEmptyHint => '标签用来给关注的直播间分组：在关注页的卡片菜单里给直播间加标签，关注页可以按标签筛选。';
+	/// zh-CN: '在关注页的卡片菜单里给直播间加标签，即可按标签筛选。'
+	String get tagEmptyHint => '在关注页的卡片菜单里给直播间加标签，即可按标签筛选。';
 
 	/// zh-CN: '拖动左侧把手调整顺序，关注页的标签栏按这个顺序显示。'
 	String get tagSortTip => '拖动左侧把手调整顺序，关注页的标签栏按这个顺序显示。';
@@ -8362,20 +8362,20 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '显示不能直接播放的直播'
 	String get showUnplayableTitle => '显示不能直接播放的直播';
 
-	/// zh-CN: '不能直接播放（付费、加锁、仅限 App 等）的直播也显示在热门与分区房间；关注和搜索始终显示'
-	String get showUnplayableDesc => '不能直接播放（付费、加锁、仅限 App 等）的直播也显示在热门与分区房间；关注和搜索始终显示';
+	/// zh-CN: '付费、加锁、仅限 App 的直播也显示在热门与分区；关注和搜索始终显示。'
+	String get showUnplayableDesc => '付费、加锁、仅限 App 的直播也显示在热门与分区；关注和搜索始终显示。';
 
 	/// zh-CN: '小窗自由比例'
 	String get windowsPipFreeAspect => '小窗自由比例';
 
-	/// zh-CN: '开启后可单独压小高度或拉宽窗口；画面按比例适配，形状不符的一侧会留黑边。关闭时窗口始终等于视频形状。'
-	String get windowsPipFreeAspectDesc => '开启后可单独压小高度或拉宽窗口；画面按比例适配，形状不符的一侧会留黑边。关闭时窗口始终等于视频形状。';
+	/// zh-CN: '可单独压小高度或拉宽窗口，不符的一侧留黑边；关闭时窗口始终等于视频形状。'
+	String get windowsPipFreeAspectDesc => '可单独压小高度或拉宽窗口，不符的一侧留黑边；关闭时窗口始终等于视频形状。';
 
 	/// zh-CN: '重置小窗位置和大小'
 	String get windowsPipResetPosition => '重置小窗位置和大小';
 
-	/// zh-CN: '清除已保存的小窗尺寸与位置，下次从应用所在显示器右下角打开。'
-	String get windowsPipResetPositionDesc => '清除已保存的小窗尺寸与位置，下次从应用所在显示器右下角打开。';
+	/// zh-CN: '清除已存的小窗尺寸与位置，下次从右下角打开。'
+	String get windowsPipResetPositionDesc => '清除已存的小窗尺寸与位置，下次从右下角打开。';
 
 	/// zh-CN: '确定要清除已保存的小窗位置和大小吗？'
 	String get windowsPipResetPositionConfirm => '确定要清除已保存的小窗位置和大小吗？';
@@ -8443,8 +8443,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '房间卡片'
 	String get roomCardSettingsTitle => '房间卡片';
 
-	/// zh-CN: '卡片与列表的版式固定，这里只选择显示哪些信息；设置自动应用到当前设备类型。'
-	String get roomCardSettingsDescription => '卡片与列表的版式固定，这里只选择显示哪些信息；设置自动应用到当前设备类型。';
+	/// zh-CN: '版式固定，这里只选显示哪些信息；自动应用到当前设备类型。'
+	String get roomCardSettingsDescription => '版式固定，这里只选显示哪些信息；自动应用到当前设备类型。';
 
 	/// zh-CN: '卡片预览'
 	String get roomCardPreview => '卡片预览';
@@ -8503,8 +8503,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '恢复默认显示'
 	String get roomCardResetCurrent => '恢复默认显示';
 
-	/// zh-CN: '移动端与桌面端各自保存，并自动应用到当前设备类型的卡片与列表。'
-	String get roomCardScopeHint => '移动端与桌面端各自保存，并自动应用到当前设备类型的卡片与列表。';
+	/// zh-CN: '移动端与桌面端各自保存，自动应用到当前设备。'
+	String get roomCardScopeHint => '移动端与桌面端各自保存，自动应用到当前设备。';
 
 	/// zh-CN: '预览'
 	String get backgroundPreviewMedia => '预览';
@@ -8563,8 +8563,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '画面模式'
 	String get portraitDisplayMode => '画面模式';
 
-	/// zh-CN: '完整=整幅画面；沉浸=整幅画面配柔和背景；均衡=轻微裁切；铺满=裁切两侧填满屏幕。'
-	String get portraitDisplayModeDesc => '完整=整幅画面；沉浸=整幅画面配柔和背景；均衡=轻微裁切；铺满=裁切两侧填满屏幕。';
+	/// zh-CN: '完整=原样；沉浸=原样配柔和背景；均衡=轻微裁切；铺满=裁两侧填满。'
+	String get portraitDisplayModeDesc => '完整=原样；沉浸=原样配柔和背景；均衡=轻微裁切；铺满=裁两侧填满。';
 
 	/// zh-CN: '弹幕区域'
 	String get portraitDanmakuMode => '弹幕区域';
@@ -8575,14 +8575,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '记住每个房间的选择'
 	String get portraitRememberRoom => '记住每个房间的选择';
 
-	/// zh-CN: '在竖屏全屏里切换画面/弹幕后，按房间保存；关闭会清除已保存的房间选择。'
-	String get portraitRememberRoomDesc => '在竖屏全屏里切换画面/弹幕后，按房间保存；关闭会清除已保存的房间选择。';
+	/// zh-CN: '竖屏全屏里的画面/弹幕切换按房间记住；关闭即清除。'
+	String get portraitRememberRoomDesc => '竖屏全屏里的画面/弹幕切换按房间记住；关闭即清除。';
 
 	/// zh-CN: '竖屏全屏上下滑换台'
 	String get portraitSwipeSwitch => '竖屏全屏上下滑换台';
 
-	/// zh-CN: '从关注、热门、分区或搜索进的直播间，竖屏全屏时在画面中间上滑看下一场、下滑上一场。'
-	String get portraitSwipeSwitchDesc => '从关注、热门、分区或搜索进的直播间，竖屏全屏时在画面中间上滑看下一场、下滑上一场。';
+	/// zh-CN: '竖屏全屏时上滑看下一场、下滑看上一场。'
+	String get portraitSwipeSwitchDesc => '竖屏全屏时上滑看下一场、下滑看上一场。';
 
 	/// zh-CN: '显示竖屏诊断'
 	String get portraitDiagnostics => '显示竖屏诊断';
@@ -8716,8 +8716,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '按住时冻结弹幕'
 	String get holdDanmakuOnPress => '按住时冻结弹幕';
 
-	/// zh-CN: '手指按住画面弹幕时先冻结，便于点按或长按；关闭后点按/长按仍会命中，但弹幕不会在按住期间停住。'
-	String get holdDanmakuOnPressDesc => '手指按住画面弹幕时先冻结，便于点按或长按；关闭后点按/长按仍会命中，但弹幕不会在按住期间停住。';
+	/// zh-CN: '按住弹幕先冻结，便于点按；关闭后按住期间弹幕照常飞过。'
+	String get holdDanmakuOnPressDesc => '按住弹幕先冻结，便于点按；关闭后按住期间弹幕照常飞过。';
 
 	/// zh-CN: 'YouTube 显示全部聊天'
 	String get youtubeAllChat => 'YouTube 显示全部聊天';
@@ -8749,14 +8749,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '关闭画中画时暂停'
 	String get pauseOnPipClose => '关闭画中画时暂停';
 
-	/// zh-CN: '开着后台播放时，关掉画中画小窗就暂停，不在后台继续出声；回到应用再继续。'
-	String get pauseOnPipCloseDesc => '开着后台播放时，关掉画中画小窗就暂停，不在后台继续出声；回到应用再继续。';
+	/// zh-CN: '开着后台播放时，关小窗即暂停；回应用再继续。'
+	String get pauseOnPipCloseDesc => '开着后台播放时，关小窗即暂停；回应用再继续。';
 
 	/// zh-CN: '在聊天列表显示礼物'
 	String get chatShowGifts => '在聊天列表显示礼物';
 
-	/// zh-CN: '平台上报的礼物显示为聊天里的礼物行；关闭后已有礼物行立即移除。'
-	String get chatShowGiftsDesc => '平台上报的礼物显示为聊天里的礼物行；关闭后已有礼物行立即移除。';
+	/// zh-CN: '礼物显示为聊天里的礼物行；关闭后立即移除已有礼物行。'
+	String get chatShowGiftsDesc => '礼物显示为聊天里的礼物行；关闭后立即移除已有礼物行。';
 
 	/// zh-CN: '只显示值钱的礼物'
 	String get chatGiftsAboveTier => '只显示值钱的礼物';
@@ -8773,14 +8773,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '上舰和开会员进醒目留言'
 	String get superChatIncludesMembership => '上舰和开会员进醒目留言';
 
-	/// zh-CN: '哔哩哔哩上舰、YouTube 会员和各平台的订阅也在醒目留言里显示一张卡；聊天列表照旧。'
-	String get superChatIncludesMembershipDesc => '哔哩哔哩上舰、YouTube 会员和各平台的订阅也在醒目留言里显示一张卡；聊天列表照旧。';
+	/// zh-CN: 'B 站上舰、YouTube 会员等订阅也在醒目留言里出卡；聊天列表照旧。'
+	String get superChatIncludesMembershipDesc => 'B 站上舰、YouTube 会员等订阅也在醒目留言里出卡；聊天列表照旧。';
 
 	/// zh-CN: '飞行弹幕显示礼物'
 	String get danmakuShowGifts => '飞行弹幕显示礼物';
 
-	/// zh-CN: '值钱的礼物飞过画面，很值钱的在顶部停 4 秒；连击只飞开头和总数，每秒最多 3 条。'
-	String get danmakuShowGiftsDesc => '值钱的礼物飞过画面，很值钱的在顶部停 4 秒；连击只飞开头和总数，每秒最多 3 条。';
+	/// zh-CN: '值钱礼物飞过画面，更值钱的在顶部停 4 秒；连击只显示开头和总数。'
+	String get danmakuShowGiftsDesc => '值钱礼物飞过画面，更值钱的在顶部停 4 秒；连击只显示开头和总数。';
 
 	/// zh-CN: '小窗大小'
 	String get floatWindowSize => '小窗大小';
@@ -8806,14 +8806,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '斗鱼每 5 分钟自动续期'
 	String get douyuForceRenew => '斗鱼每 5 分钟自动续期';
 
-	/// zh-CN: '登录斗鱼后定期续期 Cookie，降低长时间观看时掉登录的概率。'
-	String get douyuForceRenewDesc => '登录斗鱼后定期续期 Cookie，降低长时间观看时掉登录的概率。';
+	/// zh-CN: '登录后定期续期 Cookie，降低长时间观看掉登录的概率。'
+	String get douyuForceRenewDesc => '登录后定期续期 Cookie，降低长时间观看掉登录的概率。';
 
 	/// zh-CN: '焦点放大'
 	String get tvFocusZoom => '焦点放大';
 
-	/// zh-CN: '获得焦点的卡片、菜单项和播放控制放大一点；盒子卡顿时可以关掉，只留描边。'
-	String get tvFocusZoomDesc => '获得焦点的卡片、菜单项和播放控制放大一点；盒子卡顿时可以关掉，只留描边。';
+	/// zh-CN: '焦点卡片与控件略微放大；盒子卡顿时可关掉只留描边。'
+	String get tvFocusZoomDesc => '焦点卡片与控件略微放大；盒子卡顿时可关掉只留描边。';
 
 	/// zh-CN: 'TV 侧栏始终展开'
 	String get tvMenuExpanded => 'TV 侧栏始终展开';
@@ -9118,8 +9118,8 @@ class Translations$toolbox$zh_CN {
 	/// zh-CN: '识别剪贴板直播间链接'
 	String get linkClipboardRooms => '识别剪贴板直播间链接';
 
-	/// zh-CN: '回到应用时读取剪贴板，发现支持的直播平台链接会询问是否打开；不会自动跳转。'
-	String get linkClipboardRoomsDesc => '回到应用时读取剪贴板，发现支持的直播平台链接会询问是否打开；不会自动跳转。';
+	/// zh-CN: '回应用时读取剪贴板，发现直播链接会询问是否打开；不自动跳转。'
+	String get linkClipboardRoomsDesc => '回应用时读取剪贴板，发现直播链接会询问是否打开；不自动跳转。';
 
 	/// zh-CN: '正在解析链接…'
 	String get linkResolving => '正在解析链接…';
@@ -9295,8 +9295,8 @@ class Translations$toolbox$zh_CN {
 	/// zh-CN: '写入日志文件'
 	String get logsFile => '写入日志文件';
 
-	/// zh-CN: '在应用数据目录保存轮转日志（pure_live.log）；关闭后只保留内存日志。'
-	String get logsFileDesc => '在应用数据目录保存轮转日志（pure_live.log）；关闭后只保留内存日志。';
+	/// zh-CN: '在应用数据目录保存轮转日志 pure_live.log；关闭只留内存日志。'
+	String get logsFileDesc => '在应用数据目录保存轮转日志 pure_live.log；关闭只留内存日志。';
 
 	/// zh-CN: '复制日志'
 	String get logsExport => '复制日志';
@@ -10137,7 +10137,7 @@ extension on Translations {
 			'account.qrRetry' => '重新获取',
 			'account.qrPollingFailed' => '连接失败，正在重试…',
 			'account.cookieDialogTitle' => ({required Object site}) => '${site} 导入 Cookie',
-			'account.cookieDialogHint' => '在已登录的浏览器中复制该网站的 Cookie，粘贴到下面（形如 name=value; name2=value2）。',
+			'account.cookieDialogHint' => '在已登录的浏览器复制 Cookie 粘贴进来（形如 name=value; name2=value2）。',
 			'account.cookieFieldHint' => '粘贴 Cookie 内容',
 			'account.loginSuccess' => '登录成功',
 			'account.loginFailed' => ({required Object message}) => '登录失败：${message}',
@@ -10188,7 +10188,7 @@ extension on Translations {
 			'account.statusHuyaNoUid' => '已保存，但 Cookie 里没有账号 ID',
 			'account.bilibiliLoginExpired' => 'B 站登录已失效，已自动退出登录',
 			'account.savedAccounts' => '已记住的账号',
-			'account.savedAccountsNote' => ({required Object count}) => '登录过的账号记在这里（最多 ${count} 个），切换不用重新扫码。登录信息只加密保存在本机，退出登录或删除就会清掉。',
+			'account.savedAccountsNote' => ({required Object count}) => '最多记住 ${count} 个账号，切换不用重新扫码；只加密存在本机，退出或删除即清除。',
 			'account.accountUid' => ({required Object uid}) => 'UID ${uid}',
 			'account.accountCurrent' => '当前账号',
 			'account.addAccount' => '添加账号',
@@ -10212,7 +10212,7 @@ extension on Translations {
 			'account.webLoginReading' => '已回到主站，正在读取登录状态…',
 			'account.webLoginFailed' => '网页登录未成功',
 			'account.webLoginUnavailable' => '这台设备没有可用的内置浏览器',
-			'account.webLoginUnavailableDesc' => '网页登录需要内置浏览器。请改用扫码登录，或在其他浏览器登录后把 Cookie 粘贴进来。',
+			'account.webLoginUnavailableDesc' => '需要内置浏览器；请改用扫码登录，或在其他浏览器登录后粘贴 Cookie。',
 			'account.noLoginMethod' => ({required Object site}) => '${site} 暂未接入登录方式',
 			'account.cookiePageTitle' => ({required Object site}) => '${site} Cookie',
 			'account.cookieSection' => 'Cookie',
@@ -10257,12 +10257,12 @@ extension on Translations {
 			'backup.summaryTitle' => '当前数据',
 			'backup.summaryEmpty' => '还没有可备份的数据',
 			'backup.exportTitle' => '导出备份',
-			'backup.exportDescription' => '把关注、观看历史、关注分区与设置打包为一个 JSON 文件，通过系统分享面板保存。',
+			'backup.exportDescription' => '把关注、历史、分区与设置打包为 JSON，经系统分享保存。',
 			'backup.exportEmpty' => '没有可备份的数据',
 			'backup.exportDone' => '备份文件已生成',
 			'backup.exportFailed' => '导出失败',
 			'backup.importTitle' => '导入备份',
-			'backup.importDescription' => '粘贴备份 JSON 的内容，确认后覆盖当前数据；也可以从 WebDAV 下载并恢复。',
+			'backup.importDescription' => '粘贴备份 JSON，确认后覆盖当前数据；也可从 WebDAV 恢复。',
 			'backup.importHint' => '粘贴备份 JSON',
 			'backup.importFileNote' => '直接选择本地文件要等文件选择器依赖接入；目前可粘贴内容或走 WebDAV。',
 			'backup.importConfirmTitle' => '覆盖当前数据？',
@@ -10273,7 +10273,7 @@ extension on Translations {
 			'backup.summary' => ({required Object follows, required Object history, required Object areas, required Object settings}) => '关注 ${follows} · 历史 ${history} · 分区 ${areas} · 设置 ${settings} 项',
 			'backup.webdavSection' => 'WebDAV 同步',
 			'backup.webdavAccounts' => 'WebDAV 账号',
-			'backup.webdavAccountsHint' => '点选账号即设为当前并打开它的文件夹；铅笔图标用于修改或删除该账号。',
+			'backup.webdavAccountsHint' => '点选即切换并打开它的文件夹；铅笔可修改或删除。',
 			'backup.webdavAddAccount' => '添加账号',
 			'backup.webdavEditAccount' => '编辑账号',
 			'backup.webdavAccountName' => '账号名称',
@@ -10297,7 +10297,7 @@ extension on Translations {
 			'backup.webdavBrowseDesc' => '像文件夹一样浏览服务器：进入目录、新建文件夹、上传或恢复任意文件。',
 			'backup.webdavDescription' => ({required Object file}) => '备份以 ${file} 存放在服务器目录，上传覆盖、下载恢复。',
 			'backup.webdavConfigTitle' => '服务器配置',
-			'backup.webdavConfigDescription' => '填写 WebDAV 服务器地址与账号；密码保存在系统安全存储中，不进入备份。',
+			'backup.webdavConfigDescription' => '填服务器地址与账号；密码只存系统安全存储，不进备份。',
 			'backup.webdavUrl' => '服务器地址',
 			'backup.webdavUrlHint' => 'https://dav.jianguoyun.com/dav/',
 			'backup.webdavUser' => '用户名',
@@ -10346,8 +10346,8 @@ extension on Translations {
 			'backup.kindFollows' => '仅关注',
 			'backup.fileDelete' => '删除备份文件',
 			'backup.restoreConfirmTitle' => '恢复这个备份？',
-			'backup.restoreConfirmDesc' => ({required String name}) => '将用 ${name} 覆盖本机的关注、观看历史、关注分区与设置，当前数据无法找回。',
-			'backup.restoreFollowsConfirmDesc' => ({required String name}) => '将用 ${name} 覆盖本机的关注与关注分区，其他数据保持不变。',
+			'backup.restoreConfirmDesc' => ({required String name}) => '将用 ${name} 覆盖本机的关注、历史、分区与设置，无法找回。',
+			'backup.restoreFollowsConfirmDesc' => ({required String name}) => '将用 ${name} 覆盖关注与分区，其他数据不变。',
 			'backup.restoreFailed' => '恢复失败',
 			'backup.deleteConfirmTitle' => '删除这个备份文件？',
 			'backup.deleteConfirmDesc' => ({required String name}) => '${name} 将被永久删除。',
@@ -10489,8 +10489,8 @@ extension on Translations {
 			'history.deleteAction' => '删除',
 			'history.deleteDone' => '已从观看记录删除',
 			'history.clearConfirmTitle' => '清空观看记录？',
-			'history.clearConfirmDesc' => ({required int count}) => '确定清空这 ${count} 条观看记录吗？此操作不可撤销。',
-			'history.clearFilteredConfirmDesc' => ({required int count}) => '确定删除筛选出的 ${count} 条观看记录吗？其他记录不受影响，此操作不可撤销。',
+			'history.clearConfirmDesc' => ({required int count}) => '清空这 ${count} 条观看记录？不可撤销。',
+			'history.clearFilteredConfirmDesc' => ({required int count}) => '删除筛选出的 ${count} 条观看记录？不可撤销。',
 			'history.clearDone' => ({required int count}) => '已清空 ${count} 条观看记录',
 			'history.changeFailed' => '观看记录更改未保存，请重试。',
 			'history.limitAction' => '调整上限',
@@ -10742,7 +10742,7 @@ extension on Translations {
 			'iptv.autoUpdate' => '自动更新',
 			'iptv.autoUpdateHint' => '应用会按此间隔在后台检查，并重新拉取已开启自动更新的节目单。',
 			'iptv.customUserAgent' => '自定义 User-Agent',
-			'iptv.customUserAgentDesc' => '导入播放列表、节目单和播放请求使用的 User-Agent；留空使用应用默认值。播放列表自带的 User-Agent 优先。',
+			'iptv.customUserAgentDesc' => '导入与播放请求使用的 User-Agent；留空用应用默认，播放列表自带优先。',
 			'iptv.updateInterval' => '更新间隔',
 			'iptv.updateIntervalHours' => ({required int hours}) => '${hours} 小时',
 			'iptv.updateIntervalDays' => ({required int days}) => '${days} 天',
@@ -10880,7 +10880,7 @@ extension on Translations {
 			'iptv.browseProgrammeLineDesc' => '在频道名下方写出正在播出或接下来播出的节目。',
 			'iptv.browseReset' => '恢复默认的换台显示',
 			'iptv.groupsEmpty' => '还没有分组：先导入一份播放列表。',
-			'iptv.groupsHint' => '关掉一个分组，它会从频道列表和换台里一起消失；重新打开还是原来的台单。',
+			'iptv.groupsHint' => '关掉的分组从频道列表和换台里消失；重开即恢复。',
 			'iptv.recentTitle' => '最近观看',
 			'iptv.recentCount' => ({required Object count}) => '共 ${count} 个频道',
 			'iptv.recentWatched' => ({required Object time}) => '上次观看 ${time}',
@@ -10967,7 +10967,7 @@ extension on Translations {
 			'music.sourcesReady' => ({required Object count}) => '已就绪 ${count} 个自定义源',
 			'music.settingsPlayback' => '音源与播放',
 			'music.defaultSource' => '默认音源',
-			'music.defaultSourceDesc' => '歌曲从哪个音源获取；lx-music 通过导入的自定义源脚本解析播放地址。',
+			'music.defaultSourceDesc' => '歌曲从哪个音源获取；自定义源脚本负责解析播放地址。',
 			'music.defaultSourceEmpty' => '还没有可用的音源；先在下方「自定义源」里导入脚本。',
 			'music.quality' => '播放品质',
 			'music.qualityDesc' => '向音源请求的音质；音源没有这一档时会给出它能提供的最高档。',
@@ -10988,7 +10988,7 @@ extension on Translations {
 			'music.playbackReset' => '恢复默认',
 			'music.playbackResetDesc' => '自动选源、320K、出错跳过、新歌排在末尾。',
 			'music.sourcesSection' => '自定义源',
-			'music.sourcesHint' => 'lx-music 的自定义源是 JavaScript 脚本，在 fjs（QuickJS）运行时中执行；导入后会初始化并接管播放地址解析。',
+			'music.sourcesHint' => '自定义源是 JavaScript 脚本，在 fjs（QuickJS）中执行；导入后初始化并接管播放地址解析。',
 			'music.sourcesImportText' => '粘贴脚本导入',
 			'music.sourcesImportTextDesc' => '把 lx-music 自定义源脚本的全文粘贴进来。',
 			'music.sourcesImportUrl' => '从链接导入',
@@ -11140,7 +11140,7 @@ extension on Translations {
 			'music.downloadTypeOgg' => 'OGG',
 			'music.downloadTypeWav' => 'WAV',
 			'music.downloadPattern' => '文件名格式',
-			'music.downloadPatternHint' => '可用占位符（写在花括号里）：title、artist、album、quality、source、list、index。',
+			'music.downloadPatternHint' => '占位符（花括号）：title、artist、album、quality、source、list、index。',
 			'music.downloadPatternEdit' => '编辑',
 			'music.downloadEmbedCover' => '嵌入封面',
 			'music.downloadEmbedCoverDesc' => '把歌曲封面写入音频标签。',
@@ -11219,12 +11219,12 @@ extension on Translations {
 			'music.lyricZoomActiveDesc' => '正在唱的一句歌词略大，便于跟唱。',
 			'music.lyricProgress' => '显示播放进度',
 			'music.lyricProgressDesc' => '在歌词面板上方显示歌曲的播放进度。',
-			'music.lyricHint' => '歌词显示与延迟对所有歌曲生效；桌面歌词可在设置或播放页的更多菜单里打开。',
+			'music.lyricHint' => '歌词显示与延迟全局生效；桌面歌词在设置或播放页菜单打开。',
 			'music.desktopLyrics' => '桌面歌词',
 			'music.desktopLyricsOn' => '桌面歌词已开启',
 			'music.desktopLyricsOff' => '桌面歌词已关闭',
 			'music.desktopLyricsUnavailable' => '当前平台没有桌面歌词窗口或未授权',
-			'music.desktopLyricHint' => '桌面歌词是独立悬浮窗，可拖动、锁定并控制播放；Android 需要悬浮窗权限。',
+			'music.desktopLyricHint' => '桌面歌词是可拖动、可锁定的悬浮窗；Android 需悬浮窗权限。',
 			'music.desktopLyricEnableDesc' => '在桌面上悬浮显示当前歌词；关闭后保留下面的样式。',
 			'music.desktopLyricLock' => '锁定歌词',
 			'music.desktopLyricLockDesc' => '锁定后鼠标点击穿过歌词窗口，不会挡住下面的程序。',
@@ -11336,7 +11336,7 @@ extension on Translations {
 			'music.eqMeterTitle' => '响度电平表',
 			'music.eqAnalysis' => '响度探针',
 			'music.eqAnalysisDesc' => '在链路中运行 EBU R128 探针，不改变声音本身',
-			'music.eqMeterNote' => '响度电平表（M=400ms 瞬时，S=3s 短期），并非 FFT 频谱——mpv 不提供原始频谱数据。',
+			'music.eqMeterNote' => '响度表（M=400ms 瞬时，S=3s 短期），不是 FFT 频谱——mpv 不提供原始频谱。',
 			'music.eqNodesTitle' => '参数均衡器',
 			'music.eqNodesAdd' => '添加节点',
 			'music.eqNodeFrequency' => '频率',
@@ -11368,7 +11368,7 @@ extension on Translations {
 			'music.syncStatusHint' => '连接后拉取服务端歌单并推送本地改动。',
 			'music.syncForgetKey' => '清除授权',
 			'music.syncForgetKeyDesc' => '删除已保存的密钥，下次连接用连接码重新授权。',
-			'music.syncNote' => '与 lx-music 桌面端服务端同步：试听、收藏与自建歌单。服务端按所选模式合并。',
+			'music.syncNote' => '与 lx-music 桌面端同步：试听、收藏与自建歌单，服务端按所选模式合并。',
 			'music.syncModeMergeLocalRemote' => '合并（本地优先）',
 			'music.syncModeMergeRemoteLocal' => '合并（远端优先）',
 			'music.syncModeOverwriteLocalRemote' => '以本地覆盖远端',
@@ -11376,7 +11376,7 @@ extension on Translations {
 			'music.syncModeOverwriteLocalRemoteFull' => '仅保留本地',
 			'music.syncModeOverwriteRemoteLocalFull' => '仅保留远端',
 			'music.catalogSection' => '内置音源库',
-			'music.catalogHint' => '来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本，下载路线跟随设置里的 GitHub 加速。',
+			'music.catalogHint' => '来自社区合集 pdone/lx-music-source，一键拉取最新脚本，走设置的 GitHub 加速。',
 			'music.catalogImport' => '导入',
 			'music.catalogImported' => '已导入',
 			'music.catalogFetchFailed' => '音源脚本下载失败：raw 源与镜像都不可达',
@@ -11503,24 +11503,24 @@ extension on Translations {
 			'recorder.cacheTitle' => '录制缓存',
 			'recorder.liveCheckGroup' => '开播检测',
 			'recorder.enablePolling' => '启用开播检测',
-			'recorder.enablePollingDesc' => '主播未开播时自动轮询；在直播间的更多菜单里选择「开播自动录」加入检测。',
+			'recorder.enablePollingDesc' => '主播未开播时自动轮询；在直播间菜单里选「开播自动录」加入。',
 			'recorder.pollingOff' => '「开播检测」关着，等待开播的任务不会自动开始。',
 			'recorder.pollingEnable' => '打开',
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）',
 			'recorder.cacheLimitEnabled' => '限制录制缓存',
 			'recorder.cacheLimitEnabledDesc' => '超过上限时自动删除最旧的已完成录制；正在录制的文件不会被删除。',
 			'recorder.cacheLimit' => '缓存上限',
-			'recorder.cacheLimitDesc' => '按 MB 计；超过后从最旧的录像开始删除，正在录制的文件不会删除。',
+			'recorder.cacheLimitDesc' => '超过上限从最旧的已完成录像删起；正在录制的不动。',
 			'recorder.cacheSize' => '当前录制缓存',
 			'recorder.cacheSizeDesc' => '录制目录中已完成与正在录制的文件总大小。',
 			'recorder.cacheRefresh' => '刷新',
 			'recorder.cacheClear' => '清理录制缓存',
 			'recorder.cacheClearDesc' => '删除全部已完成的录制文件与弹幕 XML，正在录制的保留。',
 			'recorder.cacheClearConfirm' => '清理全部已完成录制？',
-			'recorder.cacheClearConfirmDesc' => '此操作会删除录制目录中的已完成视频、分段与弹幕文件，无法恢复；正在录制的任务会跳过。',
+			'recorder.cacheClearConfirmDesc' => '删除目录中已完成的视频、分段与弹幕文件，无法恢复；正在录制的跳过。',
 			'recorder.cacheCleared' => '录制缓存已清理',
 			'recorder.cacheFailed' => '缓存操作失败，请重试',
-			'recorder.cacheManagedHint' => '为保护其他文件，自定义目录下只会创建并管理 PureLiveRecords 子目录。',
+			'recorder.cacheManagedHint' => '自定义目录下只创建并管理 PureLiveRecords 子目录。',
 			'recorder.liveCheckSecondsTitle' => '检测间隔（秒）',
 			'recorder.liveCheckSecondsDesc' => '每个等待开播的任务多久检查一次，10–300 秒。',
 			'recorder.checkBackoff' => '启用指数退避',
@@ -11528,7 +11528,7 @@ extension on Translations {
 			'recorder.maxCheckSecondsTitle' => '最大检测间隔（秒）',
 			'recorder.maxCheckSecondsDesc' => '退避后的间隔上限，60–3600 秒。',
 			'recorder.autoStartOnBoot' => '应用启动时恢复待录任务',
-			'recorder.autoStartOnBootDesc' => '把上次进程中断时仍在录制的任务恢复为等待开播，交给开播检测继续；已停止/完成的保持原状态。',
+			'recorder.autoStartOnBootDesc' => '把中断时仍在录制的任务恢复为等待开播；已停止的保持原状。',
 			'recorder.cacheBusy' => '有录制任务正在进行（可能在另一个窗口），缓存不会被清理或自动裁剪。',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
@@ -11696,7 +11696,7 @@ extension on Translations {
 			'room.switchLive' => '直播中',
 			'room.switchShowGrid' => '切换为网格',
 			'room.switchShowList' => '切换为列表',
-			'room.twitchCookieExpired' => 'Twitch 的 Cookie 已失效，弹幕已改为匿名接收，请重新填写 Twitch Cookie',
+			'room.twitchCookieExpired' => 'Twitch Cookie 已失效，弹幕改为匿名接收；请重新填写。',
 			'room.bilibiliGuestNames' => '当前以访客身份连接，B 站弹幕不会显示完整昵称',
 			'room.bilibiliLoginExpired' => 'B 站登录似乎已失效：昵称全部被打码，请重新登录',
 			'room.danmakuConnectFailed' => ({required Object reason}) => '弹幕连接失败（${reason}），直播画面不受影响',
@@ -11822,14 +11822,14 @@ extension on Translations {
 			'settings.refreshRateUnknown' => '未知',
 			'settings.refreshRateLowPower' => '低电量模式',
 			'settings.refreshRateMode' => '刷新率模式',
-			'settings.refreshRateModeDesc' => '节能把刷新率交给系统（支持内容匹配的平台固定 60 Hz）；均衡在 Android 上只在触摸或滚动时升频，停手 1.5 秒后释放；性能在前台保持最高刷新率。平台不支持的选项不会出现。',
+			'settings.refreshRateModeDesc' => '节能交给系统自动调；均衡只在触摸或滚动时升频，停手 1.5 秒后释放；性能恒定最高。平台不支持的选项不显示。',
 			'settings.refreshRatePowerSaving' => '节能',
 			'settings.refreshRateBalanced' => '均衡（交互自适应）',
 			'settings.refreshRatePerformance' => '性能（最高刷新率）',
 			'settings.refreshRateReadOnly' => '此平台只支持读取刷新率',
-			'settings.refreshRateReadOnlyDesc' => '系统没有向应用开放刷新率请求接口；上面显示的是当前显示器的实际值。',
+			'settings.refreshRateReadOnlyDesc' => '系统未开放刷新率接口；显示的是显示器实际值。',
 			'settings.refreshRateMatchVideo' => '播放时匹配视频帧率',
-			'settings.refreshRateMatchVideoDesc' => '让屏幕刷新率是视频帧率的整数倍，画面更匀；只在不闪屏时切换。直播源未声明帧率时不做调整。',
+			'settings.refreshRateMatchVideoDesc' => '刷新率取视频帧率的整数倍，画面更匀；只在不会闪屏时切换，源未声明帧率则不动。',
 			'settings.refreshRateMatchVideoSingle' => ({required Object rate}) => '这台设备只有 ${rate} Hz，用不上',
 			'settings.refreshRateMatchVideoUnsupported' => '此设备的系统接口不支持按视频内容切换刷新率',
 			'settings.updateGroup' => '更新',
@@ -11844,7 +11844,7 @@ extension on Translations {
 			'settings.windowSizeApplyFailed' => '窗口尺寸应用失败。',
 			'settings.windowSizeApplied' => '窗口尺寸已应用。',
 			'settings.startup' => '开机启动',
-			'settings.startupDesc' => '登录系统后自动打开 Pure Live；开关读取的是系统里的真实启动项。',
+			'settings.startupDesc' => '登录系统后自动打开 Pure Live；开关读取真实启动项。',
 			'settings.startupFailed' => '开机启动设置失败',
 			'settings.splashAnimation' => '启动动画',
 			'settings.splashAnimationDesc' => '启动时先显示应用标记，再进入主界面；下次启动生效。',
@@ -11896,7 +11896,7 @@ extension on Translations {
 			'settings.dynamicColor' => '动态取色',
 			'settings.dynamicColorDescription' => '使用系统壁纸或强调色生成主题，覆盖当前主题色。',
 			'settings.liquidGlass' => '液体玻璃',
-			'settings.liquidGlassDescription' => '首页底栏悬浮成毛玻璃，页面从下面透出来；内存 4 GB 及以下的安卓手机不模糊，只半透明。',
+			'settings.liquidGlassDescription' => '首页底栏悬浮成毛玻璃；4 GB 以下机型只半透明不模糊。',
 			'settings.themeColorTitle' => '主题色',
 			'settings.themeColorPresets' => '预设颜色',
 			'settings.themeColorCustom' => '自定义颜色',
@@ -11926,7 +11926,7 @@ extension on Translations {
 			'settings.followsAutoRefresh' => '关注自动刷新',
 			'settings.followsAutoRefreshDesc' => '停留在关注页时按间隔刷新关注列表。',
 			'settings.liveAlert' => '开播提醒',
-			'settings.liveAlertDesc' => '关注的主播开播时发一条系统通知；应用运行时每 15 分钟检查一次。',
+			'settings.liveAlertDesc' => '关注的主播开播时发系统通知；运行时每 15 分钟检查。',
 			'settings.liveAlertTags' => '提醒标签',
 			'settings.liveAlertTagsDesc' => '只提醒带有所选标签的关注；不选则覆盖全部关注。',
 			'settings.liveAlertTagsAll' => '全部关注',
@@ -11976,7 +11976,7 @@ extension on Translations {
 			'settings.githubMirrorFailed' => ({required Object error}) => '远程获取失败：${error}',
 			'settings.githubMirrorAdd' => '添加镜像地址',
 			'settings.githubMirrorAddTitle' => '添加镜像地址',
-			'settings.githubMirrorAddDesc' => '填一个以 https:// 开头的镜像域名，下载时作为前缀拼在原始地址前。',
+			'settings.githubMirrorAddDesc' => '填一个 https:// 开头的镜像域名，作为下载前缀。',
 			'settings.githubMirrorAddInvalid' => '地址无效：需要以 https:// 开头',
 			'settings.githubMirrorEmpty' => '没有可用的镜像地址。',
 			'settings.githubMirrorRestore' => '恢复内置镜像',
@@ -12000,7 +12000,7 @@ extension on Translations {
 			'settings.showFlyingDanmakuDesc' => '关闭后弹幕只在聊天列表里显示。',
 			'settings.danmakuInteractionGroup' => '画面弹幕交互',
 			'settings.styleTapInteraction' => '点击画面弹幕查看操作',
-			'settings.styleTapInteractionDesc' => '点按画面上的弹幕打开操作面板，可复制内容、屏蔽用户或关键词。关闭后点按画面只显示或隐藏控制条。',
+			'settings.styleTapInteractionDesc' => '点按弹幕打开面板，可复制或屏蔽；关闭后点按画面只切换控制条。',
 			'settings.styleLongPressInteraction' => '长按画面弹幕查看操作',
 			'settings.styleLongPressInteractionDesc' => '长按画面上的弹幕打开同一操作面板；关闭后长按不再命中弹幕。',
 			'settings.danmakuStyleGroup' => '弹幕样式',
@@ -12013,7 +12013,7 @@ extension on Translations {
 			'settings.chatListLayoutGroup' => '聊天列表排版',
 			'settings.danmakuFont' => '弹幕字体',
 			'settings.danmakuFontDescription' => '画面飞行弹幕使用的字体；聊天列表保持界面字体。',
-			'settings.danmakuFontManagerDescription' => '选择弹幕字体：MiSans 默认随应用提供，国内字体来自免费商用字体库，国外字体来自 Google Fonts；选中立即应用到所有直播间的飞行弹幕。',
+			'settings.danmakuFontManagerDescription' => 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于飞行弹幕。',
 			'settings.styleFontSize' => '字体大小',
 			'settings.styleFontSizeDesc' => '画面飞行弹幕字形的高度，单位像素。',
 			'settings.styleFontWeight' => '字体粗细',
@@ -12051,10 +12051,10 @@ extension on Translations {
 			'settings.styleFpsDesc' => '飞行层每秒重绘的次数；越高越顺滑，也更耗性能。',
 			'settings.styleFpsValue' => ({required Object count}) => '${count} FPS',
 			'settings.styleMaxVisible' => '同屏最大弹幕条数',
-			'settings.styleMaxVisibleDesc' => '画面上同时飞的弹幕最多几条，默认 48；少一些更清楚、更省电。',
+			'settings.styleMaxVisibleDesc' => '同屏弹幕最多几条，默认 48；少些更清楚省电。',
 			'settings.styleMaxVisibleValue' => ({required Object count}) => '${count} 条',
 			'settings.styleMassMode' => '海量模式',
-			'settings.styleMassModeDesc' => '提高同屏上限到 1000 条并使用实时渲染，适合弹幕非常密集的直播间。',
+			'settings.styleMassModeDesc' => '同屏上限提到 1000 条并用实时渲染，适合超密弹幕。',
 			'settings.styleItalic' => '斜体',
 			'settings.styleTextColor' => '文字颜色',
 			'settings.styleStrokeColor' => '描边颜色',
@@ -12088,7 +12088,7 @@ extension on Translations {
 			'settings.danmakuColorPurple' => '紫色',
 			'settings.danmakuColorPink' => '粉色',
 			'settings.pipDanmakuScaleAuto' => '小窗弹幕比例自动',
-			'settings.pipDanmakuScaleAutoDesc' => '开启后按画中画窗口宽度自动缩小弹幕，最大不超过主弹幕大小；关闭后使用下方固定比例。',
+			'settings.pipDanmakuScaleAutoDesc' => '按小窗宽度自动缩小弹幕，不超过主弹幕大小；关闭用下方固定比例。',
 			'settings.pipDanmakuScale' => '小窗弹幕比例',
 			'settings.pipDanmakuScaleDesc' => '关闭自动小窗比例时使用的固定倍率。',
 			'settings.styleReset' => '恢复默认',
@@ -12100,19 +12100,19 @@ extension on Translations {
 			'settings.danmakuPresetCustom' => '自定义',
 			'settings.preset' => '预设',
 			'settings.prefScope' => '设置生效范围',
-			'settings.prefScopeDesc' => '选择这些更改只在本窗口生效，还是应用到主窗口和所有直播间窗口。',
+			'settings.prefScopeDesc' => '选择只在本窗口生效，还是应用到主窗口与全部直播间窗口。',
 			'settings.prefScopeLocal' => '仅本窗口',
 			'settings.prefScopeGlobal' => '所有窗口',
 			'settings.windowGroup' => '窗口',
 			'settings.roomWindow' => '直播间在独立窗口打开',
-			'settings.roomWindowDesc' => '每个直播间一个独立窗口，像聊天软件一样；关闭后在主窗口内浏览。仅桌面端。',
+			'settings.roomWindowDesc' => '每个直播间一个独立窗口；关闭后在主窗口内浏览。仅桌面端。',
 			'settings.closeAction' => '关闭窗口时',
-			'settings.closeActionDesc' => '关闭按钮的行为；隐藏到托盘时应用保持运行，点击托盘图标即可恢复窗口。',
+			'settings.closeActionDesc' => '隐藏到托盘时应用保持运行，点托盘图标恢复窗口。',
 			'settings.closeQuit' => '退出应用',
 			'settings.closeMinimise' => '最小化到任务栏',
 			'settings.closeHideToTray' => '隐藏到托盘',
 			'settings.noExitConfirm' => '退出不再询问',
-			'settings.noExitConfirmDescription' => '开启后，点关闭按钮直接执行上面的行为；关闭此项则每次关闭都先确认。',
+			'settings.noExitConfirmDescription' => '开启后点关闭直接执行上面的行为；关闭则每次先确认。',
 			'settings.closeWindowTitle' => '关闭窗口',
 			'settings.closeWindowQuestion' => '要退出应用，还是最小化后继续运行？',
 			'settings.closeDontAskAgain' => '不再询问',
@@ -12124,7 +12124,7 @@ extension on Translations {
 			'settings.trayScreenshotSaved' => ({required Object path}) => '已保存到 ${path}',
 			'settings.trayScreenshotFailed' => '截图失败：没有正在播放的房间或引擎不支持',
 			'settings.font' => '字体',
-			'settings.fontDescription' => '界面字体：MiSans 随应用打包并在全平台默认使用，也可切换国内或国外字体。',
+			'settings.fontDescription' => 'MiSans 随应用打包并默认使用，也可换国内或国外字体。',
 			'settings.fontDefault' => 'MiSans（默认）',
 			'settings.fontSystemChinese' => '系统字体',
 			'settings.fontRegionDomestic' => '国内',
@@ -12138,7 +12138,7 @@ extension on Translations {
 			'settings.fontManagerPreviewAction' => '预览',
 			'settings.fontManagerPreviewPending' => '下载后可预览',
 			'settings.fontManagerGoogle' => 'Google 字体',
-			'settings.fontManagerDescription' => '选择界面字体：MiSans 默认随应用提供，国内字体来自免费商用字体库，国外字体来自 Google Fonts；选中立即应用到全部界面。',
+			'settings.fontManagerDescription' => 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于全部界面。',
 			'settings.fontManagerSystemDescription' => ({required Object face}) => '由系统提供，本机使用 ${face}。',
 			'settings.fontManagerBundledNote' => '随应用打包，所有平台默认使用。',
 			'settings.fontManagerGoogleNote' => '首次选择时从 Google Fonts 获取并缓存在本机，之后离线可用。',
@@ -12204,7 +12204,7 @@ extension on Translations {
 			'settings.cacheLimitOff' => '不自动清理',
 			'settings.cacheHint' => '封面与头像会在本机缓存 30 天，过期或超限时自动清理。',
 			'settings.preferPlatform' => '首选平台',
-			'settings.preferPlatformDesc' => '进入热门或分区时优先显示的平台，也是分区房间列表与搜索起始的平台。',
+			'settings.preferPlatformDesc' => '热门与分区的优先平台，也是分区列表与搜索的起始平台。',
 			'settings.preferPlatformFilterHint' => '搜索平台',
 			'settings.preferPlatformFilterEmpty' => '没有匹配的平台',
 			'settings.sitesOrderReset' => '恢复默认顺序',
@@ -12260,7 +12260,7 @@ extension on Translations {
 			'settings.musicEqDescription' => '音效总开关、内置预设、十段均衡器与预放增益。',
 			'settings.musicDesktopLyricDescription' => '悬浮歌词的开关、锁定、字号、颜色与对齐。',
 			'settings.vodQuality' => '默认清晰度',
-			'settings.vodQualityDesc' => '打开视频时优先请求的清晰度；未登录时 Bilibili 可能只提供 720P 及以下。',
+			'settings.vodQualityDesc' => '打开视频优先请求的清晰度；未登录 B 站可能只有 720P。',
 			'settings.vodQuality720' => '720P',
 			'settings.vodQuality1080' => '1080P',
 			'settings.vodQuality1080Plus' => '1080P+',
@@ -12286,22 +12286,22 @@ extension on Translations {
 			'settings.playerPresets' => '播放预设',
 			'settings.playerPresetsHint' => '一键切换解码、输出与缓冲策略；只影响播放器。',
 			'settings.playerOneClick' => '一键推荐配置',
-			'settings.playerOneClickDesc' => '把播放内核参数恢复到「标准」预设，撤销之前的手动调优；正在播放的直播立即重新应用，其他播放器下次打开生效。',
+			'settings.playerOneClickDesc' => '恢复「标准」预设，撤销手动调优；正在播放的立即重应用，其余下次打开生效。',
 			'settings.playerOneClickConfirmTitle' => '应用推荐配置？',
 			'settings.playerOneClickConfirmBody' => ({required Object preset}) => '将把播放内核设为「${preset}」，撤销手动输出与解码器选择；正在播放的直播会短暂重建画面。',
 			'settings.playerOneClickApplied' => ({required Object preset}) => '已应用「${preset}」',
 			'settings.playerCompatFix' => '花屏 / 绿屏修复',
-			'settings.playerCompatFixDesc' => '改用 mediacodec_embed 直出表面并强制硬解，仅 Android 提供；音画不同步或画面撕裂时也先试这个。',
+			'settings.playerCompatFixDesc' => 'mediacodec_embed 直出表面并强制硬解，仅 Android；音画不同步或画面撕裂时先试这个。',
 			'settings.presetBalanced' => '标准（引擎默认）',
-			'settings.presetBalancedDesc' => '全部交给引擎自己决定，仅附加直播所需的解复用与缓存调优。大多数设备和网络下这是最稳的选择，也是其它预设的基线。',
+			'settings.presetBalancedDesc' => '全部交给引擎决定，仅附加直播所需的缓冲调优；大多数设备最稳，也是其它预设的基线。',
 			'settings.presetCompat' => 'Android 硬解兼容',
-			'settings.presetCompatDesc' => 'Android 上改用 mediacodec_embed 直出表面并强制 mediacodec 硬解。适合默认 gl/ffmpeg 路径出现花屏、绿屏或音画不同步的机型。',
+			'settings.presetCompatDesc' => 'Android 专用：mediacodec_embed 直出表面并强制硬解。默认路径花屏、绿屏或音画不同步时使用。',
 			'settings.presetRtxVsr' => 'RTX 视频超分辨率',
-			'settings.presetRtxVsrDesc' => 'Windows + NVIDIA 显卡专用：d3d11va 硬解并启用 RTX Video Super Resolution 超分滤镜，把低清晰度源放大到高分辨率屏幕上观看。',
+			'settings.presetRtxVsrDesc' => 'Windows + NVIDIA 专用：d3d11va 硬解叠加 RTX Video Super Resolution，把低清源放大到高分屏。',
 			'settings.presetLowEnd' => '低配流畅',
-			'settings.presetLowEndDesc' => '软解线程数上限 2、lowres 降采样、跳过非参考帧环路滤波、缩小缓冲。把 CPU 交给画面本身，适合核显或老机器。',
+			'settings.presetLowEndDesc' => '软解线程上限 2、lowres 降采样、跳过环路滤波、小缓冲；核显或老机器用。',
 			'settings.presetStableNetwork' => '弱网稳定',
-			'settings.presetStableNetworkDesc' => '加大解复用缓冲与预读、开启强制可拖动与重连退避。用内存换卡顿，适合跨网、跨运营商或信号边缘的直播源。',
+			'settings.presetStableNetworkDesc' => '加大缓冲与预读、开启强制可拖动与重连退避；用内存换流畅，适合跨网或信号边缘的源。',
 			'settings.presetLowLatency' => '低延迟',
 			'settings.presetLowLatencyDesc' => '最小缓冲 + 解码/渲染双端丢帧，牺牲抗抖动换低延迟。适合赛事直播、连麦互动等时效优先的场景。',
 			'settings.playerPresetApplied' => '已应用预设',
@@ -12314,7 +12314,7 @@ extension on Translations {
 			'settings.playerProxyManual' => '单独设置',
 			'settings.hardwareDecoder' => '硬件解码器 (--hwdec)',
 			'settings.hardwareDecoderDesc' => '选择 mpv 的 hwdec 解码器（自定义输出开启时生效）。',
-			'settings.hardwareDecoderAutoHint' => '未开启自定义输出，解码器由 mpv 自动选择（auto-safe）；如需指定，请在「高级设置」开启「自定义驱动与硬件加速」。',
+			'settings.hardwareDecoderAutoHint' => '未开启自定义输出时由 mpv 自动选择（auto-safe）；要指定请在「高级设置」开启自定义驱动。',
 			'settings.hardwareDecoderSoftware' => 'no（软件解码，兼容性最好）',
 			'settings.hardwareDecoderAuto' => 'auto（任意硬解路径，兼容性有风险）',
 			'settings.hardwareDecoderAutoSafe' => 'auto-safe（白名单内安全硬解，推荐）',
@@ -12334,10 +12334,10 @@ extension on Translations {
 			'settings.hardwareDecoderMediacodec' => 'mediacodec（Android 直通，推荐）',
 			'settings.hardwareDecoderMediacodecCopy' => 'mediacodec-copy（Android + 拷回内存）',
 			'settings.customOutput' => '自定义驱动与硬件加速',
-			'settings.customOutputDesc' => '开启后用所选视频输出、音频输出与解码器，代替「硬件解码」开关。',
+			'settings.customOutputDesc' => '开启后用所选输出与解码器，代替「硬件解码」开关。',
 			'settings.customOutputHardwareTakeover' => '已由「自定义驱动与硬件加速」接管，解码器在下方选择。',
 			'settings.videoOutput' => '视频输出',
-			'settings.videoOutputHint' => 'gpu / gpu-next / direct3d 可能让 mpv 另开窗口；嵌入画面通常保持 libmpv 或 auto。',
+			'settings.videoOutputHint' => 'gpu / gpu-next / direct3d 可能另开 mpv 窗口；嵌入画面保持 libmpv 或 auto。',
 			'settings.videoOutputAuto' => 'auto（跟随 mpv 默认，推荐）',
 			'settings.videoOutputLibmpv' => 'libmpv（内嵌 Flutter 纹理）',
 			'settings.videoOutputGpu' => 'gpu（独立 mpv 窗口，完整着色器）',
@@ -12369,7 +12369,7 @@ extension on Translations {
 			'settings.videoSyncDisplayDesync' => '显示时钟 + 不同步',
 			'settings.videoSyncDesync' => '完全不同步（调试）',
 			'settings.interpolation' => '运动插帧 (--interpolation)',
-			'settings.interpolationDesc' => '需配合「显示重采样」同步模式；提升平移画面平滑度，消耗 GPU。',
+			'settings.interpolationDesc' => '需配合「显示重采样」；平移画面更顺滑，消耗 GPU。',
 			'settings.scaleKernel' => '缩放算法',
 			'settings.scaleKernelDesc' => '放大画面时的重采样算法。',
 			'settings.scaleLanczos' => 'Lanczos（均衡推荐）',
@@ -12385,12 +12385,12 @@ extension on Translations {
 			'settings.scaleBilinear' => '双线性（最快，最糊）',
 			'settings.scaleNearest' => '最近邻（块状）',
 			'settings.deinterlace' => '反交错 (--deinterlace)',
-			'settings.deinterlaceDesc' => '直播源基本都是逐行的，保持自动即可；只有老电视信号或采集卡源才需要开启。',
+			'settings.deinterlaceDesc' => '直播源基本都是逐行的，保持自动；老电视信号或采集卡才需要。',
 			'settings.deinterlaceAuto' => '自动',
 			'settings.deinterlaceOff' => '关闭',
 			'settings.deinterlaceOn' => '开启（隔行源才需要）',
 			'settings.hwdecCodecs' => '硬解编码范围 (--hwdec-codecs)',
-			'settings.hwdecCodecsDesc' => '限制哪些编码格式走硬解；某编码黑屏或花屏时，把它从列表移除即可回退软解。',
+			'settings.hwdecCodecsDesc' => '某编码黑屏或花屏时把它移出列表，即可回退软解。',
 			'settings.hwdecCodecsAll' => '全部编码格式',
 			'settings.hwdecCodecsH264Hevc' => 'H264 + HEVC',
 			'settings.hwdecCodecsH264HevcVp9' => 'H264 + HEVC + VP9',
@@ -12484,13 +12484,13 @@ extension on Translations {
 			'settings.playerAdvancedRequiresMpv' => '这些选项只对 mpv 内核生效。',
 			'settings.superResolution' => '超分辨率',
 			'settings.superResolutionDescription' => '用 Anime4K 着色器实时放大画面；需要桌面 GPU。',
-			'settings.superResolutionHint' => '基于 Anime4K 的实时超分，仅桌面 GPU 可实时运行；当前仅 Windows 生效。',
+			'settings.superResolutionHint' => '基于 Anime4K 的实时超分，仅 Windows 桌面 GPU 可实时运行。',
 			'settings.superResolutionOff' => '关闭',
 			'settings.superResolutionEfficiency' => '效率档',
 			'settings.superResolutionQuality' => '质量档',
 			'settings.recordingDescription' => '录制目录、文件命名与容量上限。',
 			'settings.preferredQuality' => '首选画质',
-			'settings.preferredQualityDesc' => '进入房间时优先选用的清晰度档位；站点没有同名画质时，按档位比例选最接近的。默认原画。',
+			'settings.preferredQualityDesc' => '进入房间优先选用的清晰度；没有同名画质时按档位就近选择。',
 			'settings.preferredQualityCellular' => '蜂窝网络首选画质',
 			'settings.preferredQualityCellularDesc' => '使用移动数据时优先选用的清晰度档位；Wi-Fi 与有线仍使用上面的首选画质。',
 			'settings.qualityAuto' => '自动（站点默认）',
@@ -12505,16 +12505,16 @@ extension on Translations {
 			'settings.defaultMuted' => '默认静音',
 			'settings.defaultMutedDesc' => '每个新房间打开时保持静音。',
 			'settings.defaultVolume' => '默认音量',
-			'settings.defaultVolumeDesc' => '手机/平板新播放器默认 50%，桌面默认 100%；滑杆调整当前平台。',
+			'settings.defaultVolumeDesc' => '移动端新播放器默认 50%，桌面 100%；滑杆只调当前平台。',
 			'settings.volumeWheelStep' => '滚轮音量步长',
 			'settings.volumeWheelStepDesc' => '鼠标滚轮与方向键每次调节的音量幅度。',
 			'settings.volumeWheelStepValue' => ({required int percent}) => '${percent}%',
 			'settings.globalMute' => '全局静音',
-			'settings.globalMuteDesc' => '立即静音所有正在播放和之后打开的房间、频道与视频；关闭后恢复各播放器自身的静音设置。',
+			'settings.globalMuteDesc' => '静音所有正在播放与之后打开的房间、频道和视频；关闭后各自恢复。',
 			'settings.backgroundPlay' => '后台播放',
-			'settings.backgroundPlayDesc' => '离开应用后继续播放声音；关闭时切到后台会暂停，回到应用后继续。',
+			'settings.backgroundPlayDesc' => '离开应用后继续出声；关闭则切后台即暂停。',
 			'settings.asmrSleepMode' => 'ASMR 睡眠模式',
-			'settings.asmrSleepModeDesc' => '进入直播间时自动切换为音频模式，并在设定时间后暂停。仅 Android。',
+			'settings.asmrSleepModeDesc' => '进直播间自动切音频模式，到时暂停。仅 Android。',
 			'settings.asmrSleepTimer' => 'ASMR 睡眠时长',
 			'settings.asmrSleepTimerDesc' => '音频模式自动停止前的分钟数，范围 15–1440。',
 			'settings.asmrSleepCustomMinutes' => '自定义分钟数',
@@ -12528,7 +12528,7 @@ extension on Translations {
 			'settings.miniDanmakuVisibleDesc' => '缩成小窗时是否继续显示飞行弹幕。',
 			'settings.miniDanmakuHint' => '弹幕样式与「弹幕」页共用。',
 			'settings.engineTitle' => '播放内核',
-			'settings.engineDesc' => '选择直播与视频使用的播放内核；mpv 为默认，移动端还可选 IJK 或 BetterPlayer。',
+			'settings.engineDesc' => '直播与视频的播放内核；mpv 为默认，移动端另可选 IJK 或 BetterPlayer。',
 			'settings.playerEngineMpv' => 'mpv 播放器',
 			'settings.playerEngineIjk' => 'IJK 播放器',
 			'settings.playerEngineBetterPlayer' => 'BetterPlayer',
@@ -12541,7 +12541,7 @@ extension on Translations {
 			'settings.maxConcurrentRefreshDesc' => '同时向平台查询的房间数，参考推荐 4，范围 1–20。',
 			'settings.recommended' => '推荐',
 			'settings.refreshThumbnails' => '自动刷新封面',
-			'settings.refreshThumbnailsDesc' => '定期清空图片缓存，让封面、头像和台标重新下载；不会清空观看历史或关注。',
+			'settings.refreshThumbnailsDesc' => '定期清空图片缓存，封面、头像和台标重新下载；不影响历史与关注。',
 			'settings.thumbnailRefreshInterval' => '封面刷新间隔',
 			'settings.navHomeMenuTitle' => '首页菜单',
 			'settings.navHomeMenuDescription' => '侧栏、抽屉与底栏显示的首页入口，以及它们的顺序。',
@@ -12567,7 +12567,7 @@ extension on Translations {
 			'settings.navBackground' => '背景',
 			'settings.backgroundDescription' => '用图片或视频铺在应用后面，可上传本地文件或填写地址。',
 			'settings.backgroundImagesTitle' => '在线图片',
-			'settings.backgroundImagesDescription' => '官方、Wallhaven、Bing 与 deepin 图片源，选中后预览再应用。',
+			'settings.backgroundImagesDescription' => '官方、Wallhaven、Bing 与 deepin 图源，先预览再应用。',
 			'settings.backgroundVideosTitle' => '在线视频',
 			'settings.navRandomWallpaper' => '随机图源',
 			'settings.randomWallpaperDescription' => '按分组从公开随机接口取图，预览后再应用。',
@@ -12610,16 +12610,16 @@ extension on Translations {
 			'settings.backgroundMask' => '蒙层浓度',
 			'settings.backgroundMaskDescription' => '在壁纸上盖一层压暗或提亮的蒙层；浓度越高文字越清楚，壁纸越淡。',
 			'settings.backgroundOverlayBlur' => '背景模糊',
-			'settings.backgroundOverlayBlurDescription' => '把壁纸本身模糊掉，图片、视频、纯色和渐变都生效；0 保持清晰。',
+			'settings.backgroundOverlayBlurDescription' => '模糊壁纸本身，图片、视频、纯色、渐变都生效；0 保持清晰。',
 			'settings.backgroundClearDescription' => '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。',
 			'settings.backgroundClear' => '清除背景',
 			'settings.backgroundGlass' => '界面玻璃',
 			'settings.backgroundGlassEnable' => '启用',
-			'settings.backgroundGlassDescription' => '卡片、列表、房间和各浮动层的底色都变半透明；菜单、面板等浮层再模糊背后的内容，让壁纸透出来。',
+			'settings.backgroundGlassDescription' => '卡片、列表与浮层底色变半透明，浮层再模糊背后内容，让壁纸透出来。',
 			'settings.backgroundGlassFill' => '面板填充',
 			'settings.backgroundGlassFillDescription' => '卡片、列表和浮层底色的不透明度；越低壁纸透得越多，文字对比越弱。',
 			'settings.backgroundGlassBlur' => '浮层模糊',
-			'settings.backgroundGlassBlurDescription' => '菜单、面板等浮层背后内容的模糊半径；0 只做半透明，不模糊。卡片和列表只有填充。',
+			'settings.backgroundGlassBlurDescription' => '浮层背后内容的模糊半径；0 只半透明不模糊。',
 			'settings.checkUpdate' => '检查更新',
 			'settings.checkUpdateDesc' => '从项目的发行页读取最新版本。',
 			'settings.checkingUpdate' => '正在检查更新…',
@@ -12659,7 +12659,7 @@ extension on Translations {
 			'settings.downloadManagerTitle' => '下载管理',
 			'settings.downloadManagerDesc' => '壁纸的下载任务、记录与保存目录。',
 			'settings.downloadManagerEmpty' => '还没有下载记录',
-			'settings.downloadManagerEmptyDesc' => '在预览或图库里点「下载」，任务会出现在这里，文件保存到上面的目录。',
+			'settings.downloadManagerEmptyDesc' => '在预览或图库点「下载」，任务会出现在这里。',
 			'settings.downloadStatusRunning' => '下载中',
 			'settings.downloadStatusDone' => '已完成',
 			'settings.downloadStatusFailed' => '下载失败',
@@ -12725,19 +12725,19 @@ extension on Translations {
 			'settings.releaseKindOther' => '文件',
 			'settings.sitesKeepOne' => '至少保留一个平台',
 			'settings.autoPip' => '离开应用时自动小窗',
-			'settings.autoPipDesc' => '播放中离开应用时，把画面留在其他应用上的小窗里；需要「显示在其他应用的上层」权限。',
+			'settings.autoPipDesc' => '播放中离开应用时把画面留在系统小窗；需要悬浮窗权限。',
 			'settings.floatPlay' => '返回时悬浮播放',
-			'settings.floatPlayDesc' => '离开直播间返回其他页面时，把正在播放的画面留在一个可拖动的小窗里；关闭小窗会停止播放。',
+			'settings.floatPlayDesc' => '离开直播间时把画面留在可拖动的小窗；关闭小窗即停止播放。',
 			'settings.windowsPipAlwaysOnTop' => '小窗始终置顶',
-			'settings.windowsPipAlwaysOnTopDesc' => 'Windows 画中画小窗保持在其他窗口之上；正在播放的小窗会立即应用。',
+			'settings.windowsPipAlwaysOnTopDesc' => '小窗保持在其他窗口之上；正在播放的小窗立即应用。',
 			'settings.rememberPipPosition' => '记住小窗位置',
 			'settings.rememberPipPositionDesc' => '再次进入小窗时回到上次的尺寸、位置和显示器；关闭后每次使用默认位置。',
 			'settings.windowsPipBaseSize' => '小窗基准尺寸',
 			'settings.windowsPipBaseSizeDesc' => '横向视频的长边；竖向视频时作为高。范围 200–720。',
 			'settings.windowsPipMinWidth' => '小窗最小宽度',
-			'settings.windowsPipMinWidthDesc' => '小窗可拖动到的最小宽度，范围 100–320；只作用于小窗，离开后恢复应用窗口的常规下限。',
+			'settings.windowsPipMinWidthDesc' => '小窗最小宽度，100–320；离开小窗后恢复常规下限。',
 			'settings.windowsPipMinHeight' => '小窗最小高度',
-			'settings.windowsPipMinHeightDesc' => '小窗可拖动到的最小高度，范围 60–240；只作用于小窗，离开后恢复应用窗口的常规下限。',
+			'settings.windowsPipMinHeightDesc' => '小窗最小高度，60–240；离开小窗后恢复常规下限。',
 			'settings.fullscreenDefault' => '自动全屏',
 			'settings.fullscreenDefaultDesc' => '当进入直播播放页，自动进入全屏',
 			'settings.keepScreenOn' => '播放时保持屏幕常亮',
@@ -12752,7 +12752,7 @@ extension on Translations {
 			'settings.portraitEntryOff' => '已关闭',
 			'settings.portraitDetectionGroup' => '识别与普通页布局',
 			'settings.portraitSmartDetection' => '智能识别竖屏直播源',
-			'settings.portraitSmartDetectionDesc' => '根据解码后的真实画面尺寸识别竖屏直播；关闭后竖屏源按普通横屏页面显示。',
+			'settings.portraitSmartDetectionDesc' => '按解码后的真实画面尺寸识别竖屏；关闭后竖屏源按横屏显示。',
 			'settings.portraitAdaptiveHeight' => '普通页自适应视频高度',
 			'settings.portraitAdaptiveHeightDesc' => '竖屏源增大观看区域，同时保留足够的聊天与弹幕列表空间。',
 			'settings.portraitLayoutMode' => '普通页布局模式',
@@ -12771,18 +12771,18 @@ extension on Translations {
 			'settings.audiencePopularity' => '热度',
 			'settings.audienceTotal' => '累计观看',
 			'settings.audienceDisplayGroup' => '卡片显示与排行方式',
-			'settings.audienceRankingNote' => '按观众排序使用卡片当前显示的数值；「真实在线人数优先」只在「跟随平台」显示方式下、且只对已开启的平台生效。',
+			'settings.audienceRankingNote' => '排序用卡片显示的数值；「真实在线」仅在跟随平台下、已开启的平台生效。',
 			'settings.audienceRealOnlineGroup' => '真实在线人数',
 			'settings.audienceRealOnline' => '真实在线人数优先',
-			'settings.audienceRealOnlineDesc' => '跟随平台显示时，对已开启的平台优先使用同时在线人数；其余平台保留热度或累计观看。',
+			'settings.audienceRealOnlineDesc' => '跟随平台显示时，已开启的平台优先用同时在线人数，其余保留热度或累计。',
 			'settings.audienceNeedsAutomaticMode' => '先在「观众数显示」中选择「跟随平台」，真实在线优先才会生效。',
 			'settings.audiencePlatformsGroup' => '真实在线平台',
-			'settings.audiencePlatformsDesc' => '只有公开返回明确并发人数的平台会出现在这里；关闭后该平台仍按热度或累计观看显示。',
+			'settings.audiencePlatformsDesc' => '只有公开返回并发人数的平台会出现；关闭后该平台仍按热度显示。',
 			'settings.audienceSourceRoomList' => '来源：房间列表/详情，可直接排行',
 			'settings.audienceSourceRoomRealtime' => '来源：进入直播间后的实时消息',
 			'settings.audiencePlatformNeedsOnline' => '先开启「真实在线人数优先」',
 			'settings.audienceHeatOnlyGroup' => '仅热度或累计观看的平台',
-			'settings.audienceHeatOnlyDesc' => '这些平台的公开接口没有同时在线人数，卡片照常标明热度或累计观看。',
+			'settings.audienceHeatOnlyDesc' => '这些平台的接口没有并发人数，卡片照常标明热度或累计观看。',
 			'settings.backgroundSolid' => '纯色',
 			'settings.backgroundGradient' => '渐变',
 			'settings.backgroundPresets' => '预设',
@@ -12838,18 +12838,18 @@ extension on Translations {
 			'settings.tagSavedToast' => ({required String name}) => '已保存标签“${name}”',
 			'settings.tagDeletedToast' => ({required String name}) => '已删除标签“${name}”',
 			'settings.tagDeleteTitle' => ({required String name}) => '确定要永久删除标签“${name}”吗？',
-			'settings.tagDeleteRoomsHint' => ({required int count}) => '${count} 个关注直播间会移出这个标签，直播间本身不会被取消关注。',
+			'settings.tagDeleteRoomsHint' => ({required int count}) => '${count} 个直播间会移出该标签，不会被取消关注。',
 			'settings.tagDeleteBody' => '该标签还没有直播间在使用。',
 			'settings.tagEmptyTitle' => '暂无自定义标签',
-			'settings.tagEmptyHint' => '标签用来给关注的直播间分组：在关注页的卡片菜单里给直播间加标签，关注页可以按标签筛选。',
+			'settings.tagEmptyHint' => '在关注页的卡片菜单里给直播间加标签，即可按标签筛选。',
 			'settings.tagSortTip' => '拖动左侧把手调整顺序，关注页的标签栏按这个顺序显示。',
 			'settings.tagRooms' => ({required int count}) => '${count} 个直播间',
 			'settings.showUnplayableTitle' => '显示不能直接播放的直播',
-			'settings.showUnplayableDesc' => '不能直接播放（付费、加锁、仅限 App 等）的直播也显示在热门与分区房间；关注和搜索始终显示',
+			'settings.showUnplayableDesc' => '付费、加锁、仅限 App 的直播也显示在热门与分区；关注和搜索始终显示。',
 			'settings.windowsPipFreeAspect' => '小窗自由比例',
-			'settings.windowsPipFreeAspectDesc' => '开启后可单独压小高度或拉宽窗口；画面按比例适配，形状不符的一侧会留黑边。关闭时窗口始终等于视频形状。',
+			'settings.windowsPipFreeAspectDesc' => '可单独压小高度或拉宽窗口，不符的一侧留黑边；关闭时窗口始终等于视频形状。',
 			'settings.windowsPipResetPosition' => '重置小窗位置和大小',
-			'settings.windowsPipResetPositionDesc' => '清除已保存的小窗尺寸与位置，下次从应用所在显示器右下角打开。',
+			'settings.windowsPipResetPositionDesc' => '清除已存的小窗尺寸与位置，下次从右下角打开。',
 			'settings.windowsPipResetPositionConfirm' => '确定要清除已保存的小窗位置和大小吗？',
 			'settings.windowsPipResetAction' => '重置',
 			'settings.windowsPipResetPositionSuccess' => '已清除保存的小窗位置和大小',
@@ -12872,7 +12872,7 @@ extension on Translations {
 			'settings.styleBottomMargin' => '底部留白（像素）',
 			'settings.styleBottomMarginDesc' => '画面底部不显示弹幕的高度，避免挡住字幕，0–300。',
 			'settings.roomCardSettingsTitle' => '房间卡片',
-			'settings.roomCardSettingsDescription' => '卡片与列表的版式固定，这里只选择显示哪些信息；设置自动应用到当前设备类型。',
+			'settings.roomCardSettingsDescription' => '版式固定，这里只选显示哪些信息；自动应用到当前设备类型。',
 			'settings.roomCardPreview' => '卡片预览',
 			'settings.roomCardPreviewTitle' => '今晚八点，一起聊聊新番和游戏',
 			'settings.roomCardPreviewAnchor' => '夜色电台',
@@ -12892,7 +12892,7 @@ extension on Translations {
 			'settings.roomCardShowAudience' => '观众指标',
 			'settings.roomCardReplay' => '回放',
 			'settings.roomCardResetCurrent' => '恢复默认显示',
-			'settings.roomCardScopeHint' => '移动端与桌面端各自保存，并自动应用到当前设备类型的卡片与列表。',
+			'settings.roomCardScopeHint' => '移动端与桌面端各自保存，自动应用到当前设备。',
 			'settings.backgroundPreviewMedia' => '预览',
 			'settings.backgroundCopyColor' => '复制色值',
 			'settings.backgroundCopyGradient' => '复制渐变',
@@ -12912,13 +12912,13 @@ extension on Translations {
 			'settings.downloadDirectoryChange' => '更改目录',
 			'settings.portraitFullscreenGroup' => '竖屏全屏',
 			'settings.portraitDisplayMode' => '画面模式',
-			'settings.portraitDisplayModeDesc' => '完整=整幅画面；沉浸=整幅画面配柔和背景；均衡=轻微裁切；铺满=裁切两侧填满屏幕。',
+			'settings.portraitDisplayModeDesc' => '完整=原样；沉浸=原样配柔和背景；均衡=轻微裁切；铺满=裁两侧填满。',
 			'settings.portraitDanmakuMode' => '弹幕区域',
 			'settings.portraitDanmakuModeDesc' => '竖屏全屏中飞行弹幕可占用的区域。',
 			'settings.portraitRememberRoom' => '记住每个房间的选择',
-			'settings.portraitRememberRoomDesc' => '在竖屏全屏里切换画面/弹幕后，按房间保存；关闭会清除已保存的房间选择。',
+			'settings.portraitRememberRoomDesc' => '竖屏全屏里的画面/弹幕切换按房间记住；关闭即清除。',
 			'settings.portraitSwipeSwitch' => '竖屏全屏上下滑换台',
-			'settings.portraitSwipeSwitchDesc' => '从关注、热门、分区或搜索进的直播间，竖屏全屏时在画面中间上滑看下一场、下滑上一场。',
+			'settings.portraitSwipeSwitchDesc' => '竖屏全屏时上滑看下一场、下滑看上一场。',
 			'settings.portraitDiagnostics' => '显示竖屏诊断',
 			'settings.portraitDiagnosticsDesc' => '在竖屏全屏左下角显示分辨率、宽高比、画面与弹幕模式。',
 			'settings.portraitClearOverrides' => '清除房间覆盖',
@@ -12963,7 +12963,7 @@ extension on Translations {
 			'settings.twitchLanguage_tr' => '土耳其语',
 			'settings.twitchLanguage_pl' => '波兰语',
 			'settings.holdDanmakuOnPress' => '按住时冻结弹幕',
-			'settings.holdDanmakuOnPressDesc' => '手指按住画面弹幕时先冻结，便于点按或长按；关闭后点按/长按仍会命中，但弹幕不会在按住期间停住。',
+			'settings.holdDanmakuOnPressDesc' => '按住弹幕先冻结，便于点按；关闭后按住期间弹幕照常飞过。',
 			'settings.youtubeAllChat' => 'YouTube 显示全部聊天',
 			'settings.youtubeAllChatDesc' => '关闭时使用网页默认的 Top chat；开启后请求全部直播聊天。',
 			'settings.preferH264' => '虎牙优先 H.264',
@@ -12974,17 +12974,17 @@ extension on Translations {
 			'settings.backgroundAudioOnly' => '后台仅音频',
 			'settings.backgroundAudioOnlyDesc' => '后台播放时关闭视频解码，只保留声音；回到前台恢复画面。',
 			'settings.pauseOnPipClose' => '关闭画中画时暂停',
-			'settings.pauseOnPipCloseDesc' => '开着后台播放时，关掉画中画小窗就暂停，不在后台继续出声；回到应用再继续。',
+			'settings.pauseOnPipCloseDesc' => '开着后台播放时，关小窗即暂停；回应用再继续。',
 			'settings.chatShowGifts' => '在聊天列表显示礼物',
-			'settings.chatShowGiftsDesc' => '平台上报的礼物显示为聊天里的礼物行；关闭后已有礼物行立即移除。',
+			'settings.chatShowGiftsDesc' => '礼物显示为聊天里的礼物行；关闭后立即移除已有礼物行。',
 			'settings.chatGiftsAboveTier' => '只显示值钱的礼物',
 			'settings.chatGiftsAboveTierDesc' => '免费和便宜的礼物不进聊天列表；连击加起来够了再显示。',
 			'settings.chatGiftValueInYuan' => '礼物价值换算成元',
 			'settings.chatGiftValueInYuanDesc' => '金瓜子、钻石、抖币按平台的固定比例写成元；海外的币种不换算。',
 			'settings.superChatIncludesMembership' => '上舰和开会员进醒目留言',
-			'settings.superChatIncludesMembershipDesc' => '哔哩哔哩上舰、YouTube 会员和各平台的订阅也在醒目留言里显示一张卡；聊天列表照旧。',
+			'settings.superChatIncludesMembershipDesc' => 'B 站上舰、YouTube 会员等订阅也在醒目留言里出卡；聊天列表照旧。',
 			'settings.danmakuShowGifts' => '飞行弹幕显示礼物',
-			'settings.danmakuShowGiftsDesc' => '值钱的礼物飞过画面，很值钱的在顶部停 4 秒；连击只飞开头和总数，每秒最多 3 条。',
+			'settings.danmakuShowGiftsDesc' => '值钱礼物飞过画面，更值钱的在顶部停 4 秒；连击只显示开头和总数。',
 			'settings.floatWindowSize' => '小窗大小',
 			'settings.floatWindowSizeDesc' => '应用内悬浮窗的基础大小；拖动缩放会按横屏/竖屏分别记住。',
 			'settings.floatWindowSmall' => '小',
@@ -12993,9 +12993,9 @@ extension on Translations {
 			'settings.backgroundPauseDanmaku' => '后台暂停弹幕连接',
 			'settings.backgroundPauseDanmakuDesc' => '进入后台时断开平台弹幕连接，回到前台重新连接；聊天记录保留。',
 			'settings.douyuForceRenew' => '斗鱼每 5 分钟自动续期',
-			'settings.douyuForceRenewDesc' => '登录斗鱼后定期续期 Cookie，降低长时间观看时掉登录的概率。',
+			'settings.douyuForceRenewDesc' => '登录后定期续期 Cookie，降低长时间观看掉登录的概率。',
 			'settings.tvFocusZoom' => '焦点放大',
-			'settings.tvFocusZoomDesc' => '获得焦点的卡片、菜单项和播放控制放大一点；盒子卡顿时可以关掉，只留描边。',
+			'settings.tvFocusZoomDesc' => '焦点卡片与控件略微放大；盒子卡顿时可关掉只留描边。',
 			'settings.tvMenuExpanded' => 'TV 侧栏始终展开',
 			'settings.tvMenuExpandedDesc' => '保持侧栏显示名称；关闭后可用图标轨并在聚焦时展开。',
 			'settings.backgroundPreviewSettingsTitle' => '播放设置',
@@ -13088,7 +13088,7 @@ extension on Translations {
 			'toolbox.linkClear' => '清空',
 			'toolbox.linkClipboardGroup' => '剪贴板',
 			'toolbox.linkClipboardRooms' => '识别剪贴板直播间链接',
-			'toolbox.linkClipboardRoomsDesc' => '回到应用时读取剪贴板，发现支持的直播平台链接会询问是否打开；不会自动跳转。',
+			'toolbox.linkClipboardRoomsDesc' => '回应用时读取剪贴板，发现直播链接会询问是否打开；不自动跳转。',
 			'toolbox.linkResolving' => '正在解析链接…',
 			'toolbox.linkResolvedTitle' => '解析结果',
 			'toolbox.linkPlatform' => '平台',
@@ -13147,7 +13147,7 @@ extension on Translations {
 			'toolbox.logsSection' => '日志与诊断',
 			'toolbox.logsLevel' => '日志级别',
 			'toolbox.logsFile' => '写入日志文件',
-			'toolbox.logsFileDesc' => '在应用数据目录保存轮转日志（pure_live.log）；关闭后只保留内存日志。',
+			'toolbox.logsFileDesc' => '在应用数据目录保存轮转日志 pure_live.log；关闭只留内存日志。',
 			'toolbox.logsExport' => '复制日志',
 			'toolbox.logsExportDesc' => '把内存中的日志复制到剪贴板。',
 			'toolbox.logsClear' => '清空日志',
