@@ -12,6 +12,7 @@ final class VodVideo {
     this.uploader,
     this.duration,
     this.playCount,
+    this.danmakuCount,
     this.bvid,
     this.aid,
   });
@@ -33,6 +34,9 @@ final class VodVideo {
 
   /// How many times it was played.
   final int? playCount;
+
+  /// How many danmaku it holds.
+  final int? danmakuCount;
 
   /// The bvid, for a source that separates ids.
   final String? bvid;

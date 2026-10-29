@@ -112,6 +112,8 @@
   "followingEmptyTitle": "Nothing followed yet",
   "followingEmptyDescription": "The anime and cinema you follow on Bilibili appear here.",
   "comments": "Comments",
+  "commentsHot": "Top",
+  "commentsNew": "Newest",
   "commentsEmpty": "No comments yet.",
   "commentsFailed": "The comments did not load",
   "historyEmptyTitle": "Nothing watched yet",
@@ -128,5 +130,12 @@
   "saveVideo": "Favourite",
   "savedVideo": "Favourited",
   "saveAdded": "Added to favourites",
-  "saveRemoved": "Removed from favourites"
+  "saveRemoved": "Removed from favourites",
+  "download": "Download video",
+  "downloading": "Downloading {percent: int}%",
+  "downloadingUnknown": "Downloading…",
+  "downloadDone": "Saved to {name: String}",
+  "downloadFailed": "Download failed",
+  "downloadCancelled": "Download cancelled",
+  "downloadCancel": "Cancel download"
 }

@@ -123,14 +123,19 @@ typedef VodCommentsState = ({
   int nextPage,
   bool hasMore,
   bool loading,
+  int sort,
   VodFailure? error,
 });
 
 VodCommentsState _commentsInitial() =>
-    (comments: const [], total: 0, nextPage: 1, hasMore: true, loading: false, error: null);
+    (comments: const [], total: 0, nextPage: 1, hasMore: true, loading: false, sort: 1, error: null);
 
 /// The comments under an archive, cached per aid and paged by demand.
 final class VodCommentsController extends Notifier<Map<int, VodCommentsState>> {
+  /// The orders the comments read in: Bilibili's 最热 and 最新.
+  static const int sortHot = 1;
+  static const int sortNewest = 2;
+
   @override
   Map<int, VodCommentsState> build() => const {};
 
@@ -154,12 +159,24 @@ final class VodCommentsController extends Notifier<Map<int, VodCommentsState>> {
   /// Reads the first page again (the retry button).
   Future<void> refresh(int aid) => _load(aid, 1);
 
+  /// Reads [aid]'s comments in [sort] order, from the first page.
+  Future<void> setSort(int aid, int sort) async {
+    final comments = of(aid);
+    if (comments.sort == sort || comments.loading) return;
+    state = {
+      ...state,
+      aid: _with(comments, sort: sort, comments: const [], nextPage: 1, hasMore: true, clearError: true),
+    };
+    await _load(aid, 1);
+  }
+
   Future<void> _load(int aid, int page) async {
     final current = of(aid);
     if (current.loading) return;
+    final sort = current.sort;
     state = {...state, aid: _with(current, loading: true, clearError: true)};
     try {
-      final answer = await ref.read(vodClientProvider).comments(aid, page: page);
+      final answer = await ref.read(vodClientProvider).comments(aid, page: page, sort: sort);
       if (!ref.mounted) return;
       final open = state[aid];
       if (open == null) return;
@@ -177,6 +194,7 @@ final class VodCommentsController extends Notifier<Map<int, VodCommentsState>> {
           // A page that brought nothing new ends the walk.
           hasMore: answer.hasMore && (page == 1 || comments.length > open.comments.length),
           loading: false,
+          sort: sort,
           error: null,
         ),
       };
@@ -203,6 +221,7 @@ final class VodCommentsController extends Notifier<Map<int, VodCommentsState>> {
     int? nextPage,
     bool? hasMore,
     bool? loading,
+    int? sort,
     VodFailure? error,
     bool clearError = false,
   }) => (
@@ -211,6 +230,7 @@ final class VodCommentsController extends Notifier<Map<int, VodCommentsState>> {
     nextPage: nextPage ?? from.nextPage,
     hasMore: hasMore ?? from.hasMore,
     loading: loading ?? from.loading,
+    sort: sort ?? from.sort,
     error: clearError ? null : (error ?? from.error),
   );
 }

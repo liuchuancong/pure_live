@@ -418,6 +418,10 @@ final class VodVideoRow extends StatelessWidget {
     final t = context.t;
     final count = video.playCount;
     final plays = count == null || count <= 0 ? '' : AudienceFormat.format(count);
+    final danmaku = switch (video.danmakuCount) {
+      final value? when value > 0 => AudienceFormat.format(value),
+      _ => '',
+    };
     return DsCard(
       onPressed: onOpen,
       semanticLabel: video.title,
@@ -470,15 +474,29 @@ final class VodVideoRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.caption.copyWith(color: colors.textMuted),
                     ),
-                  if (plays.isNotEmpty)
+                  if (plays.isNotEmpty || danmaku.isNotEmpty)
                     Row(
                       spacing: DsSpace.s4,
                       children: [
-                        DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: colors.textSubtle),
-                        Text(
-                          plays,
-                          style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
-                        ),
+                        if (plays.isNotEmpty) ...[
+                          DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: colors.textSubtle),
+                          Text(
+                            plays,
+                            style: theme.typography.numeric(
+                              theme.typography.caption.copyWith(color: colors.textSubtle),
+                            ),
+                          ),
+                        ],
+                        if (plays.isNotEmpty && danmaku.isNotEmpty) const SizedBox(width: DsSpace.s4),
+                        if (danmaku.isNotEmpty) ...[
+                          DsIcon(DsIcons.captions, size: theme.sizes.iconXs, color: colors.textSubtle),
+                          Text(
+                            danmaku,
+                            style: theme.typography.numeric(
+                              theme.typography.caption.copyWith(color: colors.textSubtle),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                 ],

@@ -15,10 +15,11 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
+import 'package:pure_live/modules/vod/controller/vod_download.dart';
 import 'package:pure_live/modules/vod/controller/vod_library.dart';
 import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
-import 'package:pure_live/modules/vod/controller/vod_social.dart' show vodCommentsProvider;
+import 'package:pure_live/modules/vod/controller/vod_social.dart' show VodCommentsController, vodCommentsProvider;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoRow, vodDateText, vodDurationText;
 import 'package:pure_live/shared/shared.dart';
 
@@ -49,6 +50,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   List<VodVideo> _related = const [];
   VodPlayInfo? _play;
   VodPart? _part;
+
+  /// The download running off this page, if one is.
+  VodDownloadTask? _download;
   int _qn = _defaultQn;
   PlayerHandle? _handle;
   PlayerId? _boundPlayer;
@@ -184,6 +188,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
 
   @override
   void dispose() {
+    _download?.cancel();
+    _download = null;
     _hideTimer?.cancel();
     _hoverTimer?.cancel();
     _leaveTimer?.cancel();
@@ -260,6 +266,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// Opens [part] on the shared kernel, reusing the page's handle.
   Future<void> _openPart(VodPart part, {int? qn, double? resume}) async {
     if (_opening) return;
+    // A download belongs to the part it was resolved for; the next part
+    // resolves its own address instead of keeping this one's bytes.
+    _download?.cancel();
+    _download = null;
     // Keep the part being left before the page starts writing for the next
     // one; a stored position belongs to the part that reported it.
     _saveProgress(force: true);
@@ -801,6 +811,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           immersive: immersive,
           child: MouseRegion(
             onHover: (_) => _wake(),
+            onExit: (_) => _scheduleHide(),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -833,24 +844,82 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     bottom: 0,
                     start: 0,
                     end: 0,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (_openPanel case final panel?)
-                          Padding(
-                            padding: const EdgeInsetsDirectional.only(end: DsSpace.s12, bottom: DsSpace.s4),
-                            child: Align(
-                              alignment: AlignmentDirectional.centerEnd,
-                              child: MouseRegion(
-                                onEnter: (_) => _leaveTimer?.cancel(),
-                                onExit: (_) => _leavePanelSoon(),
-                                child: _vodPanel(t, panel),
+                    // Resting on the bar keeps it; leaving it settles the bar
+                    // the way an idle pointer does.
+                    child: MouseRegion(
+                      onEnter: (_) => _hideTimer?.cancel(),
+                      onExit: (_) => _scheduleHide(),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (_download case final download? when download.status == VodDownloadStatus.running)
+                            Padding(
+                              padding: const EdgeInsetsDirectional.only(end: DsSpace.s12, bottom: DsSpace.s4),
+                              child: Align(
+                                alignment: AlignmentDirectional.centerEnd,
+                                child: ListenableBuilder(
+                                  listenable: download,
+                                  builder: (context, _) => PlayerGlassPill(
+                                    child: Padding(
+                                      padding: const EdgeInsetsDirectional.fromSTEB(
+                                        DsSpace.s12,
+                                        DsSpace.s4,
+                                        DsSpace.s4,
+                                        DsSpace.s4,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        spacing: DsSpace.s8,
+                                        children: [
+                                          const DsSpinner(style: DsSpinnerStyle(size: 14)),
+                                          Text(switch (download.progress) {
+                                            final progress? => t.vod.downloading(percent: (progress * 100).round()),
+                                            null => t.vod.downloadingUnknown,
+                                          }, style: theme.typography.caption.copyWith(color: playerInk)),
+                                          MediaBarButton(
+                                            icon: DsIcons.x,
+                                            label: t.vod.downloadCancel,
+                                            size: 28,
+                                            iconSize: 16,
+                                            onPressed: download.cancel,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        _vodControlBar(context),
-                      ],
+                          if (_openPanel case final panel?)
+                            Padding(
+                              padding: const EdgeInsetsDirectional.only(end: DsSpace.s12, bottom: DsSpace.s4),
+                              child: Align(
+                                alignment: AlignmentDirectional.centerEnd,
+                                child: MouseRegion(
+                                  onEnter: (_) => _leaveTimer?.cancel(),
+                                  onExit: (_) => _leavePanelSoon(),
+                                  child: _vodPanel(t, panel),
+                                ),
+                              ),
+                            ),
+                          _vodControlBar(context),
+                        ],
+                      ),
+                    ),
+                  )
+                // The bar away, the picture keeps one line at its bottom
+                // edge: how far it played, and the strip that brings the bar
+                // back under the pointer.
+                else if (playing && handle != null)
+                  PositionedDirectional(
+                    bottom: 0,
+                    start: 0,
+                    end: 0,
+                    child: PlayerIdleProgress(
+                      position: transport?.position,
+                      duration: transport?.duration,
+                      onWake: _wake,
                     ),
                   ),
               ],
@@ -895,6 +964,60 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         ],
       ),
     );
+  }
+
+  /// Resolves the current part's download address and streams it into the
+  /// app's Videos folder, the bar showing how far it has come.
+  ///
+  /// The address is signed and short-lived, so it is resolved here rather
+  /// than reused from the player; the player's own answer may be a
+  /// picture-only DASH rendition, which is why the download asks for the
+  /// muxed MP4 separately.
+  Future<void> _startDownload() async {
+    final t = context.t;
+    final part = _part;
+    final detail = _detail;
+    if (part == null || detail == null) return;
+    if (_download?.status == VodDownloadStatus.running) return;
+    try {
+      final info = await ref.read(vodClientProvider).downloadPart(bvid: widget.bvid, cid: part.cid, qn: _qn);
+      if (!mounted) return;
+      final task = VodDownloadTask(
+        url: info.url,
+        headers: info.headers,
+        fileName: vodDownloadFileName(
+          title: detail.title,
+          part: part.title,
+          index: part.page,
+          parts: detail.parts.length,
+          extension: info.format == 'mp4' ? 'mp4' : 'm4s',
+        ),
+      );
+      setState(() => _download = task);
+      unawaited(
+        task.start().then((_) {
+          if (!mounted) return;
+          setState(() {});
+          switch (task.status) {
+            case VodDownloadStatus.done:
+              final name = task.file?.uri.pathSegments.last ?? task.fileName;
+              showDsToast(
+                context: context,
+                title: t.vod.downloadDone(name: name),
+                status: DsStatus.success,
+              );
+            case VodDownloadStatus.failed:
+              showDsToast(context: context, title: t.vod.downloadFailed, status: DsStatus.danger);
+            case VodDownloadStatus.cancelled:
+              showDsToast(context: context, title: t.vod.downloadCancelled);
+            case VodDownloadStatus.running:
+              break;
+          }
+        }),
+      );
+    } on Object {
+      if (mounted) showDsToast(context: context, title: t.vod.downloadFailed, status: DsStatus.danger);
+    }
   }
 
   /// The bar under the picture: the seek line over the transport, then the
@@ -1027,6 +1150,16 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     label: VodSpeedChoice.nearest(_speed).label(t),
                     semanticLabel: t.vod.speed,
                     compact: compact,
+                  ),
+                  MediaBarButton(
+                    icon: DsIcons.download,
+                    label: t.vod.download,
+                    onPressed: _part == null || _detail == null
+                        ? null
+                        : () {
+                            _wake();
+                            unawaited(_startDownload());
+                          },
                   ),
                   if (handle != null && presentationController.pipAvailable)
                     MediaBarButton(
@@ -1317,6 +1450,17 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               leading: DsIcon(DsIcons.heart, size: 14, color: saved ? colors.accent : colors.textMuted),
               child: Text(saved ? t.vod.savedVideo : t.vod.saveVideo),
             ),
+            // The bar's download without opening the bar: the reference's
+            // own action row names it, and the address is resolved on press.
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: _part == null || _download?.status == VodDownloadStatus.running
+                  ? null
+                  : () => unawaited(_startDownload()),
+              leading: const DsIcon(DsIcons.download, size: 14),
+              child: Text(t.vod.download),
+            ),
             if (detail.likeCount case final count?) _VodStat(icon: DsIcons.thumbsUp, value: count, label: t.vod.likes),
             if (detail.coinCount case final count?) _VodStat(icon: DsIcons.coins, value: count, label: t.vod.coins),
             if (detail.favoriteCount case final count?)
@@ -1460,7 +1604,8 @@ final class _VodStat extends StatelessWidget {
   }
 }
 
-/// The archive's comments: the hot list, twenty at a time, read on demand.
+/// The archive's comments: twenty at a time, hot or newest first, read on
+/// demand.
 final class _CommentsSection extends ConsumerStatefulWidget {
   const _CommentsSection({required this.aid});
 
@@ -1494,9 +1639,26 @@ final class _CommentsSectionState extends ConsumerState<_CommentsSection> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
-        Text(
-          count == null ? t.vod.comments : '${t.vod.comments} · ${AudienceFormat.format(count)}',
-          style: theme.typography.title.copyWith(color: colors.text),
+        Row(
+          spacing: DsSpace.s8,
+          children: [
+            Expanded(
+              child: Text(
+                count == null ? t.vod.comments : '${t.vod.comments} · ${AudienceFormat.format(count)}',
+                style: theme.typography.title.copyWith(color: colors.text),
+              ),
+            ),
+            // The reference's two orders; a pick restarts from the first page.
+            DsSegmentedControl<int>(
+              value: state?.sort ?? VodCommentsController.sortHot,
+              onChanged: (sort) => unawaited(controller.setSort(widget.aid, sort)),
+              semanticLabel: t.vod.comments,
+              segments: [
+                DsSegment(value: VodCommentsController.sortHot, label: Text(t.vod.commentsHot)),
+                DsSegment(value: VodCommentsController.sortNewest, label: Text(t.vod.commentsNew)),
+              ],
+            ),
+          ],
         ),
         if (state?.error case final failure?)
           DsAlert(

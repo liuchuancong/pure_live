@@ -510,6 +510,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
       // so phones keep the tap.
       child: MouseRegion(
         onHover: mini ? null : (_) => _wake(),
+        onExit: mini ? null : (_) => _scheduleHide(),
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -752,16 +753,24 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: _ControlBar(
-                  handle: handle,
-                  transport: transport,
-                  onWake: _wake,
-                  autofocusPlay: widget.autofocusFirstControl,
-                  canEnterPortraitFullscreen: widget.canEnterPortraitFullscreen,
-                  portraitFullscreen: widget.portraitFullscreen,
-                  onPortraitFullscreen: widget.onPortraitFullscreen,
+                child: MouseRegion(
+                  onEnter: (_) => _hideTimer?.cancel(),
+                  onExit: (_) => _scheduleHide(),
+                  child: _ControlBar(
+                    handle: handle,
+                    transport: transport,
+                    onWake: _wake,
+                    autofocusPlay: widget.autofocusFirstControl,
+                    canEnterPortraitFullscreen: widget.canEnterPortraitFullscreen,
+                    portraitFullscreen: widget.portraitFullscreen,
+                    onPortraitFullscreen: widget.onPortraitFullscreen,
+                  ),
                 ),
-              ),
+              )
+            // The bar away, the picture keeps one thin line on its bottom
+            // edge; resting on it brings the bar back.
+            else if (playing && !mini && handle != null)
+              Positioned(bottom: 0, left: 0, right: 0, child: PlayerIdleProgress(onWake: _wake)),
           ],
         ),
       ),

@@ -35,6 +35,64 @@ final class PlayerGlassPill extends StatelessWidget {
   }
 }
 
+/// The line left at the picture's bottom edge while the bar is away.
+///
+/// A seekable picture shows how far it has played; a live one has no end to
+/// draw against, so [position] and [duration] stay null and the line is the
+/// live edge alone. The strip is taller than the line it draws, so the
+/// pointer finds it without aiming, and resting on it wakes the full bar.
+final class PlayerIdleProgress extends StatelessWidget {
+  /// The idle line; [onWake] brings the bar back.
+  const PlayerIdleProgress({required this.onWake, this.position, this.duration, super.key});
+
+  /// How far the picture has played; null for a live stream.
+  final Duration? position;
+
+  /// The picture's whole length; null for a live stream.
+  final Duration? duration;
+
+  /// Wakes the bar the line belongs to.
+  final VoidCallback onWake;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = duration?.inMilliseconds ?? 0;
+    final played = total <= 0 ? null : ((position?.inMilliseconds ?? 0) / total).clamp(0.0, 1.0);
+    final track = Container(height: 3, color: const Color(0x33FFFFFF));
+    final fill = Container(height: 3, color: const Color(0xFFFFFFFF));
+    return MouseRegion(
+      onHover: (_) => onWake(),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onWake,
+        child: SizedBox(
+          height: 14,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: SizedBox(
+              height: 3,
+              width: double.infinity,
+              child: played == null
+                  ? track
+                  : Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        track,
+                        FractionallySizedBox(
+                          alignment: AlignmentDirectional.centerStart,
+                          widthFactor: played,
+                          child: fill,
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// The panel a picker drops over the picture: a dark glass card with the
 /// catalogue's name and its rows, the tick on the one in force.
 ///

@@ -112,6 +112,8 @@
   "followingEmptyTitle": "还没有追番",
   "followingEmptyDescription": "在 Bilibili 上追的番剧和影视会出现在这里。",
   "comments": "评论",
+  "commentsHot": "最热",
+  "commentsNew": "最新",
   "commentsEmpty": "还没有评论。",
   "commentsFailed": "评论没有加载出来",
   "historyEmptyTitle": "还没有观看记录",
@@ -128,5 +130,12 @@
   "saveVideo": "收藏",
   "savedVideo": "已收藏",
   "saveAdded": "已加入收藏",
-  "saveRemoved": "已取消收藏"
+  "saveRemoved": "已取消收藏",
+  "download": "下载视频",
+  "downloading": "下载中 {percent: int}%",
+  "downloadingUnknown": "下载中…",
+  "downloadDone": "已下载到 {name: String}",
+  "downloadFailed": "下载失败",
+  "downloadCancelled": "已取消下载",
+  "downloadCancel": "取消下载"
 }

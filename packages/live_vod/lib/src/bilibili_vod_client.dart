@@ -146,32 +146,33 @@ final class BilibiliVodClient {
     final pages = (data['pages'] as List<Object?>?) ?? const [];
     return VodDetail(
       bvid: bvid,
-      aid: (data['aid'] as num?)?.toInt() ?? 0,
+      aid: _intOf(data['aid']) ?? 0,
       title: '${data['title'] ?? ''}',
       coverUrl: _coverOf(data['pic']),
       description: '${data['desc'] ?? ''}'.trim(),
       uploader: owner is Map ? '${owner['name'] ?? ''}' : null,
-      uploaderMid: owner is Map ? (owner['mid'] as num?)?.toInt() : null,
+      uploaderMid: owner is Map ? _intOf(owner['mid']) : null,
       uploaderAvatar: owner is Map ? _coverOf(owner['face']) : null,
-      playCount: stat is Map ? (stat['view'] as num?)?.toInt() : null,
-      danmakuCount: stat is Map ? (stat['danmaku'] as num?)?.toInt() : null,
-      likeCount: stat is Map ? (stat['like'] as num?)?.toInt() : null,
-      coinCount: stat is Map ? (stat['coin'] as num?)?.toInt() : null,
-      favoriteCount: stat is Map ? (stat['favorite'] as num?)?.toInt() : null,
+      playCount: stat is Map ? _intOf(stat['view']) : null,
+      danmakuCount: stat is Map ? _intOf(stat['danmaku']) : null,
+      likeCount: stat is Map ? _intOf(stat['like']) : null,
+      coinCount: stat is Map ? _intOf(stat['coin']) : null,
+      favoriteCount: stat is Map ? _intOf(stat['favorite']) : null,
       duration: _durationOf('${data['duration'] ?? ''}'),
       parts: [
         for (final page in pages)
-          if (page is Map && (page['cid'] as num?) != null)
+          if (page is Map && _intOf(page['cid']) != null)
             VodPart(
-              cid: (page['cid'] as num).toInt(),
-              page: (page['page'] as num?)?.toInt() ?? 1,
+              cid: _intOf(page['cid']) ?? 0,
+              page: _intOf(page['page']) ?? 1,
               title: '${page['part'] ?? ''}',
               duration: _durationOf('${page['duration'] ?? ''}'),
             ),
       ],
-      publishedAt: (data['pubdate'] as num?) == null
-          ? null
-          : DateTime.fromMillisecondsSinceEpoch((data['pubdate'] as num).toInt() * 1000),
+      publishedAt: switch (_intOf(data['pubdate'])) {
+        final stamp? => DateTime.fromMillisecondsSinceEpoch(stamp * 1000),
+        null => null,
+      },
     );
   }
 
@@ -234,7 +235,7 @@ final class BilibiliVodClient {
       for (final hit in results)
         if (hit is Map) ?_videoOf(hit),
     ];
-    final numResults = (data['numResults'] as num?)?.toInt() ?? videos.length;
+    final numResults = _intOf(data['numResults']) ?? videos.length;
     return VodSearchPage(videos: videos, hasMore: page * window < numResults);
   }
 
@@ -274,6 +275,35 @@ final class BilibiliVodClient {
     if (data is! Map) {
       throw const VodFailure('the source returned no play data');
     }
+    return _playInfoOf(data, qn: qn);
+  }
+
+  /// Resolves one part's download address: the muxed MP4 (`fnval=0`) served
+  /// as a single file, which a plain HTTP download can keep as it is.
+  ///
+  /// The play endpoint answers a DASH ladder only for some sign-in states;
+  /// the answer then names a picture-only rendition, whose
+  /// [VodPlayInfo.silent] says so.
+  Future<VodPlayInfo> downloadPart({required String bvid, required int cid, int qn = 64}) async {
+    final play = await http.send(
+      LiveRequest.custom(
+        method: 'GET',
+        url: Uri.https('api.bilibili.com', '/x/player/playurl', {
+          'bvid': bvid,
+          'cid': '$cid',
+          'qn': '$qn',
+          'fnval': '0',
+          'fnver': '0',
+          'fourk': '1',
+          'platform': 'oc',
+          'otype': 'json',
+          if (cookie.isEmpty) ..._guestParams,
+        }),
+        headers: _headers,
+      ),
+    );
+    final data = _body(play)['data'];
+    if (data is! Map) throw const VodFailure('the source returned no download data');
     return _playInfoOf(data, qn: qn);
   }
 
@@ -364,8 +394,8 @@ final class BilibiliVodClient {
     final data = _body(response)['data'];
     if (data is! Map) return (results: const <Object?>[], hasMore: false);
     final results = (data['result'] as List<Object?>?) ?? const <Object?>[];
-    final pages = (data['numPages'] as num?)?.toInt();
-    final total = (data['numResults'] as num?)?.toInt();
+    final pages = _intOf(data['numPages']);
+    final total = _intOf(data['numResults']);
     final hasMore = pages != null
         ? page < pages
         : total != null
@@ -377,7 +407,7 @@ final class BilibiliVodClient {
   /// One 番剧/影视 hit as a season card: the score and the type's own name.
   static VodSeason? _seasonOfSearch(Object? hit) {
     if (hit is! Map) return null;
-    final seasonId = (hit['season_id'] as num?)?.toInt() ?? 0;
+    final seasonId = _intOf(hit['season_id']) ?? 0;
     final title = _plain('${hit['title'] ?? ''}');
     if (seasonId == 0 || title.isEmpty) return null;
     final score = hit['media_score'];
@@ -395,7 +425,7 @@ final class BilibiliVodClient {
   /// One user hit.
   static VodUser? _userOf(Object? hit) {
     if (hit is! Map) return null;
-    final mid = (hit['mid'] as num?)?.toInt() ?? int.tryParse('${hit['mid'] ?? ''}') ?? 0;
+    final mid = _intOf(hit['mid']) ?? int.tryParse('${hit['mid'] ?? ''}') ?? 0;
     final name = _plain('${hit['uname'] ?? ''}');
     if (mid == 0 || name.isEmpty) return null;
     return VodUser(
@@ -403,15 +433,15 @@ final class BilibiliVodClient {
       name: name,
       avatar: _coverOf(hit['upic']),
       sign: '${hit['usign'] ?? ''}'.trim(),
-      fans: (hit['fans'] as num?)?.toInt(),
-      videoCount: (hit['videos'] as num?)?.toInt(),
+      fans: _intOf(hit['fans']),
+      videoCount: _intOf(hit['videos']),
     );
   }
 
   /// One live-room hit.
   static VodLiveRoom? _liveRoomOf(Object? hit) {
     if (hit is! Map) return null;
-    final roomId = (hit['roomid'] as num?)?.toInt() ?? 0;
+    final roomId = _intOf(hit['roomid']) ?? 0;
     final title = _plain('${hit['title'] ?? ''}');
     if (roomId == 0 || title.isEmpty) return null;
     final anchor = '${hit['uname'] ?? ''}'.trim();
@@ -421,7 +451,7 @@ final class BilibiliVodClient {
       coverUrl: _coverOf(hit['cover'] ?? hit['user_cover']),
       anchor: anchor.isEmpty ? null : anchor,
       avatar: _coverOf(hit['uface']),
-      online: (hit['online'] as num?)?.toInt(),
+      online: _intOf(hit['online']),
     );
   }
 
@@ -475,9 +505,9 @@ final class BilibiliVodClient {
       for (final item in [...audio, ?flacAudio])
         if (item is Map && item['baseUrl'] is String && (item['baseUrl'] as String).isNotEmpty)
           VodAudioStream(
-            id: (item['id'] as num?)?.toInt() ?? 0,
+            id: _intOf(item['id']) ?? 0,
             url: item['baseUrl'] as String,
-            bandwidth: (item['bandwidth'] as num?)?.toInt(),
+            bandwidth: _intOf(item['bandwidth']),
             codecs: item['codecs'] is String ? item['codecs'] as String : null,
           ),
     ];
@@ -531,7 +561,7 @@ final class BilibiliVodClient {
     final face = '${data['face'] ?? ''}'.trim();
     return VodAccount(
       isLogin: data['isLogin'] == true,
-      mid: (data['mid'] as num?)?.toInt(),
+      mid: _intOf(data['mid']),
       name: name.isEmpty ? null : name,
       avatar: face.isEmpty ? null : _https(face),
     );
@@ -606,7 +636,7 @@ final class BilibiliVodClient {
     if (data is! Map) return const VodCommentPage(comments: [], total: 0, hasMore: false);
     final replies = (data['replies'] as List<Object?>?) ?? const <Object?>[];
     final stats = data['page'];
-    final total = stats is Map ? ((stats['count'] as num?)?.toInt() ?? replies.length) : replies.length;
+    final total = stats is Map ? (_intOf(stats['count']) ?? replies.length) : replies.length;
     return VodCommentPage(
       comments: [for (final reply in replies) ?_commentOf(reply)],
       total: total,
@@ -645,7 +675,7 @@ final class BilibiliVodClient {
     final data = _body(response)['data'];
     if (data is! Map) return const VodSeasonPage(seasons: [], hasMore: false);
     final list = (data['list'] as List<Object?>?) ?? const <Object?>[];
-    final total = (data['total'] as num?)?.toInt() ?? list.length;
+    final total = _intOf(data['total']) ?? list.length;
     return VodSeasonPage(
       seasons: [
         for (final item in list)
@@ -692,7 +722,7 @@ final class BilibiliVodClient {
       if (item is! Map) continue;
       seasons.addAll(_seasonOfList(item));
     }
-    final next = (data['coursor'] as num?)?.toInt() ?? cursor;
+    final next = _intOf(data['coursor']) ?? cursor;
     return VodSeasonPage(seasons: seasons, cursor: next, hasMore: data['has_next'] == true && next != cursor);
   }
 
@@ -706,7 +736,8 @@ final class BilibiliVodClient {
         headers: {..._headers, 'referer': 'https://www.bilibili.com'},
       ),
     );
-    final data = _body(response)['data'];
+    final body = _body(response);
+    final data = body['result'] ?? body['data'];
     if (data is! Map) throw const VodFailure('the season answer carried no data');
     final episodes = (data['episodes'] as List<Object?>?) ?? const <Object?>[];
     final status = data['user_status'];
@@ -715,13 +746,13 @@ final class BilibiliVodClient {
     final cover = '${data['cover'] ?? data['square_cover'] ?? ''}'.trim();
     final title = '${data['title'] ?? data['season_title'] ?? ''}'.trim();
     return VodSeasonDetail(
-      seasonId: (data['season_id'] as num?)?.toInt() ?? seasonId,
+      seasonId: _intOf(data['season_id']) ?? seasonId,
       title: title,
       coverUrl: cover.isEmpty ? null : _https(cover),
       evaluate: '${data['evaluate'] ?? ''}'.trim(),
       episodes: [for (final episode in episodes) ?_episodeOf(episode)],
       publishedAt: started,
-      followed: status is Map && ((status['follow'] as num?)?.toInt() ?? 0) > 0,
+      followed: status is Map && (_intOf(status['follow']) ?? 0) > 0,
     );
   }
 
@@ -798,7 +829,7 @@ final class BilibiliVodClient {
     final desc = card is Map ? card['desc'] : null;
     final major = card is Map ? card['major'] : null;
     final archive = major is Map ? major['archive'] : null;
-    final stamp = author is Map ? (author['pub_ts'] as num?)?.toInt() : null;
+    final stamp = author is Map ? _intOf(author['pub_ts']) : null;
     final bvid = archive is Map ? '${archive['bvid'] ?? ''}'.trim() : '';
     return VodDynamic(
       id: id,
@@ -814,33 +845,33 @@ final class BilibiliVodClient {
   /// One reply of the `x/v2/reply` answer.
   static VodComment? _commentOf(Object? reply) {
     if (reply is! Map) return null;
-    final id = (reply['rpid'] as num?)?.toInt() ?? int.tryParse('${reply['rpid_str'] ?? ''}') ?? 0;
+    final id = _intOf(reply['rpid']) ?? int.tryParse('${reply['rpid_str'] ?? ''}') ?? 0;
     if (id == 0) return null;
     final member = reply['member'];
     final content = reply['content'];
     final author = member is Map ? '${member['uname'] ?? ''}'.trim() : '';
     final message = content is Map ? '${content['message'] ?? ''}'.trim() : '';
     if (author.isEmpty || message.isEmpty) return null;
-    final stamp = (reply['ctime'] as num?)?.toInt();
+    final stamp = _intOf(reply['ctime']);
     return VodComment(
       id: id,
       author: author,
       avatar: member is Map ? _coverOf(member['avatar']) : null,
       message: message,
-      likeCount: (reply['like'] as num?)?.toInt(),
-      replyCount: (reply['rcount'] as num?)?.toInt() ?? (reply['count'] as num?)?.toInt(),
+      likeCount: _intOf(reply['like']),
+      replyCount: _intOf(reply['rcount']) ?? _intOf(reply['count']),
       createdAt: stamp == null ? null : DateTime.fromMillisecondsSinceEpoch(stamp * 1000),
     );
   }
 
   /// One card of the 追番 answer.
   static VodSeason? _seasonOf(Map<Object?, Object?> item) {
-    final seasonId = (item['season_id'] as num?)?.toInt();
+    final seasonId = _intOf(item['season_id']);
     final title = '${item['title'] ?? item['season_title'] ?? ''}'.trim();
     if (seasonId == null || title.isEmpty) return null;
     final newEp = item['new_ep'];
     final subtitle = item['subtitle'];
-    final episodeId = (item['episode_id'] as num?)?.toInt();
+    final episodeId = _intOf(item['episode_id']);
     final score = item['rating'];
     final stat = item['stat'];
     return VodSeason(
@@ -857,10 +888,8 @@ final class BilibiliVodClient {
           ? score.trim()
           : null,
       evaluate: '${item['evaluate'] ?? ''}'.trim(),
-      playCount: stat is Map
-          ? ((stat['views'] as num?)?.toInt() ?? (stat['view'] as num?)?.toInt())
-          : (stat as num?)?.toInt(),
-      followed: ((item['follow_status'] as num?)?.toInt() ?? 0) > 0,
+      playCount: stat is Map ? (_intOf(stat['views']) ?? _intOf(stat['view'])) : _intOf(stat),
+      followed: (_intOf(item['follow_status']) ?? 0) > 0,
       episodeId: episodeId == null || episodeId <= 0 ? null : episodeId,
     );
   }
@@ -884,14 +913,14 @@ final class BilibiliVodClient {
   /// One episode of a season's page.
   static VodEpisode? _episodeOf(Object? value) {
     if (value is! Map) return null;
-    final id = (value['id'] as num?)?.toInt() ?? (value['ep_id'] as num?)?.toInt() ?? 0;
+    final id = _intOf(value['id']) ?? _intOf(value['ep_id']) ?? 0;
     if (id == 0) return null;
     final name = '${value['title'] ?? ''}'.trim();
     final long = '${value['long_title'] ?? ''}'.trim();
     // The season answer's episode duration is milliseconds.
-    final millis = (value['duration'] as num?)?.toInt() ?? 0;
-    final cid = (value['cid'] as num?)?.toInt() ?? 0;
-    final aid = (value['aid'] as num?)?.toInt() ?? 0;
+    final millis = _intOf(value['duration']) ?? 0;
+    final cid = _intOf(value['cid']) ?? 0;
+    final aid = _intOf(value['aid']) ?? 0;
     return VodEpisode(
       id: id,
       title: long.isEmpty ? name : long,
@@ -908,7 +937,7 @@ final class BilibiliVodClient {
   /// rendition marked silent.
   VodPlayInfo _playInfoOf(Map<Object?, Object?> data, {required int qn}) {
     final qualities = _qualitiesOf(data);
-    final served = (data['quality'] as num?)?.toInt() ?? qn;
+    final served = _intOf(data['quality']) ?? qn;
     final label = _qualityLabel(qualities, served);
     final durl = data['durl'];
     final firstPart = durl is List && durl.isNotEmpty ? durl.first : null;
@@ -945,7 +974,7 @@ final class BilibiliVodClient {
     if (decoded is! Map<String, Object?>) {
       throw const VodFailure('the source answered something that is not JSON');
     }
-    final code = (decoded['code'] as num?)?.toInt() ?? 0;
+    final code = _intOf(decoded['code']) ?? 0;
     if (code != 0) {
       throw VodFailure('${decoded['message'] ?? 'code $code'}');
     }
@@ -963,12 +992,12 @@ final class BilibiliVodClient {
     return VodVideo(
       id: bvid,
       bvid: bvid,
-      aid: (hit['aid'] as num?)?.toInt(),
+      aid: _intOf(hit['aid']),
       title: title,
       coverUrl: cover.isEmpty ? null : _https(cover),
       uploader: '${hit['author'] ?? ''}'.isEmpty ? null : '${hit['author']}',
       duration: duration,
-      playCount: (hit['play'] as num?)?.toInt(),
+      playCount: _intOf(hit['play']),
     );
   }
 
@@ -990,17 +1019,33 @@ final class BilibiliVodClient {
       (_, final String author) => author.trim(),
       _ => '',
     };
-    final plays = stat is Map ? (stat['view'] as num?)?.toInt() : (item['play'] as num?)?.toInt();
+    final plays = stat is Map ? _intOf(stat['view']) : _intOf(item['play']);
+    final danmaku = stat is Map ? _intOf(stat['danmaku']) : _intOf(item['danmaku']);
     return VodVideo(
       id: bvid,
       bvid: bvid,
-      aid: (item['aid'] as num?)?.toInt(),
+      aid: _intOf(item['aid']),
       title: title,
       coverUrl: _coverOf(item['pic'] ?? item['cover']),
       uploader: uploader.isEmpty ? null : uploader,
       duration: duration is num ? Duration(seconds: duration.toInt()) : _durationOf('${duration ?? ''}'),
       playCount: plays,
+      danmakuCount: danmaku,
     );
+  }
+
+  /// An integer the source wrote as a number or as a string ("12", "12.0").
+  ///
+  /// Bilibili mixes the two shapes between endpoints and over time; a cast
+  /// would throw over one field and lose the whole page with it.
+  static int? _intOf(Object? value) {
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final text = value.trim();
+      if (text.isEmpty) return null;
+      return int.tryParse(text) ?? double.tryParse(text)?.toInt();
+    }
+    return null;
   }
 
   /// A cover address with a scheme, or null when there is none.
@@ -1016,11 +1061,8 @@ final class BilibiliVodClient {
     if (qns is! List) return const [];
     return [
       for (var index = 0; index < qns.length; index++)
-        if (qns[index] case final num qn when qn > 0)
-          VodQuality(
-            qn: qn.toInt(),
-            label: labels is List && index < labels.length ? '${labels[index]}' : 'qn ${qn.toInt()}',
-          ),
+        if (_intOf(qns[index]) case final qn? when qn > 0)
+          VodQuality(qn: qn, label: labels is List && index < labels.length ? '${labels[index]}' : 'qn $qn'),
     ];
   }
 
