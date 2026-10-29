@@ -330,6 +330,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.4"
+  chinese_font_library:
+    dependency: transitive
+    description:
+      name: chinese_font_library
+      sha256: "4f98fc0d193e2aaed02b891e03dd28eae96672d949c0e6599261c58d1f9df7da"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.0"
   cli_config:
     dependency: transitive
     description:
@@ -634,14 +642,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.9.0"
-  dynamic_fonts:
-    dependency: transitive
-    description:
-      name: dynamic_fonts
-      sha256: "8f7722e603fd4e2931dbc0a44a446a3052e72f333a5cd639ddbcf9a99e524b6a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.1.0"
   envied:
     dependency: transitive
     description:
@@ -1160,6 +1160,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.5.2"
+  google_fonts:
+    dependency: transitive
+    description:
+      name: google_fonts
+      sha256: fdbbfbbb1a62f376ab29fa9627561d389751fb984da0b630ce3326e272911c8a
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.0.0"
   graphs:
     dependency: transitive
     description:
