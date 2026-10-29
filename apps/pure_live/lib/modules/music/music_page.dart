@@ -774,6 +774,39 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
     }
   }
 
+  /// The reference's 更新: the linked plaza is asked afresh and the list's
+  /// tracks are overwritten with the answer.
+  Future<void> _updateOnline(MusicPlaylist playlist) async {
+    final t = context.t;
+    final linked = playlist.source;
+    final sourceListId = playlist.sourceListId;
+    if (linked == null || sourceListId == null) return;
+    final plaza = switch (ref.read(musicSourceListProvider)) {
+      final sources => [
+        for (final source in sources)
+          if (source.id == linked && source is OnlinePlaylists) source as OnlinePlaylists,
+      ].firstOrNull,
+    };
+    if (!mounted) return;
+    if (plaza == null) {
+      showDsToast(context: context, title: t.music.onlineUpdateFailed, status: DsStatus.warning);
+      return;
+    }
+    try {
+      final (_, tracks) = await plaza.playlistDetail(sourceListId);
+      final count = await ref.read(musicPlaylistsProvider.notifier).replaceTracks(playlist.id, tracks);
+      if (!mounted) return;
+      showDsToast(
+        context: context,
+        title: t.music.onlineUpdatedToast(name: playlist.name, count: count),
+        status: DsStatus.success,
+      );
+    } on Object {
+      if (!mounted) return;
+      showDsToast(context: context, title: t.music.onlineUpdateFailed, status: DsStatus.warning);
+    }
+  }
+
   Future<void> _rename(MusicPlaylist playlist) async {
     final t = context.t;
     final field = TextEditingController(text: playlist.name);
@@ -1074,6 +1107,12 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                     label: Text(t.music.playlistExport),
                     onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_export(playlist)),
                   ),
+                  if (playlist.source != null && playlist.sourceListId != null)
+                    DsMenuItem(
+                      leading: const DsIcon(DsIcons.refreshCw),
+                      label: Text(t.music.playlistUpdateOnline),
+                      onPressed: () => unawaited(_updateOnline(playlist)),
+                    ),
                   DsMenuItem(
                     leading: const DsIcon(DsIcons.trash2),
                     label: Text(t.music.playlistDelete),
@@ -2364,11 +2403,43 @@ final class _OnlinePlaylistDetail extends ConsumerWidget {
   Future<void> _import(BuildContext context, WidgetRef ref, List<audio.MusicTrack> tracks) async {
     final t = context.t;
     final controller = ref.read(musicPlaylistsProvider.notifier);
+    final sourceId = ref.read(musicSourceProvider).id;
+    // The reference's duplicate check: a second 收藏 of the same online
+    // list offers to refresh what is already there.
+    final existing = controller.findLinked(sourceId, info.id);
+    if (existing != null) {
+      final confirmed = await showDsDialog<bool>(
+        context: context,
+        builder: (context) => DsDialog(
+          title: Text(t.music.playlistUpdateOnline),
+          description: Text(t.music.duplicateListTip(name: existing.name)),
+          actions: [
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(t.common.cancel),
+            ),
+            DsButton(onPressed: () => Navigator.of(context).pop(true), child: Text(t.common.confirm)),
+          ],
+        ),
+      );
+      if (confirmed != true || !context.mounted) return;
+      ref.invalidate(musicOnlinePlaylistDetailProvider(info.id));
+      final (_, fresh) = await ref.read(musicOnlinePlaylistDetailProvider(info.id).future);
+      final count = await controller.replaceTracks(existing.id, fresh);
+      if (!context.mounted) return;
+      showDsToast(
+        context: context,
+        title: t.music.onlineUpdatedToast(name: existing.name, count: count),
+        status: DsStatus.success,
+      );
+      return;
+    }
     final playlist = await controller.create(info.name);
     if (playlist == null) return;
     // The reference's collected list carries its origin (`source` +
     // `sourceListId`) so a later pass can pull the online list afresh.
-    await controller.linkSource(playlist.id, source: ref.read(musicSourceProvider).id, sourceListId: info.id);
+    await controller.linkSource(playlist.id, source: sourceId, sourceListId: info.id);
     final added = await controller.addTracks(playlist.id, tracks);
     if (!context.mounted) return;
     showDsToast(

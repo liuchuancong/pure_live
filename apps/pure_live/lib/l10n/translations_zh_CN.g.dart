@@ -2758,6 +2758,18 @@ class Translations$music$zh_CN {
 	/// zh-CN: '仅支持当前音源的链接或 ID；粘贴内容会先解析成歌单 ID 再打开。'
 	String get openPlaylistTip => '仅支持当前音源的链接或 ID；粘贴内容会先解析成歌单 ID 再打开。';
 
+	/// zh-CN: '更新在线歌单'
+	String get playlistUpdateOnline => '更新在线歌单';
+
+	/// zh-CN: '你之前已收藏过「{name}」，是否拉取最新并覆盖里面的歌曲？'
+	String duplicateListTip({required Object name}) => '你之前已收藏过「${name}」，是否拉取最新并覆盖里面的歌曲？';
+
+	/// zh-CN: '已更新「{name}」：{count} 首。'
+	String onlineUpdatedToast({required Object name, required Object count}) => '已更新「${name}」：${count} 首。';
+
+	/// zh-CN: '更新失败，请稍后再试。'
+	String get onlineUpdateFailed => '更新失败，请稍后再试。';
+
 	/// zh-CN: '当前音源暂不支持歌单搜索。'
 	String get songlistSearchUnsupported => '当前音源暂不支持歌单搜索。';
 
@@ -11095,6 +11107,10 @@ extension on Translations {
 			'music.openPlaylistTitle' => '打开歌单',
 			'music.openPlaylistHint' => '歌单链接或 ID',
 			'music.openPlaylistTip' => '仅支持当前音源的链接或 ID；粘贴内容会先解析成歌单 ID 再打开。',
+			'music.playlistUpdateOnline' => '更新在线歌单',
+			'music.duplicateListTip' => ({required Object name}) => '你之前已收藏过「${name}」，是否拉取最新并覆盖里面的歌曲？',
+			'music.onlineUpdatedToast' => ({required Object name, required Object count}) => '已更新「${name}」：${count} 首。',
+			'music.onlineUpdateFailed' => '更新失败，请稍后再试。',
 			'music.songlistSearchUnsupported' => '当前音源暂不支持歌单搜索。',
 			'music.defaultSource' => '默认音源',
 			'music.defaultSourceDesc' => '歌曲从哪个音源获取；自定义源脚本负责解析播放地址。',
@@ -11247,12 +11263,12 @@ extension on Translations {
 			'music.selectionCancel' => '取消选择',
 			'music.selectionCount' => ({required Object count}) => '已选 ${count} 首',
 			'music.selectionAll' => '全选',
+			_ => null,
+		} ?? switch (path) {
 			'music.selectionDownload' => '下载',
 			'music.selectionRemove' => '移除',
 			'music.selectionRemoveDone' => ({required Object count}) => '已移除 ${count} 首',
 			'music.downloadsActive' => ({required Object count}) => '正在下载 ${count} 首',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadQueued' => ({required Object title}) => '已加入下载：${title}',
 			'music.downloadDuplicate' => '这首歌已经在下载队列里',
 			'music.downloadUnsupported' => '这首歌没有可下载的音源（本地文件或当前音源未覆盖）',
@@ -11761,12 +11777,12 @@ extension on Translations {
 			'room.startedAt' => ({required Object time}) => '${time} 开播',
 			'room.danmakuList' => '弹幕',
 			'room.danmakuSettingsDesc' => '控制飞行弹幕的显示、字号、速度与区域。',
+			_ => null,
+		} ?? switch (path) {
 			'room.block' => '屏蔽',
 			'room.openExternal' => '在平台打开',
 			'room.restrictionNeedsLogin' => '需要登录',
 			'room.restrictionPaid' => '需要付费',
-			_ => null,
-		} ?? switch (path) {
 			'room.restrictionSubscribersOnly' => '仅限会员',
 			'room.restrictionPrivate' => '私密房间',
 			'room.restrictionAppOnly' => '需要在官方 App 观看',
@@ -12275,12 +12291,12 @@ extension on Translations {
 			'settings.fontManagerPreviewTitle' => '字体预览',
 			'settings.fontManagerPreviewAction' => '预览',
 			'settings.fontManagerPreviewPending' => '下载后可预览',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerGoogle' => 'Google 字体',
 			'settings.fontManagerDescription' => 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于全部界面。',
 			'settings.fontManagerSystemDescription' => ({required Object face}) => '由系统提供，本机使用 ${face}。',
 			'settings.fontManagerBundledNote' => '随应用打包，所有平台默认使用。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerGoogleNote' => '首次选择时从 Google Fonts 获取并缓存在本机，之后离线可用。',
 			'settings.fontManagerFreeFontNote' => '来自免费商用字体库，首次使用时下载并保存在本机。',
 			'settings.fontManagerInUse' => '使用中',
@@ -12789,12 +12805,12 @@ extension on Translations {
 			'settings.downloadProgressUnknown' => ({required Object received}) => '已下载 ${received}',
 			'settings.downloadSavedTo' => ({required Object path}) => '已保存到 ${path}',
 			'settings.downloadCancelled' => '下载已取消，未保留部分文件。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadOpenFile' => '打开文件',
 			'settings.downloadOpenFolder' => '打开所在文件夹',
 			'settings.downloadOpenFailed' => '无法打开该文件',
 			'settings.downloadQueued' => ({required Object title}) => '已加入下载：${title}',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadManagerView' => '查看',
 			'settings.downloadManagerTitle' => '下载管理',
 			'settings.downloadManagerDesc' => '壁纸的下载任务、记录与保存目录。',
@@ -13303,12 +13319,12 @@ extension on Translations {
 			'toolbox.logsCopyEmpty' => '没有可复制的日志',
 			'toolbox.logsDirectoryDefault' => '日志文件尚未就绪。',
 			'toolbox.logsFileTitle' => '日志文件',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsOpenFolder' => '打开所在文件夹',
 			'toolbox.logsCopyPath' => '复制路径',
 			'toolbox.logsPathCopied' => '路径已复制到剪贴板',
 			'toolbox.logsOpenFailed' => '无法打开日志目录',
-			_ => null,
-		} ?? switch (path) {
 			'vod.searchHint' => '搜索 Bilibili 视频',
 			'vod.idleTitle' => '搜索点播视频',
 			'vod.idleDescription' => '输入关键词搜索 Bilibili 的视频。',

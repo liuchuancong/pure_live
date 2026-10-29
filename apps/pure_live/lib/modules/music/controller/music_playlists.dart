@@ -280,6 +280,33 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
     return fresh.length;
   }
 
+  /// Overwrites the playlist's tracks with [tracks] — the reference's
+  /// `overwriteListMusics`, behind a collected list's 更新.
+  Future<int> replaceTracks(String id, Iterable<audio.MusicTrack> tracks) async {
+    final playlist = find(id);
+    if (playlist == null) return 0;
+    final fresh = <audio.MusicTrack>[];
+    final seen = <audio.MusicTrack>{};
+    for (final track in tracks) {
+      if (seen.add(track)) fresh.add(track);
+    }
+    state = [
+      for (final item in state)
+        if (item.id == id) item.copyWith(tracks: fresh) else item,
+    ];
+    await _save();
+    return fresh.length;
+  }
+
+  /// The viewer's list collected from [source]'s playlist [sourceListId],
+  /// if any — the duplicate check behind a second 收藏.
+  MusicPlaylist? findLinked(String source, String sourceListId) {
+    for (final playlist in state) {
+      if (playlist.source == source && playlist.sourceListId == sourceListId) return playlist;
+    }
+    return null;
+  }
+
   /// Drops [track] from the playlist.
   Future<void> removeTrack(String id, audio.MusicTrack track) async {
     state = [

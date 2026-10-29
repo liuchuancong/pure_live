@@ -1019,6 +1019,10 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get openPlaylistTitle => 'Open playlist';
 	@override String get openPlaylistHint => 'Playlist link or ID';
 	@override String get openPlaylistTip => 'Links or IDs from the current source only; what you paste is parsed into a playlist ID before it opens.';
+	@override String get playlistUpdateOnline => 'Update online list';
+	@override String duplicateListTip({required Object name}) => 'You collected "${name}" before. Pull the latest and overwrite its tracks?';
+	@override String onlineUpdatedToast({required Object name, required Object count}) => 'Updated "${name}": ${count} tracks.';
+	@override String get onlineUpdateFailed => 'The update failed; try again later.';
 	@override String get songlistSearchUnsupported => 'This source cannot search songlists yet.';
 	@override String get defaultSource => 'Default source';
 	@override String get defaultSourceDesc => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.';
@@ -4457,6 +4461,10 @@ extension on TranslationsEn {
 			'music.openPlaylistTitle' => 'Open playlist',
 			'music.openPlaylistHint' => 'Playlist link or ID',
 			'music.openPlaylistTip' => 'Links or IDs from the current source only; what you paste is parsed into a playlist ID before it opens.',
+			'music.playlistUpdateOnline' => 'Update online list',
+			'music.duplicateListTip' => ({required Object name}) => 'You collected "${name}" before. Pull the latest and overwrite its tracks?',
+			'music.onlineUpdatedToast' => ({required Object name, required Object count}) => 'Updated "${name}": ${count} tracks.',
+			'music.onlineUpdateFailed' => 'The update failed; try again later.',
 			'music.songlistSearchUnsupported' => 'This source cannot search songlists yet.',
 			'music.defaultSource' => 'Default source',
 			'music.defaultSourceDesc' => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.',
@@ -4609,12 +4617,12 @@ extension on TranslationsEn {
 			'music.selectionCancel' => 'Cancel selection',
 			'music.selectionCount' => ({required Object count}) => '${count} selected',
 			'music.selectionAll' => 'Select all',
+			_ => null,
+		} ?? switch (path) {
 			'music.selectionDownload' => 'Download',
 			'music.selectionRemove' => 'Remove',
 			'music.selectionRemoveDone' => ({required Object count}) => 'Removed ${count} songs',
 			'music.downloadsActive' => ({required Object count}) => 'Downloading ${count}',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadQueued' => ({required Object title}) => 'Queued for download: ${title}',
 			'music.downloadDuplicate' => 'This song is already in the download queue',
 			'music.downloadUnsupported' => 'This song has no downloadable source (a local file, or not covered by the current source)',
@@ -5123,12 +5131,12 @@ extension on TranslationsEn {
 			'room.startedAt' => ({required Object time}) => 'Started ${time}',
 			'room.danmakuList' => 'Danmaku',
 			'room.danmakuSettingsDesc' => 'The flying items’ visibility, size, speed and area.',
+			_ => null,
+		} ?? switch (path) {
 			'room.block' => 'Block',
 			'room.openExternal' => 'Open on the platform',
 			'room.restrictionNeedsLogin' => 'Sign-in required',
 			'room.restrictionPaid' => 'Paid',
-			_ => null,
-		} ?? switch (path) {
 			'room.restrictionSubscribersOnly' => 'Members only',
 			'room.restrictionPrivate' => 'Private room',
 			'room.restrictionAppOnly' => 'Watch in the platform’s app',
@@ -5637,12 +5645,12 @@ extension on TranslationsEn {
 			'settings.fontManagerPreviewTitle' => 'Font preview',
 			'settings.fontManagerPreviewAction' => 'Preview',
 			'settings.fontManagerPreviewPending' => 'Preview after download',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerGoogle' => 'Google fonts',
 			'settings.fontManagerDescription' => 'Choose the UI typeface: MiSans comes with the app, the domestic faces come from a free-for-commercial-use collection, and the overseas ones come from Google Fonts. A choice applies everywhere at once.',
 			'settings.fontManagerSystemDescription' => ({required Object face}) => 'The system provides it; this device uses ${face}.',
 			'settings.fontManagerBundledNote' => 'Bundled with the app, the default on every platform.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerGoogleNote' => 'Fetched from Google Fonts the first time and cached on this device for later offline use.',
 			'settings.fontManagerFreeFontNote' => 'From a free-for-commercial-use collection; downloaded and kept on this device the first time it is used.',
 			'settings.fontManagerInUse' => 'In use',
@@ -6151,12 +6159,12 @@ extension on TranslationsEn {
 			'settings.downloadProgressUnknown' => ({required Object received}) => '${received} downloaded',
 			'settings.downloadSavedTo' => ({required Object path}) => 'Saved to ${path}',
 			'settings.downloadCancelled' => 'Download cancelled; no partial file was kept.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadOpenFile' => 'Open the file',
 			'settings.downloadOpenFolder' => 'Open the folder',
 			'settings.downloadOpenFailed' => 'Could not open it',
 			'settings.downloadQueued' => ({required Object title}) => 'Queued: ${title}',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadManagerView' => 'View',
 			'settings.downloadManagerTitle' => 'Downloads',
 			'settings.downloadManagerDesc' => 'Wallpaper download tasks, history and the save folder.',
@@ -6665,12 +6673,12 @@ extension on TranslationsEn {
 			'toolbox.logsCopyEmpty' => 'No logs to copy',
 			'toolbox.logsDirectoryDefault' => 'The log file is not ready yet.',
 			'toolbox.logsFileTitle' => 'Log file',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsOpenFolder' => 'Open the folder',
 			'toolbox.logsCopyPath' => 'Copy path',
 			'toolbox.logsPathCopied' => 'Path copied to the clipboard',
 			'toolbox.logsOpenFailed' => 'Could not open the log directory',
-			_ => null,
-		} ?? switch (path) {
 			'vod.searchHint' => 'Search Bilibili videos',
 			'vod.idleTitle' => 'Search for videos',
 			'vod.idleDescription' => 'Type a keyword to search Bilibili videos.',
