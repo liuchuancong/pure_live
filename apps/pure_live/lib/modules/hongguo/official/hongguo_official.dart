@@ -1060,6 +1060,8 @@ HongguoSeries? _seriesFromRank(Map<String, Object?> row) {
     cover: _cleanUrl(_str(row, 'cover')),
     intro: _str(row, 'description'),
     hot: _str(row, 'heatText'),
+    favoriteText: _str(row, 'favoriteText'),
+    likeText: _str(row, 'likeText'),
     score: _str(row, 'scoreText'),
     rank: (row['rank'] as num?)?.toInt(),
     category: tags is List<Object?> ? [for (final tag in tags.take(5)) tag.toString()].join(' / ') : '',

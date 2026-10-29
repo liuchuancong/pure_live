@@ -509,6 +509,17 @@ final class HongguoRankRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: theme.typography.caption.copyWith(color: colors.textMuted),
                   ),
+                // The board's social figures sit beside the heat it prints at
+                // the title's end, as the station's own row lays them out.
+                if (series.favoriteText.isNotEmpty || series.likeText.isNotEmpty)
+                  Wrap(
+                    spacing: DsSpace.s12,
+                    runSpacing: DsSpace.s4,
+                    children: [
+                      if (series.favoriteText.isNotEmpty) _RankFigure(icon: DsIcons.heart, label: series.favoriteText),
+                      if (series.likeText.isNotEmpty) _RankFigure(icon: DsIcons.thumbsUp, label: series.likeText),
+                    ],
+                  ),
                 if (series.intro.isNotEmpty)
                   Text(
                     series.intro,
@@ -527,6 +538,29 @@ final class HongguoRankRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// One social figure of a board row: the glyph and the source's own count.
+final class _RankFigure extends StatelessWidget {
+  const _RankFigure({required this.icon, required this.label});
+
+  final DsIconData icon;
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DsSpace.s3,
+      children: [
+        DsIcon(icon, size: theme.sizes.iconXs, color: colors.textSubtle),
+        Text(label, style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted))),
+      ],
     );
   }
 }

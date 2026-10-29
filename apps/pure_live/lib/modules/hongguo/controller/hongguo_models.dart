@@ -52,6 +52,8 @@ final class HongguoSeries {
     this.category = '',
     this.copyright = '',
     this.hot = '',
+    this.favoriteText = '',
+    this.likeText = '',
     this.durationSeconds = 0,
     this.vid = '',
     this.coverTags = const [],
@@ -115,6 +117,12 @@ final class HongguoSeries {
   /// The listing's own heat line ("1.2万人在看") when it has one.
   final String hot;
 
+  /// The listing's own favorite figure ("418.1万收藏") when it has one.
+  final String favoriteText;
+
+  /// The listing's own like figure ("1371.7万点赞") when it has one.
+  final String likeText;
+
   /// The first episode's vid, when the listing carries it.
   final String vid;
 
@@ -146,6 +154,8 @@ final class HongguoSeries {
     String? category,
     String? copyright,
     String? hot,
+    String? favoriteText,
+    String? likeText,
     int? durationSeconds,
     String? vid,
     List<String>? coverTags,
@@ -164,6 +174,8 @@ final class HongguoSeries {
     category: category ?? this.category,
     copyright: copyright ?? this.copyright,
     hot: hot ?? this.hot,
+    favoriteText: favoriteText ?? this.favoriteText,
+    likeText: likeText ?? this.likeText,
     durationSeconds: durationSeconds ?? this.durationSeconds,
     vid: vid ?? this.vid,
     coverTags: coverTags ?? this.coverTags,
