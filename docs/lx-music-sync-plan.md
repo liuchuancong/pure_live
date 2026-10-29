@@ -228,7 +228,13 @@
   **待做**、阶段 C（参数 EQ/FIR/设备校正）、设计图逐像素音效中心主页面
   （当前先落设置子页）、A/B 对比、频响图验证测试）（`plugins/player/index.ts`、
   `store/soundEffect.ts`）。
-- ⬜ H2 频谱可视化（AnalyserNode getByteFrequencyData 等价物；桌面歌词共享频谱）。
+- ✅ H2 电平监控（2026-10-29，如实标记为响度表非频谱）：mpv 无原始 FFT，走 ebur128 元数据探针——
+  media_core `PlayerAdapterEvent.loudnessChanged(momentary, shortTerm)`（LUFS）+ `emitLoudnessChanged`
+  （探针过滤器的存在即能力，不做 capability 门控）+ media_kit 适配器 observe `af-metadata`
+  （lavfi.r128.M/S，200ms 节流，未开链时零事件=「无表」而非「静音」）+ AudioPlaybackController
+  `loudnessStream`/`AudioLoudness`。app 侧 `MusicEqConfig.analysis`（链尾 asplit 分支
+  `[probe]ebur128=metadata=1,anullsink`，EQ 关闭也可单独开探针），EQ 面板响度电平表 M/S 双条。
+  顺带修复：Phase B 的 musicFxAfFilters 六个增强滤镜从未并入 musicEqAfEntries（开关只存了状态没出声），已并入链头。
 - ✅ H3 系统媒体会话（`MusicBackgroundBinding` SMTC/MPRIS + 通知/锁屏已接）：已有 MusicBackgroundBinding（SMTC/MPRIS），对齐 `useMediaSessionInfo.ts` 元数据。
 - ✅ H4 开放 API（2026-10-29 `music_open_api.dart`：loopback HttpServer，LX 同款路由
   /status /toggle /play /pause /skip /back /seek /volume /mute；开关/端口 Provider 已落
