@@ -40,11 +40,14 @@
   签名 `signatureParams` = MD5(key+排序参数+body+key)，key=`OIlwieks28dk2k092lksi2UIkp`(android)/
   `NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt`(web)；歌词两步（search→download，fmt=krc|lrc）。
   LX 参考：`musicSdk/kg/*`、`kg/util.js`
-- ⬜ A4 tx QQ：POST `u.y.qq.com/cgi-bin/musicu.fcg`（module `music.pf_song_detail_svr`），
+- 🟨 A4 tx QQ（2026-10-29 搜索/榜单/封面已接 `music_source_tx.dart`，zzcSign SHA1 签名移植；
+  QRC 歌词解码归 D2，暂不返回歌词）：POST `u.y.qq.com/cgi-bin/musicu.fcg`（module `music.pf_song_detail_svr`），
   音质从 `file.size_128mp3/320mp3/flac/hires` 推导；封面拼
   `y.gtimg.cn/music/photo_new/T002R500x500M000{albumMid}.jpg`；歌词 qrc:1,trans:1 + QRC 解码。
   LX 参考：`musicSdk/tx/*`、`tx/qrcDecode.js`
-- ⬜ A5 wy 网易：eapi/weapi 加密（AES-128-CBC 双层 + RSA / eapi=
+- 🟨 A5 wy 网易（2026-10-29 搜索/榜单/歌词已接 `music_source_wy.dart`，`wy_crypto.dart` 移植
+  eapi/weapi：AES-128-CBC/ECB(pointycastle PKCS7) + RSA NoPadding（公钥 n/e 已硬编码）；
+  yrc 逐字合成归 D2）：eapi/weapi 加密（AES-128-CBC 双层 + RSA / eapi=
   MD5("nobody{url}use{text}md5forencrypt")+AES-128-ECB，key=`e82ckenh8dichen8`，iv=`0102030405060708`）；
   搜索 `/api/search/song/list/page`、详情 `weapi/v3/song/detail`、歌词 `/api/song/lyric/v1`
   （返回 lyric/tlyric/romalrc + yrc 逐字合成 lx 逐字格式）。
