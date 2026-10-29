@@ -31,6 +31,7 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart'
 import 'package:pure_live/modules/hongguo/controller/hongguo_social.dart' show hongguoDanmakuProvider;
 import 'package:pure_live/modules/hongguo/official/hongguo_account.dart' show HongguoAccountClient, HongguoCredentials;
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoRendition;
+import 'package:pure_live/modules/hongguo/widgets/hongguo_comment_panel.dart' show HongguoCommentPanel;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_danmaku_layer.dart' show HongguoDanmakuLayer;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart' show HongguoEpisodeShelf;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
@@ -905,7 +906,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.common.retry))],
                 ),
               )
-            : _body(context, detail, t),
+            : _body(context, detail),
       ),
     );
   }
@@ -925,23 +926,46 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     }
   }
 
-  /// The picture above the shelf it can switch along.
-  Widget _body(BuildContext context, HongguoSeriesDetail? detail, Translations t) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s16,
-        children: [
-          _playerSurface(context, immersive: false),
-          if (detail != null)
-            HongguoEpisodeShelf(
-              detail: detail,
-              current: _episode,
-              onOpen: (episode) => unawaited(_openEpisode(episode)),
+  /// The picture above the shelf it can switch along, with the comments
+  /// docked beside both on a wide window — the reference's side panel, which
+  /// never covers the picture.
+  Widget _body(BuildContext context, HongguoSeriesDetail? detail) {
+    final player = _playerSurface(context, immersive: false);
+    final shelf = detail == null
+        ? const SizedBox.shrink()
+        : HongguoEpisodeShelf(detail: detail, current: _episode, onOpen: (episode) => unawaited(_openEpisode(episode)));
+    final comments = HongguoCommentPanel(seriesId: widget.seriesId, episodeVid: _episode?.vid ?? '');
+    if (MediaQuery.sizeOf(context).width < 1100) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s16,
+          children: [player, shelf, comments],
+        ),
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: DsSpace.s16,
+              children: [player, shelf],
             ),
-        ],
-      ),
+          ),
+        ),
+        SizedBox(
+          width: 340,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(0, DsSpace.s12, DsSpace.s20, DsSpace.s24),
+            child: comments,
+          ),
+        ),
+      ],
     );
   }
 

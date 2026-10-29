@@ -14,10 +14,10 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart'
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_social.dart'
-    show hongguoCommentsProvider, hongguoPublicReviewsProvider, hongguoRelatedClientProvider, hongguoRelatedProvider;
+    show hongguoRelatedClientProvider, hongguoRelatedProvider;
 import 'package:pure_live/modules/hongguo/official/hongguo_account.dart' show HongguoCredentials;
-import 'package:pure_live/modules/hongguo/official/hongguo_public_reviews.dart' show HongguoPublicReview;
 import 'package:pure_live/modules/hongguo/official/hongguo_related.dart' show HongguoRelatedWork;
+import 'package:pure_live/modules/hongguo/widgets/hongguo_comment_panel.dart' show HongguoCommentPanel;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart' show HongguoEpisodeShelf;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show HongguoSeriesRow, hongguoDurationText;
 import 'package:pure_live/shared/shared.dart';
@@ -146,9 +146,8 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
     );
     final info = _info(context, detail, t);
     final episodeVid = resume?.vid ?? '';
-    final reviews = _SeriesReviewsSection(seriesId: widget.seriesId, episodeVid: episodeVid);
+    final comments = HongguoCommentPanel(seriesId: widget.seriesId, episodeVid: episodeVid);
     final related = _RelatedSection(seriesId: widget.seriesId);
-    final comments = _CommentsSection(seriesId: widget.seriesId, episodeVid: episodeVid);
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 1000;
@@ -158,7 +157,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: DsSpace.s16,
-              children: [play, shelf, info, reviews, related, comments],
+              children: [play, shelf, info, related, comments],
             ),
           );
         }
@@ -171,7 +170,7 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: DsSpace.s16,
-                  children: [play, info, reviews, related, comments],
+                  children: [play, info, related, comments],
                 ),
               ),
             ),
@@ -409,238 +408,6 @@ final class _RelatedSectionState extends ConsumerState<_RelatedSection> {
                     child: Text(t.hongguo.relatedReserve),
                   )
                 : null,
-          ),
-      ],
-    );
-  }
-}
-
-/// One episode's comments: paged by the server cursor, read-only.
-final class _CommentsSection extends ConsumerStatefulWidget {
-  const _CommentsSection({required this.seriesId, required this.episodeVid});
-
-  final String seriesId;
-
-  /// The episode whose comments the section reads; empty until one is known.
-  final String episodeVid;
-
-  @override
-  ConsumerState<_CommentsSection> createState() => _CommentsSectionState();
-}
-
-final class _CommentsSectionState extends ConsumerState<_CommentsSection> {
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final state = ref.watch(hongguoCommentsProvider);
-    final episode = widget.episodeVid;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || episode.isEmpty || !RegExp(r'^[0-9]{6,30}$').hasMatch(episode)) return;
-      unawaited(ref.read(hongguoCommentsProvider.notifier).open(widget.seriesId, episode));
-    });
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s8,
-      children: [
-        Text(
-          state.total > 0 ? '${t.hongguo.comments} (${state.total})' : t.hongguo.comments,
-          style: theme.typography.title.copyWith(color: colors.text),
-        ),
-        if (state.loading && state.items.isEmpty) const Center(child: DsSpinner()),
-        if (state.error != null && state.items.isEmpty)
-          Text(state.error!, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-        if (!state.loading && state.items.isEmpty && state.error == null && episode.isNotEmpty)
-          Text(t.hongguo.commentsEmpty, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-        for (final comment in state.items)
-          DsCard(
-            style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s12,
-              children: [
-                DsAvatar(
-                  initials: comment.author.isEmpty ? 'HG' : comment.author,
-                  size: DsSize.sm,
-                  toneIndex: DsAvatar.toneFor(comment.id),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: DsSpace.s4,
-                    children: [
-                      Row(
-                        spacing: DsSpace.s8,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              comment.author.isEmpty ? '红果用户' : comment.author,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                            ),
-                          ),
-                          DsIcon(DsIcons.heart, size: theme.sizes.iconXs, color: colors.textSubtle),
-                          Text(
-                            '${comment.likes}',
-                            style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(color: colors.textSubtle),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(comment.content, style: theme.typography.body.copyWith(color: colors.text)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        if (state.hasMore)
-          DsButton(
-            variant: DsButtonVariant.secondary,
-            onPressed: state.loading ? null : () => unawaited(ref.read(hongguoCommentsProvider.notifier).loadMore()),
-            child: Text(t.hongguo.commentsLoadMore),
-          ),
-      ],
-    );
-  }
-}
-
-/// The series' public reviews and its rating, read off the website's own
-/// pages — no account credential goes with the ask.
-final class _SeriesReviewsSection extends ConsumerStatefulWidget {
-  const _SeriesReviewsSection({required this.seriesId, required this.episodeVid});
-
-  final String seriesId;
-
-  /// The episode the viewer is on; its comments come from the same pages.
-  final String episodeVid;
-
-  @override
-  ConsumerState<_SeriesReviewsSection> createState() => _SeriesReviewsSectionState();
-}
-
-final class _SeriesReviewsSectionState extends ConsumerState<_SeriesReviewsSection> {
-  /// Whether the list shows this episode's comments; the other tab is the
-  /// series' own reviews, the reference's two tabs.
-  bool _episodeTab = true;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final state = ref.watch(hongguoPublicReviewsProvider);
-    final episode = widget.episodeVid;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || episode.isEmpty || !RegExp(r'^[0-9]{6,30}$').hasMatch(episode)) return;
-      unawaited(ref.read(hongguoPublicReviewsProvider.notifier).open(widget.seriesId, episode));
-    });
-    final data = state.data;
-    final page = data == null ? null : (_episodeTab ? data.episode : data.series);
-    final reviews = page?.items ?? const <HongguoPublicReview>[];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s8,
-      children: [
-        Row(
-          spacing: DsSpace.s8,
-          children: [
-            Expanded(
-              child: Text(t.hongguo.reviews, style: theme.typography.title.copyWith(color: colors.text)),
-            ),
-            if (data != null && data.rating > 0)
-              DsBadge(
-                label: Text(
-                  data.ratingCount > 0
-                      ? '${t.hongguo.rating(score: data.rating.toStringAsFixed(1))} · ${t.hongguo.ratingCount(count: data.ratingCount)}'
-                      : t.hongguo.rating(score: data.rating.toStringAsFixed(1)),
-                ),
-                dot: false,
-              ),
-          ],
-        ),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: DsSegmentedControl<bool>(
-            value: _episodeTab,
-            onChanged: (value) => setState(() => _episodeTab = value),
-            segments: [
-              DsSegment(value: true, label: Text(t.hongguo.reviewsEpisode)),
-              DsSegment(value: false, label: Text(t.hongguo.reviewsSeries)),
-            ],
-          ),
-        ),
-        if (state.loading && data == null) const Center(child: DsSpinner()),
-        if (state.error != null && data == null)
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(
-                child: Text(state.error!, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-              ),
-              DsButton(
-                size: DsSize.sm,
-                variant: DsButtonVariant.ghost,
-                onPressed: () => unawaited(ref.read(hongguoPublicReviewsProvider.notifier).retry()),
-                child: Text(t.common.retry),
-              ),
-            ],
-          ),
-        if (data != null && reviews.isEmpty)
-          Text(t.hongguo.reviewsEmpty, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-        for (final review in reviews)
-          DsCard(
-            style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s12,
-              children: [
-                DsAvatar(
-                  initials: review.author.isEmpty ? 'HG' : review.author,
-                  size: DsSize.sm,
-                  toneIndex: DsAvatar.toneFor(review.id),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: DsSpace.s4,
-                    children: [
-                      Row(
-                        spacing: DsSpace.s8,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              review.author.isEmpty ? '红果用户' : review.author,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                            ),
-                          ),
-                          if (review.rating > 0)
-                            Text(
-                              review.rating.toStringAsFixed(1),
-                              style: theme.typography.numeric(
-                                theme.typography.caption.copyWith(color: colors.textSubtle),
-                              ),
-                            ),
-                          DsIcon(DsIcons.heart, size: theme.sizes.iconXs, color: colors.textSubtle),
-                          Text(
-                            '${review.likes}',
-                            style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(color: colors.textSubtle),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(review.content, style: theme.typography.body.copyWith(color: colors.text)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
           ),
       ],
     );
