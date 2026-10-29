@@ -166,8 +166,13 @@
   updateUserListPosition/getListMusics/addListMusics（去重）/moveListMusics/overwriteListFull/
   checkListExistMusic/getMusicExistListIds。
 - ✅ F4 不喜欢列表（`music_dislikes.dart`，播放时自动跳过已接）（`store/dislikeList/`，已有雏形 `music_dislikes.dart`，对齐结构）。
-- ⬜ F5 备份/迁移：部分歌单/仅设置/全量三档导出导入；导出歌单为文本/CSV
-  （`SettingBackup.vue`、`migrateSetting.ts`）。对接现有 backup 域。
+- ✅ F5 备份/迁移：对接现有 backup 域 + 导出歌单为文本/CSV（`SettingBackup.vue`、
+  `renderer/worker/main/list.ts`）。backup_settings.dart 早已收录 music.* 全部键
+  （设置/歌单/收藏/最近/不喜欢/自定义源/歌词覆盖/队列=仅设置与全量两档已覆盖；补齐本轮
+  新增 music.play.volume/rate、music.lyric.traditionalize/playWordTimed 四键）；
+  `music_playlists.dart` 新增 LX 同款导出：合并单文件（`\uFEFF` BOM、
+  `歌名  歌手  专辑` 行、列表间空行）与逐列表文件 `lx_list_<名>.txt/.csv`，
+  CSV 带 `歌名,歌手,专辑` 表头 + 引号转义（`exportPlayListToText`/`exportPlayListToCSV`）。
 - 🟨 F6 在线歌单（数据层已落：能力接口 `OnlinePlaylists`（`online_playlist_models.dart` 共享
   `MusicPlaylistInfo/Page`）；**wy+tx+kg 三通道已实现**——wy weapi hottags/list/v3 detail（含
   privileges 音质合并），tx 热门标签刮取 + `get_category_content` + `GetRecommendWhole` 兜底 +
