@@ -85,7 +85,9 @@
   运行时才是裁判（与 LX 桌面端一致）。文本导入框粘贴 URL 自动拉取（与 LX 单导入框行为对齐）。
   新增 `controller/music_source_catalog.dart`：awaw.cc/pdone/lx-music-source 16 源目录
   （长青/Fish/野花/野草/HelloWorld/幻音/Huibq/HYW/ikun/杰翔/聚合API/独家/全豆要/六音/星海/玉宁熙），
-  raw.githubusercontent 直链 + 三个 ghproxy 镜像回退；自定义源页新增「内置音源库」分区
+  **下载路线走 app 现有 `githubMirrorProvider`（设置里的 GitHub 加速），不私建镜像表**
+  （2026-10-30 用户纠偏：曾硬编码三个 ghproxy 镜像被斥"我已经有 github 代理配置了,怎么又重新写一个"）；
+  自定义源页新增「内置音源库」分区
   （MusicSourceCatalogSection）一键导入、已导入态比对 @name/展示名。+13 测试（含 16 真实
   脚本样本形态）。余项（id 时间戳规则、gz_ 前缀压缩存储）随 B3 导入导出一并核对。原条目：脚本头注释解析 `@name/@description/@author/@homepage/@version`
   （正则 `/^\s?\*\s?@(\w+)\s(.+)$/`）、id 规则 `user_api_XXX_时间戳`、脚本 deflate+base64

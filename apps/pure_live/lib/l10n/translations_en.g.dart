@@ -1374,7 +1374,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get syncModeOverwriteLocalRemoteFull => 'Local only';
 	@override String get syncModeOverwriteRemoteLocalFull => 'Remote only';
 	@override String get catalogSection => 'Built-in sources';
-	@override String get catalogHint => 'Sources from the pdone/lx-music-source community collection; importing downloads the latest script, falling back to mirrors.';
+	@override String get catalogHint => 'Sources from the pdone/lx-music-source community collection; importing downloads the latest script over the GitHub-acceleration setting.';
 	@override String get catalogImport => 'Import';
 	@override String get catalogImported => 'Imported';
 	@override String get catalogFetchFailed => 'Downloading the source script failed: every mirror was unreachable';
@@ -3390,13 +3390,6 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get savedVideo => 'Favourited';
 	@override String get saveAdded => 'Added to favourites';
 	@override String get saveRemoved => 'Removed from favourites';
-	@override String get download => 'Download video';
-	@override String downloading({required int percent}) => 'Downloading ${percent}%';
-	@override String get downloadingUnknown => 'Downloading…';
-	@override String downloadDone({required String name}) => 'Saved to ${name}';
-	@override String get downloadFailed => 'Download failed';
-	@override String get downloadCancelled => 'Download cancelled';
-	@override String get downloadCancel => 'Cancel download';
 }
 
 // Path: wallpaper
@@ -4745,7 +4738,7 @@ extension on TranslationsEn {
 			'music.syncModeOverwriteLocalRemoteFull' => 'Local only',
 			'music.syncModeOverwriteRemoteLocalFull' => 'Remote only',
 			'music.catalogSection' => 'Built-in sources',
-			'music.catalogHint' => 'Sources from the pdone/lx-music-source community collection; importing downloads the latest script, falling back to mirrors.',
+			'music.catalogHint' => 'Sources from the pdone/lx-music-source community collection; importing downloads the latest script over the GitHub-acceleration setting.',
 			'music.catalogImport' => 'Import',
 			'music.catalogImported' => 'Imported',
 			'music.catalogFetchFailed' => 'Downloading the source script failed: every mirror was unreachable',
@@ -6670,13 +6663,6 @@ extension on TranslationsEn {
 			'vod.savedVideo' => 'Favourited',
 			'vod.saveAdded' => 'Added to favourites',
 			'vod.saveRemoved' => 'Removed from favourites',
-			'vod.download' => 'Download video',
-			'vod.downloading' => ({required int percent}) => 'Downloading ${percent}%',
-			'vod.downloadingUnknown' => 'Downloading…',
-			'vod.downloadDone' => ({required String name}) => 'Saved to ${name}',
-			'vod.downloadFailed' => 'Download failed',
-			'vod.downloadCancelled' => 'Download cancelled',
-			'vod.downloadCancel' => 'Cancel download',
 			'wallpaper.title' => 'Random pictures',
 			'wallpaper.description' => 'Fetch a picture from a public random source by group; preview before applying.',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} sources',

@@ -425,7 +425,7 @@
   "syncModeOverwriteLocalRemoteFull": "Local only",
   "syncModeOverwriteRemoteLocalFull": "Remote only",
   "catalogSection": "Built-in sources",
-  "catalogHint": "Sources from the pdone/lx-music-source community collection; importing downloads the latest script, falling back to mirrors.",
+  "catalogHint": "Sources from the pdone/lx-music-source community collection; importing downloads the latest script over the GitHub-acceleration setting.",
   "catalogImport": "Import",
   "catalogImported": "Imported",
   "catalogFetchFailed": "Downloading the source script failed: every mirror was unreachable"

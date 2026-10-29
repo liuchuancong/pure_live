@@ -425,7 +425,7 @@
   "syncModeOverwriteLocalRemoteFull": "仅保留本地",
   "syncModeOverwriteRemoteLocalFull": "仅保留远端",
   "catalogSection": "内置音源库",
-  "catalogHint": "来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本（raw 源不可达时自动换镜像）。",
+  "catalogHint": "来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本，下载路线跟随设置里的 GitHub 加速。",
   "catalogImport": "导入",
   "catalogImported": "已导入",
   "catalogFetchFailed": "音源脚本下载失败：raw 源与镜像都不可达"

@@ -8,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile, LiveHttpCalls;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
+import 'package:pure_live/app/providers/network/github_mirror_provider.dart' show githubMirrorProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/app/providers/settings/download_directory_provider.dart'
     show DownloadDirectoryPaths, downloadDirectoryProvider;
@@ -526,12 +527,18 @@ final class _MusicSourceCatalogSectionState extends ConsumerState<MusicSourceCat
     if (_inFlight.contains(entry.id)) return;
     setState(() => _inFlight.add(entry.id));
     try {
-      final script = await fetchCatalogScript(entry, (uri) {
-        return ref
+      final script = await fetchCatalogScript(
+        entry,
+        (uri) => ref
             .read(networkFactoryProvider)
             .create(profile: ClientProfile.plugin)
-            .getText(uri, timeout: const Duration(seconds: 20));
-      });
+            .getText(uri, timeout: const Duration(seconds: 20)),
+        // The app's GitHub-acceleration setting orders the routes — the
+        // chosen mirror first, the raw address as the fallback.
+        routes: (raw) => [
+          for (final candidate in ref.read(githubMirrorProvider).candidates(raw.toString())) Uri.parse(candidate),
+        ],
+      );
       if (!mounted) return;
       await _runImport(context, ref, () => ref.read(musicSourcesProvider.notifier).importScript(script));
     } on Object {

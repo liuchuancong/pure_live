@@ -3823,8 +3823,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '内置音源库'
 	String get catalogSection => '内置音源库';
 
-	/// zh-CN: '来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本（raw 源不可达时自动换镜像）。'
-	String get catalogHint => '来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本（raw 源不可达时自动换镜像）。';
+	/// zh-CN: '来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本，下载路线跟随设置里的 GitHub 加速。'
+	String get catalogHint => '来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本，下载路线跟随设置里的 GitHub 加速。';
 
 	/// zh-CN: '导入'
 	String get catalogImport => '导入';
@@ -9672,27 +9672,6 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '已取消收藏'
 	String get saveRemoved => '已取消收藏';
-
-	/// zh-CN: '下载视频'
-	String get download => '下载视频';
-
-	/// zh-CN: '下载中 {percent: int}%'
-	String downloading({required int percent}) => '下载中 ${percent}%';
-
-	/// zh-CN: '下载中…'
-	String get downloadingUnknown => '下载中…';
-
-	/// zh-CN: '已下载到 {name: String}'
-	String downloadDone({required String name}) => '已下载到 ${name}';
-
-	/// zh-CN: '下载失败'
-	String get downloadFailed => '下载失败';
-
-	/// zh-CN: '已取消下载'
-	String get downloadCancelled => '已取消下载';
-
-	/// zh-CN: '取消下载'
-	String get downloadCancel => '取消下载';
 }
 
 // Path: wallpaper
@@ -11245,7 +11224,7 @@ extension on Translations {
 			'music.syncModeOverwriteLocalRemoteFull' => '仅保留本地',
 			'music.syncModeOverwriteRemoteLocalFull' => '仅保留远端',
 			'music.catalogSection' => '内置音源库',
-			'music.catalogHint' => '来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本（raw 源不可达时自动换镜像）。',
+			'music.catalogHint' => '来自社区合集 pdone/lx-music-source 的音源，点击导入即拉取最新脚本，下载路线跟随设置里的 GitHub 加速。',
 			'music.catalogImport' => '导入',
 			'music.catalogImported' => '已导入',
 			'music.catalogFetchFailed' => '音源脚本下载失败：raw 源与镜像都不可达',
@@ -13170,13 +13149,6 @@ extension on Translations {
 			'vod.savedVideo' => '已收藏',
 			'vod.saveAdded' => '已加入收藏',
 			'vod.saveRemoved' => '已取消收藏',
-			'vod.download' => '下载视频',
-			'vod.downloading' => ({required int percent}) => '下载中 ${percent}%',
-			'vod.downloadingUnknown' => '下载中…',
-			'vod.downloadDone' => ({required String name}) => '已下载到 ${name}',
-			'vod.downloadFailed' => '下载失败',
-			'vod.downloadCancelled' => '已取消下载',
-			'vod.downloadCancel' => '取消下载',
 			'wallpaper.title' => '随机图源',
 			'wallpaper.description' => '按分组从公开随机接口取图，预览后再应用。',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} 个来源',

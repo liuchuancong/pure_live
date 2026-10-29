@@ -35,14 +35,6 @@ final class MusicCatalogEntry {
 /// The upstream repo, newest-checked daily by its maintainer.
 const String _catalogRepo = 'https://raw.githubusercontent.com/pdone/lx-music-source/main';
 
-/// Mirror prefixes that serve the same repo path, tried in order when the
-/// raw host is unreachable.
-const List<String> _catalogMirrors = <String>[
-  'https://ghproxy.net/raw.githubusercontent.com/pdone/lx-music-source/main',
-  'https://github.moeyy.xyz/raw.githubusercontent.com/pdone/lx-music-source/main',
-  'https://gh.llkk.cc/raw.githubusercontent.com/pdone/lx-music-source/main',
-];
-
 /// The catalog, in the order the collection page lists them.
 const List<MusicCatalogEntry> kMusicSourceCatalog = <MusicCatalogEntry>[
   MusicCatalogEntry(id: 'changqing', name: '长青', scriptName: '长青SVIP音源'),
@@ -63,21 +55,22 @@ const List<MusicCatalogEntry> kMusicSourceCatalog = <MusicCatalogEntry>[
   MusicCatalogEntry(id: 'yuningxi', name: '玉宁熙', scriptName: 'lx-玉宁熙-Pro'),
 ];
 
-/// The addresses a catalog entry's script is served from — the raw host
-/// first, then the mirrors.
-List<Uri> musicCatalogScriptUrls(MusicCatalogEntry entry) => <Uri>[
-  for (final base in <String>[_catalogRepo, ..._catalogMirrors]) Uri.parse('$base/${entry.id}/latest.js'),
-];
+/// The raw address a catalog entry's script is served from. Acceleration is
+/// the app's own GitHub-mirror setting, not a private list here: callers
+/// expand it through [fetchCatalogScript]'s `routes` hook.
+Uri musicCatalogScriptUrl(MusicCatalogEntry entry) => Uri.parse('$_catalogRepo/${entry.id}/latest.js');
 
-/// Downloads a catalog entry's script, walking the mirror list; the first
-/// non-empty body wins. [fetch] is the transport — the app passes
-/// `LiveHttp`'s `getText`, tests pass a stub.
+/// Downloads a catalog entry's script, walking the routes the caller
+/// expands — the app passes its GitHub-acceleration candidates, so the
+/// viewer's mirror choice governs; the first non-empty body wins. [fetch]
+/// is the transport — the app passes `LiveHttp`'s `getText`, tests a stub.
 Future<String> fetchCatalogScript(
   MusicCatalogEntry entry,
-  Future<String> Function(Uri uri) fetch,
-) async {
+  Future<String> Function(Uri uri) fetch, {
+  List<Uri> Function(Uri raw) routes = _rawOnly,
+}) async {
   String? lastFailure;
-  for (final uri in musicCatalogScriptUrls(entry)) {
+  for (final uri in routes(musicCatalogScriptUrl(entry))) {
     try {
       final body = await fetch(uri);
       if (body.trim().isNotEmpty) return body;
@@ -86,8 +79,11 @@ Future<String> fetchCatalogScript(
       lastFailure = '$error';
     }
   }
-  throw MusicCatalogFetchException(lastFailure ?? 'no mirrors');
+  throw MusicCatalogFetchException(lastFailure ?? 'no routes');
 }
+
+/// The bare raw address, for callers that expand routes themselves.
+List<Uri> _rawOnly(Uri raw) => [raw];
 
 /// Every address answered nothing usable.
 final class MusicCatalogFetchException implements Exception {

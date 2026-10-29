@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/modules/music/controller/music_source_catalog.dart'
-    show MusicCatalogFetchException, fetchCatalogScript, kMusicSourceCatalog, musicCatalogScriptUrls;
+    show MusicCatalogFetchException, fetchCatalogScript, kMusicSourceCatalog, musicCatalogScriptUrl;
 import 'package:pure_live/modules/music/controller/music_sources.dart';
 
 void main() {
@@ -61,35 +61,51 @@ void main() {
       expect(kMusicSourceCatalog.map((entry) => entry.id).toSet(), hasLength(16));
     });
 
-    test('every entry serves a latest.js script', () {
+    test('every entry serves a raw latest.js script', () {
       for (final entry in kMusicSourceCatalog) {
-        final urls = musicCatalogScriptUrls(entry);
-        expect(urls.first.host, 'raw.githubusercontent.com');
-        expect(urls.first.path, '/pdone/lx-music-source/main/${entry.id}/latest.js');
-        expect(urls, hasLength(4));
-        expect(urls.skip(1).map((uri) => uri.host), everyElement(isNot('raw.githubusercontent.com')));
+        final uri = musicCatalogScriptUrl(entry);
+        expect(uri.host, 'raw.githubusercontent.com');
+        expect(uri.path, '/pdone/lx-music-source/main/${entry.id}/latest.js');
       }
     });
   });
 
   group('fetchCatalogScript', () {
-    test('returns the first body that answers', () async {
+    test('returns the first route that answers', () async {
       final seen = <Uri>[];
-      final body = await fetchCatalogScript(kMusicSourceCatalog.first, (uri) async {
-        seen.add(uri);
-        if (seen.length == 1) throw const FormatException('blocked');
-        return '// script';
-      });
+      final body = await fetchCatalogScript(
+        kMusicSourceCatalog.first,
+        (uri) async {
+          seen.add(uri);
+          if (seen.length == 1) throw const FormatException('blocked');
+          return '// script';
+        },
+        routes: (raw) => [Uri.parse('https://mirror.test/one'), raw],
+      );
       expect(body, '// script');
       expect(seen, hasLength(2));
     });
 
     test('skips empty bodies', () async {
-      final body = await fetchCatalogScript(kMusicSourceCatalog.first, (uri) async => uri.host.contains('raw') ? ' ' : 'ok');
+      final body = await fetchCatalogScript(
+        kMusicSourceCatalog.first,
+        (uri) async => uri.host == 'mirror.test' ? ' ' : 'ok',
+        routes: (raw) => [Uri.parse('https://mirror.test/one'), raw],
+      );
       expect(body, 'ok');
     });
 
-    test('throws when every mirror fails', () async {
+    test('falls back to the raw address when no routes given', () async {
+      final seen = <Uri>[];
+      final body = await fetchCatalogScript(kMusicSourceCatalog.first, (uri) async {
+        seen.add(uri);
+        return '// script';
+      });
+      expect(body, '// script');
+      expect(seen.single.host, 'raw.githubusercontent.com');
+    });
+
+    test('throws when every route fails', () async {
       await expectLater(
         fetchCatalogScript(kMusicSourceCatalog.first, (uri) async => throw StateError('down')),
         throwsA(isA<MusicCatalogFetchException>()),
