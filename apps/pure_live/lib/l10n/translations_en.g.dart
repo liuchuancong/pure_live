@@ -1011,6 +1011,11 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get sourceAliasWy => 'WY Music';
 	@override String get sourceAliasMg => 'MG Music';
 	@override String get playlistHotTags => 'Hot';
+	@override String get sortRecommend => 'Recommended';
+	@override String get sortHot => 'Hot';
+	@override String get sortNew => 'New';
+	@override String get sortHotCollect => 'Most collected';
+	@override String get sortRise => 'Rising';
 	@override String get songlistSearchUnsupported => 'This source cannot search songlists yet.';
 	@override String get defaultSource => 'Default source';
 	@override String get defaultSourceDesc => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.';
@@ -4441,6 +4446,11 @@ extension on TranslationsEn {
 			'music.sourceAliasWy' => 'WY Music',
 			'music.sourceAliasMg' => 'MG Music',
 			'music.playlistHotTags' => 'Hot',
+			'music.sortRecommend' => 'Recommended',
+			'music.sortHot' => 'Hot',
+			'music.sortNew' => 'New',
+			'music.sortHotCollect' => 'Most collected',
+			'music.sortRise' => 'Rising',
 			'music.songlistSearchUnsupported' => 'This source cannot search songlists yet.',
 			'music.defaultSource' => 'Default source',
 			'music.defaultSourceDesc' => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.',
@@ -4600,13 +4610,13 @@ extension on TranslationsEn {
 			'music.downloadQueued' => ({required Object title}) => 'Queued for download: ${title}',
 			'music.downloadDuplicate' => 'This song is already in the download queue',
 			'music.downloadUnsupported' => 'This song has no downloadable source (a local file, or not covered by the current source)',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadFailed' => ({required Object error}) => 'Download failed: ${error}',
 			'music.downloadHint' => 'Files land in the shared download folder; the queue supports pause, resume and retry.',
 			'music.downloadDirectory' => 'Download folder',
 			'music.downloadDirectoryDefault' => 'Use the default folder',
 			'music.downloadDirectoryDefaultDesc' => 'Return to the app’s default downloads folder.',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadDirectoryUpdated' => 'Download folder updated',
 			'music.downloadDirectoryFailed' => 'This folder is not writable',
 			'music.downloadType' => 'Download format',
@@ -5114,13 +5124,13 @@ extension on TranslationsEn {
 			'room.restrictionSubscribersOnly' => 'Members only',
 			'room.restrictionPrivate' => 'Private room',
 			'room.restrictionAppOnly' => 'Watch in the platform’s app',
+			_ => null,
+		} ?? switch (path) {
 			'room.restrictionRegionBlocked' => 'Not available in this region',
 			'room.restrictionPassword' => 'Password required',
 			'room.restrictionAdult' => 'Age restricted',
 			'room.restrictionUnplayable' => 'Not playable now',
 			'room.orientation' => 'Picture orientation',
-			_ => null,
-		} ?? switch (path) {
 			'room.orientationHint' => 'Follow the picture’s own shape, or fix this room to portrait or landscape.',
 			'room.orientationAutomatic' => 'Automatic',
 			'room.orientationPortrait' => 'Portrait',
@@ -5628,13 +5638,13 @@ extension on TranslationsEn {
 			'settings.fontManagerGoogleNote' => 'Fetched from Google Fonts the first time and cached on this device for later offline use.',
 			'settings.fontManagerFreeFontNote' => 'From a free-for-commercial-use collection; downloaded and kept on this device the first time it is used.',
 			'settings.fontManagerInUse' => 'In use',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerDefaultBadge' => 'Default',
 			'settings.fontManagerCurrent' => 'Current font',
 			'settings.fontManagerReset' => 'Restore the default',
 			'settings.fontManagerFilterAll' => 'All',
 			'settings.fontManagerCategory' => 'Category',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerCount' => ({required Object count}) => '${count} fonts',
 			'settings.fontManagerTagBundled' => 'Bundled',
 			'settings.fontManagerSourceFreeFont' => 'Free font collection',
@@ -6142,13 +6152,13 @@ extension on TranslationsEn {
 			'settings.downloadManagerView' => 'View',
 			'settings.downloadManagerTitle' => 'Downloads',
 			'settings.downloadManagerDesc' => 'Wallpaper download tasks, history and the save folder.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadManagerEmpty' => 'No downloads yet',
 			'settings.downloadManagerEmptyDesc' => 'Choose “Download” in a preview or the library and the task shows up here.',
 			'settings.downloadStatusRunning' => 'Downloading',
 			'settings.downloadStatusDone' => 'Completed',
 			'settings.downloadStatusFailed' => 'Failed',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => 'Finished ${time}',
 			'settings.downloadRemove' => 'Remove record',
@@ -6656,13 +6666,13 @@ extension on TranslationsEn {
 			'vod.searchHint' => 'Search Bilibili videos',
 			'vod.idleTitle' => 'Search for videos',
 			'vod.idleDescription' => 'Type a keyword to search Bilibili videos.',
+			_ => null,
+		} ?? switch (path) {
 			'vod.noResultsTitle' => 'No videos found',
 			'vod.noResultsDescription' => 'Try another keyword.',
 			'vod.errorTitle' => 'The videos did not load',
 			'vod.retry' => 'Retry',
 			'vod.tabRecommend' => 'Recommended',
-			_ => null,
-		} ?? switch (path) {
 			'vod.tabPopular' => 'Popular',
 			'vod.tabDynamics' => 'Dynamics',
 			'vod.dynamicsLoginTitle' => 'Sign in to see your dynamics',

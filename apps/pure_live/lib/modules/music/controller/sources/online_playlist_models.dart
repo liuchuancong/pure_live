@@ -39,13 +39,30 @@ final class MusicPlaylistPage {
   final int total;
 }
 
+/// One sort tab of the plaza (排序 tab) — the reference's `sortList` rows;
+/// [id] is the semantic key (`recommend`/`hot`/…) the wording is keyed on.
+final class MusicPlazaSort {
+  /// Creates a sort.
+  const MusicPlazaSort({required this.id, required this.name});
+
+  /// The semantic sort key.
+  final String id;
+
+  /// The words the sort is shown under when no wording is keyed on the id.
+  final String name;
+}
+
 /// The online-playlist capability (在线歌单) a platform source can carry:
 /// the hot tags, the pages under one tag, and a playlist's tracks.
 abstract mixin class OnlinePlaylists {
   /// The hot tags; the tag set the browser starts from.
   Future<List<String>> hotTags();
 
-  /// One page of playlists under [tag].
+  /// The plaza's sort tabs; empty shows none — the reference's `sortList`.
+  List<MusicPlazaSort> get sorts => const [];
+
+  /// One page of playlists under [tag], sorted by [order] — the semantic
+  /// sort key of one of [sorts].
   Future<MusicPlaylistPage> playlists({String tag, String order, int page, int pageSize});
 
   /// The playlist's summary and tracks.

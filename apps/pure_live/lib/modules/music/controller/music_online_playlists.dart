@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
+import 'package:pure_live/l10n/translations.dart';
 
 import 'package:pure_live/modules/music/controller/music_source.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTagGroup, OnlinePlaylists, PlaylistTagTree, SonglistSearch;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTagGroup, MusicPlazaSort, OnlinePlaylists, PlaylistTagTree,
+        SonglistSearch;
 
 /// One online playlist opened to its tracks.
 typedef MusicOnlinePlaylistDetail = (MusicPlaylistInfo, List<audio.MusicTrack>);
@@ -18,7 +20,25 @@ final musicOnlineHotTagsProvider = FutureProvider<List<String>>((ref) {
   return Future.value(const <String>[]);
 });
 
-typedef MusicOnlinePlaylistKey = ({String tag, int page});
+/// The plaza's sort tabs; a source without them shows none.
+final musicPlaylistSortsProvider = Provider<List<MusicPlazaSort>>((ref) {
+  final source = ref.watch(musicSourceProvider);
+  if (source is OnlinePlaylists) return (source as OnlinePlaylists).sorts;
+  return const <MusicPlazaSort>[];
+});
+
+/// The words a plaza's sort tab is shown under — the reference's `sortList`
+/// names; an unknown id falls back to its own words.
+String musicPlaylistSortLabel(Translations t, MusicPlazaSort sort) => switch (sort.id) {
+  'recommend' => t.music.sortRecommend,
+  'hot' => t.music.sortHot,
+  'new' => t.music.sortNew,
+  'hot_collect' => t.music.sortHotCollect,
+  'rise' => t.music.sortRise,
+  _ => sort.name,
+};
+
+typedef MusicOnlinePlaylistKey = ({String tag, String order, int page});
 
 /// The plaza's category tree (歌单分类): one group per category, its tags
 /// inside. A source without the tree has none and the browser keeps to the
@@ -33,7 +53,7 @@ final FutureProviderFamily<MusicPlaylistPage, MusicOnlinePlaylistKey> musicOnlin
     FutureProvider.family<MusicPlaylistPage, MusicOnlinePlaylistKey>((ref, key) {
       final source = ref.watch(musicSourceProvider);
       if (source is OnlinePlaylists) {
-        return (source as OnlinePlaylists).playlists(tag: key.tag, page: key.page);
+        return (source as OnlinePlaylists).playlists(tag: key.tag, order: key.order, page: key.page);
       }
       return Future.value(const MusicPlaylistPage(items: [], total: 0));
     });

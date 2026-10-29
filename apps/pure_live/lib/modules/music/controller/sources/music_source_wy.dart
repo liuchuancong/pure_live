@@ -7,8 +7,8 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, OnlinePlaylists, PlaylistTagTree,
-        SonglistSearch;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort,
+        OnlinePlaylists, PlaylistTagTree, SonglistSearch;
 import 'package:pure_live/modules/music/controller/sources/wy_crypto.dart';
 
 /// The wy-music leaderboard view's Netease boards, in its own order.
@@ -103,6 +103,10 @@ implements MusicHotWords, MusicCommentsSource {
     ];
     return audio.MusicSourcePage(items: items, total: items.length);
   }
+
+  /// The plaza's sort tabs — the reference's wy `sortList` keeps only 最热.
+  @override
+  List<MusicPlazaSort> get sorts => const [MusicPlazaSort(id: 'hot', name: '最热')];
 
   /// The viewer-browsable online playlists (在线歌单): hot tags, the pages
   /// under a tag, and one playlist's tracks. lx-music's wy `songList`.

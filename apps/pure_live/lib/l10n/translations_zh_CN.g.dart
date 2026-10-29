@@ -2734,6 +2734,21 @@ class Translations$music$zh_CN {
 	/// zh-CN: '热门'
 	String get playlistHotTags => '热门';
 
+	/// zh-CN: '推荐'
+	String get sortRecommend => '推荐';
+
+	/// zh-CN: '最热'
+	String get sortHot => '最热';
+
+	/// zh-CN: '最新'
+	String get sortNew => '最新';
+
+	/// zh-CN: '热藏'
+	String get sortHotCollect => '热藏';
+
+	/// zh-CN: '飙升'
+	String get sortRise => '飙升';
+
 	/// zh-CN: '当前音源暂不支持歌单搜索。'
 	String get songlistSearchUnsupported => '当前音源暂不支持歌单搜索。';
 
@@ -11063,6 +11078,11 @@ extension on Translations {
 			'music.sourceAliasWy' => '小芸音乐',
 			'music.sourceAliasMg' => '小蜜音乐',
 			'music.playlistHotTags' => '热门',
+			'music.sortRecommend' => '推荐',
+			'music.sortHot' => '最热',
+			'music.sortNew' => '最新',
+			'music.sortHotCollect' => '热藏',
+			'music.sortRise' => '飙升',
 			'music.songlistSearchUnsupported' => '当前音源暂不支持歌单搜索。',
 			'music.defaultSource' => '默认音源',
 			'music.defaultSourceDesc' => '歌曲从哪个音源获取；自定义源脚本负责解析播放地址。',
@@ -11222,13 +11242,13 @@ extension on Translations {
 			'music.downloadQueued' => ({required Object title}) => '已加入下载：${title}',
 			'music.downloadDuplicate' => '这首歌已经在下载队列里',
 			'music.downloadUnsupported' => '这首歌没有可下载的音源（本地文件或当前音源未覆盖）',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadFailed' => ({required Object error}) => '下载失败：${error}',
 			'music.downloadHint' => '下载文件保存在共享下载目录；队列支持暂停、续传和失败重试。',
 			'music.downloadDirectory' => '下载目录',
 			'music.downloadDirectoryDefault' => '使用默认目录',
 			'music.downloadDirectoryDefaultDesc' => '回到应用默认的下载文件夹。',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadDirectoryUpdated' => '下载目录已更新',
 			'music.downloadDirectoryFailed' => '无法写入这个目录',
 			'music.downloadType' => '下载格式',
@@ -11736,13 +11756,13 @@ extension on Translations {
 			'room.restrictionSubscribersOnly' => '仅限会员',
 			'room.restrictionPrivate' => '私密房间',
 			'room.restrictionAppOnly' => '需要在官方 App 观看',
+			_ => null,
+		} ?? switch (path) {
 			'room.restrictionRegionBlocked' => '当前地区不可观看',
 			'room.restrictionPassword' => '需要密码',
 			'room.restrictionAdult' => '年龄限制',
 			'room.restrictionUnplayable' => '暂时无法播放',
 			'room.orientation' => '画面方向',
-			_ => null,
-		} ?? switch (path) {
 			'room.orientationHint' => '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。',
 			'room.orientationAutomatic' => '自动',
 			'room.orientationPortrait' => '竖屏',
@@ -12250,13 +12270,13 @@ extension on Translations {
 			'settings.fontManagerGoogleNote' => '首次选择时从 Google Fonts 获取并缓存在本机，之后离线可用。',
 			'settings.fontManagerFreeFontNote' => '来自免费商用字体库，首次使用时下载并保存在本机。',
 			'settings.fontManagerInUse' => '使用中',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerDefaultBadge' => '默认',
 			'settings.fontManagerCurrent' => '当前字体',
 			'settings.fontManagerReset' => '恢复默认',
 			'settings.fontManagerFilterAll' => '全部',
 			'settings.fontManagerCategory' => '分类',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerCount' => ({required Object count}) => '共 ${count} 款字体',
 			'settings.fontManagerTagBundled' => '随应用打包',
 			'settings.fontManagerSourceFreeFont' => '免费字体库',
@@ -12764,13 +12784,13 @@ extension on Translations {
 			'settings.downloadManagerView' => '查看',
 			'settings.downloadManagerTitle' => '下载管理',
 			'settings.downloadManagerDesc' => '壁纸的下载任务、记录与保存目录。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadManagerEmpty' => '还没有下载记录',
 			'settings.downloadManagerEmptyDesc' => '在预览或图库点「下载」，任务会出现在这里。',
 			'settings.downloadStatusRunning' => '下载中',
 			'settings.downloadStatusDone' => '已完成',
 			'settings.downloadStatusFailed' => '下载失败',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => '完成于 ${time}',
 			'settings.downloadRemove' => '移除记录',
@@ -13278,13 +13298,13 @@ extension on Translations {
 			'vod.searchHint' => '搜索 Bilibili 视频',
 			'vod.idleTitle' => '搜索点播视频',
 			'vod.idleDescription' => '输入关键词搜索 Bilibili 的视频。',
+			_ => null,
+		} ?? switch (path) {
 			'vod.noResultsTitle' => '没有找到视频',
 			'vod.noResultsDescription' => '换个关键词再试试。',
 			'vod.errorTitle' => '视频没有加载出来',
 			'vod.retry' => '重试',
 			'vod.tabRecommend' => '推荐',
-			_ => null,
-		} ?? switch (path) {
 			'vod.tabPopular' => '热门',
 			'vod.tabDynamics' => '动态',
 			'vod.dynamicsLoginTitle' => '登录后查看动态',

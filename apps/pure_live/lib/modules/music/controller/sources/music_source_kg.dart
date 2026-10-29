@@ -8,8 +8,8 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, OnlinePlaylists, PlaylistTagTree,
-        SonglistSearch;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort,
+        OnlinePlaylists, PlaylistTagTree, SonglistSearch;
 
 /// The lx-music leaderboard view's KuGou boards, in its own order.
 const List<(String, String)> _kKgBoards = [
@@ -271,12 +271,31 @@ implements MusicHotWords, MusicCommentsSource {
     );
   }
 
+  /// The plaza's sort tabs — the reference's kg `sortList`, the t codes its
+  /// getSpecial answers by.
   @override
-  Future<MusicPlaylistPage> playlists({String tag = '', String order = 'hot', int page = 1, int pageSize = 30}) async {
+  List<MusicPlazaSort> get sorts => const [
+    MusicPlazaSort(id: 'recommend', name: '推荐'),
+    MusicPlazaSort(id: 'hot', name: '最热'),
+    MusicPlazaSort(id: 'new', name: '最新'),
+    MusicPlazaSort(id: 'hot_collect', name: '热藏'),
+    MusicPlazaSort(id: 'rise', name: '飙升'),
+  ];
+
+  static const Map<String, String> _sortIds = {
+    'recommend': '5',
+    'hot': '6',
+    'new': '7',
+    'hot_collect': '3',
+    'rise': '8',
+  };
+
+  @override
+  Future<MusicPlaylistPage> playlists({String tag = '', String order = 'recommend', int page = 1, int pageSize = 30}) async {
     final uri = Uri.http('www2.kugou.kugou.com', '/yueku/v9/special/getSpecial', {
       'is_ajax': '1',
       'cdn': 'cdn',
-      't': '5',
+      't': _sortIds[order] ?? '5',
       'c': tag,
       'p': '$page',
     });

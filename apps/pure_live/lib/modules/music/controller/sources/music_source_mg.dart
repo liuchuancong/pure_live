@@ -8,8 +8,8 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, OnlinePlaylists, PlaylistTagTree,
-        SonglistSearch;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort,
+        OnlinePlaylists, PlaylistTagTree, SonglistSearch;
 
 /// The mg-music leaderboard view's boards, in its own order.
 const List<(String, String)> _kMgBoards = [
@@ -196,6 +196,11 @@ implements MusicHotWords, MusicCommentsSource {
         'Chrome/59.0.3071.115 Mobile Safari/537.36',
     'channel': '0146921',
   };
+
+  /// The plaza's sort tabs — the reference's mg `sortList` keeps only 推荐,
+  /// and its active listing path asks the recommend feed regardless.
+  @override
+  List<MusicPlazaSort> get sorts => const [MusicPlazaSort(id: 'recommend', name: '推荐')];
 
   /// The online playlists (在线歌单): the plaza's tag list, the per-tag pages
   /// and the MIGUM3.0 playlist detail lx-music's mg `songList` rides.

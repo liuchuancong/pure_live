@@ -18,7 +18,7 @@ import 'package:pure_live/modules/music/controller/music_library.dart';
 import 'package:pure_live/modules/music/controller/music_local.dart';
 import 'package:pure_live/modules/music/controller/music_online_playlists.dart'
     show musicOnlineHotTagsProvider, musicOnlinePlaylistDetailProvider, musicOnlinePlaylistsProvider,
-        musicPlaylistTagGroupsProvider, musicSonglistSearchProvider;
+        musicPlaylistSortLabel, musicPlaylistSortsProvider, musicPlaylistTagGroupsProvider, musicSonglistSearchProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_playlists.dart';
 import 'package:pure_live/modules/music/controller/music_search.dart';
@@ -28,7 +28,8 @@ import 'package:pure_live/modules/music/controller/music_source.dart'
     show musicSourceListProvider, musicSourceProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show musicSourcesProvider;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, OnlinePlaylists, SonglistSearch;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, OnlinePlaylists,
+        SonglistSearch;
 import 'package:pure_live/modules/music/pages/music_player_page.dart' show musicDurationText;
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
     show MusicCardMenuButton, MusicPlaylistCard, MusicPlaylistGrid;
@@ -2094,6 +2095,9 @@ final class _OnlinePlaylistBrowse extends ConsumerStatefulWidget {
 }
 
 final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrowse> {
+  /// The sort tab in browse; null waits for the sorts to name the first.
+  String? _order;
+
   /// The category group in browse; empty is the hot tags.
   String _group = '';
 
@@ -2109,8 +2113,10 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
     final t = context.t;
     final hotTags = ref.watch(musicOnlineHotTagsProvider);
     final tree = ref.watch(musicPlaylistTagGroupsProvider);
+    final sorts = ref.watch(musicPlaylistSortsProvider);
     final supported = ref.watch(musicSourceProvider) is OnlinePlaylists;
 
+    final order = _order ?? sorts.firstOrNull?.id ?? '';
     final tagGroups = tree.value ?? const <MusicPlaylistTagGroup>[];
     final hotValues = [
       for (final name in hotTags.value ?? const <String>[])
@@ -2123,7 +2129,8 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
 
     final pages = <AsyncValue<MusicPlaylistPage>>[
       if (effectiveTag != null)
-        for (var page = 1; page <= _page; page++) ref.watch(musicOnlinePlaylistsProvider((tag: effectiveTag, page: page))),
+        for (var page = 1; page <= _page; page++)
+          ref.watch(musicOnlinePlaylistsProvider((tag: effectiveTag, order: order, page: page))),
     ];
     final items = <MusicPlaylistInfo>[
       for (final page in pages)
@@ -2150,6 +2157,22 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
             ),
           )
         else ...[
+          // The reference's sort tabs, above the tag tree; a plaza with a
+          // single sort shows none.
+          if (sorts.length > 1)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+              child: DsTopNav<String>(
+                items: [
+                  for (final sort in sorts) DsTopNavItem(value: sort.id, label: Text(musicPlaylistSortLabel(t, sort))),
+                ],
+                value: order,
+                onChanged: (id) => setState(() {
+                  _order = id;
+                  _page = 1;
+                }),
+              ),
+            ),
           // The reference's tag tree: the categories as the nav row, the
           // chosen group's tags as the chips under it, the hot tags their
           // own first group.
@@ -2228,7 +2251,7 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
                     return;
                   }
                   for (var page = 1; page <= _page; page++) {
-                    ref.invalidate(musicOnlinePlaylistsProvider((tag: tag, page: page)));
+                    ref.invalidate(musicOnlinePlaylistsProvider((tag: tag, order: order, page: page)));
                   }
                   setState(() => _page = 1);
                 },
@@ -2248,7 +2271,7 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
                           final tag = effectiveTag;
                           if (tag == null) return;
                           for (var page = 1; page <= _page; page++) {
-                            ref.invalidate(musicOnlinePlaylistsProvider((tag: tag, page: page)));
+                            ref.invalidate(musicOnlinePlaylistsProvider((tag: tag, order: order, page: page)));
                           }
                         },
                         child: Text(t.common.retry),

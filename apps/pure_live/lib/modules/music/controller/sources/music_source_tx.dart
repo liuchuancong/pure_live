@@ -10,8 +10,8 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, OnlinePlaylists, PlaylistTagTree,
-        SonglistSearch;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort,
+        OnlinePlaylists, PlaylistTagTree, SonglistSearch;
 
 /// The QQ-music leaderboard view's boards, in its own order.
 const List<(String, String)> _kTxBoards = [
@@ -262,13 +262,28 @@ implements MusicHotWords, MusicCommentsSource {
     }
   }
 
+  /// The plaza's sort tabs — the reference's tx `sortList`: without a tag
+  /// the sort rides in place of one, 推荐 being the feed.
   @override
-  Future<MusicPlaylistPage> playlists({String tag = '', String order = 'hot', int page = 1, int pageSize = 30}) async {
-    final tagId = int.tryParse(tag);
+  List<MusicPlazaSort> get sorts => const [
+    MusicPlazaSort(id: 'recommend', name: '推荐'),
+    MusicPlazaSort(id: 'hot', name: '最热'),
+    MusicPlazaSort(id: 'new', name: '最新'),
+  ];
+
+  static const Map<String, int> _sortCategoryIds = {'hot': 3, 'new': 2};
+
+  @override
+  Future<MusicPlaylistPage> playlists({String tag = '', String order = 'recommend', int page = 1, int pageSize = 30}) async {
+    final tagId = int.tryParse(tag) ?? (tag.isEmpty ? _sortCategoryIds[order] : null);
     if (tagId == null) {
       // No numeric category: the plaza falls back to its feed.
       return await _recommendPage(page, pageSize);
     }
+    return await _categoryPage(tagId, page, pageSize);
+  }
+
+  Future<MusicPlaylistPage> _categoryPage(int tagId, int page, int pageSize) async {
     final data = jsonEncode({
       'comm': {'cv': 1602, 'ct': 20},
       'playlist': {
