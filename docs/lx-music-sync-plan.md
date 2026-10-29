@@ -225,7 +225,15 @@
   频响曲线纳入 bass/vocal 音色形（low-shelf RBJ 公式）；UI 增强音效区=每效果开关+强度滑杆
   +声明成本（latency/stereoOnly，kMusicFxCosts）；`musicEqApplyFailedProvider`=
   applyEngineOptions 报告 unsupported 或异常时页面红字提示（诚实失败规则）。
-  **待做**、阶段 C（参数 EQ/FIR/设备校正）、设计图逐像素音效中心主页面
+  **阶段 C 首项参数 EQ 已落（2026-10-29）**：MusicEqNode{id,enabled,frequency 20–20k,q 0.1–10,
+  gainDb ±12} 列表进 config（≤8 个，JSON 容损读），链序=效果→参数节点→图示段→预放→探针，
+  频响曲线按 RBJ peaking(q=节点 Q) 叠加节点；UI 新「参数均衡器」区（每节点 开关+删除+频率/Q/增益
+  三滑杆，频率 Q 均对数刻度，添加行带 x/8 计数到顶禁用）；**H2 响度探针已落**：config.analysis +
+  链尾 ebur128 asplit 分支（EQ 关闭可单独开）+ EQ 面板 M/S 响度电平表（如实标注非 FFT 频谱，
+  mpv 无原始频谱数据）；media_core 侧 PlayerAdapterEvent.loudnessChanged + af-metadata 200ms 节流
+  + AudioPlaybackController.loudnessStream；**顺修 Phase B 遗留**：musicFxAfFilters 六滤镜从未
+  并入 musicEqAfEntries（开关存状态但无声），已并入链头。
+  **待做**、阶段 C 余项（FIR/设备校正）、阶段 D（HRTF/卷积）、设计图逐像素音效中心主页面
   （当前先落设置子页）、A/B 对比、频响图验证测试）（`plugins/player/index.ts`、
   `store/soundEffect.ts`）。
 - ✅ H2 电平监控（2026-10-29，如实标记为响度表非频谱）：mpv 无原始 FFT，走 ebur128 元数据探针——
