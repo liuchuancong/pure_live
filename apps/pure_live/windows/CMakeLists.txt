@@ -55,6 +55,10 @@ add_subdirectory("runner")
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
+# VS2026's MSVC hard-errors on <experimental/coroutine>, which several
+# plugins' C++ sources still include (webview_all_windows, audio_service_win).
+# The define silences STL1011 for every target declared below.
+add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
 include(flutter/generated_plugins.cmake)
 
 
