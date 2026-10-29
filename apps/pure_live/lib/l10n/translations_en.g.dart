@@ -1282,7 +1282,25 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get eqPresetCustom => 'Custom';
 	@override String get eqPreamp => 'Preamp';
 	@override String get eqPreampDesc => 'Applied before the bands; lower it when the curve clips.';
+	@override String get hkEnable => 'Enable shortcuts';
+	@override String get hkEnableDesc => 'In-app accelerators for the transport and volume.';
+	@override String get hkUnset => 'Unset';
+	@override String get hkPressNew => 'Press a new combination, Esc cancels';
+	@override String get hkReset => 'Reset to defaults';
+	@override String get hkResetDesc => 'Restores the default combinations.';
 	@override String get eqReset => 'Reset';
+	@override String get hkNote => 'Only works inside the app window; system-wide (global) registration needs platform support that has not landed.';
+	@override String get hkTogglePlay => 'Play / pause';
+	@override String get hkNext => 'Next track';
+	@override String get hkPrev => 'Previous track';
+	@override String get hkSeekBackward => 'Seek back 5 s';
+	@override String get hkSeekForward => 'Seek forward 5 s';
+	@override String get hkVolumeUp => 'Volume up';
+	@override String get hkVolumeDown => 'Volume down';
+	@override String get hkVolumeMute => 'Mute';
+	@override String get hkMusicLove => 'Favourite';
+	@override String get hkMusicUnlove => 'Unfavourite';
+	@override String get hkMusicDislike => 'Dislike';
 	@override String get eqResetDesc => 'Every band and the preamp back to zero.';
 	@override String get eqEditorTitle => 'Ten-band equalizer';
 	@override String get eqHint => 'Drag a handle to shape its band; the curve updates as you drag and reaches the player in real time.';
@@ -1333,6 +1351,28 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get onlineLoadFailed => 'Could not load the playlist';
 	@override String get onlineImport => 'Import';
 	@override String onlineImported({required Object count, required Object name}) => 'Imported ${count} songs into “${name}”';
+	@override String get syncHost => 'Sync server';
+	@override String get syncHostHint => 'lx-music sync server address, e.g. http://192.168.1.10:23332';
+	@override String get syncEdit => 'Edit';
+	@override String get syncAuthCode => 'Auth code';
+	@override String get syncAuthCodeHint => 'The connection code shown by the server';
+	@override String get syncMode => 'Sync mode';
+	@override String get syncConnect => 'Connect';
+	@override String get syncDisconnect => 'Disconnect';
+	@override String get syncStatusConnected => 'Connected';
+	@override String get syncStatusConnecting => 'Connecting';
+	@override String get syncStatusFailed => 'Failed';
+	@override String get syncStatusIdle => 'Not connected';
+	@override String get syncStatusHint => 'Connect to pull the server\'s lists and push local changes back.';
+	@override String get syncForgetKey => 'Forget authorization';
+	@override String get syncForgetKeyDesc => 'Drop the stored key and re-auth with the code next time.';
+	@override String get syncNote => 'Lists sync with a lx-music desktop server: recent, favourites and your playlists. The server merges using the chosen mode.';
+	@override String get syncModeMergeLocalRemote => 'Merge: local first';
+	@override String get syncModeMergeRemoteLocal => 'Merge: remote first';
+	@override String get syncModeOverwriteLocalRemote => 'Overwrite remote with local';
+	@override String get syncModeOverwriteRemoteLocal => 'Overwrite local with remote';
+	@override String get syncModeOverwriteLocalRemoteFull => 'Local only';
+	@override String get syncModeOverwriteRemoteLocalFull => 'Remote only';
 }
 
 // Path: navigation
@@ -2264,7 +2304,11 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get navMusicLyric => 'Lyrics';
 	@override String get musicLyricDescription => 'Translation, romanization and lyric delay.';
 	@override String get navMusicDesktopLyric => 'Desktop lyrics';
+	@override String get navMusicHotkeys => 'Hotkeys';
+	@override String get navMusicSync => 'Sync';
 	@override String get navMusicEq => 'Sound effects';
+	@override String get musicHotkeysDescription => 'Shortcuts for play, volume and favourites.';
+	@override String get musicSyncDescription => 'List sync with a lx-music desktop server.';
 	@override String get musicEqDescription => 'The master switch, presets, the ten-band equalizer and its preamp.';
 	@override String get musicDesktopLyricDescription => 'The floating lyric\'s switch, lock, font, colour and alignment.';
 	@override String get vodQuality => 'Default quality';
@@ -4597,7 +4641,25 @@ extension on TranslationsEn {
 			'music.eqPresetCustom' => 'Custom',
 			'music.eqPreamp' => 'Preamp',
 			'music.eqPreampDesc' => 'Applied before the bands; lower it when the curve clips.',
+			'music.hkEnable' => 'Enable shortcuts',
+			'music.hkEnableDesc' => 'In-app accelerators for the transport and volume.',
+			'music.hkUnset' => 'Unset',
+			'music.hkPressNew' => 'Press a new combination, Esc cancels',
+			'music.hkReset' => 'Reset to defaults',
+			'music.hkResetDesc' => 'Restores the default combinations.',
 			'music.eqReset' => 'Reset',
+			'music.hkNote' => 'Only works inside the app window; system-wide (global) registration needs platform support that has not landed.',
+			'music.hkTogglePlay' => 'Play / pause',
+			'music.hkNext' => 'Next track',
+			'music.hkPrev' => 'Previous track',
+			'music.hkSeekBackward' => 'Seek back 5 s',
+			'music.hkSeekForward' => 'Seek forward 5 s',
+			'music.hkVolumeUp' => 'Volume up',
+			'music.hkVolumeDown' => 'Volume down',
+			'music.hkVolumeMute' => 'Mute',
+			'music.hkMusicLove' => 'Favourite',
+			'music.hkMusicUnlove' => 'Unfavourite',
+			'music.hkMusicDislike' => 'Dislike',
 			'music.eqResetDesc' => 'Every band and the preamp back to zero.',
 			'music.eqEditorTitle' => 'Ten-band equalizer',
 			'music.eqHint' => 'Drag a handle to shape its band; the curve updates as you drag and reaches the player in real time.',
@@ -4648,6 +4710,28 @@ extension on TranslationsEn {
 			'music.onlineLoadFailed' => 'Could not load the playlist',
 			'music.onlineImport' => 'Import',
 			'music.onlineImported' => ({required Object count, required Object name}) => 'Imported ${count} songs into “${name}”',
+			'music.syncHost' => 'Sync server',
+			'music.syncHostHint' => 'lx-music sync server address, e.g. http://192.168.1.10:23332',
+			'music.syncEdit' => 'Edit',
+			'music.syncAuthCode' => 'Auth code',
+			'music.syncAuthCodeHint' => 'The connection code shown by the server',
+			'music.syncMode' => 'Sync mode',
+			'music.syncConnect' => 'Connect',
+			'music.syncDisconnect' => 'Disconnect',
+			'music.syncStatusConnected' => 'Connected',
+			'music.syncStatusConnecting' => 'Connecting',
+			'music.syncStatusFailed' => 'Failed',
+			'music.syncStatusIdle' => 'Not connected',
+			'music.syncStatusHint' => 'Connect to pull the server\'s lists and push local changes back.',
+			'music.syncForgetKey' => 'Forget authorization',
+			'music.syncForgetKeyDesc' => 'Drop the stored key and re-auth with the code next time.',
+			'music.syncNote' => 'Lists sync with a lx-music desktop server: recent, favourites and your playlists. The server merges using the chosen mode.',
+			'music.syncModeMergeLocalRemote' => 'Merge: local first',
+			'music.syncModeMergeRemoteLocal' => 'Merge: remote first',
+			'music.syncModeOverwriteLocalRemote' => 'Overwrite remote with local',
+			'music.syncModeOverwriteRemoteLocal' => 'Overwrite local with remote',
+			'music.syncModeOverwriteLocalRemoteFull' => 'Local only',
+			'music.syncModeOverwriteRemoteLocalFull' => 'Remote only',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -4962,6 +5046,8 @@ extension on TranslationsEn {
 			'room.switchLive' => 'Live',
 			'room.switchShowGrid' => 'Show as grid',
 			'room.switchShowList' => 'Show as list',
+			_ => null,
+		} ?? switch (path) {
 			'room.twitchCookieExpired' => 'Twitch\'s cookie no longer works — danmaku is anonymous again; please paste a new Twitch cookie',
 			'room.bilibiliGuestNames' => 'Connected as a guest — Bilibili chat hides the full nicknames',
 			'room.bilibiliLoginExpired' => 'Your Bilibili login looks expired — every nickname is masked; please sign in again',
@@ -5002,8 +5088,6 @@ extension on TranslationsEn {
 			'search.linkOpen' => 'Open room',
 			'search.linkResolving' => 'Resolving the link…',
 			'search.linkFailed' => 'The link did not resolve to a room',
-			_ => null,
-		} ?? switch (path) {
 			'settings.title' => 'Settings',
 			'settings.navGeneral' => 'Browsing & window',
 			'settings.navPersonalization' => 'Personalization',
@@ -5476,6 +5560,8 @@ extension on TranslationsEn {
 			'settings.sitesOrderReset' => 'Restore default order',
 			'settings.sitesOrderResetDesc' => 'Platforms return to the built-in order; the show switches stay as they are.',
 			'settings.groupInterface' => 'Interface',
+			_ => null,
+		} ?? switch (path) {
 			'settings.groupSources' => 'Live sources',
 			'settings.groupPlayback' => 'Playback',
 			'settings.groupGeneral' => 'General',
@@ -5516,11 +5602,13 @@ extension on TranslationsEn {
 			'settings.navMusicDownload' => 'Downloads',
 			'settings.musicDownloadDescription' => 'Download folder, format, naming and tags.',
 			'settings.navMusicLyric' => 'Lyrics',
-			_ => null,
-		} ?? switch (path) {
 			'settings.musicLyricDescription' => 'Translation, romanization and lyric delay.',
 			'settings.navMusicDesktopLyric' => 'Desktop lyrics',
+			'settings.navMusicHotkeys' => 'Hotkeys',
+			'settings.navMusicSync' => 'Sync',
 			'settings.navMusicEq' => 'Sound effects',
+			'settings.musicHotkeysDescription' => 'Shortcuts for play, volume and favourites.',
+			'settings.musicSyncDescription' => 'List sync with a lx-music desktop server.',
 			'settings.musicEqDescription' => 'The master switch, presets, the ten-band equalizer and its preamp.',
 			'settings.musicDesktopLyricDescription' => 'The floating lyric\'s switch, lock, font, colour and alignment.',
 			'settings.vodQuality' => 'Default quality',
@@ -5986,6 +6074,8 @@ extension on TranslationsEn {
 			'settings.releaseKindPortable' => 'Portable archive',
 			'settings.releaseKindOther' => 'File',
 			'settings.sitesKeepOne' => 'Keep at least one platform visible',
+			_ => null,
+		} ?? switch (path) {
 			'settings.autoPip' => 'Small window on app leave',
 			'settings.autoPipDesc' => 'Keep a playing room in a small window over the other apps when you leave; needs the "display over other apps" permission.',
 			'settings.floatPlay' => 'Floating player on exit',
@@ -6030,8 +6120,6 @@ extension on TranslationsEn {
 			'settings.audienceMetricDesc' => 'The figure cards lead with on popular and followed rooms.',
 			'settings.audienceAutomatic' => 'Platform default',
 			'settings.audienceOnline' => 'Live viewers',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audiencePopularity' => 'Popularity',
 			'settings.audienceTotal' => 'Total viewers',
 			'settings.audienceDisplayGroup' => 'Card display and ranking mode',
@@ -6500,6 +6588,8 @@ extension on TranslationsEn {
 			'vod.likes' => 'Likes',
 			'vod.coins' => 'Coins',
 			'vod.favorites' => 'Favourites',
+			_ => null,
+		} ?? switch (path) {
 			'vod.description' => 'Description',
 			'vod.noDescription' => 'This video has no description.',
 			'vod.play' => 'Play',
@@ -6544,8 +6634,6 @@ extension on TranslationsEn {
 			'vod.toViewEmptyTitle' => 'Watch later is empty',
 			'vod.toViewEmptyDescription' => 'Videos you mark as watch later on Bilibili appear here.',
 			'vod.followingEmptyTitle' => 'Nothing followed yet',
-			_ => null,
-		} ?? switch (path) {
 			'vod.followingEmptyDescription' => 'The anime and cinema you follow on Bilibili appear here.',
 			'vod.comments' => 'Comments',
 			'vod.commentsEmpty' => 'No comments yet.',

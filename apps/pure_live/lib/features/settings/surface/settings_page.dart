@@ -553,6 +553,8 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.musicDownload => const MusicDownloadPane(),
       SettingsSection.musicLyric => const MusicLyricPane(),
       SettingsSection.musicDesktopLyric => const MusicDesktopLyricPane(),
+      SettingsSection.musicHotkeys => const MusicHotkeysPane(),
+      SettingsSection.musicSync => const MusicSyncPane(),
       SettingsSection.musicEq => const MusicEqPane(),
     };
     final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;

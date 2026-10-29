@@ -11,6 +11,8 @@ import 'package:pure_live/app/providers/settings/download_directory_provider.dar
     show DownloadDirectoryPaths, downloadDirectoryProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_downloads.dart';
+import 'package:pure_live/modules/music/controller/music_hotkeys.dart'
+    show musicHotkeyBindings;
 import 'package:pure_live/modules/music/controller/music_library.dart';
 import 'package:pure_live/modules/music/controller/music_local.dart';
 import 'package:pure_live/modules/music/controller/music_online_playlists.dart'
@@ -105,7 +107,11 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return CallbackShortcuts(
+      bindings: musicHotkeyBindings(ref),
+      child: Focus(
+        autofocus: true,
+        child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Padding(
@@ -127,6 +133,8 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
         ),
         const _MiniPlayer(),
       ],
+        ),
+      ),
     );
   }
 }

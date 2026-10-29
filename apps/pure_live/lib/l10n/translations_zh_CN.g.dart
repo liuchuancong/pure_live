@@ -3547,8 +3547,62 @@ class Translations$music$zh_CN {
 	/// zh-CN: '作用于频段之前；曲线削波时先降这里。'
 	String get eqPreampDesc => '作用于频段之前；曲线削波时先降这里。';
 
+	/// zh-CN: '启用快捷键'
+	String get hkEnable => '启用快捷键';
+
+	/// zh-CN: '应用窗口内的传输与音量快捷键。'
+	String get hkEnableDesc => '应用窗口内的传输与音量快捷键。';
+
+	/// zh-CN: '未设置'
+	String get hkUnset => '未设置';
+
+	/// zh-CN: '按下新组合，Esc 取消'
+	String get hkPressNew => '按下新组合，Esc 取消';
+
+	/// zh-CN: '恢复默认'
+	String get hkReset => '恢复默认';
+
+	/// zh-CN: '还原默认组合。'
+	String get hkResetDesc => '还原默认组合。';
+
 	/// zh-CN: '重置'
 	String get eqReset => '重置';
+
+	/// zh-CN: '仅应用窗口内生效；系统级全局注册需平台层支持，尚未接入。'
+	String get hkNote => '仅应用窗口内生效；系统级全局注册需平台层支持，尚未接入。';
+
+	/// zh-CN: '播放 / 暂停'
+	String get hkTogglePlay => '播放 / 暂停';
+
+	/// zh-CN: '下一首'
+	String get hkNext => '下一首';
+
+	/// zh-CN: '上一首'
+	String get hkPrev => '上一首';
+
+	/// zh-CN: '快退 5 秒'
+	String get hkSeekBackward => '快退 5 秒';
+
+	/// zh-CN: '快进 5 秒'
+	String get hkSeekForward => '快进 5 秒';
+
+	/// zh-CN: '音量加'
+	String get hkVolumeUp => '音量加';
+
+	/// zh-CN: '音量减'
+	String get hkVolumeDown => '音量减';
+
+	/// zh-CN: '静音'
+	String get hkVolumeMute => '静音';
+
+	/// zh-CN: '收藏'
+	String get hkMusicLove => '收藏';
+
+	/// zh-CN: '取消收藏'
+	String get hkMusicUnlove => '取消收藏';
+
+	/// zh-CN: '不喜欢'
+	String get hkMusicDislike => '不喜欢';
 
 	/// zh-CN: '所有频段与预放增益归零。'
 	String get eqResetDesc => '所有频段与预放增益归零。';
@@ -3699,6 +3753,72 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '已导入 {count} 首到「{name}」'
 	String onlineImported({required Object count, required Object name}) => '已导入 ${count} 首到「${name}」';
+
+	/// zh-CN: '同步服务端'
+	String get syncHost => '同步服务端';
+
+	/// zh-CN: 'lx-music 同步服务地址，例如 http://192.168.1.10:23332'
+	String get syncHostHint => 'lx-music 同步服务地址，例如 http://192.168.1.10:23332';
+
+	/// zh-CN: '修改'
+	String get syncEdit => '修改';
+
+	/// zh-CN: '连接码'
+	String get syncAuthCode => '连接码';
+
+	/// zh-CN: '服务端显示的连接码'
+	String get syncAuthCodeHint => '服务端显示的连接码';
+
+	/// zh-CN: '同步模式'
+	String get syncMode => '同步模式';
+
+	/// zh-CN: '连接'
+	String get syncConnect => '连接';
+
+	/// zh-CN: '断开'
+	String get syncDisconnect => '断开';
+
+	/// zh-CN: '已连接'
+	String get syncStatusConnected => '已连接';
+
+	/// zh-CN: '连接中'
+	String get syncStatusConnecting => '连接中';
+
+	/// zh-CN: '连接失败'
+	String get syncStatusFailed => '连接失败';
+
+	/// zh-CN: '未连接'
+	String get syncStatusIdle => '未连接';
+
+	/// zh-CN: '连接后拉取服务端歌单并推送本地改动。'
+	String get syncStatusHint => '连接后拉取服务端歌单并推送本地改动。';
+
+	/// zh-CN: '清除授权'
+	String get syncForgetKey => '清除授权';
+
+	/// zh-CN: '删除已保存的密钥，下次连接用连接码重新授权。'
+	String get syncForgetKeyDesc => '删除已保存的密钥，下次连接用连接码重新授权。';
+
+	/// zh-CN: '与 lx-music 桌面端服务端同步：试听、收藏与自建歌单。服务端按所选模式合并。'
+	String get syncNote => '与 lx-music 桌面端服务端同步：试听、收藏与自建歌单。服务端按所选模式合并。';
+
+	/// zh-CN: '合并（本地优先）'
+	String get syncModeMergeLocalRemote => '合并（本地优先）';
+
+	/// zh-CN: '合并（远端优先）'
+	String get syncModeMergeRemoteLocal => '合并（远端优先）';
+
+	/// zh-CN: '以本地覆盖远端'
+	String get syncModeOverwriteLocalRemote => '以本地覆盖远端';
+
+	/// zh-CN: '以远端覆盖本地'
+	String get syncModeOverwriteRemoteLocal => '以远端覆盖本地';
+
+	/// zh-CN: '仅保留本地'
+	String get syncModeOverwriteLocalRemoteFull => '仅保留本地';
+
+	/// zh-CN: '仅保留远端'
+	String get syncModeOverwriteRemoteLocalFull => '仅保留远端';
 }
 
 // Path: navigation
@@ -6367,8 +6487,20 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '桌面歌词'
 	String get navMusicDesktopLyric => '桌面歌词';
 
+	/// zh-CN: '快捷键'
+	String get navMusicHotkeys => '快捷键';
+
+	/// zh-CN: '同步'
+	String get navMusicSync => '同步';
+
 	/// zh-CN: '音效'
 	String get navMusicEq => '音效';
+
+	/// zh-CN: '播放、音量与收藏的快捷键。'
+	String get musicHotkeysDescription => '播放、音量与收藏的快捷键。';
+
+	/// zh-CN: '与 lx-music 桌面端服务端同步歌单。'
+	String get musicSyncDescription => '与 lx-music 桌面端服务端同步歌单。';
 
 	/// zh-CN: '音效总开关、内置预设、十段均衡器与预放增益。'
 	String get musicEqDescription => '音效总开关、内置预设、十段均衡器与预放增益。';
@@ -10985,7 +11117,25 @@ extension on Translations {
 			'music.eqPresetCustom' => '自定义',
 			'music.eqPreamp' => '预放增益',
 			'music.eqPreampDesc' => '作用于频段之前；曲线削波时先降这里。',
+			'music.hkEnable' => '启用快捷键',
+			'music.hkEnableDesc' => '应用窗口内的传输与音量快捷键。',
+			'music.hkUnset' => '未设置',
+			'music.hkPressNew' => '按下新组合，Esc 取消',
+			'music.hkReset' => '恢复默认',
+			'music.hkResetDesc' => '还原默认组合。',
 			'music.eqReset' => '重置',
+			'music.hkNote' => '仅应用窗口内生效；系统级全局注册需平台层支持，尚未接入。',
+			'music.hkTogglePlay' => '播放 / 暂停',
+			'music.hkNext' => '下一首',
+			'music.hkPrev' => '上一首',
+			'music.hkSeekBackward' => '快退 5 秒',
+			'music.hkSeekForward' => '快进 5 秒',
+			'music.hkVolumeUp' => '音量加',
+			'music.hkVolumeDown' => '音量减',
+			'music.hkVolumeMute' => '静音',
+			'music.hkMusicLove' => '收藏',
+			'music.hkMusicUnlove' => '取消收藏',
+			'music.hkMusicDislike' => '不喜欢',
 			'music.eqResetDesc' => '所有频段与预放增益归零。',
 			'music.eqEditorTitle' => '十段均衡器',
 			'music.eqHint' => '拖动滑块调整频段；曲线实时更新并即时应用到播放。',
@@ -11036,6 +11186,28 @@ extension on Translations {
 			'music.onlineLoadFailed' => '歌单加载失败',
 			'music.onlineImport' => '导入歌单',
 			'music.onlineImported' => ({required Object count, required Object name}) => '已导入 ${count} 首到「${name}」',
+			'music.syncHost' => '同步服务端',
+			'music.syncHostHint' => 'lx-music 同步服务地址，例如 http://192.168.1.10:23332',
+			'music.syncEdit' => '修改',
+			'music.syncAuthCode' => '连接码',
+			'music.syncAuthCodeHint' => '服务端显示的连接码',
+			'music.syncMode' => '同步模式',
+			'music.syncConnect' => '连接',
+			'music.syncDisconnect' => '断开',
+			'music.syncStatusConnected' => '已连接',
+			'music.syncStatusConnecting' => '连接中',
+			'music.syncStatusFailed' => '连接失败',
+			'music.syncStatusIdle' => '未连接',
+			'music.syncStatusHint' => '连接后拉取服务端歌单并推送本地改动。',
+			'music.syncForgetKey' => '清除授权',
+			'music.syncForgetKeyDesc' => '删除已保存的密钥，下次连接用连接码重新授权。',
+			'music.syncNote' => '与 lx-music 桌面端服务端同步：试听、收藏与自建歌单。服务端按所选模式合并。',
+			'music.syncModeMergeLocalRemote' => '合并（本地优先）',
+			'music.syncModeMergeRemoteLocal' => '合并（远端优先）',
+			'music.syncModeOverwriteLocalRemote' => '以本地覆盖远端',
+			'music.syncModeOverwriteRemoteLocal' => '以远端覆盖本地',
+			'music.syncModeOverwriteLocalRemoteFull' => '仅保留本地',
+			'music.syncModeOverwriteRemoteLocalFull' => '仅保留远端',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -11350,6 +11522,8 @@ extension on Translations {
 			'room.switchLive' => '直播中',
 			'room.switchShowGrid' => '切换为网格',
 			'room.switchShowList' => '切换为列表',
+			_ => null,
+		} ?? switch (path) {
 			'room.twitchCookieExpired' => 'Twitch 的 Cookie 已失效，弹幕已改为匿名接收，请重新填写 Twitch Cookie',
 			'room.bilibiliGuestNames' => '当前以访客身份连接，B 站弹幕不会显示完整昵称',
 			'room.bilibiliLoginExpired' => 'B 站登录似乎已失效：昵称全部被打码，请重新登录',
@@ -11390,8 +11564,6 @@ extension on Translations {
 			'search.linkOpen' => '打开直播间',
 			'search.linkResolving' => '正在解析链接…',
 			'search.linkFailed' => '没有解析到直播间',
-			_ => null,
-		} ?? switch (path) {
 			'settings.title' => '设置',
 			'settings.navGeneral' => '浏览与窗口',
 			'settings.navPersonalization' => '个性化',
@@ -11864,6 +12036,8 @@ extension on Translations {
 			'settings.sitesOrderReset' => '恢复默认顺序',
 			'settings.sitesOrderResetDesc' => '平台回到内置的排列顺序；显示开关不受影响。',
 			'settings.groupInterface' => '界面',
+			_ => null,
+		} ?? switch (path) {
 			'settings.groupSources' => '直播来源',
 			'settings.groupPlayback' => '播放',
 			'settings.groupGeneral' => '通用',
@@ -11904,11 +12078,13 @@ extension on Translations {
 			'settings.navMusicDownload' => '下载',
 			'settings.musicDownloadDescription' => '下载目录、文件格式、命名与标签处理。',
 			'settings.navMusicLyric' => '歌词',
-			_ => null,
-		} ?? switch (path) {
 			'settings.musicLyricDescription' => '歌词的翻译、音译与延迟。',
 			'settings.navMusicDesktopLyric' => '桌面歌词',
+			'settings.navMusicHotkeys' => '快捷键',
+			'settings.navMusicSync' => '同步',
 			'settings.navMusicEq' => '音效',
+			'settings.musicHotkeysDescription' => '播放、音量与收藏的快捷键。',
+			'settings.musicSyncDescription' => '与 lx-music 桌面端服务端同步歌单。',
 			'settings.musicEqDescription' => '音效总开关、内置预设、十段均衡器与预放增益。',
 			'settings.musicDesktopLyricDescription' => '悬浮歌词的开关、锁定、字号、颜色与对齐。',
 			'settings.vodQuality' => '默认清晰度',
@@ -12374,6 +12550,8 @@ extension on Translations {
 			'settings.releaseKindPortable' => '便携版压缩包',
 			'settings.releaseKindOther' => '文件',
 			'settings.sitesKeepOne' => '至少保留一个平台',
+			_ => null,
+		} ?? switch (path) {
 			'settings.autoPip' => '离开应用时自动小窗',
 			'settings.autoPipDesc' => '播放中离开应用时，把画面留在其他应用上的小窗里；需要「显示在其他应用的上层」权限。',
 			'settings.floatPlay' => '返回时悬浮播放',
@@ -12418,8 +12596,6 @@ extension on Translations {
 			'settings.audienceMetricDesc' => '热门、关注等卡片优先展示的观众指标。',
 			'settings.audienceAutomatic' => '跟随平台',
 			'settings.audienceOnline' => '在线观众',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audiencePopularity' => '热度',
 			'settings.audienceTotal' => '累计观看',
 			'settings.audienceDisplayGroup' => '卡片显示与排行方式',
@@ -12888,6 +13064,8 @@ extension on Translations {
 			'vod.likes' => '点赞',
 			'vod.coins' => '投币',
 			'vod.favorites' => '收藏',
+			_ => null,
+		} ?? switch (path) {
 			'vod.description' => '简介',
 			'vod.noDescription' => '这个视频没有简介。',
 			'vod.play' => '播放',
@@ -12932,8 +13110,6 @@ extension on Translations {
 			'vod.toViewEmptyTitle' => '稍后再看是空的',
 			'vod.toViewEmptyDescription' => '在 Bilibili 上标记「稍后再看」的视频会出现在这里。',
 			'vod.followingEmptyTitle' => '还没有追番',
-			_ => null,
-		} ?? switch (path) {
 			'vod.followingEmptyDescription' => '在 Bilibili 上追的番剧和影视会出现在这里。',
 			'vod.comments' => '评论',
 			'vod.commentsEmpty' => '还没有评论。',

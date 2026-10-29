@@ -90,6 +90,12 @@ final class MusicFavouritesController extends Notifier<List<audio.MusicTrack>> {
     return added;
   }
 
+  /// Replaces the whole collection — the sync bridge's overwrite path.
+  Future<void> replaceAll(List<audio.MusicTrack> tracks) async {
+    state = tracks;
+    await _writeTracks(kMusicFavouritesKey, state);
+  }
+
   /// Drops [track] from the collection.
   Future<void> remove(audio.MusicTrack track) async {
     state = [
@@ -127,6 +133,12 @@ final class MusicRecentController extends Notifier<List<audio.MusicTrack>> {
       for (final entry in state)
         if (entry != track) entry,
     ];
+    await _writeTracks(kMusicRecentKey, state);
+  }
+
+  /// Replaces the whole list — the sync bridge's overwrite path.
+  Future<void> replaceAll(List<audio.MusicTrack> tracks) async {
+    state = tracks.take(kMusicRecentLimit).toList();
     await _writeTracks(kMusicRecentKey, state);
   }
 

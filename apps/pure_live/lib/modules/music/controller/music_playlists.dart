@@ -232,6 +232,15 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
     await _save();
   }
 
+  /// Replaces the whole shelf with [playlists] — the sync bridge's
+  /// overwrite path; positions follow the input order.
+  Future<void> replaceAll(List<MusicPlaylist> playlists) async {
+    state = [
+      for (var i = 0; i < playlists.length; i++) playlists[i].copyWith(position: i),
+    ];
+    await _save();
+  }
+
   /// Adds [track] to the playlist; false when it is already there or the
   /// playlist is gone.
   Future<bool> addTrack(String id, audio.MusicTrack track) async {

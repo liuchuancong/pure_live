@@ -77,6 +77,8 @@ enum SettingsSection {
   musicDownload(DsIcons.download),
   musicLyric(DsIcons.captions),
   musicDesktopLyric(DsIcons.monitor),
+  musicHotkeys(DsIcons.keyboard),
+  musicSync(DsIcons.refresh),
   musicEq(DsIcons.audioLines),
   hongguo(DsIcons.drama),
   // Deep-link aliases: their content lives on another page now (see
@@ -156,6 +158,8 @@ enum SettingsSection {
     SettingsSection.musicDownload => t.settings.navMusicDownload,
     SettingsSection.musicLyric => t.settings.navMusicLyric,
     SettingsSection.musicDesktopLyric => t.settings.navMusicDesktopLyric,
+    SettingsSection.musicHotkeys => t.settings.navMusicHotkeys,
+    SettingsSection.musicSync => t.settings.navMusicSync,
     SettingsSection.musicEq => t.settings.navMusicEq,
     SettingsSection.hongguo => t.settings.navHongguo,
     // Aliases: their pre-merge words, kept for anything still naming them.
@@ -227,6 +231,8 @@ enum SettingsSection {
     SettingsSection.musicDownload => t.settings.musicDownloadDescription,
     SettingsSection.musicLyric => t.settings.musicLyricDescription,
     SettingsSection.musicDesktopLyric => t.settings.musicDesktopLyricDescription,
+    SettingsSection.musicHotkeys => t.settings.musicHotkeysDescription,
+    SettingsSection.musicSync => t.settings.musicSyncDescription,
     SettingsSection.musicEq => t.settings.musicEqDescription,
     SettingsSection.hongguo => t.settings.hongguoDescription,
     SettingsSection.personalization => t.settings.personalizationDescription,
@@ -272,6 +278,8 @@ enum SettingsSection {
     SettingsSection.musicDownload ||
     SettingsSection.musicLyric ||
     SettingsSection.musicDesktopLyric ||
+    SettingsSection.musicHotkeys => SettingsSection.music,
+    SettingsSection.musicSync => SettingsSection.music,
     SettingsSection.musicEq => SettingsSection.music,
     SettingsSection.nodes => SettingsSection.network,
     SettingsSection.webdavSync => SettingsSection.backup,
@@ -348,6 +356,8 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
     SettingsSection.musicDownload,
     SettingsSection.musicLyric,
     SettingsSection.musicDesktopLyric,
+    SettingsSection.musicHotkeys,
+    SettingsSection.musicSync,
     SettingsSection.musicEq,
   ],
   SettingsSection.network => const [SettingsSection.nodes],

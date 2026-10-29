@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
+import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile, LiveHttpCalls;
@@ -29,10 +30,14 @@ import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
 import 'package:pure_live/modules/music/controller/eq/music_eq_dsp.dart' show kMusicFxCosts;
 import 'package:pure_live/modules/music/controller/lx_script_runtime.dart' show lxScriptRuntimeProvider;
 import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
+import 'package:pure_live/modules/music/controller/music_hotkeys.dart'
+    show MusicHotkeyAction, MusicHotkeyCombo, musicHotkeysProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show MusicPlayerController, musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_settings.dart';
 import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId, musicSourceListProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart';
+import 'package:pure_live/modules/music/controller/music_sync.dart'
+    show MusicSyncStatus, kMusicSyncModes, musicSyncProvider;
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart' show MusicEqEditor;
 
 /// The music module's own settings: the source a song is asked from, the
@@ -1504,3 +1509,317 @@ final class _CompareButtonState extends ConsumerState<_CompareButton> {
     );
   }
 }
+
+
+/// The pane shown under Settings → Music → 快捷键: the module's shortcut
+/// table, captured straight from the keyboard the way the reference's
+/// setting records them.
+final class MusicHotkeysPane extends ConsumerWidget {
+  const MusicHotkeysPane({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final config = ref.watch(musicHotkeysProvider);
+    final controller = ref.read(musicHotkeysProvider.notifier);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        DsListSection(
+          header: Text(t.settings.navMusicHotkeys),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.keyboard),
+              title: t.music.hkEnable,
+              description: t.music.hkEnableDesc,
+              control: DsSwitch(
+                value: config.enabled,
+                onChanged: (value) => unawaited(controller.setEnabled(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.rotateCcw),
+              title: t.music.hkReset,
+              description: t.music.hkResetDesc,
+              control: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => unawaited(controller.reset()),
+                child: Text(t.music.eqReset),
+              ),
+            ),
+          ],
+        ),
+        DsListSection(
+          children: [
+            for (final action in MusicHotkeyAction.values)
+              SettingsConfigRow(
+                title: musicHotkeyActionLabel(t, action),
+                control: _HotkeyCaptureButton(action: action),
+                controlWidth: 260,
+              ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4),
+          child: Text(t.music.hkNote, style: DsTheme.typographyOf(context).caption.copyWith(color: DsTheme.colorsOf(context).textSubtle)),
+        ),
+      ],
+    );
+  }
+}
+
+/// One action's name in words.
+String musicHotkeyActionLabel(Translations t, MusicHotkeyAction action) => switch (action) {
+  MusicHotkeyAction.togglePlay => t.music.hkTogglePlay,
+  MusicHotkeyAction.next => t.music.hkNext,
+  MusicHotkeyAction.prev => t.music.hkPrev,
+  MusicHotkeyAction.seekBackward => t.music.hkSeekBackward,
+  MusicHotkeyAction.seekForward => t.music.hkSeekForward,
+  MusicHotkeyAction.volumeUp => t.music.hkVolumeUp,
+  MusicHotkeyAction.volumeDown => t.music.hkVolumeDown,
+  MusicHotkeyAction.volumeMute => t.music.hkVolumeMute,
+  MusicHotkeyAction.musicLove => t.music.hkMusicLove,
+  MusicHotkeyAction.musicUnlove => t.music.hkMusicUnlove,
+  MusicHotkeyAction.musicDislike => t.music.hkMusicDislike,
+};
+
+/// The combo button: idle it names the stored combination, focused it
+/// captures the next key press — Esc cancels, modifiers alone wait.
+final class _HotkeyCaptureButton extends ConsumerStatefulWidget {
+  const _HotkeyCaptureButton({required this.action});
+
+  final MusicHotkeyAction action;
+
+  @override
+  ConsumerState<_HotkeyCaptureButton> createState() => _HotkeyCaptureButtonState();
+}
+
+final class _HotkeyCaptureButtonState extends ConsumerState<_HotkeyCaptureButton> {
+  final FocusNode _focus = FocusNode();
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
+      _focus.unfocus();
+      return KeyEventResult.handled;
+    }
+    final name = _hotkeyKeyName(event.logicalKey);
+    if (name == null) return KeyEventResult.handled; // a bare modifier; keep waiting
+    final keyboard = HardwareKeyboard.instance;
+    final modifiers = <String>{
+      if (keyboard.isControlPressed || keyboard.isMetaPressed) 'mod',
+      if (keyboard.isAltPressed) 'alt',
+      if (keyboard.isShiftPressed) 'shift',
+    };
+    final combo = MusicHotkeyCombo(modifiers: modifiers, key: name);
+    unawaited(ref.read(musicHotkeysProvider.notifier).assign(widget.action, combo));
+    _focus.unfocus();
+    return KeyEventResult.handled;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final config = ref.watch(musicHotkeysProvider);
+    final captured = config.assignments[widget.action];
+    final capturing = _focus.hasFocus;
+    return Focus(
+      focusNode: _focus,
+      onKeyEvent: _onKey,
+      child: DsButton(
+        variant: capturing ? DsButtonVariant.primary : DsButtonVariant.secondary,
+        size: DsSize.sm,
+        onPressed: () => capturing ? _focus.unfocus() : _focus.requestFocus(),
+        child: Text(
+          capturing
+              ? t.music.hkPressNew
+              : captured == null
+              ? t.music.hkUnset
+              : captured.display(),
+          style: capturing ? null : captured == null ? TextStyle(color: colors.textSubtle) : null,
+        ),
+      ),
+    );
+  }
+}
+
+/// The pressed key's LX-style name, or null for a bare modifier.
+String? _hotkeyKeyName(LogicalKeyboardKey key) {
+  // identity keys, so not const
+  final special = <LogicalKeyboardKey, String>{
+    LogicalKeyboardKey.arrowLeft: 'arrowleft',
+    LogicalKeyboardKey.arrowRight: 'arrowright',
+    LogicalKeyboardKey.arrowUp: 'arrowup',
+    LogicalKeyboardKey.arrowDown: 'arrowdown',
+    LogicalKeyboardKey.space: 'space',
+    LogicalKeyboardKey.enter: 'enter',
+    LogicalKeyboardKey.escape: 'escape',
+    LogicalKeyboardKey.tab: 'tab',
+    LogicalKeyboardKey.backspace: 'backspace',
+    LogicalKeyboardKey.delete: 'delete',
+    LogicalKeyboardKey.home: 'home',
+    LogicalKeyboardKey.end: 'end',
+    LogicalKeyboardKey.pageUp: 'pageup',
+    LogicalKeyboardKey.pageDown: 'pagedown',
+  };
+  if (special[key] case final name?) return name;
+  final fIndex = key.keyId - LogicalKeyboardKey.f1.keyId;
+  if (fIndex >= 0 && fIndex < 19) return 'f${fIndex + 1}';
+  final letterIndex = key.keyId - LogicalKeyboardKey.keyA.keyId;
+  if (letterIndex >= 0 && letterIndex < 26) return String.fromCharCode(0x61 + letterIndex);
+  final digitIndex = key.keyId - LogicalKeyboardKey.digit0.keyId;
+  if (digitIndex >= 0 && digitIndex < 10) return '$digitIndex';
+  final label = key.keyLabel;
+  return label.length == 1 ? label.toLowerCase() : null;
+}
+
+/// The 同步 pane: a lx-music desktop sync server's address and auth code,
+/// the sync-mode answer the server merges with, and the connection itself.
+final class MusicSyncPane extends ConsumerWidget {
+  const MusicSyncPane({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final state = ref.watch(musicSyncProvider);
+    final controller = ref.read(musicSyncProvider.notifier);
+    return DsListSection(
+      children: [
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.link),
+          title: t.music.syncHost,
+          description: state.host.isEmpty ? t.music.syncHostHint : state.host,
+          control: DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            onPressed: () => unawaited(_editHost(context, ref)),
+            child: Text(t.music.syncEdit),
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.lock),
+          title: t.music.syncAuthCode,
+          description: state.authCode.isEmpty ? t.music.syncAuthCodeHint : '••••••',
+          control: DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            onPressed: () => unawaited(_editAuthCode(context, ref)),
+            child: Text(t.music.syncEdit),
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.listMusic),
+          title: t.music.syncMode,
+          description: musicSyncModeLabel(t, state.syncMode),
+          control: DsSelect<String>(
+            value: state.syncMode,
+            options: [for (final mode in kMusicSyncModes) DsSelectOption(value: mode, label: musicSyncModeLabel(t, mode))],
+            onChanged: (mode) { if (mode != null) unawaited(controller.setSyncMode(mode)); },
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.refresh),
+          title: switch (state.status) {
+            MusicSyncStatus.connected => t.music.syncStatusConnected,
+            MusicSyncStatus.connecting || MusicSyncStatus.authing => t.music.syncStatusConnecting,
+            MusicSyncStatus.failed => t.music.syncStatusFailed,
+            MusicSyncStatus.idle => t.music.syncStatusIdle,
+          },
+          description: state.message ?? state.serverName ?? t.music.syncStatusHint,
+          control: DsButton(
+            variant: state.status == MusicSyncStatus.connected ? DsButtonVariant.secondary : DsButtonVariant.primary,
+            size: DsSize.sm,
+            onPressed: () => unawaited(
+              state.status == MusicSyncStatus.connected ? controller.disconnect() : controller.connect(),
+            ),
+            child: Text(state.status == MusicSyncStatus.connected ? t.music.syncDisconnect : t.music.syncConnect),
+          ),
+        ),
+        if (state.serverName != null)
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.keyboard),
+            title: t.music.syncForgetKey,
+            description: t.music.syncForgetKeyDesc,
+            control: DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: () => unawaited(controller.forgetKey()),
+              child: Text(t.music.syncForgetKey),
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s4, DsSpace.s16, DsSpace.s8),
+          child: Text(
+            t.music.syncNote,
+            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _editHost(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final current = ref.read(musicSyncProvider).host;
+    final value = await _editField(context, t.music.syncHost, t.music.syncHostHint, current);
+    if (value != null) await ref.read(musicSyncProvider.notifier).setHost(value);
+  }
+
+  Future<void> _editAuthCode(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final value = await _editField(context, t.music.syncAuthCode, t.music.syncAuthCodeHint, '');
+    if (value != null && value.isNotEmpty) await ref.read(musicSyncProvider.notifier).setAuthCode(value);
+  }
+
+  Future<String?> _editField(BuildContext context, String title, String hint, String initial) async {
+    final t = context.t;
+    final field = TextEditingController(text: initial);
+    final value = await showDsDialog<String>(
+      context: context,
+      builder: (context) => DsDialog(
+        title: Text(title),
+        icon: const DsIcon(DsIcons.link),
+        description: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s8,
+          children: [
+            Text(hint),
+            DsTextField(controller: field, autofocus: true, clearable: initial.isEmpty, semanticLabel: title),
+          ],
+        ),
+        actions: [
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(t.common.cancel),
+          ),
+          DsButton(onPressed: () => Navigator.of(context).pop(field.text), child: Text(t.common.confirm)),
+        ],
+      ),
+    );
+    field.dispose();
+    return value;
+  }
+}
+
+/// The sync mode in words.
+String musicSyncModeLabel(Translations t, String mode) => switch (mode) {
+  'merge_local_remote' => t.music.syncModeMergeLocalRemote,
+  'merge_remote_local' => t.music.syncModeMergeRemoteLocal,
+  'overwrite_local_remote' => t.music.syncModeOverwriteLocalRemote,
+  'overwrite_remote_local' => t.music.syncModeOverwriteRemoteLocal,
+  'overwrite_local_remote_full' => t.music.syncModeOverwriteLocalRemoteFull,
+  'overwrite_remote_local_full' => t.music.syncModeOverwriteRemoteLocalFull,
+  _ => mode,
+};
