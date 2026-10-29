@@ -283,14 +283,21 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s20,
         children: [
-          Wrap(
-            spacing: DsSpace.s8,
-            runSpacing: DsSpace.s8,
-            children: [
-              DsChip(label: Text(t.hongguo.homeTabAll), selected: genre == null, onChanged: (_) => _selectGenre(null)),
-              for (final value in HongguoGenre.values)
-                DsChip(label: Text(value.label(t)), selected: genre == value, onChanged: (_) => _selectGenre(value)),
-            ],
+          // The station's genre bar, the live module's measure: one 44px
+          // scrollable row instead of a wall of chips.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+            child: SizedBox(
+              height: 44,
+              child: DsTopNav<String>(
+                value: genre?.name ?? '',
+                onChanged: (name) => _selectGenre(name.isEmpty ? null : HongguoGenre.values.byName(name)),
+                items: [
+                  DsTopNavItem(value: '', label: Text(t.hongguo.homeTabAll)),
+                  for (final value in HongguoGenre.values) DsTopNavItem(value: value.name, label: Text(value.label(t))),
+                ],
+              ),
+            ),
           ),
           if (themeRow != null)
             Row(
@@ -493,39 +500,46 @@ final class _FindViewState extends ConsumerState<_FindView> {
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s8,
             children: [
-              Wrap(
-                spacing: DsSpace.s8,
-                runSpacing: DsSpace.s8,
-                children: [
-                  for (final genre in HongguoGenre.values)
-                    DsChip(
-                      label: Text(genre.label(t)),
-                      selected: _genre == genre,
-                      onChanged: (_) => setState(() => _genre = genre),
+              // The shelf bar, the live module's measure: the genres scroll
+              // in one row and the conditions open beside them. A shelf the
+              // page has not read yet is opened on the pick — the chips it
+              // replaced left a new shelf an empty pane.
+              SizedBox(
+                height: 44,
+                child: Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(
+                      child: DsTopNav<HongguoGenre>(
+                        value: _genre,
+                        onChanged: (genre) {
+                          if (genre == _genre) return;
+                          setState(() => _genre = genre);
+                          unawaited(controller.open(genre));
+                        },
+                        items: [
+                          for (final genre in HongguoGenre.values)
+                            DsTopNavItem(value: genre, label: Text(genre.label(t))),
+                        ],
+                      ),
                     ),
-                ],
+                    DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.secondary,
+                      leading: const DsIcon(DsIcons.listFilter, size: 14),
+                      onPressed: state.groups.isEmpty ? null : () => unawaited(_openFilters()),
+                      child: Text(t.hongguo.filter),
+                    ),
+                  ],
+                ),
               ),
-              Row(
-                spacing: DsSpace.s8,
-                children: [
-                  Expanded(
-                    child: Text(
-                      chosen.isEmpty ? t.hongguo.filterNone : chosen.join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: DsTheme.of(context).typography.caption
-                          .copyWith(color: DsTheme.colorsOf(context).textMuted),
-                    ),
-                  ),
-                  DsButton(
-                    size: DsSize.sm,
-                    variant: DsButtonVariant.secondary,
-                    leading: const DsIcon(DsIcons.listFilter, size: 14),
-                    onPressed: state.groups.isEmpty ? null : () => unawaited(_openFilters()),
-                    child: Text(t.hongguo.filter),
-                  ),
-                ],
+              Text(
+                chosen.isEmpty ? t.hongguo.filterNone : chosen.join(' · '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
               ),
             ],
           ),
@@ -653,34 +667,39 @@ final class _RankViewState extends ConsumerState<_RankView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              Row(
-                spacing: DsSpace.s8,
-                children: [
-                  Expanded(
-                    child: Wrap(
-                      spacing: DsSpace.s8,
-                      runSpacing: DsSpace.s8,
-                      children: [
-                        for (final board in HongguoWebsiteBoard.values)
-                          DsChip(
-                            label: Text(_boardLabel(t, board)),
-                            selected: _board == board,
-                            onChanged: (_) => setState(() {
-                              _board = board;
-                              _topic = '';
-                            }),
-                          ),
-                      ],
+              // The boards' bar, the live module's measure; a board the page
+              // has not read yet is opened on the pick, as the shelf bars do.
+              SizedBox(
+                height: 44,
+                child: Row(
+                  spacing: DsSpace.s8,
+                  children: [
+                    Expanded(
+                      child: DsTopNav<HongguoWebsiteBoard>(
+                        value: _board,
+                        onChanged: (board) {
+                          if (board == _board) return;
+                          setState(() {
+                            _board = board;
+                            _topic = '';
+                          });
+                          unawaited(controller.open(board));
+                        },
+                        items: [
+                          for (final board in HongguoWebsiteBoard.values)
+                            DsTopNavItem(value: board, label: Text(_boardLabel(t, board))),
+                        ],
+                      ),
                     ),
-                  ),
-                  DsButton(
-                    size: DsSize.sm,
-                    variant: DsButtonVariant.secondary,
-                    leading: const DsIcon(DsIcons.refreshCw, size: 14),
-                    onPressed: held.loading || held.renewing ? null : () => unawaited(controller.refresh(_board)),
-                    child: Text(held.loading || held.renewing ? t.hongguo.rankReading : t.hongguo.refresh),
-                  ),
-                ],
+                    DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.secondary,
+                      leading: const DsIcon(DsIcons.refreshCw, size: 14),
+                      onPressed: held.loading || held.renewing ? null : () => unawaited(controller.refresh(_board)),
+                      child: Text(held.loading || held.renewing ? t.hongguo.rankReading : t.hongguo.refresh),
+                    ),
+                  ],
+                ),
               ),
               if (topics.isNotEmpty)
                 Wrap(
@@ -773,25 +792,22 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              Wrap(
-                spacing: DsSpace.s8,
-                children: [
-                  DsChip(
-                    label: Text(t.hongguo.localTab),
-                    selected: !_account,
-                    onChanged: (_) => setState(() => _account = false),
-                  ),
-                  DsChip(
-                    label: Text(t.hongguo.accountTab),
-                    selected: _account,
-                    onChanged: (_) {
-                      setState(() => _account = true);
-                      if (ref.read(hongguoAccountProvider).signedIn && shelf.items.isEmpty && !shelf.loading) {
-                        unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).refresh());
-                      }
-                    },
-                  ),
+              // 本机/账户, the areas page's segmented switch.
+              DsSegmentedControl<bool>(
+                segments: [
+                  DsSegment(value: false, label: Text(t.hongguo.localTab)),
+                  DsSegment(value: true, label: Text(t.hongguo.accountTab)),
                 ],
+                value: _account,
+                onChanged: (account) {
+                  setState(() => _account = account);
+                  if (account &&
+                      ref.read(hongguoAccountProvider).signedIn &&
+                      shelf.items.isEmpty &&
+                      !shelf.loading) {
+                    unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).refresh());
+                  }
+                },
               ),
               if (!_account)
                 Row(
@@ -944,26 +960,21 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              Wrap(
-                spacing: DsSpace.s8,
-                runSpacing: DsSpace.s8,
-                children: [
-                  DsChip(
-                    label: Text(t.hongguo.localTab),
-                    selected: !_account,
-                    onChanged: (_) => setState(() => _account = false),
-                  ),
-                  DsChip(
-                    label: Text(t.hongguo.accountTab),
-                    selected: _account,
-                    onChanged: (_) {
-                      setState(() => _account = true);
-                      if (ref.read(hongguoAccountProvider).signedIn && cloud.items.isEmpty && !cloud.loading) {
-                        unawaited(ref.read(hongguoAccountHistoryProvider.notifier).refresh());
-                      }
-                    },
-                  ),
+              DsSegmentedControl<bool>(
+                segments: [
+                  DsSegment(value: false, label: Text(t.hongguo.localTab)),
+                  DsSegment(value: true, label: Text(t.hongguo.accountTab)),
                 ],
+                value: _account,
+                onChanged: (account) {
+                  setState(() => _account = account);
+                  if (account &&
+                      ref.read(hongguoAccountProvider).signedIn &&
+                      cloud.items.isEmpty &&
+                      !cloud.loading) {
+                    unawaited(ref.read(hongguoAccountHistoryProvider.notifier).refresh());
+                  }
+                },
               ),
               if (!_account)
                 Wrap(
@@ -1070,20 +1081,13 @@ final class _ReservationsViewState extends ConsumerState<_ReservationsView> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
-          child: Wrap(
-            spacing: DsSpace.s8,
-            children: [
-              DsChip(
-                label: Text(t.hongguo.reservationsOnline),
-                selected: _online,
-                onChanged: (_) => setState(() => _online = true),
-              ),
-              DsChip(
-                label: Text(t.hongguo.reservationsUpcoming),
-                selected: !_online,
-                onChanged: (_) => setState(() => _online = false),
-              ),
+          child: DsSegmentedControl<bool>(
+            segments: [
+              DsSegment(value: true, label: Text(t.hongguo.reservationsOnline)),
+              DsSegment(value: false, label: Text(t.hongguo.reservationsUpcoming)),
             ],
+            value: _online,
+            onChanged: (online) => setState(() => _online = online),
           ),
         ),
         Expanded(
@@ -1397,21 +1401,19 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
             children: [
-              Wrap(
-                spacing: DsSpace.s8,
-                runSpacing: DsSpace.s8,
-                children: [
-                  for (final genre in HongguoGenre.values)
-                    DsChip(
-                      label: Text(genre.label(t)),
-                      selected: _genre == genre,
-                      onChanged: (selected) {
-                        if (!selected) return;
-                        setState(() => _genre = genre);
-                        if (state.query.isNotEmpty) unawaited(controller.search(state.query, genre: genre));
-                      },
-                    ),
-                ],
+              SizedBox(
+                height: 44,
+                child: DsTopNav<HongguoGenre>(
+                  value: _genre,
+                  onChanged: (genre) {
+                    if (genre == _genre) return;
+                    setState(() => _genre = genre);
+                    if (state.query.isNotEmpty) unawaited(controller.search(state.query, genre: genre));
+                  },
+                  items: [
+                    for (final genre in HongguoGenre.values) DsTopNavItem(value: genre, label: Text(genre.label(t))),
+                  ],
+                ),
               ),
               Row(
                 spacing: DsSpace.s8,
