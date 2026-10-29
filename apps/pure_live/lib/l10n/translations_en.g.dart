@@ -206,6 +206,7 @@ class _Translations$areas$en extends Translations$areas$zh_CN {
 	@override String get open => 'Open the area';
 	@override String get follow => 'Follow area';
 	@override String get searchHint => 'Search areas';
+	@override String get search => 'Search';
 	@override String searchAt({required Object query, required Object platform}) => 'Searching areas for “${query}” on ${platform}';
 	@override String get searchEmpty => 'No matching areas';
 	@override String get backToBrowse => 'Back to browsing';
@@ -376,6 +377,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get backToTop => 'Back to top';
 	@override String get backToBottom => 'Back to bottom';
 	@override String get more => 'More';
+	@override String get switchPlatform => 'Switch platform';
 	@override String get delete => 'Delete';
 	@override String get newWindow => 'New window';
 	@override String get show => 'Show';
@@ -1038,6 +1040,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get mineEmptyDescription => 'Songs you collect or play appear here.';
 	@override String get removeSong => 'Remove';
 	@override String get chartsFailed => 'The chart did not load';
+	@override String get queueEmpty => 'Queue is empty';
 	@override String get queueTitle => 'Queue';
 	@override String get nowPlaying => 'Now playing';
 	@override String get volume => 'Volume';
@@ -1199,6 +1202,10 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get lyricRomanizationDesc => 'Show the romanization when the lyric has one.';
 	@override String get lyricSwapSecondary => 'Translation/romanization order';
 	@override String get lyricSwapSecondaryDesc => 'Swap translation and romanization under a lyric line.';
+	@override String get lyricTraditionalize => 'Traditional Chinese';
+	@override String get lyricTraditionalizeDesc => 'Rewrite lyric text into traditional Chinese.';
+	@override String get lyricWordTimed => 'Word-by-word lyrics';
+	@override String get lyricWordTimedDesc => 'Play karaoke-style word timing when the platform provides it.';
 	@override String get lyricFontScale => 'Lyric size';
 	@override String get lyricFontScaleDesc => 'Scale of the lyrics in the player (100%–200%).';
 	@override String get lyricFontSmaller => 'Smaller lyrics';
@@ -1267,6 +1274,65 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String commentsReplies({required Object count}) => '${count} replies';
 	@override String exportLyricDone({required Object path}) => 'Lyric saved to ${path}';
 	@override String exportLyricFailed({required Object error}) => 'Could not export the lyric: ${error}';
+	@override String get eqSection => 'Sound effects';
+	@override String get eqEnabled => 'Enable sound effects';
+	@override String get eqEnabledDesc => 'Off means the audio runs untouched, whatever the bands say.';
+	@override String get eqPreset => 'Preset';
+	@override String get eqPresetDesc => 'A target character, not a promise for every headphone or speaker.';
+	@override String get eqPresetCustom => 'Custom';
+	@override String get eqPreamp => 'Preamp';
+	@override String get eqPreampDesc => 'Applied before the bands; lower it when the curve clips.';
+	@override String get eqReset => 'Reset';
+	@override String get eqResetDesc => 'Every band and the preamp back to zero.';
+	@override String get eqEditorTitle => 'Ten-band equalizer';
+	@override String get eqHint => 'Drag a handle to shape its band; the curve updates as you drag and reaches the player in real time.';
+	@override String get eqChainNote => 'The predicted curve is a theory-layer preview; the actual audio follows the FFmpeg chain derived from these values.';
+	@override String get eqPresetPop => 'Pop';
+	@override String get eqPresetRock => 'Rock';
+	@override String get eqPresetClassical => 'Classical';
+	@override String get eqPresetJazz => 'Jazz';
+	@override String get eqPresetElectronic => 'Electronic';
+	@override String get eqPresetBass => 'Bass boost';
+	@override String get eqPresetVocal => 'Clear vocal';
+	@override String get eqPresetLive => 'Live';
+	@override String get eqPresetFlat => 'Flat';
+	@override String get eqApplyFailed => 'The engine refused this effect chain — the sound runs unprocessed. Turn effects off and try a smaller chain.';
+	@override String get eqFxSection => 'Enhancement effects';
+	@override String get eqFxCostPrefix => 'Note: ';
+	@override String get eqFxCostLatency => 'adds latency';
+	@override String get eqFxCostStereo => 'stereo output only';
+	@override String get eqFxLoudness => 'Volume normalisation';
+	@override String get eqFxLoudnessDesc => 'loudnorm holds loudness steady across tracks and sources.';
+	@override String get eqFxBass => 'Bass boost';
+	@override String get eqFxBassDesc => 'bass low shelf under 105 Hz, up to +8 dB.';
+	@override String get eqFxVocal => 'Vocal enhance';
+	@override String get eqFxVocalDesc => 'presence lift at 3 kHz with a mud cut at 300 Hz.';
+	@override String get eqFxWidth => 'Stereo width';
+	@override String get eqFxWidthDesc => 'stereotools raises the side level, keeping the centre intact.';
+	@override String get eqFxSurround => 'Surround';
+	@override String get eqFxSurroundDesc => 'haas pseudo-surround from a small cross delay.';
+	@override String get eqFxDynamics => 'Compression & limiter';
+	@override String get eqFxDynamicsDesc => 'acompressor evens the peaks, alimiter guards the output.';
+	@override String get eqMeterTitle => 'Loudness meter';
+	@override String get eqAnalysis => 'Loudness probe';
+	@override String get eqAnalysisDesc => 'Runs an EBU R128 probe in the chain; playback is untouched';
+	@override String get eqMeterNote => 'Loudness level meter (M = 400 ms momentary, S = 3 s short-term), not an FFT spectrum — mpv exposes no raw spectrum.';
+	@override String get eqNodesTitle => 'Parametric EQ';
+	@override String get eqNodesAdd => 'Add node';
+	@override String get eqNodeFrequency => 'Frequency';
+	@override String get eqNodeQ => 'Q';
+	@override String get eqNodeGain => 'Gain';
+	@override String get eqCompareTitle => 'A/B compare';
+	@override String get eqCompare => 'Hold to hear the original';
+	@override String get eqCompareHeld => 'Playing the original — release to restore';
+	@override String get songlistTabMine => 'My playlists';
+	@override String get songlistTabOnline => 'Online';
+	@override String get onlineUnsupported => 'The current source does not serve online playlists';
+	@override String get onlineEmpty => 'No playlists under this tag';
+	@override String get onlineLoadMore => 'Load more';
+	@override String get onlineLoadFailed => 'Could not load the playlist';
+	@override String get onlineImport => 'Import';
+	@override String onlineImported({required Object count, required Object name}) => 'Imported ${count} songs into “${name}”';
 }
 
 // Path: navigation
@@ -2198,6 +2264,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get navMusicLyric => 'Lyrics';
 	@override String get musicLyricDescription => 'Translation, romanization and lyric delay.';
 	@override String get navMusicDesktopLyric => 'Desktop lyrics';
+	@override String get navMusicEq => 'Sound effects';
+	@override String get musicEqDescription => 'The master switch, presets, the ten-band equalizer and its preamp.';
 	@override String get musicDesktopLyricDescription => 'The floating lyric\'s switch, lock, font, colour and alignment.';
 	@override String get vodQuality => 'Default quality';
 	@override String get vodQualityDesc => 'The quality the page asks for first; without a Bilibili sign-in the source may serve 720P or lower.';
@@ -2517,6 +2585,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundDeviceTitle => 'From this device';
 	@override String get backgroundDeviceDescription => 'Upload an image or video, or enter a network address.';
 	@override String get backgroundPreview => 'Current background';
+	@override String get backgroundPreviewKind => 'Pictures and videos';
 	@override String get backgroundPreviewPrevious => 'Previous image';
 	@override String get backgroundPreviewNext => 'Next image';
 	@override String get backgroundPreviewTitle => 'Wallpaper preview';
@@ -2547,11 +2616,18 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundFitNone => 'Original size';
 	@override String get backgroundFitScaleDown => 'Original or smaller';
 	@override String get backgroundMask => 'Scrim';
-	@override String get backgroundMaskDescription => 'Darkens or lightens the backdrop so text stays legible.';
-	@override String get backgroundOverlayBlur => 'Scrim blur';
-	@override String get backgroundOverlayBlurDescription => 'Turns the mask into frosted glass, blurring the background itself on every kind; 0 keeps a flat wash.';
+	@override String get backgroundMaskDescription => 'A wash over the wallpaper that darkens or lightens it; a stronger scrim keeps text legible and fades the wallpaper.';
+	@override String get backgroundOverlayBlur => 'Background blur';
+	@override String get backgroundOverlayBlurDescription => 'Blurs the wallpaper itself on every background kind; 0 keeps it sharp.';
 	@override String get backgroundClearDescription => 'Returns to the theme\'s own surface; the saved media stays for later.';
 	@override String get backgroundClear => 'Clear background';
+	@override String get backgroundGlass => 'Interface glass';
+	@override String get backgroundGlassEnable => 'Enabled';
+	@override String get backgroundGlassDescription => 'Cards, lists, the room\'s columns and every floating layer take a translucent fill; menus and panels also blur what lies behind them, so the wallpaper reads through.';
+	@override String get backgroundGlassFill => 'Panel fill';
+	@override String get backgroundGlassFillDescription => 'How opaque card, list and layer fills are; lower lets more wallpaper through and weakens text contrast.';
+	@override String get backgroundGlassBlur => 'Layer blur';
+	@override String get backgroundGlassBlurDescription => 'Blur radius behind menus and panels; 0 keeps them translucent but sharp. Cards and lists take the fill alone.';
 	@override String get checkUpdate => 'Check for updates';
 	@override String get checkUpdateDesc => 'Reads the newest version from the project’s releases.';
 	@override String get checkingUpdate => 'Checking for updates…';
@@ -2606,6 +2682,15 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get downloadFilterAll => 'All';
 	@override String get downloadFilterEmpty => 'Nothing under this status';
 	@override String get downloadKindFilter => 'Filter by kind';
+	@override String get downloadColumnFile => 'File';
+	@override String get downloadColumnSize => 'Size';
+	@override String get downloadColumnTime => 'Time';
+	@override String get downloadColumnActions => 'Actions';
+	@override String get downloadSearchPlaceholder => 'Search downloads';
+	@override String downloadPercent({required Object percent}) => 'Downloading ${percent}%';
+	@override String get downloadStatusPaused => 'Paused';
+	@override String downloadLoadedCount({required Object shown, required Object total}) => 'Loaded ${shown} of ${total}';
+	@override String get downloadLoadingMore => 'Loading more…';
 	@override String get downloadSettings => 'Download settings';
 	@override String get downloadDetailPreview => 'Open the preview';
 	@override String get downloadDetailTitle => 'Download detail';
@@ -3504,6 +3589,7 @@ extension on TranslationsEn {
 			'areas.open' => 'Open the area',
 			'areas.follow' => 'Follow area',
 			'areas.searchHint' => 'Search areas',
+			'areas.search' => 'Search',
 			'areas.searchAt' => ({required Object query, required Object platform}) => 'Searching areas for “${query}” on ${platform}',
 			'areas.searchEmpty' => 'No matching areas',
 			'areas.backToBrowse' => 'Back to browsing',
@@ -3656,6 +3742,7 @@ extension on TranslationsEn {
 			'common.backToTop' => 'Back to top',
 			'common.backToBottom' => 'Back to bottom',
 			'common.more' => 'More',
+			'common.switchPlatform' => 'Switch platform',
 			'common.delete' => 'Delete',
 			'common.newWindow' => 'New window',
 			'common.show' => 'Show',
@@ -3887,10 +3974,10 @@ extension on TranslationsEn {
 			'hongguo.searchHistory' => 'Recent',
 			'hongguo.searchHistoryClear' => 'Clear',
 			'hongguo.searchHistoryHint' => 'Searches stay on this machine, up to 20',
-			'hongguo.filter' => 'Filter',
-			'hongguo.filterPanelTitle' => 'Filter',
 			_ => null,
 		} ?? switch (path) {
+			'hongguo.filter' => 'Filter',
+			'hongguo.filterPanelTitle' => 'Filter',
 			'hongguo.filterDone' => 'Done',
 			'hongguo.accountId' => 'Hongguo ID',
 			'hongguo.copyAccountId' => 'Copy',
@@ -4266,6 +4353,7 @@ extension on TranslationsEn {
 			'music.mineEmptyDescription' => 'Songs you collect or play appear here.',
 			'music.removeSong' => 'Remove',
 			'music.chartsFailed' => 'The chart did not load',
+			'music.queueEmpty' => 'Queue is empty',
 			'music.queueTitle' => 'Queue',
 			'music.nowPlaying' => 'Now playing',
 			'music.volume' => 'Volume',
@@ -4400,11 +4488,11 @@ extension on TranslationsEn {
 			'music.downloadResume' => 'Resume',
 			'music.downloadPause' => 'Pause',
 			'music.downloadCancel' => 'Cancel',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadsEmptyTitle' => 'No downloads yet',
 			'music.downloadsEmptyDescription' => ({required Object directory}) => 'Download from a row’s “More actions” menu; files go to ${directory}.',
 			'music.localAddFolder' => 'Add a folder',
-			_ => null,
-		} ?? switch (path) {
 			'music.localHint' => 'Add a folder of audio files; the scan makes them play like online songs.',
 			'music.localFiles' => ({required Object count}) => '${count} files',
 			'music.localRescan' => 'Scan again',
@@ -4429,6 +4517,10 @@ extension on TranslationsEn {
 			'music.lyricRomanizationDesc' => 'Show the romanization when the lyric has one.',
 			'music.lyricSwapSecondary' => 'Translation/romanization order',
 			'music.lyricSwapSecondaryDesc' => 'Swap translation and romanization under a lyric line.',
+			'music.lyricTraditionalize' => 'Traditional Chinese',
+			'music.lyricTraditionalizeDesc' => 'Rewrite lyric text into traditional Chinese.',
+			'music.lyricWordTimed' => 'Word-by-word lyrics',
+			'music.lyricWordTimedDesc' => 'Play karaoke-style word timing when the platform provides it.',
 			'music.lyricFontScale' => 'Lyric size',
 			'music.lyricFontScaleDesc' => 'Scale of the lyrics in the player (100%–200%).',
 			'music.lyricFontSmaller' => 'Smaller lyrics',
@@ -4497,6 +4589,65 @@ extension on TranslationsEn {
 			'music.commentsReplies' => ({required Object count}) => '${count} replies',
 			'music.exportLyricDone' => ({required Object path}) => 'Lyric saved to ${path}',
 			'music.exportLyricFailed' => ({required Object error}) => 'Could not export the lyric: ${error}',
+			'music.eqSection' => 'Sound effects',
+			'music.eqEnabled' => 'Enable sound effects',
+			'music.eqEnabledDesc' => 'Off means the audio runs untouched, whatever the bands say.',
+			'music.eqPreset' => 'Preset',
+			'music.eqPresetDesc' => 'A target character, not a promise for every headphone or speaker.',
+			'music.eqPresetCustom' => 'Custom',
+			'music.eqPreamp' => 'Preamp',
+			'music.eqPreampDesc' => 'Applied before the bands; lower it when the curve clips.',
+			'music.eqReset' => 'Reset',
+			'music.eqResetDesc' => 'Every band and the preamp back to zero.',
+			'music.eqEditorTitle' => 'Ten-band equalizer',
+			'music.eqHint' => 'Drag a handle to shape its band; the curve updates as you drag and reaches the player in real time.',
+			'music.eqChainNote' => 'The predicted curve is a theory-layer preview; the actual audio follows the FFmpeg chain derived from these values.',
+			'music.eqPresetPop' => 'Pop',
+			'music.eqPresetRock' => 'Rock',
+			'music.eqPresetClassical' => 'Classical',
+			'music.eqPresetJazz' => 'Jazz',
+			'music.eqPresetElectronic' => 'Electronic',
+			'music.eqPresetBass' => 'Bass boost',
+			'music.eqPresetVocal' => 'Clear vocal',
+			'music.eqPresetLive' => 'Live',
+			'music.eqPresetFlat' => 'Flat',
+			'music.eqApplyFailed' => 'The engine refused this effect chain — the sound runs unprocessed. Turn effects off and try a smaller chain.',
+			'music.eqFxSection' => 'Enhancement effects',
+			'music.eqFxCostPrefix' => 'Note: ',
+			'music.eqFxCostLatency' => 'adds latency',
+			'music.eqFxCostStereo' => 'stereo output only',
+			'music.eqFxLoudness' => 'Volume normalisation',
+			'music.eqFxLoudnessDesc' => 'loudnorm holds loudness steady across tracks and sources.',
+			'music.eqFxBass' => 'Bass boost',
+			'music.eqFxBassDesc' => 'bass low shelf under 105 Hz, up to +8 dB.',
+			'music.eqFxVocal' => 'Vocal enhance',
+			'music.eqFxVocalDesc' => 'presence lift at 3 kHz with a mud cut at 300 Hz.',
+			'music.eqFxWidth' => 'Stereo width',
+			'music.eqFxWidthDesc' => 'stereotools raises the side level, keeping the centre intact.',
+			'music.eqFxSurround' => 'Surround',
+			'music.eqFxSurroundDesc' => 'haas pseudo-surround from a small cross delay.',
+			'music.eqFxDynamics' => 'Compression & limiter',
+			'music.eqFxDynamicsDesc' => 'acompressor evens the peaks, alimiter guards the output.',
+			'music.eqMeterTitle' => 'Loudness meter',
+			'music.eqAnalysis' => 'Loudness probe',
+			'music.eqAnalysisDesc' => 'Runs an EBU R128 probe in the chain; playback is untouched',
+			'music.eqMeterNote' => 'Loudness level meter (M = 400 ms momentary, S = 3 s short-term), not an FFT spectrum — mpv exposes no raw spectrum.',
+			'music.eqNodesTitle' => 'Parametric EQ',
+			'music.eqNodesAdd' => 'Add node',
+			'music.eqNodeFrequency' => 'Frequency',
+			'music.eqNodeQ' => 'Q',
+			'music.eqNodeGain' => 'Gain',
+			'music.eqCompareTitle' => 'A/B compare',
+			'music.eqCompare' => 'Hold to hear the original',
+			'music.eqCompareHeld' => 'Playing the original — release to restore',
+			'music.songlistTabMine' => 'My playlists',
+			'music.songlistTabOnline' => 'Online',
+			'music.onlineUnsupported' => 'The current source does not serve online playlists',
+			'music.onlineEmpty' => 'No playlists under this tag',
+			'music.onlineLoadMore' => 'Load more',
+			'music.onlineLoadFailed' => 'Could not load the playlist',
+			'music.onlineImport' => 'Import',
+			'music.onlineImported' => ({required Object count, required Object name}) => 'Imported ${count} songs into “${name}”',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -4851,6 +5002,8 @@ extension on TranslationsEn {
 			'search.linkOpen' => 'Open room',
 			'search.linkResolving' => 'Resolving the link…',
 			'search.linkFailed' => 'The link did not resolve to a room',
+			_ => null,
+		} ?? switch (path) {
 			'settings.title' => 'Settings',
 			'settings.navGeneral' => 'Browsing & window',
 			'settings.navPersonalization' => 'Personalization',
@@ -4917,8 +5070,6 @@ extension on TranslationsEn {
 			'settings.audioPageDescription' => 'Default volume, mute and background audio.',
 			'settings.picturePageDescription' => 'Fit, floating window and picture-in-picture.',
 			'settings.floatingWindowPageDescription' => 'The in-app floating window and the system picture-in-picture: size, position and pinning.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.pictureDisplayGroup' => 'Picture',
 			'settings.floatWindowGroup' => 'In-app floating window',
 			'settings.pipGroup' => 'System picture-in-picture',
@@ -5365,8 +5516,12 @@ extension on TranslationsEn {
 			'settings.navMusicDownload' => 'Downloads',
 			'settings.musicDownloadDescription' => 'Download folder, format, naming and tags.',
 			'settings.navMusicLyric' => 'Lyrics',
+			_ => null,
+		} ?? switch (path) {
 			'settings.musicLyricDescription' => 'Translation, romanization and lyric delay.',
 			'settings.navMusicDesktopLyric' => 'Desktop lyrics',
+			'settings.navMusicEq' => 'Sound effects',
+			'settings.musicEqDescription' => 'The master switch, presets, the ten-band equalizer and its preamp.',
 			'settings.musicDesktopLyricDescription' => 'The floating lyric\'s switch, lock, font, colour and alignment.',
 			'settings.vodQuality' => 'Default quality',
 			'settings.vodQualityDesc' => 'The quality the page asks for first; without a Bilibili sign-in the source may serve 720P or lower.',
@@ -5431,8 +5586,6 @@ extension on TranslationsEn {
 			'settings.hardwareDecoderYes' => 'yes (force hw, fails loudly)',
 			'settings.hardwareDecoderAutoCopy' => 'auto-copy (safe + copy-back)',
 			'settings.hardwareDecoderD3d11va' => 'd3d11va (Direct3D 11, Windows 8+)',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hardwareDecoderD3d11vaCopy' => 'd3d11va-copy (D3D11 + copy-back)',
 			'settings.hardwareDecoderNvdec' => 'nvdec (NVIDIA, zero-copy)',
 			'settings.hardwareDecoderNvdecCopy' => 'nvdec-copy (NVIDIA + copy-back)',
@@ -5688,6 +5841,7 @@ extension on TranslationsEn {
 			'settings.backgroundDeviceTitle' => 'From this device',
 			'settings.backgroundDeviceDescription' => 'Upload an image or video, or enter a network address.',
 			'settings.backgroundPreview' => 'Current background',
+			'settings.backgroundPreviewKind' => 'Pictures and videos',
 			'settings.backgroundPreviewPrevious' => 'Previous image',
 			'settings.backgroundPreviewNext' => 'Next image',
 			'settings.backgroundPreviewTitle' => 'Wallpaper preview',
@@ -5718,11 +5872,18 @@ extension on TranslationsEn {
 			'settings.backgroundFitNone' => 'Original size',
 			'settings.backgroundFitScaleDown' => 'Original or smaller',
 			'settings.backgroundMask' => 'Scrim',
-			'settings.backgroundMaskDescription' => 'Darkens or lightens the backdrop so text stays legible.',
-			'settings.backgroundOverlayBlur' => 'Scrim blur',
-			'settings.backgroundOverlayBlurDescription' => 'Turns the mask into frosted glass, blurring the background itself on every kind; 0 keeps a flat wash.',
+			'settings.backgroundMaskDescription' => 'A wash over the wallpaper that darkens or lightens it; a stronger scrim keeps text legible and fades the wallpaper.',
+			'settings.backgroundOverlayBlur' => 'Background blur',
+			'settings.backgroundOverlayBlurDescription' => 'Blurs the wallpaper itself on every background kind; 0 keeps it sharp.',
 			'settings.backgroundClearDescription' => 'Returns to the theme\'s own surface; the saved media stays for later.',
 			'settings.backgroundClear' => 'Clear background',
+			'settings.backgroundGlass' => 'Interface glass',
+			'settings.backgroundGlassEnable' => 'Enabled',
+			'settings.backgroundGlassDescription' => 'Cards, lists, the room\'s columns and every floating layer take a translucent fill; menus and panels also blur what lies behind them, so the wallpaper reads through.',
+			'settings.backgroundGlassFill' => 'Panel fill',
+			'settings.backgroundGlassFillDescription' => 'How opaque card, list and layer fills are; lower lets more wallpaper through and weakens text contrast.',
+			'settings.backgroundGlassBlur' => 'Layer blur',
+			'settings.backgroundGlassBlurDescription' => 'Blur radius behind menus and panels; 0 keeps them translucent but sharp. Cards and lists take the fill alone.',
 			'settings.checkUpdate' => 'Check for updates',
 			'settings.checkUpdateDesc' => 'Reads the newest version from the project’s releases.',
 			'settings.checkingUpdate' => 'Checking for updates…',
@@ -5777,6 +5938,15 @@ extension on TranslationsEn {
 			'settings.downloadFilterAll' => 'All',
 			'settings.downloadFilterEmpty' => 'Nothing under this status',
 			'settings.downloadKindFilter' => 'Filter by kind',
+			'settings.downloadColumnFile' => 'File',
+			'settings.downloadColumnSize' => 'Size',
+			'settings.downloadColumnTime' => 'Time',
+			'settings.downloadColumnActions' => 'Actions',
+			'settings.downloadSearchPlaceholder' => 'Search downloads',
+			'settings.downloadPercent' => ({required Object percent}) => 'Downloading ${percent}%',
+			'settings.downloadStatusPaused' => 'Paused',
+			'settings.downloadLoadedCount' => ({required Object shown, required Object total}) => 'Loaded ${shown} of ${total}',
+			'settings.downloadLoadingMore' => 'Loading more…',
 			'settings.downloadSettings' => 'Download settings',
 			'settings.downloadDetailPreview' => 'Open the preview',
 			'settings.downloadDetailTitle' => 'Download detail',
@@ -5860,6 +6030,8 @@ extension on TranslationsEn {
 			'settings.audienceMetricDesc' => 'The figure cards lead with on popular and followed rooms.',
 			'settings.audienceAutomatic' => 'Platform default',
 			'settings.audienceOnline' => 'Live viewers',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audiencePopularity' => 'Popularity',
 			'settings.audienceTotal' => 'Total viewers',
 			'settings.audienceDisplayGroup' => 'Card display and ranking mode',
@@ -5945,8 +6117,6 @@ extension on TranslationsEn {
 			'settings.windowsPipResetPositionConfirm' => 'Clear the saved PiP position and size?',
 			'settings.windowsPipResetAction' => 'Reset',
 			'settings.windowsPipResetPositionSuccess' => 'Saved PiP position and size cleared',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fitHeight' => 'Fit Height',
 			'settings.fitWidth' => 'Fit Width',
 			'settings.fitScaleDown' => 'Scale Down',
@@ -6374,6 +6544,8 @@ extension on TranslationsEn {
 			'vod.toViewEmptyTitle' => 'Watch later is empty',
 			'vod.toViewEmptyDescription' => 'Videos you mark as watch later on Bilibili appear here.',
 			'vod.followingEmptyTitle' => 'Nothing followed yet',
+			_ => null,
+		} ?? switch (path) {
 			'vod.followingEmptyDescription' => 'The anime and cinema you follow on Bilibili appear here.',
 			'vod.comments' => 'Comments',
 			'vod.commentsEmpty' => 'No comments yet.',
@@ -6459,8 +6631,6 @@ extension on TranslationsEn {
 			'wallpaper.source360Star' => '360 Wallpaper · Stars',
 			'wallpaper.source360Car' => '360 Wallpaper · Cars',
 			'wallpaper.source360Pet' => '360 Wallpaper · Pets',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.source360Fresh' => '360 Wallpaper · Fresh',
 			'wallpaper.source360Sport' => '360 Wallpaper · Sports',
 			'wallpaper.source360Child' => '360 Wallpaper · Kids',

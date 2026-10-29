@@ -13,6 +13,7 @@
   "open": "进入分区",
   "follow": "关注分区",
   "searchHint": "搜索分区",
+  "search": "搜索",
   "searchAt": "在 {platform} 中搜索分区“{query}”",
   "searchEmpty": "没有匹配的分区",
   "backToBrowse": "返回浏览",

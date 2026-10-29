@@ -13,6 +13,7 @@
   "open": "Open the area",
   "follow": "Follow area",
   "searchHint": "Search areas",
+  "search": "Search",
   "searchAt": "Searching areas for “{query}” on {platform}",
   "searchEmpty": "No matching areas",
   "backToBrowse": "Back to browsing",

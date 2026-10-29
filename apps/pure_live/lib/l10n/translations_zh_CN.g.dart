@@ -463,6 +463,9 @@ class Translations$areas$zh_CN {
 	/// zh-CN: '搜索分区'
 	String get searchHint => '搜索分区';
 
+	/// zh-CN: '搜索'
+	String get search => '搜索';
+
 	/// zh-CN: '在 {platform} 中搜索分区“{query}”'
 	String searchAt({required Object platform, required Object query}) => '在 ${platform} 中搜索分区“${query}”';
 
@@ -936,6 +939,9 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '更多'
 	String get more => '更多';
+
+	/// zh-CN: '切换平台'
+	String get switchPlatform => '切换平台';
 
 	/// zh-CN: '删除'
 	String get delete => '删除';
@@ -2815,6 +2821,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '榜单加载失败'
 	String get chartsFailed => '榜单加载失败';
 
+	/// zh-CN: '队列为空'
+	String get queueEmpty => '队列为空';
+
 	/// zh-CN: '播放队列'
 	String get queueTitle => '播放队列';
 
@@ -3298,6 +3307,18 @@ class Translations$music$zh_CN {
 	/// zh-CN: '交换翻译与音译在歌词行中的先后顺序。'
 	String get lyricSwapSecondaryDesc => '交换翻译与音译在歌词行中的先后顺序。';
 
+	/// zh-CN: '简体转繁体'
+	String get lyricTraditionalize => '简体转繁体';
+
+	/// zh-CN: '把歌词文本改写为繁体中文。'
+	String get lyricTraditionalizeDesc => '把歌词文本改写为繁体中文。';
+
+	/// zh-CN: '逐字歌词'
+	String get lyricWordTimed => '逐字歌词';
+
+	/// zh-CN: '平台提供逐字时间轴时按字高亮演唱。'
+	String get lyricWordTimedDesc => '平台提供逐字时间轴时按字高亮演唱。';
+
 	/// zh-CN: '歌词字号'
 	String get lyricFontScale => '歌词字号';
 
@@ -3501,6 +3522,183 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '歌词导出失败：{error}'
 	String exportLyricFailed({required Object error}) => '歌词导出失败：${error}';
+
+	/// zh-CN: '音效'
+	String get eqSection => '音效';
+
+	/// zh-CN: '启用音效'
+	String get eqEnabled => '启用音效';
+
+	/// zh-CN: '关闭时音频完全不经过处理，频段参数保持不变。'
+	String get eqEnabledDesc => '关闭时音频完全不经过处理，频段参数保持不变。';
+
+	/// zh-CN: '音效预设'
+	String get eqPreset => '音效预设';
+
+	/// zh-CN: '预设代表目标听感，不保证不同耳机音箱上效果一致。'
+	String get eqPresetDesc => '预设代表目标听感，不保证不同耳机音箱上效果一致。';
+
+	/// zh-CN: '自定义'
+	String get eqPresetCustom => '自定义';
+
+	/// zh-CN: '预放增益'
+	String get eqPreamp => '预放增益';
+
+	/// zh-CN: '作用于频段之前；曲线削波时先降这里。'
+	String get eqPreampDesc => '作用于频段之前；曲线削波时先降这里。';
+
+	/// zh-CN: '重置'
+	String get eqReset => '重置';
+
+	/// zh-CN: '所有频段与预放增益归零。'
+	String get eqResetDesc => '所有频段与预放增益归零。';
+
+	/// zh-CN: '十段均衡器'
+	String get eqEditorTitle => '十段均衡器';
+
+	/// zh-CN: '拖动滑块调整频段；曲线实时更新并即时应用到播放。'
+	String get eqHint => '拖动滑块调整频段；曲线实时更新并即时应用到播放。';
+
+	/// zh-CN: '频响曲线为理论预测；实际音频以这组参数生成的 FFmpeg 滤镜链为准。'
+	String get eqChainNote => '频响曲线为理论预测；实际音频以这组参数生成的 FFmpeg 滤镜链为准。';
+
+	/// zh-CN: '流行'
+	String get eqPresetPop => '流行';
+
+	/// zh-CN: '摇滚'
+	String get eqPresetRock => '摇滚';
+
+	/// zh-CN: '古典'
+	String get eqPresetClassical => '古典';
+
+	/// zh-CN: '爵士'
+	String get eqPresetJazz => '爵士';
+
+	/// zh-CN: '电子'
+	String get eqPresetElectronic => '电子';
+
+	/// zh-CN: '重低音'
+	String get eqPresetBass => '重低音';
+
+	/// zh-CN: '清晰人声'
+	String get eqPresetVocal => '清晰人声';
+
+	/// zh-CN: '现场感'
+	String get eqPresetLive => '现场感';
+
+	/// zh-CN: '平直响应'
+	String get eqPresetFlat => '平直响应';
+
+	/// zh-CN: '引擎拒绝了当前音效链——声音未经过处理。请先关闭效果再尝试较小的组合。'
+	String get eqApplyFailed => '引擎拒绝了当前音效链——声音未经过处理。请先关闭效果再尝试较小的组合。';
+
+	/// zh-CN: '增强音效'
+	String get eqFxSection => '增强音效';
+
+	/// zh-CN: '注意：'
+	String get eqFxCostPrefix => '注意：';
+
+	/// zh-CN: '增加延迟'
+	String get eqFxCostLatency => '增加延迟';
+
+	/// zh-CN: '仅立体声输出有效'
+	String get eqFxCostStereo => '仅立体声输出有效';
+
+	/// zh-CN: '音量均衡'
+	String get eqFxLoudness => '音量均衡';
+
+	/// zh-CN: 'loudnorm 让不同曲目与来源的响度保持一致。'
+	String get eqFxLoudnessDesc => 'loudnorm 让不同曲目与来源的响度保持一致。';
+
+	/// zh-CN: '低音增强'
+	String get eqFxBass => '低音增强';
+
+	/// zh-CN: 'bass 低架滤波，105 Hz 以下最多 +8 dB。'
+	String get eqFxBassDesc => 'bass 低架滤波，105 Hz 以下最多 +8 dB。';
+
+	/// zh-CN: '人声增强'
+	String get eqFxVocal => '人声增强';
+
+	/// zh-CN: '3 kHz 人声凸起，同时收 300 Hz 浑浊段。'
+	String get eqFxVocalDesc => '3 kHz 人声凸起，同时收 300 Hz 浑浊段。';
+
+	/// zh-CN: '立体声拓宽'
+	String get eqFxWidth => '立体声拓宽';
+
+	/// zh-CN: 'stereotools 抬高侧声道电平，中央声像不动。'
+	String get eqFxWidthDesc => 'stereotools 抬高侧声道电平，中央声像不动。';
+
+	/// zh-CN: '环境声场'
+	String get eqFxSurround => '环境声场';
+
+	/// zh-CN: 'haas 交叉延迟伪环绕。'
+	String get eqFxSurroundDesc => 'haas 交叉延迟伪环绕。';
+
+	/// zh-CN: '动态压缩与限幅'
+	String get eqFxDynamics => '动态压缩与限幅';
+
+	/// zh-CN: 'acompressor 平滑峰值，alimiter 守住输出上限。'
+	String get eqFxDynamicsDesc => 'acompressor 平滑峰值，alimiter 守住输出上限。';
+
+	/// zh-CN: '响度电平表'
+	String get eqMeterTitle => '响度电平表';
+
+	/// zh-CN: '响度探针'
+	String get eqAnalysis => '响度探针';
+
+	/// zh-CN: '在链路中运行 EBU R128 探针，不改变声音本身'
+	String get eqAnalysisDesc => '在链路中运行 EBU R128 探针，不改变声音本身';
+
+	/// zh-CN: '响度电平表（M=400ms 瞬时，S=3s 短期），并非 FFT 频谱——mpv 不提供原始频谱数据。'
+	String get eqMeterNote => '响度电平表（M=400ms 瞬时，S=3s 短期），并非 FFT 频谱——mpv 不提供原始频谱数据。';
+
+	/// zh-CN: '参数均衡器'
+	String get eqNodesTitle => '参数均衡器';
+
+	/// zh-CN: '添加节点'
+	String get eqNodesAdd => '添加节点';
+
+	/// zh-CN: '频率'
+	String get eqNodeFrequency => '频率';
+
+	/// zh-CN: 'Q 值'
+	String get eqNodeQ => 'Q 值';
+
+	/// zh-CN: '增益'
+	String get eqNodeGain => '增益';
+
+	/// zh-CN: 'A/B 对比'
+	String get eqCompareTitle => 'A/B 对比';
+
+	/// zh-CN: '按住试听原始声音'
+	String get eqCompare => '按住试听原始声音';
+
+	/// zh-CN: '正在播放原始声音——松开恢复'
+	String get eqCompareHeld => '正在播放原始声音——松开恢复';
+
+	/// zh-CN: '我的歌单'
+	String get songlistTabMine => '我的歌单';
+
+	/// zh-CN: '在线歌单'
+	String get songlistTabOnline => '在线歌单';
+
+	/// zh-CN: '当前音乐源不支持在线歌单'
+	String get onlineUnsupported => '当前音乐源不支持在线歌单';
+
+	/// zh-CN: '该分类下暂无歌单'
+	String get onlineEmpty => '该分类下暂无歌单';
+
+	/// zh-CN: '加载更多'
+	String get onlineLoadMore => '加载更多';
+
+	/// zh-CN: '歌单加载失败'
+	String get onlineLoadFailed => '歌单加载失败';
+
+	/// zh-CN: '导入歌单'
+	String get onlineImport => '导入歌单';
+
+	/// zh-CN: '已导入 {count} 首到「{name}」'
+	String onlineImported({required Object count, required Object name}) => '已导入 ${count} 首到「${name}」';
 }
 
 // Path: navigation
@@ -6169,6 +6367,12 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '桌面歌词'
 	String get navMusicDesktopLyric => '桌面歌词';
 
+	/// zh-CN: '音效'
+	String get navMusicEq => '音效';
+
+	/// zh-CN: '音效总开关、内置预设、十段均衡器与预放增益。'
+	String get musicEqDescription => '音效总开关、内置预设、十段均衡器与预放增益。';
+
 	/// zh-CN: '悬浮歌词的开关、锁定、字号、颜色与对齐。'
 	String get musicDesktopLyricDescription => '悬浮歌词的开关、锁定、字号、颜色与对齐。';
 
@@ -7126,6 +7330,9 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '当前背景'
 	String get backgroundPreview => '当前背景';
 
+	/// zh-CN: '图片与视频'
+	String get backgroundPreviewKind => '图片与视频';
+
 	/// zh-CN: '上一张'
 	String get backgroundPreviewPrevious => '上一张';
 
@@ -7210,26 +7417,47 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '原始大小'
 	String get backgroundFitNone => '原始大小';
 
-	/// zh-CN: '原始或缩小'
-	String get backgroundFitScaleDown => '原始或缩小';
+	/// zh-CN: '缩小'
+	String get backgroundFitScaleDown => '缩小';
 
-	/// zh-CN: '遮罩'
-	String get backgroundMask => '遮罩';
+	/// zh-CN: '蒙层浓度'
+	String get backgroundMask => '蒙层浓度';
 
-	/// zh-CN: '压暗或提亮背景，保证文字可读。'
-	String get backgroundMaskDescription => '压暗或提亮背景，保证文字可读。';
+	/// zh-CN: '在壁纸上盖一层压暗或提亮的蒙层；浓度越高文字越清楚，壁纸越淡。'
+	String get backgroundMaskDescription => '在壁纸上盖一层压暗或提亮的蒙层；浓度越高文字越清楚，壁纸越淡。';
 
-	/// zh-CN: '遮罩模糊'
-	String get backgroundOverlayBlur => '遮罩模糊';
+	/// zh-CN: '背景模糊'
+	String get backgroundOverlayBlur => '背景模糊';
 
-	/// zh-CN: '让遮罩变成磨砂：把背景本身模糊掉，任何背景类型都生效；0 保持平面遮罩。'
-	String get backgroundOverlayBlurDescription => '让遮罩变成磨砂：把背景本身模糊掉，任何背景类型都生效；0 保持平面遮罩。';
+	/// zh-CN: '把壁纸本身模糊掉，图片、视频、纯色和渐变都生效；0 保持清晰。'
+	String get backgroundOverlayBlurDescription => '把壁纸本身模糊掉，图片、视频、纯色和渐变都生效；0 保持清晰。';
 
 	/// zh-CN: '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。'
 	String get backgroundClearDescription => '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。';
 
 	/// zh-CN: '清除背景'
 	String get backgroundClear => '清除背景';
+
+	/// zh-CN: '界面玻璃'
+	String get backgroundGlass => '界面玻璃';
+
+	/// zh-CN: '启用'
+	String get backgroundGlassEnable => '启用';
+
+	/// zh-CN: '卡片、列表、房间和各浮动层的底色都变半透明；菜单、面板等浮层再模糊背后的内容，让壁纸透出来。'
+	String get backgroundGlassDescription => '卡片、列表、房间和各浮动层的底色都变半透明；菜单、面板等浮层再模糊背后的内容，让壁纸透出来。';
+
+	/// zh-CN: '面板填充'
+	String get backgroundGlassFill => '面板填充';
+
+	/// zh-CN: '卡片、列表和浮层底色的不透明度；越低壁纸透得越多，文字对比越弱。'
+	String get backgroundGlassFillDescription => '卡片、列表和浮层底色的不透明度；越低壁纸透得越多，文字对比越弱。';
+
+	/// zh-CN: '浮层模糊'
+	String get backgroundGlassBlur => '浮层模糊';
+
+	/// zh-CN: '菜单、面板等浮层背后内容的模糊半径；0 只做半透明，不模糊。卡片和列表只有填充。'
+	String get backgroundGlassBlurDescription => '菜单、面板等浮层背后内容的模糊半径；0 只做半透明，不模糊。卡片和列表只有填充。';
 
 	/// zh-CN: '检查更新'
 	String get checkUpdate => '检查更新';
@@ -7392,6 +7620,33 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '按类型筛选'
 	String get downloadKindFilter => '按类型筛选';
+
+	/// zh-CN: '文件'
+	String get downloadColumnFile => '文件';
+
+	/// zh-CN: '大小'
+	String get downloadColumnSize => '大小';
+
+	/// zh-CN: '时间'
+	String get downloadColumnTime => '时间';
+
+	/// zh-CN: '操作'
+	String get downloadColumnActions => '操作';
+
+	/// zh-CN: '搜索下载记录'
+	String get downloadSearchPlaceholder => '搜索下载记录';
+
+	/// zh-CN: '下载中 {percent}%'
+	String downloadPercent({required Object percent}) => '下载中 ${percent}%';
+
+	/// zh-CN: '已暂停'
+	String get downloadStatusPaused => '已暂停';
+
+	/// zh-CN: '已加载 {shown} / {total}'
+	String downloadLoadedCount({required Object shown, required Object total}) => '已加载 ${shown} / ${total}';
+
+	/// zh-CN: '正在加载更多…'
+	String get downloadLoadingMore => '正在加载更多…';
 
 	/// zh-CN: '下载设置'
 	String get downloadSettings => '下载设置';
@@ -9722,6 +9977,7 @@ extension on Translations {
 			'areas.open' => '进入分区',
 			'areas.follow' => '关注分区',
 			'areas.searchHint' => '搜索分区',
+			'areas.search' => '搜索',
 			'areas.searchAt' => ({required Object platform, required Object query}) => '在 ${platform} 中搜索分区“${query}”',
 			'areas.searchEmpty' => '没有匹配的分区',
 			'areas.backToBrowse' => '返回浏览',
@@ -9874,6 +10130,7 @@ extension on Translations {
 			'common.backToTop' => '回到顶部',
 			'common.backToBottom' => '回到底部',
 			'common.more' => '更多',
+			'common.switchPlatform' => '切换平台',
 			'common.delete' => '删除',
 			'common.newWindow' => '新建窗口',
 			'common.show' => '显示',
@@ -10105,10 +10362,10 @@ extension on Translations {
 			'hongguo.searchHistory' => '最近搜索',
 			'hongguo.searchHistoryClear' => '清空历史',
 			'hongguo.searchHistoryHint' => '搜过的剧名会留在本机，最多 20 条',
-			'hongguo.filter' => '筛选',
-			'hongguo.filterPanelTitle' => '筛选条件',
 			_ => null,
 		} ?? switch (path) {
+			'hongguo.filter' => '筛选',
+			'hongguo.filterPanelTitle' => '筛选条件',
 			'hongguo.filterDone' => '完成',
 			'hongguo.accountId' => '红果号',
 			'hongguo.copyAccountId' => '复制',
@@ -10484,6 +10741,7 @@ extension on Translations {
 			'music.mineEmptyDescription' => '收藏或播放过的歌曲会出现在这里。',
 			'music.removeSong' => '移除',
 			'music.chartsFailed' => '榜单加载失败',
+			'music.queueEmpty' => '队列为空',
 			'music.queueTitle' => '播放队列',
 			'music.nowPlaying' => '正在播放',
 			'music.volume' => '音量',
@@ -10618,11 +10876,11 @@ extension on Translations {
 			'music.downloadResume' => '继续',
 			'music.downloadPause' => '暂停',
 			'music.downloadCancel' => '取消',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadsEmptyTitle' => '还没有下载任务',
 			'music.downloadsEmptyDescription' => ({required Object directory}) => '在歌曲行的「更多」里下载，文件会保存到 ${directory}。',
 			'music.localAddFolder' => '添加文件夹',
-			_ => null,
-		} ?? switch (path) {
 			'music.localHint' => '添加本机音乐文件夹，扫描后会像在线歌曲一样播放。',
 			'music.localFiles' => ({required Object count}) => '${count} 个文件',
 			'music.localRescan' => '重新扫描',
@@ -10647,6 +10905,10 @@ extension on Translations {
 			'music.lyricRomanizationDesc' => '歌词带音译或罗马音时一并显示。',
 			'music.lyricSwapSecondary' => '翻译/音译顺序',
 			'music.lyricSwapSecondaryDesc' => '交换翻译与音译在歌词行中的先后顺序。',
+			'music.lyricTraditionalize' => '简体转繁体',
+			'music.lyricTraditionalizeDesc' => '把歌词文本改写为繁体中文。',
+			'music.lyricWordTimed' => '逐字歌词',
+			'music.lyricWordTimedDesc' => '平台提供逐字时间轴时按字高亮演唱。',
 			'music.lyricFontScale' => '歌词字号',
 			'music.lyricFontScaleDesc' => '播放页歌词的缩放比例（100%–200%）。',
 			'music.lyricFontSmaller' => '缩小字号',
@@ -10715,6 +10977,65 @@ extension on Translations {
 			'music.commentsReplies' => ({required Object count}) => '${count} 条回复',
 			'music.exportLyricDone' => ({required Object path}) => '歌词已保存到 ${path}',
 			'music.exportLyricFailed' => ({required Object error}) => '歌词导出失败：${error}',
+			'music.eqSection' => '音效',
+			'music.eqEnabled' => '启用音效',
+			'music.eqEnabledDesc' => '关闭时音频完全不经过处理，频段参数保持不变。',
+			'music.eqPreset' => '音效预设',
+			'music.eqPresetDesc' => '预设代表目标听感，不保证不同耳机音箱上效果一致。',
+			'music.eqPresetCustom' => '自定义',
+			'music.eqPreamp' => '预放增益',
+			'music.eqPreampDesc' => '作用于频段之前；曲线削波时先降这里。',
+			'music.eqReset' => '重置',
+			'music.eqResetDesc' => '所有频段与预放增益归零。',
+			'music.eqEditorTitle' => '十段均衡器',
+			'music.eqHint' => '拖动滑块调整频段；曲线实时更新并即时应用到播放。',
+			'music.eqChainNote' => '频响曲线为理论预测；实际音频以这组参数生成的 FFmpeg 滤镜链为准。',
+			'music.eqPresetPop' => '流行',
+			'music.eqPresetRock' => '摇滚',
+			'music.eqPresetClassical' => '古典',
+			'music.eqPresetJazz' => '爵士',
+			'music.eqPresetElectronic' => '电子',
+			'music.eqPresetBass' => '重低音',
+			'music.eqPresetVocal' => '清晰人声',
+			'music.eqPresetLive' => '现场感',
+			'music.eqPresetFlat' => '平直响应',
+			'music.eqApplyFailed' => '引擎拒绝了当前音效链——声音未经过处理。请先关闭效果再尝试较小的组合。',
+			'music.eqFxSection' => '增强音效',
+			'music.eqFxCostPrefix' => '注意：',
+			'music.eqFxCostLatency' => '增加延迟',
+			'music.eqFxCostStereo' => '仅立体声输出有效',
+			'music.eqFxLoudness' => '音量均衡',
+			'music.eqFxLoudnessDesc' => 'loudnorm 让不同曲目与来源的响度保持一致。',
+			'music.eqFxBass' => '低音增强',
+			'music.eqFxBassDesc' => 'bass 低架滤波，105 Hz 以下最多 +8 dB。',
+			'music.eqFxVocal' => '人声增强',
+			'music.eqFxVocalDesc' => '3 kHz 人声凸起，同时收 300 Hz 浑浊段。',
+			'music.eqFxWidth' => '立体声拓宽',
+			'music.eqFxWidthDesc' => 'stereotools 抬高侧声道电平，中央声像不动。',
+			'music.eqFxSurround' => '环境声场',
+			'music.eqFxSurroundDesc' => 'haas 交叉延迟伪环绕。',
+			'music.eqFxDynamics' => '动态压缩与限幅',
+			'music.eqFxDynamicsDesc' => 'acompressor 平滑峰值，alimiter 守住输出上限。',
+			'music.eqMeterTitle' => '响度电平表',
+			'music.eqAnalysis' => '响度探针',
+			'music.eqAnalysisDesc' => '在链路中运行 EBU R128 探针，不改变声音本身',
+			'music.eqMeterNote' => '响度电平表（M=400ms 瞬时，S=3s 短期），并非 FFT 频谱——mpv 不提供原始频谱数据。',
+			'music.eqNodesTitle' => '参数均衡器',
+			'music.eqNodesAdd' => '添加节点',
+			'music.eqNodeFrequency' => '频率',
+			'music.eqNodeQ' => 'Q 值',
+			'music.eqNodeGain' => '增益',
+			'music.eqCompareTitle' => 'A/B 对比',
+			'music.eqCompare' => '按住试听原始声音',
+			'music.eqCompareHeld' => '正在播放原始声音——松开恢复',
+			'music.songlistTabMine' => '我的歌单',
+			'music.songlistTabOnline' => '在线歌单',
+			'music.onlineUnsupported' => '当前音乐源不支持在线歌单',
+			'music.onlineEmpty' => '该分类下暂无歌单',
+			'music.onlineLoadMore' => '加载更多',
+			'music.onlineLoadFailed' => '歌单加载失败',
+			'music.onlineImport' => '导入歌单',
+			'music.onlineImported' => ({required Object count, required Object name}) => '已导入 ${count} 首到「${name}」',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -11069,6 +11390,8 @@ extension on Translations {
 			'search.linkOpen' => '打开直播间',
 			'search.linkResolving' => '正在解析链接…',
 			'search.linkFailed' => '没有解析到直播间',
+			_ => null,
+		} ?? switch (path) {
 			'settings.title' => '设置',
 			'settings.navGeneral' => '浏览与窗口',
 			'settings.navPersonalization' => '个性化',
@@ -11135,8 +11458,6 @@ extension on Translations {
 			'settings.audioPageDescription' => '默认音量、静音与后台音频。',
 			'settings.picturePageDescription' => '画面比例、悬浮窗与画中画。',
 			'settings.floatingWindowPageDescription' => '应用内悬浮窗与系统画中画的大小、位置与置顶。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.pictureDisplayGroup' => '画面显示',
 			'settings.floatWindowGroup' => '应用内悬浮窗',
 			'settings.pipGroup' => '系统画中画',
@@ -11583,8 +11904,12 @@ extension on Translations {
 			'settings.navMusicDownload' => '下载',
 			'settings.musicDownloadDescription' => '下载目录、文件格式、命名与标签处理。',
 			'settings.navMusicLyric' => '歌词',
+			_ => null,
+		} ?? switch (path) {
 			'settings.musicLyricDescription' => '歌词的翻译、音译与延迟。',
 			'settings.navMusicDesktopLyric' => '桌面歌词',
+			'settings.navMusicEq' => '音效',
+			'settings.musicEqDescription' => '音效总开关、内置预设、十段均衡器与预放增益。',
 			'settings.musicDesktopLyricDescription' => '悬浮歌词的开关、锁定、字号、颜色与对齐。',
 			'settings.vodQuality' => '默认清晰度',
 			'settings.vodQualityDesc' => '打开视频时优先请求的清晰度；未登录时 Bilibili 可能只提供 720P 及以下。',
@@ -11649,8 +11974,6 @@ extension on Translations {
 			'settings.hardwareDecoderYes' => 'yes（强制硬解，失败即报错）',
 			'settings.hardwareDecoderAutoCopy' => 'auto-copy（安全硬解 + 拷回内存，滤镜/截图可用）',
 			'settings.hardwareDecoderD3d11va' => 'd3d11va（Direct3D 11 直通，Windows 8+）',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hardwareDecoderD3d11vaCopy' => 'd3d11va-copy（D3D11 + 拷回内存）',
 			'settings.hardwareDecoderNvdec' => 'nvdec（NVIDIA 直通，低开销）',
 			'settings.hardwareDecoderNvdecCopy' => 'nvdec-copy（NVIDIA + 拷回内存）',
@@ -11906,6 +12229,7 @@ extension on Translations {
 			'settings.backgroundDeviceTitle' => '从设备',
 			'settings.backgroundDeviceDescription' => '上传图片或视频，或填写网络地址。',
 			'settings.backgroundPreview' => '当前背景',
+			'settings.backgroundPreviewKind' => '图片与视频',
 			'settings.backgroundPreviewPrevious' => '上一张',
 			'settings.backgroundPreviewNext' => '下一张',
 			'settings.backgroundPreviewTitle' => '壁纸预览',
@@ -11934,13 +12258,20 @@ extension on Translations {
 			'settings.backgroundFitWidth' => '适应宽度',
 			'settings.backgroundFitHeight' => '适应高度',
 			'settings.backgroundFitNone' => '原始大小',
-			'settings.backgroundFitScaleDown' => '原始或缩小',
-			'settings.backgroundMask' => '遮罩',
-			'settings.backgroundMaskDescription' => '压暗或提亮背景，保证文字可读。',
-			'settings.backgroundOverlayBlur' => '遮罩模糊',
-			'settings.backgroundOverlayBlurDescription' => '让遮罩变成磨砂：把背景本身模糊掉，任何背景类型都生效；0 保持平面遮罩。',
+			'settings.backgroundFitScaleDown' => '缩小',
+			'settings.backgroundMask' => '蒙层浓度',
+			'settings.backgroundMaskDescription' => '在壁纸上盖一层压暗或提亮的蒙层；浓度越高文字越清楚，壁纸越淡。',
+			'settings.backgroundOverlayBlur' => '背景模糊',
+			'settings.backgroundOverlayBlurDescription' => '把壁纸本身模糊掉，图片、视频、纯色和渐变都生效；0 保持清晰。',
 			'settings.backgroundClearDescription' => '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。',
 			'settings.backgroundClear' => '清除背景',
+			'settings.backgroundGlass' => '界面玻璃',
+			'settings.backgroundGlassEnable' => '启用',
+			'settings.backgroundGlassDescription' => '卡片、列表、房间和各浮动层的底色都变半透明；菜单、面板等浮层再模糊背后的内容，让壁纸透出来。',
+			'settings.backgroundGlassFill' => '面板填充',
+			'settings.backgroundGlassFillDescription' => '卡片、列表和浮层底色的不透明度；越低壁纸透得越多，文字对比越弱。',
+			'settings.backgroundGlassBlur' => '浮层模糊',
+			'settings.backgroundGlassBlurDescription' => '菜单、面板等浮层背后内容的模糊半径；0 只做半透明，不模糊。卡片和列表只有填充。',
 			'settings.checkUpdate' => '检查更新',
 			'settings.checkUpdateDesc' => '从项目的发行页读取最新版本。',
 			'settings.checkingUpdate' => '正在检查更新…',
@@ -11995,6 +12326,15 @@ extension on Translations {
 			'settings.downloadFilterAll' => '全部',
 			'settings.downloadFilterEmpty' => '没有符合这个状态的记录',
 			'settings.downloadKindFilter' => '按类型筛选',
+			'settings.downloadColumnFile' => '文件',
+			'settings.downloadColumnSize' => '大小',
+			'settings.downloadColumnTime' => '时间',
+			'settings.downloadColumnActions' => '操作',
+			'settings.downloadSearchPlaceholder' => '搜索下载记录',
+			'settings.downloadPercent' => ({required Object percent}) => '下载中 ${percent}%',
+			'settings.downloadStatusPaused' => '已暂停',
+			'settings.downloadLoadedCount' => ({required Object shown, required Object total}) => '已加载 ${shown} / ${total}',
+			'settings.downloadLoadingMore' => '正在加载更多…',
 			'settings.downloadSettings' => '下载设置',
 			'settings.downloadDetailPreview' => '点击进入预览',
 			'settings.downloadDetailTitle' => '下载详情',
@@ -12078,6 +12418,8 @@ extension on Translations {
 			'settings.audienceMetricDesc' => '热门、关注等卡片优先展示的观众指标。',
 			'settings.audienceAutomatic' => '跟随平台',
 			'settings.audienceOnline' => '在线观众',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audiencePopularity' => '热度',
 			'settings.audienceTotal' => '累计观看',
 			'settings.audienceDisplayGroup' => '卡片显示与排行方式',
@@ -12163,8 +12505,6 @@ extension on Translations {
 			'settings.windowsPipResetPositionConfirm' => '确定要清除已保存的小窗位置和大小吗？',
 			'settings.windowsPipResetAction' => '重置',
 			'settings.windowsPipResetPositionSuccess' => '已清除保存的小窗位置和大小',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fitHeight' => '适应高度',
 			'settings.fitWidth' => '适应宽度',
 			'settings.fitScaleDown' => '等比缩小',
@@ -12592,6 +12932,8 @@ extension on Translations {
 			'vod.toViewEmptyTitle' => '稍后再看是空的',
 			'vod.toViewEmptyDescription' => '在 Bilibili 上标记「稍后再看」的视频会出现在这里。',
 			'vod.followingEmptyTitle' => '还没有追番',
+			_ => null,
+		} ?? switch (path) {
 			'vod.followingEmptyDescription' => '在 Bilibili 上追的番剧和影视会出现在这里。',
 			'vod.comments' => '评论',
 			'vod.commentsEmpty' => '还没有评论。',
@@ -12677,8 +13019,6 @@ extension on Translations {
 			'wallpaper.source360Star' => '360壁纸明星',
 			'wallpaper.source360Car' => '360壁纸汽车',
 			'wallpaper.source360Pet' => '360壁纸萌宠',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.source360Fresh' => '360壁纸清新',
 			'wallpaper.source360Sport' => '360壁纸体育',
 			'wallpaper.source360Child' => '360壁纸萌娃',
