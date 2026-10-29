@@ -143,11 +143,16 @@
   simplify-chinese-main/chinese.js 抽取）；顺修 decodeKrc 误剥逐字标签（与 qrc/yrc/mrc 及文件头
   契约不一致）。LX 参考：`core/music/utils.ts buildLyricInfo`、`simplify-chinese-main`、
   `defaultSetting.ts`
-- 🟨 D5 桌面歌词（2026-10-29 实查大半已接：`DesktopLyricController` 已覆盖
+- ✅ D5 桌面歌词（2026-10-29 收尾完成：响度电平通道已接通——H2 的 loudness 流经
+  DesktopLyricController 转发 `_transport.setLevels(momentary, shortTerm, active)`
+  （active=_visible&&_playing，暂停/隐藏即发关闭帧），transport 新协议方法
+  `setLevels`（Noop 实现空转=不支持平台诚实静默）；Windows 原生端 plugin
+  `setLevels` handler + DesktopLyricWindow::SetLevels（mutex+PostMessage 跨线程）
+  + DrawLoudness 双条（M 0xB4 亮/S 0x80 暗，-60…0 LUFS 映射，叠进度条上方、
+  窗口过矮自动省略）；media_core_audio 64 测全绿。先前已接：`DesktopLyricController` 已覆盖
   show/hide/toggle/lock/style/displayOptions/bounds/setDocument，模块 `music_playback.dart`
-  已喂 `desktopLyric.*` 设置——LX 的 get/set_info、get/set_status 通道等价落地；剩
-  频谱 analyser 数据通道，media_core 无频谱能力，属引擎缺口待扩）：LX 用 MessagePort 通道（get_info/set_info/get_status/set_status/
-  频谱 analyser 数据）；media_core_audio 已有桌面歌词窗口（含鼠标穿透 `winLyric/mouseCheckTools.ts` 语义）。
+  已喂 `desktopLyric.*` 设置——LX 的 get/set_info、get/set_status 通道等价落地；
+  LX 的频谱 analyser 数据通道以响度电平条等价落地（mpv 无原始 FFT，如实降级）。
 
 ### E. 下载
 - ✅ E1 任务状态机（media_core_audio `MusicDownloadQueue/MusicDownloadTask/MusicDownloader`
