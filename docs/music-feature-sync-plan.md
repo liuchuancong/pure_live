@@ -41,8 +41,8 @@
 | 歌单分类标签组（TagGroup 分类树） | PlaylistTagTree 能力 + 浏览页分类组 DsTopNav 行（热门为第一组）+ 组内标签 chips：wy catalogue / kg smarty getSpecial / tx all-categories / mg taglist 模板（提交 `16fd63dbe`） | 🟡 余 kw（其广场未建，树随广场一起） |
 | 排序 tab（推荐/最热/最新/热藏/飙升） | MusicPlazaSort 表 + 浏览页第一行 DsTopNav（单 tab 不显示）：kg 五 tab 映射 getSpecial t 码、tx 无标签时排序顶替分类（推荐=feed）、wy/mg 各自仅剩的单 tab（提交 `28c05034f`） | ✅ |
 | 打开歌单（链接或 ID） | 在线歌单 tab 行尾链接按钮 + 对话框（链接/ID）；四源 `playlistDetail` 内按参考 `getListId` 正则归一（wy ?id= 与 /playlist/n/m、tx /playlist/ 与 id=、kg special/single 与 id_ 前缀、mg /playlist/），裸 ID 直用（提交 `09e12aa10`） | ✅ |
-| 歌单搜索（搜索类型=歌单的结果页） | 无 | ⬜（随 B 项） |
-| 收藏歌单（存入我的列表并记 source 供更新） | 导入为本地列表（`onlineImport`），未记 source | 🟡 记 source |
+| 歌单搜索（搜索类型=歌单的结果页） | 随 B 项落地：library 歌单类型结果页（`_SonglistResults`，MusicPlaylistGrid 双模滚动，点击进详情） | ✅（0cac05b4f） |
+| 收藏歌单（存入我的列表并记 source 供更新） | 导入即 `linkSource` 记 source+sourceListId（模型与持久化本就支持），供后续更新对比（提交 `da26d9b86`） | ✅ |
 | 已收藏在线歌单"更新"（拉最新对比替换） | 无 | ⬜ |
 
 ## D. 排行榜域
