@@ -1,7 +1,10 @@
 import 'dart:async' show unawaited;
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flame_barrage/flame_barrage.dart' show EmojiAtlas;
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
@@ -60,19 +63,33 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
             ],
           ),
           DsLine(color: colors.border),
+          // A chat column is dragged by the mouse as much as by a finger,
+          // as every desktop chat app reads; the app-wide behavior keeps
+          // the mouse out of dragging.
           Expanded(
-            child: switch (tab) {
-              _ChatTab.danmaku => const Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(child: _ChatFeed()),
-                  _ChatComposer(),
-                ],
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(
+                dragDevices: const {
+                  PointerDeviceKind.touch,
+                  PointerDeviceKind.stylus,
+                  PointerDeviceKind.invertedStylus,
+                  PointerDeviceKind.trackpad,
+                  PointerDeviceKind.mouse,
+                },
               ),
-              _ChatTab.superChats => const _SuperChatTab(),
-              _ChatTab.settings => const _RoomDanmakuSettings(),
-              _ChatTab.shield => const _ShieldTab(),
-            },
+              child: switch (tab) {
+                _ChatTab.danmaku => const Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: _ChatFeed()),
+                    _ChatComposer(),
+                  ],
+                ),
+                _ChatTab.superChats => const _SuperChatTab(),
+                _ChatTab.settings => const _RoomDanmakuSettings(),
+                _ChatTab.shield => const _ShieldTab(),
+              },
+            ),
           ),
         ],
       ),
@@ -208,6 +225,9 @@ final class _ChatLine extends ConsumerWidget {
           ? colors.textMuted
           : Color.fromARGB(255, message.color!.r, message.color!.g, message.color!.b),
     );
+    // The line's own pixel size, followed from the theme when the viewer
+    // hasn't picked one; an emoticon rides a touch larger than its words.
+    final fontPx = fontSize > 0 ? fontSize.toDouble() : (theme.typography.caption.fontSize ?? 13);
     final gift = _giftOf(message);
     final superChat = message.type == LiveMessageType.superChat && message.payload is LiveSuperChatMessage
         ? message.payload! as LiveSuperChatMessage
@@ -315,7 +335,9 @@ final class _ChatLine extends ConsumerWidget {
                     const WidgetSpan(child: SizedBox(width: DsSpace.s4)),
                   ],
                   if (showNames && senderName.isNotEmpty) TextSpan(text: '$senderName: ', style: nameStyle),
-                  TextSpan(text: words, style: lineStyle),
+                  // The words with the platform's own emoticons in them, cut
+                  // out of the flying layer's catalogue and drawn as itself.
+                  ..._wordSpans(words, lineStyle, fontPx * 1.4),
                 ],
               ),
             ),
@@ -482,6 +504,65 @@ final class _ChatBadge extends StatelessWidget {
     decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(DsRadii.pill)),
     child: Text(text, style: style.copyWith(color: foreground)),
   );
+}
+
+/// A line's words with the platform's emoticons drawn as themselves: the
+/// flying layer's own catalogue (its keys are the emoticons' message texts,
+/// "[抠鼻]") regex-cut out of the words and painted from the bundled atlas.
+/// A catalogue that hasn't loaded — or a word it doesn't know — stays text,
+/// exactly as written.
+List<InlineSpan> _wordSpans(String words, TextStyle style, double emojiSize) {
+  final atlas = EmojiAtlas.instance;
+  final regex = atlas.regex;
+  if (regex == null || !regex.hasMatch(words)) return [TextSpan(text: words, style: style)];
+  final spans = <InlineSpan>[];
+  var last = 0;
+  for (final match in regex.allMatches(words)) {
+    final key = match[0]!;
+    final info = atlas.find(key);
+    final image = info == null ? null : atlas.image(info.id);
+    final src = image == null ? null : atlas.getSrcRect(key);
+    // A match without a picture is left in the running text: the next
+    // flush writes it out as written.
+    if (image == null || src == null) continue;
+    if (match.start > last) spans.add(TextSpan(text: words.substring(last, match.start), style: style));
+    spans.add(
+      WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: _AtlasEmoji(image: image, src: src, size: emojiSize),
+      ),
+    );
+    last = match.end;
+  }
+  if (last < words.length) spans.add(TextSpan(text: words.substring(last), style: style));
+  return spans;
+}
+
+/// One emoticon of the bundled atlas: a rect of the sheet the flying layer
+/// already decoded, painted at the chat line's own size.
+final class _AtlasEmoji extends StatelessWidget {
+  const _AtlasEmoji({required this.image, required this.src, required this.size});
+
+  final ui.Image image;
+  final Rect src;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(size: Size.square(size), painter: _AtlasEmojiPainter(this));
+}
+
+final class _AtlasEmojiPainter extends CustomPainter {
+  _AtlasEmojiPainter(this.emoji);
+
+  final _AtlasEmoji emoji;
+
+  @override
+  void paint(Canvas canvas, Size size) =>
+      canvas.drawImageRect(emoji.image, emoji.src, Offset.zero & size, Paint()..filterQuality = FilterQuality.medium);
+
+  @override
+  bool shouldRepaint(_AtlasEmojiPainter old) =>
+      old.emoji.image != emoji.image || old.emoji.src != emoji.src || old.emoji.size != emoji.size;
 }
 
 /// A gift's picture at its line's text size, with the generic gift mark
