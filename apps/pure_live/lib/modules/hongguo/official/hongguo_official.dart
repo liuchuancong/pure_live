@@ -1035,13 +1035,18 @@ HongguoSeries? _seriesFromCard(Map<String, Object?> item) {
   if (title.isEmpty) title = _str(o, 'series_title');
   if (title.isEmpty) title = _str(item, 'name');
   if (!RegExp(r'^[0-9]{1,30}$').hasMatch(id) || title.isEmpty) return null;
+  // The website's cells put the heat in its own block, while
+  // `episode_right_text` is only the "全N集" line the episode count already
+  // carries — reading that as heat duplicates the count and loses the figure.
+  final heat = o['hot_score_data'];
+  final hot = heat is Map<String, Object?> ? _str(heat, 'text') : _str(o, 'hot');
   return HongguoSeries(
     seriesId: id,
     title: title,
     episodeCount: (o['episode_cnt'] as num?)?.toInt() ?? 0,
     cover: _cleanUrl(_str(o, 'series_cover')),
     intro: _str(o, 'series_intro'),
-    hot: _str(o, 'episode_right_text'),
+    hot: hot,
     category: _tagNames(o).join(' / '),
   );
 }
