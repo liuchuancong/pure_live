@@ -162,9 +162,6 @@
   缺失字段语义：`source`/`sourceListId`（在线歌单关联，linkSource/unlinkSource）、`position`
   （歌单排序，`move(id,to)`=updateUserListPosition，其余列表 position 平移重写）、
   `locationUpdateTime`（移动时间戳）；旧条目 JSON 无新字段按默认读入，向后兼容）
-- ⬜ F2 表结构对齐 `dbService/tables.ts`：`my_list{id,name,source,sourceListId,position,locationUpdateTime}`、
-  `my_list_music_info{...UNIQUE(id,listId)}`、`my_list_music_info_order{listId,musicInfoId,order}`。
-  本项目按 Hive 惯例落地但字段语义一致。
 - ✅ F3 操作全集（`music_playlists.dart` 全操作 + 回归测试，导入导出已通）（`rendererListManage.ts`）：getUserLists/createUserList/removeUserList/
   updateUserListPosition/getListMusics/addListMusics（去重）/moveListMusics/overwriteListFull/
   checkListExistMusic/getMusicExistListIds。
@@ -189,11 +186,6 @@
   持久化（play.volume/play.rate=player.volume/playbackRate，启动 `_restorePlaybackPrefs` 先于队列恢复，
   且不受 autoplay 早退影响）。引擎侧缺口单列：mediaDeviceId/preservesPitch（引擎无 API）、
   audioVisualization=H2、soundEffect=H1 待拍板）
-- ⬜ G1 设置域对齐 `app_setting.d.ts` 的 key 前缀语义：common./player./desktopLyric./download./
-  list./network./odc./openAPI./playDetail./search./sync./theme./tray.；重点 player 键：
-  startupAutoPlay/togglePlayMethod/playQuality/volume/playbackRate/preservesPitch/mediaDeviceId/
-  歌词五开关/isSavePlayTime/audioVisualization/waitPlayEndStop/autoSkipOnError/soundEffect.*。
-  本项目走 `StoragePrefs`（`music_settings.dart` 已有基础）。
 - ⬜ G2 同步服务 client：WebSocket `ws://host/socket?i={clientId}&t={aesEncrypt(msgConnect,key)}`、
   close code 重连/认证失败处理、服务端 action 驱动本地变更、本地变更推快照
   （`main/modules/sync/client/*`）。快照机制：md5 去重 + latest 指针 + 历史
