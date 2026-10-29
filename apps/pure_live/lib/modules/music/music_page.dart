@@ -345,32 +345,37 @@ final class _LibraryView extends ConsumerWidget {
         ),
       );
     } else {
-      body = Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
-            child: Text(
-              t.music.songsCount(count: state.songs.length),
-              style: theme.typography.caption.copyWith(color: colors.textSubtle),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(itemCount: state.songs.length, itemBuilder: (context, index) => songAt(index)),
-          ),
-          if (state.hasMore)
+      body = NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification.depth != 0) return false;
+          if (notification.metrics.pixels < notification.metrics.maxScrollExtent - 600) return false;
+          unawaited(controller.loadMore());
+          return false;
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             Padding(
-              padding: const EdgeInsets.all(DsSpace.s12),
-              child: Center(
-                child: DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  onPressed: state.loading ? null : () => unawaited(controller.loadMore()),
-                  child: Text(t.music.loadMore),
-                ),
+              padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+              child: Text(
+                t.music.songsCount(count: state.songs.length),
+                style: theme.typography.caption.copyWith(color: colors.textSubtle),
               ),
             ),
-        ],
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.only(bottom: DsSpace.s16),
+                itemCount: state.songs.length + (state.hasMore ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index >= state.songs.length) {
+                    return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
+                  }
+                  return songAt(index);
+                },
+              ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -623,24 +628,45 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
       });
     });
 
+    // One toolbar row, the areas page's measure: the tabs take the leftover
+    // width, the count and the verbs close the row.
+    final Widget toolbar = SizedBox(
+      height: 44,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s4),
+        child: Row(
+          spacing: DsSpace.s8,
+          children: [
+            Expanded(child: tabs),
+            if (!_online)
+              Text(
+                t.music.playlistsCount(count: playlists.length),
+                style: theme.typography.caption.copyWith(color: colors.textSubtle),
+              ),
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.arrowDownToLine, size: 16),
+              onPressed: () => unawaited(_import()),
+              child: Text(t.music.playlistImport),
+            ),
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.plus, size: 16),
+              onPressed: () => unawaited(_create()),
+              child: Text(t.music.playlistCreate),
+            ),
+          ],
+        ),
+      ),
+    );
+
     if (playlists.isEmpty && !_online) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          tabs,
-          Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
-            child: Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.plus, size: 16),
-                onPressed: () => unawaited(_create()),
-                child: Text(t.music.playlistCreate),
-              ),
-            ),
-          ),
+          toolbar,
           Expanded(
             child: Center(
               child: DsEmptyState(
@@ -670,34 +696,7 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        tabs,
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  t.music.playlistsCount(count: playlists.length),
-                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                ),
-              ),
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.arrowDownToLine, size: 16),
-                onPressed: () => unawaited(_import()),
-                child: Text(t.music.playlistImport),
-              ),
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.plus, size: 16),
-                onPressed: () => unawaited(_create()),
-                child: Text(t.music.playlistCreate),
-              ),
-            ],
-          ),
-        ),
+        toolbar,
         Expanded(
           child: MusicPlaylistGrid<MusicPlaylist>(
             items: playlists,
@@ -994,7 +993,7 @@ final class _ChartsView extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
               child: SizedBox(
-                height: 40,
+                height: 44,
                 child: DsTopNav<String>(
                   value: selected.id,
                   onChanged: onCatalog,
@@ -1760,8 +1759,6 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final tags = ref.watch(musicOnlineHotTagsProvider);
     final supported = ref.watch(musicSourceProvider) is OnlinePlaylists;
 
@@ -1804,48 +1801,73 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
                 runSpacing: DsSpace.s8,
                 children: [
                   for (final tag in tagsValue)
-                    GestureDetector(
-                      onTap: () => setState(() {
-                        _tag = tag;
-                        _page = 1;
-                      }),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s4),
-                        decoration: BoxDecoration(
-                          color: tag == effectiveTag ? colors.accent : colors.surface,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: colors.border),
-                        ),
-                        child: Text(
-                          tag,
-                          style: theme.typography.caption.copyWith(
-                            color: tag == effectiveTag ? colors.onAccent : colors.text,
-                          ),
-                        ),
-                      ),
+                    DsChip(
+                      label: Text(tag),
+                      selected: tag == effectiveTag,
+                      onChanged: (on) {
+                        if (!on) return;
+                        setState(() {
+                          _tag = tag;
+                          _page = 1;
+                        });
+                      },
                     ),
                 ],
               ),
             ),
           Expanded(
-            child: !loading && items.isEmpty
-                ? Center(
-                    child: DsEmptyState(
-                      icon: const DsIcon(DsIcons.listMusic),
-                      title: Text(error != null ? t.music.onlineLoadFailed : t.music.onlineEmpty),
-                      description: error != null ? Text(t.common.retry) : null,
+            child: switch ((effectiveTag, tags, error, loading, items.isEmpty)) {
+              // The tags have not named a board yet: the first page waits
+              // for them, loading or honestly failed.
+              (null, AsyncValue(:final isLoading), _, _, _) when isLoading => const Center(
+                child: DsSpinner(style: DsSpinnerStyle(size: 28)),
+              ),
+              (null, AsyncValue(hasError: true), _, _, _) => Center(
+                child: DsEmptyState(
+                  icon: const DsIcon(DsIcons.listMusic),
+                  title: Text(t.music.onlineLoadFailed),
+                  actions: [
+                    DsButton(
+                      variant: DsButtonVariant.secondary,
+                      size: DsSize.sm,
+                      onPressed: () => ref.invalidate(musicOnlineHotTagsProvider),
+                      child: Text(t.common.retry),
                     ),
-                  )
-                : MusicPlaylistGrid<MusicPlaylistInfo>(
-                    items: items,
-                    isLoading: loading,
-                    hasMore: items.length < total,
-                    onLoadMore: () async {
-                      setState(() => _page += 1);
-                    },
-                    itemBuilder: (context, playlist) =>
-                        MusicPlaylistCard.online(info: playlist, onOpen: () => widget.onOpen(playlist)),
-                  ),
+                  ],
+                ),
+              ),
+              (_, _, _, true, _) || (_, _, _, false, false) => MusicPlaylistGrid<MusicPlaylistInfo>(
+                items: items,
+                isLoading: loading,
+                hasMore: items.length < total,
+                onLoadMore: () async {
+                  setState(() => _page += 1);
+                },
+                itemBuilder: (context, playlist) =>
+                    MusicPlaylistCard.online(info: playlist, onOpen: () => widget.onOpen(playlist)),
+              ),
+              (_, _, final pageError, false, true) => Center(
+                child: DsEmptyState(
+                  icon: const DsIcon(DsIcons.listMusic),
+                  title: Text(pageError != null ? t.music.onlineLoadFailed : t.music.onlineEmpty),
+                  actions: [
+                    if (pageError != null)
+                      DsButton(
+                        variant: DsButtonVariant.secondary,
+                        size: DsSize.sm,
+                        onPressed: () {
+                          final tag = effectiveTag;
+                          if (tag == null) return;
+                          for (var page = 1; page <= _page; page++) {
+                            ref.invalidate(musicOnlinePlaylistsProvider((tag: tag, page: page)));
+                          }
+                        },
+                        child: Text(t.common.retry),
+                      ),
+                  ],
+                ),
+              ),
+            },
           ),
         ],
       ],
