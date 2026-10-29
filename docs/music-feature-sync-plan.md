@@ -39,7 +39,7 @@
 |---|---|---|
 | 热门标签浏览 + 卡片网格分页 | `_OnlinePlaylistBrowse`（DsChip + MusicPlaylistGrid） | ✅ |
 | 歌单分类标签组（TagGroup 分类树） | PlaylistTagTree 能力 + 浏览页分类组 DsTopNav 行（热门为第一组）+ 组内标签 chips：wy catalogue / kg smarty getSpecial / tx all-categories / mg taglist 模板（提交 `16fd63dbe`） | 🟡 余 kw（其广场未建，树随广场一起） |
-| 排序 tab（推荐/最热/最新/热藏/飙升） | 无 | ⬜ |
+| 排序 tab（推荐/最热/最新/热藏/飙升） | MusicPlazaSort 表 + 浏览页第一行 DsTopNav（单 tab 不显示）：kg 五 tab 映射 getSpecial t 码、tx 无标签时排序顶替分类（推荐=feed）、wy/mg 各自仅剩的单 tab（提交 `28c05034f`） | ✅ |
 | 打开歌单（链接或 ID） | 无 | ⬜ |
 | 歌单搜索（搜索类型=歌单的结果页） | 无 | ⬜（随 B 项） |
 | 收藏歌单（存入我的列表并记 source 供更新） | 导入为本地列表（`onlineImport`），未记 source | 🟡 记 source |
