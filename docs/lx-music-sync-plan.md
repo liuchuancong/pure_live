@@ -127,8 +127,15 @@
   `setLyricOffset` 手动偏移已实现，行为等价 LX LinePlayer）：`lyric-font-player/`（`LinePlayer{offset,rate,onPlay,onSetLyric}`，
   `_findCurLineNum` 增量查找；font-player 逐字版）+ `[offset:]` 标签/手动偏移
   （setOffset/setTempOffset）。
-- ⬜ D4 显示开关：isShowLyricTranslation / isShowLyricRoma / isSwapLyricTranslationAndRoma /
-  isPlayLxlrc / isS2t 简繁转换。
+- ✅ D4 显示开关（2026-10-29 收口：translation/romanization/swap 三开关此前已落并在
+  `music_playback` 消费；本批补齐 isS2t 与 isPlayLxlrc——设置 `traditionalizeLyric`（默认关，
+  `player.isS2t` 同款）与 `playWordLyrics`（默认开，`player.isPlayLxlrc`；LX 仅在 macOS 关）+
+  slang 双语 key + 外观-歌词窗格两行开关；生效点=新装饰器 `sources/music_display_lyric.dart`
+  （DisplayLyricSource 套在 CachedLyricSource 外，缓存原始 payload、读取时按当前设置改写：
+  关逐字→剥 `<start,dur>` 标签，繁体→`chinese_s2t.dart` 2537 字符表逐字替换——表由 python 从
+  simplify-chinese-main/chinese.js 抽取）；顺修 decodeKrc 误剥逐字标签（与 qrc/yrc/mrc 及文件头
+  契约不一致）。LX 参考：`core/music/utils.ts buildLyricInfo`、`simplify-chinese-main`、
+  `defaultSetting.ts`
 - ⬜ D5 桌面歌词：LX 用 MessagePort 通道（get_info/set_info/get_status/set_status/
   频谱 analyser 数据）；media_core_audio 已有桌面歌词窗口，对齐数据通道与
   `desktopLyric.*` 设置域（含鼠标穿透 `winLyric/mouseCheckTools.ts`）。
