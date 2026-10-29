@@ -208,10 +208,20 @@
   （`server/sync/modules/list/manage.ts`）。
 
 ### H. 其他功能
-- ⬜ H1 音效/EQ：WebAudio 链 source→analyser→10 段 biquadFilter(31~16000Hz)→pitchShifter→
-  (convolver&sourceGain→DynamicsCompressor)→panner(环绕)→gain；预设存 sound_effect store
-  （`plugins/player/index.ts`、`store/soundEffect.ts`）。Flutter 侧落地方式待定
-  （media_core_audio/mpv 能力评估）。
+- 🟨 H1 音效/EQ（2026-10-29 用户拍板为「音效中心」专项并给出设计规范 v1.0；
+  **阶段 A 已落**：`controller/eq/` 三件——`music_eq_config.dart`（结构化配置模型
+  MusicEqConfig{enabled,preampDb,gains×10,presetId} 持久化 `music.eq`+备份注册、
+  9 内置预设 流行/摇滚/古典/爵士/电子/重低音/清晰人声/现场感/平直）、
+  `music_eq_dsp.dart`（RBJ peaking 理论频响叠加曲线 + lavfi 链生成
+  `equalizer=f=:t=q:w=1:g=` 逐非零段 + `volume=` 预放，平直/关闭时清空 af）、
+  UI `pages/music_eq_editor.dart`（曲线+10 拖杆 CustomPainter，日志频域对齐频段中心）+
+  设置页新子页 SettingsSection.musicEq（总开关/预设选择/预放滑杆/重置/编辑器）；
+  播放器适配层=`MusicPlayerController._applyEq`：经 `AudioPlaybackController.handle
+  .applyEngineOptions([EngineOption('af',[lavfi])])` 热应用（handle 记忆并随引擎重建回放），
+  250ms 防抖节流拖动、handle 未建时 pending 到首个曲目）。**待做**：阶段 B（低音/人声/
+  立体声/响度/动态处理节点）、阶段 C（参数 EQ/FIR/设备校正）、设计图逐像素音效中心主页面
+  （当前先落设置子页）、A/B 对比、频响图验证测试）（`plugins/player/index.ts`、
+  `store/soundEffect.ts`）。
 - ⬜ H2 频谱可视化（AnalyserNode getByteFrequencyData 等价物；桌面歌词共享频谱）。
 - ✅ H3 系统媒体会话（`MusicBackgroundBinding` SMTC/MPRIS + 通知/锁屏已接）：已有 MusicBackgroundBinding（SMTC/MPRIS），对齐 `useMediaSessionInfo.ts` 元数据。
 - ✅ H4 开放 API（2026-10-29 `music_open_api.dart`：loopback HttpServer，LX 同款路由
