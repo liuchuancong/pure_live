@@ -10,7 +10,6 @@ import 'package:pure_live/layouts/desktop/desktop_layout.dart';
 import 'package:pure_live/layouts/mobile/mobile_layout.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart' show hongguoLibraryProvider;
 import 'package:pure_live/shared/shared.dart';
-
 import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
 
 // No `show` clause: a wrapped import is what the save-time import
@@ -95,23 +94,21 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
   /// [kExpandedSidebarBreakpoint].
   double? _lastWidth;
 
-  /// Whether a selected home entry that the navigation setting just hid is
-  /// already waiting to fall back to the first visible one.
-  bool _homeFallbackScheduled = false;
+  /// Whether a selection that does not belong on screen is already waiting
+  /// to move off it.
+  bool _selectionFallbackScheduled = false;
 
-  /// Moves a selection off a home entry the navigation setting hides. The
-  /// fallback is a microtask because a provider write during build is
-  /// rejected; the build calls it after reading the selection.
-  void _scheduleHomeFallback() {
-    if (_homeFallbackScheduled) return;
-    _homeFallbackScheduled = true;
+  /// Moves the selection to [target] after this frame. The fallback is a
+  /// microtask because a provider write during build is rejected; the build
+  /// calls it when the selection is hidden by the navigation setting or
+  /// belongs to another module's menu.
+  void _scheduleSelectionFallback(NavigationItem target) {
+    if (_selectionFallbackScheduled) return;
+    _selectionFallbackScheduled = true;
     unawaited(
       Future<void>.microtask(() {
-        _homeFallbackScheduled = false;
+        _selectionFallbackScheduled = false;
         if (!mounted) return;
-        final home = ref.read(navMenuProvider);
-        if (home.isEmpty) return;
-        final target = home.first;
         _lastAppItem = target;
         ref.read(selectedNavItemProvider.notifier).selected = target;
         final branch = _branchIndexOf(target);
@@ -154,13 +151,19 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     final selected = ref.watch(selectedNavItemProvider);
     final formFactor = ref.watch(platformRuntimeProvider).environment.runtime.formFactor;
     final tv = formFactor == FormFactor.tv;
-    // A desktop platform keeps the desktop shell at every window width: the
-    // sidebar is the window's navigation, and a narrow window must not lose
-    // it to the touch drawer. A phone or tablet still gets the bottom bar.
-    final desktopShell = formFactor == FormFactor.desktop || tv;
+    // Only a TV keeps the desktop shell at every width: a remote's D-pad
+    // starts on the sidebar, and its canvas is never thumb-sized. Every
+    // other platform follows the window — a Windows window dragged under
+    // the bottom-bar breakpoint gets the mobile shell, whose top bar still
+    // carries the caption strip and the window controls.
+    final desktopShell = tv;
     final sidebar = ref.watch(sidebarProvider);
     final module = ref.watch(selectedModuleProvider);
     final homeMenu = ref.watch(navMenuProvider);
+    // One registry row per module decides both menus: the settings menu
+    // shows the module's settings groups (alone — no app entries mixed in),
+    // the app's menu its blocks, a divider between them.
+    final navigation = navigationOf(module);
 
     /// A home entry the navigation setting hides falls back to the first
     /// one still shown: no page may sit behind an absent menu row.
@@ -209,11 +212,19 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
       showItem(target);
     }
 
-    // A selection left on an entry the navigation setting hid (startup with
-    // a restored menu list, or a restore while the page is open) moves to
-    // the first visible one after this frame.
-    if (module == AppModule.live && kHomeMenuItems.contains(selected) && !homeMenu.contains(selected)) {
-      _scheduleHomeFallback();
+    // The selection must belong to the module on screen. A destination from
+    // another module's menu — a hot reload can reset the selection while the
+    // chosen module's state survives — would otherwise render that module's
+    // page under this module's labels; a home entry the navigation setting
+    // hid (startup with a restored menu list) has no row to sit on either.
+    // Both land on an entry this module really shows, after this frame.
+    final moduleItems = {for (final block in navigation.menu) ...block};
+    final hiddenHome = module == AppModule.live && kHomeMenuItems.contains(selected) && !homeMenu.contains(selected);
+    if (selected != NavigationItem.settings && (!moduleItems.contains(selected) || hiddenHome)) {
+      final landing = navigation.landing;
+      _scheduleSelectionFallback(
+        module == AppModule.live && !homeMenu.contains(landing) && homeMenu.isNotEmpty ? homeMenu.first : landing,
+      );
     }
 
     // Settings is a destination of the same shell: while it is selected the
@@ -225,10 +236,6 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     final settingsSection = ref.watch(settingsSectionProvider);
     final settingsCategory = ref.watch(settingsCategoryProvider);
     final sectionOpen = ref.watch(settingsSectionOpenProvider);
-    // One registry row per module decides both menus: the settings menu
-    // shows the module's settings groups (alone — no app entries mixed in),
-    // the app's menu its blocks, a divider between them.
-    final navigation = navigationOf(module);
     // The shelf's new episodes ride on the hongguo menu's favorites row,
     // the reference's badge: the number each favorite gained since the
     // series was last opened. Only the station that owns the shelf is
@@ -335,7 +342,12 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     } else if (selected == NavigationItem.settings) {
       moduleContent = const SettingsPage();
     } else {
-      final page = kModulePages[selected] ?? kModulePages[navigation.landing]!;
+      // An entry the module does not carry renders the module's landing
+      // page, never another module's: the fallback above moves the
+      // selection off it, this keeps the frame between free of the wrong
+      // page.
+      final page =
+          (moduleItems.contains(selected) ? kModulePages[selected] : null) ?? kModulePages[navigation.landing]!;
       moduleContent = page();
     }
     // The scroll pair every page carries, mounted once here so the desktop,
@@ -352,7 +364,8 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
 
     // A TV keeps the desktop shell even on a narrow logical canvas: the
     // drawer and bottom bar belong to thumbs, and this shell's sidebar is
-    // what a remote starts on.
+    // what a remote starts on. Every other platform hands the width to the
+    // gate, so a Windows window shrunk past it lands on the mobile shell.
     if (breakpoint.index < kBottomBarBreakpoint.index && !desktopShell) {
       return MobileLayout(
         content: shownContent,

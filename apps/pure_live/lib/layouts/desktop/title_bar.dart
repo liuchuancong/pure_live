@@ -69,8 +69,8 @@ final class WindowTitleBar extends ConsumerWidget {
           builder: (context, constraints) {
             // A narrow window keeps its drag band: the trail arrows and the
             // search give way first, the toggle and the caption never do.
-            final trail = constraints.maxWidth >= 480;
-            final search = onSearch != null && constraints.maxWidth >= 560;
+            final trail = constraints.maxWidth >= LiveWindow.form;
+            final search = onSearch != null && constraints.maxWidth >= LiveWindow.compact;
             return Row(
               children: [
                 _SidebarToggleButton(expanded: expanded, onPressed: onToggleSidebar),

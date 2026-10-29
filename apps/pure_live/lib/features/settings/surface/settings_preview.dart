@@ -1,14 +1,11 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/shared.dart' show LiveWindow;
 
 /// The visual language the settings previews share with the wallpaper preview
 /// page: a black stage with a chip in its corner and round controls floating
 /// over it, under a heading led by a tinted icon tile.
-
-/// Below this width a preview stacks its controls under the stage instead of
-/// placing them beside it.
-const double kSettingsPreviewWideBreakpoint = 900;
 
 /// A settings sample shown full-window, in the wallpaper preview page's frame:
 /// the sample in a dark stage with the controls that shape it beside it, and
@@ -66,7 +63,7 @@ final class _SettingsPreviewPageState extends State<SettingsPreviewPage> {
     // The frame follows the app's light or dark skin; only the stage itself
     // stays black, because the sample — not the shell — owns those colours.
     final colors = DsTheme.colorsOf(context);
-    final wide = MediaQuery.sizeOf(context).width >= kSettingsPreviewWideBreakpoint;
+    final wide = LiveWindow.isExpanded(MediaQuery.sizeOf(context).width);
     return PopScope(
       // A folded-away panel answers the system back before the page does.
       canPop: wide || !_settingsOpen,

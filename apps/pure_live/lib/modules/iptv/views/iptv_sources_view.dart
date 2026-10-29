@@ -14,6 +14,7 @@ import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart'
 import 'package:pure_live/modules/iptv/views/iptv_import_dialog.dart'
     show iptvImportFailureText, runIptvGuideImport, runIptvPlaylistImport;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart';
+import 'package:pure_live/shared/shared.dart' show LiveWindow;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// What the resources table shows: everything, only playlists or only
@@ -276,6 +277,7 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
 
   @override
   Widget build(BuildContext context) {
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final sources = ref.watch(iptvSourcesProvider);
     final epg = ref.watch(iptvEpgProvider);
     if (!sources.ready || !epg.ready) {
@@ -303,7 +305,7 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
         if (_keeps(item) && _matches(item, _query)) item,
     ];
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s16,
@@ -362,8 +364,9 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final dirty = _dirty;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
       child: IptvTablePanel(
         toolbar: Row(
           spacing: DsSpace.s8,
@@ -640,7 +643,7 @@ final class _SettingsRow extends StatelessWidget {
     );
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 1000) {
+        if (LiveWindow.isExpanded(constraints.maxWidth)) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -833,7 +836,7 @@ final class _SourcesToolbar extends StatelessWidget {
     );
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 900) {
+        if (!LiveWindow.stacksToolbar(constraints.maxWidth)) {
           return Row(
             spacing: DsSpace.s12,
             children: [
@@ -1215,7 +1218,7 @@ final class _SortRow extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          if (constraints.maxWidth >= 620) {
+          if (!LiveWindow.isCompact(constraints.maxWidth)) {
             return Row(
               spacing: DsSpace.s8,
               children: [

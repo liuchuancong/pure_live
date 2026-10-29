@@ -163,6 +163,7 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final platform = ref.watch(popularSiteProvider);
     // The platform list and its order are settings this page follows live:
     // watching the notifier alone would leave the tabs stale until another
@@ -202,47 +203,62 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
       );
     }
 
-    final toolbar = <Widget>[
-      Expanded(
-        child: PlatformTabRow(
-          platforms: ids,
-          current: platform,
-          nameOf: _platformName,
-          semanticLabel: t.navigation.hot,
-          onManagePlatforms: () =>
-              unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
-          onChanged: (id) {
-            ref.read(popularSiteProvider.notifier).selected = id;
-            unawaited(ref.read(popularCatalogProvider.notifier).open(id));
-          },
-        ),
+    final tabs = PlatformTabRow(
+      platforms: ids,
+      current: platform,
+      nameOf: _platformName,
+      semanticLabel: t.navigation.hot,
+      onManagePlatforms: () =>
+          unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location)),
+      onChanged: (id) {
+        ref.read(popularSiteProvider.notifier).selected = id;
+        unawaited(ref.read(popularCatalogProvider.notifier).open(id));
+      },
+    );
+    final sort = SizedBox(
+      width: 148,
+      child: AdaptiveChoiceField<_PopularSort>(
+        value: _sort,
+        title: t.popular.sortLabel,
+        onChanged: (value) {
+          if (value == _sort) return;
+          setState(() => _sort = value);
+          final controller = _scrolls[platform];
+          if (controller?.hasClients ?? false) controller!.jumpTo(0);
+        },
+        options: [
+          DsSelectOption(value: _PopularSort.platform, label: t.popular.sortPlatform),
+          DsSelectOption(value: _PopularSort.audience, label: t.popular.sortAudience),
+        ],
+        placeholder: t.popular.sortLabel,
+        semanticLabel: t.popular.sortLabel,
       ),
-      SizedBox(
-        width: 148,
-        child: AdaptiveChoiceField<_PopularSort>(
-          value: _sort,
-          title: t.popular.sortLabel,
-          onChanged: (value) {
-            if (value == _sort) return;
-            setState(() => _sort = value);
-            final controller = _scrolls[platform];
-            if (controller?.hasClients ?? false) controller!.jumpTo(0);
-          },
-          options: [
-            DsSelectOption(value: _PopularSort.platform, label: t.popular.sortPlatform),
-            DsSelectOption(value: _PopularSort.audience, label: t.popular.sortAudience),
-          ],
-          placeholder: t.popular.sortLabel,
-          semanticLabel: t.popular.sortLabel,
-        ),
-      ),
-    ];
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
-          child: Row(spacing: DsSpace.s12, children: toolbar),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
+          // The tabs and the sort share a row when the toolbar has room;
+          // a compact window stacks the sort under the scrolling tabs.
+          child: LayoutBuilder(
+            builder: (context, constraints) => LiveWindow.stacksToolbar(constraints.maxWidth)
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: DsSpace.s8,
+                    children: [
+                      tabs,
+                      Align(alignment: AlignmentDirectional.centerEnd, child: sort),
+                    ],
+                  )
+                : Row(
+                    spacing: DsSpace.s12,
+                    children: [
+                      Expanded(child: tabs),
+                      sort,
+                    ],
+                  ),
+          ),
         ),
         Expanded(
           child: _PlatformFeed(
@@ -294,6 +310,7 @@ final class _PlatformFeed extends ConsumerWidget {
           error: null,
         );
     final wide = MediaQuery.sizeOf(context).width >= 768;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     // The chosen order is applied to the catalogue before the desktop
     // slices it, so a page holds the right rooms rather than a reordered
     // window of one page.
@@ -360,7 +377,7 @@ final class _PlatformFeed extends ConsumerWidget {
     // turns the setting over so they show.
     final hiddenNote = state.hidden > 0 && !ref.watch(showUnplayableProvider)
         ? Padding(
-            padding: EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, wide ? DsSpace.s4 : DsSpace.s20),
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, wide ? DsSpace.s4 : DsSpace.s20),
             child: Row(
               spacing: DsSpace.s8,
               children: [
@@ -401,7 +418,7 @@ final class _PlatformFeed extends ConsumerWidget {
       children: [
         Expanded(child: feedView),
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
           child: Center(
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -505,13 +522,14 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final search = ref.watch(searchProvider);
     final settings = ref.watch(browseSettingsProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           // The toolbar's word as the kit's callout, the areas page's own
           // line: what is being searched and the way back to the feed.
           child: DsAlert(
@@ -544,6 +562,7 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
   Widget _pagedResults(BuildContext context, SearchState search, BrowseSettings settings) {
     final t = context.t;
     final wide = MediaQuery.sizeOf(context).width >= 768;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final page = wide ? _page : 1;
     final pageSize = _pageSize;
     final rooms = wide ? roomPageOf(search.rooms, page, pageSize) : search.rooms;
@@ -594,7 +613,7 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
       children: [
         Expanded(child: grid),
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
+          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
           child: Center(
             child: Row(
               mainAxisSize: MainAxisSize.min,

@@ -88,13 +88,14 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final vod = ref.watch(vodProvider);
     final controller = ref.read(vodProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: DsSearchField(
             controller: _search,
             autofocus: true,
@@ -103,7 +104,7 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
           child: SizedBox(
             height: 40,
             child: DsTopNav<VodSearchKind>(
@@ -118,7 +119,7 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
         ),
         if (_kind.filterable)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             child: Wrap(
               spacing: DsSpace.s8,
               runSpacing: DsSpace.s8,
@@ -193,6 +194,7 @@ final class _SearchResults extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     if (state.query.isEmpty) {
       return Center(
         child: DsEmptyState(
@@ -243,7 +245,7 @@ final class _SearchResults extends StatelessWidget {
         if (state.loading && state.users.isEmpty) return const Center(child: DsSpinner());
         if (state.users.isEmpty) return const _NoResults();
         return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
           itemCount: state.users.length + 1,
           separatorBuilder: (context, index) => const SizedBox(height: DsSpace.s4),
           itemBuilder: (context, index) {

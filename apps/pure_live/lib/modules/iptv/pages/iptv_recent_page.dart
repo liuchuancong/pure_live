@@ -9,7 +9,7 @@ import 'package:pure_live/app/app.dart' show RouteNames;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart';
-import 'package:pure_live/shared/shared.dart' show cachedImage;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage;
 
 /// The IPTV module's 最近观看: the channels the player has opened, newest
 /// first. The record is this module's own — it follows the library's channel
@@ -41,6 +41,7 @@ final class IptvRecentPage extends ConsumerWidget {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final recent = ref.watch(iptvRecentProvider);
     final library = ref.watch(iptvLibraryProvider).value;
     final channels = {for (final channel in library?.channels ?? const <IptvChannel>[]) channel.id: channel};
@@ -52,7 +53,7 @@ final class IptvRecentPage extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: Row(
             spacing: DsSpace.s12,
             children: [

@@ -60,7 +60,7 @@ final class SettingsConfigRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 640;
+        final wide = constraints.maxWidth >= LiveWindow.sheet;
         // A switch or checkbox is small enough to keep at the row's end at
         // any width; only a control that needs a slot of its own drops to
         // the line below the label.
@@ -169,7 +169,7 @@ final class SettingsSegmentedRow<T> extends StatelessWidget {
     );
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 640) {
+        if (constraints.maxWidth >= LiveWindow.sheet) {
           return SettingsConfigRow(
             leading: leading,
             title: title,

@@ -9,7 +9,7 @@ import 'package:pure_live/app/app.dart' show RouteNames;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show IptvGuideRow, iptvDayLabel, iptvStartOfDay;
-import 'package:pure_live/shared/shared.dart' show cachedImage;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage;
 
 /// The IPTV module's programme guide as a page of its own: the channels on
 /// one side, the open channel's day on the other, with the day walked back
@@ -85,36 +85,52 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
         ? const <EpgProgramme>[]
         : library.schedule(selected, from: _day, span: dayEnd.difference(_day));
     return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s16, DsSpace.s20, DsSpace.s16),
+      padding: EdgeInsets.fromLTRB(
+        LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+        DsSpace.s16,
+        LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+        DsSpace.s16,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s12,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 2,
-                  children: [
-                    Text(t.common.moduleIptv, style: theme.typography.overline.copyWith(color: colors.textSubtle)),
-                    Text(t.iptv.guideTitle, style: theme.typography.display.copyWith(color: colors.text)),
-                    Text(
-                      channels.isEmpty ? t.iptv.emptyDescription : t.iptv.channelCount(count: channels.length),
-                      style: theme.typography.body.copyWith(color: colors.textMuted),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: DsSpace.s16),
-              _DayStepper(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final title = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 2,
+                children: [
+                  Text(t.common.moduleIptv, style: theme.typography.overline.copyWith(color: colors.textSubtle)),
+                  Text(t.iptv.guideTitle, style: theme.typography.display.copyWith(color: colors.text)),
+                  Text(
+                    channels.isEmpty ? t.iptv.emptyDescription : t.iptv.channelCount(count: channels.length),
+                    style: theme.typography.body.copyWith(color: colors.textMuted),
+                  ),
+                ],
+              );
+              final stepper = _DayStepper(
                 label: iptvDayLabel(t, _day, now),
                 onPrevious: () => _stepDay(-1),
                 onNext: () => _stepDay(1),
                 onToday: () => setState(() => _day = iptvStartOfDay(DateTime.now())),
-              ),
-            ],
+              );
+              if (LiveWindow.isCompact(constraints.maxWidth)) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s8,
+                  children: [title, stepper],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(child: title),
+                  const SizedBox(width: DsSpace.s16),
+                  stepper,
+                ],
+              );
+            },
           ),
           Expanded(
             child: LayoutBuilder(
@@ -135,7 +151,7 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
                     if (open != null) _play(open, catchup: programme);
                   },
                 );
-                if (constraints.maxWidth >= 900) {
+                if (LiveWindow.isExpanded(constraints.maxWidth)) {
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     spacing: DsSpace.s16,

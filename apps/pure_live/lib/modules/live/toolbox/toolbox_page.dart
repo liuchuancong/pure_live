@@ -27,12 +27,13 @@ final class ToolboxPage extends StatelessWidget {
   /// The form's measure: the sign-in card's, a little wider for a pasted
   /// share text — narrow enough to read as a form, never a band across the
   /// window.
-  static const double formWidth = 480;
+  static const double formWidth = LiveWindow.form;
 
   @override
   Widget build(BuildContext context) {
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s24, DsSpace.s20, DsSpace.s32),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s24, inset, DsSpace.s32),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: formWidth),
@@ -427,11 +428,11 @@ final class PlatformNodesPane extends ConsumerWidget {
         if (probe.running) DsProgressBar(semanticLabel: t.toolbox.nodeTesting),
         LayoutBuilder(
           builder: (context, constraints) {
-            final columns = constraints.maxWidth >= 960
+            final columns = LiveWindow.isExpanded(constraints.maxWidth)
                 ? 3
-                : constraints.maxWidth >= 640
-                ? 2
-                : 1;
+                : LiveWindow.isCompact(constraints.maxWidth)
+                ? 1
+                : 2;
             final width = (constraints.maxWidth - (columns - 1) * DsSpace.s12) / columns;
             return Wrap(
               spacing: DsSpace.s12,

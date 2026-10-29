@@ -9,6 +9,7 @@ import 'package:pure_live/features/version/release_builds.dart';
 import 'package:pure_live/features/version/update_download.dart' show showUpdateDownload;
 import 'package:pure_live/features/version/update_feed.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/shared.dart' show LiveWindow;
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// 查看更新: what the new release says and the two ways to act on it.
@@ -17,7 +18,10 @@ import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 /// notes, take the installer or leave it — and the viewer stays on the
 /// version page either way.
 Future<void> showUpdateDialog(BuildContext context, UpdateInfo info) {
-  return showDsDialog<void>(context: context, builder: (context) => _UpdateDialog(info: info));
+  return showDsDialog<void>(
+    context: context,
+    builder: (context) => _UpdateDialog(info: info),
+  );
 }
 
 final class _UpdateDialog extends StatelessWidget {
@@ -135,6 +139,7 @@ final class _ReleaseDownloadsPageState extends ConsumerState<ReleaseDownloadsPag
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final own = currentReleasePlatform();
+    final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;
     return ColoredBox(
       color: colors.surface,
       child: SafeArea(
@@ -177,7 +182,7 @@ final class _ReleaseDownloadsPageState extends ConsumerState<ReleaseDownloadsPag
                     ...builds.where((build) => build.platform != own),
                   ];
                   return ListView(
-                    padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s8, DsSpace.s24, DsSpace.s24),
+                    padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s24),
                     children: [
                       Padding(
                         padding: const EdgeInsets.only(bottom: DsSpace.s8),
@@ -260,6 +265,7 @@ final class _ReleaseHistoryPageState extends ConsumerState<ReleaseHistoryPage> {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;
     return ColoredBox(
       color: colors.surface,
       child: SafeArea(
@@ -292,13 +298,10 @@ final class _ReleaseHistoryPageState extends ConsumerState<ReleaseHistoryPage> {
                   }
                   final releases = snapshot.data ?? const <ReleaseInfo>[];
                   if (releases.isEmpty) {
-                    return DsEmptyState(
-                      icon: const DsIcon(DsIcons.list),
-                      title: Text(t.settings.releaseHistoryEmpty),
-                    );
+                    return DsEmptyState(icon: const DsIcon(DsIcons.list), title: Text(t.settings.releaseHistoryEmpty));
                   }
                   return ListView(
-                    padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s8, DsSpace.s24, DsSpace.s24),
+                    padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s24),
                     children: [
                       for (final release in releases)
                         Padding(
@@ -327,7 +330,8 @@ final class _ReleaseHistoryPageState extends ConsumerState<ReleaseHistoryPage> {
                                         DsButton(
                                           variant: DsButtonVariant.ghost,
                                           size: DsSize.sm,
-                                          onPressed: () => unawaited(showDownloadPage(context, version: release.version)),
+                                          onPressed: () =>
+                                              unawaited(showDownloadPage(context, version: release.version)),
                                           child: Text(t.settings.downloadTitle),
                                         ),
                                       DsButton(
@@ -335,7 +339,10 @@ final class _ReleaseHistoryPageState extends ConsumerState<ReleaseHistoryPage> {
                                         size: DsSize.sm,
                                         leading: const DsIcon(DsIcons.externalLink, size: 14),
                                         onPressed: () => unawaited(
-                                          _open(context, release.url.isEmpty ? releasePageUrl(release.version) : release.url),
+                                          _open(
+                                            context,
+                                            release.url.isEmpty ? releasePageUrl(release.version) : release.url,
+                                          ),
                                         ),
                                         child: Text(t.settings.openReleasePage),
                                       ),
@@ -392,9 +399,10 @@ final class _ReleaseHistoryPageState extends ConsumerState<ReleaseHistoryPage> {
 /// release page when the release carries nothing the app can install.
 Future<void> _downloadRecommended(BuildContext context, {required String version, required String fallback}) async {
   final t = context.t;
-  final http = ProviderScope.containerOf(context, listen: false)
-      .read(networkFactoryProvider)
-      .create(profile: ClientProfile.api);
+  final http = ProviderScope.containerOf(
+    context,
+    listen: false,
+  ).read(networkFactoryProvider).create(profile: ClientProfile.api);
   final page = fallback.isEmpty ? releasePageUrl(version) : fallback;
   try {
     final builds = await fetchReleaseBuilds(http, version: version);

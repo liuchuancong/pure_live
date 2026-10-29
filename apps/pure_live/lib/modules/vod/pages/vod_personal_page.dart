@@ -100,6 +100,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final account = ref.watch(vodAccountProvider);
     final loggedIn = account.value?.isLogin ?? false;
     final history = ref.watch(vodHistoryProvider);
@@ -116,7 +117,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: DsSpace.s8,
@@ -209,7 +210,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                             description: Text(t.vod.historyEmptyDescription),
                           )
                         : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+                            padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
                             itemCount: history.length,
                             itemBuilder: (context, index) {
                               final entry = history[index];
@@ -242,7 +243,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                             description: Text(t.vod.favouritesEmptyDescription),
                           )
                         : ListView.builder(
-                            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+                            padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
                             itemCount: favourites.length,
                             itemBuilder: (context, index) {
                               final video = favourites[index];
@@ -320,6 +321,7 @@ final class _RemoteVideoList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     if (error != null && videos.isEmpty) {
       return Center(
         child: DsEmptyState(
@@ -337,7 +339,7 @@ final class _RemoteVideoList extends StatelessWidget {
       );
     }
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
       itemCount: videos.length,
       itemBuilder: (context, index) {
         final video = videos[index];

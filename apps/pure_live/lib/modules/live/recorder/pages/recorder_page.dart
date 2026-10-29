@@ -121,11 +121,12 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       );
     }
 
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, 0),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, 0),
           child: Row(
             spacing: DsSpace.s12,
             children: [
@@ -143,7 +144,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s8),
           child: DsChoiceChips<_RecorderFilter>(
             value: _filter,
             onChanged: (value) => setState(() => _filter = value),
@@ -156,29 +157,25 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         ),
         if (!polling && (counts[_RecorderFilter.waiting] ?? 0) > 0)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
-            child: Row(
-              spacing: DsSpace.s8,
-              children: [
-                Expanded(
-                  child: Text(t.recorder.pollingOff, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-                ),
-                DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  onPressed: () {
-                    ref.read(recordingSettingsProvider.notifier).pollingEnabled = true;
-                    showDsToast(
-                      context: context,
-                      title: t.recorder.pollingEnabledToast(
-                        seconds: ref.read(recordingSettingsProvider).liveCheckSeconds,
-                      ),
-                      status: DsStatus.success,
-                    );
-                  },
-                  child: Text(t.recorder.pollingEnable),
-                ),
-              ],
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+            child: DsAlert(
+              title: Text(t.recorder.pollingOff),
+              status: DsStatus.warning,
+              action: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () {
+                  ref.read(recordingSettingsProvider.notifier).pollingEnabled = true;
+                  showDsToast(
+                    context: context,
+                    title: t.recorder.pollingEnabledToast(
+                      seconds: ref.read(recordingSettingsProvider).liveCheckSeconds,
+                    ),
+                    status: DsStatus.success,
+                  );
+                },
+                child: Text(t.recorder.pollingEnable),
+              ),
             ),
           ),
         Expanded(child: content),
@@ -279,7 +276,7 @@ final class _TaskCard extends StatelessWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final wide = MediaQuery.sizeOf(context).width >= 840;
+    final wide = LiveWindow.isExpanded(MediaQuery.sizeOf(context).width);
     final (coverWidth, coverHeight) = wide ? (128.0, 72.0) : (96.0, 54.0);
     final streamer = room?.anchor?.name.trim() ?? '';
     final storedTitle = task.roomTitle.trim();

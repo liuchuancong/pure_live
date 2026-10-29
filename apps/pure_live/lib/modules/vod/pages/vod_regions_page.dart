@@ -95,11 +95,12 @@ final class _VodRegionsPageState extends ConsumerState<VodRegionsPage> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: SizedBox(
             height: 40,
             child: DsTopNav<int>(

@@ -57,6 +57,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final history = ref.watch(historyProvider);
     if (!history.ready) {
       return const _SkeletonList();
@@ -100,7 +101,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
         ),
         if (_progress case final progress?)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s6),
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s6),
             child: DsProgressBar(value: progress, semanticLabel: t.history.refresh),
           ),
         Expanded(child: _body(t, history.records, shown)),
@@ -138,8 +139,9 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     final sections = _daySections(t, shown, DateTime.now());
     final layout = ref.watch(browseLayoutProvider);
     final settings = ref.watch(browseSettingsProvider);
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s8,
@@ -484,12 +486,13 @@ final class _Header extends StatelessWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s4),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 560;
-          return Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = LiveWindow.isCompact(constraints.maxWidth);
+        final inset = LiveWindow.pageInset(constraints.maxWidth);
+        return Padding(
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
+          child: Row(
             spacing: DsSpace.s8,
             children: [
               Expanded(
@@ -556,9 +559,9 @@ final class _Header extends StatelessWidget {
                   child: Text(t.history.clear),
                 ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -711,8 +714,9 @@ final class _SkeletonList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s24),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
       children: [
         for (var i = 0; i < 8; i++)
           const Padding(

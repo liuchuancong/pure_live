@@ -137,11 +137,12 @@ final class _VodPageState extends ConsumerState<VodPage> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: Row(
             children: [
               Expanded(
@@ -240,6 +241,7 @@ final class _VodDynamicsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final account = ref.watch(vodAccountProvider);
     final login = account.value;
     if (account.isLoading && login == null) {
@@ -295,7 +297,7 @@ final class _VodDynamicsView extends ConsumerWidget {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
       itemCount: state.items.length + 1,
       separatorBuilder: (context, index) => const SizedBox(height: DsSpace.s4),
       itemBuilder: (context, index) {

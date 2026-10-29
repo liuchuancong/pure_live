@@ -14,6 +14,7 @@ import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodCl
 import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
+import 'package:pure_live/shared/shared.dart' show LiveWindow;
 
 /// One cinema title's page: the player over media_core, the season's blurb,
 /// and its episodes — the reference's PgcFeatureScreen, with the station's own
@@ -242,8 +243,9 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> {
   }
 
   Widget _page(VodSeasonDetail detail, Translations t) {
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s24),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1100),

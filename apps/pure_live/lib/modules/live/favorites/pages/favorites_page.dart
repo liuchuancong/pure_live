@@ -231,6 +231,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final follows = ref.watch(followsProvider);
     final layout = ref.watch(browseLayoutProvider);
     // The page size follows the platform tab, which resets the page itself;
@@ -341,7 +342,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,

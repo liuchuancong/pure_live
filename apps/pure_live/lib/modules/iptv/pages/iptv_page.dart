@@ -197,9 +197,10 @@ final class _IptvHeader extends StatelessWidget {
     );
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 900;
+        final wide = LiveWindow.isExpanded(constraints.maxWidth);
+        final inset = LiveWindow.pageInset(constraints.maxWidth);
         return Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s16, DsSpace.s20, DsSpace.s4),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s16, inset, DsSpace.s4),
           child: wide
               ? Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -311,8 +312,9 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
         sources.ready &&
         epg.ready;
     _fillViewport();
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s16),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s16),
       child: IptvTablePanel(
         fill: true,
         toolbar: Column(
@@ -380,7 +382,7 @@ final class _ChannelsToolbar extends ConsumerWidget {
     );
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 760) {
+        if (!LiveWindow.stacksToolbar(constraints.maxWidth)) {
           return Row(
             spacing: DsSpace.s12,
             children: [

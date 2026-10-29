@@ -39,6 +39,7 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final settings = ref.watch(browseSettingsProvider);
     final feed = ref.watch(vodLiveProvider);
     final controller = ref.read(vodLiveProvider.notifier);
@@ -104,7 +105,7 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
             ),
           ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: Row(
             children: [
               Expanded(

@@ -138,6 +138,7 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
     // to a visible one instead of showing areas behind an absent tab.
     if (ids.isNotEmpty && !ids.contains(platform)) _schedulePlatformFallback();
     final query = ref.watch(areasInlineSearchProvider);
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final views = DsSegmentedControl<_AreasView>(
       segments: [
         DsSegment(value: _AreasView.platform, label: Text(t.areas.viewPlatform)),
@@ -180,13 +181,13 @@ final class _AreasPageState extends ConsumerState<AreasPage> with WidgetsBinding
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: LayoutBuilder(
             builder: (context, constraints) {
               // The platform tabs take the row's leftover width — the
               // popular page's measure — so names read whole. Only a narrow
               // window stacks them under the view switch.
-              if (constraints.maxWidth >= 720) {
+              if (!LiveWindow.stacksToolbar(constraints.maxWidth)) {
                 return SizedBox(
                   height: 44,
                   child: Row(
@@ -324,6 +325,7 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
     final searching = query != null && query.isNotEmpty;
     final site = ref.watch(sitesProvider).getById(widget.platform);
     final platformName = site == null ? widget.platform : localizedSiteName(site);
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final category = categories.any((entry) => entry.$1 == _category) ? _category : '';
     // A search reads the whole platform catalogue, not only the shown
     // category: the word names the area the viewer wants, wherever the
@@ -366,7 +368,7 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
       children: [
         if (searching)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             // The toolbar's word as the kit's callout: what is being
             // searched and the way back to the catalogue.
             child: DsAlert(
@@ -382,7 +384,7 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
           )
         else if (categories.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DsTabs<String>(

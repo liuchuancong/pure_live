@@ -123,11 +123,12 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
     final link = _linkIn(word);
     final linkState = ref.watch(linkToolProvider);
     final view = _viewOf(search);
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
           child: PlatformTabRow(
             platforms: [kSearchAllPlatforms, ...allPlatformIds],
             current: scope,
@@ -146,7 +147,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
           child: Row(
             spacing: DsSpace.s8,
             children: [
@@ -182,6 +183,22 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
                   ),
                   builder: (context, controller, _) {
                     final active = (_sort == _SearchSort.smart ? 0 : 1) + (_includeOffline ? 0 : 1);
+                    // A compact window keeps the secondary action an icon;
+                    // the count rides the kit's anchored badge.
+                    if (LiveWindow.isCompact(MediaQuery.sizeOf(context).width)) {
+                      return DsAnchoredBadge(
+                        badge: active == 0 ? const SizedBox.shrink() : DsCount(active, semanticLabel: '$active'),
+                        child: DsButton.icon(
+                          variant: active == 0 ? DsButtonVariant.secondary : DsButtonVariant.tinted,
+                          size: DsSize.sm,
+                          semanticLabel: active == 0
+                              ? context.t.search.filterTitle
+                              : '${context.t.search.filterTitle}, $active',
+                          onPressed: controller.toggle,
+                          icon: const DsIcon(DsIcons.slidersHorizontal, size: 16),
+                        ),
+                      );
+                    }
                     return DsButton(
                       variant: active == 0 ? DsButtonVariant.secondary : DsButtonVariant.tinted,
                       size: DsSize.sm,
@@ -207,7 +224,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
         ),
         if (_showHistory(search))
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             child: _SearchHistory(
               onPicked: _onSuggestionPicked,
               onCleared: () {
@@ -218,7 +235,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
           ),
         if (targets.length >= 2)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
             child: _TargetSegments(
               targets: targets,
               selected: search.target,
@@ -227,7 +244,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
           ),
         if (link != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             child: DsAlert(
               title: Text(context.t.search.linkDetected),
               description: Text(link, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -242,7 +259,7 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
           ),
         if (_showSuggestions(search))
           Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s8),
             child: DsListSection(
               header: Text(context.t.search.suggestionsTitle),
               children: [

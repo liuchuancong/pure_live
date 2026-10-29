@@ -723,10 +723,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           );
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 1000;
+        final wide = LiveWindow.isExpanded(constraints.maxWidth);
         if (!wide) {
+          final inset = LiveWindow.pageInset(constraints.maxWidth);
           return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s24),
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: DsSpace.s16,
@@ -898,7 +899,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                           // The bar gives way from the outside in: the volume
                           // slider, then the menus' labels, so a phone — or a
                           // desktop's paned picture — never overflows.
-                          final compact = constraints.maxWidth < 640;
+                          final compact = LiveWindow.isCompact(constraints.maxWidth);
                           final parts = detail?.parts ?? const <VodPart>[];
                           return Row(
                             spacing: DsSpace.s4,
