@@ -467,8 +467,8 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.music, t.music.quality, 'music quality lossless flac 音质 品质 无损'),
     _hit(SettingsSection.music, t.music.skipOnError, 'music skip error next source 跳过 出错 音源'),
     _hit(SettingsSection.music, t.music.autoplay, 'music autoplay resume 自动 播放 继续'),
-    _hit(SettingsSection.musicList, t.music.addToTop, 'music list top bottom order 列表 顶部 末尾 顺序'),
-    _hit(SettingsSection.musicList, t.music.showSource, 'music list source tag 列表 音源 标签'),
+    _hit(SettingsSection.music, t.music.addToTop, 'music list top bottom order 列表 顶部 末尾 顺序'),
+    _hit(SettingsSection.music, t.music.showSource, 'music list source tag 列表 音源 标签'),
     _hit(SettingsSection.musicSources, t.music.sourcesImportText, 'music custom source import script js lx 自定义源 导入 脚本'),
     // Hongguo: the station's rendition and the decoder notes learned on this
     // machine.

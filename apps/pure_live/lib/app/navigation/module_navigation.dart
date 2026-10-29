@@ -173,11 +173,23 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
       [NavigationItem.musicLibrary, NavigationItem.musicLocal, NavigationItem.musicDownloads],
     ],
     landing: NavigationItem.music,
-    // The music module's own page: the source a song is asked from, the
-    // rendition, the list behaviour and the imported lx-style scripts. It
-    // borrows no live-platform or video-station page.
+    // The music module's settings rail, entry for entry the way lx-music
+    // lays its own out — playback, lyrics, desktop lyrics, download,
+    // sources, hotkeys, sync and the EQ — with the shared pages after.
     settingsGroups: [
-      (labelKey: 'groupMusic', sections: [SettingsSection.music]),
+      (
+        labelKey: 'groupMusic',
+        sections: [
+          SettingsSection.music,
+          SettingsSection.musicLyric,
+          SettingsSection.musicDesktopLyric,
+          SettingsSection.musicDownload,
+          SettingsSection.musicSources,
+          SettingsSection.musicHotkeys,
+          SettingsSection.musicSync,
+          SettingsSection.musicEq,
+        ],
+      ),
       ..._sharedGroups,
     ],
   ),

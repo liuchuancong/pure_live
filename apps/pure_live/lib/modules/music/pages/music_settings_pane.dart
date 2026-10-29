@@ -43,10 +43,10 @@ import 'package:pure_live/modules/music/controller/music_sync.dart'
     show MusicSyncStatus, kMusicSyncModes, musicSyncProvider;
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart' show MusicEqEditor;
 
-/// The music module's own settings: the source a song is asked from, the
-/// rendition asked of it, and the two playback behaviours; the list page and
-/// the custom-source page sit beside them, the way lx-music keeps its own
-/// settings rail.
+/// The music module's own settings, the way lx-music lays its rail out:
+/// the source a song is asked from, the rendition asked of it, the list
+/// behaviours and the reset; the other pages (sources, download, lyrics…)
+/// sit beside it as their own rows.
 final class MusicSettingsPane extends ConsumerWidget {
   /// The pane shown under Settings → Music.
   const MusicSettingsPane({super.key});
@@ -56,6 +56,7 @@ final class MusicSettingsPane extends ConsumerWidget {
     final t = context.t;
     final settings = ref.watch(musicSettingsProvider);
     final controller = ref.read(musicSettingsProvider.notifier);
+    final dislikes = ref.watch(musicDislikesProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -113,38 +114,8 @@ final class MusicSettingsPane extends ConsumerWidget {
             ),
           ],
         ),
-        const DsListSection(
-          children: [
-            SettingsChildEntry(child: SettingsSection.musicList),
-            SettingsChildEntry(child: SettingsSection.musicSources),
-            SettingsChildEntry(child: SettingsSection.musicDownload),
-            SettingsChildEntry(child: SettingsSection.musicLyric),
-            SettingsChildEntry(child: SettingsSection.musicDesktopLyric),
-            SettingsChildEntry(child: SettingsSection.musicEq),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-/// The reference's list page: where a new song lands and whether a row names
-/// the source it came from.
-final class MusicListPane extends ConsumerWidget {
-  /// The pane shown under Settings → Music → 列表设置.
-  const MusicListPane({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final settings = ref.watch(musicSettingsProvider);
-    final controller = ref.read(musicSettingsProvider.notifier);
-    final dislikes = ref.watch(musicDislikesProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s16,
-      children: [
         DsListSection(
+          header: Text(t.music.settingsList),
           children: [
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.arrowUpToLine),

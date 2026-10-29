@@ -548,7 +548,6 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.vodInterface => const VodInterfacePane(),
       SettingsSection.music => const MusicSettingsPane(),
       SettingsSection.hongguo => const HongguoSettingsPane(),
-      SettingsSection.musicList => const MusicListPane(),
       SettingsSection.musicSources => const MusicSourcesPane(),
       SettingsSection.musicDownload => const MusicDownloadPane(),
       SettingsSection.musicLyric => const MusicLyricPane(),

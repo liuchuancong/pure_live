@@ -17,6 +17,7 @@
   "chartsEmptyDescription": "Popular-song charts from the music sources will live here.",
   "sourcesReady": "{count} custom sources ready",
   "settingsPlayback": "Source and playback",
+  "settingsList": "Lists",
   "defaultSource": "Default source",
   "defaultSourceDesc": "The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.",
   "defaultSourceEmpty": "No source yet — import a script under Custom sources below.",

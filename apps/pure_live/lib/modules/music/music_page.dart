@@ -26,6 +26,8 @@ import 'package:pure_live/modules/music/controller/music_sources.dart' show musi
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists;
 import 'package:pure_live/modules/music/pages/music_player_page.dart' show musicDurationText;
+import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
+    show MusicCardMenuButton, MusicPlaylistCard, MusicPlaylistGrid;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 
@@ -697,61 +699,45 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
           ),
         ),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: DsSpace.s16),
-            children: [
-              DsListSection(
-                children: [
-                  for (final playlist in playlists)
-                    DsListRow(
-                      leading: const DsIcon(DsIcons.listMusic),
-                      title: Text(playlist.name),
-                      description: Text(t.music.songsCount(count: playlist.tracks.length)),
-                      showChevron: true,
-                      onPressed: () => setState(() {
-                        _openId = playlist.id;
-                        _selecting = false;
-                        _selected.clear();
-                      }),
-                      trailing: DsMenuAnchor(
-                        semanticLabel: t.music.moreActions,
-                        items: [
-                          DsMenuItem(
-                            leading: const DsIcon(DsIcons.play),
-                            label: Text(t.music.play),
-                            onPressed: playlist.tracks.isEmpty
-                                ? null
-                                : () => unawaited(ref.read(musicPlayerProvider.notifier).playAll(playlist.tracks)),
-                          ),
-                          DsMenuItem(
-                            leading: const DsIcon(DsIcons.pencil),
-                            label: Text(t.music.playlistRename),
-                            onPressed: () => unawaited(_rename(playlist)),
-                          ),
-                          DsMenuItem(
-                            leading: const DsIcon(DsIcons.arrowUpFromLine),
-                            label: Text(t.music.playlistExport),
-                            onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_export(playlist)),
-                          ),
-                          DsMenuItem(
-                            leading: const DsIcon(DsIcons.trash2),
-                            label: Text(t.music.playlistDelete),
-                            destructive: true,
-                            onPressed: () => unawaited(_delete(playlist)),
-                          ),
-                        ],
-                        builder: (context, controller, _) => DsButton.icon(
-                          variant: DsButtonVariant.ghost,
-                          size: DsSize.sm,
-                          semanticLabel: t.music.moreActions,
-                          onPressed: controller.toggle,
-                          icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
-                        ),
-                      ),
-                    ),
+          child: MusicPlaylistGrid<MusicPlaylist>(
+            items: playlists,
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+            itemBuilder: (context, playlist) => MusicPlaylistCard.own(
+              playlist: playlist,
+              onOpen: () => setState(() {
+                _openId = playlist.id;
+                _selecting = false;
+                _selected.clear();
+              }),
+              menuBuilder: (context) => MusicCardMenuButton(
+                semanticLabel: t.music.moreActions,
+                items: [
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.play),
+                    label: Text(t.music.play),
+                    onPressed: playlist.tracks.isEmpty
+                        ? null
+                        : () => unawaited(ref.read(musicPlayerProvider.notifier).playAll(playlist.tracks)),
+                  ),
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.pencil),
+                    label: Text(t.music.playlistRename),
+                    onPressed: () => unawaited(_rename(playlist)),
+                  ),
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.arrowUpFromLine),
+                    label: Text(t.music.playlistExport),
+                    onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_export(playlist)),
+                  ),
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.trash2),
+                    label: Text(t.music.playlistDelete),
+                    destructive: true,
+                    onPressed: () => unawaited(_delete(playlist)),
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ],
@@ -1850,55 +1836,15 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
                       description: error != null ? Text(t.common.retry) : null,
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.only(bottom: DsSpace.s16),
-                    itemCount: items.length + (loading || items.length < total ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index >= items.length) {
-                        return Padding(
-                          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s16),
-                          child: Center(
-                            child: loading
-                                ? const DsSpinner(style: DsSpinnerStyle(size: 24))
-                                : DsButton(
-                                    variant: DsButtonVariant.secondary,
-                                    size: DsSize.sm,
-                                    onPressed: () => setState(() => _page += 1),
-                                    child: Text(t.music.onlineLoadMore),
-                                  ),
-                          ),
-                        );
-                      }
-                      final playlist = items[index];
-                      return DsListRow(
-                        leading: playlist.cover.isEmpty
-                            ? const DsIcon(DsIcons.listMusic)
-                            : ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
-                                child: Image.network(
-                                  playlist.cover,
-                                  width: 44,
-                                  height: 44,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const SizedBox(
-                                    width: 44,
-                                    height: 44,
-                                    child: ColoredBox(color: Color(0x20808080), child: Center(child: DsIcon(DsIcons.listMusic, size: 18))),
-                                  ),
-                                ),
-                              ),
-                        title: Text(playlist.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                        description: Text(
-                          playlist.author.isEmpty
-                              ? t.music.songsCount(count: playlist.trackCount)
-                              : '${playlist.author} · ${t.music.songsCount(count: playlist.trackCount)}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        showChevron: true,
-                        onPressed: () => widget.onOpen(playlist),
-                      );
+                : MusicPlaylistGrid<MusicPlaylistInfo>(
+                    items: items,
+                    isLoading: loading,
+                    hasMore: items.length < total,
+                    onLoadMore: () async {
+                      setState(() => _page += 1);
                     },
+                    itemBuilder: (context, playlist) =>
+                        MusicPlaylistCard.online(info: playlist, onOpen: () => widget.onOpen(playlist)),
                   ),
           ),
         ],

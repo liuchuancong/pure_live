@@ -17,6 +17,7 @@
   "chartsEmptyDescription": "来自各音乐源的热门榜单会出现在这里。",
   "sourcesReady": "已就绪 {count} 个自定义源",
   "settingsPlayback": "音源与播放",
+  "settingsList": "列表",
   "defaultSource": "默认音源",
   "defaultSourceDesc": "歌曲从哪个音源获取；自定义源脚本负责解析播放地址。",
   "defaultSourceEmpty": "还没有可用的音源；先在下方「自定义源」里导入脚本。",
