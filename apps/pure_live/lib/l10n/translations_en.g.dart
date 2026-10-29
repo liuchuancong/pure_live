@@ -996,6 +996,9 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String sourcesReady({required Object count}) => '${count} custom sources ready';
 	@override String get settingsPlayback => 'Source and playback';
 	@override String get settingsList => 'Lists';
+	@override String get searchTypeSongs => 'Songs';
+	@override String get searchTypeSonglists => 'Songlists';
+	@override String get songlistSearchUnsupported => 'This source cannot search songlists yet.';
 	@override String get defaultSource => 'Default source';
 	@override String get defaultSourceDesc => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.';
 	@override String get defaultSourceEmpty => 'No source yet — import a script under Custom sources below.';
@@ -4410,6 +4413,9 @@ extension on TranslationsEn {
 			'music.sourcesReady' => ({required Object count}) => '${count} custom sources ready',
 			'music.settingsPlayback' => 'Source and playback',
 			'music.settingsList' => 'Lists',
+			'music.searchTypeSongs' => 'Songs',
+			'music.searchTypeSonglists' => 'Songlists',
+			'music.songlistSearchUnsupported' => 'This source cannot search songlists yet.',
 			'music.defaultSource' => 'Default source',
 			'music.defaultSourceDesc' => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.',
 			'music.defaultSourceEmpty' => 'No source yet — import a script under Custom sources below.',
@@ -4586,11 +4592,11 @@ extension on TranslationsEn {
 			'music.downloadPattern' => 'File name pattern',
 			'music.downloadPatternHint' => 'Placeholders (written inside braces): title, artist, album, quality, source, list, index.',
 			'music.downloadPatternEdit' => 'Edit',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadEmbedCover' => 'Embed the cover',
 			'music.downloadEmbedCoverDesc' => 'Write the cover into the audio tags.',
 			'music.downloadEmbedLyric' => 'Embed the lyric',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadEmbedLyricDesc' => 'Write the lyric into the audio tags so it travels with the file.',
 			'music.downloadIncludeTranslation' => 'Include the translation',
 			'music.downloadIncludeTranslationDesc' => 'Write the translation into the downloaded lyric file and embedded tag.',
@@ -5100,11 +5106,11 @@ extension on TranslationsEn {
 			'room.portraitDisplayBalanced' => 'Balanced',
 			'room.portraitDisplayCover' => 'Cover',
 			'room.portraitDanmakuTitle' => 'Danmaku area',
+			_ => null,
+		} ?? switch (path) {
 			'room.portraitDanmakuFollow' => 'Follow global',
 			'room.portraitDanmakuUpper' => 'Upper quarter',
 			'room.portraitDanmakuReduced' => 'Reduced',
-			_ => null,
-		} ?? switch (path) {
 			'room.portraitDanmakuHidden' => 'Hidden',
 			'room.portraitDiagnostics' => 'Portrait diagnostics',
 			'room.giftLineSent' => 'sent',
@@ -5614,11 +5620,11 @@ extension on TranslationsEn {
 			'settings.fontManagerDeleteQuestion' => ({required Object name}) => 'Delete this device\'s copy of “${name}”? It can be downloaded again.',
 			'settings.fontManagerNoResults' => 'No fonts match.',
 			'settings.fontManagerFilterLabel' => 'Filter fonts',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerSearchPlaceholder' => 'Search font names',
 			'settings.fontManagerPageLabel' => 'Font list pages',
 			'settings.fontManagerColumnSource' => 'Source',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerColumnSize' => 'Size',
 			'settings.fontManagerColumnFont' => 'Font',
 			'settings.fontManagerColumnState' => 'Status',
@@ -6128,11 +6134,11 @@ extension on TranslationsEn {
 			'settings.downloadKindFilter' => 'Filter by kind',
 			'settings.downloadColumnFile' => 'File',
 			'settings.downloadColumnSize' => 'Size',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadColumnTime' => 'Time',
 			'settings.downloadColumnActions' => 'Actions',
 			'settings.downloadSearchPlaceholder' => 'Search downloads',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadPercent' => ({required Object percent}) => 'Downloading ${percent}%',
 			'settings.downloadStatusPaused' => 'Paused',
 			'settings.downloadLoadedCount' => ({required Object shown, required Object total}) => 'Loaded ${shown} of ${total}',
@@ -6642,11 +6648,11 @@ extension on TranslationsEn {
 			'vod.search' => 'Search',
 			'vod.home' => 'Home',
 			'vod.personal' => 'Personal',
+			_ => null,
+		} ?? switch (path) {
 			'vod.live' => 'Live',
 			'vod.searchKindVideo' => 'Videos',
 			'vod.searchKindBangumi' => 'Anime',
-			_ => null,
-		} ?? switch (path) {
 			'vod.searchKindCinema' => 'Films',
 			'vod.searchKindUser' => 'Users',
 			'vod.searchKindLiveRoom' => 'Live rooms',

@@ -2689,6 +2689,15 @@ class Translations$music$zh_CN {
 	/// zh-CN: '列表'
 	String get settingsList => '列表';
 
+	/// zh-CN: '歌曲'
+	String get searchTypeSongs => '歌曲';
+
+	/// zh-CN: '歌单'
+	String get searchTypeSonglists => '歌单';
+
+	/// zh-CN: '当前音源暂不支持歌单搜索。'
+	String get songlistSearchUnsupported => '当前音源暂不支持歌单搜索。';
+
 	/// zh-CN: '默认音源'
 	String get defaultSource => '默认音源';
 
@@ -11000,6 +11009,9 @@ extension on Translations {
 			'music.sourcesReady' => ({required Object count}) => '已就绪 ${count} 个自定义源',
 			'music.settingsPlayback' => '音源与播放',
 			'music.settingsList' => '列表',
+			'music.searchTypeSongs' => '歌曲',
+			'music.searchTypeSonglists' => '歌单',
+			'music.songlistSearchUnsupported' => '当前音源暂不支持歌单搜索。',
 			'music.defaultSource' => '默认音源',
 			'music.defaultSourceDesc' => '歌曲从哪个音源获取；自定义源脚本负责解析播放地址。',
 			'music.defaultSourceEmpty' => '还没有可用的音源；先在下方「自定义源」里导入脚本。',
@@ -11176,11 +11188,11 @@ extension on Translations {
 			'music.downloadPattern' => '文件名格式',
 			'music.downloadPatternHint' => '占位符（花括号）：title、artist、album、quality、source、list、index。',
 			'music.downloadPatternEdit' => '编辑',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadEmbedCover' => '嵌入封面',
 			'music.downloadEmbedCoverDesc' => '把歌曲封面写入音频标签。',
 			'music.downloadEmbedLyric' => '嵌入歌词',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadEmbedLyricDesc' => '把歌词写入音频标签，随文件一起播放。',
 			'music.downloadIncludeTranslation' => '歌词包含翻译',
 			'music.downloadIncludeTranslationDesc' => '下载的歌词文件与内嵌歌词一并写入翻译。',
@@ -11690,11 +11702,11 @@ extension on Translations {
 			'room.portraitDisplayBalanced' => '均衡',
 			'room.portraitDisplayCover' => '铺满',
 			'room.portraitDanmakuTitle' => '弹幕区域',
+			_ => null,
+		} ?? switch (path) {
 			'room.portraitDanmakuFollow' => '跟随全局',
 			'room.portraitDanmakuUpper' => '上部 1/4',
 			'room.portraitDanmakuReduced' => '减半',
-			_ => null,
-		} ?? switch (path) {
 			'room.portraitDanmakuHidden' => '隐藏',
 			'room.portraitDiagnostics' => '竖屏诊断',
 			'room.giftLineSent' => '送出',
@@ -12204,11 +12216,11 @@ extension on Translations {
 			'settings.fontManagerDeleteQuestion' => ({required Object name}) => '删除「${name}」在本机的字体文件？之后可再次下载。',
 			'settings.fontManagerNoResults' => '没有找到匹配的字体。',
 			'settings.fontManagerFilterLabel' => '筛选字体',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerSearchPlaceholder' => '搜索字体名称',
 			'settings.fontManagerPageLabel' => '字体列表翻页',
 			'settings.fontManagerColumnSource' => '来源',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerColumnSize' => '大小',
 			'settings.fontManagerColumnFont' => '字体',
 			'settings.fontManagerColumnState' => '状态',
@@ -12718,11 +12730,11 @@ extension on Translations {
 			'settings.downloadKindFilter' => '按类型筛选',
 			'settings.downloadColumnFile' => '文件',
 			'settings.downloadColumnSize' => '大小',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadColumnTime' => '时间',
 			'settings.downloadColumnActions' => '操作',
 			'settings.downloadSearchPlaceholder' => '搜索下载记录',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadPercent' => ({required Object percent}) => '下载中 ${percent}%',
 			'settings.downloadStatusPaused' => '已暂停',
 			'settings.downloadLoadedCount' => ({required Object shown, required Object total}) => '已加载 ${shown} / ${total}',
@@ -13232,11 +13244,11 @@ extension on Translations {
 			'vod.search' => '搜索',
 			'vod.home' => '主页',
 			'vod.personal' => '个人',
+			_ => null,
+		} ?? switch (path) {
 			'vod.live' => '直播',
 			'vod.searchKindVideo' => '视频',
 			'vod.searchKindBangumi' => '番剧',
-			_ => null,
-		} ?? switch (path) {
 			'vod.searchKindCinema' => '影视',
 			'vod.searchKindUser' => '用户',
 			'vod.searchKindLiveRoom' => '直播间',

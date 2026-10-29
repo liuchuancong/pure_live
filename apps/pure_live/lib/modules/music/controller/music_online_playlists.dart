@@ -4,7 +4,7 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/modules/music/controller/music_source.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists;
+    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists, SonglistSearch;
 
 /// One online playlist opened to its tracks.
 typedef MusicOnlinePlaylistDetail = (MusicPlaylistInfo, List<audio.MusicTrack>);
@@ -36,4 +36,17 @@ final FutureProviderFamily<MusicOnlinePlaylistDetail, String> musicOnlinePlaylis
         return (source as OnlinePlaylists).playlistDetail(id);
       }
       return Future.error(StateError('online playlists are not served by $id'));
+    });
+
+/// The 歌单 search type's answers: the keyword's playlists on the active
+/// source, page by page. A source without the capability refuses honestly.
+typedef MusicSonglistSearchKey = ({String keyword, int page});
+
+final FutureProviderFamily<MusicPlaylistPage, MusicSonglistSearchKey> musicSonglistSearchProvider =
+    FutureProvider.family<MusicPlaylistPage, MusicSonglistSearchKey>((ref, key) {
+      final source = ref.watch(musicSourceProvider);
+      if (source case final SonglistSearch songlist) {
+        return songlist.searchPlaylists(key.keyword, page: key.page);
+      }
+      return Future.error(StateError('songlist search is not served by ${source.id}'));
     });

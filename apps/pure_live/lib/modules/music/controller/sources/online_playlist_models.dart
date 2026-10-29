@@ -51,3 +51,10 @@ abstract mixin class OnlinePlaylists {
   /// The playlist's summary and tracks.
   Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> playlistDetail(String id);
 }
+
+/// The songlist-search capability (搜索类型=歌单) a platform source can
+/// carry: keyword search over its own online playlists.
+mixin SonglistSearch {
+  /// One page of playlists matching [keyword].
+  Future<MusicPlaylistPage> searchPlaylists(String keyword, {int page = 1, int pageSize = 20});
+}

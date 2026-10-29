@@ -17,7 +17,8 @@ import 'package:pure_live/modules/music/controller/music_hotkeys.dart'
 import 'package:pure_live/modules/music/controller/music_library.dart';
 import 'package:pure_live/modules/music/controller/music_local.dart';
 import 'package:pure_live/modules/music/controller/music_online_playlists.dart'
-    show musicOnlineHotTagsProvider, musicOnlinePlaylistDetailProvider, musicOnlinePlaylistsProvider;
+    show musicOnlineHotTagsProvider, musicOnlinePlaylistDetailProvider, musicOnlinePlaylistsProvider,
+        musicSonglistSearchProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_playlists.dart';
 import 'package:pure_live/modules/music/controller/music_search.dart';
@@ -25,7 +26,7 @@ import 'package:pure_live/modules/music/controller/music_settings.dart' show mus
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show musicSourcesProvider;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists;
+    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists, SonglistSearch;
 import 'package:pure_live/modules/music/pages/music_player_page.dart' show musicDurationText;
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
     show MusicCardMenuButton, MusicPlaylistCard, MusicPlaylistGrid;
@@ -87,6 +88,10 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
   /// The view the page is showing.
   late MusicView _view = widget.view;
 
+  /// The online playlist the library's 歌单 search asked to open, handed to
+  /// the songlists view when it next mounts.
+  MusicPlaylistInfo? _openSonglist;
+
   /// The library's search field, kept across view switches so a query is not
   /// lost by looking at the charts.
   final TextEditingController _search = TextEditingController();
@@ -123,8 +128,14 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
         ),
         Expanded(
           child: switch (_view) {
-            MusicView.library => _LibraryView(search: _search),
-            MusicView.songlists => const _PlaylistsView(),
+            MusicView.library => _LibraryView(
+              search: _search,
+              onOpenSonglist: (info) => setState(() {
+                _view = MusicView.songlists;
+                _openSonglist = info;
+              }),
+            ),
+            MusicView.songlists => _PlaylistsView(initialOnlineOpen: _openSonglist),
             MusicView.toplists => _ChartsView(
               catalogId: _catalogId,
               onCatalog: (id) => setState(() => _catalogId = id),
@@ -201,9 +212,12 @@ final class _ModuleHeader extends ConsumerWidget {
 /// The library: a search, its history and the songs it answers, each row
 /// playing the answer from that song on.
 final class _LibraryView extends ConsumerStatefulWidget {
-  const _LibraryView({required this.search});
+  const _LibraryView({required this.search, required this.onOpenSonglist});
 
   final TextEditingController search;
+
+  /// Opens a 歌单-search hit in the songlists view.
+  final ValueChanged<MusicPlaylistInfo> onOpenSonglist;
 
   @override
   ConsumerState<_LibraryView> createState() => _LibraryViewState();
@@ -221,6 +235,10 @@ final class _LibraryViewState extends ConsumerState<_LibraryView> {
   /// it shows while the field holds the focus and a word that is not the
   /// committed query yet, the reference's tip list.
   String _typed = '';
+
+  /// Whether the search answers playlists (歌单) instead of songs, the
+  /// reference's search-type switch.
+  bool _songlist = false;
 
   FocusNode? _focus;
   Timer? _suggestDebounce;
@@ -524,22 +542,44 @@ final class _LibraryViewState extends ConsumerState<_LibraryView> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
-          child: DsSearchField(
-            controller: search,
-            autofocus: true,
-            focusNode: _focus,
-            placeholder: t.music.searchHint,
-            onChanged: _onTyped,
-            onSubmitted: (value) {
-              // The submit commits at once: the pending debounce ask drops
-              // and the overlay closes because the word is the query now.
-              _suggestDebounce?.cancel();
-              setState(() => _typed = value);
-              unawaited(controller.search(value));
-            },
+          child: Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(
+                child: DsSearchField(
+                  controller: search,
+                  autofocus: true,
+                  focusNode: _focus,
+                  placeholder: t.music.searchHint,
+                  onChanged: _onTyped,
+                  onSubmitted: (value) {
+                    // The submit commits at once: the pending debounce ask drops
+                    // and the overlay closes because the word is the query now.
+                    _suggestDebounce?.cancel();
+                    setState(() => _typed = value);
+                    unawaited(controller.search(value));
+                  },
+                ),
+              ),
+              // The reference's search-type switch: songs or songlists.
+              DsSegmentedControl<bool>(
+                segments: [
+                  DsSegment(value: false, label: Text(t.music.searchTypeSongs)),
+                  DsSegment(value: true, label: Text(t.music.searchTypeSonglists)),
+                ],
+                value: _songlist,
+                onChanged: (songlist) => setState(() => _songlist = songlist),
+              ),
+            ],
           ),
         ),
-        Expanded(child: showTips ? _tips(word) : body),
+        Expanded(
+          child: showTips
+              ? _tips(word)
+              : _songlist
+              ? _SonglistResults(query: state.query, onOpen: widget.onOpenSonglist)
+              : body,
+        ),
       ],
     );
   }
@@ -567,9 +607,101 @@ final class _LibraryViewState extends ConsumerState<_LibraryView> {
   }
 }
 
+/// The library's 歌单 search answers: the committed query's playlists on the
+/// active source, page by page, opening the songlists view's detail.
+final class _SonglistResults extends ConsumerStatefulWidget {
+  const _SonglistResults({required this.query, required this.onOpen});
+
+  /// The committed keyword; empty shows the idle pane.
+  final String query;
+
+  /// Opens a hit in the songlists view.
+  final ValueChanged<MusicPlaylistInfo> onOpen;
+
+  @override
+  ConsumerState<_SonglistResults> createState() => _SonglistResultsState();
+}
+
+final class _SonglistResultsState extends ConsumerState<_SonglistResults> {
+  /// How many pages the viewer has asked for; the family provider caches
+  /// each one, so widening this range re-reads, it does not re-fetch.
+  int _page = 1;
+
+  @override
+  void didUpdateWidget(_SonglistResults oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A new keyword restarts the walk; the stale pages of the old word must
+    // not ride in.
+    if (oldWidget.query != widget.query && _page != 1) setState(() => _page = 1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final source = ref.watch(musicSourceProvider);
+    if (source is! SonglistSearch) {
+      return Center(
+        child: DsEmptyState(icon: const DsIcon(DsIcons.listMusic), title: Text(t.music.songlistSearchUnsupported)),
+      );
+    }
+    if (widget.query.isEmpty) {
+      return Center(
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.search),
+          title: Text(t.music.searchIdleTitle),
+          description: Text(t.music.searchIdleDescription),
+        ),
+      );
+    }
+    final pages = <AsyncValue<MusicPlaylistPage>>[
+      for (var page = 1; page <= _page; page++)
+        ref.watch(musicSonglistSearchProvider((keyword: widget.query, page: page))),
+    ];
+    final items = <MusicPlaylistInfo>[for (final page in pages) if (page.value != null) ...page.value!.items];
+    final loading = pages.any((page) => page.isLoading);
+    final error = pages.where((page) => page.hasError).firstOrNull;
+    final total = pages.lastOrNull?.value?.total ?? 0;
+    if (!loading && items.isEmpty) {
+      return Center(
+        child: DsEmptyState(
+          icon: const DsIcon(DsIcons.searchX),
+          title: Text(error != null ? t.music.onlineLoadFailed : t.music.noResultsTitle),
+          description: Text(t.music.noResultsDescription),
+          actions: [
+            if (error != null)
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () {
+                  for (var page = 1; page <= _page; page++) {
+                    ref.invalidate(musicSonglistSearchProvider((keyword: widget.query, page: page)));
+                  }
+                },
+                child: Text(t.common.retry),
+              ),
+          ],
+        ),
+      );
+    }
+    return MusicPlaylistGrid<MusicPlaylistInfo>(
+      items: items,
+      isLoading: loading,
+      hasMore: items.length < total,
+      onLoadMore: () async {
+        setState(() => _page += 1);
+      },
+      itemBuilder: (context, info) => MusicPlaylistCard.online(info: info, onOpen: () => widget.onOpen(info)),
+    );
+  }
+}
+
 /// 歌单: the viewer's own playlists and the songs in the one that is open.
 final class _PlaylistsView extends ConsumerStatefulWidget {
-  const _PlaylistsView();
+  const _PlaylistsView({this.initialOnlineOpen});
+
+  /// The online playlist a caller (the library's 歌单 search) asked to
+  /// open; consumed once the view mounts.
+  final MusicPlaylistInfo? initialOnlineOpen;
 
   @override
   ConsumerState<_PlaylistsView> createState() => _PlaylistsViewState();
@@ -586,6 +718,16 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
 
   /// The online playlist opened to its tracks; null shows the browse list.
   MusicPlaylistInfo? _onlineOpen;
+
+  @override
+  void initState() {
+    super.initState();
+    final open = widget.initialOnlineOpen;
+    if (open != null) {
+      _online = true;
+      _onlineOpen = open;
+    }
+  }
 
   Future<void> _create() async {
     final playlist = await showCreatePlaylistDialog(context, ref);

@@ -7,7 +7,7 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists;
+    show MusicPlaylistInfo, MusicPlaylistPage, OnlinePlaylists, SonglistSearch;
 import 'package:pure_live/modules/music/controller/sources/wy_crypto.dart';
 
 /// The wy-music leaderboard view's Netease boards, in its own order.
@@ -29,7 +29,8 @@ const String _neteaseUserAgent =
 
 /// The Netease platform: search, boards and lyrics ride the eapi/weapi
 /// encrypted channels; play URLs come from the lx scripts.
-final class WyMusicSource extends LxPlatformSource with OnlinePlaylists implements MusicHotWords, MusicCommentsSource {
+final class WyMusicSource extends LxPlatformSource with OnlinePlaylists, SonglistSearch
+implements MusicHotWords, MusicCommentsSource {
   /// A Netease source over the lx runtime.
   WyMusicSource(super.runtime, super.http);
 
@@ -140,6 +141,32 @@ final class WyMusicSource extends LxPlatformSource with OnlinePlaylists implemen
             if (entry is Map) _playlistOf(entry.cast<String, Object?>()),
       ],
       total: total,
+    );
+  }
+
+  /// The keyword's playlists, the lx wy `songList.search`: the eapi
+  /// cloudsearch with type 1000 (歌单) pages over the same playlist shape
+  /// the tag browser reads.
+  @override
+  Future<MusicPlaylistPage> searchPlaylists(String keyword, {int page = 1, int pageSize = 20}) async {
+    final json = await _eapi('/api/cloudsearch/pc', {
+      's': keyword,
+      'type': 1000,
+      'limit': pageSize,
+      'total': page == 1,
+      'offset': pageSize * (page - 1),
+    });
+    if (json['code'] != 200) return const MusicPlaylistPage(items: [], total: 0);
+    final result = json['result'];
+    final raw = result is Map ? result['playlists'] : null;
+    final count = result is Map ? (result['playlistCount'] as num?)?.toInt() ?? 0 : 0;
+    return MusicPlaylistPage(
+      items: [
+        if (raw is List)
+          for (final entry in raw)
+            if (entry is Map) _playlistOf(entry.cast<String, Object?>()),
+      ],
+      total: count,
     );
   }
 
