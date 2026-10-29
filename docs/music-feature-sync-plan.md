@@ -43,7 +43,7 @@
 | 打开歌单（链接或 ID） | 在线歌单 tab 行尾链接按钮 + 对话框（链接/ID）；四源 `playlistDetail` 内按参考 `getListId` 正则归一（wy ?id= 与 /playlist/n/m、tx /playlist/ 与 id=、kg special/single 与 id_ 前缀、mg /playlist/），裸 ID 直用（提交 `09e12aa10`） | ✅ |
 | 歌单搜索（搜索类型=歌单的结果页） | 随 B 项落地：library 歌单类型结果页（`_SonglistResults`，MusicPlaylistGrid 双模滚动，点击进详情） | ✅（0cac05b4f） |
 | 收藏歌单（存入我的列表并记 source 供更新） | 导入即 `linkSource` 记 source+sourceListId（模型与持久化本就支持），供后续更新对比（提交 `da26d9b86`） | ✅ |
-| 已收藏在线歌单"更新"（拉最新对比替换） | 无 | ⬜ |
+| 已收藏在线歌单"更新"（拉最新对比替换） | 卡片菜单「更新在线歌单」：按存的 source+sourceListId 重拉广场整表替换（`replaceTracks`，参考 overwriteListMusics）；二次收藏同歌单弹确认改走更新（提交 `b596c3348`） | ✅ |
 
 ## D. 排行榜域
 
