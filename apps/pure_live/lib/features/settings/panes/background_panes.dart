@@ -7,10 +7,10 @@ import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:path/path.dart' as p;
 
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_preview_page.dart';
 import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openSettingsChild;
 import 'package:pure_live/features/settings/surface/settings_sections.dart';
@@ -177,21 +177,26 @@ final class _BackgroundColorsPaneState extends ConsumerState<BackgroundColorsPan
 
   /// Saves the swatch as a 1920×1080 PNG in the shared download folder.
   Future<void> _savePaint(BuildContext context, WallpaperPreviewPaint paint) async {
-    final t = context.t;
-    final directory = ref.read(downloadDirectoryProvider).effectivePath;
     try {
-      final target = File(
-        p.join(directory, wallpaperFileName(title: paint.name, fallback: 'background', address: 'paint.png')),
-      );
-      await target.parent.create(recursive: true);
-      await target.writeAsBytes(await encodeWallpaperPaint(paint));
+      final handover = await ref
+          .read(wallpaperDownloadsProvider.notifier)
+          .enqueueBytes(
+            title: paint.name,
+            kind: WallpaperDownloadKind.paint,
+            bytes: await encodeWallpaperPaint(paint),
+            fileName: wallpaperFileName(title: paint.name, fallback: 'background', address: 'paint.png'),
+          );
       if (!context.mounted) return;
-      showDsToast(context: context, title: t.settings.downloadSavedTo(path: directory));
+      showDownloadHandoverToast(
+        context,
+        handover,
+        openManager: () => _openBackgroundChild(context, ref, SettingsSection.backgroundDownloads),
+      );
     } on Object catch (error) {
       if (!context.mounted) return;
       showDsToast(
         context: context,
-        title: t.settings.backgroundDownloadFailed,
+        title: context.t.settings.backgroundDownloadFailed,
         description: '$error',
         status: DsStatus.danger,
       );
@@ -393,9 +398,17 @@ final class _Swatch extends StatelessWidget {
     return DsContextMenuRegion(
       semanticLabel: t.common.more,
       items: [
-        DsMenuItem(leading: const DsIcon(DsIcons.eye), label: Text(t.settings.backgroundPreviewMedia), onPressed: onPreview),
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.eye),
+          label: Text(t.settings.backgroundPreviewMedia),
+          onPressed: onPreview,
+        ),
         DsMenuItem(leading: const DsIcon(DsIcons.check), label: Text(t.settings.backgroundApply), onPressed: onPressed),
-        DsMenuItem(leading: const DsIcon(DsIcons.download), label: Text(t.settings.downloadAction), onPressed: onDownload),
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.download),
+          label: Text(t.settings.downloadAction),
+          onPressed: onDownload,
+        ),
         DsMenuItem(
           leading: const DsIcon(DsIcons.copy),
           label: Text(copyLabel),
@@ -630,33 +643,23 @@ final class _BackgroundLibraryPaneState extends ConsumerState<BackgroundLibraryP
     showDsToast(context: context, title: t.settings.backgroundLibraryApplied);
   }
 
-  /// Fetches an entry into the shared download folder: the grid shows
-  /// thumbnails, so keeping one is otherwise a trip through a browser.
-  Future<void> _download(WallpaperItem item) async {
-    final t = context.t;
-    final directory = ref.read(downloadDirectoryProvider).effectivePath;
-    try {
-      final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
-      await downloadMediaFile(
-        http: http,
-        url: Uri.parse(item.url),
-        directory: directory,
-        fileName: wallpaperFileName(title: item.name, fallback: item.id, address: item.url),
-      );
-      if (!mounted) return;
-      showDsToast(
-        context: context,
-        title: t.settings.downloadSavedTo(path: directory),
-      );
-    } on Object catch (error) {
-      if (!mounted) return;
-      showDsToast(
-        context: context,
-        title: t.settings.backgroundDownloadFailed,
-        description: '$error',
-        status: DsStatus.danger,
-      );
-    }
+  /// Hands an entry to the download queue: the grid shows thumbnails, so
+  /// keeping one is otherwise a trip through a browser.
+  void _download(WallpaperItem item) {
+    final handover = ref
+        .read(wallpaperDownloadsProvider.notifier)
+        .enqueueUrl(
+          title: item.name,
+          url: item.url,
+          kind: item.video ? WallpaperDownloadKind.video : WallpaperDownloadKind.image,
+          thumbUrl: item.thumb,
+          fileName: wallpaperFileName(title: item.name, fallback: item.id, address: item.url),
+        );
+    showDownloadHandoverToast(
+      context,
+      handover,
+      openManager: () => _openBackgroundChild(context, ref, SettingsSection.backgroundDownloads),
+    );
   }
 
   /// The grid every page — and every skeleton row — is laid out with.
@@ -765,7 +768,7 @@ final class _BackgroundLibraryPaneState extends ConsumerState<BackgroundLibraryP
                           // pulls later pages as the walk reaches them.
                           onPressed: () => unawaited(showWallpaperPreview(context, items, index, more: _loadMore)),
                           onApply: () => _applyItem(item),
-                          onDownload: () => unawaited(_download(item)),
+                          onDownload: () => _download(item),
                         );
                       },
                     );
@@ -1238,26 +1241,23 @@ final class _BackgroundDevicePaneState extends ConsumerState<BackgroundDevicePan
   /// Copies the imported file into the shared download folder, so the
   /// original can be moved or cleaned up without losing the choice.
   Future<void> _saveCopy(String path) async {
-    final t = context.t;
-    final directory = ref.read(downloadDirectoryProvider).effectivePath;
-    try {
-      final target = File(p.join(directory, p.basename(path)));
-      await target.parent.create(recursive: true);
-      await File(path).copy(target.path);
-      if (!mounted) return;
-      showDsToast(
-        context: context,
-        title: t.settings.downloadSavedTo(path: directory),
-      );
-    } on Object catch (error) {
-      if (!mounted) return;
-      showDsToast(
-        context: context,
-        title: t.settings.backgroundDownloadFailed,
-        description: '$error',
-        status: DsStatus.danger,
-      );
-    }
+    final name = p.basename(path);
+    final handover = await ref
+        .read(wallpaperDownloadsProvider.notifier)
+        .enqueueCopy(
+          title: name,
+          sourcePath: path,
+          fileName: name,
+          kind: backgroundMediaKindOf(name) == BackgroundMediaKind.video
+              ? WallpaperDownloadKind.video
+              : WallpaperDownloadKind.image,
+        );
+    if (!mounted) return;
+    showDownloadHandoverToast(
+      context,
+      handover,
+      openManager: () => _openBackgroundChild(context, ref, SettingsSection.backgroundDownloads),
+    );
   }
 
   /// Picks a picture or a clip and opens it in the preview: the file's own

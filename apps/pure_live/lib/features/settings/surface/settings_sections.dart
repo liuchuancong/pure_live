@@ -30,6 +30,7 @@ enum SettingsSection {
   backgroundVideos(DsIcons.film),
   backgroundColors(DsIcons.palette),
   backgroundDevice(DsIcons.upload),
+  backgroundDownloads(DsIcons.folderOpen),
   nav(DsIcons.panelLeft),
   navHomeMenu(DsIcons.listTodo),
   navToolOrder(DsIcons.listOrdered),
@@ -110,6 +111,7 @@ enum SettingsSection {
     SettingsSection.backgroundVideos => t.settings.backgroundVideosTitle,
     SettingsSection.backgroundColors => t.settings.backgroundColorsTitle,
     SettingsSection.backgroundDevice => t.settings.backgroundDeviceTitle,
+    SettingsSection.backgroundDownloads => t.settings.downloadManagerTitle,
     SettingsSection.nav => t.settings.navNavigation,
     SettingsSection.navHomeMenu => t.settings.navHomeMenuTitle,
     SettingsSection.navToolOrder => t.settings.toolsOrder,
@@ -180,6 +182,7 @@ enum SettingsSection {
     SettingsSection.backgroundVideos => t.settings.backgroundVideosDescription,
     SettingsSection.backgroundColors => t.settings.backgroundColorsDescription,
     SettingsSection.backgroundDevice => t.settings.backgroundDeviceDescription,
+    SettingsSection.backgroundDownloads => t.settings.downloadManagerDesc,
     SettingsSection.nav => t.settings.navigationDescription,
     SettingsSection.navHomeMenu => t.settings.navHomeMenuDescription,
     SettingsSection.navToolOrder => t.settings.toolsOrderDesc,
@@ -249,7 +252,8 @@ enum SettingsSection {
     SettingsSection.backgroundRandom ||
     SettingsSection.backgroundVideos ||
     SettingsSection.backgroundColors ||
-    SettingsSection.backgroundDevice => SettingsSection.background,
+    SettingsSection.backgroundDevice ||
+    SettingsSection.backgroundDownloads => SettingsSection.background,
     SettingsSection.accounts => SettingsSection.sites,
     SettingsSection.sitesDisplay => SettingsSection.sites,
     SettingsSection.navHomeMenu || SettingsSection.navToolOrder => SettingsSection.nav,
@@ -324,6 +328,7 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
     SettingsSection.backgroundRandom,
     SettingsSection.backgroundVideos,
     SettingsSection.backgroundDevice,
+    SettingsSection.backgroundDownloads,
   ],
   SettingsSection.sites => const [SettingsSection.sitesDisplay, SettingsSection.audience, SettingsSection.accounts],
   SettingsSection.nav => const [SettingsSection.navHomeMenu, SettingsSection.navToolOrder],

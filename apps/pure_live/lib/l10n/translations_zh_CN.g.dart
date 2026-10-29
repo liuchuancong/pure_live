@@ -2713,6 +2713,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '脚本没有提供说明。'
 	String get sourceNoDescription => '脚本没有提供说明。';
 
+	/// zh-CN: '已停用'
+	String get sourceDisabled => '已停用';
+
 	/// zh-CN: '使用此音源'
 	String get sourceUse => '使用此音源';
 
@@ -2884,6 +2887,30 @@ class Translations$music$zh_CN {
 	/// zh-CN: '—'
 	String get songDetailEmpty => '—';
 
+	/// zh-CN: '不喜欢'
+	String get dislike => '不喜欢';
+
+	/// zh-CN: '取消不喜欢'
+	String get undislike => '取消不喜欢';
+
+	/// zh-CN: '已加入不喜欢规则，以后自动跳过'
+	String get disliked => '已加入不喜欢规则，以后自动跳过';
+
+	/// zh-CN: '已取消不喜欢'
+	String get undisliked => '已取消不喜欢';
+
+	/// zh-CN: '不喜欢规则 · {count} 条'
+	String dislikeRules({required Object count}) => '不喜欢规则 · ${count} 条';
+
+	/// zh-CN: '这些歌曲出现在播放队列里时会自动跳过。'
+	String get dislikeRulesDesc => '这些歌曲出现在播放队列里时会自动跳过。';
+
+	/// zh-CN: '清除规则'
+	String get dislikeRulesClear => '清除规则';
+
+	/// zh-CN: '已清除不喜欢规则'
+	String get dislikeRulesCleared => '已清除不喜欢规则';
+
 	/// zh-CN: '下载全部'
 	String get downloadAll => '下载全部';
 
@@ -2907,6 +2934,15 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '删除这条搜索'
 	String get searchHistoryRemove => '删除这条搜索';
+
+	/// zh-CN: '热门搜索'
+	String get searchHot => '热门搜索';
+
+	/// zh-CN: '搜索页为空时显示音源提供的热门搜索词。'
+	String get searchHotDesc => '搜索页为空时显示音源提供的热门搜索词。';
+
+	/// zh-CN: '热门搜索加载失败'
+	String get searchHotFailed => '热门搜索加载失败';
 
 	/// zh-CN: '新建歌单'
 	String get playlistCreate => '新建歌单';
@@ -2947,6 +2983,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '已加入「{name}」'
 	String playlistAdded({required Object name}) => '已加入「${name}」';
 
+	/// zh-CN: '已加入 {count} 首到「{name}」'
+	String playlistAddedCount({required Object count, required Object name}) => '已加入 ${count} 首到「${name}」';
+
 	/// zh-CN: '「{name}」里已经有这首歌'
 	String playlistAlreadyIn({required Object name}) => '「${name}」里已经有这首歌';
 
@@ -2962,6 +3001,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '导入失败：{error}'
 	String playlistImportFailed({required Object error}) => '导入失败：${error}';
 
+	/// zh-CN: '文件里没有可用的歌曲'
+	String get playlistImportInvalid => '文件里没有可用的歌曲';
+
 	/// zh-CN: '导出歌单'
 	String get playlistExport => '导出歌单';
 
@@ -2970,6 +3012,45 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '导出失败：{error}'
 	String playlistExportFailed({required Object error}) => '导出失败：${error}';
+
+	/// zh-CN: '排序'
+	String get playlistSort => '排序';
+
+	/// zh-CN: '按歌名'
+	String get sortByTitle => '按歌名';
+
+	/// zh-CN: '按歌手'
+	String get sortByArtist => '按歌手';
+
+	/// zh-CN: '按专辑'
+	String get sortByAlbum => '按专辑';
+
+	/// zh-CN: '按时长'
+	String get sortByDuration => '按时长';
+
+	/// zh-CN: '随机排序'
+	String get sortByShuffle => '随机排序';
+
+	/// zh-CN: '选择'
+	String get selectionStart => '选择';
+
+	/// zh-CN: '取消选择'
+	String get selectionCancel => '取消选择';
+
+	/// zh-CN: '已选 {count} 首'
+	String selectionCount({required Object count}) => '已选 ${count} 首';
+
+	/// zh-CN: '全选'
+	String get selectionAll => '全选';
+
+	/// zh-CN: '下载'
+	String get selectionDownload => '下载';
+
+	/// zh-CN: '移除'
+	String get selectionRemove => '移除';
+
+	/// zh-CN: '已移除 {count} 首'
+	String selectionRemoveDone({required Object count}) => '已移除 ${count} 首';
 
 	/// zh-CN: '正在下载 {count} 首'
 	String downloadsActive({required Object count}) => '正在下载 ${count} 首';
@@ -3049,6 +3130,18 @@ class Translations$music$zh_CN {
 	/// zh-CN: '把歌词写入音频标签，随文件一起播放。'
 	String get downloadEmbedLyricDesc => '把歌词写入音频标签，随文件一起播放。';
 
+	/// zh-CN: '歌词包含翻译'
+	String get downloadIncludeTranslation => '歌词包含翻译';
+
+	/// zh-CN: '下载的歌词文件与内嵌歌词一并写入翻译。'
+	String get downloadIncludeTranslationDesc => '下载的歌词文件与内嵌歌词一并写入翻译。';
+
+	/// zh-CN: '歌词包含音译'
+	String get downloadIncludeRomanization => '歌词包含音译';
+
+	/// zh-CN: '下载的歌词文件与内嵌歌词一并写入音译。'
+	String get downloadIncludeRomanizationDesc => '下载的歌词文件与内嵌歌词一并写入音译。';
+
 	/// zh-CN: '保存歌词文件'
 	String get downloadWriteLyric => '保存歌词文件';
 
@@ -3066,6 +3159,12 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '从歌单下载时，文件保存到以歌单命名的子文件夹。'
 	String get downloadGroupByListDesc => '从歌单下载时，文件保存到以歌单命名的子文件夹。';
+
+	/// zh-CN: '同时下载数'
+	String get downloadMaxConcurrent => '同时下载数';
+
+	/// zh-CN: '同时进行的下载任务数量（1–5），修改后立即生效。'
+	String get downloadMaxConcurrentDesc => '同时进行的下载任务数量（1–5），修改后立即生效。';
 
 	/// zh-CN: '排队中'
 	String get downloadStatusQueued => '排队中';
@@ -3166,6 +3265,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '{count} 分钟'
 	String sleepMinutes({required Object count}) => '${count} 分钟';
 
+	/// zh-CN: '播完当前歌曲'
+	String get sleepAfterCurrent => '播完当前歌曲';
+
 	/// zh-CN: '{value} 后暂停'
 	String sleepRemaining({required Object value}) => '${value} 后暂停';
 
@@ -3189,6 +3291,45 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '歌词带音译或罗马音时一并显示。'
 	String get lyricRomanizationDesc => '歌词带音译或罗马音时一并显示。';
+
+	/// zh-CN: '翻译/音译顺序'
+	String get lyricSwapSecondary => '翻译/音译顺序';
+
+	/// zh-CN: '交换翻译与音译在歌词行中的先后顺序。'
+	String get lyricSwapSecondaryDesc => '交换翻译与音译在歌词行中的先后顺序。';
+
+	/// zh-CN: '歌词字号'
+	String get lyricFontScale => '歌词字号';
+
+	/// zh-CN: '播放页歌词的缩放比例（100%–200%）。'
+	String get lyricFontScaleDesc => '播放页歌词的缩放比例（100%–200%）。';
+
+	/// zh-CN: '缩小字号'
+	String get lyricFontSmaller => '缩小字号';
+
+	/// zh-CN: '放大字号'
+	String get lyricFontLarger => '放大字号';
+
+	/// zh-CN: '重置字号'
+	String get lyricFontReset => '重置字号';
+
+	/// zh-CN: '歌词对齐'
+	String get lyricAlignment => '歌词对齐';
+
+	/// zh-CN: '播放页歌词在面板内的对齐方式。'
+	String get lyricAlignmentDesc => '播放页歌词在面板内的对齐方式。';
+
+	/// zh-CN: '放大当前行'
+	String get lyricZoomActive => '放大当前行';
+
+	/// zh-CN: '正在唱的一句歌词略大，便于跟唱。'
+	String get lyricZoomActiveDesc => '正在唱的一句歌词略大，便于跟唱。';
+
+	/// zh-CN: '显示播放进度'
+	String get lyricProgress => '显示播放进度';
+
+	/// zh-CN: '在歌词面板上方显示歌曲的播放进度。'
+	String get lyricProgressDesc => '在歌词面板上方显示歌曲的播放进度。';
 
 	/// zh-CN: '歌词显示与延迟对所有歌曲生效；桌面歌词可在设置或播放页的更多菜单里打开。'
 	String get lyricHint => '歌词显示与延迟对所有歌曲生效；桌面歌词可在设置或播放页的更多菜单里打开。';
@@ -3297,6 +3438,63 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '导出歌词'
 	String get exportLyric => '导出歌词';
+
+	/// zh-CN: '关联本地歌词'
+	String get associateLyric => '关联本地歌词';
+
+	/// zh-CN: '已关联歌词'
+	String get associateLyricDone => '已关联歌词';
+
+	/// zh-CN: '关联失败：文件里没有可用的歌词'
+	String get associateLyricFailed => '关联失败：文件里没有可用的歌词';
+
+	/// zh-CN: '取消关联歌词'
+	String get lyricOverrideRemove => '取消关联歌词';
+
+	/// zh-CN: '在线搜索歌词'
+	String get lyricSearch => '在线搜索歌词';
+
+	/// zh-CN: '为「{title}」搜索歌词'
+	String lyricSearchFor({required Object title}) => '为「${title}」搜索歌词';
+
+	/// zh-CN: '输入歌名，或「歌手 - 歌名」'
+	String get lyricSearchHint => '输入歌名，或「歌手 - 歌名」';
+
+	/// zh-CN: '搜索'
+	String get lyricSearchAction => '搜索';
+
+	/// zh-CN: '没有找到匹配的歌曲'
+	String get lyricSearchEmpty => '没有找到匹配的歌曲';
+
+	/// zh-CN: '搜索失败：{error}'
+	String lyricSearchFailed({required Object error}) => '搜索失败：${error}';
+
+	/// zh-CN: '这首歌没有可用的歌词'
+	String get lyricSearchNoLyric => '这首歌没有可用的歌词';
+
+	/// zh-CN: '已应用「{title}」的歌词'
+	String lyricSearchApplied({required Object title}) => '已应用「${title}」的歌词';
+
+	/// zh-CN: '评论'
+	String get comments => '评论';
+
+	/// zh-CN: '热门'
+	String get commentsHot => '热门';
+
+	/// zh-CN: '最新'
+	String get commentsNew => '最新';
+
+	/// zh-CN: '还没有评论'
+	String get commentsEmpty => '还没有评论';
+
+	/// zh-CN: '评论加载失败：{error}'
+	String commentsFailed({required Object error}) => '评论加载失败：${error}';
+
+	/// zh-CN: '{count} 条评论'
+	String commentsCount({required Object count}) => '${count} 条评论';
+
+	/// zh-CN: '{count} 条回复'
+	String commentsReplies({required Object count}) => '${count} 条回复';
 
 	/// zh-CN: '歌词已保存到 {path}'
 	String exportLyricDone({required Object path}) => '歌词已保存到 ${path}';
@@ -4299,6 +4497,9 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: 'B 站登录似乎已失效：昵称全部被打码，请重新登录'
 	String get bilibiliLoginExpired => 'B 站登录似乎已失效：昵称全部被打码，请重新登录';
+
+	/// zh-CN: '弹幕连接失败（{reason}），直播画面不受影响'
+	String danmakuConnectFailed({required Object reason}) => '弹幕连接失败（${reason}），直播画面不受影响';
 }
 
 // Path: search
@@ -5092,6 +5293,90 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '代理客户端在启动后才开启或关闭时，不必重启应用。'
 	String get proxySystemRecheckDesc => '代理客户端在启动后才开启或关闭时，不必重启应用。';
 
+	/// zh-CN: 'GitHub 加速'
+	String get githubMirrorTitle => 'GitHub 加速';
+
+	/// zh-CN: '下载方式'
+	String get githubMirrorMode => '下载方式';
+
+	/// zh-CN: '字体等 GitHub 资源从哪个地址下载。'
+	String get githubMirrorModeDesc => '字体等 GitHub 资源从哪个地址下载。';
+
+	/// zh-CN: '默认（不加速）'
+	String get githubMirrorOff => '默认（不加速）';
+
+	/// zh-CN: '官方源 · 可能较慢'
+	String get githubMirrorOfficial => '官方源 · 可能较慢';
+
+	/// zh-CN: '自定义…'
+	String get githubMirrorCustom => '自定义…';
+
+	/// zh-CN: '自填镜像域名'
+	String get githubMirrorCustomDetail => '自填镜像域名';
+
+	/// zh-CN: '自定义加速域名'
+	String get githubMirrorCustomDomain => '自定义加速域名';
+
+	/// zh-CN: '以 https:// 开头，直接拼在原始地址前面。'
+	String get githubMirrorCustomDesc => '以 https:// 开头，直接拼在原始地址前面。';
+
+	/// zh-CN: '留空回退直连：下载失败自动回退直连兜底。'
+	String get githubMirrorHint => '留空回退直连：下载失败自动回退直连兜底。';
+
+	/// zh-CN: '镜像地址'
+	String get githubMirrorList => '镜像地址';
+
+	/// zh-CN: '从远程更新'
+	String get githubMirrorRefresh => '从远程更新';
+
+	/// zh-CN: '正在获取远程镜像…'
+	String get githubMirrorRefreshing => '正在获取远程镜像…';
+
+	/// zh-CN: '尚未获取远程镜像。'
+	String get githubMirrorNever => '尚未获取远程镜像。';
+
+	/// zh-CN: '远程更新于 {time}'
+	String githubMirrorUpdated({required Object time}) => '远程更新于 ${time}';
+
+	/// zh-CN: '远程获取失败：{error}'
+	String githubMirrorFailed({required Object error}) => '远程获取失败：${error}';
+
+	/// zh-CN: '添加镜像地址'
+	String get githubMirrorAdd => '添加镜像地址';
+
+	/// zh-CN: '添加镜像地址'
+	String get githubMirrorAddTitle => '添加镜像地址';
+
+	/// zh-CN: '填一个以 https:// 开头的镜像域名，下载时作为前缀拼在原始地址前。'
+	String get githubMirrorAddDesc => '填一个以 https:// 开头的镜像域名，下载时作为前缀拼在原始地址前。';
+
+	/// zh-CN: '地址无效：需要以 https:// 开头'
+	String get githubMirrorAddInvalid => '地址无效：需要以 https:// 开头';
+
+	/// zh-CN: '没有可用的镜像地址。'
+	String get githubMirrorEmpty => '没有可用的镜像地址。';
+
+	/// zh-CN: '恢复内置镜像'
+	String get githubMirrorRestore => '恢复内置镜像';
+
+	/// zh-CN: '内置'
+	String get githubMirrorSourceBuiltin => '内置';
+
+	/// zh-CN: '远程'
+	String get githubMirrorSourceRemote => '远程';
+
+	/// zh-CN: '自定义'
+	String get githubMirrorSourceCustom => '自定义';
+
+	/// zh-CN: '前缀代理'
+	String get githubMirrorStrategyPrefix => '前缀代理';
+
+	/// zh-CN: '替换 Raw 域名'
+	String get githubMirrorStrategyRaw => '替换 Raw 域名';
+
+	/// zh-CN: 'jsDelivr 路径'
+	String get githubMirrorStrategyJsdelivr => 'jsDelivr 路径';
+
 	/// zh-CN: '工具区排序'
 	String get toolsOrder => '工具区排序';
 
@@ -5173,8 +5458,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '画面飞行弹幕使用的字体；聊天列表保持界面字体。'
 	String get danmakuFontDescription => '画面飞行弹幕使用的字体；聊天列表保持界面字体。';
 
-	/// zh-CN: '从平台字体、随应用内置的官方字体或云端字体目录中选择弹幕字体；选中立即应用到所有直播间的飞行弹幕。'
-	String get danmakuFontManagerDescription => '从平台字体、随应用内置的官方字体或云端字体目录中选择弹幕字体；选中立即应用到所有直播间的飞行弹幕。';
+	/// zh-CN: '选择弹幕字体：MiSans 默认随应用提供，国内字体来自免费商用字体库，国外字体来自 Google Fonts；选中立即应用到所有直播间的飞行弹幕。'
+	String get danmakuFontManagerDescription => '选择弹幕字体：MiSans 默认随应用提供，国内字体来自免费商用字体库，国外字体来自 Google Fonts；选中立即应用到所有直播间的飞行弹幕。';
 
 	/// zh-CN: '字体大小'
 	String get styleFontSize => '字体大小';
@@ -5506,110 +5791,194 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '字体'
 	String get font => '字体';
 
-	/// zh-CN: '界面字体：跟随平台官方字体、选一款内置官方字体，或从云端目录下载。'
-	String get fontDescription => '界面字体：跟随平台官方字体、选一款内置官方字体，或从云端目录下载。';
+	/// zh-CN: '界面字体：MiSans 随应用打包并在全平台默认使用，也可切换国内或国外字体。'
+	String get fontDescription => '界面字体：MiSans 随应用打包并在全平台默认使用，也可切换国内或国外字体。';
 
-	/// zh-CN: '跟随平台（系统字体）'
-	String get fontPlatform => '跟随平台（系统字体）';
+	/// zh-CN: 'MiSans（默认）'
+	String get fontDefault => 'MiSans（默认）';
 
-	/// zh-CN: '字体管理器'
-	String get fontManagerTitle => '字体管理器';
+	/// zh-CN: '系统字体'
+	String get fontSystemChinese => '系统字体';
 
-	/// zh-CN: '从平台字体、随应用内置的官方字体或云端字体目录中选择一个界面字体；选中立即应用到全部界面。'
-	String get fontManagerDescription => '从平台字体、随应用内置的官方字体或云端字体目录中选择一个界面字体；选中立即应用到全部界面。';
+	/// zh-CN: '国内'
+	String get fontRegionDomestic => '国内';
 
-	/// zh-CN: '由平台决定，本机使用 {face}。'
-	String fontManagerSystemDescription({required Object face}) => '由平台决定，本机使用 ${face}。';
+	/// zh-CN: '国外'
+	String get fontRegionOverseas => '国外';
 
-	/// zh-CN: '内置字体'
-	String get fontManagerBundled => '内置字体';
+	/// zh-CN: '字体管理'
+	String get fontManagerTitle => '字体管理';
 
-	/// zh-CN: '随应用内置'
-	String get fontManagerBundledNote => '随应用内置';
+	/// zh-CN: '选择你喜欢的字体，让界面更符合你的审美。'
+	String get fontManagerSubtitle => '选择你喜欢的字体，让界面更符合你的审美。';
+
+	/// zh-CN: '纯粹直播'
+	String get fontManagerSample => '纯粹直播';
+
+	/// zh-CN: '本地字体'
+	String get fontManagerLocal => '本地字体';
+
+	/// zh-CN: '下载更多字体'
+	String get fontManagerMore => '下载更多字体';
+
+	/// zh-CN: '字体预览'
+	String get fontManagerPreviewTitle => '字体预览';
+
+	/// zh-CN: '预览'
+	String get fontManagerPreviewAction => '预览';
+
+	/// zh-CN: '下载后可预览'
+	String get fontManagerPreviewPending => '下载后可预览';
+
+	/// zh-CN: 'Google 字体'
+	String get fontManagerGoogle => 'Google 字体';
+
+	/// zh-CN: '选择界面字体：MiSans 默认随应用提供，国内字体来自免费商用字体库，国外字体来自 Google Fonts；选中立即应用到全部界面。'
+	String get fontManagerDescription => '选择界面字体：MiSans 默认随应用提供，国内字体来自免费商用字体库，国外字体来自 Google Fonts；选中立即应用到全部界面。';
+
+	/// zh-CN: '由系统提供，本机使用 {face}。'
+	String fontManagerSystemDescription({required Object face}) => '由系统提供，本机使用 ${face}。';
+
+	/// zh-CN: '随应用打包，所有平台默认使用。'
+	String get fontManagerBundledNote => '随应用打包，所有平台默认使用。';
+
+	/// zh-CN: '首次选择时从 Google Fonts 获取并缓存在本机，之后离线可用。'
+	String get fontManagerGoogleNote => '首次选择时从 Google Fonts 获取并缓存在本机，之后离线可用。';
+
+	/// zh-CN: '来自免费商用字体库，首次使用时下载并保存在本机。'
+	String get fontManagerFreeFontNote => '来自免费商用字体库，首次使用时下载并保存在本机。';
 
 	/// zh-CN: '使用中'
 	String get fontManagerInUse => '使用中';
 
-	/// zh-CN: '永远相信美好的事情即将发生 · The quick brown fox jumps over the lazy dog 0123456789'
-	String get fontManagerPreview => '永远相信美好的事情即将发生 · The quick brown fox jumps over the lazy dog 0123456789';
-
-	/// zh-CN: '应用'
-	String get fontManagerApply => '应用';
-
-	/// zh-CN: '云端字体'
-	String get fontManagerCloud => '云端字体';
-
-	/// zh-CN: '按需从字体仓库下载并缓存到本机，不随应用打包。'
-	String get fontManagerCloudDescription => '按需从字体仓库下载并缓存到本机，不随应用打包。';
-
-	/// zh-CN: '下载'
-	String get fontManagerDownload => '下载';
-
-	/// zh-CN: '下载中 {done}/{total}'
-	String fontManagerDownloading({required Object done, required Object total}) => '下载中 ${done}/${total}';
-
-	/// zh-CN: '取消下载'
-	String get fontManagerCancelDownload => '取消下载';
-
-	/// zh-CN: '下载失败'
-	String get fontManagerDownloadFailed => '下载失败';
-
-	/// zh-CN: '已下载（{size}）'
-	String fontManagerDownloadedSize({required Object size}) => '已下载（${size}）';
-
-	/// zh-CN: '未下载'
-	String get fontManagerNotDownloaded => '未下载';
-
-	/// zh-CN: '许可证：{name}'
-	String fontManagerLicenseNote({required Object name}) => '许可证：${name}';
-
-	/// zh-CN: '删除已下载的字体'
-	String get fontManagerDeleteFont => '删除已下载的字体';
-
-	/// zh-CN: '要删除{name}已下载的字体文件吗？之后可随时重新下载。'
-	String fontManagerDeleteQuestion({required Object name}) => '要删除${name}已下载的字体文件吗？之后可随时重新下载。';
-
-	/// zh-CN: '字体删除后，重启应用前界面可能仍在使用它。'
-	String get fontManagerRestartNote => '字体删除后，重启应用前界面可能仍在使用它。';
-
-	/// zh-CN: '搜索字体名称或关键词'
-	String get fontManagerSearchPlaceholder => '搜索字体名称或关键词';
+	/// zh-CN: '默认'
+	String get fontManagerDefaultBadge => '默认';
 
 	/// zh-CN: '当前字体'
 	String get fontManagerCurrent => '当前字体';
 
-	/// zh-CN: '下载更多字体'
-	String get fontManagerDownloadMore => '下载更多字体';
+	/// zh-CN: '恢复默认'
+	String get fontManagerReset => '恢复默认';
 
 	/// zh-CN: '全部'
 	String get fontManagerFilterAll => '全部';
 
-	/// zh-CN: '内置字体'
-	String get fontManagerFilterBundled => '内置字体';
-
-	/// zh-CN: '已安装'
-	String get fontManagerFilterInstalled => '已安装';
-
-	/// zh-CN: '可下载'
-	String get fontManagerFilterAvailable => '可下载';
+	/// zh-CN: '分类'
+	String get fontManagerCategory => '分类';
 
 	/// zh-CN: '共 {count} 款字体'
 	String fontManagerCount({required Object count}) => '共 ${count} 款字体';
 
-	/// zh-CN: '内置'
-	String get fontManagerTagBundled => '内置';
+	/// zh-CN: '随应用打包'
+	String get fontManagerTagBundled => '随应用打包';
 
-	/// zh-CN: '云端'
-	String get fontManagerTagCloud => '云端';
-
-	/// zh-CN: '{count} 个字重'
-	String fontManagerTagWeights({required Object count}) => '${count} 个字重';
+	/// zh-CN: '免费字体库'
+	String get fontManagerSourceFreeFont => '免费字体库';
 
 	/// zh-CN: '使用'
 	String get fontManagerUse => '使用';
 
+	/// zh-CN: '下载并使用'
+	String get fontManagerDownloadAndUse => '下载并使用';
+
+	/// zh-CN: '下载中 {percent}%'
+	String fontManagerDownloading({required Object percent}) => '下载中 ${percent}%';
+
+	/// zh-CN: '下载失败'
+	String get fontManagerDownloadFailed => '下载失败';
+
+	/// zh-CN: '已下载'
+	String get fontManagerDownloaded => '已下载';
+
+	/// zh-CN: '未下载'
+	String get fontManagerNotDownloaded => '未下载';
+
+	/// zh-CN: '删除已下载的字体'
+	String get fontManagerDeleteFont => '删除已下载的字体';
+
+	/// zh-CN: '删除「{name}」在本机的字体文件？之后可再次下载。'
+	String fontManagerDeleteQuestion({required Object name}) => '删除「${name}」在本机的字体文件？之后可再次下载。';
+
 	/// zh-CN: '没有找到匹配的字体。'
 	String get fontManagerNoResults => '没有找到匹配的字体。';
+
+	/// zh-CN: '筛选字体'
+	String get fontManagerFilterLabel => '筛选字体';
+
+	/// zh-CN: '搜索字体名称'
+	String get fontManagerSearchPlaceholder => '搜索字体名称';
+
+	/// zh-CN: '字体列表翻页'
+	String get fontManagerPageLabel => '字体列表翻页';
+
+	/// zh-CN: '来源'
+	String get fontManagerColumnSource => '来源';
+
+	/// zh-CN: '大小'
+	String get fontManagerColumnSize => '大小';
+
+	/// zh-CN: '字体'
+	String get fontManagerColumnFont => '字体';
+
+	/// zh-CN: '状态'
+	String get fontManagerColumnState => '状态';
+
+	/// zh-CN: '操作'
+	String get fontManagerColumnActions => '操作';
+
+	/// zh-CN: '中文字体'
+	String get fontManagerScriptChinese => '中文字体';
+
+	/// zh-CN: '复制字体名称'
+	String get fontManagerCopyName => '复制字体名称';
+
+	/// zh-CN: '下载'
+	String get fontManagerDownload => '下载';
+
+	/// zh-CN: '下载中'
+	String get fontManagerDownloadingShort => '下载中';
+
+	/// zh-CN: '显示与设置'
+	String get fontManagerDetails => '显示与设置';
+
+	/// zh-CN: '已加载 {shown} / {total}'
+	String fontManagerLoadedCount({required Object shown, required Object total}) => '已加载 ${shown} / ${total}';
+
+	/// zh-CN: '正在加载更多…'
+	String get fontManagerLoadingMore => '正在加载更多…';
+
+	/// zh-CN: '黑体'
+	String get fontCategoryHeiti => '黑体';
+
+	/// zh-CN: '宋体'
+	String get fontCategorySongti => '宋体';
+
+	/// zh-CN: '楷体'
+	String get fontCategoryKaiti => '楷体';
+
+	/// zh-CN: '艺术体'
+	String get fontCategoryArt => '艺术体';
+
+	/// zh-CN: '手绘体'
+	String get fontCategoryHandwriting => '手绘体';
+
+	/// zh-CN: '英文'
+	String get fontCategoryEnglish => '英文';
+
+	/// zh-CN: '衬线'
+	String get fontCategorySerif => '衬线';
+
+	/// zh-CN: '无衬线'
+	String get fontCategorySansSerif => '无衬线';
+
+	/// zh-CN: '展示'
+	String get fontCategoryDisplay => '展示';
+
+	/// zh-CN: '等宽'
+	String get fontCategoryMonospace => '等宽';
+
+	/// zh-CN: '其他'
+	String get fontCategoryOther => '其他';
 
 	/// zh-CN: '文本缩放'
 	String get textScale => '文本缩放';
@@ -6964,6 +7333,126 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '无法打开该文件'
 	String get downloadOpenFailed => '无法打开该文件';
 
+	/// zh-CN: '已加入下载：{title}'
+	String downloadQueued({required Object title}) => '已加入下载：${title}';
+
+	/// zh-CN: '查看'
+	String get downloadManagerView => '查看';
+
+	/// zh-CN: '下载管理'
+	String get downloadManagerTitle => '下载管理';
+
+	/// zh-CN: '壁纸的下载任务、记录与保存目录。'
+	String get downloadManagerDesc => '壁纸的下载任务、记录与保存目录。';
+
+	/// zh-CN: '还没有下载记录'
+	String get downloadManagerEmpty => '还没有下载记录';
+
+	/// zh-CN: '在预览或图库里点「下载」，任务会出现在这里，文件保存到上面的目录。'
+	String get downloadManagerEmptyDesc => '在预览或图库里点「下载」，任务会出现在这里，文件保存到上面的目录。';
+
+	/// zh-CN: '下载中'
+	String get downloadStatusRunning => '下载中';
+
+	/// zh-CN: '已完成'
+	String get downloadStatusDone => '已完成';
+
+	/// zh-CN: '下载失败'
+	String get downloadStatusFailed => '下载失败';
+
+	/// zh-CN: '开始于 {time}'
+	String downloadStartedAt({required Object time}) => '开始于 ${time}';
+
+	/// zh-CN: '完成于 {time}'
+	String downloadFinishedAt({required Object time}) => '完成于 ${time}';
+
+	/// zh-CN: '移除记录'
+	String get downloadRemove => '移除记录';
+
+	/// zh-CN: '只移除这条记录，不会删除已保存的文件。'
+	String get downloadRemoveBody => '只移除这条记录，不会删除已保存的文件。';
+
+	/// zh-CN: '清除已完成'
+	String get downloadClearFinished => '清除已完成';
+
+	/// zh-CN: '这个文件正在下载'
+	String get downloadDuplicateRunning => '这个文件正在下载';
+
+	/// zh-CN: '这个文件已经下载过了'
+	String get downloadDuplicateDone => '这个文件已经下载过了';
+
+	/// zh-CN: '打开文件夹'
+	String get downloadManagerOpenFolder => '打开文件夹';
+
+	/// zh-CN: '全部'
+	String get downloadFilterAll => '全部';
+
+	/// zh-CN: '没有符合这个状态的记录'
+	String get downloadFilterEmpty => '没有符合这个状态的记录';
+
+	/// zh-CN: '按类型筛选'
+	String get downloadKindFilter => '按类型筛选';
+
+	/// zh-CN: '下载设置'
+	String get downloadSettings => '下载设置';
+
+	/// zh-CN: '点击进入预览'
+	String get downloadDetailPreview => '点击进入预览';
+
+	/// zh-CN: '下载详情'
+	String get downloadDetailTitle => '下载详情';
+
+	/// zh-CN: '保存路径'
+	String get downloadInfoPath => '保存路径';
+
+	/// zh-CN: '文件大小'
+	String get downloadInfoSize => '文件大小';
+
+	/// zh-CN: '下载时间'
+	String get downloadInfoTime => '下载时间';
+
+	/// zh-CN: '全选'
+	String get downloadSelectAll => '全选';
+
+	/// zh-CN: '已选 {count} 项'
+	String downloadSelectedCount({required Object count}) => '已选 ${count} 项';
+
+	/// zh-CN: '删除所选（{count}）'
+	String downloadDeleteSelected({required Object count}) => '删除所选（${count}）';
+
+	/// zh-CN: '全部删除'
+	String get downloadDeleteAll => '全部删除';
+
+	/// zh-CN: '全部类型'
+	String get downloadTypeAll => '全部类型';
+
+	/// zh-CN: '暂停'
+	String get downloadPause => '暂停';
+
+	/// zh-CN: '继续下载'
+	String get downloadResume => '继续下载';
+
+	/// zh-CN: '已暂停 · 点击继续'
+	String get downloadPausedHint => '已暂停 · 点击继续';
+
+	/// zh-CN: '预计还需 {seconds} 秒'
+	String downloadEtaSeconds({required Object seconds}) => '预计还需 ${seconds} 秒';
+
+	/// zh-CN: '预计还需 {minutes} 分钟'
+	String downloadEtaMinutes({required Object minutes}) => '预计还需 ${minutes} 分钟';
+
+	/// zh-CN: '预计还需 {hours} 小时'
+	String downloadEtaHours({required Object hours}) => '预计还需 ${hours} 小时';
+
+	/// zh-CN: '共 {total} 项'
+	String downloadSummary({required Object total}) => '共 ${total} 项';
+
+	/// zh-CN: '共 {total} 个任务 · {running} 个正在下载'
+	String downloadSummaryMoving({required Object total, required Object running}) => '共 ${total} 个任务 · ${running} 个正在下载';
+
+	/// zh-CN: '共 {total} 个任务 · 第 {page}/{count} 页'
+	String downloadPageSummary({required Object total, required Object page, required Object count}) => '共 ${total} 个任务 · 第 ${page}/${count} 页';
+
 	/// zh-CN: '发布页'
 	String get openReleasePage => '发布页';
 
@@ -7546,27 +8035,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '播放控制仅用于本次预览；应用的动态壁纸始终静音循环。'
 	String get backgroundPreviewVideoHint => '播放控制仅用于本次预览；应用的动态壁纸始终静音循环。';
 
-	/// zh-CN: '更换字重'
-	String get fontWeightChange => '更换字重';
-
-	/// zh-CN: '当前字体包含多个字重，可锁定其中一个。'
-	String get fontWeightChangeDesc => '当前字体包含多个字重，可锁定其中一个。';
-
-	/// zh-CN: '自动字重（推荐）'
-	String get fontWeightAuto => '自动字重（推荐）';
-
-	/// zh-CN: '随系统与界面自动使用常规或加粗。'
-	String get fontWeightAutoDesc => '随系统与界面自动使用常规或加粗。';
-
-	/// zh-CN: '锁定「{name}」'
-	String fontWeightLock({required Object name}) => '锁定「${name}」';
-
-	/// zh-CN: '全应用文字将固定使用这个字面。'
-	String get fontWeightLockDesc => '全应用文字将固定使用这个字面。';
-
-	/// zh-CN: '已锁定字重：{name}'
-	String fontWeightLockedDetail({required Object name}) => '已锁定字重：${name}';
-
 	/// zh-CN: '刷新缩略图'
 	String get cacheRefreshThumbnails => '刷新缩略图';
 
@@ -7596,6 +8064,9 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '所选目录无法写入：请授予存储权限，或改用默认目录。'
 	String get downloadDirectoryPermissionHint => '所选目录无法写入：请授予存储权限，或改用默认目录。';
+
+	/// zh-CN: '更改目录'
+	String get downloadDirectoryChange => '更改目录';
 
 	/// zh-CN: '竖屏全屏'
 	String get portraitFullscreenGroup => '竖屏全屏';
@@ -7647,18 +8118,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '关闭后聊天列表只显示内容；长按操作仍知道发送者。'
 	String get chatShowNamesDesc => '关闭后聊天列表只显示内容；长按操作仍知道发送者。';
-
-	/// zh-CN: '列表样式'
-	String get chatListStyle => '列表样式';
-
-	/// zh-CN: '列表是紧凑排列，还是每条消息单独一张卡片。'
-	String get chatListStyleDesc => '列表是紧凑排列，还是每条消息单独一张卡片。';
-
-	/// zh-CN: '紧凑'
-	String get chatListStyleCompact => '紧凑';
-
-	/// zh-CN: '卡片'
-	String get chatListStyleCard => '卡片';
 
 	/// zh-CN: '列表文字大小'
 	String get chatListFontSize => '列表文字大小';
@@ -9991,6 +10450,7 @@ extension on Translations {
 			'music.sourcesEmpty' => '还没有自定义源',
 			'music.sourcesEmptyDesc' => '导入 lx-music 自定义源脚本后，它会出现在这里。',
 			'music.sourceNoDescription' => '脚本没有提供说明。',
+			'music.sourceDisabled' => '已停用',
 			'music.sourceUse' => '使用此音源',
 			'music.sourceDelete' => '移除源',
 			'music.sourceDeleteTitle' => ({required Object name}) => '移除「${name}」？',
@@ -10048,6 +10508,14 @@ extension on Translations {
 			'music.songDetailSource' => '来源',
 			'music.songDetailPath' => '文件',
 			'music.songDetailEmpty' => '—',
+			'music.dislike' => '不喜欢',
+			'music.undislike' => '取消不喜欢',
+			'music.disliked' => '已加入不喜欢规则，以后自动跳过',
+			'music.undisliked' => '已取消不喜欢',
+			'music.dislikeRules' => ({required Object count}) => '不喜欢规则 · ${count} 条',
+			'music.dislikeRulesDesc' => '这些歌曲出现在播放队列里时会自动跳过。',
+			'music.dislikeRulesClear' => '清除规则',
+			'music.dislikeRulesCleared' => '已清除不喜欢规则',
 			'music.downloadAll' => '下载全部',
 			'music.downloadAllQueued' => ({required Object count}) => '已加入 ${count} 首到下载队列',
 			'music.moveUp' => '上移',
@@ -10056,6 +10524,9 @@ extension on Translations {
 			'music.searchHistory' => '最近搜索',
 			'music.searchHistoryClear' => '清空',
 			'music.searchHistoryRemove' => '删除这条搜索',
+			'music.searchHot' => '热门搜索',
+			'music.searchHotDesc' => '搜索页为空时显示音源提供的热门搜索词。',
+			'music.searchHotFailed' => '热门搜索加载失败',
 			'music.playlistCreate' => '新建歌单',
 			'music.playlistCreateTitle' => '新建歌单',
 			'music.playlistName' => '歌单名称',
@@ -10069,14 +10540,29 @@ extension on Translations {
 			'music.playlistEmptyTitle' => '歌单还是空的',
 			'music.playlistEmptyDescription' => '在歌曲行的「更多」里把歌加进来。',
 			'music.playlistAdded' => ({required Object name}) => '已加入「${name}」',
+			'music.playlistAddedCount' => ({required Object count, required Object name}) => '已加入 ${count} 首到「${name}」',
 			'music.playlistAlreadyIn' => ({required Object name}) => '「${name}」里已经有这首歌',
 			'music.playlistsCount' => ({required Object count}) => '${count} 个歌单',
 			'music.playlistImport' => '导入歌单',
 			'music.playlistImportDone' => ({required Object name}) => '已导入「${name}」',
 			'music.playlistImportFailed' => ({required Object error}) => '导入失败：${error}',
+			'music.playlistImportInvalid' => '文件里没有可用的歌曲',
 			'music.playlistExport' => '导出歌单',
 			'music.playlistExportDone' => ({required Object path}) => '已导出到 ${path}',
 			'music.playlistExportFailed' => ({required Object error}) => '导出失败：${error}',
+			'music.playlistSort' => '排序',
+			'music.sortByTitle' => '按歌名',
+			'music.sortByArtist' => '按歌手',
+			'music.sortByAlbum' => '按专辑',
+			'music.sortByDuration' => '按时长',
+			'music.sortByShuffle' => '随机排序',
+			'music.selectionStart' => '选择',
+			'music.selectionCancel' => '取消选择',
+			'music.selectionCount' => ({required Object count}) => '已选 ${count} 首',
+			'music.selectionAll' => '全选',
+			'music.selectionDownload' => '下载',
+			'music.selectionRemove' => '移除',
+			'music.selectionRemoveDone' => ({required Object count}) => '已移除 ${count} 首',
 			'music.downloadsActive' => ({required Object count}) => '正在下载 ${count} 首',
 			'music.downloadQueued' => ({required Object title}) => '已加入下载：${title}',
 			'music.downloadDuplicate' => '这首歌已经在下载队列里',
@@ -10103,12 +10589,18 @@ extension on Translations {
 			'music.downloadEmbedCoverDesc' => '把歌曲封面写入音频标签。',
 			'music.downloadEmbedLyric' => '嵌入歌词',
 			'music.downloadEmbedLyricDesc' => '把歌词写入音频标签，随文件一起播放。',
+			'music.downloadIncludeTranslation' => '歌词包含翻译',
+			'music.downloadIncludeTranslationDesc' => '下载的歌词文件与内嵌歌词一并写入翻译。',
+			'music.downloadIncludeRomanization' => '歌词包含音译',
+			'music.downloadIncludeRomanizationDesc' => '下载的歌词文件与内嵌歌词一并写入音译。',
 			'music.downloadWriteLyric' => '保存歌词文件',
 			'music.downloadWriteLyricDesc' => '在音频文件旁写一个同名 .lrc。',
 			'music.downloadSkipExisting' => '跳过已存在文件',
 			'music.downloadSkipExistingDesc' => '目标文件已存在时不再下载。',
 			'music.downloadGroupByList' => '按歌单分文件夹',
 			'music.downloadGroupByListDesc' => '从歌单下载时，文件保存到以歌单命名的子文件夹。',
+			'music.downloadMaxConcurrent' => '同时下载数',
+			'music.downloadMaxConcurrentDesc' => '同时进行的下载任务数量（1–5），修改后立即生效。',
 			'music.downloadStatusQueued' => '排队中',
 			'music.downloadStatusRunning' => '下载中',
 			'music.downloadStatusPaused' => '已暂停',
@@ -10144,6 +10636,7 @@ extension on Translations {
 			'music.sleepTimer' => '睡眠定时',
 			'music.sleepOff' => '关闭',
 			'music.sleepMinutes' => ({required Object count}) => '${count} 分钟',
+			'music.sleepAfterCurrent' => '播完当前歌曲',
 			'music.sleepRemaining' => ({required Object value}) => '${value} 后暂停',
 			'music.lyricOffset' => '歌词延迟',
 			'music.lyricOffsetDesc' => '正值让歌词更晚出现。',
@@ -10152,6 +10645,19 @@ extension on Translations {
 			'music.lyricTranslationDesc' => '歌词带翻译时一并显示。',
 			'music.lyricRomanization' => '显示音译',
 			'music.lyricRomanizationDesc' => '歌词带音译或罗马音时一并显示。',
+			'music.lyricSwapSecondary' => '翻译/音译顺序',
+			'music.lyricSwapSecondaryDesc' => '交换翻译与音译在歌词行中的先后顺序。',
+			'music.lyricFontScale' => '歌词字号',
+			'music.lyricFontScaleDesc' => '播放页歌词的缩放比例（100%–200%）。',
+			'music.lyricFontSmaller' => '缩小字号',
+			'music.lyricFontLarger' => '放大字号',
+			'music.lyricFontReset' => '重置字号',
+			'music.lyricAlignment' => '歌词对齐',
+			'music.lyricAlignmentDesc' => '播放页歌词在面板内的对齐方式。',
+			'music.lyricZoomActive' => '放大当前行',
+			'music.lyricZoomActiveDesc' => '正在唱的一句歌词略大，便于跟唱。',
+			'music.lyricProgress' => '显示播放进度',
+			'music.lyricProgressDesc' => '在歌词面板上方显示歌曲的播放进度。',
 			'music.lyricHint' => '歌词显示与延迟对所有歌曲生效；桌面歌词可在设置或播放页的更多菜单里打开。',
 			'music.desktopLyrics' => '桌面歌词',
 			'music.desktopLyricsOn' => '桌面歌词已开启',
@@ -10188,6 +10694,25 @@ extension on Translations {
 			'music.desktopLyricColorOrange' => '橙色',
 			'music.clearQueue' => '清空播放队列',
 			'music.exportLyric' => '导出歌词',
+			'music.associateLyric' => '关联本地歌词',
+			'music.associateLyricDone' => '已关联歌词',
+			'music.associateLyricFailed' => '关联失败：文件里没有可用的歌词',
+			'music.lyricOverrideRemove' => '取消关联歌词',
+			'music.lyricSearch' => '在线搜索歌词',
+			'music.lyricSearchFor' => ({required Object title}) => '为「${title}」搜索歌词',
+			'music.lyricSearchHint' => '输入歌名，或「歌手 - 歌名」',
+			'music.lyricSearchAction' => '搜索',
+			'music.lyricSearchEmpty' => '没有找到匹配的歌曲',
+			'music.lyricSearchFailed' => ({required Object error}) => '搜索失败：${error}',
+			'music.lyricSearchNoLyric' => '这首歌没有可用的歌词',
+			'music.lyricSearchApplied' => ({required Object title}) => '已应用「${title}」的歌词',
+			'music.comments' => '评论',
+			'music.commentsHot' => '热门',
+			'music.commentsNew' => '最新',
+			'music.commentsEmpty' => '还没有评论',
+			'music.commentsFailed' => ({required Object error}) => '评论加载失败：${error}',
+			'music.commentsCount' => ({required Object count}) => '${count} 条评论',
+			'music.commentsReplies' => ({required Object count}) => '${count} 条回复',
 			'music.exportLyricDone' => ({required Object path}) => '歌词已保存到 ${path}',
 			'music.exportLyricFailed' => ({required Object error}) => '歌词导出失败：${error}',
 			'navigation.groupPrimary' => '高频页面',
@@ -10507,6 +11032,7 @@ extension on Translations {
 			'room.twitchCookieExpired' => 'Twitch 的 Cookie 已失效，弹幕已改为匿名接收，请重新填写 Twitch Cookie',
 			'room.bilibiliGuestNames' => '当前以访客身份连接，B 站弹幕不会显示完整昵称',
 			'room.bilibiliLoginExpired' => 'B 站登录似乎已失效：昵称全部被打码，请重新登录',
+			'room.danmakuConnectFailed' => ({required Object reason}) => '弹幕连接失败（${reason}），直播画面不受影响',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -10609,9 +11135,9 @@ extension on Translations {
 			'settings.audioPageDescription' => '默认音量、静音与后台音频。',
 			'settings.picturePageDescription' => '画面比例、悬浮窗与画中画。',
 			'settings.floatingWindowPageDescription' => '应用内悬浮窗与系统画中画的大小、位置与置顶。',
-			'settings.pictureDisplayGroup' => '画面显示',
 			_ => null,
 		} ?? switch (path) {
+			'settings.pictureDisplayGroup' => '画面显示',
 			'settings.floatWindowGroup' => '应用内悬浮窗',
 			'settings.pipGroup' => '系统画中画',
 			'settings.playbackComingSoon' => '播放设置将在播放器接入后开放。',
@@ -10767,6 +11293,34 @@ extension on Translations {
 			'settings.proxySystemFailed' => '系统代理检测失败，当前直连。',
 			'settings.proxySystemRecheck' => '重新检测系统代理',
 			'settings.proxySystemRecheckDesc' => '代理客户端在启动后才开启或关闭时，不必重启应用。',
+			'settings.githubMirrorTitle' => 'GitHub 加速',
+			'settings.githubMirrorMode' => '下载方式',
+			'settings.githubMirrorModeDesc' => '字体等 GitHub 资源从哪个地址下载。',
+			'settings.githubMirrorOff' => '默认（不加速）',
+			'settings.githubMirrorOfficial' => '官方源 · 可能较慢',
+			'settings.githubMirrorCustom' => '自定义…',
+			'settings.githubMirrorCustomDetail' => '自填镜像域名',
+			'settings.githubMirrorCustomDomain' => '自定义加速域名',
+			'settings.githubMirrorCustomDesc' => '以 https:// 开头，直接拼在原始地址前面。',
+			'settings.githubMirrorHint' => '留空回退直连：下载失败自动回退直连兜底。',
+			'settings.githubMirrorList' => '镜像地址',
+			'settings.githubMirrorRefresh' => '从远程更新',
+			'settings.githubMirrorRefreshing' => '正在获取远程镜像…',
+			'settings.githubMirrorNever' => '尚未获取远程镜像。',
+			'settings.githubMirrorUpdated' => ({required Object time}) => '远程更新于 ${time}',
+			'settings.githubMirrorFailed' => ({required Object error}) => '远程获取失败：${error}',
+			'settings.githubMirrorAdd' => '添加镜像地址',
+			'settings.githubMirrorAddTitle' => '添加镜像地址',
+			'settings.githubMirrorAddDesc' => '填一个以 https:// 开头的镜像域名，下载时作为前缀拼在原始地址前。',
+			'settings.githubMirrorAddInvalid' => '地址无效：需要以 https:// 开头',
+			'settings.githubMirrorEmpty' => '没有可用的镜像地址。',
+			'settings.githubMirrorRestore' => '恢复内置镜像',
+			'settings.githubMirrorSourceBuiltin' => '内置',
+			'settings.githubMirrorSourceRemote' => '远程',
+			'settings.githubMirrorSourceCustom' => '自定义',
+			'settings.githubMirrorStrategyPrefix' => '前缀代理',
+			'settings.githubMirrorStrategyRaw' => '替换 Raw 域名',
+			'settings.githubMirrorStrategyJsdelivr' => 'jsDelivr 路径',
 			'settings.toolsOrder' => '工具区排序',
 			'settings.toolsOrderDesc' => '侧栏分区线下方工具的显示顺序。',
 			'settings.moveUp' => '上移',
@@ -10794,7 +11348,7 @@ extension on Translations {
 			'settings.chatListLayoutGroup' => '聊天列表排版',
 			'settings.danmakuFont' => '弹幕字体',
 			'settings.danmakuFontDescription' => '画面飞行弹幕使用的字体；聊天列表保持界面字体。',
-			'settings.danmakuFontManagerDescription' => '从平台字体、随应用内置的官方字体或云端字体目录中选择弹幕字体；选中立即应用到所有直播间的飞行弹幕。',
+			'settings.danmakuFontManagerDescription' => '选择弹幕字体：MiSans 默认随应用提供，国内字体来自免费商用字体库，国外字体来自 Google Fonts；选中立即应用到所有直播间的飞行弹幕。',
 			'settings.styleFontSize' => '字体大小',
 			'settings.styleFontSizeDesc' => '画面飞行弹幕字形的高度，单位像素。',
 			'settings.styleFontWeight' => '字体粗细',
@@ -10905,41 +11459,69 @@ extension on Translations {
 			'settings.trayScreenshotSaved' => ({required Object path}) => '已保存到 ${path}',
 			'settings.trayScreenshotFailed' => '截图失败：没有正在播放的房间或引擎不支持',
 			'settings.font' => '字体',
-			'settings.fontDescription' => '界面字体：跟随平台官方字体、选一款内置官方字体，或从云端目录下载。',
-			'settings.fontPlatform' => '跟随平台（系统字体）',
-			'settings.fontManagerTitle' => '字体管理器',
-			'settings.fontManagerDescription' => '从平台字体、随应用内置的官方字体或云端字体目录中选择一个界面字体；选中立即应用到全部界面。',
-			'settings.fontManagerSystemDescription' => ({required Object face}) => '由平台决定，本机使用 ${face}。',
-			'settings.fontManagerBundled' => '内置字体',
-			'settings.fontManagerBundledNote' => '随应用内置',
+			'settings.fontDescription' => '界面字体：MiSans 随应用打包并在全平台默认使用，也可切换国内或国外字体。',
+			'settings.fontDefault' => 'MiSans（默认）',
+			'settings.fontSystemChinese' => '系统字体',
+			'settings.fontRegionDomestic' => '国内',
+			'settings.fontRegionOverseas' => '国外',
+			'settings.fontManagerTitle' => '字体管理',
+			'settings.fontManagerSubtitle' => '选择你喜欢的字体，让界面更符合你的审美。',
+			'settings.fontManagerSample' => '纯粹直播',
+			'settings.fontManagerLocal' => '本地字体',
+			'settings.fontManagerMore' => '下载更多字体',
+			'settings.fontManagerPreviewTitle' => '字体预览',
+			'settings.fontManagerPreviewAction' => '预览',
+			'settings.fontManagerPreviewPending' => '下载后可预览',
+			'settings.fontManagerGoogle' => 'Google 字体',
+			'settings.fontManagerDescription' => '选择界面字体：MiSans 默认随应用提供，国内字体来自免费商用字体库，国外字体来自 Google Fonts；选中立即应用到全部界面。',
+			'settings.fontManagerSystemDescription' => ({required Object face}) => '由系统提供，本机使用 ${face}。',
+			'settings.fontManagerBundledNote' => '随应用打包，所有平台默认使用。',
+			'settings.fontManagerGoogleNote' => '首次选择时从 Google Fonts 获取并缓存在本机，之后离线可用。',
+			'settings.fontManagerFreeFontNote' => '来自免费商用字体库，首次使用时下载并保存在本机。',
 			'settings.fontManagerInUse' => '使用中',
-			'settings.fontManagerPreview' => '永远相信美好的事情即将发生 · The quick brown fox jumps over the lazy dog 0123456789',
-			'settings.fontManagerApply' => '应用',
-			'settings.fontManagerCloud' => '云端字体',
-			'settings.fontManagerCloudDescription' => '按需从字体仓库下载并缓存到本机，不随应用打包。',
-			'settings.fontManagerDownload' => '下载',
-			'settings.fontManagerDownloading' => ({required Object done, required Object total}) => '下载中 ${done}/${total}',
-			'settings.fontManagerCancelDownload' => '取消下载',
-			'settings.fontManagerDownloadFailed' => '下载失败',
-			'settings.fontManagerDownloadedSize' => ({required Object size}) => '已下载（${size}）',
-			'settings.fontManagerNotDownloaded' => '未下载',
-			'settings.fontManagerLicenseNote' => ({required Object name}) => '许可证：${name}',
-			'settings.fontManagerDeleteFont' => '删除已下载的字体',
-			'settings.fontManagerDeleteQuestion' => ({required Object name}) => '要删除${name}已下载的字体文件吗？之后可随时重新下载。',
-			'settings.fontManagerRestartNote' => '字体删除后，重启应用前界面可能仍在使用它。',
-			'settings.fontManagerSearchPlaceholder' => '搜索字体名称或关键词',
+			'settings.fontManagerDefaultBadge' => '默认',
 			'settings.fontManagerCurrent' => '当前字体',
-			'settings.fontManagerDownloadMore' => '下载更多字体',
+			'settings.fontManagerReset' => '恢复默认',
 			'settings.fontManagerFilterAll' => '全部',
-			'settings.fontManagerFilterBundled' => '内置字体',
-			'settings.fontManagerFilterInstalled' => '已安装',
-			'settings.fontManagerFilterAvailable' => '可下载',
+			'settings.fontManagerCategory' => '分类',
 			'settings.fontManagerCount' => ({required Object count}) => '共 ${count} 款字体',
-			'settings.fontManagerTagBundled' => '内置',
-			'settings.fontManagerTagCloud' => '云端',
-			'settings.fontManagerTagWeights' => ({required Object count}) => '${count} 个字重',
+			'settings.fontManagerTagBundled' => '随应用打包',
+			'settings.fontManagerSourceFreeFont' => '免费字体库',
 			'settings.fontManagerUse' => '使用',
+			'settings.fontManagerDownloadAndUse' => '下载并使用',
+			'settings.fontManagerDownloading' => ({required Object percent}) => '下载中 ${percent}%',
+			'settings.fontManagerDownloadFailed' => '下载失败',
+			'settings.fontManagerDownloaded' => '已下载',
+			'settings.fontManagerNotDownloaded' => '未下载',
+			'settings.fontManagerDeleteFont' => '删除已下载的字体',
+			'settings.fontManagerDeleteQuestion' => ({required Object name}) => '删除「${name}」在本机的字体文件？之后可再次下载。',
 			'settings.fontManagerNoResults' => '没有找到匹配的字体。',
+			'settings.fontManagerFilterLabel' => '筛选字体',
+			'settings.fontManagerSearchPlaceholder' => '搜索字体名称',
+			'settings.fontManagerPageLabel' => '字体列表翻页',
+			'settings.fontManagerColumnSource' => '来源',
+			'settings.fontManagerColumnSize' => '大小',
+			'settings.fontManagerColumnFont' => '字体',
+			'settings.fontManagerColumnState' => '状态',
+			'settings.fontManagerColumnActions' => '操作',
+			'settings.fontManagerScriptChinese' => '中文字体',
+			'settings.fontManagerCopyName' => '复制字体名称',
+			'settings.fontManagerDownload' => '下载',
+			'settings.fontManagerDownloadingShort' => '下载中',
+			'settings.fontManagerDetails' => '显示与设置',
+			'settings.fontManagerLoadedCount' => ({required Object shown, required Object total}) => '已加载 ${shown} / ${total}',
+			'settings.fontManagerLoadingMore' => '正在加载更多…',
+			'settings.fontCategoryHeiti' => '黑体',
+			'settings.fontCategorySongti' => '宋体',
+			'settings.fontCategoryKaiti' => '楷体',
+			'settings.fontCategoryArt' => '艺术体',
+			'settings.fontCategoryHandwriting' => '手绘体',
+			'settings.fontCategoryEnglish' => '英文',
+			'settings.fontCategorySerif' => '衬线',
+			'settings.fontCategorySansSerif' => '无衬线',
+			'settings.fontCategoryDisplay' => '展示',
+			'settings.fontCategoryMonospace' => '等宽',
+			'settings.fontCategoryOther' => '其他',
 			'settings.textScale' => '文本缩放',
 			'settings.textScaleDescription' => '按比例放大或缩小整个应用的文字；100% 为平台原始大小。',
 			'settings.backHome' => '返回应用',
@@ -11067,6 +11649,8 @@ extension on Translations {
 			'settings.hardwareDecoderYes' => 'yes（强制硬解，失败即报错）',
 			'settings.hardwareDecoderAutoCopy' => 'auto-copy（安全硬解 + 拷回内存，滤镜/截图可用）',
 			'settings.hardwareDecoderD3d11va' => 'd3d11va（Direct3D 11 直通，Windows 8+）',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hardwareDecoderD3d11vaCopy' => 'd3d11va-copy（D3D11 + 拷回内存）',
 			'settings.hardwareDecoderNvdec' => 'nvdec（NVIDIA 直通，低开销）',
 			'settings.hardwareDecoderNvdecCopy' => 'nvdec-copy（NVIDIA + 拷回内存）',
@@ -11119,8 +11703,6 @@ extension on Translations {
 			'settings.scaleKernelDesc' => '放大画面时的重采样算法。',
 			'settings.scaleLanczos' => 'Lanczos（均衡推荐）',
 			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp（锐利，吃 GPU）',
-			_ => null,
-		} ?? switch (path) {
 			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest（配合插帧）',
 			'settings.scaleEwaLanczos' => 'EWA Lanczos',
 			'settings.scaleSpline36' => 'Spline36',
@@ -11393,6 +11975,46 @@ extension on Translations {
 			'settings.downloadOpenFile' => '打开文件',
 			'settings.downloadOpenFolder' => '打开所在文件夹',
 			'settings.downloadOpenFailed' => '无法打开该文件',
+			'settings.downloadQueued' => ({required Object title}) => '已加入下载：${title}',
+			'settings.downloadManagerView' => '查看',
+			'settings.downloadManagerTitle' => '下载管理',
+			'settings.downloadManagerDesc' => '壁纸的下载任务、记录与保存目录。',
+			'settings.downloadManagerEmpty' => '还没有下载记录',
+			'settings.downloadManagerEmptyDesc' => '在预览或图库里点「下载」，任务会出现在这里，文件保存到上面的目录。',
+			'settings.downloadStatusRunning' => '下载中',
+			'settings.downloadStatusDone' => '已完成',
+			'settings.downloadStatusFailed' => '下载失败',
+			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
+			'settings.downloadFinishedAt' => ({required Object time}) => '完成于 ${time}',
+			'settings.downloadRemove' => '移除记录',
+			'settings.downloadRemoveBody' => '只移除这条记录，不会删除已保存的文件。',
+			'settings.downloadClearFinished' => '清除已完成',
+			'settings.downloadDuplicateRunning' => '这个文件正在下载',
+			'settings.downloadDuplicateDone' => '这个文件已经下载过了',
+			'settings.downloadManagerOpenFolder' => '打开文件夹',
+			'settings.downloadFilterAll' => '全部',
+			'settings.downloadFilterEmpty' => '没有符合这个状态的记录',
+			'settings.downloadKindFilter' => '按类型筛选',
+			'settings.downloadSettings' => '下载设置',
+			'settings.downloadDetailPreview' => '点击进入预览',
+			'settings.downloadDetailTitle' => '下载详情',
+			'settings.downloadInfoPath' => '保存路径',
+			'settings.downloadInfoSize' => '文件大小',
+			'settings.downloadInfoTime' => '下载时间',
+			'settings.downloadSelectAll' => '全选',
+			'settings.downloadSelectedCount' => ({required Object count}) => '已选 ${count} 项',
+			'settings.downloadDeleteSelected' => ({required Object count}) => '删除所选（${count}）',
+			'settings.downloadDeleteAll' => '全部删除',
+			'settings.downloadTypeAll' => '全部类型',
+			'settings.downloadPause' => '暂停',
+			'settings.downloadResume' => '继续下载',
+			'settings.downloadPausedHint' => '已暂停 · 点击继续',
+			'settings.downloadEtaSeconds' => ({required Object seconds}) => '预计还需 ${seconds} 秒',
+			'settings.downloadEtaMinutes' => ({required Object minutes}) => '预计还需 ${minutes} 分钟',
+			'settings.downloadEtaHours' => ({required Object hours}) => '预计还需 ${hours} 小时',
+			'settings.downloadSummary' => ({required Object total}) => '共 ${total} 项',
+			'settings.downloadSummaryMoving' => ({required Object total, required Object running}) => '共 ${total} 个任务 · ${running} 个正在下载',
+			'settings.downloadPageSummary' => ({required Object total, required Object page, required Object count}) => '共 ${total} 个任务 · 第 ${page}/${count} 页',
 			'settings.openReleasePage' => '发布页',
 			'settings.releaseExpand' => '展开更新内容',
 			'settings.releaseCollapse' => '收起更新内容',
@@ -11541,6 +12163,8 @@ extension on Translations {
 			'settings.windowsPipResetPositionConfirm' => '确定要清除已保存的小窗位置和大小吗？',
 			'settings.windowsPipResetAction' => '重置',
 			'settings.windowsPipResetPositionSuccess' => '已清除保存的小窗位置和大小',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fitHeight' => '适应高度',
 			'settings.fitWidth' => '适应宽度',
 			'settings.fitScaleDown' => '等比缩小',
@@ -11587,13 +12211,6 @@ extension on Translations {
 			'settings.backgroundCopyAddress' => '复制地址',
 			'settings.backgroundDownloadFailed' => '下载失败',
 			'settings.backgroundPreviewVideoHint' => '播放控制仅用于本次预览；应用的动态壁纸始终静音循环。',
-			'settings.fontWeightChange' => '更换字重',
-			'settings.fontWeightChangeDesc' => '当前字体包含多个字重，可锁定其中一个。',
-			'settings.fontWeightAuto' => '自动字重（推荐）',
-			'settings.fontWeightAutoDesc' => '随系统与界面自动使用常规或加粗。',
-			'settings.fontWeightLock' => ({required Object name}) => '锁定「${name}」',
-			'settings.fontWeightLockDesc' => '全应用文字将固定使用这个字面。',
-			'settings.fontWeightLockedDetail' => ({required Object name}) => '已锁定字重：${name}',
 			'settings.cacheRefreshThumbnails' => '刷新缩略图',
 			'settings.cacheRefreshThumbnailsDesc' => '清空封面、头像与图标缓存，下一次显示时重新下载。',
 			'settings.cacheRefreshThumbnailsDone' => '缩略图已刷新',
@@ -11604,6 +12221,7 @@ extension on Translations {
 			'settings.downloadDirectoryUpdated' => '下载目录已更新',
 			'settings.downloadDirectoryPickFailed' => '无法选择下载目录',
 			'settings.downloadDirectoryPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
+			'settings.downloadDirectoryChange' => '更改目录',
 			'settings.portraitFullscreenGroup' => '竖屏全屏',
 			'settings.portraitDisplayMode' => '画面模式',
 			'settings.portraitDisplayModeDesc' => '完整=整幅画面；沉浸=整幅画面配柔和背景；均衡=轻微裁切；铺满=裁切两侧填满屏幕。',
@@ -11621,10 +12239,6 @@ extension on Translations {
 			'settings.portraitOverridesCount' => ({required int count}) => '已保存 ${count} 个房间',
 			'settings.chatShowNames' => '显示聊天用户名',
 			'settings.chatShowNamesDesc' => '关闭后聊天列表只显示内容；长按操作仍知道发送者。',
-			'settings.chatListStyle' => '列表样式',
-			'settings.chatListStyleDesc' => '列表是紧凑排列，还是每条消息单独一张卡片。',
-			'settings.chatListStyleCompact' => '紧凑',
-			'settings.chatListStyleCard' => '卡片',
 			'settings.chatListFontSize' => '列表文字大小',
 			'settings.chatListFontSizeDesc' => '聊天列表的文字大小；跟随主题时与界面保持一致。',
 			'settings.chatListFollowTheme' => '跟随主题',
@@ -11637,8 +12251,6 @@ extension on Translations {
 			'settings.chatPanelWidth' => '聊天栏宽度',
 			'settings.chatPanelWidthDesc' => '桌面宽布局下右侧聊天栏的宽度。',
 			'settings.danmakuPausedBehavior' => '暂停时的弹幕',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuPausedBehaviorDesc' => '视频暂停后，弹幕跟着停住还是照常飘过。',
 			'settings.danmakuPausedPause' => '随视频暂停',
 			'settings.danmakuPausedFly' => '继续飘过',
@@ -12065,6 +12677,8 @@ extension on Translations {
 			'wallpaper.source360Star' => '360壁纸明星',
 			'wallpaper.source360Car' => '360壁纸汽车',
 			'wallpaper.source360Pet' => '360壁纸萌宠',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.source360Fresh' => '360壁纸清新',
 			'wallpaper.source360Sport' => '360壁纸体育',
 			'wallpaper.source360Child' => '360壁纸萌娃',

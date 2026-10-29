@@ -1004,6 +1004,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get sourcesEmpty => 'No custom sources yet';
 	@override String get sourcesEmptyDesc => 'Import an lx-music custom-source script and it appears here.';
 	@override String get sourceNoDescription => 'The script carries no description.';
+	@override String get sourceDisabled => 'Disabled';
 	@override String get sourceUse => 'Use this source';
 	@override String get sourceDelete => 'Remove the source';
 	@override String sourceDeleteTitle({required Object name}) => 'Remove "${name}"?';
@@ -1061,6 +1062,14 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get songDetailSource => 'Source';
 	@override String get songDetailPath => 'File';
 	@override String get songDetailEmpty => '—';
+	@override String get dislike => 'Not interested';
+	@override String get undislike => 'Remove from disliked';
+	@override String get disliked => 'Added to the dislike rules; it will be skipped';
+	@override String get undisliked => 'Removed from the dislike rules';
+	@override String dislikeRules({required Object count}) => 'Dislike rules · ${count}';
+	@override String get dislikeRulesDesc => 'Songs with a rule are skipped when the queue reaches them.';
+	@override String get dislikeRulesClear => 'Clear rules';
+	@override String get dislikeRulesCleared => 'Dislike rules cleared';
 	@override String get downloadAll => 'Download all';
 	@override String downloadAllQueued({required Object count}) => 'Queued ${count} songs';
 	@override String get moveUp => 'Move up';
@@ -1069,6 +1078,9 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get searchHistory => 'Recent searches';
 	@override String get searchHistoryClear => 'Clear';
 	@override String get searchHistoryRemove => 'Remove this search';
+	@override String get searchHot => 'Top searches';
+	@override String get searchHotDesc => 'Show the source\'s top searches while the search page is empty.';
+	@override String get searchHotFailed => 'Could not load the top searches';
 	@override String get playlistCreate => 'New playlist';
 	@override String get playlistCreateTitle => 'New playlist';
 	@override String get playlistName => 'Playlist name';
@@ -1082,14 +1094,29 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get playlistEmptyTitle => 'This playlist is empty';
 	@override String get playlistEmptyDescription => 'Add songs from a row’s “More actions” menu.';
 	@override String playlistAdded({required Object name}) => 'Added to “${name}”';
+	@override String playlistAddedCount({required Object count, required Object name}) => 'Added ${count} songs to “${name}”';
 	@override String playlistAlreadyIn({required Object name}) => '“${name}” already has this song';
 	@override String playlistsCount({required Object count}) => '${count} playlists';
 	@override String get playlistImport => 'Import playlist';
 	@override String playlistImportDone({required Object name}) => 'Imported "${name}"';
 	@override String playlistImportFailed({required Object error}) => 'Import failed: ${error}';
+	@override String get playlistImportInvalid => 'The file has no usable songs';
 	@override String get playlistExport => 'Export playlist';
 	@override String playlistExportDone({required Object path}) => 'Exported to ${path}';
 	@override String playlistExportFailed({required Object error}) => 'Export failed: ${error}';
+	@override String get playlistSort => 'Sort';
+	@override String get sortByTitle => 'By title';
+	@override String get sortByArtist => 'By artist';
+	@override String get sortByAlbum => 'By album';
+	@override String get sortByDuration => 'By duration';
+	@override String get sortByShuffle => 'Shuffle';
+	@override String get selectionStart => 'Select';
+	@override String get selectionCancel => 'Cancel selection';
+	@override String selectionCount({required Object count}) => '${count} selected';
+	@override String get selectionAll => 'Select all';
+	@override String get selectionDownload => 'Download';
+	@override String get selectionRemove => 'Remove';
+	@override String selectionRemoveDone({required Object count}) => 'Removed ${count} songs';
 	@override String downloadsActive({required Object count}) => 'Downloading ${count}';
 	@override String downloadQueued({required Object title}) => 'Queued for download: ${title}';
 	@override String get downloadDuplicate => 'This song is already in the download queue';
@@ -1116,12 +1143,18 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get downloadEmbedCoverDesc => 'Write the cover into the audio tags.';
 	@override String get downloadEmbedLyric => 'Embed the lyric';
 	@override String get downloadEmbedLyricDesc => 'Write the lyric into the audio tags so it travels with the file.';
+	@override String get downloadIncludeTranslation => 'Include the translation';
+	@override String get downloadIncludeTranslationDesc => 'Write the translation into the downloaded lyric file and embedded tag.';
+	@override String get downloadIncludeRomanization => 'Include the romanization';
+	@override String get downloadIncludeRomanizationDesc => 'Write the romanization into the downloaded lyric file and embedded tag.';
 	@override String get downloadWriteLyric => 'Save a lyric file';
 	@override String get downloadWriteLyricDesc => 'Write a sibling .lrc next to the audio file.';
 	@override String get downloadSkipExisting => 'Skip existing files';
 	@override String get downloadSkipExistingDesc => 'Do not download when the output file is already there.';
 	@override String get downloadGroupByList => 'Group by playlist';
 	@override String get downloadGroupByListDesc => 'When downloading from a playlist, save into a folder named after it.';
+	@override String get downloadMaxConcurrent => 'Concurrent downloads';
+	@override String get downloadMaxConcurrentDesc => 'How many downloads run at once (1–5); changes apply immediately.';
 	@override String get downloadStatusQueued => 'Queued';
 	@override String get downloadStatusRunning => 'Downloading';
 	@override String get downloadStatusPaused => 'Paused';
@@ -1155,6 +1188,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get sleepTimer => 'Sleep timer';
 	@override String get sleepOff => 'Off';
 	@override String sleepMinutes({required Object count}) => '${count} minutes';
+	@override String get sleepAfterCurrent => 'After this song';
 	@override String sleepRemaining({required Object value}) => 'Pauses in ${value}';
 	@override String get lyricOffset => 'Lyric delay';
 	@override String get lyricOffsetDesc => 'Positive values show the lyric later.';
@@ -1163,6 +1197,19 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get lyricTranslationDesc => 'Show the translation when the lyric has one.';
 	@override String get lyricRomanization => 'Show romanization';
 	@override String get lyricRomanizationDesc => 'Show the romanization when the lyric has one.';
+	@override String get lyricSwapSecondary => 'Translation/romanization order';
+	@override String get lyricSwapSecondaryDesc => 'Swap translation and romanization under a lyric line.';
+	@override String get lyricFontScale => 'Lyric size';
+	@override String get lyricFontScaleDesc => 'Scale of the lyrics in the player (100%–200%).';
+	@override String get lyricFontSmaller => 'Smaller lyrics';
+	@override String get lyricFontLarger => 'Larger lyrics';
+	@override String get lyricFontReset => 'Reset size';
+	@override String get lyricAlignment => 'Lyric alignment';
+	@override String get lyricAlignmentDesc => 'How lyric lines sit inside the player panel.';
+	@override String get lyricZoomActive => 'Enlarge the active line';
+	@override String get lyricZoomActiveDesc => 'Draw the line being sung a little larger.';
+	@override String get lyricProgress => 'Show playback progress';
+	@override String get lyricProgressDesc => 'Show the song\'s progress above the lyric panel.';
 	@override String get lyricHint => 'The display and delay apply to every song; desktop lyrics open from Settings or the player’s More actions menu.';
 	@override String get desktopLyrics => 'Desktop lyrics';
 	@override String get desktopLyricsOn => 'Desktop lyrics shown';
@@ -1199,6 +1246,25 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get desktopLyricColorOrange => 'Orange';
 	@override String get clearQueue => 'Clear the queue';
 	@override String get exportLyric => 'Export the lyric';
+	@override String get associateLyric => 'Use a local lyric';
+	@override String get associateLyricDone => 'Lyric linked';
+	@override String get associateLyricFailed => 'Could not link: the file has no usable lyric';
+	@override String get lyricOverrideRemove => 'Unlink the lyric';
+	@override String get lyricSearch => 'Search lyrics online';
+	@override String lyricSearchFor({required Object title}) => 'Search lyrics for "${title}"';
+	@override String get lyricSearchHint => 'A song title, or "artist - title"';
+	@override String get lyricSearchAction => 'Search';
+	@override String get lyricSearchEmpty => 'No matching songs';
+	@override String lyricSearchFailed({required Object error}) => 'Search failed: ${error}';
+	@override String get lyricSearchNoLyric => 'This song has no lyric';
+	@override String lyricSearchApplied({required Object title}) => 'Using the lyric from "${title}"';
+	@override String get comments => 'Comments';
+	@override String get commentsHot => 'Top';
+	@override String get commentsNew => 'Newest';
+	@override String get commentsEmpty => 'No comments yet';
+	@override String commentsFailed({required Object error}) => 'Could not load comments: ${error}';
+	@override String commentsCount({required Object count}) => '${count} comments';
+	@override String commentsReplies({required Object count}) => '${count} replies';
 	@override String exportLyricDone({required Object path}) => 'Lyric saved to ${path}';
 	@override String exportLyricFailed({required Object error}) => 'Could not export the lyric: ${error}';
 }
@@ -1563,6 +1629,7 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get twitchCookieExpired => 'Twitch\'s cookie no longer works — danmaku is anonymous again; please paste a new Twitch cookie';
 	@override String get bilibiliGuestNames => 'Connected as a guest — Bilibili chat hides the full nicknames';
 	@override String get bilibiliLoginExpired => 'Your Bilibili login looks expired — every nickname is masked; please sign in again';
+	@override String danmakuConnectFailed({required Object reason}) => 'Danmaku did not connect (${reason}) — the stream is unaffected';
 }
 
 // Path: search
@@ -1839,6 +1906,34 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get proxySystemFailed => 'The system proxy check failed; requests go direct.';
 	@override String get proxySystemRecheck => 'Check the system proxy again';
 	@override String get proxySystemRecheckDesc => 'A proxy client started or stopped after launch is picked up without restarting the app.';
+	@override String get githubMirrorTitle => 'GitHub acceleration';
+	@override String get githubMirrorMode => 'Download route';
+	@override String get githubMirrorModeDesc => 'Which address GitHub downloads such as fonts go through.';
+	@override String get githubMirrorOff => 'Default (no acceleration)';
+	@override String get githubMirrorOfficial => 'Official source · may be slow';
+	@override String get githubMirrorCustom => 'Custom…';
+	@override String get githubMirrorCustomDetail => 'Type a mirror domain';
+	@override String get githubMirrorCustomDomain => 'Custom mirror domain';
+	@override String get githubMirrorCustomDesc => 'Starts with https:// and is placed in front of the original address.';
+	@override String get githubMirrorHint => 'Leave it empty to fall back to direct: a failed download retries the original address.';
+	@override String get githubMirrorList => 'Mirror addresses';
+	@override String get githubMirrorRefresh => 'Fetch from the remote list';
+	@override String get githubMirrorRefreshing => 'Fetching the remote mirrors…';
+	@override String get githubMirrorNever => 'The remote list has not been fetched yet.';
+	@override String githubMirrorUpdated({required Object time}) => 'Remote list updated ${time}';
+	@override String githubMirrorFailed({required Object error}) => 'The remote list could not be fetched: ${error}';
+	@override String get githubMirrorAdd => 'Add a mirror address';
+	@override String get githubMirrorAddTitle => 'Add a mirror address';
+	@override String get githubMirrorAddDesc => 'An https:// mirror domain used as a prefix in front of the original address.';
+	@override String get githubMirrorAddInvalid => 'Invalid address: it must start with https://';
+	@override String get githubMirrorEmpty => 'No usable mirror addresses.';
+	@override String get githubMirrorRestore => 'Restore the built-in mirrors';
+	@override String get githubMirrorSourceBuiltin => 'Built-in';
+	@override String get githubMirrorSourceRemote => 'Remote';
+	@override String get githubMirrorSourceCustom => 'Custom';
+	@override String get githubMirrorStrategyPrefix => 'prefix proxy';
+	@override String get githubMirrorStrategyRaw => 'raw host replacement';
+	@override String get githubMirrorStrategyJsdelivr => 'jsDelivr path';
 	@override String get toolsOrder => 'Tools order';
 	@override String get toolsOrderDesc => 'The order of the tools under the sidebar\'s divider.';
 	@override String get moveUp => 'Move up';
@@ -1866,7 +1961,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get chatListLayoutGroup => 'Chat list layout';
 	@override String get danmakuFont => 'Danmaku font';
 	@override String get danmakuFontDescription => 'The typeface for the flying danmaku on the video; the chat list keeps the UI font.';
-	@override String get danmakuFontManagerDescription => 'Choose the danmaku typeface from the platform\'s own face, the official fonts bundled with the app, or the cloud catalogue. A choice applies to every room\'s flying danmaku at once.';
+	@override String get danmakuFontManagerDescription => 'Choose the danmaku typeface: MiSans comes with the app, the domestic faces come from a free-for-commercial-use collection, and the overseas ones come from Google Fonts. A choice applies to every room\'s flying danmaku at once.';
 	@override String get styleFontSize => 'Font Size';
 	@override String get styleFontSizeDesc => 'Font size of a flying danmaku, in pixels.';
 	@override String get styleFontWeight => 'Font Weight';
@@ -1977,41 +2072,69 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String trayScreenshotSaved({required Object path}) => 'Saved to ${path}';
 	@override String get trayScreenshotFailed => 'Screenshot failed: no room is playing, or the engine cannot capture';
 	@override String get font => 'Font';
-	@override String get fontDescription => 'UI typeface: the platform\'s own face, a bundled official one, or a cloud font.';
-	@override String get fontPlatform => 'Follow the platform (system font)';
+	@override String get fontDescription => 'UI typeface: MiSans ships with the app and is the default everywhere; switch to a domestic or overseas face here.';
+	@override String get fontDefault => 'MiSans (default)';
+	@override String get fontSystemChinese => 'System font';
+	@override String get fontRegionDomestic => 'Domestic';
+	@override String get fontRegionOverseas => 'Overseas';
 	@override String get fontManagerTitle => 'Font manager';
-	@override String get fontManagerDescription => 'Choose the UI typeface from the platform\'s own face, the official fonts bundled with the app, or the cloud catalogue. A choice applies everywhere at once.';
-	@override String fontManagerSystemDescription({required Object face}) => 'The platform decides; this device uses ${face}.';
-	@override String get fontManagerBundled => 'Bundled fonts';
-	@override String get fontManagerBundledNote => 'Bundled with the app';
+	@override String get fontManagerSubtitle => 'Pick the typeface you like and make the interface yours.';
+	@override String get fontManagerSample => 'Pure Live';
+	@override String get fontManagerLocal => 'Local fonts';
+	@override String get fontManagerMore => 'Get more fonts';
+	@override String get fontManagerPreviewTitle => 'Font preview';
+	@override String get fontManagerPreviewAction => 'Preview';
+	@override String get fontManagerPreviewPending => 'Preview after download';
+	@override String get fontManagerGoogle => 'Google fonts';
+	@override String get fontManagerDescription => 'Choose the UI typeface: MiSans comes with the app, the domestic faces come from a free-for-commercial-use collection, and the overseas ones come from Google Fonts. A choice applies everywhere at once.';
+	@override String fontManagerSystemDescription({required Object face}) => 'The system provides it; this device uses ${face}.';
+	@override String get fontManagerBundledNote => 'Bundled with the app, the default on every platform.';
+	@override String get fontManagerGoogleNote => 'Fetched from Google Fonts the first time and cached on this device for later offline use.';
+	@override String get fontManagerFreeFontNote => 'From a free-for-commercial-use collection; downloaded and kept on this device the first time it is used.';
 	@override String get fontManagerInUse => 'In use';
-	@override String get fontManagerPreview => 'The quick brown fox jumps over the lazy dog · 0123456789';
-	@override String get fontManagerCloud => 'Cloud fonts';
-	@override String get fontManagerApply => 'Apply';
-	@override String get fontManagerCloudDescription => 'Fetched from the font repository when chosen and cached on this device; nothing is bundled.';
-	@override String get fontManagerDownload => 'Download';
-	@override String fontManagerDownloading({required Object done, required Object total}) => 'Downloading ${done}/${total}';
-	@override String get fontManagerCancelDownload => 'Cancel the download';
-	@override String get fontManagerDownloadFailed => 'Download failed';
-	@override String fontManagerDownloadedSize({required Object size}) => 'Downloaded (${size})';
-	@override String get fontManagerNotDownloaded => 'Not downloaded';
-	@override String fontManagerLicenseNote({required Object name}) => 'Licence: ${name}';
-	@override String get fontManagerDeleteFont => 'Delete the downloaded font';
-	@override String fontManagerDeleteQuestion({required Object name}) => 'Delete the files ${name} downloaded? They can be fetched again at any time.';
-	@override String get fontManagerRestartNote => 'A deleted font can keep drawing until the app restarts.';
-	@override String get fontManagerSearchPlaceholder => 'Search fonts by name or keyword';
+	@override String get fontManagerDefaultBadge => 'Default';
 	@override String get fontManagerCurrent => 'Current font';
-	@override String get fontManagerDownloadMore => 'Get more fonts';
+	@override String get fontManagerReset => 'Restore the default';
 	@override String get fontManagerFilterAll => 'All';
-	@override String get fontManagerFilterBundled => 'Bundled';
-	@override String get fontManagerFilterInstalled => 'Installed';
-	@override String get fontManagerFilterAvailable => 'Available';
+	@override String get fontManagerCategory => 'Category';
 	@override String fontManagerCount({required Object count}) => '${count} fonts';
 	@override String get fontManagerTagBundled => 'Bundled';
-	@override String get fontManagerTagCloud => 'Cloud';
-	@override String fontManagerTagWeights({required Object count}) => '${count} weights';
+	@override String get fontManagerSourceFreeFont => 'Free font collection';
 	@override String get fontManagerUse => 'Use';
+	@override String get fontManagerDownloadAndUse => 'Download and use';
+	@override String fontManagerDownloading({required Object percent}) => 'Downloading ${percent}%';
+	@override String get fontManagerDownloadFailed => 'Download failed';
+	@override String get fontManagerDownloaded => 'Downloaded';
+	@override String get fontManagerNotDownloaded => 'Not downloaded';
+	@override String get fontManagerDeleteFont => 'Delete the downloaded font';
+	@override String fontManagerDeleteQuestion({required Object name}) => 'Delete this device\'s copy of “${name}”? It can be downloaded again.';
 	@override String get fontManagerNoResults => 'No fonts match.';
+	@override String get fontManagerFilterLabel => 'Filter fonts';
+	@override String get fontManagerSearchPlaceholder => 'Search font names';
+	@override String get fontManagerPageLabel => 'Font list pages';
+	@override String get fontManagerColumnSource => 'Source';
+	@override String get fontManagerColumnSize => 'Size';
+	@override String get fontManagerColumnFont => 'Font';
+	@override String get fontManagerColumnState => 'Status';
+	@override String get fontManagerColumnActions => 'Actions';
+	@override String get fontManagerScriptChinese => 'Chinese fonts';
+	@override String get fontManagerCopyName => 'Copy font name';
+	@override String get fontManagerDownload => 'Download';
+	@override String get fontManagerDownloadingShort => 'Downloading';
+	@override String get fontManagerDetails => 'Display and settings';
+	@override String fontManagerLoadedCount({required Object shown, required Object total}) => 'Loaded ${shown} of ${total}';
+	@override String get fontManagerLoadingMore => 'Loading more…';
+	@override String get fontCategoryHeiti => 'Heiti';
+	@override String get fontCategorySongti => 'Songti';
+	@override String get fontCategoryKaiti => 'Kaiti';
+	@override String get fontCategoryArt => 'Display';
+	@override String get fontCategoryHandwriting => 'Handwriting';
+	@override String get fontCategoryEnglish => 'Latin';
+	@override String get fontCategorySerif => 'Serif';
+	@override String get fontCategorySansSerif => 'Sans-serif';
+	@override String get fontCategoryDisplay => 'Display';
+	@override String get fontCategoryMonospace => 'Monospace';
+	@override String get fontCategoryOther => 'Other';
 	@override String get textScale => 'Text scale';
 	@override String get textScaleDescription => 'Scales the app\'s text as a whole; 100% keeps the platform size.';
 	@override String get backHome => 'Back to app';
@@ -2463,6 +2586,46 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get downloadOpenFile => 'Open the file';
 	@override String get downloadOpenFolder => 'Open the folder';
 	@override String get downloadOpenFailed => 'Could not open it';
+	@override String downloadQueued({required Object title}) => 'Queued: ${title}';
+	@override String get downloadManagerView => 'View';
+	@override String get downloadManagerTitle => 'Downloads';
+	@override String get downloadManagerDesc => 'Wallpaper download tasks, history and the save folder.';
+	@override String get downloadManagerEmpty => 'No downloads yet';
+	@override String get downloadManagerEmptyDesc => 'Choose “Download” in a preview or the library and the task shows up here.';
+	@override String get downloadStatusRunning => 'Downloading';
+	@override String get downloadStatusDone => 'Completed';
+	@override String get downloadStatusFailed => 'Failed';
+	@override String downloadStartedAt({required Object time}) => 'Started ${time}';
+	@override String downloadFinishedAt({required Object time}) => 'Finished ${time}';
+	@override String get downloadRemove => 'Remove record';
+	@override String get downloadRemoveBody => 'Removes the record only; the saved file stays.';
+	@override String get downloadClearFinished => 'Clear finished';
+	@override String get downloadDuplicateRunning => 'That file is already downloading';
+	@override String get downloadDuplicateDone => 'That file has already been downloaded';
+	@override String get downloadManagerOpenFolder => 'Open folder';
+	@override String get downloadFilterAll => 'All';
+	@override String get downloadFilterEmpty => 'Nothing under this status';
+	@override String get downloadKindFilter => 'Filter by kind';
+	@override String get downloadSettings => 'Download settings';
+	@override String get downloadDetailPreview => 'Open the preview';
+	@override String get downloadDetailTitle => 'Download detail';
+	@override String get downloadInfoPath => 'Save path';
+	@override String get downloadInfoSize => 'File size';
+	@override String get downloadInfoTime => 'Download time';
+	@override String get downloadSelectAll => 'Select all';
+	@override String downloadSelectedCount({required Object count}) => '${count} selected';
+	@override String downloadDeleteSelected({required Object count}) => 'Delete selected (${count})';
+	@override String get downloadDeleteAll => 'Delete all';
+	@override String get downloadTypeAll => 'All types';
+	@override String get downloadPause => 'Pause';
+	@override String get downloadResume => 'Resume';
+	@override String get downloadPausedHint => 'Paused · tap to resume';
+	@override String downloadEtaSeconds({required Object seconds}) => '${seconds} seconds left';
+	@override String downloadEtaMinutes({required Object minutes}) => '${minutes} minutes left';
+	@override String downloadEtaHours({required Object hours}) => '${hours} hours left';
+	@override String downloadSummary({required Object total}) => '${total} items';
+	@override String downloadSummaryMoving({required Object total, required Object running}) => '${total} tasks · ${running} downloading';
+	@override String downloadPageSummary({required Object total, required Object page, required Object count}) => '${total} tasks · page ${page} of ${count}';
 	@override String get openReleasePage => 'Release page';
 	@override String get releaseExpand => 'Show the notes';
 	@override String get releaseCollapse => 'Hide the notes';
@@ -2657,13 +2820,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundCopyAddress => 'Copy address';
 	@override String get backgroundDownloadFailed => 'Download failed';
 	@override String get backgroundPreviewVideoHint => 'Transport controls are for this preview only; the applied wallpaper loops muted.';
-	@override String get fontWeightChange => 'Change weight';
-	@override String get fontWeightChangeDesc => 'This family ships several weights; pin one.';
-	@override String get fontWeightAuto => 'Automatic weight (recommended)';
-	@override String get fontWeightAutoDesc => 'Use regular or bold automatically with the system and the interface.';
-	@override String fontWeightLock({required Object name}) => 'Lock “${name}”';
-	@override String get fontWeightLockDesc => 'All application text will use this face.';
-	@override String fontWeightLockedDetail({required Object name}) => 'Locked weight: ${name}';
 	@override String get cacheRefreshThumbnails => 'Refresh thumbnails';
 	@override String get cacheRefreshThumbnailsDesc => 'Empty the cover, avatar and icon caches so they download again on the next draw.';
 	@override String get cacheRefreshThumbnailsDone => 'Thumbnails refreshed';
@@ -2674,6 +2830,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get downloadDirectoryUpdated => 'Download folder updated';
 	@override String get downloadDirectoryPickFailed => 'Could not select a download folder';
 	@override String get downloadDirectoryPermissionHint => 'The chosen folder is not writable. Grant storage access, or use the default folder.';
+	@override String get downloadDirectoryChange => 'Change folder';
 	@override String get portraitFullscreenGroup => 'Portrait full screen';
 	@override String get portraitDisplayMode => 'Picture mode';
 	@override String get portraitDisplayModeDesc => 'Complete fits the whole picture; Ambient adds a soft backdrop; Balanced crops slightly; Cover fills the screen.';
@@ -2691,10 +2848,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String portraitOverridesCount({required int count}) => '${count} rooms saved';
 	@override String get chatShowNames => 'Show chat user names';
 	@override String get chatShowNamesDesc => 'Turn off to show only the message; long-press actions still know the sender.';
-	@override String get chatListStyle => 'List style';
-	@override String get chatListStyleDesc => 'Whether the list packs its lines tight or gives each message a card.';
-	@override String get chatListStyleCompact => 'Compact';
-	@override String get chatListStyleCard => 'Cards';
 	@override String get chatListFontSize => 'List text size';
 	@override String get chatListFontSizeDesc => 'The list\'s text size; following the theme keeps it with the interface.';
 	@override String get chatListFollowTheme => 'Follow theme';
@@ -4079,6 +4232,7 @@ extension on TranslationsEn {
 			'music.sourcesEmpty' => 'No custom sources yet',
 			'music.sourcesEmptyDesc' => 'Import an lx-music custom-source script and it appears here.',
 			'music.sourceNoDescription' => 'The script carries no description.',
+			'music.sourceDisabled' => 'Disabled',
 			'music.sourceUse' => 'Use this source',
 			'music.sourceDelete' => 'Remove the source',
 			'music.sourceDeleteTitle' => ({required Object name}) => 'Remove "${name}"?',
@@ -4136,6 +4290,14 @@ extension on TranslationsEn {
 			'music.songDetailSource' => 'Source',
 			'music.songDetailPath' => 'File',
 			'music.songDetailEmpty' => '—',
+			'music.dislike' => 'Not interested',
+			'music.undislike' => 'Remove from disliked',
+			'music.disliked' => 'Added to the dislike rules; it will be skipped',
+			'music.undisliked' => 'Removed from the dislike rules',
+			'music.dislikeRules' => ({required Object count}) => 'Dislike rules · ${count}',
+			'music.dislikeRulesDesc' => 'Songs with a rule are skipped when the queue reaches them.',
+			'music.dislikeRulesClear' => 'Clear rules',
+			'music.dislikeRulesCleared' => 'Dislike rules cleared',
 			'music.downloadAll' => 'Download all',
 			'music.downloadAllQueued' => ({required Object count}) => 'Queued ${count} songs',
 			'music.moveUp' => 'Move up',
@@ -4144,6 +4306,9 @@ extension on TranslationsEn {
 			'music.searchHistory' => 'Recent searches',
 			'music.searchHistoryClear' => 'Clear',
 			'music.searchHistoryRemove' => 'Remove this search',
+			'music.searchHot' => 'Top searches',
+			'music.searchHotDesc' => 'Show the source\'s top searches while the search page is empty.',
+			'music.searchHotFailed' => 'Could not load the top searches',
 			'music.playlistCreate' => 'New playlist',
 			'music.playlistCreateTitle' => 'New playlist',
 			'music.playlistName' => 'Playlist name',
@@ -4157,14 +4322,29 @@ extension on TranslationsEn {
 			'music.playlistEmptyTitle' => 'This playlist is empty',
 			'music.playlistEmptyDescription' => 'Add songs from a row’s “More actions” menu.',
 			'music.playlistAdded' => ({required Object name}) => 'Added to “${name}”',
+			'music.playlistAddedCount' => ({required Object count, required Object name}) => 'Added ${count} songs to “${name}”',
 			'music.playlistAlreadyIn' => ({required Object name}) => '“${name}” already has this song',
 			'music.playlistsCount' => ({required Object count}) => '${count} playlists',
 			'music.playlistImport' => 'Import playlist',
 			'music.playlistImportDone' => ({required Object name}) => 'Imported "${name}"',
 			'music.playlistImportFailed' => ({required Object error}) => 'Import failed: ${error}',
+			'music.playlistImportInvalid' => 'The file has no usable songs',
 			'music.playlistExport' => 'Export playlist',
 			'music.playlistExportDone' => ({required Object path}) => 'Exported to ${path}',
 			'music.playlistExportFailed' => ({required Object error}) => 'Export failed: ${error}',
+			'music.playlistSort' => 'Sort',
+			'music.sortByTitle' => 'By title',
+			'music.sortByArtist' => 'By artist',
+			'music.sortByAlbum' => 'By album',
+			'music.sortByDuration' => 'By duration',
+			'music.sortByShuffle' => 'Shuffle',
+			'music.selectionStart' => 'Select',
+			'music.selectionCancel' => 'Cancel selection',
+			'music.selectionCount' => ({required Object count}) => '${count} selected',
+			'music.selectionAll' => 'Select all',
+			'music.selectionDownload' => 'Download',
+			'music.selectionRemove' => 'Remove',
+			'music.selectionRemoveDone' => ({required Object count}) => 'Removed ${count} songs',
 			'music.downloadsActive' => ({required Object count}) => 'Downloading ${count}',
 			'music.downloadQueued' => ({required Object title}) => 'Queued for download: ${title}',
 			'music.downloadDuplicate' => 'This song is already in the download queue',
@@ -4191,12 +4371,18 @@ extension on TranslationsEn {
 			'music.downloadEmbedCoverDesc' => 'Write the cover into the audio tags.',
 			'music.downloadEmbedLyric' => 'Embed the lyric',
 			'music.downloadEmbedLyricDesc' => 'Write the lyric into the audio tags so it travels with the file.',
+			'music.downloadIncludeTranslation' => 'Include the translation',
+			'music.downloadIncludeTranslationDesc' => 'Write the translation into the downloaded lyric file and embedded tag.',
+			'music.downloadIncludeRomanization' => 'Include the romanization',
+			'music.downloadIncludeRomanizationDesc' => 'Write the romanization into the downloaded lyric file and embedded tag.',
 			'music.downloadWriteLyric' => 'Save a lyric file',
 			'music.downloadWriteLyricDesc' => 'Write a sibling .lrc next to the audio file.',
 			'music.downloadSkipExisting' => 'Skip existing files',
 			'music.downloadSkipExistingDesc' => 'Do not download when the output file is already there.',
 			'music.downloadGroupByList' => 'Group by playlist',
 			'music.downloadGroupByListDesc' => 'When downloading from a playlist, save into a folder named after it.',
+			'music.downloadMaxConcurrent' => 'Concurrent downloads',
+			'music.downloadMaxConcurrentDesc' => 'How many downloads run at once (1–5); changes apply immediately.',
 			'music.downloadStatusQueued' => 'Queued',
 			'music.downloadStatusRunning' => 'Downloading',
 			'music.downloadStatusPaused' => 'Paused',
@@ -4232,6 +4418,7 @@ extension on TranslationsEn {
 			'music.sleepTimer' => 'Sleep timer',
 			'music.sleepOff' => 'Off',
 			'music.sleepMinutes' => ({required Object count}) => '${count} minutes',
+			'music.sleepAfterCurrent' => 'After this song',
 			'music.sleepRemaining' => ({required Object value}) => 'Pauses in ${value}',
 			'music.lyricOffset' => 'Lyric delay',
 			'music.lyricOffsetDesc' => 'Positive values show the lyric later.',
@@ -4240,6 +4427,19 @@ extension on TranslationsEn {
 			'music.lyricTranslationDesc' => 'Show the translation when the lyric has one.',
 			'music.lyricRomanization' => 'Show romanization',
 			'music.lyricRomanizationDesc' => 'Show the romanization when the lyric has one.',
+			'music.lyricSwapSecondary' => 'Translation/romanization order',
+			'music.lyricSwapSecondaryDesc' => 'Swap translation and romanization under a lyric line.',
+			'music.lyricFontScale' => 'Lyric size',
+			'music.lyricFontScaleDesc' => 'Scale of the lyrics in the player (100%–200%).',
+			'music.lyricFontSmaller' => 'Smaller lyrics',
+			'music.lyricFontLarger' => 'Larger lyrics',
+			'music.lyricFontReset' => 'Reset size',
+			'music.lyricAlignment' => 'Lyric alignment',
+			'music.lyricAlignmentDesc' => 'How lyric lines sit inside the player panel.',
+			'music.lyricZoomActive' => 'Enlarge the active line',
+			'music.lyricZoomActiveDesc' => 'Draw the line being sung a little larger.',
+			'music.lyricProgress' => 'Show playback progress',
+			'music.lyricProgressDesc' => 'Show the song\'s progress above the lyric panel.',
 			'music.lyricHint' => 'The display and delay apply to every song; desktop lyrics open from Settings or the player’s More actions menu.',
 			'music.desktopLyrics' => 'Desktop lyrics',
 			'music.desktopLyricsOn' => 'Desktop lyrics shown',
@@ -4276,6 +4476,25 @@ extension on TranslationsEn {
 			'music.desktopLyricColorOrange' => 'Orange',
 			'music.clearQueue' => 'Clear the queue',
 			'music.exportLyric' => 'Export the lyric',
+			'music.associateLyric' => 'Use a local lyric',
+			'music.associateLyricDone' => 'Lyric linked',
+			'music.associateLyricFailed' => 'Could not link: the file has no usable lyric',
+			'music.lyricOverrideRemove' => 'Unlink the lyric',
+			'music.lyricSearch' => 'Search lyrics online',
+			'music.lyricSearchFor' => ({required Object title}) => 'Search lyrics for "${title}"',
+			'music.lyricSearchHint' => 'A song title, or "artist - title"',
+			'music.lyricSearchAction' => 'Search',
+			'music.lyricSearchEmpty' => 'No matching songs',
+			'music.lyricSearchFailed' => ({required Object error}) => 'Search failed: ${error}',
+			'music.lyricSearchNoLyric' => 'This song has no lyric',
+			'music.lyricSearchApplied' => ({required Object title}) => 'Using the lyric from "${title}"',
+			'music.comments' => 'Comments',
+			'music.commentsHot' => 'Top',
+			'music.commentsNew' => 'Newest',
+			'music.commentsEmpty' => 'No comments yet',
+			'music.commentsFailed' => ({required Object error}) => 'Could not load comments: ${error}',
+			'music.commentsCount' => ({required Object count}) => '${count} comments',
+			'music.commentsReplies' => ({required Object count}) => '${count} replies',
 			'music.exportLyricDone' => ({required Object path}) => 'Lyric saved to ${path}',
 			'music.exportLyricFailed' => ({required Object error}) => 'Could not export the lyric: ${error}',
 			'navigation.groupPrimary' => 'Top pages',
@@ -4595,6 +4814,7 @@ extension on TranslationsEn {
 			'room.twitchCookieExpired' => 'Twitch\'s cookie no longer works — danmaku is anonymous again; please paste a new Twitch cookie',
 			'room.bilibiliGuestNames' => 'Connected as a guest — Bilibili chat hides the full nicknames',
 			'room.bilibiliLoginExpired' => 'Your Bilibili login looks expired — every nickname is masked; please sign in again',
+			'room.danmakuConnectFailed' => ({required Object reason}) => 'Danmaku did not connect (${reason}) — the stream is unaffected',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -4697,9 +4917,9 @@ extension on TranslationsEn {
 			'settings.audioPageDescription' => 'Default volume, mute and background audio.',
 			'settings.picturePageDescription' => 'Fit, floating window and picture-in-picture.',
 			'settings.floatingWindowPageDescription' => 'The in-app floating window and the system picture-in-picture: size, position and pinning.',
-			'settings.pictureDisplayGroup' => 'Picture',
 			_ => null,
 		} ?? switch (path) {
+			'settings.pictureDisplayGroup' => 'Picture',
 			'settings.floatWindowGroup' => 'In-app floating window',
 			'settings.pipGroup' => 'System picture-in-picture',
 			'settings.playbackComingSoon' => 'Playback settings arrive with the player.',
@@ -4855,6 +5075,34 @@ extension on TranslationsEn {
 			'settings.proxySystemFailed' => 'The system proxy check failed; requests go direct.',
 			'settings.proxySystemRecheck' => 'Check the system proxy again',
 			'settings.proxySystemRecheckDesc' => 'A proxy client started or stopped after launch is picked up without restarting the app.',
+			'settings.githubMirrorTitle' => 'GitHub acceleration',
+			'settings.githubMirrorMode' => 'Download route',
+			'settings.githubMirrorModeDesc' => 'Which address GitHub downloads such as fonts go through.',
+			'settings.githubMirrorOff' => 'Default (no acceleration)',
+			'settings.githubMirrorOfficial' => 'Official source · may be slow',
+			'settings.githubMirrorCustom' => 'Custom…',
+			'settings.githubMirrorCustomDetail' => 'Type a mirror domain',
+			'settings.githubMirrorCustomDomain' => 'Custom mirror domain',
+			'settings.githubMirrorCustomDesc' => 'Starts with https:// and is placed in front of the original address.',
+			'settings.githubMirrorHint' => 'Leave it empty to fall back to direct: a failed download retries the original address.',
+			'settings.githubMirrorList' => 'Mirror addresses',
+			'settings.githubMirrorRefresh' => 'Fetch from the remote list',
+			'settings.githubMirrorRefreshing' => 'Fetching the remote mirrors…',
+			'settings.githubMirrorNever' => 'The remote list has not been fetched yet.',
+			'settings.githubMirrorUpdated' => ({required Object time}) => 'Remote list updated ${time}',
+			'settings.githubMirrorFailed' => ({required Object error}) => 'The remote list could not be fetched: ${error}',
+			'settings.githubMirrorAdd' => 'Add a mirror address',
+			'settings.githubMirrorAddTitle' => 'Add a mirror address',
+			'settings.githubMirrorAddDesc' => 'An https:// mirror domain used as a prefix in front of the original address.',
+			'settings.githubMirrorAddInvalid' => 'Invalid address: it must start with https://',
+			'settings.githubMirrorEmpty' => 'No usable mirror addresses.',
+			'settings.githubMirrorRestore' => 'Restore the built-in mirrors',
+			'settings.githubMirrorSourceBuiltin' => 'Built-in',
+			'settings.githubMirrorSourceRemote' => 'Remote',
+			'settings.githubMirrorSourceCustom' => 'Custom',
+			'settings.githubMirrorStrategyPrefix' => 'prefix proxy',
+			'settings.githubMirrorStrategyRaw' => 'raw host replacement',
+			'settings.githubMirrorStrategyJsdelivr' => 'jsDelivr path',
 			'settings.toolsOrder' => 'Tools order',
 			'settings.toolsOrderDesc' => 'The order of the tools under the sidebar\'s divider.',
 			'settings.moveUp' => 'Move up',
@@ -4882,7 +5130,7 @@ extension on TranslationsEn {
 			'settings.chatListLayoutGroup' => 'Chat list layout',
 			'settings.danmakuFont' => 'Danmaku font',
 			'settings.danmakuFontDescription' => 'The typeface for the flying danmaku on the video; the chat list keeps the UI font.',
-			'settings.danmakuFontManagerDescription' => 'Choose the danmaku typeface from the platform\'s own face, the official fonts bundled with the app, or the cloud catalogue. A choice applies to every room\'s flying danmaku at once.',
+			'settings.danmakuFontManagerDescription' => 'Choose the danmaku typeface: MiSans comes with the app, the domestic faces come from a free-for-commercial-use collection, and the overseas ones come from Google Fonts. A choice applies to every room\'s flying danmaku at once.',
 			'settings.styleFontSize' => 'Font Size',
 			'settings.styleFontSizeDesc' => 'Font size of a flying danmaku, in pixels.',
 			'settings.styleFontWeight' => 'Font Weight',
@@ -4993,41 +5241,69 @@ extension on TranslationsEn {
 			'settings.trayScreenshotSaved' => ({required Object path}) => 'Saved to ${path}',
 			'settings.trayScreenshotFailed' => 'Screenshot failed: no room is playing, or the engine cannot capture',
 			'settings.font' => 'Font',
-			'settings.fontDescription' => 'UI typeface: the platform\'s own face, a bundled official one, or a cloud font.',
-			'settings.fontPlatform' => 'Follow the platform (system font)',
+			'settings.fontDescription' => 'UI typeface: MiSans ships with the app and is the default everywhere; switch to a domestic or overseas face here.',
+			'settings.fontDefault' => 'MiSans (default)',
+			'settings.fontSystemChinese' => 'System font',
+			'settings.fontRegionDomestic' => 'Domestic',
+			'settings.fontRegionOverseas' => 'Overseas',
 			'settings.fontManagerTitle' => 'Font manager',
-			'settings.fontManagerDescription' => 'Choose the UI typeface from the platform\'s own face, the official fonts bundled with the app, or the cloud catalogue. A choice applies everywhere at once.',
-			'settings.fontManagerSystemDescription' => ({required Object face}) => 'The platform decides; this device uses ${face}.',
-			'settings.fontManagerBundled' => 'Bundled fonts',
-			'settings.fontManagerBundledNote' => 'Bundled with the app',
+			'settings.fontManagerSubtitle' => 'Pick the typeface you like and make the interface yours.',
+			'settings.fontManagerSample' => 'Pure Live',
+			'settings.fontManagerLocal' => 'Local fonts',
+			'settings.fontManagerMore' => 'Get more fonts',
+			'settings.fontManagerPreviewTitle' => 'Font preview',
+			'settings.fontManagerPreviewAction' => 'Preview',
+			'settings.fontManagerPreviewPending' => 'Preview after download',
+			'settings.fontManagerGoogle' => 'Google fonts',
+			'settings.fontManagerDescription' => 'Choose the UI typeface: MiSans comes with the app, the domestic faces come from a free-for-commercial-use collection, and the overseas ones come from Google Fonts. A choice applies everywhere at once.',
+			'settings.fontManagerSystemDescription' => ({required Object face}) => 'The system provides it; this device uses ${face}.',
+			'settings.fontManagerBundledNote' => 'Bundled with the app, the default on every platform.',
+			'settings.fontManagerGoogleNote' => 'Fetched from Google Fonts the first time and cached on this device for later offline use.',
+			'settings.fontManagerFreeFontNote' => 'From a free-for-commercial-use collection; downloaded and kept on this device the first time it is used.',
 			'settings.fontManagerInUse' => 'In use',
-			'settings.fontManagerPreview' => 'The quick brown fox jumps over the lazy dog · 0123456789',
-			'settings.fontManagerCloud' => 'Cloud fonts',
-			'settings.fontManagerApply' => 'Apply',
-			'settings.fontManagerCloudDescription' => 'Fetched from the font repository when chosen and cached on this device; nothing is bundled.',
-			'settings.fontManagerDownload' => 'Download',
-			'settings.fontManagerDownloading' => ({required Object done, required Object total}) => 'Downloading ${done}/${total}',
-			'settings.fontManagerCancelDownload' => 'Cancel the download',
-			'settings.fontManagerDownloadFailed' => 'Download failed',
-			'settings.fontManagerDownloadedSize' => ({required Object size}) => 'Downloaded (${size})',
-			'settings.fontManagerNotDownloaded' => 'Not downloaded',
-			'settings.fontManagerLicenseNote' => ({required Object name}) => 'Licence: ${name}',
-			'settings.fontManagerDeleteFont' => 'Delete the downloaded font',
-			'settings.fontManagerDeleteQuestion' => ({required Object name}) => 'Delete the files ${name} downloaded? They can be fetched again at any time.',
-			'settings.fontManagerRestartNote' => 'A deleted font can keep drawing until the app restarts.',
-			'settings.fontManagerSearchPlaceholder' => 'Search fonts by name or keyword',
+			'settings.fontManagerDefaultBadge' => 'Default',
 			'settings.fontManagerCurrent' => 'Current font',
-			'settings.fontManagerDownloadMore' => 'Get more fonts',
+			'settings.fontManagerReset' => 'Restore the default',
 			'settings.fontManagerFilterAll' => 'All',
-			'settings.fontManagerFilterBundled' => 'Bundled',
-			'settings.fontManagerFilterInstalled' => 'Installed',
-			'settings.fontManagerFilterAvailable' => 'Available',
+			'settings.fontManagerCategory' => 'Category',
 			'settings.fontManagerCount' => ({required Object count}) => '${count} fonts',
 			'settings.fontManagerTagBundled' => 'Bundled',
-			'settings.fontManagerTagCloud' => 'Cloud',
-			'settings.fontManagerTagWeights' => ({required Object count}) => '${count} weights',
+			'settings.fontManagerSourceFreeFont' => 'Free font collection',
 			'settings.fontManagerUse' => 'Use',
+			'settings.fontManagerDownloadAndUse' => 'Download and use',
+			'settings.fontManagerDownloading' => ({required Object percent}) => 'Downloading ${percent}%',
+			'settings.fontManagerDownloadFailed' => 'Download failed',
+			'settings.fontManagerDownloaded' => 'Downloaded',
+			'settings.fontManagerNotDownloaded' => 'Not downloaded',
+			'settings.fontManagerDeleteFont' => 'Delete the downloaded font',
+			'settings.fontManagerDeleteQuestion' => ({required Object name}) => 'Delete this device\'s copy of “${name}”? It can be downloaded again.',
 			'settings.fontManagerNoResults' => 'No fonts match.',
+			'settings.fontManagerFilterLabel' => 'Filter fonts',
+			'settings.fontManagerSearchPlaceholder' => 'Search font names',
+			'settings.fontManagerPageLabel' => 'Font list pages',
+			'settings.fontManagerColumnSource' => 'Source',
+			'settings.fontManagerColumnSize' => 'Size',
+			'settings.fontManagerColumnFont' => 'Font',
+			'settings.fontManagerColumnState' => 'Status',
+			'settings.fontManagerColumnActions' => 'Actions',
+			'settings.fontManagerScriptChinese' => 'Chinese fonts',
+			'settings.fontManagerCopyName' => 'Copy font name',
+			'settings.fontManagerDownload' => 'Download',
+			'settings.fontManagerDownloadingShort' => 'Downloading',
+			'settings.fontManagerDetails' => 'Display and settings',
+			'settings.fontManagerLoadedCount' => ({required Object shown, required Object total}) => 'Loaded ${shown} of ${total}',
+			'settings.fontManagerLoadingMore' => 'Loading more…',
+			'settings.fontCategoryHeiti' => 'Heiti',
+			'settings.fontCategorySongti' => 'Songti',
+			'settings.fontCategoryKaiti' => 'Kaiti',
+			'settings.fontCategoryArt' => 'Display',
+			'settings.fontCategoryHandwriting' => 'Handwriting',
+			'settings.fontCategoryEnglish' => 'Latin',
+			'settings.fontCategorySerif' => 'Serif',
+			'settings.fontCategorySansSerif' => 'Sans-serif',
+			'settings.fontCategoryDisplay' => 'Display',
+			'settings.fontCategoryMonospace' => 'Monospace',
+			'settings.fontCategoryOther' => 'Other',
 			'settings.textScale' => 'Text scale',
 			'settings.textScaleDescription' => 'Scales the app\'s text as a whole; 100% keeps the platform size.',
 			'settings.backHome' => 'Back to app',
@@ -5155,6 +5431,8 @@ extension on TranslationsEn {
 			'settings.hardwareDecoderYes' => 'yes (force hw, fails loudly)',
 			'settings.hardwareDecoderAutoCopy' => 'auto-copy (safe + copy-back)',
 			'settings.hardwareDecoderD3d11va' => 'd3d11va (Direct3D 11, Windows 8+)',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hardwareDecoderD3d11vaCopy' => 'd3d11va-copy (D3D11 + copy-back)',
 			'settings.hardwareDecoderNvdec' => 'nvdec (NVIDIA, zero-copy)',
 			'settings.hardwareDecoderNvdecCopy' => 'nvdec-copy (NVIDIA + copy-back)',
@@ -5207,8 +5485,6 @@ extension on TranslationsEn {
 			'settings.scaleKernelDesc' => 'Resampler used when upscaling the picture.',
 			'settings.scaleLanczos' => 'Lanczos (balanced)',
 			'settings.scaleEwaLanczosSharp' => 'EWA Lanczos Sharp (sharpest, heavy)',
-			_ => null,
-		} ?? switch (path) {
 			'settings.scaleEwaLanczos4Sharpest' => 'EWA Lanczos 4 Sharpest (with interpolation)',
 			'settings.scaleEwaLanczos' => 'EWA Lanczos',
 			'settings.scaleSpline36' => 'Spline36',
@@ -5481,6 +5757,46 @@ extension on TranslationsEn {
 			'settings.downloadOpenFile' => 'Open the file',
 			'settings.downloadOpenFolder' => 'Open the folder',
 			'settings.downloadOpenFailed' => 'Could not open it',
+			'settings.downloadQueued' => ({required Object title}) => 'Queued: ${title}',
+			'settings.downloadManagerView' => 'View',
+			'settings.downloadManagerTitle' => 'Downloads',
+			'settings.downloadManagerDesc' => 'Wallpaper download tasks, history and the save folder.',
+			'settings.downloadManagerEmpty' => 'No downloads yet',
+			'settings.downloadManagerEmptyDesc' => 'Choose “Download” in a preview or the library and the task shows up here.',
+			'settings.downloadStatusRunning' => 'Downloading',
+			'settings.downloadStatusDone' => 'Completed',
+			'settings.downloadStatusFailed' => 'Failed',
+			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
+			'settings.downloadFinishedAt' => ({required Object time}) => 'Finished ${time}',
+			'settings.downloadRemove' => 'Remove record',
+			'settings.downloadRemoveBody' => 'Removes the record only; the saved file stays.',
+			'settings.downloadClearFinished' => 'Clear finished',
+			'settings.downloadDuplicateRunning' => 'That file is already downloading',
+			'settings.downloadDuplicateDone' => 'That file has already been downloaded',
+			'settings.downloadManagerOpenFolder' => 'Open folder',
+			'settings.downloadFilterAll' => 'All',
+			'settings.downloadFilterEmpty' => 'Nothing under this status',
+			'settings.downloadKindFilter' => 'Filter by kind',
+			'settings.downloadSettings' => 'Download settings',
+			'settings.downloadDetailPreview' => 'Open the preview',
+			'settings.downloadDetailTitle' => 'Download detail',
+			'settings.downloadInfoPath' => 'Save path',
+			'settings.downloadInfoSize' => 'File size',
+			'settings.downloadInfoTime' => 'Download time',
+			'settings.downloadSelectAll' => 'Select all',
+			'settings.downloadSelectedCount' => ({required Object count}) => '${count} selected',
+			'settings.downloadDeleteSelected' => ({required Object count}) => 'Delete selected (${count})',
+			'settings.downloadDeleteAll' => 'Delete all',
+			'settings.downloadTypeAll' => 'All types',
+			'settings.downloadPause' => 'Pause',
+			'settings.downloadResume' => 'Resume',
+			'settings.downloadPausedHint' => 'Paused · tap to resume',
+			'settings.downloadEtaSeconds' => ({required Object seconds}) => '${seconds} seconds left',
+			'settings.downloadEtaMinutes' => ({required Object minutes}) => '${minutes} minutes left',
+			'settings.downloadEtaHours' => ({required Object hours}) => '${hours} hours left',
+			'settings.downloadSummary' => ({required Object total}) => '${total} items',
+			'settings.downloadSummaryMoving' => ({required Object total, required Object running}) => '${total} tasks · ${running} downloading',
+			'settings.downloadPageSummary' => ({required Object total, required Object page, required Object count}) => '${total} tasks · page ${page} of ${count}',
 			'settings.openReleasePage' => 'Release page',
 			'settings.releaseExpand' => 'Show the notes',
 			'settings.releaseCollapse' => 'Hide the notes',
@@ -5629,6 +5945,8 @@ extension on TranslationsEn {
 			'settings.windowsPipResetPositionConfirm' => 'Clear the saved PiP position and size?',
 			'settings.windowsPipResetAction' => 'Reset',
 			'settings.windowsPipResetPositionSuccess' => 'Saved PiP position and size cleared',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fitHeight' => 'Fit Height',
 			'settings.fitWidth' => 'Fit Width',
 			'settings.fitScaleDown' => 'Scale Down',
@@ -5675,13 +5993,6 @@ extension on TranslationsEn {
 			'settings.backgroundCopyAddress' => 'Copy address',
 			'settings.backgroundDownloadFailed' => 'Download failed',
 			'settings.backgroundPreviewVideoHint' => 'Transport controls are for this preview only; the applied wallpaper loops muted.',
-			'settings.fontWeightChange' => 'Change weight',
-			'settings.fontWeightChangeDesc' => 'This family ships several weights; pin one.',
-			'settings.fontWeightAuto' => 'Automatic weight (recommended)',
-			'settings.fontWeightAutoDesc' => 'Use regular or bold automatically with the system and the interface.',
-			'settings.fontWeightLock' => ({required Object name}) => 'Lock “${name}”',
-			'settings.fontWeightLockDesc' => 'All application text will use this face.',
-			'settings.fontWeightLockedDetail' => ({required Object name}) => 'Locked weight: ${name}',
 			'settings.cacheRefreshThumbnails' => 'Refresh thumbnails',
 			'settings.cacheRefreshThumbnailsDesc' => 'Empty the cover, avatar and icon caches so they download again on the next draw.',
 			'settings.cacheRefreshThumbnailsDone' => 'Thumbnails refreshed',
@@ -5692,6 +6003,7 @@ extension on TranslationsEn {
 			'settings.downloadDirectoryUpdated' => 'Download folder updated',
 			'settings.downloadDirectoryPickFailed' => 'Could not select a download folder',
 			'settings.downloadDirectoryPermissionHint' => 'The chosen folder is not writable. Grant storage access, or use the default folder.',
+			'settings.downloadDirectoryChange' => 'Change folder',
 			'settings.portraitFullscreenGroup' => 'Portrait full screen',
 			'settings.portraitDisplayMode' => 'Picture mode',
 			'settings.portraitDisplayModeDesc' => 'Complete fits the whole picture; Ambient adds a soft backdrop; Balanced crops slightly; Cover fills the screen.',
@@ -5709,10 +6021,6 @@ extension on TranslationsEn {
 			'settings.portraitOverridesCount' => ({required int count}) => '${count} rooms saved',
 			'settings.chatShowNames' => 'Show chat user names',
 			'settings.chatShowNamesDesc' => 'Turn off to show only the message; long-press actions still know the sender.',
-			'settings.chatListStyle' => 'List style',
-			'settings.chatListStyleDesc' => 'Whether the list packs its lines tight or gives each message a card.',
-			'settings.chatListStyleCompact' => 'Compact',
-			'settings.chatListStyleCard' => 'Cards',
 			'settings.chatListFontSize' => 'List text size',
 			'settings.chatListFontSizeDesc' => 'The list\'s text size; following the theme keeps it with the interface.',
 			'settings.chatListFollowTheme' => 'Follow theme',
@@ -5725,8 +6033,6 @@ extension on TranslationsEn {
 			'settings.chatPanelWidth' => 'Chat panel width',
 			'settings.chatPanelWidthDesc' => 'The chat column\'s width in the desktop room layout.',
 			'settings.danmakuPausedBehavior' => 'Danmaku while paused',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuPausedBehaviorDesc' => 'Whether danmaku stop with a paused video or keep flying.',
 			'settings.danmakuPausedPause' => 'Pause with video',
 			'settings.danmakuPausedFly' => 'Keep flying',
@@ -6153,6 +6459,8 @@ extension on TranslationsEn {
 			'wallpaper.source360Star' => '360 Wallpaper · Stars',
 			'wallpaper.source360Car' => '360 Wallpaper · Cars',
 			'wallpaper.source360Pet' => '360 Wallpaper · Pets',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.source360Fresh' => '360 Wallpaper · Fresh',
 			'wallpaper.source360Sport' => '360 Wallpaper · Sports',
 			'wallpaper.source360Child' => '360 Wallpaper · Kids',

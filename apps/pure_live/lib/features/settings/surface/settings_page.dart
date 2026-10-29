@@ -36,6 +36,7 @@ import 'package:pure_live/features/settings/general/tv_preferences.dart'
 import 'package:pure_live/features/settings/general/window_size_row.dart' show WindowSizeRow;
 import 'package:pure_live/features/settings/pages/font_manager_page.dart'
     show FontManagerPage, fontFamilyLabel, showFontManagerPage;
+import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show WallpaperDownloadsPane;
 import 'package:pure_live/features/settings/panes/audience_settings_pane.dart'
     show AudienceSettingsPane, audienceModeLabel;
 import 'package:pure_live/features/settings/panes/background_panes.dart'
@@ -493,6 +494,7 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.backgroundVideos => const BackgroundLibraryPane(video: true),
       SettingsSection.backgroundColors => const BackgroundColorsPane(),
       SettingsSection.backgroundDevice => const BackgroundDevicePane(),
+      SettingsSection.backgroundDownloads => const WallpaperDownloadsPane(),
       SettingsSection.nav => const _NavPane(),
       SettingsSection.navHomeMenu => const _NavHomeMenuPane(),
       SettingsSection.navToolOrder => const _NavToolOrderPane(),
@@ -549,7 +551,8 @@ final class SettingsSectionPane extends StatelessWidget {
     // its pager at the bottom.
     if (section == SettingsSection.logs ||
         section == SettingsSection.backgroundImages ||
-        section == SettingsSection.backgroundVideos) {
+        section == SettingsSection.backgroundVideos ||
+        section == SettingsSection.backgroundDownloads) {
       return Padding(padding: padding, child: body);
     }
     return SingleChildScrollView(

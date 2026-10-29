@@ -3,32 +3,20 @@ import 'dart:io' show File;
 import 'dart:typed_data' show Uint8List;
 import 'dart:ui' as ui show ImageByteFormat, ImageFilter, PictureRecorder;
 
+import 'package:any_image_view/any_image_view.dart' show AnyImageView;
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart';
+import 'package:pure_live/features/settings/pages/wallpaper_video_player.dart';
 import 'package:pure_live/features/settings/panes/background_panes.dart' show backgroundFitLabel;
 import 'package:pure_live/features/settings/surface/settings_preview.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart';
-import 'package:pure_uikit_background/pure_uikit_background.dart'
-    show
-        BackgroundConfig,
-        BackgroundOverlay,
-        GradientBackground,
-        ImageBackground,
-        ProviderImageSource,
-        PureBackground,
-        SolidBackground,
-        VideoBackground;
-
-/// Below this width the preview keeps its settings in a sheet instead of a
-/// sidebar.
-const double _kPreviewWideBreakpoint = 900;
 
 /// The intervals the image slideshow offers.
 const List<Duration> _kSlideshowIntervals = [Duration(seconds: 3), Duration(seconds: 5), Duration(seconds: 10)];
@@ -226,17 +214,13 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
   RandomWallpaperFailure? _failure;
   int _generation = 0;
 
-  /// The preview's own transport. An applied wallpaper always loops muted,
-  /// so these only shape what the viewer hears while deciding.
-  bool _paused = false;
-  bool _muted = true;
-
   /// The resolved pixel size of the picture in view, when it is a picture.
   Size? _mediaSize;
   ImageStream? _sizeStream;
   ImageStreamListener? _sizeListener;
 
-  /// Image slideshow, preview-only.
+  /// Image slideshow, preview-only. The media's own transport lives inside
+  /// the stages: the video player owns its play, seek and mute.
   Timer? _slideshow;
   bool _autoPlay = false;
   Duration _interval = _kSlideshowIntervals[1];
@@ -595,59 +579,64 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     _closePreview();
   }
 
-  /// Keeps the entry in view: a catalogue address is fetched, a random
-  /// picture is already in memory.
+  /// Hands the entry in view to the download queue; the manager page owns
+  /// the rest, and the toast words what the queue did with the job.
   Future<void> _download() async {
     final t = context.t;
-    final directory = ref.read(downloadDirectoryProvider).effectivePath;
     final paint = _currentPaint;
     final item = _currentItem;
     final bytes = _bytes;
     if (paint == null && item == null && bytes == null) return;
+    final queue = ref.read(wallpaperDownloadsProvider.notifier);
     setState(() => _downloading = true);
     try {
+      final WallpaperDownloadHandover handover;
       if (paint != null) {
-        final target = File(
-          p.join(directory, wallpaperFileName(title: paint.name, fallback: 'background', address: 'paint.png')),
+        handover = await queue.enqueueBytes(
+          title: paint.name,
+          bytes: await encodeWallpaperPaint(paint),
+          kind: WallpaperDownloadKind.paint,
+          fileName: wallpaperFileName(title: paint.name, fallback: 'background', address: 'paint.png'),
         );
-        await target.parent.create(recursive: true);
-        await target.writeAsBytes(await encodeWallpaperPaint(paint));
       } else if (item != null) {
         final local = _localPathOf(item.url);
         if (local != null) {
           // An imported file is copied, not fetched: it is already on disk.
-          final target = File(p.join(directory, p.basename(local)));
-          await target.parent.create(recursive: true);
-          await File(local).copy(target.path);
+          handover = await queue.enqueueCopy(
+            title: item.name,
+            sourcePath: local,
+            fileName: p.basename(local),
+            kind: item.video ? WallpaperDownloadKind.video : WallpaperDownloadKind.image,
+            thumbUrl: item.thumb,
+          );
         } else {
-          final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
-          await downloadMediaFile(
-            http: http,
-            url: Uri.parse(item.url),
-            directory: directory,
+          handover = queue.enqueueUrl(
+            title: item.name,
+            url: item.url,
+            kind: item.video ? WallpaperDownloadKind.video : WallpaperDownloadKind.image,
+            thumbUrl: item.thumb,
             fileName: wallpaperFileName(title: item.name, fallback: item.id, address: item.url),
           );
         }
       } else {
-        final target = File(p.join(directory, 'wallpaper-${DateTime.now().millisecondsSinceEpoch}.$_extension'));
-        await target.parent.create(recursive: true);
-        await target.writeAsBytes(bytes!);
+        handover = await queue.enqueueBytes(
+          title: t.settings.backgroundImage,
+          bytes: bytes!,
+          fileName: 'wallpaper-${DateTime.now().millisecondsSinceEpoch}.$_extension',
+        );
       }
       if (!mounted) return;
-      setState(() => _downloading = false);
-      showDsToast(
-        context: context,
-        title: t.settings.downloadSavedTo(path: directory),
-      );
+      showDownloadHandoverToast(context, handover);
     } on Object catch (error) {
       if (!mounted) return;
-      setState(() => _downloading = false);
       showDsToast(
         context: context,
         title: t.settings.backgroundDownloadFailed,
         description: '$error',
         status: DsStatus.danger,
       );
+    } finally {
+      if (mounted) setState(() => _downloading = false);
     }
   }
 
@@ -662,62 +651,6 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     }
     navigator.popUntil((candidate) => candidate == route);
     if (navigator.canPop()) navigator.pop();
-  }
-
-  /// The candidate with the display settings on it, in the same shape the app
-  /// background paints with.
-  BackgroundConfig? _configOf(BuildContext context, BackgroundSettings settings) {
-    final colors = DsTheme.colorsOf(context);
-    final overlay = appBackgroundOverlay(context, opacity: settings.maskOpacity, blurSigma: settings.overlayBlurSigma);
-    final underlay = SolidBackground(color: colors.canvas);
-    final paint = _currentPaint;
-    if (paint != null) return _paintConfig(context, paint, overlay);
-    final item = _currentItem;
-    if (item != null) {
-      if (item.video) {
-        // A clip's frost goes on the decoded surface, not on the backdrop: a
-        // `Texture` gives a backdrop filter nothing to sample, so the mask
-        // would stay a flat wash over a sharp video.
-        return VideoBackground(
-          source: AppBackgroundVideoSource(Uri.parse(item.url)),
-          fit: settings.fit,
-          underlay: underlay,
-          fallback: underlay,
-          muted: _muted,
-          blurSigma: settings.overlayBlurSigma,
-          overlay: appBackgroundOverlay(context, opacity: settings.maskOpacity, blurSigma: 0),
-        );
-      }
-      return ImageBackground(
-        source: ProviderImageSource(imageProviderOf(item.url)),
-        fit: settings.fit,
-        placeholderColor: colors.canvas,
-        underlay: underlay,
-        fallback: underlay,
-        overlay: overlay,
-      );
-    }
-    final bytes = _bytes;
-    if (bytes == null) return null;
-    return ImageBackground(
-      source: ProviderImageSource(MemoryImage(bytes)),
-      fit: settings.fit,
-      placeholderColor: colors.canvas,
-      underlay: underlay,
-      fallback: underlay,
-      overlay: overlay,
-    );
-  }
-
-  /// The swatch as the app would wear it: its own stops and angle, under the
-  /// same scrim the media kinds get.
-  static BackgroundConfig _paintConfig(BuildContext context, WallpaperPreviewPaint paint, BackgroundOverlay overlay) {
-    final color = paint.color;
-    if (color != null) return SolidBackground(color: color, overlay: overlay);
-    final preset = paint.preset;
-    if (preset == null) return SolidBackground(color: DsTheme.colorsOf(context).canvas, overlay: overlay);
-    final (begin, end) = gradientAlignments(preset.deg);
-    return GradientBackground(colors: preset.colors, stops: preset.stops, begin: begin, end: end, overlay: overlay);
   }
 
   /// The provider for an entry's address: a file the viewer imported reads
@@ -839,13 +772,8 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
             child: _PreviewSettings(
               videoMode: _videoMode,
               paintMode: widget.subject.isPaint,
-              muted: _muted,
               autoPlay: _autoPlay,
               interval: _interval,
-              onMuted: (value) {
-                setState(() => _muted = value);
-                setSheetState(() {});
-              },
               onAutoPlay: (value) {
                 _setAutoPlay(value);
                 setSheetState(() {});
@@ -866,10 +794,8 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
 
   Widget _buildPage(BuildContext context) {
     final t = context.t;
-    final settings = ref.watch(backgroundSettingsProvider);
-    final config = _configOf(context, settings);
     final isVideo = _currentItem?.video ?? false;
-    final wide = MediaQuery.sizeOf(context).width >= _kPreviewWideBreakpoint;
+    final wide = LiveWindow.isExpanded(MediaQuery.sizeOf(context).width);
     // The frame follows the app's light or dark skin; the backdrop is the
     // wallpaper itself, so the page looks the same in either one only where
     // the media stands.
@@ -879,15 +805,13 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
         fit: StackFit.expand,
         children: [
           _Backdrop(image: _backdropImage()),
-          SafeArea(
-            child: wide ? _buildDesktop(context, t, config, isVideo) : _buildMobile(context, t, config, isVideo),
-          ),
+          SafeArea(child: wide ? _buildDesktop(context, t, isVideo) : _buildMobile(context, t, isVideo)),
         ],
       ),
     );
   }
 
-  Widget _buildDesktop(BuildContext context, Translations t, BackgroundConfig? config, bool isVideo) {
+  Widget _buildDesktop(BuildContext context, Translations t, bool isVideo) {
     final theme = DsTheme.of(context);
     final colors = theme.colors;
     return Padding(
@@ -906,7 +830,7 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
               borderRadius: BorderRadius.circular(20),
               child: Column(
                 children: [
-                  _titleBar(context, t),
+                  _titleBar(context, t, trailing: _managerButton(t)),
                   Expanded(
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -918,7 +842,7 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               spacing: DsSpace.s12,
                               children: [
-                                Expanded(child: _buildStage(context, t, config, isVideo, radius: 14)),
+                                Expanded(child: _buildStage(context, t, isVideo, radius: 14)),
                                 if (_stripCount > 0) _buildStrip(context, t),
                               ],
                             ),
@@ -938,10 +862,8 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
                                   child: _PreviewSettings(
                                     videoMode: _videoMode,
                                     paintMode: widget.subject.isPaint,
-                                    muted: _muted,
                                     autoPlay: _autoPlay,
                                     interval: _interval,
-                                    onMuted: (value) => setState(() => _muted = value),
                                     onAutoPlay: _setAutoPlay,
                                     onInterval: _setInterval,
                                   ),
@@ -997,7 +919,16 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     trailing: trailing,
   );
 
-  Widget _buildMobile(BuildContext context, Translations t, BackgroundConfig? config, bool isVideo) {
+  /// The download manager: the queue and its history live one tap away while
+  /// the viewer picks what to keep.
+  Widget _managerButton(Translations t) => DsButton.icon(
+    variant: DsButtonVariant.secondary,
+    onPressed: () => unawaited(showWallpaperDownloads(context)),
+    icon: const DsIcon(DsIcons.folderOpen),
+    semanticLabel: t.settings.downloadManagerTitle,
+  );
+
+  Widget _buildMobile(BuildContext context, Translations t, bool isVideo) {
     final colors = DsTheme.colorsOf(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1005,14 +936,20 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
         _titleBar(
           context,
           t,
-          trailing: DsButton.icon(
-            variant: DsButtonVariant.secondary,
-            onPressed: () => unawaited(_openSettingsSheet()),
-            icon: const DsIcon(DsIcons.slidersHorizontal),
-            semanticLabel: t.settings.backgroundPreviewSettingsTitle,
+          trailing: Row(
+            spacing: DsSpace.s8,
+            children: [
+              _managerButton(t),
+              DsButton.icon(
+                variant: DsButtonVariant.secondary,
+                onPressed: () => unawaited(_openSettingsSheet()),
+                icon: const DsIcon(DsIcons.slidersHorizontal),
+                semanticLabel: t.settings.backgroundPreviewSettingsTitle,
+              ),
+            ],
           ),
         ),
-        Expanded(child: _buildStage(context, t, config, isVideo, radius: 0)),
+        Expanded(child: _buildStage(context, t, isVideo, radius: 0)),
         ColoredBox(
           color: colors.surface,
           child: Padding(
@@ -1051,15 +988,9 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     );
   }
 
-  Widget _buildStage(
-    BuildContext context,
-    Translations t,
-    BackgroundConfig? config,
-    bool isVideo, {
-    required double radius,
-  }) {
+  Widget _buildStage(BuildContext context, Translations t, bool isVideo, {required double radius}) {
     final item = _currentItem;
-    final resolution = config == null || widget.subject.isPaint ? null : _resolutionLabel(t);
+    final resolution = widget.subject.isPaint ? null : _resolutionLabel(t);
     final media = ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: ColoredBox(
@@ -1067,41 +998,11 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
         child: Stack(
           fit: StackFit.expand,
           children: [
-            _stageContent(config, t),
-            if (isVideo)
-              PositionedDirectional(
-                start: 0,
-                end: 0,
-                bottom: 0,
-                child: SettingsPreviewBar(
-                  children: [
-                    SettingsPreviewCircleButton(
-                      icon: _paused ? DsIcons.play : DsIcons.pause,
-                      semanticLabel: _paused ? t.room.play : t.room.pause,
-                      onPressed: () => setState(() => _paused = !_paused),
-                    ),
-                    SettingsPreviewCircleButton(
-                      icon: _muted ? DsIcons.volumeOff : DsIcons.volume,
-                      semanticLabel: _muted ? t.room.unmute : t.room.mute,
-                      onPressed: () => setState(() => _muted = !_muted),
-                    ),
-                    const SizedBox(width: DsSpace.s8),
-                    Text(
-                      t.settings.backgroundPreviewLooping,
-                      style: DsTheme.of(context).typography.small.copyWith(color: const Color(0xCCFFFFFF)),
-                    ),
-                    const Spacer(),
-                  ],
-                ),
-              ),
-            if (isVideo && _paused)
-              Center(
-                child: _PlayButton(onPressed: () => setState(() => _paused = false), semanticLabel: t.room.play),
-              ),
-            if (resolution != null)
+            _stageContent(t),
+            if (resolution != null && !isVideo)
               PositionedDirectional(
                 start: DsSpace.s12,
-                bottom: isVideo ? 76 : DsSpace.s12,
+                bottom: DsSpace.s12,
                 child: SettingsPreviewChip(label: resolution),
               ),
             // Another random picture is on its way: the stage keeps the
@@ -1148,12 +1049,41 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     );
   }
 
-  Widget _stageContent(BackgroundConfig? config, Translations t) {
-    if (config != null) {
-      return PureBackground(config: config, paused: _paused, child: const SizedBox.shrink());
+  /// The media itself, at rest: a picture zooms (the reference's viewer), a
+  /// clip runs on the app's own media_core player with its transport under
+  /// it, and a swatch paints its own stops and angle.
+  Widget _stageContent(Translations t) {
+    final paint = _currentPaint;
+    if (paint != null) {
+      return DecoratedBox(decoration: wallpaperPaintDecoration(paint), child: const SizedBox.expand());
+    }
+    final item = _currentItem;
+    if (item != null) {
+      if (item.video) {
+        return WallpaperVideoPlayer(uri: Uri.parse(item.url));
+      }
+      final local = _localPathOf(item.url);
+      return AnyImageView(
+        imagePath: local ?? item.url,
+        fit: BoxFit.contain,
+        enableZoom: true,
+        placeholderWidget: Center(
+          child: DsSpinner(style: const DsSpinnerStyle(size: 28), semanticLabel: t.settings.backgroundImage),
+        ),
+        errorWidget: Center(child: DsIcon(DsIcons.imageOff, size: 28, color: DsTheme.colorsOf(context).textSubtle)),
+      );
     }
     if (_failure != null) {
       return _FailureView(failure: _failure, onRetry: () => unawaited(_fetch()));
+    }
+    final bytes = _bytes;
+    if (bytes != null) {
+      // A random picture is already in memory; the same pinch-to-zoom the
+      // catalogue's viewer offers, over the bytes themselves.
+      return InteractiveViewer(
+        maxScale: 8,
+        child: Center(child: Image(image: MemoryImage(bytes))),
+      );
     }
     if (!widget.subject.isRandom && _items.isEmpty) {
       return Center(
@@ -1322,10 +1252,8 @@ final class _PreviewSettings extends ConsumerWidget {
   const _PreviewSettings({
     required this.videoMode,
     required this.paintMode,
-    required this.muted,
     required this.autoPlay,
     required this.interval,
-    required this.onMuted,
     required this.onAutoPlay,
     required this.onInterval,
   });
@@ -1334,10 +1262,8 @@ final class _PreviewSettings extends ConsumerWidget {
 
   /// A palette swatch: the fit and the slideshow have nothing to act on.
   final bool paintMode;
-  final bool muted;
   final bool autoPlay;
   final Duration interval;
-  final ValueChanged<bool> onMuted;
   final ValueChanged<bool> onAutoPlay;
   final ValueChanged<Duration> onInterval;
 
@@ -1401,18 +1327,14 @@ final class _PreviewSettings extends ConsumerWidget {
           ],
         ),
         if (videoMode)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s8,
-            children: [
-              _SectionTitle(icon: DsIcons.volume, label: t.settings.backgroundVideo),
-              DsSwitch(
-                value: muted,
-                onChanged: onMuted,
-                label: Text(t.room.mute),
-                description: Text(t.settings.backgroundPreviewVideoHint),
-              ),
-            ],
+          // The clip's own transport — play, seek, mute — lives on the player
+          // under the stage; this sheet only names the kind.
+          Padding(
+            padding: const EdgeInsets.only(top: DsSpace.s4),
+            child: Text(
+              t.settings.backgroundPreviewVideoHint,
+              style: theme.typography.caption.copyWith(color: colors.textMuted),
+            ),
           )
         else if (!paintMode)
           Column(
@@ -1579,32 +1501,6 @@ final class _ThumbTile extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// The large play control over a paused clip.
-final class _PlayButton extends StatelessWidget {
-  const _PlayButton({required this.onPressed, required this.semanticLabel});
-
-  final VoidCallback onPressed;
-  final String semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return DsPressable(
-      semanticLabel: semanticLabel,
-      onPressed: onPressed,
-      builder: (context, states, _) => Container(
-        width: 72,
-        height: 72,
-        decoration: BoxDecoration(
-          color: const Color(0x8A000000),
-          shape: BoxShape.circle,
-          border: Border.all(color: const Color(0x33FFFFFF)),
-        ),
-        child: const Center(child: DsIcon(DsIcons.play, size: 30, color: Color(0xFFFFFFFF))),
       ),
     );
   }
