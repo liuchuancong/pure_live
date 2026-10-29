@@ -38,7 +38,7 @@
 | LX 功能 | v2 落点 | 状态 |
 |---|---|---|
 | 热门标签浏览 + 卡片网格分页 | `_OnlinePlaylistBrowse`（DsChip + MusicPlaylistGrid） | ✅ |
-| 歌单分类标签组（TagGroup 分类树） | 仅热门标签，无分类组 | ⬜ |
+| 歌单分类标签组（TagGroup 分类树） | PlaylistTagTree 能力 + 浏览页分类组 DsTopNav 行（热门为第一组）+ 组内标签 chips：wy catalogue / kg smarty getSpecial / tx all-categories / mg taglist 模板（提交 `16fd63dbe`） | 🟡 余 kw（其广场未建，树随广场一起） |
 | 排序 tab（推荐/最热/最新/热藏/飙升） | 无 | ⬜ |
 | 打开歌单（链接或 ID） | 无 | ⬜ |
 | 歌单搜索（搜索类型=歌单的结果页） | 无 | ⬜（随 B 项） |
