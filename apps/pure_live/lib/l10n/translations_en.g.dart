@@ -547,6 +547,7 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get historyAccountOff => 'Sign in to sync your phone history here';
 	@override String get historyClear => 'Clear history';
 	@override String get historyClearDesc => 'Clears this device only; account history and favorites stay';
+	@override String get historyCleared => 'This device\'s watch history is cleared';
 	@override String get historyRemove => 'Remove entry';
 	@override String get historyRemoveDesc => 'Drops this series’ progress only';
 	@override String get resumeAt => 'Resume';
@@ -3639,6 +3640,7 @@ extension on TranslationsEn {
 			'hongguo.historyAccountOff' => 'Sign in to sync your phone history here',
 			'hongguo.historyClear' => 'Clear history',
 			'hongguo.historyClearDesc' => 'Clears this device only; account history and favorites stay',
+			'hongguo.historyCleared' => 'This device\'s watch history is cleared',
 			'hongguo.historyRemove' => 'Remove entry',
 			'hongguo.historyRemoveDesc' => 'Drops this series’ progress only',
 			'hongguo.resumeAt' => 'Resume',

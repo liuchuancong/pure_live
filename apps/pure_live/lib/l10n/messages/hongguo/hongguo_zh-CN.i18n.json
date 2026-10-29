@@ -58,6 +58,7 @@
   "historyAccountOff": "登录红果账号后，在这里同步手机观看历史",
   "historyClear": "清空历史",
   "historyClearDesc": "只清空这台设备的观看进度，账户历史和收藏保留",
+  "historyCleared": "已清空这台设备的观看记录",
   "historyRemove": "删除记录",
   "historyRemoveDesc": "只删除这部剧的观看进度",
   "resumeAt": "续播",

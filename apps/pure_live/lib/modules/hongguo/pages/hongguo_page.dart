@@ -834,6 +834,23 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
   /// what is still running — the station's 全部 / 已看完 / 未看完 row.
   int _watched = 0;
 
+  /// Empties this device's watch history after a confirmation; the reference
+  ///'s 清空历史 asks before it forgets.
+  Future<void> _clearHistory(Translations t) async {
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.hongguo.historyClear,
+      description: t.hongguo.historyClearDesc,
+      confirmLabel: t.common.confirm,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.trash2),
+    );
+    if (!confirmed || !mounted) return;
+    ref.read(hongguoLibraryProvider.notifier).clearHistory();
+    showDsToast(context: context, title: t.hongguo.historyCleared);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -894,6 +911,14 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
                       selected: _watched == 2,
                       onChanged: (_) => setState(() => _watched = 2),
                     ),
+                    if (library.history.isNotEmpty)
+                      DsButton(
+                        size: DsSize.sm,
+                        variant: DsButtonVariant.ghost,
+                        leading: const DsIcon(DsIcons.trash2, size: 14),
+                        onPressed: () => unawaited(_clearHistory(t)),
+                        child: Text(t.hongguo.historyClear),
+                      ),
                   ],
                 ),
             ],

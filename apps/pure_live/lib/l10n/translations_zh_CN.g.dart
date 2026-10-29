@@ -1396,6 +1396,9 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '只清空这台设备的观看进度，账户历史和收藏保留'
 	String get historyClearDesc => '只清空这台设备的观看进度，账户历史和收藏保留';
 
+	/// zh-CN: '已清空这台设备的观看记录'
+	String get historyCleared => '已清空这台设备的观看记录';
+
 	/// zh-CN: '删除记录'
 	String get historyRemove => '删除记录';
 
@@ -9535,6 +9538,7 @@ extension on Translations {
 			'hongguo.historyAccountOff' => '登录红果账号后，在这里同步手机观看历史',
 			'hongguo.historyClear' => '清空历史',
 			'hongguo.historyClearDesc' => '只清空这台设备的观看进度，账户历史和收藏保留',
+			'hongguo.historyCleared' => '已清空这台设备的观看记录',
 			'hongguo.historyRemove' => '删除记录',
 			'hongguo.historyRemoveDesc' => '只删除这部剧的观看进度',
 			'hongguo.resumeAt' => '续播',

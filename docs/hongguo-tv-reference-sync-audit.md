@@ -300,7 +300,7 @@ l10n 累计新增 27 个 key（中英各一份，`dart run slang` 已重生成�
 
 ### 8.7 下一轮继续
 
-P1 已清零：首页/侧栏的新集徽标见 8.10，断网等待见 8.11。P2：弹幕渲染层（#7）见 8.9，选集分组/跳转/已看标记（#6）见 8.12，评论双 tab 见 8.13，HUD 状态行见 8.14，收藏卡片文案见 8.15；剩评论面板的侧边停靠版式与表情图、筛选面板收放、搜索联想/历史、榜单快照 TTL。
+P1 已清零：首页/侧栏的新集徽标见 8.10，断网等待见 8.11，本机记录清空确认见 8.16。P2：弹幕渲染层（#7）见 8.9，选集分组/跳转/已看标记（#6）见 8.12，评论双 tab 见 8.13，HUD 状态行见 8.14，收藏卡片文案见 8.15。搜索联想/历史与榜单快照 TTL 复查后已在库（`hongguo_feeds.dart` 的 suggestion/history 与 10 分钟 TTL），§5 的对应条目已过期。剩评论面板的侧边停靠版式与表情图、筛选面板在首页的收放形态（找剧页已有 `DsPanel` 版）。
 
 ### 8.8 第六轮（2026-10-29）：签名器与 ttEncrypt 的四处错位
 
@@ -389,6 +389,15 @@ P1 已清零：首页/侧栏的新集徽标见 8.10，断网等待见 8.11。P2�
 - l10n：新增 `favoriteTotal/favoriteTotalAdded/favoriteTotalPending/favoriteWatchedTo`，删掉不再有人用的 `favoriteUpTo`。
 
 新增 3 项测试（合计/带记录、检查过没涨、未检查的两种回落）。`dart analyze lib/modules/hongguo test/hongguo` 0 issues；`flutter test test/hongguo test/app` 27 项全绿。**没做**：参考的「两行」卡片版式与 `待上线/暂不可观看` 状态标签（前者要改共享卡片的可计算高度，后者要预约行带状态字段）。
+
+### 8.16 第十四轮（2026-10-29）：本机记录清空确认（P1 #13 收尾）
+
+`HongguoLibraryController.clearHistory()` 早就写好、`historyClear/historyClearDesc` 两条文案也早就在，但历史页没有任何入口，等于只能一条条删。本轮把它接上：
+
+- 历史页「全部 / 已看完 / 未看完」筛选行末尾加 `清空历史`（仅在本机 tab 且确实有记录时出现），点开 `showDsConfirm`（destructive），确认后清空并 toast「已清空这台设备的观看记录」；账户历史与收藏不动。
+- l10n 中英各 +1（`historyCleared`），其余复用已有词条。
+
+新增 1 项测试（清空历史保留收藏）。`dart analyze lib/modules/hongguo test/hongguo` 0 issues；`flutter test test/hongguo test/app` 28 项全绿。**没做**：参考的「管理本机记录」多选批量删除（现为逐条删除 + 全部清空两档）。
 
 ---
 

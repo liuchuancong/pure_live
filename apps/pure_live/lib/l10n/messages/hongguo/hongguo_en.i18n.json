@@ -58,6 +58,7 @@
   "historyAccountOff": "Sign in to sync your phone history here",
   "historyClear": "Clear history",
   "historyClearDesc": "Clears this device only; account history and favorites stay",
+  "historyCleared": "This device's watch history is cleared",
   "historyRemove": "Remove entry",
   "historyRemoveDesc": "Drops this series’ progress only",
   "resumeAt": "Resume",

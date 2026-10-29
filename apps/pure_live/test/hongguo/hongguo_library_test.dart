@@ -80,4 +80,35 @@ void main() {
       expect(hongguoFavoriteLine(t, const HongguoLibraryState(), series), '总集数待更新');
     });
   });
+
+  group('the history shelf', () {
+    test('clearing it keeps the favorites', () async {
+      await StoragePrefs.initSeeded({});
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final controller = container.read(hongguoLibraryProvider.notifier)
+        ..toggleFavorite(const HongguoSeries(seriesId: 'a', title: '剧'))
+        ..saveProgress(
+          const HongguoWatchProgress(
+            seriesId: 'a',
+            title: '剧',
+            cover: '',
+            episodeIndex: 2,
+            episodeVid: 'v',
+            positionMs: 1,
+            durationMs: 2,
+            completed: false,
+            updatedAt: 1,
+          ),
+        );
+
+      expect(container.read(hongguoLibraryProvider).history, hasLength(1));
+
+      controller.clearHistory();
+
+      final state = container.read(hongguoLibraryProvider);
+      expect(state.history, isEmpty);
+      expect(state.favorites.map((row) => row.seriesId), ['a']);
+    });
+  });
 }
