@@ -440,8 +440,20 @@ implements MusicHotWords, MusicCommentsSource {
     );
   }
 
+  /// lx-music's `getListId`: a share link yields its playlist id, a bare id
+  /// stands as it is.
+  static String _playlistIdOf(String raw) {
+    final id = raw.trim();
+    final path = RegExp(r'/playlist/(\d+)').firstMatch(id);
+    if (path != null) return path[1]!;
+    final query = RegExp(r'id=(\d+)').firstMatch(id);
+    if (query != null) return query[1]!;
+    return id;
+  }
+
   @override
-  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> playlistDetail(String id) async {
+  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> playlistDetail(String rawId) async {
+    final id = _playlistIdOf(rawId);
     final numericId = int.tryParse(id);
     if (numericId == null) throw StateError('tx playlist id $id is not numeric');
     final json = await _musicu({

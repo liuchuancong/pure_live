@@ -2749,6 +2749,15 @@ class Translations$music$zh_CN {
 	/// zh-CN: '飙升'
 	String get sortRise => '飙升';
 
+	/// zh-CN: '打开歌单'
+	String get openPlaylistTitle => '打开歌单';
+
+	/// zh-CN: '歌单链接或 ID'
+	String get openPlaylistHint => '歌单链接或 ID';
+
+	/// zh-CN: '仅支持当前音源的链接或 ID；粘贴内容会先解析成歌单 ID 再打开。'
+	String get openPlaylistTip => '仅支持当前音源的链接或 ID；粘贴内容会先解析成歌单 ID 再打开。';
+
 	/// zh-CN: '当前音源暂不支持歌单搜索。'
 	String get songlistSearchUnsupported => '当前音源暂不支持歌单搜索。';
 
@@ -11083,6 +11092,9 @@ extension on Translations {
 			'music.sortNew' => '最新',
 			'music.sortHotCollect' => '热藏',
 			'music.sortRise' => '飙升',
+			'music.openPlaylistTitle' => '打开歌单',
+			'music.openPlaylistHint' => '歌单链接或 ID',
+			'music.openPlaylistTip' => '仅支持当前音源的链接或 ID；粘贴内容会先解析成歌单 ID 再打开。',
 			'music.songlistSearchUnsupported' => '当前音源暂不支持歌单搜索。',
 			'music.defaultSource' => '默认音源',
 			'music.defaultSourceDesc' => '歌曲从哪个音源获取；自定义源脚本负责解析播放地址。',
@@ -11239,11 +11251,11 @@ extension on Translations {
 			'music.selectionRemove' => '移除',
 			'music.selectionRemoveDone' => ({required Object count}) => '已移除 ${count} 首',
 			'music.downloadsActive' => ({required Object count}) => '正在下载 ${count} 首',
+			_ => null,
+		} ?? switch (path) {
 			'music.downloadQueued' => ({required Object title}) => '已加入下载：${title}',
 			'music.downloadDuplicate' => '这首歌已经在下载队列里',
 			'music.downloadUnsupported' => '这首歌没有可下载的音源（本地文件或当前音源未覆盖）',
-			_ => null,
-		} ?? switch (path) {
 			'music.downloadFailed' => ({required Object error}) => '下载失败：${error}',
 			'music.downloadHint' => '下载文件保存在共享下载目录；队列支持暂停、续传和失败重试。',
 			'music.downloadDirectory' => '下载目录',
@@ -11753,11 +11765,11 @@ extension on Translations {
 			'room.openExternal' => '在平台打开',
 			'room.restrictionNeedsLogin' => '需要登录',
 			'room.restrictionPaid' => '需要付费',
+			_ => null,
+		} ?? switch (path) {
 			'room.restrictionSubscribersOnly' => '仅限会员',
 			'room.restrictionPrivate' => '私密房间',
 			'room.restrictionAppOnly' => '需要在官方 App 观看',
-			_ => null,
-		} ?? switch (path) {
 			'room.restrictionRegionBlocked' => '当前地区不可观看',
 			'room.restrictionPassword' => '需要密码',
 			'room.restrictionAdult' => '年龄限制',
@@ -12267,11 +12279,11 @@ extension on Translations {
 			'settings.fontManagerDescription' => 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于全部界面。',
 			'settings.fontManagerSystemDescription' => ({required Object face}) => '由系统提供，本机使用 ${face}。',
 			'settings.fontManagerBundledNote' => '随应用打包，所有平台默认使用。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerGoogleNote' => '首次选择时从 Google Fonts 获取并缓存在本机，之后离线可用。',
 			'settings.fontManagerFreeFontNote' => '来自免费商用字体库，首次使用时下载并保存在本机。',
 			'settings.fontManagerInUse' => '使用中',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerDefaultBadge' => '默认',
 			'settings.fontManagerCurrent' => '当前字体',
 			'settings.fontManagerReset' => '恢复默认',
@@ -12781,11 +12793,11 @@ extension on Translations {
 			'settings.downloadOpenFolder' => '打开所在文件夹',
 			'settings.downloadOpenFailed' => '无法打开该文件',
 			'settings.downloadQueued' => ({required Object title}) => '已加入下载：${title}',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadManagerView' => '查看',
 			'settings.downloadManagerTitle' => '下载管理',
 			'settings.downloadManagerDesc' => '壁纸的下载任务、记录与保存目录。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadManagerEmpty' => '还没有下载记录',
 			'settings.downloadManagerEmptyDesc' => '在预览或图库点「下载」，任务会出现在这里。',
 			'settings.downloadStatusRunning' => '下载中',
@@ -13295,11 +13307,11 @@ extension on Translations {
 			'toolbox.logsCopyPath' => '复制路径',
 			'toolbox.logsPathCopied' => '路径已复制到剪贴板',
 			'toolbox.logsOpenFailed' => '无法打开日志目录',
+			_ => null,
+		} ?? switch (path) {
 			'vod.searchHint' => '搜索 Bilibili 视频',
 			'vod.idleTitle' => '搜索点播视频',
 			'vod.idleDescription' => '输入关键词搜索 Bilibili 的视频。',
-			_ => null,
-		} ?? switch (path) {
 			'vod.noResultsTitle' => '没有找到视频',
 			'vod.noResultsDescription' => '换个关键词再试试。',
 			'vod.errorTitle' => '视频没有加载出来',

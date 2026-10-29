@@ -202,8 +202,20 @@ implements MusicHotWords, MusicCommentsSource {
     );
   }
 
+  /// lx-music's `getListId`: a share link yields its playlist id, a bare id
+  /// stands as it is.
+  static String _playlistIdOf(String raw) {
+    final id = raw.trim();
+    final query = RegExp(r'(?:\?|&)id=(\d+)').firstMatch(id);
+    if (query != null) return query[1]!;
+    final path = RegExp(r'/playlist/(\d+)/\d+/').firstMatch(id);
+    if (path != null) return path[1]!;
+    return id;
+  }
+
   @override
-  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> playlistDetail(String id) async {
+  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> playlistDetail(String rawId) async {
+    final id = _playlistIdOf(rawId);
     final json = await _weapi('/weapi/v3/playlist/detail', {'id': id, 'n': 100000, 'p': 1});
     if (json['code'] != 200) throw StateError('wy playlist $id unavailable');
     final playlist = json['playlist'] as Map?;

@@ -2059,23 +2059,34 @@ String _statusLabel(Translations t, audio.MusicDownloadTask task) => switch (tas
 /// The 歌单 rail's two tabs: the viewer's own lists and the source's online
 /// playlists (在线歌单), the way LX keeps both behind one view.
 final class _SonglistTabs extends ConsumerWidget {
-  const _SonglistTabs({required this.online, required this.mineCount, required this.onChanged});
+  const _SonglistTabs({required this.online, required this.mineCount, required this.onChanged, this.actions = const <Widget>[]});
 
   final bool online;
   final int mineCount;
   final ValueChanged<bool> onChanged;
 
+  /// The controls beside the tabs, shown with them on the row's end.
+  final List<Widget> actions;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    return DsTabs<bool>(
-      value: online,
-      onChanged: onChanged,
-      tabs: [
-        DsTab<bool>(value: false, label: Text(t.music.songlistTabMine), count: mineCount),
-        DsTab<bool>(value: true, label: Text(t.music.songlistTabOnline)),
+    return Row(
+      spacing: DsSpace.s8,
+      children: [
+        Expanded(
+          child: DsTabs<bool>(
+            value: online,
+            onChanged: onChanged,
+            tabs: [
+              DsTab<bool>(value: false, label: Text(t.music.songlistTabMine), count: mineCount),
+              DsTab<bool>(value: true, label: Text(t.music.songlistTabOnline)),
+            ],
+            semanticLabel: t.music.songlistTabMine,
+          ),
+        ),
+        ...actions,
       ],
-      semanticLabel: t.music.songlistTabMine,
     );
   }
 }
@@ -2107,6 +2118,50 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
   /// How many pages are wanted; the family provider caches each one, so
   /// widening this range re-reads, it does not re-fetch.
   int _page = 1;
+
+  /// The reference's 打开歌单 dialog: the pasted link or id, opened as the
+  /// playlist's detail once confirmed.
+  Future<void> _openByLink() async {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final field = TextEditingController();
+    final opened = await showDsDialog<String>(
+      context: context,
+      builder: (context) => DsDialog(
+        title: Text(t.music.openPlaylistTitle),
+        icon: const DsIcon(DsIcons.listMusic),
+        description: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DsTextField(
+              controller: field,
+              autofocus: true,
+              clearable: true,
+              placeholder: t.music.openPlaylistHint,
+              semanticLabel: t.music.openPlaylistTitle,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: DsSpace.s8),
+              child: Text(t.music.openPlaylistTip, style: theme.typography.caption),
+            ),
+          ],
+        ),
+        actions: [
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(t.common.cancel),
+          ),
+          DsButton(onPressed: () => Navigator.of(context).pop(field.text), child: Text(t.common.confirm)),
+        ],
+      ),
+    );
+    field.dispose();
+    final target = opened?.trim();
+    if (target == null || target.isEmpty || !mounted) return;
+    widget.onOpen(MusicPlaylistInfo(id: target, name: target, cover: '', author: '', trackCount: 0));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2145,7 +2200,17 @@ final class _OnlinePlaylistBrowseState extends ConsumerState<_OnlinePlaylistBrow
       children: [
         _SonglistTabs(online: true, mineCount: widget.mineCount, onChanged: (online) {
           if (!online) widget.onBackToMine();
-        }),
+        }, actions: [
+          // The reference's 打开歌单: a pasted link or bare id opens the
+          // playlist's detail on the current source.
+          DsButton.icon(
+            variant: DsButtonVariant.ghost,
+            size: DsSize.sm,
+            semanticLabel: t.music.openPlaylistTitle,
+            onPressed: () => unawaited(_openByLink()),
+            icon: const DsIcon(DsIcons.link, size: 16),
+          ),
+        ]),
         if (!supported)
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s16, DsSpace.s20, DsSpace.s16),

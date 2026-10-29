@@ -318,9 +318,20 @@ implements MusicHotWords, MusicCommentsSource {
     );
   }
 
+  /// lx-music's `getListDetail` id handling: the `special/single` page links
+  /// yield their numeric id, the lx `id_` prefix comes off, the rest stands.
+  static String _playlistIdOf(String raw) {
+    final id = raw.trim();
+    if (id.contains('special/single/')) {
+      final match = RegExp(r'/(\d+)\.html').firstMatch(id);
+      if (match != null) return match[1]!;
+    }
+    return id.startsWith('id_') ? id.substring(3) : id;
+  }
+
   @override
-  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> playlistDetail(String id) async {
-    final globalId = id.startsWith('id_') ? id.substring(3) : id;
+  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> playlistDetail(String rawId) async {
+    final globalId = _playlistIdOf(rawId);
     final info = await _specialInfo(globalId);
     final rows = await _specialSongs(globalId);
     final enriched = await _enrich(rows);

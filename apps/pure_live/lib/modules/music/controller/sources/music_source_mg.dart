@@ -380,8 +380,18 @@ implements MusicHotWords, MusicCommentsSource {
     );
   }
 
+  /// lx-music's `getListId`: a share link yields its playlist id, a bare id
+  /// stands as it is.
+  static String _playlistIdOf(String raw) {
+    final id = raw.trim();
+    final path = RegExp(r'/playlist/(\d+)').firstMatch(id);
+    if (path != null) return path[1]!;
+    return id;
+  }
+
   @override
-  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> playlistDetail(String id) async {
+  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> playlistDetail(String rawId) async {
+    final id = _playlistIdOf(rawId);
     final songsUri = Uri.https('app.c.nf.migu.cn', '/MIGUM3.0/resource/playlist/song/v2.0', {
       'pageNo': '1',
       'pageSize': '100000',
