@@ -89,10 +89,10 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
   /// Edits the generated sizes (the density's output).
   DsSizesAdjuster? get adjustSizes;
 
-  /// The text face, used on every platform — Apple's included. Null keeps
-  /// the API's design: San Francisco on iOS and macOS, the bundled
-  /// Schibsted Grotesk elsewhere. Looked up in this app unless
-  /// [fontPackage] says otherwise.
+  /// The text face, used on every platform. Null means the bundled default
+  /// (MiSans); a stored preset id names its own family, and the system
+  /// Chinese preset resolves per platform in [_typography]. Looked up in
+  /// this app unless [fontPackage] says otherwise.
   String? get fontFamily;
 
   /// The code face; null keeps the bundled Geist Mono.
@@ -124,9 +124,8 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
 
   /// The theme this setting describes, every factory parameter fed from a
   /// getter of this class. `DsApp` derives the dark variant from the same
-  /// expression. [fontFamilyOverride] names a pinned cloud face, used
-  /// instead of [fontFamily] without changing the stored family.
-  DsThemeData theme({String? fontFamilyOverride}) => DsThemeData(
+  /// expression.
+  DsThemeData theme() => DsThemeData(
     seed: seed ?? DsSeed.blue,
     contrast: contrast,
     cornerStyle: cornerStyle,
@@ -141,21 +140,20 @@ abstract class AppThemeSettings implements Built<AppThemeSettings, AppThemeSetti
     adjustShadows: adjustShadows,
     adjustRadii: adjustRadii,
     adjustSizes: adjustSizes,
-    typography: _typography(fontFamilyOverride: fontFamilyOverride),
+    typography: _typography(),
     motion: motion,
     haptics: haptics,
     extensions: extensions,
   );
 
   /// Builds the typography override. A stored [fontFamily] wins; without
-  /// one the platform's own face is named where this app can
-  /// ([platformFontFamily]: Segoe UI on Windows, Roboto on Android), and
-  /// Apple/Linux/web keep the library's defaults (San Francisco,
-  /// Schibsted Grotesk). The bundled presets are app fonts, so they are
-  /// looked up with a null package.
-  DsTypography _typography({String? fontFamilyOverride}) {
-    final family = fontFamilyOverride ?? fontFamily ?? platformFontFamily();
-    final package = fontFamilyOverride != null ? null : (fontFamily == null ? null : fontPackage);
+  /// one MiSans, the face bundled with this app, is named on every platform.
+  /// A preset id that only stands for the system's Chinese face
+  /// ([kSystemChineseFontId]) resolves to it here. The presets are app or
+  /// Google-hosted faces, so they are looked up with a null package.
+  DsTypography _typography() {
+    final family = resolvedFontFamily(fontFamily);
+    final package = fontFamily == null ? null : fontPackage;
     final density = this.density ?? DsDensity.forPlatform(platform ?? defaultTargetPlatform);
     final hasFontChoice =
         family != null ||

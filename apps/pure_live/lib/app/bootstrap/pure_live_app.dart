@@ -9,11 +9,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_shell/live_shell.dart' show WindowRole;
 import 'package:pure_live/app/background/wallpaper/app_background.dart' show AppBackground;
+import 'package:pure_live/app/bootstrap/live_scroll_behavior.dart' show LiveScrollBehavior;
 import 'package:pure_live/app/bootstrap/proxy_http_overrides.dart' show appProxyLookup;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/providers.dart';
 import 'package:pure_live/app/routing/router/app_router.dart' show appRouterProvider;
-import 'package:pure_live/app/theme/fonts/font_library.dart' show CloudFontIds;
+import 'package:pure_live/app/theme/fonts/font_defaults.dart' show loadGoogleFont;
+import 'package:pure_live/app/theme/fonts/free_font_store.dart' show freeFontStoreProvider;
 import 'package:pure_live/app/theme/settings/stored_theme.dart' show readStoredAppThemeSettings;
 import 'package:pure_live/app/theme/settings/theme_persistence.dart';
 import 'package:pure_live/app/theme/settings/theme_settings.dart' show AppThemeScope, AppThemeSettings;
@@ -70,7 +72,7 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     // the defaults; the store only overrides what the viewer pinned.
     _settings = readStoredAppThemeSettings();
     _customSeedColor = _readStoredCustomSeedColor();
-    _ensureCloudFontLoaded();
+    _ensureFontLoaded();
     _showSplash = widget.showStartupSplash && ref.read(splashSettingsProvider);
     // The image cache's configured cap is applied once per start, off the
     // first frame so a big tree never waits on the disk walk.
@@ -134,19 +136,26 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     }
   }
 
-  /// Stored cloud families are registered before their first paint:
-  /// `dynamic_fonts` loads them from this device's own font files and the
-  /// text repaints on its own when the loader completes. The flying danmaku
-  /// names the same kind of family, so both are armed here.
-  void _ensureCloudFontLoaded() {
-    final appFamily = _settings.fontFamily;
-    if (appFamily != null && CloudFontIds.contains(appFamily)) {
-      unawaited(ref.read(fontLibraryProvider).ensureRegistered(appFamily, face: ref.read(appFontFaceProvider)));
+  /// Arms the faces the theme and the flying danmaku name: a downloaded
+  /// free-font file is registered with the engine from its cached copy, and a
+  /// Google family is fetched and registered the first time (then cached on
+  /// the device, so later boots are offline). The bundled MiSans and the
+  /// system face need nothing.
+  void _ensureFontLoaded() {
+    unawaited(_armFonts());
+  }
+
+  /// Waits for a Google file the theme names: the first build draws with the
+  /// fallback face, so the tree lays out once more when the file lands.
+  Future<void> _armFonts() async {
+    final store = ref.read(freeFontStoreProvider.notifier);
+    var fetched = false;
+    for (final family in [_settings.fontFamily, ref.read(danmakuStyleProvider).fontFamily]) {
+      if (family == null) continue;
+      unawaited(store.register(family));
+      fetched = await loadGoogleFont(family) || fetched;
     }
-    final danmakuFamily = ref.read(danmakuStyleProvider).fontFamily;
-    if (danmakuFamily != null && CloudFontIds.contains(danmakuFamily)) {
-      unawaited(ref.read(fontLibraryProvider).ensureRegistered(danmakuFamily, face: ref.read(danmakuFontFaceProvider)));
-    }
+    if (fetched && mounted) setState(() {});
   }
 
   void _updateSettings(AppThemeSettings settings) {
@@ -170,9 +179,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       _settings = settings;
       if (seedChanged) _customSeedColor = customSeed;
     });
-    // A cloud family applied in the font manager (here or projected from
-    // another window) needs the same registration pass the boot does.
-    _ensureCloudFontLoaded();
+    // A preset applied in the font manager (here or projected from another
+    // window) is armed the same way the boot arms it.
+    _ensureFontLoaded();
     // The pane writes every change the moment it happens; the root reads
     // them back on the next boot.
     unawaited(ThemePersistence.storeMode(settings.mode));
@@ -252,16 +261,15 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       }
       // A restore or another window replaced the choice; re-arm the timer.
       ref.read(thumbnailRefreshProvider.notifier).start();
-      // A changed download folder can hold families the boot snapshot never
-      // saw; fold them in before the theme validates its stored family.
-      refreshCloudFontSnapshot();
+      // A restore or another window replaced the theme: read it again and
+      // arm the face it names.
       setState(() {
         _settings = readStoredAppThemeSettings();
         _customSeedColor = _readStoredCustomSeedColor();
         _showSplash = widget.showStartupSplash && ref.read(splashSettingsProvider);
         _localeCode = code;
       });
-      _ensureCloudFontLoaded();
+      _ensureFontLoaded();
     });
     // A desktop list row is a row a pointer can rest on: the extra 12 px
     // over the compact default and the larger leading icon are the
@@ -272,22 +280,6 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     final dynamicSeed = ref.watch(dynamicColorSeedProvider).value;
     final activeDynamicSeed = ref.watch(dynamicColorProvider) ? dynamicSeed : null;
     final textScale = ref.watch(textScaleFactorProvider);
-    final appFace = ref.watch(appFontFaceProvider);
-    final appFamily = _settings.fontFamily;
-    final lockedFamily = effectiveFontFamily(appFamily, appFace);
-    // A weight lock reaches this device from the manager, a backup restore or
-    // another window: arm its registration whenever it changes.
-    ref.listen(appFontFaceProvider, (_, next) {
-      if (appFamily != null && CloudFontIds.contains(appFamily)) {
-        unawaited(ref.read(fontLibraryProvider).ensureRegistered(appFamily, face: next));
-      }
-    });
-    ref.listen(danmakuFontFaceProvider, (_, next) {
-      final family = ref.read(danmakuStyleProvider).fontFamily;
-      if (family != null && CloudFontIds.contains(family)) {
-        unawaited(ref.read(fontLibraryProvider).ensureRegistered(family, face: next));
-      }
-    });
     final themeSettings = activeDynamicSeed == null
         ? _settings
         : _settings.rebuild((b) => b..seed = DsSeed.color(activeDynamicSeed));
@@ -297,6 +289,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     return DsApp.router(
       routerConfig: ref.watch(appRouterProvider),
       onGenerateTitle: (context) => context.t.common.appTitle,
+      // Every list drags with the mouse and the trackpad, which Flutter's
+      // own behavior leaves to the wheel alone.
+      scrollBehavior: const LiveScrollBehavior(),
       locale: LocaleSettings.currentLocale.flutterLocale,
       // Material's own strings (an AppBar's back tooltip, a
       // RefreshIndicator's semantics) need MaterialLocalizations; DsApp
@@ -305,7 +300,7 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
       debugShowCheckedModeBanner: false,
       themeMode: _settings.mode,
-      theme: themeSettings.theme(fontFamilyOverride: lockedFamily == appFamily ? null : lockedFamily),
+      theme: themeSettings.theme(),
       builder: (context, child) {
         final core = LiveAlertWatcher(
           child: ClipboardRoomWatcher(

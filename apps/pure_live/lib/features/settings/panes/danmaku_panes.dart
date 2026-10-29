@@ -31,6 +31,7 @@ import 'package:pure_live/features/settings/danmaku/danmaku_show_gifts_provider.
 // name; the engine's one is the one this page builds sample messages with.
 import 'package:pure_live/features/settings/danmaku/danmaku_style_providers.dart' hide DanmakuStyle;
 import 'package:pure_live/features/settings/danmaku/super_chat_settings.dart' show superChatIncludesMembershipProvider;
+import 'package:pure_live/features/settings/pages/font_manager_page.dart' show fontFamilyLabel, showFontManagerPage;
 import 'package:pure_live/features/settings/playback/pip_danmaku_scale_provider.dart'
     show kPipDanmakuScaleMax, kPipDanmakuScaleMin, pipDanmakuScaleProvider;
 import 'package:pure_live/features/settings/playback/playback_settings_providers.dart' show playbackSettingsProvider;
@@ -144,20 +145,6 @@ final class DanmakuStyleSettings extends ConsumerStatefulWidget {
 }
 
 final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSettings> {
-  /// The cloud catalogue, once read: the font row lists the families this
-  /// device already holds by name, so it needs the manifest.
-  List<FontFamily>? _catalog;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(
-      ref.read(fontLibraryProvider).catalog().then((families) {
-        if (mounted) setState(() => _catalog = families);
-      }),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -193,32 +180,19 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
             ),
           ],
         ),
-        // Every value is set on its own knob below — there are no bundled
-        // presets to overwrite them.
+        // The face is chosen in the font manager: the catalogue holds a few
+        // thousand families, far more than a dropdown can carry.
         DsListSection(
           children: [
-            // The fonts this device already holds: the platform's own face,
-            // the bundled presets, and the cloud families it downloaded.
-            // Picking one applies it here; the manager page is where a new
-            // family is fetched, not the way to choose among them.
-            SettingsChoiceRow<String>(
+            DsListRow(
               leading: const DsIcon(DsIcons.type),
-              title: t.settings.danmakuFont,
-              value: style.fontFamily ?? '',
-              options: [
-                DsSelectOption(value: '', label: platformFontFamilyLabel()),
-                for (final (id, label) in kBundledFontPresets) DsSelectOption(value: id, label: label),
-                for (final family in _catalog ?? const <FontFamily>[])
-                  if (ref.read(fontLibraryProvider).installedIds.contains(family.id))
-                    DsSelectOption(value: family.id, label: family.name),
-              ],
-              onChanged: (next) {
-                final family = next.isEmpty ? null : next;
-                if (family == style.fontFamily) return;
-                unawaited(ref.read(danmakuFontFaceProvider.notifier).set(''));
-                unawaited(controller.setFontFamily(family));
-                if (family != null) unawaited(ref.read(fontLibraryProvider).ensureRegistered(family));
-              },
+              title: Text(t.settings.danmakuFont),
+              description: Text(t.settings.danmakuFontDescription),
+              detail: Text(
+                fontFamilyLabel(t, style.fontFamily, name: ref.watch(freeFontStoreProvider).nameOf(style.fontFamily)),
+              ),
+              showChevron: true,
+              onPressed: () => showFontManagerPage(context, ref, danmaku: true),
             ),
           ],
         ),
@@ -1016,7 +990,7 @@ final class _DanmakuPreviewPageState extends ConsumerState<DanmakuPreviewPage> {
     final theme = DsTheme.of(context);
     final style = ref.watch(danmakuStyleProvider);
     final fps = ref.watch(danmakuEffectiveFpsProvider);
-    final family = effectiveFontFamily(style.fontFamily, ref.watch(danmakuFontFaceProvider));
+    final family = resolvedFontFamily(style.fontFamily);
     return SettingsPreviewPage(
       icon: DsIcons.captions,
       title: t.settings.danmakuPreview,

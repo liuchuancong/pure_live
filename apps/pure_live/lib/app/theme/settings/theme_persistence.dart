@@ -2,8 +2,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart' show Color;
 import 'package:live_storage/live_storage.dart';
 
-import 'package:pure_live/app/theme/fonts/font_defaults.dart' show kBundledFontPresets;
-import 'package:pure_live/app/theme/fonts/font_library.dart' show CloudFontIds;
+import 'package:pure_live/app/theme/fonts/font_defaults.dart' show normalizeFontFamilyId;
 
 /// The theme's persisted subset: the choices the settings surface writes
 /// and the root reads back on boot.
@@ -170,8 +169,7 @@ abstract final class ThemePersistence {
   static Future<void> storeDensity(DsDensity? density) =>
       density == null ? _remove('theme.density') : _store('theme.density', density.name);
 
-  /// The stored font family (a bundled preset id or a downloaded cloud
-  /// family), or null for the platform's own face.
+  /// The stored font family (a preset id), or null for the default face.
   static String? readFont() {
     try {
       return normalizeFontFamily(StoragePrefs.getString('theme.font'));
@@ -180,20 +178,17 @@ abstract final class ThemePersistence {
     }
   }
 
-  /// The stored family when this build can draw it. Empty values, the
+  /// The stored family when this build offers it. Empty values, the
   /// reference's `Default` and 3.x's system aliases, ids from builds that
-  /// bundled fewer faces and cloud ids whose folder is gone all fall back
-  /// to the platform face instead of naming a family the app cannot load.
+  /// carried other faces all fall back to the default instead of naming a
+  /// family the app cannot draw.
   static String? normalizeFontFamily(String? value) {
     final id = value?.trim();
     if (id == null || id.isEmpty) return null;
-    for (final (preset, _) in kBundledFontPresets) {
-      if (preset == id) return id;
-    }
-    return CloudFontIds.contains(id) ? id : null;
+    return normalizeFontFamilyId(id);
   }
 
-  /// Stores the font family; null clears it back to the platform face.
+  /// Stores the font family; null clears it back to the bundled default.
   static Future<void> storeFont(String? family) =>
       family == null ? _remove('theme.font') : _store('theme.font', family);
 

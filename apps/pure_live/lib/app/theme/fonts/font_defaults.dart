@@ -1,56 +1,94 @@
-import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
+import 'package:chinese_font_library/chinese_font_library.dart' show SystemChineseFont;
+import 'package:flutter/foundation.dart' show TargetPlatform, debugPrint, defaultTargetPlatform;
+import 'package:google_fonts/google_fonts.dart' show GoogleFonts;
 
-/// The face the platform's own design system sets its UI in, or null where
-/// the library's default already IS that face.
+/// The face every platform draws its UI in unless the viewer picks another:
+/// MiSans ships with the app (`pubspec.yaml`'s `flutter: fonts:`) and is the
+/// default on Windows, macOS, Linux, Android and the web alike.
+const String kDefaultFontFamily = 'MiSans';
+
+/// The preset that stands for this device's own Chinese face rather than a
+/// family bundled or fetched: [systemChineseFontFamily] resolves it per
+/// platform when the theme is built.
+const String kSystemChineseFontId = 'SystemChinese';
+
+/// The prefix a downloaded free-font family is stored and registered under.
+/// The rest of the id is a hash of the file's path in the collection.
+const String kFreeFontIdPrefix = 'freefont:';
+
+/// The default family. A stored family always outranks it.
+String defaultFontFamily() => kDefaultFontFamily;
+
+/// The family a stored value really names — a preset id that is not a family
+/// of its own ([kSystemChineseFontId]) resolves here, and a Google family
+/// resolves to the name `google_fonts` registers its file under. Null means
+/// the default.
+String? resolvedFontFamily(String? stored) => switch (stored) {
+  null => kDefaultFontFamily,
+  kSystemChineseFontId => systemChineseFontFamily() ?? kDefaultFontFamily,
+  _ when isFreeFontId(stored) => stored,
+  _ when isGoogleFontFamily(stored) => googleFontFamily(stored),
+  _ => stored,
+};
+
+/// The name the engine knows a Google family by.
 ///
-/// - Windows ships **Segoe UI** on every install; naming it gives the
-///   fluent-native reading (Chinese falls back to the system's YaHei),
-///   where desen_ui's bundled face would otherwise draw.
-/// - Android ships **Roboto**; its CJK companion (Noto Sans CJK) arrives
-///   through the same per-glyph fallback.
-/// - iOS and macOS answer null on purpose: desen_ui's `DsTypography`
-///   already resolves its null family to `CupertinoSystemText`/`Display`,
-///   i.e. San Francisco, Apple's own face. Linux and the web answer null
-///   too and keep the library's bundled Schibsted Grotesk, which is the
-///   face designed for those hosts.
+/// `google_fonts` registers each downloaded file as `<Family>_<variant>`, so
+/// a theme that asks for the catalogue name alone ("Roboto") draws in the
+/// fallback face and the fetch never starts. Asking the package for the style
+/// both queues the file and answers the name it will be registered under; the
+/// answer is kept, so a failed fetch is retried by the manager, not by every
+/// rebuild.
+String googleFontFamily(String family) => _googleFamilies[family] ??= GoogleFonts.getFont(family).fontFamily ?? family;
+
+final Map<String, String> _googleFamilies = {};
+
+/// The device's Chinese face, from `chinese_font_library`'s platform lists:
+/// PingFang on Apple, Microsoft YaHei on Windows, the platform's `sans-serif`
+/// (Noto CJK on stock Android) elsewhere. Linux answers null, where the
+/// default MiSans stays.
+String? systemChineseFontFamily({TargetPlatform? platform}) => switch (platform ?? defaultTargetPlatform) {
+  TargetPlatform.iOS || TargetPlatform.macOS => 'PingFang SC',
+  TargetPlatform.windows => SystemChineseFont.windowsFontFamily.first,
+  TargetPlatform.android || TargetPlatform.fuchsia => 'sans-serif',
+  TargetPlatform.linux => null,
+};
+
+/// Whether [id] is a family `google_fonts` knows — the same registry the
+/// official site is published from.
+bool isGoogleFontFamily(String id) => GoogleFonts.asMap().containsKey(id);
+
+/// Whether [id] was minted for a downloaded free-font file.
+bool isFreeFontId(String id) => id.startsWith(kFreeFontIdPrefix);
+
+/// A stored id this build can still draw: the default face, the system
+/// preset, a downloaded free-font family or a Google family. Anything else —
+/// the reference's `Default`, an old bundled or cloud face — falls back to the
+/// default instead of naming a family the app cannot draw.
+String? normalizeFontFamilyId(String? value) {
+  final id = value?.trim();
+  if (id == null || id.isEmpty || id == 'Default') return null;
+  if (id == kDefaultFontFamily || id == kSystemChineseFontId) return id;
+  if (isFreeFontId(id)) return id;
+  return isGoogleFontFamily(id) ? id : null;
+}
+
+/// Registers a Google-hosted family on this device: `google_fonts` fetches
+/// the files the first time and caches them, so the next boot is offline.
+/// The bundled MiSans, the system face and the downloaded free fonts need
+/// nothing here. True when a Google file finished loading.
 ///
-/// A stored family always outranks this: it is a choice the viewer made.
-String? platformFontFamily({bool? web, TargetPlatform? platform}) {
-  if (web ?? kIsWeb) {
-    return null;
+/// A failed fetch (no network, a blocked host) leaves the current face in
+/// place instead of failing the theme.
+Future<bool> loadGoogleFont(String? family) async {
+  if (family == null || family == kDefaultFontFamily || family == kSystemChineseFontId) return false;
+  if (isFreeFontId(family) || !isGoogleFontFamily(family)) return false;
+  try {
+    googleFontFamily(family);
+    await GoogleFonts.pendingFonts();
+    return true;
+  } on Object catch (error) {
+    debugPrint('Google font $family could not be fetched: $error');
+    return false;
   }
-  return switch (platform ?? defaultTargetPlatform) {
-    TargetPlatform.windows => 'Segoe UI',
-    TargetPlatform.android => 'Roboto',
-    TargetPlatform.iOS || TargetPlatform.macOS => null,
-    TargetPlatform.linux || TargetPlatform.fuchsia => null,
-  };
 }
-
-/// The face [platformFontFamily] resolves to (or the library's designed
-/// face where it answers null), named for the font manager's preview row.
-String platformFontFamilyLabel({bool? web, TargetPlatform? platform}) {
-  if (web ?? kIsWeb) return 'Schibsted Grotesk';
-  return switch (platform ?? defaultTargetPlatform) {
-    TargetPlatform.windows => 'Segoe UI',
-    TargetPlatform.android => 'Roboto',
-    TargetPlatform.iOS || TargetPlatform.macOS => 'San Francisco',
-    TargetPlatform.linux || TargetPlatform.fuchsia => 'Schibsted Grotesk',
-  };
-}
-
-/// The official faces bundled with this app (`pubspec.yaml`'s
-/// `flutter: fonts:`), offered as presets in the appearance pane. They are
-/// app fonts, so a selected one is looked up with a null package; the two
-/// Apple faces give Windows and Linux the Cupertino register, Roboto and
-/// Inter the Google and shadcn/Tailwind ones, Ubuntu Sans Canonical's.
-///
-/// Segoe UI and Android's Roboto are NOT here: they are the system faces
-/// and `platformFontFamily` already names them.
-const List<(String id, String label)> kBundledFontPresets = [
-  ('SFPro', 'SF Pro'),
-  ('SFRounded', 'SF Pro Rounded'),
-  ('Roboto', 'Roboto'),
-  ('Inter', 'Inter'),
-  ('Ubuntu', 'Ubuntu Sans'),
-];

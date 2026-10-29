@@ -20,7 +20,11 @@ SettingsSearchHit _hit(SettingsSection section, String title, String keywords) =
 List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
   final s = t.settings;
   return [
-    _hit(SettingsSection.fontApp, s.fontManagerTitle, 'font family typeface download cloud local 字体 字族 下载 云端 本地 字体管理'),
+    _hit(
+      SettingsSection.fontApp,
+      s.fontManagerTitle,
+      'font family typeface misans free google domestic overseas 字体 字族 免费 谷歌 字体管理',
+    ),
     _hit(SettingsSection.fontDanmaku, s.danmakuFont, 'danmaku font typeface family 弹幕 字体 字族 字体管理'),
     // Browsing and window.
     _hit(SettingsSection.browsing, s.crossSpacing, 'column gap spacing grid 列间距 间距 网格 卡片'),
@@ -83,7 +87,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.theme, s.selectionStyle, 'selection highlight 选中 高亮'),
     _hit(SettingsSection.theme, s.autoClash, 'clash danger success 撞色 避让 状态色'),
     _hit(SettingsSection.theme, s.font, 'font typeface manager bundled preview 字体 字型 管理器 预览 内置'),
-    _hit(SettingsSection.theme, s.fontWeightChange, 'font weight lock face change 字重 锁定 更换 字体'),
     _hit(SettingsSection.theme, s.textScale, 'text size scale factor typography accessibility zoom 文本 字号 缩放 大小 倍率'),
     _hit(SettingsSection.theme, s.language, 'language locale 语言 中文 english'),
     _hit(SettingsSection.theme, s.density, 'density compact touch 密度 紧凑 触控'),
@@ -130,6 +133,9 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.network, s.proxyPort, 'proxy port 端口 代理'),
     _hit(SettingsSection.network, s.proxySystemRecheck, 'system proxy detect recheck vpn 系统代理 检测 重新 代理客户端'),
     _hit(SettingsSection.network, s.proxyModeSystem, 'follow system proxy automatic 跟随 系统 代理 自动'),
+    _hit(SettingsSection.network, s.githubMirrorTitle, 'github mirror acceleration proxy download speed 镜像 加速 代理 下载'),
+    _hit(SettingsSection.network, s.githubMirrorMode, 'download route mirror direct custom domain 下载方式 直连 镜像 自定义'),
+    _hit(SettingsSection.network, s.githubMirrorList, 'mirror list remote refresh add delete 镜像 列表 远程 更新 添加 删除'),
     _hit(SettingsSection.nodes, t.toolbox.toolNetworkTitle, 'platform node probe latency 平台 节点 测速 延迟 网络'),
     _hit(SettingsSection.logs, t.toolbox.toolLogsTitle, 'logs diagnostics level 日志 诊断'),
     // Video.
@@ -427,7 +433,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(
       SettingsSection.dataCache,
       s.downloadDirectory,
-      'download folder directory path fonts file 下载 目录 文件夹 路径 字体 文件',
+      'download folder directory path recordings files 下载 目录 文件夹 路径 录像 文件',
     ),
     _hit(SettingsSection.dataCache, s.downloadDirectoryReset, 'reset download folder default 恢复 默认 下载 目录'),
     // IPTV.

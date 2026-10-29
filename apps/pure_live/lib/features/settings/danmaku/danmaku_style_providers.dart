@@ -705,10 +705,13 @@ class DanmakuStyleController extends Notifier<DanmakuStyle> {
 }
 
 /// The stored family, with the reference's `Default` sentinel (and an empty
-/// write) folded into null, this app's "the platform's own face".
+/// write) folded into null, this app's "the platform's own face". A family
+/// this build no longer offers — an old bundled or cloud face — falls back
+/// the same way rather than leaving the picker on a value it cannot show.
 String? _storedFontFamily(String? family) {
   final value = family?.trim();
-  return value == null || value.isEmpty || value == 'Default' ? null : value;
+  if (value == null || value.isEmpty || value == 'Default') return null;
+  return normalizeFontFamilyId(value);
 }
 
 /// The flying danmaku's style.
