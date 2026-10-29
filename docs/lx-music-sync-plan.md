@@ -52,7 +52,9 @@
   搜索 `/api/search/song/list/page`、详情 `weapi/v3/song/detail`、歌词 `/api/song/lyric/v1`
   （返回 lyric/tlyric/romalrc + yrc 逐字合成 lx 逐字格式）。
   LX 参考：`musicSdk/wy/*`、`wy/utils/crypto.js`
-- ⬜ A6 mg 咪咕：搜索 `jadeite.migu.cn/music_search/v3/search/searchAll?...&sid=USS`、
+- ✅ A6 mg 咪咕（2026-10-29 `music_source_mg.dart`：v3 签名搜索（MD5 盐+固定 deviceId）、
+  10 榜单 querycontentbyId、歌词 lrcUrl+trcUrl 翻译（mrcUrl 逐字为 TEA 变体解密，
+  暂未移植——需要时补 `utils/mrc.js` 的 XXTEA）；取链仅脚本）：搜索 `jadeite.migu.cn/music_search/v3/search/searchAll?...&sid=USS`、
   信息 `c.musicapp.migu.cn/.../resourceinfo.do`（copyrightId 为键）、榜单
   `app.c.nf.migu.cn/pc/bmw/rank/rank-index/v1.0`；MRC 逐字（`mg/utils/mrc.js`）。
 - ✅ A7 换源匹配（2026-10-29 `sources/music_source_match.dart`：名称归一化+版本后缀剥离+±5s
@@ -110,7 +112,7 @@
   LRC（media_core_audio LrcParser 原生支持）。QRC/KRC 解码尚无真实样本验证，待用户实测）：
   kg KRC（XOR 密钥 `[0x40,0x47,0x61,0x77,0x5e,0x32,0x74,0x47,0x51,0x36,0x31,0x2d,0xce,0xd2,0x6e,0x69]` + zlib inflate + `[language:base64]` 翻译/音译，`lyricUtils/kg.js`）、
   tx QRC（`qrcDecode.js`，已移植）、wy yrc→lx 逐字拼接（`wy/lyric.js`，已移植）、
-  mg MRC（`mg/utils/mrc.js`，mg 源未做故未移植）。
+  mg MRC（`mg/utils/mrc.js` TEA 解密，未移植——mg 歌词现走 LRC+翻译路径）。
   （media_core_audio 已有 LyricParser LRC/QRC/KRC/YRC 基础，需与 LX 解析行为对齐。）
 - ✅ D3 歌词播放引擎（media_core_audio `LyricDocument/LrcParser/LyricTimeline` 逐行/逐字 +
   `setLyricOffset` 手动偏移已实现，行为等价 LX LinePlayer）：`lyric-font-player/`（`LinePlayer{offset,rate,onPlay,onSetLyric}`，
