@@ -105,12 +105,17 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
 
   @override
   RecordingTasksState build() {
+    ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
+    // The refresh has to come back as the return value: a `state =` inside
+    // build is discarded — the build's return is the initial state — and a
+    // hardcoded loading tuple here would leave the page on its skeleton
+    // forever.
+    var initial = (ready: false, tasks: const <RecordingTask>[]);
     ref.watch(recordingRepositoryProvider).whenData((repository) {
       _subscription ??= repository.watch().listen((_) => _refresh(repository));
-      _refresh(repository);
+      initial = (ready: true, tasks: repository.list());
     });
-    ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
-    return (ready: false, tasks: const []);
+    return initial;
   }
 
   void _refresh(RecordingTaskRepository repository) {

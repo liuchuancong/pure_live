@@ -83,12 +83,15 @@ final class FollowedAreasController extends Notifier<FollowedAreasState> {
 
   @override
   FollowedAreasState build() {
+    ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
+    // The refresh has to come back as the return value: a `state =` inside
+    // build is discarded — the build's return is the initial state.
+    var initial = (ready: false, areas: const <LiveArea>[]);
     ref.watch(areaFollowRepositoryProvider).whenData((repository) {
       _subscription ??= repository.watch().listen((_) => _refresh(repository));
-      _refresh(repository);
+      initial = (ready: true, areas: repository.list());
     });
-    ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
-    return (ready: false, areas: const []);
+    return initial;
   }
 
   void _refresh(AreaFollowRepository repository) {

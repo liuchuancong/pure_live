@@ -33,9 +33,13 @@ final class AccountsController extends Notifier<AccountsState> {
 
   @override
   AccountsState build() {
+    ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
+    // The refresh has to come back as the return value: a `state =` inside
+    // build is discarded — the build's return is the initial state.
+    var initial = (ready: false, credentials: const <String, LiveCredential>{}, unreadable: const <String>{});
     ref.watch(accountRepositoryProvider).whenData((repository) {
       _subscription ??= repository.watch().listen((_) => _refresh(repository));
-      _refresh(repository);
+      initial = (ready: true, credentials: repository.list(), unreadable: repository.unreadableSites());
       if (!_restored) {
         _restored = true;
         // Applying is in-memory, so every process start re-applies the
@@ -43,8 +47,7 @@ final class AccountsController extends Notifier<AccountsState> {
         unawaited(_applyStored(repository));
       }
     });
-    ref.onDispose(() => unawaited(_subscription?.cancel() ?? Future<void>.value()));
-    return (ready: false, credentials: const {}, unreadable: const {});
+    return initial;
   }
 
   /// The auth capability behind [siteId], or null when the site has none.
