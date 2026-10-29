@@ -245,6 +245,8 @@ final class HongguoSeriesMeta {
     this.statusText = '',
     this.playCount = 0,
     this.followedCount = 0,
+    this.likeCount = 0,
+    this.rating = 0,
     this.cover = '',
     this.categories = const [],
   });
@@ -259,6 +261,8 @@ final class HongguoSeriesMeta {
     statusText: _str(json['status']),
     playCount: _int(json['play_cnt'] ?? json['series_play_cnt']) ?? 0,
     followedCount: _int(json['followed_cnt']) ?? 0,
+    likeCount: _int(json['like_count'] ?? json['series_like_count']) ?? 0,
+    rating: _double(json['rating'] ?? json['score']) ?? 0,
     cover: _str(json['cover'] ?? json['series_cover']),
     categories: _strList(json['category'] ?? json['categories']),
   );
@@ -286,6 +290,12 @@ final class HongguoSeriesMeta {
 
   /// The series' follower count.
   final int followedCount;
+
+  /// How many likes the series carries.
+  final int likeCount;
+
+  /// The public average score, 0 when the platform publishes none.
+  final double rating;
 
   /// The poster cover.
   final String cover;
@@ -390,6 +400,12 @@ int? _int(Object? value) {
   if (value is int) return value;
   if (value is num) return value.toInt();
   if (value is String) return int.tryParse(value.trim());
+  return null;
+}
+
+double? _double(Object? value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value.trim());
   return null;
 }
 

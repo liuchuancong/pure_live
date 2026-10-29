@@ -274,7 +274,9 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
     final figures = <String>[
       if (meta.statusText.isNotEmpty) meta.statusText,
       if (meta.playCount > 0) '${t.hongguo.plays} ${AudienceFormat.format(meta.playCount)}',
+      if (meta.rating > 0) t.hongguo.rating(score: meta.rating.toStringAsFixed(1)),
       if (meta.followedCount > 0) '${t.hongguo.followers} ${AudienceFormat.format(meta.followedCount)}',
+      if (meta.likeCount > 0) '${t.hongguo.likes} ${AudienceFormat.format(meta.likeCount)}',
       if (meta.episodeCount > 0) t.hongguo.episodesCount(count: meta.episodeCount),
     ];
     return Column(

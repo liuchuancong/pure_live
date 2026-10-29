@@ -423,6 +423,8 @@ final class HongguoOfficialClient {
       episodeCount: vids.length,
       statusText: _str(raw, 'episode_right_text'),
       followedCount: _intOf(socialJson['series_favorite_count']) ?? 0,
+      likeCount: _intOf(socialJson['series_like_count']) ?? 0,
+      rating: _doubleOf(socialJson['rating']) ?? 0,
       cover: _cleanUrl(_str(raw, 'series_cover')),
       categories: _tagNames(raw),
     );
@@ -992,6 +994,13 @@ String _str(Map<String, Object?> json, String key) {
 int? _intOf(Object? value) {
   if (value is num) return value.toInt();
   if (value is String) return int.tryParse(value.trim());
+  return null;
+}
+
+/// The published score, which the service sends as a number or a string.
+double? _doubleOf(Object? value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value.trim());
   return null;
 }
 
