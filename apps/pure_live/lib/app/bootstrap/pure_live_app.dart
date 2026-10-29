@@ -8,6 +8,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_shell/live_shell.dart' show WindowRole;
+import 'package:pure_live/app/background/glass/app_component_glass.dart' show AppComponentGlass;
+import 'package:pure_live/app/background/settings/background_settings.dart' show backgroundSettingsProvider;
+import 'package:pure_live/app/background/tone/background_tone.dart' show backgroundToneProvider;
 import 'package:pure_live/app/background/wallpaper/app_background.dart' show AppBackground;
 import 'package:pure_live/app/bootstrap/live_scroll_behavior.dart' show LiveScrollBehavior;
 import 'package:pure_live/app/bootstrap/proxy_http_overrides.dart' show appProxyLookup;
@@ -283,6 +286,17 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     final themeSettings = activeDynamicSeed == null
         ? _settings
         : _settings.rebuild((b) => b..seed = DsSeed.color(activeDynamicSeed));
+    // The glass turns the theme's own surface transparent, so cards, lists
+    // and hand-painted panels read the wallpaper too — not just the floating
+    // layers below.
+    final glass = ref.watch<(bool, double)>(
+      backgroundSettingsProvider.select((state) => (state.glass, state.glassFill)),
+    );
+    // The wallpaper picks the ink: with one painting behind the pages, its
+    // sampled tone decides whether the app wears its light or dark palette,
+    // so text never sits dark-on-dark. No tone (no wallpaper, or a sample
+    // still on its way) keeps the viewer's own choice.
+    final tone = ref.watch(backgroundToneProvider);
     // The translation provider is one per process, above every window (see
     // the entry points): slang keys it with a process-wide GlobalKey, so a
     // second copy inside a second window's tree is a duplicate key.
@@ -299,27 +313,29 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       // they live under their own type and DsApp appends its delegate.
       localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
       debugShowCheckedModeBanner: false,
-      themeMode: _settings.mode,
-      theme: themeSettings.theme(),
+      themeMode: tone == null ? _settings.mode : (tone.dark ? DsThemeMode.dark : DsThemeMode.light),
+      theme: AppComponentGlass.themeOf(themeSettings.theme(), glass: glass.$1, fill: glass.$2),
       builder: (context, child) {
-        final core = LiveAlertWatcher(
-          child: ClipboardRoomWatcher(
-            child: AppVisibilityObserver(
-              // The wallpaper is the bottom layer of the app: every route
-              // sits over it, and the shell's own fill turns translucent
-              // while one is set. The observer feeds the video's pause
-              // signal.
-              child: AppBackground(
-                child: FocusAutoScroll(
-                  // A remote or keyboard moves focus by geometry; this
-                  // reveals the stop in whichever sidebar, list or settings
-                  // column holds it.
-                  child: AppThemeScope(
-                    settings: _settings,
-                    seedColor: _customSeedColor,
-                    dynamicSeedColor: activeDynamicSeed,
-                    onChanged: _updateSettings,
-                    child: AppLocaleScope(localeCode: _localeCode, onChanged: _updateLocale, child: child!),
+        final core = AppComponentGlass(
+          child: LiveAlertWatcher(
+            child: ClipboardRoomWatcher(
+              child: AppVisibilityObserver(
+                // The wallpaper is the bottom layer of the app: every route
+                // sits over it, and the shell's own fill turns translucent
+                // while one is set. The observer feeds the video's pause
+                // signal.
+                child: AppBackground(
+                  child: FocusAutoScroll(
+                    // A remote or keyboard moves focus by geometry; this
+                    // reveals the stop in whichever sidebar, list or settings
+                    // column holds it.
+                    child: AppThemeScope(
+                      settings: _settings,
+                      seedColor: _customSeedColor,
+                      dynamicSeedColor: activeDynamicSeed,
+                      onChanged: _updateSettings,
+                      child: AppLocaleScope(localeCode: _localeCode, onChanged: _updateLocale, child: child!),
+                    ),
                   ),
                 ),
               ),

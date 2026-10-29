@@ -56,6 +56,7 @@ dependencies:
   flutter_svg: ^2.3.0 # SVG 图片渲染
   lucide_icons_flutter: ^4.0.1 # Lucide 图标库
   flame_barrage: ^0.0.10 # 飞行弹幕渲染（media_core_danmaku 的火焰宿主）
+  palette_generator_plus: ^1.0.0 # 背景取色（文字明暗决策）
   pretty_qr_code: ^3.6.0 # 生成二维码
 
   # Flutter 与状态管理

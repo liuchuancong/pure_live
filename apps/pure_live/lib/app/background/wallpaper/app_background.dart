@@ -67,7 +67,11 @@ final class AppBackground extends ConsumerWidget {
   BackgroundConfig? _configOf(BuildContext context, BackgroundSettings settings) {
     if (!settings.active) return null;
     final colors = DsTheme.colorsOf(context);
-    final overlay = appBackgroundOverlay(context, opacity: settings.maskOpacity, blurSigma: settings.overlayBlurSigma);
+    final overlay = appBackgroundOverlay(
+      context,
+      opacity: settings.scrimOpacity,
+      blurSigma: settings.backgroundBlurSigma,
+    );
     final underlay = SolidBackground(color: colors.canvas);
     final letterbox = settings.fit == BoxFit.cover || settings.fit == BoxFit.fill ? null : 24.0;
     switch (settings.kind) {
@@ -103,16 +107,18 @@ final class AppBackground extends ConsumerWidget {
       case BackgroundKind.video:
         final uri = _videoUri(settings);
         if (uri == null) return null;
-        // The frost goes on the decoded surface, not on the backdrop: a video
-        // is a `Texture`, which a backdrop filter has nothing to sample, so
-        // the scrim would stay a flat wash over a sharp clip.
+        // The background blur goes on the decoded surface, not on the
+        // backdrop: a video is a `Texture`, which a backdrop filter has
+        // nothing to sample, so the scrim would stay a flat wash over a
+        // sharp clip. The source carries the sigma itself: the package's
+        // blur sits above the decoder, so toggling it there would restart
+        // the clip.
         return VideoBackground(
-          source: AppBackgroundVideoSource(uri),
+          source: AppBackgroundVideoSource(uri, blurSigma: settings.backgroundBlurSigma),
           fit: settings.fit,
           underlay: underlay,
           fallback: underlay,
-          blurSigma: settings.overlayBlurSigma,
-          overlay: appBackgroundOverlay(context, opacity: settings.maskOpacity, blurSigma: 0),
+          overlay: appBackgroundOverlay(context, opacity: settings.scrimOpacity, blurSigma: 0),
         );
     }
   }
@@ -131,7 +137,8 @@ final class AppBackground extends ConsumerWidget {
 
 /// The scrim the app paints over a background: a white wash on a light
 /// palette (darkening artwork there would leave dark text unreadable), a
-/// dark one otherwise, at [opacity] with [blurSigma] of frost behind it.
+/// dark one otherwise, at [opacity], with the wallpaper behind it blurred
+/// by [blurSigma].
 ///
 /// The preview page builds the same overlay, so what it shows is what the
 /// app would wear.

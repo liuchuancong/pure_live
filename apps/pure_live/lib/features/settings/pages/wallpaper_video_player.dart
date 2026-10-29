@@ -24,10 +24,18 @@ import 'package:pure_live/l10n/translations.dart';
 /// timecode, and mute. A new address means a new decoder; the transport's
 /// own state (paused, muted) belongs to this widget alone.
 final class WallpaperVideoPlayer extends StatefulWidget {
-  const WallpaperVideoPlayer({required this.uri, super.key});
+  const WallpaperVideoPlayer({required this.uri, this.overlay, this.fit = BoxFit.contain, super.key});
 
   /// The clip to play; a local `file:` URI or an http(s) URL.
   final Uri uri;
+
+  /// Painted over the picture, under the transport: the preview's mask and
+  /// frost, so the controls stay as legible as they are without it.
+  final Widget? overlay;
+
+  /// How the frame fills the stage — the display mode the preview panel
+  /// chose, so the clip sits the way the wallpaper will.
+  final BoxFit fit;
 
   @override
   State<WallpaperVideoPlayer> createState() => _WallpaperVideoPlayerState();
@@ -191,7 +199,8 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        MediaPlayerView(handle: handle),
+        MediaPlayerView(handle: handle, fit: widget.fit),
+        if (widget.overlay case final overlay?) Positioned.fill(child: IgnorePointer(child: overlay)),
         // Tap the picture itself to toggle, the way every clip player does;
         // the menu region above the stage keeps its own right click.
         Positioned.fill(

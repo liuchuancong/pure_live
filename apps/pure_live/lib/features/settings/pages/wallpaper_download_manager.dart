@@ -1,8 +1,10 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
+import 'dart:io' show File;
+import 'dart:math' as math;
 
-import 'package:any_image_view/any_image_view.dart' show AnyImageView;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_file/open_file.dart' show OpenFile, ResultType;
@@ -12,8 +14,15 @@ import 'package:pure_live/features/settings/surface/settings_preview.dart' show 
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart';
 
-/// How many task cards one page of the manager's list carries.
-const int _kDownloadsPageSize = 8;
+/// The room the pager takes under the table (its row plus the gap above it),
+/// which the page size leaves out of the rows it counts.
+const double _kPagerRoom = 48;
+
+/// The room the touch list's footer takes, counted the same way.
+const double _kFooterRoom = 36;
+
+/// The table's row: tall enough for the thumbnail plus the cell's padding.
+const double _kRowHeight = 52;
 
 /// Opens the download manager as a page over the caller. The preview page
 /// lives outside the settings surface, so its entry pushes this page with
@@ -71,7 +80,19 @@ final class WallpaperDownloadsPage extends StatelessWidget {
               title: t.settings.downloadManagerTitle,
               onBack: () => Navigator.of(context).maybePop(),
             ),
-            const Expanded(child: WallpaperDownloadsPane()),
+            // The settings surface pads its own panes; this page does not sit
+            // in one, so it brings the same inset.
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+                  DsSpace.s16,
+                  LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
+                  DsSpace.s12,
+                ),
+                child: const WallpaperDownloadsPane(),
+              ),
+            ),
           ],
         ),
       ),
@@ -142,24 +163,10 @@ final class _WallpaperDownloadDetail extends ConsumerWidget {
     // The full walk belongs to the background settings' own preview page:
     // the poster here only leads there, playing the media with the same
     // stage, scrim and apply the gallery's entries get.
-    final poster = saved != null && saved.isNotEmpty && task.kind != WallpaperDownloadKind.video
-        ? saved
-        : (task.thumbUrl?.isNotEmpty == true
-              ? task.thumbUrl
-              : (task.kind == WallpaperDownloadKind.image ? task.url : null));
-    final previewItem = WallpaperItem(
-      (b) => b
-        ..id = task.id
-        ..name = task.fileName
-        ..url = saved != null && saved.isNotEmpty && task.kind != WallpaperDownloadKind.video
-            ? Uri.file(saved).toString()
-            : (task.url ?? '')
-        ..thumb = poster ?? ''
-        ..video = task.kind == WallpaperDownloadKind.video,
-    );
+    final poster = _posterOf(task);
     final preview = DsPressable(
       semanticLabel: t.settings.downloadDetailPreview,
-      onPressed: poster == null ? null : () => unawaited(showWallpaperPreview(context, [previewItem], 0)),
+      onPressed: poster == null ? null : () => openDownloadPreview(context, ref, task.id),
       builder: (context, states, _) => Stack(
         fit: StackFit.expand,
         children: [
@@ -167,11 +174,11 @@ final class _WallpaperDownloadDetail extends ConsumerWidget {
             color: colors.control,
             child: poster == null
                 ? Center(child: DsIcon(DsIcons.image, size: 32, color: colors.textSubtle))
-                : AnyImageView(
-                    imagePath: poster,
+                : DsImage(
+                    image: _imageOf(poster, width: 1280, height: 720),
+                    aspectRatio: 16 / 9,
                     fit: BoxFit.contain,
-                    placeholderWidget: const ColoredBox(color: Color(0x14000000)),
-                    errorWidget: Center(child: DsIcon(DsIcons.image, size: 32, color: colors.textSubtle)),
+                    fallback: Center(child: DsIcon(DsIcons.image, size: 32, color: colors.textSubtle)),
                   ),
           ),
           Center(
@@ -387,20 +394,12 @@ enum _DownloadFilter {
     failed => task.phase == WallpaperDownloadPhase.failed,
   };
 
-  /// The word the chip and the empty state use.
+  /// The word the segment and the empty state use.
   String label(Translations t) => switch (this) {
     all => t.settings.downloadFilterAll,
     running => t.settings.downloadStatusRunning,
     done => t.settings.downloadStatusDone,
     failed => t.settings.downloadStatusFailed,
-  };
-
-  /// The chip's glyph.
-  DsIconData get icon => switch (this) {
-    all => DsIcons.layoutGrid,
-    running => DsIcons.download,
-    done => DsIcons.circleCheck,
-    failed => DsIcons.circleAlert,
   };
 
   /// The empty state's icon for this filter.
@@ -415,11 +414,11 @@ enum _DownloadFilter {
 /// swatch counts as a picture.
 enum _KindFilter { all, image, video }
 
-/// The download manager pane, laid out the way the reference draws its
-/// download centre: a badge-headed summary with the save folder and its
-/// shortcuts, status capsules with counts beside a search field and a kind
-/// dropdown, the counting row with the kind's quick chips, task cards in
-/// three zones — text, status, actions — and a paging footer.
+/// The download manager pane, laid out like the font manager: one row of
+/// search, the kind and the count with the settings button, the state's
+/// segments and counts under it, and a compact table — the file's thumbnail
+/// and state, its size and time, the phase's one action — with a row menu
+/// holding the rest. A tap opens the media in the background preview.
 ///
 /// The settings surface hosts it for `backgroundDownloads` — in place on
 /// the desktop, under its own page header on a touch shell — so the pane
@@ -433,21 +432,112 @@ final class WallpaperDownloadsPane extends ConsumerStatefulWidget {
 }
 
 final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownloadsPane> {
+  final TextEditingController _search = TextEditingController();
+  final ScrollController _tableScroll = ScrollController();
+  String _query = '';
   _DownloadFilter _filter = _DownloadFilter.all;
   _KindFilter _kind = _KindFilter.all;
+  DsTableSort? _sort;
   int _page = 1;
 
-  /// Whether this build lays the pane out for a narrow window; the cards
-  /// read it to pick their own shape.
-  bool _compact = false;
-
-  /// The multi-select: task ids the viewer ticked. Selections survive
-  /// paging and filtering; only the rows' own departure clears them.
+  /// The multi-select: task ids the viewer ticked. Selection follows the row
+  /// through paging and filtering; only a row's own departure clears it.
   final Set<String> _selected = {};
 
-  /// The manager's settings: the folder the files land in and the way in.
-  /// The pane itself stays about the list — these belong behind one
-  /// button, in the panel the button opens.
+  // The touch shell's list: how many rows it holds, how many the filters keep
+  // and how many one screenful takes, kept from the last layout so the scroll
+  // listener knows when to append.
+  int _shown = 0;
+  int _total = 0;
+  int _batch = 0;
+  bool _paged = true;
+  bool _loadingMore = false;
+  Timer? _moreTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _tableScroll.addListener(_onTableScroll);
+  }
+
+  @override
+  void dispose() {
+    _moreTimer?.cancel();
+    _search.dispose();
+    _tableScroll.dispose();
+    super.dispose();
+  }
+
+  /// The touch list's footer: the next batch arrives when the viewer reaches
+  /// the table's end, the way the popular feed's blocks do.
+  void _onTableScroll() {
+    if (_paged || _loadingMore || !_tableScroll.hasClients) return;
+    final position = _tableScroll.position;
+    if (!position.hasContentDimensions || position.extentAfter > 120) return;
+    if (_shown >= _total) return;
+    setState(() => _loadingMore = true);
+    _moreTimer?.cancel();
+    // One beat, so the footer's spinner reads as work rather than a flicker.
+    _moreTimer = Timer(const Duration(milliseconds: 180), () {
+      if (!mounted) return;
+      setState(() {
+        _shown = math.min(_shown + math.max(_batch, 1), _total);
+        _loadingMore = false;
+      });
+    });
+  }
+
+  /// Back to the first page with the list at its top, after a filter change.
+  void _refilter(VoidCallback change) {
+    _moreTimer?.cancel();
+    setState(() {
+      change();
+      _page = 1;
+      // The touch list starts over from one batch.
+      _shown = 0;
+      _loadingMore = false;
+    });
+    _scrollToTop();
+  }
+
+  /// Turns the table to [next], the page's head in view again.
+  void _goToPage(int next) {
+    setState(() => _page = next);
+    _scrollToTop();
+  }
+
+  void _scrollToTop() {
+    if (_tableScroll.hasClients) _tableScroll.jumpTo(0);
+  }
+
+  /// Opens a row in the background settings' preview page, walking every row
+  /// the manager can show.
+  void _openPreview(WallpaperDownloadTask task) => openDownloadPreview(context, ref, task.id);
+
+  /// The rows in the sort the header asked for; the table keeps the order
+  /// ([DsTable.sortLocally] is off), because a page is only part of the list.
+  List<WallpaperDownloadTask> _sorted(List<WallpaperDownloadTask> tasks) {
+    final sort = _sort;
+    if (sort == null) return tasks;
+    final rows = [...tasks];
+    int sizeOf(WallpaperDownloadTask task) => task.total > 0 ? task.total : task.received;
+    int stampOf(WallpaperDownloadTask task) => (task.finishedAt ?? task.startedAt).millisecondsSinceEpoch;
+    int compare(WallpaperDownloadTask a, WallpaperDownloadTask b) => switch (sort.columnId) {
+      'name' => a.fileName.toLowerCase().compareTo(b.fileName.toLowerCase()),
+      'size' => sizeOf(a).compareTo(sizeOf(b)),
+      'time' => stampOf(a).compareTo(stampOf(b)),
+      _ => 0,
+    };
+    rows.sort((a, b) {
+      final order = compare(a, b);
+      return sort.ascending ? order : -order;
+    });
+    return rows;
+  }
+
+  /// The manager's settings: the folder the files land in, the way in, and
+  /// the one housekeeping action. The pane itself stays about the list — these
+  /// belong behind one button, in the panel the button opens.
   Future<void> _openSettings() {
     final t = context.t;
     final directory = ref.read(downloadDirectoryProvider).effectivePath;
@@ -457,7 +547,6 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
         final theme = DsTheme.of(panelContext);
         return DsPanel(
           title: Text(t.settings.downloadSettings),
-          style: DsPanelStyle(background: theme.colors.surface),
           child: DsListSection(
             children: [
               DsListRow(
@@ -479,6 +568,14 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
                 onPressed: () {
                   Navigator.of(panelContext).pop();
                   unawaited(_changeDirectory());
+                },
+              ),
+              DsListRow(
+                leading: DsIcon(DsIcons.trash2, color: theme.colors.danger.text),
+                title: Text(t.settings.downloadDeleteAll),
+                onPressed: () {
+                  Navigator.of(panelContext).pop();
+                  unawaited(_removeAll());
                 },
               ),
             ],
@@ -567,10 +664,10 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final tasks = ref.watch(wallpaperDownloadsProvider);
-    final controller = ref.read(wallpaperDownloadsProvider.notifier);
+    // Ticks that name rows the list no longer holds no longer count.
+    _selected.removeWhere((id) => !tasks.any((task) => task.id == id));
+    final query = _query.trim().toLowerCase();
     final byKind = switch (_kind) {
       _KindFilter.all => tasks,
       _KindFilter.image => tasks.where(
@@ -578,82 +675,166 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
       ),
       _KindFilter.video => tasks.where((task) => task.kind == WallpaperDownloadKind.video),
     };
-    final counts = <_DownloadFilter, int>{
-      for (final filter in _DownloadFilter.values) filter: byKind.where(filter.matches).length,
-    };
-    final visible = [
+    final searched = [
       for (final task in byKind)
-        if (_filter.matches(task)) task,
+        if (query.isEmpty || task.fileName.toLowerCase().contains(query) || task.title.toLowerCase().contains(query))
+          task,
     ];
-    // The pager follows the filters: narrowing the list never leaves the
-    // reader on a page that no longer exists.
-    final pageCount = (visible.length / _kDownloadsPageSize).ceil().clamp(1, 1 << 16);
-    if (_page > pageCount) _page = pageCount;
-    final pageItems = visible.skip((_page - 1) * _kDownloadsPageSize).take(_kDownloadsPageSize).toList();
-    final noneAtAll = tasks.isEmpty;
-    final Widget content;
-    if (pageItems.isEmpty) {
-      content = Center(
-        child: DsEmptyState(
-          icon: DsIcon(_filter.emptyIcon),
-          title: Text(noneAtAll ? t.settings.downloadManagerEmpty : t.settings.downloadFilterEmpty),
-          description: noneAtAll ? Text(t.settings.downloadManagerEmptyDesc) : null,
-        ),
-      );
-    } else {
-      content = CardList<WallpaperDownloadTask>(
-        items: pageItems,
-        itemBuilder: (context, task) => _TaskCard(
-          task: task,
-          compact: _compact,
-          ticked: _selected.contains(task.id),
-          onToggle: () => setState(() {
-            if (!_selected.remove(task.id)) _selected.add(task.id);
-          }),
-          onOpen: () => unawaited(showWallpaperDownloadDetail(context, task.id)),
-          onOpenFolder: () => unawaited(openDownloadedPath(context, task.directory)),
-          onPause: task.isRunning ? () => unawaited(controller.pause(task.id)) : null,
-          onResume: task.phase == WallpaperDownloadPhase.paused ? () => unawaited(controller.resume(task.id)) : null,
-          onRetry: task.isRetriable ? () => unawaited(controller.retry(task.id)) : null,
-          onRemove: () => unawaited(_remove(task)),
-        ),
-      );
-    }
-    final compact = LiveWindow.isCompact(MediaQuery.sizeOf(context).width);
-    _compact = compact;
-    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    // Ticks that name rows the list no longer holds no longer count.
-    _selected.removeWhere((id) => !tasks.any((task) => task.id == id));
-    final allTicked = visible.isNotEmpty && visible.every((task) => _selected.contains(task.id));
-    // The filters stack on a narrow window — chips alone on the first row,
-    // search and the gear under them — and share one row on a wide one.
-    final kindSelect = SizedBox(
-      width: 140,
-      child: DsSelect<_KindFilter>(
-        value: _kind,
-        semanticLabel: t.settings.downloadKindFilter,
-        options: [
-          DsSelectOption(value: _KindFilter.all, label: t.settings.downloadTypeAll),
-          DsSelectOption(value: _KindFilter.image, label: t.settings.backgroundImage),
-          DsSelectOption(value: _KindFilter.video, label: t.settings.backgroundVideo),
+    final counts = <_DownloadFilter, int>{
+      for (final filter in _DownloadFilter.values) filter: searched.where(filter.matches).length,
+    };
+    final visible = _sorted([
+      for (final task in searched)
+        if (_filter.matches(task)) task,
+    ]);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stacked = constraints.maxWidth < 760;
+        // A narrow row keeps no multi-select: the tick column would push the
+        // name out of the width, and a row can still be dropped from its own
+        // menu.
+        if (stacked) _selected.clear();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s12,
+          children: [
+            // The search, the kind, the state and the count stay put: only
+            // the table under them travels, so a long history never carries
+            // the filters away.
+            _buildToolbar(context, stacked: stacked, shown: visible.length, counts: counts),
+            if (_selected.isNotEmpty) _buildSelectionBar(context),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, area) {
+                  // The table takes the room the rest of the page leaves. A
+                  // wide window pages it — one page is exactly what the room
+                  // holds, so the pager stays in sight; a touch shell starts
+                  // with one batch and appends the next as the table's own
+                  // scroll reaches its end.
+                  final paged = !stacked;
+                  final reserve = paged ? _kPagerRoom : _kFooterRoom;
+                  final pageSize = math.max(1, ((area.maxHeight - reserve) / _kRowHeight).floor());
+                  _paged = paged;
+                  _total = visible.length;
+                  // A row past the fold, so the touch table always has
+                  // something to scroll: a first batch that fitted exactly
+                  // would leave nothing to reach the end with.
+                  _batch = paged ? pageSize : pageSize + 1;
+                  _shown = paged
+                      ? 0
+                      : _shown == 0
+                      ? math.min(_batch, visible.length)
+                      : math.min(_shown, visible.length);
+                  final pageCount = !paged || visible.isEmpty ? 0 : (visible.length / pageSize).ceil();
+                  final page = pageCount == 0 ? 1 : _page.clamp(1, pageCount);
+                  final pageItems = paged
+                      ? visible.skip((page - 1) * pageSize).take(pageSize).toList()
+                      : visible.take(_shown).toList();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: DsSpace.s8,
+                    children: [
+                      Expanded(
+                        child: DsTable<WallpaperDownloadTask>(
+                          semanticLabel: t.settings.downloadManagerTitle,
+                          style: const DsTableStyle(rowHeight: _kRowHeight),
+                          columns: _columns(context, narrow: area.maxWidth < 720),
+                          rows: pageItems,
+                          rowKey: (task) => task.id,
+                          scrollController: _tableScroll,
+                          sort: _sort,
+                          sortLocally: false,
+                          onSortChanged: (sort) => _refilter(() => _sort = sort),
+                          selected: _selected,
+                          onSelectionChanged: stacked
+                              ? null
+                              : (next) => setState(() {
+                                  _selected
+                                    ..clear()
+                                    ..addAll([
+                                      for (final key in next)
+                                        if (key is String) key,
+                                    ]);
+                                }),
+                          onRowPressed: _openPreview,
+                          showRowMenuButton: true,
+                          rowMenuBuilder: _rowMenu,
+                          emptyView: DsEmptyState(
+                            icon: DsIcon(_filter.emptyIcon),
+                            title: Text(
+                              tasks.isEmpty ? t.settings.downloadManagerEmpty : t.settings.downloadFilterEmpty,
+                            ),
+                            description: tasks.isEmpty ? Text(t.settings.downloadManagerEmptyDesc) : null,
+                          ),
+                        ),
+                      ),
+                      if (!paged && visible.isNotEmpty) _buildMoreFooter(context),
+                      if (pageCount > 1)
+                        Align(
+                          alignment: AlignmentDirectional.center,
+                          child: DsPagination(
+                            page: page,
+                            pageCount: pageCount,
+                            semanticLabel: t.settings.downloadManagerTitle,
+                            onChanged: (next) {
+                              if (next == page) return;
+                              _goToPage(next);
+                            },
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// The search, the kind of media, the count and the settings button, with
+  /// the state and its counts under them.
+  Widget _buildToolbar(
+    BuildContext context, {
+    required bool stacked,
+    required int shown,
+    required Map<_DownloadFilter, int> counts,
+  }) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final search = DsSearchField(
+      controller: _search,
+      placeholder: t.settings.downloadSearchPlaceholder,
+      semanticLabel: t.settings.downloadSearchPlaceholder,
+      onChanged: (value) => _refilter(() => _query = value),
+    );
+    final kind = DsSegmentedControl<_KindFilter>(
+      value: _kind,
+      semanticLabel: t.settings.downloadKindFilter,
+      onChanged: (value) => _refilter(() => _kind = value),
+      segments: [
+        DsSegment(value: _KindFilter.all, label: Text(t.settings.downloadFilterAll)),
+        DsSegment(value: _KindFilter.image, label: Text(t.settings.backgroundImage)),
+        DsSegment(value: _KindFilter.video, label: Text(t.settings.backgroundVideo)),
+      ],
+    );
+    final status = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DsSegmentedControl<_DownloadFilter>(
+        value: _filter,
+        semanticLabel: t.settings.downloadManagerTitle,
+        onChanged: (value) => _refilter(() => _filter = value),
+        segments: [
+          for (final filter in _DownloadFilter.values)
+            DsSegment(value: filter, label: Text('${filter.label(t)} ${counts[filter] ?? 0}')),
         ],
-        onChanged: (value) {
-          if (value != null) setState(() => _kind = value);
-        },
       ),
     );
-    final statusChips = DsChoiceChips<_DownloadFilter>(
-      value: _filter,
-      onChanged: (value) => setState(() => _filter = value),
-      semanticLabel: t.settings.downloadManagerTitle,
-      options: [
-        for (final filter in _DownloadFilter.values)
-          DsChipOption(
-            value: filter,
-            leading: DsIcon(filter.icon, size: 14),
-            label: Text('${filter.label(t)}  ${counts[filter] ?? 0}'),
-          ),
-      ],
+    final count = Text(
+      t.settings.downloadSummary(total: '$shown'),
+      style: theme.typography.caption.copyWith(color: colors.textMuted),
     );
     final settingsButton = DsButton.icon(
       variant: DsButtonVariant.secondary,
@@ -663,466 +844,307 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
       children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s16, inset, 0),
-          child: compact
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: DsSpace.s8,
-                  children: [
-                    statusChips,
-                    Row(
-                      spacing: DsSpace.s8,
-                      children: [
-                        Expanded(child: kindSelect),
-                        settingsButton,
-                      ],
-                    ),
-                  ],
-                )
-              : Row(
-                  spacing: DsSpace.s12,
-                  children: [
-                    Expanded(child: statusChips),
-                    kindSelect,
-                    settingsButton,
-                  ],
-                ),
-        ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s8),
-          child: Row(
-            spacing: DsSpace.s12,
-            children: [
-              DsCheckbox(
-                value: allTicked,
-                semanticLabel: t.settings.downloadSelectAll,
-                onChanged: (value) => setState(() {
-                  if (value == true) {
-                    _selected.addAll([for (final task in visible) task.id]);
-                  } else {
-                    _selected.clear();
-                  }
-                }),
-              ),
-              Text(
-                _selected.isEmpty
-                    ? t.settings.downloadSelectAll
-                    : t.settings.downloadSelectedCount(count: _selected.length),
-                style: theme.typography.small.copyWith(color: colors.text),
-              ),
-              const Spacer(),
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.trash2, size: 14),
-                onPressed: _selected.isEmpty ? null : () => unawaited(_removeSelected()),
-                child: Text(t.settings.downloadDeleteSelected(count: _selected.length)),
-              ),
-              DsButton(
-                variant: DsButtonVariant.ghost,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.trash2, size: 14),
-                onPressed: tasks.isEmpty ? null : () => unawaited(_removeAll()),
-                child: Text(t.settings.downloadDeleteAll),
-              ),
-            ],
-          ),
-        ),
-        Expanded(child: content),
-        Padding(
-          padding: EdgeInsets.fromLTRB(inset, DsSpace.s8, inset, DsSpace.s12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  t.settings.downloadPageSummary(total: visible.length, page: _page, count: pageCount),
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                ),
-              ),
-              DsPagination(
-                page: _page,
-                pageCount: pageCount,
-                onChanged: (page) => setState(() => _page = page),
-                semanticLabel: t.settings.downloadManagerTitle,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// One download as the reference's card: on a wide window, three zones —
-/// the media's thumbnail beside the text block, the status's fixed-width
-/// zone, and the actions that phase offers; on a narrow one, the phone's
-/// two-row tile — head (tick, thumbnail, name, size) over the progress and
-/// the actions, all leading to the same detail.
-final class _TaskCard extends ConsumerWidget {
-  const _TaskCard({
-    required this.task,
-    required this.compact,
-    required this.ticked,
-    required this.onToggle,
-    required this.onOpen,
-    required this.onOpenFolder,
-    required this.onPause,
-    required this.onResume,
-    required this.onRetry,
-    required this.onRemove,
-  });
-
-  final WallpaperDownloadTask task;
-
-  /// Whether this build lays the card out for a narrow window.
-  final bool compact;
-
-  /// Whether the multi-select holds this row.
-  final bool ticked;
-
-  /// Adds or drops this row from the multi-select.
-  final VoidCallback onToggle;
-
-  /// Opens the row's detail.
-  final VoidCallback onOpen;
-  final VoidCallback onOpenFolder;
-  final VoidCallback? onPause;
-  final VoidCallback? onResume;
-  final VoidCallback? onRetry;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final running = task.isRunning;
-    final paused = task.phase == WallpaperDownloadPhase.paused;
-    final moving = running || paused;
-    final total = task.total;
-    final fraction = total > 0 ? (task.received / total).clamp(0.0, 1.0) : null;
-    final meta = [
-      if (running && total > 0)
-        t.settings.downloadProgress(received: _formatBytes(task.received), total: _formatBytes(total))
-      else
-        _formatBytes(task.received),
-      if (running && task.speedBps > 0) '${_formatBytes(task.speedBps)}/s',
-      if (task.phase == WallpaperDownloadPhase.done && task.finishedAt != null)
-        t.settings.downloadFinishedAt(time: downloadStampOf(task.finishedAt!))
-      else
-        t.settings.downloadStartedAt(time: downloadStampOf(task.startedAt)),
-    ].join(' · ');
-    if (compact) {
-      final statusWord = switch (task.phase) {
-        WallpaperDownloadPhase.running => t.settings.downloadStatusRunning,
-        WallpaperDownloadPhase.paused => t.settings.downloadPausedHint,
-        WallpaperDownloadPhase.done => t.settings.downloadStatusDone,
-        WallpaperDownloadPhase.failed => t.settings.downloadStatusFailed,
-      };
-      final statusColor = switch (task.phase) {
-        WallpaperDownloadPhase.running || WallpaperDownloadPhase.paused => colors.info.text,
-        WallpaperDownloadPhase.done => colors.success.text,
-        WallpaperDownloadPhase.failed => colors.danger.text,
-      };
-      return DsCard(
-        onPressed: onOpen,
-        semanticLabel: task.fileName,
-        style: DsCardStyle(
-          padding: const EdgeInsets.all(DsSpace.s12),
-          borderRadius: BorderRadius.circular(theme.radii.card),
-          background: moving ? colors.accentTint : null,
-          borderColor: moving ? colors.accent : null,
-          borderWidth: moving ? 1 : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s8,
-          children: [
-            Row(
-              spacing: DsSpace.s8,
-              children: [
-                DsCheckbox(value: ticked, semanticLabel: task.fileName, onChanged: (_) => onToggle()),
-                _Thumb(task: task, width: 72, height: 48),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: DsSpace.s4,
-                    children: [
-                      Row(
-                        spacing: DsSpace.s8,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              task.fileName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.small.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                            ),
-                          ),
-                          _KindChip(kind: task.kind),
-                        ],
-                      ),
-                      Text(
-                        meta,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (moving)
-              Row(
-                spacing: DsSpace.s8,
-                children: [
-                  Expanded(
-                    child: DsProgressBar(value: fraction, semanticLabel: task.fileName),
-                  ),
-                  Text(
-                    total > 0 ? '${task.received * 100 ~/ total}%' : '',
-                    style: theme.typography.caption.copyWith(fontWeight: FontWeight.w700, color: colors.text),
-                  ),
-                ],
-              ),
-            Row(
-              spacing: DsSpace.s8,
-              children: [
-                Text(
-                  statusWord,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, color: statusColor),
-                ),
-                const Spacer(),
-                _CompactActions(
-                  task: task,
-                  onOpenFolder: onOpenFolder,
-                  onPause: onPause,
-                  onResume: onResume,
-                  onRetry: onRetry,
-                  onRemove: onRemove,
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-    return DsCard(
-      onPressed: onOpen,
-      semanticLabel: task.fileName,
-      style: DsCardStyle(
-        padding: const EdgeInsets.all(DsSpace.s12),
-        borderRadius: BorderRadius.circular(theme.radii.card),
-        // A moving transfer is the live one on the page: the reference
-        // carries it on the accent's own tint.
-        background: moving ? colors.accentTint : null,
-        borderColor: moving ? colors.accent : null,
-        borderWidth: moving ? 1 : null,
-      ),
-      child: Row(
-        spacing: DsSpace.s12,
-        children: [
-          DsCheckbox(value: ticked, semanticLabel: task.fileName, onChanged: (_) => onToggle()),
-          _Thumb(task: task),
-          Expanded(
-            child: _TextBlock(task: task, meta: meta),
-          ),
-          SizedBox(
-            width: 216,
-            child: _StatusZone(task: task, fraction: fraction),
-          ),
-          _Actions(
-            task: task,
-            onOpenFolder: onOpenFolder,
-            onPause: onPause,
-            onResume: onResume,
-            onRetry: onRetry,
-            onRemove: onRemove,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The card's text block: the name over its category chip, the size and
-/// time line, and the file's path where the folder will land it.
-final class _TextBlock extends StatelessWidget {
-  const _TextBlock({required this.task, required this.meta});
-
-  final WallpaperDownloadTask task;
-  final String meta;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final failure = task.phase == WallpaperDownloadPhase.failed ? (task.error ?? '').trim() : '';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: DsSpace.s3,
-      children: [
-        Row(
-          spacing: DsSpace.s8,
-          children: [
-            Expanded(
-              child: Text(
-                task.fileName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-              ),
-            ),
-            _KindChip(kind: task.kind),
-          ],
-        ),
-        Text(
-          meta,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography.caption.copyWith(color: colors.textMuted),
-        ),
-        Text(
-          failure.isNotEmpty ? failure : '${task.directory}${task.fileName}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography.caption.copyWith(color: failure.isNotEmpty ? colors.danger.text : colors.textSubtle),
-        ),
-      ],
-    );
-  }
-}
-
-/// The card's fixed status zone. A moving transfer shows its bar with the
-/// bold percent beside it and the time left under it; the terminal states
-/// show their own mark and word, the way the reference's list does.
-final class _StatusZone extends StatelessWidget {
-  const _StatusZone({required this.task, required this.fraction});
-
-  final WallpaperDownloadTask task;
-  final double? fraction;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    if (task.isRunning || task.phase == WallpaperDownloadPhase.paused) {
-      final percent = task.total > 0 ? '${task.received * 100 ~/ task.total}%' : '';
-      final eta = task.etaSeconds;
-      final remaining = switch (task.phase) {
-        WallpaperDownloadPhase.paused => t.settings.downloadPausedHint,
-        _ when eta == null => t.settings.downloadStatusRunning,
-        _ when eta >= 3600 => t.settings.downloadEtaHours(hours: eta ~/ 3600),
-        _ when eta >= 60 => t.settings.downloadEtaMinutes(minutes: eta ~/ 60),
-        _ => t.settings.downloadEtaSeconds(seconds: eta),
-      };
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: DsSpace.s3,
-        children: [
+        if (stacked) ...[
+          search,
           Row(
             spacing: DsSpace.s8,
             children: [
-              Expanded(
-                child: DsProgressBar(value: fraction, semanticLabel: task.fileName),
+              Flexible(
+                child: Align(alignment: AlignmentDirectional.centerStart, child: kind),
               ),
-              SizedBox(
-                width: 40,
-                child: Text(
-                  percent,
-                  textAlign: TextAlign.end,
-                  style: theme.typography.caption.copyWith(fontWeight: FontWeight.w700, color: colors.text),
-                ),
-              ),
+              count,
+              settingsButton,
             ],
           ),
-          Text(
-            remaining,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+        ] else
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(child: search),
+              kind,
+              count,
+              settingsButton,
+            ],
           ),
-        ],
-      );
-    }
-    final done = task.phase == WallpaperDownloadPhase.done;
+        status,
+      ],
+    );
+  }
+
+  /// The ticked rows' one action, while there are any.
+  Widget _buildSelectionBar(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     return Row(
       spacing: DsSpace.s8,
       children: [
-        DsIcon(
-          done ? DsIcons.circleCheck : DsIcons.circleX,
-          size: 20,
-          color: done ? colors.success.text : colors.danger.text,
-        ),
         Expanded(
           child: Text(
-            done ? t.settings.downloadStatusDone : t.settings.downloadStatusFailed,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.small.copyWith(
-              fontWeight: FontWeight.w600,
-              color: done ? colors.success.text : colors.danger.text,
-            ),
+            t.settings.downloadSelectedCount(count: _selected.length),
+            style: theme.typography.small.copyWith(color: colors.text),
           ),
+        ),
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
+          leading: const DsIcon(DsIcons.trash2, size: 14),
+          onPressed: () => unawaited(_removeSelected()),
+          child: Text(t.settings.downloadDeleteSelected(count: _selected.length)),
         ),
       ],
     );
   }
+
+  /// The touch list's footer: a spinner while the next screenful is being
+  /// appended, otherwise how much of the history is listed.
+  Widget _buildMoreFooter(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final style = theme.typography.caption.copyWith(color: colors.textMuted);
+    if (_loadingMore) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        spacing: DsSpace.s8,
+        children: [
+          const SizedBox.square(dimension: 14, child: DsSpinner()),
+          Text(t.settings.downloadLoadingMore, style: style),
+        ],
+      );
+    }
+    return Center(
+      child: Text(
+        t.settings.downloadLoadedCount(shown: '$_shown', total: '$_total'),
+        style: style,
+      ),
+    );
+  }
+
+  /// The table's columns: the file with its thumbnail and state, then what is
+  /// fixed about it (its size and when it ran, dropped on a narrow table so
+  /// the row still fits) and the one action of every phase.
+  List<DsTableColumn<WallpaperDownloadTask>> _columns(BuildContext context, {required bool narrow}) {
+    final t = context.t;
+    return [
+      DsTableColumn<WallpaperDownloadTask>(
+        id: 'name',
+        label: t.settings.downloadColumnFile,
+        value: (task) => task.fileName,
+        text: (task) => task.fileName,
+        cell: _nameCell,
+        width: const DsTableColumnWidth.flex(3, 160),
+        sortable: true,
+      ),
+      if (!narrow) ...[
+        DsTableColumn<WallpaperDownloadTask>(
+          id: 'size',
+          label: t.settings.downloadColumnSize,
+          value: (task) => task.total > 0 ? task.total : task.received,
+          text: (task) => _formatBytes(task.total > 0 ? task.total : task.received),
+          numeric: true,
+          sortable: true,
+          width: const DsTableColumnWidth.intrinsic(min: 88),
+        ),
+        DsTableColumn<WallpaperDownloadTask>(
+          id: 'time',
+          label: t.settings.downloadColumnTime,
+          value: (task) => (task.finishedAt ?? task.startedAt).millisecondsSinceEpoch,
+          text: (task) => downloadStampOf(task.finishedAt ?? task.startedAt),
+          sortable: true,
+          width: const DsTableColumnWidth.intrinsic(min: 92),
+        ),
+      ],
+      DsTableColumn<WallpaperDownloadTask>(
+        id: 'actions',
+        label: t.settings.downloadColumnActions,
+        alignment: DsTableCellAlignment.end,
+        cell: (context, task) => _actionButton(context, task, compact: narrow),
+        width: DsTableColumnWidth.fixed(narrow ? 48 : 120),
+      ),
+    ];
+  }
+
+  /// The file's row: its thumbnail, the name and the phase badge beside it, so
+  /// a narrow table keeps the state without a column of its own.
+  Widget _nameCell(BuildContext context, WallpaperDownloadTask task) {
+    return Row(
+      spacing: DsSpace.s8,
+      children: [
+        _Thumb(task: task),
+        Expanded(child: Text(task.fileName, maxLines: 1, overflow: TextOverflow.ellipsis)),
+        _stateBadge(context, task),
+      ],
+    );
+  }
+
+  /// What the manager knows about a row: how far it has gone, that it waits,
+  /// that it landed or that it stopped.
+  Widget _stateBadge(BuildContext context, WallpaperDownloadTask task) {
+    final t = context.t;
+    return switch (task.phase) {
+      WallpaperDownloadPhase.running => DsBadge(
+        status: DsStatus.info,
+        label: Text(
+          task.total > 0
+              ? t.settings.downloadPercent(percent: '${task.received * 100 ~/ task.total}')
+              : t.settings.downloadStatusRunning,
+        ),
+      ),
+      WallpaperDownloadPhase.paused => DsBadge(status: DsStatus.warning, label: Text(t.settings.downloadStatusPaused)),
+      WallpaperDownloadPhase.done => DsBadge(status: DsStatus.success, label: Text(t.settings.downloadStatusDone)),
+      WallpaperDownloadPhase.failed => DsBadge(status: DsStatus.danger, label: Text(t.settings.downloadStatusFailed)),
+    };
+  }
+
+  /// The row's one button: stop or continue a transfer, fetch a failed one
+  /// again, or open the file that landed.
+  Widget _actionButton(BuildContext context, WallpaperDownloadTask task, {required bool compact}) {
+    final t = context.t;
+    final controller = ref.read(wallpaperDownloadsProvider.notifier);
+    final saved = task.filePath;
+    final (icon, label, onPressed) = switch (task.phase) {
+      WallpaperDownloadPhase.running => (
+        DsIcons.pause,
+        t.settings.downloadPause,
+        () => unawaited(controller.pause(task.id)),
+      ),
+      WallpaperDownloadPhase.paused => (
+        DsIcons.play,
+        t.settings.downloadResume,
+        task.isResumable ? () => unawaited(controller.resume(task.id)) : null,
+      ),
+      WallpaperDownloadPhase.failed => (
+        DsIcons.rotateCw,
+        t.common.retry,
+        task.isRetriable ? () => unawaited(controller.retry(task.id)) : null,
+      ),
+      WallpaperDownloadPhase.done => (
+        DsIcons.externalLink,
+        t.settings.downloadOpenFile,
+        saved == null ? null : () => unawaited(openDownloadedPath(context, saved)),
+      ),
+    };
+    final quiet = task.phase == WallpaperDownloadPhase.running || task.phase == WallpaperDownloadPhase.done;
+    if (compact) {
+      return DsButton.icon(
+        variant: quiet ? DsButtonVariant.secondary : DsButtonVariant.primary,
+        size: DsSize.sm,
+        icon: DsIcon(icon, size: 16),
+        semanticLabel: label,
+        onPressed: onPressed,
+      );
+    }
+    return DsButton(
+      size: DsSize.xs,
+      variant: quiet ? DsButtonVariant.secondary : DsButtonVariant.primary,
+      leading: DsIcon(icon, size: 14),
+      onPressed: onPressed,
+      child: Text(label),
+    );
+  }
+
+  /// The row's context menu: the preview it opens on a tap, the phase's verbs,
+  /// its folder and address, the full detail, and its removal.
+  List<Widget> _rowMenu(BuildContext context, WallpaperDownloadTask task) {
+    final t = context.t;
+    final controller = ref.read(wallpaperDownloadsProvider.notifier);
+    final saved = task.filePath;
+    final moving = task.isRunning || task.phase == WallpaperDownloadPhase.paused;
+    return [
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.eye),
+        label: Text(t.settings.backgroundPreviewMedia),
+        onPressed: () => _openPreview(task),
+      ),
+      if (moving)
+        DsMenuItem(
+          leading: DsIcon(task.isRunning ? DsIcons.pause : DsIcons.play),
+          label: Text(task.isRunning ? t.settings.downloadPause : t.settings.downloadResume),
+          onPressed: task.isRunning
+              ? () => unawaited(controller.pause(task.id))
+              : task.isResumable
+              ? () => unawaited(controller.resume(task.id))
+              : null,
+        ),
+      if (task.isRetriable)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.rotateCw),
+          label: Text(t.common.retry),
+          onPressed: () => unawaited(controller.retry(task.id)),
+        ),
+      if (task.phase == WallpaperDownloadPhase.done && saved != null)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.externalLink),
+          label: Text(t.settings.downloadOpenFile),
+          onPressed: () => unawaited(openDownloadedPath(context, saved)),
+        ),
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.folderOpen),
+        label: Text(t.settings.downloadManagerOpenFolder),
+        onPressed: () => unawaited(openDownloadedPath(context, task.directory)),
+      ),
+      if ((task.url ?? '').isNotEmpty)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.link),
+          label: Text(t.settings.backgroundCopyAddress),
+          onPressed: () async {
+            await Clipboard.setData(ClipboardData(text: task.url!));
+            if (context.mounted) showDsToast(context: context, title: t.common.copied);
+          },
+        ),
+      const DsMenuDivider(),
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.slidersHorizontal),
+        label: Text(t.settings.downloadDetailTitle),
+        onPressed: () => unawaited(showWallpaperDownloadDetail(context, task.id)),
+      ),
+      const DsMenuDivider(),
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.trash2),
+        label: Text(t.settings.downloadRemove),
+        destructive: true,
+        onPressed: () => unawaited(_remove(task)),
+      ),
+    ];
+  }
 }
 
-/// The card's thumbnail: the saved file once it exists, the catalogue's
-/// still while it moves or failed, and the kind's glyph on the accent tint
-/// when neither is at hand — the row keeps its shape either way.
+/// The row's thumbnail: the saved file once it exists, the catalogue's still
+/// while it moves or failed, and the kind's glyph on the accent tint when
+/// neither is at hand — the row keeps its shape either way.
 final class _Thumb extends StatelessWidget {
-  const _Thumb({required this.task, this.width = 96.0, this.height = 64.0});
+  const _Thumb({required this.task});
+
+  static const double _width = 48;
+  static const double _height = 32;
 
   final WallpaperDownloadTask task;
-  final double width;
-  final double height;
 
   @override
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final video = task.kind == WallpaperDownloadKind.video;
-    final saved = task.filePath;
-    final String? source;
-    if (!video && saved != null && saved.isNotEmpty) {
-      // The file itself, once it is there.
-      source = saved;
-    } else if (task.thumbUrl != null && task.thumbUrl!.isNotEmpty) {
-      source = task.thumbUrl;
-    } else if (!video && task.url != null && task.url!.isNotEmpty) {
-      // A picture whose source sent no separate thumbnail still shows
-      // itself.
-      source = task.url;
-    } else {
-      source = null;
-    }
+    final poster = _posterOf(task);
     return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(6),
       child: SizedBox(
-        width: width,
-        height: height,
+        width: _width,
+        height: _height,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (source != null)
-              AnyImageView(
-                imagePath: source,
-                fit: BoxFit.cover,
-                placeholderWidget: ColoredBox(color: colors.control),
-                errorWidget: _glyph(colors),
-              )
-            else
-              _glyph(colors),
-            if (task.kind == WallpaperDownloadKind.video)
-              const Center(child: DsIcon(DsIcons.play, size: 20, color: Color(0xE6FFFFFF))),
+            DsImage(
+              image: poster == null
+                  ? null
+                  : _imageOf(poster, width: (_width * 2).round(), height: (_height * 2).round()),
+              width: _width,
+              height: _height,
+              fallback: _glyph(colors),
+            ),
+            if (video) const Center(child: DsIcon(DsIcons.play, size: 18, color: Color(0xE6FFFFFF))),
           ],
         ),
       ),
@@ -1134,69 +1156,107 @@ final class _Thumb extends StatelessWidget {
     child: Center(
       child: DsIcon(
         task.kind == WallpaperDownloadKind.video ? DsIcons.video : DsIcons.image,
-        size: 24,
+        size: 20,
         color: colors.accentText,
       ),
     ),
   );
 }
 
-/// The narrow card's action row: icon-only buttons, one per thing the
-/// phase can still do — the same verbs the wide card words.
-final class _CompactActions extends StatelessWidget {
-  const _CompactActions({
-    required this.task,
-    required this.onOpenFolder,
-    required this.onPause,
-    required this.onResume,
-    required this.onRetry,
-    required this.onRemove,
-  });
-
-  final WallpaperDownloadTask task;
-  final VoidCallback onOpenFolder;
-  final VoidCallback? onPause;
-  final VoidCallback? onResume;
-  final VoidCallback? onRetry;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final lead = switch (task.phase) {
-      WallpaperDownloadPhase.running => (const DsIcon(DsIcons.pause, size: 16), t.settings.downloadPause, onPause),
-      WallpaperDownloadPhase.paused => (const DsIcon(DsIcons.play, size: 16), t.settings.downloadResume, onResume),
-      WallpaperDownloadPhase.failed => (const DsIcon(DsIcons.rotateCw, size: 16), t.common.retry, onRetry),
-      WallpaperDownloadPhase.done => (const DsIcon(DsIcons.externalLink, size: 16), t.settings.downloadOpenFile, null),
-    };
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      spacing: DsSpace.s4,
-      children: [
-        DsButton.icon(
-          variant: DsButtonVariant.secondary,
-          size: DsSize.sm,
-          icon: lead.$1,
-          semanticLabel: lead.$2,
-          onPressed: lead.$3,
-        ),
-        DsButton.icon(
-          variant: DsButtonVariant.ghost,
-          size: DsSize.sm,
-          icon: const DsIcon(DsIcons.folderOpen, size: 16),
-          semanticLabel: t.settings.downloadManagerOpenFolder,
-          onPressed: onOpenFolder,
-        ),
-        DsButton.icon(
-          variant: DsButtonVariant.ghost,
-          size: DsSize.sm,
-          icon: const DsIcon(DsIcons.trash2, size: 16),
-          semanticLabel: t.settings.downloadRemove,
-          onPressed: onRemove,
-        ),
-      ],
-    );
+/// The still a row shows before its file is here: the saved picture once it
+/// exists, else the catalogue's thumbnail, else the picture's own address. A
+/// clip shows its still, never the clip file.
+String? _posterOf(WallpaperDownloadTask task) {
+  final saved = task.filePath;
+  if (task.kind != WallpaperDownloadKind.video && saved != null && saved.isNotEmpty) {
+    // A `file:` address, so the preview page's own backdrop reads it too.
+    return Uri.file(saved).toString();
   }
+  // A clip's still, taken when the download landed: the catalogue
+  // often sends no cover for a clip, and the file itself cannot be painted.
+  final still = task.thumbPath;
+  if (still != null && still.isNotEmpty && File(still).existsSync()) return Uri.file(still).toString();
+  final url = task.url?.trim() ?? '';
+  final thumb = task.thumbUrl?.trim() ?? '';
+  // The still the catalogue sent, when it sent a picture of its own: a
+  // trail that repeats the clip's address has no frame to show.
+  if (thumb.isNotEmpty && thumb != url && !_isClipAddress(thumb)) return thumb;
+  if (task.kind == WallpaperDownloadKind.image && url.isNotEmpty) return url;
+  return null;
+}
+
+/// Whether [address] names a clip rather than a still — a clip cannot be
+/// decoded into a thumbnail, so the row shows its glyph instead.
+bool _isClipAddress(String address) {
+  final path = address.split('?').first.toLowerCase();
+  return path.endsWith('.mp4') ||
+      path.endsWith('.webm') ||
+      path.endsWith('.m3u8') ||
+      path.endsWith('.mov') ||
+      path.endsWith('.m4v');
+}
+
+/// [address] as an image source: a `file:` address becomes the file itself,
+/// everything else the app's shared network cache — the same pair the
+/// background gallery draws its tiles with.
+ImageProvider _imageOf(String address, {int? width, int? height}) {
+  final uri = Uri.tryParse(address);
+  // A `file:` address, a bare path, or a Windows path whose drive letter
+  // reads as a one-letter scheme; everything else is the network's.
+  final local = switch (uri?.scheme) {
+    'file' => uri?.toFilePath(),
+    final scheme when scheme != null && scheme.length > 1 => null,
+    _ => address,
+  };
+  if (local != null && local.isNotEmpty) {
+    final image = FileImage(File(local));
+    return width == null && height == null ? image : ResizeImage(image, width: width, height: height);
+  }
+  return cachedImage(address, width: width, height: height);
+}
+
+/// The download as an entry of the background preview: the saved file once it
+/// is here, the source's address before that.
+WallpaperItem _previewItemOf(WallpaperDownloadTask task) {
+  final saved = task.filePath;
+  final local = saved != null && saved.isNotEmpty ? Uri.file(saved).toString() : null;
+  return WallpaperItem(
+    (b) => b
+      ..id = task.id
+      ..name = task.fileName
+      ..url = local ?? (task.url ?? '')
+      ..thumb = _posterOf(task) ?? ''
+      ..video = task.kind == WallpaperDownloadKind.video,
+  );
+}
+
+/// Opens [taskId]'s media in the background preview, walking every row the
+/// manager can show: the downloaded pictures and clips sit apart behind the
+/// preview's switch, and nothing offers a download — these files are kept.
+void openDownloadPreview(BuildContext context, WidgetRef ref, String taskId) {
+  final walkable = [
+    for (final task in ref.read(wallpaperDownloadsProvider))
+      if (_canPreview(task)) task,
+  ];
+  final at = walkable.indexWhere((task) => task.id == taskId);
+  if (at < 0) return;
+  unawaited(
+    showWallpaperPreview(
+      context,
+      [for (final task in walkable) _previewItemOf(task)],
+      at,
+      downloadable: false,
+      kindSwitch: true,
+    ),
+  );
+}
+
+/// Whether a row has something the preview can show: its saved file, or the
+/// address a transfer reads from.
+bool _canPreview(WallpaperDownloadTask task) {
+  final saved = task.filePath;
+  if (saved != null && saved.isNotEmpty) return true;
+  return (task.url ?? '').trim().isNotEmpty;
 }
 
 /// The row's category chip: 壁纸 or 视频, the way a download tool names
@@ -1223,101 +1283,6 @@ final class _KindChip extends StatelessWidget {
         style: theme.typography.caption.copyWith(color: video ? colors.info.text : colors.accentText),
       ),
     );
-  }
-}
-
-/// The card's own action column, per phase: a moving transfer pauses or
-/// continues, a failed one retries, and every row can reach its folder and
-/// drop its record. The actions sit on the card itself — the reference
-/// keeps no menu between the viewer and them.
-final class _Actions extends StatelessWidget {
-  const _Actions({
-    required this.task,
-    required this.onOpenFolder,
-    required this.onPause,
-    required this.onResume,
-    required this.onRetry,
-    required this.onRemove,
-  });
-
-  final WallpaperDownloadTask task;
-  final VoidCallback onOpenFolder;
-  final VoidCallback? onPause;
-  final VoidCallback? onResume;
-  final VoidCallback? onRetry;
-  final VoidCallback onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final folder = DsButton.icon(
-      variant: DsButtonVariant.ghost,
-      size: DsSize.sm,
-      icon: const DsIcon(DsIcons.folderOpen, size: 16),
-      semanticLabel: t.settings.downloadManagerOpenFolder,
-      onPressed: onOpenFolder,
-    );
-    final remove = DsButton.icon(
-      variant: DsButtonVariant.ghost,
-      size: DsSize.sm,
-      icon: const DsIcon(DsIcons.trash2, size: 16),
-      semanticLabel: t.settings.downloadRemove,
-      onPressed: onRemove,
-    );
-    return switch (task.phase) {
-      WallpaperDownloadPhase.running => Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s4,
-        children: [
-          DsButton.icon(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            icon: const DsIcon(DsIcons.pause, size: 16),
-            semanticLabel: t.settings.downloadPause,
-            onPressed: onPause,
-          ),
-          folder,
-          remove,
-        ],
-      ),
-      WallpaperDownloadPhase.paused => Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s4,
-        children: [
-          DsButton.icon(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            icon: const DsIcon(DsIcons.play, size: 16),
-            semanticLabel: t.settings.downloadResume,
-            onPressed: onResume,
-          ),
-          folder,
-          remove,
-        ],
-      ),
-      WallpaperDownloadPhase.done => Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s4,
-        children: [folder, remove],
-      ),
-      WallpaperDownloadPhase.failed => Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s4,
-        children: [
-          DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            leading: DsIcon(DsIcons.rotateCw, size: 14, color: colors.accentText),
-            onPressed: onRetry,
-            child: Text(t.common.retry, style: theme.typography.small.copyWith(color: colors.accentText)),
-          ),
-          folder,
-          remove,
-        ],
-      ),
-    };
   }
 }
 

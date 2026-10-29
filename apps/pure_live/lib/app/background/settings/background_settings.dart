@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/background/library/background_presets.dart';
+import 'package:pure_live/app/background/tone/background_thumbnails.dart' show backgroundClipStillsProvider;
 import 'package:pure_live/app/providers/providers.dart';
 
 /// What the app paints behind every page.
@@ -79,8 +80,11 @@ final class BackgroundSettings {
     this.gradientStops = const [0, 1],
     this.gradientDeg = 0,
     this.fit = BoxFit.cover,
-    this.maskOpacity = 0.45,
-    this.overlayBlurSigma = 0,
+    this.scrimOpacity = 0.45,
+    this.backgroundBlurSigma = 0,
+    this.glass = false,
+    this.glassFill = 0.6,
+    this.glassBlur = 24,
     this.busy = false,
     this.error = '',
   });
@@ -106,11 +110,28 @@ final class BackgroundSettings {
   final int gradientDeg;
 
   final BoxFit fit;
-  final double maskOpacity;
 
-  /// Gaussian sigma of the frosted scrim: what the mask blurs behind it,
-  /// so the pages read over any background. 0 keeps the flat wash.
-  final double overlayBlurSigma;
+  /// The scrim: the whole-screen wash laid over the wallpaper, white in a
+  /// light palette and black in the dark one. Its opacity is what raises
+  /// text contrast, and it is the layer the tone decision scores.
+  final double scrimOpacity;
+
+  /// Gaussian sigma applied to the wallpaper itself — pictures, clips,
+  /// gradients and flat colours alike. 0 keeps it sharp. This blurs the
+  /// backdrop, not the scrim above it.
+  final double backgroundBlurSigma;
+
+  /// Whether the app's surfaces wear the glass fill and frost
+  /// ([glassFill] over [glassBlur]) instead of the theme's opaque kinds.
+  final bool glass;
+
+  /// The panel fill: how opaque a card, list or floating layer's own
+  /// background is, so the wallpaper reads through it.
+  final double glassFill;
+
+  /// Gaussian sigma behind a floating layer; 0 keeps it translucent but
+  /// sharp. Surfaces that cannot frost (cards, lists) keep the fill alone.
+  final double glassBlur;
 
   /// An upload is being copied into the app's data area.
   final bool busy;
@@ -138,8 +159,11 @@ final class BackgroundSettings {
     List<double>? gradientStops,
     int? gradientDeg,
     BoxFit? fit,
-    double? maskOpacity,
-    double? overlayBlurSigma,
+    double? scrimOpacity,
+    double? backgroundBlurSigma,
+    bool? glass,
+    double? glassFill,
+    double? glassBlur,
     bool? busy,
     String? error,
   }) => BackgroundSettings(
@@ -153,8 +177,11 @@ final class BackgroundSettings {
     gradientStops: gradientStops ?? this.gradientStops,
     gradientDeg: gradientDeg ?? this.gradientDeg,
     fit: fit ?? this.fit,
-    maskOpacity: maskOpacity ?? this.maskOpacity,
-    overlayBlurSigma: overlayBlurSigma ?? this.overlayBlurSigma,
+    scrimOpacity: scrimOpacity ?? this.scrimOpacity,
+    backgroundBlurSigma: backgroundBlurSigma ?? this.backgroundBlurSigma,
+    glass: glass ?? this.glass,
+    glassFill: glassFill ?? this.glassFill,
+    glassBlur: glassBlur ?? this.glassBlur,
     busy: busy ?? this.busy,
     error: error ?? this.error,
   );
@@ -172,8 +199,13 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
   static const _solidKey = 'background.solid';
   static const _gradientKey = 'background.gradient';
   static const _fitKey = 'background.fit';
-  static const _maskKey = 'background.mask';
-  static const _overlayBlurKey = 'background.overlayBlur';
+  // The stored names predate the wording the pane uses now; keeping them
+  // means a settings file and a backup written by an older build still read.
+  static const _scrimKey = 'background.mask';
+  static const _backgroundBlurKey = 'background.overlayBlur';
+  static const _glassKey = 'background.glass';
+  static const _glassFillKey = 'background.glassFill';
+  static const _glassBlurKey = 'background.glassBlur';
 
   @override
   BackgroundSettings build() {
@@ -198,8 +230,11 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
         gradientStops: storedGradient.stops,
         gradientDeg: storedGradient.deg,
         fit: fit,
-        maskOpacity: (StoragePrefs.getDouble(_maskKey) ?? 0.45).clamp(0.0, 0.8),
-        overlayBlurSigma: (StoragePrefs.getDouble(_overlayBlurKey) ?? 0).clamp(0.0, 24.0),
+        scrimOpacity: (StoragePrefs.getDouble(_scrimKey) ?? 0.45).clamp(0.0, 0.8),
+        backgroundBlurSigma: (StoragePrefs.getDouble(_backgroundBlurKey) ?? 0).clamp(0.0, 24.0),
+        glass: StoragePrefs.getBool(_glassKey) ?? false,
+        glassFill: (StoragePrefs.getDouble(_glassFillKey) ?? 0.6).clamp(0.0, 1.0),
+        glassBlur: (StoragePrefs.getDouble(_glassBlurKey) ?? 24).clamp(0.0, 48.0),
       );
     } on Object {
       // Storage never opened: the defaults stand.
@@ -255,12 +290,21 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
 
   void setFit(BoxFit fit) => _update(state.copyWith(fit: fit));
 
-  void setMaskOpacity(double opacity) => _update(state.copyWith(maskOpacity: opacity.clamp(0.0, 0.8)));
+  /// How strong the scrim over the wallpaper is; 0 leaves it bare.
+  void setScrimOpacity(double opacity) => _update(state.copyWith(scrimOpacity: opacity.clamp(0.0, 0.8)));
 
-  /// How frosted the scrim is: the mask stops being a flat wash and blurs
-  /// the background behind it. Capped lower than the media blur, which is
-  /// a one-off paint cost; this one runs on the backdrop every frame.
-  void setOverlayBlurSigma(double sigma) => _update(state.copyWith(overlayBlurSigma: sigma.clamp(0.0, 24.0)));
+  /// How much the wallpaper itself is blurred, on every kind. Capped low:
+  /// this runs on the backdrop every frame, not on one still.
+  void setBackgroundBlur(double sigma) => _update(state.copyWith(backgroundBlurSigma: sigma.clamp(0.0, 24.0)));
+
+  /// Whether surfaces wear the glass fill and frost.
+  void setGlass({required bool value}) => _update(state.copyWith(glass: value));
+
+  /// The panel fill's opacity; 0 lets the wallpaper through untouched.
+  void setGlassFill(double value) => _update(state.copyWith(glassFill: value.clamp(0.0, 1.0)));
+
+  /// The frost behind a floating layer; 0 keeps it translucent but sharp.
+  void setGlassBlur(double sigma) => _update(state.copyWith(glassBlur: sigma.clamp(0.0, 48.0)));
 
   /// Back to the theme's surface; the saved media stays for a reselect.
   void clear() => _update(state.copyWith(kind: BackgroundKind.none, error: ''));
@@ -403,6 +447,17 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
       if (!ref.mounted) return;
       state = onDone(target.path).copyWith(busy: false, error: '');
       _persist();
+      if (sourcePath != null &&
+          sourcePath.isNotEmpty &&
+          backgroundMediaKindOf(target.path) == BackgroundMediaKind.video) {
+        // A clip that was downloaded already has a still; the copy carries
+        // it instead of opening the frames a second time.
+        unawaited(
+          ref
+              .read(backgroundClipStillsProvider)
+              .carry(from: Uri.file(sourcePath).toString(), to: Uri.file(target.path).toString()),
+        );
+      }
     } on Object catch (error) {
       if (target != null) await _delete(target.path);
       if (!ref.mounted) return;
@@ -412,6 +467,10 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
 
   Future<void> _delete(String path) async {
     if (path.isEmpty) return;
+    // A clip's still is keyed by the clip; the clip going makes it garbage.
+    if (backgroundMediaKindOf(path) == BackgroundMediaKind.video) {
+      await ref.read(backgroundClipStillsProvider).forget(Uri.file(path).toString());
+    }
     try {
       await File(path).delete();
     } on Object {
@@ -436,8 +495,11 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
         _solidKey: _colorHex(value.solidColor),
         _gradientKey: _encodeGradient(value),
         _fitKey: value.fit.name,
-        _maskKey: value.maskOpacity,
-        _overlayBlurKey: value.overlayBlurSigma,
+        _scrimKey: value.scrimOpacity,
+        _backgroundBlurKey: value.backgroundBlurSigma,
+        _glassKey: value.glass,
+        _glassFillKey: value.glassFill,
+        _glassBlurKey: value.glassBlur,
       }).catchError((Object _) {
         // A preference; a closed store loses it.
       }),

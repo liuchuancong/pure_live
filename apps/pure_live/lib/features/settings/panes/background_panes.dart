@@ -8,7 +8,6 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
-
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_preview_page.dart';
@@ -35,8 +34,8 @@ final class BackgroundOverviewPane extends ConsumerWidget {
     final settings = ref.watch(backgroundSettingsProvider);
     final controller = ref.read(backgroundSettingsProvider.notifier);
     final children = settingsChildrenOf(SettingsSection.background);
-    // Fit and the media blur only act on a surface that has an image or
-    // video to place; on the flat kinds they stay visible and inert.
+    // The fit only acts on a surface that has an image or video to place;
+    // on the flat kinds it stays visible and inert.
     final media = settings.kind == BackgroundKind.image || settings.kind == BackgroundKind.video;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -59,13 +58,13 @@ final class BackgroundOverviewPane extends ConsumerWidget {
               leading: const DsIcon(DsIcons.contrast),
               title: t.settings.backgroundMask,
               description: t.settings.backgroundMaskDescription,
-              detail: Text('${(settings.maskOpacity * 100).round()}%'),
+              detail: Text('${(settings.scrimOpacity * 100).round()}%'),
               controlWidth: 220,
               control: DsSlider(
-                value: settings.maskOpacity,
+                value: settings.scrimOpacity,
                 max: 0.8,
                 divisions: 16,
-                onChanged: controller.setMaskOpacity,
+                onChanged: controller.setScrimOpacity,
                 semanticLabel: t.settings.backgroundMask,
               ),
             ),
@@ -73,15 +72,15 @@ final class BackgroundOverviewPane extends ConsumerWidget {
               leading: const DsIcon(DsIcons.layers),
               title: t.settings.backgroundOverlayBlur,
               description: t.settings.backgroundOverlayBlurDescription,
-              detail: Text('${settings.overlayBlurSigma.round()}'),
+              detail: Text('${settings.backgroundBlurSigma.round()}'),
               controlWidth: 220,
               control: DsSlider(
-                value: settings.overlayBlurSigma,
+                value: settings.backgroundBlurSigma,
                 // Capped low: this filters the backdrop every frame, not a
                 // still image once.
                 max: 24,
                 divisions: 24,
-                onChanged: controller.setOverlayBlurSigma,
+                onChanged: controller.setBackgroundBlur,
                 semanticLabel: t.settings.backgroundOverlayBlur,
               ),
             ),
@@ -90,6 +89,50 @@ final class BackgroundOverviewPane extends ConsumerWidget {
               title: Text(t.settings.backgroundClear),
               description: Text(t.settings.backgroundClearDescription),
               onPressed: settings.kind == BackgroundKind.none ? null : controller.clear,
+            ),
+          ],
+        ),
+        // One panel fill and one layer blur, applied everywhere: the theme's
+        // surface token turns translucent (cards, lists, the room's own
+        // columns) and the official floating layers frost on top of it.
+        DsListSection(
+          header: Text(t.settings.backgroundGlass),
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.layers),
+              title: Text(t.settings.backgroundGlassEnable),
+              description: Text(t.settings.backgroundGlassDescription),
+              trailing: DsSwitch(
+                value: settings.glass,
+                onChanged: (value) => controller.setGlass(value: value),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.droplet),
+              title: t.settings.backgroundGlassFill,
+              description: t.settings.backgroundGlassFillDescription,
+              detail: Text('${(settings.glassFill * 100).round()}%'),
+              controlWidth: 220,
+              control: DsSlider(
+                value: settings.glassFill,
+                divisions: 20,
+                onChanged: settings.glass ? controller.setGlassFill : null,
+                semanticLabel: t.settings.backgroundGlassFill,
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.sparkles),
+              title: t.settings.backgroundGlassBlur,
+              description: t.settings.backgroundGlassBlurDescription,
+              detail: Text('${settings.glassBlur.round()}'),
+              controlWidth: 220,
+              control: DsSlider(
+                value: settings.glassBlur,
+                max: 48,
+                divisions: 24,
+                onChanged: settings.glass ? controller.setGlassBlur : null,
+                semanticLabel: t.settings.backgroundGlassBlur,
+              ),
             ),
           ],
         ),

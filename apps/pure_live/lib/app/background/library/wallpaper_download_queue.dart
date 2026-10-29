@@ -8,6 +8,7 @@ import 'package:live_net/live_net.dart' show ClientProfile, LiveRequest, LiveStr
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:path/path.dart' as p;
 
+import 'package:pure_live/app/background/tone/background_thumbnails.dart' show backgroundClipStillsProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/app/providers/settings/download_directory_provider.dart'
     show DownloadDirectoryPaths, downloadDirectoryProvider;
@@ -80,6 +81,7 @@ final class WallpaperDownloadTask {
     this.filePath,
     this.url,
     this.thumbUrl,
+    this.thumbPath,
   });
 
   /// Restores a history row the last run kept.
@@ -107,6 +109,7 @@ final class WallpaperDownloadTask {
     filePath: json['filePath'] as String?,
     url: json['url'] as String?,
     thumbUrl: json['thumbUrl'] as String?,
+    thumbPath: json['thumbPath'] as String?,
   );
 
   final String id;
@@ -149,6 +152,11 @@ final class WallpaperDownloadTask {
   /// copied file has none.
   final String? url;
 
+  /// The still taken from a downloaded clip, so a row without a
+  /// catalogue cover still shows a frame — and the wallpaper's tone lookup
+  /// finds the clip by this mapping. Pictures paint themselves.
+  final String? thumbPath;
+
   bool get isRunning => phase == WallpaperDownloadPhase.running;
   bool get isTerminal => phase == WallpaperDownloadPhase.done || phase == WallpaperDownloadPhase.failed;
 
@@ -167,6 +175,7 @@ final class WallpaperDownloadTask {
     phase: WallpaperDownloadPhase.running,
     kind: kind,
     thumbUrl: thumbUrl,
+    thumbPath: thumbPath,
     startedAt: DateTime.now(),
     url: url,
   );
@@ -181,10 +190,32 @@ final class WallpaperDownloadTask {
     phase: phase,
     kind: kind,
     thumbUrl: thumbUrl,
+    thumbPath: thumbPath,
     startedAt: startedAt,
     finishedAt: finishedAt,
     received: received,
     total: total,
+    error: error,
+    filePath: filePath,
+    url: url,
+  );
+
+  /// The row with the still cut from its clip.
+  WallpaperDownloadTask withThumbnail(String path) => WallpaperDownloadTask(
+    id: id,
+    title: title,
+    fileName: fileName,
+    directory: directory,
+    phase: phase,
+    kind: kind,
+    thumbUrl: thumbUrl,
+    thumbPath: path,
+    startedAt: startedAt,
+    finishedAt: finishedAt,
+    received: received,
+    total: total,
+    speedBps: speedBps,
+    etaSeconds: etaSeconds,
     error: error,
     filePath: filePath,
     url: url,
@@ -207,6 +238,7 @@ final class WallpaperDownloadTask {
     'error': error,
     'filePath': filePath,
     'url': url,
+    'thumbPath': thumbPath,
   };
 }
 
@@ -579,6 +611,7 @@ final class WallpaperDownloadsController extends Notifier<List<WallpaperDownload
         phase: phase,
         kind: task.kind,
         thumbUrl: task.thumbUrl,
+        thumbPath: task.thumbPath,
         startedAt: task.startedAt,
         finishedAt: DateTime.now(),
         received: received ?? task.received,
@@ -589,6 +622,19 @@ final class WallpaperDownloadsController extends Notifier<List<WallpaperDownload
       );
     });
     if (ref.mounted) unawaited(_persist());
+    if (phase == WallpaperDownloadPhase.done && filePath != null) unawaited(_cutThumbnail(id, filePath));
+  }
+
+  /// Cuts one still from a clip that just landed: the row paints it where
+  /// the catalogue sent no cover, and the wallpaper's tone lookup reads the
+  /// clip's colour off it. Pictures paint themselves and are left alone.
+  Future<void> _cutThumbnail(String id, String filePath) async {
+    final task = _taskOf(id);
+    if (task == null || task.kind != WallpaperDownloadKind.video) return;
+    final still = await ref.read(backgroundClipStillsProvider).ensure(Uri.file(filePath).toString());
+    if (still == null || !ref.mounted) return;
+    _patch(id, (task) => task.thumbPath == still ? task : task.withThumbnail(still));
+    unawaited(_persist());
   }
 
   WallpaperDownloadTask _withProgress(
@@ -605,6 +651,7 @@ final class WallpaperDownloadsController extends Notifier<List<WallpaperDownload
     phase: task.phase,
     kind: task.kind,
     thumbUrl: task.thumbUrl,
+    thumbPath: task.thumbPath,
     startedAt: task.startedAt,
     finishedAt: task.finishedAt,
     received: received,
