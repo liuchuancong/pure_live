@@ -22,7 +22,8 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart'
         hongguoStreamProxyProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_comfort.dart'
     show HongguoRecoveryBudget, HongguoSleepTimer;
-import 'package:pure_live/modules/hongguo/controller/hongguo_danmaku.dart' show hongguoDanmakuSettingsProvider;
+import 'package:pure_live/modules/hongguo/controller/hongguo_danmaku.dart'
+    show HongguoDanmakuDensity, hongguoDanmakuSettingsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_decoder.dart' show hongguoDecoderLessonsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
@@ -38,7 +39,7 @@ import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hon
 import 'package:pure_live/shared/shared.dart';
 
 /// The catalogues the picture bar hangs over.
-enum _HongguoPanel { fit, sleep, speed, quality, episodes }
+enum _HongguoPanel { fit, sleep, speed, quality, episodes, danmaku }
 
 /// One episode's player page: the picture and its control bar above the
 /// episode shelf, pushed from the series page's play card.
@@ -1656,14 +1657,12 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                       semanticLabel: t.hongguo.volume,
                     ),
                   ),
-                MediaBarButton(
+                _pickerButton(
+                  panel: _HongguoPanel.danmaku,
                   icon: danmaku.enabled ? DsIcons.captions : DsIcons.captionsOff,
                   label: danmaku.enabled ? t.hongguo.danmakuOn : t.hongguo.danmakuOff,
-                  selected: danmaku.enabled,
-                  onPressed: () {
-                    _wake();
-                    unawaited(ref.read(hongguoDanmakuSettingsProvider.notifier).setEnabled(value: !danmaku.enabled));
-                  },
+                  semanticLabel: t.hongguo.danmaku,
+                  compact: compact,
                 ),
               ];
               final trailing = <Widget>[
@@ -1912,6 +1911,49 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                     ),
                 ],
               ),
+            ),
+          ],
+        );
+      case _HongguoPanel.danmaku:
+        final danmaku = ref.watch(hongguoDanmakuSettingsProvider);
+        final controller = ref.read(hongguoDanmakuSettingsProvider.notifier);
+        const sizes = <double>[16, 20, 24, 28, 32];
+        const speeds = <double>[0.5, 1, 1.5, 2];
+        const densities = HongguoDanmakuDensity.values;
+        String speedText(double speed) => '${speed == speed.roundToDouble() ? speed.toInt() : speed}x';
+        return PlayerOverlayPanel(
+          title: t.hongguo.danmaku,
+          width: 200,
+          children: [
+            // A tap walks the value on, as the reference's own panel does,
+            // so the picture stays visible while the look is tuned.
+            PlayerPanelOption(
+              label: danmaku.enabled ? t.hongguo.danmakuOn : t.hongguo.danmakuOff,
+              selected: danmaku.enabled,
+              onPressed: () => unawaited(controller.setEnabled(value: !danmaku.enabled)),
+            ),
+            PlayerPanelOption(
+              label: '${t.hongguo.danmakuFontSize} · ${danmaku.fontSize.round()}',
+              selected: false,
+              onPressed: () {
+                final index = sizes.indexOf(danmaku.fontSize);
+                unawaited(controller.setFontSize(sizes[(index < 0 ? 1 : index + 1) % sizes.length]));
+              },
+            ),
+            PlayerPanelOption(
+              label: '${t.hongguo.danmakuDensity} · ${danmaku.density.label(t)}',
+              selected: false,
+              onPressed: () => unawaited(
+                controller.setDensity(densities[(densities.indexOf(danmaku.density) + 1) % densities.length]),
+              ),
+            ),
+            PlayerPanelOption(
+              label: '${t.hongguo.danmakuSpeed} · ${speedText(danmaku.speed)}',
+              selected: false,
+              onPressed: () {
+                final index = speeds.indexOf(danmaku.speed);
+                unawaited(controller.setSpeed(speeds[(index < 0 ? 1 : index + 1) % speeds.length]));
+              },
             ),
           ],
         );
