@@ -14,11 +14,7 @@ import 'package:media_core_mpv_audio/media_core_mpv_audio.dart'
         MediaSession,
         MediaSessionArtwork,
         MediaSessionCommandNext,
-        MediaSessionCommandPause,
-        MediaSessionCommandPlay,
         MediaSessionCommandPrevious,
-        MediaSessionCommandSeekTo,
-        MediaSessionCommandStop,
         MpvAudioPlayerAdapter,
         kMpvAudioBackendId;
 import 'package:pure_live/app/app.dart' show playerKernelProvider;
@@ -382,14 +378,18 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
           title: track.title,
           artist: track.artist.isEmpty ? null : track.artist,
           album: track.album.isEmpty ? null : track.album,
-          // A network cover is handed to the engine as a URI — the session
-          // surfaces fetch it themselves; no cover falls back to the file's
-          // embedded art.
-          artwork: coverUri == null
-              ? MediaSessionArtwork.embedded
-              : MediaSessionArtwork.uri(coverUri),
+          // A network cover is handed to the engine as a URI — it downloads
+          // it in Dart (certificates verified) before it reaches the OS; no
+          // cover falls back to the file's embedded art.
+          artwork: coverUri == null ? MediaSessionArtwork.embedded : MediaSessionArtwork.uri(coverUri),
           duration: next.duration > Duration.zero ? next.duration : null,
+          // The queue is the app's, not the engine playlist's: the OS's next
+          // and previous only emit on the command stream (nothing to drive
+          // with a single loaded track), so they are the queue's to take.
           autoApplyPlaylistNavigation: false,
+          // What the SMTC card labels the controls with — the README's app
+          // identity step; on Windows the icon itself comes from the exe.
+          appName: 'Pure Live',
           actions: const <MediaAction>{
             MediaAction.play,
             MediaAction.pause,
@@ -403,8 +403,14 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     );
   }
 
-  /// Routes the OS media commands onto the app's queue transports — once
-  /// per engine instance, because the subscription outlives tracks.
+  /// Routes the OS media commands the engine cannot satisfy itself.
+  ///
+  /// Per the README the player applies OS commands on its own — play, pause,
+  /// seek and stop reach the engine directly and only mirror here. The two
+  /// it cannot apply are the queue navigations: with `autoApplyPlaylistNavigation`
+  /// off and a single track loaded, next and previous merely emit, and the
+  /// app's queue is the only thing that knows what they mean. Once per engine
+  /// instance, because the subscription outlives tracks.
   void _bindEngineSessionCommands(MpvAudioPlayerAdapter adapter) {
     if (_engineSessionBound) return;
     _engineSessionBound = true;
@@ -412,18 +418,10 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     if (engine == null) return;
     engine.stream.mediaSessionCommands.listen((command) {
       if (!ref.mounted) return;
-      if (command is MediaSessionCommandPlay) {
-        if (!state.playing) unawaited(_audio.play());
-      } else if (command is MediaSessionCommandPause) {
-        if (state.playing) unawaited(_audio.pause());
-      } else if (command is MediaSessionCommandStop) {
-        unawaited(_audio.stop());
-      } else if (command is MediaSessionCommandNext) {
+      if (command is MediaSessionCommandNext) {
         unawaited(next());
       } else if (command is MediaSessionCommandPrevious) {
         unawaited(previous());
-      } else if (command is MediaSessionCommandSeekTo) {
-        unawaited(_audio.seek(command.position));
       }
     });
   }
