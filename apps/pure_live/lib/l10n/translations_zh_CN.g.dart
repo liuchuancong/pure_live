@@ -4110,6 +4110,34 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '桌面端'
 	String get syncServerDesktop => '桌面端';
+	String get cacheClean => '缓存清理';
+
+	/// zh-CN: '清理'
+	String get cacheCleanButton => '清理';
+
+	/// zh-CN: '换源歌曲信息数量：'
+	String get cacheSwapsLabel => '换源歌曲信息数量：';
+
+	/// zh-CN: '清理换源歌曲缓存'
+	String get cacheSwapsClear => '清理换源歌曲缓存';
+
+	/// zh-CN: '歌词数量：'
+	String get cacheLyricLabel => '歌词数量：';
+
+	/// zh-CN: '清理歌词缓存'
+	String get cacheLyricClear => '清理歌词缓存';
+
+	/// zh-CN: '关联歌词数量：'
+	String get cacheOverrideLabel => '关联歌词数量：';
+
+	/// zh-CN: '清理关联歌词'
+	String get cacheOverrideClear => '清理关联歌词';
+
+	/// zh-CN: '这将清理所有歌曲已关联的歌词，是否确认清理？'
+	String get cacheOverrideConfirm => '这将清理所有歌曲已关联的歌词，是否确认清理？';
+
+	/// zh-CN: '已清理'
+	String get cacheCleared => '已清理';
 
 	/// zh-CN: '连接码'
 	String get syncAuthCode => '连接码';
@@ -11857,6 +11885,16 @@ extension on Translations {
 			'music.syncServerLastConnect' => '最后连接时间：',
 			'music.syncServerMobile' => '移动端',
 			'music.syncServerDesktop' => '桌面端',
+			'music.cacheClean' => '缓存清理',
+			'music.cacheCleanButton' => '清理',
+			'music.cacheSwapsLabel' => '换源歌曲信息数量：',
+			'music.cacheSwapsClear' => '清理换源歌曲缓存',
+			'music.cacheLyricLabel' => '歌词数量：',
+			'music.cacheLyricClear' => '清理歌词缓存',
+			'music.cacheOverrideLabel' => '关联歌词数量：',
+			'music.cacheOverrideClear' => '清理关联歌词',
+			'music.cacheOverrideConfirm' => '这将清理所有歌曲已关联的歌词，是否确认清理？',
+			'music.cacheCleared' => '已清理',
 			'music.syncAuthCode' => '连接码',
 			'music.syncAuthCodeHint' => '服务端显示的连接码',
 			'music.syncMode' => '同步模式',

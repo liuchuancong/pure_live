@@ -1,5 +1,6 @@
 import 'dart:convert' show jsonDecode, jsonEncode;
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
@@ -72,6 +73,27 @@ class CachedLyricSource extends audio.MusicSource {
     await StoragePrefs.setString(kMusicLyricCacheKey, next);
   }
 
+  /// How many songs keep a cached lyric right now — the cache page's count.
+  static int storedLyricCount() {
+    try {
+      final raw = StoragePrefs.getString(kMusicLyricCacheKey);
+      if (raw == null || raw.isEmpty) return 0;
+      final json = jsonDecode(raw);
+      return json is Map ? json.length : 0;
+    } on Object {
+      return 0;
+    }
+  }
+
+  /// Forgets every cached lyric — the cache page's clear button.
+  static Future<void> clearLyricCache() async {
+    try {
+      await StoragePrefs.setString(kMusicLyricCacheKey, '');
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
   Map<String, audio.MusicLyricPayload> _read() {
     try {
       final raw = StoragePrefs.getString(kMusicLyricCacheKey);
@@ -126,3 +148,6 @@ class CachedLyricSource extends audio.MusicSource {
       },
   });
 }
+
+/// The lyric cache's current size for the cache page; re-read after a clear.
+final musicLyricCacheCountProvider = FutureProvider<int>((ref) async => CachedLyricSource.storedLyricCount());

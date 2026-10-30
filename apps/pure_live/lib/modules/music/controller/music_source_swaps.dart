@@ -39,6 +39,12 @@ final class MusicSourceSwapsController extends Notifier<Map<String, audio.MusicT
     await _save();
   }
 
+  /// Forgets every remembered swap — the cache page's clear button.
+  Future<void> clear() async {
+    state = const {};
+    await _save();
+  }
+
   Future<void> _save() async {
     try {
       await StoragePrefs.setString(

@@ -35,6 +35,7 @@ import 'package:pure_live/modules/music/controller/lx_script_runtime.dart' show 
 import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
 import 'package:pure_live/modules/music/controller/music_hotkeys.dart'
     show MusicHotkeyAction, MusicHotkeyCombo, musicHotkeysProvider;
+import 'package:pure_live/modules/music/controller/music_lyric_overrides.dart' show musicLyricOverridesProvider;
 import 'package:pure_live/modules/music/controller/music_open_api.dart'
     show musicOpenApiGateProvider, musicOpenApiLanProvider, musicOpenApiPortProvider, musicOpenApiProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show MusicPlayerController, musicPlayerProvider;
@@ -42,6 +43,7 @@ import 'package:pure_live/modules/music/controller/music_settings.dart';
 import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId, musicSourceListProvider;
 import 'package:pure_live/modules/music/controller/music_source_catalog.dart'
     show MusicCatalogEntry, fetchCatalogScript, kMusicSourceCatalog;
+import 'package:pure_live/modules/music/controller/music_source_swaps.dart' show musicSourceSwapsProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart';
 import 'package:pure_live/modules/music/controller/music_sync.dart'
     show MusicSyncStatus, kMusicSyncModes, musicSyncProvider;
@@ -53,6 +55,8 @@ import 'package:pure_live/modules/music/controller/music_sync_server.dart'
         musicSyncServerPortProvider,
         musicSyncServerProvider,
         musicSyncServerStatusProvider;
+import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart'
+    show CachedLyricSource, musicLyricCacheCountProvider;
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart' show MusicEqEditor;
 
 /// The music module's own settings, the way lx-music lays its rail out:
@@ -205,6 +209,50 @@ final class MusicSettingsPane extends ConsumerWidget {
             ),
           ],
         ),
+        DsListSection(
+          header: Text(t.music.cacheClean),
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.refreshCw),
+              title: Text(t.music.cacheSwapsClear),
+              description: Text('${t.music.cacheSwapsLabel} ${ref.watch(musicSourceSwapsProvider).length}'),
+              trailing: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: ref.watch(musicSourceSwapsProvider).isEmpty
+                    ? null
+                    : () => unawaited(_clearSwaps(context, ref)),
+                child: Text(t.music.cacheCleanButton),
+              ),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.captions),
+              title: Text(t.music.cacheLyricClear),
+              description: Text('${t.music.cacheLyricLabel} ${ref.watch(musicLyricCacheCountProvider).value ?? 0}'),
+              trailing: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: (ref.watch(musicLyricCacheCountProvider).value ?? 0) == 0
+                    ? null
+                    : () => unawaited(_clearLyricCache(context, ref)),
+                child: Text(t.music.cacheCleanButton),
+              ),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.fileMusic),
+              title: Text(t.music.cacheOverrideClear),
+              description: Text('${t.music.cacheOverrideLabel} ${ref.watch(musicLyricOverridesProvider).length}'),
+              trailing: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: ref.watch(musicLyricOverridesProvider).isEmpty
+                    ? null
+                    : () => unawaited(_clearOverrides(context, ref)),
+                child: Text(t.music.cacheCleanButton),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -213,6 +261,43 @@ final class MusicSettingsPane extends ConsumerWidget {
     await ref.read(musicDislikesProvider.notifier).clear();
     if (!context.mounted) return;
     showDsToast(context: context, title: context.t.music.dislikeRulesCleared, status: DsStatus.success);
+  }
+
+  Future<void> _clearSwaps(BuildContext context, WidgetRef ref) async {
+    await ref.read(musicSourceSwapsProvider.notifier).clear();
+    if (!context.mounted) return;
+    showDsToast(context: context, title: context.t.music.cacheCleared, status: DsStatus.success);
+  }
+
+  Future<void> _clearLyricCache(BuildContext context, WidgetRef ref) async {
+    await CachedLyricSource.clearLyricCache();
+    ref.invalidate(musicLyricCacheCountProvider);
+    if (!context.mounted) return;
+    showDsToast(context: context, title: context.t.music.cacheCleared, status: DsStatus.success);
+  }
+
+  Future<void> _clearOverrides(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final confirmed = await showDsDialog<bool>(
+      context: context,
+      builder: (dialogContext) => DsDialog(
+        title: Text(t.music.cacheOverrideClear),
+        icon: const DsIcon(DsIcons.fileMusic),
+        description: Text(t.music.cacheOverrideConfirm),
+        actions: [
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(t.common.cancel),
+          ),
+          DsButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(t.common.confirm)),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref.read(musicLyricOverridesProvider.notifier).clear();
+    if (!context.mounted) return;
+    showDsToast(context: context, title: t.music.cacheCleared, status: DsStatus.success);
   }
 }
 
@@ -2007,8 +2092,7 @@ final class MusicSyncPane extends ConsumerWidget {
                 control: DsButton(
                   variant: DsButtonVariant.secondary,
                   size: DsSize.sm,
-                  onPressed: () =>
-                      unawaited(Clipboard.setData(ClipboardData(text: server.address(serverPort)))),
+                  onPressed: () => unawaited(Clipboard.setData(ClipboardData(text: server.address(serverPort)))),
                   child: Text(t.music.syncServerCopy),
                 ),
               ),
@@ -2124,9 +2208,8 @@ final class MusicSyncPane extends ConsumerWidget {
         actions: [
           DsButton(
             variant: DsButtonVariant.secondary,
-            onPressed: () => unawaited(
-              provider.refresh().then((_) => field.text = ref.read(musicSyncServerAuthCodeProvider)),
-            ),
+            onPressed: () =>
+                unawaited(provider.refresh().then((_) => field.text = ref.read(musicSyncServerAuthCodeProvider))),
             child: Text(t.music.syncServerRefreshCode),
           ),
           DsButton(
@@ -2184,9 +2267,8 @@ final class MusicSyncPane extends ConsumerWidget {
                               ),
                               Text(
                                 '${t.music.syncServerLastConnect} $time',
-                                style: DsTheme.of(context).typography.caption.copyWith(
-                                  color: DsTheme.colorsOf(context).textSubtle,
-                                ),
+                                style: DsTheme.of(context).typography.caption
+                                    .copyWith(color: DsTheme.colorsOf(context).textSubtle),
                               ),
                             ],
                           ),
