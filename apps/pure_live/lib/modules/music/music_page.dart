@@ -925,33 +925,35 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
     }
   }
 
-  /// Reads a playlist file the viewer picked; the list lands as a new playlist.
+  /// Reads a playlist file the viewer picked; a `.lxmc` list backup lands
+  /// through the reference's merge rules, a module json as a new playlist.
   Future<void> _import() async {
     final t = context.t;
     try {
       final file = await FilePicker.pickFile(
         dialogTitle: t.music.playlistImport,
         type: FileType.custom,
-        allowedExtensions: const ['json'],
+        allowedExtensions: const ['json', 'lxmc'],
       );
       final path = file?.path;
       if (!mounted || path == null) return;
-      final playlist = await ref.read(musicPlaylistsProvider.notifier).importFromFile(path);
-      if (!mounted) return;
-      showDsToast(
-        context: context,
-        title: playlist == null
-            ? t.music.playlistImportFailed(error: t.music.playlistImportInvalid)
-            : t.music.playlistImportDone(name: playlist.name),
-        status: playlist == null ? DsStatus.danger : DsStatus.success,
-      );
-      if (playlist != null) {
-        setState(() {
-          _openId = playlist.id;
-          _selecting = false;
-          _selected.clear();
-        });
+      if (path.toLowerCase().endsWith('.lxmc')) {
+        await _importLxmc(path);
+        return;
       }
+      final playlist = await ref.read(musicPlaylistsProvider.notifier).importFromFile(path);
+      if (playlist == null) {
+        // A json copy of an lx-music backup is plain JSON — route it too.
+        await _importLxmc(path);
+        return;
+      }
+      if (!mounted) return;
+      showDsToast(context: context, title: t.music.playlistImportDone(name: playlist.name), status: DsStatus.success);
+      setState(() {
+        _openId = playlist.id;
+        _selecting = false;
+        _selected.clear();
+      });
     } on Object catch (failure) {
       if (mounted) {
         showDsToast(
@@ -961,6 +963,35 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
         );
       }
     }
+  }
+
+  /// The reference's list-backup import: confirm the overwrite rule, then
+  /// merge the backup's lists in.
+  Future<void> _importLxmc(String path) async {
+    final t = context.t;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.music.playlistImport,
+      description: t.music.playlistImportLxmcConfirm,
+      confirmLabel: t.common.confirm,
+      cancelLabel: t.common.cancel,
+    );
+    if (!confirmed || !mounted) return;
+    final report = await ref.read(musicPlaylistsProvider.notifier).importLxmcFile(path);
+    if (!mounted) return;
+    if (report == null) {
+      showDsToast(
+        context: context,
+        title: t.music.playlistImportFailed(error: t.music.playlistImportLxmcUnsupported),
+        status: DsStatus.danger,
+      );
+      return;
+    }
+    showDsToast(
+      context: context,
+      title: t.music.playlistImportLxmcDone(lists: report.added + report.overwritten, songs: report.songs),
+      status: DsStatus.success,
+    );
   }
 
   /// Writes a playlist into the download folder the module already uses.

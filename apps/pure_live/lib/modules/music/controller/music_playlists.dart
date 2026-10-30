@@ -1,5 +1,5 @@
-import 'dart:convert' show jsonDecode, jsonEncode;
-import 'dart:io' show File;
+import 'dart:convert' show jsonDecode, jsonEncode, utf8;
+import 'dart:io' show File, gzip;
 import 'dart:math' show min;
 
 import 'package:flutter/foundation.dart' show immutable;
@@ -7,8 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/modules/music/controller/music_library.dart' show musicTrackFromJson, musicTrackToJson;
+import 'package:pure_live/modules/music/controller/music_library.dart'
+    show musicFavouritesProvider, musicRecentProvider, musicTrackFromJson, musicTrackToJson;
 import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
+import 'package:pure_live/modules/music/controller/music_sync_data.dart' show musicSyncTrackFromInfo;
 
 /// The preference the viewer's own playlists are kept under.
 const String kMusicPlaylistsKey = 'music.playlists';
@@ -113,6 +115,21 @@ final class MusicPlaylist {
     position: position ?? this.position,
     locationUpdateTime: locationUpdateTime ?? this.locationUpdateTime,
   );
+}
+
+/// What an `.lxmc` import changed — the counts the toast reports.
+final class MusicLxmcImport {
+  /// Creates the report.
+  const MusicLxmcImport({required this.added, required this.overwritten, required this.songs});
+
+  /// User lists that joined the viewer's lists.
+  final int added;
+
+  /// Existing lists whose songs were replaced.
+  final int overwritten;
+
+  /// Songs written across the 试听, 收藏 and user lists.
+  final int songs;
 }
 
 /// How a playlist can be re-ordered — the reference's 排序.
@@ -584,6 +601,83 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
       return null;
     }
   }
+
+  /// Imports the reference's `.lxmc` list backup — the gzip container
+  /// `saveLxConfigFile` writes, holding `playList_v2` data or the playlist
+  /// section of an `allData_v2` backup (a `.json` copy of either works too).
+  ///
+  /// The merge rules are the reference's `importNewListData`: a user list
+  /// whose id already exists has its songs replaced; an unknown list joins
+  /// with its link and position time; the 试听 and 收藏 lists are replaced
+  /// wholesale. Null when the file is not one of those shapes.
+  Future<MusicLxmcImport?> importLxmcFile(String path) async {
+    Object? json;
+    try {
+      final bytes = await File(path).readAsBytes();
+      final text = path.toLowerCase().endsWith('.json')
+          ? utf8.decode(bytes)
+          : utf8.decode(gzip.decode(bytes));
+      json = jsonDecode(text);
+      // v1.14.0 shipped backups serialized twice; unwrap the second layer.
+      if (json is String) json = jsonDecode(json);
+    } on Object {
+      return null;
+    }
+    final data = switch (json) {
+      {'type': 'playList_v2', 'data': final Object? lists} => lists,
+      {'type': 'allData_v2', 'playList': final Object? lists} => lists,
+      _ => null,
+    };
+    if (data is! Map) return null;
+
+    final recent = _lxmcTracks(data['defaultList']);
+    final favourites = _lxmcTracks(data['loveList']);
+    var added = 0;
+    var overwritten = 0;
+    var songs = recent.length + favourites.length;
+    final result = [...state];
+
+    for (final entry in data['userList'] as List? ?? const <Object?>[]) {
+      if (entry is! Map || entry['id'] is! String || entry['name'] is! String) continue;
+      final tracks = _lxmcTracks(entry['list']);
+      final id = entry['id'] as String;
+      final locatedAt = entry['locationUpdateTime'] is int
+          ? DateTime.fromMillisecondsSinceEpoch(entry['locationUpdateTime'] as int)
+          : null;
+      final index = result.indexWhere((playlist) => playlist.id == id);
+      if (index >= 0) {
+        result[index] = result[index].copyWith(tracks: tracks, locationUpdateTime: locatedAt);
+        overwritten++;
+      } else {
+        if (result.length >= kMusicPlaylistLimit) continue;
+        result.add(
+          MusicPlaylist(
+            id: id,
+            name: entry['name'] as String,
+            tracks: tracks,
+            createdAt: DateTime.now(),
+            source: entry['source'] is String ? entry['source'] as String? : null,
+            sourceListId: entry['sourceListId'] is String ? entry['sourceListId'] as String? : null,
+            position: result.isEmpty ? 0 : [for (final existing in result) existing.position].reduce(_maxOf) + 1,
+            locationUpdateTime: locatedAt,
+          ),
+        );
+        added++;
+      }
+      songs += tracks.length;
+    }
+
+    state = result;
+    await _save();
+    await ref.read(musicRecentProvider.notifier).replaceAll(recent);
+    await ref.read(musicFavouritesProvider.notifier).replaceAll(favourites);
+    return MusicLxmcImport(added: added, overwritten: overwritten, songs: songs);
+  }
+
+  List<audio.MusicTrack> _lxmcTracks(Object? json) => [
+    if (json is List)
+      for (final entry in json) ?musicSyncTrackFromInfo(entry),
+  ];
 
   /// [base], or [base] with the first free ` (n)` suffix.
   String _uniqueName(String base) {

@@ -3222,6 +3222,13 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '文件里没有可用的歌曲'
 	String get playlistImportInvalid => '文件里没有可用的歌曲';
+	String get playlistImportLxmcConfirm => '备份文件中列表与现有列表 ID 相同时，现有列表内歌曲将会被覆盖，是否要继续？';
+
+	/// zh-CN: '已导入 {lists} 个列表、{songs} 首歌曲'
+	String playlistImportLxmcDone({required Object lists, required Object songs}) => '已导入 ${lists} 个列表、${songs} 首歌曲';
+
+	/// zh-CN: '不是可导入的 lx-music 列表备份'
+	String get playlistImportLxmcUnsupported => '不是可导入的 lx-music 列表备份';
 
 	/// zh-CN: '导出歌单'
 	String get playlistExport => '导出歌单';
@@ -11538,6 +11545,11 @@ extension on Translations {
 			'music.playlistImportDone' => ({required Object name}) => '已导入「${name}」',
 			'music.playlistImportFailed' => ({required Object error}) => '导入失败：${error}',
 			'music.playlistImportInvalid' => '文件里没有可用的歌曲',
+			'music.playlistImportLxmcConfirm' => '备份文件中列表与现有列表 ID 相同时，现有列表内歌曲将会被覆盖，是否要继续？',
+			_ => null,
+		} ?? switch (path) {
+			'music.playlistImportLxmcDone' => ({required Object lists, required Object songs}) => '已导入 ${lists} 个列表、${songs} 首歌曲',
+			'music.playlistImportLxmcUnsupported' => '不是可导入的 lx-music 列表备份',
 			'music.playlistExport' => '导出歌单',
 			_ => null,
 		} ?? switch (path) {

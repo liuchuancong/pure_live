@@ -1174,6 +1174,9 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String playlistImportDone({required Object name}) => 'Imported "${name}"';
 	@override String playlistImportFailed({required Object error}) => 'Import failed: ${error}';
 	@override String get playlistImportInvalid => 'The file has no usable songs';
+	@override String get playlistImportLxmcConfirm => 'Lists in the backup that share an ID with existing ones will have their songs overwritten. Continue?';
+	@override String playlistImportLxmcDone({required Object lists, required Object songs}) => 'Imported ${lists} lists, ${songs} songs';
+	@override String get playlistImportLxmcUnsupported => 'not an importable lx-music list backup';
 	@override String get playlistExport => 'Export playlist';
 	@override String playlistExportDone({required Object path}) => 'Exported to ${path}';
 	@override String playlistExportFailed({required Object error}) => 'Export failed: ${error}';
@@ -4708,6 +4711,11 @@ extension on TranslationsEn {
 			'music.playlistImportDone' => ({required Object name}) => 'Imported "${name}"',
 			'music.playlistImportFailed' => ({required Object error}) => 'Import failed: ${error}',
 			'music.playlistImportInvalid' => 'The file has no usable songs',
+			'music.playlistImportLxmcConfirm' => 'Lists in the backup that share an ID with existing ones will have their songs overwritten. Continue?',
+			_ => null,
+		} ?? switch (path) {
+			'music.playlistImportLxmcDone' => ({required Object lists, required Object songs}) => 'Imported ${lists} lists, ${songs} songs',
+			'music.playlistImportLxmcUnsupported' => 'not an importable lx-music list backup',
 			'music.playlistExport' => 'Export playlist',
 			_ => null,
 		} ?? switch (path) {
