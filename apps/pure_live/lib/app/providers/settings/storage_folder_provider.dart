@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io' show Directory, File, FileSystemException;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -10,12 +11,16 @@ import 'package:pure_live/infrastructure/infrastructure.dart' show AppPaths;
 /// A folder the viewer may move to a directory of their own.
 ///
 /// Everything except the data tree: the database of settings, accounts and
-/// history follows the deployment and never moves, while media, exports and
-/// the clearable cover cache are the viewer's call. The default for each one
-/// comes from the storage layout, so "reset" is always the device's answer.
+/// history follows the deployment and never moves, while media, exports, the
+/// log files, the recordings and the clearable cover cache are the viewer's
+/// call. The default for each one comes from the storage layout, so "reset" is
+/// always the device's answer.
 enum StorageFolder {
   /// Finished videos.
   videos(DsIcons.film),
+
+  /// Live recordings the app took.
+  recordings(DsIcons.folderVideo),
 
   /// Finished songs.
   music(DsIcons.music),
@@ -23,17 +28,23 @@ enum StorageFolder {
   /// Saved wallpapers.
   wallpapers(DsIcons.image),
 
+  /// Saved video wallpapers — the clips.
+  videoWallpapers(DsIcons.video),
+
   /// Exported lyrics.
   lyrics(DsIcons.captions),
 
   /// Installers the update check fetched.
   updates(DsIcons.download),
 
-  /// Background media the viewer imported.
+  /// Background media the viewer imported, still and video alike.
   backgrounds(DsIcons.wallpaper),
 
   /// Downloaded font files.
   fonts(DsIcons.type),
+
+  /// The rotating log files.
+  logs(DsIcons.terminal),
 
   /// The clearable cover and avatar cache.
   cache(DsIcons.database);
@@ -88,17 +99,77 @@ final class StorageFolderOverrides extends Notifier<Map<StorageFolder, String>> 
 /// The stored choices, read straight from the preferences: the notifier's
 /// first answer and the boot's cache root both come from here, so a folder
 /// moved in settings and a folder moved across a restart agree.
+///
+/// Two of these folders had their own row and their own key before they joined
+/// the list; the first read of a folder with nothing stored here takes over
+/// that choice and retires the old keys, so a viewer who moved their logs or
+/// their recordings keeps them moved without a file being touched.
 Map<StorageFolder, String> readStorageFolderOverrides() {
   final overrides = <StorageFolder, String>{};
   for (final folder in StorageFolder.values) {
     try {
       final stored = (StoragePrefs.getString(folder.prefKey) ?? '').trim();
-      if (stored.isNotEmpty) overrides[folder] = stored;
+      if (stored.isNotEmpty) {
+        overrides[folder] = stored;
+        continue;
+      }
+      final legacy = _legacyChoiceFor(folder);
+      if (legacy == null) continue;
+      overrides[folder] = legacy.path;
+      unawaited(_adoptLegacyChoice(folder, legacy));
     } on Object {
       // A closed store answers with the defaults.
     }
   }
   return overrides;
+}
+
+/// The choice [folder] stored under its own key before it belonged here, with
+/// the keys that held it; null when the old row never wrote one. The keys are
+/// read literally — the prefs gate resolves a call site only from the text.
+({String path, List<String> keys})? _legacyChoiceFor(StorageFolder folder) {
+  try {
+    return switch (folder) {
+      StorageFolder.logs => _legacy((StoragePrefs.getString('log.directory') ?? '').trim(), const ['log.directory']),
+      // The old row named a parent and the app owned a `PureLiveRecords`
+      // child of it — the takes live in that child, so adopting that child as
+      // the folder keeps every file exactly where it is.
+      StorageFolder.recordings => _legacyParentedRecordings(
+        (StoragePrefs.getString('recorder.dir') ?? '').trim(),
+        (StoragePrefs.getString('recorder.saveDir') ?? '').trim(),
+      ),
+      _ => null,
+    };
+  } on Object {
+    return null;
+  }
+}
+
+/// The legacy answer for [path] and the [keys] that held it; null when the old
+/// row never wrote one.
+({String path, List<String> keys})? _legacy(String path, List<String> keys) =>
+    path.isEmpty ? null : (path: path, keys: keys);
+
+/// The recordings folder the recorder's own keys implied: `PureLiveRecords`
+/// under the first parent the viewer typed — `recorder.dir`, or the
+/// `recorder.saveDir` an older build wrote.
+({String path, List<String> keys})? _legacyParentedRecordings(String directory, String saved) {
+  final parent = directory.isNotEmpty ? directory : saved;
+  if (parent.isEmpty) return null;
+  return (path: p.join(parent, 'PureLiveRecords'), keys: const ['recorder.dir', 'recorder.saveDir']);
+}
+
+/// Moves [legacy] under [folder]'s own key and drops the keys it came from, so
+/// the choice is read from one place from the next start on.
+Future<void> _adoptLegacyChoice(StorageFolder folder, ({String path, List<String> keys}) legacy) async {
+  try {
+    await StoragePrefs.setString(folder.prefKey, legacy.path);
+    for (final key in legacy.keys) {
+      await StoragePrefs.remove(key);
+    }
+  } on Object {
+    // A closed store leaves the legacy read to do the same thing next start.
+  }
 }
 
 /// Proves [path] accepts writes. Android scoped storage can hand back a
@@ -142,11 +213,17 @@ final class AppFolders {
   /// Finished videos.
   Directory get videos => _pick(StorageFolder.videos, paths.videos);
 
+  /// Live recordings.
+  Directory get recordings => _pick(StorageFolder.recordings, paths.recordings);
+
   /// Finished songs.
   Directory get music => _pick(StorageFolder.music, paths.music);
 
   /// Saved wallpapers.
   Directory get wallpapers => _pick(StorageFolder.wallpapers, paths.wallpapers);
+
+  /// Saved video wallpapers — the clips.
+  Directory get videoWallpapers => _pick(StorageFolder.videoWallpapers, paths.videoWallpapers);
 
   /// Exported lyrics.
   Directory get lyrics => _pick(StorageFolder.lyrics, paths.lyrics);
@@ -163,8 +240,8 @@ final class AppFolders {
   /// Downloaded fonts.
   Directory get fonts => _pick(StorageFolder.fonts, paths.fonts);
 
-  /// Live recordings, when the viewer has no folder of their own picked.
-  Directory get recordings => paths.recordings;
+  /// The rotating log files.
+  Directory get logs => _pick(StorageFolder.logs, paths.logs);
 
   /// The clearable cache area: the device default unless the viewer moved it.
   Directory get cacheRoot => _pick(StorageFolder.cache, paths.cacheRoot);

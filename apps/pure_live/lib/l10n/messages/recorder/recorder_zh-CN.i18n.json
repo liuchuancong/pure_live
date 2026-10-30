@@ -13,8 +13,6 @@
   "stateFailed": "失败",
   "settingsTitle": "录制",
   "saveDirTitle": "保存目录",
-  "saveDirDefault": "跟随引擎默认目录",
-  "saveDirDialogHint": "输入保存录制文件的文件夹路径",
   "namingTitle": "文件命名模板",
   "namingDescription": "可用日期、时间、平台、房间号与标题占位符。",
   "namingDialogHint": "输入录制文件的命名模板",

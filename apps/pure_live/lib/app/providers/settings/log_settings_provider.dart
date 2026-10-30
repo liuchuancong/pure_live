@@ -1,8 +1,7 @@
-import 'dart:io' show Directory, File, FileSystemException;
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_log/live_log.dart' show LogLevel;
 import 'package:pure_live/app/logging/app_log.dart';
+import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 
 /// What the log tree is configured to do right now: the minimum level the
 /// sinks see, whether a file is written and how it rotates, how many records
@@ -14,8 +13,6 @@ typedef LogSettings = ({
   int fileMaxFiles,
   int memoryCapacity,
   String directory,
-  String defaultDirectory,
-  bool directoryCustom,
 });
 
 /// Owns the log configuration. Every write goes through the app's log tree so
@@ -24,6 +21,10 @@ typedef LogSettings = ({
 final class LogSettingsController extends Notifier<LogSettings> {
   @override
   LogSettings build() {
+    // The folder is the storage layout's answer with the viewer's own choice
+    // laid over it, so the 存储位置 page owns it and a move lands here on the
+    // next rebuild — the running sink follows.
+    applyAppLogDirectory(ref.watch(appPathsProvider).logs);
     syncAppLogFromStore();
     return _current();
   }
@@ -43,18 +44,6 @@ final class LogSettingsController extends Notifier<LogSettings> {
   /// How many records the memory ring holds for the log page.
   Future<void> setMemoryCapacity(int capacity) async => _apply(() => setAppLogMemoryCapacity(capacity));
 
-  /// Points the file sink at [path] once it proves it accepts writes; false
-  /// means nothing changed and the caller shows the permission hint.
-  Future<bool> setDirectory(String path) async {
-    final normalized = path.trim();
-    if (normalized.isNotEmpty && !await _acceptsWrites(normalized)) return false;
-    _apply(() => setAppLogDirectory(normalized));
-    return true;
-  }
-
-  /// Returns the files to the storage layer's own logs folder.
-  Future<void> resetDirectory() async => _apply(resetAppLogDirectory);
-
   void _apply(void Function() write) {
     write();
     state = _current();
@@ -67,25 +56,8 @@ final class LogSettingsController extends Notifier<LogSettings> {
     fileMaxFiles: appLogFileMaxFiles,
     memoryCapacity: appLogMemoryCapacity,
     directory: appLogDirectoryPath ?? '',
-    defaultDirectory: appLogDefaultDirectory ?? '',
-    directoryCustom: appLogDirectoryCustom,
   );
 }
 
 /// The log configuration the settings page edits.
 final logSettingsProvider = NotifierProvider<LogSettingsController, LogSettings>(LogSettingsController.new);
-
-/// Proves [path] accepts writes. A folder the app cannot write to would make
-/// the file sink degrade silently, so the choice is tested before it is kept.
-Future<bool> _acceptsWrites(String path) async {
-  try {
-    final directory = Directory(path);
-    await directory.create(recursive: true);
-    final probe = File(directory.uri.resolve('.write_probe').toFilePath());
-    await probe.writeAsString('ok', flush: true);
-    await probe.delete();
-    return true;
-  } on FileSystemException {
-    return false;
-  }
-}

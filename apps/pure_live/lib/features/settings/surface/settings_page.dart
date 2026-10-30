@@ -2088,23 +2088,29 @@ final class _StorageFoldersSection extends ConsumerWidget {
 
   static String _label(Translations t, StorageFolder folder) => switch (folder) {
     StorageFolder.videos => t.settings.storageFolderVideos,
+    StorageFolder.recordings => t.settings.storageFolderRecordings,
     StorageFolder.music => t.settings.storageFolderMusic,
     StorageFolder.wallpapers => t.settings.storageFolderWallpapers,
+    StorageFolder.videoWallpapers => t.settings.storageFolderVideoWallpapers,
     StorageFolder.lyrics => t.settings.storageFolderLyrics,
     StorageFolder.updates => t.settings.storageFolderUpdates,
     StorageFolder.backgrounds => t.settings.storageFolderBackgrounds,
     StorageFolder.fonts => t.settings.storageFolderFonts,
+    StorageFolder.logs => t.settings.storageFolderLogs,
     StorageFolder.cache => t.settings.storageFolderCache,
   };
 
   static Directory _pathOf(AppFolders folders, StorageFolder folder) => switch (folder) {
     StorageFolder.videos => folders.videos,
+    StorageFolder.recordings => folders.recordings,
     StorageFolder.music => folders.music,
     StorageFolder.wallpapers => folders.wallpapers,
+    StorageFolder.videoWallpapers => folders.videoWallpapers,
     StorageFolder.lyrics => folders.lyrics,
     StorageFolder.updates => folders.updates,
     StorageFolder.backgrounds => folders.backgrounds,
     StorageFolder.fonts => folders.fonts,
+    StorageFolder.logs => folders.logs,
     StorageFolder.cache => folders.imageCache,
   };
 
@@ -2116,7 +2122,7 @@ final class _StorageFoldersSection extends ConsumerWidget {
       final saved = await ref.read(storageFolderOverridesProvider.notifier).set(folder, selected);
       if (!context.mounted) return;
       if (!saved) {
-        showDsToast(context: context, title: t.settings.downloadDirectoryPermissionHint, status: DsStatus.danger);
+        showDsToast(context: context, title: t.settings.storageFolderPermissionHint, status: DsStatus.danger);
         return;
       }
       showDsToast(
@@ -2127,7 +2133,7 @@ final class _StorageFoldersSection extends ConsumerWidget {
       );
     } on Object {
       if (context.mounted) {
-        showDsToast(context: context, title: t.settings.downloadDirectoryPickFailed, status: DsStatus.danger);
+        showDsToast(context: context, title: t.settings.storageFolderPickFailed, status: DsStatus.danger);
       }
     }
   }
@@ -2157,7 +2163,7 @@ final class _StorageFoldersSection extends ConsumerWidget {
                 message: directory,
                 child: Text(directory, maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
-              detail: Text(custom ? t.settings.downloadDirectoryCustomLabel : t.settings.downloadDirectoryDefaultLabel),
+              detail: Text(custom ? t.settings.storageFolderCustomLabel : t.settings.storageFolderDefaultLabel),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -2229,32 +2235,6 @@ final class _LogSettingsPaneState extends ConsumerState<_LogSettingsPane> {
 
   /// The memory-ring stops, in records.
   static const List<int> _kMemoryCaps = [200, 500, 1000, 2000, 5000];
-
-  Future<void> _pickDirectory() async {
-    final t = context.t;
-    try {
-      final selected = await FilePicker.getDirectoryPath(dialogTitle: t.settings.logDirectory);
-      if (selected == null || selected.trim().isEmpty) return;
-      final saved = await ref.read(logSettingsProvider.notifier).setDirectory(selected);
-      if (!mounted) return;
-      if (!saved) {
-        showDsToast(context: context, title: t.settings.logDirectoryPermissionHint, status: DsStatus.danger);
-        return;
-      }
-      showDsToast(context: context, title: t.settings.logDirectoryUpdated);
-    } on Object {
-      if (mounted) {
-        showDsToast(context: context, title: t.settings.logDirectoryPickFailed, status: DsStatus.danger);
-      }
-    }
-  }
-
-  Future<void> _resetDirectory() async {
-    await ref.read(logSettingsProvider.notifier).resetDirectory();
-    if (mounted) {
-      showDsToast(context: context, title: context.t.settings.logDirectoryUpdated);
-    }
-  }
 
   Future<void> _openDirectory(String path) async {
     final result = await OpenFile.open(path);
@@ -2360,12 +2340,16 @@ final class _LogSettingsPaneState extends ConsumerState<_LogSettingsPane> {
             DsListRow(
               leading: const DsIcon(DsIcons.folder),
               title: Text(t.settings.logDirectory),
-              // The folder in force, with the default named underneath when
-              // the viewer picked their own.
-              description: Text(
-                settings.directoryCustom
-                    ? '${settings.directory}\n${t.settings.logDirectoryDefaultHint} ${settings.defaultDirectory}'
-                    : settings.directory,
+              // Where the files land, reached in one press. Moving them is the
+              // 存储位置 page's job, so this row reads rather than edits.
+              description: DsTooltip(
+                message: settings.directory,
+                child: Text(settings.directory, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+              detail: Text(
+                ref.watch(storageFolderOverridesProvider).containsKey(StorageFolder.logs)
+                    ? t.settings.storageFolderCustomLabel
+                    : t.settings.storageFolderDefaultLabel,
               ),
               onPressed: settings.directory.isEmpty ? null : () => unawaited(_openDirectory(settings.directory)),
               trailing: DsButton.icon(
@@ -2376,21 +2360,6 @@ final class _LogSettingsPaneState extends ConsumerState<_LogSettingsPane> {
                 icon: const DsIcon(DsIcons.copy, size: 16),
               ),
             ),
-            DsListRow(
-              leading: const DsIcon(DsIcons.folderOpen),
-              title: Text(t.settings.logDirectoryChange),
-              description: Text(t.settings.logDirectoryChangeDesc),
-              showChevron: true,
-              onPressed: () => unawaited(_pickDirectory()),
-            ),
-            if (settings.directoryCustom)
-              DsListRow(
-                leading: const DsIcon(DsIcons.rotateCcw),
-                title: Text(t.settings.logDirectoryReset),
-                description: Text(t.settings.logDirectoryResetDesc),
-                destructive: true,
-                onPressed: () => unawaited(_resetDirectory()),
-              ),
           ],
         ),
       ],

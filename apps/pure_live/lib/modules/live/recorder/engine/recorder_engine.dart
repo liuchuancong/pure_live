@@ -182,7 +182,7 @@ final class RecorderEngine {
     // Trim completed takes before the new one lands, so the cap accounts for
     // the recording about to start and never touches an active session.
     if (settings.cacheLimitEnabled) await enforceCacheLimit();
-    final directory = await _outputDirectory(settings.saveDir);
+    final directory = await _outputDirectory();
     final take = _takeName(task);
     final root = p.join(directory, take);
     final repo = _ref.read(recordingRepositoryProvider).value;
@@ -509,24 +509,17 @@ final class RecorderEngine {
     unawaited(enforceCacheLimit().then<void>((_) {}, onError: (Object _) {}));
   }
 
-  /// Where recordings land: the viewer's chosen directory, or the app's
-  /// own support area when the row is empty. A configured path that cannot
-  /// be created falls back to the default rather than failing the take.
-  Future<String> _outputDirectory(String saveDir) async => (await _managedRoot(saveDir)).path;
+  /// Where recordings land: the folder this app owns for them, created on
+  /// demand. A folder that cannot be made fails the take — the engine has no
+  /// second place to put a recording.
+  Future<String> _outputDirectory() async => (await _managedRoot()).path;
 
-  /// The folder this app owns for recordings. A chosen parent directory gets
-  /// a `PureLiveRecords` child with an ownership marker, exactly the
-  /// reference's rule: clearing or trimming never touches the user's other
-  /// files in a broad folder such as Downloads. An empty setting uses the
-  /// app-support `recordings` folder.
-  Future<Directory> _managedRoot(String saveDir) async {
-    final trimmed = saveDir.trim();
-    final Directory root;
-    if (trimmed.isEmpty) {
-      root = _ref.read(appPathsProvider).recordings;
-    } else {
-      root = Directory(p.join(trimmed, 'PureLiveRecords'));
-    }
+  /// The folder this app owns for recordings: the storage layout's answer with
+  /// the viewer's own choice laid over it. It carries an ownership marker so
+  /// clearing and trimming stay inside what the app made and never reach a
+  /// folder the viewer pointed it at by mistake.
+  Future<Directory> _managedRoot() async {
+    final root = _ref.read(appPathsProvider).recordings;
     await root.create(recursive: true);
     final marker = File(p.join(root.path, _kRecordMarker));
     if (!marker.existsSync()) {
@@ -571,14 +564,14 @@ final class RecorderEngine {
 
   /// The managed folder's bytes, active takes included.
   Future<int> cacheBytes() async {
-    final root = await _managedRoot(_ref.read(recordingSettingsProvider).saveDir);
+    final root = await _managedRoot();
     return _folderBytes(root);
   }
 
   /// Deletes every finished managed file and empty folder; active recordings
   /// and the ownership marker stay. Answers the bytes left.
   Future<int> clearCache() async {
-    final root = await _managedRoot(_ref.read(recordingSettingsProvider).saveDir);
+    final root = await _managedRoot();
     if (_hasForeignRecording) return _folderBytes(root);
     final List<FileSystemEntity> entities;
     try {
@@ -623,7 +616,7 @@ final class RecorderEngine {
 
   Future<int> _runCacheTrim() async {
     final settings = _ref.read(recordingSettingsProvider);
-    final root = await _managedRoot(settings.saveDir);
+    final root = await _managedRoot();
     var total = _folderBytes(root);
     if (!settings.cacheLimitEnabled || _hasForeignRecording) return total;
     final limit = settings.cacheLimitMb * 1024 * 1024;
@@ -685,7 +678,7 @@ final recorderEngineProvider = Provider<RecorderEngine>((ref) {
     })
     ..listen(
       recordingSettingsProvider.select(
-        (settings) => (enabled: settings.cacheLimitEnabled, limit: settings.cacheLimitMb, saveDir: settings.saveDir),
+        (settings) => (enabled: settings.cacheLimitEnabled, limit: settings.cacheLimitMb),
       ),
       (previous, next) {
         if (next.enabled) engine.trimCacheQuietly();

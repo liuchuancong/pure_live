@@ -13,8 +13,6 @@
   "stateFailed": "Failed",
   "settingsTitle": "Recording",
   "saveDirTitle": "Save directory",
-  "saveDirDefault": "Follow the engine's default directory",
-  "saveDirDialogHint": "Enter the folder recordings are saved to",
   "namingTitle": "File naming template",
   "namingDescription": "Date, time, platform, room id and title placeholders are available.",
   "namingDialogHint": "Enter the naming template for recording files",

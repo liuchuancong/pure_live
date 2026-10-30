@@ -21,7 +21,6 @@ const String _fileKey = 'log.file';
 const String _fileMaxBytesKey = 'log.fileMaxBytes';
 const String _fileMaxFilesKey = 'log.fileMaxFiles';
 const String _memoryCapacityKey = 'log.memoryCapacity';
-const String _directoryKey = 'log.directory';
 
 /// The app's one log tree: a console line, the in-memory ring the log page
 /// reads, and (once storage opens) a rotating file. Records are sanitised
@@ -42,37 +41,24 @@ Stream<void> get appLogChanges => _memorySink.changes;
 LogLevel appLogLevel = LogLevel.debug;
 
 _SwitchableSink? _fileSink;
-Directory? _defaultDirectory;
-String _customDirectory = '';
+Directory? _directory;
 int _fileMaxBytes = kDefaultAppLogFileMaxBytes;
 int _fileMaxFiles = kDefaultAppLogFileMaxFiles;
 bool _fileEnabled = true;
 
-/// What the attached sink was built with, so a refresh that changes nothing
-/// does not reopen the file.
+/// The file sink's current switch, so a refresh that changes nothing does not
+/// reopen the file.
 String? _sinkPath;
 int _sinkMaxBytes = 0;
 int _sinkMaxFiles = 0;
 
-/// The folder the rotating files are written to: the viewer's own choice
-/// when they picked one, else the storage layer's logs folder. Null until
-/// [initAppLog] runs.
-Directory? get _logDirectory {
-  if (_customDirectory.isNotEmpty) return Directory(_customDirectory);
-  return _defaultDirectory;
-}
-
-/// The folder the rotating files live in, once [initAppLog] has run.
-Directory? get appLogDirectory => _logDirectory;
-
-/// The storage layer's own logs folder, before any custom choice.
-String? get appLogDefaultDirectory => _defaultDirectory?.path;
+/// The folder the rotating files are written to: the storage layout's logs
+/// folder with the viewer's own choice already laid over it, which the boot
+/// installs and the log settings keep in step. Null before the boot runs.
+Directory? get appLogDirectory => _directory;
 
 /// The folder the file sink writes into right now.
-String? get appLogDirectoryPath => _logDirectory?.path;
-
-/// Whether a folder other than the default is in use.
-bool get appLogDirectoryCustom => _customDirectory.isNotEmpty;
+String? get appLogDirectoryPath => _directory?.path;
 
 /// The size a log file reaches before it rotates.
 int get appLogFileMaxBytes => _fileMaxBytes;
@@ -84,17 +70,25 @@ int get appLogFileMaxFiles => _fileMaxFiles;
 int get appLogMemoryCapacity => appLogMemory.capacity;
 
 /// Attaches the rotating file sink and applies the stored log preferences.
-/// Called once after storage opens; safe to call again.
+/// [directory] is the logs folder the storage layout answers. Called once
+/// after storage opens; safe to call again.
 void initAppLog({required Directory directory}) {
-  _defaultDirectory ??= directory;
+  _directory ??= directory;
   syncAppLogFromStore();
+}
+
+/// Moves the rotating files to [directory] — the storage page's answer after
+/// the viewer picked or reset the logs folder — and reopens the sink there.
+void applyAppLogDirectory(Directory directory) {
+  if (_directory?.path == directory.path) return;
+  _directory = directory;
+  _attachFileSink();
 }
 
 /// Re-reads every stored log preference and applies it to this process's
 /// tree, so a write from another window or a restored backup lands here on
 /// the settings refresh.
 void syncAppLogFromStore() {
-  _customDirectory = _readString(_directoryKey) ?? '';
   _fileMaxBytes = _readInt(_fileMaxBytesKey) ?? kDefaultAppLogFileMaxBytes;
   _fileMaxFiles = _readInt(_fileMaxFilesKey) ?? kDefaultAppLogFileMaxFiles;
   appLogMemory.capacity = _readInt(_memoryCapacityKey) ?? kDefaultAppLogMemoryCapacity;
@@ -151,19 +145,6 @@ void setAppLogMemoryCapacity(int capacity) {
   unawaitedStore(() => StoragePrefs.setInt(_memoryCapacityKey, capacity));
 }
 
-/// Writes the log folder to [path] (already proven writable by the caller)
-/// and reopens the file sink there.
-void setAppLogDirectory(String path) {
-  final normalized = path.trim();
-  if (normalized == _customDirectory) return;
-  _customDirectory = normalized;
-  unawaitedStore(() => StoragePrefs.setString(_directoryKey, normalized));
-  _attachFileSink();
-}
-
-/// Returns the log folder to the storage layer's own logs directory.
-void resetAppLogDirectory() => setAppLogDirectory('');
-
 /// Drops every in-memory record (the file keeps what it wrote).
 void clearAppLog() {
   appLogMemory.clear();
@@ -175,7 +156,7 @@ String exportAppLog() => appLogMemory.exportText();
 
 /// The live log file's path, once the file sink is attached.
 String? get appLogFile {
-  final directory = _logDirectory;
+  final directory = _directory;
   return directory == null ? null : p.join(directory.path, 'pure_live.log');
 }
 
@@ -183,7 +164,7 @@ String? get appLogFile {
 /// nothing while they already match. The old handle is closed on the sink
 /// queue, never in the caller's frame.
 void _attachFileSink() {
-  final directory = _logDirectory;
+  final directory = _directory;
   if (directory == null) return;
   final current = _fileSink;
   if (current != null &&
@@ -241,14 +222,6 @@ bool? _readBool(String key) {
 int? _readInt(String key) {
   try {
     return StoragePrefs.getInt(key);
-  } on Object {
-    return null;
-  }
-}
-
-String? _readString(String key) {
-  try {
-    return StoragePrefs.getString(key);
   } on Object {
     return null;
   }

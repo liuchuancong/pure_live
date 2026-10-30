@@ -31,12 +31,20 @@ typedef BackupPrefEntry = (String key, BackupPrefKind kind);
 /// The backed-up keys, grouped as the settings surface presents them.
 ///
 /// Every pref the app reads or writes belongs here with the kind its reader
-/// and writer speak; `dart run tool/prefs_manifest_check.dart` fails on a key
-/// that is absent, on a kind no call site uses, and on a backed-up key whose
-/// provider is missing from `kSettingsProviders`. The one deliberate
-/// exception is `recorder.saveDir`: a legacy value `recorder.dir` upgraded
-/// from, read only as a fallback and never written, so its live value
-/// already travels under the current key.
+/// and writer speak; `tool/check_prefs_manifest.ps1` fails on a key that is
+/// absent, on a kind no call site uses, and on a backed-up key whose provider
+/// is missing from `kSettingsProviders`. The folders the 存储位置 page moves are
+/// the one thing it cannot check: their keys are built per folder
+/// (`storage.folder.<name>` from `StorageFolder.prefKey`), so no call site
+/// spells one, and they stay out of the document on purpose — a folder that
+/// does not exist on the machine a backup is restored to would only fail
+/// there, and the device's own answer is the right fallback.
+///
+/// `log.directory`, `recorder.dir` and `recorder.saveDir` are read by nothing
+/// but the one-time adoption in `storage_folder_provider.dart`, which moves an
+/// old choice under `storage.folder.logs` / `storage.folder.recordings` and
+/// drops them; they stay backed up so a document from before that move still
+/// carries the viewer's folders.
 ///
 /// A key that later disappears is harmless — capture simply finds no value;
 /// a new surface adds its pref here so its first backup carries it. Restoring
@@ -233,9 +241,8 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('danmaku.filter.blockLong', BackupPrefKind.boolean),
   ('danmaku.filter.blockLongLength', BackupPrefKind.integer),
   ('danmaku.filter.douyuSuspected', BackupPrefKind.boolean),
-  // The image cache's cap and the shared download folder (empty = default).
+  // The image cache's cap. The moved folders stay out, as above.
   ('cache.maxMB', BackupPrefKind.integer),
-  ('storage.downloadDirectory', BackupPrefKind.string),
   // IPTV: the schedule, the active guide and the source order.
   ('iptv.update.hours', BackupPrefKind.integer),
   ('iptv.autoSync', BackupPrefKind.boolean),

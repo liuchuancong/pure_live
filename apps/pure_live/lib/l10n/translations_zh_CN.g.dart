@@ -4678,12 +4678,6 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '保存目录'
 	String get saveDirTitle => '保存目录';
 
-	/// zh-CN: '跟随引擎默认目录'
-	String get saveDirDefault => '跟随引擎默认目录';
-
-	/// zh-CN: '输入保存录制文件的文件夹路径'
-	String get saveDirDialogHint => '输入保存录制文件的文件夹路径';
-
 	/// zh-CN: '文件命名模板'
 	String get namingTitle => '文件命名模板';
 
@@ -9031,29 +9025,17 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '缩略图已刷新'
 	String get cacheRefreshThumbnailsDone => '缩略图已刷新';
 
-	/// zh-CN: '下载目录'
-	String get downloadDirectory => '下载目录';
-
 	/// zh-CN: '默认'
-	String get downloadDirectoryDefaultLabel => '默认';
+	String get storageFolderDefaultLabel => '默认';
 
 	/// zh-CN: '自定义'
-	String get downloadDirectoryCustomLabel => '自定义';
-
-	/// zh-CN: '恢复默认目录'
-	String get downloadDirectoryReset => '恢复默认目录';
-
-	/// zh-CN: '下载目录已更新'
-	String get downloadDirectoryUpdated => '下载目录已更新';
+	String get storageFolderCustomLabel => '自定义';
 
 	/// zh-CN: '无法选择下载目录'
-	String get downloadDirectoryPickFailed => '无法选择下载目录';
+	String get storageFolderPickFailed => '无法选择下载目录';
 
 	/// zh-CN: '所选目录无法写入：请授予存储权限，或改用默认目录。'
-	String get downloadDirectoryPermissionHint => '所选目录无法写入：请授予存储权限，或改用默认目录。';
-
-	/// zh-CN: '更改目录'
-	String get downloadDirectoryChange => '更改目录';
+	String get storageFolderPermissionHint => '所选目录无法写入：请授予存储权限，或改用默认目录。';
 
 	/// zh-CN: '显示用户名'
 	String get chatShowNames => '显示用户名';
@@ -9370,30 +9352,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '日志目录'
 	String get logDirectory => '日志目录';
 
-	/// zh-CN: '默认：'
-	String get logDirectoryDefaultHint => '默认：';
-
-	/// zh-CN: '更改目录'
-	String get logDirectoryChange => '更改目录';
-
-	/// zh-CN: '日志文件改写到你选的文件夹。'
-	String get logDirectoryChangeDesc => '日志文件改写到你选的文件夹。';
-
-	/// zh-CN: '恢复默认目录'
-	String get logDirectoryReset => '恢复默认目录';
-
-	/// zh-CN: '回到应用数据目录里的 logs。'
-	String get logDirectoryResetDesc => '回到应用数据目录里的 logs。';
-
-	/// zh-CN: '日志目录已更新'
-	String get logDirectoryUpdated => '日志目录已更新';
-
-	/// zh-CN: '无法选择目录'
-	String get logDirectoryPickFailed => '无法选择目录';
-
-	/// zh-CN: '所选目录不可写'
-	String get logDirectoryPermissionHint => '所选目录不可写';
-
 	/// zh-CN: '复制路径'
 	String get logCopyPath => '复制路径';
 
@@ -9412,11 +9370,17 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '视频'
 	String get storageFolderVideos => '视频';
 
+	/// zh-CN: '录制'
+	String get storageFolderRecordings => '录制';
+
 	/// zh-CN: '歌曲'
 	String get storageFolderMusic => '歌曲';
 
 	/// zh-CN: '壁纸'
 	String get storageFolderWallpapers => '壁纸';
+
+	/// zh-CN: '视频壁纸'
+	String get storageFolderVideoWallpapers => '视频壁纸';
 
 	/// zh-CN: '歌词'
 	String get storageFolderLyrics => '歌词';
@@ -9429,6 +9393,9 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '字体'
 	String get storageFolderFonts => '字体';
+
+	/// zh-CN: '日志'
+	String get storageFolderLogs => '日志';
 
 	/// zh-CN: '封面缓存'
 	String get storageFolderCache => '封面缓存';
@@ -12196,8 +12163,6 @@ extension on Translations {
 			'recorder.stateFailed' => '失败',
 			'recorder.settingsTitle' => '录制',
 			'recorder.saveDirTitle' => '保存目录',
-			'recorder.saveDirDefault' => '跟随引擎默认目录',
-			'recorder.saveDirDialogHint' => '输入保存录制文件的文件夹路径',
 			'recorder.namingTitle' => '文件命名模板',
 			'recorder.namingDescription' => '可用日期、时间、平台、房间号与标题占位符。',
 			'recorder.namingDialogHint' => '输入录制文件的命名模板',
@@ -12236,10 +12201,10 @@ extension on Translations {
 			'recorder.preferBestDescription' => '开启时只映射首个视频和音频流，避免多码率文件变成多轨。',
 			'recorder.keepAliveTitle' => '后台保持录制',
 			'recorder.keepAliveDescription' => '录制期间持有后台会话与唤醒锁（Android 前台服务/通知）。',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.verifyTitle' => '结束时校验文件',
 			'recorder.verifyDescription' => '结束前检查分段是否可播放。',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.restartTitle' => '断流重试次数',
 			'recorder.restartDescription' => '流中断后 FFmpeg 自动重开的次数；0 表示不重试。',
 			'recorder.restartCount' => ({required int count}) => '${count} 次',
@@ -12750,10 +12715,10 @@ extension on Translations {
 			'settings.danmakuDisplayGroup' => '弹幕显示',
 			'settings.danmakuList' => '弹幕列表',
 			'settings.danmakuInteractionGroup' => '弹幕交互',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleTapInteraction' => '点按弹幕',
 			'settings.styleTapInteractionDesc' => '可复制、屏蔽；关闭后只切换控制条。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.styleLongPressInteraction' => '长按弹幕',
 			'settings.styleLongPressInteractionDesc' => '与点按同一菜单；关闭后长按不命中弹幕。',
 			'settings.danmakuStyleGroup' => '弹幕样式',
@@ -13264,10 +13229,10 @@ extension on Translations {
 			'settings.globalMuteDesc' => '静音现在与之后打开的房间、频道和视频。',
 			'settings.backgroundPlay' => '后台播放',
 			'settings.backgroundPlayDesc' => '离开应用后继续出声；关闭则切后台即暂停。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.asmrSleepMode' => 'ASMR 睡眠模式',
 			'settings.asmrSleepModeDesc' => '进直播间自动切音频模式，到时暂停。仅 Android。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.asmrSleepTimer' => 'ASMR 睡眠时长',
 			'settings.asmrSleepTimerDesc' => '音频模式自动停止前的分钟数，范围 15–1440。',
 			'settings.asmrSleepCustomMinutes' => '自定义分钟数',
@@ -13644,14 +13609,10 @@ extension on Translations {
 			'settings.cacheRefreshThumbnails' => '刷新缩略图',
 			'settings.cacheRefreshThumbnailsDesc' => '清空封面、头像与图标缓存。',
 			'settings.cacheRefreshThumbnailsDone' => '缩略图已刷新',
-			'settings.downloadDirectory' => '下载目录',
-			'settings.downloadDirectoryDefaultLabel' => '默认',
-			'settings.downloadDirectoryCustomLabel' => '自定义',
-			'settings.downloadDirectoryReset' => '恢复默认目录',
-			'settings.downloadDirectoryUpdated' => '下载目录已更新',
-			'settings.downloadDirectoryPickFailed' => '无法选择下载目录',
-			'settings.downloadDirectoryPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
-			'settings.downloadDirectoryChange' => '更改目录',
+			'settings.storageFolderDefaultLabel' => '默认',
+			'settings.storageFolderCustomLabel' => '自定义',
+			'settings.storageFolderPickFailed' => '无法选择下载目录',
+			'settings.storageFolderPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
 			'settings.chatShowNames' => '显示用户名',
 			'settings.chatShowNamesDesc' => '关闭后只显示内容。',
 			'settings.chatListFontSize' => '文字大小',
@@ -13757,29 +13718,22 @@ extension on Translations {
 			'settings.logFileMaxFilesDesc' => '含当前文件，更早的删除。',
 			'settings.logDirectoryGroup' => '存放位置',
 			'settings.logDirectory' => '日志目录',
-			'settings.logDirectoryDefaultHint' => '默认：',
-			'settings.logDirectoryChange' => '更改目录',
-			'settings.logDirectoryChangeDesc' => '日志文件改写到你选的文件夹。',
-			'settings.logDirectoryReset' => '恢复默认目录',
-			'settings.logDirectoryResetDesc' => '回到应用数据目录里的 logs。',
-			'settings.logDirectoryUpdated' => '日志目录已更新',
-			'settings.logDirectoryPickFailed' => '无法选择目录',
-			'settings.logDirectoryPermissionHint' => '所选目录不可写',
 			'settings.logCopyPath' => '复制路径',
 			'settings.logPathCopied' => '路径已复制',
 			'settings.logOpenFailed' => '无法打开目录',
 			'settings.storageFolders' => '存储位置',
 			'settings.storageFoldersDesc' => '每类文件的位置，默认跟随系统，可自行选择。',
 			'settings.storageFolderVideos' => '视频',
+			'settings.storageFolderRecordings' => '录制',
 			'settings.storageFolderMusic' => '歌曲',
 			'settings.storageFolderWallpapers' => '壁纸',
+			'settings.storageFolderVideoWallpapers' => '视频壁纸',
 			'settings.storageFolderLyrics' => '歌词',
 			'settings.storageFolderUpdates' => '更新包',
 			'settings.storageFolderBackgrounds' => '壁纸素材',
 			'settings.storageFolderFonts' => '字体',
+			'settings.storageFolderLogs' => '日志',
 			'settings.storageFolderCache' => '封面缓存',
-			_ => null,
-		} ?? switch (path) {
 			'settings.storageFolderData' => '应用数据',
 			'settings.storageFolderDataDesc' => '设置、账号与观看记录的数据库，不随设备迁移。',
 			'settings.storageFoldersUpdated' => '目录已更新',
@@ -13791,6 +13745,8 @@ extension on Translations {
 			'shield.masterTitle' => '总开关',
 			'shield.enabled' => '启用屏蔽',
 			'shield.enabledDescription' => '关闭后所有规则暂停。',
+			_ => null,
+		} ?? switch (path) {
 			'shield.similarityTitle' => '相似弹幕过滤',
 			'shield.similarityEnabled' => '相似弹幕过滤',
 			'shield.similarityEnabledDescription' => '过滤短时间内高度相似的弹幕。',

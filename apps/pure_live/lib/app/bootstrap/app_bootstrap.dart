@@ -115,11 +115,16 @@ Future<Boot> bootstrap() async {
       );
       await storageBootstrap.initialize();
       await StoragePrefs.init();
-      initAppLog(directory: appPaths.logs);
+      // The viewer's own folder choices, read once here: the two layers that
+      // never take a provider — the log tree and the image cache manager — are
+      // pointed at the folder in force, so a moved folder is in use from this
+      // run on.
+      final folders = AppFolders(appPaths, readStorageFolderOverrides());
+      initAppLog(directory: folders.logs);
       // The cover cache follows the layout, including a folder the viewer
       // moved. It is read once here because the manager is built against one
       // root; a change lands on the next start.
-      installImageCacheRoot(AppFolders(appPaths, readStorageFolderOverrides()).imageCache);
+      installImageCacheRoot(folders.imageCache);
       bootLog.info('storage ready', fields: {'data': storagePaths.data.path});
     } on Object catch (error, stackTrace) {
       log.forCategory('storage').error('storage bootstrap failed', error: error, stackTrace: stackTrace);

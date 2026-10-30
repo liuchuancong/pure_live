@@ -643,6 +643,7 @@ final class RecordingSettingsPane extends ConsumerWidget {
     final t = context.t;
     final settings = ref.watch(recordingSettingsProvider);
     final controller = ref.read(recordingSettingsProvider.notifier);
+    final recordings = ref.watch(appPathsProvider).recordings;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -663,13 +664,25 @@ final class RecordingSettingsPane extends ConsumerWidget {
             DsListRow(
               leading: const DsIcon(DsIcons.folder),
               title: Text(t.recorder.saveDirTitle),
-              description: Text(
-                settings.saveDir.isEmpty
-                    ? t.recorder.saveDirDefault
-                    : '${settings.saveDir}${p.separator}PureLiveRecords',
+              // The folder reads here and opens here; moving it is the
+              // 存储位置 page's row, so the choice lives in one place.
+              description: DsTooltip(
+                message: recordings.path,
+                child: Text(recordings.path, maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
-              onPressed: () => unawaited(_editSaveDir(context, ref)),
-              showChevron: true,
+              detail: Text(
+                ref.watch(storageFolderOverridesProvider).containsKey(StorageFolder.recordings)
+                    ? t.settings.storageFolderCustomLabel
+                    : t.settings.storageFolderDefaultLabel,
+              ),
+              onPressed: () => unawaited(_openFolder(context, recordings.path)),
+              trailing: DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                semanticLabel: t.recorder.openFolder,
+                onPressed: () => unawaited(_openFolder(context, recordings.path)),
+                icon: const DsIcon(DsIcons.folderOpen, size: 16),
+              ),
             ),
             DsListRow(
               leading: const DsIcon(DsIcons.fileText),
@@ -905,15 +918,11 @@ final class RecordingSettingsPane extends ConsumerWidget {
     return best;
   }
 
-  Future<void> _editSaveDir(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    return _editText(
-      context,
-      title: t.recorder.saveDirTitle,
-      hint: t.recorder.saveDirDialogHint,
-      initial: ref.read(recordingSettingsProvider).saveDir,
-      onCommit: (value) => ref.read(recordingSettingsProvider.notifier).saveDir = value,
-    );
+  /// Opens the recordings folder in the system's own file manager.
+  Future<void> _openFolder(BuildContext context, String path) async {
+    final opened = await OpenFile.open(path);
+    if (opened.type == ResultType.done || !context.mounted) return;
+    showDsToast(context: context, title: context.t.recorder.openFolderFailed, status: DsStatus.danger);
   }
 
   Future<void> _editNaming(BuildContext context, WidgetRef ref) {

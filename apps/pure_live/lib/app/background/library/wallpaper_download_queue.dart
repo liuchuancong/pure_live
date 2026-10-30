@@ -290,13 +290,13 @@ final class WallpaperDownloadsController extends Notifier<List<WallpaperDownload
     required WallpaperDownloadKind kind,
     String? thumbUrl,
   }) {
-    final duplicate = _duplicateOf(url: url, fileName: fileName);
+    final duplicate = _duplicateOf(url: url, fileName: fileName, kind: kind);
     if (duplicate != null) return (task: duplicate, duplicate: true);
     final task = WallpaperDownloadTask(
       id: _nextId(),
       title: title,
       fileName: fileName,
-      directory: _directory,
+      directory: _directoryFor(kind),
       phase: WallpaperDownloadPhase.running,
       kind: kind,
       thumbUrl: thumbUrl,
@@ -315,13 +315,13 @@ final class WallpaperDownloadsController extends Notifier<List<WallpaperDownload
     required String fileName,
     WallpaperDownloadKind kind = WallpaperDownloadKind.image,
   }) async {
-    final duplicate = _duplicateOf(fileName: fileName);
+    final duplicate = _duplicateOf(fileName: fileName, kind: kind);
     if (duplicate != null) return (task: duplicate, duplicate: true);
     final task = WallpaperDownloadTask(
       id: _nextId(),
       title: title,
       fileName: fileName,
-      directory: _directory,
+      directory: _directoryFor(kind),
       phase: WallpaperDownloadPhase.running,
       kind: kind,
       startedAt: DateTime.now(),
@@ -342,13 +342,13 @@ final class WallpaperDownloadsController extends Notifier<List<WallpaperDownload
     WallpaperDownloadKind kind = WallpaperDownloadKind.image,
     String? thumbUrl,
   }) async {
-    final duplicate = _duplicateOf(fileName: fileName);
+    final duplicate = _duplicateOf(fileName: fileName, kind: kind);
     if (duplicate != null) return (task: duplicate, duplicate: true);
     final task = WallpaperDownloadTask(
       id: _nextId(),
       title: title,
       fileName: fileName,
-      directory: _directory,
+      directory: _directoryFor(kind),
       phase: WallpaperDownloadPhase.running,
       kind: kind,
       thumbUrl: thumbUrl,
@@ -372,8 +372,8 @@ final class WallpaperDownloadsController extends Notifier<List<WallpaperDownload
   /// either still moving or saved with its file still on disk. A row whose
   /// file has since been deleted does not count — the viewer asking again is
   /// how the file comes back.
-  WallpaperDownloadTask? _duplicateOf({required String fileName, String? url}) {
-    final directory = _directory;
+  WallpaperDownloadTask? _duplicateOf({required String fileName, required WallpaperDownloadKind kind, String? url}) {
+    final directory = _directoryFor(kind);
     for (final task in state) {
       if (task.directory != directory || task.fileName != fileName) continue;
       if (_holdsFile(task)) return task;
@@ -485,7 +485,12 @@ final class WallpaperDownloadsController extends Notifier<List<WallpaperDownload
     await _persist();
   }
 
-  String get _directory => ref.read(appPathsProvider).wallpapers.path;
+  /// Where a row's file lands: the clips keep a folder of their own beside the
+  /// pictures, and a painted swatch is a picture by any other name.
+  String _directoryFor(WallpaperDownloadKind kind) {
+    final folders = ref.read(appPathsProvider);
+    return (kind == WallpaperDownloadKind.video ? folders.videoWallpapers : folders.wallpapers).path;
+  }
 
   String _nextId() => 'wallpaper-${DateTime.now().microsecondsSinceEpoch}-${_serial++}';
 

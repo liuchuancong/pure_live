@@ -18,11 +18,11 @@ import 'package:pure_live/infrastructure/storage/storage_paths.dart' show Storag
 /// * cache — `images/` for network images, `images/covers/` for platform
 ///   covers, both segments of [cacheRoot] so a viewer who moves the cache
 ///   moves every cached picture with it.
-/// * downloads — `ns/videos`, `ns/music`, `ns/wallpapers`, `ns/lyrics`,
-///   `ns/updates`, `ns/recordings` under the platform's download root; the
-///   namespace keeps the product's files out of the viewer's own tree in a
-///   shared folder, and a `<data>/downloads` root stands in where the
-///   platform offers no download folder.
+/// * downloads — `ns/videos`, `ns/recordings`, `ns/music`, `ns/wallpapers`,
+///   `ns/video_wallpapers`, `ns/lyrics`, `ns/updates` under the platform's
+///   download root; the namespace keeps the product's files out of the
+///   viewer's own tree in a shared folder, and a `<data>/downloads` root
+///   stands in where the platform offers no download folder.
 /// * exports — `backups/` for the backup files the viewer keeps.
 ///
 /// Directories are not created here: whoever writes calls
@@ -60,6 +60,11 @@ final class AppPaths {
 
   /// Wallpapers the viewer saved.
   Directory get wallpapers => downloadFolder('wallpapers');
+
+  /// Video wallpapers — the clips. They keep a folder of their own beside the
+  /// pictures because the manager filters by kind and a clip is not something
+  /// the viewer sets as a desktop picture by the same gesture.
+  Directory get videoWallpapers => downloadFolder('video_wallpapers');
 
   /// Lyrics exported beside the song they belong to.
   Directory get lyrics => downloadFolder('lyrics');

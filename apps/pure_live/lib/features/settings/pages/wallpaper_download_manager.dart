@@ -3,7 +3,6 @@ import 'dart:io' show File;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
-import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -535,12 +534,15 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
     return rows;
   }
 
-  /// The manager's settings: the folder the files land in, the way in, and
-  /// the one housekeeping action. The pane itself stays about the list — these
-  /// belong behind one button, in the panel the button opens.
+  /// The manager's settings: the two folders the files land in, and the one
+  /// housekeeping action. The pane itself stays about the list — these belong
+  /// behind one button, in the panel the button opens. Moving a folder is not
+  /// here: the 存储位置 page owns that choice, one row per folder.
   Future<void> _openSettings() {
     final t = context.t;
-    final directory = ref.read(appPathsProvider).wallpapers.path;
+    final folders = ref.read(appPathsProvider);
+    final pictures = folders.wallpapers.path;
+    final clips = folders.videoWallpapers.path;
     return showDsPanel<void>(
       context: context,
       builder: (panelContext) {
@@ -549,27 +551,22 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
           title: Text(t.settings.downloadSettings),
           child: DsListSection(
             children: [
-              DsListRow(
-                leading: const DsIcon(DsIcons.folderOpen),
-                title: Text(t.settings.downloadManagerOpenFolder),
-                description: DsTooltip(
-                  message: directory,
-                  child: Text(directory, maxLines: 1, overflow: TextOverflow.ellipsis),
+              for (final (label, directory) in [
+                (t.settings.storageFolderWallpapers, pictures),
+                (t.settings.storageFolderVideoWallpapers, clips),
+              ])
+                DsListRow(
+                  leading: const DsIcon(DsIcons.folderOpen),
+                  title: Text('${t.settings.downloadManagerOpenFolder} · $label'),
+                  description: DsTooltip(
+                    message: directory,
+                    child: Text(directory, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
+                  onPressed: () {
+                    Navigator.of(panelContext).pop();
+                    unawaited(openDownloadedPath(context, directory));
+                  },
                 ),
-                onPressed: () {
-                  Navigator.of(panelContext).pop();
-                  unawaited(openDownloadedPath(context, directory));
-                },
-              ),
-              DsListRow(
-                leading: const DsIcon(DsIcons.pencil),
-                title: Text(t.settings.downloadDirectoryChange),
-                showChevron: true,
-                onPressed: () {
-                  Navigator.of(panelContext).pop();
-                  unawaited(_changeDirectory());
-                },
-              ),
               DsListRow(
                 leading: DsIcon(DsIcons.trash2, color: theme.colors.danger.text),
                 title: Text(t.settings.downloadDeleteAll),
@@ -583,27 +580,6 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
         );
       },
     );
-  }
-
-  /// Hands the folder choice to the viewer; the same flow the settings'
-  /// cache section runs, probe included.
-  Future<void> _changeDirectory() async {
-    final t = context.t;
-    try {
-      final selected = await FilePicker.getDirectoryPath(dialogTitle: t.settings.downloadDirectory);
-      if (selected == null || selected.trim().isEmpty) return;
-      final saved = await ref.read(storageFolderOverridesProvider.notifier).set(StorageFolder.wallpapers, selected);
-      if (!mounted) return;
-      if (!saved) {
-        showDsToast(context: context, title: t.settings.downloadDirectoryPermissionHint, status: DsStatus.danger);
-        return;
-      }
-      showDsToast(context: context, title: t.settings.downloadDirectoryUpdated);
-    } on Object {
-      if (mounted) {
-        showDsToast(context: context, title: t.settings.downloadDirectoryPickFailed, status: DsStatus.danger);
-      }
-    }
   }
 
   /// Asks before dropping a row: the record goes, the file stays.

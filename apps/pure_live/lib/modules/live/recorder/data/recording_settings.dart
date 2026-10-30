@@ -36,7 +36,6 @@ final class RecordingSettings {
   const RecordingSettings({
     this.defaultQuality = '原画',
     this.recordDanmaku = false,
-    this.saveDir = '',
     this.namingTemplate = kDefaultNamingTemplate,
     this.maxSizeMb = 2048,
     this.segmentSeconds = 300,
@@ -71,9 +70,6 @@ final class RecordingSettings {
   /// Whether the live chat is saved beside the video as a same-name XML
   /// (the reference's "record chat" switch).
   final bool recordDanmaku;
-
-  /// Where recordings land; '' means the engine's own default directory.
-  final String saveDir;
 
   /// The file naming template the engine fills in.
   final String namingTemplate;
@@ -143,7 +139,6 @@ final class RecordingSettings {
   RecordingSettings copyWith({
     String? defaultQuality,
     bool? recordDanmaku,
-    String? saveDir,
     String? namingTemplate,
     int? maxSizeMb,
     int? segmentSeconds,
@@ -168,7 +163,6 @@ final class RecordingSettings {
   }) => RecordingSettings(
     defaultQuality: defaultQuality ?? this.defaultQuality,
     recordDanmaku: recordDanmaku ?? this.recordDanmaku,
-    saveDir: saveDir ?? this.saveDir,
     namingTemplate: namingTemplate ?? this.namingTemplate,
     maxSizeMb: maxSizeMb ?? this.maxSizeMb,
     segmentSeconds: segmentSeconds ?? this.segmentSeconds,
@@ -201,11 +195,9 @@ final class RecordingSettings {
 final class RecordingSettingsController extends Notifier<RecordingSettings> {
   @override
   RecordingSettings build() {
-    final saved = _storedString('recorder.saveDir') ?? _storedString('recorder.dir') ?? '';
     return RecordingSettings(
       defaultQuality: _storedString('recorder.defaultQuality') ?? RecordingSettings.defaults.defaultQuality,
       recordDanmaku: _storedBool('recorder.recordDanmaku') ?? false,
-      saveDir: saved,
       namingTemplate: _storedString('recorder.naming') ?? kDefaultNamingTemplate,
       maxSizeMb: _storedSize() ?? RecordingSettings.defaults.maxSizeMb,
       segmentSeconds: (_storedInt('recorder.segment') ?? 300).clamp(10, 86400),
@@ -273,9 +265,6 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
       return null;
     }
   }
-
-  /// Where recordings land; '' means the engine's own default directory.
-  String get saveDir => state.saveDir;
 
   /// The quality a new recording asks the platform for.
   String get defaultQuality => state.defaultQuality;
@@ -404,14 +393,6 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
   set recordDanmaku(bool value) {
     state = state.copyWith(recordDanmaku: value);
     unawaited(_write('recorder.recordDanmaku', value));
-  }
-
-  /// Moves the recording directory; an empty path means the engine's own
-  /// default.
-  set saveDir(String dir) {
-    final value = dir.trim();
-    state = state.copyWith(saveDir: value);
-    unawaited(_write('recorder.dir', value));
   }
 
   /// Changes the naming template; a blank one falls back to the default,

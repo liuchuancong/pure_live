@@ -1683,8 +1683,6 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get stateFailed => 'Failed';
 	@override String get settingsTitle => 'Recording';
 	@override String get saveDirTitle => 'Save directory';
-	@override String get saveDirDefault => 'Follow the engine\'s default directory';
-	@override String get saveDirDialogHint => 'Enter the folder recordings are saved to';
 	@override String get namingTitle => 'File naming template';
 	@override String get namingDescription => 'Date, time, platform, room id and title placeholders are available.';
 	@override String get namingDialogHint => 'Enter the naming template for recording files';
@@ -3152,14 +3150,10 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get cacheRefreshThumbnails => 'Refresh thumbnails';
 	@override String get cacheRefreshThumbnailsDesc => 'Clears cover, avatar and icon caches.';
 	@override String get cacheRefreshThumbnailsDone => 'Thumbnails refreshed';
-	@override String get downloadDirectory => 'Download folder';
-	@override String get downloadDirectoryDefaultLabel => 'Default';
-	@override String get downloadDirectoryCustomLabel => 'Custom';
-	@override String get downloadDirectoryReset => 'Use default folder';
-	@override String get downloadDirectoryUpdated => 'Download folder updated';
-	@override String get downloadDirectoryPickFailed => 'Could not select a download folder';
-	@override String get downloadDirectoryPermissionHint => 'The chosen folder is not writable. Grant storage access, or use the default folder.';
-	@override String get downloadDirectoryChange => 'Change folder';
+	@override String get storageFolderDefaultLabel => 'Default';
+	@override String get storageFolderCustomLabel => 'Custom';
+	@override String get storageFolderPickFailed => 'Could not select a download folder';
+	@override String get storageFolderPermissionHint => 'The chosen folder is not writable. Grant storage access, or use the default folder.';
 	@override String get chatShowNames => 'Show names';
 	@override String get chatShowNamesDesc => 'Off shows the message only.';
 	@override String get chatListFontSize => 'Text size';
@@ -3265,26 +3259,21 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get logFileMaxFilesDesc => 'Including the live one; older files are deleted.';
 	@override String get logDirectoryGroup => 'Location';
 	@override String get logDirectory => 'Log folder';
-	@override String get logDirectoryDefaultHint => 'Default: ';
-	@override String get logDirectoryChange => 'Change folder';
-	@override String get logDirectoryChangeDesc => 'Log files move to the folder you pick.';
-	@override String get logDirectoryReset => 'Restore default folder';
-	@override String get logDirectoryResetDesc => 'Back to logs inside the app data folder.';
-	@override String get logDirectoryUpdated => 'Log folder updated';
-	@override String get logDirectoryPickFailed => 'Could not pick a folder';
-	@override String get logDirectoryPermissionHint => 'The chosen folder is not writable';
 	@override String get logCopyPath => 'Copy path';
 	@override String get logPathCopied => 'Path copied';
 	@override String get logOpenFailed => 'Could not open the folder';
 	@override String get storageFolders => 'Storage locations';
 	@override String get storageFoldersDesc => 'Where each kind of file lives. Defaults follow the system; any of them can be moved.';
 	@override String get storageFolderVideos => 'Videos';
+	@override String get storageFolderRecordings => 'Recordings';
 	@override String get storageFolderMusic => 'Songs';
 	@override String get storageFolderWallpapers => 'Wallpapers';
+	@override String get storageFolderVideoWallpapers => 'Video wallpapers';
 	@override String get storageFolderLyrics => 'Lyrics';
 	@override String get storageFolderUpdates => 'Installers';
 	@override String get storageFolderBackgrounds => 'Background media';
 	@override String get storageFolderFonts => 'Fonts';
+	@override String get storageFolderLogs => 'Logs';
 	@override String get storageFolderCache => 'Cover cache';
 	@override String get storageFolderData => 'App data';
 	@override String get storageFolderDataDesc => 'The database of settings, accounts and history; it does not move with the device.';
@@ -5244,8 +5233,6 @@ extension on TranslationsEn {
 			'recorder.stateFailed' => 'Failed',
 			'recorder.settingsTitle' => 'Recording',
 			'recorder.saveDirTitle' => 'Save directory',
-			'recorder.saveDirDefault' => 'Follow the engine\'s default directory',
-			'recorder.saveDirDialogHint' => 'Enter the folder recordings are saved to',
 			'recorder.namingTitle' => 'File naming template',
 			'recorder.namingDescription' => 'Date, time, platform, room id and title placeholders are available.',
 			'recorder.namingDialogHint' => 'Enter the naming template for recording files',
@@ -5284,10 +5271,10 @@ extension on TranslationsEn {
 			'recorder.preferBestDescription' => 'Map only the first video and audio streams, so a multi-bitrate source does not become a multi-track file.',
 			'recorder.keepAliveTitle' => 'Keep recording in the background',
 			'recorder.keepAliveDescription' => 'Hold a background session and wake lock while recording (Android foreground service and notification).',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.verifyTitle' => 'Verify on stop',
 			'recorder.verifyDescription' => 'Check the segments are playable before the session ends.',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.restartTitle' => 'Stream retries',
 			'recorder.restartDescription' => 'How often FFmpeg reopens a broken stream; 0 disables retries.',
 			'recorder.restartCount' => ({required int count}) => '${count}×',
@@ -5798,10 +5785,10 @@ extension on TranslationsEn {
 			'settings.danmakuDisplayGroup' => 'Danmaku display',
 			'settings.danmakuList' => 'Danmaku list',
 			'settings.danmakuInteractionGroup' => 'Danmaku interaction',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleTapInteraction' => 'Tap danmaku',
 			'settings.styleTapInteractionDesc' => 'Copy or block a message; off, a tap only toggles the controls.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.styleLongPressInteraction' => 'Long-press danmaku',
 			'settings.styleLongPressInteractionDesc' => 'Opens the same actions; off, a long press misses danmaku.',
 			'settings.danmakuStyleGroup' => 'Danmaku style',
@@ -6312,10 +6299,10 @@ extension on TranslationsEn {
 			'settings.globalMuteDesc' => 'Mutes every room, channel and video, now and later.',
 			'settings.backgroundPlay' => 'Background playback',
 			'settings.backgroundPlayDesc' => 'Keep playing audio after the app leaves the foreground; when off, playback pauses and resumes when you return.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.asmrSleepMode' => 'ASMR sleep mode',
 			'settings.asmrSleepModeDesc' => 'Starts a room in audio-only mode and pauses it after the chosen time. Android only.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.asmrSleepTimer' => 'ASMR sleep duration',
 			'settings.asmrSleepTimerDesc' => 'Minutes before the audio-only room pauses; range 15–1440.',
 			'settings.asmrSleepCustomMinutes' => 'Custom minutes',
@@ -6692,14 +6679,10 @@ extension on TranslationsEn {
 			'settings.cacheRefreshThumbnails' => 'Refresh thumbnails',
 			'settings.cacheRefreshThumbnailsDesc' => 'Clears cover, avatar and icon caches.',
 			'settings.cacheRefreshThumbnailsDone' => 'Thumbnails refreshed',
-			'settings.downloadDirectory' => 'Download folder',
-			'settings.downloadDirectoryDefaultLabel' => 'Default',
-			'settings.downloadDirectoryCustomLabel' => 'Custom',
-			'settings.downloadDirectoryReset' => 'Use default folder',
-			'settings.downloadDirectoryUpdated' => 'Download folder updated',
-			'settings.downloadDirectoryPickFailed' => 'Could not select a download folder',
-			'settings.downloadDirectoryPermissionHint' => 'The chosen folder is not writable. Grant storage access, or use the default folder.',
-			'settings.downloadDirectoryChange' => 'Change folder',
+			'settings.storageFolderDefaultLabel' => 'Default',
+			'settings.storageFolderCustomLabel' => 'Custom',
+			'settings.storageFolderPickFailed' => 'Could not select a download folder',
+			'settings.storageFolderPermissionHint' => 'The chosen folder is not writable. Grant storage access, or use the default folder.',
 			'settings.chatShowNames' => 'Show names',
 			'settings.chatShowNamesDesc' => 'Off shows the message only.',
 			'settings.chatListFontSize' => 'Text size',
@@ -6805,29 +6788,22 @@ extension on TranslationsEn {
 			'settings.logFileMaxFilesDesc' => 'Including the live one; older files are deleted.',
 			'settings.logDirectoryGroup' => 'Location',
 			'settings.logDirectory' => 'Log folder',
-			'settings.logDirectoryDefaultHint' => 'Default: ',
-			'settings.logDirectoryChange' => 'Change folder',
-			'settings.logDirectoryChangeDesc' => 'Log files move to the folder you pick.',
-			'settings.logDirectoryReset' => 'Restore default folder',
-			'settings.logDirectoryResetDesc' => 'Back to logs inside the app data folder.',
-			'settings.logDirectoryUpdated' => 'Log folder updated',
-			'settings.logDirectoryPickFailed' => 'Could not pick a folder',
-			'settings.logDirectoryPermissionHint' => 'The chosen folder is not writable',
 			'settings.logCopyPath' => 'Copy path',
 			'settings.logPathCopied' => 'Path copied',
 			'settings.logOpenFailed' => 'Could not open the folder',
 			'settings.storageFolders' => 'Storage locations',
 			'settings.storageFoldersDesc' => 'Where each kind of file lives. Defaults follow the system; any of them can be moved.',
 			'settings.storageFolderVideos' => 'Videos',
+			'settings.storageFolderRecordings' => 'Recordings',
 			'settings.storageFolderMusic' => 'Songs',
 			'settings.storageFolderWallpapers' => 'Wallpapers',
+			'settings.storageFolderVideoWallpapers' => 'Video wallpapers',
 			'settings.storageFolderLyrics' => 'Lyrics',
 			'settings.storageFolderUpdates' => 'Installers',
 			'settings.storageFolderBackgrounds' => 'Background media',
 			'settings.storageFolderFonts' => 'Fonts',
+			'settings.storageFolderLogs' => 'Logs',
 			'settings.storageFolderCache' => 'Cover cache',
-			_ => null,
-		} ?? switch (path) {
 			'settings.storageFolderData' => 'App data',
 			'settings.storageFolderDataDesc' => 'The database of settings, accounts and history; it does not move with the device.',
 			'settings.storageFoldersUpdated' => 'Folder updated',
@@ -6839,6 +6815,8 @@ extension on TranslationsEn {
 			'shield.masterTitle' => 'Master switch',
 			'shield.enabled' => 'Enable the shield',
 			'shield.enabledDescription' => 'Off pauses every rule.',
+			_ => null,
+		} ?? switch (path) {
 			'shield.similarityTitle' => 'Similar danmaku filter',
 			'shield.similarityEnabled' => 'Similar danmaku filter',
 			'shield.similarityEnabledDescription' => 'Hides near-duplicates posted moments apart.',

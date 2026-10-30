@@ -419,7 +419,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(
       SettingsSection.dataCache,
       s.storageFolders,
-      'folders directory path location videos music wallpapers lyrics updates backgrounds fonts 目录 文件夹 路径 位置 视频 音乐 壁纸 歌词 字体 背景',
+      'folders directory path location videos recordings music wallpapers lyrics updates backgrounds fonts logs 目录 文件夹 路径 位置 视频 录制 音乐 壁纸 视频壁纸 歌词 字体 背景 日志',
     ),
     _hit(SettingsSection.dataCache, s.storageFolderCache, 'cache folder directory path images covers 缓存 目录 文件夹 路径 封面'),
     // Logs.
