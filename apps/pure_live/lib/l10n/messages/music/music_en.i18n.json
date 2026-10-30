@@ -48,6 +48,8 @@
   "selectionReposition": "Reposition",
   "repositionTitle": "Move the {count} selected songs to position:",
   "repositionHint": "Type the position to move them to",
+  "selectionMoveTo": "Move to",
+  "moveDoneCount": "Moved {count} tracks to \"{name}\".",
   "songlistSearchUnsupported": "This source cannot search songlists yet.",
   "defaultSource": "Default source",
   "defaultSourceDesc": "The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.",

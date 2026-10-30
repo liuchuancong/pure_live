@@ -1333,6 +1333,15 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                 DsButton(
                   variant: DsButtonVariant.secondary,
                   size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.arrowRightLeft, size: 16),
+                  onPressed: _selected.isEmpty
+                      ? null
+                      : () => unawaited(showMoveTracksToPlaylistDialog(context, ref, playlist.id, _selected.toList())),
+                  child: Text(t.music.selectionMoveTo),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
                   onPressed: _selected.isEmpty ? null : () => unawaited(_moveSelected(playlist)),
                   child: Text(t.music.selectionReposition),
                 ),

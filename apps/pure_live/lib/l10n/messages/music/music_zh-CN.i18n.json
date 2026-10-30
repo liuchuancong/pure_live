@@ -48,6 +48,8 @@
   "selectionReposition": "调整位置",
   "repositionTitle": "将已选的 {count} 首歌曲的位置调整到：",
   "repositionHint": "请输入要调整到第几个位置",
+  "selectionMoveTo": "移动到",
+  "moveDoneCount": "已移动 {count} 首到「{name}」。",
   "songlistSearchUnsupported": "当前音源暂不支持歌单搜索。",
   "defaultSource": "默认音源",
   "defaultSourceDesc": "歌曲从哪个音源获取；自定义源脚本负责解析播放地址。",

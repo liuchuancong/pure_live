@@ -377,6 +377,14 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
     await _save();
   }
 
+  /// The reference's moveListMusics: the songs join [toId] — deduped,
+  /// positioned by the addToTop preference — and leave [fromId].
+  Future<int> moveTracks(String fromId, String toId, Iterable<audio.MusicTrack> tracks) async {
+    final added = await addTracks(toId, tracks);
+    await removeTracks(fromId, tracks);
+    return added;
+  }
+
   /// Sorts a playlist in place.
   Future<void> sortTracks(String id, MusicPlaylistSort by) async {
     final playlist = find(id);

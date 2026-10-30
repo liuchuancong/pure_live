@@ -64,6 +64,29 @@ Future<void> showAddTracksToPlaylistDialog(
   );
 }
 
+/// The reference's 移动到: the [tracks] join the chosen list — deduped,
+/// positioned by the addToTop preference — and leave [fromPlaylistId].
+Future<void> showMoveTracksToPlaylistDialog(
+  BuildContext context,
+  WidgetRef ref,
+  String fromPlaylistId,
+  List<audio.MusicTrack> tracks,
+) async {
+  if (tracks.isEmpty) return;
+  final t = context.t;
+  final playlist = await _choosePlaylist(context, ref, excludeId: fromPlaylistId, title: t.music.selectionMoveTo);
+  if (playlist == null || !context.mounted) return;
+  final moved = await ref.read(musicPlaylistsProvider.notifier).moveTracks(fromPlaylistId, playlist.id, tracks);
+  if (!context.mounted) return;
+  showDsToast(
+    context: context,
+    title: moved == 0
+        ? t.music.playlistAlreadyIn(name: playlist.name)
+        : t.music.moveDoneCount(count: moved, name: playlist.name),
+    status: moved == 0 ? DsStatus.warning : DsStatus.success,
+  );
+}
+
 /// Asks which playlist should take [track], offering a new one when there is
 /// none; [listName] names the list when the caller already picked it.
 Future<void> showAddToPlaylistDialog(
@@ -86,15 +109,24 @@ Future<void> showAddToPlaylistDialog(
 }
 
 /// The picker both add-to-playlist paths share.
-Future<MusicPlaylist?> _choosePlaylist(BuildContext context, WidgetRef ref, {String? listName}) async {
+Future<MusicPlaylist?> _choosePlaylist(
+  BuildContext context,
+  WidgetRef ref, {
+  String? listName,
+  String? excludeId,
+  String? title,
+}) async {
   final t = context.t;
-  final playlists = ref.read(musicPlaylistsProvider);
+  final playlists = [
+    for (final playlist in ref.read(musicPlaylistsProvider))
+      if (playlist.id != excludeId) playlist,
+  ];
   final choice =
       listName ??
       await showDsDialog<String>(
         context: context,
         builder: (context) => DsDialog(
-          title: Text(t.music.addToPlaylist),
+          title: Text(title ?? t.music.addToPlaylist),
           icon: const DsIcon(DsIcons.listMusic),
           description: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

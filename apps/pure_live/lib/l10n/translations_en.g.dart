@@ -1027,6 +1027,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get selectionReposition => 'Reposition';
 	@override String repositionTitle({required Object count}) => 'Move the ${count} selected songs to position:';
 	@override String get repositionHint => 'Type the position to move them to';
+	@override String get selectionMoveTo => 'Move to';
+	@override String moveDoneCount({required Object count, required Object name}) => 'Moved ${count} tracks to "${name}".';
 	@override String get songlistSearchUnsupported => 'This source cannot search songlists yet.';
 	@override String get defaultSource => 'Default source';
 	@override String get defaultSourceDesc => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.';
@@ -4473,6 +4475,8 @@ extension on TranslationsEn {
 			'music.selectionReposition' => 'Reposition',
 			'music.repositionTitle' => ({required Object count}) => 'Move the ${count} selected songs to position:',
 			'music.repositionHint' => 'Type the position to move them to',
+			'music.selectionMoveTo' => 'Move to',
+			'music.moveDoneCount' => ({required Object count, required Object name}) => 'Moved ${count} tracks to "${name}".',
 			'music.songlistSearchUnsupported' => 'This source cannot search songlists yet.',
 			'music.defaultSource' => 'Default source',
 			'music.defaultSourceDesc' => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.',
@@ -4619,10 +4623,10 @@ extension on TranslationsEn {
 			'music.sortByTitle' => 'By title',
 			'music.sortByArtist' => 'By artist',
 			'music.sortByAlbum' => 'By album',
-			'music.sortByDuration' => 'By duration',
-			'music.sortByShuffle' => 'Shuffle',
 			_ => null,
 		} ?? switch (path) {
+			'music.sortByDuration' => 'By duration',
+			'music.sortByShuffle' => 'Shuffle',
 			'music.selectionStart' => 'Select',
 			'music.selectionCancel' => 'Cancel selection',
 			'music.selectionCount' => ({required Object count}) => '${count} selected',
@@ -5133,10 +5137,10 @@ extension on TranslationsEn {
 			'room.superChatFailed' => 'The super chats did not load',
 			'room.superChatCardMembership' => 'Membership',
 			'room.superChatCardSubscription' => 'Subscription',
-			'room.onlineViewers' => 'Live viewers',
-			'room.popularity' => 'Popularity',
 			_ => null,
 		} ?? switch (path) {
+			'room.onlineViewers' => 'Live viewers',
+			'room.popularity' => 'Popularity',
 			'room.totalViewers' => 'Total viewers',
 			'room.startedAt' => ({required Object time}) => 'Started ${time}',
 			'room.danmakuList' => 'Danmaku',
@@ -5647,10 +5651,10 @@ extension on TranslationsEn {
 			'settings.fontRegionOverseas' => 'Overseas',
 			'settings.fontManagerTitle' => 'Font manager',
 			'settings.fontManagerSubtitle' => 'Pick the typeface you like and make the interface yours.',
-			'settings.fontManagerSample' => 'Pure Live',
-			'settings.fontManagerLocal' => 'Local fonts',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerSample' => 'Pure Live',
+			'settings.fontManagerLocal' => 'Local fonts',
 			'settings.fontManagerMore' => 'Get more fonts',
 			'settings.fontManagerPreviewTitle' => 'Font preview',
 			'settings.fontManagerPreviewAction' => 'Preview',
@@ -6161,10 +6165,10 @@ extension on TranslationsEn {
 			'settings.downloadAction' => 'Download',
 			'settings.downloadCount' => ({required Object count}) => '${count} downloads',
 			'settings.downloadFailed' => 'The release\'s files could not be read',
-			'settings.downloadEmpty' => 'This release publishes no files',
-			'settings.downloadNoBuild' => 'This release has no package for this device; its page is open.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadEmpty' => 'This release publishes no files',
+			'settings.downloadNoBuild' => 'This release has no package for this device; its page is open.',
 			'settings.downloadProgress' => ({required Object received, required Object total}) => '${received} of ${total}',
 			'settings.downloadProgressUnknown' => ({required Object received}) => '${received} downloaded',
 			'settings.downloadSavedTo' => ({required Object path}) => 'Saved to ${path}',
@@ -6675,10 +6679,10 @@ extension on TranslationsEn {
 			'toolbox.logsEmptyDescription' => 'Startup, network requests and errors appear here.',
 			'toolbox.logsAutoOn' => 'Auto-scroll on',
 			'toolbox.logsAutoOff' => 'Auto-scroll off (scroll to the bottom to resume)',
-			'toolbox.logsLines' => ({required int count}) => '${count} lines',
-			'toolbox.logsScrollBottom' => 'Scroll to bottom',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.logsLines' => ({required int count}) => '${count} lines',
+			'toolbox.logsScrollBottom' => 'Scroll to bottom',
 			'toolbox.logsCopied' => 'Log copied',
 			'toolbox.logsCopyEmpty' => 'No logs to copy',
 			'toolbox.logsDirectoryDefault' => 'The log file is not ready yet.',

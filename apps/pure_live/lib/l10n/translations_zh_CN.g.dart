@@ -2782,6 +2782,12 @@ class Translations$music$zh_CN {
 	/// zh-CN: '请输入要调整到第几个位置'
 	String get repositionHint => '请输入要调整到第几个位置';
 
+	/// zh-CN: '移动到'
+	String get selectionMoveTo => '移动到';
+
+	/// zh-CN: '已移动 {count} 首到「{name}」。'
+	String moveDoneCount({required Object count, required Object name}) => '已移动 ${count} 首到「${name}」。';
+
 	/// zh-CN: '当前音源暂不支持歌单搜索。'
 	String get songlistSearchUnsupported => '当前音源暂不支持歌单搜索。';
 
@@ -11127,6 +11133,8 @@ extension on Translations {
 			'music.selectionReposition' => '调整位置',
 			'music.repositionTitle' => ({required Object count}) => '将已选的 ${count} 首歌曲的位置调整到：',
 			'music.repositionHint' => '请输入要调整到第几个位置',
+			'music.selectionMoveTo' => '移动到',
+			'music.moveDoneCount' => ({required Object count, required Object name}) => '已移动 ${count} 首到「${name}」。',
 			'music.songlistSearchUnsupported' => '当前音源暂不支持歌单搜索。',
 			'music.defaultSource' => '默认音源',
 			'music.defaultSourceDesc' => '歌曲从哪个音源获取；自定义源脚本负责解析播放地址。',
@@ -11273,10 +11281,10 @@ extension on Translations {
 			'music.sortByTitle' => '按歌名',
 			'music.sortByArtist' => '按歌手',
 			'music.sortByAlbum' => '按专辑',
-			'music.sortByDuration' => '按时长',
-			'music.sortByShuffle' => '随机排序',
 			_ => null,
 		} ?? switch (path) {
+			'music.sortByDuration' => '按时长',
+			'music.sortByShuffle' => '随机排序',
 			'music.selectionStart' => '选择',
 			'music.selectionCancel' => '取消选择',
 			'music.selectionCount' => ({required Object count}) => '已选 ${count} 首',
@@ -11787,10 +11795,10 @@ extension on Translations {
 			'room.superChatFailed' => '超级聊天加载失败',
 			'room.superChatCardMembership' => '会员',
 			'room.superChatCardSubscription' => '订阅',
-			'room.onlineViewers' => '在线',
-			'room.popularity' => '热度',
 			_ => null,
 		} ?? switch (path) {
+			'room.onlineViewers' => '在线',
+			'room.popularity' => '热度',
 			'room.totalViewers' => '累计观看',
 			'room.startedAt' => ({required Object time}) => '${time} 开播',
 			'room.danmakuList' => '弹幕',
@@ -12301,10 +12309,10 @@ extension on Translations {
 			'settings.fontRegionOverseas' => '国外',
 			'settings.fontManagerTitle' => '字体管理',
 			'settings.fontManagerSubtitle' => '选择你喜欢的字体，让界面更符合你的审美。',
-			'settings.fontManagerSample' => '纯粹直播',
-			'settings.fontManagerLocal' => '本地字体',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerSample' => '纯粹直播',
+			'settings.fontManagerLocal' => '本地字体',
 			'settings.fontManagerMore' => '下载更多字体',
 			'settings.fontManagerPreviewTitle' => '字体预览',
 			'settings.fontManagerPreviewAction' => '预览',
@@ -12815,10 +12823,10 @@ extension on Translations {
 			'settings.downloadAction' => '下载',
 			'settings.downloadCount' => ({required Object count}) => '${count} 次下载',
 			'settings.downloadFailed' => '无法读取发布文件列表',
-			'settings.downloadEmpty' => '这个发布没有可下载的文件',
-			'settings.downloadNoBuild' => '这个发布没有匹配本机的安装包，已打开发布页。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadEmpty' => '这个发布没有可下载的文件',
+			'settings.downloadNoBuild' => '这个发布没有匹配本机的安装包，已打开发布页。',
 			'settings.downloadProgress' => ({required Object received, required Object total}) => '${received} / ${total}',
 			'settings.downloadProgressUnknown' => ({required Object received}) => '已下载 ${received}',
 			'settings.downloadSavedTo' => ({required Object path}) => '已保存到 ${path}',
@@ -13329,10 +13337,10 @@ extension on Translations {
 			'toolbox.logsEmptyDescription' => '应用启动、网络请求与错误会记录在这里。',
 			'toolbox.logsAutoOn' => '自动滚动已开启',
 			'toolbox.logsAutoOff' => '自动滚动已关闭（滚动到底部可开启）',
-			'toolbox.logsLines' => ({required int count}) => '${count} 行',
-			'toolbox.logsScrollBottom' => '滚动到底部',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.logsLines' => ({required int count}) => '${count} 行',
+			'toolbox.logsScrollBottom' => '滚动到底部',
 			'toolbox.logsCopied' => '日志已复制',
 			'toolbox.logsCopyEmpty' => '没有可复制的日志',
 			'toolbox.logsDirectoryDefault' => '日志文件尚未就绪。',
