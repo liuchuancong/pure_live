@@ -5965,14 +5965,26 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '关闭的平台不再出现在热门、分区、关注与搜索的平台列表里。'
 	String get sitesDisplayDesc => '关闭的平台不再出现在热门、分区、关注与搜索的平台列表里。';
 
-	/// zh-CN: '全部平台都在显示中。'
-	String get sitesAllShown => '全部平台都在显示中。';
+	/// zh-CN: '全部打开'
+	String get sitesShowAll => '全部打开';
 
-	/// zh-CN: '全部显示'
-	String get sitesShowAll => '全部显示';
+	/// zh-CN: '全部关闭'
+	String get sitesHideAll => '全部关闭';
 
-	/// zh-CN: '把关闭的平台全部打开。'
-	String get sitesShowAllDesc => '把关闭的平台全部打开。';
+	/// zh-CN: '重置'
+	String get sitesReset => '重置';
+
+	/// zh-CN: '显示、顺序与首选平台都回到应用自带的默认。'
+	String get sitesResetDesc => '显示、顺序与首选平台都回到应用自带的默认。';
+
+	/// zh-CN: '平台'
+	String get sitesColumnPlatform => '平台';
+
+	/// zh-CN: '标识'
+	String get sitesColumnId => '标识';
+
+	/// zh-CN: '显示'
+	String get sitesColumnShown => '显示';
 
 	/// zh-CN: '清空观看历史'
 	String get dataClearHistory => '清空观看历史';
@@ -7029,12 +7041,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '没有匹配的平台'
 	String get preferPlatformFilterEmpty => '没有匹配的平台';
-
-	/// zh-CN: '恢复默认顺序'
-	String get sitesOrderReset => '恢复默认顺序';
-
-	/// zh-CN: '平台回到内置的排列顺序；显示开关不受影响。'
-	String get sitesOrderResetDesc => '平台回到内置的排列顺序；显示开关不受影响。';
 
 	/// zh-CN: '界面'
 	String get groupInterface => '界面';
@@ -12612,9 +12618,13 @@ extension on Translations {
 			'settings.refreshRateMultiMonitorDesc' => '刷新率读数来自当前窗口所在的那一台显示器。',
 			'settings.sitesDisplay' => '平台显示',
 			'settings.sitesDisplayDesc' => '关闭的平台不再出现在热门、分区、关注与搜索的平台列表里。',
-			'settings.sitesAllShown' => '全部平台都在显示中。',
-			'settings.sitesShowAll' => '全部显示',
-			'settings.sitesShowAllDesc' => '把关闭的平台全部打开。',
+			'settings.sitesShowAll' => '全部打开',
+			'settings.sitesHideAll' => '全部关闭',
+			'settings.sitesReset' => '重置',
+			'settings.sitesResetDesc' => '显示、顺序与首选平台都回到应用自带的默认。',
+			'settings.sitesColumnPlatform' => '平台',
+			'settings.sitesColumnId' => '标识',
+			'settings.sitesColumnShown' => '显示',
 			'settings.dataClearHistory' => '清空观看历史',
 			'settings.dataClearHistoryDesc' => '删除全部观看记录，不可恢复。',
 			'settings.dataExportFollows' => '导出关注',
@@ -12740,12 +12750,12 @@ extension on Translations {
 			'settings.danmakuDisplayGroup' => '弹幕显示',
 			'settings.danmakuList' => '弹幕列表',
 			'settings.danmakuInteractionGroup' => '弹幕交互',
+			_ => null,
+		} ?? switch (path) {
 			'settings.styleTapInteraction' => '点按弹幕',
 			'settings.styleTapInteractionDesc' => '可复制、屏蔽；关闭后只切换控制条。',
 			'settings.styleLongPressInteraction' => '长按弹幕',
 			'settings.styleLongPressInteractionDesc' => '与点按同一菜单；关闭后长按不命中弹幕。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuStyleGroup' => '弹幕样式',
 			'settings.danmakuStyleDescription' => '弹幕的字体、大小、速度、区域、描边与帧率。',
 			'settings.danmakuDisplayDescription' => '聊天列表显示谁、显示什么、怎么排。',
@@ -12969,8 +12979,6 @@ extension on Translations {
 			'settings.preferPlatformDesc' => '热门与分区的优先平台，也是分区列表与搜索的起始平台。',
 			'settings.preferPlatformFilterHint' => '搜索平台',
 			'settings.preferPlatformFilterEmpty' => '没有匹配的平台',
-			'settings.sitesOrderReset' => '恢复默认顺序',
-			'settings.sitesOrderResetDesc' => '平台回到内置的排列顺序；显示开关不受影响。',
 			'settings.groupInterface' => '界面',
 			'settings.groupSources' => '直播来源',
 			'settings.groupPlayback' => '播放',
@@ -13256,10 +13264,10 @@ extension on Translations {
 			'settings.globalMuteDesc' => '静音现在与之后打开的房间、频道和视频。',
 			'settings.backgroundPlay' => '后台播放',
 			'settings.backgroundPlayDesc' => '离开应用后继续出声；关闭则切后台即暂停。',
-			'settings.asmrSleepMode' => 'ASMR 睡眠模式',
-			'settings.asmrSleepModeDesc' => '进直播间自动切音频模式，到时暂停。仅 Android。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.asmrSleepMode' => 'ASMR 睡眠模式',
+			'settings.asmrSleepModeDesc' => '进直播间自动切音频模式，到时暂停。仅 Android。',
 			'settings.asmrSleepTimer' => 'ASMR 睡眠时长',
 			'settings.asmrSleepTimerDesc' => '音频模式自动停止前的分钟数，范围 15–1440。',
 			'settings.asmrSleepCustomMinutes' => '自定义分钟数',
@@ -13770,10 +13778,10 @@ extension on Translations {
 			'settings.storageFolderBackgrounds' => '壁纸素材',
 			'settings.storageFolderFonts' => '字体',
 			'settings.storageFolderCache' => '封面缓存',
-			'settings.storageFolderData' => '应用数据',
-			'settings.storageFolderDataDesc' => '设置、账号与观看记录的数据库，不随设备迁移。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.storageFolderData' => '应用数据',
+			'settings.storageFolderDataDesc' => '设置、账号与观看记录的数据库，不随设备迁移。',
 			'settings.storageFoldersUpdated' => '目录已更新',
 			'settings.storageFolderRestart' => '重启应用后生效',
 			'settings.storageFolderPick' => '选择目录',

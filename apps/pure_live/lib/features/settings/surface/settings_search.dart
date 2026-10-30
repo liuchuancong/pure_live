@@ -375,7 +375,11 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       'platform show hide order edit draft 平台 显示 隐藏 排序 编辑顺序 热门 分区 关注 搜索',
     ),
     _hit(SettingsSection.sites, s.preferPlatform, 'preferred platform filter search empty 首选 平台 筛选 搜索 空态'),
-    _hit(SettingsSection.sitesDisplay, s.sitesOrderReset, 'platform order restore default 平台 顺序 恢复 默认'),
+    _hit(
+      SettingsSection.sitesDisplay,
+      s.sitesReset,
+      'platform table hide all show all reset default order 平台 表格 全部打开 全部关闭 重置 默认 顺序',
+    ),
     _hit(SettingsSection.sites, s.showUnplayableTitle, 'unplayable restriction paid locked hidden 不能播放 付费 加锁 隐藏'),
     _hit(SettingsSection.sites, s.tvFocusZoom, 'tv focus zoom grow scale card menu remote 电视 焦点 放大 缩放 卡片 菜单 遥控器'),
     _hit(SettingsSection.followTags, s.tagManagement, 'tag tags management group filter follow 标签 分组 筛选 关注 添加 删除 置顶'),

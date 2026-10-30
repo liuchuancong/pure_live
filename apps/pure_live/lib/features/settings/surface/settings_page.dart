@@ -1876,67 +1876,205 @@ final class _SitesPane extends ConsumerWidget {
   }
 }
 
-/// The platform display page: every platform the build carries, in the
-/// viewer's order, each with its own show/hide switch — the order the browse
-/// surfaces read, the visibility they filter by.
+/// The platform display page: every platform the build carries, one row
+/// each, in the order the browse surfaces read and filtered by the visibility
+/// the switches set.
 ///
-/// The rows are the display order itself, but only a draft edits it:
-/// 「编辑顺序」 opens one and the order reaches storage on 保存顺序, the same
-/// two states the navigation pages use. Showing or hiding a platform stays
-/// immediate — it is a different choice from where a platform sits.
-final class _SitesDisplayPane extends ConsumerWidget {
+/// A table because the list is long and every row says the same three things
+/// — which platform, what it is called in the build, whether it shows. The
+/// three actions above it do the whole list at once: 全部打开, 全部关闭 (which
+/// keeps one platform, since a browse page with none is not a choice) and
+/// 重置, which asks first and then puts the visibility, the order and the
+/// preferred platform back to what this build ships.
+final class _SitesDisplayPane extends ConsumerStatefulWidget {
   const _SitesDisplayPane();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SitesDisplayPane> createState() => _SitesDisplayPaneState();
+}
+
+final class _SitesDisplayPaneState extends ConsumerState<_SitesDisplayPane> {
+  /// While a bulk action is in flight its buttons wait; a row's own switch
+  /// never blocks, it is one write.
+  bool _busy = false;
+
+  Future<void> _setAllShown(bool value) async {
+    if (_busy) return;
+    final t = context.t;
+    setState(() => _busy = true);
+    try {
+      final changed = await ref.read(sitesDisplayProvider.notifier).setAllShown(value: value);
+      // Turning all off with one platform left shown changes nothing, and the
+      // reason belongs on screen.
+      if (!changed && !value && mounted) {
+        showDsToast(context: context, title: t.settings.sitesKeepOne);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _reset() async {
+    final t = context.t;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.settings.sitesReset,
+      description: t.settings.sitesResetDesc,
+      confirmLabel: t.common.confirm,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.rotateCcw),
+    );
+    if (!confirmed || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(sitesDisplayProvider.notifier).setAllShown(value: true);
+      await ref.read(sitesOrderProvider.notifier).reset();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Moves [id] to [target] in the viewer's platform order — the row menu's
+  /// 置顶/上移/下移/置底, which is the draft editor's four buttons kept for a
+  /// table that has no drag grip.
+  Future<void> _move(String id, int target) async {
+    final order = ref.read(sitesOrderProvider).order;
+    final from = order.indexOf(id);
+    if (from < 0) return;
+    final to = target.clamp(0, order.length - 1);
+    if (to == from) return;
+    final next = [...order];
+    next.insert(to, next.removeAt(from));
+    await ref.read(sitesOrderProvider.notifier).setOrder(next);
+  }
+
+  List<Widget> _rowMenu(BuildContext context, String id) {
+    final t = context.t;
+    final order = ref.read(sitesOrderProvider).order;
+    final index = order.indexOf(id);
+    final last = order.length - 1;
+    return [
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.arrowUpToLine),
+        label: Text(t.settings.moveToTop),
+        onPressed: index <= 0 ? null : () => unawaited(_move(id, 0)),
+      ),
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.arrowUp),
+        label: Text(t.settings.moveUp),
+        onPressed: index <= 0 ? null : () => unawaited(_move(id, index - 1)),
+      ),
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.arrowDown),
+        label: Text(t.settings.moveDown),
+        onPressed: index >= last ? null : () => unawaited(_move(id, index + 1)),
+      ),
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.arrowDownToLine),
+        label: Text(t.settings.moveToBottom),
+        onPressed: index >= last ? null : () => unawaited(_move(id, last)),
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.t;
     final sites = ref.watch(sitesProvider).all;
     final hidden = ref.watch(sitesDisplayProvider);
-    final display = ref.read(sitesDisplayProvider.notifier);
     final order = ref.watch(sitesOrderProvider);
-    final orderController = ref.read(sitesOrderProvider.notifier);
+    final display = ref.read(sitesDisplayProvider.notifier);
     final names = {for (final site in sites) site.manifest.id: localizedSiteName(site)};
     final sitesById = {for (final site in sites) site.manifest.id: site};
     // The hidden set stores the platforms switched off; an empty set shows
     // everything.
     bool shown(String id) => hidden.isEmpty || !hidden.contains(id);
 
-    return SettingsOrderList<String>(
-      header: t.settings.sitesDisplay,
-      items: order.order,
-      identityOf: (id) => id,
-      labelOf: (id) => names[id] ?? id,
-      leadingOf: (id) => localizedSiteIcon(sitesById[id], size: 20) ?? const DsIcon(DsIcons.antenna),
-      descriptionOf: (id) => id,
-      trailingOf: (id) => DsSwitch(
-        value: shown(id),
-        onChanged: (value) async {
-          final changed = await display.toggle(id);
-          if (!changed && context.mounted) {
-            showDsToast(context: context, title: t.settings.sitesKeepOne);
-          }
-        },
-      ),
-      extraRows: [
-        // With nothing hidden the line is a status; with anything hidden it
-        // is the one-step way back to every platform.
-        if (hidden.isEmpty)
-          DsListRow(leading: const DsIcon(DsIcons.antenna), title: Text(t.settings.sitesAllShown))
-        else
-          DsListRow(
-            leading: const DsIcon(DsIcons.antenna),
-            title: Text(t.settings.sitesShowAll),
-            description: Text(t.settings.sitesShowAllDesc),
-            onPressed: () => unawaited(display.showAll()),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: Wrap(
+            spacing: DsSpace.s8,
+            children: [
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.eye, size: 16),
+                onPressed: _busy ? null : () => unawaited(_setAllShown(true)),
+                child: Text(t.settings.sitesShowAll),
+              ),
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.eyeOff, size: 16),
+                onPressed: _busy ? null : () => unawaited(_setAllShown(false)),
+                child: Text(t.settings.sitesHideAll),
+              ),
+              DsButton(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.rotateCcw, size: 16),
+                onPressed: _busy ? null : () => unawaited(_reset()),
+                child: Text(t.settings.sitesReset),
+              ),
+            ],
           ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.listRestart),
-          title: Text(t.settings.sitesOrderReset),
-          description: Text(t.settings.sitesOrderResetDesc),
-          onPressed: () => unawaited(orderController.resetOrder()),
+        ),
+        // The pushed page is already named 平台显示, so the table carries no
+        // section header of its own.
+        DsListSection(
+          children: [
+            DsTable<String>(
+              semanticLabel: t.settings.sitesDisplay,
+              rows: order.order,
+              rowKey: (id) => id,
+              rowMenuBuilder: _rowMenu,
+              showRowMenuButton: true,
+              columns: [
+                DsTableColumn<String>(
+                  id: 'platform',
+                  label: t.settings.sitesColumnPlatform,
+                  text: (id) => names[id] ?? id,
+                  cell: (context, id) => Row(
+                    children: [
+                      localizedSiteIcon(sitesById[id], size: 20) ?? const DsIcon(DsIcons.antenna),
+                      const SizedBox(width: DsSpace.s8),
+                      Expanded(child: Text(names[id] ?? id, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    ],
+                  ),
+                ),
+                DsTableColumn<String>(
+                  id: 'id',
+                  label: t.settings.sitesColumnId,
+                  text: (id) => id,
+                  width: const DsTableColumnWidth.intrinsic(),
+                ),
+                DsTableColumn<String>(
+                  id: 'shown',
+                  label: t.settings.sitesColumnShown,
+                  value: shown,
+                  width: const DsTableColumnWidth.intrinsic(min: 56),
+                  alignment: DsTableCellAlignment.end,
+                  cell: (context, id) => DsSwitch(
+                    value: shown(id),
+                    semanticLabel: names[id] ?? id,
+                    onChanged: (value) async {
+                      final changed = await display.toggle(id);
+                      if (!changed && context.mounted) {
+                        showDsToast(context: context, title: context.t.settings.sitesKeepOne);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ],
-      onSave: (draft) => unawaited(orderController.setOrder(draft)),
     );
   }
 }

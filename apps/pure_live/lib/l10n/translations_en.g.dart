@@ -2130,9 +2130,13 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get refreshRateMultiMonitorDesc => 'The reading belongs to the display the current window is on.';
 	@override String get sitesDisplay => 'Platforms shown';
 	@override String get sitesDisplayDesc => 'Switched-off platforms leave the popular, areas, follows and search platform lists.';
-	@override String get sitesAllShown => 'Every platform is shown.';
 	@override String get sitesShowAll => 'Show all';
-	@override String get sitesShowAllDesc => 'Switch every platform back on.';
+	@override String get sitesHideAll => 'Hide all';
+	@override String get sitesReset => 'Reset';
+	@override String get sitesResetDesc => 'Visibility, order and the preferred platform all return to what this build ships with.';
+	@override String get sitesColumnPlatform => 'Platform';
+	@override String get sitesColumnId => 'Id';
+	@override String get sitesColumnShown => 'Shown';
 	@override String get dataClearHistory => 'Clear watch history';
 	@override String get dataClearHistoryDesc => 'Deletes every watch record, for good.';
 	@override String get dataExportFollows => 'Export follows';
@@ -2485,8 +2489,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get preferPlatformDesc => 'The platform the popular and areas pages open on, and the one a zone\'s room list and a search start from.';
 	@override String get preferPlatformFilterHint => 'Search platforms';
 	@override String get preferPlatformFilterEmpty => 'No platforms match';
-	@override String get sitesOrderReset => 'Restore default order';
-	@override String get sitesOrderResetDesc => 'Platforms return to the built-in order; the show switches stay as they are.';
 	@override String get groupInterface => 'Interface';
 	@override String get groupSources => 'Live sources';
 	@override String get groupPlayback => 'Playback';
@@ -5664,9 +5666,13 @@ extension on TranslationsEn {
 			'settings.refreshRateMultiMonitorDesc' => 'The reading belongs to the display the current window is on.',
 			'settings.sitesDisplay' => 'Platforms shown',
 			'settings.sitesDisplayDesc' => 'Switched-off platforms leave the popular, areas, follows and search platform lists.',
-			'settings.sitesAllShown' => 'Every platform is shown.',
 			'settings.sitesShowAll' => 'Show all',
-			'settings.sitesShowAllDesc' => 'Switch every platform back on.',
+			'settings.sitesHideAll' => 'Hide all',
+			'settings.sitesReset' => 'Reset',
+			'settings.sitesResetDesc' => 'Visibility, order and the preferred platform all return to what this build ships with.',
+			'settings.sitesColumnPlatform' => 'Platform',
+			'settings.sitesColumnId' => 'Id',
+			'settings.sitesColumnShown' => 'Shown',
 			'settings.dataClearHistory' => 'Clear watch history',
 			'settings.dataClearHistoryDesc' => 'Deletes every watch record, for good.',
 			'settings.dataExportFollows' => 'Export follows',
@@ -5792,12 +5798,12 @@ extension on TranslationsEn {
 			'settings.danmakuDisplayGroup' => 'Danmaku display',
 			'settings.danmakuList' => 'Danmaku list',
 			'settings.danmakuInteractionGroup' => 'Danmaku interaction',
+			_ => null,
+		} ?? switch (path) {
 			'settings.styleTapInteraction' => 'Tap danmaku',
 			'settings.styleTapInteractionDesc' => 'Copy or block a message; off, a tap only toggles the controls.',
 			'settings.styleLongPressInteraction' => 'Long-press danmaku',
 			'settings.styleLongPressInteractionDesc' => 'Opens the same actions; off, a long press misses danmaku.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuStyleGroup' => 'Danmaku style',
 			'settings.danmakuStyleDescription' => 'The typeface, size, speed, area, outline and frame rate of a danmaku.',
 			'settings.danmakuDisplayDescription' => 'Who the chat list shows, what it keeps and how it is set.',
@@ -6021,8 +6027,6 @@ extension on TranslationsEn {
 			'settings.preferPlatformDesc' => 'The platform the popular and areas pages open on, and the one a zone\'s room list and a search start from.',
 			'settings.preferPlatformFilterHint' => 'Search platforms',
 			'settings.preferPlatformFilterEmpty' => 'No platforms match',
-			'settings.sitesOrderReset' => 'Restore default order',
-			'settings.sitesOrderResetDesc' => 'Platforms return to the built-in order; the show switches stay as they are.',
 			'settings.groupInterface' => 'Interface',
 			'settings.groupSources' => 'Live sources',
 			'settings.groupPlayback' => 'Playback',
@@ -6308,10 +6312,10 @@ extension on TranslationsEn {
 			'settings.globalMuteDesc' => 'Mutes every room, channel and video, now and later.',
 			'settings.backgroundPlay' => 'Background playback',
 			'settings.backgroundPlayDesc' => 'Keep playing audio after the app leaves the foreground; when off, playback pauses and resumes when you return.',
-			'settings.asmrSleepMode' => 'ASMR sleep mode',
-			'settings.asmrSleepModeDesc' => 'Starts a room in audio-only mode and pauses it after the chosen time. Android only.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.asmrSleepMode' => 'ASMR sleep mode',
+			'settings.asmrSleepModeDesc' => 'Starts a room in audio-only mode and pauses it after the chosen time. Android only.',
 			'settings.asmrSleepTimer' => 'ASMR sleep duration',
 			'settings.asmrSleepTimerDesc' => 'Minutes before the audio-only room pauses; range 15–1440.',
 			'settings.asmrSleepCustomMinutes' => 'Custom minutes',
@@ -6822,10 +6826,10 @@ extension on TranslationsEn {
 			'settings.storageFolderBackgrounds' => 'Background media',
 			'settings.storageFolderFonts' => 'Fonts',
 			'settings.storageFolderCache' => 'Cover cache',
-			'settings.storageFolderData' => 'App data',
-			'settings.storageFolderDataDesc' => 'The database of settings, accounts and history; it does not move with the device.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.storageFolderData' => 'App data',
+			'settings.storageFolderDataDesc' => 'The database of settings, accounts and history; it does not move with the device.',
 			'settings.storageFoldersUpdated' => 'Folder updated',
 			'settings.storageFolderRestart' => 'Takes effect after a restart',
 			'settings.storageFolderPick' => 'Choose folder',

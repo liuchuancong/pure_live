@@ -46,15 +46,39 @@ final class SitesDisplayController extends Notifier<Set<String>> {
     return state.isEmpty ? List.of(all) : all.where(shown).toList();
   }
 
-  /// Shows every platform again — the way back from a page of switches
-  /// that were turned off one by one.
-  Future<void> showAll() async {
-    if (state.isEmpty) return;
-    state = <String>{};
+  /// Turns every platform on or off at once — the table's two bulk buttons,
+  /// where the switches would otherwise be flipped one row at a time.
+  ///
+  /// Turning all off keeps exactly one platform shown: the preferred one when
+  /// it still shows, the first shown otherwise, and the preference follows it
+  /// so the browse pages never lead with a hidden platform. Answers whether
+  /// the choice changed; a caller that asked for all off with only one left
+  /// shown is the page's 「至少保留一个平台」 case.
+  Future<bool> setAllShown({required bool value}) async {
+    if (value) {
+      if (state.isEmpty) return false;
+      state = <String>{};
+      await _persist();
+      return true;
+    }
+    final visible = visibleIds();
+    if (visible.length <= 1) return false;
+    final order = ref.read(sitesOrderProvider);
+    final keep = visible.contains(order.preferred) ? order.preferred : visible.first;
+    if (keep != order.preferred) await ref.read(sitesOrderProvider.notifier).setPreferred(keep);
+    state = {
+      for (final id in order.order)
+        if (id != keep) id,
+    };
+    await _persist();
+    return true;
+  }
+
+  Future<void> _persist() async {
     try {
-      await StoragePrefs.setStringList(hiddenKey, const []);
+      await StoragePrefs.setStringList(hiddenKey, state.toList());
     } on Object {
-      // The choice is a preference; a closed store loses it.
+      // The choice is a preference; a closed store loses it, nothing else.
     }
   }
 
@@ -80,11 +104,7 @@ final class SitesDisplayController extends Notifier<Set<String>> {
         if (remaining.isNotEmpty) await ref.read(sitesOrderProvider.notifier).setPreferred(remaining.first);
       }
     }
-    try {
-      await StoragePrefs.setStringList(hiddenKey, next.toList());
-    } on Object {
-      // The choice is a preference; a closed store loses it, nothing else.
-    }
+    await _persist();
     return true;
   }
 }
@@ -158,13 +178,19 @@ final class SitesOrderController extends Notifier<SitesOrder> {
     await _writeOrder(ids);
   }
 
-  /// Puts the platforms back in the registry's order ("restore default");
-  /// the preferred platform stays unless the registry no longer knows it.
-  Future<void> resetOrder() async {
+  /// Back to this build's own answer: the registry's order and its default
+  /// preferred platform — what the platform page's 重置 does together with
+  /// showing every platform again.
+  Future<void> reset() async {
     final ids = [for (final site in ref.read(sitesProvider).all) site.manifest.id];
-    final preferred = ids.contains(state.preferred) ? state.preferred : defaultPreferredSiteId(ids);
+    final preferred = defaultPreferredSiteId(ids);
     state = (order: ids, preferred: preferred);
     await _writeOrder(ids);
+    try {
+      await StoragePrefs.setString(preferredKey, preferred);
+    } on Object {
+      // The choice is a preference; a closed store loses it, nothing else.
+    }
   }
 
   /// Moves the preferred platform, writing the choice through.
