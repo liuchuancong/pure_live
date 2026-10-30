@@ -24,6 +24,7 @@ export 'controller/music_sync_data.dart';
 export 'controller/music_sync_wire.dart';
 export 'music_page.dart';
 export 'pages/music_player_page.dart';
+export 'pages/music_eq_center_page.dart';
 export 'pages/music_settings_pane.dart';
 export 'widgets/music_actions.dart';
 export 'widgets/music_widgets.dart';

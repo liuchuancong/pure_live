@@ -3922,6 +3922,91 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '平直响应'
 	String get eqPresetFlat => '平直响应';
+	String get eqCenter => '音效中心';
+
+	/// zh-CN: '自定义你的专属音效风格'
+	String get eqCenterSubtitle => '自定义你的专属音效风格';
+
+	/// zh-CN: '已启用'
+	String get eqCenterEnabled => '已启用';
+
+	/// zh-CN: '未启用'
+	String get eqCenterDisabled => '未启用';
+
+	/// zh-CN: '当前音效'
+	String get eqCurrent => '当前音效';
+
+	/// zh-CN: '推荐音效'
+	String get eqCenterRecommended => '推荐音效';
+
+	/// zh-CN: '均衡器'
+	String get eqCenterBands => '均衡器';
+
+	/// zh-CN: '10 段 · 自定义'
+	String get eqCenterBandsCaption => '10 段 · 自定义';
+
+	/// zh-CN: '均衡器'
+	String get eqCenterEqualizer => '均衡器';
+
+	/// zh-CN: '强度'
+	String get eqCenterStrength => '强度';
+
+	/// zh-CN: '音效预设选择'
+	String get eqCenterPickTitle => '音效预设选择';
+
+	/// zh-CN: '更多预设'
+	String get eqMorePresets => '更多预设';
+
+	/// zh-CN: '使用'
+	String get eqUse => '使用';
+
+	/// zh-CN: '当前使用'
+	String get eqInUse => '当前使用';
+
+	/// zh-CN: '官方预设'
+	String get eqOfficialPresets => '官方预设';
+
+	/// zh-CN: '我的预设'
+	String get eqMyPresets => '我的预设';
+
+	/// zh-CN: '还没有自定义预设'
+	String get eqMyPresetsEmpty => '还没有自定义预设';
+
+	/// zh-CN: '流行 / 爵士乐'
+	String get eqTagPop => '流行 / 爵士乐';
+
+	/// zh-CN: '摇滚 / 硬摇滚'
+	String get eqTagRock => '摇滚 / 硬摇滚';
+
+	/// zh-CN: '古典 / 轻音乐'
+	String get eqTagClassical => '古典 / 轻音乐';
+
+	/// zh-CN: '爵士 / 蓝调'
+	String get eqTagJazz => '爵士 / 蓝调';
+
+	/// zh-CN: '电子 / 舞曲'
+	String get eqTagElectronic => '电子 / 舞曲';
+
+	/// zh-CN: '重低音 / 书房'
+	String get eqTagBass => '重低音 / 书房';
+
+	/// zh-CN: '直播 / 访谈'
+	String get eqTagVocal => '直播 / 访谈';
+
+	/// zh-CN: '现场 / 演出'
+	String get eqTagLive => '现场 / 演出';
+
+	/// zh-CN: '原始响应'
+	String get eqTagFlat => '原始响应';
+
+	/// zh-CN: '适合直播、访谈与语音内容。'
+	String get eqNoteVocal => '适合直播、访谈与语音内容。';
+
+	/// zh-CN: '安静环境里的低频氛围。'
+	String get eqNoteBass => '安静环境里的低频氛围。';
+
+	/// zh-CN: '保留音乐厅自身的平衡。'
+	String get eqNoteClassical => '保留音乐厅自身的平衡。';
 
 	/// zh-CN: '引擎拒绝了当前音效链——声音未经过处理。请先关闭效果再尝试较小的组合。'
 	String get eqApplyFailed => '引擎拒绝了当前音效链——声音未经过处理。请先关闭效果再尝试较小的组合。';
@@ -11803,6 +11888,35 @@ extension on Translations {
 			'music.eqPresetVocal' => '清晰人声',
 			'music.eqPresetLive' => '现场感',
 			'music.eqPresetFlat' => '平直响应',
+			'music.eqCenter' => '音效中心',
+			'music.eqCenterSubtitle' => '自定义你的专属音效风格',
+			'music.eqCenterEnabled' => '已启用',
+			'music.eqCenterDisabled' => '未启用',
+			'music.eqCurrent' => '当前音效',
+			'music.eqCenterRecommended' => '推荐音效',
+			'music.eqCenterBands' => '均衡器',
+			'music.eqCenterBandsCaption' => '10 段 · 自定义',
+			'music.eqCenterEqualizer' => '均衡器',
+			'music.eqCenterStrength' => '强度',
+			'music.eqCenterPickTitle' => '音效预设选择',
+			'music.eqMorePresets' => '更多预设',
+			'music.eqUse' => '使用',
+			'music.eqInUse' => '当前使用',
+			'music.eqOfficialPresets' => '官方预设',
+			'music.eqMyPresets' => '我的预设',
+			'music.eqMyPresetsEmpty' => '还没有自定义预设',
+			'music.eqTagPop' => '流行 / 爵士乐',
+			'music.eqTagRock' => '摇滚 / 硬摇滚',
+			'music.eqTagClassical' => '古典 / 轻音乐',
+			'music.eqTagJazz' => '爵士 / 蓝调',
+			'music.eqTagElectronic' => '电子 / 舞曲',
+			'music.eqTagBass' => '重低音 / 书房',
+			'music.eqTagVocal' => '直播 / 访谈',
+			'music.eqTagLive' => '现场 / 演出',
+			'music.eqTagFlat' => '原始响应',
+			'music.eqNoteVocal' => '适合直播、访谈与语音内容。',
+			'music.eqNoteBass' => '安静环境里的低频氛围。',
+			'music.eqNoteClassical' => '保留音乐厅自身的平衡。',
 			'music.eqApplyFailed' => '引擎拒绝了当前音效链——声音未经过处理。请先关闭效果再尝试较小的组合。',
 			'music.eqFxSection' => '增强音效',
 			'music.eqFxCostPrefix' => '注意：',

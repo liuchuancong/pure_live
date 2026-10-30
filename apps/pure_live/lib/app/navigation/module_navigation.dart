@@ -174,7 +174,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // 下载管理 — sit under them as the module's tools.
     menu: [
       [NavigationItem.music, NavigationItem.musicSonglist, NavigationItem.musicToplist, NavigationItem.musicLibrary],
-      [NavigationItem.musicLocal, NavigationItem.musicDownloads],
+      [NavigationItem.musicLocal, NavigationItem.musicDownloads, NavigationItem.musicEffects],
     ],
     landing: NavigationItem.music,
     // The music module's settings rail, entry for entry the way lx-music
@@ -246,6 +246,7 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.musicLibrary: () => const MusicPage(view: MusicView.mine),
   NavigationItem.musicLocal: () => const MusicPage(view: MusicView.local),
   NavigationItem.musicDownloads: () => const MusicPage(view: MusicView.downloads),
+  NavigationItem.musicEffects: MusicEqCenterPage.new,
   NavigationItem.hongguoHome: HongguoPage.new,
   NavigationItem.hongguoFind: () => const HongguoPage(view: HongguoView.find),
   NavigationItem.hongguoRank: () => const HongguoPage(view: HongguoView.rank),

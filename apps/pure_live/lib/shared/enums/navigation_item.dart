@@ -107,6 +107,9 @@ enum NavigationItem {
   /// The music module's download queue, the reference's 下载管理.
   musicDownloads(DsIcons.download),
 
+  /// The music module's sound-effect center.
+  musicEffects(DsIcons.audioLines),
+
   /// The hongguo station's home feed (首页).
   hongguoHome(DsIcons.home),
 
@@ -170,6 +173,7 @@ enum NavigationItem {
     NavigationItem.musicLibrary => t.navigation.musicLibrary,
     NavigationItem.musicLocal => t.navigation.musicLocal,
     NavigationItem.musicDownloads => t.navigation.musicDownloads,
+    NavigationItem.musicEffects => t.music.eqCenter,
     NavigationItem.hongguoHome => t.hongguo.navHome,
     NavigationItem.hongguoFind => t.hongguo.navFind,
     NavigationItem.hongguoRank => t.hongguo.navRank,
