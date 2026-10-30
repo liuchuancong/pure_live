@@ -2805,6 +2805,10 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '向音源请求的音质；音源没有这一档时会给出它能提供的最高档。'
 	String get qualityDesc => '向音源请求的音质；音源没有这一档时会给出它能提供的最高档。';
+	String get audioOutput => '输出设备';
+
+	/// zh-CN: '选择音乐的播放输出设备。'
+	String get audioOutputDesc => '选择音乐的播放输出设备。';
 
 	/// zh-CN: '128K'
 	String get qualityStandard => '128K';
@@ -11410,6 +11414,8 @@ extension on Translations {
 			'music.defaultSourceEmpty' => '还没有可用的音源；先在下方「自定义源」里导入脚本。',
 			'music.quality' => '播放品质',
 			'music.qualityDesc' => '向音源请求的音质；音源没有这一档时会给出它能提供的最高档。',
+			'music.audioOutput' => '输出设备',
+			'music.audioOutputDesc' => '选择音乐的播放输出设备。',
 			'music.qualityStandard' => '128K',
 			'music.qualityHigh' => '320K',
 			'music.qualityLossless' => '无损',

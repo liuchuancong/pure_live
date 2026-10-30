@@ -56,6 +56,8 @@
   "defaultSourceEmpty": "No source yet — import a script under Custom sources below.",
   "quality": "Playback quality",
   "qualityDesc": "The rendition asked of a source; a source that lacks it answers with the best it has.",
+  "audioOutput": "Output device",
+  "audioOutputDesc": "Where the music plays; empty means this platform has no device picker.",
   "qualityStandard": "128K",
   "qualityHigh": "320K",
   "qualityLossless": "Lossless",

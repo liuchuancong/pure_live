@@ -56,6 +56,8 @@
   "defaultSourceEmpty": "还没有可用的音源；先在下方「自定义源」里导入脚本。",
   "quality": "播放品质",
   "qualityDesc": "向音源请求的音质；音源没有这一档时会给出它能提供的最高档。",
+  "audioOutput": "输出设备",
+  "audioOutputDesc": "选择音乐的播放输出设备。",
   "qualityStandard": "128K",
   "qualityHigh": "320K",
   "qualityLossless": "无损",

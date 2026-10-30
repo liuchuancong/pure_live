@@ -1035,6 +1035,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get defaultSourceEmpty => 'No source yet — import a script under Custom sources below.';
 	@override String get quality => 'Playback quality';
 	@override String get qualityDesc => 'The rendition asked of a source; a source that lacks it answers with the best it has.';
+	@override String get audioOutput => 'Output device';
+	@override String get audioOutputDesc => 'Where the music plays; empty means this platform has no device picker.';
 	@override String get qualityStandard => '128K';
 	@override String get qualityHigh => '320K';
 	@override String get qualityLossless => 'Lossless';
@@ -4574,6 +4576,8 @@ extension on TranslationsEn {
 			'music.defaultSourceEmpty' => 'No source yet — import a script under Custom sources below.',
 			'music.quality' => 'Playback quality',
 			'music.qualityDesc' => 'The rendition asked of a source; a source that lacks it answers with the best it has.',
+			'music.audioOutput' => 'Output device',
+			'music.audioOutputDesc' => 'Where the music plays; empty means this platform has no device picker.',
 			'music.qualityStandard' => '128K',
 			'music.qualityHigh' => '320K',
 			'music.qualityLossless' => 'Lossless',

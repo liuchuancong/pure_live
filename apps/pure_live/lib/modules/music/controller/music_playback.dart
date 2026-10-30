@@ -4,7 +4,8 @@ import 'dart:io' show File;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
-import 'package:media_core/media_core.dart' show EngineOption, PlayerConfig, PlayerHandleEngineOptions;
+import 'package:media_core/media_core.dart'
+    show EngineOption, PlayerAudioDevice, PlayerConfig, PlayerHandleAudioDevices, PlayerHandleEngineOptions;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/app.dart' show playerKernelProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
@@ -21,6 +22,10 @@ import 'package:pure_live/modules/music/controller/music_source.dart' show music
 /// The preference the last queue is kept under, so 打开时继续播放 has
 /// something to resume.
 const String kMusicQueueKey = 'music.queue';
+
+/// The preference the chosen audio output device is kept under — an mpv
+/// `audio-device` name, replayed onto every new engine instance.
+const String kMusicAudioDeviceKey = 'music.play.audioDevice';
 
 /// The queue as the last run left it.
 typedef MusicQueueSnapshot = ({List<audio.MusicTrack> tracks, int index});
@@ -275,6 +280,10 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
         _pitchPending = false;
         _applyPitchCorrection(ref.read(musicSettingsProvider).preservesPitch);
       }
+      if (_devicePending && next.track != null) {
+        _devicePending = false;
+        _applyAudioDevice();
+      }
       // Android 13+ hides the media notification without this permission; ask
       // when the viewer actually starts a song, not on some unrelated page.
       if (next.playing && !_askedNotifications) {
@@ -297,6 +306,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     // when a handle already exists this applies straight away.
     _applyEq(ref.read(musicEqProvider));
     _applyPitchCorrection(ref.read(musicSettingsProvider).preservesPitch);
+    _applyAudioDevice();
     unawaited(_restore());
     unawaited(_restoreDesktopLyric());
     return _audio.state;
@@ -375,6 +385,46 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// Like the effect chain, the handle replays the option if the engine
   /// rebuilds.
   bool _pitchPending = false;
+
+  /// Re-applies the stored output device onto a new engine instance; a choice
+  /// made before the first track waits for the handle like the others.
+  bool _devicePending = false;
+
+  void _applyAudioDevice() {
+    final handle = _audio.handle;
+    if (handle == null) {
+      _devicePending = true;
+      return;
+    }
+    final stored = StoragePrefs.getString(kMusicAudioDeviceKey);
+    if (stored == null || stored.isEmpty) return;
+    unawaited(
+      handle.applyEngineOptions(<EngineOption>[EngineOption('audio-device', stored)]).then(
+        (_) {},
+        onError: (Object _) {
+          // An engine without the option keeps its own default device.
+        },
+      ),
+    );
+  }
+
+  /// The engine's audio output devices, current one marked; empty when this
+  /// backend has no device picker.
+  Future<List<PlayerAudioDevice>> audioDevices() async =>
+      await _audio.handle?.listAudioDevices() ?? const <PlayerAudioDevice>[];
+
+  /// Sends the sound to [name] — an mpv `audio-device` value straight from
+  /// [PlayerAudioDevice.name] — and remembers the choice for the next boot.
+  Future<void> selectAudioDevice(String name) async {
+    final handle = _audio.handle;
+    if (handle == null) return;
+    await StoragePrefs.setString(kMusicAudioDeviceKey, name);
+    try {
+      await handle.applyEngineOptions(<EngineOption>[EngineOption('audio-device', name)]);
+    } on Object {
+      // The choice is stored; the engine that refused keeps its default.
+    }
+  }
 
   void _applyPitchCorrection(bool preservesPitch) {
     final handle = _audio.handle;
@@ -946,4 +996,10 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
 /// The module's player and queue.
 final musicPlayerProvider = NotifierProvider<MusicPlayerController, audio.AudioPlaybackState>(
   MusicPlayerController.new,
+);
+
+/// The active engine's audio output devices; invalidate after a selection or
+/// a device plug event to re-read.
+final FutureProvider<List<PlayerAudioDevice>> musicAudioDevicesProvider = FutureProvider.autoDispose<List<PlayerAudioDevice>>(
+  (ref) => ref.read(musicPlayerProvider.notifier).audioDevices(),
 );

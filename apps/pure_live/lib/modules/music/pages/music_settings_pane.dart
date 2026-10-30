@@ -38,7 +38,8 @@ import 'package:pure_live/modules/music/controller/music_hotkeys.dart'
 import 'package:pure_live/modules/music/controller/music_lyric_overrides.dart' show musicLyricOverridesProvider;
 import 'package:pure_live/modules/music/controller/music_open_api.dart'
     show musicOpenApiGateProvider, musicOpenApiLanProvider, musicOpenApiPortProvider, musicOpenApiProvider;
-import 'package:pure_live/modules/music/controller/music_playback.dart' show MusicPlayerController, musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/music_playback.dart'
+    show MusicPlayerController, musicAudioDevicesProvider, musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_settings.dart';
 import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId, musicSourceListProvider;
 import 'package:pure_live/modules/music/controller/music_source_catalog.dart'
@@ -113,6 +114,27 @@ final class MusicSettingsPane extends ConsumerWidget {
                 for (final quality in MusicQuality.values) DsSelectOption(value: quality, label: quality.label(t)),
               ],
               onChanged: (quality) => unawaited(controller.setQuality(quality)),
+            ),
+            Builder(
+              builder: (context) {
+                final devices = ref.watch(musicAudioDevicesProvider).value ?? const [];
+                if (devices.length < 2) return const SizedBox.shrink();
+                final current = devices.firstWhere((device) => device.selected, orElse: () => devices.first);
+                return SettingsChoiceRow<String>(
+                  leading: const DsIcon(DsIcons.volume2),
+                  title: t.music.audioOutput,
+                  description: t.music.audioOutputDesc,
+                  value: current.name,
+                  options: [
+                    for (final device in devices)
+                      DsSelectOption(
+                        value: device.name,
+                        label: device.description.isEmpty ? device.name : device.description,
+                      ),
+                  ],
+                  onChanged: (name) => unawaited(_selectAudioDevice(ref, name)),
+                );
+              },
             ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.skipForward),
@@ -255,6 +277,12 @@ final class MusicSettingsPane extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  /// Sends the sound to the picked device and refreshes the row's marks.
+  Future<void> _selectAudioDevice(WidgetRef ref, String name) async {
+    await ref.read(musicPlayerProvider.notifier).selectAudioDevice(name);
+    ref.invalidate(musicAudioDevicesProvider);
   }
 
   Future<void> _clearDislikes(BuildContext context, WidgetRef ref) async {
