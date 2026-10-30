@@ -85,3 +85,22 @@
 - media_core 当前无任何 spectrum/FFT/PCM 面；已有的最接近能力是 EBU R128 响度探针路径（`PlayerAdapterBase.emitLoudnessChanged` momentary/shortTerm LUFS，"滤镜在场即能力"，af 链携带探针滤镜时才上报）——可作为电平显示的参考路径，但单频带响度 ≠ 频谱。
 - 应用侧 af 链以单条 `lavfi=[…]` 条目经 `handle.applyEngineOptions([EngineOption('af', …)])` 下发（见 apps/pure_live `modules/music/controller/music_playback.dart`），PCM Tap 如走滤镜路线需沿用同一接缝。
 - lx-music-desktop 参考实现用 Web Audio `AnalyserNode.getByteFrequencyData`（canvas 128 柱、rAF 随播放循环、均值放大 ×1.4），浏览器能力无法在 mpv 上复刻，仅作 UI 行为参照。
+
+## 13. B1/B2 实机判定（2026-10-30，Windows 实跑）
+
+自动探针 `media_core example/lib/main_probe.dart`（纯 Dart 合成 440 Hz/0.5 振幅正弦 WAV，裸 media_kit 播放器挂 astats tap，stdout 直出），本机（Windows 11 22621，wasapi 输出）实测：
+
+**前置发现（比判定本身更重要）**：media-kit 官方 Windows 预编译 libmpv-2.dll（`libmpv-win32-video-build` 2023-09-24，38MB）**没有编入任何 avfilter 音频滤镜**——`lavfi=[volume=0.5]`、`lavfi=[astats]` 一律 "parsing the filter graph failed"。DLL 内字节扫描 `astats`/`ebur128` 零命中。**这意味着 pure_live 音效中心的整条 lavfi 链（EQ/九效果）在 Windows 上从未真正生效过**（applyFailed 横幅会亮，UI 开关照走）。响度探针同理不可用。
+
+换 zhongfly/mpv-winbuild 全功能 libmpv-2.dll（2026-10-30 构建，122MB，仅替换 build 产物验证）后：
+
+- **B1 通过**：`@tap:lavfi=[astats=metadata=1:reset=1]` 挂载成功、无报错、播放推进正常；`af-metadata/tap` 属性每帧携带完整 astats 读数（正弦 ±16384 与 0.5 振幅精确吻合，Peak_level −6.02 dBFS 理论值命中）。
+- **B2 parse 通过**：稳态 33–78 µs（首帧 1.06 ms），远低于 2 ms 预算。
+- **B2 rate 不达标**：回调率稳定 **~15 Hz**，低于 30 Hz 预算。廉价回调（仅计数）同样 ~14.4 Hz——瓶颈在 mpv 属性变更通知本身（astats 逐帧写 metadata ≈46.9 Hz，但 mpv 合并通知），非解析侧开销，优化回调无法改善。
+
+**关键 API 勘误**：mpv 的滤镜元数据属性是 `af-metadata/<label>`，裸 `af-metadata` 恒为空——挂载必须带标签（`@tap:lavfi=[…]`）。探针已改（media_core 53e5ca3）。
+
+**结论与去向**：
+1. lavfi+af-metadata 路线**可用但只有 ~15 Hz**——32 频带 VU 式频谱在 15 fps 逐带更新仍可看；要更高帧率或真 FFT 必须走方案 B（WASAPI/平台采集）。
+2. **无论频谱走哪条路，Windows 换全功能 libmpv 是音效中心生效的先决条件**——不换，EQ/效果链全部空转。候选：zhongfly/mpv-winbuild mpv-dev（libmpv-2 ABI 兼容，替换即用，122MB 体积代价 + 发布渠道/校验流程待定）。
+3. B3（asplit+bandpass×N 频带扇出）在该路线下受同一 15 Hz 上限约束，先于 B4 决策 DLL 问题。
