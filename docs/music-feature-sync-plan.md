@@ -125,9 +125,9 @@
 
 | LX 功能 | v2 落点 | 状态 |
 |---|---|---|
-| 本地 HTTP API（开关+端口+局域网） | `music_open_api.dart` gate+port | ✅ |
-| /status /play /pause /skip /seek /volume /mute | 已实现 | ✅ |
-| /lyric /lyric-all /collect /uncollect、SSE 状态订阅 | 无 | 🟡 补端点 |
+| 本地 HTTP API（开关+端口+局域网） | `music_open_api.dart` gate+port+lan，同步页「开放 API」区四行（启用/端口/允许局域网/服务地址复制）（a3d7c25d0） | ✅ |
+| /status /play /pause /skip /seek /volume /mute | 已实现；本轮对齐参考参数：/seek 加 `offset`（0..duration 越界 400）、/volume 加 `volume`（0-100 整数，旧 `v` 小数仍认）、/mute 加 `mute=true\|false`（旧 `v` 仍认）；未知路由改 401 | ✅ |
+| /lyric /lyric-all /collect /uncollect、SSE 状态订阅 | 参考全端点：/lyric 纯文本、/lyric-all 四轨 json（lxlyric=逐字词计时渲染成增强 LRC）、/collect //uncollect 按参考守护语义（仅在需要时翻转收藏）、/subscribe-player-status SSE（text/event-stream+ACAO *，默认 8 键 filter，接入先逐键全量初拍、此后按变更逐键 event，player 与收藏两处状态源）；/status 同步改成参考的扁平 filter 形状（提交 a3d7c25d0） | ✅ |
 
 ## K. 缓存与日志
 
