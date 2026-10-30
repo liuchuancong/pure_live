@@ -16,8 +16,9 @@ import 'package:pure_live/shared/shared.dart';
 /// areas grid, on the root navigator on both desktop and mobile — back
 /// returns to the grid wherever it was opened from.
 ///
-/// The site comes from the shell's selection (the areas page only offers
-/// areas of the selected site); the area rides in as the push's extra.
+/// The area rides in as the push's extra; the site is the area's own
+/// platform looked up in the registry, not the viewer's preferred one — a
+/// 抖音 area opened while 京东 is preferred still asks 抖音.
 final class AreaRoomsPage extends ConsumerStatefulWidget {
   /// The rooms of [areaId], opened with the [area] itself when the route
   /// carried it.
@@ -52,7 +53,12 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final area = widget.area;
       if (area == null) return; // A deep link without the object cannot load.
-      unawaited(ref.read(areaRoomsProvider.notifier).init(site: ref.read(preferredSiteProvider), area: area));
+      // The area names its own platform; the preferred site is the viewer's
+      // home platform and may be another one entirely.
+      final sites = ref.read(sitesProvider);
+      final site = sites.getById(area.platform) ?? sites.getById(widget.platform);
+      if (site == null) return;
+      unawaited(ref.read(areaRoomsProvider.notifier).init(site: site, area: area));
     });
   }
 
