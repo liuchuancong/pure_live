@@ -1,4 +1,5 @@
 import 'dart:async' show StreamSubscription, unawaited;
+import 'dart:ui' as ui;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
@@ -24,7 +25,13 @@ import 'package:pure_live/l10n/translations.dart';
 /// timecode, and mute. A new address means a new decoder; the transport's
 /// own state (paused, muted) belongs to this widget alone.
 final class WallpaperVideoPlayer extends StatefulWidget {
-  const WallpaperVideoPlayer({required this.uri, this.overlay, this.fit = BoxFit.contain, super.key});
+  const WallpaperVideoPlayer({
+    required this.uri,
+    this.overlay,
+    this.fit = BoxFit.contain,
+    this.blurSigma = 0,
+    super.key,
+  });
 
   /// The clip to play; a local `file:` URI or an http(s) URL.
   final Uri uri;
@@ -36,6 +43,11 @@ final class WallpaperVideoPlayer extends StatefulWidget {
   /// How the frame fills the stage — the display mode the preview panel
   /// chose, so the clip sits the way the wallpaper will.
   final BoxFit fit;
+
+  /// Gaussian sigma of the frost over the decoded frame; 0 keeps it sharp.
+  /// The app's own wallpaper source frosts the same way, so the preview
+  /// shows the sigma the applied background will wear.
+  final double blurSigma;
 
   @override
   State<WallpaperVideoPlayer> createState() => _WallpaperVideoPlayerState();
@@ -196,10 +208,24 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
       );
     }
     final total = _duration;
+    final picture = MediaPlayerView(handle: handle, fit: widget.fit);
     return Stack(
       fit: StackFit.expand,
       children: [
-        MediaPlayerView(handle: handle, fit: widget.fit),
+        if (widget.blurSigma <= 0)
+          picture
+        else
+          ImageFiltered(
+            // The same decal frost the applied wallpaper's source wears; it
+            // sits under the state, so moving the slider never restarts the
+            // clip.
+            imageFilter: ui.ImageFilter.blur(
+              sigmaX: widget.blurSigma,
+              sigmaY: widget.blurSigma,
+              tileMode: ui.TileMode.decal,
+            ),
+            child: picture,
+          ),
         if (widget.overlay case final overlay?) Positioned.fill(child: IgnorePointer(child: overlay)),
         // Tap the picture itself to toggle, the way every clip player does;
         // the menu region above the stage keeps its own right click.

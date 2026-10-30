@@ -1228,9 +1228,9 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
           key: ValueKey('clip-${item.url}'),
           uri: Uri.parse(item.url),
           fit: _fit,
-          // The scrim, under the transport. A texture has nothing for the
-          // blur to sample — the app hands its sigma to the video source —
-          // so the stage keeps the wash alone.
+          // The freeze goes on the decoded frame, the wash above it — the
+          // same two layers the app paints behind its shell.
+          blurSigma: _backgroundBlurSigma,
           overlay: _StageScrim(opacity: _scrimOpacity, blurSigma: 0),
         );
       }
