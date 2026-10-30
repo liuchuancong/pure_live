@@ -167,6 +167,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   String? _lyricOverrideKey;
   String? _sessionTrackKey;
   bool _engineSessionBound = false;
+  MpvAudioPlayerAdapter? _sessionAdapter;
 
   @override
   audio.AudioPlaybackState build() {
@@ -290,6 +291,18 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       _trackProgress(next);
       _skipDislikedIfNeeded(next);
       _skipErroredIfNeeded(next);
+      // A rebuilt engine is a new world: the chain, the pitch correction,
+      // the device choice and the session commands were bound to the old
+      // adapter, and a same-track rebuild would otherwise publish nothing.
+      final adapterNow = _engineAdapter;
+      if (!identical(adapterNow, _sessionAdapter)) {
+        _sessionAdapter = adapterNow;
+        _engineSessionBound = false;
+        _sessionTrackKey = null;
+        _eqPending = true;
+        _pitchPending = true;
+        _devicePending = true;
+      }
       // The engine handle appears with the first track; a sound effect chosen
       // before that waited for exactly this moment.
       if (_eqPending && next.track != null) {
@@ -492,7 +505,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
         if (!ref.mounted) return;
         // The chain took; the preamp rides the engine's native gain.
         ref.read(musicEqApplyFailedProvider.notifier).state = false;
-        await engine.setVolumeGain(eq.preampDb);
+        // Zeroed when the chain is off: the A/B bypass must lift the
+        // preamp with the chain, or the comparison hears a lifted original.
+        await engine.setVolumeGain(eq.enabled ? eq.preampDb : 0);
       }).catchError((Object _) {
         if (ref.mounted) ref.read(musicEqApplyFailedProvider.notifier).state = true;
       }),

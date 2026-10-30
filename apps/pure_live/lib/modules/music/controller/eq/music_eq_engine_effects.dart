@@ -108,6 +108,9 @@ List<AudioEffect> musicEqAudioEffects(MusicEqConfig config) {
 /// node's slider is 0–1 around the 0.5 centre, which the engine spells as
 /// the 0.5–1.5 rate. 1.0 (no shift) when the node is off.
 double musicEqPitchRate(MusicEqConfig config) {
-  if (!config.effectOn('pitch')) return 1;
+  // The A/B bypass rides `enabled: false` through here too: a held bypass
+  // must lift the pitch shift along with the chain, or the comparison
+  // listens to a shifted original.
+  if (!config.enabled || !config.effectOn('pitch')) return 1;
   return 0.5 + config.effectOf('pitch').amount;
 }
