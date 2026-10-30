@@ -1024,6 +1024,9 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String onlineUpdatedToast({required Object name, required Object count}) => 'Updated "${name}": ${count} tracks.';
 	@override String get onlineUpdateFailed => 'The update failed; try again later.';
 	@override String get boardCollect => 'Collect board';
+	@override String get selectionReposition => 'Reposition';
+	@override String repositionTitle({required Object count}) => 'Move the ${count} selected songs to position:';
+	@override String get repositionHint => 'Type the position to move them to';
 	@override String get songlistSearchUnsupported => 'This source cannot search songlists yet.';
 	@override String get defaultSource => 'Default source';
 	@override String get defaultSourceDesc => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.';
@@ -4467,6 +4470,9 @@ extension on TranslationsEn {
 			'music.onlineUpdatedToast' => ({required Object name, required Object count}) => 'Updated "${name}": ${count} tracks.',
 			'music.onlineUpdateFailed' => 'The update failed; try again later.',
 			'music.boardCollect' => 'Collect board',
+			'music.selectionReposition' => 'Reposition',
+			'music.repositionTitle' => ({required Object count}) => 'Move the ${count} selected songs to position:',
+			'music.repositionHint' => 'Type the position to move them to',
 			'music.songlistSearchUnsupported' => 'This source cannot search songlists yet.',
 			'music.defaultSource' => 'Default source',
 			'music.defaultSourceDesc' => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.',
@@ -4615,11 +4621,11 @@ extension on TranslationsEn {
 			'music.sortByAlbum' => 'By album',
 			'music.sortByDuration' => 'By duration',
 			'music.sortByShuffle' => 'Shuffle',
+			_ => null,
+		} ?? switch (path) {
 			'music.selectionStart' => 'Select',
 			'music.selectionCancel' => 'Cancel selection',
 			'music.selectionCount' => ({required Object count}) => '${count} selected',
-			_ => null,
-		} ?? switch (path) {
 			'music.selectionAll' => 'Select all',
 			'music.selectionDownload' => 'Download',
 			'music.selectionRemove' => 'Remove',
@@ -5129,11 +5135,11 @@ extension on TranslationsEn {
 			'room.superChatCardSubscription' => 'Subscription',
 			'room.onlineViewers' => 'Live viewers',
 			'room.popularity' => 'Popularity',
+			_ => null,
+		} ?? switch (path) {
 			'room.totalViewers' => 'Total viewers',
 			'room.startedAt' => ({required Object time}) => 'Started ${time}',
 			'room.danmakuList' => 'Danmaku',
-			_ => null,
-		} ?? switch (path) {
 			'room.danmakuSettingsDesc' => 'The flying items’ visibility, size, speed and area.',
 			'room.block' => 'Block',
 			'room.openExternal' => 'Open on the platform',
@@ -5643,11 +5649,11 @@ extension on TranslationsEn {
 			'settings.fontManagerSubtitle' => 'Pick the typeface you like and make the interface yours.',
 			'settings.fontManagerSample' => 'Pure Live',
 			'settings.fontManagerLocal' => 'Local fonts',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerMore' => 'Get more fonts',
 			'settings.fontManagerPreviewTitle' => 'Font preview',
 			'settings.fontManagerPreviewAction' => 'Preview',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerPreviewPending' => 'Preview after download',
 			'settings.fontManagerGoogle' => 'Google fonts',
 			'settings.fontManagerDescription' => 'Choose the UI typeface: MiSans comes with the app, the domestic faces come from a free-for-commercial-use collection, and the overseas ones come from Google Fonts. A choice applies everywhere at once.',
@@ -6157,11 +6163,11 @@ extension on TranslationsEn {
 			'settings.downloadFailed' => 'The release\'s files could not be read',
 			'settings.downloadEmpty' => 'This release publishes no files',
 			'settings.downloadNoBuild' => 'This release has no package for this device; its page is open.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadProgress' => ({required Object received, required Object total}) => '${received} of ${total}',
 			'settings.downloadProgressUnknown' => ({required Object received}) => '${received} downloaded',
 			'settings.downloadSavedTo' => ({required Object path}) => 'Saved to ${path}',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadCancelled' => 'Download cancelled; no partial file was kept.',
 			'settings.downloadOpenFile' => 'Open the file',
 			'settings.downloadOpenFolder' => 'Open the folder',
@@ -6671,11 +6677,11 @@ extension on TranslationsEn {
 			'toolbox.logsAutoOff' => 'Auto-scroll off (scroll to the bottom to resume)',
 			'toolbox.logsLines' => ({required int count}) => '${count} lines',
 			'toolbox.logsScrollBottom' => 'Scroll to bottom',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsCopied' => 'Log copied',
 			'toolbox.logsCopyEmpty' => 'No logs to copy',
 			'toolbox.logsDirectoryDefault' => 'The log file is not ready yet.',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsFileTitle' => 'Log file',
 			'toolbox.logsOpenFolder' => 'Open the folder',
 			'toolbox.logsCopyPath' => 'Copy path',

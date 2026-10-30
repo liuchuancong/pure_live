@@ -358,6 +358,25 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
     await _save();
   }
 
+  /// Moves the chosen songs to the 1-based [position] the reference's
+  /// 调整位置 dialog asks for: the songs come out in their order and go
+  /// back in at the spot, everything else keeps its place.
+  Future<void> moveTracksTo(String id, Iterable<audio.MusicTrack> tracks, int position) async {
+    final playlist = find(id);
+    if (playlist == null || tracks.isEmpty) return;
+    final moving = tracks.toSet();
+    final rest = [for (final track in playlist.tracks) if (!moving.contains(track)) track];
+    rest.insertAll(position.clamp(1, rest.length + 1) - 1, [
+      for (final track in playlist.tracks)
+        if (moving.contains(track)) track,
+    ]);
+    state = [
+      for (final item in state)
+        if (item.id == id) item.copyWith(tracks: rest) else item,
+    ];
+    await _save();
+  }
+
   /// Sorts a playlist in place.
   Future<void> sortTracks(String id, MusicPlaylistSort by) async {
     final playlist = find(id);

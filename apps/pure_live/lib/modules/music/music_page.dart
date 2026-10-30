@@ -959,6 +959,42 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
     });
   }
 
+  /// The reference's 调整位置: a position number moves the selection there.
+  Future<void> _moveSelected(MusicPlaylist playlist) async {
+    final tracks = List<audio.MusicTrack>.of(_selected);
+    if (tracks.isEmpty) return;
+    final t = context.t;
+    final field = TextEditingController();
+    final answer = await showDsDialog<String>(
+      context: context,
+      builder: (context) => DsDialog(
+        title: Text(t.music.repositionTitle(count: tracks.length)),
+        icon: const DsIcon(DsIcons.arrowUpDown),
+        description: DsTextField(
+          controller: field,
+          autofocus: true,
+          clearable: true,
+          placeholder: t.music.repositionHint,
+          semanticLabel: t.music.selectionReposition,
+        ),
+        actions: [
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(t.common.cancel),
+          ),
+          DsButton(onPressed: () => Navigator.of(context).pop(field.text), child: Text(t.common.confirm)),
+        ],
+      ),
+    );
+    field.dispose();
+    final position = int.tryParse(answer?.trim() ?? '');
+    if (position == null || !mounted) return;
+    await ref.read(musicPlaylistsProvider.notifier).moveTracksTo(playlist.id, tracks, position);
+    if (!mounted) return;
+    _setSelecting(selecting: false);
+  }
+
   Future<void> _removeSelected(MusicPlaylist playlist) async {
     final tracks = List<audio.MusicTrack>.of(_selected);
     if (tracks.isEmpty) return;
@@ -1293,6 +1329,12 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                   leading: const DsIcon(DsIcons.download, size: 16),
                   onPressed: _selected.isEmpty ? null : () => unawaited(_downloadSelected(playlist)),
                   child: Text(t.music.selectionDownload),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: _selected.isEmpty ? null : () => unawaited(_moveSelected(playlist)),
+                  child: Text(t.music.selectionReposition),
                 ),
                 DsButton(
                   variant: DsButtonVariant.secondary,
