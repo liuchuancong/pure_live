@@ -1,5 +1,6 @@
 import 'package:media_core_notify/media_core_notify.dart'
     show
+        DesktopNotifySettings,
         MediaCoreNotify,
         NotifyChannel,
         NotifyEvent,
@@ -17,8 +18,18 @@ const NotifyChannel kLiveAlertChannel = NotifyChannel(
   description: '关注的主播开播时通知 / When a followed room goes live',
 );
 
+/// The process identity the Windows runner sets at startup; the toast and
+/// the app must agree on it or the system attributes the toast to nobody.
+const String kWindowsAppUserModelId = 'com.liuchuancong.pure_live';
+
+/// The stable activation guid a toast click is routed by. It must never
+/// change between runs, so it is a constant rather than derived.
+const String kWindowsNotifyGuid = '8f3a2d54-9c1b-4e7a-b6d2-2f9c41a07e88';
+
 /// The setup every enable path uses, so the live-alert channel exists and a
-/// tap can open the room it names.
+/// tap can open the room it names. The desktop identity is what makes the
+/// Windows/Linux pipeline initialise at all — without it every notification
+/// is silently dropped there.
 const NotifySetup _notifySetup = NotifySetup(
   channels: [
     kNotifyChannelRecording,
@@ -28,6 +39,12 @@ const NotifySetup _notifySetup = NotifySetup(
     kLiveAlertChannel,
   ],
   onTap: _onNotifyTap,
+  desktop: DesktopNotifySettings(
+    appName: 'Pure Live',
+    linuxActionName: 'Open Pure Live',
+    windowsAppUserModelId: kWindowsAppUserModelId,
+    windowsGuid: kWindowsNotifyGuid,
+  ),
 );
 
 /// The payload prefix a live alert carries.

@@ -1,6 +1,7 @@
 #include <flutter/dart_project.h>
 #include "flutter_window.h"
 #include <windows.h>
+#include <shobjidl_core.h>
 #include <optional>
 #include <flutter/flutter_engine.h>
 #include <multiview_desktop/multi_view_desktop_plugin.h>
@@ -15,6 +16,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   }
 
   ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
+  // A stable process identity before anything user-facing asks for one: the
+  // taskbar grouping, the SMTC card and toast activation all attribute by the
+  // AppUserModelID, and an unpackaged exe without one shows an unstable source.
+  SetCurrentProcessExplicitAppUserModelID(L"com.liuchuancong.pure_live");
 
   MultiViewDesktopInitializeShellIntegration();
 
