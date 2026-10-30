@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show PlatformKind;
 import 'package:live_shell/live_shell.dart'
     show DesktopShell, ShellSettings, TrayAction, TrayDivider, TrayEntry, TrayIconState, WindowHost, WindowRole;
-import 'package:live_shell_desktop/live_shell_desktop.dart' show TrayManagerHost;
+import 'package:live_shell_desktop/live_shell_desktop.dart' show MultiViewWindowHost, TrayManagerHost;
 import 'package:live_storage/live_storage.dart' show StorageStores;
 import 'package:multiview_desktop/multiview_desktop.dart' show MultiViewDesktop;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
@@ -39,12 +39,16 @@ Future<DesktopShell> startDesktopShell(WidgetRef ref) async {
     await shell.refreshTray();
   });
 
+  // The plugin's window list includes this view; a peer is any other id.
+  final selfViewId = host is MultiViewWindowHost ? host.viewId : null;
+  bool hasPeer(List<int> ids) => selfViewId == null ? ids.isNotEmpty : ids.any((id) => id != selfViewId);
+
   // If closing the primary was turned into a hide because another window
   // existed, bring it back once the last peer goes away.
   var hiddenForPeers = false;
   final windowSet = MultiViewDesktop.allWindowIdsNotifier;
   void onWindowSetChanged() {
-    if (!hiddenForPeers || windowSet.value.isNotEmpty) return;
+    if (!hiddenForPeers || hasPeer(windowSet.value)) return;
     hiddenForPeers = false;
     unawaited(_reveal(host));
   }
@@ -62,13 +66,20 @@ Future<DesktopShell> startDesktopShell(WidgetRef ref) async {
             return await showCloseWindowDialog(context, tray: tray);
           },
     exit: () async {
-      await host.destroy();
+      try {
+        // The tray is already gone by now, so a window that refuses to finish
+        // its close would leave a process with no icon and no window: quit
+        // must end the process even when the last close hangs.
+        await host.destroy().timeout(const Duration(seconds: 2));
+      } on Object {
+        // Fall through to the exit below.
+      }
       exit(0);
     },
     tray: tray,
     windows: windows,
     hasOtherWindows: () async {
-      final others = MultiViewDesktop.allWindowViewIds.isNotEmpty;
+      final others = hasPeer(MultiViewDesktop.allWindowViewIds);
       if (others) hiddenForPeers = true;
       return others;
     },

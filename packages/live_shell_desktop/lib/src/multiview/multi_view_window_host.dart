@@ -150,10 +150,18 @@ final class MultiViewWindowHost implements WindowHost, WindowListenerCallbacks {
 
   @override
   FutureOr<bool> onWindowClose() {
+    if (!role.ownsAppState) {
+      // A secondary window has no shell to answer for it: letting the plugin's
+      // cascade finish destroys this one window and nothing else.
+      return true;
+    }
     _emit(WindowEvent.closeRequested);
-    // The app's close guard opens the confirmation and closes explicitly;
-    // returning true keeps a cascade from being vetoed by this listener.
-    return true;
+    // The primary's close is the shell's decision, and the plugin's own
+    // fallback is not one of the answers: with `stayAliveMainWindow` it hides
+    // the window instead of waiting for hide / minimise / quit. Aborting the
+    // cascade leaves the window untouched until the shell acts through
+    // [hide], [minimize] or [destroy].
+    return false;
   }
 
   @override
