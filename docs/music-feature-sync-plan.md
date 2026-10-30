@@ -102,7 +102,7 @@
 | 开关/锁定/拖动/字号/透明度/颜色/对齐 | `music_playback.dart` DesktopLyricController + 设置 pane 七项 | ✅ |
 | 行间距/加粗分项 | `music_settings.dart` desktopLyricLineGap(0–25,默认15)/BoldLine/BoldExtended + pane 三行；内核 DesktopLyricStyle 四端渲染器透传（3d421b640 + media_core 65130a9） | ✅ |
 | 单行 | 桌面歌词渲染恒单行省略号截断（GDI+ AddString 不换行），即参考 ellipsis:true 的终态 | ✅ |
-| 垂直布局 | 内核四端渲染器均无逐列竖排能力 | 🟡 待内核 |
+| 垂直布局 | 内核 `DesktopLyricStyle.vertical` + Windows GDI+/Linux pango 双端 tategaki 渲染（CJK 直立堆叠、横排文字旋转 90°、列从右往左、槽宽消耗定位三槽、整宽耗尽即裁剪）；app 桌面歌词页「歌词显示方向」二选一（词表照抄 desktop_lyric_direction_*，存 `music.lyric.desktop.vertical`）（内核+app 提交已推，Android/iOS 渲染器暂不含直排=保持水平） | ✅ |
 
 ## H. 快捷键
 
