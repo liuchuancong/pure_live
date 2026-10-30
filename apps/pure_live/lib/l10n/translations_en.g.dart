@@ -1452,6 +1452,31 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get toggleSourceDone => 'Source swapped; this song now plays from the new one';
 	@override String get toggleSourceEmpty => 'No candidate songs found';
 	@override String get toggleSourceFailed => 'Searching for candidates failed';
+	@override String get editTags => 'Edit tags';
+	@override String get tagEditTitle => 'Edit song tags';
+	@override String get tagEditFileName => 'File name';
+	@override String get tagEditName => 'Title';
+	@override String get tagEditSinger => 'Artist';
+	@override String get tagEditAlbum => 'Album';
+	@override String get tagEditLyric => 'LRC lyric';
+	@override String get tagEditPic => 'Album cover';
+	@override String get tagEditParseName => 'Parse title and artist from the file name';
+	@override String get tagParseNameSinger => 'Title - Artist';
+	@override String get tagParseSingerName => 'Artist - Title';
+	@override String get tagEditSelectPic => 'Choose image';
+	@override String get tagEditSelectPicFailed => 'Reading the image failed';
+	@override String get tagEditRemovePic => 'Remove image';
+	@override String get tagEditClearLyric => 'Clear';
+	@override String get tagEditMatchOnline => 'Match online';
+	@override String get tagEditMatchLyricDone => 'Lyric matched';
+	@override String get tagEditMatchPicDone => 'Cover matched';
+	@override String get tagEditMatchLyricFailed => 'Matching lyrics online failed';
+	@override String get tagEditMatchPicFailed => 'Matching the cover online failed';
+	@override String get tagEditConfirm => 'Save';
+	@override String get tagEditSaved => 'Saved';
+	@override String tagEditFailed({required Object error}) => 'Save failed: ${error}';
+	@override String get tagEditUnsupportedFormat => 'Tag writing is not supported for this format';
+	@override String get tagEditReadFailed => 'Reading the file\'s tags failed';
 }
 
 // Path: navigation
@@ -4912,6 +4937,31 @@ extension on TranslationsEn {
 			'music.toggleSourceDone' => 'Source swapped; this song now plays from the new one',
 			'music.toggleSourceEmpty' => 'No candidate songs found',
 			'music.toggleSourceFailed' => 'Searching for candidates failed',
+			'music.editTags' => 'Edit tags',
+			'music.tagEditTitle' => 'Edit song tags',
+			'music.tagEditFileName' => 'File name',
+			'music.tagEditName' => 'Title',
+			'music.tagEditSinger' => 'Artist',
+			'music.tagEditAlbum' => 'Album',
+			'music.tagEditLyric' => 'LRC lyric',
+			'music.tagEditPic' => 'Album cover',
+			'music.tagEditParseName' => 'Parse title and artist from the file name',
+			'music.tagParseNameSinger' => 'Title - Artist',
+			'music.tagParseSingerName' => 'Artist - Title',
+			'music.tagEditSelectPic' => 'Choose image',
+			'music.tagEditSelectPicFailed' => 'Reading the image failed',
+			'music.tagEditRemovePic' => 'Remove image',
+			'music.tagEditClearLyric' => 'Clear',
+			'music.tagEditMatchOnline' => 'Match online',
+			'music.tagEditMatchLyricDone' => 'Lyric matched',
+			'music.tagEditMatchPicDone' => 'Cover matched',
+			'music.tagEditMatchLyricFailed' => 'Matching lyrics online failed',
+			'music.tagEditMatchPicFailed' => 'Matching the cover online failed',
+			'music.tagEditConfirm' => 'Save',
+			'music.tagEditSaved' => 'Saved',
+			'music.tagEditFailed' => ({required Object error}) => 'Save failed: ${error}',
+			'music.tagEditUnsupportedFormat' => 'Tag writing is not supported for this format',
+			'music.tagEditReadFailed' => 'Reading the file\'s tags failed',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -5122,6 +5172,8 @@ extension on TranslationsEn {
 			'room.record' => 'Record',
 			'room.stopRecording' => 'Stop recording',
 			'room.recordStarted' => 'Recording started',
+			_ => null,
+		} ?? switch (path) {
 			'room.recordStopped' => 'Recording stopped',
 			'room.recordFailed' => 'The recording action failed',
 			'room.autoRecordOn' => 'Record when live',
@@ -5147,8 +5199,6 @@ extension on TranslationsEn {
 			'room.messageActions' => 'Message actions',
 			'room.blockUser' => 'Block this viewer',
 			'room.blockKeyword' => 'Block a keyword…',
-			_ => null,
-		} ?? switch (path) {
 			'room.blockKeywordHint' => 'Enter the keyword to block',
 			'room.userBlocked' => 'The viewer is blocked',
 			'room.keywordBlocked' => 'The keyword is blocked',
@@ -5636,6 +5686,8 @@ extension on TranslationsEn {
 			'settings.danmakuPresetComfort' => 'Top 35% · Comfort',
 			'settings.danmakuPresetDense' => 'Top 55% · Dense',
 			'settings.danmakuPresetFull' => 'Full-screen',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuPresetHint' => 'Full-screen = danmaku covers the entire video; other presets use the top region only',
 			'settings.danmakuPresetCustom' => 'Custom',
 			'settings.preset' => 'Preset',
@@ -5661,8 +5713,6 @@ extension on TranslationsEn {
 			'settings.trayScreenshot' => 'Screenshot',
 			'settings.traySoundOn' => 'Unmute sound',
 			'settings.traySoundOff' => 'Mute sound',
-			_ => null,
-		} ?? switch (path) {
 			'settings.trayScreenshotSaved' => ({required Object path}) => 'Saved to ${path}',
 			'settings.trayScreenshotFailed' => 'Screenshot failed: no room is playing, or the engine cannot capture',
 			'settings.font' => 'Font',
@@ -6150,6 +6200,8 @@ extension on TranslationsEn {
 			'settings.backgroundMask' => 'Scrim',
 			'settings.backgroundMaskDescription' => 'A wash over the wallpaper that darkens or lightens it; a stronger scrim keeps text legible and fades the wallpaper.',
 			'settings.backgroundOverlayBlur' => 'Background blur',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundOverlayBlurDescription' => 'Blurs the wallpaper itself on every background kind; 0 keeps it sharp.',
 			'settings.backgroundClearDescription' => 'Returns to the theme\'s own surface; the saved media stays for later.',
 			'settings.backgroundClear' => 'Clear background',
@@ -6175,8 +6227,6 @@ extension on TranslationsEn {
 			'settings.releaseHistoryEmpty' => 'No releases yet',
 			'settings.releaseHistoryFailed' => 'The releases did not load',
 			'settings.releasedOn' => ({required Object date}) => 'Released ${date}',
-			_ => null,
-		} ?? switch (path) {
 			'settings.prerelease' => 'Pre-release',
 			'settings.updateLater' => 'Later',
 			'settings.downloadInstaller' => 'Download the installer',
@@ -6664,6 +6714,8 @@ extension on TranslationsEn {
 			'toolbox.comingSoonTitle' => 'Coming soon',
 			'toolbox.comingSoonDesc' => 'This tool is not finished yet; stay tuned.',
 			'toolbox.linkDirect' => 'Get stream link',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.linkDirectTitle' => 'Stream links',
 			'toolbox.linkDirectQuality' => 'Quality',
 			'toolbox.linkDirectLines' => 'Playback URLs',
@@ -6689,8 +6741,6 @@ extension on TranslationsEn {
 			'toolbox.logsFile' => 'Write log file',
 			'toolbox.logsFileDesc' => 'Keep a rotating log (pure_live.log) in the app data directory; off keeps only the in-memory ring.',
 			'toolbox.logsExport' => 'Copy log',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsExportDesc' => 'Copy the in-memory records to the clipboard.',
 			'toolbox.logsClear' => 'Clear logs',
 			'toolbox.logsClearDesc' => 'Clears the in-memory records; files already written stay.',

@@ -4056,6 +4056,81 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '候选搜索失败'
 	String get toggleSourceFailed => '候选搜索失败';
+
+	/// zh-CN: '编辑标签'
+	String get editTags => '编辑标签';
+
+	/// zh-CN: '编辑歌曲标签'
+	String get tagEditTitle => '编辑歌曲标签';
+
+	/// zh-CN: '文件名'
+	String get tagEditFileName => '文件名';
+
+	/// zh-CN: '歌曲名'
+	String get tagEditName => '歌曲名';
+
+	/// zh-CN: '艺术家'
+	String get tagEditSinger => '艺术家';
+
+	/// zh-CN: '专辑名'
+	String get tagEditAlbum => '专辑名';
+
+	/// zh-CN: 'LRC 歌词'
+	String get tagEditLyric => 'LRC 歌词';
+
+	/// zh-CN: '歌曲专辑封面'
+	String get tagEditPic => '歌曲专辑封面';
+
+	/// zh-CN: '从文件名解析歌曲名、艺术家'
+	String get tagEditParseName => '从文件名解析歌曲名、艺术家';
+
+	/// zh-CN: '歌曲名 - 艺术家'
+	String get tagParseNameSinger => '歌曲名 - 艺术家';
+
+	/// zh-CN: '艺术家 - 歌曲名'
+	String get tagParseSingerName => '艺术家 - 歌曲名';
+
+	/// zh-CN: '选择图片'
+	String get tagEditSelectPic => '选择图片';
+
+	/// zh-CN: '图片读取失败'
+	String get tagEditSelectPicFailed => '图片读取失败';
+
+	/// zh-CN: '移除图片'
+	String get tagEditRemovePic => '移除图片';
+
+	/// zh-CN: '清空'
+	String get tagEditClearLyric => '清空';
+
+	/// zh-CN: '在线匹配'
+	String get tagEditMatchOnline => '在线匹配';
+
+	/// zh-CN: '歌词匹配成功'
+	String get tagEditMatchLyricDone => '歌词匹配成功';
+
+	/// zh-CN: '封面匹配成功'
+	String get tagEditMatchPicDone => '封面匹配成功';
+
+	/// zh-CN: '在线歌词匹配失败'
+	String get tagEditMatchLyricFailed => '在线歌词匹配失败';
+
+	/// zh-CN: '在线匹配封面失败'
+	String get tagEditMatchPicFailed => '在线匹配封面失败';
+
+	/// zh-CN: '保存'
+	String get tagEditConfirm => '保存';
+
+	/// zh-CN: '保存成功'
+	String get tagEditSaved => '保存成功';
+
+	/// zh-CN: '保存失败：{error}'
+	String tagEditFailed({required Object error}) => '保存失败：${error}';
+
+	/// zh-CN: '该格式暂不支持写入标签'
+	String get tagEditUnsupportedFormat => '该格式暂不支持写入标签';
+
+	/// zh-CN: '读取文件标签失败'
+	String get tagEditReadFailed => '读取文件标签失败';
 }
 
 // Path: navigation
@@ -11590,6 +11665,31 @@ extension on Translations {
 			'music.toggleSourceDone' => '已换源，之后都用新源播放这首歌',
 			'music.toggleSourceEmpty' => '没有找到候选歌曲',
 			'music.toggleSourceFailed' => '候选搜索失败',
+			'music.editTags' => '编辑标签',
+			'music.tagEditTitle' => '编辑歌曲标签',
+			'music.tagEditFileName' => '文件名',
+			'music.tagEditName' => '歌曲名',
+			'music.tagEditSinger' => '艺术家',
+			'music.tagEditAlbum' => '专辑名',
+			'music.tagEditLyric' => 'LRC 歌词',
+			'music.tagEditPic' => '歌曲专辑封面',
+			'music.tagEditParseName' => '从文件名解析歌曲名、艺术家',
+			'music.tagParseNameSinger' => '歌曲名 - 艺术家',
+			'music.tagParseSingerName' => '艺术家 - 歌曲名',
+			'music.tagEditSelectPic' => '选择图片',
+			'music.tagEditSelectPicFailed' => '图片读取失败',
+			'music.tagEditRemovePic' => '移除图片',
+			'music.tagEditClearLyric' => '清空',
+			'music.tagEditMatchOnline' => '在线匹配',
+			'music.tagEditMatchLyricDone' => '歌词匹配成功',
+			'music.tagEditMatchPicDone' => '封面匹配成功',
+			'music.tagEditMatchLyricFailed' => '在线歌词匹配失败',
+			'music.tagEditMatchPicFailed' => '在线匹配封面失败',
+			'music.tagEditConfirm' => '保存',
+			'music.tagEditSaved' => '保存成功',
+			'music.tagEditFailed' => ({required Object error}) => '保存失败：${error}',
+			'music.tagEditUnsupportedFormat' => '该格式暂不支持写入标签',
+			'music.tagEditReadFailed' => '读取文件标签失败',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -11800,6 +11900,8 @@ extension on Translations {
 			'room.record' => '录制',
 			'room.stopRecording' => '停止录制',
 			'room.recordStarted' => '开始录制',
+			_ => null,
+		} ?? switch (path) {
 			'room.recordStopped' => '录制已停止',
 			'room.recordFailed' => '录制操作失败',
 			'room.autoRecordOn' => '开播自动录',
@@ -11825,8 +11927,6 @@ extension on Translations {
 			'room.messageActions' => '弹幕操作',
 			'room.blockUser' => '屏蔽此用户',
 			'room.blockKeyword' => '屏蔽关键词…',
-			_ => null,
-		} ?? switch (path) {
 			'room.blockKeywordHint' => '输入要屏蔽的关键词',
 			'room.userBlocked' => '已屏蔽该用户',
 			'room.keywordBlocked' => '已屏蔽该关键词',
@@ -12314,6 +12414,8 @@ extension on Translations {
 			'settings.danmakuPresetComfort' => '顶部 35% · 舒适',
 			'settings.danmakuPresetDense' => '顶部 55% · 高密度',
 			'settings.danmakuPresetFull' => '全屏全量',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuPresetHint' => '全屏全量=弹幕铺满整个画面；其它预设只占用顶部区域',
 			'settings.danmakuPresetCustom' => '自定义',
 			'settings.preset' => '预设',
@@ -12339,8 +12441,6 @@ extension on Translations {
 			'settings.trayScreenshot' => '截图',
 			'settings.traySoundOn' => '打开声音',
 			'settings.traySoundOff' => '关闭声音',
-			_ => null,
-		} ?? switch (path) {
 			'settings.trayScreenshotSaved' => ({required Object path}) => '已保存到 ${path}',
 			'settings.trayScreenshotFailed' => '截图失败：没有正在播放的房间或引擎不支持',
 			'settings.font' => '字体',
@@ -12828,6 +12928,8 @@ extension on Translations {
 			'settings.backgroundMask' => '蒙层浓度',
 			'settings.backgroundMaskDescription' => '在壁纸上盖一层压暗或提亮的蒙层；浓度越高文字越清楚，壁纸越淡。',
 			'settings.backgroundOverlayBlur' => '背景模糊',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundOverlayBlurDescription' => '模糊壁纸本身，图片、视频、纯色、渐变都生效；0 保持清晰。',
 			'settings.backgroundClearDescription' => '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。',
 			'settings.backgroundClear' => '清除背景',
@@ -12853,8 +12955,6 @@ extension on Translations {
 			'settings.releaseHistoryEmpty' => '暂无发布记录',
 			'settings.releaseHistoryFailed' => '发行记录加载失败',
 			'settings.releasedOn' => ({required Object date}) => '发布于 ${date}',
-			_ => null,
-		} ?? switch (path) {
 			'settings.prerelease' => '预览版',
 			'settings.updateLater' => '稍后再说',
 			'settings.downloadInstaller' => '下载安装包',
@@ -13342,6 +13442,8 @@ extension on Translations {
 			'toolbox.comingSoonTitle' => '即将推出',
 			'toolbox.comingSoonDesc' => '这个工具还没有完成，敬请期待。',
 			'toolbox.linkDirect' => '获取直链',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.linkDirectTitle' => '直链地址',
 			'toolbox.linkDirectQuality' => '画质',
 			'toolbox.linkDirectLines' => '播放地址',
@@ -13367,8 +13469,6 @@ extension on Translations {
 			'toolbox.logsFile' => '写入日志文件',
 			'toolbox.logsFileDesc' => '在应用数据目录保存轮转日志 pure_live.log；关闭只留内存日志。',
 			'toolbox.logsExport' => '复制日志',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsExportDesc' => '把内存中的日志复制到剪贴板。',
 			'toolbox.logsClear' => '清空日志',
 			'toolbox.logsClearDesc' => '只清除内存中的日志，已写入的文件保留。',

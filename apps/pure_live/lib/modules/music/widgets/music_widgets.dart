@@ -61,6 +61,7 @@ final class MusicSongRow extends ConsumerWidget {
     this.onAddToPlaylist,
     this.onDownload,
     this.onToggleSource,
+    this.onEditTags,
     this.onMoveUp,
     this.onMoveDown,
     this.subtitle,
@@ -95,6 +96,10 @@ final class MusicSongRow extends ConsumerWidget {
 
   /// Swaps the song to another platform's copy — the reference's 歌曲换源.
   final VoidCallback? onToggleSource;
+
+  /// Edits the song's tags in its file — the reference's 编辑歌曲标签; local
+  /// songs only.
+  final VoidCallback? onEditTags;
 
   /// Moves the song one place up in its list.
   final VoidCallback? onMoveUp;
@@ -274,6 +279,12 @@ final class MusicSongRow extends ConsumerWidget {
                         leading: const DsIcon(DsIcons.arrowRightLeft),
                         label: Text(t.music.toggleSource),
                         onPressed: toggleSource,
+                      ),
+                    if (onEditTags case final editTags?)
+                      DsMenuItem(
+                        leading: const DsIcon(DsIcons.edit),
+                        label: Text(t.music.editTags),
+                        onPressed: editTags,
                       ),
                     DsMenuItem(
                       leading: const DsIcon(DsIcons.ban),

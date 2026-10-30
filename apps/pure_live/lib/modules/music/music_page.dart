@@ -34,6 +34,7 @@ import 'package:pure_live/modules/music/pages/music_player_page.dart' show music
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
     show MusicCardMenuButton, MusicPlaylistCard, MusicPlaylistGrid;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
+import 'package:pure_live/modules/music/widgets/music_tag_edit.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 
 /// The music module's views. The reference's rail — 搜索 / 歌单 / 排行榜 /
@@ -1975,6 +1976,7 @@ final class _LocalViewState extends ConsumerState<_LocalView> {
                             onFavourite: () => unawaited(favouritesController.toggle(song)),
                             onPlayNext: () => unawaited(player.playNext(song)),
                             onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
+                            onEditTags: song.isLocal ? () => unawaited(showEditTrackTagsDialog(context, ref, song)) : null,
                           ),
                       ],
                     ),
