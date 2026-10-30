@@ -1,4 +1,5 @@
 import 'dart:convert' show jsonDecode;
+import 'dart:math' show Random;
 
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
@@ -7,7 +8,8 @@ import 'package:pure_live/modules/music/controller/sources/lx_platform_source.da
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, SonglistSearch;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort,
+        OnlinePlaylists, PlaylistTagTree, SonglistSearch;
 
 /// The Kuwo boards lx-music exposes, in its own order.
 const List<(int, String)> kMusicRankCatalogs = [
@@ -27,10 +29,12 @@ const List<(int, String)> kMusicRankCatalogs = [
 /// Kuwo's hot-word endpoint only answers the mobile client's user agent.
 const String _hotUserAgent = 'Dalvik/2.1.0 (Linux; U; Android 9;)';
 
-/// The Kuwo platform: search, boards and lyrics ride Kuwo's own channel;
-/// play URLs are asked from the lx scripts first, with Kuwo's anti-server as
-/// the fallback.
-final class KwMusicSource extends LxPlatformSource with SonglistSearch implements MusicHotWords, MusicCommentsSource {
+/// The Kuwo platform: search, boards, playlists and lyrics ride Kuwo's own
+/// channel; play URLs are asked from the lx scripts first, with Kuwo's
+/// anti-server as the fallback.
+final class KwMusicSource extends LxPlatformSource
+    with SonglistSearch, OnlinePlaylists, PlaylistTagTree
+    implements MusicHotWords, MusicCommentsSource {
   /// A Kuwo source over the lx runtime.
   KwMusicSource(super.runtime, super.http);
 
@@ -113,6 +117,469 @@ final class KwMusicSource extends LxPlatformSource with SonglistSearch implement
       ],
       total: total,
     );
+  }
+
+  /// The plaza pages 36 lists a page — the reference's `limit_list`.
+  static const int _plazaLimit = 36;
+
+  /// The hot tags' request halves, keyed by shown name — the reference's
+  /// hot tags carry `id-digest` pairs while the browser passes bare names.
+  final Map<String, (String, String)> _hotTagIds = <String, (String, String)>{};
+
+  /// The online playlists (在线歌单): Kuwo's pc classify plaza — the hot
+  /// tags, the tag tree, the pages and the digest-dispatched detail
+  /// lx-music's kw `songList` rides.
+  @override
+  Future<List<String>> hotTags() async {
+    final json = jsonDecode(
+      await getText(Uri.http('wapi.kuwo.cn', '/api/pc/classify/playlist/getRcmTagList', {
+        'loginUid': '0',
+        'loginSid': '0',
+        'appUid': '76039576',
+      })),
+    ) as Map<String, Object?>;
+    final data = json['data'];
+    final raw = data is List && data.isNotEmpty && data.first is Map ? (data.first as Map)['data'] : null;
+    _hotTagIds.clear();
+    if (raw is! List) return const <String>[];
+    final names = <String>[];
+    for (final entry in raw) {
+      if (entry is! Map) continue;
+      final name = '${entry['name'] ?? ''}'.trim();
+      if (name.isEmpty) continue;
+      _hotTagIds[name] = ('${entry['id'] ?? ''}', '${entry['digest'] ?? ''}');
+      names.add(name);
+    }
+    return names;
+  }
+
+  /// The plaza's category tree — the reference's `getTagList`, each tag's
+  /// request id the `id-digest` pair its listing call splits apart.
+  @override
+  Future<List<MusicPlaylistTagGroup>> tagGroups() async {
+    final json = jsonDecode(
+      await getText(Uri.http('wapi.kuwo.cn', '/api/pc/classify/playlist/getTagList', {
+        'cmd': 'rcm_keyword_playlist',
+        'user': '0',
+        'prod': 'kwplayer_pc_9.0.5.0',
+        'vipver': '9.0.5.0',
+        'source': 'kwplayer_pc_9.0.5.0',
+        'loginUid': '0',
+        'loginSid': '0',
+        'appUid': '76039576',
+      })),
+    ) as Map<String, Object?>;
+    final data = json['data'];
+    if (json['code'] != 200 || data is! List) return const <MusicPlaylistTagGroup>[];
+    return [
+      for (final group in data)
+        if (group is Map && '${group['name'] ?? ''}'.isNotEmpty)
+          MusicPlaylistTagGroup(
+            name: '${group['name']}',
+            tags: [
+              if (group['data'] is List)
+                for (final tag in group['data'] as List)
+                  if (tag is Map && '${tag['name'] ?? ''}'.trim().isNotEmpty)
+                    MusicPlaylistTag(id: '${tag['id'] ?? ''}-${tag['digest'] ?? ''}', name: '${tag['name']}'),
+            ],
+          ),
+    ];
+  }
+
+  /// The plaza's sort tabs — the reference's kw `sortList`, the order codes
+  /// the recommend flow answers by.
+  @override
+  List<MusicPlazaSort> get sorts => const [
+    MusicPlazaSort(id: 'new', name: '最新'),
+    MusicPlazaSort(id: 'hot', name: '最热'),
+  ];
+
+  @override
+  Future<MusicPlaylistPage> playlists({String tag = '', String order = 'new', int page = 1, int pageSize = 30}) async {
+    if (tag.trim().isEmpty) return await _recommendPage(order: order, page: page);
+    final resolved = await _resolveTag(tag);
+    if (resolved == null) return const MusicPlaylistPage(items: [], total: 0);
+    final (id, digest) = resolved;
+    if (digest == '10000') {
+      final json = jsonDecode(
+        await getText(Uri.http('wapi.kuwo.cn', '/api/pc/classify/playlist/getTagPlayList', {
+          'loginUid': '0',
+          'loginSid': '0',
+          'appUid': '76039576',
+          'pn': '$page',
+          'id': id,
+          'rn': '$_plazaLimit',
+        })),
+      ) as Map<String, Object?>;
+      final data = json['data'];
+      if (json['code'] != 200 || data is! Map) return const MusicPlaylistPage(items: [], total: 0);
+      return MusicPlaylistPage(items: _plazaPlaylistsOf(data['data']), total: (data['total'] as num?)?.toInt() ?? 0);
+    }
+    // The other digests are the 专题 pages: the qz gateway answers grouped
+    // rows the reference flattens without a total.
+    final body = jsonDecode(
+      await getText(Uri.http('mobileinterfaces.kuwo.cn', '/er.s', {'type': 'get_pc_qz_data', 'f': 'web', 'id': id, 'prod': 'pc'})),
+    ) as Object?;
+    return MusicPlaylistPage(
+      items: _qzPlaylistsOf(body is List ? body : const <Object?>[]),
+      total: 1000,
+    );
+  }
+
+  /// The tag's request halves — the reference splits the `id-digest` pair;
+  /// a bare hot-tag name re-joins through the getRcmTagList map.
+  Future<(String, String)?> _resolveTag(String tag) async {
+    final trimmed = tag.trim();
+    final dash = trimmed.indexOf('-');
+    if (dash > 0) return (trimmed.substring(0, dash), trimmed.substring(dash + 1));
+    if (!_hotTagIds.containsKey(trimmed) && _hotTagIds.isEmpty) await hotTags();
+    return _hotTagIds[trimmed];
+  }
+
+  /// The recommend flow — the reference's getRcmPlayList, the only page the
+  /// sort codes answer.
+  Future<MusicPlaylistPage> _recommendPage({required String order, required int page}) async {
+    final json = jsonDecode(
+      await getText(Uri.http('wapi.kuwo.cn', '/api/pc/classify/playlist/getRcmPlayList', {
+        'loginUid': '0',
+        'loginSid': '0',
+        'appUid': '76039576',
+        'pn': '$page',
+        'rn': '$_plazaLimit',
+        'order': order,
+      })),
+    ) as Map<String, Object?>;
+    final data = json['data'];
+    if (json['code'] != 200 || data is! Map) return const MusicPlaylistPage(items: [], total: 0);
+    return MusicPlaylistPage(items: _plazaPlaylistsOf(data['data']), total: (data['total'] as num?)?.toInt() ?? 0);
+  }
+
+  /// The plaza rows the wapi answers — the reference's `filterList`, the
+  /// `digest-<digest>__<id>` compound id the detail dispatch re-reads.
+  List<MusicPlaylistInfo> _plazaPlaylistsOf(Object? raw) {
+    if (raw is! List) return const <MusicPlaylistInfo>[];
+    return [
+      for (final entry in raw)
+        if (entry is Map && '${entry['name'] ?? ''}'.trim().isNotEmpty)
+          MusicPlaylistInfo(
+            id: 'digest-${entry['digest'] ?? ''}__${entry['id'] ?? ''}',
+            name: LxPlatformSource.decodeName('${entry['name']}').trim(),
+            cover: '${entry['img'] ?? ''}',
+            author: LxPlatformSource.decodeName('${entry['uname'] ?? ''}').trim(),
+            trackCount: (entry['total'] as num?)?.toInt() ?? 0,
+          ),
+    ];
+  }
+
+  /// The 专题 flow's rows — the reference's `filterList2`, the grouped qz
+  /// payload flattened to the songlist/list/album kinds.
+  List<MusicPlaylistInfo> _qzPlaylistsOf(List<Object?> groups) {
+    const allowed = {'songlist', 'list', 'album'};
+    return [
+      for (final group in groups)
+        if (group is Map && group['list'] is List)
+          for (final entry in group['list'] as List)
+            if (entry is Map && allowed.contains('${entry['type'] ?? ''}') && '${entry['name'] ?? ''}'.trim().isNotEmpty)
+              MusicPlaylistInfo(
+                id: 'digest-${entry['digest'] ?? ''}__${entry['id'] ?? ''}',
+                name: LxPlatformSource.decodeName('${entry['name']}').trim(),
+                cover: '${entry['img'] ?? ''}',
+                author: LxPlatformSource.decodeName('${entry['uname'] ?? ''}').trim(),
+                trackCount: (entry['total'] as num?)?.toInt() ?? 0,
+              ),
+    ];
+  }
+
+  /// The playlist's link shapes — the reference's `listDetailLink`, the
+  /// www/h5 playlist urls a paste carries.
+  static final RegExp _listDetailLink = RegExp(r'^.+\/playlist(?:_detail)?\/(\d+)(?:\?.*|&.*$|#.*$|$)');
+
+  /// The bd-api pages answer the desktop browser agent with the h5 plat mark.
+  static const Map<String, String> _bodianHeaders = {
+    'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36',
+    'plat': 'h5',
+  };
+
+  @override
+  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> playlistDetail(String rawId) async {
+    final id = rawId.trim();
+    if (id.contains('/bodian/')) return await _bodianDetail(id);
+    if (RegExp('[?&:/]').hasMatch(id)) {
+      final match = _listDetailLink.firstMatch(id);
+      if (match == null) throw StateError('kuwo playlist link not understood: $id');
+      return await _listDetail(match[1]!);
+    }
+    if (id.startsWith('digest-')) {
+      final split = id.split('__');
+      final digest = split.first.replaceFirst('digest-', '');
+      final inner = split.length > 1 ? split.last : '';
+      return await switch (digest) {
+        '13' => _albumDetail(inner),
+        '8' => _listDetail(inner),
+        _ => _digest5Detail(inner),
+      };
+    }
+    return await _listDetail(id);
+  }
+
+  /// The songlist detail — the reference's `getListDetailDigest8`, pl.svc's
+  /// paginated getlistinfo walked to the end.
+  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> _listDetail(String pid) async {
+    final rows = <Map<String, Object?>>[];
+    var page = 0;
+    var total = 1;
+    MusicPlaylistInfo? info;
+    while (rows.length < total) {
+      page += 1;
+      final json = jsonDecode(
+        await getText(Uri.http('nplserver.kuwo.cn', '/pl.svc', {
+          'op': 'getlistinfo',
+          'pid': pid,
+          'pn': '${page - 1}',
+          'rn': '1000',
+          'encode': 'utf8',
+          'keyset': 'pl2012',
+          'identity': 'kuwo',
+          'pcmp4': '1',
+          'vipver': 'MUSIC_9.0.5.0_W1',
+          'newver': '1',
+        })),
+      ) as Map<String, Object?>;
+      if (json['result'] != 'ok') throw StateError('kuwo playlist detail failed: $pid');
+      total = int.tryParse('${json['total'] ?? ''}') ?? 0;
+      final raw = json['musiclist'];
+      if (raw is! List || raw.isEmpty) break;
+      rows.addAll([for (final entry in raw) if (entry is Map) entry.cast<String, Object?>()]);
+      info ??= MusicPlaylistInfo(
+        id: pid,
+        name: LxPlatformSource.decodeName('${json['title'] ?? ''}').trim(),
+        cover: '${json['pic'] ?? ''}',
+        author: LxPlatformSource.decodeName('${json['uname'] ?? ''}').trim(),
+        trackCount: total,
+      );
+    }
+    if (info == null) throw StateError('kuwo playlist detail empty: $pid');
+    final tracks = <audio.MusicTrack>[];
+    for (final entry in rows) {
+      final track = trackOf(entry, scriptQualities());
+      if (track != null) tracks.add(track);
+    }
+    return (info, tracks);
+  }
+
+  /// The list digest — the reference's `getListDetailDigest5`: qukudata's
+  /// ninfo names the real pl.svc id first.
+  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> _digest5Detail(String id) async {
+    final json = jsonDecode(
+      await getText(Uri.http('qukudata.kuwo.cn', '/q.k', {
+        'op': 'query',
+        'cont': 'ninfo',
+        'node': id,
+        'pn': '0',
+        'rn': '1',
+        'fmt': 'json',
+        'src': 'mbox',
+        'level': '2',
+      })),
+    ) as Map<String, Object?>;
+    final child = json['child'];
+    final sourceid = child is List && child.isNotEmpty && child.first is Map ? '${(child.first as Map)['sourceid'] ?? ''}' : '';
+    if (sourceid.isEmpty) throw StateError('kuwo playlist id unresolved: $id');
+    return await _listDetail(sourceid);
+  }
+
+  /// The album digest — the reference routes it to kw `album.js`: the r.s
+  /// albuminfo page answers the tracks and the summary together.
+  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> _albumDetail(String albumId) async {
+    final json = jsonDecode(
+      await getText(Uri.http('search.kuwo.cn', '/r.s', {
+        'pn': '0',
+        'rn': '1000',
+        'stype': 'albuminfo',
+        'albumid': albumId,
+        'show_copyright_off': '0',
+        'encoding': 'utf',
+        'vipver': 'MUSIC_9.1.0',
+      })),
+    ) as Map<String, Object?>;
+    final raw = json['musiclist'];
+    if (raw is! List) throw StateError('kuwo album detail failed: $albumId');
+    final albumName = LxPlatformSource.decodeName('${json['name'] ?? ''}').trim();
+    final info = MusicPlaylistInfo(
+      id: albumId,
+      name: albumName,
+      cover: '${json['img'] ?? json['hts_img'] ?? ''}',
+      author: LxPlatformSource.decodeName('${json['artist'] ?? ''}').trim(),
+      trackCount: int.tryParse('${json['songnum'] ?? ''}') ?? raw.length,
+    );
+    final tracks = <audio.MusicTrack>[
+      for (final entry in raw)
+        if (entry is Map) ?_albumTrackOf(entry.cast<String, Object?>(), albumName, albumId),
+    ];
+    return (info, tracks);
+  }
+
+  /// The album track rows — the reference's album `filterListDetail`, the
+  /// `formats` pipe list standing in for the usual N_MINFO.
+  static audio.MusicTrack? _albumTrackOf(Map<String, Object?> raw, String albumName, String albumId) {
+    final songId = '${raw['id'] ?? ''}';
+    final title = LxPlatformSource.decodeName('${raw['name'] ?? ''}').trim();
+    if (songId.isEmpty || title.isEmpty) return null;
+    final formats = '${raw['formats'] ?? ''}'.split('|');
+    final found = <String>{
+      if (formats.contains('MP3128')) '128k',
+      if (formats.contains('MP3H')) '320k',
+      if (formats.contains('ALFLAC')) 'flac',
+      if (formats.contains('HIRFLAC')) 'flac24bit',
+    };
+    final qualities = ['128k', '320k', 'flac', 'flac24bit'].where(found.contains).toList();
+    final pic = '${raw['pic'] ?? ''}';
+    return audio.MusicTrack(
+      id: songId,
+      sourceId: 'kw',
+      title: title,
+      artist: LxPlatformSource.decodeName('${raw['artist'] ?? ''}').trim(),
+      album: albumName,
+      albumId: albumId.isEmpty ? null : albumId,
+      coverUri: pic.isEmpty ? null : Uri.tryParse(pic),
+      qualities: [for (final quality in qualities) LxPlatformSource.qualityOf(quality)],
+      metadata: {'types': qualities, 'albumId': albumId},
+    );
+  }
+
+  /// The 博单 links — the reference's `getListDetailMusicListByBD`: the
+  /// bd-api music list plus the info page the `source` code picks.
+  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> _bodianDetail(String link) async {
+    final uid = RegExp(r'uid=(\d+)').firstMatch(link)?.group(1);
+    final listId = RegExp(r'playlistId=(\d+)').firstMatch(link)?.group(1);
+    final source = RegExp(r'source=(\d+)').firstMatch(link)?.group(1);
+    if (listId == null) throw StateError('kuwo bodian link not understood: $link');
+    final reqId = _reqId();
+    var info = MusicPlaylistInfo(id: listId, name: '', cover: '', author: '', trackCount: 0);
+    if (source == '4' || source == '5') {
+      try {
+        info = source == '4' ? await _bodianListInfo(listId, reqId) : await _bodianUserInfo(uid ?? listId, reqId);
+      } on Object {
+        // The reference keeps the list even when the info page fails.
+      }
+    }
+    final rows = <Map<String, Object?>>[];
+    var page = 0;
+    var total = 1;
+    while (rows.length < total) {
+      page += 1;
+      final json = await getJson(
+        Uri.https('bd-api.kuwo.cn', '/api/service/playlist/$listId/musicList', {
+          'reqId': reqId,
+          'source': ?source,
+          'pn': '$page',
+          'rn': '1000',
+        }),
+        headers: _bodianHeaders,
+      );
+      if (json['code'] != 200) throw StateError('kuwo bodian list failed: $listId');
+      final data = json['data'];
+      if (data is! Map) break;
+      total = (data['total'] as num?)?.toInt() ?? 0;
+      final raw = data['list'];
+      if (raw is! List || raw.isEmpty) break;
+      rows.addAll([for (final entry in raw) if (entry is Map) entry.cast<String, Object?>()]);
+    }
+    final tracks = <audio.MusicTrack>[
+      for (final entry in rows) ?_bodianTrackOf(entry),
+    ];
+    return (
+      MusicPlaylistInfo(id: info.id, name: info.name, cover: info.cover, author: info.author, trackCount: total),
+      tracks,
+    );
+  }
+
+  Future<MusicPlaylistInfo> _bodianListInfo(String listId, String reqId) async {
+    final json = await getJson(
+      Uri.https('bd-api.kuwo.cn', '/api/service/playlist/info/$listId', {'reqId': reqId, 'source': '4'}),
+      headers: _bodianHeaders,
+    );
+    final data = json['data'];
+    if (json['code'] != 200 || data is! Map) throw StateError('kuwo bodian info failed: $listId');
+    return MusicPlaylistInfo(
+      id: listId,
+      name: '${data['name'] ?? ''}',
+      cover: '${data['pic'] ?? ''}',
+      author: '${data['creatorName'] ?? ''}',
+      trackCount: 0,
+    );
+  }
+
+  Future<MusicPlaylistInfo> _bodianUserInfo(String uid, String reqId) async {
+    final json = await getJson(
+      Uri.https('bd-api.kuwo.cn', '/api/ucenter/users/pub/$uid', {'reqId': reqId}),
+      headers: _bodianHeaders,
+    );
+    final data = json['data'];
+    final user = data is Map ? data['userInfo'] : null;
+    if (json['code'] != 200 || user is! Map) throw StateError('kuwo bodian user failed: $uid');
+    final nickname = '${user['nickname'] ?? ''}';
+    return MusicPlaylistInfo(
+      id: uid,
+      name: '$nickname喜欢的音乐',
+      cover: '${user['headImg'] ?? ''}',
+      author: nickname,
+      trackCount: 0,
+    );
+  }
+
+  /// The bodian track rows — the reference's `filterBDListDetail`, the
+  /// audios' bitrate list standing in for the usual N_MINFO.
+  static audio.MusicTrack? _bodianTrackOf(Map<String, Object?> raw) {
+    final songId = '${raw['id'] ?? ''}';
+    final title = '${raw['name'] ?? ''}'.trim();
+    if (songId.isEmpty || title.isEmpty) return null;
+    final found = <String>{};
+    final audios = raw['audios'];
+    if (audios is List) {
+      for (final info in audios) {
+        if (info is! Map) continue;
+        switch ('${info['bitrate'] ?? ''}') {
+          case '4000':
+            found.add('flac24bit');
+          case '2000':
+            found.add('flac');
+          case '320':
+            found.add('320k');
+          case '128':
+            found.add('128k');
+        }
+      }
+    }
+    final qualities = ['128k', '320k', 'flac', 'flac24bit'].where(found.contains).toList();
+    final artists = raw['artists'];
+    final names = [
+      if (artists is List)
+        for (final one in artists)
+          if (one is Map && one['name'] is String) one['name'] as String,
+    ];
+    final albumId = '${raw['albumId'] ?? ''}';
+    final pic = '${raw['albumPic'] ?? ''}';
+    final seconds = int.tryParse('${raw['duration'] ?? ''}');
+    return audio.MusicTrack(
+      id: songId,
+      sourceId: 'kw',
+      title: title,
+      artist: names.join('、'),
+      album: '${raw['album'] ?? ''}',
+      albumId: albumId.isEmpty ? null : albumId,
+      duration: seconds == null ? null : Duration(seconds: seconds),
+      coverUri: pic.isEmpty ? null : Uri.tryParse(pic),
+      qualities: [for (final quality in qualities) LxPlatformSource.qualityOf(quality)],
+      metadata: {'types': qualities, 'albumId': albumId},
+    );
+  }
+
+  /// The reference's `getReqId` — eight hex quartets.
+  String _reqId() {
+    final random = Random();
+    return [for (var i = 0; i < 8; i++) random.nextInt(0x10000).toRadixString(16).padLeft(4, '0')].join();
   }
 
   /// The viewer-shown top searches — the reference's 热门搜索.
