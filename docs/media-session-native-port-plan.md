@@ -1,7 +1,8 @@
-# media_session 自写底座迁移方案（弃用 audio_service）
+# media_session 底座迁移方案（弃用 audio_service_win）
 
-**日期**：2026-10-30 定稿
-**动机**：用户拍板——仲裁层（media_core_mediasession 的 bootstrap/driver/surfaces）已是自写，但 OS 底座仍是 `audio_service`（+`audio_service_win`/`audio_service_mpris`）；要求参考 mpv_audio_kit 的原生实现自写全套，彻底去掉 audio_service 依赖。
+**日期**：2026-10-30 定稿，2026-10-31 改道
+**动机**：仲裁层（media_core_mediasession 的 bootstrap/driver/surfaces）是自写，但 OS 底座仍是 `audio_service`（+`audio_service_win`/`audio_service_mpris`）。
+**改道记录（2026-10-31）**：原"参考 mpv_audio_kit 自写原生 SMTC"方案（自写包 media_session_smtc_win）已实施至可编译，用户中途改判——**改用 pub 包 `flutter_media_session`（wyrin.dev，v3.0.9，MIT，Win/macOS/iOS/Android/Web，Linux planned）**；自写包已删。现架构：media_core_mediasession 内 `media_session_flutter_bottom.dart` 桥接（AudioServicePlatform → flutter_media_session），Windows 注册之；Linux 仍走 audio_service_mpris。media_core 2482932 已推，app 构建绿+15s 烟测过。
 **参考源**：`C:\Users\XA-158\AppData\Local\Temp\mpv_audio_kit_audit`（BSD-3，须带署名移植）——`hook/build.dart` 下载逻辑无关；只取五平台会话原生代码。
 
 ## 可搬清单（实测行数）
