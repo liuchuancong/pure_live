@@ -1070,6 +1070,9 @@ HongguoSeries? _seriesFromRank(Map<String, Object?> row) {
   final episodeVids = row['episodeVids'];
   final count = (row['episodeCount'] as num?)?.toInt() ?? (episodeVids is List<Object?> ? episodeVids.length : 0);
   final tags = row['tags'];
+  // The board stamps its own tags (新剧 / 爆剧) beside each row's score, the
+  // same corner marks a listing's cover carries.
+  final statusTags = row['statusTags'];
   return HongguoSeries(
     seriesId: id,
     title: title,
@@ -1082,6 +1085,12 @@ HongguoSeries? _seriesFromRank(Map<String, Object?> row) {
     score: _str(row, 'scoreText'),
     rank: (row['rank'] as num?)?.toInt(),
     category: tags is List<Object?> ? [for (final tag in tags.take(5)) tag.toString()].join(' / ') : '',
+    coverTags: statusTags is List<Object?>
+        ? [
+            for (final tag in statusTags.take(2))
+              if (tag is String && tag.trim().isNotEmpty) tag.trim(),
+          ]
+        : const [],
   );
 }
 
