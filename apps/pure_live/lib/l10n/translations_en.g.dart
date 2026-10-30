@@ -1045,6 +1045,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get autoplayDesc => 'Continues the last queue when the music module opens.';
 	@override String get rememberProgress => 'Remember playback position';
 	@override String get rememberProgressDesc => 'A song you open again resumes where it last stopped.';
+	@override String get autoCleanPlayedList => 'Auto-clean played list';
+	@override String get autoCleanPlayedListDesc => 'Clears the played list when picking songs from the list already playing; in random mode every song joins the pool again.';
 	@override String get addToTop => 'Add new songs on top';
 	@override String get addToTopDesc => 'Off keeps them at the end of a list.';
 	@override String get showSource => 'Show the source in lists';
@@ -4553,6 +4555,8 @@ extension on TranslationsEn {
 			'music.autoplayDesc' => 'Continues the last queue when the music module opens.',
 			'music.rememberProgress' => 'Remember playback position',
 			'music.rememberProgressDesc' => 'A song you open again resumes where it last stopped.',
+			'music.autoCleanPlayedList' => 'Auto-clean played list',
+			'music.autoCleanPlayedListDesc' => 'Clears the played list when picking songs from the list already playing; in random mode every song joins the pool again.',
 			'music.addToTop' => 'Add new songs on top',
 			'music.addToTopDesc' => 'Off keeps them at the end of a list.',
 			'music.showSource' => 'Show the source in lists',

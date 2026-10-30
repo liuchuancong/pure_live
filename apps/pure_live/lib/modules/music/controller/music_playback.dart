@@ -463,14 +463,66 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   List<audio.MusicTrack> get queue => _audio.queue.tracks;
 
   /// Replaces the queue with [tracks], starting on [index] and playing.
-  Future<void> playAll(Iterable<audio.MusicTrack> tracks, {int index = 0}) =>
-      _audio.setQueue(tracks, startIndex: index);
+  ///
+  /// Replaying the list already in the queue keeps the random pool unless the
+  /// auto-clean setting asks for a clear — the reference's
+  /// `if (isAutoCleanPlayedList || prevListId != listId) clearPlayedList()`.
+  Future<void> playAll(Iterable<audio.MusicTrack> tracks, {int index = 0}) async {
+    final incoming = List<audio.MusicTrack>.of(tracks);
+
+    if (incoming.isNotEmpty && _sameQueue(incoming)) {
+      await _pick(index.clamp(0, incoming.length - 1));
+      return;
+    }
+
+    await _audio.setQueue(incoming, startIndex: index);
+  }
 
   /// Plays [track], adding it to the queue when it is not there yet.
-  Future<void> play(audio.MusicTrack track) => _audio.playTrack(track);
+  Future<void> play(audio.MusicTrack track) async {
+    final existing = _audio.queue.indexOfTrack(track);
+
+    if (existing >= 0) {
+      await _pick(existing);
+      return;
+    }
+
+    await _audio.playTrack(track);
+  }
 
   /// Plays the queue entry at [index].
-  Future<void> playAt(int index) => _audio.playAt(index);
+  Future<void> playAt(int index) => _pick(index);
+
+  /// Picks an in-queue entry, applying the played-list rule: with the
+  /// auto-clean setting on, random mode rebuilds the shuffle so every song
+  /// re-enters the pool — the reference's clearPlayedList on same-list picks.
+  Future<void> _pick(int index) async {
+    final settings = ref.read(musicSettingsProvider);
+
+    if (settings.autoCleanPlayedList && _audio.queue.mode == audio.PlayMode.random) {
+      await _audio.setQueue(_audio.queue.tracks, startIndex: index);
+      return;
+    }
+
+    await _audio.playAt(index);
+  }
+
+  /// Whether [tracks] is the queue already in place (same songs, same order).
+  bool _sameQueue(List<audio.MusicTrack> tracks) {
+    final current = _audio.queue.tracks;
+
+    if (current.length != tracks.length) {
+      return false;
+    }
+
+    for (var i = 0; i < current.length; i++) {
+      if (current[i] != tracks[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 
   /// Puts [track] right after the current one.
   Future<void> playNext(audio.MusicTrack track) => _audio.playTrack(track, insertNext: true);

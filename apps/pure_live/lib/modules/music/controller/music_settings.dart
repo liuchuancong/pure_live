@@ -154,6 +154,7 @@ final class MusicSettings {
     required this.volume,
     required this.playbackRate,
     required this.preservesPitch,
+    required this.autoCleanPlayedList,
     required this.addToTop,
     required this.showSource,
     required this.showHotSearches,
@@ -202,6 +203,7 @@ final class MusicSettings {
     volume: 1,
     playbackRate: 1,
     preservesPitch: true,
+    autoCleanPlayedList: false,
     addToTop: true,
     showSource: true,
     showHotSearches: true,
@@ -267,6 +269,11 @@ final class MusicSettings {
   /// Whether a changed speed keeps the song's pitch — the reference's
   /// `player.preservesPitch`, mpv's `audio-pitch-correction`.
   final bool preservesPitch;
+
+  /// Whether picking a song from the list already playing clears the played
+  /// list, letting every song re-enter the random pool — the reference's
+  /// `player.isAutoCleanPlayedList`.
+  final bool autoCleanPlayedList;
 
   /// Whether a song added to a list goes to its top rather than its end.
   final bool addToTop;
@@ -379,6 +386,7 @@ final class MusicSettings {
     double? volume,
     double? playbackRate,
     bool? preservesPitch,
+    bool? autoCleanPlayedList,
     bool? addToTop,
     bool? showSource,
     bool? showHotSearches,
@@ -421,6 +429,7 @@ final class MusicSettings {
     volume: volume ?? this.volume,
     playbackRate: playbackRate ?? this.playbackRate,
     preservesPitch: preservesPitch ?? this.preservesPitch,
+    autoCleanPlayedList: autoCleanPlayedList ?? this.autoCleanPlayedList,
     addToTop: addToTop ?? this.addToTop,
     showSource: showSource ?? this.showSource,
     showHotSearches: showHotSearches ?? this.showHotSearches,
@@ -465,6 +474,7 @@ const String _rememberProgressKey = 'music.play.rememberProgress';
 const String _volumeKey = 'music.play.volume';
 const String _rateKey = 'music.play.rate';
 const String _preservesPitchKey = 'music.play.preservesPitch';
+const String _autoCleanPlayedListKey = 'music.play.autoCleanPlayedList';
 const String _addToTopKey = 'music.list.addToTop';
 const String _showSourceKey = 'music.list.showSource';
 const String _showHotSearchesKey = 'music.search.hot';
@@ -511,6 +521,7 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     volume: _readDouble(_volumeKey) ?? 1,
     playbackRate: _readDouble(_rateKey) ?? 1,
     preservesPitch: _readBool(_preservesPitchKey) ?? true,
+    autoCleanPlayedList: _readBool(_autoCleanPlayedListKey) ?? false,
     addToTop: _readBool(_addToTopKey) ?? true,
     showSource: _readBool(_showSourceKey) ?? true,
     showHotSearches: _readBool(_showHotSearchesKey) ?? true,
@@ -706,6 +717,12 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
   Future<void> setPreservesPitch({required bool value}) async {
     state = state.copyWith(preservesPitch: value);
     await _writeBool(_preservesPitchKey, value);
+  }
+
+  /// Switches the played-list auto clean.
+  Future<void> setAutoCleanPlayedList({required bool value}) async {
+    state = state.copyWith(autoCleanPlayedList: value);
+    await _writeBool(_autoCleanPlayedListKey, value);
   }
 
   /// Switches traditional-Chinese lyric rendering.

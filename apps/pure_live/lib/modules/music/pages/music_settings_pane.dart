@@ -126,6 +126,15 @@ final class MusicSettingsPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setRememberProgress(value: value)),
               ),
             ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.shuffle),
+              title: t.music.autoCleanPlayedList,
+              description: t.music.autoCleanPlayedListDesc,
+              control: DsSwitch(
+                value: settings.autoCleanPlayedList,
+                onChanged: (value) => unawaited(controller.setAutoCleanPlayedList(value: value)),
+              ),
+            ),
           ],
         ),
         DsListSection(

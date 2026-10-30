@@ -2836,6 +2836,12 @@ class Translations$music$zh_CN {
 	/// zh-CN: '再次打开同一首歌时，从上一次停止的位置继续。'
 	String get rememberProgressDesc => '再次打开同一首歌时，从上一次停止的位置继续。';
 
+	/// zh-CN: '自动清空已播列表'
+	String get autoCleanPlayedList => '自动清空已播列表';
+
+	/// zh-CN: '点击与播放列表相同的列表切歌时清空已播放列表，随机模式下列表内所有歌曲会重新参与随机。'
+	String get autoCleanPlayedListDesc => '点击与播放列表相同的列表切歌时清空已播放列表，随机模式下列表内所有歌曲会重新参与随机。';
+
 	/// zh-CN: '新歌加到列表顶部'
 	String get addToTop => '新歌加到列表顶部';
 
@@ -11331,6 +11337,8 @@ extension on Translations {
 			'music.autoplayDesc' => '打开音乐模块时继续上次的播放队列。',
 			'music.rememberProgress' => '记住播放进度',
 			'music.rememberProgressDesc' => '再次打开同一首歌时，从上一次停止的位置继续。',
+			'music.autoCleanPlayedList' => '自动清空已播列表',
+			'music.autoCleanPlayedListDesc' => '点击与播放列表相同的列表切歌时清空已播放列表，随机模式下列表内所有歌曲会重新参与随机。',
 			'music.addToTop' => '新歌加到列表顶部',
 			'music.addToTopDesc' => '关闭时新歌排在列表末尾。',
 			'music.showSource' => '列表显示音源',

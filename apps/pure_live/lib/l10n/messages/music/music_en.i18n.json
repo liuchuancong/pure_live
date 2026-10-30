@@ -66,6 +66,8 @@
   "autoplayDesc": "Continues the last queue when the music module opens.",
   "rememberProgress": "Remember playback position",
   "rememberProgressDesc": "A song you open again resumes where it last stopped.",
+  "autoCleanPlayedList": "Auto-clean played list",
+  "autoCleanPlayedListDesc": "Clears the played list when picking songs from the list already playing; in random mode every song joins the pool again.",
   "addToTop": "Add new songs on top",
   "addToTopDesc": "Off keeps them at the end of a list.",
   "showSource": "Show the source in lists",
