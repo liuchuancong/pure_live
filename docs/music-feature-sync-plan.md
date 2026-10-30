@@ -81,7 +81,7 @@
 | 歌词：翻译/罗马音副行、繁体、逐字卡拉OK | `showTranslation/showRomanization/traditionalizeLyric/playWordLyrics` | ✅ |
 | 歌词：对齐/字号缩放/当前行缩放/偏移 ± | `lyricAlignment/lyricFontScale/lyricZoomActive/lyricOffsetMs` | ✅ |
 | 歌词右键菜单（字号±/偏移±10/100ms/重置） | 播放器菜单子菜单 | ✅ |
-| 拖拽歌词调整进度（3 秒回弹） | 无 | ⬜ |
+| 拖拽歌词调整进度（3 秒回弹） | 歌词设置页「拖拽歌词调整进度」开关（默认关，参考同默认）：用户滚动歌词即暂停跟随（区分自身 animateTo），面板 40% 高度出现划线=所指行时间+跳放按钮（点按 seek 到该行 start），停手 3 秒回弹到当前句（暂停中不回弹，参考 mobile Vertical/Lyric.tsx+PlayLine.tsx 逐语义）；未同步歌词不参与（提交 `7a8d9d178`） | ✅ |
 | 频谱可视化（实验性） | 无 | ⬜ |
 | 音效（实验性）：EQ + 混响 + 3D 环绕 + 升降调 | `eq/` 十段均衡+FX 链（bass/vocal/width/loudness 等）+ 预设 | 🟡 缺混响/3D/升降调 |
 | 倍速音调补偿 preservesPitch | 无 | ⬜ |
