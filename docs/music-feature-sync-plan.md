@@ -38,9 +38,9 @@
 | LX 功能 | v2 落点 | 状态 |
 |---|---|---|
 | 热门标签浏览 + 卡片网格分页 | `_OnlinePlaylistBrowse`（DsChip + MusicPlaylistGrid） | ✅ |
-| 歌单分类标签组（TagGroup 分类树） | PlaylistTagTree 能力 + 浏览页分类组 DsTopNav 行（热门为第一组）+ 组内标签 chips：wy catalogue / kg smarty getSpecial / tx all-categories / mg taglist 模板（提交 `16fd63dbe`） | 🟡 余 kw（其广场未建，树随广场一起） |
-| 排序 tab（推荐/最热/最新/热藏/飙升） | MusicPlazaSort 表 + 浏览页第一行 DsTopNav（单 tab 不显示）：kg 五 tab 映射 getSpecial t 码、tx 无标签时排序顶替分类（推荐=feed）、wy/mg 各自仅剩的单 tab（提交 `28c05034f`） | ✅ |
-| 打开歌单（链接或 ID） | 在线歌单 tab 行尾链接按钮 + 对话框（链接/ID）；四源 `playlistDetail` 内按参考 `getListId` 正则归一（wy ?id= 与 /playlist/n/m、tx /playlist/ 与 id=、kg special/single 与 id_ 前缀、mg /playlist/），裸 ID 直用（提交 `09e12aa10`） | ✅ |
+| 歌单分类标签组（TagGroup 分类树） | PlaylistTagTree 能力 + 浏览页分类组 DsTopNav 行（热门为第一组）+ 组内标签 chips：wy catalogue / kg smarty getSpecial / tx all-categories / mg taglist 模板（提交 `16fd63dbe`）/ kw getTagList 树 + getRcmTagList 热门名→`id-digest` 映射（提交 `eb104dd0c`） | ✅ |
+| 排序 tab（推荐/最热/最新/热藏/飙升） | MusicPlazaSort 表 + 浏览页第一行 DsTopNav（单 tab 不显示）：kg 五 tab 映射 getSpecial t 码、tx 无标签时排序顶替分类（推荐=feed）、wy/mg 各自仅剩的单 tab、kw 最新/最热双 tab 走 getRcmPlayList order（提交 `28c05034f`；kw `eb104dd0c`） | ✅ |
+| 打开歌单（链接或 ID） | 在线歌单 tab 行尾链接按钮 + 对话框（链接/ID）；五源 `playlistDetail` 内按参考 `getListId` 正则归一（wy ?id= 与 /playlist/n/m、tx /playlist/ 与 id=、kg special/single 与 id_ 前缀、mg /playlist/、kw /playlist(_detail)/ 链接 + `digest-<d>__<id>` 复合 id 分发 8/5/13 + 博单 bd-api 链接），裸 ID 直用（提交 `09e12aa10`；kw `eb104dd0c`） | ✅ |
 | 歌单搜索（搜索类型=歌单的结果页） | 随 B 项落地：library 歌单类型结果页（`_SonglistResults`，MusicPlaylistGrid 双模滚动，点击进详情） | ✅（0cac05b4f） |
 | 收藏歌单（存入我的列表并记 source 供更新） | 导入即 `linkSource` 记 source+sourceListId（模型与持久化本就支持），供后续更新对比（提交 `da26d9b86`） | ✅ |
 | 已收藏在线歌单"更新"（拉最新对比替换） | 卡片菜单「更新在线歌单」：按存的 source+sourceListId 重拉广场整表替换（`replaceTracks`，参考 overwriteListMusics）；二次收藏同歌单弹确认改走更新（提交 `b596c3348`） | ✅ |
