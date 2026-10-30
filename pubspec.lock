@@ -137,15 +137,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.4"
-  audio_service_win:
-    dependency: transitive
-    description:
-      path: "."
-      ref: "8ad650c6eb487208b9861d44755c8e58db061c88"
-      resolved-ref: "8ad650c6eb487208b9861d44755c8e58db061c88"
-      url: "https://github.com/Predidit/audio_service_win.git"
-    source: git
-    version: "0.0.3"
   audio_session:
     dependency: transitive
     description:
@@ -989,6 +980,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.3"
+  flutter_media_session:
+    dependency: transitive
+    description:
+      name: flutter_media_session
+      sha256: "746c0a8caada764e2fe4d1972247f9c0715ecb07a0a43650f5bcb0861f62257e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.9"
   flutter_overlay_window:
     dependency: transitive
     description:
