@@ -4044,6 +4044,18 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '没有找到匹配的歌曲'
 	String get listSearchEmpty => '没有找到匹配的歌曲';
+
+	/// zh-CN: '歌曲换源'
+	String get toggleSource => '歌曲换源';
+
+	/// zh-CN: '已换源，之后都用新源播放这首歌'
+	String get toggleSourceDone => '已换源，之后都用新源播放这首歌';
+
+	/// zh-CN: '没有找到候选歌曲'
+	String get toggleSourceEmpty => '没有找到候选歌曲';
+
+	/// zh-CN: '候选搜索失败'
+	String get toggleSourceFailed => '候选搜索失败';
 }
 
 // Path: navigation
@@ -11574,6 +11586,10 @@ extension on Translations {
 			'music.duplicatesRemoveAll' => '移除重复（保留第一首）',
 			'music.listSearch' => '搜索列表内歌曲',
 			'music.listSearchEmpty' => '没有找到匹配的歌曲',
+			'music.toggleSource' => '歌曲换源',
+			'music.toggleSourceDone' => '已换源，之后都用新源播放这首歌',
+			'music.toggleSourceEmpty' => '没有找到候选歌曲',
+			'music.toggleSourceFailed' => '候选搜索失败',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -11809,12 +11825,12 @@ extension on Translations {
 			'room.messageActions' => '弹幕操作',
 			'room.blockUser' => '屏蔽此用户',
 			'room.blockKeyword' => '屏蔽关键词…',
+			_ => null,
+		} ?? switch (path) {
 			'room.blockKeywordHint' => '输入要屏蔽的关键词',
 			'room.userBlocked' => '已屏蔽该用户',
 			'room.keywordBlocked' => '已屏蔽该关键词',
 			'room.danmakuSettings' => '弹幕设置',
-			_ => null,
-		} ?? switch (path) {
 			'room.blockList' => '屏蔽列表',
 			'room.superChats' => '超级聊天',
 			'room.superChatEmpty' => '暂无超级聊天',
@@ -12323,12 +12339,12 @@ extension on Translations {
 			'settings.trayScreenshot' => '截图',
 			'settings.traySoundOn' => '打开声音',
 			'settings.traySoundOff' => '关闭声音',
+			_ => null,
+		} ?? switch (path) {
 			'settings.trayScreenshotSaved' => ({required Object path}) => '已保存到 ${path}',
 			'settings.trayScreenshotFailed' => '截图失败：没有正在播放的房间或引擎不支持',
 			'settings.font' => '字体',
 			'settings.fontDescription' => 'MiSans 随应用打包并默认使用，也可换国内或国外字体。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontDefault' => 'MiSans（默认）',
 			'settings.fontSystemChinese' => '系统字体',
 			'settings.fontRegionDomestic' => '国内',
@@ -12837,12 +12853,12 @@ extension on Translations {
 			'settings.releaseHistoryEmpty' => '暂无发布记录',
 			'settings.releaseHistoryFailed' => '发行记录加载失败',
 			'settings.releasedOn' => ({required Object date}) => '发布于 ${date}',
+			_ => null,
+		} ?? switch (path) {
 			'settings.prerelease' => '预览版',
 			'settings.updateLater' => '稍后再说',
 			'settings.downloadInstaller' => '下载安装包',
 			'settings.downloadOtherBuilds' => '其他构建',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadTitle' => '获取安装包',
 			'settings.downloadLatest' => '最新版本',
 			'settings.downloadHint' => '选择与本机匹配的包；下载保存到「数据与缓存」里的下载目录。',
@@ -13351,12 +13367,12 @@ extension on Translations {
 			'toolbox.logsFile' => '写入日志文件',
 			'toolbox.logsFileDesc' => '在应用数据目录保存轮转日志 pure_live.log；关闭只留内存日志。',
 			'toolbox.logsExport' => '复制日志',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsExportDesc' => '把内存中的日志复制到剪贴板。',
 			'toolbox.logsClear' => '清空日志',
 			'toolbox.logsClearDesc' => '只清除内存中的日志，已写入的文件保留。',
 			'toolbox.logsClearConfirm' => '清空内存日志？',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsClearConfirmDesc' => '内存中的日志会被删除，日志文件不受影响。',
 			'toolbox.logsSearch' => '搜索日志…',
 			'toolbox.logsEmptyTitle' => '还没有日志',

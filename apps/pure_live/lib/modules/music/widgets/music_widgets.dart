@@ -60,6 +60,7 @@ final class MusicSongRow extends ConsumerWidget {
     this.onPlayNext,
     this.onAddToPlaylist,
     this.onDownload,
+    this.onToggleSource,
     this.onMoveUp,
     this.onMoveDown,
     this.subtitle,
@@ -91,6 +92,9 @@ final class MusicSongRow extends ConsumerWidget {
 
   /// Downloads the song.
   final VoidCallback? onDownload;
+
+  /// Swaps the song to another platform's copy — the reference's 歌曲换源.
+  final VoidCallback? onToggleSource;
 
   /// Moves the song one place up in its list.
   final VoidCallback? onMoveUp;
@@ -264,6 +268,12 @@ final class MusicSongRow extends ConsumerWidget {
                         leading: const DsIcon(DsIcons.download),
                         label: Text(t.music.download),
                         onPressed: download,
+                      ),
+                    if (onToggleSource case final toggleSource?)
+                      DsMenuItem(
+                        leading: const DsIcon(DsIcons.arrowRightLeft),
+                        label: Text(t.music.toggleSource),
+                        onPressed: toggleSource,
                       ),
                     DsMenuItem(
                       leading: const DsIcon(DsIcons.ban),

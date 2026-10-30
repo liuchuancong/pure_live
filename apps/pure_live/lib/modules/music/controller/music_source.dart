@@ -6,6 +6,7 @@ import 'package:pure_live/app/providers/network/network_providers.dart' show net
 
 import 'package:pure_live/modules/music/controller/lx_script_runtime.dart';
 import 'package:pure_live/modules/music/controller/music_settings.dart';
+import 'package:pure_live/modules/music/controller/music_source_swaps.dart' show musicSourceSwapsProvider;
 import 'package:pure_live/modules/music/controller/sources/music_display_lyric.dart' show DisplayLyricSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart' show CachedLyricSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_kg.dart' show KgMusicSource;
@@ -53,9 +54,21 @@ final kwMusicSourceProvider = Provider<KwMusicSource>((ref) {
 
 /// lx-music's 换源 resolve: the track's own platform is asked first, and when
 /// it refuses, the other platforms are searched for the same song and the
-/// first one that resolves wins.
+/// first one that resolves wins. A manual swap from the viewer rides above
+/// every attempt.
 Future<audio.TrackSource> resolveWithToggle(Ref ref, audio.MusicTrack track, {audio.MusicQuality? quality}) async {
   final sources = ref.read(musicSourceListProvider);
+  final swapped = ref.read(musicSourceSwapsProvider.notifier).swappedOf(track);
+  if (swapped != null) {
+    for (final source in sources) {
+      if (source.id != swapped.sourceId) continue;
+      try {
+        return await source.resolveTrackSource(swapped, quality: quality);
+      } on Object {
+        break;
+      }
+    }
+  }
   var own = ref.read(musicSourceProvider);
   for (final source in sources) {
     if (source.id == track.sourceId) own = source;

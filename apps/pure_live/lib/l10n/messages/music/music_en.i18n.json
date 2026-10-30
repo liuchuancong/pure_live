@@ -468,5 +468,9 @@
   "duplicatesNone": "No duplicate songs found",
   "duplicatesRemoveAll": "Remove duplicates (keep the first)",
   "listSearch": "Search in this list",
-  "listSearchEmpty": "No matching songs found"
+  "listSearchEmpty": "No matching songs found",
+  "toggleSource": "Toggle source",
+  "toggleSourceDone": "Source swapped; this song now plays from the new one",
+  "toggleSourceEmpty": "No candidate songs found",
+  "toggleSourceFailed": "Searching for candidates failed"
 }

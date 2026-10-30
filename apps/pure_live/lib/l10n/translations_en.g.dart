@@ -1448,6 +1448,10 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get duplicatesRemoveAll => 'Remove duplicates (keep the first)';
 	@override String get listSearch => 'Search in this list';
 	@override String get listSearchEmpty => 'No matching songs found';
+	@override String get toggleSource => 'Toggle source';
+	@override String get toggleSourceDone => 'Source swapped; this song now plays from the new one';
+	@override String get toggleSourceEmpty => 'No candidate songs found';
+	@override String get toggleSourceFailed => 'Searching for candidates failed';
 }
 
 // Path: navigation
@@ -4904,6 +4908,10 @@ extension on TranslationsEn {
 			'music.duplicatesRemoveAll' => 'Remove duplicates (keep the first)',
 			'music.listSearch' => 'Search in this list',
 			'music.listSearchEmpty' => 'No matching songs found',
+			'music.toggleSource' => 'Toggle source',
+			'music.toggleSourceDone' => 'Source swapped; this song now plays from the new one',
+			'music.toggleSourceEmpty' => 'No candidate songs found',
+			'music.toggleSourceFailed' => 'Searching for candidates failed',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -5139,12 +5147,12 @@ extension on TranslationsEn {
 			'room.messageActions' => 'Message actions',
 			'room.blockUser' => 'Block this viewer',
 			'room.blockKeyword' => 'Block a keyword…',
+			_ => null,
+		} ?? switch (path) {
 			'room.blockKeywordHint' => 'Enter the keyword to block',
 			'room.userBlocked' => 'The viewer is blocked',
 			'room.keywordBlocked' => 'The keyword is blocked',
 			'room.danmakuSettings' => 'Danmaku settings',
-			_ => null,
-		} ?? switch (path) {
 			'room.blockList' => 'Block list',
 			'room.superChats' => 'Super chats',
 			'room.superChatEmpty' => 'No super chats now',
@@ -5653,12 +5661,12 @@ extension on TranslationsEn {
 			'settings.trayScreenshot' => 'Screenshot',
 			'settings.traySoundOn' => 'Unmute sound',
 			'settings.traySoundOff' => 'Mute sound',
+			_ => null,
+		} ?? switch (path) {
 			'settings.trayScreenshotSaved' => ({required Object path}) => 'Saved to ${path}',
 			'settings.trayScreenshotFailed' => 'Screenshot failed: no room is playing, or the engine cannot capture',
 			'settings.font' => 'Font',
 			'settings.fontDescription' => 'UI typeface: MiSans ships with the app and is the default everywhere; switch to a domestic or overseas face here.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontDefault' => 'MiSans (default)',
 			'settings.fontSystemChinese' => 'System font',
 			'settings.fontRegionDomestic' => 'Domestic',
@@ -6167,12 +6175,12 @@ extension on TranslationsEn {
 			'settings.releaseHistoryEmpty' => 'No releases yet',
 			'settings.releaseHistoryFailed' => 'The releases did not load',
 			'settings.releasedOn' => ({required Object date}) => 'Released ${date}',
+			_ => null,
+		} ?? switch (path) {
 			'settings.prerelease' => 'Pre-release',
 			'settings.updateLater' => 'Later',
 			'settings.downloadInstaller' => 'Download the installer',
 			'settings.downloadOtherBuilds' => 'Other builds',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadTitle' => 'Downloads',
 			'settings.downloadLatest' => 'The latest release',
 			'settings.downloadHint' => 'Pick the package that matches this device; a download is saved to the folder shown under Data & cache.',
@@ -6681,12 +6689,12 @@ extension on TranslationsEn {
 			'toolbox.logsFile' => 'Write log file',
 			'toolbox.logsFileDesc' => 'Keep a rotating log (pure_live.log) in the app data directory; off keeps only the in-memory ring.',
 			'toolbox.logsExport' => 'Copy log',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsExportDesc' => 'Copy the in-memory records to the clipboard.',
 			'toolbox.logsClear' => 'Clear logs',
 			'toolbox.logsClearDesc' => 'Clears the in-memory records; files already written stay.',
 			'toolbox.logsClearConfirm' => 'Clear the in-memory log?',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsClearConfirmDesc' => 'The in-memory records are deleted; log files are untouched.',
 			'toolbox.logsSearch' => 'Search logs…',
 			'toolbox.logsEmptyTitle' => 'No logs yet',

@@ -345,6 +345,24 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
     await _save();
   }
 
+  /// Swaps [from] for [to] where it stands — the reference's manual 换源
+  /// inside a list keeps the song's position.
+  Future<void> replaceTrack(String id, audio.MusicTrack from, audio.MusicTrack to) async {
+    state = [
+      for (final playlist in state)
+        if (playlist.id == id)
+          playlist.copyWith(
+            tracks: [
+              for (final entry in playlist.tracks)
+                if (identical(entry, from)) to else entry,
+            ],
+          )
+        else
+          playlist,
+    ];
+    await _save();
+  }
+
   /// Moves a song inside the playlist.
   Future<void> moveTrack(String id, int from, int to) async {
     final playlist = find(id);

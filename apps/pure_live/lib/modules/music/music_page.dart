@@ -355,6 +355,7 @@ final class _LibraryViewState extends ConsumerState<_LibraryView> {
         onPlayNext: () => unawaited(playerController.playNext(song)),
         onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
         onDownload: () => unawaited(downloadTrackWithToast(context, ref, song)),
+        onToggleSource: () => unawaited(showToggleSourceDialog(context, ref, song)),
       );
     }
 
@@ -1456,6 +1457,7 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                     onPlayNext: () => unawaited(player.playNext(song)),
                     onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
                     onDownload: () => unawaited(downloadTrackWithToast(context, ref, song, listName: playlist.name)),
+                    onToggleSource: () => unawaited(showToggleSourceDialog(context, ref, song, onSwapped: (swapped) => unawaited(controller.replaceTrack(playlist.id, song, swapped)))),
                     onMoveUp: searching || index == 0
                         ? null
                         : () => unawaited(controller.moveTrack(playlist.id, index, index - 1)),
@@ -1642,6 +1644,7 @@ final class _ChartItems extends ConsumerWidget {
                   onPlayNext: () => unawaited(playerController.playNext(song)),
                   onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
                   onDownload: () => unawaited(downloadTrackWithToast(context, ref, song, listName: catalog.name)),
+                  onToggleSource: () => unawaited(showToggleSourceDialog(context, ref, song)),
                 );
               },
             ),
@@ -1700,6 +1703,7 @@ final class _MineView extends ConsumerWidget {
                 onPlayNext: () => unawaited(playerController.playNext(song)),
                 onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
                 onDownload: () => unawaited(downloadTrackWithToast(context, ref, song, listName: title)),
+                onToggleSource: () => unawaited(showToggleSourceDialog(context, ref, song)),
               ),
           ],
         ),
@@ -2736,6 +2740,7 @@ final class _OnlinePlaylistDetail extends ConsumerWidget {
                         onFavourite: () => unawaited(favouritesController.toggle(song)),
                         onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
                         onDownload: () => unawaited(downloadTrackWithToast(context, ref, song, listName: info.name)),
+                        onToggleSource: () => unawaited(showToggleSourceDialog(context, ref, song)),
                       );
                     },
                   );

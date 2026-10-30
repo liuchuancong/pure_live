@@ -468,5 +468,9 @@
   "duplicatesNone": "没有发现重复的歌曲",
   "duplicatesRemoveAll": "移除重复（保留第一首）",
   "listSearch": "搜索列表内歌曲",
-  "listSearchEmpty": "没有找到匹配的歌曲"
+  "listSearchEmpty": "没有找到匹配的歌曲",
+  "toggleSource": "歌曲换源",
+  "toggleSourceDone": "已换源，之后都用新源播放这首歌",
+  "toggleSourceEmpty": "没有找到候选歌曲",
+  "toggleSourceFailed": "候选搜索失败"
 }
