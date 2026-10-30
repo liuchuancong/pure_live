@@ -1023,6 +1023,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String duplicateListTip({required Object name}) => 'You collected "${name}" before. Pull the latest and overwrite its tracks?';
 	@override String onlineUpdatedToast({required Object name, required Object count}) => 'Updated "${name}": ${count} tracks.';
 	@override String get onlineUpdateFailed => 'The update failed; try again later.';
+	@override String get boardCollect => 'Collect board';
 	@override String get songlistSearchUnsupported => 'This source cannot search songlists yet.';
 	@override String get defaultSource => 'Default source';
 	@override String get defaultSourceDesc => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.';
@@ -4465,6 +4466,7 @@ extension on TranslationsEn {
 			'music.duplicateListTip' => ({required Object name}) => 'You collected "${name}" before. Pull the latest and overwrite its tracks?',
 			'music.onlineUpdatedToast' => ({required Object name, required Object count}) => 'Updated "${name}": ${count} tracks.',
 			'music.onlineUpdateFailed' => 'The update failed; try again later.',
+			'music.boardCollect' => 'Collect board',
 			'music.songlistSearchUnsupported' => 'This source cannot search songlists yet.',
 			'music.defaultSource' => 'Default source',
 			'music.defaultSourceDesc' => 'The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.',
@@ -4616,9 +4618,9 @@ extension on TranslationsEn {
 			'music.selectionStart' => 'Select',
 			'music.selectionCancel' => 'Cancel selection',
 			'music.selectionCount' => ({required Object count}) => '${count} selected',
-			'music.selectionAll' => 'Select all',
 			_ => null,
 		} ?? switch (path) {
+			'music.selectionAll' => 'Select all',
 			'music.selectionDownload' => 'Download',
 			'music.selectionRemove' => 'Remove',
 			'music.selectionRemoveDone' => ({required Object count}) => 'Removed ${count} songs',
@@ -5130,9 +5132,9 @@ extension on TranslationsEn {
 			'room.totalViewers' => 'Total viewers',
 			'room.startedAt' => ({required Object time}) => 'Started ${time}',
 			'room.danmakuList' => 'Danmaku',
-			'room.danmakuSettingsDesc' => 'The flying items’ visibility, size, speed and area.',
 			_ => null,
 		} ?? switch (path) {
+			'room.danmakuSettingsDesc' => 'The flying items’ visibility, size, speed and area.',
 			'room.block' => 'Block',
 			'room.openExternal' => 'Open on the platform',
 			'room.restrictionNeedsLogin' => 'Sign-in required',
@@ -5644,9 +5646,9 @@ extension on TranslationsEn {
 			'settings.fontManagerMore' => 'Get more fonts',
 			'settings.fontManagerPreviewTitle' => 'Font preview',
 			'settings.fontManagerPreviewAction' => 'Preview',
-			'settings.fontManagerPreviewPending' => 'Preview after download',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerPreviewPending' => 'Preview after download',
 			'settings.fontManagerGoogle' => 'Google fonts',
 			'settings.fontManagerDescription' => 'Choose the UI typeface: MiSans comes with the app, the domestic faces come from a free-for-commercial-use collection, and the overseas ones come from Google Fonts. A choice applies everywhere at once.',
 			'settings.fontManagerSystemDescription' => ({required Object face}) => 'The system provides it; this device uses ${face}.',
@@ -6158,9 +6160,9 @@ extension on TranslationsEn {
 			'settings.downloadProgress' => ({required Object received, required Object total}) => '${received} of ${total}',
 			'settings.downloadProgressUnknown' => ({required Object received}) => '${received} downloaded',
 			'settings.downloadSavedTo' => ({required Object path}) => 'Saved to ${path}',
-			'settings.downloadCancelled' => 'Download cancelled; no partial file was kept.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadCancelled' => 'Download cancelled; no partial file was kept.',
 			'settings.downloadOpenFile' => 'Open the file',
 			'settings.downloadOpenFolder' => 'Open the folder',
 			'settings.downloadOpenFailed' => 'Could not open it',
@@ -6672,9 +6674,9 @@ extension on TranslationsEn {
 			'toolbox.logsCopied' => 'Log copied',
 			'toolbox.logsCopyEmpty' => 'No logs to copy',
 			'toolbox.logsDirectoryDefault' => 'The log file is not ready yet.',
-			'toolbox.logsFileTitle' => 'Log file',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.logsFileTitle' => 'Log file',
 			'toolbox.logsOpenFolder' => 'Open the folder',
 			'toolbox.logsCopyPath' => 'Copy path',
 			'toolbox.logsPathCopied' => 'Path copied to the clipboard',

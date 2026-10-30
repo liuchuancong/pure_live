@@ -44,6 +44,7 @@
   "duplicateListTip": "You collected \"{name}\" before. Pull the latest and overwrite its tracks?",
   "onlineUpdatedToast": "Updated \"{name}\": {count} tracks.",
   "onlineUpdateFailed": "The update failed; try again later.",
+  "boardCollect": "Collect board",
   "songlistSearchUnsupported": "This source cannot search songlists yet.",
   "defaultSource": "Default source",
   "defaultSourceDesc": "The source a song is asked from; lx-music resolves play URLs through the imported custom-source scripts.",

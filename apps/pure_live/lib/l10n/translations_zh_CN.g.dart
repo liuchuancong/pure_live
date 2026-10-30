@@ -2770,6 +2770,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '更新失败，请稍后再试。'
 	String get onlineUpdateFailed => '更新失败，请稍后再试。';
 
+	/// zh-CN: '收藏榜单'
+	String get boardCollect => '收藏榜单';
+
 	/// zh-CN: '当前音源暂不支持歌单搜索。'
 	String get songlistSearchUnsupported => '当前音源暂不支持歌单搜索。';
 
@@ -11111,6 +11114,7 @@ extension on Translations {
 			'music.duplicateListTip' => ({required Object name}) => '你之前已收藏过「${name}」，是否拉取最新并覆盖里面的歌曲？',
 			'music.onlineUpdatedToast' => ({required Object name, required Object count}) => '已更新「${name}」：${count} 首。',
 			'music.onlineUpdateFailed' => '更新失败，请稍后再试。',
+			'music.boardCollect' => '收藏榜单',
 			'music.songlistSearchUnsupported' => '当前音源暂不支持歌单搜索。',
 			'music.defaultSource' => '默认音源',
 			'music.defaultSourceDesc' => '歌曲从哪个音源获取；自定义源脚本负责解析播放地址。',
@@ -11262,9 +11266,9 @@ extension on Translations {
 			'music.selectionStart' => '选择',
 			'music.selectionCancel' => '取消选择',
 			'music.selectionCount' => ({required Object count}) => '已选 ${count} 首',
-			'music.selectionAll' => '全选',
 			_ => null,
 		} ?? switch (path) {
+			'music.selectionAll' => '全选',
 			'music.selectionDownload' => '下载',
 			'music.selectionRemove' => '移除',
 			'music.selectionRemoveDone' => ({required Object count}) => '已移除 ${count} 首',
@@ -11776,9 +11780,9 @@ extension on Translations {
 			'room.totalViewers' => '累计观看',
 			'room.startedAt' => ({required Object time}) => '${time} 开播',
 			'room.danmakuList' => '弹幕',
-			'room.danmakuSettingsDesc' => '控制飞行弹幕的显示、字号、速度与区域。',
 			_ => null,
 		} ?? switch (path) {
+			'room.danmakuSettingsDesc' => '控制飞行弹幕的显示、字号、速度与区域。',
 			'room.block' => '屏蔽',
 			'room.openExternal' => '在平台打开',
 			'room.restrictionNeedsLogin' => '需要登录',
@@ -12290,9 +12294,9 @@ extension on Translations {
 			'settings.fontManagerMore' => '下载更多字体',
 			'settings.fontManagerPreviewTitle' => '字体预览',
 			'settings.fontManagerPreviewAction' => '预览',
-			'settings.fontManagerPreviewPending' => '下载后可预览',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerPreviewPending' => '下载后可预览',
 			'settings.fontManagerGoogle' => 'Google 字体',
 			'settings.fontManagerDescription' => 'MiSans 随应用提供；国内字体来自免费商用库，国外来自 Google Fonts，选中即应用于全部界面。',
 			'settings.fontManagerSystemDescription' => ({required Object face}) => '由系统提供，本机使用 ${face}。',
@@ -12804,9 +12808,9 @@ extension on Translations {
 			'settings.downloadProgress' => ({required Object received, required Object total}) => '${received} / ${total}',
 			'settings.downloadProgressUnknown' => ({required Object received}) => '已下载 ${received}',
 			'settings.downloadSavedTo' => ({required Object path}) => '已保存到 ${path}',
-			'settings.downloadCancelled' => '下载已取消，未保留部分文件。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadCancelled' => '下载已取消，未保留部分文件。',
 			'settings.downloadOpenFile' => '打开文件',
 			'settings.downloadOpenFolder' => '打开所在文件夹',
 			'settings.downloadOpenFailed' => '无法打开该文件',
@@ -13318,9 +13322,9 @@ extension on Translations {
 			'toolbox.logsCopied' => '日志已复制',
 			'toolbox.logsCopyEmpty' => '没有可复制的日志',
 			'toolbox.logsDirectoryDefault' => '日志文件尚未就绪。',
-			'toolbox.logsFileTitle' => '日志文件',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.logsFileTitle' => '日志文件',
 			'toolbox.logsOpenFolder' => '打开所在文件夹',
 			'toolbox.logsCopyPath' => '复制路径',
 			'toolbox.logsPathCopied' => '路径已复制到剪贴板',

@@ -781,19 +781,24 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
     final linked = playlist.source;
     final sourceListId = playlist.sourceListId;
     if (linked == null || sourceListId == null) return;
-    final plaza = switch (ref.read(musicSourceListProvider)) {
-      final sources => [
-        for (final source in sources)
-          if (source.id == linked && source is OnlinePlaylists) source as OnlinePlaylists,
-      ].firstOrNull,
-    };
+    final plaza = [
+      for (final source in ref.read(musicSourceListProvider))
+        if (source.id == linked) source,
+    ].firstOrNull;
     if (!mounted) return;
     if (plaza == null) {
       showDsToast(context: context, title: t.music.onlineUpdateFailed, status: DsStatus.warning);
       return;
     }
     try {
-      final (_, tracks) = await plaza.playlistDetail(sourceListId);
+      // The reference's syncSourceList: a board link re-routes to the
+      // leaderboard fetcher, everything else to the plaza's detail.
+      final tracks = await switch (sourceListId.startsWith('board__')) {
+        true => plaza
+            .catalogItems(audio.MusicCatalog(id: '$linked:${sourceListId.substring('board__'.length)}', name: playlist.name))
+            .then((answer) => answer.items),
+        false => (plaza as OnlinePlaylists).playlistDetail(sourceListId).then((detail) => detail.$2),
+      };
       final count = await ref.read(musicPlaylistsProvider.notifier).replaceTracks(playlist.id, tracks);
       if (!mounted) return;
       showDsToast(
@@ -1377,19 +1382,87 @@ final class _ChartsView extends ConsumerWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
-              child: SizedBox(
-                height: 44,
-                child: DsTopNav<String>(
-                  value: selected.id,
-                  onChanged: onCatalog,
-                  items: [for (final board in boards) DsTopNavItem(value: board.id, label: Text(board.name))],
-                ),
+              child: Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: DsTopNav<String>(
+                        value: selected.id,
+                        onChanged: onCatalog,
+                        items: [for (final board in boards) DsTopNavItem(value: board.id, label: Text(board.name))],
+                      ),
+                    ),
+                  ),
+                  DsButton.icon(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    semanticLabel: t.music.boardCollect,
+                    onPressed: () => unawaited(_collect(context, ref, selected)),
+                    icon: const DsIcon(DsIcons.listPlus, size: 16),
+                  ),
+                ],
               ),
             ),
             Expanded(child: _ChartItems(catalog: selected)),
           ],
         );
       },
+    );
+  }
+
+  /// The reference's board 收藏: the board lands in the viewer's lists as a
+  /// linked one (`board__<id>`), so a later pass can pull it afresh; a
+  /// second collect of the same board offers to refresh what is there.
+  Future<void> _collect(BuildContext context, WidgetRef ref, audio.MusicCatalog catalog) async {
+    final t = context.t;
+    final controller = ref.read(musicPlaylistsProvider.notifier);
+    final split = catalog.id.indexOf(':');
+    if (split < 0) return;
+    final sourceId = catalog.id.substring(0, split);
+    final sourceListId = 'board__${catalog.id.substring(split + 1)}';
+    final existing = controller.findLinked(sourceId, sourceListId);
+    if (existing != null) {
+      final confirmed = await showDsDialog<bool>(
+        context: context,
+        builder: (context) => DsDialog(
+          title: Text(t.music.playlistUpdateOnline),
+          description: Text(t.music.duplicateListTip(name: existing.name)),
+          actions: [
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(t.common.cancel),
+            ),
+            DsButton(onPressed: () => Navigator.of(context).pop(true), child: Text(t.common.confirm)),
+          ],
+        ),
+      );
+      if (confirmed != true || !context.mounted) return;
+      final count = await ref
+          .read(musicPlaylistsProvider.notifier)
+          .replaceTracks(existing.id, await ref.read(musicCatalogItemsProvider(catalog).future));
+      if (!context.mounted) return;
+      showDsToast(
+        context: context,
+        title: t.music.onlineUpdatedToast(name: existing.name, count: count),
+        status: DsStatus.success,
+      );
+      return;
+    }
+    final playlist = await controller.create(catalog.name);
+    if (playlist == null || !context.mounted) return;
+    await controller.linkSource(playlist.id, source: sourceId, sourceListId: sourceListId);
+    final added = await controller.addTracks(
+      playlist.id,
+      await ref.read(musicCatalogItemsProvider(catalog).future),
+    );
+    if (!context.mounted) return;
+    showDsToast(
+      context: context,
+      title: t.music.onlineImported(name: playlist.name, count: added),
+      status: added > 0 ? DsStatus.success : DsStatus.warning,
     );
   }
 }

@@ -44,6 +44,7 @@
   "duplicateListTip": "你之前已收藏过「{name}」，是否拉取最新并覆盖里面的歌曲？",
   "onlineUpdatedToast": "已更新「{name}」：{count} 首。",
   "onlineUpdateFailed": "更新失败，请稍后再试。",
+  "boardCollect": "收藏榜单",
   "songlistSearchUnsupported": "当前音源暂不支持歌单搜索。",
   "defaultSource": "默认音源",
   "defaultSourceDesc": "歌曲从哪个音源获取；自定义源脚本负责解析播放地址。",
