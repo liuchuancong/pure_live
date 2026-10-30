@@ -215,14 +215,19 @@ final class _ChatLine extends ConsumerWidget {
       color: colors.text,
     );
     // The sender leads the line: a touch heavier than the words, so the eye
-    // lands on who is talking before it reads what was said.
+    // lands on who is talking before it reads what was said. The ink is the
+    // name's own, never the words': most platforms send white, and white
+    // names vanish on a pale panel.
     nameStyle = theme.typography.caption.copyWith(
       fontSize: fontSize > 0 ? fontSize.toDouble() : null,
       height: height,
       fontWeight: FontWeight.w600,
-      color: message.color == null
-          ? colors.textMuted
-          : Color.fromARGB(255, message.color!.r, message.color!.g, message.color!.b),
+      color: _senderNameInk(
+        sender: sender,
+        messageColor: message.color,
+        background: colors.surface,
+        fallback: colors.textMuted,
+      ),
     );
     // The line's own pixel size, followed from the theme when the viewer
     // hasn't picked one; an emoticon rides a touch larger than its words.
@@ -416,6 +421,58 @@ final class _ChatLine extends ConsumerWidget {
       ],
       child: content,
     );
+  }
+}
+
+/// The filled-in name inks, keyed by the platform colour and the ground it
+/// was measured against: the same few colours come back all night, so the
+/// walk over lightness runs once per pair rather than once per line.
+final Map<(int, int), Color> _nameInks = {};
+
+/// The ink a sender's name is written in on [background]: the platform's own
+/// name colour (17LIVE), else the colour a coloured danmaku carries. White
+/// and black are no colour at all — those lines take [fallback] — and any
+/// other is walked towards black or white until it clears 4.5:1, so a name
+/// never sinks into the panel it sits on. The reference's `chatNameInk`.
+Color _senderNameInk({
+  required MessageSender? sender,
+  required LiveMessageColor? messageColor,
+  required Color background,
+  required Color fallback,
+}) {
+  final source = sender?.nameColor ?? messageColor;
+  if (source == null) return fallback;
+  final named = (r: source.r, g: source.g, b: source.b);
+  if ((named.r == 255 && named.g == 255 && named.b == 255) || (named.r == 0 && named.g == 0 && named.b == 0)) {
+    return fallback;
+  }
+  final color = Color.fromARGB(255, named.r, named.g, named.b);
+  final ground = background.withValues(alpha: 1);
+  final key = (color.toARGB32(), ground.toARGB32());
+  if (_nameInks[key] case final known?) return known;
+  if (_nameInks.length >= 512) _nameInks.clear();
+  return _nameInks[key] = _readableNameInk(color, ground);
+}
+
+/// [color] kept as it is when it clears 4.5:1 on [background], else moved
+/// one percent at a time towards black or white — whichever that surface
+/// stands further from, where one of them always lands.
+Color _readableNameInk(Color color, Color background) {
+  double contrast(Color a, Color b) {
+    final first = a.computeLuminance();
+    final second = b.computeLuminance();
+    return (math.max(first, second) + 0.05) / (math.min(first, second) + 0.05);
+  }
+
+  if (contrast(color, background) >= 4.5) return color;
+  final luminance = background.computeLuminance();
+  final darker = (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05);
+  final hsl = HSLColor.fromColor(color);
+  var lightness = hsl.lightness;
+  while (true) {
+    lightness = (lightness + (darker ? -0.01 : 0.01)).clamp(0.0, 1.0);
+    final next = hsl.withLightness(lightness).toColor();
+    if (contrast(next, background) >= 4.5 || lightness == 0 || lightness == 1) return next;
   }
 }
 
