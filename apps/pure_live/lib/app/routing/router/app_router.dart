@@ -14,6 +14,7 @@ import 'package:pure_live/app/routing/navigation/route_names.dart' show RouteNam
 import 'package:pure_live/app/routing/navigation/route_observer.dart' show routeObserverProvider;
 import 'package:pure_live/app/windows/chrome/window_chrome.dart' show WindowChromeState;
 import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/features/settings/surface/settings_page_action.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/layouts.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart' show HongguoPlayerPage, HongguoSeriesPage;
@@ -301,7 +302,10 @@ final class _SettingsCategoryScreen extends ConsumerWidget {
 
 /// The shared shell of a pushed settings page: the window's caption strip,
 /// a desen page header with its back button, then the page's own scroll.
-final class _SettingsSubpage extends StatelessWidget {
+///
+/// The header's end is the page's top-right corner: a body that owns a page
+/// action puts it in [SettingsPageActionScope]'s slot and it lands there.
+final class _SettingsSubpage extends StatefulWidget {
   const _SettingsSubpage({required this.title, required this.pageIdentity, required this.child});
 
   /// The page's name in the header.
@@ -312,6 +316,20 @@ final class _SettingsSubpage extends StatelessWidget {
 
   /// The page under the header.
   final Widget child;
+
+  @override
+  State<_SettingsSubpage> createState() => _SettingsSubpageState();
+}
+
+final class _SettingsSubpageState extends State<_SettingsSubpage> {
+  /// The header's end slot: the body fills it while it owns an action.
+  final ValueNotifier<Widget?> _action = ValueNotifier(null);
+
+  @override
+  void dispose() {
+    _action.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -325,31 +343,38 @@ final class _SettingsSubpage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DsPaneHeader(
-                title: Row(
-                  children: [
-                    DsButton.icon(
-                      variant: DsButtonVariant.ghost,
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const DsIcon(DsIcons.chevronLeft),
-                      semanticLabel: t.common.back,
-                    ),
-                    const SizedBox(width: DsSpace.s4),
-                    Flexible(
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.title.copyWith(color: colors.text),
+              ValueListenableBuilder<Widget?>(
+                valueListenable: _action,
+                builder: (context, action, _) => DsPaneHeader(
+                  title: Row(
+                    children: [
+                      DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        icon: const DsIcon(DsIcons.chevronLeft),
+                        semanticLabel: t.common.back,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: DsSpace.s4),
+                      Flexible(
+                        child: Text(
+                          widget.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.title.copyWith(color: colors.text),
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [?action],
                 ),
               ),
               // A pushed page is outside the shell's content area, so it
               // carries the scroll pair itself.
               Expanded(
-                child: ScrollEdgeControls(pageIdentity: pageIdentity, child: child),
+                child: SettingsPageActionScope(
+                  slot: _action,
+                  child: ScrollEdgeControls(pageIdentity: widget.pageIdentity, child: widget.child),
+                ),
               ),
             ],
           ),

@@ -8,6 +8,7 @@ import 'package:media_core_better_player/media_core_better_player.dart';
 import 'package:media_core_ijk_player/media_core_ijk_player.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
+import 'package:media_core_mediasession/media_core_mediasession.dart' show mediaSessionArtUriKey;
 import 'package:pure_live/app/providers/window/presentation_providers.dart' show presentationDriverProvider;
 
 /// The process's one player kernel: the mpv backend registered, the
@@ -62,15 +63,33 @@ LivePlaybackController createRoomPlayback({
 }) {
   return LivePlaybackController(
     kernel,
-    onEngineFallbackSources: (nextEngine, current) => onLinesNeeded().then(roomSourcesOf),
-    onRecoverySources: (current) => onLinesNeeded().then(roomSourcesOf),
+    onEngineFallbackSources: (nextEngine, current) =>
+        onLinesNeeded().then((lines) => roomSourcesOf(lines, artUri: roomArtUriOf(current))),
+    onRecoverySources: (current) =>
+        onLinesNeeded().then((lines) => roomSourcesOf(lines, artUri: roomArtUriOf(current))),
   );
+}
+
+/// The room cover the media surfaces should show, as the sources carry it.
+///
+/// A fallback or a recovery rebuilds the sources from fresh lines, which know
+/// nothing about the room's picture — the artwork is read back off the sources
+/// that were playing so a line switch never costs the notification its image.
+String? roomArtUriOf(List<PlayerSource> sources) {
+  for (final source in sources) {
+    final art = source.metadataValue(mediaSessionArtUriKey);
+    if (art is String && art.isNotEmpty) return art;
+  }
+  return null;
 }
 
 /// The site's playable lines as the player's source list, in the site's
 /// own order: each line's own headers ride along, its identity names the
 /// line so the pool and the recovery can tell sources apart.
-List<PlayerSource> roomSourcesOf(List<LivePlayLine> lines) {
+///
+/// [artUri] is the room's cover, published beside the source so a system
+/// media surface can picture a stream that carries no artwork of its own.
+List<PlayerSource> roomSourcesOf(List<LivePlayLine> lines, {String? artUri}) {
   return [
     for (final line in lines)
       PlayerSource.of(
@@ -80,6 +99,7 @@ List<PlayerSource> roomSourcesOf(List<LivePlayLine> lines) {
         protocol: SourceProtocol.fromScheme(Uri.parse(line.url).scheme),
         format: SourceFormat.fromUri(Uri.parse(line.url)),
         headers: line.headers.isEmpty ? null : SourceHeaders(line.headers.toMap()),
+        metadata: artUri == null || artUri.isEmpty ? null : <String, Object?>{mediaSessionArtUriKey: artUri},
       ),
   ];
 }
@@ -95,8 +115,10 @@ final class RoomPlaybackSession {
   RoomPlaybackSession({required PlayerKernel kernel, required this.backendId}) {
     playback = LivePlaybackController(
       kernel,
-      onEngineFallbackSources: (_, _) => lineResolver().then(roomSourcesOf),
-      onRecoverySources: (_) => lineResolver().then(roomSourcesOf),
+      onEngineFallbackSources: (_, current) =>
+          lineResolver().then((lines) => roomSourcesOf(lines, artUri: roomArtUriOf(current))),
+      onRecoverySources: (current) =>
+          lineResolver().then((lines) => roomSourcesOf(lines, artUri: roomArtUriOf(current))),
     );
   }
 

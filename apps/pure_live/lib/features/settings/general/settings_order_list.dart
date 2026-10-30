@@ -1,22 +1,28 @@
+import 'dart:async' show unawaited;
+
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
 
+import 'package:pure_live/features/settings/surface/settings_page_action.dart';
 import 'package:pure_live/l10n/translations.dart';
 
 /// One orderable list on a settings page.
 ///
-/// Out of editing it shows the saved order read-only, with an 「编辑顺序」
-/// action on the header line. That action opens a draft the viewer keeps:
-/// every row gains a drag grip at its start and 置顶/上移/下移/置底 at its
-/// end, and a footer offers 取消 and 保存顺序. Nothing reaches storage until
-/// the draft is saved, so an abandoned edit leaves the shell's order exactly
-/// as it was.
+/// Out of editing it shows the saved order read-only, with a pencil at the
+/// header's end. That action opens a draft the viewer keeps: every row gains a
+/// drag grip at its start and 置顶/上移/下移/置底 at its end, and the same
+/// corner turns into 取消 and the save tick. Nothing reaches storage until the
+/// draft is saved, so an abandoned edit leaves the shell's order exactly as it
+/// was — and leaving the page with a changed draft asks first.
 ///
 /// [trailingOf] puts a live control on a view-mode row (a home entry's
 /// visibility switch); those controls step out while the draft is open, since
 /// the row's end now carries the order buttons. [extraRows] renders under the
 /// list in view mode only — the home menu lists its hidden entries there,
-/// which have no order to edit.
+/// which have no order to edit. [removableInDraft] lets a draft drop rows
+/// too: the shield's word lists are content the viewer edits, so their save
+/// receives whatever the draft holds.
 final class SettingsOrderList<T> extends StatefulWidget {
   /// The list of [items] in their saved order.
   const SettingsOrderList({
@@ -29,6 +35,7 @@ final class SettingsOrderList<T> extends StatefulWidget {
     this.trailingOf,
     this.descriptionOf,
     this.extraRows = const [],
+    this.removableInDraft = false,
     super.key,
   });
 
@@ -59,6 +66,11 @@ final class SettingsOrderList<T> extends StatefulWidget {
   /// Rows below the list that belong to the page but not to the order.
   final List<Widget> extraRows;
 
+  /// Whether a draft row may be dropped, for a list whose content — not only
+  /// its order — is the viewer's to edit (the shield's words and users). The
+  /// save then receives the shorter list; the caller decides what it means.
+  final bool removableInDraft;
+
   @override
   State<SettingsOrderList<T>> createState() => _SettingsOrderListState<T>();
 }
@@ -67,7 +79,19 @@ class _SettingsOrderListState<T> extends State<SettingsOrderList<T>> {
   /// The draft while the viewer edits, null in the read-only state.
   List<T>? _draft;
 
+  /// The pushed page's header slot, when the page has one.
+  ValueNotifier<Widget?>? _slot;
+
+  /// The edit state and whether an action was offered, as last handed to the
+  /// slot: the corner is republished only when its meaning changes, not on
+  /// every rebuild.
+  (bool, bool)? _published;
+
   bool get _editing => _draft != null;
+
+  /// Whether the draft differs from what storage holds: what the back
+  /// gesture would throw away.
+  bool get _dirty => _draft != null && !listEquals(_draft, widget.items);
 
   /// One row's move within the draft; the grip's drop and every button come
   /// through here, so the two ways of editing cannot disagree.
@@ -85,6 +109,14 @@ class _SettingsOrderListState<T> extends State<SettingsOrderList<T>> {
 
   void _start() => setState(() => _draft = [...widget.items]);
 
+  /// Drops one row from the draft. Storage is untouched until the save, and
+  /// the last entry cannot go: an empty list is the clear-all's business.
+  void _removeAt(int index) {
+    final draft = _draft;
+    if (draft == null || draft.length <= 1) return;
+    setState(() => _draft = [...draft]..removeAt(index));
+  }
+
   void _cancel() => setState(() => _draft = null);
 
   void _save() {
@@ -92,6 +124,51 @@ class _SettingsOrderListState<T> extends State<SettingsOrderList<T>> {
     if (draft == null) return;
     widget.onSave(draft);
     _cancel();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _slot = SettingsPageActionScope.maybeOf(context);
+  }
+
+  @override
+  void dispose() {
+    // The page outlives this list only while this list is gone with it: a
+    // header left holding a dead action would press nothing.
+    final slot = _slot;
+    if (slot != null && _published != null) slot.value = null;
+    super.dispose();
+  }
+
+  /// Hands [action] to the page header, once per edit state.
+  void _publish(Widget? action) {
+    final slot = _slot;
+    final signature = (_editing, action != null);
+    if (slot == null || _published == signature) return;
+    _published = signature;
+    // A header is above this body: notifying it mid-build would rebuild an
+    // ancestor while the tree is still being laid out.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) slot.value = action;
+    });
+  }
+
+  /// Leaving with a changed draft asks before the order is dropped.
+  Future<void> _confirmDiscard(BuildContext context) async {
+    final t = context.t;
+    final discard = await showDsConfirm(
+      context: context,
+      title: t.settings.discardOrderTitle,
+      description: t.settings.discardOrderBody,
+      confirmLabel: t.settings.discardOrderAction,
+      cancelLabel: t.settings.keepEditingOrder,
+      destructive: true,
+    );
+    if (!discard || !mounted) return;
+    setState(() => _draft = null);
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
   }
 
   Widget _viewRow(T item) {
@@ -177,6 +254,15 @@ class _SettingsOrderListState<T> extends State<SettingsOrderList<T>> {
             enabled: index < count - 1,
             onPressed: () => _move(index, count - 1),
           ),
+          // A list whose content is editable drops a row from the draft; the
+          // last entry stays, so the save never writes an empty list.
+          if (widget.removableInDraft)
+            _OrderButton(
+              icon: DsIcons.trash2,
+              label: t.common.delete,
+              enabled: count > 1,
+              onPressed: () => _removeAt(index),
+            ),
         ],
       ),
     );
@@ -190,26 +276,50 @@ class _SettingsOrderListState<T> extends State<SettingsOrderList<T>> {
     final items = widget.items;
     final canEdit = items.length > 1;
     final draft = _draft;
-    return Column(
+    final colors = DsTheme.colorsOf(context);
+    // The one corner action: a pencil that opens the draft, then the tick
+    // that saves it, with 取消 beside the tick to back out. Words rather
+    // than a bare glyph, so the corner says what pressing it does.
+    final action = canEdit
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s4,
+            children: [
+              if (_editing)
+                DsButton(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  onPressed: _cancel,
+                  child: Text(t.common.cancel),
+                ),
+              DsButton(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                leading: DsIcon(_editing ? DsIcons.check : DsIcons.edit, color: _editing ? colors.accent : null),
+                onPressed: _editing ? _save : _start,
+                child: Text(_editing ? t.settings.saveOrder : t.settings.editOrder),
+              ),
+            ],
+          )
+        : null;
+    // The pushed page has a header, and the action rides at its end; a pane
+    // without one keeps the action on the list's own header line. Nothing to
+    // order, nothing offered.
+    _publish(action);
+    final header = _slot == null && action != null
+        ? Row(
+            children: [
+              Expanded(child: Text(widget.header)),
+              action,
+            ],
+          )
+        : Text(widget.header);
+    final body = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s8,
       children: [
         DsListSection(
-          header: Row(
-            children: [
-              Expanded(child: Text(widget.header)),
-              // Nothing to order with a single entry, so the action simply
-              // is not offered.
-              if (canEdit && !_editing)
-                DsButton(
-                  size: DsSize.sm,
-                  variant: DsButtonVariant.secondary,
-                  leading: const DsIcon(DsIcons.listOrdered),
-                  onPressed: _start,
-                  child: Text(t.settings.editOrder),
-                ),
-            ],
-          ),
+          header: header,
           children: [
             if (draft == null)
               for (final item in items) _viewRow(item)
@@ -226,33 +336,17 @@ class _SettingsOrderListState<T> extends State<SettingsOrderList<T>> {
             if (draft == null) ...widget.extraRows,
           ],
         ),
-        if (draft != null)
-          Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  spacing: DsSpace.s6,
-                  children: [
-                    DsIcon(DsIcons.circleDot, size: 14, color: DsTheme.colorsOf(context).warning.signal),
-                    Text(
-                      t.settings.unsavedOrderDraft,
-                      style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textMuted),
-                    ),
-                  ],
-                ),
-              ),
-              DsButton(variant: DsButtonVariant.secondary, onPressed: _cancel, child: Text(t.common.cancel)),
-              DsButton(
-                variant: DsButtonVariant.primary,
-                leading: const DsIcon(DsIcons.check),
-                onPressed: _save,
-                child: Text(t.settings.saveOrder),
-              ),
-            ],
-          ),
       ],
+    );
+    // A changed draft is not written until the tick is pressed: the back
+    // gesture asks before it throws the order away.
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || !_dirty) return;
+        unawaited(_confirmDiscard(context));
+      },
+      child: body,
     );
   }
 }

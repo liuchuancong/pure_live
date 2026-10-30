@@ -5,27 +5,63 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/settings/dialogs/player_guide_dialog.dart' show showPlayerGuide;
 import 'package:pure_live/features/settings/playback/playback_settings_providers.dart' show playbackSettingsProvider;
 import 'package:pure_live/features/settings/playback/player_tuning.dart';
 import 'package:pure_live/features/settings/surface/settings_page.dart' show SettingsChildEntry;
+import 'package:pure_live/features/settings/surface/settings_page_action.dart';
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart'
-    show SettingsChoiceRow, SettingsConfigRow, SettingsHint, SettingsSegmentedRow;
+    show SettingsChoiceRow, SettingsConfigRow, SettingsSegmentedRow;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/shared/shared.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
-/// The player kernel page: the engine in use, its hardware decoding and
-/// force-destroy switches, the tuning recipe and Anime4K pickers, and the
-/// reset. The mpv knob table — outputs, sync, scaling and the engine's own
-/// proxy — lives on the advanced subpage so the common rows are not drowned.
-final class PlayerKernelPane extends ConsumerWidget {
+/// The player kernel page: the engine in use, its hardware decoding switch,
+/// the tuning recipe, and the reset at the page's top-right. The mpv knob
+/// table — outputs, sync, scaling and the engine's own proxy — lives on the
+/// advanced subpage so the common rows are not drowned.
+final class PlayerKernelPane extends ConsumerStatefulWidget {
   /// The kernel page's content.
   const PlayerKernelPane({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PlayerKernelPane> createState() => _PlayerKernelPaneState();
+}
+
+final class _PlayerKernelPaneState extends ConsumerState<PlayerKernelPane> {
+  /// The pushed page's header slot, when the page has one.
+  ValueNotifier<Widget?>? _slot;
+
+  /// The reset action as last handed to the slot; null when none was.
+  String? _published;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _slot = SettingsPageActionScope.maybeOf(context);
+  }
+
+  @override
+  void dispose() {
+    // The page outlives this pane only while this pane is gone with it: a
+    // header left holding a dead action would press nothing.
+    final slot = _slot;
+    if (slot != null && _published != null) slot.value = null;
+    super.dispose();
+  }
+
+  /// Hands [action] to the page header, once per label; a header above this
+  /// body must not be rebuilt mid-layout.
+  void _publish(String? signature, Widget? action) {
+    final slot = _slot;
+    if (slot == null || _published == signature) return;
+    _published = signature;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) slot.value = action;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.t;
     final settings = ref.watch(playbackSettingsProvider);
     final backends = availablePlayerKernelBackends();
@@ -35,10 +71,23 @@ final class PlayerKernelPane extends ConsumerWidget {
     final mpv = selected == PlayerKernelBackend.mpv;
     final decoders = playerHardwareDecoderOptions(platform);
     final decoder = effectivePlayerHardwareDecoder(tuning.hwdec, platform);
+    // The reset is a page action, not a row: a pushed page shows it at the
+    // header's end, and a pane shown in place keeps it in its own corner.
+    final reset = mpv
+        ? DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            leading: const DsIcon(DsIcons.rotateCw, size: 16),
+            onPressed: () => unawaited(_resetMpvSettings(context, ref)),
+            child: Text(t.settings.styleReset),
+          )
+        : null;
+    _publish(reset == null ? null : t.settings.styleReset, reset);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
+        if (_slot == null && reset != null) Align(alignment: AlignmentDirectional.centerEnd, child: reset),
         DsListSection(
           header: Text(t.settings.navKernel),
           children: [
@@ -58,7 +107,6 @@ final class PlayerKernelPane extends ConsumerWidget {
                 description: Text(t.settings.engineDesc),
                 detail: Text(_engineLabel(t, selected)),
               ),
-            SettingsHint(backends.length > 1 ? t.settings.kernelSwitchHint : t.settings.kernelOnlyOne),
             if (mpv) ...[
               SettingsConfigRow(
                 leading: const DsIcon(DsIcons.microchip),
@@ -89,8 +137,6 @@ final class PlayerKernelPane extends ConsumerWidget {
                   ],
                   onChanged: (value) => unawaited(ref.read(playerTuningProvider.notifier).setHwdec(value)),
                 ),
-              if (settings.hardwareDecoding && !tuning.customOutput) SettingsHint(t.settings.hardwareDecoderAutoHint),
-              SettingsHint(t.settings.hardwareDecodingHint),
             ],
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.power),
@@ -103,10 +149,9 @@ final class PlayerKernelPane extends ConsumerWidget {
             ),
           ],
         ),
-        if (mpv) ...[
-          const _PlayerPresetSection(),
-          if (superResolutionAvailable) const _SuperResolutionSection(),
-        ] else
+        if (mpv)
+          const _PlayerPresetSection()
+        else
           Padding(
             padding: const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s20),
             child: Text(
@@ -114,30 +159,15 @@ final class PlayerKernelPane extends ConsumerWidget {
               style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
             ),
           ),
-        DsListSection(
-          children: [
-            const SettingsChildEntry(child: SettingsSection.kernelAdvanced),
-            // The reset belongs on the outer page, not buried in the knob
-            // table: it is the way out of anything the recipes or the
-            // advanced page changed.
-            if (mpv)
-              DsListRow(
-                leading: const DsIcon(DsIcons.rotateCcw),
-                title: Text(t.settings.mpvReset),
-                description: Text(t.settings.mpvResetDesc),
-                destructive: true,
-                onPressed: () => unawaited(_resetMpvSettings(context, ref)),
-              ),
-          ],
-        ),
+        const DsListSection(children: [SettingsChildEntry(child: SettingsSection.kernelAdvanced)]),
       ],
     );
   }
 }
 
 /// The kernel's advanced subpage: the mpv output, sync, scaling and
-/// decoder rows, the engine's own proxy (separate from the app's, because
-/// mpv opens the streams itself) and the documentation entries.
+/// decoder rows and the documentation entries. The engine's streams route
+/// through the app's network proxy, so there is no player-specific one.
 final class PlayerKernelAdvancedPane extends ConsumerWidget {
   /// The advanced page's content.
   const PlayerKernelAdvancedPane({super.key});
@@ -158,42 +188,7 @@ final class PlayerKernelAdvancedPane extends ConsumerWidget {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
-      children: [_PlayerProxySection(), _PlayerAdvancedSection()],
-    );
-  }
-}
-
-/// The mpv proxy's entry row: the editor dialog carries the switches.
-final class _PlayerProxySection extends ConsumerWidget {
-  const _PlayerProxySection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final proxy = ref.watch(playerProxyProvider);
-    final effective = ref.watch(effectivePlayerProxyProvider);
-    return DsListSection(
-      header: Text(t.settings.playerProxy),
-      children: [
-        DsListRow(
-          leading: const DsIcon(DsIcons.globe),
-          title: Text(t.settings.playerProxy),
-          description: Text(t.settings.playerProxyDesc),
-          // What the player will actually use: a follow-the-app choice reads
-          // through to the endpoint the app's own proxy resolved to.
-          detail: Text(
-            effective.host.isNotEmpty
-                ? '${effective.host}:${effective.port}'
-                : switch (proxy.mode) {
-                    PlayerProxyMode.off => t.settings.optionOff,
-                    PlayerProxyMode.followApp => t.settings.playerProxyFollow,
-                    PlayerProxyMode.manual => t.settings.playerProxyManual,
-                  },
-          ),
-          showChevron: true,
-          onPressed: () => unawaited(_showPlayerProxyDialog(context)),
-        ),
-      ],
+      children: [_PlayerAdvancedSection()],
     );
   }
 }
@@ -212,7 +207,6 @@ final class _PlayerPresetSection extends ConsumerWidget {
     return DsListSection(
       header: Text(t.settings.playerPresets),
       children: [
-        SettingsHint(t.settings.playerPresetsHint),
         SettingsChoiceRow<PlayerPresetId>(
           leading: DsIcon(_presetIcon(active)),
           title: t.settings.preset,
@@ -283,35 +277,6 @@ Future<void> _applyOneClickPreset(
     showDsToast(
       context: context,
       title: t.settings.playerOneClickApplied(preset: _presetName(t, preset)),
-    );
-  }
-}
-
-/// Anime4K's three modes in the same picker, with the mode's own explanation
-/// on the row and the platform caveat under it.
-final class _SuperResolutionSection extends ConsumerWidget {
-  const _SuperResolutionSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final mode = ref.watch(superResolutionModeProvider);
-    return DsListSection(
-      header: Text(t.settings.superResolutionGroup),
-      children: [
-        SettingsSegmentedRow<SuperResolutionMode>(
-          leading: DsIcon(_superResolutionIcon(mode)),
-          title: t.settings.superResolution,
-          description: _superResolutionDescription(t, mode),
-          value: mode,
-          options: [
-            for (final candidate in SuperResolutionMode.values)
-              (value: candidate, label: _superResolutionName(t, candidate)),
-          ],
-          onChanged: (next) => unawaited(ref.read(superResolutionModeProvider.notifier).select(next)),
-        ),
-        SettingsHint(t.settings.superResolutionHint),
-      ],
     );
   }
 }
@@ -440,13 +405,7 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
           onPressed: () =>
               unawaited(launchUrl(Uri.parse('https://mpv.io/manual/'), mode: LaunchMode.externalApplication)),
         ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.graduationCap),
-          title: Text(t.settings.playerGuide),
-          description: Text(t.settings.playerGuideDesc),
-          showChevron: true,
-          onPressed: () => unawaited(showPlayerGuide(context)),
-        ),
+        const SettingsChildEntry(child: SettingsSection.playerGuide),
       ],
     );
   }
@@ -502,24 +461,6 @@ DsIconData _presetIcon(PlayerPresetId preset) => switch (preset) {
   PlayerPresetId.lowEnd => DsIcons.feather,
   PlayerPresetId.stableNetwork => DsIcons.wifi,
   PlayerPresetId.lowLatency => DsIcons.zap,
-};
-
-String _superResolutionName(Translations t, SuperResolutionMode mode) => switch (mode) {
-  SuperResolutionMode.off => t.settings.superResolutionOff,
-  SuperResolutionMode.efficiency => t.settings.superResolutionEfficiency,
-  SuperResolutionMode.quality => t.settings.superResolutionQuality,
-};
-
-String _superResolutionDescription(Translations t, SuperResolutionMode mode) => switch (mode) {
-  SuperResolutionMode.off => t.settings.superResolutionOffDesc,
-  SuperResolutionMode.efficiency => t.settings.superResolutionEfficiencyDesc,
-  SuperResolutionMode.quality => t.settings.superResolutionQualityDesc,
-};
-
-DsIconData _superResolutionIcon(SuperResolutionMode mode) => switch (mode) {
-  SuperResolutionMode.off => DsIcons.circleOff,
-  SuperResolutionMode.efficiency => DsIcons.wandSparkles,
-  SuperResolutionMode.quality => DsIcons.sparkles,
 };
 
 /// A technical mpv value's readable word; unknown values keep their engine
@@ -623,101 +564,3 @@ String _optionLabel(Translations t, String value) => switch (value) {
   'null' => t.settings.optionNoOutput,
   _ => value,
 };
-
-Future<void> _showPlayerProxyDialog(BuildContext context) =>
-    showDsDialog<void>(context: context, builder: (context) => const _PlayerProxyDialog());
-
-/// The player's proxy editor: host, port and the on/off switch, applied on
-/// Confirm. It is separate from the app's proxy because mpv opens the
-/// streams itself.
-final class _PlayerProxyDialog extends ConsumerStatefulWidget {
-  const _PlayerProxyDialog();
-
-  @override
-  ConsumerState<_PlayerProxyDialog> createState() => _PlayerProxyDialogState();
-}
-
-final class _PlayerProxyDialogState extends ConsumerState<_PlayerProxyDialog> {
-  late PlayerProxyMode _mode = ref.read(playerProxyProvider).mode;
-  late final TextEditingController _host = TextEditingController(text: ref.read(playerProxyProvider).host);
-  late final TextEditingController _port = TextEditingController(text: '${ref.read(playerProxyProvider).port}');
-
-  @override
-  void dispose() {
-    _host.dispose();
-    _port.dispose();
-    super.dispose();
-  }
-
-  /// Only the manual mode types an endpoint; the other two answer from the
-  /// app's proxy or from nothing at all.
-  bool get _manual => _mode == PlayerProxyMode.manual;
-
-  bool get _valid {
-    if (!_manual) return true;
-    final port = int.tryParse(_port.text.trim());
-    return _host.text.trim().isNotEmpty && port != null && port > 0 && port <= 65535;
-  }
-
-  void _confirm() {
-    final port = int.tryParse(_port.text.trim()) ?? 0;
-    unawaited(ref.read(playerProxyProvider.notifier).save((mode: _mode, host: _host.text.trim(), port: port)));
-    Navigator.of(context).pop();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final invalid = !_valid;
-    return DsDialog(
-      title: Text(t.settings.playerProxy),
-      description: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s12,
-        children: [
-          DsSelect<PlayerProxyMode>(
-            value: _mode,
-            semanticLabel: t.settings.playerProxyMode,
-            options: [
-              DsSelectOption(value: PlayerProxyMode.off, label: t.settings.proxyModeOff),
-              DsSelectOption(value: PlayerProxyMode.followApp, label: t.settings.playerProxyFollow),
-              DsSelectOption(value: PlayerProxyMode.manual, label: t.settings.playerProxyManual),
-            ],
-            onChanged: (value) {
-              if (value != null) setState(() => _mode = value);
-            },
-          ),
-          DsTextField(
-            controller: _host,
-            enabled: _manual,
-            placeholder: t.settings.proxyHost,
-            onChanged: (_) => setState(() {}),
-            semanticLabel: t.settings.proxyHost,
-          ),
-          DsTextField(
-            controller: _port,
-            enabled: _manual,
-            placeholder: t.settings.proxyPort,
-            keyboardType: TextInputType.number,
-            error: invalid,
-            onChanged: (_) => setState(() {}),
-            semanticLabel: t.settings.proxyPort,
-          ),
-          if (invalid)
-            Text(
-              t.settings.playerProxyInvalid,
-              style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).danger.text),
-            ),
-        ],
-      ),
-      actions: [
-        DsButton(
-          variant: DsButtonVariant.secondary,
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(t.common.cancel),
-        ),
-        DsButton(onPressed: invalid ? null : _confirm, child: Text(t.common.confirm)),
-      ],
-    );
-  }
-}

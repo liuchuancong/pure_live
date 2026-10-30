@@ -5,6 +5,7 @@ import 'dart:ui' show ImageFilter, TileMode;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart' show AppBar, IconButton, Scaffold, kToolbarHeight;
+import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,7 +31,8 @@ import 'package:pure_live/modules/live/room/page/room_orientation.dart'
 import 'package:pure_live/modules/live/room/page/room_refresh_rate.dart' show roomRefreshRateProvider;
 import 'package:pure_live/modules/live/room/page/room_status.dart' show roomSlowProvider, slowAfter;
 import 'package:pure_live/modules/live/room/player/floating_room_player.dart' show FloatingRoomPlayer;
-import 'package:pure_live/modules/live/room/player/room_playlist.dart' show RoomPlaylistController, roomPlaylistProvider;
+import 'package:pure_live/modules/live/room/player/room_playlist.dart'
+    show RoomPlaylistController, roomPlaylistProvider;
 import 'package:pure_live/modules/live/room/player/room_switcher.dart' show roomSwipeList, showRoomSwitcher;
 import 'package:pure_live/modules/live/room/player/sleep_timer.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -281,7 +283,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   void dispose() {
     // The page may be destroyed while it fills the window; the next route
     // must get its window strip back.
-    _immersiveNotifier.set(value: false);
+    _writeAfterFrame(() => _immersiveNotifier.set(value: false));
     _playlistNotifier.clearIfCurrent(_currentRoomKey);
     _routeObserver?.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
@@ -317,15 +319,24 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     } else {
       // Leaving the route stops the stream rather than keeping it behind
       // the next page.
-      unawaited(_roomNotifier.close());
+      _roomNotifier.closeFromPage();
       final controller = _presentationController;
       final player = _player;
       if (controller != null && player != null) {
-        unawaited(controller.exit(player));
+        _writeAfterFrame(() => unawaited(controller.exit(player)));
       }
     }
     super.dispose();
   }
+
+  /// Runs a provider write this leaving page may not make in place.
+  ///
+  /// The route unmounts while the tree is being torn down, and Riverpod
+  /// rejects a notification in that phase — it left the page half unmounted
+  /// with the route transition reading a dead element. The write therefore
+  /// rides the end of the frame, and it goes through a notifier captured
+  /// while this page still existed, never through its own `ref`.
+  void _writeAfterFrame(void Function() write) => SchedulerBinding.instance.addPostFrameCallback((_) => write());
 
   /// The reference's `applyFullscreenOrientationPolicy`: on a phone the
   /// fullscreen orientation policy decides which way the device turns as
@@ -1362,10 +1373,7 @@ final class _RoomHero extends ConsumerWidget {
     if (detail == null) {
       return Container(
         padding: const EdgeInsets.all(DsSpace.s12),
-        decoration: DsBoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(theme.radii.card),
-        ),
+        decoration: DsBoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(theme.radii.card)),
         child: const Row(
           spacing: DsSpace.s12,
           children: [
@@ -1557,15 +1565,16 @@ final class _LiveBadge extends StatelessWidget {
     final t = context.t;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: 1),
-      decoration: BoxDecoration(
-        color: const Color(0xE6FF3B5C),
-        borderRadius: BorderRadius.circular(DsRadii.pill),
-      ),
+      decoration: BoxDecoration(color: const Color(0xE6FF3B5C), borderRadius: BorderRadius.circular(DsRadii.pill)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: DsSpace.s3,
         children: [
-          Container(width: 4, height: 4, decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFFFFFFF))),
+          Container(
+            width: 4,
+            height: 4,
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFFFFFFF)),
+          ),
           Text(
             t.favorites.statusLiveNow,
             style: theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF), fontWeight: FontWeight.w600),

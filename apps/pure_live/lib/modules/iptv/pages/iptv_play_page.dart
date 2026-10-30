@@ -365,7 +365,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
         sources: sources,
         title: replay?.title ?? channel.entry.name,
         allowEngineFallback: true,
-        engineOptions: await _engineOptions(),
+        engineOptions: _storedEngineOptions(),
       ),
       preferredBackend: ref.read(playerKernelBackendProvider).id,
     );
@@ -578,13 +578,8 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   List<EngineOption> _storedEngineOptions() => playerStoredEngineOptions(
     hardwareDecoding: ref.read(playbackSettingsProvider).hardwareDecoding,
     tuning: ref.read(playerTuningProvider),
-    proxy: ref.read(effectivePlayerProxyProvider),
+    proxy: ref.read(playerProxyProvider),
   );
-
-  /// The stored options plus the chosen shader chain; the chain lives on disk
-  /// and the engine mounts it as a list option.
-  Future<List<EngineOption>> _engineOptions() =>
-      withSuperResolution(_storedEngineOptions(), ref.read(superResolutionModeProvider));
 
   /// Routes and decodes this channel like every other live player; every
   /// handle gets the stored options, so a channel switch cannot keep an old
@@ -592,7 +587,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   /// a recipe change happens on the running channel.
   Future<void> _applyEngineOptions(PlayerHandle handle, {List<EngineOption> extra = const []}) async {
     try {
-      await handle.applyEngineOptions(<EngineOption>[...await _engineOptions(), ...extra]);
+      await handle.applyEngineOptions(<EngineOption>[..._storedEngineOptions(), ...extra]);
     } on Object {
       // A refused engine option is not a playback failure.
     }
@@ -665,7 +660,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
       final current = _handle;
       if (current != null) unawaited(_applyAudio(current));
     });
-    ref.listen(effectivePlayerProxyProvider, (previous, next) {
+    ref.listen(playerProxyProvider, (previous, next) {
       if (previous == next) return;
       final playback = _playback;
       if (playback != null) unawaited(playback.updateEngineOptions(_storedEngineOptions()));
@@ -678,11 +673,6 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     ref.listen(playerTuningProvider, (previous, next) {
       if (previous == next) return;
       unawaited(_applyTuning(previous, next));
-    });
-    ref.listen(superResolutionModeProvider, (previous, next) {
-      if (previous == next) return;
-      final current = _handle;
-      if (current != null) unawaited(applySuperResolution(current, next));
     });
     // The room page's own rule, here too: a phone entering system fullscreen
     // asks the viewer's portrait policy which way it turns. The driver's exit

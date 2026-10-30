@@ -17,7 +17,7 @@ import 'package:pure_live/features/backup/backup.dart';
 import 'package:pure_live/features/settings/browse/audience_metric_provider.dart' show audienceMetricProvider;
 import 'package:pure_live/features/settings/browse/live_alert_settings.dart' show liveAlertSettingsProvider;
 import 'package:pure_live/features/settings/browse/platform_preferences_provider.dart'
-    show douyuForceRenewProvider, preferH264Provider, youtubeAllChatProvider;
+    show preferH264Provider, youtubeAllChatProvider;
 import 'package:pure_live/features/settings/browse/sites_display_provider.dart';
 import 'package:pure_live/features/settings/browse/twitch_languages_provider.dart' show twitchLanguagesProvider;
 import 'package:pure_live/features/settings/dialogs/asmr_sleep_dialog.dart' show showAsmrSleepMinutesDialog;
@@ -36,6 +36,7 @@ import 'package:pure_live/features/settings/general/tv_preferences.dart'
 import 'package:pure_live/features/settings/general/window_size_row.dart' show WindowSizeRow;
 import 'package:pure_live/features/settings/pages/font_manager_page.dart'
     show FontManagerPage, fontFamilyLabel, showFontManagerPage;
+import 'package:pure_live/features/settings/pages/player_guide_page.dart' show PlayerGuidePage;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show WallpaperDownloadsPane;
 import 'package:pure_live/features/settings/panes/audience_settings_pane.dart'
     show AudienceSettingsPane, audienceModeLabel;
@@ -46,7 +47,7 @@ import 'package:pure_live/features/settings/panes/background_panes.dart'
         BackgroundLibraryPane,
         BackgroundOverviewPane,
         BackgroundRandomPane;
-import 'package:pure_live/features/settings/panes/danmaku_panes.dart' show DanmakuDisplayPane, DanmakuPane;
+import 'package:pure_live/features/settings/panes/danmaku_panes.dart' show DanmakuPane, DanmakuTab;
 import 'package:pure_live/features/settings/panes/github_mirror_pane.dart' show GithubMirrorSection;
 import 'package:pure_live/features/settings/panes/player_kernel_pane.dart'
     show PlayerKernelAdvancedPane, PlayerKernelPane;
@@ -67,7 +68,7 @@ import 'package:pure_live/features/settings/surface/settings_navigation.dart'
 import 'package:pure_live/features/settings/surface/settings_search.dart' show SettingsSearchHit, settingsSearchHits;
 import 'package:pure_live/features/settings/surface/settings_sections.dart';
 import 'package:pure_live/features/settings/surface/settings_widgets.dart'
-    show SettingsChoiceRow, SettingsConfigRow, SettingsHint, SettingsSegmentedRow;
+    show SettingsChoiceRow, SettingsConfigRow, SettingsSegmentedRow;
 import 'package:pure_live/features/version/version.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/layouts.dart';
@@ -77,7 +78,6 @@ import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/room/page/room_orientation.dart' show roomOrientationChoicesProvider;
-import 'package:pure_live/modules/live/shield/shield.dart';
 import 'package:pure_live/modules/live/toolbox/toolbox.dart';
 import 'package:pure_live/modules/music/music.dart';
 import 'package:pure_live/modules/vod/vod.dart';
@@ -517,8 +517,10 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.followTags => const FollowTagsPane(),
       SettingsSection.danmaku || SettingsSection.miniDanmaku => const DanmakuPane(),
       SettingsSection.fontDanmaku => const FontManagerPage(danmaku: true),
-      SettingsSection.danmakuDisplay => const DanmakuDisplayPane(),
-      SettingsSection.shield => const ShieldPane(),
+      // The merged page's categories keep their own deep links: a stored link
+      // or a search hit opens the page on the matching segment.
+      SettingsSection.danmakuDisplay => const DanmakuPane(initialTab: DanmakuTab.list),
+      SettingsSection.shield => const DanmakuPane(initialTab: DanmakuTab.shield),
       SettingsSection.recording => const _RecordingPane(),
       SettingsSection.quality ||
       SettingsSection.playback ||
@@ -530,6 +532,7 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.audience => const AudienceSettingsPane(),
       SettingsSection.kernel => const PlayerKernelPane(),
       SettingsSection.kernelAdvanced => const PlayerKernelAdvancedPane(),
+      SettingsSection.playerGuide => const PlayerGuidePage(),
       SettingsSection.startup || SettingsSection.system => const _StartupPane(),
       SettingsSection.window => const _WindowPane(),
       SettingsSection.network => const _NetworkPane(),
@@ -1800,15 +1803,6 @@ final class _SitesPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(ref.read(preferH264Provider.notifier).set(value: value)),
               ),
             ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.refreshCw),
-              title: t.settings.douyuForceRenew,
-              description: t.settings.douyuForceRenewDesc,
-              control: DsSwitch(
-                value: ref.watch(douyuForceRenewProvider),
-                onChanged: (value) => unawaited(ref.read(douyuForceRenewProvider.notifier).set(value: value)),
-              ),
-            ),
             DsListRow(
               leading: const DsIcon(DsIcons.languages),
               title: Text(t.settings.twitchLanguages),
@@ -2178,7 +2172,6 @@ final class _CachePaneState extends ConsumerState<_CachePane> {
           title: Text(t.settings.downloadDirectoryReset),
           onPressed: download.custom.isEmpty || _busy ? null : () => unawaited(_resetDownloadDirectory()),
         ),
-        SettingsHint(t.settings.cacheHint),
       ],
     );
   }
@@ -2441,14 +2434,17 @@ final class _QualityAudioPane extends ConsumerWidget {
                 semanticLabel: t.settings.defaultVolume,
               ),
             ),
-            SettingsSegmentedRow<int>(
+            SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.volume2),
               title: t.settings.volumeWheelStep,
               description: t.settings.volumeWheelStepDesc,
               value: settings.volumeWheelStepPercent,
               options: [
                 for (final percent in kVolumeWheelStepChoices)
-                  (value: percent, label: t.settings.volumeWheelStepValue(percent: percent)),
+                  DsSelectOption(
+                    value: percent,
+                    label: t.settings.volumeWheelStepValue(percent: percent),
+                  ),
               ],
               onChanged: (value) => unawaited(controller.setVolumeWheelStepPercent(value)),
             ),
@@ -2719,15 +2715,24 @@ final class _PortraitPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.portraitPresentationGroup),
           children: [
-            SettingsSegmentedRow<PortraitFullscreenPolicy>(
+            SettingsChoiceRow<PortraitFullscreenPolicy>(
               leading: const DsIcon(DsIcons.fullscreen),
               title: t.settings.portraitFullscreenPolicy,
               description: t.settings.portraitFullscreenPolicyDesc,
               value: settings.fullscreenPolicy,
               options: [
-                (value: PortraitFullscreenPolicy.followSource, label: t.settings.portraitFullscreenFollowSource),
-                (value: PortraitFullscreenPolicy.followSystem, label: t.settings.portraitFullscreenFollowSystem),
-                (value: PortraitFullscreenPolicy.landscape, label: t.settings.portraitFullscreenLandscape),
+                DsSelectOption(
+                  value: PortraitFullscreenPolicy.followSource,
+                  label: t.settings.portraitFullscreenFollowSource,
+                ),
+                DsSelectOption(
+                  value: PortraitFullscreenPolicy.followSystem,
+                  label: t.settings.portraitFullscreenFollowSystem,
+                ),
+                DsSelectOption(
+                  value: PortraitFullscreenPolicy.landscape,
+                  label: t.settings.portraitFullscreenLandscape,
+                ),
               ],
               onChanged: (policy) => unawaited(controller.setFullscreenPolicy(policy)),
             ),
@@ -2908,8 +2913,7 @@ Widget _portraitDetectionSection(
           ],
           onChanged: (mode) => unawaited(controller.setLayoutMode(mode)),
         ),
-    ] else
-      SettingsHint(t.settings.portraitDetectionOff),
+    ],
   ],
 );
 

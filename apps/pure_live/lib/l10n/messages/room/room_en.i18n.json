@@ -99,7 +99,7 @@
   "totalViewers": "Total viewers",
   "startedAt": "Started {time}",
   "danmakuList": "Danmaku",
-  "danmakuSettingsDesc": "The flying items’ visibility, size, speed and area.",
+  "danmakuSettingsDesc": "Off stops the lines that fly over the picture; the chat list stays.",
   "block": "Block",
   "openExternal": "Open on the platform",
   "restrictionNeedsLogin": "Sign-in required",

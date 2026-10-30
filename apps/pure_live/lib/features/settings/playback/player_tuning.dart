@@ -101,79 +101,37 @@ const PlayerTuning kDefaultPlayerTuning = (
   deinterlace: 'auto',
   hwdecCodecs: 'all',
   audioExclusive: false,
-  forceDestroy: false,
+  forceDestroy: true,
   preset: PlayerPresetId.balanced,
 );
 
 /// How the player's own streams reach the network.
 ///
 /// mpv opens those streams itself — the app's transport never carries them —
-/// so the choice stays the player's. [followApp] is what makes one proxy
-/// enough for both: the endpoint is taken from the app proxy, already resolved
-/// from its own mode and the system reading.
-enum PlayerProxyMode {
-  /// Direct, no proxy.
-  off,
+/// so the engine is given the app's network proxy explicitly. There is no
+/// player-specific proxy: the network page's choice covers both.
+typedef PlayerProxyEndpoint = ({String host, int port});
 
-  /// Whatever the app proxy resolves to, host and port included.
-  followApp,
-
-  /// The host and port typed on the player's own proxy page.
-  manual,
-}
-
-/// The player's proxy: the mode in force and, for [PlayerProxyMode.manual],
-/// the endpoint mpv is given.
-typedef PlayerProxySettings = ({PlayerProxyMode mode, String host, int port});
-
-/// The reference's default player proxy port (`defaultProxyPort`).
-const int kDefaultPlayerProxyPort = 7897;
-
-/// A fresh store follows the app proxy: one switch then covers the player too,
-/// and while the app proxy is off the route resolves to a direct one, which is
-/// exactly what the old default meant. An existing store keeps its own answer.
-const PlayerProxySettings kDefaultPlayerProxy = (
-  mode: PlayerProxyMode.followApp,
-  host: '',
-  port: kDefaultPlayerProxyPort,
-);
-
-/// Repairs a typed or restored proxy host the way the reference's
-/// `normalizeProxyHost` does: a Chinese keyboard's full-width dot, colon and
-/// brackets would otherwise resolve as one DNS name, and whitespace inside
-/// the endpoint is never meaningful.
-String normalizePlayerProxyHost(String value) => value
-    .trim()
-    .replaceAll('。', '.')
-    .replaceAll('．', '.')
-    .replaceAll('：', ':')
-    .replaceAll('［', '[')
-    .replaceAll('］', ']')
-    .replaceAll(RegExp(r'\s+'), '');
-
-/// Repairs a persisted or imported port; an invalid value falls back to the
-/// reference's 7897 instead of leaving playback without a proxy.
-int normalizePlayerProxyPort(int? port) => port != null && port >= 1 && port <= 65535 ? port : kDefaultPlayerProxyPort;
-
-/// The stored endpoint with its host and port repaired.
-PlayerProxySettings normalizePlayerProxy(PlayerProxySettings value) =>
-    (mode: value.mode, host: normalizePlayerProxyHost(value.host), port: normalizePlayerProxyPort(value.port));
-
-/// The engine option for [proxy].
+/// The engine option for [endpoint].
 ///
-/// The key is always sent, with an empty value when the proxy is off (the
+/// The key is always sent, with an empty value when the app proxy is off (the
 /// reference passes it the same way): an empty mpv `http-proxy` means direct
 /// and clears a route left by an earlier value. IPv6 literals are bracketed so
 /// the URL stays parseable.
-EngineOption playerProxyEngineOption(PlayerProxySettings proxy) {
-  final normalized = normalizePlayerProxy(proxy);
-  if (normalized.mode == PlayerProxyMode.off || normalized.host.isEmpty) {
-    return const EngineOption('http-proxy', '');
-  }
-  final host = normalized.host;
+EngineOption playerProxyEngineOption(PlayerProxyEndpoint? endpoint) {
+  if (endpoint == null || endpoint.host.isEmpty) return const EngineOption('http-proxy', '');
+  final host = endpoint.host;
   final endpointHost = host.contains(':') && !host.startsWith('[') && !host.endsWith(']') ? '[$host]' : host;
-  return EngineOption('http-proxy', 'http://$endpointHost:${normalized.port}');
+  return EngineOption('http-proxy', 'http://$endpointHost:${endpoint.port}');
 }
+
+/// The proxy the player runs with: the app's network proxy, resolved the way
+/// the app's own requests resolve it (direct when the network page is off, a
+/// system proxy included). Every playback surface reads and listens to this,
+/// so a change on the network page reaches a player that is already open.
+final playerProxyProvider = Provider<PlayerProxyEndpoint?>((ref) {
+  return appProxyEndpoint(ref.watch(proxySettingsProvider), ref.watch(systemProxyProvider));
+});
 
 /// The engines' driver/decoder catalogues, per platform. Values are mpv's
 /// own keys; the labels the UI shows are the keys unless a friendlier word
@@ -359,13 +317,13 @@ bool playerOutputChanged(PlayerTuning previous, PlayerTuning next) =>
 /// The options a playback surface stores for its next open: the output
 /// drivers (with the custom-output gate and the hardware-decoding switch),
 /// the codec mask, interpolation, the scale kernel, the Windows exclusive-audio
-/// switch, the active preset's engine properties and the player proxy. The
-/// live room layers its full [playerTuningOptions] over them when the tuning
-/// changes.
+/// switch, the active preset's engine properties and the app's proxy endpoint.
+/// The live room layers its full [playerTuningOptions] over them when the
+/// tuning changes.
 List<EngineOption> playerStoredEngineOptions({
   required bool hardwareDecoding,
   required PlayerTuning tuning,
-  required PlayerProxySettings proxy,
+  required PlayerProxyEndpoint? proxy,
 }) => [
   ...playerOutputEngineOptions(hardwareDecoding: hardwareDecoding, tuning: tuning),
   // The reference narrows the engine's codec list only when the pick differs
@@ -432,7 +390,7 @@ List<EngineOption> playerPresetTransitionOptions(PlayerTuning previous, PlayerTu
 List<EngineOption> playerTuningOptions({
   required PlayerTuning tuning,
   required bool hardwareDecoding,
-  required PlayerProxySettings proxy,
+  required PlayerProxyEndpoint? proxy,
 }) {
   final platform = defaultTargetPlatform;
   final options = <EngineOption>[
@@ -737,61 +695,3 @@ final class PlayerTuningController extends Notifier<PlayerTuning> {
 }
 
 final playerTuningProvider = NotifierProvider<PlayerTuningController, PlayerTuning>(PlayerTuningController.new);
-
-/// The player's own proxy, persisted under `player.proxy`.
-final class PlayerProxyController extends Notifier<PlayerProxySettings> {
-  static const String _key = 'player.proxy';
-
-  @override
-  PlayerProxySettings build() {
-    try {
-      final raw = StoragePrefs.getString(_key);
-      if (raw == null || raw.isEmpty) return kDefaultPlayerProxy;
-      final decoded = jsonDecode(raw);
-      if (decoded is! Map) return kDefaultPlayerProxy;
-      return normalizePlayerProxy((
-        mode: switch (decoded['mode']) {
-          'followApp' => PlayerProxyMode.followApp,
-          'manual' => PlayerProxyMode.manual,
-          'off' => PlayerProxyMode.off,
-          // The builds before the modes stored one boolean, whose "on" could
-          // only ever have meant the typed endpoint beside it.
-          _ => decoded['enabled'] == true ? PlayerProxyMode.manual : PlayerProxyMode.off,
-        },
-        host: decoded['host'] is String ? decoded['host'] as String : '',
-        port: decoded['port'] is int ? decoded['port'] as int : kDefaultPlayerProxyPort,
-      ));
-    } on Object {
-      return kDefaultPlayerProxy;
-    }
-  }
-
-  Future<void> save(PlayerProxySettings value) async {
-    final normalized = normalizePlayerProxy(value);
-    state = normalized;
-    try {
-      await StoragePrefs.setString(
-        _key,
-        jsonEncode({'mode': normalized.mode.name, 'host': normalized.host, 'port': normalized.port}),
-      );
-    } on Object {
-      // A preference; a closed store loses it.
-    }
-  }
-}
-
-final playerProxyProvider = NotifierProvider<PlayerProxyController, PlayerProxySettings>(PlayerProxyController.new);
-
-/// The proxy the player actually runs with: [playerProxyProvider] with a
-/// follow-the-app choice answered by the app's own resolved endpoint.
-///
-/// Every playback surface reads and listens to this rather than the stored
-/// choice, so typing an address on the network page — or a system proxy
-/// appearing after start-up — reaches a player that is already open.
-final effectivePlayerProxyProvider = Provider<PlayerProxySettings>((ref) {
-  final proxy = ref.watch(playerProxyProvider);
-  if (proxy.mode != PlayerProxyMode.followApp) return proxy;
-  final endpoint = appProxyEndpoint(ref.watch(proxySettingsProvider), ref.watch(systemProxyProvider));
-  if (endpoint == null) return kDefaultPlayerProxy;
-  return (mode: PlayerProxyMode.manual, host: endpoint.host, port: endpoint.port);
-});

@@ -581,16 +581,12 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   List<EngineOption> _storedEngineOptions() => playerStoredEngineOptions(
     hardwareDecoding: ref.read(playbackSettingsProvider).hardwareDecoding,
     tuning: ref.read(playerTuningProvider),
-    proxy: ref.read(effectivePlayerProxyProvider),
+    proxy: ref.read(playerProxyProvider),
   );
 
   Future<void> _applyEngineOptions(PlayerHandle handle, {List<EngineOption> extra = const []}) async {
     try {
-      final options = <EngineOption>[
-        ...await withSuperResolution(_storedEngineOptions(), ref.read(superResolutionModeProvider)),
-        ...extra,
-      ];
-      await handle.applyEngineOptions(options);
+      await handle.applyEngineOptions(<EngineOption>[..._storedEngineOptions(), ...extra]);
     } on Object {
       // A refused engine option is not a playback failure.
     }
@@ -741,7 +737,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       if (mounted) setState(() => _globalMute = next);
       unawaited(_applyGlobalMute());
     });
-    ref.listen(effectivePlayerProxyProvider, (previous, next) {
+    ref.listen(playerProxyProvider, (previous, next) {
       if (previous == next) return;
       final handle = _handle;
       if (handle != null) unawaited(_applyEngineOptions(handle));
@@ -754,11 +750,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     ref.listen(playerTuningProvider, (previous, next) {
       if (previous == next) return;
       unawaited(_applyTuning(previous, next));
-    });
-    ref.listen(superResolutionModeProvider, (previous, next) {
-      if (previous == next) return;
-      final handle = _handle;
-      if (handle != null) unawaited(applySuperResolution(handle, next));
     });
     // Leaving fullscreen or PiP — by any hand, including the system's —
     // puts the keyboard back on the play button, whose node outlives both

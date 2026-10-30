@@ -83,9 +83,9 @@ const DanmakuStyle _defaults = (
   rasterCacheMb: 24,
 );
 
-/// The colours the text, outline and shadow rows offer. The engine takes any
-/// ARGB value; these are the ones the settings screen can still name out
-/// loud, and the first entry is each face's engine default.
+/// The colours the picker offers as shortcuts, and the ones the settings can
+/// name out loud; the engine takes any opaque RGB, which the custom picker
+/// reads from the HSV field. The first entry is each face's engine default.
 const List<int> kDanmakuColorChoices = [
   0xFFFFFFFF,
   0xFF000000,
@@ -99,12 +99,9 @@ const List<int> kDanmakuColorChoices = [
   0xFFFF85C0,
 ];
 
-/// Whether [value] is one the palette names.
-bool isDanmakuPaletteColor(int value) => kDanmakuColorChoices.contains(value);
-
-/// A stored colour from the palette; an unknown one (a backup from another
-/// build) reads as [fallback].
-int normalizeDanmakuColor(int? value, int fallback) => value != null && isDanmakuPaletteColor(value) ? value : fallback;
+/// A stored colour, forced opaque: the picker allows any RGB, so only a
+/// missing value reads as [fallback].
+int normalizeDanmakuColor(int? value, int fallback) => value == null ? fallback : 0xFF000000 | (value & 0xFFFFFF);
 
 /// The words for a palette colour.
 String danmakuColorLabel(Translations t, int value) => switch (value) {
@@ -867,52 +864,4 @@ final class DanmakuLongPressInteractionController extends Notifier<bool> {
 /// Whether long-pressing a flying danmaku opens its actions.
 final danmakuLongPressInteractionProvider = NotifierProvider<DanmakuLongPressInteractionController, bool>(
   DanmakuLongPressInteractionController.new,
-);
-
-/// What the platform's flying messages do while the video is paused (the
-/// reference's `danmakuPausedBehavior`): [pause] stands them with it (the
-/// default, as 3.x's main picture), [fly] lets them fly on and new ones
-/// come in. Stored under the reference's own words.
-enum DanmakuPausedBehavior {
-  pause,
-  fly;
-
-  /// The reference's stored value for this choice.
-  String get stored => this == fly ? 'continue' : 'pause';
-
-  /// The reference's `allowed` set: any other value reads as the default.
-  static DanmakuPausedBehavior fromStored(String? value) => value == 'continue' ? fly : pause;
-}
-
-/// Owns the paused-video behaviour of the flying layer, persisted under
-/// `danmaku.pausedBehavior` (the reference's `danmakuPausedBehavior`).
-final class DanmakuPausedBehaviorController extends Notifier<DanmakuPausedBehavior> {
-  static const String _key = 'danmaku.pausedBehavior';
-
-  @override
-  DanmakuPausedBehavior build() {
-    try {
-      return DanmakuPausedBehavior.fromStored(StoragePrefs.getString(_key));
-    } on Object {
-      return DanmakuPausedBehavior.pause;
-    }
-  }
-
-  /// Moves the choice, writing through; a live room applies it at once.
-  Future<void> set(DanmakuPausedBehavior value) async {
-    state = value;
-    try {
-      await StoragePrefs.setString(_key, value.stored);
-    } on Object {
-      // The behaviour is a preference; a closed store loses it.
-    }
-  }
-
-  /// Restores the reference's default: the messages stand with the video.
-  Future<void> reset() => set(DanmakuPausedBehavior.pause);
-}
-
-/// What the flying danmaku do while the video is paused.
-final danmakuPausedBehaviorProvider = NotifierProvider<DanmakuPausedBehaviorController, DanmakuPausedBehavior>(
-  DanmakuPausedBehaviorController.new,
 );

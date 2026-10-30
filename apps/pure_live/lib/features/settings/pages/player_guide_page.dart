@@ -6,83 +6,33 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:url_launcher/url_launcher.dart' show LaunchMode, launchUrl;
 
 /// The complete playback guide: six chapters of concepts, presets, tuning,
-/// audio and symptom checks. Pure documentation — nothing here writes state.
-Future<void> showPlayerGuide(BuildContext context) =>
-    showDsDialog<void>(context: context, builder: (context) => const _PlayerGuideDialog());
-
-/// mpv's official manual, the external link in the guide's intro card.
-final Uri _mpvManual = Uri.parse('https://mpv.io/manual/');
-
-final class _GuideEntry {
-  const _GuideEntry({required this.title, required this.body, this.badge, this.onlyOn, this.mono = false});
-
-  final String title;
-  final String body;
-
-  /// A short capability tag (`hwdec`, `vo`, `ao`).
-  final String? badge;
-
-  /// The row only applies on this platform; it stays readable elsewhere with
-  /// a tag instead of being hidden.
-  final TargetPlatform? onlyOn;
-
-  /// The heading is an mpv switch, so it renders in monospace.
-  final bool mono;
-}
-
-final class _GuideChapter {
-  const _GuideChapter({required this.icon, required this.title, required this.entries});
-
-  final DsIconData icon;
-  final String title;
-  final List<_GuideEntry> entries;
-}
-
-final class _PlayerGuideDialog extends StatelessWidget {
-  const _PlayerGuideDialog();
+/// audio and symptom checks, its own page. Pure documentation — nothing here
+/// writes state.
+final class PlayerGuidePage extends StatelessWidget {
+  /// The guide page's content.
+  const PlayerGuidePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final chapters = _chapters(t);
-    return DsDialog(
-      title: Text(t.settings.playerGuideTitle),
-      description: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s12,
-        children: [
-          Text(t.settings.playerGuideSubtitle, style: theme.typography.small.copyWith(color: colors.textMuted)),
-          DsListSection(
-            children: [
-              DsListRow(
-                leading: const DsIcon(DsIcons.bookOpenText),
-                title: Text(t.settings.playerGuideManualTitle),
-                description: Text(t.settings.playerGuideManualHint),
-                trailing: const DsIcon(DsIcons.externalLink, size: 16),
-                onPressed: () => unawaited(launchUrl(_mpvManual, mode: LaunchMode.externalApplication)),
-              ),
-            ],
-          ),
-          Text(t.settings.playerGuideIntro, style: theme.typography.small.copyWith(color: colors.textMuted)),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 380),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: DsSpace.s8,
-                children: [
-                  for (var i = 0; i < chapters.length; i++)
-                    _GuideChapterTile(chapter: chapters[i], initiallyOpen: i == 0),
-                ],
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        DsListSection(
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.bookOpenText),
+              title: Text(t.settings.playerGuideManualTitle),
+              description: Text(t.settings.playerGuideManualHint),
+              trailing: const DsIcon(DsIcons.externalLink, size: 16),
+              onPressed: () => unawaited(launchUrl(_mpvManual, mode: LaunchMode.externalApplication)),
             ),
-          ),
-        ],
-      ),
-      style: const DsDialogStyle(width: 640),
-      actions: [DsButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.common.close))],
+          ],
+        ),
+        for (var i = 0; i < chapters.length; i++) _GuideChapterTile(chapter: chapters[i], initiallyOpen: i == 0),
+      ],
     );
   }
 
@@ -152,11 +102,6 @@ final class _PlayerGuideDialog extends StatelessWidget {
         icon: DsIcons.hd,
         title: s.playerGuideChapterQuality,
         entries: [
-          _GuideEntry(
-            title: s.playerGuideEntryRtxSuperResolutionTitle,
-            body: s.playerGuideEntryRtxSuperResolutionBody,
-            onlyOn: TargetPlatform.windows,
-          ),
           _GuideEntry(title: s.playerGuideEntryDanmakuLoadTitle, body: s.playerGuideEntryDanmakuLoadBody),
           _GuideEntry(
             title: s.playerGuideEntryHwdecCodecsTitle,
@@ -197,6 +142,34 @@ final class _PlayerGuideDialog extends StatelessWidget {
       ),
     ];
   }
+}
+
+/// mpv's official manual, the external link at the top of the guide.
+final Uri _mpvManual = Uri.parse('https://mpv.io/manual/');
+
+final class _GuideEntry {
+  const _GuideEntry({required this.title, required this.body, this.badge, this.onlyOn, this.mono = false});
+
+  final String title;
+  final String body;
+
+  /// A short capability tag (`hwdec`, `vo`, `ao`).
+  final String? badge;
+
+  /// The row only applies on this platform; it stays readable elsewhere with
+  /// a tag instead of being hidden.
+  final TargetPlatform? onlyOn;
+
+  /// The heading is an mpv switch, so it renders in monospace.
+  final bool mono;
+}
+
+final class _GuideChapter {
+  const _GuideChapter({required this.icon, required this.title, required this.entries});
+
+  final DsIconData icon;
+  final String title;
+  final List<_GuideEntry> entries;
 }
 
 final class _GuideChapterTile extends StatefulWidget {

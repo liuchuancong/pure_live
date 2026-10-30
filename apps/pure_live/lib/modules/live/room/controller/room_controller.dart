@@ -2,6 +2,7 @@ import 'dart:async' show StreamSubscription, unawaited;
 
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
+import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:media_core/media_core.dart';
@@ -22,7 +23,6 @@ import 'package:pure_live/modules/live/room/chat/gift_text.dart' show giftLineTi
 import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show membershipCard;
 import 'package:pure_live/modules/live/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
 import 'package:pure_live/modules/live/shield/shield.dart';
-import 'package:pure_live/shared/shared.dart';
 
 /// How many chat lines the page keeps; older leave first.
 const int kRoomChatLimit = 200;
@@ -79,42 +79,13 @@ DanmakuConfig _danmakuConfigFor(DanmakuFilterRules filter, DanmakuRepeatSettings
       similarityMaxCacheSize: filter.similarityMaxCacheSize,
     );
 
-/// The flying layer's engine with "暂停时的弹幕" applied to the player's
-/// pause: by default the messages stand with the picture; with "continue"
-/// the engine keeps running, so the ones on screen and the ones arriving
-/// keep moving. The binding is the only caller of pause/resume.
+/// The flying layer's engine for a live room: a paused picture must not stop
+/// the room's comments — they are a live flow that keeps arriving, so the
+/// binding's pause is swallowed here while the stock controller is left to
+/// the video player, whose comments follow its own timeline.
 final class RoomBarrageController extends BarrageController {
-  RoomBarrageController({required DanmakuPausedBehavior behavior})
-    : _pauseWithPlayback = behavior == DanmakuPausedBehavior.pause;
-
-  bool _pauseWithPlayback;
-  bool _playbackPaused = false;
-
-  /// Applies a changed choice to a picture that is already paused, so the
-  /// message flow changes direction without waiting for a resume.
-  void setBehavior(DanmakuPausedBehavior behavior) {
-    final value = behavior == DanmakuPausedBehavior.pause;
-    if (_pauseWithPlayback == value) return;
-    _pauseWithPlayback = value;
-    if (!_playbackPaused) return;
-    if (value) {
-      super.pause();
-    } else {
-      super.resume();
-    }
-  }
-
   @override
-  void pause() {
-    _playbackPaused = true;
-    if (_pauseWithPlayback) super.pause();
-  }
-
-  @override
-  void resume() {
-    _playbackPaused = false;
-    super.resume();
-  }
+  void pause() {}
 }
 
 /// The room's flying danmaku pipeline, one per open room: the site's
@@ -122,7 +93,8 @@ final class RoomBarrageController extends BarrageController {
 /// whose pipeline (the viewer's shield policy, then the gate and the
 /// duplicate/similarity filters) runs first; the sink hands every accepted
 /// message to the chat list and the flame engine (the flying layer) at
-/// once, and the player binding carries pause and seek along.
+/// once, and the player binding carries seek along — a paused picture does
+/// not stop a live flow.
 final class RoomDanmakuPipeline {
   RoomDanmakuPipeline(
     this.onChat, {
@@ -133,10 +105,9 @@ final class RoomDanmakuPipeline {
     required ShieldRules shield,
     required DanmakuFilterRules filter,
     required DanmakuRepeatSettings repeat,
-    required DanmakuPausedBehavior pausedBehavior,
     required bool Function() showFixedTop,
     required bool Function() showFixedBottom,
-  }) : barrage = RoomBarrageController(behavior: pausedBehavior) {
+  }) : barrage = RoomBarrageController() {
     chatGifts = GiftChatFilter(clock: DateTime.now)..aboveTier = chatGiftsAboveTier();
     danmaku = DanmakuController(
       sink: _ChatMirrorSink(
@@ -215,9 +186,6 @@ final class RoomDanmakuPipeline {
   void setShieldPolicy(ShieldRules rules) {
     danmaku.policy = _shieldPolicyFor(rules);
   }
-
-  /// Applies a changed "暂停时的弹幕" choice to the running layer.
-  void setPausedBehavior(DanmakuPausedBehavior behavior) => barrage.setBehavior(behavior);
 
   /// Applies a changed "飞行弹幕显示礼物" choice: turning it off forgets the
   /// combos on their way without flying their ends.
@@ -548,17 +516,11 @@ final class RoomController extends Notifier<RoomState> {
     _standby = ref.read(roomPlaybackStandbyProvider);
     ref.onDispose(_teardown);
     ref.listen(playerTuningProvider.select((tuning) => tuning.forceDestroy), (_, next) => _forceDestroy = next);
-    // A super-resolution choice applies to the live handle at once; the
-    // next handle also reads it in `_applyEnginePreferences`.
-    ref.listen(superResolutionModeProvider, (_, mode) {
-      final handle = state.handle;
-      if (handle != null) unawaited(_applySuperResolution(handle, mode));
-    });
     ref.listen(playerTuningProvider, (previous, next) {
       final handle = state.handle;
       if (handle != null) unawaited(_applyTuning(handle, previous, next));
     });
-    ref.listen(effectivePlayerProxyProvider, (_, _) {
+    ref.listen(playerProxyProvider, (_, _) {
       final playback = _playback;
       if (playback != null) unawaited(playback.updateEngineOptions(_storedEngineOptions()));
     });
@@ -575,10 +537,6 @@ final class RoomController extends Notifier<RoomState> {
     });
     ref.listen(shieldRulesProvider, (previous, next) {
       if (previous != next) _pipeline?.setShieldPolicy(next);
-    });
-    ref.listen(danmakuPausedBehaviorProvider, (previous, next) {
-      if (previous == next) return;
-      _pipeline?.setPausedBehavior(next);
     });
     ref.listen(chatShowGiftsProvider, (previous, next) {
       if (previous == next) return;
@@ -829,6 +787,26 @@ final class RoomController extends Notifier<RoomState> {
     ref.read(roomSuperChatsProvider.notifier).clear();
   }
 
+  /// Stops the room as its page leaves: the picture goes quiet now, the state
+  /// writes wait for the frame.
+  ///
+  /// [close] clears the state in place, which a leaving page may not do: the
+  /// route unmounts while the tree is being torn down, and Riverpod rejects a
+  /// notification in that phase. Only the writes move, because the stream must
+  /// not be heard over the page that follows. The write re-checks the room —
+  /// a room opened meanwhile owns the state and the chat now.
+  void closeFromPage() {
+    final leavingKey = state.room?.identityKey;
+    _teardown();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (!ref.mounted) return;
+      if (state.room?.identityKey != leavingKey) return;
+      state = _initial();
+      ref.read(roomChatProvider.notifier).clear();
+      ref.read(roomSuperChatsProvider.notifier).clear();
+    });
+  }
+
   /// Lands the viewer's current audio on a freshly attached engine; a line
   /// switch or recovery must not unmute or reset the volume.
   Future<void> _applyAudioPreferences(PlayerHandle handle) async {
@@ -847,36 +825,20 @@ final class RoomController extends Notifier<RoomState> {
   List<EngineOption> _storedEngineOptions() => playerStoredEngineOptions(
     hardwareDecoding: ref.read(playbackSettingsProvider).hardwareDecoding,
     tuning: ref.read(playerTuningProvider),
-    proxy: ref.read(effectivePlayerProxyProvider),
+    proxy: ref.read(playerProxyProvider),
   );
 
-  /// Sends the engine configuration to a handle once: the decoder choice, the
-  /// player proxy and the super-resolution shader chain (mpv property writes,
-  /// so they take effect on the running engine). A replacement handle gets
-  /// all of them again; a saved proxy must route the very first request, not
-  /// wait for a settings change.
+  /// Sends the engine configuration to a handle once: the decoder choice and
+  /// the player proxy (mpv property writes, so they take effect on the
+  /// running engine). A replacement handle gets all of them again; a saved
+  /// proxy must route the very first request, not wait for a settings change.
   Future<void> _applyEnginePreferences(PlayerHandle handle) async {
     if (identical(_preparedHandle, handle)) return;
     _preparedHandle = handle;
     try {
-      final options = <EngineOption>[..._storedEngineOptions()];
-      final shader = await superResolutionOption(ref.read(superResolutionModeProvider));
-      if (shader != null) options.add(shader);
-      await handle.applyEngineOptions(options);
+      await handle.applyEngineOptions(_storedEngineOptions());
     } on Object {
       // A preference the engine refused is not a playback failure.
-    }
-  }
-
-  /// Applies a changed super-resolution choice to the running engine; an
-  /// empty list clears the shader chain when the choice goes back to off.
-  Future<void> _applySuperResolution(PlayerHandle handle, SuperResolutionMode mode) async {
-    try {
-      final option = await superResolutionOption(mode);
-      await handle.applyEngineOptions([option ?? const EngineOption('glsl-shaders', <String>[])]);
-    } on Object {
-      // The picture is already playing; a shader the engine refused must not
-      // turn into a playback error.
     }
   }
 
@@ -889,7 +851,7 @@ final class RoomController extends Notifier<RoomState> {
       final options = playerTuningOptions(
         tuning: next,
         hardwareDecoding: settings.hardwareDecoding,
-        proxy: ref.read(effectivePlayerProxyProvider),
+        proxy: ref.read(playerProxyProvider),
       );
       if (previous != null) options.addAll(playerPresetTransitionOptions(previous, next));
       await handle.applyEngineOptions(options);
@@ -1124,7 +1086,7 @@ final class RoomController extends Notifier<RoomState> {
           });
           await playback.play(
             LiveSourceRequest(
-              sources: roomSourcesOf(lines),
+              sources: roomSourcesOf(lines, artUri: room.content.coverUrl),
               title: room.content.title,
               allowEngineFallback: true,
               engineOptions: _storedEngineOptions(),
@@ -1160,16 +1122,13 @@ final class RoomController extends Notifier<RoomState> {
     _danmakuOpeningEpoch = epoch;
     try {
       final sessionAnswer = await provider.createSession(room: room);
-      await sessionAnswer.match(
-        (error) async {
-          // A chat connection that will not open is not a room that will not
-          // open: the picture stays on screen and only a hint says what is
-          // missing (an error field would replace it).
-          if (!_danmakuCurrent(epoch, room)) return;
-          ref.read(roomHintProvider.notifier).show(l10n.t.room.danmakuConnectFailed(reason: error.message));
-        },
-        (session) => _installDanmaku(session, room, epoch: epoch),
-      );
+      await sessionAnswer.match((error) async {
+        // A chat connection that will not open is not a room that will not
+        // open: the picture stays on screen and only a hint says what is
+        // missing (an error field would replace it).
+        if (!_danmakuCurrent(epoch, room)) return;
+        ref.read(roomHintProvider.notifier).show(l10n.t.room.danmakuConnectFailed(reason: error.message));
+      }, (session) => _installDanmaku(session, room, epoch: epoch));
     } finally {
       // Only this open's own marker: a room switch already put its open there.
       if (_danmakuOpeningEpoch == epoch) _danmakuOpeningEpoch = null;
@@ -1248,7 +1207,6 @@ final class RoomController extends Notifier<RoomState> {
       shield: ref.read(shieldRulesProvider),
       filter: ref.read(danmakuFilterProvider),
       repeat: ref.read(danmakuRepeatProvider),
-      pausedBehavior: ref.read(danmakuPausedBehaviorProvider),
       showFixedTop: () => ref.read(danmakuFixedTopProvider),
       showFixedBottom: () => ref.read(danmakuFixedBottomProvider),
     );

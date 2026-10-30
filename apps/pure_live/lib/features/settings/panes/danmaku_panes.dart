@@ -31,81 +31,127 @@ import 'package:pure_live/features/settings/danmaku/danmaku_show_gifts_provider.
 // name; the engine's one is the one this page builds sample messages with.
 import 'package:pure_live/features/settings/danmaku/danmaku_style_providers.dart' hide DanmakuStyle;
 import 'package:pure_live/features/settings/danmaku/super_chat_settings.dart' show superChatIncludesMembershipProvider;
+import 'package:pure_live/features/settings/dialogs/color_picker.dart' show ColorDot, colorPickerHexLabel;
+import 'package:pure_live/features/settings/dialogs/danmaku_color_dialog.dart' show showDanmakuColorDialog;
 import 'package:pure_live/features/settings/pages/font_manager_page.dart' show fontFamilyLabel, showFontManagerPage;
 import 'package:pure_live/features/settings/playback/pip_danmaku_scale_provider.dart'
     show kPipDanmakuScaleMax, kPipDanmakuScaleMin, pipDanmakuScaleProvider;
 import 'package:pure_live/features/settings/playback/playback_settings_providers.dart' show playbackSettingsProvider;
-import 'package:pure_live/features/settings/surface/settings_page.dart' show SettingsChildEntry;
 import 'package:pure_live/features/settings/surface/settings_preview.dart';
-import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
-import 'package:pure_live/features/settings/surface/settings_widgets.dart'
-    show SettingsChoiceRow, SettingsConfigRow, SettingsHint, SettingsSegmentedRow;
+import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/room/player/room_barrage_config.dart' show roomBarrageConfig;
+import 'package:pure_live/modules/live/shield/shield.dart' show ShieldPane;
 import 'package:pure_live/shared/danmaku/danmaku.dart' show DanmakuFormat, danmakuSaveFormatsProvider;
 
-/// The danmaku settings: this page is the switch and the interaction of the
-/// flying layer, the full-window preview holds every knob of how a danmaku
-/// looks, and [DanmakuDisplayPane] is the chat list beside the picture. The
-/// shield keeps its own page under this one.
-final class DanmakuPane extends ConsumerWidget {
+/// The danmaku settings' categories: the flying layer's own controls, the
+/// chat list beside the picture, the face it draws in, and the shield.
+enum DanmakuTab {
+  /// The flying layer: the sample, the interaction and the save formats.
+  look,
+
+  /// The chat list beside the picture.
+  list,
+
+  /// The face the danmaku draws in.
+  font,
+
+  /// The rules that keep lines out.
+  shield,
+}
+
+/// The danmaku settings: one page, its categories on a segmented control.
+///
+/// The flying layer's own rows, the chat list, the font and the shield used
+/// to be four settings entries; they are four segments now. A deep link to
+/// one of the old child pages opens this page on its category.
+final class DanmakuPane extends ConsumerStatefulWidget {
   /// The pane.
-  const DanmakuPane({super.key});
+  const DanmakuPane({this.initialTab = DanmakuTab.look, super.key});
+
+  /// The category shown first; a child page's deep link names its own.
+  final DanmakuTab initialTab;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DanmakuPane> createState() => _DanmakuPaneState();
+}
+
+final class _DanmakuPaneState extends ConsumerState<DanmakuPane> {
+  late DanmakuTab _tab = widget.initialTab;
+
+  @override
+  void didUpdateWidget(DanmakuPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // A wide pane swaps sections in place: the same state meets a new
+    // category through this widget, and it must follow the deep link.
+    if (oldWidget.initialTab != widget.initialTab) _tab = widget.initialTab;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.t;
-    final playback = ref.watch(playbackSettingsProvider);
-    final family = ref.watch(danmakuStyleProvider).fontFamily;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        DsListSection(
-          children: [
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.captions),
-              title: t.settings.showFlyingDanmaku,
-              description: t.settings.showFlyingDanmakuDesc,
-              control: DsSwitch(
-                value: playback.danmakuVisible,
-                onChanged: (value) =>
-                    unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.pause),
-              title: t.settings.danmakuPausedBehavior,
-              description: t.settings.danmakuPausedBehaviorDesc,
-              control: DsSwitch(
-                value: ref.watch(danmakuPausedBehaviorProvider) == DanmakuPausedBehavior.fly,
-                onChanged: (value) => unawaited(
-                  ref
-                      .read(danmakuPausedBehaviorProvider.notifier)
-                      .set(value ? DanmakuPausedBehavior.fly : DanmakuPausedBehavior.pause),
+        // Four names do not always fit a narrow pane: the control scrolls
+        // sideways instead of squeezing its own segments.
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DsSegmentedControl<DanmakuTab>(
+              value: _tab,
+              semanticLabel: t.settings.navDanmaku,
+              segments: [
+                DsSegment(
+                  value: DanmakuTab.look,
+                  label: Text(t.settings.navDanmaku),
+                  icon: const DsIcon(DsIcons.captions, size: 16),
                 ),
-              ),
+                DsSegment(
+                  value: DanmakuTab.list,
+                  label: Text(t.settings.danmakuList),
+                  icon: const DsIcon(DsIcons.list, size: 16),
+                ),
+                DsSegment(
+                  value: DanmakuTab.font,
+                  label: Text(t.settings.danmakuFont),
+                  icon: const DsIcon(DsIcons.type, size: 16),
+                ),
+                DsSegment(
+                  value: DanmakuTab.shield,
+                  label: Text(t.shield.title),
+                  icon: const DsIcon(DsIcons.shield, size: 16),
+                ),
+              ],
+              onChanged: (value) => setState(() => _tab = value),
             ),
-          ],
+          ),
         ),
-        // The face is chosen in the font manager: the catalogue holds a few
-        // thousand families, far more than a dropdown can carry. The row sits
-        // on this page rather than the preview's, because the manager opens
-        // under the settings surface the preview covers.
-        DsListSection(
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.type),
-              title: Text(t.settings.danmakuFont),
-              description: Text(t.settings.danmakuFontDescription),
-              detail: Text(fontFamilyLabel(t, family, name: ref.watch(freeFontStoreProvider).nameOf(family))),
-              showChevron: true,
-              onPressed: () => showFontManagerPage(context, ref, danmaku: true),
-            ),
-          ],
-        ),
-        // The master switch above decides whether the layer draws; the
-        // sample sits right under it so the answer to "on" is visible.
+        switch (_tab) {
+          DanmakuTab.look => _look(context),
+          DanmakuTab.list => const DanmakuDisplayPane(),
+          DanmakuTab.font => _font(context),
+          DanmakuTab.shield => const ShieldPane(),
+        },
+      ],
+    );
+  }
+
+  /// The flying layer: the sample that shows its face, the interaction and
+  /// the formats a download keeps. Whether the layer draws is a picture
+  /// action, not a preference here; pausing follows the scene — a live room
+  /// keeps its comments flying, a video keeps them on its own timeline.
+  Widget _look(BuildContext context) {
+    final t = context.t;
+    final saveFormats = ref.watch(danmakuSaveFormatsProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        // The sample opens from the top of the category: the layer is seen at
+        // a room's size before any of its controls are touched.
         const DanmakuPreviewEntry(),
         DsListSection(
           header: Text(t.settings.danmakuInteractionGroup),
@@ -143,32 +189,57 @@ final class DanmakuPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.danmakuSaveGroup),
           children: [
-            for (final format in DanmakuFormat.values)
-              SettingsConfigRow(
-                leading: DsIcon(_saveFormatIcon(format)),
-                title: format.label(t),
-                control: DsSwitch(
-                  value: ref.watch(danmakuSaveFormatsProvider).contains(format),
-                  onChanged: (_) => unawaited(ref.read(danmakuSaveFormatsProvider.notifier).toggle(format)),
-                ),
+            // The formats are a table: one row each, checked while chosen,
+            // so the whole choice is seen and changed in one place.
+            DsTable<DanmakuFormat>(
+              semanticLabel: t.settings.danmakuSaveGroup,
+              rows: DanmakuFormat.values,
+              rowKey: (format) => format,
+              selected: saveFormats,
+              onSelectionChanged: (selection) => unawaited(
+                ref.read(danmakuSaveFormatsProvider.notifier).setAll(selection.cast<DanmakuFormat>().toSet()),
               ),
+              columns: [
+                DsTableColumn(id: 'format', label: t.settings.danmakuSaveFormats, value: (format) => format.label(t)),
+                DsTableColumn(
+                  id: 'extension',
+                  label: t.settings.danmakuSaveExtension,
+                  value: (format) => '.${format.extension}',
+                  width: const DsTableColumnWidth.intrinsic(),
+                ),
+              ],
+            ),
           ],
         ),
-        SettingsHint(t.settings.danmakuSaveDescription),
-        const DsListSection(
-          children: [
-            SettingsChildEntry(child: SettingsSection.danmakuDisplay),
-            SettingsChildEntry(child: SettingsSection.shield),
-          ],
+      ],
+    );
+  }
+
+  /// The face: the manager itself opens from its row — the catalogue holds a
+  /// few thousand families, far more than a segment can carry — and it opens
+  /// under the settings surface the preview covers.
+  Widget _font(BuildContext context) {
+    final t = context.t;
+    final family = ref.watch(danmakuStyleProvider).fontFamily;
+    return DsListSection(
+      children: [
+        DsListRow(
+          leading: const DsIcon(DsIcons.type),
+          title: Text(t.settings.danmakuFont),
+          description: Text(t.settings.danmakuFontDescription),
+          detail: Text(fontFamilyLabel(t, family, name: ref.watch(freeFontStoreProvider).nameOf(family))),
+          showChevron: true,
+          onPressed: () => showFontManagerPage(context, ref, danmaku: true),
         ),
       ],
     );
   }
 }
 
-/// Every control of the flying layer, in the order the preview page groups
-/// them. The preview is the only page that tunes them, so the rows keep only
-/// their names: the sidebar is too narrow for the explanations.
+/// The style page's sidebar: its categories on a segmented control — text,
+/// effects, layout, performance and the compact window — so no view grows
+/// into a scroll of thirty rows. The rows keep only their names: the sidebar
+/// is too narrow for explanations.
 final class DanmakuStyleSettings extends ConsumerStatefulWidget {
   /// The controls.
   const DanmakuStyleSettings({super.key});
@@ -177,18 +248,18 @@ final class DanmakuStyleSettings extends ConsumerStatefulWidget {
   ConsumerState<DanmakuStyleSettings> createState() => _DanmakuStyleSettingsState();
 }
 
+/// The style page's categories, on the sidebar's segmented control: the
+/// text's own look, its edge effects, the lanes it flies in, the engine's
+/// performance knobs, and the compact window's overrides.
+enum _StyleSection { text, effects, layout, performance, mini }
+
 final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSettings> {
+  /// The category shown in the sidebar.
+  _StyleSection _section = _StyleSection.text;
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final playback = ref.watch(playbackSettingsProvider);
-    final style = ref.watch(danmakuStyleProvider);
-    final controller = ref.read(danmakuStyleProvider.notifier);
-    final frameRate = ref.watch(danmakuFrameRateProvider);
-    final frameRateController = ref.read(danmakuFrameRateProvider.notifier);
-    final effectiveFps = ref.watch(danmakuEffectiveFpsProvider);
-    final pipScale = ref.watch(pipDanmakuScaleProvider);
-    final pipScaleController = ref.read(pipDanmakuScaleProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -202,94 +273,276 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
             variant: DsButtonVariant.secondary,
             size: DsSize.sm,
             leading: const DsIcon(DsIcons.rotateCw, size: 16),
-            onPressed: () {
-              unawaited(controller.reset());
-              unawaited(frameRateController.reset());
-              unawaited(ref.read(danmakuFixedTopProvider.notifier).reset());
-              unawaited(ref.read(danmakuFixedBottomProvider.notifier).reset());
-              unawaited(ref.read(danmakuFixedDurationProvider.notifier).reset());
-              unawaited(ref.read(danmakuTapInteractionProvider.notifier).reset());
-              unawaited(ref.read(danmakuLongPressInteractionProvider.notifier).reset());
-              unawaited(pipScaleController.reset());
-            },
+            onPressed: _resetAll,
             child: Text(t.settings.styleReset),
           ),
         ),
+        // Five names do not fit a narrow sidebar on one line: the control
+        // scrolls sideways instead of squeezing its own segments.
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DsSegmentedControl<_StyleSection>(
+              value: _section,
+              semanticLabel: t.settings.danmakuStyleGroup,
+              segments: [
+                DsSegment(value: _StyleSection.text, label: Text(t.settings.danmakuSectionText)),
+                DsSegment(value: _StyleSection.effects, label: Text(t.settings.danmakuSectionEffects)),
+                DsSegment(value: _StyleSection.layout, label: Text(t.settings.danmakuSectionLayout)),
+                DsSegment(value: _StyleSection.performance, label: Text(t.settings.danmakuSectionPerformance)),
+                DsSegment(value: _StyleSection.mini, label: Text(t.settings.danmakuSectionMini)),
+              ],
+              onChanged: (value) => setState(() => _section = value),
+            ),
+          ),
+        ),
+        switch (_section) {
+          _StyleSection.text => _textSection(context),
+          _StyleSection.effects => _effectsSection(context),
+          _StyleSection.layout => _layoutSection(context),
+          _StyleSection.performance => _performanceSection(context),
+          _StyleSection.mini => _miniSection(context),
+        },
+      ],
+    );
+  }
+
+  /// Restores every knob the flying layer owns, whichever category shows it.
+  void _resetAll() {
+    unawaited(ref.read(danmakuStyleProvider.notifier).reset());
+    unawaited(ref.read(danmakuFrameRateProvider.notifier).reset());
+    unawaited(ref.read(danmakuFixedTopProvider.notifier).reset());
+    unawaited(ref.read(danmakuFixedBottomProvider.notifier).reset());
+    unawaited(ref.read(danmakuFixedDurationProvider.notifier).reset());
+    unawaited(ref.read(danmakuTapInteractionProvider.notifier).reset());
+    unawaited(ref.read(danmakuLongPressInteractionProvider.notifier).reset());
+    unawaited(ref.read(pipDanmakuScaleProvider.notifier).reset());
+  }
+
+  /// The words themselves: size, weight, colour, spacing, speed, opacity and
+  /// the switch that drops emoji.
+  Widget _textSection(BuildContext context) {
+    final t = context.t;
+    final style = ref.watch(danmakuStyleProvider);
+    final controller = ref.read(danmakuStyleProvider.notifier);
+    return DsListSection(
+      children: [
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.caseSensitive),
+          title: t.settings.styleFontSize,
+          detail: Text('${style.fontSize.toStringAsFixed(1)} px'),
+          controlWidth: 220,
+          control: DsSlider(
+            value: style.fontSize,
+            min: DanmakuStyleRange.fontSizeMin,
+            max: DanmakuStyleRange.fontSizeMax,
+            onChanged: (value) => unawaited(controller.setFontSize(value)),
+            semanticLabel: t.settings.styleFontSize,
+            semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.bold),
+          title: t.settings.styleFontWeight,
+          detail: Text(danmakuFontWeightLabel(t, style.fontWeight)),
+          controlWidth: 220,
+          control: DsSlider(
+            value: style.fontWeight.toDouble(),
+            min: DanmakuStyleRange.fontWeightMin.toDouble(),
+            max: DanmakuStyleRange.fontWeightMax.toDouble(),
+            divisions: DanmakuStyleRange.fontWeightDivisions,
+            onChanged: (value) => unawaited(controller.setFontWeight(value.round())),
+            semanticLabel: t.settings.styleFontWeight,
+            semanticFormatter: (value) => danmakuFontWeightLabel(t, value.round()),
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.italic),
+          title: t.settings.styleItalic,
+          control: DsSwitch(
+            value: style.italic,
+            onChanged: (value) => unawaited(controller.setItalic(value: value)),
+          ),
+        ),
+        _colorRow(
+          title: t.settings.styleTextColor,
+          value: style.textColor,
+          onPicked: (value) => unawaited(controller.setTextColor(value)),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.letterSpacing),
+          title: t.settings.styleLetterSpacing,
+          detail: Text('${style.letterSpacing.toStringAsFixed(1)} px'),
+          controlWidth: 220,
+          control: DsSlider(
+            value: style.letterSpacing,
+            min: DanmakuStyleRange.letterSpacingMin,
+            max: DanmakuStyleRange.letterSpacingMax,
+            onChanged: (value) => unawaited(controller.setLetterSpacing(value)),
+            semanticLabel: t.settings.styleLetterSpacing,
+            semanticFormatter: (value) => '${style.letterSpacing.toStringAsFixed(1)} px',
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.wind),
+          title: t.settings.styleSpeed,
+          detail: Text('${style.baseSpeed.round()} px/s'),
+          controlWidth: 220,
+          control: DsSlider(
+            value: style.baseSpeed,
+            min: DanmakuStyleRange.speedMin,
+            max: DanmakuStyleRange.speedMax,
+            onChanged: (value) => unawaited(controller.setBaseSpeed(value)),
+            semanticLabel: t.settings.styleSpeed,
+            semanticFormatter: (value) => '${value.round()} px/s',
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.blend),
+          title: t.settings.styleOpacity,
+          detail: Text('${(style.opacity * 100).round()}%'),
+          controlWidth: 220,
+          control: DsSlider(
+            value: style.opacity,
+            onChanged: (value) => unawaited(controller.setOpacity(value)),
+            semanticLabel: t.settings.styleOpacity,
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.circleSlash),
+          title: t.settings.styleNoEmoji,
+          control: DsSwitch(
+            value: style.noEmoji,
+            onChanged: (value) => unawaited(controller.setNoEmoji(value: value)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// What surrounds the glyphs: the outline and the shadow, their colours
+  /// and offsets, and the switch for gift effects on the picture.
+  Widget _effectsSection(BuildContext context) {
+    final t = context.t;
+    final style = ref.watch(danmakuStyleProvider);
+    final controller = ref.read(danmakuStyleProvider.notifier);
+    return DsListSection(
+      children: [
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.typeOutline),
+          title: t.settings.styleStroke,
+          control: DsSwitch(
+            value: style.showStroke,
+            onChanged: (value) => unawaited(controller.setShowStroke(value: value)),
+          ),
+        ),
+        // The outline's own knobs exist only while the outline does: a
+        // switched-off effect has nothing to tune, and its stored values
+        // wait for the switch to come back on.
+        if (style.showStroke) ...[
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.penTool),
+            title: t.settings.styleStrokeWidth,
+            detail: Text('${style.strokeWidth.toStringAsFixed(1)} px'),
+            controlWidth: 220,
+            control: DsSlider(
+              value: style.strokeWidth,
+              max: DanmakuStyleRange.strokeWidthMax,
+              onChanged: (value) => unawaited(controller.setStrokeWidth(value)),
+              semanticLabel: t.settings.styleStrokeWidth,
+              semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
+            ),
+          ),
+          _colorRow(
+            title: t.settings.styleStrokeColor,
+            value: style.strokeColor,
+            onPicked: (value) => unawaited(controller.setStrokeColor(value)),
+          ),
+        ],
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.sunDim),
+          title: t.settings.styleShadow,
+          control: DsSwitch(
+            value: style.showShadow,
+            onChanged: (value) => unawaited(controller.setShowShadow(value: value)),
+          ),
+        ),
+        if (style.showShadow) ...[
+          _colorRow(
+            title: t.settings.styleShadowColor,
+            value: style.shadowColor,
+            onPicked: (value) => unawaited(controller.setShadowColor(value)),
+          ),
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.waves),
+            title: t.settings.styleShadowBlur,
+            detail: Text('${style.shadowBlur.toStringAsFixed(1)} px'),
+            controlWidth: 220,
+            control: DsSlider(
+              value: style.shadowBlur,
+              max: DanmakuStyleRange.shadowBlurMax,
+              onChanged: (value) => unawaited(controller.setShadowBlur(value)),
+              semanticLabel: t.settings.styleShadowBlur,
+              semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
+            ),
+          ),
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.moveHorizontal),
+            title: t.settings.styleShadowOffsetX,
+            detail: Text('${style.shadowOffsetX.round()} px'),
+            controlWidth: 220,
+            control: DsSlider(
+              value: style.shadowOffsetX,
+              min: DanmakuStyleRange.shadowOffsetMin,
+              max: DanmakuStyleRange.shadowOffsetMax,
+              divisions: DanmakuStyleRange.shadowOffsetDivisions,
+              onChanged: (value) => unawaited(controller.setShadowOffsetX(value)),
+              semanticLabel: t.settings.styleShadowOffsetX,
+              semanticFormatter: (value) => '${value.round()} px',
+            ),
+          ),
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.moveVertical),
+            title: t.settings.styleShadowOffsetY,
+            detail: Text('${style.shadowOffsetY.round()} px'),
+            controlWidth: 220,
+            control: DsSlider(
+              value: style.shadowOffsetY,
+              min: DanmakuStyleRange.shadowOffsetMin,
+              max: DanmakuStyleRange.shadowOffsetMax,
+              divisions: DanmakuStyleRange.shadowOffsetDivisions,
+              onChanged: (value) => unawaited(controller.setShadowOffsetY(value)),
+              semanticLabel: t.settings.styleShadowOffsetY,
+              semanticFormatter: (value) => '${value.round()} px',
+            ),
+          ),
+        ],
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.gift),
+          title: t.settings.danmakuShowGifts,
+          control: DsSwitch(
+            value: ref.watch(danmakuShowGiftsProvider),
+            onChanged: (value) => unawaited(ref.read(danmakuShowGiftsProvider.notifier).set(value: value)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Where the lines may fly: the area, its margins, the lanes, emoji and
+  /// gaps, and the two pinned lanes with their stay.
+  Widget _layoutSection(BuildContext context) {
+    final t = context.t;
+    final style = ref.watch(danmakuStyleProvider);
+    final controller = ref.read(danmakuStyleProvider.notifier);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
         DsListSection(
-          header: Text(t.settings.danmakuStyleGroup),
+          header: Text(t.settings.danmakuLaneGroup),
           children: [
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.caseSensitive),
-              title: t.settings.styleFontSize,
-              detail: Text('${style.fontSize.toStringAsFixed(1)} px'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.fontSize,
-                min: DanmakuStyleRange.fontSizeMin,
-                max: DanmakuStyleRange.fontSizeMax,
-                onChanged: (value) => unawaited(controller.setFontSize(value)),
-                semanticLabel: t.settings.styleFontSize,
-                semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.bold),
-              title: t.settings.styleFontWeight,
-              detail: Text(danmakuFontWeightLabel(t, style.fontWeight)),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.fontWeight.toDouble(),
-                min: DanmakuStyleRange.fontWeightMin.toDouble(),
-                max: DanmakuStyleRange.fontWeightMax.toDouble(),
-                divisions: DanmakuStyleRange.fontWeightDivisions,
-                onChanged: (value) => unawaited(controller.setFontWeight(value.round())),
-                semanticLabel: t.settings.styleFontWeight,
-                semanticFormatter: (value) => danmakuFontWeightLabel(t, value.round()),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.italic),
-              title: t.settings.styleItalic,
-              control: DsSwitch(
-                value: style.italic,
-                onChanged: (value) => unawaited(controller.setItalic(value: value)),
-              ),
-            ),
-            SettingsChoiceRow<int>(
-              leading: const DsIcon(DsIcons.palette),
-              title: t.settings.styleTextColor,
-              value: style.textColor,
-              options: _colorOptions(t),
-              onChanged: (value) => unawaited(controller.setTextColor(value)),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.letterSpacing),
-              title: t.settings.styleLetterSpacing,
-              detail: Text('${style.letterSpacing.toStringAsFixed(1)} px'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.letterSpacing,
-                min: DanmakuStyleRange.letterSpacingMin,
-                max: DanmakuStyleRange.letterSpacingMax,
-                onChanged: (value) => unawaited(controller.setLetterSpacing(value)),
-                semanticLabel: t.settings.styleLetterSpacing,
-                semanticFormatter: (value) => '${style.letterSpacing.toStringAsFixed(1)} px',
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.wind),
-              title: t.settings.styleSpeed,
-              detail: Text('${style.baseSpeed.round()} px/s'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.baseSpeed,
-                min: DanmakuStyleRange.speedMin,
-                max: DanmakuStyleRange.speedMax,
-                onChanged: (value) => unawaited(controller.setBaseSpeed(value)),
-                semanticLabel: t.settings.styleSpeed,
-                semanticFormatter: (value) => '${value.round()} px/s',
-              ),
-            ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.moveVertical),
               title: t.settings.styleArea,
@@ -332,209 +585,6 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
                 },
               ),
             ),
-            // The engine's two pinned lanes, which the area and margins above
-            // do not cover: a platform's top- or bottom-pinned message, and
-            // how long one stays up.
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.arrowUpToLine),
-              title: t.settings.fixedTopTitle,
-              control: DsSwitch(
-                value: ref.watch(danmakuFixedTopProvider),
-                onChanged: (value) => unawaited(ref.read(danmakuFixedTopProvider.notifier).set(value: value)),
-                semanticLabel: t.settings.fixedTopTitle,
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.arrowDownToLine),
-              title: t.settings.fixedBottomTitle,
-              control: DsSwitch(
-                value: ref.watch(danmakuFixedBottomProvider),
-                onChanged: (value) => unawaited(ref.read(danmakuFixedBottomProvider.notifier).set(value: value)),
-                semanticLabel: t.settings.fixedBottomTitle,
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.gauge),
-              title: t.settings.fixedDurationTitle,
-              detail: Text('${ref.watch(danmakuFixedDurationProvider).round()} s'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: ref.watch(danmakuFixedDurationProvider),
-                min: kDanmakuFixedDurationMin,
-                max: kDanmakuFixedDurationMax,
-                divisions: (kDanmakuFixedDurationMax - kDanmakuFixedDurationMin).round(),
-                onChanged: (value) => unawaited(ref.read(danmakuFixedDurationProvider.notifier).set(value)),
-                semanticLabel: t.settings.fixedDurationTitle,
-                semanticFormatter: (value) => '${value.round()} s',
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.blend),
-              title: t.settings.styleOpacity,
-              detail: Text('${(style.opacity * 100).round()}%'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.opacity,
-                onChanged: (value) => unawaited(controller.setOpacity(value)),
-                semanticLabel: t.settings.styleOpacity,
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.typeOutline),
-              title: t.settings.styleStroke,
-              control: DsSwitch(
-                value: style.showStroke,
-                onChanged: (value) => unawaited(controller.setShowStroke(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.penTool),
-              title: t.settings.styleStrokeWidth,
-              detail: Text('${style.strokeWidth.toStringAsFixed(1)} px'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.strokeWidth,
-                max: DanmakuStyleRange.strokeWidthMax,
-                // Greyed out while the outline is off, as in the reference;
-                // the stored width survives for when it is switched back on.
-                onChanged: style.showStroke ? (value) => unawaited(controller.setStrokeWidth(value)) : null,
-                semanticLabel: t.settings.styleStrokeWidth,
-                semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
-              ),
-            ),
-            SettingsChoiceRow<int>(
-              leading: const DsIcon(DsIcons.paintbrush),
-              title: t.settings.styleStrokeColor,
-              value: style.strokeColor,
-              options: _colorOptions(t),
-              onChanged: (value) => unawaited(controller.setStrokeColor(value)),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.sunDim),
-              title: t.settings.styleShadow,
-              control: DsSwitch(
-                value: style.showShadow,
-                onChanged: (value) => unawaited(controller.setShowShadow(value: value)),
-              ),
-            ),
-            SettingsChoiceRow<int>(
-              leading: const DsIcon(DsIcons.palette),
-              title: t.settings.styleShadowColor,
-              value: style.shadowColor,
-              options: _colorOptions(t),
-              onChanged: (value) => unawaited(controller.setShadowColor(value)),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.waves),
-              title: t.settings.styleShadowBlur,
-              detail: Text('${style.shadowBlur.toStringAsFixed(1)} px'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.shadowBlur,
-                max: DanmakuStyleRange.shadowBlurMax,
-                onChanged: style.showShadow ? (value) => unawaited(controller.setShadowBlur(value)) : null,
-                semanticLabel: t.settings.styleShadowBlur,
-                semanticFormatter: (value) => '${value.toStringAsFixed(1)} px',
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.moveHorizontal),
-              title: t.settings.styleShadowOffsetX,
-              detail: Text('${style.shadowOffsetX.round()} px'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.shadowOffsetX,
-                min: DanmakuStyleRange.shadowOffsetMin,
-                max: DanmakuStyleRange.shadowOffsetMax,
-                divisions: DanmakuStyleRange.shadowOffsetDivisions,
-                onChanged: style.showShadow ? (value) => unawaited(controller.setShadowOffsetX(value)) : null,
-                semanticLabel: t.settings.styleShadowOffsetX,
-                semanticFormatter: (value) => '${value.round()} px',
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.moveVertical),
-              title: t.settings.styleShadowOffsetY,
-              detail: Text('${style.shadowOffsetY.round()} px'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.shadowOffsetY,
-                min: DanmakuStyleRange.shadowOffsetMin,
-                max: DanmakuStyleRange.shadowOffsetMax,
-                divisions: DanmakuStyleRange.shadowOffsetDivisions,
-                onChanged: style.showShadow ? (value) => unawaited(controller.setShadowOffsetY(value)) : null,
-                semanticLabel: t.settings.styleShadowOffsetY,
-                semanticFormatter: (value) => '${value.round()} px',
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.circleSlash),
-              title: t.settings.styleNoEmoji,
-              control: DsSwitch(
-                value: style.noEmoji,
-                onChanged: (value) => unawaited(controller.setNoEmoji(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.sparkles),
-              title: t.settings.styleFpsFollow,
-              control: DsSwitch(
-                value: frameRate.autoFps,
-                onChanged: (value) => unawaited(frameRateController.setAutoFps(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.gauge),
-              title: t.settings.styleFps,
-              detail: Text(t.settings.styleFpsValue(count: '${frameRate.autoFps ? effectiveFps : frameRate.fps}')),
-              controlWidth: 220,
-              control: DsSlider(
-                value: (frameRate.autoFps ? effectiveFps : frameRate.fps).toDouble(),
-                min: DanmakuStyleRange.fpsMin.toDouble(),
-                max: DanmakuStyleRange.fpsMax.toDouble(),
-                divisions: DanmakuStyleRange.fpsDivisions,
-                onChanged: frameRate.autoFps ? null : (value) => unawaited(frameRateController.setFps(value.round())),
-                semanticLabel: t.settings.styleFps,
-                semanticFormatter: (value) => t.settings.styleFpsValue(count: '${value.round()}'),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.list),
-              title: t.settings.styleMaxVisible,
-              detail: Text(t.settings.styleMaxVisibleValue(count: '${style.maxVisibleCount}')),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.maxVisibleCount.toDouble(),
-                min: DanmakuStyleRange.maxVisibleMin.toDouble(),
-                max: DanmakuStyleRange.maxVisibleMax.toDouble(),
-                divisions: DanmakuStyleRange.maxVisibleDivisions,
-                onChanged: style.massMode ? null : (value) => unawaited(controller.setMaxVisibleCount(value.round())),
-                semanticLabel: t.settings.styleMaxVisible,
-                semanticFormatter: (value) => t.settings.styleMaxVisibleValue(count: '${value.round()}'),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.waves),
-              title: t.settings.styleMassMode,
-              control: DsSwitch(
-                value: style.massMode,
-                onChanged: (value) => unawaited(controller.setMassMode(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.gift),
-              title: t.settings.danmakuShowGifts,
-              control: DsSwitch(
-                value: ref.watch(danmakuShowGiftsProvider),
-                onChanged: (value) => unawaited(ref.read(danmakuShowGiftsProvider.notifier).set(value: value)),
-              ),
-            ),
-          ],
-        ),
-        // The lanes the engine allocates and the edges it must not cross.
-        DsListSection(
-          header: Text(t.settings.danmakuLaneGroup),
-          children: [
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.rows3),
               title: t.settings.styleTrackHeight,
@@ -589,167 +639,287 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
             ),
           ],
         ),
-        // The queue the layer drains and the caches it draws from: what a
-        // burst does to these decides whether a message arrives fresh or
-        // late.
         DsListSection(
-          header: Text(t.settings.danmakuQueueGroup),
+          header: Text(t.settings.danmakuFixedGroup),
           children: [
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.list),
-              title: t.settings.styleMaxPending,
-              detail: Text('${style.maxPendingCount}'),
-              controlWidth: 220,
-              control: DsNumberField(
-                value: style.maxPendingCount,
-                min: DanmakuStyleRange.maxPendingMin,
-                max: DanmakuStyleRange.maxPendingMax,
-                semanticLabel: t.settings.styleMaxPending,
-                onChanged: (value) {
-                  if (value != null) unawaited(controller.setMaxPendingCount(value.toInt()));
-                },
+              leading: const DsIcon(DsIcons.arrowUpToLine),
+              title: t.settings.fixedTopTitle,
+              control: DsSwitch(
+                value: ref.watch(danmakuFixedTopProvider),
+                onChanged: (value) => unawaited(ref.read(danmakuFixedTopProvider.notifier).set(value: value)),
+                semanticLabel: t.settings.fixedTopTitle,
               ),
             ),
             SettingsConfigRow(
-              leading: const DsIcon(DsIcons.timer),
-              title: t.settings.styleMaxPendingAge,
-              detail: Text('${style.maxPendingAge.toStringAsFixed(0)} s'),
+              leading: const DsIcon(DsIcons.arrowDownToLine),
+              title: t.settings.fixedBottomTitle,
+              control: DsSwitch(
+                value: ref.watch(danmakuFixedBottomProvider),
+                onChanged: (value) => unawaited(ref.read(danmakuFixedBottomProvider.notifier).set(value: value)),
+                semanticLabel: t.settings.fixedBottomTitle,
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.gauge),
+              title: t.settings.fixedDurationTitle,
+              detail: Text('${ref.watch(danmakuFixedDurationProvider).round()} s'),
               controlWidth: 220,
               control: DsSlider(
-                value: style.maxPendingAge,
-                min: DanmakuStyleRange.maxPendingAgeMin,
-                max: DanmakuStyleRange.maxPendingAgeMax,
-                divisions: (DanmakuStyleRange.maxPendingAgeMax - DanmakuStyleRange.maxPendingAgeMin).round(),
-                onChanged: (value) => unawaited(controller.setMaxPendingAge(value)),
-                semanticLabel: t.settings.styleMaxPendingAge,
+                value: ref.watch(danmakuFixedDurationProvider),
+                min: kDanmakuFixedDurationMin,
+                max: kDanmakuFixedDurationMax,
+                divisions: (kDanmakuFixedDurationMax - kDanmakuFixedDurationMin).round(),
+                onChanged: (value) => unawaited(ref.read(danmakuFixedDurationProvider.notifier).set(value)),
+                semanticLabel: t.settings.fixedDurationTitle,
                 semanticFormatter: (value) => '${value.round()} s',
               ),
             ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.send),
-              title: t.settings.styleEmitInterval,
-              detail: Text('${(style.emitInterval * 1000).round()} ms'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: style.emitInterval,
-                onChanged: style.massMode ? null : (value) => unawaited(controller.setEmitInterval(value)),
-                semanticLabel: t.settings.styleEmitInterval,
-                semanticFormatter: (value) => '${(value * 1000).round()} ms',
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.image),
-              title: t.settings.styleRasterize,
-              control: DsSwitch(
-                value: style.rasterize,
-                onChanged: (value) => unawaited(controller.setRasterize(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.layers),
-              title: t.settings.styleBarragePool,
-              detail: Text('${style.barragePoolMaxSize}'),
-              controlWidth: 220,
-              control: DsNumberField(
-                value: style.barragePoolMaxSize,
-                min: DanmakuStyleRange.barragePoolMin,
-                max: DanmakuStyleRange.barragePoolMax,
-                semanticLabel: t.settings.styleBarragePool,
-                onChanged: (value) {
-                  if (value != null) unawaited(controller.setBarragePoolMaxSize(value.toInt()));
-                },
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.images),
-              title: t.settings.stylePictureCache,
-              detail: Text('${style.pictureCacheMaxSize}'),
-              controlWidth: 220,
-              control: DsNumberField(
-                value: style.pictureCacheMaxSize,
-                min: DanmakuStyleRange.pictureCacheMin,
-                max: DanmakuStyleRange.pictureCacheMax,
-                semanticLabel: t.settings.stylePictureCache,
-                onChanged: (value) {
-                  if (value != null) unawaited(controller.setPictureCacheMaxSize(value.toInt()));
-                },
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.type),
-              title: t.settings.styleTextCache,
-              detail: Text('${style.textCacheMaxSize}'),
-              controlWidth: 220,
-              control: DsNumberField(
-                value: style.textCacheMaxSize,
-                min: DanmakuStyleRange.textCacheMin,
-                max: DanmakuStyleRange.textCacheMax,
-                semanticLabel: t.settings.styleTextCache,
-                onChanged: (value) {
-                  if (value != null) unawaited(controller.setTextCacheMaxSize(value.toInt()));
-                },
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.database),
-              title: t.settings.styleRasterCache,
-              detail: Text('${style.rasterCacheMb} MB'),
-              controlWidth: 220,
-              control: DsNumberField(
-                value: style.rasterCacheMb,
-                min: DanmakuStyleRange.rasterCacheMbMin,
-                max: DanmakuStyleRange.rasterCacheMbMax,
-                semanticLabel: t.settings.styleRasterCache,
-                onChanged: (value) {
-                  if (value != null) unawaited(controller.setRasterCacheMb(value.toInt()));
-                },
-              ),
-            ),
-          ],
-        ),
-        // The compact window's own layer: whether it draws danmaku at all,
-        // and how large they are against the shrunken picture.
-        DsListSection(
-          header: Text(t.settings.navMiniDanmaku),
-          children: [
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.pictureInPicture),
-              title: t.settings.miniDanmakuVisible,
-              control: DsSwitch(
-                value: playback.miniDanmakuVisible,
-                onChanged: (value) =>
-                    unawaited(ref.read(playbackSettingsProvider.notifier).setMiniDanmakuVisible(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.appWindow),
-              title: t.settings.pipDanmakuScaleAuto,
-              control: DsSwitch(
-                value: pipScale.auto,
-                onChanged: (value) => unawaited(pipScaleController.setAuto(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.scale),
-              title: t.settings.pipDanmakuScale,
-              detail: Text('x${pipScale.scale.toStringAsFixed(2)}'),
-              controlWidth: 220,
-              // The manual scale is greyed out while the auto scale owns it —
-              // the row stays on screen, it only stops answering taps.
-              control: DsSlider(
-                value: pipScale.scale,
-                min: kPipDanmakuScaleMin,
-                divisions: ((kPipDanmakuScaleMax - kPipDanmakuScaleMin) / 0.01).round(),
-                onChanged: pipScale.auto ? null : (value) => unawaited(pipScaleController.setScale(value)),
-                semanticLabel: t.settings.pipDanmakuScale,
-                semanticFormatter: (value) => 'x${value.toStringAsFixed(2)}',
-              ),
-            ),
-            SettingsHint(t.settings.miniDanmakuHint),
           ],
         ),
       ],
     );
+  }
+
+  /// The engine's own knobs: what it draws per second, how it queues and
+  /// caches, and the note on what to move first on a weak device.
+  Widget _performanceSection(BuildContext context) {
+    final t = context.t;
+    final style = ref.watch(danmakuStyleProvider);
+    final controller = ref.read(danmakuStyleProvider.notifier);
+    final frameRate = ref.watch(danmakuFrameRateProvider);
+    final frameRateController = ref.read(danmakuFrameRateProvider.notifier);
+    return DsListSection(
+      children: [
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.sparkles),
+          title: t.settings.styleFpsFollow,
+          control: DsSwitch(
+            value: frameRate.autoFps,
+            onChanged: (value) => unawaited(frameRateController.setAutoFps(value: value)),
+          ),
+        ),
+        // The manual rate exists only while the display does not own it.
+        if (!frameRate.autoFps)
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.gauge),
+            title: t.settings.styleFps,
+            detail: Text(t.settings.styleFpsValue(count: '${frameRate.fps}')),
+            controlWidth: 220,
+            control: DsSlider(
+              value: frameRate.fps.toDouble(),
+              min: DanmakuStyleRange.fpsMin.toDouble(),
+              max: DanmakuStyleRange.fpsMax.toDouble(),
+              divisions: DanmakuStyleRange.fpsDivisions,
+              onChanged: (value) => unawaited(frameRateController.setFps(value.round())),
+              semanticLabel: t.settings.styleFps,
+              semanticFormatter: (value) => t.settings.styleFpsValue(count: '${value.round()}'),
+            ),
+          ),
+        // Mass mode takes over the same-screen count and the dispatch tick,
+        // so the two knobs it overrides step out while it is on.
+        if (!style.massMode) ...[
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.list),
+            title: t.settings.styleMaxVisible,
+            detail: Text(t.settings.styleMaxVisibleValue(count: '${style.maxVisibleCount}')),
+            controlWidth: 220,
+            control: DsSlider(
+              value: style.maxVisibleCount.toDouble(),
+              min: DanmakuStyleRange.maxVisibleMin.toDouble(),
+              max: DanmakuStyleRange.maxVisibleMax.toDouble(),
+              divisions: DanmakuStyleRange.maxVisibleDivisions,
+              onChanged: (value) => unawaited(controller.setMaxVisibleCount(value.round())),
+              semanticLabel: t.settings.styleMaxVisible,
+              semanticFormatter: (value) => t.settings.styleMaxVisibleValue(count: '${value.round()}'),
+            ),
+          ),
+        ],
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.waves),
+          title: t.settings.styleMassMode,
+          control: DsSwitch(
+            value: style.massMode,
+            onChanged: (value) => unawaited(controller.setMassMode(value: value)),
+          ),
+        ),
+        if (!style.massMode)
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.send),
+            title: t.settings.styleEmitInterval,
+            detail: Text('${(style.emitInterval * 1000).round()} ms'),
+            controlWidth: 220,
+            control: DsSlider(
+              value: style.emitInterval,
+              onChanged: (value) => unawaited(controller.setEmitInterval(value)),
+              semanticLabel: t.settings.styleEmitInterval,
+              semanticFormatter: (value) => '${(value * 1000).round()} ms',
+            ),
+          ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.list),
+          title: t.settings.styleMaxPending,
+          detail: Text('${style.maxPendingCount}'),
+          controlWidth: 220,
+          control: DsNumberField(
+            value: style.maxPendingCount,
+            min: DanmakuStyleRange.maxPendingMin,
+            max: DanmakuStyleRange.maxPendingMax,
+            semanticLabel: t.settings.styleMaxPending,
+            onChanged: (value) {
+              if (value != null) unawaited(controller.setMaxPendingCount(value.toInt()));
+            },
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.timer),
+          title: t.settings.styleMaxPendingAge,
+          detail: Text('${style.maxPendingAge.toStringAsFixed(0)} s'),
+          controlWidth: 220,
+          control: DsSlider(
+            value: style.maxPendingAge,
+            min: DanmakuStyleRange.maxPendingAgeMin,
+            max: DanmakuStyleRange.maxPendingAgeMax,
+            divisions: (DanmakuStyleRange.maxPendingAgeMax - DanmakuStyleRange.maxPendingAgeMin).round(),
+            onChanged: (value) => unawaited(controller.setMaxPendingAge(value)),
+            semanticLabel: t.settings.styleMaxPendingAge,
+            semanticFormatter: (value) => '${value.round()} s',
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.image),
+          title: t.settings.styleRasterize,
+          control: DsSwitch(
+            value: style.rasterize,
+            onChanged: (value) => unawaited(controller.setRasterize(value: value)),
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.layers),
+          title: t.settings.styleBarragePool,
+          detail: Text('${style.barragePoolMaxSize}'),
+          controlWidth: 220,
+          control: DsNumberField(
+            value: style.barragePoolMaxSize,
+            min: DanmakuStyleRange.barragePoolMin,
+            max: DanmakuStyleRange.barragePoolMax,
+            semanticLabel: t.settings.styleBarragePool,
+            onChanged: (value) {
+              if (value != null) unawaited(controller.setBarragePoolMaxSize(value.toInt()));
+            },
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.images),
+          title: t.settings.stylePictureCache,
+          detail: Text('${style.pictureCacheMaxSize}'),
+          controlWidth: 220,
+          control: DsNumberField(
+            value: style.pictureCacheMaxSize,
+            min: DanmakuStyleRange.pictureCacheMin,
+            max: DanmakuStyleRange.pictureCacheMax,
+            semanticLabel: t.settings.stylePictureCache,
+            onChanged: (value) {
+              if (value != null) unawaited(controller.setPictureCacheMaxSize(value.toInt()));
+            },
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.type),
+          title: t.settings.styleTextCache,
+          detail: Text('${style.textCacheMaxSize}'),
+          controlWidth: 220,
+          control: DsNumberField(
+            value: style.textCacheMaxSize,
+            min: DanmakuStyleRange.textCacheMin,
+            max: DanmakuStyleRange.textCacheMax,
+            semanticLabel: t.settings.styleTextCache,
+            onChanged: (value) {
+              if (value != null) unawaited(controller.setTextCacheMaxSize(value.toInt()));
+            },
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.database),
+          title: t.settings.styleRasterCache,
+          detail: Text('${style.rasterCacheMb} MB'),
+          controlWidth: 220,
+          control: DsNumberField(
+            value: style.rasterCacheMb,
+            min: DanmakuStyleRange.rasterCacheMbMin,
+            max: DanmakuStyleRange.rasterCacheMbMax,
+            semanticLabel: t.settings.styleRasterCache,
+            onChanged: (value) {
+              if (value != null) unawaited(controller.setRasterCacheMb(value.toInt()));
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The compact window's own layer: whether it draws danmaku at all, and
+  /// how large they are against the shrunken picture.
+  Widget _miniSection(BuildContext context) {
+    final t = context.t;
+    final playback = ref.watch(playbackSettingsProvider);
+    final pipScale = ref.watch(pipDanmakuScaleProvider);
+    final pipScaleController = ref.read(pipDanmakuScaleProvider.notifier);
+    return DsListSection(
+      children: [
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.pictureInPicture),
+          title: t.settings.miniDanmakuVisible,
+          control: DsSwitch(
+            value: playback.miniDanmakuVisible,
+            onChanged: (value) =>
+                unawaited(ref.read(playbackSettingsProvider.notifier).setMiniDanmakuVisible(value: value)),
+          ),
+        ),
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.appWindow),
+          title: t.settings.pipDanmakuScaleAuto,
+          control: DsSwitch(
+            value: pipScale.auto,
+            onChanged: (value) => unawaited(pipScaleController.setAuto(value: value)),
+          ),
+        ),
+        // The manual scale exists only while the automatic one is off.
+        if (!pipScale.auto)
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.scale),
+            title: t.settings.pipDanmakuScale,
+            detail: Text('x${pipScale.scale.toStringAsFixed(2)}'),
+            controlWidth: 220,
+            control: DsSlider(
+              value: pipScale.scale,
+              min: kPipDanmakuScaleMin,
+              divisions: ((kPipDanmakuScaleMax - kPipDanmakuScaleMin) / 0.01).round(),
+              onChanged: (value) => unawaited(pipScaleController.setScale(value)),
+              semanticLabel: t.settings.pipDanmakuScale,
+              semanticFormatter: (value) => 'x${value.toStringAsFixed(2)}',
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// One colour a row edits: the dot and the hex are the answer, and pressing
+  /// the row opens the picker, so the palette is a shortcut rather than the
+  /// only way in.
+  Widget _colorRow({required String title, required int value, required ValueChanged<int> onPicked}) {
+    return DsListRow(
+      leading: ColorDot(color: value),
+      title: Text(title),
+      detail: Text(colorPickerHexLabel(value)),
+      showChevron: true,
+      onPressed: () => unawaited(_pickColor(initial: value, onPicked: onPicked)),
+    );
+  }
+
+  Future<void> _pickColor({required int initial, required ValueChanged<int> onPicked}) async {
+    final picked = await showDanmakuColorDialog(context, initial: initial);
+    if (picked != null) onPicked(picked);
   }
 }
 
@@ -788,28 +958,27 @@ final class DanmakuDisplayPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(ref.read(chatShowGiftsProvider.notifier).set(value: value)),
               ),
             ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.coins),
-              title: t.settings.chatGiftsAboveTier,
-              description: t.settings.chatGiftsAboveTierDesc,
-              control: DsSwitch(
-                value: ref.watch(chatGiftsAboveTierProvider),
-                onChanged: showGifts
-                    ? (value) => unawaited(ref.read(chatGiftsAboveTierProvider.notifier).set(value: value))
-                    : null,
+            // The gift rows' own filters exist only while gift lines do.
+            if (showGifts) ...[
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.coins),
+                title: t.settings.chatGiftsAboveTier,
+                description: t.settings.chatGiftsAboveTierDesc,
+                control: DsSwitch(
+                  value: ref.watch(chatGiftsAboveTierProvider),
+                  onChanged: (value) => unawaited(ref.read(chatGiftsAboveTierProvider.notifier).set(value: value)),
+                ),
               ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.banknote),
-              title: t.settings.chatGiftValueInYuan,
-              description: t.settings.chatGiftValueInYuanDesc,
-              control: DsSwitch(
-                value: ref.watch(chatGiftValueInYuanProvider),
-                onChanged: showGifts
-                    ? (value) => unawaited(ref.read(chatGiftValueInYuanProvider.notifier).set(value: value))
-                    : null,
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.banknote),
+                title: t.settings.chatGiftValueInYuan,
+                description: t.settings.chatGiftValueInYuanDesc,
+                control: DsSwitch(
+                  value: ref.watch(chatGiftValueInYuanProvider),
+                  onChanged: (value) => unawaited(ref.read(chatGiftValueInYuanProvider.notifier).set(value: value)),
+                ),
               ),
-            ),
+            ],
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.rocket),
               title: t.settings.superChatIncludesMembership,
@@ -840,15 +1009,15 @@ final class DanmakuDisplayPane extends ConsumerWidget {
               ],
               onChanged: (value) => unawaited(ref.read(chatListFontSizeProvider.notifier).set(value)),
             ),
-            SettingsSegmentedRow<String>(
+            SettingsChoiceRow<String>(
               leading: const DsIcon(DsIcons.moveVertical),
               title: t.settings.chatListLineSpacing,
               description: t.settings.chatListLineSpacingDesc,
               value: ref.watch(chatListLineSpacingProvider),
               options: [
-                (value: 'compact', label: t.settings.chatListSpacingCompact),
-                (value: 'standard', label: t.settings.chatListSpacingStandard),
-                (value: 'loose', label: t.settings.chatListSpacingLoose),
+                DsSelectOption(value: 'compact', label: t.settings.chatListSpacingCompact),
+                DsSelectOption(value: 'standard', label: t.settings.chatListSpacingStandard),
+                DsSelectOption(value: 'loose', label: t.settings.chatListSpacingLoose),
               ],
               onChanged: (value) => unawaited(ref.read(chatListLineSpacingProvider.notifier).set(value)),
             ),
@@ -874,9 +1043,8 @@ final class DanmakuDisplayPane extends ConsumerWidget {
   }
 }
 
-/// The way into the full-window sample. The sample used to sit inline on the
-/// settings page; it now opens as a page of its own, so the flying layer can
-/// be seen at a room's size while its controls sit beside it.
+/// The way into the style page: the sample and its controls open as a page of
+/// their own, so the flying layer is seen at a room's size while it changes.
 final class DanmakuPreviewEntry extends StatelessWidget {
   /// The entry.
   const DanmakuPreviewEntry({super.key});
@@ -907,8 +1075,9 @@ Future<void> showDanmakuPreview(BuildContext context) {
 }
 
 /// A live sample of the flying layer, full-window: the real barrage engine,
-/// the real config the player builds, and a short loop of messages, with every
-/// style control in the sidebar so a knob answers where it is moved.
+/// the real config the player builds, and a short loop of messages, with the
+/// style controls in the sidebar so a knob answers where it is moved; the
+/// sidebar's categories split the controls so every one stays reachable.
 ///
 /// The sample text is what a room actually sends: a long title, an emoji, a
 /// coloured gift and a top-pinned line.
@@ -1057,45 +1226,3 @@ final class _PreviewLine {
   final String text;
   final int color;
 }
-
-/// The text, outline and shadow rows' choices: each palette colour with its
-/// name and a swatch, so the answer reads without opening the list.
-List<DsSelectOption<int>> _colorOptions(Translations t) => [
-  for (final color in kDanmakuColorChoices)
-    DsSelectOption(
-      value: color,
-      label: danmakuColorLabel(t, color),
-      leading: _DanmakuColorDot(color: color),
-    ),
-];
-
-/// One palette colour as a dot; a rim keeps white readable on white.
-final class _DanmakuColorDot extends StatelessWidget {
-  const _DanmakuColorDot({required this.color});
-
-  final int color;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    return Container(
-      width: 14,
-      height: 14,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Color(color),
-        border: Border.all(color: colors.border),
-      ),
-    );
-  }
-}
-
-/// The glyph a save format gets in the list: markup, braces, styled captions,
-/// plain captions, plain text.
-DsIconData _saveFormatIcon(DanmakuFormat format) => switch (format) {
-  DanmakuFormat.xml => DsIcons.fileCode,
-  DanmakuFormat.json => DsIcons.fileBraces,
-  DanmakuFormat.ass => DsIcons.captions,
-  DanmakuFormat.srt => DsIcons.captionsShort,
-  DanmakuFormat.txt => DsIcons.fileText,
-};

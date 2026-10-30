@@ -229,11 +229,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.shield, t.shield.blockLong, 'long danmaku length threshold block 超长 字数 屏蔽 弹幕'),
     _hit(SettingsSection.shield, t.shield.blockLongLength, 'length characters threshold 长度 字数 阈值'),
     _hit(SettingsSection.shield, t.shield.douyuSuspected, 'douyu bot suspected automated 斗鱼 机器人 疑似 过滤'),
-    _hit(
-      SettingsSection.danmaku,
-      s.showFlyingDanmaku,
-      'danmaku show hide flying overlay video chat list 弹幕 显示 隐藏 画面 聊天列表',
-    ),
     _hit(SettingsSection.danmaku, s.styleTapInteraction, 'tap click interaction actions copy block 点按 点击 弹幕 操作 复制 屏蔽'),
     _hit(SettingsSection.danmaku, s.styleLongPressInteraction, 'long press interaction actions 长按 弹幕 操作 复制 屏蔽'),
     _hit(SettingsSection.danmaku, s.holdDanmakuOnPress, 'hold freeze press danmaku 按住 冻结 弹幕'),
@@ -281,11 +276,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.danmaku, s.stylePictureCache, 'picture image cache 图片 缓存 弹幕'),
     _hit(SettingsSection.danmaku, s.styleTextCache, 'text paragraph cache 文字 排版 缓存 弹幕'),
     _hit(SettingsSection.danmaku, s.styleRasterCache, 'raster cache memory budget mb 光栅 缓存 显存 上限 弹幕'),
-    _hit(
-      SettingsSection.danmaku,
-      s.danmakuPausedBehavior,
-      'danmaku while paused pause video freeze keep flying 暂停 弹幕 跟随 继续 飘过',
-    ),
     _hit(SettingsSection.danmakuDisplay, s.chatShowNames, 'chat names user sender chat list 聊天 用户名 发送者'),
     _hit(
       SettingsSection.danmaku,
@@ -322,7 +312,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     // Kernel.
     _hit(SettingsSection.kernel, s.engineTitle, 'player kernel engine mpv ijk better_player exo 播放内核 引擎 切换播放器'),
     _hit(SettingsSection.kernel, s.hardwareDecoding, 'hardware decoder hwdec gpu 硬件解码'),
-    _hit(SettingsSection.kernel, s.superResolution, 'super resolution anime4k upscale shader 超分 超分辨率 画质增强'),
     _hit(
       SettingsSection.kernel,
       s.playerPresets,
@@ -338,8 +327,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       s.playerCompatFix,
       'glitch green screen compatibility mediacodec android fix 花屏 绿屏 兼容 安卓 修复 硬解',
     ),
-    _hit(SettingsSection.kernelAdvanced, s.playerProxy, 'player proxy player network http-proxy 7897 播放器 代理 内核 主机 端口'),
-    _hit(SettingsSection.kernelAdvanced, s.playerProxyFollow, 'player proxy follow the app proxy 播放器 代理 跟随 应用 共用'),
     _hit(
       SettingsSection.kernel,
       s.hardwareDecoder,
@@ -370,7 +357,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.kernel, s.mpvReset, 'reset mpv kernel player defaults 恢复 默认 内核 播放器 重置'),
     _hit(SettingsSection.kernelAdvanced, s.mpvDocs, 'mpv manual official docs properties 官方 文档 手册 属性 说明'),
     _hit(
-      SettingsSection.kernelAdvanced,
+      SettingsSection.playerGuide,
       s.playerGuide,
       'player guide playback glossary presets symptoms concepts audio 播放器 指南 播放搭配 名词 预设 症状 花屏 绿屏 音画 缓冲 延迟 风扇 硬解 声卡',
     ),

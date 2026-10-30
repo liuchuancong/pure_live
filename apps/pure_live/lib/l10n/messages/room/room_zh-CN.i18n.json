@@ -99,7 +99,7 @@
   "totalViewers": "累计观看",
   "startedAt": "{time} 开播",
   "danmakuList": "弹幕",
-  "danmakuSettingsDesc": "控制飞行弹幕的显示、字号、速度与区域。",
+  "danmakuSettingsDesc": "关掉后画面上不再滚动弹幕，聊天列表照常。",
   "block": "屏蔽",
   "openExternal": "在平台打开",
   "restrictionNeedsLogin": "需要登录",

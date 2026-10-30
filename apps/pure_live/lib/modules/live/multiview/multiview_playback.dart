@@ -8,7 +8,6 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/multiview/multiview_controller.dart' show multiviewProvider;
-import 'package:pure_live/shared/shared.dart';
 
 /// Where one pane's session stands.
 enum MultiviewPaneStage {
@@ -73,7 +72,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       if (_active) _applyFocus();
       _publish();
     });
-    ref.listen(effectivePlayerProxyProvider, (previous, next) {
+    ref.listen(playerProxyProvider, (previous, next) {
       if (previous == next) return;
       _applyStoredEngineOptions();
     });
@@ -84,13 +83,6 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     ref.listen(playerTuningProvider, (previous, next) {
       if (previous == next) return;
       unawaited(_applyTuning(previous, next));
-    });
-    ref.listen(superResolutionModeProvider, (previous, next) {
-      if (previous == next) return;
-      for (final session in _sessions) {
-        final handle = session.handle;
-        if (handle != null) unawaited(applySuperResolution(handle, next));
-      }
     });
     ref.listen(multiviewProvider, (previous, next) {
       if (_active) _sync();
@@ -167,10 +159,10 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
         ..paused = false;
       await playback.play(
         LiveSourceRequest(
-          sources: roomSourcesOf(lines),
+          sources: roomSourcesOf(lines, artUri: session.room?.content.coverUrl),
           title: session.room?.content.title ?? '',
           allowEngineFallback: true,
-          engineOptions: await _engineOptions(),
+          engineOptions: _storedEngineOptions(),
         ),
         preferredBackend: ref.read(playerKernelBackendProvider).id,
       );
@@ -308,10 +300,10 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       _wire(session, playback);
       await playback.play(
         LiveSourceRequest(
-          sources: roomSourcesOf(lines),
+          sources: roomSourcesOf(lines, artUri: room.content.coverUrl),
           title: room.content.title,
           allowEngineFallback: true,
-          engineOptions: await _engineOptions(),
+          engineOptions: _storedEngineOptions(),
         ),
         preferredBackend: ref.read(playerKernelBackendProvider).id,
       );
@@ -434,13 +426,8 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
   List<EngineOption> _storedEngineOptions() => playerStoredEngineOptions(
     hardwareDecoding: ref.read(playbackSettingsProvider).hardwareDecoding,
     tuning: ref.read(playerTuningProvider),
-    proxy: ref.read(effectivePlayerProxyProvider),
+    proxy: ref.read(playerProxyProvider),
   );
-
-  /// The stored options plus the chosen shader chain, for a pane's first
-  /// engine and every later line or recovery.
-  Future<List<EngineOption>> _engineOptions() =>
-      withSuperResolution(_storedEngineOptions(), ref.read(superResolutionModeProvider));
 
   /// Pushes the stored options into every playing pane when the proxy or the
   /// hardware-decoding switch changes; the walls' next open uses the same
@@ -466,7 +453,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       final handle = session.handle;
       if (handle == null) continue;
       try {
-        await handle.applyEngineOptions(<EngineOption>[...await _engineOptions(), ...transition]);
+        await handle.applyEngineOptions(<EngineOption>[...options, ...transition]);
         if (rebuild) await handle.rebuildEngine(reason: 'video output settings changed');
       } on Object {
         // A pane the engine refused an option is not a playback failure.
@@ -480,7 +467,7 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
     final handle = session.handle;
     if (handle == null) return;
     try {
-      await handle.applyEngineOptions(await _engineOptions());
+      await handle.applyEngineOptions(_storedEngineOptions());
     } on Object {
       // A pane the engine refused an option is not a playback failure.
     }
