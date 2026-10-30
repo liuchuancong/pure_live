@@ -1324,6 +1324,10 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get desktopLyricLineGap => 'Line gap';
 	@override String get desktopLyricLineGapDesc => 'The space between the lyric lines.';
 	@override String get desktopLyricBoldLine => 'Bold line lyrics';
+	@override String get desktopLyricDirection => 'Lyric Display Direction';
+	@override String get desktopLyricDirectionDesc => 'Vertical reads top-to-bottom in right-to-left columns.';
+	@override String get desktopLyricDirectionHorizontal => 'Horizontal';
+	@override String get desktopLyricDirectionVertical => 'Vertical';
 	@override String get desktopLyricBoldLineDesc => 'Draws the main lyric line in bold.';
 	@override String get desktopLyricBoldExtended => 'Bold translation and romanization';
 	@override String get desktopLyricBoldExtendedDesc => 'Draws the translation and romanization lines in bold.';
@@ -4869,6 +4873,10 @@ extension on TranslationsEn {
 			'music.desktopLyricLineGap' => 'Line gap',
 			'music.desktopLyricLineGapDesc' => 'The space between the lyric lines.',
 			'music.desktopLyricBoldLine' => 'Bold line lyrics',
+			'music.desktopLyricDirection' => 'Lyric Display Direction',
+			'music.desktopLyricDirectionDesc' => 'Vertical reads top-to-bottom in right-to-left columns.',
+			'music.desktopLyricDirectionHorizontal' => 'Horizontal',
+			'music.desktopLyricDirectionVertical' => 'Vertical',
 			'music.desktopLyricBoldLineDesc' => 'Draws the main lyric line in bold.',
 			'music.desktopLyricBoldExtended' => 'Bold translation and romanization',
 			'music.desktopLyricBoldExtendedDesc' => 'Draws the translation and romanization lines in bold.',

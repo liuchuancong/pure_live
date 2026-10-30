@@ -1197,6 +1197,20 @@ final class MusicDesktopLyricPane extends ConsumerWidget {
               onChanged: (value) => unawaited(controller.setDesktopLyricLineGap(value)),
             ),
             SettingsConfigRow(
+              leading: const DsIcon(DsIcons.alignVerticalJustifyCenter),
+              title: t.music.desktopLyricDirection,
+              description: t.music.desktopLyricDirectionDesc,
+              control: DsSegmentedControl<bool>(
+                segments: [
+                  DsSegment(value: false, label: Text(t.music.desktopLyricDirectionHorizontal)),
+                  DsSegment(value: true, label: Text(t.music.desktopLyricDirectionVertical)),
+                ],
+                value: settings.desktopLyricVertical,
+                onChanged: (vertical) =>
+                    unawaited(controller.setDesktopLyricVertical(value: vertical)),
+              ),
+            ),
+            SettingsConfigRow(
               leading: const DsIcon(DsIcons.bold),
               title: t.music.desktopLyricBoldLine,
               description: t.music.desktopLyricBoldLineDesc,

@@ -179,6 +179,7 @@ final class MusicSettings {
     required this.desktopLyricLineGap,
     required this.desktopLyricBoldLine,
     required this.desktopLyricBoldExtended,
+    required this.desktopLyricVertical,
     required this.desktopLyricAlignment,
     required this.downloadType,
     required this.downloadPattern,
@@ -232,6 +233,7 @@ final class MusicSettings {
     desktopLyricLineGap: 15,
     desktopLyricBoldLine: true,
     desktopLyricBoldExtended: true,
+    desktopLyricVertical: false,
     desktopLyricAlignment: audio.DesktopLyricAlignment.center,
     downloadType: MusicDownloadType.original,
     downloadPattern: '{artist} - {title}',
@@ -362,6 +364,10 @@ final class MusicSettings {
   /// `desktopLyric.style.isFontWeightExtended`.
   final bool desktopLyricBoldExtended;
 
+  /// Whether the desktop lyric reads top-to-bottom in right-to-left columns —
+  /// the reference's `desktopLyric.direction` = vertical.
+  final bool desktopLyricVertical;
+
   /// The overlay's horizontal anchoring.
   final audio.DesktopLyricAlignment desktopLyricAlignment;
 
@@ -436,6 +442,7 @@ final class MusicSettings {
     int? desktopLyricLineGap,
     bool? desktopLyricBoldLine,
     bool? desktopLyricBoldExtended,
+    bool? desktopLyricVertical,
     audio.DesktopLyricAlignment? desktopLyricAlignment,
     MusicDownloadType? downloadType,
     String? downloadPattern,
@@ -483,6 +490,7 @@ final class MusicSettings {
     desktopLyricLineGap: desktopLyricLineGap ?? this.desktopLyricLineGap,
     desktopLyricBoldLine: desktopLyricBoldLine ?? this.desktopLyricBoldLine,
     desktopLyricBoldExtended: desktopLyricBoldExtended ?? this.desktopLyricBoldExtended,
+    desktopLyricVertical: desktopLyricVertical ?? this.desktopLyricVertical,
     desktopLyricAlignment: desktopLyricAlignment ?? this.desktopLyricAlignment,
     downloadType: downloadType ?? this.downloadType,
     downloadPattern: downloadPattern ?? this.downloadPattern,
@@ -532,6 +540,7 @@ const String _desktopLyricStrokeWidthKey = 'music.lyric.desktop.strokeWidth';
 const String _desktopLyricLineGapKey = 'music.lyric.desktop.lineGap';
 const String _desktopLyricBoldLineKey = 'music.lyric.desktop.boldLine';
 const String _desktopLyricBoldExtendedKey = 'music.lyric.desktop.boldExtended';
+const String _desktopLyricVerticalKey = 'music.lyric.desktop.vertical';
 const String _desktopLyricAlignmentKey = 'music.lyric.desktop.alignment';
 const String _downloadTypeKey = 'music.download.type';
 const String _downloadPatternKey = 'music.download.pattern';
@@ -583,6 +592,7 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     desktopLyricLineGap: (_readInt(_desktopLyricLineGapKey) ?? 15).clamp(0, 25),
     desktopLyricBoldLine: _readBool(_desktopLyricBoldLineKey) ?? true,
     desktopLyricBoldExtended: _readBool(_desktopLyricBoldExtendedKey) ?? true,
+    desktopLyricVertical: _readBool(_desktopLyricVerticalKey) ?? false,
     desktopLyricAlignment: _readAlignment(),
     downloadType: _readDownloadType(),
     downloadPattern: _readString(_downloadPatternKey) ?? MusicSettings.standard.downloadPattern,
@@ -880,6 +890,12 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
   Future<void> setDesktopLyricBoldExtended({required bool value}) async {
     state = state.copyWith(desktopLyricBoldExtended: value);
     await _writeBool(_desktopLyricBoldExtendedKey, value);
+  }
+
+  /// Toggles the vertical reading direction.
+  Future<void> setDesktopLyricVertical({required bool value}) async {
+    state = state.copyWith(desktopLyricVertical: value);
+    await _writeBool(_desktopLyricVerticalKey, value);
   }
 
   /// Sets the overlay's horizontal anchoring.

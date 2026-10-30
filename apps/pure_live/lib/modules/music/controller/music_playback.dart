@@ -235,6 +235,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
           settings.desktopLyricLineGap,
           settings.desktopLyricBoldLine,
           settings.desktopLyricBoldExtended,
+          settings.desktopLyricVertical,
         ),
       ),
       (previous, next) {
@@ -331,6 +332,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     lineGap: settings.desktopLyricLineGap.toDouble(),
     boldLine: settings.desktopLyricBoldLine,
     boldExtended: settings.desktopLyricBoldExtended,
+    vertical: settings.desktopLyricVertical,
     alignment: settings.desktopLyricAlignment,
   );
 

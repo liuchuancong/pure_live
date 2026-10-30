@@ -3666,6 +3666,16 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '加粗逐行歌词'
 	String get desktopLyricBoldLine => '加粗逐行歌词';
+	String get desktopLyricDirection => '歌词显示方向';
+
+	/// zh-CN: '垂直方向按从上到下、从右到左的直排显示。'
+	String get desktopLyricDirectionDesc => '垂直方向按从上到下、从右到左的直排显示。';
+
+	/// zh-CN: '水平方向'
+	String get desktopLyricDirectionHorizontal => '水平方向';
+
+	/// zh-CN: '垂直方向'
+	String get desktopLyricDirectionVertical => '垂直方向';
 
 	/// zh-CN: '主歌词行以粗体绘制。'
 	String get desktopLyricBoldLineDesc => '主歌词行以粗体绘制。';
@@ -11707,6 +11717,10 @@ extension on Translations {
 			'music.desktopLyricLineGap' => '歌词间距',
 			'music.desktopLyricLineGapDesc' => '歌词行与行之间的间距大小。',
 			'music.desktopLyricBoldLine' => '加粗逐行歌词',
+			'music.desktopLyricDirection' => '歌词显示方向',
+			'music.desktopLyricDirectionDesc' => '垂直方向按从上到下、从右到左的直排显示。',
+			'music.desktopLyricDirectionHorizontal' => '水平方向',
+			'music.desktopLyricDirectionVertical' => '垂直方向',
 			'music.desktopLyricBoldLineDesc' => '主歌词行以粗体绘制。',
 			'music.desktopLyricBoldExtended' => '加粗翻译、罗马音歌词',
 			'music.desktopLyricBoldExtendedDesc' => '翻译与罗马音副行以粗体绘制。',
