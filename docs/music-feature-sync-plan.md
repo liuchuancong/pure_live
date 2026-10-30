@@ -82,7 +82,7 @@
 | 歌词：对齐/字号缩放/当前行缩放/偏移 ± | `lyricAlignment/lyricFontScale/lyricZoomActive/lyricOffsetMs` | ✅ |
 | 歌词右键菜单（字号±/偏移±10/100ms/重置） | 播放器菜单子菜单 | ✅ |
 | 拖拽歌词调整进度（3 秒回弹） | 歌词设置页「拖拽歌词调整进度」开关（默认关，参考同默认）：用户滚动歌词即暂停跟随（区分自身 animateTo），面板 40% 高度出现划线=所指行时间+跳放按钮（点按 seek 到该行 start），停手 3 秒回弹到当前句（暂停中不回弹，参考 mobile Vertical/Lyric.tsx+PlayLine.tsx 逐语义）；未同步歌词不参与（提交 `7a8d9d178`） | ✅ |
-| 频谱可视化（实验性） | B1/B2 已实机判定（2026-10-30，见 `docs/media-core-audio-spectrum-architecture.md` §13）：astats/af-metadata 路线可用但回调率仅 ~15 Hz（<30 Hz 预算）；**前置堵点=media-kit 官方 Windows libmpv 未编入 avfilter 音频滤镜，音效中心 lavfi 链在 Windows 全部空转**，换全功能 libmpv 是先决条件 | 🟡 待裁决（DLL 更换 + B3/B4 取舍） |
+| 频谱可视化 | 引擎换道 mpv_audio_kit（补丁 libmpv 自带 `pcm-tap-frame` PCM/FFT tap，media_core_mpv_audio 适配包）；播放页舞台已画实时频谱条（engine.stream.fft，~32fps）；九效果/EQ 同步改道类型化效果链 | 🟡 待真机听感验证 |
 | 音效（实验性）：EQ + 混响 + 3D 环绕 + 升降调 | `eq/` 十段均衡+FX 链（bass/vocal/width/loudness 等）+ 预设；混响=aecho 回声叠加（参考为 IR 卷积，mpv 链不带货样文件，取诚实近似，强度→回声衰减）、3D=apulsator 正弦声像环绕（转速按参考 0.72s×speed/圈 换算 hz，强度→摆深 0.1–2，声明仅立体声有效）、升降调=asetrate+atempo 补时长（rate 0.5–1.5 同参考滑条 50–150，1.0 跳过滤芯）（提交 `29f017f3d`） | ✅ |
 | 倍速音调补偿 preservesPitch | 倍速菜单尾「音调补偿」勾选项（默认开，参考词表照抄；参考为 player 弹层 checkbox + `audio.preservesPitch`），存 `music.play.preservesPitch`，经 `applyEngineOptions` 下发 mpv `audio-pitch-correction` yes/no（引擎重建自动重放，handle 未就绪挂起待首曲）（提交 `5294fc8da`） | ✅ |
 | 音频输出设备选择 | 内核 `handle.listAudioDevices()`（PlayerAudioDevice{name,description,selected}，mk 适配器读 mpv audio-device-list，空表=无选择器）+ 选择走 `applyEngineOptions([EngineOption('audio-device',…)])` 选项记忆；app 播放设置「输出设备」下拉（<2 设备自动隐藏，选中即存 `music.play.audioDevice` 并在新引擎重放）（内核 + app 提交已推） | ✅ |
