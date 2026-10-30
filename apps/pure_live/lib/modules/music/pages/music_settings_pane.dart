@@ -870,6 +870,15 @@ final class MusicLyricPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setLyricProgress(value: value)),
               ),
             ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.arrowUpDown),
+              title: t.music.lyricDragSeek,
+              description: t.music.lyricDragSeekDesc,
+              control: DsSwitch(
+                value: settings.lyricDragSeek,
+                onChanged: (value) => unawaited(controller.setLyricDragSeek(value: value)),
+              ),
+            ),
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.clock),
               title: t.music.lyricOffset,

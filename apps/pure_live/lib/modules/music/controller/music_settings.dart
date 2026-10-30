@@ -165,6 +165,7 @@ final class MusicSettings {
     required this.lyricAlignment,
     required this.lyricZoomActive,
     required this.lyricProgress,
+    required this.lyricDragSeek,
     required this.lyricOffsetMs,
     required this.desktopLyrics,
     required this.desktopLyricLocked,
@@ -211,6 +212,7 @@ final class MusicSettings {
     lyricAlignment: MusicLyricAlignment.center,
     lyricZoomActive: false,
     lyricProgress: false,
+    lyricDragSeek: false,
     lyricOffsetMs: 0,
     desktopLyrics: false,
     desktopLyricLocked: false,
@@ -299,6 +301,10 @@ final class MusicSettings {
   /// Whether the panel shows the song's playback progress.
   final bool lyricProgress;
 
+  /// Whether the viewer can scrub by dragging the lyric panel — the
+  /// reference's 允许通过拖拽歌词调整播放进度.
+  final bool lyricDragSeek;
+
   /// The viewer's lyric delay in milliseconds; positive delays the highlight.
   final int lyricOffsetMs;
 
@@ -378,6 +384,7 @@ final class MusicSettings {
     MusicLyricAlignment? lyricAlignment,
     bool? lyricZoomActive,
     bool? lyricProgress,
+    bool? lyricDragSeek,
     int? lyricOffsetMs,
     bool? desktopLyrics,
     bool? desktopLyricLocked,
@@ -418,6 +425,7 @@ final class MusicSettings {
     lyricAlignment: lyricAlignment ?? this.lyricAlignment,
     lyricZoomActive: lyricZoomActive ?? this.lyricZoomActive,
     lyricProgress: lyricProgress ?? this.lyricProgress,
+    lyricDragSeek: lyricDragSeek ?? this.lyricDragSeek,
     lyricOffsetMs: lyricOffsetMs ?? this.lyricOffsetMs,
     desktopLyrics: desktopLyrics ?? this.desktopLyrics,
     desktopLyricLocked: desktopLyricLocked ?? this.desktopLyricLocked,
@@ -460,6 +468,7 @@ const String _lyricFontScaleKey = 'music.lyric.fontScale';
 const String _lyricAlignmentKey = 'music.lyric.alignment';
 const String _lyricZoomActiveKey = 'music.lyric.zoomActive';
 const String _lyricProgressKey = 'music.lyric.progress';
+const String _lyricDragSeekKey = 'music.lyric.dragSeek';
 const String _lyricOffsetKey = 'music.lyric.offsetMs';
 const String _desktopLyricsKey = 'music.lyric.desktop.enabled';
 const String _desktopLyricLockedKey = 'music.lyric.desktop.locked';
@@ -504,6 +513,7 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     lyricAlignment: _readLyricAlignment(),
     lyricZoomActive: _readBool(_lyricZoomActiveKey) ?? false,
     lyricProgress: _readBool(_lyricProgressKey) ?? false,
+    lyricDragSeek: _readBool(_lyricDragSeekKey) ?? false,
     lyricOffsetMs: _readInt(_lyricOffsetKey) ?? 0,
     desktopLyrics: _readBool(_desktopLyricsKey) ?? false,
     desktopLyricLocked: _readBool(_desktopLyricLockedKey) ?? false,
@@ -717,6 +727,13 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
   Future<void> setLyricProgress({required bool value}) async {
     state = state.copyWith(lyricProgress: value);
     await _writeBool(_lyricProgressKey, value);
+  }
+
+  /// Lets the viewer scrub by dragging the lyric panel — the reference's
+  /// 允许通过拖拽歌词调整播放进度.
+  Future<void> setLyricDragSeek({required bool value}) async {
+    state = state.copyWith(lyricDragSeek: value);
+    await _writeBool(_lyricDragSeekKey, value);
   }
 
   /// Sets the viewer's lyric delay.

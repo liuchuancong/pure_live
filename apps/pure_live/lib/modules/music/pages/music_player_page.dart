@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
@@ -11,8 +11,7 @@ import 'package:path/path.dart' as p;
 import 'package:pure_live/app/providers/settings/download_directory_provider.dart'
     show DownloadDirectoryPaths, downloadDirectoryProvider;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_comments.dart'
-    show MusicComment, musicCommentsProvider;
+import 'package:pure_live/modules/music/controller/music_comments.dart' show MusicComment, musicCommentsProvider;
 import 'package:pure_live/modules/music/controller/music_library.dart';
 import 'package:pure_live/modules/music/controller/music_lyric_overrides.dart' show musicLyricOverridesProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
@@ -118,7 +117,10 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           spacing: DsSpace.s12,
-                          children: [header, Expanded(child: body)],
+                          children: [
+                            header,
+                            Expanded(child: body),
+                          ],
                         ),
                       );
                     },
@@ -163,7 +165,9 @@ final class _StageState extends ConsumerState<_Stage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s16,
             children: [
-              Center(child: _Artwork(track: track, size: size)),
+              Center(
+                child: _Artwork(track: track, size: size),
+              ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: DsSpace.s4,
@@ -196,9 +200,7 @@ final class _StageState extends ConsumerState<_Stage> {
                         width: 48,
                         child: Text(
                           musicDurationText(position),
-                          style: theme.typography.numeric(
-                            theme.typography.caption.copyWith(color: colors.textMuted),
-                          ),
+                          style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
                         ),
                       ),
                       Expanded(
@@ -224,9 +226,7 @@ final class _StageState extends ConsumerState<_Stage> {
                         child: Text(
                           musicDurationText(duration),
                           textAlign: TextAlign.end,
-                          style: theme.typography.numeric(
-                            theme.typography.caption.copyWith(color: colors.textMuted),
-                          ),
+                          style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
                         ),
                       ),
                     ],
@@ -443,8 +443,24 @@ final class _LyricsState extends ConsumerState<_Lyrics> {
   int _loadedRevision = 0;
   int _active = -1;
 
+  /// Whether the viewer is scrolling the panel: the follow pauses while they
+  /// do — the reference's isPauseScroll — and, with 拖拽歌词调整进度 on, a
+  /// scrub line answers instead.
+  bool _scrubbing = false;
+
+  /// The line the scrub line points at.
+  int _scrubLine = 0;
+
+  /// Whether [_reveal]'s animation is in flight; its notifications look like
+  /// the viewer's scrolling otherwise.
+  bool _animating = false;
+
+  /// The reference's 3 秒回弹: a panel left alone returns to the song.
+  Timer? _resume;
+
   @override
   void dispose() {
+    _resume?.cancel();
     _scroll.dispose();
     super.dispose();
   }
@@ -456,12 +472,100 @@ final class _LyricsState extends ConsumerState<_Lyrics> {
   }
 
   /// Keeps the active line in view: the panel's own height, not the whole
-  /// page, so the page does not jump every verse.
+  /// page, so the page does not jump every verse. The viewer's drag wins
+  /// while it lasts.
   void _reveal(int index, double lineHeight) {
-    if (!_scroll.hasClients || index < 0) return;
+    if (_scrubbing || !_scroll.hasClients || index < 0) return;
     final target = ((index - 2) * lineHeight).clamp(0.0, _scroll.position.maxScrollExtent);
     if ((_scroll.offset - target).abs() < lineHeight) return;
-    _scroll.animateTo(target, duration: const Duration(milliseconds: 240), curve: Curves.easeOutCubic);
+    _animating = true;
+    unawaited(
+      _scroll
+          .animateTo(target, duration: const Duration(milliseconds: 240), curve: Curves.easeOutCubic)
+          .whenComplete(() => _animating = false),
+    );
+  }
+
+  /// The reference's drag: the viewer's scrolling stops the follow, and three
+  /// seconds after they stop, the panel returns to the song.
+  bool _onScroll(ScrollNotification notification, {required bool synced, required double lineHeight}) {
+    if (!synced) return false;
+    // The follow's own animations announce themselves like a scroll.
+    final drag = switch (notification) {
+      ScrollStartNotification(:final dragDetails) => dragDetails,
+      ScrollUpdateNotification(:final dragDetails) => dragDetails,
+      ScrollEndNotification(:final dragDetails) => dragDetails,
+      _ => null,
+    };
+    if (_animating && drag == null) return false;
+
+    switch (notification) {
+      case ScrollStartNotification():
+        _resume?.cancel();
+        if (!_scrubbing) setState(() => _scrubbing = true);
+      case ScrollUpdateNotification() when _scrubbing:
+        _updateScrubLine(notification.metrics, lineHeight);
+      case ScrollEndNotification() when _scrubbing:
+        _resume = Timer(const Duration(seconds: 3), () => _resumeFollow(lineHeight));
+    }
+    return false;
+  }
+
+  /// Points the scrub line at the row sitting at 40% of the panel — the
+  /// reference's offset math.
+  void _updateScrubLine(ScrollMetrics metrics, double lineHeight) {
+    final count = _document?.lines.length ?? 0;
+    if (count == 0 || lineHeight <= 0) return;
+    final target = ((metrics.pixels + metrics.viewportDimension * 0.4) / lineHeight).floor().clamp(0, count - 1);
+    if (target != _scrubLine) setState(() => _scrubLine = target);
+  }
+
+  /// The reference's 3 秒回弹: the indicator hides and the panel returns to
+  /// the song when it is playing; a paused song stays where it was left.
+  void _resumeFollow(double lineHeight) {
+    if (!mounted) return;
+    setState(() => _scrubbing = false);
+    if (ref.read(musicPlayerProvider).playing) _reveal(_active, lineHeight);
+  }
+
+  /// Jumps to the line the scrub line points at — the reference's PlayLine
+  /// button.
+  Future<void> _seekToScrubLine() async {
+    final lines = _document?.lines;
+    if (lines == null || lines.isEmpty) return;
+    final start = lines[_scrubLine.clamp(0, lines.length - 1)].start;
+    _resume?.cancel();
+    setState(() => _scrubbing = false);
+    await ref.read(musicPlayerProvider.notifier).seek(start);
+  }
+
+  /// The scrub line itself: a rule at 40% of the panel with the pointed
+  /// line's time and the verb that jumps there.
+  Widget _scrubRule(BuildContext context, DsColors colors, DsThemeData theme, List<audio.LyricLine> lines) {
+    final t = context.t;
+    final time = musicDurationText(lines[_scrubLine.clamp(0, lines.length - 1)].start);
+    return Positioned.fill(
+      child: Align(
+        alignment: const Alignment(0, -0.2),
+        child: Row(
+          spacing: DsSpace.s8,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: DsSpace.s4),
+              child: Text(time, style: theme.typography.caption.copyWith(color: colors.accent)),
+            ),
+            Expanded(child: Container(height: 1, color: colors.accent)),
+            DsButton.icon(
+              variant: DsButtonVariant.ghost,
+              size: DsSize.sm,
+              semanticLabel: t.music.lyricScrubPlay,
+              onPressed: () => unawaited(_seekToScrubLine()),
+              icon: const DsIcon(DsIcons.play, size: 16),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -487,6 +591,8 @@ final class _LyricsState extends ConsumerState<_Lyrics> {
       _loadedRevision = revision;
       _document = null;
       _active = -1;
+      _resume?.cancel();
+      _scrubbing = false;
       if (trackId != null) unawaited(_load(trackId));
     }
     final document = _document;
@@ -521,52 +627,61 @@ final class _LyricsState extends ConsumerState<_Lyrics> {
                       style: theme.typography.body.copyWith(color: colors.textMuted),
                     ),
                   )
-                : ListView.builder(
-                    controller: _scroll,
-                    itemExtent: lineHeight,
-                    itemCount: lines.length,
-                    itemBuilder: (context, index) {
-                      final line = lines[index];
-                      final current = index == _active;
-                      final text = line.text.trim();
-                      final secondary = line.secondaryTexts(
-                        showTranslation: settings.showTranslation,
-                        showRomanization: settings.showRomanization,
-                        swap: settings.swapLyricSecondary,
-                      );
-                      final zoom = settings.lyricZoomActive && current ? 1.1 : 1.0;
-                      return Align(
-                        alignment: alignment,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: crossAlignment,
-                          children: [
-                            Text(
-                              text.isEmpty ? '♪' : text,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: textAlign,
-                              style: theme.typography.body.copyWith(
-                                fontSize: (theme.typography.body.fontSize ?? 14) * scale * zoom,
-                                color: current ? colors.text : colors.textMuted,
-                                fontWeight: current ? FontWeight.w600 : null,
+                : Stack(
+                    children: [
+                      NotificationListener<ScrollNotification>(
+                        onNotification: (notification) =>
+                            _onScroll(notification, synced: document.isSynchronized, lineHeight: lineHeight),
+                        child: ListView.builder(
+                          controller: _scroll,
+                          itemExtent: lineHeight,
+                          itemCount: lines.length,
+                          itemBuilder: (context, index) {
+                            final line = lines[index];
+                            final current = index == _active;
+                            final text = line.text.trim();
+                            final secondary = line.secondaryTexts(
+                              showTranslation: settings.showTranslation,
+                              showRomanization: settings.showRomanization,
+                              swap: settings.swapLyricSecondary,
+                            );
+                            final zoom = settings.lyricZoomActive && current ? 1.1 : 1.0;
+                            return Align(
+                              alignment: alignment,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: crossAlignment,
+                                children: [
+                                  Text(
+                                    text.isEmpty ? '♪' : text,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: textAlign,
+                                    style: theme.typography.body.copyWith(
+                                      fontSize: (theme.typography.body.fontSize ?? 14) * scale * zoom,
+                                      color: current ? colors.text : colors.textMuted,
+                                      fontWeight: current ? FontWeight.w600 : null,
+                                    ),
+                                  ),
+                                  if (secondary.isNotEmpty)
+                                    Text(
+                                      secondary.join(' · '),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: textAlign,
+                                      style: theme.typography.caption.copyWith(
+                                        fontSize: (theme.typography.caption.fontSize ?? 12) * scale,
+                                        color: colors.textSubtle,
+                                      ),
+                                    ),
+                                ],
                               ),
-                            ),
-                            if (secondary.isNotEmpty)
-                              Text(
-                                secondary.join(' · '),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: textAlign,
-                                style: theme.typography.caption.copyWith(
-                                  fontSize: (theme.typography.caption.fontSize ?? 12) * scale,
-                                  color: colors.textSubtle,
-                                ),
-                              ),
-                          ],
+                            );
+                          },
                         ),
-                      );
-                    },
+                      ),
+                      if (_scrubbing && settings.lyricDragSeek) _scrubRule(context, colors, theme, document.lines),
+                    ],
                   ),
           ),
         ],
@@ -818,22 +933,10 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
                 onPressed: () => unawaited(controller.setLyricOffset(Duration(milliseconds: offset))),
               ),
             const DsMenuDivider(),
-            DsMenuItem(
-              label: const Text('- 100ms'),
-              onPressed: () => unawaited(_nudgeOffset(-100)),
-            ),
-            DsMenuItem(
-              label: const Text('+ 100ms'),
-              onPressed: () => unawaited(_nudgeOffset(100)),
-            ),
-            DsMenuItem(
-              label: const Text('- 10ms'),
-              onPressed: () => unawaited(_nudgeOffset(-10)),
-            ),
-            DsMenuItem(
-              label: const Text('+ 10ms'),
-              onPressed: () => unawaited(_nudgeOffset(10)),
-            ),
+            DsMenuItem(label: const Text('- 100ms'), onPressed: () => unawaited(_nudgeOffset(-100))),
+            DsMenuItem(label: const Text('+ 100ms'), onPressed: () => unawaited(_nudgeOffset(100))),
+            DsMenuItem(label: const Text('- 10ms'), onPressed: () => unawaited(_nudgeOffset(-10))),
+            DsMenuItem(label: const Text('+ 10ms'), onPressed: () => unawaited(_nudgeOffset(10))),
           ],
         ),
         DsMenuItem.submenu(
@@ -859,8 +962,7 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
               DsMenuItem(
                 label: Text(alignment.label(t)),
                 checked: settings.lyricAlignment == alignment,
-                onPressed: () =>
-                    unawaited(ref.read(musicSettingsProvider.notifier).setLyricAlignment(alignment)),
+                onPressed: () => unawaited(ref.read(musicSettingsProvider.notifier).setLyricAlignment(alignment)),
               ),
           ],
         ),
@@ -1166,10 +1268,7 @@ final class _CommentsDialogState extends ConsumerState<_CommentsDialog> {
                   )
                 : comments.isEmpty
                 ? Center(
-                    child: Text(
-                      t.music.commentsEmpty,
-                      style: theme.typography.body.copyWith(color: colors.textMuted),
-                    ),
+                    child: Text(t.music.commentsEmpty, style: theme.typography.body.copyWith(color: colors.textMuted)),
                   )
                 : ListView.builder(
                     itemCount: comments.length + (hasTail ? 1 : 0),
@@ -1262,10 +1361,7 @@ final class _CommentTile extends StatelessWidget {
                     ),
                     if (comment.likedCount > 0) ...[
                       DsIcon(DsIcons.heart, size: 12, color: colors.textSubtle),
-                      Text(
-                        '${comment.likedCount}',
-                        style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                      ),
+                      Text('${comment.likedCount}', style: theme.typography.caption.copyWith(color: colors.textSubtle)),
                     ],
                   ],
                 ),

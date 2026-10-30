@@ -1288,6 +1288,9 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get lyricZoomActiveDesc => 'Draw the line being sung a little larger.';
 	@override String get lyricProgress => 'Show playback progress';
 	@override String get lyricProgressDesc => 'Show the song\'s progress above the lyric panel.';
+	@override String get lyricDragSeek => 'Seek by dragging the lyrics';
+	@override String get lyricDragSeekDesc => 'Drag the lyric panel to pick a line; it returns to the song three seconds after you stop.';
+	@override String get lyricScrubPlay => 'Play from this line';
 	@override String get lyricHint => 'The display and delay apply to every song; desktop lyrics open from Settings or the player’s More actions menu.';
 	@override String get desktopLyrics => 'Desktop lyrics';
 	@override String get desktopLyricsOn => 'Desktop lyrics shown';
@@ -4787,6 +4790,9 @@ extension on TranslationsEn {
 			'music.lyricZoomActiveDesc' => 'Draw the line being sung a little larger.',
 			'music.lyricProgress' => 'Show playback progress',
 			'music.lyricProgressDesc' => 'Show the song\'s progress above the lyric panel.',
+			'music.lyricDragSeek' => 'Seek by dragging the lyrics',
+			'music.lyricDragSeekDesc' => 'Drag the lyric panel to pick a line; it returns to the song three seconds after you stop.',
+			'music.lyricScrubPlay' => 'Play from this line',
 			'music.lyricHint' => 'The display and delay apply to every song; desktop lyrics open from Settings or the player’s More actions menu.',
 			'music.desktopLyrics' => 'Desktop lyrics',
 			'music.desktopLyricsOn' => 'Desktop lyrics shown',
@@ -5183,11 +5189,11 @@ extension on TranslationsEn {
 			'room.banned' => 'This room has been banned',
 			'room.carousel' => 'Carousel',
 			'room.carouselReason' => 'The streamer is away; the platform is playing a carousel',
+			_ => null,
+		} ?? switch (path) {
 			'room.offlineTitle' => 'The streamer is away',
 			'room.offlineReplayReason' => 'A replay is available; open it from the card in the list',
 			'room.offlineReason' => 'The live picture appears here when the room goes live',
-			_ => null,
-		} ?? switch (path) {
 			'room.detailFailed' => 'The room details did not load',
 			'room.openRoom' => 'Open the room',
 			'room.copyLink' => 'Copy room link',
@@ -5697,11 +5703,11 @@ extension on TranslationsEn {
 			'settings.danmakuSaveFormats' => 'Saved formats',
 			'settings.danmakuFormatXml' => 'Bilibili XML',
 			'settings.danmakuFormatJson' => 'Bilibili JSON',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuFormatAss' => 'ASS subtitles',
 			'settings.danmakuFormatSrt' => 'SRT subtitles',
 			'settings.danmakuFormatTxt' => 'Plain text',
-			_ => null,
-		} ?? switch (path) {
 			'settings.pipDanmakuScaleAuto' => 'Compact danmaku auto scale',
 			'settings.pipDanmakuScaleAutoDesc' => 'Shrink danmaku with the picture-in-picture window width, never larger than the main danmaku; turn off to use the fixed factor below.',
 			'settings.pipDanmakuScale' => 'Compact danmaku scale',
@@ -6211,11 +6217,11 @@ extension on TranslationsEn {
 			'settings.backgroundImportFailed' => 'Import failed',
 			'settings.backgroundBusy' => 'Copying the file…',
 			'settings.backgroundDisplay' => 'Display',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundFit' => 'Fit',
 			'settings.backgroundFitDescription' => 'How a picture or video is placed in the window; a flat colour or gradient has nothing to fit.',
 			'settings.backgroundFitCover' => 'Cover',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundFitContain' => 'Contain',
 			'settings.backgroundFitFill' => 'Fill',
 			'settings.backgroundFitWidth' => 'Fit width',
@@ -6725,11 +6731,11 @@ extension on TranslationsEn {
 			'toolbox.networkTarget' => 'Probed endpoint',
 			'toolbox.networkTargetDesc' => 'The recommended-rooms endpoint',
 			'toolbox.networkLatency' => 'Response time',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.networkRooms' => 'Rooms returned',
 			'toolbox.networkSuccess' => 'Reachable',
 			'toolbox.networkFailure' => 'Unreachable',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.networkBusy' => 'Checking…',
 			'toolbox.networkUnsupported' => 'This platform cannot be probed yet.',
 			'toolbox.cacheSection' => 'Image cache',

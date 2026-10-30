@@ -3565,6 +3565,15 @@ class Translations$music$zh_CN {
 	/// zh-CN: '在歌词面板上方显示歌曲的播放进度。'
 	String get lyricProgressDesc => '在歌词面板上方显示歌曲的播放进度。';
 
+	/// zh-CN: '拖拽歌词调整进度'
+	String get lyricDragSeek => '拖拽歌词调整进度';
+
+	/// zh-CN: '拖动歌词面板选句，三秒无操作回到当前句。'
+	String get lyricDragSeekDesc => '拖动歌词面板选句，三秒无操作回到当前句。';
+
+	/// zh-CN: '从此句播放'
+	String get lyricScrubPlay => '从此句播放';
+
 	/// zh-CN: '歌词显示与延迟全局生效；桌面歌词在设置或播放页菜单打开。'
 	String get lyricHint => '歌词显示与延迟全局生效；桌面歌词在设置或播放页菜单打开。';
 
@@ -11543,6 +11552,9 @@ extension on Translations {
 			'music.lyricZoomActiveDesc' => '正在唱的一句歌词略大，便于跟唱。',
 			'music.lyricProgress' => '显示播放进度',
 			'music.lyricProgressDesc' => '在歌词面板上方显示歌曲的播放进度。',
+			'music.lyricDragSeek' => '拖拽歌词调整进度',
+			'music.lyricDragSeekDesc' => '拖动歌词面板选句，三秒无操作回到当前句。',
+			'music.lyricScrubPlay' => '从此句播放',
 			'music.lyricHint' => '歌词显示与延迟全局生效；桌面歌词在设置或播放页菜单打开。',
 			'music.desktopLyrics' => '桌面歌词',
 			'music.desktopLyricsOn' => '桌面歌词已开启',
@@ -11939,11 +11951,11 @@ extension on Translations {
 			'room.banned' => '该直播间已被封禁',
 			'room.carousel' => '轮播中',
 			'room.carouselReason' => '主播暂时不在，平台正在播放轮播内容',
+			_ => null,
+		} ?? switch (path) {
 			'room.offlineTitle' => '主播暂时不在',
 			'room.offlineReplayReason' => '有回放可看，回到列表后可从卡片进入',
 			'room.offlineReason' => '开播后这里会看到直播画面',
-			_ => null,
-		} ?? switch (path) {
 			'room.detailFailed' => '房间信息加载失败',
 			'room.openRoom' => '进入直播间',
 			'room.copyLink' => '复制房间链接',
@@ -12453,11 +12465,11 @@ extension on Translations {
 			'settings.danmakuSaveFormats' => '保存格式',
 			'settings.danmakuFormatXml' => 'B站 XML',
 			'settings.danmakuFormatJson' => 'B站 JSON',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuFormatAss' => 'ASS 字幕',
 			'settings.danmakuFormatSrt' => 'SRT 字幕',
 			'settings.danmakuFormatTxt' => '纯文本',
-			_ => null,
-		} ?? switch (path) {
 			'settings.pipDanmakuScaleAuto' => '小窗弹幕比例自动',
 			'settings.pipDanmakuScaleAutoDesc' => '按小窗宽度自动缩小弹幕，不超过主弹幕大小；关闭用下方固定比例。',
 			'settings.pipDanmakuScale' => '小窗弹幕比例',
@@ -12967,11 +12979,11 @@ extension on Translations {
 			'settings.backgroundDropUnsupported' => '拖入的文件类型不支持',
 			'settings.backgroundBusy' => '正在复制文件…',
 			'settings.backgroundDisplay' => '显示',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundFit' => '填充方式',
 			'settings.backgroundFitDescription' => '把图片或视频铺到窗口时的方式；纯色与渐变没有可填充的对象。',
 			'settings.backgroundFitCover' => '裁切填满',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundFitContain' => '完整显示',
 			'settings.backgroundFitFill' => '拉伸填满',
 			'settings.backgroundFitWidth' => '适应宽度',
@@ -13481,11 +13493,11 @@ extension on Translations {
 			'toolbox.networkTarget' => '探测接口',
 			'toolbox.networkTargetDesc' => '推荐房间接口',
 			'toolbox.networkLatency' => '响应时间',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.networkRooms' => '返回房间',
 			'toolbox.networkSuccess' => '连接正常',
 			'toolbox.networkFailure' => '连接失败',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.networkBusy' => '正在检测…',
 			'toolbox.networkUnsupported' => '该平台暂不支持探测。',
 			'toolbox.cacheSection' => '图片缓存',
