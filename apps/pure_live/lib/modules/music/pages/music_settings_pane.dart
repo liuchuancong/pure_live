@@ -3,7 +3,8 @@ import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
-import 'package:flutter/services.dart' show HardwareKeyboard, KeyDownEvent, LogicalKeyboardKey;
+import 'package:flutter/services.dart'
+    show Clipboard, ClipboardData, HardwareKeyboard, KeyDownEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile, LiveHttpCalls;
@@ -34,6 +35,8 @@ import 'package:pure_live/modules/music/controller/lx_script_runtime.dart' show 
 import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
 import 'package:pure_live/modules/music/controller/music_hotkeys.dart'
     show MusicHotkeyAction, MusicHotkeyCombo, musicHotkeysProvider;
+import 'package:pure_live/modules/music/controller/music_open_api.dart'
+    show musicOpenApiGateProvider, musicOpenApiLanProvider, musicOpenApiPortProvider, musicOpenApiProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show MusicPlayerController, musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_settings.dart';
 import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId, musicSourceListProvider;
@@ -1170,18 +1173,13 @@ final class MusicEqPane extends ConsumerWidget {
         if (applyFailed)
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, 0),
-            child: Text(
-              t.music.eqApplyFailed,
-              style: theme.typography.caption.copyWith(color: colors.danger.fill),
-            ),
+            child: Text(t.music.eqApplyFailed, style: theme.typography.caption.copyWith(color: colors.danger.fill)),
           ),
         DsListSection(
           header: Text(t.music.eqFxSection),
           children: [
-            for (final id in kMusicFxOrder)
-              _MusicFxRow(id: id, eq: eq, controller: controller),
-            for (final id in kMusicFxSpatialOrder)
-              _MusicFxRow(id: id, eq: eq, controller: controller),
+            for (final id in kMusicFxOrder) _MusicFxRow(id: id, eq: eq, controller: controller),
+            for (final id in kMusicFxSpatialOrder) _MusicFxRow(id: id, eq: eq, controller: controller),
           ],
         ),
         DsListSection(
@@ -1382,7 +1380,6 @@ final class _MusicFxRow extends ConsumerWidget {
   }
 }
 
-
 /// The loudness meter fed by the engine's analysis branch.
 ///
 /// Two bars — momentary (400 ms) and short-term (3 s) — scaled over the
@@ -1453,12 +1450,7 @@ final class _LoudnessMeterState extends ConsumerState<_LoudnessMeter> {
 }
 
 final class _LoudnessBar extends StatelessWidget {
-  const _LoudnessBar({
-    required this.label,
-    required this.fraction,
-    required this.accent,
-    required this.track,
-  });
+  const _LoudnessBar({required this.label, required this.fraction, required this.accent, required this.track});
 
   final String label;
   final double fraction;
@@ -1504,7 +1496,6 @@ final class _LoudnessBar extends StatelessWidget {
   }
 }
 
-
 /// One parametric node's editor: switch and delete on the header row,
 /// then frequency, Q and gain sliders — log-scaled where the ear is.
 final class _EqNodeRow extends ConsumerWidget {
@@ -1538,9 +1529,7 @@ final class _EqNodeRow extends ConsumerWidget {
               Expanded(
                 child: Text(
                   _frequencyLabel(node.frequency),
-                  style: theme.typography.body.copyWith(
-                    color: node.enabled ? colors.text : colors.textMuted,
-                  ),
+                  style: theme.typography.body.copyWith(color: node.enabled ? colors.text : colors.textMuted),
                 ),
               ),
               GestureDetector(
@@ -1608,7 +1597,6 @@ final class _EqNodeRow extends ConsumerWidget {
   }
 }
 
-
 /// The A/B compare button: hold it and the whole chain steps aside, so the
 /// ear hears the untouched mix; release restores the configuration at once.
 /// The instant switch-back is the whole point — a toggle with a delay
@@ -1656,15 +1644,12 @@ final class _CompareButtonState extends ConsumerState<_CompareButton> {
         alignment: Alignment.center,
         child: Text(
           _held ? t.music.eqCompareHeld : t.music.eqCompare,
-          style: theme.typography.body.copyWith(
-            color: _held ? colors.onAccent : colors.text,
-          ),
+          style: theme.typography.body.copyWith(color: _held ? colors.onAccent : colors.text),
         ),
       ),
     );
   }
 }
-
 
 /// The pane shown under Settings → Music → 快捷键: the module's shortcut
 /// table, captured straight from the keyboard the way the reference's
@@ -1727,7 +1712,10 @@ final class MusicHotkeysPane extends ConsumerWidget {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4),
-          child: Text(t.music.hkNote, style: DsTheme.typographyOf(context).caption.copyWith(color: DsTheme.colorsOf(context).textSubtle)),
+          child: Text(
+            t.music.hkNote,
+            style: DsTheme.typographyOf(context).caption.copyWith(color: DsTheme.colorsOf(context).textSubtle),
+          ),
         ),
       ],
     );
@@ -1809,7 +1797,11 @@ final class _HotkeyCaptureButtonState extends ConsumerState<_HotkeyCaptureButton
               : captured == null
               ? t.music.hkUnset
               : captured.display(),
-          style: capturing ? null : captured == null ? TextStyle(color: colors.textSubtle) : null,
+          style: capturing
+              ? null
+              : captured == null
+              ? TextStyle(color: colors.textSubtle)
+              : null,
         ),
       ),
     );
@@ -1858,87 +1850,142 @@ final class MusicSyncPane extends ConsumerWidget {
     final colors = DsTheme.colorsOf(context);
     final state = ref.watch(musicSyncProvider);
     final controller = ref.read(musicSyncProvider.notifier);
-    return DsListSection(
+    final api = ref.watch(musicOpenApiProvider);
+    final apiPort = ref.watch(musicOpenApiPortProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
       children: [
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.link),
-          title: t.music.syncHost,
-          description: state.host.isEmpty ? t.music.syncHostHint : state.host,
-          control: DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            onPressed: () => unawaited(_editHost(context, ref)),
-            child: Text(t.music.syncEdit),
-          ),
-        ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.history),
-          title: t.music.syncHistory,
-          description: state.hostHistory.isEmpty ? t.music.syncHistoryEmpty : t.music.syncHistoryDesc,
-          control: DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            onPressed: () => unawaited(_pickHistory(context, ref)),
-            child: Text(t.music.syncChoose),
-          ),
-        ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.lock),
-          title: t.music.syncAuthCode,
-          description: state.authCode.isEmpty ? t.music.syncAuthCodeHint : '••••••',
-          control: DsButton(
-            variant: DsButtonVariant.secondary,
-            size: DsSize.sm,
-            onPressed: () => unawaited(_editAuthCode(context, ref)),
-            child: Text(t.music.syncEdit),
-          ),
-        ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.gitMerge),
-          title: t.music.syncMode,
-          description: musicSyncModeLabel(t, state.syncMode),
-          control: DsSelect<String>(
-            value: state.syncMode,
-            options: [for (final mode in kMusicSyncModes) DsSelectOption(value: mode, label: musicSyncModeLabel(t, mode))],
-            onChanged: (mode) { if (mode != null) unawaited(controller.setSyncMode(mode)); },
-          ),
-        ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.cable),
-          title: switch (state.status) {
-            MusicSyncStatus.connected => t.music.syncStatusConnected,
-            MusicSyncStatus.connecting || MusicSyncStatus.authing => t.music.syncStatusConnecting,
-            MusicSyncStatus.failed => t.music.syncStatusFailed,
-            MusicSyncStatus.idle => t.music.syncStatusIdle,
-          },
-          description: state.message ?? state.serverName ?? t.music.syncStatusHint,
-          control: DsButton(
-            variant: state.status == MusicSyncStatus.connected ? DsButtonVariant.secondary : DsButtonVariant.primary,
-            size: DsSize.sm,
-            onPressed: () => unawaited(
-              state.status == MusicSyncStatus.connected ? controller.disconnect() : controller.connect(),
+        DsListSection(
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.link),
+              title: t.music.syncHost,
+              description: state.host.isEmpty ? t.music.syncHostHint : state.host,
+              control: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => unawaited(_editHost(context, ref)),
+                child: Text(t.music.syncEdit),
+              ),
             ),
-            child: Text(state.status == MusicSyncStatus.connected ? t.music.syncDisconnect : t.music.syncConnect),
-          ),
-        ),
-        if (state.serverName != null)
-          SettingsConfigRow(
-            leading: const DsIcon(DsIcons.keyRound),
-            title: t.music.syncForgetKey,
-            description: t.music.syncForgetKeyDesc,
-            control: DsButton(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              onPressed: () => unawaited(controller.forgetKey()),
-              child: Text(t.music.syncForgetKey),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.history),
+              title: t.music.syncHistory,
+              description: state.hostHistory.isEmpty ? t.music.syncHistoryEmpty : t.music.syncHistoryDesc,
+              control: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => unawaited(_pickHistory(context, ref)),
+                child: Text(t.music.syncChoose),
+              ),
             ),
-          ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s4, DsSpace.s16, DsSpace.s8),
-          child: Text(
-            t.music.syncNote,
-            style: theme.typography.caption.copyWith(color: colors.textSubtle),
-          ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.lock),
+              title: t.music.syncAuthCode,
+              description: state.authCode.isEmpty ? t.music.syncAuthCodeHint : '••••••',
+              control: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => unawaited(_editAuthCode(context, ref)),
+                child: Text(t.music.syncEdit),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.gitMerge),
+              title: t.music.syncMode,
+              description: musicSyncModeLabel(t, state.syncMode),
+              control: DsSelect<String>(
+                value: state.syncMode,
+                options: [
+                  for (final mode in kMusicSyncModes) DsSelectOption(value: mode, label: musicSyncModeLabel(t, mode)),
+                ],
+                onChanged: (mode) {
+                  if (mode != null) unawaited(controller.setSyncMode(mode));
+                },
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.cable),
+              title: switch (state.status) {
+                MusicSyncStatus.connected => t.music.syncStatusConnected,
+                MusicSyncStatus.connecting || MusicSyncStatus.authing => t.music.syncStatusConnecting,
+                MusicSyncStatus.failed => t.music.syncStatusFailed,
+                MusicSyncStatus.idle => t.music.syncStatusIdle,
+              },
+              description: state.message ?? state.serverName ?? t.music.syncStatusHint,
+              control: DsButton(
+                variant: state.status == MusicSyncStatus.connected
+                    ? DsButtonVariant.secondary
+                    : DsButtonVariant.primary,
+                size: DsSize.sm,
+                onPressed: () => unawaited(
+                  state.status == MusicSyncStatus.connected ? controller.disconnect() : controller.connect(),
+                ),
+                child: Text(state.status == MusicSyncStatus.connected ? t.music.syncDisconnect : t.music.syncConnect),
+              ),
+            ),
+            if (state.serverName != null)
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.keyRound),
+                title: t.music.syncForgetKey,
+                description: t.music.syncForgetKeyDesc,
+                control: DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: () => unawaited(controller.forgetKey()),
+                  child: Text(t.music.syncForgetKey),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s4, DsSpace.s16, DsSpace.s8),
+              child: Text(t.music.syncNote, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
+            ),
+          ],
+        ),
+        DsListSection(
+          header: Text(t.music.openApi),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.globe),
+              title: t.music.openApiEnable,
+              control: DsSwitch(
+                value: ref.watch(musicOpenApiGateProvider),
+                onChanged: (value) => unawaited(ref.read(musicOpenApiGateProvider.notifier).set(enabled: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.plug),
+              title: t.music.openApiPort,
+              description: '$apiPort',
+              control: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => unawaited(_editPort(context, ref)),
+                child: Text(t.music.syncEdit),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.wifi),
+              title: t.music.openApiLan,
+              control: DsSwitch(
+                value: ref.watch(musicOpenApiLanProvider),
+                onChanged: (value) => unawaited(ref.read(musicOpenApiLanProvider.notifier).set(lan: value)),
+              ),
+            ),
+            if (api.running)
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.monitor),
+                title: t.music.openApiAddress,
+                description: api.address(apiPort),
+                control: DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: () => unawaited(Clipboard.setData(ClipboardData(text: api.address(apiPort)))),
+                  child: Text(t.music.openApiCopy),
+                ),
+              ),
+          ],
         ),
       ],
     );
@@ -1949,6 +1996,17 @@ final class MusicSyncPane extends ConsumerWidget {
     final current = ref.read(musicSyncProvider).host;
     final value = await _editField(context, t.music.syncHost, t.music.syncHostHint, current);
     if (value != null) await ref.read(musicSyncProvider.notifier).setHost(value);
+  }
+
+  /// The reference's port input: a number field saved through the port
+  /// provider; an unusable value leaves the previous port.
+  Future<void> _editPort(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final current = '${ref.read(musicOpenApiPortProvider)}';
+    final value = await _editField(context, t.music.openApiPort, t.music.openApiPortHint, current);
+    if (value == null) return;
+    final port = int.tryParse(value.trim());
+    if (port != null) await ref.read(musicOpenApiPortProvider.notifier).set(port);
   }
 
   /// The reference's History popup: tap an address to fill the host field,

@@ -4054,6 +4054,27 @@ class Translations$music$zh_CN {
 	/// zh-CN: '选择'
 	String get syncChoose => '选择';
 
+	/// zh-CN: '开放 API'
+	String get openApi => '开放 API';
+
+	/// zh-CN: '启用开放 API 服务'
+	String get openApiEnable => '启用开放 API 服务';
+
+	/// zh-CN: '服务端口'
+	String get openApiPort => '服务端口';
+
+	/// zh-CN: '请输入开放 API 服务端口'
+	String get openApiPortHint => '请输入开放 API 服务端口';
+
+	/// zh-CN: '允许来自局域网的访问'
+	String get openApiLan => '允许来自局域网的访问';
+
+	/// zh-CN: '服务地址'
+	String get openApiAddress => '服务地址';
+
+	/// zh-CN: '复制'
+	String get openApiCopy => '复制';
+
 	/// zh-CN: '连接码'
 	String get syncAuthCode => '连接码';
 
@@ -11784,6 +11805,13 @@ extension on Translations {
 			'music.syncHistoryEmpty' => '这里啥也没有😮',
 			'music.syncHistoryDesc' => '连接过的服务器地址，点击选用。',
 			'music.syncChoose' => '选择',
+			'music.openApi' => '开放 API',
+			'music.openApiEnable' => '启用开放 API 服务',
+			'music.openApiPort' => '服务端口',
+			'music.openApiPortHint' => '请输入开放 API 服务端口',
+			'music.openApiLan' => '允许来自局域网的访问',
+			'music.openApiAddress' => '服务地址',
+			'music.openApiCopy' => '复制',
 			'music.syncAuthCode' => '连接码',
 			'music.syncAuthCodeHint' => '服务端显示的连接码',
 			'music.syncMode' => '同步模式',

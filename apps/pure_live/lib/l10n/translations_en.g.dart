@@ -1451,6 +1451,13 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get syncHistoryEmpty => 'Nothing here';
 	@override String get syncHistoryDesc => 'Addresses used before; tap one to use it.';
 	@override String get syncChoose => 'Choose';
+	@override String get openApi => 'Open API';
+	@override String get openApiEnable => 'Enable Open API service';
+	@override String get openApiPort => 'Service Port';
+	@override String get openApiPortHint => 'Please enter the Open API service port';
+	@override String get openApiLan => 'Allow access from LAN';
+	@override String get openApiAddress => 'Service Address';
+	@override String get openApiCopy => 'Copy';
 	@override String get syncAuthCode => 'Auth code';
 	@override String get syncAuthCodeHint => 'The connection code shown by the server';
 	@override String get syncMode => 'Sync mode';
@@ -4976,6 +4983,13 @@ extension on TranslationsEn {
 			'music.syncHistoryEmpty' => 'Nothing here',
 			'music.syncHistoryDesc' => 'Addresses used before; tap one to use it.',
 			'music.syncChoose' => 'Choose',
+			'music.openApi' => 'Open API',
+			'music.openApiEnable' => 'Enable Open API service',
+			'music.openApiPort' => 'Service Port',
+			'music.openApiPortHint' => 'Please enter the Open API service port',
+			'music.openApiLan' => 'Allow access from LAN',
+			'music.openApiAddress' => 'Service Address',
+			'music.openApiCopy' => 'Copy',
 			'music.syncAuthCode' => 'Auth code',
 			'music.syncAuthCodeHint' => 'The connection code shown by the server',
 			'music.syncMode' => 'Sync mode',
