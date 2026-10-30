@@ -4,13 +4,15 @@ import 'dart:io' show File;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
-import 'package:media_core/media_core.dart'
-    show EngineOption, PlayerAudioDevice, PlayerConfig, PlayerHandleAudioDevices, PlayerHandleEngineOptions;
+import 'package:media_core/media_core.dart' show PlayerAudioDevice, PlayerConfig;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
+import 'package:media_core_mpv_audio/media_core_mpv_audio.dart'
+    show Device, FftFrame, MpvAudioPlayerAdapter, kMpvAudioBackendId;
 import 'package:pure_live/app/app.dart' show playerKernelProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
     show MusicEqConfig, musicEqApplyFailedProvider, musicEqProvider;
-import 'package:pure_live/modules/music/controller/eq/music_eq_dsp.dart' show musicEqAfEntries;
+import 'package:pure_live/modules/music/controller/eq/music_eq_engine_effects.dart'
+    show musicEqAudioEffects, musicEqPitchRate;
 import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
 import 'package:pure_live/modules/music/controller/music_library.dart'
     show musicRecentProvider, musicTrackFromJson, musicTrackKey, musicTrackToJson;
@@ -170,7 +172,13 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
         ...ref.read(musicSourceListProvider),
         audio.LocalMusicSource(roots: const []),
       ]),
-      config: audio.AudioPlaybackConfig(initialQuality: musicQualityOf(settings.quality)),
+      config: audio.AudioPlaybackConfig(
+        initialQuality: musicQualityOf(settings.quality),
+        // The music engine is the audio-only mpv_audio backend: its patched
+        // libmpv carries the audio filters the stock build lacks, plus the
+        // PCM/FFT taps and the typed effects chain the module rides.
+        backendId: kMpvAudioBackendId,
+      ),
       // Music is the one player that keeps going after the app is backgrounded:
       // the kernel's own policy would pause it with every other player.
       playerConfig: const PlayerConfig(pauseWhenBackgrounded: false),
@@ -317,6 +325,12 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// stream the state model does not carry (the loudness meter).
   audio.AudioPlaybackController get audioEngine => _audio;
 
+  /// The engine's FFT taps — ~32 frames a second of raw bins and smoothed
+  /// log-spaced bands, the spectrum UI's data source. Null before the first
+  /// track creates the engine (or on a backend without taps); the stream is
+  /// the engine's own broadcast, so a late listener loses nothing but time.
+  Stream<FftFrame>? get spectrum => _engineAdapter?.player?.stream.fft;
+
   /// Mirrors the player onto the OS surface once a driver exists.
   void _attachBackground(audio.MediaSessionDriver session) {
     _background ??= audio.MusicBackgroundBinding(_audio, session)..attach();
@@ -347,6 +361,15 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   bool _eqPending = false;
   Timer? _eqDebounce;
 
+  /// The mpv_audio engine behind the current handle, when there is one.
+  /// The handle-layer seams (`applyEngineOptions`, `listAudioDevices`)
+  /// speak the generic dialect; the effects chain, the pitch control, the
+  /// device picker and the FFT taps are the engine's own, reached here.
+  MpvAudioPlayerAdapter? get _engineAdapter {
+    final adapter = _audio.handle?.adapter;
+    return adapter is MpvAudioPlayerAdapter ? adapter : null;
+  }
+
   void _applyEq(MusicEqConfig eq, {bool immediate = false}) {
     // While the A/B button is held, nothing but the bypass itself writes
     // the chain — a slider drag during the hold must not leak into the
@@ -365,19 +388,25 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       _eqDebounce = Timer(const Duration(milliseconds: 250), () => _applyEq(eq, immediate: true));
       return;
     }
-    final entries = musicEqAfEntries(eq);
+    final engine = _engineAdapter?.player;
+    if (engine == null) {
+      // An engine that is not the mpv_audio backend has no typed chain;
+      // the page is told instead of the switch sitting on over plain sound.
+      if (ref.mounted) ref.read(musicEqApplyFailedProvider.notifier).state = true;
+      return;
+    }
     unawaited(
-      handle
-          .applyEngineOptions(<EngineOption>[EngineOption('af', entries)])
-          .then((report) {
-            if (!ref.mounted) return;
-            // The honesty rule: the page shows whether the chain actually took.
-            ref.read(musicEqApplyFailedProvider.notifier).state = report.unsupported.isNotEmpty;
-          })
-          .catchError((Object _) {
-            if (ref.mounted) ref.read(musicEqApplyFailedProvider.notifier).state = true;
-          }),
+      engine.setAudioEffects(musicEqAudioEffects(eq)).then<void>((_) async {
+        if (!ref.mounted) return;
+        // The chain took; the preamp rides the engine's native gain.
+        ref.read(musicEqApplyFailedProvider.notifier).state = false;
+        await engine.setVolumeGain(eq.preampDb);
+      }).catchError((Object _) {
+        if (ref.mounted) ref.read(musicEqApplyFailedProvider.notifier).state = true;
+      }),
     );
+    // The pitch node is the engine's first-class control, not a filter.
+    unawaited(engine.setPitch(musicEqPitchRate(eq)).catchError((Object _) {}));
   }
 
   /// Sends the pitch-compensation choice to this instance's engine — the
@@ -393,56 +422,54 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   bool _devicePending = false;
 
   void _applyAudioDevice() {
-    final handle = _audio.handle;
-    if (handle == null) {
+    final stored = StoragePrefs.getString(kMusicAudioDeviceKey);
+    if (stored == null || stored.isEmpty) return;
+    final engine = _engineAdapter?.player;
+    if (engine == null) {
       _devicePending = true;
       return;
     }
-    final stored = StoragePrefs.getString(kMusicAudioDeviceKey);
-    if (stored == null || stored.isEmpty) return;
     unawaited(
-      handle.applyEngineOptions(<EngineOption>[EngineOption('audio-device', stored)]).then(
-        (_) {},
-        onError: (Object _) {
-          // An engine without the option keeps its own default device.
-        },
-      ),
+      engine.setAudioDevice(Device(name: stored, description: '')).catchError((Object _) {
+        // An engine without the device keeps its own default.
+      }),
     );
   }
 
   /// The engine's audio output devices, current one marked; empty when this
   /// backend has no device picker.
-  Future<List<PlayerAudioDevice>> audioDevices() async =>
-      await _audio.handle?.listAudioDevices() ?? const <PlayerAudioDevice>[];
+  Future<List<PlayerAudioDevice>> audioDevices() async {
+    final engine = _engineAdapter?.player;
+    if (engine == null) return const <PlayerAudioDevice>[];
+    return <PlayerAudioDevice>[
+      for (final device in engine.state.audioDevices)
+        PlayerAudioDevice(name: device.name, description: device.description, selected: device.name == engine.state.audioDevice.name),
+    ];
+  }
 
   /// Sends the sound to [name] — an mpv `audio-device` value straight from
   /// [PlayerAudioDevice.name] — and remembers the choice for the next boot.
   Future<void> selectAudioDevice(String name) async {
-    final handle = _audio.handle;
-    if (handle == null) return;
+    final engine = _engineAdapter?.player;
+    if (engine == null) return;
     await StoragePrefs.setString(kMusicAudioDeviceKey, name);
     try {
-      await handle.applyEngineOptions(<EngineOption>[EngineOption('audio-device', name)]);
+      await engine.setAudioDevice(Device(name: name, description: ''));
     } on Object {
       // The choice is stored; the engine that refused keeps its default.
     }
   }
 
   void _applyPitchCorrection(bool preservesPitch) {
-    final handle = _audio.handle;
-    if (handle == null) {
+    final engine = _engineAdapter?.player;
+    if (engine == null) {
       _pitchPending = true;
       return;
     }
     unawaited(
-      handle
-          .applyEngineOptions(<EngineOption>[EngineOption('audio-pitch-correction', preservesPitch ? 'yes' : 'no')])
-          .then(
-            (_) {},
-            onError: (Object _) {
-              // A backend without the option just keeps its own behaviour.
-            },
-          ),
+      engine.setPitchCorrection(preservesPitch).catchError((Object _) {
+        // An engine without the control just keeps its own behaviour.
+      }),
     );
   }
 

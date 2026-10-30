@@ -9,6 +9,7 @@ import 'package:media_core_ijk_player/media_core_ijk_player.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:media_core_mediasession/media_core_mediasession.dart' show mediaSessionArtUriKey;
+import 'package:media_core_mpv_audio/media_core_mpv_audio.dart' show MpvAudioAdapterFactory;
 import 'package:pure_live/app/providers/window/presentation_providers.dart' show presentationDriverProvider;
 
 /// The process's one player kernel: the mpv backend registered, the
@@ -32,7 +33,12 @@ PlayerKernel createPlayerKernel(Ref ref) {
   // (`systemPipBackgroundPauseProvider`), with the window exempt.
   final systemPip = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
   final kernel = PlayerKernel(options: KernelOptions(pauseWhenBackgrounded: !systemPip))
-    ..registerBackend(const MediaKitAdapterFactory().registration());
+    ..registerBackend(const MediaKitAdapterFactory().registration())
+    // The music module's audio-only engine: patched libmpv with the PCM/FFT
+    // taps, the typed effects chain and its own media session. Registered
+    // for every platform (the hook bundles five); nothing selects it unless
+    // a creator names it as its preferred backend.
+    ..registerBackend(const MpvAudioAdapterFactory().registration());
   // Desktop keeps the mpv engine; the two mobile engines are real, shipped
   // adapters on Android and iOS and stay out of a desktop build.
   if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)) {

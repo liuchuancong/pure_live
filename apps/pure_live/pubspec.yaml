@@ -105,6 +105,7 @@ dependencies:
   media_core_recording_ffmpeg: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_recording_ffmpeg } # FFmpeg 录制后端
   media_core_presentation: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_presentation } # 呈现驱动
   media_core_audio: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_audio } # 音乐播放（队列/歌词/后台）
+  media_core_mpv_audio: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mpv_audio } # 音乐引擎（mpv_audio_kit：PCM/FFT tap、类型化效果、媒体会话）
   media_core_fullscreen: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fullscreen } # 全屏驱动
   media_core_pip: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_pip } # 画中画驱动
   media_core_cast_dlna: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_cast_dlna } # DLNA 投屏后端
