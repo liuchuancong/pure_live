@@ -91,7 +91,7 @@
 | 歌曲详情（元数据弹窗） | `MusicSongRow._showDetails` | ✅ |
 | 歌词编辑/偏移持久化管理 | `music_lyric_overrides.dart` | ✅ |
 | 已播列表去重（随机不重复）/自动清空 | 随机不重复由内核 PlayQueue 每轮置换保证（耗尽即重排一轮，全部重新参与，内核文档注明与 lx-music 同语义）；本轮补参考 `player.isAutoCleanPlayedList`（默认关，词表照抄）：播放设置页开关存 `music.play.autoCleanPlayedList`；同列表点歌（playAll 同内容重放/队列行 play/playAt）在随机模式下重建洗牌、列表内所有歌曲重新参与随机（=参考 clearPlayedList），换列表恒新开一轮，设置关时同列表续播保留去重池（参考 `setting || prevListId != listId` 规则照抄）（提交 `268814b28`） | ✅ |
-| 预加载下一首 / URL 过期刷新 | 内核票务刷新已接；预加载无 | 🟡 |
+| 预加载下一首 / URL 过期刷新 | 内核已接全链（实查 `audio_playback_controller.dart`）：每曲起播即 `_prefetchNext` 预热下一曲 URL+歌词（`queue.indexAfter` mode-aware，单曲循环自动跳过），结果入 `_resolved` 且切曲时 `_openTrack` 直接消费未过期条目——比参考"最后 10 秒静音探测、结果不落播放路径"更强；URL 带 `expiresAt`，过期即重解析，加载失败 `refreshSourceOnError` 一次性刷新、起播成功即补预算（`prefetchNext`/`refreshSourceOnError` 默认开，app 构造 `AudioPlaybackConfig` 未覆盖） | ✅ |
 | 临时列表（稍后播放入队顶） | `playNext` insertNext | ✅ |
 | 通知栏/锁屏控制 + 封面 | 内核媒体会话 | ✅ |
 
