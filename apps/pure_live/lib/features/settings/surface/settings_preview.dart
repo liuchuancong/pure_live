@@ -16,6 +16,11 @@ import 'package:pure_live/shared/shared.dart' show LiveWindow;
 /// Only the frame lives here. Each preview brings its own sample and its own
 /// controls, so the wallpaper, danmaku and room-card previews read as one
 /// feature without sharing a subject.
+/// The controls column's width on a wide window: wide enough for a
+/// segmented control and a labelled slider row, narrow enough that the
+/// sample keeps the larger half of the panel.
+const double _kPreviewSettingsWidth = 500;
+
 final class SettingsPreviewPage extends StatefulWidget {
   /// The page showing [stage] with [settings].
   const SettingsPreviewPage({
@@ -166,7 +171,7 @@ final class _SettingsPreviewPageState extends State<SettingsPreviewPage> {
                           ),
                         ),
                         Container(
-                          width: 380,
+                          width: _kPreviewSettingsWidth,
                           decoration: BoxDecoration(
                             border: BorderDirectional(start: BorderSide(color: colors.border)),
                           ),

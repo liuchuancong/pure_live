@@ -42,11 +42,8 @@ final class _GithubMirrorSectionState extends ConsumerState<GithubMirrorSection>
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final state = ref.watch(githubMirrorProvider);
     final controller = ref.read(githubMirrorProvider.notifier);
-    final muted = theme.typography.caption.copyWith(color: colors.textMuted);
     final mirrors = state.mirrors;
     final value = switch (state.mode) {
       GithubMirrorMode.direct => '',
@@ -101,10 +98,6 @@ final class _GithubMirrorSectionState extends ConsumerState<GithubMirrorSection>
                   onChanged: controller.setCustomUrl,
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s12),
-              child: Text(t.settings.githubMirrorHint, style: muted),
-            ),
           ],
         ),
         DsListSection(

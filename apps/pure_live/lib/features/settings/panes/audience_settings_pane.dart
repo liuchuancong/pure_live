@@ -60,7 +60,6 @@ final class AudienceSettingsPane extends ConsumerWidget {
               ],
               onChanged: (value) => unawaited(ref.read(audienceMetricProvider.notifier).select(value)),
             ),
-            SettingsHint(t.settings.audienceRankingNote),
           ],
         ),
         DsListSection(
@@ -77,20 +76,17 @@ final class AudienceSettingsPane extends ConsumerWidget {
                     : null,
               ),
             ),
-            if (!automatic) SettingsHint(t.settings.audienceNeedsAutomaticMode),
           ],
         ),
         DsListSection(
           header: Text(t.settings.audiencePlatformsGroup),
           children: [
-            SettingsHint(t.settings.audiencePlatformsDesc),
             for (final site in onlineSites)
               _PlatformRow(
                 site: site,
                 enabled: policy.enabledFor(site.manifest.id),
                 interactive: automatic && policy.preferRealOnline,
               ),
-            if (automatic && !policy.preferRealOnline) SettingsHint(t.settings.audiencePlatformNeedsOnline),
           ],
         ),
         if (heatOnlySites.isNotEmpty)
@@ -102,7 +98,6 @@ final class AudienceSettingsPane extends ConsumerWidget {
                     .map(localizedSiteName)
                     .join(LocaleSettings.currentLocale.languageCode == 'zh' ? '、' : ', '),
               ),
-              SettingsHint(t.settings.audienceHeatOnlyDesc),
             ],
           ),
       ],

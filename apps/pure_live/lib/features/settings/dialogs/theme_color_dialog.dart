@@ -1,6 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/dialogs/color_picker.dart';
 import 'package:pure_live/l10n/translations.dart';
 
 /// The reference's accent presets (`AppConsts.themeColors`), in its order.
@@ -245,8 +246,8 @@ final class _ThemeColorDialogState extends State<_ThemeColorDialog> {
           ),
           if (_hexInvalid)
             Text(t.settings.themeColorHexInvalid, style: theme.typography.small.copyWith(color: colors.danger.text)),
-          _ColorField(hsv: _hsv, onChanged: _pickHsv, semanticLabel: t.settings.themeColorSaturation),
-          _HueBar(
+          ColorPickerField(hsv: _hsv, onChanged: _pickHsv, semanticLabel: t.settings.themeColorSaturation),
+          ColorPickerHueBar(
             hue: _hsv.hue,
             onChanged: (hue) => _pickHsv(_hsv.withHue(hue)),
             semanticLabel: t.settings.themeColorHue,
@@ -332,169 +333,4 @@ final class _PresetSwatch extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The saturation/value square: horizontal white → hue, vertical
-/// transparent → black, with the draft marked.
-final class _ColorField extends StatelessWidget {
-  const _ColorField({required this.hsv, required this.onChanged, required this.semanticLabel});
-
-  final HSVColor hsv;
-  final ValueChanged<HSVColor> onChanged;
-  final String semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const height = 160.0;
-        final width = constraints.maxWidth;
-        void pick(Offset position) {
-          final saturation = (position.dx / width).clamp(0.0, 1.0);
-          final value = (1 - position.dy / height).clamp(0.0, 1.0);
-          onChanged(hsv.withSaturation(saturation).withValue(value));
-        }
-
-        return Semantics(
-          label: semanticLabel,
-          value: '${(hsv.saturation * 100).round()}% / ${(hsv.value * 100).round()}%',
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(theme.radii.card / 2),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onPanDown: (details) => pick(details.localPosition),
-              onPanUpdate: (details) => pick(details.localPosition),
-              child: CustomPaint(size: Size(width, height), painter: _ColorFieldPainter(hsv)),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-final class _ColorFieldPainter extends CustomPainter {
-  const _ColorFieldPainter(this.hsv);
-
-  final HSVColor hsv;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final hue = HSVColor.fromAHSV(1, hsv.hue, 1, 1).toColor();
-    canvas
-      ..drawRect(rect, Paint()..shader = LinearGradient(colors: [const Color(0xFFFFFFFF), hue]).createShader(rect))
-      ..drawRect(
-        rect,
-        Paint()
-          ..shader = const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0x00000000), Color(0xFF000000)],
-          ).createShader(rect),
-      );
-    final center = Offset(hsv.saturation * size.width, (1 - hsv.value) * size.height);
-    canvas
-      ..drawCircle(
-        center,
-        8,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..color = const Color(0xFFFFFFFF),
-      )
-      ..drawCircle(
-        center,
-        9.5,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1
-          ..color = const Color(0x99000000),
-      );
-  }
-
-  @override
-  bool shouldRepaint(_ColorFieldPainter oldDelegate) => oldDelegate.hsv != hsv;
-}
-
-/// The hue strip: the full colour circle across the width, with the draft's
-/// hue marked.
-final class _HueBar extends StatelessWidget {
-  const _HueBar({required this.hue, required this.onChanged, required this.semanticLabel});
-
-  final double hue;
-  final ValueChanged<double> onChanged;
-  final String semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const height = 20.0;
-        final width = constraints.maxWidth;
-        void pick(Offset position) => onChanged((position.dx / width).clamp(0.0, 1.0) * 360);
-        return Semantics(
-          label: semanticLabel,
-          value: '${hue.round()}°',
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(DsRadii.pill),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onPanDown: (details) => pick(details.localPosition),
-              onPanUpdate: (details) => pick(details.localPosition),
-              child: CustomPaint(size: Size(width, height), painter: _HueBarPainter(hue)),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-final class _HueBarPainter extends CustomPainter {
-  const _HueBarPainter(this.hue);
-
-  final double hue;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = const LinearGradient(
-          colors: [
-            Color(0xFFFF0000),
-            Color(0xFFFFFF00),
-            Color(0xFF00FF00),
-            Color(0xFF00FFFF),
-            Color(0xFF0000FF),
-            Color(0xFFFF00FF),
-            Color(0xFFFF0000),
-          ],
-        ).createShader(rect),
-    );
-    final center = Offset(hue / 360 * size.width, size.height / 2);
-    canvas
-      ..drawCircle(
-        center,
-        7,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..color = const Color(0xFFFFFFFF),
-      )
-      ..drawCircle(
-        center,
-        8.5,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1
-          ..color = const Color(0x99000000),
-      );
-  }
-
-  @override
-  bool shouldRepaint(_HueBarPainter oldDelegate) => oldDelegate.hue != hue;
 }

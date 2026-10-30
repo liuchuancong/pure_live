@@ -229,7 +229,6 @@ final class IptvGroupsPane extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        SettingsHint(t.iptv.groupsHint),
         DsListSection(
           children: [
             for (final group in groups)

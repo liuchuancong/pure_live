@@ -34,8 +34,8 @@ final class BackgroundOverviewPane extends ConsumerWidget {
     final settings = ref.watch(backgroundSettingsProvider);
     final controller = ref.read(backgroundSettingsProvider.notifier);
     final children = settingsChildrenOf(SettingsSection.background);
-    // The fit only acts on a surface that has an image or video to place;
-    // on the flat kinds it stays visible and inert.
+    // The fit only acts on a surface that has an image or video to place,
+    // so its row exists only for those kinds.
     final media = settings.kind == BackgroundKind.image || settings.kind == BackgroundKind.video;
     // What the app would actually paint right now: in auto mode the wash can
     // be stronger than the slider, and the detail should say so.
@@ -52,16 +52,19 @@ final class BackgroundOverviewPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.backgroundDisplay),
           children: [
-            SettingsChoiceRow<BoxFit>(
-              leading: const DsIcon(DsIcons.expand),
-              title: t.settings.backgroundFit,
-              description: t.settings.backgroundFitDescription,
-              value: settings.fit,
-              options: [
-                for (final fit in kBackgroundFits) DsSelectOption(value: fit, label: backgroundFitLabel(t, fit)),
-              ],
-              onChanged: media ? controller.setFit : null,
-            ),
+            // The fit describes how an image or video is placed, so it
+            // steps out on a background with nothing to place.
+            if (media)
+              SettingsChoiceRow<BoxFit>(
+                leading: const DsIcon(DsIcons.expand),
+                title: t.settings.backgroundFit,
+                description: t.settings.backgroundFitDescription,
+                value: settings.fit,
+                options: [
+                  for (final fit in kBackgroundFits) DsSelectOption(value: fit, label: backgroundFitLabel(t, fit)),
+                ],
+                onChanged: controller.setFit,
+              ),
             SettingsChoiceRow<BackgroundScrimMode>(
               leading: const DsIcon(DsIcons.contrast),
               title: t.settings.backgroundScrimMode,
@@ -74,24 +77,25 @@ final class BackgroundOverviewPane extends ConsumerWidget {
               ],
               onChanged: controller.setScrimMode,
             ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.contrast),
-              title: t.settings.backgroundMask,
-              description: t.settings.backgroundMaskDescription,
-              // Auto may paint more than the slider asks for; the detail is
-              // the wash the app really wears.
-              detail: Text('${(scrim * 100).round()}%'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: settings.scrimOpacity,
-                max: 0.8,
-                divisions: 16,
-                // Still live in auto mode: there it is the floor, not the
-                // exact value. Off ignores the number entirely.
-                onChanged: settings.scrimMode == BackgroundScrimMode.off ? null : controller.setScrimOpacity,
-                semanticLabel: t.settings.backgroundMask,
+            // The wash's strength exists only while a wash is painted;
+            // auto still takes the slider as its floor.
+            if (settings.scrimMode != BackgroundScrimMode.off)
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.contrast),
+                title: t.settings.backgroundMask,
+                description: t.settings.backgroundMaskDescription,
+                // Auto may paint more than the slider asks for; the detail is
+                // the wash the app really wears.
+                detail: Text('${(scrim * 100).round()}%'),
+                controlWidth: 220,
+                control: DsSlider(
+                  value: settings.scrimOpacity,
+                  max: 0.8,
+                  divisions: 16,
+                  onChanged: controller.setScrimOpacity,
+                  semanticLabel: t.settings.backgroundMask,
+                ),
               ),
-            ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.layers),
               title: t.settings.backgroundOverlayBlur,
@@ -131,33 +135,36 @@ final class BackgroundOverviewPane extends ConsumerWidget {
                 onChanged: (value) => controller.setGlass(value: value),
               ),
             ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.droplet),
-              title: t.settings.backgroundGlassFill,
-              description: t.settings.backgroundGlassFillDescription,
-              detail: Text('${(settings.glassFill * 100).round()}%'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: settings.glassFill,
-                divisions: 20,
-                onChanged: settings.glass ? controller.setGlassFill : null,
-                semanticLabel: t.settings.backgroundGlassFill,
+            // The fill and the frost exist only while the glass does.
+            if (settings.glass) ...[
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.droplet),
+                title: t.settings.backgroundGlassFill,
+                description: t.settings.backgroundGlassFillDescription,
+                detail: Text('${(settings.glassFill * 100).round()}%'),
+                controlWidth: 220,
+                control: DsSlider(
+                  value: settings.glassFill,
+                  divisions: 20,
+                  onChanged: controller.setGlassFill,
+                  semanticLabel: t.settings.backgroundGlassFill,
+                ),
               ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.sparkles),
-              title: t.settings.backgroundGlassBlur,
-              description: t.settings.backgroundGlassBlurDescription,
-              detail: Text('${settings.glassBlur.round()}'),
-              controlWidth: 220,
-              control: DsSlider(
-                value: settings.glassBlur,
-                max: 48,
-                divisions: 24,
-                onChanged: settings.glass ? controller.setGlassBlur : null,
-                semanticLabel: t.settings.backgroundGlassBlur,
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.sparkles),
+                title: t.settings.backgroundGlassBlur,
+                description: t.settings.backgroundGlassBlurDescription,
+                detail: Text('${settings.glassBlur.round()}'),
+                controlWidth: 220,
+                control: DsSlider(
+                  value: settings.glassBlur,
+                  max: 48,
+                  divisions: 24,
+                  onChanged: controller.setGlassBlur,
+                  semanticLabel: t.settings.backgroundGlassBlur,
+                ),
               ),
-            ),
+            ],
           ],
         ),
         DsListSection(
@@ -631,8 +638,11 @@ final class _BackgroundLibraryPaneState extends ConsumerState<BackgroundLibraryP
     }
   }
 
-  /// Jumps to [page] and loads it; the same call retries a failed page.
+  /// Jumps to [page] and loads it; the same call retries a failed page. A
+  /// press while another page is still fetching is dropped, so the pager
+  /// never has to be greyed out to say so.
   void _goTo(int page) {
+    if (_loading) return;
     final target = page < 1 ? 1 : page;
     if (target == _page && _error == null) return;
     setState(() {
@@ -845,12 +855,7 @@ final class _BackgroundLibraryPaneState extends ConsumerState<BackgroundLibraryP
         if (_error == null)
           Align(
             alignment: AlignmentDirectional.center,
-            child: DsPagination(
-              page: _page,
-              pageCount: _pageCount,
-              onChanged: _loading ? null : _goTo,
-              semanticLabel: title,
-            ),
+            child: DsPagination(page: _page, pageCount: _pageCount, onChanged: _goTo, semanticLabel: title),
           ),
       ],
     );

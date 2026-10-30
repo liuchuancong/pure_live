@@ -104,7 +104,7 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
   String get _siteId => widget.platform.id;
 
   /// Whether this is the douyu page: the one platform with a renewal pair, a
-  /// save time and a "renew now" beside its cookie box.
+  /// save time and a "renew now" inside its cookie card.
   bool get _isDouyu => widget.platform.check == AccountCheckKind.douyu;
 
   /// Whether this is bilibili's page: the one platform that remembers the
@@ -270,7 +270,6 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
           // exists, the group is the place they are read.
           if (_isBilibili && (stored || ref.watch(bilibiliAccountsProvider).isNotEmpty))
             _bilibiliAccountsGroup(t, snapshot: snapshot),
-          if (_isDouyu) _douyuRenewalGroup(t),
           // A login that signs in nobody (a lapsed douyu cookie with nothing
           // to renew it) shows no sign-out — the row's whole point there is
           // to paste again, so the box stays the way out.
@@ -438,6 +437,10 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
               ],
             ),
             Text(t.account.cookieSaveShortcut, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+            // Douyu's session is kept alive by the renewal that rides on the
+            // same cookie: its two values and switch sit in this card rather
+            // than in a second one, so the page reads one login, not two.
+            if (_isDouyu) ...[DsLine(color: colors.border), _douyuRenewal(t)],
           ],
         ),
       ),
@@ -948,89 +951,84 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
     }
   }
 
-  /// The douyu-only block beside the cookie box: the two values the renewal
+  /// The douyu-only part of the cookie card: the two values the renewal
   /// reads (kept apart from the login), the "renew now" button and the
-  /// "force renewal" switch (the same one the settings page owns).
-  Widget _douyuRenewalGroup(Translations t) {
+  /// "force renewal" switch — the only place the switch lives now.
+  Widget _douyuRenewal(Translations t) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final enabled = !_busy && !_renewing;
     final forceRenew = ref.watch(douyuForceRenewProvider);
-    return DsCard(
-      child: Padding(
-        padding: const EdgeInsets.all(DsSpace.s16),
-        child: Column(
-          key: const ValueKey('douyu-renewal-group'),
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s12,
+    return Column(
+      key: const ValueKey('douyu-renewal-group'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s12,
+      children: [
+        Text(t.account.douyuRenewalTitle, style: theme.typography.fieldLabel.copyWith(color: colors.textSubtle)),
+        Text(t.account.douyuLtp0Label, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+        DsTextField(
+          key: const ValueKey('douyu-ltp0-input'),
+          controller: _ltp0,
+          placeholder: t.account.douyuLtp0Hint,
+          semanticLabel: t.account.douyuLtp0Label,
+          enabled: enabled,
+          autocorrect: false,
+          enableSuggestions: false,
+        ),
+        Text(t.account.douyuDidLabel, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+        DsTextField(
+          key: const ValueKey('douyu-did-input'),
+          controller: _did,
+          placeholder: t.account.douyuDidHint,
+          semanticLabel: t.account.douyuDidLabel,
+          enabled: enabled,
+          autocorrect: false,
+          enableSuggestions: false,
+        ),
+        Row(
           children: [
-            Text(t.account.douyuRenewalTitle, style: theme.typography.fieldLabel.copyWith(color: colors.textSubtle)),
-            Text(t.account.douyuLtp0Label, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-            DsTextField(
-              key: const ValueKey('douyu-ltp0-input'),
-              controller: _ltp0,
-              placeholder: t.account.douyuLtp0Hint,
-              semanticLabel: t.account.douyuLtp0Label,
-              enabled: enabled,
-              autocorrect: false,
-              enableSuggestions: false,
+            DsButton(
+              key: const ValueKey('douyu-renew-now'),
+              variant: DsButtonVariant.secondary,
+              onPressed: enabled ? () => unawaited(_renewNow()) : null,
+              loading: _renewing,
+              leading: _renewing ? null : const DsIcon(DsIcons.refreshCw),
+              child: Text(t.account.douyuRenewNow),
             ),
-            Text(t.account.douyuDidLabel, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-            DsTextField(
-              key: const ValueKey('douyu-did-input'),
-              controller: _did,
-              placeholder: t.account.douyuDidHint,
-              semanticLabel: t.account.douyuDidLabel,
-              enabled: enabled,
-              autocorrect: false,
-              enableSuggestions: false,
-            ),
-            Row(
-              children: [
-                DsButton(
-                  key: const ValueKey('douyu-renew-now'),
-                  variant: DsButtonVariant.secondary,
-                  onPressed: enabled ? () => unawaited(_renewNow()) : null,
-                  loading: _renewing,
-                  leading: _renewing ? null : const DsIcon(DsIcons.refreshCw),
-                  child: Text(t.account.douyuRenewNow),
-                ),
-                const SizedBox(width: DsSpace.s12),
-                Expanded(
-                  child: Text(
-                    t.account.douyuRenewNowDesc,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted, height: 1.45),
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(t.settings.douyuForceRenew, style: theme.typography.small.copyWith(color: colors.text)),
-                      const SizedBox(height: DsSpace.s3),
-                      Text(
-                        t.settings.douyuForceRenewDesc,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted, height: 1.45),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: DsSpace.s12),
-                DsSwitch(
-                  key: const ValueKey('douyu-force-renew'),
-                  value: forceRenew,
-                  semanticLabel: t.settings.douyuForceRenew,
-                  onChanged: (value) => unawaited(ref.read(douyuForceRenewProvider.notifier).set(value: value)),
-                ),
-              ],
+            const SizedBox(width: DsSpace.s12),
+            Expanded(
+              child: Text(
+                t.account.douyuRenewNowDesc,
+                style: theme.typography.caption.copyWith(color: colors.textMuted, height: 1.45),
+              ),
             ),
           ],
         ),
-      ),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(t.settings.douyuForceRenew, style: theme.typography.small.copyWith(color: colors.text)),
+                  const SizedBox(height: DsSpace.s3),
+                  Text(
+                    t.settings.douyuForceRenewDesc,
+                    style: theme.typography.caption.copyWith(color: colors.textMuted, height: 1.45),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: DsSpace.s12),
+            DsSwitch(
+              key: const ValueKey('douyu-force-renew'),
+              value: forceRenew,
+              semanticLabel: t.settings.douyuForceRenew,
+              onChanged: (value) => unawaited(ref.read(douyuForceRenewProvider.notifier).set(value: value)),
+            ),
+          ],
+        ),
+      ],
     );
   }
 

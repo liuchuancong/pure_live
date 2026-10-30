@@ -611,10 +611,6 @@ final class _SettingsRow extends StatelessWidget {
               ),
             ],
           ),
-          Text(
-            t.iptv.activeGuideCardHint,
-            style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textMuted),
-          ),
         ],
       ),
     );
@@ -629,13 +625,17 @@ final class _SettingsRow extends StatelessWidget {
             t.iptv.updateInterval,
             style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textMuted),
           ),
-          DsSegmentedControl<IptvUpdateInterval>(
+          // Six choices no longer fit a segmented rail: the interval is a
+          // dropdown under its own label.
+          DsSelect<IptvUpdateInterval>(
             value: interval,
-            onChanged: onInterval,
             semanticLabel: t.iptv.updateInterval,
-            segments: [
-              for (final value in IptvUpdateInterval.values) DsSegment(value: value, label: Text(value.label(t))),
+            options: [
+              for (final value in IptvUpdateInterval.values) DsSelectOption(value: value, label: value.label(t)),
             ],
+            onChanged: (value) {
+              if (value != null) onInterval(value);
+            },
           ),
           _UpdateStatus(autoOn: autoOn, remoteCount: remoteCount),
         ],
