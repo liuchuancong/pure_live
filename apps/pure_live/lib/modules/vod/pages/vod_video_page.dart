@@ -1176,7 +1176,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final presentation = ref.watch(roomPresentationProvider);
     final presentationController = ref.read(roomPresentationProvider.notifier);
     final immersive = presentationController.modeOwnsWindow(presentation);
-    final danmakuVisible = ref.watch(playbackSettingsProvider).danmakuVisible;
+    final playback = ref.watch(playbackSettingsProvider);
+    final danmakuVisible = playback.danmakuVisible;
+    final fit = playback.fit;
     final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk));
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
@@ -1267,6 +1269,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                         semanticLabel: t.vod.volume,
                       ),
                     ),
+                  const Spacer(),
                   MediaBarButton(
                     icon: danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
                     label: danmakuVisible ? t.vod.danmakuOff : t.vod.danmakuOn,
@@ -1280,7 +1283,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                             );
                           },
                   ),
-                  const Spacer(),
                   if (qualities.isNotEmpty)
                     _vodPickerButton(
                       panel: _VodPanel.quality,
@@ -1304,6 +1306,16 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                     semanticLabel: t.vod.speed,
                     compact: compact,
                   ),
+                  // The picture is already 16:9 on a phone, so the ratio's
+                  // one more control stays out of the compact bar.
+                  if (!compact)
+                    _vodPickerButton(
+                      panel: _VodPanel.fit,
+                      icon: DsIcons.aspectRatio,
+                      label: fitLabels(t)[fit.index],
+                      semanticLabel: t.settings.fit,
+                      compact: compact,
+                    ),
                   MediaBarButton(
                     icon: DsIcons.download,
                     label: t.vod.download,
@@ -1455,6 +1467,23 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 onPressed: () {
                   _closePanel();
                   unawaited(_setSpeed(choice.value));
+                },
+              ),
+          ],
+        );
+      case _VodPanel.fit:
+        final fit = ref.watch(playbackSettingsProvider).fit;
+        return PlayerOverlayPanel(
+          title: t.settings.fit,
+          width: 180,
+          children: [
+            for (final option in PlaybackFit.values)
+              PlayerPanelOption(
+                label: fitLabels(t)[option.index],
+                selected: option == fit,
+                onPressed: () {
+                  _closePanel();
+                  unawaited(ref.read(playbackSettingsProvider.notifier).setFit(option));
                 },
               ),
           ],
@@ -1737,7 +1766,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
 }
 
 /// The catalogues the video bar hangs over the picture.
-enum _VodPanel { quality, parts, speed }
+enum _VodPanel { quality, parts, speed, fit }
 
 /// The picture's box: a fixed 16:9 card inline, the container's own shape in
 /// the immersive modes.

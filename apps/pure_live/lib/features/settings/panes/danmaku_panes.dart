@@ -128,7 +128,7 @@ final class DanmakuPane extends ConsumerWidget {
           children: [
             for (final format in DanmakuFormat.values)
               SettingsConfigRow(
-                leading: const DsIcon(DsIcons.fileDown),
+                leading: DsIcon(_saveFormatIcon(format)),
                 title: format.label(t),
                 control: DsSwitch(
                   value: ref.watch(danmakuSaveFormatsProvider).contains(format),
@@ -1088,3 +1088,13 @@ final class _DanmakuColorDot extends StatelessWidget {
     );
   }
 }
+
+/// The glyph a save format gets in the list: markup, braces, styled captions,
+/// plain captions, plain text.
+DsIconData _saveFormatIcon(DanmakuFormat format) => switch (format) {
+  DanmakuFormat.xml => DsIcons.fileCode,
+  DanmakuFormat.json => DsIcons.fileBraces,
+  DanmakuFormat.ass => DsIcons.captions,
+  DanmakuFormat.srt => DsIcons.captionsShort,
+  DanmakuFormat.txt => DsIcons.fileText,
+};
