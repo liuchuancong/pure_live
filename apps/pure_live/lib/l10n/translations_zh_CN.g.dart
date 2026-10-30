@@ -3322,6 +3322,10 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '下载格式'
 	String get downloadType => '下载格式';
+	String get downloadUseOtherSource => '自动换源下载';
+
+	/// zh-CN: '当无法从歌曲的原始来源下载时，尝试切换到其他来源下载。注：此功能不 100% 保证换源后的歌曲版本与原版一致。'
+	String get downloadUseOtherSourceDesc => '当无法从歌曲的原始来源下载时，尝试切换到其他来源下载。注：此功能不 100% 保证换源后的歌曲版本与原版一致。';
 
 	/// zh-CN: '原格式会尽量保留音源容器；转码需要 ffmpeg。'
 	String get downloadTypeDesc => '原格式会尽量保留音源容器；转码需要 ffmpeg。';
@@ -11583,6 +11587,8 @@ extension on Translations {
 			'music.downloadDirectoryUpdated' => '下载目录已更新',
 			'music.downloadDirectoryFailed' => '无法写入这个目录',
 			'music.downloadType' => '下载格式',
+			'music.downloadUseOtherSource' => '自动换源下载',
+			'music.downloadUseOtherSourceDesc' => '当无法从歌曲的原始来源下载时，尝试切换到其他来源下载。注：此功能不 100% 保证换源后的歌曲版本与原版一致。',
 			'music.downloadTypeDesc' => '原格式会尽量保留音源容器；转码需要 ffmpeg。',
 			'music.downloadTypeOriginal' => '原格式',
 			'music.downloadTypeMp3' => 'MP3',

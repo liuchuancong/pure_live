@@ -53,8 +53,15 @@ final kwMusicSourceProvider = Provider<KwMusicSource>((ref) {
 /// lx-music's 换源 resolve: the track's own platform is asked first, and when
 /// it refuses, the other platforms are searched for the same song and the
 /// first one that resolves wins. A manual swap from the viewer rides above
-/// every attempt.
-Future<audio.TrackSource> resolveWithToggle(Ref ref, audio.MusicTrack track, {audio.MusicQuality? quality}) async {
+/// every attempt. [allowAutoToggle] gates only the automatic cross-source
+/// walk — downloads keep it off unless the viewer asked for it, the
+/// reference's `download.isUseOtherSource`.
+Future<audio.TrackSource> resolveWithToggle(
+  Ref ref,
+  audio.MusicTrack track, {
+  audio.MusicQuality? quality,
+  bool allowAutoToggle = true,
+}) async {
   final sources = ref.read(musicSourceListProvider);
   final swapped = ref.read(musicSourceSwapsProvider.notifier).swappedOf(track);
   if (swapped != null) {
@@ -74,7 +81,7 @@ Future<audio.TrackSource> resolveWithToggle(Ref ref, audio.MusicTrack track, {au
   try {
     return await own.resolveTrackSource(track, quality: quality);
   } on Object {
-    // Fall through to the other platforms.
+    if (!allowAutoToggle) rethrow;
   }
   for (final source in sources) {
     if (source.id == track.sourceId) continue;

@@ -228,6 +228,8 @@
   "downloadDirectoryDefaultDesc": "Return to the app’s default downloads folder.",
   "downloadDirectoryUpdated": "Download folder updated",
   "downloadDirectoryFailed": "This folder is not writable",
+  "downloadUseOtherSource": "Automatic Switch Source Download",
+  "downloadUseOtherSourceDesc": "When the song cannot be downloaded from the original source, try another source. The swapped version is not guaranteed to match the original.",
   "downloadType": "Download format",
   "downloadTypeDesc": "Original keeps the source container; transcoding needs ffmpeg.",
   "downloadTypeOriginal": "Original",

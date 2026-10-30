@@ -188,6 +188,7 @@ final class MusicSettings {
     required this.downloadIncludeRomanization,
     required this.downloadWriteLyric,
     required this.downloadSkipExisting,
+    required this.downloadUseOtherSource,
     required this.downloadGroupByList,
     required this.downloadMaxConcurrent,
   });
@@ -240,6 +241,7 @@ final class MusicSettings {
     downloadIncludeRomanization: false,
     downloadWriteLyric: true,
     downloadSkipExisting: true,
+    downloadUseOtherSource: false,
     downloadGroupByList: false,
     downloadMaxConcurrent: 1,
   );
@@ -387,6 +389,11 @@ final class MusicSettings {
   /// Whether a download skips a file that already exists.
   final bool downloadSkipExisting;
 
+  /// Whether a download may leave the song's own platform when that platform
+  /// refuses — the reference's `download.isUseOtherSource`. A remembered or
+  /// manual swap still rides above this switch.
+  final bool downloadUseOtherSource;
+
   /// Whether a download groups files by the list they came from.
   final bool downloadGroupByList;
 
@@ -438,6 +445,7 @@ final class MusicSettings {
     bool? downloadIncludeRomanization,
     bool? downloadWriteLyric,
     bool? downloadSkipExisting,
+    bool? downloadUseOtherSource,
     bool? downloadGroupByList,
     int? downloadMaxConcurrent,
   }) => MusicSettings(
@@ -484,6 +492,7 @@ final class MusicSettings {
     downloadIncludeRomanization: downloadIncludeRomanization ?? this.downloadIncludeRomanization,
     downloadWriteLyric: downloadWriteLyric ?? this.downloadWriteLyric,
     downloadSkipExisting: downloadSkipExisting ?? this.downloadSkipExisting,
+    downloadUseOtherSource: downloadUseOtherSource ?? this.downloadUseOtherSource,
     downloadGroupByList: downloadGroupByList ?? this.downloadGroupByList,
     downloadMaxConcurrent: downloadMaxConcurrent ?? this.downloadMaxConcurrent,
   );
@@ -532,6 +541,7 @@ const String _downloadIncludeTranslationKey = 'music.download.includeTranslation
 const String _downloadIncludeRomanizationKey = 'music.download.includeRomanization';
 const String _downloadWriteLyricKey = 'music.download.writeLyric';
 const String _downloadSkipExistingKey = 'music.download.skipExisting';
+const String _downloadUseOtherSourceKey = 'music.download.useOtherSource';
 const String _downloadGroupByListKey = 'music.download.groupByList';
 const String _downloadMaxConcurrentKey = 'music.download.maxConcurrent';
 
@@ -582,6 +592,7 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     downloadIncludeRomanization: _readBool(_downloadIncludeRomanizationKey) ?? false,
     downloadWriteLyric: _readBool(_downloadWriteLyricKey) ?? true,
     downloadSkipExisting: _readBool(_downloadSkipExistingKey) ?? true,
+    downloadUseOtherSource: _readBool(_downloadUseOtherSourceKey) ?? false,
     downloadGroupByList: _readBool(_downloadGroupByListKey) ?? false,
     downloadMaxConcurrent: (_readInt(_downloadMaxConcurrentKey) ?? 1).clamp(1, 5),
   );
@@ -925,6 +936,12 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
   Future<void> setDownloadSkipExisting({required bool value}) async {
     state = state.copyWith(downloadSkipExisting: value);
     await _writeBool(_downloadSkipExistingKey, value);
+  }
+
+  /// Toggles cross-source downloading.
+  Future<void> setDownloadUseOtherSource({required bool value}) async {
+    state = state.copyWith(downloadUseOtherSource: value);
+    await _writeBool(_downloadUseOtherSourceKey, value);
   }
 
   /// Groups downloaded files by the list they came from.

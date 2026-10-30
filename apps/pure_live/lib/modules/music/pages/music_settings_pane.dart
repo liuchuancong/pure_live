@@ -770,6 +770,15 @@ final class MusicDownloadPane extends ConsumerWidget {
         ),
         DsListSection(
           children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.refreshCw),
+              title: t.music.downloadUseOtherSource,
+              description: t.music.downloadUseOtherSourceDesc,
+              control: DsSwitch(
+                value: settings.downloadUseOtherSource,
+                onChanged: (value) => unawaited(controller.setDownloadUseOtherSource(value: value)),
+              ),
+            ),
             SettingsChoiceRow<MusicDownloadType>(
               leading: const DsIcon(DsIcons.fileCog),
               title: t.music.downloadType,

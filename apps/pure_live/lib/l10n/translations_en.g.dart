@@ -1208,6 +1208,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get downloadDirectoryUpdated => 'Download folder updated';
 	@override String get downloadDirectoryFailed => 'This folder is not writable';
 	@override String get downloadType => 'Download format';
+	@override String get downloadUseOtherSource => 'Automatic Switch Source Download';
+	@override String get downloadUseOtherSourceDesc => 'When the song cannot be downloaded from the original source, try another source. The swapped version is not guaranteed to match the original.';
 	@override String get downloadTypeDesc => 'Original keeps the source container; transcoding needs ffmpeg.';
 	@override String get downloadTypeOriginal => 'Original';
 	@override String get downloadTypeMp3 => 'MP3';
@@ -4749,6 +4751,8 @@ extension on TranslationsEn {
 			'music.downloadDirectoryUpdated' => 'Download folder updated',
 			'music.downloadDirectoryFailed' => 'This folder is not writable',
 			'music.downloadType' => 'Download format',
+			'music.downloadUseOtherSource' => 'Automatic Switch Source Download',
+			'music.downloadUseOtherSourceDesc' => 'When the song cannot be downloaded from the original source, try another source. The swapped version is not guaranteed to match the original.',
 			'music.downloadTypeDesc' => 'Original keeps the source container; transcoding needs ffmpeg.',
 			'music.downloadTypeOriginal' => 'Original',
 			'music.downloadTypeMp3' => 'MP3',

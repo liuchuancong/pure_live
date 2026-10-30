@@ -84,7 +84,12 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
     final quality = musicQualityOf(settings.quality);
     final directory = ref.read(downloadDirectoryProvider).effectivePath;
     try {
-      final resolved = await resolveWithToggle(ref, track, quality: quality);
+      final resolved = await resolveWithToggle(
+        ref,
+        track,
+        quality: quality,
+        allowAutoToggle: settings.downloadUseOtherSource,
+      );
       audio.MusicLyricPayload? lyric;
       if (settings.downloadEmbedLyric || settings.downloadWriteLyric) {
         try {
@@ -118,7 +123,12 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
       _queue.enqueue(
         request,
         resolve: () async {
-          final fresh = await resolveWithToggle(ref, track, quality: quality);
+          final fresh = await resolveWithToggle(
+            ref,
+            track,
+            quality: quality,
+            allowAutoToggle: settings.downloadUseOtherSource,
+          );
           return audio.MusicDownloadRequest.forTrack(
             track: track,
             source: fresh,

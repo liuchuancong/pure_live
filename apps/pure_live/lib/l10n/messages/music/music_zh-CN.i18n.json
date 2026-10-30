@@ -228,6 +228,8 @@
   "downloadDirectoryDefaultDesc": "回到应用默认的下载文件夹。",
   "downloadDirectoryUpdated": "下载目录已更新",
   "downloadDirectoryFailed": "无法写入这个目录",
+  "downloadUseOtherSource": "自动换源下载",
+  "downloadUseOtherSourceDesc": "当无法从歌曲的原始来源下载时，尝试切换到其他来源下载。注：此功能不 100% 保证换源后的歌曲版本与原版一致。",
   "downloadType": "下载格式",
   "downloadTypeDesc": "原格式会尽量保留音源容器；转码需要 ffmpeg。",
   "downloadTypeOriginal": "原格式",
