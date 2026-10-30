@@ -1413,6 +1413,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get eqCenter => 'Sound Effects';
 	@override String get eqCenterSubtitle => 'Shape your own listening signature';
 	@override String get eqCenterEnabled => 'On';
+	@override String get eqCenterNow => 'Current effect';
 	@override String get eqCenterDisabled => 'Off';
 	@override String get eqCurrent => 'Current effect';
 	@override String get eqCenterRecommended => 'Recommended';
@@ -4995,6 +4996,7 @@ extension on TranslationsEn {
 			'music.eqCenter' => 'Sound Effects',
 			'music.eqCenterSubtitle' => 'Shape your own listening signature',
 			'music.eqCenterEnabled' => 'On',
+			'music.eqCenterNow' => 'Current effect',
 			'music.eqCenterDisabled' => 'Off',
 			'music.eqCurrent' => 'Current effect',
 			'music.eqCenterRecommended' => 'Recommended',
@@ -5268,9 +5270,9 @@ extension on TranslationsEn {
 			'recorder.keepAliveTitle' => 'Keep recording in the background',
 			'recorder.keepAliveDescription' => 'Hold a background session and wake lock while recording (Android foreground service and notification).',
 			'recorder.verifyTitle' => 'Verify on stop',
-			'recorder.verifyDescription' => 'Check the segments are playable before the session ends.',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.verifyDescription' => 'Check the segments are playable before the session ends.',
 			'recorder.restartTitle' => 'Stream retries',
 			'recorder.restartDescription' => 'How often FFmpeg reopens a broken stream; 0 disables retries.',
 			'recorder.restartCount' => ({required int count}) => '${count}×',
@@ -5782,9 +5784,9 @@ extension on TranslationsEn {
 			'settings.danmakuList' => 'Danmaku list',
 			'settings.danmakuInteractionGroup' => 'Danmaku interaction',
 			'settings.styleTapInteraction' => 'Tap danmaku',
-			'settings.styleTapInteractionDesc' => 'Copy or block a message; off, a tap only toggles the controls.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.styleTapInteractionDesc' => 'Copy or block a message; off, a tap only toggles the controls.',
 			'settings.styleLongPressInteraction' => 'Long-press danmaku',
 			'settings.styleLongPressInteractionDesc' => 'Opens the same actions; off, a long press misses danmaku.',
 			'settings.danmakuStyleGroup' => 'Danmaku style',
@@ -6296,9 +6298,9 @@ extension on TranslationsEn {
 			'settings.backgroundPlay' => 'Background playback',
 			'settings.backgroundPlayDesc' => 'Keep playing audio after the app leaves the foreground; when off, playback pauses and resumes when you return.',
 			'settings.asmrSleepMode' => 'ASMR sleep mode',
-			'settings.asmrSleepModeDesc' => 'Starts a room in audio-only mode and pauses it after the chosen time. Android only.',
 			_ => null,
 		} ?? switch (path) {
+			'settings.asmrSleepModeDesc' => 'Starts a room in audio-only mode and pauses it after the chosen time. Android only.',
 			'settings.asmrSleepTimer' => 'ASMR sleep duration',
 			'settings.asmrSleepTimerDesc' => 'Minutes before the audio-only room pauses; range 15–1440.',
 			'settings.asmrSleepCustomMinutes' => 'Custom minutes',
@@ -6810,9 +6812,9 @@ extension on TranslationsEn {
 			'shield.similarityTitle' => 'Similar danmaku filter',
 			'shield.similarityEnabled' => 'Similar danmaku filter',
 			'shield.similarityEnabledDescription' => 'Hides near-duplicates posted moments apart.',
-			'shield.similarityThreshold' => 'Similarity threshold',
 			_ => null,
 		} ?? switch (path) {
+			'shield.similarityThreshold' => 'Similarity threshold',
 			'shield.similarityThresholdDescription' => 'Higher is stricter.',
 			'shield.similarityCacheDuration' => 'Cache duration',
 			'shield.similarityCacheDurationDescription' => 'No repeats within this window.',

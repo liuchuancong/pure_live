@@ -434,6 +434,7 @@
   "eqCenter": "Sound Effects",
   "eqCenterSubtitle": "Shape your own listening signature",
   "eqCenterEnabled": "On",
+  "eqCenterNow": "Current effect",
   "eqCenterDisabled": "Off",
   "eqCurrent": "Current effect",
   "eqCenterRecommended": "Recommended",

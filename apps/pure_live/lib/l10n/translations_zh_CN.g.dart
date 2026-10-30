@@ -3940,6 +3940,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '已启用'
 	String get eqCenterEnabled => '已启用';
 
+	/// zh-CN: '当前音效'
+	String get eqCenterNow => '当前音效';
+
 	/// zh-CN: '未启用'
 	String get eqCenterDisabled => '未启用';
 
@@ -11917,6 +11920,7 @@ extension on Translations {
 			'music.eqCenter' => '音效中心',
 			'music.eqCenterSubtitle' => '自定义你的专属音效风格',
 			'music.eqCenterEnabled' => '已启用',
+			'music.eqCenterNow' => '当前音效',
 			'music.eqCenterDisabled' => '未启用',
 			'music.eqCurrent' => '当前音效',
 			'music.eqCenterRecommended' => '推荐音效',
@@ -12190,9 +12194,9 @@ extension on Translations {
 			'recorder.keepAliveTitle' => '后台保持录制',
 			'recorder.keepAliveDescription' => '录制期间持有后台会话与唤醒锁（Android 前台服务/通知）。',
 			'recorder.verifyTitle' => '结束时校验文件',
-			'recorder.verifyDescription' => '结束前检查分段是否可播放。',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.verifyDescription' => '结束前检查分段是否可播放。',
 			'recorder.restartTitle' => '断流重试次数',
 			'recorder.restartDescription' => '流中断后 FFmpeg 自动重开的次数；0 表示不重试。',
 			'recorder.restartCount' => ({required int count}) => '${count} 次',
@@ -12704,9 +12708,9 @@ extension on Translations {
 			'settings.danmakuList' => '弹幕列表',
 			'settings.danmakuInteractionGroup' => '弹幕交互',
 			'settings.styleTapInteraction' => '点按弹幕',
-			'settings.styleTapInteractionDesc' => '可复制、屏蔽；关闭后只切换控制条。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.styleTapInteractionDesc' => '可复制、屏蔽；关闭后只切换控制条。',
 			'settings.styleLongPressInteraction' => '长按弹幕',
 			'settings.styleLongPressInteractionDesc' => '与点按同一菜单；关闭后长按不命中弹幕。',
 			'settings.danmakuStyleGroup' => '弹幕样式',
@@ -13218,9 +13222,9 @@ extension on Translations {
 			'settings.backgroundPlay' => '后台播放',
 			'settings.backgroundPlayDesc' => '离开应用后继续出声；关闭则切后台即暂停。',
 			'settings.asmrSleepMode' => 'ASMR 睡眠模式',
-			'settings.asmrSleepModeDesc' => '进直播间自动切音频模式，到时暂停。仅 Android。',
 			_ => null,
 		} ?? switch (path) {
+			'settings.asmrSleepModeDesc' => '进直播间自动切音频模式，到时暂停。仅 Android。',
 			'settings.asmrSleepTimer' => 'ASMR 睡眠时长',
 			'settings.asmrSleepTimerDesc' => '音频模式自动停止前的分钟数，范围 15–1440。',
 			'settings.asmrSleepCustomMinutes' => '自定义分钟数',
@@ -13732,9 +13736,9 @@ extension on Translations {
 			'shield.similarityTitle' => '相似弹幕过滤',
 			'shield.similarityEnabled' => '相似弹幕过滤',
 			'shield.similarityEnabledDescription' => '过滤短时间内高度相似的弹幕。',
-			'shield.similarityThreshold' => '相似度阈值',
 			_ => null,
 		} ?? switch (path) {
+			'shield.similarityThreshold' => '相似度阈值',
 			'shield.similarityThresholdDescription' => '越高越严格。',
 			'shield.similarityCacheDuration' => '缓存时间',
 			'shield.similarityCacheDurationDescription' => '这段时间内不重复显示。',

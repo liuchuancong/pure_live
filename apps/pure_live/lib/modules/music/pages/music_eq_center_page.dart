@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+import 'dart:ui' show ImageFilter;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
@@ -7,13 +8,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart';
 import 'package:pure_live/modules/music/controller/eq/music_eq_custom_presets.dart';
+import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart';
-import 'package:pure_live/modules/music/pages/music_settings_pane.dart' show MusicEqPane;
+import 'package:pure_live/modules/music/pages/music_settings_pane.dart' show MusicEqPane, MusicFxRow;
+import 'package:pure_live/shared/shared.dart' show cachedImage;
 
-/// The sound-effect center — the spec's own page, not a settings subpage:
-/// the master switch up top, the preset in force, the recommended presets,
-/// and the ten-band editor under the response curve, with the preset picker
-/// and the enhancement effects one tap away in their dialogs.
+/// The sound-effect center — the spec's own page, drawn after the streaming
+/// apps' own effect rooms: the current track's cover sits blurred behind the
+/// effect in force, the presets are a colourful gallery one tap away, the
+/// enhancement effects are inline instead of behind a dialog, and the
+/// ten-band editor keeps its card under the response curve.
 final class MusicEqCenterPage extends ConsumerWidget {
   /// Creates the page.
   const MusicEqCenterPage({super.key});
@@ -34,41 +38,9 @@ final class MusicEqCenterPage extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s16,
         children: [
-          // The header card: what this page is, and whether any of it runs.
-          _Card(
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: colors.accent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(theme.radii.control(36)),
-                  ),
-                  child: const Center(child: DsIcon(DsIcons.audioLines)),
-                ),
-                const SizedBox(width: DsSpace.s12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(t.music.eqCenter, style: theme.typography.heading),
-                      Text(t.music.eqCenterSubtitle, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: DsSpace.s12),
-                Text(
-                  eq.enabled ? t.music.eqCenterEnabled : t.music.eqCenterDisabled,
-                  style: theme.typography.caption.copyWith(color: eq.enabled ? colors.accent : colors.textMuted),
-                ),
-                DsSwitch(
-                  value: eq.enabled,
-                  onChanged: (value) => unawaited(controller.update(eq.copyWith(enabled: value))),
-                ),
-              ],
-            ),
-          ),
+          // The hero: the cover blurred behind the effect in force, the way
+          // the streaming apps stage their own effect rooms.
+          _Hero(eq: eq),
 
           // The honesty rule: when the engine refused the chain, the page
           // says so instead of the switches sitting on over plain sound.
@@ -88,122 +60,82 @@ final class MusicEqCenterPage extends ConsumerWidget {
               ),
             ),
 
-          // The preset in force: its name opens the picker, the three quick
-          // buttons jump at the bands and the enhancement effects.
+          // The gallery: every official preset plus the viewer's own, one
+          // tap applies, the one in force carries the ring.
           _Card(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: DsSpace.s8,
+              spacing: DsSpace.s12,
               children: [
-                Text(t.music.eqCurrent, style: theme.typography.caption.copyWith(color: colors.textMuted)),
                 Row(
                   children: [
-                    Flexible(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => unawaited(_pickPreset(context, ref)),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                _presetName(t, eq.presetId, custom),
-                                style: theme.typography.title,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: DsSpace.s4),
-                            const DsIcon(DsIcons.chevronDown, size: 18),
-                          ],
-                        ),
+                    Expanded(child: Text(t.music.eqCenterRecommended, style: theme.typography.heading)),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => unawaited(_pickPreset(context)),
+                      child: Text(
+                        '${t.music.eqMorePresets} ›',
+                        style: theme.typography.caption.copyWith(color: colors.accent),
                       ),
-                    ),
-                    const SizedBox(width: DsSpace.s8),
-                    if (eq.presetId == null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: 2),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: colors.accent),
-                        ),
-                        child: Text(
-                          t.music.eqPresetCustom,
-                          style: theme.typography.caption.copyWith(color: colors.accent),
-                        ),
-                      ),
-                  ],
-                ),
-                Row(
-                  spacing: DsSpace.s8,
-                  children: [
-                    _QuickButton(
-                      icon: DsIcons.slidersVertical,
-                      label: t.music.eqCenterEqualizer,
-                      onTap: () => unawaited(_scrollToBands(context)),
-                    ),
-                    _QuickButton(
-                      icon: DsIcons.micVocal,
-                      label: t.music.eqFxVocal,
-                      onTap: () => unawaited(_showEffects(context)),
-                    ),
-                    _QuickButton(
-                      icon: DsIcons.waves,
-                      label: t.music.eqFxSurround,
-                      onTap: () => unawaited(_showEffects(context)),
                     ),
                   ],
                 ),
-                Text(_presetNote(t, eq.presetId), style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Floor-width cards: six across on a wide shell, down to
+                    // two on a phone, never squashed.
+                    final cards = [
+                      for (final preset in kMusicEqPresets)
+                        _GalleryCard(
+                          name: MusicEqPane.presetLabel(t, preset),
+                          tag: _GalleryCard.presetTag(t, preset.id),
+                          icon: _GalleryCard.icons[preset.id] ?? DsIcons.audioLines,
+                          tint: _GalleryCard.tints[preset.id] ?? _GalleryCard.tints['flat']!,
+                          selected: eq.presetId == preset.id,
+                          onTap: () => unawaited(controller.applyPreset(preset)),
+                        ),
+                      for (final mine in custom)
+                        _GalleryCard(
+                          name: mine.name,
+                          tag: t.music.eqPresetCustom,
+                          icon: DsIcons.star,
+                          tint: [colors.accent, Color.lerp(colors.accent, const Color(0xFF000000), 0.3)!],
+                          selected: eq.presetId == '$kMusicCustomPresetPrefix${mine.id}',
+                          onTap: () => unawaited(controller.applyCustomPreset(mine)),
+                        ),
+                    ];
+                    final columns = (constraints.maxWidth / 150).floor().clamp(2, 8);
+                    final rows = (cards.length / columns).ceil();
+                    return Column(
+                      spacing: DsSpace.s8,
+                      children: [
+                        for (var row = 0; row < rows; row++)
+                          Row(
+                            spacing: DsSpace.s8,
+                            children: [
+                              for (final card in cards.skip(row * columns).take(columns)) Expanded(child: card),
+                            ],
+                          ),
+                      ],
+                    );
+                  },
+                ),
               ],
             ),
           ),
 
-          // The recommended six: one tap applies the preset.
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s8,
-            children: [
-              Row(
-                children: [
-                  Expanded(child: Text(t.music.eqCenterRecommended, style: theme.typography.heading)),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => unawaited(_pickPreset(context, ref)),
-                    child: Text(
-                      '${t.music.eqMorePresets} ›',
-                      style: theme.typography.caption.copyWith(color: colors.accent),
-                    ),
-                  ),
-                ],
-              ),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  // Six across on a wide shell, two on a phone — the cards
-                  // keep a floor width instead of squashing.
-                  final columns = (constraints.maxWidth / 180).floor().clamp(2, 6);
-                  final rows = (kRecommendedPresetIds.length / columns).ceil();
-                  return Column(
-                    spacing: DsSpace.s8,
-                    children: [
-                      for (var row = 0; row < rows; row++)
-                        Row(
-                          spacing: DsSpace.s8,
-                          children: [
-                            for (final id in kRecommendedPresetIds.skip(row * columns).take(columns))
-                              Expanded(
-                                child: _PresetCard(
-                                  preset: _presetOf(id),
-                                  selected: eq.presetId == id,
-                                  onTap: () => unawaited(controller.applyPreset(_presetOf(id))),
-                                ),
-                              ),
-                          ],
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ],
+          // The enhancement effects, inline: every switch and strength the
+          // engine can actually ride, in the same rows the settings pane uses.
+          _Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: DsSpace.s4,
+              children: [
+                Text(t.music.eqFxSection, style: theme.typography.heading),
+                for (final id in kMusicFxOrder) MusicFxRow(id: id, eq: eq, controller: controller),
+                for (final id in kMusicFxSpatialOrder) MusicFxRow(id: id, eq: eq, controller: controller),
+              ],
+            ),
           ),
 
           // The bands: the response curve and the ten handles, plus the
@@ -249,48 +181,157 @@ final class MusicEqCenterPage extends ConsumerWidget {
     );
   }
 
-  static const List<String> kRecommendedPresetIds = <String>['pop', 'rock', 'classical', 'jazz', 'electronic', 'bass'];
+  Future<void> _pickPreset(BuildContext context) async {
+    await showDsDialog<Object?>(context: context, builder: (dialogContext) => const _PresetDialog());
+  }
+}
 
-  static MusicEqPreset _presetOf(String id) =>
-      kMusicEqPresets.firstWhere((preset) => preset.id == id, orElse: () => kMusicEqPresets.first);
+/// The hero card: the current track's cover blurred behind a surface scrim,
+/// the effect in force in large type, the master switch at the right.
+final class _Hero extends ConsumerWidget {
+  const _Hero({required this.eq});
 
-  /// The viewer's preset [presetId] rides, null for a built-in or a
-  /// hand-tuned curve.
-  static MusicCustomEqPreset? _customOf(List<MusicCustomEqPreset> presets, String? presetId) {
-    final parsed = customPresetIdOf(presetId);
-    if (parsed == null) return null;
-    for (final preset in presets) {
-      if (preset.id == parsed.$2) return preset;
-    }
-    return null;
+  final MusicEqConfig eq;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final custom = ref.watch(musicCustomPresetsProvider);
+    final player = ref.watch(musicPlayerProvider);
+    final track = player.track;
+    final cover = track?.coverUri;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(theme.radii.card),
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [colors.accent.withValues(alpha: 0.30), colors.surface],
+                ),
+              ),
+            ),
+          ),
+          if (cover != null)
+            Positioned.fill(
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                child: Opacity(
+                  opacity: 0.35,
+                  child: DsImage(
+                    image: cachedImage(cover.toString()),
+                    semanticLabel: track?.title,
+                  ),
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(DsSpace.s20),
+            child: Row(
+              children: [
+                _HeroCover(cover: cover, title: track?.title),
+                const SizedBox(width: DsSpace.s16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: DsSpace.s4,
+                    children: [
+                      Text(
+                        t.music.eqCenterNow,
+                        style: theme.typography.caption.copyWith(
+                          color: eq.enabled ? colors.accent : colors.textMuted,
+                        ),
+                      ),
+                      Text(
+                        _presetName(t, eq.presetId, custom),
+                        style: theme.typography.heading,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        track == null
+                            ? t.music.eqCenterSubtitle
+                            : '${track.title} · ${track.artist}',
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: DsSpace.s12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  spacing: DsSpace.s8,
+                  children: [
+                    Text(
+                      eq.enabled ? t.music.eqCenterEnabled : t.music.eqCenterDisabled,
+                      style: theme.typography.caption.copyWith(
+                        color: eq.enabled ? colors.accent : colors.textMuted,
+                      ),
+                    ),
+                    DsSwitch(
+                      value: eq.enabled,
+                      onChanged: (value) =>
+                          unawaited(ref.read(musicEqProvider.notifier).update(eq.copyWith(enabled: value))),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// The preset in force's display name: the viewer's own preset by its
   /// name, a built-in by its label, a hand-tuned curve by 自定义.
   static String _presetName(Translations t, String? presetId, List<MusicCustomEqPreset> presets) {
-    final custom = _customOf(presets, presetId);
-    if (custom != null) return custom.name;
-    if (presetId != null) return MusicEqPane.presetLabel(t, _presetOf(presetId));
+    final parsed = customPresetIdOf(presetId);
+    if (parsed != null) {
+      for (final preset in presets) {
+        if (preset.id == parsed.$2) return preset.name;
+      }
+    }
+    if (presetId != null) {
+      for (final preset in kMusicEqPresets) {
+        if (preset.id == presetId) return MusicEqPane.presetLabel(t, preset);
+      }
+    }
     return t.music.eqPresetCustom;
   }
+}
 
-  static String _presetNote(Translations t, String? presetId) => switch (presetId) {
-    'vocal' => t.music.eqNoteVocal,
-    'bass' => t.music.eqNoteBass,
-    'classical' => t.music.eqNoteClassical,
-    _ => t.music.eqPresetDesc,
-  };
+/// The hero's square: the cover when there is one, a note glyph otherwise.
+final class _HeroCover extends ConsumerWidget {
+  const _HeroCover({required this.cover, required this.title});
 
-  Future<void> _scrollToBands(BuildContext context) async {
-    await Scrollable.ensureVisible(context, duration: const Duration(milliseconds: 300), alignment: 0.8);
-  }
+  final Uri? cover;
+  final String? title;
 
-  Future<void> _showEffects(BuildContext context) async {
-    await showDsDialog<Object?>(context: context, builder: (dialogContext) => const _EffectsDialog());
-  }
-
-  Future<void> _pickPreset(BuildContext context, WidgetRef ref) async {
-    await showDsDialog<Object?>(context: context, builder: (dialogContext) => const _PresetDialog());
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final radius = BorderRadius.circular(theme.radii.overlay);
+    if (cover == null) {
+      return Container(
+        width: 72,
+        height: 72,
+        decoration: DsBoxDecoration(color: colors.control, borderRadius: radius),
+        child: Center(child: DsIcon(DsIcons.music, size: 32, color: colors.textSubtle)),
+      );
+    }
+    return ClipRRect(
+      borderRadius: radius,
+      child: DsImage(image: cachedImage(cover.toString()), width: 72, height: 72, semanticLabel: title),
+    );
   }
 }
 
@@ -316,51 +357,41 @@ final class _Card extends ConsumerWidget {
   }
 }
 
-/// A small labelled square button — the current-effect card's quick jumps.
-final class _QuickButton extends ConsumerWidget {
-  const _QuickButton({required this.icon, required this.label, required this.onTap});
+/// One gallery card: a fixed vivid tile per preset — the streaming apps'
+/// artwork treatment — its name and scene hint under it; the preset in
+/// force carries the accent ring and the in-use mark.
+final class _GalleryCard extends ConsumerWidget {
+  const _GalleryCard({
+    required this.name,
+    required this.tag,
+    required this.icon,
+    required this.tint,
+    required this.selected,
+    required this.onTap,
+  });
 
+  final String name;
+  final String tag;
   final DsIconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: DsSpace.s8),
-          decoration: BoxDecoration(
-            color: colors.control,
-            borderRadius: BorderRadius.circular(theme.radii.control(36)),
-          ),
-          child: Column(
-            spacing: DsSpace.s4,
-            children: [
-              DsIcon(icon, size: 18, color: colors.accent),
-              Text(label, style: theme.typography.caption, overflow: TextOverflow.ellipsis),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// One recommended preset: a tinted glyph, its name and its tag line; the
-/// preset in force carries the ring.
-final class _PresetCard extends ConsumerWidget {
-  const _PresetCard({required this.preset, required this.selected, required this.onTap});
-
-  final MusicEqPreset preset;
+  final List<Color> tint;
   final bool selected;
   final VoidCallback onTap;
 
-  static const Map<String, DsIconData> _icons = <String, DsIconData>{
+  /// One vivid pair per id, fixed like artwork rather than themed — the
+  /// gallery should read the same at night as by day.
+  static const Map<String, List<Color>> tints = <String, List<Color>>{
+    'pop': [Color(0xFFFF7A9C), Color(0xFFE8467C)],
+    'rock': [Color(0xFFFF9F57), Color(0xFFE85446)],
+    'classical': [Color(0xFFF6C560), Color(0xFFD98E32)],
+    'jazz': [Color(0xFFB48BE8), Color(0xFF7D4FD3)],
+    'electronic': [Color(0xFF5EC9F0), Color(0xFF2D7FE0)],
+    'bass': [Color(0xFF6E8DF5), Color(0xFF4054D6)],
+    'vocal': [Color(0xFF5FD4B4), Color(0xFF22A98A)],
+    'live': [Color(0xFFFF8B6B), Color(0xFFD9503F)],
+    'flat': [Color(0xFF9AA5B5), Color(0xFF64707F)],
+  };
+
+  static const Map<String, DsIconData> icons = <String, DsIconData>{
     'pop': DsIcons.music,
     'rock': DsIcons.guitar,
     'classical': DsIcons.music2,
@@ -391,21 +422,21 @@ final class _PresetCard extends ConsumerWidget {
           ),
         ),
         child: Column(
-          spacing: DsSpace.s4,
+          spacing: DsSpace.s6,
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                color: colors.accent.withValues(alpha: 0.15),
+                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: tint),
                 borderRadius: BorderRadius.circular(theme.radii.control(36)),
               ),
-              child: Center(child: DsIcon(_icons[preset.id] ?? DsIcons.audioLines, size: 18)),
+              child: Center(child: DsIcon(icon, size: 22, color: const Color(0xFFFFFFFF))),
             ),
-            Text(MusicEqPane.presetLabel(t, preset), style: theme.typography.body, overflow: TextOverflow.ellipsis),
+            Text(name, style: theme.typography.body, overflow: TextOverflow.ellipsis),
             Text(
-              presetTag(t, preset.id),
-              style: theme.typography.caption.copyWith(color: colors.textMuted),
+              selected ? t.music.eqInUse : tag,
+              style: theme.typography.caption.copyWith(color: selected ? colors.accent : colors.textMuted),
               overflow: TextOverflow.ellipsis,
             ),
           ],
@@ -467,36 +498,38 @@ final class _PresetDialogState extends ConsumerState<_PresetDialog> {
           else
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 380),
-              child: Column(
-                spacing: DsSpace.s4,
-                children: [
-                  for (final preset in kMusicEqPresets)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(MusicEqPane.presetLabel(t, preset), style: theme.typography.body),
-                              Text(
-                                _PresetCard.presetTag(t, preset.id),
-                                style: theme.typography.caption.copyWith(color: colors.textMuted),
-                              ),
-                            ],
+              child: SingleChildScrollView(
+                child: Column(
+                  spacing: DsSpace.s4,
+                  children: [
+                    for (final preset in kMusicEqPresets)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(MusicEqPane.presetLabel(t, preset), style: theme.typography.body),
+                                Text(
+                                  _GalleryCard.presetTag(t, preset.id),
+                                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        if (eq.presetId == preset.id)
-                          Text(t.music.eqInUse, style: theme.typography.caption.copyWith(color: colors.accent))
-                        else
-                          DsButton(
-                            variant: DsButtonVariant.secondary,
-                            size: DsSize.sm,
-                            onPressed: () => unawaited(controller.applyPreset(preset)),
-                            child: Text(t.music.eqUse),
-                          ),
-                      ],
-                    ),
-                ],
+                          if (eq.presetId == preset.id)
+                            Text(t.music.eqInUse, style: theme.typography.caption.copyWith(color: colors.accent))
+                          else
+                            DsButton(
+                              variant: DsButtonVariant.secondary,
+                              size: DsSize.sm,
+                              onPressed: () => unawaited(controller.applyPreset(preset)),
+                              child: Text(t.music.eqUse),
+                            ),
+                        ],
+                      ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -616,101 +649,3 @@ Future<void> _saveCurrent(BuildContext context, WidgetRef ref) async {
   final saved = await ref.read(musicCustomPresetsProvider.notifier).save(trimmed);
   await ref.read(musicEqProvider.notifier).applyCustomPreset(saved);
 }
-
-/// The enhancement effects: every switch and strength the DSP chain really
-/// carries — no row for an effect the chain cannot apply.
-final class _EffectsDialog extends ConsumerWidget {
-  const _EffectsDialog();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final eq = ref.watch(musicEqProvider);
-    final controller = ref.read(musicEqProvider.notifier);
-    return DsDialog(
-      title: Text(t.music.eqFxSection),
-      icon: const DsIcon(DsIcons.slidersHorizontal),
-      description: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s12,
-        children: [
-          for (final id in kMusicFxOrder)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: DsSpace.s4,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(_fxLabel(t, id), style: theme.typography.body),
-                          Text(
-                            _fxDescription(t, id),
-                            style: theme.typography.caption.copyWith(color: colors.textMuted),
-                          ),
-                        ],
-                      ),
-                    ),
-                    DsSwitch(
-                      value: eq.effectOf(id).enabled,
-                      onChanged: (value) => unawaited(controller.setEffect(id, enabled: value)),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Text(
-                      '${t.music.eqCenterStrength} ${(eq.effectOf(id).amount * 100).round()}%',
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                    const SizedBox(width: DsSpace.s8),
-                    Expanded(
-                      child: DsSlider(
-                        value: eq.effectOf(id).amount,
-                        semanticLabel: t.music.eqCenterStrength,
-                        onChanged: eq.effectOf(id).enabled
-                            ? (value) => unawaited(controller.setEffect(id, amount: value))
-                            : null,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-        ],
-      ),
-      actions: [
-        DsButton(
-          variant: DsButtonVariant.secondary,
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(t.common.close),
-        ),
-      ],
-    );
-  }
-}
-
-/// The effect's display name — the ids the DSP chain knows, the words the
-/// listener does.
-String _fxLabel(Translations t, String id) => switch (id) {
-  'loudness' => t.music.eqFxLoudness,
-  'bass' => t.music.eqFxBass,
-  'vocal' => t.music.eqFxVocal,
-  'width' => t.music.eqFxWidth,
-  'surround' => t.music.eqFxSurround,
-  _ => t.music.eqFxDynamics,
-};
-
-/// The effect's one-line description, the filter it really rides.
-String _fxDescription(Translations t, String id) => switch (id) {
-  'loudness' => t.music.eqFxLoudnessDesc,
-  'bass' => t.music.eqFxBassDesc,
-  'vocal' => t.music.eqFxVocalDesc,
-  'width' => t.music.eqFxWidthDesc,
-  'surround' => t.music.eqFxSurroundDesc,
-  _ => t.music.eqFxDynamicsDesc,
-};
