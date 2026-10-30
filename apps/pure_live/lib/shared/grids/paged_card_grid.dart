@@ -156,17 +156,12 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
         Padding(
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
           child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: DsSpace.s8,
-              children: [
-                if (widget.isLoading) const SizedBox(width: 14, height: 14, child: DsSpinner()),
-                DsPagination(
-                  page: _page,
-                  pageCount: _inHandPages + (widget.hasMore ? 1 : 0),
-                  onChanged: (next) => unawaited(_goToPage(next)),
-                ),
-              ],
+            // The pager keeps its normal ink while a page loads — the ask is
+            // dropped inside [_goToPage], the control is not greyed out.
+            child: DsPagination(
+              page: _page,
+              pageCount: _inHandPages + (widget.hasMore ? 1 : 0),
+              onChanged: (next) => unawaited(_goToPage(next)),
             ),
           ),
         ),

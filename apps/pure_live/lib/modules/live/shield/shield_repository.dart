@@ -66,6 +66,13 @@ base class ShieldRulesController extends Notifier<ShieldRules> {
     await persist(_keywordsKey, const []);
   }
 
+  /// Replaces the blocked keywords with [values] — the list editor's save:
+  /// the draft carries the order the viewer chose and the rows they kept.
+  Future<void> setKeywords(List<String> values) async {
+    state = (enabled: state.enabled, keywords: List.unmodifiable(values), users: state.users);
+    await persist(_keywordsKey, state.keywords);
+  }
+
   /// Adds [raw] to the blocked users (trimmed; an empty or duplicate paste
   /// answers false and changes nothing).
   Future<bool> addUser(String raw) async {
@@ -92,6 +99,12 @@ base class ShieldRulesController extends Notifier<ShieldRules> {
     if (state.users.isEmpty) return;
     state = (enabled: state.enabled, keywords: state.keywords, users: const []);
     await persist(_usersKey, const []);
+  }
+
+  /// Replaces the blocked users with [values] — the list editor's save.
+  Future<void> setUsers(List<String> values) async {
+    state = (enabled: state.enabled, keywords: state.keywords, users: List.unmodifiable(values));
+    await persist(_usersKey, state.users);
   }
 
   /// Writes one rule through to the store.

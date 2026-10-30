@@ -285,7 +285,7 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
 
 /// One platform's feed: the home feed's own card grid over the catalogue's
 /// entry for [platform].
-final class _PlatformFeed extends ConsumerWidget {
+final class _PlatformFeed extends ConsumerStatefulWidget {
   const _PlatformFeed({required this.platform, required this.sort, this.scrollController, super.key});
 
   /// The platform whose recommendations show.
@@ -298,10 +298,21 @@ final class _PlatformFeed extends ConsumerWidget {
   final ScrollController? scrollController;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PlatformFeed> createState() => _PlatformFeedState();
+}
+
+final class _PlatformFeedState extends ConsumerState<_PlatformFeed> {
+  /// The page the viewer asked the pager for. The stored page still names
+  /// what the grid holds until the rooms arrive, so the pager would
+  /// otherwise sit on the old number for the whole load.
+  int? _askedPage;
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    final platform = widget.platform;
     final controller = ref.read(popularCatalogProvider.notifier);
     final feed = ref.watch(popularCatalogProvider.select((catalog) => catalog[platform]));
 
@@ -324,7 +335,7 @@ final class _PlatformFeed extends ConsumerWidget {
     // window of one page.
     final ordered = _sortedRooms(
       state.rooms,
-      sort,
+      widget.sort,
       choice: ref.watch(audienceMetricProvider),
       policy: ref.watch(audiencePolicyProvider),
     );
@@ -342,7 +353,7 @@ final class _PlatformFeed extends ConsumerWidget {
     }
 
     final grid = CardGrid<LiveRoom>(
-      scrollController: scrollController,
+      scrollController: widget.scrollController,
       items: rooms,
       layout: ref.watch(browseLayoutProvider),
       listMatchesGridWidth: true,
@@ -368,8 +379,9 @@ final class _PlatformFeed extends ConsumerWidget {
         await controller.loadPage(platform, next);
         // Only a page that really moved starts at its head; a load the feed
         // refused (still working) leaves the viewer where they are.
-        if (ref.read(popularCatalogProvider)[platform]?.page == next && (scrollController?.hasClients ?? false)) {
-          scrollController!.jumpTo(0);
+        if (ref.read(popularCatalogProvider)[platform]?.page == next &&
+            (widget.scrollController?.hasClients ?? false)) {
+          widget.scrollController!.jumpTo(0);
         }
       },
       error: state.error?.message,
@@ -421,6 +433,10 @@ final class _PlatformFeed extends ConsumerWidget {
     // one keeps the infinite scroll, thumbs do not page. The count is the
     // local slices plus one while the platform may still have rooms.
     if (!wide) return feedView;
+    // The pill moves to the page just asked for while it loads; the stored
+    // page still names what the grid holds, so the pager would otherwise sit
+    // on the old number for the whole request.
+    final shownPage = _askedPage ?? state.page;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -428,23 +444,22 @@ final class _PlatformFeed extends ConsumerWidget {
         Padding(
           padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
           child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: DsSpace.s8,
-              children: [
-                if (state.loading) const SizedBox(width: 14, height: 14, child: DsSpinner()),
-                DsPagination(
-                  page: state.page,
-                  pageCount: pageCountOf(state),
-                  onChanged: state.loading
-                      ? null
-                      : (next) {
-                          // A new page starts at its head, as desktop pagers do.
-                          if (scrollController?.hasClients ?? false) scrollController!.jumpTo(0);
-                          unawaited(controller.loadPage(platform, next));
-                        },
-                ),
-              ],
+            child: DsPagination(
+              page: shownPage,
+              pageCount: pageCountOf(state),
+              onChanged: (next) {
+                // A page already in flight drops the press: the pager keeps
+                // its normal ink instead of greying out under the viewer.
+                if (state.loading) return;
+                setState(() => _askedPage = next);
+                // A new page starts at its head, as desktop pagers do.
+                if (widget.scrollController?.hasClients ?? false) widget.scrollController!.jumpTo(0);
+                unawaited(
+                  controller.loadPage(platform, next).whenComplete(() {
+                    if (mounted) setState(() => _askedPage = null);
+                  }),
+                );
+              },
             ),
           ),
         ),
@@ -542,19 +557,14 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
           // line: what is being searched and the way back to the feed.
           child: DsAlert(
             title: Text(t.popular.inlineAt(platform: _platformName(), query: widget.query)),
-            action: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: DsSpace.s8,
-              children: [
-                if (search.loading) const SizedBox(width: 14, height: 14, child: DsSpinner()),
-                DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  onPressed: () => ref.read(popularInlineSearchProvider.notifier).clear(),
-                  leading: const DsIcon(DsIcons.x, size: 14),
-                  child: Text(t.popular.backToBrowse),
-                ),
-              ],
+            // The grid below carries the loading state itself (skeletons and
+            // the footer tile), so the callout stays one plain action.
+            action: DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: () => ref.read(popularInlineSearchProvider.notifier).clear(),
+              leading: const DsIcon(DsIcons.x, size: 14),
+              child: Text(t.popular.backToBrowse),
             ),
           ),
         ),
@@ -623,27 +633,21 @@ final class _InlineSearchFeedState extends ConsumerState<_InlineSearchFeed> {
         Padding(
           padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
           child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: DsSpace.s8,
-              children: [
-                if (search.loading) const SizedBox(width: 14, height: 14, child: DsSpinner()),
-                DsPagination(
-                  page: shown,
-                  pageCount: roomPageCount(
-                    page: shown,
-                    roomCount: search.rooms.length,
-                    pageSize: pageSize,
-                    hasMore: search.hasMore,
-                  ),
-                  onChanged: search.loading
-                      ? null
-                      : (next) {
-                          if (_scroll.hasClients) _scroll.jumpTo(0);
-                          unawaited(_showPage(next, pageSize));
-                        },
-                ),
-              ],
+            child: DsPagination(
+              page: shown,
+              pageCount: roomPageCount(
+                page: shown,
+                roomCount: search.rooms.length,
+                pageSize: pageSize,
+                hasMore: search.hasMore,
+              ),
+              onChanged: (next) {
+                // A page already in flight drops the press; the pager keeps
+                // its normal ink instead of greying out under the viewer.
+                if (search.loading) return;
+                if (_scroll.hasClients) _scroll.jumpTo(0);
+                unawaited(_showPage(next, pageSize));
+              },
             ),
           ),
         ),

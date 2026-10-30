@@ -50,7 +50,6 @@ final class _ShieldPaneState extends ConsumerState<ShieldPane> {
                 onChanged: (value) => unawaited(ref.read(shieldRulesProvider.notifier).setEnabled(value: value)),
               ),
             ),
-            SettingsHint(t.shield.effectNote),
           ],
         ),
         Align(
@@ -272,8 +271,9 @@ final class _ShieldPaneState extends ConsumerState<ShieldPane> {
   }
 }
 
-/// One managed list's section: the entries as removable rows, an inline
-/// add row under them and the destructive clear behind a confirm.
+/// One managed list's section: the entries as badges that wrap, each with its
+/// own delete icon, an inline add row under them and the destructive clear
+/// behind a confirm.
 final class _ShieldList extends ConsumerWidget {
   const _ShieldList({
     required this.icon,
@@ -316,36 +316,54 @@ final class _ShieldList extends ConsumerWidget {
     return DsListSection(
       header: Text(title),
       children: [
-        if (entries.isEmpty) DsListRow(leading: DsIcon(icon), title: Text(emptyText)),
-        for (final entry in entries)
-          DsListRow(
-            leading: DsIcon(icon),
-            title: Text(entry),
-            trailing: _RemoveButton(onPressed: () => unawaited(_remove(context, ref, entry))),
-          ),
         ShieldAddField(
           fieldHint: fieldHint,
           onAdd: onAdd,
           padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
+          // Clearing the whole list sits beside the add button: both are
+          // actions on the list.
+          trailing: entries.isEmpty
+              ? null
+              : DsButton(
+                  variant: DsButtonVariant.dangerSoft,
+                  size: DsSize.sm,
+                  onPressed: () => unawaited(_clear(context)),
+                  child: Text(t.shield.clear),
+                ),
         ),
-        if (entries.isNotEmpty)
-          DsListRow(
-            leading: const DsIcon(DsIcons.delete),
-            title: Text(t.shield.clear),
-            destructive: true,
-            onPressed: () => unawaited(_clear(context, ref)),
+        // The entries stack under the field that adds them.
+        if (entries.isEmpty)
+          DsListRow(leading: DsIcon(icon), title: Text(emptyText))
+        else
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s12),
+            child: Wrap(
+              spacing: DsSpace.s8,
+              runSpacing: DsSpace.s6,
+              children: [
+                for (final entry in entries)
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.xs,
+                    trailing: const DsIcon(DsIcons.trash2, size: 14),
+                    semanticLabel: '${t.shield.removeEntry} $entry',
+                    onPressed: () => unawaited(_remove(context, entry)),
+                    child: Text(entry),
+                  ),
+              ],
+            ),
           ),
       ],
     );
   }
 
-  Future<void> _remove(BuildContext context, WidgetRef ref, String value) async {
+  Future<void> _remove(BuildContext context, String value) async {
     await onRemove(value);
     if (!context.mounted) return;
     showDsToast(context: context, title: context.t.shield.removed);
   }
 
-  Future<void> _clear(BuildContext context, WidgetRef ref) async {
+  Future<void> _clear(BuildContext context) async {
     final t = context.t;
     final confirmed = await showDsConfirm(
       context: context,
@@ -358,23 +376,5 @@ final class _ShieldList extends ConsumerWidget {
     await onClear();
     if (!context.mounted) return;
     showDsToast(context: context, title: t.shield.cleared);
-  }
-}
-
-/// The x at a list entry's end: an icon button that removes the entry.
-final class _RemoveButton extends StatelessWidget {
-  const _RemoveButton({required this.onPressed});
-
-  /// Fired when the button is pressed.
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return DsButton.icon(
-      variant: DsButtonVariant.ghost,
-      onPressed: onPressed,
-      icon: const DsIcon(DsIcons.close),
-      semanticLabel: context.t.shield.removeEntry,
-    );
   }
 }

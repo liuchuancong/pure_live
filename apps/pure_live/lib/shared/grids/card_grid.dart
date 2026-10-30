@@ -163,8 +163,8 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   /// falls back to [aspectRatio].
   final double? listMainAxisExtent;
 
-  /// Whether a page is in flight: the grid's footer shows a spinner, and
-  /// the first page shows skeletons instead of the empty state.
+  /// Whether a page is in flight: the grid's footer shows a skeleton card,
+  /// and the first page shows skeletons instead of the empty state.
   final bool isLoading;
 
   /// Whether another page may exist; [onLoadMore] fires near the end.
@@ -561,7 +561,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
               itemCount: widget.items.length + (loadingRow ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index >= widget.items.length) {
-                  return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
+                  return const _LoadingTile();
                 }
                 return _focusableItem(index, listBuilder(context, widget.items[index]));
               },
@@ -608,7 +608,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
               itemCount: widget.items.length + (loadingRow ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index >= widget.items.length) {
-                  return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
+                  return const _LoadingTile();
                 }
                 return _focusableItem(index, widget.itemBuilder(context, widget.items[index]), zoom: true);
               },
@@ -816,6 +816,18 @@ final class _RefreshErrorBanner extends StatelessWidget {
   }
 }
 
+/// The next page's placeholder while it loads: one card-shaped shimmer in
+/// the grid's own measure, so the feed never shows a lone spinner in an
+/// empty cell.
+final class _LoadingTile extends StatelessWidget {
+  const _LoadingTile();
+
+  @override
+  Widget build(BuildContext context) => const DsShimmer(
+    child: DsSkeleton.block(width: double.infinity, height: double.infinity),
+  );
+}
+
 /// The first page's placeholder: the same grid shape — or the same row
 /// shape, when the list layout fixed a row height — with no content.
 final class _SkeletonGrid extends StatelessWidget {
@@ -946,7 +958,7 @@ final class CardList<T> extends StatelessWidget {
   /// Builds one row card; null on a skeleton-only list.
   final Widget Function(BuildContext context, T item)? itemBuilder;
 
-  /// Whether a page is in flight: the footer shows a spinner, and the
+  /// Whether a page is in flight: the footer shows a skeleton row, and the
   /// first page shows skeletons instead of the empty state.
   final bool isLoading;
 
@@ -994,7 +1006,10 @@ final class CardList<T> extends StatelessWidget {
         separatorBuilder: (context, index) => SizedBox(height: gap),
         itemBuilder: (context, index) {
           if (index >= items.length) {
-            return const Center(child: DsSpinner(style: DsSpinnerStyle(size: 24)));
+            // The next row's placeholder: the same skeleton the first load
+            // gets, so a pending page never reads as an empty row.
+            final skeleton = skeletonBuilder ?? (context) => const DsSkeleton(width: double.infinity, height: 64);
+            return DsShimmer(child: skeleton(context));
           }
           final builder = itemBuilder;
           return builder == null ? const SizedBox.shrink() : builder(context, items[index]);

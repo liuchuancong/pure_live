@@ -6,7 +6,9 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show EmojiAtlas;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
+import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/room/chat/gift_text.dart';
@@ -611,10 +613,9 @@ final class _GiftIcon extends StatelessWidget {
   }
 }
 
-/// The flying danmaku's settings and the chat column's own appearance, right
-/// beside the list — the very panes the settings centre shows, so a room is
-/// never short of a knob the engine really has. The master switch stays on
-/// top, where turning the layer off is one press away.
+/// The flying layer's master switch and the way into its settings page: the
+/// layer has one set of controls, in the settings centre, and a room opens
+/// that page rather than a second copy of it.
 final class _RoomDanmakuSettings extends ConsumerWidget {
   const _RoomDanmakuSettings();
 
@@ -623,25 +624,26 @@ final class _RoomDanmakuSettings extends ConsumerWidget {
     final t = context.t;
     final settings = ref.watch(playbackSettingsProvider);
     return ListView(
-      padding: const EdgeInsets.only(bottom: DsSpace.s20),
+      padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s20),
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, 0),
-          child: DsSwitch(
-            value: settings.danmakuVisible,
-            onChanged: (value) =>
-                unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: value)),
-            label: Text(t.room.danmakuOn),
-            description: Text(t.room.danmakuSettingsDesc),
-          ),
+        DsSwitch(
+          value: settings.danmakuVisible,
+          onChanged: (value) => unawaited(ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: value)),
+          label: Text(t.room.danmakuOn),
+          description: Text(t.room.danmakuSettingsDesc),
         ),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, 0),
-          child: DanmakuStyleSettings(),
-        ),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s16, DsSpace.s16, 0),
-          child: DanmakuDisplayPane(),
+        const SizedBox(height: DsSpace.s16),
+        DsListSection(
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.slidersHorizontal),
+              title: Text(t.settings.navDanmaku),
+              description: Text(t.settings.danmakuDescription),
+              showChevron: true,
+              onPressed: () =>
+                  unawaited(context.push(SettingsSectionRoute(section: SettingsSection.danmaku.name).location)),
+            ),
+          ],
         ),
       ],
     );

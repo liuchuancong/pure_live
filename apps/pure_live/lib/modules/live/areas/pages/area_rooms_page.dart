@@ -176,28 +176,22 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s12),
             child: Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s8,
-                children: [
-                  if (state.loading) const SizedBox(width: 14, height: 14, child: DsSpinner()),
-                  DsPagination(
-                    page: state.page,
-                    pageCount: roomPageCount(
-                      page: state.page,
-                      roomCount: state.rooms.length,
-                      pageSize: state.pageSize,
-                      hasMore: state.hasMore,
-                    ),
-                    onChanged: state.loading
-                        ? null
-                        : (next) {
-                            // A new page starts at its head, as desktop pagers do.
-                            if (_scroll.hasClients) _scroll.jumpTo(0);
-                            unawaited(controller.loadPage(next));
-                          },
-                  ),
-                ],
+              child: DsPagination(
+                page: state.page,
+                pageCount: roomPageCount(
+                  page: state.page,
+                  roomCount: state.rooms.length,
+                  pageSize: state.pageSize,
+                  hasMore: state.hasMore,
+                ),
+                onChanged: (next) {
+                  // A page already in flight drops the press; the pager keeps
+                  // its normal ink instead of greying out under the viewer.
+                  if (state.loading) return;
+                  // A new page starts at its head, as desktop pagers do.
+                  if (_scroll.hasClients) _scroll.jumpTo(0);
+                  unawaited(controller.loadPage(next));
+                },
               ),
             ),
           ),

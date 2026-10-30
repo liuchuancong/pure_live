@@ -3,7 +3,6 @@ import 'dart:async' show unawaited;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:pure_live/l10n/translations.dart';
 
 /// The inline add line both shield lists use: one entry field and its add
@@ -13,7 +12,13 @@ import 'package:pure_live/l10n/translations.dart';
 /// or user is accepted the same way wherever it is typed.
 final class ShieldAddField extends ConsumerStatefulWidget {
   /// The line adding to a list.
-  const ShieldAddField({required this.fieldHint, required this.onAdd, this.padding = EdgeInsets.zero, super.key});
+  const ShieldAddField({
+    required this.fieldHint,
+    required this.onAdd,
+    this.padding = EdgeInsets.zero,
+    this.trailing,
+    super.key,
+  });
 
   /// The field's placeholder.
   final String fieldHint;
@@ -23,6 +28,9 @@ final class ShieldAddField extends ConsumerStatefulWidget {
 
   /// Space around the field and its button.
   final EdgeInsetsGeometry padding;
+
+  /// One more action at the line's end, after the add button.
+  final Widget? trailing;
 
   @override
   ConsumerState<ShieldAddField> createState() => _ShieldAddFieldState();
@@ -57,6 +65,7 @@ final class _ShieldAddFieldState extends ConsumerState<ShieldAddField> {
             ),
           ),
           DsButton(size: DsSize.sm, onPressed: () => unawaited(_commit()), child: Text(t.shield.add)),
+          ?widget.trailing,
         ],
       ),
     );
