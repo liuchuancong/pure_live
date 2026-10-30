@@ -347,7 +347,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   void _applyFullscreenOrientation() {
     applyFullscreenOrientation(
       _screenOrientation,
-      policy: ref.read(portraitSettingsProvider).fullscreenPolicy,
       aspectRatio: ref.read(roomProvider).handle?.combinedSnapshot.geometry.aspectRatio ?? 0,
     );
   }
@@ -574,35 +573,11 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// else the usual 16:9. A portrait stream keeps its tall shape instead of
   /// sitting letterboxed in a landscape box.
   /// The portrait full-screen surface: the same player filling the page,
-  /// with compact controls for the picture mode, the danmaku area and the
-  /// optional diagnostics line.
-  Widget _buildPortraitFullscreen(
-    BuildContext context,
-    RoomState room,
-    PortraitFullscreenState state,
-    Widget player,
-    String roomKey,
-  ) {
+  /// the way to another room and the way out. The picture fills it exactly
+  /// as the 画面 setting says, and the flying layer keeps the one danmaku
+  /// configuration.
+  Widget _buildPortraitFullscreen(BuildContext context, RoomState room, Widget player) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final controller = ref.read(portraitFullscreenProvider.notifier);
-    final choice = state.modeFor(roomKey);
-    final geometry = room.handle?.combinedSnapshot.geometry;
-    final displayLabel = switch (choice.display) {
-      PortraitFullscreenMode.complete => t.room.portraitDisplayComplete,
-      PortraitFullscreenMode.ambient => t.room.portraitDisplayAmbient,
-      PortraitFullscreenMode.balanced => t.room.portraitDisplayBalanced,
-      PortraitFullscreenMode.cover => t.room.portraitDisplayCover,
-    };
-    final danmakuLabel = switch (choice.danmaku) {
-      PortraitDanmakuMode.followGlobal => t.room.portraitDanmakuFollow,
-      PortraitDanmakuMode.upperQuarter => t.room.portraitDanmakuUpper,
-      PortraitDanmakuMode.reduced => t.room.portraitDanmakuReduced,
-      PortraitDanmakuMode.hidden => t.room.portraitDanmakuHidden,
-    };
-    void choose({PortraitFullscreenMode? display, PortraitDanmakuMode? danmaku}) {
-      unawaited(controller.remember(roomKey, (display: display ?? choice.display, danmaku: danmaku ?? choice.danmaku)));
-    }
 
     return ColoredBox(
       color: const Color(0xFF000000),
@@ -616,57 +591,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      spacing: DsSpace.s8,
-                      children: [
-                        _PortraitChoiceBar<PortraitFullscreenMode>(
-                          label: t.room.portraitFullscreenDisplay,
-                          value: choice.display,
-                          options: [
-                            DsChipOption(
-                              value: PortraitFullscreenMode.complete,
-                              label: Text(t.room.portraitDisplayComplete),
-                            ),
-                            DsChipOption(
-                              value: PortraitFullscreenMode.ambient,
-                              label: Text(t.room.portraitDisplayAmbient),
-                            ),
-                            DsChipOption(
-                              value: PortraitFullscreenMode.balanced,
-                              label: Text(t.room.portraitDisplayBalanced),
-                            ),
-                            DsChipOption(value: PortraitFullscreenMode.cover, label: Text(t.room.portraitDisplayCover)),
-                          ],
-                          onChanged: (value) => choose(display: value),
-                        ),
-                        _PortraitChoiceBar<PortraitDanmakuMode>(
-                          label: t.room.portraitDanmakuTitle,
-                          value: choice.danmaku,
-                          options: [
-                            DsChipOption(
-                              value: PortraitDanmakuMode.followGlobal,
-                              label: Text(t.room.portraitDanmakuFollow),
-                            ),
-                            DsChipOption(
-                              value: PortraitDanmakuMode.upperQuarter,
-                              label: Text(t.room.portraitDanmakuUpper),
-                            ),
-                            DsChipOption(
-                              value: PortraitDanmakuMode.reduced,
-                              label: Text(t.room.portraitDanmakuReduced),
-                            ),
-                            DsChipOption(value: PortraitDanmakuMode.hidden, label: Text(t.room.portraitDanmakuHidden)),
-                          ],
-                          onChanged: (value) => choose(danmaku: value),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: DsSpace.s8),
+                const Spacer(),
                 if (room.room case final detail?)
                   DsButton.icon(
                     variant: DsButtonVariant.secondary,
@@ -686,24 +611,6 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
               ],
             ),
           ),
-          if (state.diagnostics)
-            PositionedDirectional(
-              start: 12,
-              bottom: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
-                decoration: BoxDecoration(
-                  color: const Color(0xB3000000),
-                  borderRadius: BorderRadius.circular(theme.radii.card),
-                ),
-                child: Text(
-                  '${geometry?.videoSize?.width ?? 0}×${geometry?.videoSize?.height ?? 0}'
-                  ' · ${(geometry?.aspectRatio ?? 0).toStringAsFixed(2)}'
-                  ' · $displayLabel / $danmakuLabel',
-                  style: theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -882,7 +789,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     };
 
     final pictureRatio = _pictureRatio(room);
-    final portraitSettings = ref.watch(portraitSettingsProvider);
+    final portraitLayout = ref.watch(portraitLayoutModeProvider);
     final swipeSwitch = ref.watch(portraitSwipeSwitchProvider);
     final roomKey = room.room?.ref.identityKey ?? '';
     // A source that rotates back to landscape leaves the portrait surface,
@@ -895,9 +802,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         if (mounted && _portraitFullscreen) _setPortraitFullscreen(false);
       });
     }
-    final portraitState = ref.watch(portraitFullscreenProvider);
     final chatCollapsed = ref.watch(playbackSettingsProvider.select((settings) => settings.chatCollapsed));
-    final portraitChoice = portraitState.modeFor(roomKey);
     final player = PlayerSurface(
       key: _playerKey,
       roomState: room,
@@ -910,15 +815,13 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       keepControls: tv,
       autofocusFirstControl: tv,
       portraitFullscreen: _portraitFullscreen,
-      portraitDisplay: portraitChoice.display,
-      portraitDanmaku: portraitChoice.danmaku,
       canEnterPortraitFullscreen: pictureRatio < 1,
       onPortraitFullscreen: () => _setPortraitFullscreen(true),
       onPortraitSwipe: _portraitFullscreen && swipeSwitch && mobile ? _switchPortraitRoom : null,
     );
 
     final body = _portraitFullscreen
-        ? _buildPortraitFullscreen(context, room, portraitState, player, roomKey)
+        ? _buildPortraitFullscreen(context, room, player)
         : LayoutBuilder(
             builder: (context, constraints) {
               final wide = constraints.maxWidth >= _wideBreakpoint;
@@ -932,22 +835,17 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                   (constraints.maxHeight.isFinite ? constraints.maxHeight - 150 : 480).toDouble(),
                 );
                 final portraitStream = pictureRatio < 1;
-                // The reference's portrait panel needs detection, the adaptive
-                // height and a layout other than "compatibility 16:9"; without
-                // them a portrait source uses the regular 16:9 room page.
-                final tallPortrait =
-                    portraitStream &&
-                    portraitSettings.adaptation &&
-                    portraitSettings.adaptiveHeight &&
-                    portraitSettings.layoutMode != PortraitLayoutMode.compatibility;
+                // The engine reports the picture's own ratio, so a portrait
+                // source takes the tall panel unless the viewer chose the
+                // regular 16:9 room page.
+                final tallPortrait = portraitStream && portraitLayout != PortraitLayoutMode.compatibility;
                 final ratio = tallPortrait
                     ? pictureRatio.clamp(0.5, 0.8)
                     : portraitStream
                     ? 16 / 9
                     : pictureRatio.clamp(1.0, 2.4);
                 final desired = tallPortrait
-                    ? constraints.maxHeight *
-                          (portraitSettings.layoutMode == PortraitLayoutMode.immersive ? 0.72 : 0.58)
+                    ? constraints.maxHeight * (portraitLayout == PortraitLayoutMode.immersive ? 0.72 : 0.58)
                     : constraints.maxWidth / ratio;
                 final picture = SizedBox(
                   height: math.min(desired, maxPicture),
@@ -1645,35 +1543,6 @@ final class _SleepChip extends ConsumerWidget {
             onPressed: () => ref.read(sleepTimerProvider.notifier).start(minutes),
           ),
       ],
-    );
-  }
-}
-
-/// A labelled, horizontally scrollable chip group used by the portrait
-/// full-screen chrome.
-final class _PortraitChoiceBar<T> extends StatelessWidget {
-  const _PortraitChoiceBar({required this.label, required this.value, required this.options, required this.onChanged});
-
-  final String label;
-  final T value;
-  final List<DsChipOption<T>> options;
-  final ValueChanged<T> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
-      decoration: BoxDecoration(color: const Color(0xB3000000), borderRadius: BorderRadius.circular(theme.radii.card)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s8,
-        children: [
-          Text(label, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
-          DsChoiceChips<T>(value: value, onChanged: onChanged, semanticLabel: label, options: options),
-        ],
-      ),
     );
   }
 }

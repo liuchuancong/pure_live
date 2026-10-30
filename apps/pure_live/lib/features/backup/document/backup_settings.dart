@@ -168,15 +168,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('playback.autoPip', BackupPrefKind.boolean),
   ('playback.keepScreenOn', BackupPrefKind.boolean),
   ('playback.fullscreenDefault', BackupPrefKind.boolean),
-  ('playback.portraitAdaptation', BackupPrefKind.boolean),
-  ('playback.portraitAdaptiveHeight', BackupPrefKind.boolean),
   ('playback.portraitLayoutMode', BackupPrefKind.string),
-  ('playback.portraitFullscreenPolicy', BackupPrefKind.string),
-  ('playback.portraitFullscreenDisplayMode', BackupPrefKind.string),
-  ('playback.portraitDanmakuMode', BackupPrefKind.string),
-  ('playback.rememberPortraitRoomOverride', BackupPrefKind.boolean),
-  ('playback.showPortraitDiagnostics', BackupPrefKind.boolean),
-  ('playback.portraitRoomOverrides', BackupPrefKind.string),
   ('player.backend', BackupPrefKind.string),
   ('player.tuning', BackupPrefKind.string),
   ('danmaku.style.fontSize', BackupPrefKind.floating),
@@ -357,6 +349,10 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   // The log surface.
   ('log.level', BackupPrefKind.string),
   ('log.file', BackupPrefKind.boolean),
+  ('log.fileMaxBytes', BackupPrefKind.integer),
+  ('log.fileMaxFiles', BackupPrefKind.integer),
+  ('log.memoryCapacity', BackupPrefKind.integer),
+  ('log.directory', BackupPrefKind.string),
   // The backup surface's own choices; the WebDAV password is a secret and
   // never enters the document.
   ('backup.dir', BackupPrefKind.string),

@@ -41,7 +41,6 @@ export 'playback/floating_window_settings.dart';
 export 'playback/pip_danmaku_scale_provider.dart';
 export 'playback/playback_settings_providers.dart';
 export 'playback/player_tuning.dart';
-export 'playback/portrait_fullscreen_settings.dart';
 export 'playback/portrait_settings_providers.dart';
 export 'room/clipboard_rooms.dart';
 export 'room/room_card_settings.dart';

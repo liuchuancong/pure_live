@@ -62,6 +62,7 @@ final class ModuleNavigation {
 const List<NavigationItem> kToolItems = [
   NavigationItem.multiview,
   NavigationItem.toolbox,
+  NavigationItem.logs,
   NavigationItem.search,
   NavigationItem.history,
 ];
@@ -93,8 +94,8 @@ const SettingsGroup _systemGroup = (
     SettingsSection.window,
     SettingsSection.network,
     SettingsSection.dataCache,
-    SettingsSection.backup,
     SettingsSection.logs,
+    SettingsSection.backup,
   ],
 );
 
@@ -118,11 +119,18 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
   // The live home's rail: the four home destinations as one block — the
   // navigation setting orders and hides these, its default being favorites,
   // hot feed, areas and the recording centre — then the tools block the
-  // tool-order setting sorts: multi-view, toolbox, search and history.
+  // tool-order setting sorts: multi-view, the link parser, the log console,
+  // search and history.
   AppModule.live: ModuleNavigation(
     menu: [
       [NavigationItem.favorites, NavigationItem.hot, NavigationItem.zones, NavigationItem.record],
-      [NavigationItem.multiview, NavigationItem.toolbox, NavigationItem.search, NavigationItem.history],
+      [
+        NavigationItem.multiview,
+        NavigationItem.toolbox,
+        NavigationItem.logs,
+        NavigationItem.search,
+        NavigationItem.history,
+      ],
     ],
     landing: NavigationItem.hot,
     settingsGroups: [_personalizationGroup, _liveGroup, _playbackGroup, _systemGroup, _aboutGroup],

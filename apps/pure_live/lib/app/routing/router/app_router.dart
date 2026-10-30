@@ -33,9 +33,9 @@ import 'package:pure_live/shared/shared.dart';
 
 part 'app_router.g.dart';
 
-/// The shell route: one indexed stack, seven branches — one per navigation
-/// destination — laid out by [AppLayout] (which picks the desktop, mobile
-/// or TV chrome per device).
+/// The shell route: one indexed stack, a branch per navigation destination,
+/// laid out by [AppLayout] (which picks the desktop, mobile or TV chrome per
+/// device).
 @TypedStatefulShellRoute<AppShellRoute>(
   branches: <TypedStatefulShellBranch<StatefulShellBranchData>>[
     TypedStatefulShellBranch<PopularBranch>(
@@ -64,6 +64,9 @@ part 'app_router.g.dart';
     ),
     TypedStatefulShellBranch<ToolboxBranch>(
       routes: <TypedRoute<RouteData>>[TypedGoRoute<ToolboxRoute>(path: RouteNames.toolbox)],
+    ),
+    TypedStatefulShellBranch<LogsBranch>(
+      routes: <TypedRoute<RouteData>>[TypedGoRoute<LogsRoute>(path: RouteNames.logs)],
     ),
     TypedStatefulShellBranch<SettingsBranch>(
       routes: <TypedRoute<RouteData>>[TypedGoRoute<SettingsRoute>(path: RouteNames.settings)],
@@ -132,6 +135,12 @@ final class RecorderBranch extends StatefulShellBranchData {
 final class ToolboxBranch extends StatefulShellBranchData {
   /// The branch token.
   const ToolboxBranch();
+}
+
+/// The log console branch's token.
+final class LogsBranch extends StatefulShellBranchData {
+  /// The branch token.
+  const LogsBranch();
 }
 
 /// The settings branch's token.
@@ -219,6 +228,15 @@ final class ToolboxRoute extends GoRouteData with $ToolboxRoute {
 
   @override
   Widget build(BuildContext context, GoRouterState state) => const ToolboxPage();
+}
+
+/// The log console branch's screen.
+final class LogsRoute extends GoRouteData with $LogsRoute {
+  /// The logs route.
+  const LogsRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) => const LogsPage();
 }
 
 /// The settings branch's screen.

@@ -15,6 +15,7 @@ import 'package:pure_live/app/providers/network/github_mirror_provider.dart' sho
 import 'package:pure_live/app/providers/network/network_providers.dart' show proxySettingsProvider;
 import 'package:pure_live/app/providers/player/player_backend_providers.dart' show playerKernelBackendProvider;
 import 'package:pure_live/app/providers/settings/download_directory_provider.dart' show downloadDirectoryProvider;
+import 'package:pure_live/app/providers/settings/log_settings_provider.dart' show logSettingsProvider;
 import 'package:pure_live/app/providers/settings/settings_sync.dart' show settingsRevisionProvider;
 import 'package:pure_live/app/providers/settings/shell_settings_provider.dart'
     show roomWindowsProvider, shellWindowSettingsProvider;
@@ -47,8 +48,7 @@ import 'package:pure_live/shared/shared.dart';
 /// `window.height` lands on the next start rather than resizing mid-session.
 final List<ProviderOrFamily> kSettingsProviders = [
   playbackSettingsProvider,
-  portraitSettingsProvider,
-  portraitFullscreenProvider,
+  portraitLayoutModeProvider,
   danmakuStyleProvider,
   danmakuFrameRateProvider,
   danmakuFixedTopProvider,
@@ -89,6 +89,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   maxConcurrentRefreshProvider,
   thumbnailRefreshProvider,
   downloadDirectoryProvider,
+  logSettingsProvider,
   historyLimitProvider,
   playerKernelBackendProvider,
   playerTuningProvider,

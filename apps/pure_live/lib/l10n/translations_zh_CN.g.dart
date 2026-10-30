@@ -4054,6 +4054,45 @@ class Translations$music$zh_CN {
 	/// zh-CN: '选择'
 	String get syncChoose => '选择';
 
+	/// zh-CN: '连接码'
+	String get syncAuthCode => '连接码';
+
+	/// zh-CN: '服务端显示的连接码'
+	String get syncAuthCodeHint => '服务端显示的连接码';
+
+	/// zh-CN: '同步模式'
+	String get syncMode => '同步模式';
+
+	/// zh-CN: '连接'
+	String get syncConnect => '连接';
+
+	/// zh-CN: '断开'
+	String get syncDisconnect => '断开';
+
+	/// zh-CN: '已连接'
+	String get syncStatusConnected => '已连接';
+
+	/// zh-CN: '连接中'
+	String get syncStatusConnecting => '连接中';
+
+	/// zh-CN: '连接失败'
+	String get syncStatusFailed => '连接失败';
+
+	/// zh-CN: '未连接'
+	String get syncStatusIdle => '未连接';
+
+	/// zh-CN: '连接后拉取服务端歌单并推送本地改动。'
+	String get syncStatusHint => '连接后拉取服务端歌单并推送本地改动。';
+
+	/// zh-CN: '清除授权'
+	String get syncForgetKey => '清除授权';
+
+	/// zh-CN: '删除已保存的密钥，下次连接用连接码重新授权。'
+	String get syncForgetKeyDesc => '删除已保存的密钥，下次连接用连接码重新授权。';
+
+	/// zh-CN: '与 lx-music 桌面端同步：试听、收藏与自建歌单，服务端按所选模式合并。'
+	String get syncNote => '与 lx-music 桌面端同步：试听、收藏与自建歌单，服务端按所选模式合并。';
+
 	/// zh-CN: '服务端模式'
 	String get syncServer => '服务端模式';
 
@@ -4110,6 +4149,8 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '桌面端'
 	String get syncServerDesktop => '桌面端';
+
+	/// zh-CN: '缓存清理'
 	String get cacheClean => '缓存清理';
 
 	/// zh-CN: '清理'
@@ -4138,45 +4179,6 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '已清理'
 	String get cacheCleared => '已清理';
-
-	/// zh-CN: '连接码'
-	String get syncAuthCode => '连接码';
-
-	/// zh-CN: '服务端显示的连接码'
-	String get syncAuthCodeHint => '服务端显示的连接码';
-
-	/// zh-CN: '同步模式'
-	String get syncMode => '同步模式';
-
-	/// zh-CN: '连接'
-	String get syncConnect => '连接';
-
-	/// zh-CN: '断开'
-	String get syncDisconnect => '断开';
-
-	/// zh-CN: '已连接'
-	String get syncStatusConnected => '已连接';
-
-	/// zh-CN: '连接中'
-	String get syncStatusConnecting => '连接中';
-
-	/// zh-CN: '连接失败'
-	String get syncStatusFailed => '连接失败';
-
-	/// zh-CN: '未连接'
-	String get syncStatusIdle => '未连接';
-
-	/// zh-CN: '连接后拉取服务端歌单并推送本地改动。'
-	String get syncStatusHint => '连接后拉取服务端歌单并推送本地改动。';
-
-	/// zh-CN: '清除授权'
-	String get syncForgetKey => '清除授权';
-
-	/// zh-CN: '删除已保存的密钥，下次连接用连接码重新授权。'
-	String get syncForgetKeyDesc => '删除已保存的密钥，下次连接用连接码重新授权。';
-
-	/// zh-CN: '与 lx-music 桌面端同步：试听、收藏与自建歌单，服务端按所选模式合并。'
-	String get syncNote => '与 lx-music 桌面端同步：试听、收藏与自建歌单，服务端按所选模式合并。';
 
 	/// zh-CN: '开放 API'
 	String get openApi => '开放 API';
@@ -5191,39 +5193,6 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '退出竖屏全屏'
 	String get portraitFullscreenExit => '退出竖屏全屏';
-
-	/// zh-CN: '画面模式'
-	String get portraitFullscreenDisplay => '画面模式';
-
-	/// zh-CN: '完整'
-	String get portraitDisplayComplete => '完整';
-
-	/// zh-CN: '沉浸'
-	String get portraitDisplayAmbient => '沉浸';
-
-	/// zh-CN: '均衡'
-	String get portraitDisplayBalanced => '均衡';
-
-	/// zh-CN: '铺满'
-	String get portraitDisplayCover => '铺满';
-
-	/// zh-CN: '弹幕区域'
-	String get portraitDanmakuTitle => '弹幕区域';
-
-	/// zh-CN: '跟随全局'
-	String get portraitDanmakuFollow => '跟随全局';
-
-	/// zh-CN: '上部 1/4'
-	String get portraitDanmakuUpper => '上部 1/4';
-
-	/// zh-CN: '减半'
-	String get portraitDanmakuReduced => '减半';
-
-	/// zh-CN: '隐藏'
-	String get portraitDanmakuHidden => '隐藏';
-
-	/// zh-CN: '竖屏诊断'
-	String get portraitDiagnostics => '竖屏诊断';
 
 	/// zh-CN: '送出'
 	String get giftLineSent => '送出';
@@ -7142,7 +7111,7 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '画中画小窗里的弹幕。'
 	String get miniDanmakuDescription => '画中画小窗里的弹幕。';
 
-	/// zh-CN: '内核、代理、硬件解码、预设与画质增强。'
+	/// zh-CN: '内核、硬件解码、预设与画质增强。'
 	String get kernelDescription => '内核、硬件解码、预设与画质增强。';
 
 	/// zh-CN: '当前内核'
@@ -7688,7 +7657,7 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '频繁缓冲'
 	String get playerGuideEntrySymBufferingTitle => '频繁缓冲';
 
-	/// zh-CN: '选「弱网稳定」；同时检查播放器代理设置——代理是直播卡顿的常见来源。'
+	/// zh-CN: '选「弱网稳定」；同时检查网络代理设置——代理是直播卡顿的常见来源。'
 	String get playerGuideEntrySymBufferingBody => '选「弱网稳定」；同时检查网络代理设置——代理是直播卡顿的常见来源。';
 
 	/// zh-CN: '延迟高（连麦 / 赛事情景）'
@@ -8507,35 +8476,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '{count: int} 秒'
 	String controlsAutoHideValue({required int count}) => '${count} 秒';
 
-	/// zh-CN: '竖屏直播适配'
-	String get navPortrait => '竖屏直播适配';
-
-	/// zh-CN: '自动识别直播源方向，并调整普通页的观看区域与布局。'
-	String get portraitPageDescription => '自动识别直播源方向，并调整普通页的观看区域与布局。';
-
 	/// zh-CN: '观众指标'
 	String get navAudience => '观众指标';
 
 	/// zh-CN: '卡片人数口径、真实在线优先与平台开关。'
 	String get audiencePageDescription => '卡片人数口径、真实在线优先与平台开关。';
-
-	/// zh-CN: '已关闭'
-	String get portraitEntryOff => '已关闭';
-
-	/// zh-CN: '识别与普通页布局'
-	String get portraitDetectionGroup => '识别与普通页布局';
-
-	/// zh-CN: '智能识别竖屏直播源'
-	String get portraitSmartDetection => '智能识别竖屏直播源';
-
-	/// zh-CN: '按解码后的真实画面识别竖屏。'
-	String get portraitSmartDetectionDesc => '按解码后的真实画面识别竖屏。';
-
-	/// zh-CN: '普通页自适应视频高度'
-	String get portraitAdaptiveHeight => '普通页自适应视频高度';
-
-	/// zh-CN: '竖屏源增大观看区域，同时保留足够的聊天与弹幕列表空间。'
-	String get portraitAdaptiveHeightDesc => '竖屏源增大观看区域，同时保留足够的聊天与弹幕列表空间。';
 
 	/// zh-CN: '普通页布局模式'
 	String get portraitLayoutMode => '普通页布局模式';
@@ -8551,9 +8496,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '兼容 16:9'
 	String get portraitLayoutCompatibility => '兼容 16:9';
-
-	/// zh-CN: '开启智能识别后才能调整高度与布局。'
-	String get portraitDetectionOff => '开启智能识别后才能调整高度与布局。';
 
 	/// zh-CN: '分区'
 	String get searchSections => '分区';
@@ -8846,33 +8788,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '画面飞行弹幕只画文字，表情图片跳过；聊天列表不受影响。'
 	String get styleNoEmojiDesc => '画面飞行弹幕只画文字，表情图片跳过；聊天列表不受影响。';
 
-	/// zh-CN: '全屏呈现'
-	String get portraitPresentationGroup => '全屏呈现';
-
-	/// zh-CN: '进入全屏时的方向'
-	String get portraitFullscreenPolicy => '进入全屏时的方向';
-
-	/// zh-CN: '手机跟随直播源，大屏交给系统。'
-	String get portraitFullscreenPolicyDesc => '手机跟随直播源，大屏交给系统。';
-
-	/// zh-CN: '跟随直播源（推荐）'
-	String get portraitFullscreenFollowSource => '跟随直播源（推荐）';
-
-	/// zh-CN: '跟随系统'
-	String get portraitFullscreenFollowSystem => '跟随系统';
-
-	/// zh-CN: '始终横屏'
-	String get portraitFullscreenLandscape => '始终横屏';
-
-	/// zh-CN: '恢复竖屏适配默认设置'
-	String get portraitReset => '恢复竖屏适配默认设置';
-
-	/// zh-CN: '把识别、自适应高度、布局模式与全屏方向恢复为默认值。'
-	String get portraitResetDesc => '把识别、自适应高度、布局模式与全屏方向恢复为默认值。';
-
-	/// zh-CN: '本页设置恢复默认，横屏直播不受影响。'
-	String get portraitResetConfirm => '本页设置恢复默认，横屏直播不受影响。';
-
 	/// zh-CN: '顶部留白'
 	String get styleTopMargin => '顶部留白';
 
@@ -9004,51 +8919,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '更改目录'
 	String get downloadDirectoryChange => '更改目录';
-
-	/// zh-CN: '竖屏全屏'
-	String get portraitFullscreenGroup => '竖屏全屏';
-
-	/// zh-CN: '画面模式'
-	String get portraitDisplayMode => '画面模式';
-
-	/// zh-CN: '完整=原样；沉浸=加柔和背景；均衡=轻裁；铺满=裁两侧。'
-	String get portraitDisplayModeDesc => '完整=原样；沉浸=加柔和背景；均衡=轻裁；铺满=裁两侧。';
-
-	/// zh-CN: '弹幕区域'
-	String get portraitDanmakuMode => '弹幕区域';
-
-	/// zh-CN: '竖屏全屏中飞行弹幕可占用的区域。'
-	String get portraitDanmakuModeDesc => '竖屏全屏中飞行弹幕可占用的区域。';
-
-	/// zh-CN: '记住每个房间的选择'
-	String get portraitRememberRoom => '记住每个房间的选择';
-
-	/// zh-CN: '按房间记住竖屏全屏的画面与弹幕切换。'
-	String get portraitRememberRoomDesc => '按房间记住竖屏全屏的画面与弹幕切换。';
-
-	/// zh-CN: '竖屏全屏上下滑换台'
-	String get portraitSwipeSwitch => '竖屏全屏上下滑换台';
-
-	/// zh-CN: '竖屏全屏时上滑看下一场、下滑看上一场。'
-	String get portraitSwipeSwitchDesc => '竖屏全屏时上滑看下一场、下滑看上一场。';
-
-	/// zh-CN: '显示竖屏诊断'
-	String get portraitDiagnostics => '显示竖屏诊断';
-
-	/// zh-CN: '在竖屏全屏左下角显示分辨率、宽高比、画面与弹幕模式。'
-	String get portraitDiagnosticsDesc => '在竖屏全屏左下角显示分辨率、宽高比、画面与弹幕模式。';
-
-	/// zh-CN: '清除房间覆盖'
-	String get portraitClearOverrides => '清除房间覆盖';
-
-	/// zh-CN: '删除所有按房间保存的竖屏画面与弹幕选择，保留全局默认。'
-	String get portraitClearOverridesDesc => '删除所有按房间保存的竖屏画面与弹幕选择，保留全局默认。';
-
-	/// zh-CN: '房间覆盖已清除'
-	String get portraitOverridesCleared => '房间覆盖已清除';
-
-	/// zh-CN: '已保存 {count: int} 个房间'
-	String portraitOverridesCount({required int count}) => '已保存 ${count} 个房间';
 
 	/// zh-CN: '显示用户名'
 	String get chatShowNames => '显示用户名';
@@ -9316,6 +9186,87 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '忘记匿名设备身份，下次播放重新注册。'
 	String get hongguoDeviceResetDesc => '忘记匿名设备身份，下次播放重新注册。';
+
+	/// zh-CN: '日志'
+	String get navLogs => '日志';
+
+	/// zh-CN: '记录级别、文件轮转与存放位置。'
+	String get logPageDescription => '记录级别、文件轮转与存放位置。';
+
+	/// zh-CN: '记录'
+	String get logRecordGroup => '记录';
+
+	/// zh-CN: '记录级别'
+	String get logLevel => '记录级别';
+
+	/// zh-CN: '低于此级别的日志不产生。'
+	String get logLevelDesc => '低于此级别的日志不产生。';
+
+	/// zh-CN: '写入日志文件'
+	String get logFile => '写入日志文件';
+
+	/// zh-CN: '关闭后只保留内存中的最近日志。'
+	String get logFileDesc => '关闭后只保留内存中的最近日志。';
+
+	/// zh-CN: '内存保留条数'
+	String get logMemoryCapacity => '内存保留条数';
+
+	/// zh-CN: '日志页能翻到的最近条数。'
+	String get logMemoryCapacityDesc => '日志页能翻到的最近条数。';
+
+	/// zh-CN: '文件轮转'
+	String get logRotationGroup => '文件轮转';
+
+	/// zh-CN: '单文件上限'
+	String get logFileMaxBytes => '单文件上限';
+
+	/// zh-CN: '写满就切到下一个文件。'
+	String get logFileMaxBytesDesc => '写满就切到下一个文件。';
+
+	/// zh-CN: '保留文件数'
+	String get logFileMaxFiles => '保留文件数';
+
+	/// zh-CN: '含当前文件，更早的删除。'
+	String get logFileMaxFilesDesc => '含当前文件，更早的删除。';
+
+	/// zh-CN: '存放位置'
+	String get logDirectoryGroup => '存放位置';
+
+	/// zh-CN: '日志目录'
+	String get logDirectory => '日志目录';
+
+	/// zh-CN: '默认：'
+	String get logDirectoryDefaultHint => '默认：';
+
+	/// zh-CN: '更改目录'
+	String get logDirectoryChange => '更改目录';
+
+	/// zh-CN: '日志文件改写到你选的文件夹。'
+	String get logDirectoryChangeDesc => '日志文件改写到你选的文件夹。';
+
+	/// zh-CN: '恢复默认目录'
+	String get logDirectoryReset => '恢复默认目录';
+
+	/// zh-CN: '回到应用数据目录里的 logs。'
+	String get logDirectoryResetDesc => '回到应用数据目录里的 logs。';
+
+	/// zh-CN: '日志目录已更新'
+	String get logDirectoryUpdated => '日志目录已更新';
+
+	/// zh-CN: '无法选择目录'
+	String get logDirectoryPickFailed => '无法选择目录';
+
+	/// zh-CN: '所选目录不可写'
+	String get logDirectoryPermissionHint => '所选目录不可写';
+
+	/// zh-CN: '复制路径'
+	String get logCopyPath => '复制路径';
+
+	/// zh-CN: '路径已复制'
+	String get logPathCopied => '路径已复制';
+
+	/// zh-CN: '无法打开目录'
+	String get logOpenFailed => '无法打开目录';
 }
 
 // Path: shield
@@ -9725,15 +9676,6 @@ class Translations$toolbox$zh_CN {
 	/// zh-CN: '日志与诊断'
 	String get logsSection => '日志与诊断';
 
-	/// zh-CN: '日志级别'
-	String get logsLevel => '日志级别';
-
-	/// zh-CN: '写入日志文件'
-	String get logsFile => '写入日志文件';
-
-	/// zh-CN: '在应用数据目录保存轮转日志 pure_live.log；关闭只留内存日志。'
-	String get logsFileDesc => '在应用数据目录保存轮转日志 pure_live.log；关闭只留内存日志。';
-
 	/// zh-CN: '复制日志'
 	String get logsExport => '复制日志';
 
@@ -9796,6 +9738,15 @@ class Translations$toolbox$zh_CN {
 
 	/// zh-CN: '无法打开日志目录'
 	String get logsOpenFailed => '无法打开日志目录';
+
+	/// zh-CN: '查看过滤'
+	String get logsFilterSection => '查看过滤';
+
+	/// zh-CN: '显示级别'
+	String get logsLevelFilter => '显示级别';
+
+	/// zh-CN: '只过滤这一页，不改变记录级别。'
+	String get logsLevelFilterDesc => '只过滤这一页，不改变记录级别。';
 }
 
 // Path: vod
@@ -11866,6 +11817,19 @@ extension on Translations {
 			'music.syncHistoryEmpty' => '这里啥也没有😮',
 			'music.syncHistoryDesc' => '连接过的服务器地址，点击选用。',
 			'music.syncChoose' => '选择',
+			'music.syncAuthCode' => '连接码',
+			'music.syncAuthCodeHint' => '服务端显示的连接码',
+			'music.syncMode' => '同步模式',
+			'music.syncConnect' => '连接',
+			'music.syncDisconnect' => '断开',
+			'music.syncStatusConnected' => '已连接',
+			'music.syncStatusConnecting' => '连接中',
+			'music.syncStatusFailed' => '连接失败',
+			'music.syncStatusIdle' => '未连接',
+			'music.syncStatusHint' => '连接后拉取服务端歌单并推送本地改动。',
+			'music.syncForgetKey' => '清除授权',
+			'music.syncForgetKeyDesc' => '删除已保存的密钥，下次连接用连接码重新授权。',
+			'music.syncNote' => '与 lx-music 桌面端同步：试听、收藏与自建歌单，服务端按所选模式合并。',
 			'music.syncServer' => '服务端模式',
 			'music.syncServerEnable' => '启用同步服务',
 			'music.syncServerTip' => '由于数据是明文传输，请在受信任的网络下使用',
@@ -11895,19 +11859,6 @@ extension on Translations {
 			'music.cacheOverrideClear' => '清理关联歌词',
 			'music.cacheOverrideConfirm' => '这将清理所有歌曲已关联的歌词，是否确认清理？',
 			'music.cacheCleared' => '已清理',
-			'music.syncAuthCode' => '连接码',
-			'music.syncAuthCodeHint' => '服务端显示的连接码',
-			'music.syncMode' => '同步模式',
-			'music.syncConnect' => '连接',
-			'music.syncDisconnect' => '断开',
-			'music.syncStatusConnected' => '已连接',
-			'music.syncStatusConnecting' => '连接中',
-			'music.syncStatusFailed' => '连接失败',
-			'music.syncStatusIdle' => '未连接',
-			'music.syncStatusHint' => '连接后拉取服务端歌单并推送本地改动。',
-			'music.syncForgetKey' => '清除授权',
-			'music.syncForgetKeyDesc' => '删除已保存的密钥，下次连接用连接码重新授权。',
-			'music.syncNote' => '与 lx-music 桌面端同步：试听、收藏与自建歌单，服务端按所选模式合并。',
 			'music.openApi' => '开放 API',
 			'music.openApiEnable' => '启用开放 API 服务',
 			'music.openApiPort' => '服务端口',
@@ -12102,6 +12053,8 @@ extension on Translations {
 			'recorder.cacheCleared' => '录制缓存已清理',
 			'recorder.cacheFailed' => '缓存操作失败，请重试',
 			'recorder.cacheManagedHint' => '自定义目录下只创建并管理 PureLiveRecords 子目录。',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.liveCheckSecondsTitle' => '检测间隔（秒）',
 			'recorder.liveCheckSecondsDesc' => '每个等待开播的任务多久检查一次，10–300 秒。',
 			'recorder.checkBackoff' => '启用指数退避',
@@ -12131,8 +12084,6 @@ extension on Translations {
 			'room.sendFailed' => '发送失败',
 			'room.fullscreenOn' => '进入全屏',
 			'room.fullscreenOff' => '退出全屏',
-			_ => null,
-		} ?? switch (path) {
 			'room.chatTitle' => '聊天',
 			'room.danmakuOn' => '显示弹幕',
 			'room.danmakuOff' => '隐藏弹幕',
@@ -12233,17 +12184,6 @@ extension on Translations {
 			'room.orientationUpdated' => '画面方向已更新',
 			'room.portraitFullscreen' => '竖屏全屏',
 			'room.portraitFullscreenExit' => '退出竖屏全屏',
-			'room.portraitFullscreenDisplay' => '画面模式',
-			'room.portraitDisplayComplete' => '完整',
-			'room.portraitDisplayAmbient' => '沉浸',
-			'room.portraitDisplayBalanced' => '均衡',
-			'room.portraitDisplayCover' => '铺满',
-			'room.portraitDanmakuTitle' => '弹幕区域',
-			'room.portraitDanmakuFollow' => '跟随全局',
-			'room.portraitDanmakuUpper' => '上部 1/4',
-			'room.portraitDanmakuReduced' => '减半',
-			'room.portraitDanmakuHidden' => '隐藏',
-			'room.portraitDiagnostics' => '竖屏诊断',
 			'room.giftLineSent' => '送出',
 			'room.giftLineSentTo' => ({required Object name}) => '送给 ${name}',
 			'room.giftLineGifted' => '赠送',
@@ -12627,6 +12567,8 @@ extension on Translations {
 			'settings.styleArea' => '占用高度',
 			'settings.styleAreaDesc' => '弹幕最多占用画面高度的比例（0–100%）。',
 			'settings.fixedTopTitle' => '固定顶部',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fixedTopDescription' => '平台的置顶弹幕停在画面上方；关闭后只在聊天列表里显示。',
 			'settings.fixedBottomTitle' => '固定底部',
 			'settings.fixedBottomDescription' => '平台的置底弹幕停在画面下方；关闭后只在聊天列表里显示。',
@@ -12645,8 +12587,6 @@ extension on Translations {
 			'settings.styleFpsValue' => ({required Object count}) => '${count} FPS',
 			'settings.styleMaxVisible' => '同屏上限',
 			'settings.styleMaxVisibleDesc' => '同屏弹幕最多几条，默认 48；少些更清楚省电。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleMaxVisibleValue' => ({required Object count}) => '${count} 条',
 			'settings.styleMassMode' => '海量模式',
 			'settings.styleMassModeDesc' => '同屏上限提到 1000 条并用实时渲染，适合超密弹幕。',
@@ -13141,6 +13081,8 @@ extension on Translations {
 			'settings.groupCards' => '卡片与列表',
 			'settings.groupLanguage' => '语言',
 			'settings.contrast' => '对比度',
+			_ => null,
+		} ?? switch (path) {
 			'settings.contrastDescription' => '控件边界与文字的对比强度。',
 			'settings.contrastSoft' => '柔和',
 			'settings.contrastStandard' => '标准',
@@ -13153,8 +13095,6 @@ extension on Translations {
 			'settings.navBackground' => '背景',
 			'settings.backgroundDescription' => '用图片或视频铺在应用后面，可上传本地文件或填写地址。',
 			'settings.backgroundImagesTitle' => '在线图片',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundImagesDescription' => '官方、Wallhaven、Bing 与 deepin 图源，先预览再应用。',
 			'settings.backgroundVideosTitle' => '在线视频',
 			'settings.navRandomWallpaper' => '随机图源',
@@ -13336,22 +13276,13 @@ extension on Translations {
 			'settings.controlsAutoHide' => '控制条自动隐藏',
 			'settings.controlsAutoHideDesc' => '播放时空闲这么久后隐藏控制条。',
 			'settings.controlsAutoHideValue' => ({required int count}) => '${count} 秒',
-			'settings.navPortrait' => '竖屏直播适配',
-			'settings.portraitPageDescription' => '自动识别直播源方向，并调整普通页的观看区域与布局。',
 			'settings.navAudience' => '观众指标',
 			'settings.audiencePageDescription' => '卡片人数口径、真实在线优先与平台开关。',
-			'settings.portraitEntryOff' => '已关闭',
-			'settings.portraitDetectionGroup' => '识别与普通页布局',
-			'settings.portraitSmartDetection' => '智能识别竖屏直播源',
-			'settings.portraitSmartDetectionDesc' => '按解码后的真实画面识别竖屏。',
-			'settings.portraitAdaptiveHeight' => '普通页自适应视频高度',
-			'settings.portraitAdaptiveHeightDesc' => '竖屏源增大观看区域，同时保留足够的聊天与弹幕列表空间。',
 			'settings.portraitLayoutMode' => '普通页布局模式',
 			'settings.portraitLayoutModeDesc' => '仅影响竖屏直播源，不改变普通横屏直播。',
 			'settings.portraitLayoutBalanced' => '均衡（推荐）',
 			'settings.portraitLayoutImmersive' => '沉浸',
 			'settings.portraitLayoutCompatibility' => '兼容 16:9',
-			'settings.portraitDetectionOff' => '开启智能识别后才能调整高度与布局。',
 			'settings.searchSections' => '分区',
 			'settings.searchRows' => '具体设置',
 			'settings.searchRowMatches' => ({required String items}) => '匹配：${items}',
@@ -13449,15 +13380,6 @@ extension on Translations {
 			'settings.fitScaleDown' => '等比缩小',
 			'settings.styleNoEmoji' => '隐藏表情',
 			'settings.styleNoEmojiDesc' => '画面飞行弹幕只画文字，表情图片跳过；聊天列表不受影响。',
-			'settings.portraitPresentationGroup' => '全屏呈现',
-			'settings.portraitFullscreenPolicy' => '进入全屏时的方向',
-			'settings.portraitFullscreenPolicyDesc' => '手机跟随直播源，大屏交给系统。',
-			'settings.portraitFullscreenFollowSource' => '跟随直播源（推荐）',
-			'settings.portraitFullscreenFollowSystem' => '跟随系统',
-			'settings.portraitFullscreenLandscape' => '始终横屏',
-			'settings.portraitReset' => '恢复竖屏适配默认设置',
-			'settings.portraitResetDesc' => '把识别、自适应高度、布局模式与全屏方向恢复为默认值。',
-			'settings.portraitResetConfirm' => '本页设置恢复默认，横屏直播不受影响。',
 			'settings.styleTopMargin' => '顶部留白',
 			'settings.styleTopMarginDesc' => '画面顶部不显示弹幕的高度，0–300。',
 			'settings.styleBottomMargin' => '底部留白',
@@ -13502,21 +13424,6 @@ extension on Translations {
 			'settings.downloadDirectoryPickFailed' => '无法选择下载目录',
 			'settings.downloadDirectoryPermissionHint' => '所选目录无法写入：请授予存储权限，或改用默认目录。',
 			'settings.downloadDirectoryChange' => '更改目录',
-			'settings.portraitFullscreenGroup' => '竖屏全屏',
-			'settings.portraitDisplayMode' => '画面模式',
-			'settings.portraitDisplayModeDesc' => '完整=原样；沉浸=加柔和背景；均衡=轻裁；铺满=裁两侧。',
-			'settings.portraitDanmakuMode' => '弹幕区域',
-			'settings.portraitDanmakuModeDesc' => '竖屏全屏中飞行弹幕可占用的区域。',
-			'settings.portraitRememberRoom' => '记住每个房间的选择',
-			'settings.portraitRememberRoomDesc' => '按房间记住竖屏全屏的画面与弹幕切换。',
-			'settings.portraitSwipeSwitch' => '竖屏全屏上下滑换台',
-			'settings.portraitSwipeSwitchDesc' => '竖屏全屏时上滑看下一场、下滑看上一场。',
-			'settings.portraitDiagnostics' => '显示竖屏诊断',
-			'settings.portraitDiagnosticsDesc' => '在竖屏全屏左下角显示分辨率、宽高比、画面与弹幕模式。',
-			'settings.portraitClearOverrides' => '清除房间覆盖',
-			'settings.portraitClearOverridesDesc' => '删除所有按房间保存的竖屏画面与弹幕选择，保留全局默认。',
-			'settings.portraitOverridesCleared' => '房间覆盖已清除',
-			'settings.portraitOverridesCount' => ({required int count}) => '已保存 ${count} 个房间',
 			'settings.chatShowNames' => '显示用户名',
 			'settings.chatShowNamesDesc' => '关闭后只显示内容。',
 			'settings.chatListFontSize' => '文字大小',
@@ -13606,6 +13513,33 @@ extension on Translations {
 			'settings.hongguoQuality360' => '360P',
 			'settings.hongguoDeviceReset' => '重置设备身份',
 			'settings.hongguoDeviceResetDesc' => '忘记匿名设备身份，下次播放重新注册。',
+			'settings.navLogs' => '日志',
+			'settings.logPageDescription' => '记录级别、文件轮转与存放位置。',
+			'settings.logRecordGroup' => '记录',
+			'settings.logLevel' => '记录级别',
+			'settings.logLevelDesc' => '低于此级别的日志不产生。',
+			'settings.logFile' => '写入日志文件',
+			'settings.logFileDesc' => '关闭后只保留内存中的最近日志。',
+			'settings.logMemoryCapacity' => '内存保留条数',
+			'settings.logMemoryCapacityDesc' => '日志页能翻到的最近条数。',
+			'settings.logRotationGroup' => '文件轮转',
+			'settings.logFileMaxBytes' => '单文件上限',
+			'settings.logFileMaxBytesDesc' => '写满就切到下一个文件。',
+			'settings.logFileMaxFiles' => '保留文件数',
+			'settings.logFileMaxFilesDesc' => '含当前文件，更早的删除。',
+			'settings.logDirectoryGroup' => '存放位置',
+			'settings.logDirectory' => '日志目录',
+			'settings.logDirectoryDefaultHint' => '默认：',
+			'settings.logDirectoryChange' => '更改目录',
+			'settings.logDirectoryChangeDesc' => '日志文件改写到你选的文件夹。',
+			'settings.logDirectoryReset' => '恢复默认目录',
+			'settings.logDirectoryResetDesc' => '回到应用数据目录里的 logs。',
+			'settings.logDirectoryUpdated' => '日志目录已更新',
+			'settings.logDirectoryPickFailed' => '无法选择目录',
+			'settings.logDirectoryPermissionHint' => '所选目录不可写',
+			'settings.logCopyPath' => '复制路径',
+			'settings.logPathCopied' => '路径已复制',
+			'settings.logOpenFailed' => '无法打开目录',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
@@ -13661,14 +13595,14 @@ extension on Translations {
 			'toolbox.groupData' => '数据',
 			'toolbox.toolNetworkTitle' => '平台节点',
 			'toolbox.toolNetworkDescription' => '测试各平台接口的连通性与延迟。',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.toolCacheTitle' => '缓存清理',
 			'toolbox.toolCacheDescription' => '查看并清理图片占用的内存缓存。',
 			'toolbox.toolLogsTitle' => '日志',
 			'toolbox.toolLogsDescription' => '查看应用运行日志与诊断信息。',
 			'toolbox.back' => '返回',
 			'toolbox.confirm' => '确认',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.cancel' => '取消',
 			'toolbox.linkFieldLabel' => '平台链接',
 			'toolbox.linkFieldHint' => '粘贴直播间链接或分享文字',
@@ -13735,9 +13669,6 @@ extension on Translations {
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} 可用 · 共 ${total} 个平台',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => '尚未测速 · 共 ${total} 个平台',
 			'toolbox.logsSection' => '日志与诊断',
-			'toolbox.logsLevel' => '日志级别',
-			'toolbox.logsFile' => '写入日志文件',
-			'toolbox.logsFileDesc' => '在应用数据目录保存轮转日志 pure_live.log；关闭只留内存日志。',
 			'toolbox.logsExport' => '复制日志',
 			'toolbox.logsExportDesc' => '把内存中的日志复制到剪贴板。',
 			'toolbox.logsClear' => '清空日志',
@@ -13759,6 +13690,9 @@ extension on Translations {
 			'toolbox.logsCopyPath' => '复制路径',
 			'toolbox.logsPathCopied' => '路径已复制到剪贴板',
 			'toolbox.logsOpenFailed' => '无法打开日志目录',
+			'toolbox.logsFilterSection' => '查看过滤',
+			'toolbox.logsLevelFilter' => '显示级别',
+			'toolbox.logsLevelFilterDesc' => '只过滤这一页，不改变记录级别。',
 			'vod.searchHint' => '搜索 Bilibili 视频',
 			'vod.idleTitle' => '搜索点播视频',
 			'vod.idleDescription' => '输入关键词搜索 Bilibili 的视频。',

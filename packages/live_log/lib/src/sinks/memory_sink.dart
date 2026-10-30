@@ -14,10 +14,20 @@ import 'package:live_log/src/pipeline/sanitizer.dart';
 /// limit.
 final class MemorySink implements LogSink {
   /// A sink retaining the newest [capacity] records.
-  new({this.capacity = 500}) : _records = ListQueue<LogRecord>(capacity);
+  new({int capacity = 500}) : _capacity = capacity, _records = ListQueue<LogRecord>(capacity);
 
-  /// Maximum number of retained records.
-  final int capacity;
+  /// Maximum number of retained records. Lowering it forgets the oldest
+  /// records at once, so a live view shrinks with the setting.
+  int get capacity => _capacity;
+
+  set capacity(int value) {
+    _capacity = value;
+    while (_records.length > _capacity) {
+      _records.removeFirst();
+    }
+  }
+
+  int _capacity;
 
   final ListQueue<LogRecord> _records;
 

@@ -10,6 +10,7 @@ import 'package:live_sites/live_sites.dart';
 import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/room/clipboard_rooms.dart' show detectClipboardRoomsProvider;
+import 'package:pure_live/features/settings/settings.dart' show SettingsSection;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/toolbox/direct_link_dialog.dart';
 import 'package:pure_live/modules/live/toolbox/toolbox_controllers.dart';
@@ -17,9 +18,9 @@ import 'package:pure_live/shared/shared.dart';
 
 /// The home navigation's link parser: the reference's link tool as one
 /// page — a narrow form, the sign-in page's measure, rather than a field
-/// stretched across the window. The network probe, image-cache clear and log
-/// viewer that used to sit behind the same entry are settings utilities now,
-/// under System.
+/// stretched across the window. The network probe and image-cache clear that
+/// used to sit behind the same entry are settings utilities now, under
+/// System; the log console has its own rail entry beside this one.
 final class ToolboxPage extends StatelessWidget {
   /// The link parser page.
   const ToolboxPage({super.key});
@@ -578,8 +579,11 @@ final class LogsPane extends ConsumerStatefulWidget {
 final class _LogsPaneState extends ConsumerState<LogsPane> {
   final ScrollController _scroll = ScrollController();
   final TextEditingController _search = TextEditingController();
-  LogLevel _level = appLogLevel;
-  bool _fileEnabled = appLogFileEnabled;
+
+  /// What this page shows, independent of what the tree records: the level
+  /// the viewer wants to see, with the lowest stop as the default so nothing
+  /// is hidden until they ask for it.
+  LogLevel _filter = LogLevel.trace;
   bool _autoScroll = true;
   int _lastShown = 0;
 
@@ -667,7 +671,7 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
     final query = _search.text.trim().toLowerCase();
     final shown = [
       for (final record in records)
-        if (record.level.isAtLeast(_level) &&
+        if (record.level.isAtLeast(_filter) &&
             (query.isEmpty ||
                 record.message.toLowerCase().contains(query) ||
                 record.category.toLowerCase().contains(query) ||
@@ -684,71 +688,80 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s12,
       children: [
-        // The console is what this page is for, so the settings above it give
-        // way to it and scroll themselves when the window is short.
-        Flexible(
-          child: SingleChildScrollView(
-            child: DsListSection(
-              header: Text(t.toolbox.logsSection),
-              children: [
-                DsListRow(
-                  leading: const DsIcon(DsIcons.layers),
-                  title: Text(t.toolbox.logsLevel),
-                  trailing: SizedBox(
-                    width: 160,
-                    child: AdaptiveChoiceField<LogLevel>(
-                      value: _level,
-                      title: t.toolbox.logsLevel,
-                      onChanged: (level) {
-                        setAppLogLevel(level);
-                        setState(() => _level = level);
-                      },
-                      options: [
-                        for (final level in const [
-                          LogLevel.trace,
-                          LogLevel.debug,
-                          LogLevel.info,
-                          LogLevel.warning,
-                          LogLevel.error,
-                          LogLevel.fatal,
-                        ])
-                          DsSelectOption(value: level, label: level.label),
-                      ],
-                      semanticLabel: t.toolbox.logsLevel,
+        // The lines are what this page is for, so its options sit in an
+        // accordion that starts closed and gives the height back.
+        DsAccordion<String>(
+          allowMultiple: true,
+          semanticLabel: t.toolbox.logsSection,
+          items: [
+            DsAccordionItem<String>(
+              value: 'filter',
+              title: _logsAccordionTitle(const DsIcon(DsIcons.listFilter, size: 16), t.toolbox.logsFilterSection),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  DsListRow(
+                    leading: const DsIcon(DsIcons.layers),
+                    title: Text(t.toolbox.logsLevelFilter),
+                    description: Text(t.toolbox.logsLevelFilterDesc),
+                    trailing: SizedBox(
+                      width: 160,
+                      child: AdaptiveChoiceField<LogLevel>(
+                        value: _filter,
+                        title: t.toolbox.logsLevelFilter,
+                        onChanged: (level) => setState(() => _filter = level),
+                        options: [
+                          for (final level in const [
+                            LogLevel.trace,
+                            LogLevel.debug,
+                            LogLevel.info,
+                            LogLevel.warning,
+                            LogLevel.error,
+                            LogLevel.fatal,
+                          ])
+                            DsSelectOption(value: level, label: level.label),
+                        ],
+                        semanticLabel: t.toolbox.logsLevelFilter,
+                      ),
                     ),
                   ),
-                ),
-                DsListRow(
-                  leading: const DsIcon(DsIcons.hardDrive),
-                  title: Text(t.toolbox.logsFile),
-                  description: Text(t.toolbox.logsFileDesc),
-                  trailing: DsSwitch(
-                    value: _fileEnabled,
-                    onChanged: (value) {
-                      setAppLogFileEnabled(enabled: value);
-                      setState(() => _fileEnabled = value);
-                    },
-                  ),
-                ),
-                DsListRow(
-                  leading: const DsIcon(DsIcons.folder),
-                  // The file rather than the folder: the folder is where the
-                  // rotating files live, and the path a viewer wants named is
-                  // this one, so it is the line the page prints.
-                  title: Text(t.toolbox.logsFileTitle),
-                  description: Text(appLogFile ?? t.toolbox.logsDirectoryDefault),
-                  onPressed: appLogFile == null ? null : () => unawaited(_openLogDirectory()),
-                  trailing: DsButton.icon(
-                    variant: DsButtonVariant.ghost,
-                    size: DsSize.sm,
-                    semanticLabel: t.toolbox.logsCopyPath,
-                    onPressed: appLogFile == null ? null : () => unawaited(_copyPath()),
-                    icon: const DsIcon(DsIcons.copy, size: 16),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+            DsAccordionItem<String>(
+              value: 'file',
+              title: _logsAccordionTitle(const DsIcon(DsIcons.hardDrive, size: 16), t.toolbox.logsFileTitle),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  DsListRow(
+                    leading: const DsIcon(DsIcons.folder),
+                    // The file rather than the folder: the folder is where the
+                    // rotating files live, and the path a viewer wants named is
+                    // this one, so it is the line the page prints.
+                    title: Text(t.toolbox.logsFileTitle),
+                    description: Text(appLogFile ?? t.toolbox.logsDirectoryDefault),
+                    onPressed: appLogFile == null ? null : () => unawaited(_openLogDirectory()),
+                    trailing: DsButton.icon(
+                      variant: DsButtonVariant.ghost,
+                      size: DsSize.sm,
+                      semanticLabel: t.toolbox.logsCopyPath,
+                      onPressed: appLogFile == null ? null : () => unawaited(_copyPath()),
+                      icon: const DsIcon(DsIcons.copy, size: 16),
+                    ),
+                  ),
+                  DsListRow(
+                    leading: const DsIcon(DsIcons.slidersHorizontal),
+                    title: Text(t.settings.navLogs),
+                    description: Text(t.settings.logPageDescription),
+                    showChevron: true,
+                    onPressed: () =>
+                        unawaited(context.push(SettingsSectionRoute(section: SettingsSection.logs.name).location)),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         Expanded(
           child: Container(
@@ -834,6 +847,16 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
     );
   }
 }
+
+/// An accordion header for the log page: the section's glyph and its name.
+/// The accordion styles the text itself, so this only lays the pair out.
+Widget _logsAccordionTitle(Widget icon, String label) => Row(
+  spacing: DsSpace.s8,
+  children: [
+    icon,
+    Flexible(child: Text(label)),
+  ],
+);
 
 /// One record as a monospaced line: clock, level, category, message and
 /// its fields, with the error under it when it carries one.

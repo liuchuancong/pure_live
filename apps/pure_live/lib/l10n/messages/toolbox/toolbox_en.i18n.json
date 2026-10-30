@@ -77,9 +77,6 @@
   "nodeSummary": "{ok} / {tested} reachable · {total} platforms",
   "nodeUntestedSummary": "Not tested yet · {total} platforms",
   "logsSection": "Logs & diagnostics",
-  "logsLevel": "Log level",
-  "logsFile": "Write log file",
-  "logsFileDesc": "Keep a rotating log (pure_live.log) in the app data directory; off keeps only the in-memory ring.",
   "logsExport": "Copy log",
   "logsExportDesc": "Copy the in-memory records to the clipboard.",
   "logsClear": "Clear logs",
@@ -100,5 +97,8 @@
   "logsOpenFolder": "Open the folder",
   "logsCopyPath": "Copy path",
   "logsPathCopied": "Path copied to the clipboard",
-  "logsOpenFailed": "Could not open the log directory"
+  "logsOpenFailed": "Could not open the log directory",
+  "logsFilterSection": "View filter",
+  "logsLevelFilter": "Shown level",
+  "logsLevelFilterDesc": "Filters this page only; what the app records is set in the log settings."
 }

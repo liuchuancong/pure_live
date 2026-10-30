@@ -5,10 +5,28 @@ import 'package:live_log/live_log.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:path/path.dart' as p;
 
+/// The size one log file reaches before it rotates, unless the setting says
+/// otherwise.
+const int kDefaultAppLogFileMaxBytes = 4 * 1024 * 1024;
+
+/// How many log files the sink keeps, the live one included.
+const int kDefaultAppLogFileMaxFiles = 4;
+
+/// How many records the memory ring holds for the log page.
+const int kDefaultAppLogMemoryCapacity = 1000;
+
+/// The stored keys the log settings page owns.
+const String _levelKey = 'log.level';
+const String _fileKey = 'log.file';
+const String _fileMaxBytesKey = 'log.fileMaxBytes';
+const String _fileMaxFilesKey = 'log.fileMaxFiles';
+const String _memoryCapacityKey = 'log.memoryCapacity';
+const String _directoryKey = 'log.directory';
+
 /// The app's one log tree: a console line, the in-memory ring the log page
 /// reads, and (once storage opens) a rotating file. Records are sanitised
 /// by live_log before any sink sees them.
-final MemorySink appLogMemory = MemorySink(capacity: 1000);
+final MemorySink appLogMemory = MemorySink(capacity: kDefaultAppLogMemoryCapacity);
 final _NotifyingSink _memorySink = _NotifyingSink(appLogMemory);
 final FanOutSink _sinks = FanOutSink([const LoggerConsoleSink(), _memorySink]);
 final LiveLog _root = LiveLog.root(sinks: [_sinks]);
@@ -24,15 +42,63 @@ Stream<void> get appLogChanges => _memorySink.changes;
 LogLevel appLogLevel = LogLevel.debug;
 
 _SwitchableSink? _fileSink;
-Directory? _logDirectory;
+Directory? _defaultDirectory;
+String _customDirectory = '';
+int _fileMaxBytes = kDefaultAppLogFileMaxBytes;
+int _fileMaxFiles = kDefaultAppLogFileMaxFiles;
+bool _fileEnabled = true;
 
-/// The directory the rotating files live in, once [initAppLog] has run.
+/// What the attached sink was built with, so a refresh that changes nothing
+/// does not reopen the file.
+String? _sinkPath;
+int _sinkMaxBytes = 0;
+int _sinkMaxFiles = 0;
+
+/// The folder the rotating files are written to: the viewer's own choice
+/// when they picked one, else the storage layer's logs folder. Null until
+/// [initAppLog] runs.
+Directory? get _logDirectory {
+  if (_customDirectory.isNotEmpty) return Directory(_customDirectory);
+  return _defaultDirectory;
+}
+
+/// The folder the rotating files live in, once [initAppLog] has run.
 Directory? get appLogDirectory => _logDirectory;
 
-/// Attaches the rotating file sink and applies the stored level/file
-/// preferences. Called once after storage opens; safe to call again.
+/// The storage layer's own logs folder, before any custom choice.
+String? get appLogDefaultDirectory => _defaultDirectory?.path;
+
+/// The folder the file sink writes into right now.
+String? get appLogDirectoryPath => _logDirectory?.path;
+
+/// Whether a folder other than the default is in use.
+bool get appLogDirectoryCustom => _customDirectory.isNotEmpty;
+
+/// The size a log file reaches before it rotates.
+int get appLogFileMaxBytes => _fileMaxBytes;
+
+/// How many log files are kept.
+int get appLogFileMaxFiles => _fileMaxFiles;
+
+/// How many records the memory ring holds.
+int get appLogMemoryCapacity => appLogMemory.capacity;
+
+/// Attaches the rotating file sink and applies the stored log preferences.
+/// Called once after storage opens; safe to call again.
 void initAppLog({required Directory directory}) {
-  _logDirectory = directory;
+  _defaultDirectory ??= directory;
+  syncAppLogFromStore();
+}
+
+/// Re-reads every stored log preference and applies it to this process's
+/// tree, so a write from another window or a restored backup lands here on
+/// the settings refresh.
+void syncAppLogFromStore() {
+  _customDirectory = _readString(_directoryKey) ?? '';
+  _fileMaxBytes = _readInt(_fileMaxBytesKey) ?? kDefaultAppLogFileMaxBytes;
+  _fileMaxFiles = _readInt(_fileMaxFilesKey) ?? kDefaultAppLogFileMaxFiles;
+  appLogMemory.capacity = _readInt(_memoryCapacityKey) ?? kDefaultAppLogMemoryCapacity;
+  _fileEnabled = _readBool(_fileKey) ?? true;
   final level = _readLevel() ?? LogLevel.debug;
   appLogLevel = level;
   // Request lines are emitted at debug by live_net; keep them available
@@ -40,32 +106,63 @@ void initAppLog({required Directory directory}) {
   _root
     ..setMinLevel(level)
     ..setMinLevel(LogLevel.debug, category: 'network');
-  if (_fileSink != null) {
-    return;
-  }
-  final sink = _SwitchableSink(
-    FileSink(directory, baseName: 'pure_live', maxFileBytes: 4 * 1024 * 1024, maxFiles: 4),
-    enabled: _readFileEnabled() ?? true,
-  );
-  _fileSink = sink;
-  _sinks.sinks.add(sink);
+  _attachFileSink();
 }
 
 /// The file sink's current switch.
-bool get appLogFileEnabled => _fileSink?.enabled ?? false;
+bool get appLogFileEnabled => _fileEnabled;
 
 /// Changes the tree level and stores it.
 void setAppLogLevel(LogLevel level) {
   appLogLevel = level;
   _root.setMinLevel(level);
-  unawaitedStore(() => StoragePrefs.setString('log.level', level.name));
+  unawaitedStore(() => StoragePrefs.setString(_levelKey, level.name));
 }
 
 /// Turns the file sink on or off and stores the choice.
 void setAppLogFileEnabled({required bool enabled}) {
+  _fileEnabled = enabled;
   _fileSink?.enabled = enabled;
-  unawaitedStore(() => StoragePrefs.setBool('log.file', enabled));
+  unawaitedStore(() => StoragePrefs.setBool(_fileKey, enabled));
 }
+
+/// Sets the size a log file reaches before it rotates and rebuilds the sink;
+/// the live file is closed, and the new limit applies from the next line.
+void setAppLogFileMaxBytes(int bytes) {
+  if (bytes == _fileMaxBytes) return;
+  _fileMaxBytes = bytes;
+  unawaitedStore(() => StoragePrefs.setInt(_fileMaxBytesKey, bytes));
+  _attachFileSink();
+}
+
+/// Sets how many log files are kept and rebuilds the sink.
+void setAppLogFileMaxFiles(int files) {
+  if (files == _fileMaxFiles) return;
+  _fileMaxFiles = files;
+  unawaitedStore(() => StoragePrefs.setInt(_fileMaxFilesKey, files));
+  _attachFileSink();
+}
+
+/// Resizes the memory ring the log page reads; the oldest lines go first.
+void setAppLogMemoryCapacity(int capacity) {
+  if (capacity == appLogMemory.capacity) return;
+  appLogMemory.capacity = capacity;
+  _memorySink.notifyNow();
+  unawaitedStore(() => StoragePrefs.setInt(_memoryCapacityKey, capacity));
+}
+
+/// Writes the log folder to [path] (already proven writable by the caller)
+/// and reopens the file sink there.
+void setAppLogDirectory(String path) {
+  final normalized = path.trim();
+  if (normalized == _customDirectory) return;
+  _customDirectory = normalized;
+  unawaitedStore(() => StoragePrefs.setString(_directoryKey, normalized));
+  _attachFileSink();
+}
+
+/// Returns the log folder to the storage layer's own logs directory.
+void resetAppLogDirectory() => setAppLogDirectory('');
 
 /// Drops every in-memory record (the file keeps what it wrote).
 void clearAppLog() {
@@ -76,8 +173,40 @@ void clearAppLog() {
 /// The in-memory records as text, for the clipboard/export path.
 String exportAppLog() => appLogMemory.exportText();
 
-/// The live log file's path, when the file sink is attached.
-String? get appLogFile => _logDirectory == null ? null : p.join(_logDirectory!.path, 'pure_live.log');
+/// The live log file's path, once the file sink is attached.
+String? get appLogFile {
+  final directory = _logDirectory;
+  return directory == null ? null : p.join(directory.path, 'pure_live.log');
+}
+
+/// Replaces the file sink so it follows the current folder and limits; does
+/// nothing while they already match. The old handle is closed on the sink
+/// queue, never in the caller's frame.
+void _attachFileSink() {
+  final directory = _logDirectory;
+  if (directory == null) return;
+  final current = _fileSink;
+  if (current != null &&
+      _sinkPath == directory.path &&
+      _sinkMaxBytes == _fileMaxBytes &&
+      _sinkMaxFiles == _fileMaxFiles) {
+    current.enabled = _fileEnabled;
+    return;
+  }
+  if (current != null) {
+    _sinks.sinks.remove(current);
+    unawaited(current.close());
+  }
+  final sink = _SwitchableSink(
+    FileSink(directory, baseName: 'pure_live', maxFileBytes: _fileMaxBytes, maxFiles: _fileMaxFiles),
+    enabled: _fileEnabled,
+  );
+  _fileSink = sink;
+  _sinkPath = directory.path;
+  _sinkMaxBytes = _fileMaxBytes;
+  _sinkMaxFiles = _fileMaxFiles;
+  _sinks.sinks.add(sink);
+}
 
 /// Runs a preference write without making the caller await it; a closed
 /// store loses the choice rather than failing the action.
@@ -95,15 +224,31 @@ Future<void> _guard(Future<void> Function() write) async {
 
 LogLevel? _readLevel() {
   try {
-    return LogLevel.values.asNameMap()[StoragePrefs.getString('log.level')];
+    return LogLevel.values.asNameMap()[StoragePrefs.getString(_levelKey)];
   } on Object {
     return null;
   }
 }
 
-bool? _readFileEnabled() {
+bool? _readBool(String key) {
   try {
-    return StoragePrefs.getBool('log.file');
+    return StoragePrefs.getBool(key);
+  } on Object {
+    return null;
+  }
+}
+
+int? _readInt(String key) {
+  try {
+    return StoragePrefs.getInt(key);
+  } on Object {
+    return null;
+  }
+}
+
+String? _readString(String key) {
+  try {
+    return StoragePrefs.getString(key);
   } on Object {
     return null;
   }

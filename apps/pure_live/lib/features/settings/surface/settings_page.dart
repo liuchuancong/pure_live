@@ -8,8 +8,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_device/live_device.dart' show SystemProxyEndpoint, SystemProxyStatus;
+import 'package:live_log/live_log.dart' show LogLevel;
 import 'package:live_platform/live_platform.dart' show FormFactor, PlatformKind;
 import 'package:live_shell/live_shell.dart' show CloseAction;
+import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account.dart';
@@ -54,21 +56,13 @@ import 'package:pure_live/features/settings/panes/player_kernel_pane.dart'
 import 'package:pure_live/features/settings/panes/room_card_pane.dart' show showRoomCardPreview;
 import 'package:pure_live/features/settings/playback/floating_window_settings.dart' show floatingWindowSettingsProvider;
 import 'package:pure_live/features/settings/playback/playback_settings_providers.dart';
-import 'package:pure_live/features/settings/playback/portrait_fullscreen_settings.dart';
 import 'package:pure_live/features/settings/playback/portrait_settings_providers.dart'
-    show
-        PortraitFullscreenPolicy,
-        PortraitLayoutMode,
-        PortraitSettings,
-        PortraitSettingsController,
-        portraitSettingsProvider;
-import 'package:pure_live/features/settings/room/room_switcher_settings.dart' show portraitSwipeSwitchProvider;
+    show PortraitLayoutMode, portraitLayoutModeProvider;
 import 'package:pure_live/features/settings/surface/settings_navigation.dart'
     show openSettingsCategory, openSettingsChild, openSettingsSection, settingsStacksRoutes;
 import 'package:pure_live/features/settings/surface/settings_search.dart' show SettingsSearchHit, settingsSearchHits;
 import 'package:pure_live/features/settings/surface/settings_sections.dart';
-import 'package:pure_live/features/settings/surface/settings_widgets.dart'
-    show SettingsChoiceRow, SettingsConfigRow, SettingsSegmentedRow;
+import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/features/version/version.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/layouts.dart';
@@ -77,7 +71,6 @@ import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
-import 'package:pure_live/modules/live/room/page/room_orientation.dart' show roomOrientationChoicesProvider;
 import 'package:pure_live/modules/live/toolbox/toolbox.dart';
 import 'package:pure_live/modules/music/music.dart';
 import 'package:pure_live/modules/vod/vod.dart';
@@ -416,6 +409,12 @@ final class _SettingsMenuListState extends ConsumerState<_SettingsMenuList> {
                 description: Text(settingsGroupDescription(t, group.labelKey)),
                 showChevron: true,
                 onPressed: () {
+                  // A category carrying one page opens it instead of listing it.
+                  final sole = settingsSolePageOf(group);
+                  if (sole != null) {
+                    openSettingsChild(context, ref, sole);
+                    return;
+                  }
                   openSettingsCategory(ref, group.labelKey);
                   unawaited(context.push(RouteNames.settingsCategoryFor(group.labelKey)));
                 },
@@ -528,7 +527,6 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.audio => const _QualityAudioPane(),
       SettingsSection.picture => const _PicturePane(),
       SettingsSection.floatingWindow => const _FloatingWindowPane(),
-      SettingsSection.portrait => const _PortraitPane(),
       SettingsSection.audience => const AudienceSettingsPane(),
       SettingsSection.kernel => const PlayerKernelPane(),
       SettingsSection.kernelAdvanced => const PlayerKernelAdvancedPane(),
@@ -538,9 +536,9 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.network => const _NetworkPane(),
       SettingsSection.nodes => const PlatformNodesPane(),
       SettingsSection.dataCache || SettingsSection.data || SettingsSection.cache => const _DataCachePane(),
+      SettingsSection.logs => const _LogSettingsPane(),
       SettingsSection.backup => const BackupPane(),
       SettingsSection.webdavSync => const WebDavFileManager(),
-      SettingsSection.logs => const LogsPane(),
       SettingsSection.about => const _AboutPane(),
       SettingsSection.iptv => const IptvSettingsPane(),
       SettingsSection.iptvBrowse => const IptvBrowsePane(),
@@ -561,11 +559,10 @@ final class SettingsSectionPane extends StatelessWidget {
     final inset = LiveWindow.isCompact(MediaQuery.sizeOf(context).width) ? DsSpace.s16 : DsSpace.s24;
     final padding = EdgeInsets.fromLTRB(inset, DsSpace.s20, inset, DsSpace.s24);
     // Some pages own their height instead of scrolling the whole pane with
-    // it: the log console expands into what the settings above leave, a
-    // wallpaper page fills the window with as many whole rows as fit, and the
-    // font manager pins its filters over a table that scrolls by itself.
-    if (section == SettingsSection.logs ||
-        section == SettingsSection.webdavSync ||
+    // it: a wallpaper page fills the window with as many whole rows as fit,
+    // and the font manager pins its filters over a table that scrolls by
+    // itself.
+    if (section == SettingsSection.webdavSync ||
         section == SettingsSection.backgroundImages ||
         section == SettingsSection.backgroundVideos ||
         section == SettingsSection.backgroundDownloads ||
@@ -1566,14 +1563,73 @@ final class _SeedSwatch extends StatelessWidget {
 /// stable for one seed).
 final Map<DsSeed, Color> _seedAccents = {};
 
-/// The network pane (the reference's custom network proxy): the app proxy the
-/// shared transport factory applies to every module's requests — vod, the
-/// IPTV guide, backups. The tools order moved to the navigation pane.
-final class _NetworkPane extends ConsumerWidget {
+/// The two faces of the network page.
+enum NetworkTab {
+  /// The proxy the shared transport factory applies to every module's
+  /// requests — vod, the IPTV guide, backups.
+  app,
+
+  /// The acceleration card and the mirror list GitHub downloads go through.
+  github,
+}
+
+/// The network pane (the reference's custom network proxy), its two faces on
+/// a segmented control: the app proxy and the GitHub acceleration used to be
+/// one scroll where the second buried the first. The tools order moved to the
+/// navigation pane.
+final class _NetworkPane extends ConsumerStatefulWidget {
   const _NetworkPane();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_NetworkPane> createState() => _NetworkPaneState();
+}
+
+final class _NetworkPaneState extends ConsumerState<_NetworkPane> {
+  NetworkTab _tab = NetworkTab.app;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        // Two names fit any pane, but the control keeps the same frame as the
+        // longer category controls beside it.
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DsSegmentedControl<NetworkTab>(
+              value: _tab,
+              semanticLabel: t.settings.navNetwork,
+              segments: [
+                DsSegment(
+                  value: NetworkTab.app,
+                  label: Text(t.settings.proxy),
+                  icon: const DsIcon(DsIcons.globe, size: 16),
+                ),
+                DsSegment(
+                  value: NetworkTab.github,
+                  label: Text(t.settings.githubMirrorTitle),
+                  icon: const DsIcon(DsIcons.download, size: 16),
+                ),
+              ],
+              onChanged: (value) => setState(() => _tab = value),
+            ),
+          ),
+        ),
+        switch (_tab) {
+          NetworkTab.app => _appProxy(context),
+          NetworkTab.github => const GithubMirrorSection(),
+        },
+      ],
+    );
+  }
+
+  /// The app proxy: the mode, the endpoint it types, and the system reading
+  /// under it. The segment labels the group, so the section carries no header.
+  Widget _appProxy(BuildContext context) {
     final t = context.t;
     final proxy = ref.watch(proxySettingsProvider);
     final controller = ref.read(proxySettingsProvider.notifier);
@@ -1588,7 +1644,6 @@ final class _NetworkPane extends ConsumerWidget {
       spacing: DsSpace.s16,
       children: [
         DsListSection(
-          header: Text(t.settings.navNetwork),
           children: [
             SettingsChoiceRow<ProxyMode>(
               leading: const DsIcon(DsIcons.globe),
@@ -1645,10 +1700,8 @@ final class _NetworkPane extends ConsumerWidget {
             ),
           ],
         ),
-        const GithubMirrorSection(),
         DsListSection(
           children: [
-            const SettingsChildEntry(child: SettingsSection.nodes),
             DsListRow(
               leading: const DsIcon(DsIcons.refresh),
               title: Text(t.settings.proxySystemRecheck),
@@ -1771,7 +1824,7 @@ final class _SitesPane extends ConsumerWidget {
           ],
         ),
         // The pages that carry their own controls, in one block: a settings
-        // page reads as a list of destinations, not three one-row cards.
+        // page reads as a list of destinations, not one card per destination.
         DsListSection(
           children: [
             const SettingsChildEntry(child: SettingsSection.sitesDisplay),
@@ -1780,6 +1833,7 @@ final class _SitesPane extends ConsumerWidget {
               detail: Text(audienceModeLabel(t, ref.watch(audienceMetricProvider))),
             ),
             const SettingsChildEntry(child: SettingsSection.accounts),
+            const SettingsChildEntry(child: SettingsSection.nodes),
           ],
         ),
         DsListSection(
@@ -1899,6 +1953,196 @@ final class _DataCachePane extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [_DataPane(), _CachePane()],
+    );
+  }
+}
+
+/// The log page: what the tree records, whether a file is written and how it
+/// rotates, how many lines the memory ring keeps, and which folder holds the
+/// files. The rail's 日志 console reads the same tree, so a change lands on
+/// the next line written.
+final class _LogSettingsPane extends ConsumerStatefulWidget {
+  const _LogSettingsPane();
+
+  @override
+  ConsumerState<_LogSettingsPane> createState() => _LogSettingsPaneState();
+}
+
+final class _LogSettingsPaneState extends ConsumerState<_LogSettingsPane> {
+  /// The file-size stops, in megabytes; a stored value outside them is added
+  /// to the list so it still reads as chosen.
+  static const List<int> _kFileSizeMb = [1, 2, 4, 8, 16];
+
+  /// The rotation stops (files kept, the live one included).
+  static const List<int> _kFileCounts = [2, 4, 6, 10];
+
+  /// The memory-ring stops, in records.
+  static const List<int> _kMemoryCaps = [200, 500, 1000, 2000, 5000];
+
+  Future<void> _pickDirectory() async {
+    final t = context.t;
+    try {
+      final selected = await FilePicker.getDirectoryPath(dialogTitle: t.settings.logDirectory);
+      if (selected == null || selected.trim().isEmpty) return;
+      final saved = await ref.read(logSettingsProvider.notifier).setDirectory(selected);
+      if (!mounted) return;
+      if (!saved) {
+        showDsToast(context: context, title: t.settings.logDirectoryPermissionHint, status: DsStatus.danger);
+        return;
+      }
+      showDsToast(context: context, title: t.settings.logDirectoryUpdated);
+    } on Object {
+      if (mounted) {
+        showDsToast(context: context, title: t.settings.logDirectoryPickFailed, status: DsStatus.danger);
+      }
+    }
+  }
+
+  Future<void> _resetDirectory() async {
+    await ref.read(logSettingsProvider.notifier).resetDirectory();
+    if (mounted) {
+      showDsToast(context: context, title: context.t.settings.logDirectoryUpdated);
+    }
+  }
+
+  Future<void> _openDirectory(String path) async {
+    final result = await OpenFile.open(path);
+    if (result.type != ResultType.done && mounted) {
+      showDsToast(context: context, title: context.t.settings.logOpenFailed, status: DsStatus.danger);
+    }
+  }
+
+  Future<void> _copyPath(String path) async {
+    await Clipboard.setData(ClipboardData(text: path));
+    if (mounted) {
+      showDsToast(context: context, title: context.t.settings.logPathCopied);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final settings = ref.watch(logSettingsProvider);
+    final controller = ref.read(logSettingsProvider.notifier);
+    // A cap imported from outside the stops still shows as chosen.
+    List<int> stops(List<int> base, int current) => ([...base, if (!base.contains(current)) current]..sort());
+    final fileMaxMb = (settings.fileMaxBytes / (1024 * 1024)).round();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        DsListSection(
+          header: Text(t.settings.logRecordGroup),
+          children: [
+            SettingsChoiceRow<LogLevel>(
+              leading: const DsIcon(DsIcons.gauge),
+              title: t.settings.logLevel,
+              description: t.settings.logLevelDesc,
+              value: settings.level,
+              options: [
+                for (final level in const [
+                  LogLevel.trace,
+                  LogLevel.debug,
+                  LogLevel.info,
+                  LogLevel.warning,
+                  LogLevel.error,
+                  LogLevel.fatal,
+                ])
+                  DsSelectOption(value: level, label: level.label),
+              ],
+              placeholder: t.settings.logLevel,
+              onChanged: (value) => unawaited(controller.setLevel(value)),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.hardDrive),
+              title: t.settings.logFile,
+              description: t.settings.logFileDesc,
+              control: DsSwitch(
+                value: settings.fileEnabled,
+                semanticLabel: t.settings.logFile,
+                onChanged: (value) => unawaited(controller.setFileEnabled(enabled: value)),
+              ),
+            ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.cardSd),
+              title: t.settings.logMemoryCapacity,
+              description: t.settings.logMemoryCapacityDesc,
+              value: settings.memoryCapacity,
+              options: [
+                for (final cap in stops(_kMemoryCaps, settings.memoryCapacity))
+                  DsSelectOption(value: cap, label: '$cap'),
+              ],
+              placeholder: t.settings.logMemoryCapacity,
+              onChanged: (value) => unawaited(controller.setMemoryCapacity(value)),
+            ),
+          ],
+        ),
+        DsListSection(
+          header: Text(t.settings.logRotationGroup),
+          children: [
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.ruler),
+              title: t.settings.logFileMaxBytes,
+              description: t.settings.logFileMaxBytesDesc,
+              value: fileMaxMb,
+              options: [for (final mb in stops(_kFileSizeMb, fileMaxMb)) DsSelectOption(value: mb, label: '$mb MB')],
+              placeholder: t.settings.logFileMaxBytes,
+              onChanged: (value) => unawaited(controller.setFileMaxBytes(value * 1024 * 1024)),
+            ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.layers),
+              title: t.settings.logFileMaxFiles,
+              description: t.settings.logFileMaxFilesDesc,
+              value: settings.fileMaxFiles,
+              options: [
+                for (final count in stops(_kFileCounts, settings.fileMaxFiles))
+                  DsSelectOption(value: count, label: '$count'),
+              ],
+              placeholder: t.settings.logFileMaxFiles,
+              onChanged: (value) => unawaited(controller.setFileMaxFiles(value)),
+            ),
+          ],
+        ),
+        DsListSection(
+          header: Text(t.settings.logDirectoryGroup),
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.folder),
+              title: Text(t.settings.logDirectory),
+              // The folder in force, with the default named underneath when
+              // the viewer picked their own.
+              description: Text(
+                settings.directoryCustom
+                    ? '${settings.directory}\n${t.settings.logDirectoryDefaultHint} ${settings.defaultDirectory}'
+                    : settings.directory,
+              ),
+              onPressed: settings.directory.isEmpty ? null : () => unawaited(_openDirectory(settings.directory)),
+              trailing: DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                semanticLabel: t.settings.logCopyPath,
+                onPressed: settings.directory.isEmpty ? null : () => unawaited(_copyPath(settings.directory)),
+                icon: const DsIcon(DsIcons.copy, size: 16),
+              ),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.folderOpen),
+              title: Text(t.settings.logDirectoryChange),
+              description: Text(t.settings.logDirectoryChangeDesc),
+              showChevron: true,
+              onPressed: () => unawaited(_pickDirectory()),
+            ),
+            if (settings.directoryCustom)
+              DsListRow(
+                leading: const DsIcon(DsIcons.rotateCcw),
+                title: Text(t.settings.logDirectoryReset),
+                description: Text(t.settings.logDirectoryResetDesc),
+                destructive: true,
+                onPressed: () => unawaited(_resetDirectory()),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -2455,9 +2699,9 @@ final class _QualityAudioPane extends ConsumerWidget {
   }
 }
 
-/// The picture page: how the video fills its area and what the screen does
-/// around it. The floating and compact windows the picture can leave behind
-/// are their own page, as is the portrait-stream layout.
+/// The picture page: how the video fills its area, how a portrait stream
+/// shares the room page, and what the screen does around it. The floating and
+/// compact windows the picture can leave behind are their own page.
 final class _PicturePane extends ConsumerWidget {
   const _PicturePane();
 
@@ -2465,7 +2709,7 @@ final class _PicturePane extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final settings = ref.watch(playbackSettingsProvider);
-    final portrait = ref.watch(portraitSettingsProvider);
+    final portraitLayout = ref.watch(portraitLayoutModeProvider);
     final controller = ref.read(playbackSettingsProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2485,6 +2729,22 @@ final class _PicturePane extends ConsumerWidget {
               ],
               placeholder: t.settings.fit,
               onChanged: (value) => unawaited(controller.setFit(value)),
+            ),
+            // A portrait stream's share of the room page: the engine reports
+            // the source's own ratio, so the layout is the only choice left.
+            // A select like the fit row above, so the two read as a column of
+            // the same control.
+            SettingsChoiceRow<PortraitLayoutMode>(
+              leading: const DsIcon(DsIcons.rectangleVertical),
+              title: t.settings.portraitLayoutMode,
+              description: t.settings.portraitLayoutModeDesc,
+              value: portraitLayout,
+              options: [
+                DsSelectOption(value: PortraitLayoutMode.balanced, label: t.settings.portraitLayoutBalanced),
+                DsSelectOption(value: PortraitLayoutMode.immersive, label: t.settings.portraitLayoutImmersive),
+                DsSelectOption(value: PortraitLayoutMode.compatibility, label: t.settings.portraitLayoutCompatibility),
+              ],
+              onChanged: (mode) => unawaited(ref.read(portraitLayoutModeProvider.notifier).set(mode)),
             ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.fullscreen),
@@ -2521,23 +2781,15 @@ final class _PicturePane extends ConsumerWidget {
             ),
           ],
         ),
-        DsListSection(
-          children: [
-            const SettingsChildEntry(child: SettingsSection.floatingWindow),
-            SettingsChildEntry(
-              child: SettingsSection.portrait,
-              detail: Text(
-                portrait.adaptation && portrait.adaptiveHeight
-                    ? _portraitLayoutLabel(t, portrait.layoutMode)
-                    : t.settings.portraitEntryOff,
-              ),
-            ),
-          ],
-        ),
+        const DsListSection(children: [SettingsChildEntry(child: SettingsSection.floatingWindow)]),
       ],
     );
   }
 }
+
+/// The measures the picture-in-picture size row offers, in pixels: the stored
+/// range's ends, the default and three steps between.
+const List<double> _kWindowsPipBaseSizes = [200, 280, 360, 480, 600, 720];
 
 /// The floating-window page: the in-app window the player leaves behind when
 /// a room scrolls away, and the system picture-in-picture it hands the
@@ -2567,15 +2819,15 @@ final class _FloatingWindowPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setFloatPlay(value: value)),
               ),
             ),
-            SettingsSegmentedRow<String>(
+            SettingsChoiceRow<String>(
               leading: const DsIcon(DsIcons.maximize),
               title: t.settings.floatWindowSize,
               description: t.settings.floatWindowSizeDesc,
               value: ref.watch(floatingWindowSettingsProvider).size,
               options: [
-                (value: 'small', label: t.settings.floatWindowSmall),
-                (value: 'medium', label: t.settings.floatWindowMedium),
-                (value: 'large', label: t.settings.floatWindowLarge),
+                DsSelectOption(value: 'small', label: t.settings.floatWindowSmall),
+                DsSelectOption(value: 'medium', label: t.settings.floatWindowMedium),
+                DsSelectOption(value: 'large', label: t.settings.floatWindowLarge),
               ],
               onChanged: (value) => unawaited(ref.read(floatingWindowSettingsProvider.notifier).setSize(value)),
             ),
@@ -2614,23 +2866,26 @@ final class _FloatingWindowPane extends ConsumerWidget {
                   onChanged: (value) => unawaited(controller.setRememberPipPosition(value: value)),
                 ),
               ),
-              SettingsConfigRow(
+              // The window's own measure as a short list instead of a slider:
+              // a size the list does not name keeps its own entry, so a value
+              // typed on the old slider never reads as empty.
+              SettingsChoiceRow<double>(
                 leading: const DsIcon(DsIcons.aspectRatio),
                 title: t.settings.windowsPipBaseSize,
                 description: t.settings.windowsPipBaseSizeDesc,
-                detail: Text('${settings.windowsPipBaseSize.round()} px'),
-                controlWidth: 220,
-                control: DsSlider(
-                  value: settings.windowsPipBaseSize,
-                  min: kWindowsPipBaseSizeMin,
-                  max: kWindowsPipBaseSizeMax,
-                  divisions: ((kWindowsPipBaseSizeMax - kWindowsPipBaseSizeMin) / 10).round(),
-                  onChanged: (value) {
-                    unawaited(controller.setWindowsPipBaseSize(value));
-                    _syncWindowsPipConfig(ref);
-                  },
-                  semanticLabel: t.settings.windowsPipBaseSize,
-                ),
+                value: settings.windowsPipBaseSize,
+                options: [
+                  for (final size in _kWindowsPipBaseSizes) DsSelectOption(value: size, label: '${size.round()} px'),
+                  if (!_kWindowsPipBaseSizes.contains(settings.windowsPipBaseSize))
+                    DsSelectOption(
+                      value: settings.windowsPipBaseSize,
+                      label: '${settings.windowsPipBaseSize.round()} px',
+                    ),
+                ],
+                onChanged: (value) {
+                  unawaited(controller.setWindowsPipBaseSize(value));
+                  _syncWindowsPipConfig(ref);
+                },
               ),
               SettingsConfigRow(
                 leading: const DsIcon(DsIcons.arrowLeftRight),
@@ -2694,236 +2949,6 @@ final class _FloatingWindowPane extends ConsumerWidget {
     );
   }
 }
-
-/// The portrait-stream page (the reference's portrait live settings): the
-/// room page's portrait detection, adaptive height and layout mode. The
-/// room page reads the same preferences when it lays a narrow room out, so
-/// every change lands on the next build.
-final class _PortraitPane extends ConsumerWidget {
-  const _PortraitPane();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final settings = ref.watch(portraitSettingsProvider);
-    final controller = ref.read(portraitSettingsProvider.notifier);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s16,
-      children: [
-        _portraitDetectionSection(context, t, settings, controller),
-        DsListSection(
-          header: Text(t.settings.portraitPresentationGroup),
-          children: [
-            SettingsChoiceRow<PortraitFullscreenPolicy>(
-              leading: const DsIcon(DsIcons.fullscreen),
-              title: t.settings.portraitFullscreenPolicy,
-              description: t.settings.portraitFullscreenPolicyDesc,
-              value: settings.fullscreenPolicy,
-              options: [
-                DsSelectOption(
-                  value: PortraitFullscreenPolicy.followSource,
-                  label: t.settings.portraitFullscreenFollowSource,
-                ),
-                DsSelectOption(
-                  value: PortraitFullscreenPolicy.followSystem,
-                  label: t.settings.portraitFullscreenFollowSystem,
-                ),
-                DsSelectOption(
-                  value: PortraitFullscreenPolicy.landscape,
-                  label: t.settings.portraitFullscreenLandscape,
-                ),
-              ],
-              onChanged: (policy) => unawaited(controller.setFullscreenPolicy(policy)),
-            ),
-          ],
-        ),
-        _PortraitFullscreenSection(state: ref.watch(portraitFullscreenProvider)),
-        DsListSection(
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.rotateCcw),
-              title: Text(t.settings.portraitReset),
-              description: Text(t.settings.portraitResetDesc),
-              destructive: true,
-              onPressed: () => unawaited(_resetPortraitSettings(context, ref)),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-/// Restores the portrait page (the reference's `portrait_reset_settings`,
-/// confirmed first). Only the preferences this build stores are reset; the
-/// remembered room orientations the reference also clears do not exist here.
-Future<void> _resetPortraitSettings(BuildContext context, WidgetRef ref) async {
-  final t = context.t;
-  final confirmed = await showDsConfirm(
-    context: context,
-    title: t.settings.portraitReset,
-    description: t.settings.portraitResetConfirm,
-    confirmLabel: t.settings.styleReset,
-    cancelLabel: t.common.cancel,
-    destructive: true,
-    icon: const DsIcon(DsIcons.rotateCcw),
-  );
-  if (!confirmed) return;
-  await ref.read(portraitSettingsProvider.notifier).resetToDefaults();
-  await ref.read(portraitFullscreenProvider.notifier).resetToDefaults();
-  // The rooms' remembered framings belong to the same surface: reset drops
-  // their overrides too (the store write reaches the other windows through
-  // the refresh list).
-  await ref.read(roomOrientationChoicesProvider.notifier).reset();
-  if (context.mounted) {
-    showDsToast(context: context, title: t.settings.mpvResetDone);
-  }
-}
-
-/// The portrait full-screen group: picture mode, danmaku area, per-room
-/// remembering, diagnostics and the clear action for saved room choices.
-final class _PortraitFullscreenSection extends ConsumerWidget {
-  const _PortraitFullscreenSection({required this.state});
-
-  final PortraitFullscreenState state;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final controller = ref.read(portraitFullscreenProvider.notifier);
-    final formFactor = ref.watch(platformRuntimeProvider).environment.runtime.formFactor;
-    final mobile = formFactor == FormFactor.phone || formFactor == FormFactor.tablet;
-    return DsListSection(
-      header: Text(t.settings.portraitFullscreenGroup),
-      children: [
-        SettingsChoiceRow<PortraitFullscreenMode>(
-          leading: const DsIcon(DsIcons.rectangleVertical),
-          title: t.settings.portraitDisplayMode,
-          description: t.settings.portraitDisplayModeDesc,
-          value: state.display,
-          options: [
-            DsSelectOption(value: PortraitFullscreenMode.complete, label: t.room.portraitDisplayComplete),
-            DsSelectOption(value: PortraitFullscreenMode.ambient, label: t.room.portraitDisplayAmbient),
-            DsSelectOption(value: PortraitFullscreenMode.balanced, label: t.room.portraitDisplayBalanced),
-            DsSelectOption(value: PortraitFullscreenMode.cover, label: t.room.portraitDisplayCover),
-          ],
-          onChanged: (value) => unawaited(controller.remember('', (display: value, danmaku: state.danmaku))),
-        ),
-        SettingsChoiceRow<PortraitDanmakuMode>(
-          leading: const DsIcon(DsIcons.captions),
-          title: t.settings.portraitDanmakuMode,
-          description: t.settings.portraitDanmakuModeDesc,
-          value: state.danmaku,
-          options: [
-            DsSelectOption(value: PortraitDanmakuMode.followGlobal, label: t.room.portraitDanmakuFollow),
-            DsSelectOption(value: PortraitDanmakuMode.upperQuarter, label: t.room.portraitDanmakuUpper),
-            DsSelectOption(value: PortraitDanmakuMode.reduced, label: t.room.portraitDanmakuReduced),
-            DsSelectOption(value: PortraitDanmakuMode.hidden, label: t.room.portraitDanmakuHidden),
-          ],
-          onChanged: (value) => unawaited(controller.remember('', (display: state.display, danmaku: value))),
-        ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.bookmarkPlus),
-          title: t.settings.portraitRememberRoom,
-          description: t.settings.portraitRememberRoomDesc,
-          control: DsSwitch(
-            value: state.rememberRoom,
-            onChanged: (value) => unawaited(controller.setRemember(value: value)),
-          ),
-        ),
-        if (mobile)
-          SettingsConfigRow(
-            leading: const DsIcon(DsIcons.arrowUpDown),
-            title: t.settings.portraitSwipeSwitch,
-            description: t.settings.portraitSwipeSwitchDesc,
-            control: DsSwitch(
-              value: ref.watch(portraitSwipeSwitchProvider),
-              onChanged: (value) => unawaited(ref.read(portraitSwipeSwitchProvider.notifier).set(value: value)),
-            ),
-          ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.activity),
-          title: t.settings.portraitDiagnostics,
-          description: t.settings.portraitDiagnosticsDesc,
-          control: DsSwitch(
-            value: state.diagnostics,
-            onChanged: (value) => unawaited(controller.setDiagnostics(value: value)),
-          ),
-        ),
-        if (state.overrides.isNotEmpty)
-          DsListRow(
-            leading: const DsIcon(DsIcons.trash2),
-            title: Text(t.settings.portraitClearOverrides),
-            description: Text(
-              '${t.settings.portraitClearOverridesDesc}\n'
-              '${t.settings.portraitOverridesCount(count: state.overrides.length)}',
-            ),
-            destructive: true,
-            onPressed: () async {
-              await controller.clearOverrides();
-              if (!context.mounted) return;
-              showDsToast(context: context, title: t.settings.portraitOverridesCleared);
-            },
-          ),
-      ],
-    );
-  }
-}
-
-/// The detection group: the switch, the adaptive height and the layout mode
-/// under it (the reference's `portrait_detection_group`).
-Widget _portraitDetectionSection(
-  BuildContext context,
-  Translations t,
-  PortraitSettings settings,
-  PortraitSettingsController controller,
-) => DsListSection(
-  header: Text(t.settings.portraitDetectionGroup),
-  children: [
-    SettingsConfigRow(
-      leading: const DsIcon(DsIcons.rectangleVertical),
-      title: t.settings.portraitSmartDetection,
-      description: t.settings.portraitSmartDetectionDesc,
-      control: DsSwitch(
-        value: settings.adaptation,
-        onChanged: (value) => unawaited(controller.setAdaptation(value: value)),
-      ),
-    ),
-    if (settings.adaptation) ...[
-      SettingsConfigRow(
-        leading: const DsIcon(DsIcons.moveVertical),
-        title: t.settings.portraitAdaptiveHeight,
-        description: t.settings.portraitAdaptiveHeightDesc,
-        control: DsSwitch(
-          value: settings.adaptiveHeight,
-          onChanged: (value) => unawaited(controller.setAdaptiveHeight(value: value)),
-        ),
-      ),
-      if (settings.adaptiveHeight)
-        SettingsSegmentedRow<PortraitLayoutMode>(
-          leading: const DsIcon(DsIcons.layoutGrid),
-          title: t.settings.portraitLayoutMode,
-          description: t.settings.portraitLayoutModeDesc,
-          value: settings.layoutMode,
-          options: [
-            (value: PortraitLayoutMode.balanced, label: t.settings.portraitLayoutBalanced),
-            (value: PortraitLayoutMode.immersive, label: t.settings.portraitLayoutImmersive),
-            (value: PortraitLayoutMode.compatibility, label: t.settings.portraitLayoutCompatibility),
-          ],
-          onChanged: (mode) => unawaited(controller.setLayoutMode(mode)),
-        ),
-    ],
-  ],
-);
-
-/// One of the portrait layout modes as the settings row and the entry show
-/// it.
-String _portraitLayoutLabel(Translations t, PortraitLayoutMode mode) => switch (mode) {
-  PortraitLayoutMode.balanced => t.settings.portraitLayoutBalanced,
-  PortraitLayoutMode.immersive => t.settings.portraitLayoutImmersive,
-  PortraitLayoutMode.compatibility => t.settings.portraitLayoutCompatibility,
-};
 
 /// The player-kernel pane (the reference's player kernel): the engine in use and
 /// its hardware-decoding choice, applied to each attached engine through

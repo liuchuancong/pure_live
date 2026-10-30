@@ -116,8 +116,6 @@ final class PlayerSurface extends ConsumerStatefulWidget {
     this.keepControls = false,
     this.autofocusFirstControl = false,
     this.portraitFullscreen = false,
-    this.portraitDisplay = PortraitFullscreenMode.ambient,
-    this.portraitDanmaku = PortraitDanmakuMode.followGlobal,
     this.canEnterPortraitFullscreen = false,
     this.onPortraitFullscreen,
     this.onPortraitSwipe,
@@ -153,12 +151,6 @@ final class PlayerSurface extends ConsumerStatefulWidget {
 
   /// Whether the room is in its portrait full-screen presentation.
   final bool portraitFullscreen;
-
-  /// How the portrait picture fills that surface.
-  final PortraitFullscreenMode portraitDisplay;
-
-  /// Where the flying layer sits in that surface.
-  final PortraitDanmakuMode portraitDanmaku;
 
   /// Whether a portrait stream offers the entry button.
   final bool canEnterPortraitFullscreen;
@@ -448,14 +440,6 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     compact: compact,
   );
 
-  BoxFit _portraitFit() => switch (widget.portraitDisplay) {
-    PortraitFullscreenMode.complete || PortraitFullscreenMode.ambient => BoxFit.contain,
-    PortraitFullscreenMode.balanced || PortraitFullscreenMode.cover => BoxFit.cover,
-  };
-
-  Alignment _portraitAlignment() =>
-      widget.portraitDisplay == PortraitFullscreenMode.balanced ? Alignment.topCenter : Alignment.center;
-
   @override
   Widget build(BuildContext context) {
     final room = widget.roomState;
@@ -472,16 +456,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     // app lays out (the desktop one). A phone's system window leaves the page
     // — and this surface — exactly as it was.
     final mini = presentation == PresentationMode.pip && ref.read(roomPresentationProvider.notifier).pipOwnsWindow;
-    final portraitHidden = widget.portraitFullscreen && widget.portraitDanmaku == PortraitDanmakuMode.hidden;
-    final showDanmaku = playback.danmakuVisible && (!mini || playback.miniDanmakuVisible) && !portraitHidden;
-    final danmakuArea = widget.portraitFullscreen
-        ? switch (widget.portraitDanmaku) {
-            PortraitDanmakuMode.upperQuarter => 0.25,
-            PortraitDanmakuMode.reduced => style.area * 0.5,
-            PortraitDanmakuMode.hidden => 0.0,
-            PortraitDanmakuMode.followGlobal => style.area,
-          }
-        : style.area;
+    final showDanmaku = playback.danmakuVisible && (!mini || playback.miniDanmakuVisible);
     final longPressInteraction = showDanmaku && ref.watch(danmakuLongPressInteractionProvider);
     final playing = room.playback.playing;
     // A paused or failed stream keeps the bar up; a playing one lets it go.
@@ -518,23 +493,8 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
               const ColoredBox(color: kPlayerStageColor, child: SizedBox.expand())
             else if (room.audioOnly && room.room != null)
               AudioOnlyCover(room: room.room!)
-            else if (widget.portraitFullscreen && widget.portraitDisplay == PortraitFullscreenMode.ambient)
-              DecoratedBox(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xFF17191E), kPlayerStageColor],
-                  ),
-                ),
-                child: MediaPlayerView(handle: handle, fit: _portraitFit(), alignment: _portraitAlignment()),
-              )
             else
-              MediaPlayerView(
-                handle: handle,
-                fit: widget.portraitFullscreen ? _portraitFit() : playback.fit.boxFit,
-                alignment: widget.portraitFullscreen ? _portraitAlignment() : Alignment.center,
-              ),
+              MediaPlayerView(handle: handle, fit: playback.fit.boxFit),
             if (widget.barrage case final barrage? when showDanmaku)
               Positioned.fill(
                 child: IgnorePointer(
@@ -549,7 +509,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                               style,
                               danmakuFps,
                               family: danmakuFamily,
-                              area: danmakuArea,
+                              area: style.area,
                               compact: CompactDanmakuMetrics.resolve(
                                 width: constraints.maxWidth,
                                 auto: pipScale.auto,
@@ -563,7 +523,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                           ),
                         )
                       : FlameBarrageWidget(
-                          config: _barrageConfig(style, danmakuFps, family: danmakuFamily, area: danmakuArea),
+                          config: _barrageConfig(style, danmakuFps, family: danmakuFamily, area: style.area),
                           emojiAtlas: EmojiAtlas.instance,
                           controller: barrage,
                         ),

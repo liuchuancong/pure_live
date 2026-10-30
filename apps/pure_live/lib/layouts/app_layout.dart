@@ -35,6 +35,7 @@ const List<NavigationItem> _kBranchOrder = [
   NavigationItem.multiview,
   NavigationItem.record,
   NavigationItem.toolbox,
+  NavigationItem.logs,
   NavigationItem.settings,
 ];
 
@@ -280,7 +281,17 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
         case final NavigationItem item:
           handleSelected(item);
         case final String category:
-          openSettingsCategory(ref, category);
+          // A category carrying one page opens it instead of listing it.
+          SettingsGroup? group;
+          for (final candidate in navigation.settingsGroups) {
+            if (candidate.labelKey == category) group = candidate;
+          }
+          final sole = group == null ? null : settingsSolePageOf(group);
+          if (sole == null) {
+            openSettingsCategory(ref, category);
+          } else {
+            openSettingsSection(ref, sole);
+          }
       }
     }
 

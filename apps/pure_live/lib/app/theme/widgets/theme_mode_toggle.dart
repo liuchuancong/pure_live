@@ -9,10 +9,12 @@ import 'package:pure_live/app/theme/widgets/theme_mode_dialog.dart' show showThe
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart';
 
-/// The theme switch every title bar carries: the sun while the app is dark,
-/// the moon while it is light. Desktop opens a dropdown menu under it;
-/// touch opens the three-way choice in a dialog. The appearance pane's row
-/// follows the same rule through its own select.
+/// The theme switch every title bar carries: its glyph names the mode in
+/// effect — the monitor while following the system, the sun while light, the
+/// moon while dark — the same glyphs the dropdown's own rows show. Desktop
+/// opens a dropdown menu under it; touch opens the three-way choice in a
+/// dialog. The appearance pane's row follows the same rule through its own
+/// select.
 ///
 /// The choice goes through [AppThemeScope], the root persists it like the
 /// pane's own write.
@@ -36,15 +38,16 @@ final class ThemeModeToggle extends ConsumerWidget {
     // scope to write, no switch to offer.
     if (scope == null) return const SizedBox.shrink();
     final settings = scope.settings;
-    final platformDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
-    final dark = switch (settings.mode) {
-      DsThemeMode.light => false,
-      DsThemeMode.dark => true,
-      DsThemeMode.system => platformDark,
-    };
     final t = context.t;
+    // One glyph per mode, worn by the button and by the menu's rows alike: the
+    // title bar reads as the mode in effect, not as the mode a tap would pick.
+    DsIconData glyphOf(DsThemeMode mode) => switch (mode) {
+      DsThemeMode.system => DsIcons.monitor,
+      DsThemeMode.light => DsIcons.sun,
+      DsThemeMode.dark => DsIcons.moon,
+    };
     Widget button(VoidCallback onPressed) => ChromeIconButton(
-      icon: dark ? DsIcons.sun : DsIcons.moon,
+      icon: glyphOf(settings.mode),
       semanticLabel: t.settings.themeMode,
       tooltip: t.settings.themeMode,
       tooltipSide: tooltipSide,
@@ -62,11 +65,7 @@ final class ThemeModeToggle extends ConsumerWidget {
         for (final mode in DsThemeMode.values)
           DsMenuItem(
             label: Text(themeModeLabel(t, mode)),
-            leading: DsIcon(switch (mode) {
-              DsThemeMode.system => DsIcons.monitor,
-              DsThemeMode.light => DsIcons.sun,
-              DsThemeMode.dark => DsIcons.moon,
-            }),
+            leading: DsIcon(glyphOf(mode)),
             trailing: settings.mode == mode ? const DsIcon(DsIcons.check, size: 16) : null,
             onPressed: () {
               if (mode != settings.mode) scope.onChanged(settings.rebuild((b) => b..mode = mode));

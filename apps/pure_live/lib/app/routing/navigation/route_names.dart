@@ -29,6 +29,9 @@ abstract final class RouteNames {
   /// The toolbox branch.
   static const String toolbox = '/toolbox';
 
+  /// The log console branch.
+  static const String logs = '/logs';
+
   /// The playlist branch.
   static const String playlist = '/playlist';
 

@@ -12,15 +12,18 @@ class _$WallpaperCategory extends WallpaperCategory {
   @override
   final String query;
 
-  factory _$WallpaperCategory([void Function(WallpaperCategoryBuilder)? updates]) =>
-      (WallpaperCategoryBuilder()..update(updates))._build();
+  factory _$WallpaperCategory([
+    void Function(WallpaperCategoryBuilder)? updates,
+  ]) => (WallpaperCategoryBuilder()..update(updates))._build();
 
   _$WallpaperCategory._({required this.id, required this.query}) : super._();
   @override
-  WallpaperCategory rebuild(void Function(WallpaperCategoryBuilder) updates) => (toBuilder()..update(updates)).build();
+  WallpaperCategory rebuild(void Function(WallpaperCategoryBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
-  WallpaperCategoryBuilder toBuilder() => WallpaperCategoryBuilder()..replace(this);
+  WallpaperCategoryBuilder toBuilder() =>
+      WallpaperCategoryBuilder()..replace(this);
 
   @override
   bool operator ==(Object other) {
@@ -46,7 +49,8 @@ class _$WallpaperCategory extends WallpaperCategory {
   }
 }
 
-class WallpaperCategoryBuilder implements Builder<WallpaperCategory, WallpaperCategoryBuilder> {
+class WallpaperCategoryBuilder
+    implements Builder<WallpaperCategory, WallpaperCategoryBuilder> {
   _$WallpaperCategory? _$v;
 
   WallpaperCategoryId? _id;
@@ -86,8 +90,16 @@ class WallpaperCategoryBuilder implements Builder<WallpaperCategory, WallpaperCa
     final _$result =
         _$v ??
         _$WallpaperCategory._(
-          id: BuiltValueNullFieldError.checkNotNull(id, r'WallpaperCategory', 'id'),
-          query: BuiltValueNullFieldError.checkNotNull(query, r'WallpaperCategory', 'query'),
+          id: BuiltValueNullFieldError.checkNotNull(
+            id,
+            r'WallpaperCategory',
+            'id',
+          ),
+          query: BuiltValueNullFieldError.checkNotNull(
+            query,
+            r'WallpaperCategory',
+            'query',
+          ),
         );
     replace(_$result);
     return _$result;
@@ -105,9 +117,14 @@ class _$WallpaperSource extends WallpaperSource {
   factory _$WallpaperSource([void Function(WallpaperSourceBuilder)? updates]) =>
       (WallpaperSourceBuilder()..update(updates))._build();
 
-  _$WallpaperSource._({required this.id, required this.pageSize, required this.categories}) : super._();
+  _$WallpaperSource._({
+    required this.id,
+    required this.pageSize,
+    required this.categories,
+  }) : super._();
   @override
-  WallpaperSource rebuild(void Function(WallpaperSourceBuilder) updates) => (toBuilder()..update(updates)).build();
+  WallpaperSource rebuild(void Function(WallpaperSourceBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   WallpaperSourceBuilder toBuilder() => WallpaperSourceBuilder()..replace(this);
@@ -115,7 +132,10 @@ class _$WallpaperSource extends WallpaperSource {
   @override
   bool operator ==(Object other) {
     if (identical(other, this)) return true;
-    return other is WallpaperSource && id == other.id && pageSize == other.pageSize && categories == other.categories;
+    return other is WallpaperSource &&
+        id == other.id &&
+        pageSize == other.pageSize &&
+        categories == other.categories;
   }
 
   @override
@@ -138,7 +158,8 @@ class _$WallpaperSource extends WallpaperSource {
   }
 }
 
-class WallpaperSourceBuilder implements Builder<WallpaperSource, WallpaperSourceBuilder> {
+class WallpaperSourceBuilder
+    implements Builder<WallpaperSource, WallpaperSourceBuilder> {
   _$WallpaperSource? _$v;
 
   WallpaperSourceId? _id;
@@ -150,8 +171,10 @@ class WallpaperSourceBuilder implements Builder<WallpaperSource, WallpaperSource
   set pageSize(int? pageSize) => _$this._pageSize = pageSize;
 
   ListBuilder<WallpaperCategory>? _categories;
-  ListBuilder<WallpaperCategory> get categories => _$this._categories ??= ListBuilder<WallpaperCategory>();
-  set categories(ListBuilder<WallpaperCategory>? categories) => _$this._categories = categories;
+  ListBuilder<WallpaperCategory> get categories =>
+      _$this._categories ??= ListBuilder<WallpaperCategory>();
+  set categories(ListBuilder<WallpaperCategory>? categories) =>
+      _$this._categories = categories;
 
   WallpaperSourceBuilder();
 
@@ -185,8 +208,16 @@ class WallpaperSourceBuilder implements Builder<WallpaperSource, WallpaperSource
       _$result =
           _$v ??
           _$WallpaperSource._(
-            id: BuiltValueNullFieldError.checkNotNull(id, r'WallpaperSource', 'id'),
-            pageSize: BuiltValueNullFieldError.checkNotNull(pageSize, r'WallpaperSource', 'pageSize'),
+            id: BuiltValueNullFieldError.checkNotNull(
+              id,
+              r'WallpaperSource',
+              'id',
+            ),
+            pageSize: BuiltValueNullFieldError.checkNotNull(
+              pageSize,
+              r'WallpaperSource',
+              'pageSize',
+            ),
             categories: categories.build(),
           );
     } catch (_) {
@@ -195,7 +226,11 @@ class WallpaperSourceBuilder implements Builder<WallpaperSource, WallpaperSource
         _$failedField = 'categories';
         categories.build();
       } catch (e) {
-        throw BuiltValueNestedFieldError(r'WallpaperSource', _$failedField, e.toString());
+        throw BuiltValueNestedFieldError(
+          r'WallpaperSource',
+          _$failedField,
+          e.toString(),
+        );
       }
       rethrow;
     }
@@ -219,10 +254,16 @@ class _$WallpaperItem extends WallpaperItem {
   factory _$WallpaperItem([void Function(WallpaperItemBuilder)? updates]) =>
       (WallpaperItemBuilder()..update(updates))._build();
 
-  _$WallpaperItem._({required this.id, required this.name, required this.url, required this.thumb, required this.video})
-    : super._();
+  _$WallpaperItem._({
+    required this.id,
+    required this.name,
+    required this.url,
+    required this.thumb,
+    required this.video,
+  }) : super._();
   @override
-  WallpaperItem rebuild(void Function(WallpaperItemBuilder) updates) => (toBuilder()..update(updates)).build();
+  WallpaperItem rebuild(void Function(WallpaperItemBuilder) updates) =>
+      (toBuilder()..update(updates)).build();
 
   @override
   WallpaperItemBuilder toBuilder() => WallpaperItemBuilder()..replace(this);
@@ -262,7 +303,8 @@ class _$WallpaperItem extends WallpaperItem {
   }
 }
 
-class WallpaperItemBuilder implements Builder<WallpaperItem, WallpaperItemBuilder> {
+class WallpaperItemBuilder
+    implements Builder<WallpaperItem, WallpaperItemBuilder> {
   _$WallpaperItem? _$v;
 
   String? _id;
@@ -318,10 +360,26 @@ class WallpaperItemBuilder implements Builder<WallpaperItem, WallpaperItemBuilde
         _$v ??
         _$WallpaperItem._(
           id: BuiltValueNullFieldError.checkNotNull(id, r'WallpaperItem', 'id'),
-          name: BuiltValueNullFieldError.checkNotNull(name, r'WallpaperItem', 'name'),
-          url: BuiltValueNullFieldError.checkNotNull(url, r'WallpaperItem', 'url'),
-          thumb: BuiltValueNullFieldError.checkNotNull(thumb, r'WallpaperItem', 'thumb'),
-          video: BuiltValueNullFieldError.checkNotNull(video, r'WallpaperItem', 'video'),
+          name: BuiltValueNullFieldError.checkNotNull(
+            name,
+            r'WallpaperItem',
+            'name',
+          ),
+          url: BuiltValueNullFieldError.checkNotNull(
+            url,
+            r'WallpaperItem',
+            'url',
+          ),
+          thumb: BuiltValueNullFieldError.checkNotNull(
+            thumb,
+            r'WallpaperItem',
+            'thumb',
+          ),
+          video: BuiltValueNullFieldError.checkNotNull(
+            video,
+            r'WallpaperItem',
+            'video',
+          ),
         );
     replace(_$result);
     return _$result;

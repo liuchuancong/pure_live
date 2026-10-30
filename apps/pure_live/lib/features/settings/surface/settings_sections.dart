@@ -50,7 +50,6 @@ enum SettingsSection {
   quality(DsIcons.gauge),
   picture(DsIcons.rectangleHorizontal),
   floatingWindow(DsIcons.pictureInPicture2),
-  portrait(DsIcons.rectangleVertical),
   audience(DsIcons.eye),
   kernel(DsIcons.cpu),
   kernelAdvanced(DsIcons.slidersHorizontal),
@@ -61,9 +60,9 @@ enum SettingsSection {
   network(DsIcons.globe),
   nodes(DsIcons.activity),
   dataCache(DsIcons.database),
+  logs(DsIcons.terminal),
   backup(DsIcons.databaseBackup),
   webdavSync(DsIcons.cloudUpload),
-  logs(DsIcons.terminal),
   // 关于 / module groups.
   about(DsIcons.info),
   iptv(DsIcons.antenna),
@@ -133,7 +132,6 @@ enum SettingsSection {
     SettingsSection.quality => t.settings.qualityAudioTitle,
     SettingsSection.picture => t.settings.navPicture,
     SettingsSection.floatingWindow => t.settings.navFloatingWindow,
-    SettingsSection.portrait => t.settings.navPortrait,
     SettingsSection.audience => t.settings.navAudience,
     SettingsSection.kernel => t.settings.navKernel,
     SettingsSection.kernelAdvanced => t.settings.kernelAdvancedTitle,
@@ -143,9 +141,9 @@ enum SettingsSection {
     SettingsSection.network => t.settings.navProxy,
     SettingsSection.nodes => t.toolbox.toolNetworkTitle,
     SettingsSection.dataCache => t.settings.navDataCache,
+    SettingsSection.logs => t.settings.navLogs,
     SettingsSection.backup => t.settings.navBackup,
     SettingsSection.webdavSync => t.settings.webdavSyncTitle,
-    SettingsSection.logs => t.toolbox.toolLogsTitle,
     SettingsSection.about => t.settings.navAbout,
     SettingsSection.iptv => t.settings.navIptv,
     SettingsSection.iptvBrowse => t.settings.navIptvBrowse,
@@ -206,7 +204,6 @@ enum SettingsSection {
     SettingsSection.quality => t.settings.qualityAudioDescription,
     SettingsSection.picture => t.settings.picturePageDescription,
     SettingsSection.floatingWindow => t.settings.floatingWindowPageDescription,
-    SettingsSection.portrait => t.settings.portraitPageDescription,
     SettingsSection.audience => t.settings.audiencePageDescription,
     SettingsSection.kernel => t.settings.kernelDescription,
     SettingsSection.kernelAdvanced => t.settings.kernelAdvancedDescription,
@@ -216,9 +213,9 @@ enum SettingsSection {
     SettingsSection.network => t.settings.proxyDescription,
     SettingsSection.nodes => t.toolbox.toolNetworkDescription,
     SettingsSection.dataCache => t.settings.dataCacheDescription,
+    SettingsSection.logs => t.settings.logPageDescription,
     SettingsSection.backup => t.settings.backupDescription,
     SettingsSection.webdavSync => t.settings.webdavSyncDescription,
-    SettingsSection.logs => t.toolbox.toolLogsDescription,
     SettingsSection.about => t.settings.aboutDescription,
     SettingsSection.iptv => t.settings.iptvDescription,
     SettingsSection.iptvBrowse => t.settings.iptvBrowseDescription,
@@ -268,13 +265,13 @@ enum SettingsSection {
     SettingsSection.navHomeMenu || SettingsSection.navToolOrder => SettingsSection.nav,
     SettingsSection.followTags => SettingsSection.refresh,
     SettingsSection.shield || SettingsSection.danmakuDisplay => SettingsSection.danmaku,
-    SettingsSection.portrait || SettingsSection.floatingWindow => SettingsSection.picture,
+    SettingsSection.floatingWindow => SettingsSection.picture,
     SettingsSection.audience => SettingsSection.sites,
     SettingsSection.kernelAdvanced => SettingsSection.kernel,
     SettingsSection.playerGuide => SettingsSection.kernelAdvanced,
     SettingsSection.iptvBrowse || SettingsSection.iptvGroups => SettingsSection.iptv,
     SettingsSection.vodPlayback || SettingsSection.vodInterface => SettingsSection.vod,
-    SettingsSection.nodes => SettingsSection.network,
+    SettingsSection.nodes => SettingsSection.sites,
     SettingsSection.webdavSync => SettingsSection.backup,
     _ => null,
   };
@@ -335,15 +332,19 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
     SettingsSection.backgroundDevice,
     SettingsSection.backgroundDownloads,
   ],
-  SettingsSection.sites => const [SettingsSection.sitesDisplay, SettingsSection.audience, SettingsSection.accounts],
+  SettingsSection.sites => const [
+    SettingsSection.sitesDisplay,
+    SettingsSection.audience,
+    SettingsSection.accounts,
+    SettingsSection.nodes,
+  ],
   SettingsSection.nav => const [SettingsSection.navHomeMenu, SettingsSection.navToolOrder],
   SettingsSection.refresh => const [SettingsSection.followTags],
   SettingsSection.danmaku => const [SettingsSection.danmakuDisplay, SettingsSection.shield],
-  SettingsSection.picture => const [SettingsSection.floatingWindow, SettingsSection.portrait],
+  SettingsSection.picture => const [SettingsSection.floatingWindow],
   SettingsSection.kernel => const [SettingsSection.kernelAdvanced],
   SettingsSection.iptv => const [SettingsSection.iptvBrowse, SettingsSection.iptvGroups],
   SettingsSection.vod => const [SettingsSection.vodPlayback, SettingsSection.vodInterface],
-  SettingsSection.network => const [SettingsSection.nodes],
   SettingsSection.backup => const [SettingsSection.webdavSync],
   _ => const [],
 };
@@ -365,6 +366,11 @@ List<SettingsSection> settingsSearchSections(Iterable<SettingsGroup> groups) {
   }
   return sections;
 }
+
+/// The page a category opens straight away when it carries exactly one: a
+/// chooser with a single row is a step with nothing to choose. About and the
+/// module-owned categories are all single-page groups.
+SettingsSection? settingsSolePageOf(SettingsGroup group) => group.sections.length == 1 ? group.sections.single : null;
 
 /// A group label's words. The five app-wide groups reuse the category
 /// names the old overview pages carried.

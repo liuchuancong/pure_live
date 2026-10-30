@@ -964,11 +964,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     // which way it turns; the driver's exit path puts the lock back.
     ref.listen(roomPresentationProvider, (previous, next) {
       if (next != PresentationMode.fullscreen || previous == PresentationMode.fullscreen) return;
-      applyFullscreenOrientation(
-        _screenOrientation,
-        policy: ref.read(portraitSettingsProvider).fullscreenPolicy,
-        aspectRatio: _aspectRatio,
-      );
+      applyFullscreenOrientation(_screenOrientation, aspectRatio: _aspectRatio);
     });
     final presentation = ref.watch(roomPresentationProvider);
     final t = context.t;

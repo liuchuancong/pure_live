@@ -34,9 +34,13 @@ enum NavigationItem {
   /// The search branch.
   search(DsIcons.search),
 
-  /// The link-parser branch. The network probe, image-cache clear and log
-  /// viewer that used to share this entry are settings utilities now.
+  /// The link-parser branch. The network probe and image-cache clear that
+  /// used to share this entry are settings utilities now.
   toolbox(DsIcons.wrench),
+
+  /// The log console branch: the running app's records, the level, the file
+  /// and the export.
+  logs(DsIcons.terminal),
 
   /// The recording branch.
   record(DsIcons.disc3),
@@ -144,6 +148,7 @@ enum NavigationItem {
     NavigationItem.zones => t.navigation.zones,
     NavigationItem.search => t.navigation.search,
     NavigationItem.toolbox => t.navigation.toolbox,
+    NavigationItem.logs => t.toolbox.toolLogsTitle,
     NavigationItem.record => t.navigation.record,
     NavigationItem.settings => t.navigation.settings,
     NavigationItem.appearance => t.navigation.appearance,

@@ -679,11 +679,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     // path puts the lock back.
     ref.listen(roomPresentationProvider, (previous, next) {
       if (next != PresentationMode.fullscreen || previous == PresentationMode.fullscreen) return;
-      applyFullscreenOrientation(
-        _screenOrientation,
-        policy: ref.read(portraitSettingsProvider).fullscreenPolicy,
-        aspectRatio: _aspectRatio,
-      );
+      applyFullscreenOrientation(_screenOrientation, aspectRatio: _aspectRatio);
     });
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);

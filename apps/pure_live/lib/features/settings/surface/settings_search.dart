@@ -151,7 +151,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.network, s.githubMirrorMode, 'download route mirror direct custom domain 下载方式 直连 镜像 自定义'),
     _hit(SettingsSection.network, s.githubMirrorList, 'mirror list remote refresh add delete 镜像 列表 远程 更新 添加 删除'),
     _hit(SettingsSection.nodes, t.toolbox.toolNetworkTitle, 'platform node probe latency 平台 节点 测速 延迟 网络'),
-    _hit(SettingsSection.logs, t.toolbox.toolLogsTitle, 'logs diagnostics level 日志 诊断'),
     // Video.
     _hit(SettingsSection.quality, s.preferredQuality, 'quality resolution 画质 清晰度 分辨率'),
     _hit(SettingsSection.quality, s.preferredQualityCellular, 'cellular mobile data quality 蜂窝 移动网络 流量 画质 清晰度'),
@@ -186,33 +185,10 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.picture, s.fullscreenDefault, 'auto fullscreen enter live room play 自动 全屏 进入 直播 播放'),
     _hit(SettingsSection.picture, s.controlsAutoHide, 'controls auto hide timeout toolbar overlay 控制条 自动 隐藏 超时 秒'),
     _hit(
-      SettingsSection.portrait,
-      s.navPortrait,
-      'portrait live adaptation vertical source detect orientation 竖屏 直播 适配 识别 方向',
-    ),
-    _hit(
-      SettingsSection.portrait,
-      s.portraitSmartDetection,
-      'portrait detection smart vertical source orientation 竖屏 识别 智能 方向 直播源',
-    ),
-    _hit(SettingsSection.portrait, s.portraitAdaptiveHeight, 'portrait adaptive height viewing area 竖屏 自适应 高度 观看区域'),
-    _hit(
-      SettingsSection.portrait,
+      SettingsSection.picture,
       s.portraitLayoutMode,
-      'portrait layout mode balanced immersive compatibility 16:9 竖屏 布局 模式 均衡 沉浸 兼容',
+      'portrait vertical live layout mode balanced immersive compatibility 16:9 竖屏 直播 布局 模式 均衡 沉浸 兼容',
     ),
-    _hit(
-      SettingsSection.portrait,
-      s.portraitFullscreenPolicy,
-      'fullscreen orientation follow source system landscape portrait 全屏 方向 跟随 直播源 系统 横屏 竖屏',
-    ),
-    _hit(SettingsSection.portrait, s.portraitReset, 'portrait reset restore defaults clear vertical 竖屏 重置 恢复默认 清空'),
-    _hit(
-      SettingsSection.portrait,
-      s.portraitSwipeSwitch,
-      'portrait fullscreen swipe next previous room switch 竖屏 全屏 滑动 换台 上一个 下一个',
-    ),
-    _hit(SettingsSection.portrait, t.room.switchRoom, 'room switcher layout grid list panel 切换直播间 布局 网格 列表'),
     // Danmaku.
     _hit(SettingsSection.shield, t.shield.enabled, 'shield block danmaku 屏蔽 弹幕'),
     _hit(SettingsSection.shield, t.shield.keywordsTitle, 'keyword block 屏蔽 关键词'),
@@ -442,6 +418,18 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       'download folder directory path recordings files 下载 目录 文件夹 路径 录像 文件',
     ),
     _hit(SettingsSection.dataCache, s.downloadDirectoryReset, 'reset download folder default 恢复 默认 下载 目录'),
+    // Logs.
+    _hit(SettingsSection.logs, s.navLogs, 'logs console diagnostics debug trace terminal 日志 控制台 诊断 调试 终端'),
+    _hit(SettingsSection.logs, s.logLevel, 'log level verbosity trace debug info warn error 日志 级别 详细 记录'),
+    _hit(SettingsSection.logs, s.logFile, 'log file write persist disk 日志 文件 写入 落盘'),
+    _hit(SettingsSection.logs, s.logMemoryCapacity, 'log memory ring buffer records count 日志 内存 条数 保留 最近'),
+    _hit(SettingsSection.logs, s.logFileMaxBytes, 'log file size limit rotate MB 日志 单文件 大小 上限 轮转 容量'),
+    _hit(SettingsSection.logs, s.logFileMaxFiles, 'log files kept rotate count 日志 保留 文件数 轮转 数量'),
+    _hit(
+      SettingsSection.logs,
+      s.logDirectory,
+      'log folder directory path location custom default 日志 目录 路径 位置 文件夹 自定义 默认',
+    ),
     // IPTV.
     _hit(SettingsSection.iptv, t.iptv.autoSyncTitle, 'auto sync launch cold start background 自动 同步 启动 后台 节目单'),
     _hit(SettingsSection.iptv, t.iptv.updateInterval, 'epg interval 节目单 更新 间隔'),

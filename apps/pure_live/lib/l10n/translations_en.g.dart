@@ -1451,6 +1451,19 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get syncHistoryEmpty => 'Nothing here';
 	@override String get syncHistoryDesc => 'Addresses used before; tap one to use it.';
 	@override String get syncChoose => 'Choose';
+	@override String get syncAuthCode => 'Auth code';
+	@override String get syncAuthCodeHint => 'The connection code shown by the server';
+	@override String get syncMode => 'Sync mode';
+	@override String get syncConnect => 'Connect';
+	@override String get syncDisconnect => 'Disconnect';
+	@override String get syncStatusConnected => 'Connected';
+	@override String get syncStatusConnecting => 'Connecting';
+	@override String get syncStatusFailed => 'Failed';
+	@override String get syncStatusIdle => 'Not connected';
+	@override String get syncStatusHint => 'Connect to pull the server\'s lists and push local changes back.';
+	@override String get syncForgetKey => 'Forget authorization';
+	@override String get syncForgetKeyDesc => 'Drop the stored key and re-auth with the code next time.';
+	@override String get syncNote => 'Lists sync with a lx-music desktop server: recent, favourites and your playlists. The server merges using the chosen mode.';
 	@override String get syncServer => 'Server Mode';
 	@override String get syncServerEnable => 'Enable sync service';
 	@override String get syncServerTip => 'Data is transmitted in plaintext; use it on a trusted network';
@@ -1480,19 +1493,6 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get cacheOverrideClear => 'Clear associated lyrics';
 	@override String get cacheOverrideConfirm => 'This clears every song\'s associated lyric. Continue?';
 	@override String get cacheCleared => 'Cleared';
-	@override String get syncAuthCode => 'Auth code';
-	@override String get syncAuthCodeHint => 'The connection code shown by the server';
-	@override String get syncMode => 'Sync mode';
-	@override String get syncConnect => 'Connect';
-	@override String get syncDisconnect => 'Disconnect';
-	@override String get syncStatusConnected => 'Connected';
-	@override String get syncStatusConnecting => 'Connecting';
-	@override String get syncStatusFailed => 'Failed';
-	@override String get syncStatusIdle => 'Not connected';
-	@override String get syncStatusHint => 'Connect to pull the server\'s lists and push local changes back.';
-	@override String get syncForgetKey => 'Forget authorization';
-	@override String get syncForgetKeyDesc => 'Drop the stored key and re-auth with the code next time.';
-	@override String get syncNote => 'Lists sync with a lx-music desktop server: recent, favourites and your playlists. The server merges using the chosen mode.';
 	@override String get openApi => 'Open API';
 	@override String get openApiEnable => 'Enable Open API service';
 	@override String get openApiPort => 'Service Port';
@@ -1861,17 +1861,6 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get orientationUpdated => 'Picture orientation updated';
 	@override String get portraitFullscreen => 'Portrait full screen';
 	@override String get portraitFullscreenExit => 'Exit portrait full screen';
-	@override String get portraitFullscreenDisplay => 'Picture mode';
-	@override String get portraitDisplayComplete => 'Complete';
-	@override String get portraitDisplayAmbient => 'Ambient';
-	@override String get portraitDisplayBalanced => 'Balanced';
-	@override String get portraitDisplayCover => 'Cover';
-	@override String get portraitDanmakuTitle => 'Danmaku area';
-	@override String get portraitDanmakuFollow => 'Follow global';
-	@override String get portraitDanmakuUpper => 'Upper quarter';
-	@override String get portraitDanmakuReduced => 'Reduced';
-	@override String get portraitDanmakuHidden => 'Hidden';
-	@override String get portraitDiagnostics => 'Portrait diagnostics';
 	@override String get giftLineSent => 'sent';
 	@override String giftLineSentTo({required Object name}) => 'sent ${name}';
 	@override String get giftLineGifted => 'gifted';
@@ -2978,22 +2967,13 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get controlsAutoHide => 'Controls auto-hide';
 	@override String get controlsAutoHideDesc => 'Hides the controls after this much idle time while playing.';
 	@override String controlsAutoHideValue({required int count}) => '${count} s';
-	@override String get navPortrait => 'Portrait Live Adaptation';
-	@override String get portraitPageDescription => 'Detects the source orientation and adjusts the room\'s viewing area and layout.';
 	@override String get navAudience => 'Audience figures';
 	@override String get audiencePageDescription => 'The card figure, the concurrent-viewer preference and its platforms.';
-	@override String get portraitEntryOff => 'Off';
-	@override String get portraitDetectionGroup => 'Detection and room layout';
-	@override String get portraitSmartDetection => 'Detect portrait live sources';
-	@override String get portraitSmartDetectionDesc => 'Detects portrait from the decoded frame.';
-	@override String get portraitAdaptiveHeight => 'Adaptive room video height';
-	@override String get portraitAdaptiveHeightDesc => 'Gives portrait video more space while preserving a usable chat list.';
 	@override String get portraitLayoutMode => 'Room layout mode';
 	@override String get portraitLayoutModeDesc => 'Applies only to portrait sources and leaves landscape streams unchanged.';
 	@override String get portraitLayoutBalanced => 'Balanced (recommended)';
 	@override String get portraitLayoutImmersive => 'Immersive';
 	@override String get portraitLayoutCompatibility => 'Compatible 16:9';
-	@override String get portraitDetectionOff => 'Turn on portrait detection to adjust the height and layout.';
 	@override String get searchSections => 'Sections';
 	@override String get searchRows => 'Settings';
 	@override String searchRowMatches({required String items}) => 'Matches: ${items}';
@@ -3091,15 +3071,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get fitScaleDown => 'Scale Down';
 	@override String get styleNoEmoji => 'Hide emoji';
 	@override String get styleNoEmojiDesc => 'Flying danmaku draw words only and skip emoji pictures; the chat list is unaffected.';
-	@override String get portraitPresentationGroup => 'Fullscreen presentation';
-	@override String get portraitFullscreenPolicy => 'Fullscreen orientation';
-	@override String get portraitFullscreenPolicyDesc => 'Phones follow the source; large screens follow the system.';
-	@override String get portraitFullscreenFollowSource => 'Follow source (recommended)';
-	@override String get portraitFullscreenFollowSystem => 'Follow system';
-	@override String get portraitFullscreenLandscape => 'Always landscape';
-	@override String get portraitReset => 'Reset portrait adaptation';
-	@override String get portraitResetDesc => 'Restores detection, adaptive height, layout mode and fullscreen orientation to their defaults.';
-	@override String get portraitResetConfirm => 'This page returns to defaults; landscape rooms are unaffected.';
 	@override String get styleTopMargin => 'Top inset';
 	@override String get styleTopMarginDesc => 'Height at the top kept free of danmaku, 0–300.';
 	@override String get styleBottomMargin => 'Bottom inset';
@@ -3144,21 +3115,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get downloadDirectoryPickFailed => 'Could not select a download folder';
 	@override String get downloadDirectoryPermissionHint => 'The chosen folder is not writable. Grant storage access, or use the default folder.';
 	@override String get downloadDirectoryChange => 'Change folder';
-	@override String get portraitFullscreenGroup => 'Portrait full screen';
-	@override String get portraitDisplayMode => 'Picture mode';
-	@override String get portraitDisplayModeDesc => 'Full keeps the frame; immersive adds a backdrop; balanced trims a little; fill crops the sides.';
-	@override String get portraitDanmakuMode => 'Danmaku area';
-	@override String get portraitDanmakuModeDesc => 'How much of the portrait full-screen surface flying danmaku may use.';
-	@override String get portraitRememberRoom => 'Remember each room’s choice';
-	@override String get portraitRememberRoomDesc => 'Remembers the portrait full-screen choices per room.';
-	@override String get portraitSwipeSwitch => 'Swipe between rooms in portrait full screen';
-	@override String get portraitSwipeSwitchDesc => 'For rooms opened from follows, popular, categories or search: in portrait full screen, swipe up in the middle of the picture for the next room and down for the previous.';
-	@override String get portraitDiagnostics => 'Show portrait diagnostics';
-	@override String get portraitDiagnosticsDesc => 'Show resolution, aspect ratio, picture and danmaku modes at the bottom-left in portrait full screen.';
-	@override String get portraitClearOverrides => 'Clear room overrides';
-	@override String get portraitClearOverridesDesc => 'Delete every per-room portrait choice, keeping the global defaults.';
-	@override String get portraitOverridesCleared => 'Room overrides cleared';
-	@override String portraitOverridesCount({required int count}) => '${count} rooms saved';
 	@override String get chatShowNames => 'Show names';
 	@override String get chatShowNamesDesc => 'Off shows the message only.';
 	@override String get chatListFontSize => 'Text size';
@@ -3248,6 +3204,33 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get hongguoQuality360 => '360P';
 	@override String get hongguoDeviceReset => 'Reset device identity';
 	@override String get hongguoDeviceResetDesc => 'Forgets the anonymous device; registers again on the next play.';
+	@override String get navLogs => 'Logs';
+	@override String get logPageDescription => 'Record level, file rotation and where they live.';
+	@override String get logRecordGroup => 'Recording';
+	@override String get logLevel => 'Record level';
+	@override String get logLevelDesc => 'Lines below this level are never produced.';
+	@override String get logFile => 'Write log files';
+	@override String get logFileDesc => 'Off keeps only the recent lines in memory.';
+	@override String get logMemoryCapacity => 'Memory lines';
+	@override String get logMemoryCapacityDesc => 'How far back the log page can scroll.';
+	@override String get logRotationGroup => 'File rotation';
+	@override String get logFileMaxBytes => 'Per-file limit';
+	@override String get logFileMaxBytesDesc => 'The sink moves to the next file at this size.';
+	@override String get logFileMaxFiles => 'Files kept';
+	@override String get logFileMaxFilesDesc => 'Including the live one; older files are deleted.';
+	@override String get logDirectoryGroup => 'Location';
+	@override String get logDirectory => 'Log folder';
+	@override String get logDirectoryDefaultHint => 'Default: ';
+	@override String get logDirectoryChange => 'Change folder';
+	@override String get logDirectoryChangeDesc => 'Log files move to the folder you pick.';
+	@override String get logDirectoryReset => 'Restore default folder';
+	@override String get logDirectoryResetDesc => 'Back to logs inside the app data folder.';
+	@override String get logDirectoryUpdated => 'Log folder updated';
+	@override String get logDirectoryPickFailed => 'Could not pick a folder';
+	@override String get logDirectoryPermissionHint => 'The chosen folder is not writable';
+	@override String get logCopyPath => 'Copy path';
+	@override String get logPathCopied => 'Path copied';
+	@override String get logOpenFailed => 'Could not open the folder';
 }
 
 // Path: shield
@@ -3402,9 +3385,6 @@ class _Translations$toolbox$en extends Translations$toolbox$zh_CN {
 	@override String nodeSummary({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms';
 	@override String nodeUntestedSummary({required Object total}) => 'Not tested yet · ${total} platforms';
 	@override String get logsSection => 'Logs & diagnostics';
-	@override String get logsLevel => 'Log level';
-	@override String get logsFile => 'Write log file';
-	@override String get logsFileDesc => 'Keep a rotating log (pure_live.log) in the app data directory; off keeps only the in-memory ring.';
 	@override String get logsExport => 'Copy log';
 	@override String get logsExportDesc => 'Copy the in-memory records to the clipboard.';
 	@override String get logsClear => 'Clear logs';
@@ -3426,6 +3406,9 @@ class _Translations$toolbox$en extends Translations$toolbox$zh_CN {
 	@override String get logsCopyPath => 'Copy path';
 	@override String get logsPathCopied => 'Path copied to the clipboard';
 	@override String get logsOpenFailed => 'Could not open the log directory';
+	@override String get logsFilterSection => 'View filter';
+	@override String get logsLevelFilter => 'Shown level';
+	@override String get logsLevelFilterDesc => 'Filters this page only; what the app records is set in the log settings.';
 }
 
 // Path: vod
@@ -5004,6 +4987,19 @@ extension on TranslationsEn {
 			'music.syncHistoryEmpty' => 'Nothing here',
 			'music.syncHistoryDesc' => 'Addresses used before; tap one to use it.',
 			'music.syncChoose' => 'Choose',
+			'music.syncAuthCode' => 'Auth code',
+			'music.syncAuthCodeHint' => 'The connection code shown by the server',
+			'music.syncMode' => 'Sync mode',
+			'music.syncConnect' => 'Connect',
+			'music.syncDisconnect' => 'Disconnect',
+			'music.syncStatusConnected' => 'Connected',
+			'music.syncStatusConnecting' => 'Connecting',
+			'music.syncStatusFailed' => 'Failed',
+			'music.syncStatusIdle' => 'Not connected',
+			'music.syncStatusHint' => 'Connect to pull the server\'s lists and push local changes back.',
+			'music.syncForgetKey' => 'Forget authorization',
+			'music.syncForgetKeyDesc' => 'Drop the stored key and re-auth with the code next time.',
+			'music.syncNote' => 'Lists sync with a lx-music desktop server: recent, favourites and your playlists. The server merges using the chosen mode.',
 			'music.syncServer' => 'Server Mode',
 			'music.syncServerEnable' => 'Enable sync service',
 			'music.syncServerTip' => 'Data is transmitted in plaintext; use it on a trusted network',
@@ -5033,19 +5029,6 @@ extension on TranslationsEn {
 			'music.cacheOverrideClear' => 'Clear associated lyrics',
 			'music.cacheOverrideConfirm' => 'This clears every song\'s associated lyric. Continue?',
 			'music.cacheCleared' => 'Cleared',
-			'music.syncAuthCode' => 'Auth code',
-			'music.syncAuthCodeHint' => 'The connection code shown by the server',
-			'music.syncMode' => 'Sync mode',
-			'music.syncConnect' => 'Connect',
-			'music.syncDisconnect' => 'Disconnect',
-			'music.syncStatusConnected' => 'Connected',
-			'music.syncStatusConnecting' => 'Connecting',
-			'music.syncStatusFailed' => 'Failed',
-			'music.syncStatusIdle' => 'Not connected',
-			'music.syncStatusHint' => 'Connect to pull the server\'s lists and push local changes back.',
-			'music.syncForgetKey' => 'Forget authorization',
-			'music.syncForgetKeyDesc' => 'Drop the stored key and re-auth with the code next time.',
-			'music.syncNote' => 'Lists sync with a lx-music desktop server: recent, favourites and your playlists. The server merges using the chosen mode.',
 			'music.openApi' => 'Open API',
 			'music.openApiEnable' => 'Enable Open API service',
 			'music.openApiPort' => 'Service Port',
@@ -5240,6 +5223,8 @@ extension on TranslationsEn {
 			'recorder.cacheCleared' => 'Recording cache cleared',
 			'recorder.cacheFailed' => 'Cache operation failed. Try again.',
 			'recorder.cacheManagedHint' => 'To protect other files, a chosen directory gets an app-owned PureLiveRecords child folder.',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.liveCheckSecondsTitle' => 'Check interval (seconds)',
 			'recorder.liveCheckSecondsDesc' => 'How often each waiting task checks its room, 10–300 seconds.',
 			'recorder.checkBackoff' => 'Exponential backoff',
@@ -5269,8 +5254,6 @@ extension on TranslationsEn {
 			'room.sendFailed' => 'The message failed to send',
 			'room.fullscreenOn' => 'Enter fullscreen',
 			'room.fullscreenOff' => 'Leave fullscreen',
-			_ => null,
-		} ?? switch (path) {
 			'room.chatTitle' => 'Chat',
 			'room.danmakuOn' => 'Show danmaku',
 			'room.danmakuOff' => 'Hide danmaku',
@@ -5371,17 +5354,6 @@ extension on TranslationsEn {
 			'room.orientationUpdated' => 'Picture orientation updated',
 			'room.portraitFullscreen' => 'Portrait full screen',
 			'room.portraitFullscreenExit' => 'Exit portrait full screen',
-			'room.portraitFullscreenDisplay' => 'Picture mode',
-			'room.portraitDisplayComplete' => 'Complete',
-			'room.portraitDisplayAmbient' => 'Ambient',
-			'room.portraitDisplayBalanced' => 'Balanced',
-			'room.portraitDisplayCover' => 'Cover',
-			'room.portraitDanmakuTitle' => 'Danmaku area',
-			'room.portraitDanmakuFollow' => 'Follow global',
-			'room.portraitDanmakuUpper' => 'Upper quarter',
-			'room.portraitDanmakuReduced' => 'Reduced',
-			'room.portraitDanmakuHidden' => 'Hidden',
-			'room.portraitDiagnostics' => 'Portrait diagnostics',
 			'room.giftLineSent' => 'sent',
 			'room.giftLineSentTo' => ({required Object name}) => 'sent ${name}',
 			'room.giftLineGifted' => 'gifted',
@@ -5765,6 +5737,8 @@ extension on TranslationsEn {
 			'settings.styleArea' => 'Height used',
 			'settings.styleAreaDesc' => 'How much of the picture height danmaku may use (0–100%).',
 			'settings.fixedTopTitle' => 'Pin to top',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fixedTopDescription' => 'A platform\'s top-pinned message stays at the top of the picture; when off it only shows in the chat list.',
 			'settings.fixedBottomTitle' => 'Pin to bottom',
 			'settings.fixedBottomDescription' => 'A platform\'s bottom-pinned message stays at the bottom of the picture; when off it only shows in the chat list.',
@@ -5783,8 +5757,6 @@ extension on TranslationsEn {
 			'settings.styleFpsValue' => ({required Object count}) => '${count} FPS',
 			'settings.styleMaxVisible' => 'On-screen limit',
 			'settings.styleMaxVisibleDesc' => 'How many danmaku fly over the picture at once (48 by default); fewer is clearer and saves power.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleMaxVisibleValue' => ({required Object count}) => '${count}',
 			'settings.styleMassMode' => 'Mass mode',
 			'settings.styleMassModeDesc' => 'Raises the same-screen limit to 1000 and uses realtime rendering for very busy rooms.',
@@ -6279,6 +6251,8 @@ extension on TranslationsEn {
 			'settings.groupCards' => 'Cards & lists',
 			'settings.groupLanguage' => 'Language',
 			'settings.contrast' => 'Contrast',
+			_ => null,
+		} ?? switch (path) {
 			'settings.contrastDescription' => 'How strongly control edges and text stand out.',
 			'settings.contrastSoft' => 'Soft',
 			'settings.contrastStandard' => 'Standard',
@@ -6291,8 +6265,6 @@ extension on TranslationsEn {
 			'settings.navBackground' => 'Background',
 			'settings.backgroundDescription' => 'An image or video behind the app, uploaded from a file or loaded from a URL.',
 			'settings.backgroundImagesTitle' => 'Online images',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundImagesDescription' => 'Official, Wallhaven, Bing and deepin sources; preview before applying.',
 			'settings.backgroundVideosTitle' => 'Live wallpapers',
 			'settings.navRandomWallpaper' => 'Random pictures',
@@ -6474,22 +6446,13 @@ extension on TranslationsEn {
 			'settings.controlsAutoHide' => 'Controls auto-hide',
 			'settings.controlsAutoHideDesc' => 'Hides the controls after this much idle time while playing.',
 			'settings.controlsAutoHideValue' => ({required int count}) => '${count} s',
-			'settings.navPortrait' => 'Portrait Live Adaptation',
-			'settings.portraitPageDescription' => 'Detects the source orientation and adjusts the room\'s viewing area and layout.',
 			'settings.navAudience' => 'Audience figures',
 			'settings.audiencePageDescription' => 'The card figure, the concurrent-viewer preference and its platforms.',
-			'settings.portraitEntryOff' => 'Off',
-			'settings.portraitDetectionGroup' => 'Detection and room layout',
-			'settings.portraitSmartDetection' => 'Detect portrait live sources',
-			'settings.portraitSmartDetectionDesc' => 'Detects portrait from the decoded frame.',
-			'settings.portraitAdaptiveHeight' => 'Adaptive room video height',
-			'settings.portraitAdaptiveHeightDesc' => 'Gives portrait video more space while preserving a usable chat list.',
 			'settings.portraitLayoutMode' => 'Room layout mode',
 			'settings.portraitLayoutModeDesc' => 'Applies only to portrait sources and leaves landscape streams unchanged.',
 			'settings.portraitLayoutBalanced' => 'Balanced (recommended)',
 			'settings.portraitLayoutImmersive' => 'Immersive',
 			'settings.portraitLayoutCompatibility' => 'Compatible 16:9',
-			'settings.portraitDetectionOff' => 'Turn on portrait detection to adjust the height and layout.',
 			'settings.searchSections' => 'Sections',
 			'settings.searchRows' => 'Settings',
 			'settings.searchRowMatches' => ({required String items}) => 'Matches: ${items}',
@@ -6587,15 +6550,6 @@ extension on TranslationsEn {
 			'settings.fitScaleDown' => 'Scale Down',
 			'settings.styleNoEmoji' => 'Hide emoji',
 			'settings.styleNoEmojiDesc' => 'Flying danmaku draw words only and skip emoji pictures; the chat list is unaffected.',
-			'settings.portraitPresentationGroup' => 'Fullscreen presentation',
-			'settings.portraitFullscreenPolicy' => 'Fullscreen orientation',
-			'settings.portraitFullscreenPolicyDesc' => 'Phones follow the source; large screens follow the system.',
-			'settings.portraitFullscreenFollowSource' => 'Follow source (recommended)',
-			'settings.portraitFullscreenFollowSystem' => 'Follow system',
-			'settings.portraitFullscreenLandscape' => 'Always landscape',
-			'settings.portraitReset' => 'Reset portrait adaptation',
-			'settings.portraitResetDesc' => 'Restores detection, adaptive height, layout mode and fullscreen orientation to their defaults.',
-			'settings.portraitResetConfirm' => 'This page returns to defaults; landscape rooms are unaffected.',
 			'settings.styleTopMargin' => 'Top inset',
 			'settings.styleTopMarginDesc' => 'Height at the top kept free of danmaku, 0–300.',
 			'settings.styleBottomMargin' => 'Bottom inset',
@@ -6640,21 +6594,6 @@ extension on TranslationsEn {
 			'settings.downloadDirectoryPickFailed' => 'Could not select a download folder',
 			'settings.downloadDirectoryPermissionHint' => 'The chosen folder is not writable. Grant storage access, or use the default folder.',
 			'settings.downloadDirectoryChange' => 'Change folder',
-			'settings.portraitFullscreenGroup' => 'Portrait full screen',
-			'settings.portraitDisplayMode' => 'Picture mode',
-			'settings.portraitDisplayModeDesc' => 'Full keeps the frame; immersive adds a backdrop; balanced trims a little; fill crops the sides.',
-			'settings.portraitDanmakuMode' => 'Danmaku area',
-			'settings.portraitDanmakuModeDesc' => 'How much of the portrait full-screen surface flying danmaku may use.',
-			'settings.portraitRememberRoom' => 'Remember each room’s choice',
-			'settings.portraitRememberRoomDesc' => 'Remembers the portrait full-screen choices per room.',
-			'settings.portraitSwipeSwitch' => 'Swipe between rooms in portrait full screen',
-			'settings.portraitSwipeSwitchDesc' => 'For rooms opened from follows, popular, categories or search: in portrait full screen, swipe up in the middle of the picture for the next room and down for the previous.',
-			'settings.portraitDiagnostics' => 'Show portrait diagnostics',
-			'settings.portraitDiagnosticsDesc' => 'Show resolution, aspect ratio, picture and danmaku modes at the bottom-left in portrait full screen.',
-			'settings.portraitClearOverrides' => 'Clear room overrides',
-			'settings.portraitClearOverridesDesc' => 'Delete every per-room portrait choice, keeping the global defaults.',
-			'settings.portraitOverridesCleared' => 'Room overrides cleared',
-			'settings.portraitOverridesCount' => ({required int count}) => '${count} rooms saved',
 			'settings.chatShowNames' => 'Show names',
 			'settings.chatShowNamesDesc' => 'Off shows the message only.',
 			'settings.chatListFontSize' => 'Text size',
@@ -6744,6 +6683,33 @@ extension on TranslationsEn {
 			'settings.hongguoQuality360' => '360P',
 			'settings.hongguoDeviceReset' => 'Reset device identity',
 			'settings.hongguoDeviceResetDesc' => 'Forgets the anonymous device; registers again on the next play.',
+			'settings.navLogs' => 'Logs',
+			'settings.logPageDescription' => 'Record level, file rotation and where they live.',
+			'settings.logRecordGroup' => 'Recording',
+			'settings.logLevel' => 'Record level',
+			'settings.logLevelDesc' => 'Lines below this level are never produced.',
+			'settings.logFile' => 'Write log files',
+			'settings.logFileDesc' => 'Off keeps only the recent lines in memory.',
+			'settings.logMemoryCapacity' => 'Memory lines',
+			'settings.logMemoryCapacityDesc' => 'How far back the log page can scroll.',
+			'settings.logRotationGroup' => 'File rotation',
+			'settings.logFileMaxBytes' => 'Per-file limit',
+			'settings.logFileMaxBytesDesc' => 'The sink moves to the next file at this size.',
+			'settings.logFileMaxFiles' => 'Files kept',
+			'settings.logFileMaxFilesDesc' => 'Including the live one; older files are deleted.',
+			'settings.logDirectoryGroup' => 'Location',
+			'settings.logDirectory' => 'Log folder',
+			'settings.logDirectoryDefaultHint' => 'Default: ',
+			'settings.logDirectoryChange' => 'Change folder',
+			'settings.logDirectoryChangeDesc' => 'Log files move to the folder you pick.',
+			'settings.logDirectoryReset' => 'Restore default folder',
+			'settings.logDirectoryResetDesc' => 'Back to logs inside the app data folder.',
+			'settings.logDirectoryUpdated' => 'Log folder updated',
+			'settings.logDirectoryPickFailed' => 'Could not pick a folder',
+			'settings.logDirectoryPermissionHint' => 'The chosen folder is not writable',
+			'settings.logCopyPath' => 'Copy path',
+			'settings.logPathCopied' => 'Path copied',
+			'settings.logOpenFailed' => 'Could not open the folder',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -6799,14 +6765,14 @@ extension on TranslationsEn {
 			'toolbox.groupData' => 'Data',
 			'toolbox.toolNetworkTitle' => 'Platform nodes',
 			'toolbox.toolNetworkDescription' => 'Test each platform\'s endpoint for reachability and latency.',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.toolCacheTitle' => 'Cache cleanup',
 			'toolbox.toolCacheDescription' => 'Inspect and clear the memory the image cache holds.',
 			'toolbox.toolLogsTitle' => 'Logs',
 			'toolbox.toolLogsDescription' => 'Inspect the app\'s runtime log and diagnostics.',
 			'toolbox.back' => 'Back',
 			'toolbox.confirm' => 'Confirm',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.cancel' => 'Cancel',
 			'toolbox.linkFieldLabel' => 'Platform link',
 			'toolbox.linkFieldHint' => 'Paste a room link or shared text',
@@ -6873,9 +6839,6 @@ extension on TranslationsEn {
 			'toolbox.nodeSummary' => ({required Object ok, required Object tested, required Object total}) => '${ok} / ${tested} reachable · ${total} platforms',
 			'toolbox.nodeUntestedSummary' => ({required Object total}) => 'Not tested yet · ${total} platforms',
 			'toolbox.logsSection' => 'Logs & diagnostics',
-			'toolbox.logsLevel' => 'Log level',
-			'toolbox.logsFile' => 'Write log file',
-			'toolbox.logsFileDesc' => 'Keep a rotating log (pure_live.log) in the app data directory; off keeps only the in-memory ring.',
 			'toolbox.logsExport' => 'Copy log',
 			'toolbox.logsExportDesc' => 'Copy the in-memory records to the clipboard.',
 			'toolbox.logsClear' => 'Clear logs',
@@ -6897,6 +6860,9 @@ extension on TranslationsEn {
 			'toolbox.logsCopyPath' => 'Copy path',
 			'toolbox.logsPathCopied' => 'Path copied to the clipboard',
 			'toolbox.logsOpenFailed' => 'Could not open the log directory',
+			'toolbox.logsFilterSection' => 'View filter',
+			'toolbox.logsLevelFilter' => 'Shown level',
+			'toolbox.logsLevelFilterDesc' => 'Filters this page only; what the app records is set in the log settings.',
 			'vod.searchHint' => 'Search Bilibili videos',
 			'vod.idleTitle' => 'Search for videos',
 			'vod.idleDescription' => 'Type a keyword to search Bilibili videos.',
