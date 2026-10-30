@@ -14,7 +14,6 @@ import 'package:pure_live/app/routing/navigation/route_names.dart' show RouteNam
 import 'package:pure_live/app/routing/navigation/route_observer.dart' show routeObserverProvider;
 import 'package:pure_live/app/windows/chrome/window_chrome.dart' show WindowChromeState;
 import 'package:pure_live/features/settings/settings.dart';
-import 'package:pure_live/features/settings/surface/settings_page_action.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/layouts/layouts.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart' show HongguoPlayerPage, HongguoSeriesPage;
