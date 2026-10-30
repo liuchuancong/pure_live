@@ -5,6 +5,7 @@
 import FlutterMacOS
 import Foundation
 
+import app_links
 import audio_service
 import audio_session
 import battery_plus
@@ -17,12 +18,14 @@ import ffmpeg_kit_extended_flutter
 import file_picker_darwin
 import file_selector_macos
 import flutter_local_notifications
+import flutter_media_session
 import flutter_secure_storage_darwin
 import heic_native
 import macos_window_utils
 import media_core_audio
 import media_core_native
 import media_kit_video
+import mpv_audio_kit
 import multiview_desktop
 import network_info_plus
 import open_file_mac
@@ -38,6 +41,7 @@ import wakelock_plus
 import webview_all_wkwebview
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
+  AppLinksMacosPlugin.register(with: registry.registrar(forPlugin: "AppLinksMacosPlugin"))
   AudioServicePlugin.register(with: registry.registrar(forPlugin: "AudioServicePlugin"))
   AudioSessionPlugin.register(with: registry.registrar(forPlugin: "AudioSessionPlugin"))
   BatteryPlusMacosPlugin.register(with: registry.registrar(forPlugin: "BatteryPlusMacosPlugin"))
@@ -50,12 +54,14 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FilePickerPlugin.register(with: registry.registrar(forPlugin: "FilePickerPlugin"))
   FileSelectorPlugin.register(with: registry.registrar(forPlugin: "FileSelectorPlugin"))
   FlutterLocalNotificationsPlugin.register(with: registry.registrar(forPlugin: "FlutterLocalNotificationsPlugin"))
+  FlutterMediaSessionPlugin.register(with: registry.registrar(forPlugin: "FlutterMediaSessionPlugin"))
   FlutterSecureStorageDarwinPlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStorageDarwinPlugin"))
   HeicNativePlugin.register(with: registry.registrar(forPlugin: "HeicNativePlugin"))
   MacOSWindowUtilsPlugin.register(with: registry.registrar(forPlugin: "MacOSWindowUtilsPlugin"))
   MediaCoreAudioPlugin.register(with: registry.registrar(forPlugin: "MediaCoreAudioPlugin"))
   MediaCoreNativePlugin.register(with: registry.registrar(forPlugin: "MediaCoreNativePlugin"))
   MediaKitVideoPlugin.register(with: registry.registrar(forPlugin: "MediaKitVideoPlugin"))
+  MpvAudioKitPlugin.register(with: registry.registrar(forPlugin: "MpvAudioKitPlugin"))
   MultiviewDesktopPlugin.register(with: registry.registrar(forPlugin: "MultiviewDesktopPlugin"))
   NetworkInfoPlusPlugin.register(with: registry.registrar(forPlugin: "NetworkInfoPlusPlugin"))
   OpenFilePlugin.register(with: registry.registrar(forPlugin: "OpenFilePlugin"))

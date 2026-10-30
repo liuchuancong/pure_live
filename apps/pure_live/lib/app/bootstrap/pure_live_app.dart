@@ -30,6 +30,7 @@ import 'package:pure_live/layouts/layouts.dart';
 import 'package:pure_live/modules/iptv/iptv.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
+import 'package:pure_live/modules/music/controller/music_deeplink_binding.dart';
 import 'package:pure_live/shared/shared.dart';
 import 'package:pure_uikit_background/pure_uikit_background.dart' show AppVisibilityObserver;
 
@@ -118,6 +119,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     // Only the primary polls: a clone shares the task store, and two
     // windows starting the same task would capture it twice.
     if (ref.read(isPrimaryWindowProvider)) ref.read(recordingLiveMonitorProvider);
+    // lxmusic:// links: one listener per process, started with the root so a
+    // cold-start link is caught as soon as the dispatcher's dependencies read.
+    if (ref.read(isPrimaryWindowProvider)) ref.read(musicDeeplinkBindingProvider).start();
     // iOS's system picture-in-picture window keeps the picture alive while
     // the app is away and hands it back on return; the kernel's own
     // background pause is off there, so this guard owns the rule.

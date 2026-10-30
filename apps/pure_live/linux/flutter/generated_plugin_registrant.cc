@@ -6,6 +6,7 @@
 
 #include "generated_plugin_registrant.h"
 
+#include <app_links_linux/app_links_plugin_linux.h>
 #include <desktop_drop/desktop_drop_plugin.h>
 #include <device_screen_brightness/device_screen_brightness_plugin.h>
 #include <dynamic_color/dynamic_color_plugin.h>
@@ -17,6 +18,7 @@
 #include <media_core_audio/media_core_audio_plugin.h>
 #include <media_core_native/media_core_native_plugin.h>
 #include <media_kit_video/media_kit_video_plugin.h>
+#include <mpv_audio_kit/mpv_audio_kit_plugin.h>
 #include <multiview_desktop/multiview_desktop_plugin.h>
 #include <open_file_linux/open_file_linux_plugin.h>
 #include <refresh_rate/refresh_rate_plugin.h>
@@ -27,6 +29,9 @@
 #include <webview_all_linux/webview_all_linux_plugin.h>
 
 void fl_register_plugins(FlPluginRegistry* registry) {
+  g_autoptr(FlPluginRegistrar) app_links_linux_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "AppLinksPluginLinux");
+  app_links_plugin_linux_register_with_registrar(app_links_linux_registrar);
   g_autoptr(FlPluginRegistrar) desktop_drop_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "DesktopDropPlugin");
   desktop_drop_plugin_register_with_registrar(desktop_drop_registrar);
@@ -60,6 +65,9 @@ void fl_register_plugins(FlPluginRegistry* registry) {
   g_autoptr(FlPluginRegistrar) media_kit_video_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "MediaKitVideoPlugin");
   media_kit_video_plugin_register_with_registrar(media_kit_video_registrar);
+  g_autoptr(FlPluginRegistrar) mpv_audio_kit_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(registry, "MpvAudioKitPlugin");
+  mpv_audio_kit_plugin_register_with_registrar(mpv_audio_kit_registrar);
   g_autoptr(FlPluginRegistrar) multiview_desktop_registrar =
       fl_plugin_registry_get_registrar_for_plugin(registry, "MultiviewDesktopPlugin");
   multiview_desktop_plugin_register_with_registrar(multiview_desktop_registrar);

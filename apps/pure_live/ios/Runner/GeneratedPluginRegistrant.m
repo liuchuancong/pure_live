@@ -6,6 +6,12 @@
 
 #import "GeneratedPluginRegistrant.h"
 
+#if __has_include(<app_links/AppLinksIosPlugin.h>)
+#import <app_links/AppLinksIosPlugin.h>
+#else
+@import app_links;
+#endif
+
 #if __has_include(<audio_service/AudioServicePlugin.h>)
 #import <audio_service/AudioServicePlugin.h>
 #else
@@ -90,6 +96,12 @@
 @import flutter_mailer;
 #endif
 
+#if __has_include(<flutter_media_session/FlutterMediaSessionPlugin.h>)
+#import <flutter_media_session/FlutterMediaSessionPlugin.h>
+#else
+@import flutter_media_session;
+#endif
+
 #if __has_include(<flutter_secure_storage_darwin/FlutterSecureStorageDarwinPlugin.h>)
 #import <flutter_secure_storage_darwin/FlutterSecureStorageDarwinPlugin.h>
 #else
@@ -124,6 +136,12 @@
 #import <media_kit_video/MediaKitVideoPlugin.h>
 #else
 @import media_kit_video;
+#endif
+
+#if __has_include(<mpv_audio_kit/MpvAudioKitPlugin.h>)
+#import <mpv_audio_kit/MpvAudioKitPlugin.h>
+#else
+@import mpv_audio_kit;
 #endif
 
 #if __has_include(<network_info_plus/FPPNetworkInfoPlusPlugin.h>)
@@ -207,6 +225,7 @@
 @implementation GeneratedPluginRegistrant
 
 + (void)registerWithRegistry:(NSObject<FlutterPluginRegistry>*)registry {
+  [AppLinksIosPlugin registerWithRegistrar:[registry registrarForPlugin:@"AppLinksIosPlugin"]];
   [AudioServicePlugin registerWithRegistrar:[registry registrarForPlugin:@"AudioServicePlugin"]];
   [AudioSessionPlugin registerWithRegistrar:[registry registrarForPlugin:@"AudioSessionPlugin"]];
   [FPPBatteryPlusPlugin registerWithRegistrar:[registry registrarForPlugin:@"FPPBatteryPlusPlugin"]];
@@ -221,12 +240,14 @@
   [FlutterKeyboardVisibilityPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterKeyboardVisibilityPlugin"]];
   [FlutterLocalNotificationsPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterLocalNotificationsPlugin"]];
   [FlutterMailerPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterMailerPlugin"]];
+  [FlutterMediaSessionPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterMediaSessionPlugin"]];
   [FlutterSecureStorageDarwinPlugin registerWithRegistrar:[registry registrarForPlugin:@"FlutterSecureStorageDarwinPlugin"]];
   [FluttertoastPlugin registerWithRegistrar:[registry registrarForPlugin:@"FluttertoastPlugin"]];
   [FijkPlugin registerWithRegistrar:[registry registrarForPlugin:@"FijkPlugin"]];
   [HeicNativePlugin registerWithRegistrar:[registry registrarForPlugin:@"HeicNativePlugin"]];
   [MediaCoreNativePlugin registerWithRegistrar:[registry registrarForPlugin:@"MediaCoreNativePlugin"]];
   [MediaKitVideoPlugin registerWithRegistrar:[registry registrarForPlugin:@"MediaKitVideoPlugin"]];
+  [MpvAudioKitPlugin registerWithRegistrar:[registry registrarForPlugin:@"MpvAudioKitPlugin"]];
   [FPPNetworkInfoPlusPlugin registerWithRegistrar:[registry registrarForPlugin:@"FPPNetworkInfoPlusPlugin"]];
   [OpenFilePlugin registerWithRegistrar:[registry registrarForPlugin:@"OpenFilePlugin"]];
   [FPPPackageInfoPlusPlugin registerWithRegistrar:[registry registrarForPlugin:@"FPPPackageInfoPlusPlugin"]];

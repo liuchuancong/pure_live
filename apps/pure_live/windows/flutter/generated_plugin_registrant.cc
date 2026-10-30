@@ -6,7 +6,7 @@
 
 #include "generated_plugin_registrant.h"
 
-#include <audio_service_win/audio_service_win_plugin_c_api.h>
+#include <app_links/app_links_plugin_c_api.h>
 #include <battery_plus/battery_plus_windows_plugin.h>
 #include <connectivity_plus/connectivity_plus_windows_plugin.h>
 #include <desktop_drop/desktop_drop_plugin.h>
@@ -15,11 +15,13 @@
 #include <ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter_plugin.h>
 #include <file_selector_windows/file_selector_windows.h>
 #include <flutter_acrylic/flutter_acrylic_plugin.h>
+#include <flutter_media_session/flutter_media_session_plugin_c_api.h>
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
 #include <heic_native/heic_native_plugin_c_api.h>
 #include <media_core_audio/media_core_audio_plugin_c_api.h>
 #include <media_core_native/media_core_native_plugin_c_api.h>
 #include <media_kit_video/media_kit_video_plugin_c_api.h>
+#include <mpv_audio_kit/mpv_audio_kit_plugin_c_api.h>
 #include <multiview_desktop/multi_view_desktop_plugin.h>
 #include <refresh_rate/refresh_rate_plugin_c_api.h>
 #include <restart_app/restart_app_plugin_c_api.h>
@@ -30,8 +32,8 @@
 #include <webview_all_windows/webview_all_windows_plugin.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
-  AudioServiceWinPluginCApiRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("AudioServiceWinPluginCApi"));
+  AppLinksPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("AppLinksPluginCApi"));
   BatteryPlusWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("BatteryPlusWindowsPlugin"));
   ConnectivityPlusWindowsPluginRegisterWithRegistrar(
@@ -48,6 +50,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("FileSelectorWindows"));
   FlutterAcrylicPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterAcrylicPlugin"));
+  FlutterMediaSessionPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("FlutterMediaSessionPluginCApi"));
   FlutterSecureStorageWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
   HeicNativePluginCApiRegisterWithRegistrar(
@@ -58,6 +62,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("MediaCoreNativePluginCApi"));
   MediaKitVideoPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("MediaKitVideoPluginCApi"));
+  MpvAudioKitPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("MpvAudioKitPluginCApi"));
   MultiViewDesktopPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("MultiViewDesktopPlugin"));
   RefreshRatePluginCApiRegisterWithRegistrar(
