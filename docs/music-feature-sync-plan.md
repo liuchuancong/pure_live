@@ -100,7 +100,9 @@
 | LX 功能 | v2 落点 | 状态 |
 |---|---|---|
 | 开关/锁定/拖动/字号/透明度/颜色/对齐 | `music_playback.dart` DesktopLyricController + 设置 pane 七项 | ✅ |
-| 垂直布局/行间距/加粗分项/单行 | 无（水平单行） | 🟡 |
+| 行间距/加粗分项 | `music_settings.dart` desktopLyricLineGap(0–25,默认15)/BoldLine/BoldExtended + pane 三行；内核 DesktopLyricStyle 四端渲染器透传（3d421b640 + media_core 65130a9） | ✅ |
+| 单行 | 桌面歌词渲染恒单行省略号截断（GDI+ AddString 不换行），即参考 ellipsis:true 的终态 | ✅ |
+| 垂直布局 | 内核四端渲染器均无逐列竖排能力 | 🟡 待内核 |
 
 ## H. 快捷键
 
