@@ -5,7 +5,7 @@
 > 约定：UI 可以重写（沿用现有 desen_ui/modules/music 风格），**具体逻辑必须与 LX 同步**。
 > 状态标记：⬜ 未开始 ｜ 🟨 进行中 ｜ ✅ 已完成并与 LX 对齐 ｜ ➖ 不移植（明确决策）
 
-创建：2026-10-29。更新：2026-10-29（第一批落地）。
+创建：2026-10-29。更新：2026-10-31（H5 平台投递收口；F6/H7 状态勘误；H1 按引擎换道重估）。
 
 ---
 
@@ -199,7 +199,8 @@
   `music_playlists.dart` 新增 LX 同款导出：合并单文件（`\uFEFF` BOM、
   `歌名  歌手  专辑` 行、列表间空行）与逐列表文件 `lx_list_<名>.txt/.csv`，
   CSV 带 `歌名,歌手,专辑` 表头 + 引号转义（`exportPlayListToText`/`exportPlayListToCSV`）。
-- 🟨 F6 在线歌单（数据层已落：能力接口 `OnlinePlaylists`（`online_playlist_models.dart` 共享
+- ✅ F6 在线歌单（2026-10-29 UI 收口（状态勘误 2026-10-31：UI 注记早已写明收口，🟨 改 ✅）；
+  数据层：能力接口 `OnlinePlaylists`（`online_playlist_models.dart` 共享
   `MusicPlaylistInfo/Page`）；**wy+tx+kg 三通道已实现**——wy weapi hottags/list/v3 detail（含
   privileges 音质合并），tx 热门标签刮取 + `get_category_content` + `GetRecommendWhole` 兜底 +
   `uniform_get_Dissinfo` 详情，kg 走最稳 JSON 链：yueku v9 getSpecial 列表/标签 + `special/info_v2`
@@ -207,7 +208,7 @@
   网关富化（LX `createGetMusicInfosTask` 的固定头/密钥）；**未移植 LX 的 HTML 抓取与 chain/gcid
   多级回退链**（分享链歌单暂不支持）；**mg 通道已实现**（第十批：taglist 标签 +
   `musiclistplaza-listbytag`（contents 递归收 resType=2021）/ `playlist-square-recommend` 兜底 +
-  MIGUM3.0 `playlist/song/v2.0` + `playlist/v2.0` 详情）。**UI 已接入（2026-10-29 收口 F6）**：歌单视图双 tab（我的歌单带计数/在线歌单，DsTabs）；
+  MIGUM3.0 `playlist/song/v2.0` + `playlist/v2.0` 详情）。**UI 已接入**：歌单视图双 tab（我的歌单带计数/在线歌单，DsTabs）；
 在线浏览=热点标签 chips（首标签默认）+ 分页列表（family provider 缓存逐页拼接，加载更多/总数
 判定/尾部 spinner）、封面 44px 网络图带兜底、无能力源诚实空态「当前源不支持」；详情页=返回头 +
 导入按钮（create+addTracks 落为本地歌单并 toast 报数）+ MusicSongRow 轨道列表（点播
@@ -272,8 +273,10 @@ playAll(index)/收藏/加入歌单/下载，复用本地轨道行）；非 wy/tx
   松开立即恢复当前配置；`_compareBypass` 期间 `_applyEq` 拒绝其他写入（按住时拖滑杆
   不会漏进对比）且挂起的防抖被取消；EQ 面板「A/B 对比」区=按住式大按钮
   （onTapDown/onTapUp/onTapCancel 全兜底），中英文案齐。
-  **待做**、阶段 C 余项（FIR/设备校正）、阶段 D（HRTF/卷积）、设计图逐像素音效中心主页面
-  （当前先落设置子页））（`plugins/player/index.ts`、
+  **待做（2026-10-31 现状重估）**：引擎已换道 mpv_audio_kit 类型化效果链
+  （`music_eq_engine_effects.dart`，87 种类型化 AudioEffect，旧 lavfi 链在 Windows 从未生效已废），
+  阶段 C 余项（FIR/设备校正）与阶段 D（HRTF/卷积）=mpv 类型化效果表无对应滤镜，诚实标注引擎受限
+  待扩展；设计图逐像素音效中心主页面待设计图（当前先落设置子页+自定义预设））（`plugins/player/index.ts`、
   `store/soundEffect.ts`）。**频响图验证测试已落**：`test/music/music_eq_dsp_test.dart`
   18 测全绿——RBJ peaking（中心=增益/远端静默/Q 越窄越陡）、low shelf（角频下抬升+过冲容差）、
   平直曲线近零/预放平移/250Hz 凸峰定位、vocal 3kHz 隆起位置、af 链生成（关闭清链/节点频率与 Q/
@@ -296,8 +299,12 @@ playAll(index)/收藏/加入歌单/下载，复用本地轨道行）；非 wy/tx
   （"名 - 歌手" 拆分、playLater 走 playNext）、`songlist/open|play`（source+id|url+index，
   播放走 OnlinePlaylists.playlistDetail→playAll）、`player` 八命令（toggle/next/prev/collect/
   uncollect/dislike→favourites/dislikes 控制器）；`handleMusicDeeplink` 返回错误文案不抛；
-  +14 测试全绿。**平台缺口（诚实标注）：OS 级 `lxmusic://` 协议注册（Windows 注册表/URL scheme
-  声明）未做，v2 尚无 app_links 接入——解析器/分发器就绪，等平台层把链接送进来即可用**。
+  +14 测试全绿。**平台投递已接（2026-10-31 收口缺口）**：`app_links ^7.2.2` +
+  `music_deeplink_binding.dart`（uriLinkStream 统一吃冷启+运行期链接→`handleMusicDeeplink`，
+  app 根 `isPrimaryWindow` 才启动，错误进 live_log）；Windows runner `SendAppLinkToInstance()`
+  （二实例转发后退出）+ boot 时 HKCU `Software\Classes\lxmusic` 自注册（便携友好，无安装器无提权，
+  每次启动刷新指向当前 exe）；macOS Info.plist CFBundleURLTypes 声明 lxmusic；Linux 桌面文件
+  注册属打包层未做（诚实标注）。提交 `c5a1e4dd5`。
 - ✅ H6 歌曲评论（2026-10-29 五源齐：`sources/music_comment_source.dart` 能力接口
   `MusicCommentsSource`（comments(track,hot,page,pageSize)），`music_comments.dart` 控制器改按能力分发：
   kw ncomment（原控制器逻辑下沉）、kg m.comment.service topliked/newest（_signed 签名+atlist 展开+
@@ -313,8 +320,10 @@ playAll(index)/收藏/加入歌单/下载，复用本地轨道行）；非 wy/tx
   LX global 默认 mod+alt+f5/箭头组，坏档回落默认）、assign 抢占式（组合被占则从旧动作挪走）、
   dispatchMusicHotkey 驱动播放器、`musicHotkeyBindings` 供应用内 CallbackShortcuts；
   设置新子页 SettingsSection.musicHotkeys（总开关/恢复默认/11 行按键捕获，Esc 取消、
-  纯修饰键等待）+19 条 l10n；+8 测试。**诚实缺口：①OS 级全局注册（RegisterHotkey/全局事件
-  回路）未做——应用内快捷键已生效，全局等平台层；②托盘/最小化属窗口外壳层，不在音乐模块**。
+  纯修饰键等待）+19 条 l10n；+8 测试。**缺口①已收口（2026-10-31）**：OS 级全局注册随内核
+  `417c8b0` 落地——Windows RegisterHotKey（已有）+ Linux X11 被动 grab + macOS Carbon
+  RegisterEventHotKey，Dart transport `isSupported` 自降级，快捷键 pane 全局开关三桌面端全生效。
+  **②托盘/最小化属窗口外壳层，不在音乐模块（外壳已有 tray_manager）**。
 - ➖ MV / 自动更新：LX 无 MV 模块；自动更新走 pure_live 自身体系。
 
 ## 2. 移植落地约定
@@ -337,7 +346,7 @@ playAll(index)/收藏/加入歌单/下载，复用本地轨道行）；非 wy/tx
 
 ## 3. 待用户决策
 
-1. H1 音效/EQ 的 Flutter 落地方案（mpv af 链 vs 自研 DSP）。
+1. ~~H1 音效/EQ 的 Flutter 落地方案~~ 已决：mpv_audio_kit 类型化效果链（2026-10-30/31 换道）。
 2. ~~G2 同步服务是否连 LX 官方服务端协议~~ 已拍板：连官方协议，保持互通（2026-10-29）。
 3. 歌单/歌词缓存存储：Hive（现状）已定，无需 SQLite 翻案 —— 除非字段对齐遇阻。
 
