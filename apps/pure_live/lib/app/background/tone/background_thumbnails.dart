@@ -8,9 +8,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core/media_core.dart'
     show
+        EngineOption,
         KernelOptions,
         PlayerConfig,
         PlayerHandle,
+        PlayerHandleEngineOptions,
         PlayerHandleLifecycle,
         PlayerHandlePlayback,
         PlayerKernel,
@@ -106,6 +108,25 @@ final class BackgroundClipStills {
     return _pending[address] ??= _capture(address, uri).whenComplete(() => _pending.remove(address));
   }
 
+  /// Keeps [bytes] — a frame the playing wallpaper rendered — as the still for
+  /// [address].
+  ///
+  /// On a platform where mpv will not hand a headless frame back, the picture
+  /// on screen is still a truthful sample. Remembering it gives the next run
+  /// (and the download rows) a still without opening a second decoder. An
+  /// existing still is never replaced.
+  Future<String?> remember(String address, Uint8List bytes, {ScreenshotFormat format = ScreenshotFormat.png}) async {
+    if (bytes.isEmpty) return null;
+    final existing = stored(address);
+    if (existing != null) return existing;
+    final path = await _writeBytes(bytes, format: format);
+    if (path == null) return null;
+    _mappingOf()[address] = path;
+    await _persist();
+    _failed.remove(address);
+    return path;
+  }
+
   /// Gives [to] the still already taken for [from].
   ///
   /// Applying a downloaded clip copies it into the app's own media folder,
@@ -156,6 +177,15 @@ final class BackgroundClipStills {
     String? path;
     try {
       handle = await kernel.create(config: _config, source: _sourceOf(uri)).timeout(_kOpenTimeout);
+      // A hardware decoder that cannot give its surface back makes mpv's
+      // screenshot return nothing; the software path always has a frame to
+      // encode. An engine that rejects the option keeps its default, and the
+      // capture below reports the failure as before.
+      try {
+        await handle.applyEngineOptions(const [EngineOption('screenshot-sw', true)]);
+      } on Object {
+        // The default screenshot path is still worth trying.
+      }
       final shot = await _shotOf(handle);
       if (shot != null) path = await _write(shot);
     } on Object {
@@ -212,7 +242,11 @@ final class BackgroundClipStills {
   /// Writes the capture as the still, shrinking it to [_kStillWidth] so a 4K
   /// clip's frame is a thumbnail rather than a megabyte on every page. A frame
   /// the shrinker cannot read is kept as the engine encoded it.
-  Future<String?> _write(PlayerScreenshot shot) async {
+  Future<String?> _write(PlayerScreenshot shot) => _writeBytes(shot.bytes, format: shot.format);
+
+  /// Writes [bytes] as a still in the same folder and shape as an engine
+  /// capture.
+  Future<String?> _writeBytes(Uint8List bytes, {required ScreenshotFormat format}) async {
     ui.Codec? codec;
     ui.Image? image;
     File? target;
@@ -221,16 +255,16 @@ final class BackgroundClipStills {
       await directory.create(recursive: true);
       Uint8List? shrunk;
       try {
-        codec = await ui.instantiateImageCodec(shot.bytes, targetWidth: _kStillWidth);
+        codec = await ui.instantiateImageCodec(bytes, targetWidth: _kStillWidth);
         final frame = await codec.getNextFrame();
         image = frame.image;
         shrunk = (await image.toByteData(format: ui.ImageByteFormat.png))?.buffer.asUint8List();
       } on Object {
         shrunk = null;
       }
-      final extension = shrunk != null ? 'png' : (shot.format == ScreenshotFormat.png ? 'png' : 'jpg');
+      final extension = shrunk != null ? 'png' : (format == ScreenshotFormat.png ? 'png' : 'jpg');
       target = File(p.join(directory.path, 'clip-${DateTime.now().microsecondsSinceEpoch}-${_serial++}.$extension'));
-      await target.writeAsBytes(shrunk ?? shot.bytes, flush: true);
+      await target.writeAsBytes(shrunk ?? bytes, flush: true);
       return _usable(target.path) ? target.path : null;
     } on Object {
       if (target != null) await _delete(target.path);

@@ -5488,6 +5488,12 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '深色'
 	String get themeModeDark => '深色';
 
+	/// zh-CN: '跟随背景明暗'
+	String get followBackgroundTone => '跟随背景明暗';
+
+	/// zh-CN: '有背景时按壁纸明暗自动选择浅色或深色主题；手动选择主题会自动关闭此跟随。'
+	String get followBackgroundToneDescription => '有背景时按壁纸明暗自动选择浅色或深色主题；手动选择主题会自动关闭此跟随。';
+
 	/// zh-CN: '语言'
 	String get language => '语言';
 
@@ -7893,6 +7899,21 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '在壁纸上盖一层压暗或提亮的蒙层；浓度越高文字越清楚，壁纸越淡。'
 	String get backgroundMaskDescription => '在壁纸上盖一层压暗或提亮的蒙层；浓度越高文字越清楚，壁纸越淡。';
+
+	/// zh-CN: '蒙层模式'
+	String get backgroundScrimMode => '蒙层模式';
+
+	/// zh-CN: '自动按文字清晰度加深蒙层，至少使用下方浓度；自定义只用下方浓度；关闭则完全不加蒙层。'
+	String get backgroundScrimModeDescription => '自动按文字清晰度加深蒙层，至少使用下方浓度；自定义只用下方浓度；关闭则完全不加蒙层。';
+
+	/// zh-CN: '自动'
+	String get backgroundScrimAuto => '自动';
+
+	/// zh-CN: '自定义'
+	String get backgroundScrimCustom => '自定义';
+
+	/// zh-CN: '关闭'
+	String get backgroundScrimOff => '关闭';
 
 	/// zh-CN: '背景模糊'
 	String get backgroundOverlayBlur => '背景模糊';
@@ -12123,6 +12144,8 @@ extension on Translations {
 			'settings.themeModeSystem' => '跟随系统',
 			'settings.themeModeLight' => '浅色',
 			'settings.themeModeDark' => '深色',
+			'settings.followBackgroundTone' => '跟随背景明暗',
+			'settings.followBackgroundToneDescription' => '有背景时按壁纸明暗自动选择浅色或深色主题；手动选择主题会自动关闭此跟随。',
 			'settings.language' => '语言',
 			'settings.about' => '关于',
 			'settings.refreshRateGroup' => '显示',
@@ -12412,10 +12435,10 @@ extension on Translations {
 			'settings.styleReset' => '恢复默认',
 			'settings.danmakuPresetBest' => '顶部 20% · 均衡',
 			'settings.danmakuPresetComfort' => '顶部 35% · 舒适',
-			'settings.danmakuPresetDense' => '顶部 55% · 高密度',
-			'settings.danmakuPresetFull' => '全屏全量',
 			_ => null,
 		} ?? switch (path) {
+			'settings.danmakuPresetDense' => '顶部 55% · 高密度',
+			'settings.danmakuPresetFull' => '全屏全量',
 			'settings.danmakuPresetHint' => '全屏全量=弹幕铺满整个画面；其它预设只占用顶部区域',
 			'settings.danmakuPresetCustom' => '自定义',
 			'settings.preset' => '预设',
@@ -12926,10 +12949,15 @@ extension on Translations {
 			'settings.backgroundFitNone' => '原始大小',
 			'settings.backgroundFitScaleDown' => '缩小',
 			'settings.backgroundMask' => '蒙层浓度',
-			'settings.backgroundMaskDescription' => '在壁纸上盖一层压暗或提亮的蒙层；浓度越高文字越清楚，壁纸越淡。',
-			'settings.backgroundOverlayBlur' => '背景模糊',
 			_ => null,
 		} ?? switch (path) {
+			'settings.backgroundMaskDescription' => '在壁纸上盖一层压暗或提亮的蒙层；浓度越高文字越清楚，壁纸越淡。',
+			'settings.backgroundScrimMode' => '蒙层模式',
+			'settings.backgroundScrimModeDescription' => '自动按文字清晰度加深蒙层，至少使用下方浓度；自定义只用下方浓度；关闭则完全不加蒙层。',
+			'settings.backgroundScrimAuto' => '自动',
+			'settings.backgroundScrimCustom' => '自定义',
+			'settings.backgroundScrimOff' => '关闭',
+			'settings.backgroundOverlayBlur' => '背景模糊',
 			'settings.backgroundOverlayBlurDescription' => '模糊壁纸本身，图片、视频、纯色、渐变都生效；0 保持清晰。',
 			'settings.backgroundClearDescription' => '回到主题自身的底色，已保存的媒体仍保留，随时可再次选择。',
 			'settings.backgroundClear' => '清除背景',
@@ -13435,6 +13463,8 @@ extension on Translations {
 			'toolbox.cacheSize' => '占用内存',
 			'toolbox.cacheClear' => '清理缓存',
 			'toolbox.cacheClearDesc' => '释放图片缓存占用的内存，不影响收藏与历史。',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.cacheConfirmTitle' => '清理图片缓存？',
 			'toolbox.cacheConfirmDesc' => '已加载的图片会重新下载，收藏与历史不受影响。',
 			'toolbox.cacheDone' => '缓存已清理',
@@ -13442,8 +13472,6 @@ extension on Translations {
 			'toolbox.comingSoonTitle' => '即将推出',
 			'toolbox.comingSoonDesc' => '这个工具还没有完成，敬请期待。',
 			'toolbox.linkDirect' => '获取直链',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkDirectTitle' => '直链地址',
 			'toolbox.linkDirectQuality' => '画质',
 			'toolbox.linkDirectLines' => '播放地址',

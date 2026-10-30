@@ -1,10 +1,14 @@
 import 'dart:io' show File;
+import 'dart:ui' as ui;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/background/library/background_presets.dart' show gradientAlignments;
 import 'package:pure_live/app/background/settings/background_settings.dart';
+import 'package:pure_live/app/background/tone/analysis/background_scrim.dart' show backgroundScrimWashFor;
+import 'package:pure_live/app/background/tone/background_tone.dart'
+    show backgroundScrimOpacityFor, backgroundToneProvider;
 import 'package:pure_live/app/background/wallpaper/background_video_source.dart';
 import 'package:pure_live/modules/live/room/room.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -52,7 +56,16 @@ final class AppBackground extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(backgroundSettingsProvider);
-    final config = _configOf(context, settings);
+    // The wash follows the palette the app is actually wearing: with following
+    // on that is the wallpaper's recommendation, with it off the viewer's own
+    // theme — either way its own auto plan, not the other palette's.
+    final tone = ref.watch(backgroundToneProvider);
+    final scrim = backgroundScrimOpacityFor(
+      settings: settings,
+      plans: tone?.plans,
+      dark: DsTheme.of(context).brightness == Brightness.dark,
+    );
+    final config = _configOf(context, settings, scrim);
     final roomActive = ref.watch(roomProvider.select((state) => state.handle != null));
     // A preview page decodes its own clip; the wallpaper stands down
     // while one is up so the shell never runs two players.
@@ -64,14 +77,10 @@ final class AppBackground extends ConsumerWidget {
     );
   }
 
-  BackgroundConfig? _configOf(BuildContext context, BackgroundSettings settings) {
+  BackgroundConfig? _configOf(BuildContext context, BackgroundSettings settings, double scrim) {
     if (!settings.active) return null;
     final colors = DsTheme.colorsOf(context);
-    final overlay = appBackgroundOverlay(
-      context,
-      opacity: settings.scrimOpacity,
-      blurSigma: settings.backgroundBlurSigma,
-    );
+    final overlay = appBackgroundOverlay(context, opacity: scrim, blurSigma: settings.backgroundBlurSigma);
     final underlay = SolidBackground(color: colors.canvas);
     final letterbox = settings.fit == BoxFit.cover || settings.fit == BoxFit.fill ? null : 24.0;
     switch (settings.kind) {
@@ -118,7 +127,7 @@ final class AppBackground extends ConsumerWidget {
           fit: settings.fit,
           underlay: underlay,
           fallback: underlay,
-          overlay: appBackgroundOverlay(context, opacity: settings.scrimOpacity, blurSigma: 0),
+          overlay: appBackgroundOverlay(context, opacity: scrim, blurSigma: 0),
         );
     }
   }
@@ -135,20 +144,42 @@ final class AppBackground extends ConsumerWidget {
   }
 }
 
-/// The scrim the app paints over a background: a white wash on a light
-/// palette (darkening artwork there would leave dark text unreadable), a
-/// dark one otherwise, at [opacity], with the wallpaper behind it blurred
-/// by [blurSigma].
+/// The wash colour the palette in force paints: white on a light palette
+/// (darkening artwork there would leave dark text unreadable), black on the
+/// dark one.
+Color appBackgroundScrimColor(BuildContext context) =>
+    backgroundScrimWashFor(dark: DsTheme.of(context).brightness == Brightness.dark);
+
+/// The scrim the app paints over a background, at [opacity], with the
+/// wallpaper behind it blurred by [blurSigma].
 ///
-/// The preview page builds the same overlay, so what it shows is what the
-/// app would wear.
-BackgroundOverlay appBackgroundOverlay(BuildContext context, {required double opacity, required double blurSigma}) {
-  final light = DsTheme.of(context).brightness == Brightness.light;
-  return BackgroundOverlay(
-    color: light ? const Color(0xFFFFFFFF) : const Color(0xFF000000),
-    opacity: opacity,
-    blurSigma: blurSigma,
-  );
+/// The preview page builds the same wash through [AppBackgroundScrim], so
+/// what it shows is what the app would wear.
+BackgroundOverlay appBackgroundOverlay(BuildContext context, {required double opacity, required double blurSigma}) =>
+    BackgroundOverlay(color: appBackgroundScrimColor(context), opacity: opacity, blurSigma: blurSigma);
+
+/// The scrim as a widget, for surfaces that stand in for the app's backdrop:
+/// the preview stage paints exactly this, over exactly the same wash colour.
+final class AppBackgroundScrim extends StatelessWidget {
+  /// A wash at [opacity], optionally frosting the picture under it by
+  /// [blurSigma].
+  const AppBackgroundScrim({required this.opacity, this.blurSigma = 0, super.key});
+
+  /// The wash opacity, `[0, 1]`.
+  final double opacity;
+
+  /// Gaussian sigma for the backdrop filter; `0` keeps the flat wash.
+  final double blurSigma;
+
+  @override
+  Widget build(BuildContext context) {
+    final wash = ColoredBox(color: appBackgroundScrimColor(context).withValues(alpha: opacity.clamp(0.0, 1.0)));
+    if (blurSigma <= 0) return wash;
+    return BackdropFilter(
+      filter: ui.ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+      child: wash,
+    );
+  }
 }
 
 /// Whether a wallpaper preview page is on screen.

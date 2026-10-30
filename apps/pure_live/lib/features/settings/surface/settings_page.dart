@@ -1341,6 +1341,7 @@ final class _ThemePane extends ConsumerWidget {
     final textScale = ref.watch(textScaleFactorProvider);
     final dynamicSupported = ref.watch(dynamicColorSeedProvider).value != null;
     final dynamicEnabled = ref.watch(dynamicColorProvider);
+    final followTone = ref.watch(backgroundSettingsProvider.select((settings) => settings.followTone));
     final seedDetail = seedName != null
         ? themeSeedToneLabel(t, seedName)
         : customSeed != null
@@ -1361,6 +1362,15 @@ final class _ThemePane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.groupTheme),
           children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.contrast),
+              title: Text(t.settings.followBackgroundTone),
+              description: Text(t.settings.followBackgroundToneDescription),
+              trailing: DsSwitch(
+                value: followTone,
+                onChanged: (value) => ref.read(backgroundSettingsProvider.notifier).setFollowTone(value: value),
+              ),
+            ),
             DsListRow(
               leading: dynamicSeed != null
                   ? _SeedSwatch.color(dynamicSeed)

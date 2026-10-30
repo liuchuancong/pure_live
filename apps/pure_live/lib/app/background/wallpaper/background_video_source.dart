@@ -21,8 +21,16 @@ import 'package:media_core/media_core.dart'
         SourceProtocol,
         SourceType;
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitAdapterFactory;
-import 'package:pure_live/app/background/tone/background_tone.dart' show backgroundVideoFrameProvider;
+import 'package:pure_live/app/background/tone/background_frames.dart' show backgroundVideoFrameProvider;
+import 'package:pure_live/app/background/tone/background_thumbnails.dart' show backgroundClipStillsProvider;
 import 'package:pure_uikit_background/pure_uikit_background.dart' show BackgroundVideoSource;
+
+/// The position the live tone probe waits for: far enough in that a frame has
+/// been decoded and handed to the video output.
+const Duration _kTonePosition = Duration(milliseconds: 400);
+
+/// How long a failed live capture waits before trying again.
+const Duration _kToneRetry = Duration(milliseconds: 500);
 
 /// The app's [BackgroundVideoSource] over media_core.
 ///
@@ -93,6 +101,9 @@ final class _BackgroundVideoViewState extends ConsumerState<_BackgroundVideoView
   PlayerKernel? _kernel;
   PlayerHandle? _handle;
   bool _disposed = false;
+  bool _tonePublished = false;
+  bool _toneProbing = false;
+  bool _toneRequested = false;
 
   @override
   void initState() {
@@ -105,7 +116,10 @@ final class _BackgroundVideoViewState extends ConsumerState<_BackgroundVideoView
     super.didUpdateWidget(oldWidget);
     if (oldWidget.paused != widget.paused) {
       final handle = _handle;
-      if (handle != null) unawaited(widget.paused ? handle.pause() : handle.play());
+      if (handle != null) {
+        unawaited(widget.paused ? handle.pause() : handle.play());
+        if (!widget.paused) unawaited(_publishTone(handle));
+      }
     }
   }
 
@@ -202,52 +216,103 @@ final class _BackgroundVideoViewState extends ConsumerState<_BackgroundVideoView
   }
 
   /// Hands one decoded frame to the tone reader, so the pages can pick their
-  /// ink from what the clip actually shows. A capture taken before the first
-  /// frame is empty; it is retried a few times, then left alone — an unknown
-  /// tone keeps the viewer's own brightness.
+  /// ink from what the clip actually shows.
+  ///
+  /// The headless still is the reliable sample and the tone reader already
+  /// prefers it, so once it exists this live probe has nothing to add. Only
+  /// when no still could be taken does it capture the playing frame; a paused
+  /// player has no new frame to offer and is left alone until it resumes.
   Future<void> _publishTone(PlayerHandle handle) async {
-    for (var attempt = 0; attempt < 4; attempt++) {
-      try {
-        await handle.stateChanges
-            .firstWhere((state) => state.position > Duration.zero)
-            .timeout(const Duration(seconds: 2));
-      } on Object {
-        // Nothing moved yet; the capture below answers whether a frame is
-        // there anyway.
-      }
-      if (_disposed || !mounted) return;
-      PlayerScreenshot? screenshot;
-      try {
-        screenshot = await handle.captureScreenshot(
-          // A tone probe, not a keepsake: a small JPEG is enough and keeps
-          // the frame in memory at a few dozen kilobytes.
-          options: const ScreenshotOptions(format: ScreenshotFormat.jpeg, quality: 40, timeout: Duration(seconds: 2)),
-        );
-      } on Object {
-        // A handle torn down mid-probe (or an engine that cannot capture)
-        // answers nothing; an unknown tone keeps the viewer's brightness.
-        return;
-      }
-      final bytes = screenshot?.bytes;
-      if (bytes != null) {
-        if (!_disposed && mounted) {
-          ref.read(backgroundVideoFrameProvider.notifier).publish(widget.uri.toString(), bytes);
+    if (_tonePublished) return;
+    if (_toneProbing) {
+      _toneRequested = true;
+      return;
+    }
+    _toneProbing = true;
+    try {
+      for (var attempt = 0; attempt < 4; attempt++) {
+        if (_disposed || !mounted) return;
+        if (_stillExists) {
+          _tonePublished = true;
+          return;
         }
-        return;
+        if (widget.paused) return;
+        try {
+          await handle.stateChanges
+              .firstWhere((state) => state.position >= _kTonePosition)
+              .timeout(const Duration(seconds: 2));
+        } on Object {
+          // Nothing moved yet; the position below decides whether there is a
+          // frame worth asking for.
+        }
+        if (_disposed || !mounted || widget.paused) return;
+        if (handle.playback.position < _kTonePosition) {
+          // The clip has not reached a decoded frame. Capturing now would ask
+          // the surface for whatever is behind the pages, which is not the
+          // picture the tone is supposed to read.
+          await Future<void>.delayed(_kToneRetry);
+          continue;
+        }
+        if (_stillExists) {
+          _tonePublished = true;
+          return;
+        }
+        PlayerScreenshot? screenshot;
+        try {
+          screenshot = await handle.captureScreenshot(
+            // The live wallpaper is on screen, so a failed engine capture can
+            // fall back to the rendered surface: the picture the viewer sees
+            // is there even when mpv will not hand a frame back. A tone probe
+            // needs no more than a small picture, hence the low pixel ratio.
+            options: const ScreenshotOptions(
+              format: ScreenshotFormat.jpeg,
+              quality: 40,
+              pixelRatio: 0.25,
+              timeout: Duration(seconds: 2),
+            ),
+          );
+        } on Object {
+          // A handle torn down mid-probe (or an engine that cannot capture)
+          // answers nothing; an unknown tone keeps the viewer's brightness.
+          return;
+        }
+        final bytes = screenshot?.bytes;
+        if (bytes != null) {
+          ref.read(backgroundVideoFrameProvider.notifier).publish(widget.uri.toString(), bytes);
+          // The frame on screen is a truthful still; keep it so the next run
+          // and the download rows have one even when a headless capture
+          // cannot produce it.
+          unawaited(ref.read(backgroundClipStillsProvider).remember(widget.uri.toString(), bytes));
+          _tonePublished = true;
+          return;
+        }
+        // The first frame may still be on its way; give the decoder a moment
+        // instead of burning all four attempts in a single synchronous burst.
+        await Future<void>.delayed(_kToneRetry);
+      }
+    } finally {
+      _toneProbing = false;
+      if (_toneRequested) {
+        _toneRequested = false;
+        if (!_disposed && mounted && !widget.paused && !_tonePublished) unawaited(_publishTone(handle));
       }
     }
   }
+
+  /// Whether the headless still for this clip is already on disk.
+  bool get _stillExists => ref.read(backgroundClipStillsProvider).stored(widget.uri.toString()) != null;
 
   @override
   Widget build(BuildContext context) {
     final handle = _handle;
     if (handle == null) return const SizedBox.expand();
+    // The tone probe reads the rendered frame, so the view keeps its capture
+    // boundary; one extra layer behind the pages is cheap.
     final view = MediaPlayerView(
       handle: handle,
       fit: widget.fit,
       alignment: widget.alignment,
       backgroundColor: const Color(0x00000000),
-      captureBoundary: false,
     );
     if (widget.blurSigma <= 0) return view;
     return ImageFiltered(

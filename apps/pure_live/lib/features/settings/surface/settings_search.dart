@@ -71,6 +71,11 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.startup, s.autoShutdown, 'shutdown timer quit 定时 关机 退出 倒计时'),
     // Appearance.
     _hit(SettingsSection.theme, s.themeMode, 'theme dark light system 主题 深色 浅色 跟随系统'),
+    _hit(
+      SettingsSection.theme,
+      s.followBackgroundTone,
+      'background brightness tone follow wallpaper theme 背景 明暗 跟随 壁纸 主题',
+    ),
     _hit(SettingsSection.theme, s.themeSeed, 'accent seed color custom hex picker palette 主题色 取色 配色 自定义 色盘 十六进制'),
     _hit(
       SettingsSection.theme,
@@ -107,6 +112,11 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.backgroundDevice, s.backgroundImageAddress, 'image url upload local file 图片 地址 上传 本机'),
     _hit(SettingsSection.backgroundDevice, s.backgroundVideoAddress, 'video url upload local file 视频 地址 上传 本机'),
     _hit(SettingsSection.background, s.backgroundFit, 'fit fill cover 填充 裁切'),
+    _hit(
+      SettingsSection.background,
+      s.backgroundScrimMode,
+      'scrim mode auto custom off contrast readability 蒙层 模式 自动 自定义 关闭 对比度 清晰',
+    ),
     _hit(SettingsSection.background, s.backgroundMask, 'mask scrim dim wash 蒙层 遮罩 压暗'),
     _hit(SettingsSection.background, s.backgroundOverlayBlur, 'blur frost background 背景 模糊 磨砂'),
     _hit(

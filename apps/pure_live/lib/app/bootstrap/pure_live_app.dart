@@ -166,6 +166,12 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     // accent and restored colours already describe the store, and rewriting
     // them on every theme tweak would freeze a system accent.
     final seedChanged = settings.seed != _settings.seed;
+    // Picking a theme is the viewer saying "this brightness, not the
+    // wallpaper's": stop following the background so the pick takes effect.
+    final modeChanged = settings.mode != _settings.mode;
+    if (modeChanged) {
+      ref.read(backgroundSettingsProvider.notifier).setFollowTone(value: false);
+    }
     String? storedSeed;
     Color? customSeed;
     if (seedChanged) {
@@ -293,10 +299,12 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       backgroundSettingsProvider.select((state) => (state.glass, state.glassFill)),
     );
     // The wallpaper picks the ink: with one painting behind the pages, its
-    // sampled tone decides whether the app wears its light or dark palette,
-    // so text never sits dark-on-dark. No tone (no wallpaper, or a sample
-    // still on its way) keeps the viewer's own choice.
-    final tone = ref.watch(backgroundToneProvider);
+    // measured brightness decides whether the app wears its light or dark
+    // palette, so text never sits dark-on-dark. The viewer can turn this off
+    // and keep their own choice; no tone (no wallpaper, or a measurement
+    // still on its way) does the same.
+    final followTone = ref.watch(backgroundSettingsProvider.select((settings) => settings.followTone));
+    final tone = followTone ? ref.watch(backgroundToneProvider) : null;
     // The translation provider is one per process, above every window (see
     // the entry points): slang keys it with a process-wide GlobalKey, so a
     // second copy inside a second window's tree is a duplicate key.

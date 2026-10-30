@@ -32,6 +32,19 @@ enum BackgroundKind {
 /// What a local file can become.
 enum BackgroundMediaKind { image, video }
 
+/// How the scrim over the wallpaper is decided.
+enum BackgroundScrimMode {
+  /// No wash at all: the wallpaper is painted as it is.
+  off,
+
+  /// At least the custom value, raised until the page's text reaches its
+  /// contrast target.
+  auto,
+
+  /// Exactly the custom value, whatever it means for readability.
+  custom,
+}
+
 /// The image formats the importer accepts, in the order the page names them.
 const List<String> kBackgroundImageExtensions = [
   'jpg', 'jpeg', 'jfif', 'png', 'webp', 'gif', 'bmp', 'avif', 'heic', 'heif', 'tif', 'tiff', 'ico',
@@ -80,7 +93,9 @@ final class BackgroundSettings {
     this.gradientStops = const [0, 1],
     this.gradientDeg = 0,
     this.fit = BoxFit.cover,
+    this.scrimMode = BackgroundScrimMode.auto,
     this.scrimOpacity = 0.45,
+    this.followTone = true,
     this.backgroundBlurSigma = 0,
     this.glass = false,
     this.glassFill = 0.6,
@@ -111,10 +126,21 @@ final class BackgroundSettings {
 
   final BoxFit fit;
 
+  /// How the scrim's opacity is decided. [BackgroundScrimMode.auto] keeps the
+  /// wallpaper readable without the viewer having to find the right number;
+  /// the custom value in [scrimOpacity] is its floor, so a background that
+  /// already reads well at that opacity looks exactly as it always did.
+  final BackgroundScrimMode scrimMode;
+
   /// The scrim: the whole-screen wash laid over the wallpaper, white in a
   /// light palette and black in the dark one. Its opacity is what raises
-  /// text contrast, and it is the layer the tone decision scores.
+  /// text contrast, and it is the layer the tone decision scores. In
+  /// [BackgroundScrimMode.auto] it is the minimum, not the final value.
   final double scrimOpacity;
+
+  /// Whether the wallpaper's measured brightness chooses the light or the
+  /// dark palette. Off keeps the viewer's own theme on every background.
+  final bool followTone;
 
   /// Gaussian sigma applied to the wallpaper itself — pictures, clips,
   /// gradients and flat colours alike. 0 keeps it sharp. This blurs the
@@ -159,7 +185,9 @@ final class BackgroundSettings {
     List<double>? gradientStops,
     int? gradientDeg,
     BoxFit? fit,
+    BackgroundScrimMode? scrimMode,
     double? scrimOpacity,
+    bool? followTone,
     double? backgroundBlurSigma,
     bool? glass,
     double? glassFill,
@@ -177,7 +205,9 @@ final class BackgroundSettings {
     gradientStops: gradientStops ?? this.gradientStops,
     gradientDeg: gradientDeg ?? this.gradientDeg,
     fit: fit ?? this.fit,
+    scrimMode: scrimMode ?? this.scrimMode,
     scrimOpacity: scrimOpacity ?? this.scrimOpacity,
+    followTone: followTone ?? this.followTone,
     backgroundBlurSigma: backgroundBlurSigma ?? this.backgroundBlurSigma,
     glass: glass ?? this.glass,
     glassFill: glassFill ?? this.glassFill,
@@ -202,6 +232,8 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
   // The stored names predate the wording the pane uses now; keeping them
   // means a settings file and a backup written by an older build still read.
   static const _scrimKey = 'background.mask';
+  static const _scrimModeKey = 'background.scrimMode';
+  static const _followToneKey = 'background.followTone';
   static const _backgroundBlurKey = 'background.overlayBlur';
   static const _glassKey = 'background.glass';
   static const _glassFillKey = 'background.glassFill';
@@ -230,7 +262,12 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
         gradientStops: storedGradient.stops,
         gradientDeg: storedGradient.deg,
         fit: fit,
+        scrimMode: BackgroundScrimMode.values.firstWhere(
+          (value) => value.name == StoragePrefs.getString(_scrimModeKey),
+          orElse: () => BackgroundScrimMode.auto,
+        ),
         scrimOpacity: (StoragePrefs.getDouble(_scrimKey) ?? 0.45).clamp(0.0, 0.8),
+        followTone: StoragePrefs.getBool(_followToneKey) ?? true,
         backgroundBlurSigma: (StoragePrefs.getDouble(_backgroundBlurKey) ?? 0).clamp(0.0, 24.0),
         glass: StoragePrefs.getBool(_glassKey) ?? false,
         glassFill: (StoragePrefs.getDouble(_glassFillKey) ?? 0.6).clamp(0.0, 1.0),
@@ -290,8 +327,16 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
 
   void setFit(BoxFit fit) => _update(state.copyWith(fit: fit));
 
-  /// How strong the scrim over the wallpaper is; 0 leaves it bare.
+  /// How the scrim's opacity is decided; see [BackgroundScrimMode].
+  void setScrimMode(BackgroundScrimMode mode) => _update(state.copyWith(scrimMode: mode));
+
+  /// The custom scrim strength; in auto mode it is the floor, otherwise the
+  /// exact wash. Writing it never changes the mode: the preview page stages
+  /// this value for every preset and must not turn auto into custom.
   void setScrimOpacity(double opacity) => _update(state.copyWith(scrimOpacity: opacity.clamp(0.0, 0.8)));
+
+  /// Whether the wallpaper's brightness chooses the palette.
+  void setFollowTone({required bool value}) => _update(state.copyWith(followTone: value));
 
   /// How much the wallpaper itself is blurred, on every kind. Capped low:
   /// this runs on the backdrop every frame, not on one still.
@@ -495,7 +540,9 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
         _solidKey: _colorHex(value.solidColor),
         _gradientKey: _encodeGradient(value),
         _fitKey: value.fit.name,
+        _scrimModeKey: value.scrimMode.name,
         _scrimKey: value.scrimOpacity,
+        _followToneKey: value.followTone,
         _backgroundBlurKey: value.backgroundBlurSigma,
         _glassKey: value.glass,
         _glassFillKey: value.glassFill,

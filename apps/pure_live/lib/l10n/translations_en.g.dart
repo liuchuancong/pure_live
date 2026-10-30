@@ -1971,6 +1971,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get themeModeSystem => 'Follow system';
 	@override String get themeModeLight => 'Light';
 	@override String get themeModeDark => 'Dark';
+	@override String get followBackgroundTone => 'Follow background brightness';
+	@override String get followBackgroundToneDescription => 'With a wallpaper, the app picks light or dark from it; choosing a theme by hand turns this off.';
 	@override String get language => 'Language';
 	@override String get about => 'About';
 	@override String get refreshRateGroup => 'Display';
@@ -2773,6 +2775,11 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundFitScaleDown => 'Original or smaller';
 	@override String get backgroundMask => 'Scrim';
 	@override String get backgroundMaskDescription => 'A wash over the wallpaper that darkens or lightens it; a stronger scrim keeps text legible and fades the wallpaper.';
+	@override String get backgroundScrimMode => 'Scrim mode';
+	@override String get backgroundScrimModeDescription => 'Auto raises the wash until text is readable, never below the slider; Custom uses the slider exactly; Off leaves the wallpaper bare.';
+	@override String get backgroundScrimAuto => 'Auto';
+	@override String get backgroundScrimCustom => 'Custom';
+	@override String get backgroundScrimOff => 'Off';
 	@override String get backgroundOverlayBlur => 'Background blur';
 	@override String get backgroundOverlayBlurDescription => 'Blurs the wallpaper itself on every background kind; 0 keeps it sharp.';
 	@override String get backgroundClearDescription => 'Returns to the theme\'s own surface; the saved media stays for later.';
@@ -5395,6 +5402,8 @@ extension on TranslationsEn {
 			'settings.themeModeSystem' => 'Follow system',
 			'settings.themeModeLight' => 'Light',
 			'settings.themeModeDark' => 'Dark',
+			'settings.followBackgroundTone' => 'Follow background brightness',
+			'settings.followBackgroundToneDescription' => 'With a wallpaper, the app picks light or dark from it; choosing a theme by hand turns this off.',
 			'settings.language' => 'Language',
 			'settings.about' => 'About',
 			'settings.refreshRateGroup' => 'Display',
@@ -5684,10 +5693,10 @@ extension on TranslationsEn {
 			'settings.styleReset' => 'Reset to defaults',
 			'settings.danmakuPresetBest' => 'Top 20% · Balanced',
 			'settings.danmakuPresetComfort' => 'Top 35% · Comfort',
-			'settings.danmakuPresetDense' => 'Top 55% · Dense',
-			'settings.danmakuPresetFull' => 'Full-screen',
 			_ => null,
 		} ?? switch (path) {
+			'settings.danmakuPresetDense' => 'Top 55% · Dense',
+			'settings.danmakuPresetFull' => 'Full-screen',
 			'settings.danmakuPresetHint' => 'Full-screen = danmaku covers the entire video; other presets use the top region only',
 			'settings.danmakuPresetCustom' => 'Custom',
 			'settings.preset' => 'Preset',
@@ -6198,10 +6207,15 @@ extension on TranslationsEn {
 			'settings.backgroundFitNone' => 'Original size',
 			'settings.backgroundFitScaleDown' => 'Original or smaller',
 			'settings.backgroundMask' => 'Scrim',
-			'settings.backgroundMaskDescription' => 'A wash over the wallpaper that darkens or lightens it; a stronger scrim keeps text legible and fades the wallpaper.',
-			'settings.backgroundOverlayBlur' => 'Background blur',
 			_ => null,
 		} ?? switch (path) {
+			'settings.backgroundMaskDescription' => 'A wash over the wallpaper that darkens or lightens it; a stronger scrim keeps text legible and fades the wallpaper.',
+			'settings.backgroundScrimMode' => 'Scrim mode',
+			'settings.backgroundScrimModeDescription' => 'Auto raises the wash until text is readable, never below the slider; Custom uses the slider exactly; Off leaves the wallpaper bare.',
+			'settings.backgroundScrimAuto' => 'Auto',
+			'settings.backgroundScrimCustom' => 'Custom',
+			'settings.backgroundScrimOff' => 'Off',
+			'settings.backgroundOverlayBlur' => 'Background blur',
 			'settings.backgroundOverlayBlurDescription' => 'Blurs the wallpaper itself on every background kind; 0 keeps it sharp.',
 			'settings.backgroundClearDescription' => 'Returns to the theme\'s own surface; the saved media stays for later.',
 			'settings.backgroundClear' => 'Clear background',
@@ -6707,6 +6721,8 @@ extension on TranslationsEn {
 			'toolbox.cacheSize' => 'Memory held',
 			'toolbox.cacheClear' => 'Clear the cache',
 			'toolbox.cacheClearDesc' => 'Release the memory the image cache holds; favorites and history are untouched.',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.cacheConfirmTitle' => 'Clear the image cache?',
 			'toolbox.cacheConfirmDesc' => 'Loaded images download again; favorites and history are untouched.',
 			'toolbox.cacheDone' => 'Cache cleared',
@@ -6714,8 +6730,6 @@ extension on TranslationsEn {
 			'toolbox.comingSoonTitle' => 'Coming soon',
 			'toolbox.comingSoonDesc' => 'This tool is not finished yet; stay tuned.',
 			'toolbox.linkDirect' => 'Get stream link',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkDirectTitle' => 'Stream links',
 			'toolbox.linkDirectQuality' => 'Quality',
 			'toolbox.linkDirectLines' => 'Playback URLs',

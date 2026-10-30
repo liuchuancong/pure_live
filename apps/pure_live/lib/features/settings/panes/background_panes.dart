@@ -37,6 +37,14 @@ final class BackgroundOverviewPane extends ConsumerWidget {
     // The fit only acts on a surface that has an image or video to place;
     // on the flat kinds it stays visible and inert.
     final media = settings.kind == BackgroundKind.image || settings.kind == BackgroundKind.video;
+    // What the app would actually paint right now: in auto mode the wash can
+    // be stronger than the slider, and the detail should say so.
+    final tone = ref.watch(backgroundToneProvider);
+    final scrim = backgroundScrimOpacityFor(
+      settings: settings,
+      plans: tone?.plans,
+      dark: DsTheme.of(context).brightness == Brightness.dark,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -54,17 +62,33 @@ final class BackgroundOverviewPane extends ConsumerWidget {
               ],
               onChanged: media ? controller.setFit : null,
             ),
+            SettingsChoiceRow<BackgroundScrimMode>(
+              leading: const DsIcon(DsIcons.contrast),
+              title: t.settings.backgroundScrimMode,
+              description: t.settings.backgroundScrimModeDescription,
+              value: settings.scrimMode,
+              options: [
+                DsSelectOption(value: BackgroundScrimMode.auto, label: t.settings.backgroundScrimAuto),
+                DsSelectOption(value: BackgroundScrimMode.custom, label: t.settings.backgroundScrimCustom),
+                DsSelectOption(value: BackgroundScrimMode.off, label: t.settings.backgroundScrimOff),
+              ],
+              onChanged: controller.setScrimMode,
+            ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.contrast),
               title: t.settings.backgroundMask,
               description: t.settings.backgroundMaskDescription,
-              detail: Text('${(settings.scrimOpacity * 100).round()}%'),
+              // Auto may paint more than the slider asks for; the detail is
+              // the wash the app really wears.
+              detail: Text('${(scrim * 100).round()}%'),
               controlWidth: 220,
               control: DsSlider(
                 value: settings.scrimOpacity,
                 max: 0.8,
                 divisions: 16,
-                onChanged: controller.setScrimOpacity,
+                // Still live in auto mode: there it is the floor, not the
+                // exact value. Off ignores the number entirely.
+                onChanged: settings.scrimMode == BackgroundScrimMode.off ? null : controller.setScrimOpacity,
                 semanticLabel: t.settings.backgroundMask,
               ),
             ),

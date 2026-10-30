@@ -1157,7 +1157,7 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
             if (!isVideo)
               Positioned.fill(
                 child: IgnorePointer(
-                  child: _StageScrim(opacity: _scrimOpacity, blurSigma: _backgroundBlurSigma),
+                  child: AppBackgroundScrim(opacity: _scrimOpacity, blurSigma: _backgroundBlurSigma),
                 ),
               ),
             if (resolution != null && !isVideo)
@@ -1231,7 +1231,7 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
           // The freeze goes on the decoded frame, the wash above it — the
           // same two layers the app paints behind its shell.
           blurSigma: _backgroundBlurSigma,
-          overlay: _StageScrim(opacity: _scrimOpacity, blurSigma: 0),
+          overlay: AppBackgroundScrim(opacity: _scrimOpacity),
         );
       }
       // The same provider the strip's tile and the size chip resolve: a
@@ -1420,34 +1420,6 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
           ),
         ),
       ],
-    );
-  }
-}
-
-/// The app's scrim over the stage: the same wash [appBackgroundOverlay] gives
-/// the wallpaper, with the background blur as a backdrop filter so it blurs
-/// the picture painted under it. The blur stopped at the decoded surface in
-/// the app — a clip is a texture it cannot sample — so clips pass a zero
-/// sigma.
-final class _StageScrim extends StatelessWidget {
-  const _StageScrim({required this.opacity, required this.blurSigma});
-
-  /// The scrim's opacity, `[0, 1]`.
-  final double opacity;
-
-  /// The background blur's gaussian sigma; `0` keeps the flat wash.
-  final double blurSigma;
-
-  @override
-  Widget build(BuildContext context) {
-    final light = DsTheme.of(context).brightness == Brightness.light;
-    final wash = ColoredBox(
-      color: (light ? const Color(0xFFFFFFFF) : const Color(0xFF000000)).withValues(alpha: opacity.clamp(0.0, 1.0)),
-    );
-    if (blurSigma <= 0) return wash;
-    return BackdropFilter(
-      filter: ui.ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-      child: wash,
     );
   }
 }
