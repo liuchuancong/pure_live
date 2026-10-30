@@ -191,9 +191,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
             : browseCardExtentForWidth(content, crossSpacing: crossSpacing);
         final columns = math.max(1, (content / (extent + crossSpacing)).ceil());
         final tileWidth = content > 0 ? (content - crossSpacing * (columns - 1)) / columns : 0.0;
-        final tileExtent = listRow
-            ? kRoomCardListDesignHeight
-            : roomCardTileHeight(tileWidth, cover: settings.coverAspect);
+        final tileExtent = listRow ? kRoomCardListDesignHeight : roomCardTileHeight(tileWidth);
         // One scroll for every day: the sections are slivers, so a long
         // record list builds its cards lazily instead of all at once.
         return CustomScrollView(

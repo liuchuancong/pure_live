@@ -4,13 +4,14 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart' show LiveWindow;
 
 /// The visual language the settings previews share with the wallpaper preview
-/// page: a black stage with a chip in its corner and round controls floating
-/// over it, under a heading led by a tinted icon tile.
+/// page: a stage with a chip in its corner and round controls over it, under a
+/// heading led by a tinted icon tile. A media sample's stage is black; one
+/// that shows a card on the app's page takes the page's own colour.
 
 /// A settings sample shown full-window, in the wallpaper preview page's frame:
-/// the sample in a dark stage with the controls that shape it beside it, and
-/// on a narrow window the same stage over the controls, which take the lower
-/// half while they are open.
+/// the sample on its stage with the controls that shape it beside it, and on a
+/// narrow window the same stage over the controls, which take the lower half
+/// while they are open.
 ///
 /// Only the frame lives here. Each preview brings its own sample and its own
 /// controls, so the wallpaper, danmaku and room-card previews read as one
@@ -24,6 +25,8 @@ final class SettingsPreviewPage extends StatefulWidget {
     required this.settings,
     this.subtitle,
     this.footer,
+    this.stageColor,
+    this.barTrailing,
     super.key,
   });
 
@@ -44,10 +47,20 @@ final class SettingsPreviewPage extends StatefulWidget {
   /// their rows out.
   final Widget settings;
 
+  /// The stage's backdrop; null keeps the black a media sample is judged
+  /// against. A sample that stands on the app's own page — a card, say —
+  /// passes the page's colour so it follows the theme instead of sitting on
+  /// black in a light skin.
+  final Color? stageColor;
+
   /// An action row under the controls on a wide window, or under the lower
   /// half's controls on a narrow one. Previews whose changes are instant leave
   /// it out.
   final Widget? footer;
+
+  /// A control at the title bar's top-right, held before the narrow window's
+  /// panel toggle — a whole-sample action such as restoring its defaults.
+  final Widget? barTrailing;
 
   @override
   State<SettingsPreviewPage> createState() => _SettingsPreviewPageState();
@@ -60,8 +73,8 @@ final class _SettingsPreviewPageState extends State<SettingsPreviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    // The frame follows the app's light or dark skin; only the stage itself
-    // stays black, because the sample — not the shell — owns those colours.
+    // The frame follows the app's light or dark skin; the stage's backdrop is
+    // the sample's own, because the sample — not the shell — owns it.
     final colors = DsTheme.colorsOf(context);
     final wide = LiveWindow.isExpanded(MediaQuery.sizeOf(context).width);
     return PopScope(
@@ -77,9 +90,9 @@ final class _SettingsPreviewPageState extends State<SettingsPreviewPage> {
     );
   }
 
-  /// The sample on the frame's black stage: the same backdrop at any width,
-  /// so a preview never inherits the shell's surface from the layout.
-  Widget _stage() => ColoredBox(color: const Color(0xFF000000), child: widget.stage);
+  /// The sample on its stage: the same backdrop at any width, so a preview
+  /// never inherits the shell's surface from the layout.
+  Widget _stage() => ColoredBox(color: widget.stageColor ?? const Color(0xFF000000), child: widget.stage);
 
   /// The bar's back, answering exactly as the system gesture does: fold the
   /// narrow window's controls away first, then leave the preview.
@@ -91,23 +104,35 @@ final class _SettingsPreviewPageState extends State<SettingsPreviewPage> {
     Navigator.of(context).maybePop();
   }
 
+  /// The narrow window's way into the controls, at the bar's right edge: a
+  /// bare glyph like the bar's other controls, tinted with the accent while
+  /// the panel stands open.
+  Widget _panelToggle(BuildContext context) => DsButton.icon(
+    variant: DsButtonVariant.ghost,
+    onPressed: () => setState(() => _settingsOpen = !_settingsOpen),
+    icon: DsIcon(DsIcons.settings, color: _settingsOpen ? DsTheme.colorsOf(context).accent : null),
+    semanticLabel: context.t.settings.backgroundPreviewSettingsTitle,
+  );
+
   /// The title bar: the way back, the preview's icon and subject, and on a
   /// narrow window the control that folds the panel in and out.
   Widget _bar(BuildContext context, {required bool wide}) {
-    final t = context.t;
     return SettingsPreviewTitleBar(
       icon: widget.icon,
       title: widget.title,
       subtitle: widget.subtitle,
       onBack: () => _back(context),
-      trailing: wide
-          ? null
-          : DsButton.icon(
-              variant: _settingsOpen ? DsButtonVariant.primary : DsButtonVariant.secondary,
-              onPressed: () => setState(() => _settingsOpen = !_settingsOpen),
-              icon: const DsIcon(DsIcons.slidersHorizontal),
-              semanticLabel: t.settings.backgroundPreviewSettingsTitle,
-            ),
+      trailing: switch ((widget.barTrailing, wide)) {
+        (null, true) => null,
+        (final barTrailing?, true) => barTrailing,
+        // A narrow bar keeps its panel toggle at the edge, after any action.
+        (final barTrailing?, false) => Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: DsSpace.s8,
+          children: [barTrailing, _panelToggle(context)],
+        ),
+        (null, false) => _panelToggle(context),
+      },
     );
   }
 

@@ -61,7 +61,6 @@ import 'package:pure_live/features/settings/playback/portrait_settings_providers
         PortraitSettings,
         PortraitSettingsController,
         portraitSettingsProvider;
-import 'package:pure_live/features/settings/room/room_card_settings.dart' show RoomCardCoverAspect;
 import 'package:pure_live/features/settings/room/room_switcher_settings.dart' show portraitSwipeSwitchProvider;
 import 'package:pure_live/features/settings/surface/settings_navigation.dart'
     show openSettingsCategory, openSettingsChild, openSettingsSection, settingsStacksRoutes;
@@ -890,16 +889,6 @@ final class _BrowsingPane extends ConsumerWidget {
                 for (final columns in kBrowseGridColumnChoices) DsSelectOption(value: columns, label: '$columns'),
               ],
               onChanged: (value) => ref.read(browseSettingsProvider.notifier).gridColumns = value,
-            ),
-            SettingsSegmentedRow<RoomCardCoverAspect>(
-              leading: const DsIcon(DsIcons.rectangleHorizontal),
-              title: t.settings.browseCoverAspect,
-              value: settings.coverAspect,
-              options: const [
-                (value: RoomCardCoverAspect.wide, label: '16:9'),
-                (value: RoomCardCoverAspect.boxed, label: '4:3'),
-              ],
-              onChanged: (value) => ref.read(browseSettingsProvider.notifier).coverAspect = value,
             ),
           ],
         ),

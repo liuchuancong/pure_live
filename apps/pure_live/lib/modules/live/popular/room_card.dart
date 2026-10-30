@@ -90,8 +90,7 @@ final class RoomCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = DsTheme.of(context);
-    final layout = ref.watch(browseSettingsProvider);
-    final visibility = ref.watch(roomCardAppearanceProvider).visibility;
+    final visibility = ref.watch(roomCardSettingsProvider).visibility;
     final site = ref.read(sitesProvider).getById(room.ref.platform);
     final title = room.content.title;
     final anchorName = (room.anchor?.name ?? '').trim();
@@ -124,7 +123,9 @@ final class RoomCard extends ConsumerWidget {
     // the viewer never offered.
     final removeSemanticLabel = removeLabel ?? context.t.common.delete;
     final offersRemove = onRemove != null || removeLabel != null;
-    final removeButton = offersRemove ? _RemoveButton(semanticLabel: removeSemanticLabel, onPressed: onRemove) : null;
+    final removeButton = offersRemove
+        ? _RemoveButton(semanticLabel: removeSemanticLabel, onPressed: onRemove, onCover: !listRow)
+        : null;
     if (listRow) {
       return _ListRow(
         title: title,
@@ -160,7 +161,7 @@ final class RoomCard extends ConsumerWidget {
                   children: [
                     DsImage(
                       image: image,
-                      aspectRatio: layout.coverAspect.coverRatio,
+                      aspectRatio: kRoomCardCoverRatio,
                       semanticLabel: title,
                       fallback: CoverFallback(title: title),
                       style: DsImageStyle(borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card))),
@@ -419,8 +420,8 @@ final class _ListRow extends StatelessWidget {
   }
 }
 
-/// The card's heart, drawn only while the room is followed: red on the
-/// cover's dark glass, and the press lets the room go.
+/// The card's heart, drawn only while the room is followed: a red glyph over
+/// the cover, and the press lets the room go.
 final class _FollowButton extends StatelessWidget {
   const _FollowButton({required this.onPressed});
 
@@ -437,18 +438,26 @@ final class _FollowButton extends StatelessWidget {
 
 /// The page's way out of itself, in the heart's corner: the history's ✕.
 final class _RemoveButton extends StatelessWidget {
-  const _RemoveButton({required this.semanticLabel, required this.onPressed});
+  const _RemoveButton({required this.semanticLabel, required this.onPressed, required this.onCover});
 
   final String semanticLabel;
   final VoidCallback? onPressed;
 
+  /// Whether the ✕ sits over a cover (white, as on a picture) or at a row's
+  /// end on the card's own surface (the theme's muted ink).
+  final bool onCover;
+
   @override
-  Widget build(BuildContext context) =>
-      _CornerButton(icon: DsIcons.x, semanticLabel: semanticLabel, onPressed: onPressed);
+  Widget build(BuildContext context) => _CornerButton(
+    icon: DsIcons.x,
+    semanticLabel: semanticLabel,
+    onPressed: onPressed,
+    color: onCover ? const Color(0xFFFFFFFF) : DsTheme.colorsOf(context).textMuted,
+  );
 }
 
-/// One round control at a row's end or over a cover's top-right corner: a
-/// Desen icon button, dark glass with the glyph at the caller's colour.
+/// One control at a row's end or over a cover's top-right corner: a bare
+/// glyph at the caller's colour, with no fill or edge of its own.
 final class _CornerButton extends StatelessWidget {
   const _CornerButton({
     required this.icon,
@@ -476,15 +485,14 @@ final class _CornerButton extends StatelessWidget {
       style: DsButtonStyle(
         height: dimension,
         padding: EdgeInsets.zero,
-        background: const Color(0x66000000),
+        background: const Color(0x00000000),
         foreground: color,
-        borderColor: const Color(0x26FFFFFF),
-        borderWidth: 1,
+        borderWidth: 0,
         borderRadius: BorderRadius.circular(DsRadii.pill),
         iconSize: 14,
         shadows: const [],
-        hovered: const DsButtonStyle(background: Color(0x8C000000)),
-        pressed: const DsButtonStyle(background: Color(0xA6000000)),
+        hovered: const DsButtonStyle(background: Color(0x00000000)),
+        pressed: const DsButtonStyle(background: Color(0x00000000)),
       ),
     );
   }

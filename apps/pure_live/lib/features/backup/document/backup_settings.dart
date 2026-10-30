@@ -50,6 +50,9 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('browse.areas.site', BackupPrefKind.string),
   ('browse.search.site', BackupPrefKind.string),
   ('browse.layout', BackupPrefKind.string),
+  ('interface.roomCard', BackupPrefKind.string),
+  // Older builds kept one set per device; the single set is read from these
+  // when it is absent, so a restore still carries an appearance over.
   ('interface.roomCard.mobile', BackupPrefKind.string),
   ('interface.roomCard.desktop', BackupPrefKind.string),
   ('browse.showUnplayable', BackupPrefKind.boolean),

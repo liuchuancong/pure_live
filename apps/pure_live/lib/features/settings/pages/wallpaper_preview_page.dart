@@ -1085,9 +1085,9 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
             children: [
               if (widget.subject.downloadable) _managerButton(t),
               DsButton.icon(
-                variant: DsButtonVariant.tinted,
+                variant: DsButtonVariant.ghost,
                 onPressed: () => unawaited(_openSettingsSheet()),
-                icon: const DsIcon(DsIcons.slidersHorizontal),
+                icon: const DsIcon(DsIcons.settings),
                 semanticLabel: t.settings.backgroundPreviewSettingsTitle,
               ),
             ],

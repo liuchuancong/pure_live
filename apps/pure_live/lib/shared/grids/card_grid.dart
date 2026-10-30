@@ -7,7 +7,7 @@ import 'package:flutter/services.dart' show HardwareKeyboard, KeyUpEvent, Logica
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart' show BrowseSettings, browseSettingsProvider;
-import 'package:pure_live/features/settings/room/room_card_settings.dart' show RoomCardCoverAspect, roomCardTileHeight;
+import 'package:pure_live/features/settings/room/room_card_settings.dart' show kRoomCardCoverRatio, roomCardTileHeight;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/focus/tv_focus_scale.dart';
 
@@ -154,9 +154,8 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   final double mainSpacing;
 
   /// The tile's width over height; the card fills its tile. Null — what a
-  /// room feed passes — takes the room card's own ratio, from the browse
-  /// layout's cover shape and title lines; wide row cards (areas, history)
-  /// pass their own.
+  /// room feed passes — takes the room card's own shape, a 16:9 cover over a
+  /// fixed information block; wide row cards (areas, history) pass their own.
   final double? aspectRatio;
 
   /// The fixed height of a card in the list layout's multi-column rows, so
@@ -246,7 +245,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
 
   /// The tile ratio the last build drew: the focus walk needs the same rows
   /// the delegate made.
-  double _tileAspect = 1.25;
+  double _tileAspect = kRoomCardCoverRatio;
 
   /// The room card's fixed tile height for the last build's column width;
   /// null for a caller that brought its own ratio.
@@ -499,7 +498,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
   @override
   Widget build(BuildContext context) {
     final browse = ref.watch(browseSettingsProvider);
-    final tileAspect = widget.aspectRatio ?? 1.25;
+    final tileAspect = widget.aspectRatio ?? kRoomCardCoverRatio;
     _tileAspect = tileAspect;
     if (widget.items.isEmpty && widget.isLoading) {
       final listRow = widget.layout == CardLayout.list;
@@ -508,7 +507,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
         crossSpacing: widget.crossSpacing,
         mainSpacing: widget.mainSpacing,
         aspectRatio: tileAspect,
-        cover: widget.aspectRatio == null ? browse.coverAspect : null,
+        roomCard: widget.aspectRatio == null,
         mainAxisExtent: listRow ? widget.listMainAxisExtent : null,
         listMatchesGridWidth: widget.listMatchesGridWidth,
         columns: browse.gridColumns,
@@ -589,9 +588,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
             final padding = widget.padding.resolve(Directionality.of(context));
             final content = math.max(0, constraints.maxWidth - padding.horizontal).toDouble();
             final tileWidth = (content - widget.crossSpacing * (_columns - 1)) / _columns;
-            final roomExtent = widget.aspectRatio == null && content > 0
-                ? roomCardTileHeight(tileWidth, cover: browse.coverAspect)
-                : null;
+            final roomExtent = widget.aspectRatio == null && content > 0 ? roomCardTileHeight(tileWidth) : null;
             _gridItemExtent = roomExtent;
             return GridView.builder(
               controller: _scroll,
@@ -830,7 +827,7 @@ final class _SkeletonGrid extends StatelessWidget {
     required this.padding,
     required this.columns,
     this.cardExtent,
-    this.cover,
+    this.roomCard = false,
     this.mainAxisExtent,
     this.listMatchesGridWidth = false,
   });
@@ -840,10 +837,10 @@ final class _SkeletonGrid extends StatelessWidget {
   final double mainSpacing;
   final double aspectRatio;
 
-  /// The cover shape of a room card tile: its height comes from the column
-  /// width plus the fixed information block, as the real grid's does. Null
+  /// Whether these tiles are room cards: their height comes from the column
+  /// width plus the fixed information block, as the real grid's does. False
   /// for a caller with its own ratio.
-  final RoomCardCoverAspect? cover;
+  final bool roomCard;
 
   /// The fixed height of a list row; null draws the card's own ratio.
   final double? mainAxisExtent;
@@ -879,9 +876,7 @@ final class _SkeletonGrid extends StatelessWidget {
                 : browseCardExtentForWidth(content, crossSpacing: crossSpacing));
         final columnCount = math.max(1, (content / (extent + crossSpacing)).ceil());
         final tileWidth = (content - crossSpacing * (columnCount - 1)) / columnCount;
-        final roomExtent = mainAxisExtent == null && cover != null && content > 0
-            ? roomCardTileHeight(tileWidth, cover: cover!)
-            : null;
+        final roomExtent = mainAxisExtent == null && roomCard && content > 0 ? roomCardTileHeight(tileWidth) : null;
         final fixedExtent = mainAxisExtent ?? roomExtent;
         return GridView.builder(
           padding: padding,
