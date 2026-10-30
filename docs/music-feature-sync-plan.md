@@ -109,7 +109,8 @@
 | LX 功能 | v2 落点 | 状态 |
 |---|---|---|
 | 软件内快捷键（播放/上下曲/音量/收藏…可录制） | `music_hotkeys.dart` + 快捷键 pane | ✅ |
-| 系统全局快捷键（OS 注册） | 代码注明未落地 | ⬜ |
+| 系统全局快捷键（OS 注册，Windows） | 快捷键 pane 全局开关把同一张表注册进系统，窗口未聚焦也生效；media_core 7a01775 RegisterHotKey+WM_HOTKEY（a664f4fbc） | ✅ |
+| 系统全局快捷键（Linux/macOS） | 内核 transport 已留位（isSupported 降级），原生注册未实现 | 🟡 待内核 |
 
 ## I. 数据同步
 
