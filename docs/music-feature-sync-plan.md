@@ -135,7 +135,7 @@
 |---|---|---|
 | 源脚本缓存/歌词缓存/URL 缓存 | `music_source_cache.dart`（带 TTL） | ✅ |
 | 缓存清理 UI（按类统计+清理） | 主设置 pane 末「缓存清理」区三行（照抄参考 SettingOther 词表）：换源歌曲缓存（swaps clear）/歌词缓存（`music.lyrics.cache` 计数+清空）/关联歌词（确认弹窗清空，参考已调歌词语义）；歌曲 URL 缓存=内核内存态随会话结束、资源缓存=app 缓存页已管，均无入口需求（提交 0df067d36） | ✅ |
-| 错误日志查看/清空 | live_log 控制台（无音乐专用页） | 🟡 |
+| 错误日志查看/清空 | 台账勘误：参考双端均无错误日志页（仅更新日志设置）；app 级 live_log 控制台已覆盖查看/清空（fd0eefc74 独立 rail 入口 /logs） | ✅ 语义等价 |
 
 ## L. 导入协议与文件
 
@@ -143,7 +143,7 @@
 |---|---|---|
 | lxmusic:// deeplink（搜索/播放/歌单/player 命令） | `music_deeplink.dart` | ✅ |
 | lx 源脚本导入（内置目录+自定义） | `music_source_catalog.dart` + 自定义源 pane | ✅ |
-| 列表备份文件互通（.lxmc/桌面版列表 json） | 自有 json；LX 列表数据形状经 `music_sync_data.dart` 支持读 | 🟡 导入 .lxmc |
+| 列表备份文件互通（.lxmc/桌面版列表 json） | `importLxmcFile`：.lxmc=gzip(JSON) 容器（无加密），解 playList_v2/allData_v2.playList；合并照抄参考 importNewListData（同 ID 列表覆盖歌曲、新列表带 source/sourceListId/locationUpdateTime 入列、试听+收藏整表替换、v1.14 双重序列化兼容）；我的列表导入入口 .json 落空自动转 .lxmc 路线+确认弹窗+计数 toast（提交 17b8904aa） | ✅ |
 | 音频文件拖入播放 | 本地音乐文件夹扫描 | ✅ 语义等价 |
 
 ## M. 设置项对齐
