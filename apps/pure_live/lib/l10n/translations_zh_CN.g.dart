@@ -9325,12 +9325,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '关闭后只保留内存中的最近日志。'
 	String get logFileDesc => '关闭后只保留内存中的最近日志。';
 
-	/// zh-CN: '内存保留条数'
-	String get logMemoryCapacity => '内存保留条数';
-
-	/// zh-CN: '日志页能翻到的最近条数。'
-	String get logMemoryCapacityDesc => '日志页能翻到的最近条数。';
-
 	/// zh-CN: '文件轮转'
 	String get logRotationGroup => '文件轮转';
 
@@ -9339,12 +9333,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '写满就切到下一个文件。'
 	String get logFileMaxBytesDesc => '写满就切到下一个文件。';
-
-	/// zh-CN: '保留文件数'
-	String get logFileMaxFiles => '保留文件数';
-
-	/// zh-CN: '含当前文件，更早的删除。'
-	String get logFileMaxFilesDesc => '含当前文件，更早的删除。';
 
 	/// zh-CN: '存放位置'
 	String get logDirectoryGroup => '存放位置';
@@ -13709,13 +13697,9 @@ extension on Translations {
 			'settings.logLevelDesc' => '低于此级别的日志不产生。',
 			'settings.logFile' => '写入日志文件',
 			'settings.logFileDesc' => '关闭后只保留内存中的最近日志。',
-			'settings.logMemoryCapacity' => '内存保留条数',
-			'settings.logMemoryCapacityDesc' => '日志页能翻到的最近条数。',
 			'settings.logRotationGroup' => '文件轮转',
 			'settings.logFileMaxBytes' => '单文件上限',
 			'settings.logFileMaxBytesDesc' => '写满就切到下一个文件。',
-			'settings.logFileMaxFiles' => '保留文件数',
-			'settings.logFileMaxFilesDesc' => '含当前文件，更早的删除。',
 			'settings.logDirectoryGroup' => '存放位置',
 			'settings.logDirectory' => '日志目录',
 			'settings.logCopyPath' => '复制路径',
@@ -13745,12 +13729,12 @@ extension on Translations {
 			'shield.masterTitle' => '总开关',
 			'shield.enabled' => '启用屏蔽',
 			'shield.enabledDescription' => '关闭后所有规则暂停。',
-			_ => null,
-		} ?? switch (path) {
 			'shield.similarityTitle' => '相似弹幕过滤',
 			'shield.similarityEnabled' => '相似弹幕过滤',
 			'shield.similarityEnabledDescription' => '过滤短时间内高度相似的弹幕。',
 			'shield.similarityThreshold' => '相似度阈值',
+			_ => null,
+		} ?? switch (path) {
 			'shield.similarityThresholdDescription' => '越高越严格。',
 			'shield.similarityCacheDuration' => '缓存时间',
 			'shield.similarityCacheDurationDescription' => '这段时间内不重复显示。',

@@ -9,8 +9,9 @@ import 'package:path/path.dart' as p;
 
 /// Writes formatted records to `<directory>/<baseName>.log`, rotating to
 /// `<baseName>.1.log`, `<baseName>.2.log`, … when the live file passes
-/// [maxFileBytes] and keeping at most [maxFiles] files including the live
-/// one.
+/// [maxFileBytes]. With a positive [maxFiles] at most that many files are
+/// kept, the live one included; with zero or less the rotated files simply
+/// pile up.
 ///
 /// All writes go through one serial queue — concurrent `log()` calls never
 /// interleave file operations. On the first I/O failure (disk full,
@@ -42,7 +43,8 @@ final class FileSink implements LogSink {
   /// Size that triggers a rotation of the current file.
   final int maxFileBytes;
 
-  /// Total files kept, the live one included.
+  /// Total files kept, the live one included; zero or less keeps every
+  /// rotated file.
   final int maxFiles;
 
   /// Applied to error text while formatting records.
@@ -109,23 +111,51 @@ final class FileSink implements LogSink {
 
   Future<void> _rotate() async {
     await _releaseOutput();
-    for (var index = maxFiles - 1; index >= 1; index--) {
-      final from = _fileAt(index);
-      if (!from.existsSync()) {
-        continue;
+    if (maxFiles > 0) {
+      for (var index = maxFiles - 1; index >= 1; index--) {
+        final from = _fileAt(index);
+        if (!from.existsSync()) {
+          continue;
+        }
+        if (index == maxFiles - 1) {
+          // The oldest file falls off the edge.
+          from.deleteSync();
+          continue;
+        }
+        from.renameSync(_fileAt(index + 1).path);
       }
-      if (index == maxFiles - 1) {
-        // The oldest file falls off the edge.
-        from.deleteSync();
-        continue;
+    } else {
+      // No count limit: every rotated file shifts up one place, so the
+      // numbering stays the age order and the first file is the newest.
+      for (var index = _lastIndex(); index >= 1; index--) {
+        final from = _fileAt(index);
+        if (from.existsSync()) {
+          from.renameSync(_fileAt(index + 1).path);
+        }
       }
-      from.renameSync(_fileAt(index + 1).path);
     }
     final current = currentFile;
     if (current.existsSync()) {
       current.renameSync(_fileAt(1).path);
     }
     _writtenBytes = 0;
+  }
+
+  /// The highest rotation index on disk, so an unlimited sink names the next
+  /// file after the ones it already wrote.
+  int _lastIndex() {
+    var last = 0;
+    try {
+      for (final entity in directory.listSync()) {
+        final match = RegExp('^${RegExp.escape(baseName)}\\.(\\d+)\\.log\$').firstMatch(p.basename(entity.path));
+        if (match == null) continue;
+        final index = int.tryParse(match.group(1) ?? '') ?? 0;
+        if (index > last) last = index;
+      }
+    } on FileSystemException {
+      // A directory that cannot be listed starts the count over.
+    }
+    return last;
   }
 
   Future<void> _degrade() async {

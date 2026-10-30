@@ -3250,13 +3250,9 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get logLevelDesc => 'Lines below this level are never produced.';
 	@override String get logFile => 'Write log files';
 	@override String get logFileDesc => 'Off keeps only the recent lines in memory.';
-	@override String get logMemoryCapacity => 'Memory lines';
-	@override String get logMemoryCapacityDesc => 'How far back the log page can scroll.';
 	@override String get logRotationGroup => 'File rotation';
 	@override String get logFileMaxBytes => 'Per-file limit';
 	@override String get logFileMaxBytesDesc => 'The sink moves to the next file at this size.';
-	@override String get logFileMaxFiles => 'Files kept';
-	@override String get logFileMaxFilesDesc => 'Including the live one; older files are deleted.';
 	@override String get logDirectoryGroup => 'Location';
 	@override String get logDirectory => 'Log folder';
 	@override String get logCopyPath => 'Copy path';
@@ -6779,13 +6775,9 @@ extension on TranslationsEn {
 			'settings.logLevelDesc' => 'Lines below this level are never produced.',
 			'settings.logFile' => 'Write log files',
 			'settings.logFileDesc' => 'Off keeps only the recent lines in memory.',
-			'settings.logMemoryCapacity' => 'Memory lines',
-			'settings.logMemoryCapacityDesc' => 'How far back the log page can scroll.',
 			'settings.logRotationGroup' => 'File rotation',
 			'settings.logFileMaxBytes' => 'Per-file limit',
 			'settings.logFileMaxBytesDesc' => 'The sink moves to the next file at this size.',
-			'settings.logFileMaxFiles' => 'Files kept',
-			'settings.logFileMaxFilesDesc' => 'Including the live one; older files are deleted.',
 			'settings.logDirectoryGroup' => 'Location',
 			'settings.logDirectory' => 'Log folder',
 			'settings.logCopyPath' => 'Copy path',
@@ -6815,12 +6807,12 @@ extension on TranslationsEn {
 			'shield.masterTitle' => 'Master switch',
 			'shield.enabled' => 'Enable the shield',
 			'shield.enabledDescription' => 'Off pauses every rule.',
-			_ => null,
-		} ?? switch (path) {
 			'shield.similarityTitle' => 'Similar danmaku filter',
 			'shield.similarityEnabled' => 'Similar danmaku filter',
 			'shield.similarityEnabledDescription' => 'Hides near-duplicates posted moments apart.',
 			'shield.similarityThreshold' => 'Similarity threshold',
+			_ => null,
+		} ?? switch (path) {
 			'shield.similarityThresholdDescription' => 'Higher is stricter.',
 			'shield.similarityCacheDuration' => 'Cache duration',
 			'shield.similarityCacheDurationDescription' => 'No repeats within this window.',

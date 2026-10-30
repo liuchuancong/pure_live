@@ -357,8 +357,6 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('log.level', BackupPrefKind.string),
   ('log.file', BackupPrefKind.boolean),
   ('log.fileMaxBytes', BackupPrefKind.integer),
-  ('log.fileMaxFiles', BackupPrefKind.integer),
-  ('log.memoryCapacity', BackupPrefKind.integer),
   ('log.directory', BackupPrefKind.string),
   // The backup surface's own choices; the WebDAV password is a secret and
   // never enters the document.

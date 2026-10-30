@@ -426,9 +426,7 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.logs, s.navLogs, 'logs console diagnostics debug trace terminal 日志 控制台 诊断 调试 终端'),
     _hit(SettingsSection.logs, s.logLevel, 'log level verbosity trace debug info warn error 日志 级别 详细 记录'),
     _hit(SettingsSection.logs, s.logFile, 'log file write persist disk 日志 文件 写入 落盘'),
-    _hit(SettingsSection.logs, s.logMemoryCapacity, 'log memory ring buffer records count 日志 内存 条数 保留 最近'),
     _hit(SettingsSection.logs, s.logFileMaxBytes, 'log file size limit rotate MB 日志 单文件 大小 上限 轮转 容量'),
-    _hit(SettingsSection.logs, s.logFileMaxFiles, 'log files kept rotate count 日志 保留 文件数 轮转 数量'),
     _hit(
       SettingsSection.logs,
       s.logDirectory,

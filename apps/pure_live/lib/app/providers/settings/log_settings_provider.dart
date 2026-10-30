@@ -4,16 +4,11 @@ import 'package:pure_live/app/logging/app_log.dart';
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 
 /// What the log tree is configured to do right now: the minimum level the
-/// sinks see, whether a file is written and how it rotates, how many records
-/// the memory ring holds, and which folder the files live in.
-typedef LogSettings = ({
-  LogLevel level,
-  bool fileEnabled,
-  int fileMaxBytes,
-  int fileMaxFiles,
-  int memoryCapacity,
-  String directory,
-});
+/// sinks see, whether a file is written, how large one file may grow, and
+/// which folder the files live in. Neither the console nor the folder keeps a
+/// count limit: a record is forgotten only when the process ends, and a file
+/// only gives way to the next one at the size limit.
+typedef LogSettings = ({LogLevel level, bool fileEnabled, int fileMaxBytes, String directory});
 
 /// Owns the log configuration. Every write goes through the app's log tree so
 /// the running sinks change with the stored preference, and a refresh (another
@@ -38,12 +33,6 @@ final class LogSettingsController extends Notifier<LogSettings> {
   /// The size one file reaches before the sink rotates to the next.
   Future<void> setFileMaxBytes(int bytes) async => _apply(() => setAppLogFileMaxBytes(bytes));
 
-  /// How many files the sink keeps, the live one included.
-  Future<void> setFileMaxFiles(int files) async => _apply(() => setAppLogFileMaxFiles(files));
-
-  /// How many records the memory ring holds for the log page.
-  Future<void> setMemoryCapacity(int capacity) async => _apply(() => setAppLogMemoryCapacity(capacity));
-
   void _apply(void Function() write) {
     write();
     state = _current();
@@ -53,8 +42,6 @@ final class LogSettingsController extends Notifier<LogSettings> {
     level: appLogLevel,
     fileEnabled: appLogFileEnabled,
     fileMaxBytes: appLogFileMaxBytes,
-    fileMaxFiles: appLogFileMaxFiles,
-    memoryCapacity: appLogMemoryCapacity,
     directory: appLogDirectoryPath ?? '',
   );
 }

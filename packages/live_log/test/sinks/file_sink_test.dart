@@ -55,5 +55,24 @@ void main() {
       expect(sink.currentFile.readAsStringSync(), contains('rotation line 3'));
       expect(rotated.readAsStringSync(), isNot(contains('rotation line 3')));
     });
+
+    test('keeps every rotated file when maxFiles is zero', () async {
+      // No count limit: each rotation shifts the files up one index, and the
+      // oldest line is still on disk instead of falling off the edge.
+      final sink = FileSink(tempDir, baseName: 'unit_host', maxFileBytes: 120, maxFiles: 0);
+
+      for (var index = 0; index < 20; index++) {
+        sink.write(record('unlimited line $index'));
+      }
+      await sink.flushed;
+      await sink.close();
+
+      final rotated = [
+        for (final file in tempDir.listSync().whereType<File>())
+          if (p.basename(file.path) != 'unit_host.log') file,
+      ];
+      expect(rotated.length, greaterThanOrEqualTo(3));
+      expect(rotated.map((file) => file.readAsStringSync()).join(), contains('unlimited line 0'));
+    });
   });
 }

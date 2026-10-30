@@ -688,6 +688,18 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s12,
       children: [
+        // The gear sits at the page's own top end: the settings page owns the
+        // level, the file and the folder, so this page keeps no second entry
+        // for them.
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: DsButton.icon(
+            variant: DsButtonVariant.ghost,
+            semanticLabel: t.settings.navLogs,
+            onPressed: () => unawaited(context.push(SettingsSectionRoute(section: SettingsSection.logs.name).location)),
+            icon: const DsIcon(DsIcons.settings, size: 18),
+          ),
+        ),
         // The lines are what this page is for, so its options sit in an
         // accordion that starts closed and gives the height back.
         DsAccordion<String>(
@@ -749,14 +761,6 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
                       onPressed: appLogFile == null ? null : () => unawaited(_copyPath()),
                       icon: const DsIcon(DsIcons.copy, size: 16),
                     ),
-                  ),
-                  DsListRow(
-                    leading: const DsIcon(DsIcons.slidersHorizontal),
-                    title: Text(t.settings.navLogs),
-                    description: Text(t.settings.logPageDescription),
-                    showChevron: true,
-                    onPressed: () =>
-                        unawaited(context.push(SettingsSectionRoute(section: SettingsSection.logs.name).location)),
                   ),
                 ],
               ),

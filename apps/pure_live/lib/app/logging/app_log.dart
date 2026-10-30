@@ -9,23 +9,16 @@ import 'package:path/path.dart' as p;
 /// otherwise.
 const int kDefaultAppLogFileMaxBytes = 4 * 1024 * 1024;
 
-/// How many log files the sink keeps, the live one included.
-const int kDefaultAppLogFileMaxFiles = 4;
-
-/// How many records the memory ring holds for the log page.
-const int kDefaultAppLogMemoryCapacity = 1000;
-
 /// The stored keys the log settings page owns.
 const String _levelKey = 'log.level';
 const String _fileKey = 'log.file';
 const String _fileMaxBytesKey = 'log.fileMaxBytes';
-const String _fileMaxFilesKey = 'log.fileMaxFiles';
-const String _memoryCapacityKey = 'log.memoryCapacity';
 
 /// The app's one log tree: a console line, the in-memory ring the log page
 /// reads, and (once storage opens) a rotating file. Records are sanitised
 /// by live_log before any sink sees them.
-final MemorySink appLogMemory = MemorySink(capacity: kDefaultAppLogMemoryCapacity);
+/// The console's records: every record this process wrote, no count limit.
+final MemorySink appLogMemory = MemorySink(capacity: 0);
 final _NotifyingSink _memorySink = _NotifyingSink(appLogMemory);
 final FanOutSink _sinks = FanOutSink([const LoggerConsoleSink(), _memorySink]);
 final LiveLog _root = LiveLog.root(sinks: [_sinks]);
@@ -43,14 +36,12 @@ LogLevel appLogLevel = LogLevel.debug;
 _SwitchableSink? _fileSink;
 Directory? _directory;
 int _fileMaxBytes = kDefaultAppLogFileMaxBytes;
-int _fileMaxFiles = kDefaultAppLogFileMaxFiles;
 bool _fileEnabled = true;
 
 /// The file sink's current switch, so a refresh that changes nothing does not
 /// reopen the file.
 String? _sinkPath;
 int _sinkMaxBytes = 0;
-int _sinkMaxFiles = 0;
 
 /// The folder the rotating files are written to: the storage layout's logs
 /// folder with the viewer's own choice already laid over it, which the boot
@@ -62,12 +53,6 @@ String? get appLogDirectoryPath => _directory?.path;
 
 /// The size a log file reaches before it rotates.
 int get appLogFileMaxBytes => _fileMaxBytes;
-
-/// How many log files are kept.
-int get appLogFileMaxFiles => _fileMaxFiles;
-
-/// How many records the memory ring holds.
-int get appLogMemoryCapacity => appLogMemory.capacity;
 
 /// Attaches the rotating file sink and applies the stored log preferences.
 /// [directory] is the logs folder the storage layout answers. Called once
@@ -90,8 +75,6 @@ void applyAppLogDirectory(Directory directory) {
 /// the settings refresh.
 void syncAppLogFromStore() {
   _fileMaxBytes = _readInt(_fileMaxBytesKey) ?? kDefaultAppLogFileMaxBytes;
-  _fileMaxFiles = _readInt(_fileMaxFilesKey) ?? kDefaultAppLogFileMaxFiles;
-  appLogMemory.capacity = _readInt(_memoryCapacityKey) ?? kDefaultAppLogMemoryCapacity;
   _fileEnabled = _readBool(_fileKey) ?? true;
   final level = _readLevel() ?? LogLevel.debug;
   appLogLevel = level;
@@ -129,22 +112,6 @@ void setAppLogFileMaxBytes(int bytes) {
   _attachFileSink();
 }
 
-/// Sets how many log files are kept and rebuilds the sink.
-void setAppLogFileMaxFiles(int files) {
-  if (files == _fileMaxFiles) return;
-  _fileMaxFiles = files;
-  unawaitedStore(() => StoragePrefs.setInt(_fileMaxFilesKey, files));
-  _attachFileSink();
-}
-
-/// Resizes the memory ring the log page reads; the oldest lines go first.
-void setAppLogMemoryCapacity(int capacity) {
-  if (capacity == appLogMemory.capacity) return;
-  appLogMemory.capacity = capacity;
-  _memorySink.notifyNow();
-  unawaitedStore(() => StoragePrefs.setInt(_memoryCapacityKey, capacity));
-}
-
 /// Drops every in-memory record (the file keeps what it wrote).
 void clearAppLog() {
   appLogMemory.clear();
@@ -167,10 +134,7 @@ void _attachFileSink() {
   final directory = _directory;
   if (directory == null) return;
   final current = _fileSink;
-  if (current != null &&
-      _sinkPath == directory.path &&
-      _sinkMaxBytes == _fileMaxBytes &&
-      _sinkMaxFiles == _fileMaxFiles) {
+  if (current != null && _sinkPath == directory.path && _sinkMaxBytes == _fileMaxBytes) {
     current.enabled = _fileEnabled;
     return;
   }
@@ -178,14 +142,15 @@ void _attachFileSink() {
     _sinks.sinks.remove(current);
     unawaited(current.close());
   }
+  // No file count limit: a file gives way to the next only when it reaches
+  // the size limit, and nothing older is deleted.
   final sink = _SwitchableSink(
-    FileSink(directory, baseName: 'pure_live', maxFileBytes: _fileMaxBytes, maxFiles: _fileMaxFiles),
+    FileSink(directory, baseName: 'pure_live', maxFileBytes: _fileMaxBytes, maxFiles: 0),
     enabled: _fileEnabled,
   );
   _fileSink = sink;
   _sinkPath = directory.path;
   _sinkMaxBytes = _fileMaxBytes;
-  _sinkMaxFiles = _fileMaxFiles;
   _sinks.sinks.add(sink);
 }
 

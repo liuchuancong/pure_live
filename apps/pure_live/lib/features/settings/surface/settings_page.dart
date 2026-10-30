@@ -2230,12 +2230,6 @@ final class _LogSettingsPaneState extends ConsumerState<_LogSettingsPane> {
   /// to the list so it still reads as chosen.
   static const List<int> _kFileSizeMb = [1, 2, 4, 8, 16];
 
-  /// The rotation stops (files kept, the live one included).
-  static const List<int> _kFileCounts = [2, 4, 6, 10];
-
-  /// The memory-ring stops, in records.
-  static const List<int> _kMemoryCaps = [200, 500, 1000, 2000, 5000];
-
   Future<void> _openDirectory(String path) async {
     final result = await OpenFile.open(path);
     if (result.type != ResultType.done && mounted) {
@@ -2294,18 +2288,6 @@ final class _LogSettingsPaneState extends ConsumerState<_LogSettingsPane> {
                 onChanged: (value) => unawaited(controller.setFileEnabled(enabled: value)),
               ),
             ),
-            SettingsChoiceRow<int>(
-              leading: const DsIcon(DsIcons.cardSd),
-              title: t.settings.logMemoryCapacity,
-              description: t.settings.logMemoryCapacityDesc,
-              value: settings.memoryCapacity,
-              options: [
-                for (final cap in stops(_kMemoryCaps, settings.memoryCapacity))
-                  DsSelectOption(value: cap, label: '$cap'),
-              ],
-              placeholder: t.settings.logMemoryCapacity,
-              onChanged: (value) => unawaited(controller.setMemoryCapacity(value)),
-            ),
           ],
         ),
         DsListSection(
@@ -2319,18 +2301,6 @@ final class _LogSettingsPaneState extends ConsumerState<_LogSettingsPane> {
               options: [for (final mb in stops(_kFileSizeMb, fileMaxMb)) DsSelectOption(value: mb, label: '$mb MB')],
               placeholder: t.settings.logFileMaxBytes,
               onChanged: (value) => unawaited(controller.setFileMaxBytes(value * 1024 * 1024)),
-            ),
-            SettingsChoiceRow<int>(
-              leading: const DsIcon(DsIcons.layers),
-              title: t.settings.logFileMaxFiles,
-              description: t.settings.logFileMaxFilesDesc,
-              value: settings.fileMaxFiles,
-              options: [
-                for (final count in stops(_kFileCounts, settings.fileMaxFiles))
-                  DsSelectOption(value: count, label: '$count'),
-              ],
-              placeholder: t.settings.logFileMaxFiles,
-              onChanged: (value) => unawaited(controller.setFileMaxFiles(value)),
             ),
           ],
         ),
