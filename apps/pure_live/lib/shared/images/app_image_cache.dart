@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart' show CachedNetworkImageProvider;
+import 'package:file/file.dart' as file;
+import 'package:file/local.dart' as file_local;
 import 'package:flutter/widgets.dart' show ImageProvider;
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
@@ -13,9 +15,53 @@ import 'package:path_provider/path_provider.dart';
 /// which hands the [CachedNetworkImageProvider] this manager — so the bytes
 /// live in one folder, age out after the manager's stale period, and can be
 /// measured, cleared and capped from the settings surface.
-final CacheManager appImageCache = CacheManager(
-  Config(_cacheFolder, stalePeriod: const Duration(days: 30), maxNrOfCacheObjects: 320),
-);
+Directory? _appCacheRoot;
+CacheManager? _appCache;
+
+/// The app-wide manager. Built on first use, so the boot can point it at the
+/// storage layout's cache folder ([installImageCacheRoot]) before any image
+/// asks for it.
+CacheManager get appImageCache => _appCache ??= CacheManager(_config());
+
+/// The folder the app-wide manager keeps its images in, once the boot has
+/// installed one. A module that caches derived files of its own — a converted
+/// cover, say — writes them under here so the settings page's one cache folder
+/// shows, measures and caps everything.
+Directory? get installedImageCacheDirectory => _appCacheRoot;
+
+/// Points the shared cache at [directory] — the storage layout's cache
+/// folder, moved by the viewer or not. A different folder drops the manager
+/// so the next image rebuilds it against the new one.
+void installImageCacheRoot(Directory directory) {
+  if (_appCacheRoot?.path == directory.path) return;
+  _appCacheRoot = directory;
+  _appCache = null;
+}
+
+Config _config() {
+  final root = _appCacheRoot;
+  return Config(
+    _cacheFolder,
+    fileSystem: root == null ? IOFileSystem(_cacheFolder) : _RootedFileSystem(root),
+    stalePeriod: const Duration(days: 30),
+    maxNrOfCacheObjects: 320,
+  );
+}
+
+/// Keeps the cache's files under a folder the app chose, with the same
+/// layout `flutter_cache_manager` gives its own temporary tree.
+final class _RootedFileSystem implements FileSystem {
+  const _RootedFileSystem(this.root);
+
+  final Directory root;
+
+  @override
+  Future<file.File> createFile(String name) async {
+    final target = const file_local.LocalFileSystem().file(p.join(root.path, name));
+    await target.parent.create(recursive: true);
+    return target;
+  }
+}
 
 /// The room windows' image cache, when one is installed. A room window
 /// gets a folder and a JSON metadata file of its own, so two engines never
@@ -83,6 +129,8 @@ ImageProvider cachedImage(String url, {int? width, int? height, String? cacheKey
 
 /// The cache's image folder, when the platform has a temporary directory.
 Future<Directory?> _cacheDirectory() async {
+  final root = _appCacheRoot;
+  if (root != null) return root;
   try {
     final temp = await getTemporaryDirectory();
     return Directory(p.join(temp.path, _cacheFolder));
@@ -132,6 +180,18 @@ Future<void> clearImageCache() async {
   await appImageCache.emptyCache();
   final roomWindow = _roomWindowImageCache;
   if (roomWindow != null) await roomWindow.emptyCache();
+  // The manager only knows the bytes it fetched, and the folder it shares has
+  // derived files too — a converted HEIC cover, for one. The settings page
+  // measures this folder, so clearing it has to empty it.
+  final directory = await _activeCacheDirectory();
+  if (directory == null) return;
+  for (final (image, _, _) in _imageFiles(directory)) {
+    try {
+      image.deleteSync();
+    } on Object {
+      // An image still on screen keeps its file; the next clear tries again.
+    }
+  }
 }
 
 /// Deletes the oldest cached images until the images fit [maxBytes]; a

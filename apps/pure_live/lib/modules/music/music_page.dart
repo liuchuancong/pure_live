@@ -9,8 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/app.dart' show RouteNames;
-import 'package:pure_live/app/providers/settings/download_directory_provider.dart'
-    show DownloadDirectoryPaths, downloadDirectoryProvider;
+import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_downloads.dart';
 import 'package:pure_live/modules/music/controller/music_hotkeys.dart'
@@ -998,7 +997,7 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
   Future<void> _export(MusicPlaylist playlist) async {
     final t = context.t;
     try {
-      final directory = ref.read(downloadDirectoryProvider).effectivePath;
+      final directory = ref.read(appPathsProvider).music.path;
       final path = await ref.read(musicPlaylistsProvider.notifier).exportToDirectory(playlist, directory);
       if (mounted) {
         showDsToast(
@@ -2201,7 +2200,7 @@ final class _DownloadsView extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final tasks = ref.watch(musicDownloadsProvider);
     final controller = ref.read(musicDownloadsProvider.notifier);
-    final directory = ref.watch(downloadDirectoryProvider).effectivePath;
+    final directory = ref.watch(appPathsProvider).music.path;
     final pending = tasks.where((task) => !task.isTerminal).toList();
     final hasFinished = tasks.any((task) => task.isTerminal);
     if (tasks.isEmpty) {

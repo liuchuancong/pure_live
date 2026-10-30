@@ -5,8 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
-import 'package:pure_live/app/providers/settings/download_directory_provider.dart'
-    show DownloadDirectoryPaths, downloadDirectoryProvider;
+import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicQualityOf;
 import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, resolveWithToggle;
@@ -82,7 +81,7 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
     }
     final activeSource = source;
     final quality = musicQualityOf(settings.quality);
-    final directory = ref.read(downloadDirectoryProvider).effectivePath;
+    final directory = ref.read(appPathsProvider).music.path;
     try {
       final resolved = await resolveWithToggle(
         ref,

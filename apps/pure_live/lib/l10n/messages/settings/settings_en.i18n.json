@@ -1277,5 +1277,21 @@
   "logDirectoryPermissionHint": "The chosen folder is not writable",
   "logCopyPath": "Copy path",
   "logPathCopied": "Path copied",
-  "logOpenFailed": "Could not open the folder"
+  "logOpenFailed": "Could not open the folder",
+  "storageFolders": "Storage locations",
+  "storageFoldersDesc": "Where each kind of file lives. Defaults follow the system; any of them can be moved.",
+  "storageFolderVideos": "Videos",
+  "storageFolderMusic": "Songs",
+  "storageFolderWallpapers": "Wallpapers",
+  "storageFolderLyrics": "Lyrics",
+  "storageFolderUpdates": "Installers",
+  "storageFolderBackgrounds": "Background media",
+  "storageFolderFonts": "Fonts",
+  "storageFolderCache": "Cover cache",
+  "storageFolderData": "App data",
+  "storageFolderDataDesc": "The database of settings, accounts and history; it does not move with the device.",
+  "storageFoldersUpdated": "Folder updated",
+  "storageFolderRestart": "Takes effect after a restart",
+  "storageFolderPick": "Choose folder",
+  "storageFolderReset": "Use default"
 }

@@ -414,10 +414,10 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.dataCache, s.cacheLimit, 'cache limit 缓存 上限'),
     _hit(
       SettingsSection.dataCache,
-      s.downloadDirectory,
-      'download folder directory path recordings files 下载 目录 文件夹 路径 录像 文件',
+      s.storageFolders,
+      'folders directory path location videos music wallpapers lyrics updates backgrounds fonts 目录 文件夹 路径 位置 视频 音乐 壁纸 歌词 字体 背景',
     ),
-    _hit(SettingsSection.dataCache, s.downloadDirectoryReset, 'reset download folder default 恢复 默认 下载 目录'),
+    _hit(SettingsSection.dataCache, s.storageFolderCache, 'cache folder directory path images covers 缓存 目录 文件夹 路径 封面'),
     // Logs.
     _hit(SettingsSection.logs, s.navLogs, 'logs console diagnostics debug trace terminal 日志 控制台 诊断 调试 终端'),
     _hit(SettingsSection.logs, s.logLevel, 'log level verbosity trace debug info warn error 日志 级别 详细 记录'),

@@ -9,10 +9,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile, LiveHttpCalls;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
+import 'package:pure_live/app/providers/boot/storage_providers.dart'
+    show appPathsProvider, storageFolderOverridesProvider;
 import 'package:pure_live/app/providers/network/github_mirror_provider.dart' show githubMirrorProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
-import 'package:pure_live/app/providers/settings/download_directory_provider.dart'
-    show DownloadDirectoryPaths, downloadDirectoryProvider;
+import 'package:pure_live/app/providers/settings/storage_folder_provider.dart' show StorageFolder;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
@@ -721,7 +722,7 @@ final class MusicDownloadPane extends ConsumerWidget {
     try {
       final selected = await FilePicker.getDirectoryPath(dialogTitle: t.music.downloadDirectory);
       if (selected == null || selected.trim().isEmpty) return;
-      final saved = await ref.read(downloadDirectoryProvider.notifier).setDirectory(selected);
+      final saved = await ref.read(storageFolderOverridesProvider.notifier).set(StorageFolder.music, selected);
       if (!context.mounted) return;
       showDsToast(
         context: context,
@@ -772,7 +773,7 @@ final class MusicDownloadPane extends ConsumerWidget {
     final t = context.t;
     final settings = ref.watch(musicSettingsProvider);
     final controller = ref.read(musicSettingsProvider.notifier);
-    final directory = ref.watch(downloadDirectoryProvider).effectivePath;
+    final directory = ref.watch(appPathsProvider).music.path;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -792,7 +793,7 @@ final class MusicDownloadPane extends ConsumerWidget {
               leading: const DsIcon(DsIcons.rotateCcw),
               title: Text(t.music.downloadDirectoryDefault),
               description: Text(t.music.downloadDirectoryDefaultDesc),
-              onPressed: () => unawaited(ref.read(downloadDirectoryProvider.notifier).reset()),
+              onPressed: () => unawaited(ref.read(storageFolderOverridesProvider.notifier).reset(StorageFolder.music)),
             ),
           ],
         ),

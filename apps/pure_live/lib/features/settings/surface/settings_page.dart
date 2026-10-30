@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+import 'dart:io' show Directory;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
@@ -1940,10 +1941,122 @@ final class _SitesDisplayPane extends ConsumerWidget {
   }
 }
 
-/// The data-and-cache page: what the app keeps on this machine — the watch
-/// history and the follow list's clipboard round trip — and the cover
-/// image cache's size, clearing and cap. One page because clearing either
-/// is the same task of freeing or moving local data.
+/// The folders every kind of file lives in: one row per movable folder with
+/// its resolved path, and the data tree beneath them as the one row that does
+/// not move. A row's buttons pick a folder or drop the choice, so "default"
+/// is always the device's own answer rather than a copied path.
+final class _StorageFoldersSection extends ConsumerWidget {
+  const _StorageFoldersSection();
+
+  static String _label(Translations t, StorageFolder folder) => switch (folder) {
+    StorageFolder.videos => t.settings.storageFolderVideos,
+    StorageFolder.music => t.settings.storageFolderMusic,
+    StorageFolder.wallpapers => t.settings.storageFolderWallpapers,
+    StorageFolder.lyrics => t.settings.storageFolderLyrics,
+    StorageFolder.updates => t.settings.storageFolderUpdates,
+    StorageFolder.backgrounds => t.settings.storageFolderBackgrounds,
+    StorageFolder.fonts => t.settings.storageFolderFonts,
+    StorageFolder.cache => t.settings.storageFolderCache,
+  };
+
+  static Directory _pathOf(AppFolders folders, StorageFolder folder) => switch (folder) {
+    StorageFolder.videos => folders.videos,
+    StorageFolder.music => folders.music,
+    StorageFolder.wallpapers => folders.wallpapers,
+    StorageFolder.lyrics => folders.lyrics,
+    StorageFolder.updates => folders.updates,
+    StorageFolder.backgrounds => folders.backgrounds,
+    StorageFolder.fonts => folders.fonts,
+    StorageFolder.cache => folders.imageCache,
+  };
+
+  Future<void> _pick(BuildContext context, WidgetRef ref, StorageFolder folder) async {
+    final t = context.t;
+    try {
+      final selected = await FilePicker.getDirectoryPath(dialogTitle: t.settings.storageFolderPick);
+      if (selected == null || selected.trim().isEmpty) return;
+      final saved = await ref.read(storageFolderOverridesProvider.notifier).set(folder, selected);
+      if (!context.mounted) return;
+      if (!saved) {
+        showDsToast(context: context, title: t.settings.downloadDirectoryPermissionHint, status: DsStatus.danger);
+        return;
+      }
+      showDsToast(
+        context: context,
+        title: folder.needsRestart
+            ? '${t.settings.storageFoldersUpdated} · ${t.settings.storageFolderRestart}'
+            : t.settings.storageFoldersUpdated,
+      );
+    } on Object {
+      if (context.mounted) {
+        showDsToast(context: context, title: t.settings.downloadDirectoryPickFailed, status: DsStatus.danger);
+      }
+    }
+  }
+
+  Future<void> _reset(BuildContext context, WidgetRef ref, StorageFolder folder) async {
+    await ref.read(storageFolderOverridesProvider.notifier).reset(folder);
+    if (!context.mounted) return;
+    showDsToast(context: context, title: context.t.settings.storageFoldersUpdated);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final folders = ref.watch(appPathsProvider);
+    final overrides = ref.watch(storageFolderOverridesProvider);
+    return DsListSection(
+      header: Text(t.settings.storageFolders),
+      children: [
+        for (final folder in StorageFolder.values)
+          () {
+            final directory = _pathOf(folders, folder).path;
+            final custom = overrides.containsKey(folder);
+            return DsListRow(
+              leading: DsIcon(folder.icon),
+              title: Text(_label(t, folder)),
+              description: DsTooltip(
+                message: directory,
+                child: Text(directory, maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+              detail: Text(custom ? t.settings.downloadDirectoryCustomLabel : t.settings.downloadDirectoryDefaultLabel),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DsButton(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    onPressed: () => unawaited(_pick(context, ref, folder)),
+                    child: Text(t.settings.storageFolderPick),
+                  ),
+                  if (custom)
+                    DsButton(
+                      variant: DsButtonVariant.ghost,
+                      size: DsSize.sm,
+                      onPressed: () => unawaited(_reset(context, ref, folder)),
+                      child: Text(t.settings.storageFolderReset),
+                    ),
+                ],
+              ),
+            );
+          }(),
+        DsListRow(
+          leading: const DsIcon(DsIcons.database),
+          title: Text(t.settings.storageFolderData),
+          description: DsTooltip(
+            message: '${folders.data.path} · ${t.settings.storageFolderDataDesc}',
+            child: Text(folders.data.path, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The data-and-cache page: where every kind of file lives, what the app
+/// keeps on this machine — the watch history and the follow list's clipboard
+/// round trip — and the cover image cache's size, clearing and cap. One page
+/// because moving, clearing and capping local data are one task.
 final class _DataCachePane extends StatelessWidget {
   const _DataCachePane();
 
@@ -1952,7 +2065,7 @@ final class _DataCachePane extends StatelessWidget {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
-      children: [_DataPane(), _CachePane()],
+      children: [_StorageFoldersSection(), _DataPane(), _CachePane()],
     );
   }
 }
@@ -2314,36 +2427,9 @@ final class _CachePaneState extends ConsumerState<_CachePane> {
     }
   }
 
-  Future<void> _pickDownloadDirectory() async {
-    final t = context.t;
-    try {
-      final selected = await FilePicker.getDirectoryPath(dialogTitle: t.settings.downloadDirectory);
-      if (selected == null || selected.trim().isEmpty) return;
-      final saved = await ref.read(downloadDirectoryProvider.notifier).setDirectory(selected);
-      if (!mounted) return;
-      if (!saved) {
-        showDsToast(context: context, title: t.settings.downloadDirectoryPermissionHint, status: DsStatus.danger);
-        return;
-      }
-      showDsToast(context: context, title: t.settings.downloadDirectoryUpdated);
-    } on Object {
-      if (mounted) {
-        showDsToast(context: context, title: t.settings.downloadDirectoryPickFailed, status: DsStatus.danger);
-      }
-    }
-  }
-
-  Future<void> _resetDownloadDirectory() async {
-    await ref.read(downloadDirectoryProvider.notifier).reset();
-    if (mounted) {
-      showDsToast(context: context, title: context.t.settings.downloadDirectoryUpdated);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final download = ref.watch(downloadDirectoryProvider);
     return DsListSection(
       header: Text(t.settings.navCache),
       children: [
@@ -2391,30 +2477,6 @@ final class _CachePaneState extends ConsumerState<_CachePane> {
             for (final mb in const [100, 200, 500, 1024, 2048]) DsSelectOption(value: mb, label: '$mb MB'),
           ],
           onChanged: (value) => unawaited(_setLimit(value)),
-        ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.folder),
-          title: Text(t.settings.downloadDirectory),
-          // The folder itself is what this row is for, and a Windows path is
-          // long: the description slot has the card's width to show it, and
-          // the tooltip carries the whole thing when it still has to shorten.
-          description: DsTooltip(
-            message: download.effectivePath,
-            child: Text(download.effectivePath, maxLines: 1, overflow: TextOverflow.ellipsis),
-          ),
-          detail: Text(
-            download.custom.isEmpty
-                ? t.settings.downloadDirectoryDefaultLabel
-                : t.settings.downloadDirectoryCustomLabel,
-          ),
-          onPressed: _busy ? null : () => unawaited(_pickDownloadDirectory()),
-        ),
-        // Always on screen: with the default folder in place there is nothing
-        // to undo, so the row waits greyed rather than disappearing.
-        DsListRow(
-          leading: const DsIcon(DsIcons.rotateCcw),
-          title: Text(t.settings.downloadDirectoryReset),
-          onPressed: download.custom.isEmpty || _busy ? null : () => unawaited(_resetDownloadDirectory()),
         ),
       ],
     );

@@ -9,9 +9,8 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:path/path.dart' as p;
 
 import 'package:pure_live/app/background/tone/background_thumbnails.dart' show backgroundClipStillsProvider;
+import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
-import 'package:pure_live/app/providers/settings/download_directory_provider.dart'
-    show DownloadDirectoryPaths, downloadDirectoryProvider;
 
 /// The preference the finished-and-failed history is kept under.
 const String kWallpaperDownloadsKey = 'wallpaper.downloads';
@@ -486,7 +485,7 @@ final class WallpaperDownloadsController extends Notifier<List<WallpaperDownload
     await _persist();
   }
 
-  String get _directory => ref.read(downloadDirectoryProvider).effectivePath;
+  String get _directory => ref.read(appPathsProvider).wallpapers.path;
 
   String _nextId() => 'wallpaper-${DateTime.now().microsecondsSinceEpoch}-${_serial++}';
 

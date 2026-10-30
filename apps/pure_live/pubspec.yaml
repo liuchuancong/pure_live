@@ -68,6 +68,7 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  file: ^7.0.0 # flutter_cache_manager 的缓存文件系统接口
   flutter_riverpod: ^3.3.2 # 状态管理与依赖注入
   flutter_secure_storage: 11.2.0 # 安全存储密钥
   http: ^1.0.0 # 账号、主题与字体等网络请求

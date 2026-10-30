@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart' show getApplicationDocumentsDirectory, getApplicationSupportDirectory;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart';
@@ -56,22 +55,6 @@ String storedBackupFolder() => _stored(kBackupFolderPref).trim();
 /// Stores [path] as the backup folder; '' resets it to the default.
 Future<void> storeBackupFolder(String path) async {
   await StoragePrefs.setString(kBackupFolderPref, path);
-}
-
-/// The folder backups go to when the user picked none: `Documents/PureLive`,
-/// then the app-support `backup` folder, then the temporary directory.
-Future<Directory> defaultBackupFolder() async {
-  final candidates = <Directory>[];
-  if (await _tryDirectory(getApplicationDocumentsDirectory) case final documents?) {
-    candidates.add(Directory(p.join(documents.path, 'PureLive')));
-  }
-  if (await _tryDirectory(getApplicationSupportDirectory) case final support?) {
-    candidates.add(Directory(p.join(support.path, 'backup')));
-  }
-  for (final candidate in candidates) {
-    if (await ensureWritableFolder(candidate)) return candidate;
-  }
-  return candidates.isNotEmpty ? candidates.last : Directory(p.join(Directory.systemTemp.path, 'PureLive'));
 }
 
 /// Whether files can be written in [folder] (made when missing).
@@ -188,14 +171,6 @@ String formatBackupSize(int bytes) {
     unit++;
   }
   return '${value.toStringAsFixed(1)} ${units[unit]}';
-}
-
-Future<Directory?> _tryDirectory(Future<Directory?> Function() find) async {
-  try {
-    return await find();
-  } on Object {
-    return null;
-  }
 }
 
 // -- WebDAV sync ----------------------------------------------------------

@@ -3,17 +3,20 @@ import 'dart:io' show Directory;
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:live_platform/live_platform.dart' show PlatformRuntimeInfo;
 import 'package:live_platform_path_provider/live_platform_path_provider.dart' show StorageArea, StoragePolicy;
+import 'package:path/path.dart' as p;
 
-/// A debug run keeps its data beside the debug executable — inside the
-/// project's build tree — instead of the installed build's OS locations.
+/// A debug run of a portable build keeps its data beside the executable —
+/// inside the bundle's own tree — instead of the portable release's data,
+/// so a developer's `flutter run` beside a portable copy never overwrites it.
 ///
-/// `flutter run` compiles to `build\windows\x64\runner\Debug\`, so the
-/// debug tree lands in the project directory where a developer can find
-/// and wipe it, and a debug build can never read or write an installed
-/// build's data. Every area gets the exe-rooted candidate first; the
-/// wrapped policy's answers follow as fallbacks (a path that fails the
-/// write probe simply falls through), so nothing is lost on platforms or
-/// sandboxes where the executable directory is not writable.
+/// Only portable deployments are re-rooted here. An installed or unknown
+/// deployment follows its own policy: the OS roots the shell hands over are
+/// already one `debug` segment deeper in a debug build, so those runs land
+/// in `<appsupport>/debug/...` rather than beside a `flutter run`
+/// executable that the next build wipes. The wrapped policy's answers stay
+/// as fallbacks (a path that fails the write probe simply falls through), so
+/// nothing is lost on platforms where the executable directory is not
+/// writable.
 final class DebugRootedPolicy implements StoragePolicy {
   /// Wraps [inner] with exe-rooted debug candidates under [executableRoot].
   const DebugRootedPolicy({required this.inner, required this.executableRoot});
@@ -26,10 +29,10 @@ final class DebugRootedPolicy implements StoragePolicy {
 
   @override
   List<Directory> candidatesFor(StorageArea area, PlatformRuntimeInfo runtime) {
-    if (!kDebugMode) {
+    if (!kDebugMode || !runtime.isPortable) {
       return inner.candidatesFor(area, runtime);
     }
-    final debugTree = Directory('${executableRoot.path}/pure_live_debug');
-    return [Directory('${debugTree.path}/${area.name}'), ...inner.candidatesFor(area, runtime)];
+    final debugTree = Directory(p.join(executableRoot.path, 'pure_live_debug'));
+    return [Directory(p.join(debugTree.path, area.name)), ...inner.candidatesFor(area, runtime)];
   }
 }

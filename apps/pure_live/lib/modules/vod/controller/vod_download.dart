@@ -3,25 +3,9 @@ import 'dart:io' show Directory, File, HttpClient, HttpException;
 
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart' show getApplicationDocumentsDirectory, getApplicationSupportDirectory;
 
 /// How a download ended, or that it is still going.
 enum VodDownloadStatus { running, done, failed, cancelled }
-
-/// The folder this app keeps downloaded pictures in:
-/// `Documents/PureLive/Videos`, falling back to the app-support folder when
-/// the documents folder is not there (a stripped mobile platform).
-Future<Directory> vodDownloadFolder() async {
-  Directory base;
-  try {
-    base = await getApplicationDocumentsDirectory();
-  } on Object {
-    base = await getApplicationSupportDirectory();
-  }
-  final folder = Directory(p.join(base.path, 'PureLive', 'Videos'));
-  await folder.create(recursive: true);
-  return folder;
-}
 
 /// The file a download writes: the archive's name, the part's name when it
 /// has more than one, and the container the source served.
@@ -57,8 +41,12 @@ File freeDownloadFile(Directory folder, String name) {
 /// target and the finished file is renamed into place, so a cancelled or
 /// failed download leaves nothing half-written behind.
 final class VodDownloadTask extends ChangeNotifier {
-  /// A task for [url], written as [fileName] under the app's Videos folder.
-  VodDownloadTask({required this.url, required this.headers, required this.fileName});
+  /// A task for [url], written as [fileName] under [folder] — the app's
+  /// video folder from the storage layout.
+  VodDownloadTask({required this.url, required this.headers, required this.fileName, required this.folder});
+
+  /// The folder the finished file lands in.
+  final Directory folder;
 
   /// The signed CDN address.
   final String url;
@@ -100,7 +88,7 @@ final class VodDownloadTask extends ChangeNotifier {
   Future<void> start() async {
     File? scratch;
     try {
-      final target = freeDownloadFile(await vodDownloadFolder(), fileName);
+      final target = freeDownloadFile(folder, fileName);
       scratch = File('${target.path}.part');
       final client = HttpClient()..connectionTimeout = const Duration(seconds: 20);
       _client = client;

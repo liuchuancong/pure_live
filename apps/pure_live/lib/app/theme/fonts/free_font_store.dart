@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile, LiveRequest, LiveStreamedResponse;
 import 'package:path/path.dart' as p;
 
-import 'package:pure_live/app/providers/boot/storage_providers.dart' show storagePathsProvider;
+import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/app/providers/network/github_mirror_provider.dart' show githubMirrorProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/app/theme/fonts/font_defaults.dart' show isFreeFontId;
@@ -109,8 +109,8 @@ final class FreeFontStore extends Notifier<FreeFontStoreState> {
 
   @override
   FreeFontStoreState build() {
-    final paths = ref.watch(storagePathsProvider);
-    _directory = p.join(paths.data.path, 'fonts');
+    final paths = ref.watch(appPathsProvider);
+    _directory = paths.fonts.path;
     ref.onDispose(() {
       for (final response in _responses.values) {
         unawaited(response.close());

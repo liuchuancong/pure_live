@@ -8,7 +8,7 @@ import 'package:live_net/live_net.dart' show ClientProfile, LiveRequest, LiveStr
 import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart'
-    show DownloadDirectoryPaths, downloadDirectoryProvider, networkFactoryProvider;
+    show appPathsProvider, networkFactoryProvider;
 import 'package:pure_live/features/version/release_builds.dart' show ReleaseBuild, formatReleaseSize;
 import 'package:pure_live/l10n/translations.dart';
 
@@ -83,7 +83,7 @@ final class _UpdateDownloadDialogState extends ConsumerState<UpdateDownloadDialo
   }
 
   Future<void> _start() async {
-    final directory = ref.read(downloadDirectoryProvider).effectivePath;
+    final directory = ref.read(appPathsProvider).updates.path;
     final target = File(p.join(directory, _finalName(widget.build.name)));
     final part = File('${target.path}.part');
     _savedDirectory = target.parent.path;

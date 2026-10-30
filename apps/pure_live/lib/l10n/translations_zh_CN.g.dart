@@ -2805,6 +2805,8 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '向音源请求的音质；音源没有这一档时会给出它能提供的最高档。'
 	String get qualityDesc => '向音源请求的音质；音源没有这一档时会给出它能提供的最高档。';
+
+	/// zh-CN: '输出设备'
 	String get audioOutput => '输出设备';
 
 	/// zh-CN: '选择音乐的播放输出设备。'
@@ -3226,6 +3228,8 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '文件里没有可用的歌曲'
 	String get playlistImportInvalid => '文件里没有可用的歌曲';
+
+	/// zh-CN: '备份文件中列表与现有列表 ID 相同时，现有列表内歌曲将会被覆盖，是否要继续？'
 	String get playlistImportLxmcConfirm => '备份文件中列表与现有列表 ID 相同时，现有列表内歌曲将会被覆盖，是否要继续？';
 
 	/// zh-CN: '已导入 {lists} 个列表、{songs} 首歌曲'
@@ -3324,12 +3328,14 @@ class Translations$music$zh_CN {
 	/// zh-CN: '无法写入这个目录'
 	String get downloadDirectoryFailed => '无法写入这个目录';
 
-	/// zh-CN: '下载格式'
-	String get downloadType => '下载格式';
+	/// zh-CN: '自动换源下载'
 	String get downloadUseOtherSource => '自动换源下载';
 
 	/// zh-CN: '当无法从歌曲的原始来源下载时，尝试切换到其他来源下载。注：此功能不 100% 保证换源后的歌曲版本与原版一致。'
 	String get downloadUseOtherSourceDesc => '当无法从歌曲的原始来源下载时，尝试切换到其他来源下载。注：此功能不 100% 保证换源后的歌曲版本与原版一致。';
+
+	/// zh-CN: '下载格式'
+	String get downloadType => '下载格式';
 
 	/// zh-CN: '原格式会尽量保留音源容器；转码需要 ffmpeg。'
 	String get downloadTypeDesc => '原格式会尽量保留音源容器；转码需要 ffmpeg。';
@@ -3664,8 +3670,7 @@ class Translations$music$zh_CN {
 	/// zh-CN: '歌词行与行之间的间距大小。'
 	String get desktopLyricLineGapDesc => '歌词行与行之间的间距大小。';
 
-	/// zh-CN: '加粗逐行歌词'
-	String get desktopLyricBoldLine => '加粗逐行歌词';
+	/// zh-CN: '歌词显示方向'
 	String get desktopLyricDirection => '歌词显示方向';
 
 	/// zh-CN: '垂直方向按从上到下、从右到左的直排显示。'
@@ -3676,6 +3681,9 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '垂直方向'
 	String get desktopLyricDirectionVertical => '垂直方向';
+
+	/// zh-CN: '加粗逐行歌词'
+	String get desktopLyricBoldLine => '加粗逐行歌词';
 
 	/// zh-CN: '主歌词行以粗体绘制。'
 	String get desktopLyricBoldLineDesc => '主歌词行以粗体绘制。';
@@ -3922,6 +3930,8 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '平直响应'
 	String get eqPresetFlat => '平直响应';
+
+	/// zh-CN: '音效中心'
 	String get eqCenter => '音效中心';
 
 	/// zh-CN: '自定义你的专属音效风格'
@@ -9386,6 +9396,54 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '无法打开目录'
 	String get logOpenFailed => '无法打开目录';
+
+	/// zh-CN: '存储位置'
+	String get storageFolders => '存储位置';
+
+	/// zh-CN: '每类文件的位置，默认跟随系统，可自行选择。'
+	String get storageFoldersDesc => '每类文件的位置，默认跟随系统，可自行选择。';
+
+	/// zh-CN: '视频'
+	String get storageFolderVideos => '视频';
+
+	/// zh-CN: '歌曲'
+	String get storageFolderMusic => '歌曲';
+
+	/// zh-CN: '壁纸'
+	String get storageFolderWallpapers => '壁纸';
+
+	/// zh-CN: '歌词'
+	String get storageFolderLyrics => '歌词';
+
+	/// zh-CN: '更新包'
+	String get storageFolderUpdates => '更新包';
+
+	/// zh-CN: '壁纸素材'
+	String get storageFolderBackgrounds => '壁纸素材';
+
+	/// zh-CN: '字体'
+	String get storageFolderFonts => '字体';
+
+	/// zh-CN: '封面缓存'
+	String get storageFolderCache => '封面缓存';
+
+	/// zh-CN: '应用数据'
+	String get storageFolderData => '应用数据';
+
+	/// zh-CN: '设置、账号与观看记录的数据库，不随设备迁移。'
+	String get storageFolderDataDesc => '设置、账号与观看记录的数据库，不随设备迁移。';
+
+	/// zh-CN: '目录已更新'
+	String get storageFoldersUpdated => '目录已更新';
+
+	/// zh-CN: '重启应用后生效'
+	String get storageFolderRestart => '重启应用后生效';
+
+	/// zh-CN: '选择目录'
+	String get storageFolderPick => '选择目录';
+
+	/// zh-CN: '恢复默认'
+	String get storageFolderReset => '恢复默认';
 }
 
 // Path: shield
@@ -11658,15 +11716,13 @@ extension on Translations {
 			'music.playlistImport' => '导入歌单',
 			'music.playlistImportDone' => ({required Object name}) => '已导入「${name}」',
 			'music.playlistImportFailed' => ({required Object error}) => '导入失败：${error}',
-			'music.playlistImportInvalid' => '文件里没有可用的歌曲',
-			'music.playlistImportLxmcConfirm' => '备份文件中列表与现有列表 ID 相同时，现有列表内歌曲将会被覆盖，是否要继续？',
 			_ => null,
 		} ?? switch (path) {
+			'music.playlistImportInvalid' => '文件里没有可用的歌曲',
+			'music.playlistImportLxmcConfirm' => '备份文件中列表与现有列表 ID 相同时，现有列表内歌曲将会被覆盖，是否要继续？',
 			'music.playlistImportLxmcDone' => ({required Object lists, required Object songs}) => '已导入 ${lists} 个列表、${songs} 首歌曲',
 			'music.playlistImportLxmcUnsupported' => '不是可导入的 lx-music 列表备份',
 			'music.playlistExport' => '导出歌单',
-			_ => null,
-		} ?? switch (path) {
 			'music.playlistExportDone' => ({required Object path}) => '已导出到 ${path}',
 			'music.playlistExportFailed' => ({required Object error}) => '导出失败：${error}',
 			'music.playlistSort' => '排序',
@@ -11696,9 +11752,9 @@ extension on Translations {
 			'music.downloadDirectoryDefaultDesc' => '回到应用默认的下载文件夹。',
 			'music.downloadDirectoryUpdated' => '下载目录已更新',
 			'music.downloadDirectoryFailed' => '无法写入这个目录',
-			'music.downloadType' => '下载格式',
 			'music.downloadUseOtherSource' => '自动换源下载',
 			'music.downloadUseOtherSourceDesc' => '当无法从歌曲的原始来源下载时，尝试切换到其他来源下载。注：此功能不 100% 保证换源后的歌曲版本与原版一致。',
+			'music.downloadType' => '下载格式',
 			'music.downloadTypeDesc' => '原格式会尽量保留音源容器；转码需要 ffmpeg。',
 			'music.downloadTypeOriginal' => '原格式',
 			'music.downloadTypeMp3' => 'MP3',
@@ -11810,11 +11866,11 @@ extension on Translations {
 			'music.desktopLyricStrokeWidthDesc' => '文字描边的粗细，0 表示不描边。',
 			'music.desktopLyricLineGap' => '歌词间距',
 			'music.desktopLyricLineGapDesc' => '歌词行与行之间的间距大小。',
-			'music.desktopLyricBoldLine' => '加粗逐行歌词',
 			'music.desktopLyricDirection' => '歌词显示方向',
 			'music.desktopLyricDirectionDesc' => '垂直方向按从上到下、从右到左的直排显示。',
 			'music.desktopLyricDirectionHorizontal' => '水平方向',
 			'music.desktopLyricDirectionVertical' => '垂直方向',
+			'music.desktopLyricBoldLine' => '加粗逐行歌词',
 			'music.desktopLyricBoldLineDesc' => '主歌词行以粗体绘制。',
 			'music.desktopLyricBoldExtended' => '加粗翻译、罗马音歌词',
 			'music.desktopLyricBoldExtendedDesc' => '翻译与罗马音副行以粗体绘制。',
@@ -11913,6 +11969,9 @@ extension on Translations {
 			'music.eqInUse' => '当前使用',
 			'music.eqOfficialPresets' => '官方预设',
 			'music.eqMyPresets' => '我的预设',
+			'music.eqSavePreset' => '保存当前为预设',
+			'music.eqPresetNameLabel' => '预设名称',
+			'music.eqPresetNameHint' => '给当前正在使用的曲线起个名字',
 			'music.eqMyPresetsEmpty' => '还没有自定义预设',
 			'music.eqTagPop' => '流行 / 爵士乐',
 			'music.eqTagRock' => '摇滚 / 硬摇滚',
@@ -12171,6 +12230,8 @@ extension on Translations {
 			'recorder.preferBestDescription' => '开启时只映射首个视频和音频流，避免多码率文件变成多轨。',
 			'recorder.keepAliveTitle' => '后台保持录制',
 			'recorder.keepAliveDescription' => '录制期间持有后台会话与唤醒锁（Android 前台服务/通知）。',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.verifyTitle' => '结束时校验文件',
 			'recorder.verifyDescription' => '结束前检查分段是否可播放。',
 			'recorder.restartTitle' => '断流重试次数',
@@ -12214,8 +12275,6 @@ extension on Translations {
 			'recorder.cacheCleared' => '录制缓存已清理',
 			'recorder.cacheFailed' => '缓存操作失败，请重试',
 			'recorder.cacheManagedHint' => '自定义目录下只创建并管理 PureLiveRecords 子目录。',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.liveCheckSecondsTitle' => '检测间隔（秒）',
 			'recorder.liveCheckSecondsDesc' => '每个等待开播的任务多久检查一次，10–300 秒。',
 			'recorder.checkBackoff' => '启用指数退避',
@@ -12685,6 +12744,8 @@ extension on Translations {
 			'settings.styleTapInteractionDesc' => '可复制、屏蔽；关闭后只切换控制条。',
 			'settings.styleLongPressInteraction' => '长按弹幕',
 			'settings.styleLongPressInteractionDesc' => '与点按同一菜单；关闭后长按不命中弹幕。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuStyleGroup' => '弹幕样式',
 			'settings.danmakuStyleDescription' => '弹幕的字体、大小、速度、区域、描边与帧率。',
 			'settings.danmakuDisplayDescription' => '聊天列表显示谁、显示什么、怎么排。',
@@ -12728,8 +12789,6 @@ extension on Translations {
 			'settings.styleArea' => '占用高度',
 			'settings.styleAreaDesc' => '弹幕最多占用画面高度的比例（0–100%）。',
 			'settings.fixedTopTitle' => '固定顶部',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fixedTopDescription' => '平台的置顶弹幕停在画面上方；关闭后只在聊天列表里显示。',
 			'settings.fixedBottomTitle' => '固定底部',
 			'settings.fixedBottomDescription' => '平台的置底弹幕停在画面下方；关闭后只在聊天列表里显示。',
@@ -13199,6 +13258,8 @@ extension on Translations {
 			'settings.backgroundPlayDesc' => '离开应用后继续出声；关闭则切后台即暂停。',
 			'settings.asmrSleepMode' => 'ASMR 睡眠模式',
 			'settings.asmrSleepModeDesc' => '进直播间自动切音频模式，到时暂停。仅 Android。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.asmrSleepTimer' => 'ASMR 睡眠时长',
 			'settings.asmrSleepTimerDesc' => '音频模式自动停止前的分钟数，范围 15–1440。',
 			'settings.asmrSleepCustomMinutes' => '自定义分钟数',
@@ -13242,8 +13303,6 @@ extension on Translations {
 			'settings.groupCards' => '卡片与列表',
 			'settings.groupLanguage' => '语言',
 			'settings.contrast' => '对比度',
-			_ => null,
-		} ?? switch (path) {
 			'settings.contrastDescription' => '控件边界与文字的对比强度。',
 			'settings.contrastSoft' => '柔和',
 			'settings.contrastStandard' => '标准',
@@ -13701,6 +13760,24 @@ extension on Translations {
 			'settings.logCopyPath' => '复制路径',
 			'settings.logPathCopied' => '路径已复制',
 			'settings.logOpenFailed' => '无法打开目录',
+			'settings.storageFolders' => '存储位置',
+			'settings.storageFoldersDesc' => '每类文件的位置，默认跟随系统，可自行选择。',
+			'settings.storageFolderVideos' => '视频',
+			'settings.storageFolderMusic' => '歌曲',
+			'settings.storageFolderWallpapers' => '壁纸',
+			'settings.storageFolderLyrics' => '歌词',
+			'settings.storageFolderUpdates' => '更新包',
+			'settings.storageFolderBackgrounds' => '壁纸素材',
+			'settings.storageFolderFonts' => '字体',
+			'settings.storageFolderCache' => '封面缓存',
+			'settings.storageFolderData' => '应用数据',
+			'settings.storageFolderDataDesc' => '设置、账号与观看记录的数据库，不随设备迁移。',
+			_ => null,
+		} ?? switch (path) {
+			'settings.storageFoldersUpdated' => '目录已更新',
+			'settings.storageFolderRestart' => '重启应用后生效',
+			'settings.storageFolderPick' => '选择目录',
+			'settings.storageFolderReset' => '恢复默认',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
@@ -13756,8 +13833,6 @@ extension on Translations {
 			'toolbox.groupData' => '数据',
 			'toolbox.toolNetworkTitle' => '平台节点',
 			'toolbox.toolNetworkDescription' => '测试各平台接口的连通性与延迟。',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.toolCacheTitle' => '缓存清理',
 			'toolbox.toolCacheDescription' => '查看并清理图片占用的内存缓存。',
 			'toolbox.toolLogsTitle' => '日志',

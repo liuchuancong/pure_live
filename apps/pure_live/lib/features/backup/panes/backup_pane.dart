@@ -91,7 +91,7 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
   /// The chosen folder (from prefs) or the default one, then its backups.
   Future<void> _loadFolder() async {
     final saved = storedBackupFolder();
-    final folder = saved.isNotEmpty ? saved : (await defaultBackupFolder()).path;
+    final folder = saved.isNotEmpty ? saved : ref.read(appPathsProvider).backups.path;
     if (!mounted) return;
     setState(() {
       _folder = folder;

@@ -1277,5 +1277,21 @@
   "logDirectoryPermissionHint": "所选目录不可写",
   "logCopyPath": "复制路径",
   "logPathCopied": "路径已复制",
-  "logOpenFailed": "无法打开目录"
+  "logOpenFailed": "无法打开目录",
+  "storageFolders": "存储位置",
+  "storageFoldersDesc": "每类文件的位置，默认跟随系统，可自行选择。",
+  "storageFolderVideos": "视频",
+  "storageFolderMusic": "歌曲",
+  "storageFolderWallpapers": "壁纸",
+  "storageFolderLyrics": "歌词",
+  "storageFolderUpdates": "更新包",
+  "storageFolderBackgrounds": "壁纸素材",
+  "storageFolderFonts": "字体",
+  "storageFolderCache": "封面缓存",
+  "storageFolderData": "应用数据",
+  "storageFolderDataDesc": "设置、账号与观看记录的数据库，不随设备迁移。",
+  "storageFoldersUpdated": "目录已更新",
+  "storageFolderRestart": "重启应用后生效",
+  "storageFolderPick": "选择目录",
+  "storageFolderReset": "恢复默认"
 }

@@ -8,12 +8,12 @@ import 'package:heic_native/heic_native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import 'package:pure_live/shared/shared.dart' show appImageCache, cachedImage;
+import 'package:pure_live/shared/shared.dart' show appImageCache, cachedImage, installedImageCacheDirectory;
 
 /// The platform serves its posters as HEIC (HEVC stills), which the engine's
 /// codecs cannot read — a cover therefore goes through [HongguoCoverCache]
-/// once, lands as a PNG beside the app's cache, and is plain decoding from
-/// then on.
+/// once, lands as a PNG under the app's image cache, and is plain decoding
+/// from then on.
 final class HongguoCoverCache {
   HongguoCoverCache._();
 
@@ -51,8 +51,18 @@ final class HongguoCoverCache {
     });
   }
 
+  /// Where the converted stills live: `covers/` under the app's image cache,
+  /// so the one folder the settings page measures, caps and clears holds every
+  /// cached picture. The temporary directory stands in for a cover asked for
+  /// before the boot installs the cache root.
+  static Future<Directory> _coverDirectory() async {
+    final root = installedImageCacheDirectory;
+    if (root != null) return Directory(p.join(root.path, 'covers'));
+    return Directory(p.join((await getTemporaryDirectory()).path, 'pure_live_hongguo_covers'));
+  }
+
   Future<File?> _convert(String url) async {
-    final directory = Directory(p.join((await getTemporaryDirectory()).path, 'pure_live_hongguo_covers'));
+    final directory = await _coverDirectory();
     final key = _keyOf(url);
     final target = File(p.join(directory.path, '$key.png'));
     if (target.existsSync()) return target;

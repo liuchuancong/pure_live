@@ -1209,9 +1209,9 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get downloadDirectoryDefaultDesc => 'Return to the app’s default downloads folder.';
 	@override String get downloadDirectoryUpdated => 'Download folder updated';
 	@override String get downloadDirectoryFailed => 'This folder is not writable';
-	@override String get downloadType => 'Download format';
 	@override String get downloadUseOtherSource => 'Automatic Switch Source Download';
 	@override String get downloadUseOtherSourceDesc => 'When the song cannot be downloaded from the original source, try another source. The swapped version is not guaranteed to match the original.';
+	@override String get downloadType => 'Download format';
 	@override String get downloadTypeDesc => 'Original keeps the source container; transcoding needs ffmpeg.';
 	@override String get downloadTypeOriginal => 'Original';
 	@override String get downloadTypeMp3 => 'MP3';
@@ -1323,11 +1323,11 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get desktopLyricStrokeWidthDesc => 'How thick the text outline is; 0 turns it off.';
 	@override String get desktopLyricLineGap => 'Line gap';
 	@override String get desktopLyricLineGapDesc => 'The space between the lyric lines.';
-	@override String get desktopLyricBoldLine => 'Bold line lyrics';
 	@override String get desktopLyricDirection => 'Lyric Display Direction';
 	@override String get desktopLyricDirectionDesc => 'Vertical reads top-to-bottom in right-to-left columns.';
 	@override String get desktopLyricDirectionHorizontal => 'Horizontal';
 	@override String get desktopLyricDirectionVertical => 'Vertical';
+	@override String get desktopLyricBoldLine => 'Bold line lyrics';
 	@override String get desktopLyricBoldLineDesc => 'Draws the main lyric line in bold.';
 	@override String get desktopLyricBoldExtended => 'Bold translation and romanization';
 	@override String get desktopLyricBoldExtendedDesc => 'Draws the translation and romanization lines in bold.';
@@ -1426,11 +1426,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get eqInUse => 'In use';
 	@override String get eqOfficialPresets => 'Official';
 	@override String get eqMyPresets => 'My presets';
-
 	@override String get eqSavePreset => 'Save current as preset';
-
 	@override String get eqPresetNameLabel => 'Preset name';
-
 	@override String get eqPresetNameHint => 'Name the curve you are hearing now';
 	@override String get eqMyPresetsEmpty => 'No custom presets yet';
 	@override String get eqTagPop => 'Pop / vocal';
@@ -3277,6 +3274,22 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get logCopyPath => 'Copy path';
 	@override String get logPathCopied => 'Path copied';
 	@override String get logOpenFailed => 'Could not open the folder';
+	@override String get storageFolders => 'Storage locations';
+	@override String get storageFoldersDesc => 'Where each kind of file lives. Defaults follow the system; any of them can be moved.';
+	@override String get storageFolderVideos => 'Videos';
+	@override String get storageFolderMusic => 'Songs';
+	@override String get storageFolderWallpapers => 'Wallpapers';
+	@override String get storageFolderLyrics => 'Lyrics';
+	@override String get storageFolderUpdates => 'Installers';
+	@override String get storageFolderBackgrounds => 'Background media';
+	@override String get storageFolderFonts => 'Fonts';
+	@override String get storageFolderCache => 'Cover cache';
+	@override String get storageFolderData => 'App data';
+	@override String get storageFolderDataDesc => 'The database of settings, accounts and history; it does not move with the device.';
+	@override String get storageFoldersUpdated => 'Folder updated';
+	@override String get storageFolderRestart => 'Takes effect after a restart';
+	@override String get storageFolderPick => 'Choose folder';
+	@override String get storageFolderReset => 'Use default';
 }
 
 // Path: shield
@@ -4755,15 +4768,13 @@ extension on TranslationsEn {
 			'music.playlistImport' => 'Import playlist',
 			'music.playlistImportDone' => ({required Object name}) => 'Imported "${name}"',
 			'music.playlistImportFailed' => ({required Object error}) => 'Import failed: ${error}',
-			'music.playlistImportInvalid' => 'The file has no usable songs',
-			'music.playlistImportLxmcConfirm' => 'Lists in the backup that share an ID with existing ones will have their songs overwritten. Continue?',
 			_ => null,
 		} ?? switch (path) {
+			'music.playlistImportInvalid' => 'The file has no usable songs',
+			'music.playlistImportLxmcConfirm' => 'Lists in the backup that share an ID with existing ones will have their songs overwritten. Continue?',
 			'music.playlistImportLxmcDone' => ({required Object lists, required Object songs}) => 'Imported ${lists} lists, ${songs} songs',
 			'music.playlistImportLxmcUnsupported' => 'not an importable lx-music list backup',
 			'music.playlistExport' => 'Export playlist',
-			_ => null,
-		} ?? switch (path) {
 			'music.playlistExportDone' => ({required Object path}) => 'Exported to ${path}',
 			'music.playlistExportFailed' => ({required Object error}) => 'Export failed: ${error}',
 			'music.playlistSort' => 'Sort',
@@ -4793,9 +4804,9 @@ extension on TranslationsEn {
 			'music.downloadDirectoryDefaultDesc' => 'Return to the app’s default downloads folder.',
 			'music.downloadDirectoryUpdated' => 'Download folder updated',
 			'music.downloadDirectoryFailed' => 'This folder is not writable',
-			'music.downloadType' => 'Download format',
 			'music.downloadUseOtherSource' => 'Automatic Switch Source Download',
 			'music.downloadUseOtherSourceDesc' => 'When the song cannot be downloaded from the original source, try another source. The swapped version is not guaranteed to match the original.',
+			'music.downloadType' => 'Download format',
 			'music.downloadTypeDesc' => 'Original keeps the source container; transcoding needs ffmpeg.',
 			'music.downloadTypeOriginal' => 'Original',
 			'music.downloadTypeMp3' => 'MP3',
@@ -4907,11 +4918,11 @@ extension on TranslationsEn {
 			'music.desktopLyricStrokeWidthDesc' => 'How thick the text outline is; 0 turns it off.',
 			'music.desktopLyricLineGap' => 'Line gap',
 			'music.desktopLyricLineGapDesc' => 'The space between the lyric lines.',
-			'music.desktopLyricBoldLine' => 'Bold line lyrics',
 			'music.desktopLyricDirection' => 'Lyric Display Direction',
 			'music.desktopLyricDirectionDesc' => 'Vertical reads top-to-bottom in right-to-left columns.',
 			'music.desktopLyricDirectionHorizontal' => 'Horizontal',
 			'music.desktopLyricDirectionVertical' => 'Vertical',
+			'music.desktopLyricBoldLine' => 'Bold line lyrics',
 			'music.desktopLyricBoldLineDesc' => 'Draws the main lyric line in bold.',
 			'music.desktopLyricBoldExtended' => 'Bold translation and romanization',
 			'music.desktopLyricBoldExtendedDesc' => 'Draws the translation and romanization lines in bold.',
@@ -5010,6 +5021,9 @@ extension on TranslationsEn {
 			'music.eqInUse' => 'In use',
 			'music.eqOfficialPresets' => 'Official',
 			'music.eqMyPresets' => 'My presets',
+			'music.eqSavePreset' => 'Save current as preset',
+			'music.eqPresetNameLabel' => 'Preset name',
+			'music.eqPresetNameHint' => 'Name the curve you are hearing now',
 			'music.eqMyPresetsEmpty' => 'No custom presets yet',
 			'music.eqTagPop' => 'Pop / vocal',
 			'music.eqTagRock' => 'Rock / hard rock',
@@ -5268,6 +5282,8 @@ extension on TranslationsEn {
 			'recorder.preferBestDescription' => 'Map only the first video and audio streams, so a multi-bitrate source does not become a multi-track file.',
 			'recorder.keepAliveTitle' => 'Keep recording in the background',
 			'recorder.keepAliveDescription' => 'Hold a background session and wake lock while recording (Android foreground service and notification).',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.verifyTitle' => 'Verify on stop',
 			'recorder.verifyDescription' => 'Check the segments are playable before the session ends.',
 			'recorder.restartTitle' => 'Stream retries',
@@ -5311,8 +5327,6 @@ extension on TranslationsEn {
 			'recorder.cacheCleared' => 'Recording cache cleared',
 			'recorder.cacheFailed' => 'Cache operation failed. Try again.',
 			'recorder.cacheManagedHint' => 'To protect other files, a chosen directory gets an app-owned PureLiveRecords child folder.',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.liveCheckSecondsTitle' => 'Check interval (seconds)',
 			'recorder.liveCheckSecondsDesc' => 'How often each waiting task checks its room, 10–300 seconds.',
 			'recorder.checkBackoff' => 'Exponential backoff',
@@ -5782,6 +5796,8 @@ extension on TranslationsEn {
 			'settings.styleTapInteractionDesc' => 'Copy or block a message; off, a tap only toggles the controls.',
 			'settings.styleLongPressInteraction' => 'Long-press danmaku',
 			'settings.styleLongPressInteractionDesc' => 'Opens the same actions; off, a long press misses danmaku.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuStyleGroup' => 'Danmaku style',
 			'settings.danmakuStyleDescription' => 'The typeface, size, speed, area, outline and frame rate of a danmaku.',
 			'settings.danmakuDisplayDescription' => 'Who the chat list shows, what it keeps and how it is set.',
@@ -5825,8 +5841,6 @@ extension on TranslationsEn {
 			'settings.styleArea' => 'Height used',
 			'settings.styleAreaDesc' => 'How much of the picture height danmaku may use (0–100%).',
 			'settings.fixedTopTitle' => 'Pin to top',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fixedTopDescription' => 'A platform\'s top-pinned message stays at the top of the picture; when off it only shows in the chat list.',
 			'settings.fixedBottomTitle' => 'Pin to bottom',
 			'settings.fixedBottomDescription' => 'A platform\'s bottom-pinned message stays at the bottom of the picture; when off it only shows in the chat list.',
@@ -6296,6 +6310,8 @@ extension on TranslationsEn {
 			'settings.backgroundPlayDesc' => 'Keep playing audio after the app leaves the foreground; when off, playback pauses and resumes when you return.',
 			'settings.asmrSleepMode' => 'ASMR sleep mode',
 			'settings.asmrSleepModeDesc' => 'Starts a room in audio-only mode and pauses it after the chosen time. Android only.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.asmrSleepTimer' => 'ASMR sleep duration',
 			'settings.asmrSleepTimerDesc' => 'Minutes before the audio-only room pauses; range 15–1440.',
 			'settings.asmrSleepCustomMinutes' => 'Custom minutes',
@@ -6339,8 +6355,6 @@ extension on TranslationsEn {
 			'settings.groupCards' => 'Cards & lists',
 			'settings.groupLanguage' => 'Language',
 			'settings.contrast' => 'Contrast',
-			_ => null,
-		} ?? switch (path) {
 			'settings.contrastDescription' => 'How strongly control edges and text stand out.',
 			'settings.contrastSoft' => 'Soft',
 			'settings.contrastStandard' => 'Standard',
@@ -6798,6 +6812,24 @@ extension on TranslationsEn {
 			'settings.logCopyPath' => 'Copy path',
 			'settings.logPathCopied' => 'Path copied',
 			'settings.logOpenFailed' => 'Could not open the folder',
+			'settings.storageFolders' => 'Storage locations',
+			'settings.storageFoldersDesc' => 'Where each kind of file lives. Defaults follow the system; any of them can be moved.',
+			'settings.storageFolderVideos' => 'Videos',
+			'settings.storageFolderMusic' => 'Songs',
+			'settings.storageFolderWallpapers' => 'Wallpapers',
+			'settings.storageFolderLyrics' => 'Lyrics',
+			'settings.storageFolderUpdates' => 'Installers',
+			'settings.storageFolderBackgrounds' => 'Background media',
+			'settings.storageFolderFonts' => 'Fonts',
+			'settings.storageFolderCache' => 'Cover cache',
+			'settings.storageFolderData' => 'App data',
+			'settings.storageFolderDataDesc' => 'The database of settings, accounts and history; it does not move with the device.',
+			_ => null,
+		} ?? switch (path) {
+			'settings.storageFoldersUpdated' => 'Folder updated',
+			'settings.storageFolderRestart' => 'Takes effect after a restart',
+			'settings.storageFolderPick' => 'Choose folder',
+			'settings.storageFolderReset' => 'Use default',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -6853,8 +6885,6 @@ extension on TranslationsEn {
 			'toolbox.groupData' => 'Data',
 			'toolbox.toolNetworkTitle' => 'Platform nodes',
 			'toolbox.toolNetworkDescription' => 'Test each platform\'s endpoint for reachability and latency.',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.toolCacheTitle' => 'Cache cleanup',
 			'toolbox.toolCacheDescription' => 'Inspect and clear the memory the image cache holds.',
 			'toolbox.toolLogsTitle' => 'Logs',

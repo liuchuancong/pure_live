@@ -15,7 +15,6 @@ import 'package:live_sites/live_sites.dart'
 import 'package:media_core/media_core.dart';
 import 'package:media_core_recording_ffmpeg/media_core_recording_ffmpeg.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart' show getApplicationSupportDirectory;
 
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart';
@@ -524,8 +523,7 @@ final class RecorderEngine {
     final trimmed = saveDir.trim();
     final Directory root;
     if (trimmed.isEmpty) {
-      final support = await getApplicationSupportDirectory();
-      root = Directory(p.join(support.path, 'recordings'));
+      root = _ref.read(appPathsProvider).recordings;
     } else {
       root = Directory(p.join(trimmed, 'PureLiveRecords'));
     }

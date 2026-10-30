@@ -540,7 +540,7 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
   /// belong behind one button, in the panel the button opens.
   Future<void> _openSettings() {
     final t = context.t;
-    final directory = ref.read(downloadDirectoryProvider).effectivePath;
+    final directory = ref.read(appPathsProvider).wallpapers.path;
     return showDsPanel<void>(
       context: context,
       builder: (panelContext) {
@@ -592,7 +592,7 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
     try {
       final selected = await FilePicker.getDirectoryPath(dialogTitle: t.settings.downloadDirectory);
       if (selected == null || selected.trim().isEmpty) return;
-      final saved = await ref.read(downloadDirectoryProvider.notifier).setDirectory(selected);
+      final saved = await ref.read(storageFolderOverridesProvider.notifier).set(StorageFolder.wallpapers, selected);
       if (!mounted) return;
       if (!saved) {
         showDsToast(context: context, title: t.settings.downloadDirectoryPermissionHint, status: DsStatus.danger);

@@ -1107,6 +1107,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       final info = await ref.read(vodClientProvider).downloadPart(bvid: widget.bvid, cid: part.cid, qn: _qn);
       if (!mounted) return;
       final task = VodDownloadTask(
+        folder: ref.read(appPathsProvider).videos,
         url: info.url,
         headers: info.headers,
         fileName: vodDownloadFileName(

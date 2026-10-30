@@ -28,7 +28,7 @@ import 'package:media_core/media_core.dart'
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitAdapterFactory;
 import 'package:path/path.dart' as p;
 
-import 'package:pure_live/app/providers/boot/storage_providers.dart' show storagePathsProvider;
+import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 
 /// The preference the clip-to-still mapping is kept under.
 const String kBackgroundClipStillsKey = 'background.stills';
@@ -251,7 +251,7 @@ final class BackgroundClipStills {
     ui.Image? image;
     File? target;
     try {
-      final directory = Directory(p.join(_ref.read(storagePathsProvider).data.path, 'background', 'thumbs'));
+      final directory = _ref.read(appPathsProvider).backgroundThumbs;
       await directory.create(recursive: true);
       Uint8List? shrunk;
       try {

@@ -39,6 +39,7 @@ final class StoragePaths {
     required this.config,
     required this.cache,
     required this.downloads,
+    required this.exports,
   });
 
   /// The platform runtime snapshot (OS family, form factor, distribution).
@@ -67,6 +68,12 @@ final class StoragePaths {
   /// data tree and says so instead of offering an unusable path.
   final StorageLocation? downloads;
 
+  /// The area for files the viewer asked the app to write somewhere of its
+  /// own choosing — backups, playlist exports, a song's lyrics. Same rule as
+  /// [downloads]: null when no candidate could be written, and the callers
+  /// that must still produce a file fall back to the data tree.
+  final StorageLocation? exports;
+
   /// Resolves the layout for [environment] once at boot; every later
   /// reader takes the resolved locations from here instead of asking the
   /// OS again.
@@ -77,10 +84,12 @@ final class StoragePaths {
   }) async {
     final roots = await OsRoots.measure();
     final exeRoot = environment.runtime.executableRoot;
-    // In a debug run the data tree is rooted beside the debug executable —
-    // inside the project's build tree — so `flutter run` never touches an
-    // installed build's data and the developer finds every file in the
-    // project. Release builds keep the standard policy untouched.
+    // A debug run beside a portable copy keeps its data in the bundle's own
+    // tree; every other debug run follows the deployment it is part of, with
+    // the OS roots already carrying the `debug` segment (OsRoots). A
+    // `flutter run` on an installed-shape machine therefore writes under
+    // `%APPDATA%\<Product>\debug`, not beside the build tree the next build
+    // wipes.
     final policy = kDebugMode
         ? DebugRootedPolicy(
             inner: DefaultStoragePolicy(
@@ -111,6 +120,12 @@ final class StoragePaths {
     } on Object catch (error) {
       log?.forCategory('paths').warning('the downloads area is unavailable', fields: {'error': '$error'});
     }
+    StorageLocation? exports;
+    try {
+      exports = await manager.resolve(StorageArea.exports);
+    } on Object catch (error) {
+      log?.forCategory('paths').warning('the exports area is unavailable', fields: {'error': '$error'});
+    }
     log
         ?.forCategory('paths')
         .info(
@@ -118,10 +133,12 @@ final class StoragePaths {
           fields: {
             'distribution': environment.runtime.distribution.name,
             'portable': '${environment.runtime.isPortable}',
+            'debug': '$kDebugMode',
             'data': data.path,
             'config': config.path,
             'cache': cache.path,
             'downloads': downloads?.path ?? 'unavailable',
+            'exports': exports?.path ?? 'unavailable',
           },
         );
     return StoragePaths._(
@@ -132,6 +149,7 @@ final class StoragePaths {
       config: config,
       cache: cache,
       downloads: downloads,
+      exports: exports,
     );
   }
 

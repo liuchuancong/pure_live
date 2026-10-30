@@ -1,5 +1,5 @@
 import 'dart:async' show unawaited;
-import 'dart:io' show Directory, File;
+import 'dart:io' show File;
 import 'dart:typed_data' show Uint8List;
 
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType, PlatformFile;
@@ -444,8 +444,7 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
     state = state.copyWith(busy: true, error: '');
     File? target;
     try {
-      final paths = ref.read(storagePathsProvider);
-      final directory = Directory(p.join(paths.data.path, 'background'));
+      final directory = ref.read(appPathsProvider).backgrounds;
       await directory.create(recursive: true);
       target = File(p.join(directory.path, 'random-${_bytesHash(bytes)}.$extension'));
       if (!target.existsSync() || target.lengthSync() == 0) {
@@ -473,8 +472,7 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
     state = state.copyWith(busy: true, error: '');
     File? target;
     try {
-      final paths = ref.read(storagePathsProvider);
-      final directory = Directory(p.join(paths.data.path, 'background'));
+      final directory = ref.read(appPathsProvider).backgrounds;
       await directory.create(recursive: true);
       final suffix = extension != null && extension.isNotEmpty ? '.$extension' : '';
       target = File(p.join(directory.path, '$prefix-${DateTime.now().microsecondsSinceEpoch}$suffix'));

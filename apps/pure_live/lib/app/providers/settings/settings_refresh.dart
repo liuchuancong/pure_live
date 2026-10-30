@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderOrFamily;
 import 'package:pure_live/app/background/settings/background_settings.dart' show backgroundSettingsProvider;
+import 'package:pure_live/app/providers/boot/storage_providers.dart' show storageFolderOverridesProvider;
 import 'package:pure_live/app/providers/browse/browse_settings_providers.dart'
     show browseLayoutProvider, browseSettingsProvider;
 import 'package:pure_live/app/providers/browse/refresh_settings_providers.dart'
@@ -14,7 +15,6 @@ import 'package:pure_live/app/providers/navigation/nav_visibility_providers.dart
 import 'package:pure_live/app/providers/network/github_mirror_provider.dart' show githubMirrorProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show proxySettingsProvider;
 import 'package:pure_live/app/providers/player/player_backend_providers.dart' show playerKernelBackendProvider;
-import 'package:pure_live/app/providers/settings/download_directory_provider.dart' show downloadDirectoryProvider;
 import 'package:pure_live/app/providers/settings/log_settings_provider.dart' show logSettingsProvider;
 import 'package:pure_live/app/providers/settings/settings_sync.dart' show settingsRevisionProvider;
 import 'package:pure_live/app/providers/settings/shell_settings_provider.dart'
@@ -88,7 +88,7 @@ final List<ProviderOrFamily> kSettingsProviders = [
   liveAlertSettingsProvider,
   maxConcurrentRefreshProvider,
   thumbnailRefreshProvider,
-  downloadDirectoryProvider,
+  storageFolderOverridesProvider,
   logSettingsProvider,
   historyLimitProvider,
   playerKernelBackendProvider,

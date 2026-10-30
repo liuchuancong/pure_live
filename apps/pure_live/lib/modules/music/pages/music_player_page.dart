@@ -8,8 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:path/path.dart' as p;
-import 'package:pure_live/app/providers/settings/download_directory_provider.dart'
-    show DownloadDirectoryPaths, downloadDirectoryProvider;
+import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_comments.dart' show MusicComment, musicCommentsProvider;
 import 'package:pure_live/modules/music/controller/music_library.dart';
@@ -744,7 +743,7 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
       final name = audio.MusicDownloadRequest.sanitizeFileName(
         [track.artist, track.title].where((part) => part.isNotEmpty).join(' - '),
       );
-      final directory = ref.read(downloadDirectoryProvider).effectivePath;
+      final directory = ref.read(appPathsProvider).lyrics.path;
       final path = await const audio.LyricFileWriter().write(
         p.join(directory, '${name.isEmpty ? track.id : name}.lrc'),
         text,
