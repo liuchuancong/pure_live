@@ -4,13 +4,12 @@
 library;
 
 import 'dart:async' show unawaited;
+import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
-
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
-
 import 'package:pure_live/modules/music/controller/music_library.dart'
     show musicFavouritesProvider, musicRecentProvider;
 import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicPlaylistsProvider;
@@ -26,6 +25,12 @@ const String kMusicSyncAuthCodeKey = 'music.sync.authCode';
 const String kMusicSyncModeKey = 'music.sync.mode';
 const String kMusicSyncAutoKey = 'music.sync.auto';
 
+/// The connection history's preference, the reference's `@sync_host_history`.
+const String kMusicSyncHostHistoryKey = 'music.sync.hostHistory';
+
+/// The history's cap, the reference's 最多存储20个.
+const int kMusicSyncHostHistoryLimit = 20;
+
 /// The module's answer to the reference's sync-mode dialog; the server
 /// merges on the viewer's behalf using this choice.
 const String kMusicSyncDefaultMode = 'merge_remote_local';
@@ -40,6 +45,7 @@ final class MusicSyncState {
     required this.authCode,
     required this.syncMode,
     required this.status,
+    required this.hostHistory,
     this.message,
     this.serverName,
   });
@@ -48,18 +54,29 @@ final class MusicSyncState {
   final String authCode;
   final String syncMode;
   final MusicSyncStatus status;
+
+  /// Addresses used before, newest first, the reference's syncHostHistory.
+  final List<String> hostHistory;
   final String? message;
   final String? serverName;
 
-  MusicSyncState copyWith({String? host, String? authCode, String? syncMode, MusicSyncStatus? status, String? message, String? serverName}) =>
-      MusicSyncState(
-        host: host ?? this.host,
-        authCode: authCode ?? this.authCode,
-        syncMode: syncMode ?? this.syncMode,
-        status: status ?? this.status,
-        message: message,
-        serverName: serverName ?? this.serverName,
-      );
+  MusicSyncState copyWith({
+    String? host,
+    String? authCode,
+    String? syncMode,
+    MusicSyncStatus? status,
+    List<String>? hostHistory,
+    String? message,
+    String? serverName,
+  }) => MusicSyncState(
+    host: host ?? this.host,
+    authCode: authCode ?? this.authCode,
+    syncMode: syncMode ?? this.syncMode,
+    status: status ?? this.status,
+    hostHistory: hostHistory ?? this.hostHistory,
+    message: message,
+    serverName: serverName ?? this.serverName,
+  );
 }
 
 /// The sync session's controller.
@@ -74,6 +91,7 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
       authCode: StoragePrefs.getString(kMusicSyncAuthCodeKey) ?? '',
       syncMode: _readMode(),
       status: MusicSyncStatus.idle,
+      hostHistory: _readHostHistory(),
     );
   }
 
@@ -113,6 +131,49 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
     }
   }
 
+  /// The stored connection history; anything not a string list reads as
+  /// empty, a damaged store must not break the pane.
+  List<String> _readHostHistory() {
+    try {
+      final raw = StoragePrefs.getString(kMusicSyncHostHistoryKey);
+      if (raw == null || raw.isEmpty) return const [];
+      final Object? decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return [
+        for (final entry in decoded)
+          if (entry is String) entry,
+      ];
+    } on FormatException {
+      return const [];
+    }
+  }
+
+  /// Records an address at connect time, the reference's add-on-enable:
+  /// a duplicate stays where it is (the reference returns early), newest
+  /// first, at most twenty kept.
+  Future<void> _recordHostHistory(String host) async {
+    final history = musicSyncNextHostHistory(state.hostHistory, host);
+    if (identical(history, state.hostHistory)) return;
+    state = state.copyWith(hostHistory: history);
+    try {
+      await StoragePrefs.setString(kMusicSyncHostHistoryKey, jsonEncode(history));
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
+  /// Drops one address from the history.
+  Future<void> removeHostHistory(int index) async {
+    if (index < 0 || index >= state.hostHistory.length) return;
+    final history = [...state.hostHistory]..removeAt(index);
+    state = state.copyWith(hostHistory: history);
+    try {
+      await StoragePrefs.setString(kMusicSyncHostHistoryKey, jsonEncode(history));
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
   /// Disconnects and forgets the stored key, so the next connect re-auths
   /// with the code.
   Future<void> forgetKey() async {
@@ -129,6 +190,9 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
       state = state.copyWith(status: MusicSyncStatus.failed, message: '服务器地址不合法');
       return;
     }
+    // The reference records the address the moment sync is switched on,
+    // whether or not the connection then succeeds.
+    unawaited(_recordHostHistory(state.host.trim()));
     await _teardown();
     final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
     final client = MusicSyncClient(http: http, deviceName: musicSyncDeviceName());
@@ -158,10 +222,13 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
 
   void _registerHandlers(MusicSyncClient client) {
     client
-      ..registerHandler('getEnabledFeatures', (args) => <String, Object?>{
-        'list': <String, Object?>{'skipSnapshot': false},
-        'dislike': <String, Object?>{'skipSnapshot': false},
-      })
+      ..registerHandler(
+        'getEnabledFeatures',
+        (args) => <String, Object?>{
+          'list': <String, Object?>{'skipSnapshot': false},
+          'dislike': <String, Object?>{'skipSnapshot': false},
+        },
+      )
       ..registerHandler('finished', (args) => null)
       // The next registrations answer the server's pull-based sync calls.
       ..registerPushHandler('onListSyncAction', (args) => _applyListAction(args.firstOrNull))
@@ -173,7 +240,6 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
         return null;
       })
       ..registerHandler('list_sync_finished', (args) => null)
-
       // --- dislike ---
       ..registerPushHandler('onDislikeSyncAction', (args) => _applyDislikeAction(args.firstOrNull))
       ..registerHandler('dislike_sync_get_md5', (args) => musicSyncMd5Of(_dislikeRules()))
@@ -264,3 +330,12 @@ final class MusicSyncController extends Notifier<MusicSyncState> {
 
 /// The sync session.
 final musicSyncProvider = NotifierProvider<MusicSyncController, MusicSyncState>(MusicSyncController.new);
+
+/// The next connection history for a used address, the reference's
+/// addSyncHostHistory: a duplicate leaves the list untouched, a new address
+/// goes to the front, and at most [kMusicSyncHostHistoryLimit] survive.
+List<String> musicSyncNextHostHistory(List<String> history, String host) {
+  if (host.isEmpty || history.contains(host)) return history;
+  final next = [host, ...history];
+  return next.length > kMusicSyncHostHistoryLimit ? next.sublist(0, kMusicSyncHostHistoryLimit) : next;
+}

@@ -4039,6 +4039,21 @@ class Translations$music$zh_CN {
 	/// zh-CN: '修改'
 	String get syncEdit => '修改';
 
+	/// zh-CN: '历史地址'
+	String get syncHistory => '历史地址';
+
+	/// zh-CN: '连接历史'
+	String get syncHistoryTitle => '连接历史';
+
+	/// zh-CN: '这里啥也没有😮'
+	String get syncHistoryEmpty => '这里啥也没有😮';
+
+	/// zh-CN: '连接过的服务器地址，点击选用。'
+	String get syncHistoryDesc => '连接过的服务器地址，点击选用。';
+
+	/// zh-CN: '选择'
+	String get syncChoose => '选择';
+
 	/// zh-CN: '连接码'
 	String get syncAuthCode => '连接码';
 
@@ -11764,6 +11779,11 @@ extension on Translations {
 			'music.syncHost' => '同步服务端',
 			'music.syncHostHint' => 'lx-music 同步服务地址，例如 http://192.168.1.10:23332',
 			'music.syncEdit' => '修改',
+			'music.syncHistory' => '历史地址',
+			'music.syncHistoryTitle' => '连接历史',
+			'music.syncHistoryEmpty' => '这里啥也没有😮',
+			'music.syncHistoryDesc' => '连接过的服务器地址，点击选用。',
+			'music.syncChoose' => '选择',
 			'music.syncAuthCode' => '连接码',
 			'music.syncAuthCodeHint' => '服务端显示的连接码',
 			'music.syncMode' => '同步模式',

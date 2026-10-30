@@ -3,6 +3,7 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/modules/music/controller/music_playlists.dart' show MusicPlaylist;
+import 'package:pure_live/modules/music/controller/music_sync.dart' show kMusicSyncHostHistoryLimit, musicSyncNextHostHistory;
 import 'package:pure_live/modules/music/controller/music_sync_client.dart';
 import 'package:pure_live/modules/music/controller/music_sync_codec.dart';
 import 'package:pure_live/modules/music/controller/music_sync_data.dart';
@@ -132,6 +133,23 @@ void main() {
   });
 
   group('client surface', () {
+    test('the host history keeps the reference add semantics', () {
+      final grown = musicSyncNextHostHistory(const ['a', 'b'], 'c');
+      expect(grown, ['c', 'a', 'b']);
+      // A duplicate stays where it is; the list is untouched.
+      expect(musicSyncNextHostHistory(grown, 'a'), same(grown));
+      // The cap is the reference's twenty.
+      var history = <String>[];
+      for (var i = 0; i < kMusicSyncHostHistoryLimit + 5; i++) {
+        history = musicSyncNextHostHistory(history, 'host-$i');
+      }
+      expect(history.length, kMusicSyncHostHistoryLimit);
+      expect(history.first, 'host-${kMusicSyncHostHistoryLimit + 4}');
+      expect(history.last, 'host-5');
+      // An empty address records nothing.
+      expect(musicSyncNextHostHistory(const ['a'], ''), same(const ['a']));
+    });
+
     test('address parsing accepts both schemes and bare hosts', () {
       final address = MusicSyncAddress.parse('http://h:1');
       expect(address?.wsScheme, 'ws');

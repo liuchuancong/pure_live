@@ -1446,6 +1446,11 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get syncHost => 'Sync server';
 	@override String get syncHostHint => 'lx-music sync server address, e.g. http://192.168.1.10:23332';
 	@override String get syncEdit => 'Edit';
+	@override String get syncHistory => 'History address';
+	@override String get syncHistoryTitle => 'Connection history';
+	@override String get syncHistoryEmpty => 'Nothing here';
+	@override String get syncHistoryDesc => 'Addresses used before; tap one to use it.';
+	@override String get syncChoose => 'Choose';
 	@override String get syncAuthCode => 'Auth code';
 	@override String get syncAuthCodeHint => 'The connection code shown by the server';
 	@override String get syncMode => 'Sync mode';
@@ -4966,6 +4971,11 @@ extension on TranslationsEn {
 			'music.syncHost' => 'Sync server',
 			'music.syncHostHint' => 'lx-music sync server address, e.g. http://192.168.1.10:23332',
 			'music.syncEdit' => 'Edit',
+			'music.syncHistory' => 'History address',
+			'music.syncHistoryTitle' => 'Connection history',
+			'music.syncHistoryEmpty' => 'Nothing here',
+			'music.syncHistoryDesc' => 'Addresses used before; tap one to use it.',
+			'music.syncChoose' => 'Choose',
 			'music.syncAuthCode' => 'Auth code',
 			'music.syncAuthCodeHint' => 'The connection code shown by the server',
 			'music.syncMode' => 'Sync mode',

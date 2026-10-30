@@ -1872,6 +1872,17 @@ final class MusicSyncPane extends ConsumerWidget {
           ),
         ),
         SettingsConfigRow(
+          leading: const DsIcon(DsIcons.history),
+          title: t.music.syncHistory,
+          description: state.hostHistory.isEmpty ? t.music.syncHistoryEmpty : t.music.syncHistoryDesc,
+          control: DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            onPressed: () => unawaited(_pickHistory(context, ref)),
+            child: Text(t.music.syncChoose),
+          ),
+        ),
+        SettingsConfigRow(
           leading: const DsIcon(DsIcons.lock),
           title: t.music.syncAuthCode,
           description: state.authCode.isEmpty ? t.music.syncAuthCodeHint : '••••••',
@@ -1938,6 +1949,70 @@ final class MusicSyncPane extends ConsumerWidget {
     final current = ref.read(musicSyncProvider).host;
     final value = await _editField(context, t.music.syncHost, t.music.syncHostHint, current);
     if (value != null) await ref.read(musicSyncProvider.notifier).setHost(value);
+  }
+
+  /// The reference's History popup: tap an address to fill the host field,
+  /// the trailing button removes the row; the list edits in place while the
+  /// dialog is open.
+  Future<void> _pickHistory(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final controller = ref.read(musicSyncProvider.notifier);
+    var hosts = ref.read(musicSyncProvider).hostHistory;
+    final selected = await showDsDialog<String>(
+      context: context,
+      builder: (dialogContext) => DsDialog(
+        title: Text(t.music.syncHistoryTitle),
+        icon: const DsIcon(DsIcons.history),
+        description: StatefulBuilder(
+          builder: (context, setState) => hosts.isEmpty
+              ? Text(t.music.syncHistoryEmpty)
+              : ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 360),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: hosts.length,
+                    itemBuilder: (context, index) {
+                      final host = hosts[index];
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => Navigator.of(dialogContext).pop(host),
+                              behavior: HitTestBehavior.opaque,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: DsSpace.s8, horizontal: DsSpace.s4),
+                                child: Text(host, maxLines: 1, overflow: TextOverflow.ellipsis),
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() => hosts = [...hosts]..removeAt(index));
+                              unawaited(controller.removeHostHistory(index));
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.all(DsSpace.s4),
+                              child: DsIcon(DsIcons.trash2, size: 16),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+        ),
+        actions: [
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(t.common.cancel),
+          ),
+        ],
+      ),
+    );
+    if (selected != null && hosts.contains(selected)) {
+      await controller.setHost(selected);
+    }
   }
 
   Future<void> _editAuthCode(BuildContext context, WidgetRef ref) async {
