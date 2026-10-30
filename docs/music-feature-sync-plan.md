@@ -66,7 +66,7 @@
 | 重复歌曲查重去重 | 卡片菜单「重复歌曲」：`duplicateTrackGroups` 按参考 filterDuplicateMusic 归一（去括注变体/标点/空白）分组，对话框逐条播放/移除 + 一键保留每组第一首（提交 `f2ce85222`） | ✅ |
 | 列表内搜索 | 详情页头部搜索钮 + 搜索框：`searchPlaylistTrackIndexes` 按参考 searchListMusic 三档全匹配（歌名/歌手/专辑各档保原序）+ 剩余子序列匹配按 similar 降序，点击结果按原索引续播，搜索态禁用上下移（提交 `105f4647e`） | ✅ |
 | 歌曲换源（手动，搜其他源替换+缓存） | 解析失败自动跨源匹配（`music_source_match.dart`）；手动换源：歌曲菜单「歌曲换源」对话框（参考 MusicToggleModal：全源并发搜、逐源 tab、行内试听、确认），选择进 `music_source_swaps.dart` 持久缓存表且 `resolveWithToggle` 优先走换源结果，歌单内另以 `replaceTrack` 原位替换（提交 `5261a8190`） | ✅ |
-| 本地歌曲编辑标签（元数据编辑） | 无 | ⬜ |
+| 本地歌曲编辑标签（元数据编辑） | 歌曲菜单「编辑标签」（本地歌曲）：对话框（参考 MetadataEditModal：读文件标签预填，歌名/艺术家/专辑/LRC 歌词/封面，150 字上限，文件名解析 歌名-艺术家 双序，封面选择/移除/在线匹配，歌词在线匹配带翻译合并）；写入只回写改动部分（`music_tag_writer.dart` 纯 Dart：mp3 重写 ID3v2.3+v1 尾刷新、flac 重写 Vorbis comment+PICTURE 块，其余格式 toast 不支持），保存后重扫本地库（提交 `c6672dbf3`；配套 media_core 修 flac 图片块按规范序解析 `009273d`） | ✅ |
 | 多选（区间选择/反选） | 多选=逐个勾选+全选，无区间/反选 | 🟡 |
 | 添加本地歌曲（文件进列表） | 本地音乐页独立，无"添加进列表" | 🟡 |
 
