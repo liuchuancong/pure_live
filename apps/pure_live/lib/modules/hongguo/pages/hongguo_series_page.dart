@@ -265,14 +265,16 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
     );
   }
 
-  /// The series' own metadata: the status and figures, the shelf
-  /// categories, and the story blurb with its way to read all of it.
+  /// The series' own metadata: the status, the heat and figures, the board
+  /// it sits on, the shelf categories, and the story blurb with its way to
+  /// read all of it.
   Widget _info(BuildContext context, HongguoSeriesDetail detail, Translations t) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final meta = detail.meta;
     final figures = <String>[
       if (meta.statusText.isNotEmpty) meta.statusText,
+      if (meta.hot.isNotEmpty) meta.hot,
       if (meta.playCount > 0) '${t.hongguo.plays} ${AudienceFormat.format(meta.playCount)}',
       if (meta.rating > 0) t.hongguo.rating(score: meta.rating.toStringAsFixed(1)),
       if (meta.followedCount > 0) '${t.hongguo.followers} ${AudienceFormat.format(meta.followedCount)}',
@@ -286,11 +288,15 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
         Text(meta.title, style: theme.typography.title.copyWith(color: colors.text)),
         if (figures.isNotEmpty)
           Text(figures.join(' · '), style: theme.typography.caption.copyWith(color: colors.textMuted)),
-        if (meta.categories.isNotEmpty)
+        if (meta.rankLabel.isNotEmpty || meta.categories.isNotEmpty)
           Wrap(
             spacing: DsSpace.s8,
             runSpacing: DsSpace.s8,
-            children: [for (final category in meta.categories) DsBadge(label: Text(category), dot: false)],
+            children: [
+              if (meta.rankLabel.isNotEmpty)
+                DsBadge(label: Text(meta.rankLabel), status: DsStatus.warning, icon: const DsIcon(DsIcons.trophy)),
+              for (final category in meta.categories) DsBadge(label: Text(category), dot: false),
+            ],
           ),
         Consumer(
           builder: (context, ref, _) {

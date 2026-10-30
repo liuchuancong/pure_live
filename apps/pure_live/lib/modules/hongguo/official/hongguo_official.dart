@@ -416,6 +416,7 @@ final class HongguoOfficialClient {
     // detail rather than in it, and the counts arrive as strings.
     final social = detailPage is Map<String, Object?> ? detailPage['seriesSocialInfo'] : null;
     final socialJson = social is Map<String, Object?> ? social : const <String, Object?>{};
+    final heat = socialJson['hot_score_data'];
     final meta = HongguoSeriesMeta(
       seriesId: seriesId,
       title: _str(raw, 'series_name'),
@@ -425,6 +426,8 @@ final class HongguoOfficialClient {
       followedCount: _intOf(socialJson['series_favorite_count']) ?? 0,
       likeCount: _intOf(socialJson['series_like_count']) ?? 0,
       rating: _doubleOf(socialJson['rating']) ?? 0,
+      hot: heat is Map<String, Object?> ? _str(heat, 'text') : _str(socialJson, 'hot_text'),
+      rankLabel: _str(socialJson, 'rank_label'),
       cover: _cleanUrl(_str(raw, 'series_cover')),
       categories: _tagNames(raw),
     );

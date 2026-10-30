@@ -247,6 +247,8 @@ final class HongguoSeriesMeta {
     this.followedCount = 0,
     this.likeCount = 0,
     this.rating = 0,
+    this.hot = '',
+    this.rankLabel = '',
     this.cover = '',
     this.categories = const [],
   });
@@ -263,6 +265,8 @@ final class HongguoSeriesMeta {
     followedCount: _int(json['followed_cnt']) ?? 0,
     likeCount: _int(json['like_count'] ?? json['series_like_count']) ?? 0,
     rating: _double(json['rating'] ?? json['score']) ?? 0,
+    hot: _str(json['hot']).isNotEmpty ? _str(json['hot']) : _heatText(json['hot_score_data']),
+    rankLabel: _str(json['rank_label']),
     cover: _str(json['cover'] ?? json['series_cover']),
     categories: _strList(json['category'] ?? json['categories']),
   );
@@ -296,6 +300,13 @@ final class HongguoSeriesMeta {
 
   /// The public average score, 0 when the platform publishes none.
   final double rating;
+
+  /// The heat line the platform prints ("9359万热度"), empty when none.
+  final String hot;
+
+  /// The board position line the platform stamps ("热播短剧榜第1名"), empty
+  /// when the series sits on no board.
+  final String rankLabel;
 
   /// The poster cover.
   final String cover;
@@ -414,6 +425,13 @@ bool? _bool(Object? value) {
   if (value is num) return value != 0;
   if (value is String) return value.toLowerCase() == 'true';
   return null;
+}
+
+/// The heat a social block prints, either as its own line or inside the
+/// `hot_score_data` figure the website wraps it in.
+String _heatText(Object? value) {
+  if (value is Map<String, Object?>) return _str(value['text']);
+  return _str(value);
 }
 
 /// The score the listings show, normalised to text: the source sends a
