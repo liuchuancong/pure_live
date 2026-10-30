@@ -3969,6 +3969,15 @@ class Translations$music$zh_CN {
 	/// zh-CN: '我的预设'
 	String get eqMyPresets => '我的预设';
 
+	/// zh-CN: '保存当前为预设'
+	String get eqSavePreset => '保存当前为预设';
+
+	/// zh-CN: '预设名称'
+	String get eqPresetNameLabel => '预设名称';
+
+	/// zh-CN: '给当前正在使用的曲线起个名字'
+	String get eqPresetNameHint => '给当前正在使用的曲线起个名字';
+
 	/// zh-CN: '还没有自定义预设'
 	String get eqMyPresetsEmpty => '还没有自定义预设';
 

@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
+import 'package:pure_live/modules/music/controller/eq/music_eq_custom_presets.dart';
+
 /// The preference the sound-effect configuration is kept under.
 const String kMusicEqKey = 'music.eq';
 
@@ -123,12 +125,9 @@ final class MusicEqConfig {
     'gains': gains,
     if (presetId != null) 'presetId': presetId,
     if (effects.isNotEmpty)
-      'effects': <String, Object?>{
-        for (final entry in effects.entries) entry.key: entry.value.toJson(),
-      },
+      'effects': <String, Object?>{for (final entry in effects.entries) entry.key: entry.value.toJson()},
     'analysis': analysis,
-    if (nodes.isNotEmpty)
-      'nodes': <Object?>[for (final node in nodes) node.toJson()],
+    if (nodes.isNotEmpty) 'nodes': <Object?>[for (final node in nodes) node.toJson()],
   };
 
   /// A copy with selected fields replaced.
@@ -351,6 +350,19 @@ final class MusicEqController extends Notifier<MusicEqConfig> {
   /// Applies a preset's gains, remembering which one the curve came from.
   Future<void> applyPreset(MusicEqPreset preset) async {
     await update(state.copyWith(gains: List<double>.of(preset.gains), presetId: preset.id));
+  }
+
+  /// Applies the viewer's own preset: the curve and the effects it saved
+  /// with, remembered under the `custom:` id so the picker can highlight it.
+  Future<void> applyCustomPreset(MusicCustomEqPreset preset) async {
+    await update(
+      state.copyWith(
+        gains: List<double>.of(preset.gains),
+        preampDb: preset.preampDb,
+        effects: Map.of(preset.effects),
+        presetId: '$kMusicCustomPresetPrefix${preset.id}',
+      ),
+    );
   }
 
   /// Turns the loudness probe on or off.

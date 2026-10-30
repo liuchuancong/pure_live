@@ -1426,6 +1426,12 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get eqInUse => 'In use';
 	@override String get eqOfficialPresets => 'Official';
 	@override String get eqMyPresets => 'My presets';
+
+	@override String get eqSavePreset => 'Save current as preset';
+
+	@override String get eqPresetNameLabel => 'Preset name';
+
+	@override String get eqPresetNameHint => 'Name the curve you are hearing now';
 	@override String get eqMyPresetsEmpty => 'No custom presets yet';
 	@override String get eqTagPop => 'Pop / vocal';
 	@override String get eqTagRock => 'Rock / hard rock';
