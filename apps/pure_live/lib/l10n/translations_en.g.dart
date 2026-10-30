@@ -1150,6 +1150,10 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get searchHotFailed => 'Could not load the top searches';
 	@override String get playlistCreate => 'New playlist';
 	@override String get playlistCreateTitle => 'New playlist';
+	@override String get playlistAddLocal => 'Add local songs';
+	@override String get playlistAddLocalDesc => 'Choose song files';
+	@override String playlistAddLocalDone({required Object count}) => 'Added ${count} songs';
+	@override String get playlistAddLocalNone => 'The picked songs are already in the list';
 	@override String get playlistName => 'Playlist name';
 	@override String get playlistNameHint => 'Name this playlist';
 	@override String get playlistRename => 'Rename';
@@ -4643,6 +4647,10 @@ extension on TranslationsEn {
 			'music.searchHotFailed' => 'Could not load the top searches',
 			'music.playlistCreate' => 'New playlist',
 			'music.playlistCreateTitle' => 'New playlist',
+			'music.playlistAddLocal' => 'Add local songs',
+			'music.playlistAddLocalDesc' => 'Choose song files',
+			'music.playlistAddLocalDone' => ({required Object count}) => 'Added ${count} songs',
+			'music.playlistAddLocalNone' => 'The picked songs are already in the list',
 			'music.playlistName' => 'Playlist name',
 			'music.playlistNameHint' => 'Name this playlist',
 			'music.playlistRename' => 'Rename',
@@ -4664,12 +4672,12 @@ extension on TranslationsEn {
 			'music.playlistExport' => 'Export playlist',
 			'music.playlistExportDone' => ({required Object path}) => 'Exported to ${path}',
 			'music.playlistExportFailed' => ({required Object error}) => 'Export failed: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'music.playlistSort' => 'Sort',
 			'music.sortByTitle' => 'By title',
 			'music.sortByArtist' => 'By artist',
 			'music.sortByAlbum' => 'By album',
-			_ => null,
-		} ?? switch (path) {
 			'music.sortByDuration' => 'By duration',
 			'music.sortByShuffle' => 'Shuffle',
 			'music.selectionStart' => 'Select',
@@ -5178,12 +5186,12 @@ extension on TranslationsEn {
 			'room.offlineTitle' => 'The streamer is away',
 			'room.offlineReplayReason' => 'A replay is available; open it from the card in the list',
 			'room.offlineReason' => 'The live picture appears here when the room goes live',
+			_ => null,
+		} ?? switch (path) {
 			'room.detailFailed' => 'The room details did not load',
 			'room.openRoom' => 'Open the room',
 			'room.copyLink' => 'Copy room link',
 			'room.linkCopied' => 'Link copied',
-			_ => null,
-		} ?? switch (path) {
 			'room.record' => 'Record',
 			'room.stopRecording' => 'Stop recording',
 			'room.recordStarted' => 'Recording started',
@@ -5692,12 +5700,12 @@ extension on TranslationsEn {
 			'settings.danmakuFormatAss' => 'ASS subtitles',
 			'settings.danmakuFormatSrt' => 'SRT subtitles',
 			'settings.danmakuFormatTxt' => 'Plain text',
+			_ => null,
+		} ?? switch (path) {
 			'settings.pipDanmakuScaleAuto' => 'Compact danmaku auto scale',
 			'settings.pipDanmakuScaleAutoDesc' => 'Shrink danmaku with the picture-in-picture window width, never larger than the main danmaku; turn off to use the fixed factor below.',
 			'settings.pipDanmakuScale' => 'Compact danmaku scale',
 			'settings.pipDanmakuScaleDesc' => 'The fixed factor used while the automatic compact scale is off.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleReset' => 'Reset to defaults',
 			'settings.danmakuPresetBest' => 'Top 20% · Balanced',
 			'settings.danmakuPresetComfort' => 'Top 35% · Comfort',
@@ -6206,12 +6214,12 @@ extension on TranslationsEn {
 			'settings.backgroundFit' => 'Fit',
 			'settings.backgroundFitDescription' => 'How a picture or video is placed in the window; a flat colour or gradient has nothing to fit.',
 			'settings.backgroundFitCover' => 'Cover',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundFitContain' => 'Contain',
 			'settings.backgroundFitFill' => 'Fill',
 			'settings.backgroundFitWidth' => 'Fit width',
 			'settings.backgroundFitHeight' => 'Fit height',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundFitNone' => 'Original size',
 			'settings.backgroundFitScaleDown' => 'Original or smaller',
 			'settings.backgroundMask' => 'Scrim',
@@ -6720,12 +6728,12 @@ extension on TranslationsEn {
 			'toolbox.networkRooms' => 'Rooms returned',
 			'toolbox.networkSuccess' => 'Reachable',
 			'toolbox.networkFailure' => 'Unreachable',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.networkBusy' => 'Checking…',
 			'toolbox.networkUnsupported' => 'This platform cannot be probed yet.',
 			'toolbox.cacheSection' => 'Image cache',
 			'toolbox.cacheEntries' => 'Cached images',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.cacheSize' => 'Memory held',
 			'toolbox.cacheClear' => 'Clear the cache',
 			'toolbox.cacheClearDesc' => 'Release the memory the image cache holds; favorites and history are untouched.',

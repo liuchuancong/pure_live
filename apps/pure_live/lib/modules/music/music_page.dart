@@ -1,4 +1,5 @@
 import 'dart:async' show Timer, unawaited;
+import 'dart:io' show File;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -986,6 +987,62 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
     );
   }
 
+  /// The reference's 添加本地歌曲: the audio files picked in the dialog join
+  /// the list, with the local library's own scan semantics.
+  Future<void> _addLocalSongs(MusicPlaylist playlist) async {
+    final t = context.t;
+    final picked = await FilePicker.pickFiles(
+      dialogTitle: t.music.playlistAddLocalDesc,
+      type: FileType.custom,
+      allowedExtensions: audio.LocalMusicSource.defaultExtensions,
+    );
+    final paths = [for (final file in picked) ?file.path];
+    if (paths.isEmpty || !mounted) return;
+    final tracks = [for (final path in paths) await _localTrackFromFile(path)];
+    final added = await ref.read(musicPlaylistsProvider.notifier).addTracks(playlist.id, tracks);
+    if (!mounted) return;
+    if (added > 0) {
+      showDsToast(context: context, title: t.music.playlistAddLocalDone(count: added), status: DsStatus.success);
+    } else {
+      showDsToast(context: context, title: t.music.playlistAddLocalNone, status: DsStatus.warning);
+    }
+  }
+
+  /// Builds a track from a local file the way the local library's scanner
+  /// does: tags name it, the file name answers when the tags are missing or
+  /// unreadable — a picked file is never dropped.
+  Future<audio.MusicTrack> _localTrackFromFile(String path) async {
+    final separator = path.lastIndexOf(RegExp(r'[\\/]'));
+    final fileName = separator >= 0 ? path.substring(separator + 1) : path;
+    final dot = fileName.lastIndexOf('.');
+    final title = dot > 0 ? fileName.substring(0, dot) : fileName;
+
+    audio.AudioTag tag;
+    try {
+      tag = await const audio.AudioTagReader().read(File(path));
+    } on Object {
+      tag = audio.AudioTag.empty;
+    }
+    String? clean(String? value) {
+      final trimmed = value?.trim();
+      return trimmed == null || trimmed.isEmpty ? null : trimmed;
+    }
+
+    return audio.MusicTrack(
+      id: path,
+      sourceId: audio.MusicTrack.localSourceId,
+      localPath: path,
+      title: clean(tag.title) ?? title,
+      artist: clean(tag.artist) ?? '',
+      album: clean(tag.album) ?? '',
+      duration: tag.duration,
+      metadata: <String, Object?>{
+        if (tag.trackNumber != null) 'trackNumber': tag.trackNumber,
+        if (tag.year != null) 'year': tag.year,
+      },
+    );
+  }
+
   /// Enters or leaves the reference's multi-selection.
   void _setSelecting({required bool selecting}) {
     setState(() {
@@ -1234,6 +1291,11 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                     leading: const DsIcon(DsIcons.copy),
                     label: Text(t.music.duplicateTracks),
                     onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_showDuplicates(playlist)),
+                  ),
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.folderPlus),
+                    label: Text(t.music.playlistAddLocal),
+                    onPressed: () => unawaited(_addLocalSongs(playlist)),
                   ),
                   if (playlist.source != null && playlist.sourceListId != null)
                     DsMenuItem(

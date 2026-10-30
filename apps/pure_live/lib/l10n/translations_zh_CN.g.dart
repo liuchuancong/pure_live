@@ -3151,6 +3151,18 @@ class Translations$music$zh_CN {
 	/// zh-CN: '新建歌单'
 	String get playlistCreateTitle => '新建歌单';
 
+	/// zh-CN: '添加本地歌曲'
+	String get playlistAddLocal => '添加本地歌曲';
+
+	/// zh-CN: '选择歌曲文件'
+	String get playlistAddLocalDesc => '选择歌曲文件';
+
+	/// zh-CN: '已添加 {count} 首歌曲'
+	String playlistAddLocalDone({required Object count}) => '已添加 ${count} 首歌曲';
+
+	/// zh-CN: '所选歌曲都已在列表中'
+	String get playlistAddLocalNone => '所选歌曲都已在列表中';
+
 	/// zh-CN: '歌单名称'
 	String get playlistName => '歌单名称';
 
@@ -11391,6 +11403,10 @@ extension on Translations {
 			'music.searchHotFailed' => '热门搜索加载失败',
 			'music.playlistCreate' => '新建歌单',
 			'music.playlistCreateTitle' => '新建歌单',
+			'music.playlistAddLocal' => '添加本地歌曲',
+			'music.playlistAddLocalDesc' => '选择歌曲文件',
+			'music.playlistAddLocalDone' => ({required Object count}) => '已添加 ${count} 首歌曲',
+			'music.playlistAddLocalNone' => '所选歌曲都已在列表中',
 			'music.playlistName' => '歌单名称',
 			'music.playlistNameHint' => '给歌单起个名字',
 			'music.playlistRename' => '重命名',
@@ -11412,12 +11428,12 @@ extension on Translations {
 			'music.playlistExport' => '导出歌单',
 			'music.playlistExportDone' => ({required Object path}) => '已导出到 ${path}',
 			'music.playlistExportFailed' => ({required Object error}) => '导出失败：${error}',
+			_ => null,
+		} ?? switch (path) {
 			'music.playlistSort' => '排序',
 			'music.sortByTitle' => '按歌名',
 			'music.sortByArtist' => '按歌手',
 			'music.sortByAlbum' => '按专辑',
-			_ => null,
-		} ?? switch (path) {
 			'music.sortByDuration' => '按时长',
 			'music.sortByShuffle' => '随机排序',
 			'music.selectionStart' => '选择',
@@ -11926,12 +11942,12 @@ extension on Translations {
 			'room.offlineTitle' => '主播暂时不在',
 			'room.offlineReplayReason' => '有回放可看，回到列表后可从卡片进入',
 			'room.offlineReason' => '开播后这里会看到直播画面',
+			_ => null,
+		} ?? switch (path) {
 			'room.detailFailed' => '房间信息加载失败',
 			'room.openRoom' => '进入直播间',
 			'room.copyLink' => '复制房间链接',
 			'room.linkCopied' => '链接已复制',
-			_ => null,
-		} ?? switch (path) {
 			'room.record' => '录制',
 			'room.stopRecording' => '停止录制',
 			'room.recordStarted' => '开始录制',
@@ -12440,12 +12456,12 @@ extension on Translations {
 			'settings.danmakuFormatAss' => 'ASS 字幕',
 			'settings.danmakuFormatSrt' => 'SRT 字幕',
 			'settings.danmakuFormatTxt' => '纯文本',
+			_ => null,
+		} ?? switch (path) {
 			'settings.pipDanmakuScaleAuto' => '小窗弹幕比例自动',
 			'settings.pipDanmakuScaleAutoDesc' => '按小窗宽度自动缩小弹幕，不超过主弹幕大小；关闭用下方固定比例。',
 			'settings.pipDanmakuScale' => '小窗弹幕比例',
 			'settings.pipDanmakuScaleDesc' => '关闭自动小窗比例时使用的固定倍率。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleReset' => '恢复默认',
 			'settings.danmakuPresetBest' => '顶部 20% · 均衡',
 			'settings.danmakuPresetComfort' => '顶部 35% · 舒适',
@@ -12954,12 +12970,12 @@ extension on Translations {
 			'settings.backgroundFit' => '填充方式',
 			'settings.backgroundFitDescription' => '把图片或视频铺到窗口时的方式；纯色与渐变没有可填充的对象。',
 			'settings.backgroundFitCover' => '裁切填满',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundFitContain' => '完整显示',
 			'settings.backgroundFitFill' => '拉伸填满',
 			'settings.backgroundFitWidth' => '适应宽度',
 			'settings.backgroundFitHeight' => '适应高度',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundFitNone' => '原始大小',
 			'settings.backgroundFitScaleDown' => '缩小',
 			'settings.backgroundMask' => '蒙层浓度',
@@ -13468,12 +13484,12 @@ extension on Translations {
 			'toolbox.networkRooms' => '返回房间',
 			'toolbox.networkSuccess' => '连接正常',
 			'toolbox.networkFailure' => '连接失败',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.networkBusy' => '正在检测…',
 			'toolbox.networkUnsupported' => '该平台暂不支持探测。',
 			'toolbox.cacheSection' => '图片缓存',
 			'toolbox.cacheEntries' => '缓存图片',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.cacheSize' => '占用内存',
 			'toolbox.cacheClear' => '清理缓存',
 			'toolbox.cacheClearDesc' => '释放图片缓存占用的内存，不影响收藏与历史。',
