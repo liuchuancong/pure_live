@@ -421,11 +421,9 @@ final class HongguoRankRow extends StatelessWidget {
     final rank = series.rank ?? position;
     final leading = rank <= 3;
     final fallback = CoverFallback(title: series.title, padding: const EdgeInsets.all(DsSpace.s6));
-    final badges = [
-      if (series.score.isNotEmpty) series.score,
-      if (series.today) t.hongguo.todayTag,
-      ...series.coverTags.take(2),
-    ];
+    // The board's own tags lead, as the station prints them beside the score,
+    // and they carry their own tone rather than the score badge's.
+    final statusTags = series.coverTags.take(2).toList();
     return DsCard(
       onPressed: onOpen,
       semanticLabel: series.title,
@@ -527,11 +525,15 @@ final class HongguoRankRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: theme.typography.caption.copyWith(color: colors.textSubtle),
                   ),
-                if (badges.isNotEmpty)
+                if (statusTags.isNotEmpty || series.score.isNotEmpty || series.today)
                   Wrap(
                     spacing: DsSpace.s4,
                     runSpacing: DsSpace.s4,
-                    children: [for (final badge in badges) DsBadge(label: Text(badge))],
+                    children: [
+                      for (final tag in statusTags) DsBadge(label: Text(tag), status: DsStatus.info),
+                      if (series.score.isNotEmpty) DsBadge(label: Text(series.score)),
+                      if (series.today) DsBadge(label: Text(t.hongguo.todayTag)),
+                    ],
                   ),
               ],
             ),
