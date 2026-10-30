@@ -118,7 +118,7 @@
 |---|---|---|
 | 客户端同步（地址/连接码/状态） | `music_sync*.dart` + 同步 pane | ✅ |
 | 同步内容=列表+不喜欢（合并/覆盖模式） | `kMusicSyncModes` | ✅ |
-| 服务端模式（desktop 作服务器） | 仅客户端 | ⬜ |
+| 服务端模式（desktop 作服务器） | `music_sync_server.dart`：dart:io HTTP+/hello /id /ah 三路由+WS 升级鉴权（连接码 AES 首连/密钥复连/按 IP 限流）、设备注册表（持久 clientId/key/deviceName/isMobile/lastConnectDate，重复 clientId 踢旧线、可吊销）、同步流程照抄参考（getEnabledFeatures→list+dislike：按所选模式合并矩阵（含 userList locationUpdateTime 位置合并）双方覆写+其余客户端广播、本地三库变更推送、finished+串行锁）、30s ping；设置 pane「服务端模式」区（启用/端口/局域网/连接码+刷新/地址复制/已认证设备弹窗行内吊销）；顺修 `music_sync_codec` 既有 bug：SPKI 缺外层 SEQUENCE+算法段长度字节错。连接码不自动轮换（参考 3 分钟轮换需服务端 UI 联动，暂缺）（提交 d90daafed） | ✅ |
 | 连接历史地址列表 | 同步 pane 历史行+连接历史弹窗（点击选用/行内删除/空态）；连接时记入，去重、最新在前、上限 20（f880b4515） | ✅ |
 
 ## J. 开放 API
