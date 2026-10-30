@@ -65,7 +65,7 @@
 | 移动到其他列表（批量） | 多选工具行「移动到」：选择器排除源列表（参考 excludeListId），目标去重加入（按 addToTop 定位）后从源列表移除（参考 moveListMusics）（提交 `c830f90b9`） | ✅ |
 | 重复歌曲查重去重 | 卡片菜单「重复歌曲」：`duplicateTrackGroups` 按参考 filterDuplicateMusic 归一（去括注变体/标点/空白）分组，对话框逐条播放/移除 + 一键保留每组第一首（提交 `f2ce85222`） | ✅ |
 | 列表内搜索 | 详情页头部搜索钮 + 搜索框：`searchPlaylistTrackIndexes` 按参考 searchListMusic 三档全匹配（歌名/歌手/专辑各档保原序）+ 剩余子序列匹配按 similar 降序，点击结果按原索引续播，搜索态禁用上下移（提交 `105f4647e`） | ✅ |
-| 歌曲换源（手动，搜其他源替换+缓存） | 解析失败自动跨源匹配已实现（`music_source_match.dart`）；**手动换源菜单+缓存表**无 | 🟡 手动换源 UI |
+| 歌曲换源（手动，搜其他源替换+缓存） | 解析失败自动跨源匹配（`music_source_match.dart`）；手动换源：歌曲菜单「歌曲换源」对话框（参考 MusicToggleModal：全源并发搜、逐源 tab、行内试听、确认），选择进 `music_source_swaps.dart` 持久缓存表且 `resolveWithToggle` 优先走换源结果，歌单内另以 `replaceTrack` 原位替换（提交 `5261a8190`） | ✅ |
 | 本地歌曲编辑标签（元数据编辑） | 无 | ⬜ |
 | 多选（区间选择/反选） | 多选=逐个勾选+全选，无区间/反选 | 🟡 |
 | 添加本地歌曲（文件进列表） | 本地音乐页独立，无"添加进列表" | 🟡 |
