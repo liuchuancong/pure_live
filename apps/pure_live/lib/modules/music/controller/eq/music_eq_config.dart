@@ -73,7 +73,8 @@ final class MusicEqConfig {
     if (rawEffects is Map) {
       for (final entry in rawEffects.entries) {
         final node = MusicFxNode.fromJson(entry.value);
-        if (node != null && kMusicFxOrder.contains('${entry.key}')) effects['${entry.key}'] = node;
+        final known = kMusicFxOrder.contains('${entry.key}') || kMusicFxSpatialOrder.contains('${entry.key}');
+        if (node != null && known) effects['${entry.key}'] = node;
       }
     }
     return MusicEqConfig(
@@ -169,18 +170,26 @@ final class MusicEqConfig {
 /// never claims an effect the engine cannot run.
 const List<String> kMusicFxOrder = <String>['loudness', 'bass', 'vocal', 'width', 'surround', 'dynamics'];
 
+/// The spatial effects, ordered as they enter the chain — after the tonal
+/// bands, mirroring the reference graph's EQ → pitch → reverb → panner run.
+///
+/// [kMusicFxOrder]'s ids stay first in the settings page; these append as a
+/// second group.
+const List<String> kMusicFxSpatialOrder = <String>['reverb', 'panner', 'pitch'];
+
 /// One effect's saved state: its switch and how hard it works (0–1).
 @immutable
 final class MusicFxNode {
   /// Creates a node.
-  const MusicFxNode({required this.enabled, required this.amount});
+  const MusicFxNode({required this.enabled, required this.amount, this.detail = 0.5});
 
   /// Reads a stored node; null when the entry is damaged.
   static MusicFxNode? fromJson(Object? json) {
     if (json is! Map) return null;
     final amount = (json['amount'] as num?)?.toDouble();
     if (amount == null) return null;
-    return MusicFxNode(enabled: json['enabled'] == true, amount: amount.clamp(0, 1));
+    final detail = (json['detail'] as num?)?.toDouble() ?? 0.5;
+    return MusicFxNode(enabled: json['enabled'] == true, amount: amount.clamp(0, 1), detail: detail.clamp(0, 1));
   }
 
   /// The effect's switch.
@@ -190,12 +199,17 @@ final class MusicFxNode {
   /// filter's own units.
   final double amount;
 
+  /// The effect's second axis where one exists — the 3D panner's orbit
+  /// speed — normalised 0–1 like [amount]. Effects without a second axis
+  /// leave it at the mid default.
+  final double detail;
+
   /// The stored shape.
-  Map<String, Object?> toJson() => <String, Object?>{'enabled': enabled, 'amount': amount};
+  Map<String, Object?> toJson() => <String, Object?>{'enabled': enabled, 'amount': amount, 'detail': detail};
 
   /// A copy with selected fields replaced.
-  MusicFxNode copyWith({bool? enabled, double? amount}) =>
-      MusicFxNode(enabled: enabled ?? this.enabled, amount: amount ?? this.amount);
+  MusicFxNode copyWith({bool? enabled, double? amount, double? detail}) =>
+      MusicFxNode(enabled: enabled ?? this.enabled, amount: amount ?? this.amount, detail: detail ?? this.detail);
 }
 
 /// The off node every effect starts as.
@@ -368,8 +382,8 @@ final class MusicEqController extends Notifier<MusicEqConfig> {
     );
   }
 
-  Future<void> setEffect(String id, {bool? enabled, double? amount}) async {
-    final next = state.effectOf(id).copyWith(enabled: enabled, amount: amount);
+  Future<void> setEffect(String id, {bool? enabled, double? amount, double? detail}) async {
+    final next = state.effectOf(id).copyWith(enabled: enabled, amount: amount, detail: detail);
     await update(state.copyWith(effects: {...state.effects, id: next}));
   }
 

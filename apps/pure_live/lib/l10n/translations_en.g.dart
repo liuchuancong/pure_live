@@ -1405,6 +1405,13 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get eqFxSurroundDesc => 'haas pseudo-surround from a small cross delay.';
 	@override String get eqFxDynamics => 'Compression & limiter';
 	@override String get eqFxDynamicsDesc => 'acompressor evens the peaks, alimiter guards the output.';
+	@override String get eqFxReverb => 'Reverb';
+	@override String get eqFxReverbDesc => 'aecho echo layering lays down a room\'s reverb tail.';
+	@override String get eqFxPanner => '3D surround';
+	@override String get eqFxPannerDesc => 'apulsator orbits the stereo image around the room.';
+	@override String get eqFxPannerSpeed => 'Orbit speed';
+	@override String get eqFxPitch => 'Pitch shift';
+	@override String get eqFxPitchDesc => 'asetrate shifts the pitch, atempo pays the tempo back.';
 	@override String get eqMeterTitle => 'Loudness meter';
 	@override String get eqAnalysis => 'Loudness probe';
 	@override String get eqAnalysisDesc => 'Runs an EBU R128 probe in the chain; playback is untouched';
@@ -4907,6 +4914,13 @@ extension on TranslationsEn {
 			'music.eqFxSurroundDesc' => 'haas pseudo-surround from a small cross delay.',
 			'music.eqFxDynamics' => 'Compression & limiter',
 			'music.eqFxDynamicsDesc' => 'acompressor evens the peaks, alimiter guards the output.',
+			'music.eqFxReverb' => 'Reverb',
+			'music.eqFxReverbDesc' => 'aecho echo layering lays down a room\'s reverb tail.',
+			'music.eqFxPanner' => '3D surround',
+			'music.eqFxPannerDesc' => 'apulsator orbits the stereo image around the room.',
+			'music.eqFxPannerSpeed' => 'Orbit speed',
+			'music.eqFxPitch' => 'Pitch shift',
+			'music.eqFxPitchDesc' => 'asetrate shifts the pitch, atempo pays the tempo back.',
 			'music.eqMeterTitle' => 'Loudness meter',
 			'music.eqAnalysis' => 'Loudness probe',
 			'music.eqAnalysisDesc' => 'Runs an EBU R128 probe in the chain; playback is untouched',

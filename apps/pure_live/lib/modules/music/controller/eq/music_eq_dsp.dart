@@ -164,6 +164,10 @@ List<String> musicEqAfEntries(MusicEqConfig config) {
     }
   }
 
+  // The spatial effects run last — after the finished mix, mirroring the
+  // reference graph's EQ → pitch → reverb → panner order.
+  filters.addAll(musicSpatialAfFilters(config));
+
   if (filters.isEmpty && !probe) return const <String>[];
 
   if (probe) {
@@ -230,4 +234,49 @@ const Map<String, String> kMusicFxCosts = <String, String>{
   'loudness': 'lookahead',
   'surround': 'stereoOnly, latency',
   'dynamics': 'lookahead',
+  'panner': 'stereoOnly',
 };
+
+/// The spatial effects' filters, after the whole tonal chain.
+///
+/// The reference builds these on Web Audio — a convolution reverb over
+/// impulse-response wavs, a panner orbiting the listener, a phase-vocoder
+/// pitch shifter. mpv speaks different dialects, so each one is translated
+/// to the honest closest filter, with the mapping written here rather than
+/// hidden:
+///
+/// - pitch: `asetrate` at 48k·rate with `atempo` paying the duration back —
+///   pure pitch, tempo untouched. The 0.5–1.5 rate range is the reference
+///   slider's 50–150; rate 1 skips the filter entirely.
+/// - reverb: `aecho` echo layering for the room tail — an approximation,
+///   since impulse-response convolution needs sample files this chain does
+///   not ship. Strength feeds the echo decays.
+/// - panner: `apulsator` sweeping the stereo image. The reference orbit
+///   takes 0.72 × speed seconds per turn, so `hz = 1.389 / speed`; the
+///   radius slider's 1–30 becomes the pan depth 0.1–2.
+List<String> musicSpatialAfFilters(MusicEqConfig config) {
+  final filters = <String>[];
+
+  if (config.effectOn('pitch')) {
+    final rate = 0.5 + config.effectOf('pitch').amount;
+    if ((rate - 1).abs() >= 0.01) {
+      final shifted = (kMusicEqSampleRate * rate).round();
+      filters.add(
+        'aformat=sample_rates=48000,asetrate=$shifted,aresample=48000,'
+        'atempo=${(kMusicEqSampleRate / shifted).toStringAsFixed(4)}',
+      );
+    }
+  }
+  if (config.effectOn('reverb')) {
+    final amount = config.effectOf('reverb').amount;
+    filters.add('aecho=0.8:0.9:60|121:${(amount * 0.6).toStringAsFixed(2)}|${(amount * 0.35).toStringAsFixed(2)}');
+  }
+  if (config.effectOn('panner')) {
+    final node = config.effectOf('panner');
+    final speed = (1 + node.detail * 49).clamp(1, 50);
+    final depth = (node.amount * 3).clamp(0.1, 2);
+    filters.add('apulsator=mode=sine:hz=${(1.389 / speed).toStringAsFixed(4)}:amount=${depth.toStringAsFixed(2)}');
+  }
+
+  return filters;
+}

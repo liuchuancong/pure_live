@@ -26,6 +26,7 @@ import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
         kMusicEqNodeMinQ,
         kMusicEqPresets,
         kMusicFxOrder,
+        kMusicFxSpatialOrder,
         musicEqApplyFailedProvider,
         musicEqProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_dsp.dart' show kMusicFxCosts;
@@ -1143,6 +1144,8 @@ final class MusicEqPane extends ConsumerWidget {
           children: [
             for (final id in kMusicFxOrder)
               _MusicFxRow(id: id, eq: eq, controller: controller),
+            for (final id in kMusicFxSpatialOrder)
+              _MusicFxRow(id: id, eq: eq, controller: controller),
           ],
         ),
         DsListSection(
@@ -1274,6 +1277,9 @@ final class _MusicFxRow extends ConsumerWidget {
       'vocal' => t.music.eqFxVocal,
       'width' => t.music.eqFxWidth,
       'surround' => t.music.eqFxSurround,
+      'reverb' => t.music.eqFxReverb,
+      'panner' => t.music.eqFxPanner,
+      'pitch' => t.music.eqFxPitch,
       _ => t.music.eqFxDynamics,
     };
     final description = switch (id) {
@@ -1282,6 +1288,9 @@ final class _MusicFxRow extends ConsumerWidget {
       'vocal' => t.music.eqFxVocalDesc,
       'width' => t.music.eqFxWidthDesc,
       'surround' => t.music.eqFxSurroundDesc,
+      'reverb' => t.music.eqFxReverbDesc,
+      'panner' => t.music.eqFxPannerDesc,
+      'pitch' => t.music.eqFxPitchDesc,
       _ => t.music.eqFxDynamicsDesc,
     };
 
@@ -1300,6 +1309,17 @@ final class _MusicFxRow extends ConsumerWidget {
                 value: node.amount,
                 semanticLabel: title,
                 onChanged: (value) => unawaited(controller.setEffect(id, amount: value)),
+              ),
+            ),
+          if (on && id == 'panner')
+            Text(t.music.eqFxPannerSpeed, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+          if (on && id == 'panner')
+            SizedBox(
+              width: 200,
+              child: DsSlider(
+                value: node.detail,
+                semanticLabel: t.music.eqFxPannerSpeed,
+                onChanged: (value) => unawaited(controller.setEffect(id, detail: value)),
               ),
             ),
           if (on && kMusicFxCosts[id] != null)

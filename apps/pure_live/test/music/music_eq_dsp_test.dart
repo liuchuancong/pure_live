@@ -161,6 +161,76 @@ void main() {
       expect(entry.indexOf('bass=g='), lessThan(splitAt));
       expect(entry.indexOf('equalizer=f=62'), lessThan(splitAt));
     });
+
+    test('the spatial effects ride after the tonal bands', () {
+      final gains = List<double>.filled(kMusicEqFrequencies.length, 0);
+      gains[0] = 6;
+      final config = MusicEqConfig(
+        enabled: true,
+        preampDb: 0,
+        gains: gains,
+        effects: const <String, MusicFxNode>{'reverb': MusicFxNode(enabled: true, amount: 0.6)},
+      );
+      final entry = musicEqAfEntries(config).single;
+      expect(entry.indexOf('equalizer=f=31'), lessThan(entry.indexOf('aecho=')));
+    });
+  });
+
+  group('musicSpatialAfFilters', () {
+    List<double> flatGains() => List<double>.filled(kMusicEqFrequencies.length, 0);
+
+    test('the pitch shift speaks asetrate and pays the tempo back', () {
+      final config = MusicEqConfig(
+        enabled: true,
+        preampDb: 0,
+        gains: flatGains(),
+        effects: const <String, MusicFxNode>{'pitch': MusicFxNode(enabled: true, amount: 0.3)},
+      );
+      final filter = musicSpatialAfFilters(config).single;
+      // rate 0.8 → the samples play at 38.4 kHz and atempo stretches the
+      // duration back by exactly the same factor.
+      expect(filter, contains('asetrate=38400'));
+      expect(filter, contains('atempo=1.2500'));
+    });
+
+    test('a neutral pitch rate skips the filter', () {
+      final config = MusicEqConfig(
+        enabled: true,
+        preampDb: 0,
+        gains: flatGains(),
+        effects: const <String, MusicFxNode>{'pitch': MusicFxNode(enabled: true, amount: 0.5)},
+      );
+      expect(musicSpatialAfFilters(config), isEmpty);
+    });
+
+    test('the reverb strength feeds the echo decays', () {
+      final config = MusicEqConfig(
+        enabled: true,
+        preampDb: 0,
+        gains: flatGains(),
+        effects: const <String, MusicFxNode>{'reverb': MusicFxNode(enabled: true, amount: 0.6)},
+      );
+      expect(musicSpatialAfFilters(config).single, contains('aecho=0.8:0.9:60|121:0.36|0.21'));
+    });
+
+    test('the panner derives its orbit from depth and speed', () {
+      final config = MusicEqConfig(
+        enabled: true,
+        preampDb: 0,
+        gains: flatGains(),
+        effects: const <String, MusicFxNode>{'panner': MusicFxNode(enabled: true, amount: 0.5, detail: 0.4)},
+      );
+      final filter = musicSpatialAfFilters(config).single;
+      // detail 0.4 → speed 20.6 → the reference's 0.72 s-per-speed turn
+      // becomes 0.0674 Hz; amount 0.5 → half-way pan depth.
+      expect(filter, contains('apulsator=mode=sine'));
+      expect(filter, contains('hz=0.0674'));
+      expect(filter, contains('amount=1.50'));
+    });
+
+    test('effects that are off stay out entirely', () {
+      expect(musicSpatialAfFilters(MusicEqConfig(enabled: true, preampDb: 0, gains: flatGains())), isEmpty);
+    });
   });
 
   group('MusicEqConfig round trip', () {
@@ -204,6 +274,33 @@ void main() {
       expect(node.q, 1);
       expect(node.gainDb, 3);
       expect(node.enabled, isTrue);
+    });
+
+    test('spatial ids and the detail axis survive the round trip', () {
+      const config = MusicEqConfig(
+        enabled: true,
+        preampDb: 0,
+        gains: <double>[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        effects: <String, MusicFxNode>{'panner': MusicFxNode(enabled: true, amount: 0.4, detail: 0.7)},
+      );
+      final restored = MusicEqConfig.fromJson(config.toJson())!;
+      expect(restored.effectOf('panner').enabled, isTrue);
+      expect(restored.effectOf('panner').amount, closeTo(0.4, 0.001));
+      expect(restored.effectOf('panner').detail, closeTo(0.7, 0.001));
+    });
+
+    test('an unknown effect id is dropped, and a missing detail defaults to mid', () {
+      final restored = MusicEqConfig.fromJson(<String, Object?>{
+        'enabled': true,
+        'preamp': 0,
+        'gains': List.filled(kMusicEqFrequencies.length, 0),
+        'effects': <String, Object?>{
+          'nope': <String, Object?>{'enabled': true, 'amount': 1},
+          'reverb': <String, Object?>{'enabled': true, 'amount': 0.6},
+        },
+      })!;
+      expect(restored.effects, hasLength(1));
+      expect(restored.effectOf('reverb').detail, 0.5);
     });
   });
 

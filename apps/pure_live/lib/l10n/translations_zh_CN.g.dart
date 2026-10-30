@@ -3916,6 +3916,27 @@ class Translations$music$zh_CN {
 	/// zh-CN: 'acompressor 平滑峰值，alimiter 守住输出上限。'
 	String get eqFxDynamicsDesc => 'acompressor 平滑峰值，alimiter 守住输出上限。';
 
+	/// zh-CN: '混响'
+	String get eqFxReverb => '混响';
+
+	/// zh-CN: 'aecho 回声叠加，铺出房间混响尾音。'
+	String get eqFxReverbDesc => 'aecho 回声叠加，铺出房间混响尾音。';
+
+	/// zh-CN: '3D 环绕'
+	String get eqFxPanner => '3D 环绕';
+
+	/// zh-CN: 'apulsator 声像绕场旋转，模拟现场包围感。'
+	String get eqFxPannerDesc => 'apulsator 声像绕场旋转，模拟现场包围感。';
+
+	/// zh-CN: '环绕速度'
+	String get eqFxPannerSpeed => '环绕速度';
+
+	/// zh-CN: '升降调'
+	String get eqFxPitch => '升降调';
+
+	/// zh-CN: 'asetrate 升降音高，atempo 补回节奏。'
+	String get eqFxPitchDesc => 'asetrate 升降音高，atempo 补回节奏。';
+
 	/// zh-CN: '响度电平表'
 	String get eqMeterTitle => '响度电平表';
 
@@ -11669,6 +11690,13 @@ extension on Translations {
 			'music.eqFxSurroundDesc' => 'haas 交叉延迟伪环绕。',
 			'music.eqFxDynamics' => '动态压缩与限幅',
 			'music.eqFxDynamicsDesc' => 'acompressor 平滑峰值，alimiter 守住输出上限。',
+			'music.eqFxReverb' => '混响',
+			'music.eqFxReverbDesc' => 'aecho 回声叠加，铺出房间混响尾音。',
+			'music.eqFxPanner' => '3D 环绕',
+			'music.eqFxPannerDesc' => 'apulsator 声像绕场旋转，模拟现场包围感。',
+			'music.eqFxPannerSpeed' => '环绕速度',
+			'music.eqFxPitch' => '升降调',
+			'music.eqFxPitchDesc' => 'asetrate 升降音高，atempo 补回节奏。',
 			'music.eqMeterTitle' => '响度电平表',
 			'music.eqAnalysis' => '响度探针',
 			'music.eqAnalysisDesc' => '在链路中运行 EBU R128 探针，不改变声音本身',
