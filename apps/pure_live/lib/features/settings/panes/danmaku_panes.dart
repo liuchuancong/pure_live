@@ -56,6 +56,7 @@ final class DanmakuPane extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final playback = ref.watch(playbackSettingsProvider);
+    final family = ref.watch(danmakuStyleProvider).fontFamily;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -84,6 +85,22 @@ final class DanmakuPane extends ConsumerWidget {
                       .set(value ? DanmakuPausedBehavior.fly : DanmakuPausedBehavior.pause),
                 ),
               ),
+            ),
+          ],
+        ),
+        // The face is chosen in the font manager: the catalogue holds a few
+        // thousand families, far more than a dropdown can carry. The row sits
+        // on this page rather than the preview's, because the manager opens
+        // under the settings surface the preview covers.
+        DsListSection(
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.type),
+              title: Text(t.settings.danmakuFont),
+              description: Text(t.settings.danmakuFontDescription),
+              detail: Text(fontFamilyLabel(t, family, name: ref.watch(freeFontStoreProvider).nameOf(family))),
+              showChevron: true,
+              onPressed: () => showFontManagerPage(context, ref, danmaku: true),
             ),
           ],
         ),
@@ -197,22 +214,6 @@ final class _DanmakuStyleSettingsState extends ConsumerState<DanmakuStyleSetting
             },
             child: Text(t.settings.styleReset),
           ),
-        ),
-        // The face is chosen in the font manager: the catalogue holds a few
-        // thousand families, far more than a dropdown can carry.
-        DsListSection(
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.type),
-              title: Text(t.settings.danmakuFont),
-              description: Text(t.settings.danmakuFontDescription),
-              detail: Text(
-                fontFamilyLabel(t, style.fontFamily, name: ref.watch(freeFontStoreProvider).nameOf(style.fontFamily)),
-              ),
-              showChevron: true,
-              onPressed: () => showFontManagerPage(context, ref, danmaku: true),
-            ),
-          ],
         ),
         DsListSection(
           header: Text(t.settings.danmakuStyleGroup),
