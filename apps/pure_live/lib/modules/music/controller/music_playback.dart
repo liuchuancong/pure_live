@@ -7,7 +7,20 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core/media_core.dart' show PlayerAudioDevice, PlayerConfig;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:media_core_mpv_audio/media_core_mpv_audio.dart'
-    show Device, FftFrame, MpvAudioPlayerAdapter, kMpvAudioBackendId;
+    show
+        Device,
+        FftFrame,
+        MediaAction,
+        MediaSession,
+        MediaSessionArtwork,
+        MediaSessionCommandNext,
+        MediaSessionCommandPause,
+        MediaSessionCommandPlay,
+        MediaSessionCommandPrevious,
+        MediaSessionCommandSeekTo,
+        MediaSessionCommandStop,
+        MpvAudioPlayerAdapter,
+        kMpvAudioBackendId;
 import 'package:pure_live/app/app.dart' show playerKernelProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
     show MusicEqConfig, musicEqApplyFailedProvider, musicEqProvider;
@@ -156,6 +169,8 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   String? _erroredSkipKey;
   int _erroredSkips = 0;
   String? _lyricOverrideKey;
+  String? _sessionTrackKey;
+  bool _engineSessionBound = false;
 
   @override
   audio.AudioPlaybackState build() {
@@ -293,6 +308,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
         _devicePending = false;
         _applyAudioDevice();
       }
+      _publishEngineSession(next);
       // Android 13+ hides the media notification without this permission; ask
       // when the viewer actually starts a song, not on some unrelated page.
       if (next.playing && !_askedNotifications) {
@@ -335,6 +351,84 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   void _attachBackground(audio.MediaSessionDriver session) {
     _background ??= audio.MusicBackgroundBinding(_audio, session)..attach();
   }
+
+  /// Publishes the playing track onto the engine's own media session.
+  ///
+  /// The mpv_audio engine carries a first-class session: playback state,
+  /// position and the play/pause verdict are the engine's own, so nothing
+  /// here can drift from the sound. The queue stays app-side, which is why
+  /// autoApplyPlaylistNavigation is off — the OS's next and
+  /// previous come back through MediaSessionCommandNext/MediaSessionCommandPrevious
+  /// and drive the app's queue.
+  ///
+  /// The first publish releases the app-wide arbitration binding: two
+  /// owners would draw two SMTC cards, and the engine's is the truthful one.
+  void _publishEngineSession(audio.AudioPlaybackState next) {
+    final engine = _engineAdapter?.player;
+    final track = next.track;
+    if (engine == null || track == null) return;
+    final key = musicTrackKey(track);
+    if (key == _sessionTrackKey) return;
+    _sessionTrackKey = key;
+
+    _background?.detach();
+    _background = null;
+    _bindEngineSessionCommands(_engineAdapter!);
+
+    final coverUri = track.coverUri;
+    unawaited(
+      engine.setMediaSession(
+        MediaSession(
+          title: track.title,
+          artist: track.artist.isEmpty ? null : track.artist,
+          album: track.album.isEmpty ? null : track.album,
+          // A network cover is handed to the engine as a URI — the session
+          // surfaces fetch it themselves; no cover falls back to the file's
+          // embedded art.
+          artwork: coverUri == null
+              ? MediaSessionArtwork.embedded
+              : MediaSessionArtwork.uri(coverUri),
+          duration: next.duration > Duration.zero ? next.duration : null,
+          autoApplyPlaylistNavigation: false,
+          actions: const <MediaAction>{
+            MediaAction.play,
+            MediaAction.pause,
+            MediaAction.stop,
+            MediaAction.next,
+            MediaAction.previous,
+            MediaAction.seek,
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Routes the OS media commands onto the app's queue transports — once
+  /// per engine instance, because the subscription outlives tracks.
+  void _bindEngineSessionCommands(MpvAudioPlayerAdapter adapter) {
+    if (_engineSessionBound) return;
+    _engineSessionBound = true;
+    final engine = adapter.player;
+    if (engine == null) return;
+    engine.stream.mediaSessionCommands.listen((command) {
+      if (!ref.mounted) return;
+      if (command is MediaSessionCommandPlay) {
+        if (!state.playing) unawaited(_audio.play());
+      } else if (command is MediaSessionCommandPause) {
+        if (state.playing) unawaited(_audio.pause());
+      } else if (command is MediaSessionCommandStop) {
+        unawaited(_audio.stop());
+      } else if (command is MediaSessionCommandNext) {
+        unawaited(next());
+      } else if (command is MediaSessionCommandPrevious) {
+        unawaited(previous());
+      } else if (command is MediaSessionCommandSeekTo) {
+        unawaited(_audio.seek(command.position));
+      }
+    });
+  }
+
+
 
   /// The overlay style the preferences describe.
   static audio.DesktopLyricStyle _desktopStyle(MusicSettings settings) => audio.DesktopLyricStyle(
