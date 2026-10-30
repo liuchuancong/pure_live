@@ -937,6 +937,15 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
     }
   }
 
+  /// The reference's 重复歌曲 dialog: duplicate titles in one list, picked
+  /// ones removable in place.
+  Future<void> _showDuplicates(MusicPlaylist playlist) async {
+    await showDsDialog<bool>(
+      context: context,
+      builder: (context) => _DuplicateTracksDialog(playlistId: playlist.id),
+    );
+  }
+
   /// Enters or leaves the reference's multi-selection.
   void _setSelecting({required bool selecting}) {
     setState(() {
@@ -1147,6 +1156,11 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                     leading: const DsIcon(DsIcons.arrowUpFromLine),
                     label: Text(t.music.playlistExport),
                     onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_export(playlist)),
+                  ),
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.copy),
+                    label: Text(t.music.duplicateTracks),
+                    onPressed: playlist.tracks.isEmpty ? null : () => unawaited(_showDuplicates(playlist)),
                   ),
                   if (playlist.source != null && playlist.sourceListId != null)
                     DsMenuItem(
@@ -2664,6 +2678,114 @@ final class _OnlinePlaylistDetail extends ConsumerWidget {
                   );
             },
           ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The reference's 重复歌曲 dialog: duplicate titles in one playlist, each
+/// removable in place, with a sweep that keeps the first of every group.
+final class _DuplicateTracksDialog extends ConsumerStatefulWidget {
+  const _DuplicateTracksDialog({required this.playlistId});
+
+  final String playlistId;
+
+  @override
+  ConsumerState<_DuplicateTracksDialog> createState() => _DuplicateTracksDialogState();
+}
+
+final class _DuplicateTracksDialogState extends ConsumerState<_DuplicateTracksDialog> {
+  Future<void> _remove(List<audio.MusicTrack> tracks) async {
+    final count = tracks.length;
+    if (count == 0) return;
+    await ref.read(musicPlaylistsProvider.notifier).removeTracks(widget.playlistId, tracks);
+    if (!mounted) return;
+    showDsToast(
+      context: context,
+      title: context.t.music.selectionRemoveDone(count: count),
+      status: DsStatus.success,
+    );
+  }
+
+  void _play(audio.MusicTrack track, List<audio.MusicTrack> tracks) {
+    final index = tracks.indexOf(track);
+    if (index >= 0) unawaited(ref.read(musicPlayerProvider.notifier).playAll(tracks, index: index));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    MusicPlaylist? playlist;
+    for (final candidate in ref.watch(musicPlaylistsProvider)) {
+      if (candidate.id == widget.playlistId) playlist = candidate;
+    }
+    final tracks = playlist?.tracks ?? const <audio.MusicTrack>[];
+    final groups = duplicateTrackGroups(tracks);
+    final duplicates = [for (final group in groups) ...group];
+    final extras = [for (final group in groups) ...group.skip(1)];
+    final settings = ref.watch(musicSettingsProvider);
+    final sourceNames = {
+      for (final source in ref.watch(musicSourceListProvider))
+        source.id: musicSourceDisplayName(t, settings.sourceNameType, source.id, source.name),
+    };
+    final playingId = ref.watch(musicPlayerProvider.select((state) => state.track?.id));
+    final favourites = ref.watch(musicFavouritesProvider);
+    return DsDialog(
+      title: Text(playlist?.name ?? t.music.duplicateTracks),
+      icon: const DsIcon(DsIcons.copy),
+      description: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s8,
+        children: [
+          Text(
+            t.music.duplicatesFound(count: duplicates.length),
+            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+          ),
+          SizedBox(
+            height: 360,
+            child: duplicates.isEmpty
+                ? Center(
+                    child: Text(
+                      t.music.duplicatesNone,
+                      style: theme.typography.body.copyWith(color: colors.textMuted),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: duplicates.length,
+                    itemBuilder: (context, index) {
+                      final track = duplicates[index];
+                      final source = sourceNames[track.sourceId] ?? '';
+                      final subtitle = [track.artist, if (source.isNotEmpty) source]
+                          .where((part) => part.isNotEmpty)
+                          .join(' · ');
+                      return MusicSongRow(
+                        track: track,
+                        playing: playingId == track.id,
+                        favourite: favourites.contains(track),
+                        subtitle: subtitle.isEmpty ? null : subtitle,
+                        onPlay: () => _play(track, tracks),
+                        onFavourite: () =>
+                            unawaited(ref.read(musicFavouritesProvider.notifier).toggle(track)),
+                        onRemove: () => unawaited(_remove([track])),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+      actions: [
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          onPressed: extras.isEmpty ? null : () => unawaited(_remove(extras)),
+          child: Text(t.music.duplicatesRemoveAll),
+        ),
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(t.common.close),
         ),
       ],
     );

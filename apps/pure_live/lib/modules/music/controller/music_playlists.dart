@@ -606,3 +606,32 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
 final musicPlaylistsProvider = NotifierProvider<MusicPlaylistsController, List<MusicPlaylist>>(
   MusicPlaylistsController.new,
 );
+
+final RegExp _titleVariantRxp = RegExp('[(（].+[)）]');
+final RegExp _titlePunctRxp = RegExp("[\\s'.,，&\"、()（）`~\\-<>|/\\]\\[]");
+final RegExp _titleGapRxp = RegExp(r'\s+');
+
+/// The reference's duplicate filter: titles compare after dropping a trailing
+/// parenthesized variant (Live/Explicit…), punctuation and spaces; a title
+/// that reduces to nothing falls back to its whitespace-stripped form.
+String _duplicateTitleKey(String title) {
+  final lowered = title.toLowerCase();
+  var key = lowered.replaceAll(_titleVariantRxp, '').replaceAll(_titlePunctRxp, '');
+  if (key.isEmpty) key = lowered.replaceAll(_titleGapRxp, '');
+  return key;
+}
+
+/// Groups tracks whose normalized titles collide — the reference's
+/// filterDuplicateMusic. Only groups of two or more come back, ordered by
+/// group key; tracks keep their original order inside a group.
+List<List<audio.MusicTrack>> duplicateTrackGroups(List<audio.MusicTrack> tracks) {
+  final groups = <String, List<audio.MusicTrack>>{};
+  for (final track in tracks) {
+    groups.putIfAbsent(_duplicateTitleKey(track.title), () => []).add(track);
+  }
+  final keys = [
+    for (final entry in groups.entries)
+      if (entry.value.length > 1) entry.key,
+  ]..sort();
+  return [for (final key in keys) groups[key]!];
+}

@@ -4026,6 +4026,18 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '音源脚本下载失败：raw 源与镜像都不可达'
 	String get catalogFetchFailed => '音源脚本下载失败：raw 源与镜像都不可达';
+
+	/// zh-CN: '重复歌曲'
+	String get duplicateTracks => '重复歌曲';
+
+	/// zh-CN: '发现 {count} 首重复歌曲'
+	String duplicatesFound({required Object count}) => '发现 ${count} 首重复歌曲';
+
+	/// zh-CN: '没有发现重复的歌曲'
+	String get duplicatesNone => '没有发现重复的歌曲';
+
+	/// zh-CN: '移除重复（保留第一首）'
+	String get duplicatesRemoveAll => '移除重复（保留第一首）';
 }
 
 // Path: navigation
@@ -11550,6 +11562,10 @@ extension on Translations {
 			'music.catalogImport' => '导入',
 			'music.catalogImported' => '已导入',
 			'music.catalogFetchFailed' => '音源脚本下载失败：raw 源与镜像都不可达',
+			'music.duplicateTracks' => '重复歌曲',
+			'music.duplicatesFound' => ({required Object count}) => '发现 ${count} 首重复歌曲',
+			'music.duplicatesNone' => '没有发现重复的歌曲',
+			'music.duplicatesRemoveAll' => '移除重复（保留第一首）',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -11791,12 +11807,12 @@ extension on Translations {
 			'room.danmakuSettings' => '弹幕设置',
 			'room.blockList' => '屏蔽列表',
 			'room.superChats' => '超级聊天',
+			_ => null,
+		} ?? switch (path) {
 			'room.superChatEmpty' => '暂无超级聊天',
 			'room.superChatFailed' => '超级聊天加载失败',
 			'room.superChatCardMembership' => '会员',
 			'room.superChatCardSubscription' => '订阅',
-			_ => null,
-		} ?? switch (path) {
 			'room.onlineViewers' => '在线',
 			'room.popularity' => '热度',
 			'room.totalViewers' => '累计观看',
@@ -12305,12 +12321,12 @@ extension on Translations {
 			'settings.fontDescription' => 'MiSans 随应用打包并默认使用，也可换国内或国外字体。',
 			'settings.fontDefault' => 'MiSans（默认）',
 			'settings.fontSystemChinese' => '系统字体',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontRegionDomestic' => '国内',
 			'settings.fontRegionOverseas' => '国外',
 			'settings.fontManagerTitle' => '字体管理',
 			'settings.fontManagerSubtitle' => '选择你喜欢的字体，让界面更符合你的审美。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerSample' => '纯粹直播',
 			'settings.fontManagerLocal' => '本地字体',
 			'settings.fontManagerMore' => '下载更多字体',
@@ -12819,12 +12835,12 @@ extension on Translations {
 			'settings.downloadOtherBuilds' => '其他构建',
 			'settings.downloadTitle' => '获取安装包',
 			'settings.downloadLatest' => '最新版本',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadHint' => '选择与本机匹配的包；下载保存到「数据与缓存」里的下载目录。',
 			'settings.downloadAction' => '下载',
 			'settings.downloadCount' => ({required Object count}) => '${count} 次下载',
 			'settings.downloadFailed' => '无法读取发布文件列表',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadEmpty' => '这个发布没有可下载的文件',
 			'settings.downloadNoBuild' => '这个发布没有匹配本机的安装包，已打开发布页。',
 			'settings.downloadProgress' => ({required Object received, required Object total}) => '${received} / ${total}',
@@ -13333,12 +13349,12 @@ extension on Translations {
 			'toolbox.logsClearConfirm' => '清空内存日志？',
 			'toolbox.logsClearConfirmDesc' => '内存中的日志会被删除，日志文件不受影响。',
 			'toolbox.logsSearch' => '搜索日志…',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsEmptyTitle' => '还没有日志',
 			'toolbox.logsEmptyDescription' => '应用启动、网络请求与错误会记录在这里。',
 			'toolbox.logsAutoOn' => '自动滚动已开启',
 			'toolbox.logsAutoOff' => '自动滚动已关闭（滚动到底部可开启）',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsLines' => ({required int count}) => '${count} 行',
 			'toolbox.logsScrollBottom' => '滚动到底部',
 			'toolbox.logsCopied' => '日志已复制',

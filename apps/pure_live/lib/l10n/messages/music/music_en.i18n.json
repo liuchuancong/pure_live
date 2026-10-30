@@ -462,5 +462,9 @@
   "catalogHint": "Sources from the pdone/lx-music-source community collection; importing downloads the latest script over the GitHub-acceleration setting.",
   "catalogImport": "Import",
   "catalogImported": "Imported",
-  "catalogFetchFailed": "Downloading the source script failed: every mirror was unreachable"
+  "catalogFetchFailed": "Downloading the source script failed: every mirror was unreachable",
+  "duplicateTracks": "Duplicate songs",
+  "duplicatesFound": "{count} duplicate songs found",
+  "duplicatesNone": "No duplicate songs found",
+  "duplicatesRemoveAll": "Remove duplicates (keep the first)"
 }

@@ -1442,6 +1442,10 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get catalogImport => 'Import';
 	@override String get catalogImported => 'Imported';
 	@override String get catalogFetchFailed => 'Downloading the source script failed: every mirror was unreachable';
+	@override String get duplicateTracks => 'Duplicate songs';
+	@override String duplicatesFound({required Object count}) => '${count} duplicate songs found';
+	@override String get duplicatesNone => 'No duplicate songs found';
+	@override String get duplicatesRemoveAll => 'Remove duplicates (keep the first)';
 }
 
 // Path: navigation
@@ -4892,6 +4896,10 @@ extension on TranslationsEn {
 			'music.catalogImport' => 'Import',
 			'music.catalogImported' => 'Imported',
 			'music.catalogFetchFailed' => 'Downloading the source script failed: every mirror was unreachable',
+			'music.duplicateTracks' => 'Duplicate songs',
+			'music.duplicatesFound' => ({required Object count}) => '${count} duplicate songs found',
+			'music.duplicatesNone' => 'No duplicate songs found',
+			'music.duplicatesRemoveAll' => 'Remove duplicates (keep the first)',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -5133,12 +5141,12 @@ extension on TranslationsEn {
 			'room.danmakuSettings' => 'Danmaku settings',
 			'room.blockList' => 'Block list',
 			'room.superChats' => 'Super chats',
+			_ => null,
+		} ?? switch (path) {
 			'room.superChatEmpty' => 'No super chats now',
 			'room.superChatFailed' => 'The super chats did not load',
 			'room.superChatCardMembership' => 'Membership',
 			'room.superChatCardSubscription' => 'Subscription',
-			_ => null,
-		} ?? switch (path) {
 			'room.onlineViewers' => 'Live viewers',
 			'room.popularity' => 'Popularity',
 			'room.totalViewers' => 'Total viewers',
@@ -5647,12 +5655,12 @@ extension on TranslationsEn {
 			'settings.fontDescription' => 'UI typeface: MiSans ships with the app and is the default everywhere; switch to a domestic or overseas face here.',
 			'settings.fontDefault' => 'MiSans (default)',
 			'settings.fontSystemChinese' => 'System font',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontRegionDomestic' => 'Domestic',
 			'settings.fontRegionOverseas' => 'Overseas',
 			'settings.fontManagerTitle' => 'Font manager',
 			'settings.fontManagerSubtitle' => 'Pick the typeface you like and make the interface yours.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerSample' => 'Pure Live',
 			'settings.fontManagerLocal' => 'Local fonts',
 			'settings.fontManagerMore' => 'Get more fonts',
@@ -6161,12 +6169,12 @@ extension on TranslationsEn {
 			'settings.downloadOtherBuilds' => 'Other builds',
 			'settings.downloadTitle' => 'Downloads',
 			'settings.downloadLatest' => 'The latest release',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadHint' => 'Pick the package that matches this device; a download is saved to the folder shown under Data & cache.',
 			'settings.downloadAction' => 'Download',
 			'settings.downloadCount' => ({required Object count}) => '${count} downloads',
 			'settings.downloadFailed' => 'The release\'s files could not be read',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadEmpty' => 'This release publishes no files',
 			'settings.downloadNoBuild' => 'This release has no package for this device; its page is open.',
 			'settings.downloadProgress' => ({required Object received, required Object total}) => '${received} of ${total}',
@@ -6675,12 +6683,12 @@ extension on TranslationsEn {
 			'toolbox.logsClearConfirm' => 'Clear the in-memory log?',
 			'toolbox.logsClearConfirmDesc' => 'The in-memory records are deleted; log files are untouched.',
 			'toolbox.logsSearch' => 'Search logs…',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.logsEmptyTitle' => 'No logs yet',
 			'toolbox.logsEmptyDescription' => 'Startup, network requests and errors appear here.',
 			'toolbox.logsAutoOn' => 'Auto-scroll on',
 			'toolbox.logsAutoOff' => 'Auto-scroll off (scroll to the bottom to resume)',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.logsLines' => ({required int count}) => '${count} lines',
 			'toolbox.logsScrollBottom' => 'Scroll to bottom',
 			'toolbox.logsCopied' => 'Log copied',
