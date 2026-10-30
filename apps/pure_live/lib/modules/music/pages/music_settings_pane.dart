@@ -913,6 +913,7 @@ final class MusicDesktopLyricPane extends ConsumerWidget {
   static const List<double> _sizes = [24, 32, 40, 48, 56, 64];
   static const List<double> _opacities = [1, 0.9, 0.8, 0.7, 0.6, 0.5];
   static const List<double> _strokeWidths = [0, 1, 2, 3, 4];
+  static const List<int> _lineGaps = [0, 5, 10, 15, 20, 25];
   static const List<int> _colors = [0xFFFFFFFF, 0xFFFFE066, 0xFF67E8F9, 0xFFF9A8D4, 0xFF86EFAC, 0xFFFDBA74];
   static const List<int> _strokeColors = [0xFF000000, 0xFFFFFFFF, 0xFF9CA3AF];
 
@@ -1053,6 +1054,32 @@ final class MusicDesktopLyricPane extends ConsumerWidget {
                   ),
               ],
               onChanged: (value) => unawaited(controller.setDesktopLyricStrokeColor(value)),
+            ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.arrowUpDown),
+              title: t.music.desktopLyricLineGap,
+              description: t.music.desktopLyricLineGapDesc,
+              value: settings.desktopLyricLineGap,
+              options: [for (final gap in _lineGaps) DsSelectOption(value: gap, label: '$gap')],
+              onChanged: (value) => unawaited(controller.setDesktopLyricLineGap(value)),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.bold),
+              title: t.music.desktopLyricBoldLine,
+              description: t.music.desktopLyricBoldLineDesc,
+              control: DsSwitch(
+                value: settings.desktopLyricBoldLine,
+                onChanged: (value) => unawaited(controller.setDesktopLyricBoldLine(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.languages),
+              title: t.music.desktopLyricBoldExtended,
+              description: t.music.desktopLyricBoldExtendedDesc,
+              control: DsSwitch(
+                value: settings.desktopLyricBoldExtended,
+                onChanged: (value) => unawaited(controller.setDesktopLyricBoldExtended(value: value)),
+              ),
             ),
             SettingsChoiceRow<audio.DesktopLyricAlignment>(
               leading: const DsIcon(DsIcons.alignLeft),

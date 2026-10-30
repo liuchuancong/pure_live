@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core/media_core.dart' show EngineOption, PlayerConfig, PlayerHandleEngineOptions;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
-
 import 'package:pure_live/app/app.dart' show playerKernelProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
     show MusicEqConfig, musicEqApplyFailedProvider, musicEqProvider;
@@ -228,6 +227,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
           settings.desktopLyricStrokeColor,
           settings.desktopLyricStrokeWidth,
           settings.desktopLyricLocked,
+          settings.desktopLyricLineGap,
+          settings.desktopLyricBoldLine,
+          settings.desktopLyricBoldExtended,
         ),
       ),
       (previous, next) {
@@ -240,7 +242,10 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
                 previous.$3 != next.$3 ||
                 previous.$4 != next.$4 ||
                 previous.$5 != next.$5 ||
-                previous.$6 != next.$6);
+                previous.$6 != next.$6 ||
+                previous.$8 != next.$8 ||
+                previous.$9 != next.$9 ||
+                previous.$10 != next.$10);
         if (restyled) {
           final settings = ref.read(musicSettingsProvider);
           unawaited(desktop.setStyle(_desktopStyle(settings)));
@@ -313,6 +318,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     textColor: settings.desktopLyricTextColor,
     strokeColor: settings.desktopLyricStrokeColor,
     strokeWidth: settings.desktopLyricStrokeWidth,
+    lineGap: settings.desktopLyricLineGap.toDouble(),
+    boldLine: settings.desktopLyricBoldLine,
+    boldExtended: settings.desktopLyricBoldExtended,
     alignment: settings.desktopLyricAlignment,
   );
 
@@ -347,13 +355,16 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     }
     final entries = musicEqAfEntries(eq);
     unawaited(
-      handle.applyEngineOptions(<EngineOption>[EngineOption('af', entries)]).then((report) {
-        if (!ref.mounted) return;
-        // The honesty rule: the page shows whether the chain actually took.
-        ref.read(musicEqApplyFailedProvider.notifier).state = report.unsupported.isNotEmpty;
-      }).catchError((Object _) {
-        if (ref.mounted) ref.read(musicEqApplyFailedProvider.notifier).state = true;
-      }),
+      handle
+          .applyEngineOptions(<EngineOption>[EngineOption('af', entries)])
+          .then((report) {
+            if (!ref.mounted) return;
+            // The honesty rule: the page shows whether the chain actually took.
+            ref.read(musicEqApplyFailedProvider.notifier).state = report.unsupported.isNotEmpty;
+          })
+          .catchError((Object _) {
+            if (ref.mounted) ref.read(musicEqApplyFailedProvider.notifier).state = true;
+          }),
     );
   }
 
@@ -374,9 +385,12 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     unawaited(
       handle
           .applyEngineOptions(<EngineOption>[EngineOption('audio-pitch-correction', preservesPitch ? 'yes' : 'no')])
-          .then((_) {}, onError: (Object _) {
-            // A backend without the option just keeps its own behaviour.
-          }),
+          .then(
+            (_) {},
+            onError: (Object _) {
+              // A backend without the option just keeps its own behaviour.
+            },
+          ),
     );
   }
 

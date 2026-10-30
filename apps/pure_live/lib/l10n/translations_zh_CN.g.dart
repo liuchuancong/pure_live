@@ -3643,6 +3643,24 @@ class Translations$music$zh_CN {
 	/// zh-CN: '文字描边的粗细，0 表示不描边。'
 	String get desktopLyricStrokeWidthDesc => '文字描边的粗细，0 表示不描边。';
 
+	/// zh-CN: '歌词间距'
+	String get desktopLyricLineGap => '歌词间距';
+
+	/// zh-CN: '歌词行与行之间的间距大小。'
+	String get desktopLyricLineGapDesc => '歌词行与行之间的间距大小。';
+
+	/// zh-CN: '加粗逐行歌词'
+	String get desktopLyricBoldLine => '加粗逐行歌词';
+
+	/// zh-CN: '主歌词行以粗体绘制。'
+	String get desktopLyricBoldLineDesc => '主歌词行以粗体绘制。';
+
+	/// zh-CN: '加粗翻译、罗马音歌词'
+	String get desktopLyricBoldExtended => '加粗翻译、罗马音歌词';
+
+	/// zh-CN: '翻译与罗马音副行以粗体绘制。'
+	String get desktopLyricBoldExtendedDesc => '翻译与罗马音副行以粗体绘制。';
+
 	/// zh-CN: '无'
 	String get desktopLyricStrokeNone => '无';
 
@@ -11608,6 +11626,12 @@ extension on Translations {
 			'music.desktopLyricStrokeColorDesc' => '文字描边的颜色；描边宽度为 0 时不起作用。',
 			'music.desktopLyricStrokeWidth' => '描边宽度',
 			'music.desktopLyricStrokeWidthDesc' => '文字描边的粗细，0 表示不描边。',
+			'music.desktopLyricLineGap' => '歌词间距',
+			'music.desktopLyricLineGapDesc' => '歌词行与行之间的间距大小。',
+			'music.desktopLyricBoldLine' => '加粗逐行歌词',
+			'music.desktopLyricBoldLineDesc' => '主歌词行以粗体绘制。',
+			'music.desktopLyricBoldExtended' => '加粗翻译、罗马音歌词',
+			'music.desktopLyricBoldExtendedDesc' => '翻译与罗马音副行以粗体绘制。',
 			'music.desktopLyricStrokeNone' => '无',
 			'music.desktopLyricColorBlack' => '黑色',
 			'music.desktopLyricColorGray' => '灰色',

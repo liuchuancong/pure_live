@@ -176,6 +176,9 @@ final class MusicSettings {
     required this.desktopLyricTextColor,
     required this.desktopLyricStrokeColor,
     required this.desktopLyricStrokeWidth,
+    required this.desktopLyricLineGap,
+    required this.desktopLyricBoldLine,
+    required this.desktopLyricBoldExtended,
     required this.desktopLyricAlignment,
     required this.downloadType,
     required this.downloadPattern,
@@ -225,6 +228,9 @@ final class MusicSettings {
     desktopLyricTextColor: 0xFFFFFFFF,
     desktopLyricStrokeColor: 0xFF000000,
     desktopLyricStrokeWidth: 2,
+    desktopLyricLineGap: 15,
+    desktopLyricBoldLine: true,
+    desktopLyricBoldExtended: true,
     desktopLyricAlignment: audio.DesktopLyricAlignment.center,
     downloadType: MusicDownloadType.original,
     downloadPattern: '{artist} - {title}',
@@ -342,6 +348,18 @@ final class MusicSettings {
   /// The overlay's outline width in logical pixels; 0 turns it off.
   final double desktopLyricStrokeWidth;
 
+  /// The gap between the overlay's stacked lines, 0–25 — the reference's
+  /// `desktopLyric.style.lineGap`.
+  final int desktopLyricLineGap;
+
+  /// Whether the overlay's main line draws bold — the reference's
+  /// `desktopLyric.style.isFontWeightLine`.
+  final bool desktopLyricBoldLine;
+
+  /// Whether the overlay's translation line draws bold — the reference's
+  /// `desktopLyric.style.isFontWeightExtended`.
+  final bool desktopLyricBoldExtended;
+
   /// The overlay's horizontal anchoring.
   final audio.DesktopLyricAlignment desktopLyricAlignment;
 
@@ -408,6 +426,9 @@ final class MusicSettings {
     int? desktopLyricTextColor,
     int? desktopLyricStrokeColor,
     double? desktopLyricStrokeWidth,
+    int? desktopLyricLineGap,
+    bool? desktopLyricBoldLine,
+    bool? desktopLyricBoldExtended,
     audio.DesktopLyricAlignment? desktopLyricAlignment,
     MusicDownloadType? downloadType,
     String? downloadPattern,
@@ -451,6 +472,9 @@ final class MusicSettings {
     desktopLyricTextColor: desktopLyricTextColor ?? this.desktopLyricTextColor,
     desktopLyricStrokeColor: desktopLyricStrokeColor ?? this.desktopLyricStrokeColor,
     desktopLyricStrokeWidth: desktopLyricStrokeWidth ?? this.desktopLyricStrokeWidth,
+    desktopLyricLineGap: desktopLyricLineGap ?? this.desktopLyricLineGap,
+    desktopLyricBoldLine: desktopLyricBoldLine ?? this.desktopLyricBoldLine,
+    desktopLyricBoldExtended: desktopLyricBoldExtended ?? this.desktopLyricBoldExtended,
     desktopLyricAlignment: desktopLyricAlignment ?? this.desktopLyricAlignment,
     downloadType: downloadType ?? this.downloadType,
     downloadPattern: downloadPattern ?? this.downloadPattern,
@@ -496,6 +520,9 @@ const String _desktopLyricOpacityKey = 'music.lyric.desktop.opacity';
 const String _desktopLyricTextColorKey = 'music.lyric.desktop.textColor';
 const String _desktopLyricStrokeColorKey = 'music.lyric.desktop.strokeColor';
 const String _desktopLyricStrokeWidthKey = 'music.lyric.desktop.strokeWidth';
+const String _desktopLyricLineGapKey = 'music.lyric.desktop.lineGap';
+const String _desktopLyricBoldLineKey = 'music.lyric.desktop.boldLine';
+const String _desktopLyricBoldExtendedKey = 'music.lyric.desktop.boldExtended';
 const String _desktopLyricAlignmentKey = 'music.lyric.desktop.alignment';
 const String _downloadTypeKey = 'music.download.type';
 const String _downloadPatternKey = 'music.download.pattern';
@@ -543,6 +570,9 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     desktopLyricTextColor: _readInt(_desktopLyricTextColorKey) ?? 0xFFFFFFFF,
     desktopLyricStrokeColor: _readInt(_desktopLyricStrokeColorKey) ?? 0xFF000000,
     desktopLyricStrokeWidth: _readDouble(_desktopLyricStrokeWidthKey) ?? 2,
+    desktopLyricLineGap: (_readInt(_desktopLyricLineGapKey) ?? 15).clamp(0, 25),
+    desktopLyricBoldLine: _readBool(_desktopLyricBoldLineKey) ?? true,
+    desktopLyricBoldExtended: _readBool(_desktopLyricBoldExtendedKey) ?? true,
     desktopLyricAlignment: _readAlignment(),
     downloadType: _readDownloadType(),
     downloadPattern: _readString(_downloadPatternKey) ?? MusicSettings.standard.downloadPattern,
@@ -819,6 +849,26 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     final clamped = value.clamp(0.0, 6.0);
     state = state.copyWith(desktopLyricStrokeWidth: clamped);
     await _writeDouble(_desktopLyricStrokeWidthKey, clamped);
+  }
+
+  /// Sets the overlay's line gap, 0–25 — the reference steps it by one
+  /// between those bounds.
+  Future<void> setDesktopLyricLineGap(int value) async {
+    final clamped = value.clamp(0, 25);
+    state = state.copyWith(desktopLyricLineGap: clamped);
+    await _writeInt(_desktopLyricLineGapKey, clamped);
+  }
+
+  /// Switches the overlay's bold main line.
+  Future<void> setDesktopLyricBoldLine({required bool value}) async {
+    state = state.copyWith(desktopLyricBoldLine: value);
+    await _writeBool(_desktopLyricBoldLineKey, value);
+  }
+
+  /// Switches the overlay's bold translation line.
+  Future<void> setDesktopLyricBoldExtended({required bool value}) async {
+    state = state.copyWith(desktopLyricBoldExtended: value);
+    await _writeBool(_desktopLyricBoldExtendedKey, value);
   }
 
   /// Sets the overlay's horizontal anchoring.

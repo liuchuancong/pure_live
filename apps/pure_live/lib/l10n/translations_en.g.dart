@@ -1314,6 +1314,12 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get desktopLyricStrokeColorDesc => 'The text outline’s colour; unused when the outline width is 0.';
 	@override String get desktopLyricStrokeWidth => 'Outline width';
 	@override String get desktopLyricStrokeWidthDesc => 'How thick the text outline is; 0 turns it off.';
+	@override String get desktopLyricLineGap => 'Line gap';
+	@override String get desktopLyricLineGapDesc => 'The space between the lyric lines.';
+	@override String get desktopLyricBoldLine => 'Bold line lyrics';
+	@override String get desktopLyricBoldLineDesc => 'Draws the main lyric line in bold.';
+	@override String get desktopLyricBoldExtended => 'Bold translation and romanization';
+	@override String get desktopLyricBoldExtendedDesc => 'Draws the translation and romanization lines in bold.';
 	@override String get desktopLyricStrokeNone => 'None';
 	@override String get desktopLyricColorBlack => 'Black';
 	@override String get desktopLyricColorGray => 'Gray';
@@ -4826,6 +4832,12 @@ extension on TranslationsEn {
 			'music.desktopLyricStrokeColorDesc' => 'The text outline’s colour; unused when the outline width is 0.',
 			'music.desktopLyricStrokeWidth' => 'Outline width',
 			'music.desktopLyricStrokeWidthDesc' => 'How thick the text outline is; 0 turns it off.',
+			'music.desktopLyricLineGap' => 'Line gap',
+			'music.desktopLyricLineGapDesc' => 'The space between the lyric lines.',
+			'music.desktopLyricBoldLine' => 'Bold line lyrics',
+			'music.desktopLyricBoldLineDesc' => 'Draws the main lyric line in bold.',
+			'music.desktopLyricBoldExtended' => 'Bold translation and romanization',
+			'music.desktopLyricBoldExtendedDesc' => 'Draws the translation and romanization lines in bold.',
 			'music.desktopLyricStrokeNone' => 'None',
 			'music.desktopLyricColorBlack' => 'Black',
 			'music.desktopLyricColorGray' => 'Gray',
