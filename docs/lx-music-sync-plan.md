@@ -276,7 +276,10 @@ playAll(index)/收藏/加入歌单/下载，复用本地轨道行）；非 wy/tx
   **待做（2026-10-31 现状重估）**：引擎已换道 mpv_audio_kit 类型化效果链
   （`music_eq_engine_effects.dart`，87 种类型化 AudioEffect，旧 lavfi 链在 Windows 从未生效已废），
   阶段 C 余项（FIR/设备校正）与阶段 D（HRTF/卷积）=mpv 类型化效果表无对应滤镜，诚实标注引擎受限
-  待扩展；设计图逐像素音效中心主页面待设计图（当前先落设置子页+自定义预设））（`plugins/player/index.ts`、
+  待扩展；**音效中心主页面已落（2026-10-31 `210e1fce9`，用户令参考网易云/QQ 音乐先写代码）**：
+  hero=当前曲封面模糊垫底+当前音效大字+总开关，预设=九内置+自定义的彩色卡片墙（逐预设固定
+  渐变配色如作品图、选中强调环+使用中标记），增强音效九项内联（复用设置面板 MusicFxRow 公开版，
+  含空间三件套详情滑杆），下方保留十段 EQ 编辑器卡；新增 l10n 键 eqCenterNow）（`plugins/player/index.ts`、
   `store/soundEffect.ts`）。**频响图验证测试已落**：`test/music/music_eq_dsp_test.dart`
   18 测全绿——RBJ peaking（中心=增益/远端静默/Q 越窄越陡）、low shelf（角频下抬升+过冲容差）、
   平直曲线近零/预放平移/250Hz 凸峰定位、vocal 3kHz 隆起位置、af 链生成（关闭清链/节点频率与 Q/
