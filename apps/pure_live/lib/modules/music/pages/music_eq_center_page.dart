@@ -26,6 +26,7 @@ final class MusicEqCenterPage extends ConsumerWidget {
     final eq = ref.watch(musicEqProvider);
     final controller = ref.read(musicEqProvider.notifier);
     final custom = ref.watch(musicCustomPresetsProvider);
+    final applyFailed = ref.watch(musicEqApplyFailedProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(DsSpace.s20),
@@ -68,6 +69,24 @@ final class MusicEqCenterPage extends ConsumerWidget {
               ],
             ),
           ),
+
+          // The honesty rule: when the engine refused the chain, the page
+          // says so instead of the switches sitting on over plain sound.
+          if (applyFailed)
+            _Card(
+              child: Row(
+                children: [
+                  DsIcon(DsIcons.triangleAlert, size: 18, color: colors.danger.fill),
+                  const SizedBox(width: DsSpace.s8),
+                  Expanded(
+                    child: Text(
+                      t.music.eqApplyFailed,
+                      style: theme.typography.caption.copyWith(color: colors.danger.fill),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           // The preset in force: its name opens the picker, the three quick
           // buttons jump at the bands and the enhancement effects.
