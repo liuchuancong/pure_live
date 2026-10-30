@@ -84,7 +84,7 @@
 | 拖拽歌词调整进度（3 秒回弹） | 歌词设置页「拖拽歌词调整进度」开关（默认关，参考同默认）：用户滚动歌词即暂停跟随（区分自身 animateTo），面板 40% 高度出现划线=所指行时间+跳放按钮（点按 seek 到该行 start），停手 3 秒回弹到当前句（暂停中不回弹，参考 mobile Vertical/Lyric.tsx+PlayLine.tsx 逐语义）；未同步歌词不参与（提交 `7a8d9d178`） | ✅ |
 | 频谱可视化（实验性） | 无（内核能力）：media_core 现仅有 EBU R128 响度探针（`emitLoudnessChanged`，af 链滤镜在场才上报），无 PCM/FFT 面；方案已定稿 `docs/media-core-audio-spectrum-architecture.md`——顺序为 阶段A 审计→B PCM Tap 五平台验证→C FFT→D 接入→E UI，**PCM Tap 验证前不得开发 FFT/UI** | ⬜ 待内核 |
 | 音效（实验性）：EQ + 混响 + 3D 环绕 + 升降调 | `eq/` 十段均衡+FX 链（bass/vocal/width/loudness 等）+ 预设；混响=aecho 回声叠加（参考为 IR 卷积，mpv 链不带货样文件，取诚实近似，强度→回声衰减）、3D=apulsator 正弦声像环绕（转速按参考 0.72s×speed/圈 换算 hz，强度→摆深 0.1–2，声明仅立体声有效）、升降调=asetrate+atempo 补时长（rate 0.5–1.5 同参考滑条 50–150，1.0 跳过滤芯）（提交 `29f017f3d`） | ✅ |
-| 倍速音调补偿 preservesPitch | 无 | ⬜ |
+| 倍速音调补偿 preservesPitch | 倍速菜单尾「音调补偿」勾选项（默认开，参考词表照抄；参考为 player 弹层 checkbox + `audio.preservesPitch`），存 `music.play.preservesPitch`，经 `applyEngineOptions` 下发 mpv `audio-pitch-correction` yes/no（引擎重建自动重放，handle 未就绪挂起待首曲）（提交 `5294fc8da`） | ✅ |
 | 音频输出设备选择 | 无（内核能力） | ⬜ 待内核 |
 | 播放队列面板 | `_QueuePanel` | ✅ |
 | 歌曲评论（热门/最新、楼层、图片） | `music_comments.dart` + `_CommentsDialog` | ✅ |
