@@ -3802,6 +3802,12 @@ class Translations$music$zh_CN {
 	/// zh-CN: '应用窗口内的传输与音量快捷键。'
 	String get hkEnableDesc => '应用窗口内的传输与音量快捷键。';
 
+	/// zh-CN: '全局快捷键'
+	String get hkGlobal => '全局快捷键';
+
+	/// zh-CN: '把同一张组合表注册进系统；窗口未聚焦时也生效。'
+	String get hkGlobalDesc => '把同一张组合表注册进系统；窗口未聚焦时也生效。';
+
 	/// zh-CN: '未设置'
 	String get hkUnset => '未设置';
 
@@ -11679,6 +11685,8 @@ extension on Translations {
 			'music.eqPreampDesc' => '作用于频段之前；曲线削波时先降这里。',
 			'music.hkEnable' => '启用快捷键',
 			'music.hkEnableDesc' => '应用窗口内的传输与音量快捷键。',
+			'music.hkGlobal' => '全局快捷键',
+			'music.hkGlobalDesc' => '把同一张组合表注册进系统；窗口未聚焦时也生效。',
 			'music.hkUnset' => '未设置',
 			'music.hkPressNew' => '按下新组合，Esc 取消',
 			'music.hkReset' => '恢复默认',

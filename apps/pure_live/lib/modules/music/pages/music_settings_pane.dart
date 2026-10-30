@@ -1694,6 +1694,15 @@ final class MusicHotkeysPane extends ConsumerWidget {
               ),
             ),
             SettingsConfigRow(
+              leading: const DsIcon(DsIcons.monitor),
+              title: t.music.hkGlobal,
+              description: t.music.hkGlobalDesc,
+              control: DsSwitch(
+                value: config.globalEnabled,
+                onChanged: (value) => unawaited(controller.setGlobalEnabled(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
               leading: const DsIcon(DsIcons.rotateCcw),
               title: t.music.hkReset,
               description: t.music.hkResetDesc,

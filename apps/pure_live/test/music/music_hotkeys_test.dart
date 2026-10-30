@@ -54,7 +54,7 @@ void main() {
     });
 
     test('assigning a held combo steals it from the other action', () {
-      const config = MusicHotkeyConfig(enabled: true, assignments: MusicHotkeyConfig.standard);
+      const config = MusicHotkeyConfig(enabled: true, globalEnabled: false, assignments: MusicHotkeyConfig.standard);
       final moved = config.withAssignment(
         MusicHotkeyAction.volumeMute,
         MusicHotkeyCombo.parse('mod+alt+arrowup'),
@@ -64,10 +64,19 @@ void main() {
     });
 
     test('clearing an assignment removes it without touching others', () {
-      const config = MusicHotkeyConfig(enabled: true, assignments: MusicHotkeyConfig.standard);
+      const config = MusicHotkeyConfig(enabled: true, globalEnabled: false, assignments: MusicHotkeyConfig.standard);
       final cleared = config.withAssignment(MusicHotkeyAction.next, null);
       expect(cleared.assignments.containsKey(MusicHotkeyAction.next), isFalse);
       expect(cleared.assignments.containsKey(MusicHotkeyAction.prev), isTrue);
+    });
+
+    test('the global flag survives assignment edits, the reference default is off', () {
+      const config = MusicHotkeyConfig(enabled: true, globalEnabled: true, assignments: MusicHotkeyConfig.standard);
+      final edited = config.withAssignment(MusicHotkeyAction.seekForward, MusicHotkeyCombo.parse('mod+alt+arrowright'));
+      expect(edited.globalEnabled, isTrue);
+      expect(edited.assignments[MusicHotkeyAction.seekForward]!.serialize(), 'mod+alt+arrowright');
+      const plain = MusicHotkeyConfig(enabled: true, globalEnabled: false, assignments: {});
+      expect(plain.globalEnabled, isFalse);
     });
   });
 }

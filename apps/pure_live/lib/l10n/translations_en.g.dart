@@ -1367,6 +1367,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get eqPreampDesc => 'Applied before the bands; lower it when the curve clips.';
 	@override String get hkEnable => 'Enable shortcuts';
 	@override String get hkEnableDesc => 'In-app accelerators for the transport and volume.';
+	@override String get hkGlobal => 'Global shortcuts';
+	@override String get hkGlobalDesc => 'Registers the same table with the OS; fires even when the window is not focused.';
 	@override String get hkUnset => 'Unset';
 	@override String get hkPressNew => 'Press a new combination, Esc cancels';
 	@override String get hkReset => 'Reset to defaults';
@@ -4885,6 +4887,8 @@ extension on TranslationsEn {
 			'music.eqPreampDesc' => 'Applied before the bands; lower it when the curve clips.',
 			'music.hkEnable' => 'Enable shortcuts',
 			'music.hkEnableDesc' => 'In-app accelerators for the transport and volume.',
+			'music.hkGlobal' => 'Global shortcuts',
+			'music.hkGlobalDesc' => 'Registers the same table with the OS; fires even when the window is not focused.',
 			'music.hkUnset' => 'Unset',
 			'music.hkPressNew' => 'Press a new combination, Esc cancels',
 			'music.hkReset' => 'Reset to defaults',
