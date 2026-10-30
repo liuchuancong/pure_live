@@ -280,6 +280,7 @@
   "localEmptyDescription": "Add a folder of audio files to start scanning.",
   "localFolderFailed": "Cannot add the folder: {error}",
   "playbackRate": "Playback speed",
+  "preservesPitch": "Pitch compensation",
   "sleepTimer": "Sleep timer",
   "sleepOff": "Off",
   "sleepMinutes": "{count} minutes",

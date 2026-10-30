@@ -153,6 +153,7 @@ final class MusicSettings {
     required this.rememberProgress,
     required this.volume,
     required this.playbackRate,
+    required this.preservesPitch,
     required this.addToTop,
     required this.showSource,
     required this.showHotSearches,
@@ -200,6 +201,7 @@ final class MusicSettings {
     rememberProgress: true,
     volume: 1,
     playbackRate: 1,
+    preservesPitch: true,
     addToTop: true,
     showSource: true,
     showHotSearches: true,
@@ -261,6 +263,10 @@ final class MusicSettings {
   /// The playback speed, kept across runs — the reference's
   /// `player.playbackRate`.
   final double playbackRate;
+
+  /// Whether a changed speed keeps the song's pitch — the reference's
+  /// `player.preservesPitch`, mpv's `audio-pitch-correction`.
+  final bool preservesPitch;
 
   /// Whether a song added to a list goes to its top rather than its end.
   final bool addToTop;
@@ -372,6 +378,7 @@ final class MusicSettings {
     bool? rememberProgress,
     double? volume,
     double? playbackRate,
+    bool? preservesPitch,
     bool? addToTop,
     bool? showSource,
     bool? showHotSearches,
@@ -413,6 +420,7 @@ final class MusicSettings {
     rememberProgress: rememberProgress ?? this.rememberProgress,
     volume: volume ?? this.volume,
     playbackRate: playbackRate ?? this.playbackRate,
+    preservesPitch: preservesPitch ?? this.preservesPitch,
     addToTop: addToTop ?? this.addToTop,
     showSource: showSource ?? this.showSource,
     showHotSearches: showHotSearches ?? this.showHotSearches,
@@ -456,6 +464,7 @@ const String _autoplayKey = 'music.play.autoplay';
 const String _rememberProgressKey = 'music.play.rememberProgress';
 const String _volumeKey = 'music.play.volume';
 const String _rateKey = 'music.play.rate';
+const String _preservesPitchKey = 'music.play.preservesPitch';
 const String _addToTopKey = 'music.list.addToTop';
 const String _showSourceKey = 'music.list.showSource';
 const String _showHotSearchesKey = 'music.search.hot';
@@ -501,6 +510,7 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
     rememberProgress: _readBool(_rememberProgressKey) ?? true,
     volume: _readDouble(_volumeKey) ?? 1,
     playbackRate: _readDouble(_rateKey) ?? 1,
+    preservesPitch: _readBool(_preservesPitchKey) ?? true,
     addToTop: _readBool(_addToTopKey) ?? true,
     showSource: _readBool(_showSourceKey) ?? true,
     showHotSearches: _readBool(_showHotSearchesKey) ?? true,
@@ -690,6 +700,12 @@ final class MusicSettingsController extends Notifier<MusicSettings> {
   Future<void> setPlaybackRate(double value) async {
     state = state.copyWith(playbackRate: value);
     await _writeDouble(_rateKey, value);
+  }
+
+  /// Switches pitch compensation for a changed playback speed.
+  Future<void> setPreservesPitch({required bool value}) async {
+    state = state.copyWith(preservesPitch: value);
+    await _writeBool(_preservesPitchKey, value);
   }
 
   /// Switches traditional-Chinese lyric rendering.

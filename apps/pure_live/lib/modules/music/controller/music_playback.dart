@@ -198,6 +198,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     ref.listen(musicSettingsProvider.select((settings) => settings.lyricOffsetMs), (_, offsetMs) {
       _audio.setLyricOffset(Duration(milliseconds: offsetMs));
     });
+    ref.listen(musicSettingsProvider.select((settings) => settings.preservesPitch), (_, preservesPitch) {
+      _applyPitchCorrection(preservesPitch);
+    });
     ref.listen(
       musicSettingsProvider.select(
         (settings) => (settings.showTranslation, settings.showRomanization, settings.swapLyricSecondary),
@@ -263,6 +266,10 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
         _eqPending = false;
         _applyEq(ref.read(musicEqProvider));
       }
+      if (_pitchPending && next.track != null) {
+        _pitchPending = false;
+        _applyPitchCorrection(ref.read(musicSettingsProvider).preservesPitch);
+      }
       // Android 13+ hides the media notification without this permission; ask
       // when the viewer actually starts a song, not on some unrelated page.
       if (next.playing && !_askedNotifications) {
@@ -284,6 +291,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     // The chain waits for the first engine handle when boot landed before one;
     // when a handle already exists this applies straight away.
     _applyEq(ref.read(musicEqProvider));
+    _applyPitchCorrection(ref.read(musicSettingsProvider).preservesPitch);
     unawaited(_restore());
     unawaited(_restoreDesktopLyric());
     return _audio.state;
@@ -346,6 +354,29 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       }).catchError((Object _) {
         if (ref.mounted) ref.read(musicEqApplyFailedProvider.notifier).state = true;
       }),
+    );
+  }
+
+  /// Sends the pitch-compensation choice to this instance's engine — the
+  /// reference's `audio.preservesPitch`, which mpv spells
+  /// `audio-pitch-correction`: on, a changed speed stretches time and keeps
+  /// the pitch; off, it behaves like a tape deck and the pitch follows.
+  /// Like the effect chain, the handle replays the option if the engine
+  /// rebuilds.
+  bool _pitchPending = false;
+
+  void _applyPitchCorrection(bool preservesPitch) {
+    final handle = _audio.handle;
+    if (handle == null) {
+      _pitchPending = true;
+      return;
+    }
+    unawaited(
+      handle
+          .applyEngineOptions(<EngineOption>[EngineOption('audio-pitch-correction', preservesPitch ? 'yes' : 'no')])
+          .then((_) {}, onError: (Object _) {
+            // A backend without the option just keeps its own behaviour.
+          }),
     );
   }
 

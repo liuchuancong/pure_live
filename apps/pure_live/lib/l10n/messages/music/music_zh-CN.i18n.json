@@ -280,6 +280,7 @@
   "localEmptyDescription": "添加一个存放音频文件的文件夹开始扫描。",
   "localFolderFailed": "无法添加文件夹：{error}",
   "playbackRate": "播放速度",
+  "preservesPitch": "音调补偿",
   "sleepTimer": "睡眠定时",
   "sleepOff": "关闭",
   "sleepMinutes": "{count} 分钟",

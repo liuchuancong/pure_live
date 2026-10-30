@@ -1259,6 +1259,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get localEmptyDescription => 'Add a folder of audio files to start scanning.';
 	@override String localFolderFailed({required Object error}) => 'Cannot add the folder: ${error}';
 	@override String get playbackRate => 'Playback speed';
+	@override String get preservesPitch => 'Pitch compensation';
 	@override String get sleepTimer => 'Sleep timer';
 	@override String get sleepOff => 'Off';
 	@override String sleepMinutes({required Object count}) => '${count} minutes';
@@ -4768,6 +4769,7 @@ extension on TranslationsEn {
 			'music.localEmptyDescription' => 'Add a folder of audio files to start scanning.',
 			'music.localFolderFailed' => ({required Object error}) => 'Cannot add the folder: ${error}',
 			'music.playbackRate' => 'Playback speed',
+			'music.preservesPitch' => 'Pitch compensation',
 			'music.sleepTimer' => 'Sleep timer',
 			'music.sleepOff' => 'Off',
 			'music.sleepMinutes' => ({required Object count}) => '${count} minutes',

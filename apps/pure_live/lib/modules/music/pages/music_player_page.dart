@@ -893,6 +893,14 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
                 checked: (state.rate - rate).abs() < 0.001,
                 onPressed: () => unawaited(controller.setRate(rate)),
               ),
+            const DsMenuDivider(),
+            DsMenuItem(
+              label: Text(t.music.preservesPitch),
+              checked: settings.preservesPitch,
+              onPressed: () => unawaited(
+                ref.read(musicSettingsProvider.notifier).setPreservesPitch(value: !settings.preservesPitch),
+              ),
+            ),
           ],
         ),
         DsMenuItem.submenu(

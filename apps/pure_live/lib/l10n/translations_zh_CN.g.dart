@@ -3478,6 +3478,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '播放速度'
 	String get playbackRate => '播放速度';
 
+	/// zh-CN: '音调补偿'
+	String get preservesPitch => '音调补偿';
+
 	/// zh-CN: '睡眠定时'
 	String get sleepTimer => '睡眠定时';
 
@@ -11544,6 +11547,7 @@ extension on Translations {
 			'music.localEmptyDescription' => '添加一个存放音频文件的文件夹开始扫描。',
 			'music.localFolderFailed' => ({required Object error}) => '无法添加文件夹：${error}',
 			'music.playbackRate' => '播放速度',
+			'music.preservesPitch' => '音调补偿',
 			'music.sleepTimer' => '睡眠定时',
 			'music.sleepOff' => '关闭',
 			'music.sleepMinutes' => ({required Object count}) => '${count} 分钟',
