@@ -748,6 +748,13 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
   bool _selecting = false;
   final Set<audio.MusicTrack> _selected = <audio.MusicTrack>{};
 
+  /// Whether a tap picks the span up to it — the reference's 区间 — instead
+  /// of toggling one row (单选).
+  bool _rangeMode = false;
+
+  /// The row a span is measured from — the reference's prevSelectIndex.
+  int? _anchor;
+
   /// Whether the in-list search bar (the reference's 列表内搜索) is open.
   bool _searching = false;
   TextEditingController? _searchField;
@@ -983,21 +990,54 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
   void _setSelecting({required bool selecting}) {
     setState(() {
       _selecting = selecting;
-      if (!selecting) _selected.clear();
+      if (!selecting) {
+        _rangeMode = false;
+        _anchor = null;
+        _selected.clear();
+      }
     });
   }
 
-  void _toggleSelected(audio.MusicTrack track) {
+  void _toggleSelected(audio.MusicTrack track, int index) {
     setState(() {
       if (!_selected.remove(track)) _selected.add(track);
+      _anchor = index;
     });
   }
 
-  void _selectAll(MusicPlaylist playlist) {
+  /// The reference's 区间 tap: it replaces the selection with the span from
+  /// the anchor to the tapped row; the first tap just picks one and a tap on
+  /// the anchor itself clears — and only those two move the anchor.
+  void _selectRange(List<audio.MusicTrack> tracks, int index) {
     setState(() {
-      _selected
-        ..clear()
-        ..addAll(playlist.tracks);
+      final anchor = _anchor;
+      if (anchor == null || _selected.isEmpty) {
+        _selected
+          ..clear()
+          ..add(tracks[index]);
+        _anchor = index;
+      } else if (anchor == index) {
+        _selected.clear();
+      } else {
+        final start = anchor < index ? anchor : index;
+        final end = anchor < index ? index : anchor;
+        _selected
+          ..clear()
+          ..addAll(tracks.sublist(start, end + 1));
+      }
+    });
+  }
+
+  /// The reference's 全选/反选 toggle: with everything picked, the tap clears.
+  void _toggleSelectAll(MusicPlaylist playlist) {
+    setState(() {
+      if (_selected.length == playlist.tracks.length) {
+        _selected.clear();
+      } else {
+        _selected
+          ..clear()
+          ..addAll(playlist.tracks);
+      }
     });
   }
 
@@ -1367,6 +1407,14 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
             child: Row(
               spacing: DsSpace.s8,
               children: [
+                DsSegmentedControl<bool>(
+                  value: _rangeMode,
+                  onChanged: (value) => setState(() => _rangeMode = value),
+                  segments: [
+                    DsSegment(value: false, label: Text(t.music.selectionSingle)),
+                    DsSegment(value: true, label: Text(t.music.selectionRange)),
+                  ],
+                ),
                 Expanded(
                   child: Text(
                     t.music.selectionCount(count: _selected.length),
@@ -1376,8 +1424,8 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                 DsButton(
                   variant: DsButtonVariant.secondary,
                   size: DsSize.sm,
-                  onPressed: () => _selectAll(playlist),
-                  child: Text(t.music.selectionAll),
+                  onPressed: () => _toggleSelectAll(playlist),
+                  child: Text(_selected.length == playlist.tracks.length ? t.music.selectionInvert : t.music.selectionAll),
                 ),
                 DsButton(
                   variant: DsButtonVariant.secondary,
@@ -1451,7 +1499,9 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
                     favourite: favourites.contains(song),
                     selecting: _selecting,
                     selected: _selected.contains(song),
-                    onSelected: () => _toggleSelected(song),
+                    onSelected: _rangeMode
+                        ? () => _selectRange(playlist.tracks, index)
+                        : () => _toggleSelected(song, index),
                     onPlay: () => unawaited(player.playAll(playlist.tracks, index: index)),
                     onFavourite: () => unawaited(favouritesController.toggle(song)),
                     onRemove: () => unawaited(controller.removeTrack(playlist.id, song)),
@@ -1751,24 +1801,64 @@ final class _LocalViewState extends ConsumerState<_LocalView> {
   bool _selecting = false;
   final Set<audio.MusicTrack> _selected = <audio.MusicTrack>{};
 
+  /// Whether a tap picks the span up to it — the reference's 区间 — instead
+  /// of toggling one row (单选).
+  bool _rangeMode = false;
+
+  /// The row a span is measured from — the reference's prevSelectIndex.
+  int? _anchor;
+
   void _setSelecting({required bool selecting}) {
     setState(() {
       _selecting = selecting;
-      if (!selecting) _selected.clear();
+      if (!selecting) {
+        _rangeMode = false;
+        _anchor = null;
+        _selected.clear();
+      }
     });
   }
 
-  void _toggleSelected(audio.MusicTrack track) {
+  void _toggleSelected(audio.MusicTrack track, int index) {
     setState(() {
       if (!_selected.remove(track)) _selected.add(track);
+      _anchor = index;
     });
   }
 
-  void _selectAll(List<audio.MusicTrack> tracks) {
+  /// The reference's 区间 tap: it replaces the selection with the span from
+  /// the anchor to the tapped row; the first tap just picks one and a tap on
+  /// the anchor itself clears — and only those two move the anchor.
+  void _selectRange(List<audio.MusicTrack> tracks, int index) {
     setState(() {
-      _selected
-        ..clear()
-        ..addAll(tracks);
+      final anchor = _anchor;
+      if (anchor == null || _selected.isEmpty) {
+        _selected
+          ..clear()
+          ..add(tracks[index]);
+        _anchor = index;
+      } else if (anchor == index) {
+        _selected.clear();
+      } else {
+        final start = anchor < index ? anchor : index;
+        final end = anchor < index ? index : anchor;
+        _selected
+          ..clear()
+          ..addAll(tracks.sublist(start, end + 1));
+      }
+    });
+  }
+
+  /// The reference's 全选/反选 toggle: with everything picked, the tap clears.
+  void _toggleSelectAll(List<audio.MusicTrack> tracks) {
+    setState(() {
+      if (_selected.length == tracks.length) {
+        _selected.clear();
+      } else {
+        _selected
+          ..clear()
+          ..addAll(tracks);
+      }
     });
   }
 
@@ -1858,6 +1948,14 @@ final class _LocalViewState extends ConsumerState<_LocalView> {
             child: Row(
               spacing: DsSpace.s8,
               children: [
+                DsSegmentedControl<bool>(
+                  value: _rangeMode,
+                  onChanged: (value) => setState(() => _rangeMode = value),
+                  segments: [
+                    DsSegment(value: false, label: Text(t.music.selectionSingle)),
+                    DsSegment(value: true, label: Text(t.music.selectionRange)),
+                  ],
+                ),
                 Expanded(
                   child: Text(
                     t.music.selectionCount(count: _selected.length),
@@ -1867,8 +1965,8 @@ final class _LocalViewState extends ConsumerState<_LocalView> {
                 DsButton(
                   variant: DsButtonVariant.secondary,
                   size: DsSize.sm,
-                  onPressed: () => _selectAll(state.tracks),
-                  child: Text(t.music.selectionAll),
+                  onPressed: () => _toggleSelectAll(state.tracks),
+                  child: Text(_selected.length == state.tracks.length ? t.music.selectionInvert : t.music.selectionAll),
                 ),
                 DsButton(
                   variant: DsButtonVariant.secondary,
@@ -1964,7 +2062,9 @@ final class _LocalViewState extends ConsumerState<_LocalView> {
                             favourite: favourites.contains(song),
                             selecting: _selecting,
                             selected: _selected.contains(song),
-                            onSelected: () => _toggleSelected(song),
+                            onSelected: _rangeMode
+                                ? () => _selectRange(state.tracks, index)
+                                : () => _toggleSelected(song, index),
                             // Tags name the song; the file name is the fallback
                             // for the files that carry none.
                             subtitle: song.artist.isNotEmpty

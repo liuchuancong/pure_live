@@ -3244,6 +3244,15 @@ class Translations$music$zh_CN {
 	/// zh-CN: '全选'
 	String get selectionAll => '全选';
 
+	/// zh-CN: '单选'
+	String get selectionSingle => '单选';
+
+	/// zh-CN: '区间'
+	String get selectionRange => '区间';
+
+	/// zh-CN: '反选'
+	String get selectionInvert => '反选';
+
 	/// zh-CN: '下载'
 	String get selectionDownload => '下载';
 
@@ -11415,6 +11424,9 @@ extension on Translations {
 			'music.selectionCancel' => '取消选择',
 			'music.selectionCount' => ({required Object count}) => '已选 ${count} 首',
 			'music.selectionAll' => '全选',
+			'music.selectionSingle' => '单选',
+			'music.selectionRange' => '区间',
+			'music.selectionInvert' => '反选',
 			'music.selectionDownload' => '下载',
 			'music.selectionRemove' => '移除',
 			'music.selectionRemoveDone' => ({required Object count}) => '已移除 ${count} 首',
@@ -11918,11 +11930,11 @@ extension on Translations {
 			'room.openRoom' => '进入直播间',
 			'room.copyLink' => '复制房间链接',
 			'room.linkCopied' => '链接已复制',
+			_ => null,
+		} ?? switch (path) {
 			'room.record' => '录制',
 			'room.stopRecording' => '停止录制',
 			'room.recordStarted' => '开始录制',
-			_ => null,
-		} ?? switch (path) {
 			'room.recordStopped' => '录制已停止',
 			'room.recordFailed' => '录制操作失败',
 			'room.autoRecordOn' => '开播自动录',
@@ -12432,11 +12444,11 @@ extension on Translations {
 			'settings.pipDanmakuScaleAutoDesc' => '按小窗宽度自动缩小弹幕，不超过主弹幕大小；关闭用下方固定比例。',
 			'settings.pipDanmakuScale' => '小窗弹幕比例',
 			'settings.pipDanmakuScaleDesc' => '关闭自动小窗比例时使用的固定倍率。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.styleReset' => '恢复默认',
 			'settings.danmakuPresetBest' => '顶部 20% · 均衡',
 			'settings.danmakuPresetComfort' => '顶部 35% · 舒适',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuPresetDense' => '顶部 55% · 高密度',
 			'settings.danmakuPresetFull' => '全屏全量',
 			'settings.danmakuPresetHint' => '全屏全量=弹幕铺满整个画面；其它预设只占用顶部区域',
@@ -12946,11 +12958,11 @@ extension on Translations {
 			'settings.backgroundFitFill' => '拉伸填满',
 			'settings.backgroundFitWidth' => '适应宽度',
 			'settings.backgroundFitHeight' => '适应高度',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundFitNone' => '原始大小',
 			'settings.backgroundFitScaleDown' => '缩小',
 			'settings.backgroundMask' => '蒙层浓度',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundMaskDescription' => '在壁纸上盖一层压暗或提亮的蒙层；浓度越高文字越清楚，壁纸越淡。',
 			'settings.backgroundScrimMode' => '蒙层模式',
 			'settings.backgroundScrimModeDescription' => '自动按文字清晰度加深蒙层，至少使用下方浓度；自定义只用下方浓度；关闭则完全不加蒙层。',
@@ -13460,11 +13472,11 @@ extension on Translations {
 			'toolbox.networkUnsupported' => '该平台暂不支持探测。',
 			'toolbox.cacheSection' => '图片缓存',
 			'toolbox.cacheEntries' => '缓存图片',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.cacheSize' => '占用内存',
 			'toolbox.cacheClear' => '清理缓存',
 			'toolbox.cacheClearDesc' => '释放图片缓存占用的内存，不影响收藏与历史。',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.cacheConfirmTitle' => '清理图片缓存？',
 			'toolbox.cacheConfirmDesc' => '已加载的图片会重新下载，收藏与历史不受影响。',
 			'toolbox.cacheDone' => '缓存已清理',

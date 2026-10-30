@@ -1181,6 +1181,9 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get selectionCancel => 'Cancel selection';
 	@override String selectionCount({required Object count}) => '${count} selected';
 	@override String get selectionAll => 'Select all';
+	@override String get selectionSingle => 'Single';
+	@override String get selectionRange => 'Range';
+	@override String get selectionInvert => 'Select none';
 	@override String get selectionDownload => 'Download';
 	@override String get selectionRemove => 'Remove';
 	@override String selectionRemoveDone({required Object count}) => 'Removed ${count} songs';
@@ -4673,6 +4676,9 @@ extension on TranslationsEn {
 			'music.selectionCancel' => 'Cancel selection',
 			'music.selectionCount' => ({required Object count}) => '${count} selected',
 			'music.selectionAll' => 'Select all',
+			'music.selectionSingle' => 'Single',
+			'music.selectionRange' => 'Range',
+			'music.selectionInvert' => 'Select none',
 			'music.selectionDownload' => 'Download',
 			'music.selectionRemove' => 'Remove',
 			'music.selectionRemoveDone' => ({required Object count}) => 'Removed ${count} songs',
@@ -5176,11 +5182,11 @@ extension on TranslationsEn {
 			'room.openRoom' => 'Open the room',
 			'room.copyLink' => 'Copy room link',
 			'room.linkCopied' => 'Link copied',
+			_ => null,
+		} ?? switch (path) {
 			'room.record' => 'Record',
 			'room.stopRecording' => 'Stop recording',
 			'room.recordStarted' => 'Recording started',
-			_ => null,
-		} ?? switch (path) {
 			'room.recordStopped' => 'Recording stopped',
 			'room.recordFailed' => 'The recording action failed',
 			'room.autoRecordOn' => 'Record when live',
@@ -5690,11 +5696,11 @@ extension on TranslationsEn {
 			'settings.pipDanmakuScaleAutoDesc' => 'Shrink danmaku with the picture-in-picture window width, never larger than the main danmaku; turn off to use the fixed factor below.',
 			'settings.pipDanmakuScale' => 'Compact danmaku scale',
 			'settings.pipDanmakuScaleDesc' => 'The fixed factor used while the automatic compact scale is off.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.styleReset' => 'Reset to defaults',
 			'settings.danmakuPresetBest' => 'Top 20% · Balanced',
 			'settings.danmakuPresetComfort' => 'Top 35% · Comfort',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuPresetDense' => 'Top 55% · Dense',
 			'settings.danmakuPresetFull' => 'Full-screen',
 			'settings.danmakuPresetHint' => 'Full-screen = danmaku covers the entire video; other presets use the top region only',
@@ -6204,11 +6210,11 @@ extension on TranslationsEn {
 			'settings.backgroundFitFill' => 'Fill',
 			'settings.backgroundFitWidth' => 'Fit width',
 			'settings.backgroundFitHeight' => 'Fit height',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundFitNone' => 'Original size',
 			'settings.backgroundFitScaleDown' => 'Original or smaller',
 			'settings.backgroundMask' => 'Scrim',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundMaskDescription' => 'A wash over the wallpaper that darkens or lightens it; a stronger scrim keeps text legible and fades the wallpaper.',
 			'settings.backgroundScrimMode' => 'Scrim mode',
 			'settings.backgroundScrimModeDescription' => 'Auto raises the wash until text is readable, never below the slider; Custom uses the slider exactly; Off leaves the wallpaper bare.',
@@ -6718,11 +6724,11 @@ extension on TranslationsEn {
 			'toolbox.networkUnsupported' => 'This platform cannot be probed yet.',
 			'toolbox.cacheSection' => 'Image cache',
 			'toolbox.cacheEntries' => 'Cached images',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.cacheSize' => 'Memory held',
 			'toolbox.cacheClear' => 'Clear the cache',
 			'toolbox.cacheClearDesc' => 'Release the memory the image cache holds; favorites and history are untouched.',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.cacheConfirmTitle' => 'Clear the image cache?',
 			'toolbox.cacheConfirmDesc' => 'Loaded images download again; favorites and history are untouched.',
 			'toolbox.cacheDone' => 'Cache cleared',
