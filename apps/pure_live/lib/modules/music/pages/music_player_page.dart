@@ -1,4 +1,5 @@
-import 'dart:async' show Timer, unawaited;
+import 'dart:async' show StreamSubscription, Timer, unawaited;
+import 'dart:typed_data' show Float32List;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
@@ -7,6 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
+import 'package:media_core_mpv_audio/media_core_mpv_audio.dart' show FftFrame;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/l10n/translations.dart';
@@ -188,6 +190,10 @@ final class _StageState extends ConsumerState<_Stage> {
                     ),
                 ],
               ),
+              // The engine's own FFT taps, drawn live: nothing until the
+              // first frames arrive, so a backend without taps leaves the
+              // stage exactly as it was.
+              const _Spectrum(),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: DsSpace.s4,
@@ -290,6 +296,88 @@ final class _StageState extends ConsumerState<_Stage> {
       },
     );
   }
+}
+
+/// The live spectrum strip: the mpv_audio engine's smoothed log-spaced
+/// bands, one bar each. It appears only when the engine is actually
+/// tapping the audio — the honest reading of a null stream is silence,
+/// not a faked animation.
+final class _Spectrum extends ConsumerStatefulWidget {
+  const _Spectrum();
+
+  @override
+  ConsumerState<_Spectrum> createState() => _SpectrumState();
+}
+
+final class _SpectrumState extends ConsumerState<_Spectrum> {
+  Float32List? _bands;
+  StreamSubscription<FftFrame>? _subscription;
+
+  @override
+  void dispose() {
+    unawaited(_subscription?.cancel() ?? Future<void>.value());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Watching the player state re-runs this when the engine comes to be
+    // (the first track) or is replaced, which is exactly when the tap
+    // stream appears and the subscription has to be made anew.
+    ref.watch(musicPlayerProvider);
+    final spectrum = ref.read(musicPlayerProvider.notifier).spectrum;
+    if (spectrum != null && _subscription == null) {
+      _subscription = spectrum.listen(
+        (frame) {
+          if (mounted) setState(() => _bands = frame.bands);
+        },
+        onDone: () => _subscription = null,
+        onError: (Object _) => _subscription = null,
+      );
+    }
+    final bands = _bands;
+    if (bands == null || bands.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 44,
+      child: CustomPaint(
+        painter: _SpectrumPainter(bands: bands, color: DsTheme.colorsOf(context).accent),
+      ),
+    );
+  }
+}
+
+/// One bar per band, bottom-aligned, rounded caps — the reference
+/// visualizer's shape in this theme's dialect.
+final class _SpectrumPainter extends CustomPainter {
+  const _SpectrumPainter({required this.bands, required this.color});
+
+  final Float32List bands;
+
+  /// The bars' colour, the theme's accent from the tree that painted us.
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeCap = StrokeCap.round;
+    final count = bands.length;
+    final gap = size.width / (count * 4);
+    final barWidth = (size.width - gap * (count + 1)) / count;
+    for (var i = 0; i < count; i++) {
+      final height = (bands[i].clamp(0.0, 1.0)) * size.height;
+      if (height < 0.5) continue;
+      final left = gap + i * (barWidth + gap);
+      canvas.drawLine(
+        Offset(left + barWidth / 2, size.height),
+        Offset(left + barWidth / 2, size.height - height),
+        paint..strokeWidth = barWidth,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_SpectrumPainter old) => true;
 }
 
 /// The panel beside the stage: lyrics and the queue behind one pair of
