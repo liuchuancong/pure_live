@@ -4054,6 +4054,63 @@ class Translations$music$zh_CN {
 	/// zh-CN: '选择'
 	String get syncChoose => '选择';
 
+	/// zh-CN: '服务端模式'
+	String get syncServer => '服务端模式';
+
+	/// zh-CN: '启用同步服务'
+	String get syncServerEnable => '启用同步服务';
+
+	/// zh-CN: '由于数据是明文传输，请在受信任的网络下使用'
+	String get syncServerTip => '由于数据是明文传输，请在受信任的网络下使用';
+
+	/// zh-CN: '同步端口设置'
+	String get syncServerPort => '同步端口设置';
+
+	/// zh-CN: '请输入同步服务端口号'
+	String get syncServerPortHint => '请输入同步服务端口号';
+
+	/// zh-CN: '允许来自局域网的访问'
+	String get syncServerLan => '允许来自局域网的访问';
+
+	/// zh-CN: '连接码'
+	String get syncServerAuthCode => '连接码';
+
+	/// zh-CN: '客户端首次连接时需要输入此连接码'
+	String get syncServerAuthCodeHint => '客户端首次连接时需要输入此连接码';
+
+	/// zh-CN: '刷新连接码'
+	String get syncServerRefreshCode => '刷新连接码';
+
+	/// zh-CN: '服务地址'
+	String get syncServerAddress => '服务地址';
+
+	/// zh-CN: '复制'
+	String get syncServerCopy => '复制';
+
+	/// zh-CN: '端口被占用或不可用'
+	String get syncServerErrorPort => '端口被占用或不可用';
+
+	/// zh-CN: '已认证设备'
+	String get syncServerDevices => '已认证设备';
+
+	/// zh-CN: '查看'
+	String get syncServerDevicesView => '查看';
+
+	/// zh-CN: '这里啥也没有 ┗( ▔, ▔ )┛'
+	String get syncServerDevicesEmpty => '这里啥也没有 ┗( ▔, ▔ )┛';
+
+	/// zh-CN: '💡 设备被移除后，再连接时需要重新输入连接码'
+	String get syncServerDevicesTip => '💡 设备被移除后，再连接时需要重新输入连接码';
+
+	/// zh-CN: '最后连接时间：'
+	String get syncServerLastConnect => '最后连接时间：';
+
+	/// zh-CN: '移动端'
+	String get syncServerMobile => '移动端';
+
+	/// zh-CN: '桌面端'
+	String get syncServerDesktop => '桌面端';
+
 	/// zh-CN: '连接码'
 	String get syncAuthCode => '连接码';
 
@@ -11781,6 +11838,25 @@ extension on Translations {
 			'music.syncHistoryEmpty' => '这里啥也没有😮',
 			'music.syncHistoryDesc' => '连接过的服务器地址，点击选用。',
 			'music.syncChoose' => '选择',
+			'music.syncServer' => '服务端模式',
+			'music.syncServerEnable' => '启用同步服务',
+			'music.syncServerTip' => '由于数据是明文传输，请在受信任的网络下使用',
+			'music.syncServerPort' => '同步端口设置',
+			'music.syncServerPortHint' => '请输入同步服务端口号',
+			'music.syncServerLan' => '允许来自局域网的访问',
+			'music.syncServerAuthCode' => '连接码',
+			'music.syncServerAuthCodeHint' => '客户端首次连接时需要输入此连接码',
+			'music.syncServerRefreshCode' => '刷新连接码',
+			'music.syncServerAddress' => '服务地址',
+			'music.syncServerCopy' => '复制',
+			'music.syncServerErrorPort' => '端口被占用或不可用',
+			'music.syncServerDevices' => '已认证设备',
+			'music.syncServerDevicesView' => '查看',
+			'music.syncServerDevicesEmpty' => '这里啥也没有 ┗( ▔, ▔ )┛',
+			'music.syncServerDevicesTip' => '💡 设备被移除后，再连接时需要重新输入连接码',
+			'music.syncServerLastConnect' => '最后连接时间：',
+			'music.syncServerMobile' => '移动端',
+			'music.syncServerDesktop' => '桌面端',
 			'music.syncAuthCode' => '连接码',
 			'music.syncAuthCodeHint' => '服务端显示的连接码',
 			'music.syncMode' => '同步模式',

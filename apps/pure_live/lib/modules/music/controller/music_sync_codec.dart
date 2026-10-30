@@ -4,6 +4,7 @@
 library;
 
 import 'dart:convert' show base64, base64Decode, utf8;
+import 'dart:math' show Random;
 import 'dart:typed_data' show Uint8List;
 
 import 'package:crypto/crypto.dart' show md5;
@@ -23,6 +24,17 @@ import 'package:pointycastle/random/fortuna_random.dart' show FortunaRandom;
 /// Derives the 16-character auth key the reference uses: base64 of the auth
 /// code's MD5, cut to 16 characters, then read as ASCII bytes for AES.
 String musicSyncAuthKey(String authCode) => base64.encode(md5.convert(utf8.encode(authCode)).bytes).substring(0, 16);
+
+/// A fresh random 16-byte token, base64 — the shape of the reference's
+/// client ids (`randomBytes(4 * 4).toString('base64')`).
+String musicSyncRandomToken() {
+  final random = Random.secure();
+  final bytes = Uint8List(16);
+  for (var i = 0; i < bytes.length; i++) {
+    bytes[i] = random.nextInt(256);
+  }
+  return base64.encode(bytes);
+}
 
 /// AES-128-ECB with PKCS7 padding, base64-encoded — the reference's
 /// `aesEncrypt`.
@@ -87,6 +99,83 @@ final class MusicSyncRsaKeyPair {
   late final RSAPublicKey _public = RSAPublicKey(_private.modulus!, _private.publicExponent!);
 }
 
+/// The other end's RSA public key, read back from the base64 SPKI shape the
+/// protocol exchanges — the server holds these to encrypt the auth reply
+/// each first-time client.
+final class MusicSyncPeerPublicKey {
+  MusicSyncPeerPublicKey._(this._public);
+
+  /// Parses a base64 SPKI public key; throws when the DER shape is not the
+  /// two-integer RSA sequence the protocol sends.
+  factory MusicSyncPeerPublicKey.parseSpki(String spkiBase64) {
+    // SEQUENCE { SEQUENCE(algorithm), BIT STRING { SEQUENCE { n, e } } }.
+    final (outerTag, outer) = _DerReader(base64Decode(spkiBase64)).readTlv();
+    if (outerTag != 0x30) throw const FormatException('unexpected key sequence');
+    final outerReader = _DerReader(Uint8List.fromList(outer));
+    final (algorithmTag, _) = outerReader.readTlv();
+    if (algorithmTag != 0x30) throw const FormatException('unexpected algorithm');
+    final (bitTag, bit) = outerReader.readTlv();
+    if (bitTag != 0x03 || bit.isEmpty || bit[0] != 0) {
+      throw const FormatException('unexpected public key bit string');
+    }
+    final (keyTag, key) = _DerReader(Uint8List.sublistView(bit, 1)).readTlv();
+    if (keyTag != 0x30) throw const FormatException('unexpected key sequence');
+    final integerReader = _DerReader(Uint8List.fromList(key));
+    final modulus = integerReader.readInteger();
+    final exponent = integerReader.readInteger();
+    if (modulus == BigInt.zero) throw const FormatException('empty modulus');
+    return MusicSyncPeerPublicKey._(RSAPublicKey(modulus, exponent));
+  }
+
+  final RSAPublicKey _public;
+
+  /// Encrypts with the peer's public half, OAEP — the auth answer the
+  /// client decrypts with its fresh private key.
+  String encryptOaepBase64(String text) {
+    final engine = OAEPEncoding(RSAEngine())
+      ..init(true, PublicKeyParameter<RSAPublicKey>(_public));
+    return base64.encode(engine.process(Uint8List.fromList(utf8.encode(text))));
+  }
+}
+
+/// A cursor over DER bytes: reads tag-length-value triples without assuming
+/// which order the container's children come in.
+final class _DerReader {
+  _DerReader(this.buffer);
+
+  final Uint8List buffer;
+  var _offset = 0;
+
+  /// Reads one TLV triple; the content is a view into [buffer].
+  (int, Uint8List) readTlv() {
+    if (_offset + 2 > buffer.length) throw const FormatException('DER truncated');
+    final tag = buffer[_offset++];
+    var length = buffer[_offset++];
+    if (length & 0x80 != 0) {
+      var count = length & 0x7F;
+      length = 0;
+      for (; count > 0; count--) {
+        length = (length << 8) | buffer[_offset++];
+      }
+    }
+    if (_offset + length > buffer.length) throw const FormatException('DER truncated');
+    final content = Uint8List.sublistView(buffer, _offset, _offset + length);
+    _offset += length;
+    return (tag, content);
+  }
+
+  /// Reads an INTEGER TLV as a big-endian [BigInt].
+  BigInt readInteger() {
+    final (tag, content) = readTlv();
+    if (tag != 0x02) throw const FormatException('unexpected integer');
+    var value = BigInt.zero;
+    for (final byte in content) {
+      value = (value << 8) | BigInt.from(byte);
+    }
+    return value;
+  }
+}
+
 BigInt _crtDp(RSAPrivateKey key) => key.privateExponent! % (key.p! - BigInt.one);
 BigInt _crtDq(RSAPrivateKey key) => key.privateExponent! % (key.q! - BigInt.one);
 BigInt _crtQInv(RSAPrivateKey key) => key.q!.modInverse(key.p!);
@@ -123,7 +212,11 @@ Uint8List _derInteger(BigInt value) {
   return Uint8List.fromList([0x02, ..._derLength(bytes.length), ...bytes]);
 }
 
-Uint8List _derNullSequence() => Uint8List.fromList([0x30, 0x05, 0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01, 0x05, 0x00]);
+/// SEQUENCE { OID rsaEncryption, NULL } — the AlgorithmIdentifier every
+/// SPKI and PKCS#8 carries.
+Uint8List _derNullSequence() => _der(
+  Uint8List.fromList([0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01, 0x05, 0x00]),
+);
 
 Uint8List _derBitString(Uint8List content) {
   final body = [0x00, ...content];
@@ -147,11 +240,13 @@ Uint8List _spkiBody(RSAPublicKey key) => _der(Uint8List.fromList([
     ]));
 
 String _spkiBase64(RSAPublicKey key) => base64.encode(
-      Uint8List.fromList([
-        ..._derNullSequence(),
-        ..._derBitString(_spkiBody(key)),
-      ]),
-    );
+  _der(
+    Uint8List.fromList([
+      ..._derNullSequence(),
+      ..._derBitString(_spkiBody(key)),
+    ]),
+  ),
+);
 
 String _pkcs8Base64(RSAPrivateKey key) {
   final rsaPrivate = _der(Uint8List.fromList([

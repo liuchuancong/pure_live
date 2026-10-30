@@ -30,6 +30,7 @@ import 'package:pure_live/modules/music/controller/music_settings.dart'
 import 'package:pure_live/modules/music/controller/music_source.dart'
     show musicSourceListProvider, musicSourceProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show musicSourcesProvider;
+import 'package:pure_live/modules/music/controller/music_sync_server.dart' show musicSyncServerProvider;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, OnlinePlaylists,
         SonglistSearch;
@@ -122,9 +123,12 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
 
   @override
   Widget build(BuildContext context) {
-    // The open API boots with the module: the keepAlive provider starts the
-    // endpoint when the gate is on and keeps it answering for the session.
-    ref.watch(musicOpenApiProvider);
+    // The open API and the sync server boot with the module: the keepAlive
+    // providers start their endpoints when the gates are on and keep them
+    // answering for the session.
+    ref
+      ..watch(musicOpenApiProvider)
+      ..watch(musicSyncServerProvider);
     return CallbackShortcuts(
       bindings: musicHotkeyBindings(ref),
       child: Focus(

@@ -45,6 +45,14 @@ import 'package:pure_live/modules/music/controller/music_source_catalog.dart'
 import 'package:pure_live/modules/music/controller/music_sources.dart';
 import 'package:pure_live/modules/music/controller/music_sync.dart'
     show MusicSyncStatus, kMusicSyncModes, musicSyncProvider;
+import 'package:pure_live/modules/music/controller/music_sync_server.dart'
+    show
+        musicSyncServerAuthCodeProvider,
+        musicSyncServerGateProvider,
+        musicSyncServerLanProvider,
+        musicSyncServerPortProvider,
+        musicSyncServerProvider,
+        musicSyncServerStatusProvider;
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart' show MusicEqEditor;
 
 /// The music module's own settings, the way lx-music lays its rail out:
@@ -1852,6 +1860,10 @@ final class MusicSyncPane extends ConsumerWidget {
     final controller = ref.read(musicSyncProvider.notifier);
     final api = ref.watch(musicOpenApiProvider);
     final apiPort = ref.watch(musicOpenApiPortProvider);
+    final server = ref.watch(musicSyncServerProvider);
+    final serverPort = ref.watch(musicSyncServerPortProvider);
+    final serverAuthCode = ref.watch(musicSyncServerAuthCodeProvider);
+    final serverStatus = ref.watch(musicSyncServerStatusProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -1944,6 +1956,78 @@ final class MusicSyncPane extends ConsumerWidget {
           ],
         ),
         DsListSection(
+          header: Text(t.music.syncServer),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.server),
+              title: t.music.syncServerEnable,
+              description: t.music.syncServerTip,
+              control: DsSwitch(
+                value: ref.watch(musicSyncServerGateProvider),
+                onChanged: (value) => unawaited(ref.read(musicSyncServerGateProvider.notifier).set(enabled: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.plug),
+              title: t.music.syncServerPort,
+              description: !serverStatus.running && serverStatus.error != null
+                  ? t.music.syncServerErrorPort
+                  : '$serverPort',
+              control: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => unawaited(_editServerPort(context, ref)),
+                child: Text(t.music.syncEdit),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.wifi),
+              title: t.music.syncServerLan,
+              control: DsSwitch(
+                value: ref.watch(musicSyncServerLanProvider),
+                onChanged: (value) => unawaited(ref.read(musicSyncServerLanProvider.notifier).set(lan: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.keyRound),
+              title: t.music.syncServerAuthCode,
+              description: serverAuthCode,
+              control: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => unawaited(_editServerAuthCode(context, ref)),
+                child: Text(t.music.syncEdit),
+              ),
+            ),
+            if (serverStatus.running)
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.monitor),
+                title: t.music.syncServerAddress,
+                description: server.address(serverPort),
+                control: DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: () =>
+                      unawaited(Clipboard.setData(ClipboardData(text: server.address(serverPort)))),
+                  child: Text(t.music.syncServerCopy),
+                ),
+              ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.smartphone),
+              title: t.music.syncServerDevices,
+              description: serverStatus.devices.isEmpty
+                  ? t.music.syncServerDevicesEmpty
+                  : serverStatus.devices.map((device) => device.deviceName).join('、'),
+              control: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: serverStatus.devices.isEmpty ? null : () => unawaited(_showServerDevices(context, ref)),
+                child: Text(t.music.syncServerDevicesView),
+              ),
+            ),
+          ],
+        ),
+        DsListSection(
           header: Text(t.music.openApi),
           children: [
             SettingsConfigRow(
@@ -2007,6 +2091,134 @@ final class MusicSyncPane extends ConsumerWidget {
     if (value == null) return;
     final port = int.tryParse(value.trim());
     if (port != null) await ref.read(musicOpenApiPortProvider.notifier).set(port);
+  }
+
+  Future<void> _editServerPort(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final current = '${ref.read(musicSyncServerPortProvider)}';
+    final value = await _editField(context, t.music.syncServerPort, t.music.syncServerPortHint, current);
+    if (value == null) return;
+    final port = int.tryParse(value.trim());
+    if (port != null) await ref.read(musicSyncServerPortProvider.notifier).set(port);
+  }
+
+  /// The connection code dialog: an extra action refreshes the code, the
+  /// reference's `刷新连接码`.
+  Future<void> _editServerAuthCode(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final provider = ref.read(musicSyncServerAuthCodeProvider.notifier);
+    final field = TextEditingController(text: ref.read(musicSyncServerAuthCodeProvider));
+    final edited = await showDsDialog<String>(
+      context: context,
+      builder: (dialogContext) => DsDialog(
+        title: Text(t.music.syncServerAuthCode),
+        icon: const DsIcon(DsIcons.keyRound),
+        description: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s8,
+          children: [
+            Text(t.music.syncServerAuthCodeHint),
+            DsTextField(controller: field, autofocus: true, semanticLabel: t.music.syncServerAuthCode),
+          ],
+        ),
+        actions: [
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () => unawaited(
+              provider.refresh().then((_) => field.text = ref.read(musicSyncServerAuthCodeProvider)),
+            ),
+            child: Text(t.music.syncServerRefreshCode),
+          ),
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(t.common.cancel),
+          ),
+          DsButton(onPressed: () => Navigator.of(dialogContext).pop(field.text), child: Text(t.common.confirm)),
+        ],
+      ),
+    );
+    field.dispose();
+    if (edited != null && edited.trim().isNotEmpty) await provider.set(edited);
+  }
+
+  /// The reference's certified-device list: one row per device with its
+  /// last connection time, the trailing button revokes the key.
+  Future<void> _showServerDevices(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final server = ref.read(musicSyncServerProvider);
+    var devices = server.deviceView();
+    await showDsDialog<Object?>(
+      context: context,
+      builder: (dialogContext) => DsDialog(
+        title: Text(t.music.syncServerDevices),
+        icon: const DsIcon(DsIcons.smartphone),
+        description: StatefulBuilder(
+          builder: (context, setState) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: DsSpace.s8,
+            children: [
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 360),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: devices.length,
+                  itemBuilder: (context, index) {
+                    final device = devices[index];
+                    final connected = DateTime.fromMillisecondsSinceEpoch(device.lastConnectDate);
+                    String two(int value) => value.toString().padLeft(2, '0');
+                    final time =
+                        '${connected.year}-${two(connected.month)}-${two(connected.day)} ${two(connected.hour)}:${two(connected.minute)}';
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                device.deviceName.isEmpty
+                                    ? (device.isMobile ? t.music.syncServerMobile : t.music.syncServerDesktop)
+                                    : device.deviceName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                '${t.music.syncServerLastConnect} $time',
+                                style: DsTheme.of(context).typography.caption.copyWith(
+                                  color: DsTheme.colorsOf(context).textSubtle,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            await server.removeDevice(device.clientId);
+                            setState(() => devices = server.deviceView());
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(DsSpace.s4),
+                            child: DsIcon(DsIcons.trash2, size: 16),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              Text(t.music.syncServerDevicesTip, style: DsTheme.of(context).typography.caption),
+            ],
+          ),
+        ),
+        actions: [
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(t.common.cancel),
+          ),
+        ],
+      ),
+    );
   }
 
   /// The reference's History popup: tap an address to fill the host field,
