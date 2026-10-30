@@ -466,5 +466,7 @@
   "duplicateTracks": "Duplicate songs",
   "duplicatesFound": "{count} duplicate songs found",
   "duplicatesNone": "No duplicate songs found",
-  "duplicatesRemoveAll": "Remove duplicates (keep the first)"
+  "duplicatesRemoveAll": "Remove duplicates (keep the first)",
+  "listSearch": "Search in this list",
+  "listSearchEmpty": "No matching songs found"
 }

@@ -1,12 +1,13 @@
 import 'dart:async' show unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
-import 'dart:math' show max, min;
+import 'dart:math' show max;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
+import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicTextSimilarity;
 import 'package:pure_live/modules/music/controller/music_source.dart'
     show musicSourceListProvider, musicSourceProvider;
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart' show MusicHotWords;
@@ -137,31 +138,10 @@ final class MusicSearchController extends Notifier<MusicSearchState> {
       }
     }
     merged.sort(
-      (a, b) => _similarity(query, '${b.title} ${b.artist}').compareTo(_similarity(query, '${a.title} ${a.artist}')),
+      (a, b) =>
+          musicTextSimilarity(query, '${b.title} ${b.artist}').compareTo(musicTextSimilarity(query, '${a.title} ${a.artist}')),
     );
     return audio.MusicSourcePage(items: merged, page: page, total: total, hasMore: hasMore);
-  }
-
-  /// lx-music's `similar`: one minus the normalized edit distance, the rank
-  /// the merged 'all' answers sort by.
-  static double _similarity(String left, String right) {
-    var a = left;
-    var b = right;
-    if (a.isEmpty || b.isEmpty) return 0;
-    if (a.length > b.length) (a, b) = (b, a);
-    final bl = b.length;
-    final row = List<int>.generate(bl + 1, (index) => index);
-    for (var i = 1; i <= a.length; i++) {
-      var top = row[0];
-      row[0] += 1;
-      final ai = a.codeUnitAt(i - 1);
-      for (var j = 1; j <= bl; j++) {
-        final tmp = min(min(row[j] + 1, row[j - 1] + 1), top + (ai == b.codeUnitAt(j - 1) ? 0 : 1));
-        top = row[j];
-        row[j] = tmp;
-      }
-    }
-    return 1 - row[bl] / bl;
   }
 }
 

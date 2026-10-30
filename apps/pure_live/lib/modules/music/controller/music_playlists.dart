@@ -1,5 +1,6 @@
 import 'dart:convert' show jsonDecode, jsonEncode;
 import 'dart:io' show File;
+import 'dart:math' show min;
 
 import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -634,4 +635,64 @@ List<List<audio.MusicTrack>> duplicateTrackGroups(List<audio.MusicTrack> tracks)
       if (entry.value.length > 1) entry.key,
   ]..sort();
   return [for (final key in keys) groups[key]!];
+}
+
+/// lx-music's `similar`: one minus the normalized edit distance, the rank
+/// in-list search and merged 'all' answers sort by.
+double musicTextSimilarity(String left, String right) {
+  var a = left;
+  var b = right;
+  if (a.isEmpty || b.isEmpty) return 0;
+  if (a.length > b.length) (a, b) = (b, a);
+  final bl = b.length;
+  final row = List<int>.generate(bl + 1, (index) => index);
+  for (var i = 1; i <= a.length; i++) {
+    var top = row[0];
+    row[0] += 1;
+    final ai = a.codeUnitAt(i - 1);
+    for (var j = 1; j <= bl; j++) {
+      final tmp = min(min(row[j] + 1, row[j - 1] + 1), top + (ai == b.codeUnitAt(j - 1) ? 0 : 1));
+      top = row[j];
+      row[j] = tmp;
+    }
+  }
+  return 1 - row[bl] / bl;
+}
+
+/// The reference's searchListMusic: containment hits on title, artist then
+/// album keep list order per tier; what is left matches as a character
+/// subsequence over title+artist+album, ranked by similarity. Returns the
+/// original indexes in answer order.
+List<int> searchPlaylistTrackIndexes(List<audio.MusicTrack> tracks, String query) {
+  final text = query.toLowerCase();
+  final titleHits = <int>[];
+  final artistHits = <int>[];
+  final albumHits = <int>[];
+  final rest = <int>[];
+  for (var i = 0; i < tracks.length; i++) {
+    final track = tracks[i];
+    if (track.title.toLowerCase().contains(text)) {
+      titleHits.add(i);
+    } else if (track.artist.toLowerCase().contains(text)) {
+      artistHits.add(i);
+    } else if (track.album.toLowerCase().contains(text)) {
+      albumHits.add(i);
+    } else {
+      rest.add(i);
+    }
+  }
+  final pattern = RegExp("${[for (final char in text.split('')) RegExp.escape(char)].join('.*')}.*");
+  final ranked = <(double, int)>[];
+  for (final i in rest) {
+    final track = tracks[i];
+    final blob = '${track.title}${track.artist}${track.album}'.toLowerCase();
+    if (pattern.hasMatch(blob)) ranked.add((musicTextSimilarity(text, blob), i));
+  }
+  ranked.sort((a, b) => b.$1.compareTo(a.$1));
+  return [
+    ...titleHits,
+    ...artistHits,
+    ...albumHits,
+    ...[for (final entry in ranked) entry.$2],
+  ];
 }

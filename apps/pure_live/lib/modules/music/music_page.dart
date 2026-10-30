@@ -746,6 +746,10 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
   bool _selecting = false;
   final Set<audio.MusicTrack> _selected = <audio.MusicTrack>{};
 
+  /// Whether the in-list search bar (the reference's 列表内搜索) is open.
+  bool _searching = false;
+  TextEditingController? _searchField;
+
   /// Whether the view browses the source's online playlists (在线歌单)
   /// instead of the viewer's own lists; LX keeps both behind one rail.
   bool _online = false;
@@ -761,6 +765,33 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
       _online = true;
       _onlineOpen = open;
     }
+  }
+
+  @override
+  void dispose() {
+    _searchField?.dispose();
+    super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      if (_searching) {
+        _searching = false;
+        final dead = _searchField;
+        _searchField = null;
+        if (dead != null) {
+          // The field leaves the tree with this rebuild; dispose it after.
+          WidgetsBinding.instance.addPostFrameCallback((_) => dead.dispose());
+        }
+      } else {
+        _searching = true;
+        _searchField = TextEditingController()..addListener(_onSearchChanged);
+      }
+    });
+  }
+
+  void _onSearchChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _create() async {
@@ -1232,6 +1263,13 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
               DsButton.icon(
                 variant: DsButtonVariant.ghost,
                 size: DsSize.sm,
+                semanticLabel: t.music.listSearch,
+                onPressed: playlist.tracks.isEmpty ? null : _toggleSearch,
+                icon: const DsIcon(DsIcons.search, size: 16),
+              ),
+              DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
                 semanticLabel: _selecting ? t.music.selectionCancel : t.music.selectionStart,
                 onPressed: playlist.tracks.isEmpty ? null : () => _setSelecting(selecting: !_selecting),
                 icon: DsIcon(_selecting ? DsIcons.x : DsIcons.listChecks, size: 16),
@@ -1310,6 +1348,17 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
             ],
           ),
         ),
+        if (_searching)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            child: DsTextField(
+              controller: _searchField,
+              autofocus: true,
+              clearable: true,
+              placeholder: t.music.listSearch,
+              semanticLabel: t.music.listSearch,
+            ),
+          ),
         if (_selecting)
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
@@ -1369,41 +1418,55 @@ final class _PlaylistsViewState extends ConsumerState<_PlaylistsView> {
             ),
           ),
         Expanded(
-          child: playlist.tracks.isEmpty
-              ? Center(
+          child: Builder(
+            builder: (context) {
+              final query = _searching ? (_searchField?.text.trim() ?? '') : '';
+              final hits = query.isEmpty ? null : searchPlaylistTrackIndexes(playlist.tracks, query);
+              if (playlist.tracks.isEmpty) {
+                return Center(
                   child: DsEmptyState(
                     icon: const DsIcon(DsIcons.listMusic),
                     title: Text(t.music.playlistEmptyTitle),
                     description: Text(t.music.playlistEmptyDescription),
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.only(bottom: DsSpace.s16),
-                  itemCount: playlist.tracks.length,
-                  itemBuilder: (context, index) {
-                    final song = playlist.tracks[index];
-                    return MusicSongRow(
-                      track: song,
-                      playing: playingId == song.id,
-                      favourite: favourites.contains(song),
-                      selecting: _selecting,
-                      selected: _selected.contains(song),
-                      onSelected: () => _toggleSelected(song),
-                      onPlay: () => unawaited(player.playAll(playlist.tracks, index: index)),
-                      onFavourite: () => unawaited(favouritesController.toggle(song)),
-                      onRemove: () => unawaited(controller.removeTrack(playlist.id, song)),
-                      onPlayNext: () => unawaited(player.playNext(song)),
-                      onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
-                      onDownload: () => unawaited(downloadTrackWithToast(context, ref, song, listName: playlist.name)),
-                      onMoveUp: index == 0
-                          ? null
-                          : () => unawaited(controller.moveTrack(playlist.id, index, index - 1)),
-                      onMoveDown: index == playlist.tracks.length - 1
-                          ? null
-                          : () => unawaited(controller.moveTrack(playlist.id, index, index + 1)),
-                    );
-                  },
-                ),
+                );
+              }
+              if (hits != null && hits.isEmpty) {
+                return Center(
+                  child: DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.music.listSearchEmpty)),
+                );
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.only(bottom: DsSpace.s16),
+                itemCount: hits?.length ?? playlist.tracks.length,
+                itemBuilder: (context, position) {
+                  final index = hits?[position] ?? position;
+                  final song = playlist.tracks[index];
+                  final searching = hits != null;
+                  return MusicSongRow(
+                    track: song,
+                    playing: playingId == song.id,
+                    favourite: favourites.contains(song),
+                    selecting: _selecting,
+                    selected: _selected.contains(song),
+                    onSelected: () => _toggleSelected(song),
+                    onPlay: () => unawaited(player.playAll(playlist.tracks, index: index)),
+                    onFavourite: () => unawaited(favouritesController.toggle(song)),
+                    onRemove: () => unawaited(controller.removeTrack(playlist.id, song)),
+                    onPlayNext: () => unawaited(player.playNext(song)),
+                    onAddToPlaylist: () => unawaited(showAddToPlaylistDialog(context, ref, song)),
+                    onDownload: () => unawaited(downloadTrackWithToast(context, ref, song, listName: playlist.name)),
+                    onMoveUp: searching || index == 0
+                        ? null
+                        : () => unawaited(controller.moveTrack(playlist.id, index, index - 1)),
+                    onMoveDown: searching || index == playlist.tracks.length - 1
+                        ? null
+                        : () => unawaited(controller.moveTrack(playlist.id, index, index + 1)),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ],
     );

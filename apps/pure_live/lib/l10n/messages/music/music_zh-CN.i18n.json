@@ -466,5 +466,7 @@
   "duplicateTracks": "重复歌曲",
   "duplicatesFound": "发现 {count} 首重复歌曲",
   "duplicatesNone": "没有发现重复的歌曲",
-  "duplicatesRemoveAll": "移除重复（保留第一首）"
+  "duplicatesRemoveAll": "移除重复（保留第一首）",
+  "listSearch": "搜索列表内歌曲",
+  "listSearchEmpty": "没有找到匹配的歌曲"
 }

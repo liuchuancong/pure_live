@@ -1446,6 +1446,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String duplicatesFound({required Object count}) => '${count} duplicate songs found';
 	@override String get duplicatesNone => 'No duplicate songs found';
 	@override String get duplicatesRemoveAll => 'Remove duplicates (keep the first)';
+	@override String get listSearch => 'Search in this list';
+	@override String get listSearchEmpty => 'No matching songs found';
 }
 
 // Path: navigation
@@ -4900,6 +4902,8 @@ extension on TranslationsEn {
 			'music.duplicatesFound' => ({required Object count}) => '${count} duplicate songs found',
 			'music.duplicatesNone' => 'No duplicate songs found',
 			'music.duplicatesRemoveAll' => 'Remove duplicates (keep the first)',
+			'music.listSearch' => 'Search in this list',
+			'music.listSearchEmpty' => 'No matching songs found',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -5139,10 +5143,10 @@ extension on TranslationsEn {
 			'room.userBlocked' => 'The viewer is blocked',
 			'room.keywordBlocked' => 'The keyword is blocked',
 			'room.danmakuSettings' => 'Danmaku settings',
-			'room.blockList' => 'Block list',
-			'room.superChats' => 'Super chats',
 			_ => null,
 		} ?? switch (path) {
+			'room.blockList' => 'Block list',
+			'room.superChats' => 'Super chats',
 			'room.superChatEmpty' => 'No super chats now',
 			'room.superChatFailed' => 'The super chats did not load',
 			'room.superChatCardMembership' => 'Membership',
@@ -5653,10 +5657,10 @@ extension on TranslationsEn {
 			'settings.trayScreenshotFailed' => 'Screenshot failed: no room is playing, or the engine cannot capture',
 			'settings.font' => 'Font',
 			'settings.fontDescription' => 'UI typeface: MiSans ships with the app and is the default everywhere; switch to a domestic or overseas face here.',
-			'settings.fontDefault' => 'MiSans (default)',
-			'settings.fontSystemChinese' => 'System font',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontDefault' => 'MiSans (default)',
+			'settings.fontSystemChinese' => 'System font',
 			'settings.fontRegionDomestic' => 'Domestic',
 			'settings.fontRegionOverseas' => 'Overseas',
 			'settings.fontManagerTitle' => 'Font manager',
@@ -6167,10 +6171,10 @@ extension on TranslationsEn {
 			'settings.updateLater' => 'Later',
 			'settings.downloadInstaller' => 'Download the installer',
 			'settings.downloadOtherBuilds' => 'Other builds',
-			'settings.downloadTitle' => 'Downloads',
-			'settings.downloadLatest' => 'The latest release',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadTitle' => 'Downloads',
+			'settings.downloadLatest' => 'The latest release',
 			'settings.downloadHint' => 'Pick the package that matches this device; a download is saved to the folder shown under Data & cache.',
 			'settings.downloadAction' => 'Download',
 			'settings.downloadCount' => ({required Object count}) => '${count} downloads',
@@ -6681,10 +6685,10 @@ extension on TranslationsEn {
 			'toolbox.logsClear' => 'Clear logs',
 			'toolbox.logsClearDesc' => 'Clears the in-memory records; files already written stay.',
 			'toolbox.logsClearConfirm' => 'Clear the in-memory log?',
-			'toolbox.logsClearConfirmDesc' => 'The in-memory records are deleted; log files are untouched.',
-			'toolbox.logsSearch' => 'Search logs…',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.logsClearConfirmDesc' => 'The in-memory records are deleted; log files are untouched.',
+			'toolbox.logsSearch' => 'Search logs…',
 			'toolbox.logsEmptyTitle' => 'No logs yet',
 			'toolbox.logsEmptyDescription' => 'Startup, network requests and errors appear here.',
 			'toolbox.logsAutoOn' => 'Auto-scroll on',
