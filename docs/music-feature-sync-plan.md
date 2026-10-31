@@ -110,7 +110,7 @@
 |---|---|---|
 | 软件内快捷键（播放/上下曲/音量/收藏…可录制） | `music_hotkeys.dart` + 快捷键 pane | ✅ |
 | 系统全局快捷键（OS 注册，Windows） | 快捷键 pane 全局开关把同一张表注册进系统，窗口未聚焦也生效；media_core 7a01775 RegisterHotKey+WM_HOTKEY（a664f4fbc） | ✅ |
-| 系统全局快捷键（Linux/macOS） | 内核 transport 已留位（isSupported 降级），原生注册未实现 | 🟡 待内核 |
+| 系统全局快捷键（Linux/macOS） | Linux=X11 根窗被动 grab（专用 display+事件线程，自管道唤醒，Caps/Num Lock 四形态，BadAccess=逐条失败应答，XWayland 会话同样工作、无 X 显示 isSupported=false 降级）；macOS=Carbon RegisterEventHotKey+共享事件处理器（F1–F20 非连码显式表，mod=Ctrl 与 Windows 表一致）；组合串词表与 Windows 宿主完全同套，Dart 侧零改动（内核 `417c8b0`） | ✅ |
 
 ## I. 数据同步
 
@@ -154,7 +154,7 @@
 - 歌词页：翻译/罗马音/换位/繁体/逐字/字号/对齐/当前行缩放/进度显示/偏移——✅。
 - 桌面歌词页：见 G。
 - 下载页：类型/命名模板/嵌入封面歌词/翻译罗马音/写歌词文件/跳过同名/按列表分目录/并发数——✅；**自动换源下载** ✅（提交 552c15192：`music.download.useOtherSource` 默认关照抄参考，`resolveWithToggle` 增 `allowAutoToggle` 门控自动跨源步（存量/手动换源仍恒优先），下载取 URL 与队列刷新两处传入设置；下载页开关行词表照抄 setting__download_use_other_source）。
-- 音源页：导入/启停/删除/内置目录一键导入——✅；**别名命名体系** 🟡（随 B）。
+- 音源页：导入/启停/删除/内置目录一键导入——✅；**别名命名体系** ✅（随 B 落地，源行与设置开关同走 musicSourceDisplayName）。
 - 同步/快捷键/音效：见 I/H/F。
 
 ## 自动任务的轮次规则

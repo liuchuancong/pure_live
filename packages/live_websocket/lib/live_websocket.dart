@@ -6,6 +6,7 @@
 /// message semantics live in the business modules above it.
 library;
 
+export 'src/client/exact_web_socket.dart' show ExactWebSocket, exactWebSocketConnect;
 export 'src/client/websocket_client.dart';
 export 'src/client/websocket_config.dart';
 export 'src/connection/connection.dart';

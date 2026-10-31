@@ -1434,6 +1434,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get eqCenter => 'Sound Effects';
 	@override String get eqCenterSubtitle => 'Shape your own listening signature';
 	@override String get eqCenterEnabled => 'On';
+	@override String get eqCenterNow => 'Current effect';
 	@override String get eqCenterDisabled => 'Off';
 	@override String get eqCurrent => 'Current effect';
 	@override String get eqCenterRecommended => 'Recommended';
@@ -5069,6 +5070,7 @@ extension on TranslationsEn {
 			'music.eqCenter' => 'Sound Effects',
 			'music.eqCenterSubtitle' => 'Shape your own listening signature',
 			'music.eqCenterEnabled' => 'On',
+			'music.eqCenterNow' => 'Current effect',
 			'music.eqCenterDisabled' => 'Off',
 			'music.eqCurrent' => 'Current effect',
 			'music.eqCenterRecommended' => 'Recommended',
@@ -5321,9 +5323,9 @@ extension on TranslationsEn {
 			'recorder.emptyFilterTitle' => ({required String status}) => 'No tasks in “${status}” yet',
 			'recorder.stateWaiting' => 'Waiting for live',
 			'recorder.stateSaved' => 'Saved',
-			'recorder.menuMore' => 'More actions',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.menuMore' => 'More actions',
 			'recorder.openRoom' => 'Open live room',
 			'recorder.openFolder' => 'Open folder',
 			'recorder.openFolderFailed' => 'Could not open the folder',
@@ -5835,9 +5837,9 @@ extension on TranslationsEn {
 			'settings.githubMirrorRefresh' => 'Fetch from the remote list',
 			'settings.githubMirrorRefreshing' => 'Fetching the remote mirrors…',
 			'settings.githubMirrorNever' => 'The remote list has not been fetched yet.',
-			'settings.githubMirrorUpdated' => ({required Object time}) => 'Remote list updated ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'settings.githubMirrorUpdated' => ({required Object time}) => 'Remote list updated ${time}',
 			'settings.githubMirrorFailed' => ({required Object error}) => 'The remote list could not be fetched: ${error}',
 			'settings.githubMirrorAdd' => 'Add a mirror address',
 			'settings.githubMirrorAddTitle' => 'Add a mirror address',
@@ -6349,9 +6351,9 @@ extension on TranslationsEn {
 			'settings.playerGuideEntrySymBlurryBody' => 'Windows + NVIDIA: use the RTX VSR preset. Other GPUs: switch the scale kernel to ewa_lanczossharp.',
 			'settings.playerGuideEntrySymFanTitle' => 'Fan spinning / dropped frames',
 			'settings.playerGuideEntrySymFanBody' => 'Use the low-end preset; if that fails, turn hardware decoding off (old devices can software-decode faster).',
-			'settings.playerGuideEntrySymBufferingTitle' => 'Frequent buffering',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideEntrySymBufferingTitle' => 'Frequent buffering',
 			'settings.playerGuideEntrySymBufferingBody' => 'Use the stable-network preset; also check the network proxy — a proxy is a common stall source.',
 			'settings.playerGuideEntrySymLatencyTitle' => 'High latency (co-streaming / esports)',
 			'settings.playerGuideEntrySymLatencyBody' => 'Use the low-latency preset and shrink buffering properties.',
@@ -6863,9 +6865,9 @@ extension on TranslationsEn {
 			'settings.hongguoQuality720' => '720P',
 			'settings.hongguoQuality540' => '540P',
 			'settings.hongguoQuality480' => '480P',
-			'settings.hongguoQuality360' => '360P',
 			_ => null,
 		} ?? switch (path) {
+			'settings.hongguoQuality360' => '360P',
 			'settings.hongguoDeviceReset' => 'Reset device identity',
 			'settings.hongguoDeviceResetDesc' => 'Forgets the anonymous device; registers again on the next play.',
 			'settings.navLogs' => 'Logs',

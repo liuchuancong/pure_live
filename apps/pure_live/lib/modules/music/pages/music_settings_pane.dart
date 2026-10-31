@@ -1405,8 +1405,8 @@ final class MusicEqPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.music.eqFxSection),
           children: [
-            for (final id in kMusicFxOrder) _MusicFxRow(id: id, eq: eq, controller: controller),
-            for (final id in kMusicFxSpatialOrder) _MusicFxRow(id: id, eq: eq, controller: controller),
+            for (final id in kMusicFxOrder) MusicFxRow(id: id, eq: eq, controller: controller),
+            for (final id in kMusicFxSpatialOrder) MusicFxRow(id: id, eq: eq, controller: controller),
           ],
         ),
         DsListSection(
@@ -1517,8 +1517,8 @@ final class _PreampField extends ConsumerWidget {
 /// One enhancement effect's row: its switch, its strength slider (shown
 /// while on), and the declared cost — the spec's honesty rule, in words the
 /// listener reads before enabling, not after.
-final class _MusicFxRow extends ConsumerWidget {
-  const _MusicFxRow({required this.id, required this.eq, required this.controller});
+final class MusicFxRow extends ConsumerWidget {
+  const MusicFxRow({required this.id, required this.eq, required this.controller, super.key});
 
   final String id;
   final MusicEqConfig eq;

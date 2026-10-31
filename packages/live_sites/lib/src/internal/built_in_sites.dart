@@ -69,6 +69,7 @@ import 'package:live_sites/src/platforms/youtube/api/youtube_http.dart';
 import 'package:live_sites/src/platforms/youtube/youtube_site.dart';
 import 'package:live_sites/src/platforms/yy/api/yy_http.dart';
 import 'package:live_sites/src/platforms/yy/yy_site.dart';
+import 'package:live_websocket/live_websocket.dart' show exactWebSocketConnect;
 
 /// The single internal construction entry point for built-in sites.
 ///
@@ -130,8 +131,8 @@ List<LiveSite> createBuiltInLiveSites({
     SixroomSite(http: SixroomHttp(transport)),
     LivemeSite(http: LivemeHttp(transport)),
     XiaohongshuSite(http: XiaohongshuHttp(transport)),
-    YySite(http: YyHttp(transport)),
-    SoopSite(http: SoopHttp(transport)),
+    YySite(http: YyHttp(transport), connect: exactWebSocketConnect),
+    SoopSite(http: SoopHttp(transport), connect: exactWebSocketConnect),
     SteambroadcastSite(http: SteambroadcastHttp(transport)),
     TiktokSite(http: TiktokHttp(transport)),
     TwitcastingSite(http: TwitcastingHttp(transport)),

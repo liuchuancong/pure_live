@@ -245,12 +245,12 @@ abstract final class BilibiliDanmakuProtocol {
             _stream(_inflate(body), depth + 1, out, gifts);
           case 3:
             try {
-              final decompressed = brotliCompress(body);
-              if (decompressed.length > maxInflatedBytes) {
-                throw const FormatException('Bilibili brotli decompressed message exceeds limit');
-              }
-              _stream(Uint8List.fromList(decompressed), depth + 1, out, gifts);
-            } on FormatException {
+              final decompressed = brotliDecompress(
+                body,
+                options: const BrotliDecodeOptions(maxOutputSize: maxInflatedBytes),
+              );
+              _stream(decompressed, depth + 1, out, gifts);
+            } on Object {
               // Malformed brotli data is skipped; the session continues.
               out.brotliPackets++;
             }

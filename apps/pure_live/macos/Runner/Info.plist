@@ -28,5 +28,18 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>com.liuchuancong.pure_live.lxmusic</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>lxmusic</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -289,12 +289,11 @@ abstract final class BilibiliPlayParser {
   }
 
   /// `flv` is an HTTP-FLV stream, `ts` the HLS family's segment format and
-  /// `fmp4` the fragmented-MP4 stream (beyond the shared model's formats, so
-  /// its container stays the player's `other`).
+  /// `fmp4` its fragmented-MP4 flavour — both are an `.m3u8` playlist, which
+  /// is what the player opens (the reference's mapping).
   static LiveStreamFormat? _format(String name) => switch (name) {
     'flv' => LiveStreamFormat.flv,
-    'ts' => LiveStreamFormat.hls,
-    'fmp4' => LiveStreamFormat.other,
+    'ts' || 'fmp4' => LiveStreamFormat.hls,
     _ => null,
   };
 

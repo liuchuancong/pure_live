@@ -4003,6 +4003,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '已启用'
 	String get eqCenterEnabled => '已启用';
 
+	/// zh-CN: '当前音效'
+	String get eqCenterNow => '当前音效';
+
 	/// zh-CN: '未启用'
 	String get eqCenterDisabled => '未启用';
 
@@ -12097,6 +12100,7 @@ extension on Translations {
 			'music.eqCenter' => '音效中心',
 			'music.eqCenterSubtitle' => '自定义你的专属音效风格',
 			'music.eqCenterEnabled' => '已启用',
+			'music.eqCenterNow' => '当前音效',
 			'music.eqCenterDisabled' => '未启用',
 			'music.eqCurrent' => '当前音效',
 			'music.eqCenterRecommended' => '推荐音效',
@@ -12349,9 +12353,9 @@ extension on Translations {
 			'recorder.emptyFilterTitle' => ({required String status}) => '“${status}”里还没有任务',
 			'recorder.stateWaiting' => '等待开播',
 			'recorder.stateSaved' => '已保存',
-			'recorder.menuMore' => '更多操作',
 			_ => null,
 		} ?? switch (path) {
+			'recorder.menuMore' => '更多操作',
 			'recorder.openRoom' => '进入直播间',
 			'recorder.openFolder' => '打开文件夹',
 			'recorder.openFolderFailed' => '无法打开文件夹',
@@ -12863,9 +12867,9 @@ extension on Translations {
 			'settings.githubMirrorRefresh' => '从远程更新',
 			'settings.githubMirrorRefreshing' => '正在获取远程镜像…',
 			'settings.githubMirrorNever' => '尚未获取远程镜像。',
-			'settings.githubMirrorUpdated' => ({required Object time}) => '远程更新于 ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'settings.githubMirrorUpdated' => ({required Object time}) => '远程更新于 ${time}',
 			'settings.githubMirrorFailed' => ({required Object error}) => '远程获取失败：${error}',
 			'settings.githubMirrorAdd' => '添加镜像地址',
 			'settings.githubMirrorAddTitle' => '添加镜像地址',
@@ -13377,9 +13381,9 @@ extension on Translations {
 			'settings.playerGuideEntrySymBlurryBody' => 'Windows + NVIDIA：选「RTX VSR」预设；其它 GPU：把放大算法改成 ewa_lanczossharp。',
 			'settings.playerGuideEntrySymFanTitle' => '风扇狂转 / 掉帧',
 			'settings.playerGuideEntrySymFanBody' => '选「低配流畅」方案；仍不行就关闭硬解码开关（老设备软解反而快）。',
-			'settings.playerGuideEntrySymBufferingTitle' => '频繁缓冲',
 			_ => null,
 		} ?? switch (path) {
+			'settings.playerGuideEntrySymBufferingTitle' => '频繁缓冲',
 			'settings.playerGuideEntrySymBufferingBody' => '选「弱网稳定」；同时检查网络代理设置——代理是直播卡顿的常见来源。',
 			'settings.playerGuideEntrySymLatencyTitle' => '延迟高（连麦 / 赛事情景）',
 			'settings.playerGuideEntrySymLatencyBody' => '选「低延迟」方案，并调低缓冲相关属性。',
@@ -13891,9 +13895,9 @@ extension on Translations {
 			'settings.hongguoQuality720' => '720P',
 			'settings.hongguoQuality540' => '540P',
 			'settings.hongguoQuality480' => '480P',
-			'settings.hongguoQuality360' => '360P',
 			_ => null,
 		} ?? switch (path) {
+			'settings.hongguoQuality360' => '360P',
 			'settings.hongguoDeviceReset' => '重置设备身份',
 			'settings.hongguoDeviceResetDesc' => '忘记匿名设备身份，下次播放重新注册。',
 			'settings.navLogs' => '日志',

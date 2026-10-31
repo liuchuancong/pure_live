@@ -889,17 +889,39 @@ final class RoomController extends Notifier<RoomState> {
       return 'cannot send';
     }
     final sending = session as LiveDanmakuSending;
+    // Read before the await: a room that closes mid-send must not lose the
+    // echo it already accepted, nor read a disposed ref after it.
+    final identity = _localSender();
     try {
       await sending.send(word);
       // The local echo: what the viewer sent flies at once, in the theme's
-      // own voice rather than waiting for a platform round trip.
+      // own voice rather than waiting for a platform round trip. It carries
+      // the signed-in name, so the viewer's own line reads like any other
+      // rather than as an anonymous one.
       _pipeline?.accept(
-        LiveMessage.normalized(messageId: 'local-${DateTime.now().microsecondsSinceEpoch}', text: word, isLocal: true),
+        LiveMessage.normalized(
+          messageId: 'local-${DateTime.now().microsecondsSinceEpoch}',
+          text: word,
+          sender: identity,
+          isLocal: true,
+        ),
       );
       return null;
     } on Object catch (error) {
       return error.toString();
     }
+  }
+
+  /// The viewer's own identity for the local echo: the signed-in account of
+  /// this room's platform; null when the room's chat runs anonymously, where
+  /// the platform says nothing about the viewer either.
+  MessageSender? _localSender() {
+    final siteId = state.room?.ref.platform;
+    if (siteId == null) return null;
+    final credential = ref.read(accountsProvider).credentials[siteId];
+    final name = credential?.nickname?.trim() ?? '';
+    if (name.isEmpty) return null;
+    return MessageSender.normalized(userId: credential?.userId ?? '', userName: name);
   }
 
   /// Disconnects the room's site danmaku while the app is in the background;
