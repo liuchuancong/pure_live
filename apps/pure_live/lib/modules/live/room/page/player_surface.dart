@@ -1,4 +1,5 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
+
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
@@ -17,9 +18,6 @@ import 'package:pure_live/modules/live/room/controller/room_controller.dart';
 import 'package:pure_live/modules/live/room/page/audio_only_cover.dart' show AudioOnlyCover;
 import 'package:pure_live/modules/live/room/page/room_status.dart'
     show RoomPictureAction, RoomPictureDim, RoomPictureKind, pictureStateOf, roomSlowProvider;
-import 'package:pure_live/modules/live/room/player/cast_dialog.dart' show showCastDialog;
-import 'package:pure_live/modules/live/room/player/compact_danmaku_metrics.dart' show CompactDanmakuMetrics;
-import 'package:pure_live/modules/live/room/player/room_barrage_config.dart' show roomBarrageConfig;
 import 'package:pure_live/shared/shared.dart';
 
 /// The picture's own ink: the frame is dark whatever the app's theme, so
@@ -431,7 +429,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
     String? family,
     double? area,
     CompactDanmakuMetrics? compact,
-  }) => roomBarrageConfig(
+  }) => playerBarrageConfig(
     style,
     fps,
     family: family,
@@ -567,9 +565,7 @@ final class _PlayerSurfaceState extends ConsumerState<PlayerSurface> {
                           if (window != null) unawaited(window.startDragging());
                         }
                       : desktopDrag
-                      ? (_) => unawaited(
-                          ref.read(desktopWindowHostProvider).startDragging().catchError((Object _) {}),
-                        )
+                      ? (_) => unawaited(ref.read(desktopWindowHostProvider).startDragging().catchError((Object _) {}))
                       : null,
                   onVerticalDragStart: mini || desktopDrag
                       ? null
@@ -771,6 +767,12 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
   Timer? _hoverTimer;
   Timer? _leaveTimer;
 
+  /// Each picker's box: the catalogue opens over the button that raised it
+  /// rather than at the strip's end.
+  final Map<_Picker, GlobalKey> _pickerAnchors = {
+    for (final picker in _Picker.values) picker: GlobalKey(debugLabel: 'room-picker-${picker.name}'),
+  };
+
   @override
   void dispose() {
     _hoverTimer?.cancel();
@@ -962,9 +964,10 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
             ),
             if (_open case final picker?)
               Padding(
-                padding: const EdgeInsetsDirectional.only(top: DsSpace.s4, end: DsSpace.s12),
-                child: Align(
-                  alignment: AlignmentDirectional.centerEnd,
+                padding: const EdgeInsetsDirectional.only(top: DsSpace.s4),
+                child: PlayerPanelHost(
+                  anchorKey: _pickerAnchors[picker]!,
+                  width: _panelWidth(picker),
                   child: MouseRegion(
                     onEnter: (_) => _leaveTimer?.cancel(),
                     onExit: (_) => _hoverClose(),
@@ -989,46 +992,59 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
   }) {
     final theme = DsTheme.of(context);
     final open = _open == picker;
-    return MouseRegion(
-      onEnter: (_) => _hoverOpen(picker),
-      onExit: (_) => _hoverClose(),
-      child: TvFocusScale(
-        child: DsPressable(
-          semanticLabel: semanticLabel,
-          onPressed: () => _toggle(picker),
-          builder: (context, states, _) {
-            final lit = open || states.contains(WidgetState.hovered);
-            return Container(
-              height: theme.sizes.sm,
-              padding: EdgeInsets.symmetric(horizontal: labelled ? DsSpace.s8 : DsSpace.s6),
-              decoration: DsBoxDecoration(
-                color: lit ? _onVideoHover : null,
-                borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s4,
-                children: [
-                  DsIcon(icon, size: theme.sizes.iconSm, color: _onVideoMuted),
-                  if (labelled)
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 96),
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: _onVideo),
+    return KeyedSubtree(
+      key: _pickerAnchors[picker],
+      child: MouseRegion(
+        onEnter: (_) => _hoverOpen(picker),
+        onExit: (_) => _hoverClose(),
+        child: TvFocusScale(
+          child: DsPressable(
+            semanticLabel: semanticLabel,
+            onPressed: () => _toggle(picker),
+            builder: (context, states, _) {
+              final lit = open || states.contains(WidgetState.hovered);
+              return Container(
+                height: theme.sizes.sm,
+                padding: EdgeInsets.symmetric(horizontal: labelled ? DsSpace.s8 : DsSpace.s6),
+                decoration: DsBoxDecoration(
+                  color: lit ? _onVideoHover : null,
+                  borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: DsSpace.s4,
+                  children: [
+                    DsIcon(icon, size: theme.sizes.iconSm, color: _onVideoMuted),
+                    if (labelled)
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 96),
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.caption.copyWith(color: _onVideo),
+                        ),
                       ),
-                    ),
-                  DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: _onVideoMuted),
-                ],
-              ),
-            );
-          },
+                    // The catalogue hangs under the strip, so the closed chevron points the
+                    // way it will open; an open one points back up at its button.
+                    DsIcon(open ? DsIcons.chevronUp : DsIcons.chevronDown, size: 12, color: _onVideoMuted),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
   }
+
+  /// The width each catalogue asks for; the host centres the card on its
+  /// picker with this measure.
+  static double _panelWidth(_Picker picker) => switch (picker) {
+    _Picker.quality => 200,
+    _Picker.line => 240,
+    _Picker.fit => 200,
+  };
 
   /// The open picker's catalogue.
   Widget _pickerPanel(Translations t, _Picker picker) {
@@ -1039,7 +1055,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
         final current = room.quality ?? (room.qualities.isEmpty ? null : room.qualities.first);
         return PlayerOverlayPanel(
           title: t.room.quality,
-          width: 200,
+          width: _panelWidth(picker),
           children: [
             for (final option in room.qualities)
               PlayerPanelOption(
@@ -1055,7 +1071,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
       case _Picker.line:
         return PlayerOverlayPanel(
           title: t.room.lineLabel,
-          width: 240,
+          width: _panelWidth(picker),
           children: [
             for (final (index, option) in room.lines.indexed)
               PlayerPanelOption(
@@ -1073,7 +1089,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
         final current = ref.read(playbackSettingsProvider).fit;
         return PlayerOverlayPanel(
           title: t.settings.fit,
-          width: 200,
+          width: _panelWidth(picker),
           children: [
             for (final (index, option) in PlaybackFit.values.indexed)
               PlayerPanelOption(
@@ -1131,7 +1147,11 @@ final class _VideoLiveBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: DsSpace.s3,
         children: [
-          Container(width: 5, height: 5, decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFFF3B5C))),
+          Container(
+            width: 5,
+            height: 5,
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFFF3B5C)),
+          ),
           Text(
             t.favorites.statusLiveNow,
             style: theme.typography.caption.copyWith(color: _onVideo, fontWeight: FontWeight.w600),

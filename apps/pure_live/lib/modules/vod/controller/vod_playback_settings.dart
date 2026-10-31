@@ -29,8 +29,10 @@ enum VodSpeedChoice {
   /// The rate handed to the player.
   final double value;
 
-  /// The menu's words.
-  String label(Translations t) => value == 1 ? t.vod.speed : '${_trim(value)}x';
+  /// The menu's words: the rate itself, never the category's name — a 1×
+  /// row reading "倍速" beside a panel titled 倍速 says nothing about which
+  /// choice is in force.
+  String get label => '${_trim(value)}x';
 
   /// The nearest choice for a stored rate; [normal] for a damaged value.
   static VodSpeedChoice nearest(double value) {

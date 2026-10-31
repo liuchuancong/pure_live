@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter, TileMode;
 
 import 'package:desen_ui/desen_ui.dart';
@@ -221,6 +222,176 @@ final class PlayerPanelOption extends StatelessWidget {
               if (selected) const DsIcon(DsIcons.check, size: 14, color: playerInk),
             ],
           ),
+        );
+      },
+    );
+  }
+}
+
+/// Where a picker's catalogue hangs relative to the picture's edge.
+enum PlayerPanelSide {
+  /// Above its button, and above the bar the button sits in.
+  above,
+
+  /// Below its button — a strip that runs along the top of the picture.
+  below,
+}
+
+/// A catalogue placed against the picker that opened it.
+///
+/// The player pages used to pin the card to the picture's end edge, so a menu
+/// opened from the middle of the bar appeared several buttons away from its
+/// own control and read as belonging to a neighbour. This measures the trigger
+/// (and, when [barKey] names one, the bar it sits in), centres the card over
+/// the trigger, and keeps it inside the picture.
+///
+/// With a [barKey] the host is a layer of the player's own stack and hangs
+/// above the bar (or below it); without one it is an inline child of a column
+/// — the live room's top strip — and only moves the card horizontally, which
+/// is the placement a strip with no room above it can offer.
+final class PlayerPanelHost extends StatefulWidget {
+  /// Places [child] over the picker behind [anchorKey].
+  const PlayerPanelHost({
+    required this.anchorKey,
+    required this.width,
+    required this.child,
+    this.barKey,
+    this.side = PlayerPanelSide.above,
+    this.inset = DsSpace.s8,
+    this.gap = DsSpace.s4,
+    super.key,
+  });
+
+  /// The picker button that opened the catalogue.
+  final GlobalKey anchorKey;
+
+  /// The bar the picker sits in; null places the card inline instead.
+  final GlobalKey? barKey;
+
+  /// The card's ideal width; the picture's own measure wins when it is
+  /// narrower.
+  final double width;
+
+  /// The catalogue itself.
+  final Widget child;
+
+  /// Which side of the button the card goes to.
+  final PlayerPanelSide side;
+
+  /// The least distance the card keeps from the picture's edges.
+  final double inset;
+
+  /// The distance between the card and its button or bar.
+  final double gap;
+
+  @override
+  State<PlayerPanelHost> createState() => _PlayerPanelHostState();
+}
+
+final class _PlayerPanelHostState extends State<PlayerPanelHost> {
+  Rect? _anchor;
+  Rect? _bar;
+  bool _measureScheduled = false;
+
+  bool get _inline => widget.barKey == null;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleMeasure();
+  }
+
+  @override
+  void didUpdateWidget(covariant PlayerPanelHost oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.anchorKey != widget.anchorKey || oldWidget.barKey != widget.barKey) {
+      // The card moved to another picker: the old box says nothing about this
+      // one, and a stale placement would flash it over the button just left.
+      _anchor = null;
+      _bar = null;
+    }
+    _scheduleMeasure();
+  }
+
+  /// Measures after the frame that laid the picker out. Until then the host
+  /// draws nothing, which is one frame the viewer never notices.
+  void _scheduleMeasure() {
+    if (_measureScheduled) return;
+    _measureScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _measureScheduled = false;
+      if (!mounted) return;
+      _measure();
+    });
+  }
+
+  void _measure() {
+    final self = context.findRenderObject();
+    if (self is! RenderBox || !self.hasSize) return;
+    final anchor = _rectOf(widget.anchorKey, self);
+    if (anchor == null) {
+      // The picker is not laid out yet (an inserted bar): ask again next
+      // frame rather than guessing a position.
+      _scheduleMeasure();
+      return;
+    }
+    final bar = widget.barKey == null ? null : _rectOf(widget.barKey!, self);
+    if (anchor == _anchor && bar == _bar) return;
+    setState(() {
+      _anchor = anchor;
+      _bar = bar;
+    });
+  }
+
+  static Rect? _rectOf(GlobalKey key, RenderBox self) {
+    final box = key.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return null;
+    // The picker is a sibling of this layer, not a descendant: measure both
+    // in the root's coordinates and subtract, rather than naming an ancestor
+    // the render tree does not have.
+    return (box.localToGlobal(Offset.zero) - self.localToGlobal(Offset.zero)) & box.size;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // A resize moves the picker without moving this layer's state, so the
+        // measurement follows the layout.
+        _scheduleMeasure();
+        final anchor = _anchor;
+        final available = constraints.maxWidth;
+        final width = math.min(widget.width, math.max(0, available - 2 * widget.inset).toDouble());
+        if (anchor == null || width <= 0) return const SizedBox.shrink();
+        final left = (anchor.center.dx - width / 2)
+            .clamp(widget.inset, math.max(widget.inset, available - width - widget.inset))
+            .toDouble();
+        if (_inline) {
+          return Padding(
+            padding: EdgeInsetsDirectional.only(start: left),
+            child: SizedBox(width: width, child: widget.child),
+          );
+        }
+        final height = constraints.maxHeight;
+        final barTop = _bar?.top ?? anchor.top;
+        final top = widget.side == PlayerPanelSide.below ? anchor.bottom + widget.gap : null;
+        final bottom = widget.side == PlayerPanelSide.above ? height - barTop + widget.gap : null;
+        final room = widget.side == PlayerPanelSide.above
+            ? height - (bottom ?? 0) - widget.inset
+            : height - (top ?? 0) - widget.inset;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              left: left,
+              top: top,
+              bottom: bottom,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: width, maxHeight: math.max(0, room).toDouble()),
+                child: SizedBox(width: width, child: widget.child),
+              ),
+            ),
+          ],
         );
       },
     );

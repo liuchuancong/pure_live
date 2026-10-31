@@ -46,6 +46,7 @@ final class VodSettingsPane extends ConsumerWidget {
           header: Text(t.settings.vodPages),
           children: const [
             SettingsChildEntry(child: SettingsSection.vodPlayback),
+            SettingsChildEntry(child: SettingsSection.vodDownload),
             SettingsChildEntry(child: SettingsSection.vodInterface),
           ],
         ),
@@ -77,9 +78,7 @@ final class VodPlaybackPane extends ConsumerWidget {
               title: t.vod.openingSpeed,
               description: t.vod.openingSpeedDesc,
               value: settings.speed,
-              options: [
-                for (final choice in VodSpeedChoice.values) DsSelectOption(value: choice, label: choice.label(t)),
-              ],
+              options: [for (final choice in VodSpeedChoice.values) DsSelectOption(value: choice, label: choice.label)],
               onChanged: (choice) => unawaited(controller.setSpeed(choice)),
             ),
             SettingsChoiceRow<VodFinishAction>(

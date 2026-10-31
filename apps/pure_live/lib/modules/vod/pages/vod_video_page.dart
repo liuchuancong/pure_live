@@ -1,6 +1,5 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
-import 'dart:io' show File;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show BarrageController, EmojiAtlas, FlameBarrageWidget;
@@ -10,6 +9,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_device/live_device.dart' show PlatformScreenOrientationService, ScreenOrientationService;
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:live_vod/live_vod.dart';
 import 'package:media_core/media_core.dart';
@@ -17,9 +17,8 @@ import 'package:media_core_danmaku/media_core_danmaku.dart' show BarrageItemMapp
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/live/room/player/room_barrage_config.dart' show roomBarrageConfig;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
-import 'package:pure_live/modules/vod/controller/vod_download.dart';
+import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
 import 'package:pure_live/modules/vod/controller/vod_library.dart';
 import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
@@ -60,9 +59,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   VodPlayInfo? _play;
   VodPart? _part;
 
-  /// The download running off this page, if one is.
-  VodDownloadTask? _download;
-
   /// The flying danmaku engine this page owns, the bridge that keeps its
   /// clock on the part's own, and the cid the loaded timeline belongs to.
   final BarrageController _barrage = BarrageController();
@@ -101,6 +97,13 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   _VodPanel? _openPanel;
   Timer? _hoverTimer;
   Timer? _leaveTimer;
+
+  /// The bar and each picker's box: the open catalogue hangs over the button
+  /// that raised it rather than at the picture's end edge.
+  final GlobalKey _barAnchor = GlobalKey(debugLabel: 'vod-bar');
+  final Map<_VodPanel, GlobalKey> _panelAnchors = {
+    for (final panel in _VodPanel.values) panel: GlobalKey(debugLabel: 'vod-picker-${panel.name}'),
+  };
 
   /// The playing part's row in the parts catalogue, so opening the catalogue
   /// brings it into view instead of starting at the first.
@@ -204,14 +207,24 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   void didPushNext() {
     final handle = _handle;
     if (handle != null && (_transport?.isPlaying ?? false)) {
-      unawaited(handle.pause());
+      unawaited(handle.pause().catchError((Object _) {}));
     }
   }
 
   @override
   void dispose() {
-    _download?.cancel();
-    _download = null;
+    _disposed = true;
+    // The player goes quiet before anything else: the route's leave animation
+    // runs while the release's queue drains, and the video must not be heard
+    // over the page the viewer returned to.
+    final handle = _handle;
+    if (handle != null) {
+      if (_presentationMode != PresentationMode.normal) {
+        unawaited(_presentationNotifier.exit(handle.id));
+      }
+      silencePlayer(handle);
+      unawaited(_kernel.release(handle.id));
+    }
     _hideTimer?.cancel();
     _hoverTimer?.cancel();
     _leaveTimer?.cancel();
@@ -220,7 +233,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     _backgroundGate = null;
     _routeObserver?.unsubscribe(this);
     _saveProgress(force: true);
-    _disposed = true;
     unawaited(_transportSub?.cancel() ?? Future<void>.value());
     unawaited(_eventSub?.cancel() ?? Future<void>.value());
     unawaited(_geometrySub?.cancel() ?? Future<void>.value());
@@ -228,13 +240,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     unawaited(_danmakuBinding?.dispose() ?? Future<void>.value());
     _danmakuBinding = null;
     _barrage.dispose();
-    final handle = _handle;
-    if (handle != null) {
-      if (_presentationMode != PresentationMode.normal) {
-        unawaited(_presentationNotifier.exit(handle.id));
-      }
-      unawaited(_kernel.release(handle.id));
-    }
     _playFocus.dispose();
     super.dispose();
   }
@@ -325,10 +330,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   /// Opens [part] on the shared kernel, reusing the page's handle.
   Future<void> _openPart(VodPart part, {int? qn, double? resume}) async {
     if (_opening) return;
-    // A download belongs to the part it was resolved for; the next part
-    // resolves its own address instead of keeping this one's bytes.
-    _download?.cancel();
-    _download = null;
     // Keep the part being left before the page starts writing for the next
     // one; a stored position belongs to the part that reported it.
     _saveProgress(force: true);
@@ -368,7 +369,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             preferredBackend: ref.read(playerKernelBackendProvider).id,
           );
       if (!mounted || _disposed) {
-        if (existing == null) unawaited(kernel.release(handle.id));
+        if (existing == null) {
+          silencePlayer(handle);
+          unawaited(kernel.release(handle.id));
+        }
         return;
       }
       _handle = handle;
@@ -412,6 +416,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       final stale = _handle;
       if (stale != null) {
         _handle = null;
+        silencePlayer(stale);
         unawaited(kernel.release(stale.id));
       }
       setState(() {
@@ -488,21 +493,6 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       _danmakuCid = cid;
     } on Object {
       // The picture never depends on a comment track.
-    }
-  }
-
-  /// Writes the finished video's danmaku beside it, in the formats chosen in
-  /// Settings → 弹幕 → 弹幕文件.
-  Future<void> _saveDanmaku(File video, int cid) async {
-    final client = ref.read(vodClientProvider);
-    final formats = ref.read(danmakuSaveFormatsProvider);
-    try {
-      final xml = await client.danmakuXml(cid);
-      final entries = BilibiliDanmakuXml.decode(xml);
-      if (entries.isEmpty) return;
-      await writeDanmakuFiles(video, entries, formats);
-    } on Object {
-      // The video is downloaded; a missing track does not undo it.
     }
   }
 
@@ -756,6 +746,27 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       if (previous == next) return;
       unawaited(_applyTuning(previous, next));
     });
+    // This archive's queue rows announce themselves: a finished part says
+    // where it landed, a failed one says so — however the page was left.
+    ref.listen(vodDownloadsProvider, (previous, next) {
+      final before = {for (final item in previous ?? const <VodDownloadItem>[]) item.id: item.phase};
+      for (final item in next) {
+        if (item.bvid != widget.bvid || before[item.id] == item.phase) continue;
+        if (!mounted) return;
+        final t = context.t;
+        if (item.phase == VodDownloadPhase.done) {
+          showDsToast(
+            context: context,
+            title: t.vod.downloadDone(name: item.fileName),
+            status: DsStatus.success,
+          );
+        } else if (item.phase == VodDownloadPhase.failed) {
+          // The reason belongs on the toast: "下载失败" with no cause reads as
+          // the app's own confusion, and the row keeps it too.
+          showDsToast(context: context, title: t.vod.downloadFailed, description: item.error, status: DsStatus.danger);
+        }
+      }
+    });
     // Leaving fullscreen or PiP — by any hand, including the system's —
     // puts the keyboard back on the play button, whose node outlives both
     // surfaces.
@@ -787,11 +798,28 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     if (immersive) {
       return Scaffold(backgroundColor: colors.canvas, body: _playerSurface(context, immersive: true));
     }
+    // The arrows mirror the room page: up and down take the wheel's step (the
+    // 画质与音频 setting) toward the volume, left and right skip five seconds.
+    // A TV keeps its arrows for focus; the remote drives the volume itself.
+    final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
+    final volumeStep = ref.watch(playbackSettingsProvider.select((settings) => settings.volumeWheelStepPercent)) / 100;
+    void nudgeVolume(double delta) => unawaited(_setVolume((_volume + delta).clamp(0.0, 1.0)));
+    void nudgeSeek(double delta) {
+      final position = _transport?.position;
+      if (position == null) return;
+      final target = position.inMilliseconds / 1000 + delta;
+      unawaited(_seekTo(target < 0 ? 0 : target));
+    }
+
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.space): _togglePlay,
         const SingleActivator(LogicalKeyboardKey.keyF): _toggleFullscreen,
         const SingleActivator(LogicalKeyboardKey.escape): _leave,
+        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowUp): () => nudgeVolume(volumeStep),
+        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowDown): () => nudgeVolume(-volumeStep),
+        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowLeft): () => nudgeSeek(-5),
+        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowRight): () => nudgeSeek(5),
       },
       child: Scaffold(
         backgroundColor: colors.surface,
@@ -928,11 +956,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               fit: StackFit.expand,
               children: [
                 if (handle != null)
-                  MediaPlayerView(
-                    handle: handle,
-                    fit: playback.fit.boxFit,
-                    backgroundColor: colors.overlay,
-                  )
+                  MediaPlayerView(handle: handle, fit: playback.fit.boxFit, backgroundColor: colors.overlay)
                 else
                   const ColoredBox(color: Color(0xFF000000)),
                 // The part's danmaku, on a clock the player's binding keeps
@@ -942,7 +966,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   Positioned.fill(
                     child: IgnorePointer(
                       child: FlameBarrageWidget(
-                        config: roomBarrageConfig(
+                        config: playerBarrageConfig(
                           danmakuStyle,
                           danmakuFps,
                           family: resolvedFontFamily(danmakuStyle.fontFamily),
@@ -982,53 +1006,42 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (_download case final download? when download.status == VodDownloadStatus.running)
+                          if (vodDownloadOf(ref.watch(vodDownloadsProvider), widget.bvid, _part?.cid ?? 0)
+                              case final download?
+                              when download.phase == VodDownloadPhase.running ||
+                                  download.phase == VodDownloadPhase.queued)
                             Padding(
                               padding: const EdgeInsetsDirectional.only(end: DsSpace.s12, bottom: DsSpace.s4),
                               child: Align(
                                 alignment: AlignmentDirectional.centerEnd,
-                                child: ListenableBuilder(
-                                  listenable: download,
-                                  builder: (context, _) => PlayerGlassPill(
-                                    child: Padding(
-                                      padding: const EdgeInsetsDirectional.fromSTEB(
-                                        DsSpace.s12,
-                                        DsSpace.s4,
-                                        DsSpace.s4,
-                                        DsSpace.s4,
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        spacing: DsSpace.s8,
-                                        children: [
-                                          const DsSpinner(style: DsSpinnerStyle(size: 14)),
-                                          Text(switch (download.progress) {
-                                            final progress? => t.vod.downloading(percent: (progress * 100).round()),
-                                            null => t.vod.downloadingUnknown,
-                                          }, style: theme.typography.caption.copyWith(color: playerInk)),
-                                          MediaBarButton(
-                                            icon: DsIcons.x,
-                                            label: t.vod.downloadCancel,
-                                            size: 28,
-                                            iconSize: 16,
-                                            onPressed: download.cancel,
-                                          ),
-                                        ],
-                                      ),
+                                child: PlayerGlassPill(
+                                  child: Padding(
+                                    padding: const EdgeInsetsDirectional.fromSTEB(
+                                      DsSpace.s12,
+                                      DsSpace.s4,
+                                      DsSpace.s4,
+                                      DsSpace.s4,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      spacing: DsSpace.s8,
+                                      children: [
+                                        const DsSpinner(style: DsSpinnerStyle(size: 14)),
+                                        Text(switch (download.progress) {
+                                          final progress? => t.vod.downloading(percent: (progress * 100).round()),
+                                          null => t.vod.downloadingUnknown,
+                                        }, style: theme.typography.caption.copyWith(color: playerInk)),
+                                        MediaBarButton(
+                                          icon: DsIcons.pause,
+                                          label: t.vod.downloadPause,
+                                          size: 28,
+                                          iconSize: 16,
+                                          onPressed: () =>
+                                              unawaited(ref.read(vodDownloadsProvider.notifier).pause(download.id)),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                              ),
-                            ),
-                          if (_openPanel case final panel?)
-                            Padding(
-                              padding: const EdgeInsetsDirectional.only(end: DsSpace.s12, bottom: DsSpace.s4),
-                              child: Align(
-                                alignment: AlignmentDirectional.centerEnd,
-                                child: MouseRegion(
-                                  onEnter: (_) => _leaveTimer?.cancel(),
-                                  onExit: (_) => _leavePanelSoon(),
-                                  child: _vodPanel(t, panel),
                                 ),
                               ),
                             ),
@@ -1051,6 +1064,22 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                       onWake: _wake,
                     ),
                   ),
+                // The catalogue floats over the bar and its pill, so a menu
+                // never hides behind the download status.
+                if (showBar)
+                  if (_openPanel case final panel?)
+                    Positioned.fill(
+                      child: PlayerPanelHost(
+                        anchorKey: _panelAnchors[panel]!,
+                        barKey: _barAnchor,
+                        width: _panelWidth(panel),
+                        child: MouseRegion(
+                          onEnter: (_) => _leaveTimer?.cancel(),
+                          onExit: (_) => _leavePanelSoon(),
+                          child: _vodPanel(t, panel),
+                        ),
+                      ),
+                    ),
               ],
             ),
           ),
@@ -1095,60 +1124,36 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     );
   }
 
-  /// Resolves the current part's download address and streams it into the
-  /// app's Videos folder, the bar showing how far it has come.
+  /// Hands the current part to the app-wide download queue.
   ///
-  /// The address is signed and short-lived, so it is resolved here rather
-  /// than reused from the player; the player's own answer may be a
-  /// picture-only DASH rendition, which is why the download asks for the
-  /// muxed MP4 separately.
+  /// The queue resolves its own muxed address when the task's turn comes —
+  /// a signed one would be stale by then — and the 下载管理 page (the
+  /// station's sidebar, or Settings → 视频) takes over from there.
   Future<void> _startDownload() async {
     final t = context.t;
     final part = _part;
     final detail = _detail;
     if (part == null || detail == null) return;
-    if (_download?.status == VodDownloadStatus.running) return;
-    try {
-      final info = await ref.read(vodClientProvider).downloadPart(bvid: widget.bvid, cid: part.cid, qn: _qn);
-      if (!mounted) return;
-      final task = VodDownloadTask(
-        folder: ref.read(appPathsProvider).videos,
-        url: info.url,
-        headers: info.headers,
-        fileName: vodDownloadFileName(
+    final result = await ref
+        .read(vodDownloadsProvider.notifier)
+        .download(
+          bvid: widget.bvid,
+          cid: part.cid,
           title: detail.title,
           part: part.title,
           index: part.page,
           parts: detail.parts.length,
-          extension: info.format == 'mp4' ? 'mp4' : 'm4s',
-        ),
-      );
-      setState(() => _download = task);
-      unawaited(
-        task.start().then((_) {
-          if (!mounted) return;
-          setState(() {});
-          switch (task.status) {
-            case VodDownloadStatus.done:
-              final file = task.file;
-              if (file != null) unawaited(_saveDanmaku(file, part.cid));
-              final name = task.file?.uri.pathSegments.last ?? task.fileName;
-              showDsToast(
-                context: context,
-                title: t.vod.downloadDone(name: name),
-                status: DsStatus.success,
-              );
-            case VodDownloadStatus.failed:
-              showDsToast(context: context, title: t.vod.downloadFailed, status: DsStatus.danger);
-            case VodDownloadStatus.cancelled:
-              showDsToast(context: context, title: t.vod.downloadCancelled);
-            case VodDownloadStatus.running:
-              break;
-          }
-        }),
-      );
-    } on Object {
-      if (mounted) showDsToast(context: context, title: t.vod.downloadFailed, status: DsStatus.danger);
+          qn: ref.read(vodDownloadQualityProvider).qn,
+          cover: detail.coverUrl?.toString() ?? '',
+        );
+    if (!mounted) return;
+    switch (result.outcome) {
+      case VodDownloadEnqueue.queued:
+        showDsToast(context: context, title: t.vod.downloadQueued, status: DsStatus.success);
+      case VodDownloadEnqueue.duplicate:
+        showDsToast(context: context, title: t.vod.downloadDuplicate);
+      case VodDownloadEnqueue.failed:
+        showDsToast(context: context, title: t.vod.downloadFailed, description: result.error, status: DsStatus.danger);
     }
   }
 
@@ -1174,6 +1179,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     final fit = playback.fit;
     final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk));
     return Container(
+      key: _barAnchor,
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -1299,7 +1305,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   _vodPickerButton(
                     panel: _VodPanel.speed,
                     icon: DsIcons.timer,
-                    label: VodSpeedChoice.nearest(_speed).label(t),
+                    label: VodSpeedChoice.nearest(_speed).label,
                     semanticLabel: t.vod.speed,
                     compact: compact,
                   ),
@@ -1365,53 +1371,65 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   }) {
     final theme = DsTheme.of(context);
     final open = _openPanel == panel;
-    return MouseRegion(
-      onEnter: (_) => _hoverPanel(panel),
-      onExit: (_) => _leavePanelSoon(),
-      child: TvFocusScale(
-        child: DsPressable(
-          semanticLabel: semanticLabel,
-          onPressed: () {
-            _wake();
-            if (_openPanel == panel) {
-              _closePanel();
-            } else {
-              _showPanel(panel);
-            }
-          },
-          builder: (context, states, _) {
-            final lit = open || states.contains(WidgetState.hovered);
-            return Container(
-              height: theme.sizes.sm,
-              padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
-              decoration: DsBoxDecoration(
-                color: lit ? playerInkHover : null,
-                borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s4,
-                children: [
-                  DsIcon(icon, size: theme.sizes.iconSm, color: playerInkMuted),
-                  if (!compact)
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 110),
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: playerInk),
+    return KeyedSubtree(
+      key: _panelAnchors[panel],
+      child: MouseRegion(
+        onEnter: (_) => _hoverPanel(panel),
+        onExit: (_) => _leavePanelSoon(),
+        child: TvFocusScale(
+          child: DsPressable(
+            semanticLabel: semanticLabel,
+            onPressed: () {
+              _wake();
+              if (_openPanel == panel) {
+                _closePanel();
+              } else {
+                _showPanel(panel);
+              }
+            },
+            builder: (context, states, _) {
+              final lit = open || states.contains(WidgetState.hovered);
+              return Container(
+                height: theme.sizes.sm,
+                padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
+                decoration: DsBoxDecoration(
+                  color: lit ? playerInkHover : null,
+                  borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: DsSpace.s4,
+                  children: [
+                    DsIcon(icon, size: theme.sizes.iconSm, color: playerInkMuted),
+                    if (!compact)
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 110),
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.caption.copyWith(color: playerInk),
+                        ),
                       ),
-                    ),
-                  DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: playerInkMuted),
-                ],
-              ),
-            );
-          },
+                    DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: playerInkMuted),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
   }
+
+  /// The width each catalogue asks for; the anchored host centres the card
+  /// on its picker with this measure.
+  static double _panelWidth(_VodPanel panel) => switch (panel) {
+    _VodPanel.quality => 200,
+    _VodPanel.parts => 260,
+    _VodPanel.speed => 180,
+    _VodPanel.fit => 180,
+  };
 
   /// The open picker's catalogue.
   Widget _vodPanel(Translations t, _VodPanel panel) {
@@ -1420,7 +1438,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         final qualities = _play?.qualities ?? const <VodQuality>[];
         return PlayerOverlayPanel(
           title: t.vod.quality,
-          width: 200,
+          width: _panelWidth(panel),
           children: [
             for (final quality in qualities)
               PlayerPanelOption(
@@ -1440,7 +1458,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         final parts = _detail?.parts ?? const <VodPart>[];
         return PlayerOverlayPanel(
           title: t.vod.parts,
-          width: 260,
+          width: _panelWidth(panel),
           children: [
             for (final candidate in parts)
               KeyedSubtree(
@@ -1459,11 +1477,11 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       case _VodPanel.speed:
         return PlayerOverlayPanel(
           title: t.vod.speed,
-          width: 180,
+          width: _panelWidth(panel),
           children: [
             for (final choice in VodSpeedChoice.values)
               PlayerPanelOption(
-                label: choice.label(t),
+                label: choice.label,
                 selected: choice.value == _speed,
                 onPressed: () {
                   _closePanel();
@@ -1476,7 +1494,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         final fit = ref.watch(playbackSettingsProvider).fit;
         return PlayerOverlayPanel(
           title: t.settings.fit,
-          width: 180,
+          width: _panelWidth(panel),
           children: [
             for (final option in PlaybackFit.values)
               PlayerPanelOption(
@@ -1692,9 +1710,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             DsButton(
               variant: DsButtonVariant.secondary,
               size: DsSize.sm,
-              onPressed: _part == null || _download?.status == VodDownloadStatus.running
-                  ? null
-                  : () => unawaited(_startDownload()),
+              onPressed: _part == null ? null : () => unawaited(_startDownload()),
               leading: const DsIcon(DsIcons.download, size: 14),
               child: Text(t.vod.download),
             ),
@@ -1706,7 +1722,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             runSpacing: DsSpace.s8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              if (detail.likeCount case final count?) _VodStat(icon: DsIcons.thumbsUp, value: count, label: t.vod.likes),
+              if (detail.likeCount case final count?)
+                _VodStat(icon: DsIcons.thumbsUp, value: count, label: t.vod.likes),
               if (detail.coinCount case final count?) _VodStat(icon: DsIcons.coins, value: count, label: t.vod.coins),
               if (detail.favoriteCount case final count?)
                 _VodStat(icon: DsIcons.star, value: count, label: t.vod.favorites),

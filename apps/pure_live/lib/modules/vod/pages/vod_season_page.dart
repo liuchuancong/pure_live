@@ -11,10 +11,11 @@ import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
+import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
 import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
-import 'package:pure_live/shared/shared.dart' show LiveWindow;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, silencePlayer;
 
 /// One cinema title's page: the player over media_core, the season's blurb,
 /// and its episodes — the reference's PgcFeatureScreen, with the station's own
@@ -34,7 +35,7 @@ final class VodSeasonPage extends ConsumerStatefulWidget {
   ConsumerState<VodSeasonPage> createState() => _VodSeasonPageState();
 }
 
-final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> {
+final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteAware {
   /// The cinema player's default qn (1080P); the source may serve lower.
   static const int _defaultQn = 80;
 
@@ -52,11 +53,28 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> {
   bool _autoOpened = false;
   double? _dragSeconds;
 
+  /// The window's observer, kept for `dispose` where the provider scope may
+  /// already be gone.
+  RouteObserver<ModalRoute<void>>? _routeObserver;
+
+  // Captured while the page is alive; `ref` is refused by the time dispose
+  // runs, and the leaving page must still exit its presentation mode and
+  // release its handle.
+  late final RoomPresentationController _presentationNotifier;
+  late final PlayerKernel _kernel;
+
+  /// The presentation mode, followed through a manual listener for the same
+  /// reason: the leaving page reads its own field, not `ref`.
+  PresentationMode _presentationMode = PresentationMode.normal;
+
   bool get _immersive => ref.read(roomPresentationProvider.notifier).modeOwnsWindow(ref.read(roomPresentationProvider));
 
   @override
   void initState() {
     super.initState();
+    _presentationNotifier = ref.read(roomPresentationProvider.notifier);
+    _kernel = ref.read(playerKernelProvider);
+    ref.listenManual(roomPresentationProvider, (_, next) => _presentationMode = next, fireImmediately: true);
     // The station's opening quality, with the cinema's own floor: 720P is the
     // progressive endpoint's ceiling, not a PGC rendition's.
     final setting = ref.read(vodQualityProvider).qn;
@@ -64,17 +82,48 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is ModalRoute<void>) {
+      // The field is not promoted by flow analysis, so name the type.
+      // ignore: omit_local_variable_types
+      final RouteObserver<ModalRoute<void>> observer = _routeObserver ?? ref.read(routeObserverProvider);
+      _routeObserver = observer;
+      observer.subscribe(this, route);
+    }
+  }
+
+  /// Another page covers this one (a related title, a menu route): the picture
+  /// pauses rather than playing under it — the archive page's own rule.
+  @override
+  void didPushNext() {
+    final handle = _handle;
+    if (handle != null && (_transport?.isPlaying ?? false)) {
+      unawaited(handle.pause().catchError((Object _) {}));
+    }
+  }
+
+  @override
   void dispose() {
     _disposed = true;
-    unawaited(_transportSub?.cancel() ?? Future<void>.value());
+    // The player goes quiet before anything else: the route's leave animation
+    // runs while the release's queue drains, and the episode must not be heard
+    // over the page the viewer returned to. Everything the leaving page needs
+    // was captured while it was alive: a `ref` read here throws, and a page
+    // that throws on its way out never releases the handle — the picture keeps
+    // sounding with nothing left on screen to stop it.
     final handle = _handle;
     if (handle != null) {
-      final controller = ref.read(roomPresentationProvider.notifier);
-      if (controller.modeOwnsWindow(ref.read(roomPresentationProvider))) {
-        unawaited(controller.exit(handle.id));
+      if (_presentationNotifier.modeOwnsWindow(_presentationMode)) {
+        unawaited(_presentationNotifier.exit(handle.id));
       }
-      unawaited(ref.read(playerKernelProvider).release(handle.id));
+      silencePlayer(handle);
+      unawaited(_kernel.release(handle.id));
     }
+    _routeObserver?.unsubscribe(this);
+    _routeObserver = null;
+    unawaited(_transportSub?.cancel() ?? Future<void>.value());
     super.dispose();
   }
 
@@ -158,6 +207,41 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> {
     });
   }
 
+  /// Hands the current episode to the app-wide download queue; the queue
+  /// resolves its own muxed address when the task's turn comes, and the
+  /// 下载管理 page (the station's sidebar, or Settings → 视频) takes over
+  /// from there.
+  Future<void> _startDownload() async {
+    final t = context.t;
+    final episode = _episode;
+    final cid = episode?.cid ?? 0;
+    if (episode == null || cid <= 0) return;
+    final season = ref.read(vodSeasonDetailProvider(widget.seasonId)).value;
+    final episodes = season?.episodes ?? const <VodEpisode>[];
+    final position = episodes.indexWhere((entry) => entry.id == episode.id);
+    final result = await ref
+        .read(vodDownloadsProvider.notifier)
+        .download(
+          epId: episode.id,
+          cid: cid,
+          title: season?.title ?? episode.title,
+          part: episode.title,
+          index: position >= 0 ? position + 1 : 1,
+          parts: episodes.isEmpty ? 1 : episodes.length,
+          qn: ref.read(vodDownloadQualityProvider).qn,
+          cover: episode.coverUrl?.toString() ?? season?.coverUrl?.toString() ?? '',
+        );
+    if (!mounted) return;
+    switch (result.outcome) {
+      case VodDownloadEnqueue.queued:
+        showDsToast(context: context, title: t.vod.downloadQueued, status: DsStatus.success);
+      case VodDownloadEnqueue.duplicate:
+        showDsToast(context: context, title: t.vod.downloadDuplicate);
+      case VodDownloadEnqueue.failed:
+        showDsToast(context: context, title: t.vod.downloadFailed, description: result.error, status: DsStatus.danger);
+    }
+  }
+
   void _togglePlay() {
     final handle = _handle;
     if (handle == null) return;
@@ -181,6 +265,28 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final immersive = _immersive;
+    // This episode's queue rows announce themselves: a finished episode
+    // says where it landed, a failed one says so — however the page was left.
+    ref.listen(vodDownloadsProvider, (previous, next) {
+      final episode = _episode;
+      if (episode == null) return;
+      final prefix = 'ep${episode.id}:';
+      final before = {for (final item in previous ?? const <VodDownloadItem>[]) item.id: item.phase};
+      for (final item in next) {
+        if (!item.id.startsWith(prefix) || before[item.id] == item.phase) continue;
+        if (!mounted) return;
+        final t = context.t;
+        if (item.phase == VodDownloadPhase.done) {
+          showDsToast(
+            context: context,
+            title: t.vod.downloadDone(name: item.fileName),
+            status: DsStatus.success,
+          );
+        } else if (item.phase == VodDownloadPhase.failed) {
+          showDsToast(context: context, title: t.vod.downloadFailed, status: DsStatus.danger);
+        }
+      }
+    });
     final detail = ref.watch(vodSeasonDetailProvider(widget.seasonId));
     final season = detail.value;
     if (season != null && !_autoOpened && season.episodes.isNotEmpty) {
@@ -377,6 +483,33 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> {
                     spacing: DsSpace.s4,
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (vodDownloadOf(ref.watch(vodDownloadsProvider), 'ep${episode?.id ?? 0}', episode?.cid ?? 0)
+                          case final download?
+                          when download.phase == VodDownloadPhase.running || download.phase == VodDownloadPhase.queued)
+                        Row(
+                          spacing: DsSpace.s8,
+                          children: [
+                            const DsSpinner(style: DsSpinnerStyle(size: 12)),
+                            Expanded(
+                              child: Text(
+                                switch (download.progress) {
+                                  final progress? => t.vod.downloading(percent: (progress * 100).round()),
+                                  null => t.vod.downloadingUnknown,
+                                },
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
+                              ),
+                            ),
+                            DsButton.icon(
+                              variant: DsButtonVariant.ghost,
+                              size: DsSize.sm,
+                              semanticLabel: t.vod.downloadPause,
+                              onPressed: () => unawaited(ref.read(vodDownloadsProvider.notifier).pause(download.id)),
+                              icon: const DsIcon(DsIcons.pause),
+                            ),
+                          ],
+                        ),
                       Row(
                         spacing: DsSpace.s8,
                         children: [
@@ -452,6 +585,13 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> {
                                   ),
                               ],
                             ),
+                          DsButton.icon(
+                            variant: DsButtonVariant.ghost,
+                            size: DsSize.sm,
+                            semanticLabel: t.vod.download,
+                            onPressed: (episode?.cid ?? 0) <= 0 ? null : () => unawaited(_startDownload()),
+                            icon: const DsIcon(DsIcons.download),
+                          ),
                           if (!immersive)
                             DsButton.icon(
                               variant: DsButtonVariant.ghost,

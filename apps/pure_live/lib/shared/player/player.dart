@@ -1,10 +1,14 @@
 /// Shared playback pieces: the background-playback gate, the fullscreen
-/// orientation rule, the bundled emoticon atlas and the overlay pieces every
-/// player draws over its picture.
+/// orientation rule, the bundled emoticon atlas, the DLNA cast picker and
+/// the overlay pieces every player draws over its picture.
 library;
 
 export 'background_playback_gate.dart';
+export 'barrage_config.dart';
+export 'cast_dialog.dart';
+export 'compact_danmaku_metrics.dart' show CompactDanmakuMetrics;
 export 'emoji_atlas_loader.dart' show loadEmojiAtlas;
 export 'fullscreen_orientation.dart';
 export 'media_bar_button.dart';
 export 'player_overlay.dart';
+export 'player_teardown.dart';

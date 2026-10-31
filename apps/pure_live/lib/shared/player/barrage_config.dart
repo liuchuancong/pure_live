@@ -1,15 +1,15 @@
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/painting.dart' show Color, FontStyle, FontWeight, Offset;
 import 'package:pure_live/features/settings/settings.dart';
-import 'package:pure_live/modules/live/room/player/compact_danmaku_metrics.dart';
+import 'package:pure_live/shared/player/compact_danmaku_metrics.dart';
 
-/// The flame engine's config for one room surface, translated from the
-/// stored [DanmakuStyle]. The room page and the small surfaces (the PiP
+/// The flame engine's config for one player surface, translated from the
+/// stored [DanmakuStyle]. Every player page and the small surfaces (the PiP
 /// window, the floating player) share this one mapping, so every danmaku
 /// setting bites everywhere the flying layer draws; a small surface adds
 /// [compact], the width-derived or pinned scaling from
 /// [CompactDanmakuMetrics].
-BarrageConfig roomBarrageConfig(
+BarrageConfig playerBarrageConfig(
   DanmakuStyle style,
   int fps, {
   String? family,
@@ -61,7 +61,7 @@ BarrageConfig roomBarrageConfig(
     // The reference's 弹幕帧率: the manual rate, or the display policy's cap
     // (60 FPS in power saving/balanced).
     fps: fps,
-    // The reference's 轨道高度/表情大小/重叠间距: the room surface draws them
+    // The reference's 轨道高度/表情大小/重叠间距: the player surface draws them
     // as stored; a compact surface derives them from its scaled text.
     trackHeight: compact?.trackHeight ?? style.trackHeight,
     emojiSize: compact?.emojiSize ?? style.emojiSize,
@@ -80,12 +80,12 @@ BarrageConfig roomBarrageConfig(
     // it.
     emitInterval: style.emitInterval,
     // The reference's 固定弹幕停留时长: how long a top- or bottom-pinned
-    // message stays on a room surface (a compact surface keeps its own
+    // message stays on a player surface (a compact surface keeps its own
     // shorter stay, which is what fits inside a small window).
     fixedDuration: compact == null
         ? (fixedDuration ?? const Duration(seconds: 4))
         : CompactDanmakuMetrics.fixedDuration,
-    // The reference's 光栅化 and its caches: the room surface keeps the
+    // The reference's 光栅化 and its caches: the player surface keeps the
     // stored sizes, the compact surface its smaller ones.
     rasterizeItems: style.rasterize,
     barragePoolMaxSize: compact == null ? style.barragePoolMaxSize : CompactDanmakuMetrics.barragePoolMaxSize,

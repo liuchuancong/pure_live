@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_device/live_device.dart' show PlatformScreenOrientationService, ScreenOrientationService;
+import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
@@ -25,11 +26,20 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_comfort.dart'
 import 'package:pure_live/modules/hongguo/controller/hongguo_danmaku.dart'
     show HongguoDanmakuDensity, hongguoDanmakuSettingsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_decoder.dart' show hongguoDecoderLessonsProvider;
+import 'package:pure_live/modules/hongguo/controller/hongguo_downloads.dart'
+    show
+        HongguoDownloadEnqueue,
+        HongguoDownloadItem,
+        HongguoDownloadPhase,
+        hongguoDownloadOf,
+        hongguoDownloadQualityProvider,
+        hongguoDownloadsProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart'
     show HongguoQualityChoice, hongguoSettingsProvider;
-import 'package:pure_live/modules/hongguo/controller/hongguo_social.dart' show hongguoDanmakuProvider;
+import 'package:pure_live/modules/hongguo/controller/hongguo_social.dart'
+    show HongguoDanmakuController, hongguoDanmakuProvider;
 import 'package:pure_live/modules/hongguo/official/hongguo_account.dart' show HongguoAccountClient, HongguoCredentials;
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoRendition, kHongguoSite;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_comment_panel.dart' show HongguoCommentPanel;
@@ -95,6 +105,13 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
 
   /// The catalogue hanging over the bar, when one is open.
   _HongguoPanel? _openPanel;
+
+  /// The bar and each picker's box: the open catalogue hangs over the button
+  /// that raised it rather than at the picture's end edge.
+  final GlobalKey _barAnchor = GlobalKey(debugLabel: 'hongguo-bar');
+  final Map<_HongguoPanel, GlobalKey> _panelAnchors = {
+    for (final panel in _HongguoPanel.values) panel: GlobalKey(debugLabel: 'hongguo-picker-${panel.name}'),
+  };
 
   /// The playing episode's row in the episodes catalogue, so opening the
   /// catalogue brings it into view instead of starting at the first.
@@ -179,6 +196,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   late final HongguoAccountClient _accountClient;
   late final HongguoLibraryController _library;
 
+  /// The danmaku clock the leaving page stops; captured for the same reason as
+  /// the rest of this block.
+  late final HongguoDanmakuController _danmakuNotifier;
+
   /// The sign-in the last build saw; the leaving page uploads with it
   /// rather than asking a disposed scope.
   HongguoCredentials? _accountCredentials;
@@ -196,6 +217,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     _kernel = ref.read(playerKernelProvider);
     _accountClient = ref.read(hongguoAccountClientProvider);
     _library = ref.read(hongguoLibraryProvider.notifier);
+    _danmakuNotifier = ref.read(hongguoDanmakuProvider.notifier);
     _resumeSeconds = widget.resumeSeconds;
     ref.listenManual(roomPresentationProvider, (_, next) => _presentationMode = next, fireImmediately: true);
     WidgetsBinding.instance.addObserver(this);
@@ -225,16 +247,27 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   void didPushNext() {
     final handle = _handle;
     if (handle != null && (_transport?.isPlaying ?? false)) {
-      unawaited(handle.pause());
+      unawaited(handle.pause().catchError((Object _) {}));
     }
   }
 
   @override
   void dispose() {
+    _disposed = true;
+    // The player goes quiet before anything else: the route's leave animation
+    // runs while the release's queue drains, and the episode must not be
+    // heard over the page the viewer returned to.
+    final handle = _handle;
+    if (handle != null) {
+      if (_presentationMode != PresentationMode.normal) {
+        unawaited(_presentationNotifier.exit(handle.id));
+      }
+      _silence(handle);
+      unawaited(_kernel.release(handle.id));
+    }
     WidgetsBinding.instance.removeObserver(this);
     _routeObserver?.unsubscribe(this);
     _saveProgress(force: true);
-    _disposed = true;
     _hideTimer?.cancel();
     _hideTimer = null;
     _hoverTimer?.cancel();
@@ -251,16 +284,31 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     unawaited(_eventSub?.cancel() ?? Future<void>.value());
     unawaited(_geometrySub?.cancel() ?? Future<void>.value());
     _geometrySub = null;
-    ref.read(hongguoDanmakuProvider.notifier).stop();
-    final handle = _handle;
-    if (handle != null) {
-      if (_presentationMode != PresentationMode.normal) {
-        unawaited(_presentationNotifier.exit(handle.id));
-      }
-      unawaited(_kernel.release(handle.id));
-    }
+    _danmakuNotifier.stop();
     _playFocus.dispose();
     super.dispose();
+  }
+
+  /// Silences a handle the moment the page lets it go: mute first — it takes
+  /// effect at once — then pause. The release below is queued behind whatever
+  /// the playback is doing (an open still dialling a stuck proxy takes its
+  /// whole budget), and the episode must not be heard over the page the
+  /// viewer returned to while that queue drains. Both are fire-and-forget; a
+  /// handle already being released is silent by definition, so a refusal
+  /// needs no answer — the room controller's own teardown does the same.
+  static void _silence(PlayerHandle handle) {
+    unawaited(() async {
+      try {
+        await handle.setMute(muted: true);
+      } on Object {
+        // Already gone.
+      }
+      try {
+        await handle.pause();
+      } on Object {
+        // Already gone.
+      }
+    }());
   }
 
   Future<void> _load() async {
@@ -360,7 +408,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
             preferredBackend: ref.read(playerKernelBackendProvider).id,
           );
       if (!mounted || _disposed) {
-        if (existing == null) unawaited(_kernel.release(handle.id));
+        if (existing == null) {
+          _silence(handle);
+          unawaited(_kernel.release(handle.id));
+        }
         return;
       }
       _handle = handle;
@@ -399,6 +450,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       final stale = _handle;
       if (stale != null) {
         _handle = null;
+        _silence(stale);
         unawaited(_kernel.release(stale.id));
       }
       setState(() => _opening = false);
@@ -971,6 +1023,33 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       if (next != PresentationMode.fullscreen || previous == PresentationMode.fullscreen) return;
       applyFullscreenOrientation(_screenOrientation, aspectRatio: _aspectRatio);
     });
+    // A download the queue finished or failed says so here too — a toast
+    // names the file, however the page was left.
+    ref.listen(hongguoDownloadsProvider, (previous, next) {
+      final episode = _episode;
+      if (episode == null) return;
+      final before = {for (final item in previous ?? const <HongguoDownloadItem>[]) item.id: item.phase};
+      for (final item in next) {
+        if (item.id != episode.vid || before[item.id] == item.phase) continue;
+        if (!mounted) return;
+        final t = context.t;
+        if (item.phase == HongguoDownloadPhase.done) {
+          showDsToast(
+            context: context,
+            title: t.hongguo.downloadDone(name: item.fileName),
+            status: DsStatus.success,
+          );
+        } else if (item.phase == HongguoDownloadPhase.failed) {
+          // The reason belongs on the toast; the row keeps it too.
+          showDsToast(
+            context: context,
+            title: t.hongguo.downloadFailed,
+            description: item.error,
+            status: DsStatus.danger,
+          );
+        }
+      }
+    });
     final presentation = ref.watch(roomPresentationProvider);
     final t = context.t;
     final detail = _detail;
@@ -980,11 +1059,28 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     if (immersive) {
       return Scaffold(backgroundColor: colors.canvas, body: _playerSurface(context, immersive: true));
     }
+    // The arrows mirror the room page: up and down take the wheel's step (the
+    // 画质与音频 setting) toward the volume, left and right skip five seconds.
+    // A TV keeps its arrows for focus; the remote drives the volume itself.
+    final tv = ref.watch(platformRuntimeProvider).environment.runtime.formFactor == FormFactor.tv;
+    final volumeStep = ref.watch(playbackSettingsProvider.select((settings) => settings.volumeWheelStepPercent)) / 100;
+    void nudgeVolume(double delta) => unawaited(_setVolume((_volume + delta).clamp(0.0, 1.0)));
+    void nudgeSeek(double delta) {
+      final position = _transport?.position;
+      if (position == null) return;
+      final target = position.inMilliseconds / 1000 + delta;
+      unawaited(_seekTo(target < 0 ? 0 : target));
+    }
+
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.space): _togglePlay,
         const SingleActivator(LogicalKeyboardKey.keyF): _toggleFullscreen,
         const SingleActivator(LogicalKeyboardKey.escape): _leave,
+        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowUp): () => nudgeVolume(volumeStep),
+        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowDown): () => nudgeVolume(-volumeStep),
+        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowLeft): () => nudgeSeek(-5),
+        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowRight): () => nudgeSeek(5),
       },
       child: Scaffold(
         backgroundColor: colors.surface,
@@ -1149,6 +1245,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 onPressed: () => unawaited(_openEpisode(next)),
                 child: Text(t.hongguo.nextEpisode),
               ),
+            if (episode != null) _downloadButton(context, episode),
           ],
         ),
         if (meta.intro.isNotEmpty)
@@ -1170,6 +1267,69 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final index = episodes.indexWhere((episode) => episode.vid == current.vid);
     if (index < 0 || index + 1 >= episodes.length) return null;
     return episodes[index + 1];
+  }
+
+  /// The watch head's download button: idle it asks the queue, moving it
+  /// reports the percent, paused it resumes, done it stands down.
+  Widget _downloadButton(BuildContext context, HongguoEpisode episode) {
+    final t = context.t;
+    final task = hongguoDownloadOf(ref.watch(hongguoDownloadsProvider), episode.vid);
+    final label = switch (task?.phase) {
+      HongguoDownloadPhase.queued => t.hongguo.downloadQueuedLabel,
+      HongguoDownloadPhase.running => '${task!.total > 0 ? task.received * 100 ~/ task.total : 0}%',
+      HongguoDownloadPhase.paused => t.hongguo.downloadResume,
+      HongguoDownloadPhase.done => t.hongguo.downloaded,
+      HongguoDownloadPhase.failed || null => t.hongguo.download,
+    };
+    final busy =
+        task != null && (task.phase == HongguoDownloadPhase.running || task.phase == HongguoDownloadPhase.queued);
+    final finished = task != null && task.phase == HongguoDownloadPhase.done;
+    return DsButton(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      leading: busy ? const DsSpinner(style: DsSpinnerStyle(size: 12)) : const DsIcon(DsIcons.download, size: 16),
+      onPressed: busy || finished || _detail == null ? null : () => unawaited(_startDownload()),
+      child: Text(label),
+    );
+  }
+
+  /// Hands the current episode to the app-wide download queue. The queue
+  /// resolves its own ladder and decrypting proxy when the task's turn
+  /// comes, and the 下载管理 page (the station's sidebar, or Settings →
+  /// 红果短剧) takes over from there.
+  Future<void> _startDownload() async {
+    final t = context.t;
+    final episode = _episode;
+    final detail = _detail;
+    if (episode == null || detail == null) return;
+    final episodes = detail.episodes;
+    final position = episodes.indexWhere((entry) => entry.vid == episode.vid);
+    final result = await ref
+        .read(hongguoDownloadsProvider.notifier)
+        .download(
+          vid: episode.vid,
+          seriesId: widget.seriesId,
+          title: detail.meta.title,
+          part: episode.title.isEmpty ? t.hongguo.episodeLabel(index: episode.index) : episode.title,
+          index: episode.index > 0 ? episode.index : position + 1,
+          parts: episodes.isEmpty ? 1 : episodes.length,
+          maxHeight: ref.read(hongguoDownloadQualityProvider).maxHeight,
+          cover: detail.meta.cover,
+        );
+    if (!mounted) return;
+    switch (result.outcome) {
+      case HongguoDownloadEnqueue.queued:
+        showDsToast(context: context, title: t.hongguo.downloadQueued, status: DsStatus.success);
+      case HongguoDownloadEnqueue.duplicate:
+        showDsToast(context: context, title: t.hongguo.downloadDuplicate);
+      case HongguoDownloadEnqueue.failed:
+        showDsToast(
+          context: context,
+          title: t.hongguo.downloadFailed,
+          description: result.error,
+          status: DsStatus.danger,
+        );
+    }
   }
 
   /// The episode catalogue's name: the phone's own "选集 · 全50集".
@@ -1449,21 +1609,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (_openPanel case final panel?)
-                            Padding(
-                              padding: const EdgeInsetsDirectional.only(end: DsSpace.s12, bottom: DsSpace.s4),
-                              child: Align(
-                                alignment: AlignmentDirectional.centerEnd,
-                                child: MouseRegion(
-                                  onEnter: (_) => _leaveTimer?.cancel(),
-                                  onExit: (_) => _leavePanelSoon(),
-                                  child: _panel(t, panel),
-                                ),
-                              ),
-                            ),
-                          _controlBar(context),
-                        ],
+                        children: [_controlBar(context)],
                       ),
                     ),
                   )
@@ -1479,6 +1625,22 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                       onWake: _wake,
                     ),
                   ),
+                // The catalogue floats over the bar, above whatever status
+                // pill it carries.
+                if (showBar)
+                  if (_openPanel case final panel?)
+                    Positioned.fill(
+                      child: PlayerPanelHost(
+                        anchorKey: _panelAnchors[panel]!,
+                        barKey: _barAnchor,
+                        width: _panelWidth(panel),
+                        child: MouseRegion(
+                          onEnter: (_) => _leaveTimer?.cancel(),
+                          onExit: (_) => _leavePanelSoon(),
+                          child: _panel(t, panel),
+                        ),
+                      ),
+                    ),
               ],
             ),
           ),
@@ -1546,6 +1708,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final timeStyle = theme.typography.numeric(theme.typography.caption.copyWith(color: playerInk));
     final speedLabel = _speed == _speed.roundToDouble() ? '${_speed.toInt()}x' : '${_speed}x';
     return Container(
+      key: _barAnchor,
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s8),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -1671,7 +1834,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 ),
                 _pickerButton(
                   panel: _HongguoPanel.quality,
-                  icon: DsIcons.hd,
+                  icon: DsIcons.gauge,
                   label: (_attempted?.quality ?? 0) > 0 ? '${_attempted!.quality}P' : t.hongguo.quality,
                   semanticLabel: t.hongguo.quality,
                   compact: compact,
@@ -1692,13 +1855,13 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 ),
                 _pickerButton(
                   panel: _HongguoPanel.speed,
-                  icon: DsIcons.gauge,
+                  icon: DsIcons.timer,
                   label: speedLabel,
                   semanticLabel: t.hongguo.speed,
                   compact: compact,
                 ),
                 MediaBarButton(
-                  icon: DsIcons.maximize2,
+                  icon: DsIcons.fullscreen,
                   label: t.hongguo.fullscreen,
                   onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
                 ),
@@ -1730,53 +1893,67 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   }) {
     final theme = DsTheme.of(context);
     final open = _openPanel == panel;
-    return MouseRegion(
-      onEnter: (_) => _hoverPanel(panel),
-      onExit: (_) => _leavePanelSoon(),
-      child: TvFocusScale(
-        child: DsPressable(
-          semanticLabel: semanticLabel,
-          onPressed: () {
-            _wake();
-            if (_openPanel == panel) {
-              _closePanel();
-            } else {
-              _showPanel(panel);
-            }
-          },
-          builder: (context, states, _) {
-            final lit = open || states.contains(WidgetState.hovered);
-            return Container(
-              height: theme.sizes.sm,
-              padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
-              decoration: DsBoxDecoration(
-                color: lit ? playerInkHover : null,
-                borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: DsSpace.s4,
-                children: [
-                  DsIcon(icon, size: theme.sizes.iconSm, color: playerInkMuted),
-                  if (!compact)
-                    ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: panel == _HongguoPanel.episodes ? 168 : 110),
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: playerInk),
+    return KeyedSubtree(
+      key: _panelAnchors[panel],
+      child: MouseRegion(
+        onEnter: (_) => _hoverPanel(panel),
+        onExit: (_) => _leavePanelSoon(),
+        child: TvFocusScale(
+          child: DsPressable(
+            semanticLabel: semanticLabel,
+            onPressed: () {
+              _wake();
+              if (_openPanel == panel) {
+                _closePanel();
+              } else {
+                _showPanel(panel);
+              }
+            },
+            builder: (context, states, _) {
+              final lit = open || states.contains(WidgetState.hovered);
+              return Container(
+                height: theme.sizes.sm,
+                padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),
+                decoration: DsBoxDecoration(
+                  color: lit ? playerInkHover : null,
+                  borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: DsSpace.s4,
+                  children: [
+                    DsIcon(icon, size: theme.sizes.iconSm, color: playerInkMuted),
+                    if (!compact)
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: panel == _HongguoPanel.episodes ? 168 : 110),
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.caption.copyWith(color: playerInk),
+                        ),
                       ),
-                    ),
-                  DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: playerInkMuted),
-                ],
-              ),
-            );
-          },
+                    DsIcon(open ? DsIcons.chevronDown : DsIcons.chevronUp, size: 12, color: playerInkMuted),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
   }
+
+  /// The width each catalogue asks for; the anchored host centres the card
+  /// on its picker with this measure.
+  static double _panelWidth(_HongguoPanel panel) => switch (panel) {
+    _HongguoPanel.fit => 180,
+    _HongguoPanel.sleep => 220,
+    _HongguoPanel.speed => 180,
+    _HongguoPanel.quality => 220,
+    _HongguoPanel.episodes => 260,
+    _HongguoPanel.danmaku => 200,
+  };
 
   /// The open picker's catalogue.
   Widget _panel(Translations t, _HongguoPanel panel) {
@@ -1785,9 +1962,12 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         final fit = ref.watch(playbackSettingsProvider).fit;
         return PlayerOverlayPanel(
           title: t.settings.fit,
-          width: 180,
+          width: _panelWidth(panel),
           children: [
-            for (final mode in const [PlaybackFit.contain, PlaybackFit.cover, PlaybackFit.fill])
+            // The same six the room and the video page list — a shortlist
+            // here would make the app-wide ratio read as broken on this one
+            // page.
+            for (final mode in PlaybackFit.values)
               PlayerPanelOption(
                 label: fitLabels(t)[mode.index],
                 selected: mode == fit,
@@ -1801,6 +1981,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       case _HongguoPanel.sleep:
         return PlayerOverlayPanel(
           title: t.hongguo.sleep,
+          width: _panelWidth(panel),
           children: [
             PlayerPanelOption(
               label: t.hongguo.sleepOff,
@@ -1841,7 +2022,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       case _HongguoPanel.speed:
         return PlayerOverlayPanel(
           title: t.hongguo.speed,
-          width: 180,
+          width: _panelWidth(panel),
           children: [
             for (final speed in const <double>[0.5, 0.75, 1, 1.25, 1.5, 2])
               PlayerPanelOption(
@@ -1858,6 +2039,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         final choice = ref.watch(hongguoSettingsProvider).quality;
         return PlayerOverlayPanel(
           title: t.hongguo.quality,
+          width: _panelWidth(panel),
           children: [
             for (final value in HongguoQualityChoice.values)
               PlayerPanelOption(
@@ -1879,7 +2061,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         final episodes = _detail?.episodes ?? const <HongguoEpisode>[];
         return PlayerOverlayPanel(
           title: _episodesLabel(t),
-          width: 260,
+          width: _panelWidth(panel),
           children: [
             // A series may run to hundreds of episodes; the catalogue keeps
             // its own height and scrolls inside the panel.
@@ -1916,7 +2098,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         String speedText(double speed) => '${speed == speed.roundToDouble() ? speed.toInt() : speed}x';
         return PlayerOverlayPanel(
           title: t.hongguo.danmaku,
-          width: 200,
+          width: _panelWidth(panel),
           children: [
             // A tap walks the value on, as the reference's own panel does,
             // so the picture stays visible while the look is tuned.
@@ -2069,7 +2251,8 @@ final class _RailAction extends StatelessWidget {
             spacing: DsSpace.s4,
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
+                duration: theme.motion.toneDuration,
+                curve: theme.motion.toneCurve,
                 width: 38,
                 height: 38,
                 alignment: Alignment.center,
