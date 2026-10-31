@@ -8,7 +8,7 @@ import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoCard, VodVideoRow;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodVideoCard, VodVideoRow, kVodCardInfoExtent;
 import 'package:pure_live/shared/shared.dart';
 
 /// The regions the 分区 page offers: the channel ids (1xxx) the region feed
@@ -151,6 +151,7 @@ final class _RegionFeedView extends ConsumerWidget {
       layout: ref.watch(browseLayoutProvider),
       listMainAxisExtent: 104,
       listItemBuilder: (context, video) => VodVideoRow(video: video, onOpen: () => onOpen(video)),
+      infoExtent: kVodCardInfoExtent,
       crossSpacing: settings.crossSpacing,
       mainSpacing: settings.mainSpacing,
       isLoading: state.loading,

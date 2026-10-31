@@ -232,7 +232,9 @@ final class _AreaFollowButton extends ConsumerWidget {
     final followed = ref.watch(followedAreasProvider);
     final isFollowed = followed.ready && followed.areas.any((item) => item.identityKey == area.identityKey);
     return DsTooltip(
-      message: isFollowed ? context.t.areas.unfollow : context.t.areas.viewFollowed,
+      // The tooltip names the press, as the card menu and the heart's own
+      // label do — "followed areas" is the view's name, not this action.
+      message: isFollowed ? context.t.areas.unfollow : context.t.areas.follow,
       child: AreaFollowButton(
         followed: isFollowed,
         onPressed: () async {

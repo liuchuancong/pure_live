@@ -79,19 +79,6 @@ final class IptvSettingsPane extends ConsumerWidget {
             ],
             onChanged: ref.read(iptvUpdateIntervalProvider.notifier).select,
           ),
-        SettingsConfigRow(
-          leading: const DsIcon(DsIcons.user),
-          title: t.iptv.customUserAgent,
-          description: t.iptv.customUserAgentDesc,
-          controlWidth: 280,
-          control: DsTextField(
-            initialValue: userAgent,
-            clearable: true,
-            placeholder: t.iptv.customUserAgent,
-            onChanged: (value) => unawaited(ref.read(iptvUserAgentProvider.notifier).set(value)),
-            semanticLabel: t.iptv.customUserAgent,
-          ),
-        ),
         if (autoSync)
           SettingsConfigRow(
             leading: const DsIcon(DsIcons.calendarClock),
@@ -114,13 +101,35 @@ final class IptvSettingsPane extends ConsumerWidget {
         ),
       ],
     );
+    // The user agent travels with every remote fetch the module makes —
+    // playlists as much as guides — so it stands apart from the schedule.
+    final networkSection = DsListSection(
+      header: Text(t.settings.iptvNetwork),
+      children: [
+        SettingsConfigRow(
+          leading: const DsIcon(DsIcons.user),
+          title: t.iptv.customUserAgent,
+          description: t.iptv.customUserAgentDesc,
+          controlWidth: 280,
+          control: DsTextField(
+            initialValue: userAgent,
+            clearable: true,
+            placeholder: t.iptv.customUserAgent,
+            onChanged: (value) => unawaited(ref.read(iptvUserAgentProvider.notifier).set(value)),
+            semanticLabel: t.iptv.customUserAgent,
+          ),
+        ),
+      ],
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
         guideSection,
-        const DsListSection(
-          children: [
+        networkSection,
+        DsListSection(
+          header: Text(t.settings.iptvSections),
+          children: const [
             SettingsChildEntry(child: SettingsSection.iptvBrowse),
             SettingsChildEntry(child: SettingsSection.iptvGroups),
           ],
@@ -148,6 +157,7 @@ final class IptvBrowsePane extends ConsumerWidget {
       spacing: DsSpace.s16,
       children: [
         DsListSection(
+          header: Text(t.settings.navIptvBrowse),
           children: [
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.hash),
@@ -188,6 +198,7 @@ final class IptvBrowsePane extends ConsumerWidget {
           ],
         ),
         DsListSection(
+          header: Text(t.settings.resetGroup),
           children: [
             DsListRow(
               leading: const DsIcon(DsIcons.rotateCcw),
@@ -217,6 +228,7 @@ final class IptvGroupsPane extends ConsumerWidget {
     final controller = ref.read(iptvGroupsProvider.notifier);
     if (groups.isEmpty) {
       return DsListSection(
+        header: Text(t.settings.navIptvGroups),
         children: [
           Padding(
             padding: const EdgeInsets.all(DsSpace.s16),
@@ -230,6 +242,7 @@ final class IptvGroupsPane extends ConsumerWidget {
       spacing: DsSpace.s16,
       children: [
         DsListSection(
+          header: Text(t.settings.navIptvGroups),
           children: [
             for (final group in groups)
               SettingsConfigRow(

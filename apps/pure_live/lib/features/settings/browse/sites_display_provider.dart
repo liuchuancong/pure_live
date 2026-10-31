@@ -74,6 +74,23 @@ final class SitesDisplayController extends Notifier<Set<String>> {
     return true;
   }
 
+  /// Replaces the hidden set wholesale — the platform page's 编辑 save, one
+  /// write for the whole draft. The browsing pages' rules hold: at least one
+  /// platform stays shown (the caller's 「至少保留一个平台」 case), and a set
+  /// that hides the preferred platform hands the preference to the first one
+  /// still shown. Answers whether the set was applied.
+  Future<bool> setHidden(Set<String> hidden) async {
+    final order = ref.read(sitesOrderProvider);
+    final visible = [for (final id in order.order) if (!hidden.contains(id)) id];
+    if (visible.isEmpty) return false;
+    if (!visible.contains(order.preferred)) {
+      await ref.read(sitesOrderProvider.notifier).setPreferred(visible.first);
+    }
+    state = Set.of(hidden);
+    await _persist();
+    return true;
+  }
+
   Future<void> _persist() async {
     try {
       await StoragePrefs.setStringList(hiddenKey, state.toList());

@@ -57,6 +57,8 @@ import 'package:pure_live/modules/music/controller/music_sync_server.dart'
         musicSyncServerPortProvider,
         musicSyncServerProvider,
         musicSyncServerStatusProvider;
+import 'package:pure_live/modules/music/controller/music_ui_settings.dart'
+    show MusicUiElement, musicUiSettingsProvider;
 import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart'
     show CachedLyricSource, musicLyricCacheCountProvider;
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart' show MusicEqEditor;
@@ -75,6 +77,8 @@ final class MusicSettingsPane extends ConsumerWidget {
     final settings = ref.watch(musicSettingsProvider);
     final controller = ref.read(musicSettingsProvider.notifier);
     final dislikes = ref.watch(musicDislikesProvider);
+    final ui = ref.watch(musicUiSettingsProvider);
+    final uiController = ref.read(musicUiSettingsProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -95,16 +99,6 @@ final class MusicSettingsPane extends ConsumerWidget {
                   ),
               ],
               onChanged: (id) => unawaited(controller.setDefaultSource(id)),
-            ),
-            SettingsChoiceRow<MusicSourceNameType>(
-              leading: const DsIcon(DsIcons.tag),
-              title: t.music.sourceNameType,
-              description: t.music.sourceNameTypeDesc,
-              value: settings.sourceNameType,
-              options: [
-                for (final type in MusicSourceNameType.values) DsSelectOption(value: type, label: type.label(t)),
-              ],
-              onChanged: (type) => unawaited(controller.setSourceNameType(type)),
             ),
             SettingsChoiceRow<MusicQuality>(
               leading: const DsIcon(DsIcons.slidersHorizontal),
@@ -133,18 +127,9 @@ final class MusicSettingsPane extends ConsumerWidget {
                         label: device.description.isEmpty ? device.name : device.description,
                       ),
                   ],
-                  onChanged: (name) => unawaited(_selectAudioDevice(ref, name)),
+                  onChanged: (name) => unawaited(_selectAudioDevice(context, ref, name)),
                 );
               },
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.skipForward),
-              title: t.music.skipOnError,
-              description: t.music.skipOnErrorDesc,
-              control: DsSwitch(
-                value: settings.skipOnError,
-                onChanged: (value) => unawaited(controller.setSkipOnError(value: value)),
-              ),
             ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.play),
@@ -153,6 +138,15 @@ final class MusicSettingsPane extends ConsumerWidget {
               control: DsSwitch(
                 value: settings.autoplay,
                 onChanged: (value) => unawaited(controller.setAutoplay(value: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.skipForward),
+              title: t.music.skipOnError,
+              description: t.music.skipOnErrorDesc,
+              control: DsSwitch(
+                value: settings.skipOnError,
+                onChanged: (value) => unawaited(controller.setSkipOnError(value: value)),
               ),
             ),
             SettingsConfigRow(
@@ -172,6 +166,45 @@ final class MusicSettingsPane extends ConsumerWidget {
                 value: settings.autoCleanPlayedList,
                 onChanged: (value) => unawaited(controller.setAutoCleanPlayedList(value: value)),
               ),
+            ),
+          ],
+        ),
+        DsListSection(
+          header: Text(t.music.settingsInterface),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.image),
+              title: t.music.uiBlurredBackdrop,
+              description: t.music.uiBlurredBackdropDesc,
+              control: DsSwitch(
+                value: ui.shows(MusicUiElement.blurredBackdrop),
+                onChanged: (value) =>
+                    unawaited(uiController.setElement(MusicUiElement.blurredBackdrop, visible: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.disc3),
+              title: t.music.uiVinylDisc,
+              description: t.music.uiVinylDiscDesc,
+              control: DsSwitch(
+                value: ui.shows(MusicUiElement.vinylDisc),
+                onChanged: (value) => unawaited(uiController.setElement(MusicUiElement.vinylDisc, visible: value)),
+              ),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.audioLines),
+              title: t.music.uiSpectrum,
+              description: t.music.uiSpectrumDesc,
+              control: DsSwitch(
+                value: ui.shows(MusicUiElement.spectrum),
+                onChanged: (value) => unawaited(uiController.setElement(MusicUiElement.spectrum, visible: value)),
+              ),
+            ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.rotateCcw),
+              title: Text(t.music.uiReset),
+              description: Text(t.music.uiResetDesc),
+              onPressed: () => unawaited(uiController.reset()),
             ),
           ],
         ),
@@ -196,6 +229,16 @@ final class MusicSettingsPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setShowSource(value: value)),
               ),
             ),
+            SettingsChoiceRow<MusicSourceNameType>(
+              leading: const DsIcon(DsIcons.fileCode),
+              title: t.music.sourceNameType,
+              description: t.music.sourceNameTypeDesc,
+              value: settings.sourceNameType,
+              options: [
+                for (final type in MusicSourceNameType.values) DsSelectOption(value: type, label: type.label(t)),
+              ],
+              onChanged: (type) => unawaited(controller.setSourceNameType(type)),
+            ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.search),
               title: t.music.searchHot,
@@ -208,6 +251,7 @@ final class MusicSettingsPane extends ConsumerWidget {
           ],
         ),
         DsListSection(
+          header: Text(t.music.dislikeSection),
           children: [
             DsListRow(
               leading: const DsIcon(DsIcons.ban),
@@ -219,16 +263,6 @@ final class MusicSettingsPane extends ConsumerWidget {
                 onPressed: dislikes.isEmpty ? null : () => unawaited(_clearDislikes(context, ref)),
                 child: Text(t.music.dislikeRulesClear),
               ),
-            ),
-          ],
-        ),
-        DsListSection(
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.rotateCcw),
-              title: Text(t.music.playbackReset),
-              description: Text(t.music.playbackResetDesc),
-              onPressed: () => unawaited(controller.reset()),
             ),
           ],
         ),
@@ -276,13 +310,28 @@ final class MusicSettingsPane extends ConsumerWidget {
             ),
           ],
         ),
+        // The reset verb closes the page: everything above it is tunable in
+        // place, this one throws the tuning away.
+        DsListSection(
+          header: Text(t.music.settingsReset),
+          children: [
+            DsListRow(
+              leading: const DsIcon(DsIcons.rotateCcw),
+              title: Text(t.music.playbackReset),
+              description: Text(t.music.playbackResetDesc),
+              onPressed: () => unawaited(controller.reset()),
+            ),
+          ],
+        ),
       ],
     );
   }
 
   /// Sends the sound to the picked device and refreshes the row's marks.
-  Future<void> _selectAudioDevice(WidgetRef ref, String name) async {
+  Future<void> _selectAudioDevice(BuildContext context, WidgetRef ref, String name) async {
     await ref.read(musicPlayerProvider.notifier).selectAudioDevice(name);
+    // The switch may outlive the pane; a defunct ref takes no invalidate.
+    if (!context.mounted) return;
     ref.invalidate(musicAudioDevicesProvider);
   }
 
@@ -300,8 +349,8 @@ final class MusicSettingsPane extends ConsumerWidget {
 
   Future<void> _clearLyricCache(BuildContext context, WidgetRef ref) async {
     await CachedLyricSource.clearLyricCache();
-    ref.invalidate(musicLyricCacheCountProvider);
     if (!context.mounted) return;
+    ref.invalidate(musicLyricCacheCountProvider);
     showDsToast(context: context, title: context.t.music.cacheCleared, status: DsStatus.success);
   }
 
@@ -469,8 +518,12 @@ final class MusicSourcesPane extends ConsumerWidget {
       destructive: true,
     );
     if (!confirmed || !context.mounted) return;
+    // The default check reads before the removal: past that await the pane's
+    // ref may already be defunct.
+    final wasDefault = ref.read(musicSettingsProvider).defaultSourceId == source.id;
     await ref.read(musicSourcesProvider.notifier).remove(source.id);
-    if (ref.read(musicSettingsProvider).defaultSourceId == source.id) {
+    if (!context.mounted) return;
+    if (wasDefault) {
       await ref.read(musicSettingsProvider.notifier).setDefaultSource('');
     }
     if (context.mounted) {
@@ -551,6 +604,7 @@ final class MusicSourcesPane extends ConsumerWidget {
           )
         else
           DsListSection(
+            header: Text(t.music.sourcesImported),
             children: [
               for (final source in sources)
                 DsListRow(
@@ -571,7 +625,7 @@ final class MusicSourcesPane extends ConsumerWidget {
                             unawaited(ref.read(musicSourcesProvider.notifier).setEnabled(source.id, enabled: value)),
                       ),
                       DsButton.icon(
-                        variant: DsButtonVariant.ghost,
+                        variant: DsButtonVariant.secondary,
                         size: DsSize.sm,
                         semanticLabel: t.music.sourceDelete,
                         onPressed: () => unawaited(_remove(context, ref, source)),
@@ -702,7 +756,7 @@ final class _MusicSourceCatalogSectionState extends ConsumerState<MusicSourceCat
     }
     final imported = widget.sources.any((source) => entry.names.contains(source.name));
     return DsButton(
-      variant: imported ? DsButtonVariant.ghost : DsButtonVariant.secondary,
+      variant: DsButtonVariant.secondary,
       size: DsSize.sm,
       onPressed: imported ? null : () => unawaited(_import(entry)),
       child: Text(imported ? t.music.catalogImported : t.music.catalogImport),
@@ -764,7 +818,7 @@ final class MusicDownloadPane extends ConsumerWidget {
       ),
     );
     field.dispose();
-    if (pattern == null) return;
+    if (pattern == null || !context.mounted) return;
     await ref.read(musicSettingsProvider.notifier).setDownloadPattern(pattern);
   }
 
@@ -797,7 +851,11 @@ final class MusicDownloadPane extends ConsumerWidget {
             ),
           ],
         ),
+        // The download pipeline in three passes, lx-music's own grouping:
+        // how the fetch runs, what the file is called, and what gets
+        // written inside it.
         DsListSection(
+          header: Text(t.music.downloadBehaviour),
           children: [
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.refreshCw),
@@ -808,6 +866,28 @@ final class MusicDownloadPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setDownloadUseOtherSource(value: value)),
               ),
             ),
+            SettingsChoiceRow<int>(
+              leading: const DsIcon(DsIcons.download),
+              title: t.music.downloadMaxConcurrent,
+              description: t.music.downloadMaxConcurrentDesc,
+              value: settings.downloadMaxConcurrent,
+              options: [for (var count = 1; count <= 5; count++) DsSelectOption(value: count, label: '$count')],
+              onChanged: (value) => unawaited(controller.setDownloadMaxConcurrent(value)),
+            ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.fileCheck),
+              title: t.music.downloadSkipExisting,
+              description: t.music.downloadSkipExistingDesc,
+              control: DsSwitch(
+                value: settings.downloadSkipExisting,
+                onChanged: (value) => unawaited(controller.setDownloadSkipExisting(value: value)),
+              ),
+            ),
+          ],
+        ),
+        DsListSection(
+          header: Text(t.music.downloadNaming),
+          children: [
             SettingsChoiceRow<MusicDownloadType>(
               leading: const DsIcon(DsIcons.fileCog),
               title: t.music.downloadType,
@@ -827,6 +907,20 @@ final class MusicDownloadPane extends ConsumerWidget {
                 child: Text(t.music.downloadPatternEdit),
               ),
             ),
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.folderTree),
+              title: t.music.downloadGroupByList,
+              description: t.music.downloadGroupByListDesc,
+              control: DsSwitch(
+                value: settings.downloadGroupByList,
+                onChanged: (value) => unawaited(controller.setDownloadGroupByList(value: value)),
+              ),
+            ),
+          ],
+        ),
+        DsListSection(
+          header: Text(t.music.downloadTags),
+          children: [
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.image),
               title: t.music.downloadEmbedCover,
@@ -872,32 +966,6 @@ final class MusicDownloadPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setDownloadWriteLyric(value: value)),
               ),
             ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.fileCheck),
-              title: t.music.downloadSkipExisting,
-              description: t.music.downloadSkipExistingDesc,
-              control: DsSwitch(
-                value: settings.downloadSkipExisting,
-                onChanged: (value) => unawaited(controller.setDownloadSkipExisting(value: value)),
-              ),
-            ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.folderTree),
-              title: t.music.downloadGroupByList,
-              description: t.music.downloadGroupByListDesc,
-              control: DsSwitch(
-                value: settings.downloadGroupByList,
-                onChanged: (value) => unawaited(controller.setDownloadGroupByList(value: value)),
-              ),
-            ),
-            SettingsChoiceRow<int>(
-              leading: const DsIcon(DsIcons.download),
-              title: t.music.downloadMaxConcurrent,
-              description: t.music.downloadMaxConcurrentDesc,
-              value: settings.downloadMaxConcurrent,
-              options: [for (var count = 1; count <= 5; count++) DsSelectOption(value: count, label: '$count')],
-              onChanged: (value) => unawaited(controller.setDownloadMaxConcurrent(value)),
-            ),
           ],
         ),
       ],
@@ -930,7 +998,10 @@ final class MusicLyricPane extends ConsumerWidget {
       spacing: DsSpace.s16,
       children: [
         SettingsHint(t.music.lyricHint),
+        // What a line carries, how it paints, and where its clock sits —
+        // three concerns the reference keeps apart.
         DsListSection(
+          header: Text(t.music.lyricContent),
           children: [
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.languages),
@@ -977,6 +1048,11 @@ final class MusicLyricPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setPlayWordLyrics(value: value)),
               ),
             ),
+          ],
+        ),
+        DsListSection(
+          header: Text(t.music.lyricDisplay),
+          children: [
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.fontSize),
               title: t.music.lyricFontScale,
@@ -1023,6 +1099,11 @@ final class MusicLyricPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setLyricDragSeek(value: value)),
               ),
             ),
+          ],
+        ),
+        DsListSection(
+          header: Text(t.music.lyricTiming),
+          children: [
             SettingsChoiceRow<int>(
               leading: const DsIcon(DsIcons.clock),
               title: t.music.lyricOffset,
@@ -1090,6 +1171,7 @@ final class MusicDesktopLyricPane extends ConsumerWidget {
       children: [
         SettingsHint(t.music.desktopLyricHint),
         DsListSection(
+          header: Text(t.music.desktopLyricShow),
           children: [
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.monitor),
@@ -1832,20 +1914,10 @@ final class MusicHotkeysPane extends ConsumerWidget {
                 onChanged: (value) => unawaited(controller.setGlobalEnabled(value: value)),
               ),
             ),
-            SettingsConfigRow(
-              leading: const DsIcon(DsIcons.rotateCcw),
-              title: t.music.hkReset,
-              description: t.music.hkResetDesc,
-              control: DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: () => unawaited(controller.reset()),
-                child: Text(t.music.eqReset),
-              ),
-            ),
           ],
         ),
         DsListSection(
+          header: Text(t.music.hkAssignments),
           children: [
             for (final action in MusicHotkeyAction.values)
               SettingsConfigRow(
@@ -1861,6 +1933,22 @@ final class MusicHotkeysPane extends ConsumerWidget {
             t.music.hkNote,
             style: DsTheme.typographyOf(context).caption.copyWith(color: DsTheme.colorsOf(context).textSubtle),
           ),
+        ),
+        DsListSection(
+          header: Text(t.music.settingsReset),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.rotateCcw),
+              title: t.music.hkReset,
+              description: t.music.hkResetDesc,
+              control: DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => unawaited(controller.reset()),
+                child: Text(t.music.eqReset),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -2006,6 +2094,7 @@ final class MusicSyncPane extends ConsumerWidget {
       spacing: DsSpace.s16,
       children: [
         DsListSection(
+          header: Text(t.music.syncClient),
           children: [
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.link),
@@ -2215,7 +2304,8 @@ final class MusicSyncPane extends ConsumerWidget {
     final t = context.t;
     final current = ref.read(musicSyncProvider).host;
     final value = await _editField(context, t.music.syncHost, t.music.syncHostHint, current);
-    if (value != null) await ref.read(musicSyncProvider.notifier).setHost(value);
+    if (value == null || !context.mounted) return;
+    await ref.read(musicSyncProvider.notifier).setHost(value);
   }
 
   /// The reference's port input: a number field saved through the port
@@ -2224,7 +2314,7 @@ final class MusicSyncPane extends ConsumerWidget {
     final t = context.t;
     final current = '${ref.read(musicOpenApiPortProvider)}';
     final value = await _editField(context, t.music.openApiPort, t.music.openApiPortHint, current);
-    if (value == null) return;
+    if (value == null || !context.mounted) return;
     final port = int.tryParse(value.trim());
     if (port != null) await ref.read(musicOpenApiPortProvider.notifier).set(port);
   }
@@ -2233,7 +2323,7 @@ final class MusicSyncPane extends ConsumerWidget {
     final t = context.t;
     final current = '${ref.read(musicSyncServerPortProvider)}';
     final value = await _editField(context, t.music.syncServerPort, t.music.syncServerPortHint, current);
-    if (value == null) return;
+    if (value == null || !context.mounted) return;
     final port = int.tryParse(value.trim());
     if (port != null) await ref.read(musicSyncServerPortProvider.notifier).set(port);
   }
@@ -2260,8 +2350,14 @@ final class MusicSyncPane extends ConsumerWidget {
         actions: [
           DsButton(
             variant: DsButtonVariant.secondary,
-            onPressed: () =>
-                unawaited(provider.refresh().then((_) => field.text = ref.read(musicSyncServerAuthCodeProvider))),
+            // The refresh may land after the dialog is gone — a dead field;
+            // the new code rides back on the future, no provider read.
+            onPressed: () => unawaited(
+              provider.refresh().then((code) {
+                if (!dialogContext.mounted) return;
+                field.text = code;
+              }),
+            ),
             child: Text(t.music.syncServerRefreshCode),
           ),
           DsButton(
@@ -2289,7 +2385,7 @@ final class MusicSyncPane extends ConsumerWidget {
         title: Text(t.music.syncServerDevices),
         icon: const DsIcon(DsIcons.smartphone),
         description: StatefulBuilder(
-          builder: (context, setState) => Column(
+          builder: (listContext, setState) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: DsSpace.s8,
             children: [
@@ -2328,7 +2424,9 @@ final class MusicSyncPane extends ConsumerWidget {
                         GestureDetector(
                           onTap: () async {
                             await server.removeDevice(device.clientId);
-                            setState(() => devices = server.deviceView());
+                            // The dialog may close over the removal; the list
+                            // has nowhere to repaint then.
+                            if (listContext.mounted) setState(() => devices = server.deviceView());
                           },
                           child: const Padding(
                             padding: EdgeInsets.all(DsSpace.s4),
@@ -2340,7 +2438,7 @@ final class MusicSyncPane extends ConsumerWidget {
                   },
                 ),
               ),
-              Text(t.music.syncServerDevicesTip, style: DsTheme.of(context).typography.caption),
+              Text(t.music.syncServerDevicesTip, style: DsTheme.of(listContext).typography.caption),
             ],
           ),
         ),
@@ -2422,7 +2520,8 @@ final class MusicSyncPane extends ConsumerWidget {
   Future<void> _editAuthCode(BuildContext context, WidgetRef ref) async {
     final t = context.t;
     final value = await _editField(context, t.music.syncAuthCode, t.music.syncAuthCodeHint, '');
-    if (value != null && value.isNotEmpty) await ref.read(musicSyncProvider.notifier).setAuthCode(value);
+    if (value == null || value.isEmpty || !context.mounted) return;
+    await ref.read(musicSyncProvider.notifier).setAuthCode(value);
   }
 
   Future<String?> _editField(BuildContext context, String title, String hint, String initial) async {

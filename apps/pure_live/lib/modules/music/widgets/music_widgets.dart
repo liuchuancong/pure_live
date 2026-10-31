@@ -227,7 +227,7 @@ final class MusicSongRow extends ConsumerWidget {
               spacing: DsSpace.s4,
               children: [
                 DsButton.icon(
-                  variant: DsButtonVariant.ghost,
+                  variant: DsButtonVariant.secondary,
                   size: DsSize.sm,
                   semanticLabel: favourite ? t.music.unfavourite : t.music.favourite,
                   onPressed: onFavourite,
@@ -235,7 +235,7 @@ final class MusicSongRow extends ConsumerWidget {
                 ),
                 if (onRemove case final remove?)
                   DsButton.icon(
-                    variant: DsButtonVariant.ghost,
+                    variant: DsButtonVariant.secondary,
                     size: DsSize.sm,
                     semanticLabel: t.music.removeSong,
                     onPressed: remove,
@@ -303,7 +303,7 @@ final class MusicSongRow extends ConsumerWidget {
                     ),
                   ],
                   builder: (context, controller, _) => DsButton.icon(
-                    variant: DsButtonVariant.ghost,
+                    variant: DsButtonVariant.secondary,
                     size: DsSize.sm,
                     semanticLabel: t.music.moreActions,
                     onPressed: controller.toggle,

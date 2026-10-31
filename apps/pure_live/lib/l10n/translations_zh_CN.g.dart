@@ -1933,6 +1933,9 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '导入 M3U/TXT 播放列表后，频道就会出现在这里。'
 	String get emptyDescription => '导入 M3U/TXT 播放列表后，频道就会出现在这里。';
 
+	/// zh-CN: '打开失败'
+	String get openFailed => '打开失败';
+
 	/// zh-CN: '频道库打开失败。'
 	String get openFailedDescription => '频道库打开失败。';
 
@@ -2692,6 +2695,33 @@ class Translations$music$zh_CN {
 	/// zh-CN: '列表'
 	String get settingsList => '列表';
 
+	/// zh-CN: '界面设置'
+	String get settingsInterface => '界面设置';
+
+	/// zh-CN: '播放页模糊背景'
+	String get uiBlurredBackdrop => '播放页模糊背景';
+
+	/// zh-CN: '播放详情页以当前歌曲的封面放大模糊作为背景'
+	String get uiBlurredBackdropDesc => '播放详情页以当前歌曲的封面放大模糊作为背景';
+
+	/// zh-CN: '黑胶唱片'
+	String get uiVinylDisc => '黑胶唱片';
+
+	/// zh-CN: '宽屏播放详情页的封面右侧探出一张唱片'
+	String get uiVinylDiscDesc => '宽屏播放详情页的封面右侧探出一张唱片';
+
+	/// zh-CN: '播放频谱'
+	String get uiSpectrum => '播放频谱';
+
+	/// zh-CN: '播放详情页舞台上的实时频谱条'
+	String get uiSpectrumDesc => '播放详情页舞台上的实时频谱条';
+
+	/// zh-CN: '恢复默认显示'
+	String get uiReset => '恢复默认显示';
+
+	/// zh-CN: '重新显示上面关闭的全部界面元素'
+	String get uiResetDesc => '重新显示上面关闭的全部界面元素';
+
 	/// zh-CN: '歌曲'
 	String get searchTypeSongs => '歌曲';
 
@@ -3046,6 +3076,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '这首歌还没有歌词。'
 	String get lyricsEmpty => '这首歌还没有歌词。';
 
+	/// zh-CN: '歌词加载失败'
+	String get lyricLoadFailed => '歌词加载失败';
+
 	/// zh-CN: '打开播放页'
 	String get openPlayer => '打开播放页';
 
@@ -3057,6 +3090,9 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '清空最近播放'
 	String get clearRecent => '清空最近播放';
+
+	/// zh-CN: '还没有播放记录'
+	String get recentEmpty => '还没有播放记录';
 
 	/// zh-CN: '更多操作'
 	String get moreActions => '更多操作';
@@ -3114,6 +3150,12 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '不喜欢规则 · {count} 条'
 	String dislikeRules({required Object count}) => '不喜欢规则 · ${count} 条';
+
+	/// zh-CN: '歌曲屏蔽'
+	String get dislikeSection => '歌曲屏蔽';
+
+	/// zh-CN: '重置'
+	String get settingsReset => '重置';
 
 	/// zh-CN: '这些歌曲出现在播放队列里时会自动跳过。'
 	String get dislikeRulesDesc => '这些歌曲出现在播放队列里时会自动跳过。';
@@ -3315,6 +3357,15 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '下载目录'
 	String get downloadDirectory => '下载目录';
+
+	/// zh-CN: '下载行为'
+	String get downloadBehaviour => '下载行为';
+
+	/// zh-CN: '文件与命名'
+	String get downloadNaming => '文件与命名';
+
+	/// zh-CN: '标签与歌词'
+	String get downloadTags => '标签与歌词';
 
 	/// zh-CN: '使用默认目录'
 	String get downloadDirectoryDefault => '使用默认目录';
@@ -3535,6 +3586,15 @@ class Translations$music$zh_CN {
 	/// zh-CN: '显示翻译'
 	String get lyricTranslation => '显示翻译';
 
+	/// zh-CN: '歌词内容'
+	String get lyricContent => '歌词内容';
+
+	/// zh-CN: '歌词显示'
+	String get lyricDisplay => '歌词显示';
+
+	/// zh-CN: '时间轴'
+	String get lyricTiming => '时间轴';
+
 	/// zh-CN: '歌词带翻译时一并显示。'
 	String get lyricTranslationDesc => '歌词带翻译时一并显示。';
 
@@ -3633,6 +3693,9 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '样式'
 	String get desktopLyricStyleSection => '样式';
+
+	/// zh-CN: '显示与锁定'
+	String get desktopLyricShow => '显示与锁定';
 
 	/// zh-CN: '字号'
 	String get desktopLyricFontSize => '字号';
@@ -4467,6 +4530,15 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '读取文件标签失败'
 	String get tagEditReadFailed => '读取文件标签失败';
+
+	/// zh-CN: '客户端模式'
+	String get syncClient => '客户端模式';
+
+	/// zh-CN: '按键分配'
+	String get hkAssignments => '按键分配';
+
+	/// zh-CN: '已导入的源'
+	String get sourcesImported => '已导入的源';
 }
 
 // Path: navigation
@@ -4557,6 +4629,9 @@ class Translations$navigation$zh_CN {
 
 	/// zh-CN: '下载管理'
 	String get musicDownloads => '下载管理';
+
+	/// zh-CN: '音乐设置'
+	String get musicSettings => '音乐设置';
 }
 
 // Path: player
@@ -5972,6 +6047,9 @@ class Translations$settings$zh_CN {
 	String get sitesResetDesc => '显示、顺序与首选平台都回到应用自带的默认。';
 
 	/// zh-CN: '平台'
+	String get sitesGroupList => '平台';
+
+	/// zh-CN: '平台'
 	String get sitesColumnPlatform => '平台';
 
 	/// zh-CN: '标识'
@@ -7063,6 +7141,21 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '网络代理'
 	String get navProxy => '网络代理';
 
+	/// zh-CN: '电视'
+	String get tvGroup => '电视';
+
+	/// zh-CN: '平台'
+	String get sitesPlatforms => '平台';
+
+	/// zh-CN: '站点兼容'
+	String get sitesCompatibility => '站点兼容';
+
+	/// zh-CN: '更多设置'
+	String get settingsMore => '更多设置';
+
+	/// zh-CN: '菜单顺序'
+	String get navMenuOrder => '菜单顺序';
+
 	/// zh-CN: '平台与账号'
 	String get navPlatforms => '平台与账号';
 
@@ -7203,6 +7296,24 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '节目单更新'
 	String get iptvGuideUpdates => '节目单更新';
+
+	/// zh-CN: '网络请求'
+	String get iptvNetwork => '网络请求';
+
+	/// zh-CN: '换台与分组'
+	String get iptvSections => '换台与分组';
+
+	/// zh-CN: '播放与界面'
+	String get vodPages => '播放与界面';
+
+	/// zh-CN: '播放'
+	String get hongguoPlayback => '播放';
+
+	/// zh-CN: '界面设置'
+	String get hongguoInterface => '界面设置';
+
+	/// zh-CN: '设备'
+	String get hongguoDevice => '设备';
 
 	/// zh-CN: '换台与显示'
 	String get navIptvBrowse => '换台与显示';
@@ -9280,6 +9391,30 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '打开剧集时优先请求的清晰度；不存在时自动取更低一档。'
 	String get hongguoQualityDesc => '打开剧集时优先请求的清晰度；不存在时自动取更低一档。';
 
+	/// zh-CN: '卡片显示内容'
+	String get hongguoCardVisibleContent => '卡片显示内容';
+
+	/// zh-CN: '榜单排名'
+	String get hongguoCardRank => '榜单排名';
+
+	/// zh-CN: '来源标签'
+	String get hongguoCardTags => '来源标签';
+
+	/// zh-CN: '集数'
+	String get hongguoCardEpisodes => '集数';
+
+	/// zh-CN: '今日标记'
+	String get hongguoCardToday => '今日标记';
+
+	/// zh-CN: '评分'
+	String get hongguoCardScore => '评分';
+
+	/// zh-CN: '封面热度'
+	String get hongguoCardHot => '封面热度';
+
+	/// zh-CN: '列表信息'
+	String get hongguoCardMeta => '列表信息';
+
 	/// zh-CN: '最高'
 	String get hongguoQualityBest => '最高';
 
@@ -9405,6 +9540,12 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '恢复默认'
 	String get storageFolderReset => '恢复默认';
+
+	/// zh-CN: '重置'
+	String get resetGroup => '重置';
+
+	/// zh-CN: '房间卡片样式'
+	String get roomCardGroup => '房间卡片样式';
 }
 
 // Path: shield
@@ -10326,6 +10467,24 @@ class Translations$vod$zh_CN {
 
 	/// zh-CN: '取消下载'
 	String get downloadCancel => '取消下载';
+
+	/// zh-CN: '上一组'
+	String get partsPrevious => '上一组';
+
+	/// zh-CN: '下一组'
+	String get partsNext => '下一组';
+
+	/// zh-CN: '跳转分P'
+	String get partsJump => '跳转分P';
+
+	/// zh-CN: '上一组'
+	String get episodesPrevious => '上一组';
+
+	/// zh-CN: '下一组'
+	String get episodesNext => '下一组';
+
+	/// zh-CN: '跳转集数'
+	String get episodesJump => '跳转集数';
 }
 
 // Path: wallpaper
@@ -11252,6 +11411,7 @@ extension on Translations {
 			'iptv.ungrouped' => '未分组',
 			'iptv.emptyTitle' => '还没有频道',
 			'iptv.emptyDescription' => '导入 M3U/TXT 播放列表后，频道就会出现在这里。',
+			'iptv.openFailed' => '打开失败',
 			'iptv.openFailedDescription' => '频道库打开失败。',
 			'iptv.noFavoritesTitle' => '还没有收藏的频道',
 			'iptv.noFavoritesDescription' => '点一下频道卡片上的心形，频道就会留在这里。',
@@ -11499,6 +11659,15 @@ extension on Translations {
 			'music.sourcesReady' => ({required Object count}) => '已就绪 ${count} 个自定义源',
 			'music.settingsPlayback' => '音源与播放',
 			'music.settingsList' => '列表',
+			'music.settingsInterface' => '界面设置',
+			'music.uiBlurredBackdrop' => '播放页模糊背景',
+			'music.uiBlurredBackdropDesc' => '播放详情页以当前歌曲的封面放大模糊作为背景',
+			'music.uiVinylDisc' => '黑胶唱片',
+			'music.uiVinylDiscDesc' => '宽屏播放详情页的封面右侧探出一张唱片',
+			'music.uiSpectrum' => '播放频谱',
+			'music.uiSpectrumDesc' => '播放详情页舞台上的实时频谱条',
+			'music.uiReset' => '恢复默认显示',
+			'music.uiResetDesc' => '重新显示上面关闭的全部界面元素',
 			'music.searchTypeSongs' => '歌曲',
 			'music.searchTypeSonglists' => '歌单',
 			'music.searchSourceAll' => '全部音源',
@@ -11617,10 +11786,12 @@ extension on Translations {
 			'music.progress' => '播放进度',
 			'music.lyrics' => '歌词',
 			'music.lyricsEmpty' => '这首歌还没有歌词。',
+			'music.lyricLoadFailed' => '歌词加载失败',
 			'music.openPlayer' => '打开播放页',
 			'music.playingSource' => ({required Object source}) => '来自 ${source}',
 			'music.loadMore' => '加载更多',
 			'music.clearRecent' => '清空最近播放',
+			'music.recentEmpty' => '还没有播放记录',
 			'music.moreActions' => '更多操作',
 			'music.playNext' => '下一首播放',
 			'music.addToPlaylist' => '加入歌单',
@@ -11640,6 +11811,8 @@ extension on Translations {
 			'music.disliked' => '已加入不喜欢规则，以后自动跳过',
 			'music.undisliked' => '已取消不喜欢',
 			'music.dislikeRules' => ({required Object count}) => '不喜欢规则 · ${count} 条',
+			'music.dislikeSection' => '歌曲屏蔽',
+			'music.settingsReset' => '重置',
 			'music.dislikeRulesDesc' => '这些歌曲出现在播放队列里时会自动跳过。',
 			'music.dislikeRulesClear' => '清除规则',
 			'music.dislikeRulesCleared' => '已清除不喜欢规则',
@@ -11663,6 +11836,8 @@ extension on Translations {
 			'music.playlistName' => '歌单名称',
 			'music.playlistNameHint' => '给歌单起个名字',
 			'music.playlistRename' => '重命名',
+			_ => null,
+		} ?? switch (path) {
 			'music.playlistRenameTitle' => '重命名歌单',
 			'music.playlistDelete' => '删除歌单',
 			'music.playlistDeleteTitle' => ({required Object name}) => '删除「${name}」？',
@@ -11677,8 +11852,6 @@ extension on Translations {
 			'music.playlistImport' => '导入歌单',
 			'music.playlistImportDone' => ({required Object name}) => '已导入「${name}」',
 			'music.playlistImportFailed' => ({required Object error}) => '导入失败：${error}',
-			_ => null,
-		} ?? switch (path) {
 			'music.playlistImportInvalid' => '文件里没有可用的歌曲',
 			'music.playlistImportLxmcConfirm' => '备份文件中列表与现有列表 ID 相同时，现有列表内歌曲将会被覆盖，是否要继续？',
 			'music.playlistImportLxmcDone' => ({required Object lists, required Object songs}) => '已导入 ${lists} 个列表、${songs} 首歌曲',
@@ -11709,6 +11882,9 @@ extension on Translations {
 			'music.downloadFailed' => ({required Object error}) => '下载失败：${error}',
 			'music.downloadHint' => '下载文件保存在共享下载目录；队列支持暂停、续传和失败重试。',
 			'music.downloadDirectory' => '下载目录',
+			'music.downloadBehaviour' => '下载行为',
+			'music.downloadNaming' => '文件与命名',
+			'music.downloadTags' => '标签与歌词',
 			'music.downloadDirectoryDefault' => '使用默认目录',
 			'music.downloadDirectoryDefaultDesc' => '回到应用默认的下载文件夹。',
 			'music.downloadDirectoryUpdated' => '下载目录已更新',
@@ -11782,6 +11958,9 @@ extension on Translations {
 			'music.lyricOffsetDesc' => '正值让歌词更晚出现。',
 			'music.lyricOffsetReset' => '不偏移',
 			'music.lyricTranslation' => '显示翻译',
+			'music.lyricContent' => '歌词内容',
+			'music.lyricDisplay' => '歌词显示',
+			'music.lyricTiming' => '时间轴',
 			'music.lyricTranslationDesc' => '歌词带翻译时一并显示。',
 			'music.lyricRomanization' => '显示音译',
 			'music.lyricRomanizationDesc' => '歌词带音译或罗马音时一并显示。',
@@ -11815,6 +11994,7 @@ extension on Translations {
 			'music.desktopLyricLock' => '锁定歌词',
 			'music.desktopLyricLockDesc' => '锁定后鼠标点击穿过歌词窗口，不会挡住下面的程序。',
 			'music.desktopLyricStyleSection' => '样式',
+			'music.desktopLyricShow' => '显示与锁定',
 			'music.desktopLyricFontSize' => '字号',
 			'music.desktopLyricFontSizeDesc' => '桌面歌词的字体大小。',
 			'music.desktopLyricOpacity' => '不透明度',
@@ -12093,6 +12273,9 @@ extension on Translations {
 			'music.tagEditFailed' => ({required Object error}) => '保存失败：${error}',
 			'music.tagEditUnsupportedFormat' => '该格式暂不支持写入标签',
 			'music.tagEditReadFailed' => '读取文件标签失败',
+			'music.syncClient' => '客户端模式',
+			'music.hkAssignments' => '按键分配',
+			'music.sourcesImported' => '已导入的源',
 			'navigation.groupPrimary' => '高频页面',
 			'navigation.home' => '首页',
 			'navigation.live' => '直播',
@@ -12120,6 +12303,7 @@ extension on Translations {
 			'navigation.musicLibrary' => '我的列表',
 			'navigation.musicLocal' => '本地音乐',
 			'navigation.musicDownloads' => '下载管理',
+			'navigation.musicSettings' => '音乐设置',
 			'player.title' => '播放',
 			'player.back' => '返回',
 			'player.quality' => '清晰度',
@@ -12166,6 +12350,8 @@ extension on Translations {
 			'recorder.stateWaiting' => '等待开播',
 			'recorder.stateSaved' => '已保存',
 			'recorder.menuMore' => '更多操作',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.openRoom' => '进入直播间',
 			'recorder.openFolder' => '打开文件夹',
 			'recorder.openFolderFailed' => '无法打开文件夹',
@@ -12191,8 +12377,6 @@ extension on Translations {
 			'recorder.keepAliveDescription' => '录制期间持有后台会话与唤醒锁（Android 前台服务/通知）。',
 			'recorder.verifyTitle' => '结束时校验文件',
 			'recorder.verifyDescription' => '结束前检查分段是否可播放。',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.restartTitle' => '断流重试次数',
 			'recorder.restartDescription' => '流中断后 FFmpeg 自动重开的次数；0 表示不重试。',
 			'recorder.restartCount' => ({required int count}) => '${count} 次',
@@ -12575,6 +12759,7 @@ extension on Translations {
 			'settings.sitesHideAll' => '全部关闭',
 			'settings.sitesReset' => '重置',
 			'settings.sitesResetDesc' => '显示、顺序与首选平台都回到应用自带的默认。',
+			'settings.sitesGroupList' => '平台',
 			'settings.sitesColumnPlatform' => '平台',
 			'settings.sitesColumnId' => '标识',
 			'settings.sitesColumnShown' => '显示',
@@ -12679,6 +12864,8 @@ extension on Translations {
 			'settings.githubMirrorRefreshing' => '正在获取远程镜像…',
 			'settings.githubMirrorNever' => '尚未获取远程镜像。',
 			'settings.githubMirrorUpdated' => ({required Object time}) => '远程更新于 ${time}',
+			_ => null,
+		} ?? switch (path) {
 			'settings.githubMirrorFailed' => ({required Object error}) => '远程获取失败：${error}',
 			'settings.githubMirrorAdd' => '添加镜像地址',
 			'settings.githubMirrorAddTitle' => '添加镜像地址',
@@ -12705,8 +12892,6 @@ extension on Translations {
 			'settings.danmakuInteractionGroup' => '弹幕交互',
 			'settings.styleTapInteraction' => '点按弹幕',
 			'settings.styleTapInteractionDesc' => '可复制、屏蔽；关闭后只切换控制条。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleLongPressInteraction' => '长按弹幕',
 			'settings.styleLongPressInteractionDesc' => '与点按同一菜单；关闭后长按不命中弹幕。',
 			'settings.danmakuStyleGroup' => '弹幕样式',
@@ -12941,6 +13126,11 @@ extension on Translations {
 			'settings.navNavigation' => '导航栏',
 			'settings.navRefresh' => '自动刷新',
 			'settings.navProxy' => '网络代理',
+			'settings.tvGroup' => '电视',
+			'settings.sitesPlatforms' => '平台',
+			'settings.sitesCompatibility' => '站点兼容',
+			'settings.settingsMore' => '更多设置',
+			'settings.navMenuOrder' => '菜单顺序',
 			'settings.navPlatforms' => '平台与账号',
 			'settings.navigationDescription' => '首页菜单与工具区各自的显示与排序。',
 			'settings.refreshDescription' => '关注列表与直播缩略图的自动刷新。',
@@ -12988,6 +13178,12 @@ extension on Translations {
 			'settings.vodQuality1080Plus' => '1080P+',
 			'settings.vodQuality4K' => '4K',
 			'settings.iptvGuideUpdates' => '节目单更新',
+			'settings.iptvNetwork' => '网络请求',
+			'settings.iptvSections' => '换台与分组',
+			'settings.vodPages' => '播放与界面',
+			'settings.hongguoPlayback' => '播放',
+			'settings.hongguoInterface' => '界面设置',
+			'settings.hongguoDevice' => '设备',
 			'settings.navIptvBrowse' => '换台与显示',
 			'settings.iptvBrowseDescription' => '频道号、换台方向、时间和当前节目行怎么显示。',
 			'settings.navIptvGroups' => '分组显示',
@@ -13182,6 +13378,8 @@ extension on Translations {
 			'settings.playerGuideEntrySymFanTitle' => '风扇狂转 / 掉帧',
 			'settings.playerGuideEntrySymFanBody' => '选「低配流畅」方案；仍不行就关闭硬解码开关（老设备软解反而快）。',
 			'settings.playerGuideEntrySymBufferingTitle' => '频繁缓冲',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntrySymBufferingBody' => '选「弱网稳定」；同时检查网络代理设置——代理是直播卡顿的常见来源。',
 			'settings.playerGuideEntrySymLatencyTitle' => '延迟高（连麦 / 赛事情景）',
 			'settings.playerGuideEntrySymLatencyBody' => '选「低延迟」方案，并调低缓冲相关属性。',
@@ -13219,8 +13417,6 @@ extension on Translations {
 			'settings.backgroundPlayDesc' => '离开应用后继续出声；关闭则切后台即暂停。',
 			'settings.asmrSleepMode' => 'ASMR 睡眠模式',
 			'settings.asmrSleepModeDesc' => '进直播间自动切音频模式，到时暂停。仅 Android。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.asmrSleepTimer' => 'ASMR 睡眠时长',
 			'settings.asmrSleepTimerDesc' => '音频模式自动停止前的分钟数，范围 15–1440。',
 			'settings.asmrSleepCustomMinutes' => '自定义分钟数',
@@ -13682,12 +13878,22 @@ extension on Translations {
 			'settings.hongguoDescription' => '红果伴侣服务与播放偏好。',
 			'settings.hongguoQuality' => '默认清晰度',
 			'settings.hongguoQualityDesc' => '打开剧集时优先请求的清晰度；不存在时自动取更低一档。',
+			'settings.hongguoCardVisibleContent' => '卡片显示内容',
+			'settings.hongguoCardRank' => '榜单排名',
+			'settings.hongguoCardTags' => '来源标签',
+			'settings.hongguoCardEpisodes' => '集数',
+			'settings.hongguoCardToday' => '今日标记',
+			'settings.hongguoCardScore' => '评分',
+			'settings.hongguoCardHot' => '封面热度',
+			'settings.hongguoCardMeta' => '列表信息',
 			'settings.hongguoQualityBest' => '最高',
 			'settings.hongguoQuality1080' => '1080P',
 			'settings.hongguoQuality720' => '720P',
 			'settings.hongguoQuality540' => '540P',
 			'settings.hongguoQuality480' => '480P',
 			'settings.hongguoQuality360' => '360P',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hongguoDeviceReset' => '重置设备身份',
 			'settings.hongguoDeviceResetDesc' => '忘记匿名设备身份，下次播放重新注册。',
 			'settings.navLogs' => '日志',
@@ -13724,6 +13930,8 @@ extension on Translations {
 			'settings.storageFolderRestart' => '重启应用后生效',
 			'settings.storageFolderPick' => '选择目录',
 			'settings.storageFolderReset' => '恢复默认',
+			'settings.resetGroup' => '重置',
+			'settings.roomCardGroup' => '房间卡片样式',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
@@ -13733,8 +13941,6 @@ extension on Translations {
 			'shield.similarityEnabled' => '相似弹幕过滤',
 			'shield.similarityEnabledDescription' => '过滤短时间内高度相似的弹幕。',
 			'shield.similarityThreshold' => '相似度阈值',
-			_ => null,
-		} ?? switch (path) {
 			'shield.similarityThresholdDescription' => '越高越严格。',
 			'shield.similarityCacheDuration' => '缓存时间',
 			'shield.similarityCacheDurationDescription' => '这段时间内不重复显示。',
@@ -14021,6 +14227,12 @@ extension on Translations {
 			'vod.downloadFailed' => '下载失败',
 			'vod.downloadCancelled' => '已取消下载',
 			'vod.downloadCancel' => '取消下载',
+			'vod.partsPrevious' => '上一组',
+			'vod.partsNext' => '下一组',
+			'vod.partsJump' => '跳转分P',
+			'vod.episodesPrevious' => '上一组',
+			'vod.episodesNext' => '下一组',
+			'vod.episodesJump' => '跳转集数',
 			'wallpaper.title' => '随机图源',
 			'wallpaper.description' => '按分组从公开随机接口取图，预览后再应用。',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} 个来源',

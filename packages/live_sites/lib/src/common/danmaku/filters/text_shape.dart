@@ -47,7 +47,4 @@ final RegExp _emojiOnly = RegExp(
 );
 
 /// At least one picture among them (not only joiners and spaces).
-final RegExp _pictograph = RegExp(
-  r'[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}]',
-  unicode: true,
-);
+final RegExp _pictograph = RegExp(r'[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}]', unicode: true);

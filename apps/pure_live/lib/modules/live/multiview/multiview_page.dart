@@ -15,8 +15,8 @@ import 'package:pure_live/modules/live/multiview/multiview_controller.dart';
 import 'package:pure_live/modules/live/multiview/multiview_playback.dart';
 import 'package:pure_live/shared/shared.dart';
 
-/// The multi-view wall (the reference's multiview): the 1×1, 1×2, 2×2 and
-/// 1+3 arrangements, each pane holding a followed room, with the layout
+/// The multi-view wall (the reference's multiview): the 1×1, 1×2, 2×2,
+/// 1+3 and 1×4 arrangements, each pane holding a followed room, with the layout
 /// switcher in the header and every pane picking, playing, selecting,
 /// clearing or exchanging its room. The arrangement persists in the
 /// multiview store, so a revisit opens the same wall.
@@ -411,7 +411,6 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
     );
   }
 
-  /// The (columns, rows) a layout's pane count fills.
   /// The pane's title: the room's own title, or the identity a pane holds
   /// whose room left the follows (the pane keeps its place until cleared).
   String _slotTitle(String? key, LiveRoom? room) {
@@ -994,30 +993,27 @@ final class _PaneControls extends StatelessWidget {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final line = pane.lines.isEmpty ? null : pane.lines[pane.lineIndex.clamp(0, pane.lines.length - 1)];
-    return Row(
-      spacing: DsSpace.s8,
-      children: [
-        _ToolbarButton(
-          icon: pane.paused ? DsIcons.play : DsIcons.pause,
-          semanticLabel: pane.paused ? t.multiview.playPane : t.multiview.pausePane,
-          onPressed: onPause,
-        ),
-        _StreamChip(
-          icon: DsIcons.gauge,
-          label: pane.quality?.label ?? t.multiview.paneQuality,
-          semanticLabel: t.multiview.paneQuality,
-          enabled: !pane.switching && pane.qualities.isNotEmpty,
-          items: [
-            for (final quality in pane.qualities)
-              DsMenuItem(
-                label: Text(quality.label),
-                checked: quality == pane.quality,
-                onPressed: () => onQuality(quality),
-              ),
-          ],
-        ),
-        if (pane.lines.length > 1)
-          _StreamChip(
+    final pause = _ToolbarButton(
+      icon: pane.paused ? DsIcons.play : DsIcons.pause,
+      semanticLabel: pane.paused ? t.multiview.playPane : t.multiview.pausePane,
+      onPressed: onPause,
+    );
+    final quality = _StreamChip(
+      icon: DsIcons.gauge,
+      label: pane.quality?.label ?? t.multiview.paneQuality,
+      semanticLabel: t.multiview.paneQuality,
+      enabled: !pane.switching && pane.qualities.isNotEmpty,
+      items: [
+        for (final quality in pane.qualities)
+          DsMenuItem(
+            label: Text(quality.label),
+            checked: quality == pane.quality,
+            onPressed: () => onQuality(quality),
+          ),
+      ],
+    );
+    final lineChip = pane.lines.length > 1
+        ? _StreamChip(
             icon: DsIcons.route,
             label: line?.lineLabel ?? t.room.line(n: pane.lineIndex + 1),
             semanticLabel: t.room.lineLabel,
@@ -1030,8 +1026,11 @@ final class _PaneControls extends StatelessWidget {
                   onPressed: () => onLine(index),
                 ),
             ],
-          ),
-        const SizedBox(width: DsSpace.s4),
+          )
+        : null;
+    final volume = Row(
+      spacing: DsSpace.s8,
+      children: [
         DsTooltip(
           message: t.room.volume,
           excludeFromSemantics: true,
@@ -1046,6 +1045,36 @@ final class _PaneControls extends StatelessWidget {
           ),
         ),
       ],
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The pane's switches and its slider cannot share one row down to
+        // the window's 300 px floor — two capped chips, the pause switch
+        // and the gaps already total ~430 px — so below that the switches
+        // wrap and the volume takes the line beneath.
+        if (constraints.maxWidth < 440) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: DsSpace.s8,
+            children: [
+              Wrap(
+                spacing: DsSpace.s8,
+                runSpacing: DsSpace.s8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [pause, quality, ?lineChip],
+              ),
+              volume,
+            ],
+          );
+        }
+        // The volume row holds an Expanded slider: only the fitted row's
+        // remaining space gives it the bounded width that asks for — loose
+        // in an outer row it would meet unbounded constraints and die.
+        return Row(
+          spacing: DsSpace.s8,
+          children: [pause, quality, ?lineChip, const SizedBox(width: DsSpace.s4), Expanded(child: volume)],
+        );
+      },
     );
   }
 }
@@ -1227,10 +1256,15 @@ final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: DsSpace.s4,
                     children: [
+                      // Both lines bend: at the window's floor the dock is
+                      // the page's own width and the two cannot stand at
+                      // full size — an unbent Text paints past the row. The
+                      // title takes two shares, the hint one.
                       Row(
                         spacing: DsSpace.s6,
                         children: [
                           Flexible(
+                            flex: 2,
                             child: Text(
                               t.multiview.pickerTitle(index: widget.slotIndex + 1),
                               maxLines: 1,
@@ -1238,11 +1272,13 @@ final class _PanePickerDockState extends ConsumerState<_PanePickerDock> {
                               style: theme.typography.bodyStrong.copyWith(color: colors.text),
                             ),
                           ),
-                          Text(
-                            t.multiview.pickerHint,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                          Flexible(
+                            child: Text(
+                              t.multiview.pickerHint,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                            ),
                           ),
                         ],
                       ),

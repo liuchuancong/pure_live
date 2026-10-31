@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/hongguo/controller/hongguo_card_settings.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_client.dart' show hongguoClientProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_danmaku.dart'
     show HongguoDanmakuDensity, hongguoDanmakuSettingsProvider;
@@ -29,11 +30,17 @@ final class HongguoSettingsPane extends ConsumerWidget {
     final danmaku = ref.watch(hongguoDanmakuSettingsProvider);
     final danmakuController = ref.read(hongguoDanmakuSettingsProvider.notifier);
     final learned = ref.watch(hongguoDecoderLessonsProvider);
+    final card = ref.watch(hongguoCardSettingsProvider);
+    final cardController = ref.read(hongguoCardSettingsProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
+        // One section per concern, the reference's page rhythm: what plays,
+        // what the cards draw, what the danmaku looks like, and the device
+        // this install registered — reset verbs last.
         DsListSection(
+          header: Text(t.settings.hongguoPlayback),
           children: [
             SettingsChoiceRow<HongguoQualityChoice>(
               leading: const DsIcon(DsIcons.slidersHorizontal),
@@ -45,9 +52,53 @@ final class HongguoSettingsPane extends ConsumerWidget {
               ],
               onChanged: (choice) => unawaited(ref.read(hongguoSettingsProvider.notifier).setQuality(choice)),
             ),
+            DsListRow(
+              leading: const DsIcon(DsIcons.circleAlert),
+              title: Text(t.hongguo.decoderLessons),
+              description: Text(
+                learned.isEmpty ? t.hongguo.decoderLessonsEmpty : t.hongguo.decoderLessonsCount(count: learned.length),
+              ),
+              onPressed: learned.isEmpty
+                  ? null
+                  : () async {
+                      final count = learned.length;
+                      await ref.read(hongguoDecoderLessonsProvider.notifier).reset();
+                      if (context.mounted) {
+                        showDsToast(
+                          context: context,
+                          title: t.hongguo.decoderResetDone(count: count),
+                        );
+                      }
+                    },
+            ),
+          ],
+        ),
+        // What the poster card draws: one switch per piece, the way the room
+        // card's pane lays its own out.
+        DsListSection(
+          header: Text(t.settings.hongguoInterface),
+          children: [
+            for (final (element, icon, label) in <(HongguoCardElement, DsIconData, String)>[
+              (HongguoCardElement.rank, DsIcons.trophy, t.settings.hongguoCardRank),
+              (HongguoCardElement.coverTags, DsIcons.tag, t.settings.hongguoCardTags),
+              (HongguoCardElement.episodes, DsIcons.listMusic, t.settings.hongguoCardEpisodes),
+              (HongguoCardElement.today, DsIcons.calendar, t.settings.hongguoCardToday),
+              (HongguoCardElement.score, DsIcons.star, t.settings.hongguoCardScore),
+              (HongguoCardElement.hot, DsIcons.flame, t.settings.hongguoCardHot),
+              (HongguoCardElement.meta, DsIcons.info, t.settings.hongguoCardMeta),
+            ])
+              SettingsConfigRow(
+                leading: DsIcon(icon),
+                title: label,
+                control: DsSwitch(
+                  value: card.shows(element),
+                  onChanged: (value) => unawaited(cardController.setElement(element, visible: value)),
+                ),
+              ),
           ],
         ),
         DsListSection(
+          header: Text(t.hongguo.danmaku),
           children: [
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.captions),
@@ -105,29 +156,7 @@ final class HongguoSettingsPane extends ConsumerWidget {
           ],
         ),
         DsListSection(
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.circleAlert),
-              title: Text(t.hongguo.decoderLessons),
-              description: Text(
-                learned.isEmpty ? t.hongguo.decoderLessonsEmpty : t.hongguo.decoderLessonsCount(count: learned.length),
-              ),
-              onPressed: learned.isEmpty
-                  ? null
-                  : () async {
-                      final count = learned.length;
-                      await ref.read(hongguoDecoderLessonsProvider.notifier).reset();
-                      if (context.mounted) {
-                        showDsToast(
-                          context: context,
-                          title: t.hongguo.decoderResetDone(count: count),
-                        );
-                      }
-                    },
-            ),
-          ],
-        ),
-        DsListSection(
+          header: Text(t.settings.hongguoDevice),
           children: [
             DsListRow(
               leading: const DsIcon(DsIcons.rotateCcw),

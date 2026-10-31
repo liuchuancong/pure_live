@@ -110,6 +110,10 @@ enum NavigationItem {
   /// The music module's sound-effect center.
   musicEffects(DsIcons.audioLines),
 
+  /// The music module's own settings row: the settings surface opened
+  /// straight on the music group instead of the category list.
+  musicSettings(DsIcons.slidersHorizontal),
+
   /// The hongguo station's home feed (首页).
   hongguoHome(DsIcons.home),
 
@@ -174,6 +178,7 @@ enum NavigationItem {
     NavigationItem.musicLocal => t.navigation.musicLocal,
     NavigationItem.musicDownloads => t.navigation.musicDownloads,
     NavigationItem.musicEffects => t.music.eqCenter,
+    NavigationItem.musicSettings => t.navigation.musicSettings,
     NavigationItem.hongguoHome => t.hongguo.navHome,
     NavigationItem.hongguoFind => t.hongguo.navFind,
     NavigationItem.hongguoRank => t.hongguo.navRank,

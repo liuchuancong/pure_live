@@ -276,8 +276,6 @@ final class _TaskCard extends StatelessWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final wide = LiveWindow.isExpanded(MediaQuery.sizeOf(context).width);
-    final (coverWidth, coverHeight) = wide ? (128.0, 72.0) : (96.0, 54.0);
     final streamer = room?.anchor?.name.trim() ?? '';
     final storedTitle = task.roomTitle.trim();
     final roomTitle = room?.content.title.trim() ?? '';
@@ -297,70 +295,88 @@ final class _TaskCard extends StatelessWidget {
         padding: const EdgeInsets.all(DsSpace.s12),
         borderRadius: BorderRadius.circular(theme.radii.card),
       ),
-      child: Row(
-        spacing: DsSpace.s12,
-        children: [
-          DsImage(
-            image: cover.isEmpty ? null : cachedImage(cover),
-            width: coverWidth,
-            height: coverHeight,
-            semanticLabel: title,
-            fallback: _CoverFallback(letter: _platformLetter(task.platform)),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s3,
-              children: [
-                Text(
-                  streamer.isEmpty ? title : streamer,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                ),
-                if (streamer.isNotEmpty)
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
-                  ),
-                Text(
-                  meta,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                ),
-                if (task.state == RecordingTaskState.failed && task.errorText.trim().isNotEmpty)
-                  Text(
-                    task.errorText.trim(),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.danger.text),
-                  ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            spacing: DsSpace.s3,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // The badge, the size figure and the menu — with the gaps, some
+          // 110–130 px — are fixed, so the cover follows the card's own
+          // width (the sidebar beside the list shrinks it too) and steps
+          // down before the title starves; at the window's floor it stands
+          // down entirely.
+          final width = constraints.maxWidth;
+          final (coverWidth, coverHeight) = width >= 560
+              ? (128.0, 72.0)
+              : width >= 420
+              ? (96.0, 54.0)
+              : width >= 340
+              ? (72.0, 40.0)
+              : (0.0, 0.0);
+          return Row(
+            spacing: DsSpace.s12,
             children: [
-              DsBadge(label: Text(_stateLabel(t, task.state)), status: _stateStatus(task.state)),
-              Text(
-                task.bytes > 0 ? _formatBytes(task.bytes) : '—',
-                style: theme.typography.caption.copyWith(color: colors.textSubtle),
+              if (coverWidth > 0)
+                DsImage(
+                  image: cover.isEmpty ? null : cachedImage(cover),
+                  width: coverWidth,
+                  height: coverHeight,
+                  semanticLabel: title,
+                  fallback: _CoverFallback(letter: _platformLetter(task.platform)),
+                ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s3,
+                  children: [
+                    Text(
+                      streamer.isEmpty ? title : streamer,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                    ),
+                    if (streamer.isNotEmpty)
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                    Text(
+                      meta,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                    if (task.state == RecordingTaskState.failed && task.errorText.trim().isNotEmpty)
+                      Text(
+                        task.errorText.trim(),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.danger.text),
+                      ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                spacing: DsSpace.s3,
+                children: [
+                  DsBadge(label: Text(_stateLabel(t, task.state)), status: _stateStatus(task.state)),
+                  Text(
+                    task.bytes > 0 ? _formatBytes(task.bytes) : '—',
+                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  ),
+                ],
+              ),
+              _TaskMenu(
+                task: task,
+                hasFile: (task.filePath ?? '').trim().isNotEmpty,
+                onOpen: onOpen,
+                onStop: onStop,
+                onCancelWaiting: onCancelWaiting,
+                onDelete: onDelete,
               ),
             ],
-          ),
-          _TaskMenu(
-            task: task,
-            hasFile: (task.filePath ?? '').trim().isNotEmpty,
-            onOpen: onOpen,
-            onStop: onStop,
-            onCancelWaiting: onCancelWaiting,
-            onDelete: onDelete,
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -490,7 +506,10 @@ final class _TaskMenu extends StatelessWidget {
       destructive: true,
       icon: const DsIcon(DsIcons.trash2),
     );
-    if (confirmed) onDelete();
+    // The tap can land after the dialog's host is gone (the list rebuilt
+    // under it); a dead context must not reach the page's store callback.
+    if (!confirmed || !context.mounted) return;
+    onDelete();
   }
 }
 
@@ -701,7 +720,9 @@ final class RecordingSettingsPane extends ConsumerWidget {
               min: 100,
               max: 20480,
               divisions: 203,
-              onChanged: (value) => controller.maxSizeMb = value.round(),
+              // The slider's 100.4 MB steps land on 401, 502 …; whole
+              // hundreds read cleanly in the detail, capped at the max.
+              onChanged: (value) => controller.maxSizeMb = ((value / 100).round() * 100).clamp(100, 20480),
               semanticLabel: t.recorder.maxSizeTitle,
             ),
             SettingsSegmentedRow<RecordingFileContainer>(
@@ -964,9 +985,12 @@ final class RecordingSettingsPane extends ConsumerWidget {
               clearable: true,
               placeholder: hint,
               onChanged: (next) => value = next,
+              // Enter commits, as the app's other dialogs do; a plain pop
+              // would silently drop what was typed.
               onSubmitted: (next) {
                 value = next;
                 Navigator.of(context).pop();
+                onCommit(value);
               },
               semanticLabel: title,
             ),

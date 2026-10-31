@@ -42,8 +42,9 @@ final class VodSettingsPane extends ConsumerWidget {
             ),
           ],
         ),
-        const DsListSection(
-          children: [
+        DsListSection(
+          header: Text(t.settings.vodPages),
+          children: const [
             SettingsChildEntry(child: SettingsSection.vodPlayback),
             SettingsChildEntry(child: SettingsSection.vodInterface),
           ],
@@ -69,6 +70,7 @@ final class VodPlaybackPane extends ConsumerWidget {
       spacing: DsSpace.s16,
       children: [
         DsListSection(
+          header: Text(t.settings.navVodPlayback),
           children: [
             SettingsChoiceRow<VodSpeedChoice>(
               leading: const DsIcon(DsIcons.timer),
@@ -93,6 +95,7 @@ final class VodPlaybackPane extends ConsumerWidget {
           ],
         ),
         DsListSection(
+          header: Text(t.settings.resetGroup),
           children: [
             DsListRow(
               leading: const DsIcon(DsIcons.rotateCcw),
@@ -119,6 +122,7 @@ final class VodInterfacePane extends ConsumerWidget {
     final settings = ref.watch(vodPlaybackSettingsProvider);
     final controller = ref.read(vodPlaybackSettingsProvider.notifier);
     return DsListSection(
+      header: Text(t.settings.navVodInterface),
       children: [
         SettingsConfigRow(
           leading: const DsIcon(DsIcons.info),

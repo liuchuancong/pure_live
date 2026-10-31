@@ -8,6 +8,7 @@ import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/app/app.dart' show RouteNames;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
+import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart' show iptvRecentProvider;
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show IptvGuideRow, iptvDayLabel, iptvStartOfDay;
 import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage;
 
@@ -42,6 +43,11 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
   @override
   void initState() {
     super.initState();
+    // The guide opens on the channel last watched — the zapper's own rule of
+    // starting where the picture already is — and on the first when nothing
+    // has. A channel the library no longer holds falls back in the build.
+    final recent = ref.read(iptvRecentProvider);
+    _channelId = recent.isEmpty ? null : recent.first.channelId;
     // The on-air mark and its progress follow the clock, not a reload.
     _tick = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
@@ -222,7 +228,7 @@ final class _DayStepper extends StatelessWidget {
 
 /// The channels the guide can open: the name search above a one-row-per-
 /// channel list, the open channel marked.
-final class _ChannelPicker extends StatelessWidget {
+final class _ChannelPicker extends StatefulWidget {
   const _ChannelPicker({
     required this.channels,
     required this.selectedId,
@@ -238,10 +244,44 @@ final class _ChannelPicker extends StatelessWidget {
   final ValueChanged<IptvChannel> onSelect;
 
   @override
+  State<_ChannelPicker> createState() => _ChannelPickerState();
+}
+
+final class _ChannelPickerState extends State<_ChannelPicker> {
+  /// The selected row's mark, so the list can bring it into view — the page
+  /// may open on a channel buried deep in the list.
+  final GlobalKey _selectedKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _revealSelected();
+  }
+
+  @override
+  void didUpdateWidget(_ChannelPicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedId != widget.selectedId) _revealSelected();
+  }
+
+  /// Scrolls the selected row into view; a row already on screen stays put.
+  void _revealSelected() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final keyContext = _selectedKey.currentContext;
+      if (keyContext != null) {
+        Scrollable.ensureVisible(keyContext, alignment: 0.3, duration: const Duration(milliseconds: 120));
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    final channels = widget.channels;
+    final selectedId = widget.selectedId;
     return DsCard(
       style: const DsCardStyle(padding: EdgeInsets.zero),
       child: Column(
@@ -250,10 +290,10 @@ final class _ChannelPicker extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(DsSpace.s12),
             child: DsSearchField(
-              controller: search,
+              controller: widget.search,
               placeholder: t.iptv.searchChannels,
               semanticLabel: t.iptv.searchChannels,
-              onChanged: onQuery,
+              onChanged: widget.onQuery,
             ),
           ),
           const DsDivider(),
@@ -269,28 +309,31 @@ final class _ChannelPicker extends StatelessWidget {
                       final channel = channels[index];
                       final logo = (channel.entry.tvgLogo ?? '').trim();
                       final group = iptvGroupKeyOf(channel);
-                      return DsListRow(
-                        selected: channel.id == selectedId,
-                        leading: DsAvatar(
-                          initials: channel.entry.name,
-                          image: logo.isEmpty ? null : cachedImage(logo),
-                          size: DsSize.sm,
-                          toneIndex: DsAvatar.toneFor(channel.id),
-                          semanticLabel: channel.entry.name,
+                      return KeyedSubtree(
+                        key: channel.id == selectedId ? _selectedKey : null,
+                        child: DsListRow(
+                          selected: channel.id == selectedId,
+                          leading: DsAvatar(
+                            initials: channel.entry.name,
+                            image: logo.isEmpty ? null : cachedImage(logo),
+                            size: DsSize.sm,
+                            toneIndex: DsAvatar.toneFor(channel.id),
+                            semanticLabel: channel.entry.name,
+                          ),
+                          title: Text(
+                            channel.entry.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.body.copyWith(color: colors.text),
+                          ),
+                          description: Text(
+                            group.isEmpty ? t.iptv.ungrouped : group,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                          ),
+                          onPressed: () => widget.onSelect(channel),
                         ),
-                        title: Text(
-                          channel.entry.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.body.copyWith(color: colors.text),
-                        ),
-                        description: Text(
-                          group.isEmpty ? t.iptv.ungrouped : group,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                        ),
-                        onPressed: () => onSelect(channel),
                       );
                     },
                   ),

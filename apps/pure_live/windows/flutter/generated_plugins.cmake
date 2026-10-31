@@ -3,7 +3,6 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  audio_service_win
   battery_plus
   connectivity_plus
   desktop_drop
@@ -12,11 +11,13 @@ list(APPEND FLUTTER_PLUGIN_LIST
   ffmpeg_kit_extended_flutter
   file_selector_windows
   flutter_acrylic
+  flutter_media_session
   flutter_secure_storage_windows
   heic_native
   media_core_audio
   media_core_native
   media_kit_video
+  mpv_audio_kit
   multiview_desktop
   refresh_rate
   restart_app

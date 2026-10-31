@@ -352,7 +352,10 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
       if (mounted) setState(() => _playbackState = state);
     });
     _handles ??= playback.onHandleChanged.listen((handle) {
-      if (mounted) setState(() => _handle = handle);
+      // The audio and engine options below read the stored settings off
+      // `ref`; an event in flight past dispose must not reach them.
+      if (!mounted) return;
+      setState(() => _handle = handle);
       unawaited(_applyAudio(handle));
       unawaited(_applyEngineOptions(handle));
       _bindGeometry(handle);
@@ -540,6 +543,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   void _bindGeometry(PlayerHandle handle) {
     unawaited(_geometry?.cancel() ?? Future<void>.value());
     _geometry = handle.geometryController.state.listen((state) {
+      if (!mounted) return;
       final size = state.geometry.videoSize;
       if (size.width <= 0 || size.height <= 0) return;
       _aspectRatio = size.width / size.height;
@@ -683,6 +687,13 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     });
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
+    // A full header outruns a narrow window: the clock, then the zapping
+    // chevrons and the cast verb stand down — the arrow keys, the zapper
+    // panel and the line menu do the same work, and a player page reads
+    // best on one line. The page fills the window, so its width decides.
+    final headerWidth = MediaQuery.sizeOf(context).width;
+    final headerCompact = headerWidth < 560;
+    final headerNarrow = headerWidth < 420;
     final channel = _channel;
     final handle = _handle;
     final muted = _effectivelyMuted;
@@ -817,8 +828,9 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                         ),
                       ),
                       // The reference's corner clock, on the viewer's switch:
-                      // the page's minute tick already redraws it.
-                      if (browse.showClock)
+                      // the page's minute tick already redraws it. The first
+                      // decoration a narrow header drops.
+                      if (browse.showClock && !headerCompact)
                         Text(
                           iptvClockLabel(DateTime.now()),
                           style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textMuted)),
@@ -830,7 +842,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                           selected: _favourite,
                           onPressed: () => unawaited(_toggleFavourite(channel)),
                         ),
-                      if (channel != null && canStep) ...[
+                      if (channel != null && canStep && !headerNarrow) ...[
                         _IconButton(
                           semanticLabel: t.iptv.previousDay,
                           icon: DsIcons.chevronUp,
@@ -859,7 +871,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                             onPressed: controller.toggle,
                           ),
                         ),
-                      if (channel != null)
+                      if (channel != null && !headerNarrow)
                         _IconButton(semanticLabel: t.room.cast, icon: DsIcons.cast, onPressed: () => _cast(channel)),
                       if (channel != null)
                         _IconButton(

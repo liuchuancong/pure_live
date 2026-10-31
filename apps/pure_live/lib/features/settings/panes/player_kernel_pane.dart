@@ -159,7 +159,10 @@ final class _PlayerKernelPaneState extends ConsumerState<PlayerKernelPane> {
               style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textMuted),
             ),
           ),
-        const DsListSection(children: [SettingsChildEntry(child: SettingsSection.kernelAdvanced)]),
+        DsListSection(
+          header: Text(t.settings.settingsMore),
+          children: const [SettingsChildEntry(child: SettingsSection.kernelAdvanced)],
+        ),
       ],
     );
   }

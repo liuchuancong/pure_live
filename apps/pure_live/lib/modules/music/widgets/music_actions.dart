@@ -338,7 +338,7 @@ final class _ToggleSourceDialogState extends ConsumerState<_ToggleSourceDialog> 
                         selected: _picked?.id == candidate.id && _picked?.sourceId == candidate.sourceId,
                         onPressed: () => setState(() => _picked = candidate),
                         trailing: DsButton.icon(
-                          variant: DsButtonVariant.ghost,
+                          variant: DsButtonVariant.secondary,
                           size: DsSize.sm,
                           semanticLabel: t.music.play,
                           onPressed: () => unawaited(ref.read(musicPlayerProvider.notifier).play(candidate)),

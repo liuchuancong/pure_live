@@ -93,24 +93,24 @@ dependencies:
   live_websocket: # WebSocket 连接
   pure_uikit_background: # 背景样式与图层
 
-  # 播放内核（本地 C:/Users/XA-158/projects/flutter/media_core，绝对路径；沙盒 player-lab 已验证解析）
+  # 播放内核（本地 F:/media_core，绝对路径；沙盒 player-lab 已验证解析）
   pip_kit: ^1.0.2 # iOS 系统画中画（media_core_pip 的 iOS 通路，抬起屏上的 AVPlayerLayer）
-  media_core: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core } # 播放器内核
-  media_core_logging: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_logging } # 内核日志中枢（MediaCoreLog，桥进 live_log）
-  media_core_live: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_live } # 直播恢复编排（线路×引擎扫描）
-  media_core_media_kit: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_media_kit } # mpv 后端
-  media_core_ijk_player: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ijk_player } # Android/iOS 内核
-  media_core_better_player: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_better_player } # Android/iOS 内核
-  media_core_danmaku: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_danmaku } # 弹幕管线（过滤/摄录）
-  media_core_recording_ffmpeg: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_recording_ffmpeg } # FFmpeg 录制后端
-  media_core_presentation: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_presentation } # 呈现驱动
-  media_core_audio: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_audio } # 音乐播放（队列/歌词/后台）
-  media_core_mpv_audio: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mpv_audio } # 音乐引擎（mpv_audio_kit：PCM/FFT tap、类型化效果、媒体会话）
-  media_core_fullscreen: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fullscreen } # 全屏驱动
-  media_core_pip: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_pip } # 画中画驱动
-  media_core_cast_dlna: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_cast_dlna } # DLNA 投屏后端
-  media_core_mediasession: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mediasession } # 媒体会话通知
-  media_core_notify: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_notify } # 用户通知
+  media_core: { path: F:/media_core/packages/media_core } # 播放器内核
+  media_core_logging: { path: F:/media_core/packages/media_core_logging } # 内核日志中枢（MediaCoreLog，桥进 live_log）
+  media_core_live: { path: F:/media_core/packages/media_core_live } # 直播恢复编排（线路×引擎扫描）
+  media_core_media_kit: { path: F:/media_core/packages/media_core_media_kit } # mpv 后端
+  media_core_ijk_player: { path: F:/media_core/packages/media_core_ijk_player } # Android/iOS 内核
+  media_core_better_player: { path: F:/media_core/packages/media_core_better_player } # Android/iOS 内核
+  media_core_danmaku: { path: F:/media_core/packages/media_core_danmaku } # 弹幕管线（过滤/摄录）
+  media_core_recording_ffmpeg: { path: F:/media_core/packages/media_core_recording_ffmpeg } # FFmpeg 录制后端
+  media_core_presentation: { path: F:/media_core/packages/media_core_presentation } # 呈现驱动
+  media_core_audio: { path: F:/media_core/packages/media_core_audio } # 音乐播放（队列/歌词/后台）
+  media_core_mpv_audio: { path: F:/media_core/packages/media_core_mpv_audio } # 音乐引擎（mpv_audio_kit：PCM/FFT tap、类型化效果、媒体会话）
+  media_core_fullscreen: { path: F:/media_core/packages/media_core_fullscreen } # 全屏驱动
+  media_core_pip: { path: F:/media_core/packages/media_core_pip } # 画中画驱动
+  media_core_cast_dlna: { path: F:/media_core/packages/media_core_cast_dlna } # DLNA 投屏后端
+  media_core_mediasession: { path: F:/media_core/packages/media_core_mediasession } # 媒体会话通知
+  media_core_notify: { path: F:/media_core/packages/media_core_notify } # 用户通知
 
   responsive_breakpoints: ^1.0.3 # 断点定义与解析（Tailwind/Material/Bootstrap）
 

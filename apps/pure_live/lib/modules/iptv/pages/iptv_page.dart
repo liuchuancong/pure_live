@@ -71,6 +71,8 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
       });
     }
     _slotRefresh = Timer.periodic(_slotRefreshInterval, (_) {
+      // A tick queued as the page leaves must not reach a defunct ref.
+      if (!mounted) return;
       ref.read(iptvChannelsProvider.notifier).refreshSlots();
     });
   }
@@ -102,7 +104,7 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
       return Center(
         child: DsEmptyState(
           icon: const DsIcon(DsIcons.cloudOff),
-          title: Text(t.common.empty),
+          title: Text(t.iptv.openFailed),
           description: Text(t.iptv.openFailedDescription),
           actions: [DsButton(onPressed: () => ref.invalidate(iptvLibraryProvider), child: Text(t.common.retry))],
         ),

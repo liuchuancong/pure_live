@@ -5,7 +5,7 @@ import 'dart:io' show File;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flame_barrage/flame_barrage.dart' show BarrageController, EmojiAtlas, FlameBarrageWidget;
 import 'package:flutter/material.dart' show AppBar, Scaffold;
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
+import 'package:flutter/services.dart' show FilteringTextInputFormatter, LogicalKeyboardKey, TextInputType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -101,6 +101,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
   _VodPanel? _openPanel;
   Timer? _hoverTimer;
   Timer? _leaveTimer;
+
+  /// The playing part's row in the parts catalogue, so opening the catalogue
+  /// brings it into view instead of starting at the first.
+  final GlobalKey _currentPartKey = GlobalKey();
 
   /// Whether the end of the current part has already been acted on, so the
   /// station's finish action runs once per part.
@@ -427,6 +431,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     unawaited(_eventSub?.cancel() ?? Future<void>.value());
     unawaited(_geometrySub?.cancel() ?? Future<void>.value());
     _geometrySub = handle.geometryController.state.listen((state) {
+      if (!mounted) return;
       final size = state.geometry.videoSize;
       if (size.width <= 0 || size.height <= 0) return;
       _aspectRatio = size.width / size.height;
@@ -1216,10 +1221,12 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           LayoutBuilder(
             builder: (context, constraints) {
               // The bar gives way from the outside in: the volume slider,
-              // then the pickers' words, so a phone — or a desktop's paned
-              // picture — never overflows.
+              // then the pickers' words — and what still does not fit
+              // scrolls, the room bar's own answer, so a phone or a desktop's
+              // paned picture never overflows.
               final compact = LiveWindow.isCompact(constraints.maxWidth);
-              return Row(
+              final bar = Row(
+                mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
                 spacing: DsSpace.s4,
                 children: [
                   MediaBarButton(
@@ -1257,7 +1264,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                         semanticLabel: t.vod.volume,
                       ),
                     ),
-                  const Spacer(),
+                  // Only the fitted bar has spare width to split its clusters
+                  // with; a scrolling one keeps the verbs right after.
+                  if (!compact) const Spacer(),
                   MediaBarButton(
                     icon: danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
                     label: danmakuVisible ? t.vod.danmakuOff : t.vod.danmakuOn,
@@ -1337,6 +1346,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   ),
                 ],
               );
+              return compact ? SingleChildScrollView(scrollDirection: Axis.horizontal, child: bar) : bar;
             },
           ),
         ],
@@ -1433,13 +1443,16 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
           width: 260,
           children: [
             for (final candidate in parts)
-              PlayerPanelOption(
-                label: 'P${candidate.page} ${candidate.title}',
-                selected: candidate.cid == _part?.cid,
-                onPressed: () {
-                  _closePanel();
-                  unawaited(_openPart(candidate, resume: _resumeFor(candidate)));
-                },
+              KeyedSubtree(
+                key: candidate.cid == _part?.cid ? _currentPartKey : null,
+                child: PlayerPanelOption(
+                  label: 'P${candidate.page} ${candidate.title}',
+                  selected: candidate.cid == _part?.cid,
+                  onPressed: () {
+                    _closePanel();
+                    unawaited(_openPart(candidate, resume: _resumeFor(candidate)));
+                  },
+                ),
               ),
           ],
         );
@@ -1513,6 +1526,16 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     if (_openPanel == panel) return;
     setState(() => _openPanel = panel);
     _hideTimer?.cancel();
+    // The parts catalogue opens on the part being played, not on the first:
+    // a multi-part upload hundreds deep would otherwise always start over.
+    if (panel == _VodPanel.parts) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final keyContext = _currentPartKey.currentContext;
+        if (keyContext != null && mounted) {
+          Scrollable.ensureVisible(keyContext, alignment: 0.1, duration: const Duration(milliseconds: 120));
+        }
+      });
+    }
   }
 
   void _closePanel() {
@@ -1592,7 +1615,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             ),
             if (overflows)
               DsButton(
-                variant: DsButtonVariant.ghost,
+                variant: DsButtonVariant.secondary,
                 size: DsSize.sm,
                 onPressed: () => setState(() => _introExpanded = !_introExpanded),
                 child: Text(_introExpanded ? t.vod.collapse : t.vod.expand),
@@ -1649,6 +1672,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               Text(meta.join(' · '), style: theme.typography.caption.copyWith(color: colors.textSubtle)),
           ],
         ),
+        // Actions on one line, the crowd's numbers on the next: the buttons
+        // are things the viewer does, the stats are things that happened,
+        // and one Wrap mixed them into a single unordered strip.
         Wrap(
           spacing: DsSpace.s8,
           runSpacing: DsSpace.s8,
@@ -1672,15 +1698,23 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               leading: const DsIcon(DsIcons.download, size: 14),
               child: Text(t.vod.download),
             ),
-            if (detail.likeCount case final count?) _VodStat(icon: DsIcons.thumbsUp, value: count, label: t.vod.likes),
-            if (detail.coinCount case final count?) _VodStat(icon: DsIcons.coins, value: count, label: t.vod.coins),
-            if (detail.favoriteCount case final count?)
-              _VodStat(icon: DsIcons.star, value: count, label: t.vod.favorites),
           ],
         ),
+        if (detail.likeCount != null || detail.coinCount != null || detail.favoriteCount != null)
+          Wrap(
+            spacing: DsSpace.s16,
+            runSpacing: DsSpace.s8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (detail.likeCount case final count?) _VodStat(icon: DsIcons.thumbsUp, value: count, label: t.vod.likes),
+              if (detail.coinCount case final count?) _VodStat(icon: DsIcons.coins, value: count, label: t.vod.coins),
+              if (detail.favoriteCount case final count?)
+                _VodStat(icon: DsIcons.star, value: count, label: t.vod.favorites),
+            ],
+          ),
         if (showDetails && uploader.isNotEmpty)
-          DsCard(
-            style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
             child: Row(
               spacing: DsSpace.s12,
               children: [
@@ -1710,29 +1744,10 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
             ),
           ),
         if (detail.parts.length > 1)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s8,
-            children: [
-              Text(
-                '${t.vod.parts} · ${detail.parts.length}',
-                style: theme.typography.title.copyWith(color: colors.text),
-              ),
-              Wrap(
-                spacing: DsSpace.s8,
-                runSpacing: DsSpace.s8,
-                children: [
-                  for (final candidate in detail.parts)
-                    DsButton(
-                      variant: DsButtonVariant.secondary,
-                      size: DsSize.sm,
-                      onPressed: () => unawaited(_openPart(candidate, resume: _resumeFor(candidate))),
-                      leading: candidate.cid == _part?.cid ? const DsIcon(DsIcons.play, size: 12) : null,
-                      child: Text('P${candidate.page} ${candidate.title}'),
-                    ),
-                ],
-              ),
-            ],
+          _PartsSection(
+            parts: detail.parts,
+            current: _part,
+            onOpen: (part) => unawaited(_openPart(part, resume: _resumeFor(part))),
           ),
         if (showDetails) ...[
           Column(
@@ -1775,37 +1790,199 @@ final class _PictureBox extends StatelessWidget {
   Widget build(BuildContext context) => immersive ? child : AspectRatio(aspectRatio: 16 / 9, child: child);
 }
 
-/// One count beside the save button: what the archive collected, read off
-/// the picture's own ink rather than a heading.
+/// One count in the archive's action row: the station's own reading — a
+/// glyph and its number in flat ink, no capsule behind them.
 final class _VodStat extends StatelessWidget {
   const _VodStat({required this.icon, required this.value, required this.label});
 
   final DsIconData icon;
   final int value;
+
+  /// The count's name, spoken to the reader rather than printed.
   final String label;
 
   @override
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
-      decoration: BoxDecoration(
-        color: colors.control.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(DsRadii.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: DsSpace.s4,
-        children: [
-          DsIcon(icon, size: theme.sizes.iconXs, color: colors.textMuted),
-          Text(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DsSpace.s4,
+      children: [
+        DsIcon(icon, size: theme.sizes.iconSm, color: colors.textMuted),
+        Semantics(
+          label: '$label ${AudienceFormat.format(value)}',
+          child: Text(
             AudienceFormat.format(value),
-            style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.text)),
+            style: theme.typography.numeric(
+              theme.typography.caption.copyWith(color: colors.text, fontWeight: FontWeight.w600),
+            ),
           ),
-          Text(label, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The parts the archive splits into, [kVodPartGroup] at a time with a pager
+/// and a jump box when they run past one group — the episode shelf's pattern
+/// carried over to the station's multi-part uploads, whose courses can run to
+/// hundreds of parts.
+const int kVodPartGroup = 20;
+
+final class _PartsSection extends StatefulWidget {
+  const _PartsSection({required this.parts, required this.current, required this.onOpen});
+
+  final List<VodPart> parts;
+
+  /// The part the page is playing, when one is.
+  final VodPart? current;
+
+  /// Runs when the viewer picks another part.
+  final void Function(VodPart part) onOpen;
+
+  @override
+  State<_PartsSection> createState() => _PartsSectionState();
+}
+
+final class _PartsSectionState extends State<_PartsSection> {
+  int _group = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _group = _groupOf(widget.current);
+  }
+
+  @override
+  void didUpdateWidget(_PartsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Switching the playing part — from here or from the bar's catalogue —
+    // turns the shelf to the page it sits on.
+    if (oldWidget.current?.cid != widget.current?.cid) {
+      setState(() => _group = _groupOf(widget.current));
+    }
+  }
+
+  /// The group [part] sits in, by its place in the archive's list.
+  int _groupOf(VodPart? part) {
+    if (part == null) return 0;
+    final position = widget.parts.indexWhere((candidate) => candidate.cid == part.cid);
+    return position < 0 ? 0 : position ~/ kVodPartGroup;
+  }
+
+  /// Asks for a part number and opens it; an empty or unknown answer leaves
+  /// the shelf where it was.
+  Future<void> _jump() async {
+    final parts = widget.parts;
+    if (parts.isEmpty) return;
+    final controller = TextEditingController();
+    int? parse() {
+      final typed = int.tryParse(controller.text.trim());
+      if (typed == null) return null;
+      final byPage = parts.where((part) => part.page == typed);
+      if (byPage.isNotEmpty) return parts.indexOf(byPage.first);
+      return typed >= 1 && typed <= parts.length ? typed - 1 : null;
+    }
+
+    final position = await showDsDialog<int>(
+      context: context,
+      builder: (dialogContext) {
+        final t = dialogContext.t;
+        return DsDialog(
+          title: Text(t.vod.partsJump),
+          description: DsTextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            placeholder: '1–${parts.length}',
+            onSubmitted: (_) => Navigator.of(dialogContext).pop(parse()),
+          ),
+          actions: [
+            DsButton(
+              variant: DsButtonVariant.ghost,
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(t.common.cancel),
+            ),
+            DsButton(onPressed: () => Navigator.of(dialogContext).pop(parse()), child: Text(t.common.confirm)),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (position == null || position < 0 || position >= parts.length || !mounted) return;
+    widget.onOpen(parts[position]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final parts = widget.parts;
+    final groups = (parts.length + kVodPartGroup - 1) ~/ kVodPartGroup;
+    final group = _group.clamp(0, groups - 1);
+    final first = group * kVodPartGroup;
+    final shown = parts.skip(first).take(kVodPartGroup).toList();
+    final last = first + shown.length;
+    final muted = theme.typography.caption.copyWith(color: colors.textMuted);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        Row(
+          spacing: DsSpace.s8,
+          children: [
+            Expanded(
+              child: Text(
+                '${t.vod.parts} · ${parts.length}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.title.copyWith(color: colors.text),
+              ),
+            ),
+            if (groups > 1) ...[
+              Text('$first–$last / ${parts.length}', style: muted),
+              DsButton.icon(
+                icon: const DsIcon(DsIcons.chevronLeft),
+                semanticLabel: t.vod.partsPrevious,
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: group > 0 ? () => setState(() => _group = group - 1) : null,
+              ),
+              DsButton.icon(
+                icon: const DsIcon(DsIcons.chevronRight),
+                semanticLabel: t.vod.partsNext,
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: group < groups - 1 ? () => setState(() => _group = group + 1) : null,
+              ),
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.listOrdered, size: 16),
+                onPressed: () => unawaited(_jump()),
+                child: Text(t.vod.partsJump),
+              ),
+            ],
+          ],
+        ),
+        Wrap(
+          spacing: DsSpace.s8,
+          runSpacing: DsSpace.s8,
+          children: [
+            for (final candidate in shown)
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => widget.onOpen(candidate),
+                leading: candidate.cid == widget.current?.cid ? const DsIcon(DsIcons.play, size: 12) : null,
+                child: Text('P${candidate.page} ${candidate.title}'),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -1899,7 +2076,9 @@ final class _CommentsSectionState extends ConsumerState<_CommentsSection> {
   }
 }
 
-/// One comment: the author's avatar and name, when, the words, and the likes.
+/// One comment, drawn the way the station lays its floor out: the author's
+/// avatar and name, the words, then the floor's own line — when it was
+/// posted, the likes it drew, the replies it gathered.
 final class _CommentRow extends StatelessWidget {
   const _CommentRow({required this.comment});
 
@@ -1913,7 +2092,7 @@ final class _CommentRow extends StatelessWidget {
     final posted = comment.createdAt;
     final likes = comment.likeCount ?? 0;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
+      padding: const EdgeInsets.symmetric(vertical: DsSpace.s6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s8,
@@ -1921,44 +2100,38 @@ final class _CommentRow extends StatelessWidget {
           DsAvatar(
             initials: comment.author,
             image: avatar == null || avatar.isEmpty ? null : cachedImage(avatar),
-            size: DsSize.xs,
+            size: DsSize.sm,
             toneIndex: DsAvatar.toneFor(comment.author),
             semanticLabel: comment.author,
           ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s3,
+              spacing: DsSpace.s4,
               children: [
+                Text(
+                  comment.author,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.link, fontWeight: FontWeight.w600),
+                ),
+                Text(comment.message, style: theme.typography.body.copyWith(color: colors.text)),
                 Row(
-                  spacing: DsSpace.s8,
+                  spacing: DsSpace.s12,
                   children: [
-                    Flexible(
-                      child: Text(
-                        comment.author,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                    ),
                     if (posted != null)
                       Text(
                         vodDateText(posted),
                         style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
                       ),
-                  ],
-                ),
-                Text(comment.message, style: theme.typography.body.copyWith(color: colors.text)),
-                Row(
-                  spacing: DsSpace.s4,
-                  children: [
-                    DsIcon(DsIcons.thumbsUp, size: theme.sizes.iconXs, color: colors.textSubtle),
-                    Text(
-                      AudienceFormat.format(likes),
-                      style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
-                    ),
+                    if (likes > 0) ...[
+                      DsIcon(DsIcons.thumbsUp, size: theme.sizes.iconXs, color: colors.textSubtle),
+                      Text(
+                        AudienceFormat.format(likes),
+                        style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                      ),
+                    ],
                     if ((comment.replyCount ?? 0) > 0) ...[
-                      const SizedBox(width: DsSpace.s8),
                       DsIcon(DsIcons.messageCircle, size: theme.sizes.iconXs, color: colors.textSubtle),
                       Text(
                         AudienceFormat.format(comment.replyCount ?? 0),

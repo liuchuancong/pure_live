@@ -142,5 +142,11 @@
   "downloadDone": "Saved to {name: String}",
   "downloadFailed": "Download failed",
   "downloadCancelled": "Download cancelled",
-  "downloadCancel": "Cancel download"
+  "downloadCancel": "Cancel download",
+  "partsPrevious": "Previous group",
+  "partsNext": "Next group",
+  "partsJump": "Jump to part",
+  "episodesPrevious": "Previous group",
+  "episodesNext": "Next group",
+  "episodesJump": "Jump to episode"
 }

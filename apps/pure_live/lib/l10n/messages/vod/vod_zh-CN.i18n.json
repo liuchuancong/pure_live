@@ -142,5 +142,11 @@
   "downloadDone": "已下载到 {name: String}",
   "downloadFailed": "下载失败",
   "downloadCancelled": "已取消下载",
-  "downloadCancel": "取消下载"
+  "downloadCancel": "取消下载",
+  "partsPrevious": "上一组",
+  "partsNext": "下一组",
+  "partsJump": "跳转分P",
+  "episodesPrevious": "上一组",
+  "episodesNext": "下一组",
+  "episodesJump": "跳转集数"
 }

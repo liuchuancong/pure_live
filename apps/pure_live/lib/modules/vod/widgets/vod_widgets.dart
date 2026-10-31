@@ -20,10 +20,15 @@ String vodDateText(DateTime time, {DateTime? now}) {
   return time.year == today.year ? date : '${time.year}-$date';
 }
 
-/// One Bilibili archive as a card in a browse or search grid.
-///
-/// The cover carries the length pill; beneath it the title, the uploader and
-/// the play figure. The whole card is one press target.
+/// The information area under a vod card's cover: room for a two-line title
+/// and the uploader line, taller than the room card's one-line block.
+const double kVodCardInfoExtent = 72;
+
+/// One Bilibili archive as a card in a browse or search grid, drawn the way
+/// the station's own home lays them out: the counts sit on the cover as
+/// white ink with a soft shadow — plays and danmaku at its foot's start,
+/// the length at its foot's end — and beneath it the title and the uploader.
+/// The whole card is one press target.
 final class VodVideoCard extends StatelessWidget {
   /// The card for [video]; [onOpen] opens its page.
   const VodVideoCard({required this.video, this.onOpen, this.rank, super.key});
@@ -43,6 +48,11 @@ final class VodVideoCard extends StatelessWidget {
     final theme = DsTheme.of(context);
     final count = video.playCount;
     final plays = count == null || count <= 0 ? '' : AudienceFormat.format(count);
+    final uploader = (video.uploader ?? '').trim();
+    final danmaku = switch (video.danmakuCount) {
+      final value? when value > 0 => AudienceFormat.format(value),
+      _ => '',
+    };
     return DsCard(
       onPressed: onOpen,
       semanticLabel: video.title,
@@ -53,28 +63,28 @@ final class VodVideoCard extends StatelessWidget {
           shadows: [DsShadow(color: colors.overlay, blur: DsSpace.s24, offset: const Offset(0, DsSpace.s8))],
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s6,
-        children: [
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(theme.radii.card),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AspectRatio(
+              aspectRatio: 16 / 9,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   vodCover(video, context),
-                  if (video.duration != null)
-                    PositionedDirectional(
-                      bottom: DsSpace.s6,
-                      end: DsSpace.s6,
-                      child: DsBadge(label: Text(vodDurationText(video.duration!)), dot: false),
+                  // Darkens the cover's lower edge so the counts keep their
+                  // contrast over a bright picture — the room cover's scrim.
+                  const Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
                     ),
+                  ),
                   if (rank != null)
                     PositionedDirectional(
-                      top: DsSpace.s6,
-                      start: DsSpace.s6,
+                      top: DsSpace.s8,
+                      start: DsSpace.s8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s3),
                         decoration: DsBoxDecoration(
@@ -89,55 +99,71 @@ final class VodVideoCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                  // The station's own cover ink: the play and danmaku figures
+                  // at the foot's start, the length at its end, each plain
+                  // white with a soft shadow instead of a capsule.
+                  PositionedDirectional(
+                    start: DsSpace.s8,
+                    end: DsSpace.s8,
+                    bottom: DsSpace.s6,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Wrap(
+                            spacing: DsSpace.s8,
+                            runSpacing: DsSpace.s3,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              if (plays.isNotEmpty)
+                                _CoverInk(icon: DsIcons.play, label: plays),
+                              if (danmaku.isNotEmpty)
+                                _CoverInk(icon: DsIcons.captions, label: danmaku),
+                            ],
+                          ),
+                        ),
+                        if (video.duration != null)
+                          Text(
+                            vodDurationText(video.duration!),
+                            style: theme.typography.numeric(
+                              theme.typography.caption.copyWith(
+                                color: const Color(0xFFFFFFFF),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s4,
-              children: [
-                Text(
-                  video.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
-                ),
-                Row(
-                  spacing: DsSpace.s4,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if ((video.uploader ?? '').trim().isNotEmpty)
-                      Flexible(
-                        child: Text(
-                          video.uploader!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.caption.copyWith(color: colors.textMuted),
-                        ),
-                      ),
+                    Text(
+                      video.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                    ),
                     const Spacer(),
-                    if (plays.isNotEmpty)
-                      Row(
-                        spacing: DsSpace.s4,
-                        children: [
-                          DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: colors.textSubtle),
-                          Text(
-                            plays,
-                            style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(color: colors.textSubtle),
-                            ),
-                          ),
-                        ],
+                    if (uploader.isNotEmpty)
+                      Text(
+                        uploader,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
                       ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: DsSpace.s6),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -148,6 +174,37 @@ final class VodVideoCard extends StatelessWidget {
     final url = video.coverUrl;
     if (url == null || url.isEmpty) return fallback;
     return DsImage(image: cachedImage(url), aspectRatio: 16 / 9, semanticLabel: video.title, fallback: fallback);
+  }
+}
+
+/// One figure printed on a cover: a small glyph and its count in white with
+/// the station's soft drop shadow — no capsule behind it.
+final class _CoverInk extends StatelessWidget {
+  const _CoverInk({required this.icon, required this.label});
+
+  final DsIconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    const shadow = [Shadow(color: Color(0x66000000), offset: Offset(0, 1), blurRadius: 2)];
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DsSpace.s3,
+      children: [
+        DsIcon(icon, size: theme.sizes.iconXs, color: const Color(0xFFFFFFFF)),
+        Text(
+          label,
+          style: theme.typography.numeric(
+            theme.typography.caption.copyWith(
+              color: const Color(0xFFFFFFFF),
+              shadows: shadow,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -200,11 +257,24 @@ final class VodSeasonCard extends StatelessWidget {
                       semanticLabel: season.title,
                       fallback: fallback,
                     ),
+                  const Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
+                    ),
+                  ),
                   if (rating != null && rating.isNotEmpty)
                     PositionedDirectional(
-                      bottom: DsSpace.s6,
-                      end: DsSpace.s6,
-                      child: DsBadge(label: Text(rating), dot: false),
+                      bottom: DsSpace.s8,
+                      end: DsSpace.s8,
+                      child: RoomCoverChip(
+                        text: rating,
+                        style: theme.typography.numeric(
+                          theme.typography.caption.copyWith(
+                            color: const Color(0xFFFFFFFF),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -415,7 +485,6 @@ final class VodVideoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final t = context.t;
     final count = video.playCount;
     final plays = count == null || count <= 0 ? '' : AudienceFormat.format(count);
     final danmaku = switch (video.danmakuCount) {
@@ -443,11 +512,26 @@ final class VodVideoRow extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     VodVideoCard.vodCover(video, context),
+                    const Positioned.fill(
+                      child: IgnorePointer(
+                        child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
+                      ),
+                    ),
                     if (video.duration != null)
                       PositionedDirectional(
                         bottom: DsSpace.s4,
                         end: DsSpace.s4,
-                        child: DsBadge(label: Text(vodDurationText(video.duration!)), dot: false),
+                        child: RoomCoverChip(
+                          compact: true,
+                          text: vodDurationText(video.duration!),
+                          style: theme.typography.numeric(
+                            theme.typography.caption.copyWith(
+                              fontSize: 10,
+                              color: const Color(0xFFFFFFFF),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -469,17 +553,22 @@ final class VodVideoRow extends StatelessWidget {
                   ),
                   if ((video.uploader ?? '').trim().isNotEmpty)
                     Text(
-                      '${t.vod.up} · ${video.uploader}',
+                      video.uploader!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.caption.copyWith(color: colors.textMuted),
                     ),
                   if (plays.isNotEmpty || danmaku.isNotEmpty)
-                    Row(
+                    // The figures share the line with a fixed 148 px cover, so
+                    // a narrow window leaves them too little for one line —
+                    // they fold under instead of painting stripes.
+                    Wrap(
                       spacing: DsSpace.s4,
+                      runSpacing: DsSpace.s3,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         if (plays.isNotEmpty) ...[
-                          DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: colors.textSubtle),
+                          DsIcon(DsIcons.play, size: theme.sizes.iconXs, color: colors.textSubtle),
                           Text(
                             plays,
                             style: theme.typography.numeric(
@@ -487,7 +576,6 @@ final class VodVideoRow extends StatelessWidget {
                             ),
                           ),
                         ],
-                        if (plays.isNotEmpty && danmaku.isNotEmpty) const SizedBox(width: DsSpace.s4),
                         if (danmaku.isNotEmpty) ...[
                           DsIcon(DsIcons.captions, size: theme.sizes.iconXs, color: colors.textSubtle),
                           Text(

@@ -779,11 +779,13 @@ final class MusicSyncServerAuthCode extends Notifier<String> {
     await StoragePrefs.setString(kMusicSyncServerAuthCodeKey, next);
   }
 
-  /// Replaces the code with a fresh one, the reference's refresh.
-  Future<void> refresh() async {
+  /// Replaces the code with a fresh one, the reference's refresh; the new
+  /// code comes back so callers need no provider read to show it.
+  Future<String> refresh() async {
     final code = musicSyncGenerateAuthCode();
     state = code;
     await StoragePrefs.setString(kMusicSyncServerAuthCodeKey, code);
+    return code;
   }
 }
 

@@ -14,6 +14,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   media_core_audio
   media_core_native
   media_kit_video
+  mpv_audio_kit
   multiview_desktop
   open_file_linux
   refresh_rate

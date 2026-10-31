@@ -16,7 +16,14 @@ import 'package:pure_live/modules/music/pages/music_settings_pane.dart' show Mus
 /// and the enhancement effects one tap away in their dialogs.
 final class MusicEqCenterPage extends ConsumerWidget {
   /// Creates the page.
-  const MusicEqCenterPage({super.key});
+  ///
+  /// Not const: the bands card's jump key belongs to this instance's tree.
+  MusicEqCenterPage({super.key});
+
+  /// The bands card, so the current-preset card's quick jump can walk the
+  /// page's own scroll view to it — the page root's context cannot: the
+  /// scroll view is its descendant, not its ancestor.
+  final GlobalKey _bandsKey = GlobalKey();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -119,7 +126,7 @@ final class MusicEqCenterPage extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: DsSpace.s8),
-                    if (eq.presetId == null)
+                    if (!_resolves(eq.presetId, custom))
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: 2),
                         decoration: BoxDecoration(
@@ -139,7 +146,7 @@ final class MusicEqCenterPage extends ConsumerWidget {
                     _QuickButton(
                       icon: DsIcons.slidersVertical,
                       label: t.music.eqCenterEqualizer,
-                      onTap: () => unawaited(_scrollToBands(context)),
+                      onTap: () => unawaited(_scrollToBands()),
                     ),
                     _QuickButton(
                       icon: DsIcons.micVocal,
@@ -209,6 +216,7 @@ final class MusicEqCenterPage extends ConsumerWidget {
           // The bands: the response curve and the ten handles, plus the
           // preamp that rides before them.
           _Card(
+            key: _bandsKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: DsSpace.s12,
@@ -265,12 +273,23 @@ final class MusicEqCenterPage extends ConsumerWidget {
     return null;
   }
 
+  /// Whether [presetId] still names a preset the shelves know: a built-in,
+  /// or one of the viewer's own still shelved. Deleting a custom preset
+  /// that was in force leaves its id behind; the curve it had is now
+  /// hand-tuned, and the page says 自定义 rather than a built-in's name.
+  static bool _resolves(String? presetId, List<MusicCustomEqPreset> presets) =>
+      presetId == null ||
+      kMusicEqPresets.any((preset) => preset.id == presetId) ||
+      _customOf(presets, presetId) != null;
+
   /// The preset in force's display name: the viewer's own preset by its
   /// name, a built-in by its label, a hand-tuned curve by 自定义.
   static String _presetName(Translations t, String? presetId, List<MusicCustomEqPreset> presets) {
     final custom = _customOf(presets, presetId);
     if (custom != null) return custom.name;
-    if (presetId != null) return MusicEqPane.presetLabel(t, _presetOf(presetId));
+    if (presetId != null && kMusicEqPresets.any((preset) => preset.id == presetId)) {
+      return MusicEqPane.presetLabel(t, _presetOf(presetId));
+    }
     return t.music.eqPresetCustom;
   }
 
@@ -281,8 +300,10 @@ final class MusicEqCenterPage extends ConsumerWidget {
     _ => t.music.eqPresetDesc,
   };
 
-  Future<void> _scrollToBands(BuildContext context) async {
-    await Scrollable.ensureVisible(context, duration: const Duration(milliseconds: 300), alignment: 0.8);
+  Future<void> _scrollToBands() async {
+    final keyContext = _bandsKey.currentContext;
+    if (keyContext == null) return;
+    await Scrollable.ensureVisible(keyContext, duration: const Duration(milliseconds: 300), alignment: 0.8);
   }
 
   Future<void> _showEffects(BuildContext context) async {
@@ -296,7 +317,7 @@ final class MusicEqCenterPage extends ConsumerWidget {
 
 /// One panel of the page: a rounded surface on the theme's card colour.
 final class _Card extends ConsumerWidget {
-  const _Card({required this.child});
+  const _Card({required this.child, super.key});
 
   final Widget child;
 
@@ -467,36 +488,40 @@ final class _PresetDialogState extends ConsumerState<_PresetDialog> {
           else
             ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 380),
-              child: Column(
-                spacing: DsSpace.s4,
-                children: [
-                  for (final preset in kMusicEqPresets)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(MusicEqPane.presetLabel(t, preset), style: theme.typography.body),
-                              Text(
-                                _PresetCard.presetTag(t, preset.id),
-                                style: theme.typography.caption.copyWith(color: colors.textMuted),
-                              ),
-                            ],
+              // Ten presets stand taller than the cap; the list scrolls
+              // where it ends, as the viewer's own tab does.
+              child: SingleChildScrollView(
+                child: Column(
+                  spacing: DsSpace.s4,
+                  children: [
+                    for (final preset in kMusicEqPresets)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(MusicEqPane.presetLabel(t, preset), style: theme.typography.body),
+                                Text(
+                                  _PresetCard.presetTag(t, preset.id),
+                                  style: theme.typography.caption.copyWith(color: colors.textMuted),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        if (eq.presetId == preset.id)
-                          Text(t.music.eqInUse, style: theme.typography.caption.copyWith(color: colors.accent))
-                        else
-                          DsButton(
-                            variant: DsButtonVariant.secondary,
-                            size: DsSize.sm,
-                            onPressed: () => unawaited(controller.applyPreset(preset)),
-                            child: Text(t.music.eqUse),
-                          ),
-                      ],
-                    ),
-                ],
+                          if (eq.presetId == preset.id)
+                            Text(t.music.eqInUse, style: theme.typography.caption.copyWith(color: colors.accent))
+                          else
+                            DsButton(
+                              variant: DsButtonVariant.secondary,
+                              size: DsSize.sm,
+                              onPressed: () => unawaited(controller.applyPreset(preset)),
+                              child: Text(t.music.eqUse),
+                            ),
+                        ],
+                      ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -613,7 +638,11 @@ Future<void> _saveCurrent(BuildContext context, WidgetRef ref) async {
   field.dispose();
   final trimmed = name?.trim();
   if (trimmed == null || trimmed.isEmpty) return;
+  // The shelf may be gone while its dialog was up — or gone again while
+  // the save writes; a dead element's ref must not be reached twice.
+  if (!context.mounted) return;
   final saved = await ref.read(musicCustomPresetsProvider.notifier).save(trimmed);
+  if (!context.mounted) return;
   await ref.read(musicEqProvider.notifier).applyCustomPreset(saved);
 }
 

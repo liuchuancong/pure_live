@@ -732,6 +732,7 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String get ungrouped => 'Ungrouped';
 	@override String get emptyTitle => 'No channels yet';
 	@override String get emptyDescription => 'Import an M3U or TXT playlist and its channels will appear here.';
+	@override String get openFailed => 'Could not open';
 	@override String get openFailedDescription => 'The channel library could not be opened.';
 	@override String get noFavoritesTitle => 'No favourite channels';
 	@override String get noFavoritesDescription => 'Tap the heart on a channel card and it stays in this list.';
@@ -997,6 +998,15 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String sourcesReady({required Object count}) => '${count} custom sources ready';
 	@override String get settingsPlayback => 'Source and playback';
 	@override String get settingsList => 'Lists';
+	@override String get settingsInterface => 'Interface';
+	@override String get uiBlurredBackdrop => 'Blurred backdrop';
+	@override String get uiBlurredBackdropDesc => 'Paint the player page over the playing song\'s cover, blown up and blurred';
+	@override String get uiVinylDisc => 'Vinyl disc';
+	@override String get uiVinylDiscDesc => 'Let a record peek out beside the wide player page\'s artwork';
+	@override String get uiSpectrum => 'Playback spectrum';
+	@override String get uiSpectrumDesc => 'The live spectrum bars on the player page\'s stage';
+	@override String get uiReset => 'Reset display';
+	@override String get uiResetDesc => 'Show every interface element turned off above again';
 	@override String get searchTypeSongs => 'Songs';
 	@override String get searchTypeSonglists => 'Songlists';
 	@override String get searchSourceAll => 'All sources';
@@ -1115,10 +1125,12 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get progress => 'Progress';
 	@override String get lyrics => 'Lyrics';
 	@override String get lyricsEmpty => 'This song has no lyrics yet.';
+	@override String get lyricLoadFailed => 'Couldn\'t load the lyrics';
 	@override String get openPlayer => 'Open the player';
 	@override String playingSource({required Object source}) => 'From ${source}';
 	@override String get loadMore => 'Load more';
 	@override String get clearRecent => 'Clear recently played';
+	@override String get recentEmpty => 'Nothing played yet';
 	@override String get moreActions => 'More actions';
 	@override String get playNext => 'Play next';
 	@override String get addToPlaylist => 'Add to a playlist';
@@ -1138,6 +1150,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get disliked => 'Added to the dislike rules; it will be skipped';
 	@override String get undisliked => 'Removed from the dislike rules';
 	@override String dislikeRules({required Object count}) => 'Dislike rules · ${count}';
+	@override String get dislikeSection => 'Disliked songs';
+	@override String get settingsReset => 'Reset';
 	@override String get dislikeRulesDesc => 'Songs with a rule are skipped when the queue reaches them.';
 	@override String get dislikeRulesClear => 'Clear rules';
 	@override String get dislikeRulesCleared => 'Dislike rules cleared';
@@ -1205,6 +1219,9 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String downloadFailed({required Object error}) => 'Download failed: ${error}';
 	@override String get downloadHint => 'Files land in the shared download folder; the queue supports pause, resume and retry.';
 	@override String get downloadDirectory => 'Download folder';
+	@override String get downloadBehaviour => 'Download behaviour';
+	@override String get downloadNaming => 'Files & naming';
+	@override String get downloadTags => 'Tags & lyrics';
 	@override String get downloadDirectoryDefault => 'Use the default folder';
 	@override String get downloadDirectoryDefaultDesc => 'Return to the app’s default downloads folder.';
 	@override String get downloadDirectoryUpdated => 'Download folder updated';
@@ -1278,6 +1295,9 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get lyricOffsetDesc => 'Positive values show the lyric later.';
 	@override String get lyricOffsetReset => 'No delay';
 	@override String get lyricTranslation => 'Show translation';
+	@override String get lyricContent => 'Lyric content';
+	@override String get lyricDisplay => 'Lyric display';
+	@override String get lyricTiming => 'Timing';
 	@override String get lyricTranslationDesc => 'Show the translation when the lyric has one.';
 	@override String get lyricRomanization => 'Show romanization';
 	@override String get lyricRomanizationDesc => 'Show the romanization when the lyric has one.';
@@ -1311,6 +1331,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get desktopLyricLock => 'Lock the lyrics';
 	@override String get desktopLyricLockDesc => 'A locked window lets clicks pass through to the app underneath.';
 	@override String get desktopLyricStyleSection => 'Style';
+	@override String get desktopLyricShow => 'Show & lock';
 	@override String get desktopLyricFontSize => 'Font size';
 	@override String get desktopLyricFontSizeDesc => 'The overlay’s text size.';
 	@override String get desktopLyricOpacity => 'Opacity';
@@ -1589,6 +1610,9 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String tagEditFailed({required Object error}) => 'Save failed: ${error}';
 	@override String get tagEditUnsupportedFormat => 'Tag writing is not supported for this format';
 	@override String get tagEditReadFailed => 'Reading the file\'s tags failed';
+	@override String get syncClient => 'Client mode';
+	@override String get hkAssignments => 'Key assignments';
+	@override String get sourcesImported => 'Imported sources';
 }
 
 // Path: navigation
@@ -1625,6 +1649,7 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get musicLibrary => 'My lists';
 	@override String get musicLocal => 'Local music';
 	@override String get musicDownloads => 'Downloads';
+	@override String get musicSettings => 'Music settings';
 }
 
 // Path: player
@@ -2132,6 +2157,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get sitesHideAll => 'Hide all';
 	@override String get sitesReset => 'Reset';
 	@override String get sitesResetDesc => 'Visibility, order and the preferred platform all return to what this build ships with.';
+	@override String get sitesGroupList => 'Platforms';
 	@override String get sitesColumnPlatform => 'Platform';
 	@override String get sitesColumnId => 'Id';
 	@override String get sitesColumnShown => 'Shown';
@@ -2496,6 +2522,11 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get navNavigation => 'Navigation bar';
 	@override String get navRefresh => 'Auto refresh';
 	@override String get navProxy => 'Network proxy';
+	@override String get tvGroup => 'TV';
+	@override String get sitesPlatforms => 'Platforms';
+	@override String get sitesCompatibility => 'Site compatibility';
+	@override String get settingsMore => 'More';
+	@override String get navMenuOrder => 'Menu order';
 	@override String get navPlatforms => 'Platforms & accounts';
 	@override String get navigationDescription => 'What the home menu and the tools block each show, and in what order.';
 	@override String get refreshDescription => 'Automatic refresh for the follow list and live covers.';
@@ -2543,6 +2574,12 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get vodQuality1080Plus => '1080P+';
 	@override String get vodQuality4K => '4K';
 	@override String get iptvGuideUpdates => 'Guide updates';
+	@override String get iptvNetwork => 'Network';
+	@override String get iptvSections => 'Zapping & groups';
+	@override String get vodPages => 'Playback & interface';
+	@override String get hongguoPlayback => 'Playback';
+	@override String get hongguoInterface => 'Interface';
+	@override String get hongguoDevice => 'Device';
 	@override String get navIptvBrowse => 'Zapping and display';
 	@override String get iptvBrowseDescription => 'How the channel number, the zap direction, the clock and the programme line are shown.';
 	@override String get navIptvGroups => 'Group visibility';
@@ -3235,6 +3272,14 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get hongguoDescription => 'The hongguo companion service and playback preferences.';
 	@override String get hongguoQuality => 'Default quality';
 	@override String get hongguoQualityDesc => 'The rendition an episode opens with; a missing one falls back to the nearest lower.';
+	@override String get hongguoCardVisibleContent => 'Card visible content';
+	@override String get hongguoCardRank => 'Board rank';
+	@override String get hongguoCardTags => 'Source tags';
+	@override String get hongguoCardEpisodes => 'Episode count';
+	@override String get hongguoCardToday => '“Today” marker';
+	@override String get hongguoCardScore => 'Score';
+	@override String get hongguoCardHot => 'Cover heat';
+	@override String get hongguoCardMeta => 'Listing line';
 	@override String get hongguoQualityBest => 'Best';
 	@override String get hongguoQuality1080 => '1080P';
 	@override String get hongguoQuality720 => '720P';
@@ -3277,6 +3322,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get storageFolderRestart => 'Takes effect after a restart';
 	@override String get storageFolderPick => 'Choose folder';
 	@override String get storageFolderReset => 'Use default';
+	@override String get resetGroup => 'Reset';
+	@override String get roomCardGroup => 'Room card style';
 }
 
 // Path: shield
@@ -3608,6 +3655,12 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get downloadFailed => 'Download failed';
 	@override String get downloadCancelled => 'Download cancelled';
 	@override String get downloadCancel => 'Cancel download';
+	@override String get partsPrevious => 'Previous group';
+	@override String get partsNext => 'Next group';
+	@override String get partsJump => 'Jump to part';
+	@override String get episodesPrevious => 'Previous group';
+	@override String get episodesNext => 'Next group';
+	@override String get episodesJump => 'Jump to episode';
 }
 
 // Path: wallpaper
@@ -4330,6 +4383,7 @@ extension on TranslationsEn {
 			'iptv.ungrouped' => 'Ungrouped',
 			'iptv.emptyTitle' => 'No channels yet',
 			'iptv.emptyDescription' => 'Import an M3U or TXT playlist and its channels will appear here.',
+			'iptv.openFailed' => 'Could not open',
 			'iptv.openFailedDescription' => 'The channel library could not be opened.',
 			'iptv.noFavoritesTitle' => 'No favourite channels',
 			'iptv.noFavoritesDescription' => 'Tap the heart on a channel card and it stays in this list.',
@@ -4577,6 +4631,15 @@ extension on TranslationsEn {
 			'music.sourcesReady' => ({required Object count}) => '${count} custom sources ready',
 			'music.settingsPlayback' => 'Source and playback',
 			'music.settingsList' => 'Lists',
+			'music.settingsInterface' => 'Interface',
+			'music.uiBlurredBackdrop' => 'Blurred backdrop',
+			'music.uiBlurredBackdropDesc' => 'Paint the player page over the playing song\'s cover, blown up and blurred',
+			'music.uiVinylDisc' => 'Vinyl disc',
+			'music.uiVinylDiscDesc' => 'Let a record peek out beside the wide player page\'s artwork',
+			'music.uiSpectrum' => 'Playback spectrum',
+			'music.uiSpectrumDesc' => 'The live spectrum bars on the player page\'s stage',
+			'music.uiReset' => 'Reset display',
+			'music.uiResetDesc' => 'Show every interface element turned off above again',
 			'music.searchTypeSongs' => 'Songs',
 			'music.searchTypeSonglists' => 'Songlists',
 			'music.searchSourceAll' => 'All sources',
@@ -4695,10 +4758,12 @@ extension on TranslationsEn {
 			'music.progress' => 'Progress',
 			'music.lyrics' => 'Lyrics',
 			'music.lyricsEmpty' => 'This song has no lyrics yet.',
+			'music.lyricLoadFailed' => 'Couldn\'t load the lyrics',
 			'music.openPlayer' => 'Open the player',
 			'music.playingSource' => ({required Object source}) => 'From ${source}',
 			'music.loadMore' => 'Load more',
 			'music.clearRecent' => 'Clear recently played',
+			'music.recentEmpty' => 'Nothing played yet',
 			'music.moreActions' => 'More actions',
 			'music.playNext' => 'Play next',
 			'music.addToPlaylist' => 'Add to a playlist',
@@ -4718,6 +4783,8 @@ extension on TranslationsEn {
 			'music.disliked' => 'Added to the dislike rules; it will be skipped',
 			'music.undisliked' => 'Removed from the dislike rules',
 			'music.dislikeRules' => ({required Object count}) => 'Dislike rules · ${count}',
+			'music.dislikeSection' => 'Disliked songs',
+			'music.settingsReset' => 'Reset',
 			'music.dislikeRulesDesc' => 'Songs with a rule are skipped when the queue reaches them.',
 			'music.dislikeRulesClear' => 'Clear rules',
 			'music.dislikeRulesCleared' => 'Dislike rules cleared',
@@ -4741,6 +4808,8 @@ extension on TranslationsEn {
 			'music.playlistName' => 'Playlist name',
 			'music.playlistNameHint' => 'Name this playlist',
 			'music.playlistRename' => 'Rename',
+			_ => null,
+		} ?? switch (path) {
 			'music.playlistRenameTitle' => 'Rename playlist',
 			'music.playlistDelete' => 'Delete playlist',
 			'music.playlistDeleteTitle' => ({required Object name}) => 'Delete “${name}”?',
@@ -4755,8 +4824,6 @@ extension on TranslationsEn {
 			'music.playlistImport' => 'Import playlist',
 			'music.playlistImportDone' => ({required Object name}) => 'Imported "${name}"',
 			'music.playlistImportFailed' => ({required Object error}) => 'Import failed: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'music.playlistImportInvalid' => 'The file has no usable songs',
 			'music.playlistImportLxmcConfirm' => 'Lists in the backup that share an ID with existing ones will have their songs overwritten. Continue?',
 			'music.playlistImportLxmcDone' => ({required Object lists, required Object songs}) => 'Imported ${lists} lists, ${songs} songs',
@@ -4787,6 +4854,9 @@ extension on TranslationsEn {
 			'music.downloadFailed' => ({required Object error}) => 'Download failed: ${error}',
 			'music.downloadHint' => 'Files land in the shared download folder; the queue supports pause, resume and retry.',
 			'music.downloadDirectory' => 'Download folder',
+			'music.downloadBehaviour' => 'Download behaviour',
+			'music.downloadNaming' => 'Files & naming',
+			'music.downloadTags' => 'Tags & lyrics',
 			'music.downloadDirectoryDefault' => 'Use the default folder',
 			'music.downloadDirectoryDefaultDesc' => 'Return to the app’s default downloads folder.',
 			'music.downloadDirectoryUpdated' => 'Download folder updated',
@@ -4860,6 +4930,9 @@ extension on TranslationsEn {
 			'music.lyricOffsetDesc' => 'Positive values show the lyric later.',
 			'music.lyricOffsetReset' => 'No delay',
 			'music.lyricTranslation' => 'Show translation',
+			'music.lyricContent' => 'Lyric content',
+			'music.lyricDisplay' => 'Lyric display',
+			'music.lyricTiming' => 'Timing',
 			'music.lyricTranslationDesc' => 'Show the translation when the lyric has one.',
 			'music.lyricRomanization' => 'Show romanization',
 			'music.lyricRomanizationDesc' => 'Show the romanization when the lyric has one.',
@@ -4893,6 +4966,7 @@ extension on TranslationsEn {
 			'music.desktopLyricLock' => 'Lock the lyrics',
 			'music.desktopLyricLockDesc' => 'A locked window lets clicks pass through to the app underneath.',
 			'music.desktopLyricStyleSection' => 'Style',
+			'music.desktopLyricShow' => 'Show & lock',
 			'music.desktopLyricFontSize' => 'Font size',
 			'music.desktopLyricFontSizeDesc' => 'The overlay’s text size.',
 			'music.desktopLyricOpacity' => 'Opacity',
@@ -5171,6 +5245,9 @@ extension on TranslationsEn {
 			'music.tagEditFailed' => ({required Object error}) => 'Save failed: ${error}',
 			'music.tagEditUnsupportedFormat' => 'Tag writing is not supported for this format',
 			'music.tagEditReadFailed' => 'Reading the file\'s tags failed',
+			'music.syncClient' => 'Client mode',
+			'music.hkAssignments' => 'Key assignments',
+			'music.sourcesImported' => 'Imported sources',
 			'navigation.groupPrimary' => 'Top pages',
 			'navigation.home' => 'Home',
 			'navigation.live' => 'Live',
@@ -5198,6 +5275,7 @@ extension on TranslationsEn {
 			'navigation.musicLibrary' => 'My lists',
 			'navigation.musicLocal' => 'Local music',
 			'navigation.musicDownloads' => 'Downloads',
+			'navigation.musicSettings' => 'Music settings',
 			'player.title' => 'Player',
 			'player.back' => 'Back',
 			'player.quality' => 'Quality',
@@ -5244,6 +5322,8 @@ extension on TranslationsEn {
 			'recorder.stateWaiting' => 'Waiting for live',
 			'recorder.stateSaved' => 'Saved',
 			'recorder.menuMore' => 'More actions',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.openRoom' => 'Open live room',
 			'recorder.openFolder' => 'Open folder',
 			'recorder.openFolderFailed' => 'Could not open the folder',
@@ -5269,8 +5349,6 @@ extension on TranslationsEn {
 			'recorder.keepAliveDescription' => 'Hold a background session and wake lock while recording (Android foreground service and notification).',
 			'recorder.verifyTitle' => 'Verify on stop',
 			'recorder.verifyDescription' => 'Check the segments are playable before the session ends.',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.restartTitle' => 'Stream retries',
 			'recorder.restartDescription' => 'How often FFmpeg reopens a broken stream; 0 disables retries.',
 			'recorder.restartCount' => ({required int count}) => '${count}×',
@@ -5653,6 +5731,7 @@ extension on TranslationsEn {
 			'settings.sitesHideAll' => 'Hide all',
 			'settings.sitesReset' => 'Reset',
 			'settings.sitesResetDesc' => 'Visibility, order and the preferred platform all return to what this build ships with.',
+			'settings.sitesGroupList' => 'Platforms',
 			'settings.sitesColumnPlatform' => 'Platform',
 			'settings.sitesColumnId' => 'Id',
 			'settings.sitesColumnShown' => 'Shown',
@@ -5757,6 +5836,8 @@ extension on TranslationsEn {
 			'settings.githubMirrorRefreshing' => 'Fetching the remote mirrors…',
 			'settings.githubMirrorNever' => 'The remote list has not been fetched yet.',
 			'settings.githubMirrorUpdated' => ({required Object time}) => 'Remote list updated ${time}',
+			_ => null,
+		} ?? switch (path) {
 			'settings.githubMirrorFailed' => ({required Object error}) => 'The remote list could not be fetched: ${error}',
 			'settings.githubMirrorAdd' => 'Add a mirror address',
 			'settings.githubMirrorAddTitle' => 'Add a mirror address',
@@ -5783,8 +5864,6 @@ extension on TranslationsEn {
 			'settings.danmakuInteractionGroup' => 'Danmaku interaction',
 			'settings.styleTapInteraction' => 'Tap danmaku',
 			'settings.styleTapInteractionDesc' => 'Copy or block a message; off, a tap only toggles the controls.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleLongPressInteraction' => 'Long-press danmaku',
 			'settings.styleLongPressInteractionDesc' => 'Opens the same actions; off, a long press misses danmaku.',
 			'settings.danmakuStyleGroup' => 'Danmaku style',
@@ -6019,6 +6098,11 @@ extension on TranslationsEn {
 			'settings.navNavigation' => 'Navigation bar',
 			'settings.navRefresh' => 'Auto refresh',
 			'settings.navProxy' => 'Network proxy',
+			'settings.tvGroup' => 'TV',
+			'settings.sitesPlatforms' => 'Platforms',
+			'settings.sitesCompatibility' => 'Site compatibility',
+			'settings.settingsMore' => 'More',
+			'settings.navMenuOrder' => 'Menu order',
 			'settings.navPlatforms' => 'Platforms & accounts',
 			'settings.navigationDescription' => 'What the home menu and the tools block each show, and in what order.',
 			'settings.refreshDescription' => 'Automatic refresh for the follow list and live covers.',
@@ -6066,6 +6150,12 @@ extension on TranslationsEn {
 			'settings.vodQuality1080Plus' => '1080P+',
 			'settings.vodQuality4K' => '4K',
 			'settings.iptvGuideUpdates' => 'Guide updates',
+			'settings.iptvNetwork' => 'Network',
+			'settings.iptvSections' => 'Zapping & groups',
+			'settings.vodPages' => 'Playback & interface',
+			'settings.hongguoPlayback' => 'Playback',
+			'settings.hongguoInterface' => 'Interface',
+			'settings.hongguoDevice' => 'Device',
 			'settings.navIptvBrowse' => 'Zapping and display',
 			'settings.iptvBrowseDescription' => 'How the channel number, the zap direction, the clock and the programme line are shown.',
 			'settings.navIptvGroups' => 'Group visibility',
@@ -6260,6 +6350,8 @@ extension on TranslationsEn {
 			'settings.playerGuideEntrySymFanTitle' => 'Fan spinning / dropped frames',
 			'settings.playerGuideEntrySymFanBody' => 'Use the low-end preset; if that fails, turn hardware decoding off (old devices can software-decode faster).',
 			'settings.playerGuideEntrySymBufferingTitle' => 'Frequent buffering',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntrySymBufferingBody' => 'Use the stable-network preset; also check the network proxy — a proxy is a common stall source.',
 			'settings.playerGuideEntrySymLatencyTitle' => 'High latency (co-streaming / esports)',
 			'settings.playerGuideEntrySymLatencyBody' => 'Use the low-latency preset and shrink buffering properties.',
@@ -6297,8 +6389,6 @@ extension on TranslationsEn {
 			'settings.backgroundPlayDesc' => 'Keep playing audio after the app leaves the foreground; when off, playback pauses and resumes when you return.',
 			'settings.asmrSleepMode' => 'ASMR sleep mode',
 			'settings.asmrSleepModeDesc' => 'Starts a room in audio-only mode and pauses it after the chosen time. Android only.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.asmrSleepTimer' => 'ASMR sleep duration',
 			'settings.asmrSleepTimerDesc' => 'Minutes before the audio-only room pauses; range 15–1440.',
 			'settings.asmrSleepCustomMinutes' => 'Custom minutes',
@@ -6760,12 +6850,22 @@ extension on TranslationsEn {
 			'settings.hongguoDescription' => 'The hongguo companion service and playback preferences.',
 			'settings.hongguoQuality' => 'Default quality',
 			'settings.hongguoQualityDesc' => 'The rendition an episode opens with; a missing one falls back to the nearest lower.',
+			'settings.hongguoCardVisibleContent' => 'Card visible content',
+			'settings.hongguoCardRank' => 'Board rank',
+			'settings.hongguoCardTags' => 'Source tags',
+			'settings.hongguoCardEpisodes' => 'Episode count',
+			'settings.hongguoCardToday' => '“Today” marker',
+			'settings.hongguoCardScore' => 'Score',
+			'settings.hongguoCardHot' => 'Cover heat',
+			'settings.hongguoCardMeta' => 'Listing line',
 			'settings.hongguoQualityBest' => 'Best',
 			'settings.hongguoQuality1080' => '1080P',
 			'settings.hongguoQuality720' => '720P',
 			'settings.hongguoQuality540' => '540P',
 			'settings.hongguoQuality480' => '480P',
 			'settings.hongguoQuality360' => '360P',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hongguoDeviceReset' => 'Reset device identity',
 			'settings.hongguoDeviceResetDesc' => 'Forgets the anonymous device; registers again on the next play.',
 			'settings.navLogs' => 'Logs',
@@ -6802,6 +6902,8 @@ extension on TranslationsEn {
 			'settings.storageFolderRestart' => 'Takes effect after a restart',
 			'settings.storageFolderPick' => 'Choose folder',
 			'settings.storageFolderReset' => 'Use default',
+			'settings.resetGroup' => 'Reset',
+			'settings.roomCardGroup' => 'Room card style',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -6811,8 +6913,6 @@ extension on TranslationsEn {
 			'shield.similarityEnabled' => 'Similar danmaku filter',
 			'shield.similarityEnabledDescription' => 'Hides near-duplicates posted moments apart.',
 			'shield.similarityThreshold' => 'Similarity threshold',
-			_ => null,
-		} ?? switch (path) {
 			'shield.similarityThresholdDescription' => 'Higher is stricter.',
 			'shield.similarityCacheDuration' => 'Cache duration',
 			'shield.similarityCacheDurationDescription' => 'No repeats within this window.',
@@ -7099,6 +7199,12 @@ extension on TranslationsEn {
 			'vod.downloadFailed' => 'Download failed',
 			'vod.downloadCancelled' => 'Download cancelled',
 			'vod.downloadCancel' => 'Cancel download',
+			'vod.partsPrevious' => 'Previous group',
+			'vod.partsNext' => 'Next group',
+			'vod.partsJump' => 'Jump to part',
+			'vod.episodesPrevious' => 'Previous group',
+			'vod.episodesNext' => 'Next group',
+			'vod.episodesJump' => 'Jump to episode',
 			'wallpaper.title' => 'Random pictures',
 			'wallpaper.description' => 'Fetch a picture from a public random source by group; preview before applying.',
 			'wallpaper.sourceCount' => ({required Object count}) => '${count} sources',

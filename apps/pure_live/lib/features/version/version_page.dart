@@ -45,7 +45,17 @@ final class _UpdateDialog extends StatelessWidget {
           Row(
             spacing: DsSpace.s8,
             children: [
-              Text(info.version, style: theme.typography.heading.copyWith(color: colors.text)),
+              // Loose on purpose: a long beta tag truncates rather than
+              // pushing the build number off a 300 px window's dialog, and
+              // a short tag leaves the Spacer its slack untouched.
+              Flexible(
+                child: Text(
+                  info.version,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.heading.copyWith(color: colors.text),
+                ),
+              ),
               if (info.prerelease) DsBadge(dot: false, label: Text(t.settings.prerelease), status: DsStatus.warning),
               const Spacer(),
               Text(
@@ -313,40 +323,66 @@ final class _ReleaseHistoryPageState extends ConsumerState<ReleaseHistoryPage> {
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 spacing: DsSpace.s8,
                                 children: [
-                                  Row(
-                                    spacing: DsSpace.s8,
-                                    children: [
-                                      Text(
-                                        release.version,
-                                        style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                                      ),
-                                      if (release.date.isNotEmpty)
-                                        Text(
-                                          release.date,
-                                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                                        ),
-                                      const Spacer(),
-                                      if (release.url.isNotEmpty)
+                                  LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final identity = Row(
+                                        spacing: DsSpace.s8,
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              release.version,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: theme.typography.bodyStrong.copyWith(color: colors.text),
+                                            ),
+                                          ),
+                                          if (release.date.isNotEmpty)
+                                            Flexible(
+                                              child: Text(
+                                                release.date,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                                              ),
+                                            ),
+                                        ],
+                                      );
+                                      final actions = [
+                                        if (release.url.isNotEmpty)
+                                          DsButton(
+                                            variant: DsButtonVariant.ghost,
+                                            size: DsSize.sm,
+                                            onPressed: () =>
+                                                unawaited(showDownloadPage(context, version: release.version)),
+                                            child: Text(t.settings.downloadTitle),
+                                          ),
                                         DsButton(
                                           variant: DsButtonVariant.ghost,
                                           size: DsSize.sm,
-                                          onPressed: () =>
-                                              unawaited(showDownloadPage(context, version: release.version)),
-                                          child: Text(t.settings.downloadTitle),
-                                        ),
-                                      DsButton(
-                                        variant: DsButtonVariant.ghost,
-                                        size: DsSize.sm,
-                                        leading: const DsIcon(DsIcons.externalLink, size: 14),
-                                        onPressed: () => unawaited(
-                                          _open(
-                                            context,
-                                            release.url.isEmpty ? releasePageUrl(release.version) : release.url,
+                                          leading: const DsIcon(DsIcons.externalLink, size: 14),
+                                          onPressed: () => unawaited(
+                                            _open(
+                                              context,
+                                              release.url.isEmpty ? releasePageUrl(release.version) : release.url,
+                                            ),
                                           ),
+                                          child: Text(t.settings.openReleasePage),
                                         ),
-                                        child: Text(t.settings.openReleasePage),
-                                      ),
-                                    ],
+                                      ];
+                                      // The card's own measure decides, not
+                                      // the window's: a 300 px window's card
+                                      // cannot hold version, date and two
+                                      // buttons on one line, so the buttons
+                                      // take the line beneath.
+                                      if (constraints.maxWidth < 360) {
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          spacing: DsSpace.s8,
+                                          children: [identity, Row(spacing: DsSpace.s8, children: actions)],
+                                        );
+                                      }
+                                      return Row(spacing: DsSpace.s8, children: [Expanded(child: identity), ...actions]);
+                                    },
                                   ),
                                   if (release.author.isNotEmpty)
                                     Text(

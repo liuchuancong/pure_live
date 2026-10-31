@@ -115,28 +115,42 @@ final class PlayerOverlayPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
-    return Container(
-      width: width,
-      padding: const EdgeInsets.symmetric(vertical: DsSpace.s6),
-      decoration: BoxDecoration(
-        color: const Color(0xF2131519),
-        borderRadius: BorderRadius.circular(theme.radii.card),
-        border: Border.all(color: const Color(0x24FFFFFF)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s6),
-            child: Text(
-              title,
-              style: theme.typography.caption.copyWith(color: playerInkSubtle, fontWeight: FontWeight.w600),
-            ),
+    // A card wider than the picture it hangs over loses its start edge to
+    // the picture's own rounded clip, so the host's measure wins over the
+    // card's ideal where the two disagree.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final effective = constraints.maxWidth < width ? constraints.maxWidth : width;
+        return Container(
+          width: effective,
+          padding: const EdgeInsets.symmetric(vertical: DsSpace.s6),
+          decoration: BoxDecoration(
+            color: const Color(0xF2131519),
+            borderRadius: BorderRadius.circular(theme.radii.card),
+            border: Border.all(color: const Color(0x24FFFFFF)),
           ),
-          ...children,
-        ],
-      ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s4, DsSpace.s12, DsSpace.s6),
+                child: Text(
+                  title,
+                  style: theme.typography.caption.copyWith(color: playerInkSubtle, fontWeight: FontWeight.w600),
+                ),
+              ),
+              // A long catalogue — a multi-part upload's parts — scrolls
+              // inside the card instead of growing it past the picture.
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

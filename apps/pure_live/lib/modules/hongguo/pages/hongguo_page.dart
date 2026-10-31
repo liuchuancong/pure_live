@@ -122,6 +122,10 @@ final class _ModuleHeader extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final t = context.t;
     final account = ref.watch(hongguoAccountProvider);
+    // The header names the viewer once the profile lands; until then (or
+    // when it names nobody) the bare words stand alone — a separator with
+    // nothing after it reads as a broken line.
+    final nickname = (account.profile?.nickname ?? '').trim();
     return Row(
       spacing: DsSpace.s12,
       children: [
@@ -149,7 +153,9 @@ final class _ModuleHeader extends ConsumerWidget {
               ),
               Text(
                 account.signedIn
-                    ? '${t.hongguo.accountSignedInAs} · ${account.profile?.nickname ?? ''}'
+                    ? (nickname.isEmpty
+                          ? t.hongguo.accountSignedInAs
+                          : '${t.hongguo.accountSignedInAs} · $nickname')
                     : t.hongguo.tagline,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -406,7 +412,12 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
             title: t.hongguo.shelfNew,
             items: latest?.items ?? const <HongguoSeries>[],
             loading: latest?.loading ?? true,
-            actions: [
+            error: latest?.error,
+            onRetry: () => unawaited(latestController.retry(_latest)),
+            // The shelf's own switches wrap under the title — four chips and
+            // a button cannot share one header row down to the window's
+            // 300 px floor.
+            toolbar: [
               for (final value in HongguoGenre.values)
                 DsChip(
                   label: Text('${value.label(t)}${t.hongguo.newArrivals}'),
@@ -416,6 +427,8 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
                     unawaited(latestController.open(value));
                   },
                 ),
+            ],
+            actions: [
               DsButton(
                 size: DsSize.sm,
                 variant: DsButtonVariant.secondary,
@@ -1052,6 +1065,7 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
               onToggle: (id) => setState(() {
                 if (!_selected.remove(id)) _selected.add(id);
               }),
+              emptyText: _watched == 0 ? null : t.common.empty,
             ),
           },
         ),
@@ -1571,7 +1585,13 @@ final class _SeriesList extends StatelessWidget {
 /// The local history's own rows: the stripe where playback stood, and a
 /// checkbox instead of the delete button while the shelf is being managed.
 final class _ProgressList extends ConsumerWidget {
-  const _ProgressList({required this.rows, this.managing = false, this.selected = const {}, this.onToggle});
+  const _ProgressList({
+    required this.rows,
+    this.managing = false,
+    this.selected = const {},
+    this.onToggle,
+    this.emptyText,
+  });
 
   final List<HongguoWatchProgress> rows;
 
@@ -1584,12 +1604,16 @@ final class _ProgressList extends ConsumerWidget {
   /// Flips one row's tick.
   final ValueChanged<String>? onToggle;
 
+  /// What the empty shelf says; a shelf the filter emptied speaks for the
+  /// filter, not for the whole history.
+  final String? emptyText;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     if (rows.isEmpty) {
       return Center(
-        child: DsEmptyState(icon: const DsIcon(DsIcons.history), title: Text(t.hongguo.historyLocalEmpty)),
+        child: DsEmptyState(icon: const DsIcon(DsIcons.history), title: Text(emptyText ?? t.hongguo.historyLocalEmpty)),
       );
     }
     return ListView.separated(

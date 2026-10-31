@@ -142,6 +142,9 @@ final class _WallpaperDownloadDetail extends ConsumerWidget {
     );
     if (!confirmed) return;
     await ref.read(wallpaperDownloadsProvider.notifier).remove(task.id);
+    // The host may already be gone (popped during the await); its own
+    // departure is not this removal's to announce.
+    if (!context.mounted) return;
     onGone();
   }
 

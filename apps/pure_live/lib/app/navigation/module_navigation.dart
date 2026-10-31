@@ -174,7 +174,14 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // 下载管理 — sit under them as the module's tools.
     menu: [
       [NavigationItem.music, NavigationItem.musicSonglist, NavigationItem.musicToplist, NavigationItem.musicLibrary],
-      [NavigationItem.musicLocal, NavigationItem.musicDownloads, NavigationItem.musicEffects],
+      [
+        NavigationItem.musicLocal,
+        NavigationItem.musicDownloads,
+        NavigationItem.musicEffects,
+        // The music settings' own rail row: one click onto the surface, on
+        // the music group, instead of the settings landing's category list.
+        NavigationItem.musicSettings,
+      ],
     ],
     landing: NavigationItem.music,
     // The music module's settings rail, entry for entry the way lx-music

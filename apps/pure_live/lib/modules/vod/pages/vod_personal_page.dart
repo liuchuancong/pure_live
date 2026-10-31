@@ -149,7 +149,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                   ),
                   if (_tab == VodPersonalTab.history && history.isNotEmpty)
                     DsButton.icon(
-                      variant: DsButtonVariant.ghost,
+                      variant: DsButtonVariant.secondary,
                       size: DsSize.sm,
                       semanticLabel: t.vod.clearHistory,
                       onPressed: () => unawaited(_clearHistory()),
@@ -468,7 +468,7 @@ final class _SavedVideoRow extends StatelessWidget {
               ),
             ),
             DsButton.icon(
-              variant: DsButtonVariant.ghost,
+              variant: DsButtonVariant.secondary,
               size: DsSize.sm,
               semanticLabel: removeLabel,
               onPressed: onRemove,

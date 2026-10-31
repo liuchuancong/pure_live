@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/app/app.dart' show browseSettingsProvider;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/hongguo/controller/hongguo_card_settings.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_covers.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
@@ -63,10 +64,13 @@ String hongguoSeriesMetaLine(HongguoSeries series) {
   return parts.join(' · ');
 }
 
-/// One series as a poster card: the cover with its badges — the board
-/// position, the episode count, the heat, the 今日 marker — the title, the
-/// listing line and, on a shelf that asks for it, the local bookmark.
-final class HongguoSeriesCard extends StatelessWidget {
+/// One series as a poster card, drawn in the room card's manner: the cover
+/// carries a soft scrim with its badges as translucent chips — the board
+/// position, the source tags, the episode count, the 今日 marker, the score,
+/// the heat along the foot — then the title and the listing line, and, on a
+/// shelf that asks for it, the local bookmark. Which pieces appear is the
+/// card visibility setting's to say.
+final class HongguoSeriesCard extends ConsumerWidget {
   /// The card for [series]; [onOpen] opens its page.
   const HongguoSeriesCard({required this.series, this.onOpen, this.favoritable = false, super.key});
 
@@ -80,12 +84,20 @@ final class HongguoSeriesCard extends StatelessWidget {
   final bool favoritable;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final t = context.t;
+    final visibility = ref.watch(hongguoCardSettingsProvider);
     final fallback = CoverFallback(title: series.title, padding: const EdgeInsets.all(DsSpace.s8));
     final rank = series.rank;
+    final showsRank = visibility.shows(HongguoCardElement.rank) && rank != null;
+    final showsTags =
+        visibility.shows(HongguoCardElement.coverTags) && rank == null && series.coverTags.isNotEmpty;
+    final showsEpisodes = visibility.shows(HongguoCardElement.episodes) && series.episodeCount > 0;
+    final showsToday = visibility.shows(HongguoCardElement.today) && series.today;
+    final showsScore = visibility.shows(HongguoCardElement.score) && series.score.isNotEmpty;
+    final showsHot = visibility.shows(HongguoCardElement.hot) && series.hot.isNotEmpty;
     return DsCard(
       onPressed: onOpen,
       semanticLabel: series.title,
@@ -96,13 +108,13 @@ final class HongguoSeriesCard extends StatelessWidget {
           shadows: [DsShadow(color: colors.overlay, blur: DsSpace.s24, offset: const Offset(0, DsSpace.s8))],
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AspectRatio(
-            aspectRatio: 3 / 4,
-            child: ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(theme.radii.card),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AspectRatio(
+              aspectRatio: 3 / 4,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -115,103 +127,101 @@ final class HongguoSeriesCard extends StatelessWidget {
                       semanticLabel: series.title,
                       fallback: fallback,
                     ),
-                  // The heat sits on the picture's own foot, where the
-                  // listing puts it; a bare chip there would hide the art.
-                  if (series.hot.isNotEmpty)
-                    PositionedDirectional(
-                      bottom: 0,
-                      start: 0,
-                      end: 0,
-                      height: 34,
-                      child: DecoratedBox(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: AlignmentDirectional.bottomCenter,
-                            end: AlignmentDirectional.topCenter,
-                            colors: [Color(0xB3000000), Color(0x00000000)],
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, 0, DsSpace.s8, DsSpace.s5),
-                          child: Text(
-                            series.hot,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.numeric(
-                              theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
-                            ),
-                          ),
-                        ),
-                      ),
+                  // Darkens the cover's edges so the chips keep their contrast
+                  // over a bright picture — the room cover's scrim.
+                  const Positioned.fill(
+                    child: IgnorePointer(
+                      child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
                     ),
-                  if (rank != null)
-                    PositionedDirectional(
-                      top: DsSpace.s6,
-                      start: DsSpace.s6,
-                      child: _RankFlag(rank: rank),
-                    )
-                  else if (series.coverTags.isNotEmpty)
+                  ),
+                  if (showsRank)
+                    PositionedDirectional(top: DsSpace.s8, start: DsSpace.s8, child: _RankFlag(rank: rank))
+                  else if (showsTags)
                     // The source's own corner tags (爆剧 / 新剧 / 独播), where
                     // the app stamps them; a ranked card keeps the place for
                     // its flag instead.
                     PositionedDirectional(
-                      top: DsSpace.s6,
-                      start: DsSpace.s6,
+                      top: DsSpace.s8,
+                      start: DsSpace.s8,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         spacing: DsSpace.s4,
                         children: [for (final tag in series.coverTags.take(2)) _CoverTag(label: tag)],
                       ),
                     ),
-                  PositionedDirectional(
-                    top: DsSpace.s6,
-                    end: DsSpace.s6,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      spacing: DsSpace.s4,
-                      children: [
-                        if (series.episodeCount > 0)
-                          _CoverTag(label: t.hongguo.allEpisodesCount(count: series.episodeCount)),
-                        if (series.today) DsBadge(label: Text(t.hongguo.todayTag), status: DsStatus.success),
-                        if (series.score.isNotEmpty) DsBadge(label: Text(series.score), dot: false),
-                      ],
+                  if (showsEpisodes || showsToday || showsScore)
+                    PositionedDirectional(
+                      top: DsSpace.s8,
+                      end: DsSpace.s8,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        spacing: DsSpace.s4,
+                        children: [
+                          if (showsEpisodes)
+                            RoomCoverChip(
+                              compact: true,
+                              text: t.hongguo.allEpisodesCount(count: series.episodeCount),
+                            ),
+                          if (showsToday) DsBadge(label: Text(t.hongguo.todayTag), status: DsStatus.success),
+                          if (showsScore)
+                            RoomCoverChip(
+                              text: series.score,
+                              style: theme.typography.numeric(
+                                theme.typography.caption.copyWith(
+                                  color: const Color(0xFFFFFFFF),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
+                  if (showsHot)
+                    PositionedDirectional(
+                      bottom: DsSpace.s8,
+                      start: DsSpace.s8,
+                      end: DsSpace.s8,
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: RoomCoverChip(text: series.hot),
+                      ),
+                    ),
                 ],
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s6, DsSpace.s12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s4,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: DsSpace.s4,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        series.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s6, DsSpace.s12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: DsSpace.s4,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: DsSpace.s4,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          series.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                        ),
                       ),
+                      if (favoritable) _FavoriteBookmark(series: series),
+                    ],
+                  ),
+                  if (visibility.shows(HongguoCardElement.meta) && hongguoSeriesMetaLine(series).isNotEmpty)
+                    Text(
+                      hongguoSeriesMetaLine(series),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
                     ),
-                    if (favoritable) _FavoriteBookmark(series: series),
-                  ],
-                ),
-                Text(
-                  hongguoSeriesMetaLine(series),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -658,6 +668,7 @@ final class HongguoShelf extends ConsumerWidget {
     required this.items,
     required this.cardBuilder,
     this.actions = const <Widget>[],
+    this.toolbar = const <Widget>[],
     this.loading = false,
     this.error,
     this.onRetry,
@@ -675,6 +686,11 @@ final class HongguoShelf extends ConsumerWidget {
 
   /// The controls beside the title.
   final List<Widget> actions;
+
+  /// The controls under the title, above the posters — the shelf's own
+  /// switches. They wrap instead of squeezing beside the name: the window's
+  /// floor is 300 px and a header row of chips cannot hold it.
+  final List<Widget> toolbar;
 
   /// Whether the shelf's own list is being read.
   final bool loading;
@@ -712,6 +728,7 @@ final class HongguoShelf extends ConsumerWidget {
             ],
           ),
         ),
+        if (toolbar.isNotEmpty) Wrap(spacing: DsSpace.s8, runSpacing: DsSpace.s8, children: toolbar),
         LayoutBuilder(
           builder: (context, constraints) {
             final content = constraints.hasBoundedWidth ? constraints.maxWidth : 0.0;

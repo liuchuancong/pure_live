@@ -32,6 +32,7 @@ final class PagedCardGrid<T> extends StatefulWidget {
     this.listMainAxisExtent,
     this.listMatchesGridWidth = false,
     this.aspectRatio,
+    this.infoExtent,
     this.cardExtent,
     this.crossSpacing = DsSpace.s16,
     this.mainSpacing = DsSpace.s16,
@@ -82,6 +83,10 @@ final class PagedCardGrid<T> extends StatefulWidget {
 
   /// The tile's width over height; see [CardGrid.aspectRatio].
   final double? aspectRatio;
+
+  /// The information block's height on room-shaped tiles; see
+  /// [CardGrid.infoExtent].
+  final double? infoExtent;
 
   /// The widest a card gets; see [CardGrid.cardExtent].
   final double? cardExtent;
@@ -180,6 +185,7 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
       listMainAxisExtent: widget.listMainAxisExtent,
       listMatchesGridWidth: widget.listMatchesGridWidth,
       aspectRatio: widget.aspectRatio,
+      infoExtent: widget.infoExtent,
       cardExtent: widget.cardExtent,
       crossSpacing: widget.crossSpacing,
       mainSpacing: widget.mainSpacing,
@@ -211,6 +217,7 @@ final class _PagedCardGridState<T> extends State<PagedCardGrid<T>> {
       listMainAxisExtent: widget.listMainAxisExtent,
       listMatchesGridWidth: widget.listMatchesGridWidth,
       aspectRatio: widget.aspectRatio,
+      infoExtent: widget.infoExtent,
       cardExtent: widget.cardExtent,
       crossSpacing: widget.crossSpacing,
       mainSpacing: widget.mainSpacing,

@@ -7,7 +7,8 @@ import 'package:flutter/services.dart' show HardwareKeyboard, KeyUpEvent, Logica
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart' show BrowseSettings, browseSettingsProvider;
-import 'package:pure_live/features/settings/room/room_card_settings.dart' show kRoomCardCoverRatio, roomCardTileHeight;
+import 'package:pure_live/features/settings/room/room_card_settings.dart'
+    show kRoomCardCoverRatio, kRoomCardInfoExtent, roomCardTileHeight;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/focus/tv_focus_scale.dart';
 
@@ -100,6 +101,7 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
     this.crossSpacing = DsSpace.s16,
     this.mainSpacing = DsSpace.s16,
     this.aspectRatio,
+    this.infoExtent,
     this.listMainAxisExtent,
     this.isLoading = false,
     this.hasMore = false,
@@ -157,6 +159,11 @@ final class CardGrid<T> extends ConsumerStatefulWidget {
   /// room feed passes — takes the room card's own shape, a 16:9 cover over a
   /// fixed information block; wide row cards (areas, history) pass their own.
   final double? aspectRatio;
+
+  /// The information block's height when the tile takes the room card's
+  /// shape ([aspectRatio] of null): the room card's own extent unless the
+  /// caller's card draws a taller one (the vod card's two-line title).
+  final double? infoExtent;
 
   /// The fixed height of a card in the list layout's multi-column rows, so
   /// a row design keeps its proportions however wide its column gets. Null
@@ -507,6 +514,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
         crossSpacing: widget.crossSpacing,
         mainSpacing: widget.mainSpacing,
         aspectRatio: tileAspect,
+        infoExtent: widget.infoExtent,
         roomCard: widget.aspectRatio == null,
         mainAxisExtent: listRow ? widget.listMainAxisExtent : null,
         listMatchesGridWidth: widget.listMatchesGridWidth,
@@ -588,7 +596,9 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
             final padding = widget.padding.resolve(Directionality.of(context));
             final content = math.max(0, constraints.maxWidth - padding.horizontal).toDouble();
             final tileWidth = (content - widget.crossSpacing * (_columns - 1)) / _columns;
-            final roomExtent = widget.aspectRatio == null && content > 0 ? roomCardTileHeight(tileWidth) : null;
+            final roomExtent = widget.aspectRatio == null && content > 0
+                ? roomCardTileHeight(tileWidth) - kRoomCardInfoExtent + (widget.infoExtent ?? kRoomCardInfoExtent)
+                : null;
             _gridItemExtent = roomExtent;
             return GridView.builder(
               controller: _scroll,
@@ -840,6 +850,7 @@ final class _SkeletonGrid extends StatelessWidget {
     required this.columns,
     this.cardExtent,
     this.roomCard = false,
+    this.infoExtent,
     this.mainAxisExtent,
     this.listMatchesGridWidth = false,
   });
@@ -853,6 +864,10 @@ final class _SkeletonGrid extends StatelessWidget {
   /// width plus the fixed information block, as the real grid's does. False
   /// for a caller with its own ratio.
   final bool roomCard;
+
+  /// The information block's height when these are room tiles; see
+  /// [CardGrid.infoExtent].
+  final double? infoExtent;
 
   /// The fixed height of a list row; null draws the card's own ratio.
   final double? mainAxisExtent;
@@ -888,7 +903,9 @@ final class _SkeletonGrid extends StatelessWidget {
                 : browseCardExtentForWidth(content, crossSpacing: crossSpacing));
         final columnCount = math.max(1, (content / (extent + crossSpacing)).ceil());
         final tileWidth = (content - crossSpacing * (columnCount - 1)) / columnCount;
-        final roomExtent = mainAxisExtent == null && roomCard && content > 0 ? roomCardTileHeight(tileWidth) : null;
+        final roomExtent = mainAxisExtent == null && roomCard && content > 0
+            ? roomCardTileHeight(tileWidth) - kRoomCardInfoExtent + (infoExtent ?? kRoomCardInfoExtent)
+            : null;
         final fixedExtent = mainAxisExtent ?? roomExtent;
         return GridView.builder(
           padding: padding,

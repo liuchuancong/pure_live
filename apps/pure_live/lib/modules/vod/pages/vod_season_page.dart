@@ -2,7 +2,7 @@ import 'dart:async' show StreamSubscription, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart' show AppBar, Scaffold;
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
+import 'package:flutter/services.dart' show FilteringTextInputFormatter, LogicalKeyboardKey, TextInputType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -304,27 +304,10 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> {
   }
 
   Widget _episodes(VodSeasonDetail detail, Translations t) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: DsSpace.s8,
-      children: [
-        Text(t.vod.episodes, style: theme.typography.title.copyWith(color: colors.text)),
-        Wrap(
-          spacing: DsSpace.s8,
-          runSpacing: DsSpace.s8,
-          children: [
-            for (final episode in detail.episodes)
-              DsButton(
-                variant: episode.id == _episode?.id ? DsButtonVariant.primary : DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: () => unawaited(_openEpisode(episode)),
-                child: Text(episode.index),
-              ),
-          ],
-        ),
-      ],
+    return _EpisodesSection(
+      episodes: detail.episodes,
+      current: _episode,
+      onOpen: (episode) => unawaited(_openEpisode(episode)),
     );
   }
 
@@ -496,6 +479,166 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A season's episodes, [kVodEpisodeGroup] at a time with a pager and a jump
+/// box when they run past one group — the episode shelf's pattern shared with
+/// the video page's parts, for the seasons that run to hundreds of episodes.
+const int kVodEpisodeGroup = 20;
+
+final class _EpisodesSection extends StatefulWidget {
+  const _EpisodesSection({required this.episodes, required this.current, required this.onOpen});
+
+  final List<VodEpisode> episodes;
+
+  /// The episode the page is playing, when one is.
+  final VodEpisode? current;
+
+  /// Runs when the viewer picks another episode.
+  final void Function(VodEpisode episode) onOpen;
+
+  @override
+  State<_EpisodesSection> createState() => _EpisodesSectionState();
+}
+
+final class _EpisodesSectionState extends State<_EpisodesSection> {
+  int _group = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _group = _groupOf(widget.current);
+  }
+
+  @override
+  void didUpdateWidget(_EpisodesSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Switching the playing episode turns the shelf to the page it sits on.
+    if (oldWidget.current?.id != widget.current?.id) {
+      setState(() => _group = _groupOf(widget.current));
+    }
+  }
+
+  /// The group [episode] sits in, by its place in the season's list.
+  int _groupOf(VodEpisode? episode) {
+    if (episode == null) return 0;
+    final position = widget.episodes.indexWhere((candidate) => candidate.id == episode.id);
+    return position < 0 ? 0 : position ~/ kVodEpisodeGroup;
+  }
+
+  /// Asks for an episode number and opens it; an empty or unknown answer
+  /// leaves the shelf where it was.
+  Future<void> _jump() async {
+    final episodes = widget.episodes;
+    if (episodes.isEmpty) return;
+    final controller = TextEditingController();
+    int? parse() {
+      final typed = int.tryParse(controller.text.trim());
+      if (typed == null) return null;
+      final byIndex = episodes.where((episode) => int.tryParse(episode.index) == typed);
+      if (byIndex.isNotEmpty) return episodes.indexOf(byIndex.first);
+      return typed >= 1 && typed <= episodes.length ? typed - 1 : null;
+    }
+
+    final position = await showDsDialog<int>(
+      context: context,
+      builder: (dialogContext) {
+        final t = dialogContext.t;
+        return DsDialog(
+          title: Text(t.vod.episodesJump),
+          description: DsTextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            placeholder: '1–${episodes.length}',
+            onSubmitted: (_) => Navigator.of(dialogContext).pop(parse()),
+          ),
+          actions: [
+            DsButton(
+              variant: DsButtonVariant.ghost,
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(t.common.cancel),
+            ),
+            DsButton(onPressed: () => Navigator.of(dialogContext).pop(parse()), child: Text(t.common.confirm)),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    if (position == null || position < 0 || position >= episodes.length || !mounted) return;
+    widget.onOpen(episodes[position]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final episodes = widget.episodes;
+    final groups = (episodes.length + kVodEpisodeGroup - 1) ~/ kVodEpisodeGroup;
+    final group = _group.clamp(0, groups - 1);
+    final first = group * kVodEpisodeGroup;
+    final shown = episodes.skip(first).take(kVodEpisodeGroup).toList();
+    final last = first + shown.length;
+    final muted = theme.typography.caption.copyWith(color: colors.textMuted);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s8,
+      children: [
+        Row(
+          spacing: DsSpace.s8,
+          children: [
+            Expanded(
+              child: Text(
+                '${t.vod.episodes} · ${episodes.length}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.title.copyWith(color: colors.text),
+              ),
+            ),
+            if (groups > 1) ...[
+              Text('$first–$last / ${episodes.length}', style: muted),
+              DsButton.icon(
+                icon: const DsIcon(DsIcons.chevronLeft),
+                semanticLabel: t.vod.episodesPrevious,
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: group > 0 ? () => setState(() => _group = group - 1) : null,
+              ),
+              DsButton.icon(
+                icon: const DsIcon(DsIcons.chevronRight),
+                semanticLabel: t.vod.episodesNext,
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: group < groups - 1 ? () => setState(() => _group = group + 1) : null,
+              ),
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                leading: const DsIcon(DsIcons.listOrdered, size: 16),
+                onPressed: () => unawaited(_jump()),
+                child: Text(t.vod.episodesJump),
+              ),
+            ],
+          ],
+        ),
+        Wrap(
+          spacing: DsSpace.s8,
+          runSpacing: DsSpace.s8,
+          children: [
+            for (final candidate in shown)
+              DsButton(
+                variant: candidate.id == widget.current?.id ? DsButtonVariant.primary : DsButtonVariant.secondary,
+                size: DsSize.sm,
+                onPressed: () => widget.onOpen(candidate),
+                child: Text(candidate.index),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

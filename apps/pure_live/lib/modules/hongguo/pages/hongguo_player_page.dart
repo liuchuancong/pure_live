@@ -95,6 +95,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
 
   /// The catalogue hanging over the bar, when one is open.
   _HongguoPanel? _openPanel;
+
+  /// The playing episode's row in the episodes catalogue, so opening the
+  /// catalogue brings it into view instead of starting at the first.
+  final GlobalKey _currentEpisodeKey = GlobalKey();
   bool _loading = true;
   bool _opening = false;
   bool _disposed = false;
@@ -621,6 +625,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     unawaited(_eventSub?.cancel() ?? Future<void>.value());
     unawaited(_geometrySub?.cancel() ?? Future<void>.value());
     _geometrySub = handle.geometryController.state.listen((state) {
+      if (!mounted) return;
       final size = state.geometry.videoSize;
       if (size.width <= 0 || size.height <= 0) return;
       _aspectRatio = size.width / size.height;
@@ -1249,8 +1254,6 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     showDsToast(context: context, title: context.t.hongguo.shareCopied);
   }
 
-  /// The picture and its controls; [immersive] adds the way out and the
-  /// title over the picture, since the page's app bar is gone there.
   /// The picture and its controls. The bar wakes under the pointer and
   /// settles away while the stream plays — the live room's own overlay — and
   /// [immersive] adds the way out and the title over the picture, since the
@@ -1886,15 +1889,18 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 padding: EdgeInsets.zero,
                 children: [
                   for (final episode in episodes)
-                    PlayerPanelOption(
-                      label: episode.title.isEmpty
-                          ? t.hongguo.episodeLabel(index: episode.index)
-                          : '${t.hongguo.episodeLabel(index: episode.index)} ${episode.title}',
-                      selected: episode.vid == _episode?.vid,
-                      onPressed: () {
-                        _closePanel();
-                        unawaited(_openEpisode(episode));
-                      },
+                    KeyedSubtree(
+                      key: episode.vid == _episode?.vid ? _currentEpisodeKey : null,
+                      child: PlayerPanelOption(
+                        label: episode.title.isEmpty
+                            ? t.hongguo.episodeLabel(index: episode.index)
+                            : '${t.hongguo.episodeLabel(index: episode.index)} ${episode.title}',
+                        selected: episode.vid == _episode?.vid,
+                        onPressed: () {
+                          _closePanel();
+                          unawaited(_openEpisode(episode));
+                        },
+                      ),
                     ),
                 ],
               ),
@@ -1981,6 +1987,16 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     if (_openPanel == panel) return;
     setState(() => _openPanel = panel);
     _hideTimer?.cancel();
+    // The episodes catalogue opens on the episode being watched, not on the
+    // first: a series hundreds deep would otherwise always start over.
+    if (panel == _HongguoPanel.episodes) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final keyContext = _currentEpisodeKey.currentContext;
+        if (keyContext != null && mounted) {
+          Scrollable.ensureVisible(keyContext, alignment: 0.1, duration: const Duration(milliseconds: 120));
+        }
+      });
+    }
   }
 
   void _closePanel() {

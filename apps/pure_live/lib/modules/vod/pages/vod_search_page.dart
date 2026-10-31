@@ -10,7 +10,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodSeasonCard, VodUserRow, VodVideoCard;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodSeasonCard, VodUserRow, VodVideoCard, kVodCardInfoExtent;
 import 'package:pure_live/shared/shared.dart';
 
 /// The kind's tab words, the reference's five search types.
@@ -209,6 +209,7 @@ final class _SearchResults extends StatelessWidget {
       case VodSearchKind.video:
         return PagedCardGrid<VodVideo>(
           items: state.videos,
+          infoExtent: kVodCardInfoExtent,
           crossSpacing: settings.crossSpacing,
           mainSpacing: settings.mainSpacing,
           isLoading: state.loading,

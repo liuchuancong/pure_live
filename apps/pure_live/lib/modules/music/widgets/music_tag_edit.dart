@@ -350,7 +350,7 @@ final class _EditTagsDialogState extends ConsumerState<_EditTagsDialog> {
                       ),
                       if (picture != null)
                         DsButton(
-                          variant: DsButtonVariant.ghost,
+                          variant: DsButtonVariant.secondary,
                           size: DsSize.sm,
                           onPressed: () => setState(() {
                             _newPicture = null;
@@ -375,14 +375,14 @@ final class _EditTagsDialogState extends ConsumerState<_EditTagsDialog> {
                           spacing: DsSpace.s8,
                           children: [
                             DsButton(
-                              variant: DsButtonVariant.ghost,
+                              variant: DsButtonVariant.secondary,
                               size: DsSize.sm,
                               leading: _matchingLyric ? const DsSpinner() : null,
                               onPressed: _matchingLyric ? null : () => unawaited(_matchLyric()),
                               child: Text(t.music.tagEditMatchOnline),
                             ),
                             DsButton(
-                              variant: DsButtonVariant.ghost,
+                              variant: DsButtonVariant.secondary,
                               size: DsSize.sm,
                               onPressed: _lyric.text.isEmpty ? null : () => setState(_lyric.clear),
                               child: Text(t.music.tagEditClearLyric),

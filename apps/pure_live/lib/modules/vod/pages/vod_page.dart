@@ -10,7 +10,7 @@ import 'package:pure_live/features/account/account.dart' show showBilibiliWebLog
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
 import 'package:pure_live/modules/vod/controller/vod_social.dart';
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodDynamicRow, VodVideoCard, VodVideoRow;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodDynamicRow, VodVideoCard, VodVideoRow, kVodCardInfoExtent;
 import 'package:pure_live/shared/shared.dart';
 
 /// The station's home: the reference's 主页 rail entry, on its three tabs in
@@ -209,6 +209,7 @@ final class _VodFeedView extends ConsumerWidget {
       // than the room row so a two-line title never presses on its edge.
       listMainAxisExtent: 104,
       listItemBuilder: (context, video) => VodVideoRow(video: video, onOpen: () => onOpen(video)),
+      infoExtent: kVodCardInfoExtent,
       crossSpacing: settings.crossSpacing,
       mainSpacing: settings.mainSpacing,
       isLoading: state.loading,
