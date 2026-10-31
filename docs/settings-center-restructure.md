@@ -493,9 +493,10 @@ live 模块侧栏 = 5 个组标题 + 13 个一级行；iptv = 5 标题 + 11 行�
 
 ## 仍开着的项
 
-- **D2（pane 搬出 `settings_page.dart`、派发表）**：`settings_page.dart` 现为 2784 行，仍是全仓最长的
-  Dart 文件，规范 §6 展示层与 §10.5「页面不应太长」直接指向它。它是 10 分钟自动任务的每轮写入点，
-  整文件重写会静默丢掉对方在途的行级改动，因此需要与自动任务错峰（暂停一轮，或在独立分支做完再并回）。
+- **D2（pane 搬出 `settings_page.dart`、派发表）：已完成 2026-11-01 00:11。** `settings_page.dart` 现为
+  **557 行 / 10 个顶层类**，只剩设置壳（页面、分类、带搜索的机身、列、菜单列表、分区容器）；全部 pane
+  都在 `panes/` 下各自的文件里，盲集为 0。拆分组次记在下方「反向验证」的说明里；当时担心的「与自动任务
+  抢写」最终靠错峰解决（每一组搬完即刻 `dart analyze` + 两道门禁）。
   派发表保持编译期穷尽的 switch 形态（不是 `Map<SettingsSection, ...>`），搬迁到注册表一侧的独立文件，
   这一取舍的理由记在这里：穷尽性比可注入性更值钱，且规范 §7 禁止为拆分引入新框架。
 - **D3 语义项**（§2.1 代理两份定义的作用域文案、§2.2 `recorder.saveDir` 的真正迁移写入、
@@ -543,20 +544,36 @@ switch、`settings_search.dart` 目录），自动任务每轮都可能只改其
 - 搜索命中必须指向真实页且是该模块菜单能打开的页；每个真实页至少有一条命中；
 - 命中的文案键必须出现在该 pane 可达的文件里。
 
-反向验证（在 `.tmp/negtree` 副本上注入 4 类漂移后跑门禁，副本已删除）。注入与结果：
+反向验证（在 `.tmp/negtree` 副本上注入 4 类漂移后跑门禁，副本已删除；2026-10-31 追加一行是真实树观测，不是注入）。
+注入与结果：
 
 | 注入的漂移 | 门禁是否报错 |
 | --- | --- |
 | 命中改挂到深链别名（`browsing`→`general`） | ✅ 报「指向别名」，并连带报该别名不在任何模块菜单里 |
 | 子页入口从父页 pane 摘掉（`nodes`） | ✅ 报「子页从未被父页 pane 打开」 |
 | 删除一个 pane 分支（`webdavSync`） | ✅ 报「`webdavSync` has no pane case」 |
-| 命中改挂到另一个**真实**页（`audience`→`typography`） | ❌ 不报错 |
+| 命中标签在页面重写后只剩在文案表里 | ✅ 报「no file that page renders mentions that label」（2026-10-31 新增口径，真树上抓出并修掉 7 条） |
+| 命中改挂到另一个**真实**页（`audience`→`typography`） | ❌ 仍不报错（等 D2） |
 
-**最后一类当前检不出来**，原因写在脚本头部注释里：私有 pane 都在 `settings_page.dart`，而它导入整个
-设置表面，可达集因此覆盖全部文案键。这条检查要等 D2 把 pane 拆到各自文件后才变成真正的归属门。
-严格口径（只看 pane 自己的定义文件）实测在真树上有 27 处误报（`_RecordingPane` 只是
-`recorder_page.dart` 的外壳；导航/竖屏等页级命中的标题键是页名而非行名），所以本轮不收紧，
-避免把门禁做成一堆豁免表。
+**最后一类当时检不出来**：私有 pane 都在 `settings_page.dart`，而它导入整个设置表面，可达集因此覆盖
+全部文案键。严格口径（只看 pane 自己的定义文件）试过，在真树上有 27 处误报（`_RecordingPane` 只是
+`recorder_page.dart` 的外壳；导航/竖屏等页级命中的标题键是页名而非行名），所以当时没有收紧。
+
+**2026-10-31 补：两件事把这条检查从「几乎恒真」推进到「页面文件之外已为真」。**
+第一件是口径：** 可达集排除 `settings_search.dart`（目录自己写着每个
+标签）与生成文案（`*.g.dart`、`l10n/**`，每个 getter 都在那里）之后，再豁免「标签即该节自己的名字」
+一类（页头打印节名），真树上**零误报**，并立刻抓出 7 条过期命中（账号页与 WebDAV 改成多账号/文件管理器、
+屏蔽页改写后旧标签只剩在文案表里）。所以「过期命中」已进 IA 门。
+第二件是可达集本身：把 `SettingsChildEntry` 从 `settings_page.dart` 拆到独立文件，并把 6 个模块 pane 的
+`features/settings/settings.dart` / `settings_page.dart` 导入收窄成精确导入（`toolbox_page`、`player_kernel_pane`、
+`backup_pane`、`hongguo_settings_pane`、`hongguo_downloads_page`、`iptv_settings_pane`、`music_settings_pane`）之后，
+**页面文件之外的 pane 已达集不再含 `settings_page.dart`**（57 个 pane 中 39 个），对这些页的「命中改挂到另一个
+真实页」会失败（副本注入复验：把音乐页的一条命中改挂成设置页文案，门禁报错）。盲集随后按组清零：
+启动/刷新/导航三项/关于 → `general_panes.dart`，窗口/音质与声音/画面/浮窗/录制 → `playback_panes.dart`，
+存储位置与数据缓存 → `data_cache_panes.dart`，浏览与站点 → `browse_sites_panes.dart`，站点显示 →
+`sites_display_pane.dart`，主题（连同四个预览构件）→ `theme_pane.dart`，最后网络 → `network_pane.dart`
+（盲数 18→12→7→5→3→2→1→**0**、分区 31→…→**0**）。门禁无需再改，它现在对每一页都会因「命中被改挂到
+另一个真实页」而失败；值守期间已抓到并修掉 `nodes` 的父页登记与 `tvFocusZoom` 的命中指向两处真错。
 
 
 # 规范变更（2026-10-26 08:51）：§10.10「不写测试，不build运行」
@@ -584,12 +601,14 @@ switch、`settings_search.dart` 目录），自动任务每轮都可能只改其
 | `dart analyze lib`（apps/pure_live） | No issues found |
 
 §10 逐条对照：1–4、6–9 由阶段 A/B/C/D 的记录与本表支撑（每项设置的处置见上文 D1 清单与
-`docs/settings-review-checklist.md`）；**第 5 条仍有一处未闭合**——`settings_page.dart` 已长到 3003 行 /
-127 KB，47 个 pane 挤在展示层单文件里，违反「页面不应太长」与 §6 的展示层职责边界。这就是 D2。
+`docs/settings-review-checklist.md`）；**第 5 条已闭合（2026-11-01）**——`settings_page.dart` 557 行 /
+10 个顶层类，只剩设置壳，pane 全部在 `panes/` 下的独立文件里，§10.5「页面不应太长」与 §6 的展示层职责
+边界因此满足。
 
 ## D2 因为这条变更而变难，不是变易
 
-没有构建/运行期兜底后，把 ~18 个 pane 从单文件里搬出去只能靠 `dart analyze` + 门禁自证。因此 D2 开工前
+本条的「未闭合」已消除（2026-11-01）。当时记下的前提——没有构建/运行期兜底后，搬 pane 只能靠
+`dart analyze` + 门禁自证，因此开工前
 必须先做两件事，否则拆完等于没验：
 
 1. `check_settings_ia.ps1` 的 pane 归属检查目前「明知无牙」（私有 pane 全在 `settings_page.dart`，

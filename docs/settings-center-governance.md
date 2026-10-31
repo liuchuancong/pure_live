@@ -63,13 +63,29 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tool/check_prefs_manifest.ps
 powershell -NoProfile -ExecutionPolicy Bypass -File tool/check_settings_ia.ps1
 ```
 
-- `check_prefs_manifest.ps1` = 配置身份：键 / 备份种类 / 失效登记 / 包级归属。豁免必须带一句理由，
-  当前唯一豁免是 `recorder.saveDir`（旧 `recorder.dir` 升级而来，机器相关路径不随备份走，
-  见 `features/backup/backup_settings.dart` 的注释）。
+- `check_prefs_manifest.ps1` = 配置身份：键 / 备份种类 / 失效登记 / 包级归属。解析按 helper 的字面前缀
+  合成整键（`'danmaku.style.$key'` → `danmaku.style.<arg>`），跳过不碰 facade 的 helper 与运行时拼键，
+  裸标识符只有名字以 `Key`/`Pref` 结尾才借全局常量。豁免必须各带一句理由，分两类：**不进备份**的键
+  （设备指纹与登录凭据、同步的密钥与配对设备、缓存、三个下载队列、逐曲进度、本机已下载字体索引、
+  `recorder.saveDir`）与**不重建**的控制器（目前只有 `musicPlayerProvider`：它持有队列与内核，重建等于丢
+  队列，能中途生效的偏好由它自己监听）。2026-10-31 实测 363 键 / 348 备份条目 / 124 个失效登记。
 - `check_settings_ia.ps1` = 四处结构事实一致：分区（每个值是真实行 / 子页 / 别名之一）、别名目标、
   `parentSection` ↔ `settingsChildrenOf` 互逆、页面层级、每页有 pane 分支、别名渲染 canonical 页、
-  子页确实由父页的 pane 打开、每页至少一条搜索命中。注意搜索命中的归属用的是「pane 所在文件 + 它 import
-  的文件，三层深」的可达集，这正是它检不出「命中被改挂到另一个真实页」的原因（可达集覆盖几乎全部文案键）。
+  子页确实由父页的 pane 打开、每页至少一条搜索命中。搜索命中的归属用「pane 所在文件 + 它 import 的文件，
+  三层深」的可达集，但**排除 `settings_search.dart` 与生成文案（`*.g.dart`、`l10n/**`）**，并豁免
+  「命中标签就是该节自己的名字」的情形（节名由设置壳的页头打印，不在 pane 体内）。因此「页面重写后旧标签只
+  剩在文案表里」的过期命中会失败——2026-10-31 据此修掉 7 条；「命中被改挂到另一个真实页」仍要等 D2 每页
+  一文件才检得出。2026-10-31 实测 75 分区 / 61 页 / 305 命中。
+  同日把 6 个模块 pane 的 barrel 导入收窄成精确导入（`SettingsChildEntry` 也已从页面文件拆出）：除仍写在
+  `settings_page.dart` 里的 pane 外，所有 pane 的可达集已不含该页面文件，归属检查对它们是**真的**（在副本上
+  把一条音乐页命中改挂到设置页才有的文案，门禁按「no file that page renders mentions that label」报错）。
+  **盲集已清零（2026-11-01 00:11）**：网络页搬进 `panes/network_pane.dart` 后，任何 pane 的可达集都不再
+  包含 `settings_page.dart`——「命中改挂到另一个真实页」如今对每一页都会被门禁抓到。收口路径：
+  2026-10-31 把 启动/刷新/导航三项/关于、窗口/音质与声音/画面/浮窗/录制、存储位置与数据缓存、浏览与站点、
+  站点显示、主题（含四个预览构件）依次搬到 `panes/` 下的独立文件，盲数 18→12→7→5→3→2→1→0；
+  `settings_page.dart` 只剩壳（页面、分类、带搜索的机身、列、菜单列表、分区容器），557 行 / 10 个顶层类。
+  收窄后的检查也第一次抓到两条真错：`nodes` 的注册父页写着 sites、入口却在网络页（按代码注释现把父页改为
+  network），以及 `tvFocusZoom` 的搜索命中还挂在 sites（该行早随窗口页搬走，现改指 window）。
 - `tool/audit_settings_disposition.ps1 -Markdown` 生成 `docs/settings-key-disposition.md`：键侧清单
   （类型 / 是否进备份 / 是否在评审清单点名 / 持键文件 / 两侧引用 / 计算键）。它是**证据**，不是门。
 - 裸 `-File` 会被未签名脚本策略挡住，必须带 `-ExecutionPolicy Bypass`。
@@ -77,11 +93,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tool/check_settings_ia.ps1
 
 ## 6. 目前无法自动验收的两件事
 
-1. **行级绑定**：哪个控件读写哪个键，在 pane 仍挤在 `settings_page.dart`（本轮实测 3310 行）时查不准。
+1. **行级绑定**：哪个控件读写哪个键，在 pane 仍挤在 `settings_page.dart`（2026-10-31 实测 3259 行）时查不准。
+   导入收窄与 pane 搬移都已完成：每个 pane 现在都有自己的文件，归属检查对全部页面为真；行级绑定
+  （哪个控件读写哪个键）仍不在门禁范围，但「命中指向哪一页」这一半已经闭合。
    按文件归属是恒真的，按「类边界 + 成员名」归属会撞 UI 词汇同名（实测把 `playback.background`
    算进导航页，而那页根本没有静音相关字样）。所以 D2（每页一文件）是 §5「一个配置一个规范定义」与
-   §10.3 能被自动检查的**前置条件**，不是整洁性问题；它也修掉了 IA 门「命中改挂到另一个真实页检不出来」
-   的无牙案例。实验全过程记在 `docs/settings-center-restructure.md`。
+   §10.3 能被自动检查的**前置条件**，不是整洁性问题，也是「命中改挂到另一个真实页」那条无牙案例的唯一
+   解。2026-10-31 已先把「过期命中」这一半收进 IA 门（见上），剩下的页间错挂仍归 D2。实验全过程记在
+   `docs/settings-center-restructure.md`。
 2. **运行期效果**：§10.10 取消 build/run 后，「设置改动真的生效」「备份往返」「既有数据兼容」只能靠代码
    链路审读与门禁覆盖，凡未运行期证实的都按未验证处理。
 
