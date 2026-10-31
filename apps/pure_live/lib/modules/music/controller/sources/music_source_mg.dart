@@ -8,8 +8,15 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort,
-        OnlinePlaylists, PlaylistTagTree, SonglistSearch;
+    show
+        MusicPlaylistInfo,
+        MusicPlaylistPage,
+        MusicPlaylistTag,
+        MusicPlaylistTagGroup,
+        MusicPlazaSort,
+        OnlinePlaylists,
+        PlaylistTagTree,
+        SonglistSearch;
 
 /// The mg-music leaderboard view's boards, in its own order.
 const List<(String, String)> _kMgBoards = [
@@ -39,8 +46,9 @@ const String _mgUserAgent =
 
 /// The Migu platform: search rides the signed v3 gateway, boards and lyrics
 /// the open app endpoints; play URLs come from the lx scripts.
-final class MgMusicSource extends LxPlatformSource with OnlinePlaylists, PlaylistTagTree, SonglistSearch
-implements MusicHotWords, MusicCommentsSource {
+final class MgMusicSource extends LxPlatformSource
+    with OnlinePlaylists, PlaylistTagTree, SonglistSearch
+    implements MusicHotWords, MusicCommentsSource {
   /// A Migu source over the lx runtime.
   MgMusicSource(super.runtime, super.http);
 
@@ -529,8 +537,7 @@ implements MusicHotWords, MusicCommentsSource {
       if (songs is! List) return const [];
       return [
         for (final song in songs)
-          if (song is Map && song['name'] is String)
-            '${song['name']} - ${song['singerName'] ?? ''}'.trim(),
+          if (song is Map && song['name'] is String) '${song['name']} - ${song['singerName'] ?? ''}'.trim(),
       ];
     } on Object {
       return const [];
@@ -544,7 +551,12 @@ implements MusicHotWords, MusicCommentsSource {
   /// One page of a song's comments, hot or newest — the reference's mg
   /// `comment.js` on the app comment stack.
   @override
-  Future<MusicCommentsPage> comments(audio.MusicTrack track, {required bool hot, required int page, int pageSize = 20}) async {
+  Future<MusicCommentsPage> comments(
+    audio.MusicTrack track, {
+    required bool hot,
+    required int page,
+    int pageSize = 20,
+  }) async {
     final songId = await _commentSongId(track);
     if (hot) {
       final json = await _commentStack(songId, {

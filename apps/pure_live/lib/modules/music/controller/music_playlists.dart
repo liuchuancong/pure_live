@@ -48,10 +48,9 @@ final class MusicPlaylist {
       createdAt: DateTime.fromMillisecondsSinceEpoch(createdAt),
       tracks: entries is List ? [for (final entry in entries) ?musicTrackFromJson(entry)] : const [],
       source: json['source'] is String && (json['source'] as String).isNotEmpty ? json['source'] as String : null,
-      sourceListId:
-          json['sourceListId'] is String && (json['sourceListId'] as String).isNotEmpty
-              ? json['sourceListId'] as String
-              : null,
+      sourceListId: json['sourceListId'] is String && (json['sourceListId'] as String).isNotEmpty
+          ? json['sourceListId'] as String
+          : null,
       position: (json['position'] as num?)?.toInt() ?? 0,
       locationUpdateTime: locatedAt == null ? null : DateTime.fromMillisecondsSinceEpoch(locatedAt),
     );
@@ -253,9 +252,7 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
   /// Replaces the whole shelf with [playlists] — the sync bridge's
   /// overwrite path; positions follow the input order.
   Future<void> replaceAll(List<MusicPlaylist> playlists) async {
-    state = [
-      for (var i = 0; i < playlists.length; i++) playlists[i].copyWith(position: i),
-    ];
+    state = [for (var i = 0; i < playlists.length; i++) playlists[i].copyWith(position: i)];
     await _save();
   }
 
@@ -401,7 +398,10 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
     final playlist = find(id);
     if (playlist == null || tracks.isEmpty) return;
     final moving = tracks.toSet();
-    final rest = [for (final track in playlist.tracks) if (!moving.contains(track)) track];
+    final rest = [
+      for (final track in playlist.tracks)
+        if (!moving.contains(track)) track,
+    ];
     rest.insertAll(position.clamp(1, rest.length + 1) - 1, [
       for (final track in playlist.tracks)
         if (moving.contains(track)) track,
@@ -517,8 +517,9 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
 
   /// Every playlist's rows, lists separated by a blank line — the reference
   /// exports all lists into one file.
-  String _exportBlocks(String Function(audio.MusicTrack track) rowOf) =>
-      [for (final playlist in state) [for (final track in playlist.tracks) rowOf(track)].join('\n')].join('\n\n');
+  String _exportBlocks(String Function(audio.MusicTrack track) rowOf) => [
+    for (final playlist in state) [for (final track in playlist.tracks) rowOf(track)].join('\n'),
+  ].join('\n\n');
 
   /// Writes one file per playlist into [directory] — the reference's un-merged
   /// export, `lx_list_<name>.txt`-style names.
@@ -543,10 +544,7 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
       final safe = audio.MusicDownloadRequest.sanitizeFileName(playlist.name);
       final name = safe.isEmpty ? playlist.id : safe;
       final rows = [for (final track in playlist.tracks) rowOf(track)].join('\n');
-      await File('$directory/lx_list_$name.$extension').writeAsString(
-        '\uFEFF${header ?? ''}$rows',
-        flush: true,
-      );
+      await File('$directory/lx_list_$name.$extension').writeAsString('\uFEFF${header ?? ''}$rows', flush: true);
     }
   }
 
@@ -614,9 +612,7 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
     Object? json;
     try {
       final bytes = await File(path).readAsBytes();
-      final text = path.toLowerCase().endsWith('.json')
-          ? utf8.decode(bytes)
-          : utf8.decode(gzip.decode(bytes));
+      final text = path.toLowerCase().endsWith('.json') ? utf8.decode(bytes) : utf8.decode(gzip.decode(bytes));
       json = jsonDecode(text);
       // v1.14.0 shipped backups serialized twice; unwrap the second layer.
       if (json is String) json = jsonDecode(json);

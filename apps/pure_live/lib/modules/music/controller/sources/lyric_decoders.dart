@@ -76,11 +76,7 @@ DecodedLyric? decodeKrc(String base64Data) {
       })
       .replaceAll(_krcWordTail, r'<$1>');
 
-  return DecodedLyric(
-    lyric: lxlyric,
-    translation: _linesOf(tlyricLines),
-    romanization: _linesOf(rlyricLines),
-  );
+  return DecodedLyric(lyric: lxlyric, translation: _linesOf(tlyricLines), romanization: _linesOf(rlyricLines));
 }
 
 /// Restamps the raw millisecond tag with the lyric's own stamp format.

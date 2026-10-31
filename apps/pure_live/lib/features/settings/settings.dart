@@ -30,6 +30,7 @@ export 'general/settings_order_list.dart';
 export 'general/tv_preferences.dart';
 export 'general/window_size_row.dart';
 export 'pages/font_manager_page.dart';
+export 'pages/local_media_page.dart';
 export 'pages/player_guide_page.dart';
 export 'pages/wallpaper_preview_page.dart';
 export 'panes/audience_settings_pane.dart';

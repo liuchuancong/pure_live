@@ -140,7 +140,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // the recent ones; the module's own sources sit under them.
     menu: [
       [NavigationItem.channels, NavigationItem.iptvFavorites, NavigationItem.iptvRecent],
-      [NavigationItem.iptvGuide, NavigationItem.iptvSources],
+      [NavigationItem.iptvGuide, NavigationItem.iptvSources, NavigationItem.record, NavigationItem.logs],
     ],
     landing: NavigationItem.channels,
     // IPTV's own surface is guide updates and source syncing; the app-wide
@@ -157,7 +157,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // 搜索 first; every module here puts its surfaces ahead of its tools.)
     menu: [
       [NavigationItem.vod, NavigationItem.vodRegions, NavigationItem.vodPgc, NavigationItem.vodLive],
-      [NavigationItem.vodSearch, NavigationItem.vodPersonal],
+      [NavigationItem.vodSearch, NavigationItem.vodPersonal, NavigationItem.vodDownloads, NavigationItem.logs],
     ],
     landing: NavigationItem.vod,
     // The video station's own page: its Bilibili account, the quality a
@@ -169,15 +169,20 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     ],
   ),
   AppModule.music: ModuleNavigation(
-    // The reference's rail, entry for entry: 搜索 / 歌单 / 排行榜 / 我的列表
-    // are its four main entries; the viewer's own surfaces — 本地音乐 /
-    // 下载管理 — sit under them as the module's tools.
+    // Two blocks above the tools: what the source suggests — 推荐 and 精选 —
+    // and the search beside them, then the lists the viewer works through —
+    // 歌单 / 排行榜 / 我的列表. The module still lands on the search: the
+    // rail's first entry is a page to open, not where the switcher drops you.
     menu: [
-      [NavigationItem.music, NavigationItem.musicSonglist, NavigationItem.musicToplist, NavigationItem.musicLibrary],
+      [NavigationItem.musicRecommend, NavigationItem.musicFeatured, NavigationItem.music],
+      [NavigationItem.musicSonglist, NavigationItem.musicToplist, NavigationItem.musicLibrary],
       [
         NavigationItem.musicLocal,
         NavigationItem.musicDownloads,
         NavigationItem.musicEffects,
+        // The shared tree's console sits with the module's own tools, ahead
+        // of the settings row that stays last.
+        NavigationItem.logs,
         // The music settings' own rail row: one click onto the surface, on
         // the music group, instead of the settings landing's category list.
         NavigationItem.musicSettings,
@@ -187,19 +192,22 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     // The music module's settings rail, entry for entry the way lx-music
     // lays its own out — playback, lyrics, desktop lyrics, download,
     // sources, hotkeys, sync and the EQ — with the shared pages after.
+    // Two headings instead of one wall of eight: what the player and its
+    // files decide, then the effects and the ways out (hotkeys, sync/API).
     settingsGroups: [
       (
         labelKey: 'groupMusic',
         sections: [
           SettingsSection.music,
+          SettingsSection.musicSources,
+          SettingsSection.musicDownload,
           SettingsSection.musicLyric,
           SettingsSection.musicDesktopLyric,
-          SettingsSection.musicDownload,
-          SettingsSection.musicSources,
-          SettingsSection.musicHotkeys,
-          SettingsSection.musicSync,
-          SettingsSection.musicEq,
         ],
+      ),
+      (
+        labelKey: 'groupMusicTools',
+        sections: [SettingsSection.musicEq, SettingsSection.musicHotkeys, SettingsSection.musicSync],
       ),
       ..._sharedGroups,
     ],
@@ -211,7 +219,7 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     menu: [
       [NavigationItem.hongguoHome, NavigationItem.hongguoFind, NavigationItem.hongguoRank],
       [NavigationItem.hongguoFavorites, NavigationItem.hongguoHistory, NavigationItem.hongguoReservations],
-      [NavigationItem.hongguoAccount, NavigationItem.hongguoSearch],
+      [NavigationItem.hongguoAccount, NavigationItem.hongguoSearch, NavigationItem.hongguoDownloads, NavigationItem.logs],
     ],
     landing: NavigationItem.hongguoHome,
     // The station's own page: the companion service it asks and the
@@ -247,6 +255,9 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.vodRegions: VodRegionsPage.new,
   NavigationItem.vodSearch: VodSearchPage.new,
   NavigationItem.vodPersonal: VodPersonalPage.new,
+  NavigationItem.vodDownloads: VodDownloadsPage.new,
+  NavigationItem.musicRecommend: () => const MusicPage(view: MusicView.recommend),
+  NavigationItem.musicFeatured: () => const MusicPage(view: MusicView.featured),
   NavigationItem.music: MusicPage.new,
   NavigationItem.musicSonglist: () => const MusicPage(view: MusicView.songlists),
   NavigationItem.musicToplist: () => const MusicPage(view: MusicView.toplists),
@@ -255,6 +266,7 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.musicDownloads: () => const MusicPage(view: MusicView.downloads),
   NavigationItem.musicEffects: MusicEqCenterPage.new,
   NavigationItem.hongguoHome: HongguoPage.new,
+  NavigationItem.hongguoDownloads: HongguoDownloadsPage.new,
   NavigationItem.hongguoFind: () => const HongguoPage(view: HongguoView.find),
   NavigationItem.hongguoRank: () => const HongguoPage(view: HongguoView.rank),
   NavigationItem.hongguoFavorites: () => const HongguoPage(view: HongguoView.favorites),
@@ -270,4 +282,7 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.multiview: MultiviewPage.new,
   NavigationItem.record: RecorderPage.new,
   NavigationItem.toolbox: ToolboxPage.new,
+  // The log console is every module's tool, not the live rail's alone: the
+  // record it reads is the one shared tree.
+  NavigationItem.logs: LogsPage.new,
 };

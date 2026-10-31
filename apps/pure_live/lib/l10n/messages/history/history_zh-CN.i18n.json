@@ -29,13 +29,11 @@
   "clearFilteredConfirmDesc": "删除筛选出的 {count: int} 条观看记录？不可撤销。",
   "clearDone": "已清空 {count: int} 条观看记录",
   "changeFailed": "观看记录更改未保存，请重试。",
-  "limitAction": "调整上限",
   "limitTitle": "观看记录保留数量",
   "limitDescription": "超出上限后，最早的记录会被移除。",
   "limitPresetsLabel": "预设数量",
   "limitCustomLabel": "自定义数量",
   "limitInvalid": "请输入 {min: int} 到 {max: int} 之间的整数。",
-  "limitSaved": "上限已设为 {limit: int} 条",
   "refresh": "刷新",
   "refreshFailed": "{count: int} 条记录刷新失败"
 }

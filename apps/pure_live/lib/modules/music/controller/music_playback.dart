@@ -439,8 +439,6 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     });
   }
 
-
-
   /// The overlay style the preferences describe.
   static audio.DesktopLyricStyle _desktopStyle(MusicSettings settings) => audio.DesktopLyricStyle(
     fontSize: settings.desktopLyricFontSize,
@@ -501,16 +499,19 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       return;
     }
     unawaited(
-      engine.setAudioEffects(musicEqAudioEffects(eq)).then<void>((_) async {
-        if (!ref.mounted) return;
-        // The chain took; the preamp rides the engine's native gain.
-        ref.read(musicEqApplyFailedProvider.notifier).state = false;
-        // Zeroed when the chain is off: the A/B bypass must lift the
-        // preamp with the chain, or the comparison hears a lifted original.
-        await engine.setVolumeGain(eq.enabled ? eq.preampDb : 0);
-      }).catchError((Object _) {
-        if (ref.mounted) ref.read(musicEqApplyFailedProvider.notifier).state = true;
-      }),
+      engine
+          .setAudioEffects(musicEqAudioEffects(eq))
+          .then<void>((_) async {
+            if (!ref.mounted) return;
+            // The chain took; the preamp rides the engine's native gain.
+            ref.read(musicEqApplyFailedProvider.notifier).state = false;
+            // Zeroed when the chain is off: the A/B bypass must lift the
+            // preamp with the chain, or the comparison hears a lifted original.
+            await engine.setVolumeGain(eq.enabled ? eq.preampDb : 0);
+          })
+          .catchError((Object _) {
+            if (ref.mounted) ref.read(musicEqApplyFailedProvider.notifier).state = true;
+          }),
     );
     // The pitch node is the engine's first-class control, not a filter.
     unawaited(engine.setPitch(musicEqPitchRate(eq)).catchError((Object _) {}));
@@ -550,7 +551,11 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     if (engine == null) return const <PlayerAudioDevice>[];
     return <PlayerAudioDevice>[
       for (final device in engine.state.audioDevices)
-        PlayerAudioDevice(name: device.name, description: device.description, selected: device.name == engine.state.audioDevice.name),
+        PlayerAudioDevice(
+          name: device.name,
+          description: device.description,
+          selected: device.name == engine.state.audioDevice.name,
+        ),
     ];
   }
 
@@ -762,6 +767,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
 
   /// Drops the queue entry at [index].
   Future<void> removeAt(int index) => _audio.removeAt(index);
+
+  /// Moves a queue entry; the playing song keeps playing wherever it lands.
+  Future<void> moveInQueue(int from, int to) => _audio.moveInQueue(from, to);
 
   /// Empties the queue and stops.
   Future<void> clearQueue() => _audio.clearQueue();
@@ -1136,6 +1144,5 @@ final musicPlayerProvider = NotifierProvider<MusicPlayerController, audio.AudioP
 
 /// The active engine's audio output devices; invalidate after a selection or
 /// a device plug event to re-read.
-final FutureProvider<List<PlayerAudioDevice>> musicAudioDevicesProvider = FutureProvider.autoDispose<List<PlayerAudioDevice>>(
-  (ref) => ref.read(musicPlayerProvider.notifier).audioDevices(),
-);
+final FutureProvider<List<PlayerAudioDevice>> musicAudioDevicesProvider =
+    FutureProvider.autoDispose<List<PlayerAudioDevice>>((ref) => ref.read(musicPlayerProvider.notifier).audioDevices());

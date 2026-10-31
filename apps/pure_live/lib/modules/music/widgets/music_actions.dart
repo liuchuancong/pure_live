@@ -259,10 +259,12 @@ final class _ToggleSourceDialogState extends ConsumerState<_ToggleSourceDialog> 
     final query = '${widget.track.title} ${widget.track.artist}';
     final answers = await Future.wait([
       for (final source in sources)
-        source.search(query, pageSize: 10).then<MapEntry<String, List<audio.MusicTrack>?>>(
-          (page) => MapEntry(source.id, page.items),
-          onError: (_) => MapEntry(source.id, null),
-        ),
+        source
+            .search(query, pageSize: 10)
+            .then<MapEntry<String, List<audio.MusicTrack>?>>(
+              (page) => MapEntry(source.id, page.items),
+              onError: (_) => MapEntry(source.id, null),
+            ),
     ]);
     if (!mounted) return;
     setState(() {
@@ -329,9 +331,10 @@ final class _ToggleSourceDialogState extends ConsumerState<_ToggleSourceDialog> 
                       return DsListRow(
                         title: Text(candidate.title, maxLines: 1, overflow: TextOverflow.ellipsis),
                         description: Text(
-                          [candidate.artist, if (candidate.album.isNotEmpty) candidate.album]
-                              .where((part) => part.isNotEmpty)
-                              .join(' · '),
+                          [
+                            candidate.artist,
+                            if (candidate.album.isNotEmpty) candidate.album,
+                          ].where((part) => part.isNotEmpty).join(' · '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),

@@ -8,6 +8,7 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/shared/shared.dart' show localizedSiteName;
 
 /// The reference's `detectClipboardRooms`: a room link in the clipboard is
 /// offered when the app comes back, never opened on its own.
@@ -40,7 +41,7 @@ final detectClipboardRoomsProvider = NotifierProvider<DetectClipboardRoomsContro
 );
 
 /// A parsed room link.
-typedef ClipboardRoom = ({String platform, String roomId, String label});
+typedef ClipboardRoom = ({String platform, String roomId});
 
 /// Reads a supported live-room link out of [text]; null when it is not one.
 ClipboardRoom? clipboardRoomOf(String text) {
@@ -53,32 +54,32 @@ ClipboardRoom? clipboardRoomOf(String text) {
   String? first(String hostSuffix) => host == hostSuffix || host.endsWith('.$hostSuffix') ? segments.firstOrNull : null;
   if (host == 'live.bilibili.com') {
     final id = segments.firstOrNull;
-    return id == null ? null : (platform: 'bilibili', roomId: id, label: 'Bilibili');
+    return id == null ? null : (platform: 'bilibili', roomId: id);
   }
   if (host == 'live.douyin.com') {
     final id = segments.firstOrNull;
-    return id == null ? null : (platform: 'douyin', roomId: id, label: '抖音');
+    return id == null ? null : (platform: 'douyin', roomId: id);
   }
   if (host == 'douyu.com' || host.endsWith('.douyu.com')) {
     final id = first('douyu.com');
-    return id == null ? null : (platform: 'douyu', roomId: id, label: '斗鱼');
+    return id == null ? null : (platform: 'douyu', roomId: id);
   }
   if (host == 'huya.com' || host.endsWith('.huya.com')) {
     final id = first('huya.com');
-    return id == null ? null : (platform: 'huya', roomId: id, label: '虎牙');
+    return id == null ? null : (platform: 'huya', roomId: id);
   }
   if (host == 'live.kuaishou.com') {
     final index = segments.indexOf('u');
     final id = index >= 0 && index + 1 < segments.length ? segments[index + 1] : null;
-    return id == null ? null : (platform: 'kuaishou', roomId: id, label: '快手');
+    return id == null ? null : (platform: 'kuaishou', roomId: id);
   }
   if (host == 'twitch.tv' || host.endsWith('.twitch.tv')) {
     final id = first('twitch.tv');
-    return id == null ? null : (platform: 'twitch', roomId: id, label: 'Twitch');
+    return id == null ? null : (platform: 'twitch', roomId: id);
   }
   if (host == 'youtube.com' || host.endsWith('.youtube.com')) {
     final id = uri.queryParameters['v'] ?? (segments.length > 1 && segments.first == 'live' ? segments[1] : null);
-    return id == null ? null : (platform: 'youtube', roomId: id, label: 'YouTube');
+    return id == null ? null : (platform: 'youtube', roomId: id);
   }
   return null;
 }
@@ -138,10 +139,14 @@ final class _ClipboardRoomWatcherState extends ConsumerState<ClipboardRoomWatche
     final navigatorContext = rootNavigatorKey.currentContext;
     if (navigatorContext == null || !navigatorContext.mounted) return;
     final t = navigatorContext.t;
+    // The platform names itself the way every list names it, in the app's
+    // own language; the parser only knows the id.
+    final site = ref.read(sitesProvider).getById(room.platform);
+    final platformName = site == null ? room.platform : localizedSiteName(site);
     final open = await showDsConfirm(
       context: navigatorContext,
       title: t.settings.clipboardRoomTitle,
-      description: t.settings.clipboardRoomDesc(platform: room.label, roomId: room.roomId),
+      description: t.settings.clipboardRoomDesc(platform: platformName, roomId: room.roomId),
       confirmLabel: t.settings.clipboardRoomOpen,
       cancelLabel: t.common.cancel,
       icon: const DsIcon(DsIcons.clipboard),

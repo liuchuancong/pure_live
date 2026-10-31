@@ -94,11 +94,7 @@ List<MusicEqResponsePoint> musicEqResponseCurve(MusicEqConfig config, {int point
     final frequency = 20 * math.pow(1000, t * (math.log(20000 / 20) / math.log(1000))).toDouble();
     var gain = config.preampDb;
     for (var band = 0; band < kMusicEqFrequencies.length; band++) {
-      gain += musicEqBandGainAt(
-        frequency: frequency,
-        centre: kMusicEqFrequencies[band],
-        gainDb: config.gains[band],
-      );
+      gain += musicEqBandGainAt(frequency: frequency, centre: kMusicEqFrequencies[band], gainDb: config.gains[band]);
     }
     for (final node in config.nodes) {
       if (!node.enabled) continue;
@@ -108,10 +104,7 @@ List<MusicEqResponsePoint> musicEqResponseCurve(MusicEqConfig config, {int point
     // the prediction includes them; the stereo-field and dynamics effects
     // have no magnitude curve and stay out.
     if (config.effectOn('bass')) {
-      gain += musicEqLowShelfGainAt(
-        frequency: frequency,
-        gainDb: config.effectOf('bass').amount * 8,
-      );
+      gain += musicEqLowShelfGainAt(frequency: frequency, gainDb: config.effectOf('bass').amount * 8);
     }
     if (config.effectOn('vocal')) {
       final amount = config.effectOf('vocal').amount;
@@ -175,7 +168,8 @@ List<String> musicEqAfEntries(MusicEqConfig config) {
     // sunk; the listener's branch ends in a plain `anull` so the graph
     // still has one unlabeled output for the speakers.
     final prefix = filters.isEmpty ? '' : '${filters.join(',')},';
-    final graph = '${prefix}asplit=2[ao][probe];'
+    final graph =
+        '${prefix}asplit=2[ao][probe];'
         '[probe]ebur128=metadata=1[ebur128];anullsink[ebur128];[ao]anull';
     return <String>['lavfi=[$graph]'];
   }

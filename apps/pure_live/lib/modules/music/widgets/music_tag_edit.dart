@@ -22,7 +22,10 @@ import 'package:pure_live/modules/music/controller/sources/music_source_match.da
 /// viewer actually changed are written back; a saved edit rescans the local
 /// library so the row follows the file.
 Future<void> showEditTrackTagsDialog(BuildContext context, WidgetRef ref, audio.MusicTrack track) async {
-  final saved = await showDsDialog<bool>(context: context, builder: (context) => _EditTagsDialog(track: track));
+  final saved = await showDsDialog<bool>(
+    context: context,
+    builder: (context) => _EditTagsDialog(track: track),
+  );
   if (saved != true) return;
   unawaited(ref.read(musicLocalProvider.notifier).rescan());
   if (!context.mounted) return;
@@ -246,7 +249,11 @@ final class _EditTagsDialogState extends ConsumerState<_EditTagsDialog> {
       if (failure is UnsupportedError) {
         showDsToast(context: context, title: t.music.tagEditUnsupportedFormat, status: DsStatus.warning);
       } else {
-        showDsToast(context: context, title: t.music.tagEditFailed(error: '$failure'), status: DsStatus.danger);
+        showDsToast(
+          context: context,
+          title: t.music.tagEditFailed(error: '$failure'),
+          status: DsStatus.danger,
+        );
       }
     }
   }
@@ -257,7 +264,10 @@ final class _EditTagsDialogState extends ConsumerState<_EditTagsDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: DsSpace.s4,
       children: [
-        Text(label, style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textSubtle)),
+        Text(
+          label,
+          style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.colorsOf(context).textSubtle),
+        ),
         child,
       ],
     ),
@@ -277,7 +287,9 @@ final class _EditTagsDialogState extends ConsumerState<_EditTagsDialog> {
           : _failed
           ? SizedBox(
               height: 96,
-              child: Center(child: Text(t.music.tagEditReadFailed, style: theme.typography.body.copyWith(color: colors.textMuted))),
+              child: Center(
+                child: Text(t.music.tagEditReadFailed, style: theme.typography.body.copyWith(color: colors.textMuted)),
+              ),
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

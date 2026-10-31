@@ -16,6 +16,8 @@
   "search": "搜索",
   "searchAt": "在 {platform} 中搜索分区“{query}”",
   "searchEmpty": "没有匹配的分区",
+  "roomsEmptyTitle": "这个分区暂时没有直播间",
+  "roomsEmptyDescription": "换个分区，或稍后再来看看。",
   "backToBrowse": "返回浏览",
   "hiddenUnplayable": "已隐藏 {count: int} 个不能播放的直播（付费、加密、仅限 App 等）"
 }

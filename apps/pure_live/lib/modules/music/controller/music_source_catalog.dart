@@ -13,11 +13,7 @@ library;
 /// an upstream rename does not double the entry.
 final class MusicCatalogEntry {
   /// Creates one entry.
-  const MusicCatalogEntry({
-    required this.id,
-    required this.name,
-    required this.scriptName,
-  });
+  const MusicCatalogEntry({required this.id, required this.name, required this.scriptName});
 
   /// The repo folder the `latest.js` lives under.
   final String id;

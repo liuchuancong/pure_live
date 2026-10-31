@@ -2,10 +2,13 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_device/live_device.dart' show SystemProxyEndpoint;
+import 'package:live_net/live_net.dart' show HttpProxyRoute;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core/media_core.dart' show EngineOption;
 
-import 'package:pure_live/app/providers/network/network_providers.dart' show appProxyEndpoint, proxySettingsProvider;
+import 'package:pure_live/app/providers/network/network_providers.dart'
+    show ProxySettings, appProxyRoute, proxySettingsProvider;
 import 'package:pure_live/app/providers/network/system_proxy_provider.dart' show systemProxyProvider;
 import 'package:pure_live/features/settings/playback/playback_settings_providers.dart' show playbackSettingsProvider;
 
@@ -109,20 +112,35 @@ const PlayerTuning kDefaultPlayerTuning = (
 ///
 /// mpv opens those streams itself — the app's transport never carries them —
 /// so the engine is given the app's network proxy explicitly. There is no
-/// player-specific proxy: the network page's choice covers both.
-typedef PlayerProxyEndpoint = ({String host, int port});
+/// player-specific proxy: the network page's choice covers both, credential
+/// included, because a player that reached the proxy anonymously would fail
+/// exactly where the app's own requests succeeded.
+typedef PlayerProxyEndpoint = ({String host, int port, String username, String password});
+
+/// The endpoint form mpv needs, or null when the app is direct.
+PlayerProxyEndpoint? playerProxyEndpoint(ProxySettings settings, SystemProxyEndpoint system) {
+  final route = appProxyRoute(settings, system);
+  if (route is! HttpProxyRoute || route.host.isEmpty) return null;
+  return (host: route.host, port: route.port, username: route.username, password: route.password);
+}
 
 /// The engine option for [endpoint].
 ///
 /// The key is always sent, with an empty value when the app proxy is off (the
 /// reference passes it the same way): an empty mpv `http-proxy` means direct
 /// and clears a route left by an earlier value. IPv6 literals are bracketed so
-/// the URL stays parseable.
+/// the URL stays parseable, and mpv is the one consumer whose documentation
+/// says it parses `user:pass@` in the proxy URL — so the credential rides here
+/// (FFmpeg does not, and gets it as a header instead).
 EngineOption playerProxyEngineOption(PlayerProxyEndpoint? endpoint) {
   if (endpoint == null || endpoint.host.isEmpty) return const EngineOption('http-proxy', '');
-  final host = endpoint.host;
-  final endpointHost = host.contains(':') && !host.startsWith('[') && !host.endsWith(']') ? '[$host]' : host;
-  return EngineOption('http-proxy', 'http://$endpointHost:${endpoint.port}');
+  final route = HttpProxyRoute(
+    host: endpoint.host,
+    port: endpoint.port,
+    username: endpoint.username,
+    password: endpoint.password,
+  );
+  return EngineOption('http-proxy', route.url(includeCredentials: true));
 }
 
 /// The proxy the player runs with: the app's network proxy, resolved the way
@@ -130,7 +148,7 @@ EngineOption playerProxyEngineOption(PlayerProxyEndpoint? endpoint) {
 /// system proxy included). Every playback surface reads and listens to this,
 /// so a change on the network page reaches a player that is already open.
 final playerProxyProvider = Provider<PlayerProxyEndpoint?>((ref) {
-  return appProxyEndpoint(ref.watch(proxySettingsProvider), ref.watch(systemProxyProvider));
+  return playerProxyEndpoint(ref.watch(proxySettingsProvider), ref.watch(systemProxyProvider));
 });
 
 /// The engines' driver/decoder catalogues, per platform. Values are mpv's

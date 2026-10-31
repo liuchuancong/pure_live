@@ -18,7 +18,6 @@
   "linkCopy": "复制房间链接",
   "linkPaste": "粘贴",
   "linkClear": "清空",
-  "linkClipboardGroup": "剪贴板",
   "linkClipboardRooms": "识别剪贴板直播间链接",
   "linkClipboardRoomsDesc": "回应用时读取剪贴板，发现直播链接会询问是否打开；不自动跳转。",
   "linkResolving": "正在解析链接…",
@@ -93,12 +92,11 @@
   "logsCopied": "日志已复制",
   "logsCopyEmpty": "没有可复制的日志",
   "logsDirectoryDefault": "日志文件尚未就绪。",
-  "logsFileTitle": "日志文件",
   "logsOpenFolder": "打开所在文件夹",
-  "logsCopyPath": "复制路径",
+  "logsLevelLabel": "级别",
+  "logsSave": "保存到本地",
+  "logsSaved": "日志已保存",
+  "logsSaveFailed": "日志保存失败",
   "logsPathCopied": "路径已复制到剪贴板",
-  "logsOpenFailed": "无法打开日志目录",
-  "logsFilterSection": "查看过滤",
-  "logsLevelFilter": "显示级别",
-  "logsLevelFilterDesc": "只过滤这一页，不改变记录级别。"
+  "logsOpenFailed": "无法打开日志目录"
 }

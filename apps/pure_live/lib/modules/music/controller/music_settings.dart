@@ -37,6 +37,18 @@ enum MusicQuality {
   };
 }
 
+/// The step an lx script id names — [MusicQuality.scriptName]'s reverse.
+///
+/// Null for a tier the module's four steps do not cover (192K, 自动, a source's
+/// own id), so callers say nothing rather than guess at a rendition they cannot
+/// ask for.
+MusicQuality? musicQualityByScriptName(String id) {
+  for (final quality in MusicQuality.values) {
+    if (quality.scriptName == id) return quality;
+  }
+  return null;
+}
+
 /// How a platform's name is worded in the module's lists — lx-music's
 /// `common.sourceNameType`: the stage names by default, the real ones on
 /// demand.

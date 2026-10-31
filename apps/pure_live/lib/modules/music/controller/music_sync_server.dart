@@ -7,8 +7,16 @@ library;
 import 'dart:async' show Completer, Timer, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
 import 'dart:io'
-    show ContentType, HttpRequest, HttpServer, InternetAddress, InternetAddressType, NetworkInterface, Platform,
-        WebSocket, WebSocketTransformer;
+    show
+        ContentType,
+        HttpRequest,
+        HttpServer,
+        InternetAddress,
+        InternetAddressType,
+        NetworkInterface,
+        Platform,
+        WebSocket,
+        WebSocketTransformer;
 import 'dart:math' show Random;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,15 +26,9 @@ import 'package:pure_live/modules/music/controller/music_library.dart'
     show musicFavouritesProvider, musicRecentProvider;
 import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicPlaylistsProvider;
 import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
-import 'package:pure_live/modules/music/controller/music_sync.dart'
-    show kMusicDislikeRemoteRulesKey, musicSyncProvider;
+import 'package:pure_live/modules/music/controller/music_sync.dart' show kMusicDislikeRemoteRulesKey, musicSyncProvider;
 import 'package:pure_live/modules/music/controller/music_sync_client.dart'
-    show
-        kMusicSyncAuthMsg,
-        kMusicSyncCloseFailed,
-        kMusicSyncHelloMsg,
-        kMusicSyncIdPrefix,
-        kMusicSyncMsgConnect;
+    show kMusicSyncAuthMsg, kMusicSyncCloseFailed, kMusicSyncHelloMsg, kMusicSyncIdPrefix, kMusicSyncMsgConnect;
 import 'package:pure_live/modules/music/controller/music_sync_codec.dart';
 import 'package:pure_live/modules/music/controller/music_sync_data.dart';
 import 'package:pure_live/modules/music/controller/music_sync_wire.dart';
@@ -140,10 +142,13 @@ final class MusicSyncServerSocket {
     final completer = Completer<Object?>();
     _pending[callName] = completer;
     _send(musicSyncEncodeFrame(musicSyncEncodeRequest(callName, args, const <int>[])));
-    return completer.future.timeout(timeout, onTimeout: () {
-      _pending.remove(callName);
-      throw Exception('同步调用超时: $name');
-    });
+    return completer.future.timeout(
+      timeout,
+      onTimeout: () {
+        _pending.remove(callName);
+        throw Exception('同步调用超时: $name');
+      },
+    );
   }
 
   /// Pushes an action at the client; failures close the connection, the way
@@ -277,11 +282,7 @@ final class MusicSyncServer {
     }
     _attemptTimer = Timer.periodic(const Duration(minutes: 1), (_) => _authAttempts.clear());
     _emitStatus();
-    _http!.listen(
-      (request) => unawaited(_onRequest(request)),
-      onError: (_) => _emitStatus(),
-      onDone: _emitStatus,
-    );
+    _http!.listen((request) => unawaited(_onRequest(request)), onError: (_) => _emitStatus(), onDone: _emitStatus);
   }
 
   var _isLanBound = false;
@@ -396,7 +397,25 @@ final class MusicSyncServer {
     }
   }
 
-  String _readAuthCode() => StoragePrefs.getString(kMusicSyncServerAuthCodeKey) ?? '';
+  /// The connection code, minted on the first read when none is stored.
+  ///
+  /// The code is a secret and stays out of the backup document, while the gate
+  /// itself travels: a restore onto a fresh machine can therefore switch the
+  /// endpoint on with no code written yet. Answering with the empty code's key
+  /// would make the handshake open to anyone who can compute it, so the first
+  /// read mints a code and keeps it — the viewer shares the new one the way
+  /// they would on a first pairing.
+  String _readAuthCode() {
+    final stored = StoragePrefs.getString(kMusicSyncServerAuthCodeKey);
+    if (stored != null && stored.isNotEmpty) return stored;
+    final code = musicSyncGenerateAuthCode();
+    try {
+      unawaited(StoragePrefs.setString(kMusicSyncServerAuthCodeKey, code));
+    } on Object {
+      // A closed store loses the code; the next read mints another.
+    }
+    return code;
+  }
 
   /// The module's dislike rules, the same preference the client half keeps.
   String _readDislikeRules() {
@@ -407,9 +426,8 @@ final class MusicSyncServer {
     }
   }
 
-  void _emitStatus({String? error}) => onStatus?.call(
-    MusicSyncServerStatus(running: _http != null, error: error, devices: deviceView()),
-  );
+  void _emitStatus({String? error}) =>
+      onStatus?.call(MusicSyncServerStatus(running: _http != null, error: error, devices: deviceView()));
 
   // --- HTTP ---
 
@@ -574,10 +592,10 @@ final class MusicSyncServer {
     }
     _syncingClientId = connection.device.clientId;
     try {
-      final features = await connection.call(
-        'getEnabledFeatures',
-        <Object?>['desktop-app', <String, Object?>{'list': 1, 'dislike': 1}],
-      );
+      final features = await connection.call('getEnabledFeatures', <Object?>[
+        'desktop-app',
+        <String, Object?>{'list': 1, 'dislike': 1},
+      ]);
       if (connection.isClosed) return;
       final enabled = features is Map ? features : const <String, Object?>{};
       if (enabled['list'] != null && enabled['list'] != false) {
@@ -811,39 +829,51 @@ final musicSyncServerStatusProvider = NotifierProvider<MusicSyncServerStatusNoti
 /// The module's sync server, started and stopped by the gate, port and LAN
 /// switch; the module's stores feed the syncs and local changes push out.
 final musicSyncServerProvider = Provider<MusicSyncServer>((ref) {
-  final server = MusicSyncServer(
-        readSyncMode: () => ref.read(musicSyncProvider).syncMode,
-        readAddToTop: () => ref.read(musicSettingsProvider).addToTop,
-        readListData: () => musicSyncListDataFromState(
-          ref.read(musicRecentProvider),
-          ref.read(musicFavouritesProvider),
-          ref.read(musicPlaylistsProvider),
-        ),
-        applyListData: (listData) async {
-          final decoded = musicSyncApplyListData(listData);
-          await ref.read(musicRecentProvider.notifier).replaceAll(decoded.recent);
-          await ref.read(musicFavouritesProvider.notifier).replaceAll(decoded.favourites);
-          await ref.read(musicPlaylistsProvider.notifier).replaceAll(decoded.playlists);
-        },
-        storeDislikeRules: (rules) => StoragePrefs.setString(kMusicDislikeRemoteRulesKey, rules),
-      )
-      ..onStatus = (status) {
-        if (ref.mounted) ref.read(musicSyncServerStatusProvider.notifier).update(status);
-      };
+  final server =
+      MusicSyncServer(
+          readSyncMode: () => ref.read(musicSyncProvider).syncMode,
+          readAddToTop: () => ref.read(musicSettingsProvider).addToTop,
+          readListData: () => musicSyncListDataFromState(
+            ref.read(musicRecentProvider),
+            ref.read(musicFavouritesProvider),
+            ref.read(musicPlaylistsProvider),
+          ),
+          applyListData: (listData) async {
+            final decoded = musicSyncApplyListData(listData);
+            await ref.read(musicRecentProvider.notifier).replaceAll(decoded.recent);
+            await ref.read(musicFavouritesProvider.notifier).replaceAll(decoded.favourites);
+            await ref.read(musicPlaylistsProvider.notifier).replaceAll(decoded.playlists);
+          },
+          storeDislikeRules: (rules) => StoragePrefs.setString(kMusicDislikeRemoteRulesKey, rules),
+        )
+        ..onStatus = (status) {
+          if (ref.mounted) ref.read(musicSyncServerStatusProvider.notifier).update(status);
+        };
+
+  // Watched here so a gate/port/LAN change rebuilds this provider and
+  // re-runs the sync below; sync() itself reads them so the delayed retries
+  // pick up the latest values.
+  ref
+    ..watch(musicSyncServerGateProvider)
+    ..watch(musicSyncServerPortProvider)
+    ..watch(musicSyncServerLanProvider);
 
   Future<void> sync() async {
-    if (!ref.watch(musicSyncServerGateProvider)) {
+    if (!ref.read(musicSyncServerGateProvider)) {
       await server.stop();
       return;
     }
     try {
-      await server.start(ref.watch(musicSyncServerPortProvider), lan: ref.watch(musicSyncServerLanProvider));
+      await server.start(ref.read(musicSyncServerPortProvider), lan: ref.read(musicSyncServerLanProvider));
     } on Object {
       // The status carries the bind failure to the pane.
     }
   }
 
-  unawaited(sync());
+  // Deferred out of the build: start/stop emit their first status
+  // synchronously, and Riverpod forbids modifying the status provider while
+  // this provider is still initializing.
+  unawaited(Future<void>.microtask(sync));
   Timer(const Duration(seconds: 2), () => unawaited(sync()));
   ref
     ..listen(musicRecentProvider, (_, _) => server.pushLocalListChanges())

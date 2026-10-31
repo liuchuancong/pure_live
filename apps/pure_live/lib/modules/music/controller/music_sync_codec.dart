@@ -47,8 +47,10 @@ String musicSyncAesDecrypt(String base64Text, String key16) =>
     utf8.decode(_aes(base64Decode(base64Text), Uint8List.fromList(utf8.encode(key16)), false));
 
 Uint8List _aes(Uint8List input, Uint8List key, bool forEncryption) {
-  final cipher = PaddedBlockCipherImpl(PKCS7Padding(), ECBBlockCipher(AESEngine()))
-    ..init(forEncryption, PaddedBlockCipherParameters<KeyParameter, KeyParameter>(KeyParameter(key), KeyParameter(key)));
+  final cipher = PaddedBlockCipherImpl(
+    PKCS7Padding(),
+    ECBBlockCipher(AESEngine()),
+  )..init(forEncryption, PaddedBlockCipherParameters<KeyParameter, KeyParameter>(KeyParameter(key), KeyParameter(key)));
   return cipher.process(input);
 }
 
@@ -56,8 +58,7 @@ Uint8List _aes(Uint8List input, Uint8List key, bool forEncryption) {
 /// the public key goes out as base64 SPKI (no headers) and the private key
 /// stays around as base64 PKCS#8 for the OAEP reply decrypt.
 final class MusicSyncRsaKeyPair {
-  MusicSyncRsaKeyPair._(this.publicSpkiBase64, this.privatePkcs8Base64, RSAPrivateKey private)
-    : _private = private;
+  MusicSyncRsaKeyPair._(this.publicSpkiBase64, this.privatePkcs8Base64, RSAPrivateKey private) : _private = private;
 
   final String publicSpkiBase64;
   final String privatePkcs8Base64;
@@ -68,12 +69,7 @@ final class MusicSyncRsaKeyPair {
   static MusicSyncRsaKeyPair generate() {
     final secureRandom = FortunaRandom()..seed(KeyParameter(_seed()));
     final generator = RSAKeyGenerator()
-      ..init(
-        ParametersWithRandom(
-          RSAKeyGeneratorParameters(BigInt.parse('65537'), 2048, 64),
-          secureRandom,
-        ),
-      );
+      ..init(ParametersWithRandom(RSAKeyGeneratorParameters(BigInt.parse('65537'), 2048, 64), secureRandom));
     final pair = generator.generateKeyPair();
     return MusicSyncRsaKeyPair._(
       _spkiBase64(pair.publicKey as RSAPublicKey),
@@ -84,15 +80,13 @@ final class MusicSyncRsaKeyPair {
 
   /// Decrypts the server's OAEP reply — the auth answer.
   String decryptOaep(String base64Text) {
-    final engine = OAEPEncoding(RSAEngine())
-      ..init(false, PrivateKeyParameter<RSAPrivateKey>(_private));
+    final engine = OAEPEncoding(RSAEngine())..init(false, PrivateKeyParameter<RSAPrivateKey>(_private));
     return utf8.decode(engine.process(base64Decode(base64Text)));
   }
 
   /// Encrypts with the public half; exercises the OAEP path in tests.
   String encryptOaep(String text) {
-    final engine = OAEPEncoding(RSAEngine())
-      ..init(true, PublicKeyParameter<RSAPublicKey>(_public));
+    final engine = OAEPEncoding(RSAEngine())..init(true, PublicKeyParameter<RSAPublicKey>(_public));
     return base64.encode(engine.process(Uint8List.fromList(utf8.encode(text))));
   }
 
@@ -132,8 +126,7 @@ final class MusicSyncPeerPublicKey {
   /// Encrypts with the peer's public half, OAEP — the auth answer the
   /// client decrypts with its fresh private key.
   String encryptOaepBase64(String text) {
-    final engine = OAEPEncoding(RSAEngine())
-      ..init(true, PublicKeyParameter<RSAPublicKey>(_public));
+    final engine = OAEPEncoding(RSAEngine())..init(true, PublicKeyParameter<RSAPublicKey>(_public));
     return base64.encode(engine.process(Uint8List.fromList(utf8.encode(text))));
   }
 }
@@ -214,9 +207,8 @@ Uint8List _derInteger(BigInt value) {
 
 /// SEQUENCE { OID rsaEncryption, NULL } — the AlgorithmIdentifier every
 /// SPKI and PKCS#8 carries.
-Uint8List _derNullSequence() => _der(
-  Uint8List.fromList([0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01, 0x05, 0x00]),
-);
+Uint8List _derNullSequence() =>
+    _der(Uint8List.fromList([0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01, 0x05, 0x00]));
 
 Uint8List _derBitString(Uint8List content) {
   final body = [0x00, ...content];
@@ -228,43 +220,31 @@ Uint8List _derOctetString(Uint8List content) => Uint8List.fromList([0x04, ..._de
 Uint8List _bigIntToBytes(BigInt value) {
   final hex = value.toRadixString(16);
   final padded = hex.length.isOdd ? '0$hex' : hex;
-  final bytes = <int>[
-    for (var i = 0; i < padded.length; i += 2) int.parse(padded.substring(i, i + 2), radix: 16),
-  ];
+  final bytes = <int>[for (var i = 0; i < padded.length; i += 2) int.parse(padded.substring(i, i + 2), radix: 16)];
   return Uint8List.fromList(bytes);
 }
 
-Uint8List _spkiBody(RSAPublicKey key) => _der(Uint8List.fromList([
-      ..._derInteger(key.modulus!),
-      ..._derInteger(key.exponent!),
-    ]));
+Uint8List _spkiBody(RSAPublicKey key) =>
+    _der(Uint8List.fromList([..._derInteger(key.modulus!), ..._derInteger(key.exponent!)]));
 
-String _spkiBase64(RSAPublicKey key) => base64.encode(
-  _der(
-    Uint8List.fromList([
-      ..._derNullSequence(),
-      ..._derBitString(_spkiBody(key)),
-    ]),
-  ),
-);
+String _spkiBase64(RSAPublicKey key) =>
+    base64.encode(_der(Uint8List.fromList([..._derNullSequence(), ..._derBitString(_spkiBody(key))])));
 
 String _pkcs8Base64(RSAPrivateKey key) {
-  final rsaPrivate = _der(Uint8List.fromList([
-    ..._derInteger(BigInt.zero),
-    ..._derInteger(key.modulus!),
-    ..._derInteger(key.publicExponent!),
-    ..._derInteger(key.privateExponent!),
-    ..._derInteger(key.p!),
-    ..._derInteger(key.q!),
-    ..._derInteger(_crtDp(key)),
-    ..._derInteger(_crtDq(key)),
-    ..._derInteger(_crtQInv(key)),
-  ]));
+  final rsaPrivate = _der(
+    Uint8List.fromList([
+      ..._derInteger(BigInt.zero),
+      ..._derInteger(key.modulus!),
+      ..._derInteger(key.publicExponent!),
+      ..._derInteger(key.privateExponent!),
+      ..._derInteger(key.p!),
+      ..._derInteger(key.q!),
+      ..._derInteger(_crtDp(key)),
+      ..._derInteger(_crtDq(key)),
+      ..._derInteger(_crtQInv(key)),
+    ]),
+  );
   final algorithm = _derNullSequence();
-  final pkcs8 = _der(Uint8List.fromList([
-    ..._derInteger(BigInt.zero),
-    ...algorithm,
-    ..._derOctetString(rsaPrivate),
-  ]));
+  final pkcs8 = _der(Uint8List.fromList([..._derInteger(BigInt.zero), ...algorithm, ..._derOctetString(rsaPrivate)]));
   return base64.encode(pkcs8);
 }

@@ -77,13 +77,20 @@ List<AudioEffect> musicEqAudioEffects(MusicEqConfig config) {
   // the character goes down.
   for (final node in config.nodes) {
     if (!node.enabled || node.gainDb.abs() < 0.05) continue;
-    effects.add(EqualizerEffect(frequency: node.frequency, gain: node.gainDb, width: node.q, widthType: EqualizerWidthType.q));
+    effects.add(
+      EqualizerEffect(frequency: node.frequency, gain: node.gainDb, width: node.q, widthType: EqualizerWidthType.q),
+    );
   }
   for (var band = 0; band < kMusicEqFrequencies.length; band++) {
     final gain = config.gains[band];
     if (gain.abs() < 0.05) continue;
     effects.add(
-      EqualizerEffect(frequency: kMusicEqFrequencies[band], gain: gain, width: kMusicEqBandQ, widthType: EqualizerWidthType.q),
+      EqualizerEffect(
+        frequency: kMusicEqFrequencies[band],
+        gain: gain,
+        width: kMusicEqBandQ,
+        widthType: EqualizerWidthType.q,
+      ),
     );
   }
 
@@ -91,7 +98,12 @@ List<AudioEffect> musicEqAudioEffects(MusicEqConfig config) {
   if (config.effectOn('reverb')) {
     final amount = config.effectOf('reverb').amount;
     effects.add(
-      AechoEffect(inGain: 0.8, outGain: 0.9, delays: '60|121', decays: '${(amount * 0.6).toStringAsFixed(2)}|${(amount * 0.35).toStringAsFixed(2)}'),
+      AechoEffect(
+        inGain: 0.8,
+        outGain: 0.9,
+        delays: '60|121',
+        decays: '${(amount * 0.6).toStringAsFixed(2)}|${(amount * 0.35).toStringAsFixed(2)}',
+      ),
     );
   }
   if (config.effectOn('panner')) {

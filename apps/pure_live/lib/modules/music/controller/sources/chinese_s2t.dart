@@ -2545,6 +2545,5 @@ const Map<String, String> kChineseSimplifiedTraditional = {
 
 /// Rewrites text character by character into traditional Chinese;
 /// characters outside the table pass through untouched.
-String traditionalize(String text) => [
-  for (final char in text.split('')) kChineseSimplifiedTraditional[char] ?? char,
-].join();
+String traditionalize(String text) =>
+    [for (final char in text.split('')) kChineseSimplifiedTraditional[char] ?? char].join();

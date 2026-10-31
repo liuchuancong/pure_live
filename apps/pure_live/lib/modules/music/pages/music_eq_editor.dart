@@ -45,10 +45,7 @@ final class MusicEqEditor extends ConsumerWidget {
             for (final frequency in kMusicEqFrequencies)
               Expanded(
                 child: Center(
-                  child: Text(
-                    bandLabel(frequency),
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
-                  ),
+                  child: Text(bandLabel(frequency), style: theme.typography.caption.copyWith(color: colors.textMuted)),
                 ),
               ),
           ],
@@ -77,7 +74,9 @@ final class _EqBoard extends ConsumerWidget {
         return Stack(
           children: [
             Positioned.fill(
-              child: CustomPaint(painter: _EqCurvePainter(eq: eq, colors: colors)),
+              child: CustomPaint(
+                painter: _EqCurvePainter(eq: eq, colors: colors),
+              ),
             ),
             Positioned.fill(
               child: Row(
@@ -186,17 +185,15 @@ final class _EqBandHandle extends StatelessWidget {
   double _yOf(double value, double height) =>
       height * (1 - (value - kMusicEqMinGain) / (kMusicEqMaxGain - kMusicEqMinGain));
 
-  double _gainOf(double y, double height) =>
-      (kMusicEqMinGain + (1 - y / height) * (kMusicEqMaxGain - kMusicEqMinGain)).clamp(kMusicEqMinGain, kMusicEqMaxGain);
+  double _gainOf(double y, double height) => (kMusicEqMinGain + (1 - y / height) * (kMusicEqMaxGain - kMusicEqMinGain))
+      .clamp(kMusicEqMinGain, kMusicEqMaxGain);
 
   @override
   Widget build(BuildContext context) {
     final y = _yOf(gain, size.height);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onVerticalDragUpdate: enabled
-          ? (details) => onChanged(_gainOf(details.localPosition.dy, size.height))
-          : null,
+      onVerticalDragUpdate: enabled ? (details) => onChanged(_gainOf(details.localPosition.dy, size.height)) : null,
       onTapDown: enabled ? (details) => onChanged(_gainOf(details.localPosition.dy, size.height)) : null,
       child: CustomPaint(
         size: Size.infinite,
@@ -208,12 +205,7 @@ final class _EqBandHandle extends StatelessWidget {
 
 /// The knob and its vertical track, painted in the band's own column.
 final class _BandPainter extends CustomPainter {
-  const _BandPainter({
-    required this.knobY,
-    required this.knobRadius,
-    required this.colors,
-    required this.enabled,
-  });
+  const _BandPainter({required this.knobY, required this.knobRadius, required this.colors, required this.enabled});
 
   final double knobY;
   final double knobRadius;

@@ -8,8 +8,7 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicTextSimilarity;
-import 'package:pure_live/modules/music/controller/music_source.dart'
-    show musicSourceListProvider, musicSourceProvider;
+import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, musicSourceProvider;
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart' show MusicHotWords;
 
 /// What the library view holds: the committed query, its songs, where the
@@ -138,8 +137,10 @@ final class MusicSearchController extends Notifier<MusicSearchState> {
       }
     }
     merged.sort(
-      (a, b) =>
-          musicTextSimilarity(query, '${b.title} ${b.artist}').compareTo(musicTextSimilarity(query, '${a.title} ${a.artist}')),
+      (a, b) => musicTextSimilarity(
+        query,
+        '${b.title} ${b.artist}',
+      ).compareTo(musicTextSimilarity(query, '${a.title} ${a.artist}')),
     );
     return audio.MusicSourcePage(items: merged, page: page, total: total, hasMore: hasMore);
   }
@@ -176,19 +177,18 @@ final musicHotSearchesProvider = FutureProvider<List<String>>((ref) async {
 
 /// The completions for the text in the query box; an empty query has none and
 /// a source without the capability answers none.
-final FutureProviderFamily<List<String>, String> musicSearchSuggestionsProvider = FutureProvider.family<List<String>, String>(
-  (ref, query) async {
-  final word = query.trim();
-  if (word.isEmpty) return const <String>[];
-  try {
-    final source = ref.watch(musicSourceProvider);
-    if (source case final MusicHotWords hot) return await hot.suggestions(word);
-    return const <String>[];
-    } on Object {
-      return const [];
-    }
-  },
-);
+final FutureProviderFamily<List<String>, String> musicSearchSuggestionsProvider =
+    FutureProvider.family<List<String>, String>((ref, query) async {
+      final word = query.trim();
+      if (word.isEmpty) return const <String>[];
+      try {
+        final source = ref.watch(musicSourceProvider);
+        if (source case final MusicHotWords hot) return await hot.suggestions(word);
+        return const <String>[];
+      } on Object {
+        return const [];
+      }
+    });
 
 /// The preference the recent searches are kept under.
 const String kMusicSearchHistoryKey = 'music.search.history';

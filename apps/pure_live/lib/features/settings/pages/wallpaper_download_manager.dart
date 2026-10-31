@@ -597,10 +597,9 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
       destructive: true,
       icon: const DsIcon(DsIcons.trash2),
     );
-    if (confirmed) {
-      await ref.read(wallpaperDownloadsProvider.notifier).remove(task.id);
-      if (mounted) setState(() => _selected.remove(task.id));
-    }
+    if (!confirmed || !mounted) return;
+    await ref.read(wallpaperDownloadsProvider.notifier).remove(task.id);
+    if (mounted) setState(() => _selected.remove(task.id));
   }
 
   /// Drops the ticked rows after one ask.
@@ -617,7 +616,7 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
       destructive: true,
       icon: const DsIcon(DsIcons.trash2),
     );
-    if (!confirmed) return;
+    if (!confirmed || !mounted) return;
     await ref.read(wallpaperDownloadsProvider.notifier).removeMany(_selected);
     if (mounted) setState(_selected.clear);
   }
@@ -635,7 +634,7 @@ final class _WallpaperDownloadsPaneState extends ConsumerState<WallpaperDownload
       destructive: true,
       icon: const DsIcon(DsIcons.trash2),
     );
-    if (!confirmed) return;
+    if (!confirmed || !mounted) return;
     await ref.read(wallpaperDownloadsProvider.notifier).removeAll();
     if (mounted) setState(_selected.clear);
   }
@@ -1266,12 +1265,37 @@ final class _KindChip extends StatelessWidget {
 }
 
 /// Hands [path] to the system; a file opens in its viewer, a folder in the
-/// platform's file manager.
-Future<void> openDownloadedPath(BuildContext context, String path) async {
+/// platform's file manager. [failedTitle] replaces the failure toast's text
+/// when the page's own wording says it better.
+Future<void> openDownloadedPath(BuildContext context, String path, {String? failedTitle}) async {
   final result = await OpenFile.open(path);
   if (result.type != ResultType.done && context.mounted) {
-    showDsToast(context: context, title: context.t.settings.downloadOpenFailed, status: DsStatus.danger);
+    showDsToast(context: context, title: failedTitle ?? context.t.settings.downloadOpenFailed, status: DsStatus.danger);
   }
+}
+
+/// Asks before dropping every finished entry of a download list: the batch
+/// is as destructive as a single remove, and the files stay either way.
+/// [title] names the action in the page's own wording.
+Future<void> confirmClearFinished(
+  BuildContext context, {
+  required String title,
+  required Future<void> Function() clear,
+}) async {
+  final t = context.t;
+  final confirmed = await showDsConfirm(
+    context: context,
+    title: title,
+    description: t.settings.downloadClearFinishedBody,
+    confirmLabel: title,
+    cancelLabel: t.common.cancel,
+    destructive: true,
+    icon: const DsIcon(DsIcons.trash2),
+  );
+  // The tap can land after the dialog's host is gone (the list rebuilt
+  // under it); a dead context must not reach the store callback.
+  if (!confirmed || !context.mounted) return;
+  await clear();
 }
 
 /// A local moment for a row: the clock on today's entries, a short date

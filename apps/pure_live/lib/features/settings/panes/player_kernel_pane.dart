@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/playback/playback_settings_providers.dart' show playbackSettingsProvider;
 import 'package:pure_live/features/settings/playback/player_tuning.dart';
-import 'package:pure_live/features/settings/surface/settings_page.dart' show SettingsChildEntry;
+import 'package:pure_live/features/settings/surface/settings_child_entry.dart' show SettingsChildEntry;
 import 'package:pure_live/features/settings/surface/settings_page_action.dart';
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart'
@@ -161,7 +161,10 @@ final class _PlayerKernelPaneState extends ConsumerState<PlayerKernelPane> {
           ),
         DsListSection(
           header: Text(t.settings.settingsMore),
-          children: const [SettingsChildEntry(child: SettingsSection.kernelAdvanced)],
+          children: const [
+            SettingsChildEntry(child: SettingsSection.kernelAdvanced),
+            SettingsChildEntry(child: SettingsSection.playerGuide),
+          ],
         ),
       ],
     );
@@ -408,7 +411,6 @@ final class _PlayerAdvancedSection extends ConsumerWidget {
           onPressed: () =>
               unawaited(launchUrl(Uri.parse('https://mpv.io/manual/'), mode: LaunchMode.externalApplication)),
         ),
-        const SettingsChildEntry(child: SettingsSection.playerGuide),
       ],
     );
   }

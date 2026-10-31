@@ -7,8 +7,15 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort,
-        OnlinePlaylists, PlaylistTagTree, SonglistSearch;
+    show
+        MusicPlaylistInfo,
+        MusicPlaylistPage,
+        MusicPlaylistTag,
+        MusicPlaylistTagGroup,
+        MusicPlazaSort,
+        OnlinePlaylists,
+        PlaylistTagTree,
+        SonglistSearch;
 import 'package:pure_live/modules/music/controller/sources/wy_crypto.dart';
 
 /// The wy-music leaderboard view's Netease boards, in its own order.
@@ -30,8 +37,9 @@ const String _neteaseUserAgent =
 
 /// The Netease platform: search, boards and lyrics ride the eapi/weapi
 /// encrypted channels; play URLs come from the lx scripts.
-final class WyMusicSource extends LxPlatformSource with OnlinePlaylists, PlaylistTagTree, SonglistSearch
-implements MusicHotWords, MusicCommentsSource {
+final class WyMusicSource extends LxPlatformSource
+    with OnlinePlaylists, PlaylistTagTree, SonglistSearch
+    implements MusicHotWords, MusicCommentsSource {
   /// A Netease source over the lx runtime.
   WyMusicSource(super.runtime, super.http);
 
@@ -371,8 +379,7 @@ implements MusicHotWords, MusicCommentsSource {
       if (songs is! List) return const [];
       return [
         for (final song in songs)
-          if (song is Map && song['name'] is String)
-            '${song['name']} - ${_singersOf(song['artists'])}'.trim(),
+          if (song is Map && song['name'] is String) '${song['name']} - ${_singersOf(song['artists'])}'.trim(),
       ];
     } on Object {
       return const [];
@@ -387,7 +394,12 @@ implements MusicHotWords, MusicCommentsSource {
   /// `comment.js` over the weapi comment endpoints. `[大笑]` short codes
   /// become characters.
   @override
-  Future<MusicCommentsPage> comments(audio.MusicTrack track, {required bool hot, required int page, int pageSize = 20}) async {
+  Future<MusicCommentsPage> comments(
+    audio.MusicTrack track, {
+    required bool hot,
+    required int page,
+    int pageSize = 20,
+  }) async {
     final id = 'R_SO_4_${track.id}';
     if (hot) {
       final json = await _weapi('/weapi/v1/resource/hotcomments/$id', {
@@ -424,12 +436,7 @@ implements MusicHotWords, MusicCommentsSource {
     });
     final data = json['data'];
     if (data is! Map) throw StateError('wy comments answered no data');
-    _newestCursors[track.id] = (
-      cursor: '${data['cursor'] ?? ''}',
-      orderType: orderType,
-      offset: offset,
-      page: page,
-    );
+    _newestCursors[track.id] = (cursor: '${data['cursor'] ?? ''}', orderType: orderType, offset: offset, page: page);
     final total = (data['totalCount'] as num?)?.toInt() ?? 0;
     final rows = data['comments'];
     return (comments: commentsOf(rows is List ? rows : const [], _commentOf), hasMore: page * pageSize < total);

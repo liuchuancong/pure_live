@@ -5,7 +5,13 @@ import 'package:pure_live/l10n/translations.dart';
 
 import 'package:pure_live/modules/music/controller/music_source.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTagGroup, MusicPlazaSort, OnlinePlaylists, PlaylistTagTree,
+    show
+        MusicPlaylistInfo,
+        MusicPlaylistPage,
+        MusicPlaylistTagGroup,
+        MusicPlazaSort,
+        OnlinePlaylists,
+        PlaylistTagTree,
         SonglistSearch;
 
 /// One online playlist opened to its tracks.

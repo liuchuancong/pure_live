@@ -225,10 +225,7 @@ final class _Hero extends ConsumerWidget {
                 imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
                 child: Opacity(
                   opacity: 0.35,
-                  child: DsImage(
-                    image: cachedImage(cover.toString()),
-                    semanticLabel: track?.title,
-                  ),
+                  child: DsImage(image: cachedImage(cover.toString()), semanticLabel: track?.title),
                 ),
               ),
             ),
@@ -245,9 +242,7 @@ final class _Hero extends ConsumerWidget {
                     children: [
                       Text(
                         t.music.eqCenterNow,
-                        style: theme.typography.caption.copyWith(
-                          color: eq.enabled ? colors.accent : colors.textMuted,
-                        ),
+                        style: theme.typography.caption.copyWith(color: eq.enabled ? colors.accent : colors.textMuted),
                       ),
                       Text(
                         _presetName(t, eq.presetId, custom),
@@ -255,9 +250,7 @@ final class _Hero extends ConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        track == null
-                            ? t.music.eqCenterSubtitle
-                            : '${track.title} · ${track.artist}',
+                        track == null ? t.music.eqCenterSubtitle : '${track.title} · ${track.artist}',
                         style: theme.typography.caption.copyWith(color: colors.textMuted),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -271,9 +264,7 @@ final class _Hero extends ConsumerWidget {
                   children: [
                     Text(
                       eq.enabled ? t.music.eqCenterEnabled : t.music.eqCenterDisabled,
-                      style: theme.typography.caption.copyWith(
-                        color: eq.enabled ? colors.accent : colors.textMuted,
-                      ),
+                      style: theme.typography.caption.copyWith(color: eq.enabled ? colors.accent : colors.textMuted),
                     ),
                     DsSwitch(
                       value: eq.enabled,
@@ -598,12 +589,16 @@ final class _MyPresetsList extends ConsumerWidget {
                             onPressed: () => unawaited(eqController.applyCustomPreset(preset)),
                             child: Text(t.music.eqUse),
                           ),
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => unawaited(custom.remove(preset.id)),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
-                            child: DsIcon(DsIcons.trash2, size: 16, color: colors.textMuted),
+                        Semantics(
+                          button: true,
+                          label: t.music.eqRemovePreset,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => unawaited(custom.remove(preset.id)),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
+                              child: DsIcon(DsIcons.trash2, size: 16, color: colors.textMuted),
+                            ),
                           ),
                         ),
                       ],

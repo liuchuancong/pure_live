@@ -38,11 +38,12 @@ import 'package:pure_live/features/settings/playback/pip_danmaku_scale_provider.
     show kPipDanmakuScaleMax, kPipDanmakuScaleMin, pipDanmakuScaleProvider;
 import 'package:pure_live/features/settings/playback/playback_settings_providers.dart' show playbackSettingsProvider;
 import 'package:pure_live/features/settings/surface/settings_preview.dart';
+import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection, settingsChildrenOf;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/live/room/player/room_barrage_config.dart' show roomBarrageConfig;
 import 'package:pure_live/modules/live/shield/shield.dart' show ShieldPane;
-import 'package:pure_live/shared/danmaku/danmaku.dart' show DanmakuFormat, danmakuSaveFormatsProvider;
+import 'package:pure_live/shared/danmaku/danmaku.dart' show DanmakuSaveFormatsSection;
+import 'package:pure_live/shared/player/barrage_config.dart' show playerBarrageConfig;
 
 /// The danmaku settings' categories: the flying layer's own controls, the
 /// chat list beside the picture, the face it draws in, and the shield.
@@ -79,6 +80,41 @@ final class DanmakuPane extends ConsumerStatefulWidget {
 final class _DanmakuPaneState extends ConsumerState<DanmakuPane> {
   late DanmakuTab _tab = widget.initialTab;
 
+  /// The page's segments in reading order. A segment that used to be its own
+  /// settings page names that page's section, and the registry decides which
+  /// of them still exist — a deep link to an old child page lands on the
+  /// segment it became, and a section dropped from the registry takes its
+  /// segment with it instead of leaving a tab that opens nothing.
+  static const List<(DanmakuTab, SettingsSection?)> _segments = [
+    (DanmakuTab.look, null),
+    (DanmakuTab.list, SettingsSection.danmakuDisplay),
+    (DanmakuTab.font, null),
+    (DanmakuTab.shield, SettingsSection.shield),
+  ];
+
+  /// The segments the registry still carries.
+  static Set<DanmakuTab> _shownSegments() {
+    final linked = settingsChildrenOf(SettingsSection.danmaku);
+    return {
+      for (final (tab, section) in _segments)
+        if (section == null || linked.contains(section)) tab,
+    };
+  }
+
+  static String _segmentLabel(Translations t, DanmakuTab tab) => switch (tab) {
+    DanmakuTab.look => t.settings.navDanmaku,
+    DanmakuTab.list => t.settings.danmakuList,
+    DanmakuTab.font => t.settings.danmakuFont,
+    DanmakuTab.shield => t.shield.title,
+  };
+
+  static DsIconData _segmentIcon(DanmakuTab tab) => switch (tab) {
+    DanmakuTab.look => DsIcons.captions,
+    DanmakuTab.list => DsIcons.list,
+    DanmakuTab.font => DsIcons.type,
+    DanmakuTab.shield => DsIcons.shield,
+  };
+
   @override
   void didUpdateWidget(DanmakuPane oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -90,46 +126,37 @@ final class _DanmakuPaneState extends ConsumerState<DanmakuPane> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final shown = _shownSegments();
+    // A link can name a segment the registry no longer carries: the page then
+    // opens on its first one rather than on nothing.
+    final tab = shown.contains(_tab) ? _tab : DanmakuTab.look;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        // Four names do not always fit a narrow pane: the control scrolls
+        // The names do not always fit a narrow pane: the control scrolls
         // sideways instead of squeezing its own segments.
         Align(
           alignment: AlignmentDirectional.centerStart,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DsSegmentedControl<DanmakuTab>(
-              value: _tab,
+              value: tab,
               semanticLabel: t.settings.navDanmaku,
               segments: [
-                DsSegment(
-                  value: DanmakuTab.look,
-                  label: Text(t.settings.navDanmaku),
-                  icon: const DsIcon(DsIcons.captions, size: 16),
-                ),
-                DsSegment(
-                  value: DanmakuTab.list,
-                  label: Text(t.settings.danmakuList),
-                  icon: const DsIcon(DsIcons.list, size: 16),
-                ),
-                DsSegment(
-                  value: DanmakuTab.font,
-                  label: Text(t.settings.danmakuFont),
-                  icon: const DsIcon(DsIcons.type, size: 16),
-                ),
-                DsSegment(
-                  value: DanmakuTab.shield,
-                  label: Text(t.shield.title),
-                  icon: const DsIcon(DsIcons.shield, size: 16),
-                ),
+                for (final (value, _) in _segments)
+                  if (shown.contains(value))
+                    DsSegment(
+                      value: value,
+                      label: Text(_segmentLabel(t, value)),
+                      icon: DsIcon(_segmentIcon(value), size: 16),
+                    ),
               ],
               onChanged: (value) => setState(() => _tab = value),
             ),
           ),
         ),
-        switch (_tab) {
+        switch (tab) {
           DanmakuTab.look => _look(context),
           DanmakuTab.list => const DanmakuDisplayPane(),
           DanmakuTab.font => _font(context),
@@ -145,7 +172,6 @@ final class _DanmakuPaneState extends ConsumerState<DanmakuPane> {
   /// keeps its comments flying, a video keeps them on its own timeline.
   Widget _look(BuildContext context) {
     final t = context.t;
-    final saveFormats = ref.watch(danmakuSaveFormatsProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -186,31 +212,9 @@ final class _DanmakuPaneState extends ConsumerState<DanmakuPane> {
             ),
           ],
         ),
-        DsListSection(
-          header: Text(t.settings.danmakuSaveGroup),
-          children: [
-            // The formats are a table: one row each, checked while chosen,
-            // so the whole choice is seen and changed in one place.
-            DsTable<DanmakuFormat>(
-              semanticLabel: t.settings.danmakuSaveGroup,
-              rows: DanmakuFormat.values,
-              rowKey: (format) => format,
-              selected: saveFormats,
-              onSelectionChanged: (selection) => unawaited(
-                ref.read(danmakuSaveFormatsProvider.notifier).setAll(selection.cast<DanmakuFormat>().toSet()),
-              ),
-              columns: [
-                DsTableColumn(id: 'format', label: t.settings.danmakuSaveFormats, value: (format) => format.label(t)),
-                DsTableColumn(
-                  id: 'extension',
-                  label: t.settings.danmakuSaveExtension,
-                  value: (format) => '.${format.extension}',
-                  width: const DsTableColumnWidth.intrinsic(),
-                ),
-              ],
-            ),
-          ],
-        ),
+        // The formats are one table, shared with the recorder's file tab:
+        // a recording's chat and a download's sidecar take the same set.
+        const DanmakuSaveFormatsSection(),
       ],
     );
   }
@@ -1187,7 +1191,7 @@ final class _DanmakuPreviewPageState extends ConsumerState<DanmakuPreviewPage> {
         fit: StackFit.expand,
         children: [
           FlameBarrageWidget(
-            config: roomBarrageConfig(
+            config: playerBarrageConfig(
               style,
               fps,
               family: family,

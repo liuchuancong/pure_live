@@ -229,15 +229,39 @@ foreach ($sectionName in @($hitSections | Where-Object { $openable -notcontains 
 foreach ($sectionName in @($real | Where-Object { $hitSections -notcontains $_ })) {
     $failures.Add("page '$sectionName' has no search hit")
 }
+# The section's own label is printed by the pane header, not by the pane's
+# body: a hit named after its section is rendered wherever that page opens.
+$labelMap = @{}
+$inLabel = $false
+foreach ($line in (Get-Content -LiteralPath $sectionsPath)) {
+    if ($line -match 'String label\(Translations t\) => switch \(this\) \{') { $inLabel = $true; continue }
+    if (-not $inLabel) { continue }
+    if ($line -match '^\s*\};\s*$') { break }
+    $name = [regex]::Match($line, '=> t\.\w+\.(\w+)')
+    if (-not $name.Success) { continue }
+    foreach ($m in [regex]::Matches($line, 'SettingsSection\.(\w+)')) {
+        $labelMap[$m.Groups[1].Value] = $name.Groups[1].Value
+    }
+}
 $paneBlobs = @{}
 foreach ($hit in $hits) {
     if ($aliases.Contains($hit.Section) -or -not $dispatch.Contains($hit.Section)) { continue }
+    if ($labelMap.ContainsKey($hit.Section) -and $labelMap[$hit.Section] -eq $hit.Key) { continue }
     $pane = $dispatch[$hit.Section]
     if (-not $paneBlobs.Contains($pane)) {
         $paneFile = Resolve-ClassFile $pane $classIndex
         $blob = ''
         if ($paneFile) {
-            foreach ($file in (Get-ReachableFiles $paneFile $lib)) { $blob += (Get-Content -Raw -LiteralPath $file) }
+            foreach ($file in (Get-ReachableFiles $paneFile $lib)) {
+                # The catalogue itself names every label, so counting it as a
+                # renderer would bless a hit no pane draws; skip it here.
+                if ($file -like '*settings_search.dart') { continue }
+                # A generated translation file *defines* every label, so it
+                # would bless a hit no pane draws; only code that names the
+                # label counts.
+                if ($file -like '*.g.dart' -or $file -like '*\l10n\*' -or $file -like '*/l10n/*') { continue }
+                $blob += (Get-Content -Raw -LiteralPath $file)
+            }
         }
         $paneBlobs[$pane] = $blob
     }

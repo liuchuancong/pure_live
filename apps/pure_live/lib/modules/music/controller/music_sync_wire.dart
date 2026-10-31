@@ -52,7 +52,11 @@ final class MusicSyncRpcRequest {
   String reply(Object? result) => jsonEncode([1, name, null, result]);
 
   /// Answers the call with a failure.
-  String replyError(String message) => jsonEncode([1, name, <String, Object?>{'message': message}]);
+  String replyError(String message) => jsonEncode([
+    1,
+    name,
+    <String, Object?>{'message': message},
+  ]);
 
   /// The name of the callback argument at [index], null when it was data.
   String? callbackAt(int index) {
@@ -133,7 +137,10 @@ Object? musicSyncParseMessage(String text) {
 MusicSyncRpcRequest _parseRequest(String name, List<Object?> args, List<Object?> indexes) {
   final rebuilt = <Object?>[];
   final callbackNames = <String>[];
-  final callbackPositions = <int>[for (final index in indexes) if (index is int) index];
+  final callbackPositions = <int>[
+    for (final index in indexes)
+      if (index is int) index,
+  ];
   for (var i = 0; i < args.length; i++) {
     if (callbackPositions.contains(i)) {
       final callbackName = args[i]?.toString() ?? '';

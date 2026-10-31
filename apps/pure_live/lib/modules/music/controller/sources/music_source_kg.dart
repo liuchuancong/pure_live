@@ -8,8 +8,15 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort,
-        OnlinePlaylists, PlaylistTagTree, SonglistSearch;
+    show
+        MusicPlaylistInfo,
+        MusicPlaylistPage,
+        MusicPlaylistTag,
+        MusicPlaylistTagGroup,
+        MusicPlazaSort,
+        OnlinePlaylists,
+        PlaylistTagTree,
+        SonglistSearch;
 
 /// The lx-music leaderboard view's KuGou boards, in its own order.
 const List<(String, String)> _kKgBoards = [
@@ -36,8 +43,9 @@ const Map<String, String> _krcHeaders = {
 /// The KuGou platform: search, boards and lyrics ride KuGou's own channel;
 /// play URLs come from the lx scripts (KuGou has no open URL endpoint), keyed
 /// by the per-quality file hashes the search response carries.
-final class KgMusicSource extends LxPlatformSource with OnlinePlaylists, PlaylistTagTree, SonglistSearch
-implements MusicHotWords, MusicCommentsSource {
+final class KgMusicSource extends LxPlatformSource
+    with OnlinePlaylists, PlaylistTagTree, SonglistSearch
+    implements MusicHotWords, MusicCommentsSource {
   /// A KuGou source over the lx runtime.
   KgMusicSource(super.runtime, super.http);
 
@@ -291,7 +299,12 @@ implements MusicHotWords, MusicCommentsSource {
   };
 
   @override
-  Future<MusicPlaylistPage> playlists({String tag = '', String order = 'recommend', int page = 1, int pageSize = 30}) async {
+  Future<MusicPlaylistPage> playlists({
+    String tag = '',
+    String order = 'recommend',
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     final uri = Uri.http('www2.kugou.kugou.com', '/yueku/v9/special/getSpecial', {
       'is_ajax': '1',
       'cdn': 'cdn',
@@ -674,20 +687,22 @@ implements MusicHotWords, MusicCommentsSource {
   /// One page of a song's comments, hot (topliked) or newest — the reference's
   /// kg `comment.js`, signed like every mobiles.kugou.com call.
   @override
-  Future<MusicCommentsPage> comments(audio.MusicTrack track, {required bool hot, required int page, int pageSize = 20}) async {
+  Future<MusicCommentsPage> comments(
+    audio.MusicTrack track, {
+    required bool hot,
+    required int page,
+    int pageSize = 20,
+  }) async {
     final hash = '${track.metadata['hash'] ?? ''}';
     if (hash.isEmpty) throw StateError('kg comments need a file hash');
-    final params = 'dfid=0&mid=16249512204336365674023395779019'
+    final params =
+        'dfid=0&mid=16249512204336365674023395779019'
         '&clienttime=${DateTime.now().millisecondsSinceEpoch}'
         '&uuid=0&extdata=$hash&appid=1005&code=fc4be23b4e972707f36b8a828a93ba8a&schash=$hash'
         '&clientver=11409&p=$page&clienttoken=&pagesize=$pageSize&ver=10&kugouid=0';
     final json = jsonDecode(
       await getText(
-        Uri.http(
-          'm.comment.service.kugou.com',
-          hot ? '/r/v1/rank/topliked' : '/r/v1/rank/newest',
-          _signed(params),
-        ),
+        Uri.http('m.comment.service.kugou.com', hot ? '/r/v1/rank/topliked' : '/r/v1/rank/newest', _signed(params)),
         headers: {'User-Agent': _commentUserAgent},
       ),
     ) as Map<String, Object?>;

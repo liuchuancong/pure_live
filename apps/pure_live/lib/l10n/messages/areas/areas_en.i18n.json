@@ -16,6 +16,8 @@
   "search": "Search",
   "searchAt": "Searching areas for “{query}” on {platform}",
   "searchEmpty": "No matching areas",
+  "roomsEmptyTitle": "No live rooms in this area right now",
+  "roomsEmptyDescription": "Try another area, or come back later.",
   "backToBrowse": "Back to browsing",
   "hiddenUnplayable": "{count: int} streams that cannot play here are hidden (paid, password, app only…)"
 }

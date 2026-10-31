@@ -73,7 +73,14 @@ String _mimeOf(Uint8List bytes) {
 // mp3 / ID3v2.3
 // -----------------------------------------------------------------------------
 
-Future<void> _writeMp3(File file, String? title, String? artist, String? album, String? lyric, Uint8List? picture) async {
+Future<void> _writeMp3(
+  File file,
+  String? title,
+  String? artist,
+  String? album,
+  String? lyric,
+  Uint8List? picture,
+) async {
   final bytes = await file.readAsBytes();
   var body = bytes;
 
@@ -86,7 +93,10 @@ Future<void> _writeMp3(File file, String? title, String? artist, String? album, 
   // The v1 tail is refreshed in place rather than dropped: files that carried
   // one keep one.
   Uint8List? v1;
-  if (body.length >= 128 && body[body.length - 128] == 0x54 && body[body.length - 127] == 0x41 && body[body.length - 126] == 0x47) {
+  if (body.length >= 128 &&
+      body[body.length - 128] == 0x54 &&
+      body[body.length - 127] == 0x41 &&
+      body[body.length - 126] == 0x47) {
     v1 = Uint8List.sublistView(body, body.length - 128);
     body = Uint8List.sublistView(body, 0, body.length - 128);
   }
@@ -157,7 +167,10 @@ List<int> _utf16Body(String text) => [
 ];
 
 int _syncsafe(Uint8List bytes, int offset) =>
-    ((bytes[offset] & 0x7F) << 21) | ((bytes[offset + 1] & 0x7F) << 14) | ((bytes[offset + 2] & 0x7F) << 7) | (bytes[offset + 3] & 0x7F);
+    ((bytes[offset] & 0x7F) << 21) |
+    ((bytes[offset + 1] & 0x7F) << 14) |
+    ((bytes[offset + 2] & 0x7F) << 7) |
+    (bytes[offset + 3] & 0x7F);
 
 List<int> _syncsafeBytes(int value) => [(value >> 21) & 0x7F, (value >> 14) & 0x7F, (value >> 7) & 0x7F, value & 0x7F];
 
@@ -165,7 +178,14 @@ List<int> _syncsafeBytes(int value) => [(value >> 21) & 0x7F, (value >> 14) & 0x
 // flac / Vorbis comment + picture block
 // -----------------------------------------------------------------------------
 
-Future<void> _writeFlac(File file, String? title, String? artist, String? album, String? lyric, Uint8List? picture) async {
+Future<void> _writeFlac(
+  File file,
+  String? title,
+  String? artist,
+  String? album,
+  String? lyric,
+  Uint8List? picture,
+) async {
   final bytes = await file.readAsBytes();
   if (bytes.length < 8 || bytes[0] != 0x66 || bytes[1] != 0x4C || bytes[2] != 0x61 || bytes[3] != 0x43) {
     throw const FormatException('not a flac stream');
@@ -189,7 +209,10 @@ Future<void> _writeFlac(File file, String? title, String? artist, String? album,
 
     if (type == 4) {
       sawComment = true;
-      blocks.add((4, textChanged ? _vorbisComment(title, artist, album, lyric) : Uint8List.sublistView(bytes, start, start + size)));
+      blocks.add((
+        4,
+        textChanged ? _vorbisComment(title, artist, album, lyric) : Uint8List.sublistView(bytes, start, start + size),
+      ));
     } else if (type == 6) {
       sawPicture = true;
       if (picture != null) blocks.add((6, _flacPicture(picture)));
@@ -209,7 +232,12 @@ Future<void> _writeFlac(File file, String? title, String? artist, String? album,
   for (final (index, (type, content)) in blocks.indexed) {
     final last = index == blocks.length - 1;
     out
-      ..add([(last ? 0x80 : 0x00) | (type & 0x7F), (content.length >> 16) & 0xFF, (content.length >> 8) & 0xFF, content.length & 0xFF])
+      ..add([
+        (last ? 0x80 : 0x00) | (type & 0x7F),
+        (content.length >> 16) & 0xFF,
+        (content.length >> 8) & 0xFF,
+        content.length & 0xFF,
+      ])
       ..add(content);
   }
   out.add(Uint8List.sublistView(bytes, audioStart));
@@ -227,7 +255,9 @@ Uint8List _vorbisComment(String? title, String? artist, String? album, String? l
     ..add(vendor)
     ..add(_le32(entries.length));
   for (final entry in entries) {
-    out..add(_le32(entry.length))..add(entry);
+    out
+      ..add(_le32(entry.length))
+      ..add(entry);
   }
   return out.takeBytes();
 }

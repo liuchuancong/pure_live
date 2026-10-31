@@ -209,6 +209,8 @@ class _Translations$areas$en extends Translations$areas$zh_CN {
 	@override String get search => 'Search';
 	@override String searchAt({required Object query, required Object platform}) => 'Searching areas for “${query}” on ${platform}';
 	@override String get searchEmpty => 'No matching areas';
+	@override String get roomsEmptyTitle => 'No live rooms in this area right now';
+	@override String get roomsEmptyDescription => 'Try another area, or come back later.';
 	@override String get backToBrowse => 'Back to browsing';
 	@override String hiddenUnplayable({required int count}) => '${count} streams that cannot play here are hidden (paid, password, app only…)';
 }
@@ -222,6 +224,7 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	// Translations
 	@override String get title => 'Backup & restore';
 	@override String get localSection => 'Local backup';
+	@override String get folderSection => 'Backup location';
 	@override String get summaryTitle => 'Current data';
 	@override String get summaryEmpty => 'Nothing to back up yet';
 	@override String get exportTitle => 'Export backup';
@@ -238,7 +241,7 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get importDone => 'Restored; restart the app to apply everything';
 	@override String get importBadData => 'This is not a valid backup';
 	@override String get importFailed => 'Import failed';
-	@override String summary({required Object follows, required Object history, required Object areas, required Object settings}) => 'Follows ${follows} · History ${history} · Areas ${areas} · Settings ${settings}';
+	@override String summary({required Object follows, required Object history, required Object areas, required Object recordings, required Object settings}) => 'Follows ${follows} · History ${history} · Areas ${areas} · Recordings ${recordings} · Settings ${settings}';
 	@override String get webdavSection => 'WebDAV sync';
 	@override String get webdavAccounts => 'WebDAV accounts';
 	@override String get webdavAccountsHint => 'Opening an account makes it the current one and walks its folders; the pencil edits or deletes it.';
@@ -299,7 +302,7 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get folderSaveFailed => 'Could not save the backup folder';
 	@override String get openFolderFailed => 'Could not open the backup folder';
 	@override String get createTitle => 'Create backup';
-	@override String get createDescription => 'Bundles follows, watch history, followed areas and settings into a file in the backup folder.';
+	@override String get createDescription => 'Bundles follows, watch history, followed areas, recording tasks and settings into a file in the backup folder.';
 	@override String get createFollowsTitle => 'Create follows-only backup';
 	@override String get createFollowsDescription => 'Backs up followed rooms and areas only.';
 	@override String createDone({required String name}) => 'Created ${name}';
@@ -314,9 +317,11 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get kindFollows => 'Follows only';
 	@override String get fileDelete => 'Delete backup file';
 	@override String get restoreConfirmTitle => 'Restore this backup?';
-	@override String restoreConfirmDesc({required String name}) => 'Restoring ${name} overwrites this device\'s follows, watch history, followed areas and settings. The current data cannot be recovered.';
+	@override String restoreConfirmDesc({required String name}) => 'Restoring ${name} overwrites this device\'s follows, watch history, followed areas, recording tasks and settings. The current data cannot be recovered.';
 	@override String restoreFollowsConfirmDesc({required String name}) => 'Restoring ${name} overwrites this device\'s follows and followed areas; other data stays as it is.';
 	@override String get restoreFailed => 'Restore failed';
+	@override String get restoreEmptyDocument => 'This backup holds no data';
+	@override String get restoreRecordingsBusy => 'This device is recording or still finishing a take — end it before restoring the recording tasks';
 	@override String get deleteConfirmTitle => 'Delete this backup file?';
 	@override String deleteConfirmDesc({required String name}) => '${name} will be permanently deleted.';
 	@override String get deleteDone => 'Backup file deleted';
@@ -328,7 +333,7 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get webdavLoadFailed => 'The folder could not be read';
 	@override String get webdavRestore => 'Restore';
 	@override String webdavRestoreTitle({required String name}) => 'Restore “${name}”?';
-	@override String get webdavRestoreDesc => 'The server file replaces this device’s follows, history, areas and settings.';
+	@override String get webdavRestoreDesc => 'The server file replaces this device’s follows, history, areas, recording tasks and settings.';
 	@override String get webdavRestored => 'Server backup restored';
 	@override String get webdavFileDelete => 'Delete server file';
 	@override String webdavDeleteTitle({required String name}) => 'Delete “${name}” from the server?';
@@ -488,13 +493,11 @@ class _Translations$history$en extends Translations$history$zh_CN {
 	@override String clearFilteredConfirmDesc({required int count}) => 'Remove the ${count} entries that match the filter? Other entries stay. This cannot be undone.';
 	@override String clearDone({required int count}) => 'Cleared ${count} history entries';
 	@override String get changeFailed => 'The history changes were not saved. Try again.';
-	@override String get limitAction => 'Change limit';
 	@override String get limitTitle => 'Watch History Retention';
 	@override String get limitDescription => 'The oldest records are dropped past the limit.';
 	@override String get limitPresetsLabel => 'Preset Limits';
 	@override String get limitCustomLabel => 'Custom Limit';
 	@override String limitInvalid({required int min, required int max}) => 'Enter a whole number from ${min} to ${max}.';
-	@override String limitSaved({required int limit}) => 'History limit set to ${limit}';
 	@override String get refresh => 'Refresh';
 	@override String refreshFailed({required int count}) => '${count} records could not be refreshed';
 }
@@ -613,6 +616,7 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get relatedLive => 'Live · open';
 	@override String get relatedReserve => 'Reserve';
 	@override String get reserved => 'Reserved';
+	@override String get reserveFailed => 'Could not reserve it; try again later.';
 	@override String get comments => 'Comments';
 	@override String get commentsEmpty => 'No comments yet';
 	@override String get commentsLoadMore => 'More';
@@ -714,6 +718,46 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get reviewsEmpty => 'No reviews yet';
 	@override String rating({required Object score}) => 'Rated ${score}';
 	@override String ratingCount({required Object count}) => '${count} ratings';
+	@override String get downloadManagerHint => 'The queue downloads with as many lanes as set; episodes stream through the local decrypting proxy and the transfer carries on from the bytes already written. When a file completes, find it — with its in-app preview — under Downloads in the station\'s sidebar.';
+	@override String get downloadSettingsTitle => 'Download settings';
+	@override String get downloadMaxConcurrent => 'Simultaneous downloads';
+	@override String get downloadMaxConcurrentDesc => 'How many tasks run at once; a change applies at once.';
+	@override String get downloadQuality => 'Download quality';
+	@override String get downloadQualityDesc => 'The rendition tier a download asks the platform for.';
+	@override String get downloadDirectory => 'Save location';
+	@override String get downloadDirectoryUpdated => 'Save location updated';
+	@override String get downloadDirectoryFailed => 'Couldn\'t update the save location';
+	@override String get downloadDirectoryDefault => 'Restore default folder';
+	@override String get downloadDirectoryDefaultDesc => 'Back to the app\'s default Videos folder.';
+	@override String downloadTaskCount({required int count, required int active}) => '${count} tasks · ${active} active';
+	@override String get downloadManagerTitle => 'Downloads';
+	@override String get downloadPauseAll => 'Pause all';
+	@override String get downloadResumeAll => 'Resume all';
+	@override String get downloadClearFinished => 'Clear finished';
+	@override String get downloadFilterAll => 'All';
+	@override String get downloadFilterActive => 'In progress';
+	@override String get downloadFilterDone => 'Finished';
+	@override String get downloadFilterEmpty => 'Nothing under this filter';
+	@override String get downloadFilterEmptyDesc => 'Pick another filter, or add a download from a player page first.';
+	@override String get downloadEmpty => 'No downloads yet';
+	@override String get downloadEmptyDesc => 'Tap download on an episode and its task appears here.';
+	@override String get download => 'Download';
+	@override String get downloadQueued => 'Added to the download queue';
+	@override String get downloadQueuedLabel => 'Queued';
+	@override String get downloadDuplicate => 'This episode is already in the queue';
+	@override String get downloadResume => 'Resume download';
+	@override String get downloaded => 'Downloaded';
+	@override String get downloadFailed => 'Download failed';
+	@override String downloadDone({required Object name}) => 'Downloaded ${name}';
+	@override String downloading({required Object percent}) => 'Downloading ${percent}%';
+	@override String get downloadingUnknown => 'Downloading';
+	@override String get downloadPhaseQueued => 'Queued';
+	@override String get downloadPhasePaused => 'Paused';
+	@override String get downloadPhaseFailed => 'Download failed';
+	@override String get downloadPhaseDone => 'Finished';
+	@override String get downloadDeleteFile => 'Delete file';
+	@override String get downloadDeleteFileBody => 'The video file is deleted with it; this cannot be undone.';
+	@override String get downloadDeleteFailed => 'Couldn\'t delete the file';
 }
 
 // Path: iptv
@@ -1001,8 +1045,11 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get settingsInterface => 'Interface';
 	@override String get uiBlurredBackdrop => 'Blurred backdrop';
 	@override String get uiBlurredBackdropDesc => 'Paint the player page over the playing song\'s cover, blown up and blurred';
-	@override String get uiVinylDisc => 'Vinyl disc';
-	@override String get uiVinylDiscDesc => 'Let a record peek out beside the wide player page\'s artwork';
+	@override String get playerMode => 'Player mode';
+	@override String get playerModeDesc => 'What the player stage draws: the cover card, the turntable, or the words alone.';
+	@override String get playerModeStandard => 'Standard';
+	@override String get playerModeVinyl => 'Vinyl';
+	@override String get playerModeLyrics => 'Lyrics';
 	@override String get uiSpectrum => 'Playback spectrum';
 	@override String get uiSpectrumDesc => 'The live spectrum bars on the player page\'s stage';
 	@override String get uiReset => 'Reset display';
@@ -1045,12 +1092,17 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get defaultSourceEmpty => 'No source yet — import a script under Custom sources below.';
 	@override String get quality => 'Playback quality';
 	@override String get qualityDesc => 'The rendition asked of a source; a source that lacks it answers with the best it has.';
+	@override String get qualityServedHere => 'this song';
+	@override String get qualityDowngraded => 'served now';
+	@override String get qualityNotInSong => 'not in this song';
+	@override String get qualityNextTip => 'A new tier applies from the next track.';
 	@override String get audioOutput => 'Output device';
 	@override String get audioOutputDesc => 'Where the music plays; empty means this platform has no device picker.';
 	@override String get qualityStandard => '128K';
 	@override String get qualityHigh => '320K';
 	@override String get qualityLossless => 'Lossless';
 	@override String get qualityHiRes => 'Hi-Res lossless';
+	@override String get badgeHiRes => 'Hi-Res';
 	@override String get skipOnError => 'Skip a failing source';
 	@override String get skipOnErrorDesc => 'Moves to the next source when one cannot answer, instead of stopping.';
 	@override String get autoplay => 'Resume on open';
@@ -1138,10 +1190,15 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get songDetails => 'Song details';
 	@override String get copySongName => 'Copy song name';
 	@override String get copiedSongName => 'Song name copied';
+	@override String get songTableTitle => 'Title';
+	@override String get songTableAlbum => 'Album';
+	@override String get songTableDuration => 'Time';
+	@override String get songAlbumUnknown => 'Unknown album';
 	@override String get songDetailTitle => 'Title';
 	@override String get songDetailArtist => 'Artist';
 	@override String get songDetailAlbum => 'Album';
 	@override String get songDetailDuration => 'Duration';
+	@override String get songDetailQualities => 'Available tiers';
 	@override String get songDetailSource => 'Source';
 	@override String get songDetailPath => 'File';
 	@override String get songDetailEmpty => '—';
@@ -1166,6 +1223,13 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get searchHot => 'Top searches';
 	@override String get searchHotDesc => 'Show the source\'s top searches while the search page is empty.';
 	@override String get searchHotFailed => 'Could not load the top searches';
+	@override String get recPlaylists => 'Recommended playlists';
+	@override String get recMore => 'More playlists';
+	@override String get recRecent => 'Keep playing';
+	@override String get recBoards => 'Charts';
+	@override String get recEmptyTitle => 'Nothing to recommend yet';
+	@override String get recEmptyDescription => 'The source\'s playlists, its charts and the songs you played show up here.';
+	@override String get featuredTitle => 'Featured playlists';
 	@override String get playlistCreate => 'New playlist';
 	@override String get playlistCreateTitle => 'New playlist';
 	@override String get playlistAddLocal => 'Add local songs';
@@ -1213,6 +1277,11 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get selectionRemove => 'Remove';
 	@override String selectionRemoveDone({required Object count}) => 'Removed ${count} songs';
 	@override String downloadsActive({required Object count}) => 'Downloading ${count}';
+	@override String downloadsSummary({required Object count, required Object size}) => 'Downloaded ${count} · ${size}';
+	@override String get downloadFilterAll => 'All';
+	@override String get downloadFilterActive => 'In progress';
+	@override String get downloadFilterDone => 'Finished';
+	@override String get downloadFilterEmpty => 'Nothing in this filter yet';
 	@override String downloadQueued({required Object title}) => 'Queued for download: ${title}';
 	@override String get downloadDuplicate => 'This song is already in the download queue';
 	@override String get downloadUnsupported => 'This song has no downloadable source (a local file, or not covered by the current source)';
@@ -1308,12 +1377,13 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get lyricWordTimed => 'Word-by-word lyrics';
 	@override String get lyricWordTimedDesc => 'Play karaoke-style word timing when the platform provides it.';
 	@override String get lyricFontScale => 'Lyric size';
-	@override String get lyricFontScaleDesc => 'Scale of the lyrics in the player (100%–200%).';
+	@override String get lyricFontScaleDesc => 'Scale of the lyrics in the lyric panel (100%–200%).';
+	@override String get lyricPreviewHint => 'A sample: changes show on these lines at once.';
 	@override String get lyricFontSmaller => 'Smaller lyrics';
 	@override String get lyricFontLarger => 'Larger lyrics';
 	@override String get lyricFontReset => 'Reset size';
 	@override String get lyricAlignment => 'Lyric alignment';
-	@override String get lyricAlignmentDesc => 'How lyric lines sit inside the player panel.';
+	@override String get lyricAlignmentDesc => 'How lyric lines sit inside the lyric panel.';
 	@override String get lyricZoomActive => 'Enlarge the active line';
 	@override String get lyricZoomActiveDesc => 'Draw the line being sung a little larger.';
 	@override String get lyricProgress => 'Show playback progress';
@@ -1327,6 +1397,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get desktopLyricsOff => 'Desktop lyrics hidden';
 	@override String get desktopLyricsUnavailable => 'This platform has no desktop lyric window, or the permission was refused';
 	@override String get desktopLyricHint => 'Desktop lyrics are a floating window you can drag, lock and control; Android needs the overlay permission.';
+	@override String get desktopLyricPreviewHint => 'A sample of how the overlay will look.';
 	@override String get desktopLyricEnableDesc => 'Float the current lyric over the desktop; turning it off keeps the style below.';
 	@override String get desktopLyricLock => 'Lock the lyrics';
 	@override String get desktopLyricLockDesc => 'A locked window lets clicks pass through to the app underneath.';
@@ -1500,6 +1571,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get eqCompareTitle => 'A/B compare';
 	@override String get eqCompare => 'Hold to hear the original';
 	@override String get eqCompareHeld => 'Playing the original — release to restore';
+	@override String get eqRemoveNode => 'Remove this equalizer node';
+	@override String get eqRemovePreset => 'Remove this preset';
 	@override String get songlistTabMine => 'My playlists';
 	@override String get songlistTabOnline => 'Online';
 	@override String get onlineUnsupported => 'The current source does not serve online playlists';
@@ -1521,6 +1594,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get syncMode => 'Sync mode';
 	@override String get syncConnect => 'Connect';
 	@override String get syncDisconnect => 'Disconnect';
+	@override String get syncRemoveDevice => 'Remove this device';
+	@override String get syncRemoveHost => 'Remove this saved address';
 	@override String get syncStatusConnected => 'Connected';
 	@override String get syncStatusConnecting => 'Connecting';
 	@override String get syncStatusFailed => 'Failed';
@@ -1542,8 +1617,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get syncServerCopy => 'Copy';
 	@override String get syncServerErrorPort => 'Port is occupied or unavailable';
 	@override String get syncServerDevices => 'Certified devices';
-	@override String get syncServerDevicesView => 'View';
 	@override String get syncServerDevicesEmpty => 'Nothing here ┗( ▔, ▔ )┛';
+	@override String get syncServerDevicesView => 'View';
 	@override String get syncServerDevicesTip => '💡 After a device is removed, reconnecting needs the connection code again';
 	@override String get syncServerLastConnect => 'Last connection time:';
 	@override String get syncServerMobile => 'Mobile';
@@ -1643,14 +1718,18 @@ class _Translations$navigation$en extends Translations$navigation$zh_CN {
 	@override String get proxy => 'Network proxy';
 	@override String get user => 'User';
 	@override String get vodRegions => 'Regions';
+	@override String get vodDownloads => 'Downloads';
 	@override String get iptvSources => 'Subscriptions';
 	@override String get iptvGuide => 'Guide';
+	@override String get musicRecommend => 'Recommended';
+	@override String get musicFeatured => 'Featured';
 	@override String get musicSonglist => 'Songlists';
 	@override String get musicToplist => 'Charts';
 	@override String get musicLibrary => 'My lists';
 	@override String get musicLocal => 'Local music';
 	@override String get musicDownloads => 'Downloads';
 	@override String get musicSettings => 'Music settings';
+	@override String get hongguoDownloads => 'Downloads';
 }
 
 // Path: player
@@ -1709,10 +1788,29 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get stateFailed => 'Failed';
 	@override String get settingsTitle => 'Recording';
 	@override String get saveDirTitle => 'Save directory';
+	@override String get saveDirResetTitle => 'Use the default folder';
+	@override String get saveDirResetDesc => 'Back to the default under the download folder; recordings already saved stay where they are.';
+	@override String get folderInUseTitle => 'A recording is in progress';
+	@override String folderInUseBody({required Object count}) => '${count} take(s) will keep writing to the old folder and their files stay there; only new recordings use the new folder, and existing files are not moved.';
+	@override String get folderInUseConfirm => 'Change anyway';
+	@override String get folderChangedActive => 'New folder saved; the running takes are still in the old folder';
+	@override String get saveDirDefaultInUse => 'The default folder is already in use.';
+	@override String get resetAll => 'Reset to defaults';
+	@override String get resetAllConfirmTitle => 'Reset recording settings?';
+	@override String get resetAllConfirmDesc => 'Quality, naming, segments, limits, live check and cache return to their defaults; the save folder and danmaku formats are left as they are.';
+	@override String get resetAllDone => 'Recording settings reset';
 	@override String get namingTitle => 'File naming template';
 	@override String get namingDescription => 'Date, time, platform, room id and title placeholders are available.';
 	@override String get namingDialogHint => 'Enter the naming template for recording files';
+	@override String get namingFieldsCaption => 'Fields you can use (tap to insert):';
+	@override String get namingFieldDate => 'Date';
+	@override String get namingFieldTime => 'Time';
+	@override String get namingFieldPlatform => 'Platform';
+	@override String get namingFieldRoomId => 'Room id';
+	@override String get namingFieldTitle => 'Title';
 	@override String get maxSizeTitle => 'Recording size cap';
+	@override String get maxSizeLimitTitle => 'Limit each file\'s size';
+	@override String get maxSizeLimitDesc => 'When off, a take is not ended by size; segments are still cut by duration.';
 	@override String get maxSizeDescription => 'Ends the take once it reaches the cap; measured in MB.';
 	@override String get filterLabel => 'Filter';
 	@override String get filterAll => 'All';
@@ -1722,6 +1820,48 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get filterFailed => 'Failed';
 	@override String emptyFilterTitle({required String status}) => 'No tasks in “${status}” yet';
 	@override String get stateWaiting => 'Waiting for live';
+	@override String get stateProcessing => 'Processing';
+	@override String get warningJoinFailed => 'Join failed; the segments are kept in the folder';
+	@override String get warningTranscodeFailed => 'Transcode failed; the untranscoded MP4 is kept';
+	@override String get warningFinalizeFailed => 'Post-processing failed; the recording files are kept';
+	@override String get warningStaleProcessing => 'The last join/transcode did not finish; check the task folder';
+	@override String get warningDiskLow => 'Free space ran low and the recording stopped; the segments are kept';
+	@override String get warningCanceled => 'Post-processing was cancelled; the recording files are kept';
+	@override String get cancelProcessing => 'Cancel processing';
+	@override String get cancelProcessingRequested => 'Cancelling post-processing…';
+	@override String get retryJoin => 'Re-join segments';
+	@override String get retryJoinStarted => 'Re-joining this recording';
+	@override String get retryJoinBusy => 'That take is recording or processing already';
+	@override String get retryJoinGone => 'This recording\'s folder cannot be found';
+	@override String get retryJoinNothing => 'No joinable segments left in that folder — it may already be merged';
+	@override String retryJoinFailed({required Object error}) => 'Could not start the merge: ${error}';
+	@override String get batchMenu => 'Batch actions';
+	@override String get stopAll => 'Stop every recording';
+	@override String get stopAllTitle => 'Stop every recording?';
+	@override String stopAllBody({required int count}) => '${count} room(s) now recording end and save; segments already written stay and post-processing runs as usual.';
+	@override String stopAllDone({required int count}) => 'Stopped ${count} recording(s)';
+	@override String stopAllPartial({required int count, required Object error}) => 'Stopped ${count}; one failed: ${error}';
+	@override String get clearSettled => 'Clear settled tasks';
+	@override String get clearSettledTitle => 'Clear the settled tasks?';
+	@override String clearSettledBody({required int count}) => '${count} task rows leave the list; the recordings stay in their folders. Rooms recording, still processing or waiting to go live are untouched.';
+	@override String clearSettledDone({required int count}) => 'Cleared ${count} task(s)';
+	@override String get merge => 'Merge into this folder';
+	@override String get mergeTitle => 'Merge the other folder\'s recordings here?';
+	@override String mergeBody({required int count}) => '${count} recording(s) live in another folder. On one disk the folder is only renamed; across disks every file is copied and measured against the source, and the source folder is deleted only when the copy matches. Task rows follow the new path; rooms recording or still processing are untouched.';
+	@override String mergeDesc({required int count}) => '${count} finished recording(s) live in another folder and can be merged here';
+	@override String mergeRunning({required Object done, required Object total, required Object name}) => 'Merging ${done}/${total}: ${name}';
+	@override String mergeDone({required int count}) => 'Merged ${count} recording(s)';
+	@override String mergePartial({required int moved, required int failed}) => 'Merged ${moved}; ${failed} did not finish';
+	@override String get caCustomTitle => 'Custom CA bundle';
+	@override String get caCustomDesc => 'Not set: recordings trust the bundled Mozilla store. Picking your own bundle (PEM text) trusts a corporate root or a self-signed chain without switching verification off.';
+	@override String caCustomPicked({required Object name}) => 'In use: ${name}';
+	@override String caCustomMissing({required Object name}) => '${name} is no longer where the row found it — recordings will fail; pick it again or clear it';
+	@override String get caCustomNotPem => 'That is not a PEM certificate bundle (it should contain -----BEGIN CERTIFICATE-----)';
+	@override String get caCustomPickFailed => 'The certificate file could not be read';
+	@override String get caCustomClear => 'Use bundled';
+	@override String get caCustomCleared => 'Recording uses the bundled root store again';
+	@override String get startNowBusyOther => 'Another window is recording this room';
+	@override String get startNowCaFailed => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store';
 	@override String get stateSaved => 'Saved';
 	@override String get menuMore => 'More actions';
 	@override String get openRoom => 'Open live room';
@@ -1733,6 +1873,10 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get settingsOpen => 'Recording settings';
 	@override String get stop => 'Stop recording';
 	@override String get settingsFiles => 'Files and location';
+	@override String get settingsTabFiles => 'Files';
+	@override String get settingsTabCapture => 'Recovery';
+	@override String get settingsTabRuntime => 'Runtime';
+	@override String get settingsTabPolling => 'Live check';
 	@override String get settingsRecovery => 'Segments and recovery';
 	@override String get settingsRuntime => 'Background and limits';
 	@override String get segmentTitle => 'Segment length';
@@ -1749,6 +1893,8 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get keepAliveDescription => 'Hold a background session and wake lock while recording (Android foreground service and notification).';
 	@override String get verifyTitle => 'Verify on stop';
 	@override String get verifyDescription => 'Check the segments are playable before the session ends.';
+	@override String get tlsVerifyTitle => 'Verify HTTPS certificates';
+	@override String get tlsVerifyDesc => 'Off accepts self-signed or proxy-intercepted certificates; the server\'s identity is then unverified and interception is possible.';
 	@override String get restartTitle => 'Stream retries';
 	@override String get restartDescription => 'How often FFmpeg reopens a broken stream; 0 disables retries.';
 	@override String restartCount({required int count}) => '${count}×';
@@ -1757,23 +1903,39 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get stallTitle => 'Stall timeout';
 	@override String get stallDescription => 'How long without new data counts as a stalled stream and reopens it.';
 	@override String get watermarkTitle => 'Free-space floor';
+	@override String get diskWatermarkLimitTitle => 'Stop on low disk space';
+	@override String get diskWatermarkLimitDesc => 'When off, a capture does not stop for low free space.';
 	@override String get watermarkDescription => 'Stop recording when free space falls below this.';
 	@override String get maxTasksTitle => 'Concurrent recordings';
+	@override String get maxTasksLimitTitle => 'Limit concurrent recordings';
+	@override String get maxTasksLimitDesc => 'When off, no concurrency cap applies; waiting takes start in queue order.';
 	@override String get maxTasksDescription => 'New recording requests are refused once this many run.';
 	@override String maxTasksCount({required int count}) => '${count}';
 	@override String get containerTitle => 'Segment container';
 	@override String get containerDescription => 'TS survives interruptions best; MP4 opens in ordinary players.';
 	@override String get containerTs => 'MPEG-TS';
 	@override String get containerMp4 => 'Fragmented MP4';
+	@override String get combineTitle => 'Join into one MP4';
+	@override String get combineDesc => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.';
+	@override String get combineDeleteOriginals => 'Delete segments after joining';
+	@override String get combineDeleteOriginalsDesc => 'Keep only the MP4; off moves the segments into an original folder beside it so the join can be retried.';
+	@override String get transcodeTitle => 'Re-encode after joining';
+	@override String get transcodeDesc => 'Re-encodes the joined MP4 to H.264; it takes longer with the recording\'s length and lowers the source quality.';
+	@override String get transcodeBitrateTitle => 'Transcode bitrate';
+	@override String get transcodeBitrateDesc => 'Target video bitrate; higher is clearer and larger.';
+	@override String get playRecording => 'Play recording';
+	@override String get previewRecording => 'Preview in built-in player';
+	@override String get recordChatGiftsTitle => 'Record gift messages';
+	@override String get recordChatGiftsDesc => 'Writes gift messages, in the text the platform gives, into the same danmaku file; the chat alone is the default.';
 	@override String get recordChatTitle => 'Record chat';
-	@override String get recordChatDescription => 'Save live chat beside each video in the formats chosen under Danmaku → Danmaku files; needs a platform with remote chat';
+	@override String get recordChatDescription => 'Save live chat beside each video in the formats chosen under Danmaku → Danmaku save formats; needs a platform with remote chat';
 	@override String get defaultQualityTitle => 'Default recording quality';
 	@override String get defaultQualityDesc => 'Ask the platform for this quality when a recording starts; when it is unavailable, the current playback line is used.';
 	@override String get cacheTitle => 'Recording cache';
 	@override String get liveCheckGroup => 'Live check';
 	@override String get enablePolling => 'Enable live detection';
-	@override String get enablePollingDesc => 'Automatically poll while the streamer is offline; add a room with “Record when live” in the room’s more menu.';
-	@override String get pollingOff => 'Live check is off; waiting tasks will not start automatically.';
+	@override String get enablePollingDesc => 'Automatically poll while the streamer is offline; add a room with “Record when live” in the room’s more menu. Off, waiting rooms and scheduled windows never begin a take on their own — “Start now” still works.';
+	@override String get pollingOff => 'Live check is off; waiting and scheduled tasks will not start automatically.';
 	@override String get pollingEnable => 'Turn on';
 	@override String pollingEnabledToast({required Object seconds}) => 'Live check turned on (every ${seconds} s)';
 	@override String get cacheLimitEnabled => 'Limit the recording cache';
@@ -1789,7 +1951,6 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get cacheClearConfirmDesc => 'This deletes finished videos, segments and danmaku files in the managed folder and cannot be undone; active recordings are skipped.';
 	@override String get cacheCleared => 'Recording cache cleared';
 	@override String get cacheFailed => 'Cache operation failed. Try again.';
-	@override String get cacheManagedHint => 'To protect other files, a chosen directory gets an app-owned PureLiveRecords child folder.';
 	@override String get liveCheckSecondsTitle => 'Check interval (seconds)';
 	@override String get liveCheckSecondsDesc => 'How often each waiting task checks its room, 10–300 seconds.';
 	@override String get checkBackoff => 'Exponential backoff';
@@ -1797,8 +1958,39 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get maxCheckSecondsTitle => 'Maximum check interval (seconds)';
 	@override String get maxCheckSecondsDesc => 'The ceiling the stretched interval approaches, 60–3600 seconds.';
 	@override String get autoStartOnBoot => 'Resume pending recordings on launch';
-	@override String get autoStartOnBootDesc => 'Turn tasks still marked recording after an interrupted process into waiting tasks for the live check; stopped and finished tasks keep their state.';
+	@override String get autoStartOnBootDesc => 'Turn tasks still marked recording after an interrupted process into waiting tasks for the live check — with the live check off, one check runs at launch; stopped and finished tasks keep their state. Off, an interrupted row stays “recording” and has to be deleted and added again.';
+	@override String get stateRecordingElsewhere => 'This window is not writing it: if another window is recording, that one owns it; otherwise the last process was interrupted — delete the task and add it again.';
+	@override String get scheduleMenu => 'Schedule window';
+	@override String get scheduleTitle => 'Schedule window';
+	@override String get scheduleEnableTitle => 'Check only inside the window';
+	@override String get scheduleEnableDesc => 'Outside the window the platform is not asked; inside it the normal live check applies. After a take stops, the next window arms it again.';
+	@override String get scheduleDaysTitle => 'Days';
+	@override String get scheduleStartTitle => 'Start';
+	@override String get scheduleEndTitle => 'End';
+	@override String get scheduleOvernightHint => 'An end earlier than the start crosses midnight; equal start and end means the whole day.';
+	@override String get scheduleStopAtEnd => 'Stop recording at the window\'s end';
+	@override String get scheduleStopAtEndDesc => 'Off keeps a take running past the window until the stream ends.';
+	@override String scheduleSummary({required Object days, required Object range}) => '${days} ${range}';
+	@override String get scheduleEveryDay => 'Every day';
+	@override String get scheduleWorkdays => 'Weekdays';
+	@override String get scheduleWeekend => 'Weekends';
+	@override String get scheduleDayMon => 'Mon';
+	@override String get scheduleDayTue => 'Tue';
+	@override String get scheduleDayWed => 'Wed';
+	@override String get scheduleDayThu => 'Thu';
+	@override String get scheduleDayFri => 'Fri';
+	@override String get scheduleDaySat => 'Sat';
+	@override String get scheduleDaySun => 'Sun';
+	@override String get scheduleDaySeparator => ', ';
+	@override String get scheduleSaved => 'Schedule window saved';
+	@override String get startNow => 'Start now';
+	@override String get startNowStarted => 'Recording started';
+	@override String get startNowOffline => 'The room is not live';
+	@override String get startNowNoStream => 'No recordable line';
+	@override String get startNowTimeout => 'Reading the stream timed out';
+	@override String startNowFailed({required Object error}) => 'Could not start recording: ${error}';
 	@override String get cacheBusy => 'A recording is in progress (possibly in another window); the cache will not be cleared or trimmed now.';
+	@override String get cacheOtherRoot => 'A take is still writing to the old folder; this page\'s size, clear and automatic trimming cover the current folder only.';
 }
 
 // Path: room
@@ -2033,6 +2225,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get navIptv => 'Guides & updates';
 	@override String get navVod => 'Account & quality';
 	@override String get navData => 'Watch data';
+	@override String get followDataGroup => 'Follow data';
 	@override String get navBackup => 'Backup & restore';
 	@override String get navAbout => 'Version & licences';
 	@override String get navBrowsing => 'Browsing';
@@ -2069,13 +2262,13 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get personalizationChooseTheme => 'Choose a theme to apply';
 	@override String get personalizationSettings => 'Personalization settings';
 	@override String get playbackDescription => 'Quality, audio, picture and player behaviour.';
-	@override String get sitesDescription => 'The default and preferred platform; platform display, order and accounts live on their subpages.';
+	@override String get sitesDescription => 'Preferred platform and platform display; per-platform quirks, accounts and follow tags.';
 	@override String get iptvDescription => 'Guide updates and source syncing.';
 	@override String get vodDescription => 'Bilibili account, default quality and video-station behaviour.';
 	@override String get dataDescription => 'Live watch history and follows.';
 	@override String get backupDescription => 'Local backups, restores and WebDAV sync.';
 	@override String get aboutDescription => 'Version, licences and project links.';
-	@override String get browsingPageDescription => 'Card gaps, the follows page density and the room card.';
+	@override String get browsingPageDescription => 'Cards and lists, how dense the follows page is, the audience metric and the room card.';
 	@override String get windowPageDescription => 'Caption, room windows, close behaviour, window size and display rate.';
 	@override String get startupPageDescription => 'Launch at login, the startup mark, closing the window and scheduled shutdown.';
 	@override String get accountsPageDescription => 'Platform accounts and authorisation.';
@@ -2154,6 +2347,9 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get refreshRateMultiMonitorDesc => 'The reading belongs to the display the current window is on.';
 	@override String get sitesDisplay => 'Platforms shown';
 	@override String get sitesDisplayDesc => 'Switched-off platforms leave the popular, areas, follows and search platform lists.';
+	@override String get sitesGroupCore => 'Platforms';
+	@override String get sitesGroupPlayback => 'Compatibility & language';
+	@override String get sitesGroupAccount => 'Accounts & groups';
 	@override String get sitesShowAll => 'Show all';
 	@override String get sitesHideAll => 'Hide all';
 	@override String get sitesReset => 'Reset';
@@ -2234,6 +2430,15 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get proxyHostDesc => 'The proxy server\'s host name or address.';
 	@override String get proxyPort => 'Port';
 	@override String get proxyPortDesc => 'The port that proxy server listens on.';
+	@override String get proxyUsername => 'Username';
+	@override String get proxyUsernameDesc => 'Fill this in when the proxy asks for credentials; empty treats it as an open proxy.';
+	@override String get proxyPassword => 'Password';
+	@override String get proxyPasswordDesc => 'Kept in the system keychain — never in the preferences, never in a backup export. App requests, the player and recordings all present it; SOCKS and PAC cannot be expressed.';
+	@override String get proxyPasswordSaved => 'Saved';
+	@override String get proxyPasswordNone => 'Not set';
+	@override String get proxyPasswordReplace => 'Type a new password to replace it';
+	@override String get proxyPasswordClear => 'Clear the saved password';
+	@override String get proxyPasswordClearDesc => 'The proxy is then used without authentication; if it still requires a password, requests will fail.';
 	@override String get proxyModeOff => 'No proxy';
 	@override String get proxyModeOffDesc => 'The vod, guide and backup requests all go direct.';
 	@override String get proxyModeSystem => 'Follow the system proxy';
@@ -2387,7 +2592,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get danmakuColorBlue => 'Blue';
 	@override String get danmakuColorPurple => 'Purple';
 	@override String get danmakuColorPink => 'Pink';
-	@override String get danmakuSaveGroup => 'Danmaku files';
+	@override String get danmakuSaveGroup => 'Danmaku save formats';
 	@override String get danmakuSaveDescription => 'Recordings and downloaded videos save the danmaku in each chosen format beside the video; XML stays on when everything else is off.';
 	@override String get danmakuSaveFormats => 'Saved formats';
 	@override String get danmakuSaveExtension => 'Extension';
@@ -2524,8 +2729,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get navRefresh => 'Auto refresh';
 	@override String get navProxy => 'Network proxy';
 	@override String get tvGroup => 'TV';
-	@override String get sitesPlatforms => 'Platforms';
-	@override String get sitesCompatibility => 'Site compatibility';
 	@override String get settingsMore => 'More';
 	@override String get navMenuOrder => 'Menu order';
 	@override String get navPlatforms => 'Platforms & accounts';
@@ -2551,6 +2754,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get vodPlaybackDescription => 'The opening rate, what a finished part leads to, and the details under the picture.';
 	@override String get groupMusic => 'Music';
 	@override String get navMusic => 'Music';
+	@override String get groupMusicTools => 'Sound & tools';
 	@override String get musicSettingsDescription => 'Playback, lyrics, desktop lyrics, download, sources, hotkeys and sync.';
 	@override String get navMusicPlay => 'Playback';
 	@override String get musicPlaybackDescription => 'Sources, quality and how playback and lists behave.';
@@ -2574,6 +2778,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get vodQuality1080 => '1080P';
 	@override String get vodQuality1080Plus => '1080P+';
 	@override String get vodQuality4K => '4K';
+	@override String get vodDownloadTitle => 'Video downloads';
+	@override String get vodDownloadDescription => 'The station\'s download tasks, lanes and save folder.';
 	@override String get iptvGuideUpdates => 'Guide updates';
 	@override String get iptvNetwork => 'Network';
 	@override String get iptvSections => 'Zapping & groups';
@@ -2956,6 +3162,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String downloadProgressUnknown({required Object received}) => '${received} downloaded';
 	@override String downloadSavedTo({required Object path}) => 'Saved to ${path}';
 	@override String get downloadCancelled => 'Download cancelled; no partial file was kept.';
+	@override String get downloadClearFinishedBody => 'Removes every finished task\'s entry; the downloaded files are not touched.';
 	@override String get downloadOpenFile => 'Open the file';
 	@override String get downloadOpenFolder => 'Open the folder';
 	@override String get downloadOpenFailed => 'Could not open it';
@@ -3270,7 +3477,13 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String backgroundIntervalSeconds({required Object count}) => '${count}s';
 	@override String get backgroundPreviewLooping => 'Loops';
 	@override String get navHongguo => 'Hongguo drama';
+	@override String get navHongguoInterface => 'Cards & interface';
+	@override String get navHongguoDanmaku => 'Danmaku';
+	@override String get navHongguoDevice => 'Device & identity';
 	@override String get hongguoDescription => 'The hongguo companion service and playback preferences.';
+	@override String get hongguoInterfaceDesc => 'What the poster card shows.';
+	@override String get hongguoDanmakuDesc => 'The danmaku switch, with its size, opacity, speed and density.';
+	@override String get hongguoDeviceDesc => 'The device identity this install registered; reset it here.';
 	@override String get hongguoQuality => 'Default quality';
 	@override String get hongguoQualityDesc => 'The rendition an episode opens with; a missing one falls back to the nearest lower.';
 	@override String get hongguoCardVisibleContent => 'Card visible content';
@@ -3296,18 +3509,34 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get logLevelDesc => 'Lines below this level are never produced.';
 	@override String get logFile => 'Write log files';
 	@override String get logFileDesc => 'Off keeps only the recent lines in memory.';
+	@override String get logFileName => 'File name';
+	@override String get logFileNameDesc => 'Base name for the log file and its rotated copies; saved copies keep their time-stamped names.';
+	@override String get logFileNameHint => 'e.g. PureLive';
+	@override String get logExportFormat => 'Save format';
+	@override String get logExportFormatDesc => 'What the console\'s Save to file writes: plain text as .txt, a log file as .log (same content), or JSON Lines as .jsonl for searching and parsing.';
+	@override String get logExportFormatText => 'Plain text (.txt)';
+	@override String get logExportFormatLog => 'Log file (.log)';
+	@override String get logExportFormatJsonl => 'JSON Lines (.jsonl)';
 	@override String get logRotationGroup => 'File rotation';
 	@override String get logFileMaxBytes => 'Per-file limit';
 	@override String get logFileMaxBytesDesc => 'The sink moves to the next file at this size.';
+	@override String get logFilesKept => 'Files kept';
+	@override String get logFilesKeptDesc => 'A full file rotates to the next; older files beyond the limit are deleted.';
+	@override String get logFilesKeptUnlimited => 'Unlimited';
 	@override String get logDirectoryGroup => 'Location';
 	@override String get logDirectory => 'Log folder';
+	@override String get logDirectoryResetTitle => 'Use the default folder';
+	@override String get logDirectoryResetDesc => 'Back to logs under the data folder; files already written stay where they are.';
+	@override String get logDirectoryDefaultInUse => 'The default folder is already in use.';
 	@override String get logCopyPath => 'Copy path';
 	@override String get logPathCopied => 'Path copied';
 	@override String get logOpenFailed => 'Could not open the folder';
 	@override String get storageFolders => 'Storage locations';
+	@override String get storageFoldersDescription => 'The folders each kind of file is saved in; change or reset one at a time.';
 	@override String get storageFoldersDesc => 'Where each kind of file lives. Defaults follow the system; any of them can be moved.';
 	@override String get storageFolderVideos => 'Videos';
 	@override String get storageFolderRecordings => 'Recordings';
+	@override String get storageFolderScreenshots => 'Screenshots';
 	@override String get storageFolderMusic => 'Songs';
 	@override String get storageFolderWallpapers => 'Wallpapers';
 	@override String get storageFolderVideoWallpapers => 'Video wallpapers';
@@ -3323,8 +3552,24 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get storageFolderRestart => 'Takes effect after a restart';
 	@override String get storageFolderPick => 'Choose folder';
 	@override String get storageFolderReset => 'Use default';
+	@override String get storageFoldersResetAll => 'Reset all folders';
+	@override String get storageFoldersResetAllDesc => 'Every folder returns to the device default; the cache moves after a restart.';
 	@override String get resetGroup => 'Reset';
 	@override String get roomCardGroup => 'Room card style';
+	@override String get localMediaTitle => 'Local media';
+	@override String get localMediaDescription => 'Browse and preview the videos, recordings and songs saved on this machine.';
+	@override String localMediaSummary({required int count, required String size}) => '${count} files · ${size} in total';
+	@override String get localMediaEmpty => 'Nothing saved yet';
+	@override String get localMediaEmptyDesc => 'Downloaded videos, live recordings and songs appear here. Their folders live in storage locations.';
+	@override String get localMediaOpenStorage => 'Open storage locations';
+	@override String get localMediaOpenFailed => 'The file could not be opened';
+	@override String get localMediaSystemPlayer => 'Open with system player';
+	@override String localMediaDeleteTitle({required String name}) => 'Delete “${name}”?';
+	@override String get localMediaDeleteBody => 'The file is removed from disk.';
+	@override String get localMediaDeleteFailed => 'The file could not be deleted';
+	@override String get localMediaRefresh => 'Refresh';
+	@override String get hongguoDownloadTitle => 'Downloads';
+	@override String get hongguoDownloadDescription => 'The download queue, quality and save folder';
 }
 
 // Path: shield
@@ -3420,7 +3665,6 @@ class _Translations$toolbox$en extends Translations$toolbox$zh_CN {
 	@override String get linkCopy => 'Copy room link';
 	@override String get linkPaste => 'Paste';
 	@override String get linkClear => 'Clear';
-	@override String get linkClipboardGroup => 'Clipboard';
 	@override String get linkClipboardRooms => 'Detect room links in the clipboard';
 	@override String get linkClipboardRoomsDesc => 'Reads the clipboard when the app comes back and asks before opening a supported platform link; it never jumps on its own.';
 	@override String get linkResolving => 'Resolving the link…';
@@ -3495,14 +3739,13 @@ class _Translations$toolbox$en extends Translations$toolbox$zh_CN {
 	@override String get logsCopied => 'Log copied';
 	@override String get logsCopyEmpty => 'No logs to copy';
 	@override String get logsDirectoryDefault => 'The log file is not ready yet.';
-	@override String get logsFileTitle => 'Log file';
 	@override String get logsOpenFolder => 'Open the folder';
-	@override String get logsCopyPath => 'Copy path';
+	@override String get logsLevelLabel => 'Level';
+	@override String get logsSave => 'Save to file';
+	@override String get logsSaved => 'Log saved';
+	@override String get logsSaveFailed => 'Could not save the log';
 	@override String get logsPathCopied => 'Path copied to the clipboard';
 	@override String get logsOpenFailed => 'Could not open the log directory';
-	@override String get logsFilterSection => 'View filter';
-	@override String get logsLevelFilter => 'Shown level';
-	@override String get logsLevelFilterDesc => 'Filters this page only; what the app records is set in the log settings.';
 }
 
 // Path: vod
@@ -3656,6 +3899,41 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get downloadFailed => 'Download failed';
 	@override String get downloadCancelled => 'Download cancelled';
 	@override String get downloadCancel => 'Cancel download';
+	@override String get downloadPause => 'Pause download';
+	@override String get downloadQueued => 'Added to the download queue';
+	@override String get downloadDuplicate => 'This part is already in the queue';
+	@override String get downloadManagerHint => 'The queue downloads with as many lanes as set; an expired address is re-signed and the transfer carries on from the bytes already written. When a file completes, find it — with its in-app preview — under Downloads in the station\'s sidebar.';
+	@override String get downloadSettingsTitle => 'Download settings';
+	@override String get downloadMaxConcurrent => 'Simultaneous downloads';
+	@override String get downloadMaxConcurrentDesc => 'How many tasks run at once; a change applies at once.';
+	@override String get downloadQuality => 'Download quality';
+	@override String get downloadQualityDesc => 'The rendition a download asks the source for; 1080P+ and 4K need a signed-in account.';
+	@override String get downloadDanmaku => 'Save danmaku too';
+	@override String get downloadDanmakuDesc => 'Writes the danmaku sidecar files, in the chosen formats, beside the finished video.';
+	@override String get downloadDirectory => 'Save location';
+	@override String get downloadDirectoryUpdated => 'Save location updated';
+	@override String get downloadDirectoryFailed => 'Couldn\'t update the save location';
+	@override String get downloadDirectoryDefault => 'Restore default folder';
+	@override String get downloadDirectoryDefaultDesc => 'Back to the app\'s default Videos folder.';
+	@override String downloadTaskCount({required int count, required int active}) => '${count} tasks · ${active} active';
+	@override String get downloadManagerTitle => 'Downloads';
+	@override String get downloadPauseAll => 'Pause all';
+	@override String get downloadResumeAll => 'Resume all';
+	@override String get downloadClearFinished => 'Clear finished';
+	@override String get downloadFilterAll => 'All';
+	@override String get downloadFilterActive => 'In progress';
+	@override String get downloadFilterDone => 'Finished';
+	@override String get downloadFilterEmpty => 'Nothing under this filter';
+	@override String get downloadFilterEmptyDesc => 'Pick another filter, or add a download from a video page first.';
+	@override String get downloadEmpty => 'No downloads yet';
+	@override String get downloadEmptyDesc => 'Tap download on a video and its tasks appear here.';
+	@override String get downloadPhaseQueued => 'Queued';
+	@override String get downloadPhasePaused => 'Paused';
+	@override String get downloadPhaseFailed => 'Failed';
+	@override String get downloadPhaseDone => 'Done';
+	@override String get downloadDeleteFile => 'Delete file';
+	@override String get downloadDeleteFileBody => 'The video file is deleted too; this cannot be undone.';
+	@override String get downloadDeleteFailed => 'Couldn\'t delete the file';
 	@override String get partsPrevious => 'Previous group';
 	@override String get partsNext => 'Next group';
 	@override String get partsJump => 'Jump to part';
@@ -3913,10 +4191,13 @@ extension on TranslationsEn {
 			'areas.search' => 'Search',
 			'areas.searchAt' => ({required Object query, required Object platform}) => 'Searching areas for “${query}” on ${platform}',
 			'areas.searchEmpty' => 'No matching areas',
+			'areas.roomsEmptyTitle' => 'No live rooms in this area right now',
+			'areas.roomsEmptyDescription' => 'Try another area, or come back later.',
 			'areas.backToBrowse' => 'Back to browsing',
 			'areas.hiddenUnplayable' => ({required int count}) => '${count} streams that cannot play here are hidden (paid, password, app only…)',
 			'backup.title' => 'Backup & restore',
 			'backup.localSection' => 'Local backup',
+			'backup.folderSection' => 'Backup location',
 			'backup.summaryTitle' => 'Current data',
 			'backup.summaryEmpty' => 'Nothing to back up yet',
 			'backup.exportTitle' => 'Export backup',
@@ -3933,7 +4214,7 @@ extension on TranslationsEn {
 			'backup.importDone' => 'Restored; restart the app to apply everything',
 			'backup.importBadData' => 'This is not a valid backup',
 			'backup.importFailed' => 'Import failed',
-			'backup.summary' => ({required Object follows, required Object history, required Object areas, required Object settings}) => 'Follows ${follows} · History ${history} · Areas ${areas} · Settings ${settings}',
+			'backup.summary' => ({required Object follows, required Object history, required Object areas, required Object recordings, required Object settings}) => 'Follows ${follows} · History ${history} · Areas ${areas} · Recordings ${recordings} · Settings ${settings}',
 			'backup.webdavSection' => 'WebDAV sync',
 			'backup.webdavAccounts' => 'WebDAV accounts',
 			'backup.webdavAccountsHint' => 'Opening an account makes it the current one and walks its folders; the pencil edits or deletes it.',
@@ -3994,7 +4275,7 @@ extension on TranslationsEn {
 			'backup.folderSaveFailed' => 'Could not save the backup folder',
 			'backup.openFolderFailed' => 'Could not open the backup folder',
 			'backup.createTitle' => 'Create backup',
-			'backup.createDescription' => 'Bundles follows, watch history, followed areas and settings into a file in the backup folder.',
+			'backup.createDescription' => 'Bundles follows, watch history, followed areas, recording tasks and settings into a file in the backup folder.',
 			'backup.createFollowsTitle' => 'Create follows-only backup',
 			'backup.createFollowsDescription' => 'Backs up followed rooms and areas only.',
 			'backup.createDone' => ({required String name}) => 'Created ${name}',
@@ -4009,9 +4290,11 @@ extension on TranslationsEn {
 			'backup.kindFollows' => 'Follows only',
 			'backup.fileDelete' => 'Delete backup file',
 			'backup.restoreConfirmTitle' => 'Restore this backup?',
-			'backup.restoreConfirmDesc' => ({required String name}) => 'Restoring ${name} overwrites this device\'s follows, watch history, followed areas and settings. The current data cannot be recovered.',
+			'backup.restoreConfirmDesc' => ({required String name}) => 'Restoring ${name} overwrites this device\'s follows, watch history, followed areas, recording tasks and settings. The current data cannot be recovered.',
 			'backup.restoreFollowsConfirmDesc' => ({required String name}) => 'Restoring ${name} overwrites this device\'s follows and followed areas; other data stays as it is.',
 			'backup.restoreFailed' => 'Restore failed',
+			'backup.restoreEmptyDocument' => 'This backup holds no data',
+			'backup.restoreRecordingsBusy' => 'This device is recording or still finishing a take — end it before restoring the recording tasks',
 			'backup.deleteConfirmTitle' => 'Delete this backup file?',
 			'backup.deleteConfirmDesc' => ({required String name}) => '${name} will be permanently deleted.',
 			'backup.deleteDone' => 'Backup file deleted',
@@ -4023,7 +4306,7 @@ extension on TranslationsEn {
 			'backup.webdavLoadFailed' => 'The folder could not be read',
 			'backup.webdavRestore' => 'Restore',
 			'backup.webdavRestoreTitle' => ({required String name}) => 'Restore “${name}”?',
-			'backup.webdavRestoreDesc' => 'The server file replaces this device’s follows, history, areas and settings.',
+			'backup.webdavRestoreDesc' => 'The server file replaces this device’s follows, history, areas, recording tasks and settings.',
 			'backup.webdavRestored' => 'Server backup restored',
 			'backup.webdavFileDelete' => 'Delete server file',
 			'backup.webdavDeleteTitle' => ({required String name}) => 'Delete “${name}” from the server?',
@@ -4156,13 +4439,11 @@ extension on TranslationsEn {
 			'history.clearFilteredConfirmDesc' => ({required int count}) => 'Remove the ${count} entries that match the filter? Other entries stay. This cannot be undone.',
 			'history.clearDone' => ({required int count}) => 'Cleared ${count} history entries',
 			'history.changeFailed' => 'The history changes were not saved. Try again.',
-			'history.limitAction' => 'Change limit',
 			'history.limitTitle' => 'Watch History Retention',
 			'history.limitDescription' => 'The oldest records are dropped past the limit.',
 			'history.limitPresetsLabel' => 'Preset Limits',
 			'history.limitCustomLabel' => 'Custom Limit',
 			'history.limitInvalid' => ({required int min, required int max}) => 'Enter a whole number from ${min} to ${max}.',
-			'history.limitSaved' => ({required int limit}) => 'History limit set to ${limit}',
 			'history.refresh' => 'Refresh',
 			'history.refreshFailed' => ({required int count}) => '${count} records could not be refreshed',
 			'hongguo.title' => 'Hongguo Drama',
@@ -4272,6 +4553,7 @@ extension on TranslationsEn {
 			'hongguo.relatedLive' => 'Live · open',
 			'hongguo.relatedReserve' => 'Reserve',
 			'hongguo.reserved' => 'Reserved',
+			'hongguo.reserveFailed' => 'Could not reserve it; try again later.',
 			'hongguo.comments' => 'Comments',
 			'hongguo.commentsEmpty' => 'No comments yet',
 			'hongguo.commentsLoadMore' => 'More',
@@ -4291,12 +4573,12 @@ extension on TranslationsEn {
 			'hongguo.danmakuDensityNormal' => 'Normal',
 			'hongguo.danmakuDensityDense' => 'Dense',
 			'hongguo.phoneLogin' => 'Sign in by phone',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.phonePlaceholder' => 'Mobile, e.g. 138… (intl +cc number)',
 			'hongguo.phoneSend' => 'Send code',
 			'hongguo.phoneCodePlaceholder' => 'Code',
 			'hongguo.phoneVerify' => 'Sign in',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.phoneSent' => 'Code sent to',
 			'hongguo.accountPhoneToggle' => 'Use a phone number',
 			'hongguo.accountQrToggle' => 'Scan a code',
@@ -4375,6 +4657,46 @@ extension on TranslationsEn {
 			'hongguo.reviewsEmpty' => 'No reviews yet',
 			'hongguo.rating' => ({required Object score}) => 'Rated ${score}',
 			'hongguo.ratingCount' => ({required Object count}) => '${count} ratings',
+			'hongguo.downloadManagerHint' => 'The queue downloads with as many lanes as set; episodes stream through the local decrypting proxy and the transfer carries on from the bytes already written. When a file completes, find it — with its in-app preview — under Downloads in the station\'s sidebar.',
+			'hongguo.downloadSettingsTitle' => 'Download settings',
+			'hongguo.downloadMaxConcurrent' => 'Simultaneous downloads',
+			'hongguo.downloadMaxConcurrentDesc' => 'How many tasks run at once; a change applies at once.',
+			'hongguo.downloadQuality' => 'Download quality',
+			'hongguo.downloadQualityDesc' => 'The rendition tier a download asks the platform for.',
+			'hongguo.downloadDirectory' => 'Save location',
+			'hongguo.downloadDirectoryUpdated' => 'Save location updated',
+			'hongguo.downloadDirectoryFailed' => 'Couldn\'t update the save location',
+			'hongguo.downloadDirectoryDefault' => 'Restore default folder',
+			'hongguo.downloadDirectoryDefaultDesc' => 'Back to the app\'s default Videos folder.',
+			'hongguo.downloadTaskCount' => ({required int count, required int active}) => '${count} tasks · ${active} active',
+			'hongguo.downloadManagerTitle' => 'Downloads',
+			'hongguo.downloadPauseAll' => 'Pause all',
+			'hongguo.downloadResumeAll' => 'Resume all',
+			'hongguo.downloadClearFinished' => 'Clear finished',
+			'hongguo.downloadFilterAll' => 'All',
+			'hongguo.downloadFilterActive' => 'In progress',
+			'hongguo.downloadFilterDone' => 'Finished',
+			'hongguo.downloadFilterEmpty' => 'Nothing under this filter',
+			'hongguo.downloadFilterEmptyDesc' => 'Pick another filter, or add a download from a player page first.',
+			'hongguo.downloadEmpty' => 'No downloads yet',
+			'hongguo.downloadEmptyDesc' => 'Tap download on an episode and its task appears here.',
+			'hongguo.download' => 'Download',
+			'hongguo.downloadQueued' => 'Added to the download queue',
+			'hongguo.downloadQueuedLabel' => 'Queued',
+			'hongguo.downloadDuplicate' => 'This episode is already in the queue',
+			'hongguo.downloadResume' => 'Resume download',
+			'hongguo.downloaded' => 'Downloaded',
+			'hongguo.downloadFailed' => 'Download failed',
+			'hongguo.downloadDone' => ({required Object name}) => 'Downloaded ${name}',
+			'hongguo.downloading' => ({required Object percent}) => 'Downloading ${percent}%',
+			'hongguo.downloadingUnknown' => 'Downloading',
+			'hongguo.downloadPhaseQueued' => 'Queued',
+			'hongguo.downloadPhasePaused' => 'Paused',
+			'hongguo.downloadPhaseFailed' => 'Download failed',
+			'hongguo.downloadPhaseDone' => 'Finished',
+			'hongguo.downloadDeleteFile' => 'Delete file',
+			'hongguo.downloadDeleteFileBody' => 'The video file is deleted with it; this cannot be undone.',
+			'hongguo.downloadDeleteFailed' => 'Couldn\'t delete the file',
 			'iptv.tabAll' => 'All',
 			'iptv.live' => 'Live',
 			'iptv.scopeLabel' => 'Channel scope',
@@ -4635,8 +4957,11 @@ extension on TranslationsEn {
 			'music.settingsInterface' => 'Interface',
 			'music.uiBlurredBackdrop' => 'Blurred backdrop',
 			'music.uiBlurredBackdropDesc' => 'Paint the player page over the playing song\'s cover, blown up and blurred',
-			'music.uiVinylDisc' => 'Vinyl disc',
-			'music.uiVinylDiscDesc' => 'Let a record peek out beside the wide player page\'s artwork',
+			'music.playerMode' => 'Player mode',
+			'music.playerModeDesc' => 'What the player stage draws: the cover card, the turntable, or the words alone.',
+			'music.playerModeStandard' => 'Standard',
+			'music.playerModeVinyl' => 'Vinyl',
+			'music.playerModeLyrics' => 'Lyrics',
 			'music.uiSpectrum' => 'Playback spectrum',
 			'music.uiSpectrumDesc' => 'The live spectrum bars on the player page\'s stage',
 			'music.uiReset' => 'Reset display',
@@ -4679,12 +5004,17 @@ extension on TranslationsEn {
 			'music.defaultSourceEmpty' => 'No source yet — import a script under Custom sources below.',
 			'music.quality' => 'Playback quality',
 			'music.qualityDesc' => 'The rendition asked of a source; a source that lacks it answers with the best it has.',
+			'music.qualityServedHere' => 'this song',
+			'music.qualityDowngraded' => 'served now',
+			'music.qualityNotInSong' => 'not in this song',
+			'music.qualityNextTip' => 'A new tier applies from the next track.',
 			'music.audioOutput' => 'Output device',
 			'music.audioOutputDesc' => 'Where the music plays; empty means this platform has no device picker.',
 			'music.qualityStandard' => '128K',
 			'music.qualityHigh' => '320K',
 			'music.qualityLossless' => 'Lossless',
 			'music.qualityHiRes' => 'Hi-Res lossless',
+			'music.badgeHiRes' => 'Hi-Res',
 			'music.skipOnError' => 'Skip a failing source',
 			'music.skipOnErrorDesc' => 'Moves to the next source when one cannot answer, instead of stopping.',
 			'music.autoplay' => 'Resume on open',
@@ -4757,6 +5087,8 @@ extension on TranslationsEn {
 			'music.nowPlaying' => 'Now playing',
 			'music.volume' => 'Volume',
 			'music.progress' => 'Progress',
+			_ => null,
+		} ?? switch (path) {
 			'music.lyrics' => 'Lyrics',
 			'music.lyricsEmpty' => 'This song has no lyrics yet.',
 			'music.lyricLoadFailed' => 'Couldn\'t load the lyrics',
@@ -4772,10 +5104,15 @@ extension on TranslationsEn {
 			'music.songDetails' => 'Song details',
 			'music.copySongName' => 'Copy song name',
 			'music.copiedSongName' => 'Song name copied',
+			'music.songTableTitle' => 'Title',
+			'music.songTableAlbum' => 'Album',
+			'music.songTableDuration' => 'Time',
+			'music.songAlbumUnknown' => 'Unknown album',
 			'music.songDetailTitle' => 'Title',
 			'music.songDetailArtist' => 'Artist',
 			'music.songDetailAlbum' => 'Album',
 			'music.songDetailDuration' => 'Duration',
+			'music.songDetailQualities' => 'Available tiers',
 			'music.songDetailSource' => 'Source',
 			'music.songDetailPath' => 'File',
 			'music.songDetailEmpty' => '—',
@@ -4800,6 +5137,13 @@ extension on TranslationsEn {
 			'music.searchHot' => 'Top searches',
 			'music.searchHotDesc' => 'Show the source\'s top searches while the search page is empty.',
 			'music.searchHotFailed' => 'Could not load the top searches',
+			'music.recPlaylists' => 'Recommended playlists',
+			'music.recMore' => 'More playlists',
+			'music.recRecent' => 'Keep playing',
+			'music.recBoards' => 'Charts',
+			'music.recEmptyTitle' => 'Nothing to recommend yet',
+			'music.recEmptyDescription' => 'The source\'s playlists, its charts and the songs you played show up here.',
+			'music.featuredTitle' => 'Featured playlists',
 			'music.playlistCreate' => 'New playlist',
 			'music.playlistCreateTitle' => 'New playlist',
 			'music.playlistAddLocal' => 'Add local songs',
@@ -4809,8 +5153,6 @@ extension on TranslationsEn {
 			'music.playlistName' => 'Playlist name',
 			'music.playlistNameHint' => 'Name this playlist',
 			'music.playlistRename' => 'Rename',
-			_ => null,
-		} ?? switch (path) {
 			'music.playlistRenameTitle' => 'Rename playlist',
 			'music.playlistDelete' => 'Delete playlist',
 			'music.playlistDeleteTitle' => ({required Object name}) => 'Delete “${name}”?',
@@ -4849,6 +5191,11 @@ extension on TranslationsEn {
 			'music.selectionRemove' => 'Remove',
 			'music.selectionRemoveDone' => ({required Object count}) => 'Removed ${count} songs',
 			'music.downloadsActive' => ({required Object count}) => 'Downloading ${count}',
+			'music.downloadsSummary' => ({required Object count, required Object size}) => 'Downloaded ${count} · ${size}',
+			'music.downloadFilterAll' => 'All',
+			'music.downloadFilterActive' => 'In progress',
+			'music.downloadFilterDone' => 'Finished',
+			'music.downloadFilterEmpty' => 'Nothing in this filter yet',
 			'music.downloadQueued' => ({required Object title}) => 'Queued for download: ${title}',
 			'music.downloadDuplicate' => 'This song is already in the download queue',
 			'music.downloadUnsupported' => 'This song has no downloadable source (a local file, or not covered by the current source)',
@@ -4944,12 +5291,13 @@ extension on TranslationsEn {
 			'music.lyricWordTimed' => 'Word-by-word lyrics',
 			'music.lyricWordTimedDesc' => 'Play karaoke-style word timing when the platform provides it.',
 			'music.lyricFontScale' => 'Lyric size',
-			'music.lyricFontScaleDesc' => 'Scale of the lyrics in the player (100%–200%).',
+			'music.lyricFontScaleDesc' => 'Scale of the lyrics in the lyric panel (100%–200%).',
+			'music.lyricPreviewHint' => 'A sample: changes show on these lines at once.',
 			'music.lyricFontSmaller' => 'Smaller lyrics',
 			'music.lyricFontLarger' => 'Larger lyrics',
 			'music.lyricFontReset' => 'Reset size',
 			'music.lyricAlignment' => 'Lyric alignment',
-			'music.lyricAlignmentDesc' => 'How lyric lines sit inside the player panel.',
+			'music.lyricAlignmentDesc' => 'How lyric lines sit inside the lyric panel.',
 			'music.lyricZoomActive' => 'Enlarge the active line',
 			'music.lyricZoomActiveDesc' => 'Draw the line being sung a little larger.',
 			'music.lyricProgress' => 'Show playback progress',
@@ -4963,6 +5311,7 @@ extension on TranslationsEn {
 			'music.desktopLyricsOff' => 'Desktop lyrics hidden',
 			'music.desktopLyricsUnavailable' => 'This platform has no desktop lyric window, or the permission was refused',
 			'music.desktopLyricHint' => 'Desktop lyrics are a floating window you can drag, lock and control; Android needs the overlay permission.',
+			'music.desktopLyricPreviewHint' => 'A sample of how the overlay will look.',
 			'music.desktopLyricEnableDesc' => 'Float the current lyric over the desktop; turning it off keeps the style below.',
 			'music.desktopLyricLock' => 'Lock the lyrics',
 			'music.desktopLyricLockDesc' => 'A locked window lets clicks pass through to the app underneath.',
@@ -5136,6 +5485,8 @@ extension on TranslationsEn {
 			'music.eqCompareTitle' => 'A/B compare',
 			'music.eqCompare' => 'Hold to hear the original',
 			'music.eqCompareHeld' => 'Playing the original — release to restore',
+			'music.eqRemoveNode' => 'Remove this equalizer node',
+			'music.eqRemovePreset' => 'Remove this preset',
 			'music.songlistTabMine' => 'My playlists',
 			'music.songlistTabOnline' => 'Online',
 			'music.onlineUnsupported' => 'The current source does not serve online playlists',
@@ -5157,6 +5508,8 @@ extension on TranslationsEn {
 			'music.syncMode' => 'Sync mode',
 			'music.syncConnect' => 'Connect',
 			'music.syncDisconnect' => 'Disconnect',
+			'music.syncRemoveDevice' => 'Remove this device',
+			'music.syncRemoveHost' => 'Remove this saved address',
 			'music.syncStatusConnected' => 'Connected',
 			'music.syncStatusConnecting' => 'Connecting',
 			'music.syncStatusFailed' => 'Failed',
@@ -5178,8 +5531,8 @@ extension on TranslationsEn {
 			'music.syncServerCopy' => 'Copy',
 			'music.syncServerErrorPort' => 'Port is occupied or unavailable',
 			'music.syncServerDevices' => 'Certified devices',
-			'music.syncServerDevicesView' => 'View',
 			'music.syncServerDevicesEmpty' => 'Nothing here ┗( ▔, ▔ )┛',
+			'music.syncServerDevicesView' => 'View',
 			'music.syncServerDevicesTip' => '💡 After a device is removed, reconnecting needs the connection code again',
 			'music.syncServerLastConnect' => 'Last connection time:',
 			'music.syncServerMobile' => 'Mobile',
@@ -5248,6 +5601,8 @@ extension on TranslationsEn {
 			'music.tagEditUnsupportedFormat' => 'Tag writing is not supported for this format',
 			'music.tagEditReadFailed' => 'Reading the file\'s tags failed',
 			'music.syncClient' => 'Client mode',
+			_ => null,
+		} ?? switch (path) {
 			'music.hkAssignments' => 'Key assignments',
 			'music.sourcesImported' => 'Imported sources',
 			'navigation.groupPrimary' => 'Top pages',
@@ -5270,14 +5625,18 @@ extension on TranslationsEn {
 			'navigation.proxy' => 'Network proxy',
 			'navigation.user' => 'User',
 			'navigation.vodRegions' => 'Regions',
+			'navigation.vodDownloads' => 'Downloads',
 			'navigation.iptvSources' => 'Subscriptions',
 			'navigation.iptvGuide' => 'Guide',
+			'navigation.musicRecommend' => 'Recommended',
+			'navigation.musicFeatured' => 'Featured',
 			'navigation.musicSonglist' => 'Songlists',
 			'navigation.musicToplist' => 'Charts',
 			'navigation.musicLibrary' => 'My lists',
 			'navigation.musicLocal' => 'Local music',
 			'navigation.musicDownloads' => 'Downloads',
 			'navigation.musicSettings' => 'Music settings',
+			'navigation.hongguoDownloads' => 'Downloads',
 			'player.title' => 'Player',
 			'player.back' => 'Back',
 			'player.quality' => 'Quality',
@@ -5309,10 +5668,29 @@ extension on TranslationsEn {
 			'recorder.stateFailed' => 'Failed',
 			'recorder.settingsTitle' => 'Recording',
 			'recorder.saveDirTitle' => 'Save directory',
+			'recorder.saveDirResetTitle' => 'Use the default folder',
+			'recorder.saveDirResetDesc' => 'Back to the default under the download folder; recordings already saved stay where they are.',
+			'recorder.folderInUseTitle' => 'A recording is in progress',
+			'recorder.folderInUseBody' => ({required Object count}) => '${count} take(s) will keep writing to the old folder and their files stay there; only new recordings use the new folder, and existing files are not moved.',
+			'recorder.folderInUseConfirm' => 'Change anyway',
+			'recorder.folderChangedActive' => 'New folder saved; the running takes are still in the old folder',
+			'recorder.saveDirDefaultInUse' => 'The default folder is already in use.',
+			'recorder.resetAll' => 'Reset to defaults',
+			'recorder.resetAllConfirmTitle' => 'Reset recording settings?',
+			'recorder.resetAllConfirmDesc' => 'Quality, naming, segments, limits, live check and cache return to their defaults; the save folder and danmaku formats are left as they are.',
+			'recorder.resetAllDone' => 'Recording settings reset',
 			'recorder.namingTitle' => 'File naming template',
 			'recorder.namingDescription' => 'Date, time, platform, room id and title placeholders are available.',
 			'recorder.namingDialogHint' => 'Enter the naming template for recording files',
+			'recorder.namingFieldsCaption' => 'Fields you can use (tap to insert):',
+			'recorder.namingFieldDate' => 'Date',
+			'recorder.namingFieldTime' => 'Time',
+			'recorder.namingFieldPlatform' => 'Platform',
+			'recorder.namingFieldRoomId' => 'Room id',
+			'recorder.namingFieldTitle' => 'Title',
 			'recorder.maxSizeTitle' => 'Recording size cap',
+			'recorder.maxSizeLimitTitle' => 'Limit each file\'s size',
+			'recorder.maxSizeLimitDesc' => 'When off, a take is not ended by size; segments are still cut by duration.',
 			'recorder.maxSizeDescription' => 'Ends the take once it reaches the cap; measured in MB.',
 			'recorder.filterLabel' => 'Filter',
 			'recorder.filterAll' => 'All',
@@ -5322,9 +5700,49 @@ extension on TranslationsEn {
 			'recorder.filterFailed' => 'Failed',
 			'recorder.emptyFilterTitle' => ({required String status}) => 'No tasks in “${status}” yet',
 			'recorder.stateWaiting' => 'Waiting for live',
+			'recorder.stateProcessing' => 'Processing',
+			'recorder.warningJoinFailed' => 'Join failed; the segments are kept in the folder',
+			'recorder.warningTranscodeFailed' => 'Transcode failed; the untranscoded MP4 is kept',
+			'recorder.warningFinalizeFailed' => 'Post-processing failed; the recording files are kept',
+			'recorder.warningStaleProcessing' => 'The last join/transcode did not finish; check the task folder',
+			'recorder.warningDiskLow' => 'Free space ran low and the recording stopped; the segments are kept',
+			'recorder.warningCanceled' => 'Post-processing was cancelled; the recording files are kept',
+			'recorder.cancelProcessing' => 'Cancel processing',
+			'recorder.cancelProcessingRequested' => 'Cancelling post-processing…',
+			'recorder.retryJoin' => 'Re-join segments',
+			'recorder.retryJoinStarted' => 'Re-joining this recording',
+			'recorder.retryJoinBusy' => 'That take is recording or processing already',
+			'recorder.retryJoinGone' => 'This recording\'s folder cannot be found',
+			'recorder.retryJoinNothing' => 'No joinable segments left in that folder — it may already be merged',
+			'recorder.retryJoinFailed' => ({required Object error}) => 'Could not start the merge: ${error}',
+			'recorder.batchMenu' => 'Batch actions',
+			'recorder.stopAll' => 'Stop every recording',
+			'recorder.stopAllTitle' => 'Stop every recording?',
+			'recorder.stopAllBody' => ({required int count}) => '${count} room(s) now recording end and save; segments already written stay and post-processing runs as usual.',
+			'recorder.stopAllDone' => ({required int count}) => 'Stopped ${count} recording(s)',
+			'recorder.stopAllPartial' => ({required int count, required Object error}) => 'Stopped ${count}; one failed: ${error}',
+			'recorder.clearSettled' => 'Clear settled tasks',
+			'recorder.clearSettledTitle' => 'Clear the settled tasks?',
+			'recorder.clearSettledBody' => ({required int count}) => '${count} task rows leave the list; the recordings stay in their folders. Rooms recording, still processing or waiting to go live are untouched.',
+			'recorder.clearSettledDone' => ({required int count}) => 'Cleared ${count} task(s)',
+			'recorder.merge' => 'Merge into this folder',
+			'recorder.mergeTitle' => 'Merge the other folder\'s recordings here?',
+			'recorder.mergeBody' => ({required int count}) => '${count} recording(s) live in another folder. On one disk the folder is only renamed; across disks every file is copied and measured against the source, and the source folder is deleted only when the copy matches. Task rows follow the new path; rooms recording or still processing are untouched.',
+			'recorder.mergeDesc' => ({required int count}) => '${count} finished recording(s) live in another folder and can be merged here',
+			'recorder.mergeRunning' => ({required Object done, required Object total, required Object name}) => 'Merging ${done}/${total}: ${name}',
+			'recorder.mergeDone' => ({required int count}) => 'Merged ${count} recording(s)',
+			'recorder.mergePartial' => ({required int moved, required int failed}) => 'Merged ${moved}; ${failed} did not finish',
+			'recorder.caCustomTitle' => 'Custom CA bundle',
+			'recorder.caCustomDesc' => 'Not set: recordings trust the bundled Mozilla store. Picking your own bundle (PEM text) trusts a corporate root or a self-signed chain without switching verification off.',
+			'recorder.caCustomPicked' => ({required Object name}) => 'In use: ${name}',
+			'recorder.caCustomMissing' => ({required Object name}) => '${name} is no longer where the row found it — recordings will fail; pick it again or clear it',
+			'recorder.caCustomNotPem' => 'That is not a PEM certificate bundle (it should contain -----BEGIN CERTIFICATE-----)',
+			'recorder.caCustomPickFailed' => 'The certificate file could not be read',
+			'recorder.caCustomClear' => 'Use bundled',
+			'recorder.caCustomCleared' => 'Recording uses the bundled root store again',
+			'recorder.startNowBusyOther' => 'Another window is recording this room',
+			'recorder.startNowCaFailed' => 'The custom CA bundle cannot be read — pick it again or switch to the bundled store',
 			'recorder.stateSaved' => 'Saved',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.menuMore' => 'More actions',
 			'recorder.openRoom' => 'Open live room',
 			'recorder.openFolder' => 'Open folder',
@@ -5335,6 +5753,10 @@ extension on TranslationsEn {
 			'recorder.settingsOpen' => 'Recording settings',
 			'recorder.stop' => 'Stop recording',
 			'recorder.settingsFiles' => 'Files and location',
+			'recorder.settingsTabFiles' => 'Files',
+			'recorder.settingsTabCapture' => 'Recovery',
+			'recorder.settingsTabRuntime' => 'Runtime',
+			'recorder.settingsTabPolling' => 'Live check',
 			'recorder.settingsRecovery' => 'Segments and recovery',
 			'recorder.settingsRuntime' => 'Background and limits',
 			'recorder.segmentTitle' => 'Segment length',
@@ -5351,6 +5773,8 @@ extension on TranslationsEn {
 			'recorder.keepAliveDescription' => 'Hold a background session and wake lock while recording (Android foreground service and notification).',
 			'recorder.verifyTitle' => 'Verify on stop',
 			'recorder.verifyDescription' => 'Check the segments are playable before the session ends.',
+			'recorder.tlsVerifyTitle' => 'Verify HTTPS certificates',
+			'recorder.tlsVerifyDesc' => 'Off accepts self-signed or proxy-intercepted certificates; the server\'s identity is then unverified and interception is possible.',
 			'recorder.restartTitle' => 'Stream retries',
 			'recorder.restartDescription' => 'How often FFmpeg reopens a broken stream; 0 disables retries.',
 			'recorder.restartCount' => ({required int count}) => '${count}×',
@@ -5359,23 +5783,39 @@ extension on TranslationsEn {
 			'recorder.stallTitle' => 'Stall timeout',
 			'recorder.stallDescription' => 'How long without new data counts as a stalled stream and reopens it.',
 			'recorder.watermarkTitle' => 'Free-space floor',
+			'recorder.diskWatermarkLimitTitle' => 'Stop on low disk space',
+			'recorder.diskWatermarkLimitDesc' => 'When off, a capture does not stop for low free space.',
 			'recorder.watermarkDescription' => 'Stop recording when free space falls below this.',
 			'recorder.maxTasksTitle' => 'Concurrent recordings',
+			'recorder.maxTasksLimitTitle' => 'Limit concurrent recordings',
+			'recorder.maxTasksLimitDesc' => 'When off, no concurrency cap applies; waiting takes start in queue order.',
 			'recorder.maxTasksDescription' => 'New recording requests are refused once this many run.',
 			'recorder.maxTasksCount' => ({required int count}) => '${count}',
 			'recorder.containerTitle' => 'Segment container',
 			'recorder.containerDescription' => 'TS survives interruptions best; MP4 opens in ordinary players.',
 			'recorder.containerTs' => 'MPEG-TS',
 			'recorder.containerMp4' => 'Fragmented MP4',
+			'recorder.combineTitle' => 'Join into one MP4',
+			'recorder.combineDesc' => 'After the take ends, its segments are copied into one MP4 without re-encoding; a failed join keeps the segments.',
+			'recorder.combineDeleteOriginals' => 'Delete segments after joining',
+			'recorder.combineDeleteOriginalsDesc' => 'Keep only the MP4; off moves the segments into an original folder beside it so the join can be retried.',
+			'recorder.transcodeTitle' => 'Re-encode after joining',
+			'recorder.transcodeDesc' => 'Re-encodes the joined MP4 to H.264; it takes longer with the recording\'s length and lowers the source quality.',
+			'recorder.transcodeBitrateTitle' => 'Transcode bitrate',
+			'recorder.transcodeBitrateDesc' => 'Target video bitrate; higher is clearer and larger.',
+			'recorder.playRecording' => 'Play recording',
+			'recorder.previewRecording' => 'Preview in built-in player',
+			'recorder.recordChatGiftsTitle' => 'Record gift messages',
+			'recorder.recordChatGiftsDesc' => 'Writes gift messages, in the text the platform gives, into the same danmaku file; the chat alone is the default.',
 			'recorder.recordChatTitle' => 'Record chat',
-			'recorder.recordChatDescription' => 'Save live chat beside each video in the formats chosen under Danmaku → Danmaku files; needs a platform with remote chat',
+			'recorder.recordChatDescription' => 'Save live chat beside each video in the formats chosen under Danmaku → Danmaku save formats; needs a platform with remote chat',
 			'recorder.defaultQualityTitle' => 'Default recording quality',
 			'recorder.defaultQualityDesc' => 'Ask the platform for this quality when a recording starts; when it is unavailable, the current playback line is used.',
 			'recorder.cacheTitle' => 'Recording cache',
 			'recorder.liveCheckGroup' => 'Live check',
 			'recorder.enablePolling' => 'Enable live detection',
-			'recorder.enablePollingDesc' => 'Automatically poll while the streamer is offline; add a room with “Record when live” in the room’s more menu.',
-			'recorder.pollingOff' => 'Live check is off; waiting tasks will not start automatically.',
+			'recorder.enablePollingDesc' => 'Automatically poll while the streamer is offline; add a room with “Record when live” in the room’s more menu. Off, waiting rooms and scheduled windows never begin a take on their own — “Start now” still works.',
+			'recorder.pollingOff' => 'Live check is off; waiting and scheduled tasks will not start automatically.',
 			'recorder.pollingEnable' => 'Turn on',
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => 'Live check turned on (every ${seconds} s)',
 			'recorder.cacheLimitEnabled' => 'Limit the recording cache',
@@ -5391,7 +5831,6 @@ extension on TranslationsEn {
 			'recorder.cacheClearConfirmDesc' => 'This deletes finished videos, segments and danmaku files in the managed folder and cannot be undone; active recordings are skipped.',
 			'recorder.cacheCleared' => 'Recording cache cleared',
 			'recorder.cacheFailed' => 'Cache operation failed. Try again.',
-			'recorder.cacheManagedHint' => 'To protect other files, a chosen directory gets an app-owned PureLiveRecords child folder.',
 			'recorder.liveCheckSecondsTitle' => 'Check interval (seconds)',
 			'recorder.liveCheckSecondsDesc' => 'How often each waiting task checks its room, 10–300 seconds.',
 			'recorder.checkBackoff' => 'Exponential backoff',
@@ -5399,8 +5838,39 @@ extension on TranslationsEn {
 			'recorder.maxCheckSecondsTitle' => 'Maximum check interval (seconds)',
 			'recorder.maxCheckSecondsDesc' => 'The ceiling the stretched interval approaches, 60–3600 seconds.',
 			'recorder.autoStartOnBoot' => 'Resume pending recordings on launch',
-			'recorder.autoStartOnBootDesc' => 'Turn tasks still marked recording after an interrupted process into waiting tasks for the live check; stopped and finished tasks keep their state.',
+			'recorder.autoStartOnBootDesc' => 'Turn tasks still marked recording after an interrupted process into waiting tasks for the live check — with the live check off, one check runs at launch; stopped and finished tasks keep their state. Off, an interrupted row stays “recording” and has to be deleted and added again.',
+			'recorder.stateRecordingElsewhere' => 'This window is not writing it: if another window is recording, that one owns it; otherwise the last process was interrupted — delete the task and add it again.',
+			'recorder.scheduleMenu' => 'Schedule window',
+			'recorder.scheduleTitle' => 'Schedule window',
+			'recorder.scheduleEnableTitle' => 'Check only inside the window',
+			'recorder.scheduleEnableDesc' => 'Outside the window the platform is not asked; inside it the normal live check applies. After a take stops, the next window arms it again.',
+			'recorder.scheduleDaysTitle' => 'Days',
+			'recorder.scheduleStartTitle' => 'Start',
+			'recorder.scheduleEndTitle' => 'End',
+			'recorder.scheduleOvernightHint' => 'An end earlier than the start crosses midnight; equal start and end means the whole day.',
+			'recorder.scheduleStopAtEnd' => 'Stop recording at the window\'s end',
+			'recorder.scheduleStopAtEndDesc' => 'Off keeps a take running past the window until the stream ends.',
+			'recorder.scheduleSummary' => ({required Object days, required Object range}) => '${days} ${range}',
+			'recorder.scheduleEveryDay' => 'Every day',
+			'recorder.scheduleWorkdays' => 'Weekdays',
+			'recorder.scheduleWeekend' => 'Weekends',
+			'recorder.scheduleDayMon' => 'Mon',
+			'recorder.scheduleDayTue' => 'Tue',
+			'recorder.scheduleDayWed' => 'Wed',
+			'recorder.scheduleDayThu' => 'Thu',
+			'recorder.scheduleDayFri' => 'Fri',
+			'recorder.scheduleDaySat' => 'Sat',
+			'recorder.scheduleDaySun' => 'Sun',
+			'recorder.scheduleDaySeparator' => ', ',
+			'recorder.scheduleSaved' => 'Schedule window saved',
+			'recorder.startNow' => 'Start now',
+			'recorder.startNowStarted' => 'Recording started',
+			'recorder.startNowOffline' => 'The room is not live',
+			'recorder.startNowNoStream' => 'No recordable line',
+			'recorder.startNowTimeout' => 'Reading the stream timed out',
+			'recorder.startNowFailed' => ({required Object error}) => 'Could not start recording: ${error}',
 			'recorder.cacheBusy' => 'A recording is in progress (possibly in another window); the cache will not be cleared or trimmed now.',
+			'recorder.cacheOtherRoot' => 'A take is still writing to the old folder; this page\'s size, clear and automatic trimming cover the current folder only.',
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -5608,6 +6078,7 @@ extension on TranslationsEn {
 			'settings.navIptv' => 'Guides & updates',
 			'settings.navVod' => 'Account & quality',
 			'settings.navData' => 'Watch data',
+			'settings.followDataGroup' => 'Follow data',
 			'settings.navBackup' => 'Backup & restore',
 			'settings.navAbout' => 'Version & licences',
 			'settings.navBrowsing' => 'Browsing',
@@ -5644,13 +6115,15 @@ extension on TranslationsEn {
 			'settings.personalizationChooseTheme' => 'Choose a theme to apply',
 			'settings.personalizationSettings' => 'Personalization settings',
 			'settings.playbackDescription' => 'Quality, audio, picture and player behaviour.',
-			'settings.sitesDescription' => 'The default and preferred platform; platform display, order and accounts live on their subpages.',
+			_ => null,
+		} ?? switch (path) {
+			'settings.sitesDescription' => 'Preferred platform and platform display; per-platform quirks, accounts and follow tags.',
 			'settings.iptvDescription' => 'Guide updates and source syncing.',
 			'settings.vodDescription' => 'Bilibili account, default quality and video-station behaviour.',
 			'settings.dataDescription' => 'Live watch history and follows.',
 			'settings.backupDescription' => 'Local backups, restores and WebDAV sync.',
 			'settings.aboutDescription' => 'Version, licences and project links.',
-			'settings.browsingPageDescription' => 'Card gaps, the follows page density and the room card.',
+			'settings.browsingPageDescription' => 'Cards and lists, how dense the follows page is, the audience metric and the room card.',
 			'settings.windowPageDescription' => 'Caption, room windows, close behaviour, window size and display rate.',
 			'settings.startupPageDescription' => 'Launch at login, the startup mark, closing the window and scheduled shutdown.',
 			'settings.accountsPageDescription' => 'Platform accounts and authorisation.',
@@ -5729,6 +6202,9 @@ extension on TranslationsEn {
 			'settings.refreshRateMultiMonitorDesc' => 'The reading belongs to the display the current window is on.',
 			'settings.sitesDisplay' => 'Platforms shown',
 			'settings.sitesDisplayDesc' => 'Switched-off platforms leave the popular, areas, follows and search platform lists.',
+			'settings.sitesGroupCore' => 'Platforms',
+			'settings.sitesGroupPlayback' => 'Compatibility & language',
+			'settings.sitesGroupAccount' => 'Accounts & groups',
 			'settings.sitesShowAll' => 'Show all',
 			'settings.sitesHideAll' => 'Hide all',
 			'settings.sitesReset' => 'Reset',
@@ -5809,6 +6285,15 @@ extension on TranslationsEn {
 			'settings.proxyHostDesc' => 'The proxy server\'s host name or address.',
 			'settings.proxyPort' => 'Port',
 			'settings.proxyPortDesc' => 'The port that proxy server listens on.',
+			'settings.proxyUsername' => 'Username',
+			'settings.proxyUsernameDesc' => 'Fill this in when the proxy asks for credentials; empty treats it as an open proxy.',
+			'settings.proxyPassword' => 'Password',
+			'settings.proxyPasswordDesc' => 'Kept in the system keychain — never in the preferences, never in a backup export. App requests, the player and recordings all present it; SOCKS and PAC cannot be expressed.',
+			'settings.proxyPasswordSaved' => 'Saved',
+			'settings.proxyPasswordNone' => 'Not set',
+			'settings.proxyPasswordReplace' => 'Type a new password to replace it',
+			'settings.proxyPasswordClear' => 'Clear the saved password',
+			'settings.proxyPasswordClearDesc' => 'The proxy is then used without authentication; if it still requires a password, requests will fail.',
 			'settings.proxyModeOff' => 'No proxy',
 			'settings.proxyModeOffDesc' => 'The vod, guide and backup requests all go direct.',
 			'settings.proxyModeSystem' => 'Follow the system proxy',
@@ -5837,8 +6322,6 @@ extension on TranslationsEn {
 			'settings.githubMirrorRefresh' => 'Fetch from the remote list',
 			'settings.githubMirrorRefreshing' => 'Fetching the remote mirrors…',
 			'settings.githubMirrorNever' => 'The remote list has not been fetched yet.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.githubMirrorUpdated' => ({required Object time}) => 'Remote list updated ${time}',
 			'settings.githubMirrorFailed' => ({required Object error}) => 'The remote list could not be fetched: ${error}',
 			'settings.githubMirrorAdd' => 'Add a mirror address',
@@ -5964,7 +6447,7 @@ extension on TranslationsEn {
 			'settings.danmakuColorBlue' => 'Blue',
 			'settings.danmakuColorPurple' => 'Purple',
 			'settings.danmakuColorPink' => 'Pink',
-			'settings.danmakuSaveGroup' => 'Danmaku files',
+			'settings.danmakuSaveGroup' => 'Danmaku save formats',
 			'settings.danmakuSaveDescription' => 'Recordings and downloaded videos save the danmaku in each chosen format beside the video; XML stays on when everything else is off.',
 			'settings.danmakuSaveFormats' => 'Saved formats',
 			'settings.danmakuSaveExtension' => 'Extension',
@@ -6101,8 +6584,6 @@ extension on TranslationsEn {
 			'settings.navRefresh' => 'Auto refresh',
 			'settings.navProxy' => 'Network proxy',
 			'settings.tvGroup' => 'TV',
-			'settings.sitesPlatforms' => 'Platforms',
-			'settings.sitesCompatibility' => 'Site compatibility',
 			'settings.settingsMore' => 'More',
 			'settings.navMenuOrder' => 'Menu order',
 			'settings.navPlatforms' => 'Platforms & accounts',
@@ -6128,6 +6609,7 @@ extension on TranslationsEn {
 			'settings.vodPlaybackDescription' => 'The opening rate, what a finished part leads to, and the details under the picture.',
 			'settings.groupMusic' => 'Music',
 			'settings.navMusic' => 'Music',
+			'settings.groupMusicTools' => 'Sound & tools',
 			'settings.musicSettingsDescription' => 'Playback, lyrics, desktop lyrics, download, sources, hotkeys and sync.',
 			'settings.navMusicPlay' => 'Playback',
 			'settings.musicPlaybackDescription' => 'Sources, quality and how playback and lists behave.',
@@ -6147,10 +6629,14 @@ extension on TranslationsEn {
 			'settings.musicDesktopLyricDescription' => 'The floating lyric\'s switch, lock, font, colour and alignment.',
 			'settings.vodQuality' => 'Default quality',
 			'settings.vodQualityDesc' => 'Quality a video opens with; signed-out Bilibili may cap at 720P.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.vodQuality720' => '720P',
 			'settings.vodQuality1080' => '1080P',
 			'settings.vodQuality1080Plus' => '1080P+',
 			'settings.vodQuality4K' => '4K',
+			'settings.vodDownloadTitle' => 'Video downloads',
+			'settings.vodDownloadDescription' => 'The station\'s download tasks, lanes and save folder.',
 			'settings.iptvGuideUpdates' => 'Guide updates',
 			'settings.iptvNetwork' => 'Network',
 			'settings.iptvSections' => 'Zapping & groups',
@@ -6351,8 +6837,6 @@ extension on TranslationsEn {
 			'settings.playerGuideEntrySymBlurryBody' => 'Windows + NVIDIA: use the RTX VSR preset. Other GPUs: switch the scale kernel to ewa_lanczossharp.',
 			'settings.playerGuideEntrySymFanTitle' => 'Fan spinning / dropped frames',
 			'settings.playerGuideEntrySymFanBody' => 'Use the low-end preset; if that fails, turn hardware decoding off (old devices can software-decode faster).',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntrySymBufferingTitle' => 'Frequent buffering',
 			'settings.playerGuideEntrySymBufferingBody' => 'Use the stable-network preset; also check the network proxy — a proxy is a common stall source.',
 			'settings.playerGuideEntrySymLatencyTitle' => 'High latency (co-streaming / esports)',
@@ -6535,6 +7019,7 @@ extension on TranslationsEn {
 			'settings.downloadProgressUnknown' => ({required Object received}) => '${received} downloaded',
 			'settings.downloadSavedTo' => ({required Object path}) => 'Saved to ${path}',
 			'settings.downloadCancelled' => 'Download cancelled; no partial file was kept.',
+			'settings.downloadClearFinishedBody' => 'Removes every finished task\'s entry; the downloaded files are not touched.',
 			'settings.downloadOpenFile' => 'Open the file',
 			'settings.downloadOpenFolder' => 'Open the folder',
 			'settings.downloadOpenFailed' => 'Could not open it',
@@ -6658,6 +7143,8 @@ extension on TranslationsEn {
 			'settings.audienceHeatOnlyDesc' => 'Their public APIs give no concurrent count; cards still show heat or total views.',
 			'settings.backgroundSolid' => 'Solid',
 			'settings.backgroundGradient' => 'Gradient',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundPresets' => 'Presets',
 			'settings.backgroundLibraryTitle' => 'Wallpaper library',
 			'settings.backgroundLibraryEmpty' => 'No wallpapers available',
@@ -6849,7 +7336,13 @@ extension on TranslationsEn {
 			'settings.backgroundIntervalSeconds' => ({required Object count}) => '${count}s',
 			'settings.backgroundPreviewLooping' => 'Loops',
 			'settings.navHongguo' => 'Hongguo drama',
+			'settings.navHongguoInterface' => 'Cards & interface',
+			'settings.navHongguoDanmaku' => 'Danmaku',
+			'settings.navHongguoDevice' => 'Device & identity',
 			'settings.hongguoDescription' => 'The hongguo companion service and playback preferences.',
+			'settings.hongguoInterfaceDesc' => 'What the poster card shows.',
+			'settings.hongguoDanmakuDesc' => 'The danmaku switch, with its size, opacity, speed and density.',
+			'settings.hongguoDeviceDesc' => 'The device identity this install registered; reset it here.',
 			'settings.hongguoQuality' => 'Default quality',
 			'settings.hongguoQualityDesc' => 'The rendition an episode opens with; a missing one falls back to the nearest lower.',
 			'settings.hongguoCardVisibleContent' => 'Card visible content',
@@ -6865,8 +7358,6 @@ extension on TranslationsEn {
 			'settings.hongguoQuality720' => '720P',
 			'settings.hongguoQuality540' => '540P',
 			'settings.hongguoQuality480' => '480P',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hongguoQuality360' => '360P',
 			'settings.hongguoDeviceReset' => 'Reset device identity',
 			'settings.hongguoDeviceResetDesc' => 'Forgets the anonymous device; registers again on the next play.',
@@ -6877,18 +7368,34 @@ extension on TranslationsEn {
 			'settings.logLevelDesc' => 'Lines below this level are never produced.',
 			'settings.logFile' => 'Write log files',
 			'settings.logFileDesc' => 'Off keeps only the recent lines in memory.',
+			'settings.logFileName' => 'File name',
+			'settings.logFileNameDesc' => 'Base name for the log file and its rotated copies; saved copies keep their time-stamped names.',
+			'settings.logFileNameHint' => 'e.g. PureLive',
+			'settings.logExportFormat' => 'Save format',
+			'settings.logExportFormatDesc' => 'What the console\'s Save to file writes: plain text as .txt, a log file as .log (same content), or JSON Lines as .jsonl for searching and parsing.',
+			'settings.logExportFormatText' => 'Plain text (.txt)',
+			'settings.logExportFormatLog' => 'Log file (.log)',
+			'settings.logExportFormatJsonl' => 'JSON Lines (.jsonl)',
 			'settings.logRotationGroup' => 'File rotation',
 			'settings.logFileMaxBytes' => 'Per-file limit',
 			'settings.logFileMaxBytesDesc' => 'The sink moves to the next file at this size.',
+			'settings.logFilesKept' => 'Files kept',
+			'settings.logFilesKeptDesc' => 'A full file rotates to the next; older files beyond the limit are deleted.',
+			'settings.logFilesKeptUnlimited' => 'Unlimited',
 			'settings.logDirectoryGroup' => 'Location',
 			'settings.logDirectory' => 'Log folder',
+			'settings.logDirectoryResetTitle' => 'Use the default folder',
+			'settings.logDirectoryResetDesc' => 'Back to logs under the data folder; files already written stay where they are.',
+			'settings.logDirectoryDefaultInUse' => 'The default folder is already in use.',
 			'settings.logCopyPath' => 'Copy path',
 			'settings.logPathCopied' => 'Path copied',
 			'settings.logOpenFailed' => 'Could not open the folder',
 			'settings.storageFolders' => 'Storage locations',
+			'settings.storageFoldersDescription' => 'The folders each kind of file is saved in; change or reset one at a time.',
 			'settings.storageFoldersDesc' => 'Where each kind of file lives. Defaults follow the system; any of them can be moved.',
 			'settings.storageFolderVideos' => 'Videos',
 			'settings.storageFolderRecordings' => 'Recordings',
+			'settings.storageFolderScreenshots' => 'Screenshots',
 			'settings.storageFolderMusic' => 'Songs',
 			'settings.storageFolderWallpapers' => 'Wallpapers',
 			'settings.storageFolderVideoWallpapers' => 'Video wallpapers',
@@ -6904,8 +7411,24 @@ extension on TranslationsEn {
 			'settings.storageFolderRestart' => 'Takes effect after a restart',
 			'settings.storageFolderPick' => 'Choose folder',
 			'settings.storageFolderReset' => 'Use default',
+			'settings.storageFoldersResetAll' => 'Reset all folders',
+			'settings.storageFoldersResetAllDesc' => 'Every folder returns to the device default; the cache moves after a restart.',
 			'settings.resetGroup' => 'Reset',
 			'settings.roomCardGroup' => 'Room card style',
+			'settings.localMediaTitle' => 'Local media',
+			'settings.localMediaDescription' => 'Browse and preview the videos, recordings and songs saved on this machine.',
+			'settings.localMediaSummary' => ({required int count, required String size}) => '${count} files · ${size} in total',
+			'settings.localMediaEmpty' => 'Nothing saved yet',
+			'settings.localMediaEmptyDesc' => 'Downloaded videos, live recordings and songs appear here. Their folders live in storage locations.',
+			'settings.localMediaOpenStorage' => 'Open storage locations',
+			'settings.localMediaOpenFailed' => 'The file could not be opened',
+			'settings.localMediaSystemPlayer' => 'Open with system player',
+			'settings.localMediaDeleteTitle' => ({required String name}) => 'Delete “${name}”?',
+			'settings.localMediaDeleteBody' => 'The file is removed from disk.',
+			'settings.localMediaDeleteFailed' => 'The file could not be deleted',
+			'settings.localMediaRefresh' => 'Refresh',
+			'settings.hongguoDownloadTitle' => 'Downloads',
+			'settings.hongguoDownloadDescription' => 'The download queue, quality and save folder',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -6974,7 +7497,6 @@ extension on TranslationsEn {
 			'toolbox.linkCopy' => 'Copy room link',
 			'toolbox.linkPaste' => 'Paste',
 			'toolbox.linkClear' => 'Clear',
-			'toolbox.linkClipboardGroup' => 'Clipboard',
 			'toolbox.linkClipboardRooms' => 'Detect room links in the clipboard',
 			'toolbox.linkClipboardRoomsDesc' => 'Reads the clipboard when the app comes back and asks before opening a supported platform link; it never jumps on its own.',
 			'toolbox.linkResolving' => 'Resolving the link…',
@@ -7049,14 +7571,13 @@ extension on TranslationsEn {
 			'toolbox.logsCopied' => 'Log copied',
 			'toolbox.logsCopyEmpty' => 'No logs to copy',
 			'toolbox.logsDirectoryDefault' => 'The log file is not ready yet.',
-			'toolbox.logsFileTitle' => 'Log file',
 			'toolbox.logsOpenFolder' => 'Open the folder',
-			'toolbox.logsCopyPath' => 'Copy path',
+			'toolbox.logsLevelLabel' => 'Level',
+			'toolbox.logsSave' => 'Save to file',
+			'toolbox.logsSaved' => 'Log saved',
+			'toolbox.logsSaveFailed' => 'Could not save the log',
 			'toolbox.logsPathCopied' => 'Path copied to the clipboard',
 			'toolbox.logsOpenFailed' => 'Could not open the log directory',
-			'toolbox.logsFilterSection' => 'View filter',
-			'toolbox.logsLevelFilter' => 'Shown level',
-			'toolbox.logsLevelFilterDesc' => 'Filters this page only; what the app records is set in the log settings.',
 			'vod.searchHint' => 'Search Bilibili videos',
 			'vod.idleTitle' => 'Search for videos',
 			'vod.idleDescription' => 'Type a keyword to search Bilibili videos.',
@@ -7136,6 +7657,8 @@ extension on TranslationsEn {
 			'vod.mute' => 'Mute',
 			'vod.unmute' => 'Unmute',
 			'vod.volume' => 'Volume',
+			_ => null,
+		} ?? switch (path) {
 			'vod.quality' => 'Quality',
 			'vod.speed' => 'Speed',
 			'vod.fullscreen' => 'Fullscreen',
@@ -7201,6 +7724,41 @@ extension on TranslationsEn {
 			'vod.downloadFailed' => 'Download failed',
 			'vod.downloadCancelled' => 'Download cancelled',
 			'vod.downloadCancel' => 'Cancel download',
+			'vod.downloadPause' => 'Pause download',
+			'vod.downloadQueued' => 'Added to the download queue',
+			'vod.downloadDuplicate' => 'This part is already in the queue',
+			'vod.downloadManagerHint' => 'The queue downloads with as many lanes as set; an expired address is re-signed and the transfer carries on from the bytes already written. When a file completes, find it — with its in-app preview — under Downloads in the station\'s sidebar.',
+			'vod.downloadSettingsTitle' => 'Download settings',
+			'vod.downloadMaxConcurrent' => 'Simultaneous downloads',
+			'vod.downloadMaxConcurrentDesc' => 'How many tasks run at once; a change applies at once.',
+			'vod.downloadQuality' => 'Download quality',
+			'vod.downloadQualityDesc' => 'The rendition a download asks the source for; 1080P+ and 4K need a signed-in account.',
+			'vod.downloadDanmaku' => 'Save danmaku too',
+			'vod.downloadDanmakuDesc' => 'Writes the danmaku sidecar files, in the chosen formats, beside the finished video.',
+			'vod.downloadDirectory' => 'Save location',
+			'vod.downloadDirectoryUpdated' => 'Save location updated',
+			'vod.downloadDirectoryFailed' => 'Couldn\'t update the save location',
+			'vod.downloadDirectoryDefault' => 'Restore default folder',
+			'vod.downloadDirectoryDefaultDesc' => 'Back to the app\'s default Videos folder.',
+			'vod.downloadTaskCount' => ({required int count, required int active}) => '${count} tasks · ${active} active',
+			'vod.downloadManagerTitle' => 'Downloads',
+			'vod.downloadPauseAll' => 'Pause all',
+			'vod.downloadResumeAll' => 'Resume all',
+			'vod.downloadClearFinished' => 'Clear finished',
+			'vod.downloadFilterAll' => 'All',
+			'vod.downloadFilterActive' => 'In progress',
+			'vod.downloadFilterDone' => 'Finished',
+			'vod.downloadFilterEmpty' => 'Nothing under this filter',
+			'vod.downloadFilterEmptyDesc' => 'Pick another filter, or add a download from a video page first.',
+			'vod.downloadEmpty' => 'No downloads yet',
+			'vod.downloadEmptyDesc' => 'Tap download on a video and its tasks appear here.',
+			'vod.downloadPhaseQueued' => 'Queued',
+			'vod.downloadPhasePaused' => 'Paused',
+			'vod.downloadPhaseFailed' => 'Failed',
+			'vod.downloadPhaseDone' => 'Done',
+			'vod.downloadDeleteFile' => 'Delete file',
+			'vod.downloadDeleteFileBody' => 'The video file is deleted too; this cannot be undone.',
+			'vod.downloadDeleteFailed' => 'Couldn\'t delete the file',
 			'vod.partsPrevious' => 'Previous group',
 			'vod.partsNext' => 'Next group',
 			'vod.partsJump' => 'Jump to part',

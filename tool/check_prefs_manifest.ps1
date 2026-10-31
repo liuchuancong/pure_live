@@ -64,7 +64,7 @@ $constRe = "\b(?:static\s+)?const\s+(?:String\s+)?(\w+)\s*=\s*'([a-zA-Z0-9_.]+)'
 # A file-local helper that takes the key as a parameter (`String?
 # _storedString(String key)`) hides its keys from the direct scan; the values
 # handed to it are collected instead, under the kind its own body speaks.
-$helperRe = "(?m)^\s*(?:[\w<>?,\s]+\s+)?(_?\w+)\s*\(\s*String\s+(?:key|pref|prefsName)\b"
+$helperRe = "(?m)^\s*(?:[\w<>?,\s]+\s+)?(_?\w+)\s*\(\s*String\s+(key|pref|prefsName)\b"
 
 # A constant imported from another file resolves through the global map, and
 # only while its name is unambiguous there. Provider names come from the same
@@ -116,6 +116,10 @@ foreach ($file in $dartFiles) {
 
     # Constants in declaration order: a file reuses a name such as `prefsKey`
     # for several classes, and a call site takes the value declared above it.
+    $helperParams = [System.Collections.Generic.HashSet[string]]::new()
+    foreach ($helperMatch in [regex]::Matches($text, $helperRe)) {
+        [void]$helperParams.Add($helperMatch.Groups[2].Value)
+    }
     $fileConsts = [System.Collections.Generic.List[System.Object]]::new()
     foreach ($match in [regex]::Matches($text, $constRe)) {
         $fileConsts.Add(@{ Pos = $match.Index; Name = $match.Groups[1].Value; Value = $match.Groups[2].Value })
@@ -137,7 +141,13 @@ foreach ($file in $dartFiles) {
             }
             if ($resolved) {
                 $key = $resolved.Value
-            } elseif ($globalConsts.ContainsKey($argument)) {
+            } elseif ($helperParams.Contains($argument)) {
+                # This file's own helper takes the key as a parameter; its call
+                # sites are collected by the helper pass below. Another file's
+                # const of the same name must not answer for it.
+            } elseif ($argument -notmatch '^(?i:key|pref|prefsName)$' -and $argument -match '(?i)(key|pref)$' -and $globalConsts.ContainsKey($argument)) {
+                # Only a name that says it is a key (Key/Pref) may borrow another file's
+                # constant; a loop variable called `key` must not.
                 $key = $globalConsts[$argument]
             }
         }
@@ -146,6 +156,12 @@ foreach ($file in $dartFiles) {
             # further away than a constant. Those must be listed in the
             # manifest by hand, so they are printed for review, not failed on.
             $dynamicSites.Add("$relative : StoragePrefs.$method($argument)")
+            continue
+        }
+        if ($key -match '\$') {
+            # A key a helper composes from a prefix ('danmaku.style.$key'):
+            # the helper pass below names the family's real keys; this literal
+            # is only its tail.
             continue
         }
         if ($relative.StartsWith("packages/")) {
@@ -159,17 +175,34 @@ foreach ($file in $dartFiles) {
     # helper's own body speaks to the facade.
     foreach ($match in [regex]::Matches($text, $helperRe)) {
         $helper = $match.Groups[1].Value
+        $param = $match.Groups[2].Value
         $body = $text.Substring($match.Index, [Math]::Min(700, $text.Length - $match.Index))
         $bodyKind = "any"
-        if ($body -match "StoragePrefs\s*\.\s*($methodNames)") {
+        # Only a call that hands the parameter to the facade makes this
+        # helper's arguments pref keys; a helper reading a JSON field of that
+        # name ('value(String key) => json[key]') takes a field, not a pref.
+        if ($body -match "StoragePrefs\s*\.\s*($methodNames)\s*\(\s*[^)\r\n]*\b$param\b") {
             $bodyKind = & $kindOf $Matches[1]
+        }
+        # A helper whose body never speaks to the facade takes plain strings
+        # (a JSON field name, a cache slot): its arguments are not prefs.
+        if ($bodyKind -eq "any") {
+            continue
+        }
+        # A helper may build its key from a literal prefix and the parameter
+        # ('danmaku.style.$key'): the family's real keys are that prefix plus
+        # each argument, so one helper can own a whole block of the manifest.
+        $prefix = ""
+        $prefixMatch = [regex]::Match($body, "'([a-zA-Z0-9_.]*)\`$")
+        if ($prefixMatch.Success) {
+            $prefix = $prefixMatch.Groups[1].Value
         }
         foreach ($call in [regex]::Matches($text, "\b$helper\s*\(\s*('[^']+'|[A-Za-z_]\w*)")) {
             $key = $null
             $argument = $call.Groups[1].Value
             if ($argument.StartsWith("'")) {
                 $key = $argument.Trim("'")
-            } elseif ($globalConsts.ContainsKey($argument)) {
+            } elseif ($argument -notmatch '^(?i:key|pref|prefsName)$' -and $argument -match '(?i)(key|pref)$' -and $globalConsts.ContainsKey($argument)) {
                 $key = $globalConsts[$argument]
             } else {
                 foreach ($candidate in $fileConsts) {
@@ -179,7 +212,7 @@ foreach ($file in $dartFiles) {
                 }
             }
             if ($key) {
-                Add-Observation $key $bodyKind "$relative`:$helper"
+                Add-Observation ($prefix + $key) $bodyKind "$relative`:$helper"
             }
         }
     }
@@ -210,6 +243,20 @@ foreach ($match in [regex]::Matches((Get-Content -Raw $backupFile), "\('([a-zA-Z
 # would otherwise print. A new entry here needs a sentence, not just a name.
 $unbackedAllowed = @{
     "recorder.saveDir" = "a legacy value recorder.dir was upgraded from, read only as a fallback and never written; the live choice travels as recorder.dir."
+    "background.stills" = "the clip-to-still map points at pictures this machine rendered; another machine has neither the clips nor the stills."
+    "music.lyrics.cache" = "a fetched-lyric cache: another machine asks the source again instead of carrying this one's answers."
+    "music.playback.positions" = "where each song was paused — run-time progress, not a preference; the queue itself travels as music.queue."
+    "music.downloads" = "the download queue's tasks point at files that exist on this machine only."
+    "vod.downloads" = "the video download queue's tasks point at files that exist on this machine only."
+    "hongguo.downloads" = "the station's download queue tasks point at files that exist on this machine only."
+    "wallpaper.downloads" = "the wallpaper download queue's tasks point at files that exist on this machine only."
+    "fonts.google.downloaded" = "the cloud fonts this machine fetched; another machine downloads the ones its own theme asks for."
+    "hongguo.account.credentials" = "a sign-in cookie stored in the prefs store; a backup document must not carry it. Moving it into the secret vault is a separate change."
+    "hongguo.device.identity" = "the official client's device fingerprint; restoring it would clone another device's identity."
+    "music.sync.authCode" = "the client half of the sync pair's shared secret; the two machines exchange it when they pair."
+    "music.sync.server.authCode" = "the server half of the same secret, kept out for the same reason."
+    "music.sync.keyInfo" = "key material for the sync cipher; a backup of it would be a backup of the pair's secrets."
+    "music.sync.server.devices" = "the paired machines' keys, which only they may hold."
 }
 
 foreach ($key in ($observedKinds.Keys | Sort-Object)) {
@@ -247,6 +294,7 @@ foreach ($match in [regex]::Matches((Get-Content -Raw $refreshFile), "(?m)^\s{2}
 # size to itself, so those controllers never take another window's choice or a
 # restored document's value.
 $refreshAllowed = @{
+    "musicPlayerProvider"    = "the player controller owns the live queue and the kernel; rebuilding it would throw both away. It listens to the prefs it can apply mid-song (quality, rate, volume, pitch, lyric offset, the desktop overlay) and reads the rest when it is next built."
     "selectedModuleProvider" = "which module a window shows is that window's own navigation state."
     "selectedSiteIdProvider" = "the site a window is browsing is that window's own navigation state."
     "popularSiteProvider"    = "the popular page's picked site is navigation state, not a synced setting."

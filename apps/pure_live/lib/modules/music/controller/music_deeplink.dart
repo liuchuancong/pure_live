@@ -102,11 +102,7 @@ MusicDeeplinkAction parseMusicDeeplink(String link) {
 
   final body = link.substring(scheme.length);
   final split = body.split('?');
-  final segments = split.first
-      .split('/')
-      .where((segment) => segment.isNotEmpty)
-      .map(_decode)
-      .toList();
+  final segments = split.first.split('/').where((segment) => segment.isNotEmpty).map(_decode).toList();
   if (segments.isEmpty) throw const MusicDeeplinkException('Empty link');
 
   final params = <String, String>{};
@@ -189,7 +185,8 @@ MusicDeeplinkAction _parseMusicLink(String action, List<String> paths, Map<Strin
         singer = '${decoded['singer'] ?? ''}'.trim();
       }
       if (name.isEmpty) throw const MusicDeeplinkException('searchPlay without name');
-      final playLater = params['playLater'] == 'true' || params['data'] != null && _jsonFlag(params['data'], 'playLater');
+      final playLater =
+          params['playLater'] == 'true' || params['data'] != null && _jsonFlag(params['data'], 'playLater');
       return MusicDeeplinkSearchPlay(name: name, singer: singer, playLater: playLater);
 
     default:
@@ -246,9 +243,11 @@ audio.MusicTrack _trackFromDeeplinkJson(Object? decoded) {
     coverUri: decoded['img'] == null || '${decoded['img']}'.isEmpty ? null : Uri.tryParse('${decoded['img']}'),
     duration: minutes == null ? null : Duration(minutes: minutes),
     qualities: qualities,
-    metadata: {'strMediaMid': decoded['strMediaMid'], 'albumMid': decoded['albumMid'], 'lrcUrl': decoded['lrcUrl']}
-        .cast<String, Object?>()
-      ..removeWhere((key, value) => value == null),
+    metadata: {
+      'strMediaMid': decoded['strMediaMid'],
+      'albumMid': decoded['albumMid'],
+      'lrcUrl': decoded['lrcUrl'],
+    }.cast<String, Object?>()..removeWhere((key, value) => value == null),
   );
 }
 

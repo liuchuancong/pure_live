@@ -18,7 +18,6 @@
   "linkCopy": "Copy room link",
   "linkPaste": "Paste",
   "linkClear": "Clear",
-  "linkClipboardGroup": "Clipboard",
   "linkClipboardRooms": "Detect room links in the clipboard",
   "linkClipboardRoomsDesc": "Reads the clipboard when the app comes back and asks before opening a supported platform link; it never jumps on its own.",
   "linkResolving": "Resolving the link…",
@@ -93,12 +92,11 @@
   "logsCopied": "Log copied",
   "logsCopyEmpty": "No logs to copy",
   "logsDirectoryDefault": "The log file is not ready yet.",
-  "logsFileTitle": "Log file",
   "logsOpenFolder": "Open the folder",
-  "logsCopyPath": "Copy path",
+  "logsLevelLabel": "Level",
+  "logsSave": "Save to file",
+  "logsSaved": "Log saved",
+  "logsSaveFailed": "Could not save the log",
   "logsPathCopied": "Path copied to the clipboard",
-  "logsOpenFailed": "Could not open the log directory",
-  "logsFilterSection": "View filter",
-  "logsLevelFilter": "Shown level",
-  "logsLevelFilterDesc": "Filters this page only; what the app records is set in the log settings."
+  "logsOpenFailed": "Could not open the log directory"
 }

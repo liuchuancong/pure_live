@@ -198,9 +198,7 @@ final class MusicOpenApi {
     response
       ..statusCode = answer.status
       ..headers.add('Access-Control-Allow-Origin', '*')
-      ..headers.contentType = answer.body is String
-          ? ContentType('text', 'plain', charset: 'utf-8')
-          : _jsonType
+      ..headers.contentType = answer.body is String ? ContentType('text', 'plain', charset: 'utf-8') : _jsonType
       ..write(body);
     await response.close();
   }

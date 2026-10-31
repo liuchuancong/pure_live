@@ -49,10 +49,18 @@ final class MusicSyncAddress {
     final text = raw.trim();
     if (text.isEmpty) return null;
     if (text.startsWith('http://')) {
-      return MusicSyncAddress(httpScheme: 'http', wsScheme: 'ws', hostPath: text.substring(7).replaceAll(RegExp(r'/+$'), ''));
+      return MusicSyncAddress(
+        httpScheme: 'http',
+        wsScheme: 'ws',
+        hostPath: text.substring(7).replaceAll(RegExp(r'/+$'), ''),
+      );
     }
     if (text.startsWith('https://')) {
-      return MusicSyncAddress(httpScheme: 'https', wsScheme: 'wss', hostPath: text.substring(8).replaceAll(RegExp(r'/+$'), ''));
+      return MusicSyncAddress(
+        httpScheme: 'https',
+        wsScheme: 'wss',
+        hostPath: text.substring(8).replaceAll(RegExp(r'/+$'), ''),
+      );
     }
     if (text.startsWith('ws://') || text.startsWith('wss://')) return null;
     return MusicSyncAddress(httpScheme: 'http', wsScheme: 'ws', hostPath: text.replaceAll(RegExp(r'/+$'), ''));
@@ -144,7 +152,10 @@ final class MusicSyncClient {
     if (authCode.trim().isEmpty) throw Exception('auth code is empty');
     final key = musicSyncAuthKey(authCode.trim());
     final pair = MusicSyncRsaKeyPair.generate();
-    final message = musicSyncAesEncrypt('$kMusicSyncAuthMsg\n${pair.publicSpkiBase64}\n$deviceName\nlx_music_desktop', key);
+    final message = musicSyncAesEncrypt(
+      '$kMusicSyncAuthMsg\n${pair.publicSpkiBase64}\n$deviceName\nlx_music_desktop',
+      key,
+    );
     final text = await _http.getText(
       Uri(scheme: address.httpScheme, host: _host(address), port: _port(address), path: '/ah'),
       headers: {'m': message},
@@ -168,9 +179,13 @@ final class MusicSyncClient {
   /// Reads `/hello` and `/id` and checks both shapes before auth.
   Future<String> readServerId(MusicSyncAddress address) async {
     _emit(MusicSyncStatus.connecting);
-    final hello = await _http.getText(Uri(scheme: address.httpScheme, host: _host(address), port: _port(address), path: '/hello'));
+    final hello = await _http.getText(
+      Uri(scheme: address.httpScheme, host: _host(address), port: _port(address), path: '/hello'),
+    );
     if (hello != kMusicSyncHelloMsg) throw Exception('不是 lx-music 同步服务');
-    final id = await _http.getText(Uri(scheme: address.httpScheme, host: _host(address), port: _port(address), path: '/id'));
+    final id = await _http.getText(
+      Uri(scheme: address.httpScheme, host: _host(address), port: _port(address), path: '/id'),
+    );
     return id.startsWith(kMusicSyncIdPrefix) ? id.substring(kMusicSyncIdPrefix.length) : id;
   }
 
@@ -232,10 +247,13 @@ final class MusicSyncClient {
       }
     }
     socket.send(musicSyncEncodeFrame(musicSyncEncodeRequest(callId, wireArgs, callbackIndexes)));
-    return completer.future.timeout(timeout, onTimeout: () {
-      _pending.remove(callId);
-      throw Exception('同步调用超时: $name');
-    });
+    return completer.future.timeout(
+      timeout,
+      onTimeout: () {
+        _pending.remove(callId);
+        throw Exception('同步调用超时: $name');
+      },
+    );
   }
 
   Future<void> _swallow(Future<Object?> future) async {
@@ -321,9 +339,8 @@ final class MusicSyncClient {
     if (!_messages.isClosed) _messages.add(message);
   }
 
-  String _host(MusicSyncAddress address) => address.hostPath.contains(':')
-      ? address.hostPath.substring(0, address.hostPath.indexOf(':'))
-      : address.hostPath;
+  String _host(MusicSyncAddress address) =>
+      address.hostPath.contains(':') ? address.hostPath.substring(0, address.hostPath.indexOf(':')) : address.hostPath;
 
   int _port(MusicSyncAddress address) {
     final colon = address.hostPath.indexOf(':');

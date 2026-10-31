@@ -90,6 +90,23 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
   }
 
   Future<void> _release(PlayerKernel kernel, PlayerHandle handle) async {
+    // The release below is queued behind whatever the preview is still doing;
+    // mute first — it lands at once — then pause, so the wallpaper cannot be
+    // heard over the pane the viewer returned to while that queue drains.
+    // Both are fire-and-forget; a handle already being released is silent by
+    // definition, so a refusal needs no answer.
+    unawaited(() async {
+      try {
+        await handle.setMute(muted: true);
+      } on Object {
+        // Already gone.
+      }
+      try {
+        await handle.pause();
+      } on Object {
+        // Already gone.
+      }
+    }());
     try {
       await kernel.release(handle.id);
     } on Object {

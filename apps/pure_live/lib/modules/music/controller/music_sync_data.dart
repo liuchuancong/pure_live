@@ -53,8 +53,7 @@ Map<String, Object?> musicSyncMusicInfo(audio.MusicTrack track) => <String, Obje
   'name': track.title,
   'singer': track.artist,
   'source': track.sourceId,
-  if (track.duration != null)
-    'interval': '${_two(track.duration!.inMinutes)}:${_two(track.duration!.inSeconds % 60)}',
+  if (track.duration != null) 'interval': '${_two(track.duration!.inMinutes)}:${_two(track.duration!.inSeconds % 60)}',
   'meta': <String, Object?>{
     'songId': track.id,
     if (track.album.isNotEmpty) 'albumName': track.album,
@@ -168,9 +167,17 @@ MusicSyncMergeResult? musicSyncMergeListData(Object? local, Object? remote, Stri
         updateRemote: true,
       );
     case 'overwrite_local_remote':
-      return MusicSyncMergeResult(musicSyncOverwriteUserLists(localData, remoteData), updateLocal: false, updateRemote: true);
+      return MusicSyncMergeResult(
+        musicSyncOverwriteUserLists(localData, remoteData),
+        updateLocal: false,
+        updateRemote: true,
+      );
     case 'overwrite_remote_local':
-      return MusicSyncMergeResult(musicSyncOverwriteUserLists(remoteData, localData), updateLocal: true, updateRemote: false);
+      return MusicSyncMergeResult(
+        musicSyncOverwriteUserLists(remoteData, localData),
+        updateLocal: true,
+        updateRemote: false,
+      );
     case 'overwrite_local_remote_full':
       return MusicSyncMergeResult(localData, updateLocal: false, updateRemote: true);
     case 'overwrite_remote_local_full':
@@ -193,20 +200,24 @@ List<Object?> _listOf(Map<String, Object?> data, String key) {
 /// Merges two sides the reference's `mergeList`: songs dedupe per list (the
 /// target's top entries keep their place when adding to top), user lists
 /// fold by id with the later `locationUpdateTime` winning the position.
-Map<String, Object?> musicSyncMergeUserLists(Map<String, Object?> source, Map<String, Object?> target, {required bool addToTop}) =>
-    <String, Object?>{
-      'defaultList': _mergeMusicInfos(_listOf(source, 'defaultList'), _listOf(target, 'defaultList'), addToTop),
-      'loveList': _mergeMusicInfos(_listOf(source, 'loveList'), _listOf(target, 'loveList'), addToTop),
-      'userList': _mergeUserLists(_listOf(source, 'userList'), _listOf(target, 'userList'), addToTop),
-    };
+Map<String, Object?> musicSyncMergeUserLists(
+  Map<String, Object?> source,
+  Map<String, Object?> target, {
+  required bool addToTop,
+}) => <String, Object?>{
+  'defaultList': _mergeMusicInfos(_listOf(source, 'defaultList'), _listOf(target, 'defaultList'), addToTop),
+  'loveList': _mergeMusicInfos(_listOf(source, 'loveList'), _listOf(target, 'loveList'), addToTop),
+  'userList': _mergeUserLists(_listOf(source, 'userList'), _listOf(target, 'userList'), addToTop),
+};
 
 /// The reference's `overwriteList`: the source side wins outright; target
 /// user lists the source never had join at their remembered position.
-Map<String, Object?> musicSyncOverwriteUserLists(Map<String, Object?> source, Map<String, Object?> target) => <String, Object?>{
-  'defaultList': source['defaultList'],
-  'loveList': source['loveList'],
-  'userList': _overwriteUserLists(_listOf(source, 'userList'), _listOf(target, 'userList')),
-};
+Map<String, Object?> musicSyncOverwriteUserLists(Map<String, Object?> source, Map<String, Object?> target) =>
+    <String, Object?>{
+      'defaultList': source['defaultList'],
+      'loveList': source['loveList'],
+      'userList': _overwriteUserLists(_listOf(source, 'userList'), _listOf(target, 'userList')),
+    };
 
 /// The reference's `handleMergeList`: concat by add position, then dedupe
 /// by song id — bottom keeps the first occurrence, top keeps the last.
@@ -223,7 +234,10 @@ List<Object?> _mergeMusicInfos(List<Object?> source, List<Object?> target, bool 
 /// The reference's top-position walk: deduped songs sit at their last
 /// (topmost) occurrence's position.
 List<Object?> _keepLastOccurrences(List<Object?> combined, List<Object?> merged) {
-  final ids = {for (final entry in merged) if (entry is Map) entry['id'] as String};
+  final ids = {
+    for (final entry in merged)
+      if (entry is Map) entry['id'] as String,
+  };
   final lastPosition = <String, int>{};
   for (var i = combined.length - 1; i >= 0; i--) {
     final entry = combined[i];
@@ -279,7 +293,10 @@ List<Object?> _mergeUserLists(List<Object?> source, List<Object?> target, bool a
 /// The reference's `overwriteList` user-list half.
 List<Object?> _overwriteUserLists(List<Object?> source, List<Object?> target) {
   final merged = [...source];
-  final ids = {for (final list in merged) if (list is Map) list['id']: true};
+  final ids = {
+    for (final list in merged)
+      if (list is Map) list['id']: true,
+  };
   for (var index = 0; index < target.length; index++) {
     final list = target[index];
     if (list is! Map || ids[list['id']] == true) continue;
@@ -319,7 +336,6 @@ String musicSyncDislikeMerge(String local, String remote) {
 /// One rule half: inner `@` becomes the reference's `#` alias, then
 /// lowercase and trim.
 String _dislikeName(String raw) => raw.replaceAll('@', '#').toLowerCase().trim();
-
 
 /// The dislike rules string for a set of `singer - title` rules, one per
 /// line — the reference stores rules as one plain string.

@@ -14,7 +14,7 @@ import 'package:pure_live/app/providers/boot/storage_providers.dart'
 import 'package:pure_live/app/providers/network/github_mirror_provider.dart' show githubMirrorProvider;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/app/providers/settings/storage_folder_provider.dart' show StorageFolder;
-import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/features/settings/surface/settings_widgets.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
     show
@@ -58,10 +58,11 @@ import 'package:pure_live/modules/music/controller/music_sync_server.dart'
         musicSyncServerProvider,
         musicSyncServerStatusProvider;
 import 'package:pure_live/modules/music/controller/music_ui_settings.dart'
-    show MusicUiElement, musicUiSettingsProvider;
+    show MusicPlayerMode, MusicUiElement, musicPlayerModeProvider, musicUiSettingsProvider;
 import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart'
     show CachedLyricSource, musicLyricCacheCountProvider;
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart' show MusicEqEditor;
+import 'package:pure_live/modules/music/widgets/music_lyric_preview.dart';
 
 /// The music module's own settings, the way lx-music lays its rail out:
 /// the source a song is asked from, the rendition asked of it, the list
@@ -182,14 +183,19 @@ final class MusicSettingsPane extends ConsumerWidget {
                     unawaited(uiController.setElement(MusicUiElement.blurredBackdrop, visible: value)),
               ),
             ),
-            SettingsConfigRow(
+            // The stage's shape is one choice, the reference's player
+            // modes: the sleeve, the record, or the words.
+            SettingsChoiceRow<MusicPlayerMode>(
               leading: const DsIcon(DsIcons.disc3),
-              title: t.music.uiVinylDisc,
-              description: t.music.uiVinylDiscDesc,
-              control: DsSwitch(
-                value: ui.shows(MusicUiElement.vinylDisc),
-                onChanged: (value) => unawaited(uiController.setElement(MusicUiElement.vinylDisc, visible: value)),
-              ),
+              title: t.music.playerMode,
+              description: t.music.playerModeDesc,
+              value: ref.watch(musicPlayerModeProvider),
+              options: [
+                DsSelectOption(value: MusicPlayerMode.standard, label: t.music.playerModeStandard),
+                DsSelectOption(value: MusicPlayerMode.vinyl, label: t.music.playerModeVinyl),
+                DsSelectOption(value: MusicPlayerMode.lyrics, label: t.music.playerModeLyrics),
+              ],
+              onChanged: (value) => unawaited(ref.read(musicPlayerModeProvider.notifier).set(value)),
             ),
             SettingsConfigRow(
               leading: const DsIcon(DsIcons.audioLines),
@@ -998,6 +1004,9 @@ final class MusicLyricPane extends ConsumerWidget {
       spacing: DsSpace.s16,
       children: [
         SettingsHint(t.music.lyricHint),
+        // The sample the switches below repaint: a lyric setting is
+        // seen here rather than only in the player.
+        const MusicLyricPreview(),
         // What a line carries, how it paints, and where its clock sits —
         // three concerns the reference keeps apart.
         DsListSection(
@@ -1170,6 +1179,9 @@ final class MusicDesktopLyricPane extends ConsumerWidget {
       spacing: DsSpace.s16,
       children: [
         SettingsHint(t.music.desktopLyricHint),
+        // What the floating window will look like: it lives in its own
+        // window, so the page shows the sample.
+        const MusicDesktopLyricPreview(),
         DsListSection(
           header: Text(t.music.desktopLyricShow),
           children: [
@@ -1289,8 +1301,7 @@ final class MusicDesktopLyricPane extends ConsumerWidget {
                   DsSegment(value: true, label: Text(t.music.desktopLyricDirectionVertical)),
                 ],
                 value: settings.desktopLyricVertical,
-                onChanged: (vertical) =>
-                    unawaited(controller.setDesktopLyricVertical(value: vertical)),
+                onChanged: (vertical) => unawaited(controller.setDesktopLyricVertical(value: vertical)),
               ),
             ),
             SettingsConfigRow(
@@ -1759,9 +1770,13 @@ final class _EqNodeRow extends ConsumerWidget {
                   style: theme.typography.body.copyWith(color: node.enabled ? colors.text : colors.textMuted),
                 ),
               ),
-              GestureDetector(
-                onTap: () => unawaited(controller.removeNode(node.id)),
-                child: DsIcon(DsIcons.trash2, size: 16, color: colors.textMuted),
+              Semantics(
+                button: true,
+                label: t.music.eqRemoveNode,
+                child: GestureDetector(
+                  onTap: () => unawaited(controller.removeNode(node.id)),
+                  child: DsIcon(DsIcons.trash2, size: 16, color: colors.textMuted),
+                ),
               ),
             ],
           ),
@@ -2389,55 +2404,62 @@ final class MusicSyncPane extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: DsSpace.s8,
             children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 360),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: devices.length,
-                  itemBuilder: (context, index) {
-                    final device = devices[index];
-                    final connected = DateTime.fromMillisecondsSinceEpoch(device.lastConnectDate);
-                    String two(int value) => value.toString().padLeft(2, '0');
-                    final time =
-                        '${connected.year}-${two(connected.month)}-${two(connected.day)} ${two(connected.hour)}:${two(connected.minute)}';
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                device.deviceName.isEmpty
-                                    ? (device.isMobile ? t.music.syncServerMobile : t.music.syncServerDesktop)
-                                    : device.deviceName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                '${t.music.syncServerLastConnect} $time',
-                                style: DsTheme.of(context).typography.caption
-                                    .copyWith(color: DsTheme.colorsOf(context).textSubtle),
-                              ),
-                            ],
+              if (devices.isEmpty)
+                Text(t.music.syncServerDevicesEmpty)
+              else
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 360),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: devices.length,
+                    itemBuilder: (context, index) {
+                      final device = devices[index];
+                      final connected = DateTime.fromMillisecondsSinceEpoch(device.lastConnectDate);
+                      String two(int value) => value.toString().padLeft(2, '0');
+                      final time =
+                          '${connected.year}-${two(connected.month)}-${two(connected.day)} ${two(connected.hour)}:${two(connected.minute)}';
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  device.deviceName.isEmpty
+                                      ? (device.isMobile ? t.music.syncServerMobile : t.music.syncServerDesktop)
+                                      : device.deviceName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  '${t.music.syncServerLastConnect} $time',
+                                  style: DsTheme.of(context).typography.caption
+                                      .copyWith(color: DsTheme.colorsOf(context).textSubtle),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        GestureDetector(
-                          onTap: () async {
-                            await server.removeDevice(device.clientId);
-                            // The dialog may close over the removal; the list
-                            // has nowhere to repaint then.
-                            if (listContext.mounted) setState(() => devices = server.deviceView());
-                          },
-                          child: const Padding(
-                            padding: EdgeInsets.all(DsSpace.s4),
-                            child: DsIcon(DsIcons.trash2, size: 16),
+                          Semantics(
+                            button: true,
+                            label: t.music.syncRemoveDevice,
+                            child: GestureDetector(
+                              onTap: () async {
+                                await server.removeDevice(device.clientId);
+                                // The dialog may close over the removal; the list
+                                // has nowhere to repaint then.
+                                if (listContext.mounted) setState(() => devices = server.deviceView());
+                              },
+                              child: const Padding(
+                                padding: EdgeInsets.all(DsSpace.s4),
+                                child: DsIcon(DsIcons.trash2, size: 16),
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
+                        ],
+                      );
+                    },
+                  ),
                 ),
-              ),
               Text(t.music.syncServerDevicesTip, style: DsTheme.of(listContext).typography.caption),
             ],
           ),
@@ -2487,14 +2509,18 @@ final class MusicSyncPane extends ConsumerWidget {
                               ),
                             ),
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() => hosts = [...hosts]..removeAt(index));
-                              unawaited(controller.removeHostHistory(index));
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.all(DsSpace.s4),
-                              child: DsIcon(DsIcons.trash2, size: 16),
+                          Semantics(
+                            button: true,
+                            label: t.music.syncRemoveHost,
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() => hosts = [...hosts]..removeAt(index));
+                                unawaited(controller.removeHostHistory(index));
+                              },
+                              child: const Padding(
+                                padding: EdgeInsets.all(DsSpace.s4),
+                                child: DsIcon(DsIcons.trash2, size: 16),
+                              ),
                             ),
                           ),
                         ],

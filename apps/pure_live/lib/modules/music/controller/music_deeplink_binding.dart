@@ -27,9 +27,7 @@ final class MusicDeeplinkBinding {
     _links ??= AppLinks().uriLinkStream.listen(
       _handle,
       onError: (Object error) {
-        appLog
-            .forCategory('music.deeplink')
-            .warning('the link stream failed', fields: {'error': '$error'});
+        appLog.forCategory('music.deeplink').warning('the link stream failed', fields: {'error': '$error'});
       },
     );
   }
@@ -38,9 +36,7 @@ final class MusicDeeplinkBinding {
     final message = await handleMusicDeeplink(_ref, link.toString());
 
     if (message != null) {
-      appLog
-          .forCategory('music.deeplink')
-          .warning('the link was rejected', fields: {'reason': message});
+      appLog.forCategory('music.deeplink').warning('the link was rejected', fields: {'reason': message});
     }
   }
 

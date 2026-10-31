@@ -22,28 +22,20 @@ const double kMusicPlaylistInfoHeight = 48;
 /// without a cover of its own draws the title on the fallback tile.
 final class MusicPlaylistCard extends StatelessWidget {
   /// A card for the viewer's own list.
-  MusicPlaylistCard.own({
-    required MusicPlaylist playlist,
-    this.onOpen,
-    this.menuBuilder,
-    super.key,
-  }) : title = playlist.name,
-       coverUrl = null,
-       creator = '',
-       trackCount = playlist.tracks.length;
+  MusicPlaylistCard.own({required MusicPlaylist playlist, this.onOpen, this.menuBuilder, super.key})
+    : title = playlist.name,
+      coverUrl = null,
+      creator = '',
+      trackCount = playlist.tracks.length;
 
   /// A card for a playlist browsed from the source.
   // A field-initializer body cannot read the parameter's fields, so this
   // constructor is not const.
-  MusicPlaylistCard.online({
-    required MusicPlaylistInfo info,
-    this.onOpen,
-    this.menuBuilder,
-    super.key,
-  }) : title = info.name,
-       coverUrl = info.cover,
-       creator = info.author,
-       trackCount = info.trackCount;
+  MusicPlaylistCard.online({required MusicPlaylistInfo info, this.onOpen, this.menuBuilder, super.key})
+    : title = info.name,
+      coverUrl = info.cover,
+      creator = info.author,
+      trackCount = info.trackCount;
 
   /// The playlist's display name.
   final String title;
@@ -86,10 +78,16 @@ final class MusicPlaylistCard extends StatelessWidget {
                   style: DsImageStyle(borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card))),
                 ),
                 const Positioned.fill(
-                  child: IgnorePointer(child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim))),
+                  child: IgnorePointer(
+                    child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
+                  ),
                 ),
                 if (menuBuilder != null)
-                  PositionedDirectional(top: DsSpace.s8, end: DsSpace.s8, child: Builder(builder: menuBuilder!)),
+                  PositionedDirectional(
+                    top: DsSpace.s8,
+                    end: DsSpace.s8,
+                    child: Builder(builder: menuBuilder!),
+                  ),
                 PositionedDirectional(
                   start: DsSpace.s8,
                   end: DsSpace.s8,
@@ -219,9 +217,11 @@ final class _MusicPlaylistGridState<T> extends State<MusicPlaylistGrid<T>> {
     if (notification.depth != 0) return;
     if (notification.metrics.pixels < notification.metrics.maxScrollExtent - 600) return;
     _asking = true;
-    unawaited(onLoadMore().whenComplete(() {
-      if (mounted) setState(() => _asking = false);
-    }));
+    unawaited(
+      onLoadMore().whenComplete(() {
+        if (mounted) setState(() => _asking = false);
+      }),
+    );
   }
 
   /// Moves the pager to [next]: a page already in hand moves without a

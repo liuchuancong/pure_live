@@ -10,12 +10,56 @@ enum MusicUiElement {
   /// The player page's blurred cover backdrop.
   blurredBackdrop,
 
-  /// The record peeking out behind the stage's artwork.
-  vinylDisc,
-
   /// The live FFT bars on the player page's stage.
   spectrum,
 }
+
+/// What the player's stage draws: the sleeve as it is, the record on a
+/// turntable, or the words alone — the reference's three player modes.
+enum MusicPlayerMode {
+  /// The square cover card, the default.
+  standard,
+
+  /// The record, its cover as the label, with the tonearm.
+  vinyl,
+
+  /// The lyrics in the stage's place, for reading along.
+  lyrics,
+}
+
+/// The stored key of the player's mode.
+const String kMusicPlayerModeKey = 'music.playerMode';
+
+/// Owns the player's mode under `music.playerMode`.
+final class MusicPlayerModeController extends Notifier<MusicPlayerMode> {
+  @override
+  MusicPlayerMode build() {
+    try {
+      return MusicPlayerMode.values.asNameMap()[StoragePrefs.getString(kMusicPlayerModeKey) ?? ''] ??
+          MusicPlayerMode.standard;
+    } on Object {
+      return MusicPlayerMode.standard;
+    }
+  }
+
+  /// Chooses the stage and writes it through.
+  Future<void> set(MusicPlayerMode mode) async {
+    state = mode;
+    try {
+      await StoragePrefs.setString(kMusicPlayerModeKey, mode.name);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
+  /// Back to the reference's standard stage.
+  Future<void> reset() => set(MusicPlayerMode.standard);
+}
+
+/// The stage every player surface draws.
+final musicPlayerModeProvider = NotifierProvider<MusicPlayerModeController, MusicPlayerMode>(
+  MusicPlayerModeController.new,
+);
 
 /// Which pieces the player draws.
 @immutable
@@ -24,8 +68,7 @@ final class MusicUiVisibility {
   const MusicUiVisibility(this.hidden);
 
   /// Hides exactly [hidden].
-  factory MusicUiVisibility.hiding(Iterable<MusicUiElement> hidden) =>
-      MusicUiVisibility(Set.unmodifiable(hidden));
+  factory MusicUiVisibility.hiding(Iterable<MusicUiElement> hidden) => MusicUiVisibility(Set.unmodifiable(hidden));
 
   /// Reads stored visibility; anything unreadable falls back to the default.
   factory MusicUiVisibility.fromJson(Object? value) {

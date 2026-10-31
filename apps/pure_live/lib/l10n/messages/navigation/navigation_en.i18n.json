@@ -19,12 +19,16 @@
   "proxy": "Network proxy",
   "user": "User",
   "vodRegions": "Regions",
+  "vodDownloads": "Downloads",
   "iptvSources": "Subscriptions",
   "iptvGuide": "Guide",
+  "musicRecommend": "Recommended",
+  "musicFeatured": "Featured",
   "musicSonglist": "Songlists",
   "musicToplist": "Charts",
   "musicLibrary": "My lists",
   "musicLocal": "Local music",
   "musicDownloads": "Downloads",
-  "musicSettings": "Music settings"
+  "musicSettings": "Music settings",
+  "hongguoDownloads": "Downloads"
 }

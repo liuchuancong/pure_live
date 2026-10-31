@@ -10,8 +10,15 @@ import 'package:pure_live/modules/music/controller/sources/lyric_decoders.dart' 
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort,
-        OnlinePlaylists, PlaylistTagTree, SonglistSearch;
+    show
+        MusicPlaylistInfo,
+        MusicPlaylistPage,
+        MusicPlaylistTag,
+        MusicPlaylistTagGroup,
+        MusicPlazaSort,
+        OnlinePlaylists,
+        PlaylistTagTree,
+        SonglistSearch;
 
 /// The QQ-music leaderboard view's boards, in its own order.
 const List<(String, String)> _kTxBoards = [
@@ -70,8 +77,9 @@ String zzcSign(String text) {
 
 /// The QQ music platform: search and boards ride the signed android gateway;
 /// play URLs come from the lx scripts (the open gateway serves no URLs).
-final class TxMusicSource extends LxPlatformSource with OnlinePlaylists, PlaylistTagTree, SonglistSearch
-implements MusicHotWords, MusicCommentsSource {
+final class TxMusicSource extends LxPlatformSource
+    with OnlinePlaylists, PlaylistTagTree, SonglistSearch
+    implements MusicHotWords, MusicCommentsSource {
   /// A QQ music source over the lx runtime.
   TxMusicSource(super.runtime, super.http);
 
@@ -274,7 +282,12 @@ implements MusicHotWords, MusicCommentsSource {
   static const Map<String, int> _sortCategoryIds = {'hot': 3, 'new': 2};
 
   @override
-  Future<MusicPlaylistPage> playlists({String tag = '', String order = 'recommend', int page = 1, int pageSize = 30}) async {
+  Future<MusicPlaylistPage> playlists({
+    String tag = '',
+    String order = 'recommend',
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     final tagId = int.tryParse(tag) ?? (tag.isEmpty ? _sortCategoryIds[order] : null);
     if (tagId == null) {
       // No numeric category: the plaza falls back to its feed.
@@ -369,7 +382,11 @@ implements MusicHotWords, MusicCommentsSource {
       'platform': 'wk_v15.json',
       'needNewCode': '0',
       'data': jsonEncode({
-        'tags': {'method': 'get_all_categories', 'param': {'qq': ''}, 'module': 'playlist.PlaylistAllCategoriesServer'},
+        'tags': {
+          'method': 'get_all_categories',
+          'param': {'qq': ''},
+          'module': 'playlist.PlaylistAllCategoriesServer',
+        },
       }),
     });
     final json = jsonDecode(await getText(uri)) as Map<String, Object?>;
@@ -616,7 +633,12 @@ implements MusicHotWords, MusicCommentsSource {
   /// `comment.js`: newest rides the legacy h5 form gateway, hot the musicu
   /// `CommentRead` module. QQ's `[em]e…[/em]` codes become characters.
   @override
-  Future<MusicCommentsPage> comments(audio.MusicTrack track, {required bool hot, required int page, int pageSize = 20}) async {
+  Future<MusicCommentsPage> comments(
+    audio.MusicTrack track, {
+    required bool hot,
+    required int page,
+    int pageSize = 20,
+  }) async {
     final songId = '${track.metadata['songId'] ?? ''}';
     if (songId.isEmpty) throw StateError('tx comments need a songId');
     if (hot) {
@@ -770,6 +792,7 @@ implements MusicHotWords, MusicCommentsSource {
       replies: replies,
     );
   }
+
   @override
   Future<List<String>> suggestions(String query) async {
     try {
@@ -795,8 +818,7 @@ implements MusicHotWords, MusicCommentsSource {
       if (itemlist is! List) return const [];
       return [
         for (final entry in itemlist)
-          if (entry is Map && entry['name'] is String)
-            '${entry['name']} - ${entry['singer'] ?? ''}'.trim(),
+          if (entry is Map && entry['name'] is String) '${entry['name']} - ${entry['singer'] ?? ''}'.trim(),
       ];
     } on Object {
       return const [];
