@@ -3,13 +3,15 @@ import 'dart:io' show Directory, File, Platform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core/media_core.dart' show PlayerHandleLifecycle;
 import 'package:media_core_notify/media_core_notify.dart' show MediaCoreNotify, NotifyEvent;
+import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/l10n/translations.dart' show t;
 import 'package:pure_live/modules/live/room/room.dart' show roomProvider;
 
 /// The tray's 截图: the primary window's current room frame, saved under the
-/// user's Pictures folder. Feedback lands in the system notification area —
-/// the tray is most useful while the window is hidden, where a toast would
-/// have no one to talk to.
+/// viewer's screenshots folder (Settings → Data & cache → Storage locations;
+/// the platform's Pictures tree by default). Feedback lands in the system
+/// notification area — the tray is most useful while the window is hidden,
+/// where a toast would have no one to talk to.
 Future<void> captureRoomScreenshot(WidgetRef ref) async {
   final room = ref.read(roomProvider);
   final handle = room.handle;
@@ -25,17 +27,24 @@ Future<void> captureRoomScreenshot(WidgetRef ref) async {
       await _notify(t.settings.trayScreenshotFailed);
       return;
     }
-    final path = await _write(bytes, platform: detail.ref.platform, roomId: detail.ref.roomId);
+    final path = await _write(
+      bytes,
+      directory: ref.read(appPathsProvider).screenshots,
+      platform: detail.ref.platform,
+      roomId: detail.ref.roomId,
+    );
     await _notify(t.settings.trayScreenshotSaved(path: path));
   } on Object {
     await _notify(t.settings.trayScreenshotFailed);
   }
 }
 
-Future<String> _write(List<int> bytes, {required String platform, required String roomId}) async {
-  final home = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'];
-  final root = home == null ? Directory.systemTemp.path : '$home${Platform.pathSeparator}Pictures';
-  final directory = Directory('$root${Platform.pathSeparator}PureLive');
+Future<String> _write(
+  List<int> bytes, {
+  required Directory directory,
+  required String platform,
+  required String roomId,
+}) async {
   await directory.create(recursive: true);
   final stamp = DateTime.now();
   String two(int value) => value.toString().padLeft(2, '0');

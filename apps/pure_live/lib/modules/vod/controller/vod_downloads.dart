@@ -600,6 +600,13 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       await sink.close();
       sink = null;
       if (stopped) return;
+      // A stream that ends early with a polite close is not a finished
+      // file: the row must not claim done over bytes it never received.
+      // The part file stays, so the retry resumes from it instead of
+      // shipping a truncated video.
+      if (total > 0 && received < total) {
+        throw HttpException('transfer ended at $received of $total bytes');
+      }
       final target = File(item.filePath);
       await _delete(target);
       final file = await scratch.rename(target.path);

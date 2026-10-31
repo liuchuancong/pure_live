@@ -1,4 +1,4 @@
-import 'dart:io' show HttpClient, HttpOverrides, SecurityContext;
+import 'dart:io' show HttpClient, HttpClientBasicCredentials, HttpOverrides, SecurityContext;
 
 import 'package:live_net/live_net.dart' show HttpProxyRoute, ProxyRoute;
 
@@ -29,7 +29,19 @@ final class AppProxyHttpOverrides extends HttpOverrides {
     if (lookup != null) {
       try {
         if (lookup() case final HttpProxyRoute route) {
-          client.findProxy = (_) => 'PROXY ${route.host}:${route.port}';
+          // The same route the app's own transport builds: the credential in the
+          // string Dart parses it from, plus the registration that puts it on a
+          // CONNECT tunnel — the one case a `PROXY host:port` string cannot
+          // reach. Third-party clients (WebDAV's) get no less than Dio does.
+          client.findProxy = (_) => route.ioRoute;
+          if (route.isAuthenticationRequired) {
+            client.addProxyCredentials(
+              route.host,
+              route.port,
+              '',
+              HttpClientBasicCredentials(route.username, route.password),
+            );
+          }
         }
       } on Object {
         // A failing lookup must not take the request down with it.

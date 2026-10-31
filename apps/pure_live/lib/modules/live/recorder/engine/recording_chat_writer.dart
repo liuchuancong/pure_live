@@ -1,10 +1,23 @@
 import 'dart:convert' show utf8;
 import 'dart:io';
 
-import 'package:live_sites/live_sites.dart' show LiveMessage, LiveMessageColor;
+import 'package:live_sites/live_sites.dart' show LiveMessage, LiveMessageColor, LiveMessageType;
 import 'package:media_core_danmaku/media_core_danmaku.dart' show DanmakuColor;
 import 'package:pure_live/shared/danmaku/danmaku.dart'
     show BilibiliDanmakuXml, DanmakuEntry, DanmakuFormat, SrtDanmaku, TextDanmaku;
+
+/// Whether the recorded danmaku takes a message of [type].
+///
+/// The chat is always kept, and a gift joins it only when the viewer asked for
+/// it — the reference's own independent switch. Everything else on the stream
+/// (audience counts, notices, entries, retractions) describes the room rather
+/// than what was said, and writing it would push the chat out of the sidecar a
+/// player shows.
+bool recordableDanmaku(LiveMessageType type, {required bool includeGifts}) => switch (type) {
+  LiveMessageType.chat => true,
+  LiveMessageType.gift => includeGifts,
+  _ => false,
+};
 
 /// Writes one recording session's live chat beside its video, in every format
 /// the viewer chose in Settings → 弹幕 → 弹幕文件.
@@ -78,7 +91,7 @@ final class RecordChatWriter {
   int get count => _entries.length;
 
   /// Adds [message] received at [receivedAt]; written at the next [flush].
-  /// Only chat messages are recorded (the reference saves chat, not gifts).
+  /// The caller decides what reaches this — see [recordableDanmaku].
   void add(LiveMessage message, {required DateTime receivedAt}) {
     if (_closed) return;
     final text = message.text.trim();

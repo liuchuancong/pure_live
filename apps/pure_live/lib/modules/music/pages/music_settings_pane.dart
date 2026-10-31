@@ -1770,13 +1770,12 @@ final class _EqNodeRow extends ConsumerWidget {
                   style: theme.typography.body.copyWith(color: node.enabled ? colors.text : colors.textMuted),
                 ),
               ),
-              Semantics(
-                button: true,
-                label: t.music.eqRemoveNode,
-                child: GestureDetector(
-                  onTap: () => unawaited(controller.removeNode(node.id)),
-                  child: DsIcon(DsIcons.trash2, size: 16, color: colors.textMuted),
-                ),
+              DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                semanticLabel: t.music.eqRemoveNode,
+                onPressed: () => unawaited(controller.removeNode(node.id)),
+                icon: DsIcon(DsIcons.trash2, size: 16, color: colors.textMuted),
               ),
             ],
           ),
@@ -2439,21 +2438,17 @@ final class MusicSyncPane extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          Semantics(
-                            button: true,
-                            label: t.music.syncRemoveDevice,
-                            child: GestureDetector(
-                              onTap: () async {
-                                await server.removeDevice(device.clientId);
-                                // The dialog may close over the removal; the list
-                                // has nowhere to repaint then.
-                                if (listContext.mounted) setState(() => devices = server.deviceView());
-                              },
-                              child: const Padding(
-                                padding: EdgeInsets.all(DsSpace.s4),
-                                child: DsIcon(DsIcons.trash2, size: 16),
-                              ),
-                            ),
+                          DsButton.icon(
+                            variant: DsButtonVariant.ghost,
+                            size: DsSize.sm,
+                            semanticLabel: t.music.syncRemoveDevice,
+                            onPressed: () async {
+                              await server.removeDevice(device.clientId);
+                              // The dialog may close over the removal; the list
+                              // has nowhere to repaint then.
+                              if (listContext.mounted) setState(() => devices = server.deviceView());
+                            },
+                            icon: const DsIcon(DsIcons.trash2, size: 16),
                           ),
                         ],
                       );
@@ -2500,28 +2495,24 @@ final class MusicSyncPane extends ConsumerWidget {
                       return Row(
                         children: [
                           Expanded(
-                            child: GestureDetector(
-                              onTap: () => Navigator.of(dialogContext).pop(host),
-                              behavior: HitTestBehavior.opaque,
-                              child: Padding(
+                            child: DsPressable(
+                              semanticLabel: host,
+                              onPressed: () => Navigator.of(dialogContext).pop(host),
+                              builder: (context, states, _) => Padding(
                                 padding: const EdgeInsets.symmetric(vertical: DsSpace.s8, horizontal: DsSpace.s4),
                                 child: Text(host, maxLines: 1, overflow: TextOverflow.ellipsis),
                               ),
                             ),
                           ),
-                          Semantics(
-                            button: true,
-                            label: t.music.syncRemoveHost,
-                            child: GestureDetector(
-                              onTap: () {
-                                setState(() => hosts = [...hosts]..removeAt(index));
-                                unawaited(controller.removeHostHistory(index));
-                              },
-                              child: const Padding(
-                                padding: EdgeInsets.all(DsSpace.s4),
-                                child: DsIcon(DsIcons.trash2, size: 16),
-                              ),
-                            ),
+                          DsButton.icon(
+                            variant: DsButtonVariant.ghost,
+                            size: DsSize.sm,
+                            semanticLabel: t.music.syncRemoveHost,
+                            onPressed: () {
+                              setState(() => hosts = [...hosts]..removeAt(index));
+                              unawaited(controller.removeHostHistory(index));
+                            },
+                            icon: const DsIcon(DsIcons.trash2, size: 16),
                           ),
                         ],
                       );

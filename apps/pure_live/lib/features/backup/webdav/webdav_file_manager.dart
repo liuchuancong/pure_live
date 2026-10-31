@@ -9,7 +9,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pure_live/features/backup/document/backup_document.dart';
-import 'package:pure_live/features/backup/document/backup_repository.dart' show backupSummaryProvider;
+import 'package:pure_live/features/backup/document/backup_repository.dart'
+    show BackupDocumentEmpty, BackupRecordingsBusy, backupSummaryProvider;
 import 'package:pure_live/features/backup/panes/backup_actions.dart'
     show applyBackup, captureBackupDocument, formatBackupSize, formatBackupTime, webDavClientFor;
 import 'package:pure_live/features/backup/webdav/webdav_accounts.dart';
@@ -501,6 +502,7 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
             follows: counts.follows,
             history: counts.history,
             areas: counts.areas,
+            recordings: counts.recordings,
             settings: counts.settings,
           );
     final confirmed = await showDsConfirm(
@@ -512,7 +514,20 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
       destructive: true,
     );
     if (!confirmed || !mounted) return;
-    await applyBackup(ref, document);
+    // The restore's refusals are messages the viewer can act on, not a
+    // transport failure; anything else keeps the server-error wording.
+    try {
+      await applyBackup(ref, document);
+    } on BackupRecordingsBusy {
+      if (mounted) _toast(t.backup.restoreRecordingsBusy, status: DsStatus.danger);
+      return;
+    } on BackupDocumentEmpty {
+      if (mounted) _toast(t.backup.restoreEmptyDocument, status: DsStatus.danger);
+      return;
+    } on Object catch (error) {
+      if (mounted) _toast(_messageOf(error), status: DsStatus.danger);
+      return;
+    }
     ref.invalidate(backupSummaryProvider);
     if (mounted) _toast(t.backup.webdavRestored, status: DsStatus.success);
   }

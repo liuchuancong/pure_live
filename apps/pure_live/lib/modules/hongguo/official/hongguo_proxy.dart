@@ -48,6 +48,13 @@ final class HongguoStreamProxy {
   /// Forgets every registered stream (the player page closed).
   void clear() => _entries.clear();
 
+  /// Forgets one registered stream by the [url] [register] handed out — a
+  /// download that ended with its address, so its entry does not linger.
+  void forget(String url) {
+    final segments = Uri.tryParse(url)?.pathSegments ?? const <String>[];
+    if (segments.length >= 2) _entries.remove(segments[0]);
+  }
+
   /// Stops the server.
   Future<void> close() async {
     clear();

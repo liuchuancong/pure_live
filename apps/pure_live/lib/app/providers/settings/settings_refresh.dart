@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderOrFamily;
+import 'package:pure_live/app/background/library/wallpaper_download_queue.dart' show wallpaperDownloadsProvider;
 import 'package:pure_live/app/background/settings/background_settings.dart' show backgroundSettingsProvider;
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show storageFolderOverridesProvider;
 import 'package:pure_live/app/providers/browse/browse_settings_providers.dart'
@@ -28,13 +29,29 @@ import 'package:pure_live/app/providers/theme/text_scale_provider.dart' show tex
 import 'package:pure_live/features/account/douyu_cookie_saved_at.dart' show douyuCookieSavedAtProvider;
 import 'package:pure_live/features/backup/backup.dart';
 import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/modules/hongguo/controller/hongguo_card_settings.dart' show hongguoCardSettingsProvider;
 import 'package:pure_live/modules/hongguo/hongguo.dart';
 import 'package:pure_live/modules/iptv/iptv.dart';
+import 'package:pure_live/modules/live/areas/controllers/areas_controller.dart' show areaLayoutProvider;
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/room/room.dart';
 import 'package:pure_live/modules/live/search/search.dart';
 import 'package:pure_live/modules/live/shield/shield.dart';
+import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart' show musicEqProvider;
+import 'package:pure_live/modules/music/controller/eq/music_eq_custom_presets.dart' show musicCustomPresetsProvider;
+import 'package:pure_live/modules/music/controller/music_open_api.dart'
+    show musicOpenApiGateProvider, musicOpenApiLanProvider, musicOpenApiPortProvider;
+import 'package:pure_live/modules/music/controller/music_source_swaps.dart' show musicSourceSwapsProvider;
+import 'package:pure_live/modules/music/controller/music_sync_server.dart'
+    show
+        musicSyncServerAuthCodeProvider,
+        musicSyncServerGateProvider,
+        musicSyncServerLanProvider,
+        musicSyncServerPortProvider,
+        musicSyncServerStatusProvider;
+import 'package:pure_live/modules/music/controller/music_ui_settings.dart'
+    show musicPlayerModeProvider, musicUiSettingsProvider;
 import 'package:pure_live/modules/music/music.dart';
 import 'package:pure_live/modules/vod/vod.dart';
 import 'package:pure_live/shared/shared.dart';
@@ -145,6 +162,38 @@ final List<ProviderOrFamily> kSettingsProviders = [
   splashSettingsProvider,
   textScaleFactorProvider,
   updateSettingsProvider,
+  // The controllers this pass had left out: the music module's own (its
+  // sources' swaps, the equaliser and its presets, the player's mode and
+  // surface choices, the open API and the sync server), the danmaku save
+  // formats, the areas page's layout and the two stations' card designs and
+  // download queue. Each reads a pref once and has to rebuild when a restore
+  // or another window writes it.
+  musicSourceSwapsProvider,
+  musicDownloadsProvider,
+  musicEqProvider,
+  musicCustomPresetsProvider,
+  musicUiSettingsProvider,
+  musicPlayerModeProvider,
+  musicOpenApiGateProvider,
+  musicOpenApiLanProvider,
+  musicOpenApiPortProvider,
+  musicSyncProvider,
+  musicSyncServerAuthCodeProvider,
+  musicSyncServerGateProvider,
+  musicSyncServerLanProvider,
+  musicSyncServerPortProvider,
+  musicSyncServerStatusProvider,
+  danmakuSaveFormatsProvider,
+  areaLayoutProvider,
+  hongguoCardSettingsProvider,
+  wallpaperDownloadsProvider,
+  vodDownloadSettingsProvider,
+  vodDownloadsProvider,
+  hongguoDownloadQualityProvider,
+  hongguoDownloadSettingsProvider,
+  hongguoDownloadsProvider,
+  vodDownloadQualityProvider,
+  vodDownloadDanmakuProvider,
 ];
 
 /// Marks the settings revision and rebuilds every cached settings provider.

@@ -10,6 +10,7 @@ import 'package:pure_live/layouts/desktop/desktop_layout.dart';
 import 'package:pure_live/layouts/location_breadcrumb.dart';
 import 'package:pure_live/layouts/mobile/mobile_layout.dart';
 import 'package:pure_live/modules/hongguo/hongguo.dart' show hongguoLibraryProvider;
+import 'package:pure_live/modules/music/widgets/music_now_playing_bar.dart' show MusicNowPlayingBar;
 import 'package:pure_live/shared/shared.dart';
 import 'package:responsive_breakpoints/responsive_breakpoints.dart' show TailwindBreakpoint;
 
@@ -381,12 +382,25 @@ final class _AppLayoutState extends ConsumerState<AppLayout> {
     // sidebar and the bottom bar, over the page. What is shown names it: a
     // tab the viewer switches to is kept alive off screen and never scrolls
     // on its own, so the pair has to be told to look again.
-    final shownContent = ScrollEdgeControls(
+    final page = ScrollEdgeControls(
       pageIdentity: inSettings
           ? '${module.name}/settings/${sectionOpen ? settingsSection.name : 'category/$settingsCategory'}'
           : '${module.name}/${selected.name}/',
       child: moduleContent,
     );
+    // The music module keeps its now-playing bar under every page — search,
+    // the lists, the local library, downloads, the effects page — the way the
+    // reference's bar follows the viewer; the bar itself is empty until a
+    // song is on air, and it takes the module's settings pages too.
+    final shownContent = module == AppModule.music
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: page),
+              const MusicNowPlayingBar(),
+            ],
+          )
+        : page;
 
     // A TV keeps the desktop shell even on a narrow logical canvas: the
     // drawer and bottom bar belong to thumbs, and this shell's sidebar is

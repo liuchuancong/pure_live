@@ -5,10 +5,10 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile, LiveRequest, LiveStreamedResponse;
-import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart'
     show appPathsProvider, networkFactoryProvider;
+import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/features/version/release_builds.dart' show ReleaseBuild, formatReleaseSize;
 import 'package:pure_live/l10n/translations.dart';
 
@@ -162,11 +162,7 @@ final class _UpdateDownloadDialogState extends ConsumerState<UpdateDownloadDialo
   }
 
   Future<void> _open(String path) async {
-    final t = context.t;
-    final result = await OpenFile.open(path);
-    if (result.type != ResultType.done && mounted) {
-      showDsToast(context: context, title: t.settings.downloadOpenFailed, status: DsStatus.danger);
-    }
+    await openDownloadedPath(context, path);
   }
 
   /// A failure in the viewer's terms: the transport's own words are noise, so

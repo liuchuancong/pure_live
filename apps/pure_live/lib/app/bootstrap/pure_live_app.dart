@@ -16,7 +16,7 @@ import 'package:pure_live/app/bootstrap/live_scroll_behavior.dart' show LiveScro
 import 'package:pure_live/app/bootstrap/proxy_http_overrides.dart' show appProxyLookup;
 import 'package:pure_live/app/logging/app_log.dart' show appLog;
 import 'package:pure_live/app/providers/providers.dart';
-import 'package:pure_live/app/routing/router/app_router.dart' show appRouterProvider;
+import 'package:pure_live/app/routing/router/app_router.dart' show RecorderRoute, appRouterProvider;
 import 'package:pure_live/app/theme/fonts/font_defaults.dart' show loadGoogleFont;
 import 'package:pure_live/app/theme/fonts/free_font_store.dart' show freeFontStoreProvider;
 import 'package:pure_live/app/theme/settings/stored_theme.dart' show readStoredAppThemeSettings;
@@ -71,6 +71,10 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     // The process-wide proxy hook: a client created by any package asks here
     // which route is in force at the moment it opens its connection.
     appProxyLookup = () => ref.read(appProxyRouteProvider);
+    // A recording's toast names its take, but the path it carries is the one the
+    // post-recording rename moves: the recorder centre is where the viewer can
+    // still act on it, and it is one route away from wherever they are.
+    recordingTapHandler = () => ref.read(appRouterProvider).go(const RecorderRoute().location);
     // The stored choices land before the first frame builds, so the boot
     // never flashes the defaults. The settings' own builder hook supplies
     // the defaults; the store only overrides what the viewer pinned.

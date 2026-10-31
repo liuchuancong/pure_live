@@ -57,14 +57,27 @@ typedef LiveAlertTapHandler = void Function(String identityKey);
 /// before it is set (a cold start) opens the app without a room.
 LiveAlertTapHandler? liveAlertTapHandler;
 
+/// Handles a tapped notification that is not a live alert — the recorder's
+/// "saved" and "failed" toasts.
+///
+/// The payload those carry is the take's directory, which the post-recording
+/// rename moves, so opening it would open nothing: the useful destination is
+/// the recorder centre. Set once by the app shell, where the router exists; a
+/// tap before that (a cold start) brings the app forward without navigating,
+/// the same as a live alert without a watcher.
+void Function()? recordingTapHandler;
+
 /// The one id a room's alert reuses, so a second broadcast replaces the
 /// first instead of stacking.
 int liveAlertNotificationId(String identityKey) => 0x50000000 + (identityKey.hashCode & 0x0fffffff);
 
 void _onNotifyTap(NotifyTap tap) {
   final payload = tap.payload;
-  if (payload == null || !payload.startsWith(kLiveAlertPayloadPrefix)) return;
-  liveAlertTapHandler?.call(payload.substring(kLiveAlertPayloadPrefix.length));
+  if (payload != null && payload.startsWith(kLiveAlertPayloadPrefix)) {
+    liveAlertTapHandler?.call(payload.substring(kLiveAlertPayloadPrefix.length));
+    return;
+  }
+  recordingTapHandler?.call();
 }
 
 /// Turns user-facing notifications on once per process.

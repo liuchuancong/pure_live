@@ -11,7 +11,7 @@ import 'package:pure_live/modules/music/controller/eq/music_eq_custom_presets.da
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart';
 import 'package:pure_live/modules/music/pages/music_settings_pane.dart' show MusicEqPane, MusicFxRow;
-import 'package:pure_live/shared/shared.dart' show cachedImage;
+import 'package:pure_live/shared/shared.dart' show TvFocusScale, cachedImage;
 
 /// The sound-effect center — the spec's own page, drawn after the streaming
 /// apps' own effect rooms: the current track's cover sits blurred behind the
@@ -70,14 +70,7 @@ final class MusicEqCenterPage extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(child: Text(t.music.eqCenterRecommended, style: theme.typography.heading)),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => unawaited(_pickPreset(context)),
-                      child: Text(
-                        '${t.music.eqMorePresets} ›',
-                        style: theme.typography.caption.copyWith(color: colors.accent),
-                      ),
-                    ),
+                    DsLink(label: '${t.music.eqMorePresets} ›', onPressed: () => unawaited(_pickPreset(context))),
                   ],
                 ),
                 LayoutBuilder(
@@ -399,38 +392,40 @@ final class _GalleryCard extends ConsumerWidget {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: DsSpace.s12, horizontal: DsSpace.s4),
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(theme.radii.control(36)),
-          border: Border.all(
-            color: selected ? colors.accent : colors.border.withValues(alpha: 0.4),
-            width: selected ? 2 : 1,
+    return TvFocusScale(
+      child: DsPressable(
+        semanticLabel: name,
+        onPressed: onTap,
+        builder: (context, states, _) => Container(
+          padding: const EdgeInsets.symmetric(vertical: DsSpace.s12, horizontal: DsSpace.s4),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(theme.radii.control(36)),
+            border: Border.all(
+              color: selected ? colors.accent : colors.border.withValues(alpha: 0.4),
+              width: selected ? 2 : 1,
+            ),
           ),
-        ),
-        child: Column(
-          spacing: DsSpace.s6,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: tint),
-                borderRadius: BorderRadius.circular(theme.radii.control(36)),
+          child: Column(
+            spacing: DsSpace.s6,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: tint),
+                  borderRadius: BorderRadius.circular(theme.radii.control(36)),
+                ),
+                child: Center(child: DsIcon(icon, size: 22, color: const Color(0xFFFFFFFF))),
               ),
-              child: Center(child: DsIcon(icon, size: 22, color: const Color(0xFFFFFFFF))),
-            ),
-            Text(name, style: theme.typography.body, overflow: TextOverflow.ellipsis),
-            Text(
-              selected ? t.music.eqInUse : tag,
-              style: theme.typography.caption.copyWith(color: selected ? colors.accent : colors.textMuted),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              Text(name, style: theme.typography.body, overflow: TextOverflow.ellipsis),
+              Text(
+                selected ? t.music.eqInUse : tag,
+                style: theme.typography.caption.copyWith(color: selected ? colors.accent : colors.textMuted),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -589,17 +584,12 @@ final class _MyPresetsList extends ConsumerWidget {
                             onPressed: () => unawaited(eqController.applyCustomPreset(preset)),
                             child: Text(t.music.eqUse),
                           ),
-                        Semantics(
-                          button: true,
-                          label: t.music.eqRemovePreset,
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => unawaited(custom.remove(preset.id)),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s4),
-                              child: DsIcon(DsIcons.trash2, size: 16, color: colors.textMuted),
-                            ),
-                          ),
+                        DsButton.icon(
+                          variant: DsButtonVariant.ghost,
+                          size: DsSize.sm,
+                          semanticLabel: t.music.eqRemovePreset,
+                          onPressed: () => unawaited(custom.remove(preset.id)),
+                          icon: DsIcon(DsIcons.trash2, size: 16, color: colors.textMuted),
                         ),
                       ],
                     ),

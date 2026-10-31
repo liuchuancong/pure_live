@@ -8,6 +8,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_library.dart';
 import 'package:pure_live/modules/music/controller/music_playback.dart';
+import 'package:pure_live/modules/music/widgets/music_actions.dart' show listenPlaybackErrors;
 import 'package:pure_live/modules/music/widgets/music_lyric_panel.dart';
 import 'package:pure_live/modules/music/widgets/music_quality_pill.dart';
 import 'package:pure_live/modules/music/widgets/music_queue_panel.dart' show MusicQueuePanel;
@@ -57,6 +58,9 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
     final controller = ref.read(musicPlayerProvider.notifier);
     final favourites = ref.watch(musicFavouritesProvider);
     final favouriteController = ref.read(musicFavouritesProvider.notifier);
+    // A failed song must say so before it skips away — the bar is the one
+    // strip alive under every page of the module.
+    listenPlaybackErrors(context, ref);
     final track = state.track;
     if (track == null) return const SizedBox.shrink();
     final duration = state.duration.inMilliseconds;
@@ -156,20 +160,17 @@ final class MusicNowPlayingBarState extends ConsumerState<MusicNowPlayingBar> {
                 child: Row(
                   spacing: DsSpace.s8,
                   children: [
-                    Semantics(
-                      button: true,
-                      label: t.music.openPlayer,
-                      child: GestureDetector(
-                        onTap: () => unawaited(context.push(RouteNames.musicPlayer)),
-                        child: MusicArtwork(track: track),
-                      ),
+                    DsPressable(
+                      semanticLabel: t.music.openPlayer,
+                      onPressed: () => unawaited(context.push(RouteNames.musicPlayer)),
+                      builder: (context, states, _) => MusicArtwork(track: track),
                     ),
                     Expanded(
                       flex: 3,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => unawaited(context.push(RouteNames.musicPlayer)),
-                        child: Column(
+                      child: DsPressable(
+                        semanticLabel: t.music.openPlayer,
+                        onPressed: () => unawaited(context.push(RouteNames.musicPlayer)),
+                        builder: (context, states, _) => Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           spacing: DsSpace.s3,
                           children: [

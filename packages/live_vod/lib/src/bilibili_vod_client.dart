@@ -803,6 +803,32 @@ final class BilibiliVodClient {
     return _playInfoOf(data, qn: qn);
   }
 
+  /// Resolves a PGC episode's download address: the muxed MP4 (`fnval=0`)
+  /// served as a single file, the same shape the station's video download
+  /// asks for. A signed, short-lived address — resolve it per attempt.
+  Future<VodPlayInfo> pgcDownloadPart({required int episodeId, int? cid, int? aid, int qn = 80}) async {
+    final query = await _signed({
+      'ep_id': '$episodeId',
+      if (cid != null) 'cid': '$cid',
+      if (aid != null) 'avid': '$aid',
+      'qn': '$qn',
+      'fnval': '0',
+      'fnver': '0',
+      'fourk': '1',
+    });
+    final response = await http.send(
+      LiveRequest.custom(
+        method: 'GET',
+        url: Uri.https('api.bilibili.com', '/pgc/player/web/playurl', query),
+        headers: {..._headers, 'referer': 'https://www.bilibili.com'},
+      ),
+    );
+    final body = _body(response);
+    final data = body['result'] ?? body['data'];
+    if (data is! Map) throw const VodFailure('the episode returned no download data');
+    return _playInfoOf(data, qn: qn);
+  }
+
   /// Signs [params] with the cached WBI key pair and the current time.
   Future<Map<String, String>> _signed(Map<String, String> params) async {
     final keys = await _ensureWbiKeys();

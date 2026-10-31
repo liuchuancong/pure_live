@@ -437,9 +437,11 @@ extension _ReserveAction on _RelatedSectionState {
       unawaited(ref.read(hongguoReservationsProvider.notifier).refresh());
       if (!mounted) return;
       showDsToast(context: this.context, title: t.hongguo.reserved);
-    } on Object catch (error) {
+    } on Object {
       if (!mounted) return;
-      showDsToast(context: this.context, title: '$error');
+      // The transport's own words are noise here; the toast names what the
+      // viewer was trying to do and stays openable on a retry.
+      showDsToast(context: this.context, title: t.hongguo.reserveFailed, status: DsStatus.danger);
     }
   }
 }

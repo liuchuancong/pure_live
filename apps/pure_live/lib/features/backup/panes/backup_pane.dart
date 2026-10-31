@@ -8,7 +8,8 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart';
 import 'package:pure_live/features/backup/panes/backup_actions.dart';
-import 'package:pure_live/features/settings/settings.dart';
+import 'package:pure_live/features/settings/surface/settings_child_entry.dart' show SettingsChildEntry;
+import 'package:pure_live/features/settings/surface/settings_sections.dart';
 import 'package:pure_live/l10n/translations.dart';
 
 /// The one action running: the other rows grey out and the running row
@@ -16,7 +17,8 @@ import 'package:pure_live/l10n/translations.dart';
 enum _BackupAction { createAll, createFollows, folder, openFolder, restoreFile, deleteFile }
 
 /// The backup and restore page: one JSON document bundles the followed
-/// rooms, the watch history, the followed areas and the settings subset.
+/// rooms, the watch history, the followed areas, the recording tasks and
+/// the settings subset.
 /// The page writes it as a file in a local backup folder — a full document
 /// or a follows-only one — lists what the folder holds (newest first) and
 /// restores or deletes one file at a time behind a confirm. The WebDAV
@@ -63,8 +65,8 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
     });
     try {
       await work();
-    } on Object {
-      if (mounted) _toast(_failureMessage(action));
+    } on Object catch (error) {
+      if (mounted) _toast(_failureMessage(action, error));
     } finally {
       if (mounted) {
         setState(() {
@@ -75,8 +77,11 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
     }
   }
 
-  String _failureMessage(_BackupAction action) {
+  String _failureMessage(_BackupAction action, Object error) {
     final t = context.t;
+    // A refusal of its own: the pane says why the data was left alone.
+    if (error is BackupRecordingsBusy) return t.backup.restoreRecordingsBusy;
+    if (error is BackupDocumentEmpty) return t.backup.restoreEmptyDocument;
     return switch (action) {
       _BackupAction.createAll || _BackupAction.createFollows => t.backup.createFailed,
       _BackupAction.folder => t.backup.folderSaveFailed,
@@ -233,6 +238,7 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
       follows: counts.follows,
       history: counts.history,
       areas: counts.areas,
+      recordings: counts.recordings,
       settings: counts.settings,
     );
   }
@@ -309,6 +315,7 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
                         follows: summary.follows,
                         history: summary.history,
                         areas: summary.areas,
+                        recordings: summary.recordings,
                         settings: summary.settings,
                       ),
               ),
@@ -331,6 +338,13 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
                   : null,
               trailing: spinner(_BackupAction.createFollows),
             ),
+          ],
+        ),
+        // Where the files land is its own subject: a folder, its way back
+        // and the way into it, not another backup action.
+        DsListSection(
+          header: Text(t.backup.folderSection),
+          children: [
             DsListRow(
               leading: const DsIcon(DsIcons.folder),
               title: Text(_customFolder ? t.backup.folderTitle : t.backup.folderDefault),

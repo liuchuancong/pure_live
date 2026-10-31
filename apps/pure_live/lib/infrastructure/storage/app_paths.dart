@@ -1,4 +1,4 @@
-import 'dart:io' show Directory;
+import 'dart:io' show Directory, Platform;
 
 import 'package:path/path.dart' as p;
 
@@ -76,8 +76,31 @@ final class AppPaths {
   /// big media files, so they sit with the other downloads.
   Directory get recordings => downloadFolder('recordings');
 
+  /// Room frames the tray's screenshot action saved. The default follows the
+  /// platform's Pictures folder under the product's namespace, so the shots
+  /// sit beside the viewer's own pictures without scattering; a host without
+  /// a home directory falls back to the data tree.
+  Directory get screenshots {
+    final home = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'];
+    return home == null || home.isEmpty
+        ? Directory(p.join(areas.data.path, 'screenshots'))
+        : Directory(p.join(home, 'Pictures', namespace));
+  }
+
   /// The log files and their rotation.
   Directory get logs => Directory(p.join(areas.data.path, 'logs'));
+
+  /// Certificate material the app copies out of its assets: the CA bundle
+  /// FFmpeg's OpenSSL build needs on platforms whose compile-time path does
+  /// not exist. Kept in the persistent area, not the clearable cache.
+  Directory get certificates => Directory(p.join(areas.data.path, 'certificates'));
+
+  /// The claims a running capture holds, one file per task.
+  ///
+  /// Cross-window state the operating system enforces: a lock file released
+  /// when the process ends, so two windows cannot capture the same room and a
+  /// crash leaves no stale claim behind.
+  Directory get recordingClaims => Directory(p.join(areas.data.path, 'recording_claims'));
 
   /// Background media the viewer imported, and the thumbnails the tone
   /// sampler derives from it.

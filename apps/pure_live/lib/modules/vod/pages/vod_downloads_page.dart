@@ -207,10 +207,12 @@ final class _VodTaskRow extends ConsumerWidget {
     final moving = task.phase == VodDownloadPhase.running || task.phase == VodDownloadPhase.paused;
     final caption = switch (task.phase) {
       VodDownloadPhase.queued => t.vod.downloadPhaseQueued,
-      VodDownloadPhase.running when total > 0 =>
-        '${t.vod.downloading(percent: task.received * 100 ~/ total)}'
-            ' · ${_formatBytes(task.speed)}/s'
-            ' · ${_formatBytes(task.received)} / ${_formatBytes(total)}',
+      VodDownloadPhase.running when total > 0 => [
+        t.vod.downloading(percent: task.received * 100 ~/ total),
+        '${_formatBytes(task.speed)}/s',
+        '${_formatBytes(task.received)} / ${_formatBytes(total)}',
+        ?_etaOf(t, speed: task.speed, total: total, received: task.received),
+      ].join(' · '),
       VodDownloadPhase.running => t.vod.downloadingUnknown,
       VodDownloadPhase.paused when total > 0 =>
         '${t.vod.downloadPhasePaused} · ${task.received * 100 ~/ total}% · ${_formatBytes(task.received)} / ${_formatBytes(total)}',
@@ -346,6 +348,18 @@ String _formatBytes(int bytes) {
     unit++;
   }
   return unit == 0 ? '${value.round()} B' : '${value.toStringAsFixed(1)} ${units[unit]}';
+}
+
+/// The remaining time the caption carries when it can be computed at all:
+/// a known speed and bytes still owed — otherwise the fact is left out
+/// rather than guessed.
+String? _etaOf(Translations t, {required int speed, required int total, required int received}) {
+  if (speed <= 0 || received >= total) return null;
+  final seconds = (total - received) ~/ speed;
+  final hours = seconds ~/ 3600;
+  final mm = ((seconds % 3600) ~/ 60).toString().padLeft(2, '0');
+  final ss = (seconds % 60).toString().padLeft(2, '0');
+  return t.vod.downloadEta(time: hours > 0 ? '$hours:$mm:$ss' : '$mm:$ss');
 }
 
 /// What the manager's filter shows.

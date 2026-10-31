@@ -77,6 +77,10 @@ enum NavigationItem {
   /// followed rooms, the site's areas and its recommended live feed.
   vodLive(DsIcons.tvMinimal),
 
+  /// The video station's download queue, the reference's 下载管理: the
+  /// tasks on their lanes and the files they land in.
+  vodDownloads(DsIcons.download),
+
   /// The IPTV module's playlists and guide sources.
   iptvSources(DsIcons.radioTower),
 
@@ -88,6 +92,12 @@ enum NavigationItem {
 
   /// The IPTV module's watch history, the reference's 最近观看.
   iptvRecent(DsIcons.history),
+
+  /// The music module's picks, the reference's 推荐 rail entry.
+  musicRecommend(DsIcons.sparkles),
+
+  /// The source's curated playlists, the reference's 精选 rail entry.
+  musicFeatured(DsIcons.compass),
 
   /// The music module's own entry, the reference's 搜索 rail entry.
   music(DsIcons.search),
@@ -135,6 +145,10 @@ enum NavigationItem {
   /// The hongguo station's account (登录/账户管理).
   hongguoAccount(DsIcons.circleUser),
 
+  /// The hongguo station's download queue, the 下载管理: the episodes on
+  /// their lanes and the files they land in.
+  hongguoDownloads(DsIcons.download),
+
   /// The hongguo station's search.
   hongguoSearch(DsIcons.search);
 
@@ -167,10 +181,13 @@ enum NavigationItem {
     NavigationItem.vodSearch => t.vod.search,
     NavigationItem.vodPersonal => t.vod.personal,
     NavigationItem.vodLive => t.vod.live,
+    NavigationItem.vodDownloads => t.navigation.vodDownloads,
     NavigationItem.iptvSources => t.navigation.iptvSources,
     NavigationItem.iptvGuide => t.navigation.iptvGuide,
     NavigationItem.iptvFavorites => t.iptv.favouritesTitle,
     NavigationItem.iptvRecent => t.iptv.recentTitle,
+    NavigationItem.musicRecommend => t.navigation.musicRecommend,
+    NavigationItem.musicFeatured => t.navigation.musicFeatured,
     NavigationItem.music => t.music.search,
     NavigationItem.musicSonglist => t.navigation.musicSonglist,
     NavigationItem.musicToplist => t.navigation.musicToplist,
@@ -186,6 +203,7 @@ enum NavigationItem {
     NavigationItem.hongguoHistory => t.hongguo.navHistory,
     NavigationItem.hongguoReservations => t.hongguo.navReservations,
     NavigationItem.hongguoAccount => t.hongguo.navAccount,
+    NavigationItem.hongguoDownloads => t.navigation.hongguoDownloads,
     NavigationItem.hongguoSearch => t.hongguo.navSearch,
   };
 }

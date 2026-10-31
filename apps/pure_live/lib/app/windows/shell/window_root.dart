@@ -25,6 +25,7 @@ import 'package:pure_live/modules/live/multiview/multiview.dart'
     show MultiviewPlaybackController, multiviewPlaybackProvider;
 import 'package:pure_live/modules/live/room/room.dart';
 import 'package:pure_live/modules/music/music.dart' show MusicPlayerController, musicPlayerProvider;
+import 'package:pure_live/shared/player/cast_dialog.dart';
 
 /// One OS window's root.
 ///

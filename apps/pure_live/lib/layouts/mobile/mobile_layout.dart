@@ -76,12 +76,20 @@ final class MobileLayout extends ConsumerWidget {
   /// bar has no badge slot; a destination missing here shows none.
   final Map<NavigationItem, int> badges;
 
+  /// How many destinations a phone's bottom bar keeps; the platform
+  /// guidance and every common client agree on five.
+  static const int kMaxBottomTabs = 5;
+
   /// The bar's destinations: the module's feeds, the shape a phone's tab
   /// bar takes in every common client. Live follows the navigation
-  /// setting's saved menu, the recording centre included. Settings is not a
-  /// tab: it opens from the drawer and steps back from its own top bar.
+  /// setting's saved menu up to [kMaxBottomTabs]. Settings is not a tab: it
+  /// opens from the drawer and steps back from its own top bar.
   List<NavigationItem> bottomTabsOf(AppModule module) => switch (module) {
-    AppModule.live => homeMenuItems.isEmpty ? kHomeMenuItems : homeMenuItems,
+    // A bottom bar reads at a glance only up to five destinations; the rest
+    // of the module's menu stays one tap away in the drawer, which lists
+    // exactly what the bar leaves out. Cramming nine feeds into a phone's
+    // width was shrinking every label to ellipses.
+    AppModule.live => (homeMenuItems.isEmpty ? kHomeMenuItems : homeMenuItems).take(kMaxBottomTabs).toList(),
     AppModule.iptv => const [
       NavigationItem.channels,
       NavigationItem.iptvFavorites,
@@ -95,6 +103,7 @@ final class MobileLayout extends ConsumerWidget {
       NavigationItem.vodPgc,
     ],
     AppModule.music => const [
+      NavigationItem.musicRecommend,
       NavigationItem.music,
       NavigationItem.musicSonglist,
       NavigationItem.musicToplist,
@@ -304,7 +313,7 @@ final class MobileLayout extends ConsumerWidget {
               // (the reference's GlassBarInset): the bar's reach plus the
               // system strip, handed down as the bottom padding pages add.
               data: MediaQuery.of(context).copyWith(
-                padding: MediaQuery.of(context).padding.copyWith(bottom: safeBottom + LiquidGlassMetrics.barOverlap),
+                padding: MediaQuery.paddingOf(context).copyWith(bottom: safeBottom + LiquidGlassMetrics.barOverlap),
               ),
               child: content,
             )

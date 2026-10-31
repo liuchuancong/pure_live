@@ -4,12 +4,13 @@ import 'dart:math' as math;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/room/room_card_settings.dart'
     show kRoomCardListDesignHeight, roomCardTileHeight;
+import 'package:pure_live/features/settings/settings.dart' show SettingsSection, openSettingsSection;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/live/history/history_limit_dialog.dart';
 import 'package:pure_live/modules/live/history/history_repository.dart';
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/shared/shared.dart';
@@ -108,7 +109,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
           busy: _busy,
           canClear: shown.isNotEmpty,
           onOpenFilter: () => unawaited(_openFilter(history.records)),
-          onEditLimit: () => unawaited(_editLimit()),
+          onOpenSettings: _openSettings,
           onRefresh: () => unawaited(_refreshAll(history.records)),
           onClear: () => unawaited(_clear()),
         ),
@@ -399,19 +400,11 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     );
   }
 
-  Future<void> _editLimit() async {
-    if (_busy) return;
-    final saved = await showHistoryLimitDialog(
-      context,
-      limit: ref.read(historyLimitProvider),
-      save: (limit) => ref.read(historyLimitProvider.notifier).setLimit(limit),
-    );
-    if (!mounted || saved == null) return;
-    showDsToast(
-      context: context,
-      title: context.t.history.limitSaved(limit: saved),
-      status: DsStatus.success,
-    );
+  /// The gear opens the settings surface at the data section — where the
+  /// watch history's cap lives — the same page the sidebar reaches.
+  void _openSettings() {
+    openSettingsSection(ref, SettingsSection.dataCache);
+    unawaited(context.push(SettingsSectionRoute(section: SettingsSection.dataCache.name).location));
   }
 
   /// Runs [change] once at a time, then says it worked or that it failed.
@@ -483,7 +476,7 @@ final class _Header extends ConsumerWidget {
     required this.busy,
     required this.canClear,
     required this.onOpenFilter,
-    required this.onEditLimit,
+    required this.onOpenSettings,
     required this.onRefresh,
     required this.onClear,
   });
@@ -499,7 +492,7 @@ final class _Header extends ConsumerWidget {
   final bool busy;
   final bool canClear;
   final VoidCallback onOpenFilter;
-  final VoidCallback onEditLimit;
+  final VoidCallback onOpenSettings;
   final VoidCallback onRefresh;
   final VoidCallback onClear;
 
@@ -557,9 +550,9 @@ final class _Header extends ConsumerWidget {
               onPressed: busy || total == 0 ? null : onRefresh,
             ),
             DsMenuItem(
-              leading: const DsIcon(DsIcons.gauge, size: 16),
-              label: Text(t.history.limitAction),
-              onPressed: busy ? null : onEditLimit,
+              leading: const DsIcon(DsIcons.settings, size: 16),
+              label: Text(t.navigation.settings),
+              onPressed: onOpenSettings,
             ),
             const DsMenuDivider(),
             DsMenuItem(
@@ -612,9 +605,9 @@ final class _Header extends ConsumerWidget {
                   DsButton.icon(
                     variant: DsButtonVariant.ghost,
                     size: DsSize.sm,
-                    semanticLabel: t.history.limitAction,
-                    onPressed: busy ? null : onEditLimit,
-                    icon: const DsIcon(DsIcons.gauge, size: 16),
+                    semanticLabel: t.navigation.settings,
+                    onPressed: onOpenSettings,
+                    icon: const DsIcon(DsIcons.settings, size: 16),
                   ),
                   DsButton(
                     variant: DsButtonVariant.dangerSoft,

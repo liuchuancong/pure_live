@@ -4,11 +4,19 @@ import 'package:pure_live/app/logging/app_log.dart';
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 
 /// What the log tree is configured to do right now: the minimum level the
-/// sinks see, whether a file is written, how large one file may grow, and
-/// which folder the files live in. Neither the console nor the folder keeps a
-/// count limit: a record is forgotten only when the process ends, and a file
-/// only gives way to the next one at the size limit.
-typedef LogSettings = ({LogLevel level, bool fileEnabled, int fileMaxBytes, String directory});
+/// sinks see, whether a file is written, how large one file may grow, how
+/// many rotating files are kept (zero keeps all) and which folder the files
+/// live in. The console itself keeps no count limit: a record is forgotten
+/// only when the process ends.
+typedef LogSettings = ({
+  LogLevel level,
+  bool fileEnabled,
+  int fileMaxBytes,
+  int filesKept,
+  String fileName,
+  LogExportFormat exportFormat,
+  String directory,
+});
 
 /// Owns the log configuration. Every write goes through the app's log tree so
 /// the running sinks change with the stored preference, and a refresh (another
@@ -33,6 +41,15 @@ final class LogSettingsController extends Notifier<LogSettings> {
   /// The size one file reaches before the sink rotates to the next.
   Future<void> setFileMaxBytes(int bytes) async => _apply(() => setAppLogFileMaxBytes(bytes));
 
+  /// How many rotating files are kept, the live one included; zero keeps all.
+  Future<void> setFilesKept(int files) async => _apply(() => setAppLogFilesKept(files));
+
+  /// The base name the rotating files carry; the sink reopens under it.
+  Future<void> setFileName(String name) async => _apply(() => setAppLogBaseName(name));
+
+  /// How a saved copy encodes the records.
+  Future<void> setExportFormat(LogExportFormat format) async => _apply(() => setAppLogExportFormat(format));
+
   void _apply(void Function() write) {
     write();
     state = _current();
@@ -42,6 +59,9 @@ final class LogSettingsController extends Notifier<LogSettings> {
     level: appLogLevel,
     fileEnabled: appLogFileEnabled,
     fileMaxBytes: appLogFileMaxBytes,
+    filesKept: appLogFilesKept,
+    fileName: appLogBaseName,
+    exportFormat: appLogExportFormat,
     directory: appLogDirectoryPath ?? '',
   );
 }

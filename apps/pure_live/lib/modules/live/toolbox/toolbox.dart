@@ -4,6 +4,7 @@
 library;
 
 export 'direct_link_dialog.dart';
+export 'log_settings_section.dart';
 export 'logs_page.dart';
 export 'toolbox_controllers.dart';
 export 'toolbox_page.dart';

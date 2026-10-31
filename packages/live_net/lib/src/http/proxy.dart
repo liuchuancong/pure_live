@@ -1,3 +1,5 @@
+import 'dart:convert' show base64Encode, utf8;
+
 /// Proxy routing decisions for outgoing requests.
 ///
 /// A [ProxyPolicy] answers "which route should this request take". Routes are
@@ -35,7 +37,13 @@ final class SystemProxyRoute extends ProxyRoute {
 final class HttpProxyRoute extends ProxyRoute {
   /// Routes through [host]:[port]; [port] defaults to the common local proxy
   /// port 7897.
-  const new({required this.host, this.port = 7897});
+  ///
+  /// [username] and [password] are the proxy's own credentials. An empty pair
+  /// leaves the route unauthenticated; a filled one belongs to *this* endpoint
+  /// and is never presented to another — which is the property that has to hold
+  /// before a stored password is safe to hand out at all, and it is measured in
+  /// the app's `test/app/proxy_credentials_test.dart`.
+  const new({required this.host, this.port = 7897, this.username = '', this.password = ''});
 
   /// Proxy host name or IP.
   final String host;
@@ -43,6 +51,49 @@ final class HttpProxyRoute extends ProxyRoute {
   /// Proxy port; defaults to the common local proxy port 7897.
   final int port;
 
+  /// The proxy's username.
+  final String username;
+
+  /// The proxy's password. It never enters [key], [toString], or equality, so
+  /// the string a transport pool is labelled with and a log prints cannot carry
+  /// it out of this object.
+  final String password;
+
+  /// Whether this endpoint asks for a credential at all.
+  ///
+  /// Both halves are required: a username with no password is a half-typed
+  /// entry, and `Basic` of a blank password would be answered with a 407 the
+  /// caller cannot explain.
+  bool get isAuthenticationRequired => username.isNotEmpty && password.isNotEmpty;
+
+  /// The string dart:io's `findProxy` must be handed to authenticate a route.
+  ///
+  /// `user:pass@host:port` — and deliberately **without** a scheme:
+  /// `_ProxyConfiguration` cuts the userinfo at the last `@` and then at the
+  /// *first* colon, so `PROXY http://user:pass@host:port` reaches the proxy with
+  /// a username of `http://user`.
+  String get ioRoute => isAuthenticationRequired ? 'PROXY $username:$password@$host:$port' : key;
+
+  /// The `http://host:port` form FFmpeg's `-http_proxy` and mpv's `http-proxy`
+  /// take.
+  ///
+  /// [includeCredentials] is a caller's promise that *that* library parses the
+  /// userinfo as its documentation says: mpv does, FFmpeg does not — its
+  /// `-http_proxy` reads a bare `host:port` and would fold the credential into
+  /// the hostname — so an authenticated endpoint reaches FFmpeg through a
+  /// [proxyAuthorizationHeader] instead.
+  String url({bool includeCredentials = false}) {
+    final hostPort = host.contains(':') && !host.startsWith('[') ? '[$host]:$port' : '$host:$port';
+    if (!includeCredentials || !isAuthenticationRequired) return 'http://$hostPort';
+    return 'http://${Uri.encodeComponent(username)}:${Uri.encodeComponent(password)}@$hostPort';
+  }
+
+  /// The `Proxy-Authorization` value for this endpoint, or null when it asks for
+  /// nothing: `Basic` over `user:pass`, as an HTTP proxy expects.
+  String? get proxyAuthorizationHeader =>
+      isAuthenticationRequired ? 'Basic ${base64Encode(utf8.encode('$username:$password'))}' : null;
+
+  /// The identity this route is pooled and logged under: host and port only.
   @override
   String get key => 'http://$host:$port';
 

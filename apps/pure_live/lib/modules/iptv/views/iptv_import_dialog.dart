@@ -107,6 +107,7 @@ final class _PlaylistImportDialogState extends ConsumerState<_PlaylistImportDial
       description: t.iptv.replaceMessage,
       confirmLabel: t.iptv.importAction,
       cancelLabel: t.common.cancel,
+      destructive: true,
     );
   }
 
@@ -285,6 +286,7 @@ final class _GuideImportDialogState extends ConsumerState<_GuideImportDialog> {
       description: t.iptv.replaceMessage,
       confirmLabel: t.iptv.importAction,
       cancelLabel: t.common.cancel,
+      destructive: true,
     );
   }
 

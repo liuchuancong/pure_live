@@ -32,7 +32,7 @@ final class IptvRecentPage extends ConsumerWidget {
       cancelLabel: t.common.cancel,
       destructive: true,
     );
-    if (!confirmed) return;
+    if (!confirmed || !context.mounted) return;
     await ref.read(iptvRecentProvider.notifier).clear();
   }
 

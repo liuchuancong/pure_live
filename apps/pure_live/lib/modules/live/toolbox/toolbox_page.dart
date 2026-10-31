@@ -7,12 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_log/live_log.dart' show LogLevel, LogRecord;
 import 'package:live_sites/live_sites.dart';
-import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/features/settings/room/clipboard_rooms.dart' show detectClipboardRoomsProvider;
-import 'package:pure_live/features/settings/settings.dart' show SettingsSection;
+import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openSettingsSection;
+import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/toolbox/direct_link_dialog.dart';
+import 'package:pure_live/modules/live/toolbox/log_settings_section.dart';
 import 'package:pure_live/modules/live/toolbox/toolbox_controllers.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -34,7 +36,7 @@ final class ToolboxPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(inset, DsSpace.s24, inset, DsSpace.s32),
+      padding: EdgeInsets.fromLTRB(inset, DsSpace.s20, inset, DsSpace.s24),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: formWidth),
@@ -209,6 +211,8 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
     final link = ref.watch(linkToolProvider);
     final resolving = link.resolving;
     final resolvable = [
@@ -267,17 +271,28 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
                     ),
                 ],
               ),
-              DsButton(
-                variant: DsButtonVariant.primary,
-                loading: resolving,
-                onPressed: resolving ? null : () => unawaited(_open()),
-                child: Text(t.toolbox.linkOpen),
-              ),
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                loading: resolving,
-                onPressed: resolving ? null : () => unawaited(_copy()),
-                child: Text(t.toolbox.linkCopy),
+              // The two actions share one line: the form is an errand, not
+              // a page of buttons.
+              Row(
+                spacing: DsSpace.s12,
+                children: [
+                  Expanded(
+                    child: DsButton(
+                      variant: DsButtonVariant.primary,
+                      loading: resolving,
+                      onPressed: resolving ? null : () => unawaited(_open()),
+                      child: Text(t.toolbox.linkOpen),
+                    ),
+                  ),
+                  Expanded(
+                    child: DsButton(
+                      variant: DsButtonVariant.secondary,
+                      loading: resolving,
+                      onPressed: resolving ? null : () => unawaited(_copy()),
+                      child: Text(t.toolbox.linkCopy),
+                    ),
+                  ),
+                ],
               ),
               Center(
                 child: DsLink(
@@ -285,6 +300,34 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
                   onPressed: resolving ? null : () => unawaited(_direct()),
                   style: DsLinkStyle(textStyle: DsTheme.of(context).typography.small),
                 ),
+              ),
+              // The same errand, run by itself: reading the clipboard for a
+              // room link belongs with the paste button above, not at the
+              // page's bottom.
+              DsLine(color: colors.border),
+              Row(
+                spacing: DsSpace.s12,
+                children: [
+                  const DsIcon(DsIcons.clipboard),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 2,
+                      children: [
+                        Text(t.toolbox.linkClipboardRooms, style: theme.typography.body),
+                        Text(
+                          t.toolbox.linkClipboardRoomsDesc,
+                          style: theme.typography.caption.copyWith(color: colors.textMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  DsSwitch(
+                    value: ref.watch(detectClipboardRoomsProvider),
+                    semanticLabel: t.toolbox.linkClipboardRooms,
+                    onChanged: (value) => unawaited(ref.read(detectClipboardRoomsProvider.notifier).set(value: value)),
+                  ),
+                ],
               ),
             ],
           ),
@@ -302,23 +345,6 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
             ],
           ),
         _SupportPlatforms(sites: resolvable),
-        // The same errand, run by itself: this is where a copied link is
-        // read, so the switch that lets the app read the clipboard on its
-        // own belongs here rather than on a browsing page.
-        DsListSection(
-          header: Text(t.toolbox.linkClipboardGroup),
-          children: [
-            DsListRow(
-              leading: const DsIcon(DsIcons.clipboard),
-              title: Text(t.toolbox.linkClipboardRooms),
-              description: Text(t.toolbox.linkClipboardRoomsDesc),
-              trailing: DsSwitch(
-                value: ref.watch(detectClipboardRoomsProvider),
-                onChanged: (value) => unawaited(ref.read(detectClipboardRoomsProvider.notifier).set(value: value)),
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -348,30 +374,36 @@ final class _SupportPlatforms extends StatelessWidget {
       iconSize: 16,
       gap: DsSpace.s6,
     );
-    return DsListSection(
-      header: Row(
-        children: [
-          Expanded(child: Text(t.toolbox.linkSupportTitle)),
-          Text('${sites.length}', style: theme.typography.overline.copyWith(color: colors.textSubtle)),
-        ],
-      ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: DsSpace.s12,
+    return DsAccordion<String>(
+      semanticLabel: t.toolbox.linkSupportTitle,
+      items: [
+        DsAccordionItem<String>(
+          value: 'support',
+          title: Row(
+            spacing: DsSpace.s8,
             children: [
-              Text(t.toolbox.linkSupportHint, style: theme.typography.small.copyWith(color: colors.textSubtle)),
-              Wrap(
-                spacing: DsSpace.s8,
-                runSpacing: DsSpace.s8,
-                children: [
-                  for (final site in sites)
-                    DsBadge(dot: false, icon: localizedSiteIcon(site), label: Text(_siteName(site)), style: badge),
-                ],
-              ),
+              const DsIcon(DsIcons.antenna, size: 16),
+              Expanded(child: Text(t.toolbox.linkSupportTitle)),
+              Text('${sites.length}', style: theme.typography.overline.copyWith(color: colors.textSubtle)),
             ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s8, DsSpace.s16, DsSpace.s16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: DsSpace.s12,
+              children: [
+                Text(t.toolbox.linkSupportHint, style: theme.typography.small.copyWith(color: colors.textSubtle)),
+                Wrap(
+                  spacing: DsSpace.s8,
+                  runSpacing: DsSpace.s8,
+                  children: [
+                    for (final site in sites)
+                      DsBadge(dot: false, icon: localizedSiteIcon(site), label: Text(_siteName(site)), style: badge),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -565,10 +597,9 @@ final class _PlatformNodeCard extends StatelessWidget {
   }
 }
 
-/// The log page: the live tree's memory ring (the rotating file writes the
-/// same records), a level control, a file-write switch, search, and a log
-/// panel that follows the newest line until the viewer scrolls away from
-/// the bottom.
+/// The log page: the journal's own configuration and diagnostics card above
+/// the console — the records the running app wrote, searchable, following the
+/// newest line until the viewer scrolls away from the bottom.
 final class LogsPane extends ConsumerStatefulWidget {
   const LogsPane({super.key});
 
@@ -580,10 +611,6 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
   final ScrollController _scroll = ScrollController();
   final TextEditingController _search = TextEditingController();
 
-  /// What this page shows, independent of what the tree records: the level
-  /// the viewer wants to see, with the lowest stop as the default so nothing
-  /// is hidden until they ask for it.
-  LogLevel _filter = LogLevel.trace;
   bool _autoScroll = true;
   int _lastShown = 0;
 
@@ -618,6 +645,37 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
     setState(() => _autoScroll = true);
   }
 
+  /// The gear opens the settings surface at the log section — the same page
+  /// the sidebar reaches — where the rotation limits, the folder and the
+  /// diagnostics live.
+  void _openSettings() {
+    openSettingsSection(ref, SettingsSection.logs);
+    unawaited(context.push(SettingsSectionRoute(section: SettingsSection.logs.name).location));
+  }
+
+  /// Writes the in-memory records beside the log files, so they can be read
+  /// after the process ends; the toast names the file and opens its folder.
+  Future<void> _save() async {
+    final t = context.t;
+    try {
+      final file = await saveAppLogCopy();
+      if (!mounted) return;
+      showDsToast(
+        context: context,
+        title: t.toolbox.logsSaved,
+        description: file.uri.pathSegments.last,
+        actionLabel: t.toolbox.logsOpenFolder,
+        onAction: () => unawaited(_openFolder(file.parent.path)),
+      );
+    } on Object {
+      if (mounted) showDsToast(context: context, title: t.toolbox.logsSaveFailed, status: DsStatus.danger);
+    }
+  }
+
+  Future<void> _openFolder(String path) async {
+    await openDownloadedPath(context, path, failedTitle: context.t.settings.logOpenFailed);
+  }
+
   Future<void> _copy() async {
     final text = exportAppLog();
     if (text.trim().isEmpty) {
@@ -626,24 +684,6 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
     }
     await Clipboard.setData(ClipboardData(text: text));
     if (mounted) showDsToast(context: context, title: context.t.toolbox.logsCopied);
-  }
-
-  /// The log file's own path onto the clipboard: opening the folder is the
-  /// last step a viewer takes, and the path is what they paste into a report.
-  Future<void> _copyPath() async {
-    final path = appLogFile;
-    if (path == null) return;
-    await Clipboard.setData(ClipboardData(text: path));
-    if (mounted) showDsToast(context: context, title: context.t.toolbox.logsPathCopied);
-  }
-
-  Future<void> _openLogDirectory() async {
-    final directory = appLogDirectory;
-    if (directory == null) return;
-    final opened = await OpenFile.open(directory.path);
-    if (opened.type != ResultType.done && mounted) {
-      showDsToast(context: context, title: context.t.toolbox.logsOpenFailed, status: DsStatus.danger);
-    }
   }
 
   Future<void> _clear() async {
@@ -671,11 +711,10 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
     final query = _search.text.trim().toLowerCase();
     final shown = [
       for (final record in records)
-        if (record.level.isAtLeast(_filter) &&
-            (query.isEmpty ||
-                record.message.toLowerCase().contains(query) ||
-                record.category.toLowerCase().contains(query) ||
-                record.fields.entries.any((entry) => '${entry.key} ${entry.value}'.toLowerCase().contains(query))))
+        if (query.isEmpty ||
+            record.message.toLowerCase().contains(query) ||
+            record.category.toLowerCase().contains(query) ||
+            record.fields.entries.any((entry) => '${entry.key} ${entry.value}'.toLowerCase().contains(query)))
           record,
     ];
     if (_autoScroll && shown.length != _lastShown) {
@@ -688,82 +727,36 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s12,
       children: [
-        // The gear sits at the page's own top end: the settings page owns the
-        // level, the file and the folder, so this page keeps no second entry
-        // for them.
+        // The page's own top-right corner: the way to the rest of the log
+        // settings, at the edge on every width (a phone reaches it with a
+        // thumb as easily as a pointer reaches it here).
         Align(
           alignment: AlignmentDirectional.centerEnd,
           child: DsButton.icon(
             variant: DsButtonVariant.ghost,
+            size: DsSize.md,
             semanticLabel: t.settings.navLogs,
-            onPressed: () => unawaited(context.push(SettingsSectionRoute(section: SettingsSection.logs.name).location)),
+            onPressed: _openSettings,
             icon: const DsIcon(DsIcons.settings, size: 18),
           ),
         ),
-        // The lines are what this page is for, so its options sit in an
-        // accordion that starts closed and gives the height back.
+        // The page keeps only the two things a viewer changes while reading:
+        // what is recorded and whether a file is written. The rest — the
+        // rotation limits and the folder — is the settings page's, behind the
+        // gear, so the console below keeps the height.
         DsAccordion<String>(
-          allowMultiple: true,
           semanticLabel: t.toolbox.logsSection,
           items: [
             DsAccordionItem<String>(
-              value: 'filter',
-              title: _logsAccordionTitle(const DsIcon(DsIcons.listFilter, size: 16), t.toolbox.logsFilterSection),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              value: 'settings',
+              title: Row(
+                spacing: DsSpace.s8,
                 children: [
-                  DsListRow(
-                    leading: const DsIcon(DsIcons.layers),
-                    title: Text(t.toolbox.logsLevelFilter),
-                    description: Text(t.toolbox.logsLevelFilterDesc),
-                    trailing: SizedBox(
-                      width: 160,
-                      child: AdaptiveChoiceField<LogLevel>(
-                        value: _filter,
-                        title: t.toolbox.logsLevelFilter,
-                        onChanged: (level) => setState(() => _filter = level),
-                        options: [
-                          for (final level in const [
-                            LogLevel.trace,
-                            LogLevel.debug,
-                            LogLevel.info,
-                            LogLevel.warning,
-                            LogLevel.error,
-                            LogLevel.fatal,
-                          ])
-                            DsSelectOption(value: level, label: level.label),
-                        ],
-                        semanticLabel: t.toolbox.logsLevelFilter,
-                      ),
-                    ),
-                  ),
+                  const DsIcon(DsIcons.gauge, size: 16),
+                  Flexible(child: Text(t.toolbox.logsSection)),
                 ],
               ),
-            ),
-            DsAccordionItem<String>(
-              value: 'file',
-              title: _logsAccordionTitle(const DsIcon(DsIcons.hardDrive, size: 16), t.toolbox.logsFileTitle),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  DsListRow(
-                    leading: const DsIcon(DsIcons.folder),
-                    // The file rather than the folder: the folder is where the
-                    // rotating files live, and the path a viewer wants named is
-                    // this one, so it is the line the page prints.
-                    title: Text(t.toolbox.logsFileTitle),
-                    description: Text(appLogFile ?? t.toolbox.logsDirectoryDefault),
-                    onPressed: appLogFile == null ? null : () => unawaited(_openLogDirectory()),
-                    trailing: DsButton.icon(
-                      variant: DsButtonVariant.ghost,
-                      size: DsSize.sm,
-                      semanticLabel: t.toolbox.logsCopyPath,
-                      onPressed: appLogFile == null ? null : () => unawaited(_copyPath()),
-                      icon: const DsIcon(DsIcons.copy, size: 16),
-                    ),
-                  ),
-                ],
-              ),
+              child: const LogQuickSettings(),
             ),
           ],
         ),
@@ -779,10 +772,23 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s12, DsSpace.s12, DsSpace.s8),
-                  child: DsSearchField(
-                    controller: _search,
-                    placeholder: t.toolbox.logsSearch,
-                    onChanged: (_) => setState(() {}),
+                  child: Row(
+                    spacing: DsSpace.s8,
+                    children: [
+                      Expanded(
+                        child: DsSearchField(
+                          controller: _search,
+                          placeholder: t.toolbox.logsSearch,
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                      DsButton(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        onPressed: () => unawaited(_clear()),
+                        child: Text(t.toolbox.logsClear),
+                      ),
+                    ],
                   ),
                 ),
                 Expanded(
@@ -829,9 +835,9 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
                       DsButton(
                         variant: DsButtonVariant.ghost,
                         size: DsSize.sm,
-                        leading: const DsIcon(DsIcons.trash2, size: 14),
-                        onPressed: () => unawaited(_clear()),
-                        child: Text(t.toolbox.logsClear),
+                        leading: const DsIcon(DsIcons.fileDown, size: 14),
+                        onPressed: () => unawaited(_save()),
+                        child: Text(t.toolbox.logsSave),
                       ),
                       DsButton(
                         variant: DsButtonVariant.ghost,
@@ -851,16 +857,6 @@ final class _LogsPaneState extends ConsumerState<LogsPane> {
     );
   }
 }
-
-/// An accordion header for the log page: the section's glyph and its name.
-/// The accordion styles the text itself, so this only lays the pair out.
-Widget _logsAccordionTitle(Widget icon, String label) => Row(
-  spacing: DsSpace.s8,
-  children: [
-    icon,
-    Flexible(child: Text(label)),
-  ],
-);
 
 /// One record as a monospaced line: clock, level, category, message and
 /// its fields, with the error under it when it carries one.

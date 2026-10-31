@@ -1910,7 +1910,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
               }
             },
             builder: (context, states, _) {
-              final lit = open || states.contains(WidgetState.hovered);
+              final lit = open || states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
               return Container(
                 height: theme.sizes.sm,
                 padding: EdgeInsets.symmetric(horizontal: compact ? DsSpace.s6 : DsSpace.s8),

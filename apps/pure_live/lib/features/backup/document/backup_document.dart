@@ -3,7 +3,8 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 /// What a document carries: every section the codec knows, or just the
 /// follows (the reference app's "favorites only" backup).
 enum BackupScope {
-  /// Followed rooms, watch history, followed areas and settings.
+  /// Followed rooms, watch history, followed areas, recording tasks and
+  /// settings.
   all,
 
   /// Followed rooms and followed areas only.
@@ -11,12 +12,12 @@ enum BackupScope {
 }
 
 /// One backup document: the app's user data bundled into a single JSON
-/// object — the followed rooms, the watch history, the followed areas and
-/// a named subset of the simple settings.
+/// object — the followed rooms, the watch history, the followed areas, the
+/// recording tasks and a named subset of the simple settings.
 ///
 /// The shape is plain and forward-compatible: every section is an object
-/// keyed by identity (`platform:roomId`, `platform:areaId`, the pref key
-/// itself), so an older reader skips what a newer writer added and a
+/// keyed by identity (`platform:roomId`, `platform:areaId`, the task id, the
+/// pref key itself), so an older reader skips what a newer writer added and a
 /// missing section restores as "nothing". The decode side tolerates
 /// unknown keys and sections on purpose.
 final class BackupDocument {
@@ -27,9 +28,10 @@ final class BackupDocument {
     this.follows = const {},
     this.history = const {},
     this.areaFollows = const {},
+    this.recordings = const {},
     this.settings = const {},
     Set<String>? presentSections,
-  }) : presentSections = presentSections ?? const {'follows', 'history', 'areaFollows', 'settings'};
+  }) : presentSections = presentSections ?? kSections;
 
   factory BackupDocument._fromRoot(Map<String, Object?> root) {
     final version = _objectMap(root['version']);
@@ -41,11 +43,12 @@ final class BackupDocument {
       follows: _entries(root['follows']),
       history: _entries(root['history']),
       areaFollows: _entries(root['areaFollows']),
+      recordings: _entries(root['recordings']),
       settings: _settingsOf(root['settings']),
       // Only the sections the document actually carries may be restored:
       // an older writer that never knew a section must not clear it.
       presentSections: {
-        for (final section in const ['follows', 'history', 'areaFollows', 'settings'])
+        for (final section in kSections)
           if (root[section] is Map) section,
       },
     );
@@ -72,6 +75,11 @@ final class BackupDocument {
   /// The followed areas: identity key → the area's stored fields.
   final Map<String, Map<String, Object?>> areaFollows;
 
+  /// The recording tasks: task id → the task's storage JSON. A restore
+  /// reads these as idle tasks — a take that was still recording becomes a
+  /// waiting one, and a half-finished post-processing flag is dropped.
+  final Map<String, Map<String, Object?>> recordings;
+
   /// The backed-up settings: pref key → the stored value (bool, int,
   /// double, String or String list).
   final Map<String, Object?> settings;
@@ -90,12 +98,21 @@ final class BackupDocument {
   /// Whether it carries followed areas.
   bool get hasAreas => presentSections.contains('areaFollows');
 
+  /// Whether it carries recording tasks.
+  bool get hasRecordings => presentSections.contains('recordings');
+
   /// Whether it carries settings.
   bool get hasSettings => presentSections.contains('settings');
 
   /// The schema this writer emits; a reader accepts any, and reports what
   /// it saw so a future migration can branch on it.
   static const int schemaVersion = 1;
+
+  /// Every section the codec knows, in wire order. A section is added here
+  /// once and the reader then treats it as optional: a document written
+  /// before it exists simply does not carry it, and restoring leaves that
+  /// box alone.
+  static const Set<String> kSections = {'follows', 'history', 'areaFollows', 'recordings', 'settings'};
 
   /// The document's app tag.
   static const String appTag = 'pure_live';
@@ -119,11 +136,16 @@ final class BackupDocument {
   /// only needs follows or areas to be worth writing.
   bool get isEmpty => scope == BackupScope.follows
       ? follows.isEmpty && areaFollows.isEmpty
-      : follows.isEmpty && history.isEmpty && areaFollows.isEmpty && settings.isEmpty;
+      : follows.isEmpty && history.isEmpty && areaFollows.isEmpty && recordings.isEmpty && settings.isEmpty;
 
   /// The counts the pane's summary shows.
-  ({int follows, int history, int areas, int settings}) get counts =>
-      (follows: follows.length, history: history.length, areas: areaFollows.length, settings: settings.length);
+  ({int follows, int history, int areas, int recordings, int settings}) get counts => (
+    follows: follows.length,
+    history: history.length,
+    areas: areaFollows.length,
+    recordings: recordings.length,
+    settings: settings.length,
+  );
 
   /// The document as the wire JSON, so a file or a server payload stays
   /// readable.
@@ -140,6 +162,7 @@ final class BackupDocument {
     'follows': follows,
     'history': history,
     'areaFollows': areaFollows,
+    'recordings': recordings,
     'settings': settings,
   };
 
@@ -159,7 +182,7 @@ final class BackupDocument {
     if (decoded is! Map) return null;
     final root = Map<String, Object?>.from(decoded);
     final tagged = _objectMap(root['version'])?['app'] == appTag;
-    final hasSection = const ['follows', 'history', 'areaFollows', 'settings'].any((key) => root[key] is Map);
+    final hasSection = kSections.any((key) => root[key] is Map);
     if (!tagged && !hasSection) return null;
     return BackupDocument._fromRoot(root);
   }

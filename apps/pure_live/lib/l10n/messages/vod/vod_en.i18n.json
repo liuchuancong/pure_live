@@ -178,6 +178,7 @@
   "downloadDeleteFile": "Delete file",
   "downloadDeleteFileBody": "The video file is deleted too; this cannot be undone.",
   "downloadDeleteFailed": "Couldn't delete the file",
+  "downloadEta": "{time} left",
   "partsPrevious": "Previous group",
   "partsNext": "Next group",
   "partsJump": "Jump to part",

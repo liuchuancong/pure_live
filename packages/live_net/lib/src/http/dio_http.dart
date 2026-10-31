@@ -233,7 +233,18 @@ final class DioLiveHttp implements LiveHttp {
       createHttpClient: () {
         final client = HttpClient();
         if (route is HttpProxyRoute) {
-          client.findProxy = (uri) => 'PROXY ${route.host}:${route.port}';
+          client.findProxy = (uri) => route.ioRoute;
+          // The credential is registered for this endpoint's host:port, which is
+          // the only place dart:io will present it: a rerouted client offers
+          // nothing to another proxy.
+          if (route.isAuthenticationRequired) {
+            client.addProxyCredentials(
+              route.host,
+              route.port,
+              '',
+              HttpClientBasicCredentials(route.username, route.password),
+            );
+          }
         } else if (route is SystemProxyRoute) {
           client.findProxy = HttpClient.findProxyFromEnvironment;
         }

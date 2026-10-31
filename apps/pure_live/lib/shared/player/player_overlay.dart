@@ -187,9 +187,9 @@ final class PlayerPanelOption extends StatelessWidget {
       semanticLabel: label,
       onPressed: onPressed,
       builder: (context, states, _) {
-        final hovered = states.contains(WidgetState.hovered);
+        final active = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
         return Container(
-          color: hovered ? playerInkHover : null,
+          color: active ? playerInkHover : null,
           padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s6),
           child: Row(
             spacing: DsSpace.s8,

@@ -24,7 +24,7 @@ import 'package:pure_live/modules/iptv/controllers/iptv_user_agent.dart'
     show iptvHeadersWithUserAgent, iptvUserAgentProvider;
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show catchupUrlOf, iptvClockLabel, showIptvGuide;
 import 'package:pure_live/modules/iptv/views/iptv_zapper.dart' show IptvZapper;
-import 'package:pure_live/modules/live/room/room.dart';
+import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/shared/shared.dart';
 
 /// One IPTV channel on media_core's own player: the playlist entry's URL
@@ -263,6 +263,15 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     unawaited(_failures?.cancel() ?? Future<void>.value());
     unawaited(_geometry?.cancel() ?? Future<void>.value());
     _geometry = null;
+    // The session's dispose is queued behind whatever the playback is doing
+    // (an open still dialling a dead address takes its whole budget); mute
+    // first — it lands at once — then pause, so the channel cannot sound over
+    // the page the viewer returned to while that queue drains.
+    final handle = _handle;
+    if (handle != null) {
+      unawaited(handle.setMute(muted: true).catchError((Object _) {}));
+    }
+    unawaited(_playback?.pause() ?? Future<void>.value());
     unawaited(_playback?.dispose() ?? Future<void>.value());
     super.dispose();
   }
@@ -309,7 +318,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     if (channel == null) return;
     final url = catchupUrlOf(channel, programme);
     if (url == null) {
-      if (mounted) showDsToast(context: context, title: context.t.iptv.catchupFailed);
+      if (mounted) showDsToast(context: context, title: context.t.iptv.catchupFailed, status: DsStatus.danger);
       return;
     }
     setState(() {
@@ -530,6 +539,38 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     unawaited(showCastDialog(context, line: line, title: channel.entry.name));
   }
 
+  /// The recording identity the recorder centre files this channel under —
+  /// the `platform:roomId` shape every task carries.
+  String get _recordingId => 'iptv:${_channel?.id ?? ''}';
+
+  /// Starts or stops the channel's recording; answers the engine's reason
+  /// when the action failed, null on success. A playlist address is static,
+  /// so the capture needs no URL refresher, room or danmaku.
+  Future<String?> _toggleRecording() async {
+    final channel = _channel;
+    if (channel == null) return 'no channel';
+    final engine = ref.read(recorderEngineProvider);
+    if (engine.isRecording(_recordingId)) return await engine.stop(_recordingId);
+    final url = _lineIndex < _urls.length ? _urls[_lineIndex] : '';
+    if (url.isEmpty) return 'no line to record';
+    final line = LivePlayLine.of(
+      url: url,
+      format: inferStreamFormat(url) ?? LiveStreamFormat.other,
+      formatSource: LivePlayFormatSource.inferred,
+      headers: iptvHeadersWithUserAgent(channel.entry.headers.asMap(), ref.read(iptvUserAgentProvider)),
+      lineLabel: channel.entry.name,
+    );
+    final task = RecordingTask(
+      id: _recordingId,
+      platform: 'iptv',
+      roomId: channel.id,
+      roomTitle: channel.entry.name,
+      state: RecordingTaskState.stopped,
+      startedAt: DateTime.now().toUtc(),
+    );
+    return await engine.start(task, line);
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _backgroundGate?.handleLifecycle(state);
@@ -697,6 +738,14 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     final channel = _channel;
     final handle = _handle;
     final muted = _effectivelyMuted;
+    // The task store is the truth the record button follows, so a recording
+    // started in an earlier visit still reads as running.
+    final recording =
+        channel != null &&
+        ref
+            .watch(recordingTasksProvider)
+            .tasks
+            .any((task) => task.id == 'iptv:${channel.id}' && task.state == RecordingTaskState.recording);
     final presentation = ref.watch(roomPresentationProvider);
     final presentationController = ref.read(roomPresentationProvider.notifier);
     // Fullscreen and the desktop compact window take the app's window; a
@@ -767,6 +816,9 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
         const SingleActivator(LogicalKeyboardKey.arrowDown): () => _switchChannel(1),
         const SingleActivator(LogicalKeyboardKey.arrowLeft): _openZapper,
         const SingleActivator(LogicalKeyboardKey.escape): leave,
+        // Space plays and pauses, the baseline the other players already bind.
+        const SingleActivator(LogicalKeyboardKey.space): () =>
+            unawaited(_playback?.togglePlayPause() ?? Future<void>.value()),
         // The reference's number keys: four digits at most, two seconds
         // between the last key and the switch.
         for (final (key, digit) in _kDigitKeys) SingleActivator(key): () => _typeDigit(digit),
@@ -854,25 +906,26 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                           onPressed: () => _switchChannel(1),
                         ),
                       ],
-                      if (channel != null && _urls.length > 1)
-                        DsMenuAnchor(
-                          semanticLabel: t.room.lineLabel,
-                          items: [
-                            for (final (index, _) in _urls.indexed)
-                              DsMenuItem(
-                                leading: DsIcon(index == _lineIndex ? DsIcons.check : DsIcons.gitBranch),
-                                label: Text(t.room.line(n: '${index + 1}')),
-                                onPressed: () => unawaited(_selectLine(index)),
-                              ),
-                          ],
-                          builder: (context, controller, _) => _IconButton(
-                            semanticLabel: t.room.lineLabel,
-                            icon: DsIcons.gitBranch,
-                            onPressed: controller.toggle,
-                          ),
-                        ),
                       if (channel != null && !headerNarrow)
                         _IconButton(semanticLabel: t.room.cast, icon: DsIcons.cast, onPressed: () => _cast(channel)),
+                      if (channel != null)
+                        _IconButton(
+                          semanticLabel: recording ? t.room.stopRecording : t.room.record,
+                          icon: recording ? DsIcons.squareStop : DsIcons.disc,
+                          selected: recording,
+                          onPressed: () async {
+                            final wasRecording = recording;
+                            final failure = await _toggleRecording();
+                            if (!context.mounted) return;
+                            showDsToast(
+                              context: context,
+                              title: failure == null
+                                  ? (wasRecording ? t.room.recordStopped : t.room.recordStarted)
+                                  : t.room.recordFailed,
+                              status: failure == null ? DsStatus.success : DsStatus.danger,
+                            );
+                          },
+                        ),
                       if (channel != null)
                         _IconButton(
                           semanticLabel: t.iptv.zapperOpen,
@@ -1049,6 +1102,26 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                           semanticLabel: t.room.volume,
                         ),
                       ),
+                      // The playlist's alternatives, beside the ratio picker:
+                      // one bar owns everything that reshapes the picture,
+                      // and the header keeps only the channel verbs.
+                      if (_urls.length > 1)
+                        DsMenuAnchor(
+                          semanticLabel: t.room.lineLabel,
+                          items: [
+                            for (final (index, _) in _urls.indexed)
+                              DsMenuItem(
+                                checked: index == _lineIndex,
+                                label: Text(t.room.line(n: '${index + 1}')),
+                                onPressed: () => unawaited(_selectLine(index)),
+                              ),
+                          ],
+                          builder: (context, controller, _) => _IconButton(
+                            semanticLabel: t.room.lineLabel,
+                            icon: DsIcons.route,
+                            onPressed: controller.toggle,
+                          ),
+                        ),
                       // The reference's 画面比例 chip, as a menu: the stream's
                       // own shape or a frame the viewer picked.
                       DsMenuAnchor(
@@ -1056,7 +1129,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                         items: [
                           for (final mode in IptvAspectMode.values)
                             DsMenuItem(
-                              leading: DsIcon(mode == _aspect ? DsIcons.check : DsIcons.aspectRatio),
+                              checked: mode == _aspect,
                               label: Text(iptvAspectLabel(t, mode)),
                               onPressed: () => setState(() {
                                 _aspect = mode;

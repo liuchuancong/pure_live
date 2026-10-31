@@ -75,7 +75,8 @@ final class RoomShieldPanel extends ConsumerWidget {
             value: '${filter.blockLongLength}',
             min: DanmakuFilterRange.blockLongLengthMin.toDouble(),
             max: DanmakuFilterRange.blockLongLengthMax.toDouble(),
-            divisions: (DanmakuFilterRange.blockLongLengthMax - DanmakuFilterRange.blockLongLengthMin) ~/
+            divisions:
+                (DanmakuFilterRange.blockLongLengthMax - DanmakuFilterRange.blockLongLengthMin) ~/
                 DanmakuFilterRange.blockLongLengthStep,
             semanticLabel: t.shield.blockLongLength,
             onChanged: (value) => unawaited(
@@ -135,8 +136,7 @@ final class RoomShieldPanel extends ConsumerWidget {
             max: kDanmakuRepeatWindowMax.toDouble(),
             divisions: kDanmakuRepeatWindowMax - kDanmakuRepeatWindowMin,
             semanticLabel: t.shield.repeatWindow,
-            onChanged: (value) =>
-                unawaited(ref.read(danmakuRepeatProvider.notifier).setWindowSeconds(value.round())),
+            onChanged: (value) => unawaited(ref.read(danmakuRepeatProvider.notifier).setWindowSeconds(value.round())),
           ),
       ],
     );
@@ -183,12 +183,7 @@ final class _ShieldHeader extends StatelessWidget {
 /// One switch row: the label carries the description on hover, so the
 /// narrow column keeps one line per rule.
 final class _ShieldSwitch extends StatelessWidget {
-  const _ShieldSwitch({
-    required this.label,
-    required this.description,
-    required this.value,
-    required this.onChanged,
-  });
+  const _ShieldSwitch({required this.label, required this.description, required this.value, required this.onChanged});
 
   final String label;
   final String description;
@@ -202,7 +197,10 @@ final class _ShieldSwitch extends StatelessWidget {
     return DsSwitch(
       value: value,
       onChanged: onChanged,
-      label: DsTooltip(message: description, child: Text(label, style: theme.typography.body.copyWith(color: colors.text))),
+      label: DsTooltip(
+        message: description,
+        child: Text(label, style: theme.typography.body.copyWith(color: colors.text)),
+      ),
     );
   }
 }
@@ -401,12 +399,16 @@ final class _ShieldTag extends StatelessWidget {
               style: theme.typography.caption.copyWith(color: colors.text),
             ),
           ),
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => unawaited(onRemove()),
-            child: Padding(
-              padding: const EdgeInsets.all(DsSpace.s3),
-              child: DsIcon(DsIcons.close, size: theme.sizes.iconXs, color: colors.textMuted),
+          Semantics(
+            button: true,
+            label: context.t.shield.removeEntry,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => unawaited(onRemove()),
+              child: Padding(
+                padding: const EdgeInsets.all(DsSpace.s3),
+                child: DsIcon(DsIcons.close, size: theme.sizes.iconXs, color: colors.textMuted),
+              ),
             ),
           ),
         ],

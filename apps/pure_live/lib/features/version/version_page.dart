@@ -570,7 +570,7 @@ Future<void> _open(BuildContext context, String url) async {
   final uri = Uri.tryParse(url);
   final opened = uri != null && await launchUrl(uri, mode: LaunchMode.externalApplication);
   if (!opened && context.mounted) {
-    showDsToast(context: context, title: context.t.settings.updateCheckFailed);
+    showDsToast(context: context, title: context.t.settings.updateCheckFailed, status: DsStatus.danger);
   }
 }
 

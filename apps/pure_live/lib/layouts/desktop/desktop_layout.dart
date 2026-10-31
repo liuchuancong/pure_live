@@ -346,7 +346,6 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                   // gives way to a narrow window (or the settings surface
                   // hides it), the button goes with it instead of standing
                   // over nothing.
-                  onSearch: widget.tv || !showToolbarSearch ? null : _focusSearch,
                 ),
               Expanded(
                 child: Row(

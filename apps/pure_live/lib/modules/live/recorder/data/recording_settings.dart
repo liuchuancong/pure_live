@@ -36,20 +36,27 @@ final class RecordingSettings {
   const RecordingSettings({
     this.defaultQuality = '原画',
     this.recordDanmaku = false,
+    this.recordDanmakuGifts = false,
     this.namingTemplate = kDefaultNamingTemplate,
     this.maxSizeMb = 2048,
-    this.segmentSeconds = 300,
+    this.segmentSeconds = 1800,
     this.readTimeoutSeconds = 15,
-    this.queueSize = 2048,
+    this.queueSize = 1024,
     this.preferBestStream = true,
     this.keepAlive = true,
     this.verifyOutput = true,
     this.restartLimit = 5,
     this.restartBackoffSeconds = 30,
     this.stallTimeoutSeconds = 30,
-    this.diskWatermarkMb = 200,
+    this.diskWatermarkMb = 2048,
     this.maxTasks = 3,
     this.container = RecordingFileContainer.mpegTs,
+    this.combineAfterStop = true,
+    this.deleteOriginalsAfterCombine = false,
+    this.transcodeAfterCombine = false,
+    this.transcodeBitrateKbps = 4000,
+    this.tlsVerify = true,
+    this.customCaPath = '',
     this.cacheLimitEnabled = false,
     this.cacheLimitMb = 1024,
     this.pollingEnabled = false,
@@ -70,6 +77,13 @@ final class RecordingSettings {
   /// Whether the live chat is saved beside the video as a same-name XML
   /// (the reference's "record chat" switch).
   final bool recordDanmaku;
+
+  /// Whether gift messages join the recorded danmaku beside the chat.
+  ///
+  /// Off by default: the chat is what a viewer reads back, and a gift feed can
+  /// be loud. The reference keeps the same independent switch
+  /// (`record_danmaku_gifts`). Only meaningful while [recordDanmaku] is on.
+  final bool recordDanmakuGifts;
 
   /// The file naming template the engine fills in.
   final String namingTemplate;
@@ -113,6 +127,46 @@ final class RecordingSettings {
   /// The segment container.
   final RecordingFileContainer container;
 
+  /// Whether a finished take is joined into one MP4 beside its segments.
+  ///
+  /// Segments are the crash-safe capture format, not the file a viewer wants
+  /// to open: the reference converts TS to MP4 after recording, and this is
+  /// that step. A failed join leaves the segments untouched.
+  final bool combineAfterStop;
+
+  /// Whether the segments are deleted after a successful join.
+  ///
+  /// Off keeps them under `original/` inside the take's folder, so a join
+  /// that produced a bad file can be retried and nothing is lost.
+  final bool deleteOriginalsAfterCombine;
+
+  /// Whether the joined file is re-encoded to a smaller H.264 MP4.
+  ///
+  /// A recording is captured by stream copy; this is an optional second pass
+  /// for the viewer who needs a smaller file. It costs CPU time proportional
+  /// to the recording's length and trades source quality for size.
+  final bool transcodeAfterCombine;
+
+  /// Target video bitrate for [transcodeAfterCombine], in kbit/s.
+  final int transcodeBitrateKbps;
+
+  /// Whether an HTTPS input's certificate is verified.
+  ///
+  /// On by default. Off accepts a self-signed or proxy-intercepted certificate,
+  /// which is the escape hatch for a TLS-terminating proxy; it also removes
+  /// the protection against a real interception.
+  final bool tlsVerify;
+
+  /// A CA bundle of the viewer's own, in PEM text, that FFmpeg is pointed at
+  /// instead of the bundled Mozilla store.
+  ///
+  /// This is the way to trust a corporate or TLS-intercepting root, or a
+  /// self-signed chain, *without* turning verification off. '' means the
+  /// bundled bundle. The path is the file the viewer picked; the engine copies
+  /// it into its own certificate folder before handing it to FFmpeg, so a
+  /// folder the viewer later moves or deletes cannot strand a recording.
+  final String customCaPath;
+
   /// Whether completed takes are trimmed to [cacheLimitMb].
   final bool cacheLimitEnabled;
 
@@ -139,6 +193,7 @@ final class RecordingSettings {
   RecordingSettings copyWith({
     String? defaultQuality,
     bool? recordDanmaku,
+    bool? recordDanmakuGifts,
     String? namingTemplate,
     int? maxSizeMb,
     int? segmentSeconds,
@@ -153,6 +208,12 @@ final class RecordingSettings {
     int? diskWatermarkMb,
     int? maxTasks,
     RecordingFileContainer? container,
+    bool? combineAfterStop,
+    bool? deleteOriginalsAfterCombine,
+    bool? transcodeAfterCombine,
+    int? transcodeBitrateKbps,
+    bool? tlsVerify,
+    String? customCaPath,
     bool? cacheLimitEnabled,
     int? cacheLimitMb,
     bool? pollingEnabled,
@@ -163,6 +224,7 @@ final class RecordingSettings {
   }) => RecordingSettings(
     defaultQuality: defaultQuality ?? this.defaultQuality,
     recordDanmaku: recordDanmaku ?? this.recordDanmaku,
+    recordDanmakuGifts: recordDanmakuGifts ?? this.recordDanmakuGifts,
     namingTemplate: namingTemplate ?? this.namingTemplate,
     maxSizeMb: maxSizeMb ?? this.maxSizeMb,
     segmentSeconds: segmentSeconds ?? this.segmentSeconds,
@@ -177,6 +239,12 @@ final class RecordingSettings {
     diskWatermarkMb: diskWatermarkMb ?? this.diskWatermarkMb,
     maxTasks: maxTasks ?? this.maxTasks,
     container: container ?? this.container,
+    combineAfterStop: combineAfterStop ?? this.combineAfterStop,
+    deleteOriginalsAfterCombine: deleteOriginalsAfterCombine ?? this.deleteOriginalsAfterCombine,
+    transcodeAfterCombine: transcodeAfterCombine ?? this.transcodeAfterCombine,
+    transcodeBitrateKbps: transcodeBitrateKbps ?? this.transcodeBitrateKbps,
+    tlsVerify: tlsVerify ?? this.tlsVerify,
+    customCaPath: customCaPath ?? this.customCaPath,
     cacheLimitEnabled: cacheLimitEnabled ?? this.cacheLimitEnabled,
     cacheLimitMb: cacheLimitMb ?? this.cacheLimitMb,
     pollingEnabled: pollingEnabled ?? this.pollingEnabled,
@@ -198,22 +266,31 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
     return RecordingSettings(
       defaultQuality: _storedString('recorder.defaultQuality') ?? RecordingSettings.defaults.defaultQuality,
       recordDanmaku: _storedBool('recorder.recordDanmaku') ?? false,
+      recordDanmakuGifts: _storedBool('recorder.chatGifts') ?? false,
       namingTemplate: _storedString('recorder.naming') ?? kDefaultNamingTemplate,
       maxSizeMb: _storedSize() ?? RecordingSettings.defaults.maxSizeMb,
-      segmentSeconds: (_storedInt('recorder.segment') ?? 300).clamp(10, 86400),
+      segmentSeconds: (_storedInt('recorder.segment') ?? RecordingSettings.defaults.segmentSeconds).clamp(10, 86400),
       readTimeoutSeconds: (_storedInt('recorder.rwTimeout') ?? 15).clamp(5, 120),
-      queueSize: (_storedInt('recorder.queue') ?? 2048).clamp(256, 32768),
+      queueSize: (_storedInt('recorder.queue') ?? RecordingSettings.defaults.queueSize).clamp(256, 32768),
       preferBestStream: _storedBool('recorder.preferBest') ?? true,
       keepAlive: _storedBool('recorder.keepAlive') ?? true,
       verifyOutput: _storedBool('recorder.verify') ?? true,
       restartLimit: (_storedInt('recorder.restartLimit') ?? 5).clamp(0, 20),
       restartBackoffSeconds: (_storedInt('recorder.restartBackoff') ?? 30).clamp(5, 120),
       stallTimeoutSeconds: (_storedInt('recorder.stallTimeout') ?? 30).clamp(10, 600),
-      diskWatermarkMb: (_storedInt('recorder.diskWatermark') ?? 200).clamp(50, 4096),
-      maxTasks: (_storedInt('recorder.maxTasks') ?? 3).clamp(1, 10),
+      diskWatermarkMb: _storedDiskWatermark() ?? RecordingSettings.defaults.diskWatermarkMb,
+      maxTasks: _storedMaxTasks() ?? 3,
       container:
           RecordingFileContainer.values.asNameMap()[_storedString('recorder.container') ?? ''] ??
           RecordingFileContainer.mpegTs,
+      combineAfterStop: _storedBool('recorder.combine') ?? true,
+      deleteOriginalsAfterCombine: _storedBool('recorder.combineDeleteOriginals') ?? false,
+      transcodeAfterCombine: _storedBool('recorder.transcode') ?? false,
+      transcodeBitrateKbps: (_storedInt('recorder.transcodeBitrate') ?? 4000).clamp(500, 50000),
+      tlsVerify: _storedBool('recorder.tlsVerify') ?? true,
+      // A stored empty path is the same answer as nothing stored: the bundled
+      // bundle is in force.
+      customCaPath: (_storedString('recorder.customCa') ?? '').trim(),
       cacheLimitEnabled: _storedBool('recorder.cacheLimitEnabled') ?? false,
       cacheLimitMb: (_storedInt('recorder.cacheLimitMb') ?? 1024).clamp(
         kRecordingCacheLimitMinMb,
@@ -257,7 +334,9 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
   static int? _storedSize() {
     try {
       final megabytes = _storedInt('recorder.maxSizeMb');
-      if (megabytes != null) return megabytes.clamp(100, 20480);
+      // Zero is the viewer's own answer — no size limit — and must survive
+      // a reload as itself, not as the smallest bounded value.
+      if (megabytes != null) return megabytes == 0 ? 0 : megabytes.clamp(100, 20480);
       final gigabytes = StoragePrefs.getDouble('recorder.maxSizeGb');
       if (gigabytes != null && gigabytes <= 20) return (gigabytes * 1024).round().clamp(100, 20480);
       return null;
@@ -266,11 +345,29 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
     }
   }
 
+  /// The stored free-space floor, or null when storage never opened. Zero is
+  /// the viewer lifting the guard and stays zero; anything else is clamped.
+  static int? _storedDiskWatermark() {
+    final stored = _storedInt('recorder.diskWatermark');
+    if (stored == null) return null;
+    return stored == 0 ? 0 : stored.clamp(50, 4096);
+  }
+
+  /// The stored concurrency cap, with zero as "no cap".
+  static int? _storedMaxTasks() {
+    final stored = _storedInt('recorder.maxTasks');
+    if (stored == null) return null;
+    return stored == 0 ? 0 : stored.clamp(1, 10);
+  }
+
   /// The quality a new recording asks the platform for.
   String get defaultQuality => state.defaultQuality;
 
   /// Whether a recording saves the room's chat beside its video.
   bool get recordDanmaku => state.recordDanmaku;
+
+  /// Whether gift messages are written beside the chat in the danmaku file.
+  bool get recordDanmakuGifts => state.recordDanmakuGifts;
 
   /// The file naming template the engine will fill in.
   String get namingTemplate => state.namingTemplate;
@@ -314,6 +411,24 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
 
   /// The segment container.
   RecordingFileContainer get container => state.container;
+
+  /// Whether a finished take is joined into one MP4.
+  bool get combineAfterStop => state.combineAfterStop;
+
+  /// Whether the joined take's segments are deleted afterwards.
+  bool get deleteOriginalsAfterCombine => state.deleteOriginalsAfterCombine;
+
+  /// Whether the joined file is re-encoded after the join.
+  bool get transcodeAfterCombine => state.transcodeAfterCombine;
+
+  /// Target video bitrate for the post-record transcode, in kbit/s.
+  int get transcodeBitrateKbps => state.transcodeBitrateKbps;
+
+  /// Whether an HTTPS input's certificate is verified.
+  bool get tlsVerify => state.tlsVerify;
+
+  /// The CA bundle of the viewer's own, or '' when the bundled one is in force.
+  String get customCaPath => state.customCaPath;
 
   /// Whether completed takes are trimmed to the cap.
   bool get cacheLimitEnabled => state.cacheLimitEnabled;
@@ -389,6 +504,12 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
     unawaited(_write('recorder.defaultQuality', value));
   }
 
+  /// Chooses whether gift messages join the recorded danmaku.
+  set recordDanmakuGifts(bool value) {
+    state = state.copyWith(recordDanmakuGifts: value);
+    unawaited(_write('recorder.chatGifts', value));
+  }
+
   /// Chooses whether recordings save the room's chat as a same-name XML.
   set recordDanmaku(bool value) {
     state = state.copyWith(recordDanmaku: value);
@@ -406,7 +527,7 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
 
   /// Changes the recording size cap, in megabytes.
   set maxSizeMb(int megabytes) {
-    final clamped = megabytes.clamp(100, 20480);
+    final clamped = megabytes == 0 ? 0 : megabytes.clamp(100, 20480);
     state = state.copyWith(maxSizeMb: clamped);
     unawaited(_write('recorder.maxSizeMb', clamped));
   }
@@ -473,14 +594,14 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
 
   /// Changes the free-space floor a recording stops at.
   set diskWatermarkMb(int megabytes) {
-    final clamped = megabytes.clamp(50, 4096);
+    final clamped = megabytes == 0 ? 0 : megabytes.clamp(50, 4096);
     state = state.copyWith(diskWatermarkMb: clamped);
     unawaited(_write('recorder.diskWatermark', clamped));
   }
 
   /// Changes how many recordings may run at once.
   set maxTasks(int count) {
-    final clamped = count.clamp(1, 10);
+    final clamped = count == 0 ? 0 : count.clamp(1, 10);
     state = state.copyWith(maxTasks: clamped);
     unawaited(_write('recorder.maxTasks', clamped));
   }
@@ -489,6 +610,92 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
   set container(RecordingFileContainer value) {
     state = state.copyWith(container: value);
     unawaited(_write('recorder.container', value.name));
+  }
+
+  /// Chooses whether a finished take is joined into one MP4.
+  set combineAfterStop(bool value) {
+    state = state.copyWith(combineAfterStop: value);
+    unawaited(_write('recorder.combine', value));
+  }
+
+  /// Chooses whether the segments are deleted after a successful join.
+  set deleteOriginalsAfterCombine(bool value) {
+    state = state.copyWith(deleteOriginalsAfterCombine: value);
+    unawaited(_write('recorder.combineDeleteOriginals', value));
+  }
+
+  /// Chooses whether the joined file is re-encoded.
+  set transcodeAfterCombine(bool value) {
+    state = state.copyWith(transcodeAfterCombine: value);
+    unawaited(_write('recorder.transcode', value));
+  }
+
+  /// Changes the post-record transcode's target video bitrate.
+  set transcodeBitrateKbps(int value) {
+    final next = value.clamp(500, 50000);
+    state = state.copyWith(transcodeBitrateKbps: next);
+    unawaited(_write('recorder.transcodeBitrate', next));
+  }
+
+  /// Chooses whether HTTPS certificates are verified.
+  set tlsVerify(bool value) {
+    state = state.copyWith(tlsVerify: value);
+    unawaited(_write('recorder.tlsVerify', value));
+  }
+
+  /// Points the recorder at the viewer's own CA bundle; a blank path falls back
+  /// to the bundled Mozilla store. The engine re-reads this per start, so a new
+  /// choice takes effect on the next take without a restart.
+  set customCaPath(String path) {
+    final value = path.trim();
+    state = state.copyWith(customCaPath: value);
+    unawaited(_write('recorder.customCa', value));
+  }
+
+  /// Puts every recording tunable back to the designed defaults.
+  ///
+  /// The save folder, the danmaku save formats and a chosen CA file are
+  /// deliberately not reset: the folder belongs to the storage page, the
+  /// formats to the danmaku page, and a certificate bundle is a file the viewer
+  /// picked once and cannot easily re-pick. Undoing a recording setting must
+  /// not take any of those away.
+  Future<void> reset() async {
+    const d = RecordingSettings.defaults;
+    // The chosen CA bundle is not a tunable and is not reset: carry it over the
+    // default copy, or the state would say "bundled store" while the pref still
+    // holds the viewer's file — and the next launch would bring it back.
+    state = d.copyWith(customCaPath: state.customCaPath);
+    await Future.wait([
+      _write('recorder.defaultQuality', d.defaultQuality),
+      _write('recorder.recordDanmaku', d.recordDanmaku),
+      _write('recorder.chatGifts', d.recordDanmakuGifts),
+      _write('recorder.naming', d.namingTemplate),
+      _write('recorder.maxSizeMb', d.maxSizeMb),
+      _write('recorder.segment', d.segmentSeconds),
+      _write('recorder.rwTimeout', d.readTimeoutSeconds),
+      _write('recorder.queue', d.queueSize),
+      _write('recorder.preferBest', d.preferBestStream),
+      _write('recorder.keepAlive', d.keepAlive),
+      _write('recorder.verify', d.verifyOutput),
+      _write('recorder.restartLimit', d.restartLimit),
+      _write('recorder.restartBackoff', d.restartBackoffSeconds),
+      _write('recorder.stallTimeout', d.stallTimeoutSeconds),
+      _write('recorder.diskWatermark', d.diskWatermarkMb),
+      _write('recorder.maxTasks', d.maxTasks),
+      _write('recorder.container', d.container.name),
+      _write('recorder.combine', d.combineAfterStop),
+      _write('recorder.combineDeleteOriginals', d.deleteOriginalsAfterCombine),
+      _write('recorder.transcode', d.transcodeAfterCombine),
+      _write('recorder.transcodeBitrate', d.transcodeBitrateKbps),
+      _write('recorder.tlsVerify', d.tlsVerify),
+      _write('recorder.cacheLimitEnabled', d.cacheLimitEnabled),
+      _write('recorder.cacheLimitMb', d.cacheLimitMb),
+      _write('recorder.pollingEnabled', d.pollingEnabled),
+      _write('recorder.liveCheckSeconds', d.liveCheckSeconds),
+      _write('recorder.checkBackoffEnabled', d.checkBackoffEnabled),
+      _write('recorder.maxCheckSeconds', d.maxCheckSeconds),
+      _write('recorder.autoStartOnBoot', d.autoStartOnBoot),
+    ]);
   }
 }
 

@@ -4,12 +4,14 @@
 library;
 
 export 'controller/vod_controller.dart';
+export 'controller/vod_downloads.dart';
 export 'controller/vod_library.dart';
 export 'controller/vod_live.dart';
 export 'controller/vod_pgc.dart';
 export 'controller/vod_playback_settings.dart';
 export 'controller/vod_settings.dart';
 export 'controller/vod_social.dart';
+export 'pages/vod_downloads_page.dart';
 export 'pages/vod_live_page.dart';
 export 'pages/vod_page.dart';
 export 'pages/vod_personal_page.dart';

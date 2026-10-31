@@ -178,6 +178,7 @@
   "downloadDeleteFile": "删除文件",
   "downloadDeleteFileBody": "视频文件会被一并删除，此操作无法撤销。",
   "downloadDeleteFailed": "文件未能删除",
+  "downloadEta": "剩余 {time}",
   "partsPrevious": "上一组",
   "partsNext": "下一组",
   "partsJump": "跳转分P",

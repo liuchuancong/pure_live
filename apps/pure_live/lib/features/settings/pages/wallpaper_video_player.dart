@@ -160,15 +160,15 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
         });
       });
     } on Object {
-      if (_disposed) {
-        try {
-          await kernel.dispose();
-        } on Object {
-          // Nothing left to release.
-        }
-      } else if (mounted) {
-        setState(() => _kernel = null);
+      // The kernel never got a handle, so dispose's own teardown skips it —
+      // _start owns the failed kernel either way, or a retry would pile
+      // half-built decoders up one per press.
+      try {
+        await kernel.dispose();
+      } on Object {
+        // A shutdown that is already running wins; nothing is left to do.
       }
+      if (mounted) setState(() => _kernel = null);
     }
   }
 
@@ -214,9 +214,22 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
     final handle = _handle;
     final colors = DsTheme.colorsOf(context);
     if (handle == null && _kernel == null) {
+      // A decoder that could not start: the honest surface over a black
+      // box, with the one verb the failure leaves — try again.
       return Center(
-        child: DsIcon(DsIcons.videoOff, size: 28, color: colors.textSubtle),
-        // A decoder that could not start: the honest surface over a black box.
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          spacing: DsSpace.s8,
+          children: [
+            DsIcon(DsIcons.videoOff, size: 28, color: colors.textSubtle),
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: () => unawaited(_start()),
+              child: Text(t.common.retry),
+            ),
+          ],
+        ),
       );
     }
     if (handle == null) {

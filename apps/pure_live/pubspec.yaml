@@ -160,6 +160,7 @@ flutter:
     - assets/preview/ # 设置预览页的舞台背景
     - assets/fonts/free_font.json # 国内免费字体清单（jaywcjlove/free-font）
     - assets/fonts/google_font_categories.json # Google 字体分类（font_picker 的 constants）
+    - assets/certs/ # FFmpeg 录制用的 Mozilla CA 信任根（curl.se 官方 cacert.pem）
 
 # 启动图标：assets/icon/app_icon.png 是唯一母图，各平台的图标资源全部由它生成。
 # 换图标只改母图，然后跑：dart run icons_launcher:launch

@@ -367,3 +367,30 @@ final class _ToggleSourceDialogState extends ConsumerState<_ToggleSourceDialog> 
     );
   }
 }
+
+/// The playback failure the session last toasted, keyed by song and reason:
+/// the bar and the full player both listen, and only one toast may land.
+String? _toastedPlaybackError;
+
+/// Watches the player for a playback failure and raises the reason once:
+/// the skip-on-error rule advances the queue silently otherwise, and the
+/// viewer would see the songs move with no word why. The bar and the full
+/// player both call this in their builds — whichever is on screen speaks.
+void listenPlaybackErrors(BuildContext context, WidgetRef ref) {
+  ref.listen(musicPlayerProvider, (previous, next) {
+    final error = next.error;
+    if (error == null || error.isEmpty) {
+      _toastedPlaybackError = null;
+      return;
+    }
+    final key = '${next.track?.id ?? ''}·$error';
+    if (key == _toastedPlaybackError) return;
+    _toastedPlaybackError = key;
+    showDsToast(
+      context: context,
+      title: context.t.music.playbackFailedTitle,
+      description: error,
+      status: DsStatus.danger,
+    );
+  });
+}

@@ -153,14 +153,16 @@ final class _AreaRoomsPageState extends ConsumerState<AreaRoomsPage> {
         onRefresh: controller.reload,
         refreshError: open.error?.message,
         itemBuilder: cardFor,
+        emptyTitle: context.t.areas.roomsEmptyTitle,
+        emptyDescription: context.t.areas.roomsEmptyDescription,
       );
     }
 
     final Widget body;
     if (state == null) {
-      body = Center(
-        child: DsEmptyState(icon: const DsIcon(DsIcons.tag), title: Text(title)),
-      );
+      // `init` has not answered yet: this is loading, not emptiness — the
+      // empty state would flash "no rooms" over every area open.
+      body = const Center(child: DsSpinner());
     } else if (!wide) {
       body = withHiddenNote(state, grid(state, state.rooms, endless: true));
     } else {

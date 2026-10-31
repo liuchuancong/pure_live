@@ -321,6 +321,9 @@ final class _PlatformPanel extends StatelessWidget {
   /// breathing room between.
   static const double _tileExtent = 112;
 
+  /// The narrowest a tile may get before the wall drops a column.
+  static const double _kTileMinWidth = 124;
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -357,69 +360,83 @@ final class _PlatformPanel extends StatelessWidget {
         children: [
           Text(t.popular.allPlatformsHint, style: theme.typography.small.copyWith(color: colors.textMuted)),
           Expanded(
-            child: GridView.builder(
-              // A focused card's ring is painted 4px outside it, while a
-              // viewport clips at its own edge: this room keeps the first
-              // and last columns' rings whole instead of cutting them flat
-              // against the panel's border.
-              padding: const EdgeInsets.all(DsSpace.s6),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisExtent: _tileExtent,
-                mainAxisSpacing: DsSpace.s12,
-                crossAxisSpacing: DsSpace.s12,
-              ),
-              itemCount: platforms.length,
-              itemBuilder: (context, index) {
-                final id = platforms[index];
-                final name = nameOf(id);
-                final selected = id == current;
-                return DsCard(
-                  // A remote opens the panel with no pointer: the shown
-                  // platform is the first stop.
-                  autofocus: selected,
-                  semanticLabel: name,
-                  style: DsCardStyle(
-                    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s12),
-                    background: selected ? colors.accentTint : null,
+            // The wall's column count follows the room it is given: a
+            // phone's sheet fits two tiles a row, a desktop panel three or
+            // four. A fixed three squeezed the names into ellipses on the
+            // narrow end and wasted the wide one.
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = ((constraints.maxWidth - DsSpace.s6 * 2 + DsSpace.s12) / (_kTileMinWidth + DsSpace.s12))
+                    .floor()
+                    .clamp(2, 4);
+                return GridView.builder(
+                  // A focused card's ring is painted 4px outside it, while a
+                  // viewport clips at its own edge: this room keeps the first
+                  // and last columns' rings whole instead of cutting them flat
+                  // against the panel's border.
+                  padding: const EdgeInsets.all(DsSpace.s6),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    mainAxisExtent: _tileExtent,
+                    mainAxisSpacing: DsSpace.s12,
+                    crossAxisSpacing: DsSpace.s12,
                   ),
-                  onPressed: () {
-                    onChanged(id);
-                    Navigator.of(context).pop();
-                  },
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        spacing: DsSpace.s8,
+                  itemCount: platforms.length,
+                  itemBuilder: (context, index) {
+                    final id = platforms[index];
+                    final name = nameOf(id);
+                    final selected = id == current;
+                    return DsCard(
+                      // A remote opens the panel with no pointer: the shown
+                      // platform is the first stop.
+                      autofocus: selected,
+                      semanticLabel: name,
+                      style: DsCardStyle(
+                        padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s12),
+                        background: selected ? colors.accentTint : null,
+                      ),
+                      onPressed: () {
+                        onChanged(id);
+                        Navigator.of(context).pop();
+                      },
+                      child: Stack(
+                        alignment: Alignment.center,
                         children: [
-                          ?iconOf(id),
-                          Text(
-                            name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: theme.typography.small.copyWith(color: colors.text),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            spacing: DsSpace.s8,
+                            children: [
+                              ?iconOf(id),
+                              Text(
+                                name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: theme.typography.small.copyWith(color: colors.text),
+                              ),
+                              if (countOf?.call(id) case final count?)
+                                Text('$count', style: theme.typography.overline.copyWith(color: colors.textSubtle)),
+                            ],
                           ),
-                          if (countOf?.call(id) case final count?)
-                            Text('$count', style: theme.typography.overline.copyWith(color: colors.textSubtle)),
+                          if (selected)
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: Container(
+                                width: 18,
+                                height: 18,
+                                alignment: Alignment.center,
+                                decoration: DsBoxDecoration(
+                                  color: colors.accent,
+                                  borderRadius: BorderRadius.circular(9),
+                                ),
+                                child: DsIcon(DsIcons.check, size: 12, color: colors.onAccent),
+                              ),
+                            ),
                         ],
                       ),
-                      if (selected)
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: Container(
-                            width: 18,
-                            height: 18,
-                            alignment: Alignment.center,
-                            decoration: DsBoxDecoration(color: colors.accent, borderRadius: BorderRadius.circular(9)),
-                            child: DsIcon(DsIcons.check, size: 12, color: colors.onAccent),
-                          ),
-                        ),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
             ),

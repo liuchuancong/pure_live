@@ -224,6 +224,7 @@ final class _DownloadRow extends ConsumerWidget {
       if (progress != null && !task.isTerminal) '${(progress * 100).round()}%',
       if (task.bytesPerSecond > 0 && task.status == audio.MusicDownloadStatus.running)
         '${_bytesText(task.bytesPerSecond)}/s',
+      ?_etaOf(t, task),
       if (playable && task.bytesTotal > 0) _bytesText(task.bytesTotal),
     ].join(' · ');
     return DsListRow(
@@ -253,7 +254,7 @@ final class _DownloadRow extends ConsumerWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: DsSpace.s4,
-        children: [..._actions(context, controller, t, ref), if (playable) _menu(context)],
+        children: [..._actions(context, controller, t, ref), if (playable) _menu(context, ref)],
       ),
     );
   }
@@ -294,8 +295,10 @@ final class _DownloadRow extends ConsumerWidget {
   }
 
   /// The finished file's ways out: open it, or open the folder it sits in —
-  /// the station managers' two verbs, beside the play the row leads with.
-  Widget _menu(BuildContext context) {
+  /// the station managers' two verbs, beside the play the row leads with —
+  /// and the destructive third the plain remove button must not be: the
+  /// record and its file going together, behind a confirm.
+  Widget _menu(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
@@ -328,8 +331,38 @@ final class _DownloadRow extends ConsumerWidget {
           label: Text(t.settings.downloadManagerOpenFolder),
           onPressed: () => unawaited(openDownloadedPath(context, File(task.outputPath).parent.path)),
         ),
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.trash2),
+          label: Text(t.music.downloadDeleteFile),
+          destructive: true,
+          onPressed: () => unawaited(_deleteFile(context, ref)),
+        ),
       ],
     );
+  }
+
+  /// The confirm-guarded file deletion: removing the row silently keeps the
+  /// file, so the delete that takes both is its own ask — the VOD page's
+  /// verb, worded for audio.
+  Future<void> _deleteFile(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.music.downloadDeleteFile,
+      description: t.music.downloadDeleteFileBody,
+      confirmLabel: t.common.delete,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.trash2),
+    );
+    if (!confirmed || !context.mounted) return;
+    try {
+      await ref.read(musicDownloadsProvider.notifier).remove(task.id, deleteFile: true);
+    } on Object {
+      if (context.mounted) {
+        showDsToast(context: context, title: t.music.downloadDeleteFailed, status: DsStatus.danger);
+      }
+    }
   }
 
   Widget _icon(String label, DsIconData icon, VoidCallback onPressed) => DsButton.icon(
@@ -365,6 +398,15 @@ String? _qualityOf(Translations t, audio.MusicDownloadTask task) {
   final id = task.request.qualityId;
   if (id == null || id.isEmpty) return null;
   return musicQualityByScriptName(id)?.label(t) ?? id;
+}
+
+/// The remaining time while the engine can compute one — bytes owed over a
+/// known speed; left out of the row rather than guessed.
+String? _etaOf(Translations t, audio.MusicDownloadTask task) {
+  if (task.status != audio.MusicDownloadStatus.running) return null;
+  final left = task.remaining;
+  if (left == null) return null;
+  return t.music.downloadEta(time: musicDurationText(left));
 }
 
 /// A byte count as a short human label.

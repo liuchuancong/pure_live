@@ -86,7 +86,7 @@ final class _FollowTagPickerState extends ConsumerState<_FollowTagPicker> {
       destructive: true,
       icon: const DsIcon(DsIcons.tag),
     );
-    if (!confirmed) return;
+    if (!confirmed || !mounted) return;
     await ref.read(followTagsProvider.notifier).remove(tag.id);
   }
 

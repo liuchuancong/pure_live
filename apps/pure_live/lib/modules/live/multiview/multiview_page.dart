@@ -224,9 +224,12 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
           semanticLabel: wallMuted ? t.multiview.unmuteAll : t.multiview.muteAll,
           active: wallMuted,
           onPressed: () {
-            if (playback.allMuted) controls.toggleMuteAll();
+            // The global switch outranks the wall's own: while it mutes, the
+            // fix is clearing it, not flipping the wall's flag under it.
             if (globallyMuted) {
               unawaited(ref.read(playbackSettingsProvider.notifier).setGlobalMute(value: false));
+            } else {
+              controls.toggleMuteAll();
             }
           },
         ),

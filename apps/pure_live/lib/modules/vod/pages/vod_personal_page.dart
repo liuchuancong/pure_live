@@ -91,7 +91,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
       cancelLabel: t.common.cancel,
       destructive: true,
     );
-    if (!confirmed) return;
+    if (!confirmed || !mounted) return;
     await ref.read(vodHistoryProvider.notifier).clear();
   }
 

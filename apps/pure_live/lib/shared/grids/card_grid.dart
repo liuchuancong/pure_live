@@ -11,6 +11,7 @@ import 'package:pure_live/features/settings/room/room_card_settings.dart'
     show kRoomCardCoverRatio, kRoomCardInfoExtent, roomCardTileHeight;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/focus/tv_focus_scale.dart';
+import 'package:pure_live/shared/widgets/pull_to_refresh.dart' show buildDsRefreshIndicator;
 
 /// The widest a feed card gets before the grid takes another column, and the
 /// narrowest one may get: the measure every card grid holds itself. A pinned
@@ -629,7 +630,7 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
     }
     final content = refresh == null
         ? collection
-        : CustomRefreshIndicator(onRefresh: refresh, builder: _buildRefreshIndicator, child: collection);
+        : CustomRefreshIndicator(onRefresh: refresh, builder: buildDsRefreshIndicator, child: collection);
     final error = widget.refreshError;
     // One Stack for good: the error bar is a keyed layer over the collection,
     // never a wrapper swapped in and out around it. A wrapper would change
@@ -651,46 +652,6 @@ final class _CardGridState<T> extends ConsumerState<CardGrid<T>> {
               reason: error,
               onRetry: refresh == null ? null : () => unawaited(refresh()),
               onDismiss: () => setState(() => _dismissedRefreshError = error),
-            ),
-          ),
-      ],
-    );
-  }
-
-  /// The pull-to-refresh indicator: a spinner easing down from under the
-  /// grid's top edge as the drag grows, on the kit's surface with the
-  /// accent ink.
-  Widget _buildRefreshIndicator(BuildContext context, Widget child, IndicatorController controller) {
-    final colors = DsTheme.colorsOf(context);
-    final value = controller.value.clamp(0.0, 1.0);
-    return Stack(
-      children: [
-        child,
-        if (!controller.isIdle)
-          Positioned(
-            top: value * 48 - 44,
-            left: 0,
-            right: 0,
-            child: IgnorePointer(
-              child: Center(
-                child: Opacity(
-                  opacity: value,
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    alignment: Alignment.center,
-                    decoration: DsBoxDecoration(
-                      color: colors.surface,
-                      borderRadius: BorderRadius.circular(18),
-                      shadows: [DsShadow.innerRing(colors.border)],
-                    ),
-                    child: IconTheme.merge(
-                      data: IconThemeData(size: 18, color: colors.accent),
-                      child: const DsSpinner(style: DsSpinnerStyle(size: 18)),
-                    ),
-                  ),
-                ),
-              ),
             ),
           ),
       ],

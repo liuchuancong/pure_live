@@ -10,4 +10,5 @@ export 'package:pure_live/shared/danmaku/danmaku_entry.dart';
 export 'package:pure_live/shared/danmaku/danmaku_files.dart';
 export 'package:pure_live/shared/danmaku/danmaku_format.dart';
 export 'package:pure_live/shared/danmaku/danmaku_save_formats.dart';
+export 'package:pure_live/shared/danmaku/danmaku_save_formats_section.dart';
 export 'package:pure_live/shared/danmaku/formats/formats.dart';

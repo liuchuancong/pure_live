@@ -34,11 +34,20 @@ final class SecureVault implements SecretVault {
   Future<void> delete(String ref) => storage.delete(key: ref);
 }
 
-/// The app's secrets, cached in memory over the device vault. The WebDAV
-/// password is read through this, never through the prefs.
-final webdavSecretStoreProvider = FutureProvider<SecretStore>((ref) {
+/// The app's secrets, cached in memory over the device vault. Every secret the
+/// app keeps — a WebDAV password, an account cookie, the app proxy's credential
+/// — is read through this one store, never through the prefs; `secretVaultProvider`
+/// in the network module is the alias other features reach it by.
+final appSecretStoreProvider = FutureProvider<SecretStore>((ref) {
   return SecretStore.load(vault: const SecureVault(FlutterSecureStorage()));
 });
+
+/// The name the WebDAV module itself uses for the shared store.
+/// The app's secret store, under its historical name: every caller in this
+/// module already reads it as the WebDAV store, and it is the same object the
+/// network module reaches through `secretVaultProvider`.
+// ignore: prefer_final_declarations
+final FutureProvider<SecretStore> webdavSecretStoreProvider = appSecretStoreProvider;
 
 /// The device vault, read through a widget's ref; null when it never opened.
 ///

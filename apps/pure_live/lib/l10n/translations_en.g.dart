@@ -1105,6 +1105,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get badgeHiRes => 'Hi-Res';
 	@override String get skipOnError => 'Skip a failing source';
 	@override String get skipOnErrorDesc => 'Moves to the next source when one cannot answer, instead of stopping.';
+	@override String get playbackFailedTitle => 'The song could not play';
 	@override String get autoplay => 'Resume on open';
 	@override String get autoplayDesc => 'Continues the last queue when the music module opens.';
 	@override String get rememberProgress => 'Remember playback position';
@@ -1173,6 +1174,7 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get queueEmpty => 'Queue is empty';
 	@override String get queueTitle => 'Queue';
 	@override String get nowPlaying => 'Now playing';
+	@override String get stagePanels => 'Lyrics & queue';
 	@override String get volume => 'Volume';
 	@override String get progress => 'Progress';
 	@override String get lyrics => 'Lyrics';
@@ -1338,6 +1340,10 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get downloadProgress => 'Download progress';
 	@override String get downloadRetry => 'Retry';
 	@override String get downloadRemove => 'Remove the row';
+	@override String get downloadDeleteFile => 'Delete the file';
+	@override String get downloadDeleteFileBody => 'The audio file goes with this record. This cannot be undone.';
+	@override String get downloadDeleteFailed => 'The file could not be deleted';
+	@override String downloadEta({required Object time}) => '${time} left';
 	@override String get downloadResume => 'Resume';
 	@override String get downloadPause => 'Pause';
 	@override String get downloadCancel => 'Cancel';
@@ -1438,6 +1444,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get desktopLyricColorGreen => 'Green';
 	@override String get desktopLyricColorOrange => 'Orange';
 	@override String get clearQueue => 'Clear the queue';
+	@override String get clearQueueConfirmTitle => 'Clear the play queue?';
+	@override String get clearQueueConfirmBody => 'Every song in the queue will be removed. This cannot be undone.';
 	@override String get exportLyric => 'Export the lyric';
 	@override String get associateLyric => 'Use a local lyric';
 	@override String get associateLyricDone => 'Lyric linked';
@@ -3934,6 +3942,7 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get downloadDeleteFile => 'Delete file';
 	@override String get downloadDeleteFileBody => 'The video file is deleted too; this cannot be undone.';
 	@override String get downloadDeleteFailed => 'Couldn\'t delete the file';
+	@override String downloadEta({required Object time}) => '${time} left';
 	@override String get partsPrevious => 'Previous group';
 	@override String get partsNext => 'Next group';
 	@override String get partsJump => 'Jump to part';
@@ -5017,6 +5026,7 @@ extension on TranslationsEn {
 			'music.badgeHiRes' => 'Hi-Res',
 			'music.skipOnError' => 'Skip a failing source',
 			'music.skipOnErrorDesc' => 'Moves to the next source when one cannot answer, instead of stopping.',
+			'music.playbackFailedTitle' => 'The song could not play',
 			'music.autoplay' => 'Resume on open',
 			'music.autoplayDesc' => 'Continues the last queue when the music module opens.',
 			'music.rememberProgress' => 'Remember playback position',
@@ -5085,10 +5095,11 @@ extension on TranslationsEn {
 			'music.queueEmpty' => 'Queue is empty',
 			'music.queueTitle' => 'Queue',
 			'music.nowPlaying' => 'Now playing',
-			'music.volume' => 'Volume',
-			'music.progress' => 'Progress',
+			'music.stagePanels' => 'Lyrics & queue',
 			_ => null,
 		} ?? switch (path) {
+			'music.volume' => 'Volume',
+			'music.progress' => 'Progress',
 			'music.lyrics' => 'Lyrics',
 			'music.lyricsEmpty' => 'This song has no lyrics yet.',
 			'music.lyricLoadFailed' => 'Couldn\'t load the lyrics',
@@ -5252,6 +5263,10 @@ extension on TranslationsEn {
 			'music.downloadProgress' => 'Download progress',
 			'music.downloadRetry' => 'Retry',
 			'music.downloadRemove' => 'Remove the row',
+			'music.downloadDeleteFile' => 'Delete the file',
+			'music.downloadDeleteFileBody' => 'The audio file goes with this record. This cannot be undone.',
+			'music.downloadDeleteFailed' => 'The file could not be deleted',
+			'music.downloadEta' => ({required Object time}) => '${time} left',
 			'music.downloadResume' => 'Resume',
 			'music.downloadPause' => 'Pause',
 			'music.downloadCancel' => 'Cancel',
@@ -5352,6 +5367,8 @@ extension on TranslationsEn {
 			'music.desktopLyricColorGreen' => 'Green',
 			'music.desktopLyricColorOrange' => 'Orange',
 			'music.clearQueue' => 'Clear the queue',
+			'music.clearQueueConfirmTitle' => 'Clear the play queue?',
+			'music.clearQueueConfirmBody' => 'Every song in the queue will be removed. This cannot be undone.',
 			'music.exportLyric' => 'Export the lyric',
 			'music.associateLyric' => 'Use a local lyric',
 			'music.associateLyricDone' => 'Lyric linked',
@@ -5593,6 +5610,8 @@ extension on TranslationsEn {
 			'music.tagEditMatchOnline' => 'Match online',
 			'music.tagEditMatchLyricDone' => 'Lyric matched',
 			'music.tagEditMatchPicDone' => 'Cover matched',
+			_ => null,
+		} ?? switch (path) {
 			'music.tagEditMatchLyricFailed' => 'Matching lyrics online failed',
 			'music.tagEditMatchPicFailed' => 'Matching the cover online failed',
 			'music.tagEditConfirm' => 'Save',
@@ -5601,8 +5620,6 @@ extension on TranslationsEn {
 			'music.tagEditUnsupportedFormat' => 'Tag writing is not supported for this format',
 			'music.tagEditReadFailed' => 'Reading the file\'s tags failed',
 			'music.syncClient' => 'Client mode',
-			_ => null,
-		} ?? switch (path) {
 			'music.hkAssignments' => 'Key assignments',
 			'music.sourcesImported' => 'Imported sources',
 			'navigation.groupPrimary' => 'Top pages',
@@ -6107,6 +6124,8 @@ extension on TranslationsEn {
 			'settings.generalDescription' => 'Browsing, window and startup pages.',
 			'settings.appearanceDescription' => 'Theme, typography and colours.',
 			'settings.personalizationDescription' => 'Theme, appearance, background and navigation.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.liveSettingsDescription' => 'Live sources, danmaku and recording.',
 			'settings.liveSourcesDescription' => 'Platforms, accounts and auto refresh.',
 			'settings.playbackSettingsDescription' => 'Playback preferences and the player engine.',
@@ -6115,8 +6134,6 @@ extension on TranslationsEn {
 			'settings.personalizationChooseTheme' => 'Choose a theme to apply',
 			'settings.personalizationSettings' => 'Personalization settings',
 			'settings.playbackDescription' => 'Quality, audio, picture and player behaviour.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.sitesDescription' => 'Preferred platform and platform display; per-platform quirks, accounts and follow tags.',
 			'settings.iptvDescription' => 'Guide updates and source syncing.',
 			'settings.vodDescription' => 'Bilibili account, default quality and video-station behaviour.',
@@ -6621,6 +6638,8 @@ extension on TranslationsEn {
 			'settings.musicLyricDescription' => 'Translation, romanization and lyric delay.',
 			'settings.navMusicDesktopLyric' => 'Desktop lyrics',
 			'settings.navMusicHotkeys' => 'Hotkeys',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navMusicSync' => 'Sync',
 			'settings.navMusicEq' => 'Sound effects',
 			'settings.musicHotkeysDescription' => 'Shortcuts for play, volume and favourites.',
@@ -6629,8 +6648,6 @@ extension on TranslationsEn {
 			'settings.musicDesktopLyricDescription' => 'The floating lyric\'s switch, lock, font, colour and alignment.',
 			'settings.vodQuality' => 'Default quality',
 			'settings.vodQualityDesc' => 'Quality a video opens with; signed-out Bilibili may cap at 720P.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.vodQuality720' => '720P',
 			'settings.vodQuality1080' => '1080P',
 			'settings.vodQuality1080Plus' => '1080P+',
@@ -7135,6 +7152,8 @@ extension on TranslationsEn {
 			'settings.audienceRealOnlineDesc' => 'Follow the platform: online counts where offered, heat elsewhere.',
 			'settings.audienceNeedsAutomaticMode' => 'Choose "Platform default" under the card display mode for the concurrent-viewer preference to apply.',
 			'settings.audiencePlatformsGroup' => 'Concurrent-viewer platforms',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audiencePlatformsDesc' => 'Only platforms with an explicit concurrent count appear here; a disabled platform keeps its heat or total views.',
 			'settings.audienceSourceRoomList' => 'Source: room list/detail; immediately rankable',
 			'settings.audienceSourceRoomRealtime' => 'Source: realtime message after entering a room',
@@ -7143,8 +7162,6 @@ extension on TranslationsEn {
 			'settings.audienceHeatOnlyDesc' => 'Their public APIs give no concurrent count; cards still show heat or total views.',
 			'settings.backgroundSolid' => 'Solid',
 			'settings.backgroundGradient' => 'Gradient',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundPresets' => 'Presets',
 			'settings.backgroundLibraryTitle' => 'Wallpaper library',
 			'settings.backgroundLibraryEmpty' => 'No wallpapers available',
@@ -7649,6 +7666,8 @@ extension on TranslationsEn {
 			'vod.danmaku' => 'Danmaku',
 			'vod.likes' => 'Likes',
 			'vod.coins' => 'Coins',
+			_ => null,
+		} ?? switch (path) {
 			'vod.favorites' => 'Favourites',
 			'vod.description' => 'Description',
 			'vod.noDescription' => 'This video has no description.',
@@ -7657,8 +7676,6 @@ extension on TranslationsEn {
 			'vod.mute' => 'Mute',
 			'vod.unmute' => 'Unmute',
 			'vod.volume' => 'Volume',
-			_ => null,
-		} ?? switch (path) {
 			'vod.quality' => 'Quality',
 			'vod.speed' => 'Speed',
 			'vod.fullscreen' => 'Fullscreen',
@@ -7759,6 +7776,7 @@ extension on TranslationsEn {
 			'vod.downloadDeleteFile' => 'Delete file',
 			'vod.downloadDeleteFileBody' => 'The video file is deleted too; this cannot be undone.',
 			'vod.downloadDeleteFailed' => 'Couldn\'t delete the file',
+			'vod.downloadEta' => ({required Object time}) => '${time} left',
 			'vod.partsPrevious' => 'Previous group',
 			'vod.partsNext' => 'Next group',
 			'vod.partsJump' => 'Jump to part',

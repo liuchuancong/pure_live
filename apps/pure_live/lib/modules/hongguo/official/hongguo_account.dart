@@ -271,7 +271,10 @@ final class HongguoAccountClient {
       if (!seen.add(row.id)) continue;
       progress.add(
         HongguoCloudProgress(
-          series: details[row.id] ?? HongguoSeries(seriesId: row.id, title: '剧集 ${row.id}'),
+          // The details fetch normally carries the series' own name; when it
+          // did not, the id stands in — a language-neutral fallback rather
+          // than a Chinese-only placeholder in an otherwise translated list.
+          series: details[row.id] ?? HongguoSeries(seriesId: row.id, title: row.id),
           episodeVid: row.vid,
           episodeIndex: row.index,
           positionMs: row.position,

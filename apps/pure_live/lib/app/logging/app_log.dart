@@ -1,5 +1,5 @@
 import 'dart:async' show StreamController, Timer, unawaited;
-import 'dart:io' show Directory;
+import 'dart:io' show Directory, File;
 
 import 'package:live_log/live_log.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
@@ -13,6 +13,41 @@ const int kDefaultAppLogFileMaxBytes = 4 * 1024 * 1024;
 const String _levelKey = 'log.level';
 const String _fileKey = 'log.file';
 const String _fileMaxBytesKey = 'log.fileMaxBytes';
+const String _filesKeptKey = 'log.filesKept';
+const String _fileNameKey = 'log.fileName';
+const String _formatKey = 'log.exportFormat';
+
+/// The base name a log file starts with: the rotating files are
+/// `PureLive.log`, `PureLive.1.log`, … unless the viewer names them.
+const String kDefaultAppLogBaseName = 'PureLive';
+
+/// The longest name the setting takes; a file name, not a sentence.
+const int kAppLogBaseNameMaxLength = 40;
+
+/// The file type a saved copy takes: plain text as `.txt` or as the
+/// conventional `.log`, or one JSON object per line as `.jsonl`.
+enum LogExportFormat {
+  /// Plain text under a `.txt` name: reads in any editor.
+  txt,
+
+  /// Plain text under a `.log` name: the same bytes, the extension a log
+  /// viewer expects.
+  log,
+
+  /// One JSON object per line: greppable and machine-readable, for a report
+  /// that gets parsed.
+  jsonLines;
+
+  /// The file extension a copy takes.
+  String get extension => switch (this) {
+    LogExportFormat.txt => 'txt',
+    LogExportFormat.log => 'log',
+    LogExportFormat.jsonLines => 'jsonl',
+  };
+
+  /// Whether the copy encodes records as JSON lines.
+  bool get isJsonLines => this == LogExportFormat.jsonLines;
+}
 
 /// The app's one log tree: a console line, the in-memory ring the log page
 /// reads, and (once storage opens) a rotating file. Records are sanitised
@@ -36,12 +71,17 @@ LogLevel appLogLevel = LogLevel.debug;
 _SwitchableSink? _fileSink;
 Directory? _directory;
 int _fileMaxBytes = kDefaultAppLogFileMaxBytes;
+int _fileMaxFiles = 0;
 bool _fileEnabled = true;
+String _baseName = kDefaultAppLogBaseName;
+LogExportFormat _exportFormat = LogExportFormat.txt;
 
 /// The file sink's current switch, so a refresh that changes nothing does not
 /// reopen the file.
 String? _sinkPath;
 int _sinkMaxBytes = 0;
+int _sinkMaxFiles = -1;
+String _sinkBaseName = '';
 
 /// The folder the rotating files are written to: the storage layout's logs
 /// folder with the viewer's own choice already laid over it, which the boot
@@ -53,6 +93,39 @@ String? get appLogDirectoryPath => _directory?.path;
 
 /// The size a log file reaches before it rotates.
 int get appLogFileMaxBytes => _fileMaxBytes;
+
+/// How many rotating files are kept, the live one included; zero keeps every
+/// file forever.
+int get appLogFilesKept => _fileMaxFiles;
+
+/// The base name the rotating files carry, without the `.log` suffix.
+String get appLogBaseName => _baseName;
+
+/// How a saved copy encodes the records.
+LogExportFormat get appLogExportFormat => _exportFormat;
+
+/// Today's folder name under the log directory, so the file list reads as
+/// days rather than one flat run.
+String get appLogDay => _dayStamp(DateTime.now());
+
+String _dayStamp(DateTime day) {
+  String two(int value) => value.toString().padLeft(2, '0');
+  return '${day.year}-${two(day.month)}-${two(day.day)}';
+}
+
+/// Today's folder under [root].
+Directory _dayDirectory(Directory root) => Directory(p.join(root.path, appLogDay));
+
+/// A viewer-typed name as a safe file name: path separators and the
+/// characters Windows refuses are dropped, and an empty answer falls back to
+/// the default rather than naming a file ''.
+String normalizeAppLogBaseName(String name) {
+  final cleaned = name.replaceAll(RegExp(r'[\/:*?"<>|]'), '').trim();
+  final cut = cleaned.length > kAppLogBaseNameMaxLength
+      ? cleaned.substring(0, kAppLogBaseNameMaxLength).trimRight()
+      : cleaned;
+  return cut.isEmpty ? kDefaultAppLogBaseName : cut;
+}
 
 /// Attaches the rotating file sink and applies the stored log preferences.
 /// [directory] is the logs folder the storage layout answers. Called once
@@ -75,6 +148,9 @@ void applyAppLogDirectory(Directory directory) {
 /// the settings refresh.
 void syncAppLogFromStore() {
   _fileMaxBytes = _readInt(_fileMaxBytesKey) ?? kDefaultAppLogFileMaxBytes;
+  _fileMaxFiles = _readInt(_filesKeptKey) ?? 0;
+  _baseName = normalizeAppLogBaseName(_readString(_fileNameKey) ?? kDefaultAppLogBaseName);
+  _exportFormat = LogExportFormat.values.asNameMap()[_readString(_formatKey) ?? ''] ?? LogExportFormat.txt;
   _fileEnabled = _readBool(_fileKey) ?? true;
   final level = _readLevel() ?? LogLevel.debug;
   appLogLevel = level;
@@ -112,6 +188,32 @@ void setAppLogFileMaxBytes(int bytes) {
   _attachFileSink();
 }
 
+/// Renames the rotating files: the live file is closed and the next line
+/// opens under the new name, in the same day's folder.
+void setAppLogBaseName(String name) {
+  final next = normalizeAppLogBaseName(name);
+  if (next == _baseName) return;
+  _baseName = next;
+  unawaitedStore(() => StoragePrefs.setString(_fileNameKey, next));
+  _attachFileSink();
+}
+
+/// Chooses how a saved copy encodes the records.
+void setAppLogExportFormat(LogExportFormat format) {
+  if (format == _exportFormat) return;
+  _exportFormat = format;
+  unawaitedStore(() => StoragePrefs.setString(_formatKey, format.name));
+}
+
+/// Sets how many rotating files are kept (zero keeps all) and rebuilds the
+/// sink, since the trim rule is fixed when the sink opens.
+void setAppLogFilesKept(int files) {
+  if (files == _fileMaxFiles) return;
+  _fileMaxFiles = files.clamp(0, 100);
+  unawaitedStore(() => StoragePrefs.setInt(_filesKeptKey, _fileMaxFiles));
+  _attachFileSink();
+}
+
 /// Drops every in-memory record (the file keeps what it wrote).
 void clearAppLog() {
   appLogMemory.clear();
@@ -121,10 +223,30 @@ void clearAppLog() {
 /// The in-memory records as text, for the clipboard/export path.
 String exportAppLog() => appLogMemory.exportText();
 
+/// Writes the in-memory records beside the log files — the viewer's own copy
+/// of what the console shows, named so it sorts after the rotating files.
+///
+/// The ring is the source: a file that is switched off still exports, and a
+/// file that is on is not disturbed.
+Future<File> saveAppLogCopy() async {
+  final directory = _directory;
+  if (directory == null) throw StateError('the log directory is not open yet');
+  final now = DateTime.now();
+  String two(int value) => value.toString().padLeft(2, '0');
+  // The base name and the whole stamp, so a copy stays identifiable after it
+  // is moved out of its day folder.
+  final stamp = '${now.year}-${two(now.month)}-${two(now.day)}-${two(now.hour)}-${two(now.minute)}-${two(now.second)}';
+  final file = File(p.join(_dayDirectory(directory).path, '$_baseName-$stamp.${_exportFormat.extension}'));
+  final body = _exportFormat.isJsonLines ? appLogMemory.exportJsonLines() : exportAppLog();
+  await file.parent.create(recursive: true);
+  await file.writeAsString(body, flush: true);
+  return file;
+}
+
 /// The live log file's path, once the file sink is attached.
 String? get appLogFile {
   final directory = _directory;
-  return directory == null ? null : p.join(directory.path, 'pure_live.log');
+  return directory == null ? null : p.join(directory.path, appLogDay, '$_baseName.log');
 }
 
 /// Replaces the file sink so it follows the current folder and limits; does
@@ -133,8 +255,16 @@ String? get appLogFile {
 void _attachFileSink() {
   final directory = _directory;
   if (directory == null) return;
+  // One folder per day: the files read as days rather than one flat list.
+  // A day a long-running session crosses is picked up the next time the sink
+  // is rebuilt (a settings change, the copy action or the next launch).
+  final dayDirectory = _dayDirectory(directory);
   final current = _fileSink;
-  if (current != null && _sinkPath == directory.path && _sinkMaxBytes == _fileMaxBytes) {
+  if (current != null &&
+      _sinkPath == dayDirectory.path &&
+      _sinkMaxBytes == _fileMaxBytes &&
+      _sinkMaxFiles == _fileMaxFiles &&
+      _sinkBaseName == _baseName) {
     current.enabled = _fileEnabled;
     return;
   }
@@ -142,15 +272,15 @@ void _attachFileSink() {
     _sinks.sinks.remove(current);
     unawaited(current.close());
   }
-  // No file count limit: a file gives way to the next only when it reaches
-  // the size limit, and nothing older is deleted.
   final sink = _SwitchableSink(
-    FileSink(directory, baseName: 'pure_live', maxFileBytes: _fileMaxBytes, maxFiles: 0),
+    FileSink(dayDirectory, baseName: _baseName, maxFileBytes: _fileMaxBytes, maxFiles: _fileMaxFiles),
     enabled: _fileEnabled,
   );
   _fileSink = sink;
-  _sinkPath = directory.path;
+  _sinkPath = dayDirectory.path;
   _sinkMaxBytes = _fileMaxBytes;
+  _sinkMaxFiles = _fileMaxFiles;
+  _sinkBaseName = _baseName;
   _sinks.sinks.add(sink);
 }
 
@@ -165,6 +295,14 @@ Future<void> _guard(Future<void> Function() write) async {
     await write();
   } on Object {
     // A preference; a closed store loses it.
+  }
+}
+
+String? _readString(String key) {
+  try {
+    return StoragePrefs.getString(key);
+  } on Object {
+    return null;
   }
 }
 

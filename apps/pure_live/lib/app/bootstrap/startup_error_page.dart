@@ -23,7 +23,10 @@ final class StartupErrorPage extends StatelessWidget {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text('启动失败:$error', textAlign: TextAlign.center),
+            // No translations are up at a failed boot, so the one line this
+            // screen carries says itself in both of the app's languages
+            // rather than guessing the viewer's.
+            child: Text('启动失败 / Startup failed\n$error', textAlign: TextAlign.center),
           ),
         ),
       ),

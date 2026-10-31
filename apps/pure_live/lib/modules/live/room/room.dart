@@ -17,8 +17,6 @@ export 'page/room_orientation.dart';
 export 'page/room_page.dart';
 export 'page/room_refresh_rate.dart';
 export 'page/room_status.dart';
-export 'player/cast_dialog.dart';
-export 'player/compact_danmaku_metrics.dart';
 export 'player/floating_room_player.dart';
 export 'player/room_playlist.dart';
 export 'player/room_switcher.dart';

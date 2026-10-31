@@ -26,7 +26,7 @@ import 'package:pure_live/modules/music/widgets/music_lyric_panel.dart';
 import 'package:pure_live/modules/music/widgets/music_quality_pill.dart';
 import 'package:pure_live/modules/music/widgets/music_queue_panel.dart' show MusicQueuePanel;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show cachedImage;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage;
 
 /// The module's player page: the song at listening size, its transport, and
 /// the queue behind it — the reference's PlayDetail, with the module's own
@@ -49,6 +49,9 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
     final controller = ref.read(musicPlayerProvider.notifier);
     final ui = ref.watch(musicUiSettingsProvider);
     final track = state.track;
+    // The bar hides while this page is up, so the failure toast needs this
+    // page's own ear; the shared key keeps the two from double-speaking.
+    listenPlaybackErrors(context, ref);
     return CallbackShortcuts(
       bindings: <SingleActivator, VoidCallback>{
         const SingleActivator(LogicalKeyboardKey.space): () => unawaited(controller.toggle()),
@@ -99,6 +102,14 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                   : LayoutBuilder(
                       builder: (context, constraints) {
                         final wide = constraints.maxWidth >= 920;
+                        // A phone has no room for a stage and a panel side by
+                        // side or stacked half each: the song leads, and the
+                        // lyrics / queue / comments open from the header, the
+                        // way the station's own phone player does.
+                        // A short window is the same problem as a narrow
+                        // one: two half-height panes leave neither side
+                        // usable, so height counts as well as width.
+                        final phone = constraints.maxWidth < LiveWindow.sheet || constraints.maxHeight < 520;
                         final header = Row(
                           spacing: DsSpace.s8,
                           children: [
@@ -130,6 +141,14 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                                 ],
                               ),
                             ),
+                            if (phone)
+                              DsButton.icon(
+                                variant: DsButtonVariant.secondary,
+                                size: DsSize.sm,
+                                semanticLabel: t.music.stagePanels,
+                                onPressed: () => _openStagePanels(context),
+                                icon: const DsIcon(DsIcons.listMusic),
+                              ),
                             const _PlayerMenu(),
                           ],
                         );
@@ -141,6 +160,8 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                                   Expanded(flex: 6, child: _SidePanel()),
                                 ],
                               )
+                            : phone
+                            ? const _Stage()
                             : const Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 spacing: DsSpace.s12,
@@ -168,6 +189,27 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
       ),
     );
   }
+}
+
+/// The phone's panel button: lyrics, comments, the queue and recent songs,
+/// each a tab of one sheet. The stage keeps the screen and these lists are
+/// summoned — the station's own phone player — because half the screen given
+/// to a permanently open panel left neither side enough room.
+void _openStagePanels(BuildContext context) {
+  final t = context.t;
+  unawaited(
+    showDsPanel<void>(
+      context: context,
+      builder: (context) => DsPanel(
+        title: Text(t.music.stagePanels),
+        scrollable: false,
+        child: SizedBox(
+          height: (MediaQuery.sizeOf(context).height * 0.6).clamp(320.0, 560.0),
+          child: const _SidePanel(),
+        ),
+      ),
+    ),
+  );
 }
 
 /// The stage: the song at listening size above its seek and transport.
@@ -441,7 +483,7 @@ final class _SpectrumState extends ConsumerState<_Spectrum> {
     // Watching the player state re-runs this when the engine comes to be
     // (the first track) or is replaced, which is exactly when the tap
     // stream appears and the subscription has to be made anew.
-    ref.watch(musicPlayerProvider);
+    final player = ref.watch(musicPlayerProvider);
     final spectrum = ref.read(musicPlayerProvider.notifier).spectrum;
     if (spectrum != null && _subscription == null) {
       _subscription = spectrum.listen(
@@ -453,7 +495,10 @@ final class _SpectrumState extends ConsumerState<_Spectrum> {
       );
     }
     final bands = _bands;
-    if (bands == null || bands.isEmpty) return const SizedBox.shrink();
+    // A paused or failed engine stops sending frames, and the strip would
+    // freeze on its last frame — a picture of sound that is not sounding.
+    // Only a playing engine earns the bars.
+    if (!player.playing || bands == null || bands.isEmpty) return const SizedBox.shrink();
     return SizedBox(
       height: 44,
       child: CustomPaint(
@@ -1172,7 +1217,21 @@ final class _PlayerMenuState extends ConsumerState<_PlayerMenu> {
             leading: const DsIcon(DsIcons.trash2),
             label: Text(t.music.clearQueue),
             destructive: true,
-            onPressed: () => unawaited(controller.clearQueue()),
+            onPressed: () async {
+              // The same ask the queue panel makes: an emptied queue cannot
+              // be brought back.
+              final confirmed = await showDsConfirm(
+                context: context,
+                title: t.music.clearQueueConfirmTitle,
+                description: t.music.clearQueueConfirmBody,
+                confirmLabel: t.music.clearQueue,
+                cancelLabel: t.common.cancel,
+                destructive: true,
+                icon: const DsIcon(DsIcons.trash2),
+              );
+              if (!confirmed || !context.mounted) return;
+              unawaited(controller.clearQueue());
+            },
           ),
         ],
       ],

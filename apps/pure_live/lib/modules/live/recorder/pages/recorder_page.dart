@@ -1,12 +1,15 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show TimeoutException, unawaited;
+import 'dart:io' show File;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_sites/live_sites.dart' show LiveAudienceMetricType, LiveRoom;
-import 'package:open_file/open_file.dart' show OpenFile, ResultType;
+import 'package:go_router/go_router.dart' show GoRouterHelper;
+import 'package:live_sites/live_sites.dart' show LiveAudienceMetricType, LiveDanmakuProvider, LiveRoom;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
@@ -15,6 +18,8 @@ import 'package:pure_live/modules/live/recorder/data/recording_repository.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_settings.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart';
 import 'package:pure_live/modules/live/recorder/engine/recorder_engine.dart' show recorderEngineProvider;
+import 'package:pure_live/modules/live/recorder/engine/stream_resolver.dart'
+    show NoRecordableStream, resolveRecordableStream;
 import 'package:pure_live/shared/shared.dart';
 
 /// The recording centre (the reference's recorder page): five status
@@ -85,6 +90,20 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final counts = <_RecorderFilter, int>{
       for (final filter in _RecorderFilter.values) filter: store.tasks.where(filter.matches).length,
     };
+    // The two groups the whole-list actions work on: what the engine is
+    // writing now, and the rows a session already settled — a take still being
+    // joined and a room still being watched belong to neither.
+    final recording = [
+      for (final task in store.tasks)
+        if (task.state == RecordingTaskState.recording) task,
+    ];
+    final settled = [
+      for (final task in store.tasks)
+        if (!task.postProcessing &&
+            task.state != RecordingTaskState.recording &&
+            task.state != RecordingTaskState.waiting)
+          task,
+    ];
     final visible = [
       for (final task in store.tasks)
         if (_filter.matches(task)) task,
@@ -117,6 +136,19 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               ? () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id))
               : null,
           onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
+          onSchedule: () => unawaited(_editSchedule(task)),
+          onStartNow: !task.postProcessing && task.state != RecordingTaskState.recording
+              ? () => unawaited(_startNow(task))
+              : null,
+          onCancelProcessing: task.postProcessing ? () => unawaited(_cancelProcessing(task.id)) : null,
+          // A take the app never finished still holds its segments: offer the
+          // finish again whenever the task names a file and nothing runs.
+          onRetryJoin:
+              !task.postProcessing &&
+                  task.state != RecordingTaskState.recording &&
+                  (task.filePath ?? '').trim().isNotEmpty
+              ? () => unawaited(_retryJoin(task))
+              : null,
         ),
       );
     }
@@ -133,11 +165,18 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               Expanded(
                 child: Text(t.navigation.record, style: theme.typography.title.copyWith(color: colors.text)),
               ),
+              // Whole-list work belongs beside the title, not inside one card:
+              // a room that ran for a month is a list of takes, and stopping or
+              // clearing them one by one is not what a viewer means by "停掉".
+              _BatchMenu(
+                onStopAll: recording.isEmpty ? null : () => unawaited(_stopAll(recording)),
+                onClearFinished: settled.isEmpty ? null : () => unawaited(_clearFinished(settled)),
+              ),
               DsButton(
                 variant: DsButtonVariant.ghost,
                 size: DsSize.sm,
                 leading: const DsIcon(DsIcons.settings, size: 16),
-                onPressed: () => unawaited(_openSettings()),
+                onPressed: _openSettings,
                 child: Text(t.recorder.settingsOpen),
               ),
             ],
@@ -155,7 +194,10 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
             ],
           ),
         ),
-        if (!polling && (counts[_RecorderFilter.waiting] ?? 0) > 0)
+        // With the live check off nothing begins a take on its own, so the banner
+        // covers the scheduled rows too: a stopped task whose window is meant to
+        // re-arm it is just as stranded as a room waiting to go live.
+        if (!polling && store.tasks.any((task) => task.needsLiveCheck))
           Padding(
             padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
             child: DsAlert(
@@ -195,25 +237,201 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     );
   }
 
-  /// The recorder settings, as the pane the settings surface will embed
-  /// beside this page too; until its section exists, the header action
-  /// opens it in a panel over the page.
-  Future<void> _openSettings() => showDsDialog<void>(
-    context: context,
-    builder: (dialogContext) => DsDialog(
-      title: Text(dialogContext.t.recorder.settingsOpen),
-      icon: const DsIcon(DsIcons.settings),
-      description: const RecordingSettingsPane(),
-      actions: [
-        DsButton(
-          variant: DsButtonVariant.secondary,
-          onPressed: () => Navigator.of(dialogContext).pop(),
-          child: Text(dialogContext.t.common.close),
-        ),
-      ],
-      style: const DsDialogStyle(width: 460),
-    ),
-  );
+  /// The recorder's settings live on the settings surface: the header action
+  /// opens that page with the recording category chosen, the same page the
+  /// sidebar reaches, instead of a dialog over this one.
+  void _openSettings() {
+    openSettingsSection(ref, SettingsSection.recording);
+    unawaited(context.push(SettingsSectionRoute(section: SettingsSection.recording.name).location));
+  }
+
+  /// Cancels the take's running join/transcode; the files it already has stay.
+  Future<void> _cancelProcessing(String taskId) async {
+    final cancelled = await ref.read(recorderEngineProvider).cancelFinalize(taskId);
+    if (!cancelled || !mounted) return;
+    showDsToast(context: context, title: context.t.recorder.cancelProcessingRequested, status: DsStatus.info);
+  }
+
+  /// Runs the post-recording steps again on a take the app never finished.
+  ///
+  /// The engine reads the folder back — its manifest and journals say which
+  /// segments are closed — and joins, transcodes and renames it exactly as a
+  /// normal stop would, so the card shows the work with its own progress and
+  /// the cancel item. Only a refusal needs saying here, and the engine names
+  /// the reason.
+  Future<void> _retryJoin(RecordingTask task) async {
+    final t = context.t;
+    final failure = await ref.read(recorderEngineProvider).retryFinalize(task);
+    if (!mounted) return;
+    if (failure == null) {
+      showDsToast(context: context, title: t.recorder.retryJoinStarted, status: DsStatus.info);
+      return;
+    }
+    final message = switch (failure) {
+      'busy' => t.recorder.retryJoinBusy,
+      'gone' => t.recorder.retryJoinGone,
+      'nothing' => t.recorder.retryJoinNothing,
+      _ => t.recorder.retryJoinFailed(error: failure),
+    };
+    showDsToast(context: context, title: message, status: DsStatus.warning);
+  }
+
+  /// Stops every capture the engine is writing.
+  ///
+  /// Each take ends as a user stop, so its segments stay and its join runs the
+  /// way the card's own stop would. A row the engine does not hold is skipped
+  /// rather than faked: another window owns that session and its files.
+  Future<void> _stopAll(List<RecordingTask> recording) async {
+    final t = context.t;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.recorder.stopAllTitle,
+      description: t.recorder.stopAllBody(count: recording.length),
+      confirmLabel: t.recorder.stopAll,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.squareStop),
+    );
+    if (!confirmed || !mounted) return;
+    final engine = ref.read(recorderEngineProvider);
+    var stopped = 0;
+    String? failure;
+    for (final task in recording) {
+      if (!engine.isRecording(task.id)) continue;
+      try {
+        final error = await engine.stop(task.id);
+        if (error == null) {
+          stopped++;
+        } else {
+          failure = error;
+        }
+      } on Object catch (error) {
+        failure = error.toString();
+      }
+    }
+    if (!mounted) return;
+    showDsToast(
+      context: context,
+      title: failure == null
+          ? t.recorder.stopAllDone(count: stopped)
+          : t.recorder.stopAllPartial(count: stopped, error: failure),
+      status: failure == null ? DsStatus.success : DsStatus.warning,
+    );
+  }
+
+  /// Drops the rows a session already settled, leaving every file where it is.
+  ///
+  /// The list of a recorder that ran for a month is mostly history; the take is
+  /// the thing worth keeping, the card is not. A take still being joined and a
+  /// room still being watched are never in this group (the caller filters them),
+  /// and removing a row touches no media.
+  Future<void> _clearFinished(List<RecordingTask> settled) async {
+    final t = context.t;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.recorder.clearSettledTitle,
+      description: t.recorder.clearSettledBody(count: settled.length),
+      confirmLabel: t.recorder.clearSettled,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.trash2),
+    );
+    if (!confirmed || !mounted) return;
+    final notifier = ref.read(recordingTasksProvider.notifier);
+    var removed = 0;
+    for (final task in settled) {
+      await notifier.remove(task.id);
+      removed++;
+    }
+    if (!mounted) return;
+    showDsToast(
+      context: context,
+      title: t.recorder.clearSettledDone(count: removed),
+      status: DsStatus.success,
+    );
+  }
+
+  /// Starts a waiting/stopped task now, ignoring its schedule window.
+  ///
+  /// This is the manual override a viewer uses when they know the room is live:
+  /// it resolves the current line exactly as the monitor does and hands it to
+  /// the engine.
+  Future<void> _startNow(RecordingTask task) async {
+    final t = context.t;
+    final site = ref.read(sitesProvider).getById(task.platform);
+    if (site == null) {
+      showDsToast(
+        context: context,
+        title: t.recorder.startNowFailed(error: task.platform),
+        status: DsStatus.danger,
+      );
+      return;
+    }
+    try {
+      final stream = await resolveRecordableStream(
+        site: site,
+        platform: task.platform,
+        roomId: task.roomId,
+        qualityLabel: task.quality,
+      ).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      final failure = await ref
+          .read(recorderEngineProvider)
+          .start(task, stream.line, room: stream.room, danmaku: site.capability<LiveDanmakuProvider>());
+      if (!mounted) return;
+      showDsToast(
+        context: context,
+        title: failure == null
+            ? t.recorder.startNowStarted
+            : failure == 'custom-ca'
+            ? t.recorder.startNowCaFailed
+            : failure == 'recording-busy'
+            ? t.recorder.startNowBusyOther
+            : t.recorder.startNowFailed(error: failure),
+        status: failure == null ? DsStatus.success : DsStatus.danger,
+      );
+    } on NoRecordableStream catch (error) {
+      if (!mounted) return;
+      showDsToast(
+        context: context,
+        title: error.reason == 'offline' ? t.recorder.startNowOffline : t.recorder.startNowNoStream,
+        status: DsStatus.warning,
+      );
+    } on TimeoutException {
+      if (mounted) showDsToast(context: context, title: t.recorder.startNowTimeout, status: DsStatus.warning);
+    } on Object catch (error) {
+      if (mounted) {
+        showDsToast(
+          context: context,
+          title: t.recorder.startNowFailed(error: error.toString()),
+          status: DsStatus.danger,
+        );
+      }
+    }
+  }
+
+  /// Opens the take's schedule editor and saves the window it returns.
+  Future<void> _editSchedule(RecordingTask task) async {
+    final draft = await showDsDialog<_ScheduleDraft>(
+      context: context,
+      builder: (context) => _ScheduleDialog(task: task),
+    );
+    if (draft == null || !mounted) return;
+    final days = draft.days.toList()..sort();
+    await ref
+        .read(recordingTasksProvider.notifier)
+        .add(
+          task.copyWith(
+            scheduleEnabled: draft.enabled,
+            scheduleDays: days.isEmpty ? const [1, 2, 3, 4, 5, 6, 7] : days,
+            scheduleStartMinutes: draft.start,
+            scheduleEndMinutes: draft.end,
+            stopAtWindowEnd: draft.stopAtEnd,
+          ),
+        );
+    if (!mounted) return;
+    showDsToast(context: context, title: context.t.recorder.scheduleSaved, status: DsStatus.success);
+  }
 
   /// A platform id's display name, or the id itself when the registry
   /// does not know it (a task from a site since removed).
@@ -247,8 +465,12 @@ final class _TaskCard extends StatelessWidget {
     required this.platformName,
     required this.onOpen,
     required this.onDelete,
+    required this.onSchedule,
     this.onStop,
     this.onCancelWaiting,
+    this.onCancelProcessing,
+    this.onStartNow,
+    this.onRetryJoin,
   });
 
   final RecordingTask task;
@@ -265,11 +487,24 @@ final class _TaskCard extends StatelessWidget {
   /// Drops the task (the menu has confirmed it).
   final VoidCallback onDelete;
 
+  /// Opens the take's schedule editor.
+  final VoidCallback onSchedule;
+
   /// Stops a running capture, null when the task is not being recorded.
   final VoidCallback? onStop;
 
   /// Takes a waiting task out of the live check, null for other states.
   final VoidCallback? onCancelWaiting;
+
+  /// Cancels a running join/transcode, null when there is none.
+  final VoidCallback? onCancelProcessing;
+
+  /// Starts a waiting/stopped task now, null while it is already running.
+  final VoidCallback? onStartNow;
+
+  /// Re-runs the post-recording steps on a take the app never finished, null
+  /// while the task is being captured or finished.
+  final VoidCallback? onRetryJoin;
 
   @override
   Widget build(BuildContext context) {
@@ -286,7 +521,17 @@ final class _TaskCard extends StatelessWidget {
       platformName,
       if (audience.isNotEmpty) audience,
       if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
+      if (task.scheduleEnabled) _scheduleSummary(t, task),
       t.recorder.startedAt(time: _formatMoment(task.startedAt)),
+    ].join(' · ');
+    // Media time is what the take actually captured; a running session that
+    // has not reported yet falls back to the wall clock since it started.
+    final recorded = Duration(milliseconds: task.durationMs);
+    final elapsed = task.isRunning && recorded == Duration.zero ? DateTime.now().difference(task.startedAt) : recorded;
+    final speed = task.isRunning && elapsed.inSeconds > 0 && task.bytes > 0 ? task.bytes / elapsed.inSeconds : 0.0;
+    final progress = [
+      if (elapsed > Duration.zero) _formatDuration(elapsed),
+      if (speed > 0) '${_formatBytes(speed.round())}/s',
     ].join(' · ');
     return DsCard(
       onPressed: onOpen,
@@ -345,12 +590,45 @@ final class _TaskCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.caption.copyWith(color: colors.textMuted),
                     ),
+                    // A row that says recording while this window holds no
+                    // session tells the truth about the store, not about here:
+                    // another window may be writing it, or the last process
+                    // died mid-take. The line says which readings to expect
+                    // rather than leaving a card that looks live and answers
+                    // nothing.
+                    if (task.state == RecordingTaskState.recording && onStop == null)
+                      Text(
+                        t.recorder.stateRecordingElsewhere,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.warning.text),
+                      ),
                     if (task.state == RecordingTaskState.failed && task.errorText.trim().isNotEmpty)
                       Text(
                         task.errorText.trim(),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.typography.caption.copyWith(color: colors.danger.text),
+                      ),
+                    if (!task.postProcessing && task.warning.isNotEmpty)
+                      Text(
+                        _warningLabel(t, task.warning),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.warning.text),
+                      ),
+                    if (task.postProcessing)
+                      Padding(
+                        padding: const EdgeInsets.only(top: DsSpace.s4),
+                        child: Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: DsProgressBar(
+                            value: task.postProcessingProgress >= 0
+                                ? task.postProcessingProgress.clamp(0.0, 1.0)
+                                : null,
+                            semanticLabel: t.recorder.stateProcessing,
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -359,11 +637,21 @@ final class _TaskCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 spacing: DsSpace.s3,
                 children: [
-                  DsBadge(label: Text(_stateLabel(t, task.state)), status: _stateStatus(task.state)),
+                  DsBadge(
+                    label: Text(task.postProcessing ? t.recorder.stateProcessing : _stateLabel(t, task.state)),
+                    status: task.postProcessing ? DsStatus.info : _stateStatus(task.state),
+                  ),
                   Text(
                     task.bytes > 0 ? _formatBytes(task.bytes) : '—',
                     style: theme.typography.caption.copyWith(color: colors.textSubtle),
                   ),
+                  if (progress.isNotEmpty)
+                    Text(
+                      progress,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                    ),
                 ],
               ),
               _TaskMenu(
@@ -373,6 +661,10 @@ final class _TaskCard extends StatelessWidget {
                 onStop: onStop,
                 onCancelWaiting: onCancelWaiting,
                 onDelete: onDelete,
+                onSchedule: onSchedule,
+                onCancelProcessing: onCancelProcessing,
+                onStartNow: onStartNow,
+                onRetryJoin: onRetryJoin,
               ),
             ],
           );
@@ -405,6 +697,66 @@ final class _TaskCard extends StatelessWidget {
   }
 }
 
+/// The whole-list actions, beside the page title.
+///
+/// An item appears only when there is something for it to act on — a row that
+/// would do nothing is a dead control, and the card menu already follows the
+/// same rule. Bulk *starting* is deliberately absent: a waiting room is begun
+/// by the live check when it goes on air, and forcing one that is offline is
+/// what each card's 「立即开录」 exists for.
+final class _BatchMenu extends StatelessWidget {
+  const _BatchMenu({this.onStopAll, this.onClearFinished});
+
+  /// Stops the captures now running; null when none are.
+  final VoidCallback? onStopAll;
+
+  /// Drops the rows a session already settled; null when there are none.
+  final VoidCallback? onClearFinished;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    if (onStopAll == null && onClearFinished == null) return const SizedBox.shrink();
+    return DsMenuAnchor(
+      semanticLabel: t.recorder.batchMenu,
+      align: DsAlign.end,
+      builder: (context, controller, child) => DsPressable(
+        semanticLabel: t.recorder.batchMenu,
+        onPressed: controller.toggle,
+        builder: (context, states, _) {
+          final hovered = states.contains(WidgetState.hovered);
+          return Padding(
+            padding: const EdgeInsets.all(DsSpace.s4),
+            child: DsIcon(
+              DsIcons.listChecks,
+              size: theme.sizes.iconSm,
+              color: hovered ? colors.text : colors.textSubtle,
+            ),
+          );
+        },
+      ),
+      items: [
+        if (onStopAll case final stop?)
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.squareStop),
+            label: Text(t.recorder.stopAll),
+            destructive: true,
+            onPressed: stop,
+          ),
+        if (onClearFinished case final clear?)
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.trash2),
+            label: Text(t.recorder.clearSettled),
+            destructive: true,
+            onPressed: clear,
+          ),
+      ],
+    );
+  }
+}
+
 /// The card's "⋮" menu: the room, the saved file's folder (when the task
 /// has one), taking a waiting task out of the live check, and the confirmed
 /// delete.
@@ -414,8 +766,12 @@ final class _TaskMenu extends StatelessWidget {
     required this.hasFile,
     required this.onOpen,
     required this.onDelete,
+    required this.onSchedule,
     this.onStop,
     this.onCancelWaiting,
+    this.onCancelProcessing,
+    this.onStartNow,
+    this.onRetryJoin,
   });
 
   final RecordingTask task;
@@ -425,12 +781,23 @@ final class _TaskMenu extends StatelessWidget {
 
   final VoidCallback onOpen;
   final VoidCallback onDelete;
+  final VoidCallback onSchedule;
 
   /// Stops a running capture, null when the task is not being recorded.
   final VoidCallback? onStop;
 
   /// Takes a waiting task out of the live check, null for other states.
   final VoidCallback? onCancelWaiting;
+
+  /// Cancels a running join/transcode, null when there is none.
+  final VoidCallback? onCancelProcessing;
+
+  /// Starts a waiting/stopped task now, null while it is already running.
+  final VoidCallback? onStartNow;
+
+  /// Re-runs the post-recording steps on a take the app never finished, null
+  /// while the task is being captured or finished.
+  final VoidCallback? onRetryJoin;
 
   @override
   Widget build(BuildContext context) {
@@ -457,19 +824,46 @@ final class _TaskMenu extends StatelessWidget {
       ),
       items: [
         DsMenuItem(leading: const DsIcon(DsIcons.externalLink), label: Text(t.recorder.openRoom), onPressed: onOpen),
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.calendarClock),
+          label: Text(t.recorder.scheduleMenu),
+          onPressed: onSchedule,
+        ),
+        if (onStartNow case final start?)
+          DsMenuItem(leading: const DsIcon(DsIcons.play), label: Text(t.recorder.startNow), onPressed: start),
         if (hasFile)
           DsMenuItem(
             leading: const DsIcon(DsIcons.folderOpen),
             label: Text(t.recorder.openFolder),
             onPressed: () => unawaited(_openFolder(context)),
           ),
+        if (hasFile && File((task.filePath ?? '').trim()).existsSync())
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.playCircle),
+            label: Text(t.recorder.previewRecording),
+            onPressed: () {
+              final file = (task.filePath ?? '').trim();
+              final room = task.roomTitle.trim();
+              unawaited(showLocalMediaPreview(context, path: file, title: room.isNotEmpty ? room : p.basename(file)));
+            },
+          ),
+        if (hasFile && File((task.filePath ?? '').trim()).existsSync())
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.play),
+            label: Text(t.recorder.playRecording),
+            onPressed: () => unawaited(_playRecording(context)),
+          ),
         if (onStop case final stop?)
           DsMenuItem(
-            leading: const DsIcon(DsIcons.square),
+            leading: const DsIcon(DsIcons.squareStop),
             label: Text(t.recorder.stop),
             destructive: true,
             onPressed: stop,
           ),
+        if (onCancelProcessing case final cancel?)
+          DsMenuItem(leading: const DsIcon(DsIcons.x), label: Text(t.recorder.cancelProcessing), onPressed: cancel),
+        if (onRetryJoin case final retry?)
+          DsMenuItem(leading: const DsIcon(DsIcons.merge), label: Text(t.recorder.retryJoin), onPressed: retry),
         if (onCancelWaiting case final cancel?)
           DsMenuItem(leading: const DsIcon(DsIcons.clock), label: Text(t.room.autoRecordOff), onPressed: cancel),
         const DsMenuDivider(),
@@ -488,9 +882,14 @@ final class _TaskMenu extends StatelessWidget {
   Future<void> _openFolder(BuildContext context) async {
     final file = (task.filePath ?? '').trim();
     if (file.isEmpty) return;
-    final opened = await OpenFile.open(p.dirname(file));
-    if (opened.type == ResultType.done || !context.mounted) return;
-    showDsToast(context: context, title: context.t.recorder.openFolderFailed, status: DsStatus.danger);
+    await openDownloadedPath(context, p.dirname(file), failedTitle: context.t.recorder.openFolderFailed);
+  }
+
+  /// Opens the joined file in the system's own player.
+  Future<void> _playRecording(BuildContext context) async {
+    final file = (task.filePath ?? '').trim();
+    if (file.isEmpty) return;
+    await openDownloadedPath(context, file);
   }
 
   /// Asks before dropping the task: the entry goes, the files stay.
@@ -565,6 +964,73 @@ String _formatBytes(int bytes) {
 /// gigabyte, one decimal above.
 String _formatMb(int megabytes) => megabytes >= 1024 ? '${(megabytes / 1024).toStringAsFixed(1)} GB' : '$megabytes MB';
 
+/// A bitrate as the settings show it: whole megabits when the figure divides
+/// evenly, one decimal otherwise.
+String _formatBitrate(int kbps) =>
+    kbps % 1000 == 0 ? '${kbps ~/ 1000} Mbps' : '${(kbps / 1000).toStringAsFixed(1)} Mbps';
+
+/// The bitrate choices, plus the stored value when it came from an older
+/// build, so the dropdown never opens on a value it does not list.
+List<int> _transcodeBitrateChoices(int current) => ({1500, 2500, 4000, 6000, 8000, current}.toList()..sort());
+
+/// One of the stable post-processing warning codes as the viewer's sentence.
+String _warningLabel(Translations t, String warning) => switch (warning) {
+  'join-failed' => t.recorder.warningJoinFailed,
+  'transcode-failed' => t.recorder.warningTranscodeFailed,
+  'stale' => t.recorder.warningStaleProcessing,
+  'disk-low' => t.recorder.warningDiskLow,
+  'canceled' => t.recorder.warningCanceled,
+  _ => t.recorder.warningFinalizeFailed,
+};
+
+/// A clock minute in the 24-hour form the app's Chinese UI uses; 1440 is the
+/// end of the day, shown as 24:00.
+String _formatClock(int minutes) {
+  final value = minutes.clamp(0, 1440);
+  final hour = value ~/ 60;
+  final minute = value % 60;
+  return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+}
+
+String _scheduleDayLabel(Translations t, int day) => switch (day) {
+  1 => t.recorder.scheduleDayMon,
+  2 => t.recorder.scheduleDayTue,
+  3 => t.recorder.scheduleDayWed,
+  4 => t.recorder.scheduleDayThu,
+  5 => t.recorder.scheduleDayFri,
+  6 => t.recorder.scheduleDaySat,
+  _ => t.recorder.scheduleDaySun,
+};
+
+/// The weekdays a schedule covers, in the shortest form that stays truthful.
+String _scheduleDaysLabel(Translations t, List<int> days) {
+  final selected = days.isEmpty ? const {1, 2, 3, 4, 5, 6, 7} : days.toSet();
+  if (selected.length == 7) return t.recorder.scheduleEveryDay;
+  if (selected.length == 5 && selected.containsAll(const [1, 2, 3, 4, 5])) {
+    return t.recorder.scheduleWorkdays;
+  }
+  if (selected.length == 2 && selected.containsAll(const [6, 7])) return t.recorder.scheduleWeekend;
+  return [
+    for (var day = 1; day <= 7; day++)
+      if (selected.contains(day)) _scheduleDayLabel(t, day),
+  ].join(t.recorder.scheduleDaySeparator);
+}
+
+String _scheduleSummary(Translations t, RecordingTask task) => t.recorder.scheduleSummary(
+  days: _scheduleDaysLabel(t, task.scheduleDays),
+  range: '${_formatClock(task.scheduleStartMinutes)}–${_formatClock(task.scheduleEndMinutes)}',
+);
+
+/// A capture length as a player shows it: minutes and seconds, hours only
+/// when the take has them.
+String _formatDuration(Duration duration) {
+  String two(int value) => value.toString().padLeft(2, '0');
+  final hours = duration.inHours;
+  final minutes = duration.inMinutes % 60;
+  final seconds = duration.inSeconds % 60;
+  return hours > 0 ? '$hours:${two(minutes)}:${two(seconds)}' : '${two(minutes)}:${two(seconds)}';
+}
+
 /// A local moment for a task list row: the clock on today's entries, a
 /// short date with the clock otherwise.
 String _formatMoment(DateTime utc) {
@@ -638,7 +1104,10 @@ final class _RecordSwitch extends StatelessWidget {
   final String title;
   final String description;
   final bool value;
-  final ValueChanged<bool> onChanged;
+
+  /// Null keeps the switch visible but disabled, so a dependent setting
+  /// never reads as a missing one.
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) => SettingsConfigRow(
@@ -649,20 +1118,150 @@ final class _RecordSwitch extends StatelessWidget {
   );
 }
 
-/// The recorder's settings pane: where files land and how they name
-/// themselves, how a capture is segmented and recovered, and the background
-/// and concurrency limits — every row reaches the FFmpeg session through
-/// `RecordingSettings`.
-final class RecordingSettingsPane extends ConsumerWidget {
+/// The recording settings' categories: where a file lands and how it names
+/// itself, how a capture is segmented and recovered, the background and
+/// capacity limits, and the live check that starts captures on its own.
+enum RecordingTab {
+  /// Where files land, what they are called and the file's own shape.
+  files,
+
+  /// Segmentation, timeouts and the retry walk.
+  capture,
+
+  /// Background behaviour, concurrency and the managed cache.
+  runtime,
+
+  /// Watching followed rooms for a live start.
+  polling,
+}
+
+/// The recorder's settings pane: one page with its categories on a segmented
+/// control, the way the danmaku settings lay their own out — a short tab
+/// instead of one long scroll, and one headed card per topic.
+final class RecordingSettingsPane extends ConsumerStatefulWidget {
   /// The recorder settings pane.
   const RecordingSettingsPane({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RecordingSettingsPane> createState() => _RecordingSettingsPaneState();
+}
+
+final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsPane> {
+  RecordingTab _tab = RecordingTab.files;
+
+  /// The pushed page's header end, when this pane is shown as its own page;
+  /// null when it sits in a desktop window's settings pane, which has no
+  /// header of its own.
+  ValueNotifier<Widget?>? _slot;
+
+  /// Whether the reset action was handed to that header.
+  bool _published = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _slot = SettingsPageActionScope.maybeOf(context);
+    final slot = _slot;
+    if (slot == null || _published) return;
+    _published = true;
+    // A header sits above this body: notifying it mid-build would rebuild an
+    // ancestor while the tree is still being laid out.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) slot.value = _resetAction();
+    });
+  }
+
+  @override
+  void dispose() {
+    // A header left holding a dead action would press nothing.
+    final slot = _slot;
+    if (slot != null && _published) slot.value = null;
+    super.dispose();
+  }
+
+  /// The reset as the page header's end control: an icon the viewer can find
+  /// beside the title, not a row the body has to make room for.
+  Widget _resetAction() => DsButton.icon(
+    variant: DsButtonVariant.ghost,
+    semanticLabel: context.t.recorder.resetAll,
+    onPressed: () => unawaited(_resetAll()),
+    icon: const DsIcon(DsIcons.rotateCw, size: 18),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
+        // On its own page the reset lives in the header's end; an in-place
+        // desktop pane has no header, so it draws the same action here.
+        if (_slot == null)
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.rotateCw, size: 16),
+              onPressed: () => unawaited(_resetAll()),
+              child: Text(t.recorder.resetAll),
+            ),
+          ),
+        // Four names do not always fit a narrow pane — the recording centre
+        // opens this same pane in a dialog: the control scrolls sideways
+        // instead of squeezing its own segments.
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DsSegmentedControl<RecordingTab>(
+              value: _tab,
+              semanticLabel: t.recorder.settingsTitle,
+              segments: [
+                DsSegment(
+                  value: RecordingTab.files,
+                  label: Text(t.recorder.settingsTabFiles),
+                  icon: const DsIcon(DsIcons.folderVideo, size: 16),
+                ),
+                DsSegment(
+                  value: RecordingTab.capture,
+                  label: Text(t.recorder.settingsTabCapture),
+                  icon: const DsIcon(DsIcons.refreshCw, size: 16),
+                ),
+                DsSegment(
+                  value: RecordingTab.runtime,
+                  label: Text(t.recorder.settingsTabRuntime),
+                  icon: const DsIcon(DsIcons.activity, size: 16),
+                ),
+                DsSegment(
+                  value: RecordingTab.polling,
+                  label: Text(t.recorder.settingsTabPolling),
+                  icon: const DsIcon(DsIcons.clock, size: 16),
+                ),
+              ],
+              onChanged: (value) => setState(() => _tab = value),
+            ),
+          ),
+        ),
+        switch (_tab) {
+          RecordingTab.files => _files(context),
+          RecordingTab.capture => _capture(context),
+          RecordingTab.runtime => _runtime(context),
+          RecordingTab.polling => _polling(context),
+        },
+      ],
+    );
+  }
+
+  /// Where a file lands, what it is called, how big it may grow, which
+  /// container it uses and whether the chat is written beside it.
+  Widget _files(BuildContext context) {
     final t = context.t;
     final settings = ref.watch(recordingSettingsProvider);
     final controller = ref.read(recordingSettingsProvider.notifier);
-    final recordings = ref.watch(appPathsProvider).recordings;
+    final directory = ref.watch(appPathsProvider).recordings;
+    final custom = ref.watch(storageFolderOverridesProvider).containsKey(StorageFolder.recordings);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -680,28 +1279,43 @@ final class RecordingSettingsPane extends ConsumerWidget {
               ],
               onChanged: (value) => controller.defaultQuality = value,
             ),
+            // The folder is chosen right here now, not only on the storage
+            // page: this is where a viewer looks when a recording lands
+            // somewhere unexpected.
             DsListRow(
               leading: const DsIcon(DsIcons.folder),
               title: Text(t.recorder.saveDirTitle),
-              // The folder reads here and opens here; moving it is the
-              // 存储位置 page's row, so the choice lives in one place.
               description: DsTooltip(
-                message: recordings.path,
-                child: Text(recordings.path, maxLines: 1, overflow: TextOverflow.ellipsis),
+                message: directory.path,
+                child: Text(directory.path, maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
-              detail: Text(
-                ref.watch(storageFolderOverridesProvider).containsKey(StorageFolder.recordings)
-                    ? t.settings.storageFolderCustomLabel
-                    : t.settings.storageFolderDefaultLabel,
+              detail: Text(custom ? t.settings.storageFolderCustomLabel : t.settings.storageFolderDefaultLabel),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DsButton(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    onPressed: () => unawaited(_pickFolder()),
+                    child: Text(t.settings.storageFolderPick),
+                  ),
+                  DsButton.icon(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    semanticLabel: t.recorder.openFolder,
+                    onPressed: () => unawaited(_openFolder(context, directory.path)),
+                    icon: const DsIcon(DsIcons.folderOpen, size: 16),
+                  ),
+                ],
               ),
-              onPressed: () => unawaited(_openFolder(context, recordings.path)),
-              trailing: DsButton.icon(
-                variant: DsButtonVariant.ghost,
-                size: DsSize.sm,
-                semanticLabel: t.recorder.openFolder,
-                onPressed: () => unawaited(_openFolder(context, recordings.path)),
-                icon: const DsIcon(DsIcons.folderOpen, size: 16),
-              ),
+            ),
+            // Always there, so a custom folder never hides the way back; it says
+            // so rather than disappearing when the default already applies.
+            DsListRow(
+              leading: const DsIcon(DsIcons.rotateCcw),
+              title: Text(t.recorder.saveDirResetTitle),
+              description: Text(custom ? t.recorder.saveDirResetDesc : t.recorder.saveDirDefaultInUse),
+              onPressed: custom ? () => unawaited(_resetFolder()) : null,
             ),
             DsListRow(
               leading: const DsIcon(DsIcons.fileText),
@@ -711,31 +1325,83 @@ final class RecordingSettingsPane extends ConsumerWidget {
               onPressed: () => unawaited(_editNaming(context, ref)),
               showChevron: true,
             ),
-            _RecordSlider(
+            // A cap the viewer can lift: off means the take runs until the
+            // stream ends or the duration split cuts it.
+            _RecordSwitch(
               icon: DsIcons.hardDrive,
-              title: t.recorder.maxSizeTitle,
-              description: t.recorder.maxSizeDescription,
-              detail: _formatMb(settings.maxSizeMb),
-              value: settings.maxSizeMb.toDouble(),
-              min: 100,
-              max: 20480,
-              divisions: 203,
-              // The slider's 100.4 MB steps land on 401, 502 …; whole
-              // hundreds read cleanly in the detail, capped at the max.
-              onChanged: (value) => controller.maxSizeMb = ((value / 100).round() * 100).clamp(100, 20480),
-              semanticLabel: t.recorder.maxSizeTitle,
+              title: t.recorder.maxSizeLimitTitle,
+              description: t.recorder.maxSizeLimitDesc,
+              value: settings.maxSizeMb > 0,
+              onChanged: (value) => controller.maxSizeMb = value ? RecordingSettings.defaults.maxSizeMb : 0,
             ),
-            SettingsSegmentedRow<RecordingFileContainer>(
+            // The bar belongs to the cap above it: with the cap off there is
+            // no number to set.
+            if (settings.maxSizeMb > 0)
+              _RecordSlider(
+                icon: DsIcons.hardDrive,
+                title: t.recorder.maxSizeTitle,
+                description: t.recorder.maxSizeDescription,
+                detail: _formatMb(settings.maxSizeMb),
+                value: settings.maxSizeMb.toDouble(),
+                min: 100,
+                max: 20480,
+                divisions: 203,
+                // The slider's 100.4 MB steps land on 401, 502 …; whole
+                // hundreds read cleanly in the detail, capped at the max.
+                onChanged: (value) => controller.maxSizeMb = ((value / 100).round() * 100).clamp(100, 20480),
+                semanticLabel: t.recorder.maxSizeTitle,
+              ),
+            // A dropdown, not a two-way segmented strip: the container is a
+            // choice among formats like every other format row, and a
+            // third would not fit the segment.
+            SettingsChoiceRow<RecordingFileContainer>(
               leading: const DsIcon(DsIcons.fileVideo),
               title: t.recorder.containerTitle,
               description: t.recorder.containerDescription,
               value: settings.container,
               options: [
-                (value: RecordingFileContainer.mpegTs, label: t.recorder.containerTs),
-                (value: RecordingFileContainer.mp4, label: t.recorder.containerMp4),
+                DsSelectOption(value: RecordingFileContainer.mpegTs, label: t.recorder.containerTs),
+                DsSelectOption(value: RecordingFileContainer.mp4, label: t.recorder.containerMp4),
               ],
               onChanged: (value) => controller.container = value,
             ),
+            // The post-recording step the reference runs by default: segments
+            // are the crash-safe capture, one MP4 is the file a viewer opens.
+            _RecordSwitch(
+              icon: DsIcons.film,
+              title: t.recorder.combineTitle,
+              description: t.recorder.combineDesc,
+              value: settings.combineAfterStop,
+              onChanged: (value) => controller.combineAfterStop = value,
+            ),
+            if (settings.combineAfterStop)
+              _RecordSwitch(
+                icon: DsIcons.trash2,
+                title: t.recorder.combineDeleteOriginals,
+                description: t.recorder.combineDeleteOriginalsDesc,
+                value: settings.deleteOriginalsAfterCombine,
+                onChanged: (value) => controller.deleteOriginalsAfterCombine = value,
+              ),
+            if (settings.combineAfterStop)
+              _RecordSwitch(
+                icon: DsIcons.cpu,
+                title: t.recorder.transcodeTitle,
+                description: t.recorder.transcodeDesc,
+                value: settings.transcodeAfterCombine,
+                onChanged: (value) => controller.transcodeAfterCombine = value,
+              ),
+            if (settings.combineAfterStop && settings.transcodeAfterCombine)
+              SettingsChoiceRow<int>(
+                leading: const DsIcon(DsIcons.gauge),
+                title: t.recorder.transcodeBitrateTitle,
+                description: t.recorder.transcodeBitrateDesc,
+                value: settings.transcodeBitrateKbps,
+                options: [
+                  for (final bitrate in _transcodeBitrateChoices(settings.transcodeBitrateKbps))
+                    DsSelectOption(value: bitrate, label: _formatBitrate(bitrate)),
+                ],
+                onChanged: (value) => controller.transcodeBitrateKbps = value,
+              ),
             _RecordSwitch(
               icon: DsIcons.messageCircle,
               title: t.recorder.recordChatTitle,
@@ -743,87 +1409,157 @@ final class RecordingSettingsPane extends ConsumerWidget {
               value: settings.recordDanmaku,
               onChanged: (value) => controller.recordDanmaku = value,
             ),
+            // A sub-option of the switch above it: with the chat off there is no
+            // danmaku file for a gift to join.
+            if (settings.recordDanmaku)
+              _RecordSwitch(
+                icon: DsIcons.gift,
+                title: t.recorder.recordChatGiftsTitle,
+                description: t.recorder.recordChatGiftsDesc,
+                value: settings.recordDanmakuGifts,
+                onChanged: (value) => controller.recordDanmakuGifts = value,
+              ),
           ],
         ),
-        DsListSection(
-          header: Text(t.recorder.settingsRecovery),
-          children: [
-            _RecordSlider(
-              icon: DsIcons.timer,
-              title: t.recorder.segmentTitle,
-              description: t.recorder.segmentDescription,
-              detail: t.recorder.segmentMinutes(count: settings.segmentSeconds ~/ 60),
-              value: (settings.segmentSeconds / 60).clamp(1, 60),
-              min: 1,
-              max: 60,
-              divisions: 59,
-              onChanged: (value) => controller.segmentSeconds = value.round() * 60,
-              semanticLabel: t.recorder.segmentTitle,
-            ),
-            _RecordSlider(
-              icon: DsIcons.clock,
-              title: t.recorder.readTimeoutTitle,
-              description: t.recorder.readTimeoutDescription,
-              detail: t.recorder.seconds(count: settings.readTimeoutSeconds),
-              value: settings.readTimeoutSeconds.toDouble(),
-              min: 5,
-              max: 120,
-              divisions: 23,
-              onChanged: (value) => controller.readTimeoutSeconds = value.round(),
-              semanticLabel: t.recorder.readTimeoutTitle,
-            ),
-            _RecordSlider(
-              icon: DsIcons.refreshCw,
-              title: t.recorder.restartTitle,
-              description: t.recorder.restartDescription,
-              detail: t.recorder.restartCount(count: settings.restartLimit),
-              value: settings.restartLimit.toDouble(),
-              min: 0,
-              max: 20,
-              divisions: 20,
-              onChanged: (value) => controller.restartLimit = value.round(),
-              semanticLabel: t.recorder.restartTitle,
-            ),
-            _RecordSlider(
-              icon: DsIcons.timerReset,
-              title: t.recorder.backoffTitle,
-              description: t.recorder.backoffDescription,
-              detail: t.recorder.seconds(count: settings.restartBackoffSeconds),
-              value: settings.restartBackoffSeconds.toDouble(),
-              min: 5,
-              max: 120,
-              divisions: 23,
-              onChanged: (value) => controller.restartBackoffSeconds = value.round(),
-              semanticLabel: t.recorder.backoffTitle,
-            ),
-            _RecordSlider(
-              icon: DsIcons.activity,
-              title: t.recorder.stallTitle,
-              description: t.recorder.stallDescription,
-              detail: t.recorder.seconds(count: settings.stallTimeoutSeconds),
-              value: settings.stallTimeoutSeconds.toDouble(),
-              min: 10,
-              max: 300,
-              divisions: 29,
-              onChanged: (value) => controller.stallTimeoutSeconds = value.round(),
-              semanticLabel: t.recorder.stallTitle,
-            ),
-            _RecordSwitch(
-              icon: DsIcons.filter,
-              title: t.recorder.preferBestTitle,
-              description: t.recorder.preferBestDescription,
-              value: settings.preferBestStream,
-              onChanged: (value) => controller.preferBestStream = value,
-            ),
-            _RecordSwitch(
-              icon: DsIcons.circleCheck,
-              title: t.recorder.verifyTitle,
-              description: t.recorder.verifyDescription,
-              value: settings.verifyOutput,
-              onChanged: (value) => controller.verifyOutput = value,
-            ),
-          ],
+        // The formats only matter while the chat is recorded; the switch
+        // above is the only way in, so they follow it.
+        if (settings.recordDanmaku) const DanmakuSaveFormatsSection(),
+      ],
+    );
+  }
+
+  /// How a capture is cut, how long it waits and how it walks its retries.
+  Widget _capture(BuildContext context) {
+    final t = context.t;
+    final settings = ref.watch(recordingSettingsProvider);
+    final controller = ref.read(recordingSettingsProvider.notifier);
+    // The row says what is in force, which means it has to say so when the
+    // picked bundle is no longer where the row found it.
+    final customCa = settings.customCaPath.trim();
+    final customCaName = customCa.isEmpty ? '' : p.basename(customCa);
+    final missing = customCa.isNotEmpty && !File(customCa).existsSync();
+    return DsListSection(
+      header: Text(t.recorder.settingsRecovery),
+      children: [
+        _RecordSlider(
+          icon: DsIcons.timer,
+          title: t.recorder.segmentTitle,
+          description: t.recorder.segmentDescription,
+          detail: t.recorder.segmentMinutes(count: settings.segmentSeconds ~/ 60),
+          value: (settings.segmentSeconds / 60).clamp(1, 60),
+          min: 1,
+          max: 60,
+          divisions: 59,
+          onChanged: (value) => controller.segmentSeconds = value.round() * 60,
+          semanticLabel: t.recorder.segmentTitle,
         ),
+        _RecordSlider(
+          icon: DsIcons.clock,
+          title: t.recorder.readTimeoutTitle,
+          description: t.recorder.readTimeoutDescription,
+          detail: t.recorder.seconds(count: settings.readTimeoutSeconds),
+          value: settings.readTimeoutSeconds.toDouble(),
+          min: 5,
+          max: 120,
+          divisions: 23,
+          onChanged: (value) => controller.readTimeoutSeconds = value.round(),
+          semanticLabel: t.recorder.readTimeoutTitle,
+        ),
+        _RecordSlider(
+          icon: DsIcons.refreshCw,
+          title: t.recorder.restartTitle,
+          description: t.recorder.restartDescription,
+          detail: t.recorder.restartCount(count: settings.restartLimit),
+          value: settings.restartLimit.toDouble(),
+          min: 0,
+          max: 20,
+          divisions: 20,
+          onChanged: (value) => controller.restartLimit = value.round(),
+          semanticLabel: t.recorder.restartTitle,
+        ),
+        _RecordSlider(
+          icon: DsIcons.timerReset,
+          title: t.recorder.backoffTitle,
+          description: t.recorder.backoffDescription,
+          detail: t.recorder.seconds(count: settings.restartBackoffSeconds),
+          value: settings.restartBackoffSeconds.toDouble(),
+          min: 5,
+          max: 120,
+          divisions: 23,
+          onChanged: (value) => controller.restartBackoffSeconds = value.round(),
+          semanticLabel: t.recorder.backoffTitle,
+        ),
+        _RecordSlider(
+          icon: DsIcons.activity,
+          title: t.recorder.stallTitle,
+          description: t.recorder.stallDescription,
+          detail: t.recorder.seconds(count: settings.stallTimeoutSeconds),
+          value: settings.stallTimeoutSeconds.toDouble(),
+          min: 10,
+          max: 300,
+          divisions: 29,
+          onChanged: (value) => controller.stallTimeoutSeconds = value.round(),
+          semanticLabel: t.recorder.stallTitle,
+        ),
+        _RecordSwitch(
+          icon: DsIcons.filter,
+          title: t.recorder.preferBestTitle,
+          description: t.recorder.preferBestDescription,
+          value: settings.preferBestStream,
+          onChanged: (value) => controller.preferBestStream = value,
+        ),
+        _RecordSwitch(
+          icon: DsIcons.circleCheck,
+          title: t.recorder.verifyTitle,
+          description: t.recorder.verifyDescription,
+          value: settings.verifyOutput,
+          onChanged: (value) => controller.verifyOutput = value,
+        ),
+        _RecordSwitch(
+          icon: DsIcons.lockCheck,
+          title: t.recorder.tlsVerifyTitle,
+          description: t.recorder.tlsVerifyDesc,
+          value: settings.tlsVerify,
+          onChanged: (value) => controller.tlsVerify = value,
+        ),
+        // Trusting one's own root is the honest alternative to switching
+        // verification off, so it sits beside that switch rather than hidden
+        // three rows away.
+        DsListRow(
+          leading: const DsIcon(DsIcons.badgeCheck),
+          title: Text(t.recorder.caCustomTitle),
+          description: Text(
+            customCa.isEmpty
+                ? t.recorder.caCustomDesc
+                : missing
+                ? t.recorder.caCustomMissing(name: customCaName)
+                : t.recorder.caCustomPicked(name: customCaName),
+          ),
+          onPressed: () => unawaited(_pickCaFile()),
+          showChevron: true,
+          trailing: customCa.isEmpty
+              ? null
+              : DsButton(
+                  variant: DsButtonVariant.ghost,
+                  size: DsSize.sm,
+                  onPressed: () => unawaited(_clearCaFile()),
+                  child: Text(t.recorder.caCustomClear),
+                ),
+        ),
+      ],
+    );
+  }
+
+  /// What the app does while capturing in the background, how many takes run
+  /// at once, and the managed folder's own cap.
+  Widget _runtime(BuildContext context) {
+    final t = context.t;
+    final settings = ref.watch(recordingSettingsProvider);
+    final controller = ref.read(recordingSettingsProvider.notifier);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
+      children: [
         DsListSection(
           header: Text(t.recorder.settingsRuntime),
           children: [
@@ -844,86 +1580,115 @@ final class RecordingSettingsPane extends ConsumerWidget {
               ],
               onChanged: (value) => controller.queueSize = value,
             ),
-            _RecordSlider(
+            // Both caps can be lifted: off means the queue's waiting takes
+            // start as they come, and takes are not stopped for low free
+            // space.
+            _RecordSwitch(
               icon: DsIcons.layers,
-              title: t.recorder.maxTasksTitle,
-              description: t.recorder.maxTasksDescription,
-              detail: t.recorder.maxTasksCount(count: settings.maxTasks),
-              value: settings.maxTasks.toDouble(),
-              min: 1,
-              max: 10,
-              divisions: 9,
-              onChanged: (value) => controller.maxTasks = value.round(),
-              semanticLabel: t.recorder.maxTasksTitle,
+              title: t.recorder.maxTasksLimitTitle,
+              description: t.recorder.maxTasksLimitDesc,
+              value: settings.maxTasks > 0,
+              onChanged: (value) => controller.maxTasks = value ? RecordingSettings.defaults.maxTasks : 0,
             ),
-            _RecordSlider(
-              icon: DsIcons.hardDrive,
-              title: t.recorder.watermarkTitle,
-              description: t.recorder.watermarkDescription,
-              detail: _formatMb(settings.diskWatermarkMb),
-              value: settings.diskWatermarkMb.toDouble(),
-              min: 50,
-              max: 2048,
-              divisions: 39,
-              onChanged: (value) => controller.diskWatermarkMb = (value / 50).round() * 50,
-              semanticLabel: t.recorder.watermarkTitle,
-            ),
-          ],
-        ),
-        DsListSection(
-          header: Text(t.recorder.liveCheckGroup),
-          children: [
-            _RecordSwitch(
-              icon: DsIcons.clock,
-              title: t.recorder.enablePolling,
-              description: t.recorder.enablePollingDesc,
-              value: settings.pollingEnabled,
-              onChanged: (value) => controller.pollingEnabled = value,
-            ),
-            if (settings.pollingEnabled) ...[
+            if (settings.maxTasks > 0)
               _RecordSlider(
-                icon: DsIcons.timer,
-                title: t.recorder.liveCheckSecondsTitle,
-                description: t.recorder.liveCheckSecondsDesc,
-                detail: t.recorder.seconds(count: settings.liveCheckSeconds),
-                value: settings.liveCheckSeconds.toDouble(),
-                min: 10,
-                max: 300,
-                divisions: 29,
-                onChanged: (value) => controller.liveCheckSeconds = value.round(),
-                semanticLabel: t.recorder.liveCheckSecondsTitle,
+                icon: DsIcons.layers,
+                title: t.recorder.maxTasksTitle,
+                description: t.recorder.maxTasksDescription,
+                detail: t.recorder.maxTasksCount(count: settings.maxTasks),
+                value: settings.maxTasks.toDouble(),
+                min: 1,
+                max: 10,
+                divisions: 9,
+                onChanged: (value) => controller.maxTasks = value.round(),
+                semanticLabel: t.recorder.maxTasksTitle,
               ),
-              _RecordSwitch(
-                icon: DsIcons.activity,
-                title: t.recorder.checkBackoff,
-                description: t.recorder.checkBackoffDesc,
-                value: settings.checkBackoffEnabled,
-                onChanged: (value) => controller.checkBackoffEnabled = value,
-              ),
-              if (settings.checkBackoffEnabled)
-                _RecordSlider(
-                  icon: DsIcons.hourglass,
-                  title: t.recorder.maxCheckSecondsTitle,
-                  description: t.recorder.maxCheckSecondsDesc,
-                  detail: t.recorder.seconds(count: settings.maxCheckSeconds),
-                  value: settings.maxCheckSeconds.toDouble(),
-                  min: 60,
-                  max: 3600,
-                  divisions: 59,
-                  onChanged: (value) => controller.maxCheckSeconds = (value / 60).round() * 60,
-                  semanticLabel: t.recorder.maxCheckSecondsTitle,
-                ),
-            ],
             _RecordSwitch(
-              icon: DsIcons.power,
-              title: t.recorder.autoStartOnBoot,
-              description: t.recorder.autoStartOnBootDesc,
-              value: settings.autoStartOnBoot,
-              onChanged: (value) => controller.autoStartOnBoot = value,
+              icon: DsIcons.hardDrive,
+              title: t.recorder.diskWatermarkLimitTitle,
+              description: t.recorder.diskWatermarkLimitDesc,
+              value: settings.diskWatermarkMb > 0,
+              onChanged: (value) => controller.diskWatermarkMb = value ? RecordingSettings.defaults.diskWatermarkMb : 0,
             ),
+            if (settings.diskWatermarkMb > 0)
+              _RecordSlider(
+                icon: DsIcons.hardDrive,
+                title: t.recorder.watermarkTitle,
+                description: t.recorder.watermarkDescription,
+                detail: _formatMb(settings.diskWatermarkMb),
+                value: settings.diskWatermarkMb.toDouble(),
+                min: 50,
+                max: 2048,
+                divisions: 39,
+                onChanged: (value) => controller.diskWatermarkMb = (value / 50).round() * 50,
+                semanticLabel: t.recorder.watermarkTitle,
+              ),
           ],
         ),
         const _RecordingCacheSection(),
+      ],
+    );
+  }
+
+  /// Watching followed rooms for a live start, and picking a capture back up
+  /// after a restart.
+  Widget _polling(BuildContext context) {
+    final t = context.t;
+    final settings = ref.watch(recordingSettingsProvider);
+    final controller = ref.read(recordingSettingsProvider.notifier);
+    return DsListSection(
+      header: Text(t.recorder.liveCheckGroup),
+      children: [
+        _RecordSwitch(
+          icon: DsIcons.clock,
+          title: t.recorder.enablePolling,
+          description: t.recorder.enablePollingDesc,
+          value: settings.pollingEnabled,
+          onChanged: (value) => controller.pollingEnabled = value,
+        ),
+        // The schedule belongs to the switch above it: with polling off
+        // there is no interval to set, so these follow it in and out.
+        if (settings.pollingEnabled) ...[
+          _RecordSlider(
+            icon: DsIcons.timer,
+            title: t.recorder.liveCheckSecondsTitle,
+            description: t.recorder.liveCheckSecondsDesc,
+            detail: t.recorder.seconds(count: settings.liveCheckSeconds),
+            value: settings.liveCheckSeconds.toDouble(),
+            min: 10,
+            max: 300,
+            divisions: 29,
+            onChanged: (value) => controller.liveCheckSeconds = value.round(),
+            semanticLabel: t.recorder.liveCheckSecondsTitle,
+          ),
+          _RecordSwitch(
+            icon: DsIcons.activity,
+            title: t.recorder.checkBackoff,
+            description: t.recorder.checkBackoffDesc,
+            value: settings.checkBackoffEnabled,
+            onChanged: (value) => controller.checkBackoffEnabled = value,
+          ),
+          if (settings.checkBackoffEnabled)
+            _RecordSlider(
+              icon: DsIcons.hourglass,
+              title: t.recorder.maxCheckSecondsTitle,
+              description: t.recorder.maxCheckSecondsDesc,
+              detail: t.recorder.seconds(count: settings.maxCheckSeconds),
+              value: settings.maxCheckSeconds.toDouble(),
+              min: 60,
+              max: 3600,
+              divisions: 59,
+              onChanged: (value) => controller.maxCheckSeconds = (value / 60).round() * 60,
+              semanticLabel: t.recorder.maxCheckSecondsTitle,
+            ),
+        ],
+        _RecordSwitch(
+          icon: DsIcons.power,
+          title: t.recorder.autoStartOnBoot,
+          description: t.recorder.autoStartOnBootDesc,
+          value: settings.autoStartOnBoot,
+          onChanged: (value) => controller.autoStartOnBoot = value,
+        ),
       ],
     );
   }
@@ -939,11 +1704,120 @@ final class RecordingSettingsPane extends ConsumerWidget {
     return best;
   }
 
+  /// Lets the viewer move the recordings somewhere writable, with the same
+  /// probe and toasts the storage page uses.
+  Future<void> _pickFolder() async {
+    final t = context.t;
+    try {
+      final selected = await FilePicker.getDirectoryPath(dialogTitle: t.settings.storageFolderPick);
+      if (selected == null || selected.trim().isEmpty) return;
+      if (!mounted) return;
+      final active = ref.read(recorderEngineProvider).activeRecordingCount;
+      if (active > 0) {
+        final confirmed = await showDsConfirm(
+          context: context,
+          title: t.recorder.folderInUseTitle,
+          description: t.recorder.folderInUseBody(count: active),
+          confirmLabel: t.recorder.folderInUseConfirm,
+          cancelLabel: t.common.cancel,
+          icon: const DsIcon(DsIcons.folderVideo),
+        );
+        if (!confirmed || !mounted) return;
+      }
+      final saved = await ref.read(storageFolderOverridesProvider.notifier).set(StorageFolder.recordings, selected);
+      if (!mounted) return;
+      if (!saved) {
+        showDsToast(context: context, title: t.settings.storageFolderPermissionHint, status: DsStatus.danger);
+        return;
+      }
+      showDsToast(
+        context: context,
+        title: active > 0
+            ? t.recorder.folderChangedActive
+            : StorageFolder.recordings.needsRestart
+            ? '${t.settings.storageFoldersUpdated} · ${t.settings.storageFolderRestart}'
+            : t.settings.storageFoldersUpdated,
+      );
+    } on Object {
+      if (mounted) {
+        showDsToast(context: context, title: t.settings.storageFolderPickFailed, status: DsStatus.danger);
+      }
+    }
+  }
+
+  /// Lets the viewer point the recorder at a CA bundle of their own — the way
+  /// to trust a corporate or self-signed chain without turning verification
+  /// off. The engine stages the bytes itself; this proves the pick.
+  Future<void> _pickCaFile() async {
+    final t = context.t;
+    try {
+      final picked = await FilePicker.pickFiles(
+        dialogTitle: t.recorder.caCustomTitle,
+        type: FileType.custom,
+        allowedExtensions: const ['pem', 'crt', 'cer', 'ca-bundle'],
+      );
+      // An empty list is the cancel; a picked file without a path is a content
+      // URI this platform will not hand a native reader, so it is treated the
+      // same way.
+      final path = picked.isEmpty ? '' : picked.first.path ?? '';
+      if (path.isEmpty) return;
+      final file = File(path);
+      if (!file.existsSync() || !file.readAsStringSync().contains('-----BEGIN CERTIFICATE-----')) {
+        if (!mounted) return;
+        showDsToast(context: context, title: t.recorder.caCustomNotPem, status: DsStatus.danger);
+        return;
+      }
+      ref.read(recordingSettingsProvider.notifier).customCaPath = path;
+      if (!mounted) return;
+      showDsToast(
+        context: context,
+        title: t.recorder.caCustomPicked(name: p.basename(path)),
+      );
+    } on Object {
+      if (mounted) {
+        showDsToast(context: context, title: t.recorder.caCustomPickFailed, status: DsStatus.danger);
+      }
+    }
+  }
+
+  /// Puts the recorder back on the bundled Mozilla store.
+  Future<void> _clearCaFile() async {
+    ref.read(recordingSettingsProvider.notifier).customCaPath = '';
+    if (!mounted) return;
+    showDsToast(context: context, title: context.t.recorder.caCustomCleared);
+  }
+
+  /// Puts the recordings back under the download folder; existing files
+  /// stay where they are.
+  Future<void> _resetFolder() async {
+    await ref.read(storageFolderOverridesProvider.notifier).reset(StorageFolder.recordings);
+    if (!mounted) return;
+    showDsToast(context: context, title: context.t.settings.storageFoldersUpdated);
+  }
+
+  /// Puts every recording tunable back to its designed defaults, behind a
+  /// confirmation. The save folder and the danmaku save formats are not
+  /// recorder tunables and stay exactly as they are.
+  Future<void> _resetAll() async {
+    final t = context.t;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.recorder.resetAllConfirmTitle,
+      description: t.recorder.resetAllConfirmDesc,
+      confirmLabel: t.recorder.resetAll,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.rotateCw),
+    );
+    if (!confirmed || !mounted) return;
+    await ref.read(recordingSettingsProvider.notifier).reset();
+    if (!mounted) return;
+    showDsToast(context: context, title: t.recorder.resetAllDone);
+  }
+
   /// Opens the recordings folder in the system's own file manager.
   Future<void> _openFolder(BuildContext context, String path) async {
-    final opened = await OpenFile.open(path);
-    if (opened.type == ResultType.done || !context.mounted) return;
-    showDsToast(context: context, title: context.t.recorder.openFolderFailed, status: DsStatus.danger);
+    await openDownloadedPath(context, path, failedTitle: context.t.recorder.openFolderFailed);
   }
 
   Future<void> _editNaming(BuildContext context, WidgetRef ref) {
@@ -953,6 +1827,15 @@ final class RecordingSettingsPane extends ConsumerWidget {
       title: t.recorder.namingTitle,
       hint: t.recorder.namingDialogHint,
       initial: ref.read(recordingSettingsProvider).namingTemplate,
+      // The engine fills these in; the dialog says which ones exist and
+      // inserts a tapped one, so the template is not guessed from memory.
+      fields: [
+        (token: '{date}', label: t.recorder.namingFieldDate),
+        (token: '{time}', label: t.recorder.namingFieldTime),
+        (token: '{platform}', label: t.recorder.namingFieldPlatform),
+        (token: '{roomId}', label: t.recorder.namingFieldRoomId),
+        (token: '{title}', label: t.recorder.namingFieldTitle),
+      ],
       onCommit: (value) => ref.read(recordingSettingsProvider.notifier).namingTemplate = value,
     );
   }
@@ -966,6 +1849,7 @@ final class RecordingSettingsPane extends ConsumerWidget {
     required String hint,
     required String initial,
     required ValueChanged<String> onCommit,
+    List<({String token, String label})>? fields,
   }) async {
     final t = context.t;
     final field = TextEditingController(text: initial);
@@ -994,6 +1878,28 @@ final class RecordingSettingsPane extends ConsumerWidget {
               },
               semanticLabel: title,
             ),
+            if (fields case final fields?) ...[
+              const SizedBox(height: DsSpace.s4),
+              Text(t.recorder.namingFieldsCaption),
+              Wrap(
+                spacing: DsSpace.s8,
+                runSpacing: DsSpace.s8,
+                children: [
+                  for (final entry in fields)
+                    DsButton(
+                      variant: DsButtonVariant.secondary,
+                      size: DsSize.sm,
+                      onPressed: () {
+                        value = '$value${entry.token}';
+                        field
+                          ..text = value
+                          ..selection = TextSelection.collapsed(offset: value.length);
+                      },
+                      child: Text('${entry.token} · ${entry.label}'),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
         actions: [
@@ -1028,11 +1934,21 @@ final class _RecordingCacheSection extends ConsumerStatefulWidget {
 final class _RecordingCacheSectionState extends ConsumerState<_RecordingCacheSection> {
   int? _bytes;
   bool _busy = false;
+  ({int done, int total, String name})? _merging;
+  bool _mergeCancelRequested = false;
 
   @override
   void initState() {
     super.initState();
     unawaited(_measure());
+  }
+
+  @override
+  void dispose() {
+    // The run owns real file moves; dropping this card does not undo them, but
+    // it must stop the loop from writing into a widget that is gone.
+    _mergeCancelRequested = true;
+    super.dispose();
   }
 
   Future<void> _measure() async {
@@ -1092,14 +2008,66 @@ final class _RecordingCacheSectionState extends ConsumerState<_RecordingCacheSec
     }
   }
 
+  /// Brings the takes from other folders into the current one.
+  ///
+  /// The engine renames on the same volume and copies, measures and only then
+  /// deletes across volumes, so a take is never left with one home missing;
+  /// this only says how many landed and which did not.
+  Future<void> _mergeStranded(List<RecordingTask> stranded) async {
+    final t = context.t;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.recorder.mergeTitle,
+      description: t.recorder.mergeBody(count: stranded.length),
+      confirmLabel: t.recorder.merge,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.folderVideo),
+    );
+    if (!confirmed || !mounted) return;
+    setState(() {
+      _merging = (done: 0, total: stranded.length, name: '');
+      _mergeCancelRequested = false;
+    });
+    final result = await ref
+        .read(recorderEngineProvider)
+        .moveStrandedTakes(
+          onProgress: (done, total, name) {
+            if (mounted) setState(() => _merging = (done: done, total: total, name: name));
+          },
+          cancelled: () => _mergeCancelRequested,
+        )
+        .whenComplete(() {
+          if (mounted) setState(() => _merging = null);
+        });
+    if (!mounted) return;
+    await _measure();
+    if (!mounted) return;
+    showDsToast(
+      context: context,
+      title: result.failed == 0
+          ? t.recorder.mergeDone(count: result.moved)
+          : t.recorder.mergePartial(moved: result.moved, failed: result.failed),
+      status: result.failed == 0 ? DsStatus.success : DsStatus.warning,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final settings = ref.watch(recordingSettingsProvider);
     final controller = ref.read(recordingSettingsProvider.notifier);
-    final recording = ref.watch(recordingTasksProvider).tasks.any((task) => task.state == RecordingTaskState.recording);
+    final tasks = ref.watch(recordingTasksProvider).tasks;
+    final recording = tasks.any((task) => task.state == RecordingTaskState.recording);
+    final processing = tasks.any((task) => task.postProcessing);
+    final directory = ref.watch(appPathsProvider).recordings;
+    final outside = ref.read(recorderEngineProvider).hasActiveOutside(directory);
+    // Settled takes the current folder does not hold, read from the task list
+    // this build already watches — the engine owns the moving, the page only
+    // counts and names.
+    final stranded = strandedTasksOf(tasks, directory.path);
+    final running = _merging;
+    final blocked = recording || processing || outside;
     return DsListSection(
       header: Text(t.recorder.cacheTitle),
       children: [
@@ -1125,7 +2093,13 @@ final class _RecordingCacheSectionState extends ConsumerState<_RecordingCacheSec
         DsListRow(
           leading: const DsIcon(DsIcons.archive),
           title: Text(t.recorder.cacheSize),
-          description: Text(recording ? t.recorder.cacheBusy : t.recorder.cacheSizeDesc),
+          description: Text(
+            outside
+                ? t.recorder.cacheOtherRoot
+                : (recording || processing)
+                ? t.recorder.cacheBusy
+                : t.recorder.cacheSizeDesc,
+          ),
           detail: Text(_bytes == null ? '…' : _formatMb((_bytes! / (1024 * 1024)).round())),
           trailing: DsButton(
             variant: DsButtonVariant.ghost,
@@ -1135,6 +2109,26 @@ final class _RecordingCacheSectionState extends ConsumerState<_RecordingCacheSec
             child: Text(t.recorder.cacheRefresh),
           ),
         ),
+        // Takes left behind by a folder move are the one thing the figures
+        // above cannot reach, so the row that names them also brings them home.
+        if (stranded.isNotEmpty || running != null)
+          DsListRow(
+            leading: const DsIcon(DsIcons.folderVideo),
+            title: Text(t.recorder.merge),
+            description: Text(
+              running == null
+                  ? t.recorder.mergeDesc(count: stranded.length)
+                  : t.recorder.mergeRunning(done: running.done + 1, total: running.total, name: running.name),
+            ),
+            trailing: DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              onPressed: running == null
+                  ? () => unawaited(_mergeStranded(stranded))
+                  : () => setState(() => _mergeCancelRequested = true),
+              child: Text(running == null ? t.recorder.merge : t.common.cancel),
+            ),
+          ),
         DsListRow(
           leading: const DsIcon(DsIcons.trash2),
           title: Text(t.recorder.cacheClear),
@@ -1143,13 +2137,188 @@ final class _RecordingCacheSectionState extends ConsumerState<_RecordingCacheSec
           trailing: DsButton(
             variant: DsButtonVariant.secondary,
             size: DsSize.sm,
-            onPressed: _busy || recording ? null : () => unawaited(_clear()),
+            onPressed: _busy || blocked ? null : () => unawaited(_clear()),
             child: Text(t.recorder.cacheClear),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s16),
-          child: Text(t.recorder.cacheManagedHint, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+      ],
+    );
+  }
+}
+
+/// The window a schedule editor returns; applied to the task on Confirm.
+typedef _ScheduleDraft = ({bool enabled, Set<int> days, int start, int end, bool stopAtEnd});
+
+/// The take's schedule editor: a switch, weekday chips, two time pickers and
+/// the window-end policy. A dialog because it is a short form, not a page.
+final class _ScheduleDialog extends StatefulWidget {
+  const _ScheduleDialog({required this.task});
+
+  final RecordingTask task;
+
+  @override
+  State<_ScheduleDialog> createState() => _ScheduleDialogState();
+}
+
+final class _ScheduleDialogState extends State<_ScheduleDialog> {
+  late bool _enabled = widget.task.scheduleEnabled;
+  late Set<int> _days = widget.task.scheduleDays.toSet();
+  late int _start = widget.task.scheduleStartMinutes;
+  late int _end = widget.task.scheduleEndMinutes;
+  late bool _stopAtEnd = widget.task.stopAtWindowEnd;
+
+  static DsTime _timeOf(int minutes) {
+    final value = minutes.clamp(0, 1439);
+    return DsTime(value ~/ 60, value % 60);
+  }
+
+  void _toggleDay(int day, bool selected) {
+    final next = {..._days};
+    if (selected) {
+      next.add(day);
+    } else {
+      next.remove(day);
+    }
+    setState(() => _days = next.isEmpty ? {1, 2, 3, 4, 5, 6, 7} : next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return DsDialog(
+      title: Text(t.recorder.scheduleTitle),
+      icon: const DsIcon(DsIcons.calendarClock),
+      style: const DsDialogStyle(width: 460),
+      description: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s16,
+        children: [
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.clock),
+            title: t.recorder.scheduleEnableTitle,
+            description: t.recorder.scheduleEnableDesc,
+            control: DsSwitch(
+              value: _enabled,
+              onChanged: (value) => setState(() => _enabled = value),
+              semanticLabel: t.recorder.scheduleEnableTitle,
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: DsSpace.s8,
+            children: [
+              Text(t.recorder.scheduleDaysTitle, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+              Wrap(
+                spacing: DsSpace.s8,
+                runSpacing: DsSpace.s8,
+                children: [
+                  for (var day = 1; day <= 7; day++)
+                    DsChip(
+                      label: Text(_scheduleDayLabel(t, day)),
+                      selected: _days.contains(day),
+                      onChanged: _enabled ? (selected) => _toggleDay(day, selected) : null,
+                      semanticLabel: _scheduleDayLabel(t, day),
+                    ),
+                ],
+              ),
+              Wrap(
+                spacing: DsSpace.s8,
+                runSpacing: DsSpace.s8,
+                children: [
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: _enabled ? () => setState(() => _days = {1, 2, 3, 4, 5, 6, 7}) : null,
+                    child: Text(t.recorder.scheduleEveryDay),
+                  ),
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: _enabled ? () => setState(() => _days = {1, 2, 3, 4, 5}) : null,
+                    child: Text(t.recorder.scheduleWorkdays),
+                  ),
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    onPressed: _enabled ? () => setState(() => _days = {6, 7}) : null,
+                    child: Text(t.recorder.scheduleWeekend),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Row(
+            spacing: DsSpace.s12,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s4,
+                  children: [
+                    Text(
+                      t.recorder.scheduleStartTitle,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                    DsTimePicker(
+                      value: _timeOf(_start),
+                      onChanged: _enabled ? (time) => setState(() => _start = time?.inMinutes ?? _start) : null,
+                      placeholder: 'HH:mm',
+                      semanticLabel: t.recorder.scheduleStartTitle,
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s4,
+                  children: [
+                    Text(
+                      t.recorder.scheduleEndTitle,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                    DsTimePicker(
+                      value: _timeOf(_end),
+                      onChanged: _enabled
+                          ? (time) {
+                              if (time == null) return;
+                              setState(() => _end = time.inMinutes == 0 ? 1440 : time.inMinutes);
+                            }
+                          : null,
+                      placeholder: 'HH:mm',
+                      semanticLabel: t.recorder.scheduleEndTitle,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Text(t.recorder.scheduleOvernightHint, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+          SettingsConfigRow(
+            leading: const DsIcon(DsIcons.squareStop),
+            title: t.recorder.scheduleStopAtEnd,
+            description: t.recorder.scheduleStopAtEndDesc,
+            control: DsSwitch(
+              value: _stopAtEnd,
+              onChanged: _enabled ? (value) => setState(() => _stopAtEnd = value) : null,
+              semanticLabel: t.recorder.scheduleStopAtEnd,
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        DsButton(
+          variant: DsButtonVariant.secondary,
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(t.common.cancel),
+        ),
+        DsButton(
+          onPressed: () =>
+              Navigator.of(context)
+                  .pop((enabled: _enabled, days: _days, start: _start, end: _end, stopAtEnd: _stopAtEnd)),
+          child: Text(t.common.confirm),
         ),
       ],
     );

@@ -3016,6 +3016,9 @@ class Translations$music$zh_CN {
 	/// zh-CN: '某个音源取不到地址时换下一个，而不是停下。'
 	String get skipOnErrorDesc => '某个音源取不到地址时换下一个，而不是停下。';
 
+	/// zh-CN: '歌曲无法播放'
+	String get playbackFailedTitle => '歌曲无法播放';
+
 	/// zh-CN: '打开时继续播放'
 	String get autoplay => '打开时继续播放';
 
@@ -3219,6 +3222,9 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '正在播放'
 	String get nowPlaying => '正在播放';
+
+	/// zh-CN: '歌词与队列'
+	String get stagePanels => '歌词与队列';
 
 	/// zh-CN: '音量'
 	String get volume => '音量';
@@ -3715,6 +3721,18 @@ class Translations$music$zh_CN {
 	/// zh-CN: '移除记录'
 	String get downloadRemove => '移除记录';
 
+	/// zh-CN: '删除文件'
+	String get downloadDeleteFile => '删除文件';
+
+	/// zh-CN: '音频文件会随这条记录一并删除，此操作无法撤销。'
+	String get downloadDeleteFileBody => '音频文件会随这条记录一并删除，此操作无法撤销。';
+
+	/// zh-CN: '文件未能删除'
+	String get downloadDeleteFailed => '文件未能删除';
+
+	/// zh-CN: '剩余 {time}'
+	String downloadEta({required Object time}) => '剩余 ${time}';
+
 	/// zh-CN: '继续'
 	String get downloadResume => '继续';
 
@@ -4014,6 +4032,12 @@ class Translations$music$zh_CN {
 
 	/// zh-CN: '清空播放队列'
 	String get clearQueue => '清空播放队列';
+
+	/// zh-CN: '清空播放队列？'
+	String get clearQueueConfirmTitle => '清空播放队列？';
+
+	/// zh-CN: '队列中的所有歌曲都会被移除，此操作无法撤销。'
+	String get clearQueueConfirmBody => '队列中的所有歌曲都会被移除，此操作无法撤销。';
 
 	/// zh-CN: '导出歌词'
 	String get exportLyric => '导出歌词';
@@ -11305,6 +11329,9 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '文件未能删除'
 	String get downloadDeleteFailed => '文件未能删除';
 
+	/// zh-CN: '剩余 {time}'
+	String downloadEta({required Object time}) => '剩余 ${time}';
+
 	/// zh-CN: '上一组'
 	String get partsPrevious => '上一组';
 
@@ -12603,6 +12630,7 @@ extension on Translations {
 			'music.badgeHiRes' => 'Hi-Res',
 			'music.skipOnError' => '出错自动跳过',
 			'music.skipOnErrorDesc' => '某个音源取不到地址时换下一个，而不是停下。',
+			'music.playbackFailedTitle' => '歌曲无法播放',
 			'music.autoplay' => '打开时继续播放',
 			'music.autoplayDesc' => '打开音乐模块时继续上次的播放队列。',
 			'music.rememberProgress' => '记住播放进度',
@@ -12671,10 +12699,11 @@ extension on Translations {
 			'music.queueEmpty' => '队列为空',
 			'music.queueTitle' => '播放队列',
 			'music.nowPlaying' => '正在播放',
-			'music.volume' => '音量',
-			'music.progress' => '播放进度',
+			'music.stagePanels' => '歌词与队列',
 			_ => null,
 		} ?? switch (path) {
+			'music.volume' => '音量',
+			'music.progress' => '播放进度',
 			'music.lyrics' => '歌词',
 			'music.lyricsEmpty' => '这首歌还没有歌词。',
 			'music.lyricLoadFailed' => '歌词加载失败',
@@ -12838,6 +12867,10 @@ extension on Translations {
 			'music.downloadProgress' => '下载进度',
 			'music.downloadRetry' => '重试',
 			'music.downloadRemove' => '移除记录',
+			'music.downloadDeleteFile' => '删除文件',
+			'music.downloadDeleteFileBody' => '音频文件会随这条记录一并删除，此操作无法撤销。',
+			'music.downloadDeleteFailed' => '文件未能删除',
+			'music.downloadEta' => ({required Object time}) => '剩余 ${time}',
 			'music.downloadResume' => '继续',
 			'music.downloadPause' => '暂停',
 			'music.downloadCancel' => '取消',
@@ -12938,6 +12971,8 @@ extension on Translations {
 			'music.desktopLyricColorGreen' => '绿色',
 			'music.desktopLyricColorOrange' => '橙色',
 			'music.clearQueue' => '清空播放队列',
+			'music.clearQueueConfirmTitle' => '清空播放队列？',
+			'music.clearQueueConfirmBody' => '队列中的所有歌曲都会被移除，此操作无法撤销。',
 			'music.exportLyric' => '导出歌词',
 			'music.associateLyric' => '关联本地歌词',
 			'music.associateLyricDone' => '已关联歌词',
@@ -13179,6 +13214,8 @@ extension on Translations {
 			'music.tagEditMatchOnline' => '在线匹配',
 			'music.tagEditMatchLyricDone' => '歌词匹配成功',
 			'music.tagEditMatchPicDone' => '封面匹配成功',
+			_ => null,
+		} ?? switch (path) {
 			'music.tagEditMatchLyricFailed' => '在线歌词匹配失败',
 			'music.tagEditMatchPicFailed' => '在线匹配封面失败',
 			'music.tagEditConfirm' => '保存',
@@ -13187,8 +13224,6 @@ extension on Translations {
 			'music.tagEditUnsupportedFormat' => '该格式暂不支持写入标签',
 			'music.tagEditReadFailed' => '读取文件标签失败',
 			'music.syncClient' => '客户端模式',
-			_ => null,
-		} ?? switch (path) {
 			'music.hkAssignments' => '按键分配',
 			'music.sourcesImported' => '已导入的源',
 			'navigation.groupPrimary' => '高频页面',
@@ -13693,6 +13728,8 @@ extension on Translations {
 			'settings.generalDescription' => '浏览、窗口与启动设置。',
 			'settings.appearanceDescription' => '主题、字体与配色。',
 			'settings.personalizationDescription' => '主题、外观、背景与导航。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.liveSettingsDescription' => '直播资源、弹幕与录制。',
 			'settings.liveSourcesDescription' => '平台、账号与自动刷新。',
 			'settings.playbackSettingsDescription' => '播放偏好与播放器内核。',
@@ -13701,8 +13738,6 @@ extension on Translations {
 			'settings.personalizationChooseTheme' => '选择要应用的主题',
 			'settings.personalizationSettings' => '个性化设置',
 			'settings.playbackDescription' => '画质、音频、画面与播放器行为。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.sitesDescription' => '首选平台与平台显示；各平台的兼容项、账号与标签分组。',
 			'settings.iptvDescription' => '节目单自动更新与来源同步。',
 			'settings.vodDescription' => 'Bilibili 账号、默认清晰度与视频站行为。',
@@ -14207,6 +14242,8 @@ extension on Translations {
 			'settings.musicLyricDescription' => '歌词的翻译、音译与延迟。',
 			'settings.navMusicDesktopLyric' => '桌面歌词',
 			'settings.navMusicHotkeys' => '快捷键',
+			_ => null,
+		} ?? switch (path) {
 			'settings.navMusicSync' => '同步',
 			'settings.navMusicEq' => '音效',
 			'settings.musicHotkeysDescription' => '播放、音量与收藏的快捷键。',
@@ -14215,8 +14252,6 @@ extension on Translations {
 			'settings.musicDesktopLyricDescription' => '悬浮歌词的开关、锁定、字号、颜色与对齐。',
 			'settings.vodQuality' => '默认清晰度',
 			'settings.vodQualityDesc' => '打开视频的清晰度；未登录 B 站可能只有 720P。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.vodQuality720' => '720P',
 			'settings.vodQuality1080' => '1080P',
 			'settings.vodQuality1080Plus' => '1080P+',
@@ -14721,6 +14756,8 @@ extension on Translations {
 			'settings.audienceRealOnlineDesc' => '跟随平台：有在线数的用它，其余保留热度。',
 			'settings.audienceNeedsAutomaticMode' => '先在「观众数显示」中选择「跟随平台」，真实在线优先才会生效。',
 			'settings.audiencePlatformsGroup' => '真实在线平台',
+			_ => null,
+		} ?? switch (path) {
 			'settings.audiencePlatformsDesc' => '只有公开返回并发人数的平台会出现；关闭后该平台仍按热度显示。',
 			'settings.audienceSourceRoomList' => '来源：房间列表/详情，可直接排行',
 			'settings.audienceSourceRoomRealtime' => '来源：进入直播间后的实时消息',
@@ -14729,8 +14766,6 @@ extension on Translations {
 			'settings.audienceHeatOnlyDesc' => '这些平台的接口没有并发人数，卡片照常标明热度或累计观看。',
 			'settings.backgroundSolid' => '纯色',
 			'settings.backgroundGradient' => '渐变',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundPresets' => '预设',
 			'settings.backgroundLibraryTitle' => '壁纸图库',
 			'settings.backgroundLibraryEmpty' => '没有可用的壁纸',
@@ -15235,6 +15270,8 @@ extension on Translations {
 			'vod.danmaku' => '弹幕',
 			'vod.likes' => '点赞',
 			'vod.coins' => '投币',
+			_ => null,
+		} ?? switch (path) {
 			'vod.favorites' => '收藏',
 			'vod.description' => '简介',
 			'vod.noDescription' => '这个视频没有简介。',
@@ -15243,8 +15280,6 @@ extension on Translations {
 			'vod.mute' => '静音',
 			'vod.unmute' => '取消静音',
 			'vod.volume' => '音量',
-			_ => null,
-		} ?? switch (path) {
 			'vod.quality' => '清晰度',
 			'vod.speed' => '倍速',
 			'vod.fullscreen' => '全屏',
@@ -15345,6 +15380,7 @@ extension on Translations {
 			'vod.downloadDeleteFile' => '删除文件',
 			'vod.downloadDeleteFileBody' => '视频文件会被一并删除，此操作无法撤销。',
 			'vod.downloadDeleteFailed' => '文件未能删除',
+			'vod.downloadEta' => ({required Object time}) => '剩余 ${time}',
 			'vod.partsPrevious' => '上一组',
 			'vod.partsNext' => '下一组',
 			'vod.partsJump' => '跳转分P',

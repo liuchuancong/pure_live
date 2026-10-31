@@ -12,8 +12,6 @@ import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/room/controller/room_controller.dart' show barrageProvider, roomProvider;
 import 'package:pure_live/modules/live/room/page/audio_only_cover.dart' show AudioOnlyCover;
-import 'package:pure_live/modules/live/room/player/compact_danmaku_metrics.dart' show CompactDanmakuMetrics;
-import 'package:pure_live/modules/live/room/player/room_barrage_config.dart' show roomBarrageConfig;
 import 'package:pure_live/shared/shared.dart';
 
 /// The app-level floating live-room player (the reference's `floatPlay`).
@@ -142,7 +140,10 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
     unawaited(ref.read(roomProvider.notifier).close());
     if (inWindow) {
       unawaited(FloatingOverlay.close());
-      if (context.canPop()) context.pop();
+      // hide() has already scheduled this overlay's removal; pop the page
+      // through the root navigator, the way _returnToRoom does.
+      final page = rootNavigatorKey.currentContext;
+      if (page != null && page.mounted && page.canPop()) page.pop();
     }
   }
 
@@ -233,7 +234,7 @@ final class _FloatingRoomPlayerViewState extends ConsumerState<FloatingRoomPlaye
                     Positioned.fill(
                       child: IgnorePointer(
                         child: FlameBarrageWidget(
-                          config: roomBarrageConfig(
+                          config: playerBarrageConfig(
                             style,
                             danmakuFps,
                             family: danmakuFamily,

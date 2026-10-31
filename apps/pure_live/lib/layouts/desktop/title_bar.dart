@@ -27,7 +27,6 @@ final class WindowTitleBar extends ConsumerWidget {
     required this.canForward,
     required this.onBack,
     required this.onForward,
-    this.onSearch,
     super.key,
   });
 
@@ -49,11 +48,6 @@ final class WindowTitleBar extends ConsumerWidget {
   /// Fired when the forward arrow is pressed.
   final VoidCallback onForward;
 
-  /// Opens the global search: the toolbar field takes focus. Null leaves the
-  /// magnifier out — a host without a search, or a window too narrow for the
-  /// field the button would reach.
-  final VoidCallback? onSearch;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
@@ -67,10 +61,9 @@ final class WindowTitleBar extends ConsumerWidget {
         height: kTitleBarHeight,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // A narrow window keeps its drag band: the trail arrows and the
-            // search give way first, the toggle and the caption never do.
+            // A narrow window keeps its drag band: the trail arrows give way
+            // first, the toggle and the caption never do.
             final trail = constraints.maxWidth >= LiveWindow.form;
-            final search = onSearch != null && constraints.maxWidth >= LiveWindow.compact;
             return Row(
               children: [
                 _SidebarToggleButton(expanded: expanded, onPressed: onToggleSidebar),
@@ -115,14 +108,6 @@ final class WindowTitleBar extends ConsumerWidget {
                     ),
                   ),
                 ),
-                if (search)
-                  ChromeIconButton(
-                    icon: DsIcons.search,
-                    semanticLabel: t.navigation.search,
-                    tooltip: t.navigation.search,
-                    shortcut: mac ? '⌘K' : 'Ctrl K',
-                    onPressed: onSearch,
-                  ),
                 ChromeIconButton(
                   icon: DsIcons.appWindow,
                   semanticLabel: t.common.newWindow,

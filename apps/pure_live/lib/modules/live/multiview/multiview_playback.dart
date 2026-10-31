@@ -491,6 +491,23 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       ..handles = null
       ..states = null
       ..failures = null;
+    final handle = session.handle;
+    if (handle != null) {
+      // The dispose below is queued behind whatever the pane is still doing;
+      // the wall must not be heard over the page the viewer opened next.
+      unawaited(() async {
+        try {
+          await handle.setMute(muted: true);
+        } on Object {
+          // Already gone.
+        }
+        try {
+          await handle.pause();
+        } on Object {
+          // Already gone.
+        }
+      }());
+    }
     unawaited(session.playback?.dispose() ?? Future<void>.value());
     session
       ..playback = null

@@ -22,6 +22,9 @@ enum StorageFolder {
   /// Live recordings the app took.
   recordings(DsIcons.folderVideo),
 
+  /// Room frames the tray's screenshot action saved.
+  screenshots(DsIcons.camera),
+
   /// Finished songs.
   music(DsIcons.music),
 
@@ -90,6 +93,19 @@ final class StorageFolderOverrides extends Notifier<Map<StorageFolder, String>> 
     state = {...state}..remove(folder);
     try {
       await StoragePrefs.remove(folder.prefKey);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
+  /// Drops every choice so all folders follow the device again.
+  Future<void> resetAll() async {
+    if (state.isEmpty) return;
+    state = const <StorageFolder, String>{};
+    try {
+      for (final folder in StorageFolder.values) {
+        await StoragePrefs.remove(folder.prefKey);
+      }
     } on Object {
       // A preference; a closed store loses it.
     }
@@ -216,6 +232,9 @@ final class AppFolders {
   /// Live recordings.
   Directory get recordings => _pick(StorageFolder.recordings, paths.recordings);
 
+  /// Room frames the tray's screenshot action saved.
+  Directory get screenshots => _pick(StorageFolder.screenshots, paths.screenshots);
+
   /// Finished songs.
   Directory get music => _pick(StorageFolder.music, paths.music);
 
@@ -242,6 +261,12 @@ final class AppFolders {
 
   /// The rotating log files.
   Directory get logs => _pick(StorageFolder.logs, paths.logs);
+
+  /// Certificate material copied from the app's assets; not a viewer folder.
+  Directory get certificates => paths.certificates;
+
+  /// The claims a running capture holds; see [AppPaths.recordingClaims].
+  Directory get recordingClaims => paths.recordingClaims;
 
   /// The clearable cache area: the device default unless the viewer moved it.
   Directory get cacheRoot => _pick(StorageFolder.cache, paths.cacheRoot);

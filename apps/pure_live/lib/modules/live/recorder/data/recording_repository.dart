@@ -30,6 +30,12 @@ final class RecordingTaskRepository {
   /// Stores [task] whole, replacing any entry behind its id.
   Future<void> save(RecordingTask task) => store.put(task.id, task.toJson());
 
+  /// The task behind [id], or null when it is not stored.
+  RecordingTask? taskById(String id) {
+    final stored = store.get(id);
+    return stored == null ? null : RecordingTask.fromJson(stored);
+  }
+
   /// Drops the task behind [id]; a task never stored is a no-op.
   Future<void> remove(String id) => store.delete(id);
 
@@ -54,13 +60,27 @@ final class RecordingTaskRepository {
         quality: task.quality,
         state: RecordingTaskState.recording,
         startedAt: DateTime.now().toUtc(),
+        scheduleEnabled: task.scheduleEnabled,
+        scheduleDays: task.scheduleDays,
+        scheduleStartMinutes: task.scheduleStartMinutes,
+        scheduleEndMinutes: task.scheduleEndMinutes,
+        stopAtWindowEnd: task.stopAtWindowEnd,
       ),
     );
   }
 
   /// Marks the task behind [id] as ended in [state], stamping the end and
   /// what the session left behind. A task never stored is a no-op.
-  Future<void> setEnded(String id, RecordingTaskState state, {String? filePath, int? bytes, String? errorText}) async {
+  Future<void> setEnded(
+    String id,
+    RecordingTaskState state, {
+    String? filePath,
+    int? bytes,
+    int? durationMs,
+    String? errorText,
+    bool? postProcessing,
+    String? warning,
+  }) async {
     final stored = store.get(id);
     if (stored == null) return;
     final task = RecordingTask.fromJson(stored);
@@ -70,19 +90,133 @@ final class RecordingTaskRepository {
         endedAt: DateTime.now().toUtc(),
         filePath: filePath ?? task.filePath,
         bytes: bytes ?? task.bytes,
+        durationMs: durationMs ?? task.durationMs,
         errorText: errorText ?? task.errorText,
+        postProcessing: postProcessing,
+        postProcessingProgress: -1,
+        warning: warning,
       ),
     );
   }
 
-  /// Puts the running session's [bytes] on the task without touching its
-  /// state or start: the engine's progress line, written on its own clock.
-  /// A task never stored is a no-op.
-  Future<void> setProgress(String id, int bytes) async {
+  /// Marks an ended task as being finished again, for a post-recording step
+  /// the viewer re-runs by hand.
+  ///
+  /// Guarded by [expectedStartedAt] like the other late writes: a new take of
+  /// the same room may already own the entry, and its own status must not be
+  /// overwritten by a retry of the older one. Returns whether it applied.
+  Future<bool> beginPostProcessing(String id, {required DateTime expectedStartedAt}) async {
+    final stored = store.get(id);
+    if (stored == null) return false;
+    final task = RecordingTask.fromJson(stored);
+    if (task.isRunning || !task.startedAt.isAtSameMomentAs(expectedStartedAt)) return false;
+    await save(task.copyWith(postProcessing: true, postProcessingProgress: -1, warning: ''));
+    return true;
+  }
+
+  /// Writes the post-processing run's progress (0–1, or -1 unknown).
+  ///
+  /// Guarded like [finishPostProcessing]: a new take may replace the entry
+  /// while the older take is still being joined.
+  Future<bool> setPostProcessingProgress(
+    String id, {
+    required DateTime expectedStartedAt,
+    required double progress,
+  }) async {
+    final stored = store.get(id);
+    if (stored == null) return false;
+    final task = RecordingTask.fromJson(stored);
+    if (!task.postProcessing || !task.startedAt.isAtSameMomentAs(expectedStartedAt)) return false;
+    await save(task.copyWith(postProcessingProgress: progress.clamp(-1, 1)));
+    return true;
+  }
+
+  /// Marks the post-processing run behind [id] as finished.
+  ///
+  /// Guarded by [expectedStartedAt]: a new take of the same room may have
+  /// replaced the entry while the older take was joined, and that older work
+  /// must not clear the new session's status. Returns whether it applied.
+  Future<bool> finishPostProcessing(String id, {required DateTime expectedStartedAt, String warning = ''}) async {
+    final stored = store.get(id);
+    if (stored == null) return false;
+    final task = RecordingTask.fromJson(stored);
+    if (task.state != RecordingTaskState.stopped || !task.startedAt.isAtSameMomentAs(expectedStartedAt)) {
+      return false;
+    }
+    await save(task.copyWith(postProcessing: false, postProcessingProgress: -1, warning: warning));
+    return true;
+  }
+
+  /// Points an ended task at the path the post-recording steps left.
+  ///
+  /// [filePath] is the joined/transcoded MP4 when there is one, otherwise the
+  /// renamed take directory. Guarded by [expectedStartedAt]: a new take of the
+  /// same room replaces the entry while an older take is still being finished,
+  /// and that older work must not write its path over the new session.
+  /// Returns whether the task was still the expected one.
+  Future<bool> setFinalPath(
+    String id, {
+    required DateTime expectedStartedAt,
+    required String filePath,
+    int? bytes,
+  }) async {
+    final stored = store.get(id);
+    if (stored == null) return false;
+    final task = RecordingTask.fromJson(stored);
+    if (task.state != RecordingTaskState.stopped || !task.startedAt.isAtSameMomentAs(expectedStartedAt)) {
+      return false;
+    }
+    await save(task.copyWith(filePath: filePath, bytes: bytes));
+    return true;
+  }
+
+  /// Puts the running session's [bytes] and media time on the task without
+  /// touching its state or start: the engine's progress line, written on its
+  /// own clock. A task never stored is a no-op.
+  Future<void> setProgress(String id, int bytes, {int durationMs = 0}) async {
     final stored = store.get(id);
     if (stored == null) return;
-    await save(RecordingTask.fromJson(stored).copyWith(bytes: bytes));
+    await save(RecordingTask.fromJson(stored).copyWith(bytes: bytes, durationMs: durationMs));
   }
+}
+
+/// The tasks with a take that the given recording folder does not hold.
+///
+/// A viewer who moved the recording folder leaves their old takes where they
+/// were written — a take keeps the folder it started in — and this is the
+/// settled subset of that: rows whose session is neither capturing nor being
+/// finished, read from the task list alone, so a page can count and name them
+/// without touching the disk.
+List<RecordingTask> strandedTasksOf(Iterable<RecordingTask> tasks, String rootPath) {
+  final normalized = _normalizePath(rootPath);
+  return [
+    for (final task in tasks)
+      if (!task.isRunning &&
+          !task.postProcessing &&
+          task.filePath != null &&
+          (task.filePath ?? '').trim().isNotEmpty &&
+          !_isWithin(normalized, _normalizePath(task.takeDirectory)))
+        task,
+  ];
+}
+
+/// Whether [path] is [root] itself or below it, on either separator style.
+bool _isWithin(String root, String path) =>
+    path.isNotEmpty && (root.isEmpty || path == root || path.startsWith('$root${_styleOf(path)}'));
+
+/// The separator [path] uses — Windows reads a POSIX one, macOS and Linux do
+/// not read a Windows one, and a stranded take on the wrong platform is simply
+/// not this folder's.
+String _styleOf(String path) => path.contains(r'\') ? r'\' : '/';
+
+/// [path] with its own separators and no trailing one, so two paths written on
+/// different days still compare equal.
+String _normalizePath(String path) {
+  final value = path.trim().replaceAll(r'\', _styleOf(path));
+  if (value.length <= 1) return value;
+  final separator = _styleOf(value);
+  final trimmed = value.endsWith(separator) ? value.substring(0, value.length - separator.length) : value;
+  return trimmed.isEmpty ? value : trimmed;
 }
 
 /// The recordings repository (one namespace, one process).
@@ -164,11 +298,12 @@ class RecordingTasksController extends Notifier<RecordingTasksState> {
     await repository.setEnded(id, RecordingTaskState.failed, filePath: filePath, bytes: bytes, errorText: errorText);
   }
 
-  /// Puts the running session's [bytes] on the task (the engine's progress).
-  Future<void> setProgress(String id, int bytes) async {
+  /// Puts the running session's [bytes] and media time on the task (the
+  /// engine's progress).
+  Future<void> setProgress(String id, int bytes, {int durationMs = 0}) async {
     final repository = ref.read(recordingRepositoryProvider).value;
     if (repository == null) return;
-    await repository.setProgress(id, bytes);
+    await repository.setProgress(id, bytes, durationMs: durationMs);
   }
 }
 

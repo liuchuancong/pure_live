@@ -57,7 +57,9 @@ final class SystemPipLifecycle with WidgetsBindingObserver {
               !handle.playbackStream.value.isPlaying) {
             continue;
           }
-          unawaited(handle.deactivate());
+          // The window is on its way down; a handle that cannot pause
+          // (engine already tearing down) has nothing left to pause.
+          unawaited(handle.deactivate().catchError((Object _) {}));
         }
       case AppLifecycleState.resumed:
         if (pipOpen()) unawaited(exitSystemPip());

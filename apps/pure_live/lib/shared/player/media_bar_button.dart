@@ -73,12 +73,14 @@ final class MediaBarButton extends StatelessWidget {
       autofocus: autofocus,
       focusNode: focusNode,
       builder: (context, states, _) {
-        final hovered = states.contains(WidgetState.hovered);
+        // Focus lights the button like hover does: a remote or keyboard
+        // user sees where they are even where a zoom is not drawn.
+        final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
         return Container(
           width: side,
           height: side,
           decoration: DsBoxDecoration(
-            color: hovered && enabled ? (onDark ? const Color(0x24FFFFFF) : colors.hover) : null,
+            color: lit && enabled ? (onDark ? const Color(0x24FFFFFF) : colors.hover) : null,
             borderRadius: theme.radii.controlCorners(null, side),
           ),
           child: Center(

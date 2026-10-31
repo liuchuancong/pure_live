@@ -1002,7 +1002,7 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
             semanticLabel: semanticLabel,
             onPressed: () => _toggle(picker),
             builder: (context, states, _) {
-              final lit = open || states.contains(WidgetState.hovered);
+              final lit = open || states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
               return Container(
                 height: theme.sizes.sm,
                 padding: EdgeInsets.symmetric(horizontal: labelled ? DsSpace.s8 : DsSpace.s6),

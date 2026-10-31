@@ -82,12 +82,25 @@ final class MusicQueuePanelState extends ConsumerState<MusicQueuePanel> {
                   ),
                 ),
                 // The reference panel's own verb: emptying the list from the
-                // panel that lists it, not only from the player's menu.
+                // panel that lists it, not only from the player's menu. The
+                // queue cannot be brought back, so the ask comes first.
                 DsButton.icon(
                   variant: DsButtonVariant.ghost,
                   size: DsSize.sm,
                   semanticLabel: t.music.clearQueue,
-                  onPressed: controller.clearQueue,
+                  onPressed: () async {
+                    final confirmed = await showDsConfirm(
+                      context: context,
+                      title: t.music.clearQueueConfirmTitle,
+                      description: t.music.clearQueueConfirmBody,
+                      confirmLabel: t.music.clearQueue,
+                      cancelLabel: t.common.cancel,
+                      destructive: true,
+                      icon: const DsIcon(DsIcons.trash2),
+                    );
+                    if (!confirmed || !context.mounted) return;
+                    unawaited(controller.clearQueue());
+                  },
                   icon: const DsIcon(DsIcons.trash2, size: 16),
                 ),
               ],
