@@ -369,49 +369,65 @@ final class HongguoOfficialClient {
   }
 
   /// The rank payload behind the page's `data-fn-*` script attributes —
-  /// read as data only, never executed. The renderer wraps a payload either
-  /// in a double-quoted `mergeLoaderData` attribute or in a single-quoted
-  /// `r` one, page by page, so both are read and the tag itself tolerates
-  /// quoted `>`.
+  /// read as data only, never executed. The renderer wraps it two ways, and
+  /// which one a page gets is up to it: a `mergeLoaderData` tag carrying the
+  /// JSON inline (`p`), or one pointing at a separate `r` tag that registered
+  /// the same loader and key (`s`). The board's own page answers the first
+  /// shape and its continuation pages the second, so both are read, the `r`
+  /// tags are collected first, and the tag pattern tolerates quoted `>`.
   static Map<String, Object?> _rankPayload(String html, HongguoWebsiteBoard board) {
     final tagPattern = RegExp(r"""<script\b(?:[^>"']|"[^"]*"|'[^']*')*>""");
+    // `loader → key → value`, as the page's own `r` registry holds it.
+    final registry = <String, Map<String, Object?>>{};
+    final pointers = <Object?>[];
     for (final match in tagPattern.allMatches(html)) {
       final tag = match.group(0)!;
       final name = _scriptAttribute(tag, 'data-fn-name');
       if (name != 'r' && name != 'mergeLoaderData') continue;
       final argsRaw = _scriptAttribute(tag, 'data-fn-args');
       if (argsRaw == null) continue;
-      final args = jsonDecode(_unescapeAttribute(argsRaw));
-      if (args is! List<Object?> || args.isEmpty || args[0] != board.loader) continue;
-      Object? raw;
-      if (name == 'r' && args.length > 2 && args[1] == 'content') {
-        raw = args[2];
+      final List<Object?> args;
+      try {
+        final decoded = jsonDecode(_unescapeAttribute(argsRaw));
+        if (decoded is! List<Object?>) continue;
+        args = decoded;
+      } on FormatException {
+        // One script tag whose arguments are not JSON is not a reason to give
+        // up on the page: another tag may carry the board.
+        continue;
+      }
+      if (args.isEmpty || args[0] != board.loader) continue;
+      if (name == 'r' && args.length > 2 && args[1] is String && args[2] is Map<String, Object?>) {
+        registry.putIfAbsent(args[1]! as String, () => args[2]! as Map<String, Object?>);
       } else if (name == 'mergeLoaderData' && args.length > 1 && args[1] is List<Object?>) {
         for (final entry in args[1]! as List<Object?>) {
-          if (entry is Map<String, Object?> &&
-              entry['key'] == 'content' &&
-              entry['routerDataFnName'] == 'p' &&
-              entry['routerDataFnArgs'] is List<Object?>) {
-            final fnArgs = entry['routerDataFnArgs']! as List<Object?>;
-            if (fnArgs.isNotEmpty) raw = fnArgs[0];
-          }
+          if (entry is! Map<String, Object?> || entry['key'] != 'content') continue;
+          final fnArgs = entry['routerDataFnArgs'];
+          if (fnArgs is! List<Object?> || fnArgs.isEmpty) continue;
+          final inlined = entry['routerDataFnName'] == 'p';
+          // A pointer names its registry entry by its quoted loader and key.
+          final named = fnArgs.length > 1 && fnArgs[1] == '"content"';
+          if (inlined || named) pointers.add(inlined ? fnArgs[0] : registry[namespacedLoaderKey(fnArgs[0])]);
         }
       }
+    }
+    for (final raw in [...pointers, registry['content']]) {
       if (raw is Map<String, Object?>) return raw;
-      if (raw is String) {
-        final Object? decoded;
-        try {
-          decoded = jsonDecode(raw);
-        } on FormatException {
-          // One script tag whose payload is not JSON is not a reason to give up
-          // on the page: another tag may carry the board.
-          continue;
-        }
-        if (decoded is Map<String, Object?>) return decoded;
+      if (raw is! String) continue;
+      final Object? decoded;
+      try {
+        decoded = jsonDecode(raw);
+      } on FormatException {
+        continue;
       }
+      if (decoded is Map<String, Object?>) return decoded;
     }
     throw const HongguoOfficialFailure('剧集榜单暂不可用');
   }
+
+  /// The registry key a `mergeLoaderData` pointer names: the platform writes
+  /// the loader's own slash as `/-`, which the quoted argument then escapes.
+  static String namespacedLoaderKey(Object? raw) => '${raw ?? ''}'.replaceAll(r'\/', '/').replaceAll('"', '');
 
   /// One `data-fn-*` attribute of a script tag, whichever quote style the
   /// renderer used for it.

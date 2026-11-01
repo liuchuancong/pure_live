@@ -1849,11 +1849,14 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '红果官网热播榜'
 	String get rankSource => '红果官网热播榜';
 
+	/// zh-CN: '榜单题材'
+	String get rankFilterTitle => '榜单题材';
+
 	/// zh-CN: '全部题材'
 	String get rankTopicAll => '全部题材';
 
-	/// zh-CN: '保留原榜名次'
-	String get rankKeepsPlaces => '保留原榜名次';
+	/// zh-CN: '筛选后仍按原榜名次排列'
+	String get rankKeepsPlaces => '筛选后仍按原榜名次排列';
 
 	/// zh-CN: '正在后台更新…'
 	String get rankRenewing => '正在后台更新…';
@@ -12694,8 +12697,9 @@ extension on Translations {
 			'hongguo.filterReset' => '重置',
 			'hongguo.filterNone' => '全部条件',
 			'hongguo.rankSource' => '红果官网热播榜',
+			'hongguo.rankFilterTitle' => '榜单题材',
 			'hongguo.rankTopicAll' => '全部题材',
-			'hongguo.rankKeepsPlaces' => '保留原榜名次',
+			'hongguo.rankKeepsPlaces' => '筛选后仍按原榜名次排列',
 			'hongguo.rankRenewing' => '正在后台更新…',
 			'hongguo.rankReading' => '读取中…',
 			'hongguo.rankEmptyTopic' => '本榜暂无符合条件的作品，可切换题材',
@@ -13143,9 +13147,9 @@ extension on Translations {
 			'music.rememberProgressDesc' => '再次打开同一首歌时，从上一次停止的位置继续。',
 			'music.autoCleanPlayedList' => '自动清空已播列表',
 			'music.autoCleanPlayedListDesc' => '点击与播放列表相同的列表切歌时清空已播放列表，随机模式下列表内所有歌曲会重新参与随机。',
-			'music.addToTop' => '新歌加到列表顶部',
 			_ => null,
 		} ?? switch (path) {
+			'music.addToTop' => '新歌加到列表顶部',
 			'music.addToTopDesc' => '关闭时新歌排在列表末尾。',
 			'music.showSource' => '列表显示音源',
 			'music.showSourceDesc' => '在歌曲行旁标出它来自哪个音源。',
@@ -13657,9 +13661,9 @@ extension on Translations {
 			'music.syncMode' => '同步模式',
 			'music.syncConnect' => '连接',
 			'music.syncDisconnect' => '断开',
-			'music.syncRemoveDevice' => '移除该设备',
 			_ => null,
 		} ?? switch (path) {
+			'music.syncRemoveDevice' => '移除该设备',
 			'music.syncRemoveHost' => '移除该历史地址',
 			'music.syncStatusConnected' => '已连接',
 			'music.syncStatusConnecting' => '连接中',
@@ -14171,9 +14175,9 @@ extension on Translations {
 			'room.giftValueSixCoin' => ({required Object value}) => '${value} 六币',
 			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC币',
 			'room.giftValueStarCoin' => ({required Object value}) => '${value} 星币',
-			'room.giftValueHeart' => ({required Object value}) => '${value} 爱心',
 			_ => null,
 		} ?? switch (path) {
+			'room.giftValueHeart' => ({required Object value}) => '${value} 爱心',
 			'room.giftValueNote' => ({required Object value}) => '${value} 音符',
 			'room.collapseChat' => '收起聊天',
 			'room.expandChat' => '展开聊天',
@@ -14685,9 +14689,9 @@ extension on Translations {
 			'settings.fontManagerReset' => '恢复默认',
 			'settings.fontManagerFilterAll' => '全部',
 			'settings.fontManagerCategory' => '分类',
-			'settings.fontManagerCount' => ({required Object count}) => '共 ${count} 款字体',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerCount' => ({required Object count}) => '共 ${count} 款字体',
 			'settings.fontManagerTagBundled' => '随应用打包',
 			'settings.fontManagerSourceFreeFont' => '免费字体库',
 			'settings.fontManagerUse' => '使用',
@@ -15199,9 +15203,9 @@ extension on Translations {
 			'settings.downloadStatusRunning' => '下载中',
 			'settings.downloadStatusDone' => '已完成',
 			'settings.downloadStatusFailed' => '下载失败',
-			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => '完成于 ${time}',
 			'settings.downloadRemove' => '移除记录',
 			'settings.downloadRemoveBody' => '只移除这条记录，不会删除已保存的文件。',
@@ -15713,9 +15717,9 @@ extension on Translations {
 			'toolbox.linkTimeout' => '解析超时，请检查网络后重试。',
 			'toolbox.linkFailed' => '解析失败，请稍后重试。',
 			'toolbox.linkCopyDone' => '已复制房间链接',
-			'toolbox.linkCopyFailed' => '复制失败',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.linkCopyFailed' => '复制失败',
 			'toolbox.linkSupportTitle' => '支持解析的平台',
 			'toolbox.linkSupportHint' => '以下平台的直播间链接可以直接解析并打开。',
 			'toolbox.networkSiteLabel' => '选择平台',

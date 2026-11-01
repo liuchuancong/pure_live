@@ -698,8 +698,9 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get filterReset => 'Reset';
 	@override String get filterNone => 'All';
 	@override String get rankSource => 'Hongguo public board';
+	@override String get rankFilterTitle => 'Board topic';
 	@override String get rankTopicAll => 'All topics';
-	@override String get rankKeepsPlaces => 'board places kept';
+	@override String get rankKeepsPlaces => 'Keeps the board\'s own places';
 	@override String get rankRenewing => 'updating in the background…';
 	@override String get rankReading => 'Reading…';
 	@override String get rankEmptyTopic => 'Nothing on this board under that topic';
@@ -4794,8 +4795,9 @@ extension on TranslationsEn {
 			'hongguo.filterReset' => 'Reset',
 			'hongguo.filterNone' => 'All',
 			'hongguo.rankSource' => 'Hongguo public board',
+			'hongguo.rankFilterTitle' => 'Board topic',
 			'hongguo.rankTopicAll' => 'All topics',
-			'hongguo.rankKeepsPlaces' => 'board places kept',
+			'hongguo.rankKeepsPlaces' => 'Keeps the board\'s own places',
 			'hongguo.rankRenewing' => 'updating in the background…',
 			'hongguo.rankReading' => 'Reading…',
 			'hongguo.rankEmptyTopic' => 'Nothing on this board under that topic',
@@ -5243,9 +5245,9 @@ extension on TranslationsEn {
 			'music.rememberProgressDesc' => 'A song you open again resumes where it last stopped.',
 			'music.autoCleanPlayedList' => 'Auto-clean played list',
 			'music.autoCleanPlayedListDesc' => 'Clears the played list when picking songs from the list already playing; in random mode every song joins the pool again.',
-			'music.addToTop' => 'Add new songs on top',
 			_ => null,
 		} ?? switch (path) {
+			'music.addToTop' => 'Add new songs on top',
 			'music.addToTopDesc' => 'Off keeps them at the end of a list.',
 			'music.showSource' => 'Show the source in lists',
 			'music.showSourceDesc' => 'Marks which source a song came from beside its row.',
@@ -5757,9 +5759,9 @@ extension on TranslationsEn {
 			'music.syncMode' => 'Sync mode',
 			'music.syncConnect' => 'Connect',
 			'music.syncDisconnect' => 'Disconnect',
-			'music.syncRemoveDevice' => 'Remove this device',
 			_ => null,
 		} ?? switch (path) {
+			'music.syncRemoveDevice' => 'Remove this device',
 			'music.syncRemoveHost' => 'Remove this saved address',
 			'music.syncStatusConnected' => 'Connected',
 			'music.syncStatusConnecting' => 'Connecting',
@@ -6271,9 +6273,9 @@ extension on TranslationsEn {
 			'room.giftValueSixCoin' => ({required Object value}) => '${value} six coins',
 			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC coins',
 			'room.giftValueStarCoin' => ({required Object value}) => '${value} star coins',
-			'room.giftValueHeart' => ({required Object value}) => '${value} hearts',
 			_ => null,
 		} ?? switch (path) {
+			'room.giftValueHeart' => ({required Object value}) => '${value} hearts',
 			'room.giftValueNote' => ({required Object value}) => '${value} notes',
 			'room.collapseChat' => 'Collapse chat',
 			'room.expandChat' => 'Expand chat',
@@ -6785,9 +6787,9 @@ extension on TranslationsEn {
 			'settings.fontManagerReset' => 'Restore the default',
 			'settings.fontManagerFilterAll' => 'All',
 			'settings.fontManagerCategory' => 'Category',
-			'settings.fontManagerCount' => ({required Object count}) => '${count} fonts',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerCount' => ({required Object count}) => '${count} fonts',
 			'settings.fontManagerTagBundled' => 'Bundled',
 			'settings.fontManagerSourceFreeFont' => 'Free font collection',
 			'settings.fontManagerUse' => 'Use',
@@ -7299,9 +7301,9 @@ extension on TranslationsEn {
 			'settings.downloadStatusRunning' => 'Downloading',
 			'settings.downloadStatusDone' => 'Completed',
 			'settings.downloadStatusFailed' => 'Failed',
-			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => 'Finished ${time}',
 			'settings.downloadRemove' => 'Remove record',
 			'settings.downloadRemoveBody' => 'Removes the record only; the saved file stays.',
@@ -7813,9 +7815,9 @@ extension on TranslationsEn {
 			'toolbox.linkTimeout' => 'The resolve timed out; check the network and try again.',
 			'toolbox.linkFailed' => 'The resolve failed; try again later.',
 			'toolbox.linkCopyDone' => 'Room link copied',
-			'toolbox.linkCopyFailed' => 'Copy failed',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.linkCopyFailed' => 'Copy failed',
 			'toolbox.linkSupportTitle' => 'Supported platforms',
 			'toolbox.linkSupportHint' => 'Room links of these platforms resolve and open directly.',
 			'toolbox.networkSiteLabel' => 'Choose a platform',

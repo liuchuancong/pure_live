@@ -652,6 +652,14 @@ final class _RankViewState extends ConsumerState<_RankView> {
     });
   }
 
+  /// The board's topics, in a panel over the rows: the board carries fifty of
+  /// them at a time and a pick goes straight to the list behind.
+  Future<void> _openTopics(HongguoWebsiteBoard board, List<HongguoRankTopic> topics) => showDsPanel<void>(
+    context: context,
+    builder: (context) =>
+        _RankFilterPanel(topics: topics, topic: _topic, onSelect: (topic) => setState(() => _topic = topic ?? '')),
+  );
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -662,12 +670,6 @@ final class _RankViewState extends ConsumerState<_RankView> {
     final held = feed ?? (items: const <HongguoSeries>[], readAt: 0, loading: false, renewing: false, error: null);
     final topics = controller.topicsOf(_board);
     final rows = controller.rowsOf(_board, _topic);
-    final figures = <String>[
-      t.hongguo.rankSource,
-      t.hongguo.rankSeriesCount(count: held.items.length),
-      if (_topic.isNotEmpty) '$_topic ${t.hongguo.rankSeriesCount(count: rows.length)}（${t.hongguo.rankKeepsPlaces}）',
-      if (held.renewing) t.hongguo.rankRenewing,
-    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -705,6 +707,13 @@ final class _RankViewState extends ConsumerState<_RankView> {
                     DsButton(
                       size: DsSize.sm,
                       variant: DsButtonVariant.secondary,
+                      leading: const DsIcon(DsIcons.listFilter, size: 14),
+                      onPressed: topics.isEmpty ? null : () => unawaited(_openTopics(_board, topics)),
+                      child: Text(t.hongguo.filter),
+                    ),
+                    DsButton(
+                      size: DsSize.sm,
+                      variant: DsButtonVariant.secondary,
                       leading: const DsIcon(DsIcons.refreshCw, size: 14),
                       onPressed: held.loading || held.renewing ? null : () => unawaited(controller.refresh(_board)),
                       child: Text(held.loading || held.renewing ? t.hongguo.rankReading : t.hongguo.refresh),
@@ -712,27 +721,13 @@ final class _RankViewState extends ConsumerState<_RankView> {
                   ],
                 ),
               ),
-              if (topics.isNotEmpty)
-                Wrap(
-                  spacing: DsSpace.s8,
-                  runSpacing: DsSpace.s8,
-                  children: [
-                    DsChip(
-                      label: Text('${t.hongguo.rankTopicAll} · ${held.items.length}'),
-                      selected: _topic.isEmpty,
-                      onChanged: (_) => setState(() => _topic = ''),
-                    ),
-                    for (final topic in topics)
-                      DsChip(
-                        label: Text('${topic.topic} · ${topic.count}'),
-                        selected: _topic == topic.topic,
-                        onChanged: (selected) => setState(() => _topic = selected ? topic.topic : ''),
-                      ),
-                  ],
-                ),
+              // The one condition this board keeps, and how many of its hundred
+              // rows it leaves — the row list itself starts right below it.
               Text(
-                figures.join(' · '),
-                maxLines: 2,
+                _topic.isEmpty
+                    ? '${t.hongguo.rankTopicAll} · ${t.hongguo.rankSeriesCount(count: rows.length)}'
+                    : '$_topic · ${t.hongguo.rankSeriesCount(count: rows.length)}',
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.typography.caption.copyWith(color: colors.textMuted),
               ),
@@ -773,6 +768,68 @@ final class _RankViewState extends ConsumerState<_RankView> {
                 ),
         ),
       ],
+    );
+  }
+}
+
+/// The board's topics, in the panel the board's own filter row opens: one
+/// dimension, so its single choice goes straight to the board behind the
+/// panel and the rows keep the place the board gave them.
+final class _RankFilterPanel extends StatelessWidget {
+  const _RankFilterPanel({required this.topics, required this.topic, required this.onSelect});
+
+  /// The topics the whole board carries, most frequent first.
+  final List<HongguoRankTopic> topics;
+
+  /// The topic the board is thinned to; empty for the board whole.
+  final String topic;
+
+  /// Carries the chosen topic, or null for the board whole.
+  final ValueChanged<String?> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return DsPanel(
+      title: Text(t.hongguo.rankFilterTitle),
+      footer: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: DsSpace.s8,
+        children: [
+          Text(
+            '${t.hongguo.rankSource} · ${t.hongguo.rankKeepsPlaces}',
+            style: theme.typography.caption.copyWith(color: colors.textMuted),
+          ),
+          Row(
+            spacing: DsSpace.s8,
+            children: [
+              Expanded(
+                child: DsButton(
+                  variant: DsButtonVariant.secondary,
+                  onPressed: topic.isEmpty ? null : () => onSelect(null),
+                  child: Text(t.hongguo.filterReset),
+                ),
+              ),
+              Expanded(
+                child: DsButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.hongguo.filterDone)),
+              ),
+            ],
+          ),
+        ],
+      ),
+      child: HongguoFilterRowView(
+        row: HongguoFilterRow(
+          type: 'topic',
+          rowName: t.hongguo.rankFilterTitle,
+          items: [
+            for (final entry in topics) HongguoFilterOption(id: entry.topic, name: '${entry.topic} · ${entry.count}'),
+          ],
+        ),
+        selection: topic.isEmpty ? const <String, String>{} : <String, String>{'topic': topic},
+        onSelect: onSelect,
+      ),
     );
   }
 }
