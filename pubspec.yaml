@@ -54,15 +54,17 @@ dependency_overrides:
   dbus: ^0.8.0
   equatable: ^3.0.0
   ffmpeg_kit_extended_flutter: ^1.0.0
-  # 启动即死修复：媒体会话插件的 winrt::init_apartment() 在 runner 的 STA 平台
+  # 启动即死修复暂时缺位：媒体会话插件的 winrt::init_apartment() 在 runner 的 STA 平台
   # 线程上必然抛 RPC_E_CHANGED_MODE，而该异常经 hresult_error 构造内的
   # RoOriginateError 路径会直接终止进程（debug/release/profile 全档位复现）。
-  # 本地 fork 把公寓初始化与 SMTC 激活改为免抛的 HRESULT 直调。
-  flutter_media_session: { path: F:/flutter_media_session_local }
+  # 原 override 指向本地 fork F:/flutter_media_session_local（公寓初始化与 SMTC 激活
+  # 改为免抛的 HRESULT 直调）；本机没有 F: 盘，全盘也没有该 fork 源码，先按上游
+  # 3.0.9 解析。Windows 真机若复现启动即死，要么补回 fork，要么在本机重建它。
+  flutter_media_session: ^3.0.9
   hooks: ^2.2.0
-  # 播放内核走本地 F:/media_core（与应用侧的 path 依赖同源，避免 git/path 双源冲突）
-  media_core: { path: F:/media_core/packages/media_core }
-  media_core_native: { path: F:/media_core/packages/media_core_native }
+  # 播放内核走本地 C:/Users/XA-158/projects/flutter/media_core（与应用侧的 path 依赖同源，避免 git/path 双源冲突）
+  media_core: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core }
+  media_core_native: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_native }
   platform: ^3.2.0
   test_api: ^0.7.15
   wakelock_plus: 1.8.1
