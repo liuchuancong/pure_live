@@ -8,7 +8,7 @@ import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
 import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar;
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodSeasonCard;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodSeasonCard, kVodSeasonTileAspect;
 import 'package:pure_live/shared/shared.dart';
 
 /// The cinema's six catalogues with the platform's own names — Bilibili's
@@ -126,8 +126,7 @@ final class _PgcFeedView extends ConsumerWidget {
       key: ValueKey(type),
       scrollController: scrollController,
       items: feed.seasons,
-      // A poster plus two text lines beneath it.
-      aspectRatio: 0.62,
+      aspectRatio: kVodSeasonTileAspect,
       isLoading: feed.loading,
       hasMore: feed.hasMore,
       onLoadMore: () => controller.loadMore(type),

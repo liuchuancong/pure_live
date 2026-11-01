@@ -9,7 +9,8 @@ import 'package:pure_live/features/account/account.dart' show showBilibiliWebLog
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_library.dart';
 import 'package:pure_live/modules/vod/controller/vod_social.dart';
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodSeasonCard, VodVideoRow, vodDurationText;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
+    show VodSeasonCard, VodVideoRow, kVodSeasonTileAspect, vodDurationText;
 import 'package:pure_live/shared/shared.dart';
 
 /// The video station's 个人 page: the four lists the reference offers.
@@ -394,7 +395,7 @@ final class _FollowingList extends StatelessWidget {
     }
     return CardGrid<VodSeason>(
       items: seasons,
-      aspectRatio: 0.62,
+      aspectRatio: kVodSeasonTileAspect,
       itemBuilder: (context, season) => VodSeasonCard(season: season, onOpen: () => onOpen(season.seasonId)),
     );
   }

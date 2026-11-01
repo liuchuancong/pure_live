@@ -24,6 +24,16 @@ String vodDateText(DateTime time, {DateTime? now}) {
 /// and the uploader line, taller than the room card's one-line block.
 const double kVodCardInfoExtent = 72;
 
+/// The information area under a season card's poster: room for a two-line
+/// title, held at a fixed height so the posters of a row all end at the same
+/// line whatever the column width, and the poster takes the height left.
+const double kVodSeasonCardInfoExtent = 60;
+
+/// The season tile's width over height — the measure every poster wall of the
+/// station pages by, so a card draws its name block at
+/// [kVodSeasonCardInfoExtent] and gives the poster the rest.
+const double kVodSeasonTileAspect = 0.62;
+
 /// One Bilibili archive as a card in a browse or search grid, drawn the way
 /// the station's own home lays them out: the counts sit on the cover as
 /// white ink with a soft shadow — plays and danmaku at its foot's start,
@@ -208,8 +218,8 @@ final class _CoverInk extends StatelessWidget {
   }
 }
 
-/// One cinema title as a card: the poster, the title, the update line and the
-/// score.
+/// One cinema title as a card: the poster carrying its update state and score,
+/// the name on a fixed line block beneath it.
 final class VodSeasonCard extends StatelessWidget {
   /// The card for [season]; [onOpen] opens its page.
   const VodSeasonCard({required this.season, this.onOpen, super.key});
@@ -237,14 +247,16 @@ final class VodSeasonCard extends StatelessWidget {
           shadows: [DsShadow(color: colors.overlay, blur: DsSpace.s24, offset: const Offset(0, DsSpace.s8))],
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s6,
-        children: [
-          AspectRatio(
-            aspectRatio: 3 / 4,
-            child: ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(theme.radii.card),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // The tile's height is a ratio of its width, so a name block of
+            // its own content height would overflow a narrow column and float
+            // in a wide one. The poster takes the height the fixed block
+            // leaves instead.
+            Expanded(
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -262,6 +274,14 @@ final class VodSeasonCard extends StatelessWidget {
                       child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
                     ),
                   ),
+                  // The poster's own corners carry a title's state, so the
+                  // block under it keeps to the name.
+                  if (season.subtitle.isNotEmpty)
+                    PositionedDirectional(
+                      top: DsSpace.s8,
+                      end: DsSpace.s8,
+                      child: RoomCoverChip(compact: true, text: season.subtitle),
+                    ),
                   if (rating != null && rating.isNotEmpty)
                     PositionedDirectional(
                       bottom: DsSpace.s8,
@@ -279,31 +299,20 @@ final class VodSeasonCard extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s4,
-              children: [
-                Text(
+            SizedBox(
+              height: kVodSeasonCardInfoExtent,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s12, DsSpace.s8),
+                child: Text(
                   season.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                 ),
-                if (season.subtitle.isNotEmpty)
-                  Text(
-                    season.subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
-                  ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: DsSpace.s6),
-        ],
+          ],
+        ),
       ),
     );
   }
