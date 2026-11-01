@@ -36,12 +36,13 @@ enum IptvView {
 /// The IPTV module's entry page.
 ///
 /// A page header names the open surface and its counts, with the imports
-/// beside it. The channel surface is a resource table: scope and group
-/// filters, a name search, "sync all" and one row per channel — logo, group,
-/// what is on now with its progress, the favourite heart and the player
-/// action. A compact window stacks those rows in a list instead of scrolling
-/// the table sideways. The source surface keeps the same table language over
-/// the playlists and guides.
+/// beside it. The channel surface is the reference's two panes: the library's
+/// groups down the first column, and the channels of the open group as a
+/// resource table — logo, group, what is on now with its progress, the
+/// favourite heart and the player action. A window too narrow for the column
+/// keeps the same group list behind one line over the table, and the table
+/// itself stacks its rows instead of scrolling sideways. The source surface
+/// keeps the same table language over the playlists and guides.
 final class IptvPage extends ConsumerStatefulWidget {
   /// The IPTV module's channels page, opening on [initialView].
   const IptvPage({this.initialView = IptvView.channels, this.initialScope, super.key});
@@ -246,9 +247,10 @@ final class _IptvHeader extends StatelessWidget {
   }
 }
 
-/// The channel surface: the scope and group filters and a name search over
-/// the channel table. The table fills the pane and pages in as it nears
-/// its end.
+/// The channel surface: the library's groups down a first column (behind one
+/// entry where the window has no room for a column), and over the open
+/// group's channels a resource table — the scope and a name search above it.
+/// The table fills the pane and pages in as it nears its end.
 final class _ChannelsView extends ConsumerStatefulWidget {
   const _ChannelsView({required this.channels, required this.search});
 
@@ -334,27 +336,46 @@ final class _ChannelsViewState extends ConsumerState<_ChannelsView> {
         sources.ready &&
         epg.ready;
     _fillViewport();
-    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s16),
-      child: IptvTablePanel(
-        fill: true,
-        toolbar: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s6,
-          children: [
-            _ChannelsToolbar(
-              channels: channels,
-              search: widget.search,
-              progress: progress,
-              canSync: canSync,
-              onSync: () => unawaited(syncAllIptvSources(context, ref)),
-            ),
-            _GroupTabs(channels: channels),
-          ],
-        ),
-        child: _ChannelsTable(channels: channels, scrollController: _scroll, onOpen: _open),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        // A single group has nothing to choose, and the library's own
+        // display order is what the column walks.
+        final hasGroups = channels.groups.length > 1;
+        final rail = hasGroups && LiveWindow.isExpanded(width);
+        final inset = LiveWindow.pageInset(width);
+        final panel = IptvTablePanel(
+          fill: true,
+          toolbar: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s6,
+            children: [
+              _ChannelsToolbar(
+                channels: channels,
+                search: widget.search,
+                progress: progress,
+                canSync: canSync,
+                onSync: () => unawaited(syncAllIptvSources(context, ref)),
+              ),
+              if (hasGroups && !rail) _GroupEntry(channels: channels),
+            ],
+          ),
+          child: _ChannelsTable(channels: channels, scrollController: _scroll, onOpen: _open),
+        );
+        return Padding(
+          padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s16),
+          child: rail
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: DsSpace.s12,
+                  children: [
+                    _GroupRail(channels: channels),
+                    Expanded(child: panel),
+                  ],
+                )
+              : panel,
+        );
+      },
     );
   }
 }
@@ -463,35 +484,172 @@ final class _ScopeSegments extends ConsumerWidget {
   }
 }
 
-/// The library's groups as a scrolling tab row: every channel first, then
-/// one tab per visible group in the library's own display order, each with
-/// its live count.
-final class _GroupTabs extends ConsumerWidget {
-  const _GroupTabs({required this.channels});
+/// The width of the channels page's group column. The table beside it keeps
+/// its own minimums (200 + 200 flexed over the fixed 120/72/64), and 960 is
+/// where the page is allowed to pay for both panes.
+const double _kGroupRailWidth = 200;
 
-  /// The page's state; only its groups half is read here.
+/// The height of a group row — the module's list measure, the one its zapping
+/// panel already rows to.
+const double _kGroupRowExtent = 48;
+
+/// The library's groups down the first column of the channel surface: every
+/// channel first, then one row per visible group in the library's own display
+/// order, each with how many channels it holds. A vertical column is what a
+/// real playlist needs — 100 groups is a list to scroll, not a strip to
+/// hunt along — and it is the reference's first pane.
+final class _GroupRail extends StatelessWidget {
+  const _GroupRail({required this.channels});
+
+  /// The page's state; only its group half is read here.
   final IptvChannelsState channels;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return SizedBox(
+      width: _kGroupRailWidth,
+      child: DsCard(
+        style: const DsCardStyle(
+          padding: EdgeInsets.only(top: DsSpace.s8, bottom: DsSpace.s6),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s4,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12),
+              child: Text(
+                t.iptv.groupsLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.overline.copyWith(color: colors.textSubtle),
+              ),
+            ),
+            Expanded(child: _GroupList(channels: channels)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The same group list for a window that has no room for the column: one
+/// line naming the open group, which opens the list in a panel. Where the
+/// scrolling tab strip used to take a row per group, this takes a row per
+/// page — however many groups the playlist carries.
+final class _GroupEntry extends StatelessWidget {
+  const _GroupEntry({required this.channels});
+
+  /// The page's state; only its group half is read here.
+  final IptvChannelsState channels;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final group = channels.selectedGroup;
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 260),
+        child: DsButton(
+          variant: DsButtonVariant.secondary,
+          size: DsSize.sm,
+          leading: const DsIcon(DsIcons.folder, size: 14),
+          semanticLabel: t.iptv.groupsLabel,
+          onPressed: () => unawaited(
+            showDsPanel<void>(
+              context: context,
+              builder: (context) => _GroupPickerPanel(channels: channels),
+            ),
+          ),
+          // The open group is the news this line carries; the category's own
+          // name only shows while the whole library is open.
+          child: Text(
+            group == null ? t.iptv.zapperGroups : _groupLabel(t, group),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The panel the compact and medium windows open over the channel list.
+final class _GroupPickerPanel extends StatelessWidget {
+  const _GroupPickerPanel({required this.channels});
+
+  /// The page's state; only its group half is read here.
+  final IptvChannelsState channels;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return DsPanel(
+      title: Text(t.iptv.groupsLabel),
+      // The list scrolls itself; the panel should not wrap it in a second
+      // scroll that never gets a bounded height to measure against.
+      scrollable: false,
+      child: _GroupList(channels: channels, onSelected: () => Navigator.of(context).pop()),
+    );
+  }
+}
+
+/// The group rows, shared by the column and the panel so the two forms name,
+/// count and choose the same groups: every channel first, then the library's
+/// visible groups in its own display order.
+final class _GroupList extends ConsumerWidget {
+  const _GroupList({required this.channels, this.onSelected});
+
+  /// The page's state; only its group half is read here.
+  final IptvChannelsState channels;
+
+  /// Called after a group is chosen; the panel uses it to close itself.
+  final VoidCallback? onSelected;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    return DsTabs<String?>(
-      value: channels.selectedGroup,
-      onChanged: (group) => ref.read(iptvChannelsProvider.notifier).selectGroup(group),
-      semanticLabel: t.iptv.groupsLabel,
-      tabs: [
-        DsTab<String?>(value: null, label: Text(t.iptv.tabAll), count: channels.totalCount),
-        for (final group in channels.groups)
-          DsTab<String?>(value: group, label: Text(_labelOf(t, group)), count: channels.groupCounts[group] ?? 0),
-      ],
+    final theme = DsTheme.of(context);
+    final groups = channels.groups;
+    final controller = ref.read(iptvChannelsProvider.notifier);
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
+      itemExtent: _kGroupRowExtent,
+      itemCount: groups.length + 1,
+      itemBuilder: (context, index) {
+        final group = index == 0 ? null : groups[index - 1];
+        final selected = channels.selectedGroup == group;
+        return DsListRow(
+          semanticLabel: group == null ? t.iptv.tabAll : _groupLabel(t, group),
+          title: Text(
+            group == null ? t.iptv.tabAll : _groupLabel(t, group),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          detail: Text(
+            iptvNumber(group == null ? channels.totalCount : (channels.groupCounts[group] ?? 0)),
+            style: theme.typography.numeric(theme.typography.small),
+          ),
+          selected: selected,
+          style: const DsListRowStyle(height: _kGroupRowExtent),
+          onPressed: () {
+            controller.selectGroup(group);
+            onSelected?.call();
+          },
+        );
+      },
     );
   }
-
-  /// The group's own name, or the interface's name for the channels no
-  /// playlist grouped — the key for those is the empty string the package
-  /// leaves to the interface to word.
-  static String _labelOf(Translations t, String group) => group.isEmpty ? t.iptv.ungrouped : group;
 }
+
+/// The group's own name, or the interface's name for the channels no
+/// playlist grouped — the key for those is the empty string the package
+/// leaves to the interface to word.
+String _groupLabel(Translations t, String group) => group.isEmpty ? t.iptv.ungrouped : group;
 
 /// The channel rows: logo and name, group, what is on now, the favourite
 /// heart and the player action. The row itself opens the channel, so a
@@ -523,10 +681,12 @@ final class _ChannelsTable extends ConsumerWidget {
         if (LiveWindow.isCompact(constraints.maxWidth)) {
           return _ChannelsList(channels: channels, scrollController: scrollController, onOpen: onOpen);
         }
-        // The group tabs above the table already name the groups and count
-        // them; the column is what carries a group per row only when the
-        // window is wide enough to pay for it.
-        final showGroup = LiveWindow.isExpanded(constraints.maxWidth);
+        // The group column above (or the entry that opens it) already names
+        // and counts the groups; the per-row column only says something when
+        // the list runs across more than one — every row repeating the open
+        // group's name is the 120 px that pushed this table past a medium
+        // window.
+        final showGroup = LiveWindow.isExpanded(constraints.maxWidth) && channels.selectedGroup == null;
         return DsTable<IptvChannel>(
           semanticLabel: t.iptv.viewChannels,
           rows: rows,
@@ -660,6 +820,11 @@ final class _ChannelsList extends ConsumerWidget {
                 ),
           description: browse.showProgrammeLine
               ? _NowCell(slot: channels.slots[channel.id])
+              // Same rule as the table's group column: the row says which
+              // group it is in only when the list spans several — the column
+              // or its entry above already named the one that is open.
+              : channels.selectedGroup != null
+              ? null
               : Text(
                   _groupOf(t, channel),
                   maxLines: 1,
