@@ -1820,6 +1820,8 @@
   "portrait_layout_immersive": "沉浸",
   "portrait_layout_compatibility": "兼容 16:9",
   "portrait_presentation_group": "全屏、小窗与弹幕",
+  "landscape_danmaku_height": "上下分屏时弹幕区高度",
+  "landscape_danmaku_height_desc": "展开状态下横屏直播改为上下分屏时，弹幕区保留的高度；旋转屏幕后视频不会再挤占弹幕空间",
   "portrait_fullscreen_policy": "进入全屏时的方向",
   "portrait_fullscreen_policy_desc": "大屏和分屏设备自动交给系统布局，手机可跟随直播源",
   "portrait_fullscreen_follow_source": "跟随直播源（推荐）",

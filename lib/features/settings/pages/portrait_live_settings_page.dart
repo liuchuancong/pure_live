@@ -63,6 +63,21 @@ class PortraitLiveSettingsPage extends StatelessWidget {
           context.buildGroupTitle(i18n('portrait_presentation_group')),
           context.buildModernCard([
             Obx(
+              () => context.buildSliderTile(
+                context,
+                icon: Icons.vertical_split_outlined,
+                title: i18n('landscape_danmaku_height'),
+                subtitle: i18n('landscape_danmaku_height_desc'),
+                value: settings.landscapeDanmakuHeight.v,
+                min: 120.0,
+                max: 480.0,
+                displayValue: '${settings.landscapeDanmakuHeight.v.round()} px',
+                onChanged: (val) {
+                  settings.landscapeDanmakuHeight.v = double.parse(val.toStringAsFixed(0));
+                },
+              ),
+            ),
+            Obx(
               () => context.buildTile(
                 icon: Icons.fullscreen_rounded,
                 title: i18n('portrait_fullscreen_policy'),
