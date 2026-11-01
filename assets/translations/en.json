@@ -1820,6 +1820,8 @@
   "portrait_layout_immersive": "Immersive",
   "portrait_layout_compatibility": "Compatible 16:9",
   "portrait_presentation_group": "Fullscreen, PiP and danmaku",
+  "landscape_danmaku_height": "Danmaku panel height when stacked",
+  "landscape_danmaku_height_desc": "Height reserved for the danmaku list when a landscape stream stacks below the video in an unfolded window; keeps the list usable after rotating the screen",
   "portrait_fullscreen_policy": "Fullscreen orientation",
   "portrait_fullscreen_policy_desc": "Large and multi-window displays remain adaptive; phones may follow the source",
   "portrait_fullscreen_follow_source": "Follow source (recommended)",
