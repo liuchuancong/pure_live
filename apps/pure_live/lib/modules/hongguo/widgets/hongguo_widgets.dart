@@ -20,6 +20,17 @@ String hongguoDurationText(Duration duration) {
   return hours > 0 ? '$hours:$minutes:$seconds' : '${duration.inMinutes}:$seconds';
 }
 
+/// The information block under a poster card: room for a two-line title and
+/// the listing line. Held at a fixed height so a row of cards ends at the same
+/// line whatever its column width, and so a poster wall — whose tiles the grid
+/// fixes — never pushes the two lines over the card's edge.
+const double kHongguoSeriesCardInfoExtent = 82;
+
+/// The poster card's width over height: the one measure both of its homes use,
+/// the card grids' tiles and [HongguoShelf]'s row. The 3:4 cover is a preference
+/// under it and takes the height the name block leaves.
+const double kHongguoSeriesTileAspect = 0.62;
+
 /// One series' subtitle line: the episode count, the play figure and the
 /// shelf categories, whichever the listing carries.
 String hongguoSeriesSubtitle(Translations t, HongguoSeries series) {
@@ -53,12 +64,15 @@ String hongguoFavoriteLine(Translations t, HongguoLibraryState library, HongguoS
   return parts.join(' · ');
 }
 
-/// What a poster card prints under its name: the heat or play figure, then
-/// the categories — the station's browse cards, without the episode count
-/// the cover's own corner already carries.
-String hongguoSeriesMetaLine(HongguoSeries series) {
+/// What a poster card prints under its name: the categories, plus the heat or
+/// play figure only when [withFigure] asks for it — the cover's foot already
+/// carries the heat when its own switch is on, and a card says a figure once.
+String hongguoSeriesMetaLine(HongguoSeries series, {required bool withFigure}) {
   final parts = <String>[
-    if (series.hot.isNotEmpty) series.hot else if (series.playCount > 0) AudienceFormat.format(series.playCount),
+    if (withFigure && series.hot.isNotEmpty)
+      series.hot
+    else if (withFigure && series.playCount > 0)
+      AudienceFormat.format(series.playCount),
     if (series.category.isNotEmpty) series.category,
   ];
   return parts.join(' · ');
@@ -97,6 +111,9 @@ final class HongguoSeriesCard extends ConsumerWidget {
     final showsToday = visibility.shows(HongguoCardElement.today) && series.today;
     final showsScore = visibility.shows(HongguoCardElement.score) && series.score.isNotEmpty;
     final showsHot = visibility.shows(HongguoCardElement.hot) && series.hot.isNotEmpty;
+    final metaLine = visibility.shows(HongguoCardElement.meta)
+        ? hongguoSeriesMetaLine(series, withFigure: !showsHot)
+        : '';
     return DsCard(
       onPressed: onOpen,
       semanticLabel: series.title,
@@ -112,8 +129,11 @@ final class HongguoSeriesCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AspectRatio(
-              aspectRatio: 3 / 4,
+            // Both of the card's homes bound its height — a poster wall's
+            // tile, the shelf's own measure — so the cover takes the height
+            // the fixed name block leaves instead of asking for a 3:4 a
+            // narrow column cannot pay for.
+            Expanded(
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -189,35 +209,39 @@ final class HongguoSeriesCard extends ConsumerWidget {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s6, DsSpace.s12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s4,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: DsSpace.s4,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          series.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+            SizedBox(
+              height: kHongguoSeriesCardInfoExtent,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s6, DsSpace.s8),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s4,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: DsSpace.s4,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            series.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                          ),
                         ),
-                      ),
-                      if (favoritable) _FavoriteBookmark(series: series),
-                    ],
-                  ),
-                  if (visibility.shows(HongguoCardElement.meta) && hongguoSeriesMetaLine(series).isNotEmpty)
-                    Text(
-                      hongguoSeriesMetaLine(series),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                        if (favoritable) _FavoriteBookmark(series: series),
+                      ],
                     ),
-                ],
+                    if (metaLine.isNotEmpty)
+                      Text(
+                        metaLine,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -744,6 +768,10 @@ final class HongguoShelf extends ConsumerWidget {
             );
             if (ceiling > 0 && columns > ceiling) columns = ceiling;
             final cardWidth = columnExtentForWidth(content, columns, spacing) - .01;
+            // The shelf's posters take the poster walls' measure, so the same
+            // card never draws two shapes; the height is stated because the
+            // cover takes whatever the fixed name block leaves it.
+            final cardHeight = cardWidth / kHongguoSeriesTileAspect;
             if (error != null && items.isEmpty) {
               return Row(
                 spacing: DsSpace.s12,
@@ -775,7 +803,8 @@ final class HongguoShelf extends ConsumerWidget {
                   for (var row = 0; row < columns; row++)
                     SizedBox(
                       width: cardWidth,
-                      child: DsSkeleton.block(width: cardWidth, height: cardWidth * 4 / 3),
+                      height: cardHeight,
+                      child: DsSkeleton.block(width: cardWidth, height: cardHeight),
                     ),
                 ],
               );
@@ -783,7 +812,10 @@ final class HongguoShelf extends ConsumerWidget {
             return Wrap(
               spacing: spacing,
               runSpacing: spacing,
-              children: [for (final series in shown) SizedBox(width: cardWidth, child: cardBuilder(context, series))],
+              children: [
+                for (final series in shown)
+                  SizedBox(width: cardWidth, height: cardHeight, child: cardBuilder(context, series)),
+              ],
             );
           },
         ),

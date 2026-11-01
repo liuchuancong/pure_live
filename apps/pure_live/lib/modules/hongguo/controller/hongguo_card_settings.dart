@@ -25,7 +25,8 @@ enum HongguoCardElement {
   /// The heat text along the cover's foot.
   hot,
 
-  /// The listing line under the title (heat · category).
+  /// The listing line under the title (the categories, and the heat when the
+  /// cover's own foot does not carry it).
   meta,
 }
 

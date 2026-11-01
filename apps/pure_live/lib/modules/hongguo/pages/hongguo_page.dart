@@ -559,7 +559,7 @@ final class _FindViewState extends ConsumerState<_FindView> {
           child: PagedCardGrid<HongguoSeries>(
             items: state.items,
             layout: ref.watch(browseLayoutProvider),
-            aspectRatio: 0.62,
+            aspectRatio: kHongguoSeriesTileAspect,
             listMainAxisExtent: 124,
             itemBuilder: (context, series) =>
                 HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),
@@ -1571,7 +1571,7 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
           child: PagedCardGrid<HongguoSeries>(
             items: state.items,
             layout: ref.watch(browseLayoutProvider),
-            aspectRatio: 0.62,
+            aspectRatio: kHongguoSeriesTileAspect,
             listMainAxisExtent: 124,
             itemBuilder: (context, series) =>
                 HongguoSeriesCard(series: series, favoritable: true, onOpen: () => _open(context, series)),

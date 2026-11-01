@@ -130,7 +130,7 @@ accent→surface 渐变上（沿用本模块 EQ 中心与播放页已有的 hero
 组件在 `widgets/`（海报卡 `hongguo_widgets.dart`、剧集架、评论面板、弹幕层）；
 `official/` 是官网对接。**卡片显隐已达标**（`controller/hongguo_card_settings.dart` 的 7 个元素：
 rank/coverTags/episodes/today/score/hot/meta，在 `hongguo_settings_pane.dart` 的「海报卡内容」逐项开关）。
-差距：剧集选集条与榜单富信息行的版式；竖屏播放器浮层（右侧动作列、底部选集条与进度线）。
+差距：榜单富信息行的版式；竖屏播放器浮层（右侧动作列、底部选集条与进度线）。
 另：本模块每轮 UI 之前仍带旧车道的只读接口巡检职责（榜单/详情/搜索/联想，见运行记录）。
 （已闭合：榜单页的条件墙。`_RankView` 原先把整张榜的题材 chips 常驻在头排下面——一张 100
 部的快照能数出几十个体裁，`Wrap` 铺成 4–6 行，片单被推到首屏以下；现在收进
@@ -138,17 +138,36 @@ rank/coverTags/episodes/today/score/hot/meta，在 `hongguo_settings_pane.dart` 
 （接口巡检 2026-11-02：官网把榜单首页的包装换了形态，见运行记录；详情/搜索/联想三个接口
 200 且字段未变，均为匿名只读、无签名无登录，不存在「未探测」项。选集条
 `HongguoEpisodeShelf` 经核对已是「数字格 + 分组翻页 + 跳转 + 已看勾选」，符合参考形态，未动。）
-（下一轮 hongguo 的现成目标：海报卡 `widgets/hongguo_widgets.dart` 与 vod 那张同病——
-`pages/hongguo_page.dart:562/1574` 给 `aspectRatio: 0.62` 的比例格，卡内却是
-「3:4 封面 + 两行标题 + 一行 meta」的固定内容高度，列宽 <270px 时溢出、>300px 时留死白；
-vod 本轮的解法（固定信息区 + 封面吃剩余，见 `kVodSeasonCardInfoExtent`）可直接照搬。）
+（已闭合：海报卡的文字块。`widgets/hongguo_widgets.dart` 的 `HongguoSeriesCard` 与 vod 那张同病——
+`pages/hongguo_page.dart` 两处片单给 `aspectRatio: 0.62` 的比例格，卡内却是「`AspectRatio(3:4)` 封面
++ 两行标题 + 一行 meta」的自然高度：格给文字区 `0.28 × 列宽`（220 列宽只有 61.5px，文字块实测要
+85px），3 列/4 列的笔记本宽度整段溢出、>300 又留死白。现在照 vod 的解法收成一处量规：
+`kHongguoSeriesCardInfoExtent = 82`（两行标题 42/44 + 4 + 一行 meta 17.4/18 + 6/8 内边距，touch 密度也装得下）
++ 封面 `Expanded` + `Stack(fit: StackFit.expand)`，3:4 降为偏好；`0.62` 折成 `kHongguoSeriesTileAspect`
+由两处片单共用。片单的横排 `HongguoShelf` 是同一个卡的另一个家，它原先只给宽、让卡自量高度，
+`Expanded` 在那里会撞无界高度——现在由它声明 `cardWidth / kHongguoSeriesTileAspect`，
+墙上与横排因此拿到同一张卡形，加载骨架也改读这个高度（原先按 `cardWidth × 4/3` 占位，
+比真卡矮，内容一到就重排）。文字块用 `spaceBetween`：关掉 meta 时空出的高度落在标题与底边之间，
+不顶在 meta 那行上。同一处还去掉一个重复——`hot`（封面脚下的热度 chip）与 `meta`（标题下的
+`热度 · 分类`）默认同时开，同一张卡把同一串热度印两遍；现在 `hongguoSeriesMetaLine(series, withFigure:)`
+只在封面那枚没出现时才带数字，分类照旧，枚举文档与设置项 wording 已对上（`封面热度`/`列表信息`
+两个标签本来就够泛，未新增 l10n）。
+（接口巡检 2026-11-02：四条榜单（`/rank/hot-drama`、`hot-real-drama`、`hot-comic-drama`、
+`hot-ai-drama`）第 1 页 200、`_rankPayload` 的 `r` 注册表 + `s` 指针两条路都读得到，各 20 行、
+totalPages 5，行字段与上轮记录一致（`id/seriesId/title/cover/episodeCount/statusTags/scoreText/
+favoriteText/likeText/openEpisodeCount/isPaid/playHref/href/heatText/rank/tags/description/episodeVids`）；
+`detail?series_id=`（200，`loaderData.detail_page.seriesDetail` 的 `vid_list`/`episode_cnt` 与
+`seriesSocialInfo` 的 `rating/hot_score_data/series_favorite_count/series_like_count` 都在）、
+`/api/search/result`（200，`pageNum/totalPages/hasMore/totalCount/searchList`，行仍是
+`doc_type/name/video_data/video_list`）、`/incent_resource/suggestion`（200，`suggest_list[].name/display_words`）
+字段均未变，四处仍是匿名只读、无签名无登录，无「未探测」项。`?page=1` 照旧被 301 剥掉查询串，落到默认第 1 页，行为不变。）
 
 ## 轮转指针
 
 | 字段 | 值 |
 |---|---|
-| 下一轮模块 | hongguo |
-| 上一次提交 | music · 推荐页补第一视觉焦点：广场最热歌单铺成头图，并从横排里取走该项 |
+| 下一轮模块 | vod |
+| 上一次提交 | hongguo · 海报卡的文字块定高、封面吃剩余，热度不再印两遍 |
 | 连续无改动轮数 | 0 |
 | 暂停条件 | 连续 3 轮无改动即停手并在回复里说明需要用户裁决 |
 
@@ -163,3 +182,4 @@ vod 本轮的解法（固定信息区 + 封面吃剩余，见 `kVodSeasonCardInf
 | 2026-11-02 03:23 | vod | 影视海报卡（`VodSeasonCard`，三处片单共用：影视页 poster 墙、搜索结果的番剧/电影、个人页在看）把「比例格」和「固定内容高度」对冲掉了：片单传 `aspectRatio: 0.62`，格子高度 = 列宽 × 1.613，而卡片按「3:4 海报 + 两行片名 + 一行更新状态」排内容，留给文字区的只有 `列宽 × 0.28`；量规把列宽压在 220–340，于是 220–269 段（3 列的 700–840px 窗、4 列的 950–1150px 窗，正是常见笔记本宽度）差 5–14px，片名第二行与更新状态被推出卡片、叠到下一行海报上，300–340 段又反过来空出 20–60px 死白。本轮把卡片改成「名字区定高 + 封面吃剩余」：新增 `kVodSeasonCardInfoExtent = 60`（compact 两行 42 + 6/8 内边距，touch 两行 44 也装得下），片名区 `SizedBox` 定高、海报 `Expanded` + `Stack(fit: StackFit.expand)` 承接高度（3:4 降为偏好，紧约束下按格裁边），更新状态 `subtitle`（`更新至第 N 话` / `全 N 话`）从文字区挪上海报右上角 `RoomCoverChip(compact: true)`、评分保持右下角，`ClipRRect` 从「只圆海报顶角」提到整卡；`0.62` 折成 `kVodSeasonTileAspect` 给三处片单共用，免得下一处再各写各的。 | 爱奇艺的内容卡把运营信息贴在海报四角——左上收藏、右上免费/VIP、左下分类、右下评分，「通过一张海报就能尽量告诉用户尽量多的信息」，海报下面只留片名（csdn 爱奇艺UI赏析—首页推荐 125812485）；卡片元素以 3–5 个为宜，更新日期、集数、评分属贴在视觉块上的提示信息元素，超了会主次不分（woshipm 在电视端卡片设计如何进行 1047767）；内容卡分「图片块 + 内容块」，图片块取 16:9 / 1:1 / 2:3 这类固定形态（developer.android.google.cn TV 卡片指南 cards）。即：状态上封面、名字区定高，一行卡片才对得齐。 | `dart analyze apps/pure_live/lib` 0 issues；`dart format --line-length 120` 重排到 3 处无关旧行已逐 hunk 还原；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,vod)`） |
 | 2026-11-02 04:12 | iptv | 来源页那张表（`views/iptv_sources_view.dart` 的 `_SourcesTable`）与上一轮修掉的频道表是同一个缺陷，但更重：`layout: DsTableLayout.auto()` + 六列最小合计 240+100+90+150+104+92 = 776px。窄窗（手机 390、平板竖屏 600）拿到横滚 + 边缘渐隐，「自动更新」开关和删除被推到视口外；<480 时 kit 的兜底 card 版式一行只有一个文字行，而本站的 `_SourceNameCell` 本来就是两行（名称+徽章 / 地址+复制·打开），会被裁。本轮把窄态与中态都由模块定义：<760 改为堆叠行（`_SourceRow`：种类图标块 40 + 名称行含 网络/本地 与 使用中 徽章 + 一行 `类型 · N 个频道 · 更新时间` + 地址行含复制/打开 + 右列 自动更新开关在上、同步/删除在下），≥760 才是表，且「类型」列只在 ≥960 出现——它是地址的提示（`.m3u8`/`.xml.gz` 就在地址里），中窗把它读进地址行前缀 `M3U8 · https://…` 而不是再占一格，五列合计落到 200+76+120+96+84+32 = 608px；表格布局回到默认 `.rows()`，窄态不再交给 kit 的标签堆。顺带把两种形态共用的东西折成一个 `_SourcesActions`（activeId/频道数/忙碌集/阻塞 + 名称·地址·类型·时间·频道数·是否网络·是否使用中 的逐项读法 + 同步/删除/开关三个动作），表格里散在 `value:`/`cell:` 里的 `item is IptvPlaylist ? … : (item as EpgSource).…` 分支收敛到一处，堆叠行读的是同一套，两种形态不会再各说各话；`_copyAddress`/`_openAddress` 提成 `copySourceAddress`/`openSourceAddress` 供两形态共用。无新增 l10n（`channelCount`/`neverUpdated`/`networkTag` 等已够用）。 | 成熟的直播源管理页是「一行一个源」而不是六列表格：xTeVe 的 Sources 页每行给 Name、Links（该地址能取到的频道数）、Update period（自动更新周期，0 为关）、Enabled 开关与更新按钮，「点击更新按钮后…显示时间同时 Links 栏会有数量」（baijiahao 如何私人定制你的专属IPTV频道）；iptv-checker 管理界面是「左侧导航栏 + 右侧功能区」，EPG 数据源单列（csdn 终极指南：如何快速检测IPTV播放源可用性）；TV 端播放器同样把「名称 + 频道数 + 最后更新」当作列表行的三要素，且列表/图标/标题是可切的排布而非并排的列（isharepc TiviMate+Televizo 评测）。即：来源行 = 名称 + 数量 + 更新时间 + 开关/动作，类型属于地址而不是独立一列；放不下时堆叠行，不是横滚。 | `dart analyze apps/pure_live/lib` 0 issues；`dart format --line-length 120` 只动本轮文件（第二次跑 0 改动）；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,iptv)`） |
 | 2026-11-02 04:47 | music | 推荐页（模块自己的首页 `pages/music_recommend_view.dart`）没有第一视觉焦点：六类内容全排成同一种「行标题 + 内容」的等高行，歌单横排从页面第一条像素就开始，跟爱奇艺/腾讯视频那套「一张大 Banner 头图 → 再往下才是分行片单」的首页层级完全不同。本轮把头图补上，并且是**从既有数据里取**而不是造内容：`MusicRecommendHero` 读广场第一页最热的那一张歌单（`playlists.firstOrNull`），封面整块在左（宽窗 152 / 窄窗 104）、名字走 `heading` 两行、`作者 · N 首` 走 caption、眉标用广场自己的热门标签（不是编的「今日推荐」），底图是同一张封面 `ClipRect + ImageFiltered(blur 28) + Opacity(0.35)` 垫在 `accent(0.24) → surface` 渐变上——沿用本模块 EQ 中心 `_Hero` 与播放页背景已有的 hero 语言；动作是两个写明文字的小按钮 `全部播放` + `打开歌单`（头图整卡可点，播放在此页现取 `musicOnlinePlaylistDetailProvider` 的 tracks 再 `playAll`，取不到就报 `onlineLoadFailed`，不留死按钮）。横排改成读 `strip = playlists.skip(1)`，头图吃掉的那一项不再重复出现，只剩一张歌单时连行标题一起收起（`if (strip.isNotEmpty \|\| waitingForPlaza \|\| plazaFailed)`），失败重试行与加载态不受影响。开关按仓库「版式写死 + 每元素一个显隐开关」的范式接到 `MusicUiElement.recommendBanner`（同一份 `interface.musicUi`，枚举文档从「player's surfaces」放宽到「module's surfaces」），落在设置 → 音乐 → 界面设置 的第一条；新增 l10n `uiRecommendBanner`/`uiRecommendBannerDesc`（en + zh-CN）并跑 `dart run slang`。一处同源缺陷只记录未改：`pages/music_eq_center_page.dart:222` 的背景 `DsImage` 三个框参数全空，撞上 desen_ui 0.3.2 的 `(width!=null&&height!=null)!=(aspectRatio!=null)` 断言（debug 一进 EQ 中心即抛），本模块其余 8 处都有框。 | 首页的版式是「顶部导航/搜索栏 → banner 的滚动，为用户推荐最热的内容 → 往下才是『猜你喜欢』和热播剧推荐」，分区页更是「Banner + 分类合集 + 内容宫格 + 右上角筛选」的模块化结构，Banner 是首屏唯一的大视觉（jianshu 爱奇艺APP产品体验报告 5ddd4b9f3a09）；爱奇艺首页 Banner 的大标题压在左下、轮播点让到右下，「人工推荐的内容占据最醒目的位置」即推荐位是单独一层而不是行里的第一格（csdn 爱奇艺UI赏析—首页推荐 125812485、sohu 这样设计Banner点击率更高 445775567）；腾讯视频首页内容推荐区 = 「Banner 推荐站内热门内容，支持滑动与自动切换」+ 其下的双瀑布流与大卡片，且「卡片形式采用封面/视频+标题+标签」，同屏内容块刻意控制在 6 个以免浏览成本过高（zcool/ui.cn 深度拆解腾讯视频app细节设计 645580）。Banner 的背景色随内容取色衬托、深色表现体现空间感（huke88 UI 场景中的Banner布局样式探索 2519）。即：头图是首屏第一层、单独占一块，片单从它下面才开始；行标题与卡片同层是层级缺失。 | `dart analyze apps/pure_live/lib` 0 issues；`dart format --line-length 120` 只动本轮 3 个文件（第二次跑 0 改动）；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`feat(ui,music)`） |
+| 2026-11-02 05:20 | hongguo | 先做只读接口巡检（四条榜单第 1 页 + 详情 + 搜索 + 联想）：全部 200，`_rankPayload` 的 `r` 注册表与 `s` 指针两条路都还读得到（各 20 行、totalPages 5），行字段与上轮记录一致，`detail_page.seriesDetail`（`vid_list`/`episode_cnt`）、`api/search/result`（`pageNum/totalPages/hasMore/totalCount/searchList`）、`incent_resource/suggestion`（`suggest_list[].name/display_words`）字段均未变，四处仍是匿名只读、无签名无登录，无「未探测」项；`?page=1` 照旧被 301 剥掉查询串（落到默认页 1，行为不变）。版式那一件是海报卡的文字块：`HongguoSeriesCard` 与上一轮 vod 那张同病——`pages/hongguo_page.dart:562/1574` 给 `aspectRatio: 0.62` 的比例格（格高 = 列宽 × 1.613），卡内却是 `AspectRatio(3:4)` 封面 + 两行标题 + 一行 meta 的自然高度，留给文字区的只有列宽 × 0.28（220 列宽给 61.5px，文字块实测要 85px），3/4 列的笔记本宽度整段溢出、叠到下一行海报上，>300 又留死白。本轮照同一解法收成一处量规：`kHongguoSeriesCardInfoExtent = 82`（compact 42 + 4 + 17.4，touch 44 + 4 + 18，加 6/8 内边距都装得下）+ 封面 `Expanded` + `Stack(fit: StackFit.expand)`（3:4 降为偏好，紧约束下按格裁边），`0.62` 折成 `kHongguoSeriesTileAspect` 给两处片单共用。同一张卡还有第二个家：`HongguoShelf` 原先只给宽、让卡自量高度，`Expanded` 在那里会撞无界高度，现在由横排声明 `cardWidth / kHongguoSeriesTileAspect`——墙上与横排因此是同一个卡形，加载骨架也改读这个高度（原先按 `cardWidth × 4/3` 占位，比真卡矮一截，内容一到就重排）。文字块改 `spaceBetween`：关掉 meta 时空出的高度落在标题与底边之间，不顶在 meta 行上。顺手去掉一张卡上的重复墨：`hot`（封面脚下的热度 chip）与 `meta`（标题下的 `热度 · 分类`）默认同开，同一串热度印两遍——`hongguoSeriesMetaLine(series, withFigure:)` 现在只在封面那枚没出现时才带数字，分类照旧，枚举文档同步。无新增 l10n（`封面热度`/`列表信息` 两个标签本来就够泛，而且它们在 settings 命名空间、不在本轮允许路径）。 | 竖版海报卡是「海报一层 + 文字块一层」，文字块只装片名与一行灰字元信息：爱奇艺的瀑布流卡片「内容以影视封面为主，竖版结构…每个卡片所展示的信息内容相对简单，只有影视剧名称和推荐理由及类型」，腾讯视频同层给「影视剧名称，主演及推荐理由」（new.qq.com / sohu 洞察｜爱优腾 瀑布流设计）；海报墙的实现按「海报区 / 标题单行截断 + 右上角状态色标签 / 类型 · 题材 · 年份 灰字元信息行 / 星级 + 评分 / 操作」分层，更新状态记在角标而不是再写一行（harmonyosdev.csdn 海报墙网格：ArkUI 让鸿蒙影音收藏页像流媒体首页）。即：封面与文字块各自定形、行高不随列宽漂移；同一个数字在一张卡上只说一次。 | `dart analyze apps/pure_live/lib` 0 issues；离线解析验证四条榜单全绿（临时脚本与抓取页面在仓外 `AppData/Local/Temp/hgp`，跑完即删）；`dart format --line-length 120` 重排到 `hongguo_page.dart` 一处无关旧行（`_takeHandoff`）已还原；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,hongguo)`） |
