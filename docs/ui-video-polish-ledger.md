@@ -123,12 +123,8 @@ B 站视频站（`vod.dart` 自述 "The Bilibili station"）。页面：`pages/v
 `pages/music_playlist_card.dart`（`MusicPlaylistCard`/`MusicPlaylistGrid`，房间卡设计平移，
 `kMusicPlaylistCardMaxWidth = 200`、`kMusicPlaylistInfoHeight = 48`）。
 差距：`controller/music_ui_settings.dart` 只管播放器装饰（模糊背景、频谱、播放器模式），歌单卡没有逐元素显隐设置。
-另有一处只记录未改（下一轮 music 的现成目标）：`pages/music_eq_center_page.dart:222` 的 `_Hero`
-背景是 `DsImage(image: …, semanticLabel: …)`，既没有 `width`/`height` 也没有 `aspectRatio`，而
-desen_ui 0.3.2 的 `DsImage` 构造断言是 `(width != null && height != null) != (aspectRatio != null)`
-——三个都空时断言为 false，debug 构建一进 EQ 中心（有封面的歌在播）就抛；release 关掉断言才看不出来。
-本模块其余 8 处 `DsImage` 都留了框，只有这一处漏。本轮新写的头图背景走播放页那套
-`ClipRect + ImageFiltered + 原生 Image(fit: cover)`，不碰这个坑。
+另有一处只记录未改、下一轮 music 的现成目标：`pages/music_eq_center_page.dart:222` 的 `_Hero`
+背景 `DsImage` 三个框参数全空，debug 一进 EQ 中心就抛（细节见下方 2026-11-02 榜头那条）。
 （已闭合：推荐页的头图。`pages/music_recommend_view.dart` 原先把六类内容（歌单横排/继续播放/
 最近专辑/最近歌手/热搜词/榜单）排成同一种「行标题 + 内容」的等高行，整页没有任何一个第一视觉
 焦点，而视频站首页都是「一张大 Banner 头图 → 再往下才是分行片单」；现在从同一个广场第一页里取
@@ -146,6 +142,30 @@ accent→surface 渐变上（沿用本模块 EQ 中心与播放页已有的 hero
 `MusicPlazaFilterPanel`（`DsPanel`，排序/分类/标签三段 `DsChip`）。同一处也顺手对齐了
 歌单页 我的/在线 两个 tab 的头排几何（原先在线 tab 的 tab 行没有 `s20` 左右内边距、
 也没有 44 高，切 tab 时整条工具栏会横移。）
+（已闭合：排行榜页缺的详情头层。`pages/music_charts_view.dart` 的 `MusicChartsView` 原先只有
+一条 `DsTopNav` 榜名 + 最右一枚只有 `semanticLabel`、没有文字的 `DsButton.icon`
+（`boardCollect`），底下直接就是
+`MusicSongTableHeader` 和编号行——整页没有「这是哪张榜、里面有多少首、加起来多长」这一层，
+也**没有全榜的播放动作**：本模块七个歌单/列表表面（`music_online_playlists_view.dart:675`
+在线歌单详情、`music_songlists_view.dart:819` 自建歌单、`music_album_page.dart:154` 专辑、
+`music_artist_page.dart:229` 歌手、`music_mine_view.dart:127` 收藏、`music_local_view.dart:205`
+本地、`music_recommend_view.dart:234` 最近播放）全部给了 `全部播放`，只有榜单页要一首一首点。
+现在补成 `MusicChartBoardHead`（榜单自己的封面/名称/规模 + 全榜动作），落在榜名导航行与
+表头之间，且与本模块既有的详情头同一套几何：封面 72（EQ 中心、我的列表、在线歌单详情、
+自建歌单四处头的封面都是 72）、`ClipRRect(theme.radii.card)` + `DsImage(aspectRatio: 1)`，
+榜上没有自己的封面就读**榜首那首歌的封面**（`songs.firstOrNull?.coverUri`，与在线歌单详情
+读第一首歌的封面同一个做法），取不到落 `CoverFallback(title: 榜名)`；名称走 `heading` 两行、
+`N 首 · 总时长` 走 `caption`（时长由 `musicDurationText` 汇总，为 0 就整段不写）、
+`catalog.description` 非空时作第二行 muted。动作是一个 `Wrap`：`全部播放`（primary）+
+`随机播放`（secondary，与在线歌单详情同一对动词），歌还没读进来时这两个**整枚收起**而不是
+摆一个 disabled 死按钮；`收藏榜单` 从导航行那枚无字图标搬进头层、写明文字，全榜只有一个入口。
+无新增 l10n（`playAll`/`modeRandom`/`boardCollect`/`songsCount` 都够，故未跑 slang），
+`MusicChartsView` 与头共用同一个 `musicCatalogItemsProvider(catalog)` family 键，不是二次抓取。
+一处同源缺陷照旧未改，留给下一轮 music：`pages/music_eq_center_page.dart:222` 的背景
+`DsImage(image: …, semanticLabel: …)` 三个框参数全空，撞上 desen_ui 0.3.2 的
+`(width!=null&&height!=null)!=(aspectRatio!=null)` 断言（debug 一进 EQ 中心即抛，release 关掉
+断言才看不出），本模块其余各处 `DsImage` 都留了框，只有这一处漏——本轮新写的榜头读的是
+`aspectRatio: 1` 那条分支，不碰这个坑。）
 
 ### hongguo —— `apps/pure_live/lib/modules/hongguo/`
 
@@ -190,8 +210,8 @@ favoriteText/likeText/openEpisodeCount/isPaid/playHref/href/heatText/rank/tags/d
 
 | 字段 | 值 |
 |---|---|
-| 下一轮模块 | music |
-| 上一次提交 | iptv · 频道页的分组从常驻横滚条改成第一列的竖排列表（<960 折成一个入口开同一张面板），选定分组后不再逐行重复分组名 |
+| 下一轮模块 | hongguo |
+| 上一次提交 | music · 排行榜页补上榜单自己的详情头（封面/名称/首数与总时长 + 全榜「全部播放/随机播放」），收藏从导航行的无字图标搬进头层 |
 | 连续无改动轮数 | 0 |
 | 暂停条件 | 连续 3 轮无改动即停手并在回复里说明需要用户裁决 |
 
@@ -209,3 +229,4 @@ favoriteText/likeText/openEpisodeCount/isPaid/playHref/href/heatText/rank/tags/d
 | 2026-11-02 05:20 | hongguo | 先做只读接口巡检（四条榜单第 1 页 + 详情 + 搜索 + 联想）：全部 200，`_rankPayload` 的 `r` 注册表与 `s` 指针两条路都还读得到（各 20 行、totalPages 5），行字段与上轮记录一致，`detail_page.seriesDetail`（`vid_list`/`episode_cnt`）、`api/search/result`（`pageNum/totalPages/hasMore/totalCount/searchList`）、`incent_resource/suggestion`（`suggest_list[].name/display_words`）字段均未变，四处仍是匿名只读、无签名无登录，无「未探测」项；`?page=1` 照旧被 301 剥掉查询串（落到默认页 1，行为不变）。版式那一件是海报卡的文字块：`HongguoSeriesCard` 与上一轮 vod 那张同病——`pages/hongguo_page.dart:562/1574` 给 `aspectRatio: 0.62` 的比例格（格高 = 列宽 × 1.613），卡内却是 `AspectRatio(3:4)` 封面 + 两行标题 + 一行 meta 的自然高度，留给文字区的只有列宽 × 0.28（220 列宽给 61.5px，文字块实测要 85px），3/4 列的笔记本宽度整段溢出、叠到下一行海报上，>300 又留死白。本轮照同一解法收成一处量规：`kHongguoSeriesCardInfoExtent = 82`（compact 42 + 4 + 17.4，touch 44 + 4 + 18，加 6/8 内边距都装得下）+ 封面 `Expanded` + `Stack(fit: StackFit.expand)`（3:4 降为偏好，紧约束下按格裁边），`0.62` 折成 `kHongguoSeriesTileAspect` 给两处片单共用。同一张卡还有第二个家：`HongguoShelf` 原先只给宽、让卡自量高度，`Expanded` 在那里会撞无界高度，现在由横排声明 `cardWidth / kHongguoSeriesTileAspect`——墙上与横排因此是同一个卡形，加载骨架也改读这个高度（原先按 `cardWidth × 4/3` 占位，比真卡矮一截，内容一到就重排）。文字块改 `spaceBetween`：关掉 meta 时空出的高度落在标题与底边之间，不顶在 meta 行上。顺手去掉一张卡上的重复墨：`hot`（封面脚下的热度 chip）与 `meta`（标题下的 `热度 · 分类`）默认同开，同一串热度印两遍——`hongguoSeriesMetaLine(series, withFigure:)` 现在只在封面那枚没出现时才带数字，分类照旧，枚举文档同步。无新增 l10n（`封面热度`/`列表信息` 两个标签本来就够泛，而且它们在 settings 命名空间、不在本轮允许路径）。 | 竖版海报卡是「海报一层 + 文字块一层」，文字块只装片名与一行灰字元信息：爱奇艺的瀑布流卡片「内容以影视封面为主，竖版结构…每个卡片所展示的信息内容相对简单，只有影视剧名称和推荐理由及类型」，腾讯视频同层给「影视剧名称，主演及推荐理由」（new.qq.com / sohu 洞察｜爱优腾 瀑布流设计）；海报墙的实现按「海报区 / 标题单行截断 + 右上角状态色标签 / 类型 · 题材 · 年份 灰字元信息行 / 星级 + 评分 / 操作」分层，更新状态记在角标而不是再写一行（harmonyosdev.csdn 海报墙网格：ArkUI 让鸿蒙影音收藏页像流媒体首页）。即：封面与文字块各自定形、行高不随列宽漂移；同一个数字在一张卡上只说一次。 | `dart analyze apps/pure_live/lib` 0 issues；离线解析验证四条榜单全绿（临时脚本与抓取页面在仓外 `AppData/Local/Temp/hgp`，跑完即删）；`dart format --line-length 120` 重排到 `hongguo_page.dart` 一处无关旧行（`_takeHandoff`）已还原；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,hongguo)`） |
 | 2026-11-02 04:41 | vod | 搜索页（`pages/vod_search_page.dart`）把两个筛选器常驻在结果上面：排序 `AdaptiveChoiceField`（宽 150）+ 时长（宽 160）一排 `Wrap`，加上上面的分类行，用户要在首屏之前先滚过三行 chrome，而这两个控件在同一时刻只各有一个值有效；并且这一页是模块里唯一没接 `VodFeedToolbar` 的浏览页——分类行只有 40 高（其余四页 44）、也没有刷新，窄窗更没有 more。本轮把它折成同一种头排：`VodFeedToolbar(tabs: 分类, showLayout: false, filter: …, onRefresh: …)`，筛选入口与刷新落在头排最右端（窄窗两项一起进右上角 more），条件本体进新的 `_SearchFilterPanel`（`DsPanel` + 排序 5 档 / 时长 5 档两组 `DsChip`），头排下面留一行 muted 的 `排序 · 时长` 摘要。面板的选择**不即时发请求**：`_order`/`_duration` 先在面板里落定，`确定`（`t.common.confirm`）才 `setState` + `_rerun()` 一次——站点搜索是网络动作，走一遍五个排序不该打五次（红果榜单与音乐广场那种即时过滤是本地过滤，形态相同、代价不同）。`onRefresh` 只在已有提交的查询时给出（`vod.query.isNotEmpty`），空查询上刷一下什么都不做，不摆失效开关；`showLayout: false` 是因为搜索结果网格只有卡片一种形态。工具栏为此长出两个口子：`VodFeedAction`（一个动作、宽窗图标按钮与窄窗 more 项两种呈现）与可空的 `onRefresh`；排序/时长的 id 表与文案查表（`kVodSearchSorts`/`kVodSearchDurations`/`vodSearchSortLabel`/`vodSearchDurationLabel`）从内联 options 提成一处，摘要行和面板读同一套。三处既有片单的头排几何与菜单项不变（版式切换仍在刷新左边）。新增 l10n `searchFilterTitle`（en "Filters" / zh「筛选」）并跑 `dart run slang`。 | 视频类 APP 的排序与时长不是常驻行而是**右端入口 + 抽屉/浮层**：「筛选样式同样使用的是抽屉式…这些产品所用的筛选器所在的位置也是位于视觉最薄弱的右端，同时里面的内容都是关于时长和画质的」（站酷《设计筛选页面的小秘密》1033408）；「筛选项维度少时，可以将筛选（与排序一起）放置在搜索栏与结果之间，点击后以下拉菜单的形式出现；若维度丰富，一般使用侧边栏形式」（yrucd《APP和Web搜索功能的终极设计技巧分析》58420）；「排序和筛选的功能一般放置在搜索和结果之间…结果分类一般采用Tab的样式进行归类」（360doc《搜索框的设计》1041368302）；爱奇艺搜索「点击搜索范围，出现下拉选项，有三种筛选纬度」，结果页用 tab 分结果种类（人人都是产品经理《从4款主流产品出发，掌握"搜索"交互》3728115）；《UI系列-筛选页面设计总结》1063948 给的条件是「半浮层显示：从Tab栏底部向下展开，适合筛选纬度较多但不超过一屏」——本站两组共 10 档，正是浮层而不是常驻条件行。 | `dart analyze apps/pure_live/lib` 0 issues；`dart format --line-length 120` 重排到一处无关旧行（`_takePending` 的 `TextEditingValue`）已还原；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,vod)`） |
 | 2026-11-02 05:55 | iptv | 频道页的分组导航是一条常驻的 `DsTabs` 横滚条（`_GroupTabs`）：一份真实播放列表常有 50–150 个分组，条子横向长度远超视口、当前选中的分组常常在窗口之外、换一个分组要先滚完整条；而参考形态的分组是第一列的竖排列表。本轮把它改成第一栏：≥960 走经典两栏——左 `_GroupRail`（`DsCard` + `overline` 列头 `频道分组` + `_GroupList`），右频道表面板，分组行用 `DsListRow`（分组名一行 + 末列 `iptvNumber` 计数 + `selected` 用 kit 的选中底），`ListView.builder(itemExtent: 48)` 懒建、48 是本模块换台面板 `_Column` 已在用的行量规，`width: 200` 折成 `_kGroupRailWidth`（960 窗宽下两栏各留得住：内容 960−40−200−12 = 708 对表的最小 656+24）。<960 放不下列，就仍占工具栏下面那一行、但只留一个入口 `_GroupEntry`（当前分组名或 `分组`，`ConstrainedBox(maxWidth: 260)` 省略号），点开 `_GroupPickerPanel`（`DsPanel` + `scrollable: false` 装同一个 `_GroupList`，选中即过滤并收起——它是选择器，不是一组要一起提交的条件，所以没有「确定」）。两栏共用 `_GroupList`，名称/计数/选中的读法只有一处。第三处顺手是同一个原则推到底：分组选定后不再逐行重复它——`_ChannelsTable` 的 `showGroup` 现在要求 `channels.selectedGroup == null`（跨分组浏览时才逐行标分组），窄态 `_ChannelsList` 那行分组名同理（把同一个分组名印 60 遍，与上一轮红果卡「同一个数字只说一次」是同病）；`_GroupTabs` 删除。无新增 l10n（`groupsLabel`/`tabAll`/`zapperGroups`/`ungrouped` 已够用），故未跑 slang。 | 直播电视类的主界面第一栏就是分组：星河TV「打开以后，左边是频道分组，中间是频道列表，右边直接播放当前节目…央视频道、卫视频道、地方台、影视剧场…都分好了类，每一行都会显示频道号、电视台名称以及当前正在播放的节目」（bilibili 星河TV/畅映TV/超级直播评测 BV1bgak6EE6e）；MyTV Android 的「经典三段界面模式（左侧分组列表+中间频道列表+右侧EPG节目单）」，实现即 `LeanbackClassicPanelScreen.kt` 的横向三栏（csdn 148600990）；IPTVnator「左侧导航栏：播放列表与频道分类；中间区域：视频播放窗口；右侧面板：EPG节目指南」（csdn 153759132）；TiviMate「The menu bar on the left lists your Playlist Categories or "Groups"」且分类视图是「所有播放列表/所有频道/收藏夹」并高亮当前组（troypoint tivimate、37uu TiviMate 评测）；放不下时是弹出而不是常驻——YourTV/电视直播TV版「点击屏幕：弹出组/频道列表，点击选择」「点击左侧屏幕唤起电视频道列表」（pcbeta 2059872、9k9k 94061）。即：分组是竖排的第一栏（窄屏为弹层），不是一条横滚的常驻条。 | `dart analyze apps/pure_live/lib` 0 issues；`dart format --line-length 120` 只动本轮文件（第二次跑 0 改动）；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,iptv)`） |
+| 2026-11-02 05:15 | music | 排行榜页（`pages/music_charts_view.dart`，菜单里的 排行榜 / `MusicView.toplists`，也是 推荐 页那张榜单表点进来的地方）没有详情头层：导航行下面直接就是表头和编号行，整页说不出「这是哪张榜、里面多少首、加起来多长」，而且**全页没有全榜播放动作**——用户只能在三十行里一首一首点。它还是本模块唯一这样的表面：`全部播放` 已在 在线歌单详情(`music_online_playlists_view.dart:675`)、自建歌单(`music_songlists_view.dart:819`)、专辑(`music_album_page.dart:154`)、歌手(`music_artist_page.dart:229`)、收藏(`music_mine_view.dart:127`)、本地(`music_local_view.dart:205`)、最近播放(`music_recommend_view.dart:234`) 七处给齐，第七个列表 surface 单独漏掉就是版式断裂而不是风格选择。第二处断裂在同一行上：`收藏榜单` 挂在榜名导航的最右端，是一枚没有文字的 `DsButton.icon`（只有 `semanticLabel`），而它动作的对象是下面那张榜。本轮补 `MusicChartBoardHead`，插在导航行与表头之间，几何全部抄本模块已有的详情头：封面 72（EQ 中心 310/318、我的列表 91、在线歌单详情 639、自建歌单 783 四处头的封面都是 72）+ `ClipRRect(theme.radii.card)` + `DsImage(aspectRatio: 1)`；`audio.MusicCatalog` 自己不给封面（五家源都只 `MusicCatalog(id: …, name: …)`），就读榜首那首歌的 `coverUri`——与在线歌单详情读第一首歌封面同一个做法，不是编内容——取不到落 `CoverFallback(title: 榜名)`；名称 `heading` 两行、`N 首 · 总时长` 一行 `caption`（时长用现成的 `musicDurationText` 汇总，为 0 就整段不写），`catalog.description` 非空时再补一行 muted。动作排用 `Wrap`：`全部播放`(primary) + `随机播放`(secondary) 与在线歌单详情同一对动词，歌没读进来时两枚**整枚收起**而不是留一个 disabled 的死按钮；`收藏榜单` 搬进头层、写明文字，导航行回到纯榜名切换（`Row` 折成 `SizedBox(height: 44)`），一项一个入口。无新增 l10n（`playAll`/`modeRandom`/`boardCollect`/`songsCount` 够用，未跑 slang）；榜头与下面的列表读同一个 `musicCatalogItemsProvider(catalog)`，family 按 catalog（`==`/`hashCode` 都只认 id）去重，不是二次抓取。一处同源缺陷照旧只记录未改：`music_eq_center_page.dart:222` 的 `DsImage` 三个框参数全空，debug 一进 EQ 中心即抛。 | 音乐榜单/歌单详情这类「一张列表的正面」是「封面 + 名称 + 规模 + 全列表动作」的头层，动作在头部而不是行里：「在歌单详情页，最突出的是全部播放按钮…QQ音乐更注重让用户马上开始听歌」，网易云则在同层给「【收藏歌单】立体按钮 + 浏览歌单介绍」——收藏与介绍都是头层的事，不是导航行上的一枚图标（woshipm 产品分析报告｜网易云音乐 3290160、sohu 365225120、163 news F29KMLFG0511805E）；视频侧同一层级：爱奇艺的榜单是「热播总榜/必看榜/飙升榜/免费榜」多榜并列（pconline 鸿蒙版爱奇艺导航栏升级 21564931），详情页先给标题区再给选集/内容，榜与榜之间用 tab 切而把当前榜自己的信息铺成一块（本台账参考基线第 2 条）。即：列表页 = 一个头层 + 一张表；头部只放切换控件、内容直接从表头开始，是缺了一层。 | `dart analyze apps/pure_live/lib` 0 issues；`dart format --line-length 120` 本轮文件 0 改动；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`feat(ui,music)`） |
