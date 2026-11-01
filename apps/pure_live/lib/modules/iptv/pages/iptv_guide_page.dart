@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/app/app.dart' show RouteNames;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart' show iptvRecentProvider;
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show IptvGuideRow, iptvDayLabel, iptvStartOfDay;
 import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage;
@@ -52,6 +52,19 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
     _tick = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
+    // The toolbar's word lands in the picker's name filter in place: the
+    // listener catches a word handed while the page is showing, the
+    // post-frame take one handed as the page arrives.
+    ref.listenManual(iptvSearchHandoffProvider, (_, _) => _takeHandoff());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
+  }
+
+  /// Moves the handed word into the picker's name filter.
+  void _takeHandoff() {
+    final word = ref.read(iptvSearchHandoffProvider.notifier).take();
+    if (word == null || word.isEmpty || !mounted) return;
+    _search.value = TextEditingValue(text: word, selection: TextSelection.collapsed(offset: word.length));
+    setState(() {});
   }
 
   @override

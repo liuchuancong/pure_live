@@ -2,6 +2,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:pure_live/shared/focus/tv_focus_scale.dart';
+import 'package:pure_live/shared/player/player_overlay.dart' show playerInk;
 
 /// A compact icon control that floats over the picture: a square hit target,
 /// a light fill under the pointer, the glyph muted until [selected], and the
@@ -21,6 +22,7 @@ final class MediaBarButton extends StatelessWidget {
     this.autofocus = false,
     this.tooltip = true,
     this.zoomsOnTv = true,
+    this.focusRing = false,
     this.size,
     this.iconSize,
     this.focusNode,
@@ -51,6 +53,10 @@ final class MediaBarButton extends StatelessWidget {
   /// Grows while focused on a TV, like the cards and menu rows do.
   final bool zoomsOnTv;
 
+  /// Draws an on-video focus ring while focused (a TV bar): a remote has no
+  /// pointer, so the brightened fill alone does not say where the focus is.
+  final bool focusRing;
+
   /// The square's side; the theme's small size when null.
   final double? size;
 
@@ -74,15 +80,24 @@ final class MediaBarButton extends StatelessWidget {
       focusNode: focusNode,
       builder: (context, states, _) {
         // Focus lights the button like hover does: a remote or keyboard
-        // user sees where they are even where a zoom is not drawn.
-        final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+        // user sees where they are even where a zoom is not drawn. A TV bar
+        // also draws the ring, because the fill alone is faint from a sofa.
+        final focused = states.contains(WidgetState.focused);
+        final lit = states.contains(WidgetState.hovered) || focused;
+        final corners = theme.radii.controlCorners(null, side);
         return Container(
           width: side,
           height: side,
           decoration: DsBoxDecoration(
             color: lit && enabled ? (onDark ? const Color(0x24FFFFFF) : colors.hover) : null,
-            borderRadius: theme.radii.controlCorners(null, side),
+            borderRadius: corners,
           ),
+          foregroundDecoration: focusRing && focused && enabled
+              ? BoxDecoration(
+                  border: Border.all(color: playerInk, width: 2),
+                  borderRadius: corners,
+                )
+              : null,
           child: Center(
             child: DsIcon(
               icon,
@@ -91,7 +106,7 @@ final class MediaBarButton extends StatelessWidget {
                   ? !enabled
                         ? const Color(0x66FFFFFF)
                         : selected
-                        ? const Color(0xFFFFFFFF)
+                        ? playerInk
                         : const Color(0xCCFFFFFF)
                   : !enabled
                   ? colors.textSubtle

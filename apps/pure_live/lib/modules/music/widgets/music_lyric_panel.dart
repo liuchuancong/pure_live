@@ -5,8 +5,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/music/controller/music_lyric_settings.dart'
+    show MusicLyricAlignment, musicLyricsSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_settings.dart' show MusicLyricAlignment, musicSettingsProvider;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart' show musicDurationText;
 
 /// The lyric panel: the current line highlighted, the panel following the
@@ -142,6 +143,18 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
     await ref.read(musicPlayerProvider.notifier).seek(start);
   }
 
+  /// Jumps the song to the line the viewer picked. Only synchronized lyrics
+  /// carry a start worth seeking to, so their rows are the pressable ones;
+  /// a pending drag-scrub is dropped first, so the panel returns to the song
+  /// instead of holding the scrub line.
+  Future<void> _seekToLine(int index) async {
+    final lines = _document?.lines;
+    if (lines == null || index < 0 || index >= lines.length) return;
+    _resume?.cancel();
+    if (_scrubbing) setState(() => _scrubbing = false);
+    await ref.read(musicPlayerProvider.notifier).seek(lines[index].start);
+  }
+
   /// The scrub line itself: a rule at 40% of the panel with the pointed
   /// line's time and the verb that jumps there.
   Widget _scrubRule(BuildContext context, DsColors colors, DsThemeData theme, List<audio.LyricLine> lines) {
@@ -177,7 +190,7 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final state = ref.watch(musicPlayerProvider);
-    final settings = ref.watch(musicSettingsProvider);
+    final settings = ref.watch(musicLyricsSettingsProvider);
     final trackId = state.track?.id;
     final offset = state.lyricOffset.inMilliseconds;
     final revision = state.lyricRevision;
@@ -270,36 +283,60 @@ final class MusicLyricsPanelState extends ConsumerState<MusicLyricsPanel> {
                               swap: settings.swapLyricSecondary,
                             );
                             final zoom = settings.lyricZoomActive && current ? 1.1 : 1.0;
-                            return Align(
-                              alignment: alignment,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: crossAlignment,
-                                children: [
+                            final content = Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: crossAlignment,
+                              children: [
+                                Text(
+                                  text.isEmpty ? '♪' : text,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: textAlign,
+                                  style: theme.typography.body.copyWith(
+                                    fontSize: (theme.typography.body.fontSize ?? 14) * scale * zoom,
+                                    color: current ? colors.text : colors.textMuted,
+                                    fontWeight: current ? FontWeight.w600 : null,
+                                  ),
+                                ),
+                                if (secondary.isNotEmpty)
                                   Text(
-                                    text.isEmpty ? '♪' : text,
+                                    secondary.join(' · '),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     textAlign: textAlign,
-                                    style: theme.typography.body.copyWith(
-                                      fontSize: (theme.typography.body.fontSize ?? 14) * scale * zoom,
-                                      color: current ? colors.text : colors.textMuted,
-                                      fontWeight: current ? FontWeight.w600 : null,
+                                    style: theme.typography.caption.copyWith(
+                                      fontSize: (theme.typography.caption.fontSize ?? 12) * scale,
+                                      color: colors.textSubtle,
                                     ),
                                   ),
-                                  if (secondary.isNotEmpty)
-                                    Text(
-                                      secondary.join(' · '),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: textAlign,
-                                      style: theme.typography.caption.copyWith(
-                                        fontSize: (theme.typography.caption.fontSize ?? 12) * scale,
-                                        color: colors.textSubtle,
-                                      ),
+                              ],
+                            );
+                            // A synchronized line is a seek target: pressing
+                            // it plays from there. Unsynced words have no
+                            // time to jump to, so they stay plain text.
+                            if (!document.isSynchronized) {
+                              return Align(alignment: alignment, child: content);
+                            }
+                            return DsPressable(
+                              onPressed: () => unawaited(_seekToLine(index)),
+                              builder: (context, states, child) {
+                                final lit =
+                                    states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+                                return DsFocusRing(
+                                  focused: states.contains(WidgetState.focused),
+                                  borderRadius: BorderRadius.circular(theme.radii.card),
+                                  child: Container(
+                                    alignment: alignment,
+                                    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8),
+                                    decoration: DsBoxDecoration(
+                                      color: lit ? colors.hover : null,
+                                      borderRadius: BorderRadius.circular(theme.radii.card),
                                     ),
-                                ],
-                              ),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: content,
                             );
                           },
                         ),

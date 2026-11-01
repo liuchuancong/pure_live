@@ -282,7 +282,9 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
               builder: (context, states, _) => DsIcon(
                 DsIcons.trash2,
                 size: 16,
-                color: states.contains(WidgetState.hovered) ? colors.danger.text : colors.textSubtle,
+                color: (states.contains(WidgetState.hovered) || states.contains(WidgetState.focused))
+                    ? colors.danger.text
+                    : colors.textSubtle,
               ),
             ),
     );

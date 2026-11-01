@@ -13,6 +13,7 @@ import 'package:pure_live/modules/live/recorder/data/recording_settings.dart'
     show RecordingSettings, recordingSettingsProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show RecordingTask, RecordingTaskState;
 import 'package:pure_live/modules/live/recorder/engine/recorder_engine.dart' show recorderEngineProvider;
+import 'package:pure_live/modules/live/recorder/engine/recording_claim.dart';
 import 'package:pure_live/modules/live/recorder/engine/recording_finalize_lock.dart' show hasLiveFinalizeLock;
 import 'package:pure_live/modules/live/recorder/engine/stream_resolver.dart'
     show NoRecordableStream, RecordableStream, resolveRecordableStream;
@@ -34,17 +35,18 @@ const Duration _kLiveCheckTimeout = Duration(seconds: 20);
 final class RecordingLiveMonitor {
   RecordingLiveMonitor(this._ref) {
     _ref.listen(
-      recordingSettingsProvider.select(
-        (settings) => (
-          settings.pollingEnabled,
-          settings.liveCheckSeconds,
-          settings.checkBackoffEnabled,
-          settings.maxCheckSeconds,
-        ),
-      ),
+      recordingSettingsProvider.select((settings) {
+        final schedule = settings.schedule;
+        return (
+          schedule.pollingEnabled,
+          schedule.liveCheckSeconds,
+          schedule.checkBackoffEnabled,
+          schedule.maxCheckSeconds,
+        );
+      }),
       (previous, next) => _arm(immediate: true),
     );
-    if (_ref.read(recordingSettingsProvider).autoStartOnBoot) {
+    if (_ref.read(recordingSettingsProvider).schedule.autoStartOnBoot) {
       unawaited(_resumeInterrupted());
     }
     unawaited(_recoverStaleProcessing());
@@ -65,15 +67,26 @@ final class RecordingLiveMonitor {
     try {
       final repository = await _ref.read(recordingRepositoryProvider.future);
       if (!_ref.mounted) return;
+      final claims = _ref.read(appPathsProvider).recordingClaims;
       var resumed = false;
       for (final task in repository.list()) {
         if (task.state != RecordingTaskState.recording) continue;
-        await repository.save(task.copyWith(state: RecordingTaskState.waiting));
-        resumed = true;
+        // A row whose claim another process holds is not interrupted: that
+        // window is recording it right now, and turning the row into waiting
+        // would tell both windows otherwise. The probe is held across the write
+        // so a start cannot slip in between the check and the change.
+        final probe = await acquireRecordingClaim(claims, task.id);
+        if (probe == null) continue;
+        try {
+          await repository.save(task.copyWith(state: RecordingTaskState.waiting));
+          resumed = true;
+        } finally {
+          await releaseRecordingClaim(probe);
+        }
       }
       // The reference checks once even when the periodic live check is off;
       // let the task mirror see the writes first, then run that one round.
-      if (resumed && !_ref.read(recordingSettingsProvider).pollingEnabled) {
+      if (resumed && !_ref.read(recordingSettingsProvider).schedule.pollingEnabled) {
         await Future<void>.delayed(const Duration(milliseconds: 300));
         if (_ref.mounted) unawaited(_tick(force: true));
       }
@@ -131,7 +144,7 @@ final class RecordingLiveMonitor {
   /// A scheduled waiting or stopped task keeps the clock alive even outside
   /// its window, because that is how the window's next opening is noticed.
   bool get _shouldRun {
-    final polling = _ref.read(recordingSettingsProvider).pollingEnabled;
+    final polling = _ref.read(recordingSettingsProvider).schedule.pollingEnabled;
     for (final task in _ref.read(recordingTasksProvider).tasks) {
       if (polling && task.state == RecordingTaskState.waiting) return true;
       if (!task.scheduleEnabled) continue;
@@ -168,12 +181,12 @@ final class RecordingLiveMonitor {
               (task.state == RecordingTaskState.recording && task.stopAtWindowEnd),
         );
     if (busy) {
-      final tick = math.min(15, math.max(5, settings.liveCheckSeconds));
+      final tick = math.min(15, math.max(5, settings.schedule.liveCheckSeconds));
       _timer = Timer.periodic(Duration(seconds: tick), (_) => unawaited(_tick()));
     } else {
       // Only future windows are left: sleep until the nearest one, capped at
       // an hour so a clock/DST change cannot strand the task for days.
-      final polling = _ref.read(recordingSettingsProvider).pollingEnabled;
+      final polling = _ref.read(recordingSettingsProvider).schedule.pollingEnabled;
       DateTime? next;
       if (polling) {
         for (final task in _ref.read(recordingTasksProvider).tasks) {
@@ -196,10 +209,11 @@ final class RecordingLiveMonitor {
 
   /// The wait one task's next check owes, applying the optional backoff.
   Duration _delayFor(String id, RecordingSettings settings) {
-    if (!settings.checkBackoffEnabled) return Duration(seconds: settings.liveCheckSeconds);
+    final schedule = settings.schedule;
+    if (!schedule.checkBackoffEnabled) return Duration(seconds: schedule.liveCheckSeconds);
     final failures = _failures[id] ?? 0;
-    final stretched = settings.liveCheckSeconds * math.pow(2, failures).toInt();
-    return Duration(seconds: math.min(stretched, settings.maxCheckSeconds));
+    final stretched = schedule.liveCheckSeconds * math.pow(2, failures).toInt();
+    return Duration(seconds: math.min(stretched, schedule.maxCheckSeconds));
   }
 
   void _stop() {
@@ -235,7 +249,7 @@ final class RecordingLiveMonitor {
       await _stopExpired(now);
 
       final settings = _ref.read(recordingSettingsProvider);
-      if (!settings.pollingEnabled && !force) {
+      if (!settings.schedule.pollingEnabled && !force) {
         if (!_shouldRun) _stop();
         return;
       }
@@ -267,7 +281,7 @@ final class RecordingLiveMonitor {
       _lastChecked.removeWhere((id, _) => !liveIds.contains(id));
       _failures.removeWhere((id, _) => !liveIds.contains(id));
       for (final task in startable) {
-        if (!_ref.read(recordingSettingsProvider).pollingEnabled && !force) return;
+        if (!_ref.read(recordingSettingsProvider).schedule.pollingEnabled && !force) return;
         if (engine.isRecording(task.id)) continue;
         final last = _lastChecked[task.id];
         if (last != null && now.difference(last) < _delayFor(task.id, settings)) continue;
@@ -283,20 +297,20 @@ final class RecordingLiveMonitor {
             qualityLabel: task.quality,
           ).timeout(_kLiveCheckTimeout);
         } on NoRecordableStream {
-          if (settings.checkBackoffEnabled) _failures.update(task.id, (value) => value + 1, ifAbsent: () => 1);
+          if (settings.schedule.checkBackoffEnabled) _failures.update(task.id, (value) => value + 1, ifAbsent: () => 1);
           continue;
         } on TimeoutException {
-          if (settings.checkBackoffEnabled) _failures.update(task.id, (value) => value + 1, ifAbsent: () => 1);
+          if (settings.schedule.checkBackoffEnabled) _failures.update(task.id, (value) => value + 1, ifAbsent: () => 1);
           continue;
         } on Object {
-          if (settings.checkBackoffEnabled) _failures.update(task.id, (value) => value + 1, ifAbsent: () => 1);
+          if (settings.schedule.checkBackoffEnabled) _failures.update(task.id, (value) => value + 1, ifAbsent: () => 1);
           continue;
         }
         // The task may have been removed or started while the platform
         // answered; only a task still waiting is started here.
         final current = _ref.read(recordingTasksProvider).tasks.where((item) => item.id == task.id).firstOrNull;
         if (current?.state != RecordingTaskState.waiting) continue;
-        if (!_ref.read(recordingSettingsProvider).pollingEnabled) return;
+        if (!_ref.read(recordingSettingsProvider).schedule.pollingEnabled) return;
         _failures.remove(task.id);
         try {
           await engine.start(task, stream.line, room: stream.room, danmaku: site.capability<LiveDanmakuProvider>());

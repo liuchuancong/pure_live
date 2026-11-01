@@ -150,6 +150,8 @@
   "transcodeBitrateDesc": "目标视频码率；越高越清晰，文件越大。",
   "playRecording": "播放录像",
   "previewRecording": "内置播放器预览",
+  "previewTitle": "录像预览",
+  "previewUnavailable": "这个任务还没有可播放的文件",
   "recordChatGiftsTitle": "录下礼物消息",
   "recordChatGiftsDesc": "把礼物消息按平台给出的文字写进同一条弹幕文件；默认只记聊天。",
   "recordChatTitle": "同时录制弹幕",

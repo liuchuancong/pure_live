@@ -6,8 +6,9 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
+import 'package:pure_live/modules/music/controller/music_download_settings.dart' show musicDownloadSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicQualityOf;
-import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, resolveWithToggle;
 
 /// The preference the download queue is kept under.
@@ -46,7 +47,7 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
 
   @override
   List<audio.MusicDownloadTask> build() {
-    _queue = audio.MusicDownloadQueue(maxConcurrent: ref.read(musicSettingsProvider).downloadMaxConcurrent);
+    _queue = audio.MusicDownloadQueue(maxConcurrent: ref.read(musicDownloadSettingsProvider).downloadMaxConcurrent);
     final stored = _readTasks();
     if (stored.isNotEmpty) _queue.restore(stored);
     _updates = _queue.updates.listen((_) {
@@ -54,7 +55,7 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
       state = _queue.tasks;
       _persistSoon();
     });
-    ref.listen(musicSettingsProvider.select((settings) => settings.downloadMaxConcurrent), (_, concurrent) {
+    ref.listen(musicDownloadSettingsProvider.select((settings) => settings.downloadMaxConcurrent), (_, concurrent) {
       unawaited(_queue.setMaxConcurrent(concurrent));
     });
     ref.onDispose(() {
@@ -71,7 +72,7 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
     if (track.isLocal) {
       return (outcome: MusicDownloadStart.unsupported, error: null);
     }
-    final settings = ref.read(musicSettingsProvider);
+    final settings = ref.read(musicDownloadSettingsProvider);
     audio.MusicSource? source;
     for (final candidate in ref.read(musicSourceListProvider)) {
       if (candidate.id == track.sourceId) source = candidate;
@@ -80,7 +81,7 @@ final class MusicDownloadsController extends Notifier<List<audio.MusicDownloadTa
       return (outcome: MusicDownloadStart.unsupported, error: null);
     }
     final activeSource = source;
-    final quality = musicQualityOf(settings.quality);
+    final quality = musicQualityOf(ref.read(musicPlaybackSettingsProvider).quality);
     final directory = ref.read(appPathsProvider).music.path;
     try {
       final resolved = await resolveWithToggle(

@@ -1,5 +1,5 @@
 import 'package:media_core_audio/media_core_audio.dart' as audio;
-import 'package:pure_live/modules/music/controller/music_settings.dart' show MusicSettings;
+import 'package:pure_live/modules/music/controller/music_lyric_settings.dart' show MusicLyricsSettings;
 import 'package:pure_live/modules/music/controller/sources/chinese_s2t.dart' show traditionalize;
 import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart' show CachedLyricSource;
 
@@ -14,7 +14,7 @@ final class DisplayLyricSource extends CachedLyricSource {
   /// Wraps [inner]'s lyrics behind the current display preferences.
   DisplayLyricSource(super.inner, {required this.settingsOf});
 
-  final MusicSettings Function() settingsOf;
+  final MusicLyricsSettings Function() settingsOf;
 
   @override
   Future<audio.MusicLyricPayload?> resolveLyric(audio.MusicTrack track) async {

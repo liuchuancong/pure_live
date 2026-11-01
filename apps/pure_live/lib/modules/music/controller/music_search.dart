@@ -251,3 +251,27 @@ final class MusicSearchHistoryController extends Notifier<List<String>> {
 final musicSearchHistoryProvider = NotifierProvider<MusicSearchHistoryController, List<String>>(
   MusicSearchHistoryController.new,
 );
+
+/// A word handed to the module's library search from outside (the toolbar's
+/// field): the page takes it once — the library view runs it — and clears
+/// it, so a back-and-forth never replays it.
+final class MusicSearchHandoffController extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  /// Hands [word] to the music page (taken once on arrival).
+  // ignore: use_setters_to_change_properties
+  void hand(String word) => state = word;
+
+  /// Takes the word (null when none was handed).
+  String? take() {
+    final word = state;
+    state = null;
+    return word;
+  }
+}
+
+/// The word the module's library search should run next.
+final musicSearchHandoffProvider = NotifierProvider<MusicSearchHandoffController, String?>(
+  MusicSearchHandoffController.new,
+);

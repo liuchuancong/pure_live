@@ -5,6 +5,7 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/modules/music/controller/music_comments.dart' show MusicComment;
 import 'package:pure_live/modules/music/controller/sources/lx_platform_source.dart';
+import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart';
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart';
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
@@ -41,7 +42,7 @@ const String _hotUserAgent = 'Dalvik/2.1.0 (Linux; U; Android 9;)';
 /// anti-server as the fallback.
 final class KwMusicSource extends LxPlatformSource
     with SonglistSearch, OnlinePlaylists, PlaylistTagTree
-    implements MusicHotWords, MusicCommentsSource {
+    implements MusicHotWords, MusicCommentsSource, MusicAlbumSource, MusicArtistSource {
   /// A Kuwo source over the lx runtime.
   KwMusicSource(super.runtime, super.http);
 
@@ -330,7 +331,7 @@ final class KwMusicSource extends LxPlatformSource
       final digest = split.first.replaceFirst('digest-', '');
       final inner = split.length > 1 ? split.last : '';
       return await switch (digest) {
-        '13' => _albumDetail(inner),
+        '13' => _albumPlaylist(inner),
         '8' => _listDetail(inner),
         _ => _digest5Detail(inner),
       };
@@ -414,11 +415,32 @@ final class KwMusicSource extends LxPlatformSource
   }
 
   /// The album digest — the reference routes it to kw `album.js`: the r.s
-  /// albuminfo page answers the tracks and the summary together.
-  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> _albumDetail(String albumId) async {
+  /// albuminfo page answers the album's own facts and its tracks together.
+  ///
+  /// The mobile parameter set is the one that answers strict JSON; the
+  /// browser set answers a single-quoted object `jsonDecode` refuses.
+  @override
+  Future<MusicAlbumDetail> album(String albumId) => _albumDetail(albumId);
+
+  /// The album as the playlist pages name it.
+  Future<(MusicPlaylistInfo, List<audio.MusicTrack>)> _albumPlaylist(String albumId) async {
+    final (:album, :tracks) = await _albumDetail(albumId);
+    return (
+      MusicPlaylistInfo(
+        id: album.id,
+        name: album.name,
+        cover: album.coverUri?.toString() ?? '',
+        author: album.artist,
+        trackCount: album.trackCount,
+      ),
+      tracks,
+    );
+  }
+
+  Future<MusicAlbumDetail> _albumDetail(String albumId) async {
     final json = jsonDecode(
       await getText(
-        Uri.http('search.kuwo.cn', '/r.s', {
+        Uri.https('search.kuwo.cn', '/r.s', {
           'pn': '0',
           'rn': '1000',
           'stype': 'albuminfo',
@@ -426,24 +448,158 @@ final class KwMusicSource extends LxPlatformSource
           'show_copyright_off': '0',
           'encoding': 'utf',
           'vipver': 'MUSIC_9.1.0',
+          'mobi': '1',
+          'newver': '1',
+          'client': 'kt',
+          'uid': '0',
+          'rformat': 'json',
         }),
       ),
     ) as Map<String, Object?>;
     final raw = json['musiclist'];
     if (raw is! List) throw StateError('kuwo album detail failed: $albumId');
     final albumName = LxPlatformSource.decodeName('${json['name'] ?? ''}').trim();
-    final info = MusicPlaylistInfo(
+    final artistId = '${json['artistid'] ?? ''}'.trim();
+    final cover = '${json['hts_img'] ?? json['img'] ?? ''}'.trim();
+    final album = MusicAlbum(
       id: albumId,
       name: albumName,
-      cover: '${json['img'] ?? json['hts_img'] ?? ''}',
-      author: LxPlatformSource.decodeName('${json['artist'] ?? ''}').trim(),
+      artist: LxPlatformSource.decodeName('${json['artist'] ?? ''}').trim(),
+      artistId: artistId.isEmpty ? null : artistId,
+      coverUri: cover.isEmpty ? null : Uri.tryParse(cover),
       trackCount: int.tryParse('${json['songnum'] ?? ''}') ?? raw.length,
+      year: _yearOf(json['pub']),
     );
     final tracks = <audio.MusicTrack>[
       for (final entry in raw)
         if (entry is Map) ?_albumTrackOf(entry.cast<String, Object?>(), albumName, albumId),
     ];
-    return (info, tracks);
+    return (album: album, tracks: tracks);
+  }
+
+  /// The artist's page — who they are, their songs and their albums.
+  ///
+  /// Kuwo answers no artist track list to a plain request, so the songs are
+  /// the platform's own search for the artist, kept to the rows it credits
+  /// to them; the albums are its album search under the same filter, and the
+  /// profile is the artist card when [artistId] is already known.
+  @override
+  Future<MusicArtistDetail> artist(String name, {String? artistId}) async {
+    final subject = musicMainArtist(name);
+    final songs = await _artistSongs(subject);
+    final albums = await _artistAlbums(subject);
+    final id = artistId ?? _artistIdIn(songs) ?? _artistIdInAlbums(albums);
+    final profile = id == null ? null : await _artistProfile(id);
+    return (name: profile?.name ?? subject, artistId: id, avatarUri: profile?.avatar, songs: songs, albums: albums);
+  }
+
+  /// The songs the platform's search credits to [name], in its own order.
+  Future<List<audio.MusicTrack>> _artistSongs(String name) async {
+    final page = await search(name, pageSize: 100);
+    return [
+      for (final track in page.items)
+        if (track.artist.contains(name)) track,
+    ];
+  }
+
+  /// The albums whose credit line carries [name] — the platform's album
+  /// search, whose rows also carry collaborations the artist only features on.
+  Future<List<MusicAlbum>> _artistAlbums(String name) async {
+    final json = jsonDecode(
+      await getText(
+        Uri.https('search.kuwo.cn', '/r.s', {
+          'all': name,
+          'pn': '0',
+          'rn': '50',
+          'ft': 'album',
+          'show_copyright_off': '1',
+          'encoding': 'utf8',
+          'mobi': '1',
+          'newver': '1',
+          'client': 'kt',
+          'uid': '0',
+          'rformat': 'json',
+        }),
+      ),
+    ) as Map<String, Object?>;
+    final raw = json['albumlist'];
+    if (raw is! List) return const <MusicAlbum>[];
+    return [
+      for (final entry in raw)
+        if (entry is Map && LxPlatformSource.decodeName('${entry['artist'] ?? ''}').contains(name))
+          ?_albumOf(entry.cast<String, Object?>()),
+    ];
+  }
+
+  /// One album-search row as an album card.
+  static MusicAlbum? _albumOf(Map<String, Object?> raw) {
+    final id = '${raw['albumid'] ?? raw['id'] ?? ''}'.trim();
+    final name = LxPlatformSource.decodeName('${raw['name'] ?? ''}').trim();
+    if (id.isEmpty || name.isEmpty) return null;
+    final artistId = '${raw['artistid'] ?? ''}'.trim();
+    final cover = '${raw['hts_img'] ?? raw['img'] ?? ''}'.trim();
+    return MusicAlbum(
+      id: id,
+      name: name,
+      artist: LxPlatformSource.decodeName('${raw['artist'] ?? ''}').trim(),
+      artistId: artistId.isEmpty ? null : artistId,
+      coverUri: cover.isEmpty ? null : Uri.tryParse(cover),
+      trackCount: int.tryParse('${raw['musiccnt'] ?? ''}') ?? 0,
+      year: _yearOf(raw['pub']),
+    );
+  }
+
+  /// The artist's card on the platform — its canonical name and avatar; the
+  /// page works without it when the platform refuses.
+  Future<({String name, Uri? avatar})?> _artistProfile(String artistId) async {
+    try {
+      final json = jsonDecode(
+        await getText(
+          Uri.https('search.kuwo.cn', '/r.s', {
+            'stype': 'artistinfo',
+            'artistid': artistId,
+            'pn': '0',
+            'rn': '1',
+            'show_copyright_off': '1',
+            'encoding': 'utf8',
+            'mobi': '1',
+            'newver': '1',
+            'client': 'kt',
+            'uid': '0',
+            'rformat': 'json',
+          }),
+        ),
+      ) as Map<String, Object?>;
+      final name = LxPlatformSource.decodeName('${json['name'] ?? ''}').trim();
+      if (name.isEmpty) return null;
+      final avatar = '${json['hts_pic'] ?? json['pic'] ?? ''}'.trim();
+      return (name: name, avatar: avatar.isEmpty ? null : Uri.tryParse(avatar));
+    } on Object {
+      return null;
+    }
+  }
+
+  /// The first artist id the platform attached to these songs.
+  static String? _artistIdIn(List<audio.MusicTrack> songs) {
+    for (final song in songs) {
+      final id = '${song.metadata['artistId'] ?? ''}'.trim();
+      if (id.isNotEmpty) return id;
+    }
+    return null;
+  }
+
+  static String? _artistIdInAlbums(List<MusicAlbum> albums) {
+    for (final album in albums) {
+      final id = album.artistId;
+      if (id != null && id.isNotEmpty) return id;
+    }
+    return null;
+  }
+
+  /// The release year of `pub`/`showtime`, whose values are `yyyy-MM-dd`.
+  static int? _yearOf(Object? raw) {
+    final match = RegExp(r'^\s*(\d{4})').firstMatch('$raw');
+    return match == null ? null : int.tryParse(match.group(1)!);
   }
 
   /// The album track rows — the reference's album `filterListDetail`, the
@@ -461,6 +617,7 @@ final class KwMusicSource extends LxPlatformSource
     };
     final qualities = ['128k', '320k', 'flac', 'flac24bit'].where(found.contains).toList();
     final pic = '${raw['pic'] ?? ''}';
+    final artistId = '${raw['artistid'] ?? raw['allartistid'] ?? ''}'.trim();
     return audio.MusicTrack(
       id: songId,
       sourceId: 'kw',
@@ -470,7 +627,7 @@ final class KwMusicSource extends LxPlatformSource
       albumId: albumId.isEmpty ? null : albumId,
       coverUri: pic.isEmpty ? null : Uri.tryParse(pic),
       qualities: [for (final quality in qualities) LxPlatformSource.qualityOf(quality)],
-      metadata: {'types': qualities, 'albumId': albumId},
+      metadata: {'types': qualities, 'albumId': albumId, if (artistId.isNotEmpty) 'artistId': artistId},
     );
   }
 
@@ -825,6 +982,7 @@ final class KwMusicSource extends LxPlatformSource
     final artist = LxPlatformSource.decodeName('${raw['ARTIST'] ?? raw['artist'] ?? ''}').trim();
     final album = LxPlatformSource.decodeName('${raw['ALBUM'] ?? raw['album'] ?? ''}').trim();
     final albumId = '${raw['ALBUMID'] ?? raw['albumid'] ?? ''}';
+    final artistId = '${raw['ARTISTID'] ?? raw['artistid'] ?? ''}'.trim();
     final seconds = int.tryParse('${raw['DURATION'] ?? raw['song_duration'] ?? raw['duration'] ?? ''}');
     final qualities = _qualitysOf(raw, scriptQualities);
     return audio.MusicTrack(
@@ -836,7 +994,7 @@ final class KwMusicSource extends LxPlatformSource
       albumId: albumId.isEmpty ? null : albumId,
       duration: seconds == null ? null : Duration(seconds: seconds),
       qualities: [for (final quality in qualities) LxPlatformSource.qualityOf(quality)],
-      metadata: {'types': qualities, 'albumId': albumId},
+      metadata: {'types': qualities, 'albumId': albumId, if (artistId.isNotEmpty) 'artistId': artistId},
     );
   }
 

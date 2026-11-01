@@ -204,7 +204,10 @@ final class _WindowMessagesState extends ConsumerState<_WindowMessages> {
       case DesktopFocus():
         unawaited(ref.read(windowHostProvider)?.show() ?? Future<void>.value());
       case DesktopInvalidated():
-        break;
+        // Another window changed the shared settings (a theme, a language, a
+        // restore): the store already holds the new values, so this window's
+        // own root re-reads them and its cached settings controllers rebuild.
+        refreshSettingsFromWidget(ref);
     }
   }
 

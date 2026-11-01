@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   battery_plus
+  bonsoir_windows
   connectivity_plus
   desktop_drop
   device_screen_brightness

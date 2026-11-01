@@ -3,7 +3,9 @@ import 'package:live_net/live_net.dart' show ClientProfile;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/app/providers/network/network_providers.dart' show networkFactoryProvider;
 import 'package:pure_live/modules/music/controller/lx_script_runtime.dart';
-import 'package:pure_live/modules/music/controller/music_settings.dart';
+import 'package:pure_live/modules/music/controller/music_lyric_settings.dart'
+    show MusicLyricsSettings, musicLyricsSettingsProvider;
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_source_swaps.dart' show musicSourceSwapsProvider;
 import 'package:pure_live/modules/music/controller/sources/music_display_lyric.dart' show DisplayLyricSource;
 import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart' show CachedLyricSource;
@@ -22,7 +24,7 @@ const String kLxMusicSourceId = 'kw';
 final musicSourceListProvider = Provider<List<audio.MusicSource>>((ref) {
   final runtime = ref.watch(lxScriptRuntimeProvider);
   final transport = ref.watch(networkFactoryProvider).create(profile: ClientProfile.api);
-  MusicSettings settingsOf() => ref.read(musicSettingsProvider);
+  MusicLyricsSettings settingsOf() => ref.read(musicLyricsSettingsProvider);
   return [
     DisplayLyricSource(CachedLyricSource(KwMusicSource(runtime, transport)), settingsOf: settingsOf),
     DisplayLyricSource(CachedLyricSource(KgMusicSource(runtime, transport)), settingsOf: settingsOf),
@@ -35,7 +37,7 @@ final musicSourceListProvider = Provider<List<audio.MusicSource>>((ref) {
 /// The module's active source: the viewer's default, or Kuwo when unset.
 final musicSourceProvider = Provider<audio.MusicSource>((ref) {
   final sources = ref.watch(musicSourceListProvider);
-  final preferred = ref.watch(musicSettingsProvider).defaultSourceId;
+  final preferred = ref.watch(musicPlaybackSettingsProvider).defaultSourceId;
   for (final source in sources) {
     if (source.id == preferred) return source;
   }

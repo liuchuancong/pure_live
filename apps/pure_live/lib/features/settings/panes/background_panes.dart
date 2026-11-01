@@ -512,6 +512,8 @@ final class _Swatch extends StatelessWidget {
                   border: Border.all(
                     color: selected
                         ? colors.accent
+                        : states.contains(WidgetState.focused)
+                        ? colors.focus
                         : states.contains(WidgetState.hovered)
                         ? colors.textSubtle
                         : colors.border,
@@ -922,6 +924,8 @@ final class _WallpaperTile extends StatelessWidget {
             border: Border.all(
               color: selected
                   ? colors.accent
+                  : states.contains(WidgetState.focused)
+                  ? colors.focus
                   : states.contains(WidgetState.hovered)
                   ? colors.textSubtle
                   : colors.border,

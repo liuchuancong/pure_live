@@ -8,6 +8,11 @@ import 'package:flutter/widgets.dart';
 /// because the frame behind it is dark and the theme's own text would turn
 /// dark-on-dark in a light app.
 const Color playerInk = Color(0xFFFFFFFF);
+
+/// The one red every player uses to say "this is live / this is being
+/// captured": the live dot on the room's strip and the breathing dot of a
+/// running recording are the same signal, so they carry the same colour.
+const Color playerSignal = Color(0xFFFF3B5C);
 const Color playerInkMuted = Color(0xCCFFFFFF);
 const Color playerInkSubtle = Color(0x99FFFFFF);
 const Color playerInkHover = Color(0x24FFFFFF);
@@ -60,7 +65,7 @@ final class PlayerIdleProgress extends StatelessWidget {
     final total = duration?.inMilliseconds ?? 0;
     final played = total <= 0 ? null : ((position?.inMilliseconds ?? 0) / total).clamp(0.0, 1.0);
     final track = Container(height: 3, color: const Color(0x33FFFFFF));
-    final fill = Container(height: 3, color: const Color(0xFFFFFFFF));
+    final fill = Container(height: 3, color: playerInk);
     return MouseRegion(
       onHover: (_) => onWake(),
       child: GestureDetector(

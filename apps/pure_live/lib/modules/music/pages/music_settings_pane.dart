@@ -33,15 +33,22 @@ import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
         musicEqProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_dsp.dart' show kMusicFxCosts;
 import 'package:pure_live/modules/music/controller/lx_script_runtime.dart' show lxScriptRuntimeProvider;
+import 'package:pure_live/modules/music/controller/music_desktop_lyric_settings.dart'
+    show musicDesktopLyricsSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
+import 'package:pure_live/modules/music/controller/music_download_settings.dart'
+    show MusicDownloadType, musicDownloadSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_hotkeys.dart'
     show MusicHotkeyAction, MusicHotkeyCombo, musicHotkeysProvider;
 import 'package:pure_live/modules/music/controller/music_lyric_overrides.dart' show musicLyricOverridesProvider;
+import 'package:pure_live/modules/music/controller/music_lyric_settings.dart'
+    show MusicLyricAlignment, musicLyricsSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_open_api.dart'
     show musicOpenApiGateProvider, musicOpenApiLanProvider, musicOpenApiPortProvider, musicOpenApiProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart'
     show MusicPlayerController, musicAudioDevicesProvider, musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_settings.dart';
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
+    show MusicQuality, MusicSourceNameType, musicPlaybackSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/music_source.dart' show kLxMusicSourceId, musicSourceListProvider;
 import 'package:pure_live/modules/music/controller/music_source_catalog.dart'
     show MusicCatalogEntry, fetchCatalogScript, kMusicSourceCatalog;
@@ -58,7 +65,7 @@ import 'package:pure_live/modules/music/controller/music_sync_server.dart'
         musicSyncServerProvider,
         musicSyncServerStatusProvider;
 import 'package:pure_live/modules/music/controller/music_ui_settings.dart'
-    show MusicPlayerMode, MusicUiElement, musicPlayerModeProvider, musicUiSettingsProvider;
+    show MusicPlayerMode, MusicSpectrumStyle, MusicUiElement, musicPlayerModeProvider, musicUiSettingsProvider;
 import 'package:pure_live/modules/music/controller/sources/music_source_cache.dart'
     show CachedLyricSource, musicLyricCacheCountProvider;
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart' show MusicEqEditor;
@@ -75,8 +82,8 @@ final class MusicSettingsPane extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final settings = ref.watch(musicSettingsProvider);
-    final controller = ref.read(musicSettingsProvider.notifier);
+    final settings = ref.watch(musicPlaybackSettingsProvider);
+    final controller = ref.read(musicPlaybackSettingsProvider.notifier);
     final dislikes = ref.watch(musicDislikesProvider);
     final ui = ref.watch(musicUiSettingsProvider);
     final uiController = ref.read(musicUiSettingsProvider.notifier);
@@ -183,18 +190,15 @@ final class MusicSettingsPane extends ConsumerWidget {
                     unawaited(uiController.setElement(MusicUiElement.blurredBackdrop, visible: value)),
               ),
             ),
-            // The stage's shape is one choice, the reference's player
-            // modes: the sleeve, the record, or the words.
+            // The stage's shape starts here, the reference's player modes;
+            // the player page's own pill switches it for that run without
+            // touching this row.
             SettingsChoiceRow<MusicPlayerMode>(
               leading: const DsIcon(DsIcons.disc3),
               title: t.music.playerMode,
               description: t.music.playerModeDesc,
               value: ref.watch(musicPlayerModeProvider),
-              options: [
-                DsSelectOption(value: MusicPlayerMode.standard, label: t.music.playerModeStandard),
-                DsSelectOption(value: MusicPlayerMode.vinyl, label: t.music.playerModeVinyl),
-                DsSelectOption(value: MusicPlayerMode.lyrics, label: t.music.playerModeLyrics),
-              ],
+              options: [for (final mode in MusicPlayerMode.values) DsSelectOption(value: mode, label: mode.label(t))],
               onChanged: (value) => unawaited(ref.read(musicPlayerModeProvider.notifier).set(value)),
             ),
             SettingsConfigRow(
@@ -205,6 +209,20 @@ final class MusicSettingsPane extends ConsumerWidget {
                 value: ui.shows(MusicUiElement.spectrum),
                 onChanged: (value) => unawaited(uiController.setElement(MusicUiElement.spectrum, visible: value)),
               ),
+            ),
+            // The style follows the switch: the row stays where it is so the
+            // setting never seems to vanish, and only its control goes inert.
+            SettingsChoiceRow<MusicSpectrumStyle>(
+              leading: const DsIcon(DsIcons.chartColumn),
+              title: t.music.uiSpectrumStyle,
+              description: t.music.uiSpectrumStyleDesc,
+              value: ui.spectrumStyle,
+              options: [
+                for (final style in MusicSpectrumStyle.values) DsSelectOption(value: style, label: style.label(t)),
+              ],
+              onChanged: ui.shows(MusicUiElement.spectrum)
+                  ? (style) => unawaited(uiController.setSpectrumStyle(style))
+                  : null,
             ),
             DsListRow(
               leading: const DsIcon(DsIcons.rotateCcw),
@@ -526,11 +544,11 @@ final class MusicSourcesPane extends ConsumerWidget {
     if (!confirmed || !context.mounted) return;
     // The default check reads before the removal: past that await the pane's
     // ref may already be defunct.
-    final wasDefault = ref.read(musicSettingsProvider).defaultSourceId == source.id;
+    final wasDefault = ref.read(musicPlaybackSettingsProvider).defaultSourceId == source.id;
     await ref.read(musicSourcesProvider.notifier).remove(source.id);
     if (!context.mounted) return;
     if (wasDefault) {
-      await ref.read(musicSettingsProvider.notifier).setDefaultSource('');
+      await ref.read(musicPlaybackSettingsProvider.notifier).setDefaultSource('');
     }
     if (context.mounted) {
       showDsToast(
@@ -798,7 +816,7 @@ final class MusicDownloadPane extends ConsumerWidget {
 
   Future<void> _editPattern(BuildContext context, WidgetRef ref) async {
     final t = context.t;
-    final settings = ref.read(musicSettingsProvider);
+    final settings = ref.read(musicDownloadSettingsProvider);
     final field = TextEditingController(text: settings.downloadPattern);
     final pattern = await showDsDialog<String>(
       context: context,
@@ -825,14 +843,14 @@ final class MusicDownloadPane extends ConsumerWidget {
     );
     field.dispose();
     if (pattern == null || !context.mounted) return;
-    await ref.read(musicSettingsProvider.notifier).setDownloadPattern(pattern);
+    await ref.read(musicDownloadSettingsProvider.notifier).setDownloadPattern(pattern);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final settings = ref.watch(musicSettingsProvider);
-    final controller = ref.read(musicSettingsProvider.notifier);
+    final settings = ref.watch(musicDownloadSettingsProvider);
+    final controller = ref.read(musicDownloadSettingsProvider.notifier);
     final directory = ref.watch(appPathsProvider).music.path;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -997,8 +1015,8 @@ final class MusicLyricPane extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final settings = ref.watch(musicSettingsProvider);
-    final controller = ref.read(musicSettingsProvider.notifier);
+    final settings = ref.watch(musicLyricsSettingsProvider);
+    final controller = ref.read(musicLyricsSettingsProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
@@ -1171,8 +1189,8 @@ final class MusicDesktopLyricPane extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final colors = DsTheme.colorsOf(context);
-    final settings = ref.watch(musicSettingsProvider);
-    final controller = ref.read(musicSettingsProvider.notifier);
+    final settings = ref.watch(musicDesktopLyricsSettingsProvider);
+    final controller = ref.read(musicDesktopLyricsSettingsProvider.notifier);
     final player = ref.read(musicPlayerProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

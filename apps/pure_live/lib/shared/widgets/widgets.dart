@@ -5,5 +5,7 @@ library;
 export 'choice_dialog.dart';
 export 'chrome_icon_button.dart';
 export 'cover_fallback.dart';
+export 'download_details.dart';
+export 'download_workspace.dart';
 export 'pull_to_refresh.dart';
 export 'scroll_edge_controls.dart';

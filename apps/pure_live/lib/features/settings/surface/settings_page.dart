@@ -8,6 +8,7 @@ import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/account/account.dart';
 import 'package:pure_live/features/backup/backup.dart';
+import 'package:pure_live/features/lan_sync/lan_sync.dart' show LanSyncPane;
 import 'package:pure_live/features/settings/pages/font_manager_page.dart' show FontManagerPage;
 import 'package:pure_live/features/settings/pages/local_media_page.dart' show LocalMediaPane;
 import 'package:pure_live/features/settings/pages/player_guide_page.dart' show PlayerGuidePage;
@@ -481,6 +482,7 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.roomCard => const BrowsingPane(),
       SettingsSection.sites || SettingsSection.live || SettingsSection.sources => const SitesPane(),
       SettingsSection.sitesDisplay => const SitesDisplayPane(),
+      SettingsSection.nodes => const PlatformNodesPane(),
       SettingsSection.accounts => const AccountPane(),
       SettingsSection.refresh => const RefreshPane(),
       SettingsSection.followTags => const FollowTagsPane(),
@@ -504,12 +506,12 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.startup || SettingsSection.system => const StartupPane(),
       SettingsSection.window => const WindowPane(),
       SettingsSection.network => const NetworkPane(),
-      SettingsSection.nodes => const PlatformNodesPane(),
       SettingsSection.dataCache || SettingsSection.data || SettingsSection.cache => const DataCachePane(),
       SettingsSection.storageFolders => const StorageFoldersSection(),
       SettingsSection.localMedia => const LocalMediaPane(),
       SettingsSection.logs => const LogSettingsSection(),
       SettingsSection.backup => const BackupPane(),
+      SettingsSection.lanSync => const LanSyncPane(),
       SettingsSection.webdavSync => const WebDavFileManager(),
       SettingsSection.about => const AboutPane(),
       SettingsSection.iptv => const IptvSettingsPane(),

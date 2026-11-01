@@ -39,6 +39,24 @@ final class _VodSearchPageState extends ConsumerState<VodSearchPage> {
   int _duration = 0;
 
   @override
+  void initState() {
+    super.initState();
+    // A word handed from outside (the toolbar): taken once on arrival,
+    // searched as though typed here. The listener catches a word handed
+    // while the page is already showing.
+    ref.listenManual(vodPendingSearchProvider, (_, _) => _takePending());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _takePending());
+  }
+
+  /// Runs the handed word: the field reads it, the search answers it.
+  void _takePending() {
+    final word = ref.read(vodPendingSearchProvider.notifier).take();
+    if (word == null || word.isEmpty || !mounted) return;
+    _search.value = TextEditingValue(text: word, selection: TextSelection.collapsed(offset: word.length));
+    _run();
+  }
+
+  @override
   void dispose() {
     _search.dispose();
     super.dispose();

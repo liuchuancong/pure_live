@@ -44,7 +44,9 @@ typedef BackupPrefEntry = (String key, BackupPrefKind kind);
 /// but the one-time adoption in `storage_folder_provider.dart`, which moves an
 /// old choice under `storage.folder.logs` / `storage.folder.recordings` and
 /// drops them; they stay backed up so a document from before that move still
-/// carries the viewer's folders.
+/// carries the viewer's folders. `playback.chatCollapsed` is the same deal —
+/// the wide room's fold switch now lives at `danmaku.chatCollapsed` and the
+/// one-time adoption in `chat_display_settings.dart` retires the old key.
 ///
 /// A key that later disappears is harmless — capture simply finds no value;
 /// a new surface adds its pref here so its first backup carries it. Restoring
@@ -230,6 +232,7 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('danmaku.list.fontSize', BackupPrefKind.integer),
   ('danmaku.list.lineSpacing', BackupPrefKind.string),
   ('danmaku.chatPanelWidth', BackupPrefKind.floating),
+  ('danmaku.chatCollapsed', BackupPrefKind.boolean),
   ('danmaku.interaction.tap', BackupPrefKind.boolean),
   ('danmaku.interaction.longPress', BackupPrefKind.boolean),
   ('danmaku.holdOnPress', BackupPrefKind.boolean),
@@ -329,6 +332,8 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('vod.download.maxConcurrent', BackupPrefKind.integer),
   ('vod.download.qn', BackupPrefKind.integer),
   ('vod.download.danmaku', BackupPrefKind.boolean),
+  ('vod.download.retryAttempts', BackupPrefKind.integer),
+  ('vod.download.retryDelaySeconds', BackupPrefKind.integer),
   // The music module's source choice, rendition, list behaviour and the
   // imported scripts themselves.
   ('music.source.default', BackupPrefKind.string),
@@ -425,6 +430,8 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   // at files this machine holds (see the gate's exclusion list).
   ('hongguo.download.maxConcurrent', BackupPrefKind.integer),
   ('hongguo.download.quality', BackupPrefKind.string),
+  ('hongguo.download.retryAttempts', BackupPrefKind.integer),
+  ('hongguo.download.retryDelaySeconds', BackupPrefKind.integer),
   // The log surface.
   ('log.level', BackupPrefKind.string),
   ('log.file', BackupPrefKind.boolean),

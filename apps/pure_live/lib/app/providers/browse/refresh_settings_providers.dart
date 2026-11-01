@@ -116,12 +116,15 @@ final maxConcurrentRefreshProvider = NotifierProvider<MaxConcurrentRefreshContro
 /// The watch history's cap; the oldest records past it leave on every
 /// write. Persists under `history.limit`.
 final class HistoryLimitController extends Notifier<int> {
-  /// The floor and ceiling the slider offers.
+  /// The choice that keeps every record: nothing is ever trimmed.
+  static const int unlimited = 0;
+
+  /// The smallest and largest caps the presets offer.
   static const int min = 100;
   static const int max = 1000;
   static const int fallback = 500;
 
-  /// The caps the limit select offers, inside [min] and [max].
+  /// The caps the limit select offers, [min] through [max].
   static const List<int> choices = [min, 200, 300, fallback, 800, max];
 
   @override
@@ -129,16 +132,19 @@ final class HistoryLimitController extends Notifier<int> {
     try {
       final stored = StoragePrefs.getInt('history.limit');
       if (stored == null) return fallback;
-      return stored.clamp(min, max);
+      // Zero is the stored 不设上限 choice, and a typed count is taken as
+      // typed: the dialog accepts any positive number, so no ceiling clamps
+      // it back to the preset range. Only a negative is nonsense.
+      return stored < 0 ? fallback : stored;
     } on Object {
       return fallback;
     }
   }
 
-  /// Moves the cap, writing the choice through; the repository's next trim
-  /// reads it back.
+  /// Moves the cap — [unlimited] keeps everything — writing the choice
+  /// through; the repository's next trim reads it back.
   Future<void> setLimit(int limit) async {
-    final next = limit.clamp(min, max);
+    final next = limit <= 0 ? unlimited : limit;
     state = next;
     try {
       await StoragePrefs.setInt('history.limit', next);

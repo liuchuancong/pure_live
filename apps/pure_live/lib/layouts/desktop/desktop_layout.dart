@@ -11,9 +11,14 @@ import 'package:pure_live/layouts/app_switcher.dart';
 import 'package:pure_live/layouts/desktop/sidebar_resizer.dart';
 import 'package:pure_live/layouts/desktop/title_bar.dart';
 import 'package:pure_live/layouts/location_breadcrumb.dart';
+import 'package:pure_live/modules/hongguo/controller/hongguo_feeds.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/live/areas/areas.dart';
+import 'package:pure_live/modules/live/favorites/favorites.dart';
+import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/popular/popular.dart';
-import 'package:pure_live/modules/live/search/search.dart';
+import 'package:pure_live/modules/music/controller/music_search.dart';
+import 'package:pure_live/modules/vod/controller/vod_controller.dart';
 import 'package:pure_live/shared/shared.dart';
 
 // Every import stays on one line with no `show` clause: the save-time
@@ -35,8 +40,9 @@ const DsSidebarItemStyle _collapsedItem = DsSidebarItemStyle(height: 40, iconSiz
 /// never do; expanded with labels at wide widths and folded to an icon rail
 /// with tooltips below the breakpoint; a [SidebarResizer] between the
 /// sidebar and the content drags the width (double-tap resets it, dragging
-/// it far left puts the sidebar away); a search field opening the search
-/// destination above the content.
+/// it far left puts the sidebar away); a search field above the content
+/// that searches what the browsed page is — each page's own content in
+/// place, a module's own search surface when the page has none.
 ///
 /// The caption and the drag band go to the window host — the layout is the
 /// app's, the window behaviour is `live_shell_desktop`'s. Which widths get
@@ -107,7 +113,8 @@ final class DesktopLayout extends ConsumerStatefulWidget {
 
   /// A TV build: the sidebar and pages are the same, but the toolbar's
   /// text field is left out — a remote's arrows would move its caret
-  /// instead of the focus, and the sidebar's search page is the way in.
+  /// instead of the focus, and the module's own search entries are the way
+  /// in.
   final bool tv;
 
   /// Leaves the settings surface for the app: the foot's own entry while
@@ -452,11 +459,11 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                                   SizedBox(
                                     width: 320,
                                     // The toolbar search searches what the
-                                    // viewer is browsing: submitting pins the
-                                    // search scope to this page's platform (the
-                                    // live module's selected site) and opens the
-                                    // search page there — not a cold, scopeless
-                                    // search.
+                                    // viewer is browsing: the word lands in
+                                    // the page on screen — its own content
+                                    // in place, its module's own search
+                                    // surface when the page has none — never
+                                    // a cold, scopeless page elsewhere.
                                     child: _ToolbarSearch(
                                       // The areas page searches its own
                                       // catalogue, so its field says areas.
@@ -466,36 +473,76 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
                                       focusNode: _searchFocus,
                                       shortcut: DsTheme.of(context).platform == TargetPlatform.macOS ? '⌘K' : 'Ctrl K',
                                       onSubmitted: (word) {
-                                        // Inline: the word lands in the page
-                                        // being browsed — no navigation away.
-                                        // (Other modules fall through to the
-                                        // search page, where the same word
-                                        // waits.)
-                                        if (widget.module == AppModule.live) {
-                                          if (widget.menuValue == NavigationItem.zones) {
-                                            // The areas page browses areas, so
-                                            // its search stays on them instead
-                                            // of turning into a room search on
-                                            // the popular page.
-                                            ref.read(popularInlineSearchProvider.notifier).clear();
-                                            ref.read(areasInlineSearchProvider.notifier).search(word);
-                                          } else {
-                                            // The platform stays as browsed —
-                                            // the inline feed reads it;
-                                            // switching it here would strand
-                                            // the browse feed on an unopened
-                                            // platform.
-                                            ref.read(areasInlineSearchProvider.notifier).clear();
-                                            ref.read(popularInlineSearchProvider.notifier).search(word);
-                                            widget.onMenu(NavigationItem.hot);
-                                          }
-                                        } else {
-                                          ref.read(searchSiteIdProvider.notifier).selected = ref
-                                              .read(preferredSiteProvider)
-                                              .manifest
-                                              .id;
-                                          ref.read(pendingSearchProvider.notifier).hand(word);
-                                          widget.onMenu(NavigationItem.search);
+                                        // Every page's inline word yields to
+                                        // the new one: a stale filter must
+                                        // never survive a search somewhere
+                                        // else.
+                                        ref.read(popularInlineSearchProvider.notifier).clear();
+                                        ref.read(areasInlineSearchProvider.notifier).clear();
+                                        ref.read(favoritesInlineSearchProvider.notifier).clear();
+                                        switch (widget.module) {
+                                          case AppModule.live:
+                                            // The page being browsed searches
+                                            // its own content: the areas page
+                                            // its catalogue, the favorites
+                                            // page its follows, the history
+                                            // page its filter — no navigation
+                                            // away. The module's remaining
+                                            // pages land on the feed search
+                                            // (the popular page's inline
+                                            // results), the platform staying
+                                            // as browsed — switching it here
+                                            // would strand the browse feed on
+                                            // an unopened platform.
+                                            switch (widget.menuValue) {
+                                              case NavigationItem.zones:
+                                                ref.read(areasInlineSearchProvider.notifier).search(word);
+                                              case NavigationItem.favorites:
+                                                ref.read(favoritesInlineSearchProvider.notifier).search(word);
+                                              case NavigationItem.history:
+                                                ref.read(historySearchHandoffProvider.notifier).hand(word);
+                                              default:
+                                                ref.read(popularInlineSearchProvider.notifier).search(word);
+                                                widget.onMenu(NavigationItem.hot);
+                                            }
+                                          case AppModule.iptv:
+                                            // The module's search is the
+                                            // channel search: the page showing
+                                            // takes the word (the sources
+                                            // surface steps back to the
+                                            // channels), the pages without one
+                                            // land on the channels.
+                                            ref.read(iptvSearchHandoffProvider.notifier).hand(word);
+                                            const searchable = {
+                                              NavigationItem.channels,
+                                              NavigationItem.iptvFavorites,
+                                              NavigationItem.iptvGuide,
+                                            };
+                                            if (!searchable.contains(widget.menuValue)) {
+                                              widget.onMenu(NavigationItem.channels);
+                                            }
+                                          case AppModule.vod:
+                                            // The station's own search page
+                                            // answers: the word waits there.
+                                            ref.read(vodPendingSearchProvider.notifier).hand(word);
+                                            if (widget.menuValue != NavigationItem.vodSearch) {
+                                              widget.onMenu(NavigationItem.vodSearch);
+                                            }
+                                          case AppModule.music:
+                                            // The library is the module's
+                                            // search: the page takes the word
+                                            // and moves there itself.
+                                            ref.read(musicSearchHandoffProvider.notifier).hand(word);
+                                            if (widget.menuValue != NavigationItem.music) {
+                                              widget.onMenu(NavigationItem.music);
+                                            }
+                                          case AppModule.hongguo:
+                                            // The station's own search view
+                                            // answers: the word waits there.
+                                            ref.read(hongguoSearchHandoffProvider.notifier).hand(word);
+                                            if (widget.menuValue != NavigationItem.hongguoSearch) {
+                                              widget.onMenu(NavigationItem.hongguoSearch);
+                                            }
                                         }
                                       },
                                     ),
@@ -526,9 +573,9 @@ final class _DesktopLayoutState extends ConsumerState<DesktopLayout> {
   }
 }
 
-/// The toolbar's live search field: typing is real (unlike the old
-/// tap-to-navigate stub), submitting pins the search scope to the
-/// browsed platform and carries the word to the search page.
+/// The toolbar's search field: typing is real, and submitting hands the
+/// word to the page being browsed — its own content in place, its module's
+/// own search surface when the page has none.
 final class _ToolbarSearch extends StatefulWidget {
   const _ToolbarSearch({required this.hint, required this.onSubmitted, this.focusNode, this.shortcut});
 

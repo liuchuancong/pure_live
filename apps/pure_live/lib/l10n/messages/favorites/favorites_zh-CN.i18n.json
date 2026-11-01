@@ -37,5 +37,9 @@
   "tagFollowBody": "标签只属于关注的房间。先关注这个直播间，之后可以为它设置任意多个标签。",
   "tagExists": "这个标签已经存在",
   "tagInvalid": "标签名称不能为空",
-  "deleteTag": "删除"
+  "deleteTag": "删除",
+  "inlineMatches": "搜索“{query: String}”：{count: int} 个结果",
+  "inlineReset": "清除搜索",
+  "inlineEmptyTitle": "没有匹配的关注",
+  "inlineEmptyHint": "换个关键词试试，或清除搜索查看全部关注。"
 }

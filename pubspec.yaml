@@ -11,6 +11,7 @@ workspace:
   - apps/pure_live
   - packages/live_device
   - packages/live_iptv
+  - packages/live_lan_sync
   - packages/live_log
   - packages/live_net
   - packages/live_pagination
@@ -22,8 +23,8 @@ workspace:
   - packages/live_vod
   - packages/live_storage
   - packages/live_storage/example
-  - packages/pure_uikit_background
-  - packages/pure_uikit_background/example
+  - packages/live_uikit_background
+  - packages/live_uikit_background/example
   - packages/live_websocket
 
 dev_dependencies:
@@ -53,6 +54,11 @@ dependency_overrides:
   dbus: ^0.8.0
   equatable: ^3.0.0
   ffmpeg_kit_extended_flutter: ^1.0.0
+  # 启动即死修复：媒体会话插件的 winrt::init_apartment() 在 runner 的 STA 平台
+  # 线程上必然抛 RPC_E_CHANGED_MODE，而该异常经 hresult_error 构造内的
+  # RoOriginateError 路径会直接终止进程（debug/release/profile 全档位复现）。
+  # 本地 fork 把公寓初始化与 SMTC 激活改为免抛的 HRESULT 直调。
+  flutter_media_session: { path: F:/flutter_media_session_local }
   hooks: ^2.2.0
   # 播放内核走本地 F:/media_core（与应用侧的 path 依赖同源，避免 git/path 双源冲突）
   media_core: { path: F:/media_core/packages/media_core }

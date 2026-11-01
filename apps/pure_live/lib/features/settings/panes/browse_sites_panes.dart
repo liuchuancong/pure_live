@@ -116,13 +116,14 @@ final class BrowsingPane extends ConsumerWidget {
   }
 }
 
-/// The sites pane, in the three groups the viewer splits it into: what to
-/// watch (the preferred platform, the platform display, Twitch's directory
-/// language and the unplayable filter), how to watch and chat (the codec
-/// and chat quirks, the audience metric), and the account-and-network
-/// pages beneath them. A switched-off platform leaves the popular and
-/// areas tab lists until it is switched back on; the display page manages
-/// visibility and order together.
+/// The sites pane, in the two groups the viewer splits it into: the platforms
+/// themselves (the preferred platform, the platform display, the node probe
+/// over those platforms, the unplayable filter, and beneath them the
+/// account-management and tag-management pages), and the settings that only
+/// one platform obeys (the codec and chat preferences and Twitch's directory
+/// language). A switched-off platform leaves the popular and areas tab lists
+/// until it is switched back on; the display page manages visibility and
+/// order together.
 final class SitesPane extends ConsumerWidget {
   const SitesPane({super.key});
 
@@ -165,7 +166,9 @@ final class SitesPane extends ConsumerWidget {
       spacing: DsSpace.s16,
       children: [
         // Where the viewer watches: the platform that leads, which of them
-        // the browse pages show, and the platforms switched off.
+        // the browse pages show and how their endpoints answer, the platforms
+        // switched off, and the pages that own who is signed in and how the
+        // follows are tagged.
         DsListSection(
           header: Text(t.settings.sitesGroupCore),
           children: [
@@ -178,6 +181,9 @@ final class SitesPane extends ConsumerWidget {
               onPressed: () => unawaited(pickPreferred()),
             ),
             const SettingsChildEntry(child: SettingsSection.sitesDisplay),
+            // The probe measures the platforms the row above lists, so its
+            // entry follows that row rather than hiding under the proxy page.
+            const SettingsChildEntry(child: SettingsSection.nodes),
             // The reference's discover filter, kept with the platforms it
             // applies to: the popular page counts what it hides and can be
             // turned over from there too.
@@ -190,6 +196,8 @@ final class SitesPane extends ConsumerWidget {
                 onChanged: (value) => ref.read(showUnplayableProvider.notifier).setShow(value: value),
               ),
             ),
+            const SettingsChildEntry(child: SettingsSection.accounts),
+            const SettingsChildEntry(child: SettingsSection.followTags),
           ],
         ),
         // Each platform's own quirks — a codec preference, YouTube's chat
@@ -227,14 +235,6 @@ final class SitesPane extends ConsumerWidget {
                 if (result != null) await ref.read(twitchLanguagesProvider.notifier).set(result);
               },
             ),
-          ],
-        ),
-        // Who is signed in, and the tags the follows are grouped by.
-        DsListSection(
-          header: Text(t.settings.sitesGroupAccount),
-          children: const [
-            SettingsChildEntry(child: SettingsSection.accounts),
-            SettingsChildEntry(child: SettingsSection.followTags),
           ],
         ),
       ],

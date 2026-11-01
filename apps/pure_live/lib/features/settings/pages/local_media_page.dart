@@ -21,7 +21,7 @@ enum LocalMediaKind {
   video,
 
   /// Songs: the music downloads.
-  audio;
+  audio,
 }
 
 /// One saved file on disk: what a library row shows and the preview plays.
@@ -180,7 +180,11 @@ final class _LocalMediaPreviewPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SettingsPreviewTitleBar(icon: DsIcons.playCircle, title: title, onBack: () => Navigator.of(context).maybePop()),
+            SettingsPreviewTitleBar(
+              icon: DsIcons.playCircle,
+              title: title,
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(DsSpace.s16),
@@ -352,13 +356,14 @@ final class _LocalMediaPaneState extends ConsumerState<LocalMediaPane> {
                               semanticLabel: t.common.more,
                               onPressed: controller.toggle,
                               builder: (context, states, _) {
-                                final hovered = states.contains(WidgetState.hovered);
+                                final lit =
+                                    states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
                                 return Padding(
                                   padding: const EdgeInsets.all(DsSpace.s4),
                                   child: DsIcon(
                                     DsIcons.ellipsisVertical,
                                     size: theme.sizes.iconSm,
-                                    color: hovered ? colors.text : colors.textSubtle,
+                                    color: lit ? colors.text : colors.textSubtle,
                                   ),
                                 );
                               },

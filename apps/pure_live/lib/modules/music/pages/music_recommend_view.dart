@@ -7,20 +7,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/music/controller/music_browse.dart'
+    show musicHistoryAlbumsProvider, musicHistoryArtistsProvider;
 import 'package:pure_live/modules/music/controller/music_library.dart'
     show musicFavouritesProvider, musicRecentProvider;
 import 'package:pure_live/modules/music/controller/music_online_playlists.dart'
     show musicOnlineHotTagsProvider, musicOnlinePlaylistsProvider, musicPlaylistSortsProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_search.dart'
     show musicCatalogsProvider, musicHotSearchesProvider;
-import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart' show OnlinePlaylists;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart' show MusicPlaylistInfo;
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
     show MusicPlaylistCard, kMusicPlaylistInfoHeight;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
+import 'package:pure_live/modules/music/widgets/music_browse_links.dart' show openMusicAlbum, openMusicArtist;
+import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart'
+    show MusicAlbumCard, MusicArtistCard, musicBrowseSourceLabel;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show buildDsRefreshIndicator;
 
@@ -66,7 +71,7 @@ final class MusicRecommendView extends ConsumerWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = theme.colors;
-    final settings = ref.watch(musicSettingsProvider);
+    final settings = ref.watch(musicPlaybackSettingsProvider);
     final plaza = ref.watch(musicSourceProvider) is OnlinePlaylists;
     final hotTags = ref.watch(musicOnlineHotTagsProvider).value ?? const <String>[];
     final order = ref.watch(musicPlaylistSortsProvider).firstOrNull?.id ?? '';
@@ -83,6 +88,10 @@ final class MusicRecommendView extends ConsumerWidget {
         : const <String>[];
     final recent = ref.watch(musicRecentProvider).take(_songCount).toList();
     final favourites = ref.watch(musicFavouritesProvider);
+    // The album and artist rails are the history's own credits — a platform
+    // that serves no album or artist page contributes nothing here.
+    final albums = ref.watch(musicHistoryAlbumsProvider);
+    final artists = ref.watch(musicHistoryArtistsProvider);
     final playingId = ref.watch(musicPlayerProvider.select((state) => state.track?.id));
     final playerController = ref.read(musicPlayerProvider.notifier);
     final favouriteController = ref.read(musicFavouritesProvider.notifier);
@@ -93,7 +102,13 @@ final class MusicRecommendView extends ConsumerWidget {
     final waitingForPlaza = plaza && (hotTagsState.isLoading || (firstPage?.isLoading ?? false));
     final plazaFailed = plaza && (hotTagsState.hasError || (firstPage?.hasError ?? false));
 
-    if (playlists.isEmpty && boards.isEmpty && words.isEmpty && recent.isEmpty && !waitingForPlaza) {
+    if (playlists.isEmpty &&
+        boards.isEmpty &&
+        words.isEmpty &&
+        recent.isEmpty &&
+        albums.isEmpty &&
+        artists.isEmpty &&
+        !waitingForPlaza) {
       return Center(
         child: DsEmptyState(
           icon: const DsIcon(DsIcons.sparkles),
@@ -221,6 +236,48 @@ final class MusicRecommendView extends ConsumerWidget {
                       onToggleSource: () => unawaited(showToggleSourceDialog(context, ref, song)),
                     ),
                 ],
+              ),
+            ],
+            if (albums.isNotEmpty) ...[
+              head(t.music.recAlbums),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s12,
+                  children: [
+                    for (final link in albums)
+                      MusicAlbumCard(
+                        album: link.album,
+                        onPressed: () => openMusicAlbum(context, sourceId: link.sourceId, albumId: link.album.id),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+            if (artists.isNotEmpty) ...[
+              head(t.music.recArtists),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s12,
+                  children: [
+                    for (final link in artists)
+                      MusicArtistCard(
+                        name: link.name,
+                        sourceLabel: musicBrowseSourceLabel(ref, t, link.sourceId),
+                        onPressed: () => openMusicArtist(
+                          context,
+                          sourceId: link.sourceId,
+                          artist: link.name,
+                          artistId: link.artistId,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
             if (words.isNotEmpty) ...[

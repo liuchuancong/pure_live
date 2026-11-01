@@ -8,8 +8,6 @@ import 'package:live_device/live_device.dart' show SystemProxyEndpoint, SystemPr
 import 'package:pure_live/app/providers/network/network_providers.dart' show ProxyMode, proxySettingsProvider;
 import 'package:pure_live/app/providers/network/system_proxy_provider.dart' show systemProxyProvider;
 import 'package:pure_live/features/settings/panes/github_mirror_pane.dart' show GithubMirrorSection;
-import 'package:pure_live/features/settings/surface/settings_child_entry.dart' show SettingsChildEntry;
-import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 
@@ -72,9 +70,6 @@ final class NetworkPaneState extends ConsumerState<NetworkPane> {
           NetworkTab.app => _appProxy(context),
           NetworkTab.github => const GithubMirrorSection(),
         },
-        // The platform probe is a page of its own, reached from here — the
-        // network surface is its parent, whichever tab is open.
-        const DsListSection(children: [SettingsChildEntry(child: SettingsSection.nodes)]),
       ],
     );
   }

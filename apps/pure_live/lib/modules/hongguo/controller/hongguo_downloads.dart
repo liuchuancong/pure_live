@@ -78,6 +78,7 @@ final class HongguoDownloadItem {
     this.received = 0,
     this.total = 0,
     this.speed = 0,
+    this.attempts = 0,
     this.error,
   });
 
@@ -100,6 +101,7 @@ final class HongguoDownloadItem {
       received: json['received'] as int? ?? 0,
       total: json['total'] as int? ?? 0,
       speed: json['speed'] as int? ?? 0,
+      attempts: json['attempts'] as int? ?? 0,
       error: json['error'] as String?,
     );
   }
@@ -150,6 +152,10 @@ final class HongguoDownloadItem {
   /// The smoothed bytes-per-second of the moving task.
   final int speed;
 
+  /// How many automatic retries this row has used since the viewer queued it
+  /// (or retried it by hand, which starts the budget again).
+  final int attempts;
+
   /// The failure's words, on a failed task.
   final String? error;
 
@@ -157,7 +163,14 @@ final class HongguoDownloadItem {
   double? get progress => total > 0 ? (received / total).clamp(0.0, 1.0) : null;
 
   /// Returns this task with the given fields replaced.
-  HongguoDownloadItem copyWith({int? received, int? total, int? speed, HongguoDownloadPhase? phase, String? error}) {
+  HongguoDownloadItem copyWith({
+    int? received,
+    int? total,
+    int? speed,
+    int? attempts,
+    HongguoDownloadPhase? phase,
+    String? error,
+  }) {
     return HongguoDownloadItem(
       id: id,
       seriesId: seriesId,
@@ -173,6 +186,7 @@ final class HongguoDownloadItem {
       received: received ?? this.received,
       total: total ?? this.total,
       speed: speed ?? this.speed,
+      attempts: attempts ?? this.attempts,
       error: error,
     );
   }
@@ -193,6 +207,7 @@ final class HongguoDownloadItem {
     'received': received,
     'total': total,
     'speed': speed,
+    'attempts': attempts,
     if (error != null) 'error': error,
   };
 }
@@ -226,6 +241,79 @@ final class HongguoDownloadSettingsController extends Notifier<int> {
 /// The lane count for the station's download queue.
 final hongguoDownloadSettingsProvider = NotifierProvider<HongguoDownloadSettingsController, int>(
   HongguoDownloadSettingsController.new,
+);
+
+/// The most automatic retries a failed run gives itself; zero is off.
+const String _kRetryAttempts = 'hongguo.download.retryAttempts';
+
+/// Seconds between two automatic retries.
+const String _kRetryDelay = 'hongguo.download.retryDelaySeconds';
+
+/// How many times a failed download retries itself.
+final class HongguoDownloadRetryController extends Notifier<int> {
+  /// The choices the settings row offers.
+  static const List<int> choices = [0, 1, 2, 3];
+
+  @override
+  int build() {
+    try {
+      final stored = StoragePrefs.getInt(_kRetryAttempts);
+      if (stored != null && stored >= 0 && stored <= 3) return stored;
+    } on Object {
+      // A closed store falls back to no automatic retry.
+    }
+    return 0;
+  }
+
+  /// Chooses [count] and keeps it for the next failure.
+  void select(int count) {
+    final value = count.clamp(0, 3);
+    if (value == state) return;
+    state = value;
+    try {
+      unawaited(StoragePrefs.setInt(_kRetryAttempts, value));
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The retry count for the station's download queue.
+final hongguoDownloadRetryProvider = NotifierProvider<HongguoDownloadRetryController, int>(
+  HongguoDownloadRetryController.new,
+);
+
+/// The wait between two automatic retries, in seconds.
+final class HongguoDownloadRetryDelayController extends Notifier<int> {
+  /// The choices the settings row offers.
+  static const List<int> choices = [5, 10, 30, 60];
+
+  @override
+  int build() {
+    try {
+      final stored = StoragePrefs.getInt(_kRetryDelay);
+      if (stored != null && choices.contains(stored)) return stored;
+    } on Object {
+      // A closed store falls back to ten seconds.
+    }
+    return 10;
+  }
+
+  /// Chooses [seconds] and keeps it for the next failure.
+  void select(int seconds) {
+    if (!choices.contains(seconds) || seconds == state) return;
+    state = seconds;
+    try {
+      unawaited(StoragePrefs.setInt(_kRetryDelay, seconds));
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The retry delay for the station's download queue.
+final hongguoDownloadRetryDelayProvider = NotifierProvider<HongguoDownloadRetryDelayController, int>(
+  HongguoDownloadRetryDelayController.new,
 );
 
 /// The rendition tier a download picks, its own choice so the viewer can
@@ -290,6 +378,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   final List<HongguoDownloadItem> _items = [];
   final Map<String, HttpClient> _clients = {};
   final Map<String, _HongguoStop> _stops = {};
+  final Map<String, Timer> _retryTimers = {};
   Timer? _persistTimer;
 
   @override
@@ -306,6 +395,10 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
     ref.listen(hongguoDownloadSettingsProvider, (_, _) => _pump());
     ref.onDispose(() {
       _persistTimer?.cancel();
+      for (final timer in _retryTimers.values) {
+        timer.cancel();
+      }
+      _retryTimers.clear();
       for (final client in _clients.values) {
         client.close(force: true);
       }
@@ -373,6 +466,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
   Future<void> pause(String id) async {
     final item = _items.where((row) => row.id == id).firstOrNull;
     if (item == null) return;
+    _retryTimers.remove(id)?.cancel();
     switch (item.phase) {
       case HongguoDownloadPhase.running:
         _stops[id] = _HongguoStop.pause;
@@ -391,7 +485,8 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
     final item = _items.where((row) => row.id == id).firstOrNull;
     if (item == null) return;
     if (item.phase != HongguoDownloadPhase.paused && item.phase != HongguoDownloadPhase.failed) return;
-    _replace(item.copyWith(phase: HongguoDownloadPhase.queued, speed: 0));
+    _retryTimers.remove(id)?.cancel();
+    _replace(item.copyWith(phase: HongguoDownloadPhase.queued, attempts: 0, speed: 0));
     await _persist();
     _pump();
   }
@@ -432,7 +527,8 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
     for (var index = 0; index < _items.length; index++) {
       final item = _items[index];
       if (item.phase == HongguoDownloadPhase.paused || item.phase == HongguoDownloadPhase.failed) {
-        _items[index] = item.copyWith(phase: HongguoDownloadPhase.queued, speed: 0);
+        _retryTimers.remove(item.id)?.cancel();
+        _items[index] = item.copyWith(phase: HongguoDownloadPhase.queued, attempts: 0, speed: 0);
       }
     }
     _publish();
@@ -449,6 +545,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
 
   /// Removes a part file, and a finished task's file when asked.
   Future<void> _drop(HongguoDownloadItem item, {bool deleteFile = false}) async {
+    _retryTimers.remove(item.id)?.cancel();
     _items.removeWhere((row) => row.id == item.id);
     _publish();
     await _delete(File('${item.filePath}.part'));
@@ -574,6 +671,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
       if (error is! _Stopped && !stopped) {
         item = item.copyWith(received: received, speed: 0, phase: HongguoDownloadPhase.failed, error: '$error');
         _replace(item);
+        _scheduleRetry(item.id);
       }
     } finally {
       _clients.remove(id);
@@ -605,6 +703,34 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
       }
     }
   }
+
+  /// Queues a failed row again after the wait the viewer chose, while the
+  /// row still has automatic retries left. A hand retry starts the budget
+  /// over: that is a new instruction, not a continuation.
+  void _scheduleRetry(String id) {
+    final limit = ref.read(hongguoDownloadRetryProvider);
+    if (limit <= 0) return;
+    final current = _items.where((row) => row.id == id).firstOrNull;
+    if (current == null || current.phase != HongguoDownloadPhase.failed) return;
+    if (current.attempts >= limit) return;
+    final delay = Duration(seconds: ref.read(hongguoDownloadRetryDelayProvider));
+    _retryTimers[id]?.cancel();
+    _retryTimers[id] = Timer(delay, () {
+      _retryTimers.remove(id);
+      if (!ref.mounted) return;
+      final retry = _items.where((row) => row.id == id).firstOrNull;
+      if (retry == null || retry.phase != HongguoDownloadPhase.failed) return;
+      _replace(retry.copyWith(phase: HongguoDownloadPhase.queued, attempts: retry.attempts + 1, speed: 0));
+      unawaited(_persist());
+      _pump();
+    });
+    // The failed row was published before the wait began; publish again so
+    // its caption can say when the queue will come back for it.
+    _publish();
+  }
+
+  /// Whether [id] is waiting out an automatic retry.
+  bool hasPendingRetry(String id) => _retryTimers.containsKey(id);
 
   void _replace(HongguoDownloadItem item) {
     final index = _items.indexWhere((row) => row.id == item.id);

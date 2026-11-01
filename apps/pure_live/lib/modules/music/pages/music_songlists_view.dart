@@ -13,9 +13,9 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_downloads.dart' show musicDownloadsProvider;
 import 'package:pure_live/modules/music/controller/music_library.dart' show musicFavouritesProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
+    show musicPlaybackSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/music_playlists.dart';
-import 'package:pure_live/modules/music/controller/music_settings.dart'
-    show musicSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, OnlinePlaylists;
@@ -1037,7 +1037,7 @@ final class _DuplicateTracksDialogState extends ConsumerState<_DuplicateTracksDi
     final groups = duplicateTrackGroups(tracks);
     final duplicates = [for (final group in groups) ...group];
     final extras = [for (final group in groups) ...group.skip(1)];
-    final settings = ref.watch(musicSettingsProvider);
+    final settings = ref.watch(musicPlaybackSettingsProvider);
     final sourceNames = {
       for (final source in ref.watch(musicSourceListProvider))
         source.id: musicSourceDisplayName(t, settings.sourceNameType, source.id, source.name),

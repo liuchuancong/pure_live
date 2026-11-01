@@ -576,7 +576,7 @@ final class _PaneTile extends StatelessWidget {
           ? onSelect
           : onPick,
       builder: (context, states, _) {
-        final hovered = states.contains(WidgetState.hovered);
+        final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
         final ring = isSource
             ? colors.channel
             : selected && assigned
@@ -598,14 +598,14 @@ final class _PaneTile extends StatelessWidget {
                       ? Stack(
                           fit: StackFit.expand,
                           children: [
-                            _picture(context, colors, theme, hovered),
+                            _picture(context, colors, theme, lit),
                             PositionedDirectional(start: 0, end: 0, bottom: 0, child: _compactCaption(theme)),
                           ],
                         )
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Expanded(child: _picture(context, colors, theme, hovered)),
+                            Expanded(child: _picture(context, colors, theme, lit)),
                             _bar(context, colors, theme),
                           ],
                         )
@@ -656,7 +656,7 @@ final class _PaneTile extends StatelessWidget {
   /// room's cover while it opens or after a failure; a paused pane dims and
   /// says so, and a quality switch spins over the old picture while the new
   /// lines resolve.
-  Widget _picture(BuildContext context, DsColors colors, DsThemeData theme, bool hovered) {
+  Widget _picture(BuildContext context, DsColors colors, DsThemeData theme, bool lit) {
     final handle = playback?.handle;
     return Stack(
       fit: StackFit.expand,
@@ -672,7 +672,7 @@ final class _PaneTile extends StatelessWidget {
             ),
           )
         else ...[
-          _cover(colors, theme, hovered),
+          _cover(colors, theme, lit),
           if (playback?.stage == MultiviewPaneStage.opening)
             const Center(child: DsSpinner(style: DsSpinnerStyle(size: 22))),
           if (playback?.stage == MultiviewPaneStage.failed) _failure(context, colors, theme),
@@ -707,11 +707,8 @@ final class _PaneTile extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   spacing: DsSpace.s6,
                   children: [
-                    const DsIcon(DsIcons.pause, size: 14, color: Color(0xFFFFFFFF)),
-                    Text(
-                      t.multiview.panePaused,
-                      style: theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF)),
-                    ),
+                    const DsIcon(DsIcons.pause, size: 14, color: playerInk),
+                    Text(t.multiview.panePaused, style: theme.typography.caption.copyWith(color: playerInk)),
                   ],
                 ),
               ),
@@ -724,7 +721,7 @@ final class _PaneTile extends StatelessWidget {
 
   /// The room's cover, cropped to fill the pane above the title bar; a
   /// room the follows no longer know shows the stand-in only.
-  Widget _cover(DsColors colors, DsThemeData theme, bool hovered) {
+  Widget _cover(DsColors colors, DsThemeData theme, bool lit) {
     final url = slot.room?.content.coverUrl ?? '';
     final fallback = ColoredBox(
       color: colors.channel,
@@ -738,7 +735,7 @@ final class _PaneTile extends StatelessWidget {
       aspectRatio: 16 / 9,
       semanticLabel: slot.title,
       fallback: fallback,
-      style: DsImageStyle(borderRadius: hovered ? BorderRadius.zero : null),
+      style: DsImageStyle(borderRadius: lit ? BorderRadius.zero : null),
     );
   }
 
@@ -804,14 +801,14 @@ final class _PaneTile extends StatelessWidget {
           if (playback?.audible ?? false)
             const Padding(
               padding: EdgeInsetsDirectional.only(end: DsSpace.s4),
-              child: DsIcon(DsIcons.volume, size: 11, color: Color(0xFFFFFFFF)),
+              child: DsIcon(DsIcons.volume, size: 11, color: playerInk),
             ),
           Expanded(
             child: Text(
               slot.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, color: const Color(0xFFFFFFFF)),
+              style: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, color: playerInk),
             ),
           ),
         ],
@@ -890,22 +887,22 @@ final class _PaneBarButton extends StatelessWidget {
       semanticLabel: semanticLabel,
       onPressed: onPressed,
       builder: (context, states, _) {
-        final hovered = states.contains(WidgetState.hovered);
+        final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
         return Container(
           width: theme.sizes.md,
           height: theme.sizes.md,
           margin: const EdgeInsetsDirectional.only(start: DsSpace.s3),
           decoration: DsBoxDecoration(
-            color: hovered ? colors.hover : null,
+            color: lit ? colors.hover : null,
             borderRadius: theme.radii.controlCorners(null, theme.sizes.md),
           ),
           child: Center(
             child: DsIcon(
               icon,
               size: theme.sizes.iconSm,
-              color: hovered && dangerHover
+              color: lit && dangerHover
                   ? colors.danger.fill
-                  : hovered || active
+                  : lit || active
                   ? colors.text
                   : colors.textSubtle,
             ),
@@ -944,14 +941,14 @@ final class _ToolbarButton extends StatelessWidget {
         onPressed: onPressed,
         selected: active,
         builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
+          final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
           return Container(
             width: theme.sizes.sm,
             height: theme.sizes.sm,
             decoration: DsBoxDecoration(
               color: active
                   ? colors.accentTint
-                  : hovered
+                  : lit
                   ? colors.hover
                   : null,
               borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
@@ -1008,11 +1005,7 @@ final class _PaneControls extends StatelessWidget {
       enabled: !pane.switching && pane.qualities.isNotEmpty,
       items: [
         for (final quality in pane.qualities)
-          DsMenuItem(
-            label: Text(quality.label),
-            checked: quality == pane.quality,
-            onPressed: () => onQuality(quality),
-          ),
+          DsMenuItem(label: Text(quality.label), checked: quality == pane.quality, onPressed: () => onQuality(quality)),
       ],
     );
     final lineChip = pane.lines.length > 1
@@ -1075,7 +1068,13 @@ final class _PaneControls extends StatelessWidget {
         // in an outer row it would meet unbounded constraints and die.
         return Row(
           spacing: DsSpace.s8,
-          children: [pause, quality, ?lineChip, const SizedBox(width: DsSpace.s4), Expanded(child: volume)],
+          children: [
+            pause,
+            quality,
+            ?lineChip,
+            const SizedBox(width: DsSpace.s4),
+            Expanded(child: volume),
+          ],
         );
       },
     );
@@ -1104,13 +1103,13 @@ final class _StreamChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    Widget chip({required bool hovered}) => ConstrainedBox(
+    Widget chip({required bool lit}) => ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 180),
       child: Container(
         height: theme.sizes.sm,
         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8),
         decoration: DsBoxDecoration(
-          color: hovered ? colors.hover : null,
+          color: lit ? colors.hover : null,
           borderRadius: theme.radii.controlCorners(null, theme.sizes.sm),
         ),
         child: Row(
@@ -1131,14 +1130,15 @@ final class _StreamChip extends StatelessWidget {
         ),
       ),
     );
-    if (!enabled) return chip(hovered: false);
+    if (!enabled) return chip(lit: false);
     return DsMenuAnchor(
       semanticLabel: semanticLabel,
       items: items,
       builder: (context, controller, _) => DsPressable(
         semanticLabel: semanticLabel,
         onPressed: controller.toggle,
-        builder: (context, states, _) => chip(hovered: states.contains(WidgetState.hovered)),
+        builder: (context, states, _) =>
+            chip(lit: states.contains(WidgetState.hovered) || states.contains(WidgetState.focused)),
       ),
     );
   }

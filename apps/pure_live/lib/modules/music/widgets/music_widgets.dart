@@ -11,9 +11,11 @@ import 'package:pure_live/modules/music/controller/music_dislikes.dart' show mus
 import 'package:pure_live/modules/music/controller/music_library.dart' show musicTrackKey;
 import 'package:pure_live/modules/music/controller/music_local.dart' show musicLocalCoverProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_settings.dart'
-    show MusicQuality, musicQualityByScriptName, musicSettingsProvider, musicSourceDisplayName;
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
+    show MusicQuality, musicPlaybackSettingsProvider, musicQualityByScriptName, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
+import 'package:pure_live/modules/music/widgets/music_browse_links.dart'
+    show musicTrackArtistId, openMusicAlbum, openMusicArtist;
 import 'package:pure_live/shared/shared.dart' show cachedImage;
 
 /// The song's own tier marker, the reference's 无损 / Hi-Res tag beside a title.
@@ -89,6 +91,7 @@ final class MusicSongRow extends ConsumerWidget {
     this.onMoveUp,
     this.onMoveDown,
     this.subtitle,
+    this.unavailableReason,
     this.selecting = false,
     this.selected = false,
     this.onSelected,
@@ -138,6 +141,11 @@ final class MusicSongRow extends ConsumerWidget {
   /// A line under the title; the artist by default.
   final String? subtitle;
 
+  /// Why this song cannot play right now — its file is gone or the engine
+  /// failed on it. The row dims its title and says so beside it; null for a
+  /// row that has nothing to warn about.
+  final String? unavailableReason;
+
   /// Whether the row shows a selection box instead of its actions.
   final bool selecting;
 
@@ -162,15 +170,18 @@ final class MusicSongRow extends ConsumerWidget {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final empty = t.music.songDetailEmpty;
+    // The page the sheet was opened from: the sheet closes first, then the
+    // album or artist page opens above it.
+    final page = context;
     // The source names itself the way every list names it (the viewer's
     // alias choice included), not as the bare id the track carries.
-    final settings = ref.read(musicSettingsProvider);
+    final settings = ref.read(musicPlaybackSettingsProvider);
     final source = ref.read(musicSourceListProvider).where((entry) => entry.id == track.sourceId).firstOrNull;
     final sourceLabel = source == null
         ? track.sourceId
         : musicSourceDisplayName(t, settings.sourceNameType, source.id, source.name);
 
-    Widget row(String label, String value) => Padding(
+    Widget row(String label, String value, {VoidCallback? onPressed}) => Padding(
       padding: const EdgeInsets.only(bottom: DsSpace.s8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,7 +191,15 @@ final class MusicSongRow extends ConsumerWidget {
             width: 64,
             child: Text(label, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
           ),
-          Expanded(child: Text(value.isEmpty ? empty : value, style: theme.typography.body)),
+          Expanded(
+            child: onPressed == null
+                ? Text(value.isEmpty ? empty : value, style: theme.typography.body)
+                : DsLink(
+                    label: value.isEmpty ? empty : value,
+                    style: const DsLinkStyle(underlineWidth: 0),
+                    onPressed: onPressed,
+                  ),
+          ),
         ],
       ),
     );
@@ -195,8 +214,31 @@ final class MusicSongRow extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               row(t.music.songDetailTitle, track.title),
-              row(t.music.songDetailArtist, track.artist),
-              row(t.music.songDetailAlbum, track.album),
+              row(
+                t.music.songDetailArtist,
+                track.artist,
+                onPressed: track.artist.isEmpty
+                    ? null
+                    : () {
+                        Navigator.of(page).pop();
+                        openMusicArtist(
+                          page,
+                          sourceId: track.sourceId,
+                          artist: track.artist,
+                          artistId: musicTrackArtistId(track),
+                        );
+                      },
+              ),
+              row(
+                t.music.songDetailAlbum,
+                track.album,
+                onPressed: (track.albumId ?? '').isEmpty
+                    ? null
+                    : () {
+                        Navigator.of(page).pop();
+                        openMusicAlbum(page, sourceId: track.sourceId, albumId: track.albumId!);
+                      },
+              ),
               row(t.music.songDetailDuration, _durationText(track.duration)),
               // The renditions the platform listed for this song. Empty when
               // it never said, which the row shows as its dash.
@@ -292,11 +334,21 @@ final class MusicSongRow extends ConsumerWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.typography.body.copyWith(
-                                  color: playing ? colors.accent : colors.text,
+                                  color: unavailableReason != null
+                                      ? colors.textSubtle
+                                      : playing
+                                      ? colors.accent
+                                      : colors.text,
                                   fontWeight: playing ? FontWeight.w600 : null,
                                 ),
                               ),
                             ),
+                            if (unavailableReason case final reason?)
+                              DsBadge(
+                                dot: false,
+                                style: DsBadgeStyle(textStyle: theme.typography.overline),
+                                label: Text(reason),
+                              ),
                             // The song's own tier, the reference's mark beside
                             // a title: what the platform listed for this song,
                             // not what the player was asked to fetch.

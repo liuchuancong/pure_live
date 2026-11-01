@@ -7,6 +7,7 @@ import 'package:pure_live/modules/music/controller/music_downloads.dart'
     show musicDownloadsActive, musicDownloadsProvider;
 import 'package:pure_live/modules/music/controller/music_hotkeys.dart' show musicHotkeyBindings;
 import 'package:pure_live/modules/music/controller/music_open_api.dart' show musicOpenApiProvider;
+import 'package:pure_live/modules/music/controller/music_search.dart' show musicSearchHandoffProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show musicSourcesProvider;
 import 'package:pure_live/modules/music/controller/music_sync_server.dart' show musicSyncServerProvider;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart' show MusicPlaylistInfo;
@@ -102,6 +103,29 @@ final class _MusicPageState extends ConsumerState<MusicPage> {
 
   /// The board the charts view has open; null takes the first one.
   String? _catalogId;
+
+  @override
+  void initState() {
+    super.initState();
+    // The toolbar's word runs through the library's search: the page hands
+    // it over and moves to the library itself, the module's search surface.
+    // The listener catches a word handed while the page is showing; the
+    // post-frame take catches one handed as the page arrives.
+    ref.listenManual(musicSearchHandoffProvider, (_, _) => _takeHandoff());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
+  }
+
+  /// Moves the handed word into the library (the 推荐 page's own hot chip
+  /// walks the same road): the view switch lands on the search, which takes
+  /// the word as its initial query.
+  void _takeHandoff() {
+    final word = ref.read(musicSearchHandoffProvider.notifier).take();
+    if (word == null || word.isEmpty || !mounted) return;
+    setState(() {
+      _pendingSearch = word;
+      _view = MusicView.library;
+    });
+  }
 
   @override
   void didUpdateWidget(MusicPage oldWidget) {

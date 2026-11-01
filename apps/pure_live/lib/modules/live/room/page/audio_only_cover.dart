@@ -59,7 +59,7 @@ final class AudioOnlyCover extends StatelessWidget {
                       maxLines: compact ? 1 : 2,
                       overflow: TextOverflow.ellipsis,
                       style: (compact ? theme.typography.bodyStrong : theme.typography.title).copyWith(
-                        color: const Color(0xFFFFFFFF),
+                        color: playerInk,
                         fontWeight: FontWeight.w700,
                       ),
                     ),

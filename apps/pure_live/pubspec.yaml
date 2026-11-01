@@ -81,6 +81,7 @@ dependencies:
   # PureLive 内部功能包
   live_device: # 电量、亮度、音量、刷新率等设备能力
   live_iptv: # IPTV 业务
+  live_lan_sync: # 局域网设备发现与数据同步引擎
   live_log: # 日志系统
   live_net: # 网络请求层
   live_pagination: # 分页工具
@@ -92,7 +93,7 @@ dependencies:
   live_storage: # 存储与数据仓库
   live_vod: # 视频点播源
   live_websocket: # WebSocket 连接
-  pure_uikit_background: # 背景样式与图层
+  live_uikit_background: # 背景样式与图层
 
   # 播放内核（本地 F:/media_core，绝对路径；沙盒 player-lab 已验证解析）
   pip_kit: ^1.0.2 # iOS 系统画中画（media_core_pip 的 iOS 通路，抬起屏上的 AVPlayerLayer）
@@ -144,6 +145,14 @@ dev_dependencies:
 
   # 开发辅助
   slang_mcp: ^0.2.1 # 多语言开发辅助工具（MCP 服务器）
+
+# 本地 fork：Windows 通知插件的 FFI 导出边界不允许 C++ 异常逃逸（逃逸即
+# std::terminate，debug 弹 abort 对话框、release 直接 0xC0000409）。fork 把每个
+# 导出包进 try/catch，失败以返回值上报并落日志（exe 旁
+# flutter_local_notifications_fork.log），Dart 侧按"平台拒绝"优雅降级。
+dependency_overrides:
+  flutter_local_notifications_windows:
+    path: F:/flutter_local_notifications_windows_local
 
 flutter:
   uses-material-design: true

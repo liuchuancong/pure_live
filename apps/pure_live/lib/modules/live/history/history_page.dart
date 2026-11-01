@@ -4,13 +4,12 @@ import 'dart:math' as math;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/room/room_card_settings.dart'
     show kRoomCardListDesignHeight, roomCardTileHeight;
-import 'package:pure_live/features/settings/settings.dart' show SettingsSection, openSettingsSection;
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/modules/live/history/history_limit_dialog.dart';
 import 'package:pure_live/modules/live/history/history_repository.dart';
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/shared/shared.dart';
@@ -54,6 +53,23 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   /// How many conditions the filter holds: the word and each open end.
   int get _filterCount =>
       (_filter.query.trim().isNotEmpty ? 1 : 0) + (_filter.from != null ? 1 : 0) + (_filter.to != null ? 1 : 0);
+
+  @override
+  void initState() {
+    super.initState();
+    // The toolbar's word lands in the filter in place — the page stays put.
+    // The listener catches a word handed while the page is showing; the
+    // post-frame take catches one handed as the page arrives.
+    ref.listenManual(historySearchHandoffProvider, (_, _) => _takeHandoff());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
+  }
+
+  /// Moves the handed word into the filter (the days stay as they are).
+  void _takeHandoff() {
+    final word = ref.read(historySearchHandoffProvider.notifier).take();
+    if (word == null || word.isEmpty || !mounted) return;
+    setState(() => _filter = (query: word, from: _filter.from, to: _filter.to));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +125,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
           busy: _busy,
           canClear: shown.isNotEmpty,
           onOpenFilter: () => unawaited(_openFilter(history.records)),
-          onOpenSettings: _openSettings,
+          onEditLimit: () => unawaited(_editLimit()),
           onRefresh: () => unawaited(_refreshAll(history.records)),
           onClear: () => unawaited(_clear()),
         ),
@@ -400,11 +416,24 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     );
   }
 
-  /// The gear opens the settings surface at the data section — where the
-  /// watch history's cap lives — the same page the sidebar reaches.
-  void _openSettings() {
-    openSettingsSection(ref, SettingsSection.dataCache);
-    unawaited(context.push(SettingsSectionRoute(section: SettingsSection.dataCache.name).location));
+  /// The settings button opens the cap's dialog — how many records the
+  /// history keeps, or none at all — right here, no detour through the
+  /// settings surface.
+  Future<void> _editLimit() async {
+    if (_busy) return;
+    final saved = await showHistoryLimitDialog(
+      context,
+      limit: ref.read(historyLimitProvider),
+      save: (limit) => ref.read(historyLimitProvider.notifier).setLimit(limit),
+    );
+    if (!mounted || saved == null) return;
+    showDsToast(
+      context: context,
+      title: saved == HistoryLimitController.unlimited
+          ? context.t.history.limitSavedUnlimited
+          : context.t.history.limitSaved(limit: saved),
+      status: DsStatus.success,
+    );
   }
 
   /// Runs [change] once at a time, then says it worked or that it failed.
@@ -476,7 +505,7 @@ final class _Header extends ConsumerWidget {
     required this.busy,
     required this.canClear,
     required this.onOpenFilter,
-    required this.onOpenSettings,
+    required this.onEditLimit,
     required this.onRefresh,
     required this.onClear,
   });
@@ -492,7 +521,7 @@ final class _Header extends ConsumerWidget {
   final bool busy;
   final bool canClear;
   final VoidCallback onOpenFilter;
-  final VoidCallback onOpenSettings;
+  final VoidCallback onEditLimit;
   final VoidCallback onRefresh;
   final VoidCallback onClear;
 
@@ -511,7 +540,9 @@ final class _Header extends ConsumerWidget {
           TextSpan(
             children: [
               TextSpan(
-                text: t.history.recordCount(count: total, limit: limit),
+                text: limit == HistoryLimitController.unlimited
+                    ? t.history.recordCountUnlimited(count: total)
+                    : t.history.recordCount(count: total, limit: limit),
                 style: theme.typography.small.copyWith(color: colors.textMuted),
               ),
               if (filtering) ...[
@@ -552,7 +583,7 @@ final class _Header extends ConsumerWidget {
             DsMenuItem(
               leading: const DsIcon(DsIcons.settings, size: 16),
               label: Text(t.navigation.settings),
-              onPressed: onOpenSettings,
+              onPressed: onEditLimit,
             ),
             const DsMenuDivider(),
             DsMenuItem(
@@ -602,12 +633,12 @@ final class _Header extends ConsumerWidget {
                     icon: const DsIcon(DsIcons.refreshCw, size: 16),
                   ),
                   filter,
-                  DsButton.icon(
-                    variant: DsButtonVariant.ghost,
+                  DsButton(
+                    variant: DsButtonVariant.secondary,
                     size: DsSize.sm,
-                    semanticLabel: t.navigation.settings,
-                    onPressed: onOpenSettings,
-                    icon: const DsIcon(DsIcons.settings, size: 16),
+                    leading: const DsIcon(DsIcons.settings, size: 16),
+                    onPressed: busy ? null : onEditLimit,
+                    child: Text(t.navigation.settings),
                   ),
                   DsButton(
                     variant: DsButtonVariant.dangerSoft,
@@ -788,3 +819,27 @@ String _watchClock(DateTime time) {
   final sameDay = local.year == now.year && local.month == now.month && local.day == now.day;
   return sameDay ? clock : '${two(local.month)}-${two(local.day)}';
 }
+
+/// A word handed to the history page's filter from outside (the toolbar's
+/// field): the page takes it once — into the filter in force — and clears
+/// it, so a back-and-forth never replays it.
+final class HistorySearchHandoffController extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  /// Hands [word] to the history page (taken once on arrival).
+  // ignore: use_setters_to_change_properties
+  void hand(String word) => state = word;
+
+  /// Takes the word (null when none was handed).
+  String? take() {
+    final word = state;
+    state = null;
+    return word;
+  }
+}
+
+/// The word the history page's filter should take next.
+final historySearchHandoffProvider = NotifierProvider<HistorySearchHandoffController, String?>(
+  HistorySearchHandoffController.new,
+);

@@ -59,8 +59,9 @@ final class DefaultStorageManager implements StorageManager {
     }
     final snapshot =
         runtime ?? (throw StateError('no runtime snapshot: construct with runtime or run PlatformBootstrap.init'));
+    final failures = <String>[];
     for (final candidate in policy.candidatesFor(area, snapshot)) {
-      final location = await _probe(area, candidate, snapshot.kind, snapshot.appNamespace);
+      final location = await _probe(area, candidate, snapshot.kind, snapshot.appNamespace, failures: failures);
       if (location != null) {
         return _resolved[area] = location;
       }
@@ -77,14 +78,18 @@ final class DefaultStorageManager implements StorageManager {
         _ => DefaultStoragePolicy.tempDirectoryName(snapshot.appNamespace),
       };
       final fallback = Directory(p.join(_systemTemp.path, scratchName));
-      final location = await _probe(area, fallback, snapshot.kind, snapshot.appNamespace);
+      final location = await _probe(area, fallback, snapshot.kind, snapshot.appNamespace, failures: failures);
       if (location != null) {
         return _resolved[area] = location;
       }
     }
+    // A candidate list with no probe detail is a dead end for whoever boots
+    // the app: the exception must say why every candidate refused, not only
+    // where it looked.
     throw StorageUnavailableException(
       'no writable location for ${area.name} storage; '
-      'candidates: ${policy.candidatesFor(area, snapshot).map((d) => d.path).join(', ')}',
+      'candidates: ${policy.candidatesFor(area, snapshot).map((d) => d.path).join(', ')}'
+      '${failures.isEmpty ? '' : '; probes: ${failures.join('; ')}'}',
     );
   }
 
@@ -94,7 +99,13 @@ final class DefaultStorageManager implements StorageManager {
     return resolve(area);
   }
 
-  Future<StorageLocation?> _probe(StorageArea area, Directory candidate, PlatformKind kind, String namespace) async {
+  Future<StorageLocation?> _probe(
+    StorageArea area,
+    Directory candidate,
+    PlatformKind kind,
+    String namespace, {
+    List<String>? failures,
+  }) async {
     try {
       await candidate.create(recursive: true);
       final probe = File(
@@ -118,7 +129,10 @@ final class DefaultStorageManager implements StorageManager {
         accessState: AccessState.writable,
         isPrivate: PathPrivacy.isPrivate(candidate.path, kind: kind),
       );
-    } on FileSystemException {
+    } on FileSystemException catch (error) {
+      // The refused candidate is the diagnosis; the code and message say
+      // which step refused it (create, write or delete) and why.
+      failures?.add('${candidate.path}: ${error.osError?.errorCode} ${error.osError?.message ?? error.message}');
       return null;
     }
   }

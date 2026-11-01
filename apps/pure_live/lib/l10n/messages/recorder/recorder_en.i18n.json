@@ -150,6 +150,8 @@
   "transcodeBitrateDesc": "Target video bitrate; higher is clearer and larger.",
   "playRecording": "Play recording",
   "previewRecording": "Preview in built-in player",
+  "previewTitle": "Recording preview",
+  "previewUnavailable": "This task holds no file a player can open",
   "recordChatGiftsTitle": "Record gift messages",
   "recordChatGiftsDesc": "Writes gift messages, in the text the platform gives, into the same danmaku file; the chat alone is the default.",
   "recordChatTitle": "Record chat",

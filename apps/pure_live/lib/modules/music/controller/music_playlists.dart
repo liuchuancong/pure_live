@@ -9,7 +9,7 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/modules/music/controller/music_library.dart'
     show musicFavouritesProvider, musicRecentProvider, musicTrackFromJson, musicTrackToJson;
-import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_sync_data.dart' show musicSyncTrackFromInfo;
 
 /// The preference the viewer's own playlists are kept under.
@@ -261,7 +261,9 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
   Future<bool> addTrack(String id, audio.MusicTrack track) async {
     final playlist = find(id);
     if (playlist == null || playlist.tracks.contains(track)) return false;
-    final tracks = ref.read(musicSettingsProvider).addToTop ? [track, ...playlist.tracks] : [...playlist.tracks, track];
+    final tracks = ref.read(musicPlaybackSettingsProvider).addToTop
+        ? [track, ...playlist.tracks]
+        : [...playlist.tracks, track];
     state = [
       for (final item in state)
         if (item.id == id) item.copyWith(tracks: tracks) else item,
@@ -284,7 +286,7 @@ final class MusicPlaylistsController extends Notifier<List<MusicPlaylist>> {
         if (seen.add(track) && !existing.contains(track)) track,
     ];
     if (fresh.isEmpty) return 0;
-    final merged = ref.read(musicSettingsProvider).addToTop
+    final merged = ref.read(musicPlaybackSettingsProvider).addToTop
         ? [...fresh, ...playlist.tracks]
         : [...playlist.tracks, ...fresh];
     state = [

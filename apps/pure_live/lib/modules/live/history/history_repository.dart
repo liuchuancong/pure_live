@@ -70,8 +70,10 @@ final class HistoryRepository {
     await store.deleteAll(keys);
   }
 
-  /// Keeps the newest [limit] records.
+  /// Keeps the newest [limit] records; a cap of zero or less is the 不设上限
+  /// choice and keeps them all, so nothing is deleted.
   Future<void> _trim(int limit) async {
+    if (limit <= 0) return;
     final keys = store.entries.entries.toList()..sort((a, b) => _watchedAt(b.value).compareTo(_watchedAt(a.value)));
     final excess = keys.skip(limit).map((entry) => entry.key).toList();
     if (excess.isNotEmpty) await store.deleteAll(excess);

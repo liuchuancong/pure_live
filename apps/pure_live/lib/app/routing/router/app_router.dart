@@ -27,7 +27,8 @@ import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/room/room.dart';
 import 'package:pure_live/modules/live/search/search.dart';
 import 'package:pure_live/modules/live/toolbox/toolbox.dart';
-import 'package:pure_live/modules/music/music.dart' show MusicPlayerPage;
+import 'package:pure_live/modules/music/music.dart'
+    show MusicAlbumPage, MusicArtistPage, MusicEffectsPage, MusicPlayerPage;
 import 'package:pure_live/modules/vod/vod.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -539,6 +540,39 @@ GoRouter buildAppRouter({
       GoRoute(
         path: RouteNames.musicPlayer,
         builder: (context, state) => const WindowChromeFrame(child: MusicPlayerPage()),
+      ),
+      // The effect centre the mini bar opens: the same page the module's rail
+      // shows, under its own header so a pushed visit keeps its back.
+      GoRoute(
+        path: RouteNames.musicEffects,
+        builder: (context, state) => const WindowChromeFrame(child: MusicEffectsPage()),
+      ),
+      // The music module's album and artist pages: a song's own lines and an
+      // artist's album cards open them, and each keeps its own back.
+      GoRoute(
+        path: RouteNames.musicAlbum,
+        builder: (context, state) => WindowChromeFrame(
+          child: ScrollEdgeControls(
+            pageIdentity: 'musicAlbum/${state.pathParameters['sourceId']}/${state.pathParameters['albumId']}',
+            child: MusicAlbumPage(
+              sourceId: state.pathParameters['sourceId']!,
+              albumId: state.pathParameters['albumId']!,
+            ),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: RouteNames.musicArtist,
+        builder: (context, state) => WindowChromeFrame(
+          child: ScrollEdgeControls(
+            pageIdentity: 'musicArtist/${state.pathParameters['sourceId']}/${state.pathParameters['artist']}',
+            child: MusicArtistPage(
+              sourceId: state.pathParameters['sourceId']!,
+              name: state.pathParameters['artist']!,
+              artistId: state.uri.queryParameters['id'],
+            ),
+          ),
+        ),
       ),
       GoRoute(
         path: RouteNames.hongguoSeries,

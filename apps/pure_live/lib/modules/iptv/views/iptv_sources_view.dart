@@ -1143,7 +1143,13 @@ final class _SourceAddressAction extends StatelessWidget {
       onPressed: onPressed,
       builder: (context, states, _) => Padding(
         padding: const EdgeInsets.all(DsSpace.s3),
-        child: DsIcon(icon, size: 13, color: states.contains(WidgetState.hovered) ? colors.text : colors.textSubtle),
+        child: DsIcon(
+          icon,
+          size: 13,
+          color: (states.contains(WidgetState.hovered) || states.contains(WidgetState.focused))
+              ? colors.text
+              : colors.textSubtle,
+        ),
       ),
     );
   }

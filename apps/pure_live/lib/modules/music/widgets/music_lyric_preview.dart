@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/music/controller/music_settings.dart' show MusicLyricAlignment, musicSettingsProvider;
+import 'package:pure_live/modules/music/controller/music_desktop_lyric_settings.dart'
+    show musicDesktopLyricsSettingsProvider;
+import 'package:pure_live/modules/music/controller/music_lyric_settings.dart'
+    show MusicLyricAlignment, musicLyricsSettingsProvider;
 import 'package:pure_live/modules/music/controller/sources/chinese_s2t.dart' show traditionalize;
 
 /// The lyric settings' own sample: three fixed lines drawn with the pane's
@@ -28,7 +31,7 @@ final class MusicLyricPreview extends ConsumerWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = theme.colors;
-    final settings = ref.watch(musicSettingsProvider);
+    final settings = ref.watch(musicLyricsSettingsProvider);
     final scale = settings.lyricFontScale / 100;
     const active = 1;
     final (alignment, cross, textAlign) = switch (settings.lyricAlignment) {
@@ -111,7 +114,7 @@ final class MusicDesktopLyricPreview extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final theme = DsTheme.of(context);
-    final settings = ref.watch(musicSettingsProvider);
+    final settings = ref.watch(musicDesktopLyricsSettingsProvider);
     final size = settings.desktopLyricFontSize;
     final textColor = Color(settings.desktopLyricTextColor);
     final strokeColor = Color(settings.desktopLyricStrokeColor);

@@ -37,5 +37,9 @@
   "tagFollowBody": "Tags belong to followed rooms. Follow this room first, then give it any number of tags.",
   "tagExists": "That tag already exists",
   "tagInvalid": "Enter a tag name",
-  "deleteTag": "Delete"
+  "deleteTag": "Delete",
+  "inlineMatches": "Searching “{query: String}”: {count: int} results",
+  "inlineReset": "Clear search",
+  "inlineEmptyTitle": "No follows match",
+  "inlineEmptyHint": "Try another word, or clear the search to see every follow."
 }

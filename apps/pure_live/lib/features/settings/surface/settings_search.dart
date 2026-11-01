@@ -157,7 +157,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     _hit(SettingsSection.network, s.githubMirrorTitle, 'github mirror acceleration proxy download speed 镜像 加速 代理 下载'),
     _hit(SettingsSection.network, s.githubMirrorMode, 'download route mirror direct custom domain 下载方式 直连 镜像 自定义'),
     _hit(SettingsSection.network, s.githubMirrorList, 'mirror list remote refresh add delete 镜像 列表 远程 更新 添加 删除'),
-    _hit(SettingsSection.nodes, t.toolbox.toolNetworkTitle, 'platform node probe latency 平台 节点 测速 延迟 网络'),
     // Video.
     _hit(SettingsSection.quality, s.preferredQuality, 'quality resolution 画质 清晰度 分辨率'),
     _hit(SettingsSection.quality, s.preferredQualityCellular, 'cellular mobile data quality 蜂窝 移动网络 流量 画质 清晰度'),
@@ -403,6 +402,10 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       s.sitesReset,
       'platform table hide all show all reset default order 平台 表格 全部打开 全部关闭 重置 默认 顺序',
     ),
+    // The node probe left the proxy page: it hangs off the sites page now,
+    // under the display row whose platforms it measures.
+    _hit(SettingsSection.nodes, t.toolbox.toolNetworkTitle, 'platform node probe latency 平台 节点 测速 延迟 网络'),
+    _hit(SettingsSection.nodes, t.toolbox.nodeTestAll, 'probe all sweep reachability latency 全部测速 测速 节点 延迟 连通'),
     _hit(SettingsSection.sites, s.showUnplayableTitle, 'unplayable restriction paid locked hidden 不能播放 付费 加锁 隐藏'),
     _hit(SettingsSection.window, s.tvFocusZoom, 'tv focus grow scale card menu remote 电视 焦点 放大 缩放 卡片 菜单 遥控器'),
     _hit(SettingsSection.followTags, s.tagManagement, 'tag tags management group filter follow 标签 分组 筛选 关注 添加 删除 置顶'),
@@ -415,8 +418,8 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     ),
     _hit(SettingsSection.accounts, t.account.signOut, 'logout account 退出 登录'),
     _hit(SettingsSection.followTags, s.tagManagement, 'follow tags custom manage 关注 标签 管理 自定义'),
-    // Data.
-    _hit(SettingsSection.dataCache, s.historyLimit, 'history limit 历史 上限'),
+    // Data. The watch history's cap and clearing left for the history
+    // page's own dialog; the follows' clipboard round trip left the page.
     _hit(
       SettingsSection.storageFolders,
       s.storageFolders,
@@ -429,9 +432,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       'local media library files videos recordings music preview play downloaded 本地 媒体 文件 视频 录制 音乐 预览 播放 已下载',
     ),
     _hit(SettingsSection.storageFolders, s.storageFoldersResetAll, 'reset all folders default restore 全部 恢复 默认 重置 还原'),
-    _hit(SettingsSection.dataCache, s.dataClearHistory, 'clear history 清空 历史'),
-    _hit(SettingsSection.dataCache, s.dataExportFollows, 'export follows clipboard 导出 关注'),
-    _hit(SettingsSection.dataCache, s.dataImportFollows, 'import follows clipboard 导入 关注'),
     // Backup.
     _hit(SettingsSection.backup, t.backup.createTitle, 'backup create 备份 创建'),
     _hit(SettingsSection.backup, t.backup.createFollowsTitle, 'follows backup 关注 备份'),

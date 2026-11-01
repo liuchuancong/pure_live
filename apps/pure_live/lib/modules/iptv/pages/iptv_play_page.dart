@@ -2,7 +2,7 @@ import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
+import 'package:flutter/services.dart' show KeyDownEvent, KeyEvent, LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -14,6 +14,7 @@ import 'package:live_sites/live_sites.dart'
 import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/media_preview/media_preview_page.dart' show openMediaPreview;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
@@ -475,6 +476,18 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     if (!_infoVisible && mounted) setState(() => _infoVisible = true);
   }
 
+  /// The remote's OK key raises the info strip, the tap path's keyboard twin;
+  /// a focused control keeps the key for its own activation.
+  KeyEventResult _onPageKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (FocusManager.instance.primaryFocus != node) return KeyEventResult.ignored;
+    if (event.logicalKey != LogicalKeyboardKey.select && event.logicalKey != LogicalKeyboardKey.enter) {
+      return KeyEventResult.ignored;
+    }
+    _showInfo();
+    return KeyEventResult.handled;
+  }
+
   void _openZapper() {
     if (_channel == null) return;
     setState(() => _zapperOpen = true);
@@ -542,6 +555,27 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
   /// The recording identity the recorder centre files this channel under —
   /// the `platform:roomId` shape every task carries.
   String get _recordingId => 'iptv:${_channel?.id ?? ''}';
+
+  /// Opens the shared preview page on this channel's take, with the other
+  /// channels' takes beside it: IPTV records into the recording centre's own
+  /// task library, so this is that list filtered to the platform rather than
+  /// a second store of files. The files are walked here, on the press, and a
+  /// take whose folder came up empty is said so instead of showing a
+  /// neighbour from another channel.
+  Future<void> _openRecordings() async {
+    final channel = _channel;
+    if (channel == null) return;
+    final t = context.t;
+    final takes = recordingPreviewItems(
+      ref.read(recordingTasksProvider).tasks.where((task) => task.platform == 'iptv'),
+    );
+    final index = takes.indexWhere((item) => item.id == 'iptv:${channel.id}');
+    if (index < 0) {
+      showDsToast(context: context, title: t.recorder.previewUnavailable, status: DsStatus.warning);
+      return;
+    }
+    await openMediaPreview(context, title: t.recorder.previewTitle, items: takes, initialIndex: index);
+  }
 
   /// Starts or stops the channel's recording; answers the engine's reason
   /// when the action failed, null on success. A playlist address is static,
@@ -746,6 +780,22 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
             .watch(recordingTasksProvider)
             .tasks
             .any((task) => task.id == 'iptv:${channel.id}' && task.state == RecordingTaskState.recording);
+    // The door stands where the store files a settled take under this channel.
+    // Only the store's own facts are read here — this header redraws on the
+    // minute tick, and a walk of the recordings folder would then run per
+    // frame rather than per press.
+    final hasTake =
+        channel != null &&
+        ref
+            .watch(recordingTasksProvider)
+            .tasks
+            .any(
+              (task) =>
+                  task.id == 'iptv:${channel.id}' &&
+                  task.state != RecordingTaskState.recording &&
+                  !task.postProcessing &&
+                  (task.filePath ?? '').trim().isNotEmpty,
+            );
     final presentation = ref.watch(roomPresentationProvider);
     final presentationController = ref.read(roomPresentationProvider.notifier);
     // Fullscreen and the desktop compact window take the app's window; a
@@ -835,6 +885,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
       child: Focus(
         focusNode: _pageFocus,
         autofocus: true,
+        onKeyEvent: _onPageKey,
         child: ColoredBox(
           color: colors.overlay,
           child: SafeArea(
@@ -925,6 +976,12 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                               status: failure == null ? DsStatus.success : DsStatus.danger,
                             );
                           },
+                        ),
+                      if (hasTake)
+                        _IconButton(
+                          semanticLabel: t.iptv.viewRecordings,
+                          icon: DsIcons.listVideo,
+                          onPressed: () => unawaited(_openRecordings()),
                         ),
                       if (channel != null)
                         _IconButton(

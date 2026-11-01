@@ -113,7 +113,7 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
     final link = ref.read(linkToolProvider);
     final room = link.resolved;
     if (room == null) {
-      _toastFailure(link.failure);
+      _toastFailure(link.failure, retry: _open);
       return;
     }
     unawaited(context.push(RoomRoute(platform: room.platform, roomId: room.roomId).location));
@@ -127,7 +127,7 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
     final link = ref.read(linkToolProvider);
     final room = link.resolved;
     if (room == null) {
-      _toastFailure(link.failure);
+      _toastFailure(link.failure, retry: _copy);
       return;
     }
     await Clipboard.setData(ClipboardData(text: '$room.url'));
@@ -144,7 +144,7 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
     final link = ref.read(linkToolProvider);
     final resolved = link.resolved;
     if (resolved == null) {
-      _toastFailure(link.failure);
+      _toastFailure(link.failure, retry: _direct);
       return;
     }
     final site = ref.read(sitesProvider).getById(resolved.platform);
@@ -158,7 +158,7 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
     if (!mounted) return;
     final room = roomAnswer.fold((_) => null, (room) => room);
     if (room == null) {
-      _toastFailure(LinkToolFailure.failed);
+      _toastFailure(LinkToolFailure.failed, retry: _direct);
       return;
     }
     final qualitiesAnswer = await playback.getQualities(room: room);
@@ -188,8 +188,9 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
     _edited();
   }
 
-  /// Why the last resolve failed, as a toast.
-  void _toastFailure(LinkToolFailure? failure) {
+  /// Why the last resolve failed, as a toast; a transient failure offers
+  /// the retry that re-runs the action whose resolve failed.
+  void _toastFailure(LinkToolFailure? failure, {Future<void> Function()? retry}) {
     if (failure == null) return;
     final t = context.t;
     final message = switch (failure) {
@@ -198,7 +199,14 @@ final class _LinkPaneState extends ConsumerState<_LinkPane> {
       LinkToolFailure.timeout => t.toolbox.linkTimeout,
       LinkToolFailure.failed => t.toolbox.linkFailed,
     };
-    showDsToast(context: context, title: message, status: DsStatus.danger);
+    final action = retry != null && failure.isTransient ? retry : null;
+    showDsToast(
+      context: context,
+      title: message,
+      status: DsStatus.danger,
+      actionLabel: action != null ? t.common.retry : null,
+      onAction: action == null ? null : () => unawaited(action()),
+    );
   }
 
   /// The display name of the site [platformId] names, or the id itself
@@ -415,10 +423,14 @@ final class _SupportPlatforms extends StatelessWidget {
 /// resolution; the sites' names ship zh-CN first).
 String _siteName(LiveSite site) => localizedSiteName(site);
 
-/// The node test: every probe-able platform as a card with its own icon,
-/// the last measured latency and a per-card test, plus a sweep that checks
+/// The node test: every probe-able platform as a small tile with its own icon,
+/// the answer it measured and a per-tile test, plus a sweep that checks
 /// them four at a time. The design system's badges carry the state; no
 /// fake endpoint strings are shown.
+///
+/// It is a settings page of its own, reached from the sites page's platform
+/// group under the display row whose platforms it measures — it left the proxy
+/// page, which shares nothing with it.
 final class PlatformNodesPane extends ConsumerWidget {
   const PlatformNodesPane({super.key});
 
@@ -461,15 +473,18 @@ final class PlatformNodesPane extends ConsumerWidget {
         if (probe.running) DsProgressBar(semanticLabel: t.toolbox.nodeTesting),
         LayoutBuilder(
           builder: (context, constraints) {
-            final columns = LiveWindow.isExpanded(constraints.maxWidth)
-                ? 3
-                : LiveWindow.isCompact(constraints.maxWidth)
-                ? 1
-                : 2;
-            final width = (constraints.maxWidth - (columns - 1) * DsSpace.s12) / columns;
+            // Small tiles: the count comes from the width rather than the
+            // three-tier split, about 190 px per platform — one column on a
+            // phone, five on a wide pane. The old three-per-row cards made
+            // each platform a third of the page wide and a screen of them
+            // tall.
+            const tileWidth = 190.0;
+            const gap = DsSpace.s8;
+            final columns = (constraints.maxWidth / (tileWidth + gap)).floor().clamp(1, 5);
+            final width = (constraints.maxWidth - (columns - 1) * gap) / columns;
             return Wrap(
-              spacing: DsSpace.s12,
-              runSpacing: DsSpace.s12,
+              spacing: gap,
+              runSpacing: gap,
               children: [
                 for (final site in sites)
                   SizedBox(
@@ -489,8 +504,10 @@ final class PlatformNodesPane extends ConsumerWidget {
   }
 }
 
-/// One platform's node card: its own icon and name, a state badge, the
-/// measured latency and the per-platform test button.
+/// One platform's node tile: its icon and name with the state badge on the
+/// first line, what the probe answered and a small 测速 button on the second.
+/// Two lines because a dozen of these sit in one wall, and a card that stacked
+/// four made the page a scroll of panels.
 final class _PlatformNodeCard extends StatelessWidget {
   const _PlatformNodeCard({required this.site, required this.node, required this.onTest});
 
@@ -516,8 +533,22 @@ final class _PlatformNodeCard extends StatelessWidget {
     final source = site.capability<LiveDiscoveryProvider>() != null
         ? t.toolbox.nodeSourceRecommended
         : t.toolbox.nodeSourceHot;
+    // One detail line: which endpoint the tile probes before a test, and what
+    // it answered after. The badge and the button's spinner already say
+    // 测速中, so the line never repeats it. The button's tooltip carries the
+    // hint, so the tile never needs a third line.
+    final detail = Text(
+      success != null
+          ? '${success.elapsed.inMilliseconds} ms · ${t.toolbox.nodeAnswer(count: success.rooms)}'
+          : failure != null
+          ? failure.error.message
+          : source,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: theme.typography.small.copyWith(color: failure != null ? colors.danger.text : colors.textMuted),
+    );
     return Container(
-      padding: const EdgeInsets.all(DsSpace.s16),
+      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
       decoration: DsBoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(theme.radii.card),
@@ -525,71 +556,40 @@ final class _PlatformNodeCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: DsSpace.s12,
+        spacing: DsSpace.s4,
         children: [
           Row(
-            spacing: DsSpace.s8,
+            spacing: DsSpace.s6,
             children: [
-              ?localizedSiteIcon(site, size: 26),
+              ?localizedSiteIcon(site, size: 18),
               Expanded(
                 child: Text(
                   localizedSiteName(site),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.typography.title.copyWith(color: colors.text),
+                  style: theme.typography.body.copyWith(color: colors.text, fontWeight: FontWeight.w600),
                 ),
               ),
-              DsBadge(label: Text(status), status: badge),
+              DsBadge(label: Text(status), status: badge, dot: false),
             ],
           ),
           Row(
+            spacing: DsSpace.s6,
             children: [
               Expanded(
-                child: Text(
-                  source,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textMuted),
-                ),
+                child: failure == null ? detail : DsTooltip(message: failure.error.message, child: detail),
               ),
-              Text(
-                success == null ? '—' : '${success.elapsed.inMilliseconds} ms',
-                style: theme.typography.numeric(
-                  theme.typography.body.copyWith(
-                    color: success != null ? colors.success.text : colors.textSubtle,
-                    fontWeight: FontWeight.w600,
-                  ),
+              DsTooltip(
+                message: t.toolbox.nodeHint,
+                child: DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  loading: probing,
+                  onPressed: probing ? null : onTest,
+                  child: Text(t.toolbox.nodeTest),
                 ),
               ),
             ],
-          ),
-          if (success != null)
-            Text(
-              t.toolbox.nodeAnswer(count: success.rooms),
-              style: theme.typography.caption.copyWith(color: colors.textMuted),
-            )
-          else if (failure != null)
-            DsTooltip(
-              message: failure.error.message,
-              child: Text(
-                failure.error.message,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.caption.copyWith(color: colors.danger.text),
-              ),
-            )
-          else
-            Text(t.toolbox.nodeHint, style: theme.typography.caption.copyWith(color: colors.textSubtle)),
-          Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: DsButton(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              loading: probing,
-              leading: const DsIcon(DsIcons.refreshCw, size: 14),
-              onPressed: probing ? null : onTest,
-              child: Text(probing ? t.toolbox.nodeTesting : t.toolbox.nodeTest),
-            ),
           ),
         ],
       ),

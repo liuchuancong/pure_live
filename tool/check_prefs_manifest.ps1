@@ -91,6 +91,57 @@ foreach ($entry in $constValues.GetEnumerator()) {
     }
 }
 
+# A helper that takes the key as a parameter and speaks to the facade may
+# live in a file of its own (the music settings' shared read/write plumbing).
+# Its call sites still name the keys, so the helpers are collected across the
+# tree first. Only a helper whose name is unique in the tree, whose body has
+# one prefix and kind, and whose call site imports its file is followed: a
+# terse name such as `_int` means something else in the next package, and a
+# call to that one must not be read as a pref read.
+$helperDefs = @{}
+foreach ($file in $dartFiles) {
+    $text = Get-Content -Raw $file.FullName
+    if ($text -notmatch "StoragePrefs") {
+        continue
+    }
+    $relative = $file.FullName.Substring($Root.Length + 1).Replace("\", "/")
+    foreach ($helperMatch in [regex]::Matches($text, $helperRe)) {
+        $name = $helperMatch.Groups[1].Value
+        $param = $helperMatch.Groups[2].Value
+        $body = $text.Substring($helperMatch.Index, [Math]::Min(900, $text.Length - $helperMatch.Index))
+        $bodyEnd = $body.IndexOf("`n}")
+        if ($bodyEnd -ge 0) {
+            $body = $body.Substring(0, $bodyEnd)
+        }
+        if ($body -notmatch "StoragePrefs\s*\.\s*($methodNames)\s*\(\s*[^)\r\n]*\b$param\b") {
+            continue
+        }
+        $prefix = ""
+        $prefixMatch = [regex]::Match($body, "'([a-zA-Z0-9_.]*)\`$")
+        if ($prefixMatch.Success) {
+            $prefix = $prefixMatch.Groups[1].Value
+        }
+        if (-not $helperDefs.ContainsKey($name)) {
+            $helperDefs[$name] = @{
+                Files = [System.Collections.Generic.HashSet[string]]::new()
+                Defs = [System.Collections.Generic.HashSet[string]]::new()
+                Path = $relative
+            }
+        }
+        [void]$helperDefs[$name].Files.Add($file.FullName)
+        [void]$helperDefs[$name].Defs.Add("$prefix|$(& $kindOf $Matches[1])")
+        $helperDefs[$name].Path = $relative
+    }
+}
+$globalHelpers = @{}
+foreach ($entry in $helperDefs.GetEnumerator()) {
+    if ($entry.Value.Files.Count -eq 1 -and $entry.Value.Defs.Count -eq 1) {
+        $prefix, $kind = @($entry.Value.Defs)[0] -split '\|', 2
+        $import = $entry.Value.Path -replace '^.*?/lib/', ''
+        $globalHelpers[$entry.Key] = @{ Prefix = $prefix; Kind = $kind; Import = $import }
+    }
+}
+
 $observedKinds = @{}
 $observedSites = @{}
 $dynamicSites = [System.Collections.Generic.List[string]]::new()
@@ -109,7 +160,14 @@ function Add-Observation {
 
 foreach ($file in $dartFiles) {
     $text = Get-Content -Raw $file.FullName
-    if ($text -notmatch "StoragePrefs") {
+    $callsHelper = $false
+    foreach ($entry in $globalHelpers.GetEnumerator()) {
+        if ($text -match [regex]::Escape($entry.Value.Import) -and $text -match "\b$([regex]::Escape($entry.Key))\s*\(") {
+            $callsHelper = $true
+            break
+        }
+    }
+    if ($text -notmatch "StoragePrefs" -and -not $callsHelper) {
         continue
     }
     $relative = $file.FullName.Substring($Root.Length + 1).Replace("\", "/")
@@ -177,6 +235,10 @@ foreach ($file in $dartFiles) {
         $helper = $match.Groups[1].Value
         $param = $match.Groups[2].Value
         $body = $text.Substring($match.Index, [Math]::Min(700, $text.Length - $match.Index))
+        $bodyEnd = $body.IndexOf("`n}")
+        if ($bodyEnd -ge 0) {
+            $body = $body.Substring(0, $bodyEnd)
+        }
         $bodyKind = "any"
         # Only a call that hands the parameter to the facade makes this
         # helper's arguments pref keys; a helper reading a JSON field of that
@@ -217,6 +279,41 @@ foreach ($file in $dartFiles) {
         }
     }
 
+    # Helpers defined in another file hide their keys the same way; the
+    # arguments handed to them here are what names the prefs, and only a file
+    # that imports the helper's file is speaking about that helper.
+    $localHelpers = [System.Collections.Generic.HashSet[string]]::new()
+    foreach ($helperMatch in [regex]::Matches($text, $helperRe)) {
+        [void]$localHelpers.Add($helperMatch.Groups[1].Value)
+    }
+    foreach ($name in $globalHelpers.Keys) {
+        if ($localHelpers.Contains($name)) {
+            continue
+        }
+        $helper = $globalHelpers[$name]
+        if ($text -notmatch [regex]::Escape($helper.Import)) {
+            continue
+        }
+        foreach ($call in [regex]::Matches($text, "\b$([regex]::Escape($name))\s*\(\s*('[^']+'|[A-Za-z_]\w*)")) {
+            $argument = $call.Groups[1].Value
+            $key = $null
+            if ($argument.StartsWith("'")) {
+                $key = $argument.Trim("'")
+            } elseif ($globalConsts.ContainsKey($argument)) {
+                $key = $globalConsts[$argument]
+            } else {
+                foreach ($candidate in $fileConsts) {
+                    if ($candidate.Name -eq $argument -and $candidate.Pos -le $call.Index) {
+                        $key = $candidate.Value
+                    }
+                }
+            }
+            if ($key) {
+                Add-Observation ($helper.Prefix + $key) $helper.Kind "$relative`:$name"
+            }
+        }
+    }
+
     # A controller body that names StoragePrefs owns settings, whatever else it
     # caches, so a change underneath it has to rebuild it.
     foreach ($match in [regex]::Matches($text, "final\s+(\w+Provider)\s*=\s*(?:Async)?NotifierProvider\s*<\s*(\w+)\s*,")) {
@@ -227,7 +324,17 @@ foreach ($file in $dartFiles) {
         }
         $next = $text.IndexOf("`nfinal class ", $start + 1)
         $length = $(if ($next -lt 0) { $text.Length - $start } else { $next - $start })
-        if ($text.Substring($start, $length) -match "StoragePrefs") {
+        $bodyText = $text.Substring($start, $length)
+        $readsPrefs = $bodyText -match "StoragePrefs"
+        if (-not $readsPrefs) {
+            foreach ($name in $globalHelpers.Keys) {
+                if ($text -match [regex]::Escape($globalHelpers[$name].Import) -and $bodyText -match "\b$([regex]::Escape($name))\s*\(") {
+                    $readsPrefs = $true
+                    break
+                }
+            }
+        }
+        if ($readsPrefs) {
             $prefsProviders[$match.Groups[1].Value] = $relative
         }
     }

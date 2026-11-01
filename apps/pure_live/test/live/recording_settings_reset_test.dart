@@ -23,7 +23,7 @@ void main() {
     await notifier.reset();
 
     final settings = container.read(recordingSettingsProvider);
-    expect(settings.customCaPath, r'D:\certs\corp.pem', reason: 'a picked file is not a tunable');
+    expect(settings.network.customCaPath, r'D:\certs\corp.pem', reason: 'a picked file is not a tunable');
     expect(settings.segmentSeconds, RecordingSettings.defaults.segmentSeconds);
     expect(settings.combineAfterStop, RecordingSettings.defaults.combineAfterStop);
     expect(settings.transcodeAfterCombine, RecordingSettings.defaults.transcodeAfterCombine);

@@ -6,25 +6,59 @@ import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/settings/browse/sites_display_provider.dart' show decodeFollows, encodeFollows;
 import 'package:pure_live/features/settings/surface/settings_child_entry.dart' show SettingsChildEntry;
+import 'package:pure_live/features/settings/surface/settings_page_action.dart' show SettingsPageActionScope;
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow;
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/live/favorites/data/follow_repository.dart'
-    show followRepositoryProvider, followsProvider;
-import 'package:pure_live/modules/live/history/history_repository.dart' show historyProvider;
 import 'package:pure_live/modules/live/recorder/engine/recorder_engine.dart' show recorderEngineProvider;
 import 'package:pure_live/shared/shared.dart';
 
 /// The folders every kind of file lives in: one row per movable folder with
 /// its resolved path, and the data tree beneath them as the one row that does
 /// not move. A row's buttons pick a folder or drop the choice, so "default"
-/// is always the device's own answer rather than a copied path.
-final class StorageFoldersSection extends ConsumerWidget {
+/// is always the device's own answer rather than a copied path. The reset of
+/// every choice at once is the page's header action, not a row.
+final class StorageFoldersSection extends ConsumerStatefulWidget {
   const StorageFoldersSection({super.key});
+
+  @override
+  ConsumerState<StorageFoldersSection> createState() => _StorageFoldersSectionState();
+}
+
+final class _StorageFoldersSectionState extends ConsumerState<StorageFoldersSection> {
+  /// The pushed page's header slot, when the page has one.
+  ValueNotifier<Widget?>? _slot;
+
+  /// The reset action as last handed to the slot; null when none was.
+  String? _published;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _slot = SettingsPageActionScope.maybeOf(context);
+  }
+
+  @override
+  void dispose() {
+    // The page outlives this pane only while this pane is gone with it: a
+    // header left holding a dead action would press nothing.
+    final slot = _slot;
+    if (slot != null && _published != null) slot.value = null;
+    super.dispose();
+  }
+
+  /// Hands [action] to the page header, once per signature; a header above
+  /// this body must not be rebuilt mid-layout.
+  void _publish(String? signature, Widget? action) {
+    final slot = _slot;
+    if (slot == null || _published == signature) return;
+    _published = signature;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) slot.value = action;
+    });
+  }
 
   static String _label(Translations t, StorageFolder folder) => switch (folder) {
     StorageFolder.videos => t.settings.storageFolderVideos,
@@ -101,6 +135,14 @@ final class StorageFoldersSection extends ConsumerWidget {
     showDsToast(context: context, title: context.t.settings.storageFoldersUpdated);
   }
 
+  /// Puts a row's resolved path on the clipboard, so a bug report or a file
+  /// manager can take it without retyping.
+  Future<void> _copyPath(BuildContext context, String path) async {
+    await Clipboard.setData(ClipboardData(text: path));
+    if (!context.mounted) return;
+    showDsToast(context: context, title: context.t.common.copied);
+  }
+
   Future<void> _resetAll(BuildContext context, WidgetRef ref) async {
     // The cache override only lands on the next start, so dropping one says
     // so instead of promising an instant move.
@@ -116,63 +158,83 @@ final class StorageFoldersSection extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final t = context.t;
     final folders = ref.watch(appPathsProvider);
     final overrides = ref.watch(storageFolderOverridesProvider);
-    return DsListSection(
-      header: Text(t.settings.storageFolders),
+    // The reset is a page action, not a row: a pushed page shows it at the
+    // header's end, and a pane shown in place keeps it in its own corner.
+    final resetAll = DsButton(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      leading: const DsIcon(DsIcons.rotateCcw, size: 16),
+      onPressed: overrides.isEmpty ? null : () => unawaited(_resetAll(context, ref)),
+      child: Text(t.settings.storageFoldersResetAll),
+    );
+    _publish('resetAll:${overrides.isEmpty}', resetAll);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: DsSpace.s16,
       children: [
-        for (final folder in StorageFolder.values)
-          () {
-            final directory = _pathOf(folders, folder).path;
-            final custom = overrides.containsKey(folder);
-            return DsListRow(
-              leading: DsIcon(folder.icon),
-              title: Text(_label(t, folder)),
-              description: DsTooltip(
-                message: directory,
-                child: Text(directory, maxLines: 1, overflow: TextOverflow.ellipsis),
-              ),
-              detail: Text(custom ? t.settings.storageFolderCustomLabel : t.settings.storageFolderDefaultLabel),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DsButton(
-                    variant: DsButtonVariant.ghost,
-                    size: DsSize.sm,
-                    onPressed: () => unawaited(_pick(context, ref, folder)),
-                    child: Text(t.settings.storageFolderPick),
+        if (_slot == null) Align(alignment: AlignmentDirectional.centerEnd, child: resetAll),
+        DsListSection(
+          header: Text(t.settings.storageFolders),
+          children: [
+            for (final folder in StorageFolder.values)
+              () {
+                final directory = _pathOf(folders, folder).path;
+                final custom = overrides.containsKey(folder);
+                return DsListRow(
+                  leading: DsIcon(folder.icon),
+                  title: Text(_label(t, folder)),
+                  description: DsTooltip(
+                    message: directory,
+                    child: Text(directory, maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
-                  if (custom)
-                    DsButton(
-                      variant: DsButtonVariant.ghost,
-                      size: DsSize.sm,
-                      onPressed: () => unawaited(_reset(context, ref, folder)),
-                      child: Text(t.settings.storageFolderReset),
-                    ),
-                ],
+                  detail: Text(custom ? t.settings.storageFolderCustomLabel : t.settings.storageFolderDefaultLabel),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DsButton.icon(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        semanticLabel: t.settings.storageFolderCopyPath,
+                        onPressed: () => unawaited(_copyPath(context, directory)),
+                        icon: const DsIcon(DsIcons.copy, size: 16),
+                      ),
+                      DsButton(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        onPressed: () => unawaited(_pick(context, ref, folder)),
+                        child: Text(t.settings.storageFolderPick),
+                      ),
+                      if (custom)
+                        DsButton(
+                          variant: DsButtonVariant.ghost,
+                          size: DsSize.sm,
+                          onPressed: () => unawaited(_reset(context, ref, folder)),
+                          child: Text(t.settings.storageFolderReset),
+                        ),
+                    ],
+                  ),
+                );
+              }(),
+            DsListRow(
+              leading: const DsIcon(DsIcons.database),
+              title: Text(t.settings.storageFolderData),
+              description: DsTooltip(
+                message: '${folders.data.path} · ${t.settings.storageFolderDataDesc}',
+                child: Text(folders.data.path, maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
-            );
-          }(),
-        DsListRow(
-          leading: const DsIcon(DsIcons.database),
-          title: Text(t.settings.storageFolderData),
-          description: DsTooltip(
-            message: '${folders.data.path} · ${t.settings.storageFolderDataDesc}',
-            child: Text(folders.data.path, maxLines: 1, overflow: TextOverflow.ellipsis),
-          ),
-        ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.rotateCcw),
-          title: Text(t.settings.storageFoldersResetAll),
-          description: Text(t.settings.storageFoldersResetAllDesc),
-          trailing: DsButton(
-            variant: DsButtonVariant.ghost,
-            size: DsSize.sm,
-            onPressed: overrides.isEmpty ? null : () => unawaited(_resetAll(context, ref)),
-            child: Text(t.settings.storageFolderReset),
-          ),
+              trailing: DsButton.icon(
+                variant: DsButtonVariant.ghost,
+                size: DsSize.sm,
+                semanticLabel: t.settings.storageFolderCopyPath,
+                onPressed: () => unawaited(_copyPath(context, folders.data.path)),
+                icon: const DsIcon(DsIcons.copy, size: 16),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -180,9 +242,10 @@ final class StorageFoldersSection extends ConsumerWidget {
 }
 
 /// The data-and-cache page: where every kind of file lives, what the app
-/// keeps on this machine — the watch history and the follow list's clipboard
-/// round trip — and the cover image cache's size, clearing and cap. One page
-/// because moving, clearing and capping local data are one task.
+/// keeps on this machine — and the cover image cache's size, clearing and
+/// cap. One page because moving, clearing and capping local data are one
+/// task; the watch history's own cap and clearing live on the history page,
+/// behind its gauge button.
 final class DataCachePane extends ConsumerWidget {
   const DataCachePane({super.key});
 
@@ -192,129 +255,26 @@ final class DataCachePane extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        const DataPane(),
-        const FollowsDataPane(),
-        const CachePane(),
         // The folders are their own page: twelve rows with two actions each
-        // did not belong in this scroll.
-        SettingsChildEntry(
-          child: SettingsSection.storageFolders,
-          detail: Text(
-            ref.watch(storageFolderOverridesProvider).isEmpty
-                ? context.t.settings.storageFolderDefaultLabel
-                : context.t.settings.storageFolderCustomLabel,
-          ),
+        // did not belong in this scroll. Grouped under its own header so the
+        // entry reads like the cache group below it. The downloaded-media
+        // library rides beside them — both are "where the files are, and what
+        // is in them" — and it is the only door to that page.
+        DsListSection(
+          header: Text(context.t.settings.storageFolders),
+          children: [
+            SettingsChildEntry(
+              child: SettingsSection.storageFolders,
+              detail: Text(
+                ref.watch(storageFolderOverridesProvider).isEmpty
+                    ? context.t.settings.storageFolderDefaultLabel
+                    : context.t.settings.storageFolderCustomLabel,
+              ),
+            ),
+            const SettingsChildEntry(child: SettingsSection.localMedia),
+          ],
         ),
-        // The local media page: where 本地音乐 and the file cache keep their
-        // answers, beside the folders those files live in.
-        const SettingsChildEntry(child: SettingsSection.localMedia),
-      ],
-    );
-  }
-}
-
-/// The live data pane: the watch history's cap, clearing the watch history
-/// behind a confirm, and the follow list as a JSON round trip through the
-/// clipboard. Backups, restores and WebDAV sync are their own app-wide
-/// section, so the video and IPTV modules can reach them without carrying
-/// the live history.
-final class DataPane extends ConsumerWidget {
-  const DataPane({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    final historyLimit = ref.watch(historyLimitProvider);
-    // A cap imported from outside the choices still shows as chosen.
-    final limits = {...HistoryLimitController.choices, historyLimit}.toList()..sort();
-    void toast(String message) {
-      showDsToast(context: context, title: message);
-    }
-
-    return DsListSection(
-      header: Text(t.settings.navData),
-      children: [
-        SettingsChoiceRow<int>(
-          leading: const DsIcon(DsIcons.clock),
-          title: t.settings.historyLimit,
-          description: t.settings.historyLimitDesc,
-          value: historyLimit,
-          options: [for (final limit in limits) DsSelectOption(value: limit, label: '$limit')],
-          onChanged: (value) => unawaited(ref.read(historyLimitProvider.notifier).setLimit(value)),
-        ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.history),
-          title: Text(t.settings.dataClearHistory),
-          description: Text(t.settings.dataClearHistoryDesc),
-          destructive: true,
-          onPressed: () async {
-            final confirmed = await showDsConfirm(
-              context: context,
-              title: t.settings.confirmClearTitle,
-              description: t.settings.confirmClearDesc,
-              confirmLabel: t.settings.confirm,
-              destructive: true,
-            );
-            if (!confirmed || !context.mounted) return;
-            await ref.read(historyProvider.notifier).clear();
-            if (!context.mounted) return;
-            toast(t.settings.dataDone);
-          },
-        ),
-      ],
-    );
-  }
-}
-
-/// The follows' own card: the list as one JSON round trip through the
-/// clipboard — a different subject from the watch history above it.
-final class FollowsDataPane extends ConsumerWidget {
-  const FollowsDataPane({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.t;
-    void toast(String message) {
-      showDsToast(context: context, title: message);
-    }
-
-    return DsListSection(
-      header: Text(t.settings.followDataGroup),
-      children: [
-        DsListRow(
-          leading: const DsIcon(DsIcons.upload),
-          title: Text(t.settings.dataExportFollows),
-          description: Text(t.settings.dataExportFollowsDesc),
-          onPressed: () async {
-            final rooms = ref.read(followsProvider).rooms;
-            if (rooms.isEmpty) {
-              toast(t.settings.dataEmpty);
-              return;
-            }
-            await Clipboard.setData(ClipboardData(text: encodeFollows(rooms)));
-            toast(t.settings.dataDone);
-          },
-        ),
-        DsListRow(
-          leading: const DsIcon(DsIcons.download),
-          title: Text(t.settings.dataImportFollows),
-          description: Text(t.settings.dataImportFollowsDesc),
-          onPressed: () async {
-            final raw = await Clipboard.getData(Clipboard.kTextPlain).then((data) => data?.text);
-            final rooms = raw == null ? null : decodeFollows(raw);
-            if (rooms == null) {
-              toast(t.settings.dataBadData);
-              return;
-            }
-            final repository = ref.read(followRepositoryProvider).value;
-            if (repository != null) {
-              for (final room in rooms) {
-                await repository.add(room);
-              }
-            }
-            toast(t.settings.dataDone);
-          },
-        ),
+        const CachePane(),
       ],
     );
   }

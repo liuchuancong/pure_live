@@ -8,9 +8,9 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_downloads.dart';
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
+    show musicPlaybackSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/music_playlists.dart';
-import 'package:pure_live/modules/music/controller/music_settings.dart'
-    show musicSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
 import 'package:pure_live/modules/music/controller/music_source_swaps.dart' show musicSourceSwapsProvider;
 
@@ -280,7 +280,7 @@ final class _ToggleSourceDialogState extends ConsumerState<_ToggleSourceDialog> 
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final settings = ref.watch(musicSettingsProvider);
+    final settings = ref.watch(musicPlaybackSettingsProvider);
     final sourceNames = {
       for (final source in ref.watch(musicSourceListProvider))
         source.id: musicSourceDisplayName(t, settings.sourceNameType, source.id, source.name),

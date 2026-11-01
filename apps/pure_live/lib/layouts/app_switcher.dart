@@ -45,12 +45,12 @@ final class AppSwitcher extends StatelessWidget {
         semanticLabel: t.common.switchModule,
         onPressed: controller.toggle,
         builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
+          final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
           return Container(
             height: 40,
             padding: collapsed ? null : const EdgeInsetsDirectional.symmetric(horizontal: DsSpace.s8),
             decoration: DsBoxDecoration(
-              color: controller.isOpen || hovered ? colors.hover : null,
+              color: controller.isOpen || lit ? colors.hover : null,
               borderRadius: BorderRadius.circular(theme.radii.control(40)),
             ),
             child: collapsed

@@ -811,36 +811,56 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
       unawaited(_seekTo(target < 0 ? 0 : target));
     }
 
-    return CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.space): _togglePlay,
-        const SingleActivator(LogicalKeyboardKey.keyF): _toggleFullscreen,
-        const SingleActivator(LogicalKeyboardKey.escape): _leave,
-        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowUp): () => nudgeVolume(volumeStep),
-        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowDown): () => nudgeVolume(-volumeStep),
-        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowLeft): () => nudgeSeek(-5),
-        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowRight): () => nudgeSeek(5),
-      },
-      child: Scaffold(
-        backgroundColor: colors.surface,
-        appBar: AppBar(
+    return PlayerBarTier(
+      tv: tv,
+      child: CallbackShortcuts(
+        bindings: {
+          // A remote cannot tap the picture to raise the bar, so its transport
+          // keys wake the chrome they drive.
+          const SingleActivator(LogicalKeyboardKey.space): () {
+            _wake();
+            unawaited(_togglePlay());
+          },
+          const SingleActivator(LogicalKeyboardKey.keyF): () {
+            _wake();
+            unawaited(_toggleFullscreen());
+          },
+          const SingleActivator(LogicalKeyboardKey.escape): _leave,
+          // While the bar is down a TV's arrows and OK have nothing to move
+          // through, so they raise it; while it is up they stay with focus.
+          if (tv && !_controlsVisible) ...{
+            const SingleActivator(LogicalKeyboardKey.arrowUp): _wake,
+            const SingleActivator(LogicalKeyboardKey.arrowDown): _wake,
+            const SingleActivator(LogicalKeyboardKey.arrowLeft): _wake,
+            const SingleActivator(LogicalKeyboardKey.arrowRight): _wake,
+            const SingleActivator(LogicalKeyboardKey.select): _wake,
+          },
+          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowUp): () => nudgeVolume(volumeStep),
+          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowDown): () => nudgeVolume(-volumeStep),
+          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowLeft): () => nudgeSeek(-5),
+          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowRight): () => nudgeSeek(5),
+        },
+        child: Scaffold(
           backgroundColor: colors.surface,
-          surfaceTintColor: const Color(0x00000000),
-          elevation: 0,
-          title: Text(detail?.title ?? t.vod.opening, maxLines: 1, overflow: TextOverflow.ellipsis),
+          appBar: AppBar(
+            backgroundColor: colors.surface,
+            surfaceTintColor: const Color(0x00000000),
+            elevation: 0,
+            title: Text(detail?.title ?? t.vod.opening, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+          body: _loading && detail == null
+              ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
+              : _error != null && detail == null
+              ? Center(
+                  child: DsEmptyState(
+                    icon: const DsIcon(DsIcons.cloudOff),
+                    title: Text(t.vod.loadFailed),
+                    description: Text(_error!),
+                    actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.vod.retry))],
+                  ),
+                )
+              : _body(context, detail, t),
         ),
-        body: _loading && detail == null
-            ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
-            : _error != null && detail == null
-            ? Center(
-                child: DsEmptyState(
-                  icon: const DsIcon(DsIcons.cloudOff),
-                  title: Text(t.vod.loadFailed),
-                  description: Text(_error!),
-                  actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.vod.retry))],
-                ),
-              )
-            : _body(context, detail, t),
       ),
     );
   }
@@ -990,8 +1010,8 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                 ),
                 if (_opening || (transport?.isBuffering ?? false))
                   const Center(child: DsSpinner(style: DsSpinnerStyle(size: 40))),
-                if (immersive && showBar)
-                  PositionedDirectional(top: 0, start: 0, end: 0, child: _vodTopStrip(t, detail)),
+                if (showBar)
+                  PositionedDirectional(top: 0, start: 0, end: 0, child: _vodTopStrip(t, detail, immersive: immersive)),
                 if (showBar)
                   PositionedDirectional(
                     bottom: 0,
@@ -1031,7 +1051,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                                           final progress? => t.vod.downloading(percent: (progress * 100).round()),
                                           null => t.vod.downloadingUnknown,
                                         }, style: theme.typography.caption.copyWith(color: playerInk)),
-                                        MediaBarButton(
+                                        PlayerBarButton(
                                           icon: DsIcons.pause,
                                           label: t.vod.downloadPause,
                                           size: 28,
@@ -1088,9 +1108,43 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     );
   }
 
-  /// The strip over an immersive picture: the way out and the archive's name.
-  Widget _vodTopStrip(Translations t, VodDetail? detail) {
+  /// Whether this archive is on the viewer's shelf. The action row under the
+  /// player and the immersive strip's button both read it here, so the two can
+  /// never disagree about what is bookmarked.
+  bool savedOf(String bvid) => ref.watch(vodFavouritesProvider).any((video) => video.bvid == bvid);
+
+  /// The strip over the picture: the way out and the archive's name when the
+  /// page's own headline is gone, and the presentation cluster (the small
+  /// window) at the right edge wherever the picture is.
+  ///
+  /// In-page the identity half is skipped on purpose — the page header above
+  /// already names the archive — so what sits over the picture's top-right is
+  /// only the verb that changes how the picture is shown. Same rule as the live
+  /// room's strip.
+  Widget _vodTopStrip(Translations t, VodDetail? detail, {required bool immersive}) {
     final theme = DsTheme.of(context);
+    final presentation = ref.watch(roomPresentationProvider);
+    final pipAvailable = _handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable;
+    final pipButton = pipAvailable
+        ? PlayerBarButton(
+            icon: presentation == PresentationMode.pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
+            label: presentation == PresentationMode.pip ? t.room.pipOff : t.vod.pip,
+            selected: presentation == PresentationMode.pip,
+            onPressed: () {
+              _wake();
+              unawaited(_togglePip());
+            },
+          )
+        : const SizedBox.shrink();
+    if (!immersive) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s12, 0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [if (pipAvailable) PlayerGlassPill(child: pipButton)],
+        ),
+      );
+    }
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, DsSpace.s8, DsSpace.s12, DsSpace.s20),
       decoration: const BoxDecoration(
@@ -1104,7 +1158,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
         spacing: DsSpace.s8,
         children: [
           PlayerGlassPill(
-            child: MediaBarButton(
+            child: PlayerBarButton(
               icon: DsIcons.minimize2,
               label: t.vod.exitFullscreen,
               autofocus: true,
@@ -1119,6 +1173,21 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               style: theme.typography.title.copyWith(color: playerInk),
             ),
           ),
+          // The page's own bookmark, reachable from the fullscreen picture: the
+          // action row under the player is page chrome, and an immersive
+          // surface has none of it — an action that vanished with the chrome is
+          // one the viewer has to leave fullscreen to reach. One verb, so it is
+          // a button rather than a menu of one row.
+          if (detail != null)
+            PlayerGlassPill(
+              child: PlayerBarButton(
+                icon: DsIcons.heart,
+                label: savedOf(detail.bvid) ? t.vod.savedVideo : t.vod.saveVideo,
+                selected: savedOf(detail.bvid),
+                onPressed: () => unawaited(_toggleFavourite()),
+              ),
+            ),
+          if (pipAvailable) PlayerGlassPill(child: pipButton),
         ],
       ),
     );
@@ -1233,9 +1302,9 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
               final compact = LiveWindow.isCompact(constraints.maxWidth);
               final bar = Row(
                 mainAxisSize: compact ? MainAxisSize.min : MainAxisSize.max,
-                spacing: DsSpace.s4,
+                spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
                 children: [
-                  MediaBarButton(
+                  PlayerBarButton(
                     icon: playing ? DsIcons.pause : DsIcons.play,
                     label: playing ? t.vod.pause : t.vod.play,
                     focusNode: _playFocus,
@@ -1246,7 +1315,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                             unawaited(_togglePlay());
                           },
                   ),
-                  MediaBarButton(
+                  PlayerBarButton(
                     icon: _effectivelyMuted ? DsIcons.volumeOff : DsIcons.volume,
                     label: _effectivelyMuted ? t.vod.unmute : t.vod.mute,
                     onPressed: handle == null
@@ -1273,7 +1342,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                   // Only the fitted bar has spare width to split its clusters
                   // with; a scrolling one keeps the verbs right after.
                   if (!compact) const Spacer(),
-                  MediaBarButton(
+                  PlayerBarButton(
                     icon: danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
                     label: danmakuVisible ? t.vod.danmakuOff : t.vod.danmakuOn,
                     selected: danmakuVisible,
@@ -1319,7 +1388,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                       semanticLabel: t.settings.fit,
                       compact: compact,
                     ),
-                  MediaBarButton(
+                  PlayerBarButton(
                     icon: DsIcons.download,
                     label: t.vod.download,
                     onPressed: _part == null || _detail == null
@@ -1329,18 +1398,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                             unawaited(_startDownload());
                           },
                   ),
-                  if (handle != null && presentationController.pipAvailable)
-                    MediaBarButton(
-                      icon: presentation == PresentationMode.pip
-                          ? DsIcons.pictureInPictureExit
-                          : DsIcons.pictureInPicture,
-                      label: presentation == PresentationMode.pip ? t.room.pipOff : t.vod.pip,
-                      onPressed: () {
-                        _wake();
-                        unawaited(_togglePip());
-                      },
-                    ),
-                  MediaBarButton(
+                  PlayerBarButton(
                     icon: immersive ? DsIcons.minimize2 : DsIcons.fullscreen,
                     label: immersive ? t.vod.exitFullscreen : t.vod.fullscreen,
                     onPressed: handle == null
@@ -1651,7 +1709,7 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
     // The station's own switch: the archive's details under the picture are
     // what a viewer hides to keep the page on the parts and the rail.
     final showDetails = ref.watch(vodPlaybackSettingsProvider).showDetails;
-    final saved = ref.watch(vodFavouritesProvider).any((video) => video.bvid == detail.bvid);
+    final saved = savedOf(detail.bvid);
     final uploaded = detail.publishedAt;
     final plays = detail.playCount;
     final danmaku = detail.danmakuCount;

@@ -8,6 +8,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_shell/live_shell.dart' show WindowRole;
+import 'package:live_shell_desktop/live_shell_desktop.dart' show DesktopInvalidated, DesktopMessageBus;
+import 'package:live_uikit_background/live_uikit_background.dart' show AppVisibilityObserver;
+import 'package:multiview_desktop/multiview_desktop.dart' show MultiViewDesktop;
 import 'package:pure_live/app/background/glass/app_component_glass.dart' show AppComponentGlass;
 import 'package:pure_live/app/background/settings/background_settings.dart' show backgroundSettingsProvider;
 import 'package:pure_live/app/background/tone/background_tone.dart' show backgroundToneProvider;
@@ -32,7 +35,6 @@ import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/music/controller/music_deeplink_binding.dart';
 import 'package:pure_live/shared/shared.dart';
-import 'package:pure_uikit_background/pure_uikit_background.dart' show AppVisibilityObserver;
 
 /// The root: `DsApp` over the viewer's theme settings — the seed from the
 /// platform accent or the appearance pane's named tone, light/dark, density
@@ -64,6 +66,11 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
 
   /// The startup mark is shown once per process, before the shell settles.
   bool _showSplash = false;
+
+  /// The startup mark's one-shot lock: a settings revision landing later
+  /// (another window's theme change, a restore) re-reads the splash switch,
+  /// and without this lock a dismissed mark would come back mid-session.
+  bool _splashDismissed = false;
 
   @override
   void initState() {
@@ -200,16 +207,53 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     // window) is armed the same way the boot arms it.
     _ensureFontLoaded();
     // The pane writes every change the moment it happens; the root reads
-    // them back on the next boot.
-    unawaited(ThemePersistence.storeMode(settings.mode));
-    unawaited(ThemePersistence.storeCorners(settings.cornerStyle));
-    unawaited(ThemePersistence.storeContrast(settings.contrast));
-    unawaited(ThemePersistence.storeSelectionStyle(settings.selectionStyle));
-    unawaited(ThemePersistence.storeAutoClashRule(value: settings.autoClashRule));
-    unawaited(ThemePersistence.storeDensity(settings.density));
-    unawaited(ThemePersistence.storeFont(settings.fontFamily));
+    // them back on the next boot. Write and tell are one ordered job: the
+    // store's memory snapshot — what a re-reading window answers from —
+    // only updates inside the queued write, so a notice sent before the
+    // writes land makes the other windows re-read the old values and keep
+    // their old look.
+    unawaited(_persistTheme(settings, seedChanged: seedChanged, storedSeed: storedSeed));
+  }
+
+  /// Persists the theme's writes in order, then tells the other windows.
+  Future<void> _persistTheme(
+    AppThemeSettings settings, {
+    required bool seedChanged,
+    required String? storedSeed,
+  }) async {
+    await ThemePersistence.storeMode(settings.mode);
+    await ThemePersistence.storeCorners(settings.cornerStyle);
+    await ThemePersistence.storeContrast(settings.contrast);
+    await ThemePersistence.storeSelectionStyle(settings.selectionStyle);
+    await ThemePersistence.storeAutoClashRule(value: settings.autoClashRule);
+    await ThemePersistence.storeDensity(settings.density);
+    await ThemePersistence.storeFont(settings.fontFamily);
     // Named tone, custom hex, or empty for the platform accent.
-    if (seedChanged) unawaited(ThemePersistence.storeSeed(storedSeed));
+    if (seedChanged) await ThemePersistence.storeSeed(storedSeed);
+    // The theme pair lives per window (each root holds its own scope state),
+    // so the other windows learn about the write through the message bus and
+    // re-read the store there; this window already applied its own change.
+    _notifyOtherWindows('theme');
+  }
+
+  /// Tells every other window the shared settings changed under them.
+  ///
+  /// Each window's root re-reads the store when the notice lands (the
+  /// `DesktopInvalidated` handler); the sender is skipped because its own
+  /// state is already the one that produced the write. The plugin's window
+  /// table is the source of ids — the app registry only records secondaries,
+  /// and the primary has to hear this too.
+  void _notifyOtherWindows(String reason) {
+    // The window set only exists on the desktop; phones and TVs have none.
+    if (ref.read(platformRuntimeProvider).environment.runtime.formFactor != FormFactor.desktop) return;
+    final self = ref.read(windowIdProvider);
+    final targets = [
+      for (final viewId in MultiViewDesktop.allWindowViewIds)
+        if ('$viewId' != self) viewId,
+    ];
+    for (final viewId in targets) {
+      DesktopMessageBus.instance.send(viewId, DesktopInvalidated(reason));
+    }
   }
 
   /// The custom seed the store holds, or null for a named tone or the
@@ -232,7 +276,18 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     } else {
       unawaited(LocaleSettings.setLocaleRaw(normalized));
     }
-    unawaited(ThemePersistence.storeLocale(normalized));
+    // Write and tell are one ordered job, as in the theme's persistence:
+    // the notice has to land after the write is visible to a re-reading
+    // window.
+    unawaited(_persistLocale(normalized));
+  }
+
+  /// Persists the locale, then tells the other windows.
+  Future<void> _persistLocale(String? normalized) async {
+    await ThemePersistence.storeLocale(normalized);
+    // Same story as the theme: the other windows hold their own locale and
+    // only re-read when told.
+    _notifyOtherWindows('locale');
   }
 
   bool _handleNewWindowKey(KeyEvent event) {
@@ -283,7 +338,9 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       setState(() {
         _settings = readStoredAppThemeSettings();
         _customSeedColor = _readStoredCustomSeedColor();
-        _showSplash = widget.showStartupSplash && ref.read(splashSettingsProvider);
+        // Once the viewer has seen and dismissed the mark it stays gone,
+        // even when the revision that landed here flips the splash switch.
+        _showSplash = !_splashDismissed && widget.showStartupSplash && ref.read(splashSettingsProvider);
         _localeCode = code;
       });
       _ensureFontLoaded();
@@ -405,7 +462,12 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
               if (_showSplash)
                 StartupSplash(
                   onDone: () {
-                    if (mounted) setState(() => _showSplash = false);
+                    if (mounted) {
+                      setState(() {
+                        _showSplash = false;
+                        _splashDismissed = true;
+                      });
+                    }
                   },
                 ),
             ],

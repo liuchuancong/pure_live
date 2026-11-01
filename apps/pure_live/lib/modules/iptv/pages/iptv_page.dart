@@ -70,11 +70,30 @@ final class _IptvPageState extends ConsumerState<IptvPage> {
         if (mounted) ref.read(iptvChannelsProvider.notifier).selectScope(scope);
       });
     }
+    // The toolbar's word lands in the channel search in place — even from
+    // the sources surface, which steps back to the channels it searches.
+    // The listener catches a word handed while the page is showing; the
+    // post-frame take catches one handed as the page arrives.
+    ref.listenManual(iptvSearchHandoffProvider, (_, _) => _takeHandoff());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
     _slotRefresh = Timer.periodic(_slotRefreshInterval, (_) {
       // A tick queued as the page leaves must not reach a defunct ref.
       if (!mounted) return;
       ref.read(iptvChannelsProvider.notifier).refreshSlots();
     });
+  }
+
+  /// Moves the handed word into the channel search: the field reads it and
+  /// the channels controller narrows to it.
+  void _takeHandoff() {
+    final word = ref.read(iptvSearchHandoffProvider.notifier).take();
+    if (word == null || word.isEmpty || !mounted) return;
+    if (_view != IptvView.channels) setState(() => _view = IptvView.channels);
+    _channelSearch.value = TextEditingValue(
+      text: word,
+      selection: TextSelection.collapsed(offset: word.length),
+    );
+    ref.read(iptvChannelsProvider.notifier).setQuery(word);
   }
 
   @override

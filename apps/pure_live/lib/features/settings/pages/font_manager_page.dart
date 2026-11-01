@@ -11,6 +11,14 @@ import 'package:pure_live/features/settings/surface/settings_navigation.dart' sh
 import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/l10n/translations.dart';
 
+/// Copies a family's or face's name and says so: a menu item that closes
+/// with nothing on screen reads as a press that did not land.
+Future<void> _copyFontName(BuildContext context, String name) async {
+  await Clipboard.setData(ClipboardData(text: name));
+  if (!context.mounted) return;
+  showDsToast(context: context, title: context.t.common.copied);
+}
+
 /// The room the pager takes under the table (its row plus the gap above it),
 /// which the page size leaves out of the rows it counts.
 const double _kPagerRoom = 48;
@@ -719,7 +727,7 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
       DsMenuItem(
         leading: const DsIcon(DsIcons.copy),
         label: Text(t.settings.fontManagerCopyName),
-        onPressed: () => unawaited(Clipboard.setData(ClipboardData(text: entry.name))),
+        onPressed: () => unawaited(_copyFontName(context, entry.name)),
       ),
       if (current && !isDefault) ...[
         const DsMenuDivider(),
@@ -816,7 +824,7 @@ final class _FontManagerPageState extends ConsumerState<FontManagerPage> {
                       child: DsButton(
                         variant: DsButtonVariant.secondary,
                         leading: const DsIcon(DsIcons.copy, size: 16),
-                        onPressed: () => unawaited(Clipboard.setData(ClipboardData(text: entry.name))),
+                        onPressed: () => unawaited(_copyFontName(context, entry.name)),
                         child: Text(t.settings.fontManagerCopyName),
                       ),
                     ),

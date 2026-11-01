@@ -55,20 +55,25 @@
 页面移动**不得**改变键名、默认值、有效范围或既有用户数据；键身份变化属于新的独立决策，要单独评估
 兼容与回滚。
 
-## 5. 验收命令（本轮 §10.10 口径：不写测试、不 build、不运行）
+## 5. 验收命令（静态 + 编译；运行期视觉另计）
 
 ```
 dart analyze lib                                             # apps/pure_live
 powershell -NoProfile -ExecutionPolicy Bypass -File tool/check_prefs_manifest.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File tool/check_settings_ia.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tool/check_responsive.ps1
+cd apps/pure_live && flutter build bundle
 ```
 
 - `check_prefs_manifest.ps1` = 配置身份：键 / 备份种类 / 失效登记 / 包级归属。解析按 helper 的字面前缀
   合成整键（`'danmaku.style.$key'` → `danmaku.style.<arg>`），跳过不碰 facade 的 helper 与运行时拼键，
-  裸标识符只有名字以 `Key`/`Pref` 结尾才借全局常量。豁免必须各带一句理由，分两类：**不进备份**的键
+  裸标识符只有名字以 `Key`/`Pref` 结尾才借全局常量。助手可以定义在**另一个文件**里（音乐设置的
+  `readMusicPref('music.x')` 就是这样）：先全树收集「把参数交给 facade 的助手」，再在每个调用文件里解析
+  传给它们的字面量与常量；控制器调用这类助手也算「读 prefs 的 provider」，参与失效刷新检查。三条限定防误配：
+  助手名在全树唯一、调用文件 import 它的文件、函数体在第一个行首 `}` 处截断。豁免必须各带一句理由，分两类：**不进备份**的键
   （设备指纹与登录凭据、同步的密钥与配对设备、缓存、三个下载队列、逐曲进度、本机已下载字体索引、
   `recorder.saveDir`）与**不重建**的控制器（目前只有 `musicPlayerProvider`：它持有队列与内核，重建等于丢
-  队列，能中途生效的偏好由它自己监听）。2026-10-31 实测 363 键 / 348 备份条目 / 124 个失效登记。
+  队列，能中途生效的偏好由它自己监听）。2026-11-01 实测 363 键 / 348 备份条目 / 127 个失效登记（音乐拆分组后 +3）。
 - `check_settings_ia.ps1` = 四处结构事实一致：分区（每个值是真实行 / 子页 / 别名之一）、别名目标、
   `parentSection` ↔ `settingsChildrenOf` 互逆、页面层级、每页有 pane 分支、别名渲染 canonical 页、
   子页确实由父页的 pane 打开、每页至少一条搜索命中。搜索命中的归属用「pane 所在文件 + 它 import 的文件，

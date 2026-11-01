@@ -8,12 +8,14 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart'
-    show confirmClearFinished, openDownloadedPath;
+    show confirmClearFinished, downloadStampOf, openDownloadedPath;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_downloads.dart';
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_settings.dart' show musicQualityByScriptName;
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicQualityByScriptName;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
+import 'package:pure_live/shared/shared.dart'
+    show DownloadDetails, DownloadFilterOption, DownloadWorkspace, LiveWindow, showDownloadDetails;
 
 final class MusicDownloadsView extends ConsumerStatefulWidget {
   const MusicDownloadsView({super.key});
@@ -48,6 +50,10 @@ bool _playableTask(audio.MusicDownloadTask task) =>
 final class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
   _DownloadsFilter _filter = _DownloadsFilter.all;
 
+  /// The row whose facts sit in the wide workspace's right column; null lets
+  /// the first visible row speak.
+  String? _selectedId;
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -64,142 +70,258 @@ final class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
       0,
       (sum, task) => sum + (task.bytesTotal > 0 ? task.bytesTotal : task.bytesReceived),
     );
+    // The queue's live throughput: every task still working, summed.
+    final totalSpeed = pending.fold<int>(0, (sum, task) => sum + task.bytesPerSecond);
     final shown = switch (_filter) {
       _DownloadsFilter.all => tasks,
       _DownloadsFilter.active => tasks.where((task) => !_playableTask(task)).toList(),
       _DownloadsFilter.done => finished,
     };
+    // A row whose facts sit at the wide workspace's right; the first visible
+    // row speaks until the viewer picks one.
+    final selectedTask =
+        (_selectedId == null ? null : tasks.where((task) => task.id == _selectedId).firstOrNull) ??
+        (shown.isEmpty ? null : shown.first);
+    // The download page plays in the module's own player, and it hands the
+    // player the list the page is showing: 上一首/下一首, the queue panel and
+    // the player page all carry the other finished downloads instead of
+    // stopping at the one tapped. A preview page of its own would be a second,
+    // weaker audio surface over the one that already owns lyrics, the spectrum
+    // and the media session.
+    void playFromList(audio.MusicDownloadTask task) {
+      final queue = [
+        for (final item in shown)
+          if (_playableTask(item)) item,
+      ];
+      final index = queue.indexWhere((item) => item.id == task.id);
+      if (index < 0) return;
+      unawaited(
+        ref.read(musicPlayerProvider.notifier).playAll([
+          for (final item in queue) _previewTrack(item, local: true),
+        ], index: index),
+      );
+    }
+
+    Widget queueList({required bool wide}) => shown.isEmpty
+        ? Center(
+            child: DsEmptyState(
+              icon: const DsIcon(DsIcons.download),
+              title: Text(t.music.downloadFilterEmpty),
+              actions: [
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: () => setState(() => _filter = _DownloadsFilter.all),
+                  child: Text(t.music.downloadFilterAll),
+                ),
+              ],
+            ),
+          )
+        : ListView(
+            padding: const EdgeInsets.only(bottom: DsSpace.s16),
+            children: [
+              DsListSection(
+                children: [
+                  for (final task in shown)
+                    _DownloadRow(
+                      key: ValueKey(task.id),
+                      task: task,
+                      onPlay: () => playFromList(task),
+                      selected: wide && task.id == selectedTask?.id,
+                      onSelect: wide ? () => setState(() => _selectedId = task.id) : null,
+                    ),
+                ],
+              ),
+            ],
+          );
     if (tasks.isEmpty) {
       return Center(
         child: DsEmptyState(
           icon: const DsIcon(DsIcons.download),
           title: Text(t.music.downloadsEmptyTitle),
           description: Text(t.music.downloadsEmptyDescription(directory: directory)),
+          actions: [
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.folderOpen, size: 14),
+              onPressed: () => unawaited(openDownloadedPath(context, directory)),
+              child: Text(t.settings.downloadManagerOpenFolder),
+            ),
+          ],
         ),
       );
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
-          child: Row(
-            spacing: DsSpace.s8,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: DsSpace.s3,
-                  children: [
-                    // What the queue has already put on disk, the reference's
-                    // line above the folder: the page is a library of files,
-                    // not only a task list.
-                    if (finishedBytes > 0)
-                      Text(
-                        t.music.downloadsSummary(count: finished.length, size: _bytesText(finishedBytes)),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.caption.copyWith(color: colors.textMuted),
-                      ),
-                    Text(
-                      directory,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                    ),
-                  ],
-                ),
-              ),
-              // The folder every one of these files lands in, one click from
-              // the page that lists them — the station managers' own verb.
-              DsButton.icon(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                semanticLabel: t.settings.downloadManagerOpenFolder,
-                onPressed: () => unawaited(openDownloadedPath(context, directory)),
-                icon: const DsIcon(DsIcons.folderOpen, size: 16),
-              ),
-              if (pending.isNotEmpty)
-                DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  onPressed: () => unawaited(controller.pauseAll()),
-                  child: Text(t.music.downloadPauseAll),
-                ),
-              if (tasks.any((task) => task.isPaused))
-                DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  onPressed: () => unawaited(controller.resumeAll()),
-                  child: Text(t.music.downloadResumeAll),
-                ),
-              if (finished.isNotEmpty)
-                DsButton(
-                  variant: DsButtonVariant.secondary,
-                  size: DsSize.sm,
-                  onPressed: () => unawaited(
-                    confirmClearFinished(
-                      context,
-                      title: t.music.downloadClearFinished,
-                      clear: controller.clearFinished,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // A manager with room for three panes reads like a workspace: the
+        // filters, the queue, and the selected task's facts. A narrower one
+        // keeps the list and the sheet the row menu already offers.
+        final wide = constraints.maxWidth >= LiveWindow.downloadWorkspace;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+              child: Row(
+                spacing: DsSpace.s8,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: DsSpace.s3,
+                      children: [
+                        // What the queue has already put on disk, the reference's
+                        // line above the folder: the page is a library of files,
+                        // not only a task list.
+                        if (totalSpeed > 0)
+                          Text(
+                            t.common.downloadSpeed(speed: '${_bytesText(totalSpeed)}/s'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.caption.copyWith(color: colors.textMuted),
+                          ),
+                        if (finishedBytes > 0)
+                          Text(
+                            t.music.downloadsSummary(count: finished.length, size: _bytesText(finishedBytes)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.caption.copyWith(color: colors.textMuted),
+                          ),
+                        Text(
+                          directory,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Text(t.music.downloadClearFinished),
-                ),
-            ],
-          ),
-        ),
-        // The queue's own filter, the station managers' grammar: everything,
-        // what is still owed a file, and what is already on disk.
-        Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DsSegmentedControl<_DownloadsFilter>(
-                value: _filter,
-                onChanged: (filter) => setState(() => _filter = filter),
-                semanticLabel: t.navigation.musicDownloads,
-                segments: [
-                  for (final filter in _DownloadsFilter.values) DsSegment(value: filter, label: Text(filter.label(t))),
+                  // The verbs scroll rather than overflow on a narrow window:
+                  // a manager is still a manager at 320px, and the batch
+                  // actions must stay reachable there.
+                  Flexible(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      reverse: true,
+                      child: Row(
+                        spacing: DsSpace.s8,
+                        children: [
+                          // The folder every one of these files lands in, one
+                          // click from the page that lists them — the station
+                          // managers' own verb.
+                          DsButton.icon(
+                            variant: DsButtonVariant.secondary,
+                            size: DsSize.sm,
+                            semanticLabel: t.settings.downloadManagerOpenFolder,
+                            onPressed: () => unawaited(openDownloadedPath(context, directory)),
+                            icon: const DsIcon(DsIcons.folderOpen, size: 16),
+                          ),
+                          if (pending.isNotEmpty)
+                            DsButton(
+                              variant: DsButtonVariant.secondary,
+                              size: DsSize.sm,
+                              onPressed: () => unawaited(controller.pauseAll()),
+                              child: Text(t.music.downloadPauseAll),
+                            ),
+                          if (tasks.any((task) => task.isPaused))
+                            DsButton(
+                              variant: DsButtonVariant.secondary,
+                              size: DsSize.sm,
+                              onPressed: () => unawaited(controller.resumeAll()),
+                              child: Text(t.music.downloadResumeAll),
+                            ),
+                          if (finished.isNotEmpty)
+                            DsButton(
+                              variant: DsButtonVariant.secondary,
+                              size: DsSize.sm,
+                              onPressed: () => unawaited(
+                                confirmClearFinished(
+                                  context,
+                                  title: t.music.downloadClearFinished,
+                                  clear: controller.clearFinished,
+                                ),
+                              ),
+                              child: Text(t.music.downloadClearFinished),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-          ),
-        ),
-        Expanded(
-          child: shown.isEmpty
-              ? Center(
-                  child: DsEmptyState(
-                    icon: const DsIcon(DsIcons.download),
-                    title: Text(t.music.downloadFilterEmpty),
-                    actions: [
-                      DsButton(
-                        variant: DsButtonVariant.secondary,
-                        size: DsSize.sm,
-                        onPressed: () => setState(() => _filter = _DownloadsFilter.all),
-                        child: Text(t.music.downloadFilterAll),
-                      ),
-                    ],
+            // The queue's own filter, the station managers' grammar: everything,
+            // what is still owed a file, and what is already on disk — the wide
+            // workspace lists the same three in its rail instead.
+            if (!wide)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DsSegmentedControl<_DownloadsFilter>(
+                      value: _filter,
+                      onChanged: (filter) => setState(() => _filter = filter),
+                      semanticLabel: t.navigation.musicDownloads,
+                      segments: [
+                        for (final filter in _DownloadsFilter.values)
+                          DsSegment(value: filter, label: Text(filter.label(t))),
+                      ],
+                    ),
                   ),
-                )
-              : ListView(
-                  padding: const EdgeInsets.only(bottom: DsSpace.s16),
-                  children: [
-                    DsListSection(children: [for (final task in shown) _DownloadRow(task: task)]),
-                  ],
                 ),
-        ),
-      ],
+              ),
+            Expanded(
+              child: wide
+                  ? DownloadWorkspace<_DownloadsFilter>(
+                      padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s16),
+                      options: [
+                        for (final value in _DownloadsFilter.values)
+                          DownloadFilterOption(
+                            value: value,
+                            icon: switch (value) {
+                              _DownloadsFilter.all => DsIcons.list,
+                              _DownloadsFilter.active => DsIcons.download,
+                              _DownloadsFilter.done => DsIcons.checkCircle,
+                            },
+                            label: value.label(t),
+                            count: switch (value) {
+                              _DownloadsFilter.all => tasks.length,
+                              _DownloadsFilter.active => tasks.where((task) => !_playableTask(task)).length,
+                              _DownloadsFilter.done => finished.length,
+                            },
+                          ),
+                      ],
+                      selected: _filter,
+                      onSelected: (filter) => setState(() => _filter = filter),
+                      list: queueList(wide: true),
+                      details: selectedTask == null ? null : _detailsOf(context, selectedTask, t),
+                    )
+                  : queueList(wide: false),
+            ),
+          ],
+        );
+      },
     );
   }
 }
 
 final class _DownloadRow extends ConsumerWidget {
-  const _DownloadRow({required this.task});
+  const _DownloadRow({required this.task, required this.onPlay, this.selected = false, this.onSelect, super.key});
 
   final audio.MusicDownloadTask task;
+
+  /// Plays this row inside the list the page is showing, queued in the
+  /// module's own player.
+  final VoidCallback onPlay;
+
+  /// Whether the wide workspace shows this row's facts at the right.
+  final bool selected;
+
+  /// Marks this row as the one the workspace speaks about.
+  final VoidCallback? onSelect;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -228,11 +350,13 @@ final class _DownloadRow extends ConsumerWidget {
       if (playable && task.bytesTotal > 0) _bytesText(task.bytesTotal),
     ].join(' · ');
     return DsListRow(
+      selected: selected,
       leading: MusicArtwork(track: preview),
       title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
       // A finished file plays in the module's own player — the preview the
-      // download page was missing.
-      onPressed: playable ? () => _play(ref) : null,
+      // download page was missing. In the wide workspace the row's press
+      // selects it for the right column instead; its play button still plays.
+      onPressed: onSelect ?? (playable ? onPlay : null),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s4,
@@ -254,7 +378,7 @@ final class _DownloadRow extends ConsumerWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: DsSpace.s4,
-        children: [..._actions(context, controller, t, ref), if (playable) _menu(context, ref)],
+        children: [..._actions(context, controller, t, ref), _menu(context, ref)],
       ),
     );
   }
@@ -282,26 +406,21 @@ final class _DownloadRow extends ConsumerWidget {
     }
     return [
       if (task.status == audio.MusicDownloadStatus.completed || task.status == audio.MusicDownloadStatus.skipped)
-        _icon(t.music.play, DsIcons.play, () => _play(ref)),
+        _icon(t.music.play, DsIcons.play, onPlay),
       _icon(t.music.downloadRemove, DsIcons.trash2, () => unawaited(controller.remove(task.id))),
     ];
   }
 
-  /// Plays the finished file through the module's player: the download
-  /// page's preview, without a trip to the folder.
-  void _play(WidgetRef ref) {
-    final track = _previewTrack(task, local: true);
-    unawaited(ref.read(musicPlayerProvider.notifier).playAll([track]));
-  }
-
-  /// The finished file's ways out: open it, or open the folder it sits in —
-  /// the station managers' two verbs, beside the play the row leads with —
-  /// and the destructive third the plain remove button must not be: the
-  /// record and its file going together, behind a confirm.
+  /// The row's menu: the details every task answers with, then — once the
+  /// file is on disk — the two ways out (open it, open its folder) and the
+  /// destructive third the plain remove button must not be: the record and
+  /// its file going together, behind a confirm. A task still moving keeps
+  /// the details but never an action on a file that is not there yet.
   Widget _menu(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    final playable = _playableTask(task);
     return DsMenuAnchor(
       semanticLabel: t.common.more,
       align: DsAlign.end,
@@ -322,21 +441,31 @@ final class _DownloadRow extends ConsumerWidget {
       ),
       items: [
         DsMenuItem(
-          leading: const DsIcon(DsIcons.externalLink),
-          label: Text(t.settings.downloadOpenFile),
-          onPressed: () => unawaited(openDownloadedPath(context, task.outputPath)),
+          leading: const DsIcon(DsIcons.info),
+          label: Text(t.common.downloadDetails),
+          // One construction feeds the menu's sheet and the wide workspace's
+          // right column, so the two cannot state different facts.
+          onPressed: () => unawaited(showDownloadDetails(context, _detailsOf(context, task, t))),
         ),
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.folderOpen),
-          label: Text(t.settings.downloadManagerOpenFolder),
-          onPressed: () => unawaited(openDownloadedPath(context, File(task.outputPath).parent.path)),
-        ),
-        DsMenuItem(
-          leading: const DsIcon(DsIcons.trash2),
-          label: Text(t.music.downloadDeleteFile),
-          destructive: true,
-          onPressed: () => unawaited(_deleteFile(context, ref)),
-        ),
+        if (playable) ...[
+          const DsMenuDivider(),
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.externalLink),
+            label: Text(t.settings.downloadOpenFile),
+            onPressed: () => unawaited(openDownloadedPath(context, task.outputPath)),
+          ),
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.folderOpen),
+            label: Text(t.settings.downloadManagerOpenFolder),
+            onPressed: () => unawaited(openDownloadedPath(context, File(task.outputPath).parent.path)),
+          ),
+          DsMenuItem(
+            leading: const DsIcon(DsIcons.trash2),
+            label: Text(t.music.downloadDeleteFile),
+            destructive: true,
+            onPressed: () => unawaited(_deleteFile(context, ref)),
+          ),
+        ],
       ],
     );
   }
@@ -371,6 +500,29 @@ final class _DownloadRow extends ConsumerWidget {
     semanticLabel: label,
     onPressed: onPressed,
     icon: DsIcon(icon, size: 16),
+  );
+}
+
+/// The facts the row's 详情 sheet and the wide workspace's right column show
+/// — one construction, so the two cannot drift.
+DownloadDetails _detailsOf(BuildContext context, audio.MusicDownloadTask task, Translations t) {
+  final request = task.request;
+  final facts = [
+    if ((request.artist ?? '').isNotEmpty) request.artist!,
+    if ((request.album ?? '').isNotEmpty) request.album!,
+  ];
+  return DownloadDetails(
+    title: request.title ?? musicFileNameOf(task.outputPath),
+    part: facts.join(' · '),
+    coverUrl: request.coverUrl ?? '',
+    status: _statusLabel(t, task),
+    savePath: task.outputPath,
+    queuedAt: task.startedAt == null ? '' : downloadStampOf(task.startedAt!),
+    // The task's attempt is 1-based; a first run is no retry.
+    retries: (task.attempt - 1).clamp(0, 1 << 20),
+    error: task.error ?? '',
+    onOpenFile: _playableTask(task) ? () => unawaited(openDownloadedPath(context, task.outputPath)) : null,
+    onOpenFolder: () => unawaited(openDownloadedPath(context, File(task.outputPath).parent.path)),
   );
 }
 

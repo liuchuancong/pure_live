@@ -9,6 +9,7 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/data/favorite_rules.dart';
+import 'package:pure_live/modules/live/favorites/data/favorites_inline_search.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_tags.dart' show followTagsProvider;
 import 'package:pure_live/modules/live/favorites/widgets/favorites_widgets.dart';
@@ -75,6 +76,13 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     ref.listenManual(followsAutoRefreshProvider, (_, _) {
       _syncTimer();
       if (!ref.read(followsAutoRefreshProvider).onResume) _cancelResumeRefresh();
+    });
+    // The toolbar's word narrows the shown follows in place; a new word
+    // restarts the slice at its first page.
+    ref.listenManual(favoritesInlineSearchProvider, (_, _) {
+      if (!mounted) return;
+      setState(() => _page = 1);
+      _jumpToTop();
     });
     _syncTimer();
   }
@@ -310,11 +318,17 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
     final tagNames = {for (final tag in tags) tag.id: tag.name};
     final counts = followGroupCounts(follows.rooms, scope);
     final total = followCount(follows.rooms, platform: scope);
+    // The toolbar's word narrows the slice like the group and the tag do:
+    // the title or the anchor answering it is what stays. The word reads as
+    // typed; the matching itself is case-blind.
+    final inlineWord = ref.watch(favoritesInlineSearchProvider);
+    final query = (inlineWord ?? '').toLowerCase();
     final rooms = [
       for (final room in follows.rooms)
         if (onFollowPlatform(room, scope) &&
             (_group == null || followGroupOf(room) == _group) &&
-            (selectedTag == null || room.local.tagIds.contains(selectedTag)))
+            (selectedTag == null || room.local.tagIds.contains(selectedTag)) &&
+            followMatchesQuery(room, query))
           room,
     ];
     // The pager slices the loaded follows locally; the shown page is kept
@@ -436,6 +450,20 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                     for (final tag in tags) DsChipOption(value: tag.id, label: Text(tag.name)),
                   ],
                 ),
+              // The toolbar's word in force, worded over the page like the
+              // history page words its filter: what is being narrowed, and
+              // the one control that widens it again.
+              if (inlineWord != null && inlineWord.isNotEmpty)
+                DsAlert(
+                  title: Text(t.favorites.inlineMatches(query: inlineWord, count: rooms.length)),
+                  action: DsButton(
+                    variant: DsButtonVariant.secondary,
+                    size: DsSize.sm,
+                    leading: const DsIcon(DsIcons.x, size: 14),
+                    onPressed: () => ref.read(favoritesInlineSearchProvider.notifier).clear(),
+                    child: Text(t.favorites.inlineReset),
+                  ),
+                ),
               if (_progress case final progress?)
                 DsProgressBar(
                   value: progress,
@@ -447,15 +475,31 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
         ),
         Expanded(
           child: rooms.isEmpty
-              ? Center(
-                  child: _EmptySlice(
-                    group: _group,
-                    offlineCount: counts[LiveFollowGroup.offline] ?? 0,
-                    refreshing: _refreshing,
-                    onShowOffline: () => _selectGroup(LiveFollowGroup.offline),
-                    onRefresh: _runRefresh,
-                  ),
-                )
+              ? query.isNotEmpty
+                    ? Center(
+                        child: DsEmptyState(
+                          icon: const DsIcon(DsIcons.searchX),
+                          title: Text(t.favorites.inlineEmptyTitle),
+                          description: Text(t.favorites.inlineEmptyHint),
+                          actions: [
+                            DsButton(
+                              variant: DsButtonVariant.primary,
+                              size: DsSize.sm,
+                              onPressed: () => ref.read(favoritesInlineSearchProvider.notifier).clear(),
+                              child: Text(t.favorites.inlineReset),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Center(
+                        child: _EmptySlice(
+                          group: _group,
+                          offlineCount: counts[LiveFollowGroup.offline] ?? 0,
+                          refreshing: _refreshing,
+                          onShowOffline: () => _selectGroup(LiveFollowGroup.offline),
+                          onRefresh: _runRefresh,
+                        ),
+                      )
               : LayoutBuilder(
                   builder: (context, constraints) => CardGrid<LiveRoom>(
                     items: visibleRooms,

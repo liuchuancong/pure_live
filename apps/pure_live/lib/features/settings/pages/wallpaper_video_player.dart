@@ -30,11 +30,33 @@ final class WallpaperVideoPlayer extends StatefulWidget {
     this.overlay,
     this.fit = BoxFit.contain,
     this.blurSigma = 0,
+    this.loop = true,
+    this.onHandle,
+    this.barLeading = const [],
+    this.barActions = const [],
     super.key,
   });
 
   /// The clip to play; a local `file:` URI or an http(s) URL.
   final Uri uri;
+
+  /// Whether the clip starts over at its end. A wallpaper loops for as long
+  /// as the app runs; a preview of one recording stops on its last frame.
+  final bool loop;
+
+  /// Told the handle the clip opened on, so a host can put another timeline
+  /// (the danmaku layer) on the picture's own clock. A retry reports the
+  /// handle it builds next.
+  final ValueChanged<PlayerHandle>? onHandle;
+
+  /// The host page's verbs at the bar's start, before play: a preview's
+  /// 上一项/下一项 sit where a player puts them.
+  final List<Widget> barLeading;
+
+  /// The host page's own verbs, appended after the transport in the bar's row.
+  /// One bar over the picture is what a preview reads as — the alternative is
+  /// a second floating strip the viewer has to learn separately.
+  final List<Widget> barActions;
 
   /// Painted over the picture, under the transport: the preview's mask and
   /// frost, so the controls stay as legible as they are without it.
@@ -127,7 +149,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
         config: PlayerConfig(
           name: 'wallpaper-preview',
           autoPlay: true,
-          loop: true,
+          loop: widget.loop,
           muted: _muted,
           pauseWhenBackgrounded: true,
           enableRecovery: false,
@@ -146,6 +168,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
         return;
       }
       _handle = handle;
+      widget.onHandle?.call(handle);
       _states = handle.stateChanges.listen((state) {
         if (!mounted) return;
         setState(() {
@@ -277,6 +300,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
           bottom: 0,
           child: SettingsPreviewBar(
             children: [
+              ...widget.barLeading,
               SettingsPreviewCircleButton(
                 icon: _playing ? DsIcons.pause : DsIcons.play,
                 semanticLabel: _playing ? t.room.pause : t.room.play,
@@ -317,6 +341,7 @@ final class _WallpaperVideoPlayerState extends State<WallpaperVideoPlayer> {
                 ),
               ),
               const SizedBox(width: DsSpace.s4),
+              ...widget.barActions,
             ],
           ),
         ),

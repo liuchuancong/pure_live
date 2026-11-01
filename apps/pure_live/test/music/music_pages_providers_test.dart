@@ -2,20 +2,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart' show musicEqProvider;
+import 'package:pure_live/modules/music/controller/music_desktop_lyric_settings.dart'
+    show musicDesktopLyricsSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
+import 'package:pure_live/modules/music/controller/music_download_settings.dart' show musicDownloadSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_downloads.dart' show musicDownloadsProvider;
 import 'package:pure_live/modules/music/controller/music_library.dart'
     show musicFavouritesProvider, musicRecentProvider;
 import 'package:pure_live/modules/music/controller/music_local.dart' show musicLocalProvider;
+import 'package:pure_live/modules/music/controller/music_lyric_settings.dart' show musicLyricsSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_online_playlists.dart' show musicOnlineHotTagsProvider;
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicPlaylistsProvider;
 import 'package:pure_live/modules/music/controller/music_search.dart'
     show musicCatalogsProvider, musicHotSearchesProvider, musicSearchHistoryProvider, musicSearchProvider;
-import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
 import 'package:pure_live/modules/music/controller/music_sources.dart' show musicSourcesProvider;
 import 'package:pure_live/modules/music/controller/music_sync.dart' show musicSyncProvider;
-
 
 void main() {
   setUpAll(() async {
@@ -29,7 +32,10 @@ void main() {
 
     // The settings and lists every view and pane watches.
     container
-      ..read(musicSettingsProvider)
+      ..read(musicPlaybackSettingsProvider)
+      ..read(musicLyricsSettingsProvider)
+      ..read(musicDesktopLyricsSettingsProvider)
+      ..read(musicDownloadSettingsProvider)
       ..read(musicSourcesProvider)
       ..read(musicPlaylistsProvider)
       ..read(musicDownloadsProvider)

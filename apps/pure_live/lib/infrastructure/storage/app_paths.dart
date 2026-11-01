@@ -1,4 +1,4 @@
-import 'dart:io' show Directory, Platform;
+import 'dart:io' show Directory;
 
 import 'package:path/path.dart' as p;
 
@@ -19,7 +19,8 @@ import 'package:pure_live/infrastructure/storage/storage_paths.dart' show Storag
 ///   covers, both segments of [cacheRoot] so a viewer who moves the cache
 ///   moves every cached picture with it.
 /// * downloads — `ns/videos`, `ns/recordings`, `ns/music`, `ns/wallpapers`,
-///   `ns/video_wallpapers`, `ns/lyrics`, `ns/updates` under the platform's
+///   `ns/video_wallpapers`, `ns/lyrics`, `ns/updates`, `ns/screenshots` under
+///   the platform's
 ///   download root; the namespace keeps the product's files out of the
 ///   viewer's own tree in a shared folder, and a `<data>/downloads` root
 ///   stands in where the platform offers no download folder.
@@ -76,16 +77,10 @@ final class AppPaths {
   /// big media files, so they sit with the other downloads.
   Directory get recordings => downloadFolder('recordings');
 
-  /// Room frames the tray's screenshot action saved. The default follows the
-  /// platform's Pictures folder under the product's namespace, so the shots
-  /// sit beside the viewer's own pictures without scattering; a host without
-  /// a home directory falls back to the data tree.
-  Directory get screenshots {
-    final home = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'];
-    return home == null || home.isEmpty
-        ? Directory(p.join(areas.data.path, 'screenshots'))
-        : Directory(p.join(home, 'Pictures', namespace));
-  }
+  /// Room frames the tray's screenshot action saved: a folder under the
+  /// download root like every other media the app writes, so one move of
+  /// the download root takes the shots with it.
+  Directory get screenshots => downloadFolder('screenshots');
 
   /// The log files and their rotation.
   Directory get logs => Directory(p.join(areas.data.path, 'logs'));

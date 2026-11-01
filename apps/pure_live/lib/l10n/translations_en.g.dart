@@ -404,8 +404,40 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get show => 'Show';
 	@override String get save => 'Save';
 	@override String get copied => 'Copied';
+	@override String downloadSpeed({required Object speed}) => 'Total ${speed}';
+	@override String get downloadDetails => 'Download details';
+	@override String get downloadSavePath => 'Saved to';
+	@override String get downloadQueuedAt => 'Queued';
+	@override String get downloadStatus => 'Status';
+	@override String get downloadError => 'Download failed';
+	@override String get downloadRetried => 'Retried';
+	@override String downloadRetriedTimes({required int count}) => '${count} times';
+	@override String downloadRetryPending({required int delay, required int left}) => 'Auto-retry in ~${delay}s (${left} left)';
 	@override String get pipUnavailable => 'Picture-in-picture is not available for this device or player engine.';
 	@override String get moduleHongguo => 'Hongguo Drama';
+	@override String previewCount({required int count}) => '${count} items';
+	@override String get previewPrevious => 'Previous';
+	@override String get previewNext => 'Next';
+	@override String get previewListTitle => 'List';
+	@override String get previewBackToStage => 'Back to the picture';
+	@override String get previewOpenFolder => 'Open folder';
+	@override String get previewOpenFolderFailed => 'That folder could not be opened';
+	@override String get previewFileMissing => 'The file is gone';
+	@override String get previewFileMissingDescription => 'It may have been moved, renamed or deleted — open the folder, or pick another entry in the list.';
+	@override String get previewEmpty => 'Nothing to preview';
+	@override String get previewEmptyDescription => 'Finished recordings and downloads appear here.';
+	@override String get previewDanmaku => 'Danmaku';
+	@override String get previewDanmakuOff => 'This entry has no danmaku file';
+	@override String get previewDanmakuSettings => 'Danmaku settings';
+	@override String get previewDanmakuVisible => 'Show danmaku';
+	@override String get previewDanmakuVisibleDescription => 'Draw this recording\'s or download\'s danmaku over the picture, in the style the other players share.';
+	@override String get previewDanmakuLoading => 'Reading danmaku…';
+	@override String get previewAutoNext => 'Play the next entry when one ends';
+	@override String get previewDeleteFile => 'Delete file';
+	@override String get previewDeleteTitle => 'Delete this file?';
+	@override String previewDeleteBody({required String name}) => '“${name}” goes off the disk, with no undo. The module that queued it keeps its own row until it is cleared there.';
+	@override String get previewDeleteFailed => 'The file could not be deleted';
+	@override String get rename => 'Rename';
 }
 
 // Path: favorites
@@ -454,6 +486,10 @@ class _Translations$favorites$en extends Translations$favorites$zh_CN {
 	@override String get tagExists => 'That tag already exists';
 	@override String get tagInvalid => 'Enter a tag name';
 	@override String get deleteTag => 'Delete';
+	@override String inlineMatches({required String query, required int count}) => 'Searching “${query}”: ${count} results';
+	@override String get inlineReset => 'Clear search';
+	@override String get inlineEmptyTitle => 'No follows match';
+	@override String get inlineEmptyHint => 'Try another word, or clear the search to see every follow.';
 }
 
 // Path: history
@@ -472,6 +508,7 @@ class _Translations$history$en extends Translations$history$zh_CN {
 	@override String get earlier => 'Earlier';
 	@override String get openFailedTitle => 'The history could not open';
 	@override String recordCount({required int count, required int limit}) => 'Recorded ${count} / limit ${limit}';
+	@override String recordCountUnlimited({required int count}) => 'Recorded ${count} · no limit';
 	@override String get filter => 'Filter';
 	@override String get filterPanelTitle => 'Filter watch history';
 	@override String get filterKeyword => 'Keyword';
@@ -493,11 +530,15 @@ class _Translations$history$en extends Translations$history$zh_CN {
 	@override String clearFilteredConfirmDesc({required int count}) => 'Remove the ${count} entries that match the filter? Other entries stay. This cannot be undone.';
 	@override String clearDone({required int count}) => 'Cleared ${count} history entries';
 	@override String get changeFailed => 'The history changes were not saved. Try again.';
+	@override String limitSaved({required int limit}) => 'History limit set to ${limit}';
+	@override String get limitSavedUnlimited => 'The watch history keeps every record now';
 	@override String get limitTitle => 'Watch History Retention';
-	@override String get limitDescription => 'The oldest records are dropped past the limit.';
+	@override String get limitDescription => 'The oldest records are dropped past the limit; no limit keeps them all.';
 	@override String get limitPresetsLabel => 'Preset Limits';
+	@override String get limitUnlimited => 'No limit';
 	@override String get limitCustomLabel => 'Custom Limit';
-	@override String limitInvalid({required int min, required int max}) => 'Enter a whole number from ${min} to ${max}.';
+	@override String get limitCustomHint => 'Any whole number';
+	@override String get limitInvalid => 'Enter a whole number above zero.';
 	@override String get refresh => 'Refresh';
 	@override String refreshFailed({required int count}) => '${count} records could not be refreshed';
 }
@@ -730,6 +771,13 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get downloadDirectoryDefault => 'Restore default folder';
 	@override String get downloadDirectoryDefaultDesc => 'Back to the app\'s default Videos folder.';
 	@override String downloadTaskCount({required int count, required int active}) => '${count} tasks · ${active} active';
+	@override String get downloadRetry => 'Retry automatically';
+	@override String get downloadRetryDesc => 'A failed download tries again in the background, carrying on from the bytes already written.';
+	@override String get downloadRetryOff => 'No retry';
+	@override String downloadRetryTimes({required int count}) => '${count} times';
+	@override String get downloadRetryDelay => 'Retry interval';
+	@override String get downloadRetryDelayDesc => 'How long to wait between two automatic retries.';
+	@override String downloadEta({required Object time}) => '${time} left';
 	@override String get downloadManagerTitle => 'Downloads';
 	@override String get downloadPauseAll => 'Pause all';
 	@override String get downloadResumeAll => 'Resume all';
@@ -737,6 +785,8 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get downloadFilterAll => 'All';
 	@override String get downloadFilterActive => 'In progress';
 	@override String get downloadFilterDone => 'Finished';
+	@override String get previewTitle => 'Download preview';
+	@override String get previewUnavailable => 'This episode has no finished file yet';
 	@override String get downloadFilterEmpty => 'Nothing under this filter';
 	@override String get downloadFilterEmptyDesc => 'Pick another filter, or add a download from a player page first.';
 	@override String get downloadEmpty => 'No downloads yet';
@@ -910,6 +960,7 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String get playerChannelMissing => 'The channel no longer exists';
 	@override String get playerOpenFailed => 'The channel failed to play';
 	@override String get guideTitle => 'Guide';
+	@override String get viewRecordings => 'View recordings';
 	@override String get guideEmpty => 'No programmes on this day';
 	@override String get today => 'Today';
 	@override String get yesterday => 'Yesterday';
@@ -1045,13 +1096,19 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get settingsInterface => 'Interface';
 	@override String get uiBlurredBackdrop => 'Blurred backdrop';
 	@override String get uiBlurredBackdropDesc => 'Paint the player page over the playing song\'s cover, blown up and blurred';
-	@override String get playerMode => 'Player mode';
-	@override String get playerModeDesc => 'What the player stage draws: the cover card, the turntable, or the words alone.';
+	@override String get playerMode => 'Default player mode';
+	@override String get playerModeDesc => 'How the player page opens: the cover card, the turntable, or the words alone. The player page switches it any time.';
+	@override String get playerModeSwitch => 'Player mode';
 	@override String get playerModeStandard => 'Standard';
 	@override String get playerModeVinyl => 'Vinyl';
 	@override String get playerModeLyrics => 'Lyrics';
 	@override String get uiSpectrum => 'Playback spectrum';
-	@override String get uiSpectrumDesc => 'The live spectrum bars on the player page\'s stage';
+	@override String get uiSpectrumDesc => 'The live spectrum on the player page\'s stage';
+	@override String get uiSpectrumStyle => 'Spectrum style';
+	@override String get uiSpectrumStyleDesc => 'Bars, a ring, or a wave; still while paused, muted, or silent';
+	@override String get spectrumStyleBars => 'Bars';
+	@override String get spectrumStyleCircle => 'Ring';
+	@override String get spectrumStyleWave => 'Wave';
 	@override String get uiReset => 'Reset display';
 	@override String get uiResetDesc => 'Show every interface element turned off above again';
 	@override String get searchTypeSongs => 'Songs';
@@ -1173,6 +1230,11 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get chartsFailed => 'The chart did not load';
 	@override String get queueEmpty => 'Queue is empty';
 	@override String get queueTitle => 'Queue';
+	@override String get queueUpNext => 'Up next';
+	@override String get queuePlayed => 'Played';
+	@override String queueShowMore({required Object count}) => 'Show more (${count} left)';
+	@override String get queueMissingFile => 'File missing';
+	@override String get queueUnplayable => 'Couldn\'t play';
 	@override String get nowPlaying => 'Now playing';
 	@override String get stagePanels => 'Lyrics & queue';
 	@override String get volume => 'Volume';
@@ -1204,6 +1266,21 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get songDetailSource => 'Source';
 	@override String get songDetailPath => 'File';
 	@override String get songDetailEmpty => '—';
+	@override String get albumPageTitle => 'Album';
+	@override String get artistPageTitle => 'Artist';
+	@override String get viewAlbum => 'View album';
+	@override String get viewArtist => 'View artist';
+	@override String get albumUnsupported => 'This source does not support album browsing';
+	@override String get artistUnsupported => 'This source does not support artist browsing';
+	@override String browseUnsupportedHint({required Object source}) => '${source} does not provide the data this page needs.';
+	@override String get albumLoadFailed => 'Could not load the album';
+	@override String get artistLoadFailed => 'Could not load the artist';
+	@override String get albumEmptyTitle => 'This album has no playable songs';
+	@override String get albumEmptyDescription => 'The platform answered the album, but listed no songs.';
+	@override String get artistEmptyTitle => 'No songs or albums for this artist';
+	@override String get artistEmptyDescription => 'The platform gave nothing for this artist.';
+	@override String get artistSongsEmpty => 'The platform listed no songs for this artist';
+	@override String albumsCount({required Object count}) => '${count} albums';
 	@override String get dislike => 'Not interested';
 	@override String get undislike => 'Remove from disliked';
 	@override String get disliked => 'Added to the dislike rules; it will be skipped';
@@ -1228,6 +1305,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get recPlaylists => 'Recommended playlists';
 	@override String get recMore => 'More playlists';
 	@override String get recRecent => 'Keep playing';
+	@override String get recAlbums => 'Recent albums';
+	@override String get recArtists => 'Recent artists';
 	@override String get recBoards => 'Charts';
 	@override String get recEmptyTitle => 'Nothing to recommend yet';
 	@override String get recEmptyDescription => 'The source\'s playlists, its charts and the songs you played show up here.';
@@ -1933,6 +2012,8 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get transcodeBitrateDesc => 'Target video bitrate; higher is clearer and larger.';
 	@override String get playRecording => 'Play recording';
 	@override String get previewRecording => 'Preview in built-in player';
+	@override String get previewTitle => 'Recording preview';
+	@override String get previewUnavailable => 'This task holds no file a player can open';
 	@override String get recordChatGiftsTitle => 'Record gift messages';
 	@override String get recordChatGiftsDesc => 'Writes gift messages, in the text the platform gives, into the same danmaku file; the chat alone is the default.';
 	@override String get recordChatTitle => 'Record chat';
@@ -2017,6 +2098,9 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get play => 'Play';
 	@override String get pause => 'Pause';
 	@override String get noChat => 'No chat yet';
+	@override String get chatConnecting => 'Connecting to chat…';
+	@override String get chatUnsupported => 'This room has no live chat';
+	@override String get chatFailedTitle => 'Chat did not connect';
 	@override String get system => 'System';
 	@override String get mute => 'Mute';
 	@override String get unmute => 'Unmute';
@@ -2091,6 +2175,9 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get openFailed => 'The link could not be opened';
 	@override String get refreshRoom => 'Refresh room details';
 	@override String get messageActions => 'Message actions';
+	@override String get roleAnchor => 'Streamer';
+	@override String get roleModerator => 'Mod';
+	@override String get rolePlatform => 'Official';
 	@override String get blockUser => 'Block this viewer';
 	@override String get blockKeyword => 'Block a keyword…';
 	@override String get blockKeywordHint => 'Enter the keyword to block';
@@ -2122,9 +2209,11 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get restrictionUnplayable => 'Not playable now';
 	@override String get orientation => 'Picture orientation';
 	@override String get orientationHint => 'Follow the picture’s own shape, or fix this room to portrait or landscape.';
+	@override String get orientationHintWide => 'This picture is ultra-wide: fill the width at its own ratio, keep the default frame with its bars, or fix this room to portrait or landscape.';
 	@override String get orientationAutomatic => 'Automatic';
 	@override String get orientationPortrait => 'Portrait';
 	@override String get orientationLandscape => 'Landscape';
+	@override String get orientationFillWidth => 'Fill width';
 	@override String get orientationUpdated => 'Picture orientation updated';
 	@override String get portraitFullscreen => 'Portrait full screen';
 	@override String get portraitFullscreenExit => 'Exit portrait full screen';
@@ -2153,6 +2242,30 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String giftValueNote({required Object value}) => '${value} notes';
 	@override String get collapseChat => 'Collapse chat';
 	@override String get expandChat => 'Expand chat';
+	@override String get resizeChat => 'Resize chat';
+	@override String get theaterOn => 'Theater mode';
+	@override String get theaterOff => 'Exit theater mode';
+	@override String get statsToggle => 'Statistics';
+	@override String get statsPicture => 'Picture';
+	@override String get statsBitrate => 'Bitrate';
+	@override String get statsBuffer => 'Buffer';
+	@override String get statsDropped => 'Dropped';
+	@override String get statsDecoder => 'Decoder';
+	@override String get statsRenderer => 'Renderer';
+	@override String get statsProcess => 'Process';
+	@override String get statsBackend => 'Engine';
+	@override String get screenshot => 'Screenshot';
+	@override String screenshotSaved({required Object name}) => 'Saved ${name}';
+	@override String get screenshotFailed => 'That frame could not be captured';
+	@override String get shortcutsHelp => 'Keyboard shortcuts';
+	@override String get shortcutsHint => 'Keys available on this screen';
+	@override String get shortcutPlayPause => 'Play or pause';
+	@override String get shortcutFullscreen => 'Fullscreen';
+	@override String get shortcutLeave => 'Leave fullscreen, or the room';
+	@override String get shortcutVolumeUp => 'Volume up';
+	@override String get shortcutVolumeDown => 'Volume down';
+	@override String get keySpace => 'Space';
+	@override String get keyEscape => 'Esc';
 	@override String get switchRoom => 'Switch room';
 	@override String get switchOnAir => 'Followed · live';
 	@override String get switchHistory => 'Watch history';
@@ -2233,13 +2346,12 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get navIptv => 'Guides & updates';
 	@override String get navVod => 'Account & quality';
 	@override String get navData => 'Watch data';
-	@override String get followDataGroup => 'Follow data';
 	@override String get navBackup => 'Backup & restore';
 	@override String get navAbout => 'Version & licences';
 	@override String get navBrowsing => 'Browsing';
 	@override String get navWindow => 'Window';
 	@override String get navStartup => 'Startup & exit';
-	@override String get navAccounts => 'Accounts';
+	@override String get navAccounts => 'Account management';
 	@override String get navTheme => 'Theme & colours';
 	@override String get navTypography => 'Typography';
 	@override String get qualityAudioTitle => 'Quality & sound';
@@ -2270,7 +2382,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get personalizationChooseTheme => 'Choose a theme to apply';
 	@override String get personalizationSettings => 'Personalization settings';
 	@override String get playbackDescription => 'Quality, audio, picture and player behaviour.';
-	@override String get sitesDescription => 'Preferred platform and platform display; per-platform quirks, accounts and follow tags.';
+	@override String get sitesDescription => 'Preferred platform and platform display, account and tag management, and each platform\'s quirks.';
 	@override String get iptvDescription => 'Guide updates and source syncing.';
 	@override String get vodDescription => 'Bilibili account, default quality and video-station behaviour.';
 	@override String get dataDescription => 'Live watch history and follows.';
@@ -2356,8 +2468,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get sitesDisplay => 'Platforms shown';
 	@override String get sitesDisplayDesc => 'Switched-off platforms leave the popular, areas, follows and search platform lists.';
 	@override String get sitesGroupCore => 'Platforms';
-	@override String get sitesGroupPlayback => 'Compatibility & language';
-	@override String get sitesGroupAccount => 'Accounts & groups';
+	@override String get sitesGroupPlayback => 'Platform-specific settings';
 	@override String get sitesShowAll => 'Show all';
 	@override String get sitesHideAll => 'Hide all';
 	@override String get sitesReset => 'Reset';
@@ -2366,18 +2477,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get sitesColumnPlatform => 'Platform';
 	@override String get sitesColumnId => 'Id';
 	@override String get sitesColumnShown => 'Shown';
-	@override String get dataClearHistory => 'Clear watch history';
-	@override String get dataClearHistoryDesc => 'Deletes every watch record, for good.';
-	@override String get dataExportFollows => 'Export follows';
-	@override String get dataExportFollowsDesc => 'Copies the follow list to the clipboard (JSON).';
-	@override String get dataImportFollows => 'Import follows';
-	@override String get dataImportFollowsDesc => 'Reads previously exported follows from the clipboard (JSON).';
-	@override String get dataDone => 'Done';
-	@override String get dataBadData => 'The clipboard could not be read as follows';
-	@override String get dataEmpty => 'Nothing to export yet';
-	@override String get confirmClearTitle => 'Clear watch history?';
-	@override String get confirmClearDesc => 'Every watch record will be deleted, for good.';
-	@override String get confirm => 'Clear';
 	@override String get aboutVersion => 'Version';
 	@override String get aboutProject => 'Project home';
 	@override String get aboutLicense => 'Licences';
@@ -2429,8 +2528,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String liveAlertFallbackTitle({required Object roomId, required Object platform}) => 'Room ${roomId} on ${platform}';
 	@override String liveAlertNotificationBody({required Object platform}) => 'Live now on ${platform}';
 	@override String get refreshInterval => 'Interval';
-	@override String get historyLimit => 'History limit';
-	@override String get historyLimitDesc => 'The oldest records past the limit are dropped.';
 	@override String get navNetwork => 'Network';
 	@override String get networkDescription => 'The app proxy and transport behaviour.';
 	@override String get proxy => 'App proxy';
@@ -3561,7 +3658,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get storageFolderPick => 'Choose folder';
 	@override String get storageFolderReset => 'Use default';
 	@override String get storageFoldersResetAll => 'Reset all folders';
-	@override String get storageFoldersResetAllDesc => 'Every folder returns to the device default; the cache moves after a restart.';
 	@override String get resetGroup => 'Reset';
 	@override String get roomCardGroup => 'Room card style';
 	@override String get localMediaTitle => 'Local media';
@@ -3578,6 +3674,45 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get localMediaRefresh => 'Refresh';
 	@override String get hongguoDownloadTitle => 'Downloads';
 	@override String get hongguoDownloadDescription => 'The download queue, quality and save folder';
+	@override String get storageFolderCopyPath => 'Copy path';
+	@override String get lanSync => 'LAN sync';
+	@override String get lanSyncDescription => 'Sync favorites with other devices on the same network.';
+	@override String get lanSyncEnable => 'Enable LAN sync';
+	@override String get lanSyncEnableDesc => 'While on, this device is discoverable and accepts pairing; names and grants stay.';
+	@override String get lanSyncDeviceName => 'Device name';
+	@override String get lanSyncDeviceNameDesc => 'Shown to other devices.';
+	@override String get lanSyncDeviceNameSaved => 'Device name updated';
+	@override String get lanSyncFingerprint => 'Certificate fingerprint';
+	@override String get lanSyncFingerprintCopied => 'Fingerprint copied';
+	@override String get lanSyncNearby => 'Nearby devices';
+	@override String get lanSyncNearbyEmpty => 'No devices found. Both devices need the same network and the switch on.';
+	@override String get lanSyncPaired => 'Paired devices';
+	@override String get lanSyncPairedEmpty => 'No paired devices yet.';
+	@override String get lanSyncPair => 'Pair';
+	@override String get lanSyncForget => 'Revoke';
+	@override String get lanSyncSyncNow => 'Sync now';
+	@override String get lanSyncSyncDone => 'Sync finished';
+	@override String get lanSyncSyncPartial => 'Finished; some items did not sync';
+	@override String get lanSyncSyncFailed => 'Sync failed';
+	@override String get lanSyncConflictPolicy => 'On conflict keep';
+	@override String get lanSyncPolicyRemote => 'the other device';
+	@override String get lanSyncPolicyLocal => 'this device';
+	@override String get lanSyncReadAllowed => 'Allow reading favorites';
+	@override String get lanSyncWriteAllowed => 'Allow changing favorites';
+	@override String get lanSyncRevoked => 'Trust in this device revoked';
+	@override String get lanSyncStateDiscovering => 'Looking for the other device…';
+	@override String get lanSyncStateWaiting => 'Waiting for the other device…';
+	@override String get lanSyncPairTitle => 'Pair a device';
+	@override String get lanSyncPairIntro => 'Check that both screens show the same number, then confirm on both.';
+	@override String lanSyncPairFrom({required Object name}) => 'Pairing request from “${name}”';
+	@override String get lanSyncPairConfirm => 'Numbers match, confirm';
+	@override String get lanSyncPairReject => 'Different, reject';
+	@override String get lanSyncPairAccepted => 'Paired';
+	@override String get lanSyncPairRejected => 'Pairing declined';
+	@override String get lanSyncPairExpired => 'The pairing request expired; start again.';
+	@override String get lanSyncPairMismatch => 'The two devices derived different keys; pairing ended. The network may have an intruder.';
+	@override String lanSyncPairCountdown({required int seconds}) => 'Expires in ${seconds} s';
+	@override String get lanSyncTrustError => 'This device\'s identity does not match the pairing record; the connection was refused.';
 }
 
 // Path: shield
@@ -3924,6 +4059,12 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get downloadDirectoryDefault => 'Restore default folder';
 	@override String get downloadDirectoryDefaultDesc => 'Back to the app\'s default Videos folder.';
 	@override String downloadTaskCount({required int count, required int active}) => '${count} tasks · ${active} active';
+	@override String get downloadRetry => 'Retry automatically';
+	@override String get downloadRetryDesc => 'A failed download tries again in the background, carrying on from the bytes already written.';
+	@override String get downloadRetryOff => 'No retry';
+	@override String downloadRetryTimes({required int count}) => '${count} times';
+	@override String get downloadRetryDelay => 'Retry interval';
+	@override String get downloadRetryDelayDesc => 'How long to wait between two automatic retries.';
 	@override String get downloadManagerTitle => 'Downloads';
 	@override String get downloadPauseAll => 'Pause all';
 	@override String get downloadResumeAll => 'Resume all';
@@ -3931,6 +4072,8 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get downloadFilterAll => 'All';
 	@override String get downloadFilterActive => 'In progress';
 	@override String get downloadFilterDone => 'Finished';
+	@override String get previewTitle => 'Download preview';
+	@override String get previewUnavailable => 'This part has no finished file yet';
 	@override String get downloadFilterEmpty => 'Nothing under this filter';
 	@override String get downloadFilterEmptyDesc => 'Pick another filter, or add a download from a video page first.';
 	@override String get downloadEmpty => 'No downloads yet';
@@ -4377,8 +4520,40 @@ extension on TranslationsEn {
 			'common.show' => 'Show',
 			'common.save' => 'Save',
 			'common.copied' => 'Copied',
+			'common.downloadSpeed' => ({required Object speed}) => 'Total ${speed}',
+			'common.downloadDetails' => 'Download details',
+			'common.downloadSavePath' => 'Saved to',
+			'common.downloadQueuedAt' => 'Queued',
+			'common.downloadStatus' => 'Status',
+			'common.downloadError' => 'Download failed',
+			'common.downloadRetried' => 'Retried',
+			'common.downloadRetriedTimes' => ({required int count}) => '${count} times',
+			'common.downloadRetryPending' => ({required int delay, required int left}) => 'Auto-retry in ~${delay}s (${left} left)',
 			'common.pipUnavailable' => 'Picture-in-picture is not available for this device or player engine.',
 			'common.moduleHongguo' => 'Hongguo Drama',
+			'common.previewCount' => ({required int count}) => '${count} items',
+			'common.previewPrevious' => 'Previous',
+			'common.previewNext' => 'Next',
+			'common.previewListTitle' => 'List',
+			'common.previewBackToStage' => 'Back to the picture',
+			'common.previewOpenFolder' => 'Open folder',
+			'common.previewOpenFolderFailed' => 'That folder could not be opened',
+			'common.previewFileMissing' => 'The file is gone',
+			'common.previewFileMissingDescription' => 'It may have been moved, renamed or deleted — open the folder, or pick another entry in the list.',
+			'common.previewEmpty' => 'Nothing to preview',
+			'common.previewEmptyDescription' => 'Finished recordings and downloads appear here.',
+			'common.previewDanmaku' => 'Danmaku',
+			'common.previewDanmakuOff' => 'This entry has no danmaku file',
+			'common.previewDanmakuSettings' => 'Danmaku settings',
+			'common.previewDanmakuVisible' => 'Show danmaku',
+			'common.previewDanmakuVisibleDescription' => 'Draw this recording\'s or download\'s danmaku over the picture, in the style the other players share.',
+			'common.previewDanmakuLoading' => 'Reading danmaku…',
+			'common.previewAutoNext' => 'Play the next entry when one ends',
+			'common.previewDeleteFile' => 'Delete file',
+			'common.previewDeleteTitle' => 'Delete this file?',
+			'common.previewDeleteBody' => ({required String name}) => '“${name}” goes off the disk, with no undo. The module that queued it keeps its own row until it is cleared there.',
+			'common.previewDeleteFailed' => 'The file could not be deleted',
+			'common.rename' => 'Rename',
 			'favorites.emptyTitle' => 'No followed rooms yet',
 			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
 			'favorites.unfollow' => 'Unfollow',
@@ -4418,6 +4593,10 @@ extension on TranslationsEn {
 			'favorites.tagExists' => 'That tag already exists',
 			'favorites.tagInvalid' => 'Enter a tag name',
 			'favorites.deleteTag' => 'Delete',
+			'favorites.inlineMatches' => ({required String query, required int count}) => 'Searching “${query}”: ${count} results',
+			'favorites.inlineReset' => 'Clear search',
+			'favorites.inlineEmptyTitle' => 'No follows match',
+			'favorites.inlineEmptyHint' => 'Try another word, or clear the search to see every follow.',
 			'history.emptyTitle' => 'No watch history yet',
 			'history.emptyDescription' => 'Watch a stream and it lands here.',
 			'history.clear' => 'Clear history',
@@ -4427,6 +4606,7 @@ extension on TranslationsEn {
 			'history.earlier' => 'Earlier',
 			'history.openFailedTitle' => 'The history could not open',
 			'history.recordCount' => ({required int count, required int limit}) => 'Recorded ${count} / limit ${limit}',
+			'history.recordCountUnlimited' => ({required int count}) => 'Recorded ${count} · no limit',
 			'history.filter' => 'Filter',
 			'history.filterPanelTitle' => 'Filter watch history',
 			'history.filterKeyword' => 'Keyword',
@@ -4448,11 +4628,15 @@ extension on TranslationsEn {
 			'history.clearFilteredConfirmDesc' => ({required int count}) => 'Remove the ${count} entries that match the filter? Other entries stay. This cannot be undone.',
 			'history.clearDone' => ({required int count}) => 'Cleared ${count} history entries',
 			'history.changeFailed' => 'The history changes were not saved. Try again.',
+			'history.limitSaved' => ({required int limit}) => 'History limit set to ${limit}',
+			'history.limitSavedUnlimited' => 'The watch history keeps every record now',
 			'history.limitTitle' => 'Watch History Retention',
-			'history.limitDescription' => 'The oldest records are dropped past the limit.',
+			'history.limitDescription' => 'The oldest records are dropped past the limit; no limit keeps them all.',
 			'history.limitPresetsLabel' => 'Preset Limits',
+			'history.limitUnlimited' => 'No limit',
 			'history.limitCustomLabel' => 'Custom Limit',
-			'history.limitInvalid' => ({required int min, required int max}) => 'Enter a whole number from ${min} to ${max}.',
+			'history.limitCustomHint' => 'Any whole number',
+			'history.limitInvalid' => 'Enter a whole number above zero.',
 			'history.refresh' => 'Refresh',
 			'history.refreshFailed' => ({required int count}) => '${count} records could not be refreshed',
 			'hongguo.title' => 'Hongguo Drama',
@@ -4541,6 +4725,8 @@ extension on TranslationsEn {
 			'hongguo.reservationsRefresh' => 'Refresh',
 			'hongguo.reservationsOff' => 'Sign in to sync your phone reservations here',
 			'hongguo.accountSignInTitle' => 'Scan to sign in',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.accountSignInDesc' => 'Scan with the Hongguo phone app; favorites, history and reservations follow the account',
 			'hongguo.accountQrRefresh' => 'New code',
 			'hongguo.accountSignedInAs' => 'Signed in',
@@ -4582,8 +4768,6 @@ extension on TranslationsEn {
 			'hongguo.danmakuDensityNormal' => 'Normal',
 			'hongguo.danmakuDensityDense' => 'Dense',
 			'hongguo.phoneLogin' => 'Sign in by phone',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.phonePlaceholder' => 'Mobile, e.g. 138… (intl +cc number)',
 			'hongguo.phoneSend' => 'Send code',
 			'hongguo.phoneCodePlaceholder' => 'Code',
@@ -4678,6 +4862,13 @@ extension on TranslationsEn {
 			'hongguo.downloadDirectoryDefault' => 'Restore default folder',
 			'hongguo.downloadDirectoryDefaultDesc' => 'Back to the app\'s default Videos folder.',
 			'hongguo.downloadTaskCount' => ({required int count, required int active}) => '${count} tasks · ${active} active',
+			'hongguo.downloadRetry' => 'Retry automatically',
+			'hongguo.downloadRetryDesc' => 'A failed download tries again in the background, carrying on from the bytes already written.',
+			'hongguo.downloadRetryOff' => 'No retry',
+			'hongguo.downloadRetryTimes' => ({required int count}) => '${count} times',
+			'hongguo.downloadRetryDelay' => 'Retry interval',
+			'hongguo.downloadRetryDelayDesc' => 'How long to wait between two automatic retries.',
+			'hongguo.downloadEta' => ({required Object time}) => '${time} left',
 			'hongguo.downloadManagerTitle' => 'Downloads',
 			'hongguo.downloadPauseAll' => 'Pause all',
 			'hongguo.downloadResumeAll' => 'Resume all',
@@ -4685,6 +4876,8 @@ extension on TranslationsEn {
 			'hongguo.downloadFilterAll' => 'All',
 			'hongguo.downloadFilterActive' => 'In progress',
 			'hongguo.downloadFilterDone' => 'Finished',
+			'hongguo.previewTitle' => 'Download preview',
+			'hongguo.previewUnavailable' => 'This episode has no finished file yet',
 			'hongguo.downloadFilterEmpty' => 'Nothing under this filter',
 			'hongguo.downloadFilterEmptyDesc' => 'Pick another filter, or add a download from a player page first.',
 			'hongguo.downloadEmpty' => 'No downloads yet',
@@ -4849,6 +5042,7 @@ extension on TranslationsEn {
 			'iptv.playerChannelMissing' => 'The channel no longer exists',
 			'iptv.playerOpenFailed' => 'The channel failed to play',
 			'iptv.guideTitle' => 'Guide',
+			'iptv.viewRecordings' => 'View recordings',
 			'iptv.guideEmpty' => 'No programmes on this day',
 			'iptv.today' => 'Today',
 			'iptv.yesterday' => 'Yesterday',
@@ -4966,13 +5160,19 @@ extension on TranslationsEn {
 			'music.settingsInterface' => 'Interface',
 			'music.uiBlurredBackdrop' => 'Blurred backdrop',
 			'music.uiBlurredBackdropDesc' => 'Paint the player page over the playing song\'s cover, blown up and blurred',
-			'music.playerMode' => 'Player mode',
-			'music.playerModeDesc' => 'What the player stage draws: the cover card, the turntable, or the words alone.',
+			'music.playerMode' => 'Default player mode',
+			'music.playerModeDesc' => 'How the player page opens: the cover card, the turntable, or the words alone. The player page switches it any time.',
+			'music.playerModeSwitch' => 'Player mode',
 			'music.playerModeStandard' => 'Standard',
 			'music.playerModeVinyl' => 'Vinyl',
 			'music.playerModeLyrics' => 'Lyrics',
 			'music.uiSpectrum' => 'Playback spectrum',
-			'music.uiSpectrumDesc' => 'The live spectrum bars on the player page\'s stage',
+			'music.uiSpectrumDesc' => 'The live spectrum on the player page\'s stage',
+			'music.uiSpectrumStyle' => 'Spectrum style',
+			'music.uiSpectrumStyleDesc' => 'Bars, a ring, or a wave; still while paused, muted, or silent',
+			'music.spectrumStyleBars' => 'Bars',
+			'music.spectrumStyleCircle' => 'Ring',
+			'music.spectrumStyleWave' => 'Wave',
 			'music.uiReset' => 'Reset display',
 			'music.uiResetDesc' => 'Show every interface element turned off above again',
 			'music.searchTypeSongs' => 'Songs',
@@ -5039,6 +5239,8 @@ extension on TranslationsEn {
 			'music.showSourceDesc' => 'Marks which source a song came from beside its row.',
 			'music.playbackReset' => 'Restore defaults',
 			'music.playbackResetDesc' => 'Automatic source, 320K, skip failures, new songs at the end.',
+			_ => null,
+		} ?? switch (path) {
 			'music.sourcesSection' => 'Custom sources',
 			'music.sourcesHint' => 'lx-music custom sources are JavaScript scripts run by the fjs (QuickJS) runtime; importing initializes them and hands play-URL resolution to them.',
 			'music.sourcesImportText' => 'Paste a script',
@@ -5094,10 +5296,13 @@ extension on TranslationsEn {
 			'music.chartsFailed' => 'The chart did not load',
 			'music.queueEmpty' => 'Queue is empty',
 			'music.queueTitle' => 'Queue',
+			'music.queueUpNext' => 'Up next',
+			'music.queuePlayed' => 'Played',
+			'music.queueShowMore' => ({required Object count}) => 'Show more (${count} left)',
+			'music.queueMissingFile' => 'File missing',
+			'music.queueUnplayable' => 'Couldn\'t play',
 			'music.nowPlaying' => 'Now playing',
 			'music.stagePanels' => 'Lyrics & queue',
-			_ => null,
-		} ?? switch (path) {
 			'music.volume' => 'Volume',
 			'music.progress' => 'Progress',
 			'music.lyrics' => 'Lyrics',
@@ -5127,6 +5332,21 @@ extension on TranslationsEn {
 			'music.songDetailSource' => 'Source',
 			'music.songDetailPath' => 'File',
 			'music.songDetailEmpty' => '—',
+			'music.albumPageTitle' => 'Album',
+			'music.artistPageTitle' => 'Artist',
+			'music.viewAlbum' => 'View album',
+			'music.viewArtist' => 'View artist',
+			'music.albumUnsupported' => 'This source does not support album browsing',
+			'music.artistUnsupported' => 'This source does not support artist browsing',
+			'music.browseUnsupportedHint' => ({required Object source}) => '${source} does not provide the data this page needs.',
+			'music.albumLoadFailed' => 'Could not load the album',
+			'music.artistLoadFailed' => 'Could not load the artist',
+			'music.albumEmptyTitle' => 'This album has no playable songs',
+			'music.albumEmptyDescription' => 'The platform answered the album, but listed no songs.',
+			'music.artistEmptyTitle' => 'No songs or albums for this artist',
+			'music.artistEmptyDescription' => 'The platform gave nothing for this artist.',
+			'music.artistSongsEmpty' => 'The platform listed no songs for this artist',
+			'music.albumsCount' => ({required Object count}) => '${count} albums',
 			'music.dislike' => 'Not interested',
 			'music.undislike' => 'Remove from disliked',
 			'music.disliked' => 'Added to the dislike rules; it will be skipped',
@@ -5151,6 +5371,8 @@ extension on TranslationsEn {
 			'music.recPlaylists' => 'Recommended playlists',
 			'music.recMore' => 'More playlists',
 			'music.recRecent' => 'Keep playing',
+			'music.recAlbums' => 'Recent albums',
+			'music.recArtists' => 'Recent artists',
 			'music.recBoards' => 'Charts',
 			'music.recEmptyTitle' => 'Nothing to recommend yet',
 			'music.recEmptyDescription' => 'The source\'s playlists, its charts and the songs you played show up here.',
@@ -5531,6 +5753,8 @@ extension on TranslationsEn {
 			'music.syncStatusConnecting' => 'Connecting',
 			'music.syncStatusFailed' => 'Failed',
 			'music.syncStatusIdle' => 'Not connected',
+			_ => null,
+		} ?? switch (path) {
 			'music.syncStatusHint' => 'Connect to pull the server\'s lists and push local changes back.',
 			'music.syncForgetKey' => 'Forget authorization',
 			'music.syncForgetKeyDesc' => 'Drop the stored key and re-auth with the code next time.',
@@ -5610,8 +5834,6 @@ extension on TranslationsEn {
 			'music.tagEditMatchOnline' => 'Match online',
 			'music.tagEditMatchLyricDone' => 'Lyric matched',
 			'music.tagEditMatchPicDone' => 'Cover matched',
-			_ => null,
-		} ?? switch (path) {
 			'music.tagEditMatchLyricFailed' => 'Matching lyrics online failed',
 			'music.tagEditMatchPicFailed' => 'Matching the cover online failed',
 			'music.tagEditConfirm' => 'Save',
@@ -5822,6 +6044,8 @@ extension on TranslationsEn {
 			'recorder.transcodeBitrateDesc' => 'Target video bitrate; higher is clearer and larger.',
 			'recorder.playRecording' => 'Play recording',
 			'recorder.previewRecording' => 'Preview in built-in player',
+			'recorder.previewTitle' => 'Recording preview',
+			'recorder.previewUnavailable' => 'This task holds no file a player can open',
 			'recorder.recordChatGiftsTitle' => 'Record gift messages',
 			'recorder.recordChatGiftsDesc' => 'Writes gift messages, in the text the platform gives, into the same danmaku file; the chat alone is the default.',
 			'recorder.recordChatTitle' => 'Record chat',
@@ -5897,6 +6121,9 @@ extension on TranslationsEn {
 			'room.play' => 'Play',
 			'room.pause' => 'Pause',
 			'room.noChat' => 'No chat yet',
+			'room.chatConnecting' => 'Connecting to chat…',
+			'room.chatUnsupported' => 'This room has no live chat',
+			'room.chatFailedTitle' => 'Chat did not connect',
 			'room.system' => 'System',
 			'room.mute' => 'Mute',
 			'room.unmute' => 'Unmute',
@@ -5971,6 +6198,9 @@ extension on TranslationsEn {
 			'room.openFailed' => 'The link could not be opened',
 			'room.refreshRoom' => 'Refresh room details',
 			'room.messageActions' => 'Message actions',
+			'room.roleAnchor' => 'Streamer',
+			'room.roleModerator' => 'Mod',
+			'room.rolePlatform' => 'Official',
 			'room.blockUser' => 'Block this viewer',
 			'room.blockKeyword' => 'Block a keyword…',
 			'room.blockKeywordHint' => 'Enter the keyword to block',
@@ -6002,9 +6232,11 @@ extension on TranslationsEn {
 			'room.restrictionUnplayable' => 'Not playable now',
 			'room.orientation' => 'Picture orientation',
 			'room.orientationHint' => 'Follow the picture’s own shape, or fix this room to portrait or landscape.',
+			'room.orientationHintWide' => 'This picture is ultra-wide: fill the width at its own ratio, keep the default frame with its bars, or fix this room to portrait or landscape.',
 			'room.orientationAutomatic' => 'Automatic',
 			'room.orientationPortrait' => 'Portrait',
 			'room.orientationLandscape' => 'Landscape',
+			'room.orientationFillWidth' => 'Fill width',
 			'room.orientationUpdated' => 'Picture orientation updated',
 			'room.portraitFullscreen' => 'Portrait full screen',
 			'room.portraitFullscreenExit' => 'Exit portrait full screen',
@@ -6033,6 +6265,32 @@ extension on TranslationsEn {
 			'room.giftValueNote' => ({required Object value}) => '${value} notes',
 			'room.collapseChat' => 'Collapse chat',
 			'room.expandChat' => 'Expand chat',
+			'room.resizeChat' => 'Resize chat',
+			'room.theaterOn' => 'Theater mode',
+			_ => null,
+		} ?? switch (path) {
+			'room.theaterOff' => 'Exit theater mode',
+			'room.statsToggle' => 'Statistics',
+			'room.statsPicture' => 'Picture',
+			'room.statsBitrate' => 'Bitrate',
+			'room.statsBuffer' => 'Buffer',
+			'room.statsDropped' => 'Dropped',
+			'room.statsDecoder' => 'Decoder',
+			'room.statsRenderer' => 'Renderer',
+			'room.statsProcess' => 'Process',
+			'room.statsBackend' => 'Engine',
+			'room.screenshot' => 'Screenshot',
+			'room.screenshotSaved' => ({required Object name}) => 'Saved ${name}',
+			'room.screenshotFailed' => 'That frame could not be captured',
+			'room.shortcutsHelp' => 'Keyboard shortcuts',
+			'room.shortcutsHint' => 'Keys available on this screen',
+			'room.shortcutPlayPause' => 'Play or pause',
+			'room.shortcutFullscreen' => 'Fullscreen',
+			'room.shortcutLeave' => 'Leave fullscreen, or the room',
+			'room.shortcutVolumeUp' => 'Volume up',
+			'room.shortcutVolumeDown' => 'Volume down',
+			'room.keySpace' => 'Space',
+			'room.keyEscape' => 'Esc',
 			'room.switchRoom' => 'Switch room',
 			'room.switchOnAir' => 'Followed · live',
 			'room.switchHistory' => 'Watch history',
@@ -6095,13 +6353,12 @@ extension on TranslationsEn {
 			'settings.navIptv' => 'Guides & updates',
 			'settings.navVod' => 'Account & quality',
 			'settings.navData' => 'Watch data',
-			'settings.followDataGroup' => 'Follow data',
 			'settings.navBackup' => 'Backup & restore',
 			'settings.navAbout' => 'Version & licences',
 			'settings.navBrowsing' => 'Browsing',
 			'settings.navWindow' => 'Window',
 			'settings.navStartup' => 'Startup & exit',
-			'settings.navAccounts' => 'Accounts',
+			'settings.navAccounts' => 'Account management',
 			'settings.navTheme' => 'Theme & colours',
 			'settings.navTypography' => 'Typography',
 			'settings.qualityAudioTitle' => 'Quality & sound',
@@ -6124,8 +6381,6 @@ extension on TranslationsEn {
 			'settings.generalDescription' => 'Browsing, window and startup pages.',
 			'settings.appearanceDescription' => 'Theme, typography and colours.',
 			'settings.personalizationDescription' => 'Theme, appearance, background and navigation.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.liveSettingsDescription' => 'Live sources, danmaku and recording.',
 			'settings.liveSourcesDescription' => 'Platforms, accounts and auto refresh.',
 			'settings.playbackSettingsDescription' => 'Playback preferences and the player engine.',
@@ -6134,7 +6389,7 @@ extension on TranslationsEn {
 			'settings.personalizationChooseTheme' => 'Choose a theme to apply',
 			'settings.personalizationSettings' => 'Personalization settings',
 			'settings.playbackDescription' => 'Quality, audio, picture and player behaviour.',
-			'settings.sitesDescription' => 'Preferred platform and platform display; per-platform quirks, accounts and follow tags.',
+			'settings.sitesDescription' => 'Preferred platform and platform display, account and tag management, and each platform\'s quirks.',
 			'settings.iptvDescription' => 'Guide updates and source syncing.',
 			'settings.vodDescription' => 'Bilibili account, default quality and video-station behaviour.',
 			'settings.dataDescription' => 'Live watch history and follows.',
@@ -6220,8 +6475,7 @@ extension on TranslationsEn {
 			'settings.sitesDisplay' => 'Platforms shown',
 			'settings.sitesDisplayDesc' => 'Switched-off platforms leave the popular, areas, follows and search platform lists.',
 			'settings.sitesGroupCore' => 'Platforms',
-			'settings.sitesGroupPlayback' => 'Compatibility & language',
-			'settings.sitesGroupAccount' => 'Accounts & groups',
+			'settings.sitesGroupPlayback' => 'Platform-specific settings',
 			'settings.sitesShowAll' => 'Show all',
 			'settings.sitesHideAll' => 'Hide all',
 			'settings.sitesReset' => 'Reset',
@@ -6230,18 +6484,6 @@ extension on TranslationsEn {
 			'settings.sitesColumnPlatform' => 'Platform',
 			'settings.sitesColumnId' => 'Id',
 			'settings.sitesColumnShown' => 'Shown',
-			'settings.dataClearHistory' => 'Clear watch history',
-			'settings.dataClearHistoryDesc' => 'Deletes every watch record, for good.',
-			'settings.dataExportFollows' => 'Export follows',
-			'settings.dataExportFollowsDesc' => 'Copies the follow list to the clipboard (JSON).',
-			'settings.dataImportFollows' => 'Import follows',
-			'settings.dataImportFollowsDesc' => 'Reads previously exported follows from the clipboard (JSON).',
-			'settings.dataDone' => 'Done',
-			'settings.dataBadData' => 'The clipboard could not be read as follows',
-			'settings.dataEmpty' => 'Nothing to export yet',
-			'settings.confirmClearTitle' => 'Clear watch history?',
-			'settings.confirmClearDesc' => 'Every watch record will be deleted, for good.',
-			'settings.confirm' => 'Clear',
 			'settings.aboutVersion' => 'Version',
 			'settings.aboutProject' => 'Project home',
 			'settings.aboutLicense' => 'Licences',
@@ -6293,8 +6535,6 @@ extension on TranslationsEn {
 			'settings.liveAlertFallbackTitle' => ({required Object roomId, required Object platform}) => 'Room ${roomId} on ${platform}',
 			'settings.liveAlertNotificationBody' => ({required Object platform}) => 'Live now on ${platform}',
 			'settings.refreshInterval' => 'Interval',
-			'settings.historyLimit' => 'History limit',
-			'settings.historyLimitDesc' => 'The oldest records past the limit are dropped.',
 			'settings.navNetwork' => 'Network',
 			'settings.networkDescription' => 'The app proxy and transport behaviour.',
 			'settings.proxy' => 'App proxy',
@@ -6541,6 +6781,8 @@ extension on TranslationsEn {
 			'settings.fontManagerUse' => 'Use',
 			'settings.fontManagerDownloadAndUse' => 'Download and use',
 			'settings.fontManagerDownloading' => ({required Object percent}) => 'Downloading ${percent}%',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerDownloadFailed' => 'Download failed',
 			'settings.fontManagerDownloaded' => 'Downloaded',
 			'settings.fontManagerNotDownloaded' => 'Not downloaded',
@@ -6638,8 +6880,6 @@ extension on TranslationsEn {
 			'settings.musicLyricDescription' => 'Translation, romanization and lyric delay.',
 			'settings.navMusicDesktopLyric' => 'Desktop lyrics',
 			'settings.navMusicHotkeys' => 'Hotkeys',
-			_ => null,
-		} ?? switch (path) {
 			'settings.navMusicSync' => 'Sync',
 			'settings.navMusicEq' => 'Sound effects',
 			'settings.musicHotkeysDescription' => 'Shortcuts for play, volume and favourites.',
@@ -7055,6 +7295,8 @@ extension on TranslationsEn {
 			'settings.downloadRemoveBody' => 'Removes the record only; the saved file stays.',
 			'settings.downloadClearFinished' => 'Clear finished',
 			'settings.downloadDuplicateRunning' => 'That file is already downloading',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadDuplicateDone' => 'That file has already been downloaded',
 			'settings.downloadManagerOpenFolder' => 'Open folder',
 			'settings.downloadFilterAll' => 'All',
@@ -7152,8 +7394,6 @@ extension on TranslationsEn {
 			'settings.audienceRealOnlineDesc' => 'Follow the platform: online counts where offered, heat elsewhere.',
 			'settings.audienceNeedsAutomaticMode' => 'Choose "Platform default" under the card display mode for the concurrent-viewer preference to apply.',
 			'settings.audiencePlatformsGroup' => 'Concurrent-viewer platforms',
-			_ => null,
-		} ?? switch (path) {
 			'settings.audiencePlatformsDesc' => 'Only platforms with an explicit concurrent count appear here; a disabled platform keeps its heat or total views.',
 			'settings.audienceSourceRoomList' => 'Source: room list/detail; immediately rankable',
 			'settings.audienceSourceRoomRealtime' => 'Source: realtime message after entering a room',
@@ -7429,7 +7669,6 @@ extension on TranslationsEn {
 			'settings.storageFolderPick' => 'Choose folder',
 			'settings.storageFolderReset' => 'Use default',
 			'settings.storageFoldersResetAll' => 'Reset all folders',
-			'settings.storageFoldersResetAllDesc' => 'Every folder returns to the device default; the cache moves after a restart.',
 			'settings.resetGroup' => 'Reset',
 			'settings.roomCardGroup' => 'Room card style',
 			'settings.localMediaTitle' => 'Local media',
@@ -7446,6 +7685,45 @@ extension on TranslationsEn {
 			'settings.localMediaRefresh' => 'Refresh',
 			'settings.hongguoDownloadTitle' => 'Downloads',
 			'settings.hongguoDownloadDescription' => 'The download queue, quality and save folder',
+			'settings.storageFolderCopyPath' => 'Copy path',
+			'settings.lanSync' => 'LAN sync',
+			'settings.lanSyncDescription' => 'Sync favorites with other devices on the same network.',
+			'settings.lanSyncEnable' => 'Enable LAN sync',
+			'settings.lanSyncEnableDesc' => 'While on, this device is discoverable and accepts pairing; names and grants stay.',
+			'settings.lanSyncDeviceName' => 'Device name',
+			'settings.lanSyncDeviceNameDesc' => 'Shown to other devices.',
+			'settings.lanSyncDeviceNameSaved' => 'Device name updated',
+			'settings.lanSyncFingerprint' => 'Certificate fingerprint',
+			'settings.lanSyncFingerprintCopied' => 'Fingerprint copied',
+			'settings.lanSyncNearby' => 'Nearby devices',
+			'settings.lanSyncNearbyEmpty' => 'No devices found. Both devices need the same network and the switch on.',
+			'settings.lanSyncPaired' => 'Paired devices',
+			'settings.lanSyncPairedEmpty' => 'No paired devices yet.',
+			'settings.lanSyncPair' => 'Pair',
+			'settings.lanSyncForget' => 'Revoke',
+			'settings.lanSyncSyncNow' => 'Sync now',
+			'settings.lanSyncSyncDone' => 'Sync finished',
+			'settings.lanSyncSyncPartial' => 'Finished; some items did not sync',
+			'settings.lanSyncSyncFailed' => 'Sync failed',
+			'settings.lanSyncConflictPolicy' => 'On conflict keep',
+			'settings.lanSyncPolicyRemote' => 'the other device',
+			'settings.lanSyncPolicyLocal' => 'this device',
+			'settings.lanSyncReadAllowed' => 'Allow reading favorites',
+			'settings.lanSyncWriteAllowed' => 'Allow changing favorites',
+			'settings.lanSyncRevoked' => 'Trust in this device revoked',
+			'settings.lanSyncStateDiscovering' => 'Looking for the other device…',
+			'settings.lanSyncStateWaiting' => 'Waiting for the other device…',
+			'settings.lanSyncPairTitle' => 'Pair a device',
+			'settings.lanSyncPairIntro' => 'Check that both screens show the same number, then confirm on both.',
+			'settings.lanSyncPairFrom' => ({required Object name}) => 'Pairing request from “${name}”',
+			'settings.lanSyncPairConfirm' => 'Numbers match, confirm',
+			'settings.lanSyncPairReject' => 'Different, reject',
+			'settings.lanSyncPairAccepted' => 'Paired',
+			'settings.lanSyncPairRejected' => 'Pairing declined',
+			'settings.lanSyncPairExpired' => 'The pairing request expired; start again.',
+			'settings.lanSyncPairMismatch' => 'The two devices derived different keys; pairing ended. The network may have an intruder.',
+			'settings.lanSyncPairCountdown' => ({required int seconds}) => 'Expires in ${seconds} s',
+			'settings.lanSyncTrustError' => 'This device\'s identity does not match the pairing record; the connection was refused.',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -7531,6 +7809,8 @@ extension on TranslationsEn {
 			'toolbox.networkSiteLabel' => 'Choose a platform',
 			'toolbox.networkRun' => 'Run the check',
 			'toolbox.networkResultTitle' => 'Result',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.networkTarget' => 'Probed endpoint',
 			'toolbox.networkTargetDesc' => 'The recommended-rooms endpoint',
 			'toolbox.networkLatency' => 'Response time',
@@ -7666,8 +7946,6 @@ extension on TranslationsEn {
 			'vod.danmaku' => 'Danmaku',
 			'vod.likes' => 'Likes',
 			'vod.coins' => 'Coins',
-			_ => null,
-		} ?? switch (path) {
 			'vod.favorites' => 'Favourites',
 			'vod.description' => 'Description',
 			'vod.noDescription' => 'This video has no description.',
@@ -7758,6 +8036,12 @@ extension on TranslationsEn {
 			'vod.downloadDirectoryDefault' => 'Restore default folder',
 			'vod.downloadDirectoryDefaultDesc' => 'Back to the app\'s default Videos folder.',
 			'vod.downloadTaskCount' => ({required int count, required int active}) => '${count} tasks · ${active} active',
+			'vod.downloadRetry' => 'Retry automatically',
+			'vod.downloadRetryDesc' => 'A failed download tries again in the background, carrying on from the bytes already written.',
+			'vod.downloadRetryOff' => 'No retry',
+			'vod.downloadRetryTimes' => ({required int count}) => '${count} times',
+			'vod.downloadRetryDelay' => 'Retry interval',
+			'vod.downloadRetryDelayDesc' => 'How long to wait between two automatic retries.',
 			'vod.downloadManagerTitle' => 'Downloads',
 			'vod.downloadPauseAll' => 'Pause all',
 			'vod.downloadResumeAll' => 'Resume all',
@@ -7765,6 +8049,8 @@ extension on TranslationsEn {
 			'vod.downloadFilterAll' => 'All',
 			'vod.downloadFilterActive' => 'In progress',
 			'vod.downloadFilterDone' => 'Finished',
+			'vod.previewTitle' => 'Download preview',
+			'vod.previewUnavailable' => 'This part has no finished file yet',
 			'vod.downloadFilterEmpty' => 'Nothing under this filter',
 			'vod.downloadFilterEmptyDesc' => 'Pick another filter, or add a download from a video page first.',
 			'vod.downloadEmpty' => 'No downloads yet',

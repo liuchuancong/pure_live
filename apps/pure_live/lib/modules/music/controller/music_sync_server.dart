@@ -24,8 +24,8 @@ import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
 import 'package:pure_live/modules/music/controller/music_library.dart'
     show musicFavouritesProvider, musicRecentProvider;
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicPlaylistsProvider;
-import 'package:pure_live/modules/music/controller/music_settings.dart' show musicSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_sync.dart' show kMusicDislikeRemoteRulesKey, musicSyncProvider;
 import 'package:pure_live/modules/music/controller/music_sync_client.dart'
     show kMusicSyncAuthMsg, kMusicSyncCloseFailed, kMusicSyncHelloMsg, kMusicSyncIdPrefix, kMusicSyncMsgConnect;
@@ -832,7 +832,7 @@ final musicSyncServerProvider = Provider<MusicSyncServer>((ref) {
   final server =
       MusicSyncServer(
           readSyncMode: () => ref.read(musicSyncProvider).syncMode,
-          readAddToTop: () => ref.read(musicSettingsProvider).addToTop,
+          readAddToTop: () => ref.read(musicPlaybackSettingsProvider).addToTop,
           readListData: () => musicSyncListDataFromState(
             ref.read(musicRecentProvider),
             ref.read(musicFavouritesProvider),

@@ -23,7 +23,12 @@ enum LinkToolFailure {
   timeout,
 
   /// The owning platform answered with a network or parse failure.
-  failed,
+  failed;
+
+  /// Whether the answer names the network rather than the link: only a
+  /// transient answer may turn around next time, so only these deserve a
+  /// retry action on the failure toast.
+  bool get isTransient => this == timeout || this == failed;
 }
 
 /// The link tool's requests (the reference's `ToolboxController`, cut to

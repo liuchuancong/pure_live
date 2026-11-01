@@ -9,7 +9,8 @@ import 'package:pure_live/modules/live/room/room.dart' show roomProvider;
 
 /// The tray's 截图: the primary window's current room frame, saved under the
 /// viewer's screenshots folder (Settings → Data & cache → Storage locations;
-/// the platform's Pictures tree by default). Feedback lands in the system
+/// a folder under the download root by default, like the other media).
+/// Feedback lands in the system
 /// notification area — the tray is most useful while the window is hidden,
 /// where a toast would have no one to talk to.
 Future<void> captureRoomScreenshot(WidgetRef ref) async {

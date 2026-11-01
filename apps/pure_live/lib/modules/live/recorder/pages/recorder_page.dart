@@ -1,5 +1,5 @@
 import 'dart:async' show TimeoutException, unawaited;
-import 'dart:io' show File;
+import 'dart:io' show File, FileSystemEntity, FileSystemEntityType;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker, FileType;
@@ -9,11 +9,14 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart' show LiveAudienceMetricType, LiveDanmakuProvider, LiveRoom;
 import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/media_preview/media_preview_item.dart';
+import 'package:pure_live/features/media_preview/media_preview_page.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
+import 'package:pure_live/modules/live/recorder/data/recording_preview.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_settings.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart';
@@ -75,7 +78,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final store = ref.watch(recordingTasksProvider);
-    final polling = ref.watch(recordingSettingsProvider).pollingEnabled;
+    final polling = ref.watch(recordingSettingsProvider).schedule.pollingEnabled;
     // The tasks store their room's identity only; the room itself (cover,
     // streamer, audience) is the snapshot the follows and history stores
     // keep under the same key (`platform:roomId`), so the card shows real
@@ -126,30 +129,35 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     } else {
       content = CardList<RecordingTask>(
         items: visible,
-        itemBuilder: (context, task) => _TaskCard(
-          task: task,
-          room: rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'],
-          platformName: _platformName(task.platform),
-          onOpen: () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId)),
-          onStop: ref.read(recorderEngineProvider).isRecording(task.id) ? () => unawaited(_stop(task.id)) : null,
-          onCancelWaiting: task.state == RecordingTaskState.waiting
-              ? () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id))
-              : null,
-          onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
-          onSchedule: () => unawaited(_editSchedule(task)),
-          onStartNow: !task.postProcessing && task.state != RecordingTaskState.recording
-              ? () => unawaited(_startNow(task))
-              : null,
-          onCancelProcessing: task.postProcessing ? () => unawaited(_cancelProcessing(task.id)) : null,
-          // A take the app never finished still holds its segments: offer the
-          // finish again whenever the task names a file and nothing runs.
-          onRetryJoin:
-              !task.postProcessing &&
-                  task.state != RecordingTaskState.recording &&
-                  (task.filePath ?? '').trim().isNotEmpty
-              ? () => unawaited(_retryJoin(task))
-              : null,
-        ),
+        itemBuilder: (context, task) {
+          final preview = _canPreview(task);
+          return _TaskCard(
+            task: task,
+            room: rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'],
+            platformName: _platformName(task.platform),
+            onOpen: () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId)),
+            onStop: ref.read(recorderEngineProvider).isRecording(task.id) ? () => unawaited(_stop(task.id)) : null,
+            onCancelWaiting: task.state == RecordingTaskState.waiting
+                ? () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id))
+                : null,
+            onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
+            onSchedule: () => unawaited(_editSchedule(task)),
+            onStartNow: !task.postProcessing && task.state != RecordingTaskState.recording
+                ? () => unawaited(_startNow(task))
+                : null,
+            onCancelProcessing: task.postProcessing ? () => unawaited(_cancelProcessing(task.id)) : null,
+            // A take the app never finished still holds its segments: offer the
+            // finish again whenever the task names a file and nothing runs.
+            onRetryJoin:
+                !task.postProcessing &&
+                    task.state != RecordingTaskState.recording &&
+                    (task.filePath ?? '').trim().isNotEmpty
+                ? () => unawaited(_retryJoin(task))
+                : null,
+            onPreview: preview ? () => unawaited(_openPreview(task)) : null,
+            onPlayExternal: preview ? () => unawaited(_playExternal(task)) : null,
+          );
+        },
       );
     }
 
@@ -211,7 +219,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
                   showDsToast(
                     context: context,
                     title: t.recorder.pollingEnabledToast(
-                      seconds: ref.read(recordingSettingsProvider).liveCheckSeconds,
+                      seconds: ref.read(recordingSettingsProvider).schedule.liveCheckSeconds,
                     ),
                     status: DsStatus.success,
                   );
@@ -275,6 +283,55 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     };
     showDsToast(context: context, title: message, status: DsStatus.warning);
   }
+
+  /// Whether the card's take can open in either player: a settled task whose
+  /// take still exists. A running capture is a folder of open segments, not
+  /// something to watch.
+  bool _canPreview(RecordingTask task) {
+    if (task.postProcessing || task.state == RecordingTaskState.recording) return false;
+    final path = (task.filePath ?? '').trim();
+    if (path.isEmpty) return false;
+    try {
+      return FileSystemEntity.typeSync(path) != FileSystemEntityType.notFound;
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Opens the built-in preview on [task]'s take, with the centre's other
+  /// takes listed beside it — the finished picture first, the folder's
+  /// segments when the join never ran.
+  Future<void> _openPreview(RecordingTask task) async {
+    final t = context.t;
+    final items = _previewItems();
+    final index = items.indexWhere((item) => item.id == task.id);
+    // A take whose files disappeared between the card's build and the tap is
+    // said so, not silently replaced by a neighbour in the list.
+    if (index < 0) {
+      showDsToast(context: context, title: t.recorder.previewUnavailable, status: DsStatus.warning);
+      return;
+    }
+    await openMediaPreview(context, title: t.recorder.previewTitle, items: items, initialIndex: index);
+  }
+
+  /// Hands the tapped take to the system's own player, files it cannot name
+  /// included (the built-in preview is the other door).
+  Future<void> _playExternal(RecordingTask task) async {
+    final file = playableFileAt(task.filePath);
+    if (file == null) {
+      showDsToast(context: context, title: context.t.recorder.previewUnavailable, status: DsStatus.warning);
+      return;
+    }
+    await openDownloadedPath(context, file);
+  }
+
+  /// Every settled take that holds a file a player can open, in the store's
+  /// order — the same construction the IPTV page runs over its own filter of
+  /// the shared task library, so the two doors cannot drift.
+  List<MediaPreviewItem> _previewItems() => recordingPreviewItems(
+    ref.read(recordingTasksProvider).tasks,
+    platformName: (task) => _platformName(task.platform),
+  );
 
   /// Stops every capture the engine is writing.
   ///
@@ -471,6 +528,8 @@ final class _TaskCard extends StatelessWidget {
     this.onCancelProcessing,
     this.onStartNow,
     this.onRetryJoin,
+    this.onPreview,
+    this.onPlayExternal,
   });
 
   final RecordingTask task;
@@ -506,6 +565,13 @@ final class _TaskCard extends StatelessWidget {
   /// while the task is being captured or finished.
   final VoidCallback? onRetryJoin;
 
+  /// Opens the built-in preview over the centre's finished takes, null when
+  /// this card's take is not one of them.
+  final VoidCallback? onPreview;
+
+  /// Hands this take to the system's own player, null under the same rule.
+  final VoidCallback? onPlayExternal;
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -522,7 +588,7 @@ final class _TaskCard extends StatelessWidget {
       if (audience.isNotEmpty) audience,
       if (task.quality.isNotEmpty) task.quality else t.recorder.qualityBest,
       if (task.scheduleEnabled) _scheduleSummary(t, task),
-      t.recorder.startedAt(time: _formatMoment(task.startedAt)),
+      t.recorder.startedAt(time: formatRecordingMoment(task.startedAt)),
     ].join(' · ');
     // Media time is what the take actually captured; a running session that
     // has not reported yet falls back to the wall clock since it started.
@@ -530,8 +596,8 @@ final class _TaskCard extends StatelessWidget {
     final elapsed = task.isRunning && recorded == Duration.zero ? DateTime.now().difference(task.startedAt) : recorded;
     final speed = task.isRunning && elapsed.inSeconds > 0 && task.bytes > 0 ? task.bytes / elapsed.inSeconds : 0.0;
     final progress = [
-      if (elapsed > Duration.zero) _formatDuration(elapsed),
-      if (speed > 0) '${_formatBytes(speed.round())}/s',
+      if (elapsed > Duration.zero) formatRecordingDuration(elapsed),
+      if (speed > 0) '${formatRecordingBytes(speed.round())}/s',
     ].join(' · ');
     return DsCard(
       onPressed: onOpen,
@@ -642,7 +708,7 @@ final class _TaskCard extends StatelessWidget {
                     status: task.postProcessing ? DsStatus.info : _stateStatus(task.state),
                   ),
                   Text(
-                    task.bytes > 0 ? _formatBytes(task.bytes) : '—',
+                    task.bytes > 0 ? formatRecordingBytes(task.bytes) : '—',
                     style: theme.typography.caption.copyWith(color: colors.textSubtle),
                   ),
                   if (progress.isNotEmpty)
@@ -665,6 +731,8 @@ final class _TaskCard extends StatelessWidget {
                 onCancelProcessing: onCancelProcessing,
                 onStartNow: onStartNow,
                 onRetryJoin: onRetryJoin,
+                onPreview: onPreview,
+                onPlayExternal: onPlayExternal,
               ),
             ],
           );
@@ -772,6 +840,8 @@ final class _TaskMenu extends StatelessWidget {
     this.onCancelProcessing,
     this.onStartNow,
     this.onRetryJoin,
+    this.onPreview,
+    this.onPlayExternal,
   });
 
   final RecordingTask task;
@@ -798,6 +868,13 @@ final class _TaskMenu extends StatelessWidget {
   /// Re-runs the post-recording steps on a take the app never finished, null
   /// while the task is being captured or finished.
   final VoidCallback? onRetryJoin;
+
+  /// Opens the built-in preview over the centre's finished takes, null when
+  /// this card's take is not one of them.
+  final VoidCallback? onPreview;
+
+  /// Hands this take to the system's own player, null under the same rule.
+  final VoidCallback? onPlayExternal;
 
   @override
   Widget build(BuildContext context) {
@@ -837,22 +914,14 @@ final class _TaskMenu extends StatelessWidget {
             label: Text(t.recorder.openFolder),
             onPressed: () => unawaited(_openFolder(context)),
           ),
-        if (hasFile && File((task.filePath ?? '').trim()).existsSync())
+        if (onPreview case final preview?)
           DsMenuItem(
             leading: const DsIcon(DsIcons.playCircle),
             label: Text(t.recorder.previewRecording),
-            onPressed: () {
-              final file = (task.filePath ?? '').trim();
-              final room = task.roomTitle.trim();
-              unawaited(showLocalMediaPreview(context, path: file, title: room.isNotEmpty ? room : p.basename(file)));
-            },
+            onPressed: preview,
           ),
-        if (hasFile && File((task.filePath ?? '').trim()).existsSync())
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.play),
-            label: Text(t.recorder.playRecording),
-            onPressed: () => unawaited(_playRecording(context)),
-          ),
+        if (onPlayExternal case final play?)
+          DsMenuItem(leading: const DsIcon(DsIcons.play), label: Text(t.recorder.playRecording), onPressed: play),
         if (onStop case final stop?)
           DsMenuItem(
             leading: const DsIcon(DsIcons.squareStop),
@@ -883,13 +952,6 @@ final class _TaskMenu extends StatelessWidget {
     final file = (task.filePath ?? '').trim();
     if (file.isEmpty) return;
     await openDownloadedPath(context, p.dirname(file), failedTitle: context.t.recorder.openFolderFailed);
-  }
-
-  /// Opens the joined file in the system's own player.
-  Future<void> _playRecording(BuildContext context) async {
-    final file = (task.filePath ?? '').trim();
-    if (file.isEmpty) return;
-    await openDownloadedPath(context, file);
   }
 
   /// Asks before dropping the task: the entry goes, the files stay.
@@ -948,17 +1010,6 @@ String _audienceOf(LiveRoom? room) {
 }
 
 /// Renders a bytes figure the way a file manager would: the largest unit
-/// that stays above one, one decimal from KB on.
-String _formatBytes(int bytes) {
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  var value = bytes.toDouble();
-  var unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  return unit == 0 ? '${value.round()} B' : '${value.toStringAsFixed(1)} ${units[unit]}';
-}
 
 /// A recording cap in the unit the settings use: whole megabytes below a
 /// gigabyte, one decimal above.
@@ -1022,25 +1073,8 @@ String _scheduleSummary(Translations t, RecordingTask task) => t.recorder.schedu
 );
 
 /// A capture length as a player shows it: minutes and seconds, hours only
-/// when the take has them.
-String _formatDuration(Duration duration) {
-  String two(int value) => value.toString().padLeft(2, '0');
-  final hours = duration.inHours;
-  final minutes = duration.inMinutes % 60;
-  final seconds = duration.inSeconds % 60;
-  return hours > 0 ? '$hours:${two(minutes)}:${two(seconds)}' : '${two(minutes)}:${two(seconds)}';
-}
 
 /// A local moment for a task list row: the clock on today's entries, a
-/// short date with the clock otherwise.
-String _formatMoment(DateTime utc) {
-  String two(int value) => value.toString().padLeft(2, '0');
-  final local = utc.toLocal();
-  final now = DateTime.now();
-  final sameDay = local.year == now.year && local.month == now.month && local.day == now.day;
-  final clock = '${two(local.hour)}:${two(local.minute)}';
-  return sameDay ? clock : '${two(local.month)}-${two(local.day)} $clock';
-}
 
 /// One labelled slider of the recorder settings: the row every settings
 /// bar uses — the knob and its description on the left, the current value
@@ -1435,7 +1469,7 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
     final controller = ref.read(recordingSettingsProvider.notifier);
     // The row says what is in force, which means it has to say so when the
     // picked bundle is no longer where the row found it.
-    final customCa = settings.customCaPath.trim();
+    final customCa = settings.network.customCaPath.trim();
     final customCaName = customCa.isEmpty ? '' : p.basename(customCa);
     final missing = customCa.isNotEmpty && !File(customCa).existsSync();
     return DsListSection(
@@ -1457,8 +1491,8 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
           icon: DsIcons.clock,
           title: t.recorder.readTimeoutTitle,
           description: t.recorder.readTimeoutDescription,
-          detail: t.recorder.seconds(count: settings.readTimeoutSeconds),
-          value: settings.readTimeoutSeconds.toDouble(),
+          detail: t.recorder.seconds(count: settings.network.readTimeoutSeconds),
+          value: settings.network.readTimeoutSeconds.toDouble(),
           min: 5,
           max: 120,
           divisions: 23,
@@ -1519,7 +1553,7 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
           icon: DsIcons.lockCheck,
           title: t.recorder.tlsVerifyTitle,
           description: t.recorder.tlsVerifyDesc,
-          value: settings.tlsVerify,
+          value: settings.network.tlsVerify,
           onChanged: (value) => controller.tlsVerify = value,
         ),
         // Trusting one's own root is the honest alternative to switching
@@ -1643,18 +1677,18 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
           icon: DsIcons.clock,
           title: t.recorder.enablePolling,
           description: t.recorder.enablePollingDesc,
-          value: settings.pollingEnabled,
+          value: settings.schedule.pollingEnabled,
           onChanged: (value) => controller.pollingEnabled = value,
         ),
         // The schedule belongs to the switch above it: with polling off
         // there is no interval to set, so these follow it in and out.
-        if (settings.pollingEnabled) ...[
+        if (settings.schedule.pollingEnabled) ...[
           _RecordSlider(
             icon: DsIcons.timer,
             title: t.recorder.liveCheckSecondsTitle,
             description: t.recorder.liveCheckSecondsDesc,
-            detail: t.recorder.seconds(count: settings.liveCheckSeconds),
-            value: settings.liveCheckSeconds.toDouble(),
+            detail: t.recorder.seconds(count: settings.schedule.liveCheckSeconds),
+            value: settings.schedule.liveCheckSeconds.toDouble(),
             min: 10,
             max: 300,
             divisions: 29,
@@ -1665,16 +1699,16 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
             icon: DsIcons.activity,
             title: t.recorder.checkBackoff,
             description: t.recorder.checkBackoffDesc,
-            value: settings.checkBackoffEnabled,
+            value: settings.schedule.checkBackoffEnabled,
             onChanged: (value) => controller.checkBackoffEnabled = value,
           ),
-          if (settings.checkBackoffEnabled)
+          if (settings.schedule.checkBackoffEnabled)
             _RecordSlider(
               icon: DsIcons.hourglass,
               title: t.recorder.maxCheckSecondsTitle,
               description: t.recorder.maxCheckSecondsDesc,
-              detail: t.recorder.seconds(count: settings.maxCheckSeconds),
-              value: settings.maxCheckSeconds.toDouble(),
+              detail: t.recorder.seconds(count: settings.schedule.maxCheckSeconds),
+              value: settings.schedule.maxCheckSeconds.toDouble(),
               min: 60,
               max: 3600,
               divisions: 59,
@@ -1686,7 +1720,7 @@ final class _RecordingSettingsPaneState extends ConsumerState<RecordingSettingsP
           icon: DsIcons.power,
           title: t.recorder.autoStartOnBoot,
           description: t.recorder.autoStartOnBootDesc,
-          value: settings.autoStartOnBoot,
+          value: settings.schedule.autoStartOnBoot,
           onChanged: (value) => controller.autoStartOnBoot = value,
         ),
       ],

@@ -153,9 +153,7 @@ final class _ModuleHeader extends ConsumerWidget {
               ),
               Text(
                 account.signedIn
-                    ? (nickname.isEmpty
-                          ? t.hongguo.accountSignedInAs
-                          : '${t.hongguo.accountSignedInAs} · $nickname')
+                    ? (nickname.isEmpty ? t.hongguo.accountSignedInAs : '${t.hongguo.accountSignedInAs} · $nickname')
                     : t.hongguo.tagline,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -814,10 +812,7 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
                 value: _account,
                 onChanged: (account) {
                   setState(() => _account = account);
-                  if (account &&
-                      ref.read(hongguoAccountProvider).signedIn &&
-                      shelf.items.isEmpty &&
-                      !shelf.loading) {
+                  if (account && ref.read(hongguoAccountProvider).signedIn && shelf.items.isEmpty && !shelf.loading) {
                     unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).refresh());
                   }
                 },
@@ -981,10 +976,7 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
                 value: _account,
                 onChanged: (account) {
                   setState(() => _account = account);
-                  if (account &&
-                      ref.read(hongguoAccountProvider).signedIn &&
-                      cloud.items.isEmpty &&
-                      !cloud.loading) {
+                  if (account && ref.read(hongguoAccountProvider).signedIn && cloud.items.isEmpty && !cloud.loading) {
                     unawaited(ref.read(hongguoAccountHistoryProvider.notifier).refresh());
                   }
                 },
@@ -1393,6 +1385,24 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
   /// The shelf the query is asked of: the app's own search answers one
   /// shelf at a time, so comics need asking as comics.
   HongguoGenre _genre = HongguoGenre.shortPlay;
+
+  @override
+  void initState() {
+    super.initState();
+    // A word handed from outside (the toolbar): taken once on arrival,
+    // searched as though typed here. The listener catches a word handed
+    // while the view is already showing.
+    ref.listenManual(hongguoSearchHandoffProvider, (_, _) => _takeHandoff());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
+  }
+
+  /// Runs the handed word: the field reads it, the search answers it.
+  void _takeHandoff() {
+    final word = ref.read(hongguoSearchHandoffProvider.notifier).take();
+    if (word == null || word.isEmpty || !mounted) return;
+    _query.value = TextEditingValue(text: word, selection: TextSelection.collapsed(offset: word.length));
+    unawaited(ref.read(hongguoSearchProvider.notifier).search(word, genre: _genre));
+  }
 
   @override
   void dispose() {
@@ -1826,13 +1836,13 @@ final class _IconAction extends StatelessWidget {
         semanticLabel: semanticLabel,
         onPressed: onPressed,
         builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
+          final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
           return Container(
             width: 36,
             height: 36,
             alignment: Alignment.center,
             decoration: DsBoxDecoration(
-              color: hovered ? DsTheme.colorsOf(context).hover : null,
+              color: lit ? DsTheme.colorsOf(context).hover : null,
               borderRadius: BorderRadius.circular(theme.radii.control(36)),
             ),
             child: DsIcon(icon, size: 18, color: DsTheme.colorsOf(context).textMuted),

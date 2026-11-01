@@ -47,22 +47,28 @@ typedef DanmakuStyle = ({
 });
 
 const DanmakuStyle _defaults = (
-  fontSize: 16,
+  // 18 px on a live picture: 16 read as a caption pasted over the stream, and
+  // the layer's own track height and emoji size are tuned around this number.
+  fontSize: 18,
   fontWeight: 500,
   italic: false,
   letterSpacing: 0,
   baseSpeed: 120,
   area: 1.0,
   topMargin: 0,
+  // The bottom half is the streamer's: the reference keeps its flying text out
+  // of it, and a comment over a face reads as an ad.
   bottomMargin: 0.5,
   opacity: 1.0,
   showStroke: true,
   textColor: 0xFFFFFFFF,
   strokeColor: 0xFF000000,
-  strokeWidth: 1.5,
-  showShadow: false,
+  strokeWidth: 1.8,
+  // A stroke alone disappears on a bright scene (snow, a white wall, a game
+  // HUD). The soft shadow is what keeps the text legible there, so it ships on.
+  showShadow: true,
   shadowColor: 0xFF000000,
-  shadowBlur: 0,
+  shadowBlur: 2,
   shadowOffsetX: 1,
   shadowOffsetY: 1,
   noEmoji: false,

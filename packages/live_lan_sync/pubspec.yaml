@@ -1,0 +1,35 @@
+name: live_lan_sync
+description: >-
+  LAN device discovery and data synchronization engine for Pure Live:
+  configurable mDNS discovery, device pairing, secure transport contracts,
+  change-log based incremental sync, version-vector conflict resolution and
+  chunked file transfer — delivered as host-agnostic interfaces, domain
+  models and adapters. PureLive is the first host, not the only one.
+version: 0.1.0
+publish_to: none
+
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  # The mDNS / DNS-SD implementation behind the DeviceDiscovery contract.
+  # The engine depends on the contract, never on Bonsoir's types.
+  bonsoir: ^7.1.6
+  # Imported for Bonsoir's service and event types in the adapter and tests.
+  bonsoir_platform_interface: ^7.0.1
+  # SHA-256 / HMAC-SHA256: certificate fingerprints, request signatures,
+  # pairing commitments and the short authentication string.
+  crypto: ^3.0.0
+  # X25519 key agreement and HKDF for pairing (spec §9.3: reviewed
+  # primitives instead of a home-grown handshake). Pure Dart; already in
+  # the workspace cache.
+  cryptography: ^2.9.0
+  # The logging facade; hosts hand in a LiveLog view of their own tree.
+  live_log:
+  meta: ^1.19.0
+
+dev_dependencies:
+  test: ^1.33.0
+  very_good_analysis: ^11.0.0

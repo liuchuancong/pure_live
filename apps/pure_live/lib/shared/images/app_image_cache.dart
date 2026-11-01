@@ -40,9 +40,22 @@ void installImageCacheRoot(Directory directory) {
 
 Config _config() {
   final root = _appCacheRoot;
+  if (root == null) {
+    // No layout installed (phones, TVs): the platform defaults stand.
+    return Config(
+      _cacheFolder,
+      stalePeriod: const Duration(days: 30),
+      maxNrOfCacheObjects: 320,
+    );
+  }
   return Config(
     _cacheFolder,
-    fileSystem: root == null ? IOFileSystem(_cacheFolder) : _RootedFileSystem(root),
+    fileSystem: _RootedFileSystem(root),
+    // The bookkeeping goes beside the images, not in the platform's support
+    // directory: the default repo writes there, and a sandboxed or moved
+    // install would lose the index on every start (and log each loss while
+    // covers load). The room-window cache already keeps its metadata this way.
+    repo: JsonCacheInfoRepository.withFile(File(p.join(root.path, 'metadata.json'))),
     stalePeriod: const Duration(days: 30),
     maxNrOfCacheObjects: 320,
   );

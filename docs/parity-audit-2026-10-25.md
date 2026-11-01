@@ -143,7 +143,7 @@
 ## 7. 可视为完成 / 有意不同
 
 - 主题/外观基础、应用代理、账号安全存储、基础播放控制（播放/暂停/音量/静音/画质/线路）、直播平台适配、媒体会话、基本 DLNA 投屏、关注/历史的基础增删、IPTV 单源同步与节目单自动更新基本链路、Bilibili VOD（额外能力）。
-- 背景：`pure_uikit_background` 渲染纯色/渐变/图片/视频；内置图库同步 TV 的官方/Wallhaven/必应/deepin/动态壁纸五个来源（iTab API 与编译入 deepin 26 张）；图库模型为 built_value，来源/分类文案走 slang；随机图片 API 组未同步。
+- 背景：`live_uikit_background` 渲染纯色/渐变/图片/视频；内置图库同步 TV 的官方/Wallhaven/必应/deepin/动态壁纸五个来源（iTab API 与编译入 deepin 26 张）；图库模型为 built_value，来源/分类文案走 slang；随机图片 API 组未同步。
 - 有意不同：desen_ui 取代 live_ui；media_core 取代 live_player/live_cast/live_pip；VOD/音乐是参考 L03 没有的额外模块；桌面 WebView 用系统浏览器回退；Android-only 的分享/安装/相机等不作为桌面缺口，但应单列平台差异。
 - 不能把"文件/路由存在"算作完成：本报告中的 PARTIAL 都是已确认有真实页面但没有完整动作/状态的情况。
 

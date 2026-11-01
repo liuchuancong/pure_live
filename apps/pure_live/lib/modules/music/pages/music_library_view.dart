@@ -9,9 +9,9 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_library.dart' show musicFavouritesProvider;
 import 'package:pure_live/modules/music/controller/music_online_playlists.dart' show musicSonglistSearchProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
+    show MusicSourceNameType, musicPlaybackSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/music_search.dart';
-import 'package:pure_live/modules/music/controller/music_settings.dart'
-    show MusicSourceNameType, musicSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, musicSourceProvider;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, MusicPlaylistPage, SonglistSearch;
@@ -36,8 +36,8 @@ final class MusicLibraryView extends ConsumerStatefulWidget {
   /// Opens a 歌单-search hit in the songlists view.
   final ValueChanged<MusicPlaylistInfo> onOpenSonglist;
 
-  /// The word another view (推荐's hot chip) asked this one to search; taken
-  /// once, when the view mounts.
+  /// The word another view (推荐's hot chip) or the toolbar asked this one
+  /// to search; taken once, when the view mounts or the word changes.
   final String? initialQuery;
 
   /// Called as [initialQuery] is taken, so a later visit does not re-run it.
@@ -84,6 +84,14 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
       if (!mounted) return;
       _runSearch(word, ref.read(musicSearchProvider.notifier));
     });
+  }
+
+  @override
+  void didUpdateWidget(MusicLibraryView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The page is kept while the module's menu moves, so a word handed
+    // while this view is already showing arrives as a new query here.
+    if (widget.initialQuery != oldWidget.initialQuery) _seedQuery();
   }
 
   @override
@@ -157,7 +165,7 @@ final class MusicLibraryViewState extends ConsumerState<MusicLibraryView> {
     final playerController = ref.read(musicPlayerProvider.notifier);
     final favourites = ref.watch(musicFavouritesProvider);
     final favouriteController = ref.read(musicFavouritesProvider.notifier);
-    final settings = ref.watch(musicSettingsProvider);
+    final settings = ref.watch(musicPlaybackSettingsProvider);
     final showSource = settings.showSource;
     final hot = settings.showHotSearches
         ? ref.watch(musicHotSearchesProvider).value ?? const <String>[]

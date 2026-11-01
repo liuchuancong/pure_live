@@ -217,6 +217,54 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.2"
+  bonsoir:
+    dependency: transitive
+    description:
+      name: bonsoir
+      sha256: "5a16185a921039a6cc6544e5f6539c989e8d8a7dc3b219a3bcbd583b1cb302f7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.1.6"
+  bonsoir_android:
+    dependency: transitive
+    description:
+      name: bonsoir_android
+      sha256: "543689dae95e8d4df3576afadd1f8a343e0c2760ae44e5095959d870cfbcb7d3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.1.4"
+  bonsoir_darwin:
+    dependency: transitive
+    description:
+      name: bonsoir_darwin
+      sha256: "5fceef2e607db0b63fc7a51fe3c0e4da66ec77e2896acc697bb531cf48b8df0a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.1.2"
+  bonsoir_linux:
+    dependency: transitive
+    description:
+      name: bonsoir_linux
+      sha256: b3ead464c679651940ba378d38720574b1bfdf9a5b0e8cb2d4480416e1e1b5a5
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.1.1"
+  bonsoir_platform_interface:
+    dependency: transitive
+    description:
+      name: bonsoir_platform_interface
+      sha256: c08af1733b6ec3bb109e08855f91da6fee52fe57cb6033be2fd6648a74f94de0
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.0.1"
+  bonsoir_windows:
+    dependency: transitive
+    description:
+      name: bonsoir_windows
+      sha256: "22ca4c5dcba2b95fcedb723132a5d65930df3d69634f169eb327c366c9f89151"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.3.1"
   boolean_selector:
     dependency: transitive
     description:
@@ -497,6 +545,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.7"
+  cryptography:
+    dependency: transitive
+    description:
+      name: cryptography
+      sha256: "3eda3029d34ec9095a27a198ac9785630fe525c0eb6a49f3d575272f8e792ef0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.9.0"
   csslib:
     dependency: transitive
     description:
@@ -992,12 +1048,11 @@ packages:
     source: hosted
     version: "1.0.0"
   flutter_local_notifications_windows:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: flutter_local_notifications_windows
-      sha256: "6f43bdd03b171b7a90f22647506fea33e2bb12294b7c7c7a3d690e960a382945"
-      url: "https://pub.dev"
-    source: hosted
+      path: "F:/flutter_local_notifications_windows_local"
+      relative: false
+    source: path
     version: "3.1.1"
   flutter_localizations:
     dependency: transitive
@@ -1013,12 +1068,11 @@ packages:
     source: hosted
     version: "3.0.3"
   flutter_media_session:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: flutter_media_session
-      sha256: "746c0a8caada764e2fe4d1972247f9c0715ecb07a0a43650f5bcb0861f62257e"
-      url: "https://pub.dev"
-    source: hosted
+      path: "F:/flutter_media_session_local"
+      relative: false
+    source: path
     version: "3.0.9"
   flutter_overlay_window:
     dependency: transitive
@@ -1514,7 +1568,7 @@ packages:
       path: "F:/media_core/packages/media_core_cast_dlna"
       relative: false
     source: path
-    version: "0.1.0"
+    version: "0.8.0"
   media_core_danmaku:
     dependency: transitive
     description:

@@ -142,7 +142,10 @@ final class _ThemeColorDialogState extends State<_ThemeColorDialog> {
   void _onHexChanged(String text) {
     final parsed = ThemePersistence.parseSeedColor(text);
     if (parsed == null) {
-      setState(() => _hexInvalid = true);
+      // An empty field is an edit on its way somewhere, not a wrong value:
+      // the error names a malformed hex, so it clears the moment the field
+      // is emptied and returns when a new value is half-typed.
+      setState(() => _hexInvalid = text.trim().isNotEmpty);
       return;
     }
     setState(() {

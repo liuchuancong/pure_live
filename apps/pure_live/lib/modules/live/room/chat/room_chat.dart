@@ -30,7 +30,14 @@ enum _ChatTab { danmaku, superChats, settings, shield }
 /// The chat column under (or beside) the picture.
 final class RoomChatPanel extends ConsumerStatefulWidget {
   /// The chat column.
-  const RoomChatPanel({super.key});
+  ///
+  /// [translucent] leaves the panel's fill to its host: the theatre draws the
+  /// column as a glass card over the picture, and a second opaque surface
+  /// underneath would hide the glass.
+  const RoomChatPanel({this.translucent = false, super.key});
+
+  /// Whether the panel paints no fill of its own.
+  final bool translucent;
 
   @override
   ConsumerState<RoomChatPanel> createState() => _RoomChatPanelState();
@@ -48,7 +55,7 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
     // the platform keeps no board.
     final tab = _tab;
     return ColoredBox(
-      color: colors.surface,
+      color: widget.translucent ? const Color(0x00000000) : colors.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -96,8 +103,41 @@ final class _ChatFeed extends ConsumerWidget {
     final chat = ref.watch(roomChatProvider);
     final anchorName = ref.watch(roomProvider.select((state) => state.room?.anchor?.name ?? ''));
     if (chat.isEmpty) {
+      // An empty list is four different facts, and only one of them is the
+      // room being quiet: the standing the controller publishes says which, so
+      // a refused handshake never reads as "nobody is talking".
+      final standing = ref.watch(roomProvider.select((state) => state.chat));
       return Center(
-        child: DsEmptyState(icon: const DsIcon(DsIcons.messageCircle), title: Text(t.room.noChat)),
+        child: switch (standing.status) {
+          RoomChatStatus.connecting => Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s12,
+            children: [
+              const DsSpinner(style: DsSpinnerStyle(size: 24)),
+              Text(t.room.chatConnecting, style: DsTheme.of(context).typography.small),
+            ],
+          ),
+          RoomChatStatus.unsupported => DsEmptyState(
+            icon: const DsIcon(DsIcons.messageCircle),
+            title: Text(t.room.chatUnsupported),
+          ),
+          RoomChatStatus.failed => DsEmptyState(
+            icon: const DsIcon(DsIcons.cloudOff),
+            title: Text(t.room.chatFailedTitle),
+            description: Text(t.room.danmakuConnectFailed(reason: standing.error ?? '')),
+            actions: [
+              DsButton(
+                variant: DsButtonVariant.secondary,
+                onPressed: () => unawaited(ref.read(roomProvider.notifier).retryChat()),
+                child: Text(t.common.retry),
+              ),
+            ],
+          ),
+          RoomChatStatus.connected => DsEmptyState(
+            icon: const DsIcon(DsIcons.messageCircle),
+            title: Text(t.room.noChat),
+          ),
+        },
       );
     }
     // Reversed: item 0 sits at the bottom, so new messages stay in view
@@ -247,17 +287,42 @@ final class _ChatLine extends ConsumerWidget {
         gift == null &&
         superChat == null &&
         (message.type == LiveMessageType.notice || message.type == LiveMessageType.system);
-    // The platform's own labels for who is talking: the fan badge (its name
-    // and level) and the viewer's level. They ride on the sender, so a line
-    // that has neither shows none.
+    // Who is talking, in the room's own terms: the badge pictures the platform
+    // sent, the role it declares, the fan medal (its name and level) and the
+    // viewer's level. A line with none of them shows none.
     final fanBadgeName = (sender?.fanBadgeName ?? '').trim();
     final fanBadgeLevel = (sender?.fanBadgeLevel ?? '').trim();
     final userLevel = (sender?.userLevel ?? '').trim();
-    final showBadges = showNames && !isSystem && (fanBadgeName.isNotEmpty || userLevel.isNotEmpty);
+    // A platform can wear several (a title, a medal, an event mark); three is
+    // what the line can carry before the name itself is pushed off the front.
+    final badgeUrls = [
+      for (final badge in (sender?.badges ?? const <LiveBadge>[]).take(3)) badge.url.trim(),
+    ];
+    final roleTag = switch (sender?.role) {
+      LiveAnchorRole.anchor => t.room.roleAnchor,
+      LiveAnchorRole.moderator => t.room.roleModerator,
+      LiveAnchorRole.platform => t.room.rolePlatform,
+      _ => null,
+    };
+    final showBadges =
+        showNames &&
+        !isSystem &&
+        (badgeUrls.isNotEmpty || roleTag != null || fanBadgeName.isNotEmpty || userLevel.isNotEmpty);
+    // One height for every tag on the line, tied to the viewer's own chat size:
+    // tags of three different heights are what made the column look broken.
+    final tagHeight = (fontPx * 1.3).clamp(14.0, 22.0);
     final badgeStyle = theme.typography.caption.copyWith(
       fontSize: fontSize > 0 ? math.max(fontSize - 2, 9).toDouble() : 10,
-      height: 1.2,
+      height: 1,
     );
+    // The level is a number, not a plate: it reads as a fact once it carries no
+    // background, and the plate colour belongs to the medals that earn one.
+    final level = int.tryParse(userLevel) ?? 0;
+    final levelInk = level >= 20
+        ? colors.accent
+        : level >= 10
+        ? colors.warning.text
+        : colors.textSubtle;
     if (isSystem) {
       // A notice is not conversation: it sits in a quiet chip of its own, so
       // the flow of talk reads as talk and the room's own voice reads apart.
@@ -291,7 +356,7 @@ final class _ChatLine extends ConsumerWidget {
             onPressed: () => unawaited(copyRoomMessageText(context, words)),
           ),
         ],
-        child: line,
+        child: _ChatHover(child: line),
       );
     }
     // A paid line — a gift or a super chat — sits in a tinted banner; plain
@@ -315,14 +380,17 @@ final class _ChatLine extends ConsumerWidget {
                   if (priceText != null) ...[
                     WidgetSpan(
                       alignment: PlaceholderAlignment.middle,
-                      child: _ChatBadge(
-                        text: priceText,
-                        background: colors.warning.fill,
-                        foreground: colors.warning.onFill,
-                        style: badgeStyle.copyWith(fontWeight: FontWeight.w600),
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
+                        child: _SenderTag(
+                          text: priceText,
+                          background: colors.warning.fill,
+                          foreground: colors.warning.onFill,
+                          style: badgeStyle.copyWith(fontWeight: FontWeight.w600),
+                          height: tagHeight,
+                        ),
                       ),
                     ),
-                    const WidgetSpan(child: SizedBox(width: DsSpace.s4)),
                   ],
                   if (replayed)
                     TextSpan(
@@ -330,28 +398,63 @@ final class _ChatLine extends ConsumerWidget {
                       style: nameStyle.copyWith(color: colors.textSubtle),
                     ),
                   if (showBadges) ...[
+                    // The platform's own pictures first, then the role it
+                    // declares, then the medal and the level: the order a
+                    // viewer reads a stranger by.
+                    for (final url in badgeUrls)
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
+                          child: _BadgeImage(url: url, height: tagHeight),
+                        ),
+                      ),
+                    if (roleTag != null)
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
+                          child: _SenderTag(
+                            text: roleTag,
+                            background: switch (sender?.role) {
+                              LiveAnchorRole.anchor => colors.accent.withValues(alpha: 0.16),
+                              LiveAnchorRole.moderator => colors.success.tint,
+                              _ => colors.info.tint,
+                            },
+                            foreground: switch (sender?.role) {
+                              LiveAnchorRole.anchor => colors.accent,
+                              LiveAnchorRole.moderator => colors.success.text,
+                              _ => colors.info.text,
+                            },
+                            style: badgeStyle,
+                            height: tagHeight,
+                          ),
+                        ),
+                      ),
                     if (fanBadgeName.isNotEmpty)
                       WidgetSpan(
                         alignment: PlaceholderAlignment.middle,
-                        child: _ChatBadge(
-                          text: fanBadgeLevel.isEmpty ? fanBadgeName : '$fanBadgeName $fanBadgeLevel',
-                          background: colors.accent.withValues(alpha: 0.16),
-                          foreground: colors.accent,
-                          style: badgeStyle,
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
+                          child: _SenderTag(
+                            text: fanBadgeLevel.isEmpty ? fanBadgeName : '$fanBadgeName $fanBadgeLevel',
+                            background: colors.accent.withValues(alpha: 0.12),
+                            foreground: colors.accent,
+                            // A tint alone disappears on a pale panel.
+                            border: colors.accent.withValues(alpha: 0.32),
+                            style: badgeStyle,
+                            height: tagHeight,
+                          ),
                         ),
                       ),
-                    if (fanBadgeName.isNotEmpty) const WidgetSpan(child: SizedBox(width: DsSpace.s4)),
                     if (userLevel.isNotEmpty)
                       WidgetSpan(
                         alignment: PlaceholderAlignment.middle,
-                        child: _ChatBadge(
-                          text: 'Lv.$userLevel',
-                          background: colors.control,
-                          foreground: colors.textMuted,
-                          style: badgeStyle,
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
+                          child: Text('Lv.$userLevel', style: badgeStyle.copyWith(color: levelInk)),
                         ),
                       ),
-                    const WidgetSpan(child: SizedBox(width: DsSpace.s4)),
                   ],
                   if (showNames && senderName.isNotEmpty) TextSpan(text: '$senderName: ', style: nameStyle),
                   // The words with the platform's own emoticons in them, cut
@@ -419,7 +522,46 @@ final class _ChatLine extends ConsumerWidget {
             onPressed: () => unawaited(blockRoomMessageKeyword(context, ref, message.text)),
           ),
       ],
-      child: content,
+      child: _ChatHover(child: content),
+    );
+  }
+}
+
+/// The hover ink under a chat line.
+///
+/// Every line carries actions — a right click on the desktop, a long press on
+/// touch — and a bare line of text never says so (§20.2: a control's reach is
+/// shown by hover or focus, not by luck). The fill is the theme's own hover
+/// colour at half strength, so the row reads like every other row in the app
+/// and never fights a paid line's banner underneath it.
+final class _ChatHover extends StatefulWidget {
+  const _ChatHover({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_ChatHover> createState() => _ChatHoverState();
+}
+
+final class _ChatHoverState extends State<_ChatHover> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          color: _hovered ? colors.hover.withValues(alpha: 0.5) : const Color(0x00000000),
+          borderRadius: theme.radii.controlCorners(null, 24),
+        ),
+        child: widget.child,
+      ),
     );
   }
 }
@@ -565,20 +707,78 @@ String _giftSentence(Translations t, LiveGift gift, String anchorName, {bool inY
 
 /// A small inline chip on a chat line: a fan badge (its name and level) or
 /// the viewer's level, in the platform's own labels.
-final class _ChatBadge extends StatelessWidget {
-  const _ChatBadge({required this.text, required this.background, required this.foreground, required this.style});
+/// One sender tag beside the name: the platform's fan medal, the room role, the
+/// price of a paid line.
+///
+/// A rectangle, not a pill — the platforms draw their medals as plates, and a
+/// row of pills on every line reads as a row of buttons. The height is locked
+/// to the line's own size so a tag never pushes the next line down, and the
+/// digits ride the numeric face so `Lv.9` and `Lv.24` take the same width.
+final class _SenderTag extends StatelessWidget {
+  const _SenderTag({
+    required this.text,
+    required this.background,
+    required this.foreground,
+    required this.style,
+    required this.height,
+    this.border,
+  });
 
   final String text;
   final Color background;
   final Color foreground;
   final TextStyle style;
 
+  /// The tag's own height; the corners follow it, the way a control's do.
+  final double height;
+
+  /// A hairline in the tag's own hue: a tint alone disappears on a pale panel.
+  final Color? border;
+
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4, vertical: 1),
-    decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(DsRadii.pill)),
-    child: Text(text, style: style.copyWith(color: foreground)),
-  );
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    return Container(
+      height: height,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s4),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: theme.radii.controlCorners(null, height),
+        border: border == null ? null : Border.fromBorderSide(BorderSide(color: border!)),
+      ),
+      child: Text(text, style: style.apply(color: foreground), maxLines: 1),
+    );
+  }
+}
+
+/// One badge picture the platform sent (a guard crest, a VIP mark, a title).
+///
+/// Where a platform gives an image, this app draws that image rather than
+/// inventing a label for something it cannot name; a URL that fails or is not
+/// http leaves nothing behind, so a broken badge never punches a hole in a line.
+final class _BadgeImage extends StatelessWidget {
+  const _BadgeImage({required this.url, required this.height});
+
+  final String url;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final uri = Uri.tryParse(url);
+    if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) return const SizedBox.shrink();
+    // A fixed slot: badges are mostly wider than tall, and a line must not
+    // reflow when the picture arrives.
+    return SizedBox(
+      height: height,
+      width: height * 1.5,
+      child: Image(
+        image: cachedImage(url, height: (height * 2).round()),
+        fit: BoxFit.contain,
+        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+      ),
+    );
+  }
 }
 
 /// A line's words with the platform's emoticons drawn as themselves: the

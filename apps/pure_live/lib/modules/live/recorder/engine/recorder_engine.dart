@@ -478,8 +478,8 @@ final class RecorderEngine {
     // The certificate decision is made before the take is written down: a
     // bundle the viewer named that is not there any more must fail the start
     // rather than silently record against a trust store they did not choose.
-    final caFile = await _ensureCaFile(settings.customCaPath);
-    if (caFile == null && settings.customCaPath.trim().isNotEmpty) return 'custom-ca';
+    final caFile = await _ensureCaFile(settings.network.customCaPath);
+    if (caFile == null && settings.network.customCaPath.trim().isNotEmpty) return 'custom-ca';
 
     // The other window check: a claim held by another process means that process
     // is capturing this room, and a second take would write the same row twice.
@@ -506,12 +506,12 @@ final class RecorderEngine {
         includeTimestampPrefix: false,
         proxy: proxy,
         caFile: caFile,
-        tlsVerify: settings.tlsVerify,
+        tlsVerify: settings.network.tlsVerify,
         extensionPicky: task.platform != SiteIds.chzzk,
         // Every tunable the settings surface edits reaches FFmpeg here; a
         // setting that did not would be a switch with no effect.
         segmentTime: settings.segmentSeconds,
-        rwTimeout: settings.readTimeoutSeconds,
+        rwTimeout: settings.network.readTimeoutSeconds,
         threadQueueSize: settings.queueSize,
         preferBestStream: settings.preferBestStream,
         keepAlive: settings.keepAlive,
@@ -1532,9 +1532,16 @@ final class RecorderEngine {
         // than telling the viewer now.
         if (bytes.isEmpty || !_looksLikePemBundle(bytes)) return null;
         final staged = File(p.join(folder.path, 'custom-ca.pem'));
-        if (!staged.existsSync() || staged.lengthSync() != bytes.length) {
-          await staged.writeAsBytes(bytes, flush: true);
-        }
+        // A staged copy is reused only while it is at least as new as the file
+        // it came from: the viewer may have replaced the bundle in place, and a
+        // length check alone would keep serving the old roots. These are
+        // metadata reads on a path that runs once per start, so the synchronous
+        // calls are the honest ones here.
+        final fresh =
+            staged.existsSync() &&
+            staged.lengthSync() == bytes.length &&
+            staged.lastModifiedSync().isAfter(source.lastModifiedSync());
+        if (!fresh) await staged.writeAsBytes(bytes, flush: true);
         return staged.path;
       }
       final data = await rootBundle.load('assets/certs/cacert.pem');

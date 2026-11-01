@@ -434,7 +434,15 @@ final class _SearchPageState extends ConsumerState<SearchPage> {
       await openRoom(context, platform: room.platform, roomId: room.roomId);
       return;
     }
-    showDsToast(context: context, title: context.t.search.linkFailed);
+    final failure = link.failure;
+    final action = failure != null && failure.isTransient ? () => unawaited(_openLink(text)) : null;
+    showDsToast(
+      context: context,
+      title: context.t.search.linkFailed,
+      status: DsStatus.danger,
+      actionLabel: action != null ? context.t.common.retry : null,
+      onAction: action,
+    );
   }
 
   String _platformName(String id) {

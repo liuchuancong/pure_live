@@ -1072,42 +1072,62 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       unawaited(_seekTo(target < 0 ? 0 : target));
     }
 
-    return CallbackShortcuts(
-      bindings: {
-        const SingleActivator(LogicalKeyboardKey.space): _togglePlay,
-        const SingleActivator(LogicalKeyboardKey.keyF): _toggleFullscreen,
-        const SingleActivator(LogicalKeyboardKey.escape): _leave,
-        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowUp): () => nudgeVolume(volumeStep),
-        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowDown): () => nudgeVolume(-volumeStep),
-        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowLeft): () => nudgeSeek(-5),
-        if (!tv) const SingleActivator(LogicalKeyboardKey.arrowRight): () => nudgeSeek(5),
-      },
-      child: Scaffold(
-        backgroundColor: colors.surface,
-        appBar: AppBar(
+    return PlayerBarTier(
+      tv: tv,
+      child: CallbackShortcuts(
+        bindings: {
+          // A remote cannot tap the picture to raise the bar, so its transport
+          // keys wake the chrome they drive.
+          const SingleActivator(LogicalKeyboardKey.space): () {
+            _wake();
+            unawaited(_togglePlay());
+          },
+          const SingleActivator(LogicalKeyboardKey.keyF): () {
+            _wake();
+            unawaited(_toggleFullscreen());
+          },
+          const SingleActivator(LogicalKeyboardKey.escape): _leave,
+          // While the bar is down a TV's arrows and OK have nothing to move
+          // through, so they raise it; while it is up they stay with focus.
+          if (tv && !_controlsVisible) ...{
+            const SingleActivator(LogicalKeyboardKey.arrowUp): _wake,
+            const SingleActivator(LogicalKeyboardKey.arrowDown): _wake,
+            const SingleActivator(LogicalKeyboardKey.arrowLeft): _wake,
+            const SingleActivator(LogicalKeyboardKey.arrowRight): _wake,
+            const SingleActivator(LogicalKeyboardKey.select): _wake,
+          },
+          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowUp): () => nudgeVolume(volumeStep),
+          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowDown): () => nudgeVolume(-volumeStep),
+          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowLeft): () => nudgeSeek(-5),
+          if (!tv) const SingleActivator(LogicalKeyboardKey.arrowRight): () => nudgeSeek(5),
+        },
+        child: Scaffold(
           backgroundColor: colors.surface,
-          surfaceTintColor: const Color(0x00000000),
-          elevation: 0,
-          title: Text(
-            _episode == null
-                ? detail?.meta.title ?? t.hongguo.opening
-                : '${detail?.meta.title ?? ''} · ${t.hongguo.episodeLabel(index: _episode!.index)}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          appBar: AppBar(
+            backgroundColor: colors.surface,
+            surfaceTintColor: const Color(0x00000000),
+            elevation: 0,
+            title: Text(
+              _episode == null
+                  ? detail?.meta.title ?? t.hongguo.opening
+                  : '${detail?.meta.title ?? ''} · ${t.hongguo.episodeLabel(index: _episode!.index)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
+          body: _loading && detail == null
+              ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
+              : _error != null && detail == null
+              ? Center(
+                  child: DsEmptyState(
+                    icon: const DsIcon(DsIcons.cloudOff),
+                    title: Text(t.hongguo.loadFailed),
+                    description: Text(_error!),
+                    actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.common.retry))],
+                  ),
+                )
+              : _body(context, detail),
         ),
-        body: _loading && detail == null
-            ? const Center(child: DsSpinner(style: DsSpinnerStyle(size: 28)))
-            : _error != null && detail == null
-            ? Center(
-                child: DsEmptyState(
-                  icon: const DsIcon(DsIcons.cloudOff),
-                  title: Text(t.hongguo.loadFailed),
-                  description: Text(_error!),
-                  actions: [DsButton(onPressed: () => unawaited(_load()), child: Text(t.common.retry))],
-                ),
-              )
-            : _body(context, detail),
       ),
     );
   }
@@ -1340,6 +1360,26 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     return count > 0 ? '${t.hongguo.episodes} · ${t.hongguo.allEpisodesCount(count: count)}' : t.hongguo.episodes;
   }
 
+  /// The series' bookmark on the local shelf — the rail's button and the
+  /// immersive menu's row both run this one, so the figure, the series built
+  /// from the detail and the toast can never disagree between the two.
+  void _toggleSeriesFavorite(HongguoSeriesDetail detail) {
+    final t = context.t;
+    final meta = detail.meta;
+    final added = ref
+        .read(hongguoLibraryProvider.notifier)
+        .toggleFavorite(
+          HongguoSeries(
+            seriesId: meta.seriesId,
+            title: meta.title,
+            cover: meta.cover,
+            intro: meta.intro,
+            episodeCount: meta.episodeCount > 0 ? meta.episodeCount : detail.episodes.length,
+          ),
+        );
+    showDsToast(context: context, title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff);
+  }
+
   /// The picture's action column, as the phone player puts it along the
   /// picture's edge: the favorite (the local shelf's bookmark, with the
   /// series' own follower figure), the episode's comments, and the way to
@@ -1347,7 +1387,6 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   Widget _actionRail(Translations t, HongguoSeriesDetail detail) {
     final meta = detail.meta;
     final episode = _episode;
-    final total = meta.episodeCount > 0 ? meta.episodeCount : detail.episodes.length;
     return Consumer(
       builder: (context, ref, _) {
         final favored = ref.watch(hongguoLibraryProvider.select((library) => library.isFavorite(meta.seriesId)));
@@ -1360,20 +1399,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
               label: favored ? t.hongguo.favorited : t.hongguo.favorite,
               count: meta.followedCount > 0 ? AudienceFormat.format(meta.followedCount) : null,
               selected: favored,
-              onPressed: () {
-                final added = ref
-                    .read(hongguoLibraryProvider.notifier)
-                    .toggleFavorite(
-                      HongguoSeries(
-                        seriesId: meta.seriesId,
-                        title: meta.title,
-                        cover: meta.cover,
-                        intro: meta.intro,
-                        episodeCount: total,
-                      ),
-                    );
-                showDsToast(context: context, title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff);
-              },
+              onPressed: () => _toggleSeriesFavorite(detail),
             ),
             if (episode != null)
               _RailAction(
@@ -1489,7 +1515,12 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 // confirmed by a toast and the bar's speed reading.
                 if (_holding)
                   PositionedDirectional(
-                    top: immersive && showBar ? DsSpace.s64 : DsSpace.s16,
+                    // The strip is 8 of padding, one control and 20 below it —
+                    // read from the tier, so a TV's taller controls do not
+                    // cover this.
+                    top: immersive && showBar
+                        ? DsSpace.s8 + PlayerBarTier.controlSize(context) + DsSpace.s20
+                        : DsSpace.s16,
                     end: DsSpace.s12,
                     child: PlayerGlassPill(
                       child: Padding(
@@ -1517,7 +1548,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 // column steps aside for both.
                 if (showBar && handle != null && detail != null && _openPanel == null && !_holding)
                   PositionedDirectional(
-                    top: immersive ? DsSpace.s64 : DsSpace.s12,
+                    top: immersive ? DsSpace.s8 + PlayerBarTier.controlSize(context) + DsSpace.s20 : DsSpace.s12,
                     end: DsSpace.s8,
                     child: _actionRail(t, detail),
                   ),
@@ -1666,7 +1697,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
         spacing: DsSpace.s8,
         children: [
           PlayerGlassPill(
-            child: MediaBarButton(
+            child: PlayerBarButton(
               icon: DsIcons.minimize2,
               label: t.hongguo.exitFullscreen,
               autofocus: true,
@@ -1775,7 +1806,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
               // second line instead of overflowing — the app's own bar.
               final compact = constraints.maxWidth < 560;
               final leading = <Widget>[
-                MediaBarButton(
+                PlayerBarButton(
                   icon: playing ? DsIcons.pause : DsIcons.play,
                   label: playing ? t.hongguo.pause : t.hongguo.play,
                   focusNode: _playFocus,
@@ -1786,7 +1817,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                           unawaited(_togglePlay());
                         },
                 ),
-                MediaBarButton(
+                PlayerBarButton(
                   icon: _effectivelyMuted ? DsIcons.volumeOff : DsIcons.volume,
                   label: _effectivelyMuted ? t.hongguo.unmute : t.hongguo.mute,
                   onPressed: handle == null
@@ -1820,7 +1851,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
               ];
               final trailing = <Widget>[
                 if (next != null)
-                  MediaBarButton(
+                  PlayerBarButton(
                     icon: DsIcons.skipForward,
                     label: t.hongguo.nextEpisode,
                     onPressed: () => unawaited(_openEpisode(next)),
@@ -1860,7 +1891,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                   semanticLabel: t.hongguo.speed,
                   compact: compact,
                 ),
-                MediaBarButton(
+                PlayerBarButton(
                   icon: DsIcons.fullscreen,
                   label: t.hongguo.fullscreen,
                   onPressed: handle == null ? null : () => unawaited(_toggleFullscreen()),
@@ -1868,13 +1899,16 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
               ];
               if (compact) {
                 return Wrap(
-                  spacing: DsSpace.s4,
-                  runSpacing: DsSpace.s4,
+                  spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+                  runSpacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [...leading, ...trailing],
                 );
               }
-              return Row(spacing: DsSpace.s4, children: [...leading, const Spacer(), ...trailing]);
+              return Row(
+                spacing: PlayerBarTier.tvOf(context) ? DsSpace.s8 : DsSpace.s4,
+                children: [...leading, const Spacer(), ...trailing],
+              );
             },
           ),
         ],
@@ -2245,7 +2279,7 @@ final class _RailAction extends StatelessWidget {
         semanticLabel: label,
         onPressed: onPressed,
         builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
+          final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
           return Column(
             mainAxisSize: MainAxisSize.min,
             spacing: DsSpace.s4,
@@ -2259,7 +2293,7 @@ final class _RailAction extends StatelessWidget {
                 decoration: DsBoxDecoration(
                   color: selected
                       ? colors.accent
-                      : hovered
+                      : lit
                       ? playerInkHover
                       : const Color(0x66000000),
                   borderRadius: BorderRadius.circular(theme.radii.control(38)),

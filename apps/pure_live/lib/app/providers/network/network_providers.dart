@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_device/live_device.dart' show SystemProxyEndpoint;
@@ -145,6 +145,13 @@ final class ProxySettingsController extends Notifier<ProxySettings> {
       // from it still works for an unauthenticated proxy, and the next read
       // sees the credential.
       unawaited(_readStoredPassword());
+      ref.onDispose(() {
+        final pending = _passwordWrite;
+        _passwordWrite = null;
+        if (pending == null || !pending.isActive) return;
+        pending.cancel();
+        unawaited(_commitPassword());
+      });
       return (
         mode: stored ?? (legacyOn ? ProxyMode.manual : ProxyMode.off),
         host: normalizeAppProxyHost(StoragePrefs.getString('proxy.host') ?? _defaults.host),
@@ -186,8 +193,23 @@ final class ProxySettingsController extends Notifier<ProxySettings> {
   }
 
   /// Stores the proxy's password in the vault; an empty one removes it.
+  ///
+  /// The field reports every keystroke, and a keychain write per character
+  /// (Android's Keystore, Windows DPAPI) is slow and pointless. The state takes
+  /// the value at once, so the row stays truthful while typing; the preference
+  /// and the vault are written once the typing pauses. A dispose flushes what is
+  /// still pending, so leaving the page mid-word does not lose the secret.
   Future<void> setPassword(String password) async {
     _password = password;
+    state = copyProxySettings(state, password: password);
+    _passwordWrite?.cancel();
+    _passwordWrite = Timer(const Duration(milliseconds: 500), () => unawaited(_commitPassword()));
+  }
+
+  Timer? _passwordWrite;
+
+  Future<void> _commitPassword() async {
+    final password = _password ?? '';
     await _write(copyProxySettings(state, password: password));
     try {
       final vault = await ref.read(secretVaultProvider.future);

@@ -6,7 +6,8 @@ import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/live/favorites/alerts/live_alert_events.dart' show LiveAlertObserver, liveAlertObserver;
+import 'package:pure_live/modules/live/favorites/alerts/live_alert_events.dart'
+    show LiveAlertObserver, liveAlertObserver;
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart' show followsProvider;
 import 'package:pure_live/modules/live/favorites/data/follow_tags.dart' show FollowTag, followTagsProvider;
 import 'package:pure_live/shared/shared.dart';
@@ -179,11 +180,7 @@ final class _LiveAlertWatcherState extends ConsumerState<LiveAlertWatcher> with 
     if (!settings.enabled) return;
     final follows = ref.read(followsProvider);
     if (!follows.ready || follows.rooms.isEmpty) return;
-    final covered = liveAlertRooms(
-      follows.rooms,
-      chosen: settings.tagIds,
-      tags: ref.read(followTagsProvider),
-    );
+    final covered = liveAlertRooms(follows.rooms, chosen: settings.tagIds, tags: ref.read(followTagsProvider));
     if (covered.isEmpty) {
       _seeded = true;
       return;
@@ -225,16 +222,15 @@ final class _LiveAlertWatcherState extends ConsumerState<LiveAlertWatcher> with 
     }
   }
 
-  Future<void> _post(LiveRoom room) async {    if (!mounted) return;
+  Future<void> _post(LiveRoom room) async {
+    if (!mounted) return;
     final t = context.t;
     final site = ref.read(sitesProvider).getById(room.ref.platform);
     final platform = site == null ? room.ref.platform : localizedSiteName(site);
     final title = room.content.title.trim();
     await postLiveAlert(
       identityKey: room.ref.identityKey,
-      title: title.isEmpty
-          ? t.settings.liveAlertFallbackTitle(platform: platform, roomId: room.ref.roomId)
-          : title,
+      title: title.isEmpty ? t.settings.liveAlertFallbackTitle(platform: platform, roomId: room.ref.roomId) : title,
       body: t.settings.liveAlertNotificationBody(platform: platform),
     );
   }
@@ -243,9 +239,11 @@ final class _LiveAlertWatcherState extends ConsumerState<LiveAlertWatcher> with 
     final split = identityKey.indexOf(':');
     if (split <= 0 || split == identityKey.length - 1) return;
     unawaited(
-      ref.read(appRouterProvider).push(
-        RoomRoute(platform: identityKey.substring(0, split), roomId: identityKey.substring(split + 1)).location,
-      ),
+      ref
+          .read(appRouterProvider)
+          .push(
+            RoomRoute(platform: identityKey.substring(0, split), roomId: identityKey.substring(split + 1)).location,
+          ),
     );
   }
 

@@ -226,7 +226,7 @@ final class RoomCard extends ConsumerWidget {
                                 maxWidth: width * 0.3,
                                 style: DsTheme.of(context).typography.numeric(
                                   DsTheme.of(context).typography.caption
-                                      .copyWith(color: const Color(0xFFFFFFFF), fontWeight: FontWeight.w600),
+                                      .copyWith(color: playerInk, fontWeight: FontWeight.w600),
                                 ),
                               ),
                           ],
@@ -452,7 +452,7 @@ final class _RemoveButton extends StatelessWidget {
     icon: DsIcons.x,
     semanticLabel: semanticLabel,
     onPressed: onPressed,
-    color: onCover ? const Color(0xFFFFFFFF) : DsTheme.colorsOf(context).textMuted,
+    color: onCover ? playerInk : DsTheme.colorsOf(context).textMuted,
   );
 }
 
@@ -463,7 +463,7 @@ final class _CornerButton extends StatelessWidget {
     required this.icon,
     required this.semanticLabel,
     required this.onPressed,
-    this.color = const Color(0xFFFFFFFF),
+    this.color = playerInk,
   });
 
   /// The circle's diameter.
@@ -517,7 +517,7 @@ final class _PlatformMark extends StatelessWidget {
         height: 28,
         padding: EdgeInsets.symmetric(horizontal: name.isEmpty ? DsSpace.s6 : DsSpace.s8),
         background: const Color(0xB3000000),
-        foreground: const Color(0xFFFFFFFF),
+        foreground: playerInk,
         borderRadius: BorderRadius.circular(8),
         // The platform is the first thing the card names: a step above the
         // chips under it.
@@ -550,7 +550,7 @@ final class _StatePill extends StatelessWidget {
         height: compact ? 18 : 20,
         padding: const EdgeInsets.symmetric(horizontal: 6),
         background: const Color(0x8C000000),
-        foreground: const Color(0xFFFFFFFF),
+        foreground: playerInk,
         borderRadius: BorderRadius.circular(6),
         textStyle: theme.typography.caption.copyWith(fontWeight: FontWeight.w600, fontSize: compact ? 10 : null),
       ),

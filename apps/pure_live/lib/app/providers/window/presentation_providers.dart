@@ -226,10 +226,25 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
   StreamSubscription<bool>? _fullscreen;
   StreamSubscription<bool>? _pip;
 
+  /// The drivers this window's modes route through, captured while the provider
+  /// was alive.
+  ///
+  /// A leaving room page still has to give the window strip back, and it asks
+  /// for that from a post-frame callback — by which time the page was the last
+  /// listener and this notifier is already disposed. Reading a provider from a
+  /// dead `Ref` throws, so the objects the exit needs are held here instead,
+  /// and every state write below checks `ref.mounted` first.
+  PresentationDriverChain? _chain;
+  FullscreenDriver? _fullscreenDriver;
+  PipDriver? _pipDriver;
+
   @override
   PresentationMode build() {
     final fullscreen = ref.watch(fullscreenDriverProvider);
     final pip = ref.watch(pipDriverProvider);
+    _fullscreenDriver = fullscreen;
+    _pipDriver = pip;
+    _chain = ref.watch(presentationDriverProvider);
     _fullscreen ??= fullscreen.onFullscreenChanged.listen((_) => _sync());
     _pip ??= pip.onPipChanged.listen((_) => _sync());
     ref.onDispose(() {
@@ -242,9 +257,13 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
   }
 
   /// The drivers' current answer.
+  ///
+  /// Reads the cached drivers rather than the providers, so it still answers
+  /// after this notifier has been disposed.
   PresentationMode _currentMode() {
-    final fullscreen = ref.read(fullscreenDriverProvider);
-    final pip = ref.read(pipDriverProvider);
+    final pip = _pipDriver;
+    final fullscreen = _fullscreenDriver;
+    if (pip == null || fullscreen == null) return PresentationMode.normal;
     if (pip.isPip) return PresentationMode.pip;
     if (fullscreen.isWindowFullscreen) return PresentationMode.windowFullscreen;
     if (fullscreen.isSystemFullscreen) return PresentationMode.fullscreen;
@@ -253,6 +272,7 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
 
   /// Re-reads the drivers; the last transition wins.
   void _sync() {
+    if (!ref.mounted) return;
     final next = _currentMode();
     if (state != next) state = next;
   }
@@ -266,14 +286,14 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
   /// both keep this engine, so neither goes through the drivers this
   /// controller toggles.
   bool get pipAvailable {
-    final platform = ref.read(pipDriverProvider).platform;
+    final platform = _pipDriver?.platform ?? ref.read(pipDriverProvider).platform;
     return platform == PipPlatform.desktop || (platform == PipPlatform.mobile && isSystemPipHost);
   }
 
   /// Whether the picture-in-picture picture lives in a window this app lays
   /// out — the desktop compact window. A phone's window is the system's, so
   /// the page behind it keeps the layout it had.
-  bool get pipOwnsWindow => ref.read(pipDriverProvider).platform == PipPlatform.desktop;
+  bool get pipOwnsWindow => (_pipDriver?.platform ?? ref.read(pipDriverProvider).platform) == PipPlatform.desktop;
 
   /// Whether [mode] takes the app's window instead of leaving the page its
   /// own layout. Every mode does, except the phone's system window.
@@ -321,28 +341,36 @@ final class RoomPresentationController extends Notifier<PresentationMode> {
   /// the answer here is "the request was accepted", not "the state already
   /// changed".
   Future<bool> _exitMode(PlayerId player) async {
-    if (isSystemPipHost && state == PresentationMode.pip) {
+    if (isSystemPipHost && _mode == PresentationMode.pip) {
       await exitSystemPip();
       return true;
     }
     return await _apply(player, PresentationMode.normal);
   }
 
+  /// This notifier's mode, or the drivers' answer once the notifier is gone.
+  PresentationMode get _mode => ref.mounted ? state : _currentMode();
+
   Future<bool> _apply(PlayerId player, PresentationMode mode) async {
     // Optimistic first: the page lays its immersive bare-player surface out
     // before the native window changes size, so the transition never paints
     // the inline layout squeezed into the new bounds. `_sync` corrects the
     // state when a host refuses the mode.
-    if (state != mode) state = mode;
+    if (ref.mounted && state != mode) state = mode;
     try {
-      await ref.read(presentationDriverProvider).apply(player, PresentationRequest(mode: mode));
+      // The cached chain, not `ref.read`: a leaving page asks for this from a
+      // post-frame callback, after its own provider has been disposed.
+      await _chain?.apply(player, PresentationRequest(mode: mode));
     } on Object {
       // A host without the capability (web, a desktop without a window
       // backend, a phone whose system window refused) refuses; the layout
       // then simply stays inline.
     }
     _sync();
-    return state == mode;
+
+    // The drivers' own answer rather than the mirror's: after a teardown the
+    // mirror no longer exists, and before one this is what `_sync` just wrote.
+    return _currentMode() == mode;
   }
 }
 
@@ -362,7 +390,13 @@ final class RoomImmersiveController extends Notifier<bool> {
   bool build() => false;
 
   /// Publishes whether the page fills the window.
+  ///
+  /// Silent once the provider is gone: the room page clears the flag from a
+  /// post-frame callback, by which time it was the last listener and this
+  /// notifier has been disposed — and a disposed one has nothing left to tell,
+  /// because the next page that reads it gets a fresh `false` from [build].
   void set({required bool value}) {
+    if (!ref.mounted) return;
     if (state != value) state = value;
   }
 }

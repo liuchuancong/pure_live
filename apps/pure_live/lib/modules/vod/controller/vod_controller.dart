@@ -374,3 +374,27 @@ final class VodFeedController extends Notifier<Map<String, VodFeedState>> {
 
 /// The video station's browse feeds.
 final vodFeedProvider = NotifierProvider<VodFeedController, Map<String, VodFeedState>>(VodFeedController.new);
+
+/// A word handed to the station's search page from outside (the toolbar's
+/// field): the page takes it on arrival — searched as though typed — and
+/// clears it, so a back-and-forth never replays it.
+final class VodPendingSearchController extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  /// Hands [word] to the next search page (taken once on arrival).
+  // ignore: use_setters_to_change_properties
+  void hand(String word) => state = word;
+
+  /// Takes the word (null when none was handed).
+  String? take() {
+    final word = state;
+    state = null;
+    return word;
+  }
+}
+
+/// The word the station's search page should run next.
+final vodPendingSearchProvider = NotifierProvider<VodPendingSearchController, String?>(
+  VodPendingSearchController.new,
+);

@@ -116,13 +116,13 @@ final class IptvIconAction extends StatelessWidget {
         semanticLabel: label,
         onPressed: enabled ? onPressed : null,
         builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
+          final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
           return Container(
             width: 32,
             height: 32,
             alignment: Alignment.center,
             decoration: DsBoxDecoration(
-              color: hovered && enabled ? colors.hover : null,
+              color: lit && enabled ? colors.hover : null,
               borderRadius: BorderRadius.circular(theme.radii.control(32)),
             ),
             child: busy

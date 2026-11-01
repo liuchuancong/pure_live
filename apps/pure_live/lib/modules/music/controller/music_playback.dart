@@ -16,18 +16,22 @@ import 'package:media_core_mpv_audio/media_core_mpv_audio.dart'
         MediaSessionCommandNext,
         MediaSessionCommandPrevious,
         MpvAudioPlayerAdapter,
+        PcmFrame,
         kMpvAudioBackendId;
 import 'package:pure_live/app/app.dart' show playerKernelProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_config.dart'
     show MusicEqConfig, musicEqApplyFailedProvider, musicEqProvider;
 import 'package:pure_live/modules/music/controller/eq/music_eq_engine_effects.dart'
     show musicEqAudioEffects, musicEqPitchRate;
+import 'package:pure_live/modules/music/controller/music_desktop_lyric_settings.dart'
+    show MusicDesktopLyricsSettings, musicDesktopLyricsSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_dislikes.dart' show musicDislikesProvider;
 import 'package:pure_live/modules/music/controller/music_library.dart'
     show musicRecentProvider, musicTrackFromJson, musicTrackKey, musicTrackToJson;
 import 'package:pure_live/modules/music/controller/music_lyric_overrides.dart' show musicLyricOverridesProvider;
-import 'package:pure_live/modules/music/controller/music_settings.dart'
-    show MusicQuality, MusicSettings, musicSettingsProvider;
+import 'package:pure_live/modules/music/controller/music_lyric_settings.dart' show musicLyricsSettingsProvider;
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
+    show MusicQuality, musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, musicSourceProvider;
 
 /// The preference the last queue is kept under, so 打开时继续播放 has
@@ -173,7 +177,8 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   audio.AudioPlaybackState build() {
     // The kernel is read, not watched: rebuilding this controller would throw
     // its queue away, and a kernel that changes belongs to a new window.
-    final settings = ref.read(musicSettingsProvider);
+    final settings = ref.read(musicPlaybackSettingsProvider);
+    final lyricSettings = ref.read(musicLyricsSettingsProvider);
     _progressStore = ref.read(musicProgressStoreProvider);
     _positions = _progressStore.read();
     _audio = audio.AudioPlaybackController(
@@ -195,7 +200,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       // the kernel's own policy would pause it with every other player.
       playerConfig: const PlayerConfig(pauseWhenBackgrounded: false),
     );
-    _audio.setLyricOffset(Duration(milliseconds: settings.lyricOffsetMs));
+    _audio.setLyricOffset(Duration(milliseconds: lyricSettings.lyricOffsetMs));
     // The app arms the OS surfaces once at boot; a live driver lets the music
     // player publish its queue to the notification, lock screen or MPRIS. A
     // boot that lost that race (or failed once) is retried here, because a
@@ -216,17 +221,17 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     }
     // A quality choice reaches the source on the next track: the engine notes
     // the tier, resolution asks the source for it.
-    ref.listen(musicSettingsProvider.select((settings) => settings.quality), (_, quality) {
+    ref.listen(musicPlaybackSettingsProvider.select((settings) => settings.quality), (_, quality) {
       _audio.setQuality(musicQualityOf(quality));
     });
-    ref.listen(musicSettingsProvider.select((settings) => settings.lyricOffsetMs), (_, offsetMs) {
+    ref.listen(musicLyricsSettingsProvider.select((settings) => settings.lyricOffsetMs), (_, offsetMs) {
       _audio.setLyricOffset(Duration(milliseconds: offsetMs));
     });
-    ref.listen(musicSettingsProvider.select((settings) => settings.preservesPitch), (_, preservesPitch) {
+    ref.listen(musicPlaybackSettingsProvider.select((settings) => settings.preservesPitch), (_, preservesPitch) {
       _applyPitchCorrection(preservesPitch);
     });
     ref.listen(
-      musicSettingsProvider.select(
+      musicLyricsSettingsProvider.select(
         (settings) => (settings.showTranslation, settings.showRomanization, settings.swapLyricSecondary),
       ),
       (_, display) {
@@ -243,7 +248,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       },
     );
     ref.listen(
-      musicSettingsProvider.select(
+      musicDesktopLyricsSettingsProvider.select(
         (settings) => (
           settings.desktopLyricFontSize,
           settings.desktopLyricOpacity,
@@ -273,8 +278,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
                 previous.$9 != next.$9 ||
                 previous.$10 != next.$10);
         if (restyled) {
-          final settings = ref.read(musicSettingsProvider);
-          unawaited(desktop.setStyle(_desktopStyle(settings)));
+          unawaited(desktop.setStyle(_desktopStyle(ref.read(musicDesktopLyricsSettingsProvider))));
         }
         if (previous == null || previous.$7 != next.$7) {
           unawaited(desktop.setLocked(locked: next.$7));
@@ -291,6 +295,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       _trackProgress(next);
       _skipDislikedIfNeeded(next);
       _skipErroredIfNeeded(next);
+      _recordFailedTrack(next);
       // A rebuilt engine is a new world: the chain, the pitch correction,
       // the device choice and the session commands were bound to the old
       // adapter, and a same-track rebuild would otherwise publish nothing.
@@ -311,7 +316,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       }
       if (_pitchPending && next.track != null) {
         _pitchPending = false;
-        _applyPitchCorrection(ref.read(musicSettingsProvider).preservesPitch);
+        _applyPitchCorrection(ref.read(musicPlaybackSettingsProvider).preservesPitch);
       }
       if (_devicePending && next.track != null) {
         _devicePending = false;
@@ -339,7 +344,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     // The chain waits for the first engine handle when boot landed before one;
     // when a handle already exists this applies straight away.
     _applyEq(ref.read(musicEqProvider));
-    _applyPitchCorrection(ref.read(musicSettingsProvider).preservesPitch);
+    _applyPitchCorrection(ref.read(musicPlaybackSettingsProvider).preservesPitch);
     _applyAudioDevice();
     unawaited(_restore());
     unawaited(_restoreDesktopLyric());
@@ -355,6 +360,11 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// track creates the engine (or on a backend without taps); the stream is
   /// the engine's own broadcast, so a late listener loses nothing but time.
   Stream<FftFrame>? get spectrum => _engineAdapter?.player?.stream.fft;
+
+  /// The engine's live PCM taps, the time-domain counterpart of [spectrum]:
+  /// the last audio written to the output, up to 4096 frames per channel.
+  /// Null under the same conditions as [spectrum].
+  Stream<PcmFrame>? get waveform => _engineAdapter?.player?.stream.pcm;
 
   /// Mirrors the player onto the OS surface once a driver exists.
   void _attachBackground(audio.MediaSessionDriver session) {
@@ -440,7 +450,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   }
 
   /// The overlay style the preferences describe.
-  static audio.DesktopLyricStyle _desktopStyle(MusicSettings settings) => audio.DesktopLyricStyle(
+  static audio.DesktopLyricStyle _desktopStyle(MusicDesktopLyricsSettings settings) => audio.DesktopLyricStyle(
     fontSize: settings.desktopLyricFontSize,
     opacity: settings.desktopLyricOpacity,
     textColor: settings.desktopLyricTextColor,
@@ -610,14 +620,16 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   }
 
   /// The overlay controller, created on first use with the current style.
-  audio.DesktopLyricController _desktopController(MusicSettings settings) {
+  audio.DesktopLyricController _desktopController() {
     final existing = _desktopLyric;
     if (existing != null) return existing;
+    final desktopSettings = ref.read(musicDesktopLyricsSettingsProvider);
+    final lyricSettings = ref.read(musicLyricsSettingsProvider);
     final desktop = audio.DesktopLyricController(
       _audio,
-      style: _desktopStyle(settings),
-      showTranslation: settings.showTranslation,
-      showRomanization: settings.showRomanization,
+      style: _desktopStyle(desktopSettings),
+      showTranslation: lyricSettings.showTranslation,
+      showRomanization: lyricSettings.showRomanization,
     );
     _desktopLyric = desktop;
     // The overlay has its own close and lock buttons: following its stream
@@ -625,21 +637,21 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     // viewer reaches for the window instead of the settings page.
     _desktopVisibleChanges = desktop.visibleChanges.listen((visible) {
       if (!ref.mounted) return;
-      unawaited(ref.read(musicSettingsProvider.notifier).setDesktopLyrics(visible: visible));
+      unawaited(ref.read(musicDesktopLyricsSettingsProvider.notifier).setDesktopLyrics(visible: visible));
     });
     _desktopLockChanges = desktop.lockedChanges.listen((locked) {
       if (!ref.mounted) return;
-      unawaited(ref.read(musicSettingsProvider.notifier).setDesktopLyricLocked(locked: locked));
+      unawaited(ref.read(musicDesktopLyricsSettingsProvider.notifier).setDesktopLyricLocked(locked: locked));
     });
-    if (settings.desktopLyricLocked) {
+    if (desktopSettings.desktopLyricLocked) {
       unawaited(desktop.setLocked(locked: true));
     }
-    if (settings.swapLyricSecondary) {
+    if (lyricSettings.swapLyricSecondary) {
       unawaited(
         desktop.setDisplayOptions(
           audio.LyricDisplayOptions(
-            showTranslation: settings.showTranslation,
-            showRomanization: settings.showRomanization,
+            showTranslation: lyricSettings.showTranslation,
+            showRomanization: lyricSettings.showRomanization,
             swapTranslationAndRomanization: true,
           ),
         ),
@@ -652,10 +664,9 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// prompts: the permission round trip belongs to [toggleDesktopLyric], and a
   /// restored overlay that cannot draw simply stays hidden.
   Future<void> _restoreDesktopLyric() async {
-    final settings = ref.read(musicSettingsProvider);
-    if (!settings.desktopLyrics) return;
+    if (!ref.read(musicDesktopLyricsSettingsProvider).desktopLyrics) return;
     try {
-      final desktop = _desktopController(settings);
+      final desktop = _desktopController();
       if (!await desktop.hasPermission()) return;
       if (!ref.mounted) return;
       await desktop.show();
@@ -666,6 +677,13 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
 
   /// The queue, in order.
   List<audio.MusicTrack> get queue => _audio.queue.tracks;
+
+  /// The queue positions in the order they will play: list order, or the
+  /// materialized shuffle when random. The current song sits at
+  /// `playOrder.indexOf(state.index)`.
+  List<int> get playOrder => _audio.queue.mode == audio.PlayMode.random
+      ? _audio.queue.shuffleOrder
+      : List<int>.generate(_audio.queue.length, (index) => index);
 
   /// Replaces the queue with [tracks], starting on [index] and playing.
   ///
@@ -702,9 +720,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// auto-clean setting on, random mode rebuilds the shuffle so every song
   /// re-enters the pool — the reference's clearPlayedList on same-list picks.
   Future<void> _pick(int index) async {
-    final settings = ref.read(musicSettingsProvider);
-
-    if (settings.autoCleanPlayedList && _audio.queue.mode == audio.PlayMode.random) {
+    if (ref.read(musicPlaybackSettingsProvider).autoCleanPlayedList && _audio.queue.mode == audio.PlayMode.random) {
       await _audio.setQueue(_audio.queue.tracks, startIndex: index);
       return;
     }
@@ -742,14 +758,14 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
 
   Future<void> setVolume(double volume) async {
     await _audio.setVolume(volume);
-    await ref.read(musicSettingsProvider.notifier).setVolume(volume.clamp(0.0, 1.0));
+    await ref.read(musicPlaybackSettingsProvider.notifier).setVolume(volume.clamp(0.0, 1.0));
   }
 
   Future<void> setMuted({required bool muted}) => _audio.setMute(muted: muted);
 
   Future<void> setRate(double rate) async {
     await _audio.setRate(rate);
-    await ref.read(musicSettingsProvider.notifier).setPlaybackRate(rate);
+    await ref.read(musicPlaybackSettingsProvider.notifier).setPlaybackRate(rate);
   }
 
   /// Starts, replaces or clears the sleep timer.
@@ -762,14 +778,20 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// Moves the lyric delay; the preference keeps it for the next run.
   Future<void> setLyricOffset(Duration offset) async {
     _audio.setLyricOffset(offset);
-    await ref.read(musicSettingsProvider.notifier).setLyricOffsetMs(offset.inMilliseconds);
+    await ref.read(musicLyricsSettingsProvider.notifier).setLyricOffsetMs(offset.inMilliseconds);
   }
 
   /// Drops the queue entry at [index].
   Future<void> removeAt(int index) => _audio.removeAt(index);
 
   /// Moves a queue entry; the playing song keeps playing wherever it lands.
-  Future<void> moveInQueue(int from, int to) => _audio.moveInQueue(from, to);
+  Future<void> moveInQueue(int from, int to) async {
+    await _audio.moveInQueue(from, to);
+    // A move keeps the track, its index and the length, so the engine's
+    // snapshot compares equal to the last one; the revision is what tells a
+    // queue view the order changed.
+    if (ref.mounted) ref.read(musicQueueRevisionProvider.notifier).bump();
+  }
 
   /// Empties the queue and stops.
   Future<void> clearQueue() => _audio.clearQueue();
@@ -850,17 +872,16 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   bool get desktopLyricVisible => _desktopLyric?.visible ?? false;
 
   /// Whether the overlay ignores pointer input.
-  bool get desktopLyricLocked => ref.read(musicSettingsProvider).desktopLyricLocked;
+  bool get desktopLyricLocked => ref.read(musicDesktopLyricsSettingsProvider).desktopLyricLocked;
 
   /// Shows or hides the desktop lyric overlay and remembers the choice; false
   /// means the host has no overlay window (or the viewer refused the
   /// permission).
   Future<bool> toggleDesktopLyric() async {
-    final settings = ref.read(musicSettingsProvider);
-    final desktop = _desktopController(settings);
+    final desktop = _desktopController();
     try {
       final visible = await desktop.toggle();
-      await ref.read(musicSettingsProvider.notifier).setDesktopLyrics(visible: visible);
+      await ref.read(musicDesktopLyricsSettingsProvider.notifier).setDesktopLyrics(visible: visible);
       return visible;
     } on Object {
       // A host without the overlay plugin.
@@ -871,32 +892,31 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   /// Shows or hides the overlay explicitly, so a switch that is out of sync
   /// with the native window still does what its new value says.
   Future<bool> setDesktopLyricVisible({required bool visible}) async {
-    final settings = ref.read(musicSettingsProvider);
     final existing = _desktopLyric;
     // Turning off an overlay that was never opened needs no controller; it
     // would only subscribe to the player for nothing.
     if (!visible && existing == null) {
-      await ref.read(musicSettingsProvider.notifier).setDesktopLyrics(visible: false);
+      await ref.read(musicDesktopLyricsSettingsProvider.notifier).setDesktopLyrics(visible: false);
       return false;
     }
-    final desktop = existing ?? _desktopController(settings);
+    final desktop = existing ?? _desktopController();
     try {
       if (visible) {
         final shown = await desktop.show();
-        await ref.read(musicSettingsProvider.notifier).setDesktopLyrics(visible: shown);
+        await ref.read(musicDesktopLyricsSettingsProvider.notifier).setDesktopLyrics(visible: shown);
         return shown;
       }
       await desktop.hide();
     } on Object {
       // A host without the overlay plugin.
     }
-    await ref.read(musicSettingsProvider.notifier).setDesktopLyrics(visible: false);
+    await ref.read(musicDesktopLyricsSettingsProvider.notifier).setDesktopLyrics(visible: false);
     return false;
   }
 
   /// Locks the overlay into click-through mode, or unlocks it.
   Future<void> setDesktopLyricLocked({required bool locked}) async {
-    await ref.read(musicSettingsProvider.notifier).setDesktopLyricLocked(locked: locked);
+    await ref.read(musicDesktopLyricsSettingsProvider.notifier).setDesktopLyricLocked(locked: locked);
     await _desktopLyric?.setLocked(locked: locked);
   }
 
@@ -958,7 +978,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
   void _trackProgress(audio.AudioPlaybackState next) {
     final track = next.track;
     if (track == null) return;
-    if (!ref.read(musicSettingsProvider).rememberProgress) {
+    if (!ref.read(musicPlaybackSettingsProvider).rememberProgress) {
       _progressTrackKey = null;
       return;
     }
@@ -1090,7 +1110,7 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
       return;
     }
 
-    if (!ref.read(musicSettingsProvider).skipOnError) {
+    if (!ref.read(musicPlaybackSettingsProvider).skipOnError) {
       return;
     }
 
@@ -1119,18 +1139,37 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
     unawaited(_audio.next());
   }
 
+  /// Remembers a song the engine could not play, and forgets the mark once the
+  /// same song loads again: the mark is about this session, not the song.
+  void _recordFailedTrack(audio.AudioPlaybackState next) {
+    final track = next.track;
+
+    if (track == null) {
+      return;
+    }
+
+    final key = musicTrackKey(track);
+    final failed = ref.read(musicFailedTracksProvider.notifier);
+
+    if (next.error != null) {
+      failed.mark(key);
+    } else if (next.playing || next.loading) {
+      failed.clear(key);
+    }
+  }
+
   /// Reopens the last queue when the viewer asked the module to continue;
   /// restored paused, because opening a page is not pressing play.
   /// Restores the viewer's volume and speed before any queue loads — the
   /// reference persists both across runs (`volume.ts`, `playbackRate.ts`).
   Future<void> _restorePlaybackPrefs() async {
-    final settings = ref.read(musicSettingsProvider);
+    final settings = ref.read(musicPlaybackSettingsProvider);
     if (settings.volume != 1) await _audio.setVolume(settings.volume);
     if (settings.playbackRate != 1) await _audio.setRate(settings.playbackRate);
   }
 
   Future<void> _restore() async {
-    if (!ref.read(musicSettingsProvider).autoplay) return;
+    if (!ref.read(musicPlaybackSettingsProvider).autoplay) return;
     final snapshot = ref.read(musicQueueStoreProvider).read();
     if (snapshot == null || !ref.mounted) return;
     await _audio.setQueue(snapshot.tracks, startIndex: snapshot.index, autoPlay: false);
@@ -1140,6 +1179,47 @@ final class MusicPlayerController extends Notifier<audio.AudioPlaybackState> {
 /// The module's player and queue.
 final musicPlayerProvider = NotifierProvider<MusicPlayerController, audio.AudioPlaybackState>(
   MusicPlayerController.new,
+);
+
+/// The songs the engine refused this session, keyed like the dislikes
+/// (`sourceId:id`). The queue marks them instead of offering a row that fails
+/// again with no stated reason; a later successful load clears the mark.
+final class MusicFailedTracksController extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => const <String>{};
+
+  /// Marks [key] as unplayable.
+  void mark(String key) {
+    if (state.contains(key)) return;
+    state = {...state, key};
+  }
+
+  /// Clears [key]'s mark after it played.
+  void clear(String key) {
+    if (!state.contains(key)) return;
+    state = {...state}..remove(key);
+  }
+}
+
+/// The songs the engine could not play this session.
+final musicFailedTracksProvider = NotifierProvider<MusicFailedTracksController, Set<String>>(
+  MusicFailedTracksController.new,
+);
+
+/// A counter for queue rearrangements the engine reports as no state change:
+/// a reorder keeps the track, its index and the length, so a view watching
+/// only those would keep drawing the old order.
+final class MusicQueueRevisionController extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  /// Announces that the queue's order changed.
+  void bump() => state = state + 1;
+}
+
+/// Moves whenever the queue is rearranged without a state change.
+final musicQueueRevisionProvider = NotifierProvider<MusicQueueRevisionController, int>(
+  MusicQueueRevisionController.new,
 );
 
 /// The active engine's audio output devices; invalidate after a selection or

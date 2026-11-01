@@ -62,7 +62,12 @@ final class _FollowTagsPaneState extends ConsumerState<FollowTagsPane> {
     );
     if (!confirmed) return;
     await _run(() => ref.read(followTagsProvider.notifier).remove(tag.id));
-    if (mounted) showDsToast(context: context, title: t.settings.tagDeletedToast(name: tag.name));
+    if (mounted) {
+      showDsToast(
+        context: context,
+        title: t.settings.tagDeletedToast(name: tag.name),
+      );
+    }
   }
 
   @override
@@ -104,12 +109,7 @@ final class _FollowTagsPaneState extends ConsumerState<FollowTagsPane> {
             icon: const DsIcon(DsIcons.tag),
             title: Text(t.settings.tagEmptyTitle),
             description: Text(t.settings.tagEmptyHint),
-            actions: [
-              DsButton(
-                onPressed: _busy ? null : () => unawaited(_edit()),
-                child: Text(t.settings.tagAdd),
-              ),
-            ],
+            actions: [DsButton(onPressed: _busy ? null : () => unawaited(_edit()), child: Text(t.settings.tagAdd))],
           )
         else ...[
           Text(t.settings.tagSortTip, style: theme.typography.caption.copyWith(color: colors.textMuted)),
@@ -175,10 +175,14 @@ final class _TagMenu extends StatelessWidget {
         semanticLabel: t.recorder.menuMore,
         onPressed: controller.toggle,
         builder: (context, states, _) {
-          final hovered = states.contains(WidgetState.hovered);
+          final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
           return Padding(
             padding: const EdgeInsets.all(DsSpace.s4),
-            child: DsIcon(DsIcons.ellipsisVertical, size: theme.sizes.iconSm, color: hovered ? colors.text : colors.textSubtle),
+            child: DsIcon(
+              DsIcons.ellipsisVertical,
+              size: theme.sizes.iconSm,
+              color: lit ? colors.text : colors.textSubtle,
+            ),
           );
         },
       ),
@@ -316,10 +320,7 @@ final class _FollowTagEditorDialogState extends ConsumerState<_FollowTagEditorDi
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
           child: Text(t.common.cancel),
         ),
-        DsButton(
-          onPressed: _saving ? null : () => unawaited(_submit()),
-          child: Text(t.settings.tagSaveAction),
-        ),
+        DsButton(onPressed: _saving ? null : () => unawaited(_submit()), child: Text(t.settings.tagSaveAction)),
       ],
     );
   }

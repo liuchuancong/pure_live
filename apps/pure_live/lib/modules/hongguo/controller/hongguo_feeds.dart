@@ -563,3 +563,27 @@ final class HongguoSearchController extends Notifier<HongguoSearchState> {
 final hongguoSearchProvider = NotifierProvider<HongguoSearchController, HongguoSearchState>(
   HongguoSearchController.new,
 );
+
+/// A word handed to the station's search view from outside (the toolbar's
+/// field): the view takes it once — searched as though typed — and clears
+/// it, so a back-and-forth never replays it.
+final class HongguoSearchHandoffController extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  /// Hands [word] to the station's search view (taken once on arrival).
+  // ignore: use_setters_to_change_properties
+  void hand(String word) => state = word;
+
+  /// Takes the word (null when none was handed).
+  String? take() {
+    final word = state;
+    state = null;
+    return word;
+  }
+}
+
+/// The word the station's search view should run next.
+final hongguoSearchHandoffProvider = NotifierProvider<HongguoSearchHandoffController, String?>(
+  HongguoSearchHandoffController.new,
+);

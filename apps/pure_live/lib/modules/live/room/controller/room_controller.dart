@@ -32,6 +32,16 @@ const int kRoomChatLimit = 200;
 /// is (the reference's `maskedChatsForExpiredLogin`).
 const int kRoomMaskedChatsForExpiredLogin = 3;
 
+/// How the room's chat connection stands, as the chat column reads it.
+///
+/// The message list alone cannot tell "nobody is talking" from "we never got
+/// in", and a hint that fades leaves the panel claiming the first when the
+/// second is true.
+enum RoomChatStatus { connecting, connected, unsupported, failed }
+
+/// The chat's standing, with the platform's own reason when it [RoomChatStatus.failed].
+typedef RoomChat = ({RoomChatStatus status, String? error});
+
 /// What the room page holds: the room as it stands, the qualities and the
 /// lines behind the chosen one, the playback's state and handle, and the
 /// danmaku the room's chat has delivered.
@@ -45,6 +55,7 @@ typedef RoomState = ({
   PlayerHandle? handle,
   bool audioOnly,
   String? error,
+  RoomChat chat,
 });
 
 RoomState _initial({bool audioOnly = false}) => (
@@ -57,6 +68,7 @@ RoomState _initial({bool audioOnly = false}) => (
   handle: null,
   audioOnly: audioOnly,
   error: null,
+  chat: (status: RoomChatStatus.connecting, error: null),
 );
 
 /// The viewer's shield as media_core's policy slot: the pipeline's documented
@@ -635,6 +647,10 @@ final class RoomController extends Notifier<RoomState> {
           final danmakuProvider = site.capability<LiveDanmakuProvider>();
           if (room.broadcast.isLiveNow && danmakuProvider != null) {
             unawaited(_openDanmaku(danmakuProvider, room));
+          } else {
+            // A replay, or a platform that carries no chat: the column names
+            // that instead of showing an empty list that reads as a quiet room.
+            state = _with(chat: (status: RoomChatStatus.unsupported, error: null));
           }
           final qualitiesAnswer = await playbackProvider.getQualities(room: room);
           unawaited(
@@ -1142,6 +1158,7 @@ final class RoomController extends Notifier<RoomState> {
   Future<void> _openDanmaku(LiveDanmakuProvider provider, LiveRoom room) async {
     final epoch = _danmakuEpoch;
     _danmakuOpeningEpoch = epoch;
+    _setChat(RoomChatStatus.connecting);
     try {
       final sessionAnswer = await provider.createSession(room: room);
       await sessionAnswer.match((error) async {
@@ -1149,6 +1166,10 @@ final class RoomController extends Notifier<RoomState> {
         // open: the picture stays on screen and only a hint says what is
         // missing (an error field would replace it).
         if (!_danmakuCurrent(epoch, room)) return;
+        // The hint still fires (it is the room's own voice about what is
+        // missing), and the standing outlives it: the column keeps saying so
+        // with a way to try again after the hint has gone.
+        _setChat(RoomChatStatus.failed, error: error.message);
         ref.read(roomHintProvider.notifier).show(l10n.t.room.danmakuConnectFailed(reason: error.message));
       }, (session) => _installDanmaku(session, room, epoch: epoch));
     } finally {
@@ -1180,7 +1201,13 @@ final class RoomController extends Notifier<RoomState> {
   Future<void> _reopenDanmaku(LiveRoom room, LiveDanmakuProvider provider) async {
     final epoch = ++_danmakuEpoch;
     final answer = await provider.createSession(room: room);
-    final session = answer.match<LiveDanmakuSession?>((_) => null, (created) => created);
+    final session = answer.match<LiveDanmakuSession?>((error) {
+      // The old chat is still up at this point, so the room does not lose
+      // its voice; but the new credentials were refused, and the column must
+      // say that rather than go quiet on a stale connection.
+      if (_danmakuCurrent(epoch, room)) _setChat(RoomChatStatus.failed, error: error.message);
+      return null;
+    }, (created) => created);
     if (session == null) return;
     if (!_danmakuCurrent(epoch, room)) {
       unawaited(session.dispose());
@@ -1241,11 +1268,33 @@ final class RoomController extends Notifier<RoomState> {
       return;
     }
     _chat = session.events.listen(_onSiteMessage);
+    _setChat(RoomChatStatus.connected);
     final handle = state.handle;
     if (handle != null) pipeline.bind(handle);
     // The page reads the pipeline's barrage engine through the notifier;
     // this rebuild is what picks it up the moment it exists.
     state = _with();
+  }
+
+  /// Publishes the chat's standing to the column. A refused chat leaves the
+  /// picture alone, so this is the only place that knows it happened.
+  void _setChat(RoomChatStatus status, {String? error}) {
+    if (!ref.mounted) return;
+    state = _with(chat: (status: status, error: error));
+  }
+
+  /// Tries the chat's handshake again over the room's own platform: a network
+  /// that was down when the room opened, or credentials the platform just
+  /// started to accept. The picture is not touched.
+  Future<void> retryChat() async {
+    final room = state.room;
+    if (room == null) return;
+    final provider = _danmakuCapabilityOf(room.ref.platform);
+    if (provider == null) {
+      _setChat(RoomChatStatus.unsupported);
+      return;
+    }
+    await _openDanmaku(provider, room);
   }
 
   /// Whether the danmaku open of [epoch] still owns the page: the provider is
@@ -1407,6 +1456,7 @@ final class RoomController extends Notifier<RoomState> {
     PlayerHandle? handle,
     bool? audioOnly,
     String? error,
+    RoomChat? chat,
   }) => (
     room: room ?? state.room,
     qualities: qualities ?? state.qualities,
@@ -1417,6 +1467,7 @@ final class RoomController extends Notifier<RoomState> {
     handle: handle ?? state.handle,
     audioOnly: audioOnly ?? state.audioOnly,
     error: error,
+    chat: chat ?? state.chat,
   );
 
   void _teardown() {

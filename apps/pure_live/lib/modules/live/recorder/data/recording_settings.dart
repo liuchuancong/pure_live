@@ -26,6 +26,92 @@ enum RecordingFileContainer {
   mp4,
 }
 
+/// The recorder's waiting-task schedule: whether rooms are polled for a live
+/// stream, how often, and whether interrupted tasks resume on boot. Kept apart
+/// from the capture tunables so the cadence can grow without bloating them.
+final class RecordingScheduleSettings {
+  /// Creates the schedule group.
+  const RecordingScheduleSettings({
+    this.pollingEnabled = false,
+    this.liveCheckSeconds = 30,
+    this.checkBackoffEnabled = false,
+    this.maxCheckSeconds = 300,
+    this.autoStartOnBoot = false,
+  });
+
+  /// The designed defaults.
+  static const RecordingScheduleSettings defaults = RecordingScheduleSettings();
+
+  /// Whether waiting tasks check their rooms for a live stream and start
+  /// recording when one begins.
+  final bool pollingEnabled;
+
+  /// Seconds between two checks of one waiting task.
+  final int liveCheckSeconds;
+
+  /// Whether repeated failures stretch the check interval.
+  final bool checkBackoffEnabled;
+
+  /// The ceiling the stretched interval approaches, in seconds.
+  final int maxCheckSeconds;
+
+  /// Whether interrupted (still recording) tasks return as waiting on boot.
+  final bool autoStartOnBoot;
+
+  /// A copy with the named fields replaced.
+  RecordingScheduleSettings copyWith({
+    bool? pollingEnabled,
+    int? liveCheckSeconds,
+    bool? checkBackoffEnabled,
+    int? maxCheckSeconds,
+    bool? autoStartOnBoot,
+  }) => RecordingScheduleSettings(
+    pollingEnabled: pollingEnabled ?? this.pollingEnabled,
+    liveCheckSeconds: liveCheckSeconds ?? this.liveCheckSeconds,
+    checkBackoffEnabled: checkBackoffEnabled ?? this.checkBackoffEnabled,
+    maxCheckSeconds: maxCheckSeconds ?? this.maxCheckSeconds,
+    autoStartOnBoot: autoStartOnBoot ?? this.autoStartOnBoot,
+  );
+}
+
+/// The recorder's network posture: the HTTPS certificate policy and the input
+/// read timeout FFmpeg honours.
+final class RecordingNetworkSettings {
+  /// Creates the network group.
+  const RecordingNetworkSettings({this.readTimeoutSeconds = 15, this.tlsVerify = true, this.customCaPath = ''});
+
+  /// The designed defaults.
+  static const RecordingNetworkSettings defaults = RecordingNetworkSettings();
+
+  /// How long FFmpeg waits for input before failing the read, in seconds.
+  final int readTimeoutSeconds;
+
+  /// Whether an HTTPS input's certificate is verified.
+  ///
+  /// On by default. Off accepts a self-signed or proxy-intercepted certificate,
+  /// which is the escape hatch for a TLS-terminating proxy; it also removes
+  /// the protection against a real interception.
+  final bool tlsVerify;
+
+  /// A CA bundle of the viewer's own, in PEM text, that FFmpeg is pointed at
+  /// instead of the bundled Mozilla store.
+  ///
+  /// This is the way to trust a corporate or TLS-intercepting root, or a
+  /// self-signed chain, *without* turning verification off. '' means the
+  /// bundled bundle. The path is the file the viewer picked; the engine copies
+  /// it into its own certificate folder before handing it to FFmpeg, so a
+  /// folder the viewer later moves or deletes cannot strand a recording.
+  final String customCaPath;
+
+  /// A copy with the named fields replaced.
+  RecordingNetworkSettings copyWith({int? readTimeoutSeconds, bool? tlsVerify, String? customCaPath}) =>
+      RecordingNetworkSettings(
+        readTimeoutSeconds: readTimeoutSeconds ?? this.readTimeoutSeconds,
+        tlsVerify: tlsVerify ?? this.tlsVerify,
+        customCaPath: customCaPath ?? this.customCaPath,
+      );
+}
+
 /// The recorder's own tunables, consumed by `recorder_engine.dart`.
 ///
 /// Every field maps to an FFmpeg argument or the engine's own session
@@ -40,7 +126,6 @@ final class RecordingSettings {
     this.namingTemplate = kDefaultNamingTemplate,
     this.maxSizeMb = 2048,
     this.segmentSeconds = 1800,
-    this.readTimeoutSeconds = 15,
     this.queueSize = 1024,
     this.preferBestStream = true,
     this.keepAlive = true,
@@ -55,15 +140,10 @@ final class RecordingSettings {
     this.deleteOriginalsAfterCombine = false,
     this.transcodeAfterCombine = false,
     this.transcodeBitrateKbps = 4000,
-    this.tlsVerify = true,
-    this.customCaPath = '',
     this.cacheLimitEnabled = false,
     this.cacheLimitMb = 1024,
-    this.pollingEnabled = false,
-    this.liveCheckSeconds = 30,
-    this.checkBackoffEnabled = false,
-    this.maxCheckSeconds = 300,
-    this.autoStartOnBoot = false,
+    this.schedule = RecordingScheduleSettings.defaults,
+    this.network = RecordingNetworkSettings.defaults,
   });
 
   /// The designed defaults.
@@ -93,9 +173,6 @@ final class RecordingSettings {
 
   /// Length of one segment, in seconds.
   final int segmentSeconds;
-
-  /// How long FFmpeg waits for input before failing the read, in seconds.
-  final int readTimeoutSeconds;
 
   /// Input packet queue size.
   final int queueSize;
@@ -150,44 +227,17 @@ final class RecordingSettings {
   /// Target video bitrate for [transcodeAfterCombine], in kbit/s.
   final int transcodeBitrateKbps;
 
-  /// Whether an HTTPS input's certificate is verified.
-  ///
-  /// On by default. Off accepts a self-signed or proxy-intercepted certificate,
-  /// which is the escape hatch for a TLS-terminating proxy; it also removes
-  /// the protection against a real interception.
-  final bool tlsVerify;
-
-  /// A CA bundle of the viewer's own, in PEM text, that FFmpeg is pointed at
-  /// instead of the bundled Mozilla store.
-  ///
-  /// This is the way to trust a corporate or TLS-intercepting root, or a
-  /// self-signed chain, *without* turning verification off. '' means the
-  /// bundled bundle. The path is the file the viewer picked; the engine copies
-  /// it into its own certificate folder before handing it to FFmpeg, so a
-  /// folder the viewer later moves or deletes cannot strand a recording.
-  final String customCaPath;
-
   /// Whether completed takes are trimmed to [cacheLimitMb].
   final bool cacheLimitEnabled;
 
   /// The managed recording folder's cap, in megabytes.
   final int cacheLimitMb;
 
-  /// Whether waiting tasks check their rooms for a live stream and start
-  /// recording when one begins.
-  final bool pollingEnabled;
+  /// How waiting tasks are polled and resumed.
+  final RecordingScheduleSettings schedule;
 
-  /// Seconds between two checks of one waiting task.
-  final int liveCheckSeconds;
-
-  /// Whether repeated failures stretch the check interval.
-  final bool checkBackoffEnabled;
-
-  /// The ceiling the stretched interval approaches, in seconds.
-  final int maxCheckSeconds;
-
-  /// Whether interrupted (still recording) tasks return as waiting on boot.
-  final bool autoStartOnBoot;
+  /// The HTTPS posture and the input read timeout.
+  final RecordingNetworkSettings network;
 
   /// A copy with the named fields replaced.
   RecordingSettings copyWith({
@@ -197,7 +247,6 @@ final class RecordingSettings {
     String? namingTemplate,
     int? maxSizeMb,
     int? segmentSeconds,
-    int? readTimeoutSeconds,
     int? queueSize,
     bool? preferBestStream,
     bool? keepAlive,
@@ -212,15 +261,10 @@ final class RecordingSettings {
     bool? deleteOriginalsAfterCombine,
     bool? transcodeAfterCombine,
     int? transcodeBitrateKbps,
-    bool? tlsVerify,
-    String? customCaPath,
     bool? cacheLimitEnabled,
     int? cacheLimitMb,
-    bool? pollingEnabled,
-    int? liveCheckSeconds,
-    bool? checkBackoffEnabled,
-    int? maxCheckSeconds,
-    bool? autoStartOnBoot,
+    RecordingScheduleSettings? schedule,
+    RecordingNetworkSettings? network,
   }) => RecordingSettings(
     defaultQuality: defaultQuality ?? this.defaultQuality,
     recordDanmaku: recordDanmaku ?? this.recordDanmaku,
@@ -228,7 +272,6 @@ final class RecordingSettings {
     namingTemplate: namingTemplate ?? this.namingTemplate,
     maxSizeMb: maxSizeMb ?? this.maxSizeMb,
     segmentSeconds: segmentSeconds ?? this.segmentSeconds,
-    readTimeoutSeconds: readTimeoutSeconds ?? this.readTimeoutSeconds,
     queueSize: queueSize ?? this.queueSize,
     preferBestStream: preferBestStream ?? this.preferBestStream,
     keepAlive: keepAlive ?? this.keepAlive,
@@ -243,15 +286,10 @@ final class RecordingSettings {
     deleteOriginalsAfterCombine: deleteOriginalsAfterCombine ?? this.deleteOriginalsAfterCombine,
     transcodeAfterCombine: transcodeAfterCombine ?? this.transcodeAfterCombine,
     transcodeBitrateKbps: transcodeBitrateKbps ?? this.transcodeBitrateKbps,
-    tlsVerify: tlsVerify ?? this.tlsVerify,
-    customCaPath: customCaPath ?? this.customCaPath,
     cacheLimitEnabled: cacheLimitEnabled ?? this.cacheLimitEnabled,
     cacheLimitMb: cacheLimitMb ?? this.cacheLimitMb,
-    pollingEnabled: pollingEnabled ?? this.pollingEnabled,
-    liveCheckSeconds: liveCheckSeconds ?? this.liveCheckSeconds,
-    checkBackoffEnabled: checkBackoffEnabled ?? this.checkBackoffEnabled,
-    maxCheckSeconds: maxCheckSeconds ?? this.maxCheckSeconds,
-    autoStartOnBoot: autoStartOnBoot ?? this.autoStartOnBoot,
+    schedule: schedule ?? this.schedule,
+    network: network ?? this.network,
   );
 }
 
@@ -270,7 +308,6 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
       namingTemplate: _storedString('recorder.naming') ?? kDefaultNamingTemplate,
       maxSizeMb: _storedSize() ?? RecordingSettings.defaults.maxSizeMb,
       segmentSeconds: (_storedInt('recorder.segment') ?? RecordingSettings.defaults.segmentSeconds).clamp(10, 86400),
-      readTimeoutSeconds: (_storedInt('recorder.rwTimeout') ?? 15).clamp(5, 120),
       queueSize: (_storedInt('recorder.queue') ?? RecordingSettings.defaults.queueSize).clamp(256, 32768),
       preferBestStream: _storedBool('recorder.preferBest') ?? true,
       keepAlive: _storedBool('recorder.keepAlive') ?? true,
@@ -287,20 +324,25 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
       deleteOriginalsAfterCombine: _storedBool('recorder.combineDeleteOriginals') ?? false,
       transcodeAfterCombine: _storedBool('recorder.transcode') ?? false,
       transcodeBitrateKbps: (_storedInt('recorder.transcodeBitrate') ?? 4000).clamp(500, 50000),
-      tlsVerify: _storedBool('recorder.tlsVerify') ?? true,
-      // A stored empty path is the same answer as nothing stored: the bundled
-      // bundle is in force.
-      customCaPath: (_storedString('recorder.customCa') ?? '').trim(),
       cacheLimitEnabled: _storedBool('recorder.cacheLimitEnabled') ?? false,
       cacheLimitMb: (_storedInt('recorder.cacheLimitMb') ?? 1024).clamp(
         kRecordingCacheLimitMinMb,
         kRecordingCacheLimitMaxMb,
       ),
-      pollingEnabled: _storedBool('recorder.pollingEnabled') ?? false,
-      liveCheckSeconds: (_storedInt('recorder.liveCheckSeconds') ?? 30).clamp(10, 300),
-      checkBackoffEnabled: _storedBool('recorder.checkBackoffEnabled') ?? false,
-      maxCheckSeconds: (_storedInt('recorder.maxCheckSeconds') ?? 300).clamp(60, 3600),
-      autoStartOnBoot: _storedBool('recorder.autoStartOnBoot') ?? false,
+      schedule: RecordingScheduleSettings(
+        pollingEnabled: _storedBool('recorder.pollingEnabled') ?? false,
+        liveCheckSeconds: (_storedInt('recorder.liveCheckSeconds') ?? 30).clamp(10, 300),
+        checkBackoffEnabled: _storedBool('recorder.checkBackoffEnabled') ?? false,
+        maxCheckSeconds: (_storedInt('recorder.maxCheckSeconds') ?? 300).clamp(60, 3600),
+        autoStartOnBoot: _storedBool('recorder.autoStartOnBoot') ?? false,
+      ),
+      network: RecordingNetworkSettings(
+        readTimeoutSeconds: (_storedInt('recorder.rwTimeout') ?? 15).clamp(5, 120),
+        tlsVerify: _storedBool('recorder.tlsVerify') ?? true,
+        // A stored empty path is the same answer as nothing stored: the bundled
+        // bundle is in force.
+        customCaPath: (_storedString('recorder.customCa') ?? '').trim(),
+      ),
     );
   }
 
@@ -380,7 +422,7 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
   int get segmentSeconds => state.segmentSeconds;
 
   /// The input read timeout, in seconds.
-  int get readTimeoutSeconds => state.readTimeoutSeconds;
+  int get readTimeoutSeconds => state.network.readTimeoutSeconds;
 
   /// The input packet queue size.
   int get queueSize => state.queueSize;
@@ -425,10 +467,10 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
   int get transcodeBitrateKbps => state.transcodeBitrateKbps;
 
   /// Whether an HTTPS input's certificate is verified.
-  bool get tlsVerify => state.tlsVerify;
+  bool get tlsVerify => state.network.tlsVerify;
 
   /// The CA bundle of the viewer's own, or '' when the bundled one is in force.
-  String get customCaPath => state.customCaPath;
+  String get customCaPath => state.network.customCaPath;
 
   /// Whether completed takes are trimmed to the cap.
   bool get cacheLimitEnabled => state.cacheLimitEnabled;
@@ -437,15 +479,15 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
   int get cacheLimitMb => state.cacheLimitMb;
 
   /// Whether waiting tasks are checked for a live stream.
-  bool get pollingEnabled => state.pollingEnabled;
+  bool get pollingEnabled => state.schedule.pollingEnabled;
 
-  int get liveCheckSeconds => state.liveCheckSeconds;
+  int get liveCheckSeconds => state.schedule.liveCheckSeconds;
 
-  bool get checkBackoffEnabled => state.checkBackoffEnabled;
+  bool get checkBackoffEnabled => state.schedule.checkBackoffEnabled;
 
-  int get maxCheckSeconds => state.maxCheckSeconds;
+  int get maxCheckSeconds => state.schedule.maxCheckSeconds;
 
-  bool get autoStartOnBoot => state.autoStartOnBoot;
+  bool get autoStartOnBoot => state.schedule.autoStartOnBoot;
 
   set cacheLimitEnabled(bool value) {
     state = state.copyWith(cacheLimitEnabled: value);
@@ -460,29 +502,29 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
 
   /// Turns the live check of waiting tasks on or off.
   set pollingEnabled(bool value) {
-    state = state.copyWith(pollingEnabled: value);
+    state = state.copyWith(schedule: state.schedule.copyWith(pollingEnabled: value));
     unawaited(_write('recorder.pollingEnabled', value));
   }
 
   set liveCheckSeconds(int value) {
     final next = value.clamp(10, 300);
-    state = state.copyWith(liveCheckSeconds: next);
+    state = state.copyWith(schedule: state.schedule.copyWith(liveCheckSeconds: next));
     unawaited(_write('recorder.liveCheckSeconds', next));
   }
 
   set checkBackoffEnabled(bool value) {
-    state = state.copyWith(checkBackoffEnabled: value);
+    state = state.copyWith(schedule: state.schedule.copyWith(checkBackoffEnabled: value));
     unawaited(_write('recorder.checkBackoffEnabled', value));
   }
 
   set maxCheckSeconds(int value) {
     final next = value.clamp(60, 3600);
-    state = state.copyWith(maxCheckSeconds: next);
+    state = state.copyWith(schedule: state.schedule.copyWith(maxCheckSeconds: next));
     unawaited(_write('recorder.maxCheckSeconds', next));
   }
 
   set autoStartOnBoot(bool value) {
-    state = state.copyWith(autoStartOnBoot: value);
+    state = state.copyWith(schedule: state.schedule.copyWith(autoStartOnBoot: value));
     unawaited(_write('recorder.autoStartOnBoot', value));
   }
 
@@ -542,7 +584,7 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
   /// Changes the input read timeout.
   set readTimeoutSeconds(int seconds) {
     final clamped = seconds.clamp(5, 120);
-    state = state.copyWith(readTimeoutSeconds: clamped);
+    state = state.copyWith(network: state.network.copyWith(readTimeoutSeconds: clamped));
     unawaited(_write('recorder.rwTimeout', clamped));
   }
 
@@ -639,7 +681,7 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
 
   /// Chooses whether HTTPS certificates are verified.
   set tlsVerify(bool value) {
-    state = state.copyWith(tlsVerify: value);
+    state = state.copyWith(network: state.network.copyWith(tlsVerify: value));
     unawaited(_write('recorder.tlsVerify', value));
   }
 
@@ -648,7 +690,7 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
   /// choice takes effect on the next take without a restart.
   set customCaPath(String path) {
     final value = path.trim();
-    state = state.copyWith(customCaPath: value);
+    state = state.copyWith(network: state.network.copyWith(customCaPath: value));
     unawaited(_write('recorder.customCa', value));
   }
 
@@ -664,7 +706,7 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
     // The chosen CA bundle is not a tunable and is not reset: carry it over the
     // default copy, or the state would say "bundled store" while the pref still
     // holds the viewer's file — and the next launch would bring it back.
-    state = d.copyWith(customCaPath: state.customCaPath);
+    state = d.copyWith(network: d.network.copyWith(customCaPath: state.network.customCaPath));
     await Future.wait([
       _write('recorder.defaultQuality', d.defaultQuality),
       _write('recorder.recordDanmaku', d.recordDanmaku),
@@ -672,7 +714,7 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
       _write('recorder.naming', d.namingTemplate),
       _write('recorder.maxSizeMb', d.maxSizeMb),
       _write('recorder.segment', d.segmentSeconds),
-      _write('recorder.rwTimeout', d.readTimeoutSeconds),
+      _write('recorder.rwTimeout', d.network.readTimeoutSeconds),
       _write('recorder.queue', d.queueSize),
       _write('recorder.preferBest', d.preferBestStream),
       _write('recorder.keepAlive', d.keepAlive),
@@ -687,14 +729,14 @@ final class RecordingSettingsController extends Notifier<RecordingSettings> {
       _write('recorder.combineDeleteOriginals', d.deleteOriginalsAfterCombine),
       _write('recorder.transcode', d.transcodeAfterCombine),
       _write('recorder.transcodeBitrate', d.transcodeBitrateKbps),
-      _write('recorder.tlsVerify', d.tlsVerify),
+      _write('recorder.tlsVerify', d.network.tlsVerify),
       _write('recorder.cacheLimitEnabled', d.cacheLimitEnabled),
       _write('recorder.cacheLimitMb', d.cacheLimitMb),
-      _write('recorder.pollingEnabled', d.pollingEnabled),
-      _write('recorder.liveCheckSeconds', d.liveCheckSeconds),
-      _write('recorder.checkBackoffEnabled', d.checkBackoffEnabled),
-      _write('recorder.maxCheckSeconds', d.maxCheckSeconds),
-      _write('recorder.autoStartOnBoot', d.autoStartOnBoot),
+      _write('recorder.pollingEnabled', d.schedule.pollingEnabled),
+      _write('recorder.liveCheckSeconds', d.schedule.liveCheckSeconds),
+      _write('recorder.checkBackoffEnabled', d.schedule.checkBackoffEnabled),
+      _write('recorder.maxCheckSeconds', d.schedule.maxCheckSeconds),
+      _write('recorder.autoStartOnBoot', d.schedule.autoStartOnBoot),
     ]);
   }
 }

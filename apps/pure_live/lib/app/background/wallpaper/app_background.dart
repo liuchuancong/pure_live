@@ -4,15 +4,7 @@ import 'dart:ui' as ui;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pure_live/app/background/library/background_presets.dart' show gradientAlignments;
-import 'package:pure_live/app/background/settings/background_settings.dart';
-import 'package:pure_live/app/background/tone/analysis/background_scrim.dart' show backgroundScrimWashFor;
-import 'package:pure_live/app/background/tone/background_tone.dart'
-    show backgroundScrimOpacityFor, backgroundToneProvider;
-import 'package:pure_live/app/background/wallpaper/background_video_source.dart';
-import 'package:pure_live/modules/live/room/room.dart';
-import 'package:pure_live/shared/shared.dart';
-import 'package:pure_uikit_background/pure_uikit_background.dart'
+import 'package:live_uikit_background/live_uikit_background.dart'
     show
         AppVisibleScope,
         BackgroundConfig,
@@ -23,6 +15,14 @@ import 'package:pure_uikit_background/pure_uikit_background.dart'
         PureBackground,
         SolidBackground,
         VideoBackground;
+import 'package:pure_live/app/background/library/background_presets.dart' show gradientAlignments;
+import 'package:pure_live/app/background/settings/background_settings.dart';
+import 'package:pure_live/app/background/tone/analysis/background_scrim.dart' show backgroundScrimWashFor;
+import 'package:pure_live/app/background/tone/background_tone.dart'
+    show backgroundScrimOpacityFor, backgroundToneProvider;
+import 'package:pure_live/app/background/wallpaper/background_video_source.dart';
+import 'package:pure_live/modules/live/room/room.dart';
+import 'package:pure_live/shared/shared.dart';
 
 /// Tells the shell whether a wallpaper is under it, so the shell's own
 /// fill can turn translucent (the theme's surface otherwise covers it).

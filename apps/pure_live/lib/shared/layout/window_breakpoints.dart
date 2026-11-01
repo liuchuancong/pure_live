@@ -53,6 +53,17 @@ abstract final class LiveWindow {
   /// The widest a full screen's body gets on a very wide window.
   static const double wideContent = 1240;
 
+  /// The width at which a download manager holds three panes: the queue's
+  /// filters, the queue itself, and the selected task's facts. Below it the
+  /// manager keeps one list and the row menu's details sheet.
+  static const double downloadWorkspace = 1040;
+
+  /// The wide download manager's filter column.
+  static const double downloadFilters = 200;
+
+  /// The wide download manager's facts column.
+  static const double downloadDetails = 340;
+
   /// Whether [width] is the compact class.
   static bool isCompact(double width) => width < compact;
 

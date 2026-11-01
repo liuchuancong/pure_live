@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 
@@ -188,7 +190,9 @@ const double kChatPanelWidthMax = 520;
 
 const String _kChatPanelWidthKey = 'danmaku.chatPanelWidth';
 
-const double _kChatPanelWidthDefault = 340;
+/// The width the wide layout starts from, and the one the seam's double-tap
+/// puts back.
+const double kChatPanelWidthDefault = 340;
 
 /// Owns the room page's chat column width: the wide room layout gives the
 /// chat this many px instead of its proportional share.
@@ -196,13 +200,19 @@ base class ChatPanelWidthController extends Notifier<double> {
   @override
   double build() {
     try {
-      return (StoragePrefs.getDouble(_kChatPanelWidthKey) ?? _kChatPanelWidthDefault).clamp(
+      return (StoragePrefs.getDouble(_kChatPanelWidthKey) ?? kChatPanelWidthDefault).clamp(
         kChatPanelWidthMin,
         kChatPanelWidthMax,
       );
     } on Object {
-      return _kChatPanelWidthDefault;
+      return kChatPanelWidthDefault;
     }
+  }
+
+  /// Shows [value] while the seam is dragged, without the write a pointer
+  /// move does not need; the drag's end stores it through [set].
+  void preview(double value) {
+    state = value.clamp(kChatPanelWidthMin, kChatPanelWidthMax);
   }
 
   /// Stores the width, clamped to the bounds.
@@ -219,3 +229,51 @@ base class ChatPanelWidthController extends Notifier<double> {
 
 /// The room page's chat column width.
 final chatPanelWidthProvider = NotifierProvider<ChatPanelWidthController, double>(ChatPanelWidthController.new);
+
+/// Whether the wide room's chat column is folded away; the choice is
+/// remembered for the next room.
+const String kChatCollapsedKey = 'danmaku.chatCollapsed';
+
+/// Owns the chat column's fold switch. The preference used to live in the
+/// global playback settings under `playback.chatCollapsed`; the first read of
+/// an empty key adopts that value and retires the old one, the way the
+/// storage folders took over their own rows.
+final class ChatCollapsedController extends Notifier<bool> {
+  @override
+  bool build() {
+    try {
+      final stored = StoragePrefs.getBool(kChatCollapsedKey);
+      if (stored != null) return stored;
+      final legacy = StoragePrefs.getBool('playback.chatCollapsed');
+      if (legacy == null) return false;
+      unawaited(_adoptLegacyChoice(legacy));
+      return legacy;
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Folds or unfolds the chat column and writes through.
+  Future<void> set({required bool value}) async {
+    state = value;
+    try {
+      await StoragePrefs.setBool(kChatCollapsedKey, value);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+
+  /// Writes the adopted value under the room's own key and drops the old
+  /// global one, so the choice is read from one place from the next start on.
+  Future<void> _adoptLegacyChoice(bool legacy) async {
+    try {
+      await StoragePrefs.setBool(kChatCollapsedKey, legacy);
+      await StoragePrefs.remove('playback.chatCollapsed');
+    } on Object {
+      // A closed store leaves the legacy read to do the same thing next start.
+    }
+  }
+}
+
+/// The wide room's chat-column fold switch.
+final chatCollapsedProvider = NotifierProvider<ChatCollapsedController, bool>(ChatCollapsedController.new);

@@ -6,7 +6,6 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart' show AppBar, IconButton, Scaffold, kToolbarHeight;
 import 'package:flutter/scheduler.dart' show SchedulerBinding;
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
@@ -14,7 +13,7 @@ import 'package:live_device/live_device.dart'
     show PlatformScreenAwakeService, PlatformScreenOrientationService, ScreenAwakeService, ScreenOrientationService;
 import 'package:live_platform/live_platform.dart' show FormFactor;
 import 'package:live_sites/live_sites.dart';
-import 'package:media_core/media_core.dart' show PlayerId, PresentationMode;
+import 'package:media_core/media_core.dart' show PlayerHandleLifecycle, PlayerId, PresentationMode;
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -23,13 +22,26 @@ import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/room/chat/room_chat.dart' show RoomChatPanel;
 import 'package:pure_live/modules/live/room/controller/room_controller.dart';
-import 'package:pure_live/modules/live/room/page/player_surface.dart' show PlayerSurface, kPlayerStageColor;
+import 'package:pure_live/modules/live/room/page/chat_splitter.dart' show ChatSplitter;
+import 'package:pure_live/modules/live/room/page/player_stats_overlay.dart' show roomStatsVisibleProvider;
+import 'package:pure_live/modules/live/room/page/player_surface.dart'
+    show PlayerSurface, kPlayerStageColor, toggleRoomPip, toggleRoomRecording;
 import 'package:pure_live/modules/live/room/page/room_details.dart'
     show copyRoomLink, openRoomExternally, roomLinkOf, shareRoom, showRoomDetails;
 import 'package:pure_live/modules/live/room/page/room_orientation.dart'
-    show RoomOrientation, roomFrameRatio, roomOrientationProvider, showRoomOrientationDialog;
+    show
+        RoomOrientation,
+        kRoomFrameRatioMax,
+        kRoomFrameRatioMin,
+        roomFramedRatio,
+        roomOrientationProvider,
+        showRoomOrientationDialog;
 import 'package:pure_live/modules/live/room/page/room_refresh_rate.dart' show roomRefreshRateProvider;
+import 'package:pure_live/modules/live/room/page/room_screenshot.dart' show takeRoomScreenshot;
+import 'package:pure_live/modules/live/room/page/room_shortcuts.dart'
+    show RoomShortcutAction, RoomShortcutBinding, roomShortcutBindings, showRoomShortcuts;
 import 'package:pure_live/modules/live/room/page/room_status.dart' show roomSlowProvider, slowAfter;
+import 'package:pure_live/modules/live/room/page/room_theater.dart' show roomTheaterProvider;
 import 'package:pure_live/modules/live/room/player/floating_room_player.dart' show FloatingRoomPlayer;
 import 'package:pure_live/modules/live/room/player/room_playlist.dart'
     show RoomPlaylistController, roomPlaylistProvider;
@@ -41,8 +53,9 @@ import 'package:pure_live/shared/shared.dart';
 /// it, the room's facts under it, and the chat beside it on a wide window.
 ///
 /// The layout follows the reference's inline shapes: from 840 px the
-/// picture and its facts take the left and the chat a 300–400 px column on
-/// the right; narrower windows stack the chat under the picture. Fullscreen,
+/// picture and its facts take the left and the chat a column of the
+/// viewer's own width on the right; narrower windows stack the chat under
+/// the picture. Fullscreen,
 /// window fullscreen and PiP hand the whole page to the picture — those
 /// modes are media_core's presentation drivers, so the page only follows the
 /// state they publish.
@@ -151,6 +164,24 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
   /// The room's width at which the chat moves beside the picture (the
   /// reference's `wide` layout).
   static const double _wideBreakpoint = 840;
+
+  /// The stage's floor while the chat column is dragged wide: at the wide
+  /// layout's own edge the column tops out under its 520 px cap rather than
+  /// squeezing the picture into a strip.
+  static const double _wideStageFloor = 420;
+
+  /// The strips the picture's own top bar and control bar take at its edges.
+  /// The theatre's glass column starts and ends clear of them, so neither the
+  /// bars nor what rises from them (a picker's catalogue) ever lands on the
+  /// chat's words.
+  ///
+  /// Both follow the bars' own geometry rather than a look: the top is the
+  /// presentation pill the strip keeps in-page (8 px of padding + a 32 px
+  /// control + the pill's own air), since C7 left the identity in the page
+  /// header; the bottom is the control bar's padding (8 + 8) plus one row of
+  /// 32 px buttons — the live progress line C3 removed used to add 10 of them.
+  static const double _theaterTopInset = 44;
+  static const double _theaterBottomInset = 52;
 
   /// The player's own identity across the page's layout branches: normal,
   /// immersive (fullscreen/window fullscreen/PiP) and the portrait surface
@@ -565,7 +596,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
 
   double _floatingWindowRatio(RoomState room) {
     final detected = room.handle?.combinedSnapshot.geometry.aspectRatio ?? 0;
-    return detected > 0 && detected.isFinite ? detected.clamp(0.5, 2.4) : 16 / 9;
+    return detected > 0 && detected.isFinite ? detected.clamp(kRoomFrameRatioMin, kRoomFrameRatioMax) : 16 / 9;
   }
 
   /// The frame's ratio: the room's own orientation choice when it made
@@ -621,7 +652,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     final ratio = detected <= 0 || !detected.isFinite ? 16 / 9 : detected;
     final key = room.room?.ref.identityKey;
     final orientation = key == null ? RoomOrientation.automatic : ref.watch(roomOrientationProvider(key));
-    return roomFrameRatio(orientation, detected: ratio).clamp(0.5, 2.4);
+    return roomFramedRatio(orientation, detected: ratio);
   }
 
   /// The portrait fullscreen's vertical swipe: +1 for the next room in the
@@ -710,6 +741,20 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     final formFactor = ref.watch(platformRuntimeProvider).environment.runtime.formFactor;
     final tv = formFactor == FormFactor.tv;
     final mobile = formFactor == FormFactor.phone || formFactor == FormFactor.tablet;
+    // The theatre is the wide room's arrangement, and this route owns the
+    // window, so the page's own width is the measure its layout will take.
+    final wideWindow = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
+    final theater = ref.watch(roomTheaterProvider);
+
+    /// Shows or hides the theatre. Turning it on unfolds the chat: the glass
+    /// column is what the mode exists for.
+    void toggleTheater() {
+      final shown = ref.read(roomTheaterProvider.notifier).toggle();
+      if (shown && ref.read(chatCollapsedProvider)) {
+        unawaited(ref.read(chatCollapsedProvider.notifier).set(value: false));
+      }
+    }
+
     _watchSlow(room);
     final presentationController = ref.read(roomPresentationProvider.notifier);
     _presentationController = presentationController;
@@ -775,17 +820,41 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
     // keeps the bindings honest after a change.
     final volumeStep = ref.watch(playbackSettingsProvider.select((settings) => settings.volumeWheelStepPercent)) / 100;
 
-    final keys = <SingleActivator, VoidCallback>{
-      const SingleActivator(LogicalKeyboardKey.keyF): () {
+    // One table feeds the keys this page answers to and the `?` help sheet:
+    // a line the sheet shows is a key that works. Its conditions are the
+    // same ones the verbs run under — a TV remote keeps the arrows on focus,
+    // a narrow window has no theatre, and a backend without a capture route
+    // has no frame to save.
+    final shortcuts = roomShortcutBindings(
+      t,
+      tv: tv,
+      theater: wideWindow,
+      canCaptureScreenshot: room.handle?.canCaptureScreenshot ?? false,
+    );
+    VoidCallback shortcutAction(RoomShortcutAction action) => switch (action) {
+      RoomShortcutAction.playPause => () => unawaited(ref.read(roomProvider.notifier).togglePlayPause()),
+      RoomShortcutAction.fullscreen => () {
         final player = room.handle?.id;
         if (player != null) unawaited(presentationController.toggleFullscreen(player));
       },
-      const SingleActivator(LogicalKeyboardKey.escape): leave,
-      const SingleActivator(LogicalKeyboardKey.space): () =>
-          unawaited(ref.read(roomProvider.notifier).togglePlayPause()),
-      if (!tv) const SingleActivator(LogicalKeyboardKey.arrowUp): () => nudgeVolume(volumeStep),
-      if (!tv) const SingleActivator(LogicalKeyboardKey.arrowDown): () => nudgeVolume(-volumeStep),
-      const SingleActivator(LogicalKeyboardKey.keyR): () => unawaited(ref.read(roomProvider.notifier).retry()),
+      RoomShortcutAction.leave => leave,
+      RoomShortcutAction.volumeUp => () => nudgeVolume(volumeStep),
+      RoomShortcutAction.volumeDown => () => nudgeVolume(-volumeStep),
+      RoomShortcutAction.theater => toggleTheater,
+      // The two verbs a viewer reaches for when a stream misbehaves: the
+      // numbers behind it, and a frame of it.
+      RoomShortcutAction.stats => () => ref.read(roomStatsVisibleProvider.notifier).toggle(),
+      RoomShortcutAction.screenshot => () {
+        final handle = ref.read(roomProvider).handle;
+        if (handle == null || !handle.canCaptureScreenshot) return;
+        unawaited(takeRoomScreenshot(context, ref, handle));
+      },
+      RoomShortcutAction.retry => () => unawaited(ref.read(roomProvider.notifier).retry()),
+      RoomShortcutAction.help => () => unawaited(showRoomShortcuts(context, shortcuts)),
+    };
+    final keys = <SingleActivator, VoidCallback>{
+      for (final binding in shortcuts)
+        for (final activator in binding.keys) activator: shortcutAction(binding.action),
     };
 
     final pictureRatio = _pictureRatio(room);
@@ -802,8 +871,12 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
         if (mounted && _portraitFullscreen) _setPortraitFullscreen(false);
       });
     }
-    final chatCollapsed = ref.watch(playbackSettingsProvider.select((settings) => settings.chatCollapsed));
-    final player = PlayerSurface(
+    final chatCollapsed = ref.watch(chatCollapsedProvider);
+
+    /// The picture surface, with the theatre's chat handed in as a page layer
+    /// when the layout has one: the surface draws its own bars and catalogues
+    /// above that layer.
+    Widget playerWith({Widget? overlay}) => PlayerSurface(
       key: _playerKey,
       roomState: room,
       barrage: ref.read(roomProvider.notifier).barrage,
@@ -814,14 +887,23 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       // has no pointer to wake them, and arrows must walk controls.
       keepControls: tv,
       autofocusFirstControl: tv,
+      // A TV's bars take their own tier: larger controls, wider gaps and a
+      // focus ring, since the remote has no pointer and the viewer sits back.
+      tv: tv,
       portraitFullscreen: _portraitFullscreen,
       canEnterPortraitFullscreen: pictureRatio < 1,
       onPortraitFullscreen: () => _setPortraitFullscreen(true),
       onPortraitSwipe: _portraitFullscreen && swipeSwitch && mobile ? _switchPortraitRoom : null,
+      overlay: overlay,
+      theater: theater,
+      // A presentation mode that owns the window has no chat to float, and a
+      // narrow page stacks it under the picture.
+      onTheater: wideWindow && !ownsWindow && !_portraitFullscreen ? toggleTheater : null,
+      roomMenu: roomMenuItems(context, ref, room, onClose: leave, shortcuts: shortcuts),
     );
 
     final body = _portraitFullscreen
-        ? _buildPortraitFullscreen(context, room, player)
+        ? _buildPortraitFullscreen(context, room, playerWith())
         : LayoutBuilder(
             builder: (context, constraints) {
               final wide = constraints.maxWidth >= _wideBreakpoint;
@@ -843,7 +925,9 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                     ? pictureRatio.clamp(0.5, 0.8)
                     : portraitStream
                     ? 16 / 9
-                    : pictureRatio.clamp(1.0, 2.4);
+                    : pictureRatio < 1.0
+                    ? 1.0
+                    : pictureRatio;
                 final desired = tallPortrait
                     ? constraints.maxHeight * (portraitLayout == PortraitLayoutMode.immersive ? 0.72 : 0.58)
                     : constraints.maxWidth / ratio;
@@ -852,7 +936,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                   child: ColoredBox(
                     color: kPlayerStageColor,
                     child: Center(
-                      child: AspectRatio(aspectRatio: ratio, child: player),
+                      child: AspectRatio(aspectRatio: ratio, child: playerWith()),
                     ),
                   ),
                 );
@@ -871,17 +955,106 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
               // The reference's wide room: the picture centred in the stage at its
               // own shape, and the chat column with the strip above it. The
               // column can fold away; the choice is remembered for the next room.
-              // Its width is the viewer's own (the 弹幕 setting).
-              final chatWidth = ref.watch(chatPanelWidthProvider);
+              // Its width is the viewer's own (the 弹幕 setting) and the seam
+              // between the two drags it.
+              final maxChatWidth = math.max(
+                kChatPanelWidthMin,
+                math.min(kChatPanelWidthMax, constraints.maxWidth - _wideStageFloor),
+              );
+              final chatWidth = ref.watch(chatPanelWidthProvider).clamp(kChatPanelWidthMin, maxChatWidth);
               void toggleChat() {
-                unawaited(ref.read(playbackSettingsProvider.notifier).setChatCollapsed(value: !chatCollapsed));
+                unawaited(ref.read(chatCollapsedProvider.notifier).set(value: !chatCollapsed));
+              }
+
+              if (theater) {
+                // The theatre: the picture owns the stage and the chat floats
+                // over its end edge as a glass column. The page hands that
+                // layer to the surface, which draws its bars, its pickers and
+                // the statistics above it.
+                if (chatCollapsed) {
+                  return Stack(
+                    children: [
+                      Positioned.fill(child: playerWith()),
+                      PositionedDirectional(
+                        top: DsSpace.s8,
+                        end: DsSpace.s8,
+                        child: DsButton.icon(
+                          variant: DsButtonVariant.secondary,
+                          size: DsSize.sm,
+                          onPressed: toggleChat,
+                          icon: const DsIcon(DsIcons.panelRightOpen),
+                          semanticLabel: t.room.expandChat,
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return playerWith(
+                  overlay: PositionedDirectional(
+                    top: _theaterTopInset,
+                    bottom: _theaterBottomInset,
+                    end: DsSpace.s12,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ChatSplitter(
+                          width: chatWidth,
+                          minWidth: kChatPanelWidthMin,
+                          maxWidth: maxChatWidth,
+                          onResize: (value) => ref.read(chatPanelWidthProvider.notifier).preview(value),
+                          onResizeEnd: (value) => unawaited(ref.read(chatPanelWidthProvider.notifier).set(value)),
+                          onReset: () =>
+                              unawaited(ref.read(chatPanelWidthProvider.notifier).set(kChatPanelWidthDefault)),
+                          label: t.room.resizeChat,
+                          keyboard: !tv,
+                          onDark: true,
+                        ),
+                        SizedBox(
+                          width: chatWidth,
+                          child: _RoomChatGlass(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsetsDirectional.fromSTEB(
+                                          DsSpace.s12,
+                                          DsSpace.s12,
+                                          0,
+                                          DsSpace.s4,
+                                        ),
+                                        child: _RoomHero(room: room),
+                                      ),
+                                    ),
+                                    DsButton.icon(
+                                      variant: DsButtonVariant.ghost,
+                                      size: DsSize.sm,
+                                      onPressed: toggleChat,
+                                      icon: const DsIcon(DsIcons.panelRightClose),
+                                      semanticLabel: t.room.collapseChat,
+                                    ),
+                                  ],
+                                ),
+                                const Expanded(child: RoomChatPanel(translucent: true)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
               }
 
               final stage = Expanded(
                 child: ColoredBox(
                   color: kPlayerStageColor,
                   child: Center(
-                    child: AspectRatio(aspectRatio: pictureRatio, child: player),
+                    child: AspectRatio(aspectRatio: pictureRatio, child: playerWith()),
                   ),
                 ),
               );
@@ -892,7 +1065,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                       child: ColoredBox(
                         color: kPlayerStageColor,
                         child: Center(
-                          child: AspectRatio(aspectRatio: pictureRatio, child: player),
+                          child: AspectRatio(aspectRatio: pictureRatio, child: playerWith()),
                         ),
                       ),
                     ),
@@ -914,7 +1087,16 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   stage,
-                  const DsDivider.vertical(),
+                  ChatSplitter(
+                    width: chatWidth,
+                    minWidth: kChatPanelWidthMin,
+                    maxWidth: maxChatWidth,
+                    onResize: (value) => ref.read(chatPanelWidthProvider.notifier).preview(value),
+                    onResizeEnd: (value) => unawaited(ref.read(chatPanelWidthProvider.notifier).set(value)),
+                    onReset: () => unawaited(ref.read(chatPanelWidthProvider.notifier).set(kChatPanelWidthDefault)),
+                    label: t.room.resizeChat,
+                    keyboard: !tv,
+                  ),
                   SizedBox(
                     width: chatWidth,
                     child: Column(
@@ -968,7 +1150,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
       ColoredBox(
         color: kPlayerStageColor,
         child: ownsWindow
-            ? Scaffold(backgroundColor: kPlayerStageColor, body: player)
+            ? Scaffold(backgroundColor: kPlayerStageColor, body: playerWith())
             : Scaffold(
                 // The portrait full-screen surface is the page's own way of
                 // filling the window: it keeps its black stage and drops the
@@ -995,7 +1177,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                         title: ownChrome ? WindowDragArea(child: _RoomHeader(room: room)) : _RoomHeader(room: room),
                         actions: [
                           _FollowPill(room: room),
-                          _RoomMenu(room: room, onClose: leave),
+                          _RoomMenu(room: room, onClose: leave, shortcuts: shortcuts),
                           if (ownChrome) ...[
                             const SizedBox(width: DsSpace.s8),
                             const SizedBox(height: 20, child: DsDivider.vertical()),
@@ -1096,101 +1278,185 @@ final class _FollowPill extends ConsumerWidget {
   }
 }
 
+/// The room's own actions, in one list.
+///
+/// The page header's ⋮ and the player's overlay ⋮ show the same menu: in
+/// fullscreen there is no header, and a room action that disappeared with the
+/// chrome would be a control the viewer has to leave fullscreen to reach.
+List<Widget> roomMenuItems(
+  BuildContext context,
+  WidgetRef ref,
+  RoomState room, {
+  required VoidCallback onClose,
+  required List<RoomShortcutBinding> shortcuts,
+}) {
+  final t = context.t;
+  final detail = room.room;
+  final link = detail == null ? '' : roomLinkOf(detail);
+  final existing = detail == null
+      ? null
+      : ref
+            .watch(recordingTasksProvider)
+            .tasks
+            .where((task) => task.id == '${detail.ref.platform}:${detail.ref.roomId}')
+            .firstOrNull;
+  final waiting = existing?.state == RecordingTaskState.waiting;
+  final recording = existing?.state == RecordingTaskState.recording;
+  final pipOn = ref.watch(roomPresentationProvider) == PresentationMode.pip;
+  final line = room.lines.isEmpty ? null : room.lines[room.lineIndex.clamp(0, room.lines.length - 1)];
+  final external =
+      detail != null &&
+      ((detail.links.webUrl?.trim().isNotEmpty ?? false) || (detail.links.appUrl?.trim().isNotEmpty ?? false));
+  // Four sections, each a kind of errand, so the list reads as a place to look
+  // rather than a pile: the room and its facts; what the picture does (record,
+  // small window, cast, framing, capture, the scheduled capture, the numbers on
+  // the stream); keeping it running and passing it on; and finally the keys and
+  // the way out. A section that has no eligible row disappears, and the
+  // divider with it — two hairlines in a row read as a bug.
+  final sections = <List<Widget>>[
+    [
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.info),
+        label: Text(t.room.details),
+        onPressed: () => unawaited(showRoomDetails(context)),
+      ),
+      if (detail != null)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.arrowLeftRight),
+          label: Text(t.room.switchRoom),
+          onPressed: () => unawaited(showRoomSwitcher(context, current: detail)),
+        ),
+    ],
+    [
+      // The presentation verbs the strip carries, in the menu too: the narrow
+      // tier leaves only the breathing dot on the picture, and a viewer who never
+      // looks at the strip must still reach the capture, the small window and
+      // the cast target.
+      if (line != null || recording)
+        DsMenuItem(
+          leading: DsIcon(recording ? DsIcons.squareStop : DsIcons.disc),
+          label: Text(recording ? t.room.stopRecording : t.room.record),
+          onPressed: () => unawaited(toggleRoomRecording(context, ref)),
+        ),
+      if (room.handle != null && ref.read(roomPresentationProvider.notifier).pipAvailable)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.pictureInPicture),
+          label: Text(pipOn ? t.room.pipOff : t.room.pipOn),
+          onPressed: () => unawaited(toggleRoomPip(context, ref)),
+        ),
+      if (line != null)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.cast),
+          label: Text(t.room.cast),
+          onPressed: () => unawaited(showCastDialog(context, line: line, title: detail?.content.title)),
+        ),
+      if (detail != null)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.rectangleVertical),
+          label: Text(t.room.orientation),
+          onPressed: () => unawaited(
+            showRoomOrientationDialog(
+              context,
+              detail,
+              detected: room.handle?.combinedSnapshot.geometry.aspectRatio ?? 0,
+            ),
+          ),
+        ),
+      // Only where a capture has a route: a backend without one would offer
+      // a button that always answers "nothing".
+      if (room.handle?.canCaptureScreenshot ?? false)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.camera),
+          label: Text(t.room.screenshot),
+          onPressed: () => unawaited(takeRoomScreenshot(context, ref, room.handle!)),
+        ),
+      if (detail != null && waiting)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.clock),
+          label: Text(t.room.autoRecordOff),
+          onPressed: () => unawaited(_toggleAutoRecord(context, ref, detail, existing)),
+        )
+      else if (detail != null && !detail.broadcast.isLiveNow && existing?.state != RecordingTaskState.recording)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.clock),
+          label: Text(t.room.autoRecordOn),
+          onPressed: () => unawaited(_toggleAutoRecord(context, ref, detail, existing)),
+        ),
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.activity),
+        label: Text(t.room.statsToggle),
+        onPressed: () => ref.read(roomStatsVisibleProvider.notifier).toggle(),
+      ),
+    ],
+    [
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.refreshCw),
+        label: Text(t.room.refreshRoom),
+        onPressed: () => unawaited(ref.read(roomProvider.notifier).refreshRoom()),
+      ),
+      DsMenuItem(
+        leading: const DsIcon(DsIcons.undo),
+        label: Text(t.common.retry),
+        onPressed: () => unawaited(ref.read(roomProvider.notifier).retry()),
+      ),
+      if (detail != null)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.share),
+          label: Text(t.room.share),
+          onPressed: () => unawaited(shareRoom(context, detail)),
+        ),
+      if (detail != null && external)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.externalLink),
+          label: Text(t.room.openExternal),
+          onPressed: () => unawaited(openRoomExternally(context, detail)),
+        ),
+      if (detail != null && link.isNotEmpty)
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.link),
+          label: Text(t.room.copyLink),
+          onPressed: () => unawaited(copyRoomLink(context, detail)),
+        ),
+    ],
+    [
+      // The same sheet `?` opens. The binding table decides whether this room
+      // has keys to explain at all (a TV remote has none).
+      if (shortcuts.any((binding) => binding.action == RoomShortcutAction.help))
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.keyboard),
+          label: Text(t.room.shortcutsHelp),
+          onPressed: () => unawaited(showRoomShortcuts(context, shortcuts)),
+        ),
+      DsMenuItem(leading: const DsIcon(DsIcons.x), label: Text(t.common.close), destructive: true, onPressed: onClose),
+    ],
+  ];
+  final items = <Widget>[];
+  for (final section in sections) {
+    if (section.isEmpty) continue;
+    if (items.isNotEmpty) items.add(const DsMenuDivider());
+    items.addAll(section);
+  }
+  return items;
+}
+
 /// The room's overflow menu: its details, a light refresh, passing the room
 /// on (share, the platform's own page, its link), a playback retry and the
 /// way out. The player's own bar keeps the picture and stream actions.
 final class _RoomMenu extends ConsumerWidget {
-  const _RoomMenu({required this.room, required this.onClose});
+  const _RoomMenu({required this.room, required this.onClose, required this.shortcuts});
 
   final RoomState room;
   final VoidCallback onClose;
+  final List<RoomShortcutBinding> shortcuts;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final detail = room.room;
-    final link = detail == null ? '' : roomLinkOf(detail);
-    final existing = detail == null
-        ? null
-        : ref
-              .watch(recordingTasksProvider)
-              .tasks
-              .where((task) => task.id == '${detail.ref.platform}:${detail.ref.roomId}')
-              .firstOrNull;
-    final waiting = existing?.state == RecordingTaskState.waiting;
-    final external =
-        detail != null &&
-        ((detail.links.webUrl?.trim().isNotEmpty ?? false) || (detail.links.appUrl?.trim().isNotEmpty ?? false));
     return Padding(
       padding: const EdgeInsetsDirectional.symmetric(vertical: DsSpace.s8),
       child: DsMenuAnchor(
         semanticLabel: t.common.more,
-        items: [
-          if (detail != null)
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.arrowLeftRight),
-              label: Text(t.room.switchRoom),
-              onPressed: () => unawaited(showRoomSwitcher(context, current: detail)),
-            ),
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.info),
-            label: Text(t.room.details),
-            onPressed: () => unawaited(showRoomDetails(context)),
-          ),
-          if (detail != null)
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.rectangleVertical),
-              label: Text(t.room.orientation),
-              onPressed: () => unawaited(showRoomOrientationDialog(context, detail)),
-            ),
-          if (detail != null && waiting)
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.clock),
-              label: Text(t.room.autoRecordOff),
-              onPressed: () => unawaited(_toggleAutoRecord(context, ref, detail, existing)),
-            )
-          else if (detail != null && !detail.broadcast.isLiveNow && existing?.state != RecordingTaskState.recording)
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.clock),
-              label: Text(t.room.autoRecordOn),
-              onPressed: () => unawaited(_toggleAutoRecord(context, ref, detail, existing)),
-            ),
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.refreshCw),
-            label: Text(t.room.refreshRoom),
-            onPressed: () => unawaited(ref.read(roomProvider.notifier).refreshRoom()),
-          ),
-          if (detail != null)
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.share),
-              label: Text(t.room.share),
-              onPressed: () => unawaited(shareRoom(context, detail)),
-            ),
-          if (detail != null && external)
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.externalLink),
-              label: Text(t.room.openExternal),
-              onPressed: () => unawaited(openRoomExternally(context, detail)),
-            ),
-          if (detail != null && link.isNotEmpty)
-            DsMenuItem(
-              leading: const DsIcon(DsIcons.link),
-              label: Text(t.room.copyLink),
-              onPressed: () => unawaited(copyRoomLink(context, detail)),
-            ),
-          const DsMenuDivider(),
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.undo),
-            label: Text(t.common.retry),
-            onPressed: () => unawaited(ref.read(roomProvider.notifier).retry()),
-          ),
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.x),
-            label: Text(t.common.close),
-            destructive: true,
-            onPressed: onClose,
-          ),
-        ],
+        items: roomMenuItems(context, ref, room, onClose: onClose, shortcuts: shortcuts),
         builder: (context, controller, _) => DsButton.icon(
           variant: DsButtonVariant.ghost,
           size: DsSize.sm,
@@ -1201,51 +1467,87 @@ final class _RoomMenu extends ConsumerWidget {
       ),
     );
   }
+}
 
-  /// Adds the room to the live check, or takes it out. A waiting task is
-  /// what the monitor polls; turning the check on here matches the
-  /// reference, where "Record when live" opens the live check as it adds
-  /// the room.
-  Future<void> _toggleAutoRecord(BuildContext context, WidgetRef ref, LiveRoom detail, RecordingTask? task) async {
-    final t = context.t;
-    final tasks = ref.read(recordingTasksProvider.notifier);
-    if (task?.state == RecordingTaskState.waiting) {
-      await tasks.remove(task!.id);
-      if (!context.mounted) return;
-      showDsToast(context: context, title: t.room.autoRecordRemoved, status: DsStatus.success);
-      return;
-    }
-    if (!ref.read(recordingTasksProvider).ready) {
-      showDsToast(context: context, title: t.room.autoRecordFailed, status: DsStatus.danger);
-      return;
-    }
-    final settings = ref.read(recordingSettingsProvider);
-    if (!settings.pollingEnabled) {
-      ref.read(recordingSettingsProvider.notifier).pollingEnabled = true;
-    }
-    final now = DateTime.now().toUtc();
-    final waiting = task == null
-        ? RecordingTask(
-            id: '${detail.ref.platform}:${detail.ref.roomId}',
-            platform: detail.ref.platform,
-            roomId: detail.ref.roomId,
-            roomTitle: detail.content.title,
-            quality: settings.defaultQuality,
-            state: RecordingTaskState.waiting,
-            startedAt: now,
-          )
-        : task.copyWith(
-            roomTitle: detail.content.title,
-            quality: settings.defaultQuality,
-            state: RecordingTaskState.waiting,
-            startedAt: now,
-          );
-    await tasks.add(waiting);
+/// Adds the room to the live check, or takes it out.
+///
+/// A waiting task is what the monitor polls; turning the check on here matches
+/// the reference, where "Record when live" opens the live check as it adds the
+/// room.
+Future<void> _toggleAutoRecord(BuildContext context, WidgetRef ref, LiveRoom detail, RecordingTask? task) async {
+  final t = context.t;
+  final tasks = ref.read(recordingTasksProvider.notifier);
+  if (task?.state == RecordingTaskState.waiting) {
+    await tasks.remove(task!.id);
     if (!context.mounted) return;
-    showDsToast(
-      context: context,
-      title: t.room.autoRecordArmed(seconds: settings.liveCheckSeconds),
-      status: DsStatus.success,
+    showDsToast(context: context, title: t.room.autoRecordRemoved, status: DsStatus.success);
+    return;
+  }
+  if (!ref.read(recordingTasksProvider).ready) {
+    showDsToast(context: context, title: t.room.autoRecordFailed, status: DsStatus.danger);
+    return;
+  }
+  final settings = ref.read(recordingSettingsProvider);
+  if (!settings.schedule.pollingEnabled) {
+    ref.read(recordingSettingsProvider.notifier).pollingEnabled = true;
+  }
+  final now = DateTime.now().toUtc();
+  final waiting = task == null
+      ? RecordingTask(
+          id: '${detail.ref.platform}:${detail.ref.roomId}',
+          platform: detail.ref.platform,
+          roomId: detail.ref.roomId,
+          roomTitle: detail.content.title,
+          quality: settings.defaultQuality,
+          state: RecordingTaskState.waiting,
+          startedAt: now,
+        )
+      : task.copyWith(
+          roomTitle: detail.content.title,
+          quality: settings.defaultQuality,
+          state: RecordingTaskState.waiting,
+          startedAt: now,
+        );
+  await tasks.add(waiting);
+  if (!context.mounted) return;
+  showDsToast(
+    context: context,
+    title: t.room.autoRecordArmed(seconds: settings.schedule.liveCheckSeconds),
+    status: DsStatus.success,
+  );
+}
+
+/// The theatre's chat column: the room's chat, its hero strip and its fold
+/// control inside one frosted card over the picture.
+///
+/// The glass is the theme's own surface, not the player's fixed ink: the words
+/// inside wear the theme's colours, so a light app gets a milky card and a dark
+/// one an inked card. The blur keeps the picture legible as motion behind it
+/// without letting it compete with the text.
+final class _RoomChatGlass extends StatelessWidget {
+  const _RoomChatGlass({required this.child});
+
+  /// The column the card holds.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final radius = BorderRadius.circular(theme.radii.card);
+    return ClipRRect(
+      borderRadius: radius,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24, tileMode: TileMode.decal),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.surface.withValues(alpha: 0.86),
+            borderRadius: radius,
+            border: Border.all(color: colors.border),
+          ),
+          child: child,
+        ),
+      ),
     );
   }
 }
@@ -1312,105 +1614,124 @@ final class _RoomHero extends ConsumerWidget {
             Positioned.fill(child: _HeroWash(cover: cover)),
             Padding(
               padding: const EdgeInsets.all(DsSpace.s12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: Row(
                 spacing: DsSpace.s8,
                 children: [
-                  Row(
-                    spacing: DsSpace.s12,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(shape: BoxShape.circle, color: live ? colors.accent : colors.border),
-                        child: DsAvatar(
-                          initials: name,
-                          image: avatar.isEmpty ? null : cachedImage(avatar),
-                          size: DsSize.md,
-                          semanticLabel: name,
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: DsSpace.s3,
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: DsSpace.s8,
+                      children: [
+                        Row(
+                          spacing: DsSpace.s12,
                           children: [
-                            Row(
-                              spacing: DsSpace.s8,
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                                  ),
-                                ),
-                                if (live) const _LiveBadge(),
-                              ],
+                            Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: live ? colors.accent : colors.border,
+                              ),
+                              child: DsAvatar(
+                                initials: name,
+                                image: avatar.isEmpty ? null : cachedImage(avatar),
+                                size: DsSize.md,
+                                semanticLabel: name,
+                              ),
                             ),
-                            Row(
-                              spacing: DsSpace.s8,
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    area.isEmpty ? platform : '$platform · $area',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.typography.caption.copyWith(color: colors.textMuted),
-                                  ),
-                                ),
-                                const Spacer(),
-                                if (audience != null)
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                spacing: DsSpace.s3,
+                                children: [
                                   Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    spacing: DsSpace.s3,
+                                    spacing: DsSpace.s8,
                                     children: [
-                                      DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: colors.textSubtle),
-                                      Text(
-                                        AudienceFormat.format(audience),
-                                        style: theme.typography.numeric(
-                                          theme.typography.caption.copyWith(color: colors.textMuted),
+                                      Flexible(
+                                        child: Text(
+                                          name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.typography.bodyStrong.copyWith(color: colors.text),
                                         ),
                                       ),
+                                      if (live) const _LiveBadge(),
                                     ],
                                   ),
-                                if (started != null)
                                   Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    spacing: DsSpace.s3,
+                                    spacing: DsSpace.s8,
                                     children: [
-                                      DsIcon(DsIcons.clock, size: theme.sizes.iconXs, color: colors.textSubtle),
-                                      Text(
-                                        _clock(started),
-                                        style: theme.typography.numeric(
-                                          theme.typography.caption.copyWith(color: colors.textMuted),
+                                      Flexible(
+                                        child: Text(
+                                          area.isEmpty ? platform : '$platform · $area',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.typography.caption.copyWith(color: colors.textMuted),
                                         ),
                                       ),
+                                      const Spacer(),
+                                      if (audience != null)
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          spacing: DsSpace.s3,
+                                          children: [
+                                            DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: colors.textSubtle),
+                                            Text(
+                                              AudienceFormat.format(audience),
+                                              style: theme.typography.numeric(
+                                                theme.typography.caption.copyWith(color: colors.textMuted),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      if (started != null)
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          spacing: DsSpace.s3,
+                                          children: [
+                                            DsIcon(DsIcons.clock, size: theme.sizes.iconXs, color: colors.textSubtle),
+                                            Text(
+                                              _clock(started),
+                                              style: theme.typography.numeric(
+                                                theme.typography.caption.copyWith(color: colors.textMuted),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                     ],
                                   ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    spacing: DsSpace.s4,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          detail.content.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.body.copyWith(color: colors.text),
+                        Row(
+                          spacing: DsSpace.s4,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                detail.content.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.body.copyWith(color: colors.text),
+                              ),
+                            ),
+                            const _SleepChip(),
+                          ],
                         ),
-                      ),
-                      DsIcon(DsIcons.chevronDown, size: theme.sizes.iconXs, color: colors.textSubtle),
-                      const _SleepChip(),
-                    ],
+                      ],
+                    ),
+                  ),
+                  // The whole card opens the room's details, so the chevron
+                  // rides at the card's edge, where the tap actually points; at
+                  // the end of the title line it reads as "expand this text".
+                  // The panel is a side card on a wide window and a sheet on a
+                  // narrow one, so the glyph points the way it really opens.
+                  DsIcon(
+                    MediaQuery.sizeOf(context).width >= LiveWindow.sheet ? DsIcons.chevronRight : DsIcons.chevronUp,
+                    size: theme.sizes.iconSm,
+                    color: colors.textSubtle,
                   ),
                 ],
               ),
@@ -1463,7 +1784,10 @@ final class _LiveBadge extends StatelessWidget {
     final t = context.t;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: DsSpace.s6, vertical: 1),
-      decoration: BoxDecoration(color: const Color(0xE6FF3B5C), borderRadius: BorderRadius.circular(DsRadii.pill)),
+      decoration: BoxDecoration(
+        color: playerSignal.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(DsRadii.pill),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: DsSpace.s3,
@@ -1471,11 +1795,11 @@ final class _LiveBadge extends StatelessWidget {
           Container(
             width: 4,
             height: 4,
-            decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFFFFFFF)),
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: playerInk),
           ),
           Text(
             t.favorites.statusLiveNow,
-            style: theme.typography.caption.copyWith(color: const Color(0xFFFFFFFF), fontWeight: FontWeight.w600),
+            style: theme.typography.caption.copyWith(color: playerInk, fontWeight: FontWeight.w600),
           ),
         ],
       ),

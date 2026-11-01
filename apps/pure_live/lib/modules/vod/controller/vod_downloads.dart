@@ -72,6 +72,7 @@ final class VodDownloadItem {
     this.received = 0,
     this.total = 0,
     this.speed = 0,
+    this.attempts = 0,
     this.error,
   });
 
@@ -99,6 +100,7 @@ final class VodDownloadItem {
       stamp: (json['stamp'] as num?)?.toInt() ?? 0,
       received: (json['received'] as num?)?.toInt() ?? 0,
       total: (json['total'] as num?)?.toInt() ?? 0,
+      attempts: (json['attempts'] as num?)?.toInt() ?? 0,
       error: json['error'] as String?,
     );
   }
@@ -155,13 +157,24 @@ final class VodDownloadItem {
   /// Bytes per second over the last windows; ephemeral, never stored.
   final int speed;
 
+  /// How many automatic retries this row has used since the viewer queued it
+  /// (or retried it by hand, which starts the budget again).
+  final int attempts;
+
   /// What went wrong, when [phase] is failed.
   final String? error;
 
   /// The answered fraction, when the response named its length.
   double? get progress => total > 0 ? (received / total).clamp(0.0, 1.0) : null;
 
-  VodDownloadItem copyWith({int? received, int? total, int? speed, VodDownloadPhase? phase, String? error}) {
+  VodDownloadItem copyWith({
+    int? received,
+    int? total,
+    int? speed,
+    int? attempts,
+    VodDownloadPhase? phase,
+    String? error,
+  }) {
     return VodDownloadItem(
       id: id,
       bvid: bvid,
@@ -178,6 +191,7 @@ final class VodDownloadItem {
       received: received ?? this.received,
       total: total ?? this.total,
       speed: speed ?? this.speed,
+      attempts: attempts ?? this.attempts,
       error: error,
     );
   }
@@ -199,6 +213,7 @@ final class VodDownloadItem {
     'stamp': stamp,
     'received': received,
     'total': total,
+    'attempts': attempts,
     if (error != null) 'error': error,
   };
 }
@@ -232,6 +247,77 @@ final class VodDownloadSettingsController extends Notifier<int> {
 /// The lane count for the station's download queue.
 final vodDownloadSettingsProvider = NotifierProvider<VodDownloadSettingsController, int>(
   VodDownloadSettingsController.new,
+);
+
+/// The most automatic retries a failed run gives itself; zero is off.
+const String _kRetryAttempts = 'vod.download.retryAttempts';
+
+/// Seconds between two automatic retries.
+const String _kRetryDelay = 'vod.download.retryDelaySeconds';
+
+/// How many times a failed download retries itself.
+final class VodDownloadRetryController extends Notifier<int> {
+  /// The choices the settings row offers.
+  static const List<int> choices = [0, 1, 2, 3];
+
+  @override
+  int build() {
+    try {
+      final stored = StoragePrefs.getInt(_kRetryAttempts);
+      if (stored != null && stored >= 0 && stored <= 3) return stored;
+    } on Object {
+      // A closed store falls back to no automatic retry.
+    }
+    return 0;
+  }
+
+  /// Chooses [count] and keeps it for the next failure.
+  void select(int count) {
+    final value = count.clamp(0, 3);
+    if (value == state) return;
+    state = value;
+    try {
+      unawaited(StoragePrefs.setInt(_kRetryAttempts, value));
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The retry count for the station's download queue.
+final vodDownloadRetryProvider = NotifierProvider<VodDownloadRetryController, int>(VodDownloadRetryController.new);
+
+/// The wait between two automatic retries, in seconds.
+final class VodDownloadRetryDelayController extends Notifier<int> {
+  /// The choices the settings row offers.
+  static const List<int> choices = [5, 10, 30, 60];
+
+  @override
+  int build() {
+    try {
+      final stored = StoragePrefs.getInt(_kRetryDelay);
+      if (stored != null && choices.contains(stored)) return stored;
+    } on Object {
+      // A closed store falls back to ten seconds.
+    }
+    return 10;
+  }
+
+  /// Chooses [seconds] and keeps it for the next failure.
+  void select(int seconds) {
+    if (!choices.contains(seconds) || seconds == state) return;
+    state = seconds;
+    try {
+      unawaited(StoragePrefs.setInt(_kRetryDelay, seconds));
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The retry delay for the station's download queue.
+final vodDownloadRetryDelayProvider = NotifierProvider<VodDownloadRetryDelayController, int>(
+  VodDownloadRetryDelayController.new,
 );
 
 /// The preference the download quality is kept under, its own choice so the
@@ -321,6 +407,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   final List<VodDownloadItem> _items = [];
   final Map<String, HttpClient> _clients = {};
   final Map<String, _VodStop> _stops = {};
+  final Map<String, Timer> _retryTimers = {};
   Timer? _persistTimer;
 
   @override
@@ -337,6 +424,10 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
     ref.listen(vodDownloadSettingsProvider, (_, _) => _pump());
     ref.onDispose(() {
       _persistTimer?.cancel();
+      for (final timer in _retryTimers.values) {
+        timer.cancel();
+      }
+      _retryTimers.clear();
       for (final client in _clients.values) {
         client.close(force: true);
       }
@@ -415,6 +506,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
   Future<void> pause(String id) async {
     final item = _items.where((row) => row.id == id).firstOrNull;
     if (item == null) return;
+    _retryTimers.remove(id)?.cancel();
     switch (item.phase) {
       case VodDownloadPhase.running:
         _stops[id] = _VodStop.pause;
@@ -433,7 +525,8 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
     final item = _items.where((row) => row.id == id).firstOrNull;
     if (item == null) return;
     if (item.phase != VodDownloadPhase.paused && item.phase != VodDownloadPhase.failed) return;
-    _replace(item.copyWith(phase: VodDownloadPhase.queued, speed: 0));
+    _retryTimers.remove(id)?.cancel();
+    _replace(item.copyWith(phase: VodDownloadPhase.queued, attempts: 0, speed: 0));
     await _persist();
     _pump();
   }
@@ -474,7 +567,8 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
     for (var index = 0; index < _items.length; index++) {
       final item = _items[index];
       if (item.phase == VodDownloadPhase.paused || item.phase == VodDownloadPhase.failed) {
-        _items[index] = item.copyWith(phase: VodDownloadPhase.queued, speed: 0);
+        _retryTimers.remove(item.id)?.cancel();
+        _items[index] = item.copyWith(phase: VodDownloadPhase.queued, attempts: 0, speed: 0);
       }
     }
     _publish();
@@ -491,6 +585,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
 
   /// Removes a part file, and a finished task's file when asked.
   Future<void> _drop(VodDownloadItem item, {bool deleteFile = false}) async {
+    _retryTimers.remove(item.id)?.cancel();
     _items.removeWhere((row) => row.id == item.id);
     _publish();
     await _delete(File('${item.filePath}.part'));
@@ -617,6 +712,7 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       if (error is! _Stopped && !stopped) {
         item = item.copyWith(received: received, speed: 0, phase: VodDownloadPhase.failed, error: '$error');
         _replace(item);
+        _scheduleRetry(item.id);
       }
     } finally {
       _clients.remove(id);
@@ -641,6 +737,34 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
       }
     }
   }
+
+  /// Queues a failed row again after the wait the viewer chose, while the
+  /// row still has automatic retries left. The budget starts over when the
+  /// viewer retries by hand: that is a new instruction, not a continuation.
+  void _scheduleRetry(String id) {
+    final limit = ref.read(vodDownloadRetryProvider);
+    if (limit <= 0) return;
+    final current = _items.where((row) => row.id == id).firstOrNull;
+    if (current == null || current.phase != VodDownloadPhase.failed) return;
+    if (current.attempts >= limit) return;
+    final delay = Duration(seconds: ref.read(vodDownloadRetryDelayProvider));
+    _retryTimers[id]?.cancel();
+    _retryTimers[id] = Timer(delay, () {
+      _retryTimers.remove(id);
+      if (!ref.mounted) return;
+      final retry = _items.where((row) => row.id == id).firstOrNull;
+      if (retry == null || retry.phase != VodDownloadPhase.failed) return;
+      _replace(retry.copyWith(phase: VodDownloadPhase.queued, attempts: retry.attempts + 1, speed: 0));
+      unawaited(_persist());
+      _pump();
+    });
+    // The failed row was published before the wait began; publish again so
+    // its caption can say when the queue will come back for it.
+    _publish();
+  }
+
+  /// Whether [id] is waiting out an automatic retry.
+  bool hasPendingRetry(String id) => _retryTimers.containsKey(id);
 
   /// The danmaku sidecars the viewer chose, beside the finished file — a
   /// courtesy, so a miss says nothing about the download itself.

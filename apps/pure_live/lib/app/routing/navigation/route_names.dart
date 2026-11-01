@@ -60,6 +60,30 @@ abstract final class RouteNames {
   /// (the reference's PlayDetail).
   static const String musicPlayer = '/music/player';
 
+  /// The sound-effect centre, pushed above the shell: the mini bar opens it
+  /// without leaving the page the viewer was browsing.
+  static const String musicEffects = '/music/effects';
+
+  /// One album's page, pushed above the shell: a song's album line and an
+  /// artist's album cards open it.
+  static const String musicAlbum = '/music/album/:sourceId/:albumId';
+
+  /// The location of [albumId]'s page on [sourceId].
+  static String musicAlbumFor(String sourceId, String albumId) =>
+      '/music/album/${Uri.encodeComponent(sourceId)}/${Uri.encodeComponent(albumId)}';
+
+  /// One artist's page, pushed above the shell: a song's artist line and an
+  /// album's artist open it.
+  static const String musicArtist = '/music/artist/:sourceId/:artist';
+
+  /// The location of [artist]'s page on [sourceId], carrying the platform's
+  /// artist id when the caller already knows it.
+  static String musicArtistFor(String sourceId, String artist, {String? artistId}) {
+    final query = Uri(queryParameters: {if (artistId != null && artistId.isNotEmpty) 'id': artistId}).query;
+    return '/music/artist/${Uri.encodeComponent(sourceId)}/${Uri.encodeComponent(artist)}'
+        '${query.isEmpty ? '' : '?$query'}';
+  }
+
   /// One hongguo series' page (its metadata, episodes and the way into the
   /// player), pushed on the root navigator above the shell: the station's
   /// cards open it.

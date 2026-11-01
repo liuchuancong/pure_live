@@ -1697,7 +1697,7 @@ final class _ThumbTile extends StatelessWidget {
           border: Border.all(
             color: selected
                 ? colors.accent
-                : states.contains(WidgetState.hovered)
+                : (states.contains(WidgetState.hovered) || states.contains(WidgetState.focused))
                 ? colors.textSubtle
                 : colors.border,
             width: inset,

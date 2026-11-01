@@ -99,7 +99,8 @@ Future<Boot> bootstrap() async {
     primePlayerEngine();
     unawaited(enableMediaSession());
     // Job outcomes (a finished or failed recording) reach the system tray;
-    // the permission is asked when a job starts, not here.
+    // the permission is asked when a job starts, not here. A platform that
+    // refuses the pipeline reports it and the app runs without toasts.
     unawaited(enableUserNotifications());
     final storagePaths = await StoragePaths.resolve(environment: runtime.environment, log: bootLog);
     // One vocabulary for every folder the app writes; the boot hands its
@@ -143,12 +144,11 @@ Future<Boot> bootstrap() async {
 /// one log line: for a layout failure these name the widget that built the
 /// failing render object, which the exception text alone never does.
 String _frameworkDiagnostics(FlutterErrorDetails details, {int limit = 8}) {
-  final reported =
-      (details.informationCollector?.call() ?? const Iterable<Object?>.empty())
-          .map((line) => line.toString().trim())
-          .where((line) => line.isNotEmpty)
-          .take(limit)
-          .join(' | ');
+  final reported = (details.informationCollector?.call() ?? const Iterable<Object?>.empty())
+      .map((line) => line.toString().trim())
+      .where((line) => line.isNotEmpty)
+      .take(limit)
+      .join(' | ');
   if (reported.isNotEmpty) return reported;
   return details.context?.toString() ?? details.library ?? 'no diagnostics';
 }

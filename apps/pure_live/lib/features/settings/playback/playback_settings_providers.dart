@@ -121,7 +121,6 @@ typedef PlaybackSettings = ({
   bool backgroundAudioOnly,
   bool backgroundPauseDanmaku,
   bool pauseOnPipClose,
-  bool chatCollapsed,
   double mobileVolume,
   double desktopVolume,
   PlaybackFit fit,
@@ -152,7 +151,6 @@ const PlaybackSettings _defaults = (
   backgroundAudioOnly: false,
   backgroundPauseDanmaku: false,
   pauseOnPipClose: false,
-  chatCollapsed: false,
   mobileVolume: 0.5,
   desktopVolume: 1,
   fit: PlaybackFit.contain,
@@ -236,7 +234,6 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
         backgroundPauseDanmaku:
             StoragePrefs.getBool('playback.backgroundPauseDanmaku') ?? _defaults.backgroundPauseDanmaku,
         pauseOnPipClose: StoragePrefs.getBool('playback.pauseOnPipClose') ?? _defaults.pauseOnPipClose,
-        chatCollapsed: StoragePrefs.getBool('playback.chatCollapsed') ?? _defaults.chatCollapsed,
         mobileVolume:
             _readVolume('playback.mobileVolume') ?? (usesMobileVolumeDefault ? legacy : null) ?? _defaults.mobileVolume,
         desktopVolume:
@@ -305,7 +302,6 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     bool? backgroundAudioOnly,
     bool? backgroundPauseDanmaku,
     bool? pauseOnPipClose,
-    bool? chatCollapsed,
     double? mobileVolume,
     double? desktopVolume,
     PlaybackFit? fit,
@@ -334,7 +330,6 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
     backgroundAudioOnly: backgroundAudioOnly ?? state.backgroundAudioOnly,
     backgroundPauseDanmaku: backgroundPauseDanmaku ?? state.backgroundPauseDanmaku,
     pauseOnPipClose: pauseOnPipClose ?? state.pauseOnPipClose,
-    chatCollapsed: chatCollapsed ?? state.chatCollapsed,
     mobileVolume: mobileVolume ?? state.mobileVolume,
     desktopVolume: desktopVolume ?? state.desktopVolume,
     fit: fit ?? state.fit,
@@ -574,12 +569,6 @@ class PlaybackSettingsController extends Notifier<PlaybackSettings> {
   Future<void> setPauseOnPipClose({required bool value}) async {
     state = _with(pauseOnPipClose: value);
     await _write(() => StoragePrefs.setBool('playback.pauseOnPipClose', value));
-  }
-
-  /// Remembers whether the wide room's chat column is folded away.
-  Future<void> setChatCollapsed({required bool value}) async {
-    state = _with(chatCollapsed: value);
-    await _write(() => StoragePrefs.setBool('playback.chatCollapsed', value));
   }
 
   /// Moves the current platform's starting volume.

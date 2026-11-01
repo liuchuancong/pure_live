@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 import 'dart:ui' show ImageFilter;
 
 import 'package:desen_ui/desen_ui.dart';
+import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,6 +12,7 @@ import 'package:pure_live/modules/music/controller/eq/music_eq_custom_presets.da
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/pages/music_eq_editor.dart';
 import 'package:pure_live/modules/music/pages/music_settings_pane.dart' show MusicEqPane, MusicFxRow;
+import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicBrowseHeader;
 import 'package:pure_live/shared/shared.dart' show TvFocusScale, cachedImage;
 
 /// The sound-effect center — the spec's own page, drawn after the streaming
@@ -192,8 +194,7 @@ final class _Hero extends ConsumerWidget {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
     final custom = ref.watch(musicCustomPresetsProvider);
-    final player = ref.watch(musicPlayerProvider);
-    final track = player.track;
+    final track = ref.watch(musicPlayerProvider.select((state) => state.track));
     final cover = track?.coverUri;
 
     return ClipRRect(
@@ -639,4 +640,39 @@ Future<void> _saveCurrent(BuildContext context, WidgetRef ref) async {
   final saved = await ref.read(musicCustomPresetsProvider.notifier).save(trimmed);
   if (!context.mounted) return;
   await ref.read(musicEqProvider.notifier).applyCustomPreset(saved);
+}
+
+/// The sound-effect centre as its own pushed screen: the mini bar opens it
+/// without leaving the page the viewer was browsing, and the module's rail
+/// keeps showing the same page in place.
+final class MusicEffectsPage extends StatelessWidget {
+  /// The pushed effect centre.
+  const MusicEffectsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    // Escape walks back, the way it leaves the player.
+    return CallbackShortcuts(
+      bindings: <SingleActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.escape): () => Navigator.of(context).maybePop(),
+      },
+      child: Focus(
+        autofocus: true,
+        child: ColoredBox(
+          color: colors.canvas,
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                MusicBrowseHeader(title: t.music.eqCenter),
+                const Expanded(child: MusicEqCenterPage()),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

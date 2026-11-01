@@ -399,16 +399,12 @@ final class _ShieldTag extends StatelessWidget {
               style: theme.typography.caption.copyWith(color: colors.text),
             ),
           ),
-          Semantics(
-            button: true,
-            label: context.t.shield.removeEntry,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => unawaited(onRemove()),
-              child: Padding(
-                padding: const EdgeInsets.all(DsSpace.s3),
-                child: DsIcon(DsIcons.close, size: theme.sizes.iconXs, color: colors.textMuted),
-              ),
+          DsPressable(
+            semanticLabel: context.t.shield.removeEntry,
+            onPressed: () => unawaited(onRemove()),
+            builder: (context, states, child) => Padding(
+              padding: const EdgeInsets.all(DsSpace.s3),
+              child: DsIcon(DsIcons.close, size: theme.sizes.iconXs, color: colors.textMuted),
             ),
           ),
         ],

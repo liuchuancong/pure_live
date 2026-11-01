@@ -335,3 +335,28 @@ final class IptvChannelsController extends Notifier<IptvChannelsState> {
 
 /// The channels page's state.
 final iptvChannelsProvider = NotifierProvider<IptvChannelsController, IptvChannelsState>(IptvChannelsController.new);
+
+/// A word handed to the module's channel search from outside (the toolbar's
+/// field): the page showing it takes it once — into its field and the
+/// channels controller — and clears it, so a back-and-forth never replays
+/// it.
+final class IptvSearchHandoffController extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  /// Hands [word] to the IPTV page (taken once on arrival).
+  // ignore: use_setters_to_change_properties
+  void hand(String word) => state = word;
+
+  /// Takes the word (null when none was handed).
+  String? take() {
+    final word = state;
+    state = null;
+    return word;
+  }
+}
+
+/// The word the module's channel search should take next.
+final iptvSearchHandoffProvider = NotifierProvider<IptvSearchHandoffController, String?>(
+  IptvSearchHandoffController.new,
+);

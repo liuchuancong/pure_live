@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/lan_sync/application/lan_sync_providers.dart'
+    show favoritePayload, lanSyncRuntimeProvider;
 import 'package:pure_live/modules/live/favorites/alerts/live_alert_events.dart' show liveAlertObserver;
 
 /// The stored rooms the viewer follows, one entry per room identity.
@@ -102,6 +104,7 @@ class FollowsController extends Notifier<FollowsState> {
     final repository = ref.read(followRepositoryProvider).value;
     if (repository == null) return;
     await repository.add(room);
+    await _recordSyncFavorite(room.ref.identityKey, favoritePayload(room));
   }
 
   /// Unfollows the room behind [identityKey].
@@ -109,6 +112,31 @@ class FollowsController extends Notifier<FollowsState> {
     final repository = ref.read(followRepositoryProvider).value;
     if (repository == null) return;
     await repository.remove(identityKey);
+    await _recordSyncDelete(identityKey);
+  }
+
+  /// Hands a local favorite edit to the sync runtime's log, when the
+  /// feature is on and its runtime is up; any failure stays silent — the
+  /// follow itself already succeeded, and the next edit re-records.
+  Future<void> _recordSyncFavorite(String identityKey, Map<String, Object?> payload) async {
+    try {
+      final runtime = await ref.read(lanSyncRuntimeProvider.future);
+      await runtime?.recordFavoriteUpsert(identityKey, payload);
+      runtime?.scheduleAutoSync();
+    } on Object {
+      // The sync log is secondary to the follow; a missed entry is repaired
+      // by the next edit of the same favorite.
+    }
+  }
+
+  Future<void> _recordSyncDelete(String identityKey) async {
+    try {
+      final runtime = await ref.read(lanSyncRuntimeProvider.future);
+      await runtime?.recordFavoriteDelete(identityKey);
+      runtime?.scheduleAutoSync();
+    } on Object {
+      // Same as above.
+    }
   }
 
   /// Replaces the local tag ids of the followed room behind [identityKey];
@@ -180,12 +208,15 @@ class FollowsController extends Notifier<FollowsState> {
           final provider = sites.getById(room.ref.platform)?.capability<LiveRoomProvider>();
           if (provider == null) return;
           final answer = await provider.getRoom(room.ref.roomId);
-          await answer.match<Future<void>>((_) async {
-            failed++;
-          }, (room) async {
-            await repository.merge(room);
-            fresh.add(room);
-          });
+          await answer.match<Future<void>>(
+            (_) async {
+              failed++;
+            },
+            (room) async {
+              await repository.merge(room);
+              fresh.add(room);
+            },
+          );
         } on Object {
           failed++;
         } finally {

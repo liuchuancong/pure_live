@@ -92,8 +92,7 @@ final class HongguoSeriesCard extends ConsumerWidget {
     final fallback = CoverFallback(title: series.title, padding: const EdgeInsets.all(DsSpace.s8));
     final rank = series.rank;
     final showsRank = visibility.shows(HongguoCardElement.rank) && rank != null;
-    final showsTags =
-        visibility.shows(HongguoCardElement.coverTags) && rank == null && series.coverTags.isNotEmpty;
+    final showsTags = visibility.shows(HongguoCardElement.coverTags) && rank == null && series.coverTags.isNotEmpty;
     final showsEpisodes = visibility.shows(HongguoCardElement.episodes) && series.episodeCount > 0;
     final showsToday = visibility.shows(HongguoCardElement.today) && series.today;
     final showsScore = visibility.shows(HongguoCardElement.score) && series.score.isNotEmpty;
@@ -135,7 +134,11 @@ final class HongguoSeriesCard extends ConsumerWidget {
                     ),
                   ),
                   if (showsRank)
-                    PositionedDirectional(top: DsSpace.s8, start: DsSpace.s8, child: _RankFlag(rank: rank))
+                    PositionedDirectional(
+                      top: DsSpace.s8,
+                      start: DsSpace.s8,
+                      child: _RankFlag(rank: rank),
+                    )
                   else if (showsTags)
                     // The source's own corner tags (爆剧 / 新剧 / 独播), where
                     // the app stamps them; a ranked card keeps the place for
@@ -158,10 +161,7 @@ final class HongguoSeriesCard extends ConsumerWidget {
                         spacing: DsSpace.s4,
                         children: [
                           if (showsEpisodes)
-                            RoomCoverChip(
-                              compact: true,
-                              text: t.hongguo.allEpisodesCount(count: series.episodeCount),
-                            ),
+                            RoomCoverChip(compact: true, text: t.hongguo.allEpisodesCount(count: series.episodeCount)),
                           if (showsToday) DsBadge(label: Text(t.hongguo.todayTag), status: DsStatus.success),
                           if (showsScore)
                             RoomCoverChip(
@@ -310,7 +310,7 @@ final class _FavoriteBookmark extends ConsumerWidget {
           height: 30,
           alignment: Alignment.center,
           decoration: DsBoxDecoration(
-            color: states.contains(WidgetState.hovered) ? colors.hover : null,
+            color: (states.contains(WidgetState.hovered) || states.contains(WidgetState.focused)) ? colors.hover : null,
             borderRadius: BorderRadius.circular(theme.radii.control(30)),
           ),
           child: DsIcon(

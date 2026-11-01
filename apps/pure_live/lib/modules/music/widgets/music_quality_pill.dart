@@ -5,7 +5,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
-import 'package:pure_live/modules/music/controller/music_settings.dart' show MusicQuality, musicSettingsProvider;
+import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
+    show MusicQuality, musicPlaybackSettingsProvider;
 
 /// The song's quality tier as a pill: the step the module asks the source for,
 /// the one this song was actually served, and the four steps to choose between
@@ -25,7 +26,7 @@ final class MusicQualityPill extends ConsumerWidget {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = theme.colors;
-    final settings = ref.watch(musicSettingsProvider);
+    final settings = ref.watch(musicPlaybackSettingsProvider);
     final player = ref.watch(musicPlayerProvider.select((state) => (quality: state.quality, track: state.track)));
     final asked = settings.quality;
     final served = player.quality;
@@ -50,7 +51,7 @@ final class MusicQualityPill extends ConsumerWidget {
             trailing: served != null && served.id == quality.scriptName
                 ? Text(askedIsServed ? t.music.qualityServedHere : t.music.qualityDowngraded, style: hintStyle)
                 : (known && !offers(quality) ? Text(t.music.qualityNotInSong, style: hintStyle) : null),
-            onPressed: () => unawaited(ref.read(musicSettingsProvider.notifier).setQuality(quality)),
+            onPressed: () => unawaited(ref.read(musicPlaybackSettingsProvider.notifier).setQuality(quality)),
           ),
         const DsMenuDivider(),
         // A read-only footer: the menu's own note, disabled because choosing

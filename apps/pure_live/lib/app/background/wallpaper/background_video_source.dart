@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_uikit_background/live_uikit_background.dart' show BackgroundVideoSource;
 import 'package:media_core/media_core.dart'
     show
         KernelOptions,
@@ -23,7 +24,6 @@ import 'package:media_core/media_core.dart'
 import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitAdapterFactory;
 import 'package:pure_live/app/background/tone/background_frames.dart' show backgroundVideoFrameProvider;
 import 'package:pure_live/app/background/tone/background_thumbnails.dart' show backgroundClipStillsProvider;
-import 'package:pure_uikit_background/pure_uikit_background.dart' show BackgroundVideoSource;
 
 /// The position the live tone probe waits for: far enough in that a frame has
 /// been decoded and handed to the video output.
