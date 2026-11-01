@@ -215,11 +215,22 @@ final class _Hero extends ConsumerWidget {
           ),
           if (cover != null)
             Positioned.fill(
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-                child: Opacity(
-                  opacity: 0.35,
-                  child: DsImage(image: cachedImage(cover.toString()), semanticLabel: track?.title),
+              child: ClipRect(
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                  child: Opacity(
+                    opacity: 0.35,
+                    // The backdrop is a bleed, not a card: it takes the
+                    // hero's whole box, so it is the plain cover-filling
+                    // image the player and the recommend hero already use —
+                    // a DsImage would have to be handed a reserved box it
+                    // does not own. The scale keeps the blur sampling solid
+                    // to the edges instead of pulling in transparency.
+                    child: Transform.scale(
+                      scale: 1.5,
+                      child: Image(image: cachedImage(cover.toString()), fit: BoxFit.cover),
+                    ),
+                  ),
                 ),
               ),
             ),
