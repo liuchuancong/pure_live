@@ -78,15 +78,18 @@ B 站视频站（`vod.dart` 自述 "The Bilibili station"）。页面：`pages/v
 `iptv_settings_pane.dart`；视图：`views/iptv_panels.dart`、`iptv_sources_view.dart`、
 `iptv_guide_panel.dart`、`iptv_import_dialog.dart`、`iptv_zapper.dart`；浏览设置
 `controllers/iptv_browse_settings.dart`。现状是频道表格 + 来源资源表。
-差距：没有电视类经典的「分组树 + 频道列表 + 播放器/节目单」三栏形态；窄屏折叠态已定义
-（<600 频道行改为堆叠列表，见运行记录 2026-11-02 本轮），但**来源页那张表还是同一个缺陷**：
-`views/iptv_sources_view.dart` 的 `DsTable` 仍是 `layout: DsTableLayout.auto()`，
-六个列最小合计 240+100+90+150+104+92 = 776px，窄窗要么横向滚动、要么落到 kit 的 card 版式
-（一行一「标签 值」且行高只有一个文字行，它的 `_SourceNameCell` 两行会被裁）。
-下一个 iptv 轮次应当照本轮同样处理它。
+差距：没有电视类经典的「分组树 + 频道列表 + 播放器/节目单」三栏形态；窄屏折叠态已定义两处
+（<600 频道行改为堆叠列表、来源表 <760 改堆叠行，见运行记录 2026-11-02 两轮）。
 另：分组是 `DsTabs` 横滚条（`_GroupTabs`），真实播放列表常有 50–150 个分组，条子长到不可用；
 参考形态是第一列的分组树/列表，属于「三栏」那一块，改动较大，单列一轮。
 「正在播出」与进度、收藏、节目单的层级还需对照。
+（已闭合：来源表在窄窗与中窗的形态。`views/iptv_sources_view.dart` 的 `_SourcesTable` 原先
+`layout: DsTableLayout.auto()`，六列最小合计 240+100+90+150+104+92 = 776px，窄窗横滚、
+中窗（720–960）也放不下；现在 <760 由本模块自己定义堆叠行（种类图标 + 名称行 + 一行
+`类型 · 频道数 · 更新时间` + 地址行 + 自动更新开关与同步/删除），≥760 才是表，且「类型」列
+只在 ≥960 出现、中窗把它读进地址行前缀（`M3U8 · https://…`），五种字段的合计落到
+200+76+120+96+84+32 = 608px。表与堆叠行共用同一个 `_SourcesActions`，两种形态的字段与动作
+不会各说各话。）
 
 ### music —— `apps/pure_live/lib/modules/music/`
 
@@ -130,8 +133,8 @@ vod 本轮的解法（固定信息区 + 封面吃剩余，见 `kVodSeasonCardInf
 
 | 字段 | 值 |
 |---|---|
-| 下一轮模块 | iptv |
-| 上一次提交 | vod · 影视海报卡的名字区改固定高度、更新状态挪上海报角（窄列溢出 + 宽列死白） |
+| 下一轮模块 | music |
+| 上一次提交 | iptv · 来源表在窄窗/中窗改由本模块定义堆叠行，「类型」列只留宽窗 |
 | 连续无改动轮数 | 0 |
 | 暂停条件 | 连续 3 轮无改动即停手并在回复里说明需要用户裁决 |
 
@@ -144,3 +147,4 @@ vod 本轮的解法（固定信息区 + 封面吃剩余，见 `kVodSeasonCardInf
 | 2026-11-02 02:59 | hongguo | 两件，第一件是硬故障。接口巡检：`/rank/hot-drama`、`/rank/hot-real-drama`、`/rank/hot-ai-drama` 的**第 1 页**把榜单包装换了形态——`mergeLoaderData` 不再内联 JSON（`routerDataFnName: "p"`），而是留一个指向同页 `r` 注册项的指针（`"s"`，参数是 `["\"rank_x\\u002Fpage\"","\"content\""]`），只有第 2 页起和 comic 板还是旧的内联形态；`_rankPayload` 只认 `"p"`，于是三条榜单在页 1 直接落空、榜单页整页报「剧集榜单暂不可用」，而 `websiteRankSnapshot` 的第 1 页就是这次读，四条榜单里三条连读都读不进来。本轮把 `r` 的注册表先收齐、再解析指针（`\/`→`/`），页 1 与页 2+ 两种形态都能读；用抓到的真实页面离线验证四条榜单 + `page=2` 全部解析成功（各 20 行、totalPages 5）。其余接口 200 且字段未变：详情 `_ROUTER_DATA.loaderData.detail_page.seriesDetail`（含 `vid_list`、`episode_cnt`）、`/api/search/result`（`searchList/totalCount/pageNum/totalPages/hasMore`，行是 `doc_type/name/video_data/video_list`）、`/incent_resource/suggestion`（`suggest_list[]` 的 `name/display_words`）；新增行字段 `playHref/statusTags/scoreText/favoriteText/likeText/openEpisodeCount/isPaid`，`_seriesFromRank` 早已读到位。一处只记录未改：`?page=1` 现在被 301 剥掉查询串（落到默认页 1，行为不变）。第二件是版式：`_RankView` 把整张榜的题材 chips 常驻在头排下面（100 部剧数出几十个体裁，`Wrap` 铺成 4–6 行，片单被挤出首屏，而同一时刻只有一个题材有效），收敛成头排 `榜单 + 筛选 + 刷新` + 一行当前题材摘要，条件本体进 `_RankFilterPanel`（`DsPanel` + 现成的 `HongguoFilterRowView`，选中即过滤、名次不变，来源与后台更新说明挪到面板底部）。新增 l10n `rankFilterTitle`（en/zh），`rankKeepsPlaces` 改成能独立成句。 | 榜单页的筛选是头部入口而非常驻条件墙：爱奇艺的榜单是「热播总榜/必看榜/期待榜/飙升榜/免费榜」多榜 + 内容类目作主维度（sohu 鸿蒙版爱奇艺上线问AI功能、ifeng 导航栏升级），榜单排版参照首页那套统一的一行封面图网格、不让条件挤掉内容（知乎《爱奇艺PC站风云榜改版总结》p/54696671）；腾讯视频的"榜"实际是"最热 tab 下的影片筛选"，首页视觉块数被刻意控制以免提高浏览成本（sohu 腾讯视频团宠、ui.cn/知乎《深度拆解腾讯视频APP细节设计》）。即：首屏属于片单，条件收进一个入口。 | `dart analyze apps/pure_live/lib` 0 issues；离线解析验证 4 条榜单 + 翻页全绿（临时脚本与抓取页面在仓外，跑完即删）；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`fix(ui,hongguo)`） |
 | 2026-11-02 03:05 | music | 精选/在线歌单（`pages/music_online_playlists_view.dart` 的 `MusicOnlinePlaylistBrowse`，同一个 widget 同时是 精选 页和 歌单 页的在线 tab）把筛选条件常驻在内容上方：排序一行 `DsTopNav` + 分类一行 `DsTopNav` + 标签一整片 `Wrap`。一个 plaza 的热门标签/分组标签常有 20–50 个，`Wrap` 铺成 4–6 行，窄窗里歌单网格被推到看不见，宽窗也要先滚过一整片 chips 才看到内容，而这三个常驻控件在同一时刻只有 3 个值是有效的（当前排序、当前分类、当前标签）。本轮按仓库既有的「条件收进面板」形态（红果 找剧 `_FindView` + `_FindFilterPanel`）收敛：头排统一到 `SizedBox(height: 44)` + `s20` 左右内边距，`Expanded(标签行/标题) + 打开歌单 + 筛选`（筛选是图标入口，条件还没加载出来时 disabled），条件本体进新的 `MusicPlazaFilterPanel`（`DsPanel`，排序/分类/标签三段 `DsChip`，选中即回调进 browse 的 state 并 `_page = 1`），页头下方留一行 muted 摘要写当前 `排序 · 分类 · 标签`。顺手补掉一处对齐断裂：在线 tab 的 tab 行原先既没有 `s20` 左右内边距、也没有 44 高，而 我的 tab 的工具栏两者都有，切 tab 时整条工具栏会横移。新增 l10n 5 个 key（`plazaFilterTitle/Sorts/Groups/Tags/Done`，en + zh-CN）并跑 `dart run slang`；生成的 `.g.dart` 带进了 slang 自身的跨 namespace 重排（`room`/`settings` 的 `_ => null, } ?? switch (path)` 边界移动），不是本轮手改的内容。 | 爱奇艺首页/频道页是「顶部导航 + 筛选 + 轮播图」的头排 + 自上而下的单行模块（每行独立横滑），筛选是头部入口而非常驻条件行（woshipm 爱奇艺APP2023体验优化分析 1178、人人都是产品经理 爱奇艺产品分析报告 5677048）；腾讯视频首页顶栏为「搜索框 + 筛选按钮」，分类/筛选在二级页展示、首屏不放条件墙，内容行「左图右文单行排列、标题+副标题、右侧静态信息」（zcool 流媒体平台首页设计系列——腾讯视频 1180、chinutech 视频平台的会员运营细节 1179）。即：多条件收进一个入口，页面高度留给内容。 | `dart analyze apps/pure_live/lib` 0 issues；`dart format --line-length 120` 本轮文件 0 追加改动；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,music)`） |
 | 2026-11-02 03:23 | vod | 影视海报卡（`VodSeasonCard`，三处片单共用：影视页 poster 墙、搜索结果的番剧/电影、个人页在看）把「比例格」和「固定内容高度」对冲掉了：片单传 `aspectRatio: 0.62`，格子高度 = 列宽 × 1.613，而卡片按「3:4 海报 + 两行片名 + 一行更新状态」排内容，留给文字区的只有 `列宽 × 0.28`；量规把列宽压在 220–340，于是 220–269 段（3 列的 700–840px 窗、4 列的 950–1150px 窗，正是常见笔记本宽度）差 5–14px，片名第二行与更新状态被推出卡片、叠到下一行海报上，300–340 段又反过来空出 20–60px 死白。本轮把卡片改成「名字区定高 + 封面吃剩余」：新增 `kVodSeasonCardInfoExtent = 60`（compact 两行 42 + 6/8 内边距，touch 两行 44 也装得下），片名区 `SizedBox` 定高、海报 `Expanded` + `Stack(fit: StackFit.expand)` 承接高度（3:4 降为偏好，紧约束下按格裁边），更新状态 `subtitle`（`更新至第 N 话` / `全 N 话`）从文字区挪上海报右上角 `RoomCoverChip(compact: true)`、评分保持右下角，`ClipRRect` 从「只圆海报顶角」提到整卡；`0.62` 折成 `kVodSeasonTileAspect` 给三处片单共用，免得下一处再各写各的。 | 爱奇艺的内容卡把运营信息贴在海报四角——左上收藏、右上免费/VIP、左下分类、右下评分，「通过一张海报就能尽量告诉用户尽量多的信息」，海报下面只留片名（csdn 爱奇艺UI赏析—首页推荐 125812485）；卡片元素以 3–5 个为宜，更新日期、集数、评分属贴在视觉块上的提示信息元素，超了会主次不分（woshipm 在电视端卡片设计如何进行 1047767）；内容卡分「图片块 + 内容块」，图片块取 16:9 / 1:1 / 2:3 这类固定形态（developer.android.google.cn TV 卡片指南 cards）。即：状态上封面、名字区定高，一行卡片才对得齐。 | `dart analyze apps/pure_live/lib` 0 issues；`dart format --line-length 120` 重排到 3 处无关旧行已逐 hunk 还原；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,vod)`） |
+| 2026-11-02 04:12 | iptv | 来源页那张表（`views/iptv_sources_view.dart` 的 `_SourcesTable`）与上一轮修掉的频道表是同一个缺陷，但更重：`layout: DsTableLayout.auto()` + 六列最小合计 240+100+90+150+104+92 = 776px。窄窗（手机 390、平板竖屏 600）拿到横滚 + 边缘渐隐，「自动更新」开关和删除被推到视口外；<480 时 kit 的兜底 card 版式一行只有一个文字行，而本站的 `_SourceNameCell` 本来就是两行（名称+徽章 / 地址+复制·打开），会被裁。本轮把窄态与中态都由模块定义：<760 改为堆叠行（`_SourceRow`：种类图标块 40 + 名称行含 网络/本地 与 使用中 徽章 + 一行 `类型 · N 个频道 · 更新时间` + 地址行含复制/打开 + 右列 自动更新开关在上、同步/删除在下），≥760 才是表，且「类型」列只在 ≥960 出现——它是地址的提示（`.m3u8`/`.xml.gz` 就在地址里），中窗把它读进地址行前缀 `M3U8 · https://…` 而不是再占一格，五列合计落到 200+76+120+96+84+32 = 608px；表格布局回到默认 `.rows()`，窄态不再交给 kit 的标签堆。顺带把两种形态共用的东西折成一个 `_SourcesActions`（activeId/频道数/忙碌集/阻塞 + 名称·地址·类型·时间·频道数·是否网络·是否使用中 的逐项读法 + 同步/删除/开关三个动作），表格里散在 `value:`/`cell:` 里的 `item is IptvPlaylist ? … : (item as EpgSource).…` 分支收敛到一处，堆叠行读的是同一套，两种形态不会再各说各话；`_copyAddress`/`_openAddress` 提成 `copySourceAddress`/`openSourceAddress` 供两形态共用。无新增 l10n（`channelCount`/`neverUpdated`/`networkTag` 等已够用）。 | 成熟的直播源管理页是「一行一个源」而不是六列表格：xTeVe 的 Sources 页每行给 Name、Links（该地址能取到的频道数）、Update period（自动更新周期，0 为关）、Enabled 开关与更新按钮，「点击更新按钮后…显示时间同时 Links 栏会有数量」（baijiahao 如何私人定制你的专属IPTV频道）；iptv-checker 管理界面是「左侧导航栏 + 右侧功能区」，EPG 数据源单列（csdn 终极指南：如何快速检测IPTV播放源可用性）；TV 端播放器同样把「名称 + 频道数 + 最后更新」当作列表行的三要素，且列表/图标/标题是可切的排布而非并排的列（isharepc TiviMate+Televizo 评测）。即：来源行 = 名称 + 数量 + 更新时间 + 开关/动作，类型属于地址而不是独立一列；放不下时堆叠行，不是横滚。 | `dart analyze apps/pure_live/lib` 0 issues；`dart format --line-length 120` 只动本轮文件（第二次跑 0 改动）；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,iptv)`） |

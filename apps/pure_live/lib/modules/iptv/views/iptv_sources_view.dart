@@ -338,16 +338,18 @@ final class _IptvSourcesViewState extends ConsumerState<IptvSourcesView> {
             ),
             child: _SourcesTable(
               rows: rows,
-              activeId: epg.activeId,
-              channelCounts: epg.channelCounts,
-              settingsBlocked: settingsBlocked,
-              sourceBusy: sources.busy,
-              guideBusy: epg.busy,
-              onSyncPlaylist: (playlist) => unawaited(_syncPlaylist(playlist)),
-              onSyncGuide: (source) => unawaited(_syncGuide(source)),
-              onDeletePlaylist: (playlist) => unawaited(_deletePlaylist(playlist)),
-              onDeleteGuide: (source) => unawaited(_deleteGuide(source)),
-              onAutoUpdate: (source, value) => unawaited(_setAutoUpdate(source, value)),
+              actions: _SourcesActions(
+                activeId: epg.activeId,
+                channelCounts: epg.channelCounts,
+                blocked: settingsBlocked,
+                sourceBusy: sources.busy,
+                guideBusy: epg.busy,
+                syncPlaylist: (playlist) => unawaited(_syncPlaylist(playlist)),
+                syncGuide: (source) => unawaited(_syncGuide(source)),
+                deletePlaylist: (playlist) => unawaited(_deletePlaylist(playlist)),
+                deleteGuide: (source) => unawaited(_deleteGuide(source)),
+                autoUpdate: (source, value) => unawaited(_setAutoUpdate(source, value)),
+              ),
               emptyView: _emptyView(context, sources, epg),
             ),
           ),
@@ -879,38 +881,23 @@ final class _SourcesToolbar extends StatelessWidget {
   }
 }
 
-/// The playlists and guides as one table: name and address, format,
-/// channels, last update, the guide's own update switch and the row's
-/// sync/delete actions.
+/// Below this the resources table cannot hold its columns. The five a medium
+/// window keeps need 200 + 76 + 120 + 96 + 84 plus the row's own 32 px of
+/// padding = 608, and the format column adds another 96. A sideways-scrolling
+/// table parks the update switch and the delete action off screen, and the
+/// kit's card fallback is one "label value" line per column at a single
+/// line's height while a source is three lines (name, stats, address), so the
+/// narrow form is defined here instead.
+const double _sourcesTableMinWidth = 760;
+
+/// The playlists and guides: one table in a window wide enough for its
+/// columns, stacked rows in a narrow one. The same fields and the same
+/// actions either way, read from one [_SourcesActions].
 final class _SourcesTable extends StatelessWidget {
-  const _SourcesTable({
-    required this.rows,
-    required this.activeId,
-    required this.channelCounts,
-    required this.settingsBlocked,
-    required this.sourceBusy,
-    required this.guideBusy,
-    required this.onSyncPlaylist,
-    required this.onSyncGuide,
-    required this.onDeletePlaylist,
-    required this.onDeleteGuide,
-    required this.onAutoUpdate,
-    required this.emptyView,
-  });
+  const _SourcesTable({required this.rows, required this.actions, required this.emptyView});
 
   final List<Object> rows;
-  final String? activeId;
-  final Map<String, int> channelCounts;
-  final bool settingsBlocked;
-  final Set<String> sourceBusy;
-  final Set<String> guideBusy;
-  final ValueChanged<IptvPlaylist> onSyncPlaylist;
-  final ValueChanged<EpgSource> onSyncGuide;
-  final ValueChanged<IptvPlaylist> onDeletePlaylist;
-  final ValueChanged<EpgSource> onDeleteGuide;
-  // The switch reports its own on/off; a named flag would only rename it.
-  // ignore: avoid_positional_boolean_parameters
-  final void Function(EpgSource source, bool value) onAutoUpdate;
+  final _SourcesActions actions;
   final Widget emptyView;
 
   @override
@@ -919,147 +906,310 @@ final class _SourcesTable extends StatelessWidget {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final meta = theme.typography.small.copyWith(color: colors.textMuted);
-    return DsTable<Object>(
-      semanticLabel: t.iptv.viewSources,
-      layout: const DsTableLayout.auto(),
-      rows: rows,
-      rowKey: (item) => item is IptvPlaylist ? 'p:${item.id}' : 'g:${(item as EpgSource).id}',
-      columns: [
-        DsTableColumn(
-          id: 'name',
-          label: t.iptv.colName,
-          value: (item) => item is IptvPlaylist ? item.name : (item as EpgSource).name,
-          width: const DsTableColumnWidth.flex(2, 240),
-          cell: (context, item) => _SourceNameCell(item: item, activeId: activeId),
-        ),
-        DsTableColumn(
-          id: 'format',
-          label: t.iptv.colFormat,
-          value: (item) => item is IptvPlaylist ? _playlistBadge(item) : _guideBadge(item as EpgSource),
-          width: const DsTableColumnWidth.fixed(100),
-          cell: (context, item) => DsBadge(
-            dot: false,
-            label: Text(item is IptvPlaylist ? _playlistBadge(item) : _guideBadge(item as EpgSource)),
-          ),
-        ),
-        DsTableColumn(
-          id: 'channels',
-          label: t.iptv.colChannel,
-          value: (item) => item is IptvPlaylist ? item.channelCount : channelCounts[(item as EpgSource).id] ?? 0,
-          width: const DsTableColumnWidth.fixed(90),
-          numeric: true,
-          cell: (context, item) {
-            final count = item is IptvPlaylist ? item.channelCount : channelCounts[(item as EpgSource).id] ?? 0;
-            return Text(iptvNumber(count), style: theme.typography.numeric(meta));
-          },
-        ),
-        DsTableColumn(
-          id: 'updated',
-          label: t.iptv.colUpdated,
-          value: (item) =>
-              (item is IptvPlaylist ? item.importedAt : (item as EpgSource).lastRefresh)?.millisecondsSinceEpoch ?? 0,
-          width: const DsTableColumnWidth.fixed(150),
-          cell: (context, item) {
-            final updated = item is IptvPlaylist ? item.importedAt : (item as EpgSource).lastRefresh;
-            return Text(
-              _stamp(updated) ?? t.iptv.neverUpdated,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: meta,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < _sourcesTableMinWidth) {
+          if (rows.isEmpty) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: DsSpace.s32),
+              child: emptyView,
             );
-          },
-        ),
-        DsTableColumn(
-          id: 'auto',
-          label: t.iptv.colAutoUpdate,
-          width: const DsTableColumnWidth.fixed(104),
-          alignment: DsTableCellAlignment.center,
-          cell: (context, item) {
-            if (item is! EpgSource || !item.isRemote) {
-              return Text('—', style: meta);
-            }
-            final busy = guideBusy.contains('g:${item.id}');
-            return DsSwitch(
-              value: item.autoUpdate,
-              onChanged: settingsBlocked || busy ? null : (value) => onAutoUpdate(item, value),
-              semanticLabel: t.iptv.autoUpdate,
-            );
-          },
-        ),
-        DsTableColumn(
-          id: 'actions',
-          label: t.iptv.colActions,
-          width: const DsTableColumnWidth.fixed(92),
-          alignment: DsTableCellAlignment.center,
-          cell: (context, item) {
-            final playlist = item is IptvPlaylist ? item : null;
-            final guide = item is EpgSource ? item : null;
-            final remote = playlist != null ? iptvPlaylistIsRemote(playlist) : guide!.isRemote;
-            final busy = playlist != null
-                ? sourceBusy.contains('p:${playlist.id}')
-                : guideBusy.contains('g:${guide!.id}');
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (remote)
-                  IptvIconAction(
-                    icon: DsIcons.refreshCw,
-                    label: t.iptv.sync,
-                    busy: busy,
-                    onPressed: settingsBlocked && !busy
-                        ? null
-                        : () {
-                            if (playlist != null) {
-                              onSyncPlaylist(playlist);
-                            } else {
-                              onSyncGuide(guide!);
-                            }
-                          },
-                  ),
-                IptvIconAction(
-                  icon: DsIcons.trash,
-                  label: t.iptv.delete,
-                  destructive: true,
-                  onPressed: settingsBlocked || busy
-                      ? null
-                      : () {
-                          if (playlist != null) {
-                            onDeletePlaylist(playlist);
-                          } else {
-                            onDeleteGuide(guide!);
-                          }
-                        },
-                ),
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (index, item) in rows.indexed) ...[
+                if (index > 0) const DsDivider(),
+                _SourceRow(item: item, actions: actions),
               ],
-            );
-          },
-        ),
-      ],
-      style: iptvTableStyle(context),
-      emptyView: emptyView,
+            ],
+          );
+        }
+        // The format is a hint about the address every row already shows; it
+        // gets a column of its own only in a window wide enough to pay for
+        // one, and is read inline on the address line otherwise.
+        final showFormat = LiveWindow.isExpanded(constraints.maxWidth);
+        return DsTable<Object>(
+          semanticLabel: t.iptv.viewSources,
+          rows: rows,
+          rowKey: _SourcesActions.rowKey,
+          columns: [
+            DsTableColumn(
+              id: 'name',
+              label: t.iptv.colName,
+              value: actions.name,
+              width: const DsTableColumnWidth.flex(2, 200),
+              cell: (context, item) => _SourceNameCell(item: item, actions: actions, inlineFormat: !showFormat),
+            ),
+            if (showFormat)
+              DsTableColumn(
+                id: 'format',
+                label: t.iptv.colFormat,
+                value: actions.format,
+                width: const DsTableColumnWidth.fixed(96),
+                cell: (context, item) => DsBadge(dot: false, label: Text(actions.format(item))),
+              ),
+            DsTableColumn(
+              id: 'channels',
+              label: t.iptv.colChannel,
+              value: actions.channelCount,
+              width: const DsTableColumnWidth.fixed(76),
+              numeric: true,
+              cell: (context, item) =>
+                  Text(iptvNumber(actions.channelCount(item)), style: theme.typography.numeric(meta)),
+            ),
+            DsTableColumn(
+              id: 'updated',
+              label: t.iptv.colUpdated,
+              value: (item) => actions.updated(item)?.millisecondsSinceEpoch ?? 0,
+              width: const DsTableColumnWidth.flex(1, 120),
+              cell: (context, item) => Text(
+                _stamp(actions.updated(item)) ?? t.iptv.neverUpdated,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: meta,
+              ),
+            ),
+            DsTableColumn(
+              id: 'auto',
+              label: t.iptv.colAutoUpdate,
+              width: const DsTableColumnWidth.fixed(96),
+              alignment: DsTableCellAlignment.center,
+              cell: actions.autoCell,
+            ),
+            DsTableColumn(
+              id: 'actions',
+              label: t.iptv.colActions,
+              width: const DsTableColumnWidth.fixed(84),
+              alignment: DsTableCellAlignment.center,
+              cell: actions.rowActions,
+            ),
+          ],
+          style: iptvTableStyle(context),
+          emptyView: emptyView,
+        );
+      },
     );
   }
 }
 
-/// A row's name, its local/network origin, the active-guide mark and the
-/// address it came from.
-final class _SourceNameCell extends StatelessWidget {
-  const _SourceNameCell({required this.item, required this.activeId});
+/// What a source row can do and the state that decides whether it may do it
+/// now, plus the per-item reads both forms of the list need. One object
+/// shared by the table's cells and the stacked rows, so the two forms of the
+/// same list cannot drift apart.
+final class _SourcesActions {
+  const _SourcesActions({
+    required this.activeId,
+    required this.channelCounts,
+    required this.blocked,
+    required this.sourceBusy,
+    required this.guideBusy,
+    required this.syncPlaylist,
+    required this.syncGuide,
+    required this.deletePlaylist,
+    required this.deleteGuide,
+    required this.autoUpdate,
+  });
+
+  final String? activeId;
+  final Map<String, int> channelCounts;
+  final bool blocked;
+  final Set<String> sourceBusy;
+  final Set<String> guideBusy;
+  final ValueChanged<IptvPlaylist> syncPlaylist;
+  final ValueChanged<EpgSource> syncGuide;
+  final ValueChanged<IptvPlaylist> deletePlaylist;
+  final ValueChanged<EpgSource> deleteGuide;
+  // The switch reports its own on/off; a named flag would only rename it.
+  // ignore: avoid_positional_boolean_parameters
+  final void Function(EpgSource source, bool value) autoUpdate;
+
+  static String rowKey(Object item) => item is IptvPlaylist ? 'p:${item.id}' : 'g:${(item as EpgSource).id}';
+
+  String name(Object item) => item is IptvPlaylist ? item.name : (item as EpgSource).name;
+
+  String address(Object item) => item is IptvPlaylist ? (item.url ?? '') : (item as EpgSource).source;
+
+  String format(Object item) => item is IptvPlaylist ? _playlistBadge(item) : _guideBadge(item as EpgSource);
+
+  DateTime? updated(Object item) => item is IptvPlaylist ? item.importedAt : (item as EpgSource).lastRefresh;
+
+  int channelCount(Object item) =>
+      item is IptvPlaylist ? item.channelCount : channelCounts[(item as EpgSource).id] ?? 0;
+
+  bool isRemote(Object item) => item is IptvPlaylist ? iptvPlaylistIsRemote(item) : (item as EpgSource).isRemote;
+
+  bool isBusy(Object item) => sourceBusy.contains(rowKey(item)) || guideBusy.contains(rowKey(item));
+
+  bool isInUse(Object item) => item is EpgSource && item.id == activeId;
+
+  /// The row's sync and delete pair; a local source has nothing to sync.
+  Widget rowActions(BuildContext context, Object item) {
+    final t = context.t;
+    final busy = isBusy(item);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (isRemote(item))
+          IptvIconAction(
+            icon: DsIcons.refreshCw,
+            label: t.iptv.sync,
+            busy: busy,
+            onPressed: blocked && !busy ? null : () => sync(item),
+          ),
+        IptvIconAction(
+          icon: DsIcons.trash,
+          label: t.iptv.delete,
+          destructive: true,
+          onPressed: blocked || busy ? null : () => delete(item),
+        ),
+      ],
+    );
+  }
+
+  void sync(Object item) {
+    if (item is IptvPlaylist) {
+      syncPlaylist(item);
+    } else {
+      syncGuide(item as EpgSource);
+    }
+  }
+
+  void delete(Object item) {
+    if (item is IptvPlaylist) {
+      deletePlaylist(item);
+    } else {
+      deleteGuide(item as EpgSource);
+    }
+  }
+
+  /// The guide's own update switch, or null for a row the schedule does not
+  /// cover.
+  Widget? autoSwitch(BuildContext context, Object item) {
+    if (item is! EpgSource || !item.isRemote) return null;
+    final busy = guideBusy.contains(rowKey(item));
+    return DsSwitch(
+      value: item.autoUpdate,
+      onChanged: blocked || busy ? null : (value) => autoUpdate(item, value),
+      semanticLabel: context.t.iptv.autoUpdate,
+    );
+  }
+
+  /// The auto column: the switch, or the dash for a row without one.
+  Widget autoCell(BuildContext context, Object item) {
+    return autoSwitch(context, item) ??
+        Text('—', style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textMuted));
+  }
+}
+
+/// One source in the stacked form: the kind tile, the name with the badges
+/// the table gives it, one line of stats, the address it came from, and the
+/// update switch and actions the table keeps in their own columns.
+final class _SourceRow extends StatelessWidget {
+  const _SourceRow({required this.item, required this.actions});
 
   final Object item;
-  final String? activeId;
+  final _SourcesActions actions;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
-    final playlist = item is IptvPlaylist ? item as IptvPlaylist : null;
-    final guide = item is EpgSource ? item as EpgSource : null;
-    final name = playlist?.name ?? guide!.name;
-    final address = playlist?.url ?? guide!.source;
-    final remote = playlist != null ? iptvPlaylistIsRemote(playlist) : guide!.isRemote;
-    final inUse = guide != null && guide.id == activeId;
+    final address = actions.address(item);
+    final stats = [
+      actions.format(item),
+      t.iptv.channelCount(count: actions.channelCount(item)),
+      _stamp(actions.updated(item)) ?? t.iptv.neverUpdated,
+    ].join(' · ');
+    final auto = actions.autoSwitch(context, item);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: DsSpace.s12,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: DsBoxDecoration(
+              color: colors.control,
+              borderRadius: BorderRadius.circular(theme.radii.control(40)),
+            ),
+            child: DsIcon(
+              item is IptvPlaylist ? DsIcons.list : DsIcons.calendarClock,
+              size: theme.sizes.iconSm,
+              color: colors.textMuted,
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 2,
+              children: [
+                Row(
+                  spacing: DsSpace.s6,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        actions.name(item),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                      ),
+                    ),
+                    DsBadge(
+                      dot: false,
+                      label: Text(actions.isRemote(item) ? t.iptv.networkTag : t.iptv.localTag),
+                      icon: DsIcon(actions.isRemote(item) ? DsIcons.globe : DsIcons.fileText, size: 12),
+                    ),
+                    if (actions.isInUse(item)) DsBadge(dot: false, label: Text(t.iptv.inUse), status: DsStatus.info),
+                  ],
+                ),
+                Text(
+                  stats,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.small.copyWith(color: colors.textMuted),
+                ),
+                if (address.isNotEmpty)
+                  _SourceAddressLine(text: address, address: address, remote: actions.isRemote(item)),
+              ],
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            spacing: DsSpace.s4,
+            children: [?auto, actions.rowActions(context, item)],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A row's name, its local/network origin, the active-guide mark and the
+/// address it came from — with the format read inline on the address line
+/// when the table has no column for it.
+final class _SourceNameCell extends StatelessWidget {
+  const _SourceNameCell({required this.item, required this.actions, required this.inlineFormat});
+
+  final Object item;
+  final _SourcesActions actions;
+  final bool inlineFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final remote = actions.isRemote(item);
+    final address = actions.address(item);
+    final line = address.isEmpty
+        ? actions.format(item)
+        : (inlineFormat ? '${actions.format(item)} · $address' : address);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 2,
@@ -1070,7 +1220,7 @@ final class _SourceNameCell extends StatelessWidget {
           children: [
             Flexible(
               child: Text(
-                name,
+                actions.name(item),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
@@ -1081,49 +1231,78 @@ final class _SourceNameCell extends StatelessWidget {
               label: Text(remote ? t.iptv.networkTag : t.iptv.localTag),
               icon: DsIcon(remote ? DsIcons.globe : DsIcons.fileText, size: 12),
             ),
-            if (inUse) DsBadge(dot: false, label: Text(t.iptv.inUse), status: DsStatus.info),
+            if (actions.isInUse(item)) DsBadge(dot: false, label: Text(t.iptv.inUse), status: DsStatus.info),
           ],
         ),
-        if (address.isNotEmpty)
-          Row(
-            spacing: DsSpace.s4,
-            children: [
-              Flexible(
-                child: Text(
-                  address,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                ),
-              ),
-              _SourceAddressAction(
-                icon: DsIcons.copy,
-                label: t.iptv.copySourceAddress,
-                onPressed: () => unawaited(_copyAddress(context, address)),
-              ),
-              if (remote && (address.startsWith('http://') || address.startsWith('https://')))
-                _SourceAddressAction(
-                  icon: DsIcons.externalLink,
-                  label: t.iptv.openSourceAddress,
-                  onPressed: () => unawaited(_openAddress(context, address)),
-                ),
-            ],
-          ),
+        if (inlineFormat || address.isNotEmpty)
+          _SourceAddressLine(text: line, address: address.isEmpty ? null : address, remote: remote),
       ],
     );
   }
+}
 
-  Future<void> _copyAddress(BuildContext context, String address) async {
-    await Clipboard.setData(ClipboardData(text: address));
-    if (context.mounted) showDsToast(context: context, title: context.t.iptv.sourceAddressCopied);
+/// The small line under a source's name: where it came from, then copy and,
+/// for an http(s) source, open. [address] is null for a local source that
+/// records no path, and for a medium-window row whose line carries only the
+/// format.
+final class _SourceAddressLine extends StatelessWidget {
+  const _SourceAddressLine({required this.text, required this.remote, this.address});
+
+  /// The line's text.
+  final String text;
+
+  /// The address the actions work on; null when there is none to act on.
+  final String? address;
+
+  /// Whether the source is a network one, which is what makes an http(s)
+  /// address worth opening.
+  final bool remote;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final link = address;
+    return Row(
+      spacing: DsSpace.s4,
+      children: [
+        Flexible(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+          ),
+        ),
+        if (link != null) ...[
+          _SourceAddressAction(
+            icon: DsIcons.copy,
+            label: t.iptv.copySourceAddress,
+            onPressed: () => unawaited(copySourceAddress(context, link)),
+          ),
+          if (remote && (link.startsWith('http://') || link.startsWith('https://')))
+            _SourceAddressAction(
+              icon: DsIcons.externalLink,
+              label: t.iptv.openSourceAddress,
+              onPressed: () => unawaited(openSourceAddress(context, link)),
+            ),
+        ],
+      ],
+    );
   }
+}
 
-  Future<void> _openAddress(BuildContext context, String address) async {
-    final uri = Uri.tryParse(address);
-    final opened = uri != null && await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!opened && context.mounted) {
-      showDsToast(context: context, title: context.t.iptv.sourceAddressOpenFailed, status: DsStatus.danger);
-    }
+Future<void> copySourceAddress(BuildContext context, String address) async {
+  await Clipboard.setData(ClipboardData(text: address));
+  if (context.mounted) showDsToast(context: context, title: context.t.iptv.sourceAddressCopied);
+}
+
+Future<void> openSourceAddress(BuildContext context, String address) async {
+  final uri = Uri.tryParse(address);
+  final opened = uri != null && await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!opened && context.mounted) {
+    showDsToast(context: context, title: context.t.iptv.sourceAddressOpenFailed, status: DsStatus.danger);
   }
 }
 
