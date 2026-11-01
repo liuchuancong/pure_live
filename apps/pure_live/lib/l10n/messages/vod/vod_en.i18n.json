@@ -101,6 +101,8 @@
   "finishRelated": "Play the first related video",
   "showDetails": "Show video details",
   "showDetailsDesc": "Off hides the uploader, stats and description.",
+  "showFeedBanner": "Home head picture",
+  "showFeedBannerDesc": "The first pick of Recommended and Popular drawn at head size above the feed.",
   "playbackReset": "Restore default playback",
   "playbackResetDesc": "Normal speed, the next part when one ends, details shown.",
   "personalTitle": "My videos",

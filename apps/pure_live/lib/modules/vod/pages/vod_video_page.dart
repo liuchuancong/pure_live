@@ -1363,7 +1363,13 @@ final class _VodVideoPageState extends ConsumerState<VodVideoPage> with RouteAwa
                       semanticLabel: t.vod.quality,
                       compact: compact,
                     ),
-                  if (parts.length > 1)
+                  // The parts live under the picture, where the page draws them,
+                  // so the bar that rests on the picture keeps no second copy of
+                  // the choice: one list, one entry. The immersive surface has no
+                  // page under it — the picture is the whole window — and there
+                  // the catalogue on the bar is the only way from one part to
+                  // the next, so it stays.
+                  if (parts.length > 1 && immersive)
                     _vodPickerButton(
                       panel: _VodPanel.parts,
                       icon: DsIcons.listVideo,

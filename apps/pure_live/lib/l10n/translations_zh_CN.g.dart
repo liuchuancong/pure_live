@@ -11527,6 +11527,12 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '关闭后隐藏 UP 主、数据和简介。'
 	String get showDetailsDesc => '关闭后隐藏 UP 主、数据和简介。';
 
+	/// zh-CN: '首页头图'
+	String get showFeedBanner => '首页头图';
+
+	/// zh-CN: '把推荐与热门的第一条铺成片单上方的头图。'
+	String get showFeedBannerDesc => '把推荐与热门的第一条铺成片单上方的头图。';
+
 	/// zh-CN: '恢复默认播放行为'
 	String get playbackReset => '恢复默认播放行为';
 
@@ -15902,6 +15908,8 @@ extension on Translations {
 			'vod.finishRelated' => '播放相关推荐',
 			'vod.showDetails' => '显示视频详情',
 			'vod.showDetailsDesc' => '关闭后隐藏 UP 主、数据和简介。',
+			'vod.showFeedBanner' => '首页头图',
+			'vod.showFeedBannerDesc' => '把推荐与热门的第一条铺成片单上方的头图。',
 			'vod.playbackReset' => '恢复默认播放行为',
 			'vod.playbackResetDesc' => '默认倍速、播完下一分P、显示详情。',
 			'vod.personalTitle' => '我的视频',

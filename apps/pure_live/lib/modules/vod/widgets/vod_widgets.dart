@@ -218,6 +218,140 @@ final class _CoverInk extends StatelessWidget {
   }
 }
 
+/// The station's home opens with one archive drawn at head size — the feed's
+/// first pick, its cover at the head's start and its name, figures and verbs
+/// at its end — instead of starting mid-grid like every other row.
+///
+/// The figures are read once, here in words: a big cover carries the counts
+/// as ink only where the card below it has nowhere else to put them.
+final class VodFeedHero extends StatelessWidget {
+  /// The head for [video]; [onOpen] opens the archive, [onSave] collects it or
+  /// drops it, and [eyebrow] is the feed's own name rather than an invented one.
+  const VodFeedHero({
+    required this.video,
+    required this.eyebrow,
+    required this.onOpen,
+    required this.saved,
+    required this.onSave,
+    super.key,
+  });
+
+  /// The archive the feed puts first.
+  final VodVideo video;
+
+  /// The feed this head belongs to, in the station's own words.
+  final String eyebrow;
+
+  /// Opens the archive.
+  final VoidCallback onOpen;
+
+  /// Whether the archive already sits in the station's collection.
+  final bool saved;
+
+  /// Collects the archive, or drops it when it is collected.
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final uploader = (video.uploader ?? '').trim();
+    final plays = video.playCount;
+    final danmaku = video.danmakuCount;
+    final facts = [
+      if (uploader.isNotEmpty) uploader,
+      if (plays != null && plays > 0) '${AudienceFormat.format(plays)} ${t.vod.views}',
+      if (danmaku != null && danmaku > 0) '${AudienceFormat.format(danmaku)} ${t.vod.danmaku}',
+      if (video.duration != null) vodDurationText(video.duration!),
+    ].join(' · ');
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // The cover keeps its own 16:9 at every width: a head that filled the
+        // whole page would crop a picture the station drew for four thirds of
+        // its height again. Its width, then, is what sets the head's height.
+        final coverWidth = (constraints.maxWidth * 0.4).clamp(280.0, 440.0);
+        return DsCard(
+          onPressed: onOpen,
+          semanticLabel: video.title,
+          style: DsCardStyle(
+            padding: EdgeInsets.zero,
+            hovered: DsCardStyle(
+              background: colors.hover,
+              shadows: [DsShadow(color: colors.overlay, blur: DsSpace.s24, offset: const Offset(0, DsSpace.s8))],
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(theme.radii.card),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: coverWidth,
+                  child: AspectRatio(aspectRatio: 16 / 9, child: VodVideoCard.vodCover(video, context)),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: DsSpace.s4,
+                      children: [
+                        Text(eyebrow, style: theme.typography.overline.copyWith(color: colors.textSubtle)),
+                        Text(
+                          video.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.heading.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                        ),
+                        if (facts.isNotEmpty)
+                          Text(
+                            facts,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.caption.copyWith(color: colors.textMuted),
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: DsSpace.s4),
+                          child: Wrap(
+                            spacing: DsSpace.s8,
+                            runSpacing: DsSpace.s8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              DsButton(
+                                variant: DsButtonVariant.primary,
+                                size: DsSize.sm,
+                                leading: const DsIcon(DsIcons.play, size: 14),
+                                onPressed: onOpen,
+                                child: Text(t.vod.play),
+                              ),
+                              DsButton(
+                                variant: DsButtonVariant.secondary,
+                                size: DsSize.sm,
+                                onPressed: onSave,
+                                leading: DsIcon(
+                                  DsIcons.heart,
+                                  size: 14,
+                                  color: saved ? colors.accent : colors.textMuted,
+                                ),
+                                child: Text(saved ? t.vod.savedVideo : t.vod.saveVideo),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// One cinema title as a card: the poster carrying its update state and score,
 /// the name on a fixed line block beneath it.
 final class VodSeasonCard extends StatelessWidget {

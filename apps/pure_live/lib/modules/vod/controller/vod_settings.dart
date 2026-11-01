@@ -69,3 +69,34 @@ final class VodQualityController extends Notifier<VodQualityChoice> {
 
 /// The station's starting quality.
 final vodQualityProvider = NotifierProvider<VodQualityController, VodQualityChoice>(VodQualityController.new);
+
+/// The preference the home's head picture is kept under.
+const String _feedBannerPref = 'vod.feed.banner';
+
+/// Whether the station's home draws its first pick at head size above the
+/// feed. One element of a fixed layout, so it carries one switch.
+final class VodFeedBannerController extends Notifier<bool> {
+  @override
+  bool build() {
+    try {
+      return StoragePrefs.getBool(_feedBannerPref) ?? true;
+    } on Object {
+      // A closed store keeps the head on.
+      return true;
+    }
+  }
+
+  /// Shows or hides the head picture.
+  Future<void> setShown({required bool value}) async {
+    if (value == state) return;
+    state = value;
+    try {
+      await StoragePrefs.setBool(_feedBannerPref, value);
+    } on Object {
+      // A preference; a closed store loses it.
+    }
+  }
+}
+
+/// The station's home head picture.
+final vodFeedBannerProvider = NotifierProvider<VodFeedBannerController, bool>(VodFeedBannerController.new);

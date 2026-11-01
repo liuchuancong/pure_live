@@ -4008,6 +4008,8 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get finishRelated => 'Play the first related video';
 	@override String get showDetails => 'Show video details';
 	@override String get showDetailsDesc => 'Off hides the uploader, stats and description.';
+	@override String get showFeedBanner => 'Home head picture';
+	@override String get showFeedBannerDesc => 'The first pick of Recommended and Popular drawn at head size above the feed.';
 	@override String get playbackReset => 'Restore default playback';
 	@override String get playbackResetDesc => 'Normal speed, the next part when one ends, details shown.';
 	@override String get personalTitle => 'My videos';
@@ -7994,6 +7996,8 @@ extension on TranslationsEn {
 			'vod.finishRelated' => 'Play the first related video',
 			'vod.showDetails' => 'Show video details',
 			'vod.showDetailsDesc' => 'Off hides the uploader, stats and description.',
+			'vod.showFeedBanner' => 'Home head picture',
+			'vod.showFeedBannerDesc' => 'The first pick of Recommended and Popular drawn at head size above the feed.',
 			'vod.playbackReset' => 'Restore default playback',
 			'vod.playbackResetDesc' => 'Normal speed, the next part when one ends, details shown.',
 			'vod.personalTitle' => 'My videos',
