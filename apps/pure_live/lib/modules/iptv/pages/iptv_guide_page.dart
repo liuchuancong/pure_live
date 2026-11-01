@@ -10,15 +10,34 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart' show iptvRecentProvider;
+import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart'
     show IptvGuideRow, iptvClockLabel, iptvDayLabel, iptvStartOfDay;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvIconAction;
 import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage;
 
+/// Where the guide page pays for a group column of its own beside the picker.
+/// The channel page takes its column at [LiveWindow.expanded] because the table
+/// beside it flexes; this page keeps a picker pane of its own fixed measure, so
+/// the column only arrives where the day's panel still has its width left.
+const double _kGuideGroupColumnWidth = 1200;
+
+/// The picker's own width, and the 280 it gives up a third of once a group
+/// column stands beside it — the pane it gains is paid for out of its own.
+const double _kGuidePickerWidth = 320;
+const double _kGuidePickerWidthWithRail = 280;
+
 /// The IPTV module's programme guide as a page of its own: the channels on
 /// one side, the open channel's day on the other, with the day walked back
 /// and forward. A past programme's replay button opens the player on that
 /// programme, so the guide is a way into catch-up rather than a read-out.
+///
+/// The picker is a browsing surface, so it gets the module's group dimension:
+/// the library's groups down a first column where the window is wide enough to
+/// pay for three panes, and one entry over the search field where it is not.
+/// Without it a playlist of a hundred groups and a few thousand channels is
+/// only reachable by typing a name — the group is how a viewer narrows to the
+/// channel they mean, and the channel page already hands them that column.
 ///
 /// The day's panel opens with its own head — the channel it belongs to, what
 /// is on air right now with its progress, the day being read and the way into
@@ -41,6 +60,12 @@ final class IptvGuidePage extends ConsumerStatefulWidget {
 final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
   /// The channel whose day is open; null takes the first one the list holds.
   String? _channelId;
+
+  /// The group the picker is narrowed to; null walks the whole library. Held
+  /// by the page rather than by the channels controller: this surface picks a
+  /// channel to read a day, and the channel browser's own scope (its favourites
+  /// switch, its reveal) is no part of that.
+  String? _group;
 
   /// The day being read, at its first minute.
   late DateTime _day = iptvStartOfDay(DateTime.now());
@@ -103,6 +128,19 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
     if (mounted) setState(() {});
   }
 
+  /// Narrows the picker to [group] (null for every channel at once) and moves
+  /// the day to a channel the new group actually holds. The panel beside a
+  /// list is that list's channel: a choice that left the open one outside
+  /// would head the day with a row no longer on the screen.
+  void _selectGroup(String? group) {
+    final walk = ref.read(iptvLibraryProvider).value?.zapSequence(group: group).channels ?? const <IptvChannel>[];
+    final keeps = _channelId != null && walk.any((channel) => channel.id == _channelId);
+    setState(() {
+      _group = group;
+      if (!keeps) _channelId = walk.isEmpty ? null : walk.first.id;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -110,8 +148,13 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
     final colors = DsTheme.colorsOf(context);
     final library = ref.watch(iptvLibraryProvider).value;
     final query = _search.text.trim().toLowerCase();
+    final groups = _groupFilterOf(library, open: _group);
+    // The picker walks the library's visible sequence — the one the channel
+    // page's table and the remote's zapping both walk — so the number beside a
+    // group is the number of rows under it, and a hidden channel is not
+    // offered here either.
     final channels = [
-      for (final channel in library?.orderedChannels ?? const <IptvChannel>[])
+      for (final channel in library?.zapSequence(group: groups.selectedGroup).channels ?? const <IptvChannel>[])
         if (query.isEmpty || channel.entry.name.toLowerCase().contains(query)) channel,
     ];
     final selected =
@@ -127,6 +170,15 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
     // programme.
     final slot = _day == iptvStartOfDay(now) ? _slotOf(schedule, now) : null;
     final hasGuide = selected != null && library != null && library.guideKeyFor(selected) != null;
+    // Three empties, not one message: a search that matched nothing, a group
+    // the playlist left without channels, and a library nobody has filled. The
+    // count line states the number the filter makes, and the filter's own
+    // reason travels down to the panes that show nothing.
+    final emptyNote = query.isNotEmpty
+        ? t.iptv.noChannelMatch
+        : groups.selectedGroup != null
+        ? t.iptv.zapperEmptyGroup
+        : null;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         LiveWindow.pageInset(MediaQuery.sizeOf(context).width),
@@ -145,7 +197,7 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
               Text(t.common.moduleIptv, style: theme.typography.overline.copyWith(color: colors.textSubtle)),
               Text(t.iptv.guideTitle, style: theme.typography.display.copyWith(color: colors.text)),
               Text(
-                channels.isEmpty ? t.iptv.emptyDescription : t.iptv.channelCount(count: channels.length),
+                t.iptv.channelCount(count: channels.length),
                 style: theme.typography.body.copyWith(color: colors.textMuted),
               ),
             ],
@@ -153,15 +205,24 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
+                // A single group has nothing to choose, and a window that
+                // cannot pay for three panes keeps the same list behind one
+                // entry over the search field.
+                final hasGroups = groups.groups.length > 1;
+                final rail = hasGroups && constraints.maxWidth >= _kGuideGroupColumnWidth;
                 final picker = _ChannelPicker(
                   channels: channels,
                   selectedId: selected?.id,
                   search: _search,
+                  groups: groups,
+                  showGroupEntry: hasGroups && !rail,
                   onQuery: (value) => setState(() {}),
                   onSelect: (channel) => setState(() => _channelId = channel.id),
+                  onSelectGroup: _selectGroup,
                 );
                 final guide = _SchedulePanel(
                   channel: selected,
+                  emptyNote: emptyNote,
                   schedule: schedule,
                   slot: slot,
                   day: _day,
@@ -188,7 +249,8 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     spacing: DsSpace.s16,
                     children: [
-                      SizedBox(width: 320, child: picker),
+                      if (rail) IptvGroupsColumn(filter: groups, onSelect: _selectGroup),
+                      SizedBox(width: rail ? _kGuidePickerWidthWithRail : _kGuidePickerWidth, child: picker),
                       Expanded(child: guide),
                     ],
                   );
@@ -212,6 +274,36 @@ final class _IptvGuidePageState extends ConsumerState<IptvGuidePage> {
       ),
     );
   }
+}
+
+/// The library's groups as this page holds them: every visible group in the
+/// library's own display order, how many channels each holds, how many the
+/// whole walk holds, and [open] only while a re-import has not dropped it —
+/// a choice no longer in the list falls back to every channel rather than to an
+/// empty list nobody can explain.
+///
+/// The counts walk the visible sequence rather than the library's raw list, so
+/// the number beside a group is the number of rows the picker then shows.
+IptvGroupFilter _groupFilterOf(IptvLibrary? library, {String? open}) {
+  if (library == null) {
+    return (groups: const <String>[], groupCounts: const <String, int>{}, totalCount: 0, selectedGroup: null);
+  }
+  final groups = [
+    for (final name in library.groupNames)
+      if (!library.isGroupHidden(name)) name,
+  ];
+  final walk = library.zapSequence().channels;
+  final counts = <String, int>{};
+  for (final channel in walk) {
+    final key = iptvGroupKeyOf(channel);
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return (
+    groups: groups,
+    groupCounts: counts,
+    totalCount: walk.length,
+    selectedGroup: open != null && groups.contains(open) ? open : null,
+  );
 }
 
 /// The current and next programme inside one day's list, read the way the
@@ -306,22 +398,35 @@ final class _ChannelLogo extends StatelessWidget {
   }
 }
 
-/// The channels the guide can open: the name search above a one-row-per-
-/// channel list, the open channel marked.
+/// The channels the guide can open: the open group (as a column beside the
+/// picker, or as one entry over it where the window has no room for a column),
+/// the name search, and a one-row-per-channel list with the open channel
+/// marked.
 final class _ChannelPicker extends StatefulWidget {
   const _ChannelPicker({
     required this.channels,
     required this.selectedId,
     required this.search,
+    required this.groups,
+    required this.showGroupEntry,
     required this.onQuery,
     required this.onSelect,
+    required this.onSelectGroup,
   });
 
   final List<IptvChannel> channels;
   final String? selectedId;
   final TextEditingController search;
+
+  /// The library's groups, their counts and the open one.
+  final IptvGroupFilter groups;
+
+  /// Whether the picker names its group through an entry it opens, because the
+  /// window has no room for the column beside it.
+  final bool showGroupEntry;
   final ValueChanged<String> onQuery;
   final ValueChanged<IptvChannel> onSelect;
+  final ValueChanged<String?> onSelectGroup;
 
   @override
   State<_ChannelPicker> createState() => _ChannelPickerState();
@@ -362,6 +467,12 @@ final class _ChannelPickerState extends State<_ChannelPicker> {
     final colors = DsTheme.colorsOf(context);
     final channels = widget.channels;
     final selectedId = widget.selectedId;
+    final query = widget.search.text.trim();
+    final group = widget.groups.selectedGroup;
+    // The column beside the picker already names the open group, so a row that
+    // repeats it says nothing: the group line per row is what the whole
+    // library's list needs, not one group's.
+    final showRowGroup = group == null;
     return DsCard(
       style: const DsCardStyle(padding: EdgeInsets.zero),
       child: Column(
@@ -369,11 +480,18 @@ final class _ChannelPickerState extends State<_ChannelPicker> {
         children: [
           Padding(
             padding: const EdgeInsets.all(DsSpace.s12),
-            child: DsSearchField(
-              controller: widget.search,
-              placeholder: t.iptv.searchChannels,
-              semanticLabel: t.iptv.searchChannels,
-              onChanged: widget.onQuery,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: DsSpace.s8,
+              children: [
+                if (widget.showGroupEntry) IptvGroupEntry(filter: widget.groups, onSelect: widget.onSelectGroup),
+                DsSearchField(
+                  controller: widget.search,
+                  placeholder: t.iptv.searchChannels,
+                  semanticLabel: t.iptv.searchChannels,
+                  onChanged: widget.onQuery,
+                ),
+              ],
             ),
           ),
           const DsDivider(),
@@ -381,13 +499,23 @@ final class _ChannelPickerState extends State<_ChannelPicker> {
             child: channels.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.all(DsSpace.s16),
-                    child: DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.iptv.noChannelMatch)),
+                    child: DsEmptyState(
+                      icon: DsIcon(
+                        query.isNotEmpty ? DsIcons.searchX : (group == null ? DsIcons.antenna : DsIcons.folder),
+                      ),
+                      title: Text(
+                        query.isNotEmpty
+                            ? t.iptv.noChannelMatch
+                            : group != null
+                            ? t.iptv.zapperEmptyGroup
+                            : t.iptv.emptyTitle,
+                      ),
+                    ),
                   )
                 : ListView.builder(
                     itemCount: channels.length,
                     itemBuilder: (context, index) {
                       final channel = channels[index];
-                      final group = iptvGroupKeyOf(channel);
                       return KeyedSubtree(
                         key: channel.id == selectedId ? _selectedKey : null,
                         child: DsListRow(
@@ -399,12 +527,14 @@ final class _ChannelPickerState extends State<_ChannelPicker> {
                             overflow: TextOverflow.ellipsis,
                             style: theme.typography.body.copyWith(color: colors.text),
                           ),
-                          description: Text(
-                            group.isEmpty ? t.iptv.ungrouped : group,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                          ),
+                          description: showRowGroup
+                              ? Text(
+                                  iptvGroupLabel(t, iptvGroupKeyOf(channel)),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                                )
+                              : null,
                           onPressed: () => widget.onSelect(channel),
                         ),
                       );
@@ -423,6 +553,7 @@ final class _ChannelPickerState extends State<_ChannelPicker> {
 final class _SchedulePanel extends ConsumerWidget {
   const _SchedulePanel({
     required this.channel,
+    required this.emptyNote,
     required this.schedule,
     required this.slot,
     required this.day,
@@ -437,6 +568,11 @@ final class _SchedulePanel extends ConsumerWidget {
   });
 
   final IptvChannel? channel;
+
+  /// Why the picker holds no channel to read: the search matched nothing, or
+  /// the open group holds none. Null when the library itself is empty, which
+  /// is the one case the panel answers with the import invitation.
+  final String? emptyNote;
   final List<EpgProgramme> schedule;
 
   /// The programme on air now and the one after it, for the day being shown;
@@ -466,8 +602,8 @@ final class _SchedulePanel extends ConsumerWidget {
         style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s16)),
         child: DsEmptyState(
           icon: const DsIcon(DsIcons.calendarClock),
-          title: Text(t.iptv.emptyTitle),
-          description: Text(t.iptv.emptyDescription),
+          title: Text(emptyNote ?? t.iptv.emptyTitle),
+          description: emptyNote == null ? Text(t.iptv.emptyDescription) : null,
         ),
       );
     }

@@ -15,6 +15,7 @@ export 'pages/iptv_page.dart';
 export 'pages/iptv_play_page.dart';
 export 'pages/iptv_recent_page.dart';
 export 'pages/iptv_settings_pane.dart';
+export 'views/iptv_group_rail.dart';
 export 'views/iptv_guide_panel.dart';
 export 'views/iptv_import_dialog.dart';
 export 'views/iptv_panels.dart';
