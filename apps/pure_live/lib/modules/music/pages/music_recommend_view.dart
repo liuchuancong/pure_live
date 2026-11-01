@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+import 'dart:ui' show ImageFilter;
 
 import 'package:custom_refresh_indicator/custom_refresh_indicator.dart';
 import 'package:desen_ui/desen_ui.dart';
@@ -12,12 +13,17 @@ import 'package:pure_live/modules/music/controller/music_browse.dart'
 import 'package:pure_live/modules/music/controller/music_library.dart'
     show musicFavouritesProvider, musicRecentProvider;
 import 'package:pure_live/modules/music/controller/music_online_playlists.dart'
-    show musicOnlineHotTagsProvider, musicOnlinePlaylistsProvider, musicPlaylistSortsProvider;
+    show
+        musicOnlineHotTagsProvider,
+        musicOnlinePlaylistDetailProvider,
+        musicOnlinePlaylistsProvider,
+        musicPlaylistSortsProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicPlaybackSettingsProvider;
 import 'package:pure_live/modules/music/controller/music_search.dart'
     show musicCatalogsProvider, musicHotSearchesProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
+import 'package:pure_live/modules/music/controller/music_ui_settings.dart' show MusicUiElement, musicUiSettingsProvider;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart' show OnlinePlaylists;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart' show MusicPlaylistInfo;
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
@@ -27,7 +33,7 @@ import 'package:pure_live/modules/music/widgets/music_browse_links.dart' show op
 import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart'
     show MusicAlbumCard, MusicArtistCard, musicBrowseSourceLabel;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show buildDsRefreshIndicator;
+import 'package:pure_live/shared/shared.dart' show CoverFallback, buildDsRefreshIndicator, cachedImage;
 
 /// 推荐: the module's own home. Nothing here is invented — the strip of
 /// playlists is the plaza's first page, the boards are the source's own, the
@@ -72,6 +78,7 @@ final class MusicRecommendView extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final colors = theme.colors;
     final settings = ref.watch(musicPlaybackSettingsProvider);
+    final ui = ref.watch(musicUiSettingsProvider);
     final plaza = ref.watch(musicSourceProvider) is OnlinePlaylists;
     final hotTags = ref.watch(musicOnlineHotTagsProvider).value ?? const <String>[];
     final order = ref.watch(musicPlaylistSortsProvider).firstOrNull?.id ?? '';
@@ -80,6 +87,11 @@ final class MusicRecommendView extends ConsumerWidget {
         ? ref.watch(musicOnlinePlaylistsProvider((tag: firstTag, order: order, page: 1)))
         : null;
     final playlists = (firstPage?.value?.items ?? const <MusicPlaylistInfo>[]).take(_stripCount).toList();
+    // The banner takes the plaza's hottest entry out of the strip rather than
+    // above it: the page then opens with one large visual and its first row
+    // carries the rest, with nothing shown twice.
+    final hero = ui.shows(MusicUiElement.recommendBanner) ? playlists.firstOrNull : null;
+    final strip = hero == null ? playlists : playlists.skip(1).toList();
     final boards = (ref.watch(musicCatalogsProvider).value ?? const <audio.MusicCatalog>[]).take(_boardCount).toList();
     // The hot words follow the search page's own switch: a viewer who hid
     // them there does not want them here either.
@@ -148,65 +160,69 @@ final class MusicRecommendView extends ConsumerWidget {
           spacing: DsSpace.s16,
           children: [
             if (plaza) ...[
-              head(
-                t.music.recPlaylists,
-                trailing: DsButton(
-                  variant: DsButtonVariant.ghost,
-                  size: DsSize.sm,
-                  trailing: const DsIcon(DsIcons.chevronRight, size: 14),
-                  onPressed: onOpenFeatured,
-                  child: Text(t.music.recMore),
+              if (hero != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, 0),
+                  child: MusicRecommendHero(info: hero, tag: firstTag, onOpen: () => onOpenPlaylist(hero)),
                 ),
-              ),
-              if (playlists.isNotEmpty)
-                SizedBox(
-                  height: _cardWidth + kMusicPlaylistInfoHeight,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
-                    itemCount: playlists.length,
-                    separatorBuilder: (context, _) => const SizedBox(width: DsSpace.s12),
-                    itemBuilder: (context, index) => SizedBox(
-                      width: _cardWidth,
-                      child: MusicPlaylistCard.online(
-                        info: playlists[index],
-                        onOpen: () => onOpenPlaylist(playlists[index]),
+              if (strip.isNotEmpty || waitingForPlaza || plazaFailed) ...[
+                head(
+                  t.music.recPlaylists,
+                  trailing: DsButton(
+                    variant: DsButtonVariant.ghost,
+                    size: DsSize.sm,
+                    trailing: const DsIcon(DsIcons.chevronRight, size: 14),
+                    onPressed: onOpenFeatured,
+                    child: Text(t.music.recMore),
+                  ),
+                ),
+                if (strip.isNotEmpty)
+                  SizedBox(
+                    height: _cardWidth + kMusicPlaylistInfoHeight,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+                      itemCount: strip.length,
+                      separatorBuilder: (context, _) => const SizedBox(width: DsSpace.s12),
+                      itemBuilder: (context, index) => SizedBox(
+                        width: _cardWidth,
+                        child: MusicPlaylistCard.online(info: strip[index], onOpen: () => onOpenPlaylist(strip[index])),
                       ),
                     ),
-                  ),
-                )
-              else if (waitingForPlaza)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: DsSpace.s24),
-                  child: Center(child: DsSpinner(style: DsSpinnerStyle(size: 24))),
-                )
-              else if (plazaFailed)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s4),
-                  child: Row(
-                    spacing: DsSpace.s8,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          t.music.onlineLoadFailed,
-                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                  )
+                else if (waitingForPlaza)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: DsSpace.s24),
+                    child: Center(child: DsSpinner(style: DsSpinnerStyle(size: 24))),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s4),
+                    child: Row(
+                      spacing: DsSpace.s8,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            t.music.onlineLoadFailed,
+                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                          ),
                         ),
-                      ),
-                      DsButton(
-                        variant: DsButtonVariant.secondary,
-                        size: DsSize.sm,
-                        onPressed: () {
-                          final tag = firstTag;
-                          ref.invalidate(musicOnlineHotTagsProvider);
-                          if (tag != null) {
-                            ref.invalidate(musicOnlinePlaylistsProvider((tag: tag, order: order, page: 1)));
-                          }
-                        },
-                        child: Text(t.common.retry),
-                      ),
-                    ],
+                        DsButton(
+                          variant: DsButtonVariant.secondary,
+                          size: DsSize.sm,
+                          onPressed: () {
+                            final tag = firstTag;
+                            ref.invalidate(musicOnlineHotTagsProvider);
+                            if (tag != null) {
+                              ref.invalidate(musicOnlinePlaylistsProvider((tag: tag, order: order, page: 1)));
+                            }
+                          },
+                          child: Text(t.common.retry),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+              ],
             ],
             if (recent.isNotEmpty) ...[
               head(
@@ -335,6 +351,165 @@ final class MusicRecommendView extends ConsumerWidget {
       await ref.read(musicOnlinePlaylistsProvider((tag: tag, order: order, page: 1)).future);
     } on Object {
       // The plaza's own row explains a refusal; the pull ends either way.
+    }
+  }
+}
+
+/// 推荐's banner: the plaza's hottest entry given the one large visual the
+/// video sites open their home with — the cover whole beside its name in
+/// large type, blurred again behind the card for the colour, the credits on
+/// one line, and both verbs written out rather than left as icons. The strip
+/// under it skips this entry, so the page never shows the same playlist
+/// twice.
+final class MusicRecommendHero extends ConsumerWidget {
+  const MusicRecommendHero({required this.info, required this.onOpen, this.tag, super.key});
+
+  /// The playlist the plaza puts first.
+  final MusicPlaylistInfo info;
+
+  /// The plaza tag the entry was read under; the source's own words.
+  final String? tag;
+
+  /// Opens it where the whole plaza lives.
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = theme.colors;
+    final cover = info.cover.isEmpty ? null : info.cover;
+    final facts = [
+      if (info.author.isNotEmpty) info.author,
+      if (info.trackCount > 0) t.music.songsCount(count: info.trackCount),
+    ].join(' · ');
+    final eyebrow = (tag ?? '').isEmpty ? t.music.recPlaylists : tag!;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 640;
+        final coverSize = wide ? 152.0 : 104.0;
+        final coverRadius = BorderRadius.circular(theme.radii.overlay);
+        return DsCard(
+          onPressed: onOpen,
+          style: const DsCardStyle(padding: EdgeInsets.zero),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(theme.radii.card),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: AlignmentDirectional.topStart,
+                        end: AlignmentDirectional.bottomEnd,
+                        colors: [colors.accent.withValues(alpha: 0.24), colors.surface],
+                      ),
+                    ),
+                  ),
+                ),
+                if (cover != null)
+                  Positioned.fill(
+                    child: ClipRect(
+                      child: ImageFiltered(
+                        imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                        child: Opacity(
+                          opacity: 0.35,
+                          child: Transform.scale(
+                            scale: 1.5,
+                            child: Image(image: cachedImage(cover), fit: BoxFit.cover),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: EdgeInsets.all(wide ? DsSpace.s20 : DsSpace.s16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: DsSpace.s16,
+                    children: [
+                      ClipRRect(
+                        borderRadius: coverRadius,
+                        child: DsImage(
+                          image: cover == null ? null : cachedImage(cover),
+                          width: coverSize,
+                          height: coverSize,
+                          semanticLabel: info.name,
+                          fallback: CoverFallback(title: info.name),
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: DsSpace.s4,
+                          children: [
+                            Text(
+                              eyebrow,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.caption.copyWith(color: colors.accentText),
+                            ),
+                            Text(
+                              info.name.isEmpty ? t.music.recPlaylists : info.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.heading.copyWith(color: colors.text),
+                            ),
+                            if (facts.isNotEmpty)
+                              Text(
+                                facts,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.typography.caption.copyWith(color: colors.textMuted),
+                              ),
+                            Padding(
+                              padding: const EdgeInsets.only(top: DsSpace.s8),
+                              child: Wrap(
+                                spacing: DsSpace.s8,
+                                runSpacing: DsSpace.s8,
+                                children: [
+                                  DsButton(
+                                    size: DsSize.sm,
+                                    leading: const DsIcon(DsIcons.play, size: 16),
+                                    onPressed: () => unawaited(_play(context, ref)),
+                                    child: Text(t.music.playAll),
+                                  ),
+                                  DsButton(
+                                    variant: DsButtonVariant.secondary,
+                                    size: DsSize.sm,
+                                    trailing: const DsIcon(DsIcons.chevronRight, size: 14),
+                                    onPressed: onOpen,
+                                    child: Text(t.music.openPlaylistTitle),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Plays the banner's playlist from its first song: the plaza's card only
+  /// names the list, so its tracks are asked for here and a refusal is said
+  /// out rather than left as a dead button.
+  Future<void> _play(BuildContext context, WidgetRef ref) async {
+    final t = context.t;
+    try {
+      final (_, tracks) = await ref.read(musicOnlinePlaylistDetailProvider(info.id).future);
+      if (tracks.isEmpty) return;
+      await ref.read(musicPlayerProvider.notifier).playAll(tracks);
+    } on Object {
+      if (!context.mounted) return;
+      showDsToast(context: context, title: t.music.onlineLoadFailed, status: DsStatus.danger);
     }
   }
 }

@@ -1095,6 +1095,8 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get settingsPlayback => 'Source and playback';
 	@override String get settingsList => 'Lists';
 	@override String get settingsInterface => 'Interface';
+	@override String get uiRecommendBanner => 'Home banner';
+	@override String get uiRecommendBannerDesc => 'Lays the plaza\'s hottest playlist as one large card above the rows on the module\'s home page';
 	@override String get uiBlurredBackdrop => 'Blurred backdrop';
 	@override String get uiBlurredBackdropDesc => 'Paint the player page over the playing song\'s cover, blown up and blurred';
 	@override String get playerMode => 'Default player mode';
@@ -5165,6 +5167,8 @@ extension on TranslationsEn {
 			'music.settingsPlayback' => 'Source and playback',
 			'music.settingsList' => 'Lists',
 			'music.settingsInterface' => 'Interface',
+			'music.uiRecommendBanner' => 'Home banner',
+			'music.uiRecommendBannerDesc' => 'Lays the plaza\'s hottest playlist as one large card above the rows on the module\'s home page',
 			'music.uiBlurredBackdrop' => 'Blurred backdrop',
 			'music.uiBlurredBackdropDesc' => 'Paint the player page over the playing song\'s cover, blown up and blurred',
 			'music.playerMode' => 'Default player mode',
@@ -5243,10 +5247,10 @@ extension on TranslationsEn {
 			'music.autoplayDesc' => 'Continues the last queue when the music module opens.',
 			'music.rememberProgress' => 'Remember playback position',
 			'music.rememberProgressDesc' => 'A song you open again resumes where it last stopped.',
-			'music.autoCleanPlayedList' => 'Auto-clean played list',
-			'music.autoCleanPlayedListDesc' => 'Clears the played list when picking songs from the list already playing; in random mode every song joins the pool again.',
 			_ => null,
 		} ?? switch (path) {
+			'music.autoCleanPlayedList' => 'Auto-clean played list',
+			'music.autoCleanPlayedListDesc' => 'Clears the played list when picking songs from the list already playing; in random mode every song joins the pool again.',
 			'music.addToTop' => 'Add new songs on top',
 			'music.addToTopDesc' => 'Off keeps them at the end of a list.',
 			'music.showSource' => 'Show the source in lists',
@@ -5757,10 +5761,10 @@ extension on TranslationsEn {
 			'music.syncAuthCode' => 'Auth code',
 			'music.syncAuthCodeHint' => 'The connection code shown by the server',
 			'music.syncMode' => 'Sync mode',
-			'music.syncConnect' => 'Connect',
-			'music.syncDisconnect' => 'Disconnect',
 			_ => null,
 		} ?? switch (path) {
+			'music.syncConnect' => 'Connect',
+			'music.syncDisconnect' => 'Disconnect',
 			'music.syncRemoveDevice' => 'Remove this device',
 			'music.syncRemoveHost' => 'Remove this saved address',
 			'music.syncStatusConnected' => 'Connected',
@@ -6271,10 +6275,10 @@ extension on TranslationsEn {
 			'room.giftValueStarBalloon' => ({required Object value}) => '${value} star balloons',
 			'room.giftValueDouyinCoin' => ({required Object value}) => '${value} Douyin coins',
 			'room.giftValueSixCoin' => ({required Object value}) => '${value} six coins',
-			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC coins',
-			'room.giftValueStarCoin' => ({required Object value}) => '${value} star coins',
 			_ => null,
 		} ?? switch (path) {
+			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC coins',
+			'room.giftValueStarCoin' => ({required Object value}) => '${value} star coins',
 			'room.giftValueHeart' => ({required Object value}) => '${value} hearts',
 			'room.giftValueNote' => ({required Object value}) => '${value} notes',
 			'room.collapseChat' => 'Collapse chat',
@@ -6785,10 +6789,10 @@ extension on TranslationsEn {
 			'settings.fontManagerDefaultBadge' => 'Default',
 			'settings.fontManagerCurrent' => 'Current font',
 			'settings.fontManagerReset' => 'Restore the default',
-			'settings.fontManagerFilterAll' => 'All',
-			'settings.fontManagerCategory' => 'Category',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerFilterAll' => 'All',
+			'settings.fontManagerCategory' => 'Category',
 			'settings.fontManagerCount' => ({required Object count}) => '${count} fonts',
 			'settings.fontManagerTagBundled' => 'Bundled',
 			'settings.fontManagerSourceFreeFont' => 'Free font collection',
@@ -7299,10 +7303,10 @@ extension on TranslationsEn {
 			'settings.downloadManagerEmpty' => 'No downloads yet',
 			'settings.downloadManagerEmptyDesc' => 'Choose “Download” in a preview or the library and the task shows up here.',
 			'settings.downloadStatusRunning' => 'Downloading',
-			'settings.downloadStatusDone' => 'Completed',
-			'settings.downloadStatusFailed' => 'Failed',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadStatusDone' => 'Completed',
+			'settings.downloadStatusFailed' => 'Failed',
 			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => 'Finished ${time}',
 			'settings.downloadRemove' => 'Remove record',
@@ -7813,10 +7817,10 @@ extension on TranslationsEn {
 			'toolbox.linkEmpty' => 'Paste a link first',
 			'toolbox.linkUnsupported' => 'This link is not recognised; the platform is not supported yet.',
 			'toolbox.linkTimeout' => 'The resolve timed out; check the network and try again.',
-			'toolbox.linkFailed' => 'The resolve failed; try again later.',
-			'toolbox.linkCopyDone' => 'Room link copied',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.linkFailed' => 'The resolve failed; try again later.',
+			'toolbox.linkCopyDone' => 'Room link copied',
 			'toolbox.linkCopyFailed' => 'Copy failed',
 			'toolbox.linkSupportTitle' => 'Supported platforms',
 			'toolbox.linkSupportHint' => 'Room links of these platforms resolve and open directly.',

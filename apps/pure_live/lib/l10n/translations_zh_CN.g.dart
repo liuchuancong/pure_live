@@ -2986,6 +2986,12 @@ class Translations$music$zh_CN {
 	/// zh-CN: '界面设置'
 	String get settingsInterface => '界面设置';
 
+	/// zh-CN: '推荐页头图'
+	String get uiRecommendBanner => '推荐页头图';
+
+	/// zh-CN: '推荐页顶部以广场最热的一张歌单铺成大卡，排在各行之上'
+	String get uiRecommendBannerDesc => '推荐页顶部以广场最热的一张歌单铺成大卡，排在各行之上';
+
 	/// zh-CN: '播放页模糊背景'
 	String get uiBlurredBackdrop => '播放页模糊背景';
 
@@ -13067,6 +13073,8 @@ extension on Translations {
 			'music.settingsPlayback' => '音源与播放',
 			'music.settingsList' => '列表',
 			'music.settingsInterface' => '界面设置',
+			'music.uiRecommendBanner' => '推荐页头图',
+			'music.uiRecommendBannerDesc' => '推荐页顶部以广场最热的一张歌单铺成大卡，排在各行之上',
 			'music.uiBlurredBackdrop' => '播放页模糊背景',
 			'music.uiBlurredBackdropDesc' => '播放详情页以当前歌曲的封面放大模糊作为背景',
 			'music.playerMode' => '默认播放器模式',
@@ -13145,10 +13153,10 @@ extension on Translations {
 			'music.autoplayDesc' => '打开音乐模块时继续上次的播放队列。',
 			'music.rememberProgress' => '记住播放进度',
 			'music.rememberProgressDesc' => '再次打开同一首歌时，从上一次停止的位置继续。',
-			'music.autoCleanPlayedList' => '自动清空已播列表',
-			'music.autoCleanPlayedListDesc' => '点击与播放列表相同的列表切歌时清空已播放列表，随机模式下列表内所有歌曲会重新参与随机。',
 			_ => null,
 		} ?? switch (path) {
+			'music.autoCleanPlayedList' => '自动清空已播列表',
+			'music.autoCleanPlayedListDesc' => '点击与播放列表相同的列表切歌时清空已播放列表，随机模式下列表内所有歌曲会重新参与随机。',
 			'music.addToTop' => '新歌加到列表顶部',
 			'music.addToTopDesc' => '关闭时新歌排在列表末尾。',
 			'music.showSource' => '列表显示音源',
@@ -13659,10 +13667,10 @@ extension on Translations {
 			'music.syncAuthCode' => '连接码',
 			'music.syncAuthCodeHint' => '服务端显示的连接码',
 			'music.syncMode' => '同步模式',
-			'music.syncConnect' => '连接',
-			'music.syncDisconnect' => '断开',
 			_ => null,
 		} ?? switch (path) {
+			'music.syncConnect' => '连接',
+			'music.syncDisconnect' => '断开',
 			'music.syncRemoveDevice' => '移除该设备',
 			'music.syncRemoveHost' => '移除该历史地址',
 			'music.syncStatusConnected' => '已连接',
@@ -14173,10 +14181,10 @@ extension on Translations {
 			'room.giftValueStarBalloon' => ({required Object value}) => '${value} 星气球',
 			'room.giftValueDouyinCoin' => ({required Object value}) => '${value} 抖币',
 			'room.giftValueSixCoin' => ({required Object value}) => '${value} 六币',
-			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC币',
-			'room.giftValueStarCoin' => ({required Object value}) => '${value} 星币',
 			_ => null,
 		} ?? switch (path) {
+			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC币',
+			'room.giftValueStarCoin' => ({required Object value}) => '${value} 星币',
 			'room.giftValueHeart' => ({required Object value}) => '${value} 爱心',
 			'room.giftValueNote' => ({required Object value}) => '${value} 音符',
 			'room.collapseChat' => '收起聊天',
@@ -14687,10 +14695,10 @@ extension on Translations {
 			'settings.fontManagerDefaultBadge' => '默认',
 			'settings.fontManagerCurrent' => '当前字体',
 			'settings.fontManagerReset' => '恢复默认',
-			'settings.fontManagerFilterAll' => '全部',
-			'settings.fontManagerCategory' => '分类',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerFilterAll' => '全部',
+			'settings.fontManagerCategory' => '分类',
 			'settings.fontManagerCount' => ({required Object count}) => '共 ${count} 款字体',
 			'settings.fontManagerTagBundled' => '随应用打包',
 			'settings.fontManagerSourceFreeFont' => '免费字体库',
@@ -15201,10 +15209,10 @@ extension on Translations {
 			'settings.downloadManagerEmpty' => '还没有下载记录',
 			'settings.downloadManagerEmptyDesc' => '在预览或图库点「下载」，任务会出现在这里。',
 			'settings.downloadStatusRunning' => '下载中',
-			'settings.downloadStatusDone' => '已完成',
-			'settings.downloadStatusFailed' => '下载失败',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadStatusDone' => '已完成',
+			'settings.downloadStatusFailed' => '下载失败',
 			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
 			'settings.downloadFinishedAt' => ({required Object time}) => '完成于 ${time}',
 			'settings.downloadRemove' => '移除记录',
@@ -15715,10 +15723,10 @@ extension on Translations {
 			'toolbox.linkEmpty' => '请先粘贴链接',
 			'toolbox.linkUnsupported' => '无法识别该链接，暂不支持此平台。',
 			'toolbox.linkTimeout' => '解析超时，请检查网络后重试。',
-			'toolbox.linkFailed' => '解析失败，请稍后重试。',
-			'toolbox.linkCopyDone' => '已复制房间链接',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.linkFailed' => '解析失败，请稍后重试。',
+			'toolbox.linkCopyDone' => '已复制房间链接',
 			'toolbox.linkCopyFailed' => '复制失败',
 			'toolbox.linkSupportTitle' => '支持解析的平台',
 			'toolbox.linkSupportHint' => '以下平台的直播间链接可以直接解析并打开。',

@@ -98,8 +98,22 @@ B 站视频站（`vod.dart` 自述 "The Bilibili station"）。页面：`pages/v
 （总览/音源/下载/歌词/桌面歌词/EQ/快捷键/同步 8 个 Pane）；歌单卡
 `pages/music_playlist_card.dart`（`MusicPlaylistCard`/`MusicPlaylistGrid`，房间卡设计平移，
 `kMusicPlaylistCardMaxWidth = 200`、`kMusicPlaylistInfoHeight = 48`）。
-差距：`controller/music_ui_settings.dart` 只管播放器装饰（模糊背景、频谱、播放器模式），
-歌单卡没有逐元素显隐设置；推荐页的头图（Banner 位）还没有对照。
+差距：`controller/music_ui_settings.dart` 只管播放器装饰（模糊背景、频谱、播放器模式），歌单卡没有逐元素显隐设置。
+另有一处只记录未改（下一轮 music 的现成目标）：`pages/music_eq_center_page.dart:222` 的 `_Hero`
+背景是 `DsImage(image: …, semanticLabel: …)`，既没有 `width`/`height` 也没有 `aspectRatio`，而
+desen_ui 0.3.2 的 `DsImage` 构造断言是 `(width != null && height != null) != (aspectRatio != null)`
+——三个都空时断言为 false，debug 构建一进 EQ 中心（有封面的歌在播）就抛；release 关掉断言才看不出来。
+本模块其余 8 处 `DsImage` 都留了框，只有这一处漏。本轮新写的头图背景走播放页那套
+`ClipRect + ImageFiltered + 原生 Image(fit: cover)`，不碰这个坑。
+（已闭合：推荐页的头图。`pages/music_recommend_view.dart` 原先把六类内容（歌单横排/继续播放/
+最近专辑/最近歌手/热搜词/榜单）排成同一种「行标题 + 内容」的等高行，整页没有任何一个第一视觉
+焦点，而视频站首页都是「一张大 Banner 头图 → 再往下才是分行片单」；现在从同一个广场第一页里取
+最热的那张歌单铺成头图 `MusicRecommendHero`（封面整块在左 + 名字 heading + `作者 · N 首` caption
++ 广场标签作眉标 + `全部播放`/`打开歌单` 两个写明文字的动词），底图用同一张封面放大模糊垫在
+accent→surface 渐变上（沿用本模块 EQ 中心与播放页已有的 hero 语言），并且头图是从横排里
+**取走**第一项而不是另插一张——`strip = playlists.skip(1)`，同一张歌单不会在页面上出现两次；
+横排在头图吃掉唯一一项时连行标题一起收起。开关按仓库范式接到 `MusicUiElement.recommendBanner`
+（`interface.musicUi`），行落在设置 → 音乐 → 界面设置 的第一条。）
 （已闭合：精选/在线歌单浏览页的条件排。`pages/music_online_playlists_view.dart` 的
 `MusicOnlinePlaylistBrowse` 原先把
 排序 `DsTopNav` + 分类 `DsTopNav` + 标签 `Wrap` 三排常驻在网格上方，一个 plaza 的热门标签
@@ -133,8 +147,8 @@ vod 本轮的解法（固定信息区 + 封面吃剩余，见 `kVodSeasonCardInf
 
 | 字段 | 值 |
 |---|---|
-| 下一轮模块 | music |
-| 上一次提交 | iptv · 来源表在窄窗/中窗改由本模块定义堆叠行，「类型」列只留宽窗 |
+| 下一轮模块 | hongguo |
+| 上一次提交 | music · 推荐页补第一视觉焦点：广场最热歌单铺成头图，并从横排里取走该项 |
 | 连续无改动轮数 | 0 |
 | 暂停条件 | 连续 3 轮无改动即停手并在回复里说明需要用户裁决 |
 
@@ -148,3 +162,4 @@ vod 本轮的解法（固定信息区 + 封面吃剩余，见 `kVodSeasonCardInf
 | 2026-11-02 03:05 | music | 精选/在线歌单（`pages/music_online_playlists_view.dart` 的 `MusicOnlinePlaylistBrowse`，同一个 widget 同时是 精选 页和 歌单 页的在线 tab）把筛选条件常驻在内容上方：排序一行 `DsTopNav` + 分类一行 `DsTopNav` + 标签一整片 `Wrap`。一个 plaza 的热门标签/分组标签常有 20–50 个，`Wrap` 铺成 4–6 行，窄窗里歌单网格被推到看不见，宽窗也要先滚过一整片 chips 才看到内容，而这三个常驻控件在同一时刻只有 3 个值是有效的（当前排序、当前分类、当前标签）。本轮按仓库既有的「条件收进面板」形态（红果 找剧 `_FindView` + `_FindFilterPanel`）收敛：头排统一到 `SizedBox(height: 44)` + `s20` 左右内边距，`Expanded(标签行/标题) + 打开歌单 + 筛选`（筛选是图标入口，条件还没加载出来时 disabled），条件本体进新的 `MusicPlazaFilterPanel`（`DsPanel`，排序/分类/标签三段 `DsChip`，选中即回调进 browse 的 state 并 `_page = 1`），页头下方留一行 muted 摘要写当前 `排序 · 分类 · 标签`。顺手补掉一处对齐断裂：在线 tab 的 tab 行原先既没有 `s20` 左右内边距、也没有 44 高，而 我的 tab 的工具栏两者都有，切 tab 时整条工具栏会横移。新增 l10n 5 个 key（`plazaFilterTitle/Sorts/Groups/Tags/Done`，en + zh-CN）并跑 `dart run slang`；生成的 `.g.dart` 带进了 slang 自身的跨 namespace 重排（`room`/`settings` 的 `_ => null, } ?? switch (path)` 边界移动），不是本轮手改的内容。 | 爱奇艺首页/频道页是「顶部导航 + 筛选 + 轮播图」的头排 + 自上而下的单行模块（每行独立横滑），筛选是头部入口而非常驻条件行（woshipm 爱奇艺APP2023体验优化分析 1178、人人都是产品经理 爱奇艺产品分析报告 5677048）；腾讯视频首页顶栏为「搜索框 + 筛选按钮」，分类/筛选在二级页展示、首屏不放条件墙，内容行「左图右文单行排列、标题+副标题、右侧静态信息」（zcool 流媒体平台首页设计系列——腾讯视频 1180、chinutech 视频平台的会员运营细节 1179）。即：多条件收进一个入口，页面高度留给内容。 | `dart analyze apps/pure_live/lib` 0 issues；`dart format --line-length 120` 本轮文件 0 追加改动；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,music)`） |
 | 2026-11-02 03:23 | vod | 影视海报卡（`VodSeasonCard`，三处片单共用：影视页 poster 墙、搜索结果的番剧/电影、个人页在看）把「比例格」和「固定内容高度」对冲掉了：片单传 `aspectRatio: 0.62`，格子高度 = 列宽 × 1.613，而卡片按「3:4 海报 + 两行片名 + 一行更新状态」排内容，留给文字区的只有 `列宽 × 0.28`；量规把列宽压在 220–340，于是 220–269 段（3 列的 700–840px 窗、4 列的 950–1150px 窗，正是常见笔记本宽度）差 5–14px，片名第二行与更新状态被推出卡片、叠到下一行海报上，300–340 段又反过来空出 20–60px 死白。本轮把卡片改成「名字区定高 + 封面吃剩余」：新增 `kVodSeasonCardInfoExtent = 60`（compact 两行 42 + 6/8 内边距，touch 两行 44 也装得下），片名区 `SizedBox` 定高、海报 `Expanded` + `Stack(fit: StackFit.expand)` 承接高度（3:4 降为偏好，紧约束下按格裁边），更新状态 `subtitle`（`更新至第 N 话` / `全 N 话`）从文字区挪上海报右上角 `RoomCoverChip(compact: true)`、评分保持右下角，`ClipRRect` 从「只圆海报顶角」提到整卡；`0.62` 折成 `kVodSeasonTileAspect` 给三处片单共用，免得下一处再各写各的。 | 爱奇艺的内容卡把运营信息贴在海报四角——左上收藏、右上免费/VIP、左下分类、右下评分，「通过一张海报就能尽量告诉用户尽量多的信息」，海报下面只留片名（csdn 爱奇艺UI赏析—首页推荐 125812485）；卡片元素以 3–5 个为宜，更新日期、集数、评分属贴在视觉块上的提示信息元素，超了会主次不分（woshipm 在电视端卡片设计如何进行 1047767）；内容卡分「图片块 + 内容块」，图片块取 16:9 / 1:1 / 2:3 这类固定形态（developer.android.google.cn TV 卡片指南 cards）。即：状态上封面、名字区定高，一行卡片才对得齐。 | `dart analyze apps/pure_live/lib` 0 issues；`dart format --line-length 120` 重排到 3 处无关旧行已逐 hunk 还原；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,vod)`） |
 | 2026-11-02 04:12 | iptv | 来源页那张表（`views/iptv_sources_view.dart` 的 `_SourcesTable`）与上一轮修掉的频道表是同一个缺陷，但更重：`layout: DsTableLayout.auto()` + 六列最小合计 240+100+90+150+104+92 = 776px。窄窗（手机 390、平板竖屏 600）拿到横滚 + 边缘渐隐，「自动更新」开关和删除被推到视口外；<480 时 kit 的兜底 card 版式一行只有一个文字行，而本站的 `_SourceNameCell` 本来就是两行（名称+徽章 / 地址+复制·打开），会被裁。本轮把窄态与中态都由模块定义：<760 改为堆叠行（`_SourceRow`：种类图标块 40 + 名称行含 网络/本地 与 使用中 徽章 + 一行 `类型 · N 个频道 · 更新时间` + 地址行含复制/打开 + 右列 自动更新开关在上、同步/删除在下），≥760 才是表，且「类型」列只在 ≥960 出现——它是地址的提示（`.m3u8`/`.xml.gz` 就在地址里），中窗把它读进地址行前缀 `M3U8 · https://…` 而不是再占一格，五列合计落到 200+76+120+96+84+32 = 608px；表格布局回到默认 `.rows()`，窄态不再交给 kit 的标签堆。顺带把两种形态共用的东西折成一个 `_SourcesActions`（activeId/频道数/忙碌集/阻塞 + 名称·地址·类型·时间·频道数·是否网络·是否使用中 的逐项读法 + 同步/删除/开关三个动作），表格里散在 `value:`/`cell:` 里的 `item is IptvPlaylist ? … : (item as EpgSource).…` 分支收敛到一处，堆叠行读的是同一套，两种形态不会再各说各话；`_copyAddress`/`_openAddress` 提成 `copySourceAddress`/`openSourceAddress` 供两形态共用。无新增 l10n（`channelCount`/`neverUpdated`/`networkTag` 等已够用）。 | 成熟的直播源管理页是「一行一个源」而不是六列表格：xTeVe 的 Sources 页每行给 Name、Links（该地址能取到的频道数）、Update period（自动更新周期，0 为关）、Enabled 开关与更新按钮，「点击更新按钮后…显示时间同时 Links 栏会有数量」（baijiahao 如何私人定制你的专属IPTV频道）；iptv-checker 管理界面是「左侧导航栏 + 右侧功能区」，EPG 数据源单列（csdn 终极指南：如何快速检测IPTV播放源可用性）；TV 端播放器同样把「名称 + 频道数 + 最后更新」当作列表行的三要素，且列表/图标/标题是可切的排布而非并排的列（isharepc TiviMate+Televizo 评测）。即：来源行 = 名称 + 数量 + 更新时间 + 开关/动作，类型属于地址而不是独立一列；放不下时堆叠行，不是横滚。 | `dart analyze apps/pure_live/lib` 0 issues；`dart format --line-length 120` 只动本轮文件（第二次跑 0 改动）；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,iptv)`） |
+| 2026-11-02 04:47 | music | 推荐页（模块自己的首页 `pages/music_recommend_view.dart`）没有第一视觉焦点：六类内容全排成同一种「行标题 + 内容」的等高行，歌单横排从页面第一条像素就开始，跟爱奇艺/腾讯视频那套「一张大 Banner 头图 → 再往下才是分行片单」的首页层级完全不同。本轮把头图补上，并且是**从既有数据里取**而不是造内容：`MusicRecommendHero` 读广场第一页最热的那一张歌单（`playlists.firstOrNull`），封面整块在左（宽窗 152 / 窄窗 104）、名字走 `heading` 两行、`作者 · N 首` 走 caption、眉标用广场自己的热门标签（不是编的「今日推荐」），底图是同一张封面 `ClipRect + ImageFiltered(blur 28) + Opacity(0.35)` 垫在 `accent(0.24) → surface` 渐变上——沿用本模块 EQ 中心 `_Hero` 与播放页背景已有的 hero 语言；动作是两个写明文字的小按钮 `全部播放` + `打开歌单`（头图整卡可点，播放在此页现取 `musicOnlinePlaylistDetailProvider` 的 tracks 再 `playAll`，取不到就报 `onlineLoadFailed`，不留死按钮）。横排改成读 `strip = playlists.skip(1)`，头图吃掉的那一项不再重复出现，只剩一张歌单时连行标题一起收起（`if (strip.isNotEmpty \|\| waitingForPlaza \|\| plazaFailed)`），失败重试行与加载态不受影响。开关按仓库「版式写死 + 每元素一个显隐开关」的范式接到 `MusicUiElement.recommendBanner`（同一份 `interface.musicUi`，枚举文档从「player's surfaces」放宽到「module's surfaces」），落在设置 → 音乐 → 界面设置 的第一条；新增 l10n `uiRecommendBanner`/`uiRecommendBannerDesc`（en + zh-CN）并跑 `dart run slang`。一处同源缺陷只记录未改：`pages/music_eq_center_page.dart:222` 的背景 `DsImage` 三个框参数全空，撞上 desen_ui 0.3.2 的 `(width!=null&&height!=null)!=(aspectRatio!=null)` 断言（debug 一进 EQ 中心即抛），本模块其余 8 处都有框。 | 首页的版式是「顶部导航/搜索栏 → banner 的滚动，为用户推荐最热的内容 → 往下才是『猜你喜欢』和热播剧推荐」，分区页更是「Banner + 分类合集 + 内容宫格 + 右上角筛选」的模块化结构，Banner 是首屏唯一的大视觉（jianshu 爱奇艺APP产品体验报告 5ddd4b9f3a09）；爱奇艺首页 Banner 的大标题压在左下、轮播点让到右下，「人工推荐的内容占据最醒目的位置」即推荐位是单独一层而不是行里的第一格（csdn 爱奇艺UI赏析—首页推荐 125812485、sohu 这样设计Banner点击率更高 445775567）；腾讯视频首页内容推荐区 = 「Banner 推荐站内热门内容，支持滑动与自动切换」+ 其下的双瀑布流与大卡片，且「卡片形式采用封面/视频+标题+标签」，同屏内容块刻意控制在 6 个以免浏览成本过高（zcool/ui.cn 深度拆解腾讯视频app细节设计 645580）。Banner 的背景色随内容取色衬托、深色表现体现空间感（huke88 UI 场景中的Banner布局样式探索 2519）。即：头图是首屏第一层、单独占一块，片单从它下面才开始；行标题与卡片同层是层级缺失。 | `dart analyze apps/pure_live/lib` 0 issues；`dart format --line-length 120` 只动本轮 3 个文件（第二次跑 0 改动）；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`feat(ui,music)`） |

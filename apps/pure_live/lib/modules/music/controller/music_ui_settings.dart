@@ -6,7 +6,7 @@ import 'package:live_storage/live_storage.dart';
 
 import 'package:pure_live/l10n/translations.dart';
 
-/// One decorative piece the player's surfaces can draw. The designs are
+/// One decorative piece the module's surfaces can draw. The designs are
 /// fixed; a choice only decides whether the piece appears.
 enum MusicUiElement {
   /// The player page's blurred cover backdrop.
@@ -14,6 +14,9 @@ enum MusicUiElement {
 
   /// The live FFT bars on the player page's stage.
   spectrum,
+
+  /// The 推荐 page's banner, above its first row.
+  recommendBanner,
 }
 
 /// What the player's stage draws: the sleeve as it is, the record on a
@@ -108,7 +111,8 @@ final class MusicStageOverride extends Notifier<MusicPlayerMode?> {
 /// The stage the player page draws: this run's choice, else the default.
 final musicStageOverrideProvider = NotifierProvider<MusicStageOverride, MusicPlayerMode?>(MusicStageOverride.new);
 
-/// Which pieces the player draws, and how its visualiser draws them.
+/// Which pieces the module's surfaces draw, and how the visualiser draws
+/// its data.
 @immutable
 final class MusicUiSettings {
   /// Creates the settings.
@@ -188,7 +192,7 @@ final class MusicUiSettings {
 /// The key the visibility lives under; one set for every device.
 const String kMusicUiPrefsKey = 'interface.musicUi';
 
-/// Owns the player's visibility and visualiser style under
+/// Owns the module's element visibility and visualiser style under
 /// `interface.musicUi`.
 final class MusicUiSettingsController extends Notifier<MusicUiSettings> {
   @override
@@ -228,7 +232,7 @@ final class MusicUiSettingsController extends Notifier<MusicUiSettings> {
   Future<void> reset() => set(MusicUiSettings.standard);
 }
 
-/// The settings every player surface draws.
+/// The settings every module surface draws.
 final musicUiSettingsProvider = NotifierProvider<MusicUiSettingsController, MusicUiSettings>(
   MusicUiSettingsController.new,
 );
