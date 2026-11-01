@@ -20,11 +20,12 @@ import 'package:pure_live/modules/hongguo/official/hongguo_account.dart' show Ho
 import 'package:pure_live/modules/hongguo/official/hongguo_related.dart' show HongguoRelatedWork;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_comment_panel.dart' show HongguoCommentPanel;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart' show HongguoEpisodeShelf;
-import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show HongguoSeriesRow, hongguoDurationText;
+import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart'
+    show HongguoProgressStripe, HongguoSeriesRow, hongguoDurationText;
 import 'package:pure_live/shared/shared.dart';
 
-/// One series' page: its metadata, the episode shelf, its reviews and related
-/// works, and the card that starts playback.
+/// One series' page: the series' own head, the episode shelf, its reviews and
+/// related works.
 ///
 /// The picture itself lives on its own page (`RouteNames.hongguoPlayer`), so
 /// this page never holds a player handle: it reads the shelf's checkpoint,
@@ -44,7 +45,6 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
   HongguoSeriesDetail? _detail;
   bool _loading = true;
   String? _error;
-  bool _introExpanded = false;
 
   @override
   void initState() {
@@ -99,9 +99,10 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
     return byIndex.isEmpty ? null : byIndex.first;
   }
 
-  /// Pushes the player at [episode]; the checkpoint rides along only for the
-  /// episode it was written on.
-  void _play(HongguoSeriesDetail detail, HongguoEpisode? episode, HongguoWatchProgress? row) {
+  /// Pushes the player at [episode]; the checkpoint passed as `row` rides
+  /// along only for the episode it was written on, as the head asks for one
+  /// and the shelf for another.
+  void _play(HongguoSeriesDetail detail, HongguoEpisode? episode, {HongguoWatchProgress? row}) {
     final chosen = episode ?? _resumeEpisode(detail, row) ?? detail.episodes.first;
     final resume = row != null && row.episodeVid == chosen.vid ? row.positionMs / 1000 : null;
     unawaited(context.push(RouteNames.hongguoPlayerFor(widget.seriesId, vid: chosen.vid, resumeSeconds: resume)));
@@ -139,62 +140,105 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
     if (detail == null) return const SizedBox.shrink();
     final row = _checkpoint();
     final resume = _resumeEpisode(detail, row);
-    final play = _playCard(context, detail, row, t);
+    final head = HongguoSeriesHead(
+      detail: detail,
+      seriesId: widget.seriesId,
+      onPlay: ({resume = false, episode}) => _play(detail, episode, row: resume ? row : null),
+    );
     final shelf = HongguoEpisodeShelf(
       detail: detail,
       current: resume,
-      onOpen: (episode) => _play(detail, episode, row),
+      onOpen: (episode) => _play(detail, episode, row: row),
     );
-    final info = _info(context, detail, t);
     final episodeVid = resume?.vid ?? '';
     final comments = HongguoCommentPanel(seriesId: widget.seriesId, episodeVid: episodeVid);
     final related = _RelatedSection(seriesId: widget.seriesId);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 1000;
-        if (!wide) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: DsSpace.s16,
-              children: [play, shelf, info, related, comments],
-            ),
-          );
-        }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(DsSpace.s24, DsSpace.s12, DsSpace.s24, DsSpace.s24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: DsSpace.s16,
-                  children: [play, info, related, comments],
-                ),
-              ),
-            ),
-            SizedBox(
-              width: 320,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(0, DsSpace.s12, DsSpace.s24, DsSpace.s24),
-                child: shelf,
-              ),
-            ),
-          ],
+        // The episode shelf used to sit in a 320px column of its own on a wide
+        // window; the reference lays the detail page out as one reading column
+        // — head, then the selection, then the rest — so the shelf keeps its
+        // place in the flow at every width.
+        final side = constraints.maxWidth >= 1000 ? DsSpace.s24 : DsSpace.s20;
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(side, DsSpace.s12, side, DsSpace.s24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: DsSpace.s16,
+            children: [head, shelf, related, comments],
+          ),
         );
       },
     );
   }
+}
 
-  /// The way into the player: the cover, where the viewer stopped, and the
-  /// two ways on — from the checkpoint or from the first episode.
-  Widget _playCard(BuildContext context, HongguoSeriesDetail detail, HongguoWatchProgress? row, Translations t) {
+/// The series' own head: the cover, the name, the update and the figures,
+/// where the viewer stopped, every way into the player and the shelf's own
+/// bookmark — all in one block, the way the station's detail pages open.
+///
+/// Before it was two: a small card with the cover, the name and the play
+/// button, then a block repeating the name as the page's title with the
+/// figures, the badges and the favourite under it. The head says each of
+/// those once and keeps every action of the series beside its name.
+final class HongguoSeriesHead extends ConsumerStatefulWidget {
+  /// The head for [detail]; [onPlay] opens the chosen episode.
+  const HongguoSeriesHead({required this.detail, required this.seriesId, required this.onPlay, super.key});
+
+  /// The series as the detail page answered it.
+  final HongguoSeriesDetail detail;
+
+  /// The series' id, the key the library's progress and bookmark hang on.
+  final String seriesId;
+
+  /// Opens the player: the checkpoint's episode when `resume` is set, another
+  /// one when the viewer picks it from the head.
+  final void Function({bool resume, HongguoEpisode? episode}) onPlay;
+
+  @override
+  ConsumerState<HongguoSeriesHead> createState() => _HongguoSeriesHeadState();
+}
+
+final class _HongguoSeriesHeadState extends ConsumerState<HongguoSeriesHead> {
+  bool _introExpanded = false;
+
+  /// The checkpoint worth resuming — a finished series keeps its row in the
+  /// history but is not resumed here.
+  HongguoWatchProgress? _checkpoint() {
+    final row = ref.watch(hongguoLibraryProvider).progressOf(widget.seriesId);
+    if (row == null || row.completed || row.positionMs <= 0) return null;
+    return row;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    final detail = widget.detail;
     final meta = detail.meta;
+    final row = _checkpoint();
     final fallback = CoverFallback(title: meta.title, padding: const EdgeInsets.all(DsSpace.s8));
+    final figures = <String>[
+      if (meta.statusText.isNotEmpty) meta.statusText,
+      if (meta.hot.isNotEmpty) meta.hot,
+      if (meta.playCount > 0) '${t.hongguo.plays} ${AudienceFormat.format(meta.playCount)}',
+      if (meta.rating > 0) t.hongguo.rating(score: meta.rating.toStringAsFixed(1)),
+      if (meta.followedCount > 0) '${t.hongguo.followers} ${AudienceFormat.format(meta.followedCount)}',
+      if (meta.likeCount > 0) '${t.hongguo.likes} ${AudienceFormat.format(meta.likeCount)}',
+      if (meta.episodeCount > 0) t.hongguo.episodesCount(count: meta.episodeCount),
+    ];
+    final library = ref.watch(hongguoLibraryProvider);
+    final account = ref.watch(hongguoAccountProvider);
+    final snapshot = HongguoSeries(
+      seriesId: meta.seriesId,
+      title: meta.title,
+      cover: meta.cover,
+      intro: meta.intro,
+      episodeCount: meta.episodeCount,
+    );
+    final favored = library.isFavorite(meta.seriesId);
+    final hasEpisode = detail.episodes.isNotEmpty;
     return DsCard(
       style: const DsCardStyle(padding: EdgeInsets.all(DsSpace.s12)),
       child: Column(
@@ -206,15 +250,15 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
             spacing: DsSpace.s12,
             children: [
               SizedBox(
-                width: 56,
-                height: 76,
+                width: 88,
+                height: 118,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(theme.radii.card),
                   child: meta.cover.isEmpty
                       ? fallback
                       : DsImage(
                           image: hongguoCoverImage(meta.cover),
-                          aspectRatio: 56 / 76,
+                          aspectRatio: 88 / 118,
                           semanticLabel: meta.title,
                           fallback: fallback,
                         ),
@@ -223,21 +267,45 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: DsSpace.s4,
+                  spacing: DsSpace.s6,
                   children: [
                     Text(
                       meta.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                      style: theme.typography.heading.copyWith(color: colors.text),
                     ),
-                    Text(
-                      row == null
-                          ? t.hongguo.notWatchedYet
-                          : '${t.hongguo.episodeLabel(index: row.episodeIndex)} · '
-                                '${hongguoDurationText(Duration(milliseconds: row.positionMs))}',
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
+                    if (figures.isNotEmpty)
+                      Text(figures.join(' · '), style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                    if (meta.rankLabel.isNotEmpty || meta.categories.isNotEmpty)
+                      Wrap(
+                        spacing: DsSpace.s8,
+                        runSpacing: DsSpace.s4,
+                        children: [
+                          if (meta.rankLabel.isNotEmpty)
+                            DsBadge(
+                              label: Text(meta.rankLabel),
+                              status: DsStatus.warning,
+                              icon: const DsIcon(DsIcons.trophy),
+                            ),
+                          for (final category in meta.categories) DsBadge(label: Text(category), dot: false),
+                        ],
+                      ),
+                    // The one place the page says where the viewer stopped;
+                    // the stripe is the history row's own reading of it.
+                    if (row != null)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: DsSpace.s6,
+                        children: [
+                          Text(
+                            '${t.hongguo.episodeLabel(index: row.episodeIndex)} · '
+                            '${hongguoDurationText(Duration(milliseconds: row.positionMs))}',
+                            style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                          ),
+                          HongguoProgressStripe(fraction: row.fraction),
+                        ],
+                      ),
                   ],
                 ),
               ),
@@ -249,117 +317,75 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
             children: [
               DsButton(
                 leading: const DsIcon(DsIcons.play, size: 16),
-                onPressed: detail.episodes.isEmpty ? null : () => _play(detail, null, row),
+                onPressed: hasEpisode ? () => widget.onPlay(resume: true) : null,
                 child: Text(row == null ? t.hongguo.play : t.hongguo.continueWatching),
               ),
-              if (row != null && detail.episodes.isNotEmpty)
+              if (row != null && hasEpisode)
                 DsButton(
                   variant: DsButtonVariant.secondary,
-                  onPressed: () => _play(detail, detail.episodes.first, null),
+                  onPressed: () => widget.onPlay(episode: detail.episodes.first),
                   child: Text(t.hongguo.playFromStart),
+                ),
+              DsButton(
+                variant: favored ? DsButtonVariant.primary : DsButtonVariant.secondary,
+                leading: DsIcon(favored ? DsIcons.heart : DsIcons.heartOff, size: 16),
+                onPressed: () {
+                  final added = ref.read(hongguoLibraryProvider.notifier).toggleFavorite(snapshot);
+                  showDsToast(
+                    context: context,
+                    title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff,
+                  );
+                },
+                child: Text(favored ? t.hongguo.favorited : t.hongguo.favorite),
+              ),
+              if (account.signedIn)
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  leading: const DsIcon(DsIcons.cloudUpload, size: 16),
+                  onPressed: () =>
+                      unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).setFavorite(snapshot, add: true)),
+                  child: Text(t.hongguo.cloudFavoriteOn),
                 ),
             ],
           ),
+          if (meta.intro.isNotEmpty) _intro(context, meta.intro, theme, colors, t),
         ],
       ),
     );
   }
 
-  /// The series' own metadata: the status, the heat and figures, the board
-  /// it sits on, the shelf categories, and the story blurb with its way to
-  /// read all of it.
-  Widget _info(BuildContext context, HongguoSeriesDetail detail, Translations t) {
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
-    final meta = detail.meta;
-    final figures = <String>[
-      if (meta.statusText.isNotEmpty) meta.statusText,
-      if (meta.hot.isNotEmpty) meta.hot,
-      if (meta.playCount > 0) '${t.hongguo.plays} ${AudienceFormat.format(meta.playCount)}',
-      if (meta.rating > 0) t.hongguo.rating(score: meta.rating.toStringAsFixed(1)),
-      if (meta.followedCount > 0) '${t.hongguo.followers} ${AudienceFormat.format(meta.followedCount)}',
-      if (meta.likeCount > 0) '${t.hongguo.likes} ${AudienceFormat.format(meta.likeCount)}',
-      if (meta.episodeCount > 0) t.hongguo.episodesCount(count: meta.episodeCount),
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s8,
-      children: [
-        Text(meta.title, style: theme.typography.title.copyWith(color: colors.text)),
-        if (figures.isNotEmpty)
-          Text(figures.join(' · '), style: theme.typography.caption.copyWith(color: colors.textMuted)),
-        if (meta.rankLabel.isNotEmpty || meta.categories.isNotEmpty)
-          Wrap(
-            spacing: DsSpace.s8,
-            runSpacing: DsSpace.s8,
-            children: [
-              if (meta.rankLabel.isNotEmpty)
-                DsBadge(label: Text(meta.rankLabel), status: DsStatus.warning, icon: const DsIcon(DsIcons.trophy)),
-              for (final category in meta.categories) DsBadge(label: Text(category), dot: false),
-            ],
-          ),
-        Consumer(
-          builder: (context, ref, _) {
-            final t = context.t;
-            final library = ref.watch(hongguoLibraryProvider);
-            final account = ref.watch(hongguoAccountProvider);
-            final snapshot = HongguoSeries(
-              seriesId: meta.seriesId,
-              title: meta.title,
-              cover: meta.cover,
-              intro: meta.intro,
-              episodeCount: meta.episodeCount,
-            );
-            final favored = library.isFavorite(meta.seriesId);
-            return Wrap(
-              spacing: DsSpace.s8,
-              runSpacing: DsSpace.s8,
-              children: [
-                DsButton(
-                  variant: favored ? DsButtonVariant.primary : DsButtonVariant.secondary,
-                  leading: DsIcon(favored ? DsIcons.heart : DsIcons.heartOff, size: 16),
-                  onPressed: () {
-                    final added = ref.read(hongguoLibraryProvider.notifier).toggleFavorite(snapshot);
-                    showDsToast(
-                      context: context,
-                      title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff,
-                    );
-                  },
-                  child: Text(favored ? t.hongguo.favorited : t.hongguo.favorite),
-                ),
-                if (account.signedIn)
-                  DsButton(
-                    variant: DsButtonVariant.secondary,
-                    leading: const DsIcon(DsIcons.cloudUpload, size: 16),
-                    onPressed: () =>
-                        unawaited(ref.read(hongguoAccountFavoritesProvider.notifier).setFavorite(snapshot, add: true)),
-                    child: Text(t.hongguo.cloudFavoriteOn),
-                  ),
-              ],
-            );
-          },
-        ),
-        if (meta.intro.isNotEmpty)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: DsSpace.s4,
-            children: [
-              GestureDetector(
-                onTap: () => setState(() => _introExpanded = !_introExpanded),
-                child: Text(
-                  meta.intro,
-                  maxLines: _introExpanded ? null : 3,
-                  overflow: _introExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                  style: theme.typography.body.copyWith(color: colors.textMuted),
-                ),
-              ),
+  /// The story blurb: three lines until the viewer asks for the rest, and the
+  /// switch only appears when the words actually run past three lines.
+  Widget _intro(BuildContext context, String text, DsThemeData theme, DsColors colors, Translations t) {
+    final style = theme.typography.body.copyWith(color: colors.textMuted);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: text, style: style),
+          maxLines: 3,
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout(maxWidth: constraints.maxWidth);
+        final overflows = painter.didExceedMaxLines;
+        painter.dispose();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: DsSpace.s4,
+          children: [
+            Text(
+              text,
+              maxLines: _introExpanded ? null : 3,
+              overflow: _introExpanded ? null : TextOverflow.ellipsis,
+              style: style,
+            ),
+            if (overflows)
               DsLink(
                 label: _introExpanded ? t.hongguo.collapse : t.hongguo.expand,
                 onPressed: () => setState(() => _introExpanded = !_introExpanded),
               ),
-            ],
-          ),
-      ],
+          ],
+        );
+      },
     );
   }
 }
