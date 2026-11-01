@@ -243,6 +243,31 @@ final class HongguoOfficialClient {
     }
   }
 
+  /// Reads a body these endpoints answer with a JSON object.
+  ///
+  /// A bare `jsonDecode` throws `FormatException` for the two shapes this CDN
+  /// really does hand back now and then — a 200 whose body is empty, and an HTML
+  /// wall where the object was expected — and a `FormatException` that reaches the
+  /// player is a card reading `Unexpected end of input (at character 1)` over a
+  /// video the viewer only asked to watch. The module's own failure is what the
+  /// error card, its wording and its auto-retry are built to carry, so the two
+  /// refusals are said here once, in the caller's words.
+  static Map<String, Object?> _jsonBody(String raw, {required String emptyMessage}) {
+    if (raw.trim().isEmpty) {
+      throw HongguoOfficialFailure(emptyMessage);
+    }
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } on FormatException catch (error) {
+      throw HongguoOfficialFailure('响应格式已变化（$error）');
+    }
+    if (decoded is! Map<String, Object?>) {
+      throw HongguoOfficialFailure(emptyMessage);
+    }
+    return decoded;
+  }
+
   // ---- website pages -----------------------------------------------------
 
   /// The `_ROUTER_DATA` JSON embedded in a page, braces matched, strings
@@ -374,7 +399,14 @@ final class HongguoOfficialClient {
       }
       if (raw is Map<String, Object?>) return raw;
       if (raw is String) {
-        final decoded = jsonDecode(raw);
+        final Object? decoded;
+        try {
+          decoded = jsonDecode(raw);
+        } on FormatException {
+          // One script tag whose payload is not JSON is not a reason to give up
+          // on the page: another tag may carry the board.
+          continue;
+        }
         if (decoded is Map<String, Object?>) return decoded;
       }
     }
@@ -450,8 +482,8 @@ final class HongguoOfficialClient {
       ),
       retry: true,
     );
-    final decoded = jsonDecode(raw);
-    final rows = decoded is Map<String, Object?> ? decoded['suggest_list'] : null;
+    final decoded = _jsonBody(raw, emptyMessage: '搜索联想暂不可用');
+    final rows = decoded['suggest_list'];
     if (rows is! List<Object?>) {
       throw const HongguoOfficialFailure('搜索联想暂不可用');
     }
@@ -476,10 +508,7 @@ final class HongguoOfficialClient {
       Uri.parse('$kHongguoSite/api/search/result?query=${Uri.encodeQueryComponent(keyword)}&page=$page'),
       retry: true,
     );
-    final section = jsonDecode(raw);
-    if (section is! Map<String, Object?>) {
-      throw const HongguoOfficialFailure('搜索响应格式已变化');
-    }
+    final section = _jsonBody(raw, emptyMessage: '搜索响应格式已变化');
     final pageNum = section['pageNum'];
     if (pageNum is num && pageNum.toInt() != page) {
       throw const HongguoOfficialFailure('搜索页码不匹配');
@@ -541,8 +570,8 @@ final class HongguoOfficialClient {
       body: Uint8List.fromList(body),
     );
     final raw = await _text(Uri.parse(signed.url), body: signed.body, headers: signed.headers, retry: true);
-    final root = jsonDecode(raw);
-    if (root is! Map<String, Object?> || (root['code'] is num ? (root['code']! as num).toInt() : -1) != 0) {
+    final root = _jsonBody(raw, emptyMessage: '分类服务暂不可用');
+    if ((root['code'] is num ? (root['code']! as num).toInt() : -1) != 0) {
       throw const HongguoOfficialFailure('分类服务暂不可用');
     }
     final data = root['data'];
@@ -650,8 +679,8 @@ final class HongguoOfficialClient {
     if (offsetOverride != null && offsetOverride >= 0) values['offset'] = '$offsetOverride';
     final signed = _signer.sign('$_kSearchHost/reading/bookapi/search/tab/v', values);
     final raw = await _text(Uri.parse(signed.url), headers: signed.headers, userAgent: HongguoVendor.appUa);
-    final data = jsonDecode(raw);
-    if (data is! Map<String, Object?> || (data['code'] is num ? (data['code']! as num).toInt() : -1) != 0) {
+    final data = _jsonBody(raw, emptyMessage: '搜索接口暂不可用');
+    if ((data['code'] is num ? (data['code']! as num).toInt() : -1) != 0) {
       throw const HongguoOfficialFailure('搜索接口暂不可用');
     }
     final tabsValue =
@@ -821,10 +850,7 @@ final class HongguoOfficialClient {
         headers: headers,
       );
     }
-    final data = jsonDecode(raw);
-    if (data is! Map<String, Object?>) {
-      throw const HongguoOfficialFailure('播放信息为空');
-    }
+    final data = _jsonBody(raw, emptyMessage: '播放信息为空');
     final code = (data['Code'] as num?)?.toInt() ?? (data['code'] as num?)?.toInt() ?? 0;
     if (code != 0) {
       throw HongguoOfficialFailure('播放接口暂不可用（错误码 $code）');
@@ -920,8 +946,8 @@ final class HongguoOfficialClient {
       throw const HongguoOfficialFailure('播放地址格式异常');
     }
     final infoRaw = await _text(Uri.parse(fallback));
-    final infoJson = jsonDecode(infoRaw);
-    final info = infoJson is Map<String, Object?> && infoJson['video_info'] is Map<String, Object?>
+    final infoJson = _jsonBody(infoRaw, emptyMessage: '没有播放资源');
+    final info = infoJson['video_info'] is Map<String, Object?>
         ? (infoJson['video_info']! as Map<String, Object?>)['data']
         : null;
     if (info is! Map<String, Object?>) {
