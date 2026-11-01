@@ -10,6 +10,7 @@ import 'package:pure_live/features/account/account.dart' show showBilibiliWebLog
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart';
 import 'package:pure_live/modules/vod/controller/vod_social.dart';
+import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodDynamicRow, VodVideoCard, VodVideoRow, kVodCardInfoExtent;
 import 'package:pure_live/shared/shared.dart';
 
@@ -123,16 +124,11 @@ final class _VodPageState extends ConsumerState<VodPage> {
     unawaited(context.push('/vod/$bvid'));
   }
 
-  void _refreshCurrent() {
-    switch (_tab) {
-      case VodTab.recommend:
-        unawaited(ref.read(vodFeedProvider.notifier).refresh(_recommendKey));
-      case VodTab.popular:
-        unawaited(ref.read(vodFeedProvider.notifier).refresh(_popularKey));
-      case VodTab.dynamics:
-        unawaited(ref.read(vodDynamicsProvider.notifier).refresh());
-    }
-  }
+  Future<void> _refreshCurrent() => switch (_tab) {
+    VodTab.recommend => ref.read(vodFeedProvider.notifier).refresh(_recommendKey),
+    VodTab.popular => ref.read(vodFeedProvider.notifier).refresh(_popularKey),
+    VodTab.dynamics => ref.read(vodDynamicsProvider.notifier).refresh(),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -143,27 +139,20 @@ final class _VodPageState extends ConsumerState<VodPage> {
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          child: Row(
-            children: [
-              Expanded(
-                child: DsTopNav<VodTab>(
-                  value: _tab,
-                  onChanged: _selectTab,
-                  items: [
-                    for (final tab in VodTab.values)
-                      DsTopNavItem(value: tab, label: Text(tab.label(t)), icon: DsIcon(tab.icon)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: DsSpace.s8),
-              ChromeIconButton(
-                icon: DsIcons.refresh,
-                semanticLabel: t.vod.refresh,
-                tooltip: t.vod.refresh,
-                onPressed: _refreshCurrent,
-                size: 36,
-              ),
-            ],
+          // The 动态 tab is a post list with no card form, so it gets the
+          // reload alone; the two feeds that switch between cards and rows
+          // offer the switch where the viewer is looking at them.
+          child: VodFeedToolbar(
+            tabs: DsTopNav<VodTab>(
+              value: _tab,
+              onChanged: _selectTab,
+              items: [
+                for (final tab in VodTab.values)
+                  DsTopNavItem(value: tab, label: Text(tab.label(t)), icon: DsIcon(tab.icon)),
+              ],
+            ),
+            showLayout: _tab != VodTab.dynamics,
+            onRefresh: _refreshCurrent,
           ),
         ),
         Expanded(

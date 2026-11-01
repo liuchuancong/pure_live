@@ -59,8 +59,12 @@ B 站视频站（`vod.dart` 自述 "The Bilibili station"）。页面：`pages/v
 卡片 `widgets/vod_widgets.dart` 的 `VodVideoCard`（信息区 `kVodCardInfoExtent = 72`）；
 网格走 `PagedCardGrid`；数据来自 `packages/live_vod` 的 `BilibiliVodClient`。
 差距：`pages/vod_settings_pane.dart` 的「界面设置」只有一个开关（详情是否显示在画面下方），
-没有视频卡的逐元素显隐设置；首页没有头图/分行的片单编排；分区、搜索、下载页的工具栏与
-爱奇艺/腾讯的对应面尚未逐项对照。
+没有视频卡的逐元素显隐设置；首页没有头图/分行的片单编排；搜索页的两个筛选器常驻在页头，
+尚未按「多条件收进 DsPanel」重排。
+（已闭合：浏览类页面的工具栏。首页/分区/影视三页的头排现在与直播热门页同形——宽窗
+`标签 + 版式切换 + 刷新`，窄窗只留标签行、刷新与版式收进右上角 more；见
+`widgets/vod_toolbar.dart` 的 `VodFeedToolbar`。动态 tab 与影视 poster 墙没有第二种版式，
+所以传 `showLayout: false`，不摆一个失效的开关。）
 
 ### iptv —— `apps/pure_live/lib/modules/iptv/`（领域层在 `packages/live_iptv`，无 UI）
 
@@ -95,8 +99,8 @@ rank/coverTags/episodes/today/score/hot/meta，在 `hongguo_settings_pane.dart` 
 
 | 字段 | 值 |
 |---|---|
-| 下一轮模块 | vod |
-| 上一次提交 | —（台账建立，尚无轮次） |
+| 下一轮模块 | iptv |
+| 上一次提交 | vod · 视频站浏览页工具栏与成熟页同形（本轮 HEAD 提交） |
 | 连续无改动轮数 | 0 |
 | 暂停条件 | 连续 3 轮无改动即停手并在回复里说明需要用户裁决 |
 
@@ -104,3 +108,4 @@ rank/coverTags/episodes/today/score/hot/meta，在 `hongguo_settings_pane.dart` 
 
 | 日期时间 | 模块 | 改了什么 | 参考依据 | 验证 | 提交 |
 |---|---|---|---|---|---|
+| 2026-11-02 01:56 | vod | 首页/分区/影视三个浏览页的头排各自为政：首页只有一个刷新按钮，分区页连刷新都没有，而它们读的正是全局 `browseLayoutProvider`——视频站里没有任何入口能切卡片/列表。新增 `widgets/vod_toolbar.dart` 的 `VodFeedToolbar`，照直播热门页那套形态收敛：宽窗 `标签行 + LayoutToggle + 刷新`，窄窗只留标签行、刷新与版式收进右上角 more（`DsMenuAnchor`），行高统一到 44。动态 tab 与影视 poster 墙没有第二种版式 → `showLayout: false`，不留失效开关。 | 爱奇艺客户端首页有「海报模式/列表模式」两种首页形态、默认海报模式，且频道页是「Banner + 分类合集 + 内容宫格 + 右上角筛选」的模块化版式（jianshu 爱奇艺APP产品体验报告、zhidao 爱奇艺怎么切换列表模式）；腾讯视频首页为「顶部操作区 + Banner + 大卡片/双瀑布流」（new.qq.com 5500字拆解腾讯视频app细节设计）。即：视图形态是页面级入口，页面动作落在页头右上角。 | `dart analyze apps/pure_live/lib` 0 issues；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,vod)`） |

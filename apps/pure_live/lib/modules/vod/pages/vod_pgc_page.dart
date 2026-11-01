@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_vod/live_vod.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
+import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodSeasonCard;
 import 'package:pure_live/shared/shared.dart';
 
@@ -87,26 +88,16 @@ final class _VodPgcPageState extends ConsumerState<VodPgcPage> {
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          child: Row(
-            children: [
-              Expanded(
-                child: DsTopNav<int>(
-                  value: _type,
-                  onChanged: _select,
-                  items: [
-                    for (final type in kVodPgcTypes) DsTopNavItem(value: type, label: Text(vodPgcLabel(t, type))),
-                  ],
-                ),
-              ),
-              const SizedBox(width: DsSpace.s8),
-              ChromeIconButton(
-                icon: DsIcons.refresh,
-                semanticLabel: t.vod.refresh,
-                tooltip: t.vod.refresh,
-                onPressed: () => unawaited(ref.read(vodPgcProvider.notifier).refresh(_type)),
-                size: 36,
-              ),
-            ],
+          // The cinema grid is posters alone — one form, so no layout switch
+          // beside its tabs, only the reload the other feeds offer.
+          child: VodFeedToolbar(
+            tabs: DsTopNav<int>(
+              value: _type,
+              onChanged: _select,
+              items: [for (final type in kVodPgcTypes) DsTopNavItem(value: type, label: Text(vodPgcLabel(t, type)))],
+            ),
+            showLayout: false,
+            onRefresh: () => ref.read(vodPgcProvider.notifier).refresh(_type),
           ),
         ),
         Expanded(
