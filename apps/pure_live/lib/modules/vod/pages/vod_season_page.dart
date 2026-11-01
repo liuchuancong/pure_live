@@ -13,8 +13,9 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
 import 'package:pure_live/modules/vod/controller/vod_pgc.dart';
+import 'package:pure_live/modules/vod/controller/vod_playback_settings.dart' show vodPlaybackSettingsProvider;
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show vodQualityProvider;
-import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show vodDurationText;
+import 'package:pure_live/modules/vod/widgets/vod_widgets.dart' show VodSeasonHead, vodDurationText;
 import 'package:pure_live/shared/shared.dart' show LiveWindow, silencePlayer;
 
 /// One cinema title's page: the player over media_core, the season's blurb,
@@ -360,7 +361,7 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
             spacing: DsSpace.s16,
             children: [
               _player(immersive: false),
-              _header(detail, t),
+              _header(detail),
               if (detail.episodes.isNotEmpty) _episodes(detail, t),
             ],
           ),
@@ -369,43 +370,17 @@ final class _VodSeasonPageState extends ConsumerState<VodSeasonPage> with RouteA
     );
   }
 
-  Widget _header(VodSeasonDetail detail, Translations t) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    final episode = _episode;
-    final published = detail.publishedAt;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: DsSpace.s8,
-      children: [
-        Row(
-          spacing: DsSpace.s8,
-          children: [
-            Expanded(
-              child: Text(
-                detail.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.title.copyWith(color: colors.text),
-              ),
-            ),
-            if (detail.followed) DsBadge(label: Text(t.vod.following), dot: false),
-            if (published != null)
-              Text(
-                '${published.year}',
-                style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
-              ),
-          ],
-        ),
-        if (episode != null) Text(episode.title, style: theme.typography.body.copyWith(color: colors.text)),
-        if (detail.evaluate.isNotEmpty)
-          Text(
-            detail.evaluate,
-            maxLines: 4,
-            overflow: TextOverflow.ellipsis,
-            style: theme.typography.body.copyWith(color: colors.textMuted),
-          ),
-      ],
+  /// The season's own front, taken out of the answer the page already reads:
+  /// the poster, the name said once, where the season stands, the episode on
+  /// the picture, its figures and tags, and the blurb the card wall could only
+  /// truncate.
+  Widget _header(VodSeasonDetail detail) {
+    return VodSeasonHead(
+      season: detail,
+      episode: _episode,
+      // The station's one switch for the figures and the blurb; the video
+      // page's details obey it, so this page's do too.
+      showDetails: ref.watch(vodPlaybackSettingsProvider).showDetails,
     );
   }
 

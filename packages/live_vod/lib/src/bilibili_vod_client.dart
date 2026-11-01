@@ -747,8 +747,8 @@ final class BilibiliVodClient {
     return VodSeasonPage(seasons: seasons, cursor: next, hasMore: data['has_next'] == true && next != cursor);
   }
 
-  /// A season's page: its blurb, its episodes and whether the viewer follows
-  /// it.
+  /// A season's page: its own state, score and figures, its blurb, its
+  /// episodes and whether the viewer follows it.
   Future<VodSeasonDetail> seasonDetail({required int seasonId}) async {
     final response = await http.send(
       LiveRequest.custom(
@@ -766,15 +766,69 @@ final class BilibiliVodClient {
     final started = publish is Map ? DateTime.tryParse('${publish['pub_time'] ?? ''}') : null;
     final cover = '${data['cover'] ?? data['square_cover'] ?? ''}'.trim();
     final title = '${data['title'] ?? data['season_title'] ?? ''}'.trim();
+    final id = _intOf(data['season_id']) ?? seasonId;
+    final stat = data['stat'];
+    final score = data['rating'];
+    final areas = data['areas'];
+    final styles = data['styles'];
     return VodSeasonDetail(
-      seasonId: _intOf(data['season_id']) ?? seasonId,
+      seasonId: id,
       title: title,
       coverUrl: cover.isEmpty ? null : _https(cover),
+      subtitle: _seasonStateOf(data, id),
+      rating: score is Map ? _scoreOf(score['score']) : '',
+      viewCount: stat is Map ? _intOf(stat['views']) ?? _intOf(stat['view']) : null,
+      danmakuCount: stat is Map ? _intOf(stat['danmakus']) ?? _intOf(stat['danmaku']) : null,
+      area: areas is List
+          ? [
+              for (final area in areas)
+                if (area is Map) '${area['name'] ?? ''}'.trim(),
+            ].join('、')
+          : '',
+      styles: styles is List
+          ? [
+              for (final style in styles)
+                if ('$style'.trim().isNotEmpty) '$style'.trim(),
+            ]
+          : const [],
       evaluate: '${data['evaluate'] ?? ''}'.trim(),
       episodes: [for (final episode in episodes) ?_episodeOf(episode)],
       publishedAt: started,
       followed: status is Map && (_intOf(status['follow']) ?? 0) > 0,
     );
+  }
+
+  /// The answer's score in the shape both of its spellings carry: a feed card
+  /// writes it as a string (`"9.1"`), a season page as a number. Zero is the
+  /// source saying nothing has rated it yet, and a whole score loses its
+  /// `.0`, so the wall and the detail page write the same title's figure the
+  /// same way.
+  static String _scoreOf(Object? value) {
+    final parsed = value is num ? value.toDouble() : double.tryParse('$value');
+    if (parsed == null || parsed <= 0) return '';
+    return parsed == parsed.roundToDouble() ? parsed.toStringAsFixed(0) : '$value';
+  }
+
+  /// Where this season stands, in the source's own words.
+  ///
+  /// The answer's own `new_ep` names the schedule for an ongoing series
+  /// (`每周六19:30更新`) and the release day for a film, so it is the fallback;
+  /// the progress the detail page shows lives on the sibling entry `seasons`
+  /// carries for this season (`更新至第1278话`), and a film's answer holds no
+  /// such entry at all.
+  static String _seasonStateOf(Map<Object?, Object?> data, int seasonId) {
+    final siblings = (data['seasons'] as List<Object?>?) ?? const <Object?>[];
+    for (final sibling in siblings) {
+      if (sibling is! Map) continue;
+      if (_intOf(sibling['season_id']) != seasonId) continue;
+      final newEp = sibling['new_ep'];
+      final shown = newEp is Map ? '${newEp['index_show'] ?? ''}'.trim() : '';
+      if (shown.isNotEmpty) return shown;
+    }
+    final own = data['new_ep'];
+    if (own is! Map) return '';
+    final index = '${own['index_show'] ?? ''}'.trim();
+    return index.isNotEmpty ? index : '${own['desc'] ?? ''}'.trim();
   }
 
   /// Resolves a PGC episode's progressive address, the signed endpoint
@@ -921,6 +975,7 @@ final class BilibiliVodClient {
     final episodeId = _intOf(item['episode_id']);
     final score = item['rating'];
     final stat = item['stat'];
+    final rating = _scoreOf(score is Map ? score['score'] : score);
     return VodSeason(
       seasonId: seasonId,
       title: title,
@@ -929,11 +984,7 @@ final class BilibiliVodClient {
         _ => subtitle is String ? subtitle.trim() : '',
       },
       coverUrl: _coverOf(item['cover'] ?? item['square_cover']),
-      rating: score is Map && score['score'] != null
-          ? '${score['score']}'
-          : score is String && score.trim().isNotEmpty
-          ? score.trim()
-          : null,
+      rating: rating.isEmpty ? null : rating,
       evaluate: '${item['evaluate'] ?? ''}'.trim(),
       playCount: stat is Map ? (_intOf(stat['views']) ?? _intOf(stat['view'])) : _intOf(stat),
       followed: (_intOf(item['follow_status']) ?? 0) > 0,

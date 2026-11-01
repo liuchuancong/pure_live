@@ -3973,6 +3973,7 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get collapse => 'Less';
 	@override String get parts => 'Parts';
 	@override String get views => 'Views';
+	@override String get score => 'Rating';
 	@override String get danmakuOn => 'Show danmaku';
 	@override String get danmakuOff => 'Hide danmaku';
 	@override String get danmaku => 'Danmaku';
@@ -7961,6 +7962,7 @@ extension on TranslationsEn {
 			'vod.collapse' => 'Less',
 			'vod.parts' => 'Parts',
 			'vod.views' => 'Views',
+			'vod.score' => 'Rating',
 			'vod.danmakuOn' => 'Show danmaku',
 			'vod.danmakuOff' => 'Hide danmaku',
 			'vod.danmaku' => 'Danmaku',

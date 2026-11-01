@@ -307,6 +307,23 @@ void main() {
           'title': '某番剧',
           'cover': '//i0.hdslb.com/season.jpg',
           'evaluate': '简介',
+          'rating': {'score': 9.0, 'count': 420},
+          'stat': {'views': 5000, 'danmakus': 88},
+          'areas': [
+            {'id': 2, 'name': '日本'},
+          ],
+          'styles': ['漫画改', '推理', ''],
+          'new_ep': {'desc': '每周六19:30更新'},
+          'seasons': [
+            {
+              'season_id': 111,
+              'new_ep': {'index_show': '全1话'},
+            },
+            {
+              'season_id': 4242,
+              'new_ep': {'index_show': '更新至第1278话'},
+            },
+          ],
           'publish': {'pub_time': '2024-01-05'},
           'user_status': {'follow': 1},
           'episodes': [
@@ -329,6 +346,14 @@ void main() {
     expect(detail.title, '某番剧');
     expect(detail.followed, isTrue);
     expect(detail.publishedAt, DateTime(2024, 1, 5));
+    // The state comes from the sibling entry this season has in `seasons`,
+    // not from the answer's own `new_ep`, which names the schedule instead.
+    expect(detail.subtitle, '更新至第1278话');
+    expect(detail.rating, '9');
+    expect(detail.viewCount, 5000);
+    expect(detail.danmakuCount, 88);
+    expect(detail.area, '日本');
+    expect(detail.styles, ['漫画改', '推理']);
     final episode = detail.episodes.single;
     expect(episode.id, 7001);
     expect(episode.cid, 9001);
@@ -336,6 +361,32 @@ void main() {
     expect(episode.index, '2');
     expect(episode.title, '第二话');
     expect(episode.duration, const Duration(minutes: 24));
+  });
+
+  test('a season page without a sibling entry falls back to its own new_ep', () async {
+    final http = _FakeHttp({
+      '/pgc/view/web/season': {
+        'code': 0,
+        'data': {
+          'season_id': 44658,
+          'title': '某电影',
+          'rating': {'score': 0, 'count': 0},
+          'new_ep': {'desc': '2023年03月31日上映'},
+          'episodes': [
+            {'id': 7002, 'title': '原版'},
+          ],
+        },
+      },
+    });
+
+    final detail = await BilibiliVodClient(http).seasonDetail(seasonId: 44658);
+
+    expect(detail.subtitle, '2023年03月31日上映');
+    // A zero score is the source saying nothing rated it, not a rating.
+    expect(detail.rating, isEmpty);
+    expect(detail.viewCount, isNull);
+    expect(detail.area, isEmpty);
+    expect(detail.styles, isEmpty);
   });
 
   test('a PGC play answer resolves the progressive address', () async {

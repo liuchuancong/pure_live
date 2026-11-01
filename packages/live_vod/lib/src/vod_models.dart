@@ -552,13 +552,20 @@ final class VodEpisode {
   final int? aid;
 }
 
-/// One season's page: its blurb and its episodes.
+/// One season's page: its own head (state, score, figures, genres), its
+/// blurb and its episodes.
 final class VodSeasonDetail {
   /// A season detail.
   const new({
     required this.seasonId,
     required this.title,
     this.coverUrl,
+    this.subtitle = '',
+    this.rating = '',
+    this.viewCount,
+    this.danmakuCount,
+    this.area = '',
+    this.styles = const [],
     this.evaluate = '',
     this.episodes = const [],
     this.publishedAt,
@@ -573,6 +580,25 @@ final class VodSeasonDetail {
 
   /// The cover.
   final String? coverUrl;
+
+  /// Where the season stands, in the source's own words (`更新至第1278话`,
+  /// `2023年03月31日上映`); empty when the answer names no state.
+  final String subtitle;
+
+  /// The score as the source spells it (`9.1`); empty when it has none.
+  final String rating;
+
+  /// How many times the season was played, when the answer says.
+  final int? viewCount;
+
+  /// How many danmaku the season drew, when the answer says.
+  final int? danmakuCount;
+
+  /// The region the source files the season under (`美国`); empty when unnamed.
+  final String area;
+
+  /// The source's own subject tags (`冒险`, `动作`, `奇幻`).
+  final List<String> styles;
 
   /// The editorial blurb.
   final String evaluate;
