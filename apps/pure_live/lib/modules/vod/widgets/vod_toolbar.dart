@@ -7,35 +7,58 @@ import 'package:pure_live/app/app.dart' show browseLayoutProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart' show CardLayout, ChromeIconButton, LayoutToggle, LiveWindow;
 
+/// One head-end action a feed page offers beside the reload: the same icon
+/// button at the head's end on a wide window, the same item in the more menu
+/// on a narrow one — a page's action is one thing with two renderings.
+final class VodFeedAction {
+  /// The action, named by [label] and run by [onPressed].
+  const VodFeedAction({required this.icon, required this.label, required this.onPressed});
+
+  /// The action's glyph.
+  final DsIconData icon;
+
+  /// What the action is called, on the button's lip and in the menu.
+  final String label;
+
+  /// Runs the action.
+  final VoidCallback onPressed;
+}
+
 /// The video station's feed toolbar: its tabs at the head's start, the feed's
 /// own controls at its end — the card/list switch and a reload while the
 /// window holds them, and on a narrow window the tabs alone plus one more icon
 /// carrying the same actions. The same morphology the hot rooms page uses, so
 /// a feed the viewer can restyle is a feed that offers the restyle.
 final class VodFeedToolbar extends ConsumerWidget {
-  /// The toolbar over [tabs]; [onRefresh] reloads the feed shown, and
-  /// [showLayout] is false on a grid that has no second form.
-  const VodFeedToolbar({required this.tabs, required this.onRefresh, this.showLayout = true, super.key});
+  /// The toolbar over [tabs]; [onRefresh] reloads the feed shown and is null
+  /// on a page that has nothing to reload yet, [showLayout] is false on a grid
+  /// that has no second form, and [filter] is the page's condition entry.
+  const VodFeedToolbar({required this.tabs, required this.onRefresh, this.showLayout = true, this.filter, super.key});
 
   /// The page's tab row.
   final Widget tabs;
 
-  /// Reloads the feed the page is showing.
-  final Future<void> Function() onRefresh;
+  /// Reloads the feed the page is showing; null leaves the reload out, so a
+  /// page that has no query on the screen yet does not offer a dead button.
+  final Future<void> Function()? onRefresh;
 
   /// Whether the feed switches between the card and the list layout.
   final bool showLayout;
 
+  /// The page's filter entry, opening the panel its conditions live in.
+  final VodFeedAction? filter;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final refresh = ChromeIconButton(
-      icon: DsIcons.refresh,
-      semanticLabel: t.vod.refresh,
-      tooltip: t.vod.refresh,
-      onPressed: () => unawaited(onRefresh()),
-      size: 36,
-    );
+    final actions = <VodFeedAction>[
+      ?filter,
+      if (onRefresh != null)
+        VodFeedAction(icon: DsIcons.refresh, label: t.vod.refresh, onPressed: () => unawaited(onRefresh!())),
+    ];
+    final layouts = showLayout
+        ? <(String, CardLayout)>[(t.common.layoutGrid, CardLayout.grid), (t.common.layoutList, CardLayout.list)]
+        : const <(String, CardLayout)>[];
     return SizedBox(
       height: 44,
       child: LayoutBuilder(
@@ -44,12 +67,21 @@ final class VodFeedToolbar extends ConsumerWidget {
             return Row(
               children: [
                 Expanded(child: tabs),
-                if (showLayout) ...[const SizedBox(width: DsSpace.s8), const LayoutToggle()],
-                const SizedBox(width: DsSpace.s8),
-                refresh,
+                if (layouts.isNotEmpty) ...[const SizedBox(width: DsSpace.s8), const LayoutToggle()],
+                for (final action in actions) ...[
+                  const SizedBox(width: DsSpace.s8),
+                  ChromeIconButton(
+                    icon: action.icon,
+                    semanticLabel: action.label,
+                    tooltip: action.label,
+                    onPressed: action.onPressed,
+                    size: 36,
+                  ),
+                ],
               ],
             );
           }
+          if (actions.isEmpty && layouts.isEmpty) return tabs;
           return Row(
             spacing: DsSpace.s8,
             children: [
@@ -58,23 +90,18 @@ final class VodFeedToolbar extends ConsumerWidget {
                 semanticLabel: t.common.more,
                 align: DsAlign.end,
                 items: [
-                  DsMenuItem(
-                    leading: const DsIcon(DsIcons.refresh),
-                    label: Text(t.vod.refresh),
-                    onPressed: () => unawaited(onRefresh()),
-                  ),
-                  if (showLayout) ...[
+                  for (final (index, action) in actions.indexed) ...[
+                    if (index > 0) const DsMenuDivider(),
+                    DsMenuItem(leading: DsIcon(action.icon), label: Text(action.label), onPressed: action.onPressed),
+                  ],
+                  if (layouts.isNotEmpty) ...[
                     const DsMenuDivider(),
-                    DsMenuItem(
-                      label: Text(t.common.layoutGrid),
-                      checked: ref.watch(browseLayoutProvider) == CardLayout.grid,
-                      onPressed: () => unawaited(ref.read(browseLayoutProvider.notifier).set(CardLayout.grid)),
-                    ),
-                    DsMenuItem(
-                      label: Text(t.common.layoutList),
-                      checked: ref.watch(browseLayoutProvider) == CardLayout.list,
-                      onPressed: () => unawaited(ref.read(browseLayoutProvider.notifier).set(CardLayout.list)),
-                    ),
+                    for (final (label, value) in layouts)
+                      DsMenuItem(
+                        label: Text(label),
+                        checked: ref.watch(browseLayoutProvider) == value,
+                        onPressed: () => unawaited(ref.read(browseLayoutProvider.notifier).set(value)),
+                      ),
                   ],
                 ],
                 builder: (context, controller, _) => DsButton.icon(

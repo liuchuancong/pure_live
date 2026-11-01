@@ -11302,6 +11302,9 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '直播间'
 	String get searchKindLiveRoom => '直播间';
 
+	/// zh-CN: '筛选'
+	String get searchFilterTitle => '筛选';
+
 	/// zh-CN: '直播中'
 	String get living => '直播中';
 
@@ -15824,6 +15827,7 @@ extension on Translations {
 			'vod.searchKindCinema' => '影视',
 			'vod.searchKindUser' => '用户',
 			'vod.searchKindLiveRoom' => '直播间',
+			'vod.searchFilterTitle' => '筛选',
 			'vod.living' => '直播中',
 			'vod.fans' => '粉丝',
 			'vod.videoCount' => '视频',

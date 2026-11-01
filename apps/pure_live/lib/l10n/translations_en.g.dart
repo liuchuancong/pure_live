@@ -3933,6 +3933,7 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get searchKindCinema => 'Films';
 	@override String get searchKindUser => 'Users';
 	@override String get searchKindLiveRoom => 'Live rooms';
+	@override String get searchFilterTitle => 'Filters';
 	@override String get living => 'Live';
 	@override String get fans => 'Followers';
 	@override String get videoCount => 'Videos';
@@ -7918,6 +7919,7 @@ extension on TranslationsEn {
 			'vod.searchKindCinema' => 'Films',
 			'vod.searchKindUser' => 'Users',
 			'vod.searchKindLiveRoom' => 'Live rooms',
+			'vod.searchFilterTitle' => 'Filters',
 			'vod.living' => 'Live',
 			'vod.fans' => 'Followers',
 			'vod.videoCount' => 'Videos',
