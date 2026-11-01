@@ -72,7 +72,14 @@ B 站视频站（`vod.dart` 自述 "The Bilibili station"）。页面：`pages/v
 `iptv_settings_pane.dart`；视图：`views/iptv_panels.dart`、`iptv_sources_view.dart`、
 `iptv_guide_panel.dart`、`iptv_import_dialog.dart`、`iptv_zapper.dart`；浏览设置
 `controllers/iptv_browse_settings.dart`。现状是频道表格 + 来源资源表。
-差距：没有电视类经典的「分组树 + 频道列表 + 播放器/节目单」三栏形态，窄屏折叠态未定义；
+差距：没有电视类经典的「分组树 + 频道列表 + 播放器/节目单」三栏形态；窄屏折叠态已定义
+（<600 频道行改为堆叠列表，见运行记录 2026-11-02 本轮），但**来源页那张表还是同一个缺陷**：
+`views/iptv_sources_view.dart` 的 `DsTable` 仍是 `layout: DsTableLayout.auto()`，
+六个列最小合计 240+100+90+150+104+92 = 776px，窄窗要么横向滚动、要么落到 kit 的 card 版式
+（一行一「标签 值」且行高只有一个文字行，它的 `_SourceNameCell` 两行会被裁）。
+下一个 iptv 轮次应当照本轮同样处理它。
+另：分组是 `DsTabs` 横滚条（`_GroupTabs`），真实播放列表常有 50–150 个分组，条子长到不可用；
+参考形态是第一列的分组树/列表，属于「三栏」那一块，改动较大，单列一轮。
 「正在播出」与进度、收藏、节目单的层级还需对照。
 
 ### music —— `apps/pure_live/lib/modules/music/`
@@ -99,8 +106,8 @@ rank/coverTags/episodes/today/score/hot/meta，在 `hongguo_settings_pane.dart` 
 
 | 字段 | 值 |
 |---|---|
-| 下一轮模块 | iptv |
-| 上一次提交 | vod · 视频站浏览页工具栏与成熟页同形（本轮 HEAD 提交） |
+| 下一轮模块 | music |
+| 上一次提交 | iptv · 频道表在窄窗改成堆叠行（本轮 HEAD 提交） |
 | 连续无改动轮数 | 0 |
 | 暂停条件 | 连续 3 轮无改动即停手并在回复里说明需要用户裁决 |
 
@@ -109,3 +116,4 @@ rank/coverTags/episodes/today/score/hot/meta，在 `hongguo_settings_pane.dart` 
 | 日期时间 | 模块 | 改了什么 | 参考依据 | 验证 | 提交 |
 |---|---|---|---|---|---|
 | 2026-11-02 01:56 | vod | 首页/分区/影视三个浏览页的头排各自为政：首页只有一个刷新按钮，分区页连刷新都没有，而它们读的正是全局 `browseLayoutProvider`——视频站里没有任何入口能切卡片/列表。新增 `widgets/vod_toolbar.dart` 的 `VodFeedToolbar`，照直播热门页那套形态收敛：宽窗 `标签行 + LayoutToggle + 刷新`，窄窗只留标签行、刷新与版式收进右上角 more（`DsMenuAnchor`），行高统一到 44。动态 tab 与影视 poster 墙没有第二种版式 → `showLayout: false`，不留失效开关。 | 爱奇艺客户端首页有「海报模式/列表模式」两种首页形态、默认海报模式，且频道页是「Banner + 分类合集 + 内容宫格 + 右上角筛选」的模块化版式（jianshu 爱奇艺APP产品体验报告、zhidao 爱奇艺怎么切换列表模式）；腾讯视频首页为「顶部操作区 + Banner + 大卡片/双瀑布流」（new.qq.com 5500字拆解腾讯视频app细节设计）。即：视图形态是页面级入口，页面动作落在页头右上角。 | `dart analyze apps/pure_live/lib` 0 issues；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,vod)`） |
+| 2026-11-02 02:20 | iptv | 频道浏览页只有一种形态：`_ChannelsTable` 那张 `DsTable` 用 `layout: DsTableLayout.auto()`，五个列的最小合计是 220+120+200+72+64 = 676px（加左右 padding 约 700）。窄窗（<600 的手机）拿到的结果是横向滚动 + 边缘渐隐，收藏心和播放动作被推到视口外，只能靠横滚找到；而 kit 在 <480 给的兜底是 card 版式，一行一个「标签 值」且行高只有一个文字行，本站的 `_ChannelNameCell`（台名+频道号）和 `_NowCell`（节目名+进度条）本来就是两行，会被裁成一行。本轮把窄态定义出来：<600 改为 `ListView.separated` + `DsListRow` 的堆叠行（leading 台标 / title 台名 / detail 频道号 / description 复用 `_NowCell` 的正在播出+进度 / trailing 心+播放），抄的是本模块「最近观看」页已经在用的行语言，分页沿用同一个 scroll controller；≥600 才是表，并且分组列只在 ≥960 的宽窗出现（分组已经由上面 `_GroupTabs` 命名并计数，这一列正是把表撑过中窗的那 120px），台名列最小 220→200，让 600–960 段的合计落到 200+200+72+64+24 ≈ 560px 不再横滚。表格布局改回默认的 `.rows()`，窄态由本模块自己定义，不再交给 kit 的标签堆。 | 电视直播类的主界面是「左侧导航栏 + 右侧内容区」，频道列表 + 节目单是核心模块，EPG 在列表/播放界面按上下键调出（csdn 电视直播软件全攻略 163708420、gitblog_00973 界面详解：中央播放窗口/频道列表区/底部功能栏）；成熟播放器把「正在播出 + 接下来」和节目进度条作为频道列表的行内信息（HDHomeRun：what's on now and what's on next guide data、program progress bar、channel logos；AnyTV IPTV Player：see what's playing now and what's coming next、channel favorites）；窄屏形态是「点屏唤起侧边频道列表 / 长按唤出下方功能栏」的单列叠行（9k9k、pczhi 电视直播TV版）。即：台标 + 台名 + 正在播出与进度是行的必备三要素，分组是导航维度而非每行的固定列。 | `dart analyze apps/pure_live/lib` 0 issues（`dart format --line-length 120` 本轮文件 0 改动）；未构建、未截图，运行期观感待用户自测 | 本轮 HEAD（`polish(ui,iptv)`） |

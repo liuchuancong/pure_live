@@ -39,8 +39,9 @@ enum IptvView {
 /// beside it. The channel surface is a resource table: scope and group
 /// filters, a name search, "sync all" and one row per channel — logo, group,
 /// what is on now with its progress, the favourite heart and the player
-/// action. The source surface keeps the same table language over the
-/// playlists and guides.
+/// action. A compact window stacks those rows in a list instead of scrolling
+/// the table sideways. The source surface keeps the same table language over
+/// the playlists and guides.
 final class IptvPage extends ConsumerStatefulWidget {
   /// The IPTV module's channels page, opening on [initialView].
   const IptvPage({this.initialView = IptvView.channels, this.initialScope, super.key});
@@ -495,6 +496,15 @@ final class _GroupTabs extends ConsumerWidget {
 /// The channel rows: logo and name, group, what is on now, the favourite
 /// heart and the player action. The row itself opens the channel, so a
 /// remote or a click anywhere on it works.
+///
+/// Two forms of the same list. A window of [LiveWindow.compact] and wider
+/// reads it as a table; below that the columns cannot fit — the four a
+/// medium window keeps need 560 px against a phone's 390 — and a
+/// sideways-scrolling table parks the heart and the player action off
+/// screen, so the rows stack instead. The kit's own card layout is not the
+/// fallback here: it puts one column per "label value" line at a single
+/// line's height, and this module's cells are two-line (a name over its dial
+/// number, a programme over its progress bar).
 final class _ChannelsTable extends ConsumerWidget {
   const _ChannelsTable({required this.channels, required this.scrollController, required this.onOpen});
 
@@ -507,86 +517,190 @@ final class _ChannelsTable extends ConsumerWidget {
     final t = context.t;
     final browse = ref.watch(iptvBrowseSettingsProvider);
     final rows = channels.channels.take(channels.shown).toList(growable: false);
-    return DsTable<IptvChannel>(
-      semanticLabel: t.iptv.viewChannels,
-      layout: const DsTableLayout.auto(),
-      rows: rows,
-      rowKey: (channel) => channel.id,
-      columns: [
-        DsTableColumn(
-          id: 'channel',
-          label: t.iptv.colChannel,
-          value: (channel) => channel.entry.name,
-          width: const DsTableColumnWidth.flex(2, 220),
-          cell: (context, channel) => _ChannelNameCell(channel: channel, showNumber: browse.showChannelNumber),
-        ),
-        DsTableColumn(
-          id: 'group',
-          label: t.iptv.colGroup,
-          value: (channel) => _groupOf(t, channel),
-          width: const DsTableColumnWidth.fixed(120),
-          cell: (context, channel) => Text(
-            _groupOf(t, channel),
+    if (rows.isEmpty) return _channelsEmptyView(context, channels);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (LiveWindow.isCompact(constraints.maxWidth)) {
+          return _ChannelsList(channels: channels, scrollController: scrollController, onOpen: onOpen);
+        }
+        // The group tabs above the table already name the groups and count
+        // them; the column is what carries a group per row only when the
+        // window is wide enough to pay for it.
+        final showGroup = LiveWindow.isExpanded(constraints.maxWidth);
+        return DsTable<IptvChannel>(
+          semanticLabel: t.iptv.viewChannels,
+          rows: rows,
+          rowKey: (channel) => channel.id,
+          columns: [
+            DsTableColumn(
+              id: 'channel',
+              label: t.iptv.colChannel,
+              value: (channel) => channel.entry.name,
+              width: const DsTableColumnWidth.flex(2, 200),
+              cell: (context, channel) => _ChannelNameCell(channel: channel, showNumber: browse.showChannelNumber),
+            ),
+            if (showGroup)
+              DsTableColumn(
+                id: 'group',
+                label: t.iptv.colGroup,
+                value: (channel) => _groupOf(t, channel),
+                width: const DsTableColumnWidth.fixed(120),
+                cell: (context, channel) => Text(
+                  _groupOf(t, channel),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textMuted),
+                ),
+              ),
+            if (browse.showProgrammeLine)
+              DsTableColumn(
+                id: 'now',
+                label: t.iptv.colNow,
+                value: (channel) => channels.slots[channel.id]?.current?.title ?? '',
+                width: const DsTableColumnWidth.flex(2, 200),
+                cell: (context, channel) => _NowCell(slot: channels.slots[channel.id]),
+              ),
+            DsTableColumn(
+              id: 'favorite',
+              label: t.iptv.colFavorite,
+              width: const DsTableColumnWidth.fixed(72),
+              alignment: DsTableCellAlignment.center,
+              cell: (context, channel) => _FavoriteCell(
+                favorite: channel.favorite,
+                onPressed: () => unawaited(ref.read(iptvChannelsProvider.notifier).toggleFavorite(channel.id)),
+              ),
+            ),
+            DsTableColumn(
+              id: 'actions',
+              label: t.iptv.colActions,
+              width: const DsTableColumnWidth.fixed(64),
+              alignment: DsTableCellAlignment.center,
+              cell: (context, channel) =>
+                  IptvIconAction(icon: DsIcons.play, label: t.iptv.openChannel, onPressed: () => onOpen(channel)),
+            ),
+          ],
+          onRowPressed: onOpen,
+          scrollController: scrollController,
+          loading: channels.loadingMore,
+          style: iptvTableStyle(context),
+        );
+      },
+    );
+  }
+}
+
+/// What an empty channel list says: a search that matched nothing, a
+/// favourites scope with nothing in it, or a library with no channels at
+/// all. Shared by the table's window and the stacked list's.
+Widget _channelsEmptyView(BuildContext context, IptvChannelsState channels) {
+  final t = context.t;
+  if (channels.query.isNotEmpty) {
+    return DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.iptv.noChannelMatch));
+  }
+  if (channels.scope == IptvChannelScope.favourites) {
+    return DsEmptyState(
+      icon: const DsIcon(DsIcons.heart),
+      title: Text(t.iptv.noFavoritesTitle),
+      description: Text(t.iptv.noFavoritesDescription),
+    );
+  }
+  return Center(
+    child: DsEmptyState(icon: const DsIcon(DsIcons.tv), title: Text(t.common.empty)),
+  );
+}
+
+/// The channel's group, named by the interface when the playlist left the
+/// channel ungrouped.
+String _groupOf(Translations t, IptvChannel channel) {
+  final group = iptvGroupKeyOf(channel);
+  return group.isEmpty ? t.iptv.ungrouped : group;
+}
+
+/// The stacked form of the channel rows: the channel's logo and name over
+/// what is on it, with the dial number, the heart and the player action at
+/// its end. The same three columns as the table, in the row language the
+/// module's 最近观看 page already uses, and it pages off the same scroll
+/// controller.
+final class _ChannelsList extends ConsumerWidget {
+  const _ChannelsList({required this.channels, required this.scrollController, required this.onOpen});
+
+  final IptvChannelsState channels;
+  final ScrollController scrollController;
+  final ValueChanged<IptvChannel> onOpen;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final browse = ref.watch(iptvBrowseSettingsProvider);
+    final rows = channels.channels.take(channels.shown).toList(growable: false);
+    return ListView.separated(
+      controller: scrollController,
+      padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
+      itemCount: rows.length,
+      separatorBuilder: (context, _) => const DsDivider(),
+      itemBuilder: (context, index) {
+        final channel = rows[index];
+        final number = browse.showChannelNumber ? channel.number : null;
+        return DsListRow(
+          semanticLabel: channel.entry.name,
+          leading: _ChannelAvatar(channel: channel),
+          title: Text(
+            channel.entry.name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: DsTheme.of(context).typography.small.copyWith(color: DsTheme.colorsOf(context).textMuted),
+            style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
           ),
-        ),
-        if (browse.showProgrammeLine)
-          DsTableColumn(
-            id: 'now',
-            label: t.iptv.colNow,
-            value: (channel) => channels.slots[channel.id]?.current?.title ?? '',
-            width: const DsTableColumnWidth.flex(2, 200),
-            cell: (context, channel) => _NowCell(slot: channels.slots[channel.id]),
-          ),
-        DsTableColumn(
-          id: 'favorite',
-          label: t.iptv.colFavorite,
-          width: const DsTableColumnWidth.fixed(72),
-          alignment: DsTableCellAlignment.center,
-          cell: (context, channel) => _FavoriteCell(
-            favorite: channel.favorite,
-            onPressed: () => unawaited(ref.read(iptvChannelsProvider.notifier).toggleFavorite(channel.id)),
-          ),
-        ),
-        DsTableColumn(
-          id: 'actions',
-          label: t.iptv.colActions,
-          width: const DsTableColumnWidth.fixed(64),
-          alignment: DsTableCellAlignment.center,
-          cell: (context, channel) =>
+          detail: number == null
+              ? null
+              : Text(
+                  '$number',
+                  style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                ),
+          description: browse.showProgrammeLine
+              ? _NowCell(slot: channels.slots[channel.id])
+              : Text(
+                  _groupOf(t, channel),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s3,
+            children: [
+              _FavoriteCell(
+                favorite: channel.favorite,
+                onPressed: () => unawaited(ref.read(iptvChannelsProvider.notifier).toggleFavorite(channel.id)),
+              ),
               IptvIconAction(icon: DsIcons.play, label: t.iptv.openChannel, onPressed: () => onOpen(channel)),
-        ),
-      ],
-      onRowPressed: onOpen,
-      scrollController: scrollController,
-      loading: channels.loadingMore,
-      style: iptvTableStyle(context),
-      emptyView: _emptyView(context),
+            ],
+          ),
+          onPressed: () => onOpen(channel),
+        );
+      },
     );
   }
+}
 
-  Widget _emptyView(BuildContext context) {
-    final t = context.t;
-    if (channels.query.isNotEmpty) {
-      return DsEmptyState(icon: const DsIcon(DsIcons.searchX), title: Text(t.iptv.noChannelMatch));
-    }
-    if (channels.scope == IptvChannelScope.favourites) {
-      return DsEmptyState(
-        icon: const DsIcon(DsIcons.heart),
-        title: Text(t.iptv.noFavoritesTitle),
-        description: Text(t.iptv.noFavoritesDescription),
-      );
-    }
-    return Center(
-      child: DsEmptyState(icon: const DsIcon(DsIcons.tv), title: Text(t.common.empty)),
+/// A channel's logo, or the kit's tinted initials when its playlist carries
+/// none.
+final class _ChannelAvatar extends StatelessWidget {
+  const _ChannelAvatar({required this.channel});
+
+  final IptvChannel channel;
+
+  @override
+  Widget build(BuildContext context) {
+    final logo = (channel.entry.tvgLogo ?? '').trim();
+    return DsAvatar(
+      initials: channel.entry.name,
+      image: logo.isEmpty ? null : cachedImage(logo),
+      size: DsSize.sm,
+      toneIndex: DsAvatar.toneFor(channel.id),
+      semanticLabel: channel.entry.name,
     );
-  }
-
-  static String _groupOf(Translations t, IptvChannel channel) {
-    final group = iptvGroupKeyOf(channel);
-    return group.isEmpty ? t.iptv.ungrouped : group;
   }
 }
 
@@ -602,18 +716,11 @@ final class _ChannelNameCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final logo = (channel.entry.tvgLogo ?? '').trim();
     final number = showNumber ? channel.number : null;
     return Row(
       spacing: DsSpace.s8,
       children: [
-        DsAvatar(
-          initials: channel.entry.name,
-          image: logo.isEmpty ? null : cachedImage(logo),
-          size: DsSize.sm,
-          toneIndex: DsAvatar.toneFor(channel.id),
-          semanticLabel: channel.entry.name,
-        ),
+        _ChannelAvatar(channel: channel),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -627,7 +734,7 @@ final class _ChannelNameCell extends StatelessWidget {
               ),
               if (number != null)
                 Text(
-                  number.toString(),
+                  '$number',
                   style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
                 ),
             ],
