@@ -3076,6 +3076,21 @@ class Translations$music$zh_CN {
 	/// zh-CN: '热门'
 	String get playlistHotTags => '热门';
 
+	/// zh-CN: '筛选歌单'
+	String get plazaFilterTitle => '筛选歌单';
+
+	/// zh-CN: '排序'
+	String get plazaFilterSorts => '排序';
+
+	/// zh-CN: '分类'
+	String get plazaFilterGroups => '分类';
+
+	/// zh-CN: '标签'
+	String get plazaFilterTags => '标签';
+
+	/// zh-CN: '完成'
+	String get plazaFilterDone => '完成';
+
 	/// zh-CN: '推荐'
 	String get sortRecommend => '推荐';
 
@@ -13079,6 +13094,11 @@ extension on Translations {
 			'music.sourceAliasWy' => '小芸音乐',
 			'music.sourceAliasMg' => '小蜜音乐',
 			'music.playlistHotTags' => '热门',
+			'music.plazaFilterTitle' => '筛选歌单',
+			'music.plazaFilterSorts' => '排序',
+			'music.plazaFilterGroups' => '分类',
+			'music.plazaFilterTags' => '标签',
+			'music.plazaFilterDone' => '完成',
 			'music.sortRecommend' => '推荐',
 			'music.sortHot' => '最热',
 			'music.sortNew' => '最新',
@@ -13124,13 +13144,13 @@ extension on Translations {
 			'music.autoCleanPlayedList' => '自动清空已播列表',
 			'music.autoCleanPlayedListDesc' => '点击与播放列表相同的列表切歌时清空已播放列表，随机模式下列表内所有歌曲会重新参与随机。',
 			'music.addToTop' => '新歌加到列表顶部',
+			_ => null,
+		} ?? switch (path) {
 			'music.addToTopDesc' => '关闭时新歌排在列表末尾。',
 			'music.showSource' => '列表显示音源',
 			'music.showSourceDesc' => '在歌曲行旁标出它来自哪个音源。',
 			'music.playbackReset' => '恢复默认',
 			'music.playbackResetDesc' => '自动选源、320K、出错跳过、新歌排在末尾。',
-			_ => null,
-		} ?? switch (path) {
 			'music.sourcesSection' => '自定义源',
 			'music.sourcesHint' => '自定义源是 JavaScript 脚本，在 fjs（QuickJS）中执行；导入后初始化并接管播放地址解析。',
 			'music.sourcesImportText' => '粘贴脚本导入',
@@ -13638,13 +13658,13 @@ extension on Translations {
 			'music.syncConnect' => '连接',
 			'music.syncDisconnect' => '断开',
 			'music.syncRemoveDevice' => '移除该设备',
+			_ => null,
+		} ?? switch (path) {
 			'music.syncRemoveHost' => '移除该历史地址',
 			'music.syncStatusConnected' => '已连接',
 			'music.syncStatusConnecting' => '连接中',
 			'music.syncStatusFailed' => '连接失败',
 			'music.syncStatusIdle' => '未连接',
-			_ => null,
-		} ?? switch (path) {
 			'music.syncStatusHint' => '连接后拉取服务端歌单并推送本地改动。',
 			'music.syncForgetKey' => '清除授权',
 			'music.syncForgetKeyDesc' => '删除已保存的密钥，下次连接用连接码重新授权。',
@@ -14152,13 +14172,13 @@ extension on Translations {
 			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC币',
 			'room.giftValueStarCoin' => ({required Object value}) => '${value} 星币',
 			'room.giftValueHeart' => ({required Object value}) => '${value} 爱心',
+			_ => null,
+		} ?? switch (path) {
 			'room.giftValueNote' => ({required Object value}) => '${value} 音符',
 			'room.collapseChat' => '收起聊天',
 			'room.expandChat' => '展开聊天',
 			'room.resizeChat' => '调整聊天宽度',
 			'room.theaterOn' => '剧院模式',
-			_ => null,
-		} ?? switch (path) {
 			'room.theaterOff' => '退出剧院模式',
 			'room.statsToggle' => '统计信息',
 			'room.statsPicture' => '画面',
@@ -14666,13 +14686,13 @@ extension on Translations {
 			'settings.fontManagerFilterAll' => '全部',
 			'settings.fontManagerCategory' => '分类',
 			'settings.fontManagerCount' => ({required Object count}) => '共 ${count} 款字体',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fontManagerTagBundled' => '随应用打包',
 			'settings.fontManagerSourceFreeFont' => '免费字体库',
 			'settings.fontManagerUse' => '使用',
 			'settings.fontManagerDownloadAndUse' => '下载并使用',
 			'settings.fontManagerDownloading' => ({required Object percent}) => '下载中 ${percent}%',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerDownloadFailed' => '下载失败',
 			'settings.fontManagerDownloaded' => '已下载',
 			'settings.fontManagerNotDownloaded' => '未下载',
@@ -15180,13 +15200,13 @@ extension on Translations {
 			'settings.downloadStatusDone' => '已完成',
 			'settings.downloadStatusFailed' => '下载失败',
 			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadFinishedAt' => ({required Object time}) => '完成于 ${time}',
 			'settings.downloadRemove' => '移除记录',
 			'settings.downloadRemoveBody' => '只移除这条记录，不会删除已保存的文件。',
 			'settings.downloadClearFinished' => '清除已完成',
 			'settings.downloadDuplicateRunning' => '这个文件正在下载',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadDuplicateDone' => '这个文件已经下载过了',
 			'settings.downloadManagerOpenFolder' => '打开文件夹',
 			'settings.downloadFilterAll' => '全部',
@@ -15694,13 +15714,13 @@ extension on Translations {
 			'toolbox.linkFailed' => '解析失败，请稍后重试。',
 			'toolbox.linkCopyDone' => '已复制房间链接',
 			'toolbox.linkCopyFailed' => '复制失败',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.linkSupportTitle' => '支持解析的平台',
 			'toolbox.linkSupportHint' => '以下平台的直播间链接可以直接解析并打开。',
 			'toolbox.networkSiteLabel' => '选择平台',
 			'toolbox.networkRun' => '开始检测',
 			'toolbox.networkResultTitle' => '检测结果',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.networkTarget' => '探测接口',
 			'toolbox.networkTargetDesc' => '推荐房间接口',
 			'toolbox.networkLatency' => '响应时间',

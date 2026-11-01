@@ -20,7 +20,7 @@ import 'package:pure_live/modules/music/controller/music_playback.dart' show mus
 import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicPlaylistsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
-    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, OnlinePlaylists;
+    show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort, OnlinePlaylists;
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart' show MusicPlaylistCard, MusicPlaylistGrid;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
@@ -200,34 +200,89 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
       icon: const DsIcon(DsIcons.link, size: 16),
     );
 
+    // The plaza's three condition rows — the sorts, the categories and the
+    // tags — now live in one panel behind a head entry, the find page's
+    // shape: the grid keeps the window's height, and what is chosen reads as
+    // one line under the head.
+    final hasFilters = supported && (sorts.length > 1 || tagGroups.isNotEmpty || hotValues.isNotEmpty);
+    final groupLabel = _group.isEmpty ? t.music.playlistHotTags : _group;
+    final summary = [
+      if (sorts.length > 1)
+        musicPlaylistSortLabel(t, sorts.firstWhere((sort) => sort.id == order, orElse: () => sorts.first)),
+      if (tagGroups.isNotEmpty) groupLabel,
+      chips.where((tag) => tag.id == effectiveTag).firstOrNull?.name ?? '',
+    ].where((part) => part.isNotEmpty).join(' · ');
+    final headActions = [
+      openButton,
+      DsButton.icon(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
+        semanticLabel: t.music.plazaFilterTitle,
+        onPressed: hasFilters
+            ? () => unawaited(
+                showDsPanel<void>(
+                  context: context,
+                  builder: (_) => MusicPlazaFilterPanel(
+                    sorts: sorts,
+                    groups: tagGroups,
+                    hotTags: hotValues,
+                    order: order,
+                    group: _group,
+                    tag: effectiveTag,
+                    onChanged: (order, group, tag) => setState(() {
+                      _order = order;
+                      _group = group;
+                      _tag = tag;
+                      _page = 1;
+                    }),
+                  ),
+                ),
+              )
+            : null,
+        icon: const DsIcon(DsIcons.listFilter, size: 16),
+      ),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.showTabs)
-          MusicSonglistTabs(
-            online: true,
-            mineCount: widget.mineCount,
-            onChanged: (online) {
-              if (!online) widget.onBackToMine?.call();
-            },
-            actions: [openButton],
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
-            child: Row(
-              spacing: DsSpace.s8,
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.heading ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: DsTheme.of(context).typography.title.copyWith(color: DsTheme.of(context).colors.text),
+        SizedBox(
+          height: 44,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s4),
+            child: widget.showTabs
+                ? MusicSonglistTabs(
+                    online: true,
+                    mineCount: widget.mineCount,
+                    onChanged: (online) {
+                      if (!online) widget.onBackToMine?.call();
+                    },
+                    actions: headActions,
+                  )
+                : Row(
+                    spacing: DsSpace.s8,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.heading ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DsTheme.of(context).typography.title.copyWith(color: DsTheme.of(context).colors.text),
+                        ),
+                      ),
+                      ...headActions,
+                    ],
                   ),
-                ),
-                openButton,
-              ],
+          ),
+        ),
+        if (supported && summary.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
+            child: Text(
+              summary,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: DsTheme.of(context).typography.caption.copyWith(color: DsTheme.of(context).colors.textMuted),
             ),
           ),
         if (!supported)
@@ -237,64 +292,7 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
               child: DsEmptyState(icon: const DsIcon(DsIcons.listMusic), title: Text(t.music.onlineUnsupported)),
             ),
           )
-        else ...[
-          // The reference's sort tabs, above the tag tree; a plaza with a
-          // single sort shows none.
-          if (sorts.length > 1)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
-              child: DsTopNav<String>(
-                items: [
-                  for (final sort in sorts) DsTopNavItem(value: sort.id, label: Text(musicPlaylistSortLabel(t, sort))),
-                ],
-                value: order,
-                onChanged: (id) => setState(() {
-                  _order = id;
-                  _page = 1;
-                }),
-              ),
-            ),
-          // The reference's tag tree: the categories as the nav row, the
-          // chosen group's tags as the chips under it, the hot tags their
-          // own first group.
-          if (tagGroups.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
-              child: DsTopNav<String>(
-                items: [
-                  DsTopNavItem(value: '', label: Text(t.music.playlistHotTags)),
-                  for (final group in tagGroups) DsTopNavItem(value: group.name, label: Text(group.name)),
-                ],
-                value: _group,
-                onChanged: (name) => setState(() {
-                  _group = name;
-                  _tag = null;
-                  _page = 1;
-                }),
-              ),
-            ),
-          if (chips.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s8, DsSpace.s20, DsSpace.s8),
-              child: Wrap(
-                spacing: DsSpace.s8,
-                runSpacing: DsSpace.s8,
-                children: [
-                  for (final tag in chips)
-                    DsChip(
-                      label: Text(tag.name),
-                      selected: tag.id == effectiveTag,
-                      onChanged: (on) {
-                        if (!on) return;
-                        setState(() {
-                          _tag = tag.id;
-                          _page = 1;
-                        });
-                      },
-                    ),
-                ],
-              ),
-            ),
+        else
           Expanded(
             child: switch ((effectiveTag, hotTags, error, loading, items.isEmpty)) {
               // The tags have not named a board yet: the first page waits
@@ -362,8 +360,149 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
               ),
             },
           ),
-        ],
       ],
+    );
+  }
+}
+
+/// The plaza's conditions in one panel over the grid: the sorts, the
+/// categories and the group's tags, each as its own chip row — the shape the
+/// find page's selector panel uses. A pick lands in the browse at once, so
+/// the grid is already thinned when the panel closes.
+final class MusicPlazaFilterPanel extends StatefulWidget {
+  /// The panel over the plaza listing [order] under [group] and [tag].
+  const MusicPlazaFilterPanel({
+    required this.sorts,
+    required this.groups,
+    required this.hotTags,
+    required this.order,
+    required this.group,
+    required this.tag,
+    required this.onChanged,
+    super.key,
+  });
+
+  /// The plaza's sort tabs.
+  final List<MusicPlazaSort> sorts;
+
+  /// The plaza's categories, each with its tags.
+  final List<MusicPlaylistTagGroup> groups;
+
+  /// The hot tags, the category row's own first group.
+  final List<MusicPlaylistTag> hotTags;
+
+  /// The sort, category and tag the browse is on now; a null [tag] is the
+  /// group's first one.
+  final String order;
+  final String group;
+  final String? tag;
+
+  /// Hands the browse the whole choice: the sort, the category and the tag,
+  /// null when the category changed and the tag has to fall back.
+  final void Function(String order, String group, String? tag) onChanged;
+
+  @override
+  State<MusicPlazaFilterPanel> createState() => _MusicPlazaFilterPanelState();
+}
+
+final class _MusicPlazaFilterPanelState extends State<MusicPlazaFilterPanel> {
+  late String _order = widget.order;
+  late String _group = widget.group;
+  late String? _tag = widget.tag;
+
+  /// The tags the current category names: the hot ones, then that group's.
+  List<MusicPlaylistTag> get _chips => _group.isEmpty
+      ? widget.hotTags
+      : widget.groups.where((group) => group.name == _group).firstOrNull?.tags ?? const <MusicPlaylistTag>[];
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final effectiveTag = _tag ?? _chips.firstOrNull?.id;
+
+    Widget row(String label, List<Widget> chips) => Padding(
+      padding: const EdgeInsets.only(bottom: DsSpace.s12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: DsSpace.s6,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+          ),
+          Wrap(spacing: DsSpace.s8, runSpacing: DsSpace.s8, children: chips),
+        ],
+      ),
+    );
+
+    return DsPanel(
+      title: Text(t.music.plazaFilterTitle),
+      footer: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [DsButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.music.plazaFilterDone))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (widget.sorts.length > 1)
+            row(t.music.plazaFilterSorts, [
+              for (final sort in widget.sorts)
+                DsChip(
+                  label: Text(musicPlaylistSortLabel(t, sort)),
+                  selected: sort.id == _order,
+                  onChanged: (on) {
+                    if (!on) return;
+                    setState(() => _order = sort.id);
+                    widget.onChanged(sort.id, _group, _tag);
+                  },
+                ),
+            ]),
+          if (widget.groups.isNotEmpty)
+            row(t.music.plazaFilterGroups, [
+              DsChip(
+                label: Text(t.music.playlistHotTags),
+                selected: _group.isEmpty,
+                onChanged: (on) {
+                  if (!on) return;
+                  setState(() {
+                    _group = '';
+                    _tag = null;
+                  });
+                  widget.onChanged(_order, '', null);
+                },
+              ),
+              for (final group in widget.groups)
+                DsChip(
+                  label: Text(group.name),
+                  selected: group.name == _group,
+                  onChanged: (on) {
+                    if (!on) return;
+                    setState(() {
+                      _group = group.name;
+                      _tag = null;
+                    });
+                    widget.onChanged(_order, group.name, null);
+                  },
+                ),
+            ]),
+          row(t.music.plazaFilterTags, [
+            for (final tag in _chips)
+              DsChip(
+                label: Text(tag.name),
+                selected: tag.id == effectiveTag,
+                onChanged: (on) {
+                  if (!on) return;
+                  setState(() => _tag = tag.id);
+                  widget.onChanged(_order, _group, tag.id);
+                },
+              ),
+          ]),
+        ],
+      ),
     );
   }
 }
