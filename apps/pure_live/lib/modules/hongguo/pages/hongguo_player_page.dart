@@ -1194,8 +1194,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   }
 
   /// What is playing, under the picture: the series' name, the episode and
-  /// the figures it carries, the local favorite and the next episode, and the
-  /// first lines of the blurb — the video station's watch head.
+  /// the figures it carries, and every verb this page has inline — the local
+  /// favorite, the next episode, the download and the share — plus the first
+  /// lines of the blurb. The video station's watch head, and the only entry to
+  /// those four while the page itself is on the screen.
   Widget _watchHead(BuildContext context, HongguoSeriesDetail detail, Translations t) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
@@ -1212,6 +1214,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       if (total > 0) t.hongguo.allEpisodesCount(count: total),
       if (duration != null && duration > Duration.zero) hongguoDurationText(duration),
       if (meta.playCount > 0) '${AudienceFormat.format(meta.playCount)} ${t.hongguo.plays}',
+      if (meta.followedCount > 0) '${AudienceFormat.format(meta.followedCount)} ${t.hongguo.followers}',
       if (comments > 0) '${AudienceFormat.format(comments)} ${t.hongguo.comments}',
       if (likes > 0) '${AudienceFormat.format(likes)} ${t.hongguo.likes}',
     ];
@@ -1266,6 +1269,13 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                 child: Text(t.hongguo.nextEpisode),
               ),
             if (episode != null) _downloadButton(context, episode),
+            DsButton(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              leading: const DsIcon(DsIcons.share, size: 16),
+              onPressed: () => unawaited(_shareSeries()),
+              child: Text(t.hongguo.share),
+            ),
           ],
         ),
         if (meta.intro.isNotEmpty)
@@ -1380,10 +1390,11 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     showDsToast(context: context, title: added ? t.hongguo.favoriteToggleOn : t.hongguo.favoriteToggleOff);
   }
 
-  /// The picture's action column, as the phone player puts it along the
-  /// picture's edge: the favorite (the local shelf's bookmark, with the
+  /// The immersive picture's action column, as the phone player puts it along
+  /// the picture's edge: the favorite (the local shelf's bookmark, with the
   /// series' own follower figure), the episode's comments, and the way to
-  /// hand the series out.
+  /// hand the series out. The page body is off the screen there, so this is the
+  /// only way to any of the three.
   Widget _actionRail(Translations t, HongguoSeriesDetail detail) {
     final meta = detail.meta;
     final episode = _episode;
@@ -1415,9 +1426,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     );
   }
 
-  /// This episode's comments, opened as the phone's own sheet: the page's
-  /// docked panel stays where it is, and an immersive picture keeps its way
-  /// into the list.
+  /// This episode's comments, opened as the phone's own sheet — the way in
+  /// from the immersive picture, whose own window has no room for the page's
+  /// docked panel.
   void _openComments() {
     final episode = _episode;
     if (episode == null) return;
@@ -1543,12 +1554,15 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
                       ),
                     ),
                   ),
-                // The phone's action column along the picture's edge. An
-                // open catalogue and a held press own that corner, so the
-                // column steps aside for both.
-                if (showBar && handle != null && detail != null && _openPanel == null && !_holding)
+                // The immersive picture's own action column: out of the page,
+                // this column is the only way to bookmark the series, open the
+                // episode's comments or hand the link out. Inline the page's
+                // own head under the picture already says all three, so a
+                // second set of discs over the video would be a second entry
+                // for the same verb — and it covers the picture's top corner.
+                if (immersive && showBar && handle != null && detail != null && _openPanel == null && !_holding)
                   PositionedDirectional(
-                    top: immersive ? DsSpace.s8 + PlayerBarTier.controlSize(context) + DsSpace.s20 : DsSpace.s12,
+                    top: DsSpace.s8 + PlayerBarTier.controlSize(context) + DsSpace.s20,
                     end: DsSpace.s8,
                     child: _actionRail(t, detail),
                   ),
