@@ -8,6 +8,7 @@ import 'package:pure_live/modules/music/controller/music_library.dart' show musi
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_search.dart' show musicSearchProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
+import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart' show OnlinePlaylists;
 
 /// One `lxmusic://` action, parsed.
@@ -315,11 +316,10 @@ Future<void> executeMusicDeeplink(Ref ref, MusicDeeplinkAction action) async {
       break;
 
     case MusicDeeplinkPlaySonglist(:final id, :final index):
-      final source = ref.read(musicSourceProvider);
-      // OnlinePlaylists is a mixin, so `is` cannot promote; a cast is the
-      // only way to reach the mixin's methods from the base type.
-      if (source is! OnlinePlaylists) return;
-      final playlists = source as OnlinePlaylists;
+      // OnlinePlaylists is a mixin carried by the platform under the lyric
+      // wrappers, so the walk is the only way to reach its methods.
+      final playlists = musicCapabilityOf<OnlinePlaylists>(ref.read(musicSourceProvider));
+      if (playlists == null) return;
       final (_, tracks) = await playlists.playlistDetail(id);
       if (tracks.isEmpty) return;
       await ref.read(musicPlayerProvider.notifier).playAll(tracks, index: index ?? 0);

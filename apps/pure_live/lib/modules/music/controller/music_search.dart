@@ -9,6 +9,7 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicTextSimilarity;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, musicSourceProvider;
+import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/music_hot_words.dart' show MusicHotWords;
 
 /// What the library view holds: the committed query, its songs, where the
@@ -167,9 +168,9 @@ final FutureProviderFamily<List<audio.MusicTrack>, audio.MusicCatalog> musicCata
 /// the history, so a failed hot-word request never blocks searching.
 final musicHotSearchesProvider = FutureProvider<List<String>>((ref) async {
   try {
-    final source = ref.watch(musicSourceProvider);
-    if (source case final MusicHotWords hot) return await hot.hotSearches();
-    return const <String>[];
+    final hot = musicCapabilityOf<MusicHotWords>(ref.watch(musicSourceProvider));
+    if (hot == null) return const <String>[];
+    return await hot.hotSearches();
   } on Object {
     return const [];
   }
@@ -182,9 +183,9 @@ final FutureProviderFamily<List<String>, String> musicSearchSuggestionsProvider 
       final word = query.trim();
       if (word.isEmpty) return const <String>[];
       try {
-        final source = ref.watch(musicSourceProvider);
-        if (source case final MusicHotWords hot) return await hot.suggestions(word);
-        return const <String>[];
+        final hot = musicCapabilityOf<MusicHotWords>(ref.watch(musicSourceProvider));
+        if (hot == null) return const <String>[];
+        return await hot.suggestions(word);
       } on Object {
         return const [];
       }

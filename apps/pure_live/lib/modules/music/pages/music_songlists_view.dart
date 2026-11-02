@@ -17,6 +17,7 @@ import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
     show musicPlaybackSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/music_playlists.dart';
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider;
+import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, OnlinePlaylists;
 import 'package:pure_live/modules/music/pages/music_online_playlists_view.dart';
@@ -126,15 +127,19 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
     }
     try {
       // The reference's syncSourceList: a board link re-routes to the
-      // leaderboard fetcher, everything else to the plaza's detail.
-      final tracks = await switch (sourceListId.startsWith('board__')) {
-        true =>
+      // leaderboard fetcher, everything else to the plaza's detail — which
+      // the platform carries under its lyric wrappers, so it is the walk's
+      // answer that is asked, not the decorated source itself.
+      final detail = musicCapabilityOf<OnlinePlaylists>(plaza);
+      final tracks = await switch ((sourceListId.startsWith('board__'), detail)) {
+        (true, _) =>
           plaza
               .catalogItems(
                 audio.MusicCatalog(id: '$linked:${sourceListId.substring('board__'.length)}', name: playlist.name),
               )
               .then((answer) => answer.items),
-        false => (plaza as OnlinePlaylists).playlistDetail(sourceListId).then((detail) => detail.$2),
+        (false, final plazaDetail?) => plazaDetail.playlistDetail(sourceListId).then((entry) => entry.$2),
+        (false, null) => throw StateError('${plaza.id} has no online playlists'),
       };
       final count = await ref.read(musicPlaylistsProvider.notifier).replaceTracks(playlist.id, tracks);
       if (!mounted) return;

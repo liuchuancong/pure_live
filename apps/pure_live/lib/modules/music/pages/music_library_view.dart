@@ -13,6 +13,7 @@ import 'package:pure_live/modules/music/controller/music_playback_settings.dart'
     show MusicSourceNameType, musicPlaybackSettingsProvider, musicSourceDisplayName;
 import 'package:pure_live/modules/music/controller/music_search.dart';
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceListProvider, musicSourceProvider;
+import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, MusicPlaylistPage, SonglistSearch;
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart' show MusicPlaylistCard, MusicPlaylistGrid;
@@ -551,8 +552,7 @@ final class _SonglistResultsState extends ConsumerState<_SonglistResults> {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final source = ref.watch(musicSourceProvider);
-    if (source is! SonglistSearch) {
+    if (musicCapabilityOf<SonglistSearch>(ref.watch(musicSourceProvider)) == null) {
       return Center(
         child: DsEmptyState(icon: const DsIcon(DsIcons.listMusic), title: Text(t.music.songlistSearchUnsupported)),
       );

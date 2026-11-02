@@ -19,6 +19,7 @@ import 'package:pure_live/modules/music/controller/music_online_playlists.dart'
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/controller/music_playlists.dart' show musicPlaylistsProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
+import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
     show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort, OnlinePlaylists;
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart' show MusicPlaylistCard, MusicPlaylistGrid;
@@ -164,7 +165,7 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
     final hotTags = ref.watch(musicOnlineHotTagsProvider);
     final tree = ref.watch(musicPlaylistTagGroupsProvider);
     final sorts = ref.watch(musicPlaylistSortsProvider);
-    final supported = ref.watch(musicSourceProvider) is OnlinePlaylists;
+    final supported = musicCapabilityOf<OnlinePlaylists>(ref.watch(musicSourceProvider)) != null;
 
     final order = _order ?? sorts.firstOrNull?.id ?? '';
     final tagGroups = tree.value ?? const <MusicPlaylistTagGroup>[];

@@ -3,6 +3,7 @@ import 'package:media_core_audio/media_core_audio.dart' as audio;
 
 import 'package:pure_live/modules/music/controller/music_library.dart' show musicTrackKey;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
+import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
 import 'package:pure_live/modules/music/controller/sources/music_comment_source.dart' show MusicCommentsSource;
 
 /// One comment under a song — the reference's 评论.
@@ -176,7 +177,8 @@ final class MusicCommentsController extends Notifier<MusicCommentsState> {
     required int page,
   }) async {
     final source = ref.read(musicSourceProvider);
-    if (source case final MusicCommentsSource comments) {
+    final comments = musicCapabilityOf<MusicCommentsSource>(source);
+    if (comments != null) {
       return await comments.comments(track, hot: hot, page: page, pageSize: hot ? _hotPageSize : _pageSize);
     }
     throw StateError('${source.id} has no comment channel');

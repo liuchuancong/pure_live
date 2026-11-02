@@ -24,8 +24,9 @@ import 'package:pure_live/modules/music/controller/music_search.dart'
     show musicCatalogsProvider, musicHotSearchesProvider;
 import 'package:pure_live/modules/music/controller/music_source.dart' show musicSourceProvider;
 import 'package:pure_live/modules/music/controller/music_ui_settings.dart' show MusicUiElement, musicUiSettingsProvider;
-import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart' show OnlinePlaylists;
-import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart' show MusicPlaylistInfo;
+import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show musicCapabilityOf;
+import 'package:pure_live/modules/music/controller/sources/online_playlist_models.dart'
+    show MusicPlaylistInfo, OnlinePlaylists;
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
     show MusicPlaylistCard, kMusicPlaylistInfoHeight;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
@@ -79,7 +80,7 @@ final class MusicRecommendView extends ConsumerWidget {
     final colors = theme.colors;
     final settings = ref.watch(musicPlaybackSettingsProvider);
     final ui = ref.watch(musicUiSettingsProvider);
-    final plaza = ref.watch(musicSourceProvider) is OnlinePlaylists;
+    final plaza = musicCapabilityOf<OnlinePlaylists>(ref.watch(musicSourceProvider)) != null;
     final hotTags = ref.watch(musicOnlineHotTagsProvider).value ?? const <String>[];
     final order = ref.watch(musicPlaylistSortsProvider).firstOrNull?.id ?? '';
     final firstTag = hotTags.firstOrNull;
