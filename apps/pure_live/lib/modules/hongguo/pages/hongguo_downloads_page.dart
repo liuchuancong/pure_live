@@ -181,8 +181,16 @@ final class HongguoDownloadsPane extends ConsumerWidget {
             ],
           )
         else
-          DsListSection(
-            children: [for (final task in tasks) _HongguoTaskRow(key: ValueKey(task.id), task: task)],
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final group in _hongguoDownloadGroups(tasks)) ...[
+                _HongguoSeriesHead(group: group),
+                DsListSection(
+                  children: [for (final task in group.tasks) _HongguoTaskRow(key: ValueKey(task.id), task: task)],
+                ),
+              ],
+            ],
           ),
       ],
     );
@@ -289,17 +297,20 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
         : ListView(
             padding: EdgeInsets.only(left: inset, right: inset, bottom: DsSpace.s16),
             children: [
-              DsListSection(
-                children: [
-                  for (final task in shown)
-                    _HongguoTaskRow(
-                      key: ValueKey(task.id),
-                      task: task,
-                      selected: wide && task.id == selectedTask?.id,
-                      onSelect: wide ? () => setState(() => _selectedId = task.id) : null,
-                    ),
-                ],
-              ),
+              for (final group in _hongguoDownloadGroups(shown)) ...[
+                _HongguoSeriesHead(group: group),
+                DsListSection(
+                  children: [
+                    for (final task in group.tasks)
+                      _HongguoTaskRow(
+                        key: ValueKey(task.id),
+                        task: task,
+                        selected: wide && task.id == selectedTask?.id,
+                        onSelect: wide ? () => setState(() => _selectedId = task.id) : null,
+                      ),
+                  ],
+                ),
+              ],
             ],
           );
     return LayoutBuilder(
@@ -484,6 +495,103 @@ List<MediaPreviewItem> _hongguoPreviewItems(List<HongguoDownloadItem> tasks) {
   return items;
 }
 
+/// One drama's block of the queue: its name, its poster where the queue kept
+/// one, and the episodes this list holds of it.
+final class _HongguoDownloadGroup {
+  _HongguoDownloadGroup({required this.title, required this.cover, required this.parts, required this.tasks});
+
+  /// The series' name, written once for the block.
+  final String title;
+
+  /// The series' poster; the first task in the block that carries one.
+  String cover;
+
+  /// How many episodes the series lists — the queue keeps it per task, and a
+  /// block reads as a part of a whole only when the whole is more than one.
+  final int parts;
+
+  /// The episodes, in the queue's own order.
+  final List<HongguoDownloadItem> tasks;
+}
+
+/// The queue read by series: one block per drama, in the order the list first
+/// names one, the episodes inside a block kept as the list has them. The
+/// station's own 我的下载 lists dramas and opens a drama's episodes from there;
+/// a flat list of episodes writes the same drama's name once per row — thirty
+/// times for one take — and gives no line to read the take from.
+List<_HongguoDownloadGroup> _hongguoDownloadGroups(Iterable<HongguoDownloadItem> tasks) {
+  final order = <String>[];
+  final blocks = <String, _HongguoDownloadGroup>{};
+  for (final task in tasks) {
+    final key = task.seriesId.isEmpty ? task.title : task.seriesId;
+    final block = blocks[key];
+    if (block == null) {
+      blocks[key] = _HongguoDownloadGroup(title: task.title, cover: task.cover, parts: task.parts, tasks: [task]);
+      order.add(key);
+    } else {
+      block.tasks.add(task);
+      // A task queued before the queue kept posters still names its drama;
+      // the first picture the block holds is the block's.
+      if (block.cover.isEmpty) block.cover = task.cover;
+    }
+  }
+  return [for (final key in order) blocks[key]!];
+}
+
+/// The line over one drama's episodes: its poster where the queue has one, its
+/// name once for the block, and the size of the drama the block belongs to.
+final class _HongguoSeriesHead extends StatelessWidget {
+  const _HongguoSeriesHead({required this.group});
+
+  /// The block being introduced.
+  final _HongguoDownloadGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, DsSpace.s12, 0, DsSpace.s4),
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          if (group.cover.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(theme.radii.control(28)),
+              child: SizedBox(
+                width: 28,
+                height: 28,
+                child: DsImage(
+                  image: cachedImage(group.cover),
+                  aspectRatio: 1,
+                  semanticLabel: group.title,
+                  fallback: ColoredBox(color: colors.control),
+                ),
+              ),
+            ),
+          Expanded(
+            child: Text(
+              group.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+            ),
+          ),
+          // The drama's own scale, not the queue's: how many episodes sit here
+          // is the rows under this line, and the page's head already counts the
+          // whole queue. A one-episode take has nothing to be a part of.
+          if (group.parts > 1)
+            Text(
+              t.hongguo.allEpisodesCount(count: group.parts),
+              style: theme.typography.caption.copyWith(color: colors.textMuted),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 /// The facts the right column, the 详情 sheet and the row's own caption show
 /// for [task] — one construction, so the three cannot drift. [retryLimit] and
 /// [retryDelay] let a failed row say when the queue will come back for it
@@ -624,21 +732,17 @@ final class _HongguoTaskRow extends ConsumerWidget {
       retryDelay: ref.watch(hongguoDownloadRetryDelayProvider),
       retryPending: controller.hasPendingRetry(task.id),
     ).status;
-    // The row previews the drama it downloaded: the series' poster where the
-    // task kept one, its name where it predates covers, the episode's title
-    // instead of the file name, and the tallest rendition asked for.
-    final preview = task.part.isEmpty ? task.title : '${task.title} · ${task.part}';
+    // The row is one episode of the block its header just named: the series'
+    // name and its poster belong to that header, not to every one of the
+    // thirty rows under it. The platform's own episode title is kept beside
+    // the number when it differs from the number — the queue stores the
+    // generated 第N集 label when the site named nothing.
+    final label = t.hongguo.episodeLabel(index: task.index);
+    final episode = task.part.isEmpty || task.part == label ? label : '$label · ${task.part}';
     return DsListRow(
       selected: selected,
       onPressed: onSelect,
-      leading: DsAvatar(
-        initials: task.title,
-        image: task.cover.isEmpty ? null : cachedImage(task.cover),
-        size: DsSize.md,
-        toneIndex: DsAvatar.toneFor(task.id),
-        semanticLabel: preview,
-      ),
-      title: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(episode, maxLines: 1, overflow: TextOverflow.ellipsis),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s4,
