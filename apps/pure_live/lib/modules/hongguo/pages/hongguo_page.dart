@@ -509,6 +509,16 @@ final class _FindView extends ConsumerStatefulWidget {
 final class _FindViewState extends ConsumerState<_FindView> {
   HongguoGenre _genre = HongguoGenre.shortPlay;
 
+  /// The conditions this shelf last answered with. A reload clears the feed's
+  /// `groups` while it is in flight, and a page whose summary line goes quiet
+  /// and whose entry greys out mid-read is describing a selection that is
+  /// still in force as if it had gone.
+  List<HongguoFilterRow> _held = const <HongguoFilterRow>[];
+
+  /// Which shelf [`_held`] belongs to; a switch drops it, since the new
+  /// shelf's conditions are not this one's.
+  HongguoGenre? _heldGenre;
+
   @override
   void initState() {
     super.initState();
@@ -521,9 +531,9 @@ final class _FindViewState extends ConsumerState<_FindView> {
   /// The shelf's conditions live in a panel over the posters, as the app's
   /// other filtered lists do: the page keeps its room for the grid, and the
   /// grid thins as each condition arrives.
-  Future<void> _openFilters() => showDsPanel<void>(
+  Future<void> _openFilters(List<HongguoFilterRow> rows) => showDsPanel<void>(
     context: context,
-    builder: (context) => _FindFilterPanel(genre: _genre),
+    builder: (context) => _FindFilterPanel(genre: _genre, rows: rows),
   );
 
   @override
@@ -542,8 +552,14 @@ final class _FindViewState extends ConsumerState<_FindView> {
           groups: const <HongguoFilterRow>[],
         );
     final controller = ref.read(hongguoBrowseProvider.notifier);
+    if (_heldGenre != _genre) {
+      _heldGenre = _genre;
+      _held = const <HongguoFilterRow>[];
+    }
+    if (state.groups.isNotEmpty) _held = state.groups;
+    final groups = _held;
     final chosen = <String>[
-      for (final row in state.groups)
+      for (final row in groups)
         if (state.selection[row.type] case final id?)
           for (final option in row.items)
             if (option.id == id) option.name,
@@ -585,7 +601,7 @@ final class _FindViewState extends ConsumerState<_FindView> {
                       size: DsSize.sm,
                       variant: DsButtonVariant.secondary,
                       leading: const DsIcon(DsIcons.listFilter, size: 14),
-                      onPressed: state.groups.isEmpty ? null : () => unawaited(_openFilters()),
+                      onPressed: groups.isEmpty ? null : () => unawaited(_openFilters(groups)),
                       child: Text(t.hongguo.filter),
                     ),
                   ],
@@ -630,10 +646,14 @@ final class _FindViewState extends ConsumerState<_FindView> {
 /// The find page's conditions, in a panel over the posters: each choice goes
 /// straight to the shelf's feed, so the grid behind thins as the viewer picks.
 final class _FindFilterPanel extends ConsumerWidget {
-  const _FindFilterPanel({required this.genre});
+  const _FindFilterPanel({required this.genre, required this.rows});
 
   /// The shelf whose selector panel the rows come from.
   final HongguoGenre genre;
+
+  /// The conditions to offer: the page's own reading of them, so a panel
+  /// opened while a reload is in flight is not an empty pane.
+  final List<HongguoFilterRow> rows;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -662,7 +682,7 @@ final class _FindFilterPanel extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s8,
         children: [
-          for (final row in feed?.groups ?? const <HongguoFilterRow>[])
+          for (final row in rows)
             HongguoFilterRowView(
               row: row,
               selection: selection,
@@ -1502,7 +1522,10 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
   void _takeHandoff() {
     final word = ref.read(hongguoSearchHandoffProvider.notifier).take();
     if (word == null || word.isEmpty || !mounted) return;
-    _query.value = TextEditingValue(text: word, selection: TextSelection.collapsed(offset: word.length));
+    _query.value = TextEditingValue(
+      text: word,
+      selection: TextSelection.collapsed(offset: word.length),
+    );
     unawaited(ref.read(hongguoSearchProvider.notifier).search(word, genre: _genre));
   }
 
