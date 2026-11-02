@@ -11,6 +11,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart' show followsProvider;
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/modules/vod/controller/vod_live.dart';
+import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar;
 import 'package:pure_live/shared/shared.dart';
 
 /// The reference's 直播 rail entry: the followed rooms and the site's areas
@@ -59,7 +60,7 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
               height: kRoomCardListDesignHeight,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+                padding: EdgeInsets.symmetric(horizontal: inset),
                 itemCount: followedRooms.length,
                 separatorBuilder: (context, index) => const SizedBox(width: DsSpace.s12),
                 itemBuilder: (context, index) {
@@ -83,7 +84,7 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
               height: 96,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+                padding: EdgeInsets.symmetric(horizontal: inset),
                 itemCount: areas.length,
                 separatorBuilder: (context, index) => const SizedBox(width: DsSpace.s12),
                 itemBuilder: (context, index) {
@@ -106,22 +107,17 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
           ),
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  t.vod.liveRecommendTitle,
-                  style: DsTheme.of(context).typography.title.copyWith(color: DsTheme.colorsOf(context).text),
-                ),
-              ),
-              ChromeIconButton(
-                icon: DsIcons.refresh,
-                semanticLabel: t.vod.refresh,
-                tooltip: t.vod.refresh,
-                onPressed: () => unawaited(controller.refresh()),
-                size: 36,
-              ),
-            ],
+          // The feed's head is the module's one: the same 44 row, the card/list
+          // switch the grid below already honours, and the reload — on a narrow
+          // window the two controls fold into the more at the page's end.
+          child: VodFeedToolbar(
+            tabs: Text(
+              t.vod.liveRecommendTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: DsTheme.of(context).typography.title.copyWith(color: DsTheme.colorsOf(context).text),
+            ),
+            onRefresh: controller.refresh,
           ),
         ),
         Expanded(
@@ -175,8 +171,11 @@ final class _Section extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s12,
         children: [
+          // The title sits at the page's own inset, not a fixed 20: on a
+          // compact window everything else in this column starts 16 in, and
+          // two starts down one column is the break this module keeps cutting.
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DsSpace.s20),
+            padding: EdgeInsets.symmetric(horizontal: LiveWindow.pageInset(MediaQuery.sizeOf(context).width)),
             child: Text(title, style: DsTheme.of(context).typography.title.copyWith(color: colors.text)),
           ),
           child,
