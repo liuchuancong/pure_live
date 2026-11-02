@@ -3286,7 +3286,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundClear => 'Clear background';
 	@override String get backgroundGlass => 'Interface glass';
 	@override String get backgroundGlassEnable => 'Enabled';
-	@override String get backgroundGlassDescription => 'Cards, lists and overlays turn translucent, the wallpaper showing through.';
+	@override String get backgroundGlassDescription => 'Cards and lists turn translucent, the wallpaper showing through; menus, dialogs and other overlays stay opaque so they stay readable.';
 	@override String get backgroundGlassFill => 'Panel fill';
 	@override String get backgroundGlassFillDescription => 'Fill opacity; lower shows more wallpaper and less contrast.';
 	@override String get checkUpdate => 'Check for updates';
@@ -7657,7 +7657,7 @@ extension on TranslationsEn {
 			'settings.backgroundClear' => 'Clear background',
 			'settings.backgroundGlass' => 'Interface glass',
 			'settings.backgroundGlassEnable' => 'Enabled',
-			'settings.backgroundGlassDescription' => 'Cards, lists and overlays turn translucent, the wallpaper showing through.',
+			'settings.backgroundGlassDescription' => 'Cards and lists turn translucent, the wallpaper showing through; menus, dialogs and other overlays stay opaque so they stay readable.',
 			'settings.backgroundGlassFill' => 'Panel fill',
 			'settings.backgroundGlassFillDescription' => 'Fill opacity; lower shows more wallpaper and less contrast.',
 			'settings.checkUpdate' => 'Check for updates',

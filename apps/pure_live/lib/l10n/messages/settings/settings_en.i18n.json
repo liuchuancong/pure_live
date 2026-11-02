@@ -898,7 +898,7 @@
   "backgroundClear": "Clear background",
   "backgroundGlass": "Interface glass",
   "backgroundGlassEnable": "Enabled",
-  "backgroundGlassDescription": "Cards, lists and overlays turn translucent, the wallpaper showing through.",
+  "backgroundGlassDescription": "Cards and lists turn translucent, the wallpaper showing through; menus, dialogs and other overlays stay opaque so they stay readable.",
   "backgroundGlassFill": "Panel fill",
   "backgroundGlassFillDescription": "Fill opacity; lower shows more wallpaper and less contrast.",
   "checkUpdate": "Check for updates",

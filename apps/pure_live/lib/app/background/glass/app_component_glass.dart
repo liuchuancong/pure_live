@@ -3,19 +3,19 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/background/settings/background_settings.dart';
 
-/// Gives every surface one translucent fill, the floating layers included,
-/// so the wallpaper keeps reading through the app.
+/// Turns the theme's own surface token translucent while the glass is on, so
+/// every card, list section, table and hand-painted panel (the room's
+/// columns included) reads the wallpaper through it — and keeps the official
+/// floating layers opaque on top of that.
 ///
-/// Two halves: [themeOf] turns the theme's own surface token translucent,
-/// which reaches every card, list section, table and the app's hand-painted
-/// panels (the room's columns included) at once; this widget gives the
-/// desen_ui layers that take a `backdropFilter` — the menu family (anchored
-/// menus, context menus, a select's list), popovers, dialogs, panels,
-/// toasts, toolbars, tooltips, the bottom navigation and the text selection
-/// bar — the matching fill.
+/// The floating layers — the menu family (anchored menus, context menus, a
+/// select's list), popovers, dialogs, panels, toasts, toolbars, tooltips, the
+/// bottom navigation and the text selection bar — are read for a moment and
+/// over whatever happens to be behind them; translucent, they are the one
+/// place a wallpaper makes words unreadable. So they take the theme's own
+/// opaque overlay fill whatever the glass asks of the surfaces beneath.
 final class AppComponentGlass extends ConsumerWidget {
-  /// Paints the floating layers of [child] as glass, as the background
-  /// settings ask.
+  /// Keeps the floating layers of [child] opaque while the glass is on.
   const AppComponentGlass({required this.child, super.key});
 
   /// The app (the router's navigator).
@@ -47,40 +47,25 @@ final class AppComponentGlass extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(backgroundSettingsProvider);
+    final glass = ref.watch(backgroundSettingsProvider.select((settings) => settings.glass));
     // The scope stays in the tree either way: switching the glass on must
     // not remount the navigator below it (route state would go with it).
-    if (!settings.glass) return DsComponentThemes(themes: const [], child: child);
-    final fill = DsTheme.colorsOf(context).overlay.withValues(alpha: settings.glassFill);
+    if (!glass) return DsComponentThemes(themes: const [], child: child);
+    // The layers' own fill, fully opaque: the adjusted palette may have
+    // thinned the surface the layers inherit from, and a menu over a
+    // wallpaper has to be read.
+    final fill = DsTheme.colorsOf(context).overlay.withValues(alpha: 1);
     return DsComponentThemes(
       themes: [
-        DsMenuThemeData(
-          style: DsMenuStyle(background: fill),
-        ),
-        DsPopoverThemeData(
-          style: DsPopoverStyle(background: fill),
-        ),
-        DsDialogThemeData(
-          style: DsDialogStyle(background: fill),
-        ),
-        DsPanelThemeData(
-          style: DsPanelStyle(background: fill),
-        ),
-        DsToastThemeData(
-          style: DsToastStyle(background: fill),
-        ),
-        DsToolbarThemeData(
-          style: DsToolbarStyle(background: fill),
-        ),
-        DsTooltipThemeData(
-          style: DsTooltipStyle(background: fill),
-        ),
-        DsBottomNavThemeData(
-          style: DsBottomNavStyle(background: fill),
-        ),
-        DsTextSelectionToolbarThemeData(
-          style: DsTextSelectionToolbarStyle(background: fill),
-        ),
+        DsMenuThemeData(style: DsMenuStyle(background: fill)),
+        DsPopoverThemeData(style: DsPopoverStyle(background: fill)),
+        DsDialogThemeData(style: DsDialogStyle(background: fill)),
+        DsPanelThemeData(style: DsPanelStyle(background: fill)),
+        DsToastThemeData(style: DsToastStyle(background: fill)),
+        DsToolbarThemeData(style: DsToolbarStyle(background: fill)),
+        DsTooltipThemeData(style: DsTooltipStyle(background: fill)),
+        DsBottomNavThemeData(style: DsBottomNavStyle(background: fill)),
+        DsTextSelectionToolbarThemeData(style: DsTextSelectionToolbarStyle(background: fill)),
       ],
       child: child,
     );
