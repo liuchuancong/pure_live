@@ -65,9 +65,9 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
             semanticLabel: t.room.chatTitle,
             tabs: [
               DsTab(value: _ChatTab.danmaku, label: Text(t.room.danmakuList)),
-              DsTab(value: _ChatTab.superChats, label: Text(t.room.superChats)),
-              DsTab(value: _ChatTab.settings, label: Text(t.room.danmakuSettings)),
-              DsTab(value: _ChatTab.shield, label: Text(t.room.blockList)),
+              DsTab(value: _ChatTab.superChats, label: Text(t.room.tabSuperChats)),
+              DsTab(value: _ChatTab.settings, label: Text(t.room.tabSettings)),
+              DsTab(value: _ChatTab.shield, label: Text(t.room.tabShield)),
             ],
           ),
           DsLine(color: colors.border),
@@ -94,11 +94,51 @@ final class _RoomChatPanelState extends ConsumerState<RoomChatPanel> {
 /// The danmaku list: the pipeline's messages, newest at the bottom, the
 /// sender's name before the text in the sender's color. A long press (or a
 /// right click) opens the message's actions.
-final class _ChatFeed extends ConsumerWidget {
+final class _ChatFeed extends ConsumerStatefulWidget {
   const _ChatFeed();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ChatFeed> createState() => _ChatFeedState();
+}
+
+final class _ChatFeedState extends ConsumerState<_ChatFeed> {
+  /// The scroll, so the feed knows when the viewer is reading away from the
+  /// bottom.
+  final ScrollController _scroll = ScrollController();
+
+  /// The first message that arrived while the viewer was scrolled away: the
+  /// 「以下为新消息」 line is drawn above it, and it clears when they come
+  /// back down. Null is everything seen.
+  String? _boundaryId;
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_atBottom);
+    // Arrivals while the viewer is away set the boundary once — the oldest
+    // unseen message — and a return to the bottom clears it.
+    ref.listenManual(roomChatProvider, (previous, next) {
+      if (!mounted || previous == null || next.length <= previous.length) return;
+      final away = _scroll.hasClients && _scroll.offset > 40;
+      if (!away || _boundaryId != null) return;
+      setState(() => _boundaryId = next.last.messageId);
+    });
+  }
+
+  @override
+  void dispose() {
+    _scroll.removeListener(_atBottom);
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _atBottom() {
+    if (_boundaryId == null && _scroll.offset <= 2) return;
+    if (_scroll.offset <= 2 && _boundaryId != null) setState(() => _boundaryId = null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final t = context.t;
     final chat = ref.watch(roomChatProvider);
     final anchorName = ref.watch(roomProvider.select((state) => state.room?.anchor?.name ?? ''));
@@ -142,12 +182,41 @@ final class _ChatFeed extends ConsumerWidget {
     }
     // Reversed: item 0 sits at the bottom, so new messages stay in view
     // without a scroll command, and scrolling up leaves the list where the
-    // viewer put it.
+    // viewer put it. The boundary message — the oldest unseen one — carries
+    // the 「以下为新消息」 line above it, so what arrived while the viewer
+    // read earlier talk is said, not implied.
+    final boundary = _boundaryId;
     return ListView.builder(
+      controller: _scroll,
       reverse: true,
       padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s8, DsSpace.s12, DsSpace.s12),
       itemCount: chat.length,
-      itemBuilder: (context, index) => _ChatLine(message: chat[chat.length - 1 - index], anchorName: anchorName),
+      itemBuilder: (context, index) {
+        final message = chat[chat.length - 1 - index];
+        final line = _ChatLine(message: message, anchorName: anchorName);
+        if (boundary == null || message.messageId != boundary) return line;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: DsSpace.s6),
+              child: Row(
+                spacing: DsSpace.s8,
+                children: [
+                  const Expanded(child: DsDivider()),
+                  Text(
+                    t.room.newMessagesBelow,
+                    style: DsTheme.of(context).typography.overline
+                        .copyWith(color: DsTheme.colorsOf(context).textSubtle),
+                  ),
+                  const Expanded(child: DsDivider()),
+                ],
+              ),
+            ),
+            line,
+          ],
+        );
+      },
     );
   }
 }
@@ -295,9 +364,7 @@ final class _ChatLine extends ConsumerWidget {
     final userLevel = (sender?.userLevel ?? '').trim();
     // A platform can wear several (a title, a medal, an event mark); three is
     // what the line can carry before the name itself is pushed off the front.
-    final badgeUrls = [
-      for (final badge in (sender?.badges ?? const <LiveBadge>[]).take(3)) badge.url.trim(),
-    ];
+    final badgeUrls = [for (final badge in (sender?.badges ?? const <LiveBadge>[]).take(3)) badge.url.trim()];
     final roleTag = switch (sender?.role) {
       LiveAnchorRole.anchor => t.room.roleAnchor,
       LiveAnchorRole.moderator => t.room.roleModerator,
@@ -452,7 +519,16 @@ final class _ChatLine extends ConsumerWidget {
                         alignment: PlaceholderAlignment.middle,
                         child: Padding(
                           padding: const EdgeInsetsDirectional.only(end: DsSpace.s3),
-                          child: Text('Lv.$userLevel', style: badgeStyle.copyWith(color: levelInk)),
+                          // The level as the reference draws it: a hairline
+                          // plate in the tier's own ink, not a bare number.
+                          child: _SenderTag(
+                            text: 'Lv.$userLevel',
+                            background: levelInk.withValues(alpha: 0.10),
+                            foreground: levelInk,
+                            border: levelInk.withValues(alpha: 0.55),
+                            style: badgeStyle.copyWith(fontWeight: FontWeight.w600),
+                            height: tagHeight,
+                          ),
                         ),
                       ),
                   ],
@@ -483,15 +559,15 @@ final class _ChatLine extends ConsumerWidget {
         ),
       );
     } else if (gift != null) {
-      // A gift is money on the page: the accent's own tint behind the line,
-      // a hairline edge, so it reads apart from ordinary talk. Both banners
+      // A gift is money on the page: the same warm banner the super chat
+      // wears, so every paid line reads as money at a glance. Both banners
       // wear the theme's card corner, not a radius of their own.
       content = Container(
         padding: const EdgeInsets.symmetric(horizontal: DsSpace.s8, vertical: DsSpace.s5),
         decoration: BoxDecoration(
-          color: colors.accent.withValues(alpha: 0.10),
+          color: colors.warning.tint,
           borderRadius: BorderRadius.circular(theme.radii.card),
-          border: Border.fromBorderSide(BorderSide(color: colors.accent.withValues(alpha: 0.22))),
+          border: Border.fromBorderSide(BorderSide(color: colors.warning.fill.withValues(alpha: 0.35))),
         ),
         child: content,
       );
@@ -583,10 +659,18 @@ Color _senderNameInk({
   required Color fallback,
 }) {
   final source = sender?.nameColor ?? messageColor;
-  if (source == null) return fallback;
-  final named = (r: source.r, g: source.g, b: source.b);
-  if ((named.r == 255 && named.g == 255 && named.b == 255) || (named.r == 0 && named.g == 0 && named.b == 0)) {
-    return fallback;
+  final named = source == null ? null : (r: source.r, g: source.g, b: source.b);
+  if (named == null ||
+      (named.r == 255 && named.g == 255 && named.b == 255) ||
+      (named.r == 0 && named.g == 0 && named.b == 0)) {
+    // The platform gave nothing readable: the name takes a hue of its own,
+    // hashed from the name so one speaker keeps one colour — the reference's
+    // column reads many hues, not a wall of grey.
+    final ground = background.withValues(alpha: 1);
+    final dark = ground.computeLuminance() < 0.35;
+    final seed = (sender?.userName.trim().isEmpty ?? true) ? 0 : sender!.userName.trim().codeUnitAt(0);
+    final hue = (seed * 47) % 360;
+    return HSLColor.fromAHSL(1, hue.toDouble(), 0.58, dark ? 0.70 : 0.42).toColor();
   }
   final color = Color.fromARGB(255, named.r, named.g, named.b);
   final ground = background.withValues(alpha: 1);

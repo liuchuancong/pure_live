@@ -1054,8 +1054,8 @@ class Translations$common$zh_CN {
 	/// zh-CN: '前进'
 	String get forward => '前进';
 
-	/// zh-CN: '搜索房间、主播或站点'
-	String get searchHint => '搜索房间、主播或站点';
+	/// zh-CN: '搜索房间或主播'
+	String get searchHint => '搜索房间或主播';
 
 	/// zh-CN: '切换内容类型'
 	String get switchModule => '切换内容类型';
@@ -3006,6 +3006,9 @@ class Translations$multiview$zh_CN {
 
 	/// zh-CN: '没有匹配的房间'
 	String get pickerNoMatch => '没有匹配的房间';
+
+	/// zh-CN: '搜索直播间添加到当前格子'
+	String get searchHint => '搜索直播间添加到当前格子';
 }
 
 // Path: music
@@ -5305,15 +5308,6 @@ class Translations$popular$zh_CN {
 	/// zh-CN: '返回浏览'
 	String get backToBrowse => '返回浏览';
 
-	/// zh-CN: '排序'
-	String get sortLabel => '排序';
-
-	/// zh-CN: '平台推荐'
-	String get sortPlatform => '平台推荐';
-
-	/// zh-CN: '按观众'
-	String get sortAudience => '按观众';
-
 	/// zh-CN: '已隐藏 {count: int} 个暂时不能播放的直播（付费、加锁、仅限 App 等）'
 	String hiddenUnplayable({required int count}) => '已隐藏 ${count} 个暂时不能播放的直播（付费、加锁、仅限 App 等）';
 }
@@ -5982,6 +5976,36 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '另有录制正在旧目录进行；本页的统计、清理与自动裁剪只针对当前目录。'
 	String get cacheOtherRoot => '另有录制正在旧目录进行；本页的统计、清理与自动裁剪只针对当前目录。';
+
+	/// zh-CN: '搜索直播间添加录制'
+	String get searchHint => '搜索直播间添加录制';
+
+	/// zh-CN: '添加录制'
+	String get addTitle => '添加录制';
+
+	/// zh-CN: '「{title: String}」正在直播，立即开始录制？'
+	String addBodyLive({required String title}) => '「${title}」正在直播，立即开始录制？';
+
+	/// zh-CN: '「{title: String}」未开播，加入等待列表，开播后自动开始录制？'
+	String addBodyOffline({required String title}) => '「${title}」未开播，加入等待列表，开播后自动开始录制？';
+
+	/// zh-CN: '开始录制'
+	String get addStartNow => '开始录制';
+
+	/// zh-CN: '加入等待'
+	String get addArm => '加入等待';
+
+	/// zh-CN: '已加入等待，每 {seconds: int} 秒检查一次开播'
+	String addArmed({required int seconds}) => '已加入等待，每 ${seconds} 秒检查一次开播';
+
+	/// zh-CN: '这个房间已在录制中'
+	String get addAlreadyRecording => '这个房间已在录制中';
+
+	/// zh-CN: '文件已删除'
+	String get stateFileDeleted => '文件已删除';
+
+	/// zh-CN: '视频文件已在预览中删除；任务目录里的弹幕与分段仍保留'
+	String get warningFileDeleted => '视频文件已在预览中删除；任务目录里的弹幕与分段仍保留';
 }
 
 // Path: room
@@ -6558,6 +6582,24 @@ class Translations$room$zh_CN {
 
 	/// zh-CN: '弹幕连接失败（{reason}），直播画面不受影响'
 	String danmakuConnectFailed({required Object reason}) => '弹幕连接失败（${reason}），直播画面不受影响';
+
+	/// zh-CN: '已直播 {time: String}'
+	String onAirFor({required String time}) => '已直播 ${time}';
+
+	/// zh-CN: '超聊'
+	String get tabSuperChats => '超聊';
+
+	/// zh-CN: '设置'
+	String get tabSettings => '设置';
+
+	/// zh-CN: '屏蔽'
+	String get tabShield => '屏蔽';
+
+	/// zh-CN: '以下为新消息'
+	String get newMessagesBelow => '以下为新消息';
+
+	/// zh-CN: '比例'
+	String get fitShort => '比例';
 }
 
 // Path: search
@@ -13175,7 +13217,7 @@ extension on Translations {
 			'common.moduleComingSoon' => '这个模块还在路上',
 			'common.back' => '后退',
 			'common.forward' => '前进',
-			'common.searchHint' => '搜索房间、主播或站点',
+			'common.searchHint' => '搜索房间或主播',
 			'common.switchModule' => '切换内容类型',
 			'common.openNavigation' => '打开导航',
 			'common.refreshFailed' => '刷新失败',
@@ -13815,6 +13857,7 @@ extension on Translations {
 			'multiview.panePicking' => '正在为这一格选台',
 			'multiview.wallFailed' => '无法读取多画面记录',
 			'multiview.pickerNoMatch' => '没有匹配的房间',
+			'multiview.searchHint' => '搜索直播间添加到当前格子',
 			'music.title' => '音乐',
 			'music.tagline' => '搜索歌曲，在线收听',
 			'music.viewsLabel' => '音乐视图',
@@ -14275,9 +14318,9 @@ extension on Translations {
 			'music.clearQueueConfirmBody' => '队列中的所有歌曲都会被移除，此操作无法撤销。',
 			'music.exportLyric' => '导出歌词',
 			'music.associateLyric' => '关联本地歌词',
-			'music.associateLyricDone' => '已关联歌词',
 			_ => null,
 		} ?? switch (path) {
+			'music.associateLyricDone' => '已关联歌词',
 			'music.associateLyricFailed' => '关联失败：文件里没有可用的歌词',
 			'music.lyricOverrideRemove' => '取消关联歌词',
 			'music.lyricSearch' => '在线搜索歌词',
@@ -14571,9 +14614,6 @@ extension on Translations {
 			'popular.nextPage' => '下一页',
 			'popular.inlineAt' => ({required Object platform, required Object query}) => '在 ${platform} 中搜索“${query}”',
 			'popular.backToBrowse' => '返回浏览',
-			'popular.sortLabel' => '排序',
-			'popular.sortPlatform' => '平台推荐',
-			'popular.sortAudience' => '按观众',
 			'popular.hiddenUnplayable' => ({required int count}) => '已隐藏 ${count} 个暂时不能播放的直播（付费、加锁、仅限 App 等）',
 			'recorder.tabRunning' => '进行中',
 			'recorder.tabFinished' => '已完成',
@@ -14790,12 +14830,22 @@ extension on Translations {
 			'recorder.startNowStarted' => '已开始录制',
 			'recorder.startNowOffline' => '直播间未开播',
 			'recorder.startNowNoStream' => '没有可录制的线路',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.startNowTimeout' => '读取直播流超时',
 			'recorder.startNowFailed' => ({required Object error}) => '无法开始录制：${error}',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.cacheBusy' => '有录制任务正在进行（可能在另一个窗口），缓存不会被清理或自动裁剪。',
 			'recorder.cacheOtherRoot' => '另有录制正在旧目录进行；本页的统计、清理与自动裁剪只针对当前目录。',
+			'recorder.searchHint' => '搜索直播间添加录制',
+			'recorder.addTitle' => '添加录制',
+			'recorder.addBodyLive' => ({required String title}) => '「${title}」正在直播，立即开始录制？',
+			'recorder.addBodyOffline' => ({required String title}) => '「${title}」未开播，加入等待列表，开播后自动开始录制？',
+			'recorder.addStartNow' => '开始录制',
+			'recorder.addArm' => '加入等待',
+			'recorder.addArmed' => ({required int seconds}) => '已加入等待，每 ${seconds} 秒检查一次开播',
+			'recorder.addAlreadyRecording' => '这个房间已在录制中',
+			'recorder.stateFileDeleted' => '文件已删除',
+			'recorder.warningFileDeleted' => '视频文件已在预览中删除；任务目录里的弹幕与分段仍保留',
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -14985,6 +15035,12 @@ extension on Translations {
 			'room.bilibiliGuestNames' => '当前以访客身份连接，B 站弹幕不会显示完整昵称',
 			'room.bilibiliLoginExpired' => 'B 站登录似乎已失效：昵称全部被打码，请重新登录',
 			'room.danmakuConnectFailed' => ({required Object reason}) => '弹幕连接失败（${reason}），直播画面不受影响',
+			'room.onAirFor' => ({required String time}) => '已直播 ${time}',
+			'room.tabSuperChats' => '超聊',
+			'room.tabSettings' => '设置',
+			'room.tabShield' => '屏蔽',
+			'room.newMessagesBelow' => '以下为新消息',
+			'room.fitShort' => '比例',
 			'search.idleTitle' => '搜索',
 			'search.idleDescription' => '输入关键词，搜索房间、主播或分区。',
 			'search.suggestionsTitle' => '搜索建议',
@@ -15290,6 +15346,8 @@ extension on Translations {
 			'settings.styleTapInteractionDesc' => '可复制、屏蔽；关闭后只切换控制条。',
 			'settings.styleLongPressInteraction' => '长按弹幕',
 			'settings.styleLongPressInteractionDesc' => '与点按同一菜单；关闭后长按不命中弹幕。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuStyleGroup' => '弹幕样式',
 			'settings.danmakuStyleDescription' => '弹幕的字体、大小、速度、区域、描边与帧率。',
 			'settings.danmakuDisplayDescription' => '聊天列表显示谁、显示什么、怎么排。',
@@ -15304,8 +15362,6 @@ extension on Translations {
 			'settings.danmakuColorTitle' => '选择颜色',
 			'settings.danmakuColorPresets' => '预设颜色',
 			'settings.danmakuColorHex' => '十六进制颜色',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuColorHexInvalid' => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。',
 			'settings.danmakuColorHue' => '色相',
 			'settings.danmakuColorSaturation' => '饱和度与明度',
@@ -15804,6 +15860,8 @@ extension on Translations {
 			'settings.defaultMuted' => '默认静音',
 			'settings.defaultMutedDesc' => '每个新房间打开时保持静音。',
 			'settings.defaultVolume' => '默认音量',
+			_ => null,
+		} ?? switch (path) {
 			'settings.defaultVolumeDesc' => '新播放器默认音量：移动端 50%，桌面 100%。',
 			'settings.volumeWheelStep' => '滚轮音量步长',
 			'settings.volumeWheelStepDesc' => '鼠标滚轮与方向键每次调节的音量幅度。',
@@ -15818,8 +15876,6 @@ extension on Translations {
 			'settings.asmrSleepTimerDesc' => '音频模式自动停止前的分钟数，范围 15–1440。',
 			'settings.asmrSleepCustomMinutes' => '自定义分钟数',
 			'settings.asmrSleepRange' => '15–1440 分钟',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fit' => '画面比例',
 			'settings.fitDesc' => '画面在播放区域里的铺法。',
 			'settings.fitContain' => '默认比例',
@@ -16318,6 +16374,8 @@ extension on Translations {
 			'settings.logRotationGroup' => '文件轮转',
 			'settings.logFileMaxBytes' => '单文件上限',
 			'settings.logFileMaxBytesDesc' => '写满就切到下一个文件。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.logFilesKept' => '保留文件数',
 			'settings.logFilesKeptDesc' => '写满一个文件后轮转，超出保留数的旧文件会删除。',
 			'settings.logFilesKeptUnlimited' => '不限制',
@@ -16332,8 +16390,6 @@ extension on Translations {
 			'settings.storageFolders' => '存储位置',
 			'settings.storageFoldersDescription' => '各类文件保存的文件夹；每个文件夹可单独更换或恢复默认。',
 			'settings.storageFoldersDesc' => '每类文件的位置，默认跟随系统，可自行选择。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.storageFolderVideos' => '视频',
 			'settings.storageFolderRecordings' => '录制',
 			'settings.storageFolderScreenshots' => '截图',
@@ -16832,6 +16888,8 @@ extension on Translations {
 			'wallpaper.groupWuming' => '无铭 API',
 			'wallpaper.sourceWumingGirl' => '无铭随机美囡图片',
 			'wallpaper.sourceWumingBlackStocking' => '无铭随机黑丝图片',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceWumingDouyinGirl' => '抖音美女·无铭API',
 			'wallpaper.sourceWumingWhiteStocking' => '无铭随机白丝图片',
 			'wallpaper.sourceWumingDouyinGirlAlt' => '无铭随机抖音美女图片',
@@ -16846,8 +16904,6 @@ extension on Translations {
 			'wallpaper.sourceUapiLandscape' => 'UAPI风景图',
 			'wallpaper.sourceUapiAnime' => 'UAPI混合动漫',
 			'wallpaper.sourceUapiPcWallpaper' => 'UAPI电脑壁纸',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceUapiMobileWallpaper' => 'UAPI手机壁纸',
 			'wallpaper.sourceUapiGeneralAnime' => 'UAPI动漫图',
 			'wallpaper.sourceUapiFurry' => 'UAPI福瑞',

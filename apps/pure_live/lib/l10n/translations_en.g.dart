@@ -416,7 +416,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get moduleComingSoon => 'This module is on its way';
 	@override String get back => 'Back';
 	@override String get forward => 'Forward';
-	@override String get searchHint => 'Search rooms, streamers or sites';
+	@override String get searchHint => 'Search rooms or streamers';
 	@override String get switchModule => 'Switch content type';
 	@override String get openNavigation => 'Open navigation';
 	@override String get refreshFailed => 'Refresh failed';
@@ -1097,6 +1097,7 @@ class _Translations$multiview$en extends Translations$multiview$zh_CN {
 	@override String get panePicking => 'Picking for this cell';
 	@override String get wallFailed => 'The wall could not be read';
 	@override String get pickerNoMatch => 'No matching room';
+	@override String get searchHint => 'Search a room for the current cell';
 }
 
 // Path: music
@@ -1887,9 +1888,6 @@ class _Translations$popular$en extends Translations$popular$zh_CN {
 	@override String get nextPage => 'Next page';
 	@override String inlineAt({required Object query, required Object platform}) => 'Searching “${query}” on ${platform}';
 	@override String get backToBrowse => 'Back to browsing';
-	@override String get sortLabel => 'Sort';
-	@override String get sortPlatform => 'Platform order';
-	@override String get sortAudience => 'By audience';
 	@override String hiddenUnplayable({required int count}) => '${count} streams that cannot play here are hidden (paid, locked, app only…)';
 }
 
@@ -2119,6 +2117,16 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String startNowFailed({required Object error}) => 'Could not start recording: ${error}';
 	@override String get cacheBusy => 'A recording is in progress (possibly in another window); the cache will not be cleared or trimmed now.';
 	@override String get cacheOtherRoot => 'A take is still writing to the old folder; this page\'s size, clear and automatic trimming cover the current folder only.';
+	@override String get searchHint => 'Search a room to record';
+	@override String get addTitle => 'Add recording';
+	@override String addBodyLive({required String title}) => '“${title}” is live. Start recording now?';
+	@override String addBodyOffline({required String title}) => '“${title}” is offline. Add it to the waiting list and record once it goes live?';
+	@override String get addStartNow => 'Start recording';
+	@override String get addArm => 'Add to waiting';
+	@override String addArmed({required int seconds}) => 'Added to waiting; checked every ${seconds} seconds';
+	@override String get addAlreadyRecording => 'This room is already being recorded';
+	@override String get stateFileDeleted => 'File deleted';
+	@override String get warningFileDeleted => 'The video was deleted from the preview; the chat files and segments in the take folder remain';
 }
 
 // Path: room
@@ -2317,6 +2325,12 @@ class _Translations$room$en extends Translations$room$zh_CN {
 	@override String get bilibiliGuestNames => 'Connected as a guest — Bilibili chat hides the full nicknames';
 	@override String get bilibiliLoginExpired => 'Your Bilibili login looks expired — every nickname is masked; please sign in again';
 	@override String danmakuConnectFailed({required Object reason}) => 'Danmaku did not connect (${reason}) — the stream is unaffected';
+	@override String onAirFor({required String time}) => 'On air ${time}';
+	@override String get tabSuperChats => 'Chats';
+	@override String get tabSettings => 'Settings';
+	@override String get tabShield => 'Shield';
+	@override String get newMessagesBelow => 'New messages below';
+	@override String get fitShort => 'Fit';
 }
 
 // Path: search
@@ -4876,7 +4890,7 @@ extension on TranslationsEn {
 			'common.moduleComingSoon' => 'This module is on its way',
 			'common.back' => 'Back',
 			'common.forward' => 'Forward',
-			'common.searchHint' => 'Search rooms, streamers or sites',
+			'common.searchHint' => 'Search rooms or streamers',
 			'common.switchModule' => 'Switch content type',
 			'common.openNavigation' => 'Open navigation',
 			'common.refreshFailed' => 'Refresh failed',
@@ -5516,6 +5530,7 @@ extension on TranslationsEn {
 			'multiview.panePicking' => 'Picking for this cell',
 			'multiview.wallFailed' => 'The wall could not be read',
 			'multiview.pickerNoMatch' => 'No matching room',
+			'multiview.searchHint' => 'Search a room for the current cell',
 			'music.title' => 'Music',
 			'music.tagline' => 'Search songs and listen online',
 			'music.viewsLabel' => 'Music views',
@@ -5976,9 +5991,9 @@ extension on TranslationsEn {
 			'music.clearQueueConfirmBody' => 'Every song in the queue will be removed. This cannot be undone.',
 			'music.exportLyric' => 'Export the lyric',
 			'music.associateLyric' => 'Use a local lyric',
-			'music.associateLyricDone' => 'Lyric linked',
 			_ => null,
 		} ?? switch (path) {
+			'music.associateLyricDone' => 'Lyric linked',
 			'music.associateLyricFailed' => 'Could not link: the file has no usable lyric',
 			'music.lyricOverrideRemove' => 'Unlink the lyric',
 			'music.lyricSearch' => 'Search lyrics online',
@@ -6272,9 +6287,6 @@ extension on TranslationsEn {
 			'popular.nextPage' => 'Next page',
 			'popular.inlineAt' => ({required Object query, required Object platform}) => 'Searching “${query}” on ${platform}',
 			'popular.backToBrowse' => 'Back to browsing',
-			'popular.sortLabel' => 'Sort',
-			'popular.sortPlatform' => 'Platform order',
-			'popular.sortAudience' => 'By audience',
 			'popular.hiddenUnplayable' => ({required int count}) => '${count} streams that cannot play here are hidden (paid, locked, app only…)',
 			'recorder.tabRunning' => 'Recording',
 			'recorder.tabFinished' => 'Finished',
@@ -6491,12 +6503,22 @@ extension on TranslationsEn {
 			'recorder.startNowStarted' => 'Recording started',
 			'recorder.startNowOffline' => 'The room is not live',
 			'recorder.startNowNoStream' => 'No recordable line',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.startNowTimeout' => 'Reading the stream timed out',
 			'recorder.startNowFailed' => ({required Object error}) => 'Could not start recording: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.cacheBusy' => 'A recording is in progress (possibly in another window); the cache will not be cleared or trimmed now.',
 			'recorder.cacheOtherRoot' => 'A take is still writing to the old folder; this page\'s size, clear and automatic trimming cover the current folder only.',
+			'recorder.searchHint' => 'Search a room to record',
+			'recorder.addTitle' => 'Add recording',
+			'recorder.addBodyLive' => ({required String title}) => '“${title}” is live. Start recording now?',
+			'recorder.addBodyOffline' => ({required String title}) => '“${title}” is offline. Add it to the waiting list and record once it goes live?',
+			'recorder.addStartNow' => 'Start recording',
+			'recorder.addArm' => 'Add to waiting',
+			'recorder.addArmed' => ({required int seconds}) => 'Added to waiting; checked every ${seconds} seconds',
+			'recorder.addAlreadyRecording' => 'This room is already being recorded',
+			'recorder.stateFileDeleted' => 'File deleted',
+			'recorder.warningFileDeleted' => 'The video was deleted from the preview; the chat files and segments in the take folder remain',
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -6686,6 +6708,12 @@ extension on TranslationsEn {
 			'room.bilibiliGuestNames' => 'Connected as a guest — Bilibili chat hides the full nicknames',
 			'room.bilibiliLoginExpired' => 'Your Bilibili login looks expired — every nickname is masked; please sign in again',
 			'room.danmakuConnectFailed' => ({required Object reason}) => 'Danmaku did not connect (${reason}) — the stream is unaffected',
+			'room.onAirFor' => ({required String time}) => 'On air ${time}',
+			'room.tabSuperChats' => 'Chats',
+			'room.tabSettings' => 'Settings',
+			'room.tabShield' => 'Shield',
+			'room.newMessagesBelow' => 'New messages below',
+			'room.fitShort' => 'Fit',
 			'search.idleTitle' => 'Search',
 			'search.idleDescription' => 'Type to search rooms, streamers or areas.',
 			'search.suggestionsTitle' => 'Suggestions',
@@ -6991,6 +7019,8 @@ extension on TranslationsEn {
 			'settings.styleTapInteractionDesc' => 'Copy or block a message; off, a tap only toggles the controls.',
 			'settings.styleLongPressInteraction' => 'Long-press danmaku',
 			'settings.styleLongPressInteractionDesc' => 'Opens the same actions; off, a long press misses danmaku.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuStyleGroup' => 'Danmaku style',
 			'settings.danmakuStyleDescription' => 'The typeface, size, speed, area, outline and frame rate of a danmaku.',
 			'settings.danmakuDisplayDescription' => 'Who the chat list shows, what it keeps and how it is set.',
@@ -7005,8 +7035,6 @@ extension on TranslationsEn {
 			'settings.danmakuColorTitle' => 'Choose a colour',
 			'settings.danmakuColorPresets' => 'Presets',
 			'settings.danmakuColorHex' => 'Hex colour',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuColorHexInvalid' => 'Enter a 6- or 8-digit hex colour, such as #2196F3.',
 			'settings.danmakuColorHue' => 'Hue',
 			'settings.danmakuColorSaturation' => 'Saturation and brightness',
@@ -7505,6 +7533,8 @@ extension on TranslationsEn {
 			'settings.defaultMuted' => 'Start muted',
 			'settings.defaultMutedDesc' => 'Every new room opens muted.',
 			'settings.defaultVolume' => 'Starting volume',
+			_ => null,
+		} ?? switch (path) {
 			'settings.defaultVolumeDesc' => 'Starting volume for new players: 50% on mobile, 100% on desktop.',
 			'settings.volumeWheelStep' => 'Volume wheel step',
 			'settings.volumeWheelStepDesc' => 'How much the mouse wheel and the arrow keys change the volume at a time.',
@@ -7519,8 +7549,6 @@ extension on TranslationsEn {
 			'settings.asmrSleepTimerDesc' => 'Minutes before the audio-only room pauses; range 15–1440.',
 			'settings.asmrSleepCustomMinutes' => 'Custom minutes',
 			'settings.asmrSleepRange' => '15–1440 minutes',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fit' => 'Picture fit',
 			'settings.fitDesc' => 'How the frame fills its box.',
 			'settings.fitContain' => 'Default Ratio',
@@ -8019,6 +8047,8 @@ extension on TranslationsEn {
 			'settings.logRotationGroup' => 'File rotation',
 			'settings.logFileMaxBytes' => 'Per-file limit',
 			'settings.logFileMaxBytesDesc' => 'The sink moves to the next file at this size.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.logFilesKept' => 'Files kept',
 			'settings.logFilesKeptDesc' => 'A full file rotates to the next; older files beyond the limit are deleted.',
 			'settings.logFilesKeptUnlimited' => 'Unlimited',
@@ -8033,8 +8063,6 @@ extension on TranslationsEn {
 			'settings.storageFolders' => 'Storage locations',
 			'settings.storageFoldersDescription' => 'The folders each kind of file is saved in; change or reset one at a time.',
 			'settings.storageFoldersDesc' => 'Where each kind of file lives. Defaults follow the system; any of them can be moved.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.storageFolderVideos' => 'Videos',
 			'settings.storageFolderRecordings' => 'Recordings',
 			'settings.storageFolderScreenshots' => 'Screenshots',
@@ -8533,6 +8561,8 @@ extension on TranslationsEn {
 			'wallpaper.groupWuming' => 'Wuming API',
 			'wallpaper.sourceWumingGirl' => 'Wuming · random girls',
 			'wallpaper.sourceWumingBlackStocking' => 'Wuming · black stockings',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceWumingDouyinGirl' => 'Wuming · Douyin girls',
 			'wallpaper.sourceWumingWhiteStocking' => 'Wuming · white stockings',
 			'wallpaper.sourceWumingDouyinGirlAlt' => 'Wuming · random Douyin girls',
@@ -8547,8 +8577,6 @@ extension on TranslationsEn {
 			'wallpaper.sourceUapiLandscape' => 'UAPI · landscape',
 			'wallpaper.sourceUapiAnime' => 'UAPI · mixed anime',
 			'wallpaper.sourceUapiPcWallpaper' => 'UAPI · desktop wallpaper',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceUapiMobileWallpaper' => 'UAPI · phone wallpaper',
 			'wallpaper.sourceUapiGeneralAnime' => 'UAPI · anime images',
 			'wallpaper.sourceUapiFurry' => 'UAPI · furry',

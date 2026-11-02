@@ -4,7 +4,7 @@ import 'dart:ui' show ImageFilter, TileMode;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
-import 'package:flutter/material.dart' show AppBar, IconButton, Scaffold, kToolbarHeight;
+import 'package:flutter/material.dart' show AppBar, Scaffold, kToolbarHeight;
 import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +17,7 @@ import 'package:media_core/media_core.dart' show PlayerHandleLifecycle, PlayerId
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
+import 'package:pure_live/layouts/app_switcher.dart' show AppMark;
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/recorder/recorder.dart';
@@ -944,10 +945,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     picture,
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s12, DsSpace.s12, 0),
-                      child: _RoomHero(room: room),
-                    ),
+                    _RoomHero(room: room),
                     const Expanded(child: RoomChatPanel()),
                   ],
                 );
@@ -1019,17 +1017,7 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsetsDirectional.fromSTEB(
-                                          DsSpace.s12,
-                                          DsSpace.s12,
-                                          0,
-                                          DsSpace.s4,
-                                        ),
-                                        child: _RoomHero(room: room),
-                                      ),
-                                    ),
+                                    Expanded(child: _RoomHero(room: room)),
                                     DsButton.icon(
                                       variant: DsButtonVariant.ghost,
                                       size: DsSize.sm,
@@ -1050,81 +1038,102 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 );
               }
 
-              final stage = Expanded(
+              // The picture sits in its own rounded box inset from the page,
+              // the chat beside it in a card of the same corners: the page
+              // reads as two panels on the canvas rather than a stage bleeding
+              // to the edges.
+              final stageCorners = BorderRadius.circular(DsTheme.of(context).radii.card);
+              Widget stageBox(Widget child) => ClipRRect(
+                borderRadius: stageCorners,
                 child: ColoredBox(
                   color: kPlayerStageColor,
                   child: Center(
-                    child: AspectRatio(aspectRatio: pictureRatio, child: playerWith()),
+                    child: AspectRatio(aspectRatio: pictureRatio, child: child),
                   ),
                 ),
               );
               if (chatCollapsed) {
-                return Stack(
-                  children: [
-                    Positioned.fill(
-                      child: ColoredBox(
-                        color: kPlayerStageColor,
-                        child: Center(
-                          child: AspectRatio(aspectRatio: pictureRatio, child: playerWith()),
+                return Padding(
+                  padding: const EdgeInsets.all(DsSpace.s16),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(child: stageBox(playerWith())),
+                      PositionedDirectional(
+                        top: DsSpace.s8,
+                        end: DsSpace.s8,
+                        child: DsButton.icon(
+                          variant: DsButtonVariant.secondary,
+                          size: DsSize.sm,
+                          onPressed: toggleChat,
+                          icon: const DsIcon(DsIcons.panelRightOpen),
+                          semanticLabel: t.room.expandChat,
                         ),
                       ),
+                    ],
+                  ),
+                );
+              }
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: DsSpace.s16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.only(start: DsSpace.s16),
+                        child: stageBox(playerWith()),
+                      ),
                     ),
-                    PositionedDirectional(
-                      top: DsSpace.s8,
-                      end: DsSpace.s8,
-                      child: DsButton.icon(
-                        variant: DsButtonVariant.secondary,
-                        size: DsSize.sm,
-                        onPressed: toggleChat,
-                        icon: const DsIcon(DsIcons.panelRightOpen),
-                        semanticLabel: t.room.expandChat,
+                    ChatSplitter(
+                      width: chatWidth,
+                      minWidth: kChatPanelWidthMin,
+                      maxWidth: maxChatWidth,
+                      onResize: (value) => ref.read(chatPanelWidthProvider.notifier).preview(value),
+                      onResizeEnd: (value) => unawaited(ref.read(chatPanelWidthProvider.notifier).set(value)),
+                      onReset: () => unawaited(ref.read(chatPanelWidthProvider.notifier).set(kChatPanelWidthDefault)),
+                      label: t.room.resizeChat,
+                      keyboard: !tv,
+                    ),
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(end: DsSpace.s16),
+                      child: SizedBox(
+                        width: chatWidth,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: stageCorners,
+                            border: Border.all(color: colors.border),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: stageCorners,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(child: _RoomHero(room: room)),
+                                    Padding(
+                                      padding: const EdgeInsets.all(DsSpace.s4),
+                                      child: DsButton.icon(
+                                        variant: DsButtonVariant.ghost,
+                                        size: DsSize.sm,
+                                        onPressed: toggleChat,
+                                        icon: const DsIcon(DsIcons.panelRightClose),
+                                        semanticLabel: t.room.collapseChat,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const Expanded(child: RoomChatPanel()),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
-                );
-              }
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  stage,
-                  ChatSplitter(
-                    width: chatWidth,
-                    minWidth: kChatPanelWidthMin,
-                    maxWidth: maxChatWidth,
-                    onResize: (value) => ref.read(chatPanelWidthProvider.notifier).preview(value),
-                    onResizeEnd: (value) => unawaited(ref.read(chatPanelWidthProvider.notifier).set(value)),
-                    onReset: () => unawaited(ref.read(chatPanelWidthProvider.notifier).set(kChatPanelWidthDefault)),
-                    label: t.room.resizeChat,
-                    keyboard: !tv,
-                  ),
-                  SizedBox(
-                    width: chatWidth,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, DsSpace.s12, 0, DsSpace.s4),
-                                child: _RoomHero(room: room),
-                              ),
-                            ),
-                            DsButton.icon(
-                              variant: DsButtonVariant.ghost,
-                              size: DsSize.sm,
-                              onPressed: toggleChat,
-                              icon: const DsIcon(DsIcons.panelRightClose),
-                              semanticLabel: t.room.collapseChat,
-                            ),
-                          ],
-                        ),
-                        const Expanded(child: RoomChatPanel()),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               );
             },
           );
@@ -1155,37 +1164,10 @@ final class _RoomPageState extends ConsumerState<RoomPage> with WidgetsBindingOb
                 // The portrait full-screen surface is the page's own way of
                 // filling the window: it keeps its black stage and drops the
                 // app bar with it, so no header survives into the mode.
-                backgroundColor: _portraitFullscreen ? kPlayerStageColor : colors.surface,
+                backgroundColor: _portraitFullscreen ? kPlayerStageColor : colors.canvas,
                 appBar: _portraitFullscreen
                     ? null
-                    : AppBar(
-                        backgroundColor: colors.surface,
-                        surfaceTintColor: const Color(0x00000000),
-                        elevation: 0,
-                        automaticallyImplyLeading: false,
-                        leadingWidth: 52,
-                        leading: IconButton(
-                          tooltip: t.common.back,
-                          onPressed: leave,
-                          icon: DsIcon(DsIcons.chevronLeft, size: 20, color: colors.text),
-                        ),
-                        titleSpacing: 0,
-                        // On a desktop where the app draws the window's own caption
-                        // this bar is the caption: the header doubles as the drag
-                        // band and the three buttons close the window here, so the
-                        // page never stacks two title bars.
-                        title: ownChrome ? WindowDragArea(child: _RoomHeader(room: room)) : _RoomHeader(room: room),
-                        actions: [
-                          _FollowPill(room: room),
-                          _RoomMenu(room: room, onClose: leave, shortcuts: shortcuts),
-                          if (ownChrome) ...[
-                            const SizedBox(width: DsSpace.s8),
-                            const SizedBox(height: 20, child: DsDivider.vertical()),
-                            const WindowCaptionControls(height: kToolbarHeight),
-                          ],
-                          const SizedBox(width: DsSpace.s4),
-                        ],
-                      ),
+                    : _roomAppBar(context, colors: colors, ownChrome: ownChrome, shortcuts: shortcuts, leave: leave),
                 body: _portraitFullscreen ? body : SafeArea(child: body),
               ),
       ),
@@ -1203,43 +1185,114 @@ final followsRoomProvider = Provider<List<LiveRoom>>((ref) {
 /// anchor's identity — the avatar, the live ring, the counts — lives on the
 /// hero card under the picture; the bar keeps what it is the only surface
 /// for while the page scrolls the picture away: which room, which platform.
-final class _RoomHeader extends ConsumerWidget {
-  const _RoomHeader({required this.room});
+/// The room page's app bar: the app's mark where the window is wide enough
+/// to carry it beside the way back, the room as the caption (the title over
+/// the platform and area, its icon leading), and at the end the follow, the
+/// room's menu and — where the app draws its own caption — the window's
+/// three buttons. On a desktop that draws its own caption the bar *is* the
+/// caption: its header doubles as the drag band, so the page never stacks
+/// two title bars.
+PreferredSizeWidget _roomAppBar(
+  BuildContext context, {
+  required DsColors colors,
+  required bool ownChrome,
+  required List<RoomShortcutBinding> shortcuts,
+  required VoidCallback leave,
+}) {
+  final t = context.t;
+  final wide = LiveWindow.isExpanded(MediaQuery.sizeOf(context).width);
+  // The bar grows on a wide window to carry the two-line title; the caption
+  // buttons fill whatever height it has, so their hover reaches both edges.
+  final height = wide ? 64.0 : kToolbarHeight;
+  final leading = Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (wide) ...[
+        const AppMark(size: 26),
+        const SizedBox(width: DsSpace.s8),
+        Text('Pure Live', style: DsTheme.of(context).typography.bodyStrong.copyWith(color: colors.text)),
+        const SizedBox(width: DsSpace.s12),
+      ],
+      DsButton.icon(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
+        onPressed: leave,
+        icon: const DsIcon(DsIcons.chevronLeft, size: 20),
+        semanticLabel: t.common.back,
+      ),
+    ],
+  );
+  return AppBar(
+    backgroundColor: colors.surface,
+    surfaceTintColor: const Color(0x00000000),
+    elevation: 0,
+    automaticallyImplyLeading: false,
+    toolbarHeight: height,
+    leadingWidth: wide ? 190 : 56,
+    leading: Padding(
+      padding: const EdgeInsetsDirectional.only(start: DsSpace.s12, end: DsSpace.s4),
+      child: leading,
+    ),
+    titleSpacing: DsSpace.s8,
+    title: ownChrome ? const WindowDragArea(child: _RoomHeader()) : const _RoomHeader(),
+    actions: [
+      const _FollowPill(),
+      _RoomMenu(onClose: leave, shortcuts: shortcuts),
+      if (ownChrome) ...[
+        const SizedBox(width: DsSpace.s8),
+        const SizedBox(height: 20, child: DsDivider.vertical()),
+        WindowCaptionControls(height: height),
+      ],
+      const SizedBox(width: DsSpace.s4),
+    ],
+  );
+}
 
-  final RoomState room;
+final class _RoomHeader extends ConsumerWidget {
+  const _RoomHeader();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    final detail = room.room;
+    final detail = ref.watch(roomProvider.select((room) => room.room));
     if (detail == null) {
       return const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         spacing: DsSpace.s3,
-        children: [DsSkeleton(width: 132, height: 12), DsSkeleton(width: 96, height: 9)],
+        children: [DsSkeleton(width: 180, height: 15), DsSkeleton(width: 120, height: 12)],
       );
     }
     final site = ref.watch(sitesProvider).all.where((site) => site.manifest.id == detail.ref.platform).firstOrNull;
     final platform = site == null ? detail.ref.platform : localizedSiteName(site);
     final area = (detail.area?.areaName ?? '').trim();
+    final icon = localizedSiteIcon(site, size: 14);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 1,
+      spacing: 2,
       children: [
         Text(
           detail.content.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+          style: theme.typography.title.copyWith(color: colors.text),
         ),
-        Text(
-          area.isEmpty ? platform : '$platform · $area',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.typography.caption.copyWith(color: colors.textMuted),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: DsSpace.s4,
+          children: [
+            ?icon,
+            Flexible(
+              child: Text(
+                area.isEmpty ? platform : '$platform · $area',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.caption.copyWith(color: colors.textMuted),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -1249,15 +1302,13 @@ final class _RoomHeader extends ConsumerWidget {
 /// The follow action in the app bar: a labelled pill on a wide window, the
 /// same pill on a phone (it gives way only if the header needs the room).
 final class _FollowPill extends ConsumerWidget {
-  const _FollowPill({required this.room});
-
-  final RoomState room;
+  const _FollowPill();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final theme = DsTheme.of(context);
-    final detail = room.room;
+    final detail = ref.watch(roomProvider.select((room) => room.room));
     if (detail == null) return const SizedBox.shrink();
     final followed = ref.watch(
       followsRoomProvider.select((follows) {
@@ -1443,15 +1494,15 @@ List<Widget> roomMenuItems(
 /// on (share, the platform's own page, its link), a playback retry and the
 /// way out. The player's own bar keeps the picture and stream actions.
 final class _RoomMenu extends ConsumerWidget {
-  const _RoomMenu({required this.room, required this.onClose, required this.shortcuts});
+  const _RoomMenu({required this.onClose, required this.shortcuts});
 
-  final RoomState room;
   final VoidCallback onClose;
   final List<RoomShortcutBinding> shortcuts;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
+    final room = ref.watch(roomProvider);
     return Padding(
       padding: const EdgeInsetsDirectional.symmetric(vertical: DsSpace.s8),
       child: DsMenuAnchor(
@@ -1590,187 +1641,150 @@ final class _RoomHero extends ConsumerWidget {
         ),
       );
     }
-    final site = ref.watch(sitesProvider).all.where((site) => site.manifest.id == detail.ref.platform).firstOrNull;
-    final platform = site == null ? detail.ref.platform : localizedSiteName(site);
     final area = (detail.area?.areaName ?? '').trim();
     final anchor = (detail.anchor?.name ?? '').trim();
     final name = anchor.isEmpty ? detail.content.title : anchor;
     final avatar = (detail.anchor?.avatarUrl ?? detail.content.coverUrl).trim();
-    final cover = detail.content.coverUrl.trim();
-    final audience = detail.audience.onlineViewers ?? detail.audience.popularity ?? detail.audience.totalViewers;
+    final online = detail.audience.onlineViewers ?? detail.audience.totalViewers;
+    final popularity = detail.audience.popularity;
     final started = detail.broadcast.startedAt;
     final live = detail.broadcast.isLiveNow;
+    final caption = theme.typography.caption.copyWith(color: colors.textMuted);
+    final numeric = theme.typography.numeric(caption);
+    Widget metric(DsIconData icon, int value) => Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DsSpace.s4,
+      children: [
+        DsIcon(icon, size: theme.sizes.iconXs, color: colors.textSubtle),
+        Text(AudienceFormat.format(value), style: numeric),
+      ],
+    );
+    // Three rows, the reference's own card: who is streaming (the avatar in
+    // its live ring, the name, the live pill, the counts under it), a hair
+    // line, then what is streaming (the title and the area) with how long
+    // it has been on the air at the row's end. The whole card opens the
+    // room's details.
     return DsPressable(
       semanticLabel: t.room.detailsHint,
       onPressed: () => unawaited(showRoomDetails(context)),
       builder: (context, states, child) => ColoredBox(
-        color: states.contains(WidgetState.hovered) ? colors.overlay : const Color(0x00000000),
+        color: states.contains(WidgetState.hovered) ? colors.hover : const Color(0x00000000),
         child: child,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(theme.radii.card),
-        child: Stack(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s16, DsSpace.s12, DsSpace.s12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DsSpace.s12,
           children: [
-            Positioned.fill(child: _HeroWash(cover: cover)),
-            Padding(
-              padding: const EdgeInsets.all(DsSpace.s12),
-              child: Row(
-                spacing: DsSpace.s8,
-                children: [
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      spacing: DsSpace.s8,
-                      children: [
-                        Row(
-                          spacing: DsSpace.s12,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: live ? colors.accent : colors.border,
-                              ),
-                              child: DsAvatar(
-                                initials: name,
-                                image: avatar.isEmpty ? null : cachedImage(avatar),
-                                size: DsSize.md,
-                                semanticLabel: name,
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                spacing: DsSpace.s3,
-                                children: [
-                                  Row(
-                                    spacing: DsSpace.s8,
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          name,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                                        ),
-                                      ),
-                                      if (live) const _LiveBadge(),
-                                    ],
-                                  ),
-                                  Row(
-                                    spacing: DsSpace.s8,
-                                    children: [
-                                      Flexible(
-                                        child: Text(
-                                          area.isEmpty ? platform : '$platform · $area',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: theme.typography.caption.copyWith(color: colors.textMuted),
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                      if (audience != null)
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          spacing: DsSpace.s3,
-                                          children: [
-                                            DsIcon(DsIcons.eye, size: theme.sizes.iconXs, color: colors.textSubtle),
-                                            Text(
-                                              AudienceFormat.format(audience),
-                                              style: theme.typography.numeric(
-                                                theme.typography.caption.copyWith(color: colors.textMuted),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      if (started != null)
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          spacing: DsSpace.s3,
-                                          children: [
-                                            DsIcon(DsIcons.clock, size: theme.sizes.iconXs, color: colors.textSubtle),
-                                            Text(
-                                              _clock(started),
-                                              style: theme.typography.numeric(
-                                                theme.typography.caption.copyWith(color: colors.textMuted),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          spacing: DsSpace.s4,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                detail.content.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.typography.body.copyWith(color: colors.text),
-                              ),
-                            ),
-                            const _SleepChip(),
-                          ],
-                        ),
-                      ],
-                    ),
+            Row(
+              spacing: DsSpace.s12,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: live ? colors.accent : colors.border),
+                  child: DsAvatar(
+                    initials: name,
+                    image: avatar.isEmpty ? null : cachedImage(avatar),
+                    size: DsSize.lg,
+                    semanticLabel: name,
                   ),
-                  // The whole card opens the room's details, so the chevron
-                  // rides at the card's edge, where the tap actually points; at
-                  // the end of the title line it reads as "expand this text".
-                  // The panel is a side card on a wide window and a sheet on a
-                  // narrow one, so the glyph points the way it really opens.
-                  DsIcon(
-                    MediaQuery.sizeOf(context).width >= LiveWindow.sheet ? DsIcons.chevronRight : DsIcons.chevronUp,
-                    size: theme.sizes.iconSm,
-                    color: colors.textSubtle,
+                ),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: DsSpace.s4,
+                    children: [
+                      Row(
+                        spacing: DsSpace.s8,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.typography.title.copyWith(color: colors.text),
+                            ),
+                          ),
+                          if (live) const _LiveBadge(),
+                        ],
+                      ),
+                      Row(
+                        spacing: DsSpace.s12,
+                        children: [
+                          if (online != null) metric(DsIcons.eye, online),
+                          if (popularity != null && popularity != online) metric(DsIcons.flame, popularity),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
+            const DsDivider(),
+            Row(
+              spacing: DsSpace.s8,
+              children: [
+                DsIcon(DsIcons.messageSquare, size: theme.sizes.iconXs, color: colors.textSubtle),
+                Expanded(
+                  child: Text(
+                    area.isEmpty ? detail.content.title : '${detail.content.title} · $area',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: caption,
+                  ),
+                ),
+                if (live && started != null) _Elapsed(since: started, style: numeric),
+                const _SleepChip(),
+              ],
             ),
           ],
         ),
       ),
     );
   }
-
-  static String _clock(DateTime time) {
-    final local = time.toLocal();
-    String two(int value) => value.toString().padLeft(2, '0');
-    return '${two(local.hour)}:${two(local.minute)}';
-  }
 }
 
-/// The card's backdrop: the room's own cover, blurred flat and quieted under
-/// the surface's ink, so the card carries the room's colour without fighting
-/// the words over it. A room without a cover gets the plain surface.
-final class _HeroWash extends StatelessWidget {
-  const _HeroWash({required this.cover});
+/// How long the room has been on the air, ticking once a second: the
+/// reference's 「已直播 01:24:17」.
+final class _Elapsed extends StatefulWidget {
+  const _Elapsed({required this.since, required this.style});
 
-  final String cover;
+  final DateTime since;
+  final TextStyle style;
+
+  @override
+  State<_Elapsed> createState() => _ElapsedState();
+}
+
+final class _ElapsedState extends State<_Elapsed> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    if (cover.isEmpty) return ColoredBox(color: colors.surface);
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28, tileMode: TileMode.decal),
-          child: Image(image: cachedImage(cover), fit: BoxFit.cover),
-        ),
-        ColoredBox(color: colors.surface.withValues(alpha: 0.82)),
-      ],
-    );
+    final elapsed = DateTime.now().difference(widget.since);
+    if (elapsed.isNegative) return const SizedBox.shrink();
+    String two(int value) => value.toString().padLeft(2, '0');
+    final hours = elapsed.inHours;
+    final minutes = elapsed.inMinutes.remainder(60);
+    final seconds = elapsed.inSeconds.remainder(60);
+    return Text(context.t.room.onAirFor(time: '${two(hours)}:${two(minutes)}:${two(seconds)}'), style: widget.style);
   }
 }
 

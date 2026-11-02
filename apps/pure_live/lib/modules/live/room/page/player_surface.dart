@@ -1106,7 +1106,9 @@ final class _StreamPickerRow extends ConsumerWidget {
           context,
           picker: _Picker.fit,
           icon: DsIcons.aspectRatio,
-          label: fitLabels(t)[fit.index],
+          // The picker is named for what it chooses; the panel under it says
+          // which fit is on.
+          label: labelled ? t.room.fitShort : fitLabels(t)[fit.index],
           semanticLabel: t.settings.fit,
         ),
       ],
@@ -1159,7 +1161,10 @@ final class _StreamPickerRow extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   spacing: DsSpace.s4,
                   children: [
-                    DsIcon(icon, size: tv ? theme.sizes.iconLg : theme.sizes.iconSm, color: _onVideoMuted),
+                    // With room for words the glyph steps aside: 「原画
+                    // 1080P60 ⌄」 reads as the reference draws it.
+                    if (!labelled)
+                      DsIcon(icon, size: tv ? theme.sizes.iconLg : theme.sizes.iconSm, color: _onVideoMuted),
                     if (labelled)
                       ConstrainedBox(
                         constraints: BoxConstraints(maxWidth: tv ? 128 : 96),
@@ -1287,11 +1292,33 @@ final class _PlayerTopBarState extends ConsumerState<_PlayerTopBar> {
               );
         if (!widget.identity) {
           // The page header above already names the room, so over the picture
-          // only the presentation cluster stays — and no gradient band
-          // darkening an image the viewer is watching.
+          // only the verbs stay — each in a glass disc of its own (the
+          // reference's row of four), the flying danmaku's switch first — and
+          // no gradient band darkening an image the viewer is watching.
+          final settings = ref.watch(playbackSettingsProvider);
           return Padding(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s8, DsSpace.s12, 0),
-            child: Row(mainAxisAlignment: MainAxisAlignment.end, spacing: DsSpace.s8, children: [cluster, menuPill]),
+            padding: const EdgeInsets.fromLTRB(DsSpace.s8, DsSpace.s12, DsSpace.s12, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              spacing: DsSpace.s8,
+              children: [
+                PlayerGlassPill(
+                  child: PlayerBarButton(
+                    icon: settings.danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
+                    label: settings.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
+                    selected: settings.danmakuVisible,
+                    onPressed: () {
+                      widget.onWake();
+                      unawaited(
+                        ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !settings.danmakuVisible),
+                      );
+                    },
+                  ),
+                ),
+                _PresentationCluster(room: widget.room, onWake: widget.onWake, narrow: narrow, split: true),
+                menuPill,
+              ],
+            ),
           );
         }
         return Container(
@@ -1407,7 +1434,7 @@ Future<void> toggleRoomPip(BuildContext context, WidgetRef ref) async {
 /// the strip never shows two red things for one fact and the elapsed count sits
 /// where the viewer already looks for the room's state.
 final class _PresentationCluster extends ConsumerWidget {
-  const _PresentationCluster({required this.room, required this.onWake, required this.narrow});
+  const _PresentationCluster({required this.room, required this.onWake, required this.narrow, this.split = false});
 
   final RoomState room;
 
@@ -1416,6 +1443,11 @@ final class _PresentationCluster extends ConsumerWidget {
 
   /// Whether the strip has room for the verbs; below it they live in the menu.
   final bool narrow;
+
+  /// One glass disc per verb instead of one pill holding them: the in-page
+  /// strip's form. The running capture is then said on the control bar
+  /// below (its red dot and word), so the disc here only starts or stops it.
+  final bool split;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1435,6 +1467,49 @@ final class _PresentationCluster extends ConsumerWidget {
     final castLine = narrow ? null : line;
     if (!showRecord && !showPip && castLine == null) return const SizedBox.shrink();
     final tv = PlayerBarTier.tvOf(context);
+    if (split) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: DsSpace.s8,
+        children: [
+          if (showRecord)
+            PlayerGlassPill(
+              child: PlayerBarButton(
+                icon: DsIcons.disc,
+                label: recording ? t.room.stopRecording : t.room.record,
+                selected: recording,
+                onPressed: () {
+                  onWake();
+                  unawaited(toggleRoomRecording(context, ref));
+                },
+              ),
+            ),
+          if (castLine != null)
+            PlayerGlassPill(
+              child: PlayerBarButton(
+                icon: DsIcons.cast,
+                label: t.room.cast,
+                onPressed: () {
+                  onWake();
+                  unawaited(showCastDialog(context, line: castLine, title: detail?.content.title));
+                },
+              ),
+            ),
+          if (showPip)
+            PlayerGlassPill(
+              child: PlayerBarButton(
+                icon: presentation == PresentationMode.pip ? DsIcons.pictureInPictureExit : DsIcons.pictureInPicture,
+                label: presentation == PresentationMode.pip ? t.room.pipOff : t.room.pipOn,
+                selected: presentation == PresentationMode.pip,
+                onPressed: () {
+                  onWake();
+                  unawaited(toggleRoomPip(context, ref));
+                },
+              ),
+            ),
+        ],
+      );
+    }
     return PlayerGlassPill(
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1744,6 +1819,8 @@ final class _ControlBar extends ConsumerWidget {
     final volume = transport?.volume ?? controller.volume;
     final immersive = presentationController.modeOwnsWindow(presentation);
     final tv = PlayerBarTier.tvOf(context);
+    final task = roomRecordingTaskOf(ref.watch(recordingTasksProvider).tasks, room.room);
+    final recordingTask = task?.state == RecordingTaskState.recording ? task : null;
     return Container(
       padding: EdgeInsets.fromLTRB(
         tv ? DsSpace.s16 : DsSpace.s12,
@@ -1781,7 +1858,6 @@ final class _ControlBar extends ConsumerWidget {
           // cluster a viewer reaches for when the picture looks wrong, and the
           // danmaku has a home in the chat panel's header too.
           final crowded = constraints.maxWidth < 320;
-          final settings = ref.watch(playbackSettingsProvider);
           final bar = Row(
             // A TV bar spaces its controls wider: the remote jumps
             // between them, and a distant viewer needs the separation.
@@ -1807,14 +1883,6 @@ final class _ControlBar extends ConsumerWidget {
                 },
               ),
               if (wide) ...[
-                PlayerBarButton(
-                  icon: room.audioOnly ? DsIcons.video : DsIcons.headphones,
-                  label: room.audioOnly ? t.room.restoreVideo : t.room.audioOnlyMode,
-                  onPressed: () {
-                    onWake();
-                    unawaited(controller.setAudioOnly(value: !room.audioOnly));
-                  },
-                ),
                 SizedBox(
                   width: tv ? 140 : 90,
                   child: DsSlider(
@@ -1826,27 +1894,37 @@ final class _ControlBar extends ConsumerWidget {
                     semanticLabel: t.room.volume,
                   ),
                 ),
+                PlayerBarButton(
+                  icon: room.audioOnly ? DsIcons.video : DsIcons.headphones,
+                  label: room.audioOnly ? t.room.restoreVideo : t.room.audioOnlyMode,
+                  onPressed: () {
+                    onWake();
+                    unawaited(controller.setAudioOnly(value: !room.audioOnly));
+                  },
+                ),
+                // A running capture is said here, beside the transport, as
+                // the reference does: the red dot and the word, the elapsed
+                // count with them, and a press ends it.
+                if (recordingTask != null) ...[
+                  const SizedBox(width: DsSpace.s4),
+                  RecordingIndicator(
+                    startedAt: recordingTask.startedAt,
+                    tv: tv,
+                    label: t.room.stopRecording,
+                    onStop: () {
+                      onWake();
+                      unawaited(toggleRoomRecording(context, ref));
+                    },
+                  ),
+                ],
               ],
               const Spacer(),
               if (!crowded) const _BarDivider(),
-              // -- What is playing: the overlay and the stream's own
-              // catalogues. This is the cluster a viewer reaches for when
-              // the picture looks wrong, so it sits beside the transport.
-              if (!pip) ...[
-                if (!crowded)
-                  PlayerBarButton(
-                    icon: settings.danmakuVisible ? DsIcons.captions : DsIcons.captionsOff,
-                    label: settings.danmakuVisible ? t.room.danmakuOff : t.room.danmakuOn,
-                    selected: settings.danmakuVisible,
-                    onPressed: () {
-                      onWake();
-                      unawaited(
-                        ref.read(playbackSettingsProvider.notifier).setDanmakuVisible(value: !settings.danmakuVisible),
-                      );
-                    },
-                  ),
-                ?streamPickers?.call(labelled: wide),
-              ],
+              // -- What is playing: the stream's own catalogues. This is the
+              // cluster a viewer reaches for when the picture looks wrong, so
+              // it sits beside the transport. (The flying danmaku's switch
+              // lives on the strip above, with the other overlay verbs.)
+              if (!pip) ?streamPickers?.call(labelled: wide),
               // -- Capture, then the window verbs, then the way out of the
               // picture's box. Recording and casting sit in the strip above
               // with the room's state: they say where this picture goes, and
