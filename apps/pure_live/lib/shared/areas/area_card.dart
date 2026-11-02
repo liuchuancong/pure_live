@@ -100,35 +100,39 @@ final class AreaCard extends StatelessWidget {
             ?trailing,
           ],
         ),
+        // The reference's poster: the picture a full-width rounded square
+        // under the card's own inset, the name centred under it with the
+        // group a quiet line below — never a picture floating in leftover
+        // room. The heart keeps the corner over the picture.
         AreaCardLayout.tile => Stack(
           fit: StackFit.expand,
           children: [
             Padding(
-              padding: const EdgeInsets.all(DsSpace.s8),
+              padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s12, DsSpace.s12, DsSpace.s12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // The square takes the tile's width; a tile squeezed
+                  // narrower than its measure shrinks the picture, never
+                  // the words under it.
                   Expanded(
-                    // The picture keeps its square and fills the room the
-                    // name leaves, however wide the tile gets.
                     child: LayoutBuilder(
-                      builder: (context, constraints) => Center(
-                        child: AreaIcon(area: area, side: constraints.biggest.shortestSide),
+                      builder: (context, constraints) => Align(
+                        alignment: Alignment.topCenter,
+                        child: AreaIcon(area: area, side: constraints.biggest.shortestSide, radius: theme.radii.card),
                       ),
                     ),
                   ),
-                  const SizedBox(height: DsSpace.s6),
+                  const SizedBox(height: DsSpace.s8),
                   name,
-                  ?group,
+                  if (group != null) ...[const SizedBox(height: 2), group],
                 ],
               ),
             ),
-            // The heart keeps the corner the catalogue's posters carry; the
-            // surface disc keeps it legible over a busy logo.
             if (trailing case final trailing?)
               PositionedDirectional(
-                top: DsSpace.s4,
-                end: DsSpace.s4,
+                top: DsSpace.s12,
+                end: DsSpace.s12,
                 child: DecoratedBox(
                   decoration: BoxDecoration(shape: BoxShape.circle, color: colors.surface.withValues(alpha: 0.85)),
                   child: Padding(padding: const EdgeInsets.all(DsSpace.s4), child: trailing),

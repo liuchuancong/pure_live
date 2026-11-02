@@ -8,13 +8,17 @@ import 'package:pure_live/shared/images/images.dart' show cachedImage;
 /// none — either way the square keeps its place beside the name.
 final class AreaIcon extends StatelessWidget {
   /// The tile for [area].
-  const AreaIcon({required this.area, this.side, super.key});
+  const AreaIcon({required this.area, this.side, this.radius, super.key});
 
   /// The area whose icon shows.
   final LiveArea area;
 
   /// The square's side; the theme's medium control size when null.
   final double? side;
+
+  /// The corner radius; the control radius for [side] when null. A poster
+  /// tile passes the card's own corner.
+  final double? radius;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +36,7 @@ final class AreaIcon extends StatelessWidget {
       width: side,
       height: side,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(theme.radii.control(side)),
+        borderRadius: BorderRadius.circular(radius ?? theme.radii.control(side)),
         child: url.isEmpty
             ? fallback
             : DsImage(

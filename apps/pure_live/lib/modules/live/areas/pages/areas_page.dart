@@ -388,9 +388,11 @@ final class _AreaSearchPanelState extends ConsumerState<_AreaSearchPanel> {
   }
 }
 
-/// The catalogue tile's width over height in each form: the poster is nearly
-/// square, the row keeps its wide band.
-double _areaAspect(AreaCardLayout layout) => layout == AreaCardLayout.tile ? 0.86 : 3.4;
+/// The catalogue tile's width over height in each form: the poster is the
+/// full-width square picture plus the name and group under it (at the tile's
+/// 170 width: 12 + 146 + 8 + 20 + 2 + 16 + 12 = 216), the row keeps its wide
+/// band.
+double _areaAspect(AreaCardLayout layout) => layout == AreaCardLayout.tile ? _areaTileWidth / 216 : 3.4;
 
 /// The widest a poster tile gets; the window fits as many as it can side by
 /// side.
