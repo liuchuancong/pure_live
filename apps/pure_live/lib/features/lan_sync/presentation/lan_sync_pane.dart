@@ -145,7 +145,11 @@ final class _PairedSectionState extends ConsumerState<_PairedSection> {
     if (oldWidget.runtime != widget.runtime) _reload();
   }
 
-  void _reload() => setState(() => _trusts = widget.runtime?.store.loadDeviceTrusts());
+  void _reload() {
+    final future = widget.runtime?.store.loadDeviceTrusts();
+    if (future == null) return;
+    setState(() => _trusts = future);
+  }
 
   /// The address this device last saw [deviceId] on, from discovery.
   String? _lastAddressOf(LanSyncRuntime runtime, String deviceId) => runtime.directory.devices
