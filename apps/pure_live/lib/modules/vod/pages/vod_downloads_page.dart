@@ -764,18 +764,68 @@ List<_VodDownloadGroup> _vodDownloadGroups(Iterable<VodDownloadItem> tasks) {
 }
 
 /// The line over one archive's parts: its cover where the queue has one, its
-/// name once for the block, and how many parts the archive runs to.
-final class _VodArchiveHead extends StatelessWidget {
+/// name once for the block, how many parts the archive runs to, and the verbs
+/// that act on the whole block. A ten-part upload whose every action sits on
+/// the row is ten taps, and a queue that counts tasks for the whole list and
+/// for none of its blocks is a flat list wearing group headers.
+final class _VodArchiveHead extends ConsumerWidget {
   const _VodArchiveHead({required this.group});
 
   /// The block being introduced.
   final _VodDownloadGroup group;
 
+  /// Runs [verb] over every id it was handed. The store writes per task, so
+  /// the ids go one after another rather than all at once.
+  Future<void> _apply(
+    WidgetRef ref,
+    List<String> ids,
+    Future<void> Function(VodDownloadsController controller, String id) verb,
+  ) async {
+    final controller = ref.read(vodDownloadsProvider.notifier);
+    for (final id in ids) {
+      await verb(controller, id);
+    }
+  }
+
+  /// The block's own phases, read when the action is asked for rather than when
+  /// the line was painted: a task that finished in between is no longer
+  /// something to pause.
+  ({List<String> pausable, List<String> resumable}) _phases() => (
+    pausable: [
+      for (final task in group.tasks)
+        if (task.phase == VodDownloadPhase.running || task.phase == VodDownloadPhase.queued) task.id,
+    ],
+    resumable: [
+      for (final task in group.tasks)
+        if (task.phase == VodDownloadPhase.paused || task.phase == VodDownloadPhase.failed) task.id,
+    ],
+  );
+
+  Future<void> _removeBlock(BuildContext context, WidgetRef ref, Translations t) async {
+    final ids = [for (final task in group.tasks) task.id];
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.settings.downloadRemove,
+      // Which upload, and how many of its parts: the row's own body says 这条
+      // 记录, and a block would be answering for ten of them.
+      description: '${group.title} · ${t.vod.downloadTaskCount(count: ids.length, active: _phases().pausable.length)}',
+      confirmLabel: t.settings.downloadRemove,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.trash2),
+    );
+    // The tap can land after the dialog's host is gone (the queue rebuilt
+    // under it); a dead context must not reach the page's store.
+    if (!confirmed || !context.mounted) return;
+    await _apply(ref, ids, (controller, id) => controller.remove(id));
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    final phases = _phases();
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, DsSpace.s12, 0, DsSpace.s4),
       child: Row(
@@ -805,6 +855,41 @@ final class _VodArchiveHead extends StatelessWidget {
           ),
           // The shelf's own reading for the same fact, beside the rows it counts.
           Text('${t.vod.parts} · ${group.parts}', style: theme.typography.caption.copyWith(color: colors.textMuted)),
+          // A head is only built for a block of several parts, so every verb here
+          // already has more than one object; a part standing alone is served by
+          // its own row and gets no second place to be pressed.
+          DsMenuAnchor(
+            semanticLabel: group.title,
+            align: DsAlign.end,
+            items: [
+              if (phases.pausable.isNotEmpty)
+                DsMenuItem(
+                  leading: const DsIcon(DsIcons.pause),
+                  label: Text(t.settings.downloadPause),
+                  onPressed: () => unawaited(_apply(ref, phases.pausable, (controller, id) => controller.pause(id))),
+                ),
+              if (phases.resumable.isNotEmpty)
+                DsMenuItem(
+                  leading: const DsIcon(DsIcons.play),
+                  label: Text(t.settings.downloadResume),
+                  onPressed: () => unawaited(_apply(ref, phases.resumable, (controller, id) => controller.resume(id))),
+                ),
+              if (phases.pausable.isNotEmpty || phases.resumable.isNotEmpty) const DsMenuDivider(),
+              DsMenuItem(
+                leading: const DsIcon(DsIcons.trash2),
+                label: Text(t.settings.downloadRemove),
+                destructive: true,
+                onPressed: () => unawaited(_removeBlock(context, ref, t)),
+              ),
+            ],
+            builder: (context, anchor, _) => DsButton.icon(
+              variant: DsButtonVariant.secondary,
+              size: DsSize.sm,
+              semanticLabel: group.title,
+              onPressed: anchor.toggle,
+              icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
+            ),
+          ),
         ],
       ),
     );
