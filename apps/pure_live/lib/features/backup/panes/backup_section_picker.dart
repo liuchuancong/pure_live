@@ -53,6 +53,8 @@ String backupSectionLabel(Translations t, BackupSection section) => switch (sect
   BackupSection.history => t.backup.sectionHistory,
   BackupSection.recordings => t.backup.sectionRecordings,
   BackupSection.settings => t.backup.sectionSettings,
+  BackupSection.iptv => t.backup.sectionIptv,
+  BackupSection.multiview => t.backup.sectionMultiview,
   BackupSection.secrets => t.backup.sectionSecrets,
 };
 
@@ -63,6 +65,8 @@ String backupSectionDescription(Translations t, BackupSection section) => switch
   BackupSection.history => t.backup.sectionHistoryDesc,
   BackupSection.recordings => t.backup.sectionRecordingsDesc,
   BackupSection.settings => t.backup.sectionSettingsDesc,
+  BackupSection.iptv => t.backup.sectionIptvDesc,
+  BackupSection.multiview => t.backup.sectionMultiviewDesc,
   BackupSection.secrets => t.backup.sectionSecretsDesc,
 };
 
@@ -73,6 +77,8 @@ DsIconData backupSectionIcon(BackupSection section) => switch (section) {
   BackupSection.history => DsIcons.history,
   BackupSection.recordings => DsIcons.video,
   BackupSection.settings => DsIcons.settings,
+  BackupSection.iptv => DsIcons.tv,
+  BackupSection.multiview => DsIcons.layoutGrid,
   BackupSection.secrets => DsIcons.keyRound,
 };
 

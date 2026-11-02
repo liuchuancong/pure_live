@@ -934,6 +934,18 @@ class Translations$backup$zh_CN {
 	/// zh-CN: '外观、播放、弹幕、导航等偏好。'
 	String get sectionSettingsDesc => '外观、播放、弹幕、导航等偏好。';
 
+	/// zh-CN: 'IPTV 设置'
+	String get sectionIptv => 'IPTV 设置';
+
+	/// zh-CN: '播放列表、分组、节目单源与频道映射；频道与节目内容由刷新重建。'
+	String get sectionIptvDesc => '播放列表、分组、节目单源与频道映射；频道与节目内容由刷新重建。';
+
+	/// zh-CN: '多画面布局'
+	String get sectionMultiview => '多画面布局';
+
+	/// zh-CN: '多画面的布局与各格子里的房间。'
+	String get sectionMultiviewDesc => '多画面的布局与各格子里的房间。';
+
 	/// zh-CN: '账号凭据'
 	String get sectionSecrets => '账号凭据';
 
@@ -10831,6 +10843,18 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '录制任务的设置；正在录制的任务不会被对方改动。'
 	String get lanSyncScopeRecordingsDesc => '录制任务的设置；正在录制的任务不会被对方改动。';
 
+	/// zh-CN: 'IPTV 设置'
+	String get lanSyncScopeIptv => 'IPTV 设置';
+
+	/// zh-CN: '播放列表、分组、节目单源与频道映射。'
+	String get lanSyncScopeIptvDesc => '播放列表、分组、节目单源与频道映射。';
+
+	/// zh-CN: '多画面布局'
+	String get lanSyncScopeMultiview => '多画面布局';
+
+	/// zh-CN: '多画面的布局与各格子里的房间。'
+	String get lanSyncScopeMultiviewDesc => '多画面的布局与各格子里的房间。';
+
 	/// zh-CN: '主题与外观'
 	String get lanSyncScopeAppearance => '主题与外观';
 
@@ -12993,6 +13017,10 @@ extension on Translations {
 			'backup.sectionRecordingsDesc' => '录制任务的设置；进行中的任务恢复后变为等待。',
 			'backup.sectionSettings' => '设置',
 			'backup.sectionSettingsDesc' => '外观、播放、弹幕、导航等偏好。',
+			'backup.sectionIptv' => 'IPTV 设置',
+			'backup.sectionIptvDesc' => '播放列表、分组、节目单源与频道映射；频道与节目内容由刷新重建。',
+			'backup.sectionMultiview' => '多画面布局',
+			'backup.sectionMultiviewDesc' => '多画面的布局与各格子里的房间。',
 			'backup.sectionSecrets' => '账号凭据',
 			'backup.sectionSecretsDesc' => '平台 Cookie、WebDAV 密码等。明文写入，只放到你信任的地方。',
 			'backup.sectionCount' => ({required String name, required int count}) => '${name} ${count}',
@@ -13220,12 +13248,12 @@ extension on Translations {
 			'favorites.statusOfflineNow' => '未开播',
 			'favorites.justStarted' => '刚刚开播',
 			'favorites.liveFor' => ({required Object duration}) => '已播 ${duration}',
+			_ => null,
+		} ?? switch (path) {
 			'favorites.durationMinutes' => ({required Object m}) => '${m} 分钟',
 			'favorites.durationHours' => ({required Object h, required Object m}) => '${h} 小时 ${m} 分',
 			'favorites.durationDays' => ({required Object d, required Object h}) => '${d} 天 ${h} 小时',
 			'favorites.setTags' => '设置标签',
-			_ => null,
-		} ?? switch (path) {
 			'favorites.tagsTitle' => '标签',
 			'favorites.tagsFilter' => '标签筛选',
 			'favorites.allTags' => '全部标签',
@@ -13734,12 +13762,12 @@ extension on Translations {
 			'iptv.zapperTitle' => '换台',
 			'iptv.zapperOpen' => '换台面板',
 			'iptv.zapperGroups' => '分组',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.zapperChannels' => '频道',
 			'iptv.zapperProgrammes' => '节目',
 			'iptv.zapperHint' => '方向键选择，确认键播放或回看，返回键收起。',
 			'iptv.zapperEmptyGroup' => '这个分组没有频道',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.lineCount' => ({required Object current, required Object total}) => '线路 ${current}/${total}',
 			'iptv.aspectLabel' => '画面比例',
 			'iptv.aspectAuto' => '默认',
@@ -14248,12 +14276,12 @@ extension on Translations {
 			'music.exportLyric' => '导出歌词',
 			'music.associateLyric' => '关联本地歌词',
 			'music.associateLyricDone' => '已关联歌词',
+			_ => null,
+		} ?? switch (path) {
 			'music.associateLyricFailed' => '关联失败：文件里没有可用的歌词',
 			'music.lyricOverrideRemove' => '取消关联歌词',
 			'music.lyricSearch' => '在线搜索歌词',
 			'music.lyricSearchFor' => ({required Object title}) => '为「${title}」搜索歌词',
-			_ => null,
-		} ?? switch (path) {
 			'music.lyricSearchHint' => '输入歌名，或「歌手 - 歌名」',
 			'music.lyricSearchAction' => '搜索',
 			'music.lyricSearchEmpty' => '没有找到匹配的歌曲',
@@ -14762,12 +14790,12 @@ extension on Translations {
 			'recorder.startNowStarted' => '已开始录制',
 			'recorder.startNowOffline' => '直播间未开播',
 			'recorder.startNowNoStream' => '没有可录制的线路',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.startNowTimeout' => '读取直播流超时',
 			'recorder.startNowFailed' => ({required Object error}) => '无法开始录制：${error}',
 			'recorder.cacheBusy' => '有录制任务正在进行（可能在另一个窗口），缓存不会被清理或自动裁剪。',
 			'recorder.cacheOtherRoot' => '另有录制正在旧目录进行；本页的统计、清理与自动裁剪只针对当前目录。',
-			_ => null,
-		} ?? switch (path) {
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -15276,12 +15304,12 @@ extension on Translations {
 			'settings.danmakuColorTitle' => '选择颜色',
 			'settings.danmakuColorPresets' => '预设颜色',
 			'settings.danmakuColorHex' => '十六进制颜色',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuColorHexInvalid' => '请输入 6 位或 8 位十六进制颜色，例如 #2196F3。',
 			'settings.danmakuColorHue' => '色相',
 			'settings.danmakuColorSaturation' => '饱和度与明度',
 			'settings.danmakuFixedGroup' => '固定弹幕',
-			_ => null,
-		} ?? switch (path) {
 			'settings.chatListGroup' => '聊天列表内容',
 			'settings.chatListLayoutGroup' => '聊天列表排版',
 			'settings.danmakuFont' => '弹幕字体',
@@ -15790,12 +15818,12 @@ extension on Translations {
 			'settings.asmrSleepTimerDesc' => '音频模式自动停止前的分钟数，范围 15–1440。',
 			'settings.asmrSleepCustomMinutes' => '自定义分钟数',
 			'settings.asmrSleepRange' => '15–1440 分钟',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fit' => '画面比例',
 			'settings.fitDesc' => '画面在播放区域里的铺法。',
 			'settings.fitContain' => '默认比例',
 			'settings.fitCover' => '居中裁剪',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fitFill' => '填充屏幕',
 			'settings.miniDanmakuVisible' => '小窗显示弹幕',
 			'settings.miniDanmakuVisibleDesc' => '缩成小窗时是否继续显示飞行弹幕。',
@@ -16304,12 +16332,12 @@ extension on Translations {
 			'settings.storageFolders' => '存储位置',
 			'settings.storageFoldersDescription' => '各类文件保存的文件夹；每个文件夹可单独更换或恢复默认。',
 			'settings.storageFoldersDesc' => '每类文件的位置，默认跟随系统，可自行选择。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.storageFolderVideos' => '视频',
 			'settings.storageFolderRecordings' => '录制',
 			'settings.storageFolderScreenshots' => '截图',
 			'settings.storageFolderMusic' => '歌曲',
-			_ => null,
-		} ?? switch (path) {
 			'settings.storageFolderWallpapers' => '壁纸',
 			'settings.storageFolderVideoWallpapers' => '视频壁纸',
 			'settings.storageFolderLyrics' => '歌词',
@@ -16385,6 +16413,10 @@ extension on Translations {
 			'settings.lanSyncScopeHistoryDesc' => '看过的房间与时间。',
 			'settings.lanSyncScopeRecordings' => '录制任务',
 			'settings.lanSyncScopeRecordingsDesc' => '录制任务的设置；正在录制的任务不会被对方改动。',
+			'settings.lanSyncScopeIptv' => 'IPTV 设置',
+			'settings.lanSyncScopeIptvDesc' => '播放列表、分组、节目单源与频道映射。',
+			'settings.lanSyncScopeMultiview' => '多画面布局',
+			'settings.lanSyncScopeMultiviewDesc' => '多画面的布局与各格子里的房间。',
 			'settings.lanSyncScopeAppearance' => '主题与外观',
 			'settings.lanSyncScopeAppearanceDesc' => '主题、背景、窗口、导航与界面偏好。',
 			'settings.lanSyncScopePlayback' => '播放',
@@ -16814,6 +16846,8 @@ extension on Translations {
 			'wallpaper.sourceUapiLandscape' => 'UAPI风景图',
 			'wallpaper.sourceUapiAnime' => 'UAPI混合动漫',
 			'wallpaper.sourceUapiPcWallpaper' => 'UAPI电脑壁纸',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceUapiMobileWallpaper' => 'UAPI手机壁纸',
 			'wallpaper.sourceUapiGeneralAnime' => 'UAPI动漫图',
 			'wallpaper.sourceUapiFurry' => 'UAPI福瑞',
@@ -16822,8 +16856,6 @@ extension on Translations {
 			'wallpaper.sourceUapiFurryS4k' => 'UAPI福瑞·s4k',
 			'wallpaper.sourceUapiFurry4k' => 'UAPI福瑞·4k',
 			'wallpaper.group360' => '360壁纸',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.source360Beauty' => '360壁纸美女',
 			'wallpaper.source360Landscape' => '360壁纸风景',
 			'wallpaper.source360Game' => '360壁纸游戏',

@@ -22,6 +22,14 @@ enum BackupSection {
   /// The named subset of the simple settings.
   settings('settings'),
 
+  /// The IPTV library's setup: playlists, groups, guide sources and
+  /// channel mappings. The channels and programmes they fetch are not
+  /// carried — a refresh rebuilds them.
+  iptv('iptv'),
+
+  /// The multiview layout: which rooms sit in which slots.
+  multiview('multiview'),
+
   /// The vault's secrets: platform cookies, WebDAV passwords. Off the
   /// default selection, and only offered at all when the user turned
   /// `backup.includeSecrets` on.
@@ -34,7 +42,7 @@ enum BackupSection {
 
   /// Every section but the secrets: what a plain "back up everything"
   /// means.
-  static const Set<BackupSection> all = {follows, areaFollows, history, recordings, settings};
+  static const Set<BackupSection> all = {follows, areaFollows, history, recordings, settings, iptv, multiview};
 
   /// The reference app's "favorites only" backup: rooms and areas.
   static const Set<BackupSection> followsOnly = {follows, areaFollows};
@@ -71,6 +79,8 @@ final class BackupDocument {
     this.areaFollows = const {},
     this.recordings = const {},
     this.settings = const {},
+    this.iptv = const {},
+    this.multiview = const {},
     this.secrets = const {},
     Set<BackupSection>? presentSections,
   }) : presentSections = presentSections ?? BackupSection.all;
@@ -97,6 +107,8 @@ final class BackupDocument {
       areaFollows: _entries(root['areaFollows']),
       recordings: _entries(root['recordings']),
       settings: _settingsOf(root['settings']),
+      iptv: _entries(root['iptv']),
+      multiview: _entries(root['multiview']),
       secrets: _secretsOf(root['secrets']),
       presentSections: present,
     );
@@ -125,6 +137,12 @@ final class BackupDocument {
   /// double, String or String list).
   final Map<String, Object?> settings;
 
+  /// The IPTV setup: store key (`iptv.playlists.v1`…) → `{items: [...]}`.
+  final Map<String, Map<String, Object?>> iptv;
+
+  /// The multiview documents: store key → the layout document.
+  final Map<String, Map<String, Object?>> multiview;
+
   /// The vault's secrets: secret ref → plain text. Present only when the
   /// writer selected the section.
   final Map<String, String> secrets;
@@ -152,6 +170,12 @@ final class BackupDocument {
 
   /// Whether it carries settings.
   bool get hasSettings => presentSections.contains(BackupSection.settings);
+
+  /// Whether it carries the IPTV setup.
+  bool get hasIptv => presentSections.contains(BackupSection.iptv);
+
+  /// Whether it carries the multiview layout.
+  bool get hasMultiview => presentSections.contains(BackupSection.multiview);
 
   /// Whether it carries secrets.
   bool get hasSecrets => presentSections.contains(BackupSection.secrets);
@@ -186,7 +210,14 @@ final class BackupDocument {
     BackupSection.history => history.length,
     BackupSection.recordings => recordings.length,
     BackupSection.settings => settings.length,
+    BackupSection.iptv => iptv.values.fold(0, (sum, entry) => sum + _itemCount(entry)),
+    BackupSection.multiview => multiview.length,
     BackupSection.secrets => secrets.length,
+  };
+
+  static int _itemCount(Map<String, Object?> entry) => switch (entry['items']) {
+    final List<Object?> items => items.length,
+    _ => 0,
   };
 
   /// Whether nothing at all would be restored: every present section is
@@ -213,6 +244,8 @@ final class BackupDocument {
     areaFollows: areaFollows,
     recordings: recordings,
     settings: settings,
+    iptv: iptv,
+    multiview: multiview,
     secrets: secrets,
     presentSections: presentSections.intersection(sections),
   );
@@ -237,6 +270,8 @@ final class BackupDocument {
     if (hasAreas) 'areaFollows': areaFollows,
     if (hasRecordings) 'recordings': recordings,
     if (hasSettings) 'settings': settings,
+    if (hasIptv) 'iptv': iptv,
+    if (hasMultiview) 'multiview': multiview,
     if (hasSecrets) 'secrets': secrets,
   };
 

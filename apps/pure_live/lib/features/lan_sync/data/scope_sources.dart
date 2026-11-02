@@ -1,13 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_iptv/live_iptv.dart' show IptvKeys;
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/app/providers/settings/settings_refresh.dart' show refreshSettings;
+import 'package:pure_live/features/backup/document/backup_repository.dart' show BackupRepository;
 import 'package:pure_live/features/backup/document/backup_settings.dart';
 import 'package:pure_live/features/backup/panes/backup_actions.dart' show includeSecretsAllowed;
 import 'package:pure_live/features/backup/webdav/webdav_settings.dart' show appSecretStoreProvider;
 import 'package:pure_live/features/lan_sync/data/scoped_sync.dart' show ScopeSource;
 import 'package:pure_live/features/lan_sync/data/sync_scopes.dart';
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
 import 'package:pure_live/modules/live/areas/areas.dart' show areaFollowRepositoryProvider;
 import 'package:pure_live/modules/live/history/history.dart' show historyRepositoryProvider;
+import 'package:pure_live/modules/live/multiview/multiview_controller.dart'
+    show multiviewProvider, multiviewRepositoryProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart' show recordingRepositoryProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart';
 
@@ -24,6 +29,8 @@ Future<ScopeSource?> openScopeSource(Ref ref, LanSyncScope scope) async {
       LanSyncScope.areaFollows => _storeSource((await ref.read(areaFollowRepositoryProvider.future)).store),
       LanSyncScope.history => _storeSource((await ref.read(historyRepositoryProvider.future)).store),
       LanSyncScope.recordings => _recordingsSource((await ref.read(recordingRepositoryProvider.future)).store),
+      LanSyncScope.iptv => _iptvSource(ref, await StorageStores.instance.openStore(IptvKeys.table)),
+      LanSyncScope.multiview => _multiviewSource(ref, (await ref.read(multiviewRepositoryProvider.future)).store),
       LanSyncScope.secrets =>
         includeSecretsAllowed() ? _secretsSource(await ref.read(appSecretStoreProvider.future)) : null,
       _ => _settingsSource(ref, scope),
@@ -42,6 +49,42 @@ ScopeSource _storeSource(JsonStore store) => (
   upsert: (id, payload) => store.put(id, payload),
   delete: store.delete,
   afterBatch: store.flush,
+);
+
+/// The IPTV setup: entity = one of the setup keys, payload `{items}`. The
+/// fetched channels and programmes stay local; the library re-reads its
+/// store after a batch.
+ScopeSource _iptvSource(Ref ref, JsonStore store) => (
+  current: () async => {
+    for (final key in BackupRepository.iptvSetupKeys)
+      if (store.entries[key] case final List<Object?> items) key: {'items': items},
+  },
+  upsert: (key, payload) async {
+    if (!BackupRepository.iptvSetupKeys.contains(key)) return;
+    final items = payload['items'];
+    if (items is List) await store.put(key, items);
+  },
+  delete: (key) async {
+    if (BackupRepository.iptvSetupKeys.contains(key)) await store.put(key, const <Object?>[]);
+  },
+  afterBatch: () async {
+    await store.flush();
+    ref.invalidate(iptvLibraryProvider);
+  },
+);
+
+/// The multiview documents as-is; the controller re-reads after a batch.
+ScopeSource _multiviewSource(Ref ref, JsonStore store) => (
+  current: () async => {
+    for (final entry in store.entries.entries)
+      if (entry.value case final Map<Object?, Object?> value) entry.key: Map<String, Object?>.from(value),
+  },
+  upsert: (id, payload) => store.put(id, payload),
+  delete: store.delete,
+  afterBatch: () async {
+    await store.flush();
+    ref.invalidate(multiviewProvider);
+  },
 );
 
 /// The setup fields of a recording task: what the user decided, not what a

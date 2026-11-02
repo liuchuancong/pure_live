@@ -3,6 +3,7 @@ import 'dart:io' show Directory, File, FileSystemException;
 
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderOrFamily;
 import 'package:live_storage/live_storage.dart';
 import 'package:open_file/open_file.dart' show OpenFile, ResultType;
 import 'package:path/path.dart' as p;
@@ -12,6 +13,8 @@ import 'package:pure_live/features/backup/document/backup_repository.dart';
 import 'package:pure_live/features/backup/webdav/webdav_accounts.dart';
 import 'package:pure_live/features/backup/webdav/webdav_client.dart';
 import 'package:pure_live/features/backup/webdav/webdav_settings.dart' show webDavVault;
+import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
+import 'package:pure_live/modules/live/multiview/multiview_controller.dart' show multiviewProvider;
 
 // The backup pane's actions, one function per row: capture the document,
 // read and write it as a local file, apply a file or a downloaded one, and
@@ -62,6 +65,15 @@ Future<void> applyBackup(WidgetRef ref, BackupDocument document) async {
   // controllers, so this window must re-read them too; the other windows
   // hear the same writes over the store's change stream.
   if (document.hasSettings) refreshSettingsFromWidget(ref);
+  refreshBackupDataProviders(document, invalidate: ref.invalidate);
+}
+
+/// Makes the IPTV library and the multiview re-read their stores after a
+/// restore touched them; the follows, history, areas and recorder pages
+/// hear their stores' own change streams.
+void refreshBackupDataProviders(BackupDocument document, {required void Function(ProviderOrFamily) invalidate}) {
+  if (document.hasIptv) invalidate(iptvLibraryProvider);
+  if (document.hasMultiview) invalidate(multiviewProvider);
 }
 
 // -- Local backup files ---------------------------------------------------

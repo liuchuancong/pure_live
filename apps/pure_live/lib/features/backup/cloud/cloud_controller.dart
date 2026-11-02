@@ -8,6 +8,7 @@ import 'package:pure_live/features/backup/cloud/cloud_service.dart';
 import 'package:pure_live/features/backup/cloud/legacy_backup_importer.dart';
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart' show backupRepositoryProvider;
+import 'package:pure_live/features/backup/panes/backup_actions.dart' show refreshBackupDataProviders;
 import 'package:pure_live/features/version/app_version.dart';
 
 /// The Firebase endpoint a network that can reach Google answers. Checked
@@ -192,6 +193,7 @@ final class CloudController extends Notifier<CloudState> {
     final repository = await ref.read(backupRepositoryProvider.future);
     await repository.apply(document);
     if (document.hasSettings) refreshSettings(ref);
+    refreshBackupDataProviders(document, invalidate: ref.invalidate);
     await refreshBackupInfo();
   });
 

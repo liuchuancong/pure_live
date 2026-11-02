@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_iptv/live_iptv.dart' show IptvKeys;
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_settings.dart';
@@ -6,6 +7,7 @@ import 'package:pure_live/features/backup/webdav/webdav_settings.dart' show appS
 import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
+import 'package:pure_live/modules/live/multiview/multiview_controller.dart' show multiviewRepositoryProvider;
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart';
 
@@ -44,8 +46,20 @@ final class BackupRepository {
     required this.history,
     required this.areaFollows,
     required this.recordings,
+    this.iptv,
+    this.multiview,
     this.secrets,
   });
+
+  /// The IPTV store keys a backup carries: what the user set up. The
+  /// channels, guide channels, programmes and line health are fetched
+  /// from those and rebuilt by a refresh.
+  static const List<String> iptvSetupKeys = [
+    IptvKeys.playlists,
+    IptvKeys.groups,
+    IptvKeys.guideSources,
+    IptvKeys.guideMappings,
+  ];
 
   /// The followed rooms.
   final FollowRepository follows;
@@ -58,6 +72,12 @@ final class BackupRepository {
 
   /// The recorder's tasks.
   final RecordingTaskRepository recordings;
+
+  /// The IPTV library's store; null when it did not open.
+  final JsonStore? iptv;
+
+  /// The multiview store; null when it did not open.
+  final JsonStore? multiview;
 
   /// The device vault; null when it never opened (an unsupported platform
   /// or a locked keychain), in which case the secrets section cannot be
@@ -72,8 +92,20 @@ final class BackupRepository {
     BackupSection.areaFollows: areaFollows.store.keys.length,
     BackupSection.recordings: recordings.store.keys.length,
     BackupSection.settings: captureSettingsSnapshot().length,
+    BackupSection.iptv: _iptvEntries().values.fold(0, (sum, entry) => sum + ((entry['items'] as List?)?.length ?? 0)),
+    BackupSection.multiview: multiview?.keys.length ?? 0,
     BackupSection.secrets: secrets?.refs.length ?? 0,
   };
+
+  /// The IPTV setup as keyed entries: store key → `{items: [...]}`.
+  Map<String, Map<String, Object?>> _iptvEntries() {
+    final store = iptv;
+    if (store == null) return const {};
+    return {
+      for (final key in iptvSetupKeys)
+        if (store.entries[key] case final List<Object?> items) key: {'items': items},
+    };
+  }
 
   /// Bundles the selected [sections] into one document. A section not
   /// selected is absent from the document, which is what tells a restore
@@ -83,6 +115,8 @@ final class BackupRepository {
     final vault = secrets;
     final present = {...sections};
     if (vault == null) present.remove(BackupSection.secrets);
+    if (iptv == null) present.remove(BackupSection.iptv);
+    if (multiview == null) present.remove(BackupSection.multiview);
     return BackupDocument(
       exportedAt: DateTime.now().toUtc(),
       follows: present.contains(BackupSection.follows) ? _entriesOf(follows.store) : const {},
@@ -90,6 +124,8 @@ final class BackupRepository {
       areaFollows: present.contains(BackupSection.areaFollows) ? _entriesOf(areaFollows.store) : const {},
       recordings: present.contains(BackupSection.recordings) ? _entriesOf(recordings.store) : const {},
       settings: present.contains(BackupSection.settings) ? captureSettingsSnapshot() : const {},
+      iptv: present.contains(BackupSection.iptv) ? _iptvEntries() : const {},
+      multiview: present.contains(BackupSection.multiview) && multiview != null ? _entriesOf(multiview!) : const {},
       secrets: present.contains(BackupSection.secrets) && vault != null
           ? {for (final ref in vault.refs) ref: vault.value(ref) ?? ''}
           : const {},
@@ -119,7 +155,21 @@ final class BackupRepository {
     if (document.hasHistory) await _restore(history.store, document.history);
     if (document.hasRecordings) await _restoreRecordings(document.recordings);
     if (document.hasSettings) await applySettingsSnapshot(document.settings);
+    if (document.hasIptv) await _restoreIptv(document.iptv);
+    if (document.hasMultiview && multiview != null) await _restore(multiview!, document.multiview);
     if (document.hasSecrets) await _restoreSecrets(document.secrets);
+  }
+
+  /// Writes the setup keys the document carries; the keys it does not
+  /// name, and the fetched channels and programmes, stay as they are.
+  Future<void> _restoreIptv(Map<String, Map<String, Object?>> entries) async {
+    final store = iptv;
+    if (store == null) return;
+    for (final key in iptvSetupKeys) {
+      final items = entries[key]?['items'];
+      if (items is List) await store.put(key, items);
+    }
+    await store.flush();
   }
 
   /// Whether this device has a take the engine still owns: a session
@@ -197,6 +247,14 @@ final backupRepositoryProvider = FutureProvider<BackupRepository>((ref) async {
   final history = await ref.watch(historyRepositoryProvider.future);
   final areaFollows = await ref.watch(areaFollowRepositoryProvider.future);
   final recordings = await ref.watch(recordingRepositoryProvider.future);
+  JsonStore? iptv;
+  JsonStore? multiview;
+  try {
+    iptv = await StorageStores.instance.openStore(IptvKeys.table);
+    multiview = (await ref.watch(multiviewRepositoryProvider.future)).store;
+  } on Object {
+    // A store that did not open is simply not offered.
+  }
   SecretStore? secrets;
   try {
     secrets = await ref.watch(appSecretStoreProvider.future);
@@ -208,6 +266,8 @@ final backupRepositoryProvider = FutureProvider<BackupRepository>((ref) async {
     history: history,
     areaFollows: areaFollows,
     recordings: recordings,
+    iptv: iptv,
+    multiview: multiview,
     secrets: secrets,
   );
 });

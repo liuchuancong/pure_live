@@ -369,6 +369,10 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get sectionRecordingsDesc => 'The recording tasks\' setup; a running task restores as waiting.';
 	@override String get sectionSettings => 'Settings';
 	@override String get sectionSettingsDesc => 'Appearance, playback, danmaku, navigation and the other preferences.';
+	@override String get sectionIptv => 'IPTV setup';
+	@override String get sectionIptvDesc => 'Playlists, groups, guide sources and channel mappings; the channels and programmes are rebuilt by a refresh.';
+	@override String get sectionMultiview => 'Multiview layout';
+	@override String get sectionMultiviewDesc => 'The multiview layout and the room in each slot.';
 	@override String get sectionSecrets => 'Account credentials';
 	@override String get sectionSecretsDesc => 'Platform cookies, WebDAV passwords and the like. Written in plain text — only keep it somewhere you trust.';
 	@override String sectionCount({required String name, required int count}) => '${name} ${count}';
@@ -3753,6 +3757,10 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get lanSyncScopeHistoryDesc => 'The rooms you watched and when.';
 	@override String get lanSyncScopeRecordings => 'Recording tasks';
 	@override String get lanSyncScopeRecordingsDesc => 'The recording tasks\' setup; a task recording right now is never changed by a peer.';
+	@override String get lanSyncScopeIptv => 'IPTV setup';
+	@override String get lanSyncScopeIptvDesc => 'Playlists, groups, guide sources and channel mappings.';
+	@override String get lanSyncScopeMultiview => 'Multiview layout';
+	@override String get lanSyncScopeMultiviewDesc => 'The multiview layout and the room in each slot.';
 	@override String get lanSyncScopeAppearance => 'Theme and appearance';
 	@override String get lanSyncScopeAppearanceDesc => 'Theme, background, window, navigation and interface preferences.';
 	@override String get lanSyncScopePlayback => 'Playback';
@@ -4710,6 +4718,10 @@ extension on TranslationsEn {
 			'backup.sectionRecordingsDesc' => 'The recording tasks\' setup; a running task restores as waiting.',
 			'backup.sectionSettings' => 'Settings',
 			'backup.sectionSettingsDesc' => 'Appearance, playback, danmaku, navigation and the other preferences.',
+			'backup.sectionIptv' => 'IPTV setup',
+			'backup.sectionIptvDesc' => 'Playlists, groups, guide sources and channel mappings; the channels and programmes are rebuilt by a refresh.',
+			'backup.sectionMultiview' => 'Multiview layout',
+			'backup.sectionMultiviewDesc' => 'The multiview layout and the room in each slot.',
 			'backup.sectionSecrets' => 'Account credentials',
 			'backup.sectionSecretsDesc' => 'Platform cookies, WebDAV passwords and the like. Written in plain text — only keep it somewhere you trust.',
 			'backup.sectionCount' => ({required String name, required int count}) => '${name} ${count}',
@@ -4937,12 +4949,12 @@ extension on TranslationsEn {
 			'favorites.statusOfflineNow' => 'Offline',
 			'favorites.justStarted' => 'Just started',
 			'favorites.liveFor' => ({required Object duration}) => 'Live ${duration}',
+			_ => null,
+		} ?? switch (path) {
 			'favorites.durationMinutes' => ({required Object m}) => '${m} min',
 			'favorites.durationHours' => ({required Object h, required Object m}) => '${h} h ${m} min',
 			'favorites.durationDays' => ({required Object d, required Object h}) => '${d} d ${h} h',
 			'favorites.setTags' => 'Set tags',
-			_ => null,
-		} ?? switch (path) {
 			'favorites.tagsTitle' => 'Tags',
 			'favorites.tagsFilter' => 'Filter by tag',
 			'favorites.allTags' => 'All tags',
@@ -5451,12 +5463,12 @@ extension on TranslationsEn {
 			'iptv.zapperTitle' => 'Channels',
 			'iptv.zapperOpen' => 'Channel panel',
 			'iptv.zapperGroups' => 'Groups',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.zapperChannels' => 'Channels',
 			'iptv.zapperProgrammes' => 'Programmes',
 			'iptv.zapperHint' => 'Arrow keys to move, OK to play or replay, back to close.',
 			'iptv.zapperEmptyGroup' => 'No channels in this group',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.lineCount' => ({required Object current, required Object total}) => 'Line ${current}/${total}',
 			'iptv.aspectLabel' => 'Aspect',
 			'iptv.aspectAuto' => 'Default',
@@ -5965,12 +5977,12 @@ extension on TranslationsEn {
 			'music.exportLyric' => 'Export the lyric',
 			'music.associateLyric' => 'Use a local lyric',
 			'music.associateLyricDone' => 'Lyric linked',
+			_ => null,
+		} ?? switch (path) {
 			'music.associateLyricFailed' => 'Could not link: the file has no usable lyric',
 			'music.lyricOverrideRemove' => 'Unlink the lyric',
 			'music.lyricSearch' => 'Search lyrics online',
 			'music.lyricSearchFor' => ({required Object title}) => 'Search lyrics for "${title}"',
-			_ => null,
-		} ?? switch (path) {
 			'music.lyricSearchHint' => 'A song title, or "artist - title"',
 			'music.lyricSearchAction' => 'Search',
 			'music.lyricSearchEmpty' => 'No matching songs',
@@ -6479,12 +6491,12 @@ extension on TranslationsEn {
 			'recorder.startNowStarted' => 'Recording started',
 			'recorder.startNowOffline' => 'The room is not live',
 			'recorder.startNowNoStream' => 'No recordable line',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.startNowTimeout' => 'Reading the stream timed out',
 			'recorder.startNowFailed' => ({required Object error}) => 'Could not start recording: ${error}',
 			'recorder.cacheBusy' => 'A recording is in progress (possibly in another window); the cache will not be cleared or trimmed now.',
 			'recorder.cacheOtherRoot' => 'A take is still writing to the old folder; this page\'s size, clear and automatic trimming cover the current folder only.',
-			_ => null,
-		} ?? switch (path) {
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -6993,12 +7005,12 @@ extension on TranslationsEn {
 			'settings.danmakuColorTitle' => 'Choose a colour',
 			'settings.danmakuColorPresets' => 'Presets',
 			'settings.danmakuColorHex' => 'Hex colour',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuColorHexInvalid' => 'Enter a 6- or 8-digit hex colour, such as #2196F3.',
 			'settings.danmakuColorHue' => 'Hue',
 			'settings.danmakuColorSaturation' => 'Saturation and brightness',
 			'settings.danmakuFixedGroup' => 'Pinned danmaku',
-			_ => null,
-		} ?? switch (path) {
 			'settings.chatListGroup' => 'Chat list content',
 			'settings.chatListLayoutGroup' => 'Chat list layout',
 			'settings.danmakuFont' => 'Danmaku font',
@@ -7507,12 +7519,12 @@ extension on TranslationsEn {
 			'settings.asmrSleepTimerDesc' => 'Minutes before the audio-only room pauses; range 15–1440.',
 			'settings.asmrSleepCustomMinutes' => 'Custom minutes',
 			'settings.asmrSleepRange' => '15–1440 minutes',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fit' => 'Picture fit',
 			'settings.fitDesc' => 'How the frame fills its box.',
 			'settings.fitContain' => 'Default Ratio',
 			'settings.fitCover' => 'Center Crop',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fitFill' => 'Fill Screen',
 			'settings.miniDanmakuVisible' => 'Danmaku in the mini window',
 			'settings.miniDanmakuVisibleDesc' => 'Whether the flying layer still draws in the compact window.',
@@ -8021,12 +8033,12 @@ extension on TranslationsEn {
 			'settings.storageFolders' => 'Storage locations',
 			'settings.storageFoldersDescription' => 'The folders each kind of file is saved in; change or reset one at a time.',
 			'settings.storageFoldersDesc' => 'Where each kind of file lives. Defaults follow the system; any of them can be moved.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.storageFolderVideos' => 'Videos',
 			'settings.storageFolderRecordings' => 'Recordings',
 			'settings.storageFolderScreenshots' => 'Screenshots',
 			'settings.storageFolderMusic' => 'Songs',
-			_ => null,
-		} ?? switch (path) {
 			'settings.storageFolderWallpapers' => 'Wallpapers',
 			'settings.storageFolderVideoWallpapers' => 'Video wallpapers',
 			'settings.storageFolderLyrics' => 'Lyrics',
@@ -8102,6 +8114,10 @@ extension on TranslationsEn {
 			'settings.lanSyncScopeHistoryDesc' => 'The rooms you watched and when.',
 			'settings.lanSyncScopeRecordings' => 'Recording tasks',
 			'settings.lanSyncScopeRecordingsDesc' => 'The recording tasks\' setup; a task recording right now is never changed by a peer.',
+			'settings.lanSyncScopeIptv' => 'IPTV setup',
+			'settings.lanSyncScopeIptvDesc' => 'Playlists, groups, guide sources and channel mappings.',
+			'settings.lanSyncScopeMultiview' => 'Multiview layout',
+			'settings.lanSyncScopeMultiviewDesc' => 'The multiview layout and the room in each slot.',
 			'settings.lanSyncScopeAppearance' => 'Theme and appearance',
 			'settings.lanSyncScopeAppearanceDesc' => 'Theme, background, window, navigation and interface preferences.',
 			'settings.lanSyncScopePlayback' => 'Playback',
@@ -8531,6 +8547,8 @@ extension on TranslationsEn {
 			'wallpaper.sourceUapiLandscape' => 'UAPI · landscape',
 			'wallpaper.sourceUapiAnime' => 'UAPI · mixed anime',
 			'wallpaper.sourceUapiPcWallpaper' => 'UAPI · desktop wallpaper',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceUapiMobileWallpaper' => 'UAPI · phone wallpaper',
 			'wallpaper.sourceUapiGeneralAnime' => 'UAPI · anime images',
 			'wallpaper.sourceUapiFurry' => 'UAPI · furry',
@@ -8539,8 +8557,6 @@ extension on TranslationsEn {
 			'wallpaper.sourceUapiFurryS4k' => 'UAPI · furry s4k',
 			'wallpaper.sourceUapiFurry4k' => 'UAPI · furry 4k',
 			'wallpaper.group360' => '360 Wallpaper',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.source360Beauty' => '360 Wallpaper · Beauty',
 			'wallpaper.source360Landscape' => '360 Wallpaper · Landscape',
 			'wallpaper.source360Game' => '360 Wallpaper · Games',

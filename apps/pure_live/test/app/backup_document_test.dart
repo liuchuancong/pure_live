@@ -217,6 +217,32 @@ void main() {
       expect(narrowed.follows.keys, ['bili:1']);
     });
 
+    test('the IPTV setup and the multiview layout ride as keyed sections', () {
+      final document = BackupDocument(
+        exportedAt: DateTime.utc(2026),
+        iptv: {
+          'iptv.playlists.v1': {
+            'items': [
+              {'id': 'p1'},
+              {'id': 'p2'},
+            ],
+          },
+          'iptv.groups.v1': {'items': <Object?>[]},
+        },
+        multiview: {
+          'current': {'layout': 'grid2x2', 'slots': <Object?>[]},
+        },
+        presentSections: {BackupSection.iptv, BackupSection.multiview},
+      );
+      final decoded = BackupDocument.tryDecode(document.encode())!;
+      expect(decoded.presentSections, {BackupSection.iptv, BackupSection.multiview});
+      expect(decoded.countOf(BackupSection.iptv), 2, reason: 'items across the keys, not the keys');
+      expect(decoded.countOf(BackupSection.multiview), 1);
+      expect(decoded.iptv['iptv.playlists.v1']!['items'], hasLength(2));
+      expect(decoded.multiview['current']!['layout'], 'grid2x2');
+      expect(decoded.hasFollows, isFalse);
+    });
+
     test('the export name carries the kind and the moment', () {
       final moment = DateTime(2026, 10, 31, 9, 5, 7);
       expect(BackupDocument.exportFileName(moment), 'pure_live_backup_20261031_090507.json');

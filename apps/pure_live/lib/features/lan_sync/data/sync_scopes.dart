@@ -19,6 +19,12 @@ enum LanSyncScope {
   /// The recording tasks (their setup; a running take syncs as waiting).
   recordings('recordings'),
 
+  /// The IPTV setup: playlists, groups, guide sources and mappings.
+  iptv('iptv'),
+
+  /// The multiview layout.
+  multiview('multiview'),
+
   /// Theme, background, window and the other appearance prefs.
   settingsAppearance('settings.appearance'),
 
@@ -51,7 +57,7 @@ enum LanSyncScope {
 
   /// Whether this scope is a box of keyed user data.
   bool get isStore => switch (this) {
-    favorites || areaFollows || history || recordings => true,
+    favorites || areaFollows || history || recordings || iptv || multiview => true,
     _ => false,
   };
 
@@ -62,6 +68,8 @@ enum LanSyncScope {
     areaFollows,
     history,
     recordings,
+    iptv,
+    multiview,
     settingsAppearance,
     settingsPlayback,
     settingsDanmaku,
