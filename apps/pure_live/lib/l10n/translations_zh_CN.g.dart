@@ -2734,6 +2734,9 @@ class Translations$iptv$zh_CN {
 	/// zh-CN: '播放过的频道会出现在这里，方便快速回到上次看的内容。'
 	String get recentEmptyDescription => '播放过的频道会出现在这里，方便快速回到上次看的内容。';
 
+	/// zh-CN: '更早'
+	String get recentEarlier => '更早';
+
 	/// zh-CN: '收藏频道'
 	String get favouritesTitle => '收藏频道';
 
@@ -13007,6 +13010,7 @@ extension on Translations {
 			'iptv.recentClearDesc' => '只删除本机的观看记录，收藏和频道本身不受影响。',
 			'iptv.recentEmptyTitle' => '还没有看过的频道',
 			'iptv.recentEmptyDescription' => '播放过的频道会出现在这里，方便快速回到上次看的内容。',
+			'iptv.recentEarlier' => '更早',
 			'iptv.favouritesTitle' => '收藏频道',
 			'iptv.favouritesCount' => ({required Object count}) => '共 ${count} 个收藏',
 			'iptv.favouritesEmptyTitle' => '还没有收藏频道',
@@ -13164,9 +13168,9 @@ extension on Translations {
 			'music.autoplay' => '打开时继续播放',
 			'music.autoplayDesc' => '打开音乐模块时继续上次的播放队列。',
 			'music.rememberProgress' => '记住播放进度',
-			'music.rememberProgressDesc' => '再次打开同一首歌时，从上一次停止的位置继续。',
 			_ => null,
 		} ?? switch (path) {
+			'music.rememberProgressDesc' => '再次打开同一首歌时，从上一次停止的位置继续。',
 			'music.autoCleanPlayedList' => '自动清空已播列表',
 			'music.autoCleanPlayedListDesc' => '点击与播放列表相同的列表切歌时清空已播放列表，随机模式下列表内所有歌曲会重新参与随机。',
 			'music.addToTop' => '新歌加到列表顶部',
@@ -13678,9 +13682,9 @@ extension on Translations {
 			'music.syncChoose' => '选择',
 			'music.syncAuthCode' => '连接码',
 			'music.syncAuthCodeHint' => '服务端显示的连接码',
-			'music.syncMode' => '同步模式',
 			_ => null,
 		} ?? switch (path) {
+			'music.syncMode' => '同步模式',
 			'music.syncConnect' => '连接',
 			'music.syncDisconnect' => '断开',
 			'music.syncRemoveDevice' => '移除该设备',
@@ -14192,9 +14196,9 @@ extension on Translations {
 			'room.giftValueCheese' => ({required Object value}) => '${value} 奶酪',
 			'room.giftValueStarBalloon' => ({required Object value}) => '${value} 星气球',
 			'room.giftValueDouyinCoin' => ({required Object value}) => '${value} 抖币',
-			'room.giftValueSixCoin' => ({required Object value}) => '${value} 六币',
 			_ => null,
 		} ?? switch (path) {
+			'room.giftValueSixCoin' => ({required Object value}) => '${value} 六币',
 			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC币',
 			'room.giftValueStarCoin' => ({required Object value}) => '${value} 星币',
 			'room.giftValueHeart' => ({required Object value}) => '${value} 爱心',
@@ -14706,9 +14710,9 @@ extension on Translations {
 			'settings.fontManagerInUse' => '使用中',
 			'settings.fontManagerDefaultBadge' => '默认',
 			'settings.fontManagerCurrent' => '当前字体',
-			'settings.fontManagerReset' => '恢复默认',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerReset' => '恢复默认',
 			'settings.fontManagerFilterAll' => '全部',
 			'settings.fontManagerCategory' => '分类',
 			'settings.fontManagerCount' => ({required Object count}) => '共 ${count} 款字体',
@@ -15220,9 +15224,9 @@ extension on Translations {
 			'settings.downloadManagerDesc' => '壁纸的下载任务、记录与保存目录。',
 			'settings.downloadManagerEmpty' => '还没有下载记录',
 			'settings.downloadManagerEmptyDesc' => '在预览或图库点「下载」，任务会出现在这里。',
-			'settings.downloadStatusRunning' => '下载中',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadStatusRunning' => '下载中',
 			'settings.downloadStatusDone' => '已完成',
 			'settings.downloadStatusFailed' => '下载失败',
 			'settings.downloadStartedAt' => ({required Object time}) => '开始于 ${time}',
@@ -15734,9 +15738,9 @@ extension on Translations {
 			'toolbox.linkRoom' => '房间号',
 			'toolbox.linkEmpty' => '请先粘贴链接',
 			'toolbox.linkUnsupported' => '无法识别该链接，暂不支持此平台。',
-			'toolbox.linkTimeout' => '解析超时，请检查网络后重试。',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.linkTimeout' => '解析超时，请检查网络后重试。',
 			'toolbox.linkFailed' => '解析失败，请稍后重试。',
 			'toolbox.linkCopyDone' => '已复制房间链接',
 			'toolbox.linkCopyFailed' => '复制失败',

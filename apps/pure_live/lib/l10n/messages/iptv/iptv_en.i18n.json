@@ -180,6 +180,7 @@
   "recentClearDesc": "Only this device's records are deleted; favourites and channels stay.",
   "recentEmptyTitle": "Nothing watched yet",
   "recentEmptyDescription": "Channels you play appear here, so you can jump back to what was on.",
+  "recentEarlier": "Earlier",
   "favouritesTitle": "Favourite channels",
   "favouritesCount": "{count} favourites",
   "favouritesEmptyTitle": "No favourite channels yet",

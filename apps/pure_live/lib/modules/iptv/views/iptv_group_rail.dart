@@ -97,8 +97,12 @@ final class IptvGroupEntry extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.t;
     final group = filter.selectedGroup;
+    // widthFactor 1 keeps the line the button's own width: as a stretch
+    // column's line it still sits at the start of the full row, but it can
+    // also stand in a head's action row without claiming the whole window.
     return Align(
       alignment: AlignmentDirectional.centerStart,
+      widthFactor: 1,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 260),
         child: DsButton(

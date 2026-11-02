@@ -999,6 +999,7 @@ class _Translations$iptv$en extends Translations$iptv$zh_CN {
 	@override String get recentClearDesc => 'Only this device\'s records are deleted; favourites and channels stay.';
 	@override String get recentEmptyTitle => 'Nothing watched yet';
 	@override String get recentEmptyDescription => 'Channels you play appear here, so you can jump back to what was on.';
+	@override String get recentEarlier => 'Earlier';
 	@override String get favouritesTitle => 'Favourite channels';
 	@override String favouritesCount({required Object count}) => '${count} favourites';
 	@override String get favouritesEmptyTitle => 'No favourite channels yet';
@@ -5093,6 +5094,7 @@ extension on TranslationsEn {
 			'iptv.recentClearDesc' => 'Only this device\'s records are deleted; favourites and channels stay.',
 			'iptv.recentEmptyTitle' => 'Nothing watched yet',
 			'iptv.recentEmptyDescription' => 'Channels you play appear here, so you can jump back to what was on.',
+			'iptv.recentEarlier' => 'Earlier',
 			'iptv.favouritesTitle' => 'Favourite channels',
 			'iptv.favouritesCount' => ({required Object count}) => '${count} favourites',
 			'iptv.favouritesEmptyTitle' => 'No favourite channels yet',
@@ -5250,9 +5252,9 @@ extension on TranslationsEn {
 			'music.autoplay' => 'Resume on open',
 			'music.autoplayDesc' => 'Continues the last queue when the music module opens.',
 			'music.rememberProgress' => 'Remember playback position',
-			'music.rememberProgressDesc' => 'A song you open again resumes where it last stopped.',
 			_ => null,
 		} ?? switch (path) {
+			'music.rememberProgressDesc' => 'A song you open again resumes where it last stopped.',
 			'music.autoCleanPlayedList' => 'Auto-clean played list',
 			'music.autoCleanPlayedListDesc' => 'Clears the played list when picking songs from the list already playing; in random mode every song joins the pool again.',
 			'music.addToTop' => 'Add new songs on top',
@@ -5764,9 +5766,9 @@ extension on TranslationsEn {
 			'music.syncChoose' => 'Choose',
 			'music.syncAuthCode' => 'Auth code',
 			'music.syncAuthCodeHint' => 'The connection code shown by the server',
-			'music.syncMode' => 'Sync mode',
 			_ => null,
 		} ?? switch (path) {
+			'music.syncMode' => 'Sync mode',
 			'music.syncConnect' => 'Connect',
 			'music.syncDisconnect' => 'Disconnect',
 			'music.syncRemoveDevice' => 'Remove this device',
@@ -6278,9 +6280,9 @@ extension on TranslationsEn {
 			'room.giftValueCheese' => ({required Object value}) => '${value} cheese',
 			'room.giftValueStarBalloon' => ({required Object value}) => '${value} star balloons',
 			'room.giftValueDouyinCoin' => ({required Object value}) => '${value} Douyin coins',
-			'room.giftValueSixCoin' => ({required Object value}) => '${value} six coins',
 			_ => null,
 		} ?? switch (path) {
+			'room.giftValueSixCoin' => ({required Object value}) => '${value} six coins',
 			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC coins',
 			'room.giftValueStarCoin' => ({required Object value}) => '${value} star coins',
 			'room.giftValueHeart' => ({required Object value}) => '${value} hearts',
@@ -6792,9 +6794,9 @@ extension on TranslationsEn {
 			'settings.fontManagerInUse' => 'In use',
 			'settings.fontManagerDefaultBadge' => 'Default',
 			'settings.fontManagerCurrent' => 'Current font',
-			'settings.fontManagerReset' => 'Restore the default',
 			_ => null,
 		} ?? switch (path) {
+			'settings.fontManagerReset' => 'Restore the default',
 			'settings.fontManagerFilterAll' => 'All',
 			'settings.fontManagerCategory' => 'Category',
 			'settings.fontManagerCount' => ({required Object count}) => '${count} fonts',
@@ -7306,9 +7308,9 @@ extension on TranslationsEn {
 			'settings.downloadManagerDesc' => 'Wallpaper download tasks, history and the save folder.',
 			'settings.downloadManagerEmpty' => 'No downloads yet',
 			'settings.downloadManagerEmptyDesc' => 'Choose “Download” in a preview or the library and the task shows up here.',
-			'settings.downloadStatusRunning' => 'Downloading',
 			_ => null,
 		} ?? switch (path) {
+			'settings.downloadStatusRunning' => 'Downloading',
 			'settings.downloadStatusDone' => 'Completed',
 			'settings.downloadStatusFailed' => 'Failed',
 			'settings.downloadStartedAt' => ({required Object time}) => 'Started ${time}',
@@ -7820,9 +7822,9 @@ extension on TranslationsEn {
 			'toolbox.linkRoom' => 'Room',
 			'toolbox.linkEmpty' => 'Paste a link first',
 			'toolbox.linkUnsupported' => 'This link is not recognised; the platform is not supported yet.',
-			'toolbox.linkTimeout' => 'The resolve timed out; check the network and try again.',
 			_ => null,
 		} ?? switch (path) {
+			'toolbox.linkTimeout' => 'The resolve timed out; check the network and try again.',
 			'toolbox.linkFailed' => 'The resolve failed; try again later.',
 			'toolbox.linkCopyDone' => 'Room link copied',
 			'toolbox.linkCopyFailed' => 'Copy failed',

@@ -180,6 +180,7 @@
   "recentClearDesc": "只删除本机的观看记录，收藏和频道本身不受影响。",
   "recentEmptyTitle": "还没有看过的频道",
   "recentEmptyDescription": "播放过的频道会出现在这里，方便快速回到上次看的内容。",
+  "recentEarlier": "更早",
   "favouritesTitle": "收藏频道",
   "favouritesCount": "共 {count} 个收藏",
   "favouritesEmptyTitle": "还没有收藏频道",
