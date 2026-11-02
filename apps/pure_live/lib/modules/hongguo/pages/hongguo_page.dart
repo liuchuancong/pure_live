@@ -411,13 +411,15 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
             loading: latest?.loading ?? true,
             error: latest?.error,
             onRetry: () => unawaited(latestController.retry(_latest)),
-            // The shelf's own switches wrap under the title — four chips and
+            // The shelf's own switches wrap under the title — three chips and
             // a button cannot share one header row down to the window's
-            // 300 px floor.
+            // 300 px floor. They name only the genre: this row's title is
+            // already 新剧, and a shared suffix on every chip is text the eye
+            // learns to skip.
             toolbar: [
               for (final value in HongguoGenre.values)
                 DsChip(
-                  label: Text('${value.label(t)}${t.hongguo.newArrivals}'),
+                  label: Text(value.label(t)),
                   selected: _latest == value,
                   onChanged: (_) {
                     setState(() => _latest = value);
