@@ -1787,7 +1787,7 @@ final class _ProgressList extends ConsumerWidget {
               trailing: managing
                   ? DsCheckbox(
                       value: selected.contains(row.seriesId),
-                      semanticLabel: t.hongguo.episodeLabel(index: row.episodeIndex),
+                      semanticLabel: row.title,
                       onChanged: (_) => onToggle?.call(row.seriesId),
                     )
                   : _IconAction(

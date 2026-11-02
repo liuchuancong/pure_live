@@ -360,7 +360,9 @@ final class HongguoSeriesRow extends StatelessWidget {
   /// Opens the series; null leaves the row inert.
   final VoidCallback? onOpen;
 
-  /// A trailing action, beside the listing line.
+  /// The row's own action, drawn at the row's end — the ✕ that drops the
+  /// series from the page showing it, the box that picks it for a batch, the
+  /// button that reserves it.
   final Widget? trailing;
 
   @override
@@ -423,6 +425,7 @@ final class HongguoSeriesRow extends StatelessWidget {
               ),
             ),
           ),
+          ?trailing,
         ],
       ),
     );
