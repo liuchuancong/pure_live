@@ -31,5 +31,6 @@
   "paneEmpty": "点击选台",
   "panePicking": "正在为这一格选台",
   "wallFailed": "无法读取多画面记录",
-  "pickerNoMatch": "没有匹配的房间"
+  "pickerNoMatch": "没有匹配的房间",
+  "searchHint": "搜索直播间添加到当前格子"
 }

@@ -5,3 +5,4 @@ library;
 export 'multiview_controller.dart';
 export 'multiview_page.dart';
 export 'multiview_playback.dart';
+export 'multiview_search_handoff.dart';

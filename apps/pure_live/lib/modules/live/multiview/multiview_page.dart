@@ -13,6 +13,8 @@ import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/multiview/multiview_controller.dart';
 import 'package:pure_live/modules/live/multiview/multiview_playback.dart';
+import 'package:pure_live/modules/live/multiview/multiview_search_handoff.dart';
+import 'package:pure_live/modules/live/search/room_search_picker.dart' show showRoomSearchPicker;
 import 'package:pure_live/shared/shared.dart';
 
 /// The multi-view wall (the reference's multiview): the 1×1, 1×2, 2×2,
@@ -58,6 +60,32 @@ final class _MultiviewPageState extends ConsumerState<MultiviewPage> {
   void initState() {
     super.initState();
     _playbackNotifier = ref.read(multiviewPlaybackProvider.notifier);
+    // The toolbar's word opens the room search picker over the wall: the
+    // room found there lands in the current cell. The listener catches a
+    // word handed while the page is showing; the post-frame take catches
+    // one handed as the page arrives.
+    ref.listenManual(multiviewSearchHandoffProvider, (_, _) => _takeHandoff());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _takeHandoff());
+  }
+
+  void _takeHandoff() {
+    final word = ref.read(multiviewSearchHandoffProvider.notifier).take();
+    if (word == null || word.isEmpty || !mounted) return;
+    unawaited(
+      showRoomSearchPicker(context, query: word, title: context.t.multiview.searchHint, onPick: _assignFromSearch),
+    );
+  }
+
+  /// Puts the picked room in the current cell: the one the dock is open
+  /// for, else the selected (audible) pane, else the first empty cell,
+  /// else the first.
+  Future<void> _assignFromSearch(LiveRoom room) async {
+    final slots = ref.read(multiviewProvider).slots;
+    final selected = ref.read(multiviewPlaybackProvider).selected;
+    var target = _pickingSlot ?? ((selected != null && selected >= 0 && selected < slots.length) ? selected : null);
+    target ??= slots.indexWhere((slot) => slot == null);
+    if (target < 0) target = 0;
+    await ref.read(multiviewProvider.notifier).assign(target, room);
   }
 
   @override

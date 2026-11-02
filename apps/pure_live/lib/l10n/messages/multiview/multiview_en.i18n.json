@@ -31,5 +31,6 @@
   "paneEmpty": "Tap to pick",
   "panePicking": "Picking for this cell",
   "wallFailed": "The wall could not be read",
-  "pickerNoMatch": "No matching room"
+  "pickerNoMatch": "No matching room",
+  "searchHint": "Search a room for the current cell"
 }
