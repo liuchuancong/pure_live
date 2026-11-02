@@ -118,10 +118,34 @@ final class LanSyncPane extends ConsumerWidget {
   }
 }
 
-final class _PairedSection extends ConsumerWidget {
+/// The paired devices: read once per runtime and re-read after a grant
+/// or a revoke — never by restarting the runtime, which would drop the
+/// server and the discovery just to refresh a list.
+final class _PairedSection extends ConsumerStatefulWidget {
   const _PairedSection({required this.runtime});
 
   final LanSyncRuntime? runtime;
+
+  @override
+  ConsumerState<_PairedSection> createState() => _PairedSectionState();
+}
+
+final class _PairedSectionState extends ConsumerState<_PairedSection> {
+  Future<List<DeviceTrust>>? _trusts;
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+  }
+
+  @override
+  void didUpdateWidget(_PairedSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.runtime != widget.runtime) _reload();
+  }
+
+  void _reload() => setState(() => _trusts = widget.runtime?.store.loadDeviceTrusts());
 
   /// The address this device last saw [deviceId] on, from discovery.
   String? _lastAddressOf(LanSyncRuntime runtime, String deviceId) => runtime.directory.devices
@@ -133,13 +157,12 @@ final class _PairedSection extends ConsumerWidget {
       runtime.directory.devices.where((device) => device.deviceId == deviceId).map((device) => device.port).firstOrNull;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final t = context.t;
-    final current = runtime;
+    final current = widget.runtime;
     if (current == null) return const SizedBox.shrink();
-    final store = current.store;
     return FutureBuilder<List<DeviceTrust>>(
-      future: store.loadDeviceTrusts(),
+      future: _trusts,
       builder: (context, snapshot) {
         final active = current;
         final trusts = (snapshot.data ?? const <DeviceTrust>[]).where((trust) => !trust.revoked).toList();
@@ -172,7 +195,7 @@ final class _PairedSection extends ConsumerWidget {
                           showLanSyncGrantsPanel(context, runtime: active, trust: trust).then((saved) {
                             if (saved && context.mounted) {
                               showDsToast(context: context, title: t.settings.lanSyncGrantsSaved);
-                              ref.invalidate(lanSyncRuntimeProvider);
+                              _reload();
                             }
                           }),
                         ),
@@ -208,7 +231,7 @@ final class _PairedSection extends ConsumerWidget {
                         size: DsSize.sm,
                         onPressed: () => unawaited(
                           active.trustService.revokeDevice(trust.deviceId).then((_) {
-                            if (context.mounted) ref.invalidate(lanSyncRuntimeProvider);
+                            if (context.mounted) _reload();
                           }),
                         ),
                         child: Text(t.settings.lanSyncForget),

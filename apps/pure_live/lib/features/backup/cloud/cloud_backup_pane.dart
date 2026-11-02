@@ -196,8 +196,9 @@ final class _CloudBackupPaneState extends ConsumerState<CloudBackupPane> {
       return;
     }
     await _controller.upload(document);
-    if (mounted && ref.read(cloudControllerProvider).error == null)
+    if (mounted && ref.read(cloudControllerProvider).error == null) {
       _toast(t.backup.cloud.uploadDone, status: DsStatus.success);
+    }
   }
 
   Future<void> _download() async {
@@ -238,8 +239,9 @@ final class _CloudBackupPaneState extends ConsumerState<CloudBackupPane> {
     );
     if (!confirmed || !mounted) return;
     await _controller.restore(chosen);
-    if (mounted && ref.read(cloudControllerProvider).error == null)
+    if (mounted && ref.read(cloudControllerProvider).error == null) {
       _toast(t.backup.importDone, status: DsStatus.success);
+    }
   }
 
   Future<void> _delete() async {
