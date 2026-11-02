@@ -5,6 +5,12 @@ import 'dart:io' show File;
 /// A module hands the page the files it knows how to preview — a finished
 /// recording, a completed download, a local clip — and nothing about how they
 /// are played: the path is a local file, the rest is what the list shows.
+///
+/// The stage is a video stage. An audio file would play over a black frame with
+/// no cover, no lyrics and no play bar, and the app already owns that surface
+/// elsewhere — the music module's player page has the artwork, the lyric run and
+/// the transport, and a queue of downloaded songs hands its rows there rather
+/// than here. Nothing in this type pretends otherwise.
 final class MediaPreviewItem {
   /// Describes one playable entry.
   const MediaPreviewItem({
@@ -30,8 +36,10 @@ final class MediaPreviewItem {
   /// The second line: source, length, size — whatever the module knows.
   final String subtitle;
 
-  /// A cover to show when the file is audio, or when its picture has not
-  /// loaded yet.
+  /// The entry's own picture: a series' poster, a room's cover. The list shows
+  /// it once — on the header naming the group its entries came from — while the
+  /// stage plays the file's own picture and never draws this one. Empty leaves
+  /// the header as plain text.
   final String cover;
 
   /// The sidecar a preview can read danmaku from, when the module wrote one.

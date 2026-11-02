@@ -50,6 +50,7 @@ import 'package:pure_live/shared/shared.dart'
         DanmakuFormat,
         LiveWindow,
         applyFullscreenOrientation,
+        cachedImage,
         danmakuFileFor,
         playerBarrageConfig,
         playerInk,
@@ -62,7 +63,9 @@ import 'package:pure_live/shared/shared.dart'
 /// The page is the app's own player over a list: the stage on the left, the
 /// entries on the right on a wide window and as a second view on a phone.
 /// Modules hand it their finished files and nothing else — a recording centre,
-/// a download manager and the local media page all get the same page.
+/// a download manager and the local media page all get the same page. The stage
+/// is a video stage: audio belongs to the music module's own player page, which
+/// already carries the artwork, the lyric run and the transport.
 ///
 /// [onDeleted] hears of a file the viewer deleted from the page, after it is
 /// gone from disk: the list that owns the item (a recording task, a download
@@ -916,11 +919,16 @@ final class _PreviewList extends StatelessWidget {
     for (var index = 0; index < items.length; index++) {
       final group = items[index].groupLabel.trim();
       if (group.isNotEmpty && group != seen) {
+        final under = items.where((item) => item.groupLabel.trim() == group).toList();
         lines.add(
           _PreviewLine.header(
             group,
-            items.where((item) => item.groupLabel.trim() == group).length,
+            under.length,
             items[index].groupPath,
+            // The group's own picture, said once over the rows that repeat the
+            // same series title thirty times. A task queued before the queue
+            // kept covers has none, so the first one the group holds wins.
+            under.map((item) => item.cover.trim()).firstWhere((cover) => cover.isNotEmpty, orElse: () => ''),
           ),
         );
         seen = group;
@@ -971,6 +979,7 @@ final class _PreviewList extends StatelessWidget {
                   label: header,
                   count: lines[position].count,
                   folder: lines[position].folder,
+                  cover: lines[position].cover,
                   onOpen: onOpenGroup,
                 );
               }
@@ -1159,8 +1168,8 @@ String previewFolderOf(MediaPreviewItem item) => p.dirname(item.path);
 /// One line of the preview list: an entry, or the header naming the folder the
 /// entries under it came from.
 final class _PreviewLine {
-  const _PreviewLine.item(this.index) : group = null, count = 0, folder = '';
-  const _PreviewLine.header(this.group, this.count, this.folder) : index = -1;
+  const _PreviewLine.item(this.index) : group = null, count = 0, folder = '', cover = '';
+  const _PreviewLine.header(this.group, this.count, this.folder, this.cover) : index = -1;
 
   final int index;
   final String? group;
@@ -1169,16 +1178,24 @@ final class _PreviewLine {
   /// The folder the header names, which is what its button opens — the label is
   /// the room's title, not a path anyone can show in a file manager.
   final String folder;
+
+  /// The group's picture, empty when none of its entries carries one.
+  final String cover;
 }
 
 /// The group's own line: what it is, how many it holds, and the one verb a
-/// folder answers to on its own — showing it in the file manager.
+/// folder answers to on its own — showing it in the file manager. Its picture
+/// sits here rather than on every row under it, because thirty episodes of one
+/// series share it.
 final class _PreviewHeader extends StatelessWidget {
-  const _PreviewHeader({required this.label, required this.count, required this.folder, this.onOpen});
+  const _PreviewHeader({required this.label, required this.count, required this.folder, this.cover = '', this.onOpen});
 
   final String label;
   final int count;
   final String folder;
+
+  /// The series' or room's picture; empty leaves the line as the text it was.
+  final String cover;
 
   /// Null leaves the header as plain text, which is all a list without folders
   /// can offer.
@@ -1193,6 +1210,20 @@ final class _PreviewHeader extends StatelessWidget {
       child: Row(
         spacing: DsSpace.s6,
         children: [
+          if (cover.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(theme.radii.control(28)),
+              child: SizedBox(
+                width: 28,
+                height: 28,
+                child: DsImage(
+                  image: cachedImage(cover),
+                  aspectRatio: 1,
+                  semanticLabel: label,
+                  fallback: const ColoredBox(color: playerInkHover),
+                ),
+              ),
+            ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
