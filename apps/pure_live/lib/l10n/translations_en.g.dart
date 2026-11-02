@@ -1467,14 +1467,14 @@ class _Translations$music$en extends Translations$music$zh_CN {
 	@override String get downloadsEmptyTitle => 'No downloads yet';
 	@override String get downloadsEmptyDescription => 'Download from a song row’s menu and it appears here.';
 	@override String get localAddFolder => 'Add a folder';
-	@override String get localHint => 'Add a folder of audio files; the scan makes them play like online songs.';
+	@override String get localHint => 'Songs you download are scanned in on their own; add a folder of audio files and they play like online songs.';
 	@override String localFiles({required Object count}) => '${count} files';
 	@override String get localRescan => 'Scan again';
 	@override String get localFolders => 'Music folders';
 	@override String get localRemoveFolder => 'Remove the folder';
 	@override String get localFailed => 'The scan failed';
 	@override String get localEmptyTitle => 'No local music yet';
-	@override String get localEmptyDescription => 'Add a folder of audio files to start scanning.';
+	@override String get localEmptyDescription => 'Downloaded songs land in this list by themselves. To play files you already have, add a folder of audio.';
 	@override String localFolderFailed({required Object error}) => 'Cannot add the folder: ${error}';
 	@override String get playbackRate => 'Playback speed';
 	@override String get preservesPitch => 'Pitch compensation';
@@ -5970,14 +5970,14 @@ extension on TranslationsEn {
 			'music.downloadsEmptyTitle' => 'No downloads yet',
 			'music.downloadsEmptyDescription' => 'Download from a song row’s menu and it appears here.',
 			'music.localAddFolder' => 'Add a folder',
-			'music.localHint' => 'Add a folder of audio files; the scan makes them play like online songs.',
+			'music.localHint' => 'Songs you download are scanned in on their own; add a folder of audio files and they play like online songs.',
 			'music.localFiles' => ({required Object count}) => '${count} files',
 			'music.localRescan' => 'Scan again',
 			'music.localFolders' => 'Music folders',
 			'music.localRemoveFolder' => 'Remove the folder',
 			'music.localFailed' => 'The scan failed',
 			'music.localEmptyTitle' => 'No local music yet',
-			'music.localEmptyDescription' => 'Add a folder of audio files to start scanning.',
+			'music.localEmptyDescription' => 'Downloaded songs land in this list by themselves. To play files you already have, add a folder of audio.',
 			'music.localFolderFailed' => ({required Object error}) => 'Cannot add the folder: ${error}',
 			'music.playbackRate' => 'Playback speed',
 			'music.preservesPitch' => 'Pitch compensation',

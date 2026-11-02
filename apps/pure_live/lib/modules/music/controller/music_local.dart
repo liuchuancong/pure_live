@@ -6,13 +6,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:live_storage/live_storage.dart' show StoragePrefs;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
+import 'package:path/path.dart' as p;
+
+import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
+import 'package:pure_live/modules/music/controller/music_downloads.dart' show musicDownloadsProvider;
 
 /// The preference the local-music folders are kept under.
 const String kMusicLocalRootsKey = 'music.local.roots';
 
-/// What the local view holds: the folders, the files they yielded, whether a
-/// scan is running and the last failure.
-typedef MusicLocalState = ({List<String> roots, List<audio.MusicTrack> tracks, bool loading, String? error});
+/// What the local view holds: the folder the app downloads into, the folders the
+/// viewer added, the files they yielded, whether a scan is running and the last
+/// failure.
+typedef MusicLocalState = ({
+  String downloadRoot,
+  List<String> roots,
+  List<audio.MusicTrack> tracks,
+  bool loading,
+  String? error,
+});
 
 List<String> _readRoots() {
   try {
@@ -37,20 +48,56 @@ Future<void> _writeRoots(List<String> roots) async {
   }
 }
 
-/// The device's own music: the folders the viewer added, scanned into tracks.
+/// The files the queue has settled, as one stable string. The queue republishes
+/// on every progress tick, so a listener on the list itself would rescan the
+/// library a dozen times a minute; what decides whether the library has anything
+/// new to read is this set — a download landing adds a path, a file deleted from
+/// the queue takes one away.
+String _settledPaths(List<audio.MusicDownloadTask> tasks) {
+  final paths = [
+    for (final task in tasks)
+      if (task.status == audio.MusicDownloadStatus.completed || task.status == audio.MusicDownloadStatus.skipped)
+        task.outputPath,
+  ]..sort();
+  return paths.join('|');
+}
+
+/// The device's own music: the folder the app downloads into, the folders the
+/// viewer added, and the files they hold.
 ///
 /// The scan is the engine's [audio.LocalMusicSource], so the local files are
 /// ordinary songs in the queue — mixed with streamed ones, with the sidecar
 /// `.lrc` read by the same lyric pipeline.
+///
+/// The download folder is a root whether or not anyone added it: a song the
+/// viewer downloaded is a file on their device, and until now it sat outside the
+/// library until they pointed at the same folder by hand. It is not a choice, so
+/// it is not stored in [kMusicLocalRootsKey] and offers no way to be dropped —
+/// and moving the download folder in settings moves the root with it, because
+/// this reads it from the storage layout rather than remembering a path.
 final class MusicLocalController extends Notifier<MusicLocalState> {
   int _generation = 0;
 
   @override
   MusicLocalState build() {
+    final downloadRoot = ref.watch(appPathsProvider).music.path;
     final roots = _readRoots();
+    ref.listen(musicDownloadsProvider, (previous, next) {
+      if (_settledPaths(previous ?? const []) == _settledPaths(next)) return;
+      // The current state, not the roots captured here: a folder added after
+      // this build belongs to the next scan.
+      unawaited(_scan(state.downloadRoot, state.roots));
+    });
+    final folders = _folders(downloadRoot, roots);
     // Deferred: the scan writes state, and build has not returned yet.
-    if (roots.isNotEmpty) unawaited(Future<void>.microtask(() => _scan(roots)));
-    return (roots: roots, tracks: const <audio.MusicTrack>[], loading: roots.isNotEmpty, error: null);
+    if (folders.isNotEmpty) unawaited(Future<void>.microtask(() => _scan(downloadRoot, roots)));
+    return (
+      downloadRoot: downloadRoot,
+      roots: roots,
+      tracks: const <audio.MusicTrack>[],
+      loading: folders.isNotEmpty,
+      error: null,
+    );
   }
 
   /// Adds a folder to the library and scans it.
@@ -58,9 +105,9 @@ final class MusicLocalController extends Notifier<MusicLocalState> {
     final normalized = path.trim();
     if (normalized.isEmpty || state.roots.contains(normalized)) return;
     final roots = [...state.roots, normalized];
-    state = (roots: roots, tracks: state.tracks, loading: true, error: null);
+    state = (downloadRoot: state.downloadRoot, roots: roots, tracks: state.tracks, loading: true, error: null);
     await _writeRoots(roots);
-    await _scan(roots);
+    await _scan(state.downloadRoot, roots);
   }
 
   /// Drops a folder and rescans what is left.
@@ -69,29 +116,53 @@ final class MusicLocalController extends Notifier<MusicLocalState> {
       for (final root in state.roots)
         if (root != path) root,
     ];
-    state = (roots: roots, tracks: state.tracks, loading: true, error: null);
+    state = (downloadRoot: state.downloadRoot, roots: roots, tracks: state.tracks, loading: true, error: null);
     await _writeRoots(roots);
-    await _scan(roots);
+    await _scan(state.downloadRoot, roots);
   }
 
   /// Scans the current folders again.
-  Future<void> rescan() => _scan(state.roots);
+  Future<void> rescan() => _scan(state.downloadRoot, state.roots);
 
-  Future<void> _scan(List<String> roots) async {
+  /// The folders a scan reads: the download folder first, then what the viewer
+  /// added. One place named twice — the download folder added by hand, or a
+  /// parent of it — is read once, because the same file arriving under two root
+  /// paths is two rows for one song.
+  static List<String> _folders(String downloadRoot, List<String> roots) {
+    final out = <String, String>{};
+    for (final path in [downloadRoot, ...roots]) {
+      final trimmed = path.trim();
+      if (trimmed.isEmpty) continue;
+      out.putIfAbsent(p.canonicalize(trimmed), () => trimmed);
+    }
+    return out.values.toList();
+  }
+
+  Future<void> _scan(String downloadRoot, List<String> roots) async {
     final generation = ++_generation;
-    if (roots.isEmpty) {
+    final folders = _folders(downloadRoot, roots);
+    if (folders.isEmpty) {
       if (!ref.mounted) return;
-      state = (roots: const [], tracks: const [], loading: false, error: null);
+      state = (downloadRoot: downloadRoot, roots: roots, tracks: const [], loading: false, error: null);
       return;
     }
-    state = (roots: roots, tracks: state.tracks, loading: true, error: null);
+    state = (downloadRoot: downloadRoot, roots: roots, tracks: state.tracks, loading: true, error: null);
     try {
-      final tracks = await audio.LocalMusicSource(roots: roots).listTracks();
+      final found = await audio.LocalMusicSource(roots: folders).listTracks();
       if (!ref.mounted || generation != _generation) return;
-      state = (roots: roots, tracks: tracks, loading: false, error: null);
+      // One file, one row: a root nested inside another yields the same path
+      // twice, and a list that counts a song twice tells the viewer nothing new.
+      final tracks = <audio.MusicTrack>[];
+      final seen = <String>{};
+      for (final track in found) {
+        final path = track.localPath;
+        if (path != null && !seen.add(p.canonicalize(path))) continue;
+        tracks.add(track);
+      }
+      state = (downloadRoot: downloadRoot, roots: roots, tracks: tracks, loading: false, error: null);
     } on Object catch (failure) {
       if (!ref.mounted || generation != _generation) return;
-      state = (roots: roots, tracks: state.tracks, loading: false, error: '$failure');
+      state = (downloadRoot: downloadRoot, roots: roots, tracks: state.tracks, loading: false, error: '$failure');
     }
   }
 }

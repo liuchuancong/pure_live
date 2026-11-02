@@ -4099,8 +4099,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '添加文件夹'
 	String get localAddFolder => '添加文件夹';
 
-	/// zh-CN: '添加本机音乐文件夹，扫描后会像在线歌曲一样播放。'
-	String get localHint => '添加本机音乐文件夹，扫描后会像在线歌曲一样播放。';
+	/// zh-CN: '下载的歌会自己扫进来；添加本机音乐文件夹后，它们和在线歌曲一样能播。'
+	String get localHint => '下载的歌会自己扫进来；添加本机音乐文件夹后，它们和在线歌曲一样能播。';
 
 	/// zh-CN: '{count} 个文件'
 	String localFiles({required Object count}) => '${count} 个文件';
@@ -4120,8 +4120,8 @@ class Translations$music$zh_CN {
 	/// zh-CN: '还没有本地音乐'
 	String get localEmptyTitle => '还没有本地音乐';
 
-	/// zh-CN: '添加一个存放音频文件的文件夹开始扫描。'
-	String get localEmptyDescription => '添加一个存放音频文件的文件夹开始扫描。';
+	/// zh-CN: '下载的歌会自己进到这个列表；要放本机已有的文件，添加一个存放音频的文件夹。'
+	String get localEmptyDescription => '下载的歌会自己进到这个列表；要放本机已有的文件，添加一个存放音频的文件夹。';
 
 	/// zh-CN: '无法添加文件夹：{error}'
 	String localFolderFailed({required Object error}) => '无法添加文件夹：${error}';
@@ -14427,14 +14427,14 @@ extension on Translations {
 			'music.downloadsEmptyTitle' => '还没有下载任务',
 			'music.downloadsEmptyDescription' => '在歌曲行的「更多」里下载，文件会出现在这里。',
 			'music.localAddFolder' => '添加文件夹',
-			'music.localHint' => '添加本机音乐文件夹，扫描后会像在线歌曲一样播放。',
+			'music.localHint' => '下载的歌会自己扫进来；添加本机音乐文件夹后，它们和在线歌曲一样能播。',
 			'music.localFiles' => ({required Object count}) => '${count} 个文件',
 			'music.localRescan' => '重新扫描',
 			'music.localFolders' => '音乐文件夹',
 			'music.localRemoveFolder' => '移除文件夹',
 			'music.localFailed' => '扫描失败',
 			'music.localEmptyTitle' => '还没有本地音乐',
-			'music.localEmptyDescription' => '添加一个存放音频文件的文件夹开始扫描。',
+			'music.localEmptyDescription' => '下载的歌会自己进到这个列表；要放本机已有的文件，添加一个存放音频的文件夹。',
 			'music.localFolderFailed' => ({required Object error}) => '无法添加文件夹：${error}',
 			'music.playbackRate' => '播放速度',
 			'music.preservesPitch' => '音调补偿',

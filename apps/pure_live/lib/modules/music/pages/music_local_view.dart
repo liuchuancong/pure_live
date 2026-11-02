@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
+import 'package:path/path.dart' as p;
 
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_library.dart' show musicFavouritesProvider;
@@ -126,6 +127,13 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
     final theme = DsTheme.of(context);
     final state = ref.watch(musicLocalProvider);
     final controller = ref.read(musicLocalProvider.notifier);
+    // A root that names the download folder is not listed again: that folder is
+    // read either way, and one line per place is enough to steer by.
+    final downloadKey = state.downloadRoot.trim().isEmpty ? null : p.canonicalize(state.downloadRoot);
+    final added = [
+      for (final root in state.roots)
+        if (root.trim().isNotEmpty && p.canonicalize(root) != downloadKey) root,
+    ];
     final playingId = ref.watch(musicPlayerProvider.select((state) => state.track?.id));
     final player = ref.read(musicPlayerProvider.notifier);
     final favourites = ref.watch(musicFavouritesProvider);
@@ -155,7 +163,9 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
               MusicToolAction(
                 label: t.music.localRescan,
                 icon: DsIcons.refreshCw,
-                available: state.roots.isNotEmpty,
+                // The download folder is always scanned, so there is always a
+                // folder to read again.
+                available: true,
                 onPressed: state.loading ? null : () => unawaited(controller.rescan()),
               ),
               MusicToolAction(
@@ -214,13 +224,24 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
               ],
             ),
           ),
-        if (state.roots.isNotEmpty)
+        if (added.isNotEmpty || state.downloadRoot.trim().isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(DsSpace.s20, 0, DsSpace.s20, DsSpace.s8),
             child: DsListSection(
               header: Text(t.music.localFolders),
               children: [
-                for (final root in state.roots)
+                // The folder the app writes downloads into is read whether or
+                // not anyone added it, so it gets no remove verb: dropping it
+                // would hide every song the viewer already downloaded, and the
+                // way to leave it out is to move the download folder in
+                // settings, which moves this root with it.
+                if (state.downloadRoot.trim().isNotEmpty)
+                  DsListRow(
+                    leading: const DsIcon(DsIcons.folder),
+                    title: Text(state.downloadRoot, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    description: Text(t.music.downloadDirectory, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ),
+                for (final root in added)
                   DsListRow(
                     leading: const DsIcon(DsIcons.folder),
                     title: Text(root, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -316,8 +337,3 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
     );
   }
 }
-
-/// 下载: the queue's tasks with their progress and the verbs each state has.
-/// 下载管理: the queue as a library — a summary of what is on disk, the three
-/// filters the station's own manager carries, and one row per file (its art,
-/// its facts and, once it is on disk, its play verb).
