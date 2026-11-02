@@ -1,7 +1,6 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_platform/live_platform.dart' show PlatformKind;
 
 import 'package:pure_live/app/app.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -154,14 +153,14 @@ final class MobileLayout extends ConsumerWidget {
     final tabs = bottomTabsOf(module);
     final atTab = tabs.contains(selected);
     final current = atTab ? selected : tabs.first;
-    // Liquid glass (A01.5, the reference's `liquidGlass`): on the phone
-    // shell the bottom bar floats over the page as a frosted capsule and
-    // the page scrolls visibly under it; off keeps the full-width bar.
-    final glass = ref.watch(liquidGlassProvider);
-    final glassBlur = liquidGlassBlurs(
-      android: ref.watch(platformKindProvider) == PlatformKind.android,
-      memoryMegabytes: ref.watch(deviceMemoryMegabytesProvider).value,
-    );
+    // The unified glass decides the phone's bottom bar: with the glass on it
+    // floats over the page as a frosted capsule the page scrolls visibly
+    // under — the subtle (G1) navigation tier; with it off the bar is the
+    // plain full-width surface. Low-memory Android and a system asking for
+    // fewer effects drop the frost but keep the floating shape.
+    final glassPolicy = ref.watch(liveGlassPolicyProvider);
+    final glass = glassPolicy.enabled;
+    final glassBlur = glassPolicy.frost;
     final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
     final navBar = DsBottomNav<NavigationItem>(
       variant: DsBottomNavVariant.bar,

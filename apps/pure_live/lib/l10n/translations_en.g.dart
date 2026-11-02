@@ -2543,8 +2543,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get themeSeedDynamicDescription => 'Chosen by the system while dynamic colour is on; turn it off to pick an accent.';
 	@override String get dynamicColor => 'Dynamic colour';
 	@override String get dynamicColorDescription => 'Builds the theme from the wallpaper or accent colour.';
-	@override String get liquidGlass => 'Liquid glass';
-	@override String get liquidGlassDescription => 'The home bar turns to frosted glass; under 4 GB it is translucent only.';
 	@override String get themeColorTitle => 'Accent colour';
 	@override String get themeColorPresets => 'Presets';
 	@override String get themeColorCustom => 'Custom colour';
@@ -3285,10 +3283,21 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundClearDescription => 'Back to the theme colour; saved media stays.';
 	@override String get backgroundClear => 'Clear background';
 	@override String get backgroundGlass => 'Interface glass';
-	@override String get backgroundGlassEnable => 'Enabled';
-	@override String get backgroundGlassDescription => 'Cards, lists, text fields, dialogs and panels turn translucent, the wallpaper showing through; menus, tooltips and toasts stay opaque so they stay readable.';
+	@override String get backgroundGlassDescription => 'The glass material on cards, lists, text fields and floating layers: a translucent fill over a background blur, so the wallpaper shows through. Every tier keeps a readability floor, so no setting can make text unreadable.';
+	@override String get backgroundGlassMode => 'Glass mode';
+	@override String get backgroundGlassModeSystem => 'Follow system';
+	@override String get backgroundGlassModeAlways => 'Always on';
+	@override String get backgroundGlassModeReduced => 'Reduce glass';
+	@override String get backgroundGlassModeOff => 'Off';
+	@override String get backgroundGlassStrength => 'Glass strength';
+	@override String get backgroundGlassStrengthDescription => 'The frost radius and how clear the glass reads; lower leans toward a solid surface.';
+	@override String get backgroundGlassOpacity => 'Background opacity';
+	@override String get backgroundGlassOpacityDescription => 'How transparent the floating layers aim; smart lifts them with a busy wallpaper and the readability floor, high/low pin each tier\'s range.';
+	@override String get backgroundGlassOpacitySmart => 'Smart';
+	@override String get backgroundGlassOpacityHigh => 'High opacity';
+	@override String get backgroundGlassOpacityLow => 'Low opacity';
 	@override String get backgroundGlassFill => 'Panel fill';
-	@override String get backgroundGlassFillDescription => 'Fill opacity; lower shows more wallpaper and less contrast.';
+	@override String get backgroundGlassFillDescription => 'A card fill\'s opacity; lower shows more wallpaper and less contrast.';
 	@override String get checkUpdate => 'Check for updates';
 	@override String get checkUpdateDesc => 'Reads the newest version from the project’s releases.';
 	@override String get checkingUpdate => 'Checking for updates…';
@@ -6938,8 +6947,6 @@ extension on TranslationsEn {
 			'settings.themeSeedDynamicDescription' => 'Chosen by the system while dynamic colour is on; turn it off to pick an accent.',
 			'settings.dynamicColor' => 'Dynamic colour',
 			'settings.dynamicColorDescription' => 'Builds the theme from the wallpaper or accent colour.',
-			'settings.liquidGlass' => 'Liquid glass',
-			'settings.liquidGlassDescription' => 'The home bar turns to frosted glass; under 4 GB it is translucent only.',
 			'settings.themeColorTitle' => 'Accent colour',
 			'settings.themeColorPresets' => 'Presets',
 			'settings.themeColorCustom' => 'Custom colour',
@@ -7035,10 +7042,10 @@ extension on TranslationsEn {
 			'settings.githubMirrorSourceCustom' => 'Custom',
 			'settings.githubMirrorStrategyPrefix' => 'prefix proxy',
 			'settings.githubMirrorStrategyRaw' => 'raw host replacement',
-			_ => null,
-		} ?? switch (path) {
 			'settings.githubMirrorStrategyJsdelivr' => 'jsDelivr path',
 			'settings.toolsOrder' => 'Tools order',
+			_ => null,
+		} ?? switch (path) {
 			'settings.toolsOrderDesc' => 'The order of the tools under the sidebar\'s divider.',
 			'settings.moveUp' => 'Move up',
 			'settings.moveDown' => 'Move down',
@@ -7549,10 +7556,10 @@ extension on TranslationsEn {
 			'settings.optionNoOutput' => 'No output',
 			'settings.playerAdvancedRequiresMpv' => 'These options only affect the mpv engine.',
 			'settings.recordingDescription' => 'Recording folder, file naming and the size cap.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.preferredQuality' => 'Preferred quality',
 			'settings.preferredQualityDesc' => 'The quality a room opens with; nearest level when missing.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.preferredQualityCellular' => 'Preferred quality on cellular',
 			'settings.preferredQualityCellularDesc' => 'Quality on mobile data; Wi-Fi and wired keep the default above.',
 			'settings.qualityAuto' => 'Automatic (site default)',
@@ -7684,10 +7691,21 @@ extension on TranslationsEn {
 			'settings.backgroundClearDescription' => 'Back to the theme colour; saved media stays.',
 			'settings.backgroundClear' => 'Clear background',
 			'settings.backgroundGlass' => 'Interface glass',
-			'settings.backgroundGlassEnable' => 'Enabled',
-			'settings.backgroundGlassDescription' => 'Cards, lists, text fields, dialogs and panels turn translucent, the wallpaper showing through; menus, tooltips and toasts stay opaque so they stay readable.',
+			'settings.backgroundGlassDescription' => 'The glass material on cards, lists, text fields and floating layers: a translucent fill over a background blur, so the wallpaper shows through. Every tier keeps a readability floor, so no setting can make text unreadable.',
+			'settings.backgroundGlassMode' => 'Glass mode',
+			'settings.backgroundGlassModeSystem' => 'Follow system',
+			'settings.backgroundGlassModeAlways' => 'Always on',
+			'settings.backgroundGlassModeReduced' => 'Reduce glass',
+			'settings.backgroundGlassModeOff' => 'Off',
+			'settings.backgroundGlassStrength' => 'Glass strength',
+			'settings.backgroundGlassStrengthDescription' => 'The frost radius and how clear the glass reads; lower leans toward a solid surface.',
+			'settings.backgroundGlassOpacity' => 'Background opacity',
+			'settings.backgroundGlassOpacityDescription' => 'How transparent the floating layers aim; smart lifts them with a busy wallpaper and the readability floor, high/low pin each tier\'s range.',
+			'settings.backgroundGlassOpacitySmart' => 'Smart',
+			'settings.backgroundGlassOpacityHigh' => 'High opacity',
+			'settings.backgroundGlassOpacityLow' => 'Low opacity',
 			'settings.backgroundGlassFill' => 'Panel fill',
-			'settings.backgroundGlassFillDescription' => 'Fill opacity; lower shows more wallpaper and less contrast.',
+			'settings.backgroundGlassFillDescription' => 'A card fill\'s opacity; lower shows more wallpaper and less contrast.',
 			'settings.checkUpdate' => 'Check for updates',
 			'settings.checkUpdateDesc' => 'Reads the newest version from the project’s releases.',
 			'settings.checkingUpdate' => 'Checking for updates…',
@@ -8054,6 +8072,8 @@ extension on TranslationsEn {
 			'settings.hongguoQualityBest' => 'Best',
 			'settings.hongguoQuality1080' => '1080P',
 			'settings.hongguoQuality720' => '720P',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hongguoQuality540' => '540P',
 			'settings.hongguoQuality480' => '480P',
 			'settings.hongguoQuality360' => '360P',
@@ -8063,8 +8083,6 @@ extension on TranslationsEn {
 			'settings.logPageDescription' => 'Record level, file rotation and where they live.',
 			'settings.logRecordGroup' => 'Recording',
 			'settings.logLevel' => 'Record level',
-			_ => null,
-		} ?? switch (path) {
 			'settings.logLevelDesc' => 'Lines below this level are never produced.',
 			'settings.logFile' => 'Write log files',
 			'settings.logFileDesc' => 'Off keeps only the recent lines in memory.',
@@ -8568,6 +8586,8 @@ extension on TranslationsEn {
 			'wallpaper.previewDisplay' => 'Display',
 			'wallpaper.previewVideoNote' => 'An applied wallpaper keeps looping muted; play, pause and sound here are for the preview only.',
 			'wallpaper.applied' => 'Applied as the background',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceLabel' => 'Source',
 			'wallpaper.retry' => 'Retry',
 			'wallpaper.groupBing' => 'Bing',
@@ -8577,8 +8597,6 @@ extension on TranslationsEn {
 			'wallpaper.sourceBingYingJoy' => 'Bing · random (YingJoy)',
 			'wallpaper.sourceBingW3h5' => 'Bing · W3H5',
 			'wallpaper.sourceBingWumingDaily' => 'Bing daily · Wuming',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.groupAlcy' => 'Alcy',
 			'wallpaper.sourceAlcyRandom' => 'Alcy · random',
 			'wallpaper.sourceAlcyYcy' => 'Alcy · ycy',

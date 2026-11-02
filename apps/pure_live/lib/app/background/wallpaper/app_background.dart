@@ -15,6 +15,7 @@ import 'package:live_uikit_background/live_uikit_background.dart'
         PureBackground,
         SolidBackground,
         VideoBackground;
+import 'package:pure_live/app/background/glass/live_glass.dart' show kLiveGlassCoverFrostSigma;
 import 'package:pure_live/app/background/library/background_presets.dart' show gradientAlignments;
 import 'package:pure_live/app/background/settings/background_settings.dart';
 import 'package:pure_live/app/background/tone/analysis/background_scrim.dart' show backgroundScrimWashFor;
@@ -82,7 +83,10 @@ final class AppBackground extends ConsumerWidget {
     final colors = DsTheme.colorsOf(context);
     final overlay = appBackgroundOverlay(context, opacity: scrim, blurSigma: settings.backgroundBlurSigma);
     final underlay = SolidBackground(color: colors.canvas);
-    final letterbox = settings.fit == BoxFit.cover || settings.fit == BoxFit.fill ? null : 24.0;
+    // The letterbox band a `contain`-style fit leaves shows the same picture
+    // frosted; one shared cover-frost sigma so the preview and the live
+    // wallpaper blur it identically.
+    final letterbox = settings.fit == BoxFit.cover || settings.fit == BoxFit.fill ? null : kLiveGlassCoverFrostSigma;
     switch (settings.kind) {
       case BackgroundKind.none:
         return null;

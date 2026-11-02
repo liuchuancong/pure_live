@@ -117,7 +117,6 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   // Appearance.
   ('theme.mode', BackupPrefKind.string),
   ('theme.dynamicColor', BackupPrefKind.boolean),
-  ('theme.liquidGlass', BackupPrefKind.boolean),
   ('theme.seed', BackupPrefKind.string),
   ('theme.corners', BackupPrefKind.string),
   ('theme.density', BackupPrefKind.string),
@@ -140,7 +139,9 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('background.mask', BackupPrefKind.floating),
   ('background.followTone', BackupPrefKind.boolean),
   ('background.overlayBlur', BackupPrefKind.floating),
-  ('background.glass', BackupPrefKind.boolean),
+  ('background.glassMode', BackupPrefKind.string),
+  ('background.glassStrength', BackupPrefKind.floating),
+  ('background.glassOpacity', BackupPrefKind.string),
   ('background.glassFill', BackupPrefKind.floating),
   // Playback and the flying layer's own look.
   ('playback.quality', BackupPrefKind.string),

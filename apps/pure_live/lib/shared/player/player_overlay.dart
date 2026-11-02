@@ -3,6 +3,7 @@ import 'dart:ui' show ImageFilter, TileMode;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:pure_live/app/background/glass/live_glass.dart' show LiveGlassLevel;
 
 /// The ink an overlay draws on a picture: white whatever the app's theme,
 /// because the frame behind it is dark and the theme's own text would turn
@@ -19,6 +20,12 @@ const Color playerInkHover = Color(0x24FFFFFF);
 
 /// One frosted chip over the picture: a dark glass the frame's own motion
 /// bleeds through, rounded to a pill, quiet enough to sit under words.
+///
+/// The frost is the subtle (G1) level's radius — the player-control tier the
+/// glass ladder assigns to a floating control bar — so no magic sigma lives
+/// here; the dark fill stays fixed rather than the theme's overlay, because
+/// the backdrop is a video that can be any colour and the white ink over it
+/// must not depend on the app's light/dark pick.
 final class PlayerGlassPill extends StatelessWidget {
   /// The pill's contents.
   const PlayerGlassPill({required this.child, super.key});
@@ -28,10 +35,11 @@ final class PlayerGlassPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final frost = LiveGlassLevel.subtle.blurSigma;
     return ClipRRect(
       borderRadius: BorderRadius.circular(DsRadii.pill),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14, tileMode: TileMode.decal),
+        filter: ImageFilter.blur(sigmaX: frost, sigmaY: frost, tileMode: TileMode.decal),
         child: Container(
           decoration: BoxDecoration(color: const Color(0x59000000), borderRadius: BorderRadius.circular(DsRadii.pill)),
           child: child,

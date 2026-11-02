@@ -120,25 +120,56 @@ final class BackgroundOverviewPane extends ConsumerWidget {
             ),
           ],
         ),
-        // One panel fill: the theme's surface and field tokens turn
-        // translucent (cards, lists, text fields, the room's own columns) and
-        // the settled floating layers (dialogs, panels, popovers, toolbars,
-        // the bottom navigation) follow it; menus, tooltips and toasts stay
-        // opaque so they can be read over a wallpaper.
+        // The glass: one material decision for the whole app. The mode sets
+        // whether surfaces frost at all, the strength how hard, the opacity
+        // tier how transparent the floating layers aim, and the panel fill how
+        // much of the wallpaper shows through a card. Every tier keeps its own
+        // readability floor, so none of these can make text unreadable.
         DsListSection(
           header: Text(t.settings.backgroundGlass),
           children: [
-            DsListRow(
+            SettingsChoiceRow<BackgroundGlassMode>(
               leading: const DsIcon(DsIcons.layers),
-              title: Text(t.settings.backgroundGlassEnable),
-              description: Text(t.settings.backgroundGlassDescription),
-              trailing: DsSwitch(
-                value: settings.glass,
-                onChanged: (value) => controller.setGlass(value: value),
-              ),
+              title: t.settings.backgroundGlassMode,
+              description: t.settings.backgroundGlassDescription,
+              value: settings.glassMode,
+              options: [
+                DsSelectOption(value: BackgroundGlassMode.system, label: t.settings.backgroundGlassModeSystem),
+                DsSelectOption(value: BackgroundGlassMode.always, label: t.settings.backgroundGlassModeAlways),
+                DsSelectOption(value: BackgroundGlassMode.reduced, label: t.settings.backgroundGlassModeReduced),
+                DsSelectOption(value: BackgroundGlassMode.off, label: t.settings.backgroundGlassModeOff),
+              ],
+              onChanged: controller.setGlassMode,
             ),
-            // The fill exists only while the glass does.
-            if (settings.glass) ...[
+            // The strength, opacity tier and fill exist only while the glass
+            // does.
+            if (settings.glassMode != BackgroundGlassMode.off) ...[
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.slidersHorizontal),
+                title: t.settings.backgroundGlassStrength,
+                description: t.settings.backgroundGlassStrengthDescription,
+                detail: Text('${settings.glassStrength.round()}%'),
+                controlWidth: 220,
+                control: DsSlider(
+                  value: settings.glassStrength,
+                  max: 100,
+                  divisions: 20,
+                  onChanged: controller.setGlassStrength,
+                  semanticLabel: t.settings.backgroundGlassStrength,
+                ),
+              ),
+              SettingsChoiceRow<BackgroundGlassOpacity>(
+                leading: const DsIcon(DsIcons.contrast),
+                title: t.settings.backgroundGlassOpacity,
+                description: t.settings.backgroundGlassOpacityDescription,
+                value: settings.glassOpacity,
+                options: [
+                  DsSelectOption(value: BackgroundGlassOpacity.smart, label: t.settings.backgroundGlassOpacitySmart),
+                  DsSelectOption(value: BackgroundGlassOpacity.high, label: t.settings.backgroundGlassOpacityHigh),
+                  DsSelectOption(value: BackgroundGlassOpacity.low, label: t.settings.backgroundGlassOpacityLow),
+                ],
+                onChanged: controller.setGlassOpacity,
+              ),
               SettingsConfigRow(
                 leading: const DsIcon(DsIcons.droplet),
                 title: t.settings.backgroundGlassFill,
@@ -146,8 +177,11 @@ final class BackgroundOverviewPane extends ConsumerWidget {
                 detail: Text('${(settings.glassFill * 100).round()}%'),
                 controlWidth: 220,
                 control: DsSlider(
+                  // Floored: the wallpaper can show through a card, never so
+                  // much that the card loses its own words.
                   value: settings.glassFill,
-                  divisions: 20,
+                  min: kBackgroundGlassFillFloor,
+                  divisions: 10,
                   onChanged: controller.setGlassFill,
                   semanticLabel: t.settings.backgroundGlassFill,
                 ),

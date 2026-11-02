@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 import 'package:path/path.dart' as p;
+import 'package:pure_live/app/background/glass/live_glass.dart' show kLiveGlassHeroFrostSigma;
 import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPathsProvider;
 import 'package:pure_live/app/routing/navigation/route_names.dart' show RouteNames;
 import 'package:pure_live/l10n/translations.dart';
@@ -76,7 +77,7 @@ final class _MusicPlayerPageState extends ConsumerState<MusicPlayerPage> {
                 Positioned.fill(
                   child: ClipRect(
                     child: ImageFiltered(
-                      imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
+                      imageFilter: ImageFilter.blur(sigmaX: kLiveGlassHeroFrostSigma, sigmaY: kLiveGlassHeroFrostSigma),
                       child: Transform.scale(
                         scale: 1.5,
                         child: Image(image: cachedImage(cover.toString()), fit: BoxFit.cover),

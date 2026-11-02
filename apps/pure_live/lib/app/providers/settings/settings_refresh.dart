@@ -24,7 +24,6 @@ import 'package:pure_live/app/providers/settings/splash_settings_provider.dart' 
 import 'package:pure_live/app/providers/settings/update_settings_provider.dart' show updateSettingsProvider;
 import 'package:pure_live/app/providers/theme/dynamic_color_provider.dart'
     show dynamicColorProvider, dynamicColorSeedProvider;
-import 'package:pure_live/app/providers/theme/liquid_glass_provider.dart' show liquidGlassProvider;
 import 'package:pure_live/app/providers/theme/text_scale_provider.dart' show textScaleFactorProvider;
 import 'package:pure_live/features/account/douyu_cookie_saved_at.dart' show douyuCookieSavedAtProvider;
 import 'package:pure_live/features/backup/backup.dart';
@@ -162,7 +161,6 @@ final List<ProviderOrFamily> kSettingsProviders = [
   matchVideoFrameRateProvider,
   dynamicColorProvider,
   dynamicColorSeedProvider,
-  liquidGlassProvider,
   splashSettingsProvider,
   textScaleFactorProvider,
   updateSettingsProvider,

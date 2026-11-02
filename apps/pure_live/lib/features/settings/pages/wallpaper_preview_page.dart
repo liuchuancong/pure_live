@@ -1449,7 +1449,7 @@ final class _Backdrop extends StatelessWidget {
             child: Transform.scale(
               scale: 1.2,
               child: ImageFiltered(
-                imageFilter: ui.ImageFilter.blur(sigmaX: 48, sigmaY: 48),
+                imageFilter: ui.ImageFilter.blur(sigmaX: kLiveGlassCoverFrostSigma, sigmaY: kLiveGlassCoverFrostSigma),
                 child: Image(image: picture, fit: BoxFit.cover, gaplessPlayback: true),
               ),
             ),

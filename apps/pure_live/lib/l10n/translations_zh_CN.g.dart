@@ -7201,12 +7201,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '用系统壁纸或强调色生成主题。'
 	String get dynamicColorDescription => '用系统壁纸或强调色生成主题。';
 
-	/// zh-CN: '液体玻璃'
-	String get liquidGlass => '液体玻璃';
-
-	/// zh-CN: '首页底栏变毛玻璃；4 GB 以下机型只半透明。'
-	String get liquidGlassDescription => '首页底栏变毛玻璃；4 GB 以下机型只半透明。';
-
 	/// zh-CN: '主题色'
 	String get themeColorTitle => '主题色';
 
@@ -9427,17 +9421,50 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '界面玻璃'
 	String get backgroundGlass => '界面玻璃';
 
-	/// zh-CN: '启用'
-	String get backgroundGlassEnable => '启用';
+	/// zh-CN: '卡片、列表、输入框与浮层的玻璃材质：半透明填充加背景模糊，壁纸从中透出。每一级都有可读性下限，调到最低也不会让文字看不清。'
+	String get backgroundGlassDescription => '卡片、列表、输入框与浮层的玻璃材质：半透明填充加背景模糊，壁纸从中透出。每一级都有可读性下限，调到最低也不会让文字看不清。';
 
-	/// zh-CN: '卡片、列表、输入框与弹窗、面板半透明，壁纸从中透出；菜单、提示、Toast 保持不透明以保证能看清。'
-	String get backgroundGlassDescription => '卡片、列表、输入框与弹窗、面板半透明，壁纸从中透出；菜单、提示、Toast 保持不透明以保证能看清。';
+	/// zh-CN: '玻璃模式'
+	String get backgroundGlassMode => '玻璃模式';
+
+	/// zh-CN: '跟随系统'
+	String get backgroundGlassModeSystem => '跟随系统';
+
+	/// zh-CN: '始终开启'
+	String get backgroundGlassModeAlways => '始终开启';
+
+	/// zh-CN: '降低玻璃效果'
+	String get backgroundGlassModeReduced => '降低玻璃效果';
+
+	/// zh-CN: '关闭玻璃'
+	String get backgroundGlassModeOff => '关闭玻璃';
+
+	/// zh-CN: '玻璃强度'
+	String get backgroundGlassStrength => '玻璃强度';
+
+	/// zh-CN: '模糊半径与通透感；越低越接近实体背景。'
+	String get backgroundGlassStrengthDescription => '模糊半径与通透感；越低越接近实体背景。';
+
+	/// zh-CN: '背景透明度'
+	String get backgroundGlassOpacity => '背景透明度';
+
+	/// zh-CN: '浮层透到多少；智能会按壁纸复杂度与可读性自动抬升，高/低锁到该级允许的档位。'
+	String get backgroundGlassOpacityDescription => '浮层透到多少；智能会按壁纸复杂度与可读性自动抬升，高/低锁到该级允许的档位。';
+
+	/// zh-CN: '智能适配'
+	String get backgroundGlassOpacitySmart => '智能适配';
+
+	/// zh-CN: '高不透明度'
+	String get backgroundGlassOpacityHigh => '高不透明度';
+
+	/// zh-CN: '低不透明度'
+	String get backgroundGlassOpacityLow => '低不透明度';
 
 	/// zh-CN: '面板填充'
 	String get backgroundGlassFill => '面板填充';
 
-	/// zh-CN: '底色的不透明度；越低壁纸越透，文字越弱。'
-	String get backgroundGlassFillDescription => '底色的不透明度；越低壁纸越透，文字越弱。';
+	/// zh-CN: '卡片底色的不透明度；越低壁纸越透，文字越弱。'
+	String get backgroundGlassFillDescription => '卡片底色的不透明度；越低壁纸越透，文字越弱。';
 
 	/// zh-CN: '检查更新'
 	String get checkUpdate => '检查更新';
@@ -15297,8 +15324,6 @@ extension on Translations {
 			'settings.themeSeedDynamicDescription' => '动态取色开启时由系统决定；关闭后可自选主题色。',
 			'settings.dynamicColor' => '动态取色',
 			'settings.dynamicColorDescription' => '用系统壁纸或强调色生成主题。',
-			'settings.liquidGlass' => '液体玻璃',
-			'settings.liquidGlassDescription' => '首页底栏变毛玻璃；4 GB 以下机型只半透明。',
 			'settings.themeColorTitle' => '主题色',
 			'settings.themeColorPresets' => '预设颜色',
 			'settings.themeColorCustom' => '自定义颜色',
@@ -15394,10 +15419,10 @@ extension on Translations {
 			'settings.githubMirrorSourceCustom' => '自定义',
 			'settings.githubMirrorStrategyPrefix' => '前缀代理',
 			'settings.githubMirrorStrategyRaw' => '替换 Raw 域名',
-			_ => null,
-		} ?? switch (path) {
 			'settings.githubMirrorStrategyJsdelivr' => 'jsDelivr 路径',
 			'settings.toolsOrder' => '工具区排序',
+			_ => null,
+		} ?? switch (path) {
 			'settings.toolsOrderDesc' => '侧栏分区线下方工具的显示顺序。',
 			'settings.moveUp' => '上移',
 			'settings.moveDown' => '下移',
@@ -15908,10 +15933,10 @@ extension on Translations {
 			'settings.optionNoOutput' => '无输出',
 			'settings.playerAdvancedRequiresMpv' => '这些选项只对 mpv 内核生效。',
 			'settings.recordingDescription' => '录制目录、文件命名与容量上限。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.preferredQuality' => '首选画质',
 			'settings.preferredQualityDesc' => '进房间的首选清晰度；没有同名档位就近选择。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.preferredQualityCellular' => '蜂窝网络首选画质',
 			'settings.preferredQualityCellularDesc' => '移动数据下的清晰度；Wi-Fi 与有线沿用上面的首选。',
 			'settings.qualityAuto' => '自动（站点默认）',
@@ -16043,10 +16068,21 @@ extension on Translations {
 			'settings.backgroundClearDescription' => '回到主题底色，已保存的媒体仍保留。',
 			'settings.backgroundClear' => '清除背景',
 			'settings.backgroundGlass' => '界面玻璃',
-			'settings.backgroundGlassEnable' => '启用',
-			'settings.backgroundGlassDescription' => '卡片、列表、输入框与弹窗、面板半透明，壁纸从中透出；菜单、提示、Toast 保持不透明以保证能看清。',
+			'settings.backgroundGlassDescription' => '卡片、列表、输入框与浮层的玻璃材质：半透明填充加背景模糊，壁纸从中透出。每一级都有可读性下限，调到最低也不会让文字看不清。',
+			'settings.backgroundGlassMode' => '玻璃模式',
+			'settings.backgroundGlassModeSystem' => '跟随系统',
+			'settings.backgroundGlassModeAlways' => '始终开启',
+			'settings.backgroundGlassModeReduced' => '降低玻璃效果',
+			'settings.backgroundGlassModeOff' => '关闭玻璃',
+			'settings.backgroundGlassStrength' => '玻璃强度',
+			'settings.backgroundGlassStrengthDescription' => '模糊半径与通透感；越低越接近实体背景。',
+			'settings.backgroundGlassOpacity' => '背景透明度',
+			'settings.backgroundGlassOpacityDescription' => '浮层透到多少；智能会按壁纸复杂度与可读性自动抬升，高/低锁到该级允许的档位。',
+			'settings.backgroundGlassOpacitySmart' => '智能适配',
+			'settings.backgroundGlassOpacityHigh' => '高不透明度',
+			'settings.backgroundGlassOpacityLow' => '低不透明度',
 			'settings.backgroundGlassFill' => '面板填充',
-			'settings.backgroundGlassFillDescription' => '底色的不透明度；越低壁纸越透，文字越弱。',
+			'settings.backgroundGlassFillDescription' => '卡片底色的不透明度；越低壁纸越透，文字越弱。',
 			'settings.checkUpdate' => '检查更新',
 			'settings.checkUpdateDesc' => '从项目的发行页读取最新版本。',
 			'settings.checkingUpdate' => '正在检查更新…',
@@ -16413,6 +16449,8 @@ extension on Translations {
 			'settings.hongguoQualityBest' => '最高',
 			'settings.hongguoQuality1080' => '1080P',
 			'settings.hongguoQuality720' => '720P',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hongguoQuality540' => '540P',
 			'settings.hongguoQuality480' => '480P',
 			'settings.hongguoQuality360' => '360P',
@@ -16422,8 +16460,6 @@ extension on Translations {
 			'settings.logPageDescription' => '记录级别、文件轮转与存放位置。',
 			'settings.logRecordGroup' => '记录',
 			'settings.logLevel' => '记录级别',
-			_ => null,
-		} ?? switch (path) {
 			'settings.logLevelDesc' => '低于此级别的日志不产生。',
 			'settings.logFile' => '写入日志文件',
 			'settings.logFileDesc' => '关闭后只保留内存中的最近日志。',
@@ -16927,6 +16963,8 @@ extension on Translations {
 			'wallpaper.previewVideoNote' => '应用后壁纸仍静音循环；这里的播放、暂停与声音只用于预览。',
 			'wallpaper.previewTitle' => '随机图片预览',
 			'wallpaper.applied' => '已应用为背景',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceLabel' => '来源',
 			'wallpaper.retry' => '重试',
 			'wallpaper.groupBing' => '必应壁纸',
@@ -16936,8 +16974,6 @@ extension on Translations {
 			'wallpaper.sourceBingYingJoy' => '必应随机YingJoy',
 			'wallpaper.sourceBingW3h5' => '必应W3H5',
 			'wallpaper.sourceBingWumingDaily' => '无铭必应每日壁纸',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.groupAlcy' => '栗次元',
 			'wallpaper.sourceAlcyRandom' => '栗次元 · 随机',
 			'wallpaper.sourceAlcyYcy' => '栗次元 · ycy',

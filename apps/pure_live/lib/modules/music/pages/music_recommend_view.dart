@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_core_audio/media_core_audio.dart' as audio;
 
+import 'package:pure_live/app/background/glass/live_glass.dart' show kLiveGlassCoverFrostSigma;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/music/controller/music_browse.dart'
     show musicHistoryAlbumsProvider, musicHistoryArtistsProvider;
@@ -412,7 +413,7 @@ final class MusicRecommendHero extends ConsumerWidget {
                   Positioned.fill(
                     child: ClipRect(
                       child: ImageFiltered(
-                        imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+                        imageFilter: ImageFilter.blur(sigmaX: kLiveGlassCoverFrostSigma, sigmaY: kLiveGlassCoverFrostSigma),
                         child: Opacity(
                           opacity: 0.35,
                           child: Transform.scale(

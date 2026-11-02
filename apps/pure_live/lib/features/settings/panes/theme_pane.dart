@@ -329,19 +329,6 @@ final class ThemePane extends ConsumerWidget {
                   onChanged: (value) => ref.read(dynamicColorProvider.notifier).enabled = value,
                 ),
               ),
-            // A01.5: the phone shell's bottom bar is the only place this
-            // paints, so the desktop profile hides the switch outright
-            // rather than offer a choice that changes nothing there.
-            if (ref.watch(deviceProfileProvider) == DeviceProfile.mobile)
-              DsListRow(
-                leading: const DsIcon(DsIcons.layers),
-                title: Text(t.settings.liquidGlass),
-                description: Text(t.settings.liquidGlassDescription),
-                trailing: DsSwitch(
-                  value: ref.watch(liquidGlassProvider),
-                  onChanged: (value) => unawaited(ref.read(liquidGlassProvider.notifier).set(value: value)),
-                ),
-              ),
             SettingsChoiceRow<DsContrast>(
               leading: const DsIcon(DsIcons.contrast),
               title: t.settings.contrast,

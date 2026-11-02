@@ -12,7 +12,9 @@ import 'package:live_shell_desktop/live_shell_desktop.dart' show DesktopInvalida
 import 'package:live_uikit_background/live_uikit_background.dart' show AppVisibilityObserver;
 import 'package:multiview_desktop/multiview_desktop.dart' show MultiViewDesktop;
 import 'package:pure_live/app/background/glass/app_component_glass.dart' show AppComponentGlass;
-import 'package:pure_live/app/background/settings/background_settings.dart' show backgroundSettingsProvider;
+import 'package:pure_live/app/background/glass/live_glass.dart' show liveGlassPanelFill;
+import 'package:pure_live/app/background/settings/background_settings.dart'
+    show BackgroundGlassMode, backgroundSettingsProvider;
 import 'package:pure_live/app/background/tone/background_tone.dart' show backgroundToneProvider;
 import 'package:pure_live/app/background/wallpaper/app_background.dart' show AppBackground;
 import 'package:pure_live/app/bootstrap/live_scroll_behavior.dart' show LiveScrollBehavior;
@@ -362,17 +364,17 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
         : _settings.rebuild((b) => b..seed = DsSeed.color(activeDynamicSeed));
     // The glass turns the theme's own surface transparent, so cards, lists
     // and hand-painted panels read the wallpaper too — not just the floating
-    // layers below.
-    final glass = ref.watch<(bool, double)>(
-      backgroundSettingsProvider.select((state) => (state.glass, state.glassFill)),
-    );
+    // layers below. The panel fill is floored and busy-wallpaper raised.
+    final background = ref.watch(backgroundSettingsProvider);
     // The wallpaper picks the ink: with one painting behind the pages, its
     // measured brightness decides whether the app wears its light or dark
     // palette, so text never sits dark-on-dark. The viewer can turn this off
     // and keep their own choice; no tone (no wallpaper, or a measurement
     // still on its way) does the same.
-    final followTone = ref.watch(backgroundSettingsProvider.select((settings) => settings.followTone));
-    final tone = followTone ? ref.watch(backgroundToneProvider) : null;
+    final tone = background.followTone ? ref.watch(backgroundToneProvider) : null;
+    // The palette the panel fill scores against: the wallpaper's own pick when
+    // following, else the viewer's mode; the raise is small either way.
+    final panelDark = tone?.dark ?? _settings.mode == DsThemeMode.dark;
     // The translation provider is one per process, above every window (see
     // the entry points): slang keys it with a process-wide GlobalKey, so a
     // second copy inside a second window's tree is a duplicate key.
@@ -390,7 +392,11 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
       localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate],
       debugShowCheckedModeBanner: false,
       themeMode: tone == null ? _settings.mode : (tone.dark ? DsThemeMode.dark : DsThemeMode.light),
-      theme: AppComponentGlass.themeOf(themeSettings.theme(), glass: glass.$1, fill: glass.$2),
+      theme: AppComponentGlass.themeOf(
+        themeSettings.theme(),
+        glass: background.glassMode != BackgroundGlassMode.off,
+        fill: liveGlassPanelFill(settings: background, tone: tone, dark: panelDark),
+      ),
       builder: (context, child) {
         final core = AppComponentGlass(
           child: LiveAlertWatcher(

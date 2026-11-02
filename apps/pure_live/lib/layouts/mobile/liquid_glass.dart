@@ -2,12 +2,15 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:pure_live/app/app.dart' show LiveGlassLevel;
 
 /// The sizes of the floating glass bar (A01.5), the reference's
 /// `GlassMetrics` for the same bar.
 abstract final class LiquidGlassMetrics {
-  /// The blur's sigma behind the glass.
-  static const double blurSigma = 24;
+  /// The blur's sigma behind the glass: the subtle (G1) navigation tier, so
+  /// the phone's floating bar frosts at the same radius the themed bottom
+  /// navigation does and no magic number lives here.
+  static double get blurSigma => LiveGlassLevel.subtle.blurSigma;
 
   /// The capsule's corners.
   static const double barRadius = 34;

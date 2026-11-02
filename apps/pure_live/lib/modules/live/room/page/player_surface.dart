@@ -1030,7 +1030,7 @@ final class _RoomCoverBackdrop extends StatelessWidget {
     if (cover.isEmpty) return const SizedBox.shrink();
     return RepaintBoundary(
       child: ImageFiltered(
-        imageFilter: ImageFilter.blur(sigmaX: 26, sigmaY: 26),
+        imageFilter: ImageFilter.blur(sigmaX: kLiveGlassCoverFrostSigma, sigmaY: kLiveGlassCoverFrostSigma),
         child: Image(
           image: cachedImage(cover),
           fit: BoxFit.cover,

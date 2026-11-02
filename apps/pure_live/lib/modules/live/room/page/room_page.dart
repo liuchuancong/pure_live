@@ -1573,8 +1573,10 @@ Future<void> _toggleAutoRecord(BuildContext context, WidgetRef ref, LiveRoom det
 ///
 /// The glass is the theme's own surface, not the player's fixed ink: the words
 /// inside wear the theme's colours, so a light app gets a milky card and a dark
-/// one an inked card. The blur keeps the picture legible as motion behind it
-/// without letting it compete with the text.
+/// one an inked card. The frost is the standard (G2) level's radius — the tier
+/// the glass ladder assigns to a floating panel — so no magic sigma lives here;
+/// it keeps the picture legible as motion behind it without letting it compete
+/// with the text.
 final class _RoomChatGlass extends StatelessWidget {
   const _RoomChatGlass({required this.child});
 
@@ -1586,10 +1588,11 @@ final class _RoomChatGlass extends StatelessWidget {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final radius = BorderRadius.circular(theme.radii.card);
+    final frost = LiveGlassLevel.standard.blurSigma;
     return ClipRRect(
       borderRadius: radius,
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24, tileMode: TileMode.decal),
+        filter: ImageFilter.blur(sigmaX: frost, sigmaY: frost, tileMode: TileMode.decal),
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: colors.surface.withValues(alpha: 0.86),

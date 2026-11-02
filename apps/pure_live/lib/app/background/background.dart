@@ -3,6 +3,7 @@
 library;
 
 export 'glass/app_component_glass.dart';
+export 'glass/live_glass.dart';
 export 'library/background_library.dart';
 export 'library/background_library_catalog.dart';
 export 'library/background_library_models.dart';

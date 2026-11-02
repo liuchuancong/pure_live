@@ -82,9 +82,9 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       'dynamic color monet material you wallpaper system accent 动态取色 壁纸 系统取色 莫奈',
     ),
     _hit(
-      SettingsSection.theme,
-      s.liquidGlass,
-      'liquid glass frosted blur capsule bottom bar transparency 液体玻璃 毛玻璃 玻璃 悬浮 底栏 透明 模糊',
+      SettingsSection.background,
+      s.backgroundGlass,
+      'glass frosted blur capsule bottom bar transparency liquid glass 界面玻璃 液体玻璃 毛玻璃 玻璃 悬浮 底栏 透明 模糊',
     ),
     _hit(SettingsSection.theme, s.corners, 'corner radius round 圆角 直角 胶囊'),
     _hit(SettingsSection.theme, s.contrast, 'contrast border 对比度 边界'),

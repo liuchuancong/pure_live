@@ -45,6 +45,44 @@ enum BackgroundScrimMode {
   custom,
 }
 
+/// When the app wears glass over the wallpaper.
+enum BackgroundGlassMode {
+  /// On unless the system itself asks for fewer effects (reduce-motion or
+  /// high contrast demote the frost, they never take the fill away).
+  system,
+
+  /// On however the system feels about it.
+  always,
+
+  /// On, but capped light: the glass thins and the frost softens.
+  reduced,
+
+  /// Solid theme surfaces everywhere; no fill, no frost.
+  off,
+}
+
+/// How transparent the floating layers aim to be. Each level still keeps
+/// its own readability floor — no mode can push a layer under it.
+enum BackgroundGlassOpacity {
+  /// Each level's designed opacity, raised automatically on a busy
+  /// wallpaper.
+  smart,
+
+  /// Every layer moves most of the way toward solid.
+  high,
+
+  /// Every layer may go as transparent as its readability floor allows.
+  low,
+}
+
+/// The lowest panel fill the glass accepts: below this the wallpaper wins
+/// over the words sitting on it.
+const double kBackgroundGlassFillFloor = 0.8;
+
+/// The strength a fresh install starts at: a clear frost and each level's
+/// designed opacity, with room left to dial it down, never up past the spec.
+const double kBackgroundGlassStrengthDefault = 70;
+
 /// The image formats the importer accepts, in the order the page names them.
 const List<String> kBackgroundImageExtensions = [
   'jpg', 'jpeg', 'jfif', 'png', 'webp', 'gif', 'bmp', 'avif', 'heic', 'heif', 'tif', 'tiff', 'ico',
@@ -97,8 +135,10 @@ final class BackgroundSettings {
     this.scrimOpacity = 0.45,
     this.followTone = true,
     this.backgroundBlurSigma = 0,
-    this.glass = false,
-    this.glassFill = 0.6,
+    this.glassMode = BackgroundGlassMode.off,
+    this.glassStrength = kBackgroundGlassStrengthDefault,
+    this.glassOpacity = BackgroundGlassOpacity.smart,
+    this.glassFill = kBackgroundGlassFillFloor,
     this.busy = false,
     this.error = '',
   });
@@ -146,16 +186,24 @@ final class BackgroundSettings {
   /// backdrop, not the scrim above it.
   final double backgroundBlurSigma;
 
-  /// Whether the app's surfaces wear the glass fill and frost
-  /// ([glassFill]) instead of the theme's opaque kinds.
-  final bool glass;
+  /// When the app's surfaces wear glass fill and frost instead of the
+  /// theme's opaque kinds; [BackgroundGlassMode.off] keeps every surface
+  /// solid.
+  final BackgroundGlassMode glassMode;
 
-  /// The panel fill: how opaque a card, list or floating layer's own
-  /// background is, so the wallpaper reads through it.
+  /// How hard the glass works: the frost radius and how far each layer moves
+  /// from solid toward its designed opacity, on a 0–100 scale. It never
+  /// pushes a layer below that level's readability floor.
+  final double glassStrength;
+
+  /// How transparent the floating layers aim to be; every choice still keeps
+  /// each level's readability floor.
+  final BackgroundGlassOpacity glassOpacity;
+
+  /// The panel fill: how opaque a card, list or text field's own background
+  /// is, so the wallpaper reads through it. Never below
+  /// [kBackgroundGlassFillFloor].
   final double glassFill;
-
-  /// Gaussian sigma behind a floating layer; 0 keeps it translucent but
-  /// sharp. Surfaces that cannot frost (cards, lists) keep the fill alone.
 
   /// An upload is being copied into the app's data area.
   final bool busy;
@@ -187,7 +235,9 @@ final class BackgroundSettings {
     double? scrimOpacity,
     bool? followTone,
     double? backgroundBlurSigma,
-    bool? glass,
+    BackgroundGlassMode? glassMode,
+    double? glassStrength,
+    BackgroundGlassOpacity? glassOpacity,
     double? glassFill,
     bool? busy,
     String? error,
@@ -206,7 +256,9 @@ final class BackgroundSettings {
     scrimOpacity: scrimOpacity ?? this.scrimOpacity,
     followTone: followTone ?? this.followTone,
     backgroundBlurSigma: backgroundBlurSigma ?? this.backgroundBlurSigma,
-    glass: glass ?? this.glass,
+    glassMode: glassMode ?? this.glassMode,
+    glassStrength: glassStrength ?? this.glassStrength,
+    glassOpacity: glassOpacity ?? this.glassOpacity,
     glassFill: glassFill ?? this.glassFill,
     busy: busy ?? this.busy,
     error: error ?? this.error,
@@ -231,8 +283,14 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
   static const _scrimModeKey = 'background.scrimMode';
   static const _followToneKey = 'background.followTone';
   static const _backgroundBlurKey = 'background.overlayBlur';
-  static const _glassKey = 'background.glass';
+  static const _glassModeKey = 'background.glassMode';
+  static const _glassStrengthKey = 'background.glassStrength';
+  static const _glassOpacityKey = 'background.glassOpacity';
   static const _glassFillKey = 'background.glassFill';
+  // An older build stored the glass as a single on/off bool under this name;
+  // a saved file still using it reads as always-on (or off), so an upgrade
+  // keeps the viewer's glass exactly as they left it.
+  static const _legacyGlassKey = 'background.glass';
 
   @override
   BackgroundSettings build() {
@@ -264,13 +322,40 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
         scrimOpacity: (StoragePrefs.getDouble(_scrimKey) ?? 0.45).clamp(0.0, 0.8),
         followTone: StoragePrefs.getBool(_followToneKey) ?? true,
         backgroundBlurSigma: (StoragePrefs.getDouble(_backgroundBlurKey) ?? 0).clamp(0.0, 24.0),
-        glass: StoragePrefs.getBool(_glassKey) ?? false,
-        glassFill: (StoragePrefs.getDouble(_glassFillKey) ?? 0.6).clamp(0.0, 1.0),
+        glassMode: _readGlassMode(),
+        glassStrength: (StoragePrefs.getDouble(_glassStrengthKey) ?? kBackgroundGlassStrengthDefault).clamp(
+          0.0,
+          100.0,
+        ),
+        glassOpacity: BackgroundGlassOpacity.values.firstWhere(
+          (value) => value.name == StoragePrefs.getString(_glassOpacityKey),
+          orElse: () => BackgroundGlassOpacity.smart,
+        ),
+        glassFill: (StoragePrefs.getDouble(_glassFillKey) ?? kBackgroundGlassFillFloor).clamp(
+          kBackgroundGlassFillFloor,
+          1.0,
+        ),
       );
     } on Object {
       // Storage never opened: the defaults stand.
       return const BackgroundSettings();
     }
+  }
+
+  /// The saved glass mode; an older file that only knows the on/off bool
+  /// comes back as [BackgroundGlassMode.always] when it was on, so the glass
+  /// a viewer already wore survives the upgrade instead of defaulting off.
+  BackgroundGlassMode _readGlassMode() {
+    final stored = StoragePrefs.getString(_glassModeKey);
+    if (stored != null) {
+      return BackgroundGlassMode.values.firstWhere(
+        (value) => value.name == stored,
+        orElse: () => BackgroundGlassMode.off,
+      );
+    }
+    return (StoragePrefs.getBool(_legacyGlassKey) ?? false)
+        ? BackgroundGlassMode.always
+        : BackgroundGlassMode.off;
   }
 
   /// Paints [kind] behind the pages, source or not.
@@ -336,13 +421,21 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
   /// this runs on the backdrop every frame, not on one still.
   void setBackgroundBlur(double sigma) => _update(state.copyWith(backgroundBlurSigma: sigma.clamp(0.0, 24.0)));
 
-  /// Whether surfaces wear the glass fill and frost.
-  void setGlass({required bool value}) => _update(state.copyWith(glass: value));
+  /// When the surfaces wear glass; see [BackgroundGlassMode].
+  void setGlassMode(BackgroundGlassMode mode) => _update(state.copyWith(glassMode: mode));
 
-  /// The panel fill's opacity; 0 lets the wallpaper through untouched.
-  void setGlassFill(double value) => _update(state.copyWith(glassFill: value.clamp(0.0, 1.0)));
+  /// How hard the glass frosts and turns translucent, on a 0–100 scale;
+  /// each level keeps its own readability floor whatever this says.
+  void setGlassStrength(double value) => _update(state.copyWith(glassStrength: value.clamp(0.0, 100.0)));
 
-  /// The frost behind a floating layer; 0 keeps it translucent but sharp.
+  /// How transparent the floating layers aim; see [BackgroundGlassOpacity].
+  void setGlassOpacity(BackgroundGlassOpacity value) => _update(state.copyWith(glassOpacity: value));
+
+  /// The panel fill's opacity; floored at [kBackgroundGlassFillFloor] so the
+  /// wallpaper never wins over the words on it.
+  void setGlassFill(double value) => _update(
+    state.copyWith(glassFill: value.clamp(kBackgroundGlassFillFloor, 1.0)),
+  );
 
   /// Back to the theme's surface; the saved media stays for a reselect.
   void clear() => _update(state.copyWith(kind: BackgroundKind.none, error: ''));
@@ -535,7 +628,9 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
         _scrimKey: value.scrimOpacity,
         _followToneKey: value.followTone,
         _backgroundBlurKey: value.backgroundBlurSigma,
-        _glassKey: value.glass,
+        _glassModeKey: value.glassMode.name,
+        _glassStrengthKey: value.glassStrength,
+        _glassOpacityKey: value.glassOpacity.name,
         _glassFillKey: value.glassFill,
       }).catchError((Object _) {
         // A preference; a closed store loses it.
