@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
@@ -13,6 +13,7 @@ import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show ip
 import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart';
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show iptvStartOfDay;
+import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvNowCell;
 import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage;
 
 /// One watched channel and the record that says when.
@@ -26,8 +27,10 @@ typedef _Watched = ({IptvRecentEntry entry, IptvChannel channel});
 /// live module's history page walks. The group is a filter behind one entry,
 /// exactly as it is on the channel and guide surfaces, and the same rule
 /// follows — a row only names its group while the list runs across more than
-/// one. The head is the module's page head, with the filter and the clearing
-/// at its end.
+/// one. Each row also says what its channel is showing **now**, in the same
+/// cell the channel table reads, because going back to a channel is a question
+/// about this minute and not about the record. The head is the module's page
+/// head, with the filter and the clearing at its end.
 final class IptvRecentPage extends ConsumerStatefulWidget {
   /// The module's history page.
   const IptvRecentPage({super.key});
@@ -41,6 +44,24 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
   /// here rather than on the channels controller: this page reads its own
   /// archive, and the browser's favourites scope and reveal are no part of it.
   String? _group;
+
+  Timer? _tick;
+
+  @override
+  void initState() {
+    super.initState();
+    // The on-air mark and its progress follow the clock, not a reload — the
+    // rule the channel, guide and player surfaces already keep.
+    _tick = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
 
   void _open(IptvChannel channel) {
     unawaited(context.push(RouteNames.iptvPlay.replaceFirst(':channelId', channel.id), extra: channel));
@@ -99,6 +120,14 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
       for (final row in rows)
         if (filter.selectedGroup == null || iptvGroupKeyOf(row.channel) == filter.selectedGroup) row,
     ];
+    // What each listed channel is on air with, read at one shared instant: a
+    // "now" that moved per row would disagree with the progress bar under it.
+    // Skipped whole when the module's 正在播出 switch is off — a guide read is
+    // not work to do for a line nobody asked to see.
+    final moment = DateTime.now();
+    final slots = library == null || !browse.showProgrammeLine
+        ? const <String, IptvProgrammeSlot>{}
+        : {for (final row in shown) row.channel.id: library.programmeSlot(row.channel, now: moment)};
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -136,6 +165,7 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
                             ref,
                             section.rows[index],
                             browse,
+                            slots,
                             nameGroup: filter.selectedGroup == null,
                             // 今天 and 昨天 name the very day the rows
                             // happened on, so their rows only owe the clock;
@@ -154,13 +184,14 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
   }
 
   /// One watched channel: the row language the module's channel list uses —
-  /// logo, name over its dial number, what it is in and when it was left, and
-  /// the one action that takes this record out again.
+  /// logo, name over its dial number, what is on it right now, the record's
+  /// own stamp, and the one action that takes this record out again.
   Widget _row(
     BuildContext context,
     WidgetRef ref,
     _Watched row,
-    IptvBrowseSettings browse, {
+    IptvBrowseSettings browse,
+    Map<String, IptvProgrammeSlot> slots, {
     required bool nameGroup,
     required bool namedDay,
   }) {
@@ -171,6 +202,25 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
     final logo = (channel.entry.tvgLogo ?? '').trim();
     final watched = t.iptv.recentWatched(time: recentTimeLabel(entry.watchedAt, withDate: !namedDay));
     final number = browse.showChannelNumber ? channel.number : null;
+    final stamp = Text(
+      nameGroup ? '${iptvGroupLabel(t, iptvGroupKeyOf(channel))} · $watched' : watched,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: theme.typography.caption.copyWith(color: colors.textSubtle),
+    );
+    final slot = slots[channel.id];
+    // A row says what is on only where the guide answers. Its absence is the
+    // channel table's column to report — a hundred rows each reading
+    // 「暂无节目单」is one sentence said a hundred times.
+    final programme = slot != null && !slot.isEmpty
+        ? ConstrainedBox(
+            // The measure the module's other now-playing lines keep (the
+            // music bar's): a bar that runs the whole width of a wide row
+            // reads as a rule line, not as progress.
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: IptvNowCell(slot: slot),
+          )
+        : null;
     return DsListRow(
       semanticLabel: channel.entry.name,
       leading: DsAvatar(
@@ -192,12 +242,9 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
               '$number',
               style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
             ),
-      description: Text(
-        nameGroup ? '${iptvGroupLabel(t, iptvGroupKeyOf(channel))} · $watched' : watched,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.typography.caption.copyWith(color: colors.textSubtle),
-      ),
+      description: programme == null
+          ? stamp
+          : Column(crossAxisAlignment: CrossAxisAlignment.start, spacing: 2, children: [programme, stamp]),
       trailing: DsButton.icon(
         variant: DsButtonVariant.ghost,
         size: DsSize.sm,

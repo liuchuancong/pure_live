@@ -1,6 +1,7 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:live_iptv/live_iptv.dart' show IptvProgrammeSlot;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
 
@@ -69,6 +70,76 @@ String iptvNumber(int value) {
     out.write(digits[i]);
   }
   return out.toString();
+}
+
+/// What is on the channel: the on-air programme with its progress, the next
+/// one when nothing is on yet, and a quiet "no guide" line when there is no
+/// schedule to read — three facts, drawn as three things.
+///
+/// The channel table's 正在播出 column and its stacked narrow form, and the
+/// 最近观看 rows, all speak it: one guide, one wording for what it answers.
+final class IptvNowCell extends StatelessWidget {
+  /// The cell over [slot] — null while the library has not read it yet.
+  const IptvNowCell({required this.slot, super.key});
+
+  /// What is on and what comes after, as read at one instant.
+  final IptvProgrammeSlot? slot;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DsTheme.colorsOf(context);
+    final theme = DsTheme.of(context);
+    final t = context.t;
+    final current = slot?.current;
+    final next = slot?.next;
+    if (current != null && current.title.isNotEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 2,
+        children: [
+          Row(
+            spacing: DsSpace.s6,
+            children: [
+              DsBadge(label: Text(t.iptv.onAir), status: DsStatus.danger),
+              Flexible(
+                child: Text(
+                  current.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.small.copyWith(color: colors.textMuted),
+                ),
+              ),
+            ],
+          ),
+          // A programme whose length the guide does not know draws no bar:
+          // an indeterminate sweep would read as "loading".
+          if (slot?.progress case final progress?) DsProgressBar(value: progress, semanticLabel: t.iptv.onAir),
+        ],
+      );
+    }
+    if (next != null && next.title.isNotEmpty) {
+      return Row(
+        spacing: DsSpace.s6,
+        children: [
+          DsIcon(DsIcons.clock, size: theme.sizes.iconXs, color: colors.textSubtle),
+          Flexible(
+            child: Text(
+              '${t.iptv.upNext} · ${next.title}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.small.copyWith(color: colors.textSubtle),
+            ),
+          ),
+        ],
+      );
+    }
+    return Text(
+      t.iptv.noGuide,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: theme.typography.small.copyWith(color: colors.textSubtle),
+    );
+  }
 }
 
 /// One icon action in a table row: a quiet square that shows its name on
