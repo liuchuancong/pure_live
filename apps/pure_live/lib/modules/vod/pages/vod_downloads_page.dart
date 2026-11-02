@@ -13,7 +13,7 @@ import 'package:pure_live/features/media_preview/media_preview_item.dart' show M
 import 'package:pure_live/features/media_preview/media_preview_page.dart' show openMediaPreview;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart'
     show confirmClearFinished, downloadStampOf, openDownloadedPath;
-import 'package:pure_live/features/settings/settings.dart' show SettingsChoiceRow, SettingsConfigRow, SettingsHint;
+import 'package:pure_live/features/settings/settings.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/vod/controller/vod_downloads.dart';
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show VodQualityChoice;
@@ -70,7 +70,6 @@ final class VodDownloadsPane extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        SettingsHint(t.vod.downloadManagerHint),
         DsListSection(
           header: Text(t.vod.downloadSettingsTitle),
           children: [
@@ -565,12 +564,9 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           spacing: DsSpace.s3,
                           children: [
-                            Text(
-                              t.vod.downloadManagerTitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.title.copyWith(color: colors.text),
-                            ),
+                            // The page's name belongs to the menu entry that
+                            // opened it; what only this page can answer is how
+                            // big the queue is and where the files land.
                             Text(
                               [
                                 t.vod.downloadTaskCount(count: tasks.length, active: moving),
