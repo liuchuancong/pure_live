@@ -59,8 +59,8 @@ dependency_overrides:
   # RoOriginateError 路径会直接终止进程（debug/release/profile 全档位复现）。
   # 原 override 指向本地 fork F:/flutter_media_session_local（公寓初始化与 SMTC 激活
   # 改为免抛的 HRESULT 直调）；本机没有 F: 盘，全盘也没有该 fork 源码，先按上游
-  # 3.0.9 解析。Windows 真机若复现启动即死，要么补回 fork，要么在本机重建它。
-  flutter_media_session: ^3.0.9
+  # 3.1.0-pre.4 解析（与 media_core_mediasession 的约束一致；它的 init_apartment 处理与 3.0.9 相同）。Windows 真机若复现启动即死，要么补回 fork，要么在本机重建它。
+  flutter_media_session: ^3.1.0-pre.4
   hooks: ^2.2.0
   # 播放内核走本地 C:/Users/XA-158/projects/flutter/media_core（与应用侧的 path 依赖同源，避免 git/path 双源冲突）
   media_core: { path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core }

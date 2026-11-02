@@ -159,7 +159,12 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
         ..paused = false;
       await playback.play(
         LiveSourceRequest(
-          sources: roomSourcesOf(lines, artUri: session.room?.content.coverUrl),
+          sources: roomSourcesOf(
+            lines,
+            title: session.room?.content.title,
+            artist: session.room?.anchor?.name,
+            artUri: session.room?.content.coverUrl,
+          ),
           title: session.room?.content.title ?? '',
           allowEngineFallback: true,
           engineOptions: _storedEngineOptions(),
@@ -300,7 +305,12 @@ final class MultiviewPlaybackController extends Notifier<MultiviewPlaybackState>
       _wire(session, playback);
       await playback.play(
         LiveSourceRequest(
-          sources: roomSourcesOf(lines, artUri: room.content.coverUrl),
+          sources: roomSourcesOf(
+            lines,
+            title: room.content.title,
+            artist: room.anchor?.name,
+            artUri: room.content.coverUrl,
+          ),
           title: room.content.title,
           allowEngineFallback: true,
           engineOptions: _storedEngineOptions(),

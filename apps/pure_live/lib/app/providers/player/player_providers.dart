@@ -8,7 +8,7 @@ import 'package:media_core_better_player/media_core_better_player.dart';
 import 'package:media_core_ijk_player/media_core_ijk_player.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
-import 'package:media_core_mediasession/media_core_mediasession.dart' show mediaSessionArtUriKey;
+import 'package:media_core_mediasession/media_core_mediasession.dart' show mediaSessionArtUriKey, mediaSessionArtistKey;
 import 'package:media_core_mpv_audio/media_core_mpv_audio.dart' show MpvAudioAdapterFactory;
 import 'package:pure_live/app/providers/window/presentation_providers.dart' show presentationDriverProvider;
 
@@ -69,10 +69,8 @@ LivePlaybackController createRoomPlayback({
 }) {
   return LivePlaybackController(
     kernel,
-    onEngineFallbackSources: (nextEngine, current) =>
-        onLinesNeeded().then((lines) => roomSourcesOf(lines, artUri: roomArtUriOf(current))),
-    onRecoverySources: (current) =>
-        onLinesNeeded().then((lines) => roomSourcesOf(lines, artUri: roomArtUriOf(current))),
+    onEngineFallbackSources: (nextEngine, current) => onLinesNeeded().then((lines) => roomSourcesLike(lines, current)),
+    onRecoverySources: (current) => onLinesNeeded().then((lines) => roomSourcesLike(lines, current)),
   );
 }
 
@@ -93,9 +91,14 @@ String? roomArtUriOf(List<PlayerSource> sources) {
 /// own order: each line's own headers ride along, its identity names the
 /// line so the pool and the recovery can tell sources apart.
 ///
-/// [artUri] is the room's cover, published beside the source so a system
-/// media surface can picture a stream that carries no artwork of its own.
-List<PlayerSource> roomSourcesOf(List<LivePlayLine> lines, {String? artUri}) {
+/// [title], [artist] and [artUri] are what the system media surfaces show
+/// (room title, streamer name, room cover): a stream carries none of them,
+/// and without a title the surfaces fall back to the URL's file name.
+List<PlayerSource> roomSourcesOf(List<LivePlayLine> lines, {String? title, String? artist, String? artUri}) {
+  final metadata = <String, Object?>{
+    if (artUri != null && artUri.isNotEmpty) mediaSessionArtUriKey: artUri,
+    if (artist != null && artist.isNotEmpty) mediaSessionArtistKey: artist,
+  };
   return [
     for (final line in lines)
       PlayerSource.of(
@@ -105,9 +108,23 @@ List<PlayerSource> roomSourcesOf(List<LivePlayLine> lines, {String? artUri}) {
         protocol: SourceProtocol.fromScheme(Uri.parse(line.url).scheme),
         format: SourceFormat.fromUri(Uri.parse(line.url)),
         headers: line.headers.isEmpty ? null : SourceHeaders(line.headers.toMap()),
-        metadata: artUri == null || artUri.isEmpty ? null : <String, Object?>{mediaSessionArtUriKey: artUri},
+        title: title == null || title.isEmpty ? null : title,
+        metadata: metadata.isEmpty ? null : metadata,
       ),
   ];
+}
+
+/// The sources for a line switch: fresh lines, the room's surface identity
+/// (title, streamer, cover) read back off the sources that were playing.
+List<PlayerSource> roomSourcesLike(List<LivePlayLine> lines, List<PlayerSource> current) {
+  String? title;
+  String? artist;
+  for (final source in current) {
+    title ??= source.hasTitle ? source.title : null;
+    final value = source.metadataValue(mediaSessionArtistKey);
+    if (value is String && value.isNotEmpty) artist ??= value;
+  }
+  return roomSourcesOf(lines, title: title, artist: artist, artUri: roomArtUriOf(current));
 }
 
 /// One room's live playback controller, keepable between rooms.
@@ -121,10 +138,8 @@ final class RoomPlaybackSession {
   RoomPlaybackSession({required PlayerKernel kernel, required this.backendId}) {
     playback = LivePlaybackController(
       kernel,
-      onEngineFallbackSources: (_, current) =>
-          lineResolver().then((lines) => roomSourcesOf(lines, artUri: roomArtUriOf(current))),
-      onRecoverySources: (current) =>
-          lineResolver().then((lines) => roomSourcesOf(lines, artUri: roomArtUriOf(current))),
+      onEngineFallbackSources: (_, current) => lineResolver().then((lines) => roomSourcesLike(lines, current)),
+      onRecoverySources: (current) => lineResolver().then((lines) => roomSourcesLike(lines, current)),
     );
   }
 

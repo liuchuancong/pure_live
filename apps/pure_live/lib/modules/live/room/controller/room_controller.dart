@@ -1124,7 +1124,12 @@ final class RoomController extends Notifier<RoomState> {
           });
           await playback.play(
             LiveSourceRequest(
-              sources: roomSourcesOf(lines, artUri: room.content.coverUrl),
+              sources: roomSourcesOf(
+                lines,
+                title: room.content.title,
+                artist: room.anchor?.name,
+                artUri: room.content.coverUrl,
+              ),
               title: room.content.title,
               allowEngineFallback: true,
               engineOptions: _storedEngineOptions(),
