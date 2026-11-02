@@ -818,9 +818,6 @@ class _Translations$hongguo$en extends Translations$hongguo$zh_CN {
 	@override String get downloadPauseAll => 'Pause all';
 	@override String get downloadResumeAll => 'Resume all';
 	@override String get downloadClearFinished => 'Clear finished';
-	@override String get downloadFilterAll => 'All';
-	@override String get downloadFilterActive => 'In progress';
-	@override String get downloadFilterDone => 'Finished';
 	@override String get previewTitle => 'Download preview';
 	@override String get previewUnavailable => 'This episode has no finished file yet';
 	@override String get downloadFilterEmpty => 'Nothing under this filter';
@@ -4220,9 +4217,6 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get downloadPauseAll => 'Pause all';
 	@override String get downloadResumeAll => 'Resume all';
 	@override String get downloadClearFinished => 'Clear finished';
-	@override String get downloadFilterAll => 'All';
-	@override String get downloadFilterActive => 'In progress';
-	@override String get downloadFilterDone => 'Finished';
 	@override String get previewTitle => 'Download preview';
 	@override String get previewUnavailable => 'This part has no finished file yet';
 	@override String get downloadFilterEmpty => 'Nothing under this filter';
@@ -5348,9 +5342,6 @@ extension on TranslationsEn {
 			'hongguo.downloadPauseAll' => 'Pause all',
 			'hongguo.downloadResumeAll' => 'Resume all',
 			'hongguo.downloadClearFinished' => 'Clear finished',
-			'hongguo.downloadFilterAll' => 'All',
-			'hongguo.downloadFilterActive' => 'In progress',
-			'hongguo.downloadFilterDone' => 'Finished',
 			'hongguo.previewTitle' => 'Download preview',
 			'hongguo.previewUnavailable' => 'This episode has no finished file yet',
 			'hongguo.downloadFilterEmpty' => 'Nothing under this filter',
@@ -5544,11 +5535,11 @@ extension on TranslationsEn {
 			'iptv.browseProgrammeLine' => 'Show the current programme',
 			'iptv.browseProgrammeLineDesc' => 'Shows the current or next programme under the channel name.',
 			'iptv.browseReset' => 'Reset to defaults',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.groupsEmpty' => 'No groups yet — import a playlist first.',
 			'iptv.groupsHint' => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.',
 			'iptv.recentTitle' => 'Recently watched',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.recentCount' => ({required Object count}) => '${count} channels',
 			'iptv.recentWatched' => ({required Object time}) => 'Watched ${time}',
 			'iptv.recentRemove' => 'Remove from recent',
@@ -6058,11 +6049,11 @@ extension on TranslationsEn {
 			'music.desktopLyricBoldLineDesc' => 'Draws the main lyric line in bold.',
 			'music.desktopLyricBoldExtended' => 'Bold translation and romanization',
 			'music.desktopLyricBoldExtendedDesc' => 'Draws the translation and romanization lines in bold.',
-			_ => null,
-		} ?? switch (path) {
 			'music.desktopLyricStrokeNone' => 'None',
 			'music.desktopLyricColorBlack' => 'Black',
 			'music.desktopLyricColorGray' => 'Gray',
+			_ => null,
+		} ?? switch (path) {
 			'music.desktopLyricAlignment' => 'Alignment',
 			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
 			'music.desktopLyricAlignLeft' => 'Left',
@@ -6572,11 +6563,11 @@ extension on TranslationsEn {
 			'recorder.cacheTitle' => 'Recording cache',
 			'recorder.liveCheckGroup' => 'Live check',
 			'recorder.enablePolling' => 'Enable live detection',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.enablePollingDesc' => 'Automatically poll while the streamer is offline; add a room with “Record when live” in the room’s more menu. Off, waiting rooms and scheduled windows never begin a take on their own — “Start now” still works.',
 			'recorder.pollingOff' => 'Live check is off; waiting and scheduled tasks will not start automatically.',
 			'recorder.pollingEnable' => 'Turn on',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => 'Live check turned on (every ${seconds} s)',
 			'recorder.cacheLimitEnabled' => 'Limit the recording cache',
 			'recorder.cacheLimitEnabledDesc' => 'Delete the oldest finished takes when the cap is exceeded; active recordings are never deleted.',
@@ -7086,11 +7077,11 @@ extension on TranslationsEn {
 			'settings.proxyModeOffDesc' => 'The vod, guide and backup requests all go direct.',
 			'settings.proxyModeSystem' => 'Follow the system proxy',
 			'settings.proxyModeSystemDesc' => 'Uses the HTTP proxy the operating system itself is configured to use, or goes direct when it names none.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxyModeManual' => 'Manual proxy',
 			'settings.proxyModeManualDesc' => 'Uses the host and port typed below.',
 			'settings.proxySystemProbing' => 'Checking the system proxy…',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxySystemResolved' => ({required Object host}) => 'System proxy: ${host}',
 			'settings.proxySystemNone' => 'No system proxy found; requests go direct.',
 			'settings.proxySystemNotExpressible' => 'The system proxy is a PAC script or a non-HTTP proxy, which cannot be applied automatically; set a manual proxy instead.',
@@ -7600,11 +7591,11 @@ extension on TranslationsEn {
 			'settings.playerGuideEntryPresetLowEndTitle' => 'Low-end smooth',
 			'settings.playerGuideEntryPresetLowEndBody' => 'Software decode with capped threads, lowres and a small buffer. For weak CPUs and iGPUs.',
 			'settings.playerGuideEntryPresetWeakNetworkTitle' => 'Weak-network stable',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntryPresetWeakNetworkBody' => 'Bigger buffers and reconnect backoff. Trades memory for fewer stalls.',
 			'settings.playerGuideEntryPresetLowLatencyTitle' => 'Low latency',
 			'settings.playerGuideEntryPresetLowLatencyBody' => 'Minimum buffering + frame dropping. Lowest delay, more hiccups.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryVideoSyncTitle' => '--video-sync',
 			'settings.playerGuideEntryVideoSyncBody' => 'How audio and video clocks align. audio is the mpv default; display-resample is smoothest but GPU heavy and pairs with interpolation; vdrop/drop variants drop frames on drift. Desktop only.',
 			'settings.playerGuideEntryInterpolationTitle' => '--interpolation',
@@ -8114,11 +8105,11 @@ extension on TranslationsEn {
 			'settings.superChatIncludesMembership' => 'Memberships as cards',
 			'settings.superChatIncludesMembershipDesc' => 'Subscriptions get a card too; the chat list stays.',
 			'settings.danmakuShowGifts' => 'Show gifts',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',
 			'settings.floatWindowSizeDesc' => 'Base window size; drag-resizing is remembered per orientation.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.floatWindowSmall' => 'Small',
 			'settings.floatWindowMedium' => 'Medium',
 			'settings.floatWindowLarge' => 'Large',
@@ -8628,19 +8619,16 @@ extension on TranslationsEn {
 			'vod.downloadTaskCount' => ({required int count, required int active}) => '${count} tasks · ${active} active',
 			'vod.downloadRetry' => 'Retry automatically',
 			'vod.downloadRetryDesc' => 'A failed download tries again in the background, carrying on from the bytes already written.',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadRetryOff' => 'No retry',
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} times',
 			'vod.downloadRetryDelay' => 'Retry interval',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadRetryDelayDesc' => 'How long to wait between two automatic retries.',
 			'vod.downloadManagerTitle' => 'Downloads',
 			'vod.downloadPauseAll' => 'Pause all',
 			'vod.downloadResumeAll' => 'Resume all',
 			'vod.downloadClearFinished' => 'Clear finished',
-			'vod.downloadFilterAll' => 'All',
-			'vod.downloadFilterActive' => 'In progress',
-			'vod.downloadFilterDone' => 'Finished',
 			'vod.previewTitle' => 'Download preview',
 			'vod.previewUnavailable' => 'This part has no finished file yet',
 			'vod.downloadFilterEmpty' => 'Nothing under this filter',

@@ -90,29 +90,35 @@ Future<void> _openVodPreview(BuildContext context, WidgetRef ref, VodDownloadIte
 }
 
 /// What a row's phase says about itself, as the table's state column shows it:
-/// the phase, and how far a transfer still owed bytes has got.
+/// the phase, and how far a transfer still owed bytes has got. The phase's name
+/// comes from [_vodPhaseLabel], the same words the filter panel lists it by, so
+/// one phase is not said two ways on one page.
 Widget _vodPhaseBadge(BuildContext context, VodDownloadItem task, {required bool missing}) {
   final t = context.t;
-  return switch (task.phase) {
-    // A finished row whose file the viewer moved or deleted is said here, in
-    // the same words the row's own caption and the facts column use: the record
-    // is true of the transfer, not of the disk.
-    VodDownloadPhase.done when missing => DsBadge(status: DsStatus.danger, label: Text(t.common.previewFileMissing)),
-    VodDownloadPhase.done => DsBadge(status: DsStatus.success, label: Text(t.settings.downloadStatusDone)),
-    // A running row counts itself out loud; a part that never got its total
-    // only says it is moving.
-    VodDownloadPhase.running => DsBadge(
+  // A finished row whose file the viewer moved or deleted is said here, in the
+  // same words the row's own caption and the facts column use: the record is
+  // true of the transfer, not of the disk.
+  if (task.phase == VodDownloadPhase.done && missing) {
+    return DsBadge(status: DsStatus.danger, label: Text(t.common.previewFileMissing));
+  }
+  // A running row counts itself out loud; one that never got its total only
+  // says it is moving.
+  if (task.phase == VodDownloadPhase.running && task.total > 0) {
+    return DsBadge(
       status: DsStatus.info,
-      label: Text(
-        task.total > 0
-            ? t.settings.downloadPercent(percent: '${task.received * 100 ~/ task.total}')
-            : t.settings.downloadStatusRunning,
-      ),
-    ),
-    VodDownloadPhase.queued => DsBadge(label: Text(t.vod.downloadPhaseQueued)),
-    VodDownloadPhase.paused => DsBadge(status: DsStatus.warning, label: Text(t.vod.downloadPhasePaused)),
-    VodDownloadPhase.failed => DsBadge(status: DsStatus.danger, label: Text(t.vod.downloadPhaseFailed)),
-  };
+      label: Text(t.settings.downloadPercent(percent: '${task.received * 100 ~/ task.total}')),
+    );
+  }
+  return DsBadge(
+    status: switch (task.phase) {
+      VodDownloadPhase.done => DsStatus.success,
+      VodDownloadPhase.running => DsStatus.info,
+      VodDownloadPhase.paused => DsStatus.warning,
+      VodDownloadPhase.failed => DsStatus.danger,
+      VodDownloadPhase.queued => DsStatus.neutral,
+    },
+    label: Text(_vodPhaseLabel(t, task.phase)),
+  );
 }
 
 /// The phases in the order a queue reads: what is moving, what waits for a

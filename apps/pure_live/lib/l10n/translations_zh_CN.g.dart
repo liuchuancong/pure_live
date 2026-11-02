@@ -2206,15 +2206,6 @@ class Translations$hongguo$zh_CN {
 	/// zh-CN: '清除已完成'
 	String get downloadClearFinished => '清除已完成';
 
-	/// zh-CN: '全部'
-	String get downloadFilterAll => '全部';
-
-	/// zh-CN: '未完成'
-	String get downloadFilterActive => '未完成';
-
-	/// zh-CN: '已完成'
-	String get downloadFilterDone => '已完成';
-
 	/// zh-CN: '下载预览'
 	String get previewTitle => '下载预览';
 
@@ -12160,15 +12151,6 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '清除已完成'
 	String get downloadClearFinished => '清除已完成';
 
-	/// zh-CN: '全部'
-	String get downloadFilterAll => '全部';
-
-	/// zh-CN: '未完成'
-	String get downloadFilterActive => '未完成';
-
-	/// zh-CN: '已完成'
-	String get downloadFilterDone => '已完成';
-
 	/// zh-CN: '下载预览'
 	String get previewTitle => '下载预览';
 
@@ -13809,9 +13791,6 @@ extension on Translations {
 			'hongguo.downloadPauseAll' => '全部暂停',
 			'hongguo.downloadResumeAll' => '全部继续',
 			'hongguo.downloadClearFinished' => '清除已完成',
-			'hongguo.downloadFilterAll' => '全部',
-			'hongguo.downloadFilterActive' => '未完成',
-			'hongguo.downloadFilterDone' => '已完成',
 			'hongguo.previewTitle' => '下载预览',
 			'hongguo.previewUnavailable' => '这一集还没有下载完成的文件',
 			'hongguo.downloadFilterEmpty' => '这个筛选下没有任务',
@@ -14005,11 +13984,11 @@ extension on Translations {
 			'iptv.browseProgrammeLine' => '显示当前节目',
 			'iptv.browseProgrammeLineDesc' => '频道名下方显示当前或下一档节目。',
 			'iptv.browseReset' => '恢复默认',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.groupsEmpty' => '还没有分组：先导入一份播放列表。',
 			'iptv.groupsHint' => '关掉的分组从频道列表和换台里消失；重开即恢复。',
 			'iptv.recentTitle' => '最近观看',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.recentCount' => ({required Object count}) => '共 ${count} 个频道',
 			'iptv.recentWatched' => ({required Object time}) => '上次观看 ${time}',
 			'iptv.recentRemove' => '从最近观看中移除',
@@ -14519,11 +14498,11 @@ extension on Translations {
 			'music.desktopLyricBoldLineDesc' => '主歌词行以粗体绘制。',
 			'music.desktopLyricBoldExtended' => '加粗翻译、罗马音歌词',
 			'music.desktopLyricBoldExtendedDesc' => '翻译与罗马音副行以粗体绘制。',
-			_ => null,
-		} ?? switch (path) {
 			'music.desktopLyricStrokeNone' => '无',
 			'music.desktopLyricColorBlack' => '黑色',
 			'music.desktopLyricColorGray' => '灰色',
+			_ => null,
+		} ?? switch (path) {
 			'music.desktopLyricAlignment' => '对齐方式',
 			'music.desktopLyricAlignmentDesc' => '歌词在窗口内的水平对齐。',
 			'music.desktopLyricAlignLeft' => '左对齐',
@@ -15033,11 +15012,11 @@ extension on Translations {
 			'recorder.cacheTitle' => '录制缓存',
 			'recorder.liveCheckGroup' => '开播检测',
 			'recorder.enablePolling' => '启用开播检测',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.enablePollingDesc' => '主播未开播时自动轮询；在直播间菜单里选「开播自动录」加入。关掉后等待开播与定时窗口的任务都不会自动开录，仍可手动「立即开录」。',
 			'recorder.pollingOff' => '「开播检测」关着，等待开播与定时窗口的任务不会自动开始。',
 			'recorder.pollingEnable' => '打开',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.pollingEnabledToast' => ({required Object seconds}) => '已打开开播检测（每 ${seconds} 秒检查一次）',
 			'recorder.cacheLimitEnabled' => '限制录制缓存',
 			'recorder.cacheLimitEnabledDesc' => '超过上限时自动删除最旧的已完成录制；正在录制的文件不会被删除。',
@@ -15547,11 +15526,11 @@ extension on Translations {
 			'settings.proxyModeOffDesc' => '点播、节目单与备份的请求都直连。',
 			'settings.proxyModeSystem' => '跟随系统代理',
 			'settings.proxyModeSystemDesc' => '使用操作系统自己配置的 HTTP 代理，没有配置时直连。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.proxyModeManual' => '手动代理',
 			'settings.proxyModeManualDesc' => '使用下方填写的主机与端口。',
 			'settings.proxySystemProbing' => '正在检测系统代理…',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxySystemResolved' => ({required Object host}) => '系统代理：${host}',
 			'settings.proxySystemNone' => '未检测到系统代理，当前直连。',
 			'settings.proxySystemNotExpressible' => '系统代理是 PAC 脚本或非 HTTP 代理，无法自动套用；请改用手动代理。',
@@ -16061,11 +16040,11 @@ extension on Translations {
 			'settings.playerGuideEntryPresetLowEndTitle' => '低配流畅',
 			'settings.playerGuideEntryPresetLowEndBody' => '软解 + 线程上限 2 + lowres 降采样 + 小缓冲。把 CPU 让给画面本身，核显或老机器使用。',
 			'settings.playerGuideEntryPresetWeakNetworkTitle' => '弱网稳定',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerGuideEntryPresetWeakNetworkBody' => '加大缓冲与预读、开启重连退避。用内存换卡顿，跨网或信号边缘时使用。',
 			'settings.playerGuideEntryPresetLowLatencyTitle' => '低延迟',
 			'settings.playerGuideEntryPresetLowLatencyBody' => '最小缓冲 + 双端丢帧。时效优先，代价是更容易卡。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryVideoSyncTitle' => '--video-sync',
 			'settings.playerGuideEntryVideoSyncBody' => '音画时钟对齐方式。audio 是 mpv 默认；display-resample 最平滑但吃 GPU，配合运动插帧使用；带 vdrop/drop 的变体在节奏对不上时丢帧。仅桌面显示。',
 			'settings.playerGuideEntryInterpolationTitle' => '--interpolation',
@@ -16575,11 +16554,11 @@ extension on Translations {
 			'settings.superChatIncludesMembership' => '会员进醒目留言',
 			'settings.superChatIncludesMembershipDesc' => '订阅也生成卡片，聊天列表不变。',
 			'settings.danmakuShowGifts' => '显示礼物',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuShowGiftsDesc' => '值钱礼物飞过画面，更值钱的在顶部停 4 秒；连击只显示开头和总数。',
 			'settings.floatWindowSize' => '小窗大小',
 			'settings.floatWindowSizeDesc' => '悬浮窗基础大小；拖动缩放按横竖屏分别记住。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.floatWindowSmall' => '小',
 			'settings.floatWindowMedium' => '中',
 			'settings.floatWindowLarge' => '大',
@@ -17089,19 +17068,16 @@ extension on Translations {
 			'vod.downloadTaskCount' => ({required int count, required int active}) => '${count} 个任务 · ${active} 个进行中',
 			'vod.downloadRetry' => '自动重试',
 			'vod.downloadRetryDesc' => '失败的下载在后台自动再试，已经下到的字节会接着用。',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadRetryOff' => '不重试',
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} 次',
 			'vod.downloadRetryDelay' => '重试间隔',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadRetryDelayDesc' => '两次自动重试之间等待的时间。',
 			'vod.downloadManagerTitle' => '下载管理',
 			'vod.downloadPauseAll' => '全部暂停',
 			'vod.downloadResumeAll' => '全部继续',
 			'vod.downloadClearFinished' => '清除已完成',
-			'vod.downloadFilterAll' => '全部',
-			'vod.downloadFilterActive' => '未完成',
-			'vod.downloadFilterDone' => '已完成',
 			'vod.previewTitle' => '下载预览',
 			'vod.previewUnavailable' => '这个分P还没有下载完成的文件',
 			'vod.downloadFilterEmpty' => '这个筛选下没有任务',
