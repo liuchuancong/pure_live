@@ -15,7 +15,19 @@ import 'package:pure_live/modules/music/controller/music_playback.dart' show mus
 import 'package:pure_live/modules/music/controller/music_playback_settings.dart' show musicQualityByScriptName;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 import 'package:pure_live/shared/shared.dart'
-    show DownloadDetails, DownloadFilterOption, DownloadWorkspace, LiveWindow, showDownloadDetails;
+    show DownloadDetails, DownloadFilterOption, DownloadWorkspace, LiveWindow, downloadFilePresent, showDownloadDetails;
+
+/// A task whose file is on disk and playable.
+bool _playableTask(audio.MusicDownloadTask task) =>
+    task.status == audio.MusicDownloadStatus.completed || task.status == audio.MusicDownloadStatus.skipped;
+
+/// Whether a finished download's file is still on disk where its row says.
+///
+/// Only a playable task can be missing: a queued, running or paused one is
+/// still writing (the engine keeps its bytes under a scratch name beside the
+/// target), so a missing answer there would call a live transfer a lost file.
+/// One stat per row build — never a folder scan.
+bool _musicFileMissing(audio.MusicDownloadTask task) => _playableTask(task) && !downloadFilePresent(task.outputPath);
 
 final class MusicDownloadsView extends ConsumerStatefulWidget {
   const MusicDownloadsView({super.key});
@@ -42,10 +54,6 @@ enum _DownloadsFilter {
     _DownloadsFilter.done => t.music.downloadFilterDone,
   };
 }
-
-/// A task whose file is on disk and playable.
-bool _playableTask(audio.MusicDownloadTask task) =>
-    task.status == audio.MusicDownloadStatus.completed || task.status == audio.MusicDownloadStatus.skipped;
 
 final class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
   _DownloadsFilter _filter = _DownloadsFilter.all;
@@ -297,7 +305,15 @@ final class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
                       selected: _filter,
                       onSelected: (filter) => setState(() => _filter = filter),
                       list: queueList(wide: true),
-                      details: selectedTask == null ? null : _detailsOf(context, selectedTask, t),
+                      details: selectedTask == null
+                          ? null
+                          : _detailsOf(
+                              context,
+                              selectedTask,
+                              t,
+                              onRemove: () =>
+                                  unawaited(ref.read(musicDownloadsProvider.notifier).remove(selectedTask.id)),
+                            ),
                     )
                   : queueList(wide: false),
             ),
@@ -333,13 +349,15 @@ final class _DownloadRow extends ConsumerWidget {
     final title = task.request.title ?? musicFileNameOf(task.outputPath);
     final artist = task.request.artist ?? '';
     final album = task.request.album ?? '';
-    final playable =
-        task.status == audio.MusicDownloadStatus.completed || task.status == audio.MusicDownloadStatus.skipped;
+    final playable = _playableTask(task);
+    // The file the row claims, asked once: a song the viewer moved out of the
+    // download folder still shows as 已完成 unless someone looks.
+    final missing = _musicFileMissing(task);
     // The art of the row: the downloaded file's own cover once it is on disk,
     // the platform's cover before that — the page shows the songs, not their
     // tasks.
     final preview = _previewTrack(task, local: playable);
-    final status = _statusLabel(t, task);
+    final status = missing ? t.common.previewFileMissing : _statusLabel(t, task);
     final facts = [if (artist.isNotEmpty) artist, if (album.isNotEmpty) album, ?_qualityOf(t, task)];
     final detail = [
       status,
@@ -347,7 +365,7 @@ final class _DownloadRow extends ConsumerWidget {
       if (task.bytesPerSecond > 0 && task.status == audio.MusicDownloadStatus.running)
         '${_bytesText(task.bytesPerSecond)}/s',
       ?_etaOf(t, task),
-      if (playable && task.bytesTotal > 0) _bytesText(task.bytesTotal),
+      if (playable && !missing && task.bytesTotal > 0) _bytesText(task.bytesTotal),
     ].join(' · ');
     return DsListRow(
       selected: selected,
@@ -356,7 +374,8 @@ final class _DownloadRow extends ConsumerWidget {
       // A finished file plays in the module's own player — the preview the
       // download page was missing. In the wide workspace the row's press
       // selects it for the right column instead; its play button still plays.
-      onPressed: onSelect ?? (playable ? onPlay : null),
+      // A row whose file went away has neither, so its press stops.
+      onPressed: onSelect ?? (playable && !missing ? onPlay : null),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s4,
@@ -385,6 +404,7 @@ final class _DownloadRow extends ConsumerWidget {
 
   List<Widget> _actions(BuildContext context, MusicDownloadsController controller, Translations t, WidgetRef ref) {
     final status = task.status;
+    final missing = _musicFileMissing(task);
     if (status == audio.MusicDownloadStatus.failed) {
       return [
         _icon(t.music.downloadRetry, DsIcons.refreshCw, () => unawaited(controller.retry(task.id))),
@@ -405,9 +425,24 @@ final class _DownloadRow extends ConsumerWidget {
       ];
     }
     return [
-      if (task.status == audio.MusicDownloadStatus.completed || task.status == audio.MusicDownloadStatus.skipped)
-        _icon(t.music.play, DsIcons.play, onPlay),
-      _icon(t.music.downloadRemove, DsIcons.trash2, () => unawaited(controller.remove(task.id))),
+      if (_playableTask(task))
+        if (missing)
+          // Nothing to play: the button keeps its place, names the fact, and
+          // stays out of reach rather than handing the player a dead path.
+          DsButton.icon(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            icon: const DsIcon(DsIcons.fileX, size: 16),
+            semanticLabel: t.common.previewFileMissing,
+            onPressed: null,
+          )
+        else
+          _icon(t.music.play, DsIcons.play, onPlay),
+      // Over a file that is gone, the row's only verb is leaving the list; the
+      // word says that instead of 移除, which reads twice.
+      _icon(missing ? t.common.downloadRemoveFromList : t.music.downloadRemove, DsIcons.trash2, () {
+        unawaited(controller.remove(task.id));
+      }),
     ];
   }
 
@@ -421,6 +456,7 @@ final class _DownloadRow extends ConsumerWidget {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final playable = _playableTask(task);
+    final missing = _musicFileMissing(task);
     return DsMenuAnchor(
       semanticLabel: t.common.more,
       align: DsAlign.end,
@@ -445,27 +481,50 @@ final class _DownloadRow extends ConsumerWidget {
           label: Text(t.common.downloadDetails),
           // One construction feeds the menu's sheet and the wide workspace's
           // right column, so the two cannot state different facts.
-          onPressed: () => unawaited(showDownloadDetails(context, _detailsOf(context, task, t))),
+          onPressed: () => unawaited(
+            showDownloadDetails(
+              context,
+              _detailsOf(
+                context,
+                task,
+                t,
+                onRemove: () => unawaited(ref.read(musicDownloadsProvider.notifier).remove(task.id)),
+              ),
+            ),
+          ),
         ),
         if (playable) ...[
           const DsMenuDivider(),
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.externalLink),
-            label: Text(t.settings.downloadOpenFile),
-            onPressed: () => unawaited(openDownloadedPath(context, task.outputPath)),
-          ),
+          // A song whose file was moved elsewhere keeps the folder — what is
+          // left beside it is still worth seeing — and loses the two verbs
+          // that act on the file itself.
+          if (!missing)
+            DsMenuItem(
+              leading: const DsIcon(DsIcons.externalLink),
+              label: Text(t.settings.downloadOpenFile),
+              onPressed: () => unawaited(openDownloadedPath(context, task.outputPath)),
+            ),
           DsMenuItem(
             leading: const DsIcon(DsIcons.folderOpen),
             label: Text(t.settings.downloadManagerOpenFolder),
             onPressed: () => unawaited(openDownloadedPath(context, File(task.outputPath).parent.path)),
           ),
-          DsMenuItem(
-            leading: const DsIcon(DsIcons.trash2),
-            label: Text(t.music.downloadDeleteFile),
-            destructive: true,
-            onPressed: () => unawaited(_deleteFile(context, ref)),
-          ),
+          if (!missing)
+            DsMenuItem(
+              leading: const DsIcon(DsIcons.trash2),
+              label: Text(t.music.downloadDeleteFile),
+              destructive: true,
+              onPressed: () => unawaited(_deleteFile(context, ref)),
+            ),
         ],
+        DsMenuItem(
+          leading: const DsIcon(DsIcons.trash2),
+          // The row's record going on its own: the action a gone file still
+          // has, and the one this menu did not offer before.
+          label: Text(missing ? t.common.downloadRemoveFromList : t.music.downloadRemove),
+          destructive: true,
+          onPressed: () => unawaited(ref.read(musicDownloadsProvider.notifier).remove(task.id)),
+        ),
       ],
     );
   }
@@ -505,8 +564,14 @@ final class _DownloadRow extends ConsumerWidget {
 
 /// The facts the row's 详情 sheet and the wide workspace's right column show
 /// — one construction, so the two cannot drift.
-DownloadDetails _detailsOf(BuildContext context, audio.MusicDownloadTask task, Translations t) {
+DownloadDetails _detailsOf(
+  BuildContext context,
+  audio.MusicDownloadTask task,
+  Translations t, {
+  VoidCallback? onRemove,
+}) {
   final request = task.request;
+  final missing = _musicFileMissing(task);
   final facts = [
     if ((request.artist ?? '').isNotEmpty) request.artist!,
     if ((request.album ?? '').isNotEmpty) request.album!,
@@ -515,14 +580,16 @@ DownloadDetails _detailsOf(BuildContext context, audio.MusicDownloadTask task, T
     title: request.title ?? musicFileNameOf(task.outputPath),
     part: facts.join(' · '),
     coverUrl: request.coverUrl ?? '',
-    status: _statusLabel(t, task),
+    status: missing ? '${t.music.downloadStatusCompleted} · ${t.common.previewFileMissing}' : _statusLabel(t, task),
     savePath: task.outputPath,
     queuedAt: task.startedAt == null ? '' : downloadStampOf(task.startedAt!),
     // The task's attempt is 1-based; a first run is no retry.
     retries: (task.attempt - 1).clamp(0, 1 << 20),
     error: task.error ?? '',
-    onOpenFile: _playableTask(task) ? () => unawaited(openDownloadedPath(context, task.outputPath)) : null,
+    fileMissing: missing,
+    onOpenFile: _playableTask(task) && !missing ? () => unawaited(openDownloadedPath(context, task.outputPath)) : null,
     onOpenFolder: () => unawaited(openDownloadedPath(context, File(task.outputPath).parent.path)),
+    onRemove: onRemove,
   );
 }
 

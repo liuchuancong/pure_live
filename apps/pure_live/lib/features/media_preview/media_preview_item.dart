@@ -14,6 +14,8 @@ final class MediaPreviewItem {
     this.subtitle = '',
     this.cover = '',
     this.danmakuPath,
+    this.groupPath = '',
+    this.groupLabel = '',
   });
 
   /// A stable identity inside the list (a task id, a download id).
@@ -34,6 +36,14 @@ final class MediaPreviewItem {
 
   /// The sidecar a preview can read danmaku from, when the module wrote one.
   final String? danmakuPath;
+
+  /// The folder the list groups this entry under, and the name it shows for
+  /// it. A recording carries the room that made it — `<root>/day/platform/room`
+  /// named as 日期 · 平台 · 直播间 — so the run reads as the tree that filed it
+  /// rather than as a numbered queue. Empty keeps the list flat, which is what a
+  /// download queue wants.
+  final String groupPath;
+  final String groupLabel;
 
   /// Whether the file is still where the list says.
   bool get exists => path.trim().isNotEmpty && _fileExists(path);

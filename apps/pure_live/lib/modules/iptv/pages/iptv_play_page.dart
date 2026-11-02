@@ -14,7 +14,6 @@ import 'package:live_sites/live_sites.dart'
 import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/media_preview/media_preview_page.dart' show openMediaPreview;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_browse_settings.dart' show iptvBrowseSettingsProvider;
@@ -554,7 +553,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
 
   /// The recording identity the recorder centre files this channel under —
   /// the `platform:roomId` shape every task carries.
-  String get _recordingId => 'iptv:${_channel?.id ?? ''}';
+  String get _recordingId => '$kIptvRecordingPlatform:${_channel?.id ?? ''}';
 
   /// Opens the shared preview page on this channel's take, with the other
   /// channels' takes beside it: IPTV records into the recording centre's own
@@ -566,15 +565,22 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     final channel = _channel;
     if (channel == null) return;
     final t = context.t;
-    final takes = recordingPreviewItems(
-      ref.read(recordingTasksProvider).tasks.where((task) => task.platform == 'iptv'),
-    );
-    final index = takes.indexWhere((item) => item.id == 'iptv:${channel.id}');
-    if (index < 0) {
+    // Every take of this channel, read from the tree the recorder wrote. The
+    // task store keys one row per channel, so a list built from it can only ever
+    // show the last session — the second-to-last recording exists on disk and
+    // would stay unreachable from here.
+    final takes = [
+      for (final take in ref.read(recordingLibraryProvider).value ?? const <RecordingTake>[])
+        if (take.platformId == kIptvRecordingPlatform && take.roomId == channel.id && take.playable) take,
+    ];
+    final newest = takes.isEmpty ? null : takes.first;
+    if (newest == null) {
       showDsToast(context: context, title: t.recorder.previewUnavailable, status: DsStatus.warning);
       return;
     }
-    await openMediaPreview(context, title: t.recorder.previewTitle, items: takes, initialIndex: index);
+    // The same door the module's recording page uses: the player's list groups
+    // by day and channel, and a file deleted inside it marks its row.
+    await playRecordingTake(context, ref, around: takes, take: newest, platformName: (_) => t.common.moduleIptv);
   }
 
   /// Starts or stops the channel's recording; answers the engine's reason
@@ -596,7 +602,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     );
     final task = RecordingTask(
       id: _recordingId,
-      platform: 'iptv',
+      platform: kIptvRecordingPlatform,
       roomId: channel.id,
       roomTitle: channel.entry.name,
       state: RecordingTaskState.stopped,

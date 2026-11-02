@@ -1,7 +1,7 @@
 import 'dart:async' show Timer, scheduleMicrotask, unawaited;
 import 'dart:io' show File;
 import 'dart:typed_data' show Uint8List;
-import 'dart:ui' as ui show ImageByteFormat, ImageFilter, PictureRecorder;
+import 'dart:ui' as ui show ImageByteFormat, PictureRecorder;
 
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:desen_ui/desen_ui.dart';
@@ -14,6 +14,7 @@ import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dar
 import 'package:pure_live/features/settings/pages/wallpaper_video_player.dart';
 import 'package:pure_live/features/settings/panes/background_panes.dart' show backgroundFitLabel;
 import 'package:pure_live/features/settings/surface/settings_preview.dart';
+import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow, SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart';
 
@@ -595,18 +596,6 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     return bytes == null ? null : MemoryImage(bytes);
   }
 
-  /// A still for the blurred backdrop: a video's poster when it has one, the
-  /// picture itself otherwise. A clip without a poster keeps the plain scrim.
-  ImageProvider? _backdropImage() {
-    final item = _currentItem;
-    if (item != null) {
-      if (item.thumb.isEmpty || (item.video && item.thumb == item.url)) return null;
-      return imageProviderOf(item.thumb);
-    }
-    final bytes = _bytes;
-    return bytes == null ? null : MemoryImage(bytes);
-  }
-
   void _revealCurrentThumb() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_stripScroll.hasClients) return;
@@ -927,124 +916,104 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     final t = context.t;
     final isVideo = _currentItem?.video ?? false;
     final wide = LiveWindow.isExpanded(MediaQuery.sizeOf(context).width);
-    // The frame follows the app's light or dark skin; the backdrop is the
-    // wallpaper itself, so the page looks the same in either one only where
-    // the media stands.
+    // The page wears the app's own surface, flat like every other settings
+    // page. The wallpaper being judged stands on the stage, not behind the
+    // chrome framing it — a blurred copy of it under the bar would set the
+    // bar's words on a picture instead of on the surface they are read
+    // against.
     return PopScope(
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) _closeGate();
       },
       child: ColoredBox(
         color: DsTheme.colorsOf(context).canvas,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _Backdrop(image: _backdropImage()),
-            SafeArea(child: wide ? _buildDesktop(context, t, isVideo) : _buildMobile(context, t, isVideo)),
-          ],
-        ),
+        child: SafeArea(child: wide ? _buildDesktop(context, t, isVideo) : _buildMobile(context, t, isVideo)),
       ),
     );
   }
 
+  /// The page as a plain surface, not a card set inside one: the bar spans the
+  /// top, the stage takes the larger half and the settings column the rest,
+  /// the same flat framing the other settings pages paint.
   Widget _buildDesktop(BuildContext context, Translations t, bool isVideo) {
-    final theme = DsTheme.of(context);
-    final colors = theme.colors;
-    return Padding(
-      padding: const EdgeInsets.all(DsSpace.s24),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1400, maxHeight: 920),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: colors.border),
-              boxShadow: const [BoxShadow(color: Color(0x99000000), blurRadius: 56, offset: Offset(0, 28))],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Column(
-                children: [
-                  _titleBar(context, t, trailing: widget.subject.downloadable ? _managerButton(t) : null),
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(DsSpace.s16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              spacing: DsSpace.s12,
-                              children: [
-                                Expanded(child: _buildStage(context, t, isVideo, radius: 14)),
-                                if (_stripCount > 0) _buildStrip(context, t),
-                              ],
+    final colors = DsTheme.colorsOf(context);
+    return Column(
+      children: [
+        _titleBar(context, t, trailing: _barTrailing(t)),
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(DsSpace.s16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: DsSpace.s12,
+                    children: [
+                      Expanded(child: _buildStage(context, t, isVideo, radius: 14)),
+                      if (_stripCount > 0) _buildStrip(context, t),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                width: 380,
+                decoration: BoxDecoration(
+                  color: colors.surface,
+                  border: BorderDirectional(start: BorderSide(color: colors.border)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
+                        child: _PreviewSettings(
+                          videoMode: _videoMode,
+                          paintMode: widget.subject.isPaint,
+                          fit: _fit,
+                          onFit: _setFit,
+                          scrimOpacity: _scrimOpacity,
+                          onScrimOpacity: _setScrimOpacity,
+                          backgroundBlur: _backgroundBlurSigma,
+                          onBackgroundBlur: _setBackgroundBlur,
+                          autoPlay: _autoPlay,
+                          interval: _interval,
+                          onAutoPlay: _setAutoPlay,
+                          onInterval: _setInterval,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(DsSpace.s20),
+                      child: Row(
+                        spacing: DsSpace.s8,
+                        children: [
+                          if (widget.subject.downloadable)
+                            DsButton.icon(
+                              variant: DsButtonVariant.secondary,
+                              onPressed: _canCommit && !_downloading ? () => unawaited(_download()) : null,
+                              icon: const DsIcon(DsIcons.download),
+                              semanticLabel: t.settings.downloadAction,
+                            ),
+                          Expanded(
+                            child: DsButton(
+                              loading: _saving,
+                              onPressed: _canCommit && !_saving ? () => unawaited(_apply()) : null,
+                              child: Text(t.settings.backgroundApply),
                             ),
                           ),
-                        ),
-                        Container(
-                          width: 380,
-                          decoration: BoxDecoration(
-                            border: BorderDirectional(start: BorderSide(color: colors.border)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
-                                  child: _PreviewSettings(
-                                    videoMode: _videoMode,
-                                    paintMode: widget.subject.isPaint,
-                                    fit: _fit,
-                                    onFit: _setFit,
-                                    scrimOpacity: _scrimOpacity,
-                                    onScrimOpacity: _setScrimOpacity,
-                                    backgroundBlur: _backgroundBlurSigma,
-                                    onBackgroundBlur: _setBackgroundBlur,
-                                    autoPlay: _autoPlay,
-                                    interval: _interval,
-                                    onAutoPlay: _setAutoPlay,
-                                    onInterval: _setInterval,
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(DsSpace.s20),
-                                child: Row(
-                                  spacing: DsSpace.s8,
-                                  children: [
-                                    if (widget.subject.downloadable)
-                                      DsButton.icon(
-                                        variant: DsButtonVariant.secondary,
-                                        onPressed: _canCommit && !_downloading ? () => unawaited(_download()) : null,
-                                        icon: const DsIcon(DsIcons.download),
-                                        semanticLabel: t.settings.downloadAction,
-                                      ),
-                                    Expanded(
-                                      child: DsButton(
-                                        loading: _saving,
-                                        onPressed: _canCommit && !_saving ? () => unawaited(_apply()) : null,
-                                        child: Text(t.settings.backgroundApply),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -1072,6 +1041,16 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
     semanticLabel: t.settings.downloadManagerTitle,
   );
 
+  /// The bar's top-right corner, at every width: the theme's light/dark/system
+  /// switch first — the wallpaper is judged against the skin it will be worn
+  /// under, so that pick belongs where the picture is seen — then the download
+  /// manager, one tap away while the viewer is picking.
+  Widget _barTrailing(Translations t) => Row(
+    mainAxisSize: MainAxisSize.min,
+    spacing: DsSpace.s4,
+    children: [const ThemeModeToggle(), if (widget.subject.downloadable) _managerButton(t)],
+  );
+
   Widget _buildMobile(BuildContext context, Translations t, bool isVideo) {
     final colors = DsTheme.colorsOf(context);
     return Column(
@@ -1081,9 +1060,10 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
           context,
           t,
           trailing: Row(
-            spacing: DsSpace.s8,
+            mainAxisSize: MainAxisSize.min,
+            spacing: DsSpace.s4,
             children: [
-              if (widget.subject.downloadable) _managerButton(t),
+              _barTrailing(t),
               DsButton.icon(
                 variant: DsButtonVariant.ghost,
                 onPressed: () => unawaited(_openSettingsSheet()),
@@ -1160,6 +1140,13 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
                   child: AppBackgroundScrim(opacity: _scrimOpacity, blurSigma: _backgroundBlurSigma),
                 ),
               ),
+            // The shell's glass, worn over the picture it will sit on: this is
+            // where the interface-glass rows get judged. It stands above the
+            // scrim and not on the page's own surface because that is the real
+            // order — the app's bars, cards and menus frost the wallpaper as
+            // the shell has already dressed it, so the sample has to be
+            // blurred from the same layered picture the shell will read.
+            Positioned.fill(child: _GlassSample(overPlayer: isVideo)),
             if (resolution != null && !isVideo)
               PositionedDirectional(
                 start: DsSpace.s12,
@@ -1424,46 +1411,164 @@ final class _WallpaperPreviewPageState extends ConsumerState<WallpaperPreviewPag
   }
 }
 
-/// The window behind the stage: the media itself, blurred heavily and dimmed,
-/// so the chosen picture sets the mood without competing with the preview.
-final class _Backdrop extends StatelessWidget {
-  const _Backdrop({required this.image});
+/// A sample of the shell's chrome, worn over the picture: the floating bar, a
+/// card standing in for a dialog, a small popover and the phone's navigation
+/// capsule, each at the tier the real one wears — the subtle glass for settled
+/// chrome, the standard for the menu family, the strong for dialogs. Shapes
+/// carry no words on purpose: a placeholder line shows what the fill and the
+/// frost do to a surface without a string to translate.
+///
+/// The sample goes away when the glass is off, because the solid shell the app
+/// already draws is that answer, and a mock in opaque paint would only cover
+/// the picture being judged.
+final class _GlassSample extends ConsumerWidget {
+  const _GlassSample({required this.overPlayer});
 
-  final ImageProvider? image;
+  /// True when a clip holds the stage: its own transport takes the bottom edge
+  /// so the navigation capsule steps aside, and its frames are a texture, so
+  /// the panes keep their fill and give up the frost.
+  final bool overPlayer;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = theme.colors;
-    final picture = image;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // The wash follows the skin: a dim stage at night, a pale one by day,
-        // so the preview reads as part of the app either way.
-        ColoredBox(color: colors.canvas),
-        if (picture != null)
-          // Scaled past the edges so the blurred border never shows as a
-          // bright rim around the window.
-          ClipRect(
-            child: Transform.scale(
-              scale: 1.2,
-              child: ImageFiltered(
-                imageFilter: ui.ImageFilter.blur(sigmaX: kLiveGlassCoverFrostSigma, sigmaY: kLiveGlassCoverFrostSigma),
-                child: Image(image: picture, fit: BoxFit.cover, gaplessPlayback: true),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final media = MediaQuery.maybeOf(context);
+    final policy = ref
+        .watch(liveGlassPolicyProvider)
+        .demoted(reduceVisualEffects: media?.disableAnimations == true || media?.highContrast == true);
+    if (!policy.enabled) return const SizedBox.shrink();
+    final colors = DsTheme.colorsOf(context);
+    final dark = DsTheme.of(context).brightness == Brightness.dark;
+    final raise = liveGlassReadabilityRaise(
+      settings: ref.watch(backgroundSettingsProvider),
+      tone: ref.watch(backgroundToneProvider),
+      dark: dark,
+    );
+    // One pane of the shell: the level's resolved fill, its frost behind it,
+    // and the border that keeps the edge visible on a busy wallpaper.
+    Widget pane(
+      LiveGlassLevel level, {
+      required double radius,
+      required EdgeInsetsGeometry padding,
+      required Widget child,
+    }) {
+      final material = policy.materialFor(level, dark: dark, readabilityRaise: raise);
+      final body = DecoratedBox(
+        decoration: BoxDecoration(
+          color: colors.overlay.withValues(alpha: material.fillAlpha),
+          borderRadius: BorderRadius.circular(radius),
+          border: Border.all(color: colors.border),
+        ),
+        child: Padding(padding: padding, child: child),
+      );
+      // A clip is a `Texture`: a backdrop filter has nothing behind it to
+      // sample, which is why the app's own wallpaper path frosts a clip on the
+      // decoded surface instead of on the scrim. The sample says the same
+      // thing here rather than showing a frost the app could not deliver.
+      final filter = overPlayer ? null : material.backdropFilter;
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: filter == null ? body : BackdropFilter(filter: filter, child: body),
+      );
+    }
+
+    Widget line(double width, {double alpha = 0.45}) => Container(
+      width: width,
+      height: 6,
+      decoration: BoxDecoration(
+        color: colors.text.withValues(alpha: alpha),
+        borderRadius: BorderRadius.circular(3),
+      ),
+    );
+    Widget dot() => Container(
+      width: 7,
+      height: 7,
+      decoration: BoxDecoration(color: colors.text.withValues(alpha: 0.4), shape: BoxShape.circle),
+    );
+
+    return IgnorePointer(
+      child: ExcludeSemantics(
+        child: Padding(
+          // The stage's own chip names the picture's size at its lower-left
+          // corner; the sample leaves that corner to it rather than stacking
+          // the navigation capsule on top.
+          padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s16, DsSpace.s16, DsSpace.s40),
+          child: Column(
+            children: [
+              pane(
+                LiveGlassLevel.subtle,
+                radius: 17,
+                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s12, vertical: DsSpace.s8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: DsSpace.s8,
+                  children: [
+                    DsIcon(DsIcons.menu, size: 16, color: colors.text),
+                    const SizedBox(width: 96),
+                    dot(),
+                    dot(),
+                  ],
+                ),
               ),
-            ),
+              const Spacer(),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                spacing: DsSpace.s12,
+                children: [
+                  pane(
+                    LiveGlassLevel.strong,
+                    radius: 14,
+                    padding: const EdgeInsets.all(DsSpace.s12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: DsSpace.s8,
+                      children: [
+                        line(84, alpha: 0.55),
+                        line(132, alpha: 0.28),
+                        line(112, alpha: 0.28),
+                        const SizedBox(height: DsSpace.s4),
+                        Row(mainAxisSize: MainAxisSize.min, spacing: DsSpace.s8, children: [line(44), line(44)]),
+                      ],
+                    ),
+                  ),
+                  pane(
+                    LiveGlassLevel.standard,
+                    radius: 12,
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: DsSpace.s6,
+                      children: [line(64, alpha: 0.4), line(52, alpha: 0.24), line(60, alpha: 0.24)],
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              if (!overPlayer)
+                pane(
+                  LiveGlassLevel.subtle,
+                  radius: 20,
+                  padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: 10),
+                  child: Row(mainAxisSize: MainAxisSize.min, spacing: 14, children: [dot(), dot(), dot(), dot()]),
+                ),
+            ],
           ),
-        ColoredBox(color: theme.brightness == Brightness.dark ? const Color(0x99000000) : const Color(0x66FFFFFF)),
-      ],
+        ),
+      ),
     );
   }
 }
 
-/// The settings shared by the desktop sidebar and the touch sheet. Every
-/// value is the page's staged copy: the stage wears it as it moves, and the
-/// Apply button writes it onto the background with the media.
-final class _PreviewSettings extends StatelessWidget {
+/// The stage's own settings, laid out the way every other settings page lays
+/// its rows out — `DsListSection` headers and the shared row widgets, so a
+/// slider here looks, reads and stacks like the same setting on the background
+/// page.
+///
+/// The display rows are staged: they ride the stage and only reach the app
+/// when Apply is pressed. The glass rows write straight through, because the
+/// glass is a property of the whole app rather than of the picture in view,
+/// and the stage's sample wears it the moment it moves.
+final class _PreviewSettings extends ConsumerWidget {
   const _PreviewSettings({
     required this.videoMode,
     required this.paintMode,
@@ -1495,162 +1600,138 @@ final class _PreviewSettings extends StatelessWidget {
   final ValueChanged<Duration> onInterval;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = theme.colors;
+    final settings = ref.watch(backgroundSettingsProvider);
+    final controller = ref.read(backgroundSettingsProvider.notifier);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: DsSpace.s16,
       children: [
-        if (!paintMode)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s8,
-            children: [
-              _SectionTitle(icon: DsIcons.expand, label: t.settings.backgroundDisplayMode),
-              DsSelect<BoxFit>(
+        DsListSection(
+          header: Text(t.settings.backgroundDisplay),
+          children: [
+            if (!paintMode)
+              SettingsChoiceRow<BoxFit>(
+                leading: const DsIcon(DsIcons.expand),
+                title: t.settings.backgroundFit,
+                description: t.settings.backgroundFitDescription,
                 value: fit,
-                semanticLabel: t.settings.backgroundDisplayMode,
                 options: [
                   for (final option in kBackgroundFits)
                     DsSelectOption(value: option, label: backgroundFitLabel(t, option)),
                 ],
-                onChanged: (value) {
-                  if (value != null) onFit(value);
-                },
+                onChanged: onFit,
               ),
-            ],
-          ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s8,
-          children: [
-            _SectionTitle(icon: DsIcons.contrast, label: t.settings.backgroundMask),
-            _SliderRow(
-              value: scrimOpacity,
-              max: 0.8,
-              divisions: 16,
-              label: '${(scrimOpacity * 100).round()}%',
-              semanticLabel: t.settings.backgroundMask,
-              onChanged: onScrimOpacity,
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.contrast),
+              title: t.settings.backgroundMask,
+              description: t.settings.backgroundMaskDescription,
+              detail: Text('${(scrimOpacity * 100).round()}%'),
+              control: DsSlider(
+                value: scrimOpacity,
+                max: 0.8,
+                divisions: 16,
+                onChanged: onScrimOpacity,
+                semanticLabel: t.settings.backgroundMask,
+              ),
             ),
-          ],
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: DsSpace.s8,
-          children: [
-            _SectionTitle(icon: DsIcons.dropletLines, label: t.settings.backgroundOverlayBlur),
-            _SliderRow(
-              value: backgroundBlur,
-              max: 24,
-              divisions: 24,
-              label: '${backgroundBlur.round()}',
-              semanticLabel: t.settings.backgroundOverlayBlur,
-              onChanged: onBackgroundBlur,
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.dropletLines),
+              title: t.settings.backgroundOverlayBlur,
+              description: t.settings.backgroundOverlayBlurDescription,
+              detail: Text('${backgroundBlur.round()}'),
+              control: DsSlider(
+                value: backgroundBlur,
+                max: 24,
+                divisions: 24,
+                onChanged: onBackgroundBlur,
+                semanticLabel: t.settings.backgroundOverlayBlur,
+              ),
             ),
-          ],
-        ),
-        if (videoMode)
-          // The clip's own transport — play, seek, mute — lives on the player
-          // under the stage; this sheet only names the kind.
-          Padding(
-            padding: const EdgeInsets.only(top: DsSpace.s4),
-            child: Text(
-              t.settings.backgroundPreviewVideoHint,
-              style: theme.typography.caption.copyWith(color: colors.textMuted),
-            ),
-          )
-        else if (!paintMode)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: DsSpace.s8,
-            children: [
-              _SectionTitle(icon: DsIcons.image, label: t.settings.backgroundImage),
-              DsSwitch(value: autoPlay, onChanged: onAutoPlay, label: Text(t.settings.backgroundAutoPlay)),
-              Text(t.settings.backgroundPlayInterval, style: theme.typography.body.copyWith(color: colors.text)),
-              DsSegmentedControl<Duration>(
+            // A clip's transport lives on the player under the stage, and its
+            // slideshow would fire behind it: the picture alone gets both rows.
+            if (!paintMode && !videoMode) ...[
+              DsListRow(
+                leading: const DsIcon(DsIcons.play),
+                title: Text(t.settings.backgroundAutoPlay),
+                trailing: DsSwitch(value: autoPlay, onChanged: onAutoPlay),
+              ),
+              SettingsChoiceRow<Duration>(
+                leading: const DsIcon(DsIcons.clock),
+                title: t.settings.backgroundPlayInterval,
                 value: interval,
-                semanticLabel: t.settings.backgroundPlayInterval,
-                segments: [
+                options: [
                   for (final option in _kSlideshowIntervals)
-                    DsSegment(
+                    DsSelectOption(
                       value: option,
-                      label: Text(t.settings.backgroundIntervalSeconds(count: option.inSeconds)),
+                      label: t.settings.backgroundIntervalSeconds(count: option.inSeconds),
                     ),
                 ],
                 onChanged: onInterval,
               ),
             ],
-          ),
-      ],
-    );
-  }
-}
-
-/// A settings section's label: icon and name on one muted line.
-final class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.icon, required this.label});
-
-  final DsIconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = theme.colors;
-    return Row(
-      spacing: DsSpace.s8,
-      children: [
-        DsIcon(icon, size: 16, color: colors.textSubtle),
-        Text(label, style: theme.typography.labelStrong.copyWith(color: colors.text)),
-      ],
-    );
-  }
-}
-
-/// A slider with its value printed on the trailing edge.
-final class _SliderRow extends StatelessWidget {
-  const _SliderRow({
-    required this.value,
-    required this.max,
-    required this.divisions,
-    required this.label,
-    required this.semanticLabel,
-    required this.onChanged,
-  });
-
-  final double value;
-  final double max;
-  final int divisions;
-  final String label;
-  final String semanticLabel;
-  final ValueChanged<double> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = DsTheme.of(context);
-    final colors = theme.colors;
-    return Row(
-      spacing: DsSpace.s12,
-      children: [
-        Expanded(
-          child: DsSlider(
-            value: value,
-            max: max,
-            divisions: divisions,
-            onChanged: onChanged,
-            semanticLabel: semanticLabel,
-          ),
+          ],
         ),
-        SizedBox(
-          width: 44,
-          child: Text(
-            label,
-            textAlign: TextAlign.end,
-            style: theme.typography.caption.copyWith(color: colors.textSubtle),
-          ),
+        DsListSection(
+          header: Text(t.settings.backgroundGlass),
+          children: [
+            SettingsChoiceRow<BackgroundGlassMode>(
+              leading: const DsIcon(DsIcons.layers),
+              title: t.settings.backgroundGlassMode,
+              description: t.settings.backgroundGlassDescription,
+              value: settings.glassMode,
+              options: [
+                DsSelectOption(value: BackgroundGlassMode.system, label: t.settings.backgroundGlassModeSystem),
+                DsSelectOption(value: BackgroundGlassMode.always, label: t.settings.backgroundGlassModeAlways),
+                DsSelectOption(value: BackgroundGlassMode.reduced, label: t.settings.backgroundGlassModeReduced),
+                DsSelectOption(value: BackgroundGlassMode.off, label: t.settings.backgroundGlassModeOff),
+              ],
+              onChanged: controller.setGlassMode,
+            ),
+            // The rest of the glass only exists while the glass does.
+            if (settings.glassMode != BackgroundGlassMode.off) ...[
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.slidersHorizontal),
+                title: t.settings.backgroundGlassStrength,
+                description: t.settings.backgroundGlassStrengthDescription,
+                detail: Text('${settings.glassStrength.round()}%'),
+                control: DsSlider(
+                  value: settings.glassStrength,
+                  max: 100,
+                  divisions: 20,
+                  onChanged: controller.setGlassStrength,
+                  semanticLabel: t.settings.backgroundGlassStrength,
+                ),
+              ),
+              SettingsChoiceRow<BackgroundGlassOpacity>(
+                leading: const DsIcon(DsIcons.contrast),
+                title: t.settings.backgroundGlassOpacity,
+                description: t.settings.backgroundGlassOpacityDescription,
+                value: settings.glassOpacity,
+                options: [
+                  DsSelectOption(value: BackgroundGlassOpacity.smart, label: t.settings.backgroundGlassOpacitySmart),
+                  DsSelectOption(value: BackgroundGlassOpacity.high, label: t.settings.backgroundGlassOpacityHigh),
+                  DsSelectOption(value: BackgroundGlassOpacity.low, label: t.settings.backgroundGlassOpacityLow),
+                ],
+                onChanged: controller.setGlassOpacity,
+              ),
+              SettingsConfigRow(
+                leading: const DsIcon(DsIcons.droplet),
+                title: t.settings.backgroundGlassFill,
+                description: t.settings.backgroundGlassFillDescription,
+                detail: Text('${(settings.glassFill * 100).round()}%'),
+                control: DsSlider(
+                  // Floored, exactly as the background page's own slider is.
+                  value: settings.glassFill,
+                  min: kBackgroundGlassFillFloor,
+                  divisions: 10,
+                  onChanged: controller.setGlassFill,
+                  semanticLabel: t.settings.backgroundGlassFill,
+                ),
+              ),
+            ],
+          ],
         ),
       ],
     );

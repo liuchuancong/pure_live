@@ -10,7 +10,8 @@ import 'package:pure_live/app/providers/boot/storage_providers.dart' show appPat
 import 'package:pure_live/modules/vod/controller/vod_controller.dart' show vodClientProvider;
 import 'package:pure_live/modules/vod/controller/vod_download.dart' show freeDownloadFile, vodDownloadFileName;
 import 'package:pure_live/modules/vod/controller/vod_settings.dart' show VodQualityChoice;
-import 'package:pure_live/shared/shared.dart' show BilibiliDanmakuXml, danmakuSaveFormatsProvider, writeDanmakuFiles;
+import 'package:pure_live/shared/shared.dart'
+    show BilibiliDanmakuXml, danmakuSaveFormatsProvider, deleteDanmakuSidecars, writeDanmakuFiles;
 
 /// The preference the download queue is kept under.
 const String kVodDownloadsKey = 'vod.downloads';
@@ -590,7 +591,12 @@ final class VodDownloadsController extends Notifier<List<VodDownloadItem>> {
     _publish();
     await _delete(File('${item.filePath}.part'));
     if (deleteFile && item.phase == VodDownloadPhase.done) {
-      await _delete(File(item.filePath));
+      final video = File(item.filePath);
+      await _delete(video);
+      // The danmaku the download wrote beside it belongs to the same file:
+      // deleting the video and leaving three sidecars behind is how the folder
+      // fills with subtitles for videos nobody has.
+      await deleteDanmakuSidecars(video);
     }
     await _persist();
   }

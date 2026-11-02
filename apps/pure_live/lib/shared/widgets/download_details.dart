@@ -22,8 +22,10 @@ final class DownloadDetails {
     this.queuedAt = '',
     this.retries = 0,
     this.error = '',
+    this.fileMissing = false,
     this.onOpenFile,
     this.onOpenFolder,
+    this.onRemove,
   });
 
   /// The file's name, as its row says it.
@@ -51,11 +53,20 @@ final class DownloadDetails {
   /// What failed, when it did.
   final String error;
 
+  /// Whether the file this row names is gone from disk. The sheet says it in
+  /// its own words rather than leaving 已完成 as the whole truth: the row is a
+  /// record, and the viewer can move the file out from under it.
+  final bool fileMissing;
+
   /// Opens the finished file; null when there is nothing to open yet.
   final VoidCallback? onOpenFile;
 
   /// Opens the file's folder; null when the task has no path.
   final VoidCallback? onOpenFolder;
+
+  /// Takes the record out of the queue — the one action a row whose file is
+  /// gone still has. Null when the caller offers it elsewhere.
+  final VoidCallback? onRemove;
 }
 
 /// Shows [details] in a panel — the download rows' 详情 verb.
@@ -176,7 +187,18 @@ final class DownloadDetailsBody extends StatelessWidget {
             description: Text(details.error.trim()),
           ),
         ],
-        if (details.onOpenFile != null || details.onOpenFolder != null) ...[
+        // The file's own fact, said apart from the phase's: 已完成 is true of
+        // the transfer and says nothing about the disk. A row the viewer moved
+        // or deleted by hand otherwise reads as a lie until 打开文件 fails.
+        if (details.fileMissing) ...[
+          const SizedBox(height: DsSpace.s12),
+          DsAlert(
+            status: DsStatus.warning,
+            title: Text(t.common.previewFileMissing),
+            description: Text(t.common.downloadFileMissingBody),
+          ),
+        ],
+        if (details.onOpenFile != null || details.onOpenFolder != null || details.onRemove != null) ...[
           const SizedBox(height: DsSpace.s16),
           // A wrap, not a row: the two labels are long words in a small
           // sheet, and a narrow window stacks them instead of ellipsising.
@@ -199,6 +221,14 @@ final class DownloadDetailsBody extends StatelessWidget {
                   leading: const DsIcon(DsIcons.folderOpen, size: 14),
                   onPressed: folder,
                   child: Text(t.settings.downloadManagerOpenFolder),
+                ),
+              if (details.onRemove case final remove?)
+                DsButton(
+                  variant: DsButtonVariant.dangerSoft,
+                  size: DsSize.sm,
+                  leading: const DsIcon(DsIcons.trash2, size: 14),
+                  onPressed: remove,
+                  child: Text(t.settings.downloadRemove),
                 ),
             ],
           ),

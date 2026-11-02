@@ -1141,6 +1141,12 @@ class Translations$common$zh_CN {
 	/// zh-CN: '约 {delay: int} 秒后自动重试（还剩 {left: int} 次）'
 	String downloadRetryPending({required int delay, required int left}) => '约 ${delay} 秒后自动重试（还剩 ${left} 次）';
 
+	/// zh-CN: '下载完成过，但盘上已经找不到这个文件——可能被移动、改名或删除了。打开所在文件夹确认，或把这条记录从列表移除。'
+	String get downloadFileMissingBody => '下载完成过，但盘上已经找不到这个文件——可能被移动、改名或删除了。打开所在文件夹确认，或把这条记录从列表移除。';
+
+	/// zh-CN: '从列表移除'
+	String get downloadRemoveFromList => '从列表移除';
+
 	/// zh-CN: '当前设备或播放内核无法进入画中画。'
 	String get pipUnavailable => '当前设备或播放内核无法进入画中画。';
 
@@ -1161,6 +1167,9 @@ class Translations$common$zh_CN {
 
 	/// zh-CN: '回到播放'
 	String get previewBackToStage => '回到播放';
+
+	/// zh-CN: '用系统播放器打开'
+	String get previewOpenFile => '用系统播放器打开';
 
 	/// zh-CN: '打开文件夹'
 	String get previewOpenFolder => '打开文件夹';
@@ -1207,8 +1216,8 @@ class Translations$common$zh_CN {
 	/// zh-CN: '删除这个文件？'
 	String get previewDeleteTitle => '删除这个文件？';
 
-	/// zh-CN: '「{name: String}」会从磁盘删除，无法撤销。它在原模块的列表里仍会留着，要在那边清除。'
-	String previewDeleteBody({required String name}) => '「${name}」会从磁盘删除，无法撤销。它在原模块的列表里仍会留着，要在那边清除。';
+	/// zh-CN: '「{name: String}」会从磁盘删除，无法撤销。原模块的列表会同步标成文件已删除或移除该行。'
+	String previewDeleteBody({required String name}) => '「${name}」会从磁盘删除，无法撤销。原模块的列表会同步标成文件已删除或移除该行。';
 
 	/// zh-CN: '文件未能删除'
 	String get previewDeleteFailed => '文件未能删除';
@@ -5452,9 +5461,6 @@ class Translations$recorder$zh_CN {
 	/// zh-CN: '等待'
 	String get filterWaiting => '等待';
 
-	/// zh-CN: '已保存'
-	String get filterSaved => '已保存';
-
 	/// zh-CN: '失败'
 	String get filterFailed => '失败';
 
@@ -5514,6 +5520,9 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '批量操作'
 	String get batchMenu => '批量操作';
+
+	/// zh-CN: '停止录制'
+	String get stopRecording => '停止录制';
 
 	/// zh-CN: '停止全部录制'
 	String get stopAll => '停止全部录制';
@@ -5613,6 +5622,114 @@ class Translations$recorder$zh_CN {
 
 	/// zh-CN: '只删除这条录制任务记录，已保存的视频文件不会被删除。'
 	String get deleteBody => '只删除这条录制任务记录，已保存的视频文件不会被删除。';
+
+	/// zh-CN: '进行中'
+	String get runningTitle => '进行中';
+
+	/// zh-CN: '录像库'
+	String get libraryTitle => '录像库';
+
+	/// zh-CN: '全部录像'
+	String get libraryRoot => '全部录像';
+
+	/// zh-CN: '{count: int} 条 · {size: String}'
+	String librarySummary({required int count, required String size}) => '${count} 条 · ${size}';
+
+	/// zh-CN: '搜索录像（直播间 / 平台 / 日期 / 文件名）'
+	String get librarySearchHint => '搜索录像（直播间 / 平台 / 日期 / 文件名）';
+
+	/// zh-CN: '读不到录像目录'
+	String get libraryFailedTitle => '读不到录像目录';
+
+	/// zh-CN: '{error: String}'
+	String libraryFailedBody({required String error}) => '${error}';
+
+	/// zh-CN: '还没有录像文件'
+	String get emptyLibraryTitle => '还没有录像文件';
+
+	/// zh-CN: '录制完成后，文件按 日期 / 平台 / 直播间 的目录出现在这里。'
+	String get emptyLibraryDescription => '录制完成后，文件按 日期 / 平台 / 直播间 的目录出现在这里。';
+
+	/// zh-CN: '没有符合条件的录像'
+	String get emptySearchTitle => '没有符合条件的录像';
+
+	/// zh-CN: '换个关键词，或把筛选清掉。'
+	String get emptySearchDescription => '换个关键词，或把筛选清掉。';
+
+	/// zh-CN: '筛选录像'
+	String get filterTitle => '筛选录像';
+
+	/// zh-CN: '只看可播放'
+	String get filterPlayable => '只看可播放';
+
+	/// zh-CN: '列表形式'
+	String get viewLabel => '列表形式';
+
+	/// zh-CN: '文件夹'
+	String get folderView => '文件夹';
+
+	/// zh-CN: '全部'
+	String get allView => '全部';
+
+	/// zh-CN: '刷新'
+	String get refresh => '刷新';
+
+	/// zh-CN: '清空筛选'
+	String get reset => '清空筛选';
+
+	/// zh-CN: '已选 {count: int} 项'
+	String selectedCount({required int count}) => '已选 ${count} 项';
+
+	/// zh-CN: '删除选中'
+	String get deleteSelected => '删除选中';
+
+	/// zh-CN: '删除这里的录像'
+	String get deleteHere => '删除这里的录像';
+
+	/// zh-CN: '删除「{name: String}」里的录像？'
+	String deleteHereTitle({required String name}) => '删除「${name}」里的录像？';
+
+	/// zh-CN: '删除「{name: String}」？'
+	String deleteTakeTitle({required String name}) => '删除「${name}」？';
+
+	/// zh-CN: '删除 {count: int} 个录像：文件与同目录的分段、弹幕一起删掉；录制任务记录保留，会标成文件已删除。'
+	String deleteTakeBody({required int count}) => '删除 ${count} 个录像：文件与同目录的分段、弹幕一起删掉；录制任务记录保留，会标成文件已删除。';
+
+	/// zh-CN: '正在录制或合并的录像不能删'
+	String get deleteBlocked => '正在录制或合并的录像不能删';
+
+	/// zh-CN: '已删除 {count: int} 个录像'
+	String deletedToast({required int count}) => '已删除 ${count} 个录像';
+
+	/// zh-CN: '无可播放文件'
+	String get stateUnplayable => '无可播放文件';
+
+	/// zh-CN: '{count: int} 个录像'
+	String takesShown({required int count}) => '${count} 个录像';
+
+	/// zh-CN: '打开这一级'
+	String get enterFolder => '打开这一级';
+
+	/// zh-CN: '复制文件路径'
+	String get copyPath => '复制文件路径';
+
+	/// zh-CN: '录像'
+	String get columnFile => '录像';
+
+	/// zh-CN: '名称'
+	String get columnName => '名称';
+
+	/// zh-CN: '数量'
+	String get columnCount => '数量';
+
+	/// zh-CN: '时长'
+	String get columnDuration => '时长';
+
+	/// zh-CN: '大小'
+	String get columnSize => '大小';
+
+	/// zh-CN: '时间'
+	String get columnTime => '时间';
 
 	/// zh-CN: '录制设置'
 	String get settingsOpen => '录制设置';
@@ -10246,9 +10363,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '下载失败'
 	String get backgroundDownloadFailed => '下载失败';
 
-	/// zh-CN: '播放控制仅用于本次预览；应用的动态壁纸始终静音循环。'
-	String get backgroundPreviewVideoHint => '播放控制仅用于本次预览；应用的动态壁纸始终静音循环。';
-
 	/// zh-CN: '刷新缩略图'
 	String get cacheRefreshThumbnails => '刷新缩略图';
 
@@ -10485,9 +10599,6 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '更多视频'
 	String get backgroundMoreVideos => '更多视频';
-
-	/// zh-CN: '显示模式'
-	String get backgroundDisplayMode => '显示模式';
 
 	/// zh-CN: '自动播放'
 	String get backgroundAutoPlay => '自动播放';
@@ -13335,6 +13446,8 @@ extension on Translations {
 			'common.downloadRetried' => '自动重试',
 			'common.downloadRetriedTimes' => ({required int count}) => '${count} 次',
 			'common.downloadRetryPending' => ({required int delay, required int left}) => '约 ${delay} 秒后自动重试（还剩 ${left} 次）',
+			'common.downloadFileMissingBody' => '下载完成过，但盘上已经找不到这个文件——可能被移动、改名或删除了。打开所在文件夹确认，或把这条记录从列表移除。',
+			'common.downloadRemoveFromList' => '从列表移除',
 			'common.pipUnavailable' => '当前设备或播放内核无法进入画中画。',
 			'common.moduleHongguo' => '红果短剧',
 			'common.previewCount' => ({required int count}) => '共 ${count} 项',
@@ -13342,6 +13455,7 @@ extension on Translations {
 			'common.previewNext' => '下一项',
 			'common.previewListTitle' => '列表',
 			'common.previewBackToStage' => '回到播放',
+			'common.previewOpenFile' => '用系统播放器打开',
 			'common.previewOpenFolder' => '打开文件夹',
 			'common.previewOpenFolderFailed' => '打不开这个文件夹',
 			'common.previewFileMissing' => '文件不在了',
@@ -13357,16 +13471,16 @@ extension on Translations {
 			'common.previewAutoNext' => '播完自动下一项',
 			'common.previewDeleteFile' => '删除文件',
 			'common.previewDeleteTitle' => '删除这个文件？',
-			'common.previewDeleteBody' => ({required String name}) => '「${name}」会从磁盘删除，无法撤销。它在原模块的列表里仍会留着，要在那边清除。',
+			'common.previewDeleteBody' => ({required String name}) => '「${name}」会从磁盘删除，无法撤销。原模块的列表会同步标成文件已删除或移除该行。',
 			'common.previewDeleteFailed' => '文件未能删除',
 			'common.rename' => '重命名',
 			'favorites.emptyTitle' => '还没有关注的房间',
 			'favorites.emptyDescription' => '在房间里点关注，就会出现在这里。',
+			_ => null,
+		} ?? switch (path) {
 			'favorites.unfollow' => '取消关注',
 			'favorites.statusAll' => '全部',
 			'favorites.statusLive' => '直播中',
-			_ => null,
-		} ?? switch (path) {
 			'favorites.statusOffline' => '离线',
 			'favorites.refresh' => '刷新',
 			'favorites.openFailedTitle' => '关注列表打不开',
@@ -13876,11 +13990,11 @@ extension on Translations {
 			'iptv.browseProgrammeLine' => '显示当前节目',
 			'iptv.browseProgrammeLineDesc' => '频道名下方显示当前或下一档节目。',
 			'iptv.browseReset' => '恢复默认',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.groupsEmpty' => '还没有分组：先导入一份播放列表。',
 			'iptv.groupsHint' => '关掉的分组从频道列表和换台里消失；重开即恢复。',
 			'iptv.recentTitle' => '最近观看',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.recentCount' => ({required Object count}) => '共 ${count} 个频道',
 			'iptv.recentWatched' => ({required Object time}) => '上次观看 ${time}',
 			'iptv.recentRemove' => '从最近观看中移除',
@@ -14390,11 +14504,11 @@ extension on Translations {
 			'music.desktopLyricBoldLineDesc' => '主歌词行以粗体绘制。',
 			'music.desktopLyricBoldExtended' => '加粗翻译、罗马音歌词',
 			'music.desktopLyricBoldExtendedDesc' => '翻译与罗马音副行以粗体绘制。',
+			_ => null,
+		} ?? switch (path) {
 			'music.desktopLyricStrokeNone' => '无',
 			'music.desktopLyricColorBlack' => '黑色',
 			'music.desktopLyricColorGray' => '灰色',
-			_ => null,
-		} ?? switch (path) {
 			'music.desktopLyricAlignment' => '对齐方式',
 			'music.desktopLyricAlignmentDesc' => '歌词在窗口内的水平对齐。',
 			'music.desktopLyricAlignLeft' => '左对齐',
@@ -14748,7 +14862,6 @@ extension on Translations {
 			'recorder.filterAll' => '全部',
 			'recorder.filterRecording' => '录制中',
 			'recorder.filterWaiting' => '等待',
-			'recorder.filterSaved' => '已保存',
 			'recorder.filterFailed' => '失败',
 			'recorder.emptyFilterTitle' => ({required String status}) => '“${status}”里还没有任务',
 			'recorder.stateWaiting' => '等待开播',
@@ -14769,6 +14882,7 @@ extension on Translations {
 			'recorder.retryJoinNothing' => '目录里没有可合并的分段（可能已经合并过了）',
 			'recorder.retryJoinFailed' => ({required Object error}) => '无法开始合并：${error}',
 			'recorder.batchMenu' => '批量操作',
+			'recorder.stopRecording' => '停止录制',
 			'recorder.stopAll' => '停止全部录制',
 			'recorder.stopAllTitle' => '停止全部录制？',
 			'recorder.stopAllBody' => ({required int count}) => '${count} 个正在录制的房间将结束保存；已写入的分段保留，收尾照常进行。',
@@ -14802,6 +14916,42 @@ extension on Translations {
 			'recorder.delete' => '删除',
 			'recorder.deleteTitle' => ({required String name}) => '删除“${name}”？',
 			'recorder.deleteBody' => '只删除这条录制任务记录，已保存的视频文件不会被删除。',
+			'recorder.runningTitle' => '进行中',
+			'recorder.libraryTitle' => '录像库',
+			'recorder.libraryRoot' => '全部录像',
+			'recorder.librarySummary' => ({required int count, required String size}) => '${count} 条 · ${size}',
+			'recorder.librarySearchHint' => '搜索录像（直播间 / 平台 / 日期 / 文件名）',
+			'recorder.libraryFailedTitle' => '读不到录像目录',
+			'recorder.libraryFailedBody' => ({required String error}) => '${error}',
+			'recorder.emptyLibraryTitle' => '还没有录像文件',
+			'recorder.emptyLibraryDescription' => '录制完成后，文件按 日期 / 平台 / 直播间 的目录出现在这里。',
+			'recorder.emptySearchTitle' => '没有符合条件的录像',
+			'recorder.emptySearchDescription' => '换个关键词，或把筛选清掉。',
+			'recorder.filterTitle' => '筛选录像',
+			'recorder.filterPlayable' => '只看可播放',
+			'recorder.viewLabel' => '列表形式',
+			'recorder.folderView' => '文件夹',
+			'recorder.allView' => '全部',
+			'recorder.refresh' => '刷新',
+			'recorder.reset' => '清空筛选',
+			'recorder.selectedCount' => ({required int count}) => '已选 ${count} 项',
+			'recorder.deleteSelected' => '删除选中',
+			'recorder.deleteHere' => '删除这里的录像',
+			'recorder.deleteHereTitle' => ({required String name}) => '删除「${name}」里的录像？',
+			'recorder.deleteTakeTitle' => ({required String name}) => '删除「${name}」？',
+			'recorder.deleteTakeBody' => ({required int count}) => '删除 ${count} 个录像：文件与同目录的分段、弹幕一起删掉；录制任务记录保留，会标成文件已删除。',
+			'recorder.deleteBlocked' => '正在录制或合并的录像不能删',
+			'recorder.deletedToast' => ({required int count}) => '已删除 ${count} 个录像',
+			'recorder.stateUnplayable' => '无可播放文件',
+			'recorder.takesShown' => ({required int count}) => '${count} 个录像',
+			'recorder.enterFolder' => '打开这一级',
+			'recorder.copyPath' => '复制文件路径',
+			'recorder.columnFile' => '录像',
+			'recorder.columnName' => '名称',
+			'recorder.columnCount' => '数量',
+			'recorder.columnDuration' => '时长',
+			'recorder.columnSize' => '大小',
+			'recorder.columnTime' => '时间',
 			'recorder.settingsOpen' => '录制设置',
 			'recorder.stop' => '停止录制',
 			'recorder.settingsFiles' => '文件与位置',
@@ -14868,6 +15018,8 @@ extension on Translations {
 			'recorder.cacheTitle' => '录制缓存',
 			'recorder.liveCheckGroup' => '开播检测',
 			'recorder.enablePolling' => '启用开播检测',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.enablePollingDesc' => '主播未开播时自动轮询；在直播间菜单里选「开播自动录」加入。关掉后等待开播与定时窗口的任务都不会自动开录，仍可手动「立即开录」。',
 			'recorder.pollingOff' => '「开播检测」关着，等待开播与定时窗口的任务不会自动开始。',
 			'recorder.pollingEnable' => '打开',
@@ -14907,8 +15059,6 @@ extension on Translations {
 			'recorder.scheduleSummary' => ({required Object days, required Object range}) => '${days} ${range}',
 			'recorder.scheduleEveryDay' => '每天',
 			'recorder.scheduleWorkdays' => '工作日',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.scheduleWeekend' => '周末',
 			'recorder.scheduleDayMon' => '一',
 			'recorder.scheduleDayTue' => '二',
@@ -15382,6 +15532,8 @@ extension on Translations {
 			'settings.proxyModeOffDesc' => '点播、节目单与备份的请求都直连。',
 			'settings.proxyModeSystem' => '跟随系统代理',
 			'settings.proxyModeSystemDesc' => '使用操作系统自己配置的 HTTP 代理，没有配置时直连。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxyModeManual' => '手动代理',
 			'settings.proxyModeManualDesc' => '使用下方填写的主机与端口。',
 			'settings.proxySystemProbing' => '正在检测系统代理…',
@@ -15421,8 +15573,6 @@ extension on Translations {
 			'settings.githubMirrorStrategyRaw' => '替换 Raw 域名',
 			'settings.githubMirrorStrategyJsdelivr' => 'jsDelivr 路径',
 			'settings.toolsOrder' => '工具区排序',
-			_ => null,
-		} ?? switch (path) {
 			'settings.toolsOrderDesc' => '侧栏分区线下方工具的显示顺序。',
 			'settings.moveUp' => '上移',
 			'settings.moveDown' => '下移',
@@ -15896,6 +16046,8 @@ extension on Translations {
 			'settings.playerGuideEntryPresetLowEndTitle' => '低配流畅',
 			'settings.playerGuideEntryPresetLowEndBody' => '软解 + 线程上限 2 + lowres 降采样 + 小缓冲。把 CPU 让给画面本身，核显或老机器使用。',
 			'settings.playerGuideEntryPresetWeakNetworkTitle' => '弱网稳定',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryPresetWeakNetworkBody' => '加大缓冲与预读、开启重连退避。用内存换卡顿，跨网或信号边缘时使用。',
 			'settings.playerGuideEntryPresetLowLatencyTitle' => '低延迟',
 			'settings.playerGuideEntryPresetLowLatencyBody' => '最小缓冲 + 双端丢帧。时效优先，代价是更容易卡。',
@@ -15935,8 +16087,6 @@ extension on Translations {
 			'settings.recordingDescription' => '录制目录、文件命名与容量上限。',
 			'settings.preferredQuality' => '首选画质',
 			'settings.preferredQualityDesc' => '进房间的首选清晰度；没有同名档位就近选择。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.preferredQualityCellular' => '蜂窝网络首选画质',
 			'settings.preferredQualityCellularDesc' => '移动数据下的清晰度；Wi-Fi 与有线沿用上面的首选。',
 			'settings.qualityAuto' => '自动（站点默认）',
@@ -16343,7 +16493,6 @@ extension on Translations {
 			'settings.backgroundCopyGradient' => '复制渐变',
 			'settings.backgroundCopyAddress' => '复制地址',
 			'settings.backgroundDownloadFailed' => '下载失败',
-			'settings.backgroundPreviewVideoHint' => '播放控制仅用于本次预览；应用的动态壁纸始终静音循环。',
 			'settings.cacheRefreshThumbnails' => '刷新缩略图',
 			'settings.cacheRefreshThumbnailsDesc' => '清空封面、头像与图标缓存。',
 			'settings.cacheRefreshThumbnailsDone' => '缩略图已刷新',
@@ -16411,6 +16560,8 @@ extension on Translations {
 			'settings.floatWindowSizeDesc' => '悬浮窗基础大小；拖动缩放按横竖屏分别记住。',
 			'settings.floatWindowSmall' => '小',
 			'settings.floatWindowMedium' => '中',
+			_ => null,
+		} ?? switch (path) {
 			'settings.floatWindowLarge' => '大',
 			'settings.backgroundPauseDanmaku' => '后台暂停弹幕连接',
 			'settings.backgroundPauseDanmakuDesc' => '进后台断开弹幕连接，回来重连；聊天保留。',
@@ -16423,7 +16574,6 @@ extension on Translations {
 			'settings.backgroundPreviewSettingsTitle' => '播放设置',
 			'settings.backgroundMoreImages' => '更多图片',
 			'settings.backgroundMoreVideos' => '更多视频',
-			'settings.backgroundDisplayMode' => '显示模式',
 			'settings.backgroundAutoPlay' => '自动播放',
 			'settings.backgroundPlayInterval' => '播放间隔',
 			'settings.backgroundIntervalSeconds' => ({required Object count}) => '${count} 秒',
@@ -16449,8 +16599,6 @@ extension on Translations {
 			'settings.hongguoQualityBest' => '最高',
 			'settings.hongguoQuality1080' => '1080P',
 			'settings.hongguoQuality720' => '720P',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hongguoQuality540' => '540P',
 			'settings.hongguoQuality480' => '480P',
 			'settings.hongguoQuality360' => '360P',
@@ -16926,6 +17074,8 @@ extension on Translations {
 			'vod.downloadRetryDelay' => '重试间隔',
 			'vod.downloadRetryDelayDesc' => '两次自动重试之间等待的时间。',
 			'vod.downloadManagerTitle' => '下载管理',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadPauseAll' => '全部暂停',
 			'vod.downloadResumeAll' => '全部继续',
 			'vod.downloadClearFinished' => '清除已完成',
@@ -16963,8 +17113,6 @@ extension on Translations {
 			'wallpaper.previewVideoNote' => '应用后壁纸仍静音循环；这里的播放、暂停与声音只用于预览。',
 			'wallpaper.previewTitle' => '随机图片预览',
 			'wallpaper.applied' => '已应用为背景',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceLabel' => '来源',
 			'wallpaper.retry' => '重试',
 			'wallpaper.groupBing' => '必应壁纸',

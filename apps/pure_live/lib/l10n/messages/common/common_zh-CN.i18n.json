@@ -44,6 +44,8 @@
   "downloadRetried": "自动重试",
   "downloadRetriedTimes": "{count: int} 次",
   "downloadRetryPending": "约 {delay: int} 秒后自动重试（还剩 {left: int} 次）",
+  "downloadFileMissingBody": "下载完成过，但盘上已经找不到这个文件——可能被移动、改名或删除了。打开所在文件夹确认，或把这条记录从列表移除。",
+  "downloadRemoveFromList": "从列表移除",
   "pipUnavailable": "当前设备或播放内核无法进入画中画。",
   "moduleHongguo": "红果短剧",
   "previewCount": "共 {count: int} 项",
@@ -51,6 +53,7 @@
   "previewNext": "下一项",
   "previewListTitle": "列表",
   "previewBackToStage": "回到播放",
+  "previewOpenFile": "用系统播放器打开",
   "previewOpenFolder": "打开文件夹",
   "previewOpenFolderFailed": "打不开这个文件夹",
   "previewFileMissing": "文件不在了",
@@ -66,7 +69,7 @@
   "previewAutoNext": "播完自动下一项",
   "previewDeleteFile": "删除文件",
   "previewDeleteTitle": "删除这个文件？",
-  "previewDeleteBody": "「{name: String}」会从磁盘删除，无法撤销。它在原模块的列表里仍会留着，要在那边清除。",
+  "previewDeleteBody": "「{name: String}」会从磁盘删除，无法撤销。原模块的列表会同步标成文件已删除或移除该行。",
   "previewDeleteFailed": "文件未能删除",
   "rename": "重命名"
 }

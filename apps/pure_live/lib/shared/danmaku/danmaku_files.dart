@@ -28,3 +28,20 @@ Future<List<File>> writeDanmakuFiles(
   }
   return written;
 }
+
+/// Removes every danmaku sidecar [video]'s name owns.
+///
+/// The writer names each file after the video, so the delete walks the same
+/// rule rather than a caller's guess: a download's file going away without its
+/// `.xml`/`.ass`/`.srt` beside it leaves a subtitle for a video that is gone,
+/// and nothing in the queue can point at it to clean it up.
+Future<void> deleteDanmakuSidecars(File video) async {
+  for (final format in DanmakuFormat.values) {
+    final file = danmakuFileFor(video, format);
+    try {
+      if (file.existsSync()) await file.delete();
+    } on Object {
+      // A sidecar that will not go is not a reason to fail the delete.
+    }
+  }
+}

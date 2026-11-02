@@ -30,6 +30,20 @@ enum RecordingTaskState {
 }
 
 /// A room kept for recording and its last session's facts.
+/// The platform id an IPTV recording is filed under.
+///
+/// It is also the second folder of a take (`<root>/<day>/iptv/<channel>/<take>/`),
+/// which is what lets the live centre and the IPTV one each list their own
+/// recordings out of the single tree the recorder writes. Both sides name it
+/// through this constant so the two lists cannot drift apart by spelling.
+const String kIptvRecordingPlatform = 'iptv';
+
+/// The warning a take's row carries once its file is gone — deleted from the
+/// player or from the library. The row keeps naming the folder, and this is how
+/// the pages tell "saved, and the library shows it" from "saved, and nothing is
+/// left to show".
+const String kRecordingFileDeletedWarning = 'file-deleted';
+
 final class RecordingTask {
   /// Creates a task.
   const RecordingTask({

@@ -44,6 +44,8 @@
   "downloadRetried": "Retried",
   "downloadRetriedTimes": "{count: int} times",
   "downloadRetryPending": "Auto-retry in ~{delay: int}s ({left: int} left)",
+  "downloadFileMissingBody": "It finished once, but the file is no longer on disk — it may have been moved, renamed or deleted. Open its folder to check, or remove this record from the list.",
+  "downloadRemoveFromList": "Remove from list",
   "pipUnavailable": "Picture-in-picture is not available for this device or player engine.",
   "moduleHongguo": "Hongguo Drama",
   "previewCount": "{count: int} items",
@@ -51,6 +53,7 @@
   "previewNext": "Next",
   "previewListTitle": "List",
   "previewBackToStage": "Back to the picture",
+  "previewOpenFile": "Open in the system player",
   "previewOpenFolder": "Open folder",
   "previewOpenFolderFailed": "That folder could not be opened",
   "previewFileMissing": "The file is gone",
@@ -66,7 +69,7 @@
   "previewAutoNext": "Play the next entry when one ends",
   "previewDeleteFile": "Delete file",
   "previewDeleteTitle": "Delete this file?",
-  "previewDeleteBody": "“{name: String}” goes off the disk, with no undo. The module that queued it keeps its own row until it is cleared there.",
+  "previewDeleteBody": "“{name: String}” goes off the disk, with no undo. The module that queued it marks the row file-deleted or drops it.",
   "previewDeleteFailed": "The file could not be deleted",
   "rename": "Rename"
 }

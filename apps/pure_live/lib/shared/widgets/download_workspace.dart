@@ -1,8 +1,31 @@
+import 'dart:io' show File;
+
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:pure_live/shared/layout/window_breakpoints.dart' show LiveWindow;
 import 'package:pure_live/shared/widgets/download_details.dart';
+
+/// Whether the file a finished download names is still on disk.
+///
+/// A queue row is a record, not the media: the viewer can move, rename or
+/// delete the file from outside the app and the row keeps pointing at it, so
+/// 打开文件 fails with no explanation and 删除文件 reports success over nothing.
+/// One stat per row answers that — never a directory scan, and never for a row
+/// still owed bytes: a queued or paused transfer has no finished file to look
+/// for (its parts sit beside the target under their own name), so it is not
+/// missing, it is unfinished.
+bool downloadFilePresent(String path) {
+  final file = path.trim();
+  if (file.isEmpty) return false;
+  try {
+    return File(file).existsSync();
+  } on Object {
+    // An unreadable path (a drive that went away mid-read) reads as absent:
+    // the row then says the file is not there, which is what the viewer can act on.
+    return false;
+  }
+}
 
 /// One view of a download queue as its rail shows it: the value a filter
 /// selects, its glyph, its name, and how many tasks it holds.

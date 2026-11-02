@@ -445,6 +445,8 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get downloadRetried => 'Retried';
 	@override String downloadRetriedTimes({required int count}) => '${count} times';
 	@override String downloadRetryPending({required int delay, required int left}) => 'Auto-retry in ~${delay}s (${left} left)';
+	@override String get downloadFileMissingBody => 'It finished once, but the file is no longer on disk — it may have been moved, renamed or deleted. Open its folder to check, or remove this record from the list.';
+	@override String get downloadRemoveFromList => 'Remove from list';
 	@override String get pipUnavailable => 'Picture-in-picture is not available for this device or player engine.';
 	@override String get moduleHongguo => 'Hongguo Drama';
 	@override String previewCount({required int count}) => '${count} items';
@@ -452,6 +454,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get previewNext => 'Next';
 	@override String get previewListTitle => 'List';
 	@override String get previewBackToStage => 'Back to the picture';
+	@override String get previewOpenFile => 'Open in the system player';
 	@override String get previewOpenFolder => 'Open folder';
 	@override String get previewOpenFolderFailed => 'That folder could not be opened';
 	@override String get previewFileMissing => 'The file is gone';
@@ -467,7 +470,7 @@ class _Translations$common$en extends Translations$common$zh_CN {
 	@override String get previewAutoNext => 'Play the next entry when one ends';
 	@override String get previewDeleteFile => 'Delete file';
 	@override String get previewDeleteTitle => 'Delete this file?';
-	@override String previewDeleteBody({required String name}) => '“${name}” goes off the disk, with no undo. The module that queued it keeps its own row until it is cleared there.';
+	@override String previewDeleteBody({required String name}) => '“${name}” goes off the disk, with no undo. The module that queued it marks the row file-deleted or drops it.';
 	@override String get previewDeleteFailed => 'The file could not be deleted';
 	@override String get rename => 'Rename';
 }
@@ -1942,7 +1945,6 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get filterAll => 'All';
 	@override String get filterRecording => 'Recording';
 	@override String get filterWaiting => 'Waiting';
-	@override String get filterSaved => 'Saved';
 	@override String get filterFailed => 'Failed';
 	@override String emptyFilterTitle({required String status}) => 'No tasks in “${status}” yet';
 	@override String get stateWaiting => 'Waiting for live';
@@ -1962,6 +1964,7 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get retryJoinNothing => 'No joinable segments left in that folder — it may already be merged';
 	@override String retryJoinFailed({required Object error}) => 'Could not start the merge: ${error}';
 	@override String get batchMenu => 'Batch actions';
+	@override String get stopRecording => 'Stop recording';
 	@override String get stopAll => 'Stop every recording';
 	@override String get stopAllTitle => 'Stop every recording?';
 	@override String stopAllBody({required int count}) => '${count} room(s) now recording end and save; segments already written stay and post-processing runs as usual.';
@@ -1996,6 +1999,42 @@ class _Translations$recorder$en extends Translations$recorder$zh_CN {
 	@override String get delete => 'Delete';
 	@override String deleteTitle({required String name}) => 'Delete “${name}”?';
 	@override String get deleteBody => 'This removes the task only; files already saved stay on disk.';
+	@override String get runningTitle => 'In progress';
+	@override String get libraryTitle => 'Recording library';
+	@override String get libraryRoot => 'All recordings';
+	@override String librarySummary({required int count, required String size}) => '${count} · ${size}';
+	@override String get librarySearchHint => 'Search recordings (room / platform / day / file)';
+	@override String get libraryFailedTitle => 'The recording folder cannot be read';
+	@override String libraryFailedBody({required String error}) => '${error}';
+	@override String get emptyLibraryTitle => 'No recordings yet';
+	@override String get emptyLibraryDescription => 'Finished takes appear here, filed by day, platform and room.';
+	@override String get emptySearchTitle => 'No recording matches';
+	@override String get emptySearchDescription => 'Try another word, or clear the filters.';
+	@override String get filterTitle => 'Filter recordings';
+	@override String get filterPlayable => 'Playable only';
+	@override String get viewLabel => 'List style';
+	@override String get folderView => 'Folders';
+	@override String get allView => 'All';
+	@override String get refresh => 'Refresh';
+	@override String get reset => 'Clear filters';
+	@override String selectedCount({required int count}) => '${count} selected';
+	@override String get deleteSelected => 'Delete selected';
+	@override String get deleteHere => 'Delete the recordings here';
+	@override String deleteHereTitle({required String name}) => 'Delete the recordings in “${name}”?';
+	@override String deleteTakeTitle({required String name}) => 'Delete “${name}”?';
+	@override String deleteTakeBody({required int count}) => 'Removes ${count} recording: the file with its segments and chat log beside it. The task row stays and reads file deleted.';
+	@override String get deleteBlocked => 'A recording still being captured or joined cannot be deleted';
+	@override String deletedToast({required int count}) => 'Deleted ${count} recordings';
+	@override String get stateUnplayable => 'nothing to play';
+	@override String takesShown({required int count}) => '${count} recordings';
+	@override String get enterFolder => 'Open this level';
+	@override String get copyPath => 'Copy file path';
+	@override String get columnFile => 'Recording';
+	@override String get columnName => 'Name';
+	@override String get columnCount => 'Count';
+	@override String get columnDuration => 'Length';
+	@override String get columnSize => 'Size';
+	@override String get columnTime => 'Time';
 	@override String get settingsOpen => 'Recording settings';
 	@override String get stop => 'Stop recording';
 	@override String get settingsFiles => 'Files and location';
@@ -3558,7 +3597,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundCopyGradient => 'Copy gradient';
 	@override String get backgroundCopyAddress => 'Copy address';
 	@override String get backgroundDownloadFailed => 'Download failed';
-	@override String get backgroundPreviewVideoHint => 'Transport controls are for this preview only; the applied wallpaper loops muted.';
 	@override String get cacheRefreshThumbnails => 'Refresh thumbnails';
 	@override String get cacheRefreshThumbnailsDesc => 'Clears cover, avatar and icon caches.';
 	@override String get cacheRefreshThumbnailsDone => 'Thumbnails refreshed';
@@ -3638,7 +3676,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundPreviewSettingsTitle => 'Playback settings';
 	@override String get backgroundMoreImages => 'More images';
 	@override String get backgroundMoreVideos => 'More videos';
-	@override String get backgroundDisplayMode => 'Display mode';
 	@override String get backgroundAutoPlay => 'Autoplay';
 	@override String get backgroundPlayInterval => 'Play interval';
 	@override String backgroundIntervalSeconds({required Object count}) => '${count}s';
@@ -4958,6 +4995,8 @@ extension on TranslationsEn {
 			'common.downloadRetried' => 'Retried',
 			'common.downloadRetriedTimes' => ({required int count}) => '${count} times',
 			'common.downloadRetryPending' => ({required int delay, required int left}) => 'Auto-retry in ~${delay}s (${left} left)',
+			'common.downloadFileMissingBody' => 'It finished once, but the file is no longer on disk — it may have been moved, renamed or deleted. Open its folder to check, or remove this record from the list.',
+			'common.downloadRemoveFromList' => 'Remove from list',
 			'common.pipUnavailable' => 'Picture-in-picture is not available for this device or player engine.',
 			'common.moduleHongguo' => 'Hongguo Drama',
 			'common.previewCount' => ({required int count}) => '${count} items',
@@ -4965,6 +5004,7 @@ extension on TranslationsEn {
 			'common.previewNext' => 'Next',
 			'common.previewListTitle' => 'List',
 			'common.previewBackToStage' => 'Back to the picture',
+			'common.previewOpenFile' => 'Open in the system player',
 			'common.previewOpenFolder' => 'Open folder',
 			'common.previewOpenFolderFailed' => 'That folder could not be opened',
 			'common.previewFileMissing' => 'The file is gone',
@@ -4980,16 +5020,16 @@ extension on TranslationsEn {
 			'common.previewAutoNext' => 'Play the next entry when one ends',
 			'common.previewDeleteFile' => 'Delete file',
 			'common.previewDeleteTitle' => 'Delete this file?',
-			'common.previewDeleteBody' => ({required String name}) => '“${name}” goes off the disk, with no undo. The module that queued it keeps its own row until it is cleared there.',
+			'common.previewDeleteBody' => ({required String name}) => '“${name}” goes off the disk, with no undo. The module that queued it marks the row file-deleted or drops it.',
 			'common.previewDeleteFailed' => 'The file could not be deleted',
 			'common.rename' => 'Rename',
 			'favorites.emptyTitle' => 'No followed rooms yet',
 			'favorites.emptyDescription' => 'Follow a room and it shows up here.',
+			_ => null,
+		} ?? switch (path) {
 			'favorites.unfollow' => 'Unfollow',
 			'favorites.statusAll' => 'All',
 			'favorites.statusLive' => 'Live',
-			_ => null,
-		} ?? switch (path) {
 			'favorites.statusOffline' => 'Offline',
 			'favorites.refresh' => 'Refresh',
 			'favorites.openFailedTitle' => 'The follow list could not open',
@@ -5499,11 +5539,11 @@ extension on TranslationsEn {
 			'iptv.browseProgrammeLine' => 'Show the current programme',
 			'iptv.browseProgrammeLineDesc' => 'Shows the current or next programme under the channel name.',
 			'iptv.browseReset' => 'Reset to defaults',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.groupsEmpty' => 'No groups yet — import a playlist first.',
 			'iptv.groupsHint' => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.',
 			'iptv.recentTitle' => 'Recently watched',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.recentCount' => ({required Object count}) => '${count} channels',
 			'iptv.recentWatched' => ({required Object time}) => 'Watched ${time}',
 			'iptv.recentRemove' => 'Remove from recent',
@@ -6013,11 +6053,11 @@ extension on TranslationsEn {
 			'music.desktopLyricBoldLineDesc' => 'Draws the main lyric line in bold.',
 			'music.desktopLyricBoldExtended' => 'Bold translation and romanization',
 			'music.desktopLyricBoldExtendedDesc' => 'Draws the translation and romanization lines in bold.',
+			_ => null,
+		} ?? switch (path) {
 			'music.desktopLyricStrokeNone' => 'None',
 			'music.desktopLyricColorBlack' => 'Black',
 			'music.desktopLyricColorGray' => 'Gray',
-			_ => null,
-		} ?? switch (path) {
 			'music.desktopLyricAlignment' => 'Alignment',
 			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
 			'music.desktopLyricAlignLeft' => 'Left',
@@ -6371,7 +6411,6 @@ extension on TranslationsEn {
 			'recorder.filterAll' => 'All',
 			'recorder.filterRecording' => 'Recording',
 			'recorder.filterWaiting' => 'Waiting',
-			'recorder.filterSaved' => 'Saved',
 			'recorder.filterFailed' => 'Failed',
 			'recorder.emptyFilterTitle' => ({required String status}) => 'No tasks in “${status}” yet',
 			'recorder.stateWaiting' => 'Waiting for live',
@@ -6391,6 +6430,7 @@ extension on TranslationsEn {
 			'recorder.retryJoinNothing' => 'No joinable segments left in that folder — it may already be merged',
 			'recorder.retryJoinFailed' => ({required Object error}) => 'Could not start the merge: ${error}',
 			'recorder.batchMenu' => 'Batch actions',
+			'recorder.stopRecording' => 'Stop recording',
 			'recorder.stopAll' => 'Stop every recording',
 			'recorder.stopAllTitle' => 'Stop every recording?',
 			'recorder.stopAllBody' => ({required int count}) => '${count} room(s) now recording end and save; segments already written stay and post-processing runs as usual.',
@@ -6425,6 +6465,42 @@ extension on TranslationsEn {
 			'recorder.delete' => 'Delete',
 			'recorder.deleteTitle' => ({required String name}) => 'Delete “${name}”?',
 			'recorder.deleteBody' => 'This removes the task only; files already saved stay on disk.',
+			'recorder.runningTitle' => 'In progress',
+			'recorder.libraryTitle' => 'Recording library',
+			'recorder.libraryRoot' => 'All recordings',
+			'recorder.librarySummary' => ({required int count, required String size}) => '${count} · ${size}',
+			'recorder.librarySearchHint' => 'Search recordings (room / platform / day / file)',
+			'recorder.libraryFailedTitle' => 'The recording folder cannot be read',
+			'recorder.libraryFailedBody' => ({required String error}) => '${error}',
+			'recorder.emptyLibraryTitle' => 'No recordings yet',
+			'recorder.emptyLibraryDescription' => 'Finished takes appear here, filed by day, platform and room.',
+			'recorder.emptySearchTitle' => 'No recording matches',
+			'recorder.emptySearchDescription' => 'Try another word, or clear the filters.',
+			'recorder.filterTitle' => 'Filter recordings',
+			'recorder.filterPlayable' => 'Playable only',
+			'recorder.viewLabel' => 'List style',
+			'recorder.folderView' => 'Folders',
+			'recorder.allView' => 'All',
+			'recorder.refresh' => 'Refresh',
+			'recorder.reset' => 'Clear filters',
+			'recorder.selectedCount' => ({required int count}) => '${count} selected',
+			'recorder.deleteSelected' => 'Delete selected',
+			'recorder.deleteHere' => 'Delete the recordings here',
+			'recorder.deleteHereTitle' => ({required String name}) => 'Delete the recordings in “${name}”?',
+			'recorder.deleteTakeTitle' => ({required String name}) => 'Delete “${name}”?',
+			'recorder.deleteTakeBody' => ({required int count}) => 'Removes ${count} recording: the file with its segments and chat log beside it. The task row stays and reads file deleted.',
+			'recorder.deleteBlocked' => 'A recording still being captured or joined cannot be deleted',
+			'recorder.deletedToast' => ({required int count}) => 'Deleted ${count} recordings',
+			'recorder.stateUnplayable' => 'nothing to play',
+			'recorder.takesShown' => ({required int count}) => '${count} recordings',
+			'recorder.enterFolder' => 'Open this level',
+			'recorder.copyPath' => 'Copy file path',
+			'recorder.columnFile' => 'Recording',
+			'recorder.columnName' => 'Name',
+			'recorder.columnCount' => 'Count',
+			'recorder.columnDuration' => 'Length',
+			'recorder.columnSize' => 'Size',
+			'recorder.columnTime' => 'Time',
 			'recorder.settingsOpen' => 'Recording settings',
 			'recorder.stop' => 'Stop recording',
 			'recorder.settingsFiles' => 'Files and location',
@@ -6491,6 +6567,8 @@ extension on TranslationsEn {
 			'recorder.cacheTitle' => 'Recording cache',
 			'recorder.liveCheckGroup' => 'Live check',
 			'recorder.enablePolling' => 'Enable live detection',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.enablePollingDesc' => 'Automatically poll while the streamer is offline; add a room with “Record when live” in the room’s more menu. Off, waiting rooms and scheduled windows never begin a take on their own — “Start now” still works.',
 			'recorder.pollingOff' => 'Live check is off; waiting and scheduled tasks will not start automatically.',
 			'recorder.pollingEnable' => 'Turn on',
@@ -6530,8 +6608,6 @@ extension on TranslationsEn {
 			'recorder.scheduleSummary' => ({required Object days, required Object range}) => '${days} ${range}',
 			'recorder.scheduleEveryDay' => 'Every day',
 			'recorder.scheduleWorkdays' => 'Weekdays',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.scheduleWeekend' => 'Weekends',
 			'recorder.scheduleDayMon' => 'Mon',
 			'recorder.scheduleDayTue' => 'Tue',
@@ -7005,6 +7081,8 @@ extension on TranslationsEn {
 			'settings.proxyModeOffDesc' => 'The vod, guide and backup requests all go direct.',
 			'settings.proxyModeSystem' => 'Follow the system proxy',
 			'settings.proxyModeSystemDesc' => 'Uses the HTTP proxy the operating system itself is configured to use, or goes direct when it names none.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.proxyModeManual' => 'Manual proxy',
 			'settings.proxyModeManualDesc' => 'Uses the host and port typed below.',
 			'settings.proxySystemProbing' => 'Checking the system proxy…',
@@ -7044,8 +7122,6 @@ extension on TranslationsEn {
 			'settings.githubMirrorStrategyRaw' => 'raw host replacement',
 			'settings.githubMirrorStrategyJsdelivr' => 'jsDelivr path',
 			'settings.toolsOrder' => 'Tools order',
-			_ => null,
-		} ?? switch (path) {
 			'settings.toolsOrderDesc' => 'The order of the tools under the sidebar\'s divider.',
 			'settings.moveUp' => 'Move up',
 			'settings.moveDown' => 'Move down',
@@ -7519,6 +7595,8 @@ extension on TranslationsEn {
 			'settings.playerGuideEntryPresetLowEndTitle' => 'Low-end smooth',
 			'settings.playerGuideEntryPresetLowEndBody' => 'Software decode with capped threads, lowres and a small buffer. For weak CPUs and iGPUs.',
 			'settings.playerGuideEntryPresetWeakNetworkTitle' => 'Weak-network stable',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerGuideEntryPresetWeakNetworkBody' => 'Bigger buffers and reconnect backoff. Trades memory for fewer stalls.',
 			'settings.playerGuideEntryPresetLowLatencyTitle' => 'Low latency',
 			'settings.playerGuideEntryPresetLowLatencyBody' => 'Minimum buffering + frame dropping. Lowest delay, more hiccups.',
@@ -7558,8 +7636,6 @@ extension on TranslationsEn {
 			'settings.recordingDescription' => 'Recording folder, file naming and the size cap.',
 			'settings.preferredQuality' => 'Preferred quality',
 			'settings.preferredQualityDesc' => 'The quality a room opens with; nearest level when missing.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.preferredQualityCellular' => 'Preferred quality on cellular',
 			'settings.preferredQualityCellularDesc' => 'Quality on mobile data; Wi-Fi and wired keep the default above.',
 			'settings.qualityAuto' => 'Automatic (site default)',
@@ -7966,7 +8042,6 @@ extension on TranslationsEn {
 			'settings.backgroundCopyGradient' => 'Copy gradient',
 			'settings.backgroundCopyAddress' => 'Copy address',
 			'settings.backgroundDownloadFailed' => 'Download failed',
-			'settings.backgroundPreviewVideoHint' => 'Transport controls are for this preview only; the applied wallpaper loops muted.',
 			'settings.cacheRefreshThumbnails' => 'Refresh thumbnails',
 			'settings.cacheRefreshThumbnailsDesc' => 'Clears cover, avatar and icon caches.',
 			'settings.cacheRefreshThumbnailsDone' => 'Thumbnails refreshed',
@@ -8034,6 +8109,8 @@ extension on TranslationsEn {
 			'settings.floatWindowSizeDesc' => 'Base window size; drag-resizing is remembered per orientation.',
 			'settings.floatWindowSmall' => 'Small',
 			'settings.floatWindowMedium' => 'Medium',
+			_ => null,
+		} ?? switch (path) {
 			'settings.floatWindowLarge' => 'Large',
 			'settings.backgroundPauseDanmaku' => 'Pause the danmaku connection in background',
 			'settings.backgroundPauseDanmakuDesc' => 'Drops the danmaku link in the background and reconnects on return.',
@@ -8046,7 +8123,6 @@ extension on TranslationsEn {
 			'settings.backgroundPreviewSettingsTitle' => 'Playback settings',
 			'settings.backgroundMoreImages' => 'More images',
 			'settings.backgroundMoreVideos' => 'More videos',
-			'settings.backgroundDisplayMode' => 'Display mode',
 			'settings.backgroundAutoPlay' => 'Autoplay',
 			'settings.backgroundPlayInterval' => 'Play interval',
 			'settings.backgroundIntervalSeconds' => ({required Object count}) => '${count}s',
@@ -8072,8 +8148,6 @@ extension on TranslationsEn {
 			'settings.hongguoQualityBest' => 'Best',
 			'settings.hongguoQuality1080' => '1080P',
 			'settings.hongguoQuality720' => '720P',
-			_ => null,
-		} ?? switch (path) {
 			'settings.hongguoQuality540' => '540P',
 			'settings.hongguoQuality480' => '480P',
 			'settings.hongguoQuality360' => '360P',
@@ -8549,6 +8623,8 @@ extension on TranslationsEn {
 			'vod.downloadRetryDelay' => 'Retry interval',
 			'vod.downloadRetryDelayDesc' => 'How long to wait between two automatic retries.',
 			'vod.downloadManagerTitle' => 'Downloads',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadPauseAll' => 'Pause all',
 			'vod.downloadResumeAll' => 'Resume all',
 			'vod.downloadClearFinished' => 'Clear finished',
@@ -8586,8 +8662,6 @@ extension on TranslationsEn {
 			'wallpaper.previewDisplay' => 'Display',
 			'wallpaper.previewVideoNote' => 'An applied wallpaper keeps looping muted; play, pause and sound here are for the preview only.',
 			'wallpaper.applied' => 'Applied as the background',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceLabel' => 'Source',
 			'wallpaper.retry' => 'Retry',
 			'wallpaper.groupBing' => 'Bing',

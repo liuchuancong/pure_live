@@ -7,7 +7,6 @@ import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/multiview/multiview.dart';
 import 'package:pure_live/modules/live/popular/popular.dart';
-import 'package:pure_live/modules/live/recorder/recorder.dart';
 import 'package:pure_live/modules/live/search/search.dart';
 import 'package:pure_live/modules/live/toolbox/toolbox.dart';
 import 'package:pure_live/modules/music/music.dart';
@@ -219,7 +218,12 @@ const Map<AppModule, ModuleNavigation> kModuleNavigation = {
     menu: [
       [NavigationItem.hongguoHome, NavigationItem.hongguoFind, NavigationItem.hongguoRank],
       [NavigationItem.hongguoFavorites, NavigationItem.hongguoHistory, NavigationItem.hongguoReservations],
-      [NavigationItem.hongguoAccount, NavigationItem.hongguoSearch, NavigationItem.hongguoDownloads, NavigationItem.logs],
+      [
+        NavigationItem.hongguoAccount,
+        NavigationItem.hongguoSearch,
+        NavigationItem.hongguoDownloads,
+        NavigationItem.logs,
+      ],
     ],
     landing: NavigationItem.hongguoHome,
     // The station's own page: the companion service it asks and the
@@ -280,7 +284,10 @@ final Map<NavigationItem, Widget Function()> kModulePages = {
   NavigationItem.hot: PopularPage.new,
   NavigationItem.search: SearchPage.new,
   NavigationItem.multiview: MultiviewPage.new,
-  NavigationItem.record: RecorderPage.new,
+  // The recording centre is per module even though the recorder is one machine:
+  // live's rail opens the router's page, every other rail opens its own list of
+  // its own takes — the IPTV one below, cut from the same folder tree.
+  NavigationItem.record: IptvRecordingsPage.new,
   NavigationItem.toolbox: ToolboxPage.new,
   // The log console is every module's tool, not the live rail's alone: the
   // record it reads is the one shared tree.

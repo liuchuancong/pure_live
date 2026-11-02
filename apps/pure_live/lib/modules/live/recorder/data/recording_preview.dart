@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 
 import 'package:pure_live/features/media_preview/media_preview_item.dart' show MediaPreviewItem;
 import 'package:pure_live/modules/live/recorder/data/recording_task.dart' show RecordingTask, RecordingTaskState;
+import 'package:pure_live/shared/widgets/download_format.dart' show formatDownloadBytes;
 
 /// What a take can offer a player, best first.
 ///
@@ -121,18 +122,12 @@ List<MediaPreviewItem> recordingPreviewItems(
   return items;
 }
 
-/// Renders a bytes figure the way a file manager would: the largest unit
-/// that stays above one, one decimal from KB on.
-String formatRecordingBytes(int bytes) {
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  var value = bytes.toDouble();
-  var unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  return unit == 0 ? '${value.round()} B' : '${value.toStringAsFixed(1)} ${units[unit]}';
-}
+/// Renders a bytes figure the way a file manager would.
+///
+/// The shared download formatter is the one implementation; this name stays
+/// because the recording rows, the library and the player's captions all read
+/// their sizes through it.
+String formatRecordingBytes(int bytes) => formatDownloadBytes(bytes);
 
 /// A capture length as a player shows it: minutes and seconds, hours only
 /// when the take has them.

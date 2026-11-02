@@ -34,6 +34,7 @@ import 'package:pure_live/app/app.dart'
         routeCaptionTitle;
 import 'package:pure_live/features/media_preview/media_preview_danmaku.dart' show MediaPreviewDanmakuPanel;
 import 'package:pure_live/features/media_preview/media_preview_item.dart';
+import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart' show openDownloadedPath;
 import 'package:pure_live/features/settings/pages/wallpaper_video_player.dart' show WallpaperVideoPlayer;
 import 'package:pure_live/features/settings/settings.dart'
     show
@@ -412,8 +413,11 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     unawaited(router.push(SettingsSectionRoute(section: SettingsSection.shield.name).location));
   }
 
-  Future<void> _revealFolderOf(String path) async {
-    final folder = File(path).parent.path;
+  Future<void> _revealFolderOf(String path) => _revealFolder(File(path).parent.path);
+
+  /// Shows [folder] in the system's file manager — the row's own folder, or the
+  /// group header's room.
+  Future<void> _revealFolder(String folder) async {
     try {
       final result = await OpenFile.open(folder);
       if (result.type == ResultType.done || !mounted) return;
@@ -536,6 +540,11 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
                             onSelect: _select,
                             onOpenFolder: _revealFolderAt,
                             onDelete: _deleteAt,
+                            // The folder a group header names; no groups means
+                            // no button on the list.
+                            onOpenGroup: widget.items.any((item) => item.groupPath.trim().isNotEmpty)
+                                ? (folder) => unawaited(_revealFolder(folder))
+                                : null,
                             autoNext: _autoNext,
                             onAutoNext: widget.items.length > 1 ? (value) => setState(() => _autoNext = value) : null,
                           );
@@ -651,7 +660,27 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
               semanticLabel: _listOpen ? t.common.previewBackToStage : t.common.previewListTitle,
               onPressed: () => setState(() => _listOpen = !_listOpen),
             ),
-          if (item != null)
+          if (item case final entry? when entry.exists) ...[
+            // The file's own verbs on the bar that names it. Hiding them in the
+            // list's row menu made the stage a viewer cannot act from: the
+            // picture on it is what they came to look at, and the moment they
+            // want another player or want it gone is here, not three taps away.
+            _HeaderButton(
+              icon: DsIcons.externalLink,
+              semanticLabel: t.common.previewOpenFile,
+              onPressed: () => unawaited(openDownloadedPath(context, entry.path)),
+            ),
+            _HeaderButton(
+              icon: DsIcons.folderOpen,
+              semanticLabel: t.common.previewOpenFolder,
+              onPressed: () => unawaited(_revealFolderOf(entry.path)),
+            ),
+            _HeaderButton(
+              icon: DsIcons.trash2,
+              semanticLabel: t.common.previewDeleteFile,
+              onPressed: () => unawaited(_deleteAt(_index)),
+            ),
+          ] else if (item != null)
             _HeaderButton(
               icon: DsIcons.folderOpen,
               semanticLabel: t.common.previewOpenFolder,
@@ -846,6 +875,7 @@ final class _PreviewList extends StatelessWidget {
     required this.onSelect,
     required this.onOpenFolder,
     required this.onDelete,
+    this.onOpenGroup,
     this.autoNext = false,
     this.onAutoNext,
   });
@@ -857,6 +887,11 @@ final class _PreviewList extends StatelessWidget {
   /// The row's own file verbs: where the entry sits, and taking it away.
   final ValueChanged<int> onOpenFolder;
   final ValueChanged<int> onDelete;
+
+  /// A group header's folder: the room whose takes are listed under it. Null
+  /// when the caller has no groups, which is the flat list every other module
+  /// hands the page.
+  final ValueChanged<String>? onOpenGroup;
 
   /// Whether a finished entry leads to the next one, and the switch that sets
   /// it — the switch only exists once the list has a next to lead to.
@@ -872,6 +907,25 @@ final class _PreviewList extends StatelessWidget {
       return Center(
         child: Text(t.common.previewEmpty, style: theme.typography.caption.copyWith(color: playerInkMuted)),
       );
+    }
+    // The run reads as the tree that filed it: a header names the room whose
+    // takes follow it. Items that carry no group — a download queue, a loose
+    // clip — stay the plain numbered list they always were.
+    final lines = <_PreviewLine>[];
+    String? seen;
+    for (var index = 0; index < items.length; index++) {
+      final group = items[index].groupLabel.trim();
+      if (group.isNotEmpty && group != seen) {
+        lines.add(
+          _PreviewLine.header(
+            group,
+            items.where((item) => item.groupLabel.trim() == group).length,
+            items[index].groupPath,
+          ),
+        );
+        seen = group;
+      }
+      lines.add(_PreviewLine.item(index));
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -907,11 +961,20 @@ final class _PreviewList extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: ListView.separated(
+          child: ListView.builder(
             padding: const EdgeInsets.only(bottom: DsSpace.s12),
-            itemCount: items.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 2),
-            itemBuilder: (context, index) {
+            itemCount: lines.length,
+            itemBuilder: (context, position) {
+              final header = lines[position].group;
+              if (header != null) {
+                return _PreviewHeader(
+                  label: header,
+                  count: lines[position].count,
+                  folder: lines[position].folder,
+                  onOpen: onOpenGroup,
+                );
+              }
+              final index = lines[position].index;
               final item = items[index];
               final selected = index == current;
               final exists = item.exists;
@@ -1092,3 +1155,72 @@ final class _HeaderButton extends StatelessWidget {
 
 /// The folder a preview's file lives in, for a caller that wants it.
 String previewFolderOf(MediaPreviewItem item) => p.dirname(item.path);
+
+/// One line of the preview list: an entry, or the header naming the folder the
+/// entries under it came from.
+final class _PreviewLine {
+  const _PreviewLine.item(this.index) : group = null, count = 0, folder = '';
+  const _PreviewLine.header(this.group, this.count, this.folder) : index = -1;
+
+  final int index;
+  final String? group;
+  final int count;
+
+  /// The folder the header names, which is what its button opens — the label is
+  /// the room's title, not a path anyone can show in a file manager.
+  final String folder;
+}
+
+/// The group's own line: what it is, how many it holds, and the one verb a
+/// folder answers to on its own — showing it in the file manager.
+final class _PreviewHeader extends StatelessWidget {
+  const _PreviewHeader({required this.label, required this.count, required this.folder, this.onOpen});
+
+  final String label;
+  final int count;
+  final String folder;
+
+  /// Null leaves the header as plain text, which is all a list without folders
+  /// can offer.
+  final ValueChanged<String>? onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, 10, DsSpace.s8, DsSpace.s4),
+      child: Row(
+        spacing: DsSpace.s6,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: DsSpace.s3,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.typography.caption.copyWith(color: playerInk, fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  t.common.previewCount(count: count),
+                  style: theme.typography.caption.copyWith(color: playerInkSubtle),
+                ),
+              ],
+            ),
+          ),
+          if (onOpen case final open?)
+            DsButton.icon(
+              variant: DsButtonVariant.ghost,
+              size: DsSize.xs,
+              onPressed: folder.trim().isEmpty ? null : () => open(folder),
+              icon: const DsIcon(DsIcons.folderOpen, size: 14),
+              semanticLabel: t.common.previewOpenFolder,
+            ),
+        ],
+      ),
+    );
+  }
+}

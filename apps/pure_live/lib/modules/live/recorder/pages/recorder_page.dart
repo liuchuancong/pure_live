@@ -17,6 +17,7 @@ import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
 import 'package:pure_live/modules/live/recorder/data/recorder_search_handoff.dart';
+import 'package:pure_live/modules/live/recorder/data/recording_library.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_preview.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_repository.dart';
 import 'package:pure_live/modules/live/recorder/data/recording_settings.dart';
@@ -24,6 +25,7 @@ import 'package:pure_live/modules/live/recorder/data/recording_task.dart';
 import 'package:pure_live/modules/live/recorder/engine/recorder_engine.dart' show recorderEngineProvider;
 import 'package:pure_live/modules/live/recorder/engine/stream_resolver.dart'
     show NoRecordableStream, resolveRecordableStream;
+import 'package:pure_live/modules/live/recorder/pages/recorder_library_pane.dart';
 import 'package:pure_live/modules/live/search/room_search_picker.dart' show showRoomSearchPicker;
 import 'package:pure_live/shared/shared.dart';
 
@@ -46,27 +48,27 @@ final class RecorderPage extends ConsumerStatefulWidget {
 
 /// The status a task is filtered by; `saved` is the model's `stopped`
 /// state (its file was kept), under the word the page uses.
+/// The task filter. It stops at 失败 on purpose: a saved recording is no
+/// longer a row in a task list but a file in the library below, where every
+/// take of a room shows rather than only the last one the store kept a row for.
 enum _RecorderFilter {
   all,
   recording,
   waiting,
-  saved,
   failed;
 
   /// Whether [task] belongs under this filter.
   bool matches(RecordingTask task) => switch (this) {
     all => true,
-    recording => task.state == RecordingTaskState.recording,
+    recording => task.state == RecordingTaskState.recording || task.postProcessing,
     waiting => task.state == RecordingTaskState.waiting,
-    saved => task.state == RecordingTaskState.stopped,
     failed => task.state == RecordingTaskState.failed,
   };
 
-  /// The empty state's icon for this filter.
+  /// The section's icon.
   DsIconData get icon => switch (this) {
     all || recording => DsIcons.disc3,
     waiting => DsIcons.clock,
-    saved => DsIcons.fileMp4,
     failed => DsIcons.circleAlert,
   };
 }
@@ -182,82 +184,44 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
       for (final (room, _) in history.records) keyOf(room): room,
       for (final room in follows.rooms) keyOf(room): room,
     };
+    // Live's own rows. The IPTV module records through the same engine and the
+    // same store — one tree, one task list — and it shows its recordings on its
+    // own page, so nothing here may pick a channel up: 停止全部 would stop
+    // channels, a chip's count would include rows no card shows, and 进入直播间
+    // has no channel behind an IPTV take.
+    final liveTasks = [
+      for (final task in store.tasks)
+        if (task.platform != kIptvRecordingPlatform) task,
+    ];
+    // A chip's count is a count of the rows that chip can show — the tasks the
+    // page still owns. Counting every stored row instead would print a number
+    // the list under it never reaches, because a saved take lives in the library.
+    final listed = liveTasks.where(_isTaskRow).toList();
     final counts = <_RecorderFilter, int>{
-      for (final filter in _RecorderFilter.values) filter: store.tasks.where(filter.matches).length,
+      for (final filter in _RecorderFilter.values) filter: listed.where(filter.matches).length,
     };
     // The two groups the whole-list actions work on: what the engine is
     // writing now, and the rows a session already settled — a take still being
     // joined and a room still being watched belong to neither.
     final recording = [
-      for (final task in store.tasks)
+      for (final task in liveTasks)
         if (task.state == RecordingTaskState.recording) task,
     ];
     final settled = [
-      for (final task in store.tasks)
+      for (final task in liveTasks)
         if (!task.postProcessing &&
             task.state != RecordingTaskState.recording &&
             task.state != RecordingTaskState.waiting)
           task,
     ];
-    final visible = [
-      for (final task in store.tasks)
+    // What the page still owns as a task: a capture running, a room waiting to
+    // go live, a session that failed, a join still going — and a saved row whose
+    // file is gone, which the library cannot show and is the only way back to
+    // 重新合并 or to dropping the record.
+    final attention = [
+      for (final task in listed)
         if (_filter.matches(task)) task,
     ];
-    final noneAtAll = store.tasks.isEmpty;
-
-    final Widget content;
-    if (!store.ready) {
-      content = const CardList<RecordingTask>(items: [], isLoading: true);
-    } else if (visible.isEmpty) {
-      content = Center(
-        child: DsEmptyState(
-          icon: DsIcon(_filter.icon),
-          title: Text(
-            noneAtAll ? t.recorder.emptyTitle : t.recorder.emptyFilterTitle(status: _filterLabel(t, _filter)),
-          ),
-          description: noneAtAll ? Text(t.recorder.emptyDescription) : null,
-        ),
-      );
-    } else {
-      // The tasks page the popular page's way: a wide window by number, a
-      // narrow one appending as the viewer reaches the end and pulling to
-      // re-read the store. A new filter is a new list, on its first page.
-      content = PagedCardList<RecordingTask>(
-        key: ValueKey('recorder-${_filter.name}'),
-        items: visible,
-        onRefresh: ref.read(recordingTasksProvider.notifier).reload,
-        itemBuilder: (context, task) {
-          final preview = _canPreview(task);
-          return _TaskCard(
-            task: task,
-            room: rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'],
-            platformName: _platformName(task.platform),
-            onOpen: () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId)),
-            onStop: ref.read(recorderEngineProvider).isRecording(task.id) ? () => unawaited(_stop(task.id)) : null,
-            onCancelWaiting: task.state == RecordingTaskState.waiting
-                ? () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id))
-                : null,
-            onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
-            onSchedule: () => unawaited(_editSchedule(task)),
-            onStartNow: !task.postProcessing && task.state != RecordingTaskState.recording
-                ? () => unawaited(_startNow(task))
-                : null,
-            onCancelProcessing: task.postProcessing ? () => unawaited(_cancelProcessing(task.id)) : null,
-            // A take the app never finished still holds its segments: offer the
-            // finish again whenever the task names a file and nothing runs.
-            onRetryJoin:
-                !task.postProcessing &&
-                    task.state != RecordingTaskState.recording &&
-                    (task.filePath ?? '').trim().isNotEmpty
-                ? () => unawaited(_retryJoin(task))
-                : null,
-            onPreview: preview ? () => unawaited(_openPreview(task)) : null,
-            onPlayExternal: preview ? () => unawaited(_playExternal(task)) : null,
-          );
-        },
-      );
-    }
-
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -325,9 +289,96 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
               ),
             ),
           ),
-        Expanded(child: content),
+        if (attention.isNotEmpty)
+          ConstrainedBox(
+            // A bounded strip, not a second full list: what is running or
+            // waiting is a handful of rows, and the library below needs the
+            // room to be browsed in.
+            constraints: const BoxConstraints(maxHeight: 420),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: DsSpace.s8,
+                children: [
+                  Text(t.recorder.runningTitle, style: theme.typography.labelStrong.copyWith(color: colors.textMuted)),
+                  for (final task in attention) ..._taskCards(context, task, rooms),
+                ],
+              ),
+            ),
+          ),
+        Expanded(
+          child: RecorderLibraryPane(
+            showHeading: false,
+            // Channels are the IPTV module's own list.
+            excludedPlatforms: const {kIptvRecordingPlatform},
+            onPlay: (around, take) => unawaited(_playLibraryTake(around, take)),
+            onOpenRoom: (take) => unawaited(_openRoomOf(take)),
+            platformName: _platformName,
+          ),
+        ),
       ],
     );
+  }
+
+  /// The rows the task strip still lists. A saved take with a file on disk
+  /// belongs to the library, which shows every take rather than the store's one
+  /// row per room; a saved row whose file is gone stays here because the library
+  /// has nothing to show and the row is the way to rejoin or to drop it.
+  /// No disk probe here: the page rebuilds on every progress tick of a running
+  /// capture, so this reads only what the row already says — its state, whether
+  /// a join is still going, and the warning a deleted file left behind.
+  bool _isTaskRow(RecordingTask task) =>
+      task.state != RecordingTaskState.stopped ||
+      task.postProcessing ||
+      task.warning == kRecordingFileDeletedWarning ||
+      (task.filePath ?? '').trim().isEmpty;
+
+  /// One task as its card, with the actions that depend on the store's answer.
+  List<Widget> _taskCards(BuildContext context, RecordingTask task, Map<String, LiveRoom> rooms) {
+    final engine = ref.read(recorderEngineProvider);
+    return [
+      _TaskCard(
+        task: task,
+        room: rooms[task.id] ?? rooms['${task.platform.toLowerCase()}:${task.roomId.trim()}'],
+        platformName: _platformName(task.platform),
+        // The card's press opens the recording, the same door the library's row
+        // uses; the room is a menu step away, as it is there.
+        onOpen: playableFileAt(task.filePath) == null
+            ? () => unawaited(openRoom(context, platform: task.platform, roomId: task.roomId))
+            : () => unawaited(_openPreview(task)),
+        onStop: engine.isRecording(task.id) ? () => unawaited(_stop(task.id)) : null,
+        onCancelWaiting: task.state == RecordingTaskState.waiting
+            ? () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id))
+            : null,
+        onDelete: () => unawaited(ref.read(recordingTasksProvider.notifier).remove(task.id)),
+        onSchedule: () => unawaited(_editSchedule(task)),
+        onStartNow: !task.postProcessing && task.state != RecordingTaskState.recording
+            ? () => unawaited(_startNow(task))
+            : null,
+        onCancelProcessing: task.postProcessing ? () => unawaited(_cancelProcessing(task.id)) : null,
+        // A take the app never finished still holds its segments: offer the
+        // finish again whenever the task names a file and nothing runs.
+        onRetryJoin:
+            !task.postProcessing && task.state != RecordingTaskState.recording && (task.filePath ?? '').isNotEmpty
+            ? () => unawaited(_retryJoin(task))
+            : null,
+        onPreview: _canPreview(task) ? () => unawaited(_openPreview(task)) : null,
+        onPlayExternal: _canPreview(task) ? () => unawaited(_playExternal(task)) : null,
+      ),
+    ];
+  }
+
+  /// Plays a library take through the entry every recording centre shares.
+  Future<void> _playLibraryTake(List<RecordingTake> around, RecordingTake take) =>
+      playRecordingTake(context, ref, around: around, take: take, platformName: _platformName);
+
+  /// The room a take was made in, from the library's row menu. A hand-dropped
+  /// file the store never made a row for has no room to open.
+  Future<void> _openRoomOf(RecordingTake take) async {
+    final row = take.task;
+    if (row == null) return;
+    await openRoom(context, platform: row.platform, roomId: row.roomId);
   }
 
   /// Ends a running capture; its finished segments stay, and the task's
@@ -391,7 +442,6 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
     return playableFileAt(task.filePath) != null;
   }
 
-
   /// Opens the built-in preview on [task]'s take, with the centre's other
   /// takes listed beside it — the finished picture first, the folder's
   /// segments when the join never ran.
@@ -421,7 +471,7 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
         // on what is left in it.
         await ref
             .read(recordingTasksProvider.notifier)
-            .setStopped(item.id, filePath: row.takeDirectory, bytes: 0, warning: 'file-deleted');
+            .setStopped(item.id, filePath: row.takeDirectory, bytes: 0, warning: kRecordingFileDeletedWarning);
       },
     );
   }
@@ -441,7 +491,11 @@ final class _RecorderPageState extends ConsumerState<RecorderPage> {
   /// order — the same construction the IPTV page runs over its own filter of
   /// the shared task library, so the two doors cannot drift.
   List<MediaPreviewItem> _previewItems() => recordingPreviewItems(
-    ref.read(recordingTasksProvider).tasks,
+    // The same cut as the page's: live's door walks live's takes.
+    [
+      for (final task in ref.read(recordingTasksProvider).tasks)
+        if (task.platform != kIptvRecordingPlatform) task,
+    ],
     platformName: (task) => _platformName(task.platform),
   );
 
@@ -615,7 +669,6 @@ String _filterLabel(Translations t, _RecorderFilter filter) => switch (filter) {
   _RecorderFilter.all => t.recorder.filterAll,
   _RecorderFilter.recording => t.recorder.filterRecording,
   _RecorderFilter.waiting => t.recorder.filterWaiting,
-  _RecorderFilter.saved => t.recorder.filterSaved,
   _RecorderFilter.failed => t.recorder.filterFailed,
 };
 

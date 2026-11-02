@@ -5,6 +5,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:file_picker/file_picker.dart' show FilePicker;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 
 import 'package:pure_live/app/providers/boot/storage_providers.dart'
     show appPathsProvider, storageFolderOverridesProvider;
@@ -13,19 +14,59 @@ import 'package:pure_live/features/media_preview/media_preview_item.dart' show M
 import 'package:pure_live/features/media_preview/media_preview_page.dart' show openMediaPreview;
 import 'package:pure_live/features/settings/pages/wallpaper_download_manager.dart'
     show confirmClearFinished, downloadStampOf, openDownloadedPath;
+import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openModuleItem;
 import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsChoiceRow;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_downloads.dart';
 import 'package:pure_live/modules/hongguo/controller/hongguo_settings.dart' show HongguoQualityChoice;
 import 'package:pure_live/shared/shared.dart'
-    show DownloadDetails, DownloadFilterOption, DownloadWorkspace, LiveWindow, cachedImage, showDownloadDetails;
+    show
+        DownloadDetails,
+        DownloadFilterOption,
+        DownloadWorkspace,
+        LiveWindow,
+        NavigationItem,
+        cachedImage,
+        downloadFilePresent,
+        formatDownloadBytes,
+        showDownloadDetails;
 
-/// 下载管理 — the station's download queue under Settings → 红果短剧.
+/// Whether a finished episode's file is still on disk where its row says.
 ///
-/// The settings half carries the lanes, the download tier and the folder the
-/// files land in; the task half is one row per episode with the phase's own
-/// actions. The same rows live on the sidebar's own 下载管理 page
-/// ([HongguoDownloadsPage]).
+/// Only a `done` row can be missing: a queued, paused or failed episode keeps
+/// its bytes in the `.part` beside the target and renames into place only when
+/// the transfer ends, so marking such a row 文件不在了 would say the opposite
+/// of the truth. One stat per row build, never a folder scan.
+bool _hongguoFileMissing(HongguoDownloadItem task) =>
+    task.phase == HongguoDownloadPhase.done && !downloadFilePresent(task.filePath);
+
+/// Takes one episode's record out of the queue; the file, if it is there, stays.
+///
+/// The row menu and the wide workspace's facts column both reach it, so a row
+/// that only names a file the viewer moved can be cleared from wherever the
+/// absence was noticed.
+Future<void> _removeRecord(BuildContext context, WidgetRef ref, String id) async {
+  final t = context.t;
+  final confirmed = await showDsConfirm(
+    context: context,
+    title: t.settings.downloadRemove,
+    description: t.settings.downloadRemoveBody,
+    confirmLabel: t.settings.downloadRemove,
+    cancelLabel: t.common.cancel,
+    destructive: true,
+    icon: const DsIcon(DsIcons.trash2),
+  );
+  if (!confirmed || !context.mounted) return;
+  await ref.read(hongguoDownloadsProvider.notifier).remove(id);
+}
+
+/// 下载管理 — the station's download settings under Settings → 红果短剧.
+///
+/// The pane carries the lanes, the retry budget, the download tier and the
+/// folder the files land in, then one line that says how much the queue holds
+/// and opens the station's own 下载管理 page ([HongguoDownloadsPage]). Drawing
+/// the queue here as well made one thing two entrances, and the settings half
+/// was the weaker: no speed, no table, no batch verbs.
 final class HongguoDownloadsPane extends ConsumerWidget {
   /// The pane shown under Settings → 红果短剧 → 下载.
   const HongguoDownloadsPane({super.key});
@@ -52,8 +93,6 @@ final class HongguoDownloadsPane extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final theme = DsTheme.of(context);
-    final colors = DsTheme.colorsOf(context);
     final tasks = ref.watch(hongguoDownloadsProvider);
     final lanes = ref.watch(hongguoDownloadSettingsProvider);
     final quality = ref.watch(hongguoDownloadQualityProvider);
@@ -63,7 +102,6 @@ final class HongguoDownloadsPane extends ConsumerWidget {
     final active = tasks
         .where((task) => task.phase == HongguoDownloadPhase.queued || task.phase == HongguoDownloadPhase.running)
         .length;
-    final finished = tasks.any((task) => task.phase == HongguoDownloadPhase.done);
     // The bytes already on disk, the counter's second half.
     final finishedBytes = tasks
         .where((task) => task.phase == HongguoDownloadPhase.done)
@@ -137,60 +175,30 @@ final class HongguoDownloadsPane extends ConsumerWidget {
             ),
           ],
         ),
-        Row(
-          spacing: DsSpace.s8,
+        // The queue is one row and one tap away, on the station's own 下载管理
+        // page: this pane drew the same episodes a second time, with a weaker
+        // summary and no table, so the same tasks read differently depending on
+        // which door the viewer came through. Settings keeps the choices, the
+        // count and the way out.
+        DsListSection(
           children: [
-            Expanded(
-              child: Text(
+            DsListRow(
+              leading: const DsIcon(DsIcons.download),
+              title: Text(t.hongguo.downloadManagerTitle),
+              description: Text(
                 [
                   t.hongguo.downloadTaskCount(count: tasks.length, active: active),
-                  if (finishedBytes > 0) _formatBytes(finishedBytes),
+                  if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
+                  directory,
                 ].join(' · '),
-                style: theme.typography.caption.copyWith(color: colors.textMuted),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
+              showChevron: true,
+              onPressed: () => openModuleItem(context, ref, NavigationItem.hongguoDownloads),
             ),
-            if (finished)
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                onPressed: () => unawaited(
-                  confirmClearFinished(
-                    context,
-                    title: t.hongguo.downloadClearFinished,
-                    clear: () => ref.read(hongguoDownloadsProvider.notifier).clearFinished(),
-                  ),
-                ),
-                child: Text(t.hongguo.downloadClearFinished),
-              ),
           ],
         ),
-        if (tasks.isEmpty)
-          DsEmptyState(
-            icon: const DsIcon(DsIcons.download),
-            title: Text(t.hongguo.downloadEmpty),
-            description: Text(t.hongguo.downloadEmptyDesc),
-            actions: [
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.folderOpen, size: 14),
-                onPressed: () => unawaited(openDownloadedPath(context, directory)),
-                child: Text(t.settings.downloadManagerOpenFolder),
-              ),
-            ],
-          )
-        else
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final group in _hongguoDownloadGroups(tasks)) ...[
-                _HongguoSeriesHead(group: group),
-                DsListSection(
-                  children: [for (final task in group.tasks) _HongguoTaskRow(key: ValueKey(task.id), task: task)],
-                ),
-              ],
-            ],
-          ),
       ],
     );
   }
@@ -341,8 +349,9 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
                             Text(
                               [
                                 t.hongguo.downloadTaskCount(count: tasks.length, active: moving),
-                                if (totalSpeed > 0) t.common.downloadSpeed(speed: '${_formatBytes(totalSpeed)}/s'),
-                                if (finishedBytes > 0) _formatBytes(finishedBytes),
+                                if (totalSpeed > 0)
+                                  t.common.downloadSpeed(speed: '${formatDownloadBytes(totalSpeed)}/s'),
+                                if (finishedBytes > 0) formatDownloadBytes(finishedBytes),
                               ].join(' · '),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -482,10 +491,15 @@ List<MediaPreviewItem> _hongguoPreviewItems(List<HongguoDownloadItem> tasks) {
         path: task.filePath,
         subtitle: [
           '${task.maxHeight}P',
-          if (task.total > 0) _formatBytes(task.total),
+          if (task.total > 0) formatDownloadBytes(task.total),
           downloadStampOf(DateTime.fromMillisecondsSinceEpoch(task.stamp)),
         ].join(' · '),
         cover: task.cover,
+        // The list groups by the show this part belongs to, so thirty episodes
+        // of two series read as two blocks with their own folder action rather
+        // than as one numbered run the viewer has to count by hand.
+        groupPath: p.dirname(task.filePath),
+        groupLabel: task.title,
       ),
     );
   }
@@ -689,8 +703,11 @@ DownloadDetails _detailsOf(
   int retryLimit = 0,
   int retryDelay = 0,
   bool retryPending = false,
+  VoidCallback? onRemove,
 }) {
   final total = task.total;
+  // One stat, and only for a row that claims a finished file.
+  final missing = _hongguoFileMissing(task);
   // A failed row says what went wrong and, when the queue still owes it an
   // automatic retry, how long the wait is.
   final failedBase = (task.error ?? '').trim().isEmpty
@@ -703,17 +720,21 @@ DownloadDetails _detailsOf(
     HongguoDownloadPhase.queued => t.hongguo.downloadPhaseQueued,
     HongguoDownloadPhase.running when total > 0 => [
       t.hongguo.downloading(percent: task.received * 100 ~/ total),
-      '${_formatBytes(task.speed)}/s',
-      '${_formatBytes(task.received)} / ${_formatBytes(total)}',
+      '${formatDownloadBytes(task.speed)}/s',
+      '${formatDownloadBytes(task.received)} / ${formatDownloadBytes(total)}',
       ?_etaOf(t, speed: task.speed, total: total, received: task.received),
     ].join(' · '),
     HongguoDownloadPhase.running => t.hongguo.downloadingUnknown,
     HongguoDownloadPhase.paused when total > 0 =>
-      '${t.hongguo.downloadPhasePaused} · ${task.received * 100 ~/ total}% · ${_formatBytes(task.received)} / ${_formatBytes(total)}',
+      '${t.hongguo.downloadPhasePaused} · ${task.received * 100 ~/ total}% · ${formatDownloadBytes(task.received)} / ${formatDownloadBytes(total)}',
     HongguoDownloadPhase.paused => t.hongguo.downloadPhasePaused,
     HongguoDownloadPhase.failed => '$failedBase$retryWait',
+    // The record says the transfer finished; only the disk says whether the
+    // file is still there. A row whose episode was moved or deleted says so in
+    // the same place its 已完成 used to stand alone.
     HongguoDownloadPhase.done =>
-      '${t.hongguo.downloadPhaseDone} · ${_formatBytes(total > 0 ? total : task.received)}'
+      '${missing ? t.common.previewFileMissing : t.hongguo.downloadPhaseDone} · '
+          '${formatDownloadBytes(total > 0 ? total : task.received)}'
           ' · ${downloadStampOf(DateTime.fromMillisecondsSinceEpoch(task.stamp))}',
   };
   return DownloadDetails(
@@ -725,10 +746,12 @@ DownloadDetails _detailsOf(
     queuedAt: downloadStampOf(DateTime.fromMillisecondsSinceEpoch(task.stamp)),
     retries: task.attempts,
     error: task.error ?? '',
-    onOpenFile: task.phase == HongguoDownloadPhase.done
+    fileMissing: missing,
+    onOpenFile: task.phase == HongguoDownloadPhase.done && !missing
         ? () => unawaited(openDownloadedPath(context, task.filePath))
         : null,
     onOpenFolder: () => unawaited(openDownloadedPath(context, File(task.filePath).parent.path)),
+    onRemove: onRemove,
   );
 }
 
@@ -745,22 +768,7 @@ final class _HongguoTaskRow extends ConsumerWidget {
   /// Marks this row as the one the workspace speaks about.
   final VoidCallback? onSelect;
 
-  Future<void> _remove(BuildContext context, WidgetRef ref) async {
-    final t = context.t;
-    final confirmed = await showDsConfirm(
-      context: context,
-      title: t.settings.downloadRemove,
-      description: t.settings.downloadRemoveBody,
-      confirmLabel: t.settings.downloadRemove,
-      cancelLabel: t.common.cancel,
-      destructive: true,
-      icon: const DsIcon(DsIcons.trash2),
-    );
-    // The tap can land after the dialog's host is gone (the list rebuilt
-    // under it); a dead context must not reach the page's store callback.
-    if (!confirmed || !context.mounted) return;
-    await ref.read(hongguoDownloadsProvider.notifier).remove(task.id);
-  }
+  Future<void> _remove(BuildContext context, WidgetRef ref) => _removeRecord(context, ref, task.id);
 
   Future<void> _deleteFile(BuildContext context, WidgetRef ref) async {
     final t = context.t;
@@ -796,7 +804,15 @@ final class _HongguoTaskRow extends ConsumerWidget {
       showDsToast(context: context, title: t.hongguo.previewUnavailable, status: DsStatus.warning);
       return;
     }
-    await openMediaPreview(context, title: t.hongguo.previewTitle, items: items, initialIndex: index);
+    await openMediaPreview(
+      context,
+      title: t.hongguo.previewTitle,
+      items: items,
+      initialIndex: index,
+      // The same rule as the video site: an episode deleted in the player has
+      // no reason to stay in the queue as a row that opens nothing.
+      onDeleted: (item) => ref.read(hongguoDownloadsProvider.notifier).remove(item.id),
+    );
   }
 
   @override
@@ -825,6 +841,9 @@ final class _HongguoTaskRow extends ConsumerWidget {
     // generated 第N集 label when the site named nothing.
     final label = t.hongguo.episodeLabel(index: task.index);
     final episode = task.part.isEmpty || task.part == label ? label : '$label · ${task.part}';
+    // Asked once per row, never by walking the folder: a finished episode the
+    // viewer moved elsewhere still plays no part.
+    final missing = _hongguoFileMissing(task);
     return DsListRow(
       selected: selected,
       onPressed: onSelect,
@@ -869,12 +888,14 @@ final class _HongguoTaskRow extends ConsumerWidget {
               semanticLabel: t.common.retry,
               onPressed: () => unawaited(controller.resume(task.id)),
             ),
+            // An episode whose file is gone has nothing to preview; the button
+            // says which fact it is standing on instead of failing on tap.
             HongguoDownloadPhase.done => DsButton.icon(
               variant: DsButtonVariant.secondary,
               size: DsSize.sm,
-              icon: const DsIcon(DsIcons.play),
-              semanticLabel: t.settings.backgroundPreviewMedia,
-              onPressed: () => unawaited(_openPreview(context, ref)),
+              icon: DsIcon(missing ? DsIcons.fileX : DsIcons.play),
+              semanticLabel: missing ? t.common.previewFileMissing : t.settings.backgroundPreviewMedia,
+              onPressed: missing ? null : () => unawaited(_openPreview(context, ref)),
             ),
           },
           DsMenuAnchor(
@@ -909,33 +930,41 @@ final class _HongguoTaskRow extends ConsumerWidget {
                       retryLimit: ref.watch(hongguoDownloadRetryProvider),
                       retryDelay: ref.watch(hongguoDownloadRetryDelayProvider),
                       retryPending: ref.read(hongguoDownloadsProvider.notifier).hasPendingRetry(task.id),
+                      onRemove: () => unawaited(_remove(context, ref)),
                     ),
                   ),
                 ),
               ),
               const DsMenuDivider(),
               if (task.phase == HongguoDownloadPhase.done) ...[
-                DsMenuItem(
-                  leading: const DsIcon(DsIcons.externalLink),
-                  label: Text(t.settings.downloadOpenFile),
-                  onPressed: () => unawaited(openDownloadedPath(context, task.filePath)),
-                ),
+                // A gone file keeps its folder (what sits beside it is still
+                // worth seeing) and loses the two verbs that act on it.
+                if (!missing)
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.externalLink),
+                    label: Text(t.settings.downloadOpenFile),
+                    onPressed: () => unawaited(openDownloadedPath(context, task.filePath)),
+                  ),
                 DsMenuItem(
                   leading: const DsIcon(DsIcons.folderOpen),
                   label: Text(t.settings.downloadManagerOpenFolder),
                   onPressed: () => unawaited(openDownloadedPath(context, File(task.filePath).parent.path)),
                 ),
-                DsMenuItem(
-                  leading: const DsIcon(DsIcons.trash2),
-                  label: Text(t.hongguo.downloadDeleteFile),
-                  destructive: true,
-                  onPressed: () => unawaited(_deleteFile(context, ref)),
-                ),
-                const DsMenuDivider(),
+                if (!missing) ...[
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.trash2),
+                    label: Text(t.hongguo.downloadDeleteFile),
+                    destructive: true,
+                    onPressed: () => unawaited(_deleteFile(context, ref)),
+                  ),
+                  const DsMenuDivider(),
+                ],
               ],
               DsMenuItem(
                 leading: const DsIcon(DsIcons.trash2),
-                label: Text(t.settings.downloadRemove),
+                // Over a file that is not there, 移除记录 is the whole answer:
+                // the row is the only thing left of the download.
+                label: Text(missing ? t.common.downloadRemoveFromList : t.settings.downloadRemove),
                 destructive: true,
                 onPressed: () => unawaited(_remove(context, ref)),
               ),
@@ -945,16 +974,4 @@ final class _HongguoTaskRow extends ConsumerWidget {
       ),
     );
   }
-}
-
-/// Bytes as a person reads them: the biggest unit that stays whole.
-String _formatBytes(int bytes) {
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  var value = bytes.toDouble();
-  var unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit++;
-  }
-  return unit == 0 ? '${value.round()} B' : '${value.toStringAsFixed(1)} ${units[unit]}';
 }
