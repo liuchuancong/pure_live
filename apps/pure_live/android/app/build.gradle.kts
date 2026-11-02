@@ -1,11 +1,16 @@
 plugins {
     id("com.android.application")
+    // Firebase：读 google-services.json 的 FlutterFire 插件（包名已与 pure-live-26c7f 注册一致）；
+    // 与参考仓同法在 Flutter 插件之后再 apply，避免插件顺序之争。
+    id("com.google.gms.google-services") apply false
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+apply(plugin = "com.google.gms.google-services")
+
 android {
-    namespace = "com.purelive.pure_live"
+    namespace = "com.mystyle.purelive"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +21,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.purelive.pure_live"
+        applicationId = "com.mystyle.purelive"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

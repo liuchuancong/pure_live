@@ -1,4 +1,4 @@
-package com.purelive.pure_live
+package com.mystyle.purelive
 
 import android.app.Activity
 import android.content.ActivityNotFoundException

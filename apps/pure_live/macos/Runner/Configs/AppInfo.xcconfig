@@ -8,7 +8,7 @@
 PRODUCT_NAME = pure_live
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.purelive.pureLive
+PRODUCT_BUNDLE_IDENTIFIER = com.mystyle.purelive
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 com.purelive. All rights reserved.

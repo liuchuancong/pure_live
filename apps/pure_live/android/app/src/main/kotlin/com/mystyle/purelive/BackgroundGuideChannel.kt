@@ -1,4 +1,4 @@
-package com.purelive.pure_live
+package com.mystyle.purelive
 
 import android.annotation.SuppressLint
 import android.app.Activity

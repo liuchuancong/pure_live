@@ -1,4 +1,4 @@
-package com.purelive.pure_live
+package com.mystyle.purelive
 
 import android.os.Build
 import android.os.Bundle
