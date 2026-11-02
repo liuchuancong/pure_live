@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+import 'dart:math' as math;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
@@ -6,13 +7,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart' show GoRouterHelper;
 import 'package:live_sites/live_sites.dart';
 import 'package:pure_live/app/app.dart';
-import 'package:pure_live/features/settings/settings.dart' show kRoomCardListDesignHeight;
+import 'package:pure_live/features/settings/settings.dart' show kRoomCardListDesignHeight, roomCardTileHeight;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart' show followsProvider;
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/modules/vod/controller/vod_live.dart';
 import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedToolbar;
 import 'package:pure_live/shared/shared.dart';
+
+/// The followed shelf's row card, and the pair of them plus the gap a column
+/// needs before the shelf keeps that form: narrower than this the rail shows
+/// one room and a sliver of the next.
+const double _kFollowRowCardWidth = 320;
+
+/// The narrowest the shelf's cover card gets, so a 300px window still reads a
+/// title instead of two halves too cramped to use.
+const double _kFollowCardMinWidth = 150;
 
 /// The reference's 直播 rail entry: the followed rooms and the site's areas
 /// over Bilibili's recommended live feed, pages of it as the grid is read.
@@ -56,25 +66,45 @@ final class _VodLivePageState extends ConsumerState<VodLivePage> {
         if (followedRooms.isNotEmpty)
           _Section(
             title: t.vod.liveFollowTitle,
-            child: SizedBox(
-              height: kRoomCardListDesignHeight,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(horizontal: inset),
-                itemCount: followedRooms.length,
-                separatorBuilder: (context, index) => const SizedBox(width: DsSpace.s12),
-                itemBuilder: (context, index) {
-                  final room = followedRooms[index];
-                  return SizedBox(
-                    width: 320,
-                    child: RoomCardMenu(
-                      room: room,
-                      onOpen: () => _openRoom(room, followedRooms),
-                      child: RoomCard(room: room, listRow: true, onOpen: () => _openRoom(room, followedRooms)),
-                    ),
-                  );
-                },
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // The column the shelf is drawn in picks its form. A row card
+                // needs two of itself to read as a shelf; below that the rail
+                // showed one room and a 26px hint of the next on a 390 phone.
+                // There the cards take the shape the feed's grid already uses
+                // — 16:9 cover over the room card's own information block —
+                // two to a screen; a column that holds two rows keeps the row,
+                // which also carries the tags and the audience figure. The gap
+                // is the feed's own, so the shelf and the grid below it
+                // separate their cards the same way.
+                final spacing = settings.crossSpacing;
+                final content = math.max(0, constraints.maxWidth - inset * 2).toDouble();
+                final holdsRows = content >= _kFollowRowCardWidth * 2 + spacing;
+                final cardWidth = holdsRows
+                    ? _kFollowRowCardWidth
+                    : math.max(_kFollowCardMinWidth, (content - spacing) / 2);
+                final cardExtent = holdsRows ? kRoomCardListDesignHeight : roomCardTileHeight(cardWidth);
+                return SizedBox(
+                  height: cardExtent,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.symmetric(horizontal: inset),
+                    itemCount: followedRooms.length,
+                    separatorBuilder: (context, index) => SizedBox(width: spacing),
+                    itemBuilder: (context, index) {
+                      final room = followedRooms[index];
+                      return SizedBox(
+                        width: cardWidth,
+                        child: RoomCardMenu(
+                          room: room,
+                          onOpen: () => _openRoom(room, followedRooms),
+                          child: RoomCard(room: room, listRow: holdsRows, onOpen: () => _openRoom(room, followedRooms)),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
             ),
           ),
         if (areas.isNotEmpty)
