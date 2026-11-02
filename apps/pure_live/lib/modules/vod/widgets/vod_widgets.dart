@@ -793,16 +793,36 @@ final class VodUserRow extends StatelessWidget {
   }
 }
 
-/// One archive as a full-width row (the list layout of a browse feed).
+/// One archive as a full-width row: the list layout of a browse feed, and the
+/// shape every collected list of the station draws — 稍后再看, 收藏 and the
+/// player's own history are one archive read three ways, so they take one row.
+///
+/// The cover carries the archive's ink: its length at the foot's end, or the
+/// watched stripe when the row is a way back to a half-finished archive.
+/// [subtitle] is the line under the title — the uploader for an archive found
+/// in a feed, the position for one the player stopped on.
 final class VodVideoRow extends StatelessWidget {
-  /// The row for [video]; [onOpen] opens its page.
-  const VodVideoRow({required this.video, this.onOpen, super.key});
+  /// The row for [video]; [onOpen] opens its page and [trailing] is the row's
+  /// own action.
+  const VodVideoRow({required this.video, this.onOpen, this.subtitle, this.progress, this.trailing, super.key});
 
   /// The archive shown.
   final VodVideo video;
 
   /// Opens the archive; null leaves the row inert.
   final VoidCallback? onOpen;
+
+  /// The line under the title, in the uploader's place: what this row is being
+  /// read for.
+  final String? subtitle;
+
+  /// The watched fraction (0..1) along the cover's foot. A row with one leaves
+  /// the length chip out — the same figure already stands in [subtitle].
+  final double? progress;
+
+  /// The row's action at its end: the way to drop the archive from the list
+  /// it is being read out of.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -814,6 +834,7 @@ final class VodVideoRow extends StatelessWidget {
       final value? when value > 0 => AudienceFormat.format(value),
       _ => '',
     };
+    final note = (subtitle ?? video.uploader ?? '').trim();
     return DsCard(
       onPressed: onOpen,
       semanticLabel: video.title,
@@ -840,7 +861,17 @@ final class VodVideoRow extends StatelessWidget {
                         child: DecoratedBox(decoration: BoxDecoration(gradient: kRoomCoverScrim)),
                       ),
                     ),
-                    if (video.duration != null)
+                    // An archive the player stopped on carries its position at
+                    // the cover's foot; the length then stays out of the ink,
+                    // since the line under the title already gives it.
+                    if (progress case final value?)
+                      PositionedDirectional(
+                        bottom: 0,
+                        start: 0,
+                        end: 0,
+                        child: DsProgressBar(value: value, animate: false, style: const DsProgressBarStyle(height: 3)),
+                      )
+                    else if (video.duration != null)
                       PositionedDirectional(
                         bottom: DsSpace.s4,
                         end: DsSpace.s4,
@@ -874,9 +905,9 @@ final class VodVideoRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                   ),
-                  if ((video.uploader ?? '').trim().isNotEmpty)
+                  if (note.isNotEmpty)
                     Text(
-                      video.uploader!,
+                      note,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.typography.caption.copyWith(color: colors.textMuted),
@@ -914,6 +945,7 @@ final class VodVideoRow extends StatelessWidget {
               ),
             ),
           ),
+          ?trailing,
         ],
       ),
     );

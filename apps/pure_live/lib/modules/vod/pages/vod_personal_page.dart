@@ -82,6 +82,28 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
 
   void _openSeason(int seasonId) => unawaited(context.push('/vod/season/$seasonId'));
 
+  /// The watched fraction a history row draws along its cover: nothing at all
+  /// when the archive is finished (the line under the title says so), when it
+  /// has no length to be a fraction of, or when it has not really started — an
+  /// empty stripe under a cover is not a piece of information.
+  double? _watched(VodHistoryEntry entry) {
+    if (entry.completed) return null;
+    final total = entry.video.durationSeconds;
+    if (total == null || total <= 0) return null;
+    final fraction = (entry.positionSeconds / total).clamp(0.0, 1.0);
+    return fraction > 0 ? fraction : null;
+  }
+
+  /// The row-end action that drops one archive from the list it was read out
+  /// of, named by [label].
+  Widget _drop(String label, Future<void> Function() onRemove) => DsButton.icon(
+    variant: DsButtonVariant.secondary,
+    size: DsSize.sm,
+    semanticLabel: label,
+    onPressed: () => unawaited(onRemove()),
+    icon: const DsIcon(DsIcons.x, size: 16),
+  );
+
   Future<void> _clearHistory() async {
     final t = context.t;
     final confirmed = await showDsConfirm(
@@ -223,16 +245,22 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                                   : vodDurationText(
                                       Duration(milliseconds: (entry.video.durationSeconds! * 1000).round()),
                                     );
-                              return _SavedVideoRow(
-                                video: entry.video,
-                                subtitle: entry.completed
-                                    ? t.vod.historyCompleted
-                                    : total.isEmpty
-                                    ? position
-                                    : t.vod.historyProgress(position: position, total: total),
-                                onOpen: () => _open(entry.bvid),
-                                onRemove: () => unawaited(ref.read(vodHistoryProvider.notifier).remove(entry.bvid)),
-                                removeLabel: t.vod.historyRemove,
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: DsSpace.s4),
+                                child: VodVideoRow(
+                                  video: entry.video.video,
+                                  subtitle: entry.completed
+                                      ? t.vod.historyCompleted
+                                      : total.isEmpty
+                                      ? position
+                                      : t.vod.historyProgress(position: position, total: total),
+                                  progress: _watched(entry),
+                                  onOpen: () => _open(entry.bvid),
+                                  trailing: _drop(
+                                    t.vod.historyRemove,
+                                    () => ref.read(vodHistoryProvider.notifier).remove(entry.bvid),
+                                  ),
+                                ),
                               );
                             },
                           ),
@@ -248,12 +276,16 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                             itemCount: favourites.length,
                             itemBuilder: (context, index) {
                               final video = favourites[index];
-                              return _SavedVideoRow(
-                                video: video,
-                                subtitle: video.uploader ?? '',
-                                onOpen: () => _open(video.bvid),
-                                onRemove: () => unawaited(ref.read(vodFavouritesProvider.notifier).remove(video.bvid)),
-                                removeLabel: t.vod.favouriteRemove,
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: DsSpace.s4),
+                                child: VodVideoRow(
+                                  video: video.video,
+                                  onOpen: () => _open(video.bvid),
+                                  trailing: _drop(
+                                    t.vod.favouriteRemove,
+                                    () => ref.read(vodFavouritesProvider.notifier).remove(video.bvid),
+                                  ),
+                                ),
                               );
                             },
                           ),
@@ -397,87 +429,6 @@ final class _FollowingList extends StatelessWidget {
       items: seasons,
       aspectRatio: kVodSeasonTileAspect,
       itemBuilder: (context, season) => VodSeasonCard(season: season, onOpen: () => onOpen(season.seasonId)),
-    );
-  }
-}
-
-/// One saved archive: its cover, title, the line under it (a progress or the
-/// uploader) and the way to drop it from the list.
-final class _SavedVideoRow extends StatelessWidget {
-  const _SavedVideoRow({
-    required this.video,
-    required this.subtitle,
-    required this.onOpen,
-    required this.onRemove,
-    required this.removeLabel,
-  });
-
-  final VodSavedVideo video;
-  final String subtitle;
-  final VoidCallback onOpen;
-  final VoidCallback onRemove;
-  final String removeLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DsTheme.colorsOf(context);
-    final theme = DsTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: DsSpace.s4),
-      child: DsCard(
-        onPressed: onOpen,
-        semanticLabel: video.title,
-        style: DsCardStyle(
-          padding: const EdgeInsets.all(DsSpace.s8),
-          hovered: DsCardStyle(background: colors.hover),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: DsSpace.s12,
-          children: [
-            SizedBox(
-              width: 148,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(theme.radii.control(84)),
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: video.coverUrl == null
-                      ? ColoredBox(color: colors.control)
-                      : DsImage(image: cachedImage(video.coverUrl!), aspectRatio: 16 / 9, semanticLabel: video.title),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: DsSpace.s4,
-                children: [
-                  Text(
-                    video.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                  ),
-                  if (subtitle.isNotEmpty)
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.caption.copyWith(color: colors.textMuted),
-                    ),
-                ],
-              ),
-            ),
-            DsButton.icon(
-              variant: DsButtonVariant.secondary,
-              size: DsSize.sm,
-              semanticLabel: removeLabel,
-              onPressed: onRemove,
-              icon: const DsIcon(DsIcons.x, size: 16),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
