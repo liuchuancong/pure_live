@@ -16,9 +16,10 @@ enum AreaCardLayout {
 /// One area as a card: its picture, its name, the parent group it sits in
 /// when the platform nests areas, and an optional control at the end.
 ///
-/// The surface is [DsCard]'s, so hover, press and the keyboard focus ring
-/// come with it. [filled] gives the card the control fill, for a page that
-/// lays its cards directly on the surface.
+/// The surface is [DsCard]'s own — the theme's card fill and corner, so the
+/// card follows the viewer's radius and the glass's translucency exactly as
+/// the room cards do — and hover, press and the keyboard focus ring come
+/// with it.
 final class AreaCard extends StatelessWidget {
   /// The card for [area].
   const AreaCard({
@@ -26,7 +27,6 @@ final class AreaCard extends StatelessWidget {
     required this.onPressed,
     this.parentLabel,
     this.trailing,
-    this.filled = false,
     this.layout = AreaCardLayout.row,
     super.key,
   });
@@ -42,9 +42,6 @@ final class AreaCard extends StatelessWidget {
 
   /// A control at the card's end, e.g. the follow heart.
   final Widget? trailing;
-
-  /// Draws the card on the control fill instead of the surface.
-  final bool filled;
 
   /// Whether the picture sits beside the name or above it.
   final AreaCardLayout layout;
@@ -76,14 +73,7 @@ final class AreaCard extends StatelessWidget {
     return DsCard(
       onPressed: onPressed,
       semanticLabel: area.areaName,
-      style: DsCardStyle(
-        padding: layout == AreaCardLayout.tile ? EdgeInsets.zero : const EdgeInsets.all(DsSpace.s12),
-        background: filled ? colors.control : colors.surface,
-        hovered: DsCardStyle(
-          background: colors.hover,
-          shadows: [DsShadow(color: colors.overlay, blur: 24, offset: const Offset(0, 8))],
-        ),
-      ),
+      style: DsCardStyle(padding: layout == AreaCardLayout.tile ? EdgeInsets.zero : const EdgeInsets.all(DsSpace.s12)),
       child: switch (layout) {
         AreaCardLayout.row => Row(
           spacing: DsSpace.s12,

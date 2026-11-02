@@ -497,7 +497,6 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
         items: _areaMenuItems(context, followed: followed, onOpen: open, onToggle: toggle),
         child: AreaCard(
           area: area,
-          filled: true,
           layout: tileLayout,
           onPressed: open,
           // The heart is the followed state, not an offer — the room card's
@@ -665,7 +664,6 @@ final class _FollowedAreaCard extends StatelessWidget {
       items: _areaMenuItems(context, followed: true, onOpen: onSelect, onToggle: onUnfollow),
       child: AreaCard(
         area: area,
-        filled: true,
         layout: layout,
         onPressed: onSelect,
         trailing: AreaFollowButton(followed: true, onPressed: onUnfollow),
