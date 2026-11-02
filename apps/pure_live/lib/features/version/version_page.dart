@@ -136,7 +136,12 @@ final class _ReleaseDownloadsPageState extends ConsumerState<ReleaseDownloadsPag
     return fetchReleaseBuilds(http, version: widget.version);
   }
 
-  void _retry() => setState(() => _future = _load());
+  void _retry() {
+    final future = _load();
+    setState(() {
+      _future = future;
+    });
+  }
 
   Future<void> _download(ReleaseBuild build) async {
     await showUpdateDownload(context, build: build);
@@ -268,7 +273,12 @@ final class _ReleaseHistoryPageState extends ConsumerState<ReleaseHistoryPage> {
     return fetchReleases(http);
   }
 
-  void _retry() => setState(() => _future = _load());
+  void _retry() {
+    final future = _load();
+    setState(() {
+      _future = future;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -148,7 +148,9 @@ final class _PairedSectionState extends ConsumerState<_PairedSection> {
   void _reload() {
     final future = widget.runtime?.store.loadDeviceTrusts();
     if (future == null) return;
-    setState(() => _trusts = future);
+    setState(() {
+      _trusts = future;
+    });
   }
 
   /// The address this device last saw [deviceId] on, from discovery.
