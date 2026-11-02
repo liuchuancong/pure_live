@@ -10,5 +10,4 @@ export 'data/follow_repository.dart';
 export 'data/follow_tags.dart';
 export 'pages/favorites_page.dart';
 export 'pages/follow_tags_pane.dart';
-export 'widgets/favorites_widgets.dart';
 export 'widgets/follow_tag_picker.dart';

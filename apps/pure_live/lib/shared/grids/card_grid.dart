@@ -927,6 +927,7 @@ final class CardList<T> extends StatelessWidget {
     this.skeletonCount = 8,
     this.skeletonBuilder,
     this.scrollController,
+    this.onRefresh,
     super.key,
   });
 
@@ -935,6 +936,10 @@ final class CardList<T> extends StatelessWidget {
 
   /// Builds one row card; null on a skeleton-only list.
   final Widget Function(BuildContext context, T item)? itemBuilder;
+
+  /// Loads the list again when the viewer pulls it down; null offers no
+  /// pull (the grid's own gesture, so every feed refreshes the same way).
+  final Future<void> Function()? onRefresh;
 
   /// Whether a page is in flight: the footer shows a skeleton row, and the
   /// first page shows skeletons instead of the empty state.
@@ -975,11 +980,15 @@ final class CardList<T> extends StatelessWidget {
       );
     }
     final loadingRow = isLoading && hasMore;
-    return NotificationListener<ScrollNotification>(
+    final refresh = onRefresh;
+    final list = NotificationListener<ScrollNotification>(
       onNotification: _endReached,
       child: ListView.separated(
         controller: scrollController,
         padding: padding,
+        // With the gesture on, a short list still scrolls far enough to
+        // pull (the grid's rule).
+        physics: refresh == null ? null : const AlwaysScrollableScrollPhysics(),
         itemCount: items.length + (loadingRow ? 1 : 0),
         separatorBuilder: (context, index) => SizedBox(height: gap),
         itemBuilder: (context, index) {
@@ -994,6 +1003,8 @@ final class CardList<T> extends StatelessWidget {
         },
       ),
     );
+    if (refresh == null) return list;
+    return CustomRefreshIndicator(onRefresh: refresh, builder: buildDsRefreshIndicator, child: list);
   }
 
   /// Asks for the next page once the viewer nears the end.

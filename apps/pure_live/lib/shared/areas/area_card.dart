@@ -54,10 +54,14 @@ final class AreaCard extends StatelessWidget {
     final theme = DsTheme.of(context);
     final colors = theme.colors;
     final parent = (parentLabel ?? area.parentAreaName ?? '').trim();
+    // The poster centres its name under the picture; the row keeps it
+    // flush with the picture's side.
+    final textAlign = layout == AreaCardLayout.tile ? TextAlign.center : TextAlign.start;
     final name = Text(
       area.areaName,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
+      textAlign: textAlign,
       style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
     );
     final group = parent.isEmpty
@@ -66,6 +70,7 @@ final class AreaCard extends StatelessWidget {
             parent,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            textAlign: textAlign,
             style: theme.typography.caption.copyWith(color: colors.textMuted),
           );
     return DsCard(

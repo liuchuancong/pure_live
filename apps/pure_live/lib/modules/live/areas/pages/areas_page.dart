@@ -396,6 +396,10 @@ double _areaAspect(AreaCardLayout layout) => layout == AreaCardLayout.tile ? 0.8
 /// side.
 const double _areaTileWidth = 170;
 
+/// How many areas one display page (a wide window's page, a narrow one's
+/// block) holds: the tiles are small, so a page is two of the room feeds'.
+const int _areaPageSize = 60;
+
 /// One platform's areas catalogue: the platform's secondary category tabs
 /// (the reference's category row) over the card grid. A category the
 /// platform does not nest leaves the row away.
@@ -548,16 +552,24 @@ final class _PlatformAreasState extends ConsumerState<_PlatformAreas> {
                     if (velocity.abs() < 240) return;
                     _stepCategory(categories, velocity < 0 ? 1 : -1);
                   },
-            child: CardGrid<LiveArea>(
+            // The catalogue is whole in hand; the feed pages it the popular
+            // page's way — a wide window by number, a narrow one appending
+            // as the viewer reaches the end. A new category or word is a new
+            // feed, starting on its first page.
+            child: PagedCardGrid<LiveArea>(
+              key: ValueKey('areas-${widget.platform}-$category-${searching ? query : ''}'),
               scrollController: widget.scrollController,
               items: items,
+              pageSize: _areaPageSize,
+              hasMore: false,
+              isLoading: state.loading,
+              onLoadMore: () async {},
               crossSpacing: settings.crossSpacing,
               mainSpacing: settings.mainSpacing,
               aspectRatio: _areaAspect(tileLayout),
               // Poster tiles are small: their own measure fits several
               // across a window, while the row keeps the feed's card width.
               cardExtent: tileLayout == AreaCardLayout.tile ? _areaTileWidth : null,
-              isLoading: state.loading,
               error: state.error?.message,
               onRetry: () => controller.refresh(widget.platform),
               // A pull reloads the catalogue; a failure keeps the areas and
@@ -617,8 +629,14 @@ final class _FollowedAreas extends ConsumerWidget {
         ),
       ),
     );
-    return CardGrid<LiveArea>(
+    // The followed areas page like the catalogue: by number on a wide
+    // window, appending on a narrow one.
+    return PagedCardGrid<LiveArea>(
       items: followed.areas,
+      pageSize: _areaPageSize,
+      hasMore: false,
+      isLoading: false,
+      onLoadMore: () async {},
       crossSpacing: settings.crossSpacing,
       mainSpacing: settings.mainSpacing,
       aspectRatio: _areaAspect(tileLayout),

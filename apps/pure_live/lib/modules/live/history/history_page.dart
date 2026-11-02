@@ -1,6 +1,7 @@
 import 'dart:async' show unawaited;
 import 'dart:math' as math;
 
+import 'package:custom_refresh_indicator/custom_refresh_indicator.dart' show CustomRefreshIndicator;
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,6 +48,19 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   /// The refresh's progress (0..1); null when none runs.
   double? _progress;
 
+  /// How many records one display page (a wide window's page, a narrow
+  /// one's block) holds; the day sections are cut from that slice.
+  static const int _pageSize = 60;
+
+  /// The page the wide pager was asked for; the filter resets it.
+  int _asked = 1;
+
+  /// How many blocks the narrow list has revealed; the filter resets it.
+  int _revealed = 1;
+
+  /// The records' position, so a new page starts at its top.
+  final ScrollController _scroll = ScrollController();
+
   /// Whether the filter keeps anything out.
   bool get _filterActive => _filterCount > 0;
 
@@ -68,7 +82,17 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   void _takeHandoff() {
     final word = ref.read(historySearchHandoffProvider.notifier).take();
     if (word == null || word.isEmpty || !mounted) return;
-    setState(() => _filter = (query: word, from: _filter.from, to: _filter.to));
+    _setFilter((query: word, from: _filter.from, to: _filter.to));
+  }
+
+  /// Puts [filter] in force; a new filter is a new list, on its first page.
+  void _setFilter(_HistoryFilter filter) {
+    setState(() {
+      _filter = filter;
+      _asked = 1;
+      _revealed = 1;
+    });
+    if (_scroll.hasClients) _scroll.jumpTo(0);
   }
 
   @override
@@ -183,11 +207,23 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
         ),
       );
     }
-    final sections = _daySections(t, shown, DateTime.now());
+    // The records page the popular page's way: a wide window shows one
+    // page of them under the kit's pagination, a narrow one appends the next
+    // block as the viewer reaches the end and pulls to refresh them all.
+    // The day sections are cut from the shown slice, so a day that spans
+    // two pages is headed on both.
+    final wide = MediaQuery.sizeOf(context).width >= 768;
+    final lastPage = (shown.length + _pageSize - 1) ~/ _pageSize;
+    final page = _asked.clamp(1, lastPage);
+    final start = wide ? (page - 1) * _pageSize : 0;
+    final end = math.min(shown.length, wide ? start + _pageSize : _revealed * _pageSize);
+    final slice = shown.sublist(start, end);
+    final moreInHand = !wide && shown.length > end;
+    final sections = _daySections(t, slice, DateTime.now());
     final layout = ref.watch(browseLayoutProvider);
     final settings = ref.watch(browseSettingsProvider);
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    return LayoutBuilder(
+    final records = LayoutBuilder(
       builder: (context, constraints) {
         final crossSpacing = settings.crossSpacing;
         // The feed's own measure — the viewer's column cap included — so a
@@ -212,6 +248,9 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
         // One scroll for every day: the sections are slivers, so a long
         // record list builds its cards lazily instead of all at once.
         return CustomScrollView(
+          controller: _scroll,
+          // With the pull on, a short list still scrolls far enough to pull.
+          physics: wide ? null : const AlwaysScrollableScrollPhysics(),
           slivers: [
             for (final (header, records) in sections) ...[
               SliverPadding(
@@ -237,10 +276,56 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                 ),
               ),
             ],
+            // The next block's placeholder: a row of the tile the block will
+            // show, so the end never reads as the list's end.
+            if (moreInHand)
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, 0),
+                sliver: SliverToBoxAdapter(
+                  child: DsShimmer(
+                    child: DsSkeleton(width: double.infinity, height: tileExtent),
+                  ),
+                ),
+              ),
             const SliverToBoxAdapter(child: SizedBox(height: DsSpace.s24)),
           ],
         );
       },
+    );
+    if (!wide) {
+      return NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (moreInHand && notification.metrics.pixels >= notification.metrics.maxScrollExtent - 600) {
+            setState(() => _revealed++);
+          }
+          return false;
+        },
+        child: CustomRefreshIndicator(
+          onRefresh: () => _refreshAll(all),
+          builder: buildDsRefreshIndicator,
+          child: records,
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: records),
+        Padding(
+          padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s12),
+          child: Center(
+            child: DsPagination(
+              page: page,
+              pageCount: lastPage,
+              onChanged: (next) {
+                setState(() => _asked = next);
+                // A new page starts at its head, as desktop pagers do.
+                if (_scroll.hasClients) _scroll.jumpTo(0);
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -326,14 +411,20 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
         filter: _filter,
         firstDay: earliest ?? dayOf(DateTime.now()),
         onChanged: (filter) {
-          if (mounted) setState(() => _filter = filter);
+          if (mounted) _setFilter(filter);
         },
       ),
     );
   }
 
   /// Clears every condition; every record shows again.
-  void _resetFilter() => setState(() => _filter = (query: '', from: null, to: null));
+  void _resetFilter() => _setFilter((query: '', from: null, to: null));
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   /// Re-reads every record's room state, keeping each watch moment; the
   /// failures are counted rather than hidden.

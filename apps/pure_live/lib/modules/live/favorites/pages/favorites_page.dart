@@ -12,7 +12,6 @@ import 'package:pure_live/modules/live/favorites/data/favorite_rules.dart';
 import 'package:pure_live/modules/live/favorites/data/favorites_inline_search.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_repository.dart';
 import 'package:pure_live/modules/live/favorites/data/follow_tags.dart' show followTagsProvider;
-import 'package:pure_live/modules/live/favorites/widgets/favorites_widgets.dart';
 import 'package:pure_live/modules/live/popular/popular.dart' show RoomCard, RoomCardMenu;
 import 'package:pure_live/shared/shared.dart';
 
@@ -47,12 +46,7 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   /// The tag shown, or null for every tag.
   String? _tag;
 
-  /// The page shown on the bottom pager, from 1. The page is measured in the
-  /// shown platform's own feed window (see [roomFeedRequestSize]), so a page
-  /// is one refresh's worth of rooms rather than a number the viewer sets.
-  int _page = 1;
-
-  /// The grid's position, so a new page starts at its top.
+  /// The grid's position, so a new slice starts at its top.
   final ScrollController _gridScroll = ScrollController();
 
   Timer? _autoRefresh;
@@ -78,11 +72,9 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
       if (!ref.read(followsAutoRefreshProvider).onResume) _cancelResumeRefresh();
     });
     // The toolbar's word narrows the shown follows in place; a new word
-    // restarts the slice at its first page.
+    // restarts the slice at its top.
     ref.listenManual(favoritesInlineSearchProvider, (_, _) {
-      if (!mounted) return;
-      setState(() => _page = 1);
-      _jumpToTop();
+      if (mounted) _jumpToTop();
     });
     _syncTimer();
   }
@@ -209,26 +201,14 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
   /// Switches the group: a new slice starts on its first page.
   void _selectGroup(LiveFollowGroup? group) {
     if (_group == group) return;
-    setState(() {
-      _group = group;
-      _page = 1;
-    });
+    setState(() => _group = group);
     _jumpToTop();
   }
 
   /// Switches the platform: a new slice starts on its first page.
   void _selectPlatform(String platform) {
     if (_platform == platform) return;
-    setState(() {
-      _platform = platform;
-      _page = 1;
-    });
-    _jumpToTop();
-  }
-
-  /// Shows [page] and scrolls the cards back to the top.
-  void _goToPage(int page) {
-    setState(() => _page = page);
+    setState(() => _platform = platform);
     _jumpToTop();
   }
 
@@ -331,14 +311,14 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
             followMatchesQuery(room, query))
           room,
     ];
-    // The pager slices the loaded follows locally; the shown page is kept
-    // inside the slice that is left after a filter or an unfollow.
+    // The feed pages the loaded follows locally — the popular page's rule:
+    // a wide window pages by number, a narrow one appends and pulls to
+    // refresh. The page is measured in the shown platform's own feed window
+    // (see [roomFeedRequestSize]), so a page is one refresh's worth of rooms
+    // rather than a number the viewer sets. A new slice (group, platform,
+    // tag or word) is a new feed, starting on its first page.
     final pageSize = roomFeedRequestSize(platform);
-    final lastPage = rooms.isEmpty ? 1 : (rooms.length + pageSize - 1) ~/ pageSize;
-    final page = _page.clamp(1, lastPage);
-    final start = (page - 1) * pageSize;
-    final end = start + pageSize > rooms.length ? rooms.length : start + pageSize;
-    final visibleRooms = rooms.sublist(start, end);
+    final sliceKey = ValueKey('follows-$platform-${_group?.name}-$selectedTag-$query');
 
     Widget cardFor(LiveRoom room, {bool listRow = false}) {
       final names = [for (final id in room.local.tagIds) ?tagNames[id]];
@@ -500,20 +480,24 @@ final class _FavoritesPageState extends ConsumerState<FavoritesPage> with Widget
                           onRefresh: _runRefresh,
                         ),
                       )
-              : LayoutBuilder(
-                  builder: (context, constraints) => CardGrid<LiveRoom>(
-                    items: visibleRooms,
-                    layout: layout,
-                    listMatchesGridWidth: true,
-                    listMainAxisExtent: kRoomCardListTagsHeight,
-                    listItemBuilder: (context, room) => cardFor(room, listRow: true),
-                    scrollController: _gridScroll,
-                    itemBuilder: (context, room) => cardFor(room),
-                  ),
+              : PagedCardGrid<LiveRoom>(
+                  key: sliceKey,
+                  items: rooms,
+                  pageSize: pageSize,
+                  hasMore: false,
+                  isLoading: false,
+                  onLoadMore: () async {},
+                  // The pull is the header's refresh: the shown follows
+                  // asked again, the progress bar over the tabs.
+                  onRefresh: _runRefresh,
+                  layout: layout,
+                  listMatchesGridWidth: true,
+                  listMainAxisExtent: kRoomCardListTagsHeight,
+                  listItemBuilder: (context, room) => cardFor(room, listRow: true),
+                  scrollController: _gridScroll,
+                  itemBuilder: (context, room) => cardFor(room),
                 ),
         ),
-        if (lastPage > 1)
-          FavoritesPager(page: page, pageCount: lastPage, busy: _refreshing, onPage: _goToPage, onRefresh: _runRefresh),
       ],
     );
   }

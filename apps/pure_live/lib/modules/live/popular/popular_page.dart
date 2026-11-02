@@ -15,34 +15,6 @@ import 'package:pure_live/modules/live/popular/room_card_menu.dart';
 import 'package:pure_live/modules/live/search/search.dart';
 import 'package:pure_live/shared/shared.dart';
 
-/// How a platform's rooms are ordered on screen: the platform's own
-/// recommendation or the largest audience first. The order is local — the
-/// catalogue is already in hand, so switching never refetches.
-enum _PopularSort { platform, audience }
-
-/// One platform's audience figure for the sort: the figure the card shows,
-/// else zero. The choice and the real-online policy are the same ones the
-/// cards use, so the order follows what the viewer sees.
-int _audienceRank(LiveRoom room, AudienceMetricChoice choice, AudiencePolicy policy) =>
-    audienceFigureOf(room, choice, policy: policy) ?? 0;
-
-/// [rooms] in [sort]'s order; the platform's own order is left untouched,
-/// and the audience order is stable (ties keep the platform's order).
-List<LiveRoom> _sortedRooms(
-  List<LiveRoom> rooms,
-  _PopularSort sort, {
-  required AudienceMetricChoice choice,
-  required AudiencePolicy policy,
-}) {
-  if (sort == _PopularSort.platform) return rooms;
-  final indexed = rooms.indexed.toList()
-    ..sort((a, b) {
-      final byAudience = _audienceRank(b.$2, choice, policy).compareTo(_audienceRank(a.$2, choice, policy));
-      return byAudience != 0 ? byAudience : a.$1.compareTo(b.$1);
-    });
-  return [for (final (_, room) in indexed) room];
-}
-
 /// The popular page (the reference's `PopularPage`): one tab per platform
 /// of the discovery-capable sites, each tab holding its own paged feed of
 /// recommendations — the feeds stay while the app runs, so switching tabs
@@ -79,9 +51,6 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
   /// Whether a platform-display fallback is already waiting for the frame:
   /// one move per hidden selection, not one per build.
   bool _platformFallbackScheduled = false;
-
-  /// The local order of each platform's rooms.
-  _PopularSort _sort = _PopularSort.platform;
 
   @override
   void initState() {
@@ -185,46 +154,14 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
       unawaited(ref.read(popularCatalogProvider.notifier).open(id));
     }
 
-    void chooseSort(_PopularSort value) {
-      if (value == _sort) return;
-      setState(() => _sort = value);
-      final controller = _scrolls[platform];
-      if (controller?.hasClients ?? false) controller!.jumpTo(0);
-    }
-
     void managePlatforms() =>
         unawaited(context.push(SettingsSectionRoute(section: SettingsSection.sitesDisplay.name).location));
-    final sort = SizedBox(
-      width: 148,
-      child: AdaptiveChoiceField<_PopularSort>(
-        value: _sort,
-        title: t.popular.sortLabel,
-        onChanged: chooseSort,
-        options: [
-          DsSelectOption(value: _PopularSort.platform, label: t.popular.sortPlatform),
-          DsSelectOption(value: _PopularSort.audience, label: t.popular.sortAudience),
-        ],
-        placeholder: t.popular.sortLabel,
-        semanticLabel: t.popular.sortLabel,
-      ),
-    );
-    // The sort's own choices, for the menu a narrow toolbar keeps instead of
-    // the field beside the tabs.
-    final sortItems = [
-      for (final value in _PopularSort.values)
-        DsMenuItem(
-          label: Text(value == _PopularSort.platform ? t.popular.sortPlatform : t.popular.sortAudience),
-          checked: _sort == value,
-          onPressed: () => chooseSort(value),
-        ),
-    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s8),
-          // The tabs and the sort share a row when the toolbar has room; a
-          // small screen keeps the tab bar alone and puts the sort, the
+          // A small screen keeps the tab bar alone and puts the
           // layout and the platform wall behind one more icon.
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -239,15 +176,7 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
                 onManagePlatforms: managePlatforms,
                 onChanged: choosePlatform,
               );
-              if (!narrow) {
-                return Row(
-                  spacing: DsSpace.s12,
-                  children: [
-                    Expanded(child: tabs),
-                    sort,
-                  ],
-                );
-              }
+              if (!narrow) return tabs;
               return SizedBox(
                 height: 44,
                 child: Row(
@@ -260,7 +189,6 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
                       nameOf: _platformName,
                       onChanged: choosePlatform,
                       onManagePlatforms: managePlatforms,
-                      items: sortItems,
                     ),
                   ],
                 ),
@@ -269,12 +197,7 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
           ),
         ),
         Expanded(
-          child: _PlatformFeed(
-            key: ValueKey(platform),
-            platform: platform,
-            sort: _sort,
-            scrollController: _scrollOf(platform),
-          ),
+          child: _PlatformFeed(key: ValueKey(platform), platform: platform, scrollController: _scrollOf(platform)),
         ),
       ],
     );
@@ -286,13 +209,10 @@ final class _PopularPageState extends ConsumerState<PopularPage> with WidgetsBin
 /// One platform's feed: the home feed's own card grid over the catalogue's
 /// entry for [platform].
 final class _PlatformFeed extends ConsumerStatefulWidget {
-  const _PlatformFeed({required this.platform, required this.sort, this.scrollController, super.key});
+  const _PlatformFeed({required this.platform, this.scrollController, super.key});
 
   /// The platform whose recommendations show.
   final String platform;
-
-  /// The local order the page's selector chose.
-  final _PopularSort sort;
 
   /// The kept controller of this platform's tab (see the page's state).
   final ScrollController? scrollController;
@@ -330,15 +250,8 @@ final class _PlatformFeedState extends ConsumerState<_PlatformFeed> {
         );
     final wide = MediaQuery.sizeOf(context).width >= 768;
     final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
-    // The chosen order is applied to the catalogue before the desktop
-    // slices it, so a page holds the right rooms rather than a reordered
-    // window of one page.
-    final ordered = _sortedRooms(
-      state.rooms,
-      widget.sort,
-      choice: ref.watch(audienceMetricProvider),
-      policy: ref.watch(audiencePolicyProvider),
-    );
+    // The platform's own recommendation order, shown as-is.
+    final ordered = state.rooms;
     // Desktop pages slice the platform catalogue locally, so fixed-window
     // platforms (Douyu 40, Huya ~120) and asked-size ones page the same
     // way, and the viewer's page size never moves a server boundary.
