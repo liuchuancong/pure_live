@@ -60,35 +60,50 @@ final class CloudController extends Notifier<CloudState> {
   Future<void> ensureStarted() => _started ??= start();
 
   /// Probes, initialises and listens. A retry after a failed probe starts
-  /// the ladder over; a stale run's answers are dropped by epoch.
+  /// the ladder over; a stale run's answers are dropped by epoch. Nothing
+  /// in here may throw past this method: a failure anywhere lands the
+  /// feature on `unreachable`, never on a probing that never ends.
   Future<void> start() async {
     final epoch = ++_epoch;
     _started ??= Future.value();
+    // Deferred by a microtask: the first call comes from a page's
+    // initState, and a state write there is a modification during build.
+    await Future<void>.microtask(() {});
+    if (epoch != _epoch) return;
     state = const CloudState();
-    final reachable = await _reachable();
-    if (epoch != _epoch) return;
-    if (!reachable) {
-      state = state.copyWith(phase: CloudPhase.unreachable);
-      return;
-    }
     try {
-      await CloudService.initialize();
-    } on Object {
+      final reachable = await _reachable();
+      if (epoch != _epoch) return;
+      if (!reachable) {
+        state = state.copyWith(phase: CloudPhase.unreachable);
+        return;
+      }
+      await CloudService.initialize().timeout(const Duration(seconds: 15));
+      if (epoch != _epoch) return;
+      // The account as it is right now, before the stream's first event:
+      // on a desktop the native SDK can take its time (or a network it
+      // cannot reach) before it reports, and the page must not sit on the
+      // probe meanwhile.
+      await _onUser(_service.currentUser, epoch);
+      await _users?.cancel();
+      _users = _service.users.listen((user) => unawaited(_onUser(user, epoch)));
+    } on Object catch (error) {
+      appLog.forCategory('backup.cloud').warning('the cloud could not start', fields: {'error': '$error'});
       if (epoch == _epoch) state = state.copyWith(phase: CloudPhase.unreachable);
-      return;
     }
-    if (epoch != _epoch) return;
-    await _users?.cancel();
-    _users = _service.users.listen((user) => unawaited(_onUser(user, epoch)));
   }
 
   /// One HTTP GET against Firebase through the app's own transport, which
   /// honours the user's proxy settings; answered within ten seconds or
-  /// treated as unreachable.
+  /// treated as unreachable. The outer timeout is the belt to the
+  /// transport's braces: a proxy that accepts the connection and then
+  /// says nothing must not hold the page.
   Future<bool> _reachable() async {
     try {
       final http = ref.read(networkFactoryProvider).create(profile: ClientProfile.api);
-      await http.getText(Uri.parse(_probeUrl), timeout: const Duration(seconds: 10));
+      await http
+          .getText(Uri.parse(_probeUrl), timeout: const Duration(seconds: 10))
+          .timeout(const Duration(seconds: 12));
       return true;
     } on Object {
       return false;
@@ -106,11 +121,15 @@ final class CloudController extends Notifier<CloudState> {
       );
       return;
     }
-    final permissions = await _service.loadPermissions(user.uid);
+    // The account shows at once; its permissions and document follow.
+    state = state.copyWith(phase: CloudPhase.signedIn, user: user);
+    final permissions = await _service
+        .loadPermissions(user.uid)
+        .timeout(const Duration(seconds: 15), onTimeout: () => CloudPermissions.none);
     if (epoch != _epoch) return;
     var backup = CloudBackupInfo.empty;
     try {
-      backup = await _service.backupInfo(user.uid);
+      backup = await _service.backupInfo(user.uid).timeout(const Duration(seconds: 15));
     } on Object {
       // The cloud's document stays unknown; the pane shows nothing stored.
     }

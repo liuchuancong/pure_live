@@ -37,7 +37,11 @@ final class _CloudAdminPaneState extends ConsumerState<CloudAdminPane> {
   @override
   void initState() {
     super.initState();
-    unawaited(ref.read(cloudControllerProvider.notifier).ensureStarted());
+    // After the first frame: a provider write inside initState is a
+    // modification during build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(ref.read(cloudControllerProvider.notifier).ensureStarted());
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_reload()));
   }
 

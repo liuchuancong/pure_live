@@ -69,7 +69,11 @@ final class _CloudBackupPaneState extends ConsumerState<CloudBackupPane> {
   @override
   void initState() {
     super.initState();
-    unawaited(ref.read(cloudControllerProvider.notifier).ensureStarted());
+    // After the first frame: a provider write inside initState is a
+    // modification during build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(ref.read(cloudControllerProvider.notifier).ensureStarted());
+    });
   }
 
   @override
