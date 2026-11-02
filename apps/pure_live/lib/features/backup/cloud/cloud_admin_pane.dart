@@ -227,42 +227,34 @@ final class _CloudAdminPaneState extends ConsumerState<CloudAdminPane> {
         ],
       );
     }
+    // The page owns its height (the settings surface does not scroll it):
+    // the figures and the search stay put, the table takes what is left
+    // and scrolls by itself, and the pages stay in view underneath.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: DsSpace.s16,
+      spacing: DsSpace.s12,
       children: [
         _StatsSection(stats: _stats),
-        DsListSection(
-          header: Text(c.adminUsers),
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(DsSpace.s16, DsSpace.s12, DsSpace.s16, DsSpace.s8),
-              child: DsTextField(
-                controller: _search,
-                placeholder: c.adminSearchHint,
-                clearable: true,
-                leading: const DsIcon(DsIcons.search, size: 16),
-                onSubmitted: (_) => unawaited(_reload()),
-              ),
-            ),
-            _table(context),
-            if (_pageCount > 1)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: DsSpace.s12),
-                child: Center(
-                  child: DsPagination(
-                    page: _page,
-                    pageCount: _pageCount,
-                    semanticLabel: c.adminPageLabel,
-                    onChanged: (next) {
-                      if (next == _page || _loading) return;
-                      unawaited(_goTo(next, _epoch));
-                    },
-                  ),
-                ),
-              ),
-          ],
+        DsTextField(
+          controller: _search,
+          placeholder: c.adminSearchHint,
+          clearable: true,
+          leading: const DsIcon(DsIcons.search, size: 16),
+          onSubmitted: (_) => unawaited(_reload()),
         ),
+        Expanded(child: _table(context)),
+        if (_pageCount > 1)
+          Center(
+            child: DsPagination(
+              page: _page,
+              pageCount: _pageCount,
+              semanticLabel: c.adminPageLabel,
+              onChanged: (next) {
+                if (next == _page || _loading) return;
+                unawaited(_goTo(next, _epoch));
+              },
+            ),
+          ),
       ],
     );
   }
@@ -370,43 +362,35 @@ final class _StatsSection extends StatelessWidget {
       (c.statUsers, figures?.users),
       (c.statUploaders, figures?.uploaders),
     ];
-    return DsListSection(
-      header: Text(c.adminStats),
+    return Wrap(
+      spacing: DsSpace.s12,
+      runSpacing: DsSpace.s12,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(DsSpace.s16),
-          child: Wrap(
-            spacing: DsSpace.s12,
-            runSpacing: DsSpace.s12,
-            children: [
-              for (final (label, value) in tiles)
-                ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 132),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: colors.surface,
-                      borderRadius: BorderRadius.circular(theme.radii.card),
-                      border: Border.all(color: colors.border),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: DsSpace.s4,
-                        children: [
-                          if (value == null)
-                            const DsSpinner(style: DsSpinnerStyle(size: 16))
-                          else
-                            Text('$value', style: theme.typography.title),
-                          Text(label, style: theme.typography.caption.copyWith(color: colors.textMuted)),
-                        ],
-                      ),
-                    ),
-                  ),
+        for (final (label, value) in tiles)
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 132),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(theme.radii.card),
+                border: Border.all(color: colors.border),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: DsSpace.s16, vertical: DsSpace.s12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s4,
+                  children: [
+                    if (value == null)
+                      const DsSpinner(style: DsSpinnerStyle(size: 16))
+                    else
+                      Text('$value', style: theme.typography.title),
+                    Text(label, style: theme.typography.caption.copyWith(color: colors.textMuted)),
+                  ],
                 ),
-            ],
+              ),
+            ),
           ),
-        ),
       ],
     );
   }

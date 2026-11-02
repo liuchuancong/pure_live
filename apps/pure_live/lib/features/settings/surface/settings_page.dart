@@ -542,8 +542,9 @@ final class SettingsSectionPane extends StatelessWidget {
     // Some pages own their height instead of scrolling the whole pane with
     // it: a wallpaper page fills the window with as many whole rows as fit,
     // and the font manager pins its filters over a table that scrolls by
-    // itself.
+    // itself; the accounts table keeps its pages in view the same way.
     if (section == SettingsSection.webdavSync ||
+        section == SettingsSection.cloudAdmin ||
         section == SettingsSection.backgroundImages ||
         section == SettingsSection.backgroundVideos ||
         section == SettingsSection.backgroundDownloads ||
