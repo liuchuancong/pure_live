@@ -12,14 +12,19 @@ import 'package:pure_live/shared/shared.dart';
 const double kMusicPlaylistCardMaxWidth = 200;
 const double kMusicPlaylistCardMinWidth = 132;
 
-/// The information block under a playlist card's cover: the title and the
-/// creator beside the avatar, the room card's measure.
-const double kMusicPlaylistInfoHeight = 48;
+/// The information block under a playlist card's cover: the name in two lines
+/// and, on a list browsed from the source, its creator under them. The measure
+/// the station poster cards use for a name plus one listing line — so the cover
+/// keeps the rest of the tile, every card of a wall ends at the same line
+/// whatever the column width, and the two lines cannot spill over the block.
+const double kMusicPlaylistInfoHeight = 82;
 
 /// One playlist as a card, the room card's design carried over: the cover
 /// leads — the track count in a chip over its bottom edge and the page's ⋮ in
-/// the top corner — and the title with the creator sits beneath it. A list
-/// without a cover of its own draws the title on the fallback tile.
+/// the top corner — and the name sits beneath it in two lines, with the
+/// creator's own name under that. A list without a cover of its own draws the
+/// module's mark, not its title: the block underneath is where the name lives,
+/// and a card is not the place to say it twice.
 final class MusicPlaylistCard extends StatelessWidget {
   /// A card for the viewer's own list.
   MusicPlaylistCard.own({required MusicPlaylist playlist, this.onOpen, this.menuBuilder, super.key})
@@ -59,7 +64,16 @@ final class MusicPlaylistCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = DsTheme.of(context);
+    final colors = theme.colors;
     final t = context.t;
+    // The stand-in for a list with no picture: the module's mark on the control
+    // fill. Its name is written under the cover, in two lines; the cover is not
+    // a second place to write it, and a chip along the foot would print over
+    // whatever the tile put there.
+    final fallback = ColoredBox(
+      color: colors.control,
+      child: Center(child: DsIcon(DsIcons.music, size: 28, color: colors.textMuted)),
+    );
     return DsCard(
       onPressed: onOpen,
       style: const DsCardStyle(padding: EdgeInsets.zero),
@@ -74,7 +88,7 @@ final class MusicPlaylistCard extends StatelessWidget {
                   image: (coverUrl ?? '').isEmpty ? null : cachedImage(coverUrl!),
                   aspectRatio: 1,
                   semanticLabel: title,
-                  fallback: CoverFallback(title: title),
+                  fallback: fallback,
                   style: DsImageStyle(borderRadius: BorderRadius.vertical(top: Radius.circular(theme.radii.card))),
                 ),
                 const Positioned.fill(
@@ -108,35 +122,27 @@ final class MusicPlaylistCard extends StatelessWidget {
             SizedBox(
               height: kMusicPlaylistInfoHeight,
               child: Padding(
-                // The title sits close under the cover: the card reads as one
+                // The name sits close under the cover: the card reads as one
                 // block.
-                padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
-                child: Row(
-                  spacing: DsSpace.s8,
+                padding: const EdgeInsets.fromLTRB(DsSpace.s12, DsSpace.s6, DsSpace.s12, DsSpace.s8),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DsSpace.s4,
                   children: [
-                    DsAvatar(initials: title, size: DsSize.md, semanticLabel: title),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: DsSpace.s3,
-                        children: [
-                          Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.bodyStrong.copyWith(color: theme.colors.text),
-                          ),
-                          if (creator.isNotEmpty)
-                            Text(
-                              creator,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.typography.caption.copyWith(color: theme.colors.textMuted),
-                            ),
-                        ],
-                      ),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
                     ),
+                    if (creator.isNotEmpty)
+                      Text(
+                        creator,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.caption.copyWith(color: colors.textMuted),
+                      ),
                   ],
                 ),
               ),
