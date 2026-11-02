@@ -44,7 +44,8 @@ import 'package:pure_live/modules/hongguo/official/hongguo_account.dart' show Ho
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoRendition, kHongguoSite;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_comment_panel.dart' show HongguoCommentPanel;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_danmaku_layer.dart' show HongguoDanmakuLayer;
-import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart' show HongguoEpisodeShelf;
+import 'package:pure_live/modules/hongguo/widgets/hongguo_episode_shelf.dart'
+    show HongguoEpisodeShelf, hongguoEpisodeGroupOf, hongguoEpisodeMarks, kHongguoEpisodeGroup;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart' show hongguoDurationText;
 import 'package:pure_live/shared/shared.dart';
 
@@ -113,9 +114,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     for (final panel in _HongguoPanel.values) panel: GlobalKey(debugLabel: 'hongguo-picker-${panel.name}'),
   };
 
-  /// The playing episode's row in the episodes catalogue, so opening the
-  /// catalogue brings it into view instead of starting at the first.
-  final GlobalKey _currentEpisodeKey = GlobalKey();
+  /// The page of the episodes catalogue hanging over the bar. Null follows the
+  /// playing episode, so a series hundreds deep opens where the viewer stands
+  /// rather than at its first; a range button takes the page over.
+  int? _episodesGroup;
   bool _loading = true;
   bool _opening = false;
   bool _disposed = false;
@@ -1999,7 +2001,9 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     _HongguoPanel.sleep => 220,
     _HongguoPanel.speed => 180,
     _HongguoPanel.quality => 220,
-    _HongguoPanel.episodes => 260,
+    // Five numbered tiles to a row, as the reference's episode grid — a
+    // series runs to a hundred and the tiles are what a viewer reads.
+    _HongguoPanel.episodes => 300,
     _HongguoPanel.danmaku => 200,
   };
 
@@ -2106,37 +2110,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
           ],
         );
       case _HongguoPanel.episodes:
-        final episodes = _detail?.episodes ?? const <HongguoEpisode>[];
-        return PlayerOverlayPanel(
-          title: _episodesLabel(t),
-          width: _panelWidth(panel),
-          children: [
-            // A series may run to hundreds of episodes; the catalogue keeps
-            // its own height and scrolls inside the panel.
-            SizedBox(
-              height: 300,
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  for (final episode in episodes)
-                    KeyedSubtree(
-                      key: episode.vid == _episode?.vid ? _currentEpisodeKey : null,
-                      child: PlayerPanelOption(
-                        label: episode.title.isEmpty
-                            ? t.hongguo.episodeLabel(index: episode.index)
-                            : '${t.hongguo.episodeLabel(index: episode.index)} ${episode.title}',
-                        selected: episode.vid == _episode?.vid,
-                        onPressed: () {
-                          _closePanel();
-                          unawaited(_openEpisode(episode));
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        );
+        return _episodesPanel(t);
       case _HongguoPanel.danmaku:
         final danmaku = ref.watch(hongguoDanmakuSettingsProvider);
         final controller = ref.read(hongguoDanmakuSettingsProvider.notifier);
@@ -2183,6 +2157,166 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     }
   }
 
+  /// The immersive episodes catalogue: the same navigation the shelf under
+  /// the picture already gives — this group's numbered tiles, the ranges that
+  /// page through the series, the tick on what has been watched — drawn in the
+  /// panel's own ink, because the card behind it is dark in every theme and
+  /// the theme's text would go dark-on-dark over the picture.
+  Widget _episodesPanel(Translations t) {
+    final detail = _detail;
+    final episodes = detail?.episodes ?? const <HongguoEpisode>[];
+    final groups = (episodes.length + kHongguoEpisodeGroup - 1) ~/ kHongguoEpisodeGroup;
+    final group = (_episodesGroup ?? hongguoEpisodeGroupOf(episodes, _episode)).clamp(0, groups <= 0 ? 0 : groups - 1);
+    final shown = episodes.skip(group * kHongguoEpisodeGroup).take(kHongguoEpisodeGroup);
+    final marks = hongguoEpisodeMarks(ref.read(hongguoLibraryProvider).progressOf(widget.seriesId));
+    final current = _episode;
+    return PlayerOverlayPanel(
+      title: _episodesLabel(t),
+      width: _panelWidth(_HongguoPanel.episodes),
+      children: [
+        if (groups > 1)
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s8),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                spacing: DsSpace.s6,
+                children: [
+                  for (var index = 0; index < groups; index++)
+                    _panelPill(
+                      label: _episodeRangeLabel(episodes, index),
+                      selected: index == group,
+                      onPressed: () => setState(() => _episodesGroup = index),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s12, 0, DsSpace.s12, DsSpace.s6),
+          child: Wrap(
+            spacing: DsSpace.s6,
+            runSpacing: DsSpace.s6,
+            children: [
+              for (final episode in shown)
+                _episodeTile(
+                  t,
+                  episode,
+                  playing: episode.vid == current?.vid && episode.index == current?.index,
+                  marks: marks,
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// One page of the series, named by the episode numbers it holds — `1–20`,
+  /// and the short last one `81–102`.
+  String _episodeRangeLabel(List<HongguoEpisode> episodes, int group) {
+    final first = group * kHongguoEpisodeGroup;
+    return '${first + 1}–${first + (episodes.length - first).clamp(0, kHongguoEpisodeGroup)}';
+  }
+
+  /// One numbered tile: lit white while it plays, ticked once it is finished,
+  /// and marked where the viewer stopped part-way.
+  Widget _episodeTile(
+    Translations t,
+    HongguoEpisode episode, {
+    required bool playing,
+    required ({int watchedThrough, int? resumeAt}) marks,
+  }) {
+    final theme = DsTheme.of(context);
+    final height = theme.sizes.xs;
+    // The number is what the grid shows, as the shelf under the picture shows
+    // it; where the source names the episode, the name still reads out.
+    final label = t.hongguo.episodeLabel(index: episode.index);
+    return DsPressable(
+      semanticLabel: episode.title.isEmpty ? label : '$label ${episode.title}',
+      onPressed: () {
+        _closePanel();
+        unawaited(_openEpisode(episode));
+      },
+      builder: (context, states, _) {
+        final lit = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+        final resume = !playing && episode.index == marks.resumeAt;
+        final watched = !playing && !resume && episode.index <= marks.watchedThrough;
+        // The dark the card itself is cut from, for the words on a lit tile.
+        final ink = playing
+            ? const Color(0xFF131519)
+            : watched
+            ? playerInkSubtle
+            : playerInkMuted;
+        return Container(
+          height: height,
+          width: height + 20,
+          alignment: Alignment.center,
+          decoration: DsBoxDecoration(
+            color: playing
+                ? playerInk
+                : lit
+                ? playerInkHover
+                : const Color(0x1FFFFFFF),
+            borderRadius: theme.radii.controlCorners(null, height),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 2,
+            children: [
+              if (resume)
+                DsIcon(DsIcons.play, size: 10, color: ink)
+              else if (watched)
+                DsIcon(DsIcons.check, size: 10, color: ink),
+              Text(
+                '${episode.index}',
+                style: theme.typography.numeric(
+                  theme.typography.caption.copyWith(color: ink, fontWeight: playing ? FontWeight.w600 : null),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// One small ink control inside a picker panel. The panels' rows are
+  /// [PlayerPanelOption]s and their tiles are numbered boxes; a range button
+  /// is neither, but it carries the same white-on-dark the card is drawn in.
+  Widget _panelPill({required String label, required bool selected, required VoidCallback onPressed}) {
+    final theme = DsTheme.of(context);
+    return DsPressable(
+      semanticLabel: label,
+      onPressed: onPressed,
+      builder: (context, states, _) {
+        final hovered = states.contains(WidgetState.hovered) || states.contains(WidgetState.focused);
+        return Container(
+          height: theme.sizes.xs,
+          padding: const EdgeInsetsDirectional.fromSTEB(DsSpace.s8, 0, DsSpace.s8, 0),
+          alignment: Alignment.center,
+          decoration: DsBoxDecoration(
+            color: selected
+                ? playerInkHover
+                : hovered
+                ? const Color(0x14FFFFFF)
+                : null,
+            borderRadius: theme.radii.controlCorners(null, theme.sizes.xs),
+          ),
+          child: Text(
+            label,
+            style: theme.typography.numeric(
+              theme.typography.caption.copyWith(
+                color: selected ? playerInk : playerInkSubtle,
+                fontWeight: selected ? FontWeight.w600 : null,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   /// Shows the bars and, while the stream plays, lets them settle away again.
   void _wake() {
     if (mounted && !_controlsVisible) setState(() => _controlsVisible = true);
@@ -2215,18 +2349,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     _hoverTimer?.cancel();
     _leaveTimer?.cancel();
     if (_openPanel == panel) return;
+    // The episodes catalogue opens where the viewer stands, not at the first.
+    if (panel == _HongguoPanel.episodes) _episodesGroup = null;
     setState(() => _openPanel = panel);
     _hideTimer?.cancel();
-    // The episodes catalogue opens on the episode being watched, not on the
-    // first: a series hundreds deep would otherwise always start over.
-    if (panel == _HongguoPanel.episodes) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final keyContext = _currentEpisodeKey.currentContext;
-        if (keyContext != null && mounted) {
-          Scrollable.ensureVisible(keyContext, alignment: 0.1, duration: const Duration(milliseconds: 120));
-        }
-      });
-    }
   }
 
   void _closePanel() {

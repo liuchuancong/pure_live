@@ -5,12 +5,37 @@ import 'package:flutter/services.dart' show FilteringTextInputFormatter, TextInp
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/l10n/translations.dart';
-import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart' show hongguoLibraryProvider;
+import 'package:pure_live/modules/hongguo/controller/hongguo_library.dart'
+    show HongguoWatchProgress, hongguoLibraryProvider;
 import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart' show HongguoEpisode, HongguoSeriesDetail;
 
 /// The episodes one group of the shelf lists before the pager takes over —
 /// the reference's twenty.
 const int kHongguoEpisodeGroup = 20;
+
+/// How far the viewer has got, as every surface that lists the series'
+/// episodes reads it: `watchedThrough` is the last one finished — it and
+/// everything behind it take the tick — and `resumeAt` is the one stopped
+/// part-way, the only one that gets the play glyph. The shelf under the
+/// picture and the immersive catalogue over it run this one reading, so the
+/// two can never disagree about what has been watched.
+({int watchedThrough, int? resumeAt}) hongguoEpisodeMarks(HongguoWatchProgress? progress) => (
+  watchedThrough: switch (progress) {
+    null => 0,
+    final row when row.completed => row.episodeIndex,
+    final row => row.episodeIndex - 1,
+  },
+  resumeAt: progress == null || progress.completed ? null : progress.episodeIndex,
+);
+
+/// The tile group [episode] sits in, by its place in the loaded list rather
+/// than its number — a series can open mid-list, and the pages are of the
+/// list, not of the numbering.
+int hongguoEpisodeGroupOf(List<HongguoEpisode> episodes, HongguoEpisode? episode) {
+  if (episode == null) return 0;
+  final position = episodes.indexWhere((row) => row.vid == episode.vid);
+  return position < 0 ? 0 : position ~/ kHongguoEpisodeGroup;
+}
 
 /// The series' numbered episode tiles: [kHongguoEpisodeGroup] at a time with a
 /// jump box, the episode being watched lit, the last one watched marked and
@@ -50,12 +75,7 @@ final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf>
   }
 
   /// The group [episode] sits in, by its place in the loaded list.
-  int _groupOf(HongguoEpisode? episode) {
-    if (episode == null) return 0;
-    final episodes = widget.detail.episodes;
-    final position = episodes.indexWhere((row) => row.vid == episode.vid);
-    return position < 0 ? 0 : position ~/ kHongguoEpisodeGroup;
-  }
+  int _groupOf(HongguoEpisode? episode) => hongguoEpisodeGroupOf(widget.detail.episodes, episode);
 
   /// Asks for an episode number and opens it; an empty or unknown answer
   /// leaves the shelf where it was.
@@ -115,12 +135,7 @@ final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf>
     final first = group * kHongguoEpisodeGroup;
     final shown = episodes.skip(first).take(kHongguoEpisodeGroup).toList();
     final last = first + shown.length;
-    final progress = ref.watch(hongguoLibraryProvider).progressOf(widget.detail.meta.seriesId);
-    final watchedThrough = progress == null
-        ? 0
-        : progress.completed
-        ? progress.episodeIndex
-        : progress.episodeIndex - 1;
+    final marks = hongguoEpisodeMarks(ref.watch(hongguoLibraryProvider).progressOf(widget.detail.meta.seriesId));
     bool isCurrent(HongguoEpisode episode) => episode.vid == current?.vid && episode.index == current?.index;
     final muted = theme.typography.caption.copyWith(color: colors.textMuted);
     return Column(
@@ -167,9 +182,9 @@ final class _HongguoEpisodeShelfState extends ConsumerState<HongguoEpisodeShelf>
               DsChip(
                 leading: isCurrent(episode)
                     ? null
-                    : episode.index == progress?.episodeIndex && !(progress?.completed ?? false)
+                    : episode.index == marks.resumeAt
                     ? const DsIcon(DsIcons.play, size: 12)
-                    : episode.index <= watchedThrough
+                    : episode.index <= marks.watchedThrough
                     ? const DsIcon(DsIcons.check, size: 12)
                     : null,
                 label: Text('${episode.index}'),
