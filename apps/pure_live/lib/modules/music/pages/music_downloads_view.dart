@@ -210,12 +210,12 @@ final class MusicDownloadsViewState extends ConsumerState<MusicDownloadsView> {
                           // The folder every one of these files lands in, one
                           // click from the page that lists them — the station
                           // managers' own verb.
-                          DsButton.icon(
+                          DsButton(
                             variant: DsButtonVariant.secondary,
                             size: DsSize.sm,
-                            semanticLabel: t.settings.downloadManagerOpenFolder,
+                            leading: const DsIcon(DsIcons.folderOpen, size: 16),
                             onPressed: () => unawaited(openDownloadedPath(context, directory)),
-                            icon: const DsIcon(DsIcons.folderOpen, size: 16),
+                            child: Text(t.settings.downloadManagerOpenFolder),
                           ),
                           if (pending.isNotEmpty)
                             DsButton(

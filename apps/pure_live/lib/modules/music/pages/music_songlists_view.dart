@@ -24,6 +24,7 @@ import 'package:pure_live/modules/music/pages/music_online_playlists_view.dart';
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart'
     show MusicCardMenuButton, MusicPlaylistCard, MusicPlaylistGrid;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
+import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show CoverFallback, cachedImage;
 
@@ -693,19 +694,17 @@ final class MusicPlaylistsViewState extends ConsumerState<MusicPlaylistsView> {
                 icon: const DsIcon(DsIcons.chevronLeft),
               ),
               const Spacer(),
-              DsButton.icon(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                semanticLabel: t.music.listSearch,
-                onPressed: playlist.tracks.isEmpty ? null : _toggleSearch,
-                icon: const DsIcon(DsIcons.search, size: 16),
+              MusicToolAction(
+                label: t.music.listSearch,
+                icon: DsIcons.search,
+                available: playlist.tracks.isNotEmpty,
+                onPressed: _toggleSearch,
               ),
-              DsButton.icon(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                semanticLabel: _selecting ? t.music.selectionCancel : t.music.selectionStart,
-                onPressed: playlist.tracks.isEmpty ? null : () => _setSelecting(selecting: !_selecting),
-                icon: DsIcon(_selecting ? DsIcons.x : DsIcons.listChecks, size: 16),
+              MusicToolAction(
+                label: _selecting ? t.music.selectionCancel : t.music.selectionStart,
+                icon: _selecting ? DsIcons.x : DsIcons.listChecks,
+                available: playlist.tracks.isNotEmpty,
+                onPressed: () => _setSelecting(selecting: !_selecting),
               ),
               DsMenuAnchor(
                 semanticLabel: t.music.moreActions,

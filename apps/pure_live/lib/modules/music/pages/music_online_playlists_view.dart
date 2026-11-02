@@ -24,6 +24,7 @@ import 'package:pure_live/modules/music/controller/sources/online_playlist_model
     show MusicPlaylistInfo, MusicPlaylistPage, MusicPlaylistTag, MusicPlaylistTagGroup, MusicPlazaSort, OnlinePlaylists;
 import 'package:pure_live/modules/music/pages/music_playlist_card.dart' show MusicPlaylistCard, MusicPlaylistGrid;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
+import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 import 'package:pure_live/shared/shared.dart' show CoverFallback, cachedImage;
 
@@ -192,19 +193,20 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
     final total = pages.lastOrNull?.value?.total ?? 0;
 
     // The reference's 打开歌单: a pasted link or bare id opens the
-    // playlist's detail on the current source.
-    final openButton = DsButton.icon(
-      variant: DsButtonVariant.secondary,
-      size: DsSize.sm,
-      semanticLabel: t.music.openPlaylistTitle,
+    // playlist's detail on the current source. A source that cannot serve the
+    // plaza has no detail to open, so it does not get the verb either.
+    final openButton = MusicToolAction(
+      label: t.music.openPlaylistTitle,
+      icon: DsIcons.link,
+      available: supported,
       onPressed: () => unawaited(_openByLink()),
-      icon: const DsIcon(DsIcons.link, size: 16),
     );
 
     // The plaza's three condition rows — the sorts, the categories and the
     // tags — now live in one panel behind a head entry, the find page's
     // shape: the grid keeps the window's height, and what is chosen reads as
-    // one line under the head.
+    // one line under the head. Nothing to choose is no entry at all, not a
+    // greyed one.
     final hasFilters = supported && (sorts.length > 1 || tagGroups.isNotEmpty || hotValues.isNotEmpty);
     final groupLabel = _group.isEmpty ? t.music.playlistHotTags : _group;
     final summary = [
@@ -215,32 +217,29 @@ final class MusicOnlinePlaylistBrowseState extends ConsumerState<MusicOnlinePlay
     ].where((part) => part.isNotEmpty).join(' · ');
     final headActions = [
       openButton,
-      DsButton.icon(
-        variant: DsButtonVariant.secondary,
-        size: DsSize.sm,
-        semanticLabel: t.music.plazaFilterTitle,
-        onPressed: hasFilters
-            ? () => unawaited(
-                showDsPanel<void>(
-                  context: context,
-                  builder: (_) => MusicPlazaFilterPanel(
-                    sorts: sorts,
-                    groups: tagGroups,
-                    hotTags: hotValues,
-                    order: order,
-                    group: _group,
-                    tag: effectiveTag,
-                    onChanged: (order, group, tag) => setState(() {
-                      _order = order;
-                      _group = group;
-                      _tag = tag;
-                      _page = 1;
-                    }),
-                  ),
-                ),
-              )
-            : null,
-        icon: const DsIcon(DsIcons.listFilter, size: 16),
+      MusicToolAction(
+        label: t.music.plazaFilterTitle,
+        icon: DsIcons.listFilter,
+        available: hasFilters,
+        onPressed: () => unawaited(
+          showDsPanel<void>(
+            context: context,
+            builder: (_) => MusicPlazaFilterPanel(
+              sorts: sorts,
+              groups: tagGroups,
+              hotTags: hotValues,
+              order: order,
+              group: _group,
+              tag: effectiveTag,
+              onChanged: (order, group, tag) => setState(() {
+                _order = order;
+                _group = group;
+                _tag = tag;
+                _page = 1;
+              }),
+            ),
+          ),
+        ),
       ),
     ];
 

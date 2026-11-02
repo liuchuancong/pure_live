@@ -11,6 +11,7 @@ import 'package:pure_live/modules/music/controller/music_library.dart' show musi
 import 'package:pure_live/modules/music/controller/music_local.dart' show musicLocalProvider;
 import 'package:pure_live/modules/music/controller/music_playback.dart' show musicPlayerProvider;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
+import 'package:pure_live/modules/music/widgets/music_browse_widgets.dart' show MusicToolAction;
 import 'package:pure_live/modules/music/widgets/music_tag_edit.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
 
@@ -145,26 +146,23 @@ final class MusicLocalViewState extends ConsumerState<MusicLocalView> {
                   style: theme.typography.caption.copyWith(color: colors.textSubtle),
                 ),
               ),
-              DsButton.icon(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                semanticLabel: _selecting ? t.music.selectionCancel : t.music.selectionStart,
-                onPressed: state.tracks.isEmpty ? null : () => _setSelecting(selecting: !_selecting),
-                icon: DsIcon(_selecting ? DsIcons.x : DsIcons.listChecks, size: 16),
+              MusicToolAction(
+                label: _selecting ? t.music.selectionCancel : t.music.selectionStart,
+                icon: _selecting ? DsIcons.x : DsIcons.listChecks,
+                available: state.tracks.isNotEmpty,
+                onPressed: () => _setSelecting(selecting: !_selecting),
               ),
-              DsButton.icon(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                semanticLabel: t.music.localRescan,
-                onPressed: state.roots.isEmpty || state.loading ? null : () => unawaited(controller.rescan()),
-                icon: const DsIcon(DsIcons.refreshCw, size: 16),
+              MusicToolAction(
+                label: t.music.localRescan,
+                icon: DsIcons.refreshCw,
+                available: state.roots.isNotEmpty,
+                onPressed: state.loading ? null : () => unawaited(controller.rescan()),
               ),
-              DsButton(
-                variant: DsButtonVariant.secondary,
-                size: DsSize.sm,
-                leading: const DsIcon(DsIcons.folderPlus, size: 16),
+              MusicToolAction(
+                label: t.music.localAddFolder,
+                icon: DsIcons.folderPlus,
+                available: true,
                 onPressed: () => unawaited(_addFolder(context)),
-                child: Text(t.music.localAddFolder),
               ),
             ],
           ),

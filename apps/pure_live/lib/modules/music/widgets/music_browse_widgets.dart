@@ -14,7 +14,7 @@ import 'package:pure_live/modules/music/controller/music_source.dart' show music
 import 'package:pure_live/modules/music/controller/sources/music_browse_source.dart' show MusicAlbum;
 import 'package:pure_live/modules/music/widgets/music_actions.dart';
 import 'package:pure_live/modules/music/widgets/music_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show CoverFallback, cachedImage;
+import 'package:pure_live/shared/shared.dart' show CoverFallback, LiveWindow, cachedImage;
 
 /// The platform a browse page reads its data from, in the viewer's own
 /// wording — the alias choice applies here as it does in the lists.
@@ -58,6 +58,49 @@ final class MusicBrowseHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// One verb of a page's head: the word that names it on a window with room to
+/// read it, its mark alone on a compact one — the width the app's own
+/// breakpoints give to icons — and no button at all while it has nothing to
+/// act on. A greyed-out verb is a dead switch; a head says what it can do by
+/// drawing what it can do.
+final class MusicToolAction extends StatelessWidget {
+  /// The verb [label] with its [icon], drawn while [available] holds and
+  /// enabled while [onPressed] is set — null there is a page still in flight,
+  /// which keeps its place in the row.
+  const MusicToolAction({required this.label, required this.icon, required this.available, this.onPressed, super.key});
+
+  /// What the verb is called, and the mark it stands for.
+  final String label;
+  final DsIconData icon;
+
+  /// Whether this page holds anything for the verb to act on.
+  final bool available;
+
+  /// The action itself.
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!available) return const SizedBox.shrink();
+    if (LiveWindow.isCompact(MediaQuery.sizeOf(context).width)) {
+      return DsButton.icon(
+        variant: DsButtonVariant.secondary,
+        size: DsSize.sm,
+        semanticLabel: label,
+        onPressed: onPressed,
+        icon: DsIcon(icon, size: 16),
+      );
+    }
+    return DsButton(
+      variant: DsButtonVariant.secondary,
+      size: DsSize.sm,
+      leading: DsIcon(icon, size: 16),
+      onPressed: onPressed,
+      child: Text(label),
     );
   }
 }
