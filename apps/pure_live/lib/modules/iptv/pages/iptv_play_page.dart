@@ -1380,7 +1380,7 @@ final class _InfoBar extends StatelessWidget {
                   ),
                   if (showProgramme && programme != null) ...[
                     Text(
-                      '${iptvClockLabel(programme!.start)} - ${iptvClockLabel(programme!.stop)}  '
+                      '${iptvClockLabel(programme!.start)}–${iptvClockLabel(programme!.stop)}  '
                       '${programme!.title.isEmpty ? '—' : programme!.title}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

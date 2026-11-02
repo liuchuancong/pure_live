@@ -174,6 +174,53 @@ final class _IptvGuidePanelState extends ConsumerState<_IptvGuidePanel> {
   }
 }
 
+/// A programme's two clocks, one above the other: when it starts and when it
+/// ends. The guide page's rows and the player's 换台 panel both read the same
+/// day's schedule, so they state each of its times in this one place — the
+/// EPG's own record is `start` / `end` / `title`, three fields, and a row that
+/// writes the start twice is the row inventing the duplication.
+final class IptvProgrammeTimes extends StatelessWidget {
+  const IptvProgrammeTimes({required this.start, required this.stop, this.live = false, super.key});
+
+  /// When the programme begins.
+  final DateTime start;
+
+  /// When it ends.
+  final DateTime stop;
+
+  /// Whether it is on now: the live row's start takes the accent, as its own
+  /// title does.
+  final bool live;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = theme.colors;
+    return SizedBox(
+      width: 42,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: DsSpace.s3,
+        children: [
+          Text(
+            iptvClockLabel(start),
+            style: theme.typography.numeric(
+              theme.typography.caption.copyWith(
+                color: live ? colors.accent : colors.textMuted,
+                fontWeight: live ? FontWeight.w600 : null,
+              ),
+            ),
+          ),
+          Text(
+            iptvClockLabel(stop),
+            style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// One programme: its clock, its name (and subtitle), the on-air progress,
 /// and the replay button where the provider allows one.
 final class IptvGuideRow extends StatelessWidget {
@@ -214,28 +261,7 @@ final class IptvGuideRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s12,
         children: [
-          SizedBox(
-            width: 42,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DsSpace.s3,
-              children: [
-                Text(
-                  iptvClockLabel(programme.start),
-                  style: theme.typography.numeric(
-                    theme.typography.caption.copyWith(
-                      color: live ? colors.accent : colors.textMuted,
-                      fontWeight: live ? FontWeight.w600 : null,
-                    ),
-                  ),
-                ),
-                Text(
-                  iptvClockLabel(programme.stop),
-                  style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
-                ),
-              ],
-            ),
-          ),
+          IptvProgrammeTimes(start: programme.start, stop: programme.stop, live: live),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -12,7 +12,7 @@ import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show ip
 import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show IptvReminder, iptvRemindersProvider;
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart' show iptvGroupsListed;
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart'
-    show catchupAvailabilityOf, iptvClockLabel, iptvStartOfDay;
+    show IptvProgrammeTimes, catchupAvailabilityOf, iptvStartOfDay;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo;
 
 /// The height of one row in any of the panel's three columns; the keyboard
@@ -293,9 +293,18 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                                 final live =
                                     classifyIptvProgramme(start: programme.start, stop: programme.stop, now: now) ==
                                     IptvProgrammePhase.live;
+                                final subtitle = (programme.subtitle ?? '').trim();
                                 return DsListRow(
+                                  // The two clocks live in the guide page's own
+                                  // column: this list is the same day's schedule
+                                  // that page draws, and the row used to name
+                                  // the start twice — once in front of the
+                                  // title, once as the range under it — which
+                                  // cost the programme name half of a 220px
+                                  // column for a fact already printed.
+                                  leading: IptvProgrammeTimes(start: programme.start, stop: programme.stop, live: live),
                                   title: Text(
-                                    '${iptvClockLabel(programme.start)}  ${programme.title.isEmpty ? '—' : programme.title}',
+                                    programme.title.isEmpty ? '—' : programme.title,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: theme.typography.body.copyWith(
@@ -303,15 +312,14 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                                       fontWeight: live ? FontWeight.w600 : null,
                                     ),
                                   ),
-                                  description: Text(
-                                    [
-                                      '${iptvClockLabel(programme.start)} - ${iptvClockLabel(programme.stop)}',
-                                      if ((programme.subtitle ?? '').trim().isNotEmpty) programme.subtitle!.trim(),
-                                    ].join('  '),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                                  ),
+                                  description: subtitle.isEmpty
+                                      ? null
+                                      : Text(
+                                          subtitle,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                                        ),
                                   detail: Text(
                                     actionLabel(programme),
                                     style: theme.typography.caption.copyWith(
