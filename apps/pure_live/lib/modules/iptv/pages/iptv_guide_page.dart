@@ -13,8 +13,8 @@ import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart' show iptvRe
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart'
     show IptvGuideRow, iptvClockLabel, iptvDayLabel, iptvStartOfDay;
-import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvIconAction;
-import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage;
+import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvIconAction;
+import 'package:pure_live/shared/shared.dart' show LiveWindow;
 
 /// Where the guide page pays for a group column of its own beside the picker.
 /// The channel page takes its column at [LiveWindow.expanded] because the table
@@ -377,27 +377,6 @@ final class _DayStepper extends StatelessWidget {
   }
 }
 
-/// A channel's logo, or the kit's tinted initials when its playlist carries
-/// none — the same mark the channel list rows and the day's head draw.
-final class _ChannelLogo extends StatelessWidget {
-  const _ChannelLogo({required this.channel, this.size = DsSize.sm});
-
-  final IptvChannel channel;
-  final DsSize size;
-
-  @override
-  Widget build(BuildContext context) {
-    final logo = (channel.entry.tvgLogo ?? '').trim();
-    return DsAvatar(
-      initials: channel.entry.name,
-      image: logo.isEmpty ? null : cachedImage(logo),
-      size: size,
-      toneIndex: DsAvatar.toneFor(channel.id),
-      semanticLabel: channel.entry.name,
-    );
-  }
-}
-
 /// The channels the guide can open: the open group (as a column beside the
 /// picker, or as one entry over it where the window has no room for a column),
 /// the name search, and a one-row-per-channel list with the open channel
@@ -520,7 +499,7 @@ final class _ChannelPickerState extends State<_ChannelPicker> {
                         key: channel.id == selectedId ? _selectedKey : null,
                         child: DsListRow(
                           selected: channel.id == selectedId,
-                          leading: _ChannelLogo(channel: channel),
+                          leading: IptvChannelLogo(channel: channel),
                           title: Text(
                             channel.entry.name,
                             maxLines: 1,
@@ -708,7 +687,7 @@ final class _ScheduleHead extends StatelessWidget {
     final identity = Row(
       spacing: DsSpace.s8,
       children: [
-        _ChannelLogo(channel: channel, size: DsSize.md),
+        IptvChannelLogo(channel: channel, size: DsSize.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,9 +1,65 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:live_iptv/live_iptv.dart' show IptvProgrammeSlot;
+import 'package:live_iptv/live_iptv.dart' show IptvChannel, IptvProgrammeSlot;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
+import 'package:pure_live/shared/shared.dart' show cachedImage;
+
+/// The module's one way to draw a channel's mark: the playlist's own
+/// `tvg-logo` picture where it names one, the module's tv glyph where it does
+/// not. Never the channel's name — `DsAvatar`'s initials are 「up to two
+/// letters」, so a name fed through them draws half a word in the very row that
+/// writes the whole one beside it. Four surfaces used to copy this out at three
+/// sizes with three fallbacks; the mark a list shows is the one thing every
+/// channel row shares, so it is drawn in one place.
+final class IptvChannelLogo extends StatelessWidget {
+  /// The mark of [channel] at [size].
+  const IptvChannelLogo({required this.channel, this.size = DsSize.sm, super.key});
+
+  /// The channel whose logo is drawn.
+  final IptvChannel channel;
+
+  /// The kit's size; a row's mark and a page head's mark differ by [size],
+  /// never by shape or by what stands in for a missing picture.
+  final DsSize size;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = theme.colors;
+    // The kit's own avatar diameters, so a mark folded here is exactly the size
+    // the module's avatars were.
+    final box = switch (size) {
+      DsSize.xs => 24.0,
+      DsSize.sm => 32.0,
+      DsSize.md => 40.0,
+      DsSize.lg => 48.0,
+    };
+    final mark = SizedBox(
+      width: box,
+      height: box,
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: colors.control, shape: BoxShape.circle),
+        child: Center(
+          child: DsIcon(DsIcons.tv, size: box * .55, color: colors.textMuted),
+        ),
+      ),
+    );
+    final logo = (channel.entry.tvgLogo ?? '').trim();
+    if (logo.isEmpty) return mark;
+    return ClipOval(
+      child: DsImage(
+        image: cachedImage(logo),
+        width: box,
+        height: box,
+        fit: BoxFit.contain,
+        semanticLabel: channel.entry.name,
+        fallback: mark,
+      ),
+    );
+  }
+}
 
 /// The surface that holds a toolbar and a data table, drawn as one card:
 /// the toolbar sits over a hairline, the table underneath is transparent

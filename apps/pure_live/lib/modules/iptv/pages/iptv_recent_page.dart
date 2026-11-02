@@ -13,8 +13,8 @@ import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show ip
 import 'package:pure_live/modules/iptv/controllers/iptv_recent.dart';
 import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart';
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart' show iptvStartOfDay;
-import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvNowCell;
-import 'package:pure_live/shared/shared.dart' show LiveWindow, cachedImage;
+import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo, IptvNowCell;
+import 'package:pure_live/shared/shared.dart' show LiveWindow;
 
 /// One watched channel and the record that says when.
 typedef _Watched = ({IptvRecentEntry entry, IptvChannel channel});
@@ -199,7 +199,6 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final (:entry, :channel) = row;
-    final logo = (channel.entry.tvgLogo ?? '').trim();
     final watched = t.iptv.recentWatched(time: recentTimeLabel(entry.watchedAt, withDate: !namedDay));
     final number = browse.showChannelNumber ? channel.number : null;
     final stamp = Text(
@@ -223,13 +222,7 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
         : null;
     return DsListRow(
       semanticLabel: channel.entry.name,
-      leading: DsAvatar(
-        initials: channel.entry.name,
-        image: logo.isEmpty ? null : cachedImage(logo),
-        size: DsSize.sm,
-        toneIndex: DsAvatar.toneFor(channel.id),
-        semanticLabel: channel.entry.name,
-      ),
+      leading: IptvChannelLogo(channel: channel),
       title: Text(
         channel.entry.name,
         maxLines: 1,

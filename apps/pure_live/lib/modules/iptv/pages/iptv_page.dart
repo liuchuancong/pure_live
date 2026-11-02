@@ -654,7 +654,7 @@ final class _ChannelsList extends ConsumerWidget {
         final number = browse.showChannelNumber ? channel.number : null;
         return DsListRow(
           semanticLabel: channel.entry.name,
-          leading: _ChannelAvatar(channel: channel),
+          leading: IptvChannelLogo(channel: channel),
           title: Text(
             channel.entry.name,
             maxLines: 1,
@@ -698,26 +698,6 @@ final class _ChannelsList extends ConsumerWidget {
   }
 }
 
-/// A channel's logo, or the kit's tinted initials when its playlist carries
-/// none.
-final class _ChannelAvatar extends StatelessWidget {
-  const _ChannelAvatar({required this.channel});
-
-  final IptvChannel channel;
-
-  @override
-  Widget build(BuildContext context) {
-    final logo = (channel.entry.tvgLogo ?? '').trim();
-    return DsAvatar(
-      initials: channel.entry.name,
-      image: logo.isEmpty ? null : cachedImage(logo),
-      size: DsSize.sm,
-      toneIndex: DsAvatar.toneFor(channel.id),
-      semanticLabel: channel.entry.name,
-    );
-  }
-}
-
 /// A channel's logo and name, with its dial number under the name when it
 /// has one and the browse setting asks for it.
 final class _ChannelNameCell extends StatelessWidget {
@@ -734,7 +714,7 @@ final class _ChannelNameCell extends StatelessWidget {
     return Row(
       spacing: DsSpace.s8,
       children: [
-        _ChannelAvatar(channel: channel),
+        IptvChannelLogo(channel: channel),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

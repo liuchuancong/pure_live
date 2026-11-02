@@ -11,7 +11,7 @@ import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show ip
 import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show IptvReminder, iptvRemindersProvider;
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart'
     show catchupAvailabilityOf, iptvClockLabel, iptvStartOfDay;
-import 'package:pure_live/shared/shared.dart' show cachedImage;
+import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo;
 
 /// The height of one row in any of the panel's three columns; the keyboard
 /// scrolls by it, so the columns have to agree on it.
@@ -253,15 +253,8 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                               itemCount: channels.length,
                               itemBuilder: (context, index) {
                                 final entry = channels[index];
-                                final logo = (entry.entry.tvgLogo ?? '').trim();
                                 return DsListRow(
-                                  leading: DsAvatar(
-                                    initials: entry.entry.name,
-                                    image: logo.isEmpty ? null : cachedImage(logo),
-                                    size: DsSize.xs,
-                                    toneIndex: DsAvatar.toneFor(entry.id),
-                                    semanticLabel: entry.entry.name,
-                                  ),
+                                  leading: IptvChannelLogo(channel: entry, size: DsSize.xs),
                                   title: Text(
                                     [if (entry.number != null) '${entry.number}', entry.entry.name].join('  '),
                                     maxLines: 1,
