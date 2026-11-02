@@ -99,7 +99,6 @@ final class BackgroundSettings {
     this.backgroundBlurSigma = 0,
     this.glass = false,
     this.glassFill = 0.6,
-    this.glassBlur = 24,
     this.busy = false,
     this.error = '',
   });
@@ -148,7 +147,7 @@ final class BackgroundSettings {
   final double backgroundBlurSigma;
 
   /// Whether the app's surfaces wear the glass fill and frost
-  /// ([glassFill] over [glassBlur]) instead of the theme's opaque kinds.
+  /// ([glassFill]) instead of the theme's opaque kinds.
   final bool glass;
 
   /// The panel fill: how opaque a card, list or floating layer's own
@@ -157,7 +156,6 @@ final class BackgroundSettings {
 
   /// Gaussian sigma behind a floating layer; 0 keeps it translucent but
   /// sharp. Surfaces that cannot frost (cards, lists) keep the fill alone.
-  final double glassBlur;
 
   /// An upload is being copied into the app's data area.
   final bool busy;
@@ -191,7 +189,6 @@ final class BackgroundSettings {
     double? backgroundBlurSigma,
     bool? glass,
     double? glassFill,
-    double? glassBlur,
     bool? busy,
     String? error,
   }) => BackgroundSettings(
@@ -211,7 +208,6 @@ final class BackgroundSettings {
     backgroundBlurSigma: backgroundBlurSigma ?? this.backgroundBlurSigma,
     glass: glass ?? this.glass,
     glassFill: glassFill ?? this.glassFill,
-    glassBlur: glassBlur ?? this.glassBlur,
     busy: busy ?? this.busy,
     error: error ?? this.error,
   );
@@ -237,7 +233,6 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
   static const _backgroundBlurKey = 'background.overlayBlur';
   static const _glassKey = 'background.glass';
   static const _glassFillKey = 'background.glassFill';
-  static const _glassBlurKey = 'background.glassBlur';
 
   @override
   BackgroundSettings build() {
@@ -271,7 +266,6 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
         backgroundBlurSigma: (StoragePrefs.getDouble(_backgroundBlurKey) ?? 0).clamp(0.0, 24.0),
         glass: StoragePrefs.getBool(_glassKey) ?? false,
         glassFill: (StoragePrefs.getDouble(_glassFillKey) ?? 0.6).clamp(0.0, 1.0),
-        glassBlur: (StoragePrefs.getDouble(_glassBlurKey) ?? 24).clamp(0.0, 48.0),
       );
     } on Object {
       // Storage never opened: the defaults stand.
@@ -349,7 +343,6 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
   void setGlassFill(double value) => _update(state.copyWith(glassFill: value.clamp(0.0, 1.0)));
 
   /// The frost behind a floating layer; 0 keeps it translucent but sharp.
-  void setGlassBlur(double sigma) => _update(state.copyWith(glassBlur: sigma.clamp(0.0, 48.0)));
 
   /// Back to the theme's surface; the saved media stays for a reselect.
   void clear() => _update(state.copyWith(kind: BackgroundKind.none, error: ''));
@@ -544,7 +537,6 @@ final class BackgroundSettingsController extends Notifier<BackgroundSettings> {
         _backgroundBlurKey: value.backgroundBlurSigma,
         _glassKey: value.glass,
         _glassFillKey: value.glassFill,
-        _glassBlurKey: value.glassBlur,
       }).catchError((Object _) {
         // A preference; a closed store loses it.
       }),

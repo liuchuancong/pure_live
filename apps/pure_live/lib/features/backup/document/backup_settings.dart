@@ -142,7 +142,6 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('background.overlayBlur', BackupPrefKind.floating),
   ('background.glass', BackupPrefKind.boolean),
   ('background.glassFill', BackupPrefKind.floating),
-  ('background.glassBlur', BackupPrefKind.floating),
   // Playback and the flying layer's own look.
   ('playback.quality', BackupPrefKind.string),
   ('playback.qualityCellular', BackupPrefKind.string),

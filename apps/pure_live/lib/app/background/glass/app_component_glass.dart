@@ -1,13 +1,10 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/background/settings/background_settings.dart';
 
-/// Gives every surface one translucent fill, and every official floating
-/// layer one more layer of frost, so the wallpaper keeps reading through
-/// the app.
+/// Gives every surface one translucent fill, the floating layers included,
+/// so the wallpaper keeps reading through the app.
 ///
 /// Two halves: [themeOf] turns the theme's own surface token translucent,
 /// which reaches every card, list section, table and the app's hand-painted
@@ -15,7 +12,7 @@ import 'package:pure_live/app/background/settings/background_settings.dart';
 /// desen_ui layers that take a `backdropFilter` — the menu family (anchored
 /// menus, context menus, a select's list), popovers, dialogs, panels,
 /// toasts, toolbars, tooltips, the bottom navigation and the text selection
-/// bar — the matching fill plus the blur.
+/// bar — the matching fill.
 final class AppComponentGlass extends ConsumerWidget {
   /// Paints the floating layers of [child] as glass, as the background
   /// settings ask.
@@ -55,37 +52,34 @@ final class AppComponentGlass extends ConsumerWidget {
     // not remount the navigator below it (route state would go with it).
     if (!settings.glass) return DsComponentThemes(themes: const [], child: child);
     final fill = DsTheme.colorsOf(context).overlay.withValues(alpha: settings.glassFill);
-    final blur = settings.glassBlur > 0
-        ? ImageFilter.blur(sigmaX: settings.glassBlur, sigmaY: settings.glassBlur)
-        : null;
     return DsComponentThemes(
       themes: [
         DsMenuThemeData(
-          style: DsMenuStyle(background: fill, backdropFilter: blur),
+          style: DsMenuStyle(background: fill),
         ),
         DsPopoverThemeData(
-          style: DsPopoverStyle(background: fill, backdropFilter: blur),
+          style: DsPopoverStyle(background: fill),
         ),
         DsDialogThemeData(
-          style: DsDialogStyle(background: fill, backdropFilter: blur),
+          style: DsDialogStyle(background: fill),
         ),
         DsPanelThemeData(
-          style: DsPanelStyle(background: fill, backdropFilter: blur),
+          style: DsPanelStyle(background: fill),
         ),
         DsToastThemeData(
-          style: DsToastStyle(background: fill, backdropFilter: blur),
+          style: DsToastStyle(background: fill),
         ),
         DsToolbarThemeData(
-          style: DsToolbarStyle(background: fill, backdropFilter: blur),
+          style: DsToolbarStyle(background: fill),
         ),
         DsTooltipThemeData(
-          style: DsTooltipStyle(background: fill, backdropFilter: blur),
+          style: DsTooltipStyle(background: fill),
         ),
         DsBottomNavThemeData(
-          style: DsBottomNavStyle(background: fill, backdropFilter: blur),
+          style: DsBottomNavStyle(background: fill),
         ),
         DsTextSelectionToolbarThemeData(
-          style: DsTextSelectionToolbarStyle(background: fill, backdropFilter: blur),
+          style: DsTextSelectionToolbarStyle(background: fill),
         ),
       ],
       child: child,

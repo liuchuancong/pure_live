@@ -120,9 +120,9 @@ final class BackgroundOverviewPane extends ConsumerWidget {
             ),
           ],
         ),
-        // One panel fill and one layer blur, applied everywhere: the theme's
-        // surface token turns translucent (cards, lists, the room's own
-        // columns) and the official floating layers frost on top of it.
+        // One panel fill, applied everywhere: the theme's surface token turns
+        // translucent (cards, lists, the room's own columns) and the official
+        // floating layers take the same fill.
         DsListSection(
           header: Text(t.settings.backgroundGlass),
           children: [
@@ -135,7 +135,7 @@ final class BackgroundOverviewPane extends ConsumerWidget {
                 onChanged: (value) => controller.setGlass(value: value),
               ),
             ),
-            // The fill and the frost exist only while the glass does.
+            // The fill exists only while the glass does.
             if (settings.glass) ...[
               SettingsConfigRow(
                 leading: const DsIcon(DsIcons.droplet),
@@ -148,20 +148,6 @@ final class BackgroundOverviewPane extends ConsumerWidget {
                   divisions: 20,
                   onChanged: controller.setGlassFill,
                   semanticLabel: t.settings.backgroundGlassFill,
-                ),
-              ),
-              SettingsConfigRow(
-                leading: const DsIcon(DsIcons.sparkles),
-                title: t.settings.backgroundGlassBlur,
-                description: t.settings.backgroundGlassBlurDescription,
-                detail: Text('${settings.glassBlur.round()}'),
-                controlWidth: 220,
-                control: DsSlider(
-                  value: settings.glassBlur,
-                  max: 48,
-                  divisions: 24,
-                  onChanged: controller.setGlassBlur,
-                  semanticLabel: t.settings.backgroundGlassBlur,
                 ),
               ),
             ],

@@ -3286,11 +3286,9 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get backgroundClear => 'Clear background';
 	@override String get backgroundGlass => 'Interface glass';
 	@override String get backgroundGlassEnable => 'Enabled';
-	@override String get backgroundGlassDescription => 'Cards, lists and overlays turn translucent; overlays blur what is behind.';
+	@override String get backgroundGlassDescription => 'Cards, lists and overlays turn translucent, the wallpaper showing through.';
 	@override String get backgroundGlassFill => 'Panel fill';
 	@override String get backgroundGlassFillDescription => 'Fill opacity; lower shows more wallpaper and less contrast.';
-	@override String get backgroundGlassBlur => 'Layer blur';
-	@override String get backgroundGlassBlurDescription => 'Blur behind overlays; 0 keeps it sharp.';
 	@override String get checkUpdate => 'Check for updates';
 	@override String get checkUpdateDesc => 'Reads the newest version from the project’s releases.';
 	@override String get checkingUpdate => 'Checking for updates…';
@@ -7659,11 +7657,9 @@ extension on TranslationsEn {
 			'settings.backgroundClear' => 'Clear background',
 			'settings.backgroundGlass' => 'Interface glass',
 			'settings.backgroundGlassEnable' => 'Enabled',
-			'settings.backgroundGlassDescription' => 'Cards, lists and overlays turn translucent; overlays blur what is behind.',
+			'settings.backgroundGlassDescription' => 'Cards, lists and overlays turn translucent, the wallpaper showing through.',
 			'settings.backgroundGlassFill' => 'Panel fill',
 			'settings.backgroundGlassFillDescription' => 'Fill opacity; lower shows more wallpaper and less contrast.',
-			'settings.backgroundGlassBlur' => 'Layer blur',
-			'settings.backgroundGlassBlurDescription' => 'Blur behind overlays; 0 keeps it sharp.',
 			'settings.checkUpdate' => 'Check for updates',
 			'settings.checkUpdateDesc' => 'Reads the newest version from the project’s releases.',
 			'settings.checkingUpdate' => 'Checking for updates…',
@@ -8051,10 +8047,10 @@ extension on TranslationsEn {
 			'settings.logExportFormatLog' => 'Log file (.log)',
 			'settings.logExportFormatJsonl' => 'JSON Lines (.jsonl)',
 			'settings.logRotationGroup' => 'File rotation',
-			_ => null,
-		} ?? switch (path) {
 			'settings.logFileMaxBytes' => 'Per-file limit',
 			'settings.logFileMaxBytesDesc' => 'The sink moves to the next file at this size.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.logFilesKept' => 'Files kept',
 			'settings.logFilesKeptDesc' => 'A full file rotates to the next; older files beyond the limit are deleted.',
 			'settings.logFilesKeptUnlimited' => 'Unlimited',
@@ -8565,10 +8561,10 @@ extension on TranslationsEn {
 			'wallpaper.sourceAlcyTx' => 'Alcy · tx',
 			'wallpaper.sourceAlcyLai' => 'Alcy · lai',
 			'wallpaper.sourceAlcyXhl' => 'Alcy · xhl',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceAlcyBd' => 'Alcy · bd',
 			'wallpaper.groupWuming' => 'Wuming API',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceWumingGirl' => 'Wuming · random girls',
 			'wallpaper.sourceWumingBlackStocking' => 'Wuming · black stockings',
 			'wallpaper.sourceWumingDouyinGirl' => 'Wuming · Douyin girls',

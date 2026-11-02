@@ -9430,20 +9430,14 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '启用'
 	String get backgroundGlassEnable => '启用';
 
-	/// zh-CN: '卡片、列表与浮层半透明，浮层再模糊背后内容。'
-	String get backgroundGlassDescription => '卡片、列表与浮层半透明，浮层再模糊背后内容。';
+	/// zh-CN: '卡片、列表与浮层半透明，壁纸从中透出。'
+	String get backgroundGlassDescription => '卡片、列表与浮层半透明，壁纸从中透出。';
 
 	/// zh-CN: '面板填充'
 	String get backgroundGlassFill => '面板填充';
 
 	/// zh-CN: '底色的不透明度；越低壁纸越透，文字越弱。'
 	String get backgroundGlassFillDescription => '底色的不透明度；越低壁纸越透，文字越弱。';
-
-	/// zh-CN: '浮层模糊'
-	String get backgroundGlassBlur => '浮层模糊';
-
-	/// zh-CN: '浮层背后的模糊半径；0 不模糊。'
-	String get backgroundGlassBlurDescription => '浮层背后的模糊半径；0 不模糊。';
 
 	/// zh-CN: '检查更新'
 	String get checkUpdate => '检查更新';
@@ -15994,11 +15988,9 @@ extension on Translations {
 			'settings.backgroundClear' => '清除背景',
 			'settings.backgroundGlass' => '界面玻璃',
 			'settings.backgroundGlassEnable' => '启用',
-			'settings.backgroundGlassDescription' => '卡片、列表与浮层半透明，浮层再模糊背后内容。',
+			'settings.backgroundGlassDescription' => '卡片、列表与浮层半透明，壁纸从中透出。',
 			'settings.backgroundGlassFill' => '面板填充',
 			'settings.backgroundGlassFillDescription' => '底色的不透明度；越低壁纸越透，文字越弱。',
-			'settings.backgroundGlassBlur' => '浮层模糊',
-			'settings.backgroundGlassBlurDescription' => '浮层背后的模糊半径；0 不模糊。',
 			'settings.checkUpdate' => '检查更新',
 			'settings.checkUpdateDesc' => '从项目的发行页读取最新版本。',
 			'settings.checkingUpdate' => '正在检查更新…',
@@ -16386,10 +16378,10 @@ extension on Translations {
 			'settings.logExportFormatLog' => '日志文件 (.log)',
 			'settings.logExportFormatJsonl' => 'JSON Lines (.jsonl)',
 			'settings.logRotationGroup' => '文件轮转',
-			_ => null,
-		} ?? switch (path) {
 			'settings.logFileMaxBytes' => '单文件上限',
 			'settings.logFileMaxBytesDesc' => '写满就切到下一个文件。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.logFilesKept' => '保留文件数',
 			'settings.logFilesKeptDesc' => '写满一个文件后轮转，超出保留数的旧文件会删除。',
 			'settings.logFilesKeptUnlimited' => '不限制',
@@ -16900,10 +16892,10 @@ extension on Translations {
 			'wallpaper.sourceAlcyTx' => '栗次元 · tx',
 			'wallpaper.sourceAlcyLai' => '栗次元 · lai',
 			'wallpaper.sourceAlcyXhl' => '栗次元 · xhl',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceAlcyBd' => '栗次元 · bd',
 			'wallpaper.groupWuming' => '无铭 API',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.sourceWumingGirl' => '无铭随机美囡图片',
 			'wallpaper.sourceWumingBlackStocking' => '无铭随机黑丝图片',
 			'wallpaper.sourceWumingDouyinGirl' => '抖音美女·无铭API',
