@@ -61,7 +61,6 @@ enum SettingsSection {
   network(DsIcons.globe),
   dataCache(DsIcons.database),
   storageFolders(DsIcons.hardDrive),
-  localMedia(DsIcons.library),
   logs(DsIcons.terminal),
   backup(DsIcons.databaseBackup),
   webdavSync(DsIcons.cloudUpload),
@@ -150,7 +149,6 @@ enum SettingsSection {
     SettingsSection.network => t.settings.navProxy,
     SettingsSection.dataCache => t.settings.navDataCache,
     SettingsSection.storageFolders => t.settings.storageFolders,
-    SettingsSection.localMedia => t.settings.localMediaTitle,
     SettingsSection.logs => t.settings.navLogs,
     SettingsSection.backup => t.settings.navBackup,
     SettingsSection.lanSync => t.settings.lanSync,
@@ -230,7 +228,6 @@ enum SettingsSection {
     SettingsSection.network => t.settings.proxyDescription,
     SettingsSection.dataCache => t.settings.dataCacheDescription,
     SettingsSection.storageFolders => t.settings.storageFoldersDescription,
-    SettingsSection.localMedia => t.settings.localMediaDescription,
     SettingsSection.logs => t.settings.logPageDescription,
     SettingsSection.backup => t.settings.backupDescription,
     SettingsSection.lanSync => t.settings.lanSyncDescription,
@@ -305,7 +302,7 @@ enum SettingsSection {
     SettingsSection.hongguoInterface || SettingsSection.hongguoDownload => SettingsSection.hongguo,
     SettingsSection.hongguoDanmaku => SettingsSection.hongguo,
     SettingsSection.hongguoDevice => SettingsSection.hongguo,
-    SettingsSection.storageFolders || SettingsSection.localMedia => SettingsSection.dataCache,
+    SettingsSection.storageFolders => SettingsSection.dataCache,
     _ => null,
   };
 
@@ -379,7 +376,7 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
   SettingsSection.iptv => const [SettingsSection.iptvBrowse, SettingsSection.iptvGroups],
   SettingsSection.vod => const [SettingsSection.vodPlayback, SettingsSection.vodDownload, SettingsSection.vodInterface],
   SettingsSection.backup => const [SettingsSection.webdavSync, SettingsSection.lanSync],
-  SettingsSection.dataCache => const [SettingsSection.storageFolders, SettingsSection.localMedia],
+  SettingsSection.dataCache => const [SettingsSection.storageFolders],
   SettingsSection.hongguo => const [
     SettingsSection.hongguoInterface,
     SettingsSection.hongguoDownload,

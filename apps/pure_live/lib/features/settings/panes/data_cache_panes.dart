@@ -257,9 +257,7 @@ final class DataCachePane extends ConsumerWidget {
       children: [
         // The folders are their own page: twelve rows with two actions each
         // did not belong in this scroll. Grouped under its own header so the
-        // entry reads like the cache group below it. The downloaded-media
-        // library rides beside them — both are "where the files are, and what
-        // is in them" — and it is the only door to that page.
+        // entry reads like the cache group below it.
         DsListSection(
           header: Text(context.t.settings.storageFolders),
           children: [
@@ -271,7 +269,6 @@ final class DataCachePane extends ConsumerWidget {
                     : context.t.settings.storageFolderCustomLabel,
               ),
             ),
-            const SettingsChildEntry(child: SettingsSection.localMedia),
           ],
         ),
         const CachePane(),

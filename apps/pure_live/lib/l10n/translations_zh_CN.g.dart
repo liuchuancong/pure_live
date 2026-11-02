@@ -10582,42 +10582,6 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '房间卡片样式'
 	String get roomCardGroup => '房间卡片样式';
 
-	/// zh-CN: '本地媒体'
-	String get localMediaTitle => '本地媒体';
-
-	/// zh-CN: '浏览与预览保存在本机的视频、录制和歌曲。'
-	String get localMediaDescription => '浏览与预览保存在本机的视频、录制和歌曲。';
-
-	/// zh-CN: '{count: int} 个文件 · 共 {size: String}'
-	String localMediaSummary({required int count, required String size}) => '${count} 个文件 · 共 ${size}';
-
-	/// zh-CN: '还没有已保存的文件'
-	String get localMediaEmpty => '还没有已保存的文件';
-
-	/// zh-CN: '下载的视频、直播录制与歌曲会出现在这里；保存目录可在存储位置中更改。'
-	String get localMediaEmptyDesc => '下载的视频、直播录制与歌曲会出现在这里；保存目录可在存储位置中更改。';
-
-	/// zh-CN: '打开存储位置'
-	String get localMediaOpenStorage => '打开存储位置';
-
-	/// zh-CN: '无法打开文件'
-	String get localMediaOpenFailed => '无法打开文件';
-
-	/// zh-CN: '用系统播放器打开'
-	String get localMediaSystemPlayer => '用系统播放器打开';
-
-	/// zh-CN: '删除“{name: String}”？'
-	String localMediaDeleteTitle({required String name}) => '删除“${name}”？';
-
-	/// zh-CN: '文件将从磁盘上删除。'
-	String get localMediaDeleteBody => '文件将从磁盘上删除。';
-
-	/// zh-CN: '删除文件失败'
-	String get localMediaDeleteFailed => '删除文件失败';
-
-	/// zh-CN: '刷新'
-	String get localMediaRefresh => '刷新';
-
 	/// zh-CN: '视频下载'
 	String get hongguoDownloadTitle => '视频下载';
 
@@ -15609,18 +15573,6 @@ extension on Translations {
 			'settings.storageFoldersResetAll' => '全部恢复默认',
 			'settings.resetGroup' => '重置',
 			'settings.roomCardGroup' => '房间卡片样式',
-			'settings.localMediaTitle' => '本地媒体',
-			'settings.localMediaDescription' => '浏览与预览保存在本机的视频、录制和歌曲。',
-			'settings.localMediaSummary' => ({required int count, required String size}) => '${count} 个文件 · 共 ${size}',
-			'settings.localMediaEmpty' => '还没有已保存的文件',
-			'settings.localMediaEmptyDesc' => '下载的视频、直播录制与歌曲会出现在这里；保存目录可在存储位置中更改。',
-			'settings.localMediaOpenStorage' => '打开存储位置',
-			'settings.localMediaOpenFailed' => '无法打开文件',
-			'settings.localMediaSystemPlayer' => '用系统播放器打开',
-			'settings.localMediaDeleteTitle' => ({required String name}) => '删除“${name}”？',
-			'settings.localMediaDeleteBody' => '文件将从磁盘上删除。',
-			'settings.localMediaDeleteFailed' => '删除文件失败',
-			'settings.localMediaRefresh' => '刷新',
 			'settings.hongguoDownloadTitle' => '视频下载',
 			'settings.hongguoDownloadDescription' => '下载队列、清晰度与保存目录',
 			'settings.storageFolderCopyPath' => '复制路径',
@@ -15738,8 +15690,6 @@ extension on Translations {
 			'toolbox.linkRoom' => '房间号',
 			'toolbox.linkEmpty' => '请先粘贴链接',
 			'toolbox.linkUnsupported' => '无法识别该链接，暂不支持此平台。',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkTimeout' => '解析超时，请检查网络后重试。',
 			'toolbox.linkFailed' => '解析失败，请稍后重试。',
 			'toolbox.linkCopyDone' => '已复制房间链接',
@@ -15752,6 +15702,8 @@ extension on Translations {
 			'toolbox.networkTarget' => '探测接口',
 			'toolbox.networkTargetDesc' => '推荐房间接口',
 			'toolbox.networkLatency' => '响应时间',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.networkRooms' => '返回房间',
 			'toolbox.networkSuccess' => '连接正常',
 			'toolbox.networkFailure' => '连接失败',

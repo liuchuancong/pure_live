@@ -3669,18 +3669,6 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get storageFoldersResetAll => 'Reset all folders';
 	@override String get resetGroup => 'Reset';
 	@override String get roomCardGroup => 'Room card style';
-	@override String get localMediaTitle => 'Local media';
-	@override String get localMediaDescription => 'Browse and preview the videos, recordings and songs saved on this machine.';
-	@override String localMediaSummary({required int count, required String size}) => '${count} files · ${size} in total';
-	@override String get localMediaEmpty => 'Nothing saved yet';
-	@override String get localMediaEmptyDesc => 'Downloaded videos, live recordings and songs appear here. Their folders live in storage locations.';
-	@override String get localMediaOpenStorage => 'Open storage locations';
-	@override String get localMediaOpenFailed => 'The file could not be opened';
-	@override String get localMediaSystemPlayer => 'Open with system player';
-	@override String localMediaDeleteTitle({required String name}) => 'Delete “${name}”?';
-	@override String get localMediaDeleteBody => 'The file is removed from disk.';
-	@override String get localMediaDeleteFailed => 'The file could not be deleted';
-	@override String get localMediaRefresh => 'Refresh';
 	@override String get hongguoDownloadTitle => 'Downloads';
 	@override String get hongguoDownloadDescription => 'The download queue, quality and save folder';
 	@override String get storageFolderCopyPath => 'Copy path';
@@ -7693,18 +7681,6 @@ extension on TranslationsEn {
 			'settings.storageFoldersResetAll' => 'Reset all folders',
 			'settings.resetGroup' => 'Reset',
 			'settings.roomCardGroup' => 'Room card style',
-			'settings.localMediaTitle' => 'Local media',
-			'settings.localMediaDescription' => 'Browse and preview the videos, recordings and songs saved on this machine.',
-			'settings.localMediaSummary' => ({required int count, required String size}) => '${count} files · ${size} in total',
-			'settings.localMediaEmpty' => 'Nothing saved yet',
-			'settings.localMediaEmptyDesc' => 'Downloaded videos, live recordings and songs appear here. Their folders live in storage locations.',
-			'settings.localMediaOpenStorage' => 'Open storage locations',
-			'settings.localMediaOpenFailed' => 'The file could not be opened',
-			'settings.localMediaSystemPlayer' => 'Open with system player',
-			'settings.localMediaDeleteTitle' => ({required String name}) => 'Delete “${name}”?',
-			'settings.localMediaDeleteBody' => 'The file is removed from disk.',
-			'settings.localMediaDeleteFailed' => 'The file could not be deleted',
-			'settings.localMediaRefresh' => 'Refresh',
 			'settings.hongguoDownloadTitle' => 'Downloads',
 			'settings.hongguoDownloadDescription' => 'The download queue, quality and save folder',
 			'settings.storageFolderCopyPath' => 'Copy path',
@@ -7822,8 +7798,6 @@ extension on TranslationsEn {
 			'toolbox.linkRoom' => 'Room',
 			'toolbox.linkEmpty' => 'Paste a link first',
 			'toolbox.linkUnsupported' => 'This link is not recognised; the platform is not supported yet.',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkTimeout' => 'The resolve timed out; check the network and try again.',
 			'toolbox.linkFailed' => 'The resolve failed; try again later.',
 			'toolbox.linkCopyDone' => 'Room link copied',
@@ -7836,6 +7810,8 @@ extension on TranslationsEn {
 			'toolbox.networkTarget' => 'Probed endpoint',
 			'toolbox.networkTargetDesc' => 'The recommended-rooms endpoint',
 			'toolbox.networkLatency' => 'Response time',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.networkRooms' => 'Rooms returned',
 			'toolbox.networkSuccess' => 'Reachable',
 			'toolbox.networkFailure' => 'Unreachable',

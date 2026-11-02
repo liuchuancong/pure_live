@@ -426,11 +426,6 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
       'storage folder location directory path pick 存储位置 目录 文件夹 路径 更换',
     ),
     _hit(SettingsSection.storageFolders, s.storageFolderScreenshots, 'screenshots tray pictures capture 截图 图片 拍摄'),
-    _hit(
-      SettingsSection.localMedia,
-      s.localMediaTitle,
-      'local media library files videos recordings music preview play downloaded 本地 媒体 文件 视频 录制 音乐 预览 播放 已下载',
-    ),
     _hit(SettingsSection.storageFolders, s.storageFoldersResetAll, 'reset all folders default restore 全部 恢复 默认 重置 还原'),
     // Backup.
     _hit(SettingsSection.backup, t.backup.createTitle, 'backup create 备份 创建'),
