@@ -19,6 +19,7 @@ void main() {
       taskStore: MemoryJsonStore('lan_sync_tasks'),
       conflictStore: MemoryJsonStore('lan_sync_conflicts'),
       transferStore: MemoryJsonStore('lan_sync_transfers'),
+      metaStore: MemoryJsonStore('lan_sync_meta'),
     );
   });
 
@@ -68,6 +69,7 @@ void main() {
       taskStore: MemoryJsonStore('lan_sync_tasks'),
       conflictStore: MemoryJsonStore('lan_sync_conflicts'),
       transferStore: MemoryJsonStore('lan_sync_transfers'),
+      metaStore: MemoryJsonStore('lan_sync_meta'),
     );
     await seeded.recordLocalChange(change('x', title: 'one'));
     await seeded.recordLocalChange(change('y', title: 'two'));
@@ -81,6 +83,7 @@ void main() {
       taskStore: MemoryJsonStore('lan_sync_tasks'),
       conflictStore: MemoryJsonStore('lan_sync_conflicts'),
       transferStore: MemoryJsonStore('lan_sync_transfers'),
+      metaStore: MemoryJsonStore('lan_sync_meta'),
     );
     final next = await reopened.recordLocalChange(change('z', title: 'three', operationId: 'device-a-z-1'));
 

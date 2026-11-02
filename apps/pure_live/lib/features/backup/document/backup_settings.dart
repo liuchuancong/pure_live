@@ -445,6 +445,12 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   // includeSecrets switch.
   ('backup.dir', BackupPrefKind.string),
   ('backup.includeSecrets', BackupPrefKind.boolean),
+  // The LAN sync's user choices. Its device id, sequence and trust records
+  // are this device's identity and never enter a document.
+  ('lan_sync.enabled', BackupPrefKind.boolean),
+  ('lan_sync.deviceName', BackupPrefKind.string),
+  ('lan_sync.conflictPolicy', BackupPrefKind.string),
+  ('lan_sync.scopes', BackupPrefKind.stringList),
   // The account list is one JSON pref; the two url/user keys below stay listed
   // because the first read of an older store migrates from them.
   ('backup.webdav.accounts', BackupPrefKind.string),

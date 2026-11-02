@@ -10666,8 +10666,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '局域网同步'
 	String get lanSync => '局域网同步';
 
-	/// zh-CN: '与同一网络里的其他设备同步收藏。'
-	String get lanSyncDescription => '与同一网络里的其他设备同步收藏。';
+	/// zh-CN: '与同一网络里的其他设备同步关注、历史、设置等，按内容勾选与授权。'
+	String get lanSyncDescription => '与同一网络里的其他设备同步关注、历史、设置等，按内容勾选与授权。';
 
 	/// zh-CN: '启用局域网同步'
 	String get lanSyncEnable => '启用局域网同步';
@@ -10729,11 +10729,11 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '本机修改'
 	String get lanSyncPolicyLocal => '本机修改';
 
-	/// zh-CN: '允许读取收藏'
-	String get lanSyncReadAllowed => '允许读取收藏';
+	/// zh-CN: '允许读取'
+	String get lanSyncReadAllowed => '允许读取';
 
-	/// zh-CN: '允许修改收藏'
-	String get lanSyncWriteAllowed => '允许修改收藏';
+	/// zh-CN: '允许修改'
+	String get lanSyncWriteAllowed => '允许修改';
 
 	/// zh-CN: '已撤销对该设备的信任'
 	String get lanSyncRevoked => '已撤销对该设备的信任';
@@ -10776,6 +10776,126 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '这台设备的身份与配对记录不符，已拒绝连接。'
 	String get lanSyncTrustError => '这台设备的身份与配对记录不符，已拒绝连接。';
+
+	/// zh-CN: '同步内容'
+	String get lanSyncScopes => '同步内容';
+
+	/// zh-CN: '本机共享的数据'
+	String get lanSyncScopesTitle => '本机共享的数据';
+
+	/// zh-CN: '勾选的内容会与已配对设备互相同步；没勾选的只留在本机。改动后同步会重新启动。'
+	String get lanSyncScopesDesc => '勾选的内容会与已配对设备互相同步；没勾选的只留在本机。改动后同步会重新启动。';
+
+	/// zh-CN: '关注房间'
+	String get lanSyncScopeFavorites => '关注房间';
+
+	/// zh-CN: '关注的主播与房间、标签。'
+	String get lanSyncScopeFavoritesDesc => '关注的主播与房间、标签。';
+
+	/// zh-CN: '关注分区'
+	String get lanSyncScopeAreaFollows => '关注分区';
+
+	/// zh-CN: '关注的直播分区。'
+	String get lanSyncScopeAreaFollowsDesc => '关注的直播分区。';
+
+	/// zh-CN: '观看历史'
+	String get lanSyncScopeHistory => '观看历史';
+
+	/// zh-CN: '看过的房间与时间。'
+	String get lanSyncScopeHistoryDesc => '看过的房间与时间。';
+
+	/// zh-CN: '录制任务'
+	String get lanSyncScopeRecordings => '录制任务';
+
+	/// zh-CN: '录制任务的设置；正在录制的任务不会被对方改动。'
+	String get lanSyncScopeRecordingsDesc => '录制任务的设置；正在录制的任务不会被对方改动。';
+
+	/// zh-CN: '主题与外观'
+	String get lanSyncScopeAppearance => '主题与外观';
+
+	/// zh-CN: '主题、背景、窗口、导航与界面偏好。'
+	String get lanSyncScopeAppearanceDesc => '主题、背景、窗口、导航与界面偏好。';
+
+	/// zh-CN: '播放'
+	String get lanSyncScopePlayback => '播放';
+
+	/// zh-CN: '播放器与直播间的偏好。'
+	String get lanSyncScopePlaybackDesc => '播放器与直播间的偏好。';
+
+	/// zh-CN: '弹幕'
+	String get lanSyncScopeDanmaku => '弹幕';
+
+	/// zh-CN: '弹幕显示与过滤的偏好。'
+	String get lanSyncScopeDanmakuDesc => '弹幕显示与过滤的偏好。';
+
+	/// zh-CN: '音乐'
+	String get lanSyncScopeMusic => '音乐';
+
+	/// zh-CN: '音乐播放器的偏好。'
+	String get lanSyncScopeMusicDesc => '音乐播放器的偏好。';
+
+	/// zh-CN: '录制'
+	String get lanSyncScopeRecorder => '录制';
+
+	/// zh-CN: '录制器的偏好。'
+	String get lanSyncScopeRecorderDesc => '录制器的偏好。';
+
+	/// zh-CN: '模块'
+	String get lanSyncScopeModules => '模块';
+
+	/// zh-CN: 'IPTV、红果、点播、站点与浏览的偏好。'
+	String get lanSyncScopeModulesDesc => 'IPTV、红果、点播、站点与浏览的偏好。';
+
+	/// zh-CN: '账号凭据'
+	String get lanSyncScopeSecrets => '账号凭据';
+
+	/// zh-CN: '平台 Cookie、WebDAV 密码等，明文传给对方。'
+	String get lanSyncScopeSecretsDesc => '平台 Cookie、WebDAV 密码等，明文传给对方。';
+
+	/// zh-CN: '要同步凭据，先在「备份与恢复」里打开「包含账号凭据」。'
+	String get lanSyncScopeSecretsOff => '要同步凭据，先在「备份与恢复」里打开「包含账号凭据」。';
+
+	/// zh-CN: '两台设备改了同一项时，自动保留哪一方；无法自动判定的会列在下方等你决定。'
+	String get lanSyncConflictPolicyDesc => '两台设备改了同一项时，自动保留哪一方；无法自动判定的会列在下方等你决定。';
+
+	/// zh-CN: '授权'
+	String get lanSyncGrants => '授权';
+
+	/// zh-CN: '「{name: String}」的授权'
+	String lanSyncGrantsTitle({required String name}) => '「${name}」的授权';
+
+	/// zh-CN: '按内容决定这台设备能从本机读取什么、能改动本机的什么。'
+	String get lanSyncGrantsIntro => '按内容决定这台设备能从本机读取什么、能改动本机的什么。';
+
+	/// zh-CN: '全部允许'
+	String get lanSyncGrantAll => '全部允许';
+
+	/// zh-CN: '全部禁止'
+	String get lanSyncGrantNone => '全部禁止';
+
+	/// zh-CN: '授权已更新'
+	String get lanSyncGrantsSaved => '授权已更新';
+
+	/// zh-CN: '授权保存失败'
+	String get lanSyncGrantsFailed => '授权保存失败';
+
+	/// zh-CN: '可读 {read: int} · 可改 {write: int} · 共 {total: int} 项'
+	String lanSyncGrantsSummary({required int read, required int write, required int total}) => '可读 ${read} · 可改 ${write} · 共 ${total} 项';
+
+	/// zh-CN: '{count: int} 个冲突待处理'
+	String lanSyncConflicts({required int count}) => '${count} 个冲突待处理';
+
+	/// zh-CN: '保留本机'
+	String get lanSyncKeepLocal => '保留本机';
+
+	/// zh-CN: '采用对方'
+	String get lanSyncKeepRemote => '采用对方';
+
+	/// zh-CN: '冲突已处理'
+	String get lanSyncConflictResolved => '冲突已处理';
+
+	/// zh-CN: '本机数据刚变过，请重新查看后再决定'
+	String get lanSyncConflictOutdated => '本机数据刚变过，请重新查看后再决定';
 }
 
 // Path: shield
@@ -15682,7 +15802,7 @@ extension on Translations {
 			'settings.hongguoDownloadDescription' => '下载队列、清晰度与保存目录',
 			'settings.storageFolderCopyPath' => '复制路径',
 			'settings.lanSync' => '局域网同步',
-			'settings.lanSyncDescription' => '与同一网络里的其他设备同步收藏。',
+			'settings.lanSyncDescription' => '与同一网络里的其他设备同步关注、历史、设置等，按内容勾选与授权。',
 			'settings.lanSyncEnable' => '启用局域网同步',
 			'settings.lanSyncEnableDesc' => '打开后本机可被发现并接受配对；设备名与授权保持不变。',
 			'settings.lanSyncDeviceName' => '本机名称',
@@ -15703,8 +15823,8 @@ extension on Translations {
 			'settings.lanSyncConflictPolicy' => '冲突时保留',
 			'settings.lanSyncPolicyRemote' => '对方修改',
 			'settings.lanSyncPolicyLocal' => '本机修改',
-			'settings.lanSyncReadAllowed' => '允许读取收藏',
-			'settings.lanSyncWriteAllowed' => '允许修改收藏',
+			'settings.lanSyncReadAllowed' => '允许读取',
+			'settings.lanSyncWriteAllowed' => '允许修改',
 			'settings.lanSyncRevoked' => '已撤销对该设备的信任',
 			'settings.lanSyncStateDiscovering' => '正在查找对方…',
 			'settings.lanSyncStateWaiting' => '等待对方确认…',
@@ -15719,6 +15839,46 @@ extension on Translations {
 			'settings.lanSyncPairMismatch' => '两台设备密钥不一致，配对已终止。该网络可能存在中间人。',
 			'settings.lanSyncPairCountdown' => ({required int seconds}) => '${seconds} 秒后过期',
 			'settings.lanSyncTrustError' => '这台设备的身份与配对记录不符，已拒绝连接。',
+			'settings.lanSyncScopes' => '同步内容',
+			'settings.lanSyncScopesTitle' => '本机共享的数据',
+			'settings.lanSyncScopesDesc' => '勾选的内容会与已配对设备互相同步；没勾选的只留在本机。改动后同步会重新启动。',
+			'settings.lanSyncScopeFavorites' => '关注房间',
+			'settings.lanSyncScopeFavoritesDesc' => '关注的主播与房间、标签。',
+			'settings.lanSyncScopeAreaFollows' => '关注分区',
+			'settings.lanSyncScopeAreaFollowsDesc' => '关注的直播分区。',
+			'settings.lanSyncScopeHistory' => '观看历史',
+			'settings.lanSyncScopeHistoryDesc' => '看过的房间与时间。',
+			'settings.lanSyncScopeRecordings' => '录制任务',
+			'settings.lanSyncScopeRecordingsDesc' => '录制任务的设置；正在录制的任务不会被对方改动。',
+			'settings.lanSyncScopeAppearance' => '主题与外观',
+			'settings.lanSyncScopeAppearanceDesc' => '主题、背景、窗口、导航与界面偏好。',
+			'settings.lanSyncScopePlayback' => '播放',
+			'settings.lanSyncScopePlaybackDesc' => '播放器与直播间的偏好。',
+			'settings.lanSyncScopeDanmaku' => '弹幕',
+			'settings.lanSyncScopeDanmakuDesc' => '弹幕显示与过滤的偏好。',
+			'settings.lanSyncScopeMusic' => '音乐',
+			'settings.lanSyncScopeMusicDesc' => '音乐播放器的偏好。',
+			'settings.lanSyncScopeRecorder' => '录制',
+			'settings.lanSyncScopeRecorderDesc' => '录制器的偏好。',
+			'settings.lanSyncScopeModules' => '模块',
+			'settings.lanSyncScopeModulesDesc' => 'IPTV、红果、点播、站点与浏览的偏好。',
+			'settings.lanSyncScopeSecrets' => '账号凭据',
+			'settings.lanSyncScopeSecretsDesc' => '平台 Cookie、WebDAV 密码等，明文传给对方。',
+			'settings.lanSyncScopeSecretsOff' => '要同步凭据，先在「备份与恢复」里打开「包含账号凭据」。',
+			'settings.lanSyncConflictPolicyDesc' => '两台设备改了同一项时，自动保留哪一方；无法自动判定的会列在下方等你决定。',
+			'settings.lanSyncGrants' => '授权',
+			'settings.lanSyncGrantsTitle' => ({required String name}) => '「${name}」的授权',
+			'settings.lanSyncGrantsIntro' => '按内容决定这台设备能从本机读取什么、能改动本机的什么。',
+			'settings.lanSyncGrantAll' => '全部允许',
+			'settings.lanSyncGrantNone' => '全部禁止',
+			'settings.lanSyncGrantsSaved' => '授权已更新',
+			'settings.lanSyncGrantsFailed' => '授权保存失败',
+			'settings.lanSyncGrantsSummary' => ({required int read, required int write, required int total}) => '可读 ${read} · 可改 ${write} · 共 ${total} 项',
+			'settings.lanSyncConflicts' => ({required int count}) => '${count} 个冲突待处理',
+			'settings.lanSyncKeepLocal' => '保留本机',
+			'settings.lanSyncKeepRemote' => '采用对方',
+			'settings.lanSyncConflictResolved' => '冲突已处理',
+			'settings.lanSyncConflictOutdated' => '本机数据刚变过，请重新查看后再决定',
 			'shield.title' => '弹幕屏蔽',
 			'shield.description' => '按关键词、用户与相似度过滤直播间弹幕，规则保存在本机。',
 			'shield.masterTitle' => '总开关',
@@ -15743,6 +15903,8 @@ extension on Translations {
 			'shield.keywordFieldHint' => '输入要屏蔽的关键词',
 			'shield.userFieldHint' => '输入要屏蔽的用户名',
 			'shield.add' => '添加',
+			_ => null,
+		} ?? switch (path) {
 			'shield.keywordsEmpty' => '还没有屏蔽关键词',
 			'shield.usersEmpty' => '还没有屏蔽的用户',
 			'shield.clear' => '清空全部',
@@ -15783,8 +15945,6 @@ extension on Translations {
 			'toolbox.cancel' => '取消',
 			'toolbox.linkFieldLabel' => '平台链接',
 			'toolbox.linkFieldHint' => '粘贴直播间链接或分享文字',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkOpen' => '打开直播间',
 			'toolbox.linkCopy' => '复制房间链接',
 			'toolbox.linkPaste' => '粘贴',

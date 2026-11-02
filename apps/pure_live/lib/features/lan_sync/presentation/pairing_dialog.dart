@@ -189,7 +189,9 @@ final class _PairingDialogState extends ConsumerState<_PairingDialog> {
     }
     return await runtime.responder.accept(
       incoming.sessionId,
-      grants: const PairingGrants(readScopes: {'favorites'}, writeScopes: {'favorites'}),
+      // A fresh pairing gets every scope this device shares, both ways; the
+      // paired list's grants panel narrows it afterwards.
+      grants: PairingGrants(readScopes: runtime.scopeIds, writeScopes: runtime.scopeIds),
     );
   }
 

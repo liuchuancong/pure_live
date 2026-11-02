@@ -1,9 +1,10 @@
 import 'package:live_lan_sync/live_lan_sync.dart';
-import 'package:live_storage/live_storage.dart' show JsonStore, StoragePrefs, StorageStores;
+import 'package:live_storage/live_storage.dart' show JsonStore, StorageStores;
 
 /// The engine's [LanSyncStore] over the app's Drift database: one
-/// `JsonStore` namespace per fact family, the sequence counter in
-/// `StoragePrefs`.
+/// `JsonStore` namespace per fact family, this device's identity and
+/// counters in a namespace of their own — never in the prefs, which a
+/// backup carries to another machine.
 ///
 /// Layout (spec §15.2):
 ///
@@ -14,9 +15,10 @@ import 'package:live_storage/live_storage.dart' show JsonStore, StoragePrefs, St
 /// * `lan_sync_tasks` — key task id, value the task JSON.
 /// * `lan_sync_conflicts` — key `scope/entityId`, value the conflict JSON.
 /// * `lan_sync_transfers` — key transfer id, value the record JSON.
-/// * `StoragePrefs['lan_sync.sequence']` — the sequence counter.
-/// * `StoragePrefs['lan_sync.deviceId']` and
-///   `StoragePrefs['lan_sync.trust.<id>']` — identity and trust records.
+/// * `lan_sync_meta` — `sequence` (the counter), `deviceId` (this
+///   device's identity) and `trust/<id>` (the trust records). Device-local
+///   by construction: a restored backup never overwrites who this device is
+///   or whom it trusts.
 ///
 /// Atomicity follows the plan's §3.2: a batch commit writes the log
 /// entries first (`putAll`, one database batch), then the ledger, cursor
@@ -34,7 +36,9 @@ final class DriftLanSyncStore implements LanSyncStore {
     required JsonStore taskStore,
     required JsonStore conflictStore,
     required JsonStore transferStore,
+    required JsonStore metaStore,
   }) : _log = logStore,
+       _meta = metaStore,
        _cursors = cursorStore,
        _processed = processedStore,
        _tasks = taskStore,
@@ -51,12 +55,16 @@ final class DriftLanSyncStore implements LanSyncStore {
       taskStore: await open('lan_sync_tasks'),
       conflictStore: await open('lan_sync_conflicts'),
       transferStore: await open('lan_sync_transfers'),
+      metaStore: await open('lan_sync_meta'),
     );
   }
 
-  static const String _sequenceKey = 'lan_sync.sequence';
-  static const String _deviceIdKey = 'lan_sync.deviceId';
-  static String _trustKey(String deviceId) => 'lan_sync.trust.$deviceId';
+  static const String _sequenceKey = 'sequence';
+  static const String _deviceIdKey = 'deviceId';
+  static const String _trustPrefix = 'trust/';
+  static String _trustKey(String deviceId) => '$_trustPrefix$deviceId';
+
+  final JsonStore _meta;
 
   final JsonStore _log;
   final JsonStore _cursors;
@@ -69,31 +77,40 @@ final class DriftLanSyncStore implements LanSyncStore {
   bool _sequenceLoaded = false;
 
   @override
-  Future<void> saveLocalDeviceId(String deviceId) => StoragePrefs.setAnyPref(_deviceIdKey, deviceId);
+  Future<void> saveLocalDeviceId(String deviceId) async {
+    await _meta.put(_deviceIdKey, deviceId);
+    await _meta.flush();
+  }
 
   @override
-  Future<String?> loadLocalDeviceId() async => switch (StoragePrefs.getAnyPref(_deviceIdKey)) {
+  Future<String?> loadLocalDeviceId() async => switch (_meta.entries[_deviceIdKey]) {
     final String id when id.isNotEmpty => id,
     _ => null,
   };
 
   @override
-  Future<void> putDeviceTrust(DeviceTrust trust) => StoragePrefs.setAnyPref(_trustKey(trust.deviceId), trust.encode());
+  Future<void> putDeviceTrust(DeviceTrust trust) async {
+    await _meta.put(_trustKey(trust.deviceId), trust.encode());
+    await _meta.flush();
+  }
 
   @override
   Future<List<DeviceTrust>> loadDeviceTrusts() async => [
-    for (final entry in StoragePrefs.snapshot().entries)
-      if (entry.key.startsWith('lan_sync.trust.') && entry.value is String) DeviceTrust.decode(entry.value! as String),
+    for (final entry in _meta.entries.entries)
+      if (entry.key.startsWith(_trustPrefix) && entry.value is String) DeviceTrust.decode(entry.value! as String),
   ];
 
   @override
-  Future<DeviceTrust?> deviceTrust(String deviceId) async => switch (StoragePrefs.getAnyPref(_trustKey(deviceId))) {
+  Future<DeviceTrust?> deviceTrust(String deviceId) async => switch (_meta.entries[_trustKey(deviceId)]) {
     final String encoded => DeviceTrust.decode(encoded),
     _ => null,
   };
 
   @override
-  Future<void> removeDeviceTrust(String deviceId) => StoragePrefs.setAnyPref(_trustKey(deviceId), null);
+  Future<void> removeDeviceTrust(String deviceId) async {
+    await _meta.delete(_trustKey(deviceId));
+    await _meta.flush();
+  }
 
   @override
   Future<LoggedChange> recordLocalChange(SyncChange change) async {
@@ -102,7 +119,7 @@ final class DriftLanSyncStore implements LanSyncStore {
     await _log.put('${change.scope}/${change.entityId}', entry.toJson());
     await _processed.put(change.operationId, true);
     _processedIds.add(change.operationId);
-    await StoragePrefs.setAnyPref(_sequenceKey, _sequence);
+    await _meta.put(_sequenceKey, _sequence);
     return entry;
   }
 
@@ -175,7 +192,7 @@ final class DriftLanSyncStore implements LanSyncStore {
     }
     if (logEntries.isNotEmpty) {
       await _loadSequence();
-      await StoragePrefs.setAnyPref(_sequenceKey, _sequence);
+      await _meta.put(_sequenceKey, _sequence);
       await _log.flush();
     }
   }
@@ -236,7 +253,7 @@ final class DriftLanSyncStore implements LanSyncStore {
       await _log.putAll(logEntries);
       await _processed.putAll({for (final change in changes) change.operationId: true});
       _processedIds.addAll(changes.map((change) => change.operationId));
-      await StoragePrefs.setAnyPref(_sequenceKey, _sequence);
+      await _meta.put(_sequenceKey, _sequence);
       await _log.flush();
     }
     await _conflicts.delete(conflictKey);
@@ -285,7 +302,7 @@ final class DriftLanSyncStore implements LanSyncStore {
   Future<void> _loadSequence() async {
     if (_sequenceLoaded) return;
     var stored = 0;
-    if (StoragePrefs.getAnyPref(_sequenceKey) case final num value) {
+    if (_meta.entries[_sequenceKey] case final num value) {
       stored = value.toInt();
     }
     var highest = 0;

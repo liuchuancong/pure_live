@@ -3,14 +3,18 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_lan_sync/live_lan_sync.dart';
+import 'package:pure_live/features/backup/panes/backup_actions.dart' show includeSecretsAllowed;
 import 'package:pure_live/features/lan_sync/application/lan_sync_providers.dart';
-import 'package:pure_live/features/lan_sync/data/secure_credential_store.dart';
+import 'package:pure_live/features/lan_sync/data/sync_scopes.dart';
+import 'package:pure_live/features/lan_sync/presentation/lan_sync_grants.dart';
 import 'package:pure_live/features/lan_sync/presentation/pairing_dialog.dart';
-import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow;
+import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow, SettingsSegmentedRow;
 import 'package:pure_live/l10n/translations.dart';
 
-/// The LAN sync pane: the switch, this device's facts, the nearby and
-/// paired devices, and the recent tasks (spec §22.3's UI surface).
+/// The LAN sync pane: the switch, this device's facts, what it shares and
+/// how conflicts settle, the nearby and paired devices (each with its
+/// grants), the open conflicts and the recent tasks (spec §22.3's UI
+/// surface).
 final class LanSyncPane extends ConsumerWidget {
   /// The pane.
   const LanSyncPane({super.key});
@@ -74,9 +78,11 @@ final class LanSyncPane extends ConsumerWidget {
               ),
           ],
         ),
+        _ScopesSection(settings: settings),
         if (settings.enabled) ...[
           _PairedSection(runtime: runtime),
           _NearbySection(runtime: runtime),
+          _ConflictsSection(runtime: runtime),
           _TasksSection(runtime: runtime),
         ],
       ],
@@ -149,15 +155,29 @@ final class _PairedSection extends ConsumerWidget {
                   title: Text(trust.displayName),
                   description: Text(LanSyncLog.shortFingerprint(trust.keyFingerprint)),
                   detail: Text(
-                    [
-                      if (trust.allowsRead('favorites')) t.settings.lanSyncReadAllowed,
-                      if (trust.allowsWrite('favorites')) t.settings.lanSyncWriteAllowed,
-                    ].join(' · '),
+                    t.settings.lanSyncGrantsSummary(
+                      read: trust.readScopes.where((id) => active.scopeIds.contains(id)).length,
+                      write: trust.writeScopes.where((id) => active.scopeIds.contains(id)).length,
+                      total: active.scopes.length,
+                    ),
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     spacing: DsSpace.s8,
                     children: [
+                      DsButton(
+                        variant: DsButtonVariant.ghost,
+                        size: DsSize.sm,
+                        onPressed: () => unawaited(
+                          showLanSyncGrantsPanel(context, runtime: active, trust: trust).then((saved) {
+                            if (saved && context.mounted) {
+                              showDsToast(context: context, title: t.settings.lanSyncGrantsSaved);
+                              ref.invalidate(lanSyncRuntimeProvider);
+                            }
+                          }),
+                        ),
+                        child: Text(t.settings.lanSyncGrants),
+                      ),
                       DsButton(
                         variant: DsButtonVariant.secondary,
                         size: DsSize.sm,
@@ -187,16 +207,9 @@ final class _PairedSection extends ConsumerWidget {
                         variant: DsButtonVariant.dangerSoft,
                         size: DsSize.sm,
                         onPressed: () => unawaited(
-                          ref
-                              .read(lanSyncRuntimeProvider.future)
-                              .then(
-                                (runtime) => runtime == null
-                                    ? null
-                                    : DeviceTrustService(
-                                        store: runtime.store,
-                                        credentials: const SecureVaultCredentialStore(),
-                                      ).revokeDevice(trust.deviceId),
-                              ),
+                          active.trustService.revokeDevice(trust.deviceId).then((_) {
+                            if (context.mounted) ref.invalidate(lanSyncRuntimeProvider);
+                          }),
                         ),
                         child: Text(t.settings.lanSyncForget),
                       ),
@@ -265,6 +278,126 @@ final class _NearbySection extends ConsumerWidget {
 /// Runs [future] in the background; dialog-level failures surface where
 /// they happened.
 void unawaited(Future<void> future) {}
+
+/// What this device shares, one check per scope, and the conflict policy.
+/// The vault's row appears only while the backup page's secrets switch is
+/// on; otherwise a hint says where the switch is.
+final class _ScopesSection extends ConsumerWidget {
+  const _ScopesSection({required this.settings});
+
+  final LanSyncSettings settings;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    final secretsAllowed = includeSecretsAllowed();
+    final controller = ref.read(lanSyncSettingsProvider.notifier);
+    return DsListSection(
+      header: Text(t.settings.lanSyncScopes),
+      children: [
+        DsListRow(
+          leading: const DsIcon(DsIcons.listChecks),
+          title: Text(t.settings.lanSyncScopesTitle),
+          description: Text(t.settings.lanSyncScopesDesc),
+        ),
+        for (final scope in LanSyncScope.values)
+          if (scope != LanSyncScope.secrets || secretsAllowed)
+            SettingsConfigRow(
+              leading: DsIcon(lanSyncScopeIcon(scope)),
+              title: lanSyncScopeLabel(t, scope),
+              description: lanSyncScopeDescription(t, scope),
+              control: DsCheckbox(
+                value: settings.scopes.contains(scope),
+                onChanged: (value) => unawaited(controller.setScope(scope, shared: value ?? false)),
+              ),
+            )
+          else
+            DsListRow(
+              leading: DsIcon(lanSyncScopeIcon(scope), color: colors.textSubtle),
+              title: Text(lanSyncScopeLabel(t, scope), style: theme.typography.body.copyWith(color: colors.textMuted)),
+              description: Text(t.settings.lanSyncScopeSecretsOff),
+            ),
+        SettingsSegmentedRow<ConflictPolicy>(
+          leading: const DsIcon(DsIcons.gitMerge),
+          title: t.settings.lanSyncConflictPolicy,
+          description: t.settings.lanSyncConflictPolicyDesc,
+          value: settings.conflictPolicy,
+          options: [
+            (value: ConflictPolicy.preferRemote, label: t.settings.lanSyncPolicyRemote),
+            (value: ConflictPolicy.preferLocal, label: t.settings.lanSyncPolicyLocal),
+          ],
+          onChanged: (policy) => unawaited(controller.setConflictPolicy(policy)),
+        ),
+      ],
+    );
+  }
+}
+
+/// The conflicts the engine could not settle by policy: one row each, the
+/// user keeps this device's version or takes the peer's.
+final class _ConflictsSection extends ConsumerWidget {
+  const _ConflictsSection({required this.runtime});
+
+  final LanSyncRuntime? runtime;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = runtime;
+    if (current == null) return const SizedBox.shrink();
+    final t = context.t;
+    final conflicts = ref.watch(lanSyncConflictsProvider).value ?? const <SyncConflict>[];
+    if (conflicts.isEmpty) return const SizedBox.shrink();
+    Future<void> settle(SyncConflict conflict, {required bool keepLocal}) async {
+      try {
+        await current.resolveConflict(conflict.key, keepLocal: keepLocal);
+        if (context.mounted) showDsToast(context: context, title: t.settings.lanSyncConflictResolved);
+      } on LanSyncError catch (error) {
+        if (!context.mounted) return;
+        showDsToast(
+          context: context,
+          title: error.code == 'conflict_outdated' ? t.settings.lanSyncConflictOutdated : t.settings.lanSyncSyncFailed,
+          status: DsStatus.danger,
+        );
+      }
+      ref.invalidate(lanSyncConflictsProvider);
+    }
+
+    return DsListSection(
+      header: Text(t.settings.lanSyncConflicts(count: conflicts.length)),
+      children: [
+        for (final conflict in conflicts)
+          DsListRow(
+            leading: const DsIcon(DsIcons.triangleAlert),
+            title: Text(switch (LanSyncScope.byId(conflict.scope)) {
+              final scope? => lanSyncScopeLabel(t, scope),
+              null => conflict.scope,
+            }),
+            description: Text(conflict.entityId),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: DsSpace.s8,
+              children: [
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: () => unawaited(settle(conflict, keepLocal: true)),
+                  child: Text(t.settings.lanSyncKeepLocal),
+                ),
+                DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  onPressed: () => unawaited(settle(conflict, keepLocal: false)),
+                  child: Text(t.settings.lanSyncKeepRemote),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
 
 final class _TasksSection extends StatelessWidget {
   const _TasksSection({required this.runtime});

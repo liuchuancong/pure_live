@@ -3697,7 +3697,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get hongguoDownloadDescription => 'The download queue, quality and save folder';
 	@override String get storageFolderCopyPath => 'Copy path';
 	@override String get lanSync => 'LAN sync';
-	@override String get lanSyncDescription => 'Sync favorites with other devices on the same network.';
+	@override String get lanSyncDescription => 'Sync follows, history, settings and more with devices on the same network, picked and granted per content.';
 	@override String get lanSyncEnable => 'Enable LAN sync';
 	@override String get lanSyncEnableDesc => 'While on, this device is discoverable and accepts pairing; names and grants stay.';
 	@override String get lanSyncDeviceName => 'Device name';
@@ -3718,8 +3718,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get lanSyncConflictPolicy => 'On conflict keep';
 	@override String get lanSyncPolicyRemote => 'the other device';
 	@override String get lanSyncPolicyLocal => 'this device';
-	@override String get lanSyncReadAllowed => 'Allow reading favorites';
-	@override String get lanSyncWriteAllowed => 'Allow changing favorites';
+	@override String get lanSyncReadAllowed => 'Allow reading';
+	@override String get lanSyncWriteAllowed => 'Allow changing';
 	@override String get lanSyncRevoked => 'Trust in this device revoked';
 	@override String get lanSyncStateDiscovering => 'Looking for the other device…';
 	@override String get lanSyncStateWaiting => 'Waiting for the other device…';
@@ -3734,6 +3734,46 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get lanSyncPairMismatch => 'The two devices derived different keys; pairing ended. The network may have an intruder.';
 	@override String lanSyncPairCountdown({required int seconds}) => 'Expires in ${seconds} s';
 	@override String get lanSyncTrustError => 'This device\'s identity does not match the pairing record; the connection was refused.';
+	@override String get lanSyncScopes => 'What syncs';
+	@override String get lanSyncScopesTitle => 'Shared by this device';
+	@override String get lanSyncScopesDesc => 'Checked content syncs both ways with paired devices; unchecked content stays here. Changing this restarts the sync.';
+	@override String get lanSyncScopeFavorites => 'Followed rooms';
+	@override String get lanSyncScopeFavoritesDesc => 'The streamers and rooms you follow, with their tags.';
+	@override String get lanSyncScopeAreaFollows => 'Followed areas';
+	@override String get lanSyncScopeAreaFollowsDesc => 'The live areas you follow.';
+	@override String get lanSyncScopeHistory => 'Watch history';
+	@override String get lanSyncScopeHistoryDesc => 'The rooms you watched and when.';
+	@override String get lanSyncScopeRecordings => 'Recording tasks';
+	@override String get lanSyncScopeRecordingsDesc => 'The recording tasks\' setup; a task recording right now is never changed by a peer.';
+	@override String get lanSyncScopeAppearance => 'Theme and appearance';
+	@override String get lanSyncScopeAppearanceDesc => 'Theme, background, window, navigation and interface preferences.';
+	@override String get lanSyncScopePlayback => 'Playback';
+	@override String get lanSyncScopePlaybackDesc => 'Player and live room preferences.';
+	@override String get lanSyncScopeDanmaku => 'Danmaku';
+	@override String get lanSyncScopeDanmakuDesc => 'Danmaku display and filter preferences.';
+	@override String get lanSyncScopeMusic => 'Music';
+	@override String get lanSyncScopeMusicDesc => 'Music player preferences.';
+	@override String get lanSyncScopeRecorder => 'Recorder';
+	@override String get lanSyncScopeRecorderDesc => 'Recorder preferences.';
+	@override String get lanSyncScopeModules => 'Modules';
+	@override String get lanSyncScopeModulesDesc => 'IPTV, Hongguo, VOD, sites and browsing preferences.';
+	@override String get lanSyncScopeSecrets => 'Account credentials';
+	@override String get lanSyncScopeSecretsDesc => 'Platform cookies, WebDAV passwords and the like, sent to the peer in plain text.';
+	@override String get lanSyncScopeSecretsOff => 'To sync credentials, turn on “Include account credentials” under Backup and restore first.';
+	@override String get lanSyncConflictPolicyDesc => 'Which side wins when both devices changed the same item; what cannot be decided automatically is listed below for you.';
+	@override String get lanSyncGrants => 'Grants';
+	@override String lanSyncGrantsTitle({required String name}) => 'Grants for “${name}”';
+	@override String get lanSyncGrantsIntro => 'Per content, whether this device may read it from here and change it here.';
+	@override String get lanSyncGrantAll => 'Allow all';
+	@override String get lanSyncGrantNone => 'Deny all';
+	@override String get lanSyncGrantsSaved => 'Grants updated';
+	@override String get lanSyncGrantsFailed => 'The grants could not be saved';
+	@override String lanSyncGrantsSummary({required int read, required int write, required int total}) => 'reads ${read} · writes ${write} · of ${total}';
+	@override String lanSyncConflicts({required int count}) => '${count} conflicts to settle';
+	@override String get lanSyncKeepLocal => 'Keep mine';
+	@override String get lanSyncKeepRemote => 'Take theirs';
+	@override String get lanSyncConflictResolved => 'Conflict settled';
+	@override String get lanSyncConflictOutdated => 'This device\'s copy just changed; review it and decide again';
 }
 
 // Path: shield
@@ -7736,7 +7776,7 @@ extension on TranslationsEn {
 			'settings.hongguoDownloadDescription' => 'The download queue, quality and save folder',
 			'settings.storageFolderCopyPath' => 'Copy path',
 			'settings.lanSync' => 'LAN sync',
-			'settings.lanSyncDescription' => 'Sync favorites with other devices on the same network.',
+			'settings.lanSyncDescription' => 'Sync follows, history, settings and more with devices on the same network, picked and granted per content.',
 			'settings.lanSyncEnable' => 'Enable LAN sync',
 			'settings.lanSyncEnableDesc' => 'While on, this device is discoverable and accepts pairing; names and grants stay.',
 			'settings.lanSyncDeviceName' => 'Device name',
@@ -7757,8 +7797,8 @@ extension on TranslationsEn {
 			'settings.lanSyncConflictPolicy' => 'On conflict keep',
 			'settings.lanSyncPolicyRemote' => 'the other device',
 			'settings.lanSyncPolicyLocal' => 'this device',
-			'settings.lanSyncReadAllowed' => 'Allow reading favorites',
-			'settings.lanSyncWriteAllowed' => 'Allow changing favorites',
+			'settings.lanSyncReadAllowed' => 'Allow reading',
+			'settings.lanSyncWriteAllowed' => 'Allow changing',
 			'settings.lanSyncRevoked' => 'Trust in this device revoked',
 			'settings.lanSyncStateDiscovering' => 'Looking for the other device…',
 			'settings.lanSyncStateWaiting' => 'Waiting for the other device…',
@@ -7773,6 +7813,46 @@ extension on TranslationsEn {
 			'settings.lanSyncPairMismatch' => 'The two devices derived different keys; pairing ended. The network may have an intruder.',
 			'settings.lanSyncPairCountdown' => ({required int seconds}) => 'Expires in ${seconds} s',
 			'settings.lanSyncTrustError' => 'This device\'s identity does not match the pairing record; the connection was refused.',
+			'settings.lanSyncScopes' => 'What syncs',
+			'settings.lanSyncScopesTitle' => 'Shared by this device',
+			'settings.lanSyncScopesDesc' => 'Checked content syncs both ways with paired devices; unchecked content stays here. Changing this restarts the sync.',
+			'settings.lanSyncScopeFavorites' => 'Followed rooms',
+			'settings.lanSyncScopeFavoritesDesc' => 'The streamers and rooms you follow, with their tags.',
+			'settings.lanSyncScopeAreaFollows' => 'Followed areas',
+			'settings.lanSyncScopeAreaFollowsDesc' => 'The live areas you follow.',
+			'settings.lanSyncScopeHistory' => 'Watch history',
+			'settings.lanSyncScopeHistoryDesc' => 'The rooms you watched and when.',
+			'settings.lanSyncScopeRecordings' => 'Recording tasks',
+			'settings.lanSyncScopeRecordingsDesc' => 'The recording tasks\' setup; a task recording right now is never changed by a peer.',
+			'settings.lanSyncScopeAppearance' => 'Theme and appearance',
+			'settings.lanSyncScopeAppearanceDesc' => 'Theme, background, window, navigation and interface preferences.',
+			'settings.lanSyncScopePlayback' => 'Playback',
+			'settings.lanSyncScopePlaybackDesc' => 'Player and live room preferences.',
+			'settings.lanSyncScopeDanmaku' => 'Danmaku',
+			'settings.lanSyncScopeDanmakuDesc' => 'Danmaku display and filter preferences.',
+			'settings.lanSyncScopeMusic' => 'Music',
+			'settings.lanSyncScopeMusicDesc' => 'Music player preferences.',
+			'settings.lanSyncScopeRecorder' => 'Recorder',
+			'settings.lanSyncScopeRecorderDesc' => 'Recorder preferences.',
+			'settings.lanSyncScopeModules' => 'Modules',
+			'settings.lanSyncScopeModulesDesc' => 'IPTV, Hongguo, VOD, sites and browsing preferences.',
+			'settings.lanSyncScopeSecrets' => 'Account credentials',
+			'settings.lanSyncScopeSecretsDesc' => 'Platform cookies, WebDAV passwords and the like, sent to the peer in plain text.',
+			'settings.lanSyncScopeSecretsOff' => 'To sync credentials, turn on “Include account credentials” under Backup and restore first.',
+			'settings.lanSyncConflictPolicyDesc' => 'Which side wins when both devices changed the same item; what cannot be decided automatically is listed below for you.',
+			'settings.lanSyncGrants' => 'Grants',
+			'settings.lanSyncGrantsTitle' => ({required String name}) => 'Grants for “${name}”',
+			'settings.lanSyncGrantsIntro' => 'Per content, whether this device may read it from here and change it here.',
+			'settings.lanSyncGrantAll' => 'Allow all',
+			'settings.lanSyncGrantNone' => 'Deny all',
+			'settings.lanSyncGrantsSaved' => 'Grants updated',
+			'settings.lanSyncGrantsFailed' => 'The grants could not be saved',
+			'settings.lanSyncGrantsSummary' => ({required int read, required int write, required int total}) => 'reads ${read} · writes ${write} · of ${total}',
+			'settings.lanSyncConflicts' => ({required int count}) => '${count} conflicts to settle',
+			'settings.lanSyncKeepLocal' => 'Keep mine',
+			'settings.lanSyncKeepRemote' => 'Take theirs',
+			'settings.lanSyncConflictResolved' => 'Conflict settled',
+			'settings.lanSyncConflictOutdated' => 'This device\'s copy just changed; review it and decide again',
 			'shield.title' => 'Danmaku shield',
 			'shield.description' => 'Keep live-room danmaku out by keyword, user or near-duplicate text; the rules live on this device.',
 			'shield.masterTitle' => 'Master switch',
@@ -7797,6 +7877,8 @@ extension on TranslationsEn {
 			'shield.keywordFieldHint' => 'Type a keyword to block',
 			'shield.userFieldHint' => 'Type a user name to block',
 			'shield.add' => 'Add',
+			_ => null,
+		} ?? switch (path) {
 			'shield.keywordsEmpty' => 'No blocked keywords yet',
 			'shield.usersEmpty' => 'No blocked users yet',
 			'shield.clear' => 'Clear all',
@@ -7837,8 +7919,6 @@ extension on TranslationsEn {
 			'toolbox.cancel' => 'Cancel',
 			'toolbox.linkFieldLabel' => 'Platform link',
 			'toolbox.linkFieldHint' => 'Paste a room link or shared text',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.linkOpen' => 'Open room',
 			'toolbox.linkCopy' => 'Copy room link',
 			'toolbox.linkPaste' => 'Paste',
