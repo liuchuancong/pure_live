@@ -133,6 +133,33 @@ final class CloudUserItem {
   final String role;
 }
 
+/// The figures the accounts page heads with.
+final class CloudUserStats {
+  /// The figures.
+  const CloudUserStats({
+    required this.total,
+    required this.admins,
+    required this.managers,
+    required this.users,
+    required this.uploaders,
+  });
+
+  /// Every account.
+  final int total;
+
+  /// Accounts whose role is `admin`.
+  final int admins;
+
+  /// Accounts whose role is `manager`.
+  final int managers;
+
+  /// The rest.
+  final int users;
+
+  /// Accounts that may upload.
+  final int uploaders;
+}
+
 /// The whole feature's state, as the pane reads it.
 final class CloudState {
   /// The state.

@@ -12730,6 +12730,48 @@ class Translations$backup$cloud$zh_CN {
 	/// zh-CN: '已删除'
 	String get adminDeleted => '已删除';
 
+	/// zh-CN: '账号统计'
+	String get adminStats => '账号统计';
+
+	/// zh-CN: '全部账号'
+	String get statTotal => '全部账号';
+
+	/// zh-CN: '管理员'
+	String get statAdmins => '管理员';
+
+	/// zh-CN: '管理者'
+	String get statManagers => '管理者';
+
+	/// zh-CN: '普通用户'
+	String get statUsers => '普通用户';
+
+	/// zh-CN: '可上传'
+	String get statUploaders => '可上传';
+
+	/// zh-CN: '邮箱'
+	String get colEmail => '邮箱';
+
+	/// zh-CN: '角色'
+	String get colRole => '角色';
+
+	/// zh-CN: '上传'
+	String get colUpload => '上传';
+
+	/// zh-CN: '操作'
+	String get colActions => '操作';
+
+	/// zh-CN: '账号分页'
+	String get adminPageLabel => '账号分页';
+
+	/// zh-CN: '管理员'
+	String get roleAdmin => '管理员';
+
+	/// zh-CN: '管理者'
+	String get roleManager => '管理者';
+
+	/// zh-CN: '普通用户'
+	String get roleUser => '普通用户';
+
 	/// zh-CN: '请输入有效的邮箱地址'
 	String get errInvalidEmail => '请输入有效的邮箱地址';
 
@@ -13192,6 +13234,20 @@ extension on Translations {
 			'backup.cloud.adminDeleteTitle' => ({required String email}) => '删除 ${email} 的云端数据？',
 			'backup.cloud.adminDeleteDesc' => '删除该账号的备份文件与权限记录；登录账号本身需在 Firebase 控制台删除。',
 			'backup.cloud.adminDeleted' => '已删除',
+			'backup.cloud.adminStats' => '账号统计',
+			'backup.cloud.statTotal' => '全部账号',
+			'backup.cloud.statAdmins' => '管理员',
+			'backup.cloud.statManagers' => '管理者',
+			'backup.cloud.statUsers' => '普通用户',
+			'backup.cloud.statUploaders' => '可上传',
+			'backup.cloud.colEmail' => '邮箱',
+			'backup.cloud.colRole' => '角色',
+			'backup.cloud.colUpload' => '上传',
+			'backup.cloud.colActions' => '操作',
+			'backup.cloud.adminPageLabel' => '账号分页',
+			'backup.cloud.roleAdmin' => '管理员',
+			'backup.cloud.roleManager' => '管理者',
+			'backup.cloud.roleUser' => '普通用户',
 			'backup.cloud.errInvalidEmail' => '请输入有效的邮箱地址',
 			'backup.cloud.errWrongCredentials' => '邮箱或密码不正确',
 			'backup.cloud.errEmailInUse' => '该邮箱已注册，请直接登录',
@@ -13282,6 +13338,8 @@ extension on Translations {
 			'favorites.unfollow' => '取消关注',
 			'favorites.statusAll' => '全部',
 			'favorites.statusLive' => '直播中',
+			_ => null,
+		} ?? switch (path) {
 			'favorites.statusOffline' => '离线',
 			'favorites.refresh' => '刷新',
 			'favorites.openFailedTitle' => '关注列表打不开',
@@ -13296,8 +13354,6 @@ extension on Translations {
 			'favorites.refreshFailed' => ({required int count}) => '${count} 个直播间刷新失败',
 			'favorites.statusLiveNow' => '已开播',
 			'favorites.statusOfflineNow' => '未开播',
-			_ => null,
-		} ?? switch (path) {
 			'favorites.justStarted' => '刚刚开播',
 			'favorites.liveFor' => ({required Object duration}) => '已播 ${duration}',
 			'favorites.durationMinutes' => ({required Object m}) => '${m} 分钟',
@@ -13796,6 +13852,8 @@ extension on Translations {
 			'iptv.groupsEmpty' => '还没有分组：先导入一份播放列表。',
 			'iptv.groupsHint' => '关掉的分组从频道列表和换台里消失；重开即恢复。',
 			'iptv.recentTitle' => '最近观看',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.recentCount' => ({required Object count}) => '共 ${count} 个频道',
 			'iptv.recentWatched' => ({required Object time}) => '上次观看 ${time}',
 			'iptv.recentRemove' => '从最近观看中移除',
@@ -13810,8 +13868,6 @@ extension on Translations {
 			'iptv.favouritesEmptyTitle' => '还没有收藏频道',
 			'iptv.favouritesEmptyDescription' => '在频道列表里点收藏，频道会出现在这里。',
 			'iptv.zapperTitle' => '换台',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.zapperOpen' => '换台面板',
 			'iptv.zapperGroups' => '分组',
 			'iptv.zapperChannels' => '频道',
@@ -14310,6 +14366,8 @@ extension on Translations {
 			'music.desktopLyricStrokeNone' => '无',
 			'music.desktopLyricColorBlack' => '黑色',
 			'music.desktopLyricColorGray' => '灰色',
+			_ => null,
+		} ?? switch (path) {
 			'music.desktopLyricAlignment' => '对齐方式',
 			'music.desktopLyricAlignmentDesc' => '歌词在窗口内的水平对齐。',
 			'music.desktopLyricAlignLeft' => '左对齐',
@@ -14324,8 +14382,6 @@ extension on Translations {
 			'music.clearQueue' => '清空播放队列',
 			'music.clearQueueConfirmTitle' => '清空播放队列？',
 			'music.clearQueueConfirmBody' => '队列中的所有歌曲都会被移除，此操作无法撤销。',
-			_ => null,
-		} ?? switch (path) {
 			'music.exportLyric' => '导出歌词',
 			'music.associateLyric' => '关联本地歌词',
 			'music.associateLyricDone' => '已关联歌词',
@@ -14824,6 +14880,8 @@ extension on Translations {
 			'recorder.scheduleSummary' => ({required Object days, required Object range}) => '${days} ${range}',
 			'recorder.scheduleEveryDay' => '每天',
 			'recorder.scheduleWorkdays' => '工作日',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.scheduleWeekend' => '周末',
 			'recorder.scheduleDayMon' => '一',
 			'recorder.scheduleDayTue' => '二',
@@ -14838,8 +14896,6 @@ extension on Translations {
 			'recorder.startNowStarted' => '已开始录制',
 			'recorder.startNowOffline' => '直播间未开播',
 			'recorder.startNowNoStream' => '没有可录制的线路',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.startNowTimeout' => '读取直播流超时',
 			'recorder.startNowFailed' => ({required Object error}) => '无法开始录制：${error}',
 			'recorder.cacheBusy' => '有录制任务正在进行（可能在另一个窗口），缓存不会被清理或自动裁剪。',
@@ -15338,6 +15394,8 @@ extension on Translations {
 			'settings.githubMirrorSourceCustom' => '自定义',
 			'settings.githubMirrorStrategyPrefix' => '前缀代理',
 			'settings.githubMirrorStrategyRaw' => '替换 Raw 域名',
+			_ => null,
+		} ?? switch (path) {
 			'settings.githubMirrorStrategyJsdelivr' => 'jsDelivr 路径',
 			'settings.toolsOrder' => '工具区排序',
 			'settings.toolsOrderDesc' => '侧栏分区线下方工具的显示顺序。',
@@ -15352,8 +15410,6 @@ extension on Translations {
 			'settings.danmakuInteractionGroup' => '弹幕交互',
 			'settings.styleTapInteraction' => '点按弹幕',
 			'settings.styleTapInteractionDesc' => '可复制、屏蔽；关闭后只切换控制条。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleLongPressInteraction' => '长按弹幕',
 			'settings.styleLongPressInteractionDesc' => '与点按同一菜单；关闭后长按不命中弹幕。',
 			'settings.danmakuStyleGroup' => '弹幕样式',
@@ -15852,6 +15908,8 @@ extension on Translations {
 			'settings.optionNoOutput' => '无输出',
 			'settings.playerAdvancedRequiresMpv' => '这些选项只对 mpv 内核生效。',
 			'settings.recordingDescription' => '录制目录、文件命名与容量上限。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.preferredQuality' => '首选画质',
 			'settings.preferredQualityDesc' => '进房间的首选清晰度；没有同名档位就近选择。',
 			'settings.preferredQualityCellular' => '蜂窝网络首选画质',
@@ -15866,8 +15924,6 @@ extension on Translations {
 			'settings.qualityStandard' => '标清',
 			'settings.qualitySmooth' => '流畅',
 			'settings.defaultMuted' => '默认静音',
-			_ => null,
-		} ?? switch (path) {
 			'settings.defaultMutedDesc' => '每个新房间打开时保持静音。',
 			'settings.defaultVolume' => '默认音量',
 			'settings.defaultVolumeDesc' => '新播放器默认音量：移动端 50%，桌面 100%。',
@@ -16366,6 +16422,8 @@ extension on Translations {
 			'settings.logPageDescription' => '记录级别、文件轮转与存放位置。',
 			'settings.logRecordGroup' => '记录',
 			'settings.logLevel' => '记录级别',
+			_ => null,
+		} ?? switch (path) {
 			'settings.logLevelDesc' => '低于此级别的日志不产生。',
 			'settings.logFile' => '写入日志文件',
 			'settings.logFileDesc' => '关闭后只保留内存中的最近日志。',
@@ -16380,8 +16438,6 @@ extension on Translations {
 			'settings.logRotationGroup' => '文件轮转',
 			'settings.logFileMaxBytes' => '单文件上限',
 			'settings.logFileMaxBytesDesc' => '写满就切到下一个文件。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.logFilesKept' => '保留文件数',
 			'settings.logFilesKeptDesc' => '写满一个文件后轮转，超出保留数的旧文件会删除。',
 			'settings.logFilesKeptUnlimited' => '不限制',
@@ -16880,6 +16936,8 @@ extension on Translations {
 			'wallpaper.sourceBingYingJoy' => '必应随机YingJoy',
 			'wallpaper.sourceBingW3h5' => '必应W3H5',
 			'wallpaper.sourceBingWumingDaily' => '无铭必应每日壁纸',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.groupAlcy' => '栗次元',
 			'wallpaper.sourceAlcyRandom' => '栗次元 · 随机',
 			'wallpaper.sourceAlcyYcy' => '栗次元 · ycy',
@@ -16894,8 +16952,6 @@ extension on Translations {
 			'wallpaper.sourceAlcyXhl' => '栗次元 · xhl',
 			'wallpaper.sourceAlcyBd' => '栗次元 · bd',
 			'wallpaper.groupWuming' => '无铭 API',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceWumingGirl' => '无铭随机美囡图片',
 			'wallpaper.sourceWumingBlackStocking' => '无铭随机黑丝图片',
 			'wallpaper.sourceWumingDouyinGirl' => '抖音美女·无铭API',

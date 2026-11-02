@@ -228,12 +228,7 @@ final class CloudService {
     int pageSize = 30,
     DocumentSnapshot<Map<String, Object?>>? after,
   }) => _guard(() async {
-    Query<Map<String, Object?>> query = _db.collection('users').orderBy('email');
-    final start = keyword.trim().toLowerCase();
-    if (start.isNotEmpty) {
-      final end = start.substring(0, start.length - 1) + String.fromCharCode(start.codeUnitAt(start.length - 1) + 1);
-      query = query.where('email', isGreaterThanOrEqualTo: start).where('email', isLessThan: end);
-    }
+    var query = _usersQuery(keyword);
     if (after != null) query = query.startAfterDocument(after);
     final page = await query.limit(pageSize).get();
     final docs = page.docs.where((doc) => doc.id != selfUid).toList();
@@ -268,6 +263,55 @@ final class CloudService {
     }
     return (items: items, last: page.docs.isEmpty ? null : page.docs.last);
   });
+
+  /// How many `users` documents match [keyword] (a prefix of the email),
+  /// through Firestore's count aggregation — no documents are read.
+  Future<int> countUsers({String keyword = ''}) => _guard(() async {
+    final snapshot = await _usersQuery(keyword).count().get();
+    return snapshot.count ?? 0;
+  });
+
+  /// The figures the accounts page heads with: every account, by role,
+  /// and how many may upload. Reads the `users` and `permissions`
+  /// collections whole, as the reference app did.
+  Future<CloudUserStats> loadStats() => _guard(() async {
+    final users = await _db.collection('users').get();
+    final permissions = await _db.collection('permissions').get();
+    final roles = {for (final doc in permissions.docs) doc.id: doc.data()};
+    var admins = 0;
+    var managers = 0;
+    var uploaders = 0;
+    for (final doc in users.docs) {
+      final permission = roles[doc.id];
+      switch (permission?['role']) {
+        case 'admin':
+          admins++;
+        case 'manager':
+          managers++;
+      }
+      final allowed = permission?['canUpload'] != null
+          ? permission!['canUpload'] != false
+          : doc.data()['canUpload'] != false;
+      if (allowed) uploaders++;
+    }
+    return CloudUserStats(
+      total: users.docs.length,
+      admins: admins,
+      managers: managers,
+      users: users.docs.length - admins - managers,
+      uploaders: uploaders,
+    );
+  });
+
+  Query<Map<String, Object?>> _usersQuery(String keyword) {
+    Query<Map<String, Object?>> query = _db.collection('users').orderBy('email');
+    final start = keyword.trim().toLowerCase();
+    if (start.isNotEmpty) {
+      final end = start.substring(0, start.length - 1) + String.fromCharCode(start.codeUnitAt(start.length - 1) + 1);
+      query = query.where('email', isGreaterThanOrEqualTo: start).where('email', isLessThan: end);
+    }
+    return query;
+  }
 
   /// Allows or refuses uploads for [uid] (`users/{uid}.canUpload`).
   Future<void> setUploadAllowed(String uid, {required bool allowed}) =>

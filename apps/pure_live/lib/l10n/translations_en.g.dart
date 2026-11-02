@@ -4428,6 +4428,20 @@ class _Translations$backup$cloud$en extends Translations$backup$cloud$zh_CN {
 	@override String adminDeleteTitle({required String email}) => 'Delete the cloud data of ${email}?';
 	@override String get adminDeleteDesc => 'Removes the account\'s backup file and role record; the sign-in itself is deleted in the Firebase console.';
 	@override String get adminDeleted => 'Deleted';
+	@override String get adminStats => 'Account figures';
+	@override String get statTotal => 'All accounts';
+	@override String get statAdmins => 'Admins';
+	@override String get statManagers => 'Managers';
+	@override String get statUsers => 'Users';
+	@override String get statUploaders => 'May upload';
+	@override String get colEmail => 'Email';
+	@override String get colRole => 'Role';
+	@override String get colUpload => 'Upload';
+	@override String get colActions => 'Actions';
+	@override String get adminPageLabel => 'Account pages';
+	@override String get roleAdmin => 'Admin';
+	@override String get roleManager => 'Manager';
+	@override String get roleUser => 'User';
 	@override String get errInvalidEmail => 'Enter a valid email address';
 	@override String get errWrongCredentials => 'The email or password is wrong';
 	@override String get errEmailInUse => 'That email is already registered; sign in instead';
@@ -4861,6 +4875,20 @@ extension on TranslationsEn {
 			'backup.cloud.adminDeleteTitle' => ({required String email}) => 'Delete the cloud data of ${email}?',
 			'backup.cloud.adminDeleteDesc' => 'Removes the account\'s backup file and role record; the sign-in itself is deleted in the Firebase console.',
 			'backup.cloud.adminDeleted' => 'Deleted',
+			'backup.cloud.adminStats' => 'Account figures',
+			'backup.cloud.statTotal' => 'All accounts',
+			'backup.cloud.statAdmins' => 'Admins',
+			'backup.cloud.statManagers' => 'Managers',
+			'backup.cloud.statUsers' => 'Users',
+			'backup.cloud.statUploaders' => 'May upload',
+			'backup.cloud.colEmail' => 'Email',
+			'backup.cloud.colRole' => 'Role',
+			'backup.cloud.colUpload' => 'Upload',
+			'backup.cloud.colActions' => 'Actions',
+			'backup.cloud.adminPageLabel' => 'Account pages',
+			'backup.cloud.roleAdmin' => 'Admin',
+			'backup.cloud.roleManager' => 'Manager',
+			'backup.cloud.roleUser' => 'User',
 			'backup.cloud.errInvalidEmail' => 'Enter a valid email address',
 			'backup.cloud.errWrongCredentials' => 'The email or password is wrong',
 			'backup.cloud.errEmailInUse' => 'That email is already registered; sign in instead',
@@ -4951,6 +4979,8 @@ extension on TranslationsEn {
 			'favorites.unfollow' => 'Unfollow',
 			'favorites.statusAll' => 'All',
 			'favorites.statusLive' => 'Live',
+			_ => null,
+		} ?? switch (path) {
 			'favorites.statusOffline' => 'Offline',
 			'favorites.refresh' => 'Refresh',
 			'favorites.openFailedTitle' => 'The follow list could not open',
@@ -4965,8 +4995,6 @@ extension on TranslationsEn {
 			'favorites.refreshFailed' => ({required int count}) => '${count} rooms could not be refreshed',
 			'favorites.statusLiveNow' => 'Online',
 			'favorites.statusOfflineNow' => 'Offline',
-			_ => null,
-		} ?? switch (path) {
 			'favorites.justStarted' => 'Just started',
 			'favorites.liveFor' => ({required Object duration}) => 'Live ${duration}',
 			'favorites.durationMinutes' => ({required Object m}) => '${m} min',
@@ -5465,6 +5493,8 @@ extension on TranslationsEn {
 			'iptv.groupsEmpty' => 'No groups yet — import a playlist first.',
 			'iptv.groupsHint' => 'Switching a group off takes it out of the lists and the zapping; switching it back returns the same line-up.',
 			'iptv.recentTitle' => 'Recently watched',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.recentCount' => ({required Object count}) => '${count} channels',
 			'iptv.recentWatched' => ({required Object time}) => 'Watched ${time}',
 			'iptv.recentRemove' => 'Remove from recent',
@@ -5479,8 +5509,6 @@ extension on TranslationsEn {
 			'iptv.favouritesEmptyTitle' => 'No favourite channels yet',
 			'iptv.favouritesEmptyDescription' => 'Tap the favourite mark in the channel list and it appears here.',
 			'iptv.zapperTitle' => 'Channels',
-			_ => null,
-		} ?? switch (path) {
 			'iptv.zapperOpen' => 'Channel panel',
 			'iptv.zapperGroups' => 'Groups',
 			'iptv.zapperChannels' => 'Channels',
@@ -5979,6 +6007,8 @@ extension on TranslationsEn {
 			'music.desktopLyricStrokeNone' => 'None',
 			'music.desktopLyricColorBlack' => 'Black',
 			'music.desktopLyricColorGray' => 'Gray',
+			_ => null,
+		} ?? switch (path) {
 			'music.desktopLyricAlignment' => 'Alignment',
 			'music.desktopLyricAlignmentDesc' => 'How the line is anchored in the window.',
 			'music.desktopLyricAlignLeft' => 'Left',
@@ -5993,8 +6023,6 @@ extension on TranslationsEn {
 			'music.clearQueue' => 'Clear the queue',
 			'music.clearQueueConfirmTitle' => 'Clear the play queue?',
 			'music.clearQueueConfirmBody' => 'Every song in the queue will be removed. This cannot be undone.',
-			_ => null,
-		} ?? switch (path) {
 			'music.exportLyric' => 'Export the lyric',
 			'music.associateLyric' => 'Use a local lyric',
 			'music.associateLyricDone' => 'Lyric linked',
@@ -6493,6 +6521,8 @@ extension on TranslationsEn {
 			'recorder.scheduleSummary' => ({required Object days, required Object range}) => '${days} ${range}',
 			'recorder.scheduleEveryDay' => 'Every day',
 			'recorder.scheduleWorkdays' => 'Weekdays',
+			_ => null,
+		} ?? switch (path) {
 			'recorder.scheduleWeekend' => 'Weekends',
 			'recorder.scheduleDayMon' => 'Mon',
 			'recorder.scheduleDayTue' => 'Tue',
@@ -6507,8 +6537,6 @@ extension on TranslationsEn {
 			'recorder.startNowStarted' => 'Recording started',
 			'recorder.startNowOffline' => 'The room is not live',
 			'recorder.startNowNoStream' => 'No recordable line',
-			_ => null,
-		} ?? switch (path) {
 			'recorder.startNowTimeout' => 'Reading the stream timed out',
 			'recorder.startNowFailed' => ({required Object error}) => 'Could not start recording: ${error}',
 			'recorder.cacheBusy' => 'A recording is in progress (possibly in another window); the cache will not be cleared or trimmed now.',
@@ -7007,6 +7035,8 @@ extension on TranslationsEn {
 			'settings.githubMirrorSourceCustom' => 'Custom',
 			'settings.githubMirrorStrategyPrefix' => 'prefix proxy',
 			'settings.githubMirrorStrategyRaw' => 'raw host replacement',
+			_ => null,
+		} ?? switch (path) {
 			'settings.githubMirrorStrategyJsdelivr' => 'jsDelivr path',
 			'settings.toolsOrder' => 'Tools order',
 			'settings.toolsOrderDesc' => 'The order of the tools under the sidebar\'s divider.',
@@ -7021,8 +7051,6 @@ extension on TranslationsEn {
 			'settings.danmakuInteractionGroup' => 'Danmaku interaction',
 			'settings.styleTapInteraction' => 'Tap danmaku',
 			'settings.styleTapInteractionDesc' => 'Copy or block a message; off, a tap only toggles the controls.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.styleLongPressInteraction' => 'Long-press danmaku',
 			'settings.styleLongPressInteractionDesc' => 'Opens the same actions; off, a long press misses danmaku.',
 			'settings.danmakuStyleGroup' => 'Danmaku style',
@@ -7521,6 +7549,8 @@ extension on TranslationsEn {
 			'settings.optionNoOutput' => 'No output',
 			'settings.playerAdvancedRequiresMpv' => 'These options only affect the mpv engine.',
 			'settings.recordingDescription' => 'Recording folder, file naming and the size cap.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.preferredQuality' => 'Preferred quality',
 			'settings.preferredQualityDesc' => 'The quality a room opens with; nearest level when missing.',
 			'settings.preferredQualityCellular' => 'Preferred quality on cellular',
@@ -7535,8 +7565,6 @@ extension on TranslationsEn {
 			'settings.qualityStandard' => 'SD',
 			'settings.qualitySmooth' => 'Smooth',
 			'settings.defaultMuted' => 'Start muted',
-			_ => null,
-		} ?? switch (path) {
 			'settings.defaultMutedDesc' => 'Every new room opens muted.',
 			'settings.defaultVolume' => 'Starting volume',
 			'settings.defaultVolumeDesc' => 'Starting volume for new players: 50% on mobile, 100% on desktop.',
@@ -8035,6 +8063,8 @@ extension on TranslationsEn {
 			'settings.logPageDescription' => 'Record level, file rotation and where they live.',
 			'settings.logRecordGroup' => 'Recording',
 			'settings.logLevel' => 'Record level',
+			_ => null,
+		} ?? switch (path) {
 			'settings.logLevelDesc' => 'Lines below this level are never produced.',
 			'settings.logFile' => 'Write log files',
 			'settings.logFileDesc' => 'Off keeps only the recent lines in memory.',
@@ -8049,8 +8079,6 @@ extension on TranslationsEn {
 			'settings.logRotationGroup' => 'File rotation',
 			'settings.logFileMaxBytes' => 'Per-file limit',
 			'settings.logFileMaxBytesDesc' => 'The sink moves to the next file at this size.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.logFilesKept' => 'Files kept',
 			'settings.logFilesKeptDesc' => 'A full file rotates to the next; older files beyond the limit are deleted.',
 			'settings.logFilesKeptUnlimited' => 'Unlimited',
@@ -8549,6 +8577,8 @@ extension on TranslationsEn {
 			'wallpaper.sourceBingYingJoy' => 'Bing · random (YingJoy)',
 			'wallpaper.sourceBingW3h5' => 'Bing · W3H5',
 			'wallpaper.sourceBingWumingDaily' => 'Bing daily · Wuming',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.groupAlcy' => 'Alcy',
 			'wallpaper.sourceAlcyRandom' => 'Alcy · random',
 			'wallpaper.sourceAlcyYcy' => 'Alcy · ycy',
@@ -8563,8 +8593,6 @@ extension on TranslationsEn {
 			'wallpaper.sourceAlcyXhl' => 'Alcy · xhl',
 			'wallpaper.sourceAlcyBd' => 'Alcy · bd',
 			'wallpaper.groupWuming' => 'Wuming API',
-			_ => null,
-		} ?? switch (path) {
 			'wallpaper.sourceWumingGirl' => 'Wuming · random girls',
 			'wallpaper.sourceWumingBlackStocking' => 'Wuming · black stockings',
 			'wallpaper.sourceWumingDouyinGirl' => 'Wuming · Douyin girls',
