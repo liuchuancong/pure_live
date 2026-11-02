@@ -11581,6 +11581,15 @@ class Translations$vod$zh_CN {
 	/// zh-CN: '从历史中移除'
 	String get historyRemove => '从历史中移除';
 
+	/// zh-CN: '今天'
+	String get today => '今天';
+
+	/// zh-CN: '昨天'
+	String get yesterday => '昨天';
+
+	/// zh-CN: '更早'
+	String get earlier => '更早';
+
 	/// zh-CN: '清空历史'
 	String get clearHistory => '清空历史';
 
@@ -15896,6 +15905,9 @@ extension on Translations {
 			'vod.historyCompleted' => '已看完',
 			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			'vod.historyRemove' => '从历史中移除',
+			'vod.today' => '今天',
+			'vod.yesterday' => '昨天',
+			'vod.earlier' => '更早',
 			'vod.clearHistory' => '清空历史',
 			'vod.clearHistoryTitle' => '清空观看历史？',
 			'vod.clearHistoryDesc' => '只删除本机的观看记录，不影响 Bilibili 上的进度。',

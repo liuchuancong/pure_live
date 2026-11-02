@@ -11,7 +11,7 @@ import 'package:pure_live/modules/vod/controller/vod_library.dart';
 import 'package:pure_live/modules/vod/controller/vod_social.dart';
 import 'package:pure_live/modules/vod/widgets/vod_toolbar.dart' show VodFeedAction, VodFeedToolbar;
 import 'package:pure_live/modules/vod/widgets/vod_widgets.dart'
-    show VodSeasonCard, VodVideoRow, kVodSeasonTileAspect, vodDurationText;
+    show VodSeasonCard, VodVideoRow, kVodSeasonTileAspect, vodDurationText, vodWatchStamp;
 import 'package:pure_live/shared/shared.dart';
 
 /// The video station's 个人 page: the four lists the reference offers.
@@ -152,6 +152,62 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
     ),
   );
 
+  /// The player's own history, read by the day it happened: 今天, 昨天, then
+  /// everything before — the three tiers this repo's two other archive pages
+  /// (live 历史, IPTV 最近观看) already cut at, and the three a viewer counts in
+  /// when asking which video they left half-watched. Each tier answers with its
+  /// own head, so a long record is scanned by day rather than as one flat run;
+  /// a tier with nothing in it is not announced, since a head over no rows
+  /// explains a list that is not there.
+  Widget _historyList(List<VodHistoryEntry> history, double inset) {
+    final sections = _daySections(context.t, history, DateTime.now());
+    return CustomScrollView(
+      slivers: [
+        for (final section in sections) ...[
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s4),
+            sliver: SliverToBoxAdapter(
+              child: _DayHeader(label: section.label, count: section.entries.length),
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(inset, 0, inset, DsSpace.s4),
+            sliver: SliverList.separated(
+              itemCount: section.entries.length,
+              separatorBuilder: (_, _) => const SizedBox(height: DsSpace.s4),
+              itemBuilder: (context, index) => _historyRow(section.entries[index], namedDay: section.namedDay),
+            ),
+          ),
+        ],
+        const SliverToBoxAdapter(child: SizedBox(height: DsSpace.s20)),
+      ],
+    );
+  }
+
+  /// One record: the station's row, its position under the title, the break
+  /// along the cover's foot, and the minute it happened on at the end of its
+  /// title — the date travels with the clock once the head above no longer
+  /// names the day, so one day is not written in two places.
+  Widget _historyRow(VodHistoryEntry entry, {required bool namedDay}) {
+    final t = context.t;
+    final position = vodDurationText(Duration(milliseconds: (entry.positionSeconds * 1000).round()));
+    final total = entry.video.durationSeconds == null
+        ? ''
+        : vodDurationText(Duration(milliseconds: (entry.video.durationSeconds! * 1000).round()));
+    return VodVideoRow(
+      video: entry.video.video,
+      subtitle: entry.completed
+          ? t.vod.historyCompleted
+          : total.isEmpty
+          ? position
+          : t.vod.historyProgress(position: position, total: total),
+      progress: _watched(entry),
+      stamp: vodWatchStamp(entry.video.updatedAt, namedDay: namedDay),
+      onOpen: () => _open(entry.bvid),
+      trailing: _drop(t.vod.historyRemove, () => ref.read(vodHistoryProvider.notifier).remove(entry.bvid)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.t;
@@ -248,38 +304,7 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                             title: Text(t.vod.historyEmptyTitle),
                             description: Text(t.vod.historyEmptyDescription),
                           )
-                        : ListView.builder(
-                            padding: EdgeInsets.fromLTRB(inset, DsSpace.s4, inset, DsSpace.s24),
-                            itemCount: history.length,
-                            itemBuilder: (context, index) {
-                              final entry = history[index];
-                              final position = vodDurationText(
-                                Duration(milliseconds: (entry.positionSeconds * 1000).round()),
-                              );
-                              final total = entry.video.durationSeconds == null
-                                  ? ''
-                                  : vodDurationText(
-                                      Duration(milliseconds: (entry.video.durationSeconds! * 1000).round()),
-                                    );
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: DsSpace.s4),
-                                child: VodVideoRow(
-                                  video: entry.video.video,
-                                  subtitle: entry.completed
-                                      ? t.vod.historyCompleted
-                                      : total.isEmpty
-                                      ? position
-                                      : t.vod.historyProgress(position: position, total: total),
-                                  progress: _watched(entry),
-                                  onOpen: () => _open(entry.bvid),
-                                  trailing: _drop(
-                                    t.vod.historyRemove,
-                                    () => ref.read(vodHistoryProvider.notifier).remove(entry.bvid),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                        : _historyList(history, inset),
                   VodPersonalTab.favourites =>
                     favourites.isEmpty
                         ? DsEmptyState(
@@ -314,6 +339,60 @@ final class _VodPersonalPageState extends ConsumerState<VodPersonalPage> {
                   ),
                 },
         ),
+      ],
+    );
+  }
+}
+
+/// One day of the player's record: the words over it, whether those words
+/// already name the calendar day the rows fell on, and the rows themselves.
+typedef _DaySection = ({bool namedDay, String label, List<VodHistoryEntry> entries});
+
+/// Midnight the record fell on.
+DateTime _startOfDay(DateTime time) => DateTime(time.year, time.month, time.day);
+
+/// The record cut at the days it happened. The list arrives newest first, so
+/// each tier keeps that order and the tiers keep it between themselves.
+List<_DaySection> _daySections(Translations t, List<VodHistoryEntry> history, DateTime now) {
+  final today = _startOfDay(now);
+  final yesterday = today.subtract(const Duration(days: 1));
+  final buckets = <_DaySection>[
+    (namedDay: true, label: t.vod.today, entries: []),
+    (namedDay: true, label: t.vod.yesterday, entries: []),
+    (namedDay: false, label: t.vod.earlier, entries: []),
+  ];
+  for (final entry in history) {
+    final day = _startOfDay(entry.video.updatedAt);
+    final index = day == today
+        ? 0
+        : day == yesterday
+        ? 1
+        : 2;
+    buckets[index].entries.add(entry);
+  }
+  return [
+    for (final section in buckets)
+      if (section.entries.isNotEmpty) section,
+  ];
+}
+
+/// One tier's head: the day it covers and how many records it holds — the pair
+/// every archive page of this app puts over its days.
+final class _DayHeader extends StatelessWidget {
+  const _DayHeader({required this.label, required this.count});
+
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Row(
+      spacing: DsSpace.s8,
+      children: [
+        Text(label, style: theme.typography.labelStrong.copyWith(color: colors.text)),
+        DsBadge(label: Text('$count'), dot: false),
       ],
     );
   }

@@ -12,6 +12,15 @@ String vodDurationText(Duration duration) {
   return hours > 0 ? '$hours:$minutes:$seconds' : '${duration.inMinutes}:$seconds';
 }
 
+/// A history row's moment, at the end of its title line: the clock alone under
+/// a head that already names the day, the date with it once the list runs
+/// across more than one day.
+String vodWatchStamp(DateTime time, {required bool namedDay}) {
+  String two(int value) => value.toString().padLeft(2, '0');
+  final clock = '${two(time.hour)}:${two(time.minute)}';
+  return namedDay ? clock : '${vodDateText(time)} $clock';
+}
+
 /// A posting time as `MM-DD`, or `YYYY-MM-DD` once the year differs.
 String vodDateText(DateTime time, {DateTime? now}) {
   String two(int value) => value.toString().padLeft(2, '0');
@@ -800,11 +809,21 @@ final class VodUserRow extends StatelessWidget {
 /// The cover carries the archive's ink: its length at the foot's end, or the
 /// watched stripe when the row is a way back to a half-finished archive.
 /// [subtitle] is the line under the title — the uploader for an archive found
-/// in a feed, the position for one the player stopped on.
+/// in a feed, the position for one the player stopped on. [stamp] sits at the
+/// end of the title line and says when the row's record happened, for the
+/// lists that are read by time rather than by what they hold.
 final class VodVideoRow extends StatelessWidget {
   /// The row for [video]; [onOpen] opens its page and [trailing] is the row's
   /// own action.
-  const VodVideoRow({required this.video, this.onOpen, this.subtitle, this.progress, this.trailing, super.key});
+  const VodVideoRow({
+    required this.video,
+    this.onOpen,
+    this.subtitle,
+    this.progress,
+    this.stamp,
+    this.trailing,
+    super.key,
+  });
 
   /// The archive shown.
   final VodVideo video;
@@ -819,6 +838,10 @@ final class VodVideoRow extends StatelessWidget {
   /// The watched fraction (0..1) along the cover's foot. A row with one leaves
   /// the length chip out — the same figure already stands in [subtitle].
   final double? progress;
+
+  /// The row's moment at the end of its title line; empty or null leaves the
+  /// title the whole width.
+  final String? stamp;
 
   /// The row's action at its end: the way to drop the archive from the list
   /// it is being read out of.
@@ -899,11 +922,28 @@ final class VodVideoRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: DsSpace.s4,
                 children: [
-                  Text(
-                    video.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: DsSpace.s8,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          video.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+                        ),
+                      ),
+                      if (stamp case final value? when value.isNotEmpty)
+                        // The record's moment keeps its own digits in a line of
+                        // words, the way the station's own history rows do.
+                        Text(
+                          value,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: theme.typography.numeric(theme.typography.caption.copyWith(color: colors.textSubtle)),
+                        ),
+                    ],
                   ),
                   if (note.isNotEmpty)
                     Text(

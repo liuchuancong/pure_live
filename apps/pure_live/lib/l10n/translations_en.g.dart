@@ -4026,6 +4026,9 @@ class _Translations$vod$en extends Translations$vod$zh_CN {
 	@override String get historyCompleted => 'Finished';
 	@override String historyProgress({required Object position, required Object total}) => '${position} / ${total}';
 	@override String get historyRemove => 'Remove from history';
+	@override String get today => 'Today';
+	@override String get yesterday => 'Yesterday';
+	@override String get earlier => 'Earlier';
 	@override String get clearHistory => 'Clear history';
 	@override String get clearHistoryTitle => 'Clear the watch history?';
 	@override String get clearHistoryDesc => 'Only this device\'s records are deleted; progress on Bilibili stays.';
@@ -8004,6 +8007,9 @@ extension on TranslationsEn {
 			'vod.historyCompleted' => 'Finished',
 			'vod.historyProgress' => ({required Object position, required Object total}) => '${position} / ${total}',
 			'vod.historyRemove' => 'Remove from history',
+			'vod.today' => 'Today',
+			'vod.yesterday' => 'Yesterday',
+			'vod.earlier' => 'Earlier',
 			'vod.clearHistory' => 'Clear history',
 			'vod.clearHistoryTitle' => 'Clear the watch history?',
 			'vod.clearHistoryDesc' => 'Only this device\'s records are deleted; progress on Bilibili stays.',
