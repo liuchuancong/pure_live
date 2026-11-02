@@ -1,6 +1,6 @@
 import 'dart:async' show Timer, unawaited;
 import 'dart:convert' show jsonDecode, jsonEncode;
-import 'dart:io' show Directory, File, FileMode, HttpClient, HttpException, IOSink;
+import 'dart:io' show Directory, File, FileMode, FileSystemException, HttpClient, HttpException, IOSink;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
@@ -163,6 +163,13 @@ final class HongguoDownloadItem {
   double? get progress => total > 0 ? (received / total).clamp(0.0, 1.0) : null;
 
   /// Returns this task with the given fields replaced.
+  ///
+  /// [filePath] and [fileName] move together: a row whose file was merged into
+  /// another folder names the new place and the new file in one write, so no
+  /// reader can catch it with one half moved. Unlike the other fields, leaving
+  /// them out keeps what the row already had — [error] is the one field this
+  /// copy always takes from the caller, so pass it through when you mean to
+  /// keep it.
   HongguoDownloadItem copyWith({
     int? received,
     int? total,
@@ -170,17 +177,24 @@ final class HongguoDownloadItem {
     int? attempts,
     HongguoDownloadPhase? phase,
     String? error,
+    String? filePath,
+    String? fileName,
   }) {
     return HongguoDownloadItem(
       id: id,
       seriesId: seriesId,
+      // Not a copy parameter: the picture the queue kept at enqueue time
+      // belongs to the row, and a progress write used to drop it — every
+      // paused, retried or measured row lost its poster, and with it the list
+      // header's picture.
+      cover: cover,
       title: title,
       part: part,
       index: index,
       parts: parts,
       maxHeight: maxHeight,
-      fileName: fileName,
-      filePath: filePath,
+      fileName: fileName ?? this.fileName,
+      filePath: filePath ?? this.filePath,
       phase: phase ?? this.phase,
       stamp: stamp,
       received: received ?? this.received,
@@ -425,7 +439,7 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
       return (outcome: HongguoDownloadEnqueue.duplicate, error: null);
     }
     try {
-      final directory = ref.read(appPathsProvider).videos;
+      final directory = ref.read(appPathsProvider).shortDramas;
       // Made here rather than trusted to boot: the folder row can name a path
       // that does not exist yet, and a missing directory fails the first
       // write inside the sink instead of failing the enqueue honestly.
@@ -541,6 +555,87 @@ final class HongguoDownloadsController extends Notifier<List<HongguoDownloadItem
     _items.removeWhere((item) => item.phase == HongguoDownloadPhase.done);
     _publish();
     await _persist();
+  }
+
+  /// The finished episodes this queue holds whose file sits outside the folder
+  /// the viewer uses for them now — what the shared 视频 folder kept before the
+  /// dramas got one of their own.
+  ///
+  /// Only a row that finished and still names an existing file outside that
+  /// folder counts. A transfer owed bytes is never a candidate: its `.part`
+  /// lives beside where it is writing, and moving it mid-run would leave the
+  /// writer appending to a file that is no longer there.
+  List<HongguoDownloadItem> stranded() {
+    final into = ref.read(appPathsProvider).shortDramas.path;
+    return [
+      for (final item in _items)
+        if (item.phase == HongguoDownloadPhase.done && File(item.filePath).existsSync() && !_under(item.filePath, into))
+          item,
+    ];
+  }
+
+  /// Brings the finished rows in [stranded] under the folder the viewer uses
+  /// for dramas, and rewrites each row to the place its file landed.
+  ///
+  /// One file at a time, each result persisted the moment it lands: a merge
+  /// interrupted halfway leaves the rows it moved pointing at the new folder
+  /// and the rows it never reached pointing at the old one, and both are true.
+  /// The source is deleted only after the copy's byte count matches what the
+  /// source held — a move that fails leaves the file exactly where it was, with
+  /// its row still naming it, which is why this verb is the viewer's call and
+  /// never something the app does on its own.
+  Future<({int moved, int failed})> mergeStranded(
+    List<HongguoDownloadItem> stranded, {
+    void Function(int done, int total, String name)? onProgress,
+    bool Function()? cancelled,
+  }) async {
+    final into = ref.read(appPathsProvider).shortDramas;
+    await into.create(recursive: true);
+    var moved = 0;
+    var failed = 0;
+    for (var index = 0; index < stranded.length; index++) {
+      if (cancelled != null && cancelled()) break;
+      final item = stranded[index];
+      // A row the viewer removed while this run was going has no pointer left to
+      // update: leave its file where it is rather than move it somewhere nothing
+      // names.
+      if (!_items.any((row) => row.id == item.id)) continue;
+      final name = p.basename(item.filePath);
+      onProgress?.call(index, stranded.length, name);
+      try {
+        final source = File(item.filePath);
+        final target = hongguoFreeDownloadFile(into, name);
+        try {
+          await source.rename(target.path);
+        } on FileSystemException {
+          // Another volume: the rename cannot link, so copy, prove, then let go.
+          await source.copy(target.path);
+          if (await source.length() != await target.length()) {
+            await target.delete();
+            failed++;
+            continue;
+          }
+          await source.delete();
+        }
+        _replace(item.copyWith(filePath: target.path, fileName: p.basename(target.path), error: item.error));
+        await _persist();
+        moved++;
+      } on Object {
+        // The file stayed where it was and the row still names it: say so in
+        // the count rather than pretend the queue moved.
+        failed++;
+      }
+    }
+    onProgress?.call(stranded.length, stranded.length, '');
+    return (moved: moved, failed: failed);
+  }
+
+  /// Whether [path] sits under [folder] — the test that decides a row is
+  /// already home and needs no moving.
+  static bool _under(String path, String folder) {
+    final normalised = p.split(p.normalize(path)).join('/');
+    final base = p.split(p.normalize(folder)).join('/');
+    return normalised == base || normalised.startsWith('$base/');
   }
 
   /// Removes a part file, and a finished task's file when asked.

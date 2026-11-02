@@ -18,8 +18,9 @@ import 'package:pure_live/infrastructure/storage/storage_paths.dart' show Storag
 /// * cache — `images/` for network images, `images/covers/` for platform
 ///   covers, both segments of [cacheRoot] so a viewer who moves the cache
 ///   moves every cached picture with it.
-/// * downloads — `ns/videos`, `ns/recordings`, `ns/music`, `ns/wallpapers`,
-///   `ns/video_wallpapers`, `ns/lyrics`, `ns/updates`, `ns/screenshots` under
+/// * downloads — `ns/videos`, `ns/short_dramas`, `ns/recordings`, `ns/music`,
+///   `ns/wallpapers`, `ns/video_wallpapers`, `ns/lyrics`, `ns/updates`,
+///   `ns/screenshots` under
 ///   the platform's
 ///   download root; the namespace keeps the product's files out of the
 ///   viewer's own tree in a shared folder, and a `<data>/downloads` root
@@ -55,6 +56,15 @@ final class AppPaths {
   /// Finished videos, one folder per course of action rather than a flat
   /// pile next to the viewer's own files.
   Directory get videos => downloadFolder('videos');
+
+  /// Finished short dramas. They had no folder of their own and landed in
+  /// [videos] beside the station's episodes, where the viewer who wants to go
+  /// through one series could not tell the two stacks apart; a queue row names
+  /// its own absolute path, so the dramas already filed under [videos] still
+  /// open from there — this folder only takes what is queued from now on, and
+  /// merging the old rows into it is the viewer's explicit call, never a
+  /// silent move.
+  Directory get shortDramas => downloadFolder('short_dramas');
 
   /// Finished songs.
   Directory get music => downloadFolder('music');

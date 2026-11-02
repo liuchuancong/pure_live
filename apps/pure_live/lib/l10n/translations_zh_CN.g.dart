@@ -9742,6 +9742,27 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '重新检查文件'
 	String get downloadRecheck => '重新检查文件';
 
+	/// zh-CN: '并入当前目录'
+	String get downloadMerge => '并入当前目录';
+
+	/// zh-CN: '另有 {count} 个已完成的文件在其他目录，可并入当前目录'
+	String downloadMergeDesc({required Object count}) => '另有 ${count} 个已完成的文件在其他目录，可并入当前目录';
+
+	/// zh-CN: '把其他目录的已完成文件并入当前目录？'
+	String get downloadMergeTitle => '把其他目录的已完成文件并入当前目录？';
+
+	/// zh-CN: '{count} 个已完成的文件在其他目录。同一个磁盘内只做改名；跨磁盘先复制、核对字节数，核对通过才删源。任一文件失败都原样留在原目录，记录仍指向它，不会留下断链。没下完的与下载中的不在其列。'
+	String downloadMergeBody({required Object count}) => '${count} 个已完成的文件在其他目录。同一个磁盘内只做改名；跨磁盘先复制、核对字节数，核对通过才删源。任一文件失败都原样留在原目录，记录仍指向它，不会留下断链。没下完的与下载中的不在其列。';
+
+	/// zh-CN: '正在并入 {done}/{total}：{name}'
+	String downloadMergeRunning({required Object done, required Object total, required Object name}) => '正在并入 ${done}/${total}：${name}';
+
+	/// zh-CN: '已并入 {count} 个文件'
+	String downloadMergeDone({required Object count}) => '已并入 ${count} 个文件';
+
+	/// zh-CN: '已并入 {moved} 个，{failed} 个未完成'
+	String downloadMergePartial({required Object moved, required Object failed}) => '已并入 ${moved} 个，${failed} 个未完成';
+
 	/// zh-CN: '文件'
 	String get downloadColumnFile => '文件';
 
@@ -10782,6 +10803,9 @@ class Translations$settings$zh_CN {
 
 	/// zh-CN: '视频'
 	String get storageFolderVideos => '视频';
+
+	/// zh-CN: '短剧'
+	String get storageFolderShortDramas => '短剧';
 
 	/// zh-CN: '录制'
 	String get storageFolderRecordings => '录制';
@@ -16271,6 +16295,13 @@ extension on Translations {
 			'settings.downloadFilterPlayable' => '只看还能打开的文件',
 			'settings.downloadFilterReset' => '清空筛选',
 			'settings.downloadRecheck' => '重新检查文件',
+			'settings.downloadMerge' => '并入当前目录',
+			'settings.downloadMergeDesc' => ({required Object count}) => '另有 ${count} 个已完成的文件在其他目录，可并入当前目录',
+			'settings.downloadMergeTitle' => '把其他目录的已完成文件并入当前目录？',
+			'settings.downloadMergeBody' => ({required Object count}) => '${count} 个已完成的文件在其他目录。同一个磁盘内只做改名；跨磁盘先复制、核对字节数，核对通过才删源。任一文件失败都原样留在原目录，记录仍指向它，不会留下断链。没下完的与下载中的不在其列。',
+			'settings.downloadMergeRunning' => ({required Object done, required Object total, required Object name}) => '正在并入 ${done}/${total}：${name}',
+			'settings.downloadMergeDone' => ({required Object count}) => '已并入 ${count} 个文件',
+			'settings.downloadMergePartial' => ({required Object moved, required Object failed}) => '已并入 ${moved} 个，${failed} 个未完成',
 			'settings.downloadColumnFile' => '文件',
 			'settings.downloadColumnSize' => '大小',
 			'settings.downloadColumnTime' => '时间',
@@ -16538,6 +16569,8 @@ extension on Translations {
 			'settings.superChatIncludesMembership' => '会员进醒目留言',
 			'settings.superChatIncludesMembershipDesc' => '订阅也生成卡片，聊天列表不变。',
 			'settings.danmakuShowGifts' => '显示礼物',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuShowGiftsDesc' => '值钱礼物飞过画面，更值钱的在顶部停 4 秒；连击只显示开头和总数。',
 			'settings.floatWindowSize' => '小窗大小',
 			'settings.floatWindowSizeDesc' => '悬浮窗基础大小；拖动缩放按横竖屏分别记住。',
@@ -16545,8 +16578,6 @@ extension on Translations {
 			'settings.floatWindowMedium' => '中',
 			'settings.floatWindowLarge' => '大',
 			'settings.backgroundPauseDanmaku' => '后台暂停弹幕连接',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundPauseDanmakuDesc' => '进后台断开弹幕连接，回来重连；聊天保留。',
 			'settings.douyuForceRenew' => '斗鱼每 5 分钟自动续期',
 			'settings.douyuForceRenewDesc' => '登录后定期续期 Cookie，降低长时间观看掉登录的概率。',
@@ -16620,6 +16651,7 @@ extension on Translations {
 			'settings.storageFoldersDescription' => '各类文件保存的文件夹；每个文件夹可单独更换或恢复默认。',
 			'settings.storageFoldersDesc' => '每类文件的位置，默认跟随系统，可自行选择。',
 			'settings.storageFolderVideos' => '视频',
+			'settings.storageFolderShortDramas' => '短剧',
 			'settings.storageFolderRecordings' => '录制',
 			'settings.storageFolderScreenshots' => '截图',
 			'settings.storageFolderMusic' => '歌曲',
@@ -17051,6 +17083,8 @@ extension on Translations {
 			'vod.downloadDirectoryDefaultDesc' => '回到应用默认的视频目录。',
 			'vod.downloadTaskCount' => ({required int count, required int active}) => '${count} 个任务 · ${active} 个进行中',
 			'vod.downloadRetry' => '自动重试',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadRetryDesc' => '失败的下载在后台自动再试，已经下到的字节会接着用。',
 			'vod.downloadRetryOff' => '不重试',
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} 次',
@@ -17059,8 +17093,6 @@ extension on Translations {
 			'vod.downloadManagerTitle' => '下载管理',
 			'vod.downloadPauseAll' => '全部暂停',
 			'vod.downloadResumeAll' => '全部继续',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadClearFinished' => '清除已完成',
 			'vod.previewTitle' => '下载预览',
 			'vod.previewUnavailable' => '这个分P还没有下载完成的文件',

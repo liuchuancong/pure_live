@@ -62,6 +62,7 @@ final class _StorageFoldersSectionState extends ConsumerState<StorageFoldersSect
 
   static String _label(Translations t, StorageFolder folder) => switch (folder) {
     StorageFolder.videos => t.settings.storageFolderVideos,
+    StorageFolder.shortDramas => t.settings.storageFolderShortDramas,
     StorageFolder.recordings => t.settings.storageFolderRecordings,
     StorageFolder.screenshots => t.settings.storageFolderScreenshots,
     StorageFolder.music => t.settings.storageFolderMusic,
@@ -77,6 +78,7 @@ final class _StorageFoldersSectionState extends ConsumerState<StorageFoldersSect
 
   static Directory _pathOf(AppFolders folders, StorageFolder folder) => switch (folder) {
     StorageFolder.videos => folders.videos,
+    StorageFolder.shortDramas => folders.shortDramas,
     StorageFolder.recordings => folders.recordings,
     StorageFolder.screenshots => folders.screenshots,
     StorageFolder.music => folders.music,

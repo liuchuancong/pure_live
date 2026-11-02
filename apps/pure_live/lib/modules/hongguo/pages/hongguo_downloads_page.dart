@@ -274,20 +274,33 @@ List<Widget> _hongguoRowMenu(BuildContext context, WidgetRef ref, HongguoDownloa
 /// 下载管理 — the station's download settings under Settings → 红果短剧.
 ///
 /// The pane carries the lanes, the retry budget, the download tier and the
-/// folder the files land in, then one line that says how much the queue holds
-/// and opens the station's own 下载管理 page ([HongguoDownloadsPage]). Drawing
-/// the queue here as well made one thing two entrances, and the settings half
-/// was the weaker: no speed, no table, no batch verbs.
-final class HongguoDownloadsPane extends ConsumerWidget {
+/// folder the files land in, the one verb that brings what the shared 视频 folder
+/// still holds into this folder, and one line that says how much the queue
+/// holds and opens the station's own 下载管理 page ([HongguoDownloadsPage]).
+/// Drawing the queue here as well made one thing two entrances, and the settings
+/// half was the weaker: no speed, no table, no batch verbs.
+final class HongguoDownloadsPane extends ConsumerStatefulWidget {
   /// The pane shown under Settings → 红果短剧 → 下载.
   const HongguoDownloadsPane({super.key});
+
+  @override
+  ConsumerState<HongguoDownloadsPane> createState() => _HongguoDownloadsPaneState();
+}
+
+final class _HongguoDownloadsPaneState extends ConsumerState<HongguoDownloadsPane> {
+  /// The merge's own progress, or null while nothing is moving. The row has to
+  /// say which file it is on and offer a way to stop, so the run needs a place
+  /// to live that outlives one build.
+  ({int done, int total, String name})? _merging;
+
+  bool _mergeCancelRequested = false;
 
   Future<void> _pickDirectory(BuildContext context, WidgetRef ref) async {
     final t = context.t;
     try {
       final selected = await FilePicker.getDirectoryPath(dialogTitle: t.hongguo.downloadDirectory);
       if (selected == null || selected.trim().isEmpty) return;
-      final saved = await ref.read(storageFolderOverridesProvider.notifier).set(StorageFolder.videos, selected);
+      final saved = await ref.read(storageFolderOverridesProvider.notifier).set(StorageFolder.shortDramas, selected);
       if (!context.mounted) return;
       showDsToast(
         context: context,
@@ -301,15 +314,64 @@ final class HongguoDownloadsPane extends ConsumerWidget {
     }
   }
 
+  /// Brings the episodes the old shared folder still holds into this one.
+  ///
+  /// The controller renames on one volume and, across volumes, copies, measures
+  /// and only then lets go of the source; this only says how many landed and
+  /// which did not, and stops between files when asked. A row that did not move
+  /// keeps naming where its file is, so an unfinished merge is a place to come
+  /// back to rather than a list of dead paths.
+  Future<void> _mergeStranded(List<HongguoDownloadItem> stranded) async {
+    final t = context.t;
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.settings.downloadMergeTitle,
+      description: t.settings.downloadMergeBody(count: stranded.length),
+      confirmLabel: t.settings.downloadMerge,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.merge),
+    );
+    if (!confirmed || !mounted) return;
+    setState(() {
+      _merging = (done: 0, total: stranded.length, name: '');
+      _mergeCancelRequested = false;
+    });
+    final result = await ref
+        .read(hongguoDownloadsProvider.notifier)
+        .mergeStranded(
+          stranded,
+          onProgress: (done, total, name) {
+            if (mounted) setState(() => _merging = (done: done, total: total, name: name));
+          },
+          cancelled: () => _mergeCancelRequested,
+        )
+        .whenComplete(() {
+          if (mounted) setState(() => _merging = null);
+        });
+    if (!mounted) return;
+    showDsToast(
+      context: context,
+      title: result.failed == 0
+          ? t.settings.downloadMergeDone(count: result.moved)
+          : t.settings.downloadMergePartial(moved: result.moved, failed: result.failed),
+      status: result.failed == 0 ? DsStatus.success : DsStatus.warning,
+    );
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final t = context.t;
     final tasks = ref.watch(hongguoDownloadsProvider);
     final lanes = ref.watch(hongguoDownloadSettingsProvider);
     final quality = ref.watch(hongguoDownloadQualityProvider);
     final retry = ref.watch(hongguoDownloadRetryProvider);
     final retryDelay = ref.watch(hongguoDownloadRetryDelayProvider);
-    final directory = ref.watch(appPathsProvider).videos.path;
+    final directory = ref.watch(appPathsProvider).shortDramas.path;
+    // What the shared 视频 folder still holds from before dramas got a folder
+    // of their own; read after the queue so a new download lands here too.
+    final stranded = ref.read(hongguoDownloadsProvider.notifier).stranded();
+    final merging = _merging;
     final active = tasks
         .where((task) => task.phase == HongguoDownloadPhase.queued || task.phase == HongguoDownloadPhase.running)
         .length;
@@ -382,8 +444,36 @@ final class HongguoDownloadsPane extends ConsumerWidget {
               leading: const DsIcon(DsIcons.rotateCcw),
               title: Text(t.hongguo.downloadDirectoryDefault),
               description: Text(t.hongguo.downloadDirectoryDefaultDesc),
-              onPressed: () => unawaited(ref.read(storageFolderOverridesProvider.notifier).reset(StorageFolder.videos)),
+              onPressed: () =>
+                  unawaited(ref.read(storageFolderOverridesProvider.notifier).reset(StorageFolder.shortDramas)),
             ),
+            // Only a queue that actually holds files elsewhere gets this line:
+            // a verb with no object has no place to be pressed, and a greyed
+            // one would only say louder that nothing is there.
+            if (stranded.isNotEmpty || merging != null)
+              DsListRow(
+                leading: const DsIcon(DsIcons.merge),
+                title: Text(t.settings.downloadMerge),
+                description: Text(
+                  merging == null
+                      ? t.settings.downloadMergeDesc(count: stranded.length)
+                      : t.settings.downloadMergeRunning(
+                          done: merging.done + 1,
+                          total: merging.total,
+                          name: merging.name,
+                        ),
+                ),
+                trailing: DsButton(
+                  variant: DsButtonVariant.secondary,
+                  size: DsSize.sm,
+                  // Running, the same line's one verb turns into the way out;
+                  // idle with nothing to move, the row is not drawn at all.
+                  onPressed: merging == null
+                      ? () => unawaited(_mergeStranded(stranded))
+                      : () => setState(() => _mergeCancelRequested = true),
+                  child: Text(merging == null ? t.settings.downloadMerge : t.common.cancel),
+                ),
+              ),
           ],
         ),
         // The queue is one row and one tap away, on the station's own 下载管理
@@ -616,7 +706,7 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
     final t = context.t;
     final tasks = ref.watch(hongguoDownloadsProvider);
     final controller = ref.read(hongguoDownloadsProvider.notifier);
-    final directory = ref.watch(appPathsProvider).videos.path;
+    final directory = ref.watch(appPathsProvider).shortDramas.path;
     // The facts column states a failed row's retry wait, so the page follows
     // the two settings that decide it.
     final retry = ref.watch(hongguoDownloadRetryProvider);
@@ -931,7 +1021,7 @@ final class _HongguoDownloadsPageState extends ConsumerState<HongguoDownloadsPag
             : null,
         rowMenuBuilder: (context, task) => _hongguoRowMenu(context, ref, task, missing: isMissing(task)),
         showRowMenuButton: true,
-        emptyView: _empty(t, tasks, ref.read(appPathsProvider).videos.path),
+        emptyView: _empty(t, tasks, ref.read(appPathsProvider).shortDramas.path),
       ),
     );
   }

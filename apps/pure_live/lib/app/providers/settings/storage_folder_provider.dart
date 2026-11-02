@@ -19,6 +19,12 @@ enum StorageFolder {
   /// Finished videos.
   videos(DsIcons.film),
 
+  /// Finished short dramas. Beside [videos] rather than inside it: the two
+  /// stacks are read differently — one is a station's episodes, the other a
+  /// vertical drama's hundred-odd minutes — and a viewer who moved one of them
+  /// must not find the other dragged along.
+  shortDramas(DsIcons.clapperboard),
+
   /// Live recordings the app took.
   recordings(DsIcons.folderVideo),
 
@@ -228,6 +234,9 @@ final class AppFolders {
 
   /// Finished videos.
   Directory get videos => _pick(StorageFolder.videos, paths.videos);
+
+  /// Finished short dramas.
+  Directory get shortDramas => _pick(StorageFolder.shortDramas, paths.shortDramas);
 
   /// Live recordings.
   Directory get recordings => _pick(StorageFolder.recordings, paths.recordings);

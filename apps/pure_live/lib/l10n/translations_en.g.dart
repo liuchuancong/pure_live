@@ -3390,6 +3390,13 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get downloadFilterPlayable => 'Only files still on disk';
 	@override String get downloadFilterReset => 'Clear filters';
 	@override String get downloadRecheck => 'Re-check files';
+	@override String get downloadMerge => 'Merge into this folder';
+	@override String downloadMergeDesc({required Object count}) => '${count} finished file(s) live in another folder and can be merged here';
+	@override String get downloadMergeTitle => 'Merge the other folder\'s finished files into this one?';
+	@override String downloadMergeBody({required Object count}) => '${count} finished files live in another folder. On one volume each is only renamed; across volumes a file is copied and its byte count checked against the source, and the source is deleted only when the copy matches. Anything that fails stays exactly where it was with its row still naming it, so no row is left pointing at nothing. Rows still downloading or unfinished are not touched.';
+	@override String downloadMergeRunning({required Object done, required Object total, required Object name}) => 'Merging ${done}/${total}: ${name}';
+	@override String downloadMergeDone({required Object count}) => 'Merged ${count} file(s)';
+	@override String downloadMergePartial({required Object moved, required Object failed}) => 'Merged ${moved}; ${failed} did not finish';
 	@override String get downloadColumnFile => 'File';
 	@override String get downloadColumnSize => 'Size';
 	@override String get downloadColumnTime => 'Time';
@@ -3737,6 +3744,7 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get storageFoldersDescription => 'The folders each kind of file is saved in; change or reset one at a time.';
 	@override String get storageFoldersDesc => 'Where each kind of file lives. Defaults follow the system; any of them can be moved.';
 	@override String get storageFolderVideos => 'Videos';
+	@override String get storageFolderShortDramas => 'Short dramas';
 	@override String get storageFolderRecordings => 'Recordings';
 	@override String get storageFolderScreenshots => 'Screenshots';
 	@override String get storageFolderMusic => 'Songs';
@@ -7830,6 +7838,13 @@ extension on TranslationsEn {
 			'settings.downloadFilterPlayable' => 'Only files still on disk',
 			'settings.downloadFilterReset' => 'Clear filters',
 			'settings.downloadRecheck' => 'Re-check files',
+			'settings.downloadMerge' => 'Merge into this folder',
+			'settings.downloadMergeDesc' => ({required Object count}) => '${count} finished file(s) live in another folder and can be merged here',
+			'settings.downloadMergeTitle' => 'Merge the other folder\'s finished files into this one?',
+			'settings.downloadMergeBody' => ({required Object count}) => '${count} finished files live in another folder. On one volume each is only renamed; across volumes a file is copied and its byte count checked against the source, and the source is deleted only when the copy matches. Anything that fails stays exactly where it was with its row still naming it, so no row is left pointing at nothing. Rows still downloading or unfinished are not touched.',
+			'settings.downloadMergeRunning' => ({required Object done, required Object total, required Object name}) => 'Merging ${done}/${total}: ${name}',
+			'settings.downloadMergeDone' => ({required Object count}) => 'Merged ${count} file(s)',
+			'settings.downloadMergePartial' => ({required Object moved, required Object failed}) => 'Merged ${moved}; ${failed} did not finish',
 			'settings.downloadColumnFile' => 'File',
 			'settings.downloadColumnSize' => 'Size',
 			'settings.downloadColumnTime' => 'Time',
@@ -8097,6 +8112,8 @@ extension on TranslationsEn {
 			'settings.superChatIncludesMembership' => 'Memberships as cards',
 			'settings.superChatIncludesMembershipDesc' => 'Subscriptions get a card too; the chat list stays.',
 			'settings.danmakuShowGifts' => 'Show gifts',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuShowGiftsDesc' => 'Valuable gifts fly over the picture, precious ones stay at the top for 4 s; a combo flies at its start and with its total, at most 3 a second.',
 			'settings.floatWindowSize' => 'Floating window size',
 			'settings.floatWindowSizeDesc' => 'Base window size; drag-resizing is remembered per orientation.',
@@ -8104,8 +8121,6 @@ extension on TranslationsEn {
 			'settings.floatWindowMedium' => 'Medium',
 			'settings.floatWindowLarge' => 'Large',
 			'settings.backgroundPauseDanmaku' => 'Pause the danmaku connection in background',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundPauseDanmakuDesc' => 'Drops the danmaku link in the background and reconnects on return.',
 			'settings.douyuForceRenew' => 'Renew the Douyu login every 5 minutes',
 			'settings.douyuForceRenewDesc' => 'Refresh the Douyu cookie periodically after signing in so long sessions keep their login.',
@@ -8179,6 +8194,7 @@ extension on TranslationsEn {
 			'settings.storageFoldersDescription' => 'The folders each kind of file is saved in; change or reset one at a time.',
 			'settings.storageFoldersDesc' => 'Where each kind of file lives. Defaults follow the system; any of them can be moved.',
 			'settings.storageFolderVideos' => 'Videos',
+			'settings.storageFolderShortDramas' => 'Short dramas',
 			'settings.storageFolderRecordings' => 'Recordings',
 			'settings.storageFolderScreenshots' => 'Screenshots',
 			'settings.storageFolderMusic' => 'Songs',
@@ -8610,6 +8626,8 @@ extension on TranslationsEn {
 			'vod.downloadDirectoryDefaultDesc' => 'Back to the app\'s default Videos folder.',
 			'vod.downloadTaskCount' => ({required int count, required int active}) => '${count} tasks · ${active} active',
 			'vod.downloadRetry' => 'Retry automatically',
+			_ => null,
+		} ?? switch (path) {
 			'vod.downloadRetryDesc' => 'A failed download tries again in the background, carrying on from the bytes already written.',
 			'vod.downloadRetryOff' => 'No retry',
 			'vod.downloadRetryTimes' => ({required int count}) => '${count} times',
@@ -8618,8 +8636,6 @@ extension on TranslationsEn {
 			'vod.downloadManagerTitle' => 'Downloads',
 			'vod.downloadPauseAll' => 'Pause all',
 			'vod.downloadResumeAll' => 'Resume all',
-			_ => null,
-		} ?? switch (path) {
 			'vod.downloadClearFinished' => 'Clear finished',
 			'vod.previewTitle' => 'Download preview',
 			'vod.previewUnavailable' => 'This part has no finished file yet',
