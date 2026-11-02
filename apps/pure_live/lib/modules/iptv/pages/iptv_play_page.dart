@@ -762,10 +762,11 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
     });
     final colors = DsTheme.colorsOf(context);
     final theme = DsTheme.of(context);
-    // A full header outruns a narrow window: the clock, then the zapping
-    // chevrons and the cast verb stand down — the arrow keys, the zapper
-    // panel and the line menu do the same work, and a player page reads
-    // best on one line. The page fills the window, so its width decides.
+    // A full header outruns a narrow window: first the clock steps out, then
+    // the channel verbs fold behind one entry — a title squeezed between ten
+    // unlabelled glyphs stops naming the channel — while the arrow keys, the
+    // zapper panel and the line menu keep doing the same work. The page fills
+    // the window, so its width decides.
     final headerWidth = MediaQuery.sizeOf(context).width;
     final headerCompact = headerWidth < 560;
     final headerNarrow = headerWidth < 420;
@@ -818,6 +819,53 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
             final programme? => '${slot!.current != null ? t.iptv.onAir : t.iptv.upNext} · $programme',
             _ => null,
           };
+    // The header's verbs, spelled once: flat glyphs while the title has room,
+    // and in the folded state the same list read as named rows — which is what
+    // a menu is for, and what an icon-only header never said. The heart and the
+    // recorder stay out of this list: their colour is the answer they carry,
+    // and an entry that has to be opened to be read cannot report one.
+    ({DsIconData icon, String label, VoidCallback onPressed, bool selected}) headerVerb(
+      DsIconData icon,
+      String label,
+      VoidCallback onPressed, {
+      bool selected = false,
+    }) => (icon: icon, label: label, onPressed: onPressed, selected: selected);
+    final verbs = [
+      if (channel != null && !headerNarrow) headerVerb(DsIcons.cast, t.room.cast, () => _cast(channel)),
+      if (hasTake) headerVerb(DsIcons.listVideo, t.iptv.viewRecordings, () => unawaited(_openRecordings())),
+      if (channel != null) headerVerb(DsIcons.layoutGrid, t.iptv.zapperOpen, _openZapper, selected: _zapperOpen),
+      if (channel != null)
+        headerVerb(
+          DsIcons.list,
+          t.iptv.guideTitle,
+          () => unawaited(
+            showIptvGuide(context, channel: channel, catchup: _catchup, onCatchup: _playCatchup, onBackToLive: _open),
+          ),
+        ),
+      if (replay != null) headerVerb(DsIcons.radio, t.iptv.backToLive, () => unawaited(_open())),
+    ];
+    final headerActions = [
+      if (headerCompact && verbs.isNotEmpty)
+        DsMenuAnchor(
+          semanticLabel: t.common.more,
+          align: DsAlign.end,
+          items: [
+            for (final verb in verbs)
+              DsMenuItem(
+                leading: DsIcon(verb.icon),
+                label: Text(verb.label),
+                checked: verb.selected ? true : null,
+                checkRole: DsMenuCheckRole.checkbox,
+                onPressed: verb.onPressed,
+              ),
+          ],
+          builder: (context, controller, _) =>
+              _IconButton(semanticLabel: t.common.more, icon: DsIcons.ellipsisVertical, onPressed: controller.toggle),
+        )
+      else
+        for (final verb in verbs)
+          _IconButton(semanticLabel: verb.label, icon: verb.icon, selected: verb.selected, onPressed: verb.onPressed),
+    ];
     void leave() {
       if (ownsWindow && handle != null) {
         unawaited(presentationController.exit(handle.id));
@@ -957,8 +1005,6 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                           onPressed: () => _switchChannel(1),
                         ),
                       ],
-                      if (channel != null && !headerNarrow)
-                        _IconButton(semanticLabel: t.room.cast, icon: DsIcons.cast, onPressed: () => _cast(channel)),
                       if (channel != null)
                         _IconButton(
                           semanticLabel: recording ? t.room.stopRecording : t.room.record,
@@ -977,39 +1023,7 @@ final class _IptvPlayPageState extends ConsumerState<IptvPlayPage> with WidgetsB
                             );
                           },
                         ),
-                      if (hasTake)
-                        _IconButton(
-                          semanticLabel: t.iptv.viewRecordings,
-                          icon: DsIcons.listVideo,
-                          onPressed: () => unawaited(_openRecordings()),
-                        ),
-                      if (channel != null)
-                        _IconButton(
-                          semanticLabel: t.iptv.zapperOpen,
-                          icon: DsIcons.layoutGrid,
-                          selected: _zapperOpen,
-                          onPressed: _openZapper,
-                        ),
-                      if (channel != null)
-                        _IconButton(
-                          semanticLabel: t.iptv.guideTitle,
-                          icon: DsIcons.list,
-                          onPressed: () => unawaited(
-                            showIptvGuide(
-                              context,
-                              channel: channel,
-                              catchup: _catchup,
-                              onCatchup: _playCatchup,
-                              onBackToLive: _open,
-                            ),
-                          ),
-                        ),
-                      if (replay != null)
-                        _IconButton(
-                          semanticLabel: t.iptv.backToLive,
-                          icon: DsIcons.radio,
-                          onPressed: () => unawaited(_open()),
-                        ),
+                      ...headerActions,
                     ],
                   ),
                 ),
