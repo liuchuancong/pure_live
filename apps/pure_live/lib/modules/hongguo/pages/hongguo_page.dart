@@ -15,7 +15,14 @@ import 'package:pure_live/modules/hongguo/controller/hongguo_models.dart';
 import 'package:pure_live/modules/hongguo/official/hongguo_official.dart' show HongguoWebsiteBoard;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_phone_sign_in.dart' show HongguoPhoneSignIn;
 import 'package:pure_live/modules/hongguo/widgets/hongguo_widgets.dart';
-import 'package:pure_live/shared/shared.dart' show PagedCardGrid;
+import 'package:pure_live/shared/shared.dart' show LiveWindow, PagedCardGrid;
+
+/// The page's own left and right margin, asked rather than written again:
+/// `LiveWindow.pageInset` is one number for the whole app (16 while the window
+/// is compact, 20 above it), and this module's downloads page already reads it.
+/// A page that keeps its own 20 puts two different left edges under one menu on
+/// a phone, and pays a gutter the narrow window does not have to spare.
+double _hongguoPageInset(BuildContext context) => LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
 
 /// The station's views, the reference's top row plus the account surfaces:
 /// the home feed, find-drama, the boards, the two shelves, the reservations,
@@ -90,9 +97,9 @@ final class _HongguoPageState extends ConsumerState<HongguoPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s8),
-          child: _ModuleHeader(),
+        Padding(
+          padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s12, _hongguoPageInset(context), DsSpace.s8),
+          child: const _ModuleHeader(),
         ),
         Expanded(
           child: switch (_view) {
@@ -177,7 +184,7 @@ final class _ServiceHint extends StatelessWidget {
     final theme = DsTheme.of(context);
     final t = context.t;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, 0),
+      padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), 0),
       child: Row(
         spacing: DsSpace.s8,
         children: [
@@ -306,7 +313,7 @@ final class _HomeViewState extends ConsumerState<_HomeView> {
     final theme = browse?.selection['category_dim_theme'] ?? '';
     final hot = theme.isEmpty ? null : browse;
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+      padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: DsSpace.s20,
@@ -569,7 +576,7 @@ final class _FindViewState extends ConsumerState<_FindView> {
       children: [
         if (state.error != null) const _ServiceHint(),
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
@@ -740,7 +747,7 @@ final class _RankViewState extends ConsumerState<_RankView> {
       children: [
         if (held.error != null && held.items.isEmpty) const _ServiceHint(),
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
@@ -823,7 +830,12 @@ final class _RankViewState extends ConsumerState<_RankView> {
                         ),
                       ))
               : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+                  padding: EdgeInsets.fromLTRB(
+                    _hongguoPageInset(context),
+                    DsSpace.s4,
+                    _hongguoPageInset(context),
+                    DsSpace.s24,
+                  ),
                   itemCount: rows.length,
                   separatorBuilder: (_, _) => const SizedBox(height: DsSpace.s8),
                   itemBuilder: (context, index) {
@@ -920,7 +932,7 @@ final class _FavoritesViewState extends ConsumerState<_FavoritesView> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
@@ -1085,7 +1097,7 @@ final class _HistoryViewState extends ConsumerState<_HistoryView> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
@@ -1208,7 +1220,7 @@ final class _ReservationsViewState extends ConsumerState<_ReservationsView> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s8),
           child: DsSegmentedControl<bool>(
             segments: [
               DsSegment(value: true, label: Text(t.hongguo.reservationsOnline)),
@@ -1305,7 +1317,7 @@ final class _AccountViewState extends ConsumerState<_AccountView> {
       final library = ref.watch(hongguoLibraryProvider);
       final profile = account.profile;
       return SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+        padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s16,
@@ -1545,7 +1557,7 @@ final class _SearchViewState extends ConsumerState<_SearchView> {
       children: [
         if (state.error != null) const _ServiceHint(),
         Padding(
-          padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s8),
+          padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             spacing: DsSpace.s8,
@@ -1701,7 +1713,7 @@ final class _SeriesList extends StatelessWidget {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+      padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s24),
       itemCount: rows.length,
       separatorBuilder: (_, _) => const SizedBox(height: DsSpace.s8),
       itemBuilder: (context, index) {
@@ -1752,7 +1764,7 @@ final class _ProgressList extends ConsumerWidget {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s4, DsSpace.s20, DsSpace.s24),
+      padding: EdgeInsets.fromLTRB(_hongguoPageInset(context), DsSpace.s4, _hongguoPageInset(context), DsSpace.s24),
       itemCount: rows.length,
       separatorBuilder: (_, _) => const SizedBox(height: DsSpace.s8),
       itemBuilder: (context, index) {

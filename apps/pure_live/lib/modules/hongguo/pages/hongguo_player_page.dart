@@ -1155,6 +1155,10 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
   /// playing the way the video station's own page does.
   Widget _body(BuildContext context, HongguoSeriesDetail? detail) {
     final t = context.t;
+    // The page's own margin, asked from the app's one rule rather than kept
+    // here: on a phone a private 20 puts this page's left edge beside every
+    // other page's 16.
+    final inset = LiveWindow.pageInset(MediaQuery.sizeOf(context).width);
     final player = _playerSurface(context, immersive: false);
     final head = detail == null ? const SizedBox.shrink() : _watchHead(context, detail, t);
     final shelf = detail == null
@@ -1163,7 +1167,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
     final comments = HongguoCommentPanel(seriesId: widget.seriesId, episodeVid: _episode?.vid ?? '');
     if (MediaQuery.sizeOf(context).width < 1100) {
       return SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s24),
+        padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: DsSpace.s16,
@@ -1176,7 +1180,7 @@ final class _HongguoPlayerPageState extends ConsumerState<HongguoPlayerPage> wit
       children: [
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(DsSpace.s20, DsSpace.s12, DsSpace.s20, DsSpace.s24),
+            padding: EdgeInsets.fromLTRB(inset, DsSpace.s12, inset, DsSpace.s24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: DsSpace.s16,

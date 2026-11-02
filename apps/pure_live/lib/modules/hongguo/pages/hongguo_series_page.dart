@@ -159,7 +159,11 @@ final class _HongguoSeriesPageState extends ConsumerState<HongguoSeriesPage> {
         // window; the reference lays the detail page out as one reading column
         // — head, then the selection, then the rest — so the shelf keeps its
         // place in the flow at every width.
-        final side = constraints.maxWidth >= 1000 ? DsSpace.s24 : DsSpace.s20;
+        // The detail page keeps one wider margin than a list at reading
+        // width; below that it is the app's own page inset, not this module's
+        // number — a phone must not see two different left edges under one
+        // menu.
+        final side = constraints.maxWidth >= 1000 ? DsSpace.s24 : LiveWindow.pageInset(constraints.maxWidth);
         return SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(side, DsSpace.s12, side, DsSpace.s24),
           child: Column(
