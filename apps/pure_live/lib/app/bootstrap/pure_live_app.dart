@@ -26,6 +26,7 @@ import 'package:pure_live/app/theme/settings/stored_theme.dart' show readStoredA
 import 'package:pure_live/app/theme/settings/theme_persistence.dart';
 import 'package:pure_live/app/theme/settings/theme_settings.dart' show AppThemeScope, AppThemeSettings;
 import 'package:pure_live/app/windows/context/refresh_rate_interaction_scope.dart' show RefreshRateInteractionScope;
+import 'package:pure_live/features/backup/cloud/cloud_callback.dart' show cloudCallbackBindingProvider;
 import 'package:pure_live/features/settings/settings.dart';
 import 'package:pure_live/features/version/version.dart';
 import 'package:pure_live/l10n/translations.dart';
@@ -133,6 +134,8 @@ final class _PureLiveAppState extends ConsumerState<PureLiveApp> {
     // lxmusic:// links: one listener per process, started with the root so a
     // cold-start link is caught as soon as the dispatcher's dependencies read.
     if (ref.read(isPrimaryWindowProvider)) ref.read(musicDeeplinkBindingProvider).start();
+    // purelive://auth links: the GitHub sign-in's callback, same shape.
+    if (ref.read(isPrimaryWindowProvider)) ref.read(cloudCallbackBindingProvider).start();
     // iOS's system picture-in-picture window keeps the picture alive while
     // the app is away and hands it back on return; the kernel's own
     // background pause is off there, so this guard owns the rule.

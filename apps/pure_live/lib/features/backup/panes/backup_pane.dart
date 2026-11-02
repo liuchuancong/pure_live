@@ -5,6 +5,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/app.dart';
+import 'package:pure_live/features/backup/cloud/cloud_controller.dart' show cloudControllerProvider;
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart';
 import 'package:pure_live/features/backup/panes/backup_actions.dart';
@@ -446,10 +447,15 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
         ),
         DsListSection(
           header: Text(t.backup.transportsSection),
-          children: const [
-            SettingsChildEntry(child: SettingsSection.webdavSync),
-            SettingsChildEntry(child: SettingsSection.webdavHelp),
-            SettingsChildEntry(child: SettingsSection.lanSync),
+          children: [
+            const SettingsChildEntry(child: SettingsSection.cloudBackup),
+            // The accounts page only for an account that may manage others;
+            // the cloud page lists it too once signed in.
+            if (ref.watch(cloudControllerProvider.select((s) => s.permissions.hasManagementPower)))
+              const SettingsChildEntry(child: SettingsSection.cloudAdmin),
+            const SettingsChildEntry(child: SettingsSection.webdavSync),
+            const SettingsChildEntry(child: SettingsSection.webdavHelp),
+            const SettingsChildEntry(child: SettingsSection.lanSync),
           ],
         ),
       ],

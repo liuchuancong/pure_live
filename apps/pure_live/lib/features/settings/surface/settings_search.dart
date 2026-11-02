@@ -445,6 +445,17 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     ),
     _hit(SettingsSection.webdavSync, t.backup.webdavUpload, 'webdav upload 上传 备份'),
     _hit(SettingsSection.webdavSync, t.backup.webdavDownloadToLocal, 'webdav download restore 下载 恢复'),
+    _hit(
+      SettingsSection.cloudBackup,
+      s.cloudBackupTitle,
+      'cloud backup firebase sign in email github upload download 云端 备份 登录 邮箱 上传 下载',
+    ),
+    _hit(SettingsSection.cloudBackup, t.backup.cloud.gitHub, 'github sign in oauth 登录 第三方'),
+    _hit(
+      SettingsSection.cloudAdmin,
+      s.cloudAdminTitle,
+      'cloud admin accounts manage users permission upload 账号 管理 权限 管理员',
+    ),
     _hit(SettingsSection.webdavHelp, s.webdavHelpTitle, 'webdav help jianguoyun app password guide 帮助 坚果云 应用密码 教程'),
     _hit(
       SettingsSection.webdavHelp,

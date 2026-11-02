@@ -512,6 +512,8 @@ final class SettingsSectionPane extends StatelessWidget {
       SettingsSection.lanSync => const LanSyncPane(),
       SettingsSection.webdavSync => const WebDavFileManager(),
       SettingsSection.webdavHelp => const WebDavHelpPage(),
+      SettingsSection.cloudBackup => const CloudBackupPane(),
+      SettingsSection.cloudAdmin => const CloudAdminPane(),
       SettingsSection.about => const AboutPane(),
       SettingsSection.iptv => const IptvSettingsPane(),
       SettingsSection.iptvBrowse => const IptvBrowsePane(),

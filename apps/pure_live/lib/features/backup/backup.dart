@@ -2,6 +2,12 @@
 /// drive it, and the WebDAV transport they can send it over.
 library;
 
+export 'cloud/cloud_admin_pane.dart';
+export 'cloud/cloud_backup_pane.dart';
+export 'cloud/cloud_callback.dart';
+export 'cloud/cloud_controller.dart';
+export 'cloud/cloud_models.dart';
+export 'cloud/legacy_backup_importer.dart';
 export 'document/backup_document.dart';
 export 'document/backup_repository.dart';
 export 'document/backup_settings.dart';

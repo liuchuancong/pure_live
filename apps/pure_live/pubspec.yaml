@@ -123,6 +123,10 @@ dependencies:
   pub_semver: ^2.2.1 # 语义化版本比较
   riverpod_annotation: ^4.0.7 # Riverpod 生成器注解
   webdav_client_plus: ^3.0.0 # WebDAV 目录浏览与文件读写
+  # 云端备份：邮箱/GitHub 登录 + Firestore 存放备份文档（国内探活不通整块降级）
+  firebase_core: ^4.15.0
+  firebase_auth: ^6.7.0
+  cloud_firestore: ^6.10.0
   webview_all: ^1.4.7 # 内嵌网页视图（桌面/移动统一）
   catcher_2: ^3.0.0-alpha.0
   desktop_drop: ^0.8.4

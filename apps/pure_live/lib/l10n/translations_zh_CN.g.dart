@@ -977,6 +977,7 @@ class Translations$backup$zh_CN {
 	String get transportsSection => '其他方式';
 
 	late final Translations$backup$webdavHelp$zh_CN webdavHelp = Translations$backup$webdavHelp$zh_CN.internal(_root);
+	late final Translations$backup$cloud$zh_CN cloud = Translations$backup$cloud$zh_CN.internal(_root);
 }
 
 // Path: common
@@ -10665,6 +10666,18 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '复制路径'
 	String get storageFolderCopyPath => '复制路径';
 
+	/// zh-CN: '云端备份'
+	String get cloudBackupTitle => '云端备份';
+
+	/// zh-CN: '登录后把备份存到云端，换设备登录同一账号即可恢复。'
+	String get cloudBackupDescription => '登录后把备份存到云端，换设备登录同一账号即可恢复。';
+
+	/// zh-CN: '账号管理'
+	String get cloudAdminTitle => '账号管理';
+
+	/// zh-CN: '管理员查看账号、授予或撤销上传权限。'
+	String get cloudAdminDescription => '管理员查看账号、授予或撤销上传权限。';
+
 	/// zh-CN: 'WebDAV 帮助'
 	String get webdavHelpTitle => 'WebDAV 帮助';
 
@@ -12439,6 +12452,258 @@ class Translations$backup$webdavHelp$zh_CN {
 	String get closeImage => '关闭';
 }
 
+// Path: backup.cloud
+class Translations$backup$cloud$zh_CN {
+	Translations$backup$cloud$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '云端备份'
+	String get title => '云端备份';
+
+	/// zh-CN: '正在检测云端连通性…'
+	String get probing => '正在检测云端连通性…';
+
+	/// zh-CN: '先确认本机能访问 Firebase，再加载云端组件。'
+	String get probingDesc => '先确认本机能访问 Firebase，再加载云端组件。';
+
+	/// zh-CN: '无法连接云端'
+	String get unreachable => '无法连接云端';
+
+	/// zh-CN: '本机当前网络访问不到 Firebase（国内网络通常如此）。本地备份、WebDAV 与局域网同步不受影响。'
+	String get unreachableDesc => '本机当前网络访问不到 Firebase（国内网络通常如此）。本地备份、WebDAV 与局域网同步不受影响。';
+
+	/// zh-CN: '重试'
+	String get retry => '重试';
+
+	/// zh-CN: '邮箱登录'
+	String get signInSection => '邮箱登录';
+
+	/// zh-CN: '邮箱'
+	String get emailHint => '邮箱';
+
+	/// zh-CN: '密码（至少 6 位）'
+	String get passwordHint => '密码（至少 6 位）';
+
+	/// zh-CN: '登录'
+	String get signIn => '登录';
+
+	/// zh-CN: '注册'
+	String get signUp => '注册';
+
+	/// zh-CN: '忘记密码'
+	String get forgot => '忘记密码';
+
+	/// zh-CN: '重置密码邮件已发送'
+	String get resetSent => '重置密码邮件已发送';
+
+	/// zh-CN: '第三方登录'
+	String get gitHubSection => '第三方登录';
+
+	/// zh-CN: '使用 GitHub 登录'
+	String get gitHub => '使用 GitHub 登录';
+
+	/// zh-CN: '在系统浏览器里授权后自动返回。'
+	String get gitHubMobileHint => '在系统浏览器里授权后自动返回。';
+
+	/// zh-CN: '打开浏览器完成授权；回跳链接会自动送回应用，若没有则把页面给出的链接粘贴进来。'
+	String get gitHubDesktopHint => '打开浏览器完成授权；回跳链接会自动送回应用，若没有则把页面给出的链接粘贴进来。';
+
+	/// zh-CN: '电视上不便完成网页授权，请用邮箱登录，或在手机/电脑上登录后再同步。'
+	String get gitHubTvHint => '电视上不便完成网页授权，请用邮箱登录，或在手机/电脑上登录后再同步。';
+
+	/// zh-CN: '粘贴授权链接'
+	String get gitHubPasteTitle => '粘贴授权链接';
+
+	/// zh-CN: '浏览器授权完成后，页面会给出一条以 purelive:// 开头的链接；如果应用没有自动收到，复制它粘贴到这里。'
+	String get gitHubPasteBody => '浏览器授权完成后，页面会给出一条以 purelive:// 开头的链接；如果应用没有自动收到，复制它粘贴到这里。';
+
+	/// zh-CN: '账号'
+	String get accountSection => '账号';
+
+	/// zh-CN: '邮箱登录'
+	String get viaEmail => '邮箱登录';
+
+	/// zh-CN: 'GitHub 登录'
+	String get viaGitHub => 'GitHub 登录';
+
+	/// zh-CN: '角色 {role: String}'
+	String roleLabel({required String role}) => '角色 ${role}';
+
+	/// zh-CN: '可上传'
+	String get uploadAllowed => '可上传';
+
+	/// zh-CN: '不可上传'
+	String get uploadRefused => '不可上传';
+
+	/// zh-CN: '退出登录'
+	String get signOut => '退出登录';
+
+	/// zh-CN: '云端备份文件'
+	String get documentSection => '云端备份文件';
+
+	/// zh-CN: '云端已有备份'
+	String get stored => '云端已有备份';
+
+	/// zh-CN: '更新于 {time: String}'
+	String storedAt({required String time}) => '更新于 ${time}';
+
+	/// zh-CN: '来自 {version: String}'
+	String storedVersion({required String version}) => '来自 ${version}';
+
+	/// zh-CN: '旧版格式'
+	String get storedLegacy => '旧版格式';
+
+	/// zh-CN: '云端还没有备份'
+	String get nothingStored => '云端还没有备份';
+
+	/// zh-CN: '上传后，其他设备登录同一账号即可下载恢复。'
+	String get nothingStoredDesc => '上传后，其他设备登录同一账号即可下载恢复。';
+
+	/// zh-CN: '上传备份'
+	String get upload => '上传备份';
+
+	/// zh-CN: '选择要上传的内容，覆盖云端已有的备份文件。'
+	String get uploadDesc => '选择要上传的内容，覆盖云端已有的备份文件。';
+
+	/// zh-CN: '云端只保留一份；这次上传会替换之前的。'
+	String get uploadNote => '云端只保留一份；这次上传会替换之前的。';
+
+	/// zh-CN: '已上传到云端'
+	String get uploadDone => '已上传到云端';
+
+	/// zh-CN: '下载并恢复'
+	String get download => '下载并恢复';
+
+	/// zh-CN: '读取云端备份，选择要恢复的内容后覆盖本机。'
+	String get downloadDesc => '读取云端备份，选择要恢复的内容后覆盖本机。';
+
+	/// zh-CN: '从云端恢复哪些内容'
+	String get pickRestoreTitle => '从云端恢复哪些内容';
+
+	/// zh-CN: '这是旧版应用写的备份：关注、分区、历史与 Cookie 可以恢复；以下旧版内容本版本无法迁移：{skipped: String}。'
+	String legacyNote({required String skipped}) => '这是旧版应用写的备份：关注、分区、历史与 Cookie 可以恢复；以下旧版内容本版本无法迁移：${skipped}。';
+
+	/// zh-CN: '将用云端备份覆盖本机所选内容，无法找回。'
+	String get restoreConfirmDesc => '将用云端备份覆盖本机所选内容，无法找回。';
+
+	/// zh-CN: '删除云端备份'
+	String get delete => '删除云端备份';
+
+	/// zh-CN: '只删除云端的备份文件，账号与本机数据不受影响。'
+	String get deleteDesc => '只删除云端的备份文件，账号与本机数据不受影响。';
+
+	/// zh-CN: '删除云端备份？'
+	String get deleteTitle => '删除云端备份？';
+
+	/// zh-CN: '云端备份已删除'
+	String get deleteDone => '云端备份已删除';
+
+	/// zh-CN: '管理'
+	String get adminSection => '管理';
+
+	/// zh-CN: '账号管理'
+	String get adminTitle => '账号管理';
+
+	/// zh-CN: '先在云端备份页登录。'
+	String get adminSignedOut => '先在云端备份页登录。';
+
+	/// zh-CN: '当前账号没有管理权限'
+	String get adminNoPower => '当前账号没有管理权限';
+
+	/// zh-CN: '只有管理员或管理者能查看与管理其他账号。'
+	String get adminNoPowerDesc => '只有管理员或管理者能查看与管理其他账号。';
+
+	/// zh-CN: '按邮箱开头搜索'
+	String get adminSearchHint => '按邮箱开头搜索';
+
+	/// zh-CN: '账号'
+	String get adminUsers => '账号';
+
+	/// zh-CN: '{count: int} 个账号'
+	String adminUsersCount({required int count}) => '${count} 个账号';
+
+	/// zh-CN: '没有匹配的账号'
+	String get adminEmpty => '没有匹配的账号';
+
+	/// zh-CN: '正在加载…'
+	String get adminLoading => '正在加载…';
+
+	/// zh-CN: '加载更多'
+	String get adminMore => '加载更多';
+
+	/// zh-CN: '允许上传'
+	String get adminAllowUpload => '允许上传';
+
+	/// zh-CN: '禁止上传'
+	String get adminRefuseUpload => '禁止上传';
+
+	/// zh-CN: '设为管理者'
+	String get adminPromote => '设为管理者';
+
+	/// zh-CN: '撤销管理者'
+	String get adminDemote => '撤销管理者';
+
+	/// zh-CN: '删除账号数据'
+	String get adminDelete => '删除账号数据';
+
+	/// zh-CN: '删除 {email: String} 的云端数据？'
+	String adminDeleteTitle({required String email}) => '删除 ${email} 的云端数据？';
+
+	/// zh-CN: '删除该账号的备份文件与权限记录；登录账号本身需在 Firebase 控制台删除。'
+	String get adminDeleteDesc => '删除该账号的备份文件与权限记录；登录账号本身需在 Firebase 控制台删除。';
+
+	/// zh-CN: '已删除'
+	String get adminDeleted => '已删除';
+
+	/// zh-CN: '请输入有效的邮箱地址'
+	String get errInvalidEmail => '请输入有效的邮箱地址';
+
+	/// zh-CN: '邮箱或密码不正确'
+	String get errWrongCredentials => '邮箱或密码不正确';
+
+	/// zh-CN: '该邮箱已注册，请直接登录'
+	String get errEmailInUse => '该邮箱已注册，请直接登录';
+
+	/// zh-CN: '密码至少 6 位'
+	String get errWeakPassword => '密码至少 6 位';
+
+	/// zh-CN: '尝试过于频繁，稍后再试'
+	String get errTooMany => '尝试过于频繁，稍后再试';
+
+	/// zh-CN: '网络错误，请检查连接或代理'
+	String get errNetwork => '网络错误，请检查连接或代理';
+
+	/// zh-CN: '该账号已被停用'
+	String get errDisabled => '该账号已被停用';
+
+	/// zh-CN: '没有权限执行此操作'
+	String get errPermission => '没有权限执行此操作';
+
+	/// zh-CN: '该账号未被允许上传，请联系管理员'
+	String get errUploadRefused => '该账号未被允许上传，请联系管理员';
+
+	/// zh-CN: '云端还没有备份'
+	String get errNothingStored => '云端还没有备份';
+
+	/// zh-CN: '云端数据不是有效的备份'
+	String get errNotBackup => '云端数据不是有效的备份';
+
+	/// zh-CN: '链接里没有有效的授权信息'
+	String get errCallbackInvalid => '链接里没有有效的授权信息';
+
+	/// zh-CN: '请先登录'
+	String get errSignedOut => '请先登录';
+
+	/// zh-CN: '已取消'
+	String get errCancelled => '已取消';
+
+	/// zh-CN: '操作失败（{code: String}）'
+	String errUnknown({required String code}) => '操作失败（${code}）';
+}
+
 /// The flat map containing all translations for locale <zh-CN>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -12783,6 +13048,87 @@ extension on Translations {
 			'backup.webdavHelp.screenshotLabel' => ({required int number}) => '设置截图 ${number}',
 			'backup.webdavHelp.imageFailed' => '示例图片加载失败',
 			'backup.webdavHelp.closeImage' => '关闭',
+			'backup.cloud.title' => '云端备份',
+			'backup.cloud.probing' => '正在检测云端连通性…',
+			'backup.cloud.probingDesc' => '先确认本机能访问 Firebase，再加载云端组件。',
+			'backup.cloud.unreachable' => '无法连接云端',
+			'backup.cloud.unreachableDesc' => '本机当前网络访问不到 Firebase（国内网络通常如此）。本地备份、WebDAV 与局域网同步不受影响。',
+			'backup.cloud.retry' => '重试',
+			'backup.cloud.signInSection' => '邮箱登录',
+			'backup.cloud.emailHint' => '邮箱',
+			'backup.cloud.passwordHint' => '密码（至少 6 位）',
+			'backup.cloud.signIn' => '登录',
+			'backup.cloud.signUp' => '注册',
+			'backup.cloud.forgot' => '忘记密码',
+			'backup.cloud.resetSent' => '重置密码邮件已发送',
+			'backup.cloud.gitHubSection' => '第三方登录',
+			'backup.cloud.gitHub' => '使用 GitHub 登录',
+			'backup.cloud.gitHubMobileHint' => '在系统浏览器里授权后自动返回。',
+			'backup.cloud.gitHubDesktopHint' => '打开浏览器完成授权；回跳链接会自动送回应用，若没有则把页面给出的链接粘贴进来。',
+			'backup.cloud.gitHubTvHint' => '电视上不便完成网页授权，请用邮箱登录，或在手机/电脑上登录后再同步。',
+			'backup.cloud.gitHubPasteTitle' => '粘贴授权链接',
+			'backup.cloud.gitHubPasteBody' => '浏览器授权完成后，页面会给出一条以 purelive:// 开头的链接；如果应用没有自动收到，复制它粘贴到这里。',
+			'backup.cloud.accountSection' => '账号',
+			'backup.cloud.viaEmail' => '邮箱登录',
+			'backup.cloud.viaGitHub' => 'GitHub 登录',
+			'backup.cloud.roleLabel' => ({required String role}) => '角色 ${role}',
+			'backup.cloud.uploadAllowed' => '可上传',
+			'backup.cloud.uploadRefused' => '不可上传',
+			'backup.cloud.signOut' => '退出登录',
+			'backup.cloud.documentSection' => '云端备份文件',
+			'backup.cloud.stored' => '云端已有备份',
+			'backup.cloud.storedAt' => ({required String time}) => '更新于 ${time}',
+			'backup.cloud.storedVersion' => ({required String version}) => '来自 ${version}',
+			'backup.cloud.storedLegacy' => '旧版格式',
+			'backup.cloud.nothingStored' => '云端还没有备份',
+			'backup.cloud.nothingStoredDesc' => '上传后，其他设备登录同一账号即可下载恢复。',
+			'backup.cloud.upload' => '上传备份',
+			'backup.cloud.uploadDesc' => '选择要上传的内容，覆盖云端已有的备份文件。',
+			'backup.cloud.uploadNote' => '云端只保留一份；这次上传会替换之前的。',
+			'backup.cloud.uploadDone' => '已上传到云端',
+			'backup.cloud.download' => '下载并恢复',
+			'backup.cloud.downloadDesc' => '读取云端备份，选择要恢复的内容后覆盖本机。',
+			'backup.cloud.pickRestoreTitle' => '从云端恢复哪些内容',
+			'backup.cloud.legacyNote' => ({required String skipped}) => '这是旧版应用写的备份：关注、分区、历史与 Cookie 可以恢复；以下旧版内容本版本无法迁移：${skipped}。',
+			'backup.cloud.restoreConfirmDesc' => '将用云端备份覆盖本机所选内容，无法找回。',
+			'backup.cloud.delete' => '删除云端备份',
+			'backup.cloud.deleteDesc' => '只删除云端的备份文件，账号与本机数据不受影响。',
+			'backup.cloud.deleteTitle' => '删除云端备份？',
+			'backup.cloud.deleteDone' => '云端备份已删除',
+			'backup.cloud.adminSection' => '管理',
+			'backup.cloud.adminTitle' => '账号管理',
+			'backup.cloud.adminSignedOut' => '先在云端备份页登录。',
+			'backup.cloud.adminNoPower' => '当前账号没有管理权限',
+			'backup.cloud.adminNoPowerDesc' => '只有管理员或管理者能查看与管理其他账号。',
+			'backup.cloud.adminSearchHint' => '按邮箱开头搜索',
+			'backup.cloud.adminUsers' => '账号',
+			'backup.cloud.adminUsersCount' => ({required int count}) => '${count} 个账号',
+			'backup.cloud.adminEmpty' => '没有匹配的账号',
+			'backup.cloud.adminLoading' => '正在加载…',
+			'backup.cloud.adminMore' => '加载更多',
+			'backup.cloud.adminAllowUpload' => '允许上传',
+			'backup.cloud.adminRefuseUpload' => '禁止上传',
+			'backup.cloud.adminPromote' => '设为管理者',
+			'backup.cloud.adminDemote' => '撤销管理者',
+			'backup.cloud.adminDelete' => '删除账号数据',
+			'backup.cloud.adminDeleteTitle' => ({required String email}) => '删除 ${email} 的云端数据？',
+			'backup.cloud.adminDeleteDesc' => '删除该账号的备份文件与权限记录；登录账号本身需在 Firebase 控制台删除。',
+			'backup.cloud.adminDeleted' => '已删除',
+			'backup.cloud.errInvalidEmail' => '请输入有效的邮箱地址',
+			'backup.cloud.errWrongCredentials' => '邮箱或密码不正确',
+			'backup.cloud.errEmailInUse' => '该邮箱已注册，请直接登录',
+			'backup.cloud.errWeakPassword' => '密码至少 6 位',
+			'backup.cloud.errTooMany' => '尝试过于频繁，稍后再试',
+			'backup.cloud.errNetwork' => '网络错误，请检查连接或代理',
+			'backup.cloud.errDisabled' => '该账号已被停用',
+			'backup.cloud.errPermission' => '没有权限执行此操作',
+			'backup.cloud.errUploadRefused' => '该账号未被允许上传，请联系管理员',
+			'backup.cloud.errNothingStored' => '云端还没有备份',
+			'backup.cloud.errNotBackup' => '云端数据不是有效的备份',
+			'backup.cloud.errCallbackInvalid' => '链接里没有有效的授权信息',
+			'backup.cloud.errSignedOut' => '请先登录',
+			'backup.cloud.errCancelled' => '已取消',
+			'backup.cloud.errUnknown' => ({required String code}) => '操作失败（${code}）',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => '这里还没有内容',
 			'common.comingSoon' => '即将推出',
@@ -12878,6 +13224,8 @@ extension on Translations {
 			'favorites.durationHours' => ({required Object h, required Object m}) => '${h} 小时 ${m} 分',
 			'favorites.durationDays' => ({required Object d, required Object h}) => '${d} 天 ${h} 小时',
 			'favorites.setTags' => '设置标签',
+			_ => null,
+		} ?? switch (path) {
 			'favorites.tagsTitle' => '标签',
 			'favorites.tagsFilter' => '标签筛选',
 			'favorites.allTags' => '全部标签',
@@ -12959,8 +13307,6 @@ extension on Translations {
 			'hongguo.episodesJump' => '跳转集数',
 			'hongguo.episodesPrevious' => '上一组',
 			'hongguo.episodesNext' => '下一组',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.plays' => '播放',
 			'hongguo.followers' => '追剧',
 			'hongguo.todayTag' => '今日',
@@ -13392,6 +13738,8 @@ extension on Translations {
 			'iptv.zapperProgrammes' => '节目',
 			'iptv.zapperHint' => '方向键选择，确认键播放或回看，返回键收起。',
 			'iptv.zapperEmptyGroup' => '这个分组没有频道',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.lineCount' => ({required Object current, required Object total}) => '线路 ${current}/${total}',
 			'iptv.aspectLabel' => '画面比例',
 			'iptv.aspectAuto' => '默认',
@@ -13473,8 +13821,6 @@ extension on Translations {
 			'music.uiSpectrumDesc' => '播放详情页舞台上的实时频谱',
 			'music.uiSpectrumStyle' => '频谱样式',
 			'music.uiSpectrumStyleDesc' => '柱状、圆形或波形；暂停、静音或没有声音时静止',
-			_ => null,
-		} ?? switch (path) {
 			'music.spectrumStyleBars' => '柱状',
 			'music.spectrumStyleCircle' => '圆形',
 			'music.spectrumStyleWave' => '波形',
@@ -13906,6 +14252,8 @@ extension on Translations {
 			'music.lyricOverrideRemove' => '取消关联歌词',
 			'music.lyricSearch' => '在线搜索歌词',
 			'music.lyricSearchFor' => ({required Object title}) => '为「${title}」搜索歌词',
+			_ => null,
+		} ?? switch (path) {
 			'music.lyricSearchHint' => '输入歌名，或「歌手 - 歌名」',
 			'music.lyricSearchAction' => '搜索',
 			'music.lyricSearchEmpty' => '没有找到匹配的歌曲',
@@ -13987,8 +14335,6 @@ extension on Translations {
 			'music.eqTagPop' => '流行 / 爵士乐',
 			'music.eqTagRock' => '摇滚 / 硬摇滚',
 			'music.eqTagClassical' => '古典 / 轻音乐',
-			_ => null,
-		} ?? switch (path) {
 			'music.eqTagJazz' => '爵士 / 蓝调',
 			'music.eqTagElectronic' => '电子 / 舞曲',
 			'music.eqTagBass' => '重低音 / 书房',
@@ -14420,6 +14766,8 @@ extension on Translations {
 			'recorder.startNowFailed' => ({required Object error}) => '无法开始录制：${error}',
 			'recorder.cacheBusy' => '有录制任务正在进行（可能在另一个窗口），缓存不会被清理或自动裁剪。',
 			'recorder.cacheOtherRoot' => '另有录制正在旧目录进行；本页的统计、清理与自动裁剪只针对当前目录。',
+			_ => null,
+		} ?? switch (path) {
 			'room.opening' => '正在打开房间',
 			'room.follow' => '关注',
 			'room.unfollow' => '已关注',
@@ -14501,8 +14849,6 @@ extension on Translations {
 			'room.replayed' => '之前发的',
 			'room.share' => '分享',
 			'room.shareFailed' => '分享失败',
-			_ => null,
-		} ?? switch (path) {
 			'room.openIn' => ({required Object platform}) => '在 ${platform} 打开',
 			'room.openUnavailable' => '该平台没有提供可打开的链接',
 			'room.openFailed' => '无法打开链接',
@@ -14934,6 +15280,8 @@ extension on Translations {
 			'settings.danmakuColorHue' => '色相',
 			'settings.danmakuColorSaturation' => '饱和度与明度',
 			'settings.danmakuFixedGroup' => '固定弹幕',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListGroup' => '聊天列表内容',
 			'settings.chatListLayoutGroup' => '聊天列表排版',
 			'settings.danmakuFont' => '弹幕字体',
@@ -15015,8 +15363,6 @@ extension on Translations {
 			'settings.danmakuSaveGroup' => '弹幕保存格式',
 			'settings.danmakuSaveDescription' => '录制与下载视频时，弹幕按所选格式各存一份同名文件；关闭全部选项时保留 XML。',
 			'settings.danmakuSaveFormats' => '保存格式',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuSaveExtension' => '扩展名',
 			'settings.danmakuFormatXml' => 'XML 弹幕',
 			'settings.danmakuFormatJson' => 'JSON 弹幕',
@@ -15448,6 +15794,8 @@ extension on Translations {
 			'settings.fitDesc' => '画面在播放区域里的铺法。',
 			'settings.fitContain' => '默认比例',
 			'settings.fitCover' => '居中裁剪',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fitFill' => '填充屏幕',
 			'settings.miniDanmakuVisible' => '小窗显示弹幕',
 			'settings.miniDanmakuVisibleDesc' => '缩成小窗时是否继续显示飞行弹幕。',
@@ -15529,8 +15877,6 @@ extension on Translations {
 			'settings.backgroundFit' => '填充方式',
 			'settings.backgroundFitDescription' => '图片或视频铺满窗口的方式；纯色与渐变不适用。',
 			'settings.backgroundFitCover' => '裁切填满',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundFitContain' => '完整显示',
 			'settings.backgroundFitFill' => '拉伸填满',
 			'settings.backgroundFitWidth' => '适应宽度',
@@ -15962,6 +16308,8 @@ extension on Translations {
 			'settings.storageFolderRecordings' => '录制',
 			'settings.storageFolderScreenshots' => '截图',
 			'settings.storageFolderMusic' => '歌曲',
+			_ => null,
+		} ?? switch (path) {
 			'settings.storageFolderWallpapers' => '壁纸',
 			'settings.storageFolderVideoWallpapers' => '视频壁纸',
 			'settings.storageFolderLyrics' => '歌词',
@@ -15982,6 +16330,10 @@ extension on Translations {
 			'settings.hongguoDownloadTitle' => '视频下载',
 			'settings.hongguoDownloadDescription' => '下载队列、清晰度与保存目录',
 			'settings.storageFolderCopyPath' => '复制路径',
+			'settings.cloudBackupTitle' => '云端备份',
+			'settings.cloudBackupDescription' => '登录后把备份存到云端，换设备登录同一账号即可恢复。',
+			'settings.cloudAdminTitle' => '账号管理',
+			'settings.cloudAdminDescription' => '管理员查看账号、授予或撤销上传权限。',
 			'settings.webdavHelpTitle' => 'WebDAV 帮助',
 			'settings.webdavHelpDescription' => '以坚果云为例：注册、生成应用密码、填写参数与常见问题。',
 			'settings.lanSync' => '局域网同步',
@@ -16043,8 +16395,6 @@ extension on Translations {
 			'settings.lanSyncScopeMusicDesc' => '音乐播放器的偏好。',
 			'settings.lanSyncScopeRecorder' => '录制',
 			'settings.lanSyncScopeRecorderDesc' => '录制器的偏好。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.lanSyncScopeModules' => '模块',
 			'settings.lanSyncScopeModulesDesc' => 'IPTV、红果、点播、站点与浏览的偏好。',
 			'settings.lanSyncScopeSecrets' => '账号凭据',
@@ -16472,6 +16822,8 @@ extension on Translations {
 			'wallpaper.sourceUapiFurryS4k' => 'UAPI福瑞·s4k',
 			'wallpaper.sourceUapiFurry4k' => 'UAPI福瑞·4k',
 			'wallpaper.group360' => '360壁纸',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.source360Beauty' => '360壁纸美女',
 			'wallpaper.source360Landscape' => '360壁纸风景',
 			'wallpaper.source360Game' => '360壁纸游戏',

@@ -40,6 +40,16 @@
 				<string>lxmusic</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleURLName</key>
+			<string>com.liuchuancong.pure_live.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>purelive</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

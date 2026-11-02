@@ -384,6 +384,7 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get secretsSwitchDescription => 'Off, no backup, upload or LAN sync carries cookies or passwords; on, the section appears when you pick what to include.';
 	@override String get transportsSection => 'Other ways';
 	@override late final _Translations$backup$webdavHelp$en webdavHelp = _Translations$backup$webdavHelp$en._(_root);
+	@override late final _Translations$backup$cloud$en cloud = _Translations$backup$cloud$en._(_root);
 }
 
 // Path: common
@@ -3697,6 +3698,10 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get hongguoDownloadTitle => 'Downloads';
 	@override String get hongguoDownloadDescription => 'The download queue, quality and save folder';
 	@override String get storageFolderCopyPath => 'Copy path';
+	@override String get cloudBackupTitle => 'Cloud backup';
+	@override String get cloudBackupDescription => 'Sign in to keep a backup in the cloud; sign in on another device to restore it.';
+	@override String get cloudAdminTitle => 'Accounts';
+	@override String get cloudAdminDescription => 'Admins list accounts and grant or revoke uploads.';
 	@override String get webdavHelpTitle => 'WebDAV help';
 	@override String get webdavHelpDescription => 'Jianguoyun as the example: sign up, generate an app password, fill in the details, troubleshoot.';
 	@override String get lanSync => 'LAN sync';
@@ -4326,6 +4331,96 @@ class _Translations$backup$webdavHelp$en extends Translations$backup$webdavHelp$
 	@override String get closeImage => 'Close';
 }
 
+// Path: backup.cloud
+class _Translations$backup$cloud$en extends Translations$backup$cloud$zh_CN {
+	_Translations$backup$cloud$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Cloud backup';
+	@override String get probing => 'Checking whether the cloud is reachable…';
+	@override String get probingDesc => 'Firebase is only loaded once this network can reach it.';
+	@override String get unreachable => 'The cloud cannot be reached';
+	@override String get unreachableDesc => 'This network cannot reach Firebase. Local backups, WebDAV and LAN sync are unaffected.';
+	@override String get retry => 'Retry';
+	@override String get signInSection => 'Email sign-in';
+	@override String get emailHint => 'Email';
+	@override String get passwordHint => 'Password (6 characters or more)';
+	@override String get signIn => 'Sign in';
+	@override String get signUp => 'Sign up';
+	@override String get forgot => 'Forgot password';
+	@override String get resetSent => 'The password reset mail was sent';
+	@override String get gitHubSection => 'Third-party sign-in';
+	@override String get gitHub => 'Sign in with GitHub';
+	@override String get gitHubMobileHint => 'Authorise in the system browser; the app resumes on its own.';
+	@override String get gitHubDesktopHint => 'Opens the browser to authorise; the callback link returns to the app on its own, or paste the link the page shows.';
+	@override String get gitHubTvHint => 'Web authorisation is awkward on a TV: sign in with email, or sign in on a phone or computer and sync.';
+	@override String get gitHubPasteTitle => 'Paste the callback link';
+	@override String get gitHubPasteBody => 'After authorising, the page shows a link starting with purelive://. If the app did not receive it, copy it here.';
+	@override String get accountSection => 'Account';
+	@override String get viaEmail => 'Email';
+	@override String get viaGitHub => 'GitHub';
+	@override String roleLabel({required String role}) => 'role ${role}';
+	@override String get uploadAllowed => 'may upload';
+	@override String get uploadRefused => 'may not upload';
+	@override String get signOut => 'Sign out';
+	@override String get documentSection => 'Cloud backup file';
+	@override String get stored => 'A backup is in the cloud';
+	@override String storedAt({required String time}) => 'updated ${time}';
+	@override String storedVersion({required String version}) => 'from ${version}';
+	@override String get storedLegacy => 'legacy format';
+	@override String get nothingStored => 'Nothing in the cloud yet';
+	@override String get nothingStoredDesc => 'Upload once; any device signed in to this account can then download and restore.';
+	@override String get upload => 'Upload backup';
+	@override String get uploadDesc => 'Pick what to upload; it replaces the backup the cloud holds.';
+	@override String get uploadNote => 'The cloud keeps one file; this upload replaces the previous one.';
+	@override String get uploadDone => 'Uploaded to the cloud';
+	@override String get download => 'Download and restore';
+	@override String get downloadDesc => 'Read the cloud backup, pick what to restore, replace it on this device.';
+	@override String get pickRestoreTitle => 'What to restore from the cloud';
+	@override String legacyNote({required String skipped}) => 'This backup was written by the previous app: follows, areas, history and cookies restore; these legacy sections cannot be carried over by this build: ${skipped}.';
+	@override String get restoreConfirmDesc => 'The chosen sections on this device are replaced by the cloud backup and cannot be recovered.';
+	@override String get delete => 'Delete cloud backup';
+	@override String get deleteDesc => 'Removes only the backup file in the cloud; the account and this device\'s data stay.';
+	@override String get deleteTitle => 'Delete the cloud backup?';
+	@override String get deleteDone => 'The cloud backup was deleted';
+	@override String get adminSection => 'Management';
+	@override String get adminTitle => 'Accounts';
+	@override String get adminSignedOut => 'Sign in on the cloud backup page first.';
+	@override String get adminNoPower => 'This account has no management power';
+	@override String get adminNoPowerDesc => 'Only admins and managers can list and manage other accounts.';
+	@override String get adminSearchHint => 'Search by the start of an email';
+	@override String get adminUsers => 'Accounts';
+	@override String adminUsersCount({required int count}) => '${count} accounts';
+	@override String get adminEmpty => 'No matching account';
+	@override String get adminLoading => 'Loading…';
+	@override String get adminMore => 'Load more';
+	@override String get adminAllowUpload => 'Allow uploads';
+	@override String get adminRefuseUpload => 'Refuse uploads';
+	@override String get adminPromote => 'Make manager';
+	@override String get adminDemote => 'Unmake manager';
+	@override String get adminDelete => 'Delete account data';
+	@override String adminDeleteTitle({required String email}) => 'Delete the cloud data of ${email}?';
+	@override String get adminDeleteDesc => 'Removes the account\'s backup file and role record; the sign-in itself is deleted in the Firebase console.';
+	@override String get adminDeleted => 'Deleted';
+	@override String get errInvalidEmail => 'Enter a valid email address';
+	@override String get errWrongCredentials => 'The email or password is wrong';
+	@override String get errEmailInUse => 'That email is already registered; sign in instead';
+	@override String get errWeakPassword => 'The password needs 6 characters or more';
+	@override String get errTooMany => 'Too many attempts; try again later';
+	@override String get errNetwork => 'Network error; check the connection or proxy';
+	@override String get errDisabled => 'This account was disabled';
+	@override String get errPermission => 'No permission for this action';
+	@override String get errUploadRefused => 'This account may not upload; ask an administrator';
+	@override String get errNothingStored => 'Nothing in the cloud yet';
+	@override String get errNotBackup => 'The cloud data is not a valid backup';
+	@override String get errCallbackInvalid => 'The link carries no valid authorisation';
+	@override String get errSignedOut => 'Sign in first';
+	@override String get errCancelled => 'Cancelled';
+	@override String errUnknown({required String code}) => 'The action failed (${code})';
+}
+
 /// The flat map containing all translations for locale <en>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -4670,6 +4765,87 @@ extension on TranslationsEn {
 			'backup.webdavHelp.screenshotLabel' => ({required int number}) => 'Setup screenshot ${number}',
 			'backup.webdavHelp.imageFailed' => 'Example image could not be loaded',
 			'backup.webdavHelp.closeImage' => 'Close',
+			'backup.cloud.title' => 'Cloud backup',
+			'backup.cloud.probing' => 'Checking whether the cloud is reachable…',
+			'backup.cloud.probingDesc' => 'Firebase is only loaded once this network can reach it.',
+			'backup.cloud.unreachable' => 'The cloud cannot be reached',
+			'backup.cloud.unreachableDesc' => 'This network cannot reach Firebase. Local backups, WebDAV and LAN sync are unaffected.',
+			'backup.cloud.retry' => 'Retry',
+			'backup.cloud.signInSection' => 'Email sign-in',
+			'backup.cloud.emailHint' => 'Email',
+			'backup.cloud.passwordHint' => 'Password (6 characters or more)',
+			'backup.cloud.signIn' => 'Sign in',
+			'backup.cloud.signUp' => 'Sign up',
+			'backup.cloud.forgot' => 'Forgot password',
+			'backup.cloud.resetSent' => 'The password reset mail was sent',
+			'backup.cloud.gitHubSection' => 'Third-party sign-in',
+			'backup.cloud.gitHub' => 'Sign in with GitHub',
+			'backup.cloud.gitHubMobileHint' => 'Authorise in the system browser; the app resumes on its own.',
+			'backup.cloud.gitHubDesktopHint' => 'Opens the browser to authorise; the callback link returns to the app on its own, or paste the link the page shows.',
+			'backup.cloud.gitHubTvHint' => 'Web authorisation is awkward on a TV: sign in with email, or sign in on a phone or computer and sync.',
+			'backup.cloud.gitHubPasteTitle' => 'Paste the callback link',
+			'backup.cloud.gitHubPasteBody' => 'After authorising, the page shows a link starting with purelive://. If the app did not receive it, copy it here.',
+			'backup.cloud.accountSection' => 'Account',
+			'backup.cloud.viaEmail' => 'Email',
+			'backup.cloud.viaGitHub' => 'GitHub',
+			'backup.cloud.roleLabel' => ({required String role}) => 'role ${role}',
+			'backup.cloud.uploadAllowed' => 'may upload',
+			'backup.cloud.uploadRefused' => 'may not upload',
+			'backup.cloud.signOut' => 'Sign out',
+			'backup.cloud.documentSection' => 'Cloud backup file',
+			'backup.cloud.stored' => 'A backup is in the cloud',
+			'backup.cloud.storedAt' => ({required String time}) => 'updated ${time}',
+			'backup.cloud.storedVersion' => ({required String version}) => 'from ${version}',
+			'backup.cloud.storedLegacy' => 'legacy format',
+			'backup.cloud.nothingStored' => 'Nothing in the cloud yet',
+			'backup.cloud.nothingStoredDesc' => 'Upload once; any device signed in to this account can then download and restore.',
+			'backup.cloud.upload' => 'Upload backup',
+			'backup.cloud.uploadDesc' => 'Pick what to upload; it replaces the backup the cloud holds.',
+			'backup.cloud.uploadNote' => 'The cloud keeps one file; this upload replaces the previous one.',
+			'backup.cloud.uploadDone' => 'Uploaded to the cloud',
+			'backup.cloud.download' => 'Download and restore',
+			'backup.cloud.downloadDesc' => 'Read the cloud backup, pick what to restore, replace it on this device.',
+			'backup.cloud.pickRestoreTitle' => 'What to restore from the cloud',
+			'backup.cloud.legacyNote' => ({required String skipped}) => 'This backup was written by the previous app: follows, areas, history and cookies restore; these legacy sections cannot be carried over by this build: ${skipped}.',
+			'backup.cloud.restoreConfirmDesc' => 'The chosen sections on this device are replaced by the cloud backup and cannot be recovered.',
+			'backup.cloud.delete' => 'Delete cloud backup',
+			'backup.cloud.deleteDesc' => 'Removes only the backup file in the cloud; the account and this device\'s data stay.',
+			'backup.cloud.deleteTitle' => 'Delete the cloud backup?',
+			'backup.cloud.deleteDone' => 'The cloud backup was deleted',
+			'backup.cloud.adminSection' => 'Management',
+			'backup.cloud.adminTitle' => 'Accounts',
+			'backup.cloud.adminSignedOut' => 'Sign in on the cloud backup page first.',
+			'backup.cloud.adminNoPower' => 'This account has no management power',
+			'backup.cloud.adminNoPowerDesc' => 'Only admins and managers can list and manage other accounts.',
+			'backup.cloud.adminSearchHint' => 'Search by the start of an email',
+			'backup.cloud.adminUsers' => 'Accounts',
+			'backup.cloud.adminUsersCount' => ({required int count}) => '${count} accounts',
+			'backup.cloud.adminEmpty' => 'No matching account',
+			'backup.cloud.adminLoading' => 'Loading…',
+			'backup.cloud.adminMore' => 'Load more',
+			'backup.cloud.adminAllowUpload' => 'Allow uploads',
+			'backup.cloud.adminRefuseUpload' => 'Refuse uploads',
+			'backup.cloud.adminPromote' => 'Make manager',
+			'backup.cloud.adminDemote' => 'Unmake manager',
+			'backup.cloud.adminDelete' => 'Delete account data',
+			'backup.cloud.adminDeleteTitle' => ({required String email}) => 'Delete the cloud data of ${email}?',
+			'backup.cloud.adminDeleteDesc' => 'Removes the account\'s backup file and role record; the sign-in itself is deleted in the Firebase console.',
+			'backup.cloud.adminDeleted' => 'Deleted',
+			'backup.cloud.errInvalidEmail' => 'Enter a valid email address',
+			'backup.cloud.errWrongCredentials' => 'The email or password is wrong',
+			'backup.cloud.errEmailInUse' => 'That email is already registered; sign in instead',
+			'backup.cloud.errWeakPassword' => 'The password needs 6 characters or more',
+			'backup.cloud.errTooMany' => 'Too many attempts; try again later',
+			'backup.cloud.errNetwork' => 'Network error; check the connection or proxy',
+			'backup.cloud.errDisabled' => 'This account was disabled',
+			'backup.cloud.errPermission' => 'No permission for this action',
+			'backup.cloud.errUploadRefused' => 'This account may not upload; ask an administrator',
+			'backup.cloud.errNothingStored' => 'Nothing in the cloud yet',
+			'backup.cloud.errNotBackup' => 'The cloud data is not a valid backup',
+			'backup.cloud.errCallbackInvalid' => 'The link carries no valid authorisation',
+			'backup.cloud.errSignedOut' => 'Sign in first',
+			'backup.cloud.errCancelled' => 'Cancelled',
+			'backup.cloud.errUnknown' => ({required String code}) => 'The action failed (${code})',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => 'Nothing here yet',
 			'common.comingSoon' => 'Coming soon',
@@ -4765,6 +4941,8 @@ extension on TranslationsEn {
 			'favorites.durationHours' => ({required Object h, required Object m}) => '${h} h ${m} min',
 			'favorites.durationDays' => ({required Object d, required Object h}) => '${d} d ${h} h',
 			'favorites.setTags' => 'Set tags',
+			_ => null,
+		} ?? switch (path) {
 			'favorites.tagsTitle' => 'Tags',
 			'favorites.tagsFilter' => 'Filter by tag',
 			'favorites.allTags' => 'All tags',
@@ -4846,8 +5024,6 @@ extension on TranslationsEn {
 			'hongguo.episodesJump' => 'Jump to episode',
 			'hongguo.episodesPrevious' => 'Previous group',
 			'hongguo.episodesNext' => 'Next group',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.plays' => 'plays',
 			'hongguo.followers' => 'followers',
 			'hongguo.todayTag' => 'New',
@@ -5279,6 +5455,8 @@ extension on TranslationsEn {
 			'iptv.zapperProgrammes' => 'Programmes',
 			'iptv.zapperHint' => 'Arrow keys to move, OK to play or replay, back to close.',
 			'iptv.zapperEmptyGroup' => 'No channels in this group',
+			_ => null,
+		} ?? switch (path) {
 			'iptv.lineCount' => ({required Object current, required Object total}) => 'Line ${current}/${total}',
 			'iptv.aspectLabel' => 'Aspect',
 			'iptv.aspectAuto' => 'Default',
@@ -5360,8 +5538,6 @@ extension on TranslationsEn {
 			'music.uiSpectrumDesc' => 'The live spectrum on the player page\'s stage',
 			'music.uiSpectrumStyle' => 'Spectrum style',
 			'music.uiSpectrumStyleDesc' => 'Bars, a ring, or a wave; still while paused, muted, or silent',
-			_ => null,
-		} ?? switch (path) {
 			'music.spectrumStyleBars' => 'Bars',
 			'music.spectrumStyleCircle' => 'Ring',
 			'music.spectrumStyleWave' => 'Wave',
@@ -5793,6 +5969,8 @@ extension on TranslationsEn {
 			'music.lyricOverrideRemove' => 'Unlink the lyric',
 			'music.lyricSearch' => 'Search lyrics online',
 			'music.lyricSearchFor' => ({required Object title}) => 'Search lyrics for "${title}"',
+			_ => null,
+		} ?? switch (path) {
 			'music.lyricSearchHint' => 'A song title, or "artist - title"',
 			'music.lyricSearchAction' => 'Search',
 			'music.lyricSearchEmpty' => 'No matching songs',
@@ -5874,8 +6052,6 @@ extension on TranslationsEn {
 			'music.eqTagPop' => 'Pop / vocal',
 			'music.eqTagRock' => 'Rock / hard rock',
 			'music.eqTagClassical' => 'Classical / light',
-			_ => null,
-		} ?? switch (path) {
 			'music.eqTagJazz' => 'Jazz / blues',
 			'music.eqTagElectronic' => 'Electronic / dance',
 			'music.eqTagBass' => 'Bass / study',
@@ -6307,6 +6483,8 @@ extension on TranslationsEn {
 			'recorder.startNowFailed' => ({required Object error}) => 'Could not start recording: ${error}',
 			'recorder.cacheBusy' => 'A recording is in progress (possibly in another window); the cache will not be cleared or trimmed now.',
 			'recorder.cacheOtherRoot' => 'A take is still writing to the old folder; this page\'s size, clear and automatic trimming cover the current folder only.',
+			_ => null,
+		} ?? switch (path) {
 			'room.opening' => 'Opening the room',
 			'room.follow' => 'Follow',
 			'room.unfollow' => 'Following',
@@ -6388,8 +6566,6 @@ extension on TranslationsEn {
 			'room.replayed' => 'sent before',
 			'room.share' => 'Share',
 			'room.shareFailed' => 'The share failed',
-			_ => null,
-		} ?? switch (path) {
 			'room.openIn' => ({required Object platform}) => 'Open in ${platform}',
 			'room.openUnavailable' => 'This platform offers no link to open',
 			'room.openFailed' => 'The link could not be opened',
@@ -6821,6 +6997,8 @@ extension on TranslationsEn {
 			'settings.danmakuColorHue' => 'Hue',
 			'settings.danmakuColorSaturation' => 'Saturation and brightness',
 			'settings.danmakuFixedGroup' => 'Pinned danmaku',
+			_ => null,
+		} ?? switch (path) {
 			'settings.chatListGroup' => 'Chat list content',
 			'settings.chatListLayoutGroup' => 'Chat list layout',
 			'settings.danmakuFont' => 'Danmaku font',
@@ -6902,8 +7080,6 @@ extension on TranslationsEn {
 			'settings.danmakuSaveGroup' => 'Danmaku save formats',
 			'settings.danmakuSaveDescription' => 'Recordings and downloaded videos save the danmaku in each chosen format beside the video; XML stays on when everything else is off.',
 			'settings.danmakuSaveFormats' => 'Saved formats',
-			_ => null,
-		} ?? switch (path) {
 			'settings.danmakuSaveExtension' => 'Extension',
 			'settings.danmakuFormatXml' => 'XML danmaku',
 			'settings.danmakuFormatJson' => 'JSON danmaku',
@@ -7335,6 +7511,8 @@ extension on TranslationsEn {
 			'settings.fitDesc' => 'How the frame fills its box.',
 			'settings.fitContain' => 'Default Ratio',
 			'settings.fitCover' => 'Center Crop',
+			_ => null,
+		} ?? switch (path) {
 			'settings.fitFill' => 'Fill Screen',
 			'settings.miniDanmakuVisible' => 'Danmaku in the mini window',
 			'settings.miniDanmakuVisibleDesc' => 'Whether the flying layer still draws in the compact window.',
@@ -7416,8 +7594,6 @@ extension on TranslationsEn {
 			'settings.backgroundFit' => 'Fit',
 			'settings.backgroundFitDescription' => 'How an image or video fills the window; flat colours have nothing to fit.',
 			'settings.backgroundFitCover' => 'Cover',
-			_ => null,
-		} ?? switch (path) {
 			'settings.backgroundFitContain' => 'Contain',
 			'settings.backgroundFitFill' => 'Fill',
 			'settings.backgroundFitWidth' => 'Fit width',
@@ -7849,6 +8025,8 @@ extension on TranslationsEn {
 			'settings.storageFolderRecordings' => 'Recordings',
 			'settings.storageFolderScreenshots' => 'Screenshots',
 			'settings.storageFolderMusic' => 'Songs',
+			_ => null,
+		} ?? switch (path) {
 			'settings.storageFolderWallpapers' => 'Wallpapers',
 			'settings.storageFolderVideoWallpapers' => 'Video wallpapers',
 			'settings.storageFolderLyrics' => 'Lyrics',
@@ -7869,6 +8047,10 @@ extension on TranslationsEn {
 			'settings.hongguoDownloadTitle' => 'Downloads',
 			'settings.hongguoDownloadDescription' => 'The download queue, quality and save folder',
 			'settings.storageFolderCopyPath' => 'Copy path',
+			'settings.cloudBackupTitle' => 'Cloud backup',
+			'settings.cloudBackupDescription' => 'Sign in to keep a backup in the cloud; sign in on another device to restore it.',
+			'settings.cloudAdminTitle' => 'Accounts',
+			'settings.cloudAdminDescription' => 'Admins list accounts and grant or revoke uploads.',
 			'settings.webdavHelpTitle' => 'WebDAV help',
 			'settings.webdavHelpDescription' => 'Jianguoyun as the example: sign up, generate an app password, fill in the details, troubleshoot.',
 			'settings.lanSync' => 'LAN sync',
@@ -7930,8 +8112,6 @@ extension on TranslationsEn {
 			'settings.lanSyncScopeMusicDesc' => 'Music player preferences.',
 			'settings.lanSyncScopeRecorder' => 'Recorder',
 			'settings.lanSyncScopeRecorderDesc' => 'Recorder preferences.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.lanSyncScopeModules' => 'Modules',
 			'settings.lanSyncScopeModulesDesc' => 'IPTV, Hongguo, VOD, sites and browsing preferences.',
 			'settings.lanSyncScopeSecrets' => 'Account credentials',
@@ -8359,6 +8539,8 @@ extension on TranslationsEn {
 			'wallpaper.sourceUapiFurryS4k' => 'UAPI · furry s4k',
 			'wallpaper.sourceUapiFurry4k' => 'UAPI · furry 4k',
 			'wallpaper.group360' => '360 Wallpaper',
+			_ => null,
+		} ?? switch (path) {
 			'wallpaper.source360Beauty' => '360 Wallpaper · Beauty',
 			'wallpaper.source360Landscape' => '360 Wallpaper · Landscape',
 			'wallpaper.source360Game' => '360 Wallpaper · Games',
