@@ -4,7 +4,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_net/live_net.dart' show ClientProfile;
-import 'package:pure_live/app/app.dart' show networkFactoryProvider;
+import 'package:pure_live/app/app.dart' show RouteCaptionTail, networkFactoryProvider, routeCaptionTitle;
 import 'package:pure_live/features/version/release_builds.dart';
 import 'package:pure_live/features/version/update_download.dart' show showUpdateDownload;
 import 'package:pure_live/features/version/update_feed.dart';
@@ -378,10 +378,19 @@ final class _ReleaseHistoryPageState extends ConsumerState<ReleaseHistoryPage> {
                                         return Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           spacing: DsSpace.s8,
-                                          children: [identity, Row(spacing: DsSpace.s8, children: actions)],
+                                          children: [
+                                            identity,
+                                            Row(spacing: DsSpace.s8, children: actions),
+                                          ],
                                         );
                                       }
-                                      return Row(spacing: DsSpace.s8, children: [Expanded(child: identity), ...actions]);
+                                      return Row(
+                                        spacing: DsSpace.s8,
+                                        children: [
+                                          Expanded(child: identity),
+                                          ...actions,
+                                        ],
+                                      );
                                     },
                                   ),
                                   if (release.author.isNotEmpty)
@@ -487,18 +496,21 @@ final class _PageBar extends StatelessWidget {
             onPressed: onBack,
             icon: const DsIcon(DsIcons.chevronLeft),
           ),
+          // The page covers the shell's strip: its bar is the caption.
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.typography.title.copyWith(color: colors.text)),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.small.copyWith(color: colors.textSubtle),
-                ),
-              ],
+            child: routeCaptionTitle(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.typography.title.copyWith(color: colors.text)),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.small.copyWith(color: colors.textSubtle),
+                  ),
+                ],
+              ),
             ),
           ),
           DsButton.icon(
@@ -507,6 +519,7 @@ final class _PageBar extends StatelessWidget {
             onPressed: onRefresh,
             icon: const DsIcon(DsIcons.refreshCw),
           ),
+          const RouteCaptionTail(),
         ],
       ),
     );

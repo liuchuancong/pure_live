@@ -4,6 +4,7 @@ import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_sites/live_sites.dart' show SiteIds;
+import 'package:pure_live/app/app.dart' show RouteCaptionTail, routeCaptionTitle;
 import 'package:pure_live/features/account/account_platforms.dart' show accountPlatformOf;
 import 'package:pure_live/features/account/account_providers.dart' show accountsProvider, signInFailureText;
 import 'package:pure_live/features/account/account_state.dart' show cleanPastedCookie;
@@ -205,25 +206,28 @@ final class _BilibiliWebLoginPageState extends ConsumerState<BilibiliWebLoginPag
             icon: const DsIcon(DsIcons.chevronLeft),
             semanticLabel: t.common.back,
           ),
+          // The page covers the shell's strip: its bar is the caption.
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 2,
-              children: [
-                Text(
-                  t.account.webLoginTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.title.copyWith(color: colors.text),
-                ),
-                if (!_clearing)
+            child: routeCaptionTitle(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 2,
+                children: [
                   Text(
-                    _statusLine(t),
+                    t.account.webLoginTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    style: theme.typography.title.copyWith(color: colors.text),
                   ),
-              ],
+                  if (!_clearing)
+                    Text(
+                      _statusLine(t),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.typography.caption.copyWith(color: colors.textMuted),
+                    ),
+                ],
+              ),
             ),
           ),
           DsButton.icon(
@@ -232,6 +236,7 @@ final class _BilibiliWebLoginPageState extends ConsumerState<BilibiliWebLoginPag
             icon: const DsIcon(DsIcons.x),
             semanticLabel: t.common.close,
           ),
+          const RouteCaptionTail(),
         ],
       ),
     );

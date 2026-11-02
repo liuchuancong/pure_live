@@ -25,11 +25,13 @@ import 'package:path/path.dart' as p;
 import 'package:pure_live/app/app.dart'
     show
         RoomPresentationController,
+        RouteCaptionTail,
         SettingsSectionRoute,
         fullscreenDriverProvider,
         pipDriverProvider,
         resolvedFontFamily,
-        roomPresentationProvider;
+        roomPresentationProvider,
+        routeCaptionTitle;
 import 'package:pure_live/features/media_preview/media_preview_danmaku.dart' show MediaPreviewDanmakuPanel;
 import 'package:pure_live/features/media_preview/media_preview_item.dart';
 import 'package:pure_live/features/settings/pages/wallpaper_video_player.dart' show WallpaperVideoPlayer;
@@ -60,16 +62,21 @@ import 'package:pure_live/shared/shared.dart'
 /// entries on the right on a wide window and as a second view on a phone.
 /// Modules hand it their finished files and nothing else — a recording centre,
 /// a download manager and the local media page all get the same page.
+///
+/// [onDeleted] hears of a file the viewer deleted from the page, after it is
+/// gone from disk: the list that owns the item (a recording task, a download
+/// row) updates its own record, since the page only knows the file.
 Future<void> openMediaPreview(
   BuildContext context, {
   required String title,
   required List<MediaPreviewItem> items,
   int initialIndex = 0,
+  Future<void> Function(MediaPreviewItem item)? onDeleted,
 }) {
   return Navigator.of(context, rootNavigator: true).push(
     DsPageRoute<void>(
       fullscreenDialog: true,
-      builder: (_) => MediaPreviewPage(title: title, items: items, initialIndex: initialIndex),
+      builder: (_) => MediaPreviewPage(title: title, items: items, initialIndex: initialIndex, onDeleted: onDeleted),
     ),
   );
 }
@@ -78,7 +85,7 @@ Future<void> openMediaPreview(
 /// the entry's danmaku over the picture when it has a sidecar.
 final class MediaPreviewPage extends ConsumerStatefulWidget {
   /// Shows [items] under [title].
-  const MediaPreviewPage({required this.title, required this.items, this.initialIndex = 0, super.key});
+  const MediaPreviewPage({required this.title, required this.items, this.initialIndex = 0, this.onDeleted, super.key});
 
   /// The page's own name ("录制预览", "下载预览").
   final String title;
@@ -88,6 +95,9 @@ final class MediaPreviewPage extends ConsumerStatefulWidget {
 
   /// The entry to open on.
   final int initialIndex;
+
+  /// Told of a file deleted from the page, once it is gone from disk.
+  final Future<void> Function(MediaPreviewItem item)? onDeleted;
 
   @override
   ConsumerState<MediaPreviewPage> createState() => _MediaPreviewPageState();
@@ -465,6 +475,8 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
     // dropped for the delete, comes back to say 文件不在了 rather than that the
     // preview has nothing to show.
     if (mounted) setState(() => _stageCleared = false);
+    // The owner's record follows the file.
+    await widget.onDeleted?.call(item);
   }
 
   @override
@@ -595,26 +607,30 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
             onPressed: () => _leave(context, immersive: false, narrow: narrow),
             icon: const DsIcon(DsIcons.chevronLeft, color: playerInk),
           ),
+          // The page covers the shell's strip, so this bar is the window's
+          // caption: the title is the drag band, the three buttons end it.
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              spacing: DsSpace.s3,
-              children: [
-                Text(
-                  widget.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: DsTheme.of(context).typography.title.copyWith(color: playerInk),
-                ),
-                if (item != null)
+            child: routeCaptionTitle(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                spacing: DsSpace.s3,
+                children: [
                   Text(
-                    item.title,
+                    widget.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: DsTheme.of(context).typography.caption.copyWith(color: playerInkMuted),
+                    style: DsTheme.of(context).typography.title.copyWith(color: playerInk),
                   ),
-              ],
+                  if (item != null)
+                    Text(
+                      item.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: DsTheme.of(context).typography.caption.copyWith(color: playerInkMuted),
+                    ),
+                ],
+              ),
             ),
           ),
           if (widget.items.length > 1 && !(narrow && (_listOpen || _panelOpen))) ...[
@@ -641,6 +657,7 @@ final class _MediaPreviewPageState extends ConsumerState<MediaPreviewPage> {
               semanticLabel: t.common.previewOpenFolder,
               onPressed: () => unawaited(_revealFolderOf(item.path)),
             ),
+          const RouteCaptionTail(ink: playerInk),
         ],
       ),
     );

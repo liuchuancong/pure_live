@@ -61,10 +61,15 @@ final class WindowDragArea extends ConsumerWidget {
 /// they sit in, so a hover fill reaches both of its edges.
 final class WindowCaptionControls extends ConsumerWidget {
   /// The three buttons for a bar [height] tall.
-  const WindowCaptionControls({this.height = 44, super.key});
+  const WindowCaptionControls({this.height = 44, this.ink, super.key});
 
   /// The height of the bar the buttons fill.
   final double height;
+
+  /// The glyphs' colour; the theme's text when null. A bar over a black
+  /// stage (a media preview) passes its own ink, or a light theme's dark
+  /// text vanishes on it.
+  final Color? ink;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -77,18 +82,21 @@ final class WindowCaptionControls extends ConsumerWidget {
           semanticLabel: t.common.minimize,
           icon: DsIcons.minus,
           size: height,
+          ink: ink,
           onPressed: host.minimize,
         ),
         WindowCaptionButton(
           semanticLabel: maximized ? t.common.restore : t.common.maximize,
           icon: maximized ? DsIcons.copy : DsIcons.square,
           size: height,
+          ink: ink,
           onPressed: host.toggleMaximize,
         ),
         WindowCaptionButton(
           semanticLabel: t.common.close,
           icon: DsIcons.x,
           size: height,
+          ink: ink,
           danger: true,
           onPressed: host.close,
         ),
@@ -96,6 +104,41 @@ final class WindowCaptionControls extends ConsumerWidget {
     );
   }
 }
+
+/// The tail of a route's own header bar: on a desktop that draws its own
+/// caption, a divider and the three caption buttons, so a page pushed over
+/// the shell (a preview, a web login) keeps the window closable while the
+/// shell's strip is covered; elsewhere nothing. The title of the same bar
+/// goes through [routeCaptionTitle], and the two together are what the
+/// room page does with its bar.
+final class RouteCaptionTail extends StatelessWidget {
+  /// The tail for a bar whose buttons are [height] square.
+  const RouteCaptionTail({this.height = 36, this.ink, super.key});
+
+  /// The buttons' size.
+  final double height;
+
+  /// The glyphs' colour; the theme's text when null.
+  final Color? ink;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!WindowChromeState.drawsCaptionControls) return const SizedBox.shrink();
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(width: DsSpace.s8),
+        const SizedBox(height: 20, child: DsDivider.vertical()),
+        const SizedBox(width: DsSpace.s4),
+        WindowCaptionControls(height: height, ink: ink),
+      ],
+    );
+  }
+}
+
+/// The title of a route's own header bar as the window's drag band on a
+/// desktop that draws its own caption; the plain [child] elsewhere.
+Widget routeCaptionTitle(Widget child) => WindowChromeState.drawsCaptionControls ? WindowDragArea(child: child) : child;
 
 /// One caption button: a hover fill, the danger tint on close, and the label
 /// a screen reader reads.
@@ -112,6 +155,7 @@ final class WindowCaptionButton extends ConsumerWidget {
     this.size = 44,
     this.enabled = true,
     this.danger = false,
+    this.ink,
     super.key,
   });
 
@@ -133,6 +177,9 @@ final class WindowCaptionButton extends ConsumerWidget {
 
   /// Paints the close button's fill in the danger colour.
   final bool danger;
+
+  /// The glyph's colour; the theme's text when null.
+  final Color? ink;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -156,7 +203,13 @@ final class WindowCaptionButton extends ConsumerWidget {
           }
           return ColoredBox(
             color: background ?? const Color(0x00000000),
-            child: Center(child: DsIcon(icon, size: 14, color: enabled ? colors.text : colors.textSubtle)),
+            child: Center(
+              child: DsIcon(
+                icon,
+                size: 14,
+                color: enabled ? ink ?? colors.text : ink?.withValues(alpha: 0.5) ?? colors.textSubtle,
+              ),
+            ),
           );
         },
       ),

@@ -21,8 +21,7 @@ import 'package:pure_live/features/account/bilibili_accounts.dart'
         bilibiliAccountsProvider,
         isCurrentBilibiliAccount;
 import 'package:pure_live/features/account/douyu_cookie_saved_at.dart' show douyuCookieSavedAtProvider;
-import 'package:pure_live/features/account/douyu_login_store.dart'
-    show accountSnapshotWithDouyu, douyuRenewalProvider;
+import 'package:pure_live/features/account/douyu_login_store.dart' show accountSnapshotWithDouyu, douyuRenewalProvider;
 import 'package:pure_live/features/settings/settings.dart' show douyuForceRenewProvider;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart' show cachedImage, localizedSiteIcon, localizedSiteName;
@@ -232,14 +231,18 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
             icon: const DsIcon(DsIcons.chevronLeft),
             semanticLabel: t.common.back,
           ),
+          // The page covers the shell's strip: its bar is the caption.
           Expanded(
-            child: Text(
-              t.account.cookiePageTitle(site: _displayName),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.typography.title.copyWith(color: colors.text),
+            child: routeCaptionTitle(
+              Text(
+                t.account.cookiePageTitle(site: _displayName),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.typography.title.copyWith(color: colors.text),
+              ),
             ),
           ),
+          const RouteCaptionTail(),
         ],
       ),
     );
@@ -300,7 +303,12 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
   /// The status card: the platform, the same sentence the list's row reads
   /// out in the same ink, and "重新核验" for a login the platform can be
   /// asked about.
-  Widget _statusCard(Translations t, {required AccountSnapshot snapshot, required AccountStatus status, required bool recheck}) {
+  Widget _statusCard(
+    Translations t, {
+    required AccountSnapshot snapshot,
+    required AccountStatus status,
+    required bool recheck,
+  }) {
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
     final credential = ref.read(accountsProvider).credentials[_siteId];
@@ -488,7 +496,10 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
       showDsToast(context: context, title: message, status: DsStatus.danger);
       return;
     }
-    showDsToast(context: context, title: t.account.switchedSuccess(name: name));
+    showDsToast(
+      context: context,
+      title: t.account.switchedSuccess(name: name),
+    );
   }
 
   /// Forgets one remembered sign-in, asking first. The current login keeps
@@ -513,7 +524,10 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
       showDsToast(context: context, title: t.account.accountsSaveFailed, status: DsStatus.danger);
       return;
     }
-    showDsToast(context: context, title: t.account.forgottenSuccess(name: name));
+    showDsToast(
+      context: context,
+      title: t.account.forgottenSuccess(name: name),
+    );
   }
 
   /// Signs another account in with the QR code, the way the reference's add row
@@ -603,8 +617,8 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
   void _recomputeDirty() {
     if (!mounted) return;
     final cookieChanged = cleanPastedCookie(_cookie.text) != _saved;
-    final pairChanged = _isDouyu &&
-        (_cleanValue(_ltp0.text) != _savedPair.ltp0 || _cleanValue(_did.text) != _savedPair.did);
+    final pairChanged =
+        _isDouyu && (_cleanValue(_ltp0.text) != _savedPair.ltp0 || _cleanValue(_did.text) != _savedPair.did);
     final dirty = cookieChanged || pairChanged;
     if (dirty == _dirty && _error == null) return;
     setState(() {
@@ -881,10 +895,7 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
     final storedLine = accountCookieLine(ref.read(accountsProvider).credentials[_siteId]);
     setState(() => _busy = false);
     _markSaved(storedLine.isEmpty ? effective : storedLine);
-    showDsToast(
-      context: context,
-      title: changed ? t.account.cookieSavedLocal : t.account.douyuCredentialsAbsorbed,
-    );
+    showDsToast(context: context, title: changed ? t.account.cookieSavedLocal : t.account.douyuCredentialsAbsorbed);
   }
 
   /// Renews the login now (3.x's `refreshNow`): proves the pair works instead
@@ -920,7 +931,11 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
     }
     final site = _site;
     if (site is! DouyuSite) {
-      showDsToast(context: context, title: t.account.noLoginMethod(site: _displayName), status: DsStatus.danger);
+      showDsToast(
+        context: context,
+        title: t.account.noLoginMethod(site: _displayName),
+        status: DsStatus.danger,
+      );
       return;
     }
     final before = accountCookieLine(ref.read(accountsProvider).credentials[_siteId]);
@@ -939,11 +954,15 @@ class _PlatformCookiePageState extends ConsumerState<PlatformCookiePage> {
         return;
       }
       final renewal = ref.read(douyuRenewalProvider);
-      final expiry = DouyuAccount.sessionExpiry(after, savedAt: renewal.savedAt) ??
+      final expiry =
+          DouyuAccount.sessionExpiry(after, savedAt: renewal.savedAt) ??
           (renewal.savedAt ?? DateTime.now()).add(DouyuAccount.webCookieLifetime);
       setState(() => _renewing = false);
       _markSaved(after);
-      showDsToast(context: context, title: t.account.douyuRenewOk(time: accountTime(expiry)));
+      showDsToast(
+        context: context,
+        title: t.account.douyuRenewOk(time: accountTime(expiry)),
+      );
     } on Object {
       if (!mounted) return;
       setState(() => _renewing = false);

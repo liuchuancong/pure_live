@@ -1,5 +1,6 @@
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:pure_live/app/app.dart' show RouteCaptionTail, routeCaptionTitle;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/shared/shared.dart' show LiveWindow;
 
@@ -297,28 +298,34 @@ final class SettingsPreviewTitleBar extends StatelessWidget {
               ),
               child: Center(child: DsIcon(icon, size: 18, color: colors.accent)),
             ),
+            // The page covers the shell's strip, so its own bar is the
+            // window's caption: the subject is the drag band, the three
+            // buttons end the row.
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.bodyStrong.copyWith(color: colors.text),
-                  ),
-                  if (subtitle != null)
+              child: routeCaptionTitle(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                     Text(
-                      subtitle,
+                      title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.typography.small.copyWith(color: colors.textSubtle),
+                      style: theme.typography.bodyStrong.copyWith(color: colors.text),
                     ),
-                ],
+                    if (subtitle != null)
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.typography.small.copyWith(color: colors.textSubtle),
+                      ),
+                  ],
+                ),
               ),
             ),
             ?trailing,
+            const RouteCaptionTail(),
           ],
         ),
       ),
