@@ -183,8 +183,12 @@ final class VodDownloadsPane extends ConsumerWidget {
             ],
           )
         else
-          DsListSection(
-            children: [for (final task in tasks) _VodTaskRow(key: ValueKey(task.id), task: task)],
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: _vodQueueBlocks(
+              tasks,
+              rowOf: (task, {required inBlock}) => _VodTaskRow(key: ValueKey(task.id), task: task, inBlock: inBlock),
+            ),
           ),
       ],
     );
@@ -194,9 +198,13 @@ final class VodDownloadsPane extends ConsumerWidget {
 /// One part's row: the file's name over its phase's caption and bar, with
 /// the actions that phase allows at the end.
 final class _VodTaskRow extends ConsumerWidget {
-  const _VodTaskRow({required this.task, this.selected = false, this.onSelect, super.key});
+  const _VodTaskRow({required this.task, this.selected = false, this.onSelect, this.inBlock = false, super.key});
 
   final VodDownloadItem task;
+
+  /// Whether a header above names this row's archive and its cover. In a block
+  /// the row drops both and reads as the part it is.
+  final bool inBlock;
 
   /// Whether the wide workspace shows this row's facts at the right.
   final bool selected;
@@ -278,20 +286,25 @@ final class _VodTaskRow extends ConsumerWidget {
     ).status;
     // The row previews the title it downloaded: its own cover where the task
     // kept one (a task queued before covers were kept falls back to its name),
-    // the part it is, and the rendition asked for.
+    // the part it is, and the rendition asked for. Inside a block the archive's
+    // name and its cover belong to the header above it, so the row says only
+    // which part it is — the shelf's own `P3 分集名` reading.
     final preview = task.part.isEmpty ? task.title : '${task.title} · ${task.part}';
+    final part = task.part.isEmpty ? 'P${task.index}' : 'P${task.index} ${task.part}';
     final quality = VodQualityChoice.values.where((choice) => choice.qn == task.qn).firstOrNull;
     return DsListRow(
       selected: selected,
       onPressed: onSelect,
-      leading: DsAvatar(
-        initials: task.title,
-        image: task.cover.isEmpty ? null : cachedImage(task.cover),
-        size: DsSize.md,
-        toneIndex: DsAvatar.toneFor(task.id),
-        semanticLabel: preview,
-      ),
-      title: Text(preview, maxLines: 1, overflow: TextOverflow.ellipsis),
+      leading: inBlock
+          ? null
+          : DsAvatar(
+              initials: task.title,
+              image: task.cover.isEmpty ? null : cachedImage(task.cover),
+              size: DsSize.md,
+              toneIndex: DsAvatar.toneFor(task.id),
+              semanticLabel: preview,
+            ),
+      title: Text(inBlock ? part : preview, maxLines: 1, overflow: TextOverflow.ellipsis),
       description: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: DsSpace.s4,
@@ -518,19 +531,16 @@ final class _VodDownloadsPageState extends ConsumerState<VodDownloadsPage> {
           )
         : ListView(
             padding: EdgeInsets.only(left: inset, right: inset, bottom: DsSpace.s16),
-            children: [
-              DsListSection(
-                children: [
-                  for (final task in shown)
-                    _VodTaskRow(
-                      key: ValueKey(task.id),
-                      task: task,
-                      selected: wide && task.id == selectedTask?.id,
-                      onSelect: wide ? () => setState(() => _selectedId = task.id) : null,
-                    ),
-                ],
+            children: _vodQueueBlocks(
+              shown,
+              rowOf: (task, {required inBlock}) => _VodTaskRow(
+                key: ValueKey(task.id),
+                task: task,
+                inBlock: inBlock,
+                selected: wide && task.id == selectedTask?.id,
+                onSelect: wide ? () => setState(() => _selectedId = task.id) : null,
               ),
-            ],
+            ),
           );
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -713,6 +723,118 @@ List<MediaPreviewItem> _vodPreviewItems(List<VodDownloadItem> tasks, Translation
     );
   }
   return items;
+}
+
+/// One archive's block of the queue: its name, its cover where the queue kept
+/// one, how many parts it has, and the parts this list holds of it.
+final class _VodDownloadGroup {
+  _VodDownloadGroup({required this.title, required this.cover, required this.parts, required this.tasks});
+
+  /// The archive's title, written once for the block.
+  final String title;
+
+  /// The archive's cover; the first task in the block that carries one.
+  String cover;
+
+  /// How many parts the archive lists.
+  final int parts;
+
+  /// The parts, in the queue's own order.
+  final List<VodDownloadItem> tasks;
+}
+
+/// The queue read by archive: one block per title, in the order the list first
+/// names one, the parts inside a block kept as the list has them. A viewer who
+/// queued a whole multi-P upload got one row per part, each repeating the same
+/// archive title and pasting the same cover thirty times — the file's part is
+/// what differs between them, so that is what the row says.
+List<_VodDownloadGroup> _vodDownloadGroups(Iterable<VodDownloadItem> tasks) {
+  final order = <String>[];
+  final blocks = <String, _VodDownloadGroup>{};
+  for (final task in tasks) {
+    final key = task.bvid.isNotEmpty ? task.bvid : (task.epId > 0 ? 'ep${task.epId}' : task.title);
+    final block = blocks[key];
+    if (block == null) {
+      blocks[key] = _VodDownloadGroup(title: task.title, cover: task.cover, parts: task.parts, tasks: [task]);
+      order.add(key);
+    } else {
+      block.tasks.add(task);
+      // A task queued before the queue kept covers still names its archive;
+      // the first picture the block holds is the block's.
+      if (block.cover.isEmpty) block.cover = task.cover;
+    }
+  }
+  return [for (final key in order) blocks[key]!];
+}
+
+/// The line over one archive's parts: its cover where the queue has one, its
+/// name once for the block, and how many parts the archive runs to.
+final class _VodArchiveHead extends StatelessWidget {
+  const _VodArchiveHead({required this.group});
+
+  /// The block being introduced.
+  final _VodDownloadGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final theme = DsTheme.of(context);
+    final colors = DsTheme.colorsOf(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, DsSpace.s12, 0, DsSpace.s4),
+      child: Row(
+        spacing: DsSpace.s8,
+        children: [
+          if (group.cover.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(theme.radii.control(28)),
+              child: SizedBox(
+                width: 28,
+                height: 28,
+                child: DsImage(
+                  image: cachedImage(group.cover),
+                  aspectRatio: 1,
+                  semanticLabel: group.title,
+                  fallback: ColoredBox(color: colors.control),
+                ),
+              ),
+            ),
+          Expanded(
+            child: Text(
+              group.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.body.copyWith(fontWeight: FontWeight.w600, color: colors.text),
+            ),
+          ),
+          // The shelf's own reading for the same fact, beside the rows it counts.
+          Text('${t.vod.parts} · ${group.parts}', style: theme.typography.caption.copyWith(color: colors.textMuted)),
+        ],
+      ),
+    );
+  }
+}
+
+/// The queue as blocks of the same archive: an archive whose several parts are
+/// all here gets one head and its parts under it; a task standing alone keeps
+/// the row it already was, because a layer naming one file names nothing.
+/// [rowOf] builds the row so a page can hand its own selection through.
+List<Widget> _vodQueueBlocks(
+  List<VodDownloadItem> tasks, {
+  required Widget Function(VodDownloadItem task, {required bool inBlock}) rowOf,
+}) {
+  final blocks = <Widget>[];
+  for (final group in _vodDownloadGroups(tasks)) {
+    final grouped = group.tasks.length > 1;
+    if (grouped) blocks.add(_VodArchiveHead(group: group));
+    blocks.add(
+      Padding(
+        padding: const EdgeInsets.only(bottom: DsSpace.s8),
+        child: DsListSection(children: [for (final task in group.tasks) rowOf(task, inBlock: grouped)]),
+      ),
+    );
+  }
+  return blocks;
 }
 
 /// The facts the right column, the 详情 sheet and the row's own caption show
