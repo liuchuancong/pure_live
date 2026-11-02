@@ -21,6 +21,17 @@ const double _rowHeight = 48;
 /// subtitle and the action take a second.
 const double _programmeRowHeight = 60;
 
+/// The width of the panel's group column, and of its channel column; the
+/// day's list takes whatever the panel has left.
+const double _kGroupColumnWidth = 132;
+const double _kChannelColumnWidth = 212;
+
+/// The narrowest panel that can still show the three levels side by side:
+/// the two fixed columns, the gaps between them, and a day list wide enough
+/// for a programme row — the time and title on one line, the 回看/提醒 verb at
+/// its end. Narrower, the two fixed columns alone already outrun the panel.
+const double _kThreeColumnMinWidth = _kGroupColumnWidth + _kChannelColumnWidth + DsSpace.s8 * 2 + 220;
+
 /// A group in the panel's first column: a real group of the library, or the
 /// synthetic favourites entry the reference puts at the top.
 typedef _Group = ({bool favourites, String? name});
@@ -35,6 +46,11 @@ typedef _Group = ({bool favourites, String? name});
 /// set as a reminder. Choosing a channel switches the picture, choosing a
 /// programme replays or reminds, and the panel closes first so the picture
 /// is never covered by the list it was chosen from.
+///
+/// The three levels are a phone's two forms of the same list: side by side
+/// while the panel is wide enough, and one level at a time below it — the
+/// keys' left and right, or the segments above the list, still move between
+/// them.
 final class IptvZapper extends ConsumerStatefulWidget {
   /// The panel for [channel], the one playing now.
   const IptvZapper({
@@ -208,136 +224,169 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
                   ],
                 ),
                 Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: DsSpace.s8,
-                    children: [
-                      SizedBox(
-                        width: 132,
-                        child: _Column(
-                          active: _column == 0,
-                          header: t.iptv.zapperGroups,
-                          child: ListView.builder(
-                            controller: _groupScroll,
-                            itemExtent: _rowHeight,
-                            itemCount: groups.length,
-                            itemBuilder: (context, index) => DsListRow(
-                              title: Text(
-                                groupLabel(groups[index]),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.typography.body.copyWith(color: colors.text),
-                              ),
-                              selected: index == groupIndex,
-                              style: const DsListRowStyle(height: _rowHeight),
-                              onPressed: () => _chooseGroup(index),
-                            ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final groupsColumn = ListView.builder(
+                        controller: _groupScroll,
+                        itemExtent: _rowHeight,
+                        itemCount: groups.length,
+                        itemBuilder: (context, index) => DsListRow(
+                          title: Text(
+                            groupLabel(groups[index]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.body.copyWith(color: colors.text),
                           ),
+                          selected: index == groupIndex,
+                          style: const DsListRowStyle(height: _rowHeight),
+                          onPressed: () => _chooseGroup(index),
                         ),
-                      ),
-                      SizedBox(
-                        width: 212,
-                        child: _Column(
-                          active: _column == 1,
-                          header: t.iptv.zapperChannels,
-                          child: channels.isEmpty
-                              ? Padding(
-                                  padding: const EdgeInsets.all(DsSpace.s8),
-                                  child: DsEmptyState(
-                                    icon: const DsIcon(DsIcons.tv),
-                                    title: Text(t.iptv.zapperEmptyGroup),
+                      );
+                      final channelsColumn = channels.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.all(DsSpace.s8),
+                              child: DsEmptyState(icon: const DsIcon(DsIcons.tv), title: Text(t.iptv.zapperEmptyGroup)),
+                            )
+                          : ListView.builder(
+                              controller: _channelScroll,
+                              itemExtent: _rowHeight,
+                              itemCount: channels.length,
+                              itemBuilder: (context, index) {
+                                final entry = channels[index];
+                                final logo = (entry.entry.tvgLogo ?? '').trim();
+                                return DsListRow(
+                                  leading: DsAvatar(
+                                    initials: entry.entry.name,
+                                    image: logo.isEmpty ? null : cachedImage(logo),
+                                    size: DsSize.xs,
+                                    toneIndex: DsAvatar.toneFor(entry.id),
+                                    semanticLabel: entry.entry.name,
                                   ),
-                                )
-                              : ListView.builder(
-                                  controller: _channelScroll,
-                                  itemExtent: _rowHeight,
-                                  itemCount: channels.length,
-                                  itemBuilder: (context, index) {
-                                    final entry = channels[index];
-                                    final logo = (entry.entry.tvgLogo ?? '').trim();
-                                    return DsListRow(
-                                      leading: DsAvatar(
-                                        initials: entry.entry.name,
-                                        image: logo.isEmpty ? null : cachedImage(logo),
-                                        size: DsSize.xs,
-                                        toneIndex: DsAvatar.toneFor(entry.id),
-                                        semanticLabel: entry.entry.name,
-                                      ),
-                                      title: Text(
-                                        [if (entry.number != null) '${entry.number}', entry.entry.name].join('  '),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: theme.typography.body.copyWith(color: colors.text),
-                                      ),
-                                      selected: index == channelIndex,
-                                      style: const DsListRowStyle(height: _rowHeight),
-                                      trailing: DsButton.icon(
-                                        variant: DsButtonVariant.ghost,
-                                        size: DsSize.sm,
-                                        semanticLabel: entry.favorite
-                                            ? t.iptv.unfavouriteAction
-                                            : t.iptv.favouriteAction,
-                                        onPressed: () => unawaited(_toggleFavourite(entry)),
-                                        icon: DsIcon(DsIcons.heart, color: entry.favorite ? colors.accent : null),
-                                      ),
-                                      onPressed: () => _chooseChannel(index),
-                                    );
-                                  },
-                                ),
-                        ),
-                      ),
-                      Expanded(
-                        child: _Column(
-                          active: _column == 2,
-                          header: t.iptv.zapperProgrammes,
-                          child: schedule.isEmpty
-                              ? Padding(
-                                  padding: const EdgeInsets.all(DsSpace.s8),
-                                  child: DsEmptyState(icon: const DsIcon(DsIcons.list), title: Text(t.iptv.guideEmpty)),
-                                )
-                              : ListView.builder(
-                                  controller: _programmeScroll,
-                                  itemExtent: _programmeRowHeight,
-                                  itemCount: schedule.length,
-                                  itemBuilder: (context, index) {
-                                    final programme = schedule[index];
-                                    final live =
-                                        classifyIptvProgramme(start: programme.start, stop: programme.stop, now: now) ==
-                                        IptvProgrammePhase.live;
-                                    return DsListRow(
-                                      title: Text(
-                                        '${iptvClockLabel(programme.start)}  ${programme.title.isEmpty ? '—' : programme.title}',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: theme.typography.body.copyWith(
-                                          color: live ? colors.text : colors.textMuted,
-                                          fontWeight: live ? FontWeight.w600 : null,
-                                        ),
-                                      ),
-                                      description: Text(
-                                        [
-                                          '${iptvClockLabel(programme.start)} - ${iptvClockLabel(programme.stop)}',
-                                          if ((programme.subtitle ?? '').trim().isNotEmpty) programme.subtitle!.trim(),
-                                        ].join('  '),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: theme.typography.caption.copyWith(color: colors.textSubtle),
-                                      ),
-                                      detail: Text(
-                                        actionLabel(programme),
-                                        style: theme.typography.caption.copyWith(
-                                          color: live ? colors.accent : colors.textMuted,
-                                        ),
-                                      ),
-                                      selected: index == programmeIndex,
-                                      style: const DsListRowStyle(height: _programmeRowHeight),
-                                      onPressed: channel == null ? null : () => unawaited(_act(channel, programme)),
-                                    );
-                                  },
-                                ),
-                        ),
-                      ),
-                    ],
+                                  title: Text(
+                                    [if (entry.number != null) '${entry.number}', entry.entry.name].join('  '),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.typography.body.copyWith(color: colors.text),
+                                  ),
+                                  selected: index == channelIndex,
+                                  style: const DsListRowStyle(height: _rowHeight),
+                                  trailing: DsButton.icon(
+                                    variant: DsButtonVariant.ghost,
+                                    size: DsSize.sm,
+                                    semanticLabel: entry.favorite ? t.iptv.unfavouriteAction : t.iptv.favouriteAction,
+                                    onPressed: () => unawaited(_toggleFavourite(entry)),
+                                    icon: DsIcon(DsIcons.heart, color: entry.favorite ? colors.accent : null),
+                                  ),
+                                  onPressed: () => _chooseChannel(index),
+                                );
+                              },
+                            );
+                      final programmesColumn = schedule.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.all(DsSpace.s8),
+                              child: DsEmptyState(icon: const DsIcon(DsIcons.list), title: Text(t.iptv.guideEmpty)),
+                            )
+                          : ListView.builder(
+                              controller: _programmeScroll,
+                              itemExtent: _programmeRowHeight,
+                              itemCount: schedule.length,
+                              itemBuilder: (context, index) {
+                                final programme = schedule[index];
+                                final live =
+                                    classifyIptvProgramme(start: programme.start, stop: programme.stop, now: now) ==
+                                    IptvProgrammePhase.live;
+                                return DsListRow(
+                                  title: Text(
+                                    '${iptvClockLabel(programme.start)}  ${programme.title.isEmpty ? '—' : programme.title}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.typography.body.copyWith(
+                                      color: live ? colors.text : colors.textMuted,
+                                      fontWeight: live ? FontWeight.w600 : null,
+                                    ),
+                                  ),
+                                  description: Text(
+                                    [
+                                      '${iptvClockLabel(programme.start)} - ${iptvClockLabel(programme.stop)}',
+                                      if ((programme.subtitle ?? '').trim().isNotEmpty) programme.subtitle!.trim(),
+                                    ].join('  '),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.typography.caption.copyWith(color: colors.textSubtle),
+                                  ),
+                                  detail: Text(
+                                    actionLabel(programme),
+                                    style: theme.typography.caption.copyWith(
+                                      color: live ? colors.accent : colors.textMuted,
+                                    ),
+                                  ),
+                                  selected: index == programmeIndex,
+                                  style: const DsListRowStyle(height: _programmeRowHeight),
+                                  onPressed: channel == null ? null : () => unawaited(_act(channel, programme)),
+                                );
+                              },
+                            );
+                      // Two forms of the same three levels. Wide, they stand
+                      // side by side and the keys walk across them; narrow,
+                      // the fixed group and channel columns alone would
+                      // outrun the panel (and leave the day's list no width
+                      // at all), so one level shows at a time and the keys
+                      // still move between them.
+                      if (constraints.maxWidth >= _kThreeColumnMinWidth) {
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          spacing: DsSpace.s8,
+                          children: [
+                            SizedBox(
+                              width: _kGroupColumnWidth,
+                              child: _Column(active: _column == 0, header: t.iptv.zapperGroups, child: groupsColumn),
+                            ),
+                            SizedBox(
+                              width: _kChannelColumnWidth,
+                              child: _Column(
+                                active: _column == 1,
+                                header: t.iptv.zapperChannels,
+                                child: channelsColumn,
+                              ),
+                            ),
+                            Expanded(
+                              child: _Column(
+                                active: _column == 2,
+                                header: t.iptv.zapperProgrammes,
+                                child: programmesColumn,
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        spacing: DsSpace.s8,
+                        children: [
+                          DsSegmentedControl<int>(
+                            value: _column,
+                            onChanged: _showColumn,
+                            semanticLabel: t.iptv.zapperTitle,
+                            segments: [
+                              DsSegment(value: 0, icon: const DsIcon(DsIcons.folder), label: Text(t.iptv.zapperGroups)),
+                              DsSegment(value: 1, icon: const DsIcon(DsIcons.tv), label: Text(t.iptv.zapperChannels)),
+                              DsSegment(
+                                value: 2,
+                                icon: const DsIcon(DsIcons.list),
+                                label: Text(t.iptv.zapperProgrammes),
+                              ),
+                            ],
+                          ),
+                          Expanded(
+                            child: switch (_column) {
+                              0 => groupsColumn,
+                              1 => channelsColumn,
+                              _ => programmesColumn,
+                            },
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
                 Text(
@@ -388,9 +437,26 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
   }
 
   /// Moves between the three columns, stopping at the ends.
-  void _moveColumn(int delta) {
-    _column = (_column + delta).clamp(0, 2);
-    setState(() {});
+  void _moveColumn(int delta) => _showColumn((_column + delta).clamp(0, 2));
+
+  /// Puts the keys in the level at [column].
+  ///
+  /// Narrow, that level's list is only in the tree from the next frame, so
+  /// the scroll to the selected row waits for it — the level opens where the
+  /// picture is, not at its first row.
+  void _showColumn(int column) {
+    setState(() => _column = column);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _column != column) return;
+      switch (column) {
+        case 0:
+          _reveal(_groupScroll, _groupIndex);
+        case 1:
+          _reveal(_channelScroll, _channelIndex);
+        default:
+          _reveal(_programmeScroll, _programmeIndex, height: _programmeRowHeight);
+      }
+    });
   }
 
   static int _step(int value, int delta, int length) => length == 0 ? 0 : (value + delta) % length;
@@ -417,9 +483,7 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
     if (index < 0 || index >= groups.length) return;
     _groupIndex = index;
     _syncGroup(library, groups[index]);
-    _column = 1;
-    _reveal(_channelScroll, _channelIndex);
-    setState(() {});
+    _showColumn(1);
   }
 
   void _chooseChannel(int index) {
