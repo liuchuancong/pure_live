@@ -9,6 +9,7 @@ import 'package:live_iptv/live_iptv.dart';
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show iptvLibraryProvider;
 import 'package:pure_live/modules/iptv/controllers/iptv_reminders.dart' show IptvReminder, iptvRemindersProvider;
+import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart' show iptvGroupsListed;
 import 'package:pure_live/modules/iptv/views/iptv_guide_panel.dart'
     show catchupAvailabilityOf, iptvClockLabel, iptvStartOfDay;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show IptvChannelLogo;
@@ -122,7 +123,10 @@ final class _IptvZapperState extends ConsumerState<IptvZapper> {
 
   static List<_Group> _groupsOf(IptvLibrary library) => [
     if (library.zapSequence(favouritesOnly: true).channels.isNotEmpty) (favourites: true, name: null),
-    for (final name in library.groupNames)
+    // Listed by the module's one rule, so the panel's first column puts the
+    // ungrouped bucket where the channel page's column and the guide's picker
+    // do — the same three panes should not order the same groups three ways.
+    for (final name in iptvGroupsListed(library.groupNames))
       if (!library.isGroupHidden(name)) (favourites: false, name: name),
   ];
 

@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 
 import 'package:desen_ui/desen_ui.dart';
 import 'package:flutter/widgets.dart';
+import 'package:live_iptv/live_iptv.dart' show iptvUngroupedKey;
 import 'package:pure_live/l10n/translations.dart';
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show iptvNumber;
 
@@ -31,6 +32,23 @@ const double kIptvGroupRowExtent = 48;
 /// grouped — the key for those is the empty string the package leaves to the
 /// interface to word.
 String iptvGroupLabel(Translations t, String group) => group.isEmpty ? t.iptv.ungrouped : group;
+
+/// The groups a screen lists: the order it was given, with the catch-all bucket
+/// moved to the end.
+///
+/// Channels that name no group are not a group the playlist's author arranged —
+/// the package gives them the empty key and leaves the position to whoever
+/// draws the list, and the rank they get by default is wherever the first such
+/// line happens to sit in the file. An item with no rank belongs at the bottom,
+/// not between 央视 and 卫视: Fire TV's own rule for a channel with no `SortRank`
+/// is that it lands last, and alist-tvbox puts a site with no `order` at 9000,
+/// 排在最后. Every surface that offers the group dimension walks this one list,
+/// so the bucket is in one place no matter which pane the viewer is in.
+List<String> iptvGroupsListed(Iterable<String> names) => [
+  for (final name in names)
+    if (name.isNotEmpty) name,
+  if (names.any((name) => name.isEmpty)) iptvUngroupedKey,
+];
 
 /// The library's groups down a first column: every channel first, then one row
 /// per visible group, each with how many channels it holds. A vertical column
@@ -174,7 +192,10 @@ final class IptvGroupList extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.t;
     final theme = DsTheme.of(context);
-    final groups = filter.groups;
+    // Listed through one rule wherever the rows stand: the column, the panel
+    // and the picker all order the same groups the same way, so the catch-all
+    // bucket is in one place across the module's three group surfaces.
+    final groups = iptvGroupsListed(filter.groups);
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: DsSpace.s4),
       itemExtent: kIptvGroupRowExtent,

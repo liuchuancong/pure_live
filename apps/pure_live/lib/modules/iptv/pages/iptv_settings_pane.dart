@@ -14,6 +14,7 @@ import 'package:pure_live/modules/iptv/controllers/iptv_controller.dart' show ip
 import 'package:pure_live/modules/iptv/controllers/iptv_epg_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_sources_controller.dart';
 import 'package:pure_live/modules/iptv/controllers/iptv_user_agent.dart' show iptvUserAgentProvider;
+import 'package:pure_live/modules/iptv/views/iptv_group_rail.dart' show iptvGroupLabel, iptvGroupsListed;
 import 'package:pure_live/modules/iptv/views/iptv_panels.dart' show syncAllIptvSources;
 
 /// The IPTV module's own settings: the guide-update interval, the bulk
@@ -246,10 +247,17 @@ final class IptvGroupsPane extends ConsumerWidget {
         DsListSection(
           header: Text(t.settings.navIptvGroups),
           children: [
-            for (final group in groups)
+            // The same listed order the channel page's first column and the
+            // guide's picker use, and the same one wording — this pane is
+            // where a viewer hides a group, so it has to show the groups in
+            // the order they will meet them outside here.
+            for (final group in [
+              for (final name in iptvGroupsListed(groups.map((row) => row.name)))
+                groups.firstWhere((row) => row.name == name),
+            ])
               SettingsConfigRow(
                 leading: DsIcon(group.hidden ? DsIcons.eyeOff : DsIcons.eye),
-                title: group.name.isEmpty ? t.iptv.ungrouped : group.name,
+                title: iptvGroupLabel(t, group.name),
                 detail: Text(t.iptv.channelCount(count: group.channels)),
                 control: DsSwitch(
                   value: !group.hidden,
