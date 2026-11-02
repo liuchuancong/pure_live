@@ -18,6 +18,8 @@ import 'package:pure_live/features/backup/panes/backup_section_picker.dart'
 import 'package:pure_live/features/backup/webdav/webdav_accounts.dart';
 import 'package:pure_live/features/backup/webdav/webdav_client.dart';
 import 'package:pure_live/features/backup/webdav/webdav_settings.dart' show webDavVault;
+import 'package:pure_live/features/settings/surface/settings_navigation.dart' show openSettingsChild;
+import 'package:pure_live/features/settings/surface/settings_sections.dart' show SettingsSection;
 import 'package:pure_live/l10n/translations.dart';
 
 /// The WebDAV page under Backup and restore: the saved drives as a file
@@ -933,6 +935,11 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
             label: t.backup.webdavNewFolder,
             onPressed: enabled ? () => unawaited(_newFolder()) : null,
           ),
+          _ToolButton(
+            icon: DsIcons.circleQuestionMark,
+            label: t.settings.webdavHelpTitle,
+            onPressed: () => openSettingsChild(context, ref, SettingsSection.webdavHelp),
+          ),
         ],
         DsMenuAnchor(
           semanticLabel: t.common.more,
@@ -982,6 +989,12 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
               leading: const DsIcon(DsIcons.server),
               onPressed: () => unawaited(_manageAccounts()),
             ),
+            if (compact)
+              DsMenuItem(
+                label: Text(t.settings.webdavHelpTitle),
+                leading: const DsIcon(DsIcons.circleQuestionMark),
+                onPressed: () => openSettingsChild(context, ref, SettingsSection.webdavHelp),
+              ),
           ],
           builder: (context, controller, _) => DsButton.icon(
             variant: DsButtonVariant.ghost,

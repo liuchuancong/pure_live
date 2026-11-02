@@ -975,6 +975,8 @@ class Translations$backup$zh_CN {
 
 	/// zh-CN: '其他方式'
 	String get transportsSection => '其他方式';
+
+	late final Translations$backup$webdavHelp$zh_CN webdavHelp = Translations$backup$webdavHelp$zh_CN.internal(_root);
 }
 
 // Path: common
@@ -10663,6 +10665,12 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '复制路径'
 	String get storageFolderCopyPath => '复制路径';
 
+	/// zh-CN: 'WebDAV 帮助'
+	String get webdavHelpTitle => 'WebDAV 帮助';
+
+	/// zh-CN: '以坚果云为例：注册、生成应用密码、填写参数与常见问题。'
+	String get webdavHelpDescription => '以坚果云为例：注册、生成应用密码、填写参数与常见问题。';
+
 	/// zh-CN: '局域网同步'
 	String get lanSync => '局域网同步';
 
@@ -12299,6 +12307,138 @@ class Translations$wallpaper$zh_CN {
 	String get sourceSexyBeautyMioical => '随机美女·Mioical';
 }
 
+// Path: backup.webdavHelp
+class Translations$backup$webdavHelp$zh_CN {
+	Translations$backup$webdavHelp$zh_CN.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// zh-CN: '开始前说明'
+	String get introSection => '开始前说明';
+
+	/// zh-CN: '坚果云支持通过 WebDAV 备份和管理文件。本页以坚果云个人账号为示例。 免费版当前每月上传流量 1 GB、下载流量 3 GB，空间随上传的数据增长。套餐规则可能调整，依赖额度前请查看官方页面。'
+	String get introBody => '坚果云支持通过 WebDAV 备份和管理文件。本页以坚果云个人账号为示例。\n免费版当前每月上传流量 1 GB、下载流量 3 GB，空间随上传的数据增长。套餐规则可能调整，依赖额度前请查看官方页面。';
+
+	/// zh-CN: '连接参数'
+	String get paramsSection => '连接参数';
+
+	/// zh-CN: 'WebDAV 服务器地址'
+	String get serverTitle => 'WebDAV 服务器地址';
+
+	/// zh-CN: '复制服务器地址'
+	String get copyServer => '复制服务器地址';
+
+	/// zh-CN: '服务器地址已复制'
+	String get serverCopied => '服务器地址已复制';
+
+	/// zh-CN: '用户名'
+	String get usernameTitle => '用户名';
+
+	/// zh-CN: '坚果云账号邮箱'
+	String get usernameHint => '坚果云账号邮箱';
+
+	/// zh-CN: 'WebDAV 应用密码'
+	String get appPasswordTitle => 'WebDAV 应用密码';
+
+	/// zh-CN: '使用独立的应用密码，不是账号登录密码'
+	String get appPasswordHint => '使用独立的应用密码，不是账号登录密码';
+
+	/// zh-CN: '注册坚果云账号'
+	String get registerSection => '注册坚果云账号';
+
+	/// zh-CN: '1. 在浏览器打开 https://www.jianguoyun.com。 2. 选择注册并使用邮箱创建账号。 3. 按页面提示完成账号验证。'
+	String get registerSteps => '1. 在浏览器打开 https://www.jianguoyun.com。\n2. 选择注册并使用邮箱创建账号。\n3. 按页面提示完成账号验证。';
+
+	/// zh-CN: '在注册页面完成要求的账号信息。'
+	String get registerForm => '在注册页面完成要求的账号信息。';
+
+	/// zh-CN: '在网页端登录'
+	String get loginSection => '在网页端登录';
+
+	/// zh-CN: '1. 应用密码需要在坚果云网页端管理。 2. 使用已注册账号和账号密码登录。'
+	String get loginSteps => '1. 应用密码需要在坚果云网页端管理。\n2. 使用已注册账号和账号密码登录。';
+
+	/// zh-CN: '生成独立应用密码'
+	String get passwordSection => '生成独立应用密码';
+
+	/// zh-CN: '1. 打开账号菜单并选择“账户信息”。'
+	String get accountSteps => '1. 打开账号菜单并选择“账户信息”。';
+
+	/// zh-CN: '2. 打开“安全选项”。'
+	String get securitySteps => '2. 打开“安全选项”。';
+
+	/// zh-CN: '3. 找到“第三方应用管理”。 4. 添加应用密码，使用 Pure Live 等易识别名称，然后生成密码。'
+	String get generateSteps => '3. 找到“第三方应用管理”。\n4. 添加应用密码，使用 Pure Live 等易识别名称，然后生成密码。';
+
+	/// zh-CN: '5. 立即复制并妥善保存生成的密码；密码丢失或被撤销后重新创建。'
+	String get passwordOnce => '5. 立即复制并妥善保存生成的密码；密码丢失或被撤销后重新创建。';
+
+	/// zh-CN: '在 Pure Live 中填写配置'
+	String get genericSection => '在 Pure Live 中填写配置';
+
+	/// zh-CN: '名称：用于识别此配置的任意名称 地址：https://dav.jianguoyun.com/dav/ 或已存在的子目录地址 用户名：坚果云账号邮箱 密码：独立的应用密码 使用其他 WebDAV 服务时，请填写对应服务商的目录地址和凭据；Pure Live 会分别保存每项配置。'
+	String get genericBody => '名称：用于识别此配置的任意名称\n地址：https://dav.jianguoyun.com/dav/ 或已存在的子目录地址\n用户名：坚果云账号邮箱\n密码：独立的应用密码\n\n使用其他 WebDAV 服务时，请填写对应服务商的目录地址和凭据；Pure Live 会分别保存每项配置。';
+
+	/// zh-CN: '常见问题'
+	String get issuesSection => '常见问题';
+
+	/// zh-CN: '1. 服务器拒绝账号或密码'
+	String get issueCredentialsQ => '1. 服务器拒绝账号或密码';
+
+	/// zh-CN: '核对账号邮箱并使用独立应用密码；应用密码被撤销后需要重新生成。'
+	String get issueCredentialsA => '核对账号邮箱并使用独立应用密码；应用密码被撤销后需要重新生成。';
+
+	/// zh-CN: '2. 浏览器打开地址时显示异常'
+	String get issueBrowserQ => '2. 浏览器打开地址时显示异常';
+
+	/// zh-CN: 'WebDAV 地址用于 WebDAV 客户端，普通浏览器可能显示认证提示或错误；请在 Pure Live 内验证。'
+	String get issueBrowserA => 'WebDAV 地址用于 WebDAV 客户端，普通浏览器可能显示认证提示或错误；请在 Pure Live 内验证。';
+
+	/// zh-CN: '3. 上传或恢复失败'
+	String get issueUploadQ => '3. 上传或恢复失败';
+
+	/// zh-CN: '检查账号额度、目录写入权限、当前网络连接，以及远端文件是否仍然存在。'
+	String get issueUploadA => '检查账号额度、目录写入权限、当前网络连接，以及远端文件是否仍然存在。';
+
+	/// zh-CN: '4. 连接超时'
+	String get issueTimeoutQ => '4. 连接超时';
+
+	/// zh-CN: '重新核对完整的 HTTPS 目录地址和当前网络或代理路径，再使用页面内的重试操作。'
+	String get issueTimeoutA => '重新核对完整的 HTTPS 目录地址和当前网络或代理路径，再使用页面内的重试操作。';
+
+	/// zh-CN: '5. 撤销访问或重置密码'
+	String get issueRevokeQ => '5. 撤销访问或重置密码';
+
+	/// zh-CN: '在“第三方应用管理”中删除对应条目，生成新应用密码，并更新 Pure Live 配置。'
+	String get issueRevokeA => '在“第三方应用管理”中删除对应条目，生成新应用密码，并更新 Pure Live 配置。';
+
+	/// zh-CN: '当前服务限制'
+	String get limitsSection => '当前服务限制';
+
+	/// zh-CN: '坚果云官方 WebDAV 帮助目前列出：默认单文件上传上限 500 MB；免费账号每 30 分钟最多 600 次请求，付费账号 1500 次；单次目录响应最多 750 项。服务规则可能调整，请以最新官方帮助为准。'
+	String get limitsBody => '坚果云官方 WebDAV 帮助目前列出：默认单文件上传上限 500 MB；免费账号每 30 分钟最多 600 次请求，付费账号 1500 次；单次目录响应最多 750 项。服务规则可能调整，请以最新官方帮助为准。';
+
+	/// zh-CN: '快速参考'
+	String get summarySection => '快速参考';
+
+	/// zh-CN: '地址：https://dav.jianguoyun.com/dav/ 用户名：坚果云账号邮箱 密码：坚果云生成的独立应用密码'
+	String get summaryBody => '地址：https://dav.jianguoyun.com/dav/\n用户名：坚果云账号邮箱\n密码：坚果云生成的独立应用密码';
+
+	/// zh-CN: '打开官方 WebDAV 帮助'
+	String get openOfficial => '打开官方 WebDAV 帮助';
+
+	/// zh-CN: '设置截图 {number: int}'
+	String screenshotLabel({required int number}) => '设置截图 ${number}';
+
+	/// zh-CN: '示例图片加载失败'
+	String get imageFailed => '示例图片加载失败';
+
+	/// zh-CN: '关闭'
+	String get closeImage => '关闭';
+}
+
 /// The flat map containing all translations for locale <zh-CN>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -12602,6 +12742,47 @@ extension on Translations {
 			'backup.secretsSwitchTitle' => '备份与同步时包含账号凭据',
 			'backup.secretsSwitchDescription' => '关闭时任何备份、上传与局域网同步都不会带上 Cookie 与密码；打开后在挑选内容时才会出现该项。',
 			'backup.transportsSection' => '其他方式',
+			'backup.webdavHelp.introSection' => '开始前说明',
+			'backup.webdavHelp.introBody' => '坚果云支持通过 WebDAV 备份和管理文件。本页以坚果云个人账号为示例。\n免费版当前每月上传流量 1 GB、下载流量 3 GB，空间随上传的数据增长。套餐规则可能调整，依赖额度前请查看官方页面。',
+			'backup.webdavHelp.paramsSection' => '连接参数',
+			'backup.webdavHelp.serverTitle' => 'WebDAV 服务器地址',
+			'backup.webdavHelp.copyServer' => '复制服务器地址',
+			'backup.webdavHelp.serverCopied' => '服务器地址已复制',
+			'backup.webdavHelp.usernameTitle' => '用户名',
+			'backup.webdavHelp.usernameHint' => '坚果云账号邮箱',
+			'backup.webdavHelp.appPasswordTitle' => 'WebDAV 应用密码',
+			'backup.webdavHelp.appPasswordHint' => '使用独立的应用密码，不是账号登录密码',
+			'backup.webdavHelp.registerSection' => '注册坚果云账号',
+			'backup.webdavHelp.registerSteps' => '1. 在浏览器打开 https://www.jianguoyun.com。\n2. 选择注册并使用邮箱创建账号。\n3. 按页面提示完成账号验证。',
+			'backup.webdavHelp.registerForm' => '在注册页面完成要求的账号信息。',
+			'backup.webdavHelp.loginSection' => '在网页端登录',
+			'backup.webdavHelp.loginSteps' => '1. 应用密码需要在坚果云网页端管理。\n2. 使用已注册账号和账号密码登录。',
+			'backup.webdavHelp.passwordSection' => '生成独立应用密码',
+			'backup.webdavHelp.accountSteps' => '1. 打开账号菜单并选择“账户信息”。',
+			'backup.webdavHelp.securitySteps' => '2. 打开“安全选项”。',
+			'backup.webdavHelp.generateSteps' => '3. 找到“第三方应用管理”。\n4. 添加应用密码，使用 Pure Live 等易识别名称，然后生成密码。',
+			'backup.webdavHelp.passwordOnce' => '5. 立即复制并妥善保存生成的密码；密码丢失或被撤销后重新创建。',
+			'backup.webdavHelp.genericSection' => '在 Pure Live 中填写配置',
+			'backup.webdavHelp.genericBody' => '名称：用于识别此配置的任意名称\n地址：https://dav.jianguoyun.com/dav/ 或已存在的子目录地址\n用户名：坚果云账号邮箱\n密码：独立的应用密码\n\n使用其他 WebDAV 服务时，请填写对应服务商的目录地址和凭据；Pure Live 会分别保存每项配置。',
+			'backup.webdavHelp.issuesSection' => '常见问题',
+			'backup.webdavHelp.issueCredentialsQ' => '1. 服务器拒绝账号或密码',
+			'backup.webdavHelp.issueCredentialsA' => '核对账号邮箱并使用独立应用密码；应用密码被撤销后需要重新生成。',
+			'backup.webdavHelp.issueBrowserQ' => '2. 浏览器打开地址时显示异常',
+			'backup.webdavHelp.issueBrowserA' => 'WebDAV 地址用于 WebDAV 客户端，普通浏览器可能显示认证提示或错误；请在 Pure Live 内验证。',
+			'backup.webdavHelp.issueUploadQ' => '3. 上传或恢复失败',
+			'backup.webdavHelp.issueUploadA' => '检查账号额度、目录写入权限、当前网络连接，以及远端文件是否仍然存在。',
+			'backup.webdavHelp.issueTimeoutQ' => '4. 连接超时',
+			'backup.webdavHelp.issueTimeoutA' => '重新核对完整的 HTTPS 目录地址和当前网络或代理路径，再使用页面内的重试操作。',
+			'backup.webdavHelp.issueRevokeQ' => '5. 撤销访问或重置密码',
+			'backup.webdavHelp.issueRevokeA' => '在“第三方应用管理”中删除对应条目，生成新应用密码，并更新 Pure Live 配置。',
+			'backup.webdavHelp.limitsSection' => '当前服务限制',
+			'backup.webdavHelp.limitsBody' => '坚果云官方 WebDAV 帮助目前列出：默认单文件上传上限 500 MB；免费账号每 30 分钟最多 600 次请求，付费账号 1500 次；单次目录响应最多 750 项。服务规则可能调整，请以最新官方帮助为准。',
+			'backup.webdavHelp.summarySection' => '快速参考',
+			'backup.webdavHelp.summaryBody' => '地址：https://dav.jianguoyun.com/dav/\n用户名：坚果云账号邮箱\n密码：坚果云生成的独立应用密码',
+			'backup.webdavHelp.openOfficial' => '打开官方 WebDAV 帮助',
+			'backup.webdavHelp.screenshotLabel' => ({required int number}) => '设置截图 ${number}',
+			'backup.webdavHelp.imageFailed' => '示例图片加载失败',
+			'backup.webdavHelp.closeImage' => '关闭',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => '这里还没有内容',
 			'common.comingSoon' => '即将推出',
@@ -12778,6 +12959,8 @@ extension on Translations {
 			'hongguo.episodesJump' => '跳转集数',
 			'hongguo.episodesPrevious' => '上一组',
 			'hongguo.episodesNext' => '下一组',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.plays' => '播放',
 			'hongguo.followers' => '追剧',
 			'hongguo.todayTag' => '今日',
@@ -12819,8 +13002,6 @@ extension on Translations {
 			'hongguo.localTab' => '本机',
 			'hongguo.accountTab' => '账户',
 			'hongguo.favoritesLocalEmpty' => '在剧集详情中加入本机收藏，喜欢的剧就会出现在这里',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.favoritesAccountEmpty' => '尚未读取账户收藏',
 			'hongguo.favoritesAccountOff' => '登录红果账号后，在这里同步手机收藏',
 			'hongguo.historyLocalEmpty' => '看过的剧和进度会出现在这里',
@@ -13292,6 +13473,8 @@ extension on Translations {
 			'music.uiSpectrumDesc' => '播放详情页舞台上的实时频谱',
 			'music.uiSpectrumStyle' => '频谱样式',
 			'music.uiSpectrumStyleDesc' => '柱状、圆形或波形；暂停、静音或没有声音时静止',
+			_ => null,
+		} ?? switch (path) {
 			'music.spectrumStyleBars' => '柱状',
 			'music.spectrumStyleCircle' => '圆形',
 			'music.spectrumStyleWave' => '波形',
@@ -13333,8 +13516,6 @@ extension on Translations {
 			'music.repositionTitle' => ({required Object count}) => '将已选的 ${count} 首歌曲的位置调整到：',
 			'music.repositionHint' => '请输入要调整到第几个位置',
 			'music.selectionMoveTo' => '移动到',
-			_ => null,
-		} ?? switch (path) {
 			'music.moveDoneCount' => ({required Object count, required Object name}) => '已移动 ${count} 首到「${name}」。',
 			'music.songlistSearchUnsupported' => '当前音源暂不支持歌单搜索。',
 			'music.defaultSource' => '默认音源',
@@ -13806,6 +13987,8 @@ extension on Translations {
 			'music.eqTagPop' => '流行 / 爵士乐',
 			'music.eqTagRock' => '摇滚 / 硬摇滚',
 			'music.eqTagClassical' => '古典 / 轻音乐',
+			_ => null,
+		} ?? switch (path) {
 			'music.eqTagJazz' => '爵士 / 蓝调',
 			'music.eqTagElectronic' => '电子 / 舞曲',
 			'music.eqTagBass' => '重低音 / 书房',
@@ -13847,8 +14030,6 @@ extension on Translations {
 			'music.eqNodesAdd' => '添加节点',
 			'music.eqNodeFrequency' => '频率',
 			'music.eqNodeQ' => 'Q 值',
-			_ => null,
-		} ?? switch (path) {
 			'music.eqNodeGain' => '增益',
 			'music.eqCompareTitle' => 'A/B 对比',
 			'music.eqCompare' => '按住试听原始声音',
@@ -14320,6 +14501,8 @@ extension on Translations {
 			'room.replayed' => '之前发的',
 			'room.share' => '分享',
 			'room.shareFailed' => '分享失败',
+			_ => null,
+		} ?? switch (path) {
 			'room.openIn' => ({required Object platform}) => '在 ${platform} 打开',
 			'room.openUnavailable' => '该平台没有提供可打开的链接',
 			'room.openFailed' => '无法打开链接',
@@ -14361,8 +14544,6 @@ extension on Translations {
 			'room.orientationHint' => '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。',
 			'room.orientationHintWide' => '这是一路超宽画面：可以按原比例铺满宽度，或沿用带上下留边的默认画框，也可以固定为竖屏或横屏。',
 			'room.orientationAutomatic' => '自动',
-			_ => null,
-		} ?? switch (path) {
 			'room.orientationPortrait' => '竖屏',
 			'room.orientationLandscape' => '横屏',
 			'room.orientationFillWidth' => '铺满宽度',
@@ -14834,6 +15015,8 @@ extension on Translations {
 			'settings.danmakuSaveGroup' => '弹幕保存格式',
 			'settings.danmakuSaveDescription' => '录制与下载视频时，弹幕按所选格式各存一份同名文件；关闭全部选项时保留 XML。',
 			'settings.danmakuSaveFormats' => '保存格式',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuSaveExtension' => '扩展名',
 			'settings.danmakuFormatXml' => 'XML 弹幕',
 			'settings.danmakuFormatJson' => 'JSON 弹幕',
@@ -14875,8 +15058,6 @@ extension on Translations {
 			'settings.traySoundOn' => '打开声音',
 			'settings.traySoundOff' => '关闭声音',
 			'settings.trayScreenshotSaved' => ({required Object path}) => '已保存到 ${path}',
-			_ => null,
-		} ?? switch (path) {
 			'settings.trayScreenshotFailed' => '截图失败：没有正在播放的房间或引擎不支持',
 			'settings.font' => '字体',
 			'settings.fontDescription' => 'MiSans 随应用打包，也可换国内或国外字体。',
@@ -15348,6 +15529,8 @@ extension on Translations {
 			'settings.backgroundFit' => '填充方式',
 			'settings.backgroundFitDescription' => '图片或视频铺满窗口的方式；纯色与渐变不适用。',
 			'settings.backgroundFitCover' => '裁切填满',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundFitContain' => '完整显示',
 			'settings.backgroundFitFill' => '拉伸填满',
 			'settings.backgroundFitWidth' => '适应宽度',
@@ -15389,8 +15572,6 @@ extension on Translations {
 			'settings.releasedOn' => ({required Object date}) => '发布于 ${date}',
 			'settings.prerelease' => '预览版',
 			'settings.updateLater' => '稍后再说',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadInstaller' => '下载安装包',
 			'settings.downloadOtherBuilds' => '其他构建',
 			'settings.downloadTitle' => '获取安装包',
@@ -15801,6 +15982,8 @@ extension on Translations {
 			'settings.hongguoDownloadTitle' => '视频下载',
 			'settings.hongguoDownloadDescription' => '下载队列、清晰度与保存目录',
 			'settings.storageFolderCopyPath' => '复制路径',
+			'settings.webdavHelpTitle' => 'WebDAV 帮助',
+			'settings.webdavHelpDescription' => '以坚果云为例：注册、生成应用密码、填写参数与常见问题。',
 			'settings.lanSync' => '局域网同步',
 			'settings.lanSyncDescription' => '与同一网络里的其他设备同步关注、历史、设置等，按内容勾选与授权。',
 			'settings.lanSyncEnable' => '启用局域网同步',
@@ -15860,6 +16043,8 @@ extension on Translations {
 			'settings.lanSyncScopeMusicDesc' => '音乐播放器的偏好。',
 			'settings.lanSyncScopeRecorder' => '录制',
 			'settings.lanSyncScopeRecorderDesc' => '录制器的偏好。',
+			_ => null,
+		} ?? switch (path) {
 			'settings.lanSyncScopeModules' => '模块',
 			'settings.lanSyncScopeModulesDesc' => 'IPTV、红果、点播、站点与浏览的偏好。',
 			'settings.lanSyncScopeSecrets' => '账号凭据',
@@ -15903,8 +16088,6 @@ extension on Translations {
 			'shield.keywordFieldHint' => '输入要屏蔽的关键词',
 			'shield.userFieldHint' => '输入要屏蔽的用户名',
 			'shield.add' => '添加',
-			_ => null,
-		} ?? switch (path) {
 			'shield.keywordsEmpty' => '还没有屏蔽关键词',
 			'shield.usersEmpty' => '还没有屏蔽的用户',
 			'shield.clear' => '清空全部',

@@ -1330,6 +1330,8 @@
   "hongguoDownloadTitle": "Downloads",
   "hongguoDownloadDescription": "The download queue, quality and save folder",
   "storageFolderCopyPath": "Copy path",
+  "webdavHelpTitle": "WebDAV help",
+  "webdavHelpDescription": "Jianguoyun as the example: sign up, generate an app password, fill in the details, troubleshoot.",
   "lanSync": "LAN sync",
   "lanSyncDescription": "Sync follows, history, settings and more with devices on the same network, picked and granted per content.",
   "lanSyncEnable": "Enable LAN sync",

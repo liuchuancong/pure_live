@@ -383,6 +383,7 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get secretsSwitchTitle => 'Include account credentials in backups and syncs';
 	@override String get secretsSwitchDescription => 'Off, no backup, upload or LAN sync carries cookies or passwords; on, the section appears when you pick what to include.';
 	@override String get transportsSection => 'Other ways';
+	@override late final _Translations$backup$webdavHelp$en webdavHelp = _Translations$backup$webdavHelp$en._(_root);
 }
 
 // Path: common
@@ -3696,6 +3697,8 @@ class _Translations$settings$en extends Translations$settings$zh_CN {
 	@override String get hongguoDownloadTitle => 'Downloads';
 	@override String get hongguoDownloadDescription => 'The download queue, quality and save folder';
 	@override String get storageFolderCopyPath => 'Copy path';
+	@override String get webdavHelpTitle => 'WebDAV help';
+	@override String get webdavHelpDescription => 'Jianguoyun as the example: sign up, generate an app password, fill in the details, troubleshoot.';
 	@override String get lanSync => 'LAN sync';
 	@override String get lanSyncDescription => 'Sync follows, history, settings and more with devices on the same network, picked and granted per content.';
 	@override String get lanSyncEnable => 'Enable LAN sync';
@@ -4273,6 +4276,56 @@ class _Translations$wallpaper$en extends Translations$wallpaper$zh_CN {
 	@override String get sourceSexyBeautyMioical => 'Beauty · Mioical';
 }
 
+// Path: backup.webdavHelp
+class _Translations$backup$webdavHelp$en extends Translations$backup$webdavHelp$zh_CN {
+	_Translations$backup$webdavHelp$en._(TranslationsEn root) : this._root = root, super.internal(root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get introSection => 'Before you start';
+	@override String get introBody => 'Jianguoyun supports WebDAV access for backup and file management. This guide uses a personal Jianguoyun account as an example.\nFree plan: 1 GB uploads/month and 3 GB downloads/month. Storage grows with uploaded data. Plans can change; check the official pages before relying on a quota.';
+	@override String get paramsSection => 'Connection details';
+	@override String get serverTitle => 'WebDAV server address';
+	@override String get copyServer => 'Copy server address';
+	@override String get serverCopied => 'Server address copied';
+	@override String get usernameTitle => 'Username';
+	@override String get usernameHint => 'Your Jianguoyun account email';
+	@override String get appPasswordTitle => 'WebDAV app password';
+	@override String get appPasswordHint => 'Use the dedicated app password, not your account password';
+	@override String get registerSection => 'Create a Jianguoyun account';
+	@override String get registerSteps => '1. Open https://www.jianguoyun.com in a browser.\n2. Select Sign up and register with an email address.\n3. Complete account verification when prompted.';
+	@override String get registerForm => 'Complete the requested account details on the registration page.';
+	@override String get loginSection => 'Sign in on the web';
+	@override String get loginSteps => '1. App passwords are managed on the Jianguoyun website.\n2. Sign in with your registered account and account password.';
+	@override String get passwordSection => 'Generate a dedicated app password';
+	@override String get accountSteps => '1. Open the account menu and select Account information.';
+	@override String get securitySteps => '2. Open Security options.';
+	@override String get generateSteps => '3. Find Third-party app management.\n4. Add an app password, give it a recognizable name such as Pure Live, and generate it.';
+	@override String get passwordOnce => '5. Copy the generated password immediately and store it securely. Create a new one if it is lost or revoked.';
+	@override String get genericSection => 'Enter the configuration in Pure Live';
+	@override String get genericBody => 'Name: any label that identifies this configuration\nAddress: https://dav.jianguoyun.com/dav/ or an existing subdirectory URL\nUsername: your Jianguoyun account email\nPassword: the dedicated app password\n\nFor another WebDAV provider, use that provider\'s directory URL and credentials. Pure Live keeps each configuration separate.';
+	@override String get issuesSection => 'Troubleshooting';
+	@override String get issueCredentialsQ => '1. The server rejects the credentials';
+	@override String get issueCredentialsA => 'Check the account email and use the dedicated app password. Regenerate the app password if it was revoked.';
+	@override String get issueBrowserQ => '2. The address looks different in a browser';
+	@override String get issueBrowserA => 'A WebDAV endpoint is intended for a WebDAV client and may show an authentication prompt or an error in a normal browser. Verify it inside Pure Live.';
+	@override String get issueUploadQ => '3. Upload or restore fails';
+	@override String get issueUploadA => 'Check the account quota, directory write access, available network connection, and whether the remote file still exists.';
+	@override String get issueTimeoutQ => '4. The connection times out';
+	@override String get issueTimeoutA => 'Recheck the complete HTTPS directory URL and current network or proxy route, then retry from the inline error action.';
+	@override String get issueRevokeQ => '5. Revoke access or reset a password';
+	@override String get issueRevokeA => 'Delete the matching entry in Third-party app management, generate a new app password, and update the Pure Live configuration.';
+	@override String get limitsSection => 'Current provider limits';
+	@override String get limitsBody => 'Jianguoyun\'s official WebDAV help currently lists a default 500 MB upload limit, up to 600 requests per 30 minutes for free accounts (1,500 for paid accounts), and up to 750 entries per directory response. Provider rules can change; consult the official help page for the latest limits.';
+	@override String get summarySection => 'Quick reference';
+	@override String get summaryBody => 'Address: https://dav.jianguoyun.com/dav/\nUsername: your Jianguoyun account email\nPassword: the dedicated app password generated by Jianguoyun';
+	@override String get openOfficial => 'Open official WebDAV help';
+	@override String screenshotLabel({required int number}) => 'Setup screenshot ${number}';
+	@override String get imageFailed => 'Example image could not be loaded';
+	@override String get closeImage => 'Close';
+}
+
 /// The flat map containing all translations for locale <en>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -4576,6 +4629,47 @@ extension on TranslationsEn {
 			'backup.secretsSwitchTitle' => 'Include account credentials in backups and syncs',
 			'backup.secretsSwitchDescription' => 'Off, no backup, upload or LAN sync carries cookies or passwords; on, the section appears when you pick what to include.',
 			'backup.transportsSection' => 'Other ways',
+			'backup.webdavHelp.introSection' => 'Before you start',
+			'backup.webdavHelp.introBody' => 'Jianguoyun supports WebDAV access for backup and file management. This guide uses a personal Jianguoyun account as an example.\nFree plan: 1 GB uploads/month and 3 GB downloads/month. Storage grows with uploaded data. Plans can change; check the official pages before relying on a quota.',
+			'backup.webdavHelp.paramsSection' => 'Connection details',
+			'backup.webdavHelp.serverTitle' => 'WebDAV server address',
+			'backup.webdavHelp.copyServer' => 'Copy server address',
+			'backup.webdavHelp.serverCopied' => 'Server address copied',
+			'backup.webdavHelp.usernameTitle' => 'Username',
+			'backup.webdavHelp.usernameHint' => 'Your Jianguoyun account email',
+			'backup.webdavHelp.appPasswordTitle' => 'WebDAV app password',
+			'backup.webdavHelp.appPasswordHint' => 'Use the dedicated app password, not your account password',
+			'backup.webdavHelp.registerSection' => 'Create a Jianguoyun account',
+			'backup.webdavHelp.registerSteps' => '1. Open https://www.jianguoyun.com in a browser.\n2. Select Sign up and register with an email address.\n3. Complete account verification when prompted.',
+			'backup.webdavHelp.registerForm' => 'Complete the requested account details on the registration page.',
+			'backup.webdavHelp.loginSection' => 'Sign in on the web',
+			'backup.webdavHelp.loginSteps' => '1. App passwords are managed on the Jianguoyun website.\n2. Sign in with your registered account and account password.',
+			'backup.webdavHelp.passwordSection' => 'Generate a dedicated app password',
+			'backup.webdavHelp.accountSteps' => '1. Open the account menu and select Account information.',
+			'backup.webdavHelp.securitySteps' => '2. Open Security options.',
+			'backup.webdavHelp.generateSteps' => '3. Find Third-party app management.\n4. Add an app password, give it a recognizable name such as Pure Live, and generate it.',
+			'backup.webdavHelp.passwordOnce' => '5. Copy the generated password immediately and store it securely. Create a new one if it is lost or revoked.',
+			'backup.webdavHelp.genericSection' => 'Enter the configuration in Pure Live',
+			'backup.webdavHelp.genericBody' => 'Name: any label that identifies this configuration\nAddress: https://dav.jianguoyun.com/dav/ or an existing subdirectory URL\nUsername: your Jianguoyun account email\nPassword: the dedicated app password\n\nFor another WebDAV provider, use that provider\'s directory URL and credentials. Pure Live keeps each configuration separate.',
+			'backup.webdavHelp.issuesSection' => 'Troubleshooting',
+			'backup.webdavHelp.issueCredentialsQ' => '1. The server rejects the credentials',
+			'backup.webdavHelp.issueCredentialsA' => 'Check the account email and use the dedicated app password. Regenerate the app password if it was revoked.',
+			'backup.webdavHelp.issueBrowserQ' => '2. The address looks different in a browser',
+			'backup.webdavHelp.issueBrowserA' => 'A WebDAV endpoint is intended for a WebDAV client and may show an authentication prompt or an error in a normal browser. Verify it inside Pure Live.',
+			'backup.webdavHelp.issueUploadQ' => '3. Upload or restore fails',
+			'backup.webdavHelp.issueUploadA' => 'Check the account quota, directory write access, available network connection, and whether the remote file still exists.',
+			'backup.webdavHelp.issueTimeoutQ' => '4. The connection times out',
+			'backup.webdavHelp.issueTimeoutA' => 'Recheck the complete HTTPS directory URL and current network or proxy route, then retry from the inline error action.',
+			'backup.webdavHelp.issueRevokeQ' => '5. Revoke access or reset a password',
+			'backup.webdavHelp.issueRevokeA' => 'Delete the matching entry in Third-party app management, generate a new app password, and update the Pure Live configuration.',
+			'backup.webdavHelp.limitsSection' => 'Current provider limits',
+			'backup.webdavHelp.limitsBody' => 'Jianguoyun\'s official WebDAV help currently lists a default 500 MB upload limit, up to 600 requests per 30 minutes for free accounts (1,500 for paid accounts), and up to 750 entries per directory response. Provider rules can change; consult the official help page for the latest limits.',
+			'backup.webdavHelp.summarySection' => 'Quick reference',
+			'backup.webdavHelp.summaryBody' => 'Address: https://dav.jianguoyun.com/dav/\nUsername: your Jianguoyun account email\nPassword: the dedicated app password generated by Jianguoyun',
+			'backup.webdavHelp.openOfficial' => 'Open official WebDAV help',
+			'backup.webdavHelp.screenshotLabel' => ({required int number}) => 'Setup screenshot ${number}',
+			'backup.webdavHelp.imageFailed' => 'Example image could not be loaded',
+			'backup.webdavHelp.closeImage' => 'Close',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => 'Nothing here yet',
 			'common.comingSoon' => 'Coming soon',
@@ -4752,6 +4846,8 @@ extension on TranslationsEn {
 			'hongguo.episodesJump' => 'Jump to episode',
 			'hongguo.episodesPrevious' => 'Previous group',
 			'hongguo.episodesNext' => 'Next group',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.plays' => 'plays',
 			'hongguo.followers' => 'followers',
 			'hongguo.todayTag' => 'New',
@@ -4793,8 +4889,6 @@ extension on TranslationsEn {
 			'hongguo.localTab' => 'This device',
 			'hongguo.accountTab' => 'Account',
 			'hongguo.favoritesLocalEmpty' => 'Favorite a series on its page and it lands here',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.favoritesAccountEmpty' => 'Account favorites not read yet',
 			'hongguo.favoritesAccountOff' => 'Sign in to sync your phone favorites here',
 			'hongguo.historyLocalEmpty' => 'What you watched, and where you stopped, lands here',
@@ -5266,6 +5360,8 @@ extension on TranslationsEn {
 			'music.uiSpectrumDesc' => 'The live spectrum on the player page\'s stage',
 			'music.uiSpectrumStyle' => 'Spectrum style',
 			'music.uiSpectrumStyleDesc' => 'Bars, a ring, or a wave; still while paused, muted, or silent',
+			_ => null,
+		} ?? switch (path) {
 			'music.spectrumStyleBars' => 'Bars',
 			'music.spectrumStyleCircle' => 'Ring',
 			'music.spectrumStyleWave' => 'Wave',
@@ -5307,8 +5403,6 @@ extension on TranslationsEn {
 			'music.repositionTitle' => ({required Object count}) => 'Move the ${count} selected songs to position:',
 			'music.repositionHint' => 'Type the position to move them to',
 			'music.selectionMoveTo' => 'Move to',
-			_ => null,
-		} ?? switch (path) {
 			'music.moveDoneCount' => ({required Object count, required Object name}) => 'Moved ${count} tracks to "${name}".',
 			'music.songlistSearchUnsupported' => 'This source cannot search songlists yet.',
 			'music.defaultSource' => 'Default source',
@@ -5780,6 +5874,8 @@ extension on TranslationsEn {
 			'music.eqTagPop' => 'Pop / vocal',
 			'music.eqTagRock' => 'Rock / hard rock',
 			'music.eqTagClassical' => 'Classical / light',
+			_ => null,
+		} ?? switch (path) {
 			'music.eqTagJazz' => 'Jazz / blues',
 			'music.eqTagElectronic' => 'Electronic / dance',
 			'music.eqTagBass' => 'Bass / study',
@@ -5821,8 +5917,6 @@ extension on TranslationsEn {
 			'music.eqNodesAdd' => 'Add node',
 			'music.eqNodeFrequency' => 'Frequency',
 			'music.eqNodeQ' => 'Q',
-			_ => null,
-		} ?? switch (path) {
 			'music.eqNodeGain' => 'Gain',
 			'music.eqCompareTitle' => 'A/B compare',
 			'music.eqCompare' => 'Hold to hear the original',
@@ -6294,6 +6388,8 @@ extension on TranslationsEn {
 			'room.replayed' => 'sent before',
 			'room.share' => 'Share',
 			'room.shareFailed' => 'The share failed',
+			_ => null,
+		} ?? switch (path) {
 			'room.openIn' => ({required Object platform}) => 'Open in ${platform}',
 			'room.openUnavailable' => 'This platform offers no link to open',
 			'room.openFailed' => 'The link could not be opened',
@@ -6335,8 +6431,6 @@ extension on TranslationsEn {
 			'room.orientationHint' => 'Follow the picture’s own shape, or fix this room to portrait or landscape.',
 			'room.orientationHintWide' => 'This picture is ultra-wide: fill the width at its own ratio, keep the default frame with its bars, or fix this room to portrait or landscape.',
 			'room.orientationAutomatic' => 'Automatic',
-			_ => null,
-		} ?? switch (path) {
 			'room.orientationPortrait' => 'Portrait',
 			'room.orientationLandscape' => 'Landscape',
 			'room.orientationFillWidth' => 'Fill width',
@@ -6808,6 +6902,8 @@ extension on TranslationsEn {
 			'settings.danmakuSaveGroup' => 'Danmaku save formats',
 			'settings.danmakuSaveDescription' => 'Recordings and downloaded videos save the danmaku in each chosen format beside the video; XML stays on when everything else is off.',
 			'settings.danmakuSaveFormats' => 'Saved formats',
+			_ => null,
+		} ?? switch (path) {
 			'settings.danmakuSaveExtension' => 'Extension',
 			'settings.danmakuFormatXml' => 'XML danmaku',
 			'settings.danmakuFormatJson' => 'JSON danmaku',
@@ -6849,8 +6945,6 @@ extension on TranslationsEn {
 			'settings.traySoundOn' => 'Unmute sound',
 			'settings.traySoundOff' => 'Mute sound',
 			'settings.trayScreenshotSaved' => ({required Object path}) => 'Saved to ${path}',
-			_ => null,
-		} ?? switch (path) {
 			'settings.trayScreenshotFailed' => 'Screenshot failed: no room is playing, or the engine cannot capture',
 			'settings.font' => 'Font',
 			'settings.fontDescription' => 'MiSans ships with the app; swap in a domestic or overseas family.',
@@ -7322,6 +7416,8 @@ extension on TranslationsEn {
 			'settings.backgroundFit' => 'Fit',
 			'settings.backgroundFitDescription' => 'How an image or video fills the window; flat colours have nothing to fit.',
 			'settings.backgroundFitCover' => 'Cover',
+			_ => null,
+		} ?? switch (path) {
 			'settings.backgroundFitContain' => 'Contain',
 			'settings.backgroundFitFill' => 'Fill',
 			'settings.backgroundFitWidth' => 'Fit width',
@@ -7363,8 +7459,6 @@ extension on TranslationsEn {
 			'settings.releasedOn' => ({required Object date}) => 'Released ${date}',
 			'settings.prerelease' => 'Pre-release',
 			'settings.updateLater' => 'Later',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadInstaller' => 'Download the installer',
 			'settings.downloadOtherBuilds' => 'Other builds',
 			'settings.downloadTitle' => 'Downloads',
@@ -7775,6 +7869,8 @@ extension on TranslationsEn {
 			'settings.hongguoDownloadTitle' => 'Downloads',
 			'settings.hongguoDownloadDescription' => 'The download queue, quality and save folder',
 			'settings.storageFolderCopyPath' => 'Copy path',
+			'settings.webdavHelpTitle' => 'WebDAV help',
+			'settings.webdavHelpDescription' => 'Jianguoyun as the example: sign up, generate an app password, fill in the details, troubleshoot.',
 			'settings.lanSync' => 'LAN sync',
 			'settings.lanSyncDescription' => 'Sync follows, history, settings and more with devices on the same network, picked and granted per content.',
 			'settings.lanSyncEnable' => 'Enable LAN sync',
@@ -7834,6 +7930,8 @@ extension on TranslationsEn {
 			'settings.lanSyncScopeMusicDesc' => 'Music player preferences.',
 			'settings.lanSyncScopeRecorder' => 'Recorder',
 			'settings.lanSyncScopeRecorderDesc' => 'Recorder preferences.',
+			_ => null,
+		} ?? switch (path) {
 			'settings.lanSyncScopeModules' => 'Modules',
 			'settings.lanSyncScopeModulesDesc' => 'IPTV, Hongguo, VOD, sites and browsing preferences.',
 			'settings.lanSyncScopeSecrets' => 'Account credentials',
@@ -7877,8 +7975,6 @@ extension on TranslationsEn {
 			'shield.keywordFieldHint' => 'Type a keyword to block',
 			'shield.userFieldHint' => 'Type a user name to block',
 			'shield.add' => 'Add',
-			_ => null,
-		} ?? switch (path) {
 			'shield.keywordsEmpty' => 'No blocked keywords yet',
 			'shield.usersEmpty' => 'No blocked users yet',
 			'shield.clear' => 'Clear all',

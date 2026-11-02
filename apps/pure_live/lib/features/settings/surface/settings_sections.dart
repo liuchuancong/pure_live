@@ -64,6 +64,7 @@ enum SettingsSection {
   logs(DsIcons.terminal),
   backup(DsIcons.databaseBackup),
   webdavSync(DsIcons.cloudUpload),
+  webdavHelp(DsIcons.circleQuestionMark),
   lanSync(DsIcons.refreshCw),
   // 关于 / module groups.
   about(DsIcons.info),
@@ -153,6 +154,7 @@ enum SettingsSection {
     SettingsSection.backup => t.settings.navBackup,
     SettingsSection.lanSync => t.settings.lanSync,
     SettingsSection.webdavSync => t.settings.webdavSyncTitle,
+    SettingsSection.webdavHelp => t.settings.webdavHelpTitle,
     SettingsSection.about => t.settings.navAbout,
     SettingsSection.iptv => t.settings.navIptv,
     SettingsSection.iptvBrowse => t.settings.navIptvBrowse,
@@ -232,6 +234,7 @@ enum SettingsSection {
     SettingsSection.backup => t.settings.backupDescription,
     SettingsSection.lanSync => t.settings.lanSyncDescription,
     SettingsSection.webdavSync => t.settings.webdavSyncDescription,
+    SettingsSection.webdavHelp => t.settings.webdavHelpDescription,
     SettingsSection.about => t.settings.aboutDescription,
     SettingsSection.iptv => t.settings.iptvDescription,
     SettingsSection.iptvBrowse => t.settings.iptvBrowseDescription,
@@ -298,7 +301,9 @@ enum SettingsSection {
     SettingsSection.playerGuide => SettingsSection.kernel,
     SettingsSection.iptvBrowse || SettingsSection.iptvGroups => SettingsSection.iptv,
     SettingsSection.vodPlayback || SettingsSection.vodDownload || SettingsSection.vodInterface => SettingsSection.vod,
-    SettingsSection.webdavSync || SettingsSection.lanSync => SettingsSection.backup,
+    // The help is a page beside the WebDAV one, not under it: the menu
+    // lists the backup, so all three children hang from that row.
+    SettingsSection.webdavSync || SettingsSection.lanSync || SettingsSection.webdavHelp => SettingsSection.backup,
     SettingsSection.hongguoInterface || SettingsSection.hongguoDownload => SettingsSection.hongguo,
     SettingsSection.hongguoDanmaku => SettingsSection.hongguo,
     SettingsSection.hongguoDevice => SettingsSection.hongguo,
@@ -375,7 +380,7 @@ List<SettingsSection> settingsChildrenOf(SettingsSection category) => switch (ca
   SettingsSection.kernel => const [SettingsSection.kernelAdvanced, SettingsSection.playerGuide],
   SettingsSection.iptv => const [SettingsSection.iptvBrowse, SettingsSection.iptvGroups],
   SettingsSection.vod => const [SettingsSection.vodPlayback, SettingsSection.vodDownload, SettingsSection.vodInterface],
-  SettingsSection.backup => const [SettingsSection.webdavSync, SettingsSection.lanSync],
+  SettingsSection.backup => const [SettingsSection.webdavSync, SettingsSection.webdavHelp, SettingsSection.lanSync],
   SettingsSection.dataCache => const [SettingsSection.storageFolders],
   SettingsSection.hongguo => const [
     SettingsSection.hongguoInterface,

@@ -448,6 +448,7 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
           header: Text(t.backup.transportsSection),
           children: const [
             SettingsChildEntry(child: SettingsSection.webdavSync),
+            SettingsChildEntry(child: SettingsSection.webdavHelp),
             SettingsChildEntry(child: SettingsSection.lanSync),
           ],
         ),
