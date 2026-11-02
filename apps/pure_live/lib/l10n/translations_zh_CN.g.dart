@@ -9430,8 +9430,8 @@ class Translations$settings$zh_CN {
 	/// zh-CN: '启用'
 	String get backgroundGlassEnable => '启用';
 
-	/// zh-CN: '卡片与列表半透明，壁纸从中透出；菜单、弹窗等浮层保持不透明，保证能看清。'
-	String get backgroundGlassDescription => '卡片与列表半透明，壁纸从中透出；菜单、弹窗等浮层保持不透明，保证能看清。';
+	/// zh-CN: '卡片、列表、输入框与弹窗、面板半透明，壁纸从中透出；菜单、提示、Toast 保持不透明以保证能看清。'
+	String get backgroundGlassDescription => '卡片、列表、输入框与弹窗、面板半透明，壁纸从中透出；菜单、提示、Toast 保持不透明以保证能看清。';
 
 	/// zh-CN: '面板填充'
 	String get backgroundGlassFill => '面板填充';
@@ -16044,7 +16044,7 @@ extension on Translations {
 			'settings.backgroundClear' => '清除背景',
 			'settings.backgroundGlass' => '界面玻璃',
 			'settings.backgroundGlassEnable' => '启用',
-			'settings.backgroundGlassDescription' => '卡片与列表半透明，壁纸从中透出；菜单、弹窗等浮层保持不透明，保证能看清。',
+			'settings.backgroundGlassDescription' => '卡片、列表、输入框与弹窗、面板半透明，壁纸从中透出；菜单、提示、Toast 保持不透明以保证能看清。',
 			'settings.backgroundGlassFill' => '面板填充',
 			'settings.backgroundGlassFillDescription' => '底色的不透明度；越低壁纸越透，文字越弱。',
 			'settings.checkUpdate' => '检查更新',

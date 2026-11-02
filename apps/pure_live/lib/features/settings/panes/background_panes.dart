@@ -120,9 +120,11 @@ final class BackgroundOverviewPane extends ConsumerWidget {
             ),
           ],
         ),
-        // One panel fill for the surfaces: the theme's surface token turns
-        // translucent (cards, lists, the room's own columns); the official
-        // floating layers stay opaque so a menu over a wallpaper can be read.
+        // One panel fill: the theme's surface and field tokens turn
+        // translucent (cards, lists, text fields, the room's own columns) and
+        // the settled floating layers (dialogs, panels, popovers, toolbars,
+        // the bottom navigation) follow it; menus, tooltips and toasts stay
+        // opaque so they can be read over a wallpaper.
         DsListSection(
           header: Text(t.settings.backgroundGlass),
           children: [

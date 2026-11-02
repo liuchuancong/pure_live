@@ -3,27 +3,29 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live/app/background/settings/background_settings.dart';
 
-/// Turns the theme's own surface token translucent while the glass is on, so
-/// every card, list section, table and hand-painted panel (the room's
-/// columns included) reads the wallpaper through it — and keeps the official
-/// floating layers opaque on top of that.
+/// Turns the theme's own surface and field tokens translucent while the
+/// glass is on, so every card, list section, table, text field and
+/// hand-painted panel (the room's columns included) reads the wallpaper
+/// through it — and sorts the official floating layers into the ones that
+/// follow that fill and the ones that must stay opaque.
 ///
-/// The floating layers — the menu family (anchored menus, context menus, a
-/// select's list), popovers, dialogs, panels, toasts, toolbars, tooltips, the
-/// bottom navigation and the text selection bar — are read for a moment and
-/// over whatever happens to be behind them; translucent, they are the one
-/// place a wallpaper makes words unreadable. So they take the theme's own
-/// opaque overlay fill whatever the glass asks of the surfaces beneath.
+/// Following the panel fill: dialogs, the side and bottom panels, popovers,
+/// toolbars and the bottom navigation — layers a viewer settles into, laid
+/// out like the panels around them. Opaque whatever the fill asks: tooltips,
+/// toasts, the menu family (anchored menus, context menus, a select's list)
+/// and the text selection bar — small, text-dense, read for a moment over
+/// whatever happens to be behind them, the one place a wallpaper makes words
+/// unreadable.
 final class AppComponentGlass extends ConsumerWidget {
-  /// Keeps the floating layers of [child] opaque while the glass is on.
+  /// Paints the floating layers of [child] as the background settings ask.
   const AppComponentGlass({required this.child, super.key});
 
   /// The app (the router's navigator).
   final Widget child;
 
-  /// [theme] with its surface token as translucent as [fill] asks. Cards,
-  /// list sections and the app's own surface fills read the token, so they
-  /// turn glass along with the themed layers below.
+  /// [theme] with its surface and field tokens as translucent as [fill]
+  /// asks. Cards, list sections, text fields and the app's own surface fills
+  /// read the tokens, so they turn glass along with the themed layers below.
   static DsThemeData themeOf(DsThemeData theme, {required bool glass, required double fill}) {
     if (!glass) return theme;
     final outer = theme.adjustColors;
@@ -42,30 +44,33 @@ final class AppComponentGlass extends ConsumerWidget {
   static DsColorsAdjuster _fillAdjuster(double fill) => _fillAdjusters.putIfAbsent(
     fill,
     () =>
-        (colors, _) => colors.copyWith(surface: colors.surface.withValues(alpha: fill)),
+        (colors, _) => colors.copyWith(
+          surface: colors.surface.withValues(alpha: fill),
+          field: colors.field.withValues(alpha: fill),
+        ),
   );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final glass = ref.watch(backgroundSettingsProvider.select((settings) => settings.glass));
+    final settings = ref.watch(backgroundSettingsProvider);
     // The scope stays in the tree either way: switching the glass on must
     // not remount the navigator below it (route state would go with it).
-    if (!glass) return DsComponentThemes(themes: const [], child: child);
-    // The layers' own fill, fully opaque: the adjusted palette may have
-    // thinned the surface the layers inherit from, and a menu over a
-    // wallpaper has to be read.
-    final fill = DsTheme.colorsOf(context).overlay.withValues(alpha: 1);
+    if (!settings.glass) return DsComponentThemes(themes: const [], child: child);
+    final overlay = DsTheme.colorsOf(context).overlay;
+    // The layers that follow the panel fill, and the ones that stay opaque.
+    final glass = overlay.withValues(alpha: settings.glassFill);
+    final opaque = overlay.withValues(alpha: 1);
     return DsComponentThemes(
       themes: [
-        DsMenuThemeData(style: DsMenuStyle(background: fill)),
-        DsPopoverThemeData(style: DsPopoverStyle(background: fill)),
-        DsDialogThemeData(style: DsDialogStyle(background: fill)),
-        DsPanelThemeData(style: DsPanelStyle(background: fill)),
-        DsToastThemeData(style: DsToastStyle(background: fill)),
-        DsToolbarThemeData(style: DsToolbarStyle(background: fill)),
-        DsTooltipThemeData(style: DsTooltipStyle(background: fill)),
-        DsBottomNavThemeData(style: DsBottomNavStyle(background: fill)),
-        DsTextSelectionToolbarThemeData(style: DsTextSelectionToolbarStyle(background: fill)),
+        DsDialogThemeData(style: DsDialogStyle(background: glass)),
+        DsPanelThemeData(style: DsPanelStyle(background: glass)),
+        DsPopoverThemeData(style: DsPopoverStyle(background: glass)),
+        DsToolbarThemeData(style: DsToolbarStyle(background: glass)),
+        DsBottomNavThemeData(style: DsBottomNavStyle(background: glass)),
+        DsTooltipThemeData(style: DsTooltipStyle(background: opaque)),
+        DsToastThemeData(style: DsToastStyle(background: opaque)),
+        DsMenuThemeData(style: DsMenuStyle(background: opaque)),
+        DsTextSelectionToolbarThemeData(style: DsTextSelectionToolbarStyle(background: opaque)),
       ],
       child: child,
     );

@@ -898,7 +898,7 @@
   "backgroundClear": "清除背景",
   "backgroundGlass": "界面玻璃",
   "backgroundGlassEnable": "启用",
-  "backgroundGlassDescription": "卡片与列表半透明，壁纸从中透出；菜单、弹窗等浮层保持不透明，保证能看清。",
+  "backgroundGlassDescription": "卡片、列表、输入框与弹窗、面板半透明，壁纸从中透出；菜单、提示、Toast 保持不透明以保证能看清。",
   "backgroundGlassFill": "面板填充",
   "backgroundGlassFillDescription": "底色的不透明度；越低壁纸越透，文字越弱。",
   "checkUpdate": "检查更新",
