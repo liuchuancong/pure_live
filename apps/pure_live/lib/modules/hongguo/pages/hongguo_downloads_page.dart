@@ -536,18 +536,69 @@ List<_HongguoDownloadGroup> _hongguoDownloadGroups(Iterable<HongguoDownloadItem>
 }
 
 /// The line over one drama's episodes: its poster where the queue has one, its
-/// name once for the block, and the size of the drama the block belongs to.
-final class _HongguoSeriesHead extends StatelessWidget {
+/// name once for the block, the size of the drama the block belongs to, and the
+/// verbs that act on the whole block. A thirty-episode take whose every action
+/// sits on the row is thirty taps, and a page that counts tasks for the whole
+/// queue and for none of its parts is a flat list wearing group headers.
+final class _HongguoSeriesHead extends ConsumerWidget {
   const _HongguoSeriesHead({required this.group});
 
   /// The block being introduced.
   final _HongguoDownloadGroup group;
 
+  /// Runs [verb] over every id it was handed. The store writes per task, so
+  /// the ids go one after another rather than all at once.
+  Future<void> _apply(
+    WidgetRef ref,
+    List<String> ids,
+    Future<void> Function(HongguoDownloadsController controller, String id) verb,
+  ) async {
+    final controller = ref.read(hongguoDownloadsProvider.notifier);
+    for (final id in ids) {
+      await verb(controller, id);
+    }
+  }
+
+  /// The block's own phases, read when the action is asked for rather than
+  /// when the line was painted: a task that finished in between is no longer
+  /// something to pause.
+  ({List<String> pausable, List<String> resumable}) _phases() => (
+    pausable: [
+      for (final task in group.tasks)
+        if (task.phase == HongguoDownloadPhase.running || task.phase == HongguoDownloadPhase.queued) task.id,
+    ],
+    resumable: [
+      for (final task in group.tasks)
+        if (task.phase == HongguoDownloadPhase.paused || task.phase == HongguoDownloadPhase.failed) task.id,
+    ],
+  );
+
+  Future<void> _removeBlock(BuildContext context, WidgetRef ref, Translations t) async {
+    final ids = [for (final task in group.tasks) task.id];
+    final phases = _phases();
+    final confirmed = await showDsConfirm(
+      context: context,
+      title: t.settings.downloadRemove,
+      // Which drama, and how many of its tasks: the row's own body says 这条
+      // 记录, and a block would be answering for thirty of them.
+      description: '${group.title} · ${t.hongguo.downloadTaskCount(count: ids.length, active: phases.pausable.length)}',
+      confirmLabel: t.settings.downloadRemove,
+      cancelLabel: t.common.cancel,
+      destructive: true,
+      icon: const DsIcon(DsIcons.trash2),
+    );
+    // The tap can land after the dialog's host is gone (the queue rebuilt
+    // under it); a dead context must not reach the page's store.
+    if (!confirmed || !context.mounted) return;
+    await _apply(ref, ids, (controller, id) => controller.remove(id));
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
     final theme = DsTheme.of(context);
     final colors = DsTheme.colorsOf(context);
+    final phases = _phases();
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, DsSpace.s12, 0, DsSpace.s4),
       child: Row(
@@ -582,6 +633,44 @@ final class _HongguoSeriesHead extends StatelessWidget {
             Text(
               t.hongguo.allEpisodesCount(count: group.parts),
               style: theme.typography.caption.copyWith(color: colors.textMuted),
+            ),
+          // One episode in the block is the row's own business; a verb with a
+          // single object does not need a second place to be pressed, and a
+          // head that greyed out an inapplicable switch would only say so
+          // louder than the row already does.
+          if (group.tasks.length > 1)
+            DsMenuAnchor(
+              semanticLabel: group.title,
+              align: DsAlign.end,
+              items: [
+                if (phases.pausable.isNotEmpty)
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.pause),
+                    label: Text(t.settings.downloadPause),
+                    onPressed: () => unawaited(_apply(ref, phases.pausable, (controller, id) => controller.pause(id))),
+                  ),
+                if (phases.resumable.isNotEmpty)
+                  DsMenuItem(
+                    leading: const DsIcon(DsIcons.play),
+                    label: Text(t.settings.downloadResume),
+                    onPressed: () =>
+                        unawaited(_apply(ref, phases.resumable, (controller, id) => controller.resume(id))),
+                  ),
+                if (phases.pausable.isNotEmpty || phases.resumable.isNotEmpty) const DsMenuDivider(),
+                DsMenuItem(
+                  leading: const DsIcon(DsIcons.trash2),
+                  label: Text(t.settings.downloadRemove),
+                  destructive: true,
+                  onPressed: () => unawaited(_removeBlock(context, ref, t)),
+                ),
+              ],
+              builder: (context, anchor, _) => DsButton.icon(
+                variant: DsButtonVariant.secondary,
+                size: DsSize.sm,
+                semanticLabel: group.title,
+                onPressed: anchor.toggle,
+                icon: const DsIcon(DsIcons.ellipsisVertical, size: 16),
+              ),
             ),
         ],
       ),
