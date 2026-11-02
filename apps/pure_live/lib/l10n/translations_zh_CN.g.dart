@@ -733,8 +733,8 @@ class Translations$backup$zh_CN {
 	/// zh-CN: '创建备份'
 	String get createTitle => '创建备份';
 
-	/// zh-CN: '把关注、观看历史、关注分区、录制任务与设置写入备份文件夹。'
-	String get createDescription => '把关注、观看历史、关注分区、录制任务与设置写入备份文件夹。';
+	/// zh-CN: '选择要写入备份文件夹的内容：关注、观看历史、关注分区、录制任务与设置。'
+	String get createDescription => '选择要写入备份文件夹的内容：关注、观看历史、关注分区、录制任务与设置。';
 
 	/// zh-CN: '创建关注备份'
 	String get createFollowsTitle => '创建关注备份';
@@ -903,6 +903,78 @@ class Translations$backup$zh_CN {
 
 	/// zh-CN: '已用 {used: String} · 共 {total: String}'
 	String webdavQuota({required String used, required String total}) => '已用 ${used} · 共 ${total}';
+
+	/// zh-CN: '关注房间'
+	String get sectionFollows => '关注房间';
+
+	/// zh-CN: '关注的主播与房间、标签。'
+	String get sectionFollowsDesc => '关注的主播与房间、标签。';
+
+	/// zh-CN: '关注分区'
+	String get sectionAreaFollows => '关注分区';
+
+	/// zh-CN: '关注的直播分区。'
+	String get sectionAreaFollowsDesc => '关注的直播分区。';
+
+	/// zh-CN: '观看历史'
+	String get sectionHistory => '观看历史';
+
+	/// zh-CN: '看过的房间与时间。'
+	String get sectionHistoryDesc => '看过的房间与时间。';
+
+	/// zh-CN: '录制任务'
+	String get sectionRecordings => '录制任务';
+
+	/// zh-CN: '录制任务的设置；进行中的任务恢复后变为等待。'
+	String get sectionRecordingsDesc => '录制任务的设置；进行中的任务恢复后变为等待。';
+
+	/// zh-CN: '设置'
+	String get sectionSettings => '设置';
+
+	/// zh-CN: '外观、播放、弹幕、导航等偏好。'
+	String get sectionSettingsDesc => '外观、播放、弹幕、导航等偏好。';
+
+	/// zh-CN: '账号凭据'
+	String get sectionSecrets => '账号凭据';
+
+	/// zh-CN: '平台 Cookie、WebDAV 密码等。明文写入，只放到你信任的地方。'
+	String get sectionSecretsDesc => '平台 Cookie、WebDAV 密码等。明文写入，只放到你信任的地方。';
+
+	/// zh-CN: '{name: String} {count: int}'
+	String sectionCount({required String name, required int count}) => '${name} ${count}';
+
+	/// zh-CN: '全选'
+	String get pickAll => '全选';
+
+	/// zh-CN: '清空'
+	String get pickNone => '清空';
+
+	/// zh-CN: '{count: int} 项'
+	String pickCount({required int count}) => '${count} 项';
+
+	/// zh-CN: '选择要备份的内容'
+	String get pickCreateTitle => '选择要备份的内容';
+
+	/// zh-CN: '选择要上传的内容'
+	String get pickUploadTitle => '选择要上传的内容';
+
+	/// zh-CN: '从 {name: String} 恢复哪些内容'
+	String pickRestoreTitle({required String name}) => '从 ${name} 恢复哪些内容';
+
+	/// zh-CN: '勾选的内容会先清空本机数据再写入；没勾选的保持不变。'
+	String get pickRestoreNote => '勾选的内容会先清空本机数据再写入；没勾选的保持不变。';
+
+	/// zh-CN: '敏感数据'
+	String get secretsSection => '敏感数据';
+
+	/// zh-CN: '备份与同步时包含账号凭据'
+	String get secretsSwitchTitle => '备份与同步时包含账号凭据';
+
+	/// zh-CN: '关闭时任何备份、上传与局域网同步都不会带上 Cookie 与密码；打开后在挑选内容时才会出现该项。'
+	String get secretsSwitchDescription => '关闭时任何备份、上传与局域网同步都不会带上 Cookie 与密码；打开后在挑选内容时才会出现该项。';
+
+	/// zh-CN: '其他方式'
+	String get transportsSection => '其他方式';
 }
 
 // Path: common
@@ -12329,7 +12401,7 @@ extension on Translations {
 			'backup.folderSaveFailed' => '保存备份文件夹失败',
 			'backup.openFolderFailed' => '无法打开备份文件夹',
 			'backup.createTitle' => '创建备份',
-			'backup.createDescription' => '把关注、观看历史、关注分区、录制任务与设置写入备份文件夹。',
+			'backup.createDescription' => '选择要写入备份文件夹的内容：关注、观看历史、关注分区、录制任务与设置。',
 			'backup.createFollowsTitle' => '创建关注备份',
 			'backup.createFollowsDescription' => '只备份关注的房间与分区。',
 			'backup.createDone' => ({required String name}) => '已创建 ${name}',
@@ -12386,6 +12458,30 @@ extension on Translations {
 			'backup.webdavMoved' => '已移动',
 			'backup.webdavMoveIntoItself' => '不能把文件夹移动到自己里面',
 			'backup.webdavQuota' => ({required String used, required String total}) => '已用 ${used} · 共 ${total}',
+			'backup.sectionFollows' => '关注房间',
+			'backup.sectionFollowsDesc' => '关注的主播与房间、标签。',
+			'backup.sectionAreaFollows' => '关注分区',
+			'backup.sectionAreaFollowsDesc' => '关注的直播分区。',
+			'backup.sectionHistory' => '观看历史',
+			'backup.sectionHistoryDesc' => '看过的房间与时间。',
+			'backup.sectionRecordings' => '录制任务',
+			'backup.sectionRecordingsDesc' => '录制任务的设置；进行中的任务恢复后变为等待。',
+			'backup.sectionSettings' => '设置',
+			'backup.sectionSettingsDesc' => '外观、播放、弹幕、导航等偏好。',
+			'backup.sectionSecrets' => '账号凭据',
+			'backup.sectionSecretsDesc' => '平台 Cookie、WebDAV 密码等。明文写入，只放到你信任的地方。',
+			'backup.sectionCount' => ({required String name, required int count}) => '${name} ${count}',
+			'backup.pickAll' => '全选',
+			'backup.pickNone' => '清空',
+			'backup.pickCount' => ({required int count}) => '${count} 项',
+			'backup.pickCreateTitle' => '选择要备份的内容',
+			'backup.pickUploadTitle' => '选择要上传的内容',
+			'backup.pickRestoreTitle' => ({required String name}) => '从 ${name} 恢复哪些内容',
+			'backup.pickRestoreNote' => '勾选的内容会先清空本机数据再写入；没勾选的保持不变。',
+			'backup.secretsSection' => '敏感数据',
+			'backup.secretsSwitchTitle' => '备份与同步时包含账号凭据',
+			'backup.secretsSwitchDescription' => '关闭时任何备份、上传与局域网同步都不会带上 Cookie 与密码；打开后在挑选内容时才会出现该项。',
+			'backup.transportsSection' => '其他方式',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => '这里还没有内容',
 			'common.comingSoon' => '即将推出',
@@ -12603,6 +12699,8 @@ extension on Translations {
 			'hongguo.localTab' => '本机',
 			'hongguo.accountTab' => '账户',
 			'hongguo.favoritesLocalEmpty' => '在剧集详情中加入本机收藏，喜欢的剧就会出现在这里',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.favoritesAccountEmpty' => '尚未读取账户收藏',
 			'hongguo.favoritesAccountOff' => '登录红果账号后，在这里同步手机收藏',
 			'hongguo.historyLocalEmpty' => '看过的剧和进度会出现在这里',
@@ -12627,8 +12725,6 @@ extension on Translations {
 			'hongguo.reservationsRefresh' => '刷新预约',
 			'hongguo.reservationsOff' => '登录红果账号后，在这里同步手机预约',
 			'hongguo.accountSignInTitle' => '扫码登录红果',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.accountSignInDesc' => '用手机红果 App 扫二维码确认登录；账户收藏、历史与预约随账号同步',
 			'hongguo.accountQrRefresh' => '刷新二维码',
 			'hongguo.accountSignedInAs' => '已登录',
@@ -13117,6 +13213,8 @@ extension on Translations {
 			'music.repositionTitle' => ({required Object count}) => '将已选的 ${count} 首歌曲的位置调整到：',
 			'music.repositionHint' => '请输入要调整到第几个位置',
 			'music.selectionMoveTo' => '移动到',
+			_ => null,
+		} ?? switch (path) {
 			'music.moveDoneCount' => ({required Object count, required Object name}) => '已移动 ${count} 首到「${name}」。',
 			'music.songlistSearchUnsupported' => '当前音源暂不支持歌单搜索。',
 			'music.defaultSource' => '默认音源',
@@ -13141,8 +13239,6 @@ extension on Translations {
 			'music.autoplay' => '打开时继续播放',
 			'music.autoplayDesc' => '打开音乐模块时继续上次的播放队列。',
 			'music.rememberProgress' => '记住播放进度',
-			_ => null,
-		} ?? switch (path) {
 			'music.rememberProgressDesc' => '再次打开同一首歌时，从上一次停止的位置继续。',
 			'music.autoCleanPlayedList' => '自动清空已播列表',
 			'music.autoCleanPlayedListDesc' => '点击与播放列表相同的列表切歌时清空已播放列表，随机模式下列表内所有歌曲会重新参与随机。',
@@ -13631,6 +13727,8 @@ extension on Translations {
 			'music.eqNodesAdd' => '添加节点',
 			'music.eqNodeFrequency' => '频率',
 			'music.eqNodeQ' => 'Q 值',
+			_ => null,
+		} ?? switch (path) {
 			'music.eqNodeGain' => '增益',
 			'music.eqCompareTitle' => 'A/B 对比',
 			'music.eqCompare' => '按住试听原始声音',
@@ -13655,8 +13753,6 @@ extension on Translations {
 			'music.syncChoose' => '选择',
 			'music.syncAuthCode' => '连接码',
 			'music.syncAuthCodeHint' => '服务端显示的连接码',
-			_ => null,
-		} ?? switch (path) {
 			'music.syncMode' => '同步模式',
 			'music.syncConnect' => '连接',
 			'music.syncDisconnect' => '断开',
@@ -14145,6 +14241,8 @@ extension on Translations {
 			'room.orientationHint' => '默认跟随画面本身的比例；也可以为这个直播间固定为竖屏或横屏。',
 			'room.orientationHintWide' => '这是一路超宽画面：可以按原比例铺满宽度，或沿用带上下留边的默认画框，也可以固定为竖屏或横屏。',
 			'room.orientationAutomatic' => '自动',
+			_ => null,
+		} ?? switch (path) {
 			'room.orientationPortrait' => '竖屏',
 			'room.orientationLandscape' => '横屏',
 			'room.orientationFillWidth' => '铺满宽度',
@@ -14169,8 +14267,6 @@ extension on Translations {
 			'room.giftValueCheese' => ({required Object value}) => '${value} 奶酪',
 			'room.giftValueStarBalloon' => ({required Object value}) => '${value} 星气球',
 			'room.giftValueDouyinCoin' => ({required Object value}) => '${value} 抖币',
-			_ => null,
-		} ?? switch (path) {
 			'room.giftValueSixCoin' => ({required Object value}) => '${value} 六币',
 			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC币',
 			'room.giftValueStarCoin' => ({required Object value}) => '${value} 星币',
@@ -14659,6 +14755,8 @@ extension on Translations {
 			'settings.traySoundOn' => '打开声音',
 			'settings.traySoundOff' => '关闭声音',
 			'settings.trayScreenshotSaved' => ({required Object path}) => '已保存到 ${path}',
+			_ => null,
+		} ?? switch (path) {
 			'settings.trayScreenshotFailed' => '截图失败：没有正在播放的房间或引擎不支持',
 			'settings.font' => '字体',
 			'settings.fontDescription' => 'MiSans 随应用打包，也可换国内或国外字体。',
@@ -14683,8 +14781,6 @@ extension on Translations {
 			'settings.fontManagerInUse' => '使用中',
 			'settings.fontManagerDefaultBadge' => '默认',
 			'settings.fontManagerCurrent' => '当前字体',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerReset' => '恢复默认',
 			'settings.fontManagerFilterAll' => '全部',
 			'settings.fontManagerCategory' => '分类',
@@ -15173,6 +15269,8 @@ extension on Translations {
 			'settings.releasedOn' => ({required Object date}) => '发布于 ${date}',
 			'settings.prerelease' => '预览版',
 			'settings.updateLater' => '稍后再说',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadInstaller' => '下载安装包',
 			'settings.downloadOtherBuilds' => '其他构建',
 			'settings.downloadTitle' => '获取安装包',
@@ -15197,8 +15295,6 @@ extension on Translations {
 			'settings.downloadManagerDesc' => '壁纸的下载任务、记录与保存目录。',
 			'settings.downloadManagerEmpty' => '还没有下载记录',
 			'settings.downloadManagerEmptyDesc' => '在预览或图库点「下载」，任务会出现在这里。',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadStatusRunning' => '下载中',
 			'settings.downloadStatusDone' => '已完成',
 			'settings.downloadStatusFailed' => '下载失败',
@@ -15687,6 +15783,8 @@ extension on Translations {
 			'toolbox.cancel' => '取消',
 			'toolbox.linkFieldLabel' => '平台链接',
 			'toolbox.linkFieldHint' => '粘贴直播间链接或分享文字',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.linkOpen' => '打开直播间',
 			'toolbox.linkCopy' => '复制房间链接',
 			'toolbox.linkPaste' => '粘贴',
@@ -15711,8 +15809,6 @@ extension on Translations {
 			'toolbox.networkTarget' => '探测接口',
 			'toolbox.networkTargetDesc' => '推荐房间接口',
 			'toolbox.networkLatency' => '响应时间',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.networkRooms' => '返回房间',
 			'toolbox.networkSuccess' => '连接正常',
 			'toolbox.networkFailure' => '连接失败',

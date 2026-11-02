@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:live_storage/live_storage.dart';
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_settings.dart';
+import 'package:pure_live/features/backup/webdav/webdav_settings.dart' show appSecretStoreProvider;
 import 'package:pure_live/modules/live/areas/areas.dart';
 import 'package:pure_live/modules/live/favorites/favorites.dart';
 import 'package:pure_live/modules/live/history/history.dart';
@@ -28,16 +29,23 @@ final class BackupDocumentEmpty implements Exception {
 }
 
 /// The backup feature's own view of the user data: it reads the four
-/// user-data namespaces into a [BackupDocument] and writes a document
-/// back, section by section.
+/// user-data namespaces, the settings subset and (on request) the vault
+/// into a [BackupDocument] and writes a document back, section by section.
 ///
 /// The repositories stay the single writers of their stores — capture and
 /// restore go through the same handles the favorites, history, areas and
 /// recorder pages use, so every watch stream fires and the pages refresh
 /// at once.
 final class BackupRepository {
-  /// Serves the four user-data namespaces.
-  BackupRepository({required this.follows, required this.history, required this.areaFollows, required this.recordings});
+  /// Serves the four user-data namespaces and, when the vault opened, the
+  /// secrets.
+  BackupRepository({
+    required this.follows,
+    required this.history,
+    required this.areaFollows,
+    required this.recordings,
+    this.secrets,
+  });
 
   /// The followed rooms.
   final FollowRepository follows;
@@ -51,34 +59,48 @@ final class BackupRepository {
   /// The recorder's tasks.
   final RecordingTaskRepository recordings;
 
-  /// What the pane's summary shows: the entries per store plus how many
-  /// backed-up settings currently carry a value.
-  ({int follows, int history, int areas, int recordings, int settings}) summary() => (
-    follows: follows.store.keys.length,
-    history: history.store.keys.length,
-    areas: areaFollows.store.keys.length,
-    recordings: recordings.store.keys.length,
-    settings: captureSettingsSnapshot().length,
-  );
+  /// The device vault; null when it never opened (an unsupported platform
+  /// or a locked keychain), in which case the secrets section cannot be
+  /// captured or restored and the picker does not offer it.
+  final SecretStore? secrets;
 
-  /// Bundles the stores and the settings subset into one document. A
-  /// follows-only capture leaves every other section empty; its
-  /// [BackupDocument.scope] is what tells a restore to keep them.
-  BackupDocument capture({BackupScope scope = BackupScope.all}) => BackupDocument(
-    exportedAt: DateTime.now().toUtc(),
-    scope: scope,
-    follows: _entriesOf(follows.store),
-    history: scope == BackupScope.follows ? const {} : _entriesOf(history.store),
-    areaFollows: _entriesOf(areaFollows.store),
-    recordings: scope == BackupScope.follows ? const {} : _entriesOf(recordings.store),
-    settings: scope == BackupScope.follows ? const {} : captureSettingsSnapshot(),
-  );
+  /// What the pane's summary shows: the entries per section as they are
+  /// now.
+  Map<BackupSection, int> summary() => {
+    BackupSection.follows: follows.store.keys.length,
+    BackupSection.history: history.store.keys.length,
+    BackupSection.areaFollows: areaFollows.store.keys.length,
+    BackupSection.recordings: recordings.store.keys.length,
+    BackupSection.settings: captureSettingsSnapshot().length,
+    BackupSection.secrets: secrets?.refs.length ?? 0,
+  };
+
+  /// Bundles the selected [sections] into one document. A section not
+  /// selected is absent from the document, which is what tells a restore
+  /// to keep that box as it is. The secrets ride only when selected and
+  /// the vault is open.
+  BackupDocument capture({Set<BackupSection> sections = BackupSection.all}) {
+    final vault = secrets;
+    final present = {...sections};
+    if (vault == null) present.remove(BackupSection.secrets);
+    return BackupDocument(
+      exportedAt: DateTime.now().toUtc(),
+      follows: present.contains(BackupSection.follows) ? _entriesOf(follows.store) : const {},
+      history: present.contains(BackupSection.history) ? _entriesOf(history.store) : const {},
+      areaFollows: present.contains(BackupSection.areaFollows) ? _entriesOf(areaFollows.store) : const {},
+      recordings: present.contains(BackupSection.recordings) ? _entriesOf(recordings.store) : const {},
+      settings: present.contains(BackupSection.settings) ? captureSettingsSnapshot() : const {},
+      secrets: present.contains(BackupSection.secrets) && vault != null
+          ? {for (final ref in vault.refs) ref: vault.value(ref) ?? ''}
+          : const {},
+      presentSections: present,
+    );
+  }
 
   /// Restores [document]: every present section clears its store and takes
   /// the document's entries; the settings keys it carries are written
-  /// back. A follows-only document touches only the two follows stores, so
-  /// the history, the recording tasks and the settings of this device stay
-  /// as they are.
+  /// back; the secrets it carries are set in the vault (refs it does not
+  /// name stay). A section the document does not carry is left alone.
   ///
   /// Throws [BackupRecordingsBusy] when a restore would clear the task
   /// store under a take this device is recording or still finishing, and
@@ -88,18 +110,16 @@ final class BackupRepository {
     if (document.isEmpty) throw const BackupDocumentEmpty();
     // The guard runs before the first write, so a refused restore leaves
     // every box exactly as it was rather than half-applying the document.
-    if (document.scope != BackupScope.follows && document.hasRecordings && _hasLiveTake()) {
-      throw const BackupRecordingsBusy();
-    }
+    if (document.hasRecordings && _hasLiveTake()) throw const BackupRecordingsBusy();
     // A section the document does not carry is left alone: an old export
     // that predates a store must not empty it. A section it does carry,
     // even empty, is the document's word on that data and replaces it.
     if (document.hasFollows) await _restore(follows.store, document.follows);
     if (document.hasAreas) await _restore(areaFollows.store, document.areaFollows);
-    if (document.scope == BackupScope.follows) return;
     if (document.hasHistory) await _restore(history.store, document.history);
     if (document.hasRecordings) await _restoreRecordings(document.recordings);
     if (document.hasSettings) await applySettingsSnapshot(document.settings);
+    if (document.hasSecrets) await _restoreSecrets(document.secrets);
   }
 
   /// Whether this device has a take the engine still owns: a session
@@ -138,6 +158,21 @@ final class BackupRepository {
     await recordings.store.flush();
   }
 
+  /// Sets every secret the document names. Secrets it does not name are
+  /// kept: a backup from another device must not log this one out of the
+  /// platforms it never knew about. An empty value removes the ref.
+  Future<void> _restoreSecrets(Map<String, String> entries) async {
+    final vault = secrets;
+    if (vault == null) return;
+    for (final entry in entries.entries) {
+      if (entry.value.isEmpty) {
+        await vault.remove(entry.key);
+      } else {
+        await vault.set(entry.key, entry.value);
+      }
+    }
+  }
+
   /// Clears [store] and writes [entries] back, key for key, then flushes —
   /// a restore is whole or nothing per section.
   Future<void> _restore(JsonStore store, Map<String, Map<String, Object?>> entries) async {
@@ -155,20 +190,31 @@ final class BackupRepository {
       value is Map<String, Object?> ? value : Map<String, Object?>.from(value! as Map);
 }
 
-/// The backup repository (the four user-data namespaces, one process).
+/// The backup repository (the four user-data namespaces, the vault when
+/// it opens, one process).
 final backupRepositoryProvider = FutureProvider<BackupRepository>((ref) async {
   final follows = await ref.watch(followRepositoryProvider.future);
   final history = await ref.watch(historyRepositoryProvider.future);
   final areaFollows = await ref.watch(areaFollowRepositoryProvider.future);
   final recordings = await ref.watch(recordingRepositoryProvider.future);
-  return BackupRepository(follows: follows, history: history, areaFollows: areaFollows, recordings: recordings);
+  SecretStore? secrets;
+  try {
+    secrets = await ref.watch(appSecretStoreProvider.future);
+  } on Object {
+    // No vault on this platform: the secrets section is simply not offered.
+  }
+  return BackupRepository(
+    follows: follows,
+    history: history,
+    areaFollows: areaFollows,
+    recordings: recordings,
+    secrets: secrets,
+  );
 });
 
-/// What the stores and the settings subset hold right now, for the pane's
-/// summary row and its empty guard.
-final backupSummaryProvider = FutureProvider<({int follows, int history, int areas, int recordings, int settings})>((
-  ref,
-) async {
+/// What the stores, the settings subset and the vault hold right now, per
+/// section, for the pane's summary row and the picker's counts.
+final backupSummaryProvider = FutureProvider<Map<BackupSection, int>>((ref) async {
   final repository = await ref.watch(backupRepositoryProvider.future);
   return repository.summary();
 });

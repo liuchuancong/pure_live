@@ -302,7 +302,7 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get folderSaveFailed => 'Could not save the backup folder';
 	@override String get openFolderFailed => 'Could not open the backup folder';
 	@override String get createTitle => 'Create backup';
-	@override String get createDescription => 'Bundles follows, watch history, followed areas, recording tasks and settings into a file in the backup folder.';
+	@override String get createDescription => 'Choose what goes into a file in the backup folder: follows, watch history, followed areas, recording tasks and settings.';
 	@override String get createFollowsTitle => 'Create follows-only backup';
 	@override String get createFollowsDescription => 'Backs up followed rooms and areas only.';
 	@override String createDone({required String name}) => 'Created ${name}';
@@ -359,6 +359,30 @@ class _Translations$backup$en extends Translations$backup$zh_CN {
 	@override String get webdavMoved => 'Moved';
 	@override String get webdavMoveIntoItself => 'A folder cannot be moved into itself';
 	@override String webdavQuota({required String used, required String total}) => '${used} used · ${total} total';
+	@override String get sectionFollows => 'Followed rooms';
+	@override String get sectionFollowsDesc => 'The streamers and rooms you follow, with their tags.';
+	@override String get sectionAreaFollows => 'Followed areas';
+	@override String get sectionAreaFollowsDesc => 'The live areas you follow.';
+	@override String get sectionHistory => 'Watch history';
+	@override String get sectionHistoryDesc => 'The rooms you watched and when.';
+	@override String get sectionRecordings => 'Recording tasks';
+	@override String get sectionRecordingsDesc => 'The recording tasks\' setup; a running task restores as waiting.';
+	@override String get sectionSettings => 'Settings';
+	@override String get sectionSettingsDesc => 'Appearance, playback, danmaku, navigation and the other preferences.';
+	@override String get sectionSecrets => 'Account credentials';
+	@override String get sectionSecretsDesc => 'Platform cookies, WebDAV passwords and the like. Written in plain text — only keep it somewhere you trust.';
+	@override String sectionCount({required String name, required int count}) => '${name} ${count}';
+	@override String get pickAll => 'Select all';
+	@override String get pickNone => 'Clear';
+	@override String pickCount({required int count}) => '${count} items';
+	@override String get pickCreateTitle => 'What to back up';
+	@override String get pickUploadTitle => 'What to upload';
+	@override String pickRestoreTitle({required String name}) => 'What to restore from ${name}';
+	@override String get pickRestoreNote => 'A checked section replaces this device\'s data; an unchecked one stays as it is.';
+	@override String get secretsSection => 'Sensitive data';
+	@override String get secretsSwitchTitle => 'Include account credentials in backups and syncs';
+	@override String get secretsSwitchDescription => 'Off, no backup, upload or LAN sync carries cookies or passwords; on, the section appears when you pick what to include.';
+	@override String get transportsSection => 'Other ways';
 }
 
 // Path: common
@@ -4431,7 +4455,7 @@ extension on TranslationsEn {
 			'backup.folderSaveFailed' => 'Could not save the backup folder',
 			'backup.openFolderFailed' => 'Could not open the backup folder',
 			'backup.createTitle' => 'Create backup',
-			'backup.createDescription' => 'Bundles follows, watch history, followed areas, recording tasks and settings into a file in the backup folder.',
+			'backup.createDescription' => 'Choose what goes into a file in the backup folder: follows, watch history, followed areas, recording tasks and settings.',
 			'backup.createFollowsTitle' => 'Create follows-only backup',
 			'backup.createFollowsDescription' => 'Backs up followed rooms and areas only.',
 			'backup.createDone' => ({required String name}) => 'Created ${name}',
@@ -4488,6 +4512,30 @@ extension on TranslationsEn {
 			'backup.webdavMoved' => 'Moved',
 			'backup.webdavMoveIntoItself' => 'A folder cannot be moved into itself',
 			'backup.webdavQuota' => ({required String used, required String total}) => '${used} used · ${total} total',
+			'backup.sectionFollows' => 'Followed rooms',
+			'backup.sectionFollowsDesc' => 'The streamers and rooms you follow, with their tags.',
+			'backup.sectionAreaFollows' => 'Followed areas',
+			'backup.sectionAreaFollowsDesc' => 'The live areas you follow.',
+			'backup.sectionHistory' => 'Watch history',
+			'backup.sectionHistoryDesc' => 'The rooms you watched and when.',
+			'backup.sectionRecordings' => 'Recording tasks',
+			'backup.sectionRecordingsDesc' => 'The recording tasks\' setup; a running task restores as waiting.',
+			'backup.sectionSettings' => 'Settings',
+			'backup.sectionSettingsDesc' => 'Appearance, playback, danmaku, navigation and the other preferences.',
+			'backup.sectionSecrets' => 'Account credentials',
+			'backup.sectionSecretsDesc' => 'Platform cookies, WebDAV passwords and the like. Written in plain text — only keep it somewhere you trust.',
+			'backup.sectionCount' => ({required String name, required int count}) => '${name} ${count}',
+			'backup.pickAll' => 'Select all',
+			'backup.pickNone' => 'Clear',
+			'backup.pickCount' => ({required int count}) => '${count} items',
+			'backup.pickCreateTitle' => 'What to back up',
+			'backup.pickUploadTitle' => 'What to upload',
+			'backup.pickRestoreTitle' => ({required String name}) => 'What to restore from ${name}',
+			'backup.pickRestoreNote' => 'A checked section replaces this device\'s data; an unchecked one stays as it is.',
+			'backup.secretsSection' => 'Sensitive data',
+			'backup.secretsSwitchTitle' => 'Include account credentials in backups and syncs',
+			'backup.secretsSwitchDescription' => 'Off, no backup, upload or LAN sync carries cookies or passwords; on, the section appears when you pick what to include.',
+			'backup.transportsSection' => 'Other ways',
 			'common.appTitle' => 'Pure Live',
 			'common.empty' => 'Nothing here yet',
 			'common.comingSoon' => 'Coming soon',
@@ -4705,6 +4753,8 @@ extension on TranslationsEn {
 			'hongguo.localTab' => 'This device',
 			'hongguo.accountTab' => 'Account',
 			'hongguo.favoritesLocalEmpty' => 'Favorite a series on its page and it lands here',
+			_ => null,
+		} ?? switch (path) {
 			'hongguo.favoritesAccountEmpty' => 'Account favorites not read yet',
 			'hongguo.favoritesAccountOff' => 'Sign in to sync your phone favorites here',
 			'hongguo.historyLocalEmpty' => 'What you watched, and where you stopped, lands here',
@@ -4729,8 +4779,6 @@ extension on TranslationsEn {
 			'hongguo.reservationsRefresh' => 'Refresh',
 			'hongguo.reservationsOff' => 'Sign in to sync your phone reservations here',
 			'hongguo.accountSignInTitle' => 'Scan to sign in',
-			_ => null,
-		} ?? switch (path) {
 			'hongguo.accountSignInDesc' => 'Scan with the Hongguo phone app; favorites, history and reservations follow the account',
 			'hongguo.accountQrRefresh' => 'New code',
 			'hongguo.accountSignedInAs' => 'Signed in',
@@ -5219,6 +5267,8 @@ extension on TranslationsEn {
 			'music.repositionTitle' => ({required Object count}) => 'Move the ${count} selected songs to position:',
 			'music.repositionHint' => 'Type the position to move them to',
 			'music.selectionMoveTo' => 'Move to',
+			_ => null,
+		} ?? switch (path) {
 			'music.moveDoneCount' => ({required Object count, required Object name}) => 'Moved ${count} tracks to "${name}".',
 			'music.songlistSearchUnsupported' => 'This source cannot search songlists yet.',
 			'music.defaultSource' => 'Default source',
@@ -5243,8 +5293,6 @@ extension on TranslationsEn {
 			'music.autoplay' => 'Resume on open',
 			'music.autoplayDesc' => 'Continues the last queue when the music module opens.',
 			'music.rememberProgress' => 'Remember playback position',
-			_ => null,
-		} ?? switch (path) {
 			'music.rememberProgressDesc' => 'A song you open again resumes where it last stopped.',
 			'music.autoCleanPlayedList' => 'Auto-clean played list',
 			'music.autoCleanPlayedListDesc' => 'Clears the played list when picking songs from the list already playing; in random mode every song joins the pool again.',
@@ -5733,6 +5781,8 @@ extension on TranslationsEn {
 			'music.eqNodesAdd' => 'Add node',
 			'music.eqNodeFrequency' => 'Frequency',
 			'music.eqNodeQ' => 'Q',
+			_ => null,
+		} ?? switch (path) {
 			'music.eqNodeGain' => 'Gain',
 			'music.eqCompareTitle' => 'A/B compare',
 			'music.eqCompare' => 'Hold to hear the original',
@@ -5757,8 +5807,6 @@ extension on TranslationsEn {
 			'music.syncChoose' => 'Choose',
 			'music.syncAuthCode' => 'Auth code',
 			'music.syncAuthCodeHint' => 'The connection code shown by the server',
-			_ => null,
-		} ?? switch (path) {
 			'music.syncMode' => 'Sync mode',
 			'music.syncConnect' => 'Connect',
 			'music.syncDisconnect' => 'Disconnect',
@@ -6247,6 +6295,8 @@ extension on TranslationsEn {
 			'room.orientationHint' => 'Follow the picture’s own shape, or fix this room to portrait or landscape.',
 			'room.orientationHintWide' => 'This picture is ultra-wide: fill the width at its own ratio, keep the default frame with its bars, or fix this room to portrait or landscape.',
 			'room.orientationAutomatic' => 'Automatic',
+			_ => null,
+		} ?? switch (path) {
 			'room.orientationPortrait' => 'Portrait',
 			'room.orientationLandscape' => 'Landscape',
 			'room.orientationFillWidth' => 'Fill width',
@@ -6271,8 +6321,6 @@ extension on TranslationsEn {
 			'room.giftValueCheese' => ({required Object value}) => '${value} cheese',
 			'room.giftValueStarBalloon' => ({required Object value}) => '${value} star balloons',
 			'room.giftValueDouyinCoin' => ({required Object value}) => '${value} Douyin coins',
-			_ => null,
-		} ?? switch (path) {
 			'room.giftValueSixCoin' => ({required Object value}) => '${value} six coins',
 			'room.giftValueAcCoin' => ({required Object value}) => '${value} AC coins',
 			'room.giftValueStarCoin' => ({required Object value}) => '${value} star coins',
@@ -6761,6 +6809,8 @@ extension on TranslationsEn {
 			'settings.traySoundOn' => 'Unmute sound',
 			'settings.traySoundOff' => 'Mute sound',
 			'settings.trayScreenshotSaved' => ({required Object path}) => 'Saved to ${path}',
+			_ => null,
+		} ?? switch (path) {
 			'settings.trayScreenshotFailed' => 'Screenshot failed: no room is playing, or the engine cannot capture',
 			'settings.font' => 'Font',
 			'settings.fontDescription' => 'MiSans ships with the app; swap in a domestic or overseas family.',
@@ -6785,8 +6835,6 @@ extension on TranslationsEn {
 			'settings.fontManagerInUse' => 'In use',
 			'settings.fontManagerDefaultBadge' => 'Default',
 			'settings.fontManagerCurrent' => 'Current font',
-			_ => null,
-		} ?? switch (path) {
 			'settings.fontManagerReset' => 'Restore the default',
 			'settings.fontManagerFilterAll' => 'All',
 			'settings.fontManagerCategory' => 'Category',
@@ -7275,6 +7323,8 @@ extension on TranslationsEn {
 			'settings.releasedOn' => ({required Object date}) => 'Released ${date}',
 			'settings.prerelease' => 'Pre-release',
 			'settings.updateLater' => 'Later',
+			_ => null,
+		} ?? switch (path) {
 			'settings.downloadInstaller' => 'Download the installer',
 			'settings.downloadOtherBuilds' => 'Other builds',
 			'settings.downloadTitle' => 'Downloads',
@@ -7299,8 +7349,6 @@ extension on TranslationsEn {
 			'settings.downloadManagerDesc' => 'Wallpaper download tasks, history and the save folder.',
 			'settings.downloadManagerEmpty' => 'No downloads yet',
 			'settings.downloadManagerEmptyDesc' => 'Choose “Download” in a preview or the library and the task shows up here.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.downloadStatusRunning' => 'Downloading',
 			'settings.downloadStatusDone' => 'Completed',
 			'settings.downloadStatusFailed' => 'Failed',
@@ -7789,6 +7837,8 @@ extension on TranslationsEn {
 			'toolbox.cancel' => 'Cancel',
 			'toolbox.linkFieldLabel' => 'Platform link',
 			'toolbox.linkFieldHint' => 'Paste a room link or shared text',
+			_ => null,
+		} ?? switch (path) {
 			'toolbox.linkOpen' => 'Open room',
 			'toolbox.linkCopy' => 'Copy room link',
 			'toolbox.linkPaste' => 'Paste',
@@ -7813,8 +7863,6 @@ extension on TranslationsEn {
 			'toolbox.networkTarget' => 'Probed endpoint',
 			'toolbox.networkTargetDesc' => 'The recommended-rooms endpoint',
 			'toolbox.networkLatency' => 'Response time',
-			_ => null,
-		} ?? switch (path) {
 			'toolbox.networkRooms' => 'Rooms returned',
 			'toolbox.networkSuccess' => 'Reachable',
 			'toolbox.networkFailure' => 'Unreachable',

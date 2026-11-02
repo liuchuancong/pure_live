@@ -26,10 +26,29 @@ import 'package:pure_live/features/backup/webdav/webdav_settings.dart' show webD
 /// default folder.
 const String kBackupFolderPref = 'backup.dir';
 
-/// The backup document built from the stores and settings as they are now.
-Future<BackupDocument> captureBackupDocument(WidgetRef ref, {BackupScope scope = BackupScope.all}) async {
+/// The pref key of the user's word on secrets: whether the vault's cookies
+/// and passwords may be offered to a backup, an upload or a sync at all.
+/// Off by default; the picker hides the section while it is off.
+const String kIncludeSecretsPref = 'backup.includeSecrets';
+
+/// Whether the user allowed secrets into backups and syncs.
+bool includeSecretsAllowed() {
+  try {
+    return StoragePrefs.getBool(kIncludeSecretsPref) ?? false;
+  } on Object {
+    return false;
+  }
+}
+
+/// Stores the user's word on secrets.
+Future<void> storeIncludeSecrets({required bool allowed}) => StoragePrefs.setBool(kIncludeSecretsPref, allowed);
+
+/// The backup document built from the stores and settings as they are now,
+/// carrying [sections]. The secrets drop out unless the user allowed them.
+Future<BackupDocument> captureBackupDocument(WidgetRef ref, {Set<BackupSection> sections = BackupSection.all}) async {
   final repository = await ref.read(backupRepositoryProvider.future);
-  return repository.capture(scope: scope);
+  final allowed = includeSecretsAllowed() ? sections : sections.difference(const {BackupSection.secrets});
+  return repository.capture(sections: allowed);
 }
 
 /// Applies [document]: the stores restore section by section and the
@@ -42,9 +61,7 @@ Future<void> applyBackup(WidgetRef ref, BackupDocument document) async {
   // The restore writes prefs directly rather than through the settings
   // controllers, so this window must re-read them too; the other windows
   // hear the same writes over the store's change stream.
-  if (document.scope != BackupScope.follows && document.hasSettings) {
-    refreshSettingsFromWidget(ref);
-  }
+  if (document.hasSettings) refreshSettingsFromWidget(ref);
 }
 
 // -- Local backup files ---------------------------------------------------
@@ -120,7 +137,7 @@ Future<List<LocalBackupFile>> listBackupFiles(Directory folder) async {
 /// `_2`, `_3` … when that name is taken. Answers the file written.
 Future<File> writeBackupDocument(Directory folder, BackupDocument document) async {
   await folder.create(recursive: true);
-  final name = BackupDocument.exportFileName(DateTime.now(), scope: document.scope);
+  final name = BackupDocument.exportFileName(DateTime.now(), followsOnly: document.followsOnly);
   final file = freeBackupFile(folder, name);
   await file.writeAsString(document.encode(), flush: true);
   return file;

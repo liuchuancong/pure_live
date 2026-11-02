@@ -445,6 +445,14 @@ List<SettingsSearchHit> settingsSearchCatalog(Translations t) {
     ),
     _hit(SettingsSection.webdavSync, t.backup.webdavUpload, 'webdav upload 上传 备份'),
     _hit(SettingsSection.webdavSync, t.backup.webdavDownloadToLocal, 'webdav download restore 下载 恢复'),
+    _hit(SettingsSection.lanSync, s.lanSync, 'lan sync local network devices pair 局域网 同步 设备 配对 发现'),
+    _hit(SettingsSection.lanSync, s.lanSyncPaired, 'lan sync paired devices trust grants 已配对 设备 授权 信任'),
+    _hit(SettingsSection.lanSync, s.lanSyncNearby, 'lan sync nearby discover devices 附近 设备 发现'),
+    _hit(
+      SettingsSection.backup,
+      t.backup.secretsSwitchTitle,
+      'secrets cookies passwords include backup sync 敏感 凭据 cookie 密码 包含',
+    ),
     // Cache.
     _hit(SettingsSection.dataCache, s.cacheSize, 'cache size 缓存 大小'),
     _hit(SettingsSection.dataCache, s.cacheClear, 'clear cache 清除 缓存'),

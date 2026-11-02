@@ -298,7 +298,7 @@ enum SettingsSection {
     SettingsSection.playerGuide => SettingsSection.kernel,
     SettingsSection.iptvBrowse || SettingsSection.iptvGroups => SettingsSection.iptv,
     SettingsSection.vodPlayback || SettingsSection.vodDownload || SettingsSection.vodInterface => SettingsSection.vod,
-    SettingsSection.webdavSync => SettingsSection.backup,
+    SettingsSection.webdavSync || SettingsSection.lanSync => SettingsSection.backup,
     SettingsSection.hongguoInterface || SettingsSection.hongguoDownload => SettingsSection.hongguo,
     SettingsSection.hongguoDanmaku => SettingsSection.hongguo,
     SettingsSection.hongguoDevice => SettingsSection.hongguo,

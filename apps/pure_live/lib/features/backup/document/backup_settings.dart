@@ -441,8 +441,10 @@ const List<BackupPrefEntry> kBackedUpPrefs = [
   ('log.exportFormat', BackupPrefKind.string),
   ('log.directory', BackupPrefKind.string),
   // The backup surface's own choices; the WebDAV password is a secret and
-  // never enters the document.
+  // enters the document only through the secrets section, behind the
+  // includeSecrets switch.
   ('backup.dir', BackupPrefKind.string),
+  ('backup.includeSecrets', BackupPrefKind.boolean),
   // The account list is one JSON pref; the two url/user keys below stay listed
   // because the first read of an older store migrates from them.
   ('backup.webdav.accounts', BackupPrefKind.string),

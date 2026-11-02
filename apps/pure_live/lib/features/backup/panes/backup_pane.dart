@@ -8,8 +8,10 @@ import 'package:pure_live/app/app.dart';
 import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart';
 import 'package:pure_live/features/backup/panes/backup_actions.dart';
+import 'package:pure_live/features/backup/panes/backup_section_picker.dart';
 import 'package:pure_live/features/settings/surface/settings_child_entry.dart' show SettingsChildEntry;
 import 'package:pure_live/features/settings/surface/settings_sections.dart';
+import 'package:pure_live/features/settings/surface/settings_widgets.dart' show SettingsConfigRow;
 import 'package:pure_live/l10n/translations.dart';
 
 /// The one action running: the other rows grey out and the running row
@@ -17,15 +19,16 @@ import 'package:pure_live/l10n/translations.dart';
 enum _BackupAction { createAll, createFollows, folder, openFolder, restoreFile, deleteFile }
 
 /// The backup and restore page: one JSON document bundles the followed
-/// rooms, the watch history, the followed areas, the recording tasks and
-/// the settings subset.
-/// The page writes it as a file in a local backup folder — a full document
-/// or a follows-only one — lists what the folder holds (newest first) and
-/// restores or deletes one file at a time behind a confirm. The WebDAV
-/// transport is its own subpage beside these local rows.
+/// rooms, the watch history, the followed areas, the recording tasks, the
+/// settings subset and — behind the user's own switch — the vault's secrets.
+/// The page writes it as a file in a local backup folder — the sections the
+/// user picked, or the follows alone in one tap — lists what the folder
+/// holds (newest first) and restores or deletes one file at a time behind a
+/// confirm; a restore asks which of the file's sections to take. The WebDAV
+/// and LAN transports are their own subpages beside these local rows.
 ///
 /// Public for the settings surface to embed; the page owns nothing beyond
-/// its own busy and folder state.
+/// its own busy, folder and secrets-switch state.
 final class BackupPane extends ConsumerStatefulWidget {
   /// The backup pane.
   const BackupPane({super.key});
@@ -41,6 +44,7 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
   bool _customFolder = false;
   List<LocalBackupFile>? _files;
   bool _filesFailed = false;
+  bool _includeSecrets = includeSecretsAllowed();
 
   @override
   void initState() {
@@ -166,45 +170,83 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
 
   // -- Local backup files -------------------------------------------------
 
-  Future<void> _create(BackupScope scope) =>
-      _run(scope == BackupScope.follows ? _BackupAction.createFollows : _BackupAction.createAll, () async {
-        final t = context.t;
-        final folder = _folder;
-        if (folder == null) return;
-        final document = await captureBackupDocument(ref, scope: scope);
-        if (document.isEmpty) {
-          _toast(t.backup.exportEmpty);
-          return;
-        }
-        try {
-          final file = await writeBackupDocument(Directory(folder), document);
-          await _loadFiles();
-          if (mounted) _toast(t.backup.createDone(name: file.uri.pathSegments.last));
-        } on FileSystemException {
-          if (mounted) _toast(t.backup.folderUnwritable);
-        }
-      });
-
-  Future<void> _restoreFile(LocalBackupFile entry) => _run(_BackupAction.restoreFile, () async {
+  /// Asks which sections to write, then writes them. [preset] skips the
+  /// question: the follows-only row writes rooms and areas in one tap.
+  Future<void> _create({Set<BackupSection>? preset}) async {
     final t = context.t;
+    if (_busy != null) {
+      _toast(t.backup.busy);
+      return;
+    }
+    var sections = preset;
+    if (sections == null) {
+      sections = await showBackupSectionPicker(
+        context,
+        title: t.backup.pickCreateTitle,
+        confirmLabel: t.backup.createTitle,
+        available: BackupSection.values.toSet(),
+        counts: ref.read(backupSummaryProvider).value ?? const {},
+        secretsAllowed: _includeSecrets,
+      );
+      if (sections == null || !mounted) return;
+    }
+    final chosen = sections;
+    final followsOnly = preset == BackupSection.followsOnly;
+    await _run(followsOnly ? _BackupAction.createFollows : _BackupAction.createAll, () async {
+      final folder = _folder;
+      if (folder == null) return;
+      final document = await captureBackupDocument(ref, sections: chosen);
+      if (document.isEmpty) {
+        _toast(t.backup.exportEmpty);
+        return;
+      }
+      try {
+        final file = await writeBackupDocument(Directory(folder), document);
+        await _loadFiles();
+        if (mounted) _toast(t.backup.createDone(name: file.uri.pathSegments.last));
+      } on FileSystemException {
+        if (mounted) _toast(t.backup.folderUnwritable);
+      }
+    });
+  }
+
+  /// Reads the file, asks which of its sections to take, confirms on their
+  /// counts, then restores exactly those.
+  Future<void> _restoreFile(LocalBackupFile entry) async {
+    final t = context.t;
+    if (_busy != null) {
+      _toast(t.backup.busy);
+      return;
+    }
     final document = await readBackupDocument(entry.file);
     if (!mounted) return;
     if (document == null) {
       _toast(t.backup.importBadData);
       return;
     }
-    final description = document.followsOnly
-        ? t.backup.restoreFollowsConfirmDesc(name: entry.name)
-        : t.backup.restoreConfirmDesc(name: entry.name);
+    final sections = await showBackupSectionPicker(
+      context,
+      title: t.backup.pickRestoreTitle(name: entry.name),
+      confirmLabel: t.backup.webdavRestore,
+      available: document.presentSections,
+      initial: document.presentSections,
+      counts: {for (final section in document.presentSections) section: document.countOf(section)},
+      secretsAllowed: _includeSecrets,
+      note: t.backup.pickRestoreNote,
+    );
+    if (sections == null || !mounted) return;
+    final chosen = document.only(sections);
     final confirmed = await _confirm(
       t.backup.restoreConfirmTitle,
-      description: '$description\n${_summaryLine(document)}',
+      description: '${t.backup.restoreConfirmDesc(name: entry.name)}\n${_summaryLine(chosen)}',
     );
-    if (!confirmed) return;
-    await applyBackup(ref, document);
-    ref.invalidate(backupSummaryProvider);
-    if (mounted) _toast(t.backup.importDone);
-  }, path: entry.file.path);
+    if (!confirmed || !mounted) return;
+    await _run(_BackupAction.restoreFile, () async {
+      await applyBackup(ref, chosen);
+      ref.invalidate(backupSummaryProvider);
+      if (mounted) _toast(t.backup.importDone);
+    }, path: entry.file.path);
+  }
 
   Future<void> _deleteFile(LocalBackupFile entry) async {
     final t = context.t;
@@ -226,21 +268,15 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
 
   // -- Dialogs ------------------------------------------------------------
 
-  /// The one line on what a restore would change, shown in the confirms.
-  /// A follows-only document only brings follows and areas.
-  String _summaryLine(BackupDocument document) {
-    final counts = document.counts;
-    final t = context.t;
-    if (document.followsOnly) {
-      return t.backup.summaryFollows(follows: counts.follows, areas: counts.areas);
-    }
-    return t.backup.summary(
-      follows: counts.follows,
-      history: counts.history,
-      areas: counts.areas,
-      recordings: counts.recordings,
-      settings: counts.settings,
-    );
+  /// The one line on what a restore would change, shown in the confirms:
+  /// the chosen sections and their counts.
+  String _summaryLine(BackupDocument document) => backupSectionsSummary(context.t, {
+    for (final section in document.presentSections) section: document.countOf(section),
+  });
+
+  Future<void> _setIncludeSecrets({required bool allowed}) async {
+    setState(() => _includeSecrets = allowed);
+    await storeIncludeSecrets(allowed: allowed);
   }
 
   Future<bool> _confirm(String title, {required String description}) => showDsConfirm(
@@ -299,6 +335,14 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
     final busy = _busy;
     bool free(_BackupAction action) => busy == null || busy == action;
     Widget? spinner(_BackupAction action) => busy == action ? const DsSpinner() : null;
+    // The summary names the sections the user may back up; the secrets
+    // count joins only once the switch allows them at all.
+    final shown = summary == null
+        ? null
+        : {
+            for (final entry in summary.entries)
+              if (entry.key != BackupSection.secrets || _includeSecrets) entry.key: entry.value,
+          };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -310,35 +354,40 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
             DsListRow(
               leading: const DsIcon(DsIcons.database),
               title: Text(t.backup.summaryTitle),
-              detail: Text(
-                summary == null
-                    ? t.backup.summaryEmpty
-                    : t.backup.summary(
-                        follows: summary.follows,
-                        history: summary.history,
-                        areas: summary.areas,
-                        recordings: summary.recordings,
-                        settings: summary.settings,
-                      ),
-              ),
+              detail: Text(shown == null ? t.backup.summaryEmpty : backupSectionsSummary(t, shown)),
             ),
             DsListRow(
               leading: const DsIcon(DsIcons.archive),
               title: Text(t.backup.createTitle),
               description: Text(t.backup.createDescription),
-              onPressed: _folder != null && free(_BackupAction.createAll)
-                  ? () => unawaited(_create(BackupScope.all))
-                  : null,
+              onPressed: _folder != null && free(_BackupAction.createAll) ? () => unawaited(_create()) : null,
               trailing: spinner(_BackupAction.createAll),
+              showChevron: true,
             ),
             DsListRow(
               leading: const DsIcon(DsIcons.heart),
               title: Text(t.backup.createFollowsTitle),
               description: Text(t.backup.createFollowsDescription),
               onPressed: _folder != null && free(_BackupAction.createFollows)
-                  ? () => unawaited(_create(BackupScope.follows))
+                  ? () => unawaited(_create(preset: BackupSection.followsOnly))
                   : null,
               trailing: spinner(_BackupAction.createFollows),
+            ),
+          ],
+        ),
+        // The secrets are the user's call, made once here and honoured by
+        // every transport: off, and no picker even offers them.
+        DsListSection(
+          header: Text(t.backup.secretsSection),
+          children: [
+            SettingsConfigRow(
+              leading: const DsIcon(DsIcons.keyRound),
+              title: t.backup.secretsSwitchTitle,
+              description: t.backup.secretsSwitchDescription,
+              control: DsSwitch(
+                value: _includeSecrets,
+                onChanged: (value) => unawaited(_setIncludeSecrets(allowed: value)),
+              ),
             ),
           ],
         ),
@@ -396,8 +445,11 @@ final class _BackupPaneState extends ConsumerState<BackupPane> {
           ],
         ),
         DsListSection(
-          header: Text(t.settings.webdavSyncTitle),
-          children: const [SettingsChildEntry(child: SettingsSection.webdavSync)],
+          header: Text(t.backup.transportsSection),
+          children: const [
+            SettingsChildEntry(child: SettingsSection.webdavSync),
+            SettingsChildEntry(child: SettingsSection.lanSync),
+          ],
         ),
       ],
     );

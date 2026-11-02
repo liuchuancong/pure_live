@@ -149,10 +149,11 @@ void main() {
 
       final decoded = BackupDocument.tryDecode(document.encode())!;
 
-      expect(decoded.scope, BackupScope.all);
+      expect(decoded.presentSections, BackupSection.all);
+      expect(decoded.followsOnly, isFalse);
       expect(decoded.follows, {'bili:1': _room('1')});
       expect(decoded.recordings.keys, ['bili:3']);
-      expect(decoded.counts, (follows: 1, history: 1, areas: 1, recordings: 1, settings: 1));
+      expect(decoded.counts, (follows: 1, history: 1, areas: 1, recordings: 1, settings: 1, secrets: 0));
       expect(decoded.isEmpty, isFalse);
       expect(decoded.hasRecordings, isTrue);
     });
@@ -174,24 +175,52 @@ void main() {
       )!;
       expect(decoded.follows.keys, ['bili:2']);
       expect(decoded.settings, {'a': 1});
-      expect(decoded.presentSections, {'follows', 'settings'}, reason: 'an unknown section is not claimed');
+      expect(decoded.presentSections, {
+        BackupSection.follows,
+        BackupSection.settings,
+      }, reason: 'an unknown section is not claimed');
     });
 
     test('a follows-only document says so and carries no other section', () {
-      final document = BackupDocument(exportedAt: DateTime.utc(2026), scope: BackupScope.follows);
+      final document = BackupDocument(exportedAt: DateTime.utc(2026), presentSections: BackupSection.followsOnly);
+      final json = document.toJson();
+      expect(json.containsKey('history'), isFalse, reason: 'an unselected section is absent, not empty');
+      expect(json['version'], containsPair('scope', 'follows'));
       final decoded = BackupDocument.tryDecode(document.encode())!;
       expect(decoded.followsOnly, isTrue);
       expect(decoded.isEmpty, isTrue);
       expect(decoded.counts.recordings, 0);
     });
 
+    test('a schema-1 follows-only file (every section written) restores only follows and areas', () {
+      final decoded = BackupDocument.tryDecode(
+        '{"version":{"app":"pure_live","schema":1,"scope":"follows"},'
+        '"follows":{"bili:1":{"roomId":"1"}},"history":{},"areaFollows":{},"recordings":{},"settings":{}}',
+      )!;
+      expect(decoded.presentSections, BackupSection.followsOnly);
+      expect(decoded.hasHistory, isFalse, reason: 'the empty history map must not clear the device');
+    });
+
+    test('secrets ride as their own section and only() narrows the restore', () {
+      final document = BackupDocument(
+        exportedAt: DateTime.utc(2026),
+        follows: {'bili:1': _room('1')},
+        secrets: {'cookie/bilibili': 'SESSDATA=1'},
+        presentSections: {BackupSection.follows, BackupSection.secrets},
+      );
+      final decoded = BackupDocument.tryDecode(document.encode())!;
+      expect(decoded.secrets, {'cookie/bilibili': 'SESSDATA=1'});
+      expect(decoded.hasSecrets, isTrue);
+      final narrowed = decoded.only({BackupSection.follows});
+      expect(narrowed.hasSecrets, isFalse);
+      expect(narrowed.toJson().containsKey('secrets'), isFalse);
+      expect(narrowed.follows.keys, ['bili:1']);
+    });
+
     test('the export name carries the kind and the moment', () {
       final moment = DateTime(2026, 10, 31, 9, 5, 7);
       expect(BackupDocument.exportFileName(moment), 'pure_live_backup_20261031_090507.json');
-      expect(
-        BackupDocument.exportFileName(moment, scope: BackupScope.follows),
-        'pure_live_follows_20261031_090507.json',
-      );
+      expect(BackupDocument.exportFileName(moment, followsOnly: true), 'pure_live_follows_20261031_090507.json');
     });
   });
 
@@ -202,7 +231,11 @@ void main() {
       await built.history.put('old:2', _room('2'));
 
       await built.repository.apply(
-        BackupDocument(exportedAt: DateTime.utc(2026), follows: {'bili:1': _room('1')}, presentSections: {'follows'}),
+        BackupDocument(
+          exportedAt: DateTime.utc(2026),
+          follows: {'bili:1': _room('1')},
+          presentSections: {BackupSection.follows},
+        ),
       );
 
       expect(built.follows.keys, ['bili:1'], reason: 'the document is the word on follows');
@@ -215,7 +248,11 @@ void main() {
       await built.recordings.put('bili:9', _task(id: 'bili:9').toJson());
 
       await built.repository.apply(
-        BackupDocument(exportedAt: DateTime.utc(2026), scope: BackupScope.follows, follows: {'bili:1': _room('1')}),
+        BackupDocument(
+          exportedAt: DateTime.utc(2026),
+          follows: {'bili:1': _room('1')},
+          presentSections: BackupSection.followsOnly,
+        ),
       );
 
       expect(built.follows.keys, ['bili:1']);

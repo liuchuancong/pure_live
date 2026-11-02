@@ -12,7 +12,9 @@ import 'package:pure_live/features/backup/document/backup_document.dart';
 import 'package:pure_live/features/backup/document/backup_repository.dart'
     show BackupDocumentEmpty, BackupRecordingsBusy, backupSummaryProvider;
 import 'package:pure_live/features/backup/panes/backup_actions.dart'
-    show applyBackup, captureBackupDocument, formatBackupSize, formatBackupTime, webDavClientFor;
+    show applyBackup, captureBackupDocument, formatBackupSize, formatBackupTime, includeSecretsAllowed, webDavClientFor;
+import 'package:pure_live/features/backup/panes/backup_section_picker.dart'
+    show backupSectionsSummary, showBackupSectionPicker;
 import 'package:pure_live/features/backup/webdav/webdav_accounts.dart';
 import 'package:pure_live/features/backup/webdav/webdav_client.dart';
 import 'package:pure_live/features/backup/webdav/webdav_settings.dart' show webDavVault;
@@ -455,23 +457,40 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
   }
 
   /// Sends this device's data as a stamped backup file into the open folder.
-  Future<void> _uploadBackup(BackupScope scope) => _run((client) async {
+  /// [preset] skips the section question: the follows-only menu item
+  /// uploads rooms and areas in one tap.
+  Future<void> _uploadBackup({Set<BackupSection>? preset}) async {
     final t = context.t;
-    final document = await captureBackupDocument(ref, scope: scope);
-    if (document.isEmpty) {
-      if (mounted) showDsToast(context: context, title: t.backup.exportEmpty);
-      return;
+    var sections = preset;
+    if (sections == null) {
+      sections = await showBackupSectionPicker(
+        context,
+        title: t.backup.pickUploadTitle,
+        confirmLabel: t.backup.webdavUpload,
+        available: BackupSection.values.toSet(),
+        counts: ref.read(backupSummaryProvider).value ?? const {},
+        secretsAllowed: includeSecretsAllowed(),
+      );
+      if (sections == null || !mounted) return;
     }
-    final name = _freeName(BackupDocument.exportFileName(DateTime.now(), scope: scope), _taken);
-    await client.writeFile(_join(_path, name), utf8.encode(document.encode()));
-    if (!mounted) return;
-    showDsToast(
-      context: context,
-      title: t.backup.webdavUploadDone(file: name),
-      status: DsStatus.success,
-    );
-    unawaited(_load());
-  });
+    final chosen = sections;
+    await _run((client) async {
+      final document = await captureBackupDocument(ref, sections: chosen);
+      if (document.isEmpty) {
+        if (mounted) showDsToast(context: context, title: t.backup.exportEmpty);
+        return;
+      }
+      final name = _freeName(BackupDocument.exportFileName(DateTime.now(), followsOnly: document.followsOnly), _taken);
+      await client.writeFile(_join(_path, name), utf8.encode(document.encode()));
+      if (!mounted) return;
+      showDsToast(
+        context: context,
+        title: t.backup.webdavUploadDone(file: name),
+        status: DsStatus.success,
+      );
+      unawaited(_load());
+    });
+  }
 
   /// Reads one remote file and hands it to the system's save dialog.
   Future<void> _download(WebDavEntry entry) => _run((client) async {
@@ -490,21 +509,26 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
     final t = context.t;
     final bytes = await _readBytes(entry);
     if (bytes == null || !mounted) return;
-    final document = BackupDocument.tryDecode(utf8.decode(bytes, allowMalformed: true));
-    if (document == null) {
+    final decoded = BackupDocument.tryDecode(utf8.decode(bytes, allowMalformed: true));
+    if (decoded == null) {
       _toast(t.backup.importBadData, status: DsStatus.danger);
       return;
     }
-    final counts = document.counts;
-    final summary = document.followsOnly
-        ? t.backup.summaryFollows(follows: counts.follows, areas: counts.areas)
-        : t.backup.summary(
-            follows: counts.follows,
-            history: counts.history,
-            areas: counts.areas,
-            recordings: counts.recordings,
-            settings: counts.settings,
-          );
+    final sections = await showBackupSectionPicker(
+      context,
+      title: t.backup.pickRestoreTitle(name: entry.name),
+      confirmLabel: t.backup.webdavRestore,
+      available: decoded.presentSections,
+      initial: decoded.presentSections,
+      counts: {for (final section in decoded.presentSections) section: decoded.countOf(section)},
+      secretsAllowed: includeSecretsAllowed(),
+      note: t.backup.pickRestoreNote,
+    );
+    if (sections == null || !mounted) return;
+    final document = decoded.only(sections);
+    final summary = backupSectionsSummary(t, {
+      for (final section in document.presentSections) section: document.countOf(section),
+    });
     final confirmed = await showDsConfirm(
       context: context,
       title: t.backup.webdavRestoreTitle(name: entry.name),
@@ -942,14 +966,14 @@ final class _WebDavFileManagerState extends ConsumerState<WebDavFileManager> {
               label: Text(t.backup.webdavUpload),
               leading: const DsIcon(DsIcons.cloudUpload),
               onPressed: () {
-                if (enabled) unawaited(_uploadBackup(BackupScope.all));
+                if (enabled) unawaited(_uploadBackup());
               },
             ),
             DsMenuItem(
               label: Text(t.backup.webdavUploadFollows),
               leading: const DsIcon(DsIcons.cloudUpload),
               onPressed: () {
-                if (enabled) unawaited(_uploadBackup(BackupScope.follows));
+                if (enabled) unawaited(_uploadBackup(preset: BackupSection.followsOnly));
               },
             ),
             const DsMenuDivider(),
