@@ -135,6 +135,10 @@ final class _IptvRecentPageState extends ConsumerState<IptvRecentPage> {
           filter: filter,
           showing: shown.length,
           onSelectGroup: (group) => setState(() => _group = group),
+          // The archive is kept most-recent-first, so the head of what this
+          // filter shows is the channel the viewer walked away from last;
+          // opening it from the head is the shortest way back to the picture.
+          onResume: shown.isEmpty ? null : () => _open(shown.first.channel),
           onClear: rows.isEmpty ? null : () => unawaited(_clear(context, ref)),
         ),
         Expanded(
@@ -287,6 +291,7 @@ final class _RecentHeader extends StatelessWidget {
     required this.filter,
     required this.showing,
     required this.onSelectGroup,
+    required this.onResume,
     required this.onClear,
   });
 
@@ -298,6 +303,10 @@ final class _RecentHeader extends StatelessWidget {
 
   /// Narrows the list to one group; null takes every watched channel.
   final ValueChanged<String?> onSelectGroup;
+
+  /// Goes back to the most recently watched channel of what the filter shows;
+  /// null while the list is empty, since there is nothing to go back to.
+  final VoidCallback? onResume;
 
   /// Drops every record; null while there is nothing to drop.
   final VoidCallback? onClear;
@@ -328,6 +337,17 @@ final class _RecentHeader extends StatelessWidget {
       runSpacing: DsSpace.s8,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        // The verb the rows themselves answer with, given to the page once so
+        // reading the archive is not the only thing one can do here. The guide
+        // page names entering a channel's live picture the same way.
+        if (onResume != null)
+          DsButton(
+            variant: DsButtonVariant.secondary,
+            size: DsSize.sm,
+            onPressed: onResume,
+            leading: const DsIcon(DsIcons.play, size: 15),
+            child: Text(t.iptv.openChannel),
+          ),
         if (filter.groups.length > 1) IptvGroupEntry(filter: filter, onSelect: onSelectGroup),
         if (onClear != null)
           DsButton(
