@@ -22,6 +22,7 @@ import 'package:pure_live/modules/live/room/chat/gift_flights.dart' show GiftFli
 import 'package:pure_live/modules/live/room/chat/gift_text.dart' show giftLineTier;
 import 'package:pure_live/modules/live/room/chat/membership_cards.dart' show membershipCard;
 import 'package:pure_live/modules/live/room/chat/room_super_chats.dart' show roomSuperChatsProvider;
+import 'package:pure_live/modules/live/room/player/room_playlist.dart' show roomPlaylistProvider;
 import 'package:pure_live/modules/live/shield/shield.dart';
 
 /// How many chat lines the page keeps; older leave first.
@@ -635,8 +636,9 @@ final class RoomController extends Notifier<RoomState> {
         (error) async {
           if (epoch == _openEpoch) state = _with(error: error.message);
         },
-        (room) async {
+        (detail) async {
           if (epoch != _openEpoch) return;
+          final room = _fillTitleFromKnown(detail);
           state = _with(room: room);
           unawaited(_recordHistory(room));
           unawaited(_loadSuperChats(room));
@@ -669,6 +671,30 @@ final class RoomController extends Notifier<RoomState> {
         },
       ),
     );
+  }
+
+  /// [detail] with its title filled from what the app already knows of the
+  /// room when the platform's room page carries none (Kuaishou's page has
+  /// no broadcast title, only its list cards do): the card the room was
+  /// opened from (the playlist), the follow, or the watch record — the
+  /// reference's rule of entering from a card keeping the card's title. A
+  /// detail with its own title is left as it is.
+  LiveRoom _fillTitleFromKnown(LiveRoom detail) {
+    if (detail.content.title.trim().isNotEmpty) return detail;
+    final key = detail.ref.identityKey;
+    bool same(LiveRoom room) => room.ref.identityKey == key;
+    final known = [
+      ...?ref.read(roomPlaylistProvider)?.rooms,
+      ...ref.read(followsProvider).rooms,
+      for (final (room, _) in ref.read(historyProvider).records) room,
+    ];
+    for (final room in known) {
+      if (!same(room)) continue;
+      final title = room.content.title.trim();
+      if (title.isEmpty) continue;
+      return detail.rebuild((b) => b.content = detail.content.rebuild((c) => c.title = title).toBuilder());
+    }
+    return detail;
   }
 
   /// Switches the quality: the plan is re-read at the new quality and
