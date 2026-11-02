@@ -274,7 +274,12 @@ final backupRepositoryProvider = FutureProvider<BackupRepository>((ref) async {
 
 /// What the stores, the settings subset and the vault hold right now, per
 /// section, for the pane's summary row and the picker's counts.
-final backupSummaryProvider = FutureProvider<Map<BackupSection, int>>((ref) async {
-  final repository = await ref.watch(backupRepositoryProvider.future);
-  return repository.summary();
-});
+///
+/// Derived, not a `FutureProvider`: once the repository is up, a
+/// `FutureProvider` awaiting its `.future` would complete synchronously on
+/// its next (re)build — and a rebuild forced by a restore's `invalidate`
+/// then lands inside a widget build, which Riverpod refuses ("tried to
+/// modify a provider while the widget tree was building").
+final backupSummaryProvider = Provider<AsyncValue<Map<BackupSection, int>>>(
+  (ref) => ref.watch(backupRepositoryProvider).whenData((repository) => repository.summary()),
+);
